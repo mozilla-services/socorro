@@ -20,7 +20,14 @@ Development Installation and Setup
 
  6.) Run 'paster serve --reload development.ini' to start the app on
      port localhost:5000.
+     
+The list of reports is available at 
 
+<http://localhost:5000/report/list>
+
+The upload URL for Breakpad's configuration is
+
+<http://yourhost:5000/report/add>
 
 XXXsayrer Production Installation and Setup
 ============================================
