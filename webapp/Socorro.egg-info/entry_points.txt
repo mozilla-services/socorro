@@ -1,0 +1,6 @@
+
+    [paste.app_factory]
+    main=socorro:make_app
+    [paste.app_install]
+    main=paste.script.appinstall:Installer
+    

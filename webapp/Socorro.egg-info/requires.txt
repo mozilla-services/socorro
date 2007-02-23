@@ -1,0 +1,3 @@
+Pylons>=0.9.4
+SQLAlchemy>=0.3
+Genshi>=0.3.6
