@@ -1,0 +1,16 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" 
+ "http://www.w3.org/TR/html4/strict.dtd">
+<html xmlns:py="http://genshi.edgewall.org/"
+      xmlns:xi="http://www.w3.org/2001/XInclude">
+ <head>
+   <title>Crash Reports</title>
+ </head>
+ <body>
+   <ul>
+     <li py:for="report in c.reports">
+       ${h.link_to(report.crash_id, h.url_for(crash=report.crash_id, action='index'))}
+       ${report.crash_reason}
+     </li>
+   </ul> 
+ </body>
+</html>

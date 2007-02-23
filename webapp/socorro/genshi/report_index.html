@@ -1,0 +1,56 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" 
+ "http://www.w3.org/TR/html4/strict.dtd">
+<html xmlns:py="http://genshi.edgewall.org/"
+      xmlns:xi="http://www.w3.org/2001/XInclude">
+ <head>
+   <title>Breakpad Crash Report: ${c.report.crash_id}</title>
+   <style>
+     table {
+       border-top: 1px solid grey;
+       border-left: 1px solid grey;
+     }
+     td,th {
+       font-size: 11px;
+       border-bottom: 1px solid grey;
+       border-right: 1px solid grey;
+       padding: 2px;
+       margin: none;
+     }
+   </style>
+ </head>
+ <body>
+    <p>
+    ID: ${c.report.crash_id} <br/>
+    Time: ${c.report.report_time} <br/>
+    Build ID: ${c.report.build_id} <br/>
+    Platform: ${c.report.platform} <br/>
+    OS: ${c.report.os_name} <br/>
+    OS Version: ${c.report.os_version} <br/>
+    CPU: ${c.report.cpu_name} <br/>
+    CPU Info: ${c.report.cpu_info} <br/>
+    Crash Reason: ${c.report.crash_reason} <br/>
+    Crash Address: ${c.report.crash_address} <br/>
+    </p>
+    <b>Threads:</b><br/>
+    <table cellspacing="0" width="1200">
+      <tr>
+        <th>#</th>
+        <th>frame</th>
+        <th>module</th>
+        <th>function</th>
+        <th>source</th>
+        <th>line</th>
+        <th>instruction</th>
+      </tr>
+      <tr py:for="frame in c.report.stackframes">
+        <td>${frame.thread_num}</td>
+        <td>${frame.frame_num}</td>
+        <td>${frame.module_name}</td>
+        <td>${frame.function}</td>
+        <td>${frame.source}</td>
+        <td>${frame.source_line}</td>
+        <td>${frame.instruction}</td>
+      </tr>
+    </table>
+ </body>
+</html>

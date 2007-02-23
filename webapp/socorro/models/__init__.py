@@ -1,5 +1,6 @@
 from sqlalchemy import *
 from sqlalchemy.ext.assignmapper import assign_mapper
+from sqlalchemy.ext.selectresults import SelectResultsExt
 from pylons.database import session_context
 from datetime import datetime
 
@@ -33,6 +34,25 @@ stack_frames_table = Table('stack_frames', meta,
   Column('instruction', String(10))
 )
 
+def EmptyFilter(x):
+  """Return None if the argument is an empty string, otherwise
+     return the argument."""
+  if x == '':
+    return None
+  return x
+
+class StackFrame(object):
+  def __str__(self):
+    return self.stack_id
+  
+  def readline(self, line):
+    values = line.split("|")
+    frame_data = dict(zip(['thread_num', 'frame_num', 'module_name',
+                           'function', 'source', 'source_line', 'instruction'],
+                          map(EmptyFilter, line.split("|"))))
+    self.__dict__.update(frame_data)
+
+
 class CrashReport(object):
   def __init__(self):
     self.report_time = datetime.now()
@@ -55,25 +75,14 @@ class CrashReport(object):
         self.cpu_info = values[2]
       elif values[0] == 'Crash':
         self.crash_reason = values[1]
-        self.crash_address = values[2]        
+        self.crash_address = values[2]
 
-def EmptyFilter(x):
-  """Return None if the argument is an empty string, otherwise
-     return the argument."""
-  if x == '':
-    return None
-  return x
+stack_mapper = assign_mapper(session_context, StackFrame, stack_frames_table)
+crash_mapper = assign_mapper(session_context, CrashReport, crash_reports_table, 
+  properties = {
+    'stackframes': relation(StackFrame, lazy=True, cascade="all, delete-orphan", 
+                     order_by=[stack_frames_table.c.thread_num, stack_frames_table.c.frame_num]
+                   )
+  }
+)
 
-class StackFrame(object):
-  def __str__(self):
-    return self.stack_id
-  
-  def readline(self, line):
-    values = line.split("|")
-    frame_data = dict(zip(['thread_num', 'frame_num', 'module_name',
-                           'function', 'source', 'source_line', 'instruction'],
-                          map(EmptyFilter, line.split("|"))))
-    self.__dict__.update(frame_data)
-
-crash_mapper = assign_mapper(session_context, CrashReport, crash_reports_table)
-stack_mapper = assign_mapper(session_context, StackFrame, stack_frames_table)  
