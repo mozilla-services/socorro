@@ -27,12 +27,8 @@ def make_app(global_conf, full_stack=True, **app_conf):
 
     # Load our Pylons configuration defaults
     config = load_environment(global_conf, app_conf)
-    config.init_app(global_conf, app_conf, package='socorro')
+    config.init_app(global_conf, app_conf, package='socorro', template_engine='genshi')
 
-    # Add Genshi templating, remove Myghty
-    config.template_engines = []
-    config.add_template_engine('genshi', 'socorro.genshi', {})
-         
     # Load our default Pylons WSGI app and make g available
     app = pylons.wsgiapp.PylonsApp(config, helpers=socorro.lib.helpers,
                                    g=app_globals.Globals)

@@ -8,6 +8,10 @@ def make_map(global_conf={}, app_conf={}):
     root_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
     map = Mapper(directory=os.path.join(root_path, 'controllers'))
+
+    # Set default route to the list of reports.  We can change this later if we
+    # create a dashboard or better entry page.
+    map.connect('', controller='report', action='list')
     
     # This route handles displaying the error page and graphics used in the 404/500
     # error pages. It should likely stay at the top to ensure that the error page is
