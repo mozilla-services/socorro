@@ -7,8 +7,8 @@ Development Installation and Setup
 
  2.) Create a mysql database and users as necessary
 
- 3.) Edit the fields in development.ini to match your
-     mysql and Breakpad setup.
+ 3.) cp development.ini.dist development.ini.  Edit the fields in 
+     development.ini to match your mysql and Breakpad setup.
 
  4.) Run '(sudo) python setup.py develop'
      This command will install the necessary Python dependencies. It

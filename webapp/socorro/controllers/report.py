@@ -3,11 +3,11 @@ from socorro.lib.base import *
 class ReportController(BaseController):
   def index(self):
     c.report = model.CrashReport.get_by(crash_id=request.params['crash'])
-    return render_response('genshi','report_index')
+    return render_response('report_index')
 
   def list(self):
     c.reports = model.CrashReport.select()
-    return render_response('genshi','report_list')
+    return render_response('report_list')
 
   def add(self):
     if request.environ['REQUEST_METHOD'] == 'POST':
