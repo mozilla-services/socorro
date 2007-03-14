@@ -1,8 +1,9 @@
 README.txt
+development.ini.dist
 myapp.log
 setup.cfg
 setup.py
-test.ini
+test.ini.dist
 Socorro.egg-info/PKG-INFO
 Socorro.egg-info/SOURCES.txt
 Socorro.egg-info/dependency_links.txt
@@ -22,8 +23,6 @@ socorro/controllers/error.py
 socorro/controllers/report.py
 socorro/controllers/symbols.py
 socorro/docs/index.txt
-socorro/genshi/report_index.html
-socorro/genshi/report_list.html
 socorro/i18n/__init__.py
 socorro/lib/__init__.py
 socorro/lib/app_globals.py
@@ -31,8 +30,9 @@ socorro/lib/base.py
 socorro/lib/collect.py
 socorro/lib/helpers.py
 socorro/models/__init__.py
-socorro/public/index.html
-socorro/templates/autohandler
+socorro/templates/__init__.py
+socorro/templates/report_index.html
+socorro/templates/report_list.html
 socorro/tests/__init__.py
 socorro/tests/test_models.py
 socorro/tests/functional/__init__.py

@@ -39,6 +39,11 @@ socorro.symbol_dir = /tmp/socorro
 # The path to the Breakpad minidump_stackwalk binary
 socorro.minidump_stackwalk = /usr/local/bin/minidump_stackwalk
 
+# Authentication
+authkit.enable = true
+authkit.method = digest
+authkit.users.setup = admin_user:admin_password
+
 # WARNING: *THE LINE BELOW MUST BE UNCOMMENTED ON A PRODUCTION ENVIRONMENT*
 # Debug mode will enable the interactive debugging tool, allowing ANYONE to
 # execute malicious code after an exception is raised.
