@@ -19,6 +19,7 @@ socorro/config/environment.py
 socorro/config/middleware.py
 socorro/config/routing.py
 socorro/controllers/__init__.py
+socorro/controllers/admin.py
 socorro/controllers/error.py
 socorro/controllers/report.py
 socorro/controllers/symbols.py
@@ -36,5 +37,6 @@ socorro/templates/report_list.html
 socorro/tests/__init__.py
 socorro/tests/test_models.py
 socorro/tests/functional/__init__.py
+socorro/tests/functional/test_admin.py
 socorro/tests/functional/test_report.py
 socorro/tests/functional/test_symbols.py
