@@ -1,4 +1,6 @@
 from socorro.lib.base import *
+from socorro.lib.collect import Collector, FixupSourcePath, TempFileForData
+import socorro.models as model
 
 class ReportController(BaseController):
   def index(self):
