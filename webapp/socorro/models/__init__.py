@@ -43,8 +43,11 @@ def EmptyFilter(x):
 
 class StackFrame(object):
   def __str__(self):
-    return self.stack_id
-  
+    if self.stack_id is not None:
+      return str(self.stack_id)
+    else:
+      return ""
+
   def readline(self, line):
     values = line.split("|")
     frame_data = dict(zip(['thread_num', 'frame_num', 'module_name',
@@ -58,7 +61,10 @@ class CrashReport(object):
     self.report_time = datetime.now()
 
   def __str__(self):
-    return self.crash_id
+    if self.crash_id is not None:
+      return str(self.crash_id)
+    else:
+      return ""
 
   def read_header(self, fh):
     for line in fh:

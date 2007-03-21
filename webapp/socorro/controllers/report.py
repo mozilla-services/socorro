@@ -39,6 +39,7 @@ class ReportController(BaseController):
           if frame.source is not None:
             frame.source = FixupSourcePath(frame.source)
           frame.crash_id = report.crash_id
+          report.stackframes.append(frame)
           frame.flush()
 	  
       finally:
