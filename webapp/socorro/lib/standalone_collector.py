@@ -3,15 +3,17 @@
 # Standalone collector
 #
 
-import os, cgi, sys, uuid, tempfile
+import os, cgi, sys, uuid, tempfile, simplejson
 from datetime import datetime
 from stat import S_IRGRP, S_IROTH, S_IRUSR, S_IXOTH, S_IXUSR, S_IWUSR
 
 # storage constants
 storageRoot = "/tmp/dumps/"
 dumpDirPrefix = "bp_"
+jsonFileSuffix = ".json"
 dumpFileSuffix = ".dump"
 dumpPermissions = S_IRGRP | S_IROTH | S_IRUSR | S_IXOTH | S_IXUSR | S_IWUSR;
+dumpField = "upload_file_minidump"
 
 # the number of dumps to be stored in a single directory
 dumpDirCount = 500
@@ -85,21 +87,18 @@ def getParentPathForDump():
   latestDir = findLastModifiedDirInPath(datePath)
   if len(os.listdir(latestDir)) >= dumpDirCount:
     return makeDumpDir(datePath)
-  else:
-    return latestDir
-
+  
+  return latestDir
 
 def storeDump(form, dumpfile):
   """Stream the uploaded dump to a file, and store accompanying metadata.
 Return uuid to client"""
   dirPath = getParentPathForDump()
   dumpID = str(uuid.uuid1())
-  outfile = open(os.path.join(dirPath, "dump-" + dumpID + dumpFileSuffix), 'wb')
+  outfile = open(os.path.join(dirPath, dumpID + dumpFileSuffix), 'wb')
 
   # XXXsayrer need to peek at the first couple bytes for a sanity check
   # breakpad leading bytes: 0x504d444d  
-  #
-  # XXXsayrer... should be getting other metadata here as well 
   #
   try:
     while 1:
@@ -109,8 +108,15 @@ Return uuid to client"""
       outfile.write(data)
   finally:
     outfile.close()
-  return dumpID
 
+  return (dumpID, dirPath)
+
+def storeJSON(dumpID, dumpDir, form):
+  names = form.keys()
+  for name in names:
+    if name != dumpField:
+      sys.stderr.write(name + "\n")
+  sys.stderr.write("hmm:%s" % form.keys())
 
 #
 # HTTP functions
@@ -133,9 +139,10 @@ def sendHeaders(headers):
 if __name__ == "__main__":
   if method == "POST":
     theform = cgi.FieldStorage()
-    dump = theform["upload_file_minidump"]
+    dump = theform[dumpField]
     if dump.file:
-      dumpID = storeDump(theform, dump.file)
+      (dumpID, dumpPath) = storeDump(theform, dump.file)
+      storeJSON(dumpID, dumpPath, theform)
       cgiprint("Content-Type: text/plain")
       cgiprint()
       print dumpIDPrefix + dumpID
