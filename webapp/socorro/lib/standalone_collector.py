@@ -112,11 +112,15 @@ Return uuid to client"""
   return (dumpID, dirPath)
 
 def storeJSON(dumpID, dumpDir, form):
-  names = form.keys()
+  names = [name for name in form.keys() if name != dumpField]
+  fields = {}
   for name in names:
-    if name != dumpField:
-      sys.stderr.write(name + "\n")
-  sys.stderr.write("hmm:%s" % form.keys())
+    fields[name] = form[name].value
+  outfile = open(os.path.join(dumpDir, dumpID + jsonFileSuffix), 'w')
+  try:
+    simplejson.dump(fields, outfile)
+  finally:
+    outfile.close()
 
 #
 # HTTP functions
