@@ -137,7 +137,7 @@ if __name__ == "__main__":
         storeJSON(dumpID, dumpPath, theform)
         cgiprint("Content-Type: text/plain")
         cgiprint()
-        print config.dumpIDPrefix + dumpID
+        print "CrashID=" + config.dumpIDPrefix + dumpID
       else:
         sendHeaders([badRequest])
     except:
