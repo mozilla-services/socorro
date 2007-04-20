@@ -3,18 +3,37 @@ import os
 import shutil
 import glob
 
-distPath = "./dist/standalone-collector"
-if not os.path.exists(distPath):
-  os.makedirs(distPath)
-if not os.path.exists(distPath + "/simplejson"):
-  os.mkdir(distPath + "/simplejson")
+cgiCollector = "./dist/cgi-collector"
+modpythonCollector = "./dist/modpython-collector"
 
-shutil.copy("./docs/README-standalone-collector.txt", distPath + "/README.txt")
+def setupCommon(distPath):
+  if not os.path.exists(distPath):
+    os.makedirs(distPath)
+  if not os.path.exists(distPath + "/simplejson"):
+    os.mkdir(distPath + "/simplejson")
+  shutil.copy("./docs/README-standalone-collector.txt",
+              distPath + "/README.txt")
+  toplevel = ["standalone_collector.py", "config.py", "uuid.py"]
+  for name in toplevel:
+    shutil.copy("./webapp/socorro/lib/" + name, distPath + "/" + name)
+  simplejsonFiles = glob.glob("./webapp/socorro/lib/simplejson/*.py")
+  for name in simplejsonFiles:
+    shutil.copy(name, distPath + "/simplejson/" + os.path.basename(name))
 
-toplevel = ["standalone_collector.py", "config.py", "uuid.py"]
-for name in toplevel:
-  shutil.copy("./webapp/socorro/lib/" + name, distPath + "/" + name)
+setupCommon(cgiCollector)
+setupCommon(modpythonCollector)
 
-simplejsonFiles = glob.glob("./webapp/socorro/lib/simplejson/*.py")
-for name in simplejsonFiles:
-  shutil.copy(name, distPath + "/simplejson/" + os.path.basename(name))
+# concat mod_python docs
+modpythonDocs = open("./docs/README-mod-python.txt")
+distREADME = open(modpythonCollector + "/README.txt", "a")
+distREADME.write(modpythonDocs.read())
+distREADME.close()
+modpythonDocs.close()
+
+# copy mod_python-only files
+shutil.copy("./webapp/socorro/lib/modpython-collector.py",
+             modpythonCollector + "/collector.py")
+
+# copy cgi-only files
+shutil.copy("./webapp/socorro/lib/cgi-collector.py",
+             cgiCollector + "/collector.py")

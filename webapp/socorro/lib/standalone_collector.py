@@ -1,4 +1,3 @@
-#!/usr/bin/python
 #
 # Standalone collector
 #
@@ -109,38 +108,5 @@ def storeJSON(dumpID, dumpDir, form):
   finally:
     outfile.close()
 
-#
-# HTTP functions
-#
-method = os.environ['REQUEST_METHOD']
-methodNotSupported = "Status: 405 Method Not Supported"
-badRequest = "Status: 400 Bad Request"
-internalServerError = "Status: 500 Internal Server Error"
-
-def cgiprint(inline=''):
-  sys.stdout.write(inline)
-  sys.stdout.write('\r\n')
-  sys.stdout.flush()
-
-def sendHeaders(headers):
-  for h in headers:
-    cgiprint(h)
-  cgiprint()
-
-if __name__ == "__main__":
-  if method == "POST":
-    try:
-      theform = cgi.FieldStorage()
-      dump = theform[config.dumpField]
-      if dump.file:
-        (dumpID, dumpPath) = storeDump(theform, dump.file)
-        storeJSON(dumpID, dumpPath, theform)
-        cgiprint("Content-Type: text/plain")
-        cgiprint()
-        print "CrashID=" + config.dumpIDPrefix + dumpID
-      else:
-        sendHeaders([badRequest])
-    except:
-      sendHeaders([internalServerError])
-  else:
-    sendHeaders([methodNotSupported])
+def makeResponseForClient(dumpID):
+  return "CrashID=" + config.dumpIDPrefix + dumpID
