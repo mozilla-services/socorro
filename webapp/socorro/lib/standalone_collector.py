@@ -6,21 +6,7 @@
 import os, cgi, sys, uuid, tempfile, simplejson
 from datetime import datetime
 from time import time
-from stat import S_IRGRP, S_IROTH, S_IRUSR, S_IXOTH, S_IXUSR, S_IWUSR
-
-# storage constants
-storageRoot = "/tmp/dumps/"
-dumpDirPrefix = "bp_"
-jsonFileSuffix = ".json"
-dumpFileSuffix = ".dump"
-dumpPermissions = S_IRGRP | S_IROTH | S_IRUSR | S_IXOTH | S_IXUSR | S_IWUSR;
-dumpField = "upload_file_minidump"
-
-# the number of dumps to be stored in a single directory
-dumpDirCount = 500
-
-# returned to the client with a uuid following
-dumpIDPrefix = "bp-"
+import config
 
 def ensureDiskSpace():
   pass
@@ -31,18 +17,16 @@ def checkDumpQueue():
 def backOffMessage():
   pass
 
-
 def makeDumpDir(base):
   """Create a directory to hold a group of dumps, and set permissions"""
-  tmpPath = tempfile.mkdtemp(dir=base, prefix=dumpDirPrefix)
-  os.chmod(tmpPath, dumpPermissions)
+  tmpPath = tempfile.mkdtemp(dir=base, prefix=config.dumpDirPrefix)
   return tmpPath
 
 
 def findLastModifiedDirInPath(path):
   names = os.listdir(path)
   breakpadDirs = [os.path.join(path, entry) for entry
-                  in names if entry.startswith(dumpDirPrefix)]
+                  in names if entry.startswith(config.dumpDirPrefix)]
   
   # This could happen if some other process or person has removed things
   # from our dated paths
@@ -73,20 +57,20 @@ def getParentPathForDump():
   """Return a directory path to hold dump data, creating if necessary"""
   # First make an hourly directory if necessary
   utc = datetime.utcnow()
-  datePath = os.path.join(storageRoot, str(utc.year), str(utc.month),
+  datePath = os.path.join(config.storageRoot, str(utc.year), str(utc.month),
                           str(utc.day), str(utc.hour))
 
   # if it's not there yet, create the date directory and its first
   # dump directory
   if not os.path.exists(datePath):
     os.makedirs(datePath)
-    os.chmod(datePath, dumpPermissions)
+    os.chmod(datePath, config.dumpPermissions)
     return makeDumpDir(datePath)
 
   # return the last-modified dir if it has less than dumpCount entries,
   # otherwise make a new one
   latestDir = findLastModifiedDirInPath(datePath)
-  if len(os.listdir(latestDir)) >= dumpDirCount:
+  if len(os.listdir(latestDir)) >= config.dumpDirCount:
     return makeDumpDir(datePath)
   
   return latestDir
@@ -96,7 +80,7 @@ def storeDump(form, dumpfile):
 Return uuid to client"""
   dirPath = getParentPathForDump()
   dumpID = str(uuid.uuid1())
-  outfile = open(os.path.join(dirPath, dumpID + dumpFileSuffix), 'wb')
+  outfile = open(os.path.join(dirPath, dumpID + config.dumpFileSuffix), 'wb')
 
   # XXXsayrer need to peek at the first couple bytes for a sanity check
   # breakpad leading bytes: 0x504d444d  
@@ -113,12 +97,12 @@ Return uuid to client"""
   return (dumpID, dirPath)
 
 def storeJSON(dumpID, dumpDir, form):
-  names = [name for name in form.keys() if name != dumpField]
+  names = [name for name in form.keys() if name != config.dumpField]
   fields = {}
   for name in names:
     fields[name] = form[name].value
   fields["timestamp"] = time() 
-  outfile = open(os.path.join(dumpDir, dumpID + jsonFileSuffix), 'w')
+  outfile = open(os.path.join(dumpDir, dumpID + config.jsonFileSuffix), 'w')
   try:
     simplejson.dump(fields, outfile)
   finally:
@@ -144,19 +128,18 @@ def sendHeaders(headers):
 
 if __name__ == "__main__":
   if method == "POST":
-    theform = cgi.FieldStorage()
-    dump = theform[dumpField]
-    if dump.file:
-      (dumpID, dumpPath) = storeDump(theform, dump.file)
-      storeJSON(dumpID, dumpPath, theform)
-      cgiprint("Content-Type: text/plain")
-      cgiprint()
-      print dumpIDPrefix + dumpID
-    else:
-      sendHeaders([badRequest])
-  elif method == "GET":
-    cgiprint("Content-Type: text/html")
-    cgiprint()
-    print "<b>hmm</b>"
+    try:
+      theform = cgi.FieldStorage()
+      dump = theform[config.dumpField]
+      if dump.file:
+        (dumpID, dumpPath) = storeDump(theform, dump.file)
+        storeJSON(dumpID, dumpPath, theform)
+        cgiprint("Content-Type: text/plain")
+        cgiprint()
+        print config.dumpIDPrefix + dumpID
+      else:
+        sendHeaders([badRequest])
+    except:
+      sendHeaders([internalServerError])
   else:
     sendHeaders([methodNotSupported])
