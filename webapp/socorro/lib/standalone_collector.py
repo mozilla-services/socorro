@@ -5,6 +5,7 @@
 
 import os, cgi, sys, uuid, tempfile, simplejson
 from datetime import datetime
+from time import time
 from stat import S_IRGRP, S_IROTH, S_IRUSR, S_IXOTH, S_IXUSR, S_IWUSR
 
 # storage constants
@@ -62,7 +63,7 @@ def findLastModifiedDirInPath(path):
 #
 # Example file stored on March 18th 2007, between 2 and 3 pm:
 #
-# /base/2007/03/18/14/bp_qew2f3/dump-022c9812-bb4d-43cb-bf90-26b11f5a75d9.dump
+# /base/2007/03/18/14/bp_qew2f3/022c9812-bb4d-43cb-bf90-26b11f5a75d9.dump
 #
 # If the "bp_qew2f3" directory gets too full, another directory will
 # be created by tempfile.mkdtemp, and eventually the code will move on
@@ -116,6 +117,7 @@ def storeJSON(dumpID, dumpDir, form):
   fields = {}
   for name in names:
     fields[name] = form[name].value
+  fields["timestamp"] = time() 
   outfile = open(os.path.join(dumpDir, dumpID + jsonFileSuffix), 'w')
   try:
     simplejson.dump(fields, outfile)
