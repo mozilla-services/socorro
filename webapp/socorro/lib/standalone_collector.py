@@ -20,6 +20,7 @@ def backOffMessage():
 def makeDumpDir(base):
   """Create a directory to hold a group of dumps, and set permissions"""
   tmpPath = tempfile.mkdtemp(dir=base, prefix=config.dumpDirPrefix)
+  os.chmod(tmpPath, config.dumpPermissions)
   return tmpPath
 
 
