@@ -15,7 +15,87 @@ SET escape_string_warning = off;
 COMMENT ON SCHEMA public IS 'Standard public schema';
 
 
+--
+-- Name: plpgsql; Type: PROCEDURAL LANGUAGE; Schema: -; Owner: postgres
+--
+
+CREATE PROCEDURAL LANGUAGE plpgsql;
+
+
 SET search_path = public, pg_catalog;
+
+--
+-- Name: exec(text); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION exec(c text) RETURNS void
+    AS $$
+begin
+    execute c;
+end;
+$$
+    LANGUAGE plpgsql;
+
+
+ALTER FUNCTION public.exec(c text) OWNER TO postgres;
+
+--
+-- Name: make_partition(text, text, text, text, text); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION make_partition(base text, part text, pkey text, loval text, hival text) RETURNS void
+    AS $_$
+declare
+    partname text := base || '_' || part;
+    rulename text := 'ins_' || part;
+    cmd text;
+begin
+    cmd := subst('create table $$ ( check($$ >= $$ and $$ < $$) ) inherits ($$)',
+                 ARRAY[ quote_ident(partname),
+                        quote_ident(pkey),
+                        quote_literal(loval),
+                        quote_ident(pkey),
+                        quote_literal(hival),
+                        quote_ident(base) ]);
+    execute cmd;
+    cmd := subst('create rule $$ as on insert to $$ 
+                   where NEW.$$ >= $$ and NEW.$$ < $$
+                   do instead insert into $$ values (NEW.*)',
+                 ARRAY[ quote_ident(rulename),
+                        quote_ident(base),
+                        quote_ident(pkey),
+                        quote_literal(loval),
+                        quote_ident(pkey),
+                        quote_literal(hival),
+                        quote_ident(partname) ]);
+    execute cmd;
+end;
+$_$
+    LANGUAGE plpgsql;
+
+
+ALTER FUNCTION public.make_partition(base text, part text, pkey text, loval text, hival text) OWNER TO postgres;
+
+--
+-- Name: subst(text, text[]); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION subst(str text, vals text[]) RETURNS text
+    AS $_$
+declare
+    split text[] := string_to_array(str,'$$');
+    result text[] := split[1:1];
+begin
+    for i in 2..array_upper(split,1) loop
+        result := result || vals[i-1] || split[i];
+    end loop;
+    return array_to_string(result,'');
+end;
+$_$
+    LANGUAGE plpgsql IMMUTABLE STRICT;
+
+
+ALTER FUNCTION public.subst(str text, vals text[]) OWNER TO postgres;
 
 SET default_tablespace = '';
 
@@ -187,6 +267,27 @@ ALTER TABLE ONLY frames
 
 ALTER TABLE ONLY reports
     ADD CONSTRAINT reports_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: report_id; Type: INDEX; Schema: public; Owner: postgres; Tablespace: 
+--
+
+CREATE INDEX report_id ON frames USING btree (report_id, module_name, function_name);
+
+
+--
+-- Name: top_crasher_lookup; Type: INDEX; Schema: public; Owner: postgres; Tablespace: 
+--
+
+CREATE INDEX top_crasher_lookup ON reports USING btree (product, version, build);
+
+
+--
+-- Name: url; Type: INDEX; Schema: public; Owner: postgres; Tablespace: 
+--
+
+CREATE INDEX url ON reports USING btree (url);
 
 
 --
