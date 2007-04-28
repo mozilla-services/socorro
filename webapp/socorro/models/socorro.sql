@@ -30,9 +30,13 @@ SET search_path = public, pg_catalog;
 
 CREATE FUNCTION exec(c text) RETURNS void
     AS $$
+
 begin
+
     execute c;
+
 end;
+
 $$
     LANGUAGE plpgsql;
 
@@ -45,31 +49,57 @@ ALTER FUNCTION public.exec(c text) OWNER TO postgres;
 
 CREATE FUNCTION make_partition(base text, part text, pkey text, loval text, hival text) RETURNS void
     AS $_$
+
 declare
+
     partname text := base || '_' || part;
+
     rulename text := 'ins_' || part;
+
     cmd text;
+
 begin
+
     cmd := subst('create table $$ ( check($$ >= $$ and $$ < $$) ) inherits ($$)',
+
                  ARRAY[ quote_ident(partname),
+
                         quote_ident(pkey),
+
                         quote_literal(loval),
+
                         quote_ident(pkey),
+
                         quote_literal(hival),
+
                         quote_ident(base) ]);
+
     execute cmd;
+
     cmd := subst('create rule $$ as on insert to $$ 
+
                    where NEW.$$ >= $$ and NEW.$$ < $$
+
                    do instead insert into $$ values (NEW.*)',
+
                  ARRAY[ quote_ident(rulename),
+
                         quote_ident(base),
+
                         quote_ident(pkey),
+
                         quote_literal(loval),
+
                         quote_ident(pkey),
+
                         quote_literal(hival),
+
                         quote_ident(partname) ]);
+
     execute cmd;
+
 end;
+
 $_$
     LANGUAGE plpgsql;
 
@@ -82,15 +112,25 @@ ALTER FUNCTION public.make_partition(base text, part text, pkey text, loval text
 
 CREATE FUNCTION subst(str text, vals text[]) RETURNS text
     AS $_$
+
 declare
+
     split text[] := string_to_array(str,'$$');
+
     result text[] := split[1:1];
+
 begin
+
     for i in 2..array_upper(split,1) loop
+
         result := result || vals[i-1] || split[i];
+
     end loop;
+
     return array_to_string(result,'');
+
 end;
+
 $_$
     LANGUAGE plpgsql IMMUTABLE STRICT;
 
@@ -223,270 +263,6 @@ ALTER TABLE public.reports_id_seq OWNER TO postgres;
 
 ALTER SEQUENCE reports_id_seq OWNED BY reports.id;
 
-
---
--- Name: reports_2005_01; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
---
-
-CREATE TABLE reports_2005_01 (CONSTRAINT reports_2005_01_date_check CHECK (((date >= '2005-01-01 00:00:00'::timestamp without time zone) AND (date < '2005-02-01 00:00:00'::timestamp without time zone)))
-)
-INHERITS (reports);
-
-
-ALTER TABLE public.reports_2005_01 OWNER TO postgres;
-
---
--- Name: reports_2005_02; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
---
-
-CREATE TABLE reports_2005_02 (CONSTRAINT reports_2005_02_date_check CHECK (((date >= '2005-02-01 00:00:00'::timestamp without time zone) AND (date < '2005-03-01 00:00:00'::timestamp without time zone)))
-)
-INHERITS (reports);
-
-
-ALTER TABLE public.reports_2005_02 OWNER TO postgres;
-
---
--- Name: reports_2005_03; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
---
-
-CREATE TABLE reports_2005_03 (CONSTRAINT reports_2005_03_date_check CHECK (((date >= '2005-03-01 00:00:00'::timestamp without time zone) AND (date < '2005-04-01 00:00:00'::timestamp without time zone)))
-)
-INHERITS (reports);
-
-
-ALTER TABLE public.reports_2005_03 OWNER TO postgres;
-
---
--- Name: reports_2005_04; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
---
-
-CREATE TABLE reports_2005_04 (CONSTRAINT reports_2005_04_date_check CHECK (((date >= '2005-04-01 00:00:00'::timestamp without time zone) AND (date < '2005-05-01 00:00:00'::timestamp without time zone)))
-)
-INHERITS (reports);
-
-
-ALTER TABLE public.reports_2005_04 OWNER TO postgres;
-
---
--- Name: reports_2005_05; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
---
-
-CREATE TABLE reports_2005_05 (CONSTRAINT reports_2005_05_date_check CHECK (((date >= '2005-05-01 00:00:00'::timestamp without time zone) AND (date < '2005-06-01 00:00:00'::timestamp without time zone)))
-)
-INHERITS (reports);
-
-
-ALTER TABLE public.reports_2005_05 OWNER TO postgres;
-
---
--- Name: reports_2005_06; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
---
-
-CREATE TABLE reports_2005_06 (CONSTRAINT reports_2005_06_date_check CHECK (((date >= '2005-06-01 00:00:00'::timestamp without time zone) AND (date < '2005-07-01 00:00:00'::timestamp without time zone)))
-)
-INHERITS (reports);
-
-
-ALTER TABLE public.reports_2005_06 OWNER TO postgres;
-
---
--- Name: reports_2005_07; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
---
-
-CREATE TABLE reports_2005_07 (CONSTRAINT reports_2005_07_date_check CHECK (((date >= '2005-07-01 00:00:00'::timestamp without time zone) AND (date < '2005-08-01 00:00:00'::timestamp without time zone)))
-)
-INHERITS (reports);
-
-
-ALTER TABLE public.reports_2005_07 OWNER TO postgres;
-
---
--- Name: reports_2005_08; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
---
-
-CREATE TABLE reports_2005_08 (CONSTRAINT reports_2005_08_date_check CHECK (((date >= '2005-08-01 00:00:00'::timestamp without time zone) AND (date < '2005-09-01 00:00:00'::timestamp without time zone)))
-)
-INHERITS (reports);
-
-
-ALTER TABLE public.reports_2005_08 OWNER TO postgres;
-
---
--- Name: reports_2005_09; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
---
-
-CREATE TABLE reports_2005_09 (CONSTRAINT reports_2005_09_date_check CHECK (((date >= '2005-09-01 00:00:00'::timestamp without time zone) AND (date < '2005-10-01 00:00:00'::timestamp without time zone)))
-)
-INHERITS (reports);
-
-
-ALTER TABLE public.reports_2005_09 OWNER TO postgres;
-
---
--- Name: reports_2005_10; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
---
-
-CREATE TABLE reports_2005_10 (CONSTRAINT reports_2005_10_date_check CHECK (((date >= '2005-10-01 00:00:00'::timestamp without time zone) AND (date < '2005-11-01 00:00:00'::timestamp without time zone)))
-)
-INHERITS (reports);
-
-
-ALTER TABLE public.reports_2005_10 OWNER TO postgres;
-
---
--- Name: reports_2005_11; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
---
-
-CREATE TABLE reports_2005_11 (CONSTRAINT reports_2005_11_date_check CHECK (((date >= '2005-11-01 00:00:00'::timestamp without time zone) AND (date < '2005-12-01 00:00:00'::timestamp without time zone)))
-)
-INHERITS (reports);
-
-
-ALTER TABLE public.reports_2005_11 OWNER TO postgres;
-
---
--- Name: reports_2005_12; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
---
-
-CREATE TABLE reports_2005_12 (CONSTRAINT reports_2005_12_date_check CHECK (((date >= '2005-12-01 00:00:00'::timestamp without time zone) AND (date < '2006-01-01 00:00:00'::timestamp without time zone)))
-)
-INHERITS (reports);
-
-
-ALTER TABLE public.reports_2005_12 OWNER TO postgres;
-
---
--- Name: reports_2006_01; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
---
-
-CREATE TABLE reports_2006_01 (CONSTRAINT reports_2006_01_date_check CHECK (((date >= '2006-01-01 00:00:00'::timestamp without time zone) AND (date < '2006-02-01 00:00:00'::timestamp without time zone)))
-)
-INHERITS (reports);
-
-
-ALTER TABLE public.reports_2006_01 OWNER TO postgres;
-
---
--- Name: reports_2006_02; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
---
-
-CREATE TABLE reports_2006_02 (CONSTRAINT reports_2006_02_date_check CHECK (((date >= '2006-02-01 00:00:00'::timestamp without time zone) AND (date < '2006-03-01 00:00:00'::timestamp without time zone)))
-)
-INHERITS (reports);
-
-
-ALTER TABLE public.reports_2006_02 OWNER TO postgres;
-
---
--- Name: reports_2006_03; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
---
-
-CREATE TABLE reports_2006_03 (CONSTRAINT reports_2006_03_date_check CHECK (((date >= '2006-03-01 00:00:00'::timestamp without time zone) AND (date < '2006-04-01 00:00:00'::timestamp without time zone)))
-)
-INHERITS (reports);
-
-
-ALTER TABLE public.reports_2006_03 OWNER TO postgres;
-
---
--- Name: reports_2006_04; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
---
-
-CREATE TABLE reports_2006_04 (CONSTRAINT reports_2006_04_date_check CHECK (((date >= '2006-04-01 00:00:00'::timestamp without time zone) AND (date < '2006-05-01 00:00:00'::timestamp without time zone)))
-)
-INHERITS (reports);
-
-
-ALTER TABLE public.reports_2006_04 OWNER TO postgres;
-
---
--- Name: reports_2006_05; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
---
-
-CREATE TABLE reports_2006_05 (CONSTRAINT reports_2006_05_date_check CHECK (((date >= '2006-05-01 00:00:00'::timestamp without time zone) AND (date < '2006-06-01 00:00:00'::timestamp without time zone)))
-)
-INHERITS (reports);
-
-
-ALTER TABLE public.reports_2006_05 OWNER TO postgres;
-
---
--- Name: reports_2006_06; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
---
-
-CREATE TABLE reports_2006_06 (CONSTRAINT reports_2006_06_date_check CHECK (((date >= '2006-06-01 00:00:00'::timestamp without time zone) AND (date < '2006-07-01 00:00:00'::timestamp without time zone)))
-)
-INHERITS (reports);
-
-
-ALTER TABLE public.reports_2006_06 OWNER TO postgres;
-
---
--- Name: reports_2006_07; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
---
-
-CREATE TABLE reports_2006_07 (CONSTRAINT reports_2006_07_date_check CHECK (((date >= '2006-07-01 00:00:00'::timestamp without time zone) AND (date < '2006-08-01 00:00:00'::timestamp without time zone)))
-)
-INHERITS (reports);
-
-
-ALTER TABLE public.reports_2006_07 OWNER TO postgres;
-
---
--- Name: reports_2006_08; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
---
-
-CREATE TABLE reports_2006_08 (CONSTRAINT reports_2006_08_date_check CHECK (((date >= '2006-08-01 00:00:00'::timestamp without time zone) AND (date < '2006-09-01 00:00:00'::timestamp without time zone)))
-)
-INHERITS (reports);
-
-
-ALTER TABLE public.reports_2006_08 OWNER TO postgres;
-
---
--- Name: reports_2006_09; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
---
-
-CREATE TABLE reports_2006_09 (CONSTRAINT reports_2006_09_date_check CHECK (((date >= '2006-09-01 00:00:00'::timestamp without time zone) AND (date < '2006-10-01 00:00:00'::timestamp without time zone)))
-)
-INHERITS (reports);
-
-
-ALTER TABLE public.reports_2006_09 OWNER TO postgres;
-
---
--- Name: reports_2006_10; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
---
-
-CREATE TABLE reports_2006_10 (CONSTRAINT reports_2006_10_date_check CHECK (((date >= '2006-10-01 00:00:00'::timestamp without time zone) AND (date < '2006-11-01 00:00:00'::timestamp without time zone)))
-)
-INHERITS (reports);
-
-
-ALTER TABLE public.reports_2006_10 OWNER TO postgres;
-
---
--- Name: reports_2006_11; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
---
-
-CREATE TABLE reports_2006_11 (CONSTRAINT reports_2006_11_date_check CHECK (((date >= '2006-11-01 00:00:00'::timestamp without time zone) AND (date < '2006-12-01 00:00:00'::timestamp without time zone)))
-)
-INHERITS (reports);
-
-
-ALTER TABLE public.reports_2006_11 OWNER TO postgres;
-
---
--- Name: reports_2006_12; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
---
-
-CREATE TABLE reports_2006_12 (CONSTRAINT reports_2006_12_date_check CHECK (((date >= '2006-12-01 00:00:00'::timestamp without time zone) AND (date < '2007-01-01 00:00:00'::timestamp without time zone)))
-)
-INHERITS (reports);
-
-
-ALTER TABLE public.reports_2006_12 OWNER TO postgres;
 
 --
 -- Name: reports_2007_01; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
@@ -885,6 +661,270 @@ INHERITS (reports);
 ALTER TABLE public.reports_2009_12 OWNER TO postgres;
 
 --
+-- Name: reports_2010_01; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
+--
+
+CREATE TABLE reports_2010_01 (CONSTRAINT reports_2010_01_date_check CHECK (((date >= '2010-01-01 00:00:00'::timestamp without time zone) AND (date < '2010-02-01 00:00:00'::timestamp without time zone)))
+)
+INHERITS (reports);
+
+
+ALTER TABLE public.reports_2010_01 OWNER TO postgres;
+
+--
+-- Name: reports_2010_02; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
+--
+
+CREATE TABLE reports_2010_02 (CONSTRAINT reports_2010_02_date_check CHECK (((date >= '2010-02-01 00:00:00'::timestamp without time zone) AND (date < '2010-03-01 00:00:00'::timestamp without time zone)))
+)
+INHERITS (reports);
+
+
+ALTER TABLE public.reports_2010_02 OWNER TO postgres;
+
+--
+-- Name: reports_2010_03; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
+--
+
+CREATE TABLE reports_2010_03 (CONSTRAINT reports_2010_03_date_check CHECK (((date >= '2010-03-01 00:00:00'::timestamp without time zone) AND (date < '2010-04-01 00:00:00'::timestamp without time zone)))
+)
+INHERITS (reports);
+
+
+ALTER TABLE public.reports_2010_03 OWNER TO postgres;
+
+--
+-- Name: reports_2010_04; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
+--
+
+CREATE TABLE reports_2010_04 (CONSTRAINT reports_2010_04_date_check CHECK (((date >= '2010-04-01 00:00:00'::timestamp without time zone) AND (date < '2010-05-01 00:00:00'::timestamp without time zone)))
+)
+INHERITS (reports);
+
+
+ALTER TABLE public.reports_2010_04 OWNER TO postgres;
+
+--
+-- Name: reports_2010_05; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
+--
+
+CREATE TABLE reports_2010_05 (CONSTRAINT reports_2010_05_date_check CHECK (((date >= '2010-05-01 00:00:00'::timestamp without time zone) AND (date < '2010-06-01 00:00:00'::timestamp without time zone)))
+)
+INHERITS (reports);
+
+
+ALTER TABLE public.reports_2010_05 OWNER TO postgres;
+
+--
+-- Name: reports_2010_06; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
+--
+
+CREATE TABLE reports_2010_06 (CONSTRAINT reports_2010_06_date_check CHECK (((date >= '2010-06-01 00:00:00'::timestamp without time zone) AND (date < '2010-07-01 00:00:00'::timestamp without time zone)))
+)
+INHERITS (reports);
+
+
+ALTER TABLE public.reports_2010_06 OWNER TO postgres;
+
+--
+-- Name: reports_2010_07; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
+--
+
+CREATE TABLE reports_2010_07 (CONSTRAINT reports_2010_07_date_check CHECK (((date >= '2010-07-01 00:00:00'::timestamp without time zone) AND (date < '2010-08-01 00:00:00'::timestamp without time zone)))
+)
+INHERITS (reports);
+
+
+ALTER TABLE public.reports_2010_07 OWNER TO postgres;
+
+--
+-- Name: reports_2010_08; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
+--
+
+CREATE TABLE reports_2010_08 (CONSTRAINT reports_2010_08_date_check CHECK (((date >= '2010-08-01 00:00:00'::timestamp without time zone) AND (date < '2010-09-01 00:00:00'::timestamp without time zone)))
+)
+INHERITS (reports);
+
+
+ALTER TABLE public.reports_2010_08 OWNER TO postgres;
+
+--
+-- Name: reports_2010_09; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
+--
+
+CREATE TABLE reports_2010_09 (CONSTRAINT reports_2010_09_date_check CHECK (((date >= '2010-09-01 00:00:00'::timestamp without time zone) AND (date < '2010-10-01 00:00:00'::timestamp without time zone)))
+)
+INHERITS (reports);
+
+
+ALTER TABLE public.reports_2010_09 OWNER TO postgres;
+
+--
+-- Name: reports_2010_10; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
+--
+
+CREATE TABLE reports_2010_10 (CONSTRAINT reports_2010_10_date_check CHECK (((date >= '2010-10-01 00:00:00'::timestamp without time zone) AND (date < '2010-11-01 00:00:00'::timestamp without time zone)))
+)
+INHERITS (reports);
+
+
+ALTER TABLE public.reports_2010_10 OWNER TO postgres;
+
+--
+-- Name: reports_2010_11; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
+--
+
+CREATE TABLE reports_2010_11 (CONSTRAINT reports_2010_11_date_check CHECK (((date >= '2010-11-01 00:00:00'::timestamp without time zone) AND (date < '2010-12-01 00:00:00'::timestamp without time zone)))
+)
+INHERITS (reports);
+
+
+ALTER TABLE public.reports_2010_11 OWNER TO postgres;
+
+--
+-- Name: reports_2010_12; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
+--
+
+CREATE TABLE reports_2010_12 (CONSTRAINT reports_2010_12_date_check CHECK (((date >= '2010-12-01 00:00:00'::timestamp without time zone) AND (date < '2011-01-01 00:00:00'::timestamp without time zone)))
+)
+INHERITS (reports);
+
+
+ALTER TABLE public.reports_2010_12 OWNER TO postgres;
+
+--
+-- Name: reports_2011_01; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
+--
+
+CREATE TABLE reports_2011_01 (CONSTRAINT reports_2011_01_date_check CHECK (((date >= '2011-01-01 00:00:00'::timestamp without time zone) AND (date < '2011-02-01 00:00:00'::timestamp without time zone)))
+)
+INHERITS (reports);
+
+
+ALTER TABLE public.reports_2011_01 OWNER TO postgres;
+
+--
+-- Name: reports_2011_02; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
+--
+
+CREATE TABLE reports_2011_02 (CONSTRAINT reports_2011_02_date_check CHECK (((date >= '2011-02-01 00:00:00'::timestamp without time zone) AND (date < '2011-03-01 00:00:00'::timestamp without time zone)))
+)
+INHERITS (reports);
+
+
+ALTER TABLE public.reports_2011_02 OWNER TO postgres;
+
+--
+-- Name: reports_2011_03; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
+--
+
+CREATE TABLE reports_2011_03 (CONSTRAINT reports_2011_03_date_check CHECK (((date >= '2011-03-01 00:00:00'::timestamp without time zone) AND (date < '2011-04-01 00:00:00'::timestamp without time zone)))
+)
+INHERITS (reports);
+
+
+ALTER TABLE public.reports_2011_03 OWNER TO postgres;
+
+--
+-- Name: reports_2011_04; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
+--
+
+CREATE TABLE reports_2011_04 (CONSTRAINT reports_2011_04_date_check CHECK (((date >= '2011-04-01 00:00:00'::timestamp without time zone) AND (date < '2011-05-01 00:00:00'::timestamp without time zone)))
+)
+INHERITS (reports);
+
+
+ALTER TABLE public.reports_2011_04 OWNER TO postgres;
+
+--
+-- Name: reports_2011_05; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
+--
+
+CREATE TABLE reports_2011_05 (CONSTRAINT reports_2011_05_date_check CHECK (((date >= '2011-05-01 00:00:00'::timestamp without time zone) AND (date < '2011-06-01 00:00:00'::timestamp without time zone)))
+)
+INHERITS (reports);
+
+
+ALTER TABLE public.reports_2011_05 OWNER TO postgres;
+
+--
+-- Name: reports_2011_06; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
+--
+
+CREATE TABLE reports_2011_06 (CONSTRAINT reports_2011_06_date_check CHECK (((date >= '2011-06-01 00:00:00'::timestamp without time zone) AND (date < '2011-07-01 00:00:00'::timestamp without time zone)))
+)
+INHERITS (reports);
+
+
+ALTER TABLE public.reports_2011_06 OWNER TO postgres;
+
+--
+-- Name: reports_2011_07; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
+--
+
+CREATE TABLE reports_2011_07 (CONSTRAINT reports_2011_07_date_check CHECK (((date >= '2011-07-01 00:00:00'::timestamp without time zone) AND (date < '2011-08-01 00:00:00'::timestamp without time zone)))
+)
+INHERITS (reports);
+
+
+ALTER TABLE public.reports_2011_07 OWNER TO postgres;
+
+--
+-- Name: reports_2011_08; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
+--
+
+CREATE TABLE reports_2011_08 (CONSTRAINT reports_2011_08_date_check CHECK (((date >= '2011-08-01 00:00:00'::timestamp without time zone) AND (date < '2011-09-01 00:00:00'::timestamp without time zone)))
+)
+INHERITS (reports);
+
+
+ALTER TABLE public.reports_2011_08 OWNER TO postgres;
+
+--
+-- Name: reports_2011_09; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
+--
+
+CREATE TABLE reports_2011_09 (CONSTRAINT reports_2011_09_date_check CHECK (((date >= '2011-09-01 00:00:00'::timestamp without time zone) AND (date < '2011-10-01 00:00:00'::timestamp without time zone)))
+)
+INHERITS (reports);
+
+
+ALTER TABLE public.reports_2011_09 OWNER TO postgres;
+
+--
+-- Name: reports_2011_10; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
+--
+
+CREATE TABLE reports_2011_10 (CONSTRAINT reports_2011_10_date_check CHECK (((date >= '2011-10-01 00:00:00'::timestamp without time zone) AND (date < '2011-11-01 00:00:00'::timestamp without time zone)))
+)
+INHERITS (reports);
+
+
+ALTER TABLE public.reports_2011_10 OWNER TO postgres;
+
+--
+-- Name: reports_2011_11; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
+--
+
+CREATE TABLE reports_2011_11 (CONSTRAINT reports_2011_11_date_check CHECK (((date >= '2011-11-01 00:00:00'::timestamp without time zone) AND (date < '2011-12-01 00:00:00'::timestamp without time zone)))
+)
+INHERITS (reports);
+
+
+ALTER TABLE public.reports_2011_11 OWNER TO postgres;
+
+--
+-- Name: reports_2011_12; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
+--
+
+CREATE TABLE reports_2011_12 (CONSTRAINT reports_2011_12_date_check CHECK (((date >= '2011-12-01 00:00:00'::timestamp without time zone) AND (date < '2012-01-01 00:00:00'::timestamp without time zone)))
+)
+INHERITS (reports);
+
+
+ALTER TABLE public.reports_2011_12 OWNER TO postgres;
+
+--
 -- Name: id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -934,174 +974,6 @@ ALTER TABLE ONLY reports
 --
 
 CREATE INDEX report_id ON frames USING btree (report_id, module_name, function_name);
-
-
---
--- Name: reports_2005_01_idx; Type: INDEX; Schema: public; Owner: postgres; Tablespace: 
---
-
-CREATE INDEX reports_2005_01_idx ON reports_2005_01 USING btree (date);
-
-
---
--- Name: reports_2005_02_idx; Type: INDEX; Schema: public; Owner: postgres; Tablespace: 
---
-
-CREATE INDEX reports_2005_02_idx ON reports_2005_02 USING btree (date);
-
-
---
--- Name: reports_2005_03_idx; Type: INDEX; Schema: public; Owner: postgres; Tablespace: 
---
-
-CREATE INDEX reports_2005_03_idx ON reports_2005_03 USING btree (date);
-
-
---
--- Name: reports_2005_04_idx; Type: INDEX; Schema: public; Owner: postgres; Tablespace: 
---
-
-CREATE INDEX reports_2005_04_idx ON reports_2005_04 USING btree (date);
-
-
---
--- Name: reports_2005_05_idx; Type: INDEX; Schema: public; Owner: postgres; Tablespace: 
---
-
-CREATE INDEX reports_2005_05_idx ON reports_2005_05 USING btree (date);
-
-
---
--- Name: reports_2005_06_idx; Type: INDEX; Schema: public; Owner: postgres; Tablespace: 
---
-
-CREATE INDEX reports_2005_06_idx ON reports_2005_06 USING btree (date);
-
-
---
--- Name: reports_2005_07_idx; Type: INDEX; Schema: public; Owner: postgres; Tablespace: 
---
-
-CREATE INDEX reports_2005_07_idx ON reports_2005_07 USING btree (date);
-
-
---
--- Name: reports_2005_08_idx; Type: INDEX; Schema: public; Owner: postgres; Tablespace: 
---
-
-CREATE INDEX reports_2005_08_idx ON reports_2005_08 USING btree (date);
-
-
---
--- Name: reports_2005_09_idx; Type: INDEX; Schema: public; Owner: postgres; Tablespace: 
---
-
-CREATE INDEX reports_2005_09_idx ON reports_2005_09 USING btree (date);
-
-
---
--- Name: reports_2005_10_idx; Type: INDEX; Schema: public; Owner: postgres; Tablespace: 
---
-
-CREATE INDEX reports_2005_10_idx ON reports_2005_10 USING btree (date);
-
-
---
--- Name: reports_2005_11_idx; Type: INDEX; Schema: public; Owner: postgres; Tablespace: 
---
-
-CREATE INDEX reports_2005_11_idx ON reports_2005_11 USING btree (date);
-
-
---
--- Name: reports_2005_12_idx; Type: INDEX; Schema: public; Owner: postgres; Tablespace: 
---
-
-CREATE INDEX reports_2005_12_idx ON reports_2005_12 USING btree (date);
-
-
---
--- Name: reports_2006_01_idx; Type: INDEX; Schema: public; Owner: postgres; Tablespace: 
---
-
-CREATE INDEX reports_2006_01_idx ON reports_2006_01 USING btree (date);
-
-
---
--- Name: reports_2006_02_idx; Type: INDEX; Schema: public; Owner: postgres; Tablespace: 
---
-
-CREATE INDEX reports_2006_02_idx ON reports_2006_02 USING btree (date);
-
-
---
--- Name: reports_2006_03_idx; Type: INDEX; Schema: public; Owner: postgres; Tablespace: 
---
-
-CREATE INDEX reports_2006_03_idx ON reports_2006_03 USING btree (date);
-
-
---
--- Name: reports_2006_04_idx; Type: INDEX; Schema: public; Owner: postgres; Tablespace: 
---
-
-CREATE INDEX reports_2006_04_idx ON reports_2006_04 USING btree (date);
-
-
---
--- Name: reports_2006_05_idx; Type: INDEX; Schema: public; Owner: postgres; Tablespace: 
---
-
-CREATE INDEX reports_2006_05_idx ON reports_2006_05 USING btree (date);
-
-
---
--- Name: reports_2006_06_idx; Type: INDEX; Schema: public; Owner: postgres; Tablespace: 
---
-
-CREATE INDEX reports_2006_06_idx ON reports_2006_06 USING btree (date);
-
-
---
--- Name: reports_2006_07_idx; Type: INDEX; Schema: public; Owner: postgres; Tablespace: 
---
-
-CREATE INDEX reports_2006_07_idx ON reports_2006_07 USING btree (date);
-
-
---
--- Name: reports_2006_08_idx; Type: INDEX; Schema: public; Owner: postgres; Tablespace: 
---
-
-CREATE INDEX reports_2006_08_idx ON reports_2006_08 USING btree (date);
-
-
---
--- Name: reports_2006_09_idx; Type: INDEX; Schema: public; Owner: postgres; Tablespace: 
---
-
-CREATE INDEX reports_2006_09_idx ON reports_2006_09 USING btree (date);
-
-
---
--- Name: reports_2006_10_idx; Type: INDEX; Schema: public; Owner: postgres; Tablespace: 
---
-
-CREATE INDEX reports_2006_10_idx ON reports_2006_10 USING btree (date);
-
-
---
--- Name: reports_2006_11_idx; Type: INDEX; Schema: public; Owner: postgres; Tablespace: 
---
-
-CREATE INDEX reports_2006_11_idx ON reports_2006_11 USING btree (date);
-
-
---
--- Name: reports_2006_12_idx; Type: INDEX; Schema: public; Owner: postgres; Tablespace: 
---
-
-CREATE INDEX reports_2006_12_idx ON reports_2006_12 USING btree (date);
 
 
 --
@@ -1357,6 +1229,174 @@ CREATE INDEX reports_2009_12_idx ON reports_2009_12 USING btree (date);
 
 
 --
+-- Name: reports_2010_01_idx; Type: INDEX; Schema: public; Owner: postgres; Tablespace: 
+--
+
+CREATE INDEX reports_2010_01_idx ON reports_2010_01 USING btree (date);
+
+
+--
+-- Name: reports_2010_02_idx; Type: INDEX; Schema: public; Owner: postgres; Tablespace: 
+--
+
+CREATE INDEX reports_2010_02_idx ON reports_2010_02 USING btree (date);
+
+
+--
+-- Name: reports_2010_03_idx; Type: INDEX; Schema: public; Owner: postgres; Tablespace: 
+--
+
+CREATE INDEX reports_2010_03_idx ON reports_2010_03 USING btree (date);
+
+
+--
+-- Name: reports_2010_04_idx; Type: INDEX; Schema: public; Owner: postgres; Tablespace: 
+--
+
+CREATE INDEX reports_2010_04_idx ON reports_2010_04 USING btree (date);
+
+
+--
+-- Name: reports_2010_05_idx; Type: INDEX; Schema: public; Owner: postgres; Tablespace: 
+--
+
+CREATE INDEX reports_2010_05_idx ON reports_2010_05 USING btree (date);
+
+
+--
+-- Name: reports_2010_06_idx; Type: INDEX; Schema: public; Owner: postgres; Tablespace: 
+--
+
+CREATE INDEX reports_2010_06_idx ON reports_2010_06 USING btree (date);
+
+
+--
+-- Name: reports_2010_07_idx; Type: INDEX; Schema: public; Owner: postgres; Tablespace: 
+--
+
+CREATE INDEX reports_2010_07_idx ON reports_2010_07 USING btree (date);
+
+
+--
+-- Name: reports_2010_08_idx; Type: INDEX; Schema: public; Owner: postgres; Tablespace: 
+--
+
+CREATE INDEX reports_2010_08_idx ON reports_2010_08 USING btree (date);
+
+
+--
+-- Name: reports_2010_09_idx; Type: INDEX; Schema: public; Owner: postgres; Tablespace: 
+--
+
+CREATE INDEX reports_2010_09_idx ON reports_2010_09 USING btree (date);
+
+
+--
+-- Name: reports_2010_10_idx; Type: INDEX; Schema: public; Owner: postgres; Tablespace: 
+--
+
+CREATE INDEX reports_2010_10_idx ON reports_2010_10 USING btree (date);
+
+
+--
+-- Name: reports_2010_11_idx; Type: INDEX; Schema: public; Owner: postgres; Tablespace: 
+--
+
+CREATE INDEX reports_2010_11_idx ON reports_2010_11 USING btree (date);
+
+
+--
+-- Name: reports_2010_12_idx; Type: INDEX; Schema: public; Owner: postgres; Tablespace: 
+--
+
+CREATE INDEX reports_2010_12_idx ON reports_2010_12 USING btree (date);
+
+
+--
+-- Name: reports_2011_01_idx; Type: INDEX; Schema: public; Owner: postgres; Tablespace: 
+--
+
+CREATE INDEX reports_2011_01_idx ON reports_2011_01 USING btree (date);
+
+
+--
+-- Name: reports_2011_02_idx; Type: INDEX; Schema: public; Owner: postgres; Tablespace: 
+--
+
+CREATE INDEX reports_2011_02_idx ON reports_2011_02 USING btree (date);
+
+
+--
+-- Name: reports_2011_03_idx; Type: INDEX; Schema: public; Owner: postgres; Tablespace: 
+--
+
+CREATE INDEX reports_2011_03_idx ON reports_2011_03 USING btree (date);
+
+
+--
+-- Name: reports_2011_04_idx; Type: INDEX; Schema: public; Owner: postgres; Tablespace: 
+--
+
+CREATE INDEX reports_2011_04_idx ON reports_2011_04 USING btree (date);
+
+
+--
+-- Name: reports_2011_05_idx; Type: INDEX; Schema: public; Owner: postgres; Tablespace: 
+--
+
+CREATE INDEX reports_2011_05_idx ON reports_2011_05 USING btree (date);
+
+
+--
+-- Name: reports_2011_06_idx; Type: INDEX; Schema: public; Owner: postgres; Tablespace: 
+--
+
+CREATE INDEX reports_2011_06_idx ON reports_2011_06 USING btree (date);
+
+
+--
+-- Name: reports_2011_07_idx; Type: INDEX; Schema: public; Owner: postgres; Tablespace: 
+--
+
+CREATE INDEX reports_2011_07_idx ON reports_2011_07 USING btree (date);
+
+
+--
+-- Name: reports_2011_08_idx; Type: INDEX; Schema: public; Owner: postgres; Tablespace: 
+--
+
+CREATE INDEX reports_2011_08_idx ON reports_2011_08 USING btree (date);
+
+
+--
+-- Name: reports_2011_09_idx; Type: INDEX; Schema: public; Owner: postgres; Tablespace: 
+--
+
+CREATE INDEX reports_2011_09_idx ON reports_2011_09 USING btree (date);
+
+
+--
+-- Name: reports_2011_10_idx; Type: INDEX; Schema: public; Owner: postgres; Tablespace: 
+--
+
+CREATE INDEX reports_2011_10_idx ON reports_2011_10 USING btree (date);
+
+
+--
+-- Name: reports_2011_11_idx; Type: INDEX; Schema: public; Owner: postgres; Tablespace: 
+--
+
+CREATE INDEX reports_2011_11_idx ON reports_2011_11 USING btree (date);
+
+
+--
+-- Name: reports_2011_12_idx; Type: INDEX; Schema: public; Owner: postgres; Tablespace: 
+--
+
+CREATE INDEX reports_2011_12_idx ON reports_2011_12 USING btree (date);
+
+
+--
 -- Name: top_crasher_lookup; Type: INDEX; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -1368,174 +1408,6 @@ CREATE INDEX top_crasher_lookup ON reports USING btree (product, version, build)
 --
 
 CREATE INDEX url ON reports USING btree (url);
-
-
---
--- Name: ins_2005_01; Type: RULE; Schema: public; Owner: postgres
---
-
-CREATE RULE ins_2005_01 AS ON INSERT TO reports WHERE ((new.date >= '2005-01-01 00:00:00'::timestamp without time zone) AND (new.date < '2005-02-01 00:00:00'::timestamp without time zone)) DO INSTEAD INSERT INTO reports_2005_01 (id, date, signature, last_crash, install_age, url, "comment", os_name, os_version, cpu_name, cpu_info, reason, address, product, version, build, platform, uuid) VALUES (new.id, new.date, new.signature, new.last_crash, new.install_age, new.url, new."comment", new.os_name, new.os_version, new.cpu_name, new.cpu_info, new.reason, new.address, new.product, new.version, new.build, new.platform, new.uuid);
-
-
---
--- Name: ins_2005_02; Type: RULE; Schema: public; Owner: postgres
---
-
-CREATE RULE ins_2005_02 AS ON INSERT TO reports WHERE ((new.date >= '2005-02-01 00:00:00'::timestamp without time zone) AND (new.date < '2005-03-01 00:00:00'::timestamp without time zone)) DO INSTEAD INSERT INTO reports_2005_02 (id, date, signature, last_crash, install_age, url, "comment", os_name, os_version, cpu_name, cpu_info, reason, address, product, version, build, platform, uuid) VALUES (new.id, new.date, new.signature, new.last_crash, new.install_age, new.url, new."comment", new.os_name, new.os_version, new.cpu_name, new.cpu_info, new.reason, new.address, new.product, new.version, new.build, new.platform, new.uuid);
-
-
---
--- Name: ins_2005_03; Type: RULE; Schema: public; Owner: postgres
---
-
-CREATE RULE ins_2005_03 AS ON INSERT TO reports WHERE ((new.date >= '2005-03-01 00:00:00'::timestamp without time zone) AND (new.date < '2005-04-01 00:00:00'::timestamp without time zone)) DO INSTEAD INSERT INTO reports_2005_03 (id, date, signature, last_crash, install_age, url, "comment", os_name, os_version, cpu_name, cpu_info, reason, address, product, version, build, platform, uuid) VALUES (new.id, new.date, new.signature, new.last_crash, new.install_age, new.url, new."comment", new.os_name, new.os_version, new.cpu_name, new.cpu_info, new.reason, new.address, new.product, new.version, new.build, new.platform, new.uuid);
-
-
---
--- Name: ins_2005_04; Type: RULE; Schema: public; Owner: postgres
---
-
-CREATE RULE ins_2005_04 AS ON INSERT TO reports WHERE ((new.date >= '2005-04-01 00:00:00'::timestamp without time zone) AND (new.date < '2005-05-01 00:00:00'::timestamp without time zone)) DO INSTEAD INSERT INTO reports_2005_04 (id, date, signature, last_crash, install_age, url, "comment", os_name, os_version, cpu_name, cpu_info, reason, address, product, version, build, platform, uuid) VALUES (new.id, new.date, new.signature, new.last_crash, new.install_age, new.url, new."comment", new.os_name, new.os_version, new.cpu_name, new.cpu_info, new.reason, new.address, new.product, new.version, new.build, new.platform, new.uuid);
-
-
---
--- Name: ins_2005_05; Type: RULE; Schema: public; Owner: postgres
---
-
-CREATE RULE ins_2005_05 AS ON INSERT TO reports WHERE ((new.date >= '2005-05-01 00:00:00'::timestamp without time zone) AND (new.date < '2005-06-01 00:00:00'::timestamp without time zone)) DO INSTEAD INSERT INTO reports_2005_05 (id, date, signature, last_crash, install_age, url, "comment", os_name, os_version, cpu_name, cpu_info, reason, address, product, version, build, platform, uuid) VALUES (new.id, new.date, new.signature, new.last_crash, new.install_age, new.url, new."comment", new.os_name, new.os_version, new.cpu_name, new.cpu_info, new.reason, new.address, new.product, new.version, new.build, new.platform, new.uuid);
-
-
---
--- Name: ins_2005_06; Type: RULE; Schema: public; Owner: postgres
---
-
-CREATE RULE ins_2005_06 AS ON INSERT TO reports WHERE ((new.date >= '2005-06-01 00:00:00'::timestamp without time zone) AND (new.date < '2005-07-01 00:00:00'::timestamp without time zone)) DO INSTEAD INSERT INTO reports_2005_06 (id, date, signature, last_crash, install_age, url, "comment", os_name, os_version, cpu_name, cpu_info, reason, address, product, version, build, platform, uuid) VALUES (new.id, new.date, new.signature, new.last_crash, new.install_age, new.url, new."comment", new.os_name, new.os_version, new.cpu_name, new.cpu_info, new.reason, new.address, new.product, new.version, new.build, new.platform, new.uuid);
-
-
---
--- Name: ins_2005_07; Type: RULE; Schema: public; Owner: postgres
---
-
-CREATE RULE ins_2005_07 AS ON INSERT TO reports WHERE ((new.date >= '2005-07-01 00:00:00'::timestamp without time zone) AND (new.date < '2005-08-01 00:00:00'::timestamp without time zone)) DO INSTEAD INSERT INTO reports_2005_07 (id, date, signature, last_crash, install_age, url, "comment", os_name, os_version, cpu_name, cpu_info, reason, address, product, version, build, platform, uuid) VALUES (new.id, new.date, new.signature, new.last_crash, new.install_age, new.url, new."comment", new.os_name, new.os_version, new.cpu_name, new.cpu_info, new.reason, new.address, new.product, new.version, new.build, new.platform, new.uuid);
-
-
---
--- Name: ins_2005_08; Type: RULE; Schema: public; Owner: postgres
---
-
-CREATE RULE ins_2005_08 AS ON INSERT TO reports WHERE ((new.date >= '2005-08-01 00:00:00'::timestamp without time zone) AND (new.date < '2005-09-01 00:00:00'::timestamp without time zone)) DO INSTEAD INSERT INTO reports_2005_08 (id, date, signature, last_crash, install_age, url, "comment", os_name, os_version, cpu_name, cpu_info, reason, address, product, version, build, platform, uuid) VALUES (new.id, new.date, new.signature, new.last_crash, new.install_age, new.url, new."comment", new.os_name, new.os_version, new.cpu_name, new.cpu_info, new.reason, new.address, new.product, new.version, new.build, new.platform, new.uuid);
-
-
---
--- Name: ins_2005_09; Type: RULE; Schema: public; Owner: postgres
---
-
-CREATE RULE ins_2005_09 AS ON INSERT TO reports WHERE ((new.date >= '2005-09-01 00:00:00'::timestamp without time zone) AND (new.date < '2005-10-01 00:00:00'::timestamp without time zone)) DO INSTEAD INSERT INTO reports_2005_09 (id, date, signature, last_crash, install_age, url, "comment", os_name, os_version, cpu_name, cpu_info, reason, address, product, version, build, platform, uuid) VALUES (new.id, new.date, new.signature, new.last_crash, new.install_age, new.url, new."comment", new.os_name, new.os_version, new.cpu_name, new.cpu_info, new.reason, new.address, new.product, new.version, new.build, new.platform, new.uuid);
-
-
---
--- Name: ins_2005_10; Type: RULE; Schema: public; Owner: postgres
---
-
-CREATE RULE ins_2005_10 AS ON INSERT TO reports WHERE ((new.date >= '2005-10-01 00:00:00'::timestamp without time zone) AND (new.date < '2005-11-01 00:00:00'::timestamp without time zone)) DO INSTEAD INSERT INTO reports_2005_10 (id, date, signature, last_crash, install_age, url, "comment", os_name, os_version, cpu_name, cpu_info, reason, address, product, version, build, platform, uuid) VALUES (new.id, new.date, new.signature, new.last_crash, new.install_age, new.url, new."comment", new.os_name, new.os_version, new.cpu_name, new.cpu_info, new.reason, new.address, new.product, new.version, new.build, new.platform, new.uuid);
-
-
---
--- Name: ins_2005_11; Type: RULE; Schema: public; Owner: postgres
---
-
-CREATE RULE ins_2005_11 AS ON INSERT TO reports WHERE ((new.date >= '2005-11-01 00:00:00'::timestamp without time zone) AND (new.date < '2005-12-01 00:00:00'::timestamp without time zone)) DO INSTEAD INSERT INTO reports_2005_11 (id, date, signature, last_crash, install_age, url, "comment", os_name, os_version, cpu_name, cpu_info, reason, address, product, version, build, platform, uuid) VALUES (new.id, new.date, new.signature, new.last_crash, new.install_age, new.url, new."comment", new.os_name, new.os_version, new.cpu_name, new.cpu_info, new.reason, new.address, new.product, new.version, new.build, new.platform, new.uuid);
-
-
---
--- Name: ins_2005_12; Type: RULE; Schema: public; Owner: postgres
---
-
-CREATE RULE ins_2005_12 AS ON INSERT TO reports WHERE ((new.date >= '2005-12-01 00:00:00'::timestamp without time zone) AND (new.date < '2006-01-01 00:00:00'::timestamp without time zone)) DO INSTEAD INSERT INTO reports_2005_12 (id, date, signature, last_crash, install_age, url, "comment", os_name, os_version, cpu_name, cpu_info, reason, address, product, version, build, platform, uuid) VALUES (new.id, new.date, new.signature, new.last_crash, new.install_age, new.url, new."comment", new.os_name, new.os_version, new.cpu_name, new.cpu_info, new.reason, new.address, new.product, new.version, new.build, new.platform, new.uuid);
-
-
---
--- Name: ins_2006_01; Type: RULE; Schema: public; Owner: postgres
---
-
-CREATE RULE ins_2006_01 AS ON INSERT TO reports WHERE ((new.date >= '2006-01-01 00:00:00'::timestamp without time zone) AND (new.date < '2006-02-01 00:00:00'::timestamp without time zone)) DO INSTEAD INSERT INTO reports_2006_01 (id, date, signature, last_crash, install_age, url, "comment", os_name, os_version, cpu_name, cpu_info, reason, address, product, version, build, platform, uuid) VALUES (new.id, new.date, new.signature, new.last_crash, new.install_age, new.url, new."comment", new.os_name, new.os_version, new.cpu_name, new.cpu_info, new.reason, new.address, new.product, new.version, new.build, new.platform, new.uuid);
-
-
---
--- Name: ins_2006_02; Type: RULE; Schema: public; Owner: postgres
---
-
-CREATE RULE ins_2006_02 AS ON INSERT TO reports WHERE ((new.date >= '2006-02-01 00:00:00'::timestamp without time zone) AND (new.date < '2006-03-01 00:00:00'::timestamp without time zone)) DO INSTEAD INSERT INTO reports_2006_02 (id, date, signature, last_crash, install_age, url, "comment", os_name, os_version, cpu_name, cpu_info, reason, address, product, version, build, platform, uuid) VALUES (new.id, new.date, new.signature, new.last_crash, new.install_age, new.url, new."comment", new.os_name, new.os_version, new.cpu_name, new.cpu_info, new.reason, new.address, new.product, new.version, new.build, new.platform, new.uuid);
-
-
---
--- Name: ins_2006_03; Type: RULE; Schema: public; Owner: postgres
---
-
-CREATE RULE ins_2006_03 AS ON INSERT TO reports WHERE ((new.date >= '2006-03-01 00:00:00'::timestamp without time zone) AND (new.date < '2006-04-01 00:00:00'::timestamp without time zone)) DO INSTEAD INSERT INTO reports_2006_03 (id, date, signature, last_crash, install_age, url, "comment", os_name, os_version, cpu_name, cpu_info, reason, address, product, version, build, platform, uuid) VALUES (new.id, new.date, new.signature, new.last_crash, new.install_age, new.url, new."comment", new.os_name, new.os_version, new.cpu_name, new.cpu_info, new.reason, new.address, new.product, new.version, new.build, new.platform, new.uuid);
-
-
---
--- Name: ins_2006_04; Type: RULE; Schema: public; Owner: postgres
---
-
-CREATE RULE ins_2006_04 AS ON INSERT TO reports WHERE ((new.date >= '2006-04-01 00:00:00'::timestamp without time zone) AND (new.date < '2006-05-01 00:00:00'::timestamp without time zone)) DO INSTEAD INSERT INTO reports_2006_04 (id, date, signature, last_crash, install_age, url, "comment", os_name, os_version, cpu_name, cpu_info, reason, address, product, version, build, platform, uuid) VALUES (new.id, new.date, new.signature, new.last_crash, new.install_age, new.url, new."comment", new.os_name, new.os_version, new.cpu_name, new.cpu_info, new.reason, new.address, new.product, new.version, new.build, new.platform, new.uuid);
-
-
---
--- Name: ins_2006_05; Type: RULE; Schema: public; Owner: postgres
---
-
-CREATE RULE ins_2006_05 AS ON INSERT TO reports WHERE ((new.date >= '2006-05-01 00:00:00'::timestamp without time zone) AND (new.date < '2006-06-01 00:00:00'::timestamp without time zone)) DO INSTEAD INSERT INTO reports_2006_05 (id, date, signature, last_crash, install_age, url, "comment", os_name, os_version, cpu_name, cpu_info, reason, address, product, version, build, platform, uuid) VALUES (new.id, new.date, new.signature, new.last_crash, new.install_age, new.url, new."comment", new.os_name, new.os_version, new.cpu_name, new.cpu_info, new.reason, new.address, new.product, new.version, new.build, new.platform, new.uuid);
-
-
---
--- Name: ins_2006_06; Type: RULE; Schema: public; Owner: postgres
---
-
-CREATE RULE ins_2006_06 AS ON INSERT TO reports WHERE ((new.date >= '2006-06-01 00:00:00'::timestamp without time zone) AND (new.date < '2006-07-01 00:00:00'::timestamp without time zone)) DO INSTEAD INSERT INTO reports_2006_06 (id, date, signature, last_crash, install_age, url, "comment", os_name, os_version, cpu_name, cpu_info, reason, address, product, version, build, platform, uuid) VALUES (new.id, new.date, new.signature, new.last_crash, new.install_age, new.url, new."comment", new.os_name, new.os_version, new.cpu_name, new.cpu_info, new.reason, new.address, new.product, new.version, new.build, new.platform, new.uuid);
-
-
---
--- Name: ins_2006_07; Type: RULE; Schema: public; Owner: postgres
---
-
-CREATE RULE ins_2006_07 AS ON INSERT TO reports WHERE ((new.date >= '2006-07-01 00:00:00'::timestamp without time zone) AND (new.date < '2006-08-01 00:00:00'::timestamp without time zone)) DO INSTEAD INSERT INTO reports_2006_07 (id, date, signature, last_crash, install_age, url, "comment", os_name, os_version, cpu_name, cpu_info, reason, address, product, version, build, platform, uuid) VALUES (new.id, new.date, new.signature, new.last_crash, new.install_age, new.url, new."comment", new.os_name, new.os_version, new.cpu_name, new.cpu_info, new.reason, new.address, new.product, new.version, new.build, new.platform, new.uuid);
-
-
---
--- Name: ins_2006_08; Type: RULE; Schema: public; Owner: postgres
---
-
-CREATE RULE ins_2006_08 AS ON INSERT TO reports WHERE ((new.date >= '2006-08-01 00:00:00'::timestamp without time zone) AND (new.date < '2006-09-01 00:00:00'::timestamp without time zone)) DO INSTEAD INSERT INTO reports_2006_08 (id, date, signature, last_crash, install_age, url, "comment", os_name, os_version, cpu_name, cpu_info, reason, address, product, version, build, platform, uuid) VALUES (new.id, new.date, new.signature, new.last_crash, new.install_age, new.url, new."comment", new.os_name, new.os_version, new.cpu_name, new.cpu_info, new.reason, new.address, new.product, new.version, new.build, new.platform, new.uuid);
-
-
---
--- Name: ins_2006_09; Type: RULE; Schema: public; Owner: postgres
---
-
-CREATE RULE ins_2006_09 AS ON INSERT TO reports WHERE ((new.date >= '2006-09-01 00:00:00'::timestamp without time zone) AND (new.date < '2006-10-01 00:00:00'::timestamp without time zone)) DO INSTEAD INSERT INTO reports_2006_09 (id, date, signature, last_crash, install_age, url, "comment", os_name, os_version, cpu_name, cpu_info, reason, address, product, version, build, platform, uuid) VALUES (new.id, new.date, new.signature, new.last_crash, new.install_age, new.url, new."comment", new.os_name, new.os_version, new.cpu_name, new.cpu_info, new.reason, new.address, new.product, new.version, new.build, new.platform, new.uuid);
-
-
---
--- Name: ins_2006_10; Type: RULE; Schema: public; Owner: postgres
---
-
-CREATE RULE ins_2006_10 AS ON INSERT TO reports WHERE ((new.date >= '2006-10-01 00:00:00'::timestamp without time zone) AND (new.date < '2006-11-01 00:00:00'::timestamp without time zone)) DO INSTEAD INSERT INTO reports_2006_10 (id, date, signature, last_crash, install_age, url, "comment", os_name, os_version, cpu_name, cpu_info, reason, address, product, version, build, platform, uuid) VALUES (new.id, new.date, new.signature, new.last_crash, new.install_age, new.url, new."comment", new.os_name, new.os_version, new.cpu_name, new.cpu_info, new.reason, new.address, new.product, new.version, new.build, new.platform, new.uuid);
-
-
---
--- Name: ins_2006_11; Type: RULE; Schema: public; Owner: postgres
---
-
-CREATE RULE ins_2006_11 AS ON INSERT TO reports WHERE ((new.date >= '2006-11-01 00:00:00'::timestamp without time zone) AND (new.date < '2006-12-01 00:00:00'::timestamp without time zone)) DO INSTEAD INSERT INTO reports_2006_11 (id, date, signature, last_crash, install_age, url, "comment", os_name, os_version, cpu_name, cpu_info, reason, address, product, version, build, platform, uuid) VALUES (new.id, new.date, new.signature, new.last_crash, new.install_age, new.url, new."comment", new.os_name, new.os_version, new.cpu_name, new.cpu_info, new.reason, new.address, new.product, new.version, new.build, new.platform, new.uuid);
-
-
---
--- Name: ins_2006_12; Type: RULE; Schema: public; Owner: postgres
---
-
-CREATE RULE ins_2006_12 AS ON INSERT TO reports WHERE ((new.date >= '2006-12-01 00:00:00'::timestamp without time zone) AND (new.date < '2007-01-01 00:00:00'::timestamp without time zone)) DO INSTEAD INSERT INTO reports_2006_12 (id, date, signature, last_crash, install_age, url, "comment", os_name, os_version, cpu_name, cpu_info, reason, address, product, version, build, platform, uuid) VALUES (new.id, new.date, new.signature, new.last_crash, new.install_age, new.url, new."comment", new.os_name, new.os_version, new.cpu_name, new.cpu_info, new.reason, new.address, new.product, new.version, new.build, new.platform, new.uuid);
 
 
 --
@@ -1788,6 +1660,174 @@ CREATE RULE ins_2009_11 AS ON INSERT TO reports WHERE ((new.date >= '2009-11-01 
 --
 
 CREATE RULE ins_2009_12 AS ON INSERT TO reports WHERE ((new.date >= '2009-12-01 00:00:00'::timestamp without time zone) AND (new.date < '2010-01-01 00:00:00'::timestamp without time zone)) DO INSTEAD INSERT INTO reports_2009_12 (id, date, signature, last_crash, install_age, url, "comment", os_name, os_version, cpu_name, cpu_info, reason, address, product, version, build, platform, uuid) VALUES (new.id, new.date, new.signature, new.last_crash, new.install_age, new.url, new."comment", new.os_name, new.os_version, new.cpu_name, new.cpu_info, new.reason, new.address, new.product, new.version, new.build, new.platform, new.uuid);
+
+
+--
+-- Name: ins_2010_01; Type: RULE; Schema: public; Owner: postgres
+--
+
+CREATE RULE ins_2010_01 AS ON INSERT TO reports WHERE ((new.date >= '2010-01-01 00:00:00'::timestamp without time zone) AND (new.date < '2010-02-01 00:00:00'::timestamp without time zone)) DO INSTEAD INSERT INTO reports_2010_01 (id, date, signature, last_crash, install_age, url, "comment", os_name, os_version, cpu_name, cpu_info, reason, address, product, version, build, platform, uuid) VALUES (new.id, new.date, new.signature, new.last_crash, new.install_age, new.url, new."comment", new.os_name, new.os_version, new.cpu_name, new.cpu_info, new.reason, new.address, new.product, new.version, new.build, new.platform, new.uuid);
+
+
+--
+-- Name: ins_2010_02; Type: RULE; Schema: public; Owner: postgres
+--
+
+CREATE RULE ins_2010_02 AS ON INSERT TO reports WHERE ((new.date >= '2010-02-01 00:00:00'::timestamp without time zone) AND (new.date < '2010-03-01 00:00:00'::timestamp without time zone)) DO INSTEAD INSERT INTO reports_2010_02 (id, date, signature, last_crash, install_age, url, "comment", os_name, os_version, cpu_name, cpu_info, reason, address, product, version, build, platform, uuid) VALUES (new.id, new.date, new.signature, new.last_crash, new.install_age, new.url, new."comment", new.os_name, new.os_version, new.cpu_name, new.cpu_info, new.reason, new.address, new.product, new.version, new.build, new.platform, new.uuid);
+
+
+--
+-- Name: ins_2010_03; Type: RULE; Schema: public; Owner: postgres
+--
+
+CREATE RULE ins_2010_03 AS ON INSERT TO reports WHERE ((new.date >= '2010-03-01 00:00:00'::timestamp without time zone) AND (new.date < '2010-04-01 00:00:00'::timestamp without time zone)) DO INSTEAD INSERT INTO reports_2010_03 (id, date, signature, last_crash, install_age, url, "comment", os_name, os_version, cpu_name, cpu_info, reason, address, product, version, build, platform, uuid) VALUES (new.id, new.date, new.signature, new.last_crash, new.install_age, new.url, new."comment", new.os_name, new.os_version, new.cpu_name, new.cpu_info, new.reason, new.address, new.product, new.version, new.build, new.platform, new.uuid);
+
+
+--
+-- Name: ins_2010_04; Type: RULE; Schema: public; Owner: postgres
+--
+
+CREATE RULE ins_2010_04 AS ON INSERT TO reports WHERE ((new.date >= '2010-04-01 00:00:00'::timestamp without time zone) AND (new.date < '2010-05-01 00:00:00'::timestamp without time zone)) DO INSTEAD INSERT INTO reports_2010_04 (id, date, signature, last_crash, install_age, url, "comment", os_name, os_version, cpu_name, cpu_info, reason, address, product, version, build, platform, uuid) VALUES (new.id, new.date, new.signature, new.last_crash, new.install_age, new.url, new."comment", new.os_name, new.os_version, new.cpu_name, new.cpu_info, new.reason, new.address, new.product, new.version, new.build, new.platform, new.uuid);
+
+
+--
+-- Name: ins_2010_05; Type: RULE; Schema: public; Owner: postgres
+--
+
+CREATE RULE ins_2010_05 AS ON INSERT TO reports WHERE ((new.date >= '2010-05-01 00:00:00'::timestamp without time zone) AND (new.date < '2010-06-01 00:00:00'::timestamp without time zone)) DO INSTEAD INSERT INTO reports_2010_05 (id, date, signature, last_crash, install_age, url, "comment", os_name, os_version, cpu_name, cpu_info, reason, address, product, version, build, platform, uuid) VALUES (new.id, new.date, new.signature, new.last_crash, new.install_age, new.url, new."comment", new.os_name, new.os_version, new.cpu_name, new.cpu_info, new.reason, new.address, new.product, new.version, new.build, new.platform, new.uuid);
+
+
+--
+-- Name: ins_2010_06; Type: RULE; Schema: public; Owner: postgres
+--
+
+CREATE RULE ins_2010_06 AS ON INSERT TO reports WHERE ((new.date >= '2010-06-01 00:00:00'::timestamp without time zone) AND (new.date < '2010-07-01 00:00:00'::timestamp without time zone)) DO INSTEAD INSERT INTO reports_2010_06 (id, date, signature, last_crash, install_age, url, "comment", os_name, os_version, cpu_name, cpu_info, reason, address, product, version, build, platform, uuid) VALUES (new.id, new.date, new.signature, new.last_crash, new.install_age, new.url, new."comment", new.os_name, new.os_version, new.cpu_name, new.cpu_info, new.reason, new.address, new.product, new.version, new.build, new.platform, new.uuid);
+
+
+--
+-- Name: ins_2010_07; Type: RULE; Schema: public; Owner: postgres
+--
+
+CREATE RULE ins_2010_07 AS ON INSERT TO reports WHERE ((new.date >= '2010-07-01 00:00:00'::timestamp without time zone) AND (new.date < '2010-08-01 00:00:00'::timestamp without time zone)) DO INSTEAD INSERT INTO reports_2010_07 (id, date, signature, last_crash, install_age, url, "comment", os_name, os_version, cpu_name, cpu_info, reason, address, product, version, build, platform, uuid) VALUES (new.id, new.date, new.signature, new.last_crash, new.install_age, new.url, new."comment", new.os_name, new.os_version, new.cpu_name, new.cpu_info, new.reason, new.address, new.product, new.version, new.build, new.platform, new.uuid);
+
+
+--
+-- Name: ins_2010_08; Type: RULE; Schema: public; Owner: postgres
+--
+
+CREATE RULE ins_2010_08 AS ON INSERT TO reports WHERE ((new.date >= '2010-08-01 00:00:00'::timestamp without time zone) AND (new.date < '2010-09-01 00:00:00'::timestamp without time zone)) DO INSTEAD INSERT INTO reports_2010_08 (id, date, signature, last_crash, install_age, url, "comment", os_name, os_version, cpu_name, cpu_info, reason, address, product, version, build, platform, uuid) VALUES (new.id, new.date, new.signature, new.last_crash, new.install_age, new.url, new."comment", new.os_name, new.os_version, new.cpu_name, new.cpu_info, new.reason, new.address, new.product, new.version, new.build, new.platform, new.uuid);
+
+
+--
+-- Name: ins_2010_09; Type: RULE; Schema: public; Owner: postgres
+--
+
+CREATE RULE ins_2010_09 AS ON INSERT TO reports WHERE ((new.date >= '2010-09-01 00:00:00'::timestamp without time zone) AND (new.date < '2010-10-01 00:00:00'::timestamp without time zone)) DO INSTEAD INSERT INTO reports_2010_09 (id, date, signature, last_crash, install_age, url, "comment", os_name, os_version, cpu_name, cpu_info, reason, address, product, version, build, platform, uuid) VALUES (new.id, new.date, new.signature, new.last_crash, new.install_age, new.url, new."comment", new.os_name, new.os_version, new.cpu_name, new.cpu_info, new.reason, new.address, new.product, new.version, new.build, new.platform, new.uuid);
+
+
+--
+-- Name: ins_2010_10; Type: RULE; Schema: public; Owner: postgres
+--
+
+CREATE RULE ins_2010_10 AS ON INSERT TO reports WHERE ((new.date >= '2010-10-01 00:00:00'::timestamp without time zone) AND (new.date < '2010-11-01 00:00:00'::timestamp without time zone)) DO INSTEAD INSERT INTO reports_2010_10 (id, date, signature, last_crash, install_age, url, "comment", os_name, os_version, cpu_name, cpu_info, reason, address, product, version, build, platform, uuid) VALUES (new.id, new.date, new.signature, new.last_crash, new.install_age, new.url, new."comment", new.os_name, new.os_version, new.cpu_name, new.cpu_info, new.reason, new.address, new.product, new.version, new.build, new.platform, new.uuid);
+
+
+--
+-- Name: ins_2010_11; Type: RULE; Schema: public; Owner: postgres
+--
+
+CREATE RULE ins_2010_11 AS ON INSERT TO reports WHERE ((new.date >= '2010-11-01 00:00:00'::timestamp without time zone) AND (new.date < '2010-12-01 00:00:00'::timestamp without time zone)) DO INSTEAD INSERT INTO reports_2010_11 (id, date, signature, last_crash, install_age, url, "comment", os_name, os_version, cpu_name, cpu_info, reason, address, product, version, build, platform, uuid) VALUES (new.id, new.date, new.signature, new.last_crash, new.install_age, new.url, new."comment", new.os_name, new.os_version, new.cpu_name, new.cpu_info, new.reason, new.address, new.product, new.version, new.build, new.platform, new.uuid);
+
+
+--
+-- Name: ins_2010_12; Type: RULE; Schema: public; Owner: postgres
+--
+
+CREATE RULE ins_2010_12 AS ON INSERT TO reports WHERE ((new.date >= '2010-12-01 00:00:00'::timestamp without time zone) AND (new.date < '2011-01-01 00:00:00'::timestamp without time zone)) DO INSTEAD INSERT INTO reports_2010_12 (id, date, signature, last_crash, install_age, url, "comment", os_name, os_version, cpu_name, cpu_info, reason, address, product, version, build, platform, uuid) VALUES (new.id, new.date, new.signature, new.last_crash, new.install_age, new.url, new."comment", new.os_name, new.os_version, new.cpu_name, new.cpu_info, new.reason, new.address, new.product, new.version, new.build, new.platform, new.uuid);
+
+
+--
+-- Name: ins_2011_01; Type: RULE; Schema: public; Owner: postgres
+--
+
+CREATE RULE ins_2011_01 AS ON INSERT TO reports WHERE ((new.date >= '2011-01-01 00:00:00'::timestamp without time zone) AND (new.date < '2011-02-01 00:00:00'::timestamp without time zone)) DO INSTEAD INSERT INTO reports_2011_01 (id, date, signature, last_crash, install_age, url, "comment", os_name, os_version, cpu_name, cpu_info, reason, address, product, version, build, platform, uuid) VALUES (new.id, new.date, new.signature, new.last_crash, new.install_age, new.url, new."comment", new.os_name, new.os_version, new.cpu_name, new.cpu_info, new.reason, new.address, new.product, new.version, new.build, new.platform, new.uuid);
+
+
+--
+-- Name: ins_2011_02; Type: RULE; Schema: public; Owner: postgres
+--
+
+CREATE RULE ins_2011_02 AS ON INSERT TO reports WHERE ((new.date >= '2011-02-01 00:00:00'::timestamp without time zone) AND (new.date < '2011-03-01 00:00:00'::timestamp without time zone)) DO INSTEAD INSERT INTO reports_2011_02 (id, date, signature, last_crash, install_age, url, "comment", os_name, os_version, cpu_name, cpu_info, reason, address, product, version, build, platform, uuid) VALUES (new.id, new.date, new.signature, new.last_crash, new.install_age, new.url, new."comment", new.os_name, new.os_version, new.cpu_name, new.cpu_info, new.reason, new.address, new.product, new.version, new.build, new.platform, new.uuid);
+
+
+--
+-- Name: ins_2011_03; Type: RULE; Schema: public; Owner: postgres
+--
+
+CREATE RULE ins_2011_03 AS ON INSERT TO reports WHERE ((new.date >= '2011-03-01 00:00:00'::timestamp without time zone) AND (new.date < '2011-04-01 00:00:00'::timestamp without time zone)) DO INSTEAD INSERT INTO reports_2011_03 (id, date, signature, last_crash, install_age, url, "comment", os_name, os_version, cpu_name, cpu_info, reason, address, product, version, build, platform, uuid) VALUES (new.id, new.date, new.signature, new.last_crash, new.install_age, new.url, new."comment", new.os_name, new.os_version, new.cpu_name, new.cpu_info, new.reason, new.address, new.product, new.version, new.build, new.platform, new.uuid);
+
+
+--
+-- Name: ins_2011_04; Type: RULE; Schema: public; Owner: postgres
+--
+
+CREATE RULE ins_2011_04 AS ON INSERT TO reports WHERE ((new.date >= '2011-04-01 00:00:00'::timestamp without time zone) AND (new.date < '2011-05-01 00:00:00'::timestamp without time zone)) DO INSTEAD INSERT INTO reports_2011_04 (id, date, signature, last_crash, install_age, url, "comment", os_name, os_version, cpu_name, cpu_info, reason, address, product, version, build, platform, uuid) VALUES (new.id, new.date, new.signature, new.last_crash, new.install_age, new.url, new."comment", new.os_name, new.os_version, new.cpu_name, new.cpu_info, new.reason, new.address, new.product, new.version, new.build, new.platform, new.uuid);
+
+
+--
+-- Name: ins_2011_05; Type: RULE; Schema: public; Owner: postgres
+--
+
+CREATE RULE ins_2011_05 AS ON INSERT TO reports WHERE ((new.date >= '2011-05-01 00:00:00'::timestamp without time zone) AND (new.date < '2011-06-01 00:00:00'::timestamp without time zone)) DO INSTEAD INSERT INTO reports_2011_05 (id, date, signature, last_crash, install_age, url, "comment", os_name, os_version, cpu_name, cpu_info, reason, address, product, version, build, platform, uuid) VALUES (new.id, new.date, new.signature, new.last_crash, new.install_age, new.url, new."comment", new.os_name, new.os_version, new.cpu_name, new.cpu_info, new.reason, new.address, new.product, new.version, new.build, new.platform, new.uuid);
+
+
+--
+-- Name: ins_2011_06; Type: RULE; Schema: public; Owner: postgres
+--
+
+CREATE RULE ins_2011_06 AS ON INSERT TO reports WHERE ((new.date >= '2011-06-01 00:00:00'::timestamp without time zone) AND (new.date < '2011-07-01 00:00:00'::timestamp without time zone)) DO INSTEAD INSERT INTO reports_2011_06 (id, date, signature, last_crash, install_age, url, "comment", os_name, os_version, cpu_name, cpu_info, reason, address, product, version, build, platform, uuid) VALUES (new.id, new.date, new.signature, new.last_crash, new.install_age, new.url, new."comment", new.os_name, new.os_version, new.cpu_name, new.cpu_info, new.reason, new.address, new.product, new.version, new.build, new.platform, new.uuid);
+
+
+--
+-- Name: ins_2011_07; Type: RULE; Schema: public; Owner: postgres
+--
+
+CREATE RULE ins_2011_07 AS ON INSERT TO reports WHERE ((new.date >= '2011-07-01 00:00:00'::timestamp without time zone) AND (new.date < '2011-08-01 00:00:00'::timestamp without time zone)) DO INSTEAD INSERT INTO reports_2011_07 (id, date, signature, last_crash, install_age, url, "comment", os_name, os_version, cpu_name, cpu_info, reason, address, product, version, build, platform, uuid) VALUES (new.id, new.date, new.signature, new.last_crash, new.install_age, new.url, new."comment", new.os_name, new.os_version, new.cpu_name, new.cpu_info, new.reason, new.address, new.product, new.version, new.build, new.platform, new.uuid);
+
+
+--
+-- Name: ins_2011_08; Type: RULE; Schema: public; Owner: postgres
+--
+
+CREATE RULE ins_2011_08 AS ON INSERT TO reports WHERE ((new.date >= '2011-08-01 00:00:00'::timestamp without time zone) AND (new.date < '2011-09-01 00:00:00'::timestamp without time zone)) DO INSTEAD INSERT INTO reports_2011_08 (id, date, signature, last_crash, install_age, url, "comment", os_name, os_version, cpu_name, cpu_info, reason, address, product, version, build, platform, uuid) VALUES (new.id, new.date, new.signature, new.last_crash, new.install_age, new.url, new."comment", new.os_name, new.os_version, new.cpu_name, new.cpu_info, new.reason, new.address, new.product, new.version, new.build, new.platform, new.uuid);
+
+
+--
+-- Name: ins_2011_09; Type: RULE; Schema: public; Owner: postgres
+--
+
+CREATE RULE ins_2011_09 AS ON INSERT TO reports WHERE ((new.date >= '2011-09-01 00:00:00'::timestamp without time zone) AND (new.date < '2011-10-01 00:00:00'::timestamp without time zone)) DO INSTEAD INSERT INTO reports_2011_09 (id, date, signature, last_crash, install_age, url, "comment", os_name, os_version, cpu_name, cpu_info, reason, address, product, version, build, platform, uuid) VALUES (new.id, new.date, new.signature, new.last_crash, new.install_age, new.url, new."comment", new.os_name, new.os_version, new.cpu_name, new.cpu_info, new.reason, new.address, new.product, new.version, new.build, new.platform, new.uuid);
+
+
+--
+-- Name: ins_2011_10; Type: RULE; Schema: public; Owner: postgres
+--
+
+CREATE RULE ins_2011_10 AS ON INSERT TO reports WHERE ((new.date >= '2011-10-01 00:00:00'::timestamp without time zone) AND (new.date < '2011-11-01 00:00:00'::timestamp without time zone)) DO INSTEAD INSERT INTO reports_2011_10 (id, date, signature, last_crash, install_age, url, "comment", os_name, os_version, cpu_name, cpu_info, reason, address, product, version, build, platform, uuid) VALUES (new.id, new.date, new.signature, new.last_crash, new.install_age, new.url, new."comment", new.os_name, new.os_version, new.cpu_name, new.cpu_info, new.reason, new.address, new.product, new.version, new.build, new.platform, new.uuid);
+
+
+--
+-- Name: ins_2011_11; Type: RULE; Schema: public; Owner: postgres
+--
+
+CREATE RULE ins_2011_11 AS ON INSERT TO reports WHERE ((new.date >= '2011-11-01 00:00:00'::timestamp without time zone) AND (new.date < '2011-12-01 00:00:00'::timestamp without time zone)) DO INSTEAD INSERT INTO reports_2011_11 (id, date, signature, last_crash, install_age, url, "comment", os_name, os_version, cpu_name, cpu_info, reason, address, product, version, build, platform, uuid) VALUES (new.id, new.date, new.signature, new.last_crash, new.install_age, new.url, new."comment", new.os_name, new.os_version, new.cpu_name, new.cpu_info, new.reason, new.address, new.product, new.version, new.build, new.platform, new.uuid);
+
+
+--
+-- Name: ins_2011_12; Type: RULE; Schema: public; Owner: postgres
+--
+
+CREATE RULE ins_2011_12 AS ON INSERT TO reports WHERE ((new.date >= '2011-12-01 00:00:00'::timestamp without time zone) AND (new.date < '2012-01-01 00:00:00'::timestamp without time zone)) DO INSTEAD INSERT INTO reports_2011_12 (id, date, signature, last_crash, install_age, url, "comment", os_name, os_version, cpu_name, cpu_info, reason, address, product, version, build, platform, uuid) VALUES (new.id, new.date, new.signature, new.last_crash, new.install_age, new.url, new."comment", new.os_name, new.os_version, new.cpu_name, new.cpu_info, new.reason, new.address, new.product, new.version, new.build, new.platform, new.uuid);
 
 
 --
