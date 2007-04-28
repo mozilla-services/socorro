@@ -13,8 +13,12 @@
 #   http://socorro.googlecode.com/svn/trunk/webapp/socorro/models/partitions.plpgsql
 #
 # Usage:
-#   python make-test-database.py test-crashes.csv '2007-04-27 22:00:00' 18000000
+#   python make-test-database.py test-crashes.csv '2007-04-27 22:00:00' 1800000
 #   (inserts 1800000 rows of random test data into the april 2007 table)
+#
+# If for some reason you want to show the queries, append 'debug' onto the
+# command line:
+#   python make-test-database.py test-crashes.csv '2007-04-27 22:00:00' 2 debug
 #
 # Questions or flames - morgamic on irc.mozilla.org
 #
@@ -34,7 +38,7 @@ try:
     limit    =  int(sys.argv[3])
 except:
     print """Missing parameters.  Usage:
-    python make-test-database.py test-crashes.csv '2007-04-27 22:00:00' 18000000
+    python make-test-database.py test-crashes.csv '2007-04-27 22:00:00' 18000000 [debug]
     """
     sys.exit()
 
@@ -93,6 +97,13 @@ while i < limit:
         if line[0] != '': 
             row = {'product':app,'version':version,'build':build,'date':date,'os_name':line[4],'last_crash':line[5],'install_age':line[6],'signature':line[9]}
             dbh = connection.cursor()
+                
+            if 'debug' in sys.argv:
+                print """INSERT INTO reports (product, version, build,
+                date, os_name, last_crash, install_age, signature) VALUES
+                (%(product)s,%(version)s,%(build)s,%(date)s,%(os_name)s,
+                %(last_crash)s,%(install_age)s,%(signature)s)""" % row
+
             dbh.execute(
             """INSERT INTO reports (product, version, build,
             date, os_name, last_crash, install_age, signature) VALUES
@@ -102,8 +113,9 @@ while i < limit:
             connection.commit()
             dbh.close()
 
-        # Increment our count.
-        i += 1
+            # Increment our count only if we've inserted something.
+            i += 1
+
 connection.close()
 print """Test database created successfully.  Enjoy!"""
 sys.exit()
