@@ -26,6 +26,25 @@ import sys
 import psycopg2
 import random
 
+# Read in args.  Might want to do some better checking, but for now just do an
+# existence check and die if it's not there.
+try:
+    file     =  sys.argv[1]
+    date     =  sys.argv[2]
+    limit    =  int(sys.argv[3])
+except:
+    print """Missing parameters.  Usage:
+    python make-test-database.py test-crashes.csv '2007-04-27 22:00:00' 18000000
+    """
+    sys.exit()
+
+# Try opening the input file.  Die if you can't.
+try:
+    f = open(file,'r')
+except:
+    print "Cannot open file %s." % file
+    sys.exit()
+
 # Try to connect to db.
 try:
     connection = psycopg2.connect("dbname='postgres' user='dbuser' host='localhost' password='dbpass'")
@@ -33,17 +52,11 @@ except:
     print 'Unable to connect to database'
     sys.exit()
 
-# Read in args.  Might want to do some better checking, but for now just do an
-# existence check and die if it's not there.
-try:
-    choice   =  sys.argv[1]
-    date     =  sys.argv[2]
-    limit    =  sys.argv[3]
-except:
-    print """Missing parameters.  Usage:
-    python make-test-database.py test-crashes.csv '2007-04-27 22:00:00' 18000000
-    """
-    sys.exit()
+print """Starting record creation.
+    file:   %s
+    date:   %s
+    limit:  %s
+    """ % (file, date, limit)
 
 # Values for randomizing our test db.
 builds   =  ['042604', '042510', '042504', '042404', '042304', '042204', '042104', '042020', '042005', '042004', '041904', '041805', '041804', '041704', '041618', '041612', '041604']
@@ -62,17 +75,19 @@ versions =  ['1.5','2.0','2.0.0.1','2.0.0.2','2.0.0.3','0.8','1.1','5.5','6.0','
 # But seriously, we can't just read it into a massive list of dicts
 # because we'd run out of memory given the sheer number of iterations.
 i = 0
+
 while i < limit:
 
     # Pick a random app, version, build.
-    app = apps[random.randint(0,len(apps))]
-    version = versions[random.randint(0,len(versions))]
-    build = builds[random.randint(0,len(builds))]
+    app = apps[random.randint(1,len(apps))-1]
+    version = versions[random.randint(1,len(versions))-1]
+    build = builds[random.randint(1,len(builds))-1]
 
-    # Use our test data to generate about 86000 rows for the randomly selected
-    # app.
-    for rawline in open(choice):
-        line = rawline.strip().split(',')
+    # Use our test data to generate report rows for the randomly selected
+    # app/version/build.
+    for j in range(random.randint(limit-i,limit)):
+
+        line = f.readline().strip().split(',')
 
         # Dict for our insert query.
         if line[0] != '': 
@@ -86,5 +101,9 @@ while i < limit:
             , row)
             connection.commit()
             dbh.close()
+
+        # Increment our count.
         i += 1
-conn.close()
+connection.close()
+print """Test database created successfully.  Enjoy!"""
+sys.exit()
