@@ -1,5 +1,12 @@
 #!/usr/bin/python
 #
+# This file requires:
+#   psycopg2 (python postgres driver)
+#   postgres-dev package (on some systems)
+#
+# If you ran the installer for the webapp you should already meet these
+# requirements.
+#
 # File to import data based on some random strings in the lists below 
 # in conjuncture with a sample test file from:
 #   http://people.mozilla.org/~morgamic/test-crashes.tar.gz
