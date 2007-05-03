@@ -31,7 +31,7 @@ session_secret = somesecret
 # pylons.database.session_context.
 
 # CHANGE THIS TO YOUR DB DETAILS:
-sqlalchemy.dburi = mysql://socorro:password@localhost:3306/socorro
+sqlalchemy.dburi = postgres://socorro:password@localhost:5432/socorro
 
 # THE DIRECTORY FOR SYMBOL FILES
 socorro.symbol_dir = /tmp/socorro

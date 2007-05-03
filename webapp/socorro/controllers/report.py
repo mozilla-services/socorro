@@ -4,11 +4,11 @@ import socorro.models as model
 
 class ReportController(BaseController):
   def index(self):
-    c.report = model.CrashReport.get_by(crash_id=request.params['crash'])
+    c.report = model.Report.get_by(id=request.params['id'])
     return render_response('report_index')
 
   def list(self):
-    c.reports = model.CrashReport.select()
+    c.reports = model.Report.select()
     return render_response('report_list')
 
   def add(self):
@@ -27,14 +27,14 @@ class ReportController(BaseController):
         fh = collector.breakpad_file(tempfile)
 
         # read report headers
-        report = model.CrashReport()
+        report = model.Report()
         report.read_header(fh)
         report.flush()
         
         # record each stack frame of the crash
         #XXXsayrer probably not real fast to flush after each one
         for line in fh:
-          frame = model.StackFrame()
+          frame = model.Frame()
           frame.readline(line[:-1])
           if frame.source is not None:
             frame.source = FixupSourcePath(frame.source)
