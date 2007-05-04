@@ -30,7 +30,7 @@ if __name__ == "__main__":
       theform = cgi.FieldStorage()
       dump = theform[config.dumpField]
       if dump.file:
-        (dumpID, dumpPath) = collect.storeDump(theform, dump.file)
+        (dumpID, dumpPath) = collect.storeDump(dump.file)
         collect.storeJSON(dumpID, dumpPath, theform)
         cgiprint("Content-Type: text/plain")
         cgiprint()

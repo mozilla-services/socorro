@@ -75,7 +75,7 @@ def getParentPathForDump():
   
   return latestDir
 
-def storeDump(form, dumpfile):
+def storeDump(dumpfile):
   """Stream the uploaded dump to a file, and store accompanying metadata.
 Return uuid to client"""
   dirPath = getParentPathForDump()
@@ -100,7 +100,10 @@ def storeJSON(dumpID, dumpDir, form):
   names = [name for name in form.keys() if name != config.dumpField]
   fields = {}
   for name in names:
-    fields[name] = form[name].value
+    if type(form[name]) == type(""):
+      fields[name] = form[name]
+    else:
+      fields[name] = form[name].value
   fields["timestamp"] = time() 
   outfile = open(os.path.join(dumpDir, dumpID + config.jsonFileSuffix), 'w')
   try:

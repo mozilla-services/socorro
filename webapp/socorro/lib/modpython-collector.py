@@ -14,7 +14,7 @@ def handler(req):
       dump = theform[config.dumpField]
       if not dump.file:
         return apache.HTTP_BAD_REQUEST
-      (dumpID, dumpPath) = collect.storeDump(theform, dump.file)
+      (dumpID, dumpPath) = collect.storeDump(dump.file)
       collect.storeJSON(dumpID, dumpPath, theform)
       req.content_type = "text/plain"
       req.write(collect.makeResponseForClient(dumpID))
