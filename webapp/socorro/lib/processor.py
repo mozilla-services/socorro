@@ -18,7 +18,7 @@ def TempFileForData(data):
   f.write(data)
   return f
 
-class Collector(object):
+class Processor(object):
   def __init__(self, stackwalk_prog, symbol_paths):
     self.stackwalk_prog = stackwalk_prog
     self.symbol_paths = []

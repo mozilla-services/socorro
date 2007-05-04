@@ -1,5 +1,5 @@
 from socorro.lib.base import *
-from socorro.lib.collect import Collector, FixupSourcePath, TempFileForData
+from socorro.lib.processor import Processor, FixupSourcePath, TempFileForData
 import socorro.models as model
 
 class ReportController(BaseController):
@@ -16,7 +16,7 @@ class ReportController(BaseController):
       # get a handle on the situation
       symbol_dir = g.pylons_config.app_conf['socorro.symbol_dir']
       minidump = g.pylons_config.app_conf['socorro.minidump_stackwalk']
-      collector = Collector(minidump, [symbol_dir])
+      processor = Processor(minidump, [symbol_dir])
       crash_dump = request.POST['upload_file_minidump']
       if not crash_dump.file:
         return Response('Bad request')
@@ -24,7 +24,7 @@ class ReportController(BaseController):
       # now parse out the data
       try:   
         tempfile = TempFileForData(crash_dump.value)
-        fh = collector.breakpad_file(tempfile)
+        fh = processor.breakpad_file(tempfile)
 
         # read report headers
         report = model.Report()
@@ -33,19 +33,23 @@ class ReportController(BaseController):
         
         # record each stack frame of the crash
         #XXXsayrer probably not real fast to flush after each one
+        frame_num = 0
         for line in fh:
           frame = model.Frame()
           frame.readline(line[:-1])
-          if frame.source is not None:
-            frame.source = FixupSourcePath(frame.source)
-          frame.crash_id = report.crash_id
-          report.stackframes.append(frame)
-          frame.flush()
+          if frame.thread_num is 0:
+            if frame.source is not None:
+              frame.source = FixupSourcePath(frame.source)
+            frame.report_id = report.id
+            frame.frame_num = frame_num
+            report.frames.append(frame)
+            frame.flush()
+            frame_num += 1
 	  
       finally:
         tempfile.close()
 
-      return Response(report.crash_id)
+      return Response(report.id)
     else:
       h.log('bad request?')
       #XXXsayrer set a 4xx status

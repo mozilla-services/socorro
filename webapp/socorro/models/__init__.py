@@ -38,8 +38,7 @@ reports_table = Table('reports', meta,
 
 frames_table = Table('frames', meta,
   Column('report_id', Integer, ForeignKey('reports.id'), primary_key=True),
-  Column('thread_num', Integer, primary_key=True),
-  Column('frame_num', Integer, nullable=False),
+  Column('frame_num', Integer, nullable=False, primary_key=True),
   Column('module_name', String(20)),
   Column('function', String(100)),
   Column('source', String(200)),
@@ -146,7 +145,7 @@ frame_mapper = assign_mapper(session_context, Frame, frames_table)
 report_mapper = assign_mapper(session_context, Report, reports_table, 
   properties = {
     'frames': relation(Frame, lazy=True, cascade="all, delete-orphan", 
-                     order_by=[frames_table.c.thread_num, frames_table.c.frame_num]),
+                     order_by=[frames_table.c.frame_num]),
     'dumps': relation(Dump, lazy=True, cascade="all, delete-orphan")
   }
 )

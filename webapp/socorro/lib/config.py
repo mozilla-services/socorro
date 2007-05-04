@@ -1,7 +1,7 @@
 from stat import S_IRGRP, S_IROTH, S_IRUSR, S_IXOTH, S_IXUSR, S_IWUSR
 
 # Storage constants
-storageRoot = "/tmp/dumps/"
+storageRoot = "/tmp/socorro/"
 dumpDirPrefix = "bp_"
 jsonFileSuffix = ".json"
 dumpFileSuffix = ".dump"
