@@ -88,6 +88,21 @@ class Frame(object):
                           map(EmptyFilter, line.split("|"))))
     self.__dict__.update(frame_data)
 
+  def signature(self):
+    if self.function is not None:
+      return self.function
+
+    if self.source is not None and self.source_line is not None:
+      return '%s#%s' % (self.source, self.source_line)
+
+    if self.module_name is not None:
+      # Do we want to normalize this against the module base address?
+      # Or does breakpad already do this for us? (I doubt it!)
+      # This is a moot point until minidump_stackwalk gives us
+      # the module enumeration.
+      return '%s@%s' % (self.module_name, self.instruction)
+
+    return '@%s' % self.instruction
 
 class Report(object):
   def __init__(self):
