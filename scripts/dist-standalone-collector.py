@@ -13,7 +13,7 @@ def setupCommon(distPath):
     os.mkdir(distPath + "/simplejson")
   shutil.copy("./docs/README-standalone-collector.txt",
               distPath + "/README.txt")
-  toplevel = ["standalone_collector.py", "config.py", "uuid.py"]
+  toplevel = ["collect.py", "config.py", "uuid.py"]
   for name in toplevel:
     shutil.copy("./webapp/socorro/lib/" + name, distPath + "/" + name)
   simplejsonFiles = glob.glob("./webapp/socorro/lib/simplejson/*.py")

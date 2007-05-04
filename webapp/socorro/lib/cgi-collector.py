@@ -3,7 +3,7 @@
 # A CGI environment for the crash report collector
 #
 
-import standalone_collector
+import collect
 import config
 import os
 import sys
@@ -30,11 +30,11 @@ if __name__ == "__main__":
       theform = cgi.FieldStorage()
       dump = theform[config.dumpField]
       if dump.file:
-        (dumpID, dumpPath) = standalone_collector.storeDump(theform, dump.file)
-        standalone_collector.storeJSON(dumpID, dumpPath, theform)
+        (dumpID, dumpPath) = collect.storeDump(theform, dump.file)
+        collect.storeJSON(dumpID, dumpPath, theform)
         cgiprint("Content-Type: text/plain")
         cgiprint()
-        print standalone_collector.makeResponseForClient(dumpID)
+        print collect.makeResponseForClient(dumpID)
       else:
         sendHeaders([badRequest])
     except:

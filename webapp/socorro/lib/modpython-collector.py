@@ -2,7 +2,7 @@
 # A mod_python environment for the crash report collector
 #
 
-import standalone_collector
+import collect
 import config
 from mod_python import apache
 from mod_python import util
@@ -14,10 +14,10 @@ def handler(req):
       dump = theform[config.dumpField]
       if not dump.file:
         return apache.HTTP_BAD_REQUEST
-      (dumpID, dumpPath) = standalone_collector.storeDump(theform, dump.file)
-      standalone_collector.storeJSON(dumpID, dumpPath, theform)
+      (dumpID, dumpPath) = collect.storeDump(theform, dump.file)
+      collect.storeJSON(dumpID, dumpPath, theform)
       req.content_type = "text/plain"
-      req.write(standalone_collector.makeResponseForClient(dumpID))
+      req.write(collect.makeResponseForClient(dumpID))
     except:
       return apache.HTTP_INTERNAL_SERVER_ERROR
     return apache.OK

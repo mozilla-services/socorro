@@ -1,5 +1,5 @@
 #
-# Standalone collector
+# collect.py, collector functions for Pylons, CGI, and mod_python collectors
 #
 
 import os, cgi, sys, uuid, tempfile, simplejson
