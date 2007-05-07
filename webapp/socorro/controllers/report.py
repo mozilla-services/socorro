@@ -31,7 +31,7 @@ class ReportController(BaseController):
       collect.storeJSON(dumpID, dumpPath, request.POST)
       
       # now parse out the data
-      fh = processor.breakpad_file(dumpPath)
+      fh = processor.breakpad_file(dumpPath, dumpID)
 
       # read report headers
       report = model.Report()

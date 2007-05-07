@@ -1,5 +1,6 @@
 import tempfile
 import os
+import config
 
 def FixupSourcePath(path):
   """Given a full path of a file in a Mozilla source tree,
@@ -17,8 +18,9 @@ class Processor(object):
     self.symbol_paths = []
     self.symbol_paths.extend(symbol_paths)
 
-  def breakpad_file(self, dumpPath):
+  def breakpad_file(self, dumpDirPath, dumpID):
     # now call stackwalk and handle the results
+    dumpPath = os.path.join(dumpDirPath, dumpID) + config.dumpFileSuffix
     symbol_path = ' '.join(['"%s"' % x for x in self.symbol_paths])
     commandline = '"%s" %s "%s" %s' % (self.stackwalk_prog, "-m", 
                                        dumpPath, symbol_path)
