@@ -39,5 +39,6 @@ if __name__ == "__main__":
         sendHeaders([badRequest])
     except:
       sendHeaders([internalServerError])
+      raise
   else:
     sendHeaders([methodNotSupported])

@@ -79,7 +79,7 @@ def openFileForDumpID(dumpID, dumpDir, suffix, mode):
   outfile = open(filename, mode)
 
   if config.dumpGID is not None:
-    os.chown(filename, -1, confi.dumpGID)
+    os.chown(filename, -1, config.dumpGID)
   os.chmod(filename, config.dumpPermissions)
 
   return outfile
