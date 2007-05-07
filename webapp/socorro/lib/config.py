@@ -1,4 +1,5 @@
 from stat import S_IRGRP, S_IXGRP, S_IWGRP, S_IRUSR, S_IXUSR, S_IWUSR, S_ISGID
+from datetime import timedelta
 
 # Storage constants
 storageRoot = "/tmp/socorro/"
@@ -23,3 +24,7 @@ dumpDirCount = 500
 
 # Returned to the client with a uuid following
 dumpIDPrefix = "bp-"
+
+# Dump directories age for a while before they are deleted
+dumpDirDelta = timedelta(hours=3)
+dateDirDelta = timedelta(days=1)
