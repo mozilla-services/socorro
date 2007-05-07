@@ -35,16 +35,16 @@ class ReportController(BaseController):
 
       # read report headers
       report = model.Report()
-      report.read_header(fh)
+      crashed_thread = report.read_header(fh)
       report.flush()
       
       # record each stack frame of the crash
       #XXXsayrer probably not real fast to flush after each one
       frame_num = 0
       for line in fh:
-        frame = model.Frame()
-        frame.readline(line[:-1])
-        if frame.thread_num is 0:
+        if line.startswith(str(crashed_thread)):
+          frame = model.Frame()
+          frame.readline(line[:-1])
           if frame.source is not None:
             frame.source = FixupSourcePath(frame.source)
           frame.report_id = report.id

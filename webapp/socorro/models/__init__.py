@@ -81,9 +81,9 @@ class Frame(object):
       return ""
 
   def readline(self, line):
-    values = line.split("|")
     frame_data = dict(zip(['thread_num', 'frame_num', 'module_name',
-                           'function', 'source', 'source_line', 'instruction'],
+                           'function', 'source', 'source_line',
+                           'instruction'],
                           map(EmptyFilter, line.split("|"))))
     self.__dict__.update(frame_data)
 
@@ -114,11 +114,12 @@ class Report(object):
       return ""
 
   def read_header(self, fh):
+    crashed_thread = None
     for line in fh:
       line = line[:-1]
       # empty line separates header data from thread data
       if line == '':
-        break
+        return int(crashed_thread)
       values = line.split("|")
       if values[0] == 'OS':
         self.os_name = values[1]
@@ -129,6 +130,7 @@ class Report(object):
       elif values[0] == 'Crash':
         self.reason = values[1]
         self.address = values[2]
+        crashed_thread = values[3]
 
 class Dump(object):
   def __str__(self):
