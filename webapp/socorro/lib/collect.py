@@ -19,7 +19,7 @@ def backOffMessage():
 def makeDumpDir(base):
   """Create a directory to hold a group of dumps, and set permissions"""
   tmpPath = tempfile.mkdtemp(dir=base, prefix=config.dumpDirPrefix)
-  os.chmod(tmpPath, config.dumpPermissions)
+  os.chmod(tmpPath, config.dirPermissions)
   return tmpPath
 
 
@@ -63,8 +63,7 @@ def getParentPathForDump():
   # if it's not there yet, create the date directory and its first
   # dump directory
   if not os.path.exists(datePath):
-    os.makedirs(datePath)
-    os.chmod(datePath, config.dumpPermissions)
+    os.makedirs(datePath, config.dirPermissions)
     return makeDumpDir(datePath)
 
   # return the last-modified dir if it has less than dumpCount entries,
@@ -75,13 +74,23 @@ def getParentPathForDump():
   
   return latestDir
 
+def openFileForDumpID(dumpID, dumpDir, suffix, mode):
+  filename = os.path.join(dumpDir, dumpID + suffix)
+  outfile = open(filename, mode)
+
+  if config.dumpGID is not None:
+    os.chown(filename, -1, confi.dumpGID)
+  os.chmod(filename, config.dumpPermissions)
+
+  return outfile
+
 def storeDump(dumpfile):
   """Stream the uploaded dump to a file, and store accompanying metadata.
 Return uuid to client"""
   dirPath = getParentPathForDump()
   dumpID = str(uuid.uuid1())
-  outfile = open(os.path.join(dirPath, dumpID + config.dumpFileSuffix), 'wb')
-
+  outfile = openFileForDumpID(dumpID, dirPath, config.dumpFileSuffix, 'wb')
+  
   # XXXsayrer need to peek at the first couple bytes for a sanity check
   # breakpad leading bytes: 0x504d444d  
   #
@@ -104,8 +113,9 @@ def storeJSON(dumpID, dumpDir, form):
       fields[name] = form[name]
     else:
       fields[name] = form[name].value
-  fields["timestamp"] = time() 
-  outfile = open(os.path.join(dumpDir, dumpID + config.jsonFileSuffix), 'w')
+  fields["timestamp"] = time()
+
+  outfile = openFileForDumpID(dumpID, dumpDir, config.jsonFileSuffix, 'w')
   try:
     simplejson.dump(fields, outfile)
   finally:

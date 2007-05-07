@@ -5,15 +5,11 @@ The Standalone Breakpad Dump Collector
 This version of the collector depends only on Python CGI facilities,
 and includes all of its dependencies in neighboring files and directories.
 
- - collector.py 
+ - standalone_collector.py 
    -----------------------
    The collector script. This script is completely stateless, requires
    no database connections, and can write to a root storage folder
-   concurrently with other instances of the same script. Depending on your
-   configuration, this could be a mod_python handler or a CGI script.
-
- - standalone_collector.py
-   Common collector module.
+   concurrently with other instances of the same script.
 
  - config.py
    ----------------------- 
