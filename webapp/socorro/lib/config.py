@@ -26,5 +26,10 @@ dumpDirCount = 500
 dumpIDPrefix = "bp-"
 
 # Dump directories age for a while before they are deleted
-dumpDirDelta = timedelta(hours=3)
-dateDirDelta = timedelta(days=1)
+dumpDirDelta = timedelta(hours=2)
+dateDirDelta = timedelta(hours=1)
+
+# Database details for standalone dump processors
+processorDatabaseURI = "postgres://socorro:password@localhost:5432/socorro"
+processorMinidump = "/usr/local/bin/minidump_stackwalk"
+processorSymbols = ["/home/sayrer/dump"]

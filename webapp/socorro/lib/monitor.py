@@ -9,7 +9,10 @@ import gamin
 import os
 import select, errno
 from datetime import datetime
-import config
+from socorro.lib.processor import Processor, firefoxHook
+import socorro.lib.config as config
+import socorro.models as model
+from  sqlalchemy.exceptions import SQLError
 
 #
 # Adapted from the WAF project (BSD License)
@@ -58,7 +61,6 @@ class GaminHelper:
     self.__eventHandler(pathName, self.__code2str(event), userData)
 
   def watching(self, name):
-    print self.__watchHandler.keys()
     return self.__watchHandler.has_key(name)
 
   def watch_directory(self, name, userData):
@@ -184,29 +186,45 @@ def gaminCallback(filename, eventName, userData):
     stopWatchingAndDelete(fullpath)
     
   # if it's a directory we aren't watching, add it to our dict
-  if eventName in ["exists","created"]:
-    if isDir and not gGamin.watching(fullpath):
+  if eventName in ["exists","created"] and isDir:
+     if not gGamin.watching(fullpath):
       gGamin.watch_directory(fullpath, fullpath)
       # try pruning the parent
       pruneStorageRoot(userData)
-    elif not isDir:
-      # The collector should create the json file containing form
-      # fields after creating the dump file. So we ignore files ending
-      # with config.dumpSuffix until their companion JSON file is
-      # present. pruneStorageRoot will manage orphaned files.
-      #
-      pass
-  elif eventName is "deleted" and gGamin.watching(fullpath):
+  elif eventName == "deleted" and gGamin.watching(fullpath):
     gGamin.stop_watch(fullpath)
+  elif (eventName in ["exists","changed"] and
+        filename.endswith(config.jsonFileSuffix)):
+    processDump(fullpath, userData, filename)
 
-  print "fam event: %s name: %s" % (userData,eventName)
+def processDump(fullpath, dir, basename):
+  # If there is more than one processor, they will race to process dumps
+  # To prevent this from occuring, the processor will first attempt
+  # to insert a record with only the ID.
+  dumpID = basename[:basename.find(config.jsonFileSuffix)]
+  r = model.Report()
+  try:
+    r.uuid = dumpID
+    r.flush()
+  except SQLError:
+    print "beat to the punch..."
+    # This is ok, someone beat us to it
+    return
 
+  print "process uuid: " + dumpID
+  dumppath = os.path.join(dir, dumpID + config.dumpFileSuffix)
+  try:
+    processor = Processor(config.processorMinidump,
+                          config.processorSymbols,
+                          reportHook=firefoxHook)
+    processor.process(dir, dumpID, r)
+  finally:
+    os.remove(fullpath)
+    os.remove(dumppath)
+    
 gGamin = GaminHelper(gaminCallback)
-
-def main():
+def start():
+  print "starting Socorro dump file monitor"
   gGamin.watch_directory(config.storageRoot, config.storageRoot)
   gGamin.loop()
-  print "hi"
-
-if __name__ == "__main__":
-  main()
+  print "stopping Socorro dump file monitor"

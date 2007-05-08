@@ -10,11 +10,13 @@ meta = DynamicMetaData()
 """
 Define database structure.
 
-The crash reports table is a parent table that all reports partitions inherit.  No
-data is actually stored in this table.  If it is, we have a problem.
+The crash reports table is a parent table that all reports partitions
+inherit.  No data is actually stored in this table.  If it is, we have
+a problem.
 
-Check constraints will be placed on reports to ensure this doesn't happen.  See
-the PgsqlSetup class for how partitions and check constraints are set up.
+Check constraints will be placed on reports to ensure this doesn't
+happen.  See the PgsqlSetup class for how partitions and check
+constraints are set up.
 """
 reports_table = Table('reports', meta,
   Column('id', Integer, primary_key=True, autoincrement=True),
@@ -62,8 +64,7 @@ Note:
   "ix_".  Indexes we set up ourselves use "idx" to avoid name conflicts, etc.
 """
 # Top crashers index, for use with the top crasher reports query.
-Index('idx_reports_product_version_build',reports_table.c.product, reports_table.c.version,
-    reports_table.c.build)
+Index('idx_reports_product_version_build',reports_table.c.product, reports_table.c.version, reports_table.c.build)
 
 
 def EmptyFilter(x):
@@ -139,16 +140,33 @@ class Dump(object):
     else:
       return ""
 
+#
+# Check whether we're running outside Pylons
+#
+ctx = None
+try:
+  import paste.deploy
+  if paste.deploy.CONFIG.has_key("app_conf"):
+    ctx = session_context
+except AttributeError:
+  from socorro.lib import config
+  from sqlalchemy.ext.sessioncontext import SessionContext
+  localEngine = create_engine(config.processorDatabaseURI)
+  def make_session():
+    return create_session(bind_to=localEngine)
+  ctx = SessionContext(make_session)
+
 """
-This defines our relationships between the tables assembled above.  It has to be
-near the bottom since it uses the objects defined after the table definitions.
+This defines our relationships between the tables assembled above.  It
+has to be near the bottom since it uses the objects defined after the
+table definitions.
 """
-frame_mapper = assign_mapper(session_context, Frame, frames_table)
-report_mapper = assign_mapper(session_context, Report, reports_table, 
+frame_mapper = assign_mapper(ctx, Frame, frames_table)
+report_mapper = assign_mapper(ctx, Report, reports_table, 
   properties = {
     'frames': relation(Frame, lazy=True, cascade="all, delete-orphan", 
-                     order_by=[frames_table.c.frame_num]),
+                       order_by=[frames_table.c.frame_num]),
     'dumps': relation(Dump, lazy=True, cascade="all, delete-orphan")
   }
 )
-dump_mapper = assign_mapper(session_context, Dump, dumps_table)
+dump_mapper = assign_mapper(ctx, Dump, dumps_table)
