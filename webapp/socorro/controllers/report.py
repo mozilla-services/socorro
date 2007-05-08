@@ -3,8 +3,8 @@ from socorro.lib.processor import Processor, firefoxHook
 import socorro.lib.collect as collect
 
 class ReportController(BaseController):
-  def index(self):
-    c.report = model.Report.get_by(id=request.params['id'])
+  def index(self, id):
+    c.report = model.Report.get_by(id=id)
     return render_response('report_index')
 
   def list(self):
