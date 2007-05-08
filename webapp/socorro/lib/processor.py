@@ -42,6 +42,7 @@ class Processor(object):
     if self.reportHook is not None:
       self.reportHook(report)
 
+    report.flush()
     return report
 
   def processDump(self, dumpPath, jsonPath, dumpID):
@@ -56,7 +57,6 @@ class Processor(object):
         fh = self.__breakpad_file(dumpPath)
         self.processJSON(jsonPath, report)
         crashed_thread = report.read_header(fh)
-        report.flush()
         
         for line in fh:
           if line.startswith(str(crashed_thread)):
@@ -64,14 +64,16 @@ class Processor(object):
             frame.readline(line[:-1])
             frame.report_id = report.id
             report.frames.append(frame)
-            frame.flush()
 
-      except Error, e:
+      except Exception, e:
         report.flush()
         raise e
     finally:
       if fh:
         fh.close()
+
+    if len(report.frames) > 0:
+      report.signature = report.frames[0].signature()
 
     return report
 
