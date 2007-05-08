@@ -1,8 +1,6 @@
 from socorro.lib.base import *
-from socorro.lib.processor import Processor, FixupSourcePath
+from socorro.lib.processor import Processor, firefoxHook
 import socorro.lib.collect as collect
-import socorro.models as model
-import socorro.lib.simplejson as simplejson
 
 class ReportController(BaseController):
   def index(self):
@@ -18,9 +16,8 @@ class ReportController(BaseController):
       #
       # xx fix this
       symbol_dir = g.pylons_config.app_conf['socorro.symbol_dir']
-      minidump = g.pylons_config.app_conf['socorro.minidump_stackwalk']
+      minidump = g.pylons_config.app_conf['socorro.minidump_stackwalk']  
       
-      processor = Processor(minidump, [symbol_dir])
       crash_dump = request.POST['upload_file_minidump']
       if not crash_dump.file:
         #XXXsayrer set a 4xx status
@@ -29,32 +26,10 @@ class ReportController(BaseController):
       # mirror the process used by the standalone collectors
       (dumpID, dumpPath) = collect.storeDump(crash_dump.file)
       collect.storeJSON(dumpID, dumpPath, request.POST)
-      
-      # now parse out the data
-      fh = processor.breakpad_file(dumpPath, dumpID)
-
-      # read report headers
-      report = model.Report()
-      crashed_thread = report.read_header(fh)
-      report.flush()
-      
-      # record each stack frame of the crash
-      #XXXsayrer probably not real fast to flush after each one
-      frame_num = 0
-      for line in fh:
-        if line.startswith(str(crashed_thread)):
-          frame = model.Frame()
-          frame.readline(line[:-1])
-          if frame.source is not None:
-            frame.source = FixupSourcePath(frame.source)
-          frame.report_id = report.id
-          frame.frame_num = frame_num
-          report.frames.append(frame)
-          frame.flush()
-          frame_num += 1
-
-
+      processor = Processor(minidump, [symbol_dir], reportHook=firefoxHook)
+      processor.process(dumpPath, dumpID)
       return Response(collect.makeResponseForClient(dumpID))
+
     else:
       h.log('bad request?')
       #XXXsayrer set a 4xx status
