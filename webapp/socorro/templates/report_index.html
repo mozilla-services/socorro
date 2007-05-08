@@ -20,10 +20,10 @@
  </head>
  <body>
     <p>
-    ID: ${c.report.crash_id} <br/>
-    Time: ${c.report.report_time} <br/>
-    Build ID: ${c.report.build_id} <br/>
-    Platform: ${c.report.platform} <br/>
+    <b>${c.report.product} ${c.report.version}</b> <br/>
+    ID: ${c.report.id} <br/>
+    Time: ${c.report.date} <br/>
+    Build ID: ${c.report.build} <br/>
     OS: ${c.report.os_name} <br/>
     OS Version: ${c.report.os_version} <br/>
     CPU: ${c.report.cpu_name} <br/>
@@ -42,7 +42,7 @@
         <th>line</th>
         <th>instruction</th>
       </tr>
-      <tr py:for="frame in c.report.stackframes">
+      <tr py:for="frame in c.report.frames">
         <td>${frame.thread_num}</td>
         <td>${frame.frame_num}</td>
         <td>${frame.module_name}</td>
