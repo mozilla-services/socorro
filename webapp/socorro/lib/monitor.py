@@ -106,6 +106,9 @@ class GaminHelper:
   def request_end_loop(self):
     self.__isLooping = False
 
+  def is_looping(self):
+    return self.__isLooping
+
   def loop(self):
     try:
       self.__isLooping = True
@@ -171,6 +174,16 @@ def pruneStorageRoot(toppath):
   
 rootPathLength = len(config.storageRoot.split(os.sep))
 def gaminCallback(filename, eventName, userData):
+  # Don't do anything if the event loop has been stopped
+  # We'll process these when we start back up
+  if not gGamin.is_looping():
+    return
+  try:
+    lookForFiles(filename, eventName, userData)
+  except (KeyboardInterrupt, SystemExit):
+    gGamin.request_end_loop()
+
+def lookForFiles(filename, eventName, userData):
   fullpath = filename
   if filename != userData:
     fullpath = os.path.join(userData, filename)
@@ -207,7 +220,7 @@ def processDump(fullpath, dir, basename):
     r.uuid = dumpID
     r.flush()
   except SQLError:
-    print "beat to the punch..."
+    print "beat to the punch for uuid " + dumpID
     # This is ok, someone beat us to it
     return
 
