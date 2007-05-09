@@ -70,7 +70,7 @@ frames_table = Table('frames', meta,
 
 dumps_table = Table('dumps', meta,
   Column('report_id', Integer, ForeignKey('reports.id'), primary_key=True),
-  Column('data', String(50000))
+  Column('data', TEXT())
 )
 
 """
