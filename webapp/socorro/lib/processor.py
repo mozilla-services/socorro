@@ -49,23 +49,22 @@ class Processor(object):
       try:
         fh = self.__breakpad_file(dumpPath)
         self.processJSON(jsonPath, report)
-        crashed_thread = report.read_header(fh)
-        
+        crashed_thread = "%s|" % report.read_header(fh)
+
         for line in fh:
-          if line.startswith(str(crashed_thread)):
+          if line.startswith(crashed_thread):
             frame = model.Frame()
             frame.readline(line[:-1])
             frame.report_id = report.id
-            report.frames.append(frame)
+            if int(frame.frame_num) < 10:
+              report.frames.append(frame)
 
-      except Exception, e:
+      finally:
         self.__finishReport(report)
-        raise e
     finally:
       if fh:
         fh.close()
 
-    self.__finishReport(report)
     return report
 
   def __finishReport(self, report):

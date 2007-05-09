@@ -135,12 +135,12 @@ class Report(object):
       return ""
 
   def read_header(self, fh):
-    crashed_thread = None
+    crashed_thread = ''
     for line in fh:
       line = line[:-1]
       # empty line separates header data from thread data
       if line == '':
-        return int(crashed_thread)
+        return crashed_thread
       values = line.split("|")
       if values[0] == 'OS':
         self.os_name = values[1]
