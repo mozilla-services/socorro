@@ -52,6 +52,7 @@ class Processor(object):
         crashed_thread = "%s|" % report.read_header(fh)
 
         for line in fh:
+          report.add_dumptext(line)
           if line.startswith(crashed_thread):
             frame = model.Frame()
             frame.readline(line[:-1])
@@ -72,6 +73,7 @@ class Processor(object):
       report.signature = report.frames[0].signature()
     if self.reportHook is not None:
       self.reportHook(report)
+    report.finish_dumptext()
     report.flush()
 
   def processJSON(self, jsonPath, report):

@@ -135,8 +135,11 @@ class Report(object):
       return ""
 
   def read_header(self, fh):
+    self.dumpText = ""
+
     crashed_thread = ''
     for line in fh:
+      self.add_dumptext(line)
       line = line[:-1]
       # empty line separates header data from thread data
       if line == '':
@@ -153,12 +156,19 @@ class Report(object):
         self.address = values[2]
         crashed_thread = values[3]
 
+  def add_dumptext(self, text):
+    self.dumpText += text
+
+  def finish_dumptext(self):
+    self.dumps.append(Dump(self.id, self.dumpText))
+
 class Dump(object):
+  def __init__(self, report_id, text):
+    self.report_id = report_id
+    self.data = text
+
   def __str__(self):
-    if self.report_id is not None:
-      return str(self.report_id)
-    else:
-      return ""
+    return str(self.report_id)
 
 #
 # Check whether we're running outside Pylons

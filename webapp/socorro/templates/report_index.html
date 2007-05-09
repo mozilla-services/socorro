@@ -31,24 +31,27 @@
     Crash Reason: ${c.report.crash_reason} <br/>
     Crash Address: ${c.report.crash_address} <br/>
     </p>
-    <b>Stack Trace:</b><br/>
-    <table cellspacing="0" width="1200">
-      <tr>
-        <th>frame</th>
-        <th>module</th>
-        <th>function</th>
-        <th>source</th>
-        <th>line</th>
-        <th>instruction</th>
-      </tr>
-      <tr py:for="frame in c.report.frames">
-        <td>${frame.frame_num}</td>
-        <td>${frame.module_name}</td>
-        <td>${frame.function}</td>
-        <td>${frame.source}</td>
-        <td>${frame.source_line}</td>
-        <td>${frame.instruction}</td>
-      </tr>
-    </table>
+    <py:if test="len(c.report.frames) > 0">
+      <b>Stack of Crashing Thread:</b><br/>
+      <table cellspacing="0" width="1200">
+        <tr>
+          <th>frame</th>
+          <th>module</th>
+          <th>function</th>
+          <th>source</th>
+          <th>line</th>
+          <th>instruction</th>
+        </tr>
+        <tr py:for="frame in c.report.frames">
+          <td>${frame.frame_num}</td>
+          <td>${frame.module_name}</td>
+          <td>${frame.function}</td>
+          <td>${frame.source}</td>
+          <td>${frame.source_line}</td>
+          <td>${frame.instruction}</td>
+        </tr>
+      </table>
+    </py:if>
+    <pre py:if="len(c.report.dumps) == 1">${c.report.dumps[0].data}</pre>
  </body>
 </html>
