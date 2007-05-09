@@ -2,15 +2,11 @@
  "http://www.w3.org/TR/html4/strict.dtd">
 <html xmlns:py="http://genshi.edgewall.org/"
       xmlns:xi="http://www.w3.org/2001/XInclude">
+ <xi:include href="common.html" />
  <head>
    <title>Crash Reports</title>
  </head>
  <body>
-   <ul>
-     <li py:for="report in c.reports">
-       ${h.link_to(report.id, h.url_for(id=report.id, action='index'))}
-       ${report.crash_reason}
-     </li>
-   </ul> 
+  ${list_reports(c.reports)}
  </body>
 </html>
