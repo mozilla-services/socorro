@@ -154,7 +154,7 @@ class Report(object):
       elif values[0] == 'Crash':
         self.reason = values[1]
         self.address = values[2]
-        crashed_thread = values[3]
+        crashed_thread = values[3] 
 
   def add_dumptext(self, text):
     self.dumpText += text
@@ -181,7 +181,7 @@ try:
 except AttributeError:
   from socorro.lib import config
   from sqlalchemy.ext.sessioncontext import SessionContext
-  localEngine = create_engine(config.processorDatabaseURI)
+  localEngine = create_engine(config.processorDatabaseURI, strategy="threadlocal")
   def make_session():
     return create_session(bind_to=localEngine)
   ctx = SessionContext(make_session)

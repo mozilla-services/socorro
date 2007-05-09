@@ -13,6 +13,7 @@ from socorro.lib.processor import Processor, firefoxHook
 import socorro.lib.config as config
 import socorro.models as model
 from  sqlalchemy.exceptions import SQLError
+import sqlalchemy
 
 #
 # Adapted from the WAF project (BSD License)
@@ -182,7 +183,7 @@ def gaminCallback(filename, eventName, userData):
     lookForFiles(filename, eventName, userData)
   except (KeyboardInterrupt, SystemExit):
     gGamin.request_end_loop()
-
+    
 def lookForFiles(filename, eventName, userData):
   fullpath = filename
   if filename != userData:
@@ -215,26 +216,60 @@ def processDump(fullpath, dir, basename):
   # To prevent this from occuring, the processor will first attempt
   # to insert a record with only the ID.
   dumpID = basename[:basename.find(config.jsonFileSuffix)]
-  r = model.Report()
+  report = None
+  didProcess = False
+  
   try:
-    r.uuid = dumpID
-    r.flush()
-  except SQLError:
-    print "beat to the punch for uuid " + dumpID
-    # This is ok, someone beat us to it
-    return
+    report = getReport(dumpID)
+    if report is not None:
+      session = sqlalchemy.object_session(report)
+      session.clear()
+      didProcess = runProcessor(dir, dumpID, report.id)
+  except:
+    if didProcess:
+      print "did process" + dumpID
+      dumppath = os.path.join(dir, dumpID + config.dumpFileSuffix)
+      #os.remove(fullpath)
+      #os.remove(dumppath)
+    elif report is not None:
+      # need to clear the db because we didn't process it
+      print "Backout changes to uuid " + dumpID
+      r = model.Report.get_by(uuid=dumpID)
+      r.delete()
+      r.flush()
+    raise
 
-  print "process uuid: " + dumpID
-  dumppath = os.path.join(dir, dumpID + config.dumpFileSuffix)
+def runProcessor(dir, dumpID, pk):
+  print "runProcessor for " + dumpID
+  report = model.Report.get_by(id=pk, uuid=dumpID)
+  session = sqlalchemy.object_session(report) 
+  trans = session.create_transaction()
   try:
     processor = Processor(config.processorMinidump,
                           config.processorSymbols,
                           reportHook=firefoxHook)
-    processor.process(dir, dumpID, r)
-  finally:
-    os.remove(fullpath)
-    os.remove(dumppath)
-    
+    processor.process(dir, dumpID, report)
+  except (KeyboardInterrupt, SystemExit):
+    trans.rollback()
+    raise
+  except Exception, e:
+    print "Error in processor: %s" % e
+
+  trans.commit()
+  trans.close()
+  return True
+
+def getReport(dumpID):
+  r = model.Report()
+  try:
+    r.uuid = dumpID
+    r.flush()
+  except SQLError, e:
+    print "beat to the punch for uuid " + dumpID
+    # This is ok, someone beat us to it
+    return None
+  return r
+  
 gGamin = GaminHelper(gaminCallback)
 def start():
   print "starting Socorro dump file monitor"
