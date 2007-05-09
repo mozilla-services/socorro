@@ -5,7 +5,27 @@ from sqlalchemy.ext.selectresults import SelectResultsExt
 from pylons.database import session_context
 from datetime import datetime
 
+import sys
+
 meta = DynamicMetaData()
+
+class TruncatingString(types.TypeDecorator):
+  """
+  Truncating string type.
+  
+  By default, SQLAlchemy will throw an error if a string that is too long
+  is inserted into the database. We subclass the default String type to
+  automatically truncate to the correct length.
+  """
+  impl = types.String
+
+  def convert_bind_param(self, value, engine):
+    if value is None:
+      return None
+    return value[:self.length]
+
+  def convert_result_value(self, value, engine):
+    return value
 
 """
 Define database structure.
@@ -25,25 +45,25 @@ reports_table = Table('reports', meta,
   Column('product', String(20)),
   Column('version', String(10)),
   Column('build', String(10)),
-  Column('signature', String(255), index=True),
-  Column('url', String(255), index=True),
+  Column('signature', TruncatingString(255), index=True),
+  Column('url', TruncatingString(255), index=True),
   Column('install_age', Integer),
   Column('last_crash', Integer),
-  Column('comments', String(500)),
-  Column('cpu_name', String(100)),
-  Column('cpu_info', String(100)),
-  Column('reason', String(255)),
+  Column('comments', TruncatingString(500)),
+  Column('cpu_name', TruncatingString(100)),
+  Column('cpu_info', TruncatingString(100)),
+  Column('reason', TruncatingString(255)),
   Column('address', String(20)),
-  Column('os_name', String(100)),
-  Column('os_version', String(100))
-)
+  Column('os_name', TruncatingString(100)),
+  Column('os_version', TruncatingString(100)))
+                      
 
 frames_table = Table('frames', meta,
   Column('report_id', Integer, ForeignKey('reports.id'), primary_key=True),
   Column('frame_num', Integer, nullable=False, primary_key=True),
-  Column('module_name', String(50)),
-  Column('function', String(100)),
-  Column('source', String(200)),
+  Column('module_name', TruncatingString(50)),
+  Column('function', TruncatingString(100)),
+  Column('source', TruncatingString(200)),
   Column('source_line', Integer),
   Column('instruction', String(10))
 )
