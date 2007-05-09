@@ -218,27 +218,31 @@ def processDump(fullpath, dir, basename):
   dumpID = basename[:basename.find(config.jsonFileSuffix)]
   report = None
   didProcess = False
-  
-  try:
-    report = getReport(dumpID)
-    if report is not None:
-      session = sqlalchemy.object_session(report)
-      session.clear()
-      didProcess = runProcessor(dir, dumpID, report.id)
-  except:
-    if didProcess:
-      print "did process" + dumpID
-      dumppath = os.path.join(dir, dumpID + config.dumpFileSuffix)
-      #os.remove(fullpath)
-      #os.remove(dumppath)
-    elif report is not None:
-      # need to clear the db because we didn't process it
-      print "Backout changes to uuid " + dumpID
-      r = model.Report.get_by(uuid=dumpID)
-      r.delete()
-      r.flush()
-    raise
 
+  try:
+    try:
+      report = getReport(dumpID)
+      if report is not None:
+        session = sqlalchemy.object_session(report)
+        session.clear()
+        didProcess = runProcessor(dir, dumpID, report.id)
+    except:
+      print "encountered exception... " + dumpID
+      if report is not None and not didProcess:
+        # need to clear the db because we didn't process it
+        print "Backout changes to uuid " + dumpID
+        r = model.Report.get_by(uuid=dumpID)
+        r.refresh()
+        r.delete()
+        r.flush()
+      raise
+  finally:
+    if didProcess:
+      print "did process " + dumpID
+      dumppath = os.path.join(dir, dumpID + config.dumpFileSuffix)
+      os.remove(fullpath)
+      os.remove(dumppath)
+   
 def runProcessor(dir, dumpID, pk):
   print "runProcessor for " + dumpID
   report = model.Report.get_by(id=pk, uuid=dumpID)
@@ -256,7 +260,7 @@ def runProcessor(dir, dumpID, pk):
     print "Error in processor: %s" % e
 
   trans.commit()
-  trans.close()
+  session.clear()
   return True
 
 def getReport(dumpID):
