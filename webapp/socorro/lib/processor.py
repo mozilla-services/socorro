@@ -59,6 +59,8 @@ class Processor(object):
             frame.report_id = report.id
             if int(frame.frame_num) < 10:
               report.frames.append(frame)
+            else:
+              frame.expunge()
 
       finally:
         self.__finishReport(report)
