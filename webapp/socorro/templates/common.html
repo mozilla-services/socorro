@@ -12,7 +12,7 @@
   <py:for each="report in reports">
    <tr>
     <td class="report-date" rowspan="2">
-     <a href="${h.url_for(id=report.id, action='index')}">
+     <a href="${h.url_for(id=report.uuid, action='index')}">
       ${report.date.strftime("%Y-%m-%d")}&nbsp;${report.date.strftime("%H:%M")}
      </a>
     </td>

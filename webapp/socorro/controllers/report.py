@@ -4,7 +4,7 @@ import socorro.lib.collect as collect
 
 class ReportController(BaseController):
   def index(self, id):
-    c.report = model.Report.get_by(id=id)
+    c.report = model.Report.get_by(uuid=id)
     return render_response('report_index')
 
   def list(self):
