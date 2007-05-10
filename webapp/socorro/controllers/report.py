@@ -5,6 +5,8 @@ import socorro.lib.collect as collect
 class ReportController(BaseController):
   def index(self, id):
     c.report = model.Report.get_by(uuid=id)
+    if c.report is None:
+      abort(404, 'Not found')
     return render_response('report_index')
 
   def list(self):
