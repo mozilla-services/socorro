@@ -24,6 +24,7 @@ def setup_config(command, filename, section, vars):
   print "Connecting to database %s" % uri
   model.meta.connect(engine)
   print "Creating tables"
+  model.reports_id_sequence.create()
   model.meta.create_all()  
 
   # create the directory that will hold our symbol files

@@ -38,13 +38,17 @@ Check constraints will be placed on reports to ensure this doesn't
 happen.  See the PgsqlSetup class for how partitions and check
 constraints are set up.
 """
+reports_id_sequence = Sequence('seq_reports_id', meta)
+
 reports_table = Table('reports', meta,
-  Column('id', Integer, primary_key=True, autoincrement=True),
+  Column('id', Integer, reports_id_sequence,
+         default=text("nextval('seq_reports_id')"),
+         primary_key=True),
   Column('date', DateTime),
   Column('uuid', String(50), index=True, unique=True, nullable=False),
-  Column('product', String(20)),
-  Column('version', String(10)),
-  Column('build', String(10)),
+  Column('product', String(30)),
+  Column('version', String(16)),
+  Column('build', String(30)),
   Column('signature', TruncatingString(255), index=True),
   Column('url', TruncatingString(255), index=True),
   Column('install_age', Integer),
@@ -60,7 +64,7 @@ reports_table = Table('reports', meta,
 
 frames_table = Table('frames', meta,
   Column('report_id', Integer, ForeignKey('reports.id'), primary_key=True),
-  Column('frame_num', Integer, nullable=False, primary_key=True),
+  Column('frame_num', Integer, nullable=False, primary_key=True, autoincrement=False),
   Column('module_name', TruncatingString(50)),
   Column('function', TruncatingString(100)),
   Column('source', TruncatingString(200)),
@@ -84,7 +88,7 @@ Note:
   "ix_".  Indexes we set up ourselves use "idx" to avoid name conflicts, etc.
 """
 # Top crashers index, for use with the top crasher reports query.
-Index('idx_reports_product_version_build',reports_table.c.product, reports_table.c.version, reports_table.c.build)
+Index('idx_reports_date', reports_table.c.date, reports_table.c.product, reports_table.c.version, reports_table.c.build)
 
 
 def EmptyFilter(x):
