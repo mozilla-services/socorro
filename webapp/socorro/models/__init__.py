@@ -59,8 +59,9 @@ reports_table = Table('reports', meta,
   Column('reason', TruncatingString(255)),
   Column('address', String(20)),
   Column('os_name', TruncatingString(100)),
-  Column('os_version', TruncatingString(100)))
-                      
+  Column('os_version', TruncatingString(100)),
+  Column('email', TruncatingString(100))
+)
 
 frames_table = Table('frames', meta,
   Column('report_id', Integer, ForeignKey('reports.id'), primary_key=True),
