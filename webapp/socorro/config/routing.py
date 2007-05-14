@@ -11,7 +11,7 @@ def make_map(global_conf={}, app_conf={}):
 
     # Set default route to the list of reports.  We can change this later if we
     # create a dashboard or better entry page.
-    map.connect('', controller='report', action='list')
+    map.connect('', controller='query', action='query')
     
     # This route handles displaying the error page and graphics used in the 404/500
     # error pages. It should likely stay at the top to ensure that the error page is
@@ -21,7 +21,7 @@ def make_map(global_conf={}, app_conf={}):
     # Define your routes. The more specific and detailed routes should be defined first,
     # so they may take precedent over the more generic routes. For more information, refer
     # to the routes manual @ http://routes.groovie.org/docs/
+    map.connect('query', controller='query', action='query')
     map.connect(':controller/:action/:id')
-    map.connect('*url', controller='template', action='view')
 
     return map

@@ -1,6 +1,8 @@
 from socorro.lib.base import *
 from socorro.lib.processor import Processor, firefoxHook
 import socorro.lib.collect as collect
+from sqlalchemy import *
+from sqlalchemy.databases.postgres import *
 
 class ReportController(BaseController):
   def index(self, id):
@@ -10,7 +12,9 @@ class ReportController(BaseController):
     return render_response('report_index')
 
   def list(self):
-    c.reports = model.Report.select()
+    c.reports = model.Report.select(model.reports_table.c.date.between(func.now() - sql.text("interval '1 day'"), func.now()),
+                                    limit=500,
+                                    order_by=[sql.desc(model.reports_table.c.date)])
     return render_response('report_list')
 
   def add(self):
