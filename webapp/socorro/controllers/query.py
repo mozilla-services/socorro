@@ -94,5 +94,8 @@ class QueryController(BaseController):
 
     # I want to run the following query and don't know how. Help...
     # SELECT DISTINCT product FROM branches
+    #
+    # something like:
+    # model.Branch.select(model.Branch.c.product, distinct=True)
 
     return render_response('query_form')
