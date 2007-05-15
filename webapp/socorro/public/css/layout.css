@@ -1,0 +1,24 @@
+body {
+  margin: 0;
+  padding 0;
+}
+
+#header {
+  border-bottom: 1px solid #000;
+  min-height: 2em;
+  padding: .5em;
+}
+
+#header h1 {
+  margin: 0;
+  padding: 0;
+}
+
+#content {
+  padding: 1em;
+}
+
+#footer {
+  border-top: 1px solid #000;
+  clear: both;
+}

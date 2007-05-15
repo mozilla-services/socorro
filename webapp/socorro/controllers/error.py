@@ -13,14 +13,16 @@ class ErrorController(BaseController):
 
     def document(self):
         """
-        Change this method to change how error documents are displayed
+        Change this method to change how error documents are displayed.  In the
+        future we may want to invoke different tempaltes per error code, but for
+        now we'll keep it simple.
         """
-        page = error_document_template % {
+        c.error_data = {
             'prefix': get_prefix(request.environ),
             'code': request.params.get('code', ''),
             'message': request.params.get('message', ''),
         }
-        return Response(page)
+        return render_response('error')
 
     def img(self, id):
         return self._serve_file(os.path.join(media_path, 'img', id))

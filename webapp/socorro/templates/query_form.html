@@ -2,12 +2,14 @@
  "http://www.w3.org/TR/html4/strict.dtd">
 <html xmlns:py="http://genshi.edgewall.org/"
       xmlns:xi="http://www.w3.org/2001/XInclude">
+ <xi:include href="includes/site.html" />
  <xi:include href="common.html" />
  <head>
   <title>Crash Reports</title>
  </head>
  <body>
-  <h1>Crash Reports</h1>
+  <div id="content">
+  <h1 class="first">Crash Reports</h1>
 
   <form name="query" method="GET" action="${h.url_for(action='query')}">
    <input type="hidden" name="do_query" value="1" />
@@ -81,5 +83,9 @@
    ${list_reports(c.reports)}
 
   </py:if>
+
+  </div>
+  <!-- end content --> 
+
  </body>
 </html>

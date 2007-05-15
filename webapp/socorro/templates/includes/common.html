@@ -1,0 +1,36 @@
+<table xmlns:py="http://genshi.edgewall.org/" py:def="list_reports(reports)" class="report_list">
+ <thead>
+  <tr>
+   <th rowspan="2">Date</th>
+   <th colspan="2">Product/Version/Build/OS</th>
+  </tr>
+  <tr>
+   <th>Signature</th>
+  </tr>
+ </thead>
+ <tbody>
+  <py:for each="report in reports">
+   <tr>
+    <td class="report-date" rowspan="2">
+     <a href="${h.url_for(id=report.uuid, controller='report', action='index')}">
+      ${report.date.strftime("%Y-%m-%d")}&nbsp;${report.date.strftime("%H:%M")}
+     </a>
+    </td>
+    <td class="report-product">
+     ${report.product} ${report.version}: ${report.build} -
+     ${report.os_name}
+    </td>
+   </tr>
+   <tr>
+    <td class="report-signature">
+     <code>
+      ${report.signature}
+     </code>
+    </td>
+    <td class="report-url">
+     ${report.url}
+    </td>
+   </tr>
+  </py:for>
+ </tbody>
+</table>

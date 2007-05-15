@@ -1,0 +1,41 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" 
+ "http://www.w3.org/TR/html4/strict.dtd">
+<html xmlns:py="http://genshi.edgewall.org/"
+   xmlns:xi="http://www.w3.org/2001/XInclude"
+   lang="en"
+   py:strip="">
+
+<head py:match="head" py:attrs="select('@*')">
+ <meta py:replace="select('*|text()')" />
+ <link href="css/layout.css" rel="stylesheet" type="text/css" media="screen"
+  py:attrs="{'href': '/css/layout.css'}" />
+ <link href="css/style.css" rel="stylesheet" type="text/css" media="all" 
+  py:attrs="{'href': '/css/style.css'}" />
+</head>
+
+<body py:match="body" py:attrs="select('@*')">
+
+<!-- site header -->
+<div id="header">
+ <h1>Socorro</h1>
+ <ul>
+  <li>${ h.link_to('Home', h.url_for(controller='query')) }</li>
+  <li>${ h.link_to('Reports', h.url_for(controller='report')) }</li>
+ </ul>
+</div>
+<!-- end site header -->
+
+<div id="content" py:replace="select('*|text()')">This page has no content.</div>
+
+<!-- site footer -->
+<div id="footer">
+ <ul>
+  <li><a href="http://code.google.com/p/socorro/">Project Info</a></li>
+  <li><a href="http://code.google.com/p/socorro/source">Get the Source</a></li>
+  <li><a href="http://wiki.mozilla.org/Breakpad">Breakpad Wiki</a></li>
+ </ul>
+</div>
+<!-- end site footer -->
+
+</body>
+</html>
