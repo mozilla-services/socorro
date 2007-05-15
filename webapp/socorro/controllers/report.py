@@ -11,12 +11,6 @@ class ReportController(BaseController):
       abort(404, 'Not found')
     return render_response('report_index')
 
-  def list(self):
-    c.reports = model.Report.select(model.reports_table.c.date.between(func.now() - sql.text("interval '1 day'"), func.now()),
-                                    limit=500,
-                                    order_by=[sql.desc(model.reports_table.c.date)])
-    return render_response('report_list')
-
   def add(self):
     if request.environ['REQUEST_METHOD'] == 'POST':
       #
