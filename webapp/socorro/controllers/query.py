@@ -15,6 +15,7 @@ class QueryParams(object):
     self.date = ''
     self.range_value = 1
     self.range_unit = 'weeks'
+    self.product = ''
 
   def query(self):
     q = Report.query().order_by(sql.desc(reports_table.c.date)).limit(500)
@@ -35,6 +36,10 @@ class QueryParams(object):
         q = q.filter(reports_table.c.signature.like(pattern))
       else:
         q = q.filter(reports_table.c.signature == self.signature)
+
+    if self.product != '':
+      q = q.filter(reports_table.c.product == self.product)
+    
     return q
 
   def __str__(self):
@@ -52,6 +57,9 @@ class QueryParams(object):
       
       str += ", where the crash signature %s '%s'" % (sigtype, self.signature)
 
+    if self.product != '':
+      str += ", and the product is '%s'" % (self.product)
+
     str += '.'
     return str
 
@@ -62,6 +70,7 @@ class QueryParamsValidator(formencode.FancyValidator):
   type_validator = formencode.validators.OneOf(['exact', 'startswith', 'contains'])
   datetime_validator = formencode.validators.Regex('^\\d{4}-\\d{2}-\\d{2}( \\d{2}:\\d{2}(:\\d{2})?)?$', strip=True)
   range_unit_validator = formencode.validators.OneOf(['hours', 'days', 'weeks', 'months'])
+  product_validator = formencode.validators.PlainText(strip=True)
 
   def _to_python(self, value, state):
     q = QueryParams()
@@ -70,6 +79,7 @@ class QueryParamsValidator(formencode.FancyValidator):
     q.date = self.datetime_validator.to_python(value.get('date'), '')
     q.range_value = formencode.validators.Int.to_python(value.get('range_value', '1'))
     q.range_unit = self.range_unit_validator.to_python(value.get('range_unit', 'weeks'))
+    q.product = self.product_validator.to_python(value.get('product', ''))
     return q
 
 validator = QueryParamsValidator()
@@ -81,5 +91,8 @@ class QueryController(BaseController):
       c.reports = c.params.query().list()
     else:
       c.params = QueryParams()
+
+    # I want to run the following query and don't know how. Help...
+    # SELECT DISTINCT product FROM branches
 
     return render_response('query_form')

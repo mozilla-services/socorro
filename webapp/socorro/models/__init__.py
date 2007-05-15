@@ -78,6 +78,12 @@ dumps_table = Table('dumps', meta,
   Column('data', TEXT())
 )
 
+branches_table = Table('branches', meta,
+  Column('product', String(30), primary_key=True),
+  Column('version', String(16), primary_key=True),
+  Column('branch', String(24), nullable=False)
+)
+
 """
 Indexes for our tables based on commonly used queries (subject to change!).
 
@@ -175,6 +181,12 @@ class Dump(object):
   def __str__(self):
     return str(self.report_id)
 
+class Branch(object):
+  def __init__(self, product, version, branch):
+    self.product = product
+    self.version = version
+    self.branch = branch
+
 #
 # Check whether we're running outside Pylons
 #
@@ -205,3 +217,4 @@ report_mapper = assign_mapper(ctx, Report, reports_table,
   }
 )
 dump_mapper = assign_mapper(ctx, Dump, dumps_table)
+branch_mapper = assign_mapper(ctx, Branch, branches_table)

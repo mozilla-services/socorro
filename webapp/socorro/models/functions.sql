@@ -23,7 +23,8 @@ begin
     LOCK reports IN ROW EXCLUSIVE MODE;
     LOCK frames IN ROW EXCLUSIVE MODE;
     LOCK dumps IN ROW EXCLUSIVE MODE;
-    -- LOCK modules IN ROW EXCLUSIVE MODE;
+    LOCK modules IN ROW EXCLUSIVE MODE;
+    LOCK extensions IN ROW EXCLUSIVE MODE;
 
     if old_partition > 0 then
         old_tablename := 'reports_part' || old_partition::text;
@@ -49,6 +50,18 @@ begin
         execute cmd;
 
         old_tablename := 'dumps_part' || old_partition::text;
+        cmd := subst('ALTER TABLE $$ ADD CHECK( report_id <= $$ )',
+                     ARRAY[ quote_ident(old_tablename),
+                            quote_literal(old_end_id) ]);
+        execute cmd;
+
+	old_tablename := 'modules_part' || old_partition::text;
+	cmd := subst('ALTER TABLE $$ ADD CHECK( report_id <= $$ )',
+	             ARRAY[ quote_ident(old_tablename),
+                            quote_literal(old_end_id) ]);
+        execute cmd;
+
+        old_tablename := 'extensions_part' || old_partition::text;
         cmd := subst('ALTER TABLE $$ ADD CHECK( report_id <= $$ )',
                      ARRAY[ quote_ident(old_tablename),
                             quote_literal(old_end_id) ]);
@@ -94,6 +107,40 @@ begin
                   ON INSERT TO frames
                   DO INSTEAD INSERT INTO $$ VALUES (NEW.*)',
                   ARRAY [ quote_ident(objname) ]);
+    execute cmd;
+
+    objname := 'modules_part' || new_partition::text;
+    cmd := subst('CREATE TABLE $$ (
+                    CHECK(report_id >= $$),
+                    PRIMARY KEY(report_id, module_id),
+                    FOREIGN KEY(report_id) REFERENCES $$ (id)
+                  ) INHERITS (modules)',
+                 ARRAY[ quote_ident(objname),
+                        quote_literal(start_id),
+                        quote_ident(tablename) ]);
+    execute cmd;
+
+    cmd := subst('CREATE OR REPLACE RULE rule_modules_partition AS
+                  ON INSERT TO modules
+                  DO INSTEAD INSERT INTO $$ VALUES (NEW.*)',
+                 ARRAY[ quote_ident(objname) ]);
+    execute cmd;
+
+    objname := 'extensions_part' || new_partition::text;
+    cmd := subst('CREATE TABLE $$ (
+                    CHECK(report_id >= $$),
+                    PRIMARY KEY(report_id, extension_id),
+                    FOREIGN KEY(report_id) REFERENCES $$ (id)
+                  ) INHERITS (extensions)',
+                 ARRAY[ quote_ident(objname),
+                        quote_literal(start_id),
+                        quote_ident(tablename) ]);
+    execute cmd;
+
+    cmd := subst('CREATE OR REPLACE RULE rule_extensions_partition AS
+                  ON INSERT TO extensions
+                  DO INSTEAD INSERT INTO $$ VALUES (NEW.*)',
+                 ARRAY[ quote_ident(objname) ]);
     execute cmd;
 
     objname := 'dumps_part' || new_partition::text;
