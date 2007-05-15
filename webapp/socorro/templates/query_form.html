@@ -13,6 +13,36 @@
    <input type="hidden" name="do_query" value="1" />
 
    <p>
+    <label for="product">Product: </label>
+    <select name="product" size="4" multiple="multiple">
+     <option py:for="(product,) in c.products"
+             value="${product}"
+	     selected="${(product in c.params.products) and 'selected' or ''}">
+      ${product}
+     </option>
+    </select>
+
+    <label for="branch">Branch: </label>
+    <select name="branch" size="4" multiple="multiple">
+     <option py:for="(branch,) in c.branches"
+             value="${branch}"
+	     selected="${(branch in c.params.branches) and 'selected' or ''}">
+      ${branch}
+     </option>
+    </select>
+
+    <label for="version">Version: </label>
+    <!-- Want some fancy AJAX goodness here! -->
+    <select name="version" size="4" multiple="multiple">
+     <option py:for="(product, version) in c.prodversions"
+             value="${product}:${version}"
+	     selected="${ ((product, version) in c.params.versions) and 'selected' or ''}">
+      ${product} ${version}
+     </option>
+    </select>
+   </p>
+
+   <p>
     <label for="signature_type">Signature: </label>
     <select name="signature_type">
      <option py:for="(value, desc) in (('contains', 'contains'),
