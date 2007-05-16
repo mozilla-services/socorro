@@ -2,7 +2,21 @@ import os
 import config
 import socorro.models as model
 import simplejson
-from datetime import datetime
+from datetime import datetime, tzinfo, timedelta
+
+ZERO = timedelta(0)
+
+class UTC(tzinfo):
+  def utcoffset(self, dt):
+    return ZERO
+
+  def tzname(self, dt):
+    return "UTC"
+
+  def dst(self, dt):
+    return ZERO
+
+utctz = UTC()
 
 def fixupSourcePath(path):
   """Given a full path of a file in a Mozilla source tree,
@@ -84,7 +98,7 @@ class Processor(object):
       json = simplejson.load(jsonFile)
       report.build = json["BuildID"]
       if json["timestamp"]:
-        report.date = datetime.utcfromtimestamp(json["timestamp"])
+        report.date = datetime.fromtimestamp(json["timestamp"], utctz)
       report.version = json["Version"]
       report.vendor = json["Vendor"]
       report.product = json["ProductName"]
