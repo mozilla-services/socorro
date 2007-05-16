@@ -112,7 +112,7 @@ begin
     objname := 'modules_part' || new_partition::text;
     cmd := subst('CREATE TABLE $$ (
                     CHECK(report_id >= $$),
-                    PRIMARY KEY(report_id, module_id),
+                    PRIMARY KEY(report_id, module_key),
                     FOREIGN KEY(report_id) REFERENCES $$ (id)
                   ) INHERITS (modules)',
                  ARRAY[ quote_ident(objname),
@@ -129,7 +129,7 @@ begin
     objname := 'extensions_part' || new_partition::text;
     cmd := subst('CREATE TABLE $$ (
                     CHECK(report_id >= $$),
-                    PRIMARY KEY(report_id, extension_id),
+                    PRIMARY KEY(report_id, extension_key),
                     FOREIGN KEY(report_id) REFERENCES $$ (id)
                   ) INHERITS (extensions)',
                  ARRAY[ quote_ident(objname),

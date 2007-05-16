@@ -73,6 +73,22 @@ frames_table = Table('frames', meta,
   Column('instruction', String(10))
 )
 
+modules_table = Table('modules', meta,
+  Column('report_id', Integer, ForeignKey('reports.id'), primary_key=True),
+  Column('module_key', Integer, primary_key=True, autoincrement=False),
+  Column('filename', TruncatingString(40), nullable=False),
+  Column('debug_id', TruncatingString(50), nullable=False),
+  Column('module_version', TruncatingString(15)),
+  Column('debug_filename', TruncatingString(40)),
+)
+
+extensions_table = Table('extensions', meta,
+  Column('report_id', Integer, ForeignKey('reports.id'), primary_key=True),
+  Column('extension_key', Integer, primary_key=True, autoincrement=False),
+  Column('extension_id', String(100), nullable=False),
+  Column('extension_version', String(16))
+)
+
 dumps_table = Table('dumps', meta,
   Column('report_id', Integer, ForeignKey('reports.id'), primary_key=True),
   Column('data', TEXT())
@@ -187,6 +203,23 @@ class Branch(object):
     self.version = version
     self.branch = branch
 
+class Module(object):
+  def __init__(self, report_id, module_key, filename, debug_id,
+               module_version, debug_filename):
+    self.report_id = report_id
+    self.module_key = module_key
+    self.filename = filename
+    self.debug_id = debug_id
+    self.module_version = module_version
+    self.debug_filename = debug_filename
+
+class Extension(object):
+  def __init__(self, report_id, extension_key, extension_id, extension_version):
+    self.report_id = report_id
+    self.exension_key = extension_key
+    self.extension_id = extension_id
+    self.extension_version = extension_version
+
 #
 # Check whether we're running outside Pylons
 #
@@ -213,8 +246,12 @@ report_mapper = assign_mapper(ctx, Report, reports_table,
   properties = {
     'frames': relation(Frame, lazy=True, cascade="all, delete-orphan", 
                        order_by=[frames_table.c.frame_num]),
-    'dumps': relation(Dump, lazy=True, cascade="all, delete-orphan")
+    'dumps': relation(Dump, lazy=True, cascade="all, delete-orphan"),
+    'modules': relation(Module, lazy=True, cascade="all, delete-orphan"),
+    'extensions': relation(Extension, lazy=True, cascade="all, delete-orphan"),
   }
 )
 dump_mapper = assign_mapper(ctx, Dump, dumps_table)
 branch_mapper = assign_mapper(ctx, Branch, branches_table)
+module_mapper = assign_mapper(ctx, Module, modules_table)
+extension_mapper = assign_mapper(ctx, Extension, extensions_table)
