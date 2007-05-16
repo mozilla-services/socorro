@@ -54,7 +54,7 @@ class GaminHelper:
     }
     try:
       return gaminCodes[event]
-    except:
+    except IndexError:
       return "unknown"
     
   def __eventhandler_helper(self, pathName, event, userData):
