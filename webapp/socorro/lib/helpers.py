@@ -19,3 +19,10 @@ def wrap_helpers(localdict):
             continue
         localdict[name] = helper_wrapper(func)
 wrap_helpers(locals())
+
+def EmptyFilter(x):
+  """Return None if the argument is an empty string, otherwise
+     return the argument."""
+  if x == '':
+    return None
+  return x

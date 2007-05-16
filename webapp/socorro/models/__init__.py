@@ -6,6 +6,7 @@ from pylons.database import session_context
 from datetime import datetime
 
 import sys
+import re
 
 meta = DynamicMetaData()
 
@@ -66,11 +67,7 @@ reports_table = Table('reports', meta,
 frames_table = Table('frames', meta,
   Column('report_id', Integer, ForeignKey('reports.id'), primary_key=True),
   Column('frame_num', Integer, nullable=False, primary_key=True, autoincrement=False),
-  Column('module_name', TruncatingString(50)),
-  Column('function', TruncatingString(100)),
-  Column('source', TruncatingString(200)),
-  Column('source_line', Integer),
-  Column('instruction', String(10))
+  Column('signature', TruncatingString(255))
 )
 
 modules_table = Table('modules', meta,
@@ -113,13 +110,23 @@ Note:
 # Top crashers index, for use with the top crasher reports query.
 Index('idx_reports_date', reports_table.c.date, reports_table.c.product, reports_table.c.version, reports_table.c.build)
 
+filename_re = re.compile('[/\\\\]([^/\\\\]+)$')
 
-def EmptyFilter(x):
-  """Return None if the argument is an empty string, otherwise
-     return the argument."""
-  if x == '':
-    return None
-  return x
+def make_signature(module_name, function, source, source_line, instruction):
+  if function is not None:
+    return function
+
+  if source is not None and source_line is not None:
+    filename = filename_re.search(source)
+    if filename is not None:
+      source = filename.group(1)
+
+    return '%s#%s' % (source, source_line)
+
+  if module_name is not None:
+    return '%s@%s' % (module_name, instruction)
+
+  return '@%s' % instruction
 
 class Frame(object):
   def __str__(self):
@@ -128,28 +135,10 @@ class Frame(object):
     else:
       return ""
 
-  def readline(self, line):
-    frame_data = dict(zip(['thread_num', 'frame_num', 'module_name',
-                           'function', 'source', 'source_line',
-                           'instruction'],
-                          map(EmptyFilter, line.split("|"))))
-    self.__dict__.update(frame_data)
-
-  def signature(self):
-    if self.function is not None:
-      return self.function
-
-    if self.source is not None and self.source_line is not None:
-      return '%s#%s' % (self.source, self.source_line)
-
-    if self.module_name is not None:
-      # Do we want to normalize this against the module base address?
-      # Or does breakpad already do this for us? (I doubt it!)
-      # This is a moot point until minidump_stackwalk gives us
-      # the module enumeration.
-      return '%s@%s' % (self.module_name, self.instruction)
-
-    return '@%s' % self.instruction
+  def __init__(self, report_id, frame_num, module_name, function, source, source_line, instruction):
+    self.report_id = report_id
+    self.frame_num = frame_num
+    self.signature = make_signature(module_name, function, source, source_line, instruction)
 
 class Report(object):
   def __init__(self):

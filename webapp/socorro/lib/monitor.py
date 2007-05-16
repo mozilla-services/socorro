@@ -9,7 +9,7 @@ import gamin
 import os
 import select, errno
 from datetime import datetime
-from socorro.lib.processor import Processor, firefoxHook
+from socorro.lib.processor import Processor
 import socorro.lib.config as config
 import socorro.models as model
 from  sqlalchemy.exceptions import SQLError
@@ -250,8 +250,7 @@ def runProcessor(dir, dumpID, pk):
   trans = session.create_transaction()
   try:
     processor = Processor(config.processorMinidump,
-                          config.processorSymbols,
-                          reportHook=firefoxHook)
+                          config.processorSymbols)
     processor.process(dir, dumpID, report)
   except (KeyboardInterrupt, SystemExit):
     trans.rollback()

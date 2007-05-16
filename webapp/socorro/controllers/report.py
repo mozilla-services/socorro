@@ -1,5 +1,5 @@
 from socorro.lib.base import *
-from socorro.lib.processor import Processor, firefoxHook
+from socorro.lib.processor import Processor
 import socorro.lib.collect as collect
 from sqlalchemy import *
 from sqlalchemy.databases.postgres import *
@@ -26,7 +26,7 @@ class ReportController(BaseController):
       # mirror the process used by the standalone collectors
       (dumpID, dumpPath) = collect.storeDump(crash_dump.file)
       collect.storeJSON(dumpID, dumpPath, request.POST)
-      processor = Processor(minidump, [symbol_dir], reportHook=firefoxHook)
+      processor = Processor(minidump, [symbol_dir])
       processor.process(dumpPath, dumpID)
       return Response(collect.makeResponseForClient(dumpID))
 

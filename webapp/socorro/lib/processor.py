@@ -2,6 +2,7 @@ import os
 import config
 import socorro.models as model
 import simplejson
+from socorro.lib.helpers import EmptyFilter
 from datetime import datetime, tzinfo, timedelta
 
 ZERO = timedelta(0)
@@ -28,11 +29,6 @@ def fixupSourcePath(path):
     path = path[moz_pos+1:]
   return path
 
-def firefoxHook(report):
-  for frame in report.frames:
-    if frame.source is not None:
-      frame.source = fixupSourcePath(frame.source)
-      
 class Processor(object):
   def __init__(self, stackwalk_prog, symbol_paths, reportHook=None):
     self.stackwalk_prog = stackwalk_prog
@@ -63,18 +59,20 @@ class Processor(object):
       try:
         fh = self.__breakpad_file(dumpPath)
         self.processJSON(jsonPath, report)
-        crashed_thread = "%s|" % report.read_header(fh)
+        crashed_thread = report.read_header(fh)
 
         for line in fh:
           report.add_dumptext(line)
-          if line.startswith(crashed_thread):
-            frame = model.Frame()
-            frame.readline(line[:-1])
-            frame.report_id = report.id
-            if int(frame.frame_num) < 10:
-              report.frames.append(frame)
-            else:
-              frame.expunge()
+
+          (thread_num, frame_num, module_name, function, source, source_line, instruction) = map(EmptyFilter, line.split("|"))
+          if thread_num == crashed_thread and int(frame_num) < 10:
+            report.frames.append(model.Frame(report.id,
+                                             frame_num,
+                                             module_name,
+                                             function,
+                                             source,
+                                             source_line,
+                                             instruction))
 
       finally:
         self.__finishReport(report)
@@ -86,7 +84,7 @@ class Processor(object):
 
   def __finishReport(self, report):
     if len(report.frames) > 0:
-      report.signature = report.frames[0].signature()
+      report.signature = report.frames[0].signature
     if self.reportHook is not None:
       self.reportHook(report)
     report.finish_dumptext()
