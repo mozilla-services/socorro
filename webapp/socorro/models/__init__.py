@@ -77,7 +77,7 @@ modules_table = Table('modules', meta,
   Column('report_id', Integer, ForeignKey('reports.id'), primary_key=True),
   Column('module_key', Integer, primary_key=True, autoincrement=False),
   Column('filename', TruncatingString(40), nullable=False),
-  Column('debug_id', TruncatingString(50), nullable=False),
+  Column('debug_id', String(33), nullable=False),
   Column('module_version', TruncatingString(15)),
   Column('debug_filename', TruncatingString(40)),
 )
@@ -156,8 +156,8 @@ class Report(object):
     self.date = datetime.now()
 
   def __str__(self):
-    if self.report_id is not None:
-      return str(self.report_id)
+    if self.id is not None:
+      return str(self.id)
     else:
       return ""
 
@@ -165,6 +165,8 @@ class Report(object):
     self.dumpText = ""
 
     crashed_thread = ''
+    module_count = 0
+
     for line in fh:
       self.add_dumptext(line)
       line = line[:-1]
@@ -181,7 +183,12 @@ class Report(object):
       elif values[0] == 'Crash':
         self.reason = values[1]
         self.address = values[2]
-        crashed_thread = values[3] 
+        crashed_thread = values[3]
+      elif values[0] == 'Module':
+        # Module|{Filename}|{Version}|{Debug Filename}|{Debug ID}|{Base Address}|Max Address}|{Main}
+        self.modules.append(Module(self.id, module_count,
+                                   values[1], values[4], values[2], values[3]))
+        module_count += 1
 
   def add_dumptext(self, text):
     self.dumpText += text
