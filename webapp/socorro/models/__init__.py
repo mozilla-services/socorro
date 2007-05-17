@@ -4,6 +4,7 @@ from sqlalchemy.ext.selectresults import SelectResultsExt
 
 from pylons.database import session_context
 from datetime import datetime
+from socorro.lib.helpers import EmptyFilter
 
 import sys
 import re
@@ -74,7 +75,7 @@ modules_table = Table('modules', meta,
   Column('report_id', Integer, ForeignKey('reports.id'), primary_key=True),
   Column('module_key', Integer, primary_key=True, autoincrement=False),
   Column('filename', TruncatingString(40), nullable=False),
-  Column('debug_id', String(33), nullable=False),
+  Column('debug_id', String(33)),
   Column('module_version', TruncatingString(15)),
   Column('debug_filename', TruncatingString(40)),
 )
@@ -162,7 +163,7 @@ class Report(object):
       # empty line separates header data from thread data
       if line == '':
         return crashed_thread
-      values = line.split("|")
+      values = map(EmptyFilter, line.split("|"))
       if values[0] == 'OS':
         self.os_name = values[1]
         self.os_version = values[2]
