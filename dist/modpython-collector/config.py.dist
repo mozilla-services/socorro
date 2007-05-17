@@ -1,4 +1,5 @@
 from stat import S_IRGRP, S_IXGRP, S_IWGRP, S_IRUSR, S_IXUSR, S_IWUSR, S_ISGID
+from datetime import timedelta
 
 # Storage constants
 storageRoot = "/tmp/socorro/"
@@ -23,3 +24,12 @@ dumpDirCount = 500
 
 # Returned to the client with a uuid following
 dumpIDPrefix = "bp-"
+
+# Dump directories age for a while before they are deleted
+dumpDirDelta = timedelta(hours=2)
+dateDirDelta = timedelta(hours=1)
+
+# Database details for standalone dump processors
+processorDatabaseURI = "postgres://socorro:password@localhost:5432/socorro"
+processorMinidump = "/usr/local/bin/minidump_stackwalk"
+processorSymbols = ["/home/sayrer/dump"]

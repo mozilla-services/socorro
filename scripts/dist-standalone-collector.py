@@ -11,9 +11,7 @@ def setupCommon(distPath):
   makeDistDirs(distPath)
   shutil.copy("./docs/README-standalone-collector.txt",
               distPath + "/README.txt")
-  toplevel = ["collect.py", "config.py", "uuid.py"]
-  for name in toplevel:
-    shutil.copy("./webapp/socorro/lib/" + name, distPath + "/" + name)
+  copyLibFiles(["collect.py", "uuid.py"], distPath)
   copyModule("simplejson", "./webapp/socorro/lib/simplejson/*.py", distPath)
 
 setupCommon(cgiCollector)

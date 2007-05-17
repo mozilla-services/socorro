@@ -18,3 +18,10 @@ def makeDistDirs(baseDir, kids=[]):
   for kid in kids:
     if not os.path.exists(os.path.join(baseDir, kid)):
       os.makedirs(os.path.join(baseDir, kid))
+
+def copyLibFiles(fileList, distPath, destSeparator="/"):
+  for f in fileList:
+    shutil.copy("./webapp/socorro/lib/" + f, distPath + destSeparator + f)
+  shutil.copy("./webapp/socorro/lib/config.py",
+              distPath + destSeparator + "config.py.dist")
+  
