@@ -24,19 +24,11 @@
     <table class="records">
      <tr>
       <th>frame</th>
-      <th>module</th>
-      <th>function</th>
-      <th>source</th>
-      <th>line</th>
-      <th>instruction</th>
+      <th>signature</th>
      </tr>
      <tr py:for="frame in c.report.frames">
       <td>${frame.frame_num}</td>
-      <td>${frame.module_name}</td>
-      <td>${frame.function}</td>
-      <td>${frame.source}</td>
-      <td>${frame.source_line}</td>
-      <td>${frame.instruction}</td>
+      <td>${frame.signature}</td>
      </tr>
     </table>
    </py:if>
