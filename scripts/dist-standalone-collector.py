@@ -2,23 +2,19 @@
 import os
 import shutil
 import glob
+from utils import *
 
 cgiCollector = "./dist/cgi-collector"
 modpythonCollector = "./dist/modpython-collector"
 
 def setupCommon(distPath):
-  if not os.path.exists(distPath):
-    os.makedirs(distPath)
-  if not os.path.exists(distPath + "/simplejson"):
-    os.mkdir(distPath + "/simplejson")
+  makeDistDirs(distPath)
   shutil.copy("./docs/README-standalone-collector.txt",
               distPath + "/README.txt")
   toplevel = ["collect.py", "config.py", "uuid.py"]
   for name in toplevel:
     shutil.copy("./webapp/socorro/lib/" + name, distPath + "/" + name)
-  simplejsonFiles = glob.glob("./webapp/socorro/lib/simplejson/*.py")
-  for name in simplejsonFiles:
-    shutil.copy(name, distPath + "/simplejson/" + os.path.basename(name))
+  copyModule("simplejson", "./webapp/socorro/lib/simplejson/*.py", distPath)
 
 setupCommon(cgiCollector)
 setupCommon(modpythonCollector)
@@ -37,3 +33,4 @@ shutil.copy("./webapp/socorro/lib/modpython-collector.py",
 # copy cgi-only files
 shutil.copy("./webapp/socorro/lib/cgi-collector.py",
              cgiCollector + "/collector.py")
+

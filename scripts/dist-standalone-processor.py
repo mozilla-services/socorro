@@ -2,21 +2,12 @@
 import os
 import shutil
 import glob
+from utils import *
 
 processorDir = "./dist/processor/socorro"
 
-def copyModule(name, globString, distPath):
-  if not os.path.exists(os.path.join(distPath, name)):
-    os.mkdir(os.path.join(distPath, name))
-  matchFiles = glob.glob(globString)
-  for fname in matchFiles:
-    shutil.copy(fname, os.path.join(distPath, name, os.path.basename(fname)))
-
 def setup(distPath):
-  if not os.path.exists(distPath):
-    os.makedirs(distPath)
-  if not os.path.exists(os.path.join(distPath, "lib")):
-    os.makedirs(os.path.join(distPath, "lib"))
+  makeDistDirs(distPath, ["lib"])
   toplevel = ["collect.py", "config.py", "uuid.py", "monitor.py",
               "processor.py"]
   for name in toplevel:
