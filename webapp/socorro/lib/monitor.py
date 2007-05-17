@@ -5,15 +5,21 @@
 prunes directories, and detects orphaned dumps and json files. Linux only.
 Requires gamin and accompanying python bindings."""
 
+import sys
 import gamin
 import os
 import select, errno
 from datetime import datetime
+from  sqlalchemy.exceptions import SQLError
+import sqlalchemy
+
+if __name__ == '__main__':
+  thisdir = os.path.dirname(__file__)
+  sys.path.append(os.path.join(thisdir, '..', '..'))
+
 from socorro.lib.processor import Processor
 import socorro.lib.config as config
 import socorro.models as model
-from  sqlalchemy.exceptions import SQLError
-import sqlalchemy
 
 #
 # Adapted from the WAF project (BSD License)
@@ -279,3 +285,6 @@ def start():
   gGamin.watch_directory(config.storageRoot, config.storageRoot)
   gGamin.loop()
   print "stopping Socorro dump file monitor"
+
+if __name__ == '__main__':
+  start()
