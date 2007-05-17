@@ -5,8 +5,7 @@ import glob
 
 processorDir = "./dist/processor/socorro"
 
-
-def moveModule(name, globString, distPath):
+def copyModule(name, globString, distPath):
   if not os.path.exists(os.path.join(distPath, name)):
     os.mkdir(os.path.join(distPath, name))
   matchFiles = glob.glob(globString)
@@ -22,8 +21,8 @@ def setup(distPath):
               "processor.py"]
   for name in toplevel:
     shutil.copy("./webapp/socorro/lib/" + name, distPath + "/lib/" + name)
-  moveModule("simplejson", "./webapp/socorro/lib/simplejson/*.py", distPath)
-  moveModule("models", "./webapp/socorro/models/*.py", distPath)
+  copyModule("simplejson", "./webapp/socorro/lib/simplejson/*.py", distPath)
+  copyModule("models", "./webapp/socorro/models/*.py", distPath)
 
   
 setup(processorDir)
