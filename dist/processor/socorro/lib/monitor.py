@@ -246,8 +246,13 @@ def processDump(fullpath, dir, basename):
     if didProcess:
       print "did process " + dumpID
       dumppath = os.path.join(dir, dumpID + config.dumpFileSuffix)
-      os.remove(fullpath)
-      os.remove(dumppath)
+      
+      if config.saveProcessedMinidumps:
+        os.rename(fullpath, fullpath + ".saved")
+        os.rename(dumppath, dumppath + ".saved")
+      else:
+        os.remove(fullpath)
+        os.remove(dumppath)
    
 def runProcessor(dir, dumpID, pk):
   print "runProcessor for " + dumpID

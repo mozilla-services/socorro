@@ -33,3 +33,7 @@ dateDirDelta = timedelta(hours=1)
 processorDatabaseURI = "postgres://socorro:password@localhost:5432/socorro"
 processorMinidump = "/usr/local/bin/minidump_stackwalk"
 processorSymbols = ["/home/sayrer/dump"]
+
+# When testing, set to true to rename processed minidump files instead of
+# deleting them.
+saveProcessedMinidumps = False
