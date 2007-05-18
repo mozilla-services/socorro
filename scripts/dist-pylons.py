@@ -13,7 +13,7 @@ def setup(distPath):
   shutil.copytree("./webapp/socorro", "./dist/pylons/socorro")
 
   # remove any pyc files
-  for root, dirs, files in os.walk(distPath, topdown=False):
+  for root, dirs, files in os.walk(distPath):
     for name in files:
       if name.endswith(".pyc"):
         os.remove(os.path.join(root, name))
