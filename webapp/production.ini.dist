@@ -17,6 +17,7 @@ port = 5000
 
 [app:main]
 use = egg:Socorro
+filter-with = proxy-prefix
 cache_dir = %(here)s/data
 session_key = socorro
 session_secret = HzhfUGh32FbH5YTxP1NP/imo9
@@ -45,3 +46,7 @@ authkit.users.setup =
 # Debug mode will enable the interactive debugging tool, allowing ANYONE to
 # execute malicious code after an exception is raised.
 set debug = false
+
+[filter:proxy-prefix]
+use = egg:PasteDeploy#prefix
+prefix = /

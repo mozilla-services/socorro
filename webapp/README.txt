@@ -68,5 +68,31 @@ Production Installation and Setup
 5.)  Start the Pylons web server with "paster serve production.ini" 
 
 
-Deploying Behind Apache
-============================================
+Deploying Behind Apache ============================================
+
+Mostly borrowed from
+http://docs.pythonweb.org/display/pylonscookbook/Apache+and+mod_proxy+for+Pylons
+
+Add something like the following to your Apache configuration:
+
+      <VirtualHost *>
+      ServerName some.domain
+
+      # ... usual options here, then at the end add the ProxyPass entries...
+
+      ProxyPass /socorro http://localhost:5000
+      ProxyPassReverse /socorro http://localhost:5000
+      <Proxy *>
+          Order deny,allow
+          Allow from all
+      </Proxy>
+      </VirtualHost>
+
+You should take care not to add a trailing / after the URLs. You
+should also replace 5000 with the number of the port at which the
+server is actually running and replace /forms with the path at which
+you want the Pylons application to be available. For example if you
+want the Pylons application to be available at the root of the domain
+you should replace /socorro with /.
+
+
