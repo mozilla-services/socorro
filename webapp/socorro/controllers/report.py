@@ -12,7 +12,10 @@ class ReportController(BaseController):
     return render_response('report_index')
 
   def add(self):
-    if request.environ['REQUEST_METHOD'] == 'POST':
+    #
+    # Turn this off for now, until it can be tested again
+    #
+    if False:
       #
       # xx fix this
       symbol_dir = g.pylons_config.app_conf['socorro.symbol_dir']

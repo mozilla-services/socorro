@@ -29,17 +29,8 @@ app_instance_uuid = {55e55382-49cc-49e9-921e-498234794242}
 #cache_data_dir = %(here)s/data/cache
 #session_data_dir = %(here)s/data/sessions
 
-# Specify the database for SQLAlchemy to use via
-# pylons.database.session_context.
-
 # CHANGE THIS TO YOUR DB DETAILS:
 sqlalchemy.dburi = postgres://socorro:password@localhost:5432/socorro
-
-# THE DIRECTORY FOR SYMBOL FILES
-socorro.symbol_dir = /home/sayrer/dump
-
-# The path to the Breakpad minidump_stackwalk binary
-socorro.minidump_stackwalk = /usr/local/bin/minidump_stackwalk
 
 # WARNING: *THE LINE BELOW MUST BE UNCOMMENTED ON A PRODUCTION ENVIRONMENT*
 # Debug mode will enable the interactive debugging tool, allowing ANYONE to
