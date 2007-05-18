@@ -1,8 +1,9 @@
 #
 # Socorro - Pylons configuration
 #
-# The %(here)s variable will be replaced with the parent directory of this file
-#
+# The %(here)s variable will be replaced with the parent directory of
+# this file
+
 [DEFAULT]
 debug = true
 email_to = you@yourdomain.com
@@ -30,12 +31,15 @@ app_instance_uuid = {55e55382-49cc-49e9-921e-498234794242}
 
 # Specify the database for SQLAlchemy to use via
 # pylons.database.session_context.
-# %(here) may include a ':' character on Windows environments; this can
-# invalidate the URI when specifying a SQLite db via path name
-#sqlalchemy.dburi = sqlite:///%(here)s/somedb.db
 
-# Specify the database for SQLObject to use via pylons.database.PackageHub.
-#sqlobject.dburi = sqlite://%(here)s/somedb.db
+# CHANGE THIS TO YOUR DB DETAILS:
+sqlalchemy.dburi = postgres://socorro:password@localhost:5432/socorro
+
+# THE DIRECTORY FOR SYMBOL FILES
+socorro.symbol_dir = /home/sayrer/dump
+
+# The path to the Breakpad minidump_stackwalk binary
+socorro.minidump_stackwalk = /usr/local/bin/minidump_stackwalk
 
 # WARNING: *THE LINE BELOW MUST BE UNCOMMENTED ON A PRODUCTION ENVIRONMENT*
 # Debug mode will enable the interactive debugging tool, allowing ANYONE to
