@@ -41,20 +41,32 @@ The upload URL for Breakpad's configuration is
 
 <http://yourhost:5000/report/add>
 
-XXXsayrer Production Installation and Setup
+
+
+
+Production Installation and Setup
 ============================================
-XXXsayrer -- these are just the default instructions...
 
-Install ``Socorro`` using easy_install::
+1.)  Make sure you have all of the required Python packages. This can
+     be accomplished in two ways. The first is by using easy_install
+     as described by the development instructions. You can also install
+     the dependencies that the socorro application has separately:
 
-    easy_install Socorro
+      Pylons>=0.9.4
+      SQLAlchemy>=0.3.5
+      Genshi>=0.3.6
+      AuthKit>=0.3.0pre5
+      Psycopg2
 
-Make a config file as follows::
+2.)  Setup the database as described above, for production use.
 
-    paster make-config Socorro config.ini
-    
-Tweak the config file as appropriate and then setup the application::
+3.)  Copy production.ini.dist to production.ini.
 
-    paster setup-app config.ini
-    
-Then you are ready to go.
+4.)  Customize production.ini for use in your environment. (database
+     details, IP address, server port, etc)
+
+5.)  Start the Pylons web server with "paster serve production.ini" 
+
+
+Deploying Behind Apache
+============================================
