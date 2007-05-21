@@ -5,18 +5,34 @@ import glob
 from utils import *
 
 pylonsDir = "./dist/pylons"
+webapp = "./webapp/socorro/"
+
+def distFilter(tocopy, dirname, names):
+  subtree = dirname[len(webapp):]
+  for name in names:
+    if (name == ".svn"):
+      names.remove(name)
+  for name in names:
+    if (name.endswith("pyc") or name.endswith("~") or
+        name.startswith("#")):
+      pass
+    else:
+      tocopy.append((os.path.join(dirname, name),
+                     os.path.join(pylonsDir, "socorro", subtree, name)))
 
 def setup(distPath):
-  if os.path.exists(distPath):
-    shutil.rmtree(distPath)
   makeDistDirs(distPath)
-  shutil.copytree("./webapp/socorro", "./dist/pylons/socorro")
+  if not os.path.exists(os.path.join(distPath, "socorro")):
+    os.makedirs(os.path.join(distPath, "socorro"))
 
-  # remove any pyc files
-  for root, dirs, files in os.walk(distPath):
-    for name in files:
-      if name.endswith(".pyc"):
-        os.remove(os.path.join(root, name))
+  toCopy = []
+  os.path.walk(webapp, distFilter, toCopy)
+  for (src, dest) in toCopy:
+    if os.path.isdir(src):
+      if not os.path.exists(dest):
+        os.mkdir(dest)
+    else:
+      shutil.copy(src, dest)
 
   topLevel = ["production.ini.dist", "setup.py", "setup.cfg", "README.txt"]
   for name in topLevel:
