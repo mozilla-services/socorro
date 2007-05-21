@@ -1,0 +1,91 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+ "http://www.w3.org/TR/html4/strict.dtd">
+<html xmlns:py="http://genshi.edgewall.org/"
+      xmlns:xi="http://www.w3.org/2001/XInclude">
+ <xi:include href="includes/site.html" />
+ <xi:include href="common.html" />
+ <head>
+  <title>Crash Reports</title>
+ </head>
+ <body>
+  <div id="content">
+  <h1 class="first">Crash Reports</h1>
+
+  <form name="query" method="GET" action="${h.url_for(action='query')}">
+   <input type="hidden" name="do_query" value="1" />
+
+   <p>
+    <label for="product">Product: </label>
+    <select name="product" size="4" multiple="multiple">
+     <option py:for="(product,) in c.products"
+             value="${product}"
+	     selected="${(product in c.params.products) and 'selected' or ''}">
+      ${product}
+     </option>
+    </select>
+
+    <label for="branch">Branch: </label>
+    <select name="branch" size="4" multiple="multiple">
+     <option py:for="(branch,) in c.branches"
+             value="${branch}"
+	     selected="${(branch in c.params.branches) and 'selected' or ''}">
+      ${branch}
+     </option>
+    </select>
+
+    <label for="version">Version: </label>
+    <!-- Want some fancy AJAX goodness here! -->
+    <select name="version" size="4" multiple="multiple">
+     <option py:for="(product, version) in c.prodversions"
+             value="${product}:${version}"
+	     selected="${ ((product, version) in c.params.versions) and 'selected' or ''}">
+      ${product} ${version}
+     </option>
+    </select>
+   </p>
+
+   <p>
+    <label for="signature_type">Signature: </label>
+    <select name="signature_type">
+     <option py:for="(value, desc) in (('contains', 'contains'),
+                                       ('exact', 'is exactly'),
+                                       ('startswith', 'start with'))"
+             value="${value}"
+             selected="${c.params.signature_type == value and 'selected' or ''}">
+      ${desc}
+     </option>
+    </select>
+    <input type="text" name="signature" value="${c.params.signature}" />
+   </p>
+
+   <p>
+    <label for="date">Occuring before date (default: now, format yyyy-mm-dd HH:MM:SS): </label>
+    <input type="text" name="date" size="20" value="${c.params.date}" />
+    <br />
+    <label for="range_value">Date range: </label>
+    <input type="text" name="range_value" value="${c.params.range_value}" size="2" /><select name="range_unit">
+      <option py:for="interval in ('hours', 'days', 'weeks', 'months')"
+              value="${interval}"
+              selected="${c.params.range_unit == interval and 'selected' or ''}">
+       ${interval}
+      </option>
+    </select>
+   </p>
+
+   <input type="submit" />
+  </form>
+
+  <py:if test="c.reports">
+   <h2>Query Results</h2>
+
+   <p>${str(c.params)}</p>
+
+   ${list_reports(c.reports)}
+
+  </py:if>
+
+  </div>
+  <!-- end content --> 
+
+ </body>
+</html>

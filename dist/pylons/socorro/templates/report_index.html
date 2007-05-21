@@ -1,0 +1,45 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" 
+ "http://www.w3.org/TR/html4/strict.dtd">
+<html xmlns:py="http://genshi.edgewall.org/"
+   xmlns:xi="http://www.w3.org/2001/XInclude">
+ <xi:include href="includes/site.html" />
+ <head>
+  <title>Breakpad Crash Report: ${c.report.uuid}</title>
+ </head>
+ <body>
+  <div id="content">
+   <h1 class="first">${c.report.product} ${c.report.version}</h1>
+   UUID: ${c.report.uuid} <br/>
+   Time: ${c.report.date} <br/>
+   Build ID: ${c.report.build} <br/>
+   OS: ${c.report.os_name} <br/>
+   OS Version: ${c.report.os_version} <br/>
+   CPU: ${c.report.cpu_name} <br/>
+   CPU Info: ${c.report.cpu_info} <br/>
+   Crash Reason: ${c.report.reason} <br/>
+   Crash Address: ${c.report.address} <br/>
+  
+   <py:if test="len(c.report.frames) > 0">
+    <h2>Stack of Crashing Thread</h2>
+    <table class="records">
+     <tr>
+      <th>frame</th>
+      <th>signature</th>
+     </tr>
+     <tr py:for="frame in c.report.frames">
+      <td>${frame.frame_num}</td>
+      <td>${frame.signature}</td>
+     </tr>
+    </table>
+   </py:if>
+  
+   <py:if test="len(c.report.dumps) == 1">
+   <h2>Raw Dump</h2>
+   <pre py:if="len(c.report.dumps) == 1">${c.report.dumps[0].data}</pre>
+   </py:if>
+ 
+  </div>
+  <!-- end content -->
+ 
+ </body>
+</html>

@@ -1,0 +1,60 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" 
+ "http://www.w3.org/TR/html4/strict.dtd">
+<html xmlns:py="http://genshi.edgewall.org/">
+ <xi:include href="includes/site.html" />
+ <head>
+  <title>Branch Administration</title>
+ </head>
+ <body>
+
+  <div id="content">
+  <h2>Existing Branch Entries:</h2>
+
+  <p>
+   <table border="1" cellspacing="0" cellpadding="2">
+    <thead>
+     <tr>
+      <th>Product</th>
+      <th>Version</th>
+      <th>Branch</th>
+     </tr>
+    </thead>
+    <tbody>
+     <tr py:for="branch in c.branches">
+      <td>${branch.product}</td>
+      <td>${branch.version}</td>
+      <td>${branch.branch}</td>
+     </tr>
+    </tbody>
+   </table>
+  </p>
+
+  <p>
+   <form action="${h.url_for(action='branches')}" method="POST">
+    <label for="product">Product: </label>
+    <input name="product" size="20" />
+    <label for="version">Version: </label>
+    <input name="version" size="8" />
+    <label for="branch">Branch: </label>
+    <input name="branch" size="12" />
+    <input type="submit" name="add_single" value="Add New Entry" />
+   </form>
+  </p>
+
+  <h2>Missing Branch Entries:</h2>
+
+  <p>Not yet implemented.</p>
+
+  <!--
+  <ul>
+   <li py:for="report in c.unbranched">
+    ${report.product} ${report.version}
+   </li>
+  </ul>
+  -->
+
+ </div>
+ <!-- end content -->
+
+ </body>
+</html>

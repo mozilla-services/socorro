@@ -1,0 +1,26 @@
+/**
+ * Styles that are not a part of page layout.
+ *
+ * For example:
+ *  Fonts
+ *  Sizes
+ *  Decoration
+ *  Separators
+ */
+body * {
+  font-family: verdana, arial, sans-serif;
+}
+
+h1.first {
+  margin-top: 0;
+  padding-top: 0;
+}
+
+.record {
+}
+
+.column {
+}
+
+.column label {
+}
