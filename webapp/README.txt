@@ -5,13 +5,16 @@ Development Installation and Setup
  1.) Install easy_install, if you don't have it already.
      <http://peak.telecommunity.com/DevCenter/EasyInstall>
 
- 2.) Create a postgresql database and users as necessary.  For more info, see
-     <http://www.postgresql.org/docs/8.1/static/user-manag.html>
-     You will need psycopg2 as the db driver for postgres.  Some users have
-     needed postgres-dev (CentOS) to install this.  Most distros have a package
-     for this.  psycopg2 was not included in the egg or setup.py because of
-     issues related to its installation.  Install it using your system's package
-     manager
+ 2.) Create a postgresql database and users as necessary.  For more
+     info, see
+     
+      <http://www.postgresql.org/docs/8.1/static/user-manag.html>
+ 
+     You will need psycopg2 as the db driver for postgres.  Some users
+     have needed postgres-dev (CentOS) to install this.  Most distros
+     have a package for this.  psycopg2 was not included in the egg or
+     setup.py because of issues related to its installation.  Install
+     it using your system's package manager
 
      Note: Two files exist in the models directory that can be used to create
      partitions if so desired.  The plpgsql code there is not a part of the
@@ -35,13 +38,11 @@ Development Installation and Setup
      
 The list of reports is available at 
 
-<http://localhost:5000/report/list>
+  <http://localhost:5000/report/list>
 
 The upload URL for Breakpad's configuration is
 
-<http://yourhost:5000/report/add>
-
-
+  <http://yourhost:5000/report/add>
 
 
 Production Installation and Setup
@@ -49,8 +50,17 @@ Production Installation and Setup
 
 1.)  Make sure you have all of the required Python packages. This can
      be accomplished in two ways. The first is by using easy_install
-     as described by the development instructions. You can also install
-     the dependencies that the socorro application has separately:
+     as described by the development instructions. There is a known
+     bug with "paster setup-app" and the proxy filter used with
+     mod_proxy. It is described in the following ticket:
+      
+     <http://trac.pythonpaste.org/pythonpaste/ticket/159>
+
+     Just comment out the "proxy-prefix" configurations in your .ini
+     file and run it, then add them back.
+
+     You can also install the dependencies that the socorro
+     application has separately:
 
       Pylons>=0.9.4
       SQLAlchemy>=0.3.5
@@ -68,7 +78,8 @@ Production Installation and Setup
 5.)  Start the Pylons web server with "paster serve production.ini" 
 
 
-Deploying Behind Apache ============================================
+Deploying Behind Apache
+============================================
 
 Mostly borrowed from
 http://docs.pythonweb.org/display/pylonscookbook/Apache+and+mod_proxy+for+Pylons
@@ -94,5 +105,3 @@ server is actually running and replace /forms with the path at which
 you want the Pylons application to be available. For example if you
 want the Pylons application to be available at the root of the domain
 you should replace /socorro with /.
-
-
