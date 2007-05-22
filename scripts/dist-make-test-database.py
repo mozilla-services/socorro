@@ -190,7 +190,7 @@ except:
 
 def generate_progressive_date(start):
     while True:
-        start = start + timedelta(seconds=randint(-1, 4))
+        start = start + timedelta(seconds=randint(-1, 6))
         yield start
 
 dates = generate_progressive_date(options.date)
@@ -328,12 +328,14 @@ for i in range(0, limit):
     (product, buildid, incident, crash_date, os_string, last_crash, uptime, uid, email, signature, file, line, url, comments) = line.split(',')
 
     (os, os_version) = os_splitter.match(os_string).groups()
-    if os == '' and os_version.find('Darwin') != -1:
-        os = 'Mac OS X'
-    if os == '' and os_version.find('Linux') != -1:
-        os = 'Linux'
     if os[:3] == 'Win':
         os = 'Windows NT'
+    elif os == 'MacOS X':
+        os = 'Mac OS X'
+    elif os == '' and os_version.find('Darwin') != -1:
+        os = 'Mac OS X'
+    elif os == '' and os_version.find('Linux') != -1:
+        os = 'Linux'
 
     # Dict for our insert query.
     row = {'date':        dates.next(),
