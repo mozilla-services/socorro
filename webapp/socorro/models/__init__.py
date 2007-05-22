@@ -208,7 +208,17 @@ class Branch(object):
     self.branch = branch
   
   @staticmethod
-  def getBranches(Branch):
+  def getBranches():
+    """
+    Return a list of distinct [branch] sorted by branch.
+    """
+    return select([branches_table.c.branch],
+                  distinct=True,
+                  order_by=[branches_table.c.branch],
+                  engine=getEngine()).execute()
+
+  @staticmethod
+  def getProductBranches():
     """
     Return a list of distinct [product, branch] sorted by product name and branch.
     """
@@ -218,7 +228,7 @@ class Branch(object):
                             branches_table.c.branch],engine=getEngine()).execute()
 
   @staticmethod
-  def getProducts(Branch):
+  def getProducts():
     """
     Return a list of distinct [product] sorted by product.
     """
@@ -227,7 +237,7 @@ class Branch(object):
                   order_by=branches_table.c.product,engine=getEngine()).execute()
 
   @staticmethod
-  def getProductVersions(Branch):
+  def getProductVersions():
     """
     Return a list of distinct [product, version] sorted by product name and
     version.

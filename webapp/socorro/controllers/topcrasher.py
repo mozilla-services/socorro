@@ -23,12 +23,9 @@ class TopcrasherController(BaseController):
     user can choose which report they want to see.
     """
   
-    # Create an engine to pass to our model.
-    e = create_engine()
-
-    c.products = Branch.getProducts(e)
-    c.branches = Branch.getBranches(e)
-    c.product_versions = Branch.getProductVersions(e)
+    c.products = Branch.getProducts()
+    c.branches = Branch.getProductBranches()
+    c.product_versions = Branch.getProductVersions()
 
     return render_response('topcrasher/index')
 

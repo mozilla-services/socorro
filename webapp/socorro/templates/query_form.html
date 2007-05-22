@@ -45,11 +45,18 @@
    </p>
 
    <p>
+    <select name="signature_search">
+     <option value="signature" selected="${c.params.signature_search == 'signature' and 'selected' or ''}">
+      Stack Signature
+     </option>
+     <option value="stack" selected="${c.params.signature_search == 'stack' and 'selected' or ''}">
+      Top 10 Stack Frames
+     </option>
+    </select>
     <label for="signature_type">Signature: </label>
     <select name="signature_type">
      <option py:for="(value, desc) in (('contains', 'contains'),
-                                       ('exact', 'is exactly'),
-                                       ('startswith', 'start with'))"
+                                       ('exact', 'is exactly'))"
              value="${value}"
              selected="${c.params.signature_type == value and 'selected' or ''}">
       ${desc}

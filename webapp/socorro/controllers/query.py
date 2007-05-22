@@ -1,4 +1,4 @@
-from socorro.models import Report, reports_table, Branch, branches_table
+from socorro.models import Report, reports_table, Branch, branches_table, Frame, frames_table
 from socorro.lib.base import BaseController
 from pylons.database import create_engine
 from pylons import c, session, request
@@ -34,12 +34,21 @@ class QueryParams(object):
     if self.signature != '':
       if self.signature_type == 'contains':
         pattern = '%' + self.signature.replace('%', '%%') + '%'
-        q = q.filter(reports_table.c.signature.like(pattern))
-      elif request.params['signature_type'] == 'startswith':
-        pattern = self.signature.replace('%', '%%') + '%'
-        q = q.filter(reports_table.c.signature.like(pattern))
+        if self.signature_search == 'signature':
+          q = q.filter(reports_table.c.signature.like(pattern))
+        else:
+          q = q.filter(
+            sql.exists([1],
+                       sql.and_(frames_table.c.signature.like(pattern),
+                                frames_table.c.report_id == reports_table.c.id)))
       else:
-        q = q.filter(reports_table.c.signature == self.signature)
+        if self.signature_search == 'signature':
+          q = q.filter(reports_table.c.signature == self.signature)
+        else:
+          q = q.filter(
+            sql.exists([1],
+                       sql.and_(frames_table.c.signature == self.signature,
+                                frames_table.c.report_id == reports_table.c.id)))
 
     if len(self.products) > 0:
       q = q.filter(reports_table.c.product.in_(*self.products))
@@ -65,10 +74,12 @@ class QueryParams(object):
 
     if self.signature != '':
       sigtype = {'exact': 'is exactly',
-                 'startswith': 'starts with',
                  'contains': 'contains'}[self.signature_type]
+
+      sigquery = {'signature': 'the crash signature',
+                  'stack': 'one of the top 10 stack frames'}[self.signature_search]
       
-      str += ", where the crash signature %s '%s'" % (sigtype, self.signature)
+      str += ", where %s %s '%s'" % (sigquery, sigtype, self.signature)
 
     if len(self.products) > 0:
       str += ", and the product is one of %s" % ', '.join(["'%s'" % product for product in self.products])
@@ -95,7 +106,8 @@ class QueryParamsValidator(formencode.FancyValidator):
   """A custom formvalidator which processes request.params into a QueryParams
   instance."""
 
-  type_validator = formencode.validators.OneOf(['exact', 'startswith', 'contains'])
+  query_validator = formencode.validators.OneOf(['signature', 'stack'])
+  type_validator = formencode.validators.OneOf(['exact', 'contains'])
   datetime_validator = formencode.validators.Regex('^\\d{4}-\\d{2}-\\d{2}( \\d{2}:\\d{2}(:\\d{2})?)?$', strip=True)
   range_unit_validator = formencode.validators.OneOf(['hours', 'days', 'weeks', 'months'])
   string_validator = formencode.validators.String(strip=True)
@@ -104,6 +116,7 @@ class QueryParamsValidator(formencode.FancyValidator):
   def _to_python(self, value, state):
     q = QueryParams()
     q.signature = value.get('signature', '')
+    q.signature_search = self.query_validator.to_python(value.get('signature_search', 'signature'))
     q.signature_type = self.type_validator.to_python(value.get('signature_type', 'exact'))
     q.date = self.datetime_validator.to_python(value.get('date'), '')
     q.range_value = formencode.validators.Int.to_python(value.get('range_value', '1'))
@@ -126,17 +139,8 @@ class QueryController(BaseController):
     else:
       c.params = QueryParams()
 
-    e = create_engine()
-
-    # XXXbsmedberg: the results of these queries change once in a blue moon,
-    # and only when additional values are added via the branch administration
-    # page. Can we cache them aggresively somehow?
-    c.products = select([branches_table.c.product], distinct=True,
-                        order_by=Branch.c.product, engine=e).execute()
-    c.branches = select([branches_table.c.branch], distinct=True,
-                        order_by=Branch.c.branch, engine=e).execute()
-    c.prodversions = select([branches_table.c.product, branches_table.c.version],
-                            order_by=[Branch.c.product, Branch.c.version],
-                            engine=e).execute()
+    c.products = Branch.getProducts()
+    c.branches = Branch.getBranches()
+    c.prodversions = Branch.getProductVersions()
 
     return render_response('query_form')
