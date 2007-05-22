@@ -1,0 +1,38 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+ "http://www.w3.org/TR/html4/strict.dtd">
+<html xmlns:py="http://genshi.edgewall.org/"
+      xmlns:xi="http://www.w3.org/2001/XInclude">
+  <xi:include href="../includes/site.html" />
+<head>
+  <title>Available Crasher Reports</title>
+</head>
+
+<body>
+
+<div id="content">
+
+ <h1 class="first">Top Crashers by Branch</h1>
+ <ul>
+  <li py:for="row in c.branches">
+   <a href="${ h.url_for('/'.join(['topcrasher',
+            'bybranch',
+            row.product,
+            row.branch])) }">${row.product} ${row.branch}</a>
+  </li>
+ </ul>
+ 
+ <h1>Top Crashers by Version</h1>
+ <ul>
+  <li py:for="row in c.product_versions">
+   <a href="${ h.url_for('/'.join(['topcrasher',
+            'byversion',
+            row.product,
+            row.version])) }">${row.product} ${row.version}</a>
+  </li>
+ </ul>
+
+</div>
+<!-- end content -->
+
+</body>
+</html>

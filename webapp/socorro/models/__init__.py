@@ -1,9 +1,10 @@
 from sqlalchemy import *
 from sqlalchemy.ext.assignmapper import assign_mapper
 from sqlalchemy.ext.selectresults import SelectResultsExt
-
-from pylons.database import session_context
+from sqlalchemy.ext.sessioncontext import SessionContext
+from pylons.database import session_context, create_engine
 from datetime import datetime
+from socorro.lib import config
 from socorro.lib.helpers import EmptyFilter
 
 import sys
@@ -129,6 +130,13 @@ def make_signature(module_name, function, source, source_line, instruction):
 
   return '@%s' % instruction
 
+def getEngine():
+  """
+  Utility function to retrieve the pylons engine in case we need it in a model
+  for generic 'get' methods.
+  """
+  return create_engine()
+
 class Frame(object):
   def __str__(self):
     if self.report_id is not None:
@@ -144,7 +152,6 @@ class Frame(object):
 class Report(object):
   def __init__(self):
     self.date = datetime.now()
-
   def __str__(self):
     if self.id is not None:
       return str(self.id)
@@ -199,9 +206,39 @@ class Branch(object):
     self.product = product
     self.version = version
     self.branch = branch
+  
+  @staticmethod
+  def getBranches(Branch):
+    """
+    Return a list of distinct [product, branch] sorted by product name and branch.
+    """
+    return select([branches_table.c.product, branches_table.c.branch], 
+                  distinct=True,
+                  order_by=[branches_table.c.product, 
+                            branches_table.c.branch],engine=getEngine()).execute()
+
+  @staticmethod
+  def getProducts(Branch):
+    """
+    Return a list of distinct [product] sorted by product.
+    """
+    return select([branches_table.c.product], 
+                  distinct=True,
+                  order_by=branches_table.c.product,engine=getEngine()).execute()
+
+  @staticmethod
+  def getProductVersions(Branch):
+    """
+    Return a list of distinct [product, version] sorted by product name and
+    version.
+    """
+    return select([branches_table.c.product, branches_table.c.version],
+                  distinct=True,
+                  order_by=[branches_table.c.product,
+                  branches_table.c.version], engine=getEngine()).execute()
 
 class Module(object):
-  def __init__(self, report_id, module_key, filename, debug_id,
+  def __init__(self, report_id, module_key, filename, debug_id, 
                module_version, debug_filename):
     self.report_id = report_id
     self.module_key = module_key
@@ -220,14 +257,12 @@ class Extension(object):
 #
 # Check whether we're running outside Pylons
 #
-ctx = None
 try:
   import paste.deploy
   if paste.deploy.CONFIG.has_key("app_conf"):
     ctx = session_context
+    create_engine()
 except AttributeError:
-  from socorro.lib import config
-  from sqlalchemy.ext.sessioncontext import SessionContext
   localEngine = create_engine(config.processorDatabaseURI, strategy="threadlocal")
   def make_session():
     return create_session(bind_to=localEngine)

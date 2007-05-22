@@ -7,10 +7,9 @@
 
 <head py:match="head" py:attrs="select('@*')">
  <meta py:replace="select('*|text()')" />
- <link href="css/layout.css" rel="stylesheet" type="text/css" media="screen"
-  py:attrs="{'href': '/css/layout.css'}" />
- <link href="css/style.css" rel="stylesheet" type="text/css" media="all" 
-  py:attrs="{'href': '/css/style.css'}" />
+ <link href="${h.url_for('/css/layout.css')}" rel="stylesheet" type="text/css" media="screen" />
+ <link href="${h.url_for('/css/style.css')}" rel="stylesheet" type="text/css" media="all" />
+ <link href="${h.url_for('/favicon.ico')}" rel="icon" type="image/png" />
 </head>
 
 <body py:match="body" py:attrs="select('@*')">
@@ -18,8 +17,10 @@
 <!-- site header -->
 <div id="header">
  <h1>Socorro</h1>
+ <p>Crash Reporter</p>
  <ul>
-  <li>${ h.link_to('Home', h.url_for(controller='query', action='query', id=None)) }</li>
+  <li>${ h.link_to('Find a Report', h.url_for(controller='query', action='query', id=None)) }</li>
+  <li>${ h.link_to('Top Crashers', h.url_for(controller='topcrasher', action='index')) }</li>
  </ul>
 </div>
 <!-- end site header -->

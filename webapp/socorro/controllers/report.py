@@ -19,13 +19,13 @@ class ReportController(BaseController):
       #
       # xx fix this
       symbol_dir = g.pylons_config.app_conf['socorro.symbol_dir']
-      minidump = g.pylons_config.app_conf['socorro.minidump_stackwalk']  
-      
+      minidump = g.pylons_config.app_conf['socorro.minidump_stackwalk']
+
       crash_dump = request.POST['upload_file_minidump']
       if not crash_dump.file:
         #XXXsayrer set a 4xx status
         return Response('Bad request')
-      
+
       # mirror the process used by the standalone collectors
       (dumpID, dumpPath) = collect.storeDump(crash_dump.file)
       collect.storeJSON(dumpID, dumpPath, request.POST)

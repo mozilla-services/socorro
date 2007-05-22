@@ -16,11 +16,44 @@ h1.first {
   padding-top: 0;
 }
 
-.record {
+h1, h2, h3, h4, h5, h6 {
+  border-bottom: 1px solid #eee;
+  color: #400;
+  font-family: 'Times New Roman', Times, serif;
 }
 
-.column {
+/*  lists  */
+.list {
+  margin-top:.5em;
 }
-
-.column label {
+.list td {
+  padding:.2em;
+  text-align:left;
+}
+.list td label {
+  border-bottom:1px dashed #999;
+  font-weight:normal;
+}
+.list th {
+  background:#ccf;
+  border:1px solid #000;
+  font-weight:bold;
+  padding:0;
+}
+.list th a {
+  display: block;
+  padding:. 2em 1.2em .2em .2em;
+  text-align: left;
+}
+.list th a:hover {
+  background-color: #fff;
+}
+.row1 {
+  background-color: #eee;
+}
+.row2 {
+  background-color: #ddd;
+}
+.row1:hover, .row2:hover {
+  background-color: #fff;
 }
