@@ -32,6 +32,24 @@
      </tr>
     </table>
    </py:if>
+
+   <py:if test="len(c.report.modules) > 0">
+    <h2>Modules</h2>
+    <table class="modules">
+     <tr>
+      <th>filename</th>
+      <th>Version</th>
+      <th>Debug Identifier</th>
+      <th>Debug Filename</th>
+     </tr>
+     <tr py:for="module in c.report.modules">
+      <td>${module.filename}</td>
+      <td>${module.module_version}</td>
+      <td>${module.debug_id}</td>
+      <td>${module.debug_filename}</td>
+     </tr>
+    </table>
+   </py:if>
   
    <py:if test="len(c.report.dumps) == 1">
    <h2>Raw Dump</h2>
