@@ -13,6 +13,7 @@ class QueryParams(object):
   """An object representing query conditions for end-user searches."""
   def __init__(self):
     self.signature = ''
+    self.signature_search = 'signature'
     self.signature_type = 'contains'
     self.date = ''
     self.range_value = 1
