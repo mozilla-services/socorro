@@ -26,3 +26,23 @@ def EmptyFilter(x):
   if x == '':
     return None
   return x
+
+def url_quote(s):
+  """
+  Utility function to properly encode "+" characters that are often found
+  in signatures.  Without this, they get automatically converted into
+  spaces by python and we never get any results from the the reports
+  controller.  Cast it to str since it could be None|'' and we don't want 
+  urllib.quote to get angry.
+  """
+  from urllib import quote
+  return quote(str(s))
+
+def url_unquote(s):
+  """
+  Function to properly dencode special urls before passing to url_for.  Used in
+  conjunction with url_quote for "+" characters.
+  """
+  from urllib import unquote
+  return unquote(str(s))
+

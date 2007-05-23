@@ -4,7 +4,6 @@ from socorro.models import Report
 import socorro.lib.collect as collect
 from sqlalchemy import *
 from sqlalchemy.databases.postgres import *
-from urllib import unquote
 
 class ReportController(BaseController):
   def index(self, id):
@@ -15,7 +14,7 @@ class ReportController(BaseController):
 
   def list(self):
     # Unquote manually because default unencoding breaks "+".
-    signature = unquote(request.params['signature'])
+    signature = h.url_unquote(request.params['signature'])
 
     c.signature = signature
     c.reports = Report.select(Report.c.signature==signature, order_by=Report.c.date, limit=100, offset=0)
