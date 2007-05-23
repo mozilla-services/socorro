@@ -13,15 +13,17 @@ def make_map(global_conf={}, app_conf={}):
     # create a dashboard or better entry page.
     map.connect('', controller='query', action='query')
     
+    # Routes to topcrasher reports.  :product and :version follow 'by....'
+    # because I thought it was correct to have parameters after the controller
+    # and action.
     map.connect('topcrasher/byversion/:product/:version',
                 controller='topcrasher', action='byversion',
                 requirements=dict(product='[a-zA-Z\.]+',
                 version='[0-9a-zA-Z\.]+'))
-    map.connect('topcrasher/bybranch/:product/:branch', 
+    map.connect('topcrasher/bybranch/:branch', 
                 controller='topcrasher', action='bybranch',
-                requirements=dict(product='[a-zA-Z\.]+',
-                branch='[0-9a-zA-Z\.]+'))
-    
+                requirements=dict(branch='[0-9a-zA-Z\.]+'))
+
     # This route handles displaying the error page and graphics used in the 404/500
     # error pages. It should likely stay at the top to ensure that the error page is
     # displayed properly.

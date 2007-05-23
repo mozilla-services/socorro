@@ -1,8 +1,7 @@
 from sqlalchemy import *
 from sqlalchemy.ext.assignmapper import assign_mapper
 from sqlalchemy.ext.selectresults import SelectResultsExt
-from sqlalchemy.ext.sessioncontext import SessionContext
-from pylons.database import session_context, create_engine
+from pylons.database import session_context
 from datetime import datetime
 from socorro.lib import config
 from socorro.lib.helpers import EmptyFilter
@@ -81,9 +80,7 @@ modules_table = Table('modules', meta,
   Column('debug_filename', TruncatingString(40)),
 )
 
-extensions_table = Table('extensions', meta,
-  Column('report_id', Integer, ForeignKey('reports.id'), primary_key=True),
-  Column('extension_key', Integer, primary_key=True, autoincrement=False),
+extensions_table = Table('extensions', meta, Column('report_id', Integer, ForeignKey('reports.id'), primary_key=True), Column('extension_key', Integer, primary_key=True, autoincrement=False),
   Column('extension_id', String(100), nullable=False),
   Column('extension_version', String(16))
 )
@@ -135,6 +132,7 @@ def getEngine():
   Utility function to retrieve the pylons engine in case we need it in a model
   for generic 'get' methods.
   """
+  from pylons.database import create_engine
   return create_engine()
 
 class Frame(object):
@@ -268,11 +266,13 @@ class Extension(object):
 # Check whether we're running outside Pylons
 #
 try:
+  ctx = None
   import paste.deploy
   if paste.deploy.CONFIG.has_key("app_conf"):
     ctx = session_context
-    create_engine()
 except AttributeError:
+  from socorro.lib import config
+  from sqlalchemy.ext.sessioncontext import SessionContext
   localEngine = create_engine(config.processorDatabaseURI, strategy="threadlocal")
   def make_session():
     return create_session(bind_to=localEngine)

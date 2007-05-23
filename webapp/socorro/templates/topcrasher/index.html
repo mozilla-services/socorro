@@ -14,17 +14,16 @@
  <h1 class="first">Top Crashers by Branch</h1>
  <ul>
   <li py:for="row in c.branches">
-   <a href="${ h.url_for('/'.join(['topcrasher',
+   <a href="${ h.url_for('/'+'/'.join(['topcrasher',
             'bybranch',
-            row.product,
-            row.branch])) }">${row.product} ${row.branch}</a>
+            row.branch])) }">${row.branch}</a>
   </li>
  </ul>
  
  <h1>Top Crashers by Version</h1>
  <ul>
   <li py:for="row in c.product_versions">
-   <a href="${ h.url_for('/'.join(['topcrasher',
+   <a href="${ h.url_for('/'+'/'.join(['topcrasher',
             'byversion',
             row.product,
             row.version])) }">${row.product} ${row.version}</a>

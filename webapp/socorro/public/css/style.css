@@ -22,11 +22,23 @@ h1, h2, h3, h4, h5, h6 {
   font-family: 'Times New Roman', Times, serif;
 }
 
+h1 {
+  font-size: 1.4em;
+}
+
+h2 {
+  font-size: 1.2em;
+}
+
+h3 {
+  font-size: 1.0em;
+}
+
 /*  lists  */
 .list {
   margin-top:.5em;
 }
-.list td {
+.list tr td {
   padding:.2em;
   text-align:left;
 }

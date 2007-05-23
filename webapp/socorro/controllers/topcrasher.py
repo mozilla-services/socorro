@@ -24,7 +24,7 @@ class TopcrasherController(BaseController):
     """
   
     c.products = Branch.getProducts()
-    c.branches = Branch.getProductBranches()
+    c.branches = Branch.getBranches()
     c.product_versions = Branch.getProductVersions()
 
     return render_response('topcrasher/index')
@@ -50,12 +50,12 @@ class TopcrasherController(BaseController):
 
     c.tc = tc
 
-    return render_response('topcrasher/report')
+    return render_response('topcrasher/byversion')
 
-  def bybranch(self, product, branch):
+  def bybranch(self, branch):
     """
     The purpose of this action is to generate topcrasher reports based on
-    product and branch.
+    branch.
     """
 
     end = func.now()
@@ -66,12 +66,10 @@ class TopcrasherController(BaseController):
     SELECT reports.signature, count(reports.id) AS count FROM branches JOIN
     reports ON branches.product = reports.product AND branches.version = reports.version 
     WHERE reports.date BETWEEN now() - CAST(%(literal)s AS INTERVAL) AND now() AND 
-    branches.branch = %(branches_branch)s AND branches.product = %(branches_product)s 
-    GROUP BY reports.signature ORDER BY count DESC
+    branches.branch = %(branches_branch)s GROUP BY reports.signature ORDER BY count DESC
     """
     where = sql.and_(reports_table.c.date.between(start, end),
-                     branches_table.c.branch==branch,
-                     branches_table.c.product==product)
+                     branches_table.c.branch==branch)
 
     join = branches_table. \
       join(reports_table,
@@ -86,4 +84,4 @@ class TopcrasherController(BaseController):
                  order_by=[desc('count')],
                  engine=create_engine()).execute()
 
-    return render_response('topcrasher/report')
+    return render_response('topcrasher/bybranch')

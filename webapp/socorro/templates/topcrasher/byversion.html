@@ -4,13 +4,13 @@
       xmlns:xi="http://www.w3.org/2001/XInclude">
   <xi:include href="../includes/site.html" />
 <head>
-  <title>Top Crashers for ${c.product} ${c.branch} ${c.version}</title>
+  <title>Top Crashers for ${c.product} ${c.version}</title>
 </head>
 
 <body>
 
 <div id="content" py:choose="c.tc.rowcount">
- <h1 class="first">Top Crashers for ${c.product} ${c.branch} ${c.version}</h1>
+ <h1 class="first">Top Crashers for ${c.product} ${c.version}</h1>
   <p py:when="0">No results were found.</p>
   <div py:otherwise="">Below are the top 100 crashers over the last 2 weeks.
   <table class="list">
@@ -23,7 +23,18 @@
     <?python row=1 ?>
     <tr py:for="tc in c.tc" class="${'row'+str(row%2+1)}">
      <td>${str(row)}</td>
-     <td>${tc.signature}</td>
+     <?python
+     def urlquote(s):
+       """
+       Utility function to properly encode "+" characters that are often found
+       in signatures.  Without this, they get automatically converted into
+       spaces by python and we never get any results from the the reports
+       controller!
+       """
+       import urllib
+       return urllib.quote(s)
+     ?>
+     <td><a href="${h.url_for('/report/list', signature=urlquote(tc.signature))}" title="View reports with this signature.">${tc.signature}</a></td>
      <td>${tc.count}</td>
     <?python row+=1 ?>
     </tr>
