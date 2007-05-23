@@ -18,11 +18,11 @@ def make_map(global_conf={}, app_conf={}):
     # and action.
     map.connect('topcrasher/byversion/:product/:version',
                 controller='topcrasher', action='byversion',
-                requirements=dict(product='[a-zA-Z\.]+',
-                version='[0-9a-zA-Z\.]+'))
+                requirements=dict(product='[a-zA-Z.]+',
+                version='[0-9a-zA-Z.]+'))
     map.connect('topcrasher/bybranch/:branch', 
                 controller='topcrasher', action='bybranch',
-                requirements=dict(branch='[0-9a-zA-Z\.]+'))
+                requirements=dict(branch='[0-9a-zA-Z.]+'))
 
     # This route handles displaying the error page and graphics used in the 404/500
     # error pages. It should likely stay at the top to ensure that the error page is
