@@ -46,10 +46,10 @@
 
    <p>
     <select name="signature_search">
-     <option value="signature" selected="${c.params.signature_search == 'signature' and 'selected' or ''}">
+     <option value="signature" selected="${c.params.getSignatureSearch() == 'signature' and 'selected' or ''}">
       Stack Signature
      </option>
-     <option value="stack" selected="${c.params.signature_search == 'stack' and 'selected' or ''}">
+     <option value="stack" selected="${c.params.getSignatureSearch() == 'stack' and 'selected' or ''}">
       Top 10 Stack Frames
      </option>
     </select>
@@ -58,7 +58,7 @@
      <option py:for="(value, desc) in (('contains', 'contains'),
                                        ('exact', 'is exactly'))"
              value="${value}"
-             selected="${c.params.signature_type == value and 'selected' or ''}">
+             selected="${c.params.getSignatureType() == value and 'selected' or ''}">
       ${desc}
      </option>
     </select>
@@ -70,10 +70,10 @@
     <input type="text" name="date" size="20" value="${c.params.date}" />
     <br />
     <label for="range_value">Date range: </label>
-    <input type="text" name="range_value" value="${c.params.range_value}" size="2" /><select name="range_unit">
+    <input type="text" name="range_value" value="${c.params.getRange()[0]}" size="2" /><select name="range_unit">
       <option py:for="interval in ('hours', 'days', 'weeks', 'months')"
               value="${interval}"
-              selected="${c.params.range_unit == interval and 'selected' or ''}">
+              selected="${c.params.getRange()[1] == interval and 'selected' or ''}">
        ${interval}
       </option>
     </select>
@@ -82,7 +82,7 @@
    <input type="submit" />
   </form>
 
-  <py:if test="c.reports">
+  <py:if test="c.reports is not None">
    <h2>Query Results</h2>
 
    <p>${str(c.params)}</p>
