@@ -27,22 +27,22 @@ def make_app(global_conf, full_stack=True, **app_conf):
 
     # Load our Pylons configuration defaults
     config = load_environment(global_conf, app_conf)
-    config.init_app(global_conf, app_conf, package='socorro', template_engine='genshi')
+    config.init_app(global_conf, app_conf, package='socorro',
+                    template_engine='genshi')
 
     # Load our default Pylons WSGI app and make g available
     app = pylons.wsgiapp.PylonsApp(config, helpers=socorro.lib.helpers,
                                    g=app_globals.Globals)
     g = app.globals
     app = ConfigMiddleware(app, {'app_conf':app_conf,
-        'global_conf':global_conf})
+                                 'global_conf':global_conf})
     
-    # YOUR MIDDLEWARE
-    # Put your own middleware here, so that any problems are caught by the error
-    # handling middleware underneath
+    # YOUR MIDDLEWARE Put your own middleware here, so that any
+    # problems are caught by the error handling middleware underneath
     
-    # If errror handling and exception catching will be handled by middleware
-    # for multiple apps, you will want to set full_stack = False in your config
-    # file so that it can catch the problems.
+    # If errror handling and exception catching will be handled by
+    # middleware for multiple apps, you will want to set full_stack =
+    # False in your config file so that it can catch the problems.
     if asbool(full_stack):
         # Change HTTPExceptions to HTTP responses
         app = httpexceptions.make_middleware(app, global_conf)
@@ -50,11 +50,13 @@ def make_app(global_conf, full_stack=True, **app_conf):
         app = authkit.authenticate.middleware(app, config_paste=app_conf)
     
         # Error Handling
-        app = ErrorHandler(app, global_conf, error_template=error_template, **config.errorware)
+        app = ErrorHandler(app, global_conf, error_template=error_template,
+                           **config.errorware)
     
-        # Display error documents for 401, 403, 404 status codes (if debug is disabled also
-        # intercepts 500)
-        app = ErrorDocuments(app, global_conf, mapper=error_mapper, **app_conf)
+        # Display error documents for 401, 403, 404 status codes (if
+        # debug is disabled also intercepts 500)
+        app = ErrorDocuments(app, global_conf, mapper=error_mapper,
+                             **app_conf)
     
     # Establish the Registry for this application
     app = RegistryManager(app)
