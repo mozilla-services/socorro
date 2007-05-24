@@ -23,7 +23,7 @@
     <?python row=1 ?>
     <tr py:for="tc in c.tc" class="${h.get_row_class(row)}">
      <td>${str(row)}</td>
-     <td><a href="${h.url_for('/report/list', signature=h.url_quote(tc.signature))}" title="View reports with this signature.">${tc.signature}</a></td>
+     <td><a href="${h.url_for('/report/list', signature=tc.signature)}" title="View reports with this signature.">${tc.signature}</a></td>
      <td>${tc.count}</td>
     <?python row+=1 ?>
     </tr>

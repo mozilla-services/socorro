@@ -13,11 +13,10 @@ class ReportController(BaseController):
     return render_response('report/index')
 
   def list(self):
-    # Unquote manually because default unencoding breaks "+".
-    signature = h.url_unquote(request.params['signature'])
-
-    c.signature = signature
-    c.reports = Report.select(Report.c.signature==signature, order_by=Report.c.date, limit=100, offset=0)
+    c.signature = request.params['signature']
+    c.reports = Report.select(sql.and_(Report.c.signature==c.signature,
+                                       Report.c.date > func.now() - sql.cast('2 weeks', PGInterval)),
+                              order_by=Report.c.date, limit=100, offset=0)
     return render_response('report/list')
 
   def add(self):
