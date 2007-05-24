@@ -7,9 +7,6 @@ from pylons.database import create_engine
 
 class QueryController(BaseController):
   def query(self):
-    e = create_engine()
-    e.echo = True
-
     c.params = QueryLimit()
 
     if request.params.get('do_query', None):
