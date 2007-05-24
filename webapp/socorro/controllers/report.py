@@ -1,13 +1,9 @@
 from socorro.lib.base import *
 from socorro.lib.processor import Processor
-from socorro.lib.queryparams import QueryParamValidator, QueryParams
 from socorro.models import Report
 import socorro.lib.collect as collect
 from sqlalchemy import *
 from sqlalchemy.databases.postgres import *
-import formvalidator
-
-validator = QueryParamsValidator()
 
 class ReportController(BaseController):
   def index(self, id):
