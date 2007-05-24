@@ -5,20 +5,85 @@ body {
 
 #header {
   border-bottom: 1px solid #000;
+  background: url(../header_bg.png) repeat-x top left;
   min-height: 2em;
-  padding: .5em;
+  padding: .5em .7em .5em .7em;
 }
 
 #header h1 {
+  border: none;
+  color: #fff;
+  font-family: verdana, arial, sans-serif;
+  font-size: 1.8em;
   margin: 0;
   padding: 0;
 }
 
+#header p {
+  font-size: smaller;
+  font-weight: bold;
+  margin: -5px 0 0 0;
+  padding: 0;
+}
+
+#header ul {
+  float: left;
+  list-style-type: none;
+  margin: -21px 0 0 150px;
+  padding: 0;
+}
+
+#header ul li {
+  display: inline;
+  float: left;
+}
+
+#header ul li a {
+  background: #eee;
+  border: 1px outset #600;
+  color: #000;
+  display: block;
+  font-size: smaller;
+  font-weight: bold;
+  padding: 3px;
+  text-decoration: none;
+}
+
+#header ul li a:hover {
+  border: 1px inset #600;
+  background-color: #fff;
+}
+
 #content {
+  clear: both;
   padding: 1em;
 }
 
 #footer {
   border-top: 1px solid #000;
+  background: #fff url(../footer_bg.png) repeat-x top left;
   clear: both;
+  min-height: 4em;
+}
+
+#footer ul {
+  float: left;
+  list-style-type: none;
+  margin: 0 0 0 1em;
+  padding: 0;
+}
+
+#footer ul li {
+  float: left;
+}
+
+#footer ul li a {
+  color: #000;
+  display: block;
+  font-size: smaller;
+  margin: 4px;
+}
+
+#top {
+  display: none;
 }

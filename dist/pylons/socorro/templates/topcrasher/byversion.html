@@ -1,0 +1,37 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+ "http://www.w3.org/TR/html4/strict.dtd">
+<html xmlns:py="http://genshi.edgewall.org/"
+      xmlns:xi="http://www.w3.org/2001/XInclude">
+  <xi:include href="../includes/site.html" />
+<head>
+  <title>Top Crashers for ${c.product} ${c.version}</title>
+</head>
+
+<body>
+
+<div id="content" py:choose="c.tc.rowcount">
+ <h1 class="first">Top Crashers for ${c.product} ${c.version}</h1>
+  <p py:when="0">No results were found.</p>
+  <div py:otherwise="">Below are the top 100 crashers over the last 2 weeks.
+  <table class="list">
+   <thead>
+    <tr>
+     <th>Rank</th><th>Signature</th><th>#</th>
+    </tr>
+   </thead>
+   <tbody>
+    <?python row=1 ?>
+    <tr py:for="tc in c.tc" class="${h.get_row_class(row)}">
+     <td>${str(row)}</td>
+     <td><a href="${h.url_for('/report/list', signature=tc.signature)}" title="View reports with this signature.">${tc.signature}</a></td>
+     <td>${tc.count}</td>
+    <?python row+=1 ?>
+    </tr>
+   </tbody>
+  </table>
+  </div>
+</div>
+<!-- end content -->
+
+</body>
+</html>

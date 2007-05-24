@@ -1,0 +1,89 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" 
+ "http://www.w3.org/TR/html4/strict.dtd">
+<html xmlns:py="http://genshi.edgewall.org/"
+   xmlns:xi="http://www.w3.org/2001/XInclude">
+ <xi:include href="../includes/site.html" />
+ <head>
+  <title>Breakpad Crash Report: ${c.report.uuid}</title>
+ </head>
+ <body>
+  <div id="content">
+   <p>${h.link_to('Record','#record')} ${h.link_to('Frames','#frames')}
+   ${h.link_to('Modules','#modules')} ${h.link_to('Dump', '#dump')}</p>
+   <h1 class="first" id="record">${c.report.product} ${c.report.version} Crash Report</h1>
+   <table class="list record">
+    <tr class="row1">
+     <th>UUID</th><td>${c.report.uuid}</td>
+    </tr>
+    <tr class="row2">
+     <th>Time</th><td>${c.report.date}</td>
+    </tr>
+    <tr class="row1">
+     <th>Build ID</th><td>${c.report.build}</td>
+    </tr>
+    <tr class="row2">
+     <th>OS</th><td>${c.report.os_name}</td>
+    </tr>
+    <tr class="row1">
+     <th>OS Version</th><td>${c.report.os_version}</td>
+    </tr>
+    <tr class="row2">
+     <th>CPU</th><td>${c.report.cpu_name}</td>
+    </tr>
+    <tr class="row1">
+     <th>CPU Info</th><td>${c.report.cpu_info}</td>
+    </tr>
+    <tr class="row2">
+     <th>Crash Reason</th><td>${c.report.reason}</td>
+    </tr>
+    <tr class="row1">
+     <th>Crash Address</th><td>${c.report.address}</td>
+    </tr>
+  </table>
+  
+   <py:if test="len(c.report.frames) > 0">
+    <h2 id="frames">Stack of Crashing Thread</h2>
+    <table class="list">
+     <tr>
+      <th>frame</th>
+      <th>signature</th>
+     </tr>
+     <?python row = 0 ?>
+     <tr py:for="frame in c.report.frames" class="${h.get_row_class(row)}">
+      <td>${frame.frame_num}</td>
+      <td>${frame.signature}</td>
+      <?python row += 1 ?>
+     </tr>
+    </table>
+   </py:if>
+
+   <py:if test="len(c.report.modules) > 0">
+    <h2 id="modules">Modules</h2>
+    <table class="list">
+     <tr>
+      <th>filename</th>
+      <th>Version</th>
+      <th>Debug Identifier</th>
+      <th>Debug Filename</th>
+     </tr>
+     <?python row = 0 ?>
+     <tr py:for="module in c.report.modules" class="${h.get_row_class(row)}">
+      <td>${module.filename}</td>
+      <td>${module.module_version}</td>
+      <td>${module.debug_id}</td>
+      <td>${module.debug_filename}</td>
+      <?python row += 1 ?>
+     </tr>
+    </table>
+   </py:if>
+  
+   <h2 id="dump">Raw Dump</h2>
+   <py:if test="len(c.report.dumps) == 1">
+   <pre py:if="len(c.report.dumps) == 1">${c.report.dumps[0].data}</pre>
+   </py:if>
+ 
+  </div>
+  <!-- end content -->
+ 
+ </body>
+</html>

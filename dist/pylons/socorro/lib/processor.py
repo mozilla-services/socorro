@@ -62,7 +62,9 @@ class Processor(object):
         crashed_thread = report.read_header(fh)
 
         for line in fh:
+
           report.add_dumptext(line)
+          line = line.strip()
 
           (thread_num, frame_num, module_name, function, source, source_line, instruction) = map(EmptyFilter, line.split("|"))
           if thread_num == crashed_thread and int(frame_num) < 10:
