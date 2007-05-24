@@ -47,10 +47,10 @@ h3 {
   font-weight:normal;
 }
 .list th {
-  background:#ccf;
-  border:1px solid #000;
-  font-weight:bold;
-  padding:0;
+  background: #ccf;
+  border: 1px solid #000;
+  font-weight: bold;
+  padding: 2px;
 }
 .list th a {
   display: block;
@@ -68,4 +68,8 @@ h3 {
 }
 .row1:hover, .row2:hover {
   background-color: #fff;
+}
+
+.record th {
+  text-align: right;
 }

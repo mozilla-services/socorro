@@ -12,7 +12,7 @@
  <tbody>
   <?python row = 0 ?>
   <py:for each="report in reports">
-   <tr class="${'row'+str(row%2+1)}">
+   <tr class="${h.get_row_class(row)}">
     <td class="report-date" rowspan="2">
      <a href="${h.url_for(id=report.uuid, controller='report', action='index')}">
       ${report.date.strftime("%Y-%m-%d")}&nbsp;${report.date.strftime("%H:%M")}

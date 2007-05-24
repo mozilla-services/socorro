@@ -8,51 +8,77 @@
  </head>
  <body>
   <div id="content">
-   <h1 class="first">${c.report.product} ${c.report.version}</h1>
-   UUID: ${c.report.uuid} <br/>
-   Time: ${c.report.date} <br/>
-   Build ID: ${c.report.build} <br/>
-   OS: ${c.report.os_name} <br/>
-   OS Version: ${c.report.os_version} <br/>
-   CPU: ${c.report.cpu_name} <br/>
-   CPU Info: ${c.report.cpu_info} <br/>
-   Crash Reason: ${c.report.reason} <br/>
-   Crash Address: ${c.report.address} <br/>
+   <p>${h.link_to('Record','#record')} ${h.link_to('Frames','#frames')}
+   ${h.link_to('Modules','#modules')} ${h.link_to('Dump', '#dump')}</p>
+   <h1 class="first" id="record">${c.report.product} ${c.report.version} Crash Report</h1>
+   <table class="list record">
+    <tr class="row1">
+     <th>UUID</th><td>${c.report.uuid}</td>
+    </tr>
+    <tr class="row2">
+     <th>Time</th><td>${c.report.date}</td>
+    </tr>
+    <tr class="row1">
+     <th>Build ID</th><td>${c.report.build}</td>
+    </tr>
+    <tr class="row2">
+     <th>OS</th><td>${c.report.os_name}</td>
+    </tr>
+    <tr class="row1">
+     <th>OS Version</th><td>${c.report.os_version}</td>
+    </tr>
+    <tr class="row2">
+     <th>CPU</th><td>${c.report.cpu_name}</td>
+    </tr>
+    <tr class="row1">
+     <th>CPU Info</th><td>${c.report.cpu_info}</td>
+    </tr>
+    <tr class="row2">
+     <th>Crash Reason</th><td>${c.report.reason}</td>
+    </tr>
+    <tr class="row1">
+     <th>Crash Address</th><td>${c.report.address}</td>
+    </tr>
+  </table>
   
    <py:if test="len(c.report.frames) > 0">
-    <h2>Stack of Crashing Thread</h2>
-    <table class="records">
+    <h2 id="frames">Stack of Crashing Thread</h2>
+    <table class="list">
      <tr>
       <th>frame</th>
       <th>signature</th>
      </tr>
-     <tr py:for="frame in c.report.frames">
+     <?python row = 0 ?>
+     <tr py:for="frame in c.report.frames" class="${h.get_row_class(row)}">
       <td>${frame.frame_num}</td>
       <td>${frame.signature}</td>
+      <?python row += 1 ?>
      </tr>
     </table>
    </py:if>
 
    <py:if test="len(c.report.modules) > 0">
-    <h2>Modules</h2>
-    <table class="modules">
+    <h2 id="modules">Modules</h2>
+    <table class="list">
      <tr>
       <th>filename</th>
       <th>Version</th>
       <th>Debug Identifier</th>
       <th>Debug Filename</th>
      </tr>
-     <tr py:for="module in c.report.modules">
+     <?python row = 0 ?>
+     <tr py:for="module in c.report.modules" class="${h.get_row_class(row)}">
       <td>${module.filename}</td>
       <td>${module.module_version}</td>
       <td>${module.debug_id}</td>
       <td>${module.debug_filename}</td>
+      <?python row += 1 ?>
      </tr>
     </table>
    </py:if>
   
+   <h2 id="dump">Raw Dump</h2>
    <py:if test="len(c.report.dumps) == 1">
-   <h2>Raw Dump</h2>
    <pre py:if="len(c.report.dumps) == 1">${c.report.dumps[0].data}</pre>
    </py:if>
  

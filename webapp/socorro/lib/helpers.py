@@ -46,3 +46,9 @@ def url_unquote(s):
   from urllib import unquote
   return unquote(str(s))
 
+def get_row_class(i):
+  """
+  Return a row class (1|2) based on passed value.  For use in alternating table
+  row colors.
+  """
+  return 'row'+str(int(i)%2+1)

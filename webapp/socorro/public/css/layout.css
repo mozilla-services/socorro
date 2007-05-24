@@ -83,3 +83,7 @@ body {
   font-size: smaller;
   margin: 4px;
 }
+
+#top {
+  display: none;
+}
