@@ -1,7 +1,6 @@
 from sqlalchemy import *
 from sqlalchemy.ext.assignmapper import assign_mapper
 from sqlalchemy.ext.selectresults import SelectResultsExt
-from pylons.database import session_context
 from datetime import datetime
 from socorro.lib import config
 from socorro.lib.helpers import EmptyFilter
@@ -269,11 +268,13 @@ try:
   ctx = None
   import paste.deploy
   if paste.deploy.CONFIG.has_key("app_conf"):
+    from pylons.database import session_context
     ctx = session_context
 except AttributeError:
   from socorro.lib import config
   from sqlalchemy.ext.sessioncontext import SessionContext
-  localEngine = create_engine(config.processorDatabaseURI, strategy="threadlocal")
+  localEngine = create_engine(config.processorDatabaseURI,
+                              strategy="threadlocal")
   def make_session():
     return create_session(bind_to=localEngine)
   ctx = SessionContext(make_session)
