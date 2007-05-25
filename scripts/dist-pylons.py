@@ -44,5 +44,9 @@ def setup(distPath):
   for name in topLevel:
     shutil.copy(os.path.join("./webapp/", name),
                 os.path.join(pylonsDir, name))
+
+  # move config.py so it doesn't overwrite
+  shutil.move(os.path.join(pylonsDir, "socorro", "lib", "config.py"),
+              os.path.join(pylonsDir, "socorro", "lib", "config.py.dist"))
   
 setup(pylonsDir)

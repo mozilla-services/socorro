@@ -70,12 +70,14 @@ Production Installation and Setup
 
 2.)  Setup the database as described above, for production use.
 
-3.)  Copy production.ini.dist to production.ini.
+3.)  Copy socorro/lib/config.py.dist to socorro/lib/config.py
 
-4.)  Customize production.ini for use in your environment. (database
+4.)  Copy production.ini.dist to production.ini.
+
+5.)  Customize production.ini for use in your environment. (database
      details, IP address, server port, etc)
 
-5.)  Start the Pylons web server with "paster serve production.ini" 
+6.)  Start the Pylons web server with "paster serve production.ini" 
 
 
 Deploying Behind Apache
