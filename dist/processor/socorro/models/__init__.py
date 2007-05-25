@@ -2,8 +2,7 @@ from sqlalchemy import *
 from sqlalchemy.ext.assignmapper import assign_mapper
 from sqlalchemy.ext.selectresults import SelectResultsExt
 from datetime import datetime
-from socorro.lib import config
-from socorro.lib.helpers import EmptyFilter
+from socorro.lib import config, EmptyFilter
 
 import sys
 import re
@@ -266,11 +265,10 @@ class Extension(object):
 #
 try:
   ctx = None
-  import paste.deploy
-  if paste.deploy.CONFIG.has_key("app_conf"):
-    from pylons.database import session_context
-    ctx = session_context
-except AttributeError:
+  import socorro.lib.helpers
+  from pylons.database import session_context
+  ctx = session_context
+except ImportError:
   from socorro.lib import config
   from sqlalchemy.ext.sessioncontext import SessionContext
   localEngine = create_engine(config.processorDatabaseURI,

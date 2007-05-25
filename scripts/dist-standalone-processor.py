@@ -11,8 +11,11 @@ def setup(distPath):
                distPath, "/lib/")
   copyModule("simplejson", "./webapp/socorro/lib/simplejson/*.py", distPath)
   copyModule("models", "./webapp/socorro/models/*.py", distPath)
-  shutil.copy("./webapp/socorro/lib/__init__.py",
-              os.path.join(distPath, "__init__.py"))
+  
+  emptyInitFile = open(os.path.join(distPath, "__init__.py"), 'w')
+  emptyInitFile.write(" \n")
+  emptyInitFile.close()
+  
   shutil.copy("./scripts/start-processor.py",
               os.path.join(distPath, "../start-processor.py"))
   shutil.copy("./docs/README-standalone-processor.txt",

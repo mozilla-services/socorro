@@ -20,13 +20,6 @@ def wrap_helpers(localdict):
         localdict[name] = helper_wrapper(func)
 wrap_helpers(locals())
 
-def EmptyFilter(x):
-  """Return None if the argument is an empty string, otherwise
-     return the argument."""
-  if x == '':
-    return None
-  return x
-
 def get_row_class(i):
   """
   Return a row class (1|2) based on passed value.  For use in alternating table

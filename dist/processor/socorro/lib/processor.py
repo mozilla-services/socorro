@@ -2,7 +2,7 @@ import os
 import config
 import socorro.models as model
 import simplejson
-from socorro.lib.helpers import EmptyFilter
+from socorro.lib import EmptyFilter
 from datetime import datetime, tzinfo, timedelta
 
 ZERO = timedelta(0)
