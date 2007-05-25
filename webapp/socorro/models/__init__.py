@@ -2,8 +2,7 @@ from sqlalchemy import *
 from sqlalchemy.ext.assignmapper import assign_mapper
 from sqlalchemy.ext.selectresults import SelectResultsExt
 from datetime import datetime
-from socorro.lib import config
-from socorro.lib.helpers import EmptyFilter
+from socorro.lib import config, EmptyFilter
 
 import sys
 import re

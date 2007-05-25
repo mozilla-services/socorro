@@ -1,5 +1,5 @@
 from socorro.models import *
-from socorro.lib.helpers import EmptyFilter
+from socorro.lib import EmptyFilter
 import sampledump
 import StringIO
 
