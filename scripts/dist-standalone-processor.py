@@ -7,7 +7,7 @@ processorDir = "./dist/processor/socorro"
 
 def setup(distPath):
   makeDistDirs(distPath, ["lib"])
-  copyLibFiles(["monitor.py", "processor.py", "helpers.py", "__init__.py"],
+  copyLibFiles(["monitor.py", "processor.py", "__init__.py"],
                distPath, "/lib/")
   copyModule("simplejson", "./webapp/socorro/lib/simplejson/*.py", distPath)
   copyModule("models", "./webapp/socorro/models/*.py", distPath)
