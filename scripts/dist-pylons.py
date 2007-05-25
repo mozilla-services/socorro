@@ -6,9 +6,9 @@ from utils import *
 
 pylonsDir = "./dist/pylons"
 webapp = "./webapp/socorro/"
+eggdir = "./webapp/Socorro.egg-info/"
 
 def distFilter(tocopy, dirname, names):
-  subtree = dirname[len(webapp):]
   for name in names:
     if (name == ".svn"):
       names.remove(name)
@@ -17,23 +17,29 @@ def distFilter(tocopy, dirname, names):
         name.startswith("#")):
       pass
     else:
-      tocopy.append((os.path.join(dirname, name),
-                     os.path.join(pylonsDir, "socorro", subtree, name)))
+      tocopy.append((os.path.join(dirname, name), dirname, name))
 
-def setup(distPath):
-  makeDistDirs(distPath)
-  if not os.path.exists(os.path.join(distPath, "socorro")):
-    os.makedirs(os.path.join(distPath, "socorro"))
-
+def copyDirWithNoJunk(targetDir):
   toCopy = []
-  os.path.walk(webapp, distFilter, toCopy)
-  for (src, dest) in toCopy:
+  os.path.walk(targetDir, distFilter, toCopy)
+  for (src, dirname, name) in toCopy:
+    subtree = dirname[len("./webapp/"):]
+    dest = os.path.normpath(os.path.join(pylonsDir, subtree, name))
     if os.path.isdir(src):
       if not os.path.exists(dest):
         os.mkdir(dest)
     else:
       shutil.copy(src, dest)
 
+def setup(distPath):
+  makeDistDirs(distPath)
+  if not os.path.exists(os.path.join(distPath, "socorro")):
+    os.makedirs(os.path.join(distPath, "socorro"))
+  if not os.path.exists(os.path.join(distPath, "Socorro.egg-info")):
+    os.makedirs(os.path.join(distPath, "Socorro.egg-info"))
+  copyDirWithNoJunk(webapp)
+  copyDirWithNoJunk(eggdir)
+  
   topLevel = ["production.ini.dist", "setup.py", "setup.cfg", "README.txt"]
   for name in topLevel:
     shutil.copy(os.path.join("./webapp/", name),
