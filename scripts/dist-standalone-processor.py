@@ -9,7 +9,8 @@ def setup(distPath):
   makeDistDirs(distPath, ["lib"])
   copyLibFiles(["monitor.py", "processor.py", "__init__.py"],
                distPath, "/lib/")
-  copyModule("simplejson", "./webapp/socorro/lib/simplejson/*.py", distPath)
+  copyModule("simplejson", "./webapp/socorro/lib/simplejson/*.py",
+             "./dist/processor")
   copyModule("models", "./webapp/socorro/models/*.py", distPath)
   
   emptyInitFile = open(os.path.join(distPath, "__init__.py"), 'w')
