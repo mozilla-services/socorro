@@ -265,11 +265,10 @@ class Extension(object):
 #
 try:
   ctx = None
-  import paste.deploy
-  if paste.deploy.CONFIG.has_key("app_conf"):
-    from pylons.database import session_context
-    ctx = session_context
-except AttributeError:
+  import socorro.lib.helpers
+  from pylons.database import session_context
+  ctx = session_context
+except ImportError:
   from socorro.lib import config
   from sqlalchemy.ext.sessioncontext import SessionContext
   localEngine = create_engine(config.processorDatabaseURI,
