@@ -284,9 +284,8 @@ def getReport(dumpID):
     return None
   return r
   
-gGamin = None
+gGamin = GaminHelper(gaminCallback)
 def start():
-  gGamin = GaminHelper(gaminCallback)
   print "starting Socorro dump file monitor"
   gGamin.watch_directory(config.storageRoot, config.storageRoot)
   gGamin.loop()
