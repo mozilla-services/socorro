@@ -272,7 +272,9 @@ except ImportError:
   from socorro.lib import config
   from sqlalchemy.ext.sessioncontext import SessionContext
   localEngine = create_engine(config.processorDatabaseURI,
-                              strategy="threadlocal")
+                              strategy="threadlocal",
+                              poolclass=pool.QueuePool, 
+                              pool_recycle=config.processorConnTimeout)
   def make_session():
     return create_session(bind_to=localEngine)
   ctx = SessionContext(make_session)
