@@ -35,8 +35,7 @@ assert r.reason == "EXCEPTION_ACCESS_VIOLATION"
 assert r.address == "0x0"
 assert crashed_thread is not None
 assert crashed_thread == '0'
-
-#XXX skip over Module for now
+assert len(r.modules) == 114 # there are 115 lines, with one bogus module
 
 frame_num = 0
 loop_count = 0

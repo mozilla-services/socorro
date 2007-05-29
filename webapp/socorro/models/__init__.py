@@ -179,9 +179,11 @@ class Report(object):
         crashed_thread = values[3]
       elif values[0] == 'Module':
         # Module|{Filename}|{Version}|{Debug Filename}|{Debug ID}|{Base Address}|Max Address}|{Main}
-        self.modules.append(Module(self.id, module_count,
-                                   values[1], values[4], values[2], values[3]))
-        module_count += 1
+        # we should ignore modules with no filename
+        if values[1]:
+          self.modules.append(Module(self.id, module_count, values[1],
+                                     values[4], values[2], values[3]))
+          module_count += 1
 
   def add_dumptext(self, text):
     self.dumpText += text
