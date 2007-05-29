@@ -13,6 +13,10 @@ import time
 from datetime import datetime
 from  sqlalchemy.exceptions import SQLError
 import sqlalchemy
+import Queue
+# signal must be available for this to work right
+import signal
+import threading
 
 if __name__ == '__main__':
   thisdir = os.path.dirname(__file__)
@@ -217,9 +221,9 @@ def lookForFiles(filename, eventName, userData):
   elif (eventName in ["exists","changed"] and
         filename.endswith(config.jsonFileSuffix)):
     print "%s | Attempting to process %s" % (time.ctime(time.time()), filename)
-    processDump(fullpath, userData, filename)
+    gDumpQueue.put_nowait((fullpath, userData, filename))
 
-def processDump(fullpath, dir, basename):
+def processDump((fullpath, dir, basename)):
   # If there is more than one processor, they will race to process dumps
   # To prevent this from occuring, the processor will first attempt
   # to insert a record with only the ID.
@@ -298,19 +302,32 @@ def getReport(dumpID):
     # This is ok, someone beat us to it
     return None
   return r
+
+gDumpQueue = Queue.Queue(0)
+def dumpWorker(): 
+  while True: 
+    item = gDumpQueue.get(True) 
+    processDump(item)
   
 gGamin = GaminHelper(gaminCallback)
 def start():
-  print "starting Socorro dump file monitor"
+  print "starting Socorro dump file monitor."
 
   # ensure that we have a database
   c = model.localEngine.contextual_connect()
   print "Connected to database."
   c = None
 
+  print "Starting background threads."
+  for i in range(config.backgroundTaskCount):
+    t = threading.Thread(target=dumpWorker)
+    t.setDaemon(True)
+    t.start()
+
   gGamin.watch_directory(config.storageRoot, config.storageRoot)
   gGamin.loop()
-  print "stopping Socorro dump file monitor"
+  
+  print "Stopping Socorro dump file monitor."
 
 if __name__ == '__main__':
   start()

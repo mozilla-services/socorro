@@ -302,10 +302,14 @@ try:
   test = get_engine_conf()
 except (ImportError, TypeError):
   from sqlalchemy.ext.sessioncontext import SessionContext
+  taskCount = config.backgroundTaskCount
+  if taskCount <= 0:
+    raise "config.backgroundTaskCount must be at least 1"
   localEngine = create_engine(config.processorDatabaseURI,
                               strategy="threadlocal",
                               poolclass=pool.QueuePool, 
-                              pool_recycle=config.processorConnTimeout)
+                              pool_recycle=config.processorConnTimeout,
+                              pool_size=taskCount + 1)
   def make_session():
     return create_session(bind_to=localEngine)
   ctx = SessionContext(make_session)

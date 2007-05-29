@@ -35,6 +35,16 @@ processorMinidump = "/usr/local/bin/minidump_stackwalk"
 processorSymbols = ["/home/sayrer/dump"]
 processorConnTimeout = 600
 
+# Number of minidump workers to run
+#
+# Breakpad is memory intensive, so increase this number with care.
+# It must be at least 1.
+#
+# Back of envelope calculation:
+# count = ((physicalMemoryMegabytes / 2) / 300)
+#
+backgroundTaskCount = 2
+
 # By default, minidumps that failed processing will be saved to this directory.
 # NOTE: This must be on the same filesystem as storageRoot, but must not live
 # within storageRoot.
