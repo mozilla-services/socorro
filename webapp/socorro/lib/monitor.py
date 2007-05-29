@@ -227,53 +227,66 @@ def processDump(fullpath, dir, basename):
   report = None
   didProcess = False
 
-  try:
+  report = getReport(dumpID)
+  if report is not None:
     try:
-      report = getReport(dumpID)
-      if report is not None:
+      try:
         session = sqlalchemy.object_session(report)
         session.clear()
         didProcess = runProcessor(dir, dumpID, report.id)
-    except:
-      print "encountered exception... " + dumpID
-      if report is not None and not didProcess:
+      except:
+        print "encountered exception... " + dumpID
         # need to clear the db because we didn't process it
         print "Backout changes to uuid " + dumpID
         r = model.Report.get_by(uuid=dumpID)
         r.refresh()
         r.delete()
         r.flush()
-      raise
-  finally:
-    if didProcess:
-      print "%s | Did process %s" % (time.ctime(time.time()), dumpID)
+        raise
+    finally:
       dumppath = os.path.join(dir, dumpID + config.dumpFileSuffix)
+
+      if didProcess:
+        print "%s | Did process %s" % (time.ctime(time.time()), dumpID)
+        save = config.saveProcessedMinidumps
+        saveSuffix = ".processed"
+      else:
+        print "%s | Failed to process %s" % (time.ctime(time.time()), dumpID)
+        save = config.saveFailedMinidumps
+        saveSuffix = ".failed"
       
-      if config.saveProcessedMinidumps:
-        os.rename(fullpath, fullpath + ".saved")
-        os.rename(dumppath, dumppath + ".saved")
+      if save:
+        os.rename(fullpath,
+                  os.path.join(config.saveMinidumpsTo,
+                               dumpID + config.jsonFileSuffix + saveSuffix))
+        os.rename(dumppath,
+                  os.path.join(config.saveMinidumpsTo,
+                               dumpID + config.dumpFileSuffix + saveSuffix))
       else:
         os.remove(fullpath)
         os.remove(dumppath)
-   
+
 def runProcessor(dir, dumpID, pk):
   print "runProcessor for " + dumpID
   report = model.Report.get_by(id=pk, uuid=dumpID)
   session = sqlalchemy.object_session(report) 
   trans = session.create_transaction()
+  success = False
   try:
     processor = Processor(config.processorMinidump,
                           config.processorSymbols)
     processor.process(dir, dumpID, report)
+    success = True
   except (KeyboardInterrupt, SystemExit):
     trans.rollback()
     raise
   except Exception, e:
+    # XXX We should add the exception to the dump, but I can't figure out how
     print "Error in processor: %s" % e
 
   trans.commit()
   session.clear()
-  return True
+  return success
 
 def getReport(dumpID):
   r = model.Report()

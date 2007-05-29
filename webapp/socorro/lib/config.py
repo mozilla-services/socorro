@@ -35,6 +35,12 @@ processorMinidump = "/usr/local/bin/minidump_stackwalk"
 processorSymbols = ["/home/sayrer/dump"]
 processorConnTimeout = 600
 
+# By default, minidumps that failed processing will be saved to this directory.
+# NOTE: This must be on the same filesystem as storageRoot, but must not live
+# within storageRoot.
+saveMinidumpsTo = '/tmp/socorro-saved'
+saveFailedMinidumps = True
+
 # When testing, set to true to rename processed minidump files instead of
 # deleting them.
 saveProcessedMinidumps = False
