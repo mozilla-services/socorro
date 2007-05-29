@@ -82,7 +82,7 @@
    <input type="submit" />
   </form>
 
-  <py:if test="c.reports is not None">
+  <py:if test="request.params.get('do_query', None)">
    <h2>Query Results</h2>
 
    <p>${str(c.params)}</p>

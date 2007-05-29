@@ -73,10 +73,31 @@ modules_table = Table('modules', meta,
   Column('report_id', Integer, ForeignKey('reports.id'), primary_key=True),
   Column('module_key', Integer, primary_key=True, autoincrement=False),
   Column('filename', TruncatingString(40), nullable=False),
-  Column('debug_id', String(33)),
+  Column('debug_id', String(40)),
   Column('module_version', TruncatingString(15)),
   Column('debug_filename', TruncatingString(40)),
 )
+
+def upgrade_modules(cursor):
+  # See issue 25
+  print "  Upgrading modules(debug_id) datatype"
+  cursor.execute("LOCK modules IN SHARE MODE")
+
+  old_modules_rule = None
+
+  # Drop and recreate the rule_modules_partition rule if it exists
+  cursor.execute("""SELECT definition FROM pg_rules
+                    WHERE rulename = 'rule_modules_partition'
+                    AND tablename = 'modules'""")
+  row = cursor.fetchone()
+  if row:
+    old_modules_rule = row[0]
+    cursor.execute("DROP RULE rule_modules_partition ON modules")
+
+  cursor.execute("ALTER TABLE modules ALTER debug_id TYPE character varying(40)")
+
+  if old_modules_rule is not None:
+    cursor.execute(old_modules_rule)
 
 extensions_table = Table('extensions', meta, Column('report_id', Integer, ForeignKey('reports.id'), primary_key=True), Column('extension_key', Integer, primary_key=True, autoincrement=False),
   Column('extension_id', String(100), nullable=False),
@@ -93,6 +114,14 @@ branches_table = Table('branches', meta,
   Column('version', String(16), primary_key=True),
   Column('branch', String(24), nullable=False)
 )
+
+def upgrade_db(engine):
+  print "Upgrading old data"
+  dbc = engine.raw_connection()
+  cursor = dbc.cursor()
+  upgrade_modules(cursor)
+  dbc.commit()
+  cursor.close()
 
 """
 Indexes for our tables based on commonly used queries (subject to change!).
@@ -179,9 +208,11 @@ class Report(object):
         crashed_thread = values[3]
       elif values[0] == 'Module':
         # Module|{Filename}|{Version}|{Debug Filename}|{Debug ID}|{Base Address}|Max Address}|{Main}
-        self.modules.append(Module(self.id, module_count,
-                                   values[1], values[4], values[2], values[3]))
-        module_count += 1
+        # we should ignore modules with no filename
+        if values[1]:
+          self.modules.append(Module(self.id, module_count, values[1],
+                                     values[4], values[2], values[3]))
+          module_count += 1
 
   def add_dumptext(self, text):
     self.dumpText += text
@@ -266,10 +297,10 @@ class Extension(object):
 try:
   ctx = None
   import socorro.lib.helpers
-  from pylons.database import session_context
+  from pylons.database import session_context, get_engine_conf
   ctx = session_context
-except ImportError:
-  from socorro.lib import config
+  test = get_engine_conf()
+except (ImportError, TypeError):
   from sqlalchemy.ext.sessioncontext import SessionContext
   localEngine = create_engine(config.processorDatabaseURI,
                               strategy="threadlocal",

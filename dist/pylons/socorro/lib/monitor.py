@@ -9,6 +9,7 @@ import sys
 import gamin
 import os
 import select, errno
+import time
 from datetime import datetime
 from  sqlalchemy.exceptions import SQLError
 import sqlalchemy
@@ -215,6 +216,7 @@ def lookForFiles(filename, eventName, userData):
     gGamin.stop_watch(fullpath)
   elif (eventName in ["exists","changed"] and
         filename.endswith(config.jsonFileSuffix)):
+    print "%s | Attempting to process %s" % (time.ctime(time.time()), filename)
     processDump(fullpath, userData, filename)
 
 def processDump(fullpath, dir, basename):
@@ -244,7 +246,7 @@ def processDump(fullpath, dir, basename):
       raise
   finally:
     if didProcess:
-      print "did process " + dumpID
+      print "%s | Did process %s" % (time.ctime(time.time()), dumpID)
       dumppath = os.path.join(dir, dumpID + config.dumpFileSuffix)
       
       if config.saveProcessedMinidumps:
@@ -287,6 +289,12 @@ def getReport(dumpID):
 gGamin = GaminHelper(gaminCallback)
 def start():
   print "starting Socorro dump file monitor"
+
+  # ensure that we have a database
+  c = model.localEngine.contextual_connect()
+  print "Connected to database."
+  c = None
+
   gGamin.watch_directory(config.storageRoot, config.storageRoot)
   gGamin.loop()
   print "stopping Socorro dump file monitor"

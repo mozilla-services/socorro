@@ -96,7 +96,7 @@ Module|winrnr.dll|5.1.2600.2180|0x76fb0000|0x76fb7fff|0
 Module|rasadhlp.dll|5.1.2600.2938|0x76fc0000|0x76fc5fff|0
 Module|clbcatq.dll|2001.12.4414.308|0x76fd0000|0x7704efff|0
 Module|comres.dll|2001.12.4414.258|0x77050000|0x77114fff|0
-Module|oleaut32.dll|5.1.2600.2180|0x77120000|0x771abfff|0
+Module|||||0
 Module|wininet.dll|7.0.5730.11|0x771b0000|0x7727dfff|0
 Module|comctl32.dll|6.0.2900.2982|0x773d0000|0x774d2fff|0
 Module|ole32.dll|5.1.2600.2726|0x774e0000|0x7761cfff|0
