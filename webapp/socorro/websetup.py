@@ -26,6 +26,7 @@ def setup_config(command, filename, section, vars):
   print "Creating tables"
   model.reports_id_sequence.create()
   model.meta.create_all()  
+  model.upgrade_db(engine)
 
   # XXX-Turn this off, for now
   #
