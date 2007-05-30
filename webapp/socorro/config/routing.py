@@ -34,6 +34,7 @@ def make_map(global_conf={}, app_conf={}):
     # to the routes manual @ http://routes.groovie.org/docs/
     map.connect('query', controller='query', action='query')
     map.connect('topcrasher', controller='topcrasher', action='index')
+    map.connect('report/find', controller='report', action='find')
     map.connect(':controller/:action/:id')
 
     return map
