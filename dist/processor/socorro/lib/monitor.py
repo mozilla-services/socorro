@@ -307,13 +307,14 @@ def getReport(dumpID):
   return r
 
 gDumpQueue = Queue.Queue(0)
-def dumpWorker(): 
+def dumpWorker():
+  QueueEmptyError = Queue.Empty
   while True:
     try:
       # block for 5 minutes if no dump
-      item = gDumpQueue.get(True, 300)
+      item = gDumpQueue.get(True, 10)
       processDump(item)
-    except Queue.Empty:
+    except QueueEmptyError:
       print "Worker thread waited 5 minutes with no dump."
       sys.stdout.flush()
     except:
