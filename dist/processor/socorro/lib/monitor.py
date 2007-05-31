@@ -312,7 +312,7 @@ def dumpWorker():
   while True:
     try:
       # block for 5 minutes if no dump
-      item = gDumpQueue.get(True, 10)
+      item = gDumpQueue.get(True, 300)
       processDump(item)
     except QueueEmptyError:
       print "Worker thread waited 5 minutes with no dump."
