@@ -17,6 +17,7 @@ import Queue
 # signal must be available for this to work right
 import signal
 import threading
+import traceback
 
 if __name__ == '__main__':
   thisdir = os.path.dirname(__file__)
@@ -220,8 +221,9 @@ def lookForFiles(filename, eventName, userData):
     gGamin.stop_watch(fullpath)
   elif (eventName in ["exists","changed"] and
         filename.endswith(config.jsonFileSuffix)):
-    print "%s | Attempting to process %s" % (time.ctime(time.time()), filename)
+    print "%s | queueing %s" % (time.ctime(time.time()), filename)
     gDumpQueue.put_nowait((fullpath, userData, filename))
+    print "%s | queue size %d" % (time.ctime(time.time()), gDumpQueue.qsize())
 
 def processDump((fullpath, dir, basename)):
   # If there is more than one processor, they will race to process dumps
@@ -271,6 +273,7 @@ def processDump((fullpath, dir, basename)):
         os.remove(dumppath)
 
 def runProcessor(dir, dumpID, pk):
+  sys.stdout.flush()
   print "runProcessor for " + dumpID
   report = model.Report.get_by(id=pk, uuid=dumpID)
   session = sqlalchemy.object_session(report) 
@@ -305,10 +308,20 @@ def getReport(dumpID):
 
 gDumpQueue = Queue.Queue(0)
 def dumpWorker(): 
-  while True: 
-    item = gDumpQueue.get(True) 
-    processDump(item)
-  
+  while True:
+    try:
+      # block for 5 minutes if no dump
+      item = gDumpQueue.get(True, 300)
+      processDump(item)
+    except Queue.Empty:
+      print "Worker thread waited 5 minutes with no dump."
+      sys.stdout.flush()
+    except:
+      print "Error in worker thread:", sys.exc_info()[0]
+      print sys.exc_info()[1]
+      traceback.print_tb(sys.exc_info()[2])
+      sys.stdout.flush()
+        
 gGamin = GaminHelper(gaminCallback)
 def start():
   print "starting Socorro dump file monitor."
