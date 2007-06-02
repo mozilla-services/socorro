@@ -57,6 +57,7 @@ def getParentPathForDump():
   """Return a directory path to hold dump data, creating if necessary"""
   # First make an hourly directory if necessary
   utc = datetime.utcnow()
+  dateString = "%04u-%02u-%02u-%02u" % (utc.year, utc.month, utc.day, utc.hour)
   datePath = os.path.join(config.storageRoot, str(utc.year), str(utc.month),
                           str(utc.day), str(utc.hour))
 
@@ -64,15 +65,15 @@ def getParentPathForDump():
   # dump directory
   if not os.path.exists(datePath):
     os.makedirs(datePath, config.dirPermissions)
-    return makeDumpDir(datePath)
+    return (makeDumpDir(datePath), dateString)
 
   # return the last-modified dir if it has less than dumpCount entries,
   # otherwise make a new one
   latestDir = findLastModifiedDirInPath(datePath)
   if len(os.listdir(latestDir)) >= config.dumpDirCount:
-    return makeDumpDir(datePath)
+    return (makeDumpDir(datePath), dateString)
   
-  return latestDir
+  return (latestDir, dateString)
 
 def openFileForDumpID(dumpID, dumpDir, suffix, mode):
   filename = os.path.join(dumpDir, dumpID + suffix)
@@ -86,8 +87,8 @@ def openFileForDumpID(dumpID, dumpDir, suffix, mode):
 
 def storeDump(dumpfile):
   """Stream the uploaded dump to a file, and store accompanying metadata.
-Return uuid to client"""
-  dirPath = getParentPathForDump()
+  Returns (dumpID, dumpPath, dateString)"""
+  (dirPath, dateString) = getParentPathForDump()
   dumpID = str(uuid.uuid1())
   outfile = openFileForDumpID(dumpID, dirPath, config.dumpFileSuffix, 'wb')
   
@@ -103,7 +104,7 @@ Return uuid to client"""
   finally:
     outfile.close()
 
-  return (dumpID, dirPath)
+  return (dumpID, dirPath, dateString)
 
 def storeJSON(dumpID, dumpDir, form):
   names = [name for name in form.keys() if name != config.dumpField]
@@ -121,5 +122,10 @@ def storeJSON(dumpID, dumpDir, form):
   finally:
     outfile.close()
 
-def makeResponseForClient(dumpID):
-  return "CrashID=" + config.dumpIDPrefix + dumpID
+def makeResponseForClient(dumpID, dateString):
+  response = "CrashID=%s%s\n" % (config.dumpIDPrefix, dumpID)
+  if config.reporterURL is not None:
+    response += "ViewURL=%s/report/index/%s?date=%s\n" % (config.reporterURL,
+                                                          dumpID,
+                                                          dateString)
+  return response

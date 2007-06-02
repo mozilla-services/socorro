@@ -16,6 +16,10 @@ dirPermissions = S_IRGRP | S_IXGRP | S_IWGRP | S_IRUSR | S_IXUSR | S_IWUSR
 # dumpGID = 501
 dumpGID = None
 
+# Tell the collector where the reporter lives (optional)
+# reporterURL = 'http://crash-stats.mozilla.com'
+reporterURL = None
+
 # The form field the client sends the dump in
 dumpField = "upload_file_minidump"
 
