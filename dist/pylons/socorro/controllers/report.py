@@ -2,8 +2,13 @@ from socorro.lib.base import *
 from socorro.lib.processor import Processor
 from socorro.models import Report
 import socorro.lib.collect as collect
+import socorro.lib.config as config
 from sqlalchemy import *
 from sqlalchemy.databases.postgres import *
+import re
+
+
+matchDumpID = re.compile('^(%s)?([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$' % config.dumpIDPrefix)
 
 class ReportController(BaseController):
   def index(self, id):
@@ -11,6 +16,19 @@ class ReportController(BaseController):
     if c.report is None:
       abort(404, 'Not found')
     return render_response('report/index')
+
+  def find(self):
+    # This method should not touch the database!
+    uuid = None
+    if 'id' in request.params:
+      match = matchDumpID.search(request.params['id'])
+      if match is not None:
+        uuid = match.group(2)
+
+    if uuid is not None:
+      h.redirect_to(action='index', id=uuid)
+    else:
+      h.redirect_to('/')
 
   def list(self):
     c.signature = request.params['signature']

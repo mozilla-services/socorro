@@ -6,17 +6,12 @@ prunes directories, and detects orphaned dumps and json files. Linux only.
 Requires gamin and accompanying python bindings."""
 
 import sys
-import gamin
 import os
-import select, errno
 import time
 from datetime import datetime
 from  sqlalchemy.exceptions import SQLError
 import sqlalchemy
-import Queue
-# signal must be available for this to work right
-import signal
-import threading
+import traceback
 
 if __name__ == '__main__':
   thisdir = os.path.dirname(__file__)
@@ -26,127 +21,10 @@ from socorro.lib.processor import Processor
 import socorro.lib.config as config
 import socorro.models as model
 
-#
-# Adapted from the WAF project (BSD License)
-# http://code.google.com/p/waf/
-#
-class GaminHelper:
-  def __init__(self, eventHandler):
-    """@param eventHandler: callback method for event handling"""
-    self.__gamin = gamin.WatchMonitor()
-    self.__eventHandler = eventHandler # callBack function
-    self.__watchHandler = {} # {name : famId}
-
-  def __del__(self):
-    """clean remove"""
-    if self.__gamin:
-      for handle in self.__watchHandler.keys():
-        self.stop_watch(handle)
-      self.__gamin.disconnect()
-      self.__gamin = None
-
-  def __check_gamin(self):
-    """is gamin connected"""
-    if self.__gamin == None:
-      raise "gamin not init"
-
-  def __code2str(self, event):
-    """convert event numbers to string"""
-    gaminCodes = {
-      1:"changed",
-      2:"deleted",
-      3:"StartExecuting",
-      4:"StopExecuting",
-      5:"created",
-      6:"moved",
-      7:"acknowledge",
-      8:"exists",
-      9:"endExist"
-    }
-    try:
-      return gaminCodes[event]
-    except IndexError:
-      return "unknown"
-    
-  def __eventhandler_helper(self, pathName, event, userData):
-    """local eventhandler helps to convert event numbers to string"""
-    self.__eventHandler(pathName, self.__code2str(event), userData)
-
-  def watching(self, name):
-    return self.__watchHandler.has_key(name)
-
-  def watch_directory(self, name, userData):
-    self.__check_gamin()
-    if self.__watchHandler.has_key(name):
-      raise "dir allready watched"
-    # set gaminId
-    self.__watchHandler[name] = self.__gamin.watch_directory(name, self.__eventhandler_helper, userData)
-    return(self.__watchHandler[name])
-
-  def watch_file(self, name, userData):
-    self.__check_gamin()
-    if self.__watchHandler.has_key( name ):
-      raise "file allready watched"
-    # set famId
-    self.__watchHandler[name] = self.__gamin.watch_directory( name, self.__eventhandler_helper, userData)
-    return(self.__watchHandler[name])
-
-  def stop_watch(self, name):
-    self.__check_gamin()
-    if self.__watchHandler.has_key(name):
-      self.__gamin.stop_watch(name)
-      del self.__watchHandler[name]
-    return None
-
-  def wait_for_event(self):
-    self.__check_gamin()
-    try:
-      select.select([self.__gamin.get_fd()], [], [])
-    except select.error, er:
-      errnumber, strerr = er
-      if errnumber != errno.EINTR:
-        raise strerr
-
-  def event_pending( self ):
-    self.__check_gamin()
-    return self.__gamin.event_pending()
-
-  def handle_events( self ):
-    self.__check_gamin()
-    self.__gamin.handle_events()
-
-  def request_end_loop(self):
-    self.__isLooping = False
-
-  def is_looping(self):
-    return self.__isLooping
-
-  def loop(self):
-    try:
-      self.__isLooping = True
-      while (self.__isLooping) and (self.__gamin):
-        self.wait_for_event()
-        while self.event_pending():
-          self.handle_events()
-          if not self.__isLooping:
-            break
-    except KeyboardInterrupt:
-      self.request_end_loop()
-
-def shouldDeleteDir(path):
-  # check to see if it's empty
-  if not len(os.listdir(path)) == 0:
-    return False
-
+def deleteIfAppropriate(path):
   # don't delete the storage root
   if os.path.samefile(path, config.storageRoot):
-    return False
-
-  if not os.path.isdir(path):
-    raise "shouldDeleteDir called on a file"
-
-  if not path.startswith(config.storageRoot):
-    raise "shouldDeleteDir called on file outside storage root"
+    return
 
   basename = os.path.basename(path)
   isDumpDir = basename.startswith(config.dumpDirPrefix)
@@ -154,76 +32,20 @@ def shouldDeleteDir(path):
   now = datetime.utcnow()
   delta = now - mtime
   
-  # a dump directory that's empty and more than 2 hours old
-  if isDumpDir and delta > config.dumpDirDelta:
-    return True
-  
-  # a date directory that's empty and more than a day old
-  if not isDumpDir and delta > config.dateDirDelta:
-    return True
-    
-  return False
-
-def stopWatchingAndDelete(path):
-  if gGamin.watching(path):
-    gGamin.stop_watch(path)
-  # we race with other machines, so delete can fail
   try:
-    os.rmdir(path)
+    # a dump directory that's empty and more than 2 hours old
+    if isDumpDir and delta > config.dumpDirDelta:
+      print "Cleaning up directory %s" % path
+      os.rmdir(path)
+      # a date directory that's empty and more than a day old
+    elif not isDumpDir and delta > config.dateDirDelta:
+      print "Cleaning up directory %s" % path
+      os.rmdir(path)
   except OSError, e:
-    if e.errno != 2:
+    if e.errno != 2 and e.errno != 39:
       raise e
-    
-def pruneStorageRoot(toppath):
-  """Check for empty directories"""
-  for root, dirs, files in os.walk(toppath, topdown=False):
-    for name in dirs:
-      fullpath = os.path.join(root, name)
-      if shouldDeleteDir(fullpath):
-        stopWatchingAndDelete(fullpath)
-    #XXX check for orphaned dump files
-    return
-  
-rootPathLength = len(config.storageRoot.split(os.sep))
-def gaminCallback(filename, eventName, userData):
-  # Don't do anything if the event loop has been stopped
-  # We'll process these when we start back up
-  if not gGamin.is_looping():
-    return
-  try:
-    lookForFiles(filename, eventName, userData)
-  except (KeyboardInterrupt, SystemExit):
-    gGamin.request_end_loop()
-    
-def lookForFiles(filename, eventName, userData):
-  fullpath = filename
-  if filename != userData:
-    fullpath = os.path.join(userData, filename)
-  depth = len(fullpath.split(os.sep)) - rootPathLength
 
-  # make sure we don't monitor too deep or monitor the root again
-  if depth > 6 or depth < 0:
-    return
-
-  # we can stop watching and delete old, empty stuff
-  isDir = os.path.isdir(fullpath)
-  if isDir and shouldDeleteDir(fullpath):
-    stopWatchingAndDelete(fullpath)
-    
-  # if it's a directory we aren't watching, add it to our dict
-  if eventName in ["exists","created"] and isDir:
-     if not gGamin.watching(fullpath):
-      gGamin.watch_directory(fullpath, fullpath)
-      # try pruning the parent
-      pruneStorageRoot(userData)
-  elif eventName == "deleted" and gGamin.watching(fullpath):
-    gGamin.stop_watch(fullpath)
-  elif (eventName in ["exists","changed"] and
-        filename.endswith(config.jsonFileSuffix)):
-    print "%s | Attempting to process %s" % (time.ctime(time.time()), filename)
-    gDumpQueue.put_nowait((fullpath, userData, filename))
-
-def processDump((fullpath, dir, basename)):
+def processDump(fullpath, dir, basename):
   # If there is more than one processor, they will race to process dumps
   # To prevent this from occuring, the processor will first attempt
   # to insert a record with only the ID.
@@ -271,6 +93,7 @@ def processDump((fullpath, dir, basename)):
         os.remove(dumppath)
 
 def runProcessor(dir, dumpID, pk):
+  sys.stdout.flush()
   print "runProcessor for " + dumpID
   report = model.Report.get_by(id=pk, uuid=dumpID)
   session = sqlalchemy.object_session(report) 
@@ -303,13 +126,19 @@ def getReport(dumpID):
     return None
   return r
 
-gDumpQueue = Queue.Queue(0)
-def dumpWorker(): 
-  while True: 
-    item = gDumpQueue.get(True) 
-    processDump(item)
-  
-gGamin = GaminHelper(gaminCallback)
+def TimedForever():
+  last_time = 0
+  while True:
+    t = time.time()
+    sleep_time = last_time - t + config.processorLoopTime
+    if sleep_time > 0:
+      print "Sleeping for %f seconds." % sleep_time
+      time.sleep(sleep_time)
+    last_time = time.time()
+    yield 1
+
+rootPathLength = len(config.storageRoot.split(os.sep))
+
 def start():
   print "starting Socorro dump file monitor."
 
@@ -318,16 +147,31 @@ def start():
   print "Connected to database."
   c = None
 
-  print "Starting background threads."
-  for i in range(config.backgroundTaskCount):
-    t = threading.Thread(target=dumpWorker)
-    t.setDaemon(True)
-    t.start()
+  try:
+    for i in TimedForever():
+      try:
+        for (root, dirs, files) in os.walk(config.storageRoot, topdown=False):
+          if rootPathLength + 6 > root.split(os.sep):
+            del dirs[0:]
 
-  gGamin.watch_directory(config.storageRoot, config.storageRoot)
-  gGamin.loop()
+          if len(files) == 0 and len(dirs) == 0:
+            deleteIfAppropriate(root)
+
+          for file in files:
+            if file.endswith(config.jsonFileSuffix):
+              path = os.path.join(root, file)
+              processDump(path, root, file)
+        
+      except (KeyboardInterrupt, SystemExit):
+        raise
+      except:
+        print "Error during processing:", sys.exc_info()[0]
+        print sys.exc_info()[1]
+        traceback.print_tb(sys.exc_info()[2])
+        sys.stdout.flush()
+  except (KeyboardInterrupt, SystemExit):
+    print "Stopping Socorro dump file monitor."
+    sys.exit(0)
   
-  print "Stopping Socorro dump file monitor."
-
 if __name__ == '__main__':
   start()
