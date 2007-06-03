@@ -34,7 +34,7 @@ class ReportController(BaseController):
     c.signature = request.params['signature']
     c.reports = Report.select(sql.and_(Report.c.signature==c.signature,
                                        Report.c.date > func.now() - sql.cast('2 weeks', PGInterval)),
-                              order_by=Report.c.date, limit=100, offset=0)
+                              order_by=desc(Report.c.date), limit=100, offset=0)
     return render_response('report/list')
 
   def add(self):
