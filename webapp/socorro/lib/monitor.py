@@ -12,10 +12,17 @@ from datetime import datetime
 from  sqlalchemy.exceptions import SQLError
 import sqlalchemy
 import traceback
+import errno
 
 if __name__ == '__main__':
   thisdir = os.path.dirname(__file__)
   sys.path.append(os.path.join(thisdir, '..', '..'))
+
+def print_exception():
+  print "Caught Error (ignoring):", sys.exc_info()[0]
+  print sys.exc_info()[1]
+  traceback.print_tb(sys.exc_info()[2])
+  sys.stdout.flush()
 
 from socorro.lib.processor import Processor
 import socorro.lib.config as config
@@ -42,8 +49,13 @@ def deleteIfAppropriate(path):
       print "Cleaning up directory %s" % path
       os.rmdir(path)
   except OSError, e:
-    if e.errno != 2 and e.errno != 39:
-      raise e
+    if e.errno not in (errno.ENOENT,
+                       errno.ENOTEMPTY):
+      print_exception()
+  except (KeyboardInterrupt, SystemExit):
+    raise
+  except:
+    print_exception()
 
 def processDump(fullpath, dir, basename):
   # If there is more than one processor, they will race to process dumps
@@ -133,6 +145,7 @@ def TimedForever():
     sleep_time = last_time - t + config.processorLoopTime
     if sleep_time > 0:
       print "Sleeping for %f seconds." % sleep_time
+      sys.stdout.flush()
       time.sleep(sleep_time)
     last_time = time.time()
     yield 1
@@ -165,10 +178,7 @@ def start():
       except (KeyboardInterrupt, SystemExit):
         raise
       except:
-        print "Error during processing:", sys.exc_info()[0]
-        print sys.exc_info()[1]
-        traceback.print_tb(sys.exc_info()[2])
-        sys.stdout.flush()
+        print_exception()
   except (KeyboardInterrupt, SystemExit):
     print "Stopping Socorro dump file monitor."
     sys.exit(0)
