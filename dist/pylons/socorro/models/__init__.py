@@ -447,7 +447,7 @@ def getEngine():
   for generic 'get' methods.
   """
   from pylons.database import create_engine
-  return create_engine()
+  return create_engine(pool_recycle=config.processorConnTimeout)
 
 class Frame(object):
   def __str__(self):
