@@ -7,6 +7,26 @@ from datetime import datetime
 from time import time
 import config
 
+def mkdir(path):
+  """Make a directory, using the permissions and GID specified in the config"""
+  os.mkdir(path, config.dirPermissions)
+  # The umask of the apache process is typically 022. That's not good enough,
+  # and we don't want to mess with the whole process, so we set the permissions
+  # explicitly.
+  os.chmod(path, config.dirPermissions)
+  if config.dumpGID is not None:
+    os.chown(path, -1, config.dumpGID)
+
+def makedirs(path):
+  head, tail = os.path.split(path)
+  if not tail:
+    head, tail = os.path.split(head)
+  if head and tail and not os.path.exists(head):
+    makedirs(head)
+    if tail == os.curdir:
+      return
+  mkdir(path)
+
 def ensureDiskSpace():
   pass
 
@@ -20,6 +40,8 @@ def makeDumpDir(base):
   """Create a directory to hold a group of dumps, and set permissions"""
   tmpPath = tempfile.mkdtemp(dir=base, prefix=config.dumpDirPrefix)
   os.chmod(tmpPath, config.dirPermissions)
+  if config.dumpGID is not None:
+    os.chown(tmpPath, -1, config.dumpGID)
   return tmpPath
 
 
@@ -64,7 +86,7 @@ def getParentPathForDump():
   # if it's not there yet, create the date directory and its first
   # dump directory
   if not os.path.exists(datePath):
-    os.makedirs(datePath, config.dirPermissions)
+    makedirs(datePath)
     return (makeDumpDir(datePath), dateString)
 
   # return the last-modified dir if it has less than dumpCount entries,
