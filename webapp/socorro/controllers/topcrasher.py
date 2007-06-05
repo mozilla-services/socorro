@@ -1,5 +1,6 @@
 from socorro.models import Report, reports_table, Branch, branches_table
 from socorro.lib.base import BaseController
+from socorro.lib.queryparams import BaseLimit
 from pylons.database import create_engine
 from pylons import c, session, request
 from pylons.templating import render_response
@@ -35,20 +36,9 @@ class TopcrasherController(BaseController):
     product and version.
     """
 
-    end = func.now()
-    start = func.now() - sql.cast('2 weeks', PGInterval)
-
-    e = create_engine()
-    tc = select([reports_table.c.signature, func.count(reports_table.c.id)],
-                and_(reports_table.c.product==product,
-                reports_table.c.version==version,
-                reports_table.c.date.between(start,end)),
-                group_by=[reports_table.c.signature], 
-                order_by=desc(func.count(reports_table.c.id)), 
-                limit=100, offset=0,
-                engine=e).execute()
-
-    c.tc = tc
+    c.params = BaseLimit(versions=[(product, version)],
+                             range=(2, 'weeks'))
+    c.tc = c.params.query_topcrashes()
 
     return render_response('topcrasher/byversion')
 
@@ -58,30 +48,8 @@ class TopcrasherController(BaseController):
     branch.
     """
 
-    end = func.now()
-    start = func.now() - sql.cast('2 weeks', PGInterval)
-
-    # Thanks to bsmedberg for his guidance.  Below is the SA equivalent to:
-    """
-    SELECT reports.signature, count(reports.id) AS count FROM branches JOIN
-    reports ON branches.product = reports.product AND branches.version = reports.version 
-    WHERE reports.date BETWEEN now() - CAST(%(literal)s AS INTERVAL) AND now() AND 
-    branches.branch = %(branches_branch)s GROUP BY reports.signature ORDER BY count DESC
-    """
-    where = sql.and_(reports_table.c.date.between(start, end),
-                     branches_table.c.branch==branch)
-
-    join = branches_table. \
-      join(reports_table,
-           sql.and_(branches_table.c.product == reports_table.c.product,
-                    branches_table.c.version == reports_table.c.version))
-
-    c.tc = \
-      sql.select([reports_table.c.signature, func.count(reports_table.c.id).label('count')],
-                 where,
-                 [join],
-                 group_by=[reports_table.c.signature],
-                 order_by=[desc('count')],
-                 engine=create_engine()).execute()
+    c.params = BaseLimit(branches=[branch],
+                             range=(2, 'weeks'))
+    c.tc = c.params.query_topcrashes()
 
     return render_response('topcrasher/bybranch')

@@ -1,4 +1,25 @@
-<table xmlns:py="http://genshi.edgewall.org/" py:def="list_reports(reports)" class="report_list">
+<py:if xmlns:py="http://genshi.edgewall.org/" test="True">
+<table py:def="list_by_signature(signatures, params)" class="list">
+ <thead>
+  <tr>
+   <th>Rank</th><th>Signature</th><th>#</th>
+  </tr>
+ </thead>
+ <tbody>
+  <?python row=1 ?>
+  <tr py:for="signature in signatures" class="${h.get_row_class(row)}">
+   <td>${str(row)}</td>
+   <td>
+    <a href="${h.url_for('/report/list', signature=signature.signature, **params.getURLDict())}"
+       title="View reports with this signature.">${signature.signature}</a>
+   </td>
+   <td>${signature.count}</td>
+  <?python row+=1 ?>
+  </tr>
+ </tbody>
+</table>
+
+<table xmlns:py="http://genshi.edgewall.org/" py:def="list_reports(reports)" class="list">
  <thead>
   <tr>
    <th rowspan="2">Date</th>
@@ -6,22 +27,24 @@
   </tr>
   <tr>
    <th>Signature</th>
+   <th>URL</th>
   </tr>
  </thead>
  <tbody>
+  <?python row = 0 ?>
   <py:for each="report in reports">
-   <tr>
+   <tr class="${h.get_row_class(row)}">
     <td class="report-date" rowspan="2">
      <a href="${h.url_for(id=report.uuid, controller='report', action='index')}">
       ${report.date.strftime("%Y-%m-%d")}&nbsp;${report.date.strftime("%H:%M")}
      </a>
     </td>
-    <td class="report-product">
+    <td class="report-product" colspan="2">
      ${report.product} ${report.version}: ${report.build} -
      ${report.os_name}
     </td>
    </tr>
-   <tr>
+   <tr class="${'row'+str(row%2+1)}">
     <td class="report-signature">
      <code>
       ${report.signature}
@@ -31,6 +54,8 @@
      ${report.url}
     </td>
    </tr>
+   <?python row+=1 ?>
   </py:for>
  </tbody>
 </table>
+</py:if>

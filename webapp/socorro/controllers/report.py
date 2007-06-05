@@ -1,6 +1,7 @@
 from socorro.lib.base import *
 from socorro.lib.processor import Processor
 from socorro.models import Report
+from socorro.lib.queryparams import BySignatureLimit
 import socorro.lib.collect as collect
 import socorro.lib.config as config
 from sqlalchemy import *
@@ -31,10 +32,9 @@ class ReportController(BaseController):
       h.redirect_to('/')
 
   def list(self):
-    c.signature = request.params['signature']
-    c.reports = Report.select(sql.and_(Report.c.signature==c.signature,
-                                       Report.c.date > func.now() - sql.cast('2 weeks', PGInterval)),
-                              order_by=desc(Report.c.date), limit=100, offset=0)
+    c.params = BySignatureLimit()
+    c.params.setFromParams(request.params)
+    c.reports = c.params.query_reports()
     return render_response('report/list')
 
   def add(self):

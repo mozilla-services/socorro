@@ -1,14 +1,10 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
  "http://www.w3.org/TR/html4/strict.dtd">
 
-<?python
-import socorro.lib.config as config
-?>
-
 <html xmlns:py="http://genshi.edgewall.org/"
       xmlns:xi="http://www.w3.org/2001/XInclude">
  <xi:include href="includes/site.html" />
- <xi:include href="common.html" />
+ <xi:include href="includes/common.html" />
  <head>
   <title>Crash Reports</title>
  </head>
@@ -18,8 +14,7 @@ import socorro.lib.config as config
   <form id="quickfind" action="${h.url_for(controller='report', action='find')}"
         py:if="not request.params.get('do_query', None)">
    <input type="submit" value="Go to Report" />
-   <input type="text" size="24" name="id" id="crash-id"
-          value="${config.dumpIDPrefix}" />
+   <input type="text" size="24" name="id" id="crash-id"/>
   </form>
 
   <h1>Search Crash Reports</h1>
@@ -99,7 +94,7 @@ import socorro.lib.config as config
 
    <p>${str(c.params)}</p>
 
-   ${list_reports(c.reports)}
+   ${list_by_signature(c.reports, c.params)}
 
   </py:if>
 

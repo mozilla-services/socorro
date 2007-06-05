@@ -1,10 +1,21 @@
-from socorro.models import Report, Branch, Frame
+from socorro.models import Report, Branch, Frame, reports_table
 import formencode
 import sqlalchemy
+from pylons.database import create_engine
 from sqlalchemy import sql, func, select, types
 from sqlalchemy.databases.postgres import PGInterval
 import re
 from pylons import h
+
+rangeTypes = {
+  'hours': 1,
+  'days': 24,
+  'weeks': 168,
+  'months': 744
+  }
+
+# searches shouldn't span more than 3 months
+maxSearchHours = 24 * 31 * 3
 
 class ProductVersionValidator(formencode.FancyValidator):
   """A custom validator which processes 'product:version' into (product, version)"""
@@ -35,10 +46,16 @@ class BaseLimit(object):
     '^\\d{4}-\\d{2}-\\d{2}( \\d{2}:\\d{2}(:\\d{2})?)?$', strip=True
   )
   range_unit_validator = formencode.validators.OneOf(
-    ['hours', 'days', 'weeks', 'months']
+    rangeTypes.keys()
   )
   version_validator = ListValidator(ProductVersionValidator())
   stringlist_validator = ListValidator(formencode.validators.String(strip=True))
+
+  @staticmethod
+  def limit_range(range):
+    (num, unit) = range
+    num = min(num * rangeTypes[unit], maxSearchHours) / rangeTypes[unit]
+    return (num, unit)
 
   def __init__(self, date=None, range=None,
                products=None, branches=None, versions=None):
@@ -54,8 +71,8 @@ class BaseLimit(object):
     self.date = self.datetime_validator.to_python(params.get('date'), None)
     
     if 'range_value' in params and 'range_unit' in params:
-      self.range = (formencode.validators.Int.to_python(params.get('range_value')),
-                    self.range_unit_validator.to_python(params.get('range_unit')))
+      self.range = self.limit_range((formencode.validators.Int.to_python(params.get('range_value')),
+                                     self.range_unit_validator.to_python(params.get('range_unit'))))
     for products in params.getall('product'):
       self.products.extend(self.stringlist_validator.to_python(products))
 
@@ -64,6 +81,20 @@ class BaseLimit(object):
 
     for versions in params.getall('version'):
       self.versions.extend(self.version_validator.to_python(versions))
+
+  def getURLDict(self):
+    d = { }
+    if self.date is not None:
+      d['date'] = self.date
+    if self.range is not None:
+      (d['range_value'], d['range_unit']) = self.range
+    if len(self.products):
+      d['product'] = ','.join(self.products)
+    if len(self.branches):
+      d['branch'] = ','.join(self.branches)
+    if len(self.versions):
+      d['version'] = ','.join(['%s:%s' % (product, version) for (product, version) in self.versions])
+    return d
 
   def getSQLDateEnd(self):
     if self.date is not None:
@@ -110,6 +141,27 @@ class BaseLimit(object):
     q = self.filterByBranch(q)
     q = self.filterByVersion(q)
     return q
+
+  def query_reports(self):
+    q = Report.query().order_by(sql.desc(Report.c.date)).limit(500)
+    return self.filter(q)
+
+  def query_topcrashes(self):
+    total = func.count(Report.c.id)
+    s = select([Report.c.signature, total],
+               group_by=[Report.c.signature],
+               order_by=sql.desc(func.count(Report.c.id)),
+               limit=100,
+               engine=create_engine())
+
+    def FilterToAppend(clause):
+      s.append_whereclause(clause)
+      return s
+
+    s.filter = FilterToAppend
+
+    s = self.filter(s)
+    return s.execute()
 
 class QueryLimit(BaseLimit):
   query_validator = formencode.validators.OneOf(['signature', 'stack'])
@@ -163,10 +215,6 @@ class QueryLimit(BaseLimit):
 
     return q
 
-  def query(self):
-    q = Report.query().order_by(sql.desc(Report.c.date)).limit(500)
-    return self.filter(q)
-
   def __str__(self):
     if self.date is None:
       enddate = 'now'
@@ -195,3 +243,19 @@ class QueryLimit(BaseLimit):
 
     str += '.'
     return str
+
+class BySignatureLimit(BaseLimit):
+  def __init__(self, signature=None, **kwargs):
+    BaseLimit.__init__(self, **kwargs)
+    self.signature = signature
+
+  def setFromParams(self, params):
+    BaseLimit.setFromParams(self, params)
+
+    self.signature = params.get('signature', None)
+
+  def filter(self, q):
+    q = BaseLimit.filter(self, q)
+    if self.signature is not None:
+      q = q.filter(Report.c.signature == self.signature)
+    return q
