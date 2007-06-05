@@ -4,8 +4,10 @@ import socorro.models as model
 import simplejson
 from socorro.lib import EmptyFilter
 from datetime import datetime, tzinfo, timedelta
+import re
 
 ZERO = timedelta(0)
+buildDatePattern = re.compile('^(\\d{4})(\\d{2})(\\d{2})(\\d{2})')
 
 class UTC(tzinfo):
   def utcoffset(self, dt):
@@ -97,6 +99,13 @@ class Processor(object):
     try:
       json = simplejson.load(jsonFile)
       report.build = json["BuildID"]
+      try:
+        (y, m, d, h) = map(int,
+                           buildDatePattern.match(json["BuildID"]).groups())
+        report.build_date = datetime(y, m, d, h)
+      except (AttributeError, ValueError):
+        pass
+      
       if json["timestamp"]:
         report.date = datetime.fromtimestamp(json["timestamp"], utctz)
       report.version = json["Version"]

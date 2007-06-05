@@ -30,15 +30,18 @@ if __name__ == "__main__":
       theform = cgi.FieldStorage()
       dump = theform[config.dumpField]
       if dump.file:
-        (dumpID, dumpPath) = collect.storeDump(dump.file)
+        (dumpID, dumpPath, dateString) = collect.storeDump(dump.file)
         collect.storeJSON(dumpID, dumpPath, theform)
         cgiprint("Content-Type: text/plain")
         cgiprint()
-        print collect.makeResponseForClient(dumpID)
+        print collect.makeResponseForClient(dumpID, dateString)
       else:
         sendHeaders([badRequest])
+        cgiprint("Bad Request")
     except:
       sendHeaders([internalServerError])
+      cgiprint("Internal Server Error")
       raise
   else:
     sendHeaders([methodNotSupported])
+    cgiprint("Method Not Supported")

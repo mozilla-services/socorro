@@ -60,8 +60,30 @@ reports_table = Table('reports', meta,
   Column('address', String(20)),
   Column('os_name', TruncatingString(100)),
   Column('os_version', TruncatingString(100)),
-  Column('email', TruncatingString(100))
+  Column('email', TruncatingString(100)),
+  Column('build_date', DateTime())
 )
+
+def upgrade_reports(dbc):
+  cursor = dbc.cursor()
+  print "  Checking for reports.build_date...",
+  cursor.execute("""SELECT 1 FROM pg_attribute
+                    WHERE attrelid = 'reports'::regclass
+                    AND attname = 'build_date'""");
+  if cursor.rowcount == 0:
+    print "adding"
+    cursor.execute('ALTER TABLE reports ADD build_date timestamp without time zone')
+    cursor.execute("""UPDATE reports
+                      SET build_date =
+                        (substring(build from 1 for 4) || '-' ||
+                         substring(build from 5 for 2) || '-' ||
+                         substring(build from 7 for 2) || ' ' ||
+                         substring(build from 9 for 2) || ':00')
+                           ::timestamp without time zone
+                      WHERE build ~ '^\\\\d{10}'""")
+    print "  Updated %s rows." % cursor.rowcount
+  else:
+    print "ok"
 
 frames_table = Table('frames', meta,
   Column('report_id', Integer, ForeignKey('reports.id'), primary_key=True),
@@ -78,26 +100,22 @@ modules_table = Table('modules', meta,
   Column('debug_filename', TruncatingString(40)),
 )
 
-def upgrade_modules(cursor):
+def upgrade_modules(dbc):
   # See issue 25
-  print "  Upgrading modules(debug_id) datatype"
-  cursor.execute("LOCK modules IN SHARE MODE")
-
-  old_modules_rule = None
-
-  # Drop and recreate the rule_modules_partition rule if it exists
-  cursor.execute("""SELECT definition FROM pg_rules
-                    WHERE rulename = 'rule_modules_partition'
-                    AND tablename = 'modules'""")
-  row = cursor.fetchone()
-  if row:
-    old_modules_rule = row[0]
-    cursor.execute("DROP RULE rule_modules_partition ON modules")
-
-  cursor.execute("ALTER TABLE modules ALTER debug_id TYPE character varying(40)")
-
-  if old_modules_rule is not None:
-    cursor.execute(old_modules_rule)
+  print "  Checking the datatype of modules.debug_id?...",
+  cur = dbc.cursor()
+  cur.execute("""SELECT atttypmod FROM pg_attribute
+                 WHERE attrelid = 'modules'::regclass
+                 AND attname = 'debug_id'""")
+  (length,) = cur.fetchone()
+  if int(length) >= modules_table.c.debug_id.type.length:
+    print "ok"
+  else:
+    print "upgrading, previous size was %s" % length
+    cur.execute("""ALTER TABLE modules ALTER debug_id
+                   TYPE character varying(%(length)s)""",
+                {'length': modules_table.c.debug_id.type.length})
+  cur.close()
 
 extensions_table = Table('extensions', meta, Column('report_id', Integer, ForeignKey('reports.id'), primary_key=True), Column('extension_key', Integer, primary_key=True, autoincrement=False),
   Column('extension_id', String(100), nullable=False),
@@ -115,13 +133,282 @@ branches_table = Table('branches', meta,
   Column('branch', String(24), nullable=False)
 )
 
-def upgrade_db(engine):
-  print "Upgrading old data"
-  dbc = engine.raw_connection()
-  cursor = dbc.cursor()
-  upgrade_modules(cursor)
-  dbc.commit()
-  cursor.close()
+lock_function_definition = """
+declare
+begin
+    LOCK reports IN ROW EXCLUSIVE MODE;
+    LOCK frames IN ROW EXCLUSIVE MODE;
+    LOCK dumps IN ROW EXCLUSIVE MODE;
+    LOCK modules IN ROW EXCLUSIVE MODE;
+    LOCK extensions IN ROW EXCLUSIVE MODE;
+end;
+"""
+
+latest_partition_definition = """
+declare
+    partition integer;
+begin
+    SELECT INTO partition
+        max(substring(tablename from '^reports_part(\\\\d+)$')::integer)
+        FROM pg_tables WHERE tablename LIKE 'reports_part%';
+    RETURN partition;
+end;
+"""
+
+drop_rules_definition = """
+declare
+    partition integer;
+begin
+    SELECT INTO partition get_latest_partition();
+    IF partition IS NULL THEN
+        RETURN;
+    END IF;
+
+    DROP RULE rule_reports_partition ON reports;
+    DROP RULE rule_frames_partition ON frames;
+    DROP RULE rule_modules_partition ON modules;
+    DROP RULE rule_extensions_partition ON extensions;
+    DROP RULE rule_dumps_partition ON dumps;
+end;
+"""
+
+create_rules_definition = """
+declare
+    cur_partition integer := partition;
+    tablename text;
+    cmd text;
+begin
+    IF cur_partition IS NULL THEN
+        SELECT INTO cur_partition get_latest_partition();
+    END IF;
+
+    tablename := 'reports_part' || cur_partition::text;
+    cmd := subst('CREATE OR REPLACE RULE rule_reports_partition AS
+                  ON INSERT TO reports
+                  DO INSTEAD INSERT INTO $$ VALUES (NEW.*)',
+                 ARRAY[ quote_ident(tablename) ]);
+    execute cmd;
+
+    tablename := 'frames_part' || cur_partition::text;
+    cmd := subst('CREATE OR REPLACE RULE rule_frames_partition AS
+                  ON INSERT TO frames
+                  DO INSTEAD INSERT INTO $$ VALUES (NEW.*)',
+                  ARRAY [ quote_ident(tablename) ]);
+    execute cmd;
+
+    tablename := 'modules_part' || cur_partition::text;
+    cmd := subst('CREATE OR REPLACE RULE rule_modules_partition AS
+                  ON INSERT TO modules
+                  DO INSTEAD INSERT INTO $$ VALUES (NEW.*)',
+                 ARRAY[ quote_ident(tablename) ]);
+    execute cmd;
+
+    tablename := 'extensions_part' || cur_partition::text;
+    cmd := subst('CREATE OR REPLACE RULE rule_extensions_partition AS
+                  ON INSERT TO extensions
+                  DO INSTEAD INSERT INTO $$ VALUES (NEW.*)',
+                 ARRAY[ quote_ident(tablename) ]);
+    execute cmd;
+
+    tablename := 'dumps_part' || cur_partition::text;
+    cmd := subst('CREATE OR REPLACE RULE rule_dumps_partition AS
+                  ON INSERT TO dumps
+                  DO INSTEAD INSERT INTO $$ VALUES (NEW.*)',
+                 ARRAY[ quote_ident(tablename) ]);
+    execute cmd;
+end;
+"""
+
+make_partition_definition = """
+declare
+    new_partition integer;
+    old_partition integer;
+    old_start_date text;
+    old_end_date text;
+    old_end_id integer;
+    old_tablename text;
+    start_id integer := 0;
+    tablename text;
+    objname text;
+    rulename text;
+    cmd text;
+begin
+    PERFORM lock_for_changes();
+
+    SELECT INTO old_partition get_latest_partition();
+
+    IF old_partition IS NOT NULL THEN
+        new_partition := old_partition + 1;
+
+        old_tablename := 'reports_part' || old_partition::text;
+        cmd := subst('SELECT max(id), min(date), max(date) FROM $$',
+                     ARRAY[ quote_ident(old_tablename) ]);
+
+        execute cmd into old_end_id, old_start_date, old_end_date;
+
+        cmd := subst('ALTER TABLE $$ ADD CHECK( id <= $$ ),
+                                     ADD CHECK( date >= $$ AND date <= $$)',
+                     ARRAY[ quote_ident(old_tablename),
+                            quote_literal(old_end_id),
+                            quote_literal(old_start_date),
+                            quote_literal(old_end_date) ]);
+        execute cmd;
+
+        old_tablename := 'frames_part' || old_partition::text;
+        cmd := subst('ALTER TABLE $$ ADD CHECK( report_id <= $$ )',
+                     ARRAY[ quote_ident(old_tablename),
+                            quote_literal(old_end_id) ]);
+        execute cmd;
+
+        old_tablename := 'dumps_part' || old_partition::text;
+        cmd := subst('ALTER TABLE $$ ADD CHECK( report_id <= $$ )',
+                     ARRAY[ quote_ident(old_tablename),
+                            quote_literal(old_end_id) ]);
+        execute cmd;
+
+        old_tablename := 'modules_part' || old_partition::text;
+        cmd := subst('ALTER TABLE $$ ADD CHECK( report_id <= $$ )',
+                         ARRAY[ quote_ident(old_tablename),
+                            quote_literal(old_end_id) ]);
+        execute cmd;
+
+        old_tablename := 'extensions_part' || old_partition::text;
+        cmd := subst('ALTER TABLE $$ ADD CHECK( report_id <= $$ )',
+                     ARRAY[ quote_ident(old_tablename),
+                            quote_literal(old_end_id) ]);
+        execute cmd;
+
+        start_id := old_end_id + 1;
+    ELSE
+        new_partition := 1;
+    END IF;
+
+    tablename := 'reports_part' || new_partition::text;
+    cmd := subst('CREATE TABLE $$ (
+                    PRIMARY KEY(id),
+                    UNIQUE(uuid),
+                    CHECK(id >= $$)
+                  ) INHERITS (reports)',
+                 ARRAY[ quote_ident(tablename),
+                        quote_literal(start_id) ]);
+    execute cmd;
+
+    objname := 'idx_reports_part' || new_partition::text || '_date';
+    cmd := subst('CREATE INDEX $$ ON $$ (date, product, version, build)',
+                 ARRAY[ quote_ident(objname),
+                        quote_ident(tablename) ]);
+    execute cmd;
+
+    objname := 'frames_part' || new_partition::text;
+    cmd := subst('CREATE TABLE $$ (
+                    CHECK(report_id >= $$),
+                    PRIMARY KEY(report_id, frame_num),
+                    FOREIGN KEY(report_id) REFERENCES $$ (id)
+                  ) INHERITS (frames)',
+                 ARRAY[ quote_ident(objname),
+                        quote_literal(start_id),
+                        quote_ident(tablename) ]);
+    execute cmd;
+
+    objname := 'modules_part' || new_partition::text;
+    cmd := subst('CREATE TABLE $$ (
+                    CHECK(report_id >= $$),
+                    PRIMARY KEY(report_id, module_key),
+                    FOREIGN KEY(report_id) REFERENCES $$ (id)
+                  ) INHERITS (modules)',
+                 ARRAY[ quote_ident(objname),
+                        quote_literal(start_id),
+                        quote_ident(tablename) ]);
+    execute cmd;
+
+    objname := 'extensions_part' || new_partition::text;
+    cmd := subst('CREATE TABLE $$ (
+                    CHECK(report_id >= $$),
+                    PRIMARY KEY(report_id, extension_key),
+                    FOREIGN KEY(report_id) REFERENCES $$ (id)
+                  ) INHERITS (extensions)',
+                 ARRAY[ quote_ident(objname),
+                        quote_literal(start_id),
+                        quote_ident(tablename) ]);
+    execute cmd;
+
+    objname := 'dumps_part' || new_partition::text;
+    cmd := subst('CREATE TABLE $$ (
+                    CHECK(report_id >= $$),
+                    PRIMARY KEY(report_id),
+                    FOREIGN KEY(report_id) REFERENCES $$ (id)
+                  ) INHERITS (dumps)',
+                 ARRAY[ quote_ident(objname),
+                        quote_literal(start_id),
+                        quote_ident(tablename) ]);
+    execute cmd;
+
+    PERFORM create_partition_rules(new_partition);
+end;
+"""
+
+subst_definition = """
+declare
+    split text[] := string_to_array(str,'$$');
+    result text[] := split[1:1];
+begin
+    for i in 2..array_upper(split,1) loop
+        result := result || vals[i-1] || split[i];
+    end loop;
+    return array_to_string(result,'');
+end;
+"""
+
+def define_functions(dbc):
+  cur = dbc.cursor()
+  cur.execute("""CREATE OR REPLACE FUNCTION lock_for_changes()
+                 RETURNS void AS %(def)s
+                 LANGUAGE plpgsql VOLATILE""",
+              {'def': lock_function_definition})
+  cur.execute("""CREATE OR REPLACE FUNCTION get_latest_partition()
+                 RETURNS integer AS %(def)s LANGUAGE plpgsql VOLATILE""",
+              {'def': latest_partition_definition})
+  cur.execute("""CREATE OR REPLACE FUNCTION
+                   create_partition_rules(partition integer)
+                 RETURNS void AS %(def)s LANGUAGE plpgsql VOLATILE""",
+              {'def': create_rules_definition})
+  cur.execute("""CREATE OR REPLACE FUNCTION drop_partition_rules()
+                 RETURNS void AS %(def)s LANGUAGE plpgsql VOLATILE""",
+              {'def': drop_rules_definition})
+  cur.execute("""CREATE OR REPLACE FUNCTION make_partition() RETURNS void
+                 AS %(def)s LANGUAGE plpgsql VOLATILE""",
+              {'def': make_partition_definition})
+  cur.execute("""CREATE OR REPLACE FUNCTION subst(str text, vals text[])
+                 RETURNS text AS %(def)s LANGUAGE plpgsql IMMUTABLE STRICT""",
+              {'def': subst_definition})
+  cur.close()
+
+def lock_schema(dbc):
+  cur = dbc.cursor()
+  cur.execute("SELECT lock_for_changes()")
+  cur.close()
+
+def upgrade_db(dbc):
+  print "Upgrading old database schema..."
+  print "  Dropping old partitioning rules"
+  cur = dbc.cursor()
+  cur.execute("SELECT drop_partition_rules()")
+  cur.close()
+  upgrade_reports(dbc)
+  upgrade_modules(dbc)
+
+def ensure_partitions(dbc):
+  print "Checking for database partitions...",
+  cur = dbc.cursor()
+  cur.execute("SELECT get_latest_partition()")
+  (partition,) = cur.fetchone()
+  if partition is None:
+    print "No existing partition found, creating."
+    cur.execute("SELECT make_partition()")
+  else:
+    print "Partition %s found." % partition
+    cur.execute("SELECT create_partition_rules(%(p)s)", {'p': partition})
+  cur.close()
 
 """
 Indexes for our tables based on commonly used queries (subject to change!).
@@ -302,14 +589,11 @@ try:
   test = get_engine_conf()
 except (ImportError, TypeError):
   from sqlalchemy.ext.sessioncontext import SessionContext
-  taskCount = config.backgroundTaskCount
-  if taskCount <= 0:
-    raise "config.backgroundTaskCount must be at least 1"
   localEngine = create_engine(config.processorDatabaseURI,
                               strategy="threadlocal",
                               poolclass=pool.QueuePool, 
                               pool_recycle=config.processorConnTimeout,
-                              pool_size=taskCount + 1)
+                              pool_size=1)
   def make_session():
     return create_session(bind_to=localEngine)
   ctx = SessionContext(make_session)

@@ -14,10 +14,10 @@ def handler(req):
       dump = theform[config.dumpField]
       if not dump.file:
         return apache.HTTP_BAD_REQUEST
-      (dumpID, dumpPath) = collect.storeDump(dump.file)
+      (dumpID, dumpPath, dateString) = collect.storeDump(dump.file)
       collect.storeJSON(dumpID, dumpPath, theform)
       req.content_type = "text/plain"
-      req.write(collect.makeResponseForClient(dumpID))
+      req.write(collect.makeResponseForClient(dumpID, dateString))
     except:
       return apache.HTTP_INTERNAL_SERVER_ERROR
     return apache.OK

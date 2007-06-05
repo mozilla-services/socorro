@@ -7,6 +7,26 @@ from datetime import datetime
 from time import time
 import config
 
+def mkdir(path):
+  """Make a directory, using the permissions and GID specified in the config"""
+  os.mkdir(path, config.dirPermissions)
+  # The umask of the apache process is typically 022. That's not good enough,
+  # and we don't want to mess with the whole process, so we set the permissions
+  # explicitly.
+  os.chmod(path, config.dirPermissions)
+  if config.dumpGID is not None:
+    os.chown(path, -1, config.dumpGID)
+
+def makedirs(path):
+  head, tail = os.path.split(path)
+  if not tail:
+    head, tail = os.path.split(head)
+  if head and tail and not os.path.exists(head):
+    makedirs(head)
+    if tail == os.curdir:
+      return
+  mkdir(path)
+
 def ensureDiskSpace():
   pass
 
@@ -20,6 +40,8 @@ def makeDumpDir(base):
   """Create a directory to hold a group of dumps, and set permissions"""
   tmpPath = tempfile.mkdtemp(dir=base, prefix=config.dumpDirPrefix)
   os.chmod(tmpPath, config.dirPermissions)
+  if config.dumpGID is not None:
+    os.chown(tmpPath, -1, config.dumpGID)
   return tmpPath
 
 
@@ -57,22 +79,23 @@ def getParentPathForDump():
   """Return a directory path to hold dump data, creating if necessary"""
   # First make an hourly directory if necessary
   utc = datetime.utcnow()
+  dateString = "%04u-%02u-%02u-%02u" % (utc.year, utc.month, utc.day, utc.hour)
   datePath = os.path.join(config.storageRoot, str(utc.year), str(utc.month),
                           str(utc.day), str(utc.hour))
 
   # if it's not there yet, create the date directory and its first
   # dump directory
   if not os.path.exists(datePath):
-    os.makedirs(datePath, config.dirPermissions)
-    return makeDumpDir(datePath)
+    makedirs(datePath)
+    return (makeDumpDir(datePath), dateString)
 
   # return the last-modified dir if it has less than dumpCount entries,
   # otherwise make a new one
   latestDir = findLastModifiedDirInPath(datePath)
   if len(os.listdir(latestDir)) >= config.dumpDirCount:
-    return makeDumpDir(datePath)
+    return (makeDumpDir(datePath), dateString)
   
-  return latestDir
+  return (latestDir, dateString)
 
 def openFileForDumpID(dumpID, dumpDir, suffix, mode):
   filename = os.path.join(dumpDir, dumpID + suffix)
@@ -86,8 +109,8 @@ def openFileForDumpID(dumpID, dumpDir, suffix, mode):
 
 def storeDump(dumpfile):
   """Stream the uploaded dump to a file, and store accompanying metadata.
-Return uuid to client"""
-  dirPath = getParentPathForDump()
+  Returns (dumpID, dumpPath, dateString)"""
+  (dirPath, dateString) = getParentPathForDump()
   dumpID = str(uuid.uuid1())
   outfile = openFileForDumpID(dumpID, dirPath, config.dumpFileSuffix, 'wb')
   
@@ -103,7 +126,7 @@ Return uuid to client"""
   finally:
     outfile.close()
 
-  return (dumpID, dirPath)
+  return (dumpID, dirPath, dateString)
 
 def storeJSON(dumpID, dumpDir, form):
   names = [name for name in form.keys() if name != config.dumpField]
@@ -121,5 +144,10 @@ def storeJSON(dumpID, dumpDir, form):
   finally:
     outfile.close()
 
-def makeResponseForClient(dumpID):
-  return "CrashID=" + config.dumpIDPrefix + dumpID
+def makeResponseForClient(dumpID, dateString):
+  response = "CrashID=%s%s\n" % (config.dumpIDPrefix, dumpID)
+  if config.reporterURL is not None:
+    response += "ViewURL=%s/report/index/%s?date=%s\n" % (config.reporterURL,
+                                                          dumpID,
+                                                          dateString)
+  return response
