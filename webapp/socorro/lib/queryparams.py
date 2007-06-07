@@ -6,6 +6,8 @@ from sqlalchemy import sql, func, select, types
 from sqlalchemy.databases.postgres import PGInterval
 import re
 from pylons import h
+import pylons
+import time
 
 rangeTypes = {
   'hours': 1,
@@ -259,3 +261,32 @@ class BySignatureLimit(BaseLimit):
     if self.signature is not None:
       q = q.filter(Report.c.signature == self.signature)
     return q
+
+### XXXcombine the two functions below
+def getCrashesForParams(params, key):
+  """
+  Get a list of top crashes for a BaseLimit and a cache key.
+  Returns a tuple of the topcrashers and a timestamp.
+  """
+  def getCrashers():
+    tc = params.query_topcrashes()
+    ts = time.time()
+    return (tc, ts)
+
+  tccache = pylons.cache.get_cache('tc_data')
+  return tccache.get_value(key, createfunc=getCrashers,
+                           type="memory", expiretime=60)
+
+def getReportsForParams(params, key):
+  """
+  Get a list of reports for a set of params. Returns
+  a tuple of the reports and a timestamp.
+  """
+  def getList():
+    reports = [r for r in params.query_reports()]
+    ts = time.time()
+    return (reports, ts)
+  
+  rcache = pylons.cache.get_cache('report_data')
+  return rcache.get_value(key, createfunc=getList,
+                          type="file", expiretime=60)

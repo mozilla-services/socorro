@@ -1,7 +1,8 @@
 from socorro.lib.base import *
 from socorro.lib.processor import Processor
 from socorro.models import Report
-from socorro.lib.queryparams import BySignatureLimit
+from socorro.lib.queryparams import BySignatureLimit, getReportsForParams
+from socorro.lib.http_cache import responseForKey
 import socorro.lib.collect as collect
 import socorro.lib.config as config
 from sqlalchemy import *
@@ -16,7 +17,13 @@ class ReportController(BaseController):
     c.report = Report.get_by(uuid=id)
     if c.report is None:
       abort(404, 'Not found')
-    return render_response('report/index')
+
+    if c.report.build:
+      resp = responseForKey(c.report.uuid, expires=(60 * 60))
+    else:
+      resp = responseForKey(c.report.uuid)
+    resp.write(render('report/index'))
+    return resp
 
   def find(self):
     # This method should not touch the database!
@@ -34,8 +41,11 @@ class ReportController(BaseController):
   def list(self):
     c.params = BySignatureLimit()
     c.params.setFromParams(request.params)
-    c.reports = c.params.query_reports()
-    return render_response('report/list')
+    key = "reportlist_%s" % request.environ["QUERY_STRING"]
+    (c.reports, ts) = getReportsForParams(c.params, key)
+    resp = responseForKey("%s%s" % (ts,key))
+    resp.write(render('report/list'))
+    return resp
 
   def add(self):
     #
