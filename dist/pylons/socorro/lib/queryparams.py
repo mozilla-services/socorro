@@ -168,6 +168,7 @@ class BaseLimit(object):
 class QueryLimit(BaseLimit):
   query_validator = formencode.validators.OneOf(['signature', 'stack'])
   type_validator = formencode.validators.OneOf(['exact', 'contains'])
+  signature_validator = formencode.validators.String(strip=True, if_empty=None)
   
   """An object representing query conditions for end-user searches."""
   def __init__(self, signature=None, signature_search=None,
@@ -180,7 +181,7 @@ class QueryLimit(BaseLimit):
   def setFromParams(self, params):
     BaseLimit.setFromParams(self, params)
 
-    self.signature = params.get('signature', None)
+    self.signature = self.signature_validator.to_python(params.get('signature', None))
     self.signature_search = self.query_validator.to_python(params.get('signature_search', None))
     self.signature_type = self.type_validator.to_python(params.get('signature_type', None))
 

@@ -3,7 +3,6 @@ from sqlalchemy.ext.assignmapper import assign_mapper
 from sqlalchemy.ext.selectresults import SelectResultsExt
 from datetime import datetime
 from socorro.lib import config, EmptyFilter
-
 import sys
 import re
 
@@ -447,7 +446,7 @@ def getEngine():
   for generic 'get' methods.
   """
   from pylons.database import create_engine
-  return create_engine()
+  return create_engine(pool_recycle=config.processorConnTimeout)
 
 class Frame(object):
   def __str__(self):
@@ -560,6 +559,23 @@ class Branch(object):
                   distinct=True,
                   order_by=[branches_table.c.product,
                   branches_table.c.version], engine=getEngine()).execute()
+
+def getCachedBranchData():
+  """
+  Return the result of getProductBranches, getProducts,
+  and getProductVersions in a cached tuple.
+  """
+  import pylons
+  # cache calls to this
+  def branchData():
+    products = [p for p in Branch.getProducts()]
+    branches = [b for b in Branch.getBranches()]
+    prodversions = [v for v in Branch.getProductVersions()]
+    return (products, branches, prodversions)
+
+  branchcache = pylons.cache.get_cache('query_branch_data')
+  return branchcache.get_value("formfields", createfunc=branchData,
+                               type="memory", expiretime=360)
 
 class Module(object):
   def __init__(self, report_id, module_key, filename, debug_id, 
