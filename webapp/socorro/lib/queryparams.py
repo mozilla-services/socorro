@@ -270,7 +270,7 @@ def getCrashesForParams(params, key):
   Returns a tuple of the topcrashers and a timestamp.
   """
   def getCrashers():
-    tc = params.query_topcrashes()
+    tc = [r for r in params.query_topcrashes()]
     ts = time.time()
     return (tc, ts)
 
