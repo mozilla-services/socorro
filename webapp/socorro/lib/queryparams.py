@@ -157,6 +157,7 @@ class BaseLimit(object):
     return q
   
   def filter(self, q):
+    q = q.filter(Report.c.signature != None)
     q = self.filterByDate(q)
     q = self.filterByProduct(q)
     q = self.filterByBranch(q)
