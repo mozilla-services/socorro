@@ -5,6 +5,8 @@ from pylons.database import create_engine
 from sqlalchemy import sql, func, select, types
 from sqlalchemy.databases.postgres import PGInterval
 import re
+from socorro.lib.platforms import count_platforms, platformList
+import socorro
 from pylons import h
 import pylons
 import time
@@ -40,6 +42,10 @@ class ListValidator(formencode.FancyValidator):
     return [self.subvalidator.to_python(v)
             for v in str(value).split(self.separator)]
 
+class PlatformValidator(formencode.FancyValidator):
+  def _to_python(self, value, state):
+    return platformList[str(value)]
+
 class BaseLimit(object):
   """A base class which validates date/branch/product/version conditions for
   multiple searches."""
@@ -52,6 +58,7 @@ class BaseLimit(object):
   )
   version_validator = ListValidator(ProductVersionValidator())
   stringlist_validator = ListValidator(formencode.validators.String(strip=True))
+  platform_validator = ListValidator(PlatformValidator())
 
   @staticmethod
   def limit_range(range):
@@ -60,12 +67,13 @@ class BaseLimit(object):
     return (num, unit)
 
   def __init__(self, date=None, range=None,
-               products=None, branches=None, versions=None):
+               products=None, branches=None, versions=None, platforms=None):
     self.date = date
     self.range = range   # _range is a tuple (number, interval)
     self.products = products or []
     self.branches = branches or []
     self.versions = versions or []
+    self.platforms = platforms or []
 
   def setFromParams(self, params):
     """Set the values of this object from a request.params instance."""
@@ -84,6 +92,9 @@ class BaseLimit(object):
     for versions in params.getall('version'):
       self.versions.extend(self.version_validator.to_python(versions))
 
+    for platforms in params.getall('platform'):
+      self.platforms.extend(self.platform_validator.to_python(platforms))
+
   def getURLDict(self):
     d = { }
     if self.date is not None:
@@ -96,6 +107,8 @@ class BaseLimit(object):
       d['branch'] = ','.join(self.branches)
     if len(self.versions):
       d['version'] = ','.join(['%s:%s' % (product, version) for (product, version) in self.versions])
+    if len(self.platforms):
+      d['platform'] = ','.join(map(str, self.platforms))
     return d
 
   def getSQLDateEnd(self):
@@ -137,11 +150,18 @@ class BaseLimit(object):
                              for (product, version) in self.versions]))
     return q
 
+  def filterByPlatform(self, q):
+    if len(self.platforms):
+      q = q.filter(sql.or_(*[platform.condition()
+                             for platform in self.platforms]))
+    return q
+  
   def filter(self, q):
     q = self.filterByDate(q)
     q = self.filterByProduct(q)
     q = self.filterByBranch(q)
     q = self.filterByVersion(q)
+    q = self.filterByPlatform(q)
     return q
 
   def query_reports(self):
@@ -152,7 +172,9 @@ class BaseLimit(object):
 
   def query_topcrashes(self):
     total = func.count(Report.c.id)
-    s = select([Report.c.signature, total],
+    selects = [Report.c.signature, total]
+    selects.extend(count_platforms())
+    s = select(selects,
                group_by=[Report.c.signature],
                order_by=sql.desc(func.count(Report.c.id)),
                limit=100,
@@ -226,7 +248,7 @@ class QueryLimit(BaseLimit):
     else:
       enddate = self.date
       
-    str = "Results within %s %s of %s" % (self.getRange()[0], self.getRange()[1], enddate)
+    msg = "Results within %s %s of %s" % (self.getRange()[0], self.getRange()[1], enddate)
 
     if self.signature != '':
       sigtype = {'exact': 'is exactly',
@@ -235,19 +257,22 @@ class QueryLimit(BaseLimit):
       sigquery = {'signature': 'the crash signature',
                   'stack': 'one of the top 10 stack frames'}[self.getSignatureSearch()]
       
-      str += ", where %s %s '%s'" % (sigquery, sigtype, self.signature)
+      msg += ", where %s %s '%s'" % (sigquery, sigtype, self.signature)
 
     if len(self.products) > 0:
-      str += ", and the product is one of %s" % ', '.join(["'%s'" % product for product in self.products])
+      msg += ", and the product is one of %s" % ', '.join(["'%s'" % product for product in self.products])
 
     if len(self.branches) > 0:
-      str += ", and the branch is one of %s" % ', '.join(["'%s'" % branch for branch in self.branches])
+      msg += ", and the branch is one of %s" % ', '.join(["'%s'" % branch for branch in self.branches])
 
     if len(self.versions) > 0:
-      str += ", and the version is one of %s" % ', '.join(["'%s %s'" % (product, version) for (product, version) in self.versions])
+      msg += ", and the version is one of %s" % ', '.join(["'%s %s'" % (product, version) for (product, version) in self.versions])
 
-    str += '.'
-    return str
+    if len(self.platforms) > 0:
+      msg += ", and the platform is one of %s" % ', '.join([str(platform) for platform in self.platforms])
+
+    msg += '.'
+    return msg
 
 class BySignatureLimit(BaseLimit):
   def __init__(self, signature=None, **kwargs):

@@ -1,6 +1,10 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
  "http://www.w3.org/TR/html4/strict.dtd">
 
+<?python
+from socorro.lib.platforms import platformList
+?>
+
 <html xmlns:py="http://genshi.edgewall.org/"
       xmlns:xi="http://www.w3.org/2001/XInclude">
  <xi:include href="includes/site.html" />
@@ -26,7 +30,7 @@
     <select name="product" size="4" multiple="multiple">
      <option py:for="(product,) in c.products"
              value="${product}"
-	     selected="${(product in c.params.products) and 'selected' or ''}">
+             selected="${(product in c.params.products) and 'selected' or ''}">
       ${product}
      </option>
     </select>
@@ -35,7 +39,7 @@
     <select name="branch" size="4" multiple="multiple">
      <option py:for="(branch,) in c.branches"
              value="${branch}"
-	     selected="${(branch in c.params.branches) and 'selected' or ''}">
+             selected="${(branch in c.params.branches) and 'selected' or ''}">
       ${branch}
      </option>
     </select>
@@ -45,8 +49,17 @@
     <select name="version" size="4" multiple="multiple">
      <option py:for="(product, version) in c.prodversions"
              value="${product}:${version}"
-	     selected="${ ((product, version) in c.params.versions) and 'selected' or ''}">
+             selected="${ ((product, version) in c.params.versions) and 'selected' or ''}">
       ${product} ${version}
+     </option>
+    </select>
+
+    <label for="platform">Platform: </label>
+    <select name="platform" size="${len(platformList)}" multiple="multiple">
+     <option py:for="platform in platformList"
+             value="${str(platform)}"
+             selected="${ (platform in c.params.platforms) and 'selected' or ''}">
+      ${platform.name()}
      </option>
     </select>
    </p>
@@ -60,7 +73,6 @@
       Top 10 Stack Frames
      </option>
     </select>
-    <label for="signature_type">Signature: </label>
     <select name="signature_type">
      <option py:for="(value, desc) in (('contains', 'contains'),
                                        ('exact', 'is exactly'))"

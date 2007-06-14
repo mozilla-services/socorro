@@ -1,8 +1,19 @@
 <py:if xmlns:py="http://genshi.edgewall.org/" test="True">
+
+<?python
+from socorro.lib.platforms import platformList
+?>
+
 <table py:def="list_by_signature(signatures, params)" class="list">
  <thead>
   <tr>
-   <th>Rank</th><th>Signature</th><th>#</th>
+   <th>Rank</th>
+   <th>Signature</th>
+   <th py:if="len(c.params.platforms) != 1">#</th>
+   <th py:for="platform in platformList"
+       py:if="len(c.params.platforms) == 0 or platform in c.params.platforms">
+    ${platform.name()[:3]}
+   </th>
   </tr>
  </thead>
  <tbody>
@@ -13,7 +24,11 @@
     <a href="${h.url_for('/report/list', signature=signature.signature, **params.getURLDict())}"
        title="View reports with this signature.">${signature.signature}</a>
    </td>
-   <td>${signature.count}</td>
+   <td py:if="len(c.params.platforms) != 1">${signature.count}</td>
+   <td py:for="platform in platformList"
+       py:if="len(c.params.platforms) == 0 or platform in c.params.platforms">
+    ${getattr(signature, platform.count_name)}
+   </td>
   <?python row+=1 ?>
   </tr>
  </tbody>
