@@ -32,4 +32,9 @@ class QueryController(BaseController):
 
     resp = responseForKey(key)
     resp.write(render('query_form'))
+
+    del c.products, c.branches, c.prodversions
+    if request.params.get('do_query', None):
+      del c.params, c.reports
+
     return resp

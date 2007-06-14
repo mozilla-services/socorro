@@ -18,11 +18,14 @@ class ReportController(BaseController):
     if c.report is None:
       abort(404, 'Not found')
 
+    c.report.expunge()
+
     if c.report.build:
       resp = responseForKey(c.report.uuid, expires=(60 * 60))
     else:
       resp = responseForKey(c.report.uuid)
     resp.write(render('report/index'))
+    del c.report
     return resp
 
   def find(self):
@@ -45,6 +48,7 @@ class ReportController(BaseController):
     (c.reports, ts) = getReportsForParams(c.params, key)
     resp = responseForKey("%s%s" % (ts,key))
     resp.write(render('report/list'))
+    del c.params, c.reports
     return resp
 
   def add(self):

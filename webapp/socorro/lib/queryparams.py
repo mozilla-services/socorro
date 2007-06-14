@@ -146,7 +146,9 @@ class BaseLimit(object):
 
   def query_reports(self):
     q = Report.query().order_by(sql.desc(Report.c.date)).limit(500)
-    return self.filter(q)
+    reports = self.filter(q).select()
+    q.session.clear()
+    return reports
 
   def query_topcrashes(self):
     total = func.count(Report.c.id)
@@ -283,6 +285,9 @@ def getReportsForParams(params, key):
   Get a list of reports for a set of params. Returns
   a tuple of the reports and a timestamp.
   """
+  # Disable caching for the moment, because it's causing memory leaks
+  return (params.query_reports(), time.time())
+
   def getList():
     reports = [r for r in params.query_reports()]
     ts = time.time()
