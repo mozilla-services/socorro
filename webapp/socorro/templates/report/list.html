@@ -5,17 +5,18 @@
   <xi:include href="../includes/common.html" />
   <xi:include href="../includes/site.html" />
 <head>
-  <title>Crash Reports in ${c.signature}</title>
+  <title>Crash Reports in ${c.params.signature}</title>
 </head>
 
 <body>
 
  <div id="content">
- <h1 class="first">Crash Reports in ${c.signature}</h1>
- <py:if test="c.reports">
- ${list_reports(c.reports)}
- </py:if>
+ <h1 class="first">Crash Reports in ${c.params.signature}</h1>
 
+ <p>${str(c.params)}</p>
+
+ ${list_reports(c.reports)}
+ 
  </div>
 
 <!-- end content -->

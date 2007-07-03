@@ -1,6 +1,6 @@
 from socorro.models import getCachedBranchData
 from socorro.lib.base import BaseController, h
-from socorro.lib.queryparams import QueryLimit
+from socorro.lib.queryparams import BaseLimit
 from socorro.lib.http_cache import responseForKey
 from pylons import c, session, request
 from pylons.templating import render
@@ -9,7 +9,7 @@ from pylons.database import create_engine
 class QueryController(BaseController):
 
   def query(self):    
-    c.params = QueryLimit()
+    c.params = BaseLimit()
 
     (c.products, c.branches, c.prodversions) = getCachedBranchData()
 

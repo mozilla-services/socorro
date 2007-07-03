@@ -65,23 +65,23 @@ from socorro.lib.platforms import platformList
    </p>
 
    <p>
-    <select name="signature_search">
-     <option value="signature" selected="${c.params.getSignatureSearch() == 'signature' and 'selected' or ''}">
+    <select name="query_search">
+     <option value="signature" selected="${c.params.getQuerySearch() == 'signature' and 'selected' or ''}">
       Stack Signature
      </option>
-     <option value="stack" selected="${c.params.getSignatureSearch() == 'stack' and 'selected' or ''}">
+     <option value="stack" selected="${c.params.getQuerySearch() == 'stack' and 'selected' or ''}">
       Top 10 Stack Frames
      </option>
     </select>
-    <select name="signature_type">
+    <select name="query_type">
      <option py:for="(value, desc) in (('contains', 'contains'),
                                        ('exact', 'is exactly'))"
              value="${value}"
-             selected="${c.params.getSignatureType() == value and 'selected' or ''}">
+             selected="${c.params.getQueryType() == value and 'selected' or ''}">
       ${desc}
      </option>
     </select>
-    <input type="text" name="signature" value="${c.params.signature}" />
+    <input type="text" name="query" value="${c.params.query}" size="40" />
    </p>
 
    <p>
