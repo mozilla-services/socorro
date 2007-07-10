@@ -424,10 +424,18 @@ Note:
 # Top crashers index, for use with the top crasher reports query.
 Index('idx_reports_date', reports_table.c.date, reports_table.c.product, reports_table.c.version, reports_table.c.build)
 
+fixupSpace = re.compile(r' (?=[\*&,])')
+fixupComma = re.compile(r'(?<=,)(?! )')
+
 filename_re = re.compile('[/\\\\]([^/\\\\]+)$')
 
 def make_signature(module_name, function, source, source_line, instruction):
   if function is not None:
+    # Remove spaces before all stars, ampersands, and commas
+    function = re.sub(fixupSpace, '', function)
+
+    # Ensure a space after commas
+    function = re.sub(fixupComma, ' ', function)
     return function
 
   if source is not None and source_line is not None:

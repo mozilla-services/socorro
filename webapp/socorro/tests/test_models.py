@@ -11,7 +11,11 @@ expected = {
     "0|0|libxpcom_core.so||||0x440b8009":
       "libxpcom_core.so@0x440b8009",
     "0|0|||||0x440b8009":
-      "@0x440b8009"
+      "@0x440b8009",
+    "0|0|libxul.so|nsCSSFrameConstructor::CreateInputFrame(nsFrameConstructorState &,nsIContent *,nsIFrame *,nsIAtom *,nsStyleContext *,nsIFrame * *,nsStyleDisplay const *,int &,int &,nsFrameItems &)|nsCSSFrameConstructor.cpp|10001|0x12345678":
+      "nsCSSFrameConstructor::CreateInputFrame(nsFrameConstructorState&, nsIContent*, nsIFrame*, nsIAtom*, nsStyleContext*, nsIFrame**, nsStyleDisplay const*, int&, int&, nsFrameItems&)",
+    "0|0|libxul.so|nsCSSFrameConstructor::CreateInputFrame(nsFrameConstructorState &,nsIContent *,nsIFrame *,nsIAtom *,nsStyleContext *,nsIFrame * *,nsStyleDisplay const *,int &,int &,nsFrameItems &)|nsCSSFrameConstructor.cpp|10001|0x12345678":
+      "nsCSSFrameConstructor::CreateInputFrame(nsFrameConstructorState&, nsIContent*, nsIFrame*, nsIAtom*, nsStyleContext*, nsIFrame**, nsStyleDisplay const*, int&, int&, nsFrameItems&)"
     }
 
 for (line, signature) in expected.iteritems():
@@ -56,4 +60,4 @@ fh.close()
 assert loop_count > 12
 print len(r.frames)
 assert len(r.frames) == 10
-assert r.frames[0].signature == "nsObjectFrame::Instantiate(char const *,nsIURI *)"
+assert r.frames[0].signature == "nsObjectFrame::Instantiate(char const*, nsIURI*)"
