@@ -51,3 +51,4 @@ saveFailedMinidumps = True
 # When testing, set to true to rename processed minidump files instead of
 # deleting them.
 saveProcessedMinidumps = False
+saveFailedMinidumps = False

@@ -62,22 +62,16 @@ class Processor(object):
         fh = self.__breakpad_file(dumpPath)
         self.processJSON(jsonPath, report)
         crashed_thread = report.read_header(fh)
-
-        for line in fh:
-
-          report.add_dumptext(line)
-          line = line.strip()
-
-          (thread_num, frame_num, module_name, function, source, source_line, instruction) = map(EmptyFilter, line.split("|"))
-          if thread_num == crashed_thread and int(frame_num) < 10:
-            report.frames.append(model.Frame(report.id,
-                                             frame_num,
-                                             module_name,
-                                             function,
-                                             source,
-                                             source_line,
-                                             instruction))
-
+        threads = report.read_stackframes(fh)
+        if crashed_thread < len(threads):
+          for f in threads[crashed_thread]:
+            report.frames.append(Frame(f.report_id,
+                                       f.frame_num,
+                                       f.module_name,
+                                       f.function,
+                                       f.source,
+                                       f.source_line,
+                                       f.instruction))
       finally:
         self.__finishReport(report)
     finally:
