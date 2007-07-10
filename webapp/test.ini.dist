@@ -5,7 +5,7 @@
 #
 [DEFAULT]
 debug = true
-email_to = ted.mielczarek@gmail.com
+email_to = you@yourdomain.com
 smtp_server = localhost
 error_email_from = paste@localhost
 
