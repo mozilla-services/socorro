@@ -13,6 +13,7 @@
   <title>Crash Reports in ${c.params.signature}</title>
 
   <script type="text/javascript" src="${h.url_for('/js/MochiKit/MochiKit.js')}"></script>
+  <script type="text/javascript" src="${h.url_for('/js/PlotKit/excanvas.js')}"></script>
   <script type="text/javascript" src="${h.url_for('/js/PlotKit/PlotKit_Packed.js')}"></script>
 
   <style type="text/css">
@@ -101,15 +102,16 @@
 
  if (layout.points.length > 1) {
    var display = false;
-   for each (var point in layout.points) {
-     if (point.yval > 0) {
+   for (i in layout.points) {
+     if (layout.points[i].yval > 0) {
        display = true;
        break;
      }
    }
 
    if (display) {
-     var chart = new CanvasRenderer($('buildid-graph'), layout, {IECanvasHTC: '/js/PlotKit/iecanvas.htc'});
+     var chart = new CanvasRenderer($('buildid-graph'), layout,
+                                    {IECanvasHTC: '${h.url_for('/js/PlotKit/iecanvas.htc')}'});
      chart.render();
 
      $('buildid-div').style.display = 'block';
