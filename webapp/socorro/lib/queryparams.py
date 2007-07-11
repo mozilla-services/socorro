@@ -205,14 +205,15 @@ class BaseLimit(object):
 
     return q
 
-  def filter(self, q):
+  def filter(self, q, use_query=True):
     q = q.filter(Report.c.signature != None)
     q = self.filterByDate(q)
     q = self.filterByProduct(q)
     q = self.filterByBranch(q)
     q = self.filterByVersion(q)
     q = self.filterByPlatform(q)
-    q = self.filterByQuery(q)
+    if use_query:
+      q = self.filterByQuery(q)
     return q
 
   def query_reports(self):
@@ -220,6 +221,26 @@ class BaseLimit(object):
     reports = self.filter(q).select()
     q.session.clear()
     return reports
+
+  def query_frequency(self):
+    # The "frequency" of a crash is the number of instances of that crash
+    # divided by the number of instances of *any* crash using the specified
+    # date/product/branch search criteria.
+    crashcount = func.count(sql.case([(Report.c.signature == self.signature, 1)]))
+    frequency = sql.cast(crashcount, types.Float) / func.count(Report.c.id)
+    s = select([Report.c.build_date, crashcount.label('count'),
+                frequency.label('frequency')],
+               group_by=[Report.c.build_date],
+               engine=create_engine())
+    s.append_whereclause(Report.c.build_date != None)
+
+    def FilterToAppend(clause):
+      s.append_whereclause(clause)
+      return s
+
+    s.filter = FilterToAppend
+    s = BaseLimit.filter(self, s, False)
+    return s.execute()
 
   def query_topcrashes(self):
     total = func.count(Report.c.id)
@@ -249,7 +270,7 @@ class BaseLimit(object):
       
     msg = "Results within %s %s of %s" % (self.getRange()[0], self.getRange()[1], enddate)
 
-    if self.query != '':
+    if self.query is not None:
       sigtype = {'exact': 'is exactly',
                  'contains': 'contains'}[self.getQueryType()]
 
@@ -309,13 +330,14 @@ def getReportsForParams(params, key):
   Get a list of reports for a set of params. Returns
   a tuple of the reports and a timestamp.
   """
-  # Disable caching for the moment, because it's causing memory leaks
-  return (params.query_reports(), time.time())
-
   def getList():
     reports = [r for r in params.query_reports()]
+    builds = [b for b in params.query_frequency()]
     ts = time.time()
-    return (reports, ts)
+    return (reports, builds, ts)
+
+  # Disable caching for the moment, because it's causing memory leaks
+  return getList()
   
   rcache = pylons.cache.get_cache('report_data')
   return rcache.get_value(key, createfunc=getList,
