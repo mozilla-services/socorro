@@ -105,5 +105,6 @@ class Processor(object):
       report.version = json["Version"]
       report.vendor = json["Vendor"]
       report.product = json["ProductName"]
+      report.url = json["URL"]
     finally:
       jsonFile.close()

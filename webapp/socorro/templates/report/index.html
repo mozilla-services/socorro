@@ -39,6 +39,14 @@
     <tr class="row1">
      <th>Crash Address</th><td>${c.report.address}</td>
     </tr>
+    <tr class="row2" py:if="c.report.url is not None">
+     <?python
+        url = c.report.url
+        if len(url) > 100:
+           url = url[:100] + "&#0133;"
+     ?>
+     <th>URL</th><td>${h.link_to(url, url=c.report.url)}</td>
+    </tr>
   </table>
    <py:if test="len(c.report.threads) > 0">
   <h2 id="frames">Stack Traces</h2>
