@@ -500,8 +500,6 @@ class Report(object):
       return ""
 
   def read_header(self, fh):
-    self.dumpText = ""
-
     crashed_thread = ''
     module_count = 0
 
@@ -549,10 +547,12 @@ class Report(object):
         return threads
   
   def add_dumptext(self, text):
-    self.dumpText += text
+    dump = getattr(self, 'dumpText', '')
+    self.dumpText = dump + text
   
   def finish_dumptext(self):
-    self.dumps.append(Dump(self.id, self.dumpText))
+    if hasattr(self, 'dumpText'):
+      self.dumps.append(Dump(self.id, self.dumpText))
   
   def get_all_threads(self):
     if "_threads" not in dir(self):

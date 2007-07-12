@@ -4,7 +4,13 @@ import socorro.models as model
 import simplejson
 from socorro.lib import EmptyFilter
 from datetime import datetime, tzinfo, timedelta
-import re
+import re, sys, traceback
+
+def print_exception():
+  print "Caught Error:", sys.exc_info()[0]
+  print sys.exc_info()[1]
+  traceback.print_tb(sys.exc_info()[2])
+  sys.stdout.flush()
 
 ZERO = timedelta(0)
 buildDatePattern = re.compile('^(\\d{4})(\\d{2})(\\d{2})(\\d{2})')
@@ -63,18 +69,23 @@ class Processor(object):
         self.processJSON(jsonPath, report)
         crashed_thread = report.read_header(fh)
         threads = report.read_stackframes(fh)
-        if crashed_thread < len(threads):
-          for f in threads[crashed_thread]:
-            report.frames.append(Frame(f.report_id,
-                                       f.frame_num,
-                                       f.module_name,
-                                       f.function,
-                                       f.source,
-                                       f.source_line,
-                                       f.instruction))
-      finally:
-        self.__finishReport(report)
+
+        if crashed_thread != "":
+          crashed_thread = int(crashed_thread)
+          if crashed_thread < len(threads):
+            for f in threads[crashed_thread]:
+              report.frames.append(model.Frame(f.report_id,
+                                               f.frame_num,
+                                               f.module_name,
+                                               f.function,
+                                               f.source,
+                                               f.source_line,
+                                               f.instruction))
+      except:
+        print_exception()
+        raise
     finally:
+      self.__finishReport(report)
       if fh:
         fh.close()
 
@@ -100,11 +111,12 @@ class Processor(object):
       except (AttributeError, ValueError):
         pass
       
-      if json["timestamp"]:
+      if 'timestamp' in json:
         report.date = datetime.fromtimestamp(json["timestamp"], utctz)
-      report.version = json["Version"]
-      report.vendor = json["Vendor"]
+      
       report.product = json["ProductName"]
-      report.url = json["URL"]
+      report.version = json["Version"]
+      report.vendor = json.get("Vendor", None)
+      report.url = json.get("URL", None)
     finally:
       jsonFile.close()

@@ -121,7 +121,8 @@ def runProcessor(dir, dumpID, pk):
     raise
   except Exception, e:
     # XXX We should add the exception to the dump, but I can't figure out how
-    print "Error in processor: %s" % e
+    print "Error in processor:"
+    print_exception()
 
   trans.commit()
   session.clear()
