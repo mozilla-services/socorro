@@ -52,3 +52,8 @@ saveFailedMinidumps = True
 # deleting them.
 saveProcessedMinidumps = False
 saveFailedMinidumps = False
+
+# Settings for creating a link to a file in a given version control viewing 
+# website. For example: 
+#    {'cvs':{'cvs.mozilla.org/cvsroot':'http://bonsai.mozilla.org/cvsblame.cgi?file=%(file)s&rev=%(revision)s&mark=%(line)s#%(line)s'}} 
+vcsMappings = {}

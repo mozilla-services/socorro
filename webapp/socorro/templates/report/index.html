@@ -60,7 +60,12 @@
      <tr py:for="frame in frames" class="${h.get_row_class(row)}">
       <td>${frame.frame_num}</td>
       <td>${frame.signature}</td>
-      <td><py:if test="frame.source_filename is not None">${frame.source_filename}:${frame.source_line}</py:if></td>
+      <td py:choose="frame.source_link is not None">
+       <py:when test="True">
+         ${h.link_to(frame.source_filename + ", " + frame.source_line, url=frame.source_link)} 
+       </py:when>  
+       <py:otherwise test="">${frame.source_filename}</py:otherwise>
+      </td>
       <?python row += 1 ?>
      </tr>
   </table>

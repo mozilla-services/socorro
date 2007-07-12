@@ -468,11 +468,20 @@ class BaseFrame(object):
     self.source = source
     self.source_line = source_line
     self.instruction = instruction
-    #TODO: parse vcs info from source filenames
+    self.source_filename = None
+    self.source_link = None
     if source is not None:
-      self.source_filename = os.path.split(source)[1]
-    else:
-      self.source_filename = None
+      vcsinfo = source.split(":")
+      if len(vcsinfo) == 4:
+        (type, root, source_file, revision) = vcsinfo
+        self.source_filename = source_file
+        if type in config.vcsMappings:
+          if root in config.vcsMappings[type]:
+            self.source_link = config.vcsMappings[type][root] % {'file': source_file,
+                                                                 'revision': revision, 
+                                                                 'line': source_line} 
+      else:
+        self.source_filename = os.path.split(source)[1]
 
 class Frame(BaseFrame):
   def __str__(self):
