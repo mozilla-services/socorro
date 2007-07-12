@@ -9,7 +9,6 @@ from sqlalchemy import *
 from sqlalchemy.databases.postgres import *
 import re
 
-
 matchDumpID = re.compile('^(%s)?([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$' % config.dumpIDPrefix)
 
 class ReportController(BaseController):
@@ -45,10 +44,15 @@ class ReportController(BaseController):
     c.params = BySignatureLimit()
     c.params.setFromParams(request.params)
     key = "reportlist_%s" % request.environ["QUERY_STRING"]
-    (c.reports, ts) = getReportsForParams(c.params, key)
+    (c.reports, c.builds, ts) = getReportsForParams(c.params, key)
+
+    builds = [build.build_date for build in c.builds]
+    c.max_build = max(builds)
+    c.min_build = min(builds)
+
     resp = responseForKey("%s%s" % (ts,key))
     resp.write(render('report/list'))
-    del c.params, c.reports
+    del c.params, c.reports, c.builds
     return resp
 
   def add(self):

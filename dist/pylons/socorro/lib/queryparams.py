@@ -59,6 +59,9 @@ class BaseLimit(object):
   version_validator = ListValidator(ProductVersionValidator())
   stringlist_validator = ListValidator(formencode.validators.String(strip=True))
   platform_validator = ListValidator(PlatformValidator())
+  query_validator = formencode.validators.OneOf(['signature', 'stack'])
+  type_validator = formencode.validators.OneOf(['exact', 'contains'])
+  signature_validator = formencode.validators.String(strip=True, if_empty=None)
 
   @staticmethod
   def limit_range(range):
@@ -67,13 +70,17 @@ class BaseLimit(object):
     return (num, unit)
 
   def __init__(self, date=None, range=None,
-               products=None, branches=None, versions=None, platforms=None):
+               products=None, branches=None, versions=None, platforms=None,
+               query=None, query_search=None, query_type=None):
     self.date = date
     self.range = range   # _range is a tuple (number, interval)
     self.products = products or []
     self.branches = branches or []
     self.versions = versions or []
     self.platforms = platforms or []
+    self.query = query
+    self.query_search = query_search
+    self.query_type = query_type
 
   def setFromParams(self, params):
     """Set the values of this object from a request.params instance."""
@@ -95,6 +102,10 @@ class BaseLimit(object):
     for platforms in params.getall('platform'):
       self.platforms.extend(self.platform_validator.to_python(platforms))
 
+    self.query = self.signature_validator.to_python(params.get('query', None))
+    self.query_search = self.query_validator.to_python(params.get('query_search', None))
+    self.query_type = self.type_validator.to_python(params.get('query_type', None))
+
   def getURLDict(self):
     d = { }
     if self.date is not None:
@@ -109,6 +120,12 @@ class BaseLimit(object):
       d['version'] = ','.join(['%s:%s' % (product, version) for (product, version) in self.versions])
     if len(self.platforms):
       d['platform'] = ','.join(map(str, self.platforms))
+    if self.query is not None:
+      d['query'] = self.query
+    if self.query_search is not None:
+      d['query_search'] = self.query_search
+    if self.query_type is not None:
+      d['query_type'] = self.query_type
     return d
 
   def getSQLDateEnd(self):
@@ -126,6 +143,16 @@ class BaseLimit(object):
     
   def getSQLDateStart(self):
     return self.getSQLDateEnd() - self.getSQLRange()
+
+  def getQuerySearch(self):
+    if self.query_search is not None:
+      return self.query_search
+    return 'signature'
+
+  def getQueryType(self):
+    if self.query_type is not None:
+      return self.query_type
+    return 'contains'
 
   def filterByDate(self, q):
     return q.filter(Report.c.date.between(self.getSQLDateStart(),
@@ -156,13 +183,37 @@ class BaseLimit(object):
                              for platform in self.platforms]))
     return q
   
-  def filter(self, q):
+  def filterByQuery(self, q):
+    if self.query is not None:
+      if self.getQueryType() == 'contains':
+        pattern = '%' + self.query.replace('%', '%%') + '%'
+        if self.getQuerySearch() == 'signature':
+          q = q.filter(Report.c.signature.like(pattern))
+        else:
+          q = q.filter(
+            sql.exists([1],
+                       sql.and_(Frame.c.signature.like(pattern),
+                                Frame.c.report_id == Report.c.id)))
+      else:
+        if self.getQuerySearch() == 'signature':
+          q = q.filter(Report.c.signature == self.query)
+        else:
+          q = q.filter(
+            sql.exists([1],
+                       sql.and_(Frame.c.signature == self.query,
+                                Frame.c.report_id == Report.c.id)))
+
+    return q
+
+  def filter(self, q, use_query=True):
     q = q.filter(Report.c.signature != None)
     q = self.filterByDate(q)
     q = self.filterByProduct(q)
     q = self.filterByBranch(q)
     q = self.filterByVersion(q)
     q = self.filterByPlatform(q)
+    if use_query:
+      q = self.filterByQuery(q)
     return q
 
   def query_reports(self):
@@ -170,6 +221,26 @@ class BaseLimit(object):
     reports = self.filter(q).select()
     q.session.clear()
     return reports
+
+  def query_frequency(self):
+    # The "frequency" of a crash is the number of instances of that crash
+    # divided by the number of instances of *any* crash using the specified
+    # date/product/branch search criteria.
+    crashcount = func.count(sql.case([(Report.c.signature == self.signature, 1)]))
+    frequency = sql.cast(crashcount, types.Float) / func.count(Report.c.id)
+    s = select([Report.c.build_date, crashcount.label('count'),
+                frequency.label('frequency')],
+               group_by=[Report.c.build_date],
+               engine=create_engine())
+    s.append_whereclause(Report.c.build_date != None)
+
+    def FilterToAppend(clause):
+      s.append_whereclause(clause)
+      return s
+
+    s.filter = FilterToAppend
+    s = BaseLimit.filter(self, s, False)
+    return s.execute()
 
   def query_topcrashes(self):
     total = func.count(Report.c.id)
@@ -180,6 +251,7 @@ class BaseLimit(object):
                order_by=sql.desc(func.count(Report.c.id)),
                limit=100,
                engine=create_engine())
+    s.append_whereclause(Report.c.signature != None)
 
     def FilterToAppend(clause):
       s.append_whereclause(clause)
@@ -190,59 +262,6 @@ class BaseLimit(object):
     s = self.filter(s)
     return s.execute()
 
-class QueryLimit(BaseLimit):
-  query_validator = formencode.validators.OneOf(['signature', 'stack'])
-  type_validator = formencode.validators.OneOf(['exact', 'contains'])
-  signature_validator = formencode.validators.String(strip=True, if_empty=None)
-  
-  """An object representing query conditions for end-user searches."""
-  def __init__(self, signature=None, signature_search=None,
-               signature_type=None, **kwargs):
-    BaseLimit.__init__(self, **kwargs)
-    self.signature = signature
-    self.signature_search = signature_search
-    self.signature_type = signature_type
-
-  def setFromParams(self, params):
-    BaseLimit.setFromParams(self, params)
-
-    self.signature = self.signature_validator.to_python(params.get('signature', None))
-    self.signature_search = self.query_validator.to_python(params.get('signature_search', None))
-    self.signature_type = self.type_validator.to_python(params.get('signature_type', None))
-
-  def getSignatureSearch(self):
-    if self.signature_search is not None:
-      return self.signature_search
-    return 'signature'
-
-  def getSignatureType(self):
-    if self.signature_type is not None:
-      return self.signature_type
-    return 'contains'
-
-  def filter(self, q):
-    q = BaseLimit.filter(self, q)
-    if self.signature is not None:
-      if self.getSignatureType() == 'contains':
-        pattern = '%' + self.signature.replace('%', '%%') + '%'
-        if self.getSignatureSearch() == 'signature':
-          q = q.filter(Report.c.signature.like(pattern))
-        else:
-          q = q.filter(
-            sql.exists([1],
-                       sql.and_(Frame.c.signature.like(pattern),
-                                Frame.c.report_id == Report.c.id)))
-      else:
-        if self.getSignatureSearch() == 'signature':
-          q = q.filter(Report.c.signature == self.signature)
-        else:
-          q = q.filter(
-            sql.exists([1],
-                       sql.and_(Frame.c.signature == self.signature,
-                                Frame.c.report_id == Report.c.id)))
-
-    return q
-
   def __str__(self):
     if self.date is None:
       enddate = 'now'
@@ -251,14 +270,14 @@ class QueryLimit(BaseLimit):
       
     msg = "Results within %s %s of %s" % (self.getRange()[0], self.getRange()[1], enddate)
 
-    if self.signature != '':
+    if self.query is not None:
       sigtype = {'exact': 'is exactly',
-                 'contains': 'contains'}[self.getSignatureType()]
+                 'contains': 'contains'}[self.getQueryType()]
 
       sigquery = {'signature': 'the crash signature',
-                  'stack': 'one of the top 10 stack frames'}[self.getSignatureSearch()]
+                  'stack': 'one of the top 10 stack frames'}[self.getQuerySearch()]
       
-      msg += ", where %s %s '%s'" % (sigquery, sigtype, self.signature)
+      msg += ", where %s %s '%s'" % (sigquery, sigtype, self.query)
 
     if len(self.products) > 0:
       msg += ", and the product is one of %s" % ', '.join(["'%s'" % product for product in self.products])
@@ -311,13 +330,14 @@ def getReportsForParams(params, key):
   Get a list of reports for a set of params. Returns
   a tuple of the reports and a timestamp.
   """
-  # Disable caching for the moment, because it's causing memory leaks
-  return (params.query_reports(), time.time())
-
   def getList():
     reports = [r for r in params.query_reports()]
+    builds = [b for b in params.query_frequency()]
     ts = time.time()
-    return (reports, ts)
+    return (reports, builds, ts)
+
+  # Disable caching for the moment, because it's causing memory leaks
+  return getList()
   
   rcache = pylons.cache.get_cache('report_data')
   return rcache.get_value(key, createfunc=getList,

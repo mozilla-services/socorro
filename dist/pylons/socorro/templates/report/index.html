@@ -9,7 +9,7 @@
  <body>
   <div id="content">
    <p>${h.link_to('Record','#record')} ${h.link_to('Frames','#frames')}
-   ${h.link_to('Modules','#modules')} ${h.link_to('Dump', '#dump')}</p>
+   ${h.link_to('Modules','#modules')}</p>
    <h1 class="first" id="record">${c.report.product} ${c.report.version} Crash Report</h1>
    <table class="list record">
     <tr class="row1">
@@ -39,24 +39,51 @@
     <tr class="row1">
      <th>Crash Address</th><td>${c.report.address}</td>
     </tr>
+    <tr class="row2" py:if="c.report.url is not None">
+     <?python
+        url = c.report.url
+        if len(url) > 100:
+           url = url[:100] + "&#0133;"
+     ?>
+     <th>URL</th><td>${h.link_to(url, url=c.report.url)}</td>
+    </tr>
   </table>
-  
-   <py:if test="len(c.report.frames) > 0">
-    <h2 id="frames">Stack of Crashing Thread</h2>
-    <table class="list">
+   <py:if test="len(c.report.threads) > 0">
+  <h2 id="frames">Stack Traces</h2>
+  <table class="list" py:def="stack_trace(frames)">
      <tr>
       <th>frame</th>
       <th>signature</th>
+      <th>source</th>
      </tr>
      <?python row = 0 ?>
-     <tr py:for="frame in c.report.frames" class="${h.get_row_class(row)}">
+     <tr py:for="frame in frames" class="${h.get_row_class(row)}">
       <td>${frame.frame_num}</td>
       <td>${frame.signature}</td>
+      <td py:choose="frame.source_link is not None">
+       <py:when test="True">
+         ${h.link_to(frame.source_filename + ", " + frame.source_line, url=frame.source_link)} 
+       </py:when>  
+       <py:otherwise test="">${frame.source_filename}</py:otherwise>
+      </td>
       <?python row += 1 ?>
      </tr>
-    </table>
-   </py:if>
-
+  </table>
+  <h3>Stack of Crashing Thread</h3>
+  ${stack_trace(c.report.threads[c.report.crashed_thread])}
+  <!-- this just gives me tons of errors in the JS Console -->
+  <!-- h.parallel_effects(h.visual_effect('toggle_appear', 'allthreads'),h.visual_effect('toggle_appear', 'link_toggle') -->
+  <p id="link_toggle">${h.link_to('Click to view other threads', url='#allthreads', onclick=h.visual_effect('toggle_appear', 'allthreads') + ' return false;')}</p>
+  <div id="allthreads">
+   <py:for each="i in range(len(c.report.threads))">
+     <py:if test="i != c.report.crashed_thread">
+       <h3>Stack of Thread ${i}</h3>
+       ${stack_trace(c.report.threads[i])}
+     </py:if>
+   </py:for>
+  </div>
+  <script>document.getElementById("allthreads").style.display="none";</script>
+  </py:if>
    <py:if test="len(c.report.modules) > 0">
     <h2 id="modules">Modules</h2>
     <table class="list">
@@ -76,14 +103,7 @@
      </tr>
     </table>
    </py:if>
-  
-   <h2 id="dump">Raw Dump</h2>
-   <py:if test="len(c.report.dumps) == 1">
-   <pre py:if="len(c.report.dumps) == 1">${c.report.dumps[0].data}</pre>
-   </py:if>
- 
   </div>
   <!-- end content -->
- 
  </body>
 </html>

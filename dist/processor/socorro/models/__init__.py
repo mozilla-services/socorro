@@ -3,7 +3,9 @@ from sqlalchemy.ext.assignmapper import assign_mapper
 from sqlalchemy.ext.selectresults import SelectResultsExt
 from datetime import datetime
 from socorro.lib import config, EmptyFilter
+from cStringIO import StringIO
 import sys
+import os
 import re
 
 meta = DynamicMetaData()
@@ -422,10 +424,18 @@ Note:
 # Top crashers index, for use with the top crasher reports query.
 Index('idx_reports_date', reports_table.c.date, reports_table.c.product, reports_table.c.version, reports_table.c.build)
 
+fixupSpace = re.compile(r' (?=[\*&,])')
+fixupComma = re.compile(r'(?<=,)(?! )')
+
 filename_re = re.compile('[/\\\\]([^/\\\\]+)$')
 
 def make_signature(module_name, function, source, source_line, instruction):
   if function is not None:
+    # Remove spaces before all stars, ampersands, and commas
+    function = re.sub(fixupSpace, '', function)
+
+    # Ensure a space after commas
+    function = re.sub(fixupComma, ' ', function)
     return function
 
   if source is not None and source_line is not None:
@@ -448,17 +458,37 @@ def getEngine():
   from pylons.database import create_engine
   return create_engine(pool_recycle=config.processorConnTimeout)
 
-class Frame(object):
+class BaseFrame(object):
+  def __init__(self, report_id, frame_num, module_name, function, source, source_line, instruction):
+    self.report_id = report_id
+    self.frame_num = frame_num
+    self.module_name = module_name
+    self.signature = make_signature(module_name, function, source, source_line, instruction)
+    self.function = function
+    self.source = source
+    self.source_line = source_line
+    self.instruction = instruction
+    self.source_filename = None
+    self.source_link = None
+    if source is not None:
+      vcsinfo = source.split(":")
+      if len(vcsinfo) == 4:
+        (type, root, source_file, revision) = vcsinfo
+        self.source_filename = source_file
+        if type in config.vcsMappings:
+          if root in config.vcsMappings[type]:
+            self.source_link = config.vcsMappings[type][root] % {'file': source_file,
+                                                                 'revision': revision, 
+                                                                 'line': source_line} 
+      else:
+        self.source_filename = os.path.split(source)[1]
+
+class Frame(BaseFrame):
   def __str__(self):
     if self.report_id is not None:
       return str(self.report_id)
     else:
       return ""
-
-  def __init__(self, report_id, frame_num, module_name, function, source, source_line, instruction):
-    self.report_id = report_id
-    self.frame_num = frame_num
-    self.signature = make_signature(module_name, function, source, source_line, instruction)
 
 class Report(object):
   def __init__(self):
@@ -470,8 +500,6 @@ class Report(object):
       return ""
 
   def read_header(self, fh):
-    self.dumpText = ""
-
     crashed_thread = ''
     module_count = 0
 
@@ -499,12 +527,58 @@ class Report(object):
           self.modules.append(Module(self.id, module_count, values[1],
                                      values[4], values[2], values[3]))
           module_count += 1
-
+  
+  def read_stackframes(self, fh):
+        threads = []
+        for line in fh:
+          self.add_dumptext(line)
+          line = line.strip()
+          (thread_num, frame_num, module_name, function, source, source_line, instruction) = map(EmptyFilter, line.split("|"))
+          thread_num = int(thread_num)
+          while thread_num >= len(threads):
+            threads.append([])
+          threads[thread_num].append(BaseFrame(self.id,
+                                               frame_num,
+                                               module_name,
+                                               function,
+                                               source,
+                                               source_line,
+                                               instruction))
+        return threads
+  
   def add_dumptext(self, text):
-    self.dumpText += text
-
+    dump = getattr(self, 'dumpText', '')
+    self.dumpText = dump + text
+  
   def finish_dumptext(self):
-    self.dumps.append(Dump(self.id, self.dumpText))
+    if hasattr(self, 'dumpText'):
+      self.dumps.append(Dump(self.id, self.dumpText))
+  
+  def get_all_threads(self):
+    if "_threads" not in dir(self):
+      if len(self.dumps) > 0 and len(self.dumps[0].data) > 0:
+        try:
+          # this sort of sucks, eh?
+          r = Report()
+          s = StringIO(self.dumps[0].data)
+          self._crashed_thread = int(r.read_header(s))
+          self._threads = r.read_stackframes(s)
+        except:
+          print >> sys.stderr, "Unexpected error: ", sys.exc_info()[0]
+          self._crashed_thread = -1
+          self._threads = []
+      else:
+        self._crashed_thread = -1
+        self._threads = []
+    return self._threads
+
+  def get_crashed_thread(self):
+    if "_crashed_thread" not in dir(self):
+      self.get_all_threads()
+    return self._crashed_thread
+  
+  threads = property(get_all_threads)
+  crashed_thread = property(get_crashed_thread)
 
 class Dump(object):
   def __init__(self, report_id, text):
