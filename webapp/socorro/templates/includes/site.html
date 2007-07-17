@@ -10,7 +10,6 @@
  <link href="${h.url_for('/css/layout.css')}" rel="stylesheet" type="text/css" media="screen" />
  <link href="${h.url_for('/css/style.css')}" rel="stylesheet" type="text/css" media="all" />
  <link href="${h.url_for('/favicon.ico')}" rel="icon" type="image/png" />
- ${ h.javascript_include_tag(builtins=True) }
 </head>
 
 <body py:match="body" py:attrs="select('@*')">

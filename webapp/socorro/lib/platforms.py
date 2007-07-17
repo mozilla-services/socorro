@@ -4,10 +4,11 @@ from socorro.models import Report
 class Platform(object):
   """A class representing a platform, which has helper methods for
   aggregating and limiting SQL queries."""
-  def __init__(self, id, name, os_name):
+  def __init__(self, id, name, os_name, color):
     self._id = id
     self._name = name
     self._os_name = os_name
+    self._color = color
     self._condition = Report.c.os_name == self._os_name
     self._selection = sql.case([(self._condition, 1)])
     self.count_name = 'is_%s' % self._id
@@ -18,6 +19,9 @@ class Platform(object):
 
   def name(self):
     return self._name
+
+  def color(self):
+    return self._color
 
   def condition(self):
     return self._condition
@@ -40,9 +44,9 @@ class PlatformList(list):
 
     raise KeyError(key)
 
-platformList = PlatformList([Platform('windows', 'Windows', 'Windows NT'),
-                             Platform('mac', 'Mac OS X', 'Mac OS X'),
-                             Platform('linux', 'Linux', 'Linux')])
+platformList = PlatformList([Platform('windows', 'Windows', 'Windows NT', '#99F'),
+                             Platform('mac', 'Mac OS X', 'Mac OS X', '#3C3'),
+                             Platform('linux', 'Linux', 'Linux', '#C90')])
 
 def count_platforms():
   return [platform.count() for platform in platformList]

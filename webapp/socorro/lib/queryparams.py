@@ -227,10 +227,31 @@ class BaseLimit(object):
     # divided by the number of instances of *any* crash using the specified
     # date/product/branch search criteria.
     crashcount = func.count(sql.case([(Report.c.signature == self.signature, 1)]))
-    frequency = sql.cast(crashcount, types.Float) / func.count(Report.c.id)
-    s = select([Report.c.build_date, crashcount.label('count'),
-                frequency.label('frequency')],
-               group_by=[Report.c.build_date],
+    totalcount = func.count(Report.c.id)
+    frequency = sql.cast(crashcount, types.Float) / totalcount
+    truncateddate = func.date_trunc('day', Report.c.build_date)
+
+    selects = [truncateddate.label('build_date'),
+               crashcount.label('count'),
+               frequency.label('frequency'),
+               totalcount.label('total')]
+
+    for platform in platformList:
+      platform_crashcount = func.count(
+        sql.case([(sql.and_(Report.c.signature == self.signature,
+                            platform.condition()), 1)])
+        )
+      platform_totalcount = func.count(
+        sql.case([(platform.condition(), 1)])
+        )
+      platform_frequency = sql.case([(platform_totalcount > 0,
+                                      sql.cast(platform_crashcount, types.Float) / platform_totalcount)], else_=0.0)
+      selects.extend((platform_crashcount.label('count_%s' % platform.id()),
+                      platform_frequency.label('frequency_%s' % platform.id())))
+
+    s = select(selects,
+               group_by=[truncateddate],
+               order_by=[sql.desc(truncateddate)],
                engine=create_engine())
     s.append_whereclause(Report.c.build_date != None)
 
