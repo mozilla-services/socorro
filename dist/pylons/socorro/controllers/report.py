@@ -46,10 +46,6 @@ class ReportController(BaseController):
     key = "reportlist_%s" % request.environ["QUERY_STRING"]
     (c.reports, c.builds, ts) = getReportsForParams(c.params, key)
 
-    builds = [build.build_date for build in c.builds]
-    c.max_build = max(builds)
-    c.min_build = min(builds)
-
     resp = responseForKey("%s%s" % (ts,key))
     resp.write(render('report/list'))
     del c.params, c.reports, c.builds

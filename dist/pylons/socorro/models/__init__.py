@@ -62,7 +62,8 @@ reports_table = Table('reports', meta,
   Column('os_name', TruncatingString(100)),
   Column('os_version', TruncatingString(100)),
   Column('email', TruncatingString(100)),
-  Column('build_date', DateTime())
+  Column('build_date', DateTime()),
+  Column('user_id', String(50))
 )
 
 def upgrade_reports(dbc):
@@ -83,6 +84,15 @@ def upgrade_reports(dbc):
                            ::timestamp without time zone
                       WHERE build ~ '^\\\\d{10}'""")
     print "  Updated %s rows." % cursor.rowcount
+  else:
+    print "ok"
+  print "  Checking for reports.user_id...",
+  cursor.execute("""SELECT 1 FROM pg_attribute
+                    WHERE attrelid = 'reports'::regclass
+                    AND attname = 'user_id'""");
+  if cursor.rowcount == 0:
+    print "adding"
+    cursor.execute('ALTER TABLE reports ADD user_id character(50)')
   else:
     print "ok"
 

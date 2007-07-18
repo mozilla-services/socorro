@@ -111,12 +111,20 @@ class Processor(object):
       except (AttributeError, ValueError):
         pass
       
-      if 'timestamp' in json:
-        report.date = datetime.fromtimestamp(json["timestamp"], utctz)
-      
       report.product = json["ProductName"]
       report.version = json["Version"]
       report.vendor = json.get("Vendor", None)
       report.url = json.get("URL", None)
+      report.email = json.get("Email", None)
+      report.user_id = json.get("UserID", None)
+      if 'SecondsSinceLastCrash' in json:
+        report.last_crash = int(json["SecondsSinceLastCrash"])
+
+      if 'CrashTime' in json and 'InstallTime' in json:
+        crashtime = int(json['CrashTime'])
+        report.date = datetime.fromtimestamp(crashtime, utctz)
+        report.install_age = crashtime - int(json["InstallTime"])
+      elif 'timestamp' in json:
+        report.date = datetime.fromtimestamp(json["timestamp"], utctz)
     finally:
       jsonFile.close()
