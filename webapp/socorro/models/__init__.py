@@ -480,6 +480,7 @@ class BaseFrame(object):
     self.instruction = instruction
     self.source_filename = None
     self.source_link = None
+    self.source_info = None
     if source is not None:
       vcsinfo = source.split(":")
       if len(vcsinfo) == 4:
@@ -492,6 +493,8 @@ class BaseFrame(object):
                                                                  'line': source_line} 
       else:
         self.source_filename = os.path.split(source)[1]
+    if self.source_filename is not None and self.source_line is not None:
+      self.source_info = self.source_filename + ":" + self.source_line
 
 class Frame(BaseFrame):
   def __str__(self):
