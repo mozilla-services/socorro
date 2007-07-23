@@ -7,6 +7,8 @@ import config
 from mod_python import apache
 from mod_python import util
 
+import sys
+
 def handler(req):
   if req.method == "POST":
     try:
@@ -19,6 +21,10 @@ def handler(req):
       req.content_type = "text/plain"
       req.write(collect.makeResponseForClient(dumpID, dateString))
     except:
+      print >>sys.stderr, "Exception: %s" % sys.exc_info()[0]
+      print >>sys.stderr, sys.exc_info()[1]
+      print >>sys.stderr
+      sys.stderr.flush()
       return apache.HTTP_INTERNAL_SERVER_ERROR
     return apache.OK
   else:
