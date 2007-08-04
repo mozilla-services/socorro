@@ -105,6 +105,11 @@
     </table>
    </py:if>
   </div>
+  <py:if test="len(c.report.dumps) > 0">
+   <p>${h.link_to('Click to view raw dump.', url='#rawdump', onclick=h.visual_effect('toggle_appear', 'rawdump') + ' return false;')}</p>
+   <pre id="rawdump">${c.report.dumps[0].data}</pre>
+   <script>document.getElementById("rawdump").style.display="none";</script>
+  </py:if>
   <!-- end content -->
  </body>
 </html>
