@@ -19,45 +19,29 @@ expected = {
     }
 
 for (line, signature) in expected.iteritems():
-    args = map(EmptyFilter, line.split('|'))[1:]
+    args = map(EmptyFilter, line.split('|'))[2:]
     print args
-    f = Frame(1, *args)
-    assert f.signature == signature
+    f = Frame(*args)
+    assert f['signature'] == signature
 
 #
 # Test processing the output of minidump_stackwalk
 #
 assert sampledump.text != None
-fh = StringIO.StringIO(sampledump.text)
 r = Report()
-crashed_thread = r.read_header(fh)
-assert r.os_name == "Windows NT"
-assert r.os_version == "5.1.2600 Service Pack 2"
-assert r.cpu_name == "x86"
-assert r.cpu_info == "GenuineIntel family 6 model 14 stepping 8"
-assert r.reason == "EXCEPTION_ACCESS_VIOLATION"
-assert r.address == "0x0"
-assert crashed_thread is not None
-assert crashed_thread == '0'
+r['dump'] = sampledump.text
+r.read_dump()
+
+assert r['os_name'] == "Windows NT"
+assert r['os_version'] == "5.1.2600 Service Pack 2"
+assert r['cpu_name'] == "x86"
+assert r['cpu_info'] == "GenuineIntel family 6 model 14 stepping 8"
+assert r['reason'] == "EXCEPTION_ACCESS_VIOLATION"
+assert r['address'] == "0x0"
+assert r.crashed_thread == 0
 assert len(r.modules) == 114 # there are 115 lines, with one bogus module
 
-frame_num = 0
-loop_count = 0
-for line in fh:
-    loop_count += 1
-    (thread_num, frame_num, module_name, function, source, source_line, instruction) = map(EmptyFilter, line.split('|'))
-    if thread_num == crashed_thread and int(frame_num) < 10:
-        frame = Frame(r.id,
-                      frame_num,
-                      module_name,
-                      function,
-                      source,
-                      source_line,
-                      instruction)
-        r.frames.append(frame)
-fh.close()
-
-assert loop_count > 12
-print len(r.frames)
-assert len(r.frames) == 10
-assert r.frames[0].signature == "nsObjectFrame::Instantiate(char const*, nsIURI*)"
+print len(r.threads)
+assert len(r.threads) == 16
+assert r.threads[0][0]['signature'] == "nsObjectFrame::Instantiate(char const*, nsIURI*)"
+assert len(r.threads[0]) == 12

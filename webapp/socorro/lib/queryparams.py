@@ -1,4 +1,4 @@
-from socorro.models import Report, Branch, Frame, reports_table
+from socorro.models import reports_table as reports, branches_table as branches, frames_table as frames
 import formencode
 import sqlalchemy
 from pylons.database import create_engine
@@ -155,25 +155,25 @@ class BaseLimit(object):
     return 'contains'
 
   def filterByDate(self, q):
-    return q.filter(Report.c.date.between(self.getSQLDateStart(),
+    return q.filter(reports.c.date.between(self.getSQLDateStart(),
                                           self.getSQLDateEnd()))
 
   def filterByProduct(self, q):
     if len(self.products):
-      q = q.filter(Report.c.product.in_(*self.products))
+      q = q.filter(reports.c.product.in_(*self.products))
     return q
 
   def filterByBranch(self, q):
     if len(self.branches):
-      q = q.filter(sql.and_(Branch.c.branch.in_(*self.branches),
-                            Branch.c.product == Report.c.product,
-                            Branch.c.version == Report.c.version))
+      q = q.filter(sql.and_(branches.c.branch.in_(*self.branches),
+                            branches.c.product == reports.c.product,
+                            branches.c.version == reports.c.version))
     return q
 
   def filterByVersion(self, q):
     if len(self.versions):
-      q = q.filter(sql.or_(*[sql.and_(Report.c.product == product,
-                                      Report.c.version == version)
+      q = q.filter(sql.or_(*[sql.and_(reports.c.product == product,
+                                      reports.c.version == version)
                              for (product, version) in self.versions]))
     return q
 
@@ -188,25 +188,25 @@ class BaseLimit(object):
       if self.getQueryType() == 'contains':
         pattern = '%' + self.query.replace('%', '%%') + '%'
         if self.getQuerySearch() == 'signature':
-          q = q.filter(Report.c.signature.like(pattern))
+          q = q.filter(reports.c.signature.like(pattern))
         else:
           q = q.filter(
             sql.exists([1],
-                       sql.and_(Frame.c.signature.like(pattern),
-                                Frame.c.report_id == Report.c.id)))
+                       sql.and_(frames.c.signature.like(pattern),
+                                frames.c.report_id == reports.c.id)))
       else:
         if self.getQuerySearch() == 'signature':
-          q = q.filter(Report.c.signature == self.query)
+          q = q.filter(reports.c.signature == self.query)
         else:
           q = q.filter(
             sql.exists([1],
-                       sql.and_(Frame.c.signature == self.query,
-                                Frame.c.report_id == Report.c.id)))
+                       sql.and_(frames.c.signature == self.query,
+                                frames.c.report_id == reports.c.id)))
 
     return q
 
   def filter(self, q, use_query=True):
-    q = q.filter(Report.c.signature != None)
+    q = q.filter(reports.c.signature != None)
     q = self.filterByDate(q)
     q = self.filterByProduct(q)
     q = self.filterByBranch(q)
@@ -217,19 +217,35 @@ class BaseLimit(object):
     return q
 
   def query_reports(self):
-    q = Report.query().order_by(sql.desc(Report.c.date)).limit(500)
-    reports = self.filter(q).select()
-    q.session.clear()
-    return reports
+    selects = [reports.c.date,
+               reports.c.uuid,
+               reports.c.product,
+               reports.c.version,
+               reports.c.build,
+               reports.c.signature,
+               reports.c.url,
+               reports.c.os_name]
+    s = select(selects,
+               order_by=sql.desc(reports.c.date),
+               limit=500,
+               engine=create_engine())
+
+    def FilterToAppend(clause):
+      s.append_whereclause(clause)
+      return s
+      
+    s.filter = FilterToAppend
+    s = self.filter(s)
+    return s.execute()
 
   def query_frequency(self):
     # The "frequency" of a crash is the number of instances of that crash
     # divided by the number of instances of *any* crash using the specified
     # date/product/branch search criteria.
-    crashcount = func.count(sql.case([(Report.c.signature == self.signature, 1)]))
-    totalcount = func.count(Report.c.id)
+    crashcount = func.count(sql.case([(reports.c.signature == self.signature, 1)]))
+    totalcount = func.count(reports.c.id)
     frequency = sql.cast(crashcount, types.Float) / totalcount
-    truncateddate = func.date_trunc('day', Report.c.build_date)
+    truncateddate = func.date_trunc('day', reports.c.build_date)
 
     selects = [truncateddate.label('build_date'),
                crashcount.label('count'),
@@ -238,7 +254,7 @@ class BaseLimit(object):
 
     for platform in platformList:
       platform_crashcount = func.count(
-        sql.case([(sql.and_(Report.c.signature == self.signature,
+        sql.case([(sql.and_(reports.c.signature == self.signature,
                             platform.condition()), 1)])
         )
       platform_totalcount = func.count(
@@ -253,7 +269,7 @@ class BaseLimit(object):
                group_by=[truncateddate],
                order_by=[sql.desc(truncateddate)],
                engine=create_engine())
-    s.append_whereclause(Report.c.build_date != None)
+    s.append_whereclause(reports.c.build_date != None)
 
     def FilterToAppend(clause):
       s.append_whereclause(clause)
@@ -264,15 +280,15 @@ class BaseLimit(object):
     return s.execute()
 
   def query_topcrashes(self):
-    total = func.count(Report.c.id)
-    selects = [Report.c.signature, total]
+    total = func.count(reports.c.id)
+    selects = [reports.c.signature, total]
     selects.extend(count_platforms())
     s = select(selects,
-               group_by=[Report.c.signature],
-               order_by=sql.desc(func.count(Report.c.id)),
+               group_by=[reports.c.signature],
+               order_by=sql.desc(func.count(reports.c.id)),
                limit=100,
                engine=create_engine())
-    s.append_whereclause(Report.c.signature != None)
+    s.append_whereclause(reports.c.signature != None)
 
     def FilterToAppend(clause):
       s.append_whereclause(clause)
@@ -328,7 +344,7 @@ class BySignatureLimit(BaseLimit):
   def filter(self, q):
     q = BaseLimit.filter(self, q)
     if self.signature is not None:
-      q = q.filter(Report.c.signature == self.signature)
+      q = q.filter(reports.c.signature == self.signature)
     return q
 
 ### XXXcombine the two functions below

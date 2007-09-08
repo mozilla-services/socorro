@@ -49,7 +49,7 @@
      <th>URL</th><td>${h.link_to(url, url=c.report.url)}</td>
     </tr>
   </table>
-   <py:if test="len(c.report.threads) > 0">
+  <py:if test="c.report['dump'] is not None and len(c.report.threads) > 0">
   <h2 id="frames">Stack Traces</h2>
   <table class="list" py:def="stack_trace(frames)">
      <tr>
@@ -85,7 +85,7 @@
   </div>
   <script>document.getElementById("allthreads").style.display="none";</script>
   </py:if>
-   <py:if test="len(c.report.modules) > 0">
+   <py:if test="c.report['dump'] is not None and len(c.report.modules) > 0">
     <h2 id="modules">Modules</h2>
     <table class="list">
      <tr>
@@ -105,9 +105,9 @@
     </table>
    </py:if>
   </div>
-  <py:if test="len(c.report.dumps) > 0">
+  <py:if test="c.report['dump'] is not None">
    <p>${h.link_to('Click to view raw dump.', url='#rawdump', onclick=h.visual_effect('toggle_appear', 'rawdump') + ' return false;')}</p>
-   <pre id="rawdump">${c.report.dumps[0].data}</pre>
+   <pre id="rawdump">${c.report['dump']}</pre>
    <script>document.getElementById("rawdump").style.display="none";</script>
   </py:if>
   <!-- end content -->
