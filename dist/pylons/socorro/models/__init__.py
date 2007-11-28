@@ -1,6 +1,4 @@
 from sqlalchemy import *
-from sqlalchemy.ext.assignmapper import assign_mapper
-from sqlalchemy.ext.selectresults import SelectResultsExt
 from datetime import datetime
 from socorro.lib import config, EmptyFilter
 from cStringIO import StringIO
@@ -93,6 +91,17 @@ def upgrade_reports(dbc):
   if cursor.rowcount == 0:
     print "adding"
     cursor.execute('ALTER TABLE reports ADD user_id character(50)')
+  else:
+    print "ok"
+
+  print "  Checking for reports.date IS NOT NULL...",
+  cursor.execute("""SELECT 1 FROM pg_attribute
+                    WHERE attrelid = 'reports'::regclass
+                    AND attname = 'date'
+                    AND attnotnull = 't'""")
+  if cursor.rowcount == 0:
+    print "setting"
+    cursor.execute('ALTER TABLE reports ALTER date SET NOT NULL')
   else:
     print "ok"
 
@@ -465,141 +474,177 @@ def getEngine():
   Utility function to retrieve the pylons engine in case we need it in a model
   for generic 'get' methods.
   """
+  if localEngine:
+    return localEngine
+  
   from pylons.database import create_engine
   return create_engine(pool_recycle=config.processorConnTimeout)
 
-class BaseFrame(object):
-  def __init__(self, report_id, frame_num, module_name, function, source, source_line, instruction):
-    self.report_id = report_id
-    self.frame_num = frame_num
-    self.module_name = module_name
-    self.signature = make_signature(module_name, function, source, source_line, instruction)
-    self.function = function
-    self.source = source
-    self.source_line = source_line
-    self.instruction = instruction
-    self.source_filename = None
-    self.source_link = None
-    self.source_info = None
+class Frame(dict):
+  def __init__(self, module_name, function, source, source_line, instruction):
+    self['module_name'] = module_name
+    self['signature'] = make_signature(module_name, function, source, source_line, instruction)
+    self['function'] = function
+    self['source'] = source
+    self['source_line'] = source_line
+    self['instruction'] = instruction
+    self['source_filename'] = None
+    self['source_link'] = None
+    self['source_info'] = None
     if source is not None:
       vcsinfo = source.split(":")
       if len(vcsinfo) == 4:
         (type, root, source_file, revision) = vcsinfo
-        self.source_filename = source_file
+        self['source_filename'] = source_file
         if type in config.vcsMappings:
           if root in config.vcsMappings[type]:
-            self.source_link = config.vcsMappings[type][root] % {'file': source_file,
-                                                                 'revision': revision, 
-                                                                 'line': source_line} 
+            self['source_link'] = config.vcsMappings[type][root] % \
+                                    {'file': source_file,
+                                     'revision': revision, 
+                                     'line': source_line} 
       else:
-        self.source_filename = os.path.split(source)[1]
-    if self.source_filename is not None and self.source_line is not None:
-      self.source_info = self.source_filename + ":" + self.source_line
+        self['source_filename'] = os.path.split(source)[1]
 
-class Frame(BaseFrame):
-  def __str__(self):
-    if self.report_id is not None:
-      return str(self.report_id)
-    else:
-      return ""
+    if self['source_filename'] is not None and self['source_line'] is not None:
+      self['source_info'] = self['source_filename'] + ":" + self['source_line']
 
-class Report(object):
-  def __init__(self):
-    self.date = datetime.now()
+class Report(dict):
+  @staticmethod
+  def by_id(id):
+    selects = ColumnCollection(dumps_table.c.data.label('dump'),
+                               *reports_table.c)
+    r = select(selects, whereclause=reports_table.c.uuid==id,
+               from_obj=[reports_table.outerjoin(dumps_table)],
+               limit=1, engine=getEngine()).execute()
+    data = r.fetchone()
+    r.close()
+
+    if data is None:
+      return None
+
+    report = Report()
+    report.update(data)
+
+    print "Report['dump']: %s" % type(report['dump'])
+    if report['dump'] is not None:
+      report.read_dump()
+
+    return report
+
+  @staticmethod
+  def create(**kwargs):
+    r = reports_table.insert().compile(engine=getEngine()).execute(kwargs)
+
+    print "inserted data: %s" % r.last_inserted_params()
+
+    report = Report()
+    report.update(r.last_inserted_params())
+    return report
+
   def __str__(self):
     if self.id is not None:
       return str(self.id)
     else:
       return ""
 
-  def read_header(self, fh):
-    crashed_thread = ''
-    module_count = 0
+  def read_dump(self):
+    lines = iter(self['dump'].splitlines())
 
-    for line in fh:
-      self.add_dumptext(line)
-      line = line[:-1]
+    self._read_header(lines)
+    self._read_stackframes(lines)
+
+  def flush(self):
+    signature = None
+
+    if (self.crashed_thread is not None and
+        self.crashed_thread <= len(self.threads) and
+        len(self.threads[self.crashed_thread]) > 0):
+      signature = self.threads[self.crashed_thread][0]['signature']
+      print "Calculating signature: %s" % signature
+    else:
+      print "Something didn't work for signatures"
+
+    updatevalues = {'signature':  signature,
+                    'cpu_name':   self['cpu_name'],
+                    'cpu_info':   self['cpu_info'],
+                    'reason':     self['reason'],
+                    'address':    self['address'],
+                    'os_name':    self['os_name'],
+                    'os_version': self['os_version']}
+    updatecolumns = {'signature':  reports_table.c.signature,
+                     'cpu_name':   reports_table.c.cpu_name,
+                     'cpu_info':   reports_table.c.cpu_info,
+                     'reason':     reports_table.c.reason,
+                     'address':    reports_table.c.address,
+                     'os_name':    reports_table.c.os_name,
+                     'os_version': reports_table.c.os_version}
+
+    r = reports_table.update(whereclause=reports_table.c.id==self['id']). \
+        compile(engine=getEngine(), parameters=updatevalues).execute(updatevalues)
+
+    module_data = [{'report_id': self['id'],
+                    'module_key': i,
+                    'filename': self.modules[i].filename,
+                    'debug_id': self.modules[i].debug_id,
+                    'module_version': self.modules[i].module_version,
+                    'debug_filename': self.modules[i].debug_filename}
+                   for i in xrange(0, len(self.modules))]
+    r = modules_table.insert().compile(engine=getEngine()).execute(*module_data)
+
+    if (self.crashed_thread is not None and
+        self.crashed_thread <= len(self.threads)):
+      frame_data = [{'report_id': self['id'],
+                     'frame_num': i,
+                     'signature': self.threads[self.crashed_thread][i]['signature']}
+                    for i in xrange(0, min(10, len(self.threads[self.crashed_thread])))]
+      r = frames_table.insert().compile(engine=getEngine()).execute(*frame_data)
+
+    if self['dump'] is not None:
+      r = dumps_table.insert().compile(engine=getEngine()).execute(
+        {'report_id': self['id'],
+         'data': self['dump']})
+
+  def _read_header(self, lines):
+    self.crashed_thread = None
+    self.modules = []
+    self.threads = []
+
+    for line in lines:
       # empty line separates header data from thread data
       if line == '':
-        return crashed_thread
+        return
+      
       values = map(EmptyFilter, line.split("|"))
       if values[0] == 'OS':
-        self.os_name = values[1]
-        self.os_version = values[2]
+        self['os_name'] = values[1]
+        self['os_version'] = values[2]
       elif values[0] == 'CPU':
-        self.cpu_name = values[1]
-        self.cpu_info = values[2]
+        self['cpu_name'] = values[1]
+        self['cpu_info'] = values[2]
       elif values[0] == 'Crash':
-        self.reason = values[1]
-        self.address = values[2]
-        crashed_thread = values[3]
+        self['reason'] = values[1]
+        self['address'] = values[2]
+        self.crashed_thread = int(values[3])
       elif values[0] == 'Module':
         # Module|{Filename}|{Version}|{Debug Filename}|{Debug ID}|{Base Address}|Max Address}|{Main}
         # we should ignore modules with no filename
         if values[1]:
-          self.modules.append(Module(self.id, module_count, values[1],
-                                     values[4], values[2], values[3]))
-          module_count += 1
+          self.modules.append(Module(filename=values[1],
+                                     debug_id=values[4],
+                                     module_version=values[2],
+                                     debug_filename=values[3]))
   
-  def read_stackframes(self, fh):
-        threads = []
-        for line in fh:
-          self.add_dumptext(line)
-          line = line.strip()
-          (thread_num, frame_num, module_name, function, source, source_line, instruction) = map(EmptyFilter, line.split("|"))
-          thread_num = int(thread_num)
-          while thread_num >= len(threads):
-            threads.append([])
-          threads[thread_num].append(BaseFrame(self.id,
-                                               frame_num,
-                                               module_name,
-                                               function,
-                                               source,
-                                               source_line,
-                                               instruction))
-        return threads
-  
-  def add_dumptext(self, text):
-    dump = getattr(self, 'dumpText', '')
-    self.dumpText = dump + text
-  
-  def finish_dumptext(self):
-    if hasattr(self, 'dumpText'):
-      self.dumps.append(Dump(self.id, self.dumpText))
-  
-  def get_all_threads(self):
-    if "_threads" not in dir(self):
-      if len(self.dumps) > 0 and len(self.dumps[0].data) > 0:
-        try:
-          # this sort of sucks, eh?
-          r = Report()
-          s = StringIO(self.dumps[0].data)
-          self._crashed_thread = int(r.read_header(s))
-          self._threads = r.read_stackframes(s)
-        except:
-          print >> sys.stderr, "Unexpected error: ", sys.exc_info()[0]
-          self._crashed_thread = -1
-          self._threads = []
-      else:
-        self._crashed_thread = -1
-        self._threads = []
-    return self._threads
-
-  def get_crashed_thread(self):
-    if "_crashed_thread" not in dir(self):
-      self.get_all_threads()
-    return self._crashed_thread
-  
-  threads = property(get_all_threads)
-  crashed_thread = property(get_crashed_thread)
-
-class Dump(object):
-  def __init__(self, report_id, text):
-    self.report_id = report_id
-    self.data = text
-
-  def __str__(self):
-    return str(self.report_id)
+  def _read_stackframes(self, lines):
+    for line in lines:
+      (thread_num, frame_num, module_name, function, source, source_line, instruction) = map(EmptyFilter, line.split("|"))
+      thread_num = int(thread_num)
+      while thread_num >= len(self.threads):
+        self.threads.append([])
+      self.threads[thread_num].append(Frame(module_name=module_name,
+                                            function=function,
+                                            source=source,
+                                            source_line=source_line,
+                                            instruction=instruction))
 
 class Branch(object):
   def __init__(self, product, version, branch):
@@ -665,10 +710,8 @@ def getCachedBranchData():
                                type="memory", expiretime=360)
 
 class Module(object):
-  def __init__(self, report_id, module_key, filename, debug_id, 
+  def __init__(self, filename, debug_id, 
                module_version, debug_filename):
-    self.report_id = report_id
-    self.module_key = module_key
     self.filename = filename
     self.debug_id = debug_id
     self.module_version = module_version
@@ -684,12 +727,12 @@ class Extension(object):
 #
 # Check whether we're running outside Pylons
 #
+print >>sys.stderr, "Trying to set up database"
 try:
-  ctx = None
   import socorro.lib.helpers
   from pylons.database import session_context, get_engine_conf
-  ctx = session_context
   test = get_engine_conf()
+  localEngine = None
 except (ImportError, TypeError):
   from sqlalchemy.ext.sessioncontext import SessionContext
   localEngine = create_engine(config.processorDatabaseURI,
@@ -697,26 +740,3 @@ except (ImportError, TypeError):
                               poolclass=pool.QueuePool, 
                               pool_recycle=config.processorConnTimeout,
                               pool_size=1)
-  def make_session():
-    return create_session(bind_to=localEngine)
-  ctx = SessionContext(make_session)
-
-"""
-This defines our relationships between the tables assembled above.  It
-has to be near the bottom since it uses the objects defined after the
-table definitions.
-"""
-frame_mapper = assign_mapper(ctx, Frame, frames_table)
-report_mapper = assign_mapper(ctx, Report, reports_table, 
-  properties = {
-    'frames': relation(Frame, lazy=True, cascade="all, delete-orphan", 
-                       order_by=[frames_table.c.frame_num]),
-    'dumps': relation(Dump, lazy=True, cascade="all, delete-orphan"),
-    'modules': relation(Module, lazy=True, cascade="all, delete-orphan"),
-    'extensions': relation(Extension, lazy=True, cascade="all, delete-orphan"),
-  }
-)
-dump_mapper = assign_mapper(ctx, Dump, dumps_table)
-branch_mapper = assign_mapper(ctx, Branch, branches_table)
-module_mapper = assign_mapper(ctx, Module, modules_table)
-extension_mapper = assign_mapper(ctx, Extension, extensions_table)

@@ -1,5 +1,5 @@
 from sqlalchemy import sql, func, select, types
-from socorro.models import Report
+from socorro.models import reports_table
 
 class Platform(object):
   """A class representing a platform, which has helper methods for
@@ -9,7 +9,7 @@ class Platform(object):
     self._name = name
     self._os_name = os_name
     self._color = color
-    self._condition = Report.c.os_name == self._os_name
+    self._condition = reports_table.c.os_name == self._os_name
     self._selection = sql.case([(self._condition, 1)])
     self.count_name = 'is_%s' % self._id
     self._count = func.count(self._selection).label(self.count_name)

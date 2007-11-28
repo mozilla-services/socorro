@@ -4,11 +4,13 @@ from socorro.models import Branch
 class TestTopcrashController(TestController):
   def test_index(self):
     response = self.app.get(url_for(controller='topcrasher'))
-    abranch = Branch.get_by()
+    aproductversion = Branch.getProductVersions().fetchone()
     response = self.app.get(url_for(controller='topcrasher',
                                     action='byversion',
-                                    product=abranch.product,
-                                    version=abranch.version))
+                                    product=aproductversion.product,
+                                    version=aproductversion.version))
+
+    abranch = Branch.getBranches().fetchone()
     response = self.app.get(url_for(controller='topcrasher',
                                     action='bybranch',
                                     branch=abranch.branch))

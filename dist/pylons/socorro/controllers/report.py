@@ -8,23 +8,22 @@ import socorro.lib.config as config
 from sqlalchemy import *
 from sqlalchemy.databases.postgres import *
 import re
+from pylons.database import create_engine
+from cStringIO import StringIO
 
 matchDumpID = re.compile('^(%s)?([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$' % config.dumpIDPrefix)
 
 class ReportController(BaseController):
   def index(self, id):
-    c.report = Report.get_by(uuid=id)
+    c.report = Report.by_id(id)
     if c.report is None:
       abort(404, 'Not found')
 
-    c.report.expunge()
-
-    if c.report.build:
-      resp = responseForKey(c.report.uuid, expires=(60 * 60))
+    if c.report['build']:
+      resp = responseForKey(c.report['uuid'], expires=(60 * 60))
     else:
-      resp = responseForKey(c.report.uuid)
+      resp = responseForKey(c.report['uuid'])
     resp.write(render('report/index'))
-    del c.report
     return resp
 
   def find(self):
@@ -48,7 +47,6 @@ class ReportController(BaseController):
 
     resp = responseForKey("%s%s" % (ts,key))
     resp.write(render('report/list'))
-    del c.params, c.reports, c.builds
     return resp
 
   def add(self):
