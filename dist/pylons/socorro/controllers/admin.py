@@ -17,7 +17,7 @@ class AdminController(BaseController):
                  request.params['branch'])
       b.flush()
     
-    c.branches = Branch.select(order_by=[branches_table.c.product, branches_table.c.version])
+    c.branches = Branch.getAll()
 
     enddate = func.now()
     startdate = enddate - sql.cast('1 week', PGInterval)

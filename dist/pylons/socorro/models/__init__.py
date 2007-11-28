@@ -651,6 +651,23 @@ class Branch(object):
     self.product = product
     self.version = version
     self.branch = branch
+
+  def flush(self):
+    branch_data = [{'product': self.product,
+                   'version': self.version,
+                   'branch': self.branch}]
+    r = branches_table.insert().compile(engine=getEngine()).execute(*branch_data)
+    return
+
+  @staticmethod
+  def getAll():
+    """
+    Just returns everything in branches table.
+    """
+    return select([branches_table],
+                  distinct=True,
+                  order_by=[branches_table.c.branch],
+                  engine=getEngine()).execute()
   
   @staticmethod
   def getBranches():
