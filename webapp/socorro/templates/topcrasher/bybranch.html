@@ -10,7 +10,7 @@
 
 <body>
 
-<div id="content" py:choose="c.tc.rowcount">
+<div id="content" py:choose="len(c.tc)">
  <h1 class="first">Top Crashers for the ${c.branch} Branch</h1>
   <p py:when="0">No results were found.</p>
   <div py:otherwise="">Below are the top 100 crashers over the last 2 weeks.

@@ -4,17 +4,17 @@ body {
 }
 
 #header {
+  background: #eee url(../header_bg.png) no-repeat top left;
   border-bottom: 1px solid #000;
-  background: url(../header_bg.png) repeat-x top left;
-  min-height: 2em;
-  padding: .5em .7em .5em .7em;
+  min-height: 1.2em;
+  padding: .5em .7em .5em 65px;
 }
 
 #header h1 {
   border: none;
-  color: #fff;
+  color: #000;
   font-family: verdana, arial, sans-serif;
-  font-size: 1.8em;
+  font-size: 1.0em;
   margin: 0;
   padding: 0;
 }
@@ -22,12 +22,11 @@ body {
 #header p {
   font-size: smaller;
   font-weight: bold;
-  margin: -5px 0 0 0;
+  margin: 0;
   padding: 0;
 }
 
 #header ul {
-  float: left;
   list-style-type: none;
   margin: -21px 0 0 150px;
   padding: 0;
@@ -35,28 +34,55 @@ body {
 
 #header ul li {
   display: inline;
-  float: left;
+  float: right;
 }
 
 #header ul li a {
-  background: #eee;
-  border: 1px outset #600;
-  color: #000;
+  background-color: #fff;
+  border: 1px outset #ccc;
+  color: #33c;
   display: block;
   font-size: smaller;
   font-weight: bold;
+  margin: 0 7px;
   padding: 3px;
   text-decoration: none;
 }
 
 #header ul li a:hover {
-  border: 1px inset #600;
   background-color: #fff;
+  border: 1px inset #ccc;
+}
+
+#menu {
+}
+
+#quickfind {
+  display: inline;
+  float: right;
+  font-size: smaller;
 }
 
 #content {
   clear: both;
   padding: 1em;
+}
+
+#report-header {
+  float: left;
+}
+
+#report-header-details {
+  float: right;
+  font-size: smaller;
+}
+
+#report-header-details span {
+  font-weight: bold;
+}
+
+#report-index {
+  clear: both;
 }
 
 #footer {

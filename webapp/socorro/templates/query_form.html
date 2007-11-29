@@ -11,17 +11,23 @@ from socorro.lib.platforms import platformList
  <xi:include href="includes/common.html" />
  <head>
   <title>Crash Reports</title>
+  ${ h.stylesheet_link_tag("/css/datePicker.css") }
+  ${ h.javascript_include_tag("/js/jquery/jquery-1.2.1.js") }
+  ${ h.javascript_include_tag("/js/jquery/date.js") }
+  ${ h.javascript_include_tag("/js/jquery/plugins/ui/jquery.datePicker.js") }
+  <script type="text/javascript">
+  $(function()
+  {
+    Date.format='yyyy-mm-dd';
+    $('.date-pick').datePicker();
+    $('.date-pick').dpSetStartDate('2007-01-01');
+  });
+  </script>
  </head>
  <body>
   <div id="content">
 
-  <form id="quickfind" action="${h.url_for(controller='report', action='find')}"
-        py:if="not request.params.get('do_query', None)">
-   <input type="submit" value="Go to Report" />
-   <input type="text" size="24" name="id" id="crash-id"/>
-  </form>
-
-  <h1>Search Crash Reports</h1>
+  <h1 class="first">Search Crash Reports</h1>
   <form name="query" method="GET" action="${h.url_for(action='query')}">
    <input type="hidden" name="do_query" value="1" />
 
@@ -86,7 +92,7 @@ from socorro.lib.platforms import platformList
 
    <p>
     <label for="date">Occuring before date (default: now, format yyyy-mm-dd HH:MM:SS): </label>
-    <input type="text" name="date" size="20" value="${c.params.date}" />
+    <input type="text" name="date" size="20" class="date-pick" value="${c.params.date}" />
     <br />
     <label for="range_value">Date range: </label>
     <input type="text" name="range_value" value="${c.params.getRange()[0]}" size="2" /><select name="range_unit">

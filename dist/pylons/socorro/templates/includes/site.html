@@ -16,12 +16,17 @@
 
 <!-- site header -->
 <div id="header">
- <h1>Socorro</h1>
- <p>Crash Reporter</p>
- <ul>
-  <li>${ h.link_to('Find a Report', h.url_for(controller='query', action='query', id=None)) }</li>
-  <li>${ h.link_to('Top Crashers', h.url_for(controller='topcrasher', action='index')) }</li>
- </ul>
+ <h1>Mozilla Crash Reports</h1>
+ <div id="menu">
+  <form id="quickfind" action="${h.url_for(controller='report', action='find')}">
+   <input type="text" size="24" name="id" id="crash-id"/>
+   <input type="submit" value="Go to Report" />
+  </form>
+  <ul>
+   <li>${ h.link_to('Find a Report', h.url_for(controller='query', action='query', id=None)) }</li>
+   <li>${ h.link_to('Top Crashers', h.url_for(controller='topcrasher', action='index')) }</li>
+  </ul>
+ </div>
 </div>
 <!-- end site header -->
 

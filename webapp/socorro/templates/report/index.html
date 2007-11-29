@@ -4,50 +4,72 @@
    xmlns:xi="http://www.w3.org/2001/XInclude">
  <xi:include href="../includes/site.html" />
  <head>
-  <title>Breakpad Crash Report: ${c.report.uuid}</title>
- ${ h.javascript_include_tag(builtins=True) }
+  <title>Crash Report ${c.report.uuid}</title>
+  ${ h.javascript_include_tag("/js/jquery/jquery-1.2.1.js") }
+  ${ h.javascript_include_tag("/js/jquery/plugins/ui/ui.tabs.js") }
+  ${ h.stylesheet_link_tag("/css/flora/flora.all.css") }
+  <script type="text/javascript">
+  $(document).ready(function(){
+    $('#report-index > ul').tabs();
+    $('#showallthreads').click(function(){
+      $('#allthreads').toggle(400);
+      return false;
+    });
+  });
+  </script> 
  </head>
  <body>
   <div id="content">
-   <p>${h.link_to('Record','#record')} ${h.link_to('Frames','#frames')}
-   ${h.link_to('Modules','#modules')}</p>
-   <h1 class="first" id="record">${c.report.product} ${c.report.version} Crash Report</h1>
-   <table class="list record">
-    <tr class="row1">
-     <th>UUID</th><td>${c.report.uuid}</td>
-    </tr>
-    <tr class="row2">
-     <th>Time</th><td>${c.report.date}</td>
-    </tr>
-    <tr class="row1">
-     <th>Build ID</th><td>${c.report.build}</td>
-    </tr>
-    <tr class="row2">
-     <th>OS</th><td>${c.report.os_name}</td>
-    </tr>
-    <tr class="row1">
-     <th>OS Version</th><td>${c.report.os_version}</td>
-    </tr>
-    <tr class="row2">
-     <th>CPU</th><td>${c.report.cpu_name}</td>
-    </tr>
-    <tr class="row1">
-     <th>CPU Info</th><td>${c.report.cpu_info}</td>
-    </tr>
-    <tr class="row2">
-     <th>Crash Reason</th><td>${c.report.reason}</td>
-    </tr>
-    <tr class="row1">
-     <th>Crash Address</th><td>${c.report.address}</td>
-    </tr>
-  </table>
-  <py:if test="c.report['dump'] is not None and len(c.report.threads) > 0">
-  <h2 id="frames">Stack Traces</h2>
-  <table class="list" py:def="stack_trace(frames)">
+   <h1 id="report-header" class="first">${c.report.product} ${c.report.version} Crash Report</h1>
+   <div id="report-header-details">ID: <span>${c.report.uuid}</span><br/> Signature: <span>${c.report.signature}</span></div>
+   <div id="report-index" class="flora">
+    <ul>
+     <li><a href="#details"><span>Details</span></a></li>
+     <li><a href="#frames"><span>Frames</span></a></li>
+     <li><a href="#modules"><span>Modules</span></a></li>
+     <li><a href="#rawdump"><span>Raw Dump</span></a></li>
+    </ul>
+    <div id="details">
+     <table class="list record">
+      <tr class="row2">
+       <th>Signature</th><td>${c.report.signature}</td>
+      </tr>
+      <tr class="row1">
+       <th>UUID</th><td>${c.report.uuid}</td>
+      </tr>
+      <tr class="row2">
+       <th>Time</th><td>${c.report.date}</td>
+      </tr>
+      <tr class="row1">
+       <th>Build ID</th><td>${c.report.build}</td>
+      </tr>
+      <tr class="row2">
+       <th>OS</th><td>${c.report.os_name}</td>
+      </tr>
+      <tr class="row1">
+       <th>OS Version</th><td>${c.report.os_version}</td>
+      </tr>
+      <tr class="row2">
+       <th>CPU</th><td>${c.report.cpu_name}</td>
+      </tr>
+      <tr class="row1">
+       <th>CPU Info</th><td>${c.report.cpu_info}</td>
+      </tr>
+      <tr class="row2">
+       <th>Crash Reason</th><td>${c.report.reason}</td>
+      </tr>
+      <tr class="row1">
+       <th>Crash Address</th><td>${c.report.address}</td>
+      </tr>
+    </table>
+   </div>
+   <div id="frames">
+    <py:if test="c.report['dump'] is not None and len(c.report.threads) > 0">
+    <table class="list" py:def="stack_trace(frames)">
      <tr>
-      <th>frame</th>
-      <th>signature</th>
-      <th>source</th>
+      <th>Frame</th>
+      <th>Signature</th>
+      <th>Source</th>
      </tr>
      <?python row = 0 ?>
      <tr py:for="frame in frames" class="${h.get_row_class(row)}">
@@ -61,47 +83,48 @@
       </td>
       <?python row += 1 ?>
      </tr>
-  </table>
-  <h3>Stack of Crashing Thread</h3>
-  ${stack_trace(c.report.threads[c.report.crashed_thread])}
-  <!-- this just gives me tons of errors in the JS Console -->
-  <!-- h.parallel_effects(h.visual_effect('toggle_appear', 'allthreads'),h.visual_effect('toggle_appear', 'link_toggle') -->
-  <p id="link_toggle">${h.link_to('Click to view other threads', url='#allthreads', onclick=h.visual_effect('toggle_appear', 'allthreads') + ' return false;')}</p>
-  <div id="allthreads">
-   <py:for each="i in range(len(c.report.threads))">
-     <py:if test="i != c.report.crashed_thread">
-       <h3>Stack of Thread ${i}</h3>
-       ${stack_trace(c.report.threads[i])}
-     </py:if>
-   </py:for>
-  </div>
-  <script>document.getElementById("allthreads").style.display="none";</script>
-  </py:if>
-   <py:if test="c.report['dump'] is not None and len(c.report.modules) > 0">
-    <h2 id="modules">Modules</h2>
-    <table class="list">
-     <tr>
-      <th>filename</th>
-      <th>Version</th>
-      <th>Debug Identifier</th>
-      <th>Debug Filename</th>
-     </tr>
-     <?python row = 0 ?>
-     <tr py:for="module in c.report.modules" class="${h.get_row_class(row)}">
-      <td>${module.filename}</td>
-      <td>${module.module_version}</td>
-      <td>${module.debug_id}</td>
-      <td>${module.debug_filename}</td>
-      <?python row += 1 ?>
-     </tr>
     </table>
-   </py:if>
+    <h2>Crashing Thread</h2>
+    ${stack_trace(c.report.threads[c.report.crashed_thread])}
+    <p id="showallthreads">${h.link_to('Show/hide other threads', url='#allthreads')}</p>
+    <div id="allthreads">
+     <py:for each="i in range(len(c.report.threads))">
+      <py:if test="i != c.report.crashed_thread">
+       <h2>Thread ${i}</h2>
+       ${stack_trace(c.report.threads[i])}
+      </py:if>
+     </py:for>
+    </div>
+    <script>document.getElementById("allthreads").style.display="none";</script>
+    </py:if>
+   </div>
+   <div id="modules">
+    <py:if test="c.report['dump'] is not None and len(c.report.modules) > 0">
+     <table class="list">
+      <tr>
+       <th>Filename</th>
+       <th>Version</th>
+       <th>Debug Identifier</th>
+       <th>Debug Filename</th>
+      </tr>
+      <?python row = 0 ?>
+      <tr py:for="module in c.report.modules" class="${h.get_row_class(row)}">
+       <td>${module.filename}</td>
+       <td>${module.module_version}</td>
+       <td>${module.debug_id}</td>
+       <td>${module.debug_filename}</td>
+       <?python row += 1 ?>
+      </tr>
+     </table>
+    </py:if>
+   </div>
+   <div id="rawdump">
+    <py:if test="c.report['dump'] is not None">
+      <textarea class="code">${c.report['dump']}</textarea>
+    </py:if>
+   </div>
   </div>
-  <py:if test="c.report['dump'] is not None">
-   <p>${h.link_to('Click to view raw dump.', url='#rawdump', onclick=h.visual_effect('toggle_appear', 'rawdump') + ' return false;')}</p>
-   <pre id="rawdump">${c.report['dump']}</pre>
-   <script>document.getElementById("rawdump").style.display="none";</script>
-  </py:if>
-  <!-- end content -->
+ </div>
+ <!-- end content -->
  </body>
 </html>

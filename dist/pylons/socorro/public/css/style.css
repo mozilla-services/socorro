@@ -17,8 +17,7 @@ h1.first {
 }
 
 h1, h2, h3, h4, h5, h6 {
-  border-bottom: 1px solid #eee;
-  color: #400;
+  color: #33c;
   font-family: 'Times New Roman', Times, serif;
 }
 
@@ -47,7 +46,7 @@ h3 {
   font-weight:normal;
 }
 .list th {
-  background: #ccf;
+  background: #dfd;
   border: 1px solid #000;
   font-weight: bold;
   padding: 2px;
@@ -72,4 +71,12 @@ h3 {
 
 .record th {
   text-align: right;
+}
+
+textarea.code {
+  background-color: #eee;
+  border: 1px solid #ccc;
+  font-family: monospace;
+  width: 640px;
+  height: 480px;
 }

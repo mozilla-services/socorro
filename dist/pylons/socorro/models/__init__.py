@@ -481,8 +481,9 @@ def getEngine():
   return create_engine(pool_recycle=config.processorConnTimeout)
 
 class Frame(dict):
-  def __init__(self, module_name, function, source, source_line, instruction):
+  def __init__(self, module_name, frame_num, function, source, source_line, instruction):
     self['module_name'] = module_name
+    self['frame_num'] = frame_num
     self['signature'] = make_signature(module_name, function, source, source_line, instruction)
     self['function'] = function
     self['source'] = source
@@ -641,6 +642,7 @@ class Report(dict):
       while thread_num >= len(self.threads):
         self.threads.append([])
       self.threads[thread_num].append(Frame(module_name=module_name,
+                                            frame_num=frame_num,
                                             function=function,
                                             source=source,
                                             source_line=source_line,
