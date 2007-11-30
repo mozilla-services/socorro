@@ -224,7 +224,14 @@ class BaseLimit(object):
                reports.c.build,
                reports.c.signature,
                reports.c.url,
-               reports.c.os_name]
+               reports.c.os_name,
+               reports.c.os_version,
+               reports.c.cpu_name,
+               reports.c.cpu_info,
+               reports.c.address,
+               reports.c.reason,
+               reports.c.last_crash,
+               reports.c.install_age]
     s = select(selects,
                order_by=sql.desc(reports.c.date),
                limit=500,

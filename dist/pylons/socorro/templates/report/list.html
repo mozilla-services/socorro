@@ -1,5 +1,3 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
- "http://www.w3.org/TR/html4/strict.dtd">
 
 <?python
  from calendar import timegm
@@ -12,25 +10,36 @@
   <xi:include href="../includes/site.html" />
 <head>
   <title>Crash Reports in ${c.params.signature}</title>
+  ${ h.javascript_include_tag('/js/MochiKit/MochiKit.js') }
+  ${ h.javascript_include_tag('/js/PlotKit/excanvas.js') }
+  ${ h.javascript_include_tag('/js/PlotKit/PlotKit_Packed.js') }
+  ${ h.javascript_include_tag('/js/jquery/jquery-1.2.1.js') }
+  ${ h.javascript_include_tag('/js/jquery/plugins/ui/ui.tabs.js') }
+  ${ h.stylesheet_link_tag('/css/flora/flora.all.css') }
 
-  <script type="text/javascript" src="${h.url_for('/js/MochiKit/MochiKit.js')}"></script>
-  <script type="text/javascript" src="${h.url_for('/js/PlotKit/excanvas.js')}"></script>
-  <script type="text/javascript" src="${h.url_for('/js/PlotKit/PlotKit_Packed.js')}"></script>
+  <script type="text/javascript">
+  $(document).ready(function(){
+    $('#report-list > ul').tabs();
+  });
+  </script> 
 
   <style type="text/css">
    #buildid-outer {
      display: none;
    }
    #buildid-div {
+     float: left;
      height: 160px;
      width: 500px;
      margin-top: 0.5em;
      margin-bottom: 0.5em;
      margin-left: auto;
-     margin-right: auto;
+     margin-right: 1.5em;
    }
    #buildid-labels {
-     float: left;
+   }
+   .clear {
+    clear: both;
    }
   </style>    
 
@@ -39,54 +48,62 @@
 <body>
 
  <div id="content">
- <h1 class="first">Crash Reports in ${c.params.signature}</h1>
-
- <p>${str(c.params)}</p>
-
-
- <div id="buildid-outer">
-  <ul id="buildid-labels">
-   <li py:for="platform in platformList"
-       py:if="len(c.params.platforms) == 0 or platform in c.params.platforms"
-       style="color: ${platform.color()}">
-     ${platform.name()}
-   </li>
-  </ul>
-
-  <div id="buildid-div">
-  <canvas id="buildid-graph" width="500" height="160"></canvas>
+  <h1 class="first">Crash Reports in ${c.params.signature}</h1>
+  <p>${str(c.params)}</p>
+  <div id="report-list">
+   <ul>
+    <li><a href="#graph"><span>Graph</span></a></li>
+    <li><a href="#table"><span>Table</span></a></li>
+    <li><a href="#reports"><span>View Reports</span></a></li>
+   </ul>
+   <div id="graph">
+    <div id="buildid-outer">
+     <div id="buildid-div">
+     <canvas id="buildid-graph" width="500" height="160"></canvas>
+     </div>
+     <ul id="buildid-labels">
+      <li py:for="platform in platformList"
+          py:if="len(c.params.platforms) == 0 or platform in c.params.platforms"
+          style="color: ${platform.color()}">
+        ${platform.name()}
+      </li>
+     </ul>
+    </div>
+    <div class="clear"></div>
+   </div>
+   <div id="table">
+    <table id="buildid-table" class="list">
+     <thead>
+      <tr>
+       <th>Build ID</th>
+       <th py:if="len(c.params.platforms) != 1">Crashes</th>
+       <th py:for="platform in platformList"
+           py:if="len(c.params.platforms) == 0 or platform in c.params.platforms">
+        ${platform.name()[:3]}
+       </th>
+      </tr>
+     </thead>
+     <tbody>
+      <?python row=1?>
+      <tr py:for="build in c.builds" class="${h.get_row_class(row)}">
+       <td class="human-buildid">${build.build_date.strftime('%Y%m%d%H')}</td>
+       <td class="crash-count" py:if="len(c.params.platforms) != 1">
+        ${build.count} - ${"%.3f%%" % (build.frequency * 100)}
+       </td>
+       <td py:for="platform in platformList"
+           py:if="len(c.params.platforms) == 0 or platform in c.params.platforms">
+        ${getattr(build, 'count_%s' % platform.id())} -
+        ${"%.3f%%" % (getattr(build, 'frequency_%s' % platform.id()) * 100)}
+       </td>
+       <?python row+=1 ?>
+      </tr>
+     </tbody>
+    </table>
+   </div>
+   <div id="reports">
+    ${list_reports(c.reports)}
+   </div>
   </div>
- </div>
-
- ${list_reports(c.reports)}
- 
- <table id="buildid-table" class="list">
-  <thead>
-   <tr>
-    <th>Build ID</th>
-    <th py:if="len(c.params.platforms) != 1">Crashes</th>
-    <th py:for="platform in platformList"
-        py:if="len(c.params.platforms) == 0 or platform in c.params.platforms">
-     ${platform.name()[:3]}
-    </th>
-   </tr>
-  </thead>
-  <tbody>
-   <?python row=1?>
-   <tr py:for="build in c.builds" class="${h.get_row_class(row)}">
-    <td class="human-buildid">${build.build_date.strftime('%Y%m%d%H')}</td>
-    <td class="crash-count" py:if="len(c.params.platforms) != 1">
-     ${build.count} - ${"%.3f%%" % (build.frequency * 100)}
-    </td>
-    <td py:for="platform in platformList"
-        py:if="len(c.params.platforms) == 0 or platform in c.params.platforms">
-     ${getattr(build, 'count_%s' % platform.id())} -
-     ${"%.3f%%" % (getattr(build, 'frequency_%s' % platform.id()) * 100)}
-    </td>
-    <?python row+=1 ?>
-   </tr>
-  </tbody>
- </table>
 
  </div>
 
@@ -190,16 +207,18 @@
    ]; 
    colors.pop();
 
-   var chart = new CanvasRenderer($('buildid-graph'), layout,
+   var chart = new CanvasRenderer(MochiKit.DOM.getElement('buildid-graph'), layout,
                 {IECanvasHTC: '${h.url_for('/js/PlotKit/iecanvas.htc')}',
 		 colorScheme: colors,
 		 shouldStroke: true,
 		 strokeColor: null,
-		 strokeWidth: 2});
+		 strokeWidth: 2,
+     shouldFill: false,
+     axisLabelWidth: 75});
 
      chart.render();
 
-     $('buildid-outer').style.display = 'block';
+     MochiKit.DOM.getElement('buildid-outer').style.display = 'block';
  }
  </script>
 
