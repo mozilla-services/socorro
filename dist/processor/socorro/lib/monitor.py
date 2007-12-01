@@ -24,7 +24,7 @@ def print_exception():
   traceback.print_tb(sys.exc_info()[2])
   sys.stdout.flush()
 
-from socorro.lib.processor import Processor
+from socorro.lib.processor import Processor, createReport
 import socorro.lib.config as config
 import socorro.models as model
 
@@ -62,25 +62,29 @@ def processDump(fullpath, dir, basename):
   # To prevent this from occuring, the processor will first attempt
   # to insert a record with only the ID.
   dumpID = basename[:basename.find(config.jsonFileSuffix)]
-  report = None
-  didProcess = False
 
-  report = getReport(dumpID)
+  print "createReport for %s" % dumpID
+  try:
+    report = createReport(dumpID, fullpath)
+  except SQLError, e:
+    sys.stdout.flush()
+    print "beat to the punch for uuid " + dumpID
+    # This is ok, someone beat us to it
+    return
+  
   if report is not None:
+    didProcess = False
     try:
+      sys.stdout.flush()
+      print "runProcessor for %s" % dumpID
       try:
-        session = sqlalchemy.object_session(report)
-        session.clear()
-        didProcess = runProcessor(dir, dumpID, report.id)
+        processor = Processor(config.processorMinidump,
+                              config.processorSymbols)
+        processor.process(dir, dumpID, report)
+        didProcess = True
       except:
-        print "encountered exception... " + dumpID
-        # need to clear the db because we didn't process it
-        print "Backout changes to uuid " + dumpID
-        r = model.Report.get_by(uuid=dumpID)
-        r.refresh()
-        r.delete()
-        r.flush()
-        raise
+        print "Error in processor:"
+        print_exception()
     finally:
       dumppath = os.path.join(dir, dumpID + config.dumpFileSuffix)
 
@@ -104,41 +108,6 @@ def processDump(fullpath, dir, basename):
         os.remove(fullpath)
         os.remove(dumppath)
 
-def runProcessor(dir, dumpID, pk):
-  sys.stdout.flush()
-  print "runProcessor for " + dumpID
-  report = model.Report.get_by(id=pk, uuid=dumpID)
-  session = sqlalchemy.object_session(report) 
-  trans = session.create_transaction()
-  success = False
-  try:
-    processor = Processor(config.processorMinidump,
-                          config.processorSymbols)
-    processor.process(dir, dumpID, report)
-    success = True
-  except (KeyboardInterrupt, SystemExit):
-    trans.rollback()
-    raise
-  except Exception, e:
-    # XXX We should add the exception to the dump, but I can't figure out how
-    print "Error in processor:"
-    print_exception()
-
-  trans.commit()
-  session.clear()
-  return success
-
-def getReport(dumpID):
-  r = model.Report()
-  try:
-    r.uuid = dumpID
-    r.flush()
-  except SQLError, e:
-    print "beat to the punch for uuid " + dumpID
-    # This is ok, someone beat us to it
-    return None
-  return r
-
 def TimedForever():
   last_time = 0
   while True:
@@ -154,7 +123,7 @@ def TimedForever():
 rootPathLength = len(config.storageRoot.split(os.sep))
 
 def start():
-  print "starting Socorro dump file monitor."
+  print "starting Socorro dump file monitor. %s" % model.localEngine.url
 
   # ensure that we have a database
   c = model.localEngine.contextual_connect()
@@ -175,7 +144,7 @@ def start():
             if file.endswith(config.jsonFileSuffix):
               path = os.path.join(root, file)
               processDump(path, root, file)
-        
+
       except (KeyboardInterrupt, SystemExit):
         raise
       except:

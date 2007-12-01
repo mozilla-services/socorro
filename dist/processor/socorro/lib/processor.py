@@ -27,6 +27,53 @@ class UTC(tzinfo):
 
 utctz = UTC()
 
+
+def createReport(id, jsonPath):
+  """Tries to create a report in the database with the given ID and JSON
+  metadata. The database will throw SQLError if the report has already
+  been processed."""
+    
+  jsonFile = open(jsonPath)
+  try:
+    json = simplejson.load(jsonFile)
+
+    crash_time = None
+    report_date = datetime.now()
+    install_age = None
+
+    if 'CrashTime' in json and 'InstallTime' in json:
+      crash_time = int(json['CrashTime'])
+      report_date = datetime.fromtimestamp(crash_time, utctz)
+      install_age = crash_time - int(json["InstallTime"])
+    elif 'timestamp' in json:
+      report_date = datetime.fromtimestamp(json["timestamp"], utctz)
+
+    build_date = None
+    try:
+      (y, m, d, h) = map(int,
+                         buildDatePattern.match(json["BuildID"]).groups())
+      build_date = datetime(y, m, d, h)
+    except (AttributeError, ValueError):
+      pass
+
+    last_crash = None
+    if 'SecondsSinceLastCrash' in json:
+      last_crash = int(json["SecondsSinceLastCrash"])
+
+    return model.Report.create(uuid=id,
+                               date=report_date,
+                               product=json['ProductName'],
+                               version=json['Version'],
+                               build=json['BuildID'],
+                               url=json.get('URL', None),
+                               install_age=install_age,
+                               last_crash=last_crash,
+                               email=json.get('Email', None),
+                               build_date=build_date,
+                               user_id=json.get('UserID', None))
+  finally:
+    jsonFile.close()
+
 def fixupSourcePath(path):
   """Given a full path of a file in a Mozilla source tree,
      strip off anything prior to mozilla/, and convert
@@ -51,80 +98,16 @@ class Processor(object):
                                        dumpPath, symbol_path)
     return os.popen(commandline)
 
-  def process(self, dumpDirPath, dumpID, report=None):
+  def process(self, dumpDirPath, dumpID, report):
     """read the output of minidump_stackwalk"""
     dumpPath = os.path.join(dumpDirPath, dumpID) + config.dumpFileSuffix
-    jsonPath = os.path.join(dumpDirPath, dumpID) + config.jsonFileSuffix
-    report = self.processDump(dumpPath, jsonPath, dumpID, report)
-    return report
 
-  def processDump(self, dumpPath, jsonPath, dumpID, report):
-    fh = None
-    if report is None:
-      report = model.Report()
-
+    fh = self.__breakpad_file(dumpPath)
     try:
-      try:
-        fh = self.__breakpad_file(dumpPath)
-        self.processJSON(jsonPath, report)
-        crashed_thread = report.read_header(fh)
-        threads = report.read_stackframes(fh)
-
-        if crashed_thread != "":
-          crashed_thread = int(crashed_thread)
-          if crashed_thread < len(threads):
-            for f in threads[crashed_thread]:
-              report.frames.append(model.Frame(f.report_id,
-                                               f.frame_num,
-                                               f.module_name,
-                                               f.function,
-                                               f.source,
-                                               f.source_line,
-                                               f.instruction))
-      except:
-        print_exception()
-        raise
+      report['dump'] = fh.read()
     finally:
-      self.__finishReport(report)
-      if fh:
+      try:
+        report.read_dump()
+      finally:
+        report.flush()
         fh.close()
-
-    return report
-
-  def __finishReport(self, report):
-    if len(report.frames) > 0:
-      report.signature = report.frames[0].signature
-    if self.reportHook is not None:
-      self.reportHook(report)
-    report.finish_dumptext()
-    report.flush()
-
-  def processJSON(self, jsonPath, report):
-    jsonFile = open(jsonPath)
-    try:
-      json = simplejson.load(jsonFile)
-      report.build = json["BuildID"]
-      try:
-        (y, m, d, h) = map(int,
-                           buildDatePattern.match(json["BuildID"]).groups())
-        report.build_date = datetime(y, m, d, h)
-      except (AttributeError, ValueError):
-        pass
-      
-      report.product = json["ProductName"]
-      report.version = json["Version"]
-      report.vendor = json.get("Vendor", None)
-      report.url = json.get("URL", None)
-      report.email = json.get("Email", None)
-      report.user_id = json.get("UserID", None)
-      if 'SecondsSinceLastCrash' in json:
-        report.last_crash = int(json["SecondsSinceLastCrash"])
-
-      if 'CrashTime' in json and 'InstallTime' in json:
-        crashtime = int(json['CrashTime'])
-        report.date = datetime.fromtimestamp(crashtime, utctz)
-        report.install_age = crashtime - int(json["InstallTime"])
-      elif 'timestamp' in json:
-        report.date = datetime.fromtimestamp(json["timestamp"], utctz)
-    finally:
-      jsonFile.close()
