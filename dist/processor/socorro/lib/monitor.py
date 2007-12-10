@@ -71,20 +71,26 @@ def processDump(fullpath, dir, basename):
     print "beat to the punch for uuid " + dumpID
     # This is ok, someone beat us to it
     return
-  
+
   if report is not None:
     didProcess = False
     try:
       sys.stdout.flush()
       print "runProcessor for %s" % dumpID
-      try:
-        processor = Processor(config.processorMinidump,
-                              config.processorSymbols)
-        processor.process(dir, dumpID, report)
-        didProcess = True
-      except:
-        print "Error in processor:"
-        print_exception()
+
+      if report is not False:
+        """Only try to process if the report isn't missing vital information.
+        report will be False if createReport can't validate the report JSON."""
+
+        try:
+          processor = Processor(config.processorMinidump,
+                                config.processorSymbols)
+          processor.process(dir, dumpID, report)
+          didProcess = True
+        except:
+          print "Error in processor:"
+          print_exception()
+
     finally:
       dumppath = os.path.join(dir, dumpID + config.dumpFileSuffix)
 

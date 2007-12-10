@@ -37,6 +37,9 @@ def createReport(id, jsonPath):
   try:
     json = simplejson.load(jsonFile)
 
+    if not isValidReport(json):
+      return False
+
     crash_time = None
     report_date = datetime.now()
     install_age = None
@@ -53,7 +56,7 @@ def createReport(id, jsonPath):
       (y, m, d, h) = map(int,
                          buildDatePattern.match(json["BuildID"]).groups())
       build_date = datetime(y, m, d, h)
-    except (AttributeError, ValueError):
+    except (AttributeError, ValueError, KeyError):
       pass
 
     last_crash = None
@@ -62,9 +65,9 @@ def createReport(id, jsonPath):
 
     return model.Report.create(uuid=id,
                                date=report_date,
-                               product=json['ProductName'],
-                               version=json['Version'],
-                               build=json['BuildID'],
+                               product=json.get('ProductName', None),
+                               version=json.get('Version', None),
+                               build=json.get('BuildID', None),
                                url=json.get('URL', None),
                                install_age=install_age,
                                last_crash=last_crash,
@@ -73,6 +76,13 @@ def createReport(id, jsonPath):
                                user_id=json.get('UserID', None))
   finally:
     jsonFile.close()
+
+def isValidReport(json):
+  """Given a json dict passed from simplejson, we need to verify that required
+  fields exist.  If they don't, we should throw away the dump and continue.
+  Method returns a boolean value -- true if valid, false if not."""
+  
+  return 'BuildID' in json and 'Version' in json and 'ProductName' in json
 
 def fixupSourcePath(path):
   """Given a full path of a file in a Mozilla source tree,
