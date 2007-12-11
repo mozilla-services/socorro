@@ -13,7 +13,10 @@ def print_exception():
   sys.stdout.flush()
 
 ZERO = timedelta(0)
+
 buildDatePattern = re.compile('^(\\d{4})(\\d{2})(\\d{2})(\\d{2})')
+buildPattern = re.compile('^\\d{10}')
+timePattern = re.compile('^\\d+.?\\d+$')
 
 class UTC(tzinfo):
   def utcoffset(self, dt):
@@ -41,14 +44,18 @@ def createReport(id, jsonPath):
       return False
 
     crash_time = None
-    report_date = datetime.now()
     install_age = None
+    report_date = datetime.now()
 
-    if 'CrashTime' in json and 'InstallTime' in json:
+    if 'CrashTime' in json                                                     \
+      and timePattern.match(json['CrashTime'])                                 \
+      and 'InstallTime' in json                                                \
+      and timePattern.match(json['InstallTime']):
+
       crash_time = int(json['CrashTime'])
       report_date = datetime.fromtimestamp(crash_time, utctz)
       install_age = crash_time - int(json["InstallTime"])
-    elif 'timestamp' in json:
+    elif 'timestamp' in json and timePattern.match(json['timestamp']):
       report_date = datetime.fromtimestamp(json["timestamp"], utctz)
 
     build_date = None
@@ -81,8 +88,19 @@ def isValidReport(json):
   """Given a json dict passed from simplejson, we need to verify that required
   fields exist.  If they don't, we should throw away the dump and continue.
   Method returns a boolean value -- true if valid, false if not."""
-  
-  return 'BuildID' in json and 'Version' in json and 'ProductName' in json
+
+  valid = True
+
+  if 'BuildID' not in json or not buildPattern.match(json['BuildID']):
+    valid = False
+
+  if 'ProductName' not in json:
+    valid = False
+
+  if 'Version' not in json:
+    valid = False
+
+  return valid
 
 def fixupSourcePath(path):
   """Given a full path of a file in a Mozilla source tree,
