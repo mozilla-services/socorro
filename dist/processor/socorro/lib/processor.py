@@ -54,21 +54,21 @@ def createReport(id, jsonPath):
 
       crash_time = int(json['CrashTime'])
       report_date = datetime.fromtimestamp(crash_time, utctz)
-      install_age = crash_time - int(json["InstallTime"])
+      install_age = crash_time - int(json['InstallTime'])
     elif 'timestamp' in json and timePattern.match(json['timestamp']):
-      report_date = datetime.fromtimestamp(json["timestamp"], utctz)
+      report_date = datetime.fromtimestamp(json['timestamp'], utctz)
 
     build_date = None
     try:
       (y, m, d, h) = map(int,
-                         buildDatePattern.match(json["BuildID"]).groups())
+                         buildDatePattern.match(json['BuildID']).groups())
       build_date = datetime(y, m, d, h)
     except (AttributeError, ValueError, KeyError):
       pass
 
     last_crash = None
-    if 'SecondsSinceLastCrash' in json:
-      last_crash = int(json["SecondsSinceLastCrash"])
+    if 'SecondsSinceLastCrash' in json and timePattern.match(json['SecondsSinceLastCrash']):
+      last_crash = int(json['SecondsSinceLastCrash'])
 
     return model.Report.create(uuid=id,
                                date=report_date,
