@@ -52,11 +52,17 @@ def createReport(id, jsonPath):
       and 'InstallTime' in json                                                \
       and timePattern.match(str(json['InstallTime'])):
 
-      crash_time = int(json['CrashTime'])
-      report_date = datetime.fromtimestamp(crash_time, utctz)
-      install_age = crash_time - int(json['InstallTime'])
+      try:
+        crash_time = int(json['CrashTime'])
+        report_date = datetime.fromtimestamp(crash_time, utctz)
+        install_age = crash_time - int(json['InstallTime'])
+      except (ValueError):
+        pass
     elif 'timestamp' in json and timePattern.match(str(json['timestamp'])):
-      report_date = datetime.fromtimestamp(json['timestamp'], utctz)
+      try:
+        report_date = datetime.fromtimestamp(json['timestamp'], utctz)
+      except (ValueError):
+        pass
 
     build_date = None
     try:
