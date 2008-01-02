@@ -86,7 +86,8 @@ def createReport(id, jsonPath):
                                last_crash=last_crash,
                                email=json.get('Email', None),
                                build_date=build_date,
-                               user_id=json.get('UserID', None))
+                               user_id=json.get('UserID', None),
+                               comments=json.get('Comments', None))
   finally:
     jsonFile.close()
 
