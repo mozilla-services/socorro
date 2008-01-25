@@ -45,7 +45,7 @@ def createReport(id, jsonPath):
 
     crash_time = None
     install_age = None
-    uptime = None
+    uptime = 0 
     report_date = datetime.now()
 
     if 'CrashTime' in json                                                     \
@@ -61,7 +61,6 @@ def createReport(id, jsonPath):
         if 'StartupTime' in json \
           and timePattern.match(str(json['StartupTime'])) \
           and crash_time < int(json['StartupTime']):
-
           uptime = crash_time - int(json['StartupTime'])
       except (ValueError):
         pass
