@@ -23,6 +23,12 @@ class ReportController(BaseController):
       resp = responseForKey(c.report['uuid'], expires=(60 * 60))
     else:
       resp = responseForKey(c.report['uuid'])
+
+    # Need to manually convert before rendering, even though SA
+    # claims this is automatic, it still blows up if you don't.
+    if c.report['comments']:
+      c.report['comments'] = c.report['comments'].decode('utf-8')
+      
     resp.write(render('report/index'))
     return resp
 

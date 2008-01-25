@@ -12,7 +12,7 @@
   $(document).ready(function(){
     $('#report-index > ul').tabs();
     $('#showallthreads').click(function(){
-      $('#allthreads').toggle(400);
+    $('#allthreads').toggle(400);
       return false;
     });
   });
@@ -31,14 +31,17 @@
     </ul>
     <div id="details">
      <table class="list record">
-      <tr class="even">
+      <tr class="odd">
        <th>Signature</th><td>${c.report.signature}</td>
       </tr>
-      <tr class="odd">
+      <tr class="even">
        <th>UUID</th><td>${c.report.uuid}</td>
       </tr>
-      <tr class="even">
+      <tr class="odd">
        <th>Time</th><td>${c.report.date}</td>
+      </tr>
+      <tr class="even">
+       <th>Uptime</th><td>${c.report.uptime}</td>
       </tr>
       <tr class="odd">
        <th>Product</th><td>${c.report.product}</td>

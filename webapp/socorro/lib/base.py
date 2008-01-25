@@ -27,7 +27,9 @@ class BaseController(WSGIController):
         kwargs['echo'] = echo
         database.get_engines()['%s|%s' % (uri, str(kwargs))] = \
           database.create_engine(uri, echo=echo,
-                                 pool_recycle=config.processorConnTimeout) 
+                                 pool_recycle=config.processorConnTimeout,
+                                 convert_unicode=True,
+                                 encoding='utf-8') 
         return WSGIController.__call__(self, environ, start_response)
 
 # Include the '_' function in the public names
