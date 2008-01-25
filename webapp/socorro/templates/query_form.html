@@ -12,16 +12,21 @@ from socorro.lib.platforms import platformList
  <head>
   <title>Crash Reports</title>
   ${ h.stylesheet_link_tag("/css/datePicker.css") }
+  ${ h.stylesheet_link_tag('/css/flora/flora.tablesorter.css') }
   ${ h.javascript_include_tag("/js/jquery/jquery-1.2.1.js") }
   ${ h.javascript_include_tag("/js/jquery/date.js") }
   ${ h.javascript_include_tag("/js/jquery/plugins/ui/jquery.datePicker.js") }
+  ${ h.javascript_include_tag('/js/jquery/plugins/ui/jquery.tablesorter.min.js') }
   <script type="text/javascript">
+  <![CDATA[
   $(function()
   {
     Date.format='yyyy-mm-dd';
     $('.date-pick').datePicker();
     $('.date-pick').dpSetStartDate('2007-01-01');
+    $('#signatureList').tablesorter(); 
   });
+  ]]>
   </script>
  </head>
  <body>
