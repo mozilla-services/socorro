@@ -56,6 +56,12 @@ def createReport(id, jsonPath):
         crash_time = int(json['CrashTime'])
         report_date = datetime.fromtimestamp(crash_time, utctz)
         install_age = crash_time - int(json['InstallTime'])
+
+        if 'StartupTime' in json \
+          and timePattern.match(str(json['StartupTime'])) \
+          and crash_time < int(json['StartupTime']):
+
+          uptime = crash_time - int(json['StartupTime'])
       except (ValueError):
         pass
     elif 'timestamp' in json and timePattern.match(str(json['timestamp'])):
@@ -84,9 +90,11 @@ def createReport(id, jsonPath):
                                url=json.get('URL', None),
                                install_age=install_age,
                                last_crash=last_crash,
+                               uptime=uptime,
                                email=json.get('Email', None),
                                build_date=build_date,
-                               user_id=json.get('UserID', None))
+                               user_id=json.get('UserID', None),
+                               comments=json.get('Comments', None))
   finally:
     jsonFile.close()
 

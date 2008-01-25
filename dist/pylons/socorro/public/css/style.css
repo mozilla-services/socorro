@@ -59,13 +59,13 @@ h3 {
 .list th a:hover {
   background-color: #fff;
 }
-.row1 {
+.even {
   background-color: #eee;
 }
-.row2 {
+.odd {
   background-color: #ddd;
 }
-.row1:hover, .row2:hover {
+.even:hover, .odd:hover {
   background-color: #fff;
 }
 

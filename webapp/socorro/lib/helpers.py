@@ -25,4 +25,7 @@ def get_row_class(i):
   Return a row class (1|2) based on passed value.  For use in alternating table
   row colors.
   """
-  return 'row'+str(int(i)%2+1)
+  if int(i)%2+1 == 1:
+    return 'odd'
+  else:
+    return 'even'

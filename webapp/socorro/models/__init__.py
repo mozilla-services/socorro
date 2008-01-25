@@ -85,10 +85,11 @@ def upgrade_reports(dbc):
     print "  Updated %s rows." % cursor.rowcount
   else:
     print "ok"
+
   print "  Checking for reports.user_id...",
   cursor.execute("""SELECT 1 FROM pg_attribute
                     WHERE attrelid = 'reports'::regclass
-                    AND attname = 'user_id'""");
+                    AND attname = 'user_id'""")
   if cursor.rowcount == 0:
     print "adding"
     cursor.execute('ALTER TABLE reports ADD user_id character(50)')
@@ -106,19 +107,51 @@ def upgrade_reports(dbc):
   else:
     print "ok"
 
+  print "  Checking for reports.date_processed...",
+  cursor.execute("""SELECT 1 FROM pg_attribute
+                    WHERE attrelid = 'reports'::regclass
+                    AND attname = 'date_processed'""")
+  if cursor.rowcount == 0:
+    print "setting"
+    cursor.execute("""ALTER TABLE reports 
+                      ADD date_processed timestamp without time zone 
+                      NOT NULL default NOW()""")
+  else:
+    print "ok"
+
+  print "  Checking for reports.comments...",
+  cursor.execute("""SELECT 1 FROM pg_attribute
+                    WHERE attrelid = 'reports'::regclass
+                    AND attname = 'comments'""")
+  if cursor.rowcount == 0:
+    print "setting"
+    cursor.execute("""ALTER TABLE reports ADD comments text NULL""")
+  else:
+    print "ok"
+
+  print "  Checking for reports.uptime...",
+  cursor.execute("""SELECT 1 FROM pg_attribute
+                    WHERE attrelid = 'reports'::regclass
+                    AND attname = 'uptime'""")
+  if cursor.rowcount == 0:
+    print "setting"
+    cursor.execute("""ALTER TABLE reports ADD uptime integer NOT NULL default 0""")
+  else:
+    print "ok"
+
 frames_table = Table('frames', meta,
-  Column('report_id', Integer, ForeignKey('reports.id'), primary_key=True),
+  Column('report_id', Integer, ForeignKey('reports.id', ondelete='CASCADE'), primary_key=True),
   Column('frame_num', Integer, nullable=False, primary_key=True, autoincrement=False),
-  Column('signature', TruncatingString(255))
+  Column('signature', TruncatingString(255)),
 )
 
 modules_table = Table('modules', meta,
-  Column('report_id', Integer, ForeignKey('reports.id'), primary_key=True),
+  Column('report_id', Integer, ForeignKey('reports.id', ondelete='CASCADE'), primary_key=True),
   Column('module_key', Integer, primary_key=True, autoincrement=False),
   Column('filename', TruncatingString(40), nullable=False),
   Column('debug_id', String(40)),
   Column('module_version', TruncatingString(15)),
-  Column('debug_filename', TruncatingString(40)),
+  Column('debug_filename', TruncatingString(40))
 )
 
 def upgrade_modules(dbc):
@@ -138,13 +171,15 @@ def upgrade_modules(dbc):
                 {'length': modules_table.c.debug_id.type.length})
   cur.close()
 
-extensions_table = Table('extensions', meta, Column('report_id', Integer, ForeignKey('reports.id'), primary_key=True), Column('extension_key', Integer, primary_key=True, autoincrement=False),
+extensions_table = Table('extensions', meta,
+  Column('report_id', Integer, ForeignKey('reports.id', ondelete='CASCADE'), primary_key=True),
+  Column('extension_key', Integer, primary_key=True, autoincrement=False),
   Column('extension_id', String(100), nullable=False),
   Column('extension_version', String(16))
 )
 
 dumps_table = Table('dumps', meta,
-  Column('report_id', Integer, ForeignKey('reports.id'), primary_key=True),
+  Column('report_id', Integer, ForeignKey('reports.id', ondelete='CASCADE'), primary_key=True),
   Column('data', TEXT())
 )
 
@@ -324,7 +359,7 @@ begin
     cmd := subst('CREATE TABLE $$ (
                     CHECK(report_id >= $$),
                     PRIMARY KEY(report_id, frame_num),
-                    FOREIGN KEY(report_id) REFERENCES $$ (id)
+                    FOREIGN KEY(report_id) REFERENCES $$ (id) ON DELETE CASCADE
                   ) INHERITS (frames)',
                  ARRAY[ quote_ident(objname),
                         quote_literal(start_id),
@@ -335,7 +370,7 @@ begin
     cmd := subst('CREATE TABLE $$ (
                     CHECK(report_id >= $$),
                     PRIMARY KEY(report_id, module_key),
-                    FOREIGN KEY(report_id) REFERENCES $$ (id)
+                    FOREIGN KEY(report_id) REFERENCES $$ (id) ON DELETE CASCADE
                   ) INHERITS (modules)',
                  ARRAY[ quote_ident(objname),
                         quote_literal(start_id),
@@ -346,7 +381,7 @@ begin
     cmd := subst('CREATE TABLE $$ (
                     CHECK(report_id >= $$),
                     PRIMARY KEY(report_id, extension_key),
-                    FOREIGN KEY(report_id) REFERENCES $$ (id)
+                    FOREIGN KEY(report_id) REFERENCES $$ (id) ON DELETE CASCADE
                   ) INHERITS (extensions)',
                  ARRAY[ quote_ident(objname),
                         quote_literal(start_id),
@@ -357,7 +392,7 @@ begin
     cmd := subst('CREATE TABLE $$ (
                     CHECK(report_id >= $$),
                     PRIMARY KEY(report_id),
-                    FOREIGN KEY(report_id) REFERENCES $$ (id)
+                    FOREIGN KEY(report_id) REFERENCES $$ (id) ON DELETE CASCADE
                   ) INHERITS (dumps)',
                  ARRAY[ quote_ident(objname),
                         quote_literal(start_id),

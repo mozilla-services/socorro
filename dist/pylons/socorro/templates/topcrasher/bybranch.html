@@ -6,6 +6,18 @@
   <xi:include href="../includes/common.html" />
 <head>
   <title>Top Crashers for the ${c.branch} Branch</title>
+  ${ h.javascript_include_tag('/js/jquery/jquery-1.2.1.js') }
+  ${ h.javascript_include_tag('/js/jquery/plugins/ui/jquery.tablesorter.min.js') }
+  ${ h.stylesheet_link_tag('/css/flora/flora.tablesorter.css') }
+  <script type="text/javascript">
+  <![CDATA[
+  $(document).ready(function() 
+      { 
+          $("#signatureList").tablesorter(); 
+      } 
+  ); 
+  ]]>
+  </script>
 </head>
 
 <body>

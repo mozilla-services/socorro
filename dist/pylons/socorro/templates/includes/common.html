@@ -4,7 +4,7 @@
 from socorro.lib.platforms import platformList
 ?>
 
-<table py:def="list_by_signature(signatures, params)" class="list">
+<table py:def="list_by_signature(signatures, params)" id="signatureList" class="tablesorter">
  <thead>
   <tr>
    <th>Rank</th>
@@ -34,7 +34,7 @@ from socorro.lib.platforms import platformList
  </tbody>
 </table>
 
-<table xmlns:py="http://genshi.edgewall.org/" py:def="list_reports(reports)" class="list">
+<table xmlns:py="http://genshi.edgewall.org/" py:def="list_reports(reports)" class="tablesorter" id="reportsList">
  <thead>
   <tr>
    <th>Date</th>
@@ -48,9 +48,8 @@ from socorro.lib.platforms import platformList
   </tr>
  </thead>
  <tbody>
-  <?python row = 0 ?>
   <py:for each="report in reports">
-   <tr class="${h.get_row_class(row)}">
+   <tr>
     <td class="report-date">
      <a href="${h.url_for(id=report.uuid, controller='report', action='index')}">
       ${report.date.strftime("%Y-%m-%d")}&nbsp;${report.date.strftime("%H:%M")}
@@ -64,7 +63,6 @@ from socorro.lib.platforms import platformList
     <td>${report.reason}</td>
     <td>${report.address}</td>
    </tr>
-   <?python row+=1 ?>
   </py:for>
  </tbody>
 </table>

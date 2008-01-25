@@ -31,34 +31,40 @@
     </ul>
     <div id="details">
      <table class="list record">
-      <tr class="row2">
+      <tr class="even">
        <th>Signature</th><td>${c.report.signature}</td>
       </tr>
-      <tr class="row1">
+      <tr class="odd">
        <th>UUID</th><td>${c.report.uuid}</td>
       </tr>
-      <tr class="row2">
+      <tr class="even">
        <th>Time</th><td>${c.report.date}</td>
       </tr>
-      <tr class="row1">
+      <tr class="odd">
+       <th>Product</th><td>${c.report.product}</td>
+      </tr>
+      <tr class="even">
+       <th>Version</th><td>${c.report.version}</td>
+      </tr>
+      <tr class="odd">
        <th>Build ID</th><td>${c.report.build}</td>
       </tr>
-      <tr class="row2">
+      <tr class="even">
        <th>OS</th><td>${c.report.os_name}</td>
       </tr>
-      <tr class="row1">
+      <tr class="odd">
        <th>OS Version</th><td>${c.report.os_version}</td>
       </tr>
-      <tr class="row2">
+      <tr class="even">
        <th>CPU</th><td>${c.report.cpu_name}</td>
       </tr>
-      <tr class="row1">
+      <tr class="odd">
        <th>CPU Info</th><td>${c.report.cpu_info}</td>
       </tr>
-      <tr class="row2">
+      <tr class="even">
        <th>Crash Reason</th><td>${c.report.reason}</td>
       </tr>
-      <tr class="row1">
+      <tr class="odd">
        <th>Crash Address</th><td>${c.report.address}</td>
       </tr>
     </table>
@@ -71,7 +77,7 @@
       <th>Signature</th>
       <th>Source</th>
      </tr>
-     <?python row = 0 ?>
+     <?python row = 1 ?>
      <tr py:for="frame in frames" class="${h.get_row_class(row)}">
       <td>${frame.frame_num}</td>
       <td>${frame.signature}</td>
@@ -107,7 +113,7 @@
        <th>Debug Identifier</th>
        <th>Debug Filename</th>
       </tr>
-      <?python row = 0 ?>
+      <?python row = 1 ?>
       <tr py:for="module in c.report.modules" class="${h.get_row_class(row)}">
        <td>${module.filename}</td>
        <td>${module.module_version}</td>

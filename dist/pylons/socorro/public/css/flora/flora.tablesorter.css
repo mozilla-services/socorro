@@ -13,6 +13,7 @@ table.tablesorter thead tr th, table.tablesorter tfoot tr th {
 	border: 1px solid #FFF;
 	font-size: 8pt;
 	padding: 4px;
+  padding-right: 17px;
 }
 table.tablesorter thead tr .header {
 	background-image: url(i/bg.gif);
@@ -20,14 +21,16 @@ table.tablesorter thead tr .header {
 	background-position: center right;
 	cursor: pointer;
 }
+table.tablesorter tbody tr {
+  background-color: #fff;
+}
+table.tablesorter tbody tr:hover {
+  background-color: #eee;
+}
 table.tablesorter tbody td {
 	color: #3D3D3D;
 	padding: 4px;
-	background-color: #FFF;
 	vertical-align: top;
-}
-table.tablesorter tbody tr.odd td {
-	background-color:#E0F4D7;
 }
 table.tablesorter thead tr .headerSortUp {
 	background-image: url(i/asc.gif);
@@ -36,5 +39,5 @@ table.tablesorter thead tr .headerSortDown {
 	background-image: url(i/desc.gif);
 }
 table.tablesorter thead tr .headerSortDown, table.tablesorter thead tr .headerSortUp {
-background-color: #83C948;
+  background-color: #83C948;
 }
