@@ -45,6 +45,7 @@ def createReport(id, jsonPath):
 
     crash_time = None
     install_age = None
+    uptime = None
     report_date = datetime.now()
 
     if 'CrashTime' in json                                                     \
