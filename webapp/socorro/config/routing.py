@@ -12,6 +12,9 @@ def make_map(global_conf={}, app_conf={}):
     # Set default route to the list of reports.  We can change this later if we
     # create a dashboard or better entry page.
     map.connect('', controller='query', action='query')
+
+    # Route to server status page.
+    map.connect('status', controller='status', action='index')
     
     # Routes to topcrasher reports.  :product and :version follow 'by....'
     # because I thought it was correct to have parameters after the controller
