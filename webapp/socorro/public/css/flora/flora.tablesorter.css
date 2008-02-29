@@ -41,3 +41,6 @@ table.tablesorter thead tr .headerSortDown {
 table.tablesorter thead tr .headerSortDown, table.tablesorter thead tr .headerSortUp {
   background-color: #83C948;
 }
+table.tablesorter td.report-date {
+  width: 12em;
+}

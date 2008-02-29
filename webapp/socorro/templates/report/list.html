@@ -23,6 +23,7 @@
   $(document).ready(function() { 
     $('#buildid-table').tablesorter(); 
     $('#reportsList').tablesorter();
+    $('#commentsList').tablesorter();
     $('#report-list > ul').tabs();
   }); 
   ]]>
@@ -59,7 +60,8 @@
    <ul>
     <li><a href="#graph"><span>Graph</span></a></li>
     <li><a href="#table"><span>Table</span></a></li>
-    <li><a href="#reports"><span>View Reports</span></a></li>
+    <li><a href="#reports"><span>Reports</span></a></li>
+    <li><a href="#comments"><span>Comments</span></a></li>
    </ul>
    <div id="graph">
     <div id="buildid-outer">
@@ -105,6 +107,9 @@
    </div>
    <div id="reports">
     ${list_reports(c.reports)}
+   </div>
+   <div id="comments">
+    ${list_comments(c.reports)}
    </div>
   </div>
 

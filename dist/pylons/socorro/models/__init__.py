@@ -45,25 +45,25 @@ reports_table = Table('reports', meta,
          primary_key=True),
   Column('date', DateTime(timezone=True)),
   Column('date_processed', DateTime()),
-  Column('uuid', String(50), index=True, unique=True, nullable=False),
-  Column('product', String(30)),
-  Column('version', String(16)),
-  Column('build', String(30)),
-  Column('signature', TruncatingString(255), index=True),
-  Column('url', TruncatingString(255), index=True),
+  Column('uuid', Unicode(String(50)), index=True, unique=True, nullable=False),
+  Column('product', Unicode(String(30))),
+  Column('version', Unicode(String(16))),
+  Column('build', Unicode(String(30))),
+  Column('signature', Unicode(TruncatingString(255)), index=True),
+  Column('url', Unicode(TruncatingString(255)), index=True),
   Column('install_age', Integer),
   Column('last_crash', Integer),
   Column('uptime', Integer),
-  Column('comments', TruncatingString(500)),
-  Column('cpu_name', TruncatingString(100)),
-  Column('cpu_info', TruncatingString(100)),
-  Column('reason', TruncatingString(255)),
-  Column('address', String(20)),
-  Column('os_name', TruncatingString(100)),
-  Column('os_version', TruncatingString(100)),
-  Column('email', TruncatingString(100)),
+  Column('comments', Unicode(TruncatingString(500))),
+  Column('cpu_name', Unicode(TruncatingString(100))),
+  Column('cpu_info', Unicode(TruncatingString(100))),
+  Column('reason', Unicode(TruncatingString(255))),
+  Column('address', Unicode(String(20))),
+  Column('os_name', Unicode(TruncatingString(100))),
+  Column('os_version', Unicode(TruncatingString(100))),
+  Column('email', Unicode(TruncatingString(100))),
   Column('build_date', DateTime()),
-  Column('user_id', String(50))
+  Column('user_id', Unicode(String(50)))
 )
 
 def upgrade_reports(dbc):
@@ -143,16 +143,16 @@ def upgrade_reports(dbc):
 frames_table = Table('frames', meta,
   Column('report_id', Integer, ForeignKey('reports.id', ondelete='CASCADE'), primary_key=True),
   Column('frame_num', Integer, nullable=False, primary_key=True, autoincrement=False),
-  Column('signature', TruncatingString(255)),
+  Column('signature', Unicode(TruncatingString(255))),
 )
 
 modules_table = Table('modules', meta,
   Column('report_id', Integer, ForeignKey('reports.id', ondelete='CASCADE'), primary_key=True),
   Column('module_key', Integer, primary_key=True, autoincrement=False),
-  Column('filename', TruncatingString(40), nullable=False),
-  Column('debug_id', String(40)),
-  Column('module_version', TruncatingString(15)),
-  Column('debug_filename', TruncatingString(40))
+  Column('filename', Unicode(TruncatingString(40)), nullable=False),
+  Column('debug_id', Unicode(String(40))),
+  Column('module_version', Unicode(TruncatingString(15))),
+  Column('debug_filename', Unicode(TruncatingString(40)))
 )
 
 def upgrade_modules(dbc):
@@ -175,8 +175,8 @@ def upgrade_modules(dbc):
 extensions_table = Table('extensions', meta,
   Column('report_id', Integer, ForeignKey('reports.id', ondelete='CASCADE'), primary_key=True),
   Column('extension_key', Integer, primary_key=True, autoincrement=False),
-  Column('extension_id', String(100), nullable=False),
-  Column('extension_version', String(16))
+  Column('extension_id', Unicode(String(100)), nullable=False),
+  Column('extension_version', Unicode(String(16)))
 )
 
 dumps_table = Table('dumps', meta,
@@ -185,9 +185,9 @@ dumps_table = Table('dumps', meta,
 )
 
 branches_table = Table('branches', meta,
-  Column('product', String(30), primary_key=True),
-  Column('version', String(16), primary_key=True),
-  Column('branch', String(24), nullable=False)
+  Column('product', Unicode(String(30)), primary_key=True),
+  Column('version', Unicode(String(16)), primary_key=True),
+  Column('branch', Unicode(String(24)), nullable=False)
 )
 
 lock_function_definition = """

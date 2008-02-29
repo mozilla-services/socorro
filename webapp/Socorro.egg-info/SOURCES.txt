@@ -14,8 +14,6 @@ Socorro.egg-info/paster_plugins.txt
 Socorro.egg-info/requires.txt
 Socorro.egg-info/top_level.txt
 socorro/__init__.py
-socorro/profile.py
-socorro/testo.py
 socorro/websetup.py
 socorro/config/__init__.py
 socorro/config/environment.py
@@ -26,6 +24,7 @@ socorro/controllers/admin.py
 socorro/controllers/error.py
 socorro/controllers/query.py
 socorro/controllers/report.py
+socorro/controllers/status.py
 socorro/controllers/symbols.py
 socorro/controllers/topcrasher.py
 socorro/docs/index.txt
@@ -41,7 +40,6 @@ socorro/lib/http_cache.py
 socorro/lib/modpython-collector.py
 socorro/lib/monitor.py
 socorro/lib/platforms.py
-socorro/lib/processor-trunk.py
 socorro/lib/processor.py
 socorro/lib/queryparams.py
 socorro/lib/uuid.py
@@ -125,6 +123,7 @@ socorro/public/js/PlotKit/iecanvas.htc
 socorro/public/js/jquery/date.js
 socorro/public/js/jquery/jquery-1.2.1.js
 socorro/public/js/jquery/plugins/ui/jquery.datePicker.js
+socorro/public/js/jquery/plugins/ui/jquery.tablesorter.min.js
 socorro/public/js/jquery/plugins/ui/ui.tabs.js
 socorro/templates/__init__.py
 socorro/templates/admin_index.html
@@ -137,6 +136,8 @@ socorro/templates/includes/site.html
 socorro/templates/report/__init__.py
 socorro/templates/report/index.html
 socorro/templates/report/list.html
+socorro/templates/status/__init__.py
+socorro/templates/status/index.html
 socorro/templates/topcrasher/__init__.py
 socorro/templates/topcrasher/bybranch.html
 socorro/templates/topcrasher/byversion.html

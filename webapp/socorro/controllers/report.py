@@ -50,7 +50,6 @@ class ReportController(BaseController):
     c.params.setFromParams(request.params)
     key = "reportlist_%s" % request.environ["QUERY_STRING"]
     (c.reports, c.builds, ts) = getReportsForParams(c.params, key)
-
     resp = responseForKey("%s%s" % (ts,key))
     resp.write(render('report/list'))
     return resp
