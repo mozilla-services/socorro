@@ -185,9 +185,9 @@ dumps_table = Table('dumps', meta,
 )
 
 branches_table = Table('branches', meta,
-  Column('product', Unicode(String(30)), primary_key=True),
-  Column('version', Unicode(String(16)), primary_key=True),
-  Column('branch', Unicode(String(24)), nullable=False)
+  Column('product', String(30), primary_key=True),
+  Column('version', String(16), primary_key=True),
+  Column('branch', String(24), nullable=False)
 )
 
 lock_function_definition = """
