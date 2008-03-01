@@ -44,25 +44,26 @@ reports_table = Table('reports', meta,
          default=text("nextval('seq_reports_id')"),
          primary_key=True),
   Column('date', DateTime(timezone=True)),
-  Column('uuid', String(50), index=True, unique=True, nullable=False),
-  Column('product', String(30)),
-  Column('version', String(16)),
-  Column('build', String(30)),
-  Column('signature', TruncatingString(255), index=True),
-  Column('url', TruncatingString(255), index=True),
+  Column('date_processed', DateTime()),
+  Column('uuid', Unicode(50), index=True, unique=True, nullable=False),
+  Column('product', Unicode(30)),
+  Column('version', Unicode(16)),
+  Column('build', Unicode(30)),
+  Column('signature', Unicode(TruncatingString(255)), index=True),
+  Column('url', Unicode(TruncatingString(255)), index=True),
   Column('install_age', Integer),
   Column('last_crash', Integer),
   Column('uptime', Integer),
-  Column('comments', TruncatingString(500)),
-  Column('cpu_name', TruncatingString(100)),
-  Column('cpu_info', TruncatingString(100)),
-  Column('reason', TruncatingString(255)),
-  Column('address', String(20)),
-  Column('os_name', TruncatingString(100)),
-  Column('os_version', TruncatingString(100)),
-  Column('email', TruncatingString(100)),
+  Column('comments', Unicode(TruncatingString(500))),
+  Column('cpu_name', Unicode(TruncatingString(100))),
+  Column('cpu_info', Unicode(TruncatingString(100))),
+  Column('reason', Unicode(TruncatingString(255))),
+  Column('address', Unicode(20)),
+  Column('os_name', Unicode(TruncatingString(100))),
+  Column('os_version', Unicode(TruncatingString(100))),
+  Column('email', Unicode(TruncatingString(100))),
   Column('build_date', DateTime()),
-  Column('user_id', String(50))
+  Column('user_id', Unicode(50))
 )
 
 def upgrade_reports(dbc):
@@ -142,16 +143,16 @@ def upgrade_reports(dbc):
 frames_table = Table('frames', meta,
   Column('report_id', Integer, ForeignKey('reports.id', ondelete='CASCADE'), primary_key=True),
   Column('frame_num', Integer, nullable=False, primary_key=True, autoincrement=False),
-  Column('signature', TruncatingString(255)),
+  Column('signature', Unicode(TruncatingString(255))),
 )
 
 modules_table = Table('modules', meta,
   Column('report_id', Integer, ForeignKey('reports.id', ondelete='CASCADE'), primary_key=True),
   Column('module_key', Integer, primary_key=True, autoincrement=False),
-  Column('filename', TruncatingString(40), nullable=False),
-  Column('debug_id', String(40)),
-  Column('module_version', TruncatingString(15)),
-  Column('debug_filename', TruncatingString(40))
+  Column('filename', Unicode(TruncatingString(40)), nullable=False),
+  Column('debug_id', Unicode(40)),
+  Column('module_version', Unicode(TruncatingString(15))),
+  Column('debug_filename', Unicode(TruncatingString(40)))
 )
 
 def upgrade_modules(dbc):
@@ -174,8 +175,8 @@ def upgrade_modules(dbc):
 extensions_table = Table('extensions', meta,
   Column('report_id', Integer, ForeignKey('reports.id', ondelete='CASCADE'), primary_key=True),
   Column('extension_key', Integer, primary_key=True, autoincrement=False),
-  Column('extension_id', String(100), nullable=False),
-  Column('extension_version', String(16))
+  Column('extension_id', Unicode(100), nullable=False),
+  Column('extension_version', Unicode(16))
 )
 
 dumps_table = Table('dumps', meta,
@@ -677,6 +678,10 @@ class Report(dict):
       thread_num = int(thread_num)
       while thread_num >= len(self.threads):
         self.threads.append([])
+
+        if module_name is None:
+          continue
+
       self.threads[thread_num].append(Frame(module_name=module_name,
                                             frame_num=frame_num,
                                             function=function,

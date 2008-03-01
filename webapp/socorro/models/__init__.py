@@ -678,6 +678,10 @@ class Report(dict):
       thread_num = int(thread_num)
       while thread_num >= len(self.threads):
         self.threads.append([])
+
+        if module_name is None:
+          continue
+
       self.threads[thread_num].append(Frame(module_name=module_name,
                                             frame_num=frame_num,
                                             function=function,
