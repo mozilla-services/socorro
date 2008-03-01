@@ -45,10 +45,10 @@ reports_table = Table('reports', meta,
          primary_key=True),
   Column('date', DateTime(timezone=True)),
   Column('date_processed', DateTime()),
-  Column('uuid', Unicode(String(50)), index=True, unique=True, nullable=False),
-  Column('product', Unicode(String(30))),
-  Column('version', Unicode(String(16))),
-  Column('build', Unicode(String(30))),
+  Column('uuid', Unicode(50), index=True, unique=True, nullable=False),
+  Column('product', Unicode(30)),
+  Column('version', Unicode(16)),
+  Column('build', Unicode(30)),
   Column('signature', Unicode(TruncatingString(255)), index=True),
   Column('url', Unicode(TruncatingString(255)), index=True),
   Column('install_age', Integer),
@@ -58,12 +58,12 @@ reports_table = Table('reports', meta,
   Column('cpu_name', Unicode(TruncatingString(100))),
   Column('cpu_info', Unicode(TruncatingString(100))),
   Column('reason', Unicode(TruncatingString(255))),
-  Column('address', Unicode(String(20))),
+  Column('address', Unicode(20)),
   Column('os_name', Unicode(TruncatingString(100))),
   Column('os_version', Unicode(TruncatingString(100))),
   Column('email', Unicode(TruncatingString(100))),
   Column('build_date', DateTime()),
-  Column('user_id', Unicode(String(50)))
+  Column('user_id', Unicode(50))
 )
 
 def upgrade_reports(dbc):
@@ -150,7 +150,7 @@ modules_table = Table('modules', meta,
   Column('report_id', Integer, ForeignKey('reports.id', ondelete='CASCADE'), primary_key=True),
   Column('module_key', Integer, primary_key=True, autoincrement=False),
   Column('filename', Unicode(TruncatingString(40)), nullable=False),
-  Column('debug_id', Unicode(String(40))),
+  Column('debug_id', Unicode(40)),
   Column('module_version', Unicode(TruncatingString(15))),
   Column('debug_filename', Unicode(TruncatingString(40)))
 )
@@ -175,8 +175,8 @@ def upgrade_modules(dbc):
 extensions_table = Table('extensions', meta,
   Column('report_id', Integer, ForeignKey('reports.id', ondelete='CASCADE'), primary_key=True),
   Column('extension_key', Integer, primary_key=True, autoincrement=False),
-  Column('extension_id', Unicode(String(100)), nullable=False),
-  Column('extension_version', Unicode(String(16)))
+  Column('extension_id', Unicode(100), nullable=False),
+  Column('extension_version', Unicode(16))
 )
 
 dumps_table = Table('dumps', meta,
