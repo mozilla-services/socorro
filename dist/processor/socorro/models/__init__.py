@@ -24,7 +24,9 @@ class TruncatingString(types.TypeDecorator):
     return value[:self.length]
 
   def convert_result_value(self, value, engine):
-    return value
+    if value is None:
+      return None
+    return value.decode('utf-8')
 
 """
 Define database structure.
@@ -44,24 +46,24 @@ reports_table = Table('reports', meta,
          default=text("nextval('seq_reports_id')"),
          primary_key=True),
   Column('date', DateTime(timezone=True)),
-  Column('date_processed', DateTime()),
+  Column('date_processed', DateTime(), nullable=False, default=func.now()),
   Column('uuid', Unicode(50), index=True, unique=True, nullable=False),
   Column('product', Unicode(30)),
   Column('version', Unicode(16)),
   Column('build', Unicode(30)),
-  Column('signature', Unicode(TruncatingString(255)), index=True),
-  Column('url', Unicode(TruncatingString(255)), index=True),
+  Column('signature', TruncatingString(255), index=True),
+  Column('url', TruncatingString(255), index=True),
   Column('install_age', Integer),
   Column('last_crash', Integer),
   Column('uptime', Integer),
-  Column('comments', Unicode(TruncatingString(500))),
-  Column('cpu_name', Unicode(TruncatingString(100))),
-  Column('cpu_info', Unicode(TruncatingString(100))),
-  Column('reason', Unicode(TruncatingString(255))),
+  Column('comments', TruncatingString(500)),
+  Column('cpu_name', TruncatingString(100)),
+  Column('cpu_info', TruncatingString(100)),
+  Column('reason', TruncatingString(255)),
   Column('address', Unicode(20)),
-  Column('os_name', Unicode(TruncatingString(100))),
-  Column('os_version', Unicode(TruncatingString(100))),
-  Column('email', Unicode(TruncatingString(100))),
+  Column('os_name', TruncatingString(100)),
+  Column('os_version', TruncatingString(100)),
+  Column('email', TruncatingString(100)),
   Column('build_date', DateTime()),
   Column('user_id', Unicode(50))
 )
@@ -143,16 +145,16 @@ def upgrade_reports(dbc):
 frames_table = Table('frames', meta,
   Column('report_id', Integer, ForeignKey('reports.id', ondelete='CASCADE'), primary_key=True),
   Column('frame_num', Integer, nullable=False, primary_key=True, autoincrement=False),
-  Column('signature', Unicode(TruncatingString(255))),
+  Column('signature', TruncatingString(255)),
 )
 
 modules_table = Table('modules', meta,
   Column('report_id', Integer, ForeignKey('reports.id', ondelete='CASCADE'), primary_key=True),
   Column('module_key', Integer, primary_key=True, autoincrement=False),
-  Column('filename', Unicode(TruncatingString(40)), nullable=False),
+  Column('filename', TruncatingString(40), nullable=False),
   Column('debug_id', Unicode(40)),
-  Column('module_version', Unicode(TruncatingString(15))),
-  Column('debug_filename', Unicode(TruncatingString(40)))
+  Column('module_version', TruncatingString(15)),
+  Column('debug_filename', TruncatingString(40))
 )
 
 def upgrade_modules(dbc):
@@ -181,7 +183,7 @@ extensions_table = Table('extensions', meta,
 
 dumps_table = Table('dumps', meta,
   Column('report_id', Integer, ForeignKey('reports.id', ondelete='CASCADE'), primary_key=True),
-  Column('data', TEXT())
+  Column('data', TEXT(convert_unicode=True))
 )
 
 branches_table = Table('branches', meta,

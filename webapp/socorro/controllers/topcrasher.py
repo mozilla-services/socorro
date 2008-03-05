@@ -24,7 +24,9 @@ class TopcrasherController(BaseController):
     user can choose which report they want to see.
     """
     (c.products, c.branches, c.product_versions) = getCachedBranchData()
-    resp = render_response('topcrasher/index')
+    etag = "%s%s" % (len(c.branches), len(c.product_versions))
+    resp = responseForKey(etag)
+    resp.write(render('topcrasher/index'))
     return resp
 
   def byversion(self, product, version):

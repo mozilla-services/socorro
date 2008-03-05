@@ -23,7 +23,6 @@
   $(document).ready(function() { 
     $('#buildid-table').tablesorter(); 
     $('#reportsList').tablesorter();
-    $('#commentsList').tablesorter();
     $('#report-list > ul').tabs();
   }); 
   ]]>
@@ -61,12 +60,9 @@
     <li><a href="#graph"><span>Graph</span></a></li>
     <li><a href="#table"><span>Table</span></a></li>
     <li><a href="#reports"><span>Reports</span></a></li>
-    <li><a href="#comments"><span>Comments</span></a></li>
    </ul>
    <div id="graph">
-    <div id="buildid-outer">
-     <div id="buildid-div">
-     <canvas id="buildid-graph" width="500" height="160"></canvas>
+    <div id="buildid-outer"> <div id="buildid-div"> <canvas id="buildid-graph" width="500" height="160"></canvas>
      </div>
      <ul id="buildid-labels">
       <li py:for="platform in platformList"
@@ -107,9 +103,6 @@
    </div>
    <div id="reports">
     ${list_reports(c.reports)}
-   </div>
-   <div id="comments">
-    ${list_comments(c.reports)}
    </div>
   </div>
 

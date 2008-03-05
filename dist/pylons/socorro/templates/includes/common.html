@@ -45,6 +45,7 @@ from socorro.lib.platforms import platformList
    <th>CPU</th>
    <th>Reason</th>
    <th>Address</th>
+   <th>Comments</th>
   </tr>
  </thead>
  <tbody>
@@ -54,14 +55,14 @@ from socorro.lib.platforms import platformList
      <a href="${h.url_for(id=report.uuid, controller='report', action='index')}">
       ${report.date_processed.strftime("%Y-%m-%d")}&nbsp;${report.date_processed.strftime("%H:%M")}
      </a>
-    </td>
-    <td>${report.product}</td>
+    </td> <td>${report.product}</td>
     <td>${report.version}</td>
     <td>${report.build}</td>
     <td>${report.os_name} ${report.os_version}</td>
     <td>${report.cpu_name}</td>
     <td>${report.reason}</td>
     <td>${report.address}</td>
+    <td>${report.comments}</td>
    </tr>
   </py:for>
  </tbody>
