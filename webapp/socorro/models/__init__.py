@@ -593,6 +593,7 @@ class Report(dict):
     self._read_header(lines)
     self._read_stackframes(lines)
 
+  # Daddy wants some rollback for when things go bad.
   def flush(self):
     signature = None
 
@@ -600,9 +601,9 @@ class Report(dict):
         self.crashed_thread <= len(self.threads) and
         len(self.threads[self.crashed_thread]) > 0):
       signature = self.threads[self.crashed_thread][0]['signature']
-      print "Calculating signature: %s" % signature
+      print "Calculating signature for report %s: %s" % self['uuid'], signature
     else:
-      print "Something didn't work for signatures"
+      print "Failed to create signature for report %s:" % self['uuid']
 
     updatevalues = {'signature':  signature,
                     'cpu_name':   self['cpu_name'],
@@ -622,14 +623,15 @@ class Report(dict):
     r = reports_table.update(whereclause=reports_table.c.id==self['id']). \
         compile(engine=getEngine(), parameters=updatevalues).execute(updatevalues)
 
-    module_data = [{'report_id': self['id'],
-                    'module_key': i,
-                    'filename': self.modules[i].filename,
-                    'debug_id': self.modules[i].debug_id,
-                    'module_version': self.modules[i].module_version,
-                    'debug_filename': self.modules[i].debug_filename}
-                   for i in xrange(0, len(self.modules))]
-    r = modules_table.insert().compile(engine=getEngine()).execute(*module_data)
+    if self.modules is not None and len(self.modules) > 1:
+      module_data = [{'report_id': self['id'],
+                      'module_key': i,
+                      'filename': self.modules[i].filename,
+                      'debug_id': self.modules[i].debug_id,
+                      'module_version': self.modules[i].module_version,
+                      'debug_filename': self.modules[i].debug_filename}
+                     for i in xrange(0, len(self.modules))]
+      r = modules_table.insert().compile(engine=getEngine()).execute(*module_data)
 
     if (self.crashed_thread is not None and
         self.crashed_thread <= len(self.threads)):
