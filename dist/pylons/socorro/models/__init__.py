@@ -601,7 +601,7 @@ class Report(dict):
         self.crashed_thread <= len(self.threads) and
         len(self.threads[self.crashed_thread]) > 0):
       signature = self.threads[self.crashed_thread][0]['signature']
-      print "Calculating signature for report %s: %s" % self['uuid'], signature
+      print "Calculating signature for report %s: %s" % (self['uuid'], signature)
     else:
       print "Failed to create signature for report %s:" % self['uuid']
 
