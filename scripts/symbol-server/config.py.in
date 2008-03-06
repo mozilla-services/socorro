@@ -1,0 +1,10 @@
+# Database name to use
+dbname=''
+# Database host to connect to
+dbhost=''
+# Username for the database
+user=''
+# Password for the database
+password=''
+# Full path to store downloaded symbols in
+symbol_path=''
