@@ -60,7 +60,7 @@ def createReport(id, jsonPath):
 
         if 'StartupTime' in json \
           and timePattern.match(str(json['StartupTime'])) \
-          and crash_time < int(json['StartupTime']):
+          and crash_time >= int(json['StartupTime']):
           uptime = crash_time - int(json['StartupTime'])
       except (ValueError):
         pass
