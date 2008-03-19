@@ -19,12 +19,12 @@
 # reasons, the script also needs write access to the symbol_path
 # configured in config.py.
 
-import psycopg2
 import config
 import sys
 import os.path
 import time, datetime
 import subprocess
+import urllib
 
 # Just hardcoded here
 MICROSOFT_SYMBOL_SERVER = "http://msdl.microsoft.com/download/symbols"
@@ -57,37 +57,22 @@ try:
 except IOError:
   pass
 
-# Keep track of our last run, and only look for modules in crash reports
-# newer than that.
-last_run = None
-if os.path.exists("last-run.txt"):
-  try:
-      lf = file("last-run.txt")
-      last_run = datetime.datetime.fromtimestamp(float(lf.read().strip()))
-      lf.close()
-  except IOError:
-      pass
-  except ValueError:
-      pass
+try:
+  f = urllib.urlopen(config.query_data_url)
+except IOError:
+  print >>sys.stderr, "Failed to get query data from %s" % config.query_data_url
+  sys.exit(1)
 
-DSN = "dbname='%s' user='%s' password='%s' host='%s'" % (config.dbname,
-                                                         config.user,
-                                                         config.password,
-                                                         config.dbhost)
-conn = psycopg2.connect(DSN)
-cur = conn.cursor()
-if last_run is None:
-    cur.execute("""SELECT DISTINCT debug_id, debug_filename FROM modules
-WHERE debug_id IS NOT NULL AND debug_filename IS NOT NULL
-AND report_id IN (SELECT id FROM reports WHERE os_name = 'Windows NT')""")
-else:
-    cur.execute("""SELECT DISTINCT debug_id, debug_filename FROM modules
-WHERE debug_id IS NOT NULL AND debug_filename IS NOT NULL
-AND report_id IN (SELECT id FROM reports WHERE os_name = 'Windows NT'
-AND date > %s)""", (last_run,))
+# skip the header lines
+f.readline()
+f.readline()
 
-for row in cur:
-  (id, filename) = row
+for line in f:
+  if line.startswith('('):
+    break
+  (id, filename) = line.split('|')
+  id = id.strip()
+  filename = filename.strip()
   if filename in blacklist:
     # This is one of our our debug files from Firefox/Thunderbird/etc
     continue
@@ -97,6 +82,11 @@ for row in cur:
   sym_file = os.path.join(config.symbol_path, filename, id,
                           filename.replace(".pdb","") + ".sym")
   if os.path.exists(sym_file):
+    # We already have this symbol
+    continue
+  if config.read_only_symbol_path != '' and \
+     os.path.exists(os.path.join(config.symbol_path, filename, id,
+                                 filename.replace(".pdb","") + ".sym")):
     # We already have this symbol
     continue
   # Not in the blacklist, skiplist, and we don't already have it, so
@@ -122,11 +112,3 @@ try:
   sf.close()
 except IOError:
   print >>sys.stderr, "Error writing skiplist.txt"
-
-# Write out our last-run time
-try:
-  lf = file('last-run.txt', 'w')
-  lf.write("%f" % time.time())
-  lf.close()
-except IOError:
-  print >>sys.stderr, "Error writing last-run.txt"
