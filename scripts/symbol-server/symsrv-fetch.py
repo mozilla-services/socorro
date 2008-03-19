@@ -51,7 +51,7 @@ try:
       line = line.strip()
       if line == '':
           continue
-      (debug_id, debug_file) = line.split()
+      (debug_id, debug_file) = line.split(None, 1)
       skiplist[debug_id] = debug_file
   sf.close()
 except IOError:
@@ -70,7 +70,7 @@ f.readline()
 for line in f:
   if line.startswith('('):
     break
-  (id, filename) = line.split('|')
+  (id, filename) = line.split('|', 1)
   id = id.strip()
   filename = filename.strip()
   if filename in blacklist:
