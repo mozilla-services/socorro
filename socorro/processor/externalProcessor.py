@@ -18,11 +18,13 @@ class ProcessorWithExternalBreakpad (processor.Processor):
     # now call stackwalk and handle the results
     symbol_path = ' '.join(['"%s"' % x for x in config.processorSymbols])
     commandline = '"%s" %s "%s" %s' % (config.processorMinidump, "-m", dumpfilePathname, symbol_path)
-    f = os.popen(commandline)
+    inStream, outStream, errStream = os.popen3(commandline)
     try:
-      return f.read()
+      return outStream.read()
     finally:
-      f.close()
+      outStream.close()
+      errStream.close()
+      inStream.close()
   
   def doBreakpadStackDumpAnalysis (self, reportId, uuid, dumpfilePathname, databaseCursor):
     dumpAnalysis = self.invokeBreakpadStackdump(dumpfilePathname)
@@ -35,6 +37,7 @@ class ProcessorWithExternalBreakpad (processor.Processor):
     self.crashed_thread = None
     moduleCounter = 0
     reportUpdateValues = {"id": reportId} 
+    reportUpdateSQLPhrases = {"osPhrase":"", "cpuPhrase":"", "crashPhrase":""}
 
     for line in dumpAnalysisLineiterator:
       # empty line separates header data from thread data
@@ -42,15 +45,18 @@ class ProcessorWithExternalBreakpad (processor.Processor):
         break
       values = map(socorro.lib.util.emptyFilter, line.split("|"))
       if values[0] == 'OS':
-        reportUpdateValues['os_name'] = values[1]
-        reportUpdateValues['os_version'] = values[2]
+        reportUpdateValues['os_name'] = values[1][:100]
+        reportUpdateValues['os_version'] = values[2][:100]
+        reportUpdateSQLPhrases["osPhrase"] = "os_name = %(os_name)s, os_version = %(os_version)s, "
       elif values[0] == 'CPU':
-        reportUpdateValues['cpu_name'] = values[1]
-        reportUpdateValues['cpu_info'] = values[2]
+        reportUpdateValues['cpu_name'] = values[1][:100]
+        reportUpdateValues['cpu_info'] = values[2][:100]
+        reportUpdateSQLPhrases["cpuPhrase"] = "cpu_name = %(cpu_name)s, os_versicpu_info = %(cpu_info)s, "
       elif values[0] == 'Crash':
-        reportUpdateValues['reason'] = values[1]
-        reportUpdateValues['address'] = values[2]
+        reportUpdateValues['reason'] = values[1][:255]
+        reportUpdateValues['address'] = values[2][:20]
         self.crashed_thread = int(values[3])
+        reportUpdateSQLPhrases["crashPhrase"] = "reason = %(reason)s, address = %(address)s"
       elif values[0] == 'Module':
         # Module|{Filename}|{Version}|{Debug Filename}|{Debug ID}|{Base Address}|Max Address}|{Main}
         # we should ignore modules with no filename
@@ -58,17 +64,14 @@ class ProcessorWithExternalBreakpad (processor.Processor):
           databaseCursor.execute("""insert into modules
                                                      (report_id, module_key, filename, debug_id, module_version, debug_filename) values
                                                      (%s, %s, %s, %s, %s, %s)""",
-                                                      (reportId, moduleCounter, values[1], values[4], values[2], values[3]))
+                                                      (reportId, moduleCounter, values[1][:40], values[4][:40], values[2][:15], values[3][:40]))
           moduleCounter += 1
-    databaseCursor.execute("""update reports set 
-                                                  os_name = %(os_name)s,
-                                                  os_version = %(os_version)s,
-                                                  cpu_name = %(cpu_name)s,
-                                                  cpu_info = %(cpu_info)s,
-                                                  reason = %(reason)s,
-                                                  address = %(address)s
-                                              where id = %(id)s""", reportUpdateValues)
-  
+    
+    if len(reportUpdateValues) > 1:
+      reportUpdateSQL = ("""update reports set %(osPhrase)s%(cpuPhrase)s%(crashPhrase)s where id = PERCENT(id)s""" % reportUpdateSQLPhrases).replace(", w", " w").replace("PERCENT","%")
+      print reportUpdateSQL
+      databaseCursor.execute(reportUpdateSQL, reportUpdateValues)
+    
   def analyzeFrames(self, reportId, dumpAnalysisLineiterator, databaseCursor):
     frameCounter = 0
     for line in dumpAnalysisLineiterator:
@@ -99,7 +102,7 @@ class ProcessorWithExternalBreakpad (processor.Processor):
         databaseCursor.execute("""insert into frames
                                                   (report_id, frame_num, signature) values
                                                   (%s, %s, %s)""",
-                                                  (reportId, frame_num, signature))
+                                                  (reportId, frame_num, signature[:255]))
         
   
 if __name__ == '__main__':    

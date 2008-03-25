@@ -55,11 +55,11 @@ class TaskManager(object):
   #----------------
   # _ _ i n i t _ _
   #----------------
-  def __init__ (self, numberOfThreads):
+  def __init__ (self, numberOfThreads, maxQueueSize=0):
     """Initialize and start all threads"""
     self.threadList = []
     self.numberOfThreads = numberOfThreads
-    self.taskQueue = Queue.Queue()
+    self.taskQueue = Queue.Queue(maxQueueSize)
     for x in range(numberOfThreads):
       newThread = TaskManagerThread(self)
       self.threadList.append(newThread)

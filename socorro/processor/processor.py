@@ -122,8 +122,8 @@ class Processor(object):
           continue
         except IndexError:
           #no jobs to do
-          print >>config.statusReportStream, "%s: no jobs to do.  Waiting %s seconds" % (datetime.datetime.now(), config.processorLoopTime)
-          time.sleep(config.processorLoopTime)
+          print >>config.statusReportStream, "%s: no jobs to do.  Waiting 60 seconds" % datetime.datetime.now()
+          time.sleep(5)
           continue
         sqlErrorCounter = 0
         
@@ -227,9 +227,9 @@ class Processor(object):
     comments = jsonDocument.get('Comments', None)
 
     threadLocalCursor.execute ("""insert into reports
-                                  (id,                        uuid, date,         product, version, build, url, install_age, last_crash, uptime, email, build_date, user_id, comments) values
-                                  (nextval('seq_reports_id'), %s,   %s,           %s,      %s,      %s,    %s,  %s,          %s,         %s,     %s,    %s,         %s,      %s)""",
-                                  (                           uuid, report_date,  product, version, build, url, install_age, last_crash, uptime, email, build_date, user_id, comments))
+                                  (id,                        uuid,      date,         product,      version,      build,       url,       install_age, last_crash, uptime, email,       build_date, user_id,      comments) values
+                                  (nextval('seq_reports_id'), %s,        %s,           %s,           %s,           %s,          %s,        %s,          %s,         %s,     %s,          %s,         %s,           %s)""",
+                                  (                           uuid[:50], report_date,  product[:30], version[:16], buildi[:30], url[:255], install_age, last_crash, uptime, email[:100], build_date, user_id[:50], comments[:500]))
     threadLocalCursor.execute("select id from reports where uuid = %s", (uuid,))
     reportId = threadLocalCursor.fetchall()[0][0]
     return reportId
