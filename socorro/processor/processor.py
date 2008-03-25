@@ -229,7 +229,7 @@ class Processor(object):
     threadLocalCursor.execute ("""insert into reports
                                   (id,                        uuid,      date,         product,      version,      build,       url,       install_age, last_crash, uptime, email,       build_date, user_id,      comments) values
                                   (nextval('seq_reports_id'), %s,        %s,           %s,           %s,           %s,          %s,        %s,          %s,         %s,     %s,          %s,         %s,           %s)""",
-                                  (                           uuid[:50], report_date,  product[:30], version[:16], buildi[:30], url[:255], install_age, last_crash, uptime, email[:100], build_date, user_id[:50], comments[:500]))
+                                  (                           uuid[:50], report_date,  product[:30], version[:16], build[:30], url[:255], install_age, last_crash, uptime, email[:100], build_date, user_id[:50], comments[:500]))
     threadLocalCursor.execute("select id from reports where uuid = %s", (uuid,))
     reportId = threadLocalCursor.fetchall()[0][0]
     return reportId
