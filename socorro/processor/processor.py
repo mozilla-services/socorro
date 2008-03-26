@@ -217,19 +217,40 @@ class Processor(object):
     last_crash = None
     if 'SecondsSinceLastCrash' in jsonDocument and timePattern.match(str(jsonDocument['SecondsSinceLastCrash'])):
       last_crash = int(jsonDocument['SecondsSinceLastCrash'])
+    
+    try:
+      product = jsonDocument.get('ProductName', None)[:30]
+    except TypeError:
+      product = None
+    try:  
+      version = jsonDocument.get('Version', None)[:16]
+    except TypeError:
+      version = None
+    try:  
+      build = jsonDocument.get('BuildID', None)[:30]
+    except TypeError:
+      build = None
+    try:  
+      url = jsonDocument.get('URL', None)[:255]
+    except TypeError:
+      url = None
+    try:  
+      email = jsonDocument.get('Email', None)[:100]
+    except TypeError:
+      email = None
+    try:  
+      user_id = jsonDocument.get('UserID', None)[:50]
+    except TypeError:
+      user_id = None
+    try:  
+      comments = jsonDocument.get('Comments', None)[:500]
+    except TypeError:
+      comments = None
       
-    product = jsonDocument.get('ProductName', None)
-    version = jsonDocument.get('Version', None)
-    build = jsonDocument.get('BuildID', None)
-    url = jsonDocument.get('URL', None)
-    email = jsonDocument.get('Email', None)
-    user_id = jsonDocument.get('UserID', None)
-    comments = jsonDocument.get('Comments', None)
-
     threadLocalCursor.execute ("""insert into reports
                                   (id,                        uuid,      date,         product,      version,      build,       url,       install_age, last_crash, uptime, email,       build_date, user_id,      comments) values
                                   (nextval('seq_reports_id'), %s,        %s,           %s,           %s,           %s,          %s,        %s,          %s,         %s,     %s,          %s,         %s,           %s)""",
-                                  (                           uuid[:50], report_date,  product[:30], version[:16], build[:30], url[:255], install_age, last_crash, uptime, email[:100], build_date, user_id[:50], comments[:500]))
+                                  (                           uuid, report_date,  product, version, build, url, install_age, last_crash, uptime, email, build_date, user_id, comments))
     threadLocalCursor.execute("select id from reports where uuid = %s", (uuid,))
     reportId = threadLocalCursor.fetchall()[0][0]
     return reportId
