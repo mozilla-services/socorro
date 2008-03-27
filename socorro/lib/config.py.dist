@@ -1,7 +1,10 @@
+import stat
 from stat import S_IRGRP, S_IXGRP, S_IWGRP, S_IRUSR, S_IXUSR, S_IWUSR, S_ISGID
 from datetime import timedelta
 
 import sys
+
+debug = True
 
 # Output Streams
 errorReportStream=sys.stderr

@@ -34,3 +34,14 @@ def reportExceptionAndAbort():
 def emptyFilter(x):
   return (x, None)[x==""]
 
+def limitStringOrNone(aString, maxLength):
+  try:
+    return aString[:maxLength]
+  except TypeError:
+    return None
+  
+def lookupLimitedStringOrNone(aDict, aKey, maxLength):
+  try:
+    return limitStringOrNone(aDict[aKey], maxLength)
+  except KeyError:
+    return None

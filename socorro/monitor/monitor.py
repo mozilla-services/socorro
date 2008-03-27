@@ -22,11 +22,21 @@ def ignoreDuplicateDatabaseInsert (exceptionType, exception, tracebackInfo):
 
 def archiveCompletedJobFiles (jsonPathname, uuid, newFileExtension):
   print "archiving %s" % jsonPathname
-  print ("%s/%s%s.%s" % (config.saveMinidumpsTo, uuid, config.jsonFileSuffix, newFileExtension)).replace('//','/')
+  newJsonPathname = ("%s/%s%s.%s" % (config.saveMinidumpsTo, uuid, config.jsonFileSuffix, newFileExtension)).replace('//','/')
+  print "to %s" % newJsonPathname
   try:
-    os.rename(jsonPathname, ("%s/%s%s.%s" % (config.saveMinidumpsTo, uuid, config.jsonFileSuffix, newFileExtension)).replace('//','/'))
+    os.rename(jsonPathname, newJsonPathname)
   except:
-    socorro.lib.util.reportExceptionAndContinue() 
+    socorro.lib.util.reportExceptionAndContinue()
+    
+  if config.debug:
+    try:
+      f = open(jsonPathname)
+      f.close()
+      print >>config.errorReportStream, "WARNING - %s was not properly moved" % jsonPathname
+    except:
+      print >>config.statusReportStream, "INFO - %s properly moved" % jsonPathname
+      
   try:
     dumpPathname = "%s%s" % (jsonPathname[:-len(config.jsonFileSuffix)], config.dumpFileSuffix)
     os.rename(dumpPathname, ("%s/%s%s.%s" % (config.saveMinidumpsTo, uuid, config.dumpFileSuffix, newFileExtension)).replace('//','/'))
@@ -46,12 +56,14 @@ def deleteCompletedJobFiles (jsonPathname, unused1, unused2):
     socorro.lib.util.reportExceptionAndContinue()
 
 def startMonitor():
+  print >>config.statusReportStream, "INFO -- connecting to the database"
   try:
     databaseConnection = psycopg2.connect(config.processorDatabaseDSN)
     aCursor = databaseConnection.cursor()
   except:
     socorro.lib.util.reportExceptionAndAbort() # can't continue without a database connection
     
+  print >>config.statusReportStream, "INFO -- dealing with completed and failed jobs"
   # check the jobs table to and deal with the completed and failed jobs
   try:
     aCursor.execute("select pathname, uuid from jobs where success is False")
@@ -71,6 +83,7 @@ def startMonitor():
   # look for dead processors
   #  delete the processor from the processors table and, via cascade, delete its associated jobs
   #  the abandoned jobs will be picked up again by walking the dump tree and assigned to other processors
+  print >>config.statusReportStream, "INFO -- looking for dead processors"
   try:
     aCursor.execute("delete from processors where lastSeenDateTime < (now() - interval '%s')" % config.processorCheckInTime)
     databaseConnection.commit()
@@ -80,6 +93,7 @@ def startMonitor():
   # create a list of active processors along with the number of jobs asigned to each
   # then create a generator that will return the id of the processor with the fewest assigned jobs
   # this ensures that all processors have roughly an equal number of pending jobs
+  print >>config.statusReportStream, "INFO -- compiling list of active processors"
   try:
     aCursor.execute("""select p.id, count(j.*) from processors p left join jobs j on p.id = j.owner group by p.id""")
     listOfProcessorIds = [[aRow[0], aRow[1]] for aRow in aCursor.fetchall()]
@@ -93,9 +107,11 @@ def startMonitor():
     socorro.lib.util.reportExceptionAndAbort() # can't continue
   
   # walk the dump tree and assign jobs
+  print >>config.statusReportStream, "INFO -- beginning directory tree walk"
   try:
     processorIdSequenceGenerator = processorIdCycle()
     for currentDirectory, directoryList, fileList in os.walk(config.storageRoot, topdown=False):
+      print >>config.statusReportStream, "INFO --   %s" % currentDirectory
       try:
         if directoryJudgedDeletable(currentDirectory, directoryList, fileList):
           print >>config.statusReportStream, "%s: Removing - %s" % (datetime.datetime.now(),  currentDirectory)
@@ -105,6 +121,7 @@ def startMonitor():
       except Exception:
         socorro.lib.util.reportExceptionAndContinue()
       for aFileName in fileList:
+        print >>config.statusReportStream, "INFO --     %s" % aFileName
         if aFileName.endswith(config.jsonFileSuffix):
           try:
             jsonFilePathName = os.path.join(currentDirectory, aFileName)
@@ -122,5 +139,5 @@ def startMonitor():
   
 if __name__ == '__main__':       
   startMonitor()
-  print >>config.statusReportStream, "Done."  
+  print >>config.statusReportStream, "INFO -- Done."  
 
