@@ -8,6 +8,14 @@ import threading
 
 aLock = threading.RLock()
 
+def report(message):
+  aLock.acquire()
+  try:  
+    print >>config.statusReportStream, "*** thread %s ***" % threading.currentThread().getName()
+    print >>config.statusReportStream, message
+  finally:
+    aLock.release()  
+
 def reportExceptionAndContinue(ignoreFunction=None):
   try:
     exceptionType, exception, tracebackInfo = sys.exc_info()

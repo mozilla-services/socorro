@@ -17,60 +17,42 @@ import socorro.lib.threadlib
 
 import simplejson
 
-buildDatePattern = re.compile('^(\\d{4})(\\d{2})(\\d{2})(\\d{2})')
-buildPattern = re.compile('^\\d{10}')
-timePattern = re.compile('^\\d+.?\\d+$')
-fixupSpace = re.compile(r' (?=[\*&,])')
-fixupComma = re.compile(r'(?<=,)(?! )')
-filename_re = re.compile('[/\\\\]([^/\\\\]+)$')
-
+#==========================================================
 class UTC(datetime.tzinfo):
+  """
+  """
+  ZERO = datetime.timedelta(0)
+ 
+  #-----------------------------------------------------------------------------------------------------------------
   def __init__(self):
     super(UTC, self).__init__(self)
   
-  ZERO = datetime.timedelta(0)
- 
+  #-----------------------------------------------------------------------------------------------------------------
   def utcoffset(self, dt):
     return UTC.ZERO
 
+  #-----------------------------------------------------------------------------------------------------------------
   def tzname(self, dt):
     return "UTC"
 
+  #-----------------------------------------------------------------------------------------------------------------
   def dst(self, dt):
     return UTC.ZERO
-
-utctz = UTC()
-
-def fixupJsonPathname(pathname):
-  return pathname
-
-def make_signature(module_name, function, source, source_line, instruction):
-  if function is not None:
-    # Remove spaces before all stars, ampersands, and commas
-    function = re.sub(fixupSpace, '', function)
-
-    # Ensure a space after commas 
-    function = re.sub(fixupComma, ' ', function)
-    return function
-
-  if source is not None and source_line is not None:
-    filename = filename_re.search(source)
-    if filename is not None:
-      source = filename.group(1)
-
-    return '%s#%s' % (source, source_line)
-
-  if module_name is not None:
-    return '%s@%s' % (module_name, instruction)
-
-  return '@%s' % instruction
 
 #==========================================================
 class Processor(object):
   """ This class is a mechanism for processing the json and dump file pairs.  It fetches assignments
       from the 'jobs' table in the database and uses a group of threads to process them.
       
-      member data:
+      class member data:
+        buildDatePattern: a regular expression that partitions an appropriately formatted string into
+            four groups
+        utctz: a time zone instance for Universal Time Coordinate
+        fixupSpace: a regular expression used to remove spaces before all stars, ampersands, and 
+            commas
+        fixupComma: a regular expression used to ensure a space after commas
+      
+      instance member data:
         self.mainThreadDatabaseConnection: the connection to the database used by the main thread
         self.mainThreadCursor: a cursor associated with the main thread's database connection
         self.processorId: each instance of Processor registers itself in the database.  This enables
@@ -90,13 +72,19 @@ class Processor(object):
             This dictionary, indexed by thread name, is just a repository for the connections that
             persists between jobs.
   """
+  buildDatePattern = re.compile('^(\\d{4})(\\d{2})(\\d{2})(\\d{2})')
+  fixupSpace = re.compile(r' (?=[\*&,])')
+  fixupComma = re.compile(r'(?<=,)(?! )')
+  filename_re = re.compile('[/\\\\]([^/\\\\]+)$')
+  utctz = UTC()
+  
   #-----------------------------------------------------------------------------------------------------------------
   def __init__ (self):
     """
     """
     super(Processor, self).__init__()
     
-    signal.signal(signal.SIGTERM, self.respondToSIGTERM)
+    signal.signal(signal.SIGTERM, Processor.respondToSIGTERM)
     
     self.stopProcessing = False
     
@@ -127,12 +115,38 @@ class Processor(object):
     self.threadLocalDatabaseConnections = {}
     
   #-----------------------------------------------------------------------------------------------------------------
-  def respondToSIGTERM(self, signalNumber, frame):
+  @staticmethod
+  def respondToSIGTERM(signalNumber, frame):
     """ these classes are instrumented to respond to a KeyboardInterrupt by cleanly shutting down.
         This function, when given as a handler to for a SIGTERM event, will make the program respond
         to a SIGTERM as neatly as it responds to ^C.
     """
     raise KeyboardInterrupt
+
+  #-----------------------------------------------------------------------------------------------------------------
+  @staticmethod  
+  def make_signature(module_name, function, source, source_line, instruction):
+    """ returns a structured conglomeration of the input parameters to serve as a signature
+    """
+    if function is not None:
+      # Remove spaces before all stars, ampersands, and commas
+      function = re.sub(Processor.fixupSpace, '', function)
+  
+      # Ensure a space after commas 
+      function = re.sub(Processor.fixupComma, ' ', function)
+      return function
+  
+    if source is not None and source_line is not None:
+      filename = filename_re.search(source)
+      if filename is not None:
+        source = filename.group(1)
+  
+      return '%s#%s' % (source, source_line)
+  
+    if module_name is not None:
+      return '%s@%s' % (module_name, instruction)
+  
+    return '@%s' % instruction
 
   #-----------------------------------------------------------------------------------------------------------------
   def updateRegistrationNoCommit(self, aCursor):
@@ -169,8 +183,8 @@ class Processor(object):
         except IndexError:
           print >>config.statusReportStream, "%s: no jobs to do.  Waiting %s seconds" % (datetime.datetime.now(), config.processorLoopTime)
           time.sleep(config.processorLoopTime)
-          self.updateRegistrationNoCommit(self.mainThreadCursor)
-          self.mainThreadDatabaseConnection.commit()
+          #self.updateRegistrationNoCommit(self.mainThreadCursor)
+          #self.mainThreadDatabaseConnection.commit()
           continue
         sqlErrorCounter = 0
         
@@ -181,6 +195,7 @@ class Processor(object):
         
       except KeyboardInterrupt:
         print >>config.statusReportStream, "%s quit request detected" % datetime.datetime.now()
+        self.mainThreadDatabaseConnection.rollback()
         self.stopProcessing = True
         break
       
@@ -209,15 +224,24 @@ class Processor(object):
     """ This function is run only by a worker thread.
         Given a job, fetch a thread local database connection and the json document.  Use these 
         to create the record in the 'reports' table, then start the analysis of the dump file.
+        
+        input parameters:
+          jobTuple: a tuple containing three items: the jobId (the primary key from the jobs table), the
+              jobUuid (a unique string with the json file basename minus the extension) and the jobPathname
+              (a string with the full pathname of the json file that defines the job)
     """
-    if self.stopProcessing: return
     try:
-      threadLocalDatabaseConnection = self.threadLocalDatabaseConnections[threading.currentThread().getName()]
-    except KeyError:
+      if self.stopProcessing: return
       try:
-        threadLocalDatabaseConnection = self.threadLocalDatabaseConnections[threading.currentThread().getName()] = psycopg2.connect(config.processorDatabaseDSN)
-      except:
-        socorro.lib.util.reportExceptionAndAbort() # can't continue without a database connection
+        threadLocalDatabaseConnection = self.threadLocalDatabaseConnections[threading.currentThread().getName()]
+      except KeyError:
+        try:
+          threadLocalDatabaseConnection = self.threadLocalDatabaseConnections[threading.currentThread().getName()] = psycopg2.connect(config.processorDatabaseDSN)
+        except:
+          socorro.lib.util.reportExceptionAndAbort() # can't continue without a database connection
+    except KeyboardInterrupt:
+      self.stopProcessing = True
+      return
     try:
       jobId, jobUuid, jobPathname = jobTuple
       print "%s starting job: %s, %s" % (datetime.datetime.now(), jobId, jobUuid)
@@ -253,6 +277,14 @@ class Processor(object):
   def createReport(self, threadLocalCursor, uuid, jsonDocument, jobPathname):
     """ This function is run only by a worker thread. 
         Create the record for the current job in the 'reports' table
+        
+        input parameters:
+          threadLocalCursor: a database cursor for exclusive use by the calling thread
+          uuid: the unique id identifying the job - corresponds with the uuid column in the 'jobs'
+              and the 'reports' tables
+          jsonDocument: an object with a dictionary interface for fetching the components of
+              the json document
+          jobPathname:  the complete pathname for the json document
     """
     try:
       product = socorro.lib.util.limitStringOrNone(jsonDocument['ProductName'], 30)
@@ -268,37 +300,44 @@ class Processor(object):
     install_age = None
     uptime = 0 
     report_date = datetime.datetime.now()
-    
-    # this code needs refactoring - but I'm not going to do it until there is more leasure time...
-    # in the original version, ValueError exceptions were being caught and ignored - why?
-    if 'CrashTime' in jsonDocument and timePattern.match(str(jsonDocument['CrashTime'])) and 'InstallTime' in jsonDocument and timePattern.match(str(jsonDocument['InstallTime'])):
+    try:
+      crash_time = int(jsonDocument['CrashTime'])
+      report_date = datetime.datetime.fromtimestamp(crash_time, Processor.utctz)
+      install_age = crash_time - int(jsonDocument['InstallTime'])
+      uptime = max(0, crash_time - int(jsonDocument['StartupTime']))
+    except (ValueError, KeyError):
       try:
-        crash_time = int(jsonDocument['CrashTime'])
-        report_date = datetime.datetime.fromtimestamp(crash_time, utctz)
-        install_age = crash_time - int(jsonDocument['InstallTime'])
-        if 'StartupTime' in jsonDocument and timePattern.match(str(jsonDocument['StartupTime'])) and crash_time >= int(jsonDocument['StartupTime']):
-          uptime = crash_time - int(jsonDocument['StartupTime'])
-      except (ValueError):
-        print >>statusReportStream, "no 'uptime',  'crash_time' or 'install_age' calculated in %s" % jobPathname
-        socorro.lib.util.reportExceptionAndContinue()
-    elif 'timestamp' in jsonDocument and timePattern.match(str(jsonDocument['timestamp'])):
-      try:
-        report_date = datetime.datetime.fromtimestamp(jsonDocument['timestamp'], utctz)
-      except (ValueError):
+        report_date = datetime.datetime.fromtimestamp(jsonDocument['timestamp'], Processor.utctz)
+      except (ValueError, KeyError):
         print >>statusReportStream, "no 'report_date' calculated in %s" % jobPathname
-        socorro.lib.util.reportExceptionAndContinue()
+    #if 'CrashTime' in jsonDocument and timePattern.match(str(jsonDocument['CrashTime'])) and 'InstallTime' in jsonDocument and timePattern.match(str(jsonDocument['InstallTime'])):
+    #  try:
+    #    crash_time = int(jsonDocument['CrashTime'])
+    #    report_date = datetime.datetime.fromtimestamp(crash_time, utctz)
+    #    install_age = crash_time - int(jsonDocument['InstallTime'])
+    #    if 'StartupTime' in jsonDocument and timePattern.match(str(jsonDocument['StartupTime'])) and crash_time >= int(jsonDocument['StartupTime']):
+    #      uptime = crash_time - int(jsonDocument['StartupTime'])
+    #  except (ValueError):
+    #    print >>statusReportStream, "no 'uptime',  'crash_time' or 'install_age' calculated in %s" % jobPathname
+    #    socorro.lib.util.reportExceptionAndContinue()
+    #elif 'timestamp' in jsonDocument and timePattern.match(str(jsonDocument['timestamp'])):
+    #  try:
+    #    report_date = datetime.datetime.fromtimestamp(jsonDocument['timestamp'], utctz)
+    #  except (ValueError):
+    #    print >>statusReportStream, "no 'report_date' calculated in %s" % jobPathname
+    #    socorro.lib.util.reportExceptionAndContinue()
     build_date = None
     try:
-      y, m, d, h = [int(x) for x in buildDatePattern.match(str(jsonDocument['BuildID'])).groups()]
-      #(y, m, d, h) = map(int, buildDatePattern.match(str(jsonDocument['BuildID'])).groups())
+      y, m, d, h = [int(x) for x in Processor.buildDatePattern.match(str(jsonDocument['BuildID'])).groups()]
+      #(y, m, d, h) = map(int, Processor.buildDatePattern.match(str(jsonDocument['BuildID'])).groups())
       build_date = datetime.datetime(y, m, d, h)
     except (AttributeError, ValueError, KeyError):
         print >>statusReportStream, "no 'build_date' calculated in %s" % jobPathname
         socorro.lib.util.reportExceptionAndContinue()
-
-    last_crash = None
-    if 'SecondsSinceLastCrash' in jsonDocument and timePattern.match(str(jsonDocument['SecondsSinceLastCrash'])):
+    try:
       last_crash = int(jsonDocument['SecondsSinceLastCrash'])
+    except:
+      last_crash = None
 
     threadLocalCursor.execute ("""insert into reports
                                   (id,                        uuid,      date,         product,      version,      build,       url,       install_age, last_crash, uptime, email,       build_date, user_id,      comments) values

@@ -111,7 +111,7 @@ def startMonitor():
   try:
     processorIdSequenceGenerator = processorIdCycle()
     for currentDirectory, directoryList, fileList in os.walk(config.storageRoot, topdown=False):
-      print >>config.statusReportStream, "INFO --   %s" % currentDirectory
+      #print >>config.statusReportStream, "INFO --   %s" % currentDirectory
       try:
         if directoryJudgedDeletable(currentDirectory, directoryList, fileList):
           print >>config.statusReportStream, "%s: Removing - %s" % (datetime.datetime.now(),  currentDirectory)
@@ -121,7 +121,7 @@ def startMonitor():
       except Exception:
         socorro.lib.util.reportExceptionAndContinue()
       for aFileName in fileList:
-        print >>config.statusReportStream, "INFO --     %s" % aFileName
+        #print >>config.statusReportStream, "INFO --     %s" % aFileName
         if aFileName.endswith(config.jsonFileSuffix):
           try:
             jsonFilePathName = os.path.join(currentDirectory, aFileName)
