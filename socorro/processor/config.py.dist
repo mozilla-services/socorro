@@ -1,0 +1,45 @@
+import socorro.lib.ConfigurationManager as cm
+import datetime
+
+
+#get database connect string from the monitor's config file
+from socorro.monitor.config import databaseDSN
+
+#get Json file suffix from the monitor's config file
+from socorro.monitor.config import jsonFileSuffix
+
+#get dump file suffix from the monitor's config file
+from socorro.monitor.config import dumpFileSuffix
+
+errorReportStream = cm.Option()
+errorReportStream.doc = 'output stream for errors: stdout, stderr or a file name'
+errorReportStream.default = 'stderr'
+errorReportStream.fromStringConverter = cm.ioConverter
+
+statusReportStream = cm.Option()
+statusReportStream.doc = 'output stream for status messages: stdout, stderr or a file name'
+statusReportStream.default = 'stdout'
+statusReportStream.fromStringConverter = cm.ioConverter
+
+numberOfThreads = cm.Option()
+numberOfThreads.doc = 'the number of threads to use'
+numberOfThreads.default = 4
+
+storageRoot = cm.Option()
+storageRoot.doc = 'the root of the file system where dumps are found'
+storageRoot.default = '/tmp/socorro/'
+
+minidump_stackwalkPathname = cm.Option()
+minidump_stackwalkPathname.doc = 'the full pathname of the extern program minidump_stackwalk'
+minidump_stackwalkPathname.default = "/usr/local/bin/minidump_stackwalk"
+
+processorSymbolsPathnameList = cm.Option()
+processorSymbolsPathnameList.doc = 'comma separated list of symbol files for minidump_stackwalk'
+processorSymbolsPathnameList.default = "/mnt/socorro/symbols/symbols_ffx,/mnt/socorro/symbols/symbols_sea,/mnt/socorro/symbols/symbols_tbrd,/mnt/socorro/symbols/symbols_sbrd,/mnt/socorro/symbols/symbols_os"
+processorSymbolsPathnameList.fromStringConverter = lambda x: x.split(',')
+
+processorLoopTime = cm.Option()
+processorLoopTime.doc = 'the number of seconds to wait between attempts to get jobs'
+processorLoopTime.default = 60
+
+

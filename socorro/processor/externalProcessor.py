@@ -3,7 +3,6 @@
 import subprocess
 import os.path
 
-import socorro.lib.config as config
 import socorro.lib.util
 
 import processor
@@ -13,8 +12,8 @@ class ProcessorWithExternalBreakpad (processor.Processor):
   """
   """
 #-----------------------------------------------------------------------------------------------------------------
-  def __init__(self):
-    super(ProcessorWithExternalBreakpad, self).__init__()
+  def __init__(self, config):
+    super(ProcessorWithExternalBreakpad, self).__init__(config)
     
 #-----------------------------------------------------------------------------------------------------------------
   def invokeBreakpadStackdump(self, dumpfilePathname):
@@ -24,13 +23,11 @@ class ProcessorWithExternalBreakpad (processor.Processor):
           input parameters:
             dumpfilePathname: the complete pathname of the dumpfile to be analyzed
     """
-    symbol_path = ' '.join(['"%s"' % x for x in config.processorSymbols])
-    commandline = '"%s" %s "%s" %s 2>/dev/null' % (config.processorMinidump, "-m", dumpfilePathname, symbol_path)
+    symbol_path = ' '.join(['"%s"' % x for x in self.config.processorSymbolsPathnameList])
+    commandline = '"%s" %s "%s" %s 2>/dev/null' % (self.config.minidump_stackwalkPathname, "-m", dumpfilePathname, symbol_path)
     subprocessHandle = subprocess.Popen(commandline, shell=True, stdout=subprocess.PIPE)
-    try:
-      return subprocessHandle.stdout.read()
-    finally:
-      subprocessHandle.stdout.close()
+    return socorro.lib.util.CachingIterator(subprocessHandle.stdout)
+
   
 #-----------------------------------------------------------------------------------------------------------------
   def doBreakpadStackDumpAnalysis (self, reportId, uuid, dumpfilePathname, databaseCursor):
@@ -44,11 +41,15 @@ class ProcessorWithExternalBreakpad (processor.Processor):
             dumpfilePathname - the complete pathname for the =crash dump file
             databaseCursor - the cursor to use for insertion into the database
     """
-    dumpAnalysis = self.invokeBreakpadStackdump(dumpfilePathname)
-    databaseCursor.execute("insert into dumps (report_id, data) values (%s, %s)", (reportId, dumpAnalysis))
-    dumpAnalysisLineiterator = iter(dumpAnalysis.split('\n'))
-    crashedThread = self.analyzeHeader(reportId, dumpAnalysisLineiterator, databaseCursor)
-    self.analyzeFrames(reportId, dumpAnalysisLineiterator, databaseCursor, crashedThread)
+    try:
+      dumpAnalysisLineiterator = self.invokeBreakpadStackdump(dumpfilePathname)
+      crashedThread = self.analyzeHeader(reportId, dumpAnalysisLineiterator, databaseCursor)
+      self.analyzeFrames(reportId, dumpAnalysisLineiterator, databaseCursor, crashedThread)
+      dumpAnalysis = '\n'.join(dumpAnalysisLineiterator.cache)
+      databaseCursor.execute("insert into dumps (report_id, data) values (%s, %s)", (reportId, dumpAnalysis))
+    finally:
+      dumpAnalysisLineiterator.theIterator.close() #this is really a handle to a file-like object - got to close it
+
     
 #-----------------------------------------------------------------------------------------------------------------
   def analyzeHeader(self, reportId, dumpAnalysisLineiterator, databaseCursor):
@@ -70,6 +71,7 @@ class ProcessorWithExternalBreakpad (processor.Processor):
     reportUpdateSQLPhrases = {"osPhrase":"", "cpuPhrase":"", "crashPhrase":""}
 
     for line in dumpAnalysisLineiterator:
+      line = line.strip()
       # empty line separates header data from thread data
       if line == '':
         break
@@ -125,6 +127,7 @@ class ProcessorWithExternalBreakpad (processor.Processor):
     """
     frameCounter = 0
     for line in dumpAnalysisLineiterator:
+      line = line.strip()
       if line == '': continue  #some dumps have unexpected blank lines - ignore them
       if frameCounter == 10:
         break
@@ -143,4 +146,4 @@ class ProcessorWithExternalBreakpad (processor.Processor):
 if __name__ == '__main__':    
   p = ProcessorWithExternalBreakpad()
   p.start()
-  print >>config.statusReportStream, "Done."
+  print >>self.self.config.statusReportStream, "Done."

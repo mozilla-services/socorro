@@ -53,3 +53,18 @@ def lookupLimitedStringOrNone(aDict, aKey, maxLength):
     return limitStringOrNone(aDict[aKey], maxLength)
   except KeyError:
     return None
+
+class CachingIterator(object):
+  def __init__(self, anIterator):
+    self.theIterator = anIterator
+    self.cache = []
+    
+  def __iter__(self):
+    for x in self.theIterator:
+      self.cache.append(x)
+      yield x
+
+  
+  
+
+    

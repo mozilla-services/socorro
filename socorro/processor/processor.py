@@ -11,7 +11,6 @@ import re
 
 import signal
 
-import socorro.lib.config as config
 import socorro.lib.util
 import socorro.lib.threadlib
 
@@ -79,17 +78,18 @@ class Processor(object):
   utctz = UTC()
   
   #-----------------------------------------------------------------------------------------------------------------
-  def __init__ (self):
+  def __init__ (self, config):
     """
     """
     super(Processor, self).__init__()
+    self.config = config
     
     signal.signal(signal.SIGTERM, Processor.respondToSIGTERM)
     
     self.stopProcessing = False
     
     try:
-      self.mainThreadDatabaseConnection = psycopg2.connect(config.processorDatabaseDSN)
+      self.mainThreadDatabaseConnection = psycopg2.connect(self.config.databaseDSN)
       self.mainThreadCursor = self.mainThreadDatabaseConnection.cursor()
     except:
       socorro.lib.util.reportExceptionAndAbort() # can't continue without a database connection
@@ -111,7 +111,7 @@ class Processor(object):
     # remain queued in the database until the last minute.  This allows some external process to change the priority of a job by changing
     # the 'priority' column of the 'jobs' table for the particular record in the database.  If the threadManager were allowed to suck all
     # the pending jobs from the database, then the job priority could not be changed by an external process.
-    self.threadManager = socorro.lib.threadlib.TaskManager(config.processorNumberOfThreads, config.processorNumberOfThreads * 2)
+    self.threadManager = socorro.lib.threadlib.TaskManager(self.config.numberOfThreads, self.config.numberOfThreads * 2)
     self.threadLocalDatabaseConnections = {}
     
   #-----------------------------------------------------------------------------------------------------------------
@@ -151,7 +151,7 @@ class Processor(object):
   #-----------------------------------------------------------------------------------------------------------------
   def updateRegistrationNoCommit(self, aCursor):
     """ a processor must keep its database registration current.  If a processor has not updated its
-        record in the database in the interval specified in as config.processorCheckInTime, the 
+        record in the database in the interval specified in as self.config.processorCheckInTime, the 
         monitor will consider it to be expired.  The monitor will stop assigning jobs to it and reallocate
         its unfinished jobs to other processors.
     """
@@ -176,30 +176,30 @@ class Processor(object):
           socorro.lib.util.reportExceptionAndContinue()
           sqlErrorCounter += 1
           if sqlErrorCounter == 10:
-            print >>config.errorReportStream, "%s: too many server errors - quitting" % datetime.datetime.now()
+            print >>self.config.errorReportStream, "%s: too many server errors - quitting" % datetime.datetime.now()
             self.stopProcessing = True
             break
           continue
         except IndexError:
-          print >>config.statusReportStream, "%s: no jobs to do.  Waiting %s seconds" % (datetime.datetime.now(), config.processorLoopTime)
-          time.sleep(config.processorLoopTime)
-          #self.updateRegistrationNoCommit(self.mainThreadCursor)
-          #self.mainThreadDatabaseConnection.commit()
+          print >>self.config.statusReportStream, "%s: no jobs to do.  Waiting %s seconds" % (datetime.datetime.now(), self.config.processorLoopTime)
+          time.sleep(self.config.processorLoopTime)
+          self.updateRegistrationNoCommit(self.mainThreadCursor)
+          self.mainThreadDatabaseConnection.commit()
           continue
         sqlErrorCounter = 0
         
         self.mainThreadCursor.execute("update jobs set startedDateTime = %s where id = %s", (datetime.datetime.now(), jobId))
         self.mainThreadDatabaseConnection.commit()
-        print >>config.statusReportStream, "%s queuing job %d, %s, %s" % (datetime.datetime.now(), jobId, jobUuid, jobPathname)
+        print >>self.config.statusReportStream, "%s queuing job %d, %s, %s" % (datetime.datetime.now(), jobId, jobUuid, jobPathname)
         self.threadManager.newTask(self.processJob, (jobId, jobUuid, jobPathname))
         
       except KeyboardInterrupt:
-        print >>config.statusReportStream, "%s quit request detected" % datetime.datetime.now()
+        print >>self.config.statusReportStream, "%s quit request detected" % datetime.datetime.now()
         self.mainThreadDatabaseConnection.rollback()
         self.stopProcessing = True
         break
       
-    print >>config.statusReportStream, "%s waiting for threads to stop" % datetime.datetime.now()
+    print >>self.config.statusReportStream, "%s waiting for threads to stop" % datetime.datetime.now()
     self.threadManager.waitForCompletion()
     
     # we're done - kill all the threads' database connections
@@ -216,8 +216,8 @@ class Processor(object):
       self.mainThreadCursor.execute("update processors set lastSeenDateTime = '1999-01-01' where id = %s", (self.processorId,))
       self.mainThreadDatabaseConnection.commit()
     except Exception, x:
-      print >>config.errorReportStream, type(x), x 
-      print >>config.errorReportStream, "%s could not unregister %d from the database" % (datetime.datetime.now(), self.processorId)
+      print >>self.config.errorReportStream, type(x), x 
+      print >>self.config.errorReportStream, "%s could not unregister %d from the database" % (datetime.datetime.now(), self.processorId)
   
   #-----------------------------------------------------------------------------------------------------------------
   def processJob (self, jobTuple):
@@ -236,7 +236,7 @@ class Processor(object):
         threadLocalDatabaseConnection = self.threadLocalDatabaseConnections[threading.currentThread().getName()]
       except KeyError:
         try:
-          threadLocalDatabaseConnection = self.threadLocalDatabaseConnections[threading.currentThread().getName()] = psycopg2.connect(config.processorDatabaseDSN)
+          threadLocalDatabaseConnection = self.threadLocalDatabaseConnections[threading.currentThread().getName()] = psycopg2.connect(self.config.databaseDSN)
         except:
           socorro.lib.util.reportExceptionAndAbort() # can't continue without a database connection
     except KeyboardInterrupt:
@@ -253,7 +253,7 @@ class Processor(object):
       finally:
         jsonFile.close()
       reportId = self.createReport(threadLocalCursor, jobUuid, jsonDocument, jobPathname)
-      dumpfilePathname = "%s%s" % (jobPathname[:-len(config.jsonFileSuffix)], config.dumpFileSuffix)
+      dumpfilePathname = "%s%s" % (jobPathname[:-len(self.config.jsonFileSuffix)], self.config.dumpFileSuffix)
       self.doBreakpadStackDumpAnalysis(reportId, jobUuid, dumpfilePathname, threadLocalCursor)
       if self.stopProcessing: raise KeyboardInterrupt
       #finished a job - cleanup
@@ -356,5 +356,6 @@ class Processor(object):
     raise Exception("No breakpad_stackwalk invocation method specified")
 
   
-if __name__ == '__main__':    
-  print >>config.statusReportStream, "This file is not meant to be run as a standalone program."
+if __name__ == '__main__':   
+  import sys
+  print >>sys.stderr, "This file is not meant to be run as a standalone program."

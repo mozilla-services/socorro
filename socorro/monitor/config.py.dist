@@ -1,0 +1,67 @@
+import socorro.lib.ConfigurationManager as cm
+import datetime
+
+databaseDSN = cm.Option()
+databaseDSN.doc = 'the string used to connect to the database'
+databaseDSN.default = 'host=hostname dbname=databasename user=username password=password'
+
+errorReportStream = cm.Option()
+errorReportStream.doc = 'output stream for errors: stdout, stderr or a file name'
+errorReportStream.default = 'stderr'
+errorReportStream.fromStringConverter = cm.ioConverter
+
+statusReportStream = cm.Option()
+statusReportStream.doc = 'output stream for status messages: stdout, stderr or a file name'
+statusReportStream.default = 'stdout'
+statusReportStream.fromStringConverter = cm.ioConverter
+
+storageRoot = cm.Option()
+storageRoot.doc = 'the root of the file system where dumps are found'
+storageRoot.default = '/tmp/socorro/'
+
+dumpDirPrefix = cm.Option()
+dumpDirPrefix.doc = 'dump directory names begin with this prefix'
+dumpDirPrefix.default = 'bp_'
+
+jsonFileSuffix = cm.Option()
+jsonFileSuffix.doc = 'the suffix used to identify a json file'
+jsonFileSuffix.default = '.json'
+
+dumpFileSuffix = cm.Option()
+dumpFileSuffix.doc = 'the suffix used to identify a dump file'
+dumpFileSuffix.default = '.dump'
+
+dumpDirDelta = cm.Option()
+dumpDirDelta.doc = 'the age when an empty dump directory can be deleted (HHH:MM:SS)'
+dumpDirDelta.default =  datetime.timedelta(hours=2)
+dumpDirDelta.fromStringConverter = cm.timeDeltaConverter
+
+dateDirDelta = cm.Option()
+dateDirDelta.doc = 'the age when an empty date directory can be deleted (HHH:MM:SS)'
+dateDirDelta.default = datetime.timedelta(hours=1)
+dateDirDelta.fromStringConverter = cm.timeDeltaConverter
+
+processorCheckInTime = cm.Option()
+processorCheckInTime.doc = 'the time after which a processor is considered dead (in the form of an SQL interval)'
+processorCheckInTime.default = '5 minutes'
+
+saveMinidumpsTo = cm.Option()
+saveMinidumpsTo.doc = 'the location for saving dumps'
+saveMinidumpsTo.default = '/tmp/socorro-saved'
+
+saveFailedMinidumps = cm.Option()
+saveFailedMinidumps.doc = 'save the dump files that failed processing'
+saveFailedMinidumps.default = False
+saveFailedMinidumps.fromStringConverter = cm.booleanConverter
+
+saveProcessedMinidumps = cm.Option()
+saveProcessedMinidumps.doc = 'save the successfully processed dump files'
+saveProcessedMinidumps.default = False
+saveProcessedMinidumps.fromStringConverter = cm.booleanConverter
+
+debug = cm.Option()
+debug.doc = 'do debug output and routines'
+debug.default = False
+debug.fromStringConverter = cm.booleanConverter
+
+

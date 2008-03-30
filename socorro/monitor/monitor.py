@@ -7,10 +7,9 @@ import datetime
 import os
 import os.path
 
-import socorro.lib.config as config
 import socorro.lib.util
 
-def directoryJudgedDeletable (pathname, subDirectoryList, fileList):
+def directoryJudgedDeletable (config, pathname, subDirectoryList, fileList):
   if not (subDirectoryList or fileList) and pathname != config.storageRoot: #if both directoryList and fileList are empty
     #select an ageLimit from two options based on the if target directory name has a prefix of "dumpDirPrefix"
     ageLimit = (config.dateDirDelta, config.dumpDirDelta)[os.path.basename(pathname).startswith(config.dumpDirPrefix)]
@@ -20,7 +19,7 @@ def directoryJudgedDeletable (pathname, subDirectoryList, fileList):
 def ignoreDuplicateDatabaseInsert (exceptionType, exception, tracebackInfo):
   return exceptionType is psycopg2.IntegrityError
 
-def archiveCompletedJobFiles (jsonPathname, uuid, newFileExtension):
+def archiveCompletedJobFiles (config, jsonPathname, uuid, newFileExtension):
   print "archiving %s" % jsonPathname
   newJsonPathname = ("%s/%s%s.%s" % (config.saveMinidumpsTo, uuid, config.jsonFileSuffix, newFileExtension)).replace('//','/')
   print "to %s" % newJsonPathname
@@ -43,7 +42,7 @@ def archiveCompletedJobFiles (jsonPathname, uuid, newFileExtension):
   except:
     socorro.lib.util.reportExceptionAndContinue()
 
-def deleteCompletedJobFiles (jsonPathname, unused1, unused2):
+def deleteCompletedJobFiles (config, jsonPathname, unused1, unused2):
   print "deleting %s" % jsonPathname
   try:
     os.remove(jsonPathname)
@@ -55,10 +54,10 @@ def deleteCompletedJobFiles (jsonPathname, unused1, unused2):
   except:
     socorro.lib.util.reportExceptionAndContinue()
 
-def startMonitor():
+def startMonitor(config):
   print >>config.statusReportStream, "INFO -- connecting to the database"
   try:
-    databaseConnection = psycopg2.connect(config.processorDatabaseDSN)
+    databaseConnection = psycopg2.connect(config.databaseDSN)
     aCursor = databaseConnection.cursor()
   except:
     socorro.lib.util.reportExceptionAndAbort() # can't continue without a database connection
@@ -69,11 +68,11 @@ def startMonitor():
     aCursor.execute("select pathname, uuid from jobs where success is False")
     fileDisposalFunction = (deleteCompletedJobFiles, archiveCompletedJobFiles)[config.saveFailedMinidumps]
     for jsonPathname, uuid in aCursor.fetchall():
-      fileDisposalFunction(jsonPathname, uuid, "failed")
+      fileDisposalFunction(config, jsonPathname, uuid, "failed")
     fileDisposalFunction = (deleteCompletedJobFiles, archiveCompletedJobFiles)[config.saveProcessedMinidumps]
     aCursor.execute("select pathname, uuid from jobs where success is True")
     for jsonPathname, uuid in aCursor.fetchall():
-      fileDisposalFunction(jsonPathname, uuid, "processed")
+      fileDisposalFunction(config, jsonPathname, uuid, "processed")
     aCursor.execute("delete from jobs where success is not null")
     databaseConnection.commit()
   except:
@@ -113,7 +112,7 @@ def startMonitor():
     for currentDirectory, directoryList, fileList in os.walk(config.storageRoot, topdown=False):
       #print >>config.statusReportStream, "INFO --   %s" % currentDirectory
       try:
-        if directoryJudgedDeletable(currentDirectory, directoryList, fileList):
+        if directoryJudgedDeletable(config, currentDirectory, directoryList, fileList):
           print >>config.statusReportStream, "%s: Removing - %s" % (datetime.datetime.now(),  currentDirectory)
           os.rmdir(currentDirectory)
         #else:
