@@ -7,6 +7,10 @@ import datetime
 import os
 import os.path
 
+import logging
+
+logger = logging.getLogger("monitor")
+
 import socorro.lib.util
 
 def directoryJudgedDeletable (config, pathname, subDirectoryList, fileList):
@@ -20,49 +24,68 @@ def ignoreDuplicateDatabaseInsert (exceptionType, exception, tracebackInfo):
   return exceptionType is psycopg2.IntegrityError
 
 def archiveCompletedJobFiles (config, jsonPathname, uuid, newFileExtension):
-  print "archiving %s" % jsonPathname
+  logger.debug("archiving %s", jsonPathname)
   newJsonPathname = ("%s/%s%s.%s" % (config.saveMinidumpsTo, uuid, config.jsonFileSuffix, newFileExtension)).replace('//','/')
-  print "to %s" % newJsonPathname
   try:
     os.rename(jsonPathname, newJsonPathname)
   except:
-    socorro.lib.util.reportExceptionAndContinue()
-    
+    socorro.lib.util.reportExceptionAndContinue(logger)
   if config.debug:
     try:
       f = open(jsonPathname)
       f.close()
-      print >>config.errorReportStream, "WARNING - %s was not properly moved" % jsonPathname
+      logger.error("removed failed - %s", jsonPathname)
     except:
-      print >>config.statusReportStream, "INFO - %s properly moved" % jsonPathname
+      logger.debug("remove succeeded - %s", jsonPathname)
+    try:
+      f = open(newJsonPathname)
+      f.close()
+      logger.debug("arrival succeeded - %s", newJsonPathname)
+    except:
+      logger.error("arrival failed - %s", newJsonPathname)      
       
   try:
     dumpPathname = "%s%s" % (jsonPathname[:-len(config.jsonFileSuffix)], config.dumpFileSuffix)
-    os.rename(dumpPathname, ("%s/%s%s.%s" % (config.saveMinidumpsTo, uuid, config.dumpFileSuffix, newFileExtension)).replace('//','/'))
+    newDumpPathname = ("%s/%s%s.%s" % (config.saveMinidumpsTo, uuid, config.dumpFileSuffix, newFileExtension)).replace('//','/')
+    logger.debug("archiving %s", dumpPathname)
+    os.rename(dumpPathname, newDumpPathname)
   except:
-    socorro.lib.util.reportExceptionAndContinue()
-
+    socorro.lib.util.reportExceptionAndContinue(logger)
+  if config.debug:
+    try:
+      f = open(dumpPathname)
+      f.close()
+      logger.error("removed failed - %s", dumpPathname)
+    except:
+      logger.debug("remove succeeded - %s", dumpPathname)
+    try:
+      f = open(newDumpPathname)
+      f.close()
+      logger.debug("arrival succeeded - %s", newDumpPathname)
+    except:
+      logger.error("arrival failed - %s", newDumpPathname)    
+      
 def deleteCompletedJobFiles (config, jsonPathname, unused1, unused2):
-  print "deleting %s" % jsonPathname
+  logger.debug("deleting %s", jsonPathname)
   try:
     os.remove(jsonPathname)
   except:
-    socorro.lib.util.reportExceptionAndContinue() 
+    socorro.lib.util.reportExceptionAndContinue(logger) 
   try:
     dumpPathname = "%s%s" % (jsonPathname[:-len(config.jsonFileSuffix)], config.dumpFileSuffix)
     os.remove(dumpPathname)
   except:
-    socorro.lib.util.reportExceptionAndContinue()
+    socorro.lib.util.reportExceptionAndContinue(logger)
 
 def startMonitor(config):
-  print >>config.statusReportStream, "INFO -- connecting to the database"
+  logger.info("connecting to the database")
   try:
     databaseConnection = psycopg2.connect(config.databaseDSN)
     aCursor = databaseConnection.cursor()
   except:
-    socorro.lib.util.reportExceptionAndAbort() # can't continue without a database connection
+    socorro.lib.util.reportExceptionAndAbort(logger) # can't continue without a database connection
     
-  print >>config.statusReportStream, "INFO -- dealing with completed and failed jobs"
+  logger.info("dealing with completed and failed jobs")
   # check the jobs table to and deal with the completed and failed jobs
   try:
     aCursor.execute("select pathname, uuid from jobs where success is False")
@@ -77,22 +100,22 @@ def startMonitor(config):
     databaseConnection.commit()
   except:
     databaseConnection.rollback()
-    socorro.lib.util.reportExceptionAndContinue()  
+    socorro.lib.util.reportExceptionAndContinue(logger)  
     
   # look for dead processors
   #  delete the processor from the processors table and, via cascade, delete its associated jobs
   #  the abandoned jobs will be picked up again by walking the dump tree and assigned to other processors
-  print >>config.statusReportStream, "INFO -- looking for dead processors"
+  logger.info("looking for dead processors")
   try:
     aCursor.execute("delete from processors where lastSeenDateTime < (now() - interval '%s')" % config.processorCheckInTime)
     databaseConnection.commit()
   except:
-    socorro.lib.util.reportExceptionAndContinue()
+    socorro.lib.util.reportExceptionAndContinue(logger)
 
   # create a list of active processors along with the number of jobs asigned to each
   # then create a generator that will return the id of the processor with the fewest assigned jobs
   # this ensures that all processors have roughly an equal number of pending jobs
-  print >>config.statusReportStream, "INFO -- compiling list of active processors"
+  logger.info("compiling list of active processors")
   try:
     aCursor.execute("""select p.id, count(j.*) from processors p left join jobs j on p.id = j.owner group by p.id""")
     listOfProcessorIds = [[aRow[0], aRow[1]] for aRow in aCursor.fetchall()]
@@ -103,24 +126,24 @@ def startMonitor(config):
         listOfProcessorIds.sort(lambda x, y: cmp(x[1], y[1]))
         yield listOfProcessorIds[0][0]
   except:
-    socorro.lib.util.reportExceptionAndAbort() # can't continue
+    socorro.lib.util.reportExceptionAndAbort(logger) # can't continue
   
   # walk the dump tree and assign jobs
-  print >>config.statusReportStream, "INFO -- beginning directory tree walk"
+  logger.info("beginning directory tree walk")
   try:
     processorIdSequenceGenerator = processorIdCycle()
     for currentDirectory, directoryList, fileList in os.walk(config.storageRoot, topdown=False):
-      #print >>config.statusReportStream, "INFO --   %s" % currentDirectory
+      logger.debug("   %s", currentDirectory)
       try:
         if directoryJudgedDeletable(config, currentDirectory, directoryList, fileList):
-          print >>config.statusReportStream, "%s: Removing - %s" % (datetime.datetime.now(),  currentDirectory)
+          logger.debug("     removing - %s",  currentDirectory)
           os.rmdir(currentDirectory)
-        #else:
-          #print >>config.statusReportStream, "%s: not deletable - %s" % (datetime.datetime.now(),  currentDirectory)
+        else:
+          logger.debug("     not deletable - %s",  currentDirectory)
       except Exception:
-        socorro.lib.util.reportExceptionAndContinue()
+        socorro.lib.util.reportExceptionAndContinue(logger)
       for aFileName in fileList:
-        #print >>config.statusReportStream, "INFO --     %s" % aFileName
+        logger.debug("   %s", aFileName)
         if aFileName.endswith(config.jsonFileSuffix):
           try:
             jsonFilePathName = os.path.join(currentDirectory, aFileName)
@@ -130,13 +153,11 @@ def startMonitor(config):
                                        (jsonFilePathName, uuid, processorIdAssignedToThisJob, datetime.datetime.now()))
             listOfProcessorIds[0][1] += 1  #increment the job count for this processor so that the generator can track which processors need jobs 
             databaseConnection.commit()
+            logger.debug("    assigned to processor %d", processorIdAssignedToThisJob)
           except:
             databaseConnection.rollback()
-            socorro.lib.util.reportExceptionAndContinue(ignoreDuplicateDatabaseInsert)
+            socorro.lib.util.reportExceptionAndContinue(logger, logging.ERROR, ignoreDuplicateDatabaseInsert)
   except:
-    socorro.lib.util.reportExceptionAndContinue()
-  
-if __name__ == '__main__':       
-  startMonitor()
-  print >>config.statusReportStream, "INFO -- Done."  
+    socorro.lib.util.reportExceptionAndContinue(logger)
+
 

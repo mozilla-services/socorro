@@ -3,41 +3,50 @@ import socorro.lib.config as config
 import sys
 import traceback
 import datetime
-
+import cStringIO
 import threading
+
+import logging
 
 aLock = threading.RLock()
 
 def report(message):
-  aLock.acquire()
+  aLock.acquire()  #make sure these multiple log entries stay together
   try:  
-    print >>config.statusReportStream, "*** thread %s ***" % threading.currentThread().getName()
-    print >>config.statusReportStream, message
+    logger.info("*** thread %s ***", threading.currentThread().getName())
+    logger.info(message)
   finally:
     aLock.release()  
 
-def reportExceptionAndContinue(ignoreFunction=None):
+def reportExceptionAndContinue(logger, loggingLevel=logging.ERROR, ignoreFunction=None):
   try:
     exceptionType, exception, tracebackInfo = sys.exc_info()
     if ignoreFunction and ignoreFunction(exceptionType, exception, tracebackInfo):
       return
     if exceptionType in (KeyboardInterrupt, SystemExit):
       raise  exception
-    aLock.acquire()
+    aLock.acquire()   #make sure these multiple log entries stay together
     try:
-      print >>config.errorReportStream, "*** thread %s ***" % threading.currentThread().getName()
-      print >>config.errorReportStream,  "%s Caught Error: %s" %  (datetime.datetime.now(), exceptionType)
-      print  >>config.errorReportStream, "%s%s" % (' '*27, exception)
-      traceback.print_tb(tracebackInfo, None, config.errorReportStream)
+      logger.log(loggingLevel, "%s Caught Error: %s", threading.currentThread().getName(), exceptionType)
+      logger.log(loggingLevel, exception)
+      stringStream = cStringIO.StringIO()
+      try:
+        print >>stringStream,  "trace back follows:"
+        traceback.print_tb(tracebackInfo, None, stringStream)
+        tracebackString = stringStream.getvalue()
+        logger.info(tracebackString)
+      finally:
+        stringStream.close()
     finally:
       aLock.release()
   except Exception, x:
     print x
 
 
-def reportExceptionAndAbort():
-  reportExceptionAndContinue()
-  sys.exit(-1)
+def reportExceptionAndAbort(logger):
+  reportExceptionAndContinue(logger, logging.CRITICAL)
+  logger.critical("cannot continue - quitting")
+  raise SystemExit
   
 def emptyFilter(x):
   return (x, None)[x==""]
@@ -64,7 +73,8 @@ class CachingIterator(object):
       self.cache.append(x)
       yield x
 
-  
+
+
   
 
     

@@ -137,6 +137,7 @@ class Config (dict):
     # if add autohelp if needed
     if automaticHelp and "help" not in self.allowableLongFormOptionDictionary:
       helpOptionTuple = ('?', 'help', False, None, 'print this list')
+      configurationOptionsList.append(helpOptionTuple)
       self.allowableOptionDictionary[helpOptionTuple[0]] = helpOptionTuple
       self.allowableOptionDictionary[helpOptionTuple[1]] = self.allowableLongFormOptionDictionary[helpOptionTuple[1]] = helpOptionTuple
       self.addOptionsForGetopt(helpOptionTuple)
@@ -262,7 +263,7 @@ class Config (dict):
     
   #------------------------------------------------------------------------------------------
   def outputCommandSummary (self, outputStream=sys.stdout, sortOption=0, outputTemplateForOptionsWithParameters="--%s\n      %s (default: %s)", 
-                                                                         outputTemplateForOptionsWithoutParameters="--%s\n\t\t%s",
+                                                                         outputTemplateForOptionsWithoutParameters="--%s\n      %s",
                                                                          outputTemplatePrefixForSingleLetter="  -%s, ",
                                                                          outputTemplatePrefixForNoSingleLetter="  "):
     """outputs the list of acceptable commands.  This is useful as the output of the 'help' option or usage.

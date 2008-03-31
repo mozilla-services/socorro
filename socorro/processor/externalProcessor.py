@@ -2,6 +2,11 @@
 
 import subprocess
 import os.path
+import threading
+
+import logging
+
+logger = logging.getLogger("processor")
 
 import socorro.lib.util
 
@@ -25,6 +30,7 @@ class ProcessorWithExternalBreakpad (processor.Processor):
     """
     symbol_path = ' '.join(['"%s"' % x for x in self.config.processorSymbolsPathnameList])
     commandline = '"%s" %s "%s" %s 2>/dev/null' % (self.config.minidump_stackwalkPathname, "-m", dumpfilePathname, symbol_path)
+    logger.info("%s - invoking: %s", threading.currentThread().getName(), commandline)
     subprocessHandle = subprocess.Popen(commandline, shell=True, stdout=subprocess.PIPE)
     return socorro.lib.util.CachingIterator(subprocessHandle.stdout)
 
@@ -41,8 +47,9 @@ class ProcessorWithExternalBreakpad (processor.Processor):
             dumpfilePathname - the complete pathname for the =crash dump file
             databaseCursor - the cursor to use for insertion into the database
     """
+
+    dumpAnalysisLineiterator = self.invokeBreakpadStackdump(dumpfilePathname)
     try:
-      dumpAnalysisLineiterator = self.invokeBreakpadStackdump(dumpfilePathname)
       crashedThread = self.analyzeHeader(reportId, dumpAnalysisLineiterator, databaseCursor)
       self.analyzeFrames(reportId, dumpAnalysisLineiterator, databaseCursor, crashedThread)
       dumpAnalysis = '\n'.join(dumpAnalysisLineiterator.cache)
@@ -65,6 +72,7 @@ class ProcessorWithExternalBreakpad (processor.Processor):
             dumpAnalysisLineiterator - an iterator object that feeds lines from crash dump data
             databaseCursor - for database inserts and updates
     """
+    logger.info("%s - analyzeHeader", threading.currentThread().getName())
     crashedThread = None
     moduleCounter = 0
     reportUpdateValues = {"id": reportId} 
@@ -125,6 +133,7 @@ class ProcessorWithExternalBreakpad (processor.Processor):
              databaseCursor - for database insertions
              crashedThread - the number of the thread that crashed - we want frames only from the crashed thread
     """
+    logger.info("%s - analyzeFrames", threading.currentThread().getName())
     frameCounter = 0
     for line in dumpAnalysisLineiterator:
       line = line.strip()
@@ -142,8 +151,4 @@ class ProcessorWithExternalBreakpad (processor.Processor):
           databaseCursor.execute("update reports set signature = %s where id = %s", (signature, reportId))
         frameCounter += 1
 
-  
-if __name__ == '__main__':    
-  p = ProcessorWithExternalBreakpad()
-  p.start()
-  print >>self.self.config.statusReportStream, "Done."
+
