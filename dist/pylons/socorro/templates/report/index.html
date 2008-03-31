@@ -80,12 +80,14 @@
     <table class="list" py:def="stack_trace(frames)">
      <tr>
       <th>Frame</th>
+      <th>Module</th>
       <th>Signature</th>
       <th>Source</th>
      </tr>
      <?python row = 1 ?>
      <tr py:for="frame in frames" class="${h.get_row_class(row)}">
       <td>${frame.frame_num}</td>
+      <td>${frame.module_name}</td>
       <td>${frame.signature}</td>
       <td py:choose="frame.source_link is not None">
        <py:when test="True">
