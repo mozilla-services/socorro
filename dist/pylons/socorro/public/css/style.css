@@ -16,7 +16,7 @@ h1.first {
   padding-top: 0;
 }
 
-#header h1 {
+#header h1 a {
   text-decoration: none;
 }
 
