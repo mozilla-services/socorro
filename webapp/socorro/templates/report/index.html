@@ -15,6 +15,15 @@
     $('#allthreads').toggle(400);
       return false;
     });
+    $('.signature-column').append(' <a class="expand" href="#">[Expand]</a>');
+    $('.expand').click(function(){
+      // swap cell title into cell text for each cell in this column
+      $("td:nth-child(3)", $(this).parents('tbody')).each(function(){
+        $(this).text($(this).attr('title')).removeAttr('title');
+      });
+      $(this).remove();
+      return false;
+    });
   });
   </script> 
  </head>
@@ -81,14 +90,14 @@
      <tr>
       <th>Frame</th>
       <th>Module</th>
-      <th>Signature</th>
+      <th class="signature-column">Signature</th>
       <th>Source</th>
      </tr>
      <?python row = 1 ?>
      <tr py:for="frame in frames" class="${h.get_row_class(row)}">
       <td>${frame.frame_num}</td>
       <td>${frame.module_name}</td>
-      <td>${frame.signature}</td>
+      <td title="${frame.signature}">${frame.short_signature}</td>
       <td py:choose="frame.source_link is not None">
        <py:when test="True">
         ${h.link_to(frame.source_info, url=frame.source_link)} 

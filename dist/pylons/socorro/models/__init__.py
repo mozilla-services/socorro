@@ -192,6 +192,23 @@ branches_table = Table('branches', meta,
   Column('branch', String(24), nullable=False)
 )
 
+jobs_id_sequence = Sequence('jobs_id_seq', meta)
+
+jobs_table = Table('jobs', meta,
+  Column('id', Integer, jobs_id_sequence,
+         default=text("nextval('jobs_id_seq')"),
+         primary_key=True),
+  Column('pathname', String(1024), nullable=False),
+  Column('uuid', Unicode(50), index=True, unique=True, nullable=False),
+  Column('owner', Integer),
+  Column('priority', Integer, default=0),
+  Column('queueddatetime', DateTime()),
+  Column('starteddatetime', DateTime()),
+  Column('completeddatetime', DateTime()),
+  Column('success', Boolean),
+  Column('message', TEXT(convert_unicode=True))
+)
+
 lock_function_definition = """
 declare
 begin
@@ -484,6 +501,7 @@ Index('idx_reports_date', reports_table.c.date, reports_table.c.product, reports
 
 fixupSpace = re.compile(r' (?=[\*&,])')
 fixupComma = re.compile(r'(?<=,)(?! )')
+stripArgs = re.compile(r'\(.*\)')
 
 filename_re = re.compile('[/\\\\]([^/\\\\]+)$')
 
@@ -524,6 +542,7 @@ class Frame(dict):
     self['module_name'] = module_name
     self['frame_num'] = frame_num
     self['signature'] = make_signature(module_name, function, source, source_line, instruction)
+    self['short_signature'] = stripArgs.sub('', self['signature'])
     self['function'] = function
     self['source'] = source
     self['source_line'] = source_line

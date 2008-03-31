@@ -84,3 +84,8 @@ textarea.code {
   width: 640px;
   height: 480px;
 }
+
+th a.expand {
+  display: inline;
+  font-size: smaller;
+}

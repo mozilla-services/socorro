@@ -1,4 +1,4 @@
-from socorro.models import Report, reports_table as reports
+from socorro.models import Report, reports_table as reports, jobs_table as jobs
 from socorro.lib.base import BaseController
 from sqlalchemy import sql, func, select, types
 from pylons.database import create_engine
@@ -23,4 +23,8 @@ class StatusController(BaseController):
                        engine=create_engine()).execute().fetchone().values()
 
     c.lastProcessedDate = result[0].strftime('%Y-%m-%d %H:%M:%S')
+    result = select([func.count(jobs.c.id)],
+                    jobs.c.completeddatetime == None,
+                    engine=create_engine()).execute().fetchone().values()
+    c.jobsPending = result[0]
     return render_response('status/index')
