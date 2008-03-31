@@ -16,7 +16,7 @@
 
 <!-- site header -->
 <div id="header">
- <h1>Mozilla Crash Reports</h1>
+ <a href="${h.url_for('/')}"><h1>Mozilla Crash Reports</h1></a>
  <div id="menu">
   <form id="quickfind" action="${h.url_for(controller='report', action='find')}">
    <input type="text" size="24" name="id" id="crash-id"/>

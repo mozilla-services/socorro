@@ -16,6 +16,10 @@ h1.first {
   padding-top: 0;
 }
 
+#header h1 {
+  text-decoration: none;
+}
+
 h1, h2, h3, h4, h5, h6 {
   color: #33c;
   font-family: 'Times New Roman', Times, serif;
