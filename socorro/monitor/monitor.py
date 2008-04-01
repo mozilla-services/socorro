@@ -6,6 +6,7 @@ import time
 import datetime
 import os
 import os.path
+import shutil
 
 import logging
 
@@ -27,7 +28,7 @@ def archiveCompletedJobFiles (config, jsonPathname, uuid, newFileExtension):
   logger.debug("archiving %s", jsonPathname)
   newJsonPathname = ("%s/%s%s.%s" % (config.saveMinidumpsTo, uuid, config.jsonFileSuffix, newFileExtension)).replace('//','/')
   try:
-    os.rename(jsonPathname, newJsonPathname)
+    shutil.move(jsonPathname, newJsonPathname)
   except:
     socorro.lib.util.reportExceptionAndContinue(logger)
   if config.debug:
