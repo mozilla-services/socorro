@@ -248,7 +248,7 @@ class Processor(object):
           threadLocalDatabaseConnection = self.threadLocalDatabaseConnections[threading.currentThread().getName()] = psycopg2.connect(self.config.databaseDSN)
         except:
           socorro.lib.util.reportExceptionAndAbort(logger) # can't continue without a database connection
-    except KeyboardInterrupt:
+    except (KeyboardInterrupt, SystemExit):
       logger.info("%s - quit request detected", threading.currentThread().getName())
       self.stopProcessing = True
       return
@@ -270,7 +270,7 @@ class Processor(object):
       threadLocalCursor.execute("update jobs set completedDateTime = %s, success = True where id = %s", (datetime.datetime.now(), jobId))
       self.updateRegistrationNoCommit(threadLocalCursor)
       threadLocalDatabaseConnection.commit()
-    except KeyboardInterrupt:
+    except (KeyboardInterrupt, SystemExit):
       logger.info("%s - quit request detected", threading.currentThread().getName())
       self.stopProcessing = True
       try:
