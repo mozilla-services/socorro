@@ -1,5 +1,3 @@
-import socorro.lib.config as config
-
 import sys
 import traceback
 import datetime
