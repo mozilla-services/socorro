@@ -47,7 +47,7 @@ class PlatformList(list):
 platformList = PlatformList([Platform('windows', 'Windows', 'Windows NT', '#99F'),
                              Platform('mac', 'Mac OS X', 'Mac OS X', '#3C3'),
                              Platform('linux', 'Linux', 'Linux', '#C90'),
-                             Platform('opensolaris', 'OpenSolaris', 'OpenSolaris', '#A91')])
+                             Platform('solaris', 'Solaris', 'Solaris', '#A91')])
 
 def count_platforms():
   return [platform.count() for platform in platformList]
