@@ -11,7 +11,7 @@
   <script type="text/javascript">
   $(document).ready(function(){
     $('#report-index > ul').tabs();
-    $('#showallthreads').click(function(){
+    $('#showallthreads').removeClass('hidden').click(function(){
     $('#allthreads').toggle(400);
       return false;
     });
@@ -109,7 +109,7 @@
     </table>
     <h2>Crashing Thread</h2>
     ${stack_trace(c.report.threads[c.report.crashed_thread])}
-    <p id="showallthreads">${h.link_to('Show/hide other threads', url='#allthreads')}</p>
+    <p id="showallthreads" class="hidden">${h.link_to('Show/hide other threads', url='#allthreads')}</p>
     <div id="allthreads">
      <py:for each="i in range(len(c.report.threads))">
       <py:if test="i != c.report.crashed_thread">
