@@ -49,7 +49,7 @@ def archiveCompletedJobFiles (config, jsonPathname, uuid, newFileExtension):
     dumpPathname = "%s%s" % (jsonPathname[:-len(config.jsonFileSuffix)], config.dumpFileSuffix)
     newDumpPathname = ("%s/%s%s.%s" % (config.saveMinidumpsTo, uuid, config.dumpFileSuffix, newFileExtension)).replace('//','/')
     logger.debug("archiving %s", dumpPathname)
-    os.rename(dumpPathname, newDumpPathname)
+    shutil.move(dumpPathname, newDumpPathname)
   except:
     socorro.lib.util.reportExceptionAndContinue(logger)
   if config.debug:
