@@ -25,7 +25,7 @@ stderrLog.setFormatter(stderrLogFormatter)
 logger.addHandler(stderrLog)
 
 rotatingFileLog = logging.handlers.RotatingFileHandler(configurationContext.logFilePathname, "a", configurationContext.logFileMaximumSize, configurationContext.logFileMaximumBackupHistory)
-rotatingFileLog.setLevel(logging.DEBUG)
+rotatingFileLog.setLevel(configurationContext.logFileErrorLoggingLevel)
 rotatingFileLogFormatter = logging.Formatter(configurationContext.logFileLineFormatString)
 rotatingFileLog.setFormatter(rotatingFileLogFormatter)
 logger.addHandler(rotatingFileLog)
