@@ -270,6 +270,7 @@ class Processor(object):
       threadLocalCursor.execute("update jobs set completedDateTime = %s, success = True where id = %s", (datetime.datetime.now(), jobId))
       self.updateRegistrationNoCommit(threadLocalCursor)
       threadLocalDatabaseConnection.commit()
+      logger.info("%s - succeeded and committed: %s, %s", threading.currentThread().getName(), jobId, jobUuid)
     except (KeyboardInterrupt, SystemExit):
       logger.info("%s - quit request detected", threading.currentThread().getName())
       self.stopProcessing = True
@@ -280,7 +281,7 @@ class Processor(object):
       except:
         pass
     except Exception, x:
-      logger.info("%s - abandoning job with rollback: %s, %s", threading.currentThread().getName(), jobId, jobUuid)
+      c
       threadLocalDatabaseConnection.rollback()
       threadLocalCursor.execute("update jobs set completedDateTime = %s, success = False, message = %s where id = %s", (datetime.datetime.now(), "%s:%s" % (type(x), str(x)), jobId))
       threadLocalDatabaseConnection.commit()
