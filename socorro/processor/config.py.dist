@@ -11,23 +11,12 @@ from socorro.monitor.config import jsonFileSuffix
 #get dump file suffix from the monitor's config file
 from socorro.monitor.config import dumpFileSuffix
 
-errorReportStream = cm.Option()
-errorReportStream.doc = 'output stream for errors: stdout, stderr or a file name'
-errorReportStream.default = 'stderr'
-errorReportStream.fromStringConverter = cm.ioConverter
-
-statusReportStream = cm.Option()
-statusReportStream.doc = 'output stream for status messages: stdout, stderr or a file name'
-statusReportStream.default = 'stdout'
-statusReportStream.fromStringConverter = cm.ioConverter
-
 numberOfThreads = cm.Option()
 numberOfThreads.doc = 'the number of threads to use'
 numberOfThreads.default = 4
 
-storageRoot = cm.Option()
-storageRoot.doc = 'the root of the file system where dumps are found'
-storageRoot.default = '/tmp/socorro/'
+#get storageRoot from monitor's config file
+from socorro.monitor.config import storageRoot
 
 minidump_stackwalkPathname = cm.Option()
 minidump_stackwalkPathname.doc = 'the full pathname of the extern program minidump_stackwalk'
