@@ -219,6 +219,7 @@ class BaseLimit(object):
   def query_reports(self):
     selects = [reports.c.date,
                reports.c.date_processed,
+               reports.c.uptime,
                reports.c.comments,
                reports.c.uuid,
                reports.c.product,
