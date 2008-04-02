@@ -4,7 +4,7 @@
    xmlns:xi="http://www.w3.org/2001/XInclude">
  <xi:include href="../includes/site.html" />
  <head>
-  <title>Crash Report ${c.report.uuid}</title>
+  <title>[@ ${c.report.signature} ] - ${c.report.product} ${c.report.version} Crash Report - Report ID: ${c.report.uuid}</title>
   ${ h.javascript_include_tag("/js/jquery/jquery-1.2.1.js") }
   ${ h.javascript_include_tag("/js/jquery/plugins/ui/ui.tabs.js") }
   ${ h.stylesheet_link_tag("/css/flora/flora.all.css") }
@@ -29,7 +29,7 @@
  </head>
  <body>
   <div id="content">
-   <h1 id="report-header" class="first">${c.report.product} ${c.report.version} Crash Report</h1>
+   <h1 id="report-header" class="first">${c.report.product} ${c.report.version} Crash Report [@ ${c.report.signature} ]</h1>
    <div id="report-header-details">ID: <span>${c.report.uuid}</span><br/> Signature: <span>${c.report.signature}</span></div>
    <div id="report-index" class="flora">
     <ul>
