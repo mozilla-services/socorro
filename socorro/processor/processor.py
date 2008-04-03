@@ -281,7 +281,6 @@ class Processor(object):
       except:
         pass
     except Exception, x:
-      c
       threadLocalDatabaseConnection.rollback()
       threadLocalCursor.execute("update jobs set completedDateTime = %s, success = False, message = %s where id = %s", (datetime.datetime.now(), "%s:%s" % (type(x), str(x)), jobId))
       threadLocalDatabaseConnection.commit()
