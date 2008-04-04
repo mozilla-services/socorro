@@ -81,12 +81,13 @@ from socorro.lib.platforms import platformList
       Stack Signature
      </option>
      <option value="stack" selected="${c.params.getQuerySearch() == 'stack' and 'selected' or ''}">
-      Top 10 Stack Frames
+      One of the top 10 Stack Frames
      </option>
     </select>
     <select name="query_type">
      <option py:for="(value, desc) in (('contains', 'contains'),
-                                       ('exact', 'is exactly'))"
+                                       ('exact', 'is exactly'),
+				       ('startswith', 'starts with'))"
              value="${value}"
              selected="${c.params.getQueryType() == value and 'selected' or ''}">
       ${desc}

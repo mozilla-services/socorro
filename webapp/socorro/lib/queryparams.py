@@ -60,7 +60,7 @@ class BaseLimit(object):
   stringlist_validator = ListValidator(formencode.validators.String(strip=True))
   platform_validator = ListValidator(PlatformValidator())
   query_validator = formencode.validators.OneOf(['signature', 'stack'])
-  type_validator = formencode.validators.OneOf(['exact', 'contains'])
+  type_validator = formencode.validators.OneOf(['exact', 'startswith', 'contains'])
   signature_validator = formencode.validators.String(strip=True, if_empty=None)
 
   @staticmethod
@@ -185,8 +185,11 @@ class BaseLimit(object):
   
   def filterByQuery(self, q):
     if self.query is not None:
-      if self.getQueryType() == 'contains':
-        pattern = '%' + self.query.replace('%', '%%') + '%'
+      if self.getQueryType() == 'contains' or \
+         self.getQueryType() == 'startswith':
+        pattern = self.query.replace('%', '%%') + '%'
+        if self.getQueryType() == 'contains':
+          pattern = '%' + pattern
         if self.getQuerySearch() == 'signature':
           q = q.filter(reports.c.signature.like(pattern))
         else:
@@ -319,7 +322,8 @@ class BaseLimit(object):
 
     if self.query is not None:
       sigtype = {'exact': 'is exactly',
-                 'contains': 'contains'}[self.getQueryType()]
+                 'contains': 'contains',
+                 'startswith': 'starts with'}[self.getQueryType()]
 
       sigquery = {'signature': 'the crash signature',
                   'stack': 'one of the top 10 stack frames'}[self.getQuerySearch()]
