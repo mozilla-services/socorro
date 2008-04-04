@@ -54,6 +54,7 @@ socorro/public/calendar.png
 socorro/public/favicon.ico
 socorro/public/footer_bg.png
 socorro/public/header_bg.png
+socorro/public/loading.png
 socorro/public/css/datePicker.css
 socorro/public/css/layout.css
 socorro/public/css/style.css
@@ -136,6 +137,7 @@ socorro/templates/includes/site.html
 socorro/templates/report/__init__.py
 socorro/templates/report/index.html
 socorro/templates/report/list.html
+socorro/templates/report/pending.html
 socorro/templates/status/__init__.py
 socorro/templates/status/index.html
 socorro/templates/topcrasher/__init__.py
