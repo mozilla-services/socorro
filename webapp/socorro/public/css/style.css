@@ -89,3 +89,7 @@ th a.expand {
   display: inline;
   font-size: smaller;
 }
+
+dt {
+  font-weight: bold;
+}

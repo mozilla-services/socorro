@@ -43,12 +43,7 @@ class ReportController(BaseController):
       h.redirect_to(action='index', id=id)
 
     c.job = Job.by_uuid(id)
-    if c.job is None:
-      abort(404, 'Not found')
-
     c.priority = Job.set_priority(id)
-    if c.priority is False:
-      abort(404, 'Not found')
 
     return render_response('report/pending')
 
