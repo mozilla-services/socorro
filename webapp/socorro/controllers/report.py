@@ -36,6 +36,12 @@ class ReportController(BaseController):
       return resp
 
   def pending(self, id):
+
+    # Check to see if the report already got processed at some point and redirect to it if so.
+    c.report = Report.by_id(id)
+    if c.report is not None:
+      h.redirect_to(action='index', id=id)
+
     c.job = Job.by_uuid(id)
     if c.job is None:
       abort(404, 'Not found')
