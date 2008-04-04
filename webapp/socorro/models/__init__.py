@@ -807,6 +807,27 @@ class Extension(object):
     self.extension_id = extension_id
     self.extension_version = extension_version
 
+class Job(object):
+  """
+  For accessing and updating the reports queue.
+  """
+
+  @staticmethod
+  def by_uuid(uuid):
+    """ Get queue information for a pending uuid. """
+    return select([jobs_table], limit=1, whereclause=jobs_table.c.uuid==uuid, 
+                  engine=getEngine()).execute().fetchone()
+
+  @staticmethod
+  def set_priority(uuid):
+    """ Set priority of job with uuid to 1, return boolean. """
+    vals = [{'priority': 1}]
+    return jobs_table.update(whereclause=jobs_table.c.uuid==uuid). \
+        compile(engine=getEngine(), parameters=vals).execute()
+
+
+
+
 #
 # Check whether we're running outside Pylons
 #

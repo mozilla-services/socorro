@@ -1,6 +1,6 @@
 from socorro.lib.base import *
 from socorro.lib.processor import Processor
-from socorro.models import Report
+from socorro.models import Report, Job
 from socorro.lib.queryparams import BySignatureLimit, getReportsForParams
 from socorro.lib.http_cache import responseForKey
 import socorro.lib.collect as collect
@@ -16,16 +16,35 @@ matchDumpID = re.compile('^(%s)?([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}
 class ReportController(BaseController):
   def index(self, id):
     c.report = Report.by_id(id)
+
+    # If we don't have a report entry, see if it's in the queue.
+    # If it's there, flag it for priority so the user can see it in ~10 seconds.
+    #
+    # This should not be cached, so we explicitly send no-cache response
+    # headers.
     if c.report is None:
+      h.redirect_to(action='pending', id=id)
+
+    # If we have the report entry, show it as usual.
+    else:
+      if c.report['build']:
+        resp = responseForKey(c.report['uuid'], expires=(60 * 60))
+      else:
+        resp = responseForKey(c.report['uuid'])
+
+      resp.write(render('report/index'))
+      return resp
+
+  def pending(self, id):
+    c.job = Job.by_uuid(id)
+    if c.job is None:
       abort(404, 'Not found')
 
-    if c.report['build']:
-      resp = responseForKey(c.report['uuid'], expires=(60 * 60))
-    else:
-      resp = responseForKey(c.report['uuid'])
+    c.priority = Job.set_priority(id)
+    if c.priority is False:
+      abort(404, 'Not found')
 
-    resp.write(render('report/index'))
-    return resp
+    return render_response('report/pending')
 
   def find(self):
     # This method should not touch the database!

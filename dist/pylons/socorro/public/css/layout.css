@@ -117,3 +117,8 @@ body {
 .hidden {
   display: none;
 }
+
+h1.loading {
+  background: transparent url(../loading.png) no-repeat left;
+  padding-left: 25px;
+}
