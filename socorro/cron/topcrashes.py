@@ -84,7 +84,7 @@ if configContext.initMode:
   logger.info("Init mode selected. Using big query!")
   sql = "SELECT %s FROM reports" % (",".join(columns))
 else:
-  sql = "SELECT %s FROM reports WHERE date>=(SELECT last_updated FROM summary ORDER BY last_updated DESC LIMIT 1)" % (",".join(columns))
+  sql = "SELECT %s FROM reports WHERE date>=(SELECT last_updated FROM topcrashers ORDER BY last_updated DESC LIMIT 1)" % (",".join(columns))
 
 logger.info("Beginning Data Slurp")
 try:
@@ -135,7 +135,7 @@ calc_ranks(summary_crashes)
 
 ### Do the DB updates ###
 
-sql1 = "SELECT rank FROM topcrashers WHERE product=%s AND branch=%s AND signature=%s ORDER BY last_updated DESC LIMIT 1" # Find the last rank of the current signature combo
+sql1 = "SELECT rank FROM topcrashers WHERE product=%s AND version=%s AND signature=%s ORDER BY last_updated DESC LIMIT 1" # Find the last rank of the current signature combo
 sql2 = "INSERT INTO topcrashers VALUES (DEFAULT, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, now())" # Insert new rows
 
 logger.info("Beginning DB update")
