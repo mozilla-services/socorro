@@ -256,6 +256,8 @@ class Processor(object):
       jobId, jobUuid, jobPathname = jobTuple
       logger.info("%s - starting job: %s, %s", threading.currentThread().getName(), jobId, jobUuid)
       threadLocalCursor = threadLocalDatabaseConnection.cursor()
+      threadLocalCursor.execute("update jobs set startedDateTime = %s where id = %s", (datetime.datetime.now(), jobId))
+      threadLocalDatabaseConnection.commit()
       
       jsonFile = open(jobPathname)
       try:

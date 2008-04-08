@@ -49,6 +49,11 @@ saveProcessedMinidumps.doc = 'save the successfully processed dump files'
 saveProcessedMinidumps.default = False
 saveProcessedMinidumps.fromStringConverter = cm.booleanConverter
 
+loop = cm.Option()
+loop.doc = 'True: loop incessently; False: run once'
+loop.default = True
+loop.fromStringConverter = cm.booleanConverter
+
 debug = cm.Option()
 debug.doc = 'do debug output and routines'
 debug.default = False

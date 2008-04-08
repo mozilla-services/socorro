@@ -33,7 +33,8 @@ logger.addHandler(rotatingFileLog)
 logger.info("current configuration\n%s", str(configurationContext))
 
 try:
-  monitor.startMonitor(configurationContext)
+  while True:
+    monitor.startMonitor(configurationContext)
 finally:
   logger.info("done.")
 

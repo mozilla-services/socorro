@@ -3,6 +3,7 @@
 import subprocess
 import os.path
 import threading
+import time
 
 import logging
 
@@ -32,7 +33,7 @@ class ProcessorWithExternalBreakpad (processor.Processor):
     commandline = '"%s" %s "%s" %s 2>/dev/null' % (self.config.minidump_stackwalkPathname, "-m", dumpfilePathname, symbol_path)
     logger.info("%s - invoking: %s", threading.currentThread().getName(), commandline)
     subprocessHandle = subprocess.Popen(commandline, shell=True, stdout=subprocess.PIPE)
-    return socorro.lib.util.CachingIterator(subprocessHandle.stdout)
+    return (socorro.lib.util.CachingIterator(subprocessHandle.stdout), subprocessHandle)
 
   
 #-----------------------------------------------------------------------------------------------------------------
@@ -48,7 +49,7 @@ class ProcessorWithExternalBreakpad (processor.Processor):
             databaseCursor - the cursor to use for insertion into the database
     """
 
-    dumpAnalysisLineiterator = self.invokeBreakpadStackdump(dumpfilePathname)
+    dumpAnalysisLineiterator, subprocessHandle = self.invokeBreakpadStackdump(dumpfilePathname)
     try:
       crashedThread = self.analyzeHeader(reportId, dumpAnalysisLineiterator, databaseCursor)
       self.analyzeFrames(reportId, dumpAnalysisLineiterator, databaseCursor, crashedThread)
@@ -56,6 +57,14 @@ class ProcessorWithExternalBreakpad (processor.Processor):
       databaseCursor.execute("insert into dumps (report_id, data) values (%s, %s)", (reportId, dumpAnalysis))
     finally:
       dumpAnalysisLineiterator.theIterator.close() #this is really a handle to a file-like object - got to close it
+    # is the return code from the invocation important?  Uncomment, if it is...
+    #waitCount = 0
+    #while subprocessHandle.returncode is None:
+    #  time.sleep(1)
+    # waitCount += 1
+    #  if waitCount == 5: break
+    #if subprocessHandle.returncode is not None and subprocessHandle.returncode != 0:
+    #  raise Exception("%s failed with return code %s when processing dump %s" %(self.config.minidump_stackwalkPathname, subprocessHandle.returncode, uuid))
 
     
 #-----------------------------------------------------------------------------------------------------------------
