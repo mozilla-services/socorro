@@ -1,6 +1,7 @@
 
 drop table jobs;
 drop table processors;
+drop table priorityJobs;
 
 create table processors (
   id serial primary key,
@@ -23,3 +24,6 @@ create table jobs (
   message text
 );
 
+create table priorityJobs (
+  uuid varchar(255) primary key
+);

@@ -34,7 +34,8 @@ logger.info("current configuration\n%s", str(configurationContext))
 
 try:
   while True:
-    monitor.startMonitor(configurationContext)
+    m = monitor.Monitor(configurationContext)
+    m.start()
 finally:
   logger.info("done.")
 

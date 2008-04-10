@@ -35,6 +35,14 @@ processorCheckInTime = cm.Option()
 processorCheckInTime.doc = 'the time after which a processor is considered dead (in the form of an SQL interval)'
 processorCheckInTime.default = '5 minutes'
 
+standardLoopDelay = cm.Option()
+standardLoopDelay.doc = 'the delay in seconds between filesystem walks looking for jobs'
+standardLoopDelay.default = 300
+
+priorityLoopDelay = cm.Option()
+priorityLoopDelay.doc = 'the delay in seconds between checks for priority jobs'
+priorityLoopDelay.default = 5
+
 saveMinidumpsTo = cm.Option()
 saveMinidumpsTo.doc = 'the location for saving dumps'
 saveMinidumpsTo.default = '/tmp/socorro-saved'
@@ -48,11 +56,6 @@ saveProcessedMinidumps = cm.Option()
 saveProcessedMinidumps.doc = 'save the successfully processed dump files'
 saveProcessedMinidumps.default = False
 saveProcessedMinidumps.fromStringConverter = cm.booleanConverter
-
-loop = cm.Option()
-loop.doc = 'True: loop incessently; False: run once'
-loop.default = True
-loop.fromStringConverter = cm.booleanConverter
 
 debug = cm.Option()
 debug.doc = 'do debug output and routines'
