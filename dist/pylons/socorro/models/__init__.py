@@ -620,6 +620,13 @@ class Report(dict):
         self.crashed_thread <= len(self.threads) and
         len(self.threads[self.crashed_thread]) > 0):
       signature = self.threads[self.crashed_thread][0]['signature']
+      # if we just have a numeric address, walk down the stack
+      # looking for a better signature
+      if signature.startswith("@0x"):
+        for s in self.threads[self.crashed_thread]:
+          if not s['signature'].startswith("@0x"):
+            signature = s['signature']
+            break
       print "Calculating signature for report %s: %s" % (self['uuid'], signature)
     else:
       print "Failed to create signature for report %s:" % self['uuid']
