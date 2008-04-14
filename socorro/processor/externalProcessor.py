@@ -53,6 +53,8 @@ class ProcessorWithExternalBreakpad (processor.Processor):
     try:
       crashedThread = self.analyzeHeader(reportId, dumpAnalysisLineiterator, databaseCursor)
       self.analyzeFrames(reportId, dumpAnalysisLineiterator, databaseCursor, crashedThread)
+      for x in dumpAnalysisLineiterator:
+        pass  #need to spool out the rest of the stream so the cache doesn't get truncated
       dumpAnalysis = ''.join(dumpAnalysisLineiterator.cache)
       databaseCursor.execute("insert into dumps (report_id, data) values (%s, %s)", (reportId, dumpAnalysis))
     finally:
