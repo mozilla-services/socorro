@@ -1,6 +1,6 @@
 from socorro.lib.base import *
 from socorro.lib.processor import Processor
-from socorro.models import Report, Job
+from socorro.models import Report, Job, PriorityJob
 from socorro.lib.queryparams import BySignatureLimit, getReportsForParams
 from socorro.lib.http_cache import responseForKey
 import socorro.lib.collect as collect
@@ -16,6 +16,10 @@ matchDumpID = re.compile('^(%s)?([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}
 class ReportController(BaseController):
   def index(self, id):
     c.report = Report.by_id(id)
+
+    # If we get no id, 404 -- id can't be blank.
+    if id is None:
+      abort(404, 'Page Not Found')
 
     # If we don't have a report entry, see if it's in the queue.
     # If it's there, flag it for priority so the user can see it in ~10 seconds.
@@ -37,13 +41,17 @@ class ReportController(BaseController):
 
   def pending(self, id):
 
+    # If we get no id, 404 -- id can't be blank.
+    if id is None:
+      abort(404, 'Page Not Found')
+
     # Check to see if the report already got processed at some point and redirect to it if so.
     c.report = Report.by_id(id)
     if c.report is not None:
       h.redirect_to(action='index', id=id)
 
     c.job = Job.by_uuid(id)
-    c.priority = Job.set_priority(id)
+    c.priority = PriorityJob.add(id)
 
     return render_response('report/pending')
 

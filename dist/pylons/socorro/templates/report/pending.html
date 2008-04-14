@@ -5,19 +5,22 @@
  <xi:include href="../includes/site.html" />
  <head>
   <title>Please wait... we are processing your report.</title>
-  <py:if test="c.job is not None">
-  <meta http-equiv="refresh" content="21; url=${ h.url_for('/report/index/') + c.job.uuid }"/>
-  </py:if>
+  <meta http-equiv="refresh" content="21; url=${ h.url_for('/report/index/') + c.id }"/>
  </head>
  <body>
   <div id="content">
 
-  <py:if test="c.job is not None and (c.job.priority==1 or c.priority is True)">
    <h1 class="loading">Your report is being processed</h1>
-   <p>We've given <a href="${ h.url_for('/report/index/') + c.job.uuid }">your
-   report</a> priority and it should be ready in a minute.  When it
-   is finished, this page will redirect you to your report.</p>
+   <ul>
+    <li>We've given <a href="${ h.url_for('/report/index/') + c.id }">your
+   report</a> priority</li>
+   <li>Your report should be ready in a minute</li>
+   <li>This page will refresh and display your report's status</li>
+   <li>When your report has been processedd, we will redirect you to your
+   report</li>
+   </ul>
 
+   <py:if test="c.job is not None">
    <h2>Queue Info</h2>
    <dl>
     <dt>ID</dt>
@@ -33,17 +36,7 @@
     <dd>${ c.job.message }</dd>
     </py:if>
    </dl>
-  </py:if>
-
-  <py:if test="c.job is None">
-  <h1>Your report has not been queued yet</h1>
-  <p>You are seeing this because:</p>
-  <ul>
-   <li>We haven't received your report yet, or...</li>
-   <li>We have received your report but it has not been queued yet.  New reports are queued every 10 minutes.</li>
-  </ul>
-  <p>Check back here in a few minutes for an update.</p>
-  </py:if>
+   </py:if>
 
   </div>
   <!-- end content -->

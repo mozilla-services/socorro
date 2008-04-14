@@ -2,6 +2,7 @@ from sqlalchemy import *
 from datetime import datetime
 from socorro.lib import config, EmptyFilter
 from cStringIO import StringIO
+from sqlalchemy.exceptions import SQLError
 import sys
 import os
 import re
@@ -207,6 +208,10 @@ jobs_table = Table('jobs', meta,
   Column('completeddatetime', DateTime()),
   Column('success', Boolean),
   Column('message', TEXT(convert_unicode=True))
+)
+
+priorityJobs_table = Table('priorityJobs', meta,
+  Column('uuid', Unicode(50), primary_key=True, nullable=False)
 )
 
 lock_function_definition = """
@@ -818,13 +823,15 @@ class Job(object):
     return select([jobs_table], limit=1, whereclause=jobs_table.c.uuid==uuid, 
                   engine=getEngine()).execute().fetchone()
 
+class PriorityJob(object):
   @staticmethod
-  def set_priority(uuid):
-    """ Set priority of job with uuid to 1, return boolean. """
-    vals = [{'priority': 1}]
-    return jobs_table.update(whereclause=jobs_table.c.uuid==uuid). \
-        compile(engine=getEngine(), parameters=vals).execute()
-
+  def add(uuid):
+    """ Insert passed UUID into the priorityJobs table. """
+    vals = [{'uuid': uuid}]
+    try:
+      priorityJobs_table.insert().compile(engine=getEngine()).execute(*vals)
+    except(SQLError):
+      pass
 
 
 
