@@ -210,7 +210,7 @@ jobs_table = Table('jobs', meta,
   Column('message', TEXT(convert_unicode=True))
 )
 
-priorityJobs_table = Table('priorityJobs', meta,
+priorityjobs_table = Table('priorityjobs', meta,
   Column('uuid', Unicode(50), primary_key=True, nullable=False)
 )
 
@@ -826,10 +826,10 @@ class Job(object):
 class PriorityJob(object):
   @staticmethod
   def add(uuid):
-    """ Insert passed UUID into the priorityJobs table. """
+    """ Insert passed UUID into the priorityjobs table. """
     vals = [{'uuid': uuid}]
     try:
-      priorityJobs_table.insert().compile(engine=getEngine()).execute(*vals)
+      priorityjobs_table.insert().compile(engine=getEngine()).execute(*vals)
     except(SQLError):
       pass
 
