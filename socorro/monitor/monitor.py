@@ -273,23 +273,22 @@ class Monitor (object):
                     self.priorityJobAllocationCursor.execute("delete from priorityJobs where uuid = %s", (uuid,))
                     self.priorityJobAllocationDatabaseConnection.commit()
                     del priorityUuids[uuid]
-                if not priorityUuids:
-                  break #the list of files to process is empty - no need to continue
-                processorIdSequenceGenerator = self.jobSchedulerIter(self.priorityJobAllocationCursor)
-                for currentDirectory, directoryList, fileList in os.walk(self.config.storageRoot, topdown=False):
-                  self.quitCheck()
-                  for uuid, fileName in ((u, f) for u, f in priorityUuids.items() if f in fileList):
-                    logger.info("%s - priority queuing %s", threading.currentThread().getName(), fileName)
-                    self.queueJob(self.priorityJobAllocationDatabaseConnection, self.priorityJobAllocationCursor, currentDirectory, fileName, processorIdSequenceGenerator, 1)
-                    self.priorityJobAllocationCursor.execute("delete from priorityJobs where uuid = %s", (uuid,))
-                    self.priorityJobAllocationDatabaseConnection.commit()
-                    del priorityUuids[uuid]
-                if priorityUuids:
-                  for uuid in priorityUuids:
+                if priorityUuids: # only need to continue if we still have jobs to process
+                  processorIdSequenceGenerator = self.jobSchedulerIter(self.priorityJobAllocationCursor)
+                  for currentDirectory, directoryList, fileList in os.walk(self.config.storageRoot, topdown=False):
                     self.quitCheck()
-                    logger.error("%s - priority uuid %s was never found",  threading.currentThread().getName(), uuid)
-                    self.priorityJobAllocationCursor.execute("delete from priorityJobs where uuid = %s", (uuid,))
-                    self.priorityJobAllocationDatabaseConnection.commit()
+                    for uuid, fileName in ((u, f) for u, f in priorityUuids.items() if f in fileList):
+                      logger.info("%s - priority queuing %s", threading.currentThread().getName(), fileName)
+                      self.queueJob(self.priorityJobAllocationDatabaseConnection, self.priorityJobAllocationCursor, currentDirectory, fileName, processorIdSequenceGenerator, 1)
+                      self.priorityJobAllocationCursor.execute("delete from priorityJobs where uuid = %s", (uuid,))
+                      self.priorityJobAllocationDatabaseConnection.commit()
+                      del priorityUuids[uuid]
+                  if priorityUuids:
+                    for uuid in priorityUuids:
+                      self.quitCheck()
+                      logger.error("%s - priority uuid %s was never found",  threading.currentThread().getName(), uuid)
+                      self.priorityJobAllocationCursor.execute("delete from priorityJobs where uuid = %s", (uuid,))
+                      self.priorityJobAllocationDatabaseConnection.commit()
               except KeyboardInterrupt:
                 logger.debug("%s - inner QUITTING", threading.currentThread().getName())
                 raise
