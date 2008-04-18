@@ -77,12 +77,14 @@ h3 {
   text-align: right;
 }
 
-textarea.code {
+div.code {
   background-color: #eee;
   border: 1px solid #ccc;
   font-family: monospace;
   width: 640px;
   height: 480px;
+  white-space: pre;
+  overflow: auto;
 }
 
 th a.expand {
