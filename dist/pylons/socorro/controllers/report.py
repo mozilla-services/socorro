@@ -27,6 +27,14 @@ class ReportController(BaseController):
     # This should not be cached, so we explicitly send no-cache response
     # headers.
     if c.report is None:
+
+      # The pending page adds ?p=1 to redirects.  Check this to avoid inserting 
+      # duplicate priorityjob entries.  
+      try:
+        request.params['p']
+      except(KeyError):
+        c.priority = PriorityJob.add(id)
+
       h.redirect_to(action='pending', id=id)
 
     # If we have the report entry, show it as usual.
@@ -51,7 +59,6 @@ class ReportController(BaseController):
       h.redirect_to(action='index', id=id)
 
     c.job = Job.by_uuid(id)
-    c.priority = PriorityJob.add(id)
 
     return render_response('report/pending')
 

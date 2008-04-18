@@ -5,14 +5,14 @@
  <xi:include href="../includes/site.html" />
  <head>
   <title>Please wait... we are processing your report.</title>
-  <meta http-equiv="refresh" content="21; url=${ h.url_for('/report/index/') + c.id }"/>
+  <meta http-equiv="refresh" content="21; url=${ h.url_for('/report/index/') + c.id + '?p=1'}"/>
  </head>
  <body>
   <div id="content">
 
    <h1 class="loading">Your report is being processed</h1>
    <ul>
-    <li>We've given <a href="${ h.url_for('/report/index/') + c.id }">your
+    <li>We've given <a href="${ h.url_for('/report/index/') + c.id + '?p=1' }">your
    report</a> priority</li>
    <li>Your report should be ready in a minute</li>
    <li>This page will refresh and display your report's status</li>
