@@ -214,6 +214,17 @@ priorityjobs_table = Table('priorityjobs', meta,
   Column('uuid', Unicode(50), primary_key=True, nullable=False)
 )
 
+processors_id_sequence = Sequence('processors_id_seq', meta)
+
+processors_table = Table('processors', meta,
+  Column('id', Integer, processors_id_sequence,
+         default=text("nextval('processors_id_seq')"),
+         primary_key=True),
+  Column('name', String(255), nullable=False),
+  Column('startdatetime', DateTime(), nullable=False),
+  Column('lastseendatetime', DateTime())
+)
+
 lock_function_definition = """
 declare
 begin

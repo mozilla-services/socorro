@@ -1,4 +1,4 @@
-from socorro.models import Report, reports_table as reports, jobs_table as jobs
+from socorro.models import Report, reports_table as reports, jobs_table as jobs, processors_table as processors
 from socorro.lib.base import BaseController
 from sqlalchemy import sql, func, select, types
 from pylons.database import create_engine
@@ -24,13 +24,21 @@ class StatusController(BaseController):
                     jobs.c.completeddatetime != None,
                     engine=create_engine()).execute().fetchone().values()
 
-    c.lastProcessedDate = result[0].strftime('%Y-%m-%d %H:%M:%S')
-    c.avgProcessTime = result[1]
-    c.avgWaitTime = result[2]
+    if len(result) == 3 and result[0] is not None:
+      c.lastProcessedDate = result[0].strftime('%Y-%m-%d %H:%M:%S')
+      c.avgProcessTime = result[1]
+      c.avgWaitTime = result[2]
+    else:
+      c.lastProcessedDate = 'None'
+      c.avgProcessTime = 'None'
+      c.avgWaitTime = 'None'
     result = select([func.count(jobs.c.id)],
                     jobs.c.completeddatetime == None,
                     engine=create_engine()).execute().fetchone().values()
     c.jobsPending = result[0]
+    result = select([func.count(processors.c.id)],
+                    engine=create_engine()).execute().fetchone().values()
+    c.numProcessors = result[0]
     result = select([jobs.c.queueddatetime],
                     jobs.c.completeddatetime == None,
                     order_by=jobs.c.queueddatetime,
