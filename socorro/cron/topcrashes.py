@@ -9,6 +9,7 @@ import sys
 import logging
 import logging.handlers
 from operator import itemgetter
+import time
 
 import psycopg2
 import psycopg2.extras
@@ -17,6 +18,7 @@ import topcrashes_config as config
 import socorro.lib.ConfigurationManager as configurationManager
 
 import socorro.lib.util
+
 
 def calc_tots(crashes, crash_count):
   """ Calculate the total number of crashes per signature combo, as well as uptime averages. """
@@ -97,46 +99,48 @@ logger.info("Queried %d rows with %s." % (len(rows), sql))
 
 ## This loop slurps up the data into our dictionary ##
 for row in rows:
-  key = (row['product'], row['version'], row['signature'])
-  if key not in summary_crashes:
-    summary_crashes[key] = {}
-    summary_crashes[key]['win'] = 0
-    summary_crashes[key]['lin'] = 0
-    summary_crashes[key]['mac'] = 0
-    summary_crashes[key]['uptime'] = 0
-    summary_crashes[key]['product'] = row['product']
-    summary_crashes[key]['version'] = row['version']
-    summary_crashes[key]['signature'] = row['signature']
-    summary_crashes[key]['user_ids'] = [row['user_id']]
-    summary_crashes[key]['users'] = 1
-    crash_count[key] = 1.0
-  else:
-    crash_count[key] += 1.0
-    if not summary_crashes[key]['user_ids'].count(row['user_id']):
-      summary_crashes[key]['user_ids'].append(row['user_id'])
-      summary_crashes[key]['users'] += 1
-      
-  if summary_crashes[key]['uptime']:
-    summary_crashes[key]['uptime'] += row['uptime']
-  else:
-    summary_crashes[key]['uptime'] = row['uptime']
-  
-  if row['os_name'] == "Mac OS X":
-    summary_crashes[key]['mac'] += 1
+  if row['product'] and row['version'] and row['signature']:
+    key = (row['product'], row['version'], row['signature'])
+    if key not in summary_crashes:
+      summary_crashes[key] = {}
+      summary_crashes[key]['win'] = 0
+      summary_crashes[key]['lin'] = 0
+      summary_crashes[key]['mac'] = 0
+      summary_crashes[key]['uptime'] = 0
+      summary_crashes[key]['product'] = row['product']
+      summary_crashes[key]['version'] = row['version']
+      summary_crashes[key]['signature'] = row['signature']
+      summary_crashes[key]['user_ids'] = [row['user_id']]
+      summary_crashes[key]['users'] = 1
+      crash_count[key] = 1.0
+    else:
+      crash_count[key] += 1.0
+      if not summary_crashes[key]['user_ids'].count(row['user_id']):
+        summary_crashes[key]['user_ids'].append(row['user_id'])
+        summary_crashes[key]['users'] += 1
+        
+    if summary_crashes[key]['uptime']:
+      summary_crashes[key]['uptime'] += row['uptime']
+    else:
+      summary_crashes[key]['uptime'] = row['uptime']
+    
+    if row['os_name'] == "Mac OS X":
+      summary_crashes[key]['mac'] += 1
 
-  if row['os_name'] == "Windows" or row['os_name'] == "Windows NT":
-    summary_crashes[key]['win'] += 1
+    if row['os_name'] == "Windows" or row['os_name'] == "Windows NT":
+      summary_crashes[key]['win'] += 1
 
-  if row['os_name'] == "Linux":
-    summary_crashes[key]['lin'] += 1
+    if row['os_name'] == "Linux":
+      summary_crashes[key]['lin'] += 1
 
 calc_tots(summary_crashes,crash_count)
 calc_ranks(summary_crashes)
 
 ### Do the DB updates ###
+update_time = time.strftime("%Y-%m-%dT%H:%M:%S", time.gmtime())
 
 sql1 = "SELECT rank FROM topcrashers WHERE product=%s AND version=%s AND signature=%s ORDER BY last_updated DESC LIMIT 1" # Find the last rank of the current signature combo
-sql2 = "INSERT INTO topcrashers VALUES (DEFAULT, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, now())" # Insert new rows
+sql2 = "INSERT INTO topcrashers VALUES (DEFAULT, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)" # Insert new rows
 
 logger.info("Beginning DB update")
 for signature, data in summary_crashes.items():
@@ -155,11 +159,11 @@ for signature, data in summary_crashes.items():
     socorro.lib.util.reportExceptionAndAbort(logger)
   
   try:
-    cur.execute(sql2, (data['signature'], data['version'], data['product'], data['total'], data['win'], data['mac'], data['lin'], data['rank'], last_rank, "", data['uptime_average'], data['users']))
+    cur.execute(sql2, (data['signature'], data['version'], data['product'], data['total'], data['win'], data['mac'], data['lin'], data['rank'], last_rank, "", data['uptime_average'], data['users'], update_time))
     conn.commit()
     
     if configContext.debug:
-      logger.debug(sql2 % (data['signature'], data['version'], data['product'], data['total'], data['win'], data['mac'], data['lin'], data['rank'], last_rank, "", data['uptime_average'], data['users']))
+      logger.debug(sql2 % (data['signature'], data['version'], data['product'], data['total'], data['win'], data['mac'], data['lin'], data['rank'], last_rank, "", data['uptime_average'], data['users'], update_time))
  
   except:
     socorro.lib.util.reportExceptionAndAbort(logger)
