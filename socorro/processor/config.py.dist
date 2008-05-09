@@ -18,18 +18,37 @@ numberOfThreads.default = 4
 #get storageRoot from monitor's config file
 from socorro.monitor.config import storageRoot
 
+stackwalkCommandLine = cm.Option()
+stackwalkCommandLine.doc = 'the template for the command to invoke minidump_stackwalk'
+#for standard breakpad_stackwalk uncomment this line:
+stackwalkCommandLine.default = '$minidump_stackwalkPathname -m $dumpfilePathname $processorSymbolsPathnameList 2>/dev/null'
+#for caching breakpad_stackwalk uncomment this line:
+#stackwalkCommandLine.default = '$minidump_stackwalkPathname -c $symbolCachePath  -m $dumpfilePathname $processorSymbolsPathnameList 2>/dev/null'
+
 minidump_stackwalkPathname = cm.Option()
-minidump_stackwalkPathname.doc = 'the full pathname of the extern program minidump_stackwalk'
-minidump_stackwalkPathname.default = "/usr/local/bin/minidump_stackwalk"
+minidump_stackwalkPathname.doc = 'the full pathname of the extern program minidump_stackwalk (quote path with embedded spaces)'
+minidump_stackwalkPathname.default = '/usr/local/bin/minidump_stackwalk'
+
+symbolCachePath = cm.Option()
+symbolCachePath.doc = 'the path where the symbol cache is found (quote path with embedded spaces)'
+symbolCachePath.default = '/mnt/socorro/symbols'
 
 processorSymbolsPathnameList = cm.Option()
-processorSymbolsPathnameList.doc = 'comma separated list of symbol files for minidump_stackwalk'
+processorSymbolsPathnameList.doc = 'comma or space separated list of symbol files for minidump_stackwalk (quote paths with embedded spaces)'
 processorSymbolsPathnameList.default = "/mnt/socorro/symbols/symbols_ffx,/mnt/socorro/symbols/symbols_sea,/mnt/socorro/symbols/symbols_tbrd,/mnt/socorro/symbols/symbols_sbrd,/mnt/socorro/symbols/symbols_os"
-processorSymbolsPathnameList.fromStringConverter = lambda x: x.split(',')
+processorSymbolsPathnameList.fromStringConverter = lambda x: x.replace(',', ' ')
+
+crashingThreadFrameThreshold = cm.Option()
+crashingThreadFrameThreshold.doc = "the number of frames to keep in the raw dump for the crashing thread"
+crashingThreadFrameThreshold.default = 100
+
+crashingThreadTailFrameThreshold = cm.Option()
+crashingThreadTailFrameThreshold.doc="the number of frames to keep in the raw dump at the tail of the frame list"
+crashingThreadTailFrameThreshold.default = 10
 
 processorLoopTime = cm.Option()
 processorLoopTime.doc = 'the number of seconds to wait between attempts to get jobs'
-processorLoopTime.default = 60
+processorLoopTime.default = 6
 
 debug = cm.Option()
 debug.doc = 'do debug output and routines'

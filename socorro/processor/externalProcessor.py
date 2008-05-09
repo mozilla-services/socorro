@@ -4,6 +4,7 @@ import subprocess
 import os.path
 import threading
 import time
+import re
 
 import logging
 
@@ -21,6 +22,16 @@ class ProcessorWithExternalBreakpad (processor.Processor):
   def __init__(self, config):
     super(ProcessorWithExternalBreakpad, self).__init__(config)
     
+    #preprocess the breakpad_stackwalk command line
+    # convert parameters of the form "$paramterName" into a python parameter of the form "%(paramterName)s"
+    self.commandLine = re.compile(r'(\$(\w+))').sub(r'%(\2)s', config.stackwalkCommandLine)    
+    # convert parameters of the form "$(paramterName)" into a python parameter of the form "%(paramterName)s"
+    self.commandLine = re.compile(r'(\$(\(\w+\)))').sub(r'%(\2)s', self.commandLine)
+    # treat the "dumpfilePathname" as a special paramter by changing its syntax
+    self.commandLine = self.commandLine.replace('%(dumpfilePathname)s', "DUMPFILEPATHNAME")
+    # finally make the substitutions to make a real command out of the template
+    self.commandLine = self.commandLine %  config
+    
 #-----------------------------------------------------------------------------------------------------------------
   def invokeBreakpadStackdump(self, dumpfilePathname):
     """ This function invokes breakpad_stackdump as an external process capturing and returning
@@ -29,8 +40,9 @@ class ProcessorWithExternalBreakpad (processor.Processor):
           input parameters:
             dumpfilePathname: the complete pathname of the dumpfile to be analyzed
     """
-    symbol_path = ' '.join(['"%s"' % x for x in self.config.processorSymbolsPathnameList])
-    commandline = '"%s" %s "%s" %s 2>/dev/null' % (self.config.minidump_stackwalkPathname, "-m", dumpfilePathname, symbol_path)
+    #symbol_path = ' '.join(['"%s"' % x for x in self.config.processorSymbolsPathnameList])
+    #commandline = '"%s" %s "%s" %s 2>/dev/null' % (self.config.minidump_stackwalkPathname, "-m", dumpfilePathname, symbol_path)
+    commandline = self.commandLine.replace("DUMPFILEPATHNAME", dumpfilePathname)
     logger.info("%s - invoking: %s", threading.currentThread().getName(), commandline)
     subprocessHandle = subprocess.Popen(commandline, shell=True, stdout=subprocess.PIPE)
     return (socorro.lib.util.CachingIterator(subprocessHandle.stdout), subprocessHandle)
@@ -42,6 +54,9 @@ class ProcessorWithExternalBreakpad (processor.Processor):
           steps of running the breakpad_stackdump process and analyzing the textual output for insertion
           into the database.
           
+          returns:
+            truncated - boolean: True - due to excessive length the frames of the crashing thread may have been truncated.
+          
           input parameters:
             reportId - the primary key from the 'reports' table for this crash report
             uuid - the unique string identifier for the crash report
@@ -50,9 +65,10 @@ class ProcessorWithExternalBreakpad (processor.Processor):
     """
 
     dumpAnalysisLineiterator, subprocessHandle = self.invokeBreakpadStackdump(dumpfilePathname)
+    dumpAnalysisLineiterator.secondaryCacheMaximumSize = self.config.crashingThreadTailFrameThreshold + 1
     try:
       crashedThread = self.analyzeHeader(reportId, dumpAnalysisLineiterator, databaseCursor)
-      self.analyzeFrames(reportId, dumpAnalysisLineiterator, databaseCursor, crashedThread)
+      truncated = self.analyzeFrames(reportId, dumpAnalysisLineiterator, databaseCursor, crashedThread)
       for x in dumpAnalysisLineiterator:
         pass  #need to spool out the rest of the stream so the cache doesn't get truncated
       dumpAnalysis = ''.join(dumpAnalysisLineiterator.cache)
@@ -63,10 +79,11 @@ class ProcessorWithExternalBreakpad (processor.Processor):
     #waitCount = 0
     #while subprocessHandle.returncode is None:
     #  time.sleep(1)
-    # waitCount += 1
-    #  if waitCount == 5: break
+    #  waitCount += 1
+    #  if waitCount == 20: break
     #if subprocessHandle.returncode is not None and subprocessHandle.returncode != 0:
     #  raise Exception("%s failed with return code %s when processing dump %s" %(self.config.minidump_stackwalkPathname, subprocessHandle.returncode, uuid))
+    return truncated
 
     
 #-----------------------------------------------------------------------------------------------------------------
@@ -138,6 +155,9 @@ class ProcessorWithExternalBreakpad (processor.Processor):
           (determined in analyzeHeader).  Each from from that thread is written to the database until
            it has found a maximum of ten frames.
            
+           returns:
+             truncated - boolean: True - due to excessive length the frames of the crashing thread may have been truncated.
+           
            input parameters:
              reportId - the primary key from the 'reports' table for this crash report
              dumpAnalysisLineiterator - an iterator that cycles through lines from the crash dump
@@ -146,20 +166,27 @@ class ProcessorWithExternalBreakpad (processor.Processor):
     """
     logger.info("%s - analyzeFrames", threading.currentThread().getName())
     frameCounter = 0
+    truncated = False
     for line in dumpAnalysisLineiterator:
       line = line.strip()
       if line == '': continue  #some dumps have unexpected blank lines - ignore them
-      if frameCounter == 10:
-        break
       (thread_num, frame_num, module_name, function, source, source_line, instruction) = [socorro.lib.util.emptyFilter(x) for x in line.split("|")]
       if crashedThread == int(thread_num):
-        signature = processor.Processor.make_signature(module_name, function, source, source_line, instruction)
-        databaseCursor.execute("""insert into frames
-                                                  (report_id, frame_num, signature) values
-                                                  (%s, %s, %s)""",
-                                                  (reportId, frame_num, signature[:255]))
-        if frameCounter == 0:
-          databaseCursor.execute("update reports set signature = %s where id = %s", (signature, reportId))
+        if frameCounter < 10:
+          signature = processor.Processor.make_signature(module_name, function, source, source_line, instruction)
+          databaseCursor.execute("""insert into frames
+                                                    (report_id, frame_num, signature) values
+                                                    (%s, %s, %s)""",
+                                                    (reportId, frame_num, signature[:255]))
+          if frameCounter == 0:
+            databaseCursor.execute("update reports set signature = %s where id = %s", (signature, reportId))
+        if frameCounter == self.config.crashingThreadFrameThreshold:
+          logger.debug("%s - starting secondary cache with framecount = %d", threading.currentThread().getName(), frameCounter)
+          dumpAnalysisLineiterator.useSecondaryCache()
+          truncated = True
         frameCounter += 1
-
+      elif frameCounter:
+        break
+    dumpAnalysisLineiterator.stopUsingSecondaryCache()
+    return truncated
 

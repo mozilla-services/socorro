@@ -40,6 +40,10 @@ class UTC(datetime.tzinfo):
   #-----------------------------------------------------------------------------------------------------------------
   def dst(self, dt):
     return UTC.ZERO
+  
+#==========================================================
+class DuplicateEntryException(Exception):
+  pass
 
 #==========================================================
 class Processor(object):
@@ -256,7 +260,8 @@ class Processor(object):
       jobId, jobUuid, jobPathname = jobTuple
       logger.info("%s - starting job: %s, %s", threading.currentThread().getName(), jobId, jobUuid)
       threadLocalCursor = threadLocalDatabaseConnection.cursor()
-      threadLocalCursor.execute("update jobs set startedDateTime = %s where id = %s", (datetime.datetime.now(), jobId))
+      startedDateTime = datetime.datetime.now()
+      threadLocalCursor.execute("update jobs set startedDateTime = %s where id = %s", (startedDateTime, jobId))
       threadLocalDatabaseConnection.commit()
       
       jsonFile = open(jobPathname)
@@ -265,11 +270,13 @@ class Processor(object):
       finally:
         jsonFile.close()
       reportId = self.createReport(threadLocalCursor, jobUuid, jsonDocument, jobPathname)
+      threadLocalDatabaseConnection.commit()
       dumpfilePathname = "%s%s" % (jobPathname[:-len(self.config.jsonFileSuffix)], self.config.dumpFileSuffix)
-      self.doBreakpadStackDumpAnalysis(reportId, jobUuid, dumpfilePathname, threadLocalCursor)
+      truncated = self.doBreakpadStackDumpAnalysis(reportId, jobUuid, dumpfilePathname, threadLocalCursor)
       if self.stopProcessing: raise KeyboardInterrupt
       #finished a job - cleanup
       threadLocalCursor.execute("update jobs set completedDateTime = %s, success = True where id = %s", (datetime.datetime.now(), jobId))
+      threadLocalCursor.execute("update reports set startedDateTime = %s, completedDateTime = %s, success = True, truncated = %s where id = %s", (startedDateTime, datetime.datetime.now(), truncated, reportId))
       self.updateRegistrationNoCommit(threadLocalCursor)
       threadLocalDatabaseConnection.commit()
       logger.info("%s - succeeded and committed: %s, %s", threading.currentThread().getName(), jobId, jobUuid)
@@ -281,12 +288,19 @@ class Processor(object):
         threadLocalDatabaseConnection.rollback()
         threadLocalDatabaseConnection.close()
       except:
-        pass
+        pass 
+    except DuplicateEntryException, x:
+      logger.warning("%s - duplicate entry: %s", threading.currentThread().getName(), jobUuid)
     except Exception, x:
-      threadLocalDatabaseConnection.rollback()
-      threadLocalCursor.execute("update jobs set completedDateTime = %s, success = False, message = %s where id = %s", (datetime.datetime.now(), "%s:%s" % (type(x), str(x)), jobId))
-      threadLocalDatabaseConnection.commit()
       socorro.lib.util.reportExceptionAndContinue(logger)
+      threadLocalDatabaseConnection.rollback()
+      message = "%s:%s" % (type(x), str(x))
+      threadLocalCursor.execute("update jobs set completedDateTime = %s, success = False, message = %s where id = %s", (datetime.datetime.now(), message, jobId))
+      try:
+        threadLocalCursor.execute("update reports set startedDateTime = %s, completedDateTime = %s, success = False, message = %s where id = %s", (startedDateTime, datetime.datetime.now(), message, reportId))
+      except:
+        pass
+      threadLocalDatabaseConnection.commit()
 
   #-----------------------------------------------------------------------------------------------------------------
   def createReport(self, threadLocalCursor, uuid, jsonDocument, jobPathname):
@@ -354,11 +368,22 @@ class Processor(object):
       last_crash = int(jsonDocument['SecondsSinceLastCrash'])
     except:
       last_crash = None
-
-    threadLocalCursor.execute ("""insert into reports
-                                  (id,                        uuid,      date,         product,      version,      build,       url,       install_age, last_crash, uptime, email,       build_date, user_id,      comments) values
-                                  (nextval('seq_reports_id'), %s,        %s,           %s,           %s,           %s,          %s,        %s,          %s,         %s,     %s,          %s,         %s,           %s)""",
-                                  (                           uuid, report_date,  product, version, build, url, install_age, last_crash, uptime, email, build_date, user_id, comments))
+    def insertReport():
+      threadLocalCursor.execute ("""insert into reports
+                                    (id,                        uuid,      date,         product,      version,      build,       url,       install_age, last_crash, uptime, email,       build_date, user_id,      comments) values
+                                    (nextval('seq_reports_id'), %s,        %s,           %s,           %s,           %s,          %s,        %s,          %s,         %s,     %s,          %s,         %s,           %s)""",
+                                    (                           uuid, report_date,  product, version, build, url, install_age, last_crash, uptime, email, build_date, user_id, comments))
+    try:
+      insertReport()
+    except psycopg2.IntegrityError:
+      logger.debug("%s - %s: this report already exists",  threading.currentThread().getName(), uuid)
+      threadLocalCursor.connection.rollback()
+      threadLocalCursor.execute("select success from reports where uuid = %s", (uuid,))
+      previousTrialWasSuccessful = threadLocalCursor.fetchall()[0][0]
+      if previousTrialWasSuccessful:
+        raise DuplicateEntryException(uuid)
+      threadLocalCursor.execute("delete from reports where uuid = %s", (uuid,))
+      insertReport()
     threadLocalCursor.execute("select id from reports where uuid = %s", (uuid,))
     reportId = threadLocalCursor.fetchall()[0][0]
     return reportId

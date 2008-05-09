@@ -61,16 +61,41 @@ def lookupLimitedStringOrNone(aDict, aKey, maxLength):
   except KeyError:
     return None
 
+import collections
+
 class CachingIterator(object):
   def __init__(self, anIterator):
     self.theIterator = anIterator
     self.cache = []
+    self.secondaryLimitedSizeCache = collections.deque()
+    self.secondaryCacheMaximumSize = 11
+    self.secondaryCacheSize = 0
+    self.useSecondary = False
     
   def __iter__(self):
-    for x in self.theIterator:
-      self.cache.append(x)
-      yield x
-
+    #try:  #to be used in Python 2.5 or greater
+      for x in self.theIterator:
+        if self.useSecondary:
+          if self.secondaryCacheSize == self.secondaryCacheMaximumSize:
+            self.secondaryLimitedSizeCache.popleft()
+            self.secondaryLimitedSizeCache.append(x)
+          else:
+            self.secondaryLimitedSizeCache.append(x)
+            self.secondaryCacheSize += 1
+        else:
+          self.cache.append(x)
+        yield x
+    #finally:
+    #  self.stopUsingSecondaryCache()
+      
+  def useSecondaryCache(self):
+    self.useSecondary = True
+    
+  def stopUsingSecondaryCache(self):
+    self.useSecondary = False
+    self.cache.extend(self.secondaryLimitedSizeCache)
+    self.secondaryCacheSize = 0
+    self.secondaryLimitedSizeCache = collections.deque()
 
 
   

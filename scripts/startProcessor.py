@@ -37,5 +37,8 @@ try:
   p.start()
 finally:
   logger.info("done.")
+  rotatingFileLog.flush()
+  rotatingFileLog.close()
+  
 
 

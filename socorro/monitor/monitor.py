@@ -126,6 +126,11 @@ class Monitor (object):
   def compareSecondOfSequence (x, y):
     return cmp(x[1], y[1])
   
+  #-----------------------------------------------------------------------------------------------------------------  
+  @staticmethod
+  def secondOfSequence(x):
+    return x[1]
+
   #-----------------------------------------------------------------------------------------------------------------
   def jobSchedulerIter(self, aCursor):
     """ This takes a snap shot of the state of the processors as well as the number of jobs assigned to each

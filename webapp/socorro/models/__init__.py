@@ -66,7 +66,11 @@ reports_table = Table('reports', meta,
   Column('os_version', TruncatingString(100)),
   Column('email', TruncatingString(100)),
   Column('build_date', DateTime()),
-  Column('user_id', Unicode(50))
+  Column('user_id', Unicode(50)),
+  Column('starteddatetime', DateTime()),
+  Column('completeddatetime', DateTime()),
+  Column('success', Boolean),
+  Column('message', TEXT(convert_unicode=True))
 )
 
 def upgrade_reports(dbc):
@@ -143,6 +147,20 @@ def upgrade_reports(dbc):
   else:
     print "ok"
 
+  print "  Checking for reports.success...",
+  cursor.execute("""SELECT 1 FROM pg_attribute
+                    WHERE attrelid = 'reports'::regclass
+                    AND attname = 'success'""")
+  if cursor.rowcount == 0:
+    print "setting"
+    cursor.execute("""ALTER TABLE reports ADD starteddatetime timestamp without time zone NULL,
+                    ADD completeddatetime timestamp without time zone NULL,
+                    ADD success boolean NULL,
+                    ADD message text NULL,
+                    ADD truncated boolean NULL""")
+  else:
+    print "ok"
+
 frames_table = Table('frames', meta,
   Column('report_id', Integer, ForeignKey('reports.id', ondelete='CASCADE'), primary_key=True),
   Column('frame_num', Integer, nullable=False, primary_key=True, autoincrement=False),
@@ -184,6 +202,7 @@ extensions_table = Table('extensions', meta,
 
 dumps_table = Table('dumps', meta,
   Column('report_id', Integer, ForeignKey('reports.id', ondelete='CASCADE'), primary_key=True),
+  Column('truncated', Boolean, default=False),
   Column('data', TEXT(convert_unicode=True))
 )
 
@@ -488,6 +507,7 @@ def upgrade_db(dbc):
   cur.close()
   upgrade_reports(dbc)
   upgrade_modules(dbc)
+
 
 def ensure_partitions(dbc):
   print "Checking for database partitions...",
