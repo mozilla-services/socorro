@@ -1,8 +1,8 @@
-from socorro.models import reports_table as reports, branches_table as branches, frames_table as frames
+from socorro.models import reports_table as reports, branches_table as branches, frames_table as frames, top_crashers_table as topcrashers
 import formencode
 import sqlalchemy
 from pylons.database import create_engine
-from sqlalchemy import sql, func, select, types
+from sqlalchemy import sql, func, select, types, and_
 from sqlalchemy.databases.postgres import PGInterval
 import re
 from socorro.lib.platforms import count_platforms, platformList
@@ -294,14 +294,14 @@ class BaseLimit(object):
 
   def query_topcrashes(self):
     total = func.count(reports.c.id)
-    selects = [reports.c.signature, total]
+    selects = [topcrashers.c.signature, total]
     selects.extend(count_platforms())
     s = select(selects,
-               group_by=[reports.c.signature],
+               group_by=[topcrashers.c.signature],
                order_by=sql.desc(func.count(reports.c.id)),
                limit=100,
                engine=create_engine())
-    s.append_whereclause(reports.c.signature != None)
+    s.append_whereclause(topcrashers.c.signature != None)
 
     def FilterToAppend(clause):
       s.append_whereclause(clause)
@@ -362,15 +362,20 @@ class BySignatureLimit(BaseLimit):
     return q
 
 ### XXXcombine the two functions below
-def getCrashesForParams(params, key):
+def getCrashesForParams(product, version, key):
   """
   Get a list of top crashes for a BaseLimit and a cache key.
   Returns a tuple of the topcrashers and a timestamp.
   """
   def getCrashers():
-    tc = [r for r in params.query_topcrashes()]
+    db = create_engine()
+    last_updated_sql = db.execute("SELECT last_updated FROM topcrashers WHERE product='%s' AND version='%s' ORDER BY last_updated DESC LIMIT 1" % (product, version))
+    for each in last_updated_sql:
+      last_updated = each[0]
+
+    tc = [r for r in topcrashers.select(engine=create_engine(), whereclause=and_(topcrashers.c.product == product, topcrashers.c.version == version, topcrashers.c.last_updated == last_updated)).execute()]
     ts = time.time()
-    return (tc, ts)
+    return (tc, ts, last_updated)
 
   tccache = pylons.cache.get_cache('tc_data')
   return tccache.get_value(key, createfunc=getCrashers,

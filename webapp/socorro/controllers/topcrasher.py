@@ -34,8 +34,8 @@ class TopcrasherController(BaseController):
     The purpose of this action is to generate topcrasher reports based on
     product and version.
     """
-    c.params = BaseLimit(versions=[(product, version)], range=(2, 'weeks'))
-    (c.tc, ts) = getCrashesForParams(c.params,"v_%s%s" % (product, version))
+    
+    (c.tc, ts, c.last_updated) = getCrashesForParams(product, version, "v_%s%s" % (product, version))
     etag = "%s%s%s" % (product, version, ts)
     resp = responseForKey(etag)
     resp.write(render('topcrasher/byversion'))
@@ -46,6 +46,7 @@ class TopcrasherController(BaseController):
     The purpose of this action is to generate topcrasher reports based on
     branch.
     """
+    
     c.params = BaseLimit(branches=[branch], range=(2, 'weeks'))
     (c.tc, ts) = getCrashesForParams(c.params, "branch_" + branch)
     etag = "%s%s" % (branch, ts)
