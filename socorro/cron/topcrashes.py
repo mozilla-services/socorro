@@ -91,6 +91,7 @@ start_time = datetime.datetime.now()
 end_time = datetime.datetime.now()
 now = datetime.datetime.now()
 p_interval = datetime.timedelta(seconds=configContext.processingInterval)
+initModeDate = now - datetime.timedelta(days=-14)
 
 if not configContext.initMode:
   startsql = "SELECT last_updated FROM topcrashers ORDER BY last_updated DESC LIMIT 1"
@@ -115,7 +116,7 @@ while end_time <= now and initLoop:
     end_time = now
   if configContext.initMode:
     logger.info("Init mode selected. Using big query!")
-    sql = "SELECT %s FROM reports" % (",".join(columns))
+    sql = "SELECT %s FROM reports WHERE date>='%s'" % (",".join(columns), initModeDate)
   else:
     sql = "SELECT %s FROM reports WHERE date>='%s' AND date <='%s'" % (",".join(columns), start_time, end_time)
     logger.info("Beginning Data Slurp")
