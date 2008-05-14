@@ -1,7 +1,7 @@
 from socorro.models import Report, reports_table, Branch, branches_table
 from socorro.models import getCachedBranchData
 from socorro.lib.base import BaseController
-from socorro.lib.queryparams import BaseLimit, getCrashesForParams
+from socorro.lib.queryparams import BaseLimit, getTopCrashes
 from socorro.lib.http_cache import responseForKey
 from pylons.database import create_engine
 from pylons import c, session, request
@@ -35,7 +35,7 @@ class TopcrasherController(BaseController):
     product and version.
     """
     
-    (c.tc, ts, c.last_updated) = getCrashesForParams(product, version, "v_%s%s" % (product, version))
+    (c.tc, ts, c.last_updated) = getTopCrashes(product, version, "v_%s%s" % (product, version))
     etag = "%s%s%s" % (product, version, ts)
     resp = responseForKey(etag)
     resp.write(render('topcrasher/byversion'))

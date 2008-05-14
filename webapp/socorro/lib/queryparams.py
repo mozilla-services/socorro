@@ -294,14 +294,14 @@ class BaseLimit(object):
 
   def query_topcrashes(self):
     total = func.count(reports.c.id)
-    selects = [topcrashers.c.signature, total]
+    selects = [reports.c.signature, total]
     selects.extend(count_platforms())
     s = select(selects,
-               group_by=[topcrashers.c.signature],
+               group_by=[reports.c.signature],
                order_by=sql.desc(func.count(reports.c.id)),
                limit=100,
                engine=create_engine())
-    s.append_whereclause(topcrashers.c.signature != None)
+    s.append_whereclause(reports.c.signature != None)
 
     def FilterToAppend(clause):
       s.append_whereclause(clause)
@@ -361,13 +361,12 @@ class BySignatureLimit(BaseLimit):
       q = q.filter(reports.c.signature == self.signature)
     return q
 
-### XXXcombine the two functions below
-def getCrashesForParams(product, version, key):
+def getTopCrashes(product, version, key):
   """
-  Get a list of top crashes for a BaseLimit and a cache key.
-  Returns a tuple of the topcrashers and a timestamp.
+  Get a list of top crashes for a specific key.
+  Returns a tuple of the topcrashers, current timestamp, and the last updated timestamp from the topcrashers table.
   """
-  def getCrashers():
+  def getTopCrashers():
     db = create_engine()
     last_updated_sql = db.execute("SELECT last_updated FROM topcrashers WHERE product='%s' AND version='%s' ORDER BY last_updated DESC LIMIT 1" % (product, version))
     for each in last_updated_sql:
@@ -376,6 +375,20 @@ def getCrashesForParams(product, version, key):
     tc = [r for r in topcrashers.select(engine=create_engine(), whereclause=and_(topcrashers.c.product == product, topcrashers.c.version == version, topcrashers.c.last_updated == last_updated)).execute()]
     ts = time.time()
     return (tc, ts, last_updated)
+
+  tccache = pylons.cache.get_cache('tc_data')
+  return tccache.get_value(key, createfunc=getTopCrashers,
+                           type="memory", expiretime=60)
+### XXXcombine the two functions below
+def getCrashesForParams(params, key):
+  """
+  Get a list of top crashes for a BaseLimit and a cache key.
+  Returns a tuple of the topcrashers and a timestamp.
+  """
+  def getCrashers():
+    tc = [r for r in params.query_topcrashes()]
+    ts = time.time()
+    return (tc, ts)
 
   tccache = pylons.cache.get_cache('tc_data')
   return tccache.get_value(key, createfunc=getCrashers,
