@@ -100,10 +100,9 @@ if not configContext.initMode:
   except:
     socorro.lib.util.reportExceptionAndAbort(logger)
   
-  timezone = datetime.timedelta(hours=configContext.timezoneUTCOffset)
-  start_time = row[0] + timezone
+  start_time = row[0]
   end_time = start_time + p_interval
-  now = now + timezone
+  now = now
 
 if end_time > now:
   end_time = now
@@ -137,6 +136,7 @@ while end_time <= now and initLoop:
       signature = row['signature']
       if key not in summary_crashes:
         summary_crashes[key] = {}
+      else:
         if signature not in summary_crashes[key]:
           summary_crashes[key][signature] = {}
           summary_crashes[key][signature]['win'] = 0
@@ -155,19 +155,19 @@ while end_time <= now and initLoop:
             summary_crashes[key][signature]['user_ids'].append(row['user_id'])
             summary_crashes[key][signature]['users'] += 1
           
-        if summary_crashes[key][signature]['uptime']:
-          summary_crashes[key][signature]['uptime'] += row['uptime']
-        else:
-          summary_crashes[key][signature]['uptime'] = row['uptime']
+          if summary_crashes[key][signature]['uptime']:
+            summary_crashes[key][signature]['uptime'] += row['uptime']
+          else:
+            summary_crashes[key][signature]['uptime'] = row['uptime']
         
-        if row['os_name'] == "Mac OS X":
-          summary_crashes[key][signature]['mac'] += 1
+          if row['os_name'] == "Mac OS X":
+            summary_crashes[key][signature]['mac'] += 1
 
-        if row['os_name'] == "Windows" or row['os_name'] == "Windows NT":
-          summary_crashes[key][signature]['win'] += 1
+          if row['os_name'] == "Windows" or row['os_name'] == "Windows NT":
+            summary_crashes[key][signature]['win'] += 1
 
-        if row['os_name'] == "Linux":
-          summary_crashes[key][signature]['lin'] += 1
+          if row['os_name'] == "Linux":
+            summary_crashes[key][signature]['lin'] += 1
 
   calc_tots(summary_crashes,crash_count)
   
