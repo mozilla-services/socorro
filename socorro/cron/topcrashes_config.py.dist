@@ -17,10 +17,6 @@ initMode.default = False
 initMode.singleCharacter = 'I'
 initMode.fromStringConverter = cm.booleanConverter
 
-processingInterval = cm.Option()
-processingInterval.doc = 'interval of how often to process reports in seconds'
-processingInterval.default = 43200
-
 logFilePathname = cm.Option()
 logFilePathname.doc = 'full pathname for the log file'
 logFilePathname.default = './topcrashes.log'

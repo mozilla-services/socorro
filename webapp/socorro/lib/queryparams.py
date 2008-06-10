@@ -1,8 +1,8 @@
-from socorro.models import reports_table as reports, branches_table as branches, frames_table as frames, top_crashers_table as topcrashers
+from socorro.models import reports_table as reports, branches_table as branches, frames_table as frames
 import formencode
 import sqlalchemy
 from pylons.database import create_engine
-from sqlalchemy import sql, func, select, types, and_
+from sqlalchemy import sql, func, select, types
 from sqlalchemy.databases.postgres import PGInterval
 import re
 from socorro.lib.platforms import count_platforms, platformList
@@ -361,24 +361,6 @@ class BySignatureLimit(BaseLimit):
       q = q.filter(reports.c.signature == self.signature)
     return q
 
-def getTopCrashes(product, version, key):
-  """
-  Get a list of top crashes for a specific key.
-  Returns a tuple of the topcrashers, current timestamp, and the last updated timestamp from the topcrashers table.
-  """
-  def getTopCrashers():
-    db = create_engine()
-    last_updated_sql = db.execute("SELECT last_updated FROM topcrashers WHERE product='%s' AND version='%s' ORDER BY last_updated DESC LIMIT 1" % (product, version))
-    for each in last_updated_sql:
-      last_updated = each[0]
-
-    tc = [r for r in topcrashers.select(engine=create_engine(), whereclause=and_(topcrashers.c.product == product, topcrashers.c.version == version, topcrashers.c.last_updated == last_updated)).execute()]
-    ts = time.time()
-    return (tc, ts, last_updated)
-
-  tccache = pylons.cache.get_cache('tc_data')
-  return tccache.get_value(key, createfunc=getTopCrashers,
-                           type="memory", expiretime=60)
 ### XXXcombine the two functions below
 def getCrashesForParams(params, key):
   """

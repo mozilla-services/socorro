@@ -229,24 +229,6 @@ jobs_table = Table('jobs', meta,
   Column('message', TEXT(convert_unicode=True))
 )
 
-top_crashers_table = Table('topcrashers', meta,
-  Column('id', Integer, primary_key=True),
-  Column('signature', String(255), nullable=False),
-  Column('version', String(30), nullable=False),
-  Column('product', String(30), nullable=False),
-  Column('total', Integer),
-  Column('win', Integer),
-  Column('mac', Integer),
-  Column('linux', Integer),
-  Column('rank', Integer),
-  Column('last_rank', Integer),
-  Column('trend', String(30)),
-  Column('uptime', Float(2)),
-  Column('users', Integer),
-  Column('last_updated', DateTime())
-)
-
-
 priorityjobs_table = Table('priorityjobs', meta,
   Column('uuid', Unicode(50), primary_key=True, nullable=False)
 )

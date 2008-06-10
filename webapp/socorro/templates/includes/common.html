@@ -34,31 +34,6 @@ from socorro.lib.platforms import platformList
  </tbody>
 </table>
 
-<table py:def="list_topcrashers(signatures)" id="signatureList" class="tablesorter">
- <thead>
-  <tr>
-   <th>Rank</th>
-   <th>Signature</th>
-   <th>#</th>
-   <th>Win</th>
-   <th>Lin</th>
-   <th>Mac</th>
-  </tr>
- </thead>
- <tbody>
-  <?python row=1 ?>
-  <tr py:for="signature in signatures" class="${h.get_row_class(row)}">
-   <td>${str(row)}</td>
-   <td><a href="${h.url_for('/report/list', signature=signature.signature, range_unit='weeks', version=c.product + ':' + c.version, range_value='2')}" title="View reports with this signature.">${signature.signature}</a></td>
-   <td>${signature.total}</td>
-   <td>${signature.win}</td>
-   <td>${signature.linux}</td>
-   <td>${signature.mac}</td>
-  <?python row+=1 ?>
-  </tr>
- </tbody>
-</table>
-
 <table xmlns:py="http://genshi.edgewall.org/" py:def="list_reports(reports)" class="tablesorter" id="reportsList">
  <thead>
   <tr>
