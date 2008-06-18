@@ -29,14 +29,14 @@ class TopcrasherController(BaseController):
     resp.write(render('topcrasher/index'))
     return resp
 
-  def byversion(self, product, version):
+  def byversion(self, product, version, buildId=None):
     """
     The purpose of this action is to generate topcrasher reports based on
     product and version.
     """
-    c.params = BaseLimit(versions=[(product, version)], range=(2, 'weeks'))
-    (c.tc, ts) = getCrashesForParams(c.params,"v_%s%s" % (product, version))
-    etag = "%s%s%s" % (product, version, ts)
+    c.params = BaseLimit(versions=[(product, version)], buildid=buildId, range=(2, 'weeks'))
+    (c.tc, ts) = getCrashesForParams(c.params,"v_%s%s%s" % (product, version, buildId))
+    etag = "%s%s%s%s" % (product, version, buildId, ts)
     resp = responseForKey(etag)
     resp.write(render('topcrasher/byversion'))
     return resp

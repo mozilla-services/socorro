@@ -47,7 +47,7 @@ class PlatformValidator(formencode.FancyValidator):
     return platformList[str(value)]
 
 class BaseLimit(object):
-  """A base class which validates date/branch/product/version conditions for
+  """A base class which validates date/branch/product/version/buildid conditions for
   multiple searches."""
 
   datetime_validator = formencode.validators.Regex(
@@ -70,7 +70,7 @@ class BaseLimit(object):
     return (num, unit)
 
   def __init__(self, date=None, range=None,
-               products=None, branches=None, versions=None, platforms=None,
+               products=None, branches=None, versions=None, buildid=None, platforms=None,
                query=None, query_search=None, query_type=None):
     self.date = date
     self.range = range   # _range is a tuple (number, interval)
@@ -81,6 +81,7 @@ class BaseLimit(object):
     self.query = query
     self.query_search = query_search
     self.query_type = query_type
+    self.buildid = buildid
 
   def setFromParams(self, params):
     """Set the values of this object from a request.params instance."""
@@ -101,7 +102,8 @@ class BaseLimit(object):
 
     for platforms in params.getall('platform'):
       self.platforms.extend(self.platform_validator.to_python(platforms))
-
+    
+    self.query = params.get('buildid', None)
     self.query = self.signature_validator.to_python(params.get('query', None))
     self.query_search = self.query_validator.to_python(params.get('query_search', None))
     self.query_type = self.type_validator.to_python(params.get('query_type', None))
@@ -302,6 +304,8 @@ class BaseLimit(object):
                limit=100,
                engine=create_engine())
     s.append_whereclause(reports.c.signature != None)
+    if self.buildid:
+      s.append_whereclause(reports.c.build == self.buildid)
 
     def FilterToAppend(clause):
       s.append_whereclause(clause)
