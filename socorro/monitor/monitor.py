@@ -177,18 +177,23 @@ class Monitor (object):
 
   #-----------------------------------------------------------------------------------------------------------------
   def queueJobs (self, databaseConnection, databaseCursor, pendingUuids, processorIdSequenceGenerator, priority=0):
-      try:
-          sqlValuesList = []
-          for aUuid in pendingUuids.keys():
-              processorIdAssignedToThisJob = processorIdSequenceGenerator.next()
-              jsonFilePathName = os.path.join(pendingUuids[aUuid][0], pendingUuids[aUuid][1])
-              databaseCursor.execute("insert into jobs (pathname, uuid, owner, priority, queuedDateTime) values (%s, %s, %s, %s, %s)",\
-                                         (jsonFilePathName, aUuid, processorIdAssignedToThisJob, priority, datetime.datetime.now()))
-              logger.debug("%s - Inserting job %s into the db.", threading.currentThread().getName(), aUuid)
-          databaseConnection.commit()
-      except:
-          databaseConnection.rollback()
-          socorro.lib.util.reportExceptionAndContinue(logger, logging.ERROR, Monitor.ignoreDuplicateDatabaseInsert)
+      sqlValuesList = []
+      for aUuid in pendingUuids.keys():
+          processorIdAssignedToThisJob = processorIdSequenceGenerator.next()
+          jsonFilePathName = os.path.join(pendingUuids[aUuid][0], pendingUuids[aUuid][1])
+          logger.debug("%s - Inserting job %s into the db.", threading.currentThread().getName(), aUuid)
+          self.quitCheck()
+          self.insertionLock.acquire()
+          try:
+              try:
+                  databaseCursor.execute("insert into jobs (pathname, uuid, owner, priority, queuedDateTime) values (%s, %s, %s, %s, %s)",\
+                                             (jsonFilePathName, aUuid, processorIdAssignedToThisJob, priority, datetime.datetime.now()))
+                  databaseConnection.commit()
+              except:
+                  databaseConnection.rollback()
+                  socorro.lib.util.reportExceptionAndContinue(logger, logging.ERROR, Monitor.ignoreDuplicateDatabaseInsert)
+          finally:
+              self.insertionLock.release()                  
 
 
   #-----------------------------------------------------------------------------------------------------------------
@@ -241,22 +246,19 @@ class Monitor (object):
                 for aJsonFile in pendingJsonList:
                     pendingUuids[aJsonFile[:-len(self.config.jsonFileSuffix)]] = (currentDirectory,aJsonFile)
             self.quitCheck()
-            self.insertionLock.acquire()
-            try:
-                # Get a list of jobs in the db.
-                self.standardJobAllocationCursor.execute("select uuid from jobs")
-                setOfUuidsInDatabase = set([aUuidRow[0] for aUuidRow in self.standardJobAllocationCursor.fetchall()])
-                setOfUuidsPending = set(pendingUuids.keys())
-                # Delete the common uids from the hash.  
-                # The remaining uids need to be inserted into the db.
-                for aUuid in setOfUuidsPending.intersection(setOfUuidsInDatabase):
-                    del pendingUuids[aUuid]
-                if len(pendingUuids):
-                    self.queueJobs (self.standardJobAllocationDatabaseConnection, self.standardJobAllocationCursor, pendingUuids, processorIdSequenceGenerator)
-                else:
-                    logger.info("%s - No new crashes found", threading.currentThread().getName())
-            finally:
-                self.insertionLock.release()
+            
+            # Get a list of jobs in the db.
+            self.standardJobAllocationCursor.execute("select uuid from jobs")
+            setOfUuidsInDatabase = set([aUuidRow[0] for aUuidRow in self.standardJobAllocationCursor.fetchall()])
+            setOfUuidsPending = set(pendingUuids.keys())
+            # Delete the common uids from the hash.  
+            # The remaining uids need to be inserted into the db.
+            for aUuid in setOfUuidsPending.intersection(setOfUuidsInDatabase):
+                del pendingUuids[aUuid]
+            if len(pendingUuids):
+                self.queueJobs (self.standardJobAllocationDatabaseConnection, self.standardJobAllocationCursor, pendingUuids, processorIdSequenceGenerator)
+            else:
+                logger.info("%s - No new crashes found", threading.currentThread().getName())
           except KeyboardInterrupt:
             logger.debug("%s - inner QUITTING", threading.currentThread().getName())
             raise
