@@ -21,22 +21,22 @@ class ProcessorWithExternalBreakpad (processor.Processor):
 #-----------------------------------------------------------------------------------------------------------------
   def __init__(self, config):
     super(ProcessorWithExternalBreakpad, self).__init__(config)
-    
+
     #preprocess the breakpad_stackwalk command line
     # convert parameters of the form "$paramterName" into a python parameter of the form "%(paramterName)s"
-    self.commandLine = re.compile(r'(\$(\w+))').sub(r'%(\2)s', config.stackwalkCommandLine)    
+    self.commandLine = re.compile(r'(\$(\w+))').sub(r'%(\2)s', config.stackwalkCommandLine)
     # convert parameters of the form "$(paramterName)" into a python parameter of the form "%(paramterName)s"
     self.commandLine = re.compile(r'(\$(\(\w+\)))').sub(r'%(\2)s', self.commandLine)
     # treat the "dumpfilePathname" as a special paramter by changing its syntax
     self.commandLine = self.commandLine.replace('%(dumpfilePathname)s', "DUMPFILEPATHNAME")
     # finally make the substitutions to make a real command out of the template
     self.commandLine = self.commandLine %  config
-    
+
 #-----------------------------------------------------------------------------------------------------------------
   def invokeBreakpadStackdump(self, dumpfilePathname):
     """ This function invokes breakpad_stackdump as an external process capturing and returning
           the text output of stdout.  This version represses the stderr output.
-          
+
           input parameters:
             dumpfilePathname: the complete pathname of the dumpfile to be analyzed
     """
@@ -47,16 +47,16 @@ class ProcessorWithExternalBreakpad (processor.Processor):
     subprocessHandle = subprocess.Popen(commandline, shell=True, stdout=subprocess.PIPE)
     return (socorro.lib.util.CachingIterator(subprocessHandle.stdout), subprocessHandle)
 
-  
+
 #-----------------------------------------------------------------------------------------------------------------
   def doBreakpadStackDumpAnalysis (self, reportId, uuid, dumpfilePathname, databaseCursor):
     """ This function overrides the base class version of this function.  This function coordinates the six
           steps of running the breakpad_stackdump process and analyzing the textual output for insertion
           into the database.
-          
+
           returns:
             truncated - boolean: True - due to excessive length the frames of the crashing thread may have been truncated.
-          
+
           input parameters:
             reportId - the primary key from the 'reports' table for this crash report
             uuid - the unique string identifier for the crash report
@@ -85,16 +85,16 @@ class ProcessorWithExternalBreakpad (processor.Processor):
     #  raise Exception("%s failed with return code %s when processing dump %s" %(self.config.minidump_stackwalkPathname, subprocessHandle.returncode, uuid))
     return truncated
 
-    
+
 #-----------------------------------------------------------------------------------------------------------------
   def analyzeHeader(self, reportId, dumpAnalysisLineiterator, databaseCursor):
-    """ Scan through the lines of the dump header, extracting the information for population of the 
+    """ Scan through the lines of the dump header, extracting the information for population of the
           'modules' table and the update of the record for this crash in 'reports'.  During the analysis
           of the header, the number of the thread that caused the crash is determined and saved.
-          
+
           returns:
             the number of the thread that crashed
-          
+
           input parameters:
             reportId - the associated primary key from the 'reports' table for this crash
             dumpAnalysisLineiterator - an iterator object that feeds lines from crash dump data
@@ -103,7 +103,7 @@ class ProcessorWithExternalBreakpad (processor.Processor):
     logger.info("%s - analyzeHeader", threading.currentThread().getName())
     crashedThread = None
     moduleCounter = 0
-    reportUpdateValues = {"id": reportId} 
+    reportUpdateValues = {"id": reportId}
     reportUpdateSQLPhrases = {"osPhrase":"", "cpuPhrase":"", "crashPhrase":""}
 
     for line in dumpAnalysisLineiterator:
@@ -129,35 +129,36 @@ class ProcessorWithExternalBreakpad (processor.Processor):
           crashedThread = None
         reportUpdateSQLPhrases["crashPhrase"] = "reason = %(reason)s, address = %(address)s"
       elif values[0] == 'Module':
+        pass
         # Module|{Filename}|{Version}|{Debug Filename}|{Debug ID}|{Base Address}|Max Address}|{Main}
         # we should ignore modules with no filename
-        if values[1]:
-          filename = socorro.lib.util.limitStringOrNone(values[1], 40)
-          debug_id = socorro.lib.util.limitStringOrNone(values[4], 40)
-          module_version = socorro.lib.util.limitStringOrNone(values[2], 15)
-          debug_filename = socorro.lib.util.limitStringOrNone(values[3], 40)
-          databaseCursor.execute("""insert into modules
-                                                     (report_id, module_key, filename, debug_id, module_version, debug_filename) values
-                                                     (%s, %s, %s, %s, %s, %s)""",
-                                                      (reportId, moduleCounter, filename, debug_id, module_version, debug_filename))
-          moduleCounter += 1
-    
+        #if values[1]:
+          #filename = socorro.lib.util.limitStringOrNone(values[1], 40)
+          #debug_id = socorro.lib.util.limitStringOrNone(values[4], 40)
+          #module_version = socorro.lib.util.limitStringOrNone(values[2], 15)
+          #debug_filename = socorro.lib.util.limitStringOrNone(values[3], 40)
+          #databaseCursor.execute("""insert into modules
+                                                     #(report_id, module_key, filename, debug_id, module_version, debug_filename) values
+                                                     #(%s, %s, %s, %s, %s, %s)""",
+                                                      #(reportId, moduleCounter, filename, debug_id, module_version, debug_filename))
+          #moduleCounter += 1
+
     if len(reportUpdateValues) > 1:
       reportUpdateSQL = ("""update reports set %(osPhrase)s%(cpuPhrase)s%(crashPhrase)s where id = PERCENT(id)s""" % reportUpdateSQLPhrases).replace(", w", " w").replace("PERCENT","%")
       databaseCursor.execute(reportUpdateSQL, reportUpdateValues)
-    
+
     return crashedThread
-    
+
 #-----------------------------------------------------------------------------------------------------------------
   def analyzeFrames(self, reportId, dumpAnalysisLineiterator, databaseCursor, crashedThread):
     """ After the header information, the dump file consists of just frame information.  This function
           cycles through the frame information looking for frames associated with the crashed thread
           (determined in analyzeHeader).  Each from from that thread is written to the database until
            it has found a maximum of ten frames.
-           
+
            returns:
              truncated - boolean: True - due to excessive length the frames of the crashing thread may have been truncated.
-           
+
            input parameters:
              reportId - the primary key from the 'reports' table for this crash report
              dumpAnalysisLineiterator - an iterator that cycles through lines from the crash dump
