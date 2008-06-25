@@ -2,6 +2,7 @@ from sqlalchemy import *
 from datetime import datetime
 from socorro.lib import config, EmptyFilter
 from cStringIO import StringIO
+from sqlalchemy.exceptions import SQLError
 import sys
 import os
 import re
@@ -65,7 +66,11 @@ reports_table = Table('reports', meta,
   Column('os_version', TruncatingString(100)),
   Column('email', TruncatingString(100)),
   Column('build_date', DateTime()),
-  Column('user_id', Unicode(50))
+  Column('user_id', Unicode(50)),
+  Column('starteddatetime', DateTime()),
+  Column('completeddatetime', DateTime()),
+  Column('success', Boolean),
+  Column('message', TEXT(convert_unicode=True))
 )
 
 def upgrade_reports(dbc):
@@ -142,6 +147,20 @@ def upgrade_reports(dbc):
   else:
     print "ok"
 
+  print "  Checking for reports.success...",
+  cursor.execute("""SELECT 1 FROM pg_attribute
+                    WHERE attrelid = 'reports'::regclass
+                    AND attname = 'success'""")
+  if cursor.rowcount == 0:
+    print "setting"
+    cursor.execute("""ALTER TABLE reports ADD starteddatetime timestamp without time zone NULL,
+                    ADD completeddatetime timestamp without time zone NULL,
+                    ADD success boolean NULL,
+                    ADD message text NULL,
+                    ADD truncated boolean NULL""")
+  else:
+    print "ok"
+
 frames_table = Table('frames', meta,
   Column('report_id', Integer, ForeignKey('reports.id', ondelete='CASCADE'), primary_key=True),
   Column('frame_num', Integer, nullable=False, primary_key=True, autoincrement=False),
@@ -183,6 +202,7 @@ extensions_table = Table('extensions', meta,
 
 dumps_table = Table('dumps', meta,
   Column('report_id', Integer, ForeignKey('reports.id', ondelete='CASCADE'), primary_key=True),
+  Column('truncated', Boolean, default=False),
   Column('data', TEXT(convert_unicode=True))
 )
 
@@ -190,6 +210,38 @@ branches_table = Table('branches', meta,
   Column('product', String(30), primary_key=True),
   Column('version', String(16), primary_key=True),
   Column('branch', String(24), nullable=False)
+)
+
+jobs_id_sequence = Sequence('jobs_id_seq', meta)
+
+jobs_table = Table('jobs', meta,
+  Column('id', Integer, jobs_id_sequence,
+         default=text("nextval('jobs_id_seq')"),
+         primary_key=True),
+  Column('pathname', String(1024), nullable=False),
+  Column('uuid', Unicode(50), index=True, unique=True, nullable=False),
+  Column('owner', Integer),
+  Column('priority', Integer, default=0),
+  Column('queueddatetime', DateTime()),
+  Column('starteddatetime', DateTime()),
+  Column('completeddatetime', DateTime()),
+  Column('success', Boolean),
+  Column('message', TEXT(convert_unicode=True))
+)
+
+priorityjobs_table = Table('priorityjobs', meta,
+  Column('uuid', Unicode(50), primary_key=True, nullable=False)
+)
+
+processors_id_sequence = Sequence('processors_id_seq', meta)
+
+processors_table = Table('processors', meta,
+  Column('id', Integer, processors_id_sequence,
+         default=text("nextval('processors_id_seq')"),
+         primary_key=True),
+  Column('name', String(255), nullable=False),
+  Column('startdatetime', DateTime(), nullable=False),
+  Column('lastseendatetime', DateTime())
 )
 
 lock_function_definition = """
@@ -456,6 +508,7 @@ def upgrade_db(dbc):
   upgrade_reports(dbc)
   upgrade_modules(dbc)
 
+
 def ensure_partitions(dbc):
   print "Checking for database partitions...",
   cur = dbc.cursor()
@@ -484,6 +537,7 @@ Index('idx_reports_date', reports_table.c.date, reports_table.c.product, reports
 
 fixupSpace = re.compile(r' (?=[\*&,])')
 fixupComma = re.compile(r'(?<=,)(?! )')
+stripArgs = re.compile(r'\(.*\)')
 
 filename_re = re.compile('[/\\\\]([^/\\\\]+)$')
 
@@ -524,6 +578,7 @@ class Frame(dict):
     self['module_name'] = module_name
     self['frame_num'] = frame_num
     self['signature'] = make_signature(module_name, function, source, source_line, instruction)
+    self['short_signature'] = stripArgs.sub('', self['signature'])
     self['function'] = function
     self['source'] = source
     self['source_line'] = source_line
@@ -787,6 +842,29 @@ class Extension(object):
     self.exension_key = extension_key
     self.extension_id = extension_id
     self.extension_version = extension_version
+
+class Job(object):
+  """
+  For accessing and updating the reports queue.
+  """
+
+  @staticmethod
+  def by_uuid(uuid):
+    """ Get queue information for a pending uuid. """
+    return select([jobs_table], limit=1, whereclause=jobs_table.c.uuid==uuid, 
+                  engine=getEngine()).execute().fetchone()
+
+class PriorityJob(object):
+  @staticmethod
+  def add(uuid):
+    """ Insert passed UUID into the priorityjobs table. """
+    vals = [{'uuid': uuid}]
+    try:
+      priorityjobs_table.insert().compile(engine=getEngine()).execute(*vals)
+    except(SQLError):
+      pass
+
+
 
 #
 # Check whether we're running outside Pylons

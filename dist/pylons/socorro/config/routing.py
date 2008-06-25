@@ -23,6 +23,11 @@ def make_map(global_conf={}, app_conf={}):
                 controller='topcrasher', action='byversion',
                 requirements=dict(product='[a-zA-Z.]+',
                 version='[0-9a-zA-Z.]+'))
+    map.connect('topcrasher/byversion/:product/:version/:buildId',
+                controller='topcrasher', action='byversion',
+                requirements=dict(product='[a-zA-Z.]+',
+                version='[0-9a-zA-Z.]+',
+                buildId='[0-9]+'))
     map.connect('topcrasher/bybranch/:branch', 
                 controller='topcrasher', action='bybranch',
                 requirements=dict(branch='[0-9a-zA-Z.]+'))

@@ -5,7 +5,7 @@
   <xi:include href="../includes/site.html" />
   <xi:include href="../includes/common.html" />
 <head>
-  <title>Top Crashers for ${c.product} ${c.version}</title>
+  <title>Top Crashers for ${c.product} ${c.version} ${c.params.buildid}</title>
   ${ h.javascript_include_tag('/js/jquery/jquery-1.2.1.js') }
   ${ h.javascript_include_tag('/js/jquery/plugins/ui/jquery.tablesorter.min.js') }
   ${ h.stylesheet_link_tag('/css/flora/flora.tablesorter.css') }
@@ -23,7 +23,7 @@
 <body>
 
 <div id="content" py:choose="len(c.tc)">
- <h1 class="first">Top Crashers for ${c.product} ${c.version}</h1>
+ <h1 class="first">Top Crashers for ${c.product} ${c.version} ${c.params.buildid}</h1>
   <p py:when="0">No results were found.</p>
   <div py:otherwise="">Below are the top 100 crashers over the last 2 weeks.
    ${list_by_signature(c.tc, c.params)}
