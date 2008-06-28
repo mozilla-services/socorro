@@ -29,6 +29,8 @@ class ProcessorWithExternalBreakpad (processor.Processor):
     self.commandLine = re.compile(r'(\$(\(\w+\)))').sub(r'%(\2)s', self.commandLine)
     # treat the "dumpfilePathname" as a special paramter by changing its syntax
     self.commandLine = self.commandLine.replace('%(dumpfilePathname)s', "DUMPFILEPATHNAME")
+    # treat the "processorSymbolsPathnameList" as a special paramter by changing its syntax
+    self.commandLine = self.commandLine.replace('%(processorSymbolsPathnameList)s', "SYMBOL_PATHS")
     # finally make the substitutions to make a real command out of the template
     self.commandLine = self.commandLine %  config
 
@@ -40,11 +42,12 @@ class ProcessorWithExternalBreakpad (processor.Processor):
           input parameters:
             dumpfilePathname: the complete pathname of the dumpfile to be analyzed
     """
-    #symbol_path = ' '.join(['"%s"' % x for x in self.config.processorSymbolsPathnameList])
+    symbol_path = ' '.join(['"%s"' % x for x in self.config.processorSymbolsPathnameList])
     #commandline = '"%s" %s "%s" %s 2>/dev/null' % (self.config.minidump_stackwalkPathname, "-m", dumpfilePathname, symbol_path)
-    commandline = self.commandLine.replace("DUMPFILEPATHNAME", dumpfilePathname)
-    logger.info("%s - invoking: %s", threading.currentThread().getName(), commandline)
-    subprocessHandle = subprocess.Popen(commandline, shell=True, stdout=subprocess.PIPE)
+    newCommandLine = self.commandLine.replace("DUMPFILEPATHNAME", dumpfilePathname)
+    newCommandLine = newCommandLine.replace("SYMBOL_PATHS", symbol_path)
+    logger.info("%s - invoking: %s", threading.currentThread().getName(), newCommandLine)
+    subprocessHandle = subprocess.Popen(newCommandLine, shell=True, stdout=subprocess.PIPE)
     return (socorro.lib.util.CachingIterator(subprocessHandle.stdout), subprocessHandle)
 
 
