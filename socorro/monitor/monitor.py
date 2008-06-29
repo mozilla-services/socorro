@@ -227,9 +227,11 @@ class Monitor (object):
                     self.quitCheck()
                     pendingUuid = aJsonFile[:-len(self.config.jsonFileSuffix)]
                     if pendingUuid not in setOfUuidsInDatabase:
-                        self.queueJob(self.standardJobAllocationDatabaseConnection, self.standardJobAllocationCursor, currentDirectory, aJsonFile, processorIdSequenceGenerator)
-            
-            self.quitCheck()
+                        self.insertionLock.acquire()
+                        try:
+                            self.queueJob(self.standardJobAllocationDatabaseConnection, self.standardJobAllocationCursor, currentDirectory, aJsonFile, processorIdSequenceGenerator)
+                        finally:
+                            self.insertionLock.release()
           except KeyboardInterrupt:
             logger.debug("%s - inner QUITTING", threading.currentThread().getName())
             raise
