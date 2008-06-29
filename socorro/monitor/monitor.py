@@ -176,27 +176,6 @@ class Monitor (object):
       
 
   #-----------------------------------------------------------------------------------------------------------------
-  def queueJobs (self, databaseConnection, databaseCursor, pendingUuids, processorIdSequenceGenerator, priority=0):
-      sqlValuesList = []
-      for aUuid in pendingUuids.keys():
-          processorIdAssignedToThisJob = processorIdSequenceGenerator.next()
-          jsonFilePathName = os.path.join(pendingUuids[aUuid][0], pendingUuids[aUuid][1])
-          logger.debug("%s - Inserting job %s into the db.", threading.currentThread().getName(), aUuid)
-          self.quitCheck()
-          self.insertionLock.acquire()
-          try:
-              try:
-                  databaseCursor.execute("insert into jobs (pathname, uuid, owner, priority, queuedDateTime) values (%s, %s, %s, %s, %s)",\
-                                             (jsonFilePathName, aUuid, processorIdAssignedToThisJob, priority, datetime.datetime.now()))
-                  databaseConnection.commit()
-              except:
-                  databaseConnection.rollback()
-                  socorro.lib.util.reportExceptionAndContinue(logger, logging.ERROR, Monitor.ignoreDuplicateDatabaseInsert)
-          finally:
-              self.insertionLock.release()                  
-
-
-  #-----------------------------------------------------------------------------------------------------------------
   def queueJob (self, databaseConnection, databaseCursor, currentDirectory, aFileName, processorIdSequenceGenerator, priority=0):
     logger.debug("%s - priority %d queuing %s", threading.currentThread().getName(), priority, aFileName)
     try:
@@ -235,8 +214,9 @@ class Monitor (object):
           logger.debug("%s - beginning directory tree walk", threading.currentThread().getName())
           try:
             processorIdSequenceGenerator = self.jobSchedulerIter(self.standardJobAllocationCursor)
-            # has to hold the found dumps uuid => (directory, jsonname)
-            pendingUuids = {}
+            # Get a list of jobs in the db.
+            self.standardJobAllocationCursor.execute("select uuid from jobs")
+            setOfUuidsInDatabase = set([aUuidRow[0] for aUuidRow in self.standardJobAllocationCursor.fetchall()])
             for currentDirectory, directoryList, fileList in os.walk(self.config.storageRoot, topdown=False):
                 self.quitCheck()
                 self.passJudgementOnDirectory(currentDirectory, directoryList, fileList)
@@ -244,21 +224,12 @@ class Monitor (object):
                 pendingJsonList = filter(lambda fileName: fileName.endswith(self.config.jsonFileSuffix), fileList)
                 # Populate the pendingUuids hash.
                 for aJsonFile in pendingJsonList:
-                    pendingUuids[aJsonFile[:-len(self.config.jsonFileSuffix)]] = (currentDirectory,aJsonFile)
-            self.quitCheck()
+                    self.quitCheck()
+                    pendingUuid = aJsonFile[:-len(self.config.jsonFileSuffix)]
+                    if pendingUuid not in setOfUuidsInDatabase:
+                        self.queueJob(self.standardJobAllocationDatabaseConnection, self.standardJobAllocationCursor, currentDirectory, aJsonFile, processorIdSequenceGenerator)
             
-            # Get a list of jobs in the db.
-            self.standardJobAllocationCursor.execute("select uuid from jobs")
-            setOfUuidsInDatabase = set([aUuidRow[0] for aUuidRow in self.standardJobAllocationCursor.fetchall()])
-            setOfUuidsPending = set(pendingUuids.keys())
-            # Delete the common uids from the hash.  
-            # The remaining uids need to be inserted into the db.
-            for aUuid in setOfUuidsPending.intersection(setOfUuidsInDatabase):
-                del pendingUuids[aUuid]
-            if len(pendingUuids):
-                self.queueJobs (self.standardJobAllocationDatabaseConnection, self.standardJobAllocationCursor, pendingUuids, processorIdSequenceGenerator)
-            else:
-                logger.info("%s - No new crashes found", threading.currentThread().getName())
+            self.quitCheck()
           except KeyboardInterrupt:
             logger.debug("%s - inner QUITTING", threading.currentThread().getName())
             raise
