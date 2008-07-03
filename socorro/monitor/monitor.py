@@ -16,6 +16,7 @@ import logging
 logger = logging.getLogger("monitor")
 
 import socorro.lib.util
+import socorro.lib.filesystem
 
 
 
@@ -27,11 +28,11 @@ class Monitor (object):
     signal.signal(signal.SIGTERM, Monitor.respondToSIGTERM)
     self.insertionLock = threading.RLock()
     self.quit = False
-    
+
   #-----------------------------------------------------------------------------------------------------------------
   class NoProcessorsRegisteredException (Exception):
     pass
-   
+
   #-----------------------------------------------------------------------------------------------------------------
   @staticmethod
   def respondToSIGTERM(signalNumber, frame):
@@ -41,12 +42,12 @@ class Monitor (object):
     """
     logger.info("%s - SIGTERM detected", threading.currentThread().getName())
     raise KeyboardInterrupt
-  
+
   #-----------------------------------------------------------------------------------------------------------------
   @staticmethod
   def ignoreDuplicateDatabaseInsert (exceptionType, exception, tracebackInfo):
     return exceptionType is psycopg2.IntegrityError
-  
+
   #-----------------------------------------------------------------------------------------------------------------
   def quitCheck(self):
     if self.quit:
@@ -80,7 +81,7 @@ class Monitor (object):
     try:
       os.remove(jsonPathname)
     except:
-      socorro.lib.util.reportExceptionAndContinue(logger) 
+      socorro.lib.util.reportExceptionAndContinue(logger)
     try:
       dumpPathname = "%s%s" % (jsonPathname[:-len(self.config.jsonFileSuffix)], self.config.dumpFileSuffix)
       os.remove(dumpPathname)
@@ -107,26 +108,52 @@ class Monitor (object):
       databaseConnection.commit()
     except:
       databaseConnection.rollback()
-      socorro.lib.util.reportExceptionAndContinue(logger)      
-      
+      socorro.lib.util.reportExceptionAndContinue(logger)
+
   #-----------------------------------------------------------------------------------------------------------------
   def cleanUpDeadProcessors (self, databaseConnection, aCursor):
-    """ look for dead processors - delete the processor from the processors table and, via cascade, 
-        delete its associated jobs.  The abandoned jobs will be picked up again by walking the dump 
-        tree and assigned to other processors."""
-    logger.debug("%s - looking for dead processors", threading.currentThread().getName())
+    """ look for dead processors - find all the jobs of dead processors and assign them to live processors
+        then delete the dead processors
+    """
+    logger.info("%s - looking for dead processors", threading.currentThread().getName())
     try:
-      aCursor.execute("delete from processors where lastSeenDateTime < (now() - interval '%s')" % self.config.processorCheckInTime)
-      databaseConnection.commit()
+      aCursor.execute("select now() - interval '%s'" % self.config.processorCheckInTime)
+      threshold = aCursor.fetchall()[0][0]
+      aCursor.execute("select id from processors where lastSeenDateTime < '%s'" % threshold)
+      deadProcessors = aCursor.fetchall()
+      if deadProcessors:
+        logger.info("%s - found dead processor(s)", threading.currentThread().getName())
+        aCursor.execute("select id from processors where lastSeenDateTime >= '%s'" % threshold)
+        liveProcessors = aCursor.fetchall()
+        if not liveProcessors:
+          raise Monitor.NoProcessorsRegisteredException("There are no processors registered")
+        def liveProcessorGenerator():
+          while True:
+            for aRow in liveProcessors:
+              yield aRow[0]
+        aCursor.execute("select id from jobs where owner in (select id from processors where lastSeenDateTime < '%s')" % threshold)
+        rowCounter = 1
+        for jobIdTuple, newProcessorId in zip(aCursor.fetchall(), liveProcessorGenerator()):
+          logger.info("%s - reassignment: job %d to processor %d", threading.currentThread().getName(), jobIdTuple[0], newProcessorId)
+          aCursor.execute("update jobs set owner = %s where id = %s", (newProcessorId, jobIdTuple[0]))
+          rowCounter += 1
+          if rowCounter % 1000:
+            databaseConnection.commit()
+        logger.info("%s - removing all dead processors", threading.currentThread().getName())
+        aCursor.execute("delete from processors where lastSeenDateTime < '%s'" % threshold)
+        databaseConnection.commit()
+    except Monitor.NoProcessorsRegisteredException:
+      self.quit = True
+      socorro.lib.util.reportExceptionAndAbort(logger)
     except:
-      socorro.lib.util.reportExceptionAndContinue(logger) 
-      
+      socorro.lib.util.reportExceptionAndContinue(logger)
+
   #-----------------------------------------------------------------------------------------------------------------
   @staticmethod
   def compareSecondOfSequence (x, y):
     return cmp(x[1], y[1])
-  
-  #-----------------------------------------------------------------------------------------------------------------  
+
+  #-----------------------------------------------------------------------------------------------------------------
   @staticmethod
   def secondOfSequence(x):
     return x[1]
@@ -136,13 +163,22 @@ class Monitor (object):
     """ This takes a snap shot of the state of the processors as well as the number of jobs assigned to each
         then acts as an iterator that returns a sequence of processor ids.  Order of ids returned will assure that
         jobs are assigned in a balanced manner
-    """        
+    """
     logger.debug("%s - compiling list of active processors", threading.currentThread().getName())
     try:
-      aCursor.execute("""select p.id, count(j.*) from processors p left join jobs j on p.id = j.owner group by p.id""")
+      try:
+        aCursor.execute("""select p.id, count(j.*) from processors p left join jobs j on p.id = j.owner group by p.id""")
+      except psycopg2.ProgrammingError:
+        #some other database transaction failed and didn't close properly.  Roll it back and try to continue.
+        try:
+          aCursor.connection.rollback()
+          aCursor.execute("""select p.id, count(j.*) from processors p left join jobs j on p.id = j.owner group by p.id""")
+        except:
+          self.quit = True
+          socorro.lib.util.reportExceptionAndAbort(logger)
       listOfProcessorIds = [[aRow[0], aRow[1]] for aRow in aCursor.fetchall()]  #processorId, numberOfAssignedJobs
       if not listOfProcessorIds:
-        raise Monitor.NoProcessorsRegisteredException("There are no processors registered")    
+        raise Monitor.NoProcessorsRegisteredException("There are no processors registered")
       while True:
         # sort the list of (processorId, numberOfAssignedJobs) pairs
         listOfProcessorIds.sort(Monitor.compareSecondOfSequence)
@@ -153,15 +189,16 @@ class Monitor (object):
     except Monitor.NoProcessorsRegisteredException:
       self.quit = True
       socorro.lib.util.reportExceptionAndAbort(logger)
-      
+
   #-----------------------------------------------------------------------------------------------------------------
   def directoryJudgedDeletable (self, pathname, subDirectoryList, fileList):
     if not (subDirectoryList or fileList) and pathname != self.config.storageRoot: #if both directoryList and fileList are empty
       #select an ageLimit from two options based on the if target directory name has a prefix of "dumpDirPrefix"
       ageLimit = (self.config.dateDirDelta, self.config.dumpDirDelta)[os.path.basename(pathname).startswith(self.config.dumpDirPrefix)]
+      logger.debug("%s - agelimit: %s dir age: %s", threading.currentThread().getName(), ageLimit, (datetime.datetime.utcnow() - datetime.datetime.utcfromtimestamp(os.path.getmtime(pathname))))
       return (datetime.datetime.utcnow() - datetime.datetime.utcfromtimestamp(os.path.getmtime(pathname))) > ageLimit
     return False
-  
+
   #-----------------------------------------------------------------------------------------------------------------
   def passJudgementOnDirectory(self, currentDirectory, subDirectoryList, fileList):
     logger.debug("%s - %s", threading.currentThread().getName(), currentDirectory)
@@ -173,7 +210,6 @@ class Monitor (object):
         logger.debug("%s - not eligible for deletion - %s", threading.currentThread().getName(),  currentDirectory)
     except Exception:
       socorro.lib.util.reportExceptionAndContinue(logger)
-      
 
   #-----------------------------------------------------------------------------------------------------------------
   def queueJob (self, databaseConnection, databaseCursor, currentDirectory, aFileName, processorIdSequenceGenerator, priority=0):
@@ -183,14 +219,14 @@ class Monitor (object):
       uuid = aFileName[:-len(self.config.jsonFileSuffix)]
       logger.debug("%s - trying to insert %s", threading.currentThread().getName(), uuid)
       processorIdAssignedToThisJob = processorIdSequenceGenerator.next()
-      databaseCursor.execute("insert into jobs (pathname, uuid, owner, priority, queuedDateTime) values (%s, %s, %s, %s, %s)", 
-                             (jsonFilePathName, uuid, processorIdAssignedToThisJob, priority, datetime.datetime.now()))
+      databaseCursor.execute("insert into jobs (pathname, uuid, owner, priority, queuedDateTime) values (%s, %s, %s, %s, %s)",
+                                 (jsonFilePathName, uuid, processorIdAssignedToThisJob, priority, datetime.datetime.now()))
       databaseConnection.commit()
       logger.debug("%s - assigned to processor %d", threading.currentThread().getName(), processorIdAssignedToThisJob)
     except:
       databaseConnection.rollback()
       socorro.lib.util.reportExceptionAndContinue(logger, logging.ERROR, Monitor.ignoreDuplicateDatabaseInsert)
-      
+
 
   #-----------------------------------------------------------------------------------------------------------------
   def standardJobAllocationLoop(self):
@@ -202,6 +238,8 @@ class Monitor (object):
     except:
       self.quit = True
       socorro.lib.util.reportExceptionAndAbort(logger) # can't continue without a database connection
+    mostRecentFileSystemDatePath = self.config.fileSystemDateThreshold
+    mostRecentFileSystemDatePathMagnitude = Monitor.calculateDatePathMagnitude(mostRecentFileSystemDatePath)
     try:
       try:
         while (True):
@@ -214,24 +252,19 @@ class Monitor (object):
           logger.debug("%s - beginning directory tree walk", threading.currentThread().getName())
           try:
             processorIdSequenceGenerator = self.jobSchedulerIter(self.standardJobAllocationCursor)
-            # Get a list of jobs in the db.
-            self.standardJobAllocationCursor.execute("select uuid from jobs")
-            setOfUuidsInDatabase = set([aUuidRow[0] for aUuidRow in self.standardJobAllocationCursor.fetchall()])
-            for currentDirectory, directoryList, fileList in os.walk(self.config.storageRoot, topdown=False):
-                self.quitCheck()
-                self.passJudgementOnDirectory(currentDirectory, directoryList, fileList)
-                # Remove files that don't end with .json
-                pendingJsonList = filter(lambda fileName: fileName.endswith(self.config.jsonFileSuffix), fileList)
-                # Populate the pendingUuids hash.
-                for aJsonFile in pendingJsonList:
-                    self.quitCheck()
-                    pendingUuid = aJsonFile[:-len(self.config.jsonFileSuffix)]
-                    if pendingUuid not in setOfUuidsInDatabase:
-                        self.insertionLock.acquire()
-                        try:
-                            self.queueJob(self.standardJobAllocationDatabaseConnection, self.standardJobAllocationCursor, currentDirectory, aJsonFile, processorIdSequenceGenerator)
-                        finally:
-                            self.insertionLock.release()
+            for currentDirectory, filename, pathname in socorro.lib.filesystem.findFileGenerator(self.config.storageRoot, self.isJsonFile, Monitor.createDirectoryTestFunction(mostRecentFileSystemDatePath)):
+              logger.debug("%s - walking - found: %s", threading.currentThread().getName(), pathname)
+              self.quitCheck()
+              self.insertionLock.acquire()
+              try:
+                self.queueJob(self.standardJobAllocationDatabaseConnection, self.standardJobAllocationCursor, currentDirectory, filename, processorIdSequenceGenerator)
+              finally:
+                self.insertionLock.release()
+              #the newest directory examined will be the first examined on the next time around
+              currentDirectoryDateMagnitude = Monitor.calculateDatePathMagnitude(currentDirectory)
+              if currentDirectoryDateMagnitude > mostRecentFileSystemDatePathMagnitude:
+                mostRecentFileSystemDatePath = currentDirectory
+                mostRecentFileSystemDatePathMagnitude = currentDirectoryDateMagnitude
           except KeyboardInterrupt:
             logger.debug("%s - inner QUITTING", threading.currentThread().getName())
             raise
@@ -255,6 +288,35 @@ class Monitor (object):
       dictionaryOfPriorityUuids[aUuidRow[0]] = "%s%s" % (aUuidRow[0], self.config.jsonFileSuffix)
     return dictionaryOfPriorityUuids
 
+  #-----------------------------------------------------------------------------------------------------------------
+  @staticmethod
+  def calculateDatePathMagnitude (path):
+    """returns a list of all the directory names that consist entirely of digits converted to integers.
+    """
+    splitPath = path.split('/')
+    magnitudeList = []
+    for x in splitPath:
+      try:
+        magnitudeList.append(int(x))
+      except ValueError:
+        pass
+    return magnitudeList
+
+  #-----------------------------------------------------------------------------------------------------------------
+  @staticmethod
+  def createDirectoryTestFunction(datePathFragmentThreshold):
+    """ directories in the filesytem have a form of .../YYYY/M/D/H/...  This function will return a function that
+        will test if a given path is at or after the date path fragment threshold provided as the input parameter.
+    """
+    datePathThresholdMagnitude = Monitor.calculateDatePathMagnitude(datePathFragmentThreshold)
+    def testFunction(testPath):
+      testPathMagnitudeList = Monitor.calculateDatePathMagnitude(testPath[0])
+      return testPathMagnitudeList >= datePathThresholdMagnitude[:len(testPathMagnitudeList)]
+    return testFunction
+
+  #-----------------------------------------------------------------------------------------------------------------
+  def isJsonFile(self, testPath):
+    return testPath[1].endswith(self.config.jsonFileSuffix)
 
   #-----------------------------------------------------------------------------------------------------------------
   def priorityJobAllocationLoop(self):
@@ -263,7 +325,9 @@ class Monitor (object):
       self.priorityJobAllocationCursor = self.priorityJobAllocationDatabaseConnection.cursor()
     except:
       self.quit = True
-      socorro.lib.util.reportExceptionAndAbort(logger) # can't continue without a database connection 
+      socorro.lib.util.reportExceptionAndAbort(logger) # can't continue without a database connection
+    mostRecentFileSystemDatePath = self.config.fileSystemDateThreshold
+    mostRecentFileSystemDatePathMagnitude = Monitor.calculateDatePathMagnitude(mostRecentFileSystemDatePath)
     try:
       try:
         while (True):
@@ -288,14 +352,21 @@ class Monitor (object):
                     del priorityUuids[uuid]
                 if priorityUuids: # only need to continue if we still have jobs to process
                   processorIdSequenceGenerator = self.jobSchedulerIter(self.priorityJobAllocationCursor)
-                  for currentDirectory, directoryList, fileList in os.walk(self.config.storageRoot, topdown=False):
+                  for currentDirectory, filename, pathname in socorro.lib.filesystem.findFileGenerator(self.config.storageRoot, self.isJsonFile, Monitor.createDirectoryTestFunction(mostRecentFileSystemDatePath)):
+                    logger.debug("%s - walking - found: %s", threading.currentThread().getName(), pathname)
                     self.quitCheck()
-                    for uuid, fileName in ((u, f) for u, f in priorityUuids.items() if f in fileList):
+                    fileUuid = filename[:-len(self.config.jsonFileSuffix)]
+                    if fileUuid in priorityUuids:
                       logger.info("%s - priority queuing %s", threading.currentThread().getName(), fileName)
                       self.queueJob(self.priorityJobAllocationDatabaseConnection, self.priorityJobAllocationCursor, currentDirectory, fileName, processorIdSequenceGenerator, 1)
                       self.priorityJobAllocationCursor.execute("delete from priorityJobs where uuid = %s", (uuid,))
                       self.priorityJobAllocationDatabaseConnection.commit()
                       del priorityUuids[uuid]
+                    #the newest directory examined will be the first examined on the next time around
+                    currentDirectoryDateMagnitude = Monitor.calculateDatePathMagnitude(currentDirectory)
+                    if currentDirectoryDateMagnitude > mostRecentFileSystemDatePathMagnitude:
+                      mostRecentFileSystemDatePath = currentDirectory
+                      mostRecentFileSystemDatePathMagnitude = currentDirectoryDateMagnitude
                   if priorityUuids:
                     for uuid in priorityUuids:
                       self.quitCheck()
@@ -320,9 +391,33 @@ class Monitor (object):
       logger.debug("%s - priorityLoop done.", threading.currentThread().getName())
 
   #-----------------------------------------------------------------------------------------------------------------
+  def oldDirectoryCleanupLoop (self):
+    logger.info("%s - oldDirectoryCleanupLoop starting.", threading.currentThread().getName())
+    try:
+      try:
+        while True:
+          logger.info("%s - beginning oldDirectoryCleanupLoop cycle.", threading.currentThread().getName())
+          # walk entire tree looking for directories in need of deletion because they're old and empty
+          for currentDirectory, directoryList, fileList in os.walk(self.config.storageRoot, topdown=False):
+            self.quitCheck()
+            self.passJudgementOnDirectory(currentDirectory, directoryList, fileList)
+          self.responsiveSleep(self.config.cleanupLoopDelay)
+      except (KeyboardInterrupt, SystemExit):
+        logger.debug("%s - got quit message", threading.currentThread().getName())
+        self.quit = True
+      except:
+        socorro.lib.util.reportExceptionAndContinue(logger)
+    finally:
+      logger.info("%s - oldDirectoryCleanupLoop done.", threading.currentThread().getName())
+
+
+
+  #-----------------------------------------------------------------------------------------------------------------
   def start (self):
     priorityJobThread = threading.Thread(name="priorityLoopingThread", target=self.priorityJobAllocationLoop)
     priorityJobThread.start()
+    directoryCleanupThread = threading.Thread(name="directoryCleanupThread", target=self.oldDirectoryCleanupLoop)
+    directoryCleanupThread.start()
 
     try:
       try:
@@ -330,5 +425,9 @@ class Monitor (object):
       finally:
         logger.debug("%s - waiting to join.", threading.currentThread().getName())
         priorityJobThread.join()
+        directoryCleanupThread.join()
     except KeyboardInterrupt:
       raise SystemExit
+
+
+
