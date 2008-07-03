@@ -20,9 +20,9 @@ from socorro.monitor.config import storageRoot
 
 stackwalkCommandLine = cm.Option()
 stackwalkCommandLine.doc = 'the template for the command to invoke minidump_stackwalk'
-#for standard breakpad_stackwalk uncomment this line:
+#for standard minidump_stackwalk uncomment this line:
 stackwalkCommandLine.default = '$minidump_stackwalkPathname -m $dumpfilePathname $processorSymbolsPathnameList 2>/dev/null'
-#for caching breakpad_stackwalk uncomment this line:
+#for caching minidump_stackwalk uncomment this line:
 #stackwalkCommandLine.default = '$minidump_stackwalkPathname -c $symbolCachePath  -m $dumpfilePathname $processorSymbolsPathnameList 2>/dev/null'
 
 minidump_stackwalkPathname = cm.Option()
