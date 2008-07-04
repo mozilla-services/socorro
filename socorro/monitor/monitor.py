@@ -359,9 +359,9 @@ class Monitor (object):
                     if fileUuid in priorityUuids:
                       logger.info("%s - priority queuing %s", threading.currentThread().getName(), filename)
                       self.queueJob(self.priorityJobAllocationDatabaseConnection, self.priorityJobAllocationCursor, currentDirectory, fileName, processorIdSequenceGenerator, 1)
-                      self.priorityJobAllocationCursor.execute("delete from priorityJobs where uuid = %s", (uuid,))
+                      self.priorityJobAllocationCursor.execute("delete from priorityJobs where uuid = %s", (fileUuid,))
                       self.priorityJobAllocationDatabaseConnection.commit()
-                      del priorityUuids[uuid]
+                      del priorityUuids[fileUuid]
                     #the newest directory examined will be the first examined on the next time around
                     currentDirectoryDateMagnitude = Monitor.calculateDatePathMagnitude(currentDirectory)
                     if currentDirectoryDateMagnitude > mostRecentFileSystemDatePathMagnitude:
