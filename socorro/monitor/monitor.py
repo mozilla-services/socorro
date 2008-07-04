@@ -358,7 +358,7 @@ class Monitor (object):
                     fileUuid = filename[:-len(self.config.jsonFileSuffix)]
                     if fileUuid in priorityUuids:
                       logger.info("%s - priority queuing %s", threading.currentThread().getName(), filename)
-                      self.queueJob(self.priorityJobAllocationDatabaseConnection, self.priorityJobAllocationCursor, currentDirectory, fileName, processorIdSequenceGenerator, 1)
+                      self.queueJob(self.priorityJobAllocationDatabaseConnection, self.priorityJobAllocationCursor, currentDirectory, filename, processorIdSequenceGenerator, 1)
                       self.priorityJobAllocationCursor.execute("delete from priorityJobs where uuid = %s", (fileUuid,))
                       self.priorityJobAllocationDatabaseConnection.commit()
                       del priorityUuids[fileUuid]
