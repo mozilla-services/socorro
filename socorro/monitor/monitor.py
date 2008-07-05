@@ -166,25 +166,28 @@ class Monitor (object):
     """
     logger.debug("%s - compiling list of active processors", threading.currentThread().getName())
     try:
+      sql = """select p.id, count(j.*) from processors p left join jobs j on p.id = j.owner group by p.id"""
       try:
-        aCursor.execute("""select p.id, count(j.*) from processors p left join jobs j on p.id = j.owner group by p.id""")
+        aCursor.execute(sql)
+        logger.debug("%s - sql succeeded", threading.currentThread().getName())
       except psycopg2.ProgrammingError:
-        #some other database transaction failed and didn't close properly.  Roll it back and try to continue.
+        logger.debug("%s - some other database transaction failed and didn't close properly.  Roll it back and try to continue.", threading.currentThread().getName())
         try:
           aCursor.connection.rollback()
-          aCursor.execute("""select p.id, count(j.*) from processors p left join jobs j on p.id = j.owner group by p.id""")
+          aCursor.execute(sql)
         except:
+          logger.debug("%s - sql failed for the 2nd time - quit", threading.currentThread().getName())
           self.quit = True
           socorro.lib.util.reportExceptionAndAbort(logger)
       listOfProcessorIds = [[aRow[0], aRow[1]] for aRow in aCursor.fetchall()]  #processorId, numberOfAssignedJobs
       if not listOfProcessorIds:
         raise Monitor.NoProcessorsRegisteredException("There are no processors registered")
       while True:
-        # sort the list of (processorId, numberOfAssignedJobs) pairs
+        logger.debug("%s - sort the list of (processorId, numberOfAssignedJobs) pairs", threading.currentThread().getName())
         listOfProcessorIds.sort(Monitor.compareSecondOfSequence)
         # the processor with the fewest jobs is about to be assigned a new job, so increment its count
         listOfProcessorIds[0][1] += 1
-        # yield the processorId which had the fewest jobs
+        logger.debug("%s - yield the processorId which had the fewest jobs: %d", threading.currentThread().getName(), listOfProcessorIds[0][0])
         yield listOfProcessorIds[0][0]
     except Monitor.NoProcessorsRegisteredException:
       self.quit = True
