@@ -352,6 +352,7 @@ class Monitor (object):
                     del priorityUuids[uuid]
                 if priorityUuids: # only need to continue if we still have jobs to process
                   processorIdSequenceGenerator = self.jobSchedulerIter(self.priorityJobAllocationCursor)
+                  logger.debug("%s - walking - beginning with: %s, %s", threading.currentThread().getName(), mostRecentFileSystemDatePath, mostRecentFileSystemDatePathMagnitude)
                   for currentDirectory, filename, pathname in socorro.lib.filesystem.findFileGenerator(self.config.storageRoot, self.isJsonFile, Monitor.createDirectoryTestFunction(mostRecentFileSystemDatePath)):
                     logger.debug("%s - walking - found: %s", threading.currentThread().getName(), pathname)
                     self.quitCheck()
