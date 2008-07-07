@@ -42,7 +42,10 @@ class ProcessorWithExternalBreakpad (processor.Processor):
           input parameters:
             dumpfilePathname: the complete pathname of the dumpfile to be analyzed
     """
-    symbol_path = ' '.join(['"%s"' % x for x in self.config.processorSymbolsPathnameList])
+    if type(self.config.processorSymbolsPathnameList) is list:
+      symbol_path = ' '.join(['"%s"' % x for x in self.config.processorSymbolsPathnameList])
+    else:
+      symbol_path = ' '.join(['"%s"' % x for x in self.config.processorSymbolsPathnameList.split(' ')])
     #commandline = '"%s" %s "%s" %s 2>/dev/null' % (self.config.minidump_stackwalkPathname, "-m", dumpfilePathname, symbol_path)
     newCommandLine = self.commandLine.replace("DUMPFILEPATHNAME", dumpfilePathname)
     newCommandLine = newCommandLine.replace("SYMBOL_PATHS", symbol_path)
