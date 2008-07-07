@@ -204,7 +204,7 @@ class Monitor (object):
 
   #-----------------------------------------------------------------------------------------------------------------
   def passJudgementOnDirectory(self, currentDirectory, subDirectoryList, fileList):
-    logger.debug("%s - %s", threading.currentThread().getName(), currentDirectory)
+    #logger.debug("%s - %s", threading.currentThread().getName(), currentDirectory)
     try:
       if self.directoryJudgedDeletable(currentDirectory, subDirectoryList, fileList):
         logger.debug("%s - removing - %s", threading.currentThread().getName(),  currentDirectory)
@@ -255,7 +255,11 @@ class Monitor (object):
           logger.debug("%s - beginning directory tree walk", threading.currentThread().getName())
           try:
             processorIdSequenceGenerator = self.jobSchedulerIter(self.standardJobAllocationCursor)
-            for currentDirectory, filename, pathname in socorro.lib.filesystem.findFileGenerator(self.config.storageRoot, self.isJsonFile, Monitor.createDirectoryTestFunction(mostRecentFileSystemDatePath)):
+            logger.debug("%s - beginning directory tree walk, %s", threading.currentThread().getName(), self.config.storageRoot)
+            for currentDirectory, filename, pathname in socorro.lib.filesystem.findFileGenerator(self.config.storageRoot,
+                                                                                                 acceptanceFunction=self.isJsonFile,
+                                                                                                 directoryAcceptanceFunction=Monitor.createDirectoryTestFunction(mostRecentFileSystemDatePath),
+                                                                                                 directorySortFunction=Monitor.sortByIntValueIfPossible):
               logger.debug("%s - walking - found: %s", threading.currentThread().getName(), pathname)
               self.quitCheck()
               self.insertionLock.acquire()
@@ -304,6 +308,14 @@ class Monitor (object):
       except ValueError:
         pass
     return magnitudeList
+
+  #-----------------------------------------------------------------------------------------------------------------
+  @staticmethod
+  def sortByIntValueIfPossible(x, y):
+    try:
+      return cmp(int(x), int(y))
+    except ValueError:
+      return cmp(x, y)
 
   #-----------------------------------------------------------------------------------------------------------------
   @staticmethod
@@ -356,7 +368,10 @@ class Monitor (object):
                 if priorityUuids: # only need to continue if we still have jobs to process
                   processorIdSequenceGenerator = self.jobSchedulerIter(self.priorityJobAllocationCursor)
                   logger.debug("%s - walking - beginning with: %s, %s", threading.currentThread().getName(), mostRecentFileSystemDatePath, mostRecentFileSystemDatePathMagnitude)
-                  for currentDirectory, filename, pathname in socorro.lib.filesystem.findFileGenerator(self.config.storageRoot, self.isJsonFile, Monitor.createDirectoryTestFunction(mostRecentFileSystemDatePath)):
+                  for currentDirectory, filename, pathname in socorro.lib.filesystem.findFileGenerator(self.config.storageRoot,
+                                                                                                 acceptanceFunction=self.isJsonFile,
+                                                                                                 directoryAcceptanceFunction=Monitor.createDirectoryTestFunction(mostRecentFileSystemDatePath),
+                                                                                                 directorySortFunction=Monitor.sortByIntValueIfPossible):
                     logger.debug("%s - walking - found: %s", threading.currentThread().getName(), pathname)
                     self.quitCheck()
                     fileUuid = filename[:-len(self.config.jsonFileSuffix)]

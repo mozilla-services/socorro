@@ -39,6 +39,10 @@ standardLoopDelay = cm.Option()
 standardLoopDelay.doc = 'the delay in seconds between filesystem walks looking for jobs'
 standardLoopDelay.default = 300
 
+cleanupLoopDelay = cm.Option()
+cleanupLoopDelay.doc = 'the delay in seconds between checks for priority jobs'
+cleanupLoopDelay.default = 60 * 60 * 4  # 4hrs * 60min * 60sec
+
 priorityLoopDelay = cm.Option()
 priorityLoopDelay.doc = 'the delay in seconds between checks for priority jobs'
 priorityLoopDelay.default = 5
@@ -56,6 +60,10 @@ saveProcessedMinidumps = cm.Option()
 saveProcessedMinidumps.doc = 'save the successfully processed dump files'
 saveProcessedMinidumps.default = False
 saveProcessedMinidumps.fromStringConverter = cm.booleanConverter
+
+fileSystemDateThreshold = cm.Option()
+fileSystemDateThreshold.doc = 'preload the date at which to start the file system scan ("YYYY/MM/DD/HH")'
+fileSystemDateThreshold.default = "2008/07/01/00"
 
 debug = cm.Option()
 debug.doc = 'do debug output and routines'

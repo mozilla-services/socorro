@@ -31,15 +31,15 @@ def defaultAcceptanceFunction (dummy):
 #----------------------------------
 # f i n d F i l e G e n e r a t o r
 #----------------------------------
-def findFileGenerator(rootDirectory, acceptanceFunction=defaultAcceptanceFunction, directoryAcceptanceFunction=defaultAcceptanceFunction):
+def findFileGenerator(rootDirectory, acceptanceFunction=defaultAcceptanceFunction, directoryAcceptanceFunction=defaultAcceptanceFunction, directorySortFunction=cmp, **kwargs):
   """This function returns a generator that walks a filesystem tree.  It applies a user supplied function
   to each file that it encounters.  It only returns files for which the user supplied function returns true.
   It returns a tuple consiting of three items: the root path of the file, the name of the object, and the
   complete pathname of the object.  The user supplied function uses the same tuple as its input.
   """
-  for aCurrentDirectoryItem in [ (rootDirectory, x, os.path.join(rootDirectory, x)) for x in os.listdir(rootDirectory) ]:
+  for aCurrentDirectoryItem in [ (rootDirectory, x, os.path.join(rootDirectory, x)) for x in sorted(os.listdir(rootDirectory), directorySortFunction) ]:
     if os.path.isdir(aCurrentDirectoryItem[2]) and directoryAcceptanceFunction(aCurrentDirectoryItem):
-      for aSubdirectoryItem in findFileGenerator(aCurrentDirectoryItem[2], acceptanceFunction, directoryAcceptanceFunction):
+      for aSubdirectoryItem in findFileGenerator(aCurrentDirectoryItem[2], acceptanceFunction, directoryAcceptanceFunction, directorySortFunction):
         yield aSubdirectoryItem
     if acceptanceFunction(aCurrentDirectoryItem):
       yield aCurrentDirectoryItem
