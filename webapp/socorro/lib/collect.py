@@ -49,7 +49,7 @@ def findLastModifiedDirInPath(path):
   names = os.listdir(path)
   breakpadDirs = [os.path.join(path, entry) for entry
                   in names if entry.startswith(config.dumpDirPrefix)]
-  
+
   # This could happen if some other process or person has removed things
   # from our dated paths
   if len(breakpadDirs) == 0:
@@ -94,7 +94,7 @@ def getParentPathForDump():
   latestDir = findLastModifiedDirInPath(datePath)
   if len(os.listdir(latestDir)) >= config.dumpDirCount:
     return (makeDumpDir(datePath), dateString)
-  
+
   return (latestDir, dateString)
 
 def openFileForDumpID(dumpID, dumpDir, suffix, mode):
@@ -113,9 +113,9 @@ def storeDump(dumpfile):
   (dirPath, dateString) = getParentPathForDump()
   dumpID = str(uuid.uuid1())
   outfile = openFileForDumpID(dumpID, dirPath, config.dumpFileSuffix, 'wb')
-  
+
   # XXXsayrer need to peek at the first couple bytes for a sanity check
-  # breakpad leading bytes: 0x504d444d  
+  # breakpad leading bytes: 0x504d444d
   #
   try:
     while 1:
@@ -128,6 +128,39 @@ def storeDump(dumpfile):
 
   return (dumpID, dirPath, dateString)
 
+def doCreateSymbolicLink(targetPathname, linkPathname):
+  """ Create a symbolic link called 'linkPathname' linked to 'targetPathname'"""
+  os.symlink(targetPathname, linkPathname)
+  os.chmod(linkPathname, config.dirPermissions)
+  if config.dumpGID is not None:
+    os.chown(linkPathname, -1, config.dumpGID)
+
+def createSymbolicLinkForIndex(id, path, suffix):
+  """ For each json file stored, we're going to save a symbolic link to that file in a directory of the form:
+        {config.storageRoot}/index/{hostname}/{jsonfile}.symlink  We can access this structure faster than
+        the distributed structure where the actual json and dump files live.
+  """
+  # create path for index link
+  indexLinkPath = os.path.join(config.storageRoot, "index", os.uname()[1])
+  # create relative path for the link target
+  targetRelativePathName = os.path.join("../..", path[len(config.storageRoot) + 1:], "%s%s" % (id, suffix))
+  try:
+    # create symbolic link
+    symbolicLinkPathname = os.path.join(indexLinkPath, "%s%s" % (id, ".symlink"))
+    doCreateSymbolicLink(targetRelativePathName, symbolicLinkPathname)
+  except OSError:
+    # {hostname} directory does not exist
+    try:
+      mkdir(indexLinkPath)
+    except OSError:
+      # "index" directory probably doesn't exist - create it
+      mkdir(os.path.join(config.storageRoot, "index"))
+      # retry creation of {hostname} directory
+      mkdir(indexLinkPath)
+    # retry creation of symbolic link
+    doCreateSymbolicLink(targetRelativePathName, symbolicLinkPathname)
+
+
 def storeJSON(dumpID, dumpDir, form):
   names = [name for name in form.keys() if name != config.dumpField]
   fields = {}
@@ -139,10 +172,15 @@ def storeJSON(dumpID, dumpDir, form):
   fields["timestamp"] = time()
 
   outfile = openFileForDumpID(dumpID, dumpDir, config.jsonFileSuffix, 'w')
+
   try:
     simplejson.dump(fields, outfile)
   finally:
     outfile.close()
+
+  # create index symbolic link for this json file
+  createSymbolicLinkForIndex(dumpID, dumpDir, config.jsonFileSuffix)
+
 
 def makeResponseForClient(dumpID, dateString):
   response = "CrashID=%s%s\n" % (config.dumpIDPrefix, dumpID)
