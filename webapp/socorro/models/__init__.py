@@ -72,7 +72,6 @@ reports_table = Table('reports', meta,
   Column('success', Boolean),
   Column('message', TEXT(convert_unicode=True)),
   Column('truncated', Boolean)
-
 )
 
 def upgrade_reports(dbc):
@@ -155,11 +154,52 @@ def upgrade_reports(dbc):
                     AND attname = 'success'""")
   if cursor.rowcount == 0:
     print "setting"
-    cursor.execute("""ALTER TABLE reports ADD starteddatetime timestamp without time zone NULL,
-                    ADD completeddatetime timestamp without time zone NULL,
-                    ADD success boolean NULL,
-                    ADD message text NULL,
-                    ADD truncated boolean NULL""")
+    cursor.execute("""ALTER TABLE reports
+                      ADD success boolean NULL""")
+  else:
+    print "ok"
+
+  print "  Checking for reports.starteddatetime...",
+  cursor.execute("""SELECT 1 FROM pg_attribute
+                    WHERE attrelid = 'reports'::regclass
+                    AND attname = 'starteddatetime'""")
+  if cursor.rowcount == 0:
+    print "setting"
+    cursor.execute("""ALTER TABLE reports 
+                      ADD starteddatetime timestamp without time zone NULL""")
+  else:
+    print "ok"
+
+  print "  Checking for reports.completeddatetime...",
+  cursor.execute("""SELECT 1 FROM pg_attribute
+                    WHERE attrelid = 'reports'::regclass
+                    AND attname = 'completeddatetime'""")
+  if cursor.rowcount == 0:
+    print "setting"
+    cursor.execute("""ALTER TABLE reports
+                      ADD completeddatetime timestamp without time zone NULL""")
+  else:
+    print "ok"
+
+  print "  Checking for reports.message...",
+  cursor.execute("""SELECT 1 FROM pg_attribute
+                    WHERE attrelid = 'reports'::regclass
+                    AND attname = 'message'""")
+  if cursor.rowcount == 0:
+    print "setting"
+    cursor.execute("""ALTER TABLE reports
+                      ADD message text NULL""")
+  else:
+    print "ok"
+
+  print "  Checking for reports.truncated...",
+  cursor.execute("""SELECT 1 FROM pg_attribute
+                    WHERE attrelid = 'reports'::regclass
+                    AND attname = 'truncated'""")
+  if cursor.rowcount == 0:
+    print "setting"
+    cursor.execute("""ALTER TABLE reports
+                      ADD truncated boolean NULL""")
   else:
     print "ok"
 
@@ -216,21 +256,6 @@ branches_table = Table('branches', meta,
 
 jobs_id_sequence = Sequence('jobs_id_seq', meta)
 
-jobs_table = Table('jobs', meta,
-  Column('id', Integer, jobs_id_sequence,
-         default=text("nextval('jobs_id_seq')"),
-         primary_key=True),
-  Column('pathname', String(1024), nullable=False),
-  Column('uuid', Unicode(50), index=True, unique=True, nullable=False),
-  Column('owner', Integer),
-  Column('priority', Integer, default=0),
-  Column('queueddatetime', DateTime()),
-  Column('starteddatetime', DateTime()),
-  Column('completeddatetime', DateTime()),
-  Column('success', Boolean),
-  Column('message', TEXT(convert_unicode=True))
-)
-
 priorityjobs_table = Table('priorityjobs', meta,
   Column('uuid', Unicode(50), primary_key=True, nullable=False)
 )
@@ -245,6 +270,22 @@ processors_table = Table('processors', meta,
   Column('startdatetime', DateTime(), nullable=False),
   Column('lastseendatetime', DateTime())
 )
+
+jobs_table = Table('jobs', meta,
+  Column('id', Integer, jobs_id_sequence,
+         default=text("nextval('jobs_id_seq')"),
+         primary_key=True),
+  Column('pathname', String(1024), nullable=False),
+  Column('uuid', Unicode(50), index=True, unique=True, nullable=False),
+  Column('owner', Integer, ForeignKey('processors.id', ondelete='CASCADE')),
+  Column('priority', Integer, default=0),
+  Column('queueddatetime', DateTime()),
+  Column('starteddatetime', DateTime()),
+  Column('completeddatetime', DateTime()),
+  Column('success', Boolean),
+  Column('message', TEXT(convert_unicode=True))
+)
+
 
 lock_function_definition = """
 declare
