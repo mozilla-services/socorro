@@ -12,7 +12,7 @@ meta = DynamicMetaData()
 class TruncatingString(types.TypeDecorator):
   """
   Truncating string type.
-  
+
   By default, SQLAlchemy will throw an error if a string that is too long
   is inserted into the database. We subclass the default String type to
   automatically truncate to the correct length.
@@ -70,7 +70,9 @@ reports_table = Table('reports', meta,
   Column('starteddatetime', DateTime()),
   Column('completeddatetime', DateTime()),
   Column('success', Boolean),
-  Column('message', TEXT(convert_unicode=True))
+  Column('message', TEXT(convert_unicode=True)),
+  Column('truncated', Boolean),
+
 )
 
 def upgrade_reports(dbc):
@@ -121,8 +123,8 @@ def upgrade_reports(dbc):
                     AND attname = 'date_processed'""")
   if cursor.rowcount == 0:
     print "setting"
-    cursor.execute("""ALTER TABLE reports 
-                      ADD date_processed timestamp without time zone 
+    cursor.execute("""ALTER TABLE reports
+                      ADD date_processed timestamp without time zone
                       NOT NULL default NOW()""")
   else:
     print "ok"
@@ -569,7 +571,7 @@ def getEngine():
   """
   if localEngine:
     return localEngine
-  
+
   from pylons.database import create_engine
   return create_engine(pool_recycle=config.processorConnTimeout)
 
@@ -595,8 +597,8 @@ class Frame(dict):
           if root in config.vcsMappings[type]:
             self['source_link'] = config.vcsMappings[type][root] % \
                                     {'file': source_file,
-                                     'revision': revision, 
-                                     'line': source_line} 
+                                     'revision': revision,
+                                     'line': source_line}
       else:
         self['source_filename'] = os.path.split(source)[1]
 
@@ -710,7 +712,7 @@ class Report(dict):
       # empty line separates header data from thread data
       if line == '':
         return
-      
+
       values = map(EmptyFilter, line.split("|"))
       if values[0] == 'OS':
         self['os_name'] = values[1]
@@ -730,7 +732,7 @@ class Report(dict):
                                      debug_id=values[4],
                                      module_version=values[2],
                                      debug_filename=values[3]))
-  
+
   def _read_stackframes(self, lines):
     for line in lines:
       (thread_num, frame_num, module_name, function, source, source_line, instruction) = map(EmptyFilter, line.split("|"))
@@ -770,7 +772,7 @@ class Branch(object):
                   distinct=True,
                   order_by=[branches_table.c.branch],
                   engine=getEngine()).execute()
-  
+
   @staticmethod
   def getBranches():
     """
@@ -786,9 +788,9 @@ class Branch(object):
     """
     Return a list of distinct [product, branch] sorted by product name and branch.
     """
-    return select([branches_table.c.product, branches_table.c.branch], 
+    return select([branches_table.c.product, branches_table.c.branch],
                   distinct=True,
-                  order_by=[branches_table.c.product, 
+                  order_by=[branches_table.c.product,
                             branches_table.c.branch],engine=getEngine()).execute()
 
   @staticmethod
@@ -796,7 +798,7 @@ class Branch(object):
     """
     Return a list of distinct [product] sorted by product.
     """
-    return select([branches_table.c.product], 
+    return select([branches_table.c.product],
                   distinct=True,
                   order_by=branches_table.c.product,engine=getEngine()).execute()
 
@@ -829,7 +831,7 @@ def getCachedBranchData():
                                type="memory", expiretime=360)
 
 class Module(object):
-  def __init__(self, filename, debug_id, 
+  def __init__(self, filename, debug_id,
                module_version, debug_filename):
     self.filename = filename
     self.debug_id = debug_id
@@ -851,7 +853,7 @@ class Job(object):
   @staticmethod
   def by_uuid(uuid):
     """ Get queue information for a pending uuid. """
-    return select([jobs_table], limit=1, whereclause=jobs_table.c.uuid==uuid, 
+    return select([jobs_table], limit=1, whereclause=jobs_table.c.uuid==uuid,
                   engine=getEngine()).execute().fetchone()
 
 class PriorityJob(object):
@@ -879,6 +881,6 @@ except (ImportError, TypeError):
   from sqlalchemy.ext.sessioncontext import SessionContext
   localEngine = create_engine(config.processorDatabaseURI,
                               strategy="threadlocal",
-                              poolclass=pool.QueuePool, 
+                              poolclass=pool.QueuePool,
                               pool_recycle=config.processorConnTimeout,
                               pool_size=1)
