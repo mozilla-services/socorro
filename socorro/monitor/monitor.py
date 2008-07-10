@@ -227,10 +227,14 @@ class Monitor (object):
                                  (jsonFilePathName, uuid, processorIdAssignedToThisJob, priority, datetime.datetime.now()))
       databaseConnection.commit()
       os.unlink(symLinkPathname)
-      logger.debug("%s - assigned to processor %d", threading.currentThread().getName(), processorIdAssignedToThisJob)
+      logger.debug("%s - %s assigned to processor %d", threading.currentThread().getName(), uuid, processorIdAssignedToThisJob)
+    except psycopg2.IntegrityError:
+      databaseConnection.rollback()
+      os.unlink(symLinkPathname)
+      logger.debug("%s - %s already in queue - ignoring", threading.currentThread().getName(), uuid)
     except:
       databaseConnection.rollback()
-      socorro.lib.util.reportExceptionAndContinue(logger, logging.ERROR, Monitor.ignoreDuplicateDatabaseInsert)
+      socorro.lib.util.reportExceptionAndContinue(logger, logging.ERROR)
 
 
   #-----------------------------------------------------------------------------------------------------------------
