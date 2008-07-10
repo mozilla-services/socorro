@@ -357,7 +357,7 @@ class Monitor (object):
                         pathname = os.readlink(absoluteSymLinkPathname)
                         logger.debug("%s -         FOUND", threading.currentThread().getName())
                         currentDirectory, filename = os.path.split(pathname)
-                        currentDirectory = os.path.join(self.config.storageRoot, currentDirectory[5:]) # convert relative path to absolute
+                        currentDirectory = os.path.join(self.config.storageRoot, currentDirectory[6:]) # convert relative path to absolute
                       except OSError:
                         logger.debug("%s -         Not it...", threading.currentThread().getName())
                         continue
