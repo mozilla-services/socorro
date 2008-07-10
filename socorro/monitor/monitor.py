@@ -136,7 +136,7 @@ class Monitor (object):
         rowCounter = 1
         for jobIdTuple, newProcessorId in zip(aCursor.fetchall(), liveProcessorGenerator()):
           logger.info("%s - reassignment: job %d to processor %d", threading.currentThread().getName(), jobIdTuple[0], newProcessorId)
-          aCursor.execute("update jobs set owner = %s where id = %s", (newProcessorId, jobIdTuple[0]))
+          aCursor.execute("update jobs set owner = %s, starteddatetime = null where id = %s", (newProcessorId, jobIdTuple[0]))
           rowCounter += 1
           if rowCounter % 1000:
             databaseConnection.commit()
