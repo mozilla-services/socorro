@@ -216,10 +216,15 @@ class Monitor (object):
       socorro.lib.util.reportExceptionAndContinue(logger)
 
   #-----------------------------------------------------------------------------------------------------------------
-  def queueJob (self, databaseConnection, databaseCursor, currentDirectory, aFileName, symLinkPathname, processorIdSequenceGenerator, priority=0):
-    logger.debug("%s - priority %d queuing %s", threading.currentThread().getName(), priority, aFileName)
+  def queueJob (self, databaseConnection, databaseCursor, jsonFilePathName, symLinkPathname, processorIdSequenceGenerator, priority=0):
+    logger.debug("%s - priority %d queuing %s", threading.currentThread().getName(), priority, jsonFilePathName)
     try:
-      jsonFilePathName = os.path.join(currentDirectory, aFileName)
+      if not os.path.exists(jsonFilePathName):
+        # this is a bad symlink - target missing
+        logger.debug("%s - symbolic link: %s is bad. Target missing", threading.currentThread().getName(), symLinkPathname)
+        os.unlink(symLinkPathname)
+        return
+      aFileName = os.path.basename(jsonFilePathName)
       uuid = aFileName[:-len(self.config.jsonFileSuffix)]
       logger.debug("%s - trying to insert %s", threading.currentThread().getName(), uuid)
       processorIdAssignedToThisJob = processorIdSequenceGenerator.next()
@@ -247,8 +252,6 @@ class Monitor (object):
     except:
       self.quit = True
       socorro.lib.util.reportExceptionAndAbort(logger) # can't continue without a database connection
-    mostRecentFileSystemDatePath = self.config.fileSystemDateThreshold
-    mostRecentFileSystemDatePathMagnitude = Monitor.calculateDatePathMagnitude(mostRecentFileSystemDatePath)
     try:
       try:
         while (True):
@@ -261,16 +264,25 @@ class Monitor (object):
           logger.debug("%s - beginning directory tree walk", threading.currentThread().getName())
           try:
             processorIdSequenceGenerator = self.jobSchedulerIter(self.standardJobAllocationCursor)
-            for symLinkCurrentDirectory, symLinkName, symLinkPathname in socorro.lib.filesystem.findFileGenerator(os.path.join(self.config.storageRoot, "index"), acceptanceFunction=self.isSymLinkOfProperAge):
-              logger.debug("%s - found symbolic link: %s", threading.currentThread().getName(), symLinkPathname)
-              pathname = os.readlink(symLinkPathname)
-              currentDirectory, filename = os.path.split(pathname)
-              currentDirectory = os.path.join(self.config.storageRoot, currentDirectory[6:]) # convert relative path to absolute
-              logger.debug("%s - walking - found: %s referring to: %s/%s", threading.currentThread().getName(), symLinkPathname, currentDirectory, filename)
+            for symLinkCurrentDirectory, symLinkName, symLinkPathname in socorro.lib.filesystem.findFileGenerator(os.path.join(self.config.storageRoot, "index"), acceptanceFunction=self.isSymLink):
               self.quitCheck()
+              logger.debug("%s - found symbolic link: %s", threading.currentThread().getName(), symLinkPathname)
+              try:
+                if self.isProperAge(symLinkPathname):
+                  relativePathname = os.readlink(symLinkPathname)
+                  logger.debug("%s - relative target: %s", threading.currentThread().getName(), relativePathname)
+                else:
+                  continue
+              except OSError:
+                # this is a bad symlink - target missing?
+                logger.debug("%s - symbolic link: %s is bad. Target missing?", threading.currentThread().getName(), symLinkPathname)
+                os.unlink(symLinkPathname)
+                continue
+              absolutePathname = os.path.join(self.config.storageRoot, relativePathname[6:]) # convert relative path to absolute
+              logger.debug("%s - walking - found: %s referring to: %s", threading.currentThread().getName(), symLinkPathname, absolutePathname)
               self.insertionLock.acquire()
               try:
-                self.queueJob(self.standardJobAllocationDatabaseConnection, self.standardJobAllocationCursor, currentDirectory, filename, symLinkPathname, processorIdSequenceGenerator)
+                self.queueJob(self.standardJobAllocationDatabaseConnection, self.standardJobAllocationCursor, absolutePathname, symLinkPathname, processorIdSequenceGenerator)
               finally:
                 self.insertionLock.release()
           except KeyboardInterrupt:
@@ -297,26 +309,14 @@ class Monitor (object):
     return dictionaryOfPriorityUuids
 
   #-----------------------------------------------------------------------------------------------------------------
-  @staticmethod
-  def calculateDatePathMagnitude (path):
-    """returns a list of all the directory names that consist entirely of digits converted to integers.
-    """
-    splitPath = path.split('/')
-    magnitudeList = []
-    for x in splitPath:
-      try:
-        magnitudeList.append(int(x))
-      except ValueError:
-        pass
-    return magnitudeList
-
+  def isSymLink(self, testPathTuple):
+    return testPathTuple[1].endswith(".symlink")
 
   #-----------------------------------------------------------------------------------------------------------------
-  def isSymLinkOfProperAge(self, testPath):
+  def isProperAge(self, testPath):
     #logger.debug("%s - %s", threading.currentThread().getName(), testPath)
-    #logger.debug("%s - %s", threading.currentThread().getName(), testPath[1].endswith(".symlink"))
-    #logger.debug("%s - %s", threading.currentThread().getName(), (datetime.datetime.utcnow() - datetime.datetime.utcfromtimestamp(os.path.getmtime(testPath[2]))) > self.config.minimumSymlinkAge)
-    return testPath[1].endswith(".symlink") and (datetime.datetime.utcnow() - datetime.datetime.utcfromtimestamp(os.path.getmtime(testPath[2]))) > self.config.minimumSymlinkAge
+    logger.debug("%s - %s", threading.currentThread().getName(), (datetime.datetime.utcnow() - datetime.datetime.utcfromtimestamp(os.path.getmtime(testPath))) > self.config.minimumSymlinkAge)
+    return (datetime.datetime.utcnow() - datetime.datetime.utcfromtimestamp(os.path.getmtime(testPath))) > self.config.minimumSymlinkAge
 
   #-----------------------------------------------------------------------------------------------------------------
   def priorityJobAllocationLoop(self):
@@ -335,11 +335,11 @@ class Monitor (object):
           if priorityUuids:
             self.insertionLock.acquire()
             try:
-              # walk the dump tree and assign jobs
+              # assign jobs
               logger.debug("%s - beginning search for priority jobs", threading.currentThread().getName())
               try:
                 processorIdSequenceGenerator = self.jobSchedulerIter(self.priorityJobAllocationCursor)
-                #check for uuids already in the queue
+                # check for uuids already in the queue
                 for uuid in priorityUuids.keys():
                   self.quitCheck()
                   self.priorityJobAllocationCursor.execute("select uuid from jobs where uuid = %s", (uuid,))
@@ -350,6 +350,7 @@ class Monitor (object):
                     self.priorityJobAllocationDatabaseConnection.commit()
                     del priorityUuids[uuid]
                 if priorityUuids: # only need to continue if we still have jobs to process
+                  # check for jobs in symlink directories
                   processorIdSequenceGenerator = self.jobSchedulerIter(self.priorityJobAllocationCursor)
                   for uuid in priorityUuids.keys():
                     logger.debug("%s - looking for %s", threading.currentThread().getName(), uuid)
@@ -358,20 +359,20 @@ class Monitor (object):
                       absoluteSymLinkPathname = os.path.join(self.config.storageRoot, "index", currentDirectory, "%s.symlink" % uuid)
                       logger.debug("%s -         as %s", threading.currentThread().getName(), absoluteSymLinkPathname)
                       try:
-                        pathname = os.readlink(absoluteSymLinkPathname)
                         logger.debug("%s -         FOUND", threading.currentThread().getName())
-                        currentDirectory, filename = os.path.split(pathname)
-                        currentDirectory = os.path.join(self.config.storageRoot, currentDirectory[6:]) # convert relative path to absolute
+                        relativeTargetPathname = os.readlink(absoluteSymLinkPathname)
+                        absoluteTargetPathname = os.path.join(self.config.storageRoot, currentDirectory[6:])
                       except OSError:
                         logger.debug("%s -         Not it...", threading.currentThread().getName())
                         continue
-                      logger.info("%s - priority queuing %s", threading.currentThread().getName(), filename)
-                      self.queueJob(self.priorityJobAllocationDatabaseConnection, self.priorityJobAllocationCursor, currentDirectory, filename, absoluteSymLinkPathname, processorIdSequenceGenerator, 1)
+                      logger.info("%s - priority queuing %s", threading.currentThread().getName(), absoluteTargetPathname)
+                      self.queueJob(self.priorityJobAllocationDatabaseConnection, self.priorityJobAllocationCursor, absoluteTargetPathname, absoluteSymLinkPathname, processorIdSequenceGenerator, 1)
                       self.priorityJobAllocationCursor.execute("delete from priorityJobs where uuid = %s", (uuid,))
                       self.priorityJobAllocationDatabaseConnection.commit()
                       del priorityUuids[uuid]
                       break
                   if priorityUuids:
+                    # we've failed to find the uuids anywhere
                     for uuid in priorityUuids:
                       self.quitCheck()
                       logger.error("%s - priority uuid %s was never found",  threading.currentThread().getName(), uuid)

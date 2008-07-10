@@ -66,10 +66,6 @@ saveProcessedMinidumps.doc = 'save the successfully processed dump files'
 saveProcessedMinidumps.default = False
 saveProcessedMinidumps.fromStringConverter = cm.booleanConverter
 
-fileSystemDateThreshold = cm.Option()
-fileSystemDateThreshold.doc = 'preload the date at which to start the file system scan ("YYYY/MM/DD/HH")'
-fileSystemDateThreshold.default = "2008/07/01/00"
-
 debug = cm.Option()
 debug.doc = 'do debug output and routines'
 debug.default = False
