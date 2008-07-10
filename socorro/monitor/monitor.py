@@ -6,6 +6,7 @@ import time
 import datetime
 import os
 import os.path
+import dircache
 import shutil
 import signal
 import sets
@@ -215,7 +216,7 @@ class Monitor (object):
       socorro.lib.util.reportExceptionAndContinue(logger)
 
   #-----------------------------------------------------------------------------------------------------------------
-  def queueJob (self, databaseConnection, databaseCursor, currentDirectory, aFileName, processorIdSequenceGenerator, priority=0):
+  def queueJob (self, databaseConnection, databaseCursor, currentDirectory, aFileName, symLinkPathname, processorIdSequenceGenerator, priority=0):
     logger.debug("%s - priority %d queuing %s", threading.currentThread().getName(), priority, aFileName)
     try:
       jsonFilePathName = os.path.join(currentDirectory, aFileName)
@@ -225,6 +226,7 @@ class Monitor (object):
       databaseCursor.execute("insert into jobs (pathname, uuid, owner, priority, queuedDateTime) values (%s, %s, %s, %s, %s)",
                                  (jsonFilePathName, uuid, processorIdAssignedToThisJob, priority, datetime.datetime.now()))
       databaseConnection.commit()
+      os.unlink(symLinkPathname)
       logger.debug("%s - assigned to processor %d", threading.currentThread().getName(), processorIdAssignedToThisJob)
     except:
       databaseConnection.rollback()
@@ -255,23 +257,18 @@ class Monitor (object):
           logger.debug("%s - beginning directory tree walk", threading.currentThread().getName())
           try:
             processorIdSequenceGenerator = self.jobSchedulerIter(self.standardJobAllocationCursor)
-            logger.debug("%s - beginning directory tree walk, %s", threading.currentThread().getName(), self.config.storageRoot)
-            for currentDirectory, filename, pathname in socorro.lib.filesystem.findFileGenerator(self.config.storageRoot,
-                                                                                                 acceptanceFunction=self.isJsonFile,
-                                                                                                 directoryAcceptanceFunction=Monitor.createDirectoryTestFunction(mostRecentFileSystemDatePath),
-                                                                                                 directorySortFunction=Monitor.sortByIntValueIfPossible):
-              logger.debug("%s - walking - found: %s", threading.currentThread().getName(), pathname)
+            for symLinkCurrentDirectory, symLinkName, symLinkPathname in socorro.lib.filesystem.findFileGenerator(os.path.join(self.config.storageRoot, "index"), acceptanceFunction=self.isSymLinkOfProperAge):
+              logger.debug("%s - found symbolic link: %s", threading.currentThread().getName(), symLinkPathname)
+              pathname = os.readlink(symLinkPathname)
+              currentDirectory, filename = os.path.split(pathname)
+              currentDirectory = os.path.join(self.config.storageRoot, currentDirectory[6:]) # convert relative path to absolute
+              logger.debug("%s - walking - found: %s referring to: %s/%s", threading.currentThread().getName(), symLinkPathname, currentDirectory, filename)
               self.quitCheck()
               self.insertionLock.acquire()
               try:
-                self.queueJob(self.standardJobAllocationDatabaseConnection, self.standardJobAllocationCursor, currentDirectory, filename, processorIdSequenceGenerator)
+                self.queueJob(self.standardJobAllocationDatabaseConnection, self.standardJobAllocationCursor, currentDirectory, filename, symLinkPathname, processorIdSequenceGenerator)
               finally:
                 self.insertionLock.release()
-              #the newest directory examined will be the first examined on the next time around
-              currentDirectoryDateMagnitude = Monitor.calculateDatePathMagnitude(currentDirectory)
-              if currentDirectoryDateMagnitude > mostRecentFileSystemDatePathMagnitude:
-                mostRecentFileSystemDatePath = currentDirectory
-                mostRecentFileSystemDatePathMagnitude = currentDirectoryDateMagnitude
           except KeyboardInterrupt:
             logger.debug("%s - inner QUITTING", threading.currentThread().getName())
             raise
@@ -309,29 +306,13 @@ class Monitor (object):
         pass
     return magnitudeList
 
-  #-----------------------------------------------------------------------------------------------------------------
-  @staticmethod
-  def sortByIntValueIfPossible(x, y):
-    try:
-      return cmp(int(x), int(y))
-    except ValueError:
-      return cmp(x, y)
 
   #-----------------------------------------------------------------------------------------------------------------
-  @staticmethod
-  def createDirectoryTestFunction(datePathFragmentThreshold):
-    """ directories in the filesytem have a form of .../YYYY/M/D/H/...  This function will return a function that
-        will test if a given path is at or after the date path fragment threshold provided as the input parameter.
-    """
-    datePathThresholdMagnitude = Monitor.calculateDatePathMagnitude(datePathFragmentThreshold)
-    def testFunction(testPath):
-      testPathMagnitudeList = Monitor.calculateDatePathMagnitude(testPath[0])
-      return testPathMagnitudeList >= datePathThresholdMagnitude[:len(testPathMagnitudeList)]
-    return testFunction
-
-  #-----------------------------------------------------------------------------------------------------------------
-  def isJsonFile(self, testPath):
-    return testPath[1].endswith(self.config.jsonFileSuffix)
+  def isSymLinkOfProperAge(self, testPath):
+    #logger.debug("%s - %s", threading.currentThread().getName(), testPath)
+    #logger.debug("%s - %s", threading.currentThread().getName(), testPath[1].endswith(".symlink"))
+    #logger.debug("%s - %s", threading.currentThread().getName(), (datetime.datetime.utcnow() - datetime.datetime.utcfromtimestamp(os.path.getmtime(testPath[2]))) > self.config.minimumSymlinkAge)
+    return testPath[1].endswith(".symlink") and (datetime.datetime.utcnow() - datetime.datetime.utcfromtimestamp(os.path.getmtime(testPath[2]))) > self.config.minimumSymlinkAge
 
   #-----------------------------------------------------------------------------------------------------------------
   def priorityJobAllocationLoop(self):
@@ -341,8 +322,7 @@ class Monitor (object):
     except:
       self.quit = True
       socorro.lib.util.reportExceptionAndAbort(logger) # can't continue without a database connection
-    mostRecentFileSystemDatePath = self.config.fileSystemDateThreshold
-    mostRecentFileSystemDatePathMagnitude = Monitor.calculateDatePathMagnitude(mostRecentFileSystemDatePath)
+    symLinkIndexPath = os.path.join(self.config.storageRoot, "index")
     try:
       try:
         while (True):
@@ -367,25 +347,26 @@ class Monitor (object):
                     del priorityUuids[uuid]
                 if priorityUuids: # only need to continue if we still have jobs to process
                   processorIdSequenceGenerator = self.jobSchedulerIter(self.priorityJobAllocationCursor)
-                  logger.debug("%s - walking - beginning with: %s, %s", threading.currentThread().getName(), mostRecentFileSystemDatePath, mostRecentFileSystemDatePathMagnitude)
-                  for currentDirectory, filename, pathname in socorro.lib.filesystem.findFileGenerator(self.config.storageRoot,
-                                                                                                 acceptanceFunction=self.isJsonFile,
-                                                                                                 directoryAcceptanceFunction=Monitor.createDirectoryTestFunction(mostRecentFileSystemDatePath),
-                                                                                                 directorySortFunction=Monitor.sortByIntValueIfPossible):
-                    logger.debug("%s - walking - found: %s", threading.currentThread().getName(), pathname)
-                    self.quitCheck()
-                    fileUuid = filename[:-len(self.config.jsonFileSuffix)]
-                    if fileUuid in priorityUuids:
+                  for uuid in priorityUuids.keys():
+                    logger.debug("%s - looking for %s", threading.currentThread().getName(), uuid)
+                    for currentDirectory in dircache.listdir(symLinkIndexPath):
+                      self.quitCheck()
+                      absoluteSymLinkPathname = os.path.join(self.config.storageRoot, "index", currentDirectory, "%s.symlink" % uuid)
+                      logger.debug("%s -         as %s", threading.currentThread().getName(), absoluteSymLinkPathname)
+                      try:
+                        pathname = os.readlink(absoluteSymLinkPathname)
+                        logger.debug("%s -         FOUND", threading.currentThread().getName())
+                        currentDirectory, filename = os.path.split(pathname)
+                        currentDirectory = os.path.join(self.config.storageRoot, currentDirectory[5:]) # convert relative path to absolute
+                      except OSError:
+                        logger.debug("%s -         Not it...", threading.currentThread().getName())
+                        continue
                       logger.info("%s - priority queuing %s", threading.currentThread().getName(), filename)
-                      self.queueJob(self.priorityJobAllocationDatabaseConnection, self.priorityJobAllocationCursor, currentDirectory, filename, processorIdSequenceGenerator, 1)
-                      self.priorityJobAllocationCursor.execute("delete from priorityJobs where uuid = %s", (fileUuid,))
+                      self.queueJob(self.priorityJobAllocationDatabaseConnection, self.priorityJobAllocationCursor, currentDirectory, filename, absoluteSymLinkPathname, processorIdSequenceGenerator, 1)
+                      self.priorityJobAllocationCursor.execute("delete from priorityJobs where uuid = %s", (uuid,))
                       self.priorityJobAllocationDatabaseConnection.commit()
-                      del priorityUuids[fileUuid]
-                    #the newest directory examined will be the first examined on the next time around
-                    currentDirectoryDateMagnitude = Monitor.calculateDatePathMagnitude(currentDirectory)
-                    if currentDirectoryDateMagnitude > mostRecentFileSystemDatePathMagnitude:
-                      mostRecentFileSystemDatePath = currentDirectory
-                      mostRecentFileSystemDatePathMagnitude = currentDirectoryDateMagnitude
+                      del priorityUuids[uuid]
+                      break
                   if priorityUuids:
                     for uuid in priorityUuids:
                       self.quitCheck()
@@ -399,7 +380,9 @@ class Monitor (object):
                 self.priorityJobAllocationDatabaseConnection.rollback()
                 socorro.lib.util.reportExceptionAndContinue(logger)
             finally:
+              logger.debug("%s - releasing lock", threading.currentThread().getName())
               self.insertionLock.release()
+          logger.debug("%s - sleeping", threading.currentThread().getName())
           self.responsiveSleep(self.config.priorityLoopDelay)
       except (KeyboardInterrupt, SystemExit):
         logger.debug("%s - outer QUITTING", threading.currentThread().getName())
