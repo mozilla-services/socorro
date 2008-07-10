@@ -71,7 +71,7 @@ reports_table = Table('reports', meta,
   Column('completeddatetime', DateTime()),
   Column('success', Boolean),
   Column('message', TEXT(convert_unicode=True)),
-  Column('truncated', Boolean),
+  Column('truncated', Boolean)
 
 )
 
