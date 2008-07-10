@@ -280,6 +280,7 @@ class Monitor (object):
                 continue
               absolutePathname = os.path.join(self.config.storageRoot, relativePathname[6:]) # convert relative path to absolute
               logger.debug("%s - walking - found: %s referring to: %s", threading.currentThread().getName(), symLinkPathname, absolutePathname)
+              self.quitCheck()
               self.insertionLock.acquire()
               try:
                 self.queueJob(self.standardJobAllocationDatabaseConnection, self.standardJobAllocationCursor, absolutePathname, symLinkPathname, processorIdSequenceGenerator)
@@ -359,12 +360,12 @@ class Monitor (object):
                       absoluteSymLinkPathname = os.path.join(self.config.storageRoot, "index", currentDirectory, "%s.symlink" % uuid)
                       logger.debug("%s -         as %s", threading.currentThread().getName(), absoluteSymLinkPathname)
                       try:
-                        logger.debug("%s -         FOUND", threading.currentThread().getName())
                         relativeTargetPathname = os.readlink(absoluteSymLinkPathname)
-                        absoluteTargetPathname = os.path.join(self.config.storageRoot, currentDirectory[6:])
+                        absoluteTargetPathname = os.path.join(self.config.storageRoot, relativeTargetPathname[6:])
                       except OSError:
                         logger.debug("%s -         Not it...", threading.currentThread().getName())
                         continue
+                      logger.debug("%s -         FOUND", threading.currentThread().getName())
                       logger.info("%s - priority queuing %s", threading.currentThread().getName(), absoluteTargetPathname)
                       self.queueJob(self.priorityJobAllocationDatabaseConnection, self.priorityJobAllocationCursor, absoluteTargetPathname, absoluteSymLinkPathname, processorIdSequenceGenerator, 1)
                       self.priorityJobAllocationCursor.execute("delete from priorityJobs where uuid = %s", (uuid,))
