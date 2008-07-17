@@ -116,6 +116,7 @@ class Processor(object):
     except:
       socorro.lib.util.reportExceptionAndAbort(logger) # can't continue without a registration
 
+    self.lastCheckInTimestamp = datetime.datetime(1950, 1, 1)
     self.getNextJobSQL = "select j.id, j.pathname, j.uuid from jobs j where j.owner = %d and startedDateTime is null order by priority desc, queuedDateTime asc limit 1" % self.processorId
 
     # start the thread manager with the number of threads specified in the configuration.  The second parameter controls the size
@@ -139,6 +140,19 @@ class Processor(object):
     for x in xrange(int(seconds)):
       self.quitCheck()
       time.sleep(1.0)
+
+  #-----------------------------------------------------------------------------------------------------------------
+  def checkin (self):
+    """ a processor must keep its database registration current.  If a processor has not updated its
+        record in the database in the interval specified in as self.config.processorCheckInTime, the
+        monitor will consider it to be expired.  The monitor will stop assigning jobs to it and reallocate
+        its unfinished jobs to other processors.
+    """
+    if self.lastCheckInTimestamp + self.config.processorCheckInFrequency < datetime.datetime.now():
+      logger.debug("%s - updating 'processor' table registration", threading.currentThread().getName())
+      self.mainThreadCursor.execute("update processors set lastSeenDateTime = %s where id = %s", (datetime.datetime.now(), self.processorId))
+      self.mainThreadDatabaseConnection.commit()
+      self.lastCheckInTimestamp = datetime.datetime.now()
 
   #-----------------------------------------------------------------------------------------------------------------
   def cleanup(self):
@@ -217,16 +231,6 @@ class Processor(object):
     return '@%s' % instruction
 
   #-----------------------------------------------------------------------------------------------------------------
-  def updateRegistrationNoCommit(self, aCursor):
-    """ a processor must keep its database registration current.  If a processor has not updated its
-        record in the database in the interval specified in as self.config.processorCheckInTime, the
-        monitor will consider it to be expired.  The monitor will stop assigning jobs to it and reallocate
-        its unfinished jobs to other processors.
-    """
-    logger.debug("%s - updating 'processor' table registration", threading.currentThread().getName())
-    aCursor.execute("update processors set lastSeenDateTime = %s where id = %s", (datetime.datetime.now(), self.processorId))
-
-  #-----------------------------------------------------------------------------------------------------------------
   def submitJobToThreads(self, aJobTuple):
     self.mainThreadCursor.execute("update jobs set startedDateTime = %s where id = %s", (datetime.datetime.now(), aJobTuple[0]))
     self.mainThreadDatabaseConnection.commit()
@@ -242,6 +246,7 @@ class Processor(object):
     preexistingPriorityJobs = set()
     while (True):
       self.quitCheck()
+      self.checkin()
       try:
         lastPriorityCheckTimestamp = datetime.datetime.now()
         self.mainThreadCursor.execute("select uuid from %s" % self.priorityJobsTableName)
@@ -301,14 +306,9 @@ class Processor(object):
     while (True):
       try:
         #get a job
-        lastCheckInTimestamp = datetime.datetime(1950, 1, 1)
         for aJobTuple in self.incomingJobStream():
           self.quitCheck()
           self.submitJobToThreads(aJobTuple)
-          if lastCheckInTimestamp + self.config.processorCheckInFrequency < datetime.datetime.now():
-            self.updateRegistrationNoCommit(self.mainThreadCursor)
-            self.mainThreadDatabaseConnection.commit()
-            lastCheckInTimestamp = datetime.datetime.now()
       except KeyboardInterrupt:
         logger.info("%s - quit request detected", threading.currentThread().getName())
         self.mainThreadDatabaseConnection.rollback()

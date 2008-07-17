@@ -128,18 +128,18 @@ class Monitor (object):
         liveProcessors = aCursor.fetchall()
         if not liveProcessors:
           raise Monitor.NoProcessorsRegisteredException("There are no processors registered")
-        def liveProcessorGenerator():
-          while True:
-            for aRow in liveProcessors:
-              yield aRow[0]
-        aCursor.execute("select id from jobs where owner in (select id from processors where lastSeenDateTime < '%s')" % threshold)
-        rowCounter = 1
-        for jobIdTuple, newProcessorId in zip(aCursor.fetchall(), liveProcessorGenerator()):
-          logger.info("%s - reassignment: job %d to processor %d", threading.currentThread().getName(), jobIdTuple[0], newProcessorId)
-          aCursor.execute("update jobs set owner = %s, starteddatetime = null where id = %s", (newProcessorId, jobIdTuple[0]))
-          rowCounter += 1
-          if rowCounter % 1000:
-            databaseConnection.commit()
+        numberOfLiveProcessors = len(liveProcessors)
+        aCursor.execute("select count(*) from jobs where owner in (select id from processors where lastSeenDateTime < '%s')" % threshold)
+        numberOfJobsAssignedToDeadProcesors = aCursor.fetchall()[0][0]
+        numberOfJobsPerNewProcessor = numberOfJobsAssignedToDeadProcesors / numberOfLiveProcessors
+        leftOverJobs = numberOfJobsAssignedToDeadProcesors % numberOfLiveProcessors
+        for aLiveProcessorTuple in liveProcessors:
+          aLiveProcessorId = aLiveProcessorTuple[0]
+          logger.info("%s - moving %d jobs from dead processors to procssor #%d", threading.currentThread().getName(), numberOfJobsPerNewProcessor + leftOverJobs, aLiveProcessorId)
+          aCursor.execute("""update jobs set owner = %s, starteddatetime = null where id in
+                              (select id from jobs where owner in
+                                (select id from processors where lastSeenDateTime < %s) limit %s)""", (aLiveProcessorId, threshold, numberOfJobsPerNewProcessor + leftOverJobs))
+          leftOverJobs = 0
         logger.info("%s - removing all dead processors", threading.currentThread().getName())
         aCursor.execute("delete from processors where lastSeenDateTime < '%s'" % threshold)
         databaseConnection.commit()
