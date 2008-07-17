@@ -335,7 +335,6 @@ class Monitor (object):
 
   #-----------------------------------------------------------------------------------------------------------------
   def priorityJobAllocationLoop(self):
-    self.responsiveSleep(300)
     try:
       self.priorityJobAllocationDatabaseConnection = psycopg2.connect(self.config.databaseDSN)
       self.priorityJobAllocationCursor = self.priorityJobAllocationDatabaseConnection.cursor()
@@ -364,10 +363,19 @@ class Monitor (object):
                   except IndexError:
                     prexistingJobOwner = None
                   if prexistingJobOwner:
-                    logger.info("%s - priority job %s was already in the queue - raising its priority", threading.currentThread().getName(), uuid)
+                    logger.info("%s - priority job %s was already in the queue, assigned to %d - raising its priority", threading.currentThread().getName(), uuid, prexistingJobOwner)
+                    try:
+                      self.priorityJobAllocationCursor.execute("insert into priority_jobs_%d (uuid) values ('%s')" % (prexistingJobOwner, uuid))
+                    except psycopg2.ProgrammingError:
+                      logger.debug("%s - %s assigned to dead processor %d - wait for reassignment", threading.currentThread().getName(), prexistingJobOwner, uuid)
+                      # likely that the job is assigned to a dead processor
+                      # skip processing it this time around - by next time hopefully it will have been
+                      # re assigned to a live processor
+                      self.priorityJobAllocationDatabaseConnection.rollback()
+                      del priorityUuids[uuid]
+                      continue
                     self.priorityJobAllocationCursor.execute("update jobs set priority = priority + 1 where uuid = %s", (uuid,))
                     self.priorityJobAllocationCursor.execute("delete from priorityJobs where uuid = %s", (uuid,))
-                    self.priorityJobAllocationCursor.execute("insert into priority_jobs_%d (uuid) values ('%s')" % (prexistingJobOwner, uuid))
                     self.priorityJobAllocationDatabaseConnection.commit()
                     del priorityUuids[uuid]
                 if priorityUuids: # only need to continue if we still have jobs to process
