@@ -106,10 +106,18 @@ class Processor(object):
     #register self with the processors table in the database
     logger.info("%s - registering with 'processors' table", threading.currentThread().getName())
     try:
+      self.processorId = 0
       self.processorName = "%s_%d" % (os.uname()[1], os.getpid())
-      self.mainThreadCursor.execute("insert into processors (name, startDateTime, lastSeenDateTime) values (%s, now(), now())", (self.processorName,))
-      self.mainThreadCursor.execute("select id from processors where name = %s", (self.processorName,))
-      self.processorId = self.mainThreadCursor.fetchall()[0][0]
+      if self.config.processorId:
+        try:
+          self.mainThreadCursor.execute("update processors set name = %s, startDateTime = now(), lastSeenDateTime = now() where id = %s", (self.processorName, self.config.processorId))
+          self.processorId = self.config.processorId
+        except:
+          self.mainThreadDatabaseConnection.rollback()
+      if self.processorId == 0:
+        self.mainThreadCursor.execute("insert into processors (name, startDateTime, lastSeenDateTime) values (%s, now(), now())", (self.processorName,))
+        self.mainThreadCursor.execute("select id from processors where name = %s", (self.processorName,))
+        self.processorId = self.mainThreadCursor.fetchall()[0][0]
       self.priorityJobsTableName = "priority_jobs_%d" % self.processorId
       self.mainThreadCursor.execute("create table %s (uuid varchar(50) not null primary key)" % self.priorityJobsTableName)
       self.mainThreadDatabaseConnection.commit()

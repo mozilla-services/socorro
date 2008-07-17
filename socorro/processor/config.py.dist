@@ -15,6 +15,10 @@ numberOfThreads = cm.Option()
 numberOfThreads.doc = 'the number of threads to use'
 numberOfThreads.default = 4
 
+processorId = cm.Option()
+processorId.doc = 'the id number for the processor (must already exist in database) (0 for create new Id)'
+processorId.default = 0
+
 #get storageRoot from monitor's config file
 from socorro.monitor.config import storageRoot
 
