@@ -335,6 +335,7 @@ class Monitor (object):
 
   #-----------------------------------------------------------------------------------------------------------------
   def priorityJobAllocationLoop(self):
+    self.responsiveSleep(300)
     try:
       self.priorityJobAllocationDatabaseConnection = psycopg2.connect(self.config.databaseDSN)
       self.priorityJobAllocationCursor = self.priorityJobAllocationDatabaseConnection.cursor()
