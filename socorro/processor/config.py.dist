@@ -50,6 +50,20 @@ processorLoopTime = cm.Option()
 processorLoopTime.doc = 'the number of seconds to wait between attempts to get jobs'
 processorLoopTime.default = 6
 
+checkForPriorityFrequency = cm.Option()
+checkForPriorityFrequency.doc = 'the frequency in seconds to check for priority jobs'
+checkForPriorityFrequency.default = 60
+checkForPriorityFrequency.fromStringConverter = lambda x: datetime.timedelta(0, int(x))
+
+processorCheckInFrequency = cm.Option()
+processorCheckInFrequency.doc = 'the frequency in seconds for the processor to check in with the monitor'
+processorCheckInFrequency.default = 300
+processorCheckInFrequency.fromStringConverter = lambda x: datetime.timedelta(0, int(x))
+
+batchJobLimit = cm.Option()
+batchJobLimit.doc = 'the number of jobs to pull in a time'
+batchJobLimit.default = 10000
+
 debug = cm.Option()
 debug.doc = 'do debug output and routines'
 debug.default = False

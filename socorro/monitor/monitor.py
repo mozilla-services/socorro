@@ -143,6 +143,13 @@ class Monitor (object):
         logger.info("%s - removing all dead processors", threading.currentThread().getName())
         aCursor.execute("delete from processors where lastSeenDateTime < '%s'" % threshold)
         databaseConnection.commit()
+        # remove dead processors' priority tables
+        for aDeadProcessorTuple in deadProcessors:
+          try:
+            aCursor.execute("drop table priority_jobs_%d" % aDeadProcessorTuple[0])
+            databaseConnection.commit()
+          except:
+            logger.warning("%s - cannot clean up dead processor in database: the table 'priority_jobs_%d' may need manual deletion", threading.currentThread().getName(), aDeadProcessorTuple[0])
     except Monitor.NoProcessorsRegisteredException:
       self.quit = True
       socorro.lib.util.reportExceptionAndAbort(logger)
@@ -233,10 +240,16 @@ class Monitor (object):
       databaseConnection.commit()
       os.unlink(symLinkPathname)
       logger.debug("%s - %s assigned to processor %d", threading.currentThread().getName(), uuid, processorIdAssignedToThisJob)
+      return processorIdAssignedToThisJob
     except psycopg2.IntegrityError:
       databaseConnection.rollback()
       os.unlink(symLinkPathname)
       logger.debug("%s - %s already in queue - ignoring", threading.currentThread().getName(), uuid)
+    except KeyboardInterrupt:
+      logger.debug("%s - queueJob detects quit", threading.currentThread().getName())
+      self.quit = True
+      databaseConnection.rollback()
+      raise
     except:
       databaseConnection.rollback()
       socorro.lib.util.reportExceptionAndContinue(logger, logging.ERROR)
@@ -262,10 +275,10 @@ class Monitor (object):
           processorIdSequenceGenerator = self.jobSchedulerIter(self.standardJobAllocationCursor)
           # walk the dump tree and assign jobs
           logger.debug("%s - beginning directory tree walk", threading.currentThread().getName())
-          try:
-            processorIdSequenceGenerator = self.jobSchedulerIter(self.standardJobAllocationCursor)
-            for symLinkCurrentDirectory, symLinkName, symLinkPathname in socorro.lib.filesystem.findFileGenerator(os.path.join(self.config.storageRoot, "index"), acceptanceFunction=self.isSymLink):
-              self.quitCheck()
+          processorIdSequenceGenerator = self.jobSchedulerIter(self.standardJobAllocationCursor)
+          for symLinkCurrentDirectory, symLinkName, symLinkPathname in socorro.lib.filesystem.findFileGenerator(os.path.join(self.config.storageRoot, "index"), acceptanceFunction=self.isSymLink):
+            self.quitCheck()
+            try:
               logger.debug("%s - found symbolic link: %s", threading.currentThread().getName(), symLinkPathname)
               try:
                 if self.isProperAge(symLinkPathname):
@@ -286,14 +299,15 @@ class Monitor (object):
                 self.queueJob(self.standardJobAllocationDatabaseConnection, self.standardJobAllocationCursor, absolutePathname, symLinkPathname, processorIdSequenceGenerator)
               finally:
                 self.insertionLock.release()
-          except KeyboardInterrupt:
-            logger.debug("%s - inner QUITTING", threading.currentThread().getName())
-            raise
-          except:
-            socorro.lib.util.reportExceptionAndContinue(logger)
+            except KeyboardInterrupt:
+              logger.debug("%s - inner detects quit", threading.currentThread().getName())
+              self.quit = True
+              raise
+            except:
+              socorro.lib.util.reportExceptionAndContinue(logger)
           self.responsiveSleep(self.config.standardLoopDelay)
       except (KeyboardInterrupt, SystemExit):
-        logger.debug("%s - outer QUITTING", threading.currentThread().getName())
+        logger.debug("%s - outer detects quit", threading.currentThread().getName())
         self.standardJobAllocationDatabaseConnection.rollback()
         self.quit = True
         raise
@@ -343,11 +357,16 @@ class Monitor (object):
                 # check for uuids already in the queue
                 for uuid in priorityUuids.keys():
                   self.quitCheck()
-                  self.priorityJobAllocationCursor.execute("select uuid from jobs where uuid = %s", (uuid,))
-                  if self.priorityJobAllocationCursor.fetchall():
+                  self.priorityJobAllocationCursor.execute("select owner from jobs where uuid = %s", (uuid,))
+                  try:
+                    prexistingJobOwner = self.priorityJobAllocationCursor.fetchall()[0][0]
+                  except IndexError:
+                    prexistingJobOwner = None
+                  if prexistingJobOwner:
                     logger.info("%s - priority job %s was already in the queue - raising its priority", threading.currentThread().getName(), uuid)
                     self.priorityJobAllocationCursor.execute("update jobs set priority = priority + 1 where uuid = %s", (uuid,))
                     self.priorityJobAllocationCursor.execute("delete from priorityJobs where uuid = %s", (uuid,))
+                    self.priorityJobAllocationCursor.execute("insert into priority_jobs_%d (uuid) values ('%s')" % (prexistingJobOwner, uuid))
                     self.priorityJobAllocationDatabaseConnection.commit()
                     del priorityUuids[uuid]
                 if priorityUuids: # only need to continue if we still have jobs to process
@@ -367,7 +386,10 @@ class Monitor (object):
                         continue
                       logger.debug("%s -         FOUND", threading.currentThread().getName())
                       logger.info("%s - priority queuing %s", threading.currentThread().getName(), absoluteTargetPathname)
-                      self.queueJob(self.priorityJobAllocationDatabaseConnection, self.priorityJobAllocationCursor, absoluteTargetPathname, absoluteSymLinkPathname, processorIdSequenceGenerator, 1)
+                      processorIdAssignedToThisJob = self.queueJob(self.priorityJobAllocationDatabaseConnection, self.priorityJobAllocationCursor, absoluteTargetPathname, absoluteSymLinkPathname, processorIdSequenceGenerator, 1)
+                      logger.info("%s - %s assigned to %d", threading.currentThread().getName(), uuid, processorIdAssignedToThisJob)
+                      if processorIdAssignedToThisJob:
+                        self.priorityJobAllocationCursor.execute("insert into priority_jobs_%d (uuid) values ('%s')" % (processorIdAssignedToThisJob, uuid))
                       self.priorityJobAllocationCursor.execute("delete from priorityJobs where uuid = %s", (uuid,))
                       self.priorityJobAllocationDatabaseConnection.commit()
                       del priorityUuids[uuid]
@@ -380,7 +402,7 @@ class Monitor (object):
                       self.priorityJobAllocationCursor.execute("delete from priorityJobs where uuid = %s", (uuid,))
                       self.priorityJobAllocationDatabaseConnection.commit()
               except KeyboardInterrupt:
-                logger.debug("%s - inner QUITTING", threading.currentThread().getName())
+                logger.debug("%s - inner detects quit", threading.currentThread().getName())
                 raise
               except:
                 self.priorityJobAllocationDatabaseConnection.rollback()
@@ -391,7 +413,7 @@ class Monitor (object):
           logger.debug("%s - sleeping", threading.currentThread().getName())
           self.responsiveSleep(self.config.priorityLoopDelay)
       except (KeyboardInterrupt, SystemExit):
-        logger.debug("%s - outer QUITTING", threading.currentThread().getName())
+        logger.debug("%s - outer detects quit", threading.currentThread().getName())
         self.priorityJobAllocationDatabaseConnection.rollback()
         self.quit = True
     finally:

@@ -14,7 +14,7 @@ except configurationManager.NotAnOptionError, x:
   print >>sys.stderr, x
   print >>sys.stderr, "for usage, try --help"
   sys.exit()
-  
+
 logger = logging.getLogger("processor")
 logger.setLevel(logging.DEBUG)
 
@@ -39,6 +39,6 @@ finally:
   logger.info("done.")
   rotatingFileLog.flush()
   rotatingFileLog.close()
-  
+
 
 

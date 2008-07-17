@@ -9,6 +9,7 @@ import os.path
 import threading
 import re
 import signal
+import sets
 
 import logging
 
@@ -24,11 +25,11 @@ class UTC(datetime.tzinfo):
   """
   """
   ZERO = datetime.timedelta(0)
- 
+
   #-----------------------------------------------------------------------------------------------------------------
   def __init__(self):
     super(UTC, self).__init__(self)
-  
+
   #-----------------------------------------------------------------------------------------------------------------
   def utcoffset(self, dt):
     return UTC.ZERO
@@ -40,7 +41,7 @@ class UTC(datetime.tzinfo):
   #-----------------------------------------------------------------------------------------------------------------
   def dst(self, dt):
     return UTC.ZERO
-  
+
 #==========================================================
 class DuplicateEntryException(Exception):
   pass
@@ -49,22 +50,22 @@ class DuplicateEntryException(Exception):
 class Processor(object):
   """ This class is a mechanism for processing the json and dump file pairs.  It fetches assignments
       from the 'jobs' table in the database and uses a group of threads to process them.
-      
+
       class member data:
         buildDatePattern: a regular expression that partitions an appropriately formatted string into
             four groups
         utctz: a time zone instance for Universal Time Coordinate
-        fixupSpace: a regular expression used to remove spaces before all stars, ampersands, and 
+        fixupSpace: a regular expression used to remove spaces before all stars, ampersands, and
             commas
         fixupComma: a regular expression used to ensure a space after commas
-      
+
       instance member data:
         self.mainThreadDatabaseConnection: the connection to the database used by the main thread
         self.mainThreadCursor: a cursor associated with the main thread's database connection
         self.processorId: each instance of Processor registers itself in the database.  This enables
             the monitor process to assign jobs to specific processors.  This value is the unique
             identifier within the database for an instance of Processor
-        self.stopProcessing: a boolean used for internal communication between threads.  Since any
+        self.quit: a boolean used for internal communication between threads.  Since any
             thread may receive the KeyboardInterrupt signal, the receiving thread just has to set this
             variable to True.  All threads periodically check it.  If a thread sees it as True, it abandons
             what it is working on and throws away any subsequent tasks.  The main thread, on seeing
@@ -83,38 +84,40 @@ class Processor(object):
   fixupComma = re.compile(r'(?<=,)(?! )')
   filename_re = re.compile('[/\\\\]([^/\\\\]+)$')
   utctz = UTC()
-  
+
   #-----------------------------------------------------------------------------------------------------------------
   def __init__ (self, config):
     """
     """
     super(Processor, self).__init__()
     self.config = config
-    
+
     signal.signal(signal.SIGTERM, Processor.respondToSIGTERM)
-    
-    self.stopProcessing = False
-    
+
+    self.quit = False
+
     logger.info("%s - connecting to database", threading.currentThread().getName())
     try:
       self.mainThreadDatabaseConnection = psycopg2.connect(self.config.databaseDSN)
       self.mainThreadCursor = self.mainThreadDatabaseConnection.cursor()
     except:
       socorro.lib.util.reportExceptionAndAbort(logger) # can't continue without a database connection
-      
+
     #register self with the processors table in the database
     logger.info("%s - registering with 'processors' table", threading.currentThread().getName())
     try:
-      processorName = "%s:%d" % (os.uname()[1], os.getpid())
-      self.mainThreadCursor.execute("insert into processors (name, startDateTime, lastSeenDateTime) values (%s, now(), now())", (processorName,))
-      self.mainThreadCursor.execute("select id from processors where name = %s", (processorName,))
+      self.processorName = "%s_%d" % (os.uname()[1], os.getpid())
+      self.mainThreadCursor.execute("insert into processors (name, startDateTime, lastSeenDateTime) values (%s, now(), now())", (self.processorName,))
+      self.mainThreadCursor.execute("select id from processors where name = %s", (self.processorName,))
       self.processorId = self.mainThreadCursor.fetchall()[0][0]
+      self.priorityJobsTableName = "priority_jobs_%d" % self.processorId
+      self.mainThreadCursor.execute("create table %s (uuid varchar(50) not null primary key)" % self.priorityJobsTableName)
       self.mainThreadDatabaseConnection.commit()
     except:
       socorro.lib.util.reportExceptionAndAbort(logger) # can't continue without a registration
-      
+
     self.getNextJobSQL = "select j.id, j.pathname, j.uuid from jobs j where j.owner = %d and startedDateTime is null order by priority desc, queuedDateTime asc limit 1" % self.processorId
-    
+
     # start the thread manager with the number of threads specified in the configuration.  The second parameter controls the size
     # of the internal task queue within the thread manager.  It is constrained so that the queue remains starved.  This means that tasks
     # remain queued in the database until the last minute.  This allows some external process to change the priority of a job by changing
@@ -123,7 +126,61 @@ class Processor(object):
     logger.info("%s - starting worker threads", threading.currentThread().getName())
     self.threadManager = socorro.lib.threadlib.TaskManager(self.config.numberOfThreads, self.config.numberOfThreads * 2)
     self.threadLocalDatabaseConnections = {}
-    
+    logger.info("%s - I am processor #%d", threading.currentThread().getName(), self.processorId)
+    logger.info("%s -   my priority jobs table is called: '%s'", threading.currentThread().getName(), self.priorityJobsTableName)
+
+  #-----------------------------------------------------------------------------------------------------------------
+  def quitCheck(self):
+    if self.quit:
+      raise KeyboardInterrupt
+
+  #-----------------------------------------------------------------------------------------------------------------
+  def responsiveSleep (self, seconds):
+    for x in xrange(int(seconds)):
+      self.quitCheck()
+      time.sleep(1.0)
+
+  #-----------------------------------------------------------------------------------------------------------------
+  def cleanup(self):
+    """ clean up before shutdown
+    """
+    logger.info("%s - waiting for threads to stop", threading.currentThread().getName())
+    self.threadManager.waitForCompletion()
+    logger.info("%s - all threads stopped", threading.currentThread().getName())
+
+    # we're done - kill all the threads' database connections
+    logger.debug("%s - killing thread database connections", threading.currentThread().getName())
+    for i, aDatabaseConnection in enumerate(self.threadLocalDatabaseConnections.values()):
+      try:
+        aDatabaseConnection.rollback()
+        aDatabaseConnection.close()
+        logger.debug("%s -   connection %d closed", threading.currentThread().getName(), i)
+      except psycopg2.InterfaceError:
+        logger.debug("%s -   connection %d already closed", threading.currentThread().getName(), i)
+      except:
+        socorro.lib.util.reportExceptionAndContinue(logger)
+
+    try:
+      # force the processor to record a lastSeenDateTime in the distant past so that the monitor will
+      # mark it as dead.  The monitor will process its completed jobs and reallocate it unfinished ones.
+      logger.debug("%s - unregistering processor", threading.currentThread().getName())
+      self.mainThreadCursor.execute("update processors set lastSeenDateTime = '1999-01-01' where id = %s", (self.processorId,))
+      self.mainThreadDatabaseConnection.commit()
+    except Exception, x:
+      logger.critical("%s - could not unregister %d from the database", threading.currentThread().getName(), self.processorId)
+      socorro.lib.util.reportExceptionAndContinue(logger)
+
+    try:
+      self.mainThreadCursor.execute("drop table %s" % self.priorityJobsTableName)
+      self.mainThreadDatabaseConnection.commit()
+      self.mainThreadDatabaseConnection.close()
+    except psycopg2.Error:
+      logger.error("%s - Cannot complete cleanup.  %s may need manual deletion", threading.currentThread().getName(), self.priorityJobsTableName)
+      socorro.lib.util.reportExceptionAndContinue(logger)
+
+    logger.debug("%s - done with work", threading.currentThread().getName())
+
+
   #-----------------------------------------------------------------------------------------------------------------
   @staticmethod
   def respondToSIGTERM(signalNumber, frame):
@@ -135,40 +192,104 @@ class Processor(object):
     raise KeyboardInterrupt
 
   #-----------------------------------------------------------------------------------------------------------------
-  @staticmethod  
+  @staticmethod
   def make_signature(module_name, function, source, source_line, instruction):
     """ returns a structured conglomeration of the input parameters to serve as a signature
     """
     if function is not None:
       # Remove spaces before all stars, ampersands, and commas
       function = re.sub(Processor.fixupSpace, '', function)
-  
-      # Ensure a space after commas 
+
+      # Ensure a space after commas
       function = re.sub(Processor.fixupComma, ' ', function)
       return function
-  
+
     if source is not None and source_line is not None:
       filename = filename_re.search(source)
       if filename is not None:
         source = filename.group(1)
-  
+
       return '%s#%s' % (source, source_line)
-  
+
     if module_name is not None:
       return '%s@%s' % (module_name, instruction)
-  
+
     return '@%s' % instruction
 
   #-----------------------------------------------------------------------------------------------------------------
   def updateRegistrationNoCommit(self, aCursor):
     """ a processor must keep its database registration current.  If a processor has not updated its
-        record in the database in the interval specified in as self.config.processorCheckInTime, the 
+        record in the database in the interval specified in as self.config.processorCheckInTime, the
         monitor will consider it to be expired.  The monitor will stop assigning jobs to it and reallocate
         its unfinished jobs to other processors.
     """
     logger.debug("%s - updating 'processor' table registration", threading.currentThread().getName())
     aCursor.execute("update processors set lastSeenDateTime = %s where id = %s", (datetime.datetime.now(), self.processorId))
-    
+
+  #-----------------------------------------------------------------------------------------------------------------
+  def submitJobToThreads(self, aJobTuple):
+    self.mainThreadCursor.execute("update jobs set startedDateTime = %s where id = %s", (datetime.datetime.now(), aJobTuple[0]))
+    self.mainThreadDatabaseConnection.commit()
+    logger.info("%s - queuing job %d, %s, %s", threading.currentThread().getName(), aJobTuple[0], aJobTuple[2], aJobTuple[1])
+    self.threadManager.newTask(self.processJob, aJobTuple)
+
+  #-----------------------------------------------------------------------------------------------------------------
+  def incomingJobStream(self):
+    """
+       aJobTuple has this form: (jobId, jobUuid, jobPathname, jobPriority) jobPriority is optional
+    """
+    jobList = {}
+    preexistingPriorityJobs = set()
+    while (True):
+      self.quitCheck()
+      try:
+        lastPriorityCheckTimestamp = datetime.datetime.now()
+        self.mainThreadCursor.execute("select uuid from %s" % self.priorityJobsTableName)
+        setOfPriorityJobs = preexistingPriorityJobs | set([x[0] for x in self.mainThreadCursor.fetchall()])
+        logger.debug("%s - priorityJobs: %s", threading.currentThread().getName(), setOfPriorityJobs)
+        if setOfPriorityJobs:
+          for aPriorityJobUuid in setOfPriorityJobs:
+            try:
+              aJobTuple = jobList[aPriorityJobUuid]
+              del jobList[aPriorityJobUuid]
+              self.mainThreadCursor.execute("delete from %s where uuid = '%s'" % (self.priorityJobsTableName, aPriorityJobUuid))
+              self.mainThreadDatabaseConnection.commit()
+              logger.debug("%s - incomingJobStream yielding priority from existing job list: %s", threading.currentThread().getName(), aJobTuple[1])
+              yield aJobTuple
+            except KeyError:
+              self.mainThreadCursor.execute("select j.id, j.uuid, j.pathname, j.priority from jobs j where j.uuid = '%s'" % aPriorityJobUuid)
+              try:
+                try:
+                  aJobTuple = self.mainThreadCursor.fetchall()[0]
+                finally:
+                  self.mainThreadCursor.execute("delete from %s where uuid = '%s'" % (self.priorityJobsTableName, aPriorityJobUuid))
+                  self.mainThreadDatabaseConnection.commit()
+                logger.debug("%s - incomingJobStream yielding priority from database: %s", threading.currentThread().getName(), aJobTuple[1])
+                yield aJobTuple
+              except IndexError:
+                logger.warning("%s - the priority job %s was never found", threading.currentThread().getName(), aPriorityJobUuid)
+          continue  # done processing priorities - start the loop again in case there are more priorities
+        preexistingPriorityJobs = set()
+        if not jobList:
+          self.mainThreadCursor.execute("select j.id, j.uuid, j.pathname, j.priority from jobs j where j.owner = %d and j.starteddatetime is null order by j.priority desc limit %d" % (self.processorId, self.config.batchJobLimit))
+          for aJobTuple in self.mainThreadCursor.fetchall():
+            jobList[aJobTuple[1]] = aJobTuple
+            if aJobTuple[3]:  #check priority
+              logger.debug("%s - adding priority job found in database: %s", threading.currentThread().getName(), aJobTuple[1])
+              preexistingPriorityJobs.add(aJobTuple[1])
+          if not jobList:
+            logger.info("%s - no jobs to do - sleeping %d seconds", threading.currentThread().getName(), self.config.processorLoopTime)
+            self.responsiveSleep(self.config.processorLoopTime)
+        for aJobTuple in jobList.values():
+          if lastPriorityCheckTimestamp + self.config.checkForPriorityFrequency < datetime.datetime.now():
+            break
+          del jobList[aJobTuple[1]]
+          yield aJobTuple
+          logger.debug("%s - incomingJobStream yielding standard from job list: %s", threading.currentThread().getName(), aJobTuple[1])
+      except psycopg2.Error:
+        socorro.lib.util.reportExceptionAndAbort()
+
+
   #-----------------------------------------------------------------------------------------------------------------
   def start(self):
     """ Run by the main thread, this function fetches jobs from the database one at a time
@@ -179,71 +300,35 @@ class Processor(object):
     sqlErrorCounter = 0
     while (True):
       try:
-        if self.stopProcessing: raise KeyboardInterrupt
         #get a job
-        try:
-          self.mainThreadCursor.execute(self.getNextJobSQL)
-          jobId, jobPathname, jobUuid = self.mainThreadCursor.fetchall()[0]
-        except psycopg2.Error:
-          socorro.lib.util.reportExceptionAndContinue(logger)
-          sqlErrorCounter += 1
-          if sqlErrorCounter == 10:
-            logger.critical("%s - too many server errors - quitting", threading.currentThread().getName())
-            self.stopProcessing = True
-            break
-          continue
-        except IndexError:
-          logger.info("%s - no jobs to do.  Waiting %s seconds", threading.currentThread().getName(), self.config.processorLoopTime)
-          time.sleep(self.config.processorLoopTime)
-          self.updateRegistrationNoCommit(self.mainThreadCursor)
-          self.mainThreadDatabaseConnection.commit()
-          continue
-        sqlErrorCounter = 0
-        
-        self.mainThreadCursor.execute("update jobs set startedDateTime = %s where id = %s", (datetime.datetime.now(), jobId))
-        self.mainThreadDatabaseConnection.commit()
-        logger.info("%s - queuing job %d, %s, %s",  threading.currentThread().getName(), jobId, jobUuid, jobPathname)
-        self.threadManager.newTask(self.processJob, (jobId, jobUuid, jobPathname))
-        
+        lastCheckInTimestamp = datetime.datetime(1950, 1, 1)
+        for aJobTuple in self.incomingJobStream():
+          self.quitCheck()
+          self.submitJobToThreads(aJobTuple)
+          if lastCheckInTimestamp + self.config.processorCheckInFrequency < datetime.datetime.now():
+            self.updateRegistrationNoCommit(self.mainThreadCursor)
+            self.mainThreadDatabaseConnection.commit()
+            lastCheckInTimestamp = datetime.datetime.now()
       except KeyboardInterrupt:
         logger.info("%s - quit request detected", threading.currentThread().getName())
         self.mainThreadDatabaseConnection.rollback()
-        self.stopProcessing = True
+        self.quit = True
         break
-      
-    logger.info("%s - waiting for threads to stop", threading.currentThread().getName())
-    self.threadManager.waitForCompletion()
-    
-    # we're done - kill all the threads' database connections
-    for aDatabaseConnection in self.threadLocalDatabaseConnections.values():
-      try:
-        aDatabaseConnection.rollback()
-        aDatabaseConnection.close()
-      except:
-        pass
-    
-    try:
-      # force the processor to record a lastSeenDateTime in the distant past so that the monitor will
-      # mark it as dead.  The monitor will process its completed jobs and reallocate it unfinished ones.
-      self.mainThreadCursor.execute("update processors set lastSeenDateTime = '1999-01-01' where id = %s", (self.processorId,))
-      self.mainThreadDatabaseConnection.commit()
-    except Exception, x:
-      logger.critical("%s - could not unregister %d from the database", threading.currentThread().getName(), self.processorId)
-      reportExceptionAndAbort(logger)
-  
+    self.cleanup()
+
   #-----------------------------------------------------------------------------------------------------------------
   def processJob (self, jobTuple):
     """ This function is run only by a worker thread.
-        Given a job, fetch a thread local database connection and the json document.  Use these 
+        Given a job, fetch a thread local database connection and the json document.  Use these
         to create the record in the 'reports' table, then start the analysis of the dump file.
-        
+
         input parameters:
           jobTuple: a tuple containing three items: the jobId (the primary key from the jobs table), the
               jobUuid (a unique string with the json file basename minus the extension) and the jobPathname
               (a string with the full pathname of the json file that defines the job)
     """
     try:
-      if self.stopProcessing: return
+      if self.quit: return
       try:
         threadLocalDatabaseConnection = self.threadLocalDatabaseConnections[threading.currentThread().getName()]
       except KeyError:
@@ -254,16 +339,25 @@ class Processor(object):
           socorro.lib.util.reportExceptionAndAbort(logger) # can't continue without a database connection
     except (KeyboardInterrupt, SystemExit):
       logger.info("%s - quit request detected", threading.currentThread().getName())
-      self.stopProcessing = True
+      self.quit = True
       return
+
     try:
-      jobId, jobUuid, jobPathname = jobTuple
+      threadLocalCursor = threadLocalDatabaseConnection.cursor()
+      threadLocalCursor.execute("select 1")
+    except psycopg2.OperationalError:
+      # did the connection time out?
+      # try to re-establish:
+      threadLocalDatabaseConnection = self.threadLocalDatabaseConnections[threading.currentThread().getName()] = psycopg2.connect(self.config.databaseDSN)
+
+    try:
+      jobId, jobUuid, jobPathname, jobPriority = jobTuple
       logger.info("%s - starting job: %s, %s", threading.currentThread().getName(), jobId, jobUuid)
       threadLocalCursor = threadLocalDatabaseConnection.cursor()
       startedDateTime = datetime.datetime.now()
       threadLocalCursor.execute("update jobs set startedDateTime = %s where id = %s", (startedDateTime, jobId))
       threadLocalDatabaseConnection.commit()
-      
+
       jsonFile = open(jobPathname)
       try:
         jsonDocument = simplejson.load(jsonFile)
@@ -273,24 +367,26 @@ class Processor(object):
       threadLocalDatabaseConnection.commit()
       dumpfilePathname = "%s%s" % (jobPathname[:-len(self.config.jsonFileSuffix)], self.config.dumpFileSuffix)
       truncated = self.doBreakpadStackDumpAnalysis(reportId, jobUuid, dumpfilePathname, threadLocalCursor)
-      if self.stopProcessing: raise KeyboardInterrupt
+      self.quitCheck()
       #finished a job - cleanup
       threadLocalCursor.execute("update jobs set completedDateTime = %s, success = True where id = %s", (datetime.datetime.now(), jobId))
       threadLocalCursor.execute("update reports set startedDateTime = %s, completedDateTime = %s, success = True, truncated = %s where id = %s", (startedDateTime, datetime.datetime.now(), truncated, reportId))
-      self.updateRegistrationNoCommit(threadLocalCursor)
+      #self.updateRegistrationNoCommit(threadLocalCursor)
       threadLocalDatabaseConnection.commit()
       logger.info("%s - succeeded and committed: %s, %s", threading.currentThread().getName(), jobId, jobUuid)
     except (KeyboardInterrupt, SystemExit):
       logger.info("%s - quit request detected", threading.currentThread().getName())
-      self.stopProcessing = True
+      self.quit = True
       try:
         logger.info("%s - abandoning job with rollback: %s, %s", threading.currentThread().getName(), jobId, jobUuid)
         threadLocalDatabaseConnection.rollback()
         threadLocalDatabaseConnection.close()
       except:
-        pass 
+        pass
     except DuplicateEntryException, x:
       logger.warning("%s - duplicate entry: %s", threading.currentThread().getName(), jobUuid)
+    except psycopg2.OperationalError:
+      socorro.lib.util.reportExceptionAndAbort(logger)
     except Exception, x:
       socorro.lib.util.reportExceptionAndContinue(logger)
       threadLocalDatabaseConnection.rollback()
@@ -304,9 +400,9 @@ class Processor(object):
 
   #-----------------------------------------------------------------------------------------------------------------
   def createReport(self, threadLocalCursor, uuid, jsonDocument, jobPathname):
-    """ This function is run only by a worker thread. 
+    """ This function is run only by a worker thread.
         Create the record for the current job in the 'reports' table
-        
+
         input parameters:
           threadLocalCursor: a database cursor for exclusive use by the calling thread
           uuid: the unique id identifying the job - corresponds with the uuid column in the 'jobs'
@@ -327,7 +423,7 @@ class Processor(object):
     comments = socorro.lib.util.lookupLimitedStringOrNone(jsonDocument, 'Comments', 500)
     crash_time = None
     install_age = None
-    uptime = 0 
+    uptime = 0
     report_date = datetime.datetime.now()
     try:
       crash_time = int(jsonDocument['CrashTime'])
@@ -390,7 +486,7 @@ class Processor(object):
 
   #-----------------------------------------------------------------------------------------------------------------
   def doBreakpadStackDumpAnalysis (self, reportId, uuid, dumpfilePathname, databaseCursor):
-    """ This function is run only by a worker thread. 
+    """ This function is run only by a worker thread.
         This function must be overriden in a subclass - this method will invoke the breakpad_stackwalk process
         (if necessary) and then do the anaylsis of the output
     """

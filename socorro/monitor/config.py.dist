@@ -45,12 +45,12 @@ standardLoopDelay.doc = 'the delay in seconds between filesystem walks looking f
 standardLoopDelay.default = 300
 
 cleanupLoopDelay = cm.Option()
-cleanupLoopDelay.doc = 'the delay in seconds between checks for priority jobs'
+cleanupLoopDelay.doc = 'the frequency of directory clean up routines in seconds'
 cleanupLoopDelay.default = 60 * 60 * 4  # 4hrs * 60min * 60sec
 
 priorityLoopDelay = cm.Option()
 priorityLoopDelay.doc = 'the delay in seconds between checks for priority jobs'
-priorityLoopDelay.default = 5
+priorityLoopDelay.default = 60
 
 saveMinidumpsTo = cm.Option()
 saveMinidumpsTo.doc = 'the location for saving dumps'
