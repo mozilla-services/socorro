@@ -111,7 +111,7 @@ class Processor(object):
       if self.config.processorId:
         try:
           self.mainThreadCursor.execute("update processors set name = %s, startDateTime = now(), lastSeenDateTime = now() where id = %s", (self.processorName, self.config.processorId))
-          self.mainThreadCursor.execute("update jobs set starteddatetime = NULL where success is null and owner = %s", (self.config.processorId, ))
+          self.mainThreadCursor.execute("update jobs set starteddatetime = NULL where id in (select id from jobs where starteddatetime is not null and success is null and owner = %s)", (self.config.processorId, ))
           self.processorId = self.config.processorId
         except:
           self.mainThreadDatabaseConnection.rollback()
