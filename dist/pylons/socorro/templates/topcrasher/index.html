@@ -10,16 +10,6 @@
 <body>
 
 <div id="content">
-
- <h1 class="first">Top Crashers by Branch</h1>
- <ul>
-  <li py:for="row in c.branches">
-   <a href="${ h.url_for('/'+'/'.join(['topcrasher',
-            'bybranch',
-            row.branch])) }">${row.branch}</a>
-  </li>
- </ul>
- 
  <h1>Top Crashers by Version</h1>
  <ul>
   <li py:for="row in c.product_versions">
@@ -32,6 +22,5 @@
 
 </div>
 <!-- end content -->
-
 </body>
 </html>

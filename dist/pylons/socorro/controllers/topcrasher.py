@@ -1,7 +1,7 @@
 from socorro.models import Report, reports_table, Branch, branches_table
 from socorro.models import getCachedBranchData
 from socorro.lib.base import BaseController
-from socorro.lib.queryparams import BaseLimit, getCrashesForParams
+from socorro.lib.queryparams import BaseLimit, getTopCrashes
 from socorro.lib.http_cache import responseForKey
 from pylons.database import create_engine
 from pylons import c, session, request
@@ -34,9 +34,13 @@ class TopcrasherController(BaseController):
     The purpose of this action is to generate topcrasher reports based on
     product and version.
     """
-    c.params = BaseLimit(versions=[(product, version)], buildid=buildId, range=(2, 'weeks'))
-    (c.tc, ts) = getCrashesForParams(c.params,"v_%s%s%s" % (product, version, buildId))
-    etag = "%s%s%s%s" % (product, version, buildId, ts)
+    if buildId:
+      (c.tc, ts, c.last_updated) = getTopCrashes(product, version, "v_%s%s%s" % (product, version, buildId), buildId=buildId)
+      etag = "%s%s%s%s" % (product, version, buildId, ts)
+    else:
+      (c.tc, ts, c.last_updated) = getTopCrashes(product, version, "v_%s%s" % (product, version))
+      etag = "%s%s%s" % (product, version, ts)
+
     resp = responseForKey(etag)
     resp.write(render('topcrasher/byversion'))
     return resp
@@ -46,6 +50,7 @@ class TopcrasherController(BaseController):
     The purpose of this action is to generate topcrasher reports based on
     branch.
     """
+    
     c.params = BaseLimit(branches=[branch], range=(2, 'weeks'))
     (c.tc, ts) = getCrashesForParams(c.params, "branch_" + branch)
     etag = "%s%s" % (branch, ts)
