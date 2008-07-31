@@ -150,7 +150,7 @@
 /**
  * A random string used in security hashing methods.
  */
-	Configure::write('Security.salt', 'DYhG93b0qyJfIxfs2guVoUubWwvniR2G0FgaC9mi');
+	Configure::write('Security.salt', 'sucka');
 /**
  * Compress CSS output by removing comments, whitespace, repeating tags, etc.
  * This requires a/var/cache directory to be writable by the web server for caching.
@@ -213,17 +213,17 @@
  *
  * Memcache (http://www.danga.com/memcached/)
  *
- * 	 Cache::config('default', array(
- *		'engine' => 'Memcache', //[required]
- *		'duration'=> 3600, //[optional]
- *		'probability'=> 100, //[optional]
- * 		'prefix' => Inflector::slug(APP_DIR) . '_', //[optional]  prefix every cache file with this string
- * 		'servers' => array(
- * 			'127.0.0.1:11211' // localhost, default port 11211
- * 		), //[optional]
- * 		'compress' => false, // [optional] compress data in Memcache (slower, but uses less memory)
- *	));
+	Cache::config('default', array('engine' => 'File'));
  *
  */
-	Cache::config('default', array('engine' => 'File'));
+Cache::config('default', array(
+    'engine' => 'Memcache', //[required]
+    'duration'=> 3600, //[optional]
+    'probability'=> 100, //[optional]
+    'prefix' => Inflector::slug(APP_DIR) . '_', //[optional]  prefix every cache file with this string
+    'servers' => array(
+        '127.0.0.1:11211' // localhost, default port 11211
+    ), //[optional]
+    'compress' => false, // [optional] compress data in Memcache (slower, but uses less memory)
+));
 ?>
