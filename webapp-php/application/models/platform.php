@@ -1,0 +1,68 @@
+<?php defined('SYSPATH') or die('No direct script access.');
+/**
+ *
+ */
+
+/**
+ * Row class for platform info
+ */
+class Platform {
+
+    public function __construct($id, $name, $os_name, $color) {
+        $this->id      = $id;
+        $this->name    = $name;
+        $this->os_name = $os_name;
+        $this->color   = $color;
+    }
+
+}
+
+/**
+ * Common model class managing the set of platforms
+ */
+class Platform_Model extends Model {
+
+    public static $platform_list;
+
+    /**
+     * Construct ths set of known platforms.
+     */
+    public function __construct() {
+        parent::__construct();
+
+        // TODO: This should probably be in a config file somewhere.
+        $platforms = array(
+            new Platform('windows', 'Windows', 'Windows NT', '#99F'),
+            new Platform('mac', 'Mac OS X', 'Mac OS X', '#3C3'),
+            new Platform('linux', 'Linux', 'Linux', '#C90'),
+            new Platform('solaris', 'Solaris', 'Solaris', '#A91')
+        );
+
+        $this->platform_list = array();
+        foreach ($platforms as $platform) {
+            $this->platform_list[$platform->id] = $platform;
+        }
+
+    }
+
+    /**
+     * Get a list of all known platforms.
+     *
+     * @return array List of platforms
+     */
+    public function getAll() {
+        return array_values($this->platform_list);
+    }
+
+    /**
+     * Fetch a platform by ID, if available.
+     *
+     * @param  string Platform ID
+     * @return object The platform found, or FALSE
+     */
+    public function get($id) {
+        return array_key_exists($id, $this->platform_list) ?
+            $this->platform_list[$id] : FALSE;
+    }
+
+}
