@@ -23,7 +23,7 @@ class Report_Controller extends Controller {
             'query_search' => 'signature',
             'query_type'   => 'contains',
             'query'        => '',
-            'date'         => date('Y-m-d', time()),
+            'date'         => '',
             'range_value'  => '1',
             'range_unit'   => 'weeks',
 
@@ -31,10 +31,12 @@ class Report_Controller extends Controller {
         ));
 
         $reports = $this->common_model->queryReports($params);
+        $builds  = $this->common_model->queryFrequency($params);
 
         $this->setViewData(array(
             'params'  => $params,
             'reports' => $reports,
+            'builds'  => $builds,
 
             'all_products'  => $branch_data['products'],
             'all_branches'  => $branch_data['branches'],

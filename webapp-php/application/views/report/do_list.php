@@ -2,7 +2,7 @@
     <title>Crash Reports in <?php out::H($params['signature']) ?></title>
 
     <?php echo html::stylesheet(array(
-        'css/flora/flora.tablesorter.css'
+        'css/flora/flora.all.css'
     ), 'screen')?>
 
     <?php echo html::script(array(
@@ -42,6 +42,11 @@
    }
   </style>    
 
+    <?php echo html::stylesheet(array(
+        'css/layout.css',
+        'css/style.css'
+    ), 'screen')?>
+
 <?php slot::end() ?>
 
 <h1 class="first">Crash Reports in <?php out::H($params['signature']) ?></h1>
@@ -75,25 +80,29 @@
             <thead>
                 <tr>
                     <th>Build ID</th>
-                    <th py:if="len(c.params.platforms) != 1">Crashes</th>
-                    <th py:for="platform in platformList"
-                        py:if="len(c.params.platforms) == 0 or platform in c.params.platforms">
-                        ${platform.name()[:3]}
-                    </th>
+                    <?php if (count($all_platforms) != 1): ?><th>Crashes</th><?php endif ?>
+                    <?php foreach ($all_platforms as $platform): ?>
+                        <th><?php out::H(substr($platform->name, 0, 3)) ?></th>
+                    <?php endforeach ?>
                 </tr>
             </thead>
             <tbody>
-                <tr py:for="build in c.builds">
-                    <td class="human-buildid">${build.build_date.strftime('%Y%m%d%H')}</td>
+                <?php foreach ($builds as $build): ?>
+                <tr>
+                    <td class="human-buildid"><?php out::H(date('YmdH', strtotime($build->build_date))) ?></td>
+                    <?php if (count($all_platforms) != 1): ?>
                     <td class="crash-count" py:if="len(c.params.platforms) != 1">
-                        ${build.count} - ${"%.3f%%" % (build.frequency * 100)}
+                        <?php out::H($build->count) ?> - <?php printf("%.3f%%", ($build->frequency * 100)) ?>
                     </td>
-                    <td py:for="platform in platformList"
-                        py:if="len(c.params.platforms) == 0 or platform in c.params.platforms">
-                        ${getattr(build, 'count_%s' % platform.id())} -
-                        ${"%.3f%%" % (getattr(build, 'frequency_%s' % platform.id()) * 100)}
-                    </td>
+                    <?php endif ?>
+                    <?php foreach ($all_platforms as $platform): ?>
+                        <td>
+                            <?php out::H($build->{"count_$platform->id"}) ?> - 
+                            <?php printf("%.3f%%", ($build->{"frequency_$platform->id"} * 100)) ?>
+                        </td>
+                    <?php endforeach ?>
                 </tr>
+                <?php endforeach ?>
             </tbody>
         </table>
     </div>
@@ -109,21 +118,20 @@
  <script type="text/javascript">
 
  var data = [
-  <py:for each="build in c.builds" py:if="build.total > 10">
-   [ ${timegm(build.build_date.utctimetuple()) * 1000}, ${build.total},
-    <py:for each="platform in platformList"
-            py:if="len(c.params.platforms) == 0 or platform in c.params.platforms">
-     ${getattr(build, 'frequency_%s' % platform.id())},
-    </py:for>
+  <?php foreach ($builds as $build): ?>
+    <?php if ($build->total <= 10) continue ?>
+    [ <?php echo strtotime($build->build_date) ?> * 1000 , <?php out::H($build->total) ?>,
+    <?php foreach ($all_platforms as $platform): ?>
+        <?php out::H($build->{"frequency_$platform->id"}) ?> , 
+    <?php endforeach ?>
    ],
-  </py:for>
+  <?php endforeach ?>
   null
  ];
  data.pop();
 
- var total_platforms = ${len(c.params.platforms) == 0 and 3 or len(c.params.platforms)};
+ var total_platforms = <?php echo count($all_platforms) ?>;
 
- <![CDATA[
  var minDate = 1e+14;
  var maxDate = 0;
  var maxValue = 0;
@@ -195,17 +203,15 @@
 
  if (maxValue > 0) {
    var colors = [
- ]]>
- <py:for each="platform in platformList"
-         py:if="len(c.params.platforms) == 0 or platform in c.params.platforms">
-     Color.fromHexString('${platform.color()}'),
- </py:for>
+    <?php foreach ($all_platforms as $platform): ?>
+         Color.fromHexString('<?php echo $platform->color ?>'),
+    <?php endforeach ?>
      null
    ]; 
    colors.pop();
 
    var chart = new CanvasRenderer(MochiKit.DOM.getElement('buildid-graph'), layout,
-                {IECanvasHTC: '${h.url_for('/js/PlotKit/iecanvas.htc')}',
+         {IECanvasHTC: '<?php echo url::base().'js/PlotKit/iecanvas.htc' ?>',
 		 colorScheme: colors,
 		 shouldStroke: true,
 		 strokeColor: null,

@@ -32,6 +32,34 @@ class Report_Model extends Model {
     }
 
     /**
+     * Given the details of a frame, build a signature for display.
+     */
+    public function _makeSignature($module_name, $function, $source, $source_line, $instruction) {
+        if ($function) {
+            // Remove spaces before all stars, ampersands, and commas
+            $function = preg_replace('/ (?=[\*&,])/', '', $function);
+            // Ensure a space after commas
+            $function = preg_replace('/(?<=,)(?! )/', '', $function);
+            return $function;
+        }
+
+        if ($source && $source_line) {
+            //filename_re = re.compile('[/\\\\]([^/\\\\]+)$')
+            //filename = filename_re.search(source)
+            //if filename is not None:
+            //  source = filename.group(1)
+            
+            return "$source#$source_line";
+        }
+    
+        if ($module_name) {
+            return "$module_name@$instruction";
+        }
+
+        return "@$instruction";
+    }
+
+    /**
      * Parse the data from a dump into report attributes.
      *
      * @param string Text blob from the report dump.
@@ -82,19 +110,47 @@ class Report_Model extends Model {
                     if (!isset($report->threads[$thread_num])) {
                         $report->threads[$thread_num] = array();
                     }
+                    
+                    $signature = $this->_makeSignature(
+                        $module_name, $function, $source, $source_line, $instruction
+                    );
+
+                    /*  TODO:
+                        # Settings for creating a link to a file in a given version control viewing 
+                        # website. For example: 
+                        #    {'cvs':{'cvs.mozilla.org/cvsroot':'http://bonsai.mozilla.org/cvsblame.cgi?file=%(file)s&rev=%(revision)s&mark=%(line)s#%(line)s'}} 
+                        
+                        if source is not None:
+                          vcsinfo = source.split(":")
+                          if len(vcsinfo) == 4:
+                            (type, root, source_file, revision) = vcsinfo
+                            self['source_filename'] = source_file
+                            if type in config.vcsMappings:
+                              if root in config.vcsMappings[type]:
+                                self['source_link'] = config.vcsMappings[type][root] % \
+                                                        {'file': source_file,
+                                                         'revision': revision,
+                                                         'line': source_line}
+                          else:
+                            self['source_filename'] = os.path.split(source)[1]
+
+                        if self['source_filename'] is not None and self['source_line'] is not None:
+                          self['source_info'] = self['source_filename'] + ":" + self['source_line']
+                     */
 
                     $frame = array(
                         'module_name'     => $module_name,
                         'frame_num'       => $frame_num,
                         'function'        => $function,
                         'instruction'     => $instruction,
-                        // TODO:
+                        'signature'       => $signature,
                         'source'          => $source,
                         'source_line'     => $source_line,
+                        'short_signature' => preg_replace('/\(.*\)/', '', $signature),
+                        // TODO:
+                        'source_filename' => '',
                         'source_link'     => '',
-                        'source_info'     => '',
-                        'signature'       => "$module_name SIG",
-                        'short_signature' => "$module_name SIG"
+                        'source_info'     => ''
                     );
 
                     $report->threads[$thread_num][] = $frame;

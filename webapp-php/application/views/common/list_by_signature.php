@@ -5,7 +5,7 @@
             <th>Signature</th>
             <?php if (count($platforms) > 1): ?><th>#</th><?php endif ?>
             <?php foreach ($platforms as $platform): ?>
-            <th><?php out::H(substr($platform->name, 0, 3)) ?></th>
+                <th><?php out::H(substr($platform->name, 0, 3)) ?></th>
             <?php endforeach ?>
         </tr>
     </thead>

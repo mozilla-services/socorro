@@ -20,7 +20,7 @@ class Query_Controller extends Controller {
             'query_search' => 'signature',
             'query_type'   => 'contains',
             'query'        => '',
-            'date'         => date('Y-m-d', time()),
+            'date'         => '',
             'range_value'  => '1',
             'range_unit'   => 'weeks',
 

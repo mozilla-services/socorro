@@ -1,6 +1,6 @@
 <?php defined('SYSPATH') or die('No direct script access.');
 /**
- *
+ * Common DB queries that span multiple tables and perform aggregate calculations or statistics.
  */
 class Common_Model extends Model {
 
@@ -15,9 +15,136 @@ class Common_Model extends Model {
     }
 
     /**
-     *
+     * Find top report signatures for the given search parameters.
      */
-    public function _buildCriteriaFromParams($params) {
+    public function queryTopSignatures($params) {
+
+        $columns = array(
+            'reports.signature', 'count(reports.id)'
+        );
+        $tables = array(
+        );
+        $where = array(
+        );
+
+        $platforms = $this->platform_model->getAll();
+        foreach ($platforms as $platform) {
+            $columns[] = 
+                "count(CASE WHEN (reports.os_name = '{$platform->os_name}') THEN 1 END) ".
+                "AS is_{$platform->id}";
+        }
+
+        list($params_tables, $params_where) = 
+            $this->_buildCriteriaFromSearchParams($params);
+
+        $tables += $params_tables;
+        $where  += $params_where;
+
+        $sql =
+            " SELECT " . join(', ', $columns) .
+            " FROM   " . join(', ', array_keys($tables)) .
+            " WHERE  " . join(' AND ', $where) .
+            " GROUP BY reports.signature " .
+            " ORDER BY count(reports.id) DESC " .
+            " LIMIT 100";
+
+        return $this->db->query($sql);
+    }
+
+    /**
+     * Find reports for the given search parameters.
+     */
+    public function queryReports($params) {
+
+        $columns = array(
+            'reports.date',
+            'reports.date_processed',
+            'reports.uptime',
+            'reports.comments',
+            'reports.uuid',
+            'reports.product',
+            'reports.version',
+            'reports.build',
+            'reports.signature',
+            'reports.url',
+            'reports.os_name',
+            'reports.os_version',
+            'reports.cpu_name',
+            'reports.cpu_info',
+            'reports.address',
+            'reports.reason',
+            'reports.last_crash',
+            'reports.install_age'
+        );
+        $tables = array(
+        );
+        $where = array(
+        );
+
+        list($params_tables, $params_where) = 
+            $this->_buildCriteriaFromSearchParams($params);
+
+        $tables += $params_tables;
+        $where  += $params_where;
+
+        $sql =
+            " SELECT " . join(', ', $columns) .
+            " FROM   " . join(', ', array_keys($tables)) .
+            " WHERE  " . join(' AND ', $where) .
+            " ORDER BY reports.date DESC " .
+            " LIMIT 500";
+
+        return $this->db->query($sql);
+    }
+
+    /**
+     * Calculate frequency of crashes across builds and platforms.
+     */
+    public function queryFrequency($params) {
+
+        $signature = $this->db->escape($params['signature']);
+
+        $columns = array(
+            "date_trunc('day', reports.build_date) AS build_date",
+            "count(CASE WHEN (reports.signature = $signature) THEN 1 END) AS count",
+            "CAST(count(CASE WHEN (reports.signature = $signature) THEN 1 END) AS FLOAT(10)) / count(reports.id) AS frequency", 
+            "count(reports.id) AS total"
+        );
+        $tables = array(
+        );
+        $where = array(
+        );
+
+        $platforms = $this->platform_model->getAll();
+        foreach ($platforms as $platform) {
+            $columns[] = 
+                "count(CASE WHEN (reports.signature = $signature AND reports.os_name = '{$platform->os_name}') THEN 1 END) AS count_{$platform->id}";
+            $columns[] = 
+                "CASE WHEN (count(CASE WHEN (reports.os_name = '{$platform->os_name}') THEN 1 END) > 0) THEN (CAST(count(CASE WHEN (reports.signature = $signature AND reports.os_name = '{$platform->os_name}') THEN 1 END) AS FLOAT(10)) / count(CASE WHEN (reports.os_name = '{$platform->os_name}') THEN 1 END)) ELSE 0.0 END AS frequency_{$platform->id}";
+        }
+
+        list($params_tables, $params_where) = 
+            $this->_buildCriteriaFromSearchParams($params);
+
+        $tables += $params_tables;
+        $where  += $params_where;
+
+        $sql =
+            " SELECT " . join(', ', $columns) .
+            " FROM   " . join(', ', array_keys($tables)) .
+            " WHERE  " . join(' AND ', $where) .
+            " GROUP BY date_trunc('day', reports.build_date) ".
+            " ORDER BY date_trunc('day', reports.build_date) DESC";
+
+        log::debug("queryFrequency $sql");
+
+        return $this->db->query($sql);
+    }
+
+    /**
+     * Build the WHERE part of a DB query based on search from parameters.
+     */
+    public function _buildCriteriaFromSearchParams($params) {
 
         $tables = array( 
             'reports' => 1 
@@ -91,220 +218,18 @@ class Common_Model extends Model {
 
         }
 
-        // date, range_value, range_unit
+        if ($params['range_value'] && $params['range_unit']) {
+            if (!$params['date']) {
+                $interval = $this->db->escape($params['range_value'] . ' ' . $params['range_unit']);
+                $where[] = "reports.date BETWEEN now() - CAST($interval AS INTERVAL) AND now()";
+            } else {
+                $date = $this->db->escape($params['date']);
+                $interval = $this->db->escape($params['range_value'] . ' ' . $params['range_unit']);
+                $where[] = "reports.date BETWEEN CAST($date AS DATE) - CAST($interval AS INTERVAL) AND CAST($date AS DATE)";
+            }
+        }
         
         return array($tables, $where);
     }
-
-    /**
-     *
-            'date'         => date('Y-m-d', time()),
-            'range_value'  => '1',
-            'range_unit'   => 'weeks',
-     */
-    public function queryTopSignatures($params) {
-
-        $columns = array(
-            'reports.signature', 'count(reports.id)'
-        );
-        $tables = array(
-        );
-        $where = array(
-        );
-
-        $platforms = $this->platform_model->getAll();
-        foreach ($platforms as $platform) {
-            $columns[] = 
-                "count(CASE WHEN (reports.os_name = '{$platform->os_name}') THEN 1 END) ".
-                "AS is_{$platform->id}";
-        }
-
-        list($params_tables, $params_where) = 
-            $this->_buildCriteriaFromParams($params);
-
-        $tables += $params_tables;
-        $where  += $params_where;
-
-        $sql =
-            " SELECT " . join(', ', $columns) .
-            " FROM   " . join(', ', array_keys($tables)) .
-            " WHERE  " . join(' AND ', $where) .
-            " GROUP BY reports.signature " .
-            " ORDER BY count(reports.id) DESC " .
-            " LIMIT 100";
-
-        log::debug("queryTopCrashes $sql");
-
-        return $this->db->query($sql);
-
-        $result = $this->db->query($sql);
-        $data = array();
-        foreach ($result as $row) {
-            $data[] = $row;
-        }
-
-        return $data;
-    }
-
-    /**
-     *
-     */
-    public function queryReports($params) {
-
-        $columns = array(
-            'reports.date',
-            'reports.date_processed',
-            'reports.uptime',
-            'reports.comments',
-            'reports.uuid',
-            'reports.product',
-            'reports.version',
-            'reports.build',
-            'reports.signature',
-            'reports.url',
-            'reports.os_name',
-            'reports.os_version',
-            'reports.cpu_name',
-            'reports.cpu_info',
-            'reports.address',
-            'reports.reason',
-            'reports.last_crash',
-            'reports.install_age'
-        );
-        $tables = array(
-        );
-        $where = array(
-        );
-
-        list($params_tables, $params_where) = 
-            $this->_buildCriteriaFromParams($params);
-
-        $tables += $params_tables;
-        $where  += $params_where;
-
-        $sql =
-            " SELECT " . join(', ', $columns) .
-            " FROM   " . join(', ', array_keys($tables)) .
-            " WHERE  " . join(' AND ', $where) .
-            " ORDER BY reports.date DESC " .
-            " LIMIT 500";
-
-        log::debug("queryReports $sql");
-
-        return $this->db->query($sql);
-
-        $result = $this->db->query($sql);
-        $data = array();
-        foreach ($result as $row) {
-            $data[] = $row;
-        }
-
-        log::log($data, 'reports', FirePHP::LOG);
-
-        return $data;
-
-    }
-
-    /**
-     *
-     */
-    public function queryFrequency($params) {
-
-    }
-/**
-SELECT 
-
-    date_trunc(%(date_trunc)s, reports.build_date) AS build_date, 
-    
-    count(CASE WHEN (reports.signature = %(reports_signature)s) THEN 1 END) AS count, 
-    CAST(count(CASE WHEN (reports.signature = %(reports_signature)s) THEN 1 END) AS FLOAT(10)) / count(reports.id) AS frequency, 
-    count(reports.id) AS total, 
-    
-    count(CASE WHEN (reports.signature = %(reports_signature_1)s AND reports.os_name = %(reports_os_name)s) THEN 1 END) AS count_windows, 
-    
-    CASE WHEN (count(CASE WHEN (reports.os_name = %(reports_os_name)s) THEN 1 END) > %(count)s) THEN (CAST(count(CASE WHEN (reports.signature = %(reports_signature_1)s AND reports.os_name = %(reports_os_name)s) THEN 1 END) AS FLOAT(10)) / count(CASE WHEN (reports.os_name = %(reports_os_name)s) THEN 1 END)) ELSE 0.0 END AS frequency_windows, 
-    
-    count(CASE WHEN (reports.signature = %(reports_signature_2)s AND reports.os_name = %(reports_os_name_1)s) THEN 1 END) AS count_mac,
-    
-    CASE WHEN (count(CASE WHEN (reports.os_name = %(reports_os_name_1)s) THEN 1 END) > %(count_1)s) THEN (CAST(count(CASE WHEN (reports.signature = %(reports_signature_2)s AND reports.os_name = %(reports_os_name_1)s) THEN 1 END) AS FLOAT(10)) / count(CASE WHEN (reports.os_name = %(reports_os_name_1)s) THEN 1 END)) ELSE 0.0 END AS frequency_mac, 
-    
-    count(CASE WHEN (reports.signature = %(reports_signature_3)s AND reports.os_name = %(reports_os_name_2)s) THEN 1 END) AS count_linux, 
-    
-    CASE WHEN (count(CASE WHEN (reports.os_name = %(reports_os_name_2)s) THEN 1 END) > %(count_2)s) THEN (CAST(count(CASE WHEN (reports.signature = %(reports_signature_3)s AND reports.os_name = %(reports_os_name_2)s) THEN 1 END) AS FLOAT(10)) / count(CASE WHEN (reports.os_name = %(reports_os_name_2)s) THEN 1 END)) ELSE 0.0 END AS frequency_linux, 
-    
-    count(CASE WHEN (reports.signature = %(reports_signature_4)s AND reports.os_name = %(reports_os_name_3)s) THEN 1 END) AS count_solaris, 
-
-    CASE WHEN (count(CASE WHEN (reports.os_name = %(reports_os_name_3)s) THEN 1 END) > %(count_3)s) THEN (CAST(count(CASE WHEN (reports.signature = %(reports_signature_4)s AND reports.os_name = %(reports_os_name_3)s) THEN 1 END) AS FLOAT(10)) / count(CASE WHEN (reports.os_name = %(reports_os_name_3)s) THEN 1 END)) ELSE 0.0 END AS frequency_solaris 
-
-    FROM reports, branches 
-
-    WHERE reports.build_date IS NOT NULL AND reports.signature IS NOT NULL AND reports.date BETWEEN CAST(%(literal)s AS DATE) - CAST(%(literal_1)s AS INTERVAL) AND CAST(%(literal_2)s AS DATE) AND reports.product = %(reports_product)s AND branches.branch = %(branches_branch)s AND branches.product = reports.product AND branches.version = reports.version AND (reports.product = %(reports_product_1)s AND reports.version = %(reports_version)s OR reports.product = %(reports_product_2)s AND reports.version = %(reports_version_1)s OR reports.product = %(reports_product_3)s AND reports.version = %(reports_version_2)s) AND reports.os_name = %(reports_os_name)s 
-    
-    GROUP BY date_trunc(%(date_trunc)s, reports.build_date) 
-    ORDER BY date_trunc(%(date_trunc)s, reports.build_date) DESC
-
-
-2008-08-08 23:03:14,671 INFO sqlalchemy.engine.base.Engine.0x..90 {'reports_signature_1': 'js3250.dll@0x1c54f', 'reports_signature_2': 'js3250.dll@0x1c54f', 'reports_signature_3': 'js3250.dll@0x1c54f', 'reports_signature_4': 'js3250.dll@0x1c54f', 'date_trunc': 'day', 'count_3': 0, 'count_2': 0, 'count_1': 0, 'literal': '2008-08-08', 'reports_product_1': 'Firefox', 'reports_product_3': 'Firefox', 'reports_product_2': 'Firefox', 'literal_1': '12 months', 'literal_2': '2008-08-08', 'branches_branch': '1.9', 'reports_product': 'Firefox', 'reports_os_name_1': 'Mac OS X', 'reports_os_name_2': 'Linux', 'reports_os_name_3': 'Solaris', 'reports_version': '3.0b4', 'count': 0, 'reports_os_name': 'Windows NT', 'reports_version_1': '3.0b4pre', 'reports_version_2': '3.0b5pre', 'reports_signature': 'js3250.dll@0x1c54f'}
- 
-
-
- */
-
-/*
-
-    SELECT reports.signature, count(reports.id), count(CASE WHEN (reports.os_name = %(reports_os_name)s) THEN 1 END) AS is_windows, count(CASE WHEN (reports.os_name = %(reports_os_name_1)s) THEN 1 END) AS is_mac, count(CASE WHEN (reports.os_name = %(reports_os_name_2)s) THEN 1 END) AS is_linux, count(CASE WHEN (reports.os_name = %(reports_os_name_3)s) THEN 1 END) AS is_solaris 
-FROM reports 
-WHERE reports.signature IS NOT NULL AND reports.signature IS NOT NULL AND reports.date BETWEEN CAST(%(literal)s AS DATE) - CAST(%(literal_1)s AS INTERVAL) AND CAST(%(literal_2)s AS DATE) GROUP BY reports.signature ORDER BY count(reports.id) DESC 
- LIMIT 100
-2008-08-08 18:25:56,422 INFO sqlalchemy.engine.base.Engine.0x..10 {'reports_os_name': 'Windows NT', 'literal': '2008-08-13', 'reports_os_name_1': 'Mac OS X', 'reports_os_name_2': 'Linux', 'reports_os_name_3': 'Solaris', 'literal_1': '12 months', 'literal_2': '2008-08-13'}
-
-
- 
-SELECT reports.signature, count(reports.id), count(CASE WHEN (reports.os_name = %(reports_os_name)s) THEN 1 END) AS is_windows, count(CASE WHEN (reports.os_name = %(reports_os_name_1)s) THEN 1 END) AS is_mac, count(CASE WHEN (reports.os_name = %(reports_os_name_2)s) THEN 1 END) AS is_linux, count(CASE WHEN (reports.os_name = %(reports_os_name_3)s) THEN 1 END) AS is_solaris 
-FROM reports, branches 
-WHERE reports.signature IS NOT NULL AND 
-reports.signature IS NOT NULL AND 
-reports.date BETWEEN now() - CAST(%(literal)s AS INTERVAL) AND now() AND 
-reports.product = %(reports_product)s AND 
-branches.branch = %(branches_branch)s AND 
-branches.product = reports.product AND 
-branches.version = reports.version AND 
-reports.product = %(reports_product_1)s AND 
-reports.version = %(reports_version)s AND 
-reports.os_name = %(reports_os_name)s AND 
-reports.signature LIKE %(reports_signature)s 
-GROUP BY reports.signature 
-ORDER BY count(reports.id) DESC 
- LIMIT 100
- 
- 2008-08-08 16:15:54,113 INFO sqlalchemy.engine.base.Engine.0x..10 {'reports_os_name': 'Windows NT', 'reports_product': 'Firefox', 'literal': '12 months', 'reports_signature': '%stackastack%', 'reports_product_1': 'Firefox', 'reports_os_name_1': 'Mac OS X', 'reports_os_name_2': 'Linux', 'reports_os_name_3': 'Solaris', 'branches_branch': '1.9', 'reports_version': '3.0b4pre'}
-
-
-SELECT reports.signature, count(reports.id), count(CASE WHEN (reports.os_name = %(reports_os_name)s) THEN 1 END) AS is_windows, count(CASE WHEN (reports.os_name = %(reports_os_name_1)s) THEN 1 END) AS is_mac, count(CASE WHEN (reports.os_name = %(reports_os_name_2)s) THEN 1 END) AS is_linux, count(CASE WHEN (reports.os_name = %(reports_os_name_3)s) THEN 1 END) AS is_solaris 
-FROM reports, branches 
-WHERE reports.signature IS NOT NULL AND reports.signature IS NOT NULL AND reports.date BETWEEN now() - CAST(%(literal)s AS INTERVAL) AND now() AND reports.product = %(reports_product)s AND branches.branch = %(branches_branch)s AND branches.product = reports.product AND branches.version = reports.version AND reports.product = %(reports_product_1)s AND reports.version = %(reports_version)s AND reports.os_name = %(reports_os_name)s AND reports.signature = %(reports_signature)s GROUP BY reports.signature ORDER BY count(reports.id) DESC 
- LIMIT 100
-2008-08-08 16:19:11,895 INFO sqlalchemy.engine.base.Engine.0x..10 {'reports_os_name': 'Windows NT', 'reports_product': 'Firefox', 'literal': '12 months', 'reports_signature': 'stackastack', 'reports_product_1': 'Firefox', 'reports_os_name_1': 'Mac OS X', 'reports_os_name_2': 'Linux', 'reports_os_name_3': 'Solaris', 'branches_branch': '1.9', 'reports_version': '3.0b4pre'}
-
-
- SELECT reports.signature, count(reports.id), count(CASE WHEN (reports.os_name = %(reports_os_name)s) THEN 1 END) AS is_windows, count(CASE WHEN (reports.os_name = %(reports_os_name_1)s) THEN 1 END) AS is_mac, count(CASE WHEN (reports.os_name = %(reports_os_name_2)s) THEN 1 END) AS is_linux, count(CASE WHEN (reports.os_name = %(reports_os_name_3)s) THEN 1 END) AS is_solaris 
-FROM reports, branches 
-WHERE reports.signature IS NOT NULL AND reports.signature IS NOT NULL AND reports.date BETWEEN now() - CAST(%(literal)s AS INTERVAL) AND now() AND reports.product = %(reports_product)s AND branches.branch = %(branches_branch)s AND branches.product = reports.product AND branches.version = reports.version AND reports.product = %(reports_product_1)s AND reports.version = %(reports_version)s AND reports.os_name = %(reports_os_name)s AND reports.signature LIKE %(reports_signature)s GROUP BY reports.signature ORDER BY count(reports.id) DESC 
- LIMIT 100
-2008-08-08 16:19:35,173 INFO sqlalchemy.engine.base.Engine.0x..10 {'reports_os_name': 'Windows NT', 'reports_product': 'Firefox', 'literal': '12 months', 'reports_signature': 'stackastack%', 'reports_product_1': 'Firefox', 'reports_os_name_1': 'Mac OS X', 'reports_os_name_2': 'Linux', 'reports_os_name_3': 'Solaris', 'branches_branch': '1.9', 'reports_version': '3.0b4pre'}
-
-
-SELECT reports.signature, count(reports.id), count(CASE WHEN (reports.os_name = %(reports_os_name)s) THEN 1 END) AS is_windows, count(CASE WHEN (reports.os_name = %(reports_os_name_1)s) THEN 1 END) AS is_mac, count(CASE WHEN (reports.os_name = %(reports_os_name_2)s) THEN 1 END) AS is_linux, count(CASE WHEN (reports.os_name = %(reports_os_name_3)s) THEN 1 END) AS is_solaris 
-FROM reports, branches 
-WHERE reports.signature IS NOT NULL AND reports.signature IS NOT NULL AND reports.date BETWEEN now() - CAST(%(literal)s AS INTERVAL) AND now() AND reports.product = %(reports_product)s AND branches.branch = %(branches_branch)s AND branches.product = reports.product AND branches.version = reports.version AND reports.product = %(reports_product_1)s AND reports.version = %(reports_version)s AND reports.os_name = %(reports_os_name)s AND (EXISTS (SELECT 1 
-FROM frames 
-WHERE frames.signature LIKE %(frames_signature)s AND frames.report_id = reports.id)) GROUP BY reports.signature ORDER BY count(reports.id) DESC 
- LIMIT 100
-2008-08-08 16:25:16,107 INFO sqlalchemy.engine.base.Engine.0x..10 {'frames_signature': 'stackastack%', 'reports_os_name': 'Windows NT', 'reports_product': 'Firefox', 'literal': '12 months', 'reports_product_1': 'Firefox', 'reports_os_name_1': 'Mac OS X', 'reports_os_name_2': 'Linux', 'reports_os_name_3': 'Solaris', 'branches_branch': '1.9', 'reports_version': '3.0b4pre'}
-
-
-
- */
-
 
 }
