@@ -82,7 +82,8 @@ class Database_Pgsql_Driver extends Database_Driver {
 
 	public function set_charset($charset)
 	{
-		$this->query('SET client_encoding TO '.pg_escape_string($this->link, $charset));
+		//LMO $this->query('SET client_encoding TO '.pg_escape_string($this->link, $charset));
+		$this->query('SET client_encoding TO '.pg_escape_string($charset));
 	}
 
 	public function escape_table($table)
@@ -219,7 +220,8 @@ class Database_Pgsql_Driver extends Database_Driver {
 
 		is_resource($this->link) or $this->connect();
 
-		return pg_escape_string($this->link, $str);
+		//LMO: return pg_escape_string($this->link, $str);
+		return pg_escape_string($str);
 	}
 
 	public function list_tables()
