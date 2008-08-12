@@ -23,7 +23,6 @@ class Model extends Model_Core {
             $cache_key = 'query_hash_' . md5($sql);
             $data = $this->cache->get($cache_key);
             if ($data) {
-                log::log($data, "DB CACHE HIT $cache_key");
                 return $data;
             }
         }
@@ -34,7 +33,6 @@ class Model extends Model_Core {
         foreach ($result as $row) $data[] = $row;
 
         if ($do_cache && $data) {
-            log::log($data, "DB CACHE MISS $cache_key");
             $this->cache->set($cache_key, $data);
         }
 
