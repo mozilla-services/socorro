@@ -16,8 +16,8 @@ numberOfThreads.doc = 'the number of threads to use'
 numberOfThreads.default = 4
 
 processorId = cm.Option()
-processorId.doc = 'the id number for the processor (must already exist in database) (0 for create new Id)'
-processorId.default = 0
+processorId.doc = 'the id number for the processor (must already exist in database) (0 for create new Id, "auto" for autodetection)'
+processorId.default = "auto"
 
 #get storageRoot from monitor's config file
 from socorro.monitor.config import storageRoot
@@ -36,6 +36,9 @@ minidump_stackwalkPathname.default = '/usr/local/bin/minidump_stackwalk'
 symbolCachePath = cm.Option()
 symbolCachePath.doc = 'the path where the symbol cache is found (quote path with embedded spaces)'
 symbolCachePath.default = '/mnt/socorro/symbols'
+
+#get processorCheckInTime  from monitor's config file
+from socorro.monitor.config import processorCheckInTime
 
 processorSymbolsPathnameList = cm.Option()
 processorSymbolsPathnameList.doc = 'comma or space separated list of symbol files for minidump_stackwalk (quote paths with embedded spaces)'

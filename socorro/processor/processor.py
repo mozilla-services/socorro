@@ -17,6 +17,8 @@ logger = logging.getLogger("processor")
 
 import socorro.lib.util
 import socorro.lib.threadlib
+import socorro.lib.ConfigurationManager
+import socorro.lib.psycopghelper
 
 import simplejson
 
@@ -103,25 +105,44 @@ class Processor(object):
     except:
       socorro.lib.util.reportExceptionAndAbort(logger) # can't continue without a database connection
 
-    #register self with the processors table in the database
+    # register self with the processors table in the database
     logger.info("%s - registering with 'processors' table", threading.currentThread().getName())
     try:
       self.processorId = 0
       self.processorName = "%s_%d" % (os.uname()[1], os.getpid())
-      if self.config.processorId:
+      if self.config.processorId == 'auto':  # take over for an existing processor
+        threshold = socorro.lib.psycopghelper.singleValueSql(self.mainThreadCursor, "select now() - interval '%s'" % self.config.processorCheckInTime)
         try:
-          self.mainThreadCursor.execute("update processors set name = %s, startDateTime = now(), lastSeenDateTime = now() where id = %s", (self.processorName, self.config.processorId))
+          logger.debug("%s - looking for a dead processor", threading.currentThread().getName())
+          self.config.processorId = socorro.lib.psycopghelper.singleValueSql(self.mainThreadCursor, "select id from processors where lastSeenDateTime < '%s' limit 1" % threshold)
+          logger.info("%s - will step in for processor %d", threading.currentThread().getName(), self.config.processorId)
+        except socorro.lib.psycopghelper.SQLDidNotReturnSingleValue:
+          logger.debug("%s - no dead processor found", threading.currentThread().getName())
+          self.config.processorId = '0'
+      if self.config.processorId != '0':  # take over for a specific existing processor
+        try:
+          processorId = int(self.config.processorId)
+        except ValueError:
+          raise socorro.lib.ConfigurationManager.OptionError("%s is not a valid option for processorId" % self.config.processorId)
+        try:
+          logger.info("%s - stepping in for processor %d", threading.currentThread().getName(), processorId)
+          self.mainThreadCursor.execute("update processors set name = %s, startDateTime = now(), lastSeenDateTime = now() where id = %s", (self.processorName, processorId))
           self.mainThreadCursor.execute("update jobs set starteddatetime = NULL where id in (select id from jobs where starteddatetime is not null and success is null and owner = %s)", (self.config.processorId, ))
-          self.processorId = self.config.processorId
+          self.processorId = processorId
         except:
           self.mainThreadDatabaseConnection.rollback()
-      if self.processorId == 0:
+      else:  # be a new processor with a new id
         self.mainThreadCursor.execute("insert into processors (name, startDateTime, lastSeenDateTime) values (%s, now(), now())", (self.processorName,))
-        self.mainThreadCursor.execute("select id from processors where name = %s", (self.processorName,))
-        self.processorId = self.mainThreadCursor.fetchall()[0][0]
+        self.processorId = socorro.lib.psycopghelper.singleValueSql(self.mainThreadCursor, "select id from processors where name = '%s'" % (self.processorName,))
+        logger.info("%s - initializing as processor %d", threading.currentThread().getName(), self.processorId)
       self.priorityJobsTableName = "priority_jobs_%d" % self.processorId
-      self.mainThreadCursor.execute("create table %s (uuid varchar(50) not null primary key)" % self.priorityJobsTableName)
       self.mainThreadDatabaseConnection.commit()
+      try:
+        self.mainThreadCursor.execute("create table %s (uuid varchar(50) not null primary key)" % self.priorityJobsTableName)
+        self.mainThreadDatabaseConnection.commit()
+      except:
+        logger.warning("%s - failed in creating priority jobs table for this processor.  Does it already exist?",  threading.currentThread().getName())
+        socorro.lib.util.reportExceptionAndContinue(logger)
     except:
       socorro.lib.util.reportExceptionAndAbort(logger) # can't continue without a registration
 
@@ -298,15 +319,15 @@ class Processor(object):
           if lastPriorityCheckTimestamp + self.config.checkForPriorityFrequency < datetime.datetime.now():
             break
           del jobList[aJobTuple[1]]
-          yield aJobTuple
           logger.debug("%s - incomingJobStream yielding standard from job list: %s", threading.currentThread().getName(), aJobTuple[1])
+          yield aJobTuple
       except psycopg2.Error:
         socorro.lib.util.reportExceptionAndAbort()
 
 
   #-----------------------------------------------------------------------------------------------------------------
   def start(self):
-    """ Run by the main thread, this function fetches jobs from the database one at a time
+    """ Run by the main thread, this function fetches jobs from the incoming job stream one at a time
         puts them on the task queue.  If there are no jobs to do, it sleeps before trying again.
         If it detects that some thread has received a Keyboard Interrupt, it stops its looping,
         waits for the threads to stop and then closes all the database connections.
@@ -317,6 +338,7 @@ class Processor(object):
         #get a job
         for aJobTuple in self.incomingJobStream():
           self.quitCheck()
+          logger.debug("%s - start got: %s", threading.currentThread().getName(), aJobTuple[1])
           self.submitJobToThreads(aJobTuple)
       except KeyboardInterrupt:
         logger.info("%s - quit request detected", threading.currentThread().getName())
