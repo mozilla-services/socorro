@@ -8,7 +8,7 @@ class Query_Controller extends Controller {
      *
      */
     public function query() {
-        $branch_data = $this->branch_model->getCachedBranchData();
+        $branch_data = $this->branch_model->getBranchData();
         $platforms   = $this->platform_model->getAll();
 
         $params = $this->getRequestParameters(array(

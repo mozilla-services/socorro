@@ -42,11 +42,6 @@
    }
   </style>    
 
-    <?php echo html::stylesheet(array(
-        'css/layout.css',
-        'css/style.css'
-    ), 'screen')?>
-
 <?php slot::end() ?>
 
 <h1 class="first">Crash Reports in <?php out::H($params['signature']) ?></h1>

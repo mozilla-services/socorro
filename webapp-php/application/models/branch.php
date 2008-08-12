@@ -5,14 +5,6 @@
 class Branch_Model extends Model {
 
     /**
-     * Perform overall initialization for the model.
-     */
-    public function __construct() {
-        parent::__construct();
-        $this->cache = new Cache();
-    }
-
-    /**
      * Fetch everything in the branches table
      */
     public function getAll() { 
@@ -48,10 +40,10 @@ class Branch_Model extends Model {
     }
 
     /**
-     * Fetch cached data on products, branches, and versions for the front page
-     * query form.
+     * Fetch data on products, branches, and versions for the front 
+     * page query form.
      */
-    public function getCachedBranchData() { 
+    public function getBranchData() { 
         $cache_key = 'query_branch_data';
         $data = $this->cache->get($cache_key);
         if (!$data) {

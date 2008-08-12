@@ -48,7 +48,7 @@ class Common_Model extends Model {
             " ORDER BY count(reports.id) DESC " .
             " LIMIT 100";
 
-        return $this->db->query($sql);
+        return $this->fetchRows($sql);
     }
 
     /**
@@ -94,7 +94,7 @@ class Common_Model extends Model {
             " ORDER BY reports.date DESC " .
             " LIMIT 500";
 
-        return $this->db->query($sql);
+        return $this->fetchRows($sql);
     }
 
     /**
@@ -136,9 +136,7 @@ class Common_Model extends Model {
             " GROUP BY date_trunc('day', reports.build_date) ".
             " ORDER BY date_trunc('day', reports.build_date) DESC";
 
-        log::debug("queryFrequency $sql");
-
-        return $this->db->query($sql);
+        return $this->fetchRows($sql);
     }
 
     /**
@@ -152,6 +150,10 @@ class Common_Model extends Model {
         $where  = array(
             'reports.signature IS NOT NULL'
         );
+
+        if (isset($params['signature'])) {
+            $where[] = 'reports.signature = ' . $this->db->escape($params['signature']);
+        }
 
         if ($params['product']) {
             $or = array();

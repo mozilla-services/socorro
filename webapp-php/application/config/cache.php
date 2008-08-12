@@ -36,6 +36,6 @@ $config['default'] = array
 (
     'driver'   => 'memcache',
     'params'   => '',
-    'lifetime' => 5,  // 1800
+    'lifetime' => 30,  // 1800
     'requests' => 10, // 100
 );
