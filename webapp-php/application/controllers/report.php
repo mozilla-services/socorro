@@ -1,11 +1,11 @@
-<?php defined('SYSPATH') or die('No direct script access.');
+<?php
 /**
- *
+ * List, search, and show crash reports.
  */
 class Report_Controller extends Controller {
 
     /**
-     *
+     * List reports for the given search query parameters.
      */
     public function do_list() {
 
@@ -49,20 +49,67 @@ class Report_Controller extends Controller {
      * Fetch and display a single report.
      */
     public function index($uuid) {
-
         $report = $this->report_model->getByUUID($uuid);
 
+        if (!$report) {
+            if (!isset($_GET['p'])) {
+                $this->priorityjob_model = new Priorityjobs_Model();
+                $this->priorityjob_model->add($uuid);
+            }
+            return url::redirect('report/pending/'.$uuid);
+        }
+
         $this->setViewData(array(
-            'report'  => $report
+            'report' => $report
         ));
     }
 
     /**
+     * Wait while a pending job is processed.
+     */
+    public function pending($uuid) {
+
+        if (!$uuid) {
+            return Event::run('system.404');
+        }
+
+        $report = $this->report_model->getByUUID($uuid);
+        if ($report) {
+            $this->setAutoRender(FALSE);
+            return url::redirect('report/index/'.$uuid);
+        }
+
+        $this->job_model = new Job_Model();
+        $job = $this->job_model->getByUUID($uuid);
+
+        $this->setViewData(array(
+            'uuid' => $uuid,
+            'job'  => $job
+        ));
+    }
+
+    /**
+     * Linking reports with ID validation.
      *
+     * This method should not touch the database!
      */
     public function find() {
+        $id = isset($_GET['id']) ? $_GET['id'] : '';
+        $uuid = FALSE;
 
-        echo "NOT IMPLEMENTED";
+        if ($id) {
+            $matches = array();
+            $prefix = Kohana::config('application.dumpIDPrefix');
+            if ( preg_match('/^('.$prefix.')?([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/', $id, $matches) ) {
+                $uuid = $matches[2];
+            }
+        }
+
+        if ($uuid) {
+            return url::redirect('report/index/'.$uuid);
+        } else {
+            return url::redirect('');
+        }
 
     }
 

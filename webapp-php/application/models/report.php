@@ -5,14 +5,6 @@
 class Report_Model extends Model {
 
     /**
-     * Perform overall initialization for the model.
-     */
-    public function __construct() {
-        parent::__construct();
-        $this->cache = new Cache();
-    }
-
-    /**
      * Fetch a single report and associated dump data by UUID
      *
      * @param  string UUID by which to look up report

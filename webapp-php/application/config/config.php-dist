@@ -1,4 +1,5 @@
 <?php defined('SYSPATH') or die('No direct script access.');
+
 /**
  * Base path of the web site. If this includes a domain, eg: localhost/kohana/
  * then a full URL will be used, eg: http://localhost/kohana/. If it only includes
@@ -18,7 +19,7 @@ $config['site_protocol'] = '';
  *
  * This can be removed by using URL rewriting.
  */
-$config['index_page'] = 'index.php';
+$config['index_page'] = '';
 
 /**
  * Fake file extension that will be added to all generated URLs. Example: .html
@@ -81,7 +82,7 @@ $config['display_errors'] = TRUE;
  *
  * @see http://docs.kohanaphp.com/general/configuration
  */
-$config['render_stats'] = TRUE;
+$config['render_stats'] = FALSE;
 
 /**
  * Filename prefixed used to determine extensions. For example, an

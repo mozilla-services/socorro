@@ -26,10 +26,10 @@ class Controller extends Controller_Core {
         parent::__construct();
 
         // Create instances of the commonly used models.
-        $this->common_model      = new Common_Model();
-        $this->branch_model      = new Branch_Model();
-        $this->report_model      = new Report_Model();
-        $this->platform_model    = new Platform_Model();
+        $this->common_model   = new Common_Model();
+        $this->branch_model   = new Branch_Model();
+        $this->report_model   = new Report_Model();
+        $this->platform_model = new Platform_Model();
 
         // Start with empty set of view vars.
         $this->view_data = array(
