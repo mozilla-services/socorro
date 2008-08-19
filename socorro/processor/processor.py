@@ -142,6 +142,7 @@ class Processor(object):
         self.mainThreadDatabaseConnection.commit()
       except:
         logger.warning("%s - failed in creating priority jobs table for this processor.  Does it already exist?",  threading.currentThread().getName())
+        self.mainThreadDatabaseConnection.rollback()
         socorro.lib.util.reportExceptionAndContinue(logger)
     except:
       socorro.lib.util.reportExceptionAndAbort(logger) # can't continue without a registration
