@@ -100,13 +100,14 @@ class Monitor (object):
         self.quitCheck()
         fileDisposalFunction(jsonPathname, uuid, "failed")
         aCursor.execute("delete from jobs where id = %s", (jobId,))
+        databaseConnection.commit()
       fileDisposalFunction = (self.deleteCompletedJobFiles, self.archiveCompletedJobFiles)[self.config.saveProcessedMinidumps]
       aCursor.execute("select id, pathname, uuid from jobs where success is True")
       for jobId, jsonPathname, uuid in aCursor.fetchall():
         self.quitCheck()
         fileDisposalFunction(jsonPathname, uuid, "processed")
         aCursor.execute("delete from jobs where id = %s", (jobId,))
-      databaseConnection.commit()
+        databaseConnection.commit()
     except:
       databaseConnection.rollback()
       socorro.lib.util.reportExceptionAndContinue(logger)
