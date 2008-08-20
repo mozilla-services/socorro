@@ -18,7 +18,7 @@ logger = logging.getLogger("monitor")
 
 import socorro.lib.util
 import socorro.lib.filesystem
-
+import socorro.lib.psycopghelper
 
 
 class Monitor (object):
@@ -151,6 +151,7 @@ class Monitor (object):
             databaseConnection.commit()
           except:
             logger.warning("%s - cannot clean up dead processor in database: the table 'priority_jobs_%d' may need manual deletion", threading.currentThread().getName(), aDeadProcessorTuple[0])
+            databaseConnection.rollback()
     except Monitor.NoProcessorsRegisteredException:
       self.quit = True
       socorro.lib.util.reportExceptionAndAbort(logger)
@@ -173,7 +174,7 @@ class Monitor (object):
         then acts as an iterator that returns a sequence of processor ids.  Order of ids returned will assure that
         jobs are assigned in a balanced manner
     """
-    logger.debug("%s - compiling list of active processors", threading.currentThread().getName())
+    logger.debug("%s - balanced jobSchedulerIter: compiling list of active processors", threading.currentThread().getName())
     try:
       sql = """select p.id, count(j.*) from processors p left join jobs j on p.id = j.owner group by p.id"""
       try:
@@ -198,6 +199,24 @@ class Monitor (object):
         listOfProcessorIds[0][1] += 1
         logger.debug("%s - yield the processorId which had the fewest jobs: %d", threading.currentThread().getName(), listOfProcessorIds[0][0])
         yield listOfProcessorIds[0][0]
+    except Monitor.NoProcessorsRegisteredException:
+      self.quit = True
+      socorro.lib.util.reportExceptionAndAbort(logger)
+
+  #-----------------------------------------------------------------------------------------------------------------
+  def unbalancedJobSchedulerIter(self, aCursor):
+    """ This generator returns a sequence of active processorId without regard to job balance
+    """
+    logger.debug("%s - unbalancedJobSchedulerIter: compiling list of active processors", threading.currentThread().getName())
+    try:
+      threshold = socorro.lib.psycopghelper.singleValueSql( aCursor, "select now() - interval '%s'" % self.config.processorCheckInTime)
+      aCursor.execute("select id from processors where lastSeenDateTime > '%s'" % threshold)
+      listOfProcessorIds = [aRow[0] for aRow in aCursor.fetchall()]  #processorId, numberOfAssignedJobs
+      if not listOfProcessorIds:
+        raise Monitor.NoProcessorsRegisteredException("There are no active processors registered")
+      while True:
+        for aProcessorId in listOfProcessorIds:
+          yield aProcessorId
     except Monitor.NoProcessorsRegisteredException:
       self.quit = True
       socorro.lib.util.reportExceptionAndAbort(logger)
@@ -269,11 +288,9 @@ class Monitor (object):
     try:
       try:
         while (True):
-          #self.cleanUpCompletedAndFailedJobs(self.standardJobAllocationDatabaseConnection, self.standardJobAllocationCursor)
           self.quitCheck()
           self.cleanUpDeadProcessors(self.standardJobAllocationDatabaseConnection, self.standardJobAllocationCursor)
           self.quitCheck()
-          processorIdSequenceGenerator = self.jobSchedulerIter(self.standardJobAllocationCursor)
           # walk the dump tree and assign jobs
           logger.debug("%s - beginning directory tree walk", threading.currentThread().getName())
           processorIdSequenceGenerator = self.jobSchedulerIter(self.standardJobAllocationCursor)
@@ -331,7 +348,7 @@ class Monitor (object):
   #-----------------------------------------------------------------------------------------------------------------
   def isProperAge(self, testPath):
     #logger.debug("%s - %s", threading.currentThread().getName(), testPath)
-    logger.debug("%s - %s", threading.currentThread().getName(), (datetime.datetime.utcnow() - datetime.datetime.utcfromtimestamp(os.path.getmtime(testPath))) > self.config.minimumSymlinkAge)
+    #logger.debug("%s - %s", threading.currentThread().getName(), (datetime.datetime.utcnow() - datetime.datetime.utcfromtimestamp(os.path.getmtime(testPath))) > self.config.minimumSymlinkAge)
     return (datetime.datetime.utcnow() - datetime.datetime.utcfromtimestamp(os.path.getmtime(testPath))) > self.config.minimumSymlinkAge
 
   #-----------------------------------------------------------------------------------------------------------------
@@ -354,7 +371,6 @@ class Monitor (object):
               # assign jobs
               logger.debug("%s - beginning search for priority jobs", threading.currentThread().getName())
               try:
-                processorIdSequenceGenerator = self.jobSchedulerIter(self.priorityJobAllocationCursor)
                 # check for uuids already in the queue
                 for uuid in priorityUuids.keys():
                   self.quitCheck()
@@ -381,7 +397,7 @@ class Monitor (object):
                     del priorityUuids[uuid]
                 if priorityUuids: # only need to continue if we still have jobs to process
                   # check for jobs in symlink directories
-                  processorIdSequenceGenerator = self.jobSchedulerIter(self.priorityJobAllocationCursor)
+                  processorIdSequenceGenerator = self.unbalancedJobSchedulerIter(self.priorityJobAllocationCursor)
                   for uuid in priorityUuids.keys():
                     logger.debug("%s - looking for %s", threading.currentThread().getName(), uuid)
                     for currentDirectory in dircache.listdir(symLinkIndexPath):
