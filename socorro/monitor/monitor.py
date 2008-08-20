@@ -269,7 +269,7 @@ class Monitor (object):
     try:
       try:
         while (True):
-          self.cleanUpCompletedAndFailedJobs(self.standardJobAllocationDatabaseConnection, self.standardJobAllocationCursor)
+          #self.cleanUpCompletedAndFailedJobs(self.standardJobAllocationDatabaseConnection, self.standardJobAllocationCursor)
           self.quitCheck()
           self.cleanUpDeadProcessors(self.standardJobAllocationDatabaseConnection, self.standardJobAllocationCursor)
           self.quitCheck()
@@ -441,7 +441,7 @@ class Monitor (object):
           for currentDirectory, directoryList, fileList in os.walk(self.config.storageRoot, topdown=False):
             self.quitCheck()
             self.passJudgementOnDirectory(currentDirectory, directoryList, fileList)
-          self.responsiveSleep(self.config.cleanupLoopDelay)
+          self.responsiveSleep(self.config.cleanupDirectoryLoopDelay)
       except (KeyboardInterrupt, SystemExit):
         logger.debug("%s - got quit message", threading.currentThread().getName())
         self.quit = True
@@ -450,12 +450,36 @@ class Monitor (object):
     finally:
       logger.info("%s - oldDirectoryCleanupLoop done.", threading.currentThread().getName())
 
-
+  #-----------------------------------------------------------------------------------------------------------------
+  def jobCleanupLoop (self):
+    logger.info("%s - jobCleanupLoop starting.", threading.currentThread().getName())
+    try:
+      self.jobCleanupDatabaseConnection = psycopg2.connect(self.config.databaseDSN)
+      self.jobCleanupCursor = self.jobCleanupDatabaseConnection.cursor()
+    except:
+      self.quit = True
+      socorro.lib.util.reportExceptionAndAbort(logger) # can't continue without a database connection
+    try:
+      try:
+        while True:
+          logger.info("%s - beginning jobCleanupLoop cycle.", threading.currentThread().getName())
+          self.cleanUpCompletedAndFailedJobs(self.jobCleanupDatabaseConnection, self.jobCleanupCursor)
+          self.responsiveSleep(self.config.cleanupJobsLoopDelay)
+      except (KeyboardInterrupt, SystemExit):
+        logger.debug("%s - got quit message", threading.currentThread().getName())
+        self.quit = True
+      except:
+        socorro.lib.util.reportExceptionAndContinue(logger)
+    finally:
+      self.jobCleanupDatabaseConnection.close()
+      logger.info("%s - jobCleanupLoop done.", threading.currentThread().getName())
 
   #-----------------------------------------------------------------------------------------------------------------
   def start (self):
     priorityJobThread = threading.Thread(name="priorityLoopingThread", target=self.priorityJobAllocationLoop)
     priorityJobThread.start()
+    jobCleanupThread = threading.Thread(name="jobCleanupThread", target=self.jobCleanupLoop)
+    jobCleanupThread.start()
     directoryCleanupThread = threading.Thread(name="directoryCleanupThread", target=self.oldDirectoryCleanupLoop)
     directoryCleanupThread.start()
 
@@ -465,6 +489,7 @@ class Monitor (object):
       finally:
         logger.debug("%s - waiting to join.", threading.currentThread().getName())
         priorityJobThread.join()
+        jobCleanupThread.join()
         directoryCleanupThread.join()
     except KeyboardInterrupt:
       raise SystemExit

@@ -44,9 +44,13 @@ standardLoopDelay = cm.Option()
 standardLoopDelay.doc = 'the delay in seconds between filesystem walks looking for jobs'
 standardLoopDelay.default = 300
 
-cleanupLoopDelay = cm.Option()
-cleanupLoopDelay.doc = 'the frequency of directory clean up routines in seconds'
-cleanupLoopDelay.default = 60 * 60 * 4  # 4hrs * 60min * 60sec
+cleanupDirectoryLoopDelay = cm.Option()
+cleanupDirectoryLoopDelay.doc = 'the frequency of directory clean up routines in seconds'
+cleanupDirectoryLoopDelay.default = 60 * 60 * 4  # 4hrs * 60min * 60sec
+
+cleanupJobsLoopDelay = cm.Option()
+cleanupJobsLoopDelay.doc = 'the frequency of job clean up routines in seconds'
+cleanupJobsLoopDelay.default = 60 * 5  # 5min * 60sec
 
 priorityLoopDelay = cm.Option()
 priorityLoopDelay.doc = 'the delay in seconds between checks for priority jobs'
