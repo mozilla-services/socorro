@@ -33,16 +33,19 @@ import datetime
 class ConfigFileMissingError (IOError):
   pass
 ConfigurationManagerConfigFileMissing = ConfigFileMissingError  # for legacy compatability
-  
 #============================================================================================
 class ConfigFileOptionNameMissingError (Exception):
   pass
 ConfigurationManagerConfigFileOptionNameMissing = ConfigFileOptionNameMissingError  # for legacy compatability
-  
 #============================================================================================
 class NotAnOptionError (Exception):
   pass
 ConfigurationManagerNotAnOption = NotAnOptionError   # for legacy compatability
+
+#============================================================================================
+class OptionError (Exception):
+  def __init__(self, errorString):
+    super(OptionError, self).__init__(errorString)
 
 #============================================================================================
 class CannotConvert (ValueError):
@@ -66,24 +69,22 @@ def newConfiguration(**kwargs):
   if "configurationModule" not in kwargs:
     kwargs["configurationModule"] = None
   if "automaticHelp" not in kwargs:
-    kwargs["automaticHelp"] = True    
+    kwargs["automaticHelp"] = True
   if "applicationName" not in kwargs:
     kwargs["applicationName"] = ''
-  
+
   return Config(kwargs["configurationOptionsList"], kwargs["optionNameForConfigFile"], kwargs["configurationFileRequired"], kwargs["configurationModule"], kwargs["automaticHelp"], kwargs["applicationName"])
-  
+
  #============================================================================================
 class Config (dict):
   """This class encapsulates the process of getting command line arguments, configuration files and environment variables into a program.
   It wraps the Python getopt module and provides a more comprehensive interface.
   """
-  #------------------------------------------------------------------------------------------
-
 
   #------------------------------------------------------------------------------------------
   def __init__ (self, configurationOptionsList=[], optionNameForConfigFile="config", configurationFileRequired=False, configurationModule=None, automaticHelp=False, applicationName=''):
-    """Initialize a new instance.  
-    
+    """Initialize a new instance.
+
     Input Parameters:
       configurationOptionsList: a list of tuples that represent the options available to the user.  The tuples take this form:
         (singleCharacterOptionForm, longOptionForm, takesParametersBoolean, defaultValue, humanReadableOptionExplanation [, optionalListOfOptionParameterPairs | conversionFunction ])
@@ -95,37 +96,40 @@ class Config (dict):
       configurationFileRequired: if True, the lack of a configuration file is considered a fatal error
     """
     self.originalConfigurationOptionsList = configurationOptionsList
-    
+
     # incorporate config options from configuration module
-    for key, value in configurationModule.__dict__.items():
-      if type(value) == Option:
-        optionDefinition = []
-        try:
-          optionDefinition.append(value.singleCharacter)
-        except AttributeError:
-          optionDefinition.append(None)
-        optionDefinition.append(key)
-        optionDefinition.append(True)
-        try:
-          optionDefinition.append(value.default)
-        except AttributeError:
-          optionDefinition.append(None)
-        try:
-          optionDefinition.append(value.doc)
-        except AttributeError:
-          optionDefinition.append("%s imported from %s" % (key, configurationModule.__name__))
-        try:
-          optionDefinition.append(value.fromStringConverter)
-        except AttributeError:
-          pass
-        configurationOptionsList.append(optionDefinition)
-      else:
-        if key[:2] != "__" and type(value) != type(os):
-          configurationOptionsList.append([None, key, True, value, "%s imported from %s" % (key, configurationModule.__name__)])    
-    
+    try:
+      for key, value in configurationModule.__dict__.items():
+        if type(value) == Option:
+          optionDefinition = []
+          try:
+            optionDefinition.append(value.singleCharacter)
+          except AttributeError:
+            optionDefinition.append(None)
+          optionDefinition.append(key)
+          optionDefinition.append(True)
+          try:
+            optionDefinition.append(value.default)
+          except AttributeError:
+            optionDefinition.append(None)
+          try:
+            optionDefinition.append(value.doc)
+          except AttributeError:
+            optionDefinition.append("%s imported from %s" % (key, configurationModule.__name__))
+          try:
+            optionDefinition.append(value.fromStringConverter)
+          except AttributeError:
+            pass
+          configurationOptionsList.append(optionDefinition)
+        else:
+          if key[:2] != "__" and type(value) != type(os):
+            configurationOptionsList.append([None, key, True, value, "%s imported from %s" % (key, configurationModule.__name__)])
+    except AttributeError:
+      pass #we're apparently not using an initialization module
+
     self.singleLetterCommandLineOptionsForGetopt = ""
     self.expandedCommandLineOptionsForGetopt = []
-    
+
     self.allowableOptionDictionary = {}
     self.allowableLongFormOptionDictionary = {}
     for x in configurationOptionsList:
@@ -133,7 +137,7 @@ class Config (dict):
         self.allowableOptionDictionary[x[0]] = x
       self.allowableOptionDictionary[x[1]] = self.allowableLongFormOptionDictionary[x[1]] = x
       self.addOptionsForGetopt(x)
-      
+
     # if add autohelp if needed
     if automaticHelp and "help" not in self.allowableLongFormOptionDictionary:
       helpOptionTuple = ('?', 'help', False, None, 'print this list')
@@ -141,10 +145,11 @@ class Config (dict):
       self.allowableOptionDictionary[helpOptionTuple[0]] = helpOptionTuple
       self.allowableOptionDictionary[helpOptionTuple[1]] = self.allowableLongFormOptionDictionary[helpOptionTuple[1]] = helpOptionTuple
       self.addOptionsForGetopt(helpOptionTuple)
-      
+
     # setup all defaults for options:
     for x in configurationOptionsList:
-      if x[2] and x[3] is not None:
+      #if x[2] and x[3] is not None:
+      if x[2]:
         self[x[1]] = x[3]
 
     # get options from the environment - these override defaults
@@ -152,7 +157,7 @@ class Config (dict):
       if self.allowableOptionDictionary.has_key(x):
         self[self.allowableOptionDictionary[x][1]] = os.environ.get(x)
         self.insertCombinedOption(x, self)
-        
+
     # get the options from the command line - these will eventually override all other methods of setting options
     try:
       options, self.arguments = getopt.getopt(sys.argv[1:], self.singleLetterCommandLineOptionsForGetopt, self.expandedCommandLineOptionsForGetopt)
@@ -161,7 +166,7 @@ class Config (dict):
     commandLineEnvironment = {} # save these options for merging later
     for x in options:
       if len(x[0]) == 2: #single letter option
-        longFormOfSingleLetterOption = self.allowableOptionDictionary[x[0][1]][1] 
+        longFormOfSingleLetterOption = self.allowableOptionDictionary[x[0][1]][1]
         if self.allowableOptionDictionary[longFormOfSingleLetterOption][2]:
           commandLineEnvironment[longFormOfSingleLetterOption] = x[1]
         else:
@@ -174,7 +179,7 @@ class Config (dict):
         else:
           commandLineEnvironment[longFormOption] = None
         self.insertCombinedOption(longFormOption, commandLineEnvironment)
-        
+
     # get any options from the config file
     # any options already set in the environment are overridden
     if optionNameForConfigFile is not None:
@@ -204,12 +209,21 @@ class Config (dict):
       except IOError:
         if configurationFileRequired:
           raise ConfigFileMissingError()
-    
+
     # merge command line options with the workingEnvironment
     # any options already specified in the environment or
     # configuration file are overridden.
     for x in commandLineEnvironment:
       self[x] = commandLineEnvironment[x]
+
+    # mix in combo commandline arguments
+    for optionTuple in self.allowableLongFormOptionDictionary.values():
+      try:
+        if type(optionTuple[5]) == list and optionTuple[1] in self:
+          for longFormOptionFromCombo, valueFromCombo in optionTuple[5]:
+            self[longFormOptionFromCombo] = valueFromCombo
+      except IndexError:
+        pass #not a combo option
 
     # make sure that non-string values in the workingEnvironment
     # have the right type.  Assume the default value has the right
@@ -220,25 +234,25 @@ class Config (dict):
         conversionFunction = optionTuple[5]
       except IndexError:
         conversionFunction = type(optionTuple[3])
-      if conversionFunction != str and conversionFunction != type(None):
-        try: 
+      if conversionFunction not in (str, list, type(None)):
+        try:
           self[optionTuple[1]] = conversionFunction(self[optionTuple[1]])
-        except (KeyError, TypeError): 
+        except (KeyError, TypeError):
           pass
         except ValueError, x:
           raise CannotConvert(str(x))
-        
+
     # do auto help
     if automaticHelp and 'help' in self:
       if applicationName:
         print >>sys.stderr, applicationName
       self.outputCommandSummary(sys.stderr, 1)
       sys.exit()
-      
+
   #------------------------------------------------------------------------------------------
   def addOptionsForGetopt (self, optionTuple):
     """Internal Use - during setup, this function sets up internal structures with a new optionTuple.
-    
+
     Parameters:
       optionTuple: a tuple of the form - (singleCharacterOptionForm, longOptionForm, takesParametersBoolean, ...)
     """
@@ -258,16 +272,16 @@ class Config (dict):
     try:
       for x in self.allowableOptionDictionary[anOption][5]:
         theDictionaryToInsertInto[x[0]] = x[1]
-    except (KeyError, IndexError, TypeError) : 
+    except (KeyError, IndexError, TypeError) :
       pass
-    
-  #------------------------------------------------------------------------------------------
-  def outputCommandSummary (self, outputStream=sys.stdout, sortOption=0, outputTemplateForOptionsWithParameters="--%s\n      %s (default: %s)", 
-                                                                         outputTemplateForOptionsWithoutParameters="--%s\n      %s",
-                                                                         outputTemplatePrefixForSingleLetter="  -%s, ",
-                                                                         outputTemplatePrefixForNoSingleLetter="  "):
+
+  #--------------------------------------------------------------------------------------[5]----
+  def outputCommandSummary (self, outputStream=sys.stdout, sortOption=0, outputTemplateForOptionsWithParameters="--%s\n\t\t%s (default: %s)",
+                                                                         outputTemplateForOptionsWithoutParameters="--%s\n\t\t%s",
+                                                                         outputTemplatePrefixForSingleLetter="\t-%s, ",
+                                                                         outputTemplatePrefixForNoSingleLetter="\t    "):
     """outputs the list of acceptable commands.  This is useful as the output of the 'help' option or usage.
-    
+
     Parameters:
       outputStream: where to send the output
       sortOption: 0 - sort by the single character option
@@ -290,11 +304,11 @@ class Config (dict):
         print >>outputStream, ("%s%s" % (prefix, outputTemplateForOptionsWithParameters)) % commandTuple
       else:
         print >>outputStream, ("%s%s" % (prefix, outputTemplateForOptionsWithoutParameters)) % commandTuple[:-1]
-        
+
   #------------------------------------------------------------------------------------------
-  def output (self, outputStream=sys.stdout, outputTemplateForOptionsWithParameters="    %s=%s", outputTemplateForOptionsWithoutParameters="    %s", blockPassword=True):
+  def output (self, outputStream=sys.stdout, outputTemplateForOptionsWithParameters="\t%s=%s", outputTemplateForOptionsWithoutParameters="\t%s", blockPassword=True):
     """this routine will right the current values of all options to an output stream.
-    
+
     Parameters:
       outputStream: where to write the output
       outputTemplateForOptionsWithParameters: a string template for outputing options that have parameters
@@ -313,7 +327,7 @@ class Config (dict):
         print >>outputStream, outputTemplateForOptionsWithParameters % x
       else:
         print >>outputStream, outputTemplateForOptionsWithoutParameters % x[0]
-        
+
   #------------------------------------------------------------------------------------------
   def __str__ (self):
     """ return a string representation of the options and their states.
@@ -323,7 +337,7 @@ class Config (dict):
     s = stringio.getvalue()
     stringio.close()
     return s
-      
+
   #------------------------------------------------------------------------------------------
   def __getattr__(self, name):
     """ this function implements an interface allowing the entries in the dictionary
@@ -335,8 +349,8 @@ class Config (dict):
       raise AttributeError(x)
 
 ConfigurationManager = Config #for legacy compatibility
-  
-#------------------------------------------------------------------------------------------  
+
+#------------------------------------------------------------------------------------------
 def ioConverter(inputString):
   """ a conversion function for to select stdout, stderr or open a file for writing
   """
@@ -366,7 +380,7 @@ def timeDeltaConverter(inputString):
     return datetime.timedelta(hours = int(hours), minutes = int(minutes), seconds = int(seconds))
   return inputString
 
-  
+
 #------------------------------------------------------------------------------------------
 def booleanConverter(inputString):
   """ a conversion function for boolean
@@ -375,49 +389,50 @@ def booleanConverter(inputString):
     return inputString.lower() in ("true", "t", "1")
   return inputString
 
-      
+
 if __name__ == "__main__":
-  
+
   def doubler (aString):
     return float(aString) * 2
-    
-        
-  commandLineOptions = [ ('?', 'help', False, None, 'print this message'), 
-                         ('c', 'config', True, './config', "the config file"),
-                         ('a', 'alpha', True, 600, "the alpha option"),
-                         ('b', 'beta', True, 'hello', 'the beta option'),
-                         ('g', 'gamma', False, None, "the gamma option"),
+
+  commandLineOptions = [ ('c', 'config', True, './config', "the config file"),
+                         ('a', 'alpha', True, 600, "the alpha option takes an int"),
+                         ('b', 'beta', True, 'hello', 'the beta option takes a string'),
+                         ('g', 'gamma', False, None, "the gamma option accepts no parameter"),
                          ('f', 'floater', True, 3.1415, "the floater option"),
                          ('d', 'doubler', True, 3.1415, "the doubler option", doubler),
-                         ('p', 'secretpassword', True, '', 'the password'),
+                         ('p', 'secretpassword', True, '', "the password - it won't print when listing configuration"),
                          ('o', 'ostream', True, 'stdout', 'output stream', ioConverter),
                          ('d', 'dt', True, '1960-05-04 15:10:00', 'aDateTime', dateTimeConverter),
                          ('l', 'timedelta', True, '123:11:16', 'output stream', timeDeltaConverter),
                          (None, 'noShort', False, None, 'only available as a long option'),
                          ('$', 'dollar', False, None, "combo of 'alpha=22, beta=10'", [ ("alpha", 22), ("beta", 10) ] ),
-                         ('#', 'hash', False, None, "combo of 'alpha=2, beta=100, gamma'", [ ("alpha", 1), ("beta", 10), ("gamma", None), ("doubler", 23) ] ),
+                         ('#', 'hash', False, None, "combo of 'alpha=2, beta=100, gamma, doubler=23'", [ ("alpha", 2), ("beta", 100), ("gamma", None), ("doubler", 23) ] ),
                        ]
 
-  cm = ConfigurationManager(commandLineOptions)
-  if "help" in cm: 
-    cm.outputCommandSummary()
-    sys.exit()
-  
+  cm = newConfiguration(configurationOptionsList=commandLineOptions)
+
   print cm
 
-  doc = cm.document()
-  
-  #print doc.dollar
-  print doc.doubler
-  print doc.secretpassword
-  print doc.hash
-  
+  print cm.doubler
+  print cm.secretpassword
+  try:
+    print cm.dollar
+  except AttributeError:
+    print "try running with the -$ option for more exciting fun"
+  try:
+    print cm.hash
+  except AttributeError:
+    print "try running with the -# option for more exciting fun"
 
-  #cm.output()
-  
-  #print cm['alpha'] + 100  #cm['alpha'] should be int
-  
-  
-  
- 
-  
+
+  #import config
+  #cm = newConfiguration(configurationModule=config)
+  #print cm
+
+
+
+
+
+
+
