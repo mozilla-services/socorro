@@ -3,8 +3,9 @@ from datetime import timedelta
 import re
 
 # Storage constants
-storageRoot = "/home/lars/temp/standard"
-deferredStorageRoot = "/home/lars/temp/deferred"
+storageRoot = "/home/lars/breakapd/testdata"
+deferredStorageRoot = "/home/lars/breakpad/deferred_testdata"
+
 dumpDirPrefix = "bp_"
 jsonFileSuffix = ".json"
 dumpFileSuffix = ".dump"
@@ -30,35 +31,6 @@ dumpDirCount = 500
 
 # Returned to the client with a uuid following
 dumpIDPrefix = "bp-"
-
-# Dump directories age for a while before they are deleted
-dumpDirDelta = timedelta(hours=2)
-dateDirDelta = timedelta(hours=1)
-
-# Database details for standalone dump processors
-processorDatabaseURI = "postgres://socorro:password@localhost:5432/socorro"
-processorMinidump = "/usr/local/bin/minidump_stackwalk"
-processorSymbols = ["/home/sayrer/dump"]
-processorConnTimeout = 600
-
-# Number of seconds to wait between walking the minidump directory tree.
-processorLoopTime = 360
-
-# By default, minidumps that failed processing will be saved to this directory.
-# NOTE: This must be on the same filesystem as storageRoot, but must not live
-# within storageRoot.
-saveMinidumpsTo = '/tmp/socorro-saved'
-saveFailedMinidumps = True
-
-# When testing, set to true to rename processed minidump files instead of
-# deleting them.
-saveProcessedMinidumps = False
-saveFailedMinidumps = False
-
-# Settings for creating a link to a file in a given version control viewing
-# website. For example:
-#    {'cvs':{'cvs.mozilla.org/cvsroot':'http://bonsai.mozilla.org/cvsblame.cgi?file=%(file)s&rev=%(revision)s&mark=%(line)s#%(line)s'}}
-vcsMappings = {}
 
 throttleConditions = [
   #("Version", lambda x: x[-3:] == "pre", 25), # queue 25% of crashes with version ending in "pre"
