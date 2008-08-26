@@ -3,9 +3,18 @@
 #
 # A mod_python environment for the crash report collector
 #
+import socorro.lib.ConfigurationManager
 
-import collect
-import config
+try:
+  import socorro.collector.collect as collect
+except ImportError:
+  import collect
+
+import socorro.collector.config as configModule
+
+config = socorro.lib.ConfigurationManager.newConfiguration(configurationModule=configModule,automaticHelp=False)
+collectObject = collect.Collect(config)
+
 import sys
 
 if __name__ != "__main__":
@@ -14,8 +23,8 @@ if __name__ != "__main__":
 else:
   # this is a test being run from the command line
   # these objects are to provide a fake environment for testing
-  from modpython_testhelper import apache
-  from modpython_testhelper import util
+  from socorro.collector.modpython_testhelper import apache
+  from socorro.collector.modpython_testhelper import util
 
 def handler(req):
   if req.method == "POST":
@@ -25,18 +34,18 @@ def handler(req):
       if not dump.file:
         return apache.HTTP_BAD_REQUEST
 
-      jsonData = collect.createJSON(theform)
-      if collect.throttle(jsonData):
+      jsonData = collectObject.createJSON(theform)
+      if collectObject.throttle(jsonData):
         storageRoot = config.deferredStorageRoot
         useIndexSubdirectories = True
       else:
         storageRoot = config.storageRoot
         useIndexSubdirectories = False
 
-      (dumpID, dumpPath, dateString) = collect.storeDump(dump.file, storageRoot)
-      collect.storeJSON(dumpID, dumpPath, jsonData, storageRoot, useIndexSubdirectories)
+      (dumpID, dumpPath, dateString) = collectObject.storeDump(dump.file, storageRoot)
+      collectObject.storeJSON(dumpID, dumpPath, jsonData, storageRoot, useIndexSubdirectories)
       req.content_type = "text/plain"
-      req.write(collect.makeResponseForClient(dumpID, dateString))
+      req.write(collectObject.makeResponseForClient(dumpID, dateString))
     except:
       print >>sys.stderr, "Exception: %s" % sys.exc_info()[0]
       print >>sys.stderr, sys.exc_info()[1]
@@ -49,7 +58,7 @@ def handler(req):
 
 
 if __name__ == "__main__":
-  from modpython_testhelper import *
+  from socorro.collector.modpython_testhelper import *
 
   req = FakeReq()
   req.method = "POST"
