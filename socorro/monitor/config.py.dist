@@ -9,6 +9,10 @@ storageRoot = cm.Option()
 storageRoot.doc = 'the root of the file system where dumps are found'
 storageRoot.default = '/tmp/socorro/'
 
+deferredStorageRoot = cm.Option()
+deferredStorageRoot.doc = 'the root of the file system where dumps are found'
+deferredStorageRoot.default = '/tmp/socorro/'
+
 dumpDirPrefix = cm.Option()
 dumpDirPrefix.doc = 'dump directory names begin with this prefix'
 dumpDirPrefix.default = 'bp_'

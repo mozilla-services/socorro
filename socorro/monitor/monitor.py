@@ -243,7 +243,19 @@ class Monitor (object):
       socorro.lib.util.reportExceptionAndContinue(logger)
 
   #-----------------------------------------------------------------------------------------------------------------
-  def queueJob (self, databaseConnection, databaseCursor, jsonFilePathName, symLinkPathname, processorIdSequenceGenerator, priority=0):
+  def queueJob (self, databaseConnection, databaseCursor, jsonFilePathName, processorIdSequenceGenerator, priority=0):
+    aFileName = os.path.basename(jsonFilePathName)
+    uuid = aFileName[:-len(self.config.jsonFileSuffix)]
+    logger.debug("%s - trying to insert %s", threading.currentThread().getName(), uuid)
+    processorIdAssignedToThisJob = processorIdSequenceGenerator.next()
+    databaseCursor.execute("insert into jobs (pathname, uuid, owner, priority, queuedDateTime) values (%s, %s, %s, %s, %s)",
+                               (jsonFilePathName, uuid, processorIdAssignedToThisJob, priority, datetime.datetime.now()))
+    databaseConnection.commit()
+    logger.debug("%s - %s assigned to processor %d", threading.currentThread().getName(), uuid, processorIdAssignedToThisJob)
+    return processorIdAssignedToThisJob
+
+  #-----------------------------------------------------------------------------------------------------------------
+  def queueJobFromSymLink (self, databaseConnection, databaseCursor, jsonFilePathName, symLinkPathname, processorIdSequenceGenerator, priority=0):
     logger.debug("%s - priority %d queuing %s", threading.currentThread().getName(), priority, jsonFilePathName)
     try:
       if not os.path.exists(jsonFilePathName):
@@ -251,15 +263,8 @@ class Monitor (object):
         logger.debug("%s - symbolic link: %s is bad. Target missing", threading.currentThread().getName(), symLinkPathname)
         os.unlink(symLinkPathname)
         return
-      aFileName = os.path.basename(jsonFilePathName)
-      uuid = aFileName[:-len(self.config.jsonFileSuffix)]
-      logger.debug("%s - trying to insert %s", threading.currentThread().getName(), uuid)
-      processorIdAssignedToThisJob = processorIdSequenceGenerator.next()
-      databaseCursor.execute("insert into jobs (pathname, uuid, owner, priority, queuedDateTime) values (%s, %s, %s, %s, %s)",
-                                 (jsonFilePathName, uuid, processorIdAssignedToThisJob, priority, datetime.datetime.now()))
-      databaseConnection.commit()
+      processorIdAssignedToThisJob = self.queueJob(databaseConnection, databaseCursor, jsonFilePathName, processorIdSequenceGenerator, priority)
       os.unlink(symLinkPathname)
-      logger.debug("%s - %s assigned to processor %d", threading.currentThread().getName(), uuid, processorIdAssignedToThisJob)
       return processorIdAssignedToThisJob
     except psycopg2.IntegrityError:
       databaseConnection.rollback()
@@ -291,38 +296,44 @@ class Monitor (object):
           self.quitCheck()
           self.cleanUpDeadProcessors(self.standardJobAllocationDatabaseConnection, self.standardJobAllocationCursor)
           self.quitCheck()
-          # walk the dump tree and assign jobs
-          logger.debug("%s - beginning directory tree walk", threading.currentThread().getName())
+          # walk the dump indexes and assign jobs
+          logger.debug("%s - getting jobSchedulerIter", threading.currentThread().getName())
           processorIdSequenceGenerator = self.jobSchedulerIter(self.standardJobAllocationCursor)
-          for symLinkCurrentDirectory, symLinkName, symLinkPathname in socorro.lib.filesystem.findFileGenerator(os.path.join(self.config.storageRoot, "index"), acceptanceFunction=self.isSymLink):
-            self.quitCheck()
-            try:
-              logger.debug("%s - found symbolic link: %s", threading.currentThread().getName(), symLinkPathname)
-              try:
-                if self.isProperAge(symLinkPathname):
-                  relativePathname = os.readlink(symLinkPathname)
-                  logger.debug("%s - relative target: %s", threading.currentThread().getName(), relativePathname)
-                else:
-                  continue
-              except OSError:
-                # this is a bad symlink - target missing?
-                logger.debug("%s - symbolic link: %s is bad. Target missing?", threading.currentThread().getName(), symLinkPathname)
-                os.unlink(symLinkPathname)
-                continue
-              absolutePathname = os.path.join(self.config.storageRoot, relativePathname[6:]) # convert relative path to absolute
-              logger.debug("%s - walking - found: %s referring to: %s", threading.currentThread().getName(), symLinkPathname, absolutePathname)
+          logger.debug("%s - beginning index scan", threading.currentThread().getName())
+          try:
+            for symLinkCurrentDirectory, symLinkName, symLinkPathname in socorro.lib.filesystem.findFileGenerator(os.path.join(self.config.storageRoot, "index"), acceptanceFunction=self.isSymLink):
+              logger.debug("%s - looping: %s", threading.currentThread().getName(), symLinkPathname)
               self.quitCheck()
-              self.insertionLock.acquire()
               try:
-                self.queueJob(self.standardJobAllocationDatabaseConnection, self.standardJobAllocationCursor, absolutePathname, symLinkPathname, processorIdSequenceGenerator)
-              finally:
-                self.insertionLock.release()
-            except KeyboardInterrupt:
-              logger.debug("%s - inner detects quit", threading.currentThread().getName())
-              self.quit = True
-              raise
-            except:
-              socorro.lib.util.reportExceptionAndContinue(logger)
+                logger.debug("%s - found symbolic link: %s", threading.currentThread().getName(), symLinkPathname)
+                try:
+                  if self.isProperAge(symLinkPathname):
+                    relativePathname = os.readlink(symLinkPathname)
+                    logger.debug("%s - relative target: %s", threading.currentThread().getName(), relativePathname)
+                  else:
+                    continue
+                except OSError:
+                  # this is a bad symlink - target missing?
+                  logger.debug("%s - symbolic link: %s is bad. Target missing?", threading.currentThread().getName(), symLinkPathname)
+                  os.unlink(symLinkPathname)
+                  continue
+                absolutePathname = os.path.join(self.config.storageRoot, relativePathname[6:]) # convert relative path to absolute
+                logger.debug("%s - index entry found: %s referring to: %s", threading.currentThread().getName(), symLinkPathname, absolutePathname)
+                self.quitCheck()
+                self.insertionLock.acquire()
+                try:
+                  self.queueJobFromSymLink(self.standardJobAllocationDatabaseConnection, self.standardJobAllocationCursor, absolutePathname, symLinkPathname, processorIdSequenceGenerator)
+                finally:
+                  self.insertionLock.release()
+              except KeyboardInterrupt:
+                logger.debug("%s - inner detects quit", threading.currentThread().getName())
+                self.quit = True
+                raise
+              except:
+                socorro.lib.util.reportExceptionAndContinue(logger)
+          except:
+            socorro.lib.util.reportExceptionAndContinue(logger)
+          logger.debug("%s - end of loop - about to sleep", threading.currentThread().getName())
           self.responsiveSleep(self.config.standardLoopDelay)
       except (KeyboardInterrupt, SystemExit):
         logger.debug("%s - outer detects quit", threading.currentThread().getName())
@@ -343,6 +354,7 @@ class Monitor (object):
 
   #-----------------------------------------------------------------------------------------------------------------
   def isSymLink(self, testPathTuple):
+    logger.debug("%s - testing for symlink: %s", threading.currentThread().getName(), testPathTuple[1])
     return testPathTuple[1].endswith(".symlink")
 
   #-----------------------------------------------------------------------------------------------------------------
@@ -350,6 +362,67 @@ class Monitor (object):
     #logger.debug("%s - %s", threading.currentThread().getName(), testPath)
     #logger.debug("%s - %s", threading.currentThread().getName(), (datetime.datetime.utcnow() - datetime.datetime.utcfromtimestamp(os.path.getmtime(testPath))) > self.config.minimumSymlinkAge)
     return (datetime.datetime.utcnow() - datetime.datetime.utcfromtimestamp(os.path.getmtime(testPath))) > self.config.minimumSymlinkAge
+
+  #-----------------------------------------------------------------------------------------------------------------
+  def lookForPriorityJobsAlreadyInQueue(self, priorityUuids):
+    # check for uuids already in the queue
+    for uuid in priorityUuids.keys():
+      self.quitCheck()
+      try:
+        prexistingJobOwner = socorro.lib.psycopghelper.singleValueSql(self.priorityJobAllocationCursor, "select owner from jobs where uuid = '%s'" % uuid)
+        logger.info("%s - priority job %s was already in the queue, assigned to %d - raising its priority", threading.currentThread().getName(), uuid, prexistingJobOwner)
+        try:
+          self.priorityJobAllocationCursor.execute("insert into priority_jobs_%d (uuid) values ('%s')" % (prexistingJobOwner, uuid))
+        except psycopg2.ProgrammingError:
+          logger.debug("%s - %s assigned to dead processor %d - wait for reassignment", threading.currentThread().getName(), prexistingJobOwner, uuid)
+          # likely that the job is assigned to a dead processor
+          # skip processing it this time around - by next time hopefully it will have been
+          # re assigned to a live processor
+          self.priorityJobAllocationDatabaseConnection.rollback()
+          del priorityUuids[uuid]
+          continue
+        self.priorityJobAllocationCursor.execute("update jobs set priority = priority + 1 where uuid = %s", (uuid,))
+        self.priorityJobAllocationCursor.execute("delete from priorityJobs where uuid = %s", (uuid,))
+        self.priorityJobAllocationDatabaseConnection.commit()
+        del priorityUuids[uuid]
+      except socorro.lib.psycopghelper.SQLDidNotReturnSingleValue:
+        #logger.debug("%s - priority job %s was not already in the queue", threading.currentThread().getName(), uuid)
+        pass
+
+  #-----------------------------------------------------------------------------------------------------------------
+  def lookForPriorityJobsInSymlinks(self, priorityUuids, processorIdSequenceGenerator, symLinkIndexPath):
+    # check for jobs in symlink directories
+    for uuid in priorityUuids.keys():
+      logger.debug("%s - looking for %s", threading.currentThread().getName(), uuid)
+      for path, file, currentDirectory in socorro.lib.filesystem.findFileGenerator(symLinkIndexPath,lambda x: os.path.isdir(x[2])):  # list all directories
+        self.quitCheck()
+        absoluteSymLinkPathname = os.path.join(currentDirectory, "%s.symlink" % uuid)
+        logger.debug("%s -         as %s", threading.currentThread().getName(), absoluteSymLinkPathname)
+        try:
+          relativeTargetPathname = os.readlink(absoluteSymLinkPathname)
+          absoluteTargetPathname = os.path.normpath(os.path.join(currentDirectory, relativeTargetPathname))
+        except OSError:
+          logger.debug("%s -         Not it...", threading.currentThread().getName())
+          continue
+        logger.debug("%s -         FOUND", threading.currentThread().getName())
+        logger.info("%s - priority queuing %s", threading.currentThread().getName(), absoluteTargetPathname)
+        processorIdAssignedToThisJob = self.queueJobFromSymLink(self.priorityJobAllocationDatabaseConnection, self.priorityJobAllocationCursor, absoluteTargetPathname, absoluteSymLinkPathname, processorIdSequenceGenerator, 1)
+        logger.info("%s - %s assigned to %d", threading.currentThread().getName(), uuid, processorIdAssignedToThisJob)
+        if processorIdAssignedToThisJob:
+          self.priorityJobAllocationCursor.execute("insert into priority_jobs_%d (uuid) values ('%s')" % (processorIdAssignedToThisJob, uuid))
+        self.priorityJobAllocationCursor.execute("delete from priorityJobs where uuid = %s", (uuid,))
+        self.priorityJobAllocationDatabaseConnection.commit()
+        del priorityUuids[uuid]
+        break
+
+  #-----------------------------------------------------------------------------------------------------------------
+  def priorityJobsNotFound(self, priorityUuids):
+    # we've failed to find the uuids anywhere
+    for uuid in priorityUuids:
+      self.quitCheck()
+      logger.error("%s - priority uuid %s was never found",  threading.currentThread().getName(), uuid)
+      self.priorityJobAllocationCursor.execute("delete from priorityJobs where uuid = %s", (uuid,))
+      self.priorityJobAllocationDatabaseConnection.commit()
 
   #-----------------------------------------------------------------------------------------------------------------
   def priorityJobAllocationLoop(self):
@@ -360,6 +433,7 @@ class Monitor (object):
       self.quit = True
       socorro.lib.util.reportExceptionAndAbort(logger) # can't continue without a database connection
     symLinkIndexPath = os.path.join(self.config.storageRoot, "index")
+    deferredSymLinkIndexPath = os.path.join(self.config.deferredStorageRoot, "index")
     try:
       try:
         while (True):
@@ -371,62 +445,14 @@ class Monitor (object):
               # assign jobs
               logger.debug("%s - beginning search for priority jobs", threading.currentThread().getName())
               try:
-                # check for uuids already in the queue
-                for uuid in priorityUuids.keys():
-                  self.quitCheck()
-                  self.priorityJobAllocationCursor.execute("select owner from jobs where uuid = %s", (uuid,))
-                  try:
-                    prexistingJobOwner = self.priorityJobAllocationCursor.fetchall()[0][0]
-                  except IndexError:
-                    prexistingJobOwner = None
-                  if prexistingJobOwner:
-                    logger.info("%s - priority job %s was already in the queue, assigned to %d - raising its priority", threading.currentThread().getName(), uuid, prexistingJobOwner)
-                    try:
-                      self.priorityJobAllocationCursor.execute("insert into priority_jobs_%d (uuid) values ('%s')" % (prexistingJobOwner, uuid))
-                    except psycopg2.ProgrammingError:
-                      logger.debug("%s - %s assigned to dead processor %d - wait for reassignment", threading.currentThread().getName(), prexistingJobOwner, uuid)
-                      # likely that the job is assigned to a dead processor
-                      # skip processing it this time around - by next time hopefully it will have been
-                      # re assigned to a live processor
-                      self.priorityJobAllocationDatabaseConnection.rollback()
-                      del priorityUuids[uuid]
-                      continue
-                    self.priorityJobAllocationCursor.execute("update jobs set priority = priority + 1 where uuid = %s", (uuid,))
-                    self.priorityJobAllocationCursor.execute("delete from priorityJobs where uuid = %s", (uuid,))
-                    self.priorityJobAllocationDatabaseConnection.commit()
-                    del priorityUuids[uuid]
+                self.lookForPriorityJobsAlreadyInQueue(priorityUuids)
                 if priorityUuids: # only need to continue if we still have jobs to process
-                  # check for jobs in symlink directories
-                  processorIdSequenceGenerator = self.unbalancedJobSchedulerIter(self.priorityJobAllocationCursor)
-                  for uuid in priorityUuids.keys():
-                    logger.debug("%s - looking for %s", threading.currentThread().getName(), uuid)
-                    for currentDirectory in dircache.listdir(symLinkIndexPath):
-                      self.quitCheck()
-                      absoluteSymLinkPathname = os.path.join(self.config.storageRoot, "index", currentDirectory, "%s.symlink" % uuid)
-                      logger.debug("%s -         as %s", threading.currentThread().getName(), absoluteSymLinkPathname)
-                      try:
-                        relativeTargetPathname = os.readlink(absoluteSymLinkPathname)
-                        absoluteTargetPathname = os.path.join(self.config.storageRoot, relativeTargetPathname[6:])
-                      except OSError:
-                        logger.debug("%s -         Not it...", threading.currentThread().getName())
-                        continue
-                      logger.debug("%s -         FOUND", threading.currentThread().getName())
-                      logger.info("%s - priority queuing %s", threading.currentThread().getName(), absoluteTargetPathname)
-                      processorIdAssignedToThisJob = self.queueJob(self.priorityJobAllocationDatabaseConnection, self.priorityJobAllocationCursor, absoluteTargetPathname, absoluteSymLinkPathname, processorIdSequenceGenerator, 1)
-                      logger.info("%s - %s assigned to %d", threading.currentThread().getName(), uuid, processorIdAssignedToThisJob)
-                      if processorIdAssignedToThisJob:
-                        self.priorityJobAllocationCursor.execute("insert into priority_jobs_%d (uuid) values ('%s')" % (processorIdAssignedToThisJob, uuid))
-                      self.priorityJobAllocationCursor.execute("delete from priorityJobs where uuid = %s", (uuid,))
-                      self.priorityJobAllocationDatabaseConnection.commit()
-                      del priorityUuids[uuid]
-                      break
+                  processorIdSequenceGenerator = self.jobSchedulerIter(self.priorityJobAllocationCursor)
+                  self.lookForPriorityJobsInSymlinks(priorityUuids, processorIdSequenceGenerator, symLinkIndexPath)
                   if priorityUuids:
-                    # we've failed to find the uuids anywhere
-                    for uuid in priorityUuids:
-                      self.quitCheck()
-                      logger.error("%s - priority uuid %s was never found",  threading.currentThread().getName(), uuid)
-                      self.priorityJobAllocationCursor.execute("delete from priorityJobs where uuid = %s", (uuid,))
-                      self.priorityJobAllocationDatabaseConnection.commit()
+                    self.lookForPriorityJobsInSymlinks(priorityUuids, processorIdSequenceGenerator, deferredSymLinkIndexPath)
+                    if priorityUuids:
+                      self.priorityJobsNotFound(priorityUuids)
               except KeyboardInterrupt:
                 logger.debug("%s - inner detects quit", threading.currentThread().getName())
                 raise
