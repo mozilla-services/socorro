@@ -36,9 +36,9 @@ def checkDumpQueue():
 def backOffMessage():
   pass
 
-def makeDumpDir(base):
+def makeDumpDir(dumpDir):
   """Create a directory to hold a group of dumps, and set permissions"""
-  tmpPath = tempfile.mkdtemp(dir=base, prefix=config.dumpDirPrefix)
+  tmpPath = os.makedirs(dumpDir)
   os.chmod(tmpPath, config.dirPermissions)
   if config.dumpGID is not None:
     os.chown(tmpPath, -1, config.dumpGID)
@@ -79,9 +79,10 @@ def getParentPathForDump():
   """Return a directory path to hold dump data, creating if necessary"""
   # First make an hourly directory if necessary
   utc = datetime.utcnow()
+  baseminute = "%02u" % (5 * int(utc.minute/5))
   dateString = "%04u-%02u-%02u-%02u" % (utc.year, utc.month, utc.day, utc.hour)
   datePath = os.path.join(config.storageRoot, str(utc.year), str(utc.month),
-                          str(utc.day), str(utc.hour))
+                          str(utc.day), str(utc.hour), config.dumpDirPrefix + baseminute)
 
   # if it's not there yet, create the date directory and its first
   # dump directory
@@ -91,11 +92,11 @@ def getParentPathForDump():
 
   # return the last-modified dir if it has less than dumpCount entries,
   # otherwise make a new one
-  latestDir = findLastModifiedDirInPath(datePath)
-  if len(os.listdir(latestDir)) >= config.dumpDirCount:
-    return (makeDumpDir(datePath), dateString)
+  #latestDir = findLastModifiedDirInPath(datePath)
+  #if len(os.listdir(latestDir)) >= config.dumpDirCount:
+  #  return (makeDumpDir(datePath), dateString)
 
-  return (latestDir, dateString)
+  return (datePath, dateString)
 
 def openFileForDumpID(dumpID, dumpDir, suffix, mode):
   filename = os.path.join(dumpDir, dumpID + suffix)
