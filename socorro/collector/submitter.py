@@ -14,6 +14,7 @@ def submitCrashReport (jsonFilePathName, binaryFilePathName, serverURL):
   binaryFile = open(binaryFilePathName)
   try:
     data['upload_file_minidump'] = binaryFile
+    print data
     urllib2.urlopen(serverURL,data)
   finally:
     binaryFile.close()
@@ -31,25 +32,32 @@ def walkFileSystemSubmittingReports (fileSystemRoot, serverURL, errorReporter=re
 
 if __name__ == '__main__':
   import socorro.lib.ConfigurationManager
+
   import os.path
+  import traceback
+
+  def myErrorReporter (anException):
+    print >>sys.stderr, type(anException), anException
+    exceptionType, exception, tracebackInfo = sys.exc_info()
+    traceback.print_tb(tracebackInfo, None, sys.stderr)
 
   commandLineOptions = [
     ('c',  'config', True, './config', "the config file"),
     ('u',  'url', True, 'http://localhost/crash-reports/submit', "The url of the server to load test"),
     ('j',  'jsonfile', True, None, 'the pathname of a json file for POST'),
-    ('d',  'dumpfile', False, None, 'the pathname of a dumpfile to upload with the POST'),
+    ('d',  'dumpfile', True, None, 'the pathname of a dumpfile to upload with the POST'),
     ('s',  'searchRoot', True, None, 'a filesystem location to begin a search for json/dump combos'),
     ]
 
   config = socorro.lib.ConfigurationManager.newConfiguration(configurationOptionsList=commandLineOptions)
 
   if config.searchRoot:
-    walkFileSystemSubmittingReports(config.searchRoot, config.url)
+    walkFileSystemSubmittingReports(config.searchRoot, config.url, myErrorReporter)
   else:
     try:
       submitCrashReport(config.jsonfile, config.dumpfile, config.url)
     except Exception, x:
-      print >>sys.sterr, x
+      myErrorReporter(x)
 
 
 
