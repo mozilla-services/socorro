@@ -38,11 +38,11 @@ def backOffMessage():
 
 def makeDumpDir(dumpDir):
   """Create a directory to hold a group of dumps, and set permissions"""
-  tmpPath = os.makedirs(dumpDir)
-  os.chmod(tmpPath, config.dirPermissions)
+  os.makedirs(dumpDir)
+  os.chmod(dumpDir, config.dirPermissions)
   if config.dumpGID is not None:
-    os.chown(tmpPath, -1, config.dumpGID)
-  return tmpPath
+    os.chown(dumpDir, -1, config.dumpGID)
+  return dumpDir
 
 
 def findLastModifiedDirInPath(path):
@@ -87,7 +87,6 @@ def getParentPathForDump():
   # if it's not there yet, create the date directory and its first
   # dump directory
   if not os.path.exists(datePath):
-    makedirs(datePath)
     return (makeDumpDir(datePath), dateString)
 
   # return the last-modified dir if it has less than dumpCount entries,
