@@ -1,11 +1,11 @@
 <?php slot::start('head') ?>
     <title>Please wait... we are processing your report.</title>
-    <meta http-equiv="refresh" content="21; url=<?php out::H( url::base() . '/report/index/' . $uuid . '?p=1' ) ?>"/>
+    <meta http-equiv="refresh" content="21; url=<?php out::H( url::base() . 'report/index/' . $uuid . '?p=1' ) ?>"/>
 <?php slot::end() ?>
 
 <h1 class="loading">Your report is being processed</h1>
 <ul>
-    <li>We've given <a href="<?php out::H( url::base() . '/report/index/' . $uuid + '?p=1' ) ?>">your report</a> priority</li>
+    <li>We've given <a href="<?php out::H( url::base() . 'report/index/' . $uuid . '?p=1' ) ?>">your report</a> priority</li>
     <li>Your report should be ready in a minute</li>
     <li>This page will refresh and display your report's status</li>
     <li>When your report has been processed, we will redirect you to your
