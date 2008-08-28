@@ -1,6 +1,6 @@
 <?php slot::start('head') ?>
     <title>Please wait... we are processing your report.</title>
-    <meta http-equiv="refresh" content="21; url=<?php out::H( url::base() . '/report/index/' . $uuid + '?p=1' ) ?>"/>
+    <meta http-equiv="refresh" content="21; url=<?php out::H( url::base() . '/report/index/' . $uuid . '?p=1' ) ?>"/>
 <?php slot::end() ?>
 
 <h1 class="loading">Your report is being processed</h1>
