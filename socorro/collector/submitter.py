@@ -1,8 +1,8 @@
 #!/usr/bin/python
 
-import urllib2
 import simplejson
 import sys
+import pycurl
 import socorro.lib.filesystem
 
 def submitCrashReport (jsonFilePathName, binaryFilePathName, serverURL):
@@ -11,13 +11,15 @@ def submitCrashReport (jsonFilePathName, binaryFilePathName, serverURL):
     data = simplejson.load(jsonFile)
   finally:
     jsonFile.close()
-  binaryFile = open(binaryFilePathName)
-  try:
-    data['upload_file_minidump'] = binaryFile
-    print data
-    urllib2.urlopen(serverURL,data)
-  finally:
-    binaryFile.close()
+
+  c = pycurl.Curl()
+  fields = [(str(t[0]), str(t[1])) for t in data.items()]
+  fields.append (("upload_file_minidump", (c.FORM_FILE, binaryFilePathName)))
+  c.setopt(c.POST, 1)
+  c.setopt(c.URL, serverURL)
+  c.setopt(c.HTTPPOST, fields)
+  c.perform()
+  c.close()
 
 def reportErrorToStderr (x):
   print >>sys.stderr, x
