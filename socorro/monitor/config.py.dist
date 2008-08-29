@@ -35,6 +35,10 @@ dateDirDelta.doc = 'the age when an empty date directory can be deleted (HHH:MM:
 dateDirDelta.default = datetime.timedelta(hours=1)
 dateDirDelta.fromStringConverter = cm.timeDeltaConverter
 
+maximumDeferredJobAge = cm.Option()
+maximumDeferredJobAge.doc = 'the maximum number of days that deferred jobs stick around'
+maximumDeferredJobAge.default = 2
+
 minimumSymlinkAge = cm.Option()
 minimumSymlinkAge.doc = 'the age that a simlink must be before it is processed (HHH:MM:SS)'
 minimumSymlinkAge.default = datetime.timedelta(seconds=30)

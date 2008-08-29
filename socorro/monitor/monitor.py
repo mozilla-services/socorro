@@ -11,6 +11,7 @@ import shutil
 import signal
 import sets
 import threading
+import collections
 
 import logging
 
@@ -124,34 +125,39 @@ class Monitor (object):
       aCursor.execute("select id from processors where lastSeenDateTime < '%s'" % threshold)
       deadProcessors = aCursor.fetchall()
       if deadProcessors:
-        logger.info("%s - found dead processor(s)", threading.currentThread().getName())
+        logger.info("%s - found dead processor(s):", threading.currentThread().getName())
+        for aDeadProcessorTuple in deadProcessors:
+          logger.info("%s -   %d is dead", threading.currentThread().getName(), aDeadProcessorTuple[0])
         aCursor.execute("select id from processors where lastSeenDateTime >= '%s'" % threshold)
         liveProcessors = aCursor.fetchall()
         if not liveProcessors:
           raise Monitor.NoProcessorsRegisteredException("There are no processors registered")
-        numberOfLiveProcessors = len(liveProcessors)
-        aCursor.execute("select count(*) from jobs where owner in (select id from processors where lastSeenDateTime < '%s')" % threshold)
-        numberOfJobsAssignedToDeadProcesors = aCursor.fetchall()[0][0]
-        numberOfJobsPerNewProcessor = numberOfJobsAssignedToDeadProcesors / numberOfLiveProcessors
-        leftOverJobs = numberOfJobsAssignedToDeadProcesors % numberOfLiveProcessors
-        for aLiveProcessorTuple in liveProcessors:
-          aLiveProcessorId = aLiveProcessorTuple[0]
-          logger.info("%s - moving %d jobs from dead processors to procssor #%d", threading.currentThread().getName(), numberOfJobsPerNewProcessor + leftOverJobs, aLiveProcessorId)
-          aCursor.execute("""update jobs set owner = %s, starteddatetime = null where id in
-                              (select id from jobs where owner in
-                                (select id from processors where lastSeenDateTime < %s) limit %s)""", (aLiveProcessorId, threshold, numberOfJobsPerNewProcessor + leftOverJobs))
-          leftOverJobs = 0
-        logger.info("%s - removing all dead processors", threading.currentThread().getName())
-        aCursor.execute("delete from processors where lastSeenDateTime < '%s'" % threshold)
-        databaseConnection.commit()
-        # remove dead processors' priority tables
-        for aDeadProcessorTuple in deadProcessors:
-          try:
-            aCursor.execute("drop table priority_jobs_%d" % aDeadProcessorTuple[0])
-            databaseConnection.commit()
-          except:
-            logger.warning("%s - cannot clean up dead processor in database: the table 'priority_jobs_%d' may need manual deletion", threading.currentThread().getName(), aDeadProcessorTuple[0])
-            databaseConnection.rollback()
+        #
+        # This code section to reassign jobs from dead processors is blocked because it is very slow
+        #
+        #numberOfLiveProcessors = len(liveProcessors)
+        #aCursor.execute("select count(*) from jobs where owner in (select id from processors where lastSeenDateTime < '%s')" % threshold)
+        #numberOfJobsAssignedToDeadProcesors = aCursor.fetchall()[0][0]
+        #numberOfJobsPerNewProcessor = numberOfJobsAssignedToDeadProcesors / numberOfLiveProcessors
+        #leftOverJobs = numberOfJobsAssignedToDeadProcesors % numberOfLiveProcessors
+        #for aLiveProcessorTuple in liveProcessors:
+          #aLiveProcessorId = aLiveProcessorTuple[0]
+          #logger.info("%s - moving %d jobs from dead processors to procssor #%d", threading.currentThread().getName(), numberOfJobsPerNewProcessor + leftOverJobs, aLiveProcessorId)
+          #aCursor.execute("""update jobs set owner = %s, starteddatetime = null where id in
+                              #(select id from jobs where owner in
+                                #(select id from processors where lastSeenDateTime < %s) limit %s)""", (aLiveProcessorId, threshold, numberOfJobsPerNewProcessor + leftOverJobs))
+          #leftOverJobs = 0
+        #logger.info("%s - removing all dead processors", threading.currentThread().getName())
+        #aCursor.execute("delete from processors where lastSeenDateTime < '%s'" % threshold)
+        #databaseConnection.commit()
+        ## remove dead processors' priority tables
+        #for aDeadProcessorTuple in deadProcessors:
+          #try:
+            #aCursor.execute("drop table priority_jobs_%d" % aDeadProcessorTuple[0])
+            #databaseConnection.commit()
+          #except:
+            #logger.warning("%s - cannot clean up dead processor in database: the table 'priority_jobs_%d' may need manual deletion", threading.currentThread().getName(), aDeadProcessorTuple[0])
+            #databaseConnection.rollback()
     except Monitor.NoProcessorsRegisteredException:
       self.quit = True
       socorro.lib.util.reportExceptionAndAbort(logger)
@@ -220,27 +226,6 @@ class Monitor (object):
     except Monitor.NoProcessorsRegisteredException:
       self.quit = True
       socorro.lib.util.reportExceptionAndAbort(logger)
-
-  #-----------------------------------------------------------------------------------------------------------------
-  def directoryJudgedDeletable (self, pathname, subDirectoryList, fileList):
-    if not (subDirectoryList or fileList) and pathname != self.config.storageRoot: #if both directoryList and fileList are empty
-      #select an ageLimit from two options based on the if target directory name has a prefix of "dumpDirPrefix"
-      ageLimit = (self.config.dateDirDelta, self.config.dumpDirDelta)[os.path.basename(pathname).startswith(self.config.dumpDirPrefix)]
-      logger.debug("%s - agelimit: %s dir age: %s", threading.currentThread().getName(), ageLimit, (datetime.datetime.utcnow() - datetime.datetime.utcfromtimestamp(os.path.getmtime(pathname))))
-      return (datetime.datetime.utcnow() - datetime.datetime.utcfromtimestamp(os.path.getmtime(pathname))) > ageLimit
-    return False
-
-  #-----------------------------------------------------------------------------------------------------------------
-  def passJudgementOnDirectory(self, currentDirectory, subDirectoryList, fileList):
-    #logger.debug("%s - %s", threading.currentThread().getName(), currentDirectory)
-    try:
-      if self.directoryJudgedDeletable(currentDirectory, subDirectoryList, fileList):
-        logger.debug("%s - removing - %s", threading.currentThread().getName(),  currentDirectory)
-        os.rmdir(currentDirectory)
-      else:
-        logger.debug("%s - not eligible for deletion - %s", threading.currentThread().getName(),  currentDirectory)
-    except Exception:
-      socorro.lib.util.reportExceptionAndContinue(logger)
 
   #-----------------------------------------------------------------------------------------------------------------
   def queueJob (self, databaseConnection, databaseCursor, jsonFilePathName, processorIdSequenceGenerator, priority=0):
@@ -374,7 +359,7 @@ class Monitor (object):
         try:
           self.priorityJobAllocationCursor.execute("insert into priority_jobs_%d (uuid) values ('%s')" % (prexistingJobOwner, uuid))
         except psycopg2.ProgrammingError:
-          logger.debug("%s - %s assigned to dead processor %d - wait for reassignment", threading.currentThread().getName(), prexistingJobOwner, uuid)
+          logger.debug("%s - %s assigned to dead processor %d - wait for reassignment", threading.currentThread().getName(), uuid, prexistingJobOwner)
           # likely that the job is assigned to a dead processor
           # skip processing it this time around - by next time hopefully it will have been
           # re assigned to a live processor
@@ -471,6 +456,27 @@ class Monitor (object):
     finally:
       self.priorityJobAllocationDatabaseConnection.close()
       logger.debug("%s - priorityLoop done.", threading.currentThread().getName())
+
+  #-----------------------------------------------------------------------------------------------------------------
+  def directoryJudgedDeletable (self, pathname, subDirectoryList, fileList):
+    if not (subDirectoryList or fileList) and pathname != self.config.storageRoot: #if both directoryList and fileList are empty
+      #select an ageLimit from two options based on the if target directory name has a prefix of "dumpDirPrefix"
+      ageLimit = (self.config.dateDirDelta, self.config.dumpDirDelta)[os.path.basename(pathname).startswith(self.config.dumpDirPrefix)]
+      logger.debug("%s - agelimit: %s dir age: %s", threading.currentThread().getName(), ageLimit, (datetime.datetime.utcnow() - datetime.datetime.utcfromtimestamp(os.path.getmtime(pathname))))
+      return (datetime.datetime.utcnow() - datetime.datetime.utcfromtimestamp(os.path.getmtime(pathname))) > ageLimit
+    return False
+
+  #-----------------------------------------------------------------------------------------------------------------
+  def passJudgementOnDirectory(self, currentDirectory, subDirectoryList, fileList):
+    #logger.debug("%s - %s", threading.currentThread().getName(), currentDirectory)
+    try:
+      if self.directoryJudgedDeletable(currentDirectory, subDirectoryList, fileList):
+        logger.debug("%s - removing - %s", threading.currentThread().getName(),  currentDirectory)
+        os.rmdir(currentDirectory)
+      else:
+        logger.debug("%s - not eligible for deletion - %s", threading.currentThread().getName(),  currentDirectory)
+    except Exception:
+      socorro.lib.util.reportExceptionAndContinue(logger)
 
   #-----------------------------------------------------------------------------------------------------------------
   def oldDirectoryCleanupLoop (self):
