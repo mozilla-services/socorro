@@ -103,6 +103,8 @@ class Processor(object):
       self.mainThreadDatabaseConnection = psycopg2.connect(self.config.databaseDSN)
       self.mainThreadCursor = self.mainThreadDatabaseConnection.cursor()
     except:
+      self.quit = True
+      logger.critical("%s - cannot connect to the database", threading.currentThread().getName())
       socorro.lib.util.reportExceptionAndAbort(logger) # can't continue without a database connection
 
     # register self with the processors table in the database
@@ -145,6 +147,8 @@ class Processor(object):
         self.mainThreadDatabaseConnection.rollback()
         socorro.lib.util.reportExceptionAndContinue(logger)
     except:
+      logger.critical("%s - cannot register with the database", threading.currentThread().getName())
+      self.quit = True
       socorro.lib.util.reportExceptionAndAbort(logger) # can't continue without a registration
 
     self.lastCheckInTimestamp = datetime.datetime(1950, 1, 1)
@@ -304,6 +308,8 @@ class Processor(object):
                 yield aJobTuple
               except IndexError:
                 logger.warning("%s - the priority job %s was never found", threading.currentThread().getName(), aPriorityJobUuid)
+                self.mainThreadCursor.execute("delete from %s where uuid = '%s'" % (self.priorityJobsTableName, aPriorityJobUuid))
+                self.mainThreadDatabaseConnection.commit()
           continue  # done processing priorities - start the loop again in case there are more priorities
         preexistingPriorityJobs = set()
         if not jobList:
@@ -323,6 +329,8 @@ class Processor(object):
           logger.debug("%s - incomingJobStream yielding standard from job list: %s", threading.currentThread().getName(), aJobTuple[1])
           yield aJobTuple
       except psycopg2.Error:
+        self.quit = True
+        logger.critical("%s - fatal database trouble - quitting", threading.currentThread().getName())
         socorro.lib.util.reportExceptionAndAbort()
 
 
@@ -368,6 +376,8 @@ class Processor(object):
           logger.info("%s - connecting to database", threading.currentThread().getName())
           threadLocalDatabaseConnection = self.threadLocalDatabaseConnections[threading.currentThread().getName()] = psycopg2.connect(self.config.databaseDSN)
         except:
+          self.quit = True
+          logger.critical("%s - cannot connect to the database", threading.currentThread().getName())
           socorro.lib.util.reportExceptionAndAbort(logger) # can't continue without a database connection
     except (KeyboardInterrupt, SystemExit):
       logger.info("%s - quit request detected", threading.currentThread().getName())
@@ -379,8 +389,16 @@ class Processor(object):
       threadLocalCursor.execute("select 1")
     except psycopg2.OperationalError:
       # did the connection time out?
-      # try to re-establish:
-      threadLocalDatabaseConnection = self.threadLocalDatabaseConnections[threading.currentThread().getName()] = psycopg2.connect(self.config.databaseDSN)
+      logger.info("%s - trying to re-establish a database connection", threading.currentThread().getName())
+      try:
+        threadLocalDatabaseConnection = self.threadLocalDatabaseConnections[threading.currentThread().getName()] = psycopg2.connect(self.config.databaseDSN)
+        threadLocalCursor = threadLocalDatabaseConnection.cursor()
+        threadLocalCursor.execute("select 1")
+      except psycopg2.OperationalError:
+        logger.critical("%s - something's gone horribly wrong with the database connection", threading.currentThread().getName())
+        self.quit = True
+        socorro.lib.util.reportExceptionAndAbort(logger)
+
 
     try:
       jobId, jobUuid, jobPathname, jobPriority = jobTuple
@@ -418,6 +436,8 @@ class Processor(object):
     except DuplicateEntryException, x:
       logger.warning("%s - duplicate entry: %s", threading.currentThread().getName(), jobUuid)
     except psycopg2.OperationalError:
+      logger.critical("%s - something's gone horribly wrong with the database connection", threading.currentThread().getName())
+      self.quit = True
       socorro.lib.util.reportExceptionAndAbort(logger)
     except Exception, x:
       socorro.lib.util.reportExceptionAndContinue(logger)
