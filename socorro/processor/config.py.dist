@@ -19,9 +19,6 @@ processorId = cm.Option()
 processorId.doc = 'the id number for the processor (must already exist in database) (0 for create new Id, "auto" for autodetection)'
 processorId.default = "auto"
 
-#get storageRoot from monitor's config file
-from socorro.monitor.config import storageRoot
-
 stackwalkCommandLine = cm.Option()
 stackwalkCommandLine.doc = 'the template for the command to invoke minidump_stackwalk'
 #for standard minidump_stackwalk uncomment this line:
