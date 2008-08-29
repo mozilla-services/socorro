@@ -11,12 +11,10 @@ class Priorityjobs_Model extends Model {
      * @return mixed  Result of the DB insert
      */
     public function add($uuid) {
-        try {
-            $rv = @$this->db->query('INSERT INTO priorityjobs ( uuid ) VALUES (?)', $uuid); 
-        } catch (Kohana_Database_Exception $e) {
-            // HACK: Trap and ignore a potential duplicate key error here, but 
-            // raise any other errors.
-            if (strpos( (string) $e, 'duplicate key' ) === FALSE ) throw $e;
+        // Check for an existing UUID, and only insert if none found.
+        $rv = $this->db->query('SELECT uuid FROM priorityjobs WHERE uuid=?', $uuid);
+        if (!$rv->count()) {
+            $rv = $this->db->query('INSERT INTO priorityjobs ( uuid ) VALUES (?)', $uuid); 
         }
         return true;
     }
