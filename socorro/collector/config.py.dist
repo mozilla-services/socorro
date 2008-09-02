@@ -26,7 +26,7 @@ dirPermissions = stat.S_IRGRP | stat.S_IXGRP | stat.S_IWGRP | stat.S_IRUSR | sta
 # dumpGID = 501
 dumpGID = cm.Option()
 dumpGID.default = None
-deumpGID.doc="Set the group ID on minidumps so that they can be deleted by other users (optional)"
+dumpGID.doc="Set the group ID on minidumps so that they can be deleted by other users (optional)"
 
 # Tell the collector where the reporter lives (optional)
 # reporterURL = 'http://crash-stats.mozilla.com'
