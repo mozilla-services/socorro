@@ -2,7 +2,10 @@
 # collect.py, collector functions for Pylons, CGI, and mod_python collectors
 #
 
-import socorro.lib.uuid as uuid
+try:
+  import socorro.lib.uuid as uuid
+except ImportError:
+  import uuid
 
 import os, cgi, sys, tempfile, simplejson
 from datetime import datetime
@@ -108,13 +111,13 @@ class Collect(object):
   def backOffMessage():
     pass
 
-  def makeDumpDir(self, base):
+  def makeDumpDir(self, dumpDir):
     """Create a directory to hold a group of dumps, and set permissions"""
-    tmpPath = tempfile.mkdtemp(dir=base, prefix=self.config.dumpDirPrefix)
-    os.chmod(tmpPath, self.config.dirPermissions)
+    os.makedirs(dumpDir)
+    os.chmod(dumpDir, self.config.dirPermissions)
     if self.config.dumpGID is not None:
-      os.chown(tmpPath, -1, self.config.dumpGID)
-    return tmpPath
+      os.chown(dumpDir, -1, self.config.dumpGID)
+    return dumpDir
 
 
   def findLastModifiedDirInPath(self, path):
@@ -151,23 +154,24 @@ class Collect(object):
     """Return a directory path to hold dump data, creating if necessary"""
     # First make an hourly directory if necessary
     utc = datetime.utcnow()
+    baseminute = "%02u" % (5 * int(utc.minute/5))
     dateString = "%04u-%02u-%02u-%02u" % (utc.year, utc.month, utc.day, utc.hour)
     datePath = os.path.join(storageRoot, str(utc.year), str(utc.month),
-                            str(utc.day), str(utc.hour))
+                            str(utc.day), str(utc.hour), self.config.dumpDirPrefix + baseminute)
+
 
     # if it's not there yet, create the date directory and its first
     # dump directory
     if not os.path.exists(datePath):
-      self.makedirs(datePath)
       return (self.makeDumpDir(datePath), dateString)
 
     # return the last-modified dir if it has less than dumpCount entries,
     # otherwise make a new one
-    latestDir = self.findLastModifiedDirInPath(datePath)
-    if len(os.listdir(latestDir)) >= self.config.dumpDirCount:
-      return (self.makeDumpDir(datePath), dateString)
+    #latestDir = self.findLastModifiedDirInPath(datePath)
+    #if len(os.listdir(latestDir)) >= self.config.dumpDirCount:
+    #  return (self.makeDumpDir(datePath), dateString)
 
-    return (latestDir, dateString)
+    return (datePath, dateString)
 
   def openFileForDumpID(self, dumpID, dumpDir, suffix, mode):
     filename = os.path.join(dumpDir, dumpID + suffix)
