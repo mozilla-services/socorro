@@ -387,14 +387,16 @@ class Processor(object):
     try:
       threadLocalCursor = threadLocalDatabaseConnection.cursor()
       threadLocalCursor.execute("select 1")
-    except psycopg2.OperationalError:
+    #except (psycopg2.OperationalError, psycopg2.ProgrammingError):
+    except:
       # did the connection time out?
       logger.info("%s - trying to re-establish a database connection", threading.currentThread().getName())
       try:
         threadLocalDatabaseConnection = self.threadLocalDatabaseConnections[threading.currentThread().getName()] = psycopg2.connect(self.config.databaseDSN)
         threadLocalCursor = threadLocalDatabaseConnection.cursor()
         threadLocalCursor.execute("select 1")
-      except psycopg2.OperationalError:
+      #except (psycopg2.OperationalError, psycopg2.ProgrammingError):
+      except:
         logger.critical("%s - something's gone horribly wrong with the database connection", threading.currentThread().getName())
         self.quit = True
         socorro.lib.util.reportExceptionAndAbort(logger)
