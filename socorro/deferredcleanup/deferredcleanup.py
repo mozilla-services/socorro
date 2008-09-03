@@ -76,7 +76,10 @@ def deferredJobStorageCleanup (config, logger):
         directoryInventory[aDay].append(os.path.join(config.deferredStorageRoot, year)) # add the type 1 year directory
       for aPathName in directoryInventory[aDay]:
         logger.info("%s - deleting: %s", threading.currentThread().getName(), aPathName)
-        shutil.rmtree(aPathName)
+        try:
+          shutil.rmtree(aPathName)
+        except:
+          socorro.lib.util.reportExceptionAndContinue(logger)
   except (KeyboardInterrupt, SystemExit):
     logger.debug("%s - got quit message", threading.currentThread().getName())
   except:
