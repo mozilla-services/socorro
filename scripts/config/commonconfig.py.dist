@@ -39,5 +39,5 @@ dumpFileSuffix.default = '.dump'
 
 processorCheckInTime = cm.Option()
 processorCheckInTime.doc = 'the time after which a processor is considered dead (HH:MM:SS)'
-processorCheckInTime.default = str(datetime.timedelta(minutes=5))
+processorCheckInTime.default = "00:05:00"
 processorCheckInTime.fromStringConverter = lambda x: str(cm.timeDeltaConverter(x))
