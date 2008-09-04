@@ -10,7 +10,10 @@ try:
 except ImportError:
   import collect
 
-import socorro.collector.config as configModule
+try:
+  import config.collectorconfig as configModule
+except ImportError:
+  import collectorconfig as configModule
 
 config = socorro.lib.ConfigurationManager.newConfiguration(configurationModule=configModule,automaticHelp=False)
 collectObject = collect.Collect(config)
