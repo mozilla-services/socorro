@@ -1,64 +1,45 @@
 import socorro.lib.ConfigurationManager as cm
 import datetime
 
-databaseDSN = cm.Option()
-databaseDSN.doc = 'the string used to connect to the database'
-databaseDSN.default = 'host=hostname dbname=databasename user=username password=password'
-
-storageRoot = cm.Option()
-storageRoot.doc = 'the root of the file system where dumps are found'
-storageRoot.default = '/tmp/socorro/'
-
-deferredStorageRoot = cm.Option()
-deferredStorageRoot.doc = 'the root of the file system where dumps are found'
-deferredStorageRoot.default = '/tmp/socorro/'
-
-dumpDirPrefix = cm.Option()
-dumpDirPrefix.doc = 'dump directory names begin with this prefix'
-dumpDirPrefix.default = 'bp_'
-
-jsonFileSuffix = cm.Option()
-jsonFileSuffix.doc = 'the suffix used to identify a json file'
-jsonFileSuffix.default = '.json'
-
-dumpFileSuffix = cm.Option()
-dumpFileSuffix.doc = 'the suffix used to identify a dump file'
-dumpFileSuffix.default = '.dump'
+try:
+  from commonconfig import *
+except ImportError:
+  from config.commonconfig import *
 
 dumpDirDelta = cm.Option()
 dumpDirDelta.doc = 'the age when an empty dump directory can be deleted (HHH:MM:SS)'
-dumpDirDelta.default =  datetime.timedelta(hours=2)
+dumpDirDelta.default =  '2:00:00'
 dumpDirDelta.fromStringConverter = cm.timeDeltaConverter
 
 dateDirDelta = cm.Option()
 dateDirDelta.doc = 'the age when an empty date directory can be deleted (HHH:MM:SS)'
-dateDirDelta.default = datetime.timedelta(hours=1)
+dateDirDelta.default = '1:00:00'
 dateDirDelta.fromStringConverter = cm.timeDeltaConverter
 
 minimumSymlinkAge = cm.Option()
 minimumSymlinkAge.doc = 'the age that a simlink must be before it is processed (HHH:MM:SS)'
-minimumSymlinkAge.default = datetime.timedelta(seconds=30)
+minimumSymlinkAge.default = '0:00:30'
 minimumSymlinkAge.fromStringConverter = cm.timeDeltaConverter
 
-processorCheckInTime = cm.Option()
-processorCheckInTime.doc = 'the time after which a processor is considered dead (in the form of an SQL interval)'
-processorCheckInTime.default = '5 minutes'
-
 standardLoopDelay = cm.Option()
-standardLoopDelay.doc = 'the delay in seconds between filesystem walks looking for jobs'
-standardLoopDelay.default = 300
+standardLoopDelay.doc = 'the time between scans for jobs (HHH:MM:SS)'
+standardLoopDelay.default = '00:05:00'
+standardLoopDelay.fromStringConverter = cm.timeDeltaConverter
 
 cleanupDirectoryLoopDelay = cm.Option()
-cleanupDirectoryLoopDelay.doc = 'the frequency of directory clean up routines in seconds'
-cleanupDirectoryLoopDelay.default = 60 * 60 * 4  # 4hrs * 60min * 60sec
+cleanupDirectoryLoopDelay.doc = 'the time between runs of the clean up routines (HHH:MM:SS)'
+cleanupDirectoryLoopDelay.default = '4:00:00'
+cleanupDirectoryLoopDelay.fromStringConverter = cm.timeDeltaConverter
 
 cleanupJobsLoopDelay = cm.Option()
-cleanupJobsLoopDelay.doc = 'the frequency of job clean up routines in seconds'
-cleanupJobsLoopDelay.default = 60 * 5  # 5min * 60sec
+cleanupJobsLoopDelay.doc = 'the time between runs of the job clean up routines (HHH:MM:SS)'
+cleanupJobsLoopDelay.default = '00:05:00'
+cleanupJobsLoopDelay.fromStringConverter = cm.timeDeltaConverter
 
 priorityLoopDelay = cm.Option()
-priorityLoopDelay.doc = 'the delay in seconds between checks for priority jobs'
-priorityLoopDelay.default = 60
+priorityLoopDelay.doc = 'the time between checks for priority jobs (HHH:MM:SS)'
+priorityLoopDelay.default = '00:01:00'
+priorityLoopDelay.fromStringConverter = cm.timeDeltaConverter
 
 saveMinidumpsTo = cm.Option()
 saveMinidumpsTo.doc = 'the location for saving dumps'

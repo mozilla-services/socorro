@@ -1,6 +1,0 @@
-# Full path to store downloaded symbols in
-symbol_path=''
-# Read-only path to also examine for symbols (optional)
-read_only_symbol_path=''
-# URL pointing to the query data to download
-query_data_url=''

@@ -1,8 +1,14 @@
 import socorro.lib.ConfigurationManager as cm
 
 # Storage constants
-from socorro.monitor.config import storageRoot
-from socorro.monitor.config import deferredStorageRoot
+try:
+  from config.commonconfig import storageRoot
+except ImportError:
+    from commonconfig import storageRoot
+try:
+  from config.commonconfig import deferredStorageRoot
+except ImportError:
+    from commonconfig import deferredStorageRoot
 
 maximumDeferredJobAge = cm.Option()
 maximumDeferredJobAge.doc = 'the maximum number of days that deferred jobs stick around'

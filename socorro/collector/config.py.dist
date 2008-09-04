@@ -4,8 +4,14 @@ import re
 import socorro.lib.ConfigurationManager as cm
 
 # Storage constants
-from socorro.monitor.config import storageRoot
-from socorro.monitor.config import deferredStorageRoot
+
+storageRoot = cm.Option()
+storageRoot.doc = 'the root of the file system where dumps are found'
+storageRoot.default = '/tmp/socorro/toBeProcessed/'
+
+deferredStorageRoot = cm.Option()
+deferredStorageRoot.doc = 'the root of the file system where dumps are found'
+deferredStorageRoot.default = '/tmp/socorro/toBeDeferred/'
 
 from socorro.monitor.config import dumpDirPrefix
 #dumpDirPrefix = "bp_"

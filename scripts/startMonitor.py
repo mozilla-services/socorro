@@ -4,7 +4,11 @@ import sys
 import logging
 import logging.handlers
 
-import socorro.monitor.config as config
+try:
+  import config.monitorconfig as config
+except ImportError:
+  import monitorconfig as config
+
 import socorro.monitor.monitor as monitor
 import socorro.lib.ConfigurationManager as configurationManager
 

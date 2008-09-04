@@ -1,25 +1,23 @@
 #! /usr/bin/env python
 
-import sys
 import logging
-import logging.handlers
 
 try:
-  import config.processorconfig as config
+  import deferredcleanupconfig as config
 except ImportError:
-  import processorconfig as config
+    import config.deferredcleanupconfig as config
 
-import socorro.processor.externalProcessor as processor
 import socorro.lib.ConfigurationManager as configurationManager
+import socorro.deferredcleanup.deferredcleanup as deferred
 
 try:
-  configurationContext = configurationManager.newConfiguration(configurationModule=config, applicationName="Socorro Processor 2.0")
+  configurationContext = configurationManager.newConfiguration(configurationModule=config, applicationName="Socorro Deferred Storage Cleanup 1.0")
 except configurationManager.NotAnOptionError, x:
   print >>sys.stderr, x
   print >>sys.stderr, "for usage, try --help"
   sys.exit()
 
-logger = logging.getLogger("processor")
+logger = logging.getLogger("deferred_storage_cleanup")
 logger.setLevel(logging.DEBUG)
 
 stderrLog = logging.StreamHandler()
@@ -37,12 +35,8 @@ logger.addHandler(rotatingFileLog)
 logger.info("current configuration\n%s", str(configurationContext))
 
 try:
-  p = processor.ProcessorWithExternalBreakpad(configurationContext)
-  p.start()
+  deferred.deferredJobStorageCleanup(configurationContext, logger)
 finally:
   logger.info("done.")
   rotatingFileLog.flush()
   rotatingFileLog.close()
-
-
-

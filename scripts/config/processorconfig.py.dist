@@ -1,15 +1,10 @@
 import socorro.lib.ConfigurationManager as cm
 import datetime
 
-
-#get database connect string from the monitor's config file
-from socorro.monitor.config import databaseDSN
-
-#get Json file suffix from the monitor's config file
-from socorro.monitor.config import jsonFileSuffix
-
-#get dump file suffix from the monitor's config file
-from socorro.monitor.config import dumpFileSuffix
+try:
+  from config.commonconfig import *
+except ImportError:
+  from commonconfig import *
 
 numberOfThreads = cm.Option()
 numberOfThreads.doc = 'the number of threads to use'
@@ -34,9 +29,6 @@ symbolCachePath = cm.Option()
 symbolCachePath.doc = 'the path where the symbol cache is found (quote path with embedded spaces)'
 symbolCachePath.default = '/mnt/socorro/symbols'
 
-#get processorCheckInTime  from monitor's config file
-from socorro.monitor.config import processorCheckInTime
-
 processorSymbolsPathnameList = cm.Option()
 processorSymbolsPathnameList.doc = 'comma or space separated list of symbol files for minidump_stackwalk (quote paths with embedded spaces)'
 processorSymbolsPathnameList.default = "/mnt/socorro/symbols/symbols_ffx,/mnt/socorro/symbols/symbols_sea,/mnt/socorro/symbols/symbols_tbrd,/mnt/socorro/symbols/symbols_sbrd,/mnt/socorro/symbols/symbols_os"
@@ -51,18 +43,19 @@ crashingThreadTailFrameThreshold.doc="the number of frames to keep in the raw du
 crashingThreadTailFrameThreshold.default = 10
 
 processorLoopTime = cm.Option()
-processorLoopTime.doc = 'the number of seconds to wait between attempts to get jobs'
-processorLoopTime.default = 6
+processorLoopTime.doc = 'the time to wait between attempts to get jobs (HHH:MM:SS)'
+processorLoopTime.default = '0:00:06'
+processorLoopTime.fromStringConverter = cm.timeDeltaConverter
 
 checkForPriorityFrequency = cm.Option()
-checkForPriorityFrequency.doc = 'the frequency in seconds to check for priority jobs'
-checkForPriorityFrequency.default = 60
-checkForPriorityFrequency.fromStringConverter = lambda x: datetime.timedelta(0, int(x))
+checkForPriorityFrequency.doc = 'the time bewteen checks for priority jobs (HHH:MM:SS)'
+checkForPriorityFrequency.default = '0:01:00'
+checkForPriorityFrequency.fromStringConverter = cm.timeDeltaConverter
 
 processorCheckInFrequency = cm.Option()
 processorCheckInFrequency.doc = 'the frequency in seconds for the processor to check in with the monitor'
-processorCheckInFrequency.default = 300
-processorCheckInFrequency.fromStringConverter = lambda x: datetime.timedelta(0, int(x))
+processorCheckInFrequency.default = '0:05:00'
+processorCheckInFrequency.fromStringConverter = cm.timeDeltaConverter
 
 batchJobLimit = cm.Option()
 batchJobLimit.doc = 'the number of jobs to pull in a time'

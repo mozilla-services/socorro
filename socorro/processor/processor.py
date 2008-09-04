@@ -92,15 +92,17 @@ class Processor(object):
     """
     """
     super(Processor, self).__init__()
+
+    self.databaseDSN = "host=%(databaseHost)s dbname=%(databaseName)s user=%(databaseUserName)s password=%(databasePassword)s" % config
+    self.processorLoopTime = config.processorLoopTime.seconds
+
     self.config = config
-
-    signal.signal(signal.SIGTERM, Processor.respondToSIGTERM)
-
     self.quit = False
+    signal.signal(signal.SIGTERM, Processor.respondToSIGTERM)
 
     logger.info("%s - connecting to database", threading.currentThread().getName())
     try:
-      self.mainThreadDatabaseConnection = psycopg2.connect(self.config.databaseDSN)
+      self.mainThreadDatabaseConnection = psycopg2.connect(self.databaseDSN)
       self.mainThreadCursor = self.mainThreadDatabaseConnection.cursor()
     except:
       self.quit = True
@@ -320,8 +322,8 @@ class Processor(object):
               logger.debug("%s - adding priority job found in database: %s", threading.currentThread().getName(), aJobTuple[1])
               preexistingPriorityJobs.add(aJobTuple[1])
           if not jobList:
-            logger.info("%s - no jobs to do - sleeping %d seconds", threading.currentThread().getName(), self.config.processorLoopTime)
-            self.responsiveSleep(self.config.processorLoopTime)
+            logger.info("%s - no jobs to do - sleeping %d seconds", threading.currentThread().getName(), self.processorLoopTime)
+            self.responsiveSleep(self.processorLoopTime)
         for aJobTuple in jobList.values():
           if lastPriorityCheckTimestamp + self.config.checkForPriorityFrequency < datetime.datetime.now():
             break
@@ -374,7 +376,7 @@ class Processor(object):
       except KeyError:
         try:
           logger.info("%s - connecting to database", threading.currentThread().getName())
-          threadLocalDatabaseConnection = self.threadLocalDatabaseConnections[threading.currentThread().getName()] = psycopg2.connect(self.config.databaseDSN)
+          threadLocalDatabaseConnection = self.threadLocalDatabaseConnections[threading.currentThread().getName()] = psycopg2.connect(self.databaseDSN)
         except:
           self.quit = True
           logger.critical("%s - cannot connect to the database", threading.currentThread().getName())
@@ -392,7 +394,7 @@ class Processor(object):
       # did the connection time out?
       logger.info("%s - trying to re-establish a database connection", threading.currentThread().getName())
       try:
-        threadLocalDatabaseConnection = self.threadLocalDatabaseConnections[threading.currentThread().getName()] = psycopg2.connect(self.config.databaseDSN)
+        threadLocalDatabaseConnection = self.threadLocalDatabaseConnections[threading.currentThread().getName()] = psycopg2.connect(self.databaseDSN)
         threadLocalCursor = threadLocalDatabaseConnection.cursor()
         threadLocalCursor.execute("select 1")
       #except (psycopg2.OperationalError, psycopg2.ProgrammingError):

@@ -26,6 +26,34 @@ class Monitor (object):
   #-----------------------------------------------------------------------------------------------------------------
   def __init__(self, configurationContext):
     super(Monitor, self).__init__()
+
+    assert "databaseHost" in configurationContext, "databaseHost is missing from the configuration"
+    assert "databaseName" in configurationContext, "databaseName is missing from the configuration"
+    assert "databaseUserName" in configurationContext, "databaseUserName is missing from the configuration"
+    assert "databasePassword" in configurationContext, "databasePassword is missing from the configuration"
+    assert "storageRoot" in configurationContext, "storageRoot is missing from the configuration"
+    assert "deferredStorageRoot" in configurationContext, "deferredStorageRoot is missing from the configuration"
+    assert "dumpDirPrefix" in configurationContext, "dumpDirPrefix is missing from the configuration"
+    assert "jsonFileSuffix" in configurationContext, "jsonFileSuffix is missing from the configuration"
+    assert "dumpFileSuffix" in configurationContext, "dumpFileSuffix is missing from the configuration"
+    assert "dumpDirDelta" in configurationContext, "dumpDirDelta is missing from the configuration"
+    assert "dateDirDelta" in configurationContext, "dateDirDelta is missing from the configuration"
+    assert "minimumSymlinkAge" in configurationContext, "minimumSymlinkAge is missing from the configuration"
+    assert "processorCheckInTime" in configurationContext, "processorCheckInTime is missing from the configuration"
+    assert "standardLoopDelay" in configurationContext, "standardLoopDelay is missing from the configuration"
+    assert "cleanupDirectoryLoopDelay" in configurationContext, "cleanupDirectoryLoopDelay is missing from the configuration"
+    assert "cleanupJobsLoopDelay" in configurationContext, "cleanupJobsLoopDelay is missing from the configuration"
+    assert "priorityLoopDelay" in configurationContext, "priorityLoopDelay is missing from the configuration"
+    assert "saveMinidumpsTo" in configurationContext, "saveMinidumpsTo is missing from the configuration"
+    assert "saveFailedMinidumps" in configurationContext, "saveFailedMinidumps is missing from the configuration"
+    assert "saveProcessedMinidumps" in configurationContext, "saveProcessedMinidumps is missing from the configuration"
+
+    self.databaseDSN = "host=%(databaseHost)s dbname=%(databaseName)s user=%(databaseUserName)s password=%(databasePassword)s" % configurationContext
+    self.standardLoopDelay = configurationContext.standardLoopDelay.seconds
+    self.cleanupDirectoryLoopDelay = configurationContext.cleanupDirectoryLoopDelay.seconds
+    self.cleanupJobsLoopDelay = configurationContext.cleanupJobsLoopDelay.seconds
+    self.priorityLoopDelay = configurationContext.priorityLoopDelay.seconds
+
     self.config = configurationContext
     signal.signal(signal.SIGTERM, Monitor.respondToSIGTERM)
     self.insertionLock = threading.RLock()
@@ -270,7 +298,7 @@ class Monitor (object):
     """
     """
     try:
-      self.standardJobAllocationDatabaseConnection = psycopg2.connect(self.config.databaseDSN)
+      self.standardJobAllocationDatabaseConnection = psycopg2.connect(self.databaseDSN)
       self.standardJobAllocationCursor = self.standardJobAllocationDatabaseConnection.cursor()
     except:
       self.quit = True
@@ -319,7 +347,7 @@ class Monitor (object):
           except:
             socorro.lib.util.reportExceptionAndContinue(logger)
           logger.debug("%s - end of loop - about to sleep", threading.currentThread().getName())
-          self.responsiveSleep(self.config.standardLoopDelay)
+          self.responsiveSleep(self.standardLoopDelay)
       except (KeyboardInterrupt, SystemExit):
         logger.debug("%s - outer detects quit", threading.currentThread().getName())
         self.standardJobAllocationDatabaseConnection.rollback()
@@ -412,7 +440,7 @@ class Monitor (object):
   #-----------------------------------------------------------------------------------------------------------------
   def priorityJobAllocationLoop(self):
     try:
-      self.priorityJobAllocationDatabaseConnection = psycopg2.connect(self.config.databaseDSN)
+      self.priorityJobAllocationDatabaseConnection = psycopg2.connect(self.databaseDSN)
       self.priorityJobAllocationCursor = self.priorityJobAllocationDatabaseConnection.cursor()
     except:
       self.quit = True
@@ -448,7 +476,7 @@ class Monitor (object):
               logger.debug("%s - releasing lock", threading.currentThread().getName())
               self.insertionLock.release()
           logger.debug("%s - sleeping", threading.currentThread().getName())
-          self.responsiveSleep(self.config.priorityLoopDelay)
+          self.responsiveSleep(self.priorityLoopDelay)
       except (KeyboardInterrupt, SystemExit):
         logger.debug("%s - outer detects quit", threading.currentThread().getName())
         self.priorityJobAllocationDatabaseConnection.rollback()
@@ -489,7 +517,7 @@ class Monitor (object):
           for currentDirectory, directoryList, fileList in os.walk(self.config.storageRoot, topdown=False):
             self.quitCheck()
             self.passJudgementOnDirectory(currentDirectory, directoryList, fileList)
-          self.responsiveSleep(self.config.cleanupDirectoryLoopDelay)
+          self.responsiveSleep(self.cleanupDirectoryLoopDelay)
       except (KeyboardInterrupt, SystemExit):
         logger.debug("%s - got quit message", threading.currentThread().getName())
         self.quit = True
@@ -502,7 +530,7 @@ class Monitor (object):
   def jobCleanupLoop (self):
     logger.info("%s - jobCleanupLoop starting.", threading.currentThread().getName())
     try:
-      self.jobCleanupDatabaseConnection = psycopg2.connect(self.config.databaseDSN)
+      self.jobCleanupDatabaseConnection = psycopg2.connect(self.databaseDSN)
       self.jobCleanupCursor = self.jobCleanupDatabaseConnection.cursor()
     except:
       self.quit = True
@@ -512,7 +540,7 @@ class Monitor (object):
         while True:
           logger.info("%s - beginning jobCleanupLoop cycle.", threading.currentThread().getName())
           self.cleanUpCompletedAndFailedJobs(self.jobCleanupDatabaseConnection, self.jobCleanupCursor)
-          self.responsiveSleep(self.config.cleanupJobsLoopDelay)
+          self.responsiveSleep(self.cleanupJobsLoopDelay)
       except (KeyboardInterrupt, SystemExit):
         logger.debug("%s - got quit message", threading.currentThread().getName())
         self.quit = True
