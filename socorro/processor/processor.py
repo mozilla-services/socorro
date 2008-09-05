@@ -288,6 +288,7 @@ class Processor(object):
         lastPriorityCheckTimestamp = datetime.datetime.now()
         self.mainThreadCursor.execute("select uuid from %s" % self.priorityJobsTableName)
         setOfPriorityJobs = preexistingPriorityJobs | set([x[0] for x in self.mainThreadCursor.fetchall()])
+        preexistingPriorityJobs = set()
         logger.debug("%s - priorityJobs: %s", threading.currentThread().getName(), setOfPriorityJobs)
         if setOfPriorityJobs:
           for aPriorityJobUuid in setOfPriorityJobs:
