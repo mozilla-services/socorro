@@ -403,11 +403,11 @@ class Monitor (object):
         pass
 
   #-----------------------------------------------------------------------------------------------------------------
-  def lookForPriorityJobsInSymlinks(self, priorityUuids, processorIdSequenceGenerator, symLinkIndexPath):
+  def lookForPriorityJobsInSymlinks(self, priorityUuids, processorIdSequenceGenerator, symLinkIndexPath, searchDepth):
     # check for jobs in symlink directories
     for uuid in priorityUuids.keys():
       logger.debug("%s - looking for %s", threading.currentThread().getName(), uuid)
-      for path, file, currentDirectory in socorro.lib.filesystem.findFileGenerator(symLinkIndexPath,lambda x: os.path.isdir(x[2])):  # list all directories
+      for path, file, currentDirectory in socorro.lib.filesystem.findFileGenerator(symLinkIndexPath,lambda x: os.path.isdir(x[2]),maxDepth=searchDepth):  # list all directories
         self.quitCheck()
         absoluteSymLinkPathname = os.path.join(currentDirectory, "%s.symlink" % uuid)
         logger.debug("%s -         as %s", threading.currentThread().getName(), absoluteSymLinkPathname)
@@ -461,9 +461,9 @@ class Monitor (object):
                 self.lookForPriorityJobsAlreadyInQueue(priorityUuids)
                 if priorityUuids: # only need to continue if we still have jobs to process
                   processorIdSequenceGenerator = self.unbalancedJobSchedulerIter(self.priorityJobAllocationCursor)
-                  self.lookForPriorityJobsInSymlinks(priorityUuids, processorIdSequenceGenerator, symLinkIndexPath)
+                  self.lookForPriorityJobsInSymlinks(priorityUuids, processorIdSequenceGenerator, symLinkIndexPath, 1)
                   if priorityUuids:
-                    self.lookForPriorityJobsInSymlinks(priorityUuids, processorIdSequenceGenerator, deferredSymLinkIndexPath)
+                    self.lookForPriorityJobsInSymlinks(priorityUuids, processorIdSequenceGenerator, deferredSymLinkIndexPath, 2)
                     if priorityUuids:
                       self.priorityJobsNotFound(priorityUuids)
               except KeyboardInterrupt:
@@ -529,8 +529,6 @@ class Monitor (object):
   #-----------------------------------------------------------------------------------------------------------------
   def jobCleanupLoop (self):
     logger.info("%s - jobCleanupLoop starting.", threading.currentThread().getName())
-    logger.info("%s - sleeping first.", threading.currentThread().getName())
-    self.responsiveSleep(self.cleanupJobsLoopDelay)
     try:
       self.jobCleanupDatabaseConnection = psycopg2.connect(self.databaseDSN)
       self.jobCleanupCursor = self.jobCleanupDatabaseConnection.cursor()
@@ -539,6 +537,8 @@ class Monitor (object):
       socorro.lib.util.reportExceptionAndAbort(logger) # can't continue without a database connection
     try:
       try:
+        logger.info("%s - sleeping first.", threading.currentThread().getName())
+        self.responsiveSleep(self.cleanupJobsLoopDelay)
         while True:
           logger.info("%s - beginning jobCleanupLoop cycle.", threading.currentThread().getName())
           self.cleanUpCompletedAndFailedJobs(self.jobCleanupDatabaseConnection, self.jobCleanupCursor)
