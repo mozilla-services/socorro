@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 
 import logging
+import sys
 
 try:
   import deferredcleanupconfig as config
