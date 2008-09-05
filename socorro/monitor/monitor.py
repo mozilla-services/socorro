@@ -460,7 +460,7 @@ class Monitor (object):
               try:
                 self.lookForPriorityJobsAlreadyInQueue(priorityUuids)
                 if priorityUuids: # only need to continue if we still have jobs to process
-                  processorIdSequenceGenerator = self.jobSchedulerIter(self.priorityJobAllocationCursor)
+                  processorIdSequenceGenerator = self.unbalancedJobSchedulerIter(self.priorityJobAllocationCursor)
                   self.lookForPriorityJobsInSymlinks(priorityUuids, processorIdSequenceGenerator, symLinkIndexPath)
                   if priorityUuids:
                     self.lookForPriorityJobsInSymlinks(priorityUuids, processorIdSequenceGenerator, deferredSymLinkIndexPath)
@@ -529,6 +529,8 @@ class Monitor (object):
   #-----------------------------------------------------------------------------------------------------------------
   def jobCleanupLoop (self):
     logger.info("%s - jobCleanupLoop starting.", threading.currentThread().getName())
+    logger.info("%s - sleeping first.", threading.currentThread().getName())
+    self.responsiveSleep(self.cleanupJobsLoopDelay)
     try:
       self.jobCleanupDatabaseConnection = psycopg2.connect(self.databaseDSN)
       self.jobCleanupCursor = self.jobCleanupDatabaseConnection.cursor()
