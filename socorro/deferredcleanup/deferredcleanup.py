@@ -33,7 +33,7 @@ import socorro.lib.util
 import socorro.lib.filesystem
 
 
-deferredDailyIndexDateDirectoryRe = re.compile(r'\d\d\d\d\d\d\d\d$')
+deferredDailyIndexDateDirectoryRe = re.compile(r'(\d\d\d\d)(\d\d)(\d\d)(\d\d){0,1}$') # match YYYYMMDD or YYYYMMDDHH
 
 def isDeferredDailyIndexDirectory(fileTuple):
   if deferredDailyIndexDateDirectoryRe.match(fileTuple[1]):
@@ -49,14 +49,16 @@ def isLastDayOfMonth (year, month, day):
 def deferredJobStorageCleanup (config, logger):
   """ the deferredJob storage directories have two branches:
         type 1 - the dump directories of the form .../YYYY/M/D/H/bp_mm
-        type 2 - the index directories of the form .../index/webheadName/YYYYMMDD
+        type 2 - the index directories of the form .../index/webheadName/YYYYMMDD or .../index/webheadName/YYYYMMDDHH
   """
   try:
     logger.info("%s - beginning deferredJobCleanup", threading.currentThread().getName())
     directoryInventory = defaultdict(list)
-    # find all the type 1 and type 2 directories, descending no deeper
+    # find all the type 2 directories, descending no deeper
     for path, name, pathname in socorro.lib.filesystem.findFileGenerator(os.path.join(config.deferredStorageRoot, "index"), isDeferredDailyIndexDirectory, lambda x: not isDeferredDailyIndexDirectory(x)):
       logger.info("%s - found deferred day: %s", threading.currentThread().getName(), pathname)
+      if len(name) == 10: # we found an hour directory - file it under its day
+        name = name[:8]
       directoryInventory[name].append(pathname) # add the type 2 directory
     orderedListOfDaysInDeferredStorage = directoryInventory.keys()
     orderedListOfDaysInDeferredStorage.sort()
@@ -77,7 +79,8 @@ def deferredJobStorageCleanup (config, logger):
       for aPathName in directoryInventory[aDay]:
         logger.info("%s - deleting: %s", threading.currentThread().getName(), aPathName)
         try:
-          shutil.rmtree(aPathName)
+          if not config.dryRun:
+            shutil.rmtree(aPathName)
         except:
           socorro.lib.util.reportExceptionAndContinue(logger)
   except (KeyboardInterrupt, SystemExit):

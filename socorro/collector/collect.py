@@ -238,12 +238,12 @@ class Collect(object):
 
   def createSymbolicLinkForIndexWithSubdirectories(self, id, path, suffix, storageRoot):
     """ For each json file stored, we're going to save a symbolic link to that file in a directory of the form:
-          {storageRoot}/index/{hostname}/{YYYMMDD}/{jsonfile}.symlink  We can access this structure faster than
+          {storageRoot}/index/{hostname}/{YYYMMDDHH}/{jsonfile}.symlink  We can access this structure faster than
           the distributed structure where the actual json and dump files live.
     """
     # create path for index link
     now = datetime.now()
-    indexLinkPath = os.path.join(storageRoot, "index", os.uname()[1], "%04d%02d%02d" % (now.year, now.month, now.day))
+    indexLinkPath = os.path.join(storageRoot, "index", os.uname()[1], "%04d%02d%02d%02d" % (now.year, now.month, now.day, now.hour))
     # create relative path for the link target
     targetRelativePathName = os.path.join("../../..", path[len(storageRoot) + 1:], "%s%s" % (id, suffix))
     try:
@@ -251,7 +251,7 @@ class Collect(object):
       symbolicLinkPathname = os.path.join(indexLinkPath, "%s%s" % (id, ".symlink"))
       self.doCreateSymbolicLink(targetRelativePathName, symbolicLinkPathname)
     except OSError:
-      # {hostname} or {YYYYMMDD} directory does not exist
+      # {hostname} or {YYYYMMDDHH} directory does not exist
       self.makedirs(indexLinkPath)
       # retry creation of symbolic link
       self.doCreateSymbolicLink(targetRelativePathName, symbolicLinkPathname)
