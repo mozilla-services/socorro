@@ -72,8 +72,10 @@ def newConfiguration(**kwargs):
     kwargs["automaticHelp"] = True
   if "applicationName" not in kwargs:
     kwargs["applicationName"] = ''
+  if "helpHandler" not in kwargs:
+    kwargs["helpHandler"] = None
 
-  return Config(kwargs["configurationOptionsList"], kwargs["optionNameForConfigFile"], kwargs["configurationFileRequired"], kwargs["configurationModule"], kwargs["automaticHelp"], kwargs["applicationName"])
+  return Config(kwargs["configurationOptionsList"], kwargs["optionNameForConfigFile"], kwargs["configurationFileRequired"], kwargs["configurationModule"], kwargs["automaticHelp"], kwargs["applicationName"], kwargs["helpHandler"])
 
  #============================================================================================
 class Config (dict):
@@ -82,7 +84,7 @@ class Config (dict):
   """
 
   #------------------------------------------------------------------------------------------
-  def __init__ (self, configurationOptionsList=[], optionNameForConfigFile="config", configurationFileRequired=False, configurationModule=None, automaticHelp=False, applicationName=''):
+  def __init__ (self, configurationOptionsList=[], optionNameForConfigFile="config", configurationFileRequired=False, configurationModule=None, automaticHelp=False, applicationName='', helpHandler=None):
     """Initialize a new instance.
 
     Input Parameters:
@@ -96,7 +98,7 @@ class Config (dict):
       configurationFileRequired: if True, the lack of a configuration file is considered a fatal error
     """
     self.originalConfigurationOptionsList = configurationOptionsList
-
+    self.applicationName = applicationName
     # incorporate config options from configuration module
     try:
       for key, value in configurationModule.__dict__.items():
@@ -136,15 +138,22 @@ class Config (dict):
       if x[0]:
         self.allowableOptionDictionary[x[0]] = x
       self.allowableOptionDictionary[x[1]] = self.allowableLongFormOptionDictionary[x[1]] = x
-      self.addOptionsForGetopt(x)
+      self.__addOptionsForGetopt(x)
 
-    # if add autohelp if needed
-    if automaticHelp and "help" not in self.allowableLongFormOptionDictionary:
+    # add autohelp if needed
+    if automaticHelp and ("help" not in self.allowableLongFormOptionDictionary):
       helpOptionTuple = ('?', 'help', False, None, 'print this list')
       configurationOptionsList.append(helpOptionTuple)
       self.allowableOptionDictionary[helpOptionTuple[0]] = helpOptionTuple
       self.allowableOptionDictionary[helpOptionTuple[1]] = self.allowableLongFormOptionDictionary[helpOptionTuple[1]] = helpOptionTuple
-      self.addOptionsForGetopt(helpOptionTuple)
+      self.__addOptionsForGetopt(helpOptionTuple)
+
+    # handle help requests appropriately
+    self.helpHandler = self.__nothingHelpHandler # default is no autohelp
+    if helpHandler:                              # if user handed us one, use it
+      self.helpHandler = helpHandler          
+    elif "help" in self.allowableLongFormOptionDictionary: # if needed, use default
+      self.helpHandler = self.__defaultHelpHandler
 
     # setup all defaults for options:
     for x in configurationOptionsList:
@@ -156,7 +165,7 @@ class Config (dict):
     for x in os.environ:
       if self.allowableOptionDictionary.has_key(x):
         self[self.allowableOptionDictionary[x][1]] = os.environ.get(x)
-        self.insertCombinedOption(x, self)
+        self.__insertCombinedOption(x, self)
 
     # get the options from the command line - these will eventually override all other methods of setting options
     try:
@@ -171,18 +180,19 @@ class Config (dict):
           commandLineEnvironment[longFormOfSingleLetterOption] = x[1]
         else:
           commandLineEnvironment[longFormOfSingleLetterOption] = None
-        self.insertCombinedOption(longFormOfSingleLetterOption, commandLineEnvironment)
+        self.__insertCombinedOption(longFormOfSingleLetterOption, commandLineEnvironment)
       else:
         longFormOption = x[0][2:]
         if self.allowableOptionDictionary[longFormOption][2]:
           commandLineEnvironment[longFormOption] = x[1]
         else:
           commandLineEnvironment[longFormOption] = None
-        self.insertCombinedOption(longFormOption, commandLineEnvironment)
+        self.__insertCombinedOption(longFormOption, commandLineEnvironment)
 
     # get any options from the config file
     # any options already set in the environment are overridden
     if optionNameForConfigFile is not None:
+      configFile = None
       try:
         try:
           configFile = open(commandLineEnvironment[optionNameForConfigFile], 'r')
@@ -191,24 +201,29 @@ class Config (dict):
         except IOError, e:
           raise ConfigFileMissingError()
         for x in configFile:
-          x = x.lstrip().rstrip()
+          x = x.strip()
           if not x or x[0] == '#' : continue
-          keyValuePair = x.split('=', 1)
-          if self.allowableOptionDictionary.has_key(keyValuePair[0]):
-            longFormOption = self.allowableOptionDictionary[keyValuePair[0]][1]
-            self.insertCombinedOption(longFormOption, self)
+          key,value = x.split('=', 1)
+          key = key.rstrip()
+          if not key: continue
+          value = value.lstrip()
+          if self.allowableOptionDictionary.has_key(key):
+            longFormOption = self.allowableOptionDictionary[key][1]
+            self.__insertCombinedOption(longFormOption, self)
             try:
-              self[longFormOption] = keyValuePair[1]
+              self[longFormOption] = value
             except IndexError:
               self[longFormOption] = None
           else:
-            raise NotAnOptionError, "option '%s' in the config file is not recognized" % keyValuePair[0]
+            raise NotAnOptionError, "option '%s' in the config file is not recognized" % key
       except KeyError:
         if configurationFileRequired:
           raise ConfigFileOptionNameMissingError()
       except IOError:
         if configurationFileRequired:
           raise ConfigFileMissingError()
+      finally:
+        if configFile: configFile.close()
 
     # merge command line options with the workingEnvironment
     # any options already specified in the environment or
@@ -242,15 +257,23 @@ class Config (dict):
         except ValueError, x:
           raise CannotConvert(str(x))
 
-    # do auto help
-    if automaticHelp and 'help' in self:
-      if applicationName:
-        print >>sys.stderr, applicationName
-      self.outputCommandSummary(sys.stderr, 1)
-      sys.exit()
+    # do help (auto or otherwise)
+    if 'help' in self:
+      self.helpHandler(self)
 
   #------------------------------------------------------------------------------------------
-  def addOptionsForGetopt (self, optionTuple):
+  def __nothingHelpHandler(self, config):
+    pass
+  
+  #------------------------------------------------------------------------------------------
+  def __defaultHelpHandler(self, config):
+    if self.applicationName:
+      print >>sys.stderr, applicationName
+    self.outputCommandSummary(sys.stderr, 1)
+    sys.exit()
+        
+  #------------------------------------------------------------------------------------------
+  def __addOptionsForGetopt (self, optionTuple):
     """Internal Use - during setup, this function sets up internal structures with a new optionTuple.
 
     Parameters:
@@ -266,8 +289,14 @@ class Config (dict):
       self.expandedCommandLineOptionsForGetopt.append(optionTuple[1])
 
   #------------------------------------------------------------------------------------------
-  def insertCombinedOption (self, anOption, theDictionaryToInsertInto):
-    """
+  def __insertCombinedOption (self, anOption, theDictionaryToInsertInto):
+    """Internal Use - during setup, maybe set short-cut option(s) from the allowableOptionDictionary
+
+    Parameters:
+      option: key into the allowableOptionDictionary
+    Action:
+      If the key is found, look for optional (key,value) pairs that define this option as a short-cut for one or more defaults.
+      For each short-cut found, set the short-cut key and value in the given dictionary. 
     """
     try:
       for x in self.allowableOptionDictionary[anOption][5]:
@@ -275,7 +304,18 @@ class Config (dict):
     except (KeyError, IndexError, TypeError) :
       pass
 
-  #--------------------------------------------------------------------------------------[5]----
+  #------------------------------------------------------------------------------------------
+  def dumpAllowableOptionDictionary(self):
+    """ for debugging and understanding what the heck is going on
+    """
+    try:
+      for k in self.allowableOptionDictionary.keys():
+        v = self.allowableOptionDictionary.get(k)
+        print "%-8s (%d) %s" % (k,len(v),str(v))
+    except:
+      print 'No dictionary available'
+   
+  #------------------------------------------------------------------------------------------
   def outputCommandSummary (self, outputStream=sys.stdout, sortOption=0, outputTemplateForOptionsWithParameters="--%s\n\t\t%s (default: %s)",
                                                                          outputTemplateForOptionsWithoutParameters="--%s\n\t\t%s",
                                                                          outputTemplatePrefixForSingleLetter="\t-%s, ",
@@ -307,7 +347,7 @@ class Config (dict):
 
   #------------------------------------------------------------------------------------------
   def output (self, outputStream=sys.stdout, outputTemplateForOptionsWithParameters="\t%s=%s", outputTemplateForOptionsWithoutParameters="\t%s", blockPassword=True):
-    """this routine will right the current values of all options to an output stream.
+    """this routine will write the current values of all options to an output stream.
 
     Parameters:
       outputStream: where to write the output
@@ -413,6 +453,11 @@ if __name__ == "__main__":
   cm = newConfiguration(configurationOptionsList=commandLineOptions)
 
   print cm
+  cm.dumpAllowableOptionDictionary()
+#   print "AOPTDICT"
+#   for k in cm.allowableOptionDictionary.keys():
+
+
 
   print cm.doubler
   print cm.secretpassword
