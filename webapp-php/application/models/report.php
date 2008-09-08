@@ -107,29 +107,6 @@ class Report_Model extends Model {
                         $module_name, $function, $source, $source_line, $instruction
                     );
 
-                    /*  TODO:
-                        # Settings for creating a link to a file in a given version control viewing 
-                        # website. For example: 
-                        #    {'cvs':{'cvs.mozilla.org/cvsroot':'http://bonsai.mozilla.org/cvsblame.cgi?file=%(file)s&rev=%(revision)s&mark=%(line)s#%(line)s'}} 
-                        
-                        if source is not None:
-                          vcsinfo = source.split(":")
-                          if len(vcsinfo) == 4:
-                            (type, root, source_file, revision) = vcsinfo
-                            self['source_filename'] = source_file
-                            if type in config.vcsMappings:
-                              if root in config.vcsMappings[type]:
-                                self['source_link'] = config.vcsMappings[type][root] % \
-                                                        {'file': source_file,
-                                                         'revision': revision,
-                                                         'line': source_line}
-                          else:
-                            self['source_filename'] = os.path.split(source)[1]
-
-                        if self['source_filename'] is not None and self['source_line'] is not None:
-                          self['source_info'] = self['source_filename'] + ":" + self['source_line']
-                     */
-
                     $frame = array(
                         'module_name'     => $module_name,
                         'frame_num'       => $frame_num,
@@ -139,11 +116,44 @@ class Report_Model extends Model {
                         'source'          => $source,
                         'source_line'     => $source_line,
                         'short_signature' => preg_replace('/\(.*\)/', '', $signature),
-                        // TODO:
                         'source_filename' => '',
                         'source_link'     => '',
                         'source_info'     => ''
                     );
+
+                    if ($source) {
+                        $vcsinfo = explode(':', $source);
+                        if (count($vcsinfo) == 4) {
+                            list($type, $root, $source_file, $revision) = $vcsinfo;
+
+                            $frame['source_filename'] = $source_file;
+                            
+                            // Attempt to build a VCS web link from app config 
+                            // settings and a ghetto simulation of Python 
+                            // string templates.
+                            $vcs_mappings = Kohana::config('application.vcsMappings');
+                            if (isset($vcs_mappings[$type][$root])) {
+                                $link = $vcs_mappings[$type][$root];
+                                $ns = array(
+                                    'file'     => $source_file,
+                                    'revision' => $revision,
+                                    'line'     => $frame['source_line']
+                                );
+                                foreach ($ns as $name => $val) {
+                                    $link = str_replace( "%($name)s", $val, $link );
+                                }
+                                $frame['source_link'] = $link;
+                            }
+
+                        } else {
+                            $path_parts = explode('/', $source);
+                            $frame['source_filename'] = array_pop($path_parts);
+                        }
+
+                    }
+                    if ($frame['source_filename'] && $frame['source_line']) {
+                        $frame['source_info'] = $frame['source_filename'] . ':' . $frame['source_line'];
+                    }
 
                     $report->threads[$thread_num][] = $frame;
                     break;

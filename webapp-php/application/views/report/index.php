@@ -106,7 +106,11 @@
                             <td><?php out::H($frame['module_name']) ?></td>
                             <td title="<?php out::H($frame['signature']) ?>"><?php out::H($frame['short_signature']) ?></td>
                             <td>
-                                <a href="<?php out::H($frame['source_link']) ?>"><?php out::H($frame['source_info']) ?></a>
+                                <?php if ($frame['source_link']): ?>
+                                    <a href="<?php out::H($frame['source_link']) ?>"><?php out::H($frame['source_info']) ?></a>
+                                <?php else: ?>
+                                    <?php out::H($frame['source_info']) ?>
+                                <?php endif ?>
                             </td>
                         </tr>
                         <?php $row += 1 ?>
