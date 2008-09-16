@@ -151,7 +151,7 @@ class Config (dict):
     # handle help requests appropriately
     self.helpHandler = self.__nothingHelpHandler # default is no autohelp
     if helpHandler:                              # if user handed us one, use it
-      self.helpHandler = helpHandler          
+      self.helpHandler = helpHandler
     elif "help" in self.allowableLongFormOptionDictionary: # if needed, use default
       self.helpHandler = self.__defaultHelpHandler
 
@@ -195,33 +195,34 @@ class Config (dict):
       configFile = None
       try:
         try:
-          configFile = open(commandLineEnvironment[optionNameForConfigFile], 'r')
+          try:
+            configFile = open(commandLineEnvironment[optionNameForConfigFile], 'r')
+          except KeyError:
+            configFile = open(self[optionNameForConfigFile], 'r')
+          except IOError, e:
+            raise ConfigFileMissingError()
+          for x in configFile:
+            x = x.strip()
+            if not x or x[0] == '#' : continue
+            key,value = x.split('=', 1)
+            key = key.rstrip()
+            if not key: continue
+            value = value.lstrip()
+            if self.allowableOptionDictionary.has_key(key):
+              longFormOption = self.allowableOptionDictionary[key][1]
+              self.__insertCombinedOption(longFormOption, self)
+              try:
+                self[longFormOption] = value
+              except IndexError:
+                self[longFormOption] = None
+            else:
+              raise NotAnOptionError, "option '%s' in the config file is not recognized" % key
         except KeyError:
-          configFile = open(self[optionNameForConfigFile], 'r')
-        except IOError, e:
-          raise ConfigFileMissingError()
-        for x in configFile:
-          x = x.strip()
-          if not x or x[0] == '#' : continue
-          key,value = x.split('=', 1)
-          key = key.rstrip()
-          if not key: continue
-          value = value.lstrip()
-          if self.allowableOptionDictionary.has_key(key):
-            longFormOption = self.allowableOptionDictionary[key][1]
-            self.__insertCombinedOption(longFormOption, self)
-            try:
-              self[longFormOption] = value
-            except IndexError:
-              self[longFormOption] = None
-          else:
-            raise NotAnOptionError, "option '%s' in the config file is not recognized" % key
-      except KeyError:
-        if configurationFileRequired:
-          raise ConfigFileOptionNameMissingError()
-      except IOError:
-        if configurationFileRequired:
-          raise ConfigFileMissingError()
+          if configurationFileRequired:
+            raise ConfigFileOptionNameMissingError()
+        except IOError:
+          if configurationFileRequired:
+            raise ConfigFileMissingError()
       finally:
         if configFile: configFile.close()
 
@@ -264,14 +265,14 @@ class Config (dict):
   #------------------------------------------------------------------------------------------
   def __nothingHelpHandler(self, config):
     pass
-  
+
   #------------------------------------------------------------------------------------------
   def __defaultHelpHandler(self, config):
     if self.applicationName:
       print >>sys.stderr, applicationName
     self.outputCommandSummary(sys.stderr, 1)
     sys.exit()
-        
+
   #------------------------------------------------------------------------------------------
   def __addOptionsForGetopt (self, optionTuple):
     """Internal Use - during setup, this function sets up internal structures with a new optionTuple.
@@ -296,7 +297,7 @@ class Config (dict):
       option: key into the allowableOptionDictionary
     Action:
       If the key is found, look for optional (key,value) pairs that define this option as a short-cut for one or more defaults.
-      For each short-cut found, set the short-cut key and value in the given dictionary. 
+      For each short-cut found, set the short-cut key and value in the given dictionary.
     """
     try:
       for x in self.allowableOptionDictionary[anOption][5]:
@@ -314,7 +315,7 @@ class Config (dict):
         print "%-8s (%d) %s" % (k,len(v),str(v))
     except:
       print 'No dictionary available'
-   
+
   #------------------------------------------------------------------------------------------
   def outputCommandSummary (self, outputStream=sys.stdout, sortOption=0, outputTemplateForOptionsWithParameters="--%s\n\t\t%s (default: %s)",
                                                                          outputTemplateForOptionsWithoutParameters="--%s\n\t\t%s",
