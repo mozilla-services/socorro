@@ -292,6 +292,27 @@ class Monitor (object):
       databaseConnection.rollback()
       socorro.lib.util.reportExceptionAndContinue(logger, logging.ERROR)
 
+  #-----------------------------------------------------------------------------------------------------------------
+  def testDatabaseConnection (self, originalDbConnection, originalCursor):
+    try:
+      originalCursor.execute("select 1")
+      originalCursor.fetchall()
+    #except (psycopg2.OperationalError, psycopg2.ProgrammingError):
+    except:
+      # did the connection time out?
+      logger.info("%s - trying to re-establish a database connection", threading.currentThread().getName())
+      try:
+        replacementDbConnection = psycopg2.connect(self.databaseDSN)
+        replacementCursor = replacementDbConnection.cursor()
+        replacementCursor.execute("select 1")
+        replacementCursor.fetchall()
+      #except (psycopg2.OperationalError, psycopg2.ProgrammingError):
+      except:
+        logger.critical("%s - something's gone horribly wrong with the database connection", threading.currentThread().getName())
+        self.quit = True
+        socorro.lib.util.reportExceptionAndAbort(logger)
+      return (replacementDbConnection, replacementCursor)
+    return (originalDbConnection, originalCursor)
 
   #-----------------------------------------------------------------------------------------------------------------
   def standardJobAllocationLoop(self):
@@ -306,6 +327,7 @@ class Monitor (object):
     try:
       try:
         while (True):
+          self.standardJobAllocationDatabaseConnection, self.standardJobAllocationCursor = self.testDatabaseConnection(self.standardJobAllocationDatabaseConnection, self.standardJobAllocationCursor)
           self.quitCheck()
           self.cleanUpDeadProcessors(self.standardJobAllocationDatabaseConnection, self.standardJobAllocationCursor)
           self.quitCheck()
@@ -450,6 +472,7 @@ class Monitor (object):
     try:
       try:
         while (True):
+          self.priorityJobAllocationDatabaseConnection, self.priorityJobAllocationCursor = self.testDatabaseConnection(self.priorityJobAllocationDatabaseConnection, self.priorityJobAllocationCursor)
           self.quitCheck()
           priorityUuids = self.getPriorityUuids(self.priorityJobAllocationCursor)
           if priorityUuids:
