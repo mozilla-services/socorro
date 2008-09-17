@@ -37,6 +37,10 @@ class Status_Controller extends Controller {
             ' ORDER BY jobs.queueddatetime LIMIT 1 '
         );
 
+        cachecontrol::set(array(
+            'expires' => time() + (60 * 5)
+        ));
+
         $this->setViewData(array(
             'lastProcessedDate' => $jobs_stats->current()->lastprocesseddate,
             'jobsPending'       => $jobs_count->current()->jobspending,

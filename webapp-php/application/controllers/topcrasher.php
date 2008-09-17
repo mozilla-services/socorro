@@ -14,6 +14,10 @@ class Topcrasher_Controller extends Controller {
         $branch_data = $this->branch_model->getBranchData();
         $platforms   = $this->platform_model->getAll();
 
+        cachecontrol::set(array(
+            'expires' => time() + (60 * 60)
+        ));
+
         $this->setViewData(array(
             'all_products'  => $branch_data['products'],
             'all_branches'  => $branch_data['branches'],
@@ -26,6 +30,10 @@ class Topcrasher_Controller extends Controller {
     public function byversion($product, $version, $build_id=NULL) {
         list($last_updated, $top_crashers) = 
             $this->topcrashers_model->getTopCrashers($product, $version, $build_id);
+
+        cachecontrol::set(array(
+            'expires' => time() + (60 * 60)
+        ));
 
         $this->setViewData(array(
             'product'      => $product,
@@ -40,6 +48,10 @@ class Topcrasher_Controller extends Controller {
 
         list($last_updated, $top_crashers) = 
             $this->topcrashers_model->getTopCrashers(NULL, NULL, NULL, $branch);
+
+        cachecontrol::set(array(
+            'expires' => time() + (60 * 60)
+        ));
 
         $this->setViewData(array(
             'branch'       => $branch,

@@ -27,6 +27,11 @@ class Query_Controller extends Controller {
             'do_query'     => FALSE
         ));
 
+        cachecontrol::set(array(
+            'etag'     => $params,
+            'expires'  => time() + ( 60 * 60 )
+        ));
+
         if ($params['do_query'] !== FALSE) {
             $reports = $this->common_model->queryTopSignatures($params);
         } else {

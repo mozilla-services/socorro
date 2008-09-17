@@ -30,6 +30,11 @@ class Report_Controller extends Controller {
             'do_query'     => FALSE
         ));
 
+        cachecontrol::set(array(
+            'etag'     => $params,
+            'expires'  => time() + ( 60 * 60 )
+        ));
+
         $reports = $this->common_model->queryReports($params);
         $builds  = $this->common_model->queryFrequency($params);
 
@@ -58,6 +63,11 @@ class Report_Controller extends Controller {
             }
             return url::redirect('report/pending/'.$uuid);
         }
+
+        cachecontrol::set(array(
+            'etag'          => $uuid,
+            'last-modified' => strtotime($report->date_processed)
+        ));
 
         $this->setViewData(array(
             'report' => $report
