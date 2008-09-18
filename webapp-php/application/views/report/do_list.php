@@ -17,7 +17,7 @@
   <script type="text/javascript">
       $(document).ready(function() { 
         $('#buildid-table').tablesorter(); 
-        $('#reportsList').tablesorter({sortList:[[8,1]]});
+        $('#reportsList').tablesorter({sortList:[[9,1]]});
         $('#report-list > ul').tabs();
       }); 
   </script>
