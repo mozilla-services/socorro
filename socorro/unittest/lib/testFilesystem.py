@@ -82,12 +82,17 @@ class TestFilesystem(unittest.TestCase):
 
   def tearDown(self):
     self.deleteTestbed()
-    
+
   def testLevel0(self):
-    # Look for all top level items regardless of type. Note that because
-    # findFileGenerator always does the top level, regardless of maxdepth,
-    # any maxdepth <= 1 acts the same
-    for depth in [ -12,0,1] :
+    for depth in [ -12,-1,0]:
+      tst = f.findFileGenerator(self.tdir,maxDepth = depth)
+      items = [x for x in tst]
+      assert not items, 'Expect nothing for 0 or negative. For %d, got %s' %(depth,items)
+
+    
+  def testLevel1(self):
+    # Look for all top level items regardless of type.
+    for depth in [1] :
       tst = f.findFileGenerator(self.tdir,maxDepth = depth)
       items = []
       for (x,o,p) in tst:
