@@ -56,7 +56,7 @@ class Monitor (object):
 
     self.config = configurationContext
     signal.signal(signal.SIGTERM, Monitor.respondToSIGTERM)
-    self.insertionLock = threading.RLock()
+    #self.insertionLock = threading.RLock()
     self.quit = False
 
   #-----------------------------------------------------------------------------------------------------------------
@@ -355,11 +355,11 @@ class Monitor (object):
                 absolutePathname = os.path.join(self.config.storageRoot, relativePathname[6:]) # convert relative path to absolute
                 logger.debug("%s - index entry found: %s referring to: %s", threading.currentThread().getName(), symLinkPathname, absolutePathname)
                 self.quitCheck()
-                self.insertionLock.acquire()
-                try:
-                  self.queueJobFromSymLink(self.standardJobAllocationDatabaseConnection, self.standardJobAllocationCursor, absolutePathname, symLinkPathname, processorIdSequenceGenerator)
-                finally:
-                  self.insertionLock.release()
+                #self.insertionLock.acquire()
+                #try:
+                self.queueJobFromSymLink(self.standardJobAllocationDatabaseConnection, self.standardJobAllocationCursor, absolutePathname, symLinkPathname, processorIdSequenceGenerator)
+                #finally:
+                #  self.insertionLock.release()
               except KeyboardInterrupt:
                 logger.debug("%s - inner detects quit", threading.currentThread().getName())
                 self.quit = True
@@ -429,7 +429,7 @@ class Monitor (object):
     # check for jobs in symlink directories
     for uuid in priorityUuids.keys():
       logger.debug("%s - looking for %s", threading.currentThread().getName(), uuid)
-      for path, file, currentDirectory in socorro.lib.filesystem.findFileGenerator(symLinkIndexPath,lambda x: os.path.isdir(x[2]),maxDepth=searchDepth):  # list all directories
+      for path, file, currentDirectory in socorro.lib.filesystem.findFileGenerator(symLinkIndexPath,lambda x: os.path.isdir(x[2]),maxDepth=searchDepth,directorySortFunction=lambda x,y:-cmp(x,y)):  # list all directories
         self.quitCheck()
         absoluteSymLinkPathname = os.path.join(currentDirectory, "%s.symlink" % uuid)
         logger.debug("%s -         as %s", threading.currentThread().getName(), absoluteSymLinkPathname)
@@ -476,8 +476,8 @@ class Monitor (object):
           self.quitCheck()
           priorityUuids = self.getPriorityUuids(self.priorityJobAllocationCursor)
           if priorityUuids:
-            self.insertionLock.acquire()
-            try:
+            #self.insertionLock.acquire()
+            #try:
               # assign jobs
               logger.debug("%s - beginning search for priority jobs", threading.currentThread().getName())
               try:
@@ -495,9 +495,9 @@ class Monitor (object):
               except:
                 self.priorityJobAllocationDatabaseConnection.rollback()
                 socorro.lib.util.reportExceptionAndContinue(logger)
-            finally:
-              logger.debug("%s - releasing lock", threading.currentThread().getName())
-              self.insertionLock.release()
+            #finally:
+            #  logger.debug("%s - releasing lock", threading.currentThread().getName())
+            #  self.insertionLock.release()
           logger.debug("%s - sleeping", threading.currentThread().getName())
           self.responsiveSleep(self.priorityLoopDelay)
       except (KeyboardInterrupt, SystemExit):
