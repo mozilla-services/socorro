@@ -3,7 +3,8 @@ import os
 import shutil
 import types
 import sys
-import socorro.lib.filesystem as f
+#import socorro.lib.filesystem as f
+import testWalkVersusFilesystem as f
 
 # Describes the directory/file structure we will look at:
 # key is a name
@@ -95,11 +96,12 @@ class TestFilesystem(unittest.TestCase):
     for depth in [1] :
       tst = f.findFileGenerator(self.tdir,maxDepth = depth)
       items = []
+      expected = [ x for x in testDir[self.tdir].keys() ]
       for (x,o,p) in tst:
         items.append(o)
-        assert o in testDir[self.tdir].keys(),'depth=%d,Every found item is at top level' % depth
-      for k in testDir[self.tdir].keys():
-        assert k in items, 'depth=%d,every top level item is found' % depth
+        assert o in expected ,'Item %s must be expected: %s' %(o,expected)
+      for k in expected:
+        assert k in items, 'Expected item %s must be found in %s' %(k,items)
 
       # look for only top level files
       items = []
