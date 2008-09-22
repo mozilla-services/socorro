@@ -282,7 +282,7 @@ class Monitor (object):
     except psycopg2.IntegrityError:
       databaseConnection.rollback()
       os.unlink(symLinkPathname)
-      logger.debug("%s - %s already in queue - ignoring", threading.currentThread().getName(), uuid)
+      logger.debug("%s - %s already in queue - ignoring", threading.currentThread().getName(), jsonFilePathName)
     except KeyboardInterrupt:
       logger.debug("%s - queueJob detects quit", threading.currentThread().getName())
       self.quit = True
