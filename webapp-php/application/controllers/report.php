@@ -54,6 +54,11 @@ class Report_Controller extends Controller {
      * Fetch and display a single report.
      */
     public function index($uuid) {
+        // Validate UUID to make sure there aren't any bullshit characters in it.
+        if (!preg_match('/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/', $uuid) ) {
+            return Event::run('system.404');
+        }
+ 
         $report = $this->report_model->getByUUID($uuid);
 
         if (!$report) {
@@ -78,8 +83,7 @@ class Report_Controller extends Controller {
      * Wait while a pending job is processed.
      */
     public function pending($uuid) {
-
-        if (!$uuid) {
+        if (!$uuid || !preg_match('/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/', $uuid)) {
             return Event::run('system.404');
         }
 
