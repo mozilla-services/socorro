@@ -269,7 +269,7 @@ class Config (dict):
   #------------------------------------------------------------------------------------------
   def __defaultHelpHandler(self, config):
     if self.applicationName:
-      print >>sys.stderr, applicationName
+      print >>sys.stderr, self.applicationName
     self.outputCommandSummary(sys.stderr, 1)
     sys.exit()
 
