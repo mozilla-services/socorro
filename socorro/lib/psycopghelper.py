@@ -6,7 +6,7 @@ import datetime
 class LoggingCursor(psycopg2.extensions.cursor):
   def setLogger(self, logger):
     self.logger = logger
-    self.logger.info("Now logging cursor: %s", str(cursor))
+    self.logger.info("Now logging cursor")
 
   def execute(self, sql):
     try:
