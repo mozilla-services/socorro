@@ -25,7 +25,7 @@ class JsonDumpStorage(object):
     self.root = root
     self.maxDirectoryEntries = maxDirectoryEntries
   #-----------------------------------------------------------------------------------------------------------------
-  def newEntry (uuid, timestamp=dt.datetime.now()):
+  def newEntry (uuid, webheadHostName='webhead01', timestamp=dt.datetime.now()):
     """ this function will setup the radix and date storage directory branches for the given uuid.
     It will create any or all directories that it needs along the path to the appropriate storage location.
     It will create the two relative symbolic links: the date branch link pointing to the json file;
