@@ -15,7 +15,7 @@ class JsonDumpStorage(object):
     followed by the hostname (from os.uname()[1]) from which the files originated:
       "YYYY/MM/DD/HH/5min/WebHeadHostName"
       %(root)s/date/2008/09/30/12/05/webhead01/22adfb61-f75b-11dc-b6be-001321b0783d.symlink
-      the symbolic link would be: "../../../../../../../../radix/22/ad/fb/61/22adfb61-f75b-11dc-b6be-001321b0783d.json
+      the symbolic link would be: "../../../../../../../../radix/22/ad/fb/61/22adfb61-f75b-11dc-b6be-001321b0783d.json"
   """
   #-----------------------------------------------------------------------------------------------------------------
   def __init__(self, root=".", maxDirectoryEntries=1024, **kwargs):
@@ -31,7 +31,8 @@ class JsonDumpStorage(object):
     It will create the two relative symbolic links: the date branch link pointing to the json file;
     the radix branch link pointing to the date branch link.  It returns a 2-tuple containing two file handles
     open for writing.  The first file handle will be set for ".../uuid.json", while the second will be for
-    ".../uuid.dump"""
+    ".../uuid.dump"
+    """
     return (None, None)
   #-----------------------------------------------------------------------------------------------------------------
   def getJson (uuid):
@@ -41,7 +42,7 @@ class JsonDumpStorage(object):
     pass
   #-----------------------------------------------------------------------------------------------------------------
   def getDump (uuid):
-    """this function will return an absolute pathname for the json file for given uuid.
+    """this function will return an absolute pathname for the dump file for given uuid.
     If there is no such file, it will raise an IOError exception.
     """
     pass
@@ -57,21 +58,21 @@ class JsonDumpStorage(object):
   #-----------------------------------------------------------------------------------------------------------------
   def remove (uuid):
     """ this function removes all instances of the uuid from the file system including the json file, the dump
-    file, and the two links if they still exist.  In addition, after a deletion, it backs down the both the
-    radix and date branches, deleting any empty subdirectories left behind.
+    file, and the two links if they still exist.  In addition, after a deletion, it backs down the date branch,
+    deleting any empty subdirectories left behind.
     """
     pass
   #-----------------------------------------------------------------------------------------------------------------
   def move (uuid, newAbsolutePath):
     """ this function moves the json and dump files to newAbsolutePath.  In addition, after a move, it removes
-     the symbolic links if they still exist.  Then it backs down both the radix and date branches, deleting any
-     empty subdirectories left behind.
+     the symbolic links if they still exist.  Then it backs down the date branch, deleting any empty subdirectories
+     left behind. 
     """
     pass
   #-----------------------------------------------------------------------------------------------------------------
   def removeOlderThan (timestamp):
-    """ this function walks the date branch removing all entries older than the timestamp.  Of course,
-    it reaches across and removes the corresponding entries in the radix branch.  Whenever it removes
-    the last item in a directory on either branch, it removes the directory, too.
+    """ this function walks the date branch removing all entries older than the timestamp.  It also reaches across
+    and removes the corresponding entries in the radix branch.  Whenever it removes the last item in a date branch
+    directory, it removes the directory, too.
     """
     pass
