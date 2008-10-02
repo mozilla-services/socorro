@@ -24,6 +24,8 @@ class TestJsonDumpStorage(unittest.TestCase):
       '0bba61c5-dfc3-43e7-87e6-8afda3564352': ('2019-10-25-05-04','webhead02','0b/ba/61/c5','2019/10/25/05/00/webhead02'),
       '0bba929f-8721-460c-8e70-a43c95d04ed2': ('2019-10-25-05-04','webhead02','0b/ba/92/9f','2019/10/25/05/00/webhead02'),
       }
+    self.badone = '66666666-6666-6666-6666-666666666666'
+
     try:
       shutil.rmtree(self.testDir)
     except OSError:
@@ -56,50 +58,96 @@ class TestJsonDumpStorage(unittest.TestCase):
       try:
         fj,fd = storage.newEntry(uuid,webheadHostName=data[1],timestamp = datetime.datetime(*datetimedata))
       except IOError:
-        assert False, 'Expect to succeed with newEntry(%s,...)' % (uuid)
+        assert False, 'Expect to succeed with newEntry(%s,...)' % uuid
         
-      assert fj, 'Expect a non-null json file handle from newEntry(%s,...)' % (uuid)
-      assert os.sep.join((self.testDir,data[2],uuid+'.json')) == fj.name
-      assert fd, 'Expect a non-null dump file handle from newEntry(%s,...)' % (uuid)
-      assert os.sep.join((self.testDir,data[2],uuid+'.dump')) == fj.name, 'Expect appropriate json filename for %s' % (uuid)
-      assert os.path.islink(os.sep.join((self.testDir,data[3],uuid))), 'Expect a link from timed to storage for %s' % (uuid)
-      assert os.path.islink(os.sep.join((self.testDir,data[2],uuid+'.link'))), 'Expect link from radix storage to timed for %s' %(uuid)
+      assert fj, 'Expect a non-null json file handle from newEntry(%s,...)' % uuid
+      assert os.sep.join((self.testDir,'radix',data[2],uuid+'.json')) == fj.name, 'Expect appropriate json filename for %s' % uuid
+      assert fd, 'Expect a non-null dump file handle from newEntry(%s,...)' % uuid
+      assert os.sep.join((self.testDir,'radix',data[2],uuid+'.dump')) == fj.name, 'Expect appropriate dump filename for %s' % uuid
+      assert os.path.islink(os.sep.join((self.testDir,'date',data[3],uuid))), 'Expect a link from timed to storage for %s' % uuid
+      assert os.path.islink(os.sep.join((self.testDir,'radix',data[2],uuid))), 'Expect link from radix storage to timed for %s' % uuid
       try:
         fj.write("testing\n")
-        assert True, 'must be able to write to the json file for uuid %s' % (uuid)
+        assert True, 'must be able to write to the json file for uuid %s' % uuid
       except:
-        assert False, 'must not fail to write to the json file for uuid %s' % (uuid)
+        assert False, 'must not fail to write to the json file for uuid %s' % uuid
       finally:
         if fj: fj.close()
 
       try:
         fd.write("testing\n")
-        assert True, 'must be able to write to the dump file for uuid %s' % (uuid)
+        assert True, 'must be able to write to the dump file for uuid %s' % uuid
       except:
-        assert False, 'must not fail to write to the dump file for uuid %s' % (uuid)
+        assert False, 'must not fail to write to the dump file for uuid %s' % uuid
       finally:
         if fd: fd.close()
 
   def testGetJson(self):
     self.createTestSet()
+    storage = JDS.JsonDumpStorage(self.testDir)
+    for uuid,data in self.data.items():
+      assert storage.getJson(uuid) == os.sep.join(self.testDir,data[2],uuid+'.json'), 'Expect (%s) json to be as calculated' % uuid
+      
 
   def testGetDump(self):
     self.createTestSet()
+    storage = JDS.JsonDumpStorage(self.testDir)
+    for uuid,data in self.data.items():
+      assert storage.getJson(uuid) == os.sep.join(self.testDir,data[2],uuid+'.dump'), 'Expect (%s) dump to be as calculated' % uuid
 
   def testOpenAndMarkAsSeen(self):
     self.createTestSet()
+    storage = JDS.JsonDumpStorage(self.testDir)
+    for uuid.data in self.data.items():
+      assert os.path.islink(os.sep.join((self.testDir,data[3],uuid))), 'Expect a link from timed to storage for %s' % uuid
+      assert os.path.islink(os.sep.join((self.testDir,data[2],uuid+'.link'))), 'Expect link from radix storage to timed for %s' % uuid
+      try:
+        fj,fd = storage.openAndMarkAsSeen(uuid)
+        assert os.sep.join((self.testDir,data[2],uuid+'.json')) == fj.name, 'Expect appropriate json filename for %s' % uuid
+        assert os.sep.join((self.testDir,data[2],uuid+'.dump')) == fj.name, 'Expect appropriate dump filename for %s' % uuid
+        assert not os.path.islink(os.sep.join((self.testDir,data[3],uuid))), 'Expect no link from timed to storage for %s' % uuid
+        assert not os.path.islink(os.sep.join((self.testDir,data[2],uuid+'.link'))), 'Expect no link from radix storage to timed for %s' % uuid
+      finally:
+        if fj: fj.close()
+        if fd: fd.close()
 
-  def testDestructiveDateWalk(self)
+    datedir = os.path.join(self.testDir,'date')
+    assert not os.listdir(datedir), 'Expect that all seen means removed all date links, and their dirs'
+
+
+  def testDestructiveDateWalk(self):
     self.createTestSet()
+    storage = JDS.JsonDumpStorage(self.testDir)
+    uuids = self.data.keys()
+    seenids = []
+    for id in storage.destructiveDateWalk():
+      assert id in uuids, 'Expect that %s is among the uuids we stored' % uuid
+      seenids.append(id)
+    for id in uuids:
+      assert id in seenids, 'Expect that we found every uuid we stored (%s)' % uuid
+
+    datedir = os.path.join(self.testDir,'date')
+    assert not os.listdir(datedir), 'Expect that destructive walk will remove all date links, and their dirs'
 
   def testRemove(self):
     self.createTestSet()
+    storage = JDS.JsonDumpStorage(self.testDir)
+    for uuid in self.data.keys():
+      storage.remove(uuid)
+    allfiles = []
+    for dir, dirs, files in os.walk(self.testDir):
+      allfiles.extend(files)
+    assert [] == allfiles
 
   def testMove(self):
     self.createTestSet()
+    storage = JDS.JsonDumpStorage(self.testDir)
+    assert False, 'Gotta write this one'
 
   def testRemoveOlderThan(self):
-    pass
+    self.createTestSet()
+    storage = JDS.JsonDumpStorage(self.testDir)
+    assert False, 'Gotta write this one'
     
 if __name__ == "__main__":
   unittest.main()
