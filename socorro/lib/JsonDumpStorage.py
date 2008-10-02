@@ -21,7 +21,7 @@ class JsonDumpStorage(object):
   def __init__(self, root=".", maxDirectoryEntries=1024, **kwargs):
     """
     """
-    super(FileSystemStorage, self).__init__()
+    super(JsonDumpStorage, self).__init__()
     self.root = root
     self.maxDirectoryEntries = maxDirectoryEntries
   #-----------------------------------------------------------------------------------------------------------------
