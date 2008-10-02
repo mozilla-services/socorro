@@ -25,7 +25,7 @@ class JsonDumpStorage(object):
     self.root = root
     self.maxDirectoryEntries = maxDirectoryEntries
   #-----------------------------------------------------------------------------------------------------------------
-  def newEntry (uuid, webheadHostName='webhead01', timestamp=dt.datetime.now()):
+  def newEntry (self, uuid, webheadHostName='webhead01', timestamp=dt.datetime.now()):
     """ this function will setup the radix and date storage directory branches for the given uuid.
     It will create any or all directories that it needs along the path to the appropriate storage location.
     It will create the two relative symbolic links: the date branch link pointing to the json file;
@@ -41,13 +41,22 @@ class JsonDumpStorage(object):
     """
     pass
   #-----------------------------------------------------------------------------------------------------------------
-  def getDump (uuid):
+  def getDump (self, uuid):
     """this function will return an absolute pathname for the dump file for given uuid.
     If there is no such file, it will raise an IOError exception.
     """
     pass
   #-----------------------------------------------------------------------------------------------------------------
-  def destructiveDateWalk ():
+  def openAndMarkAsSeen (self,uuid):
+    """
+    Returns two streams: The first is open for reading uuid.json the second open for reading uuid.dump. Also
+    removes the links associated with these two files. Raises IOError if either file is missing. NOTE: You should
+    call remove(uuid) after reading the data from the files.
+    """
+    raise IOError("stub")
+  
+  #-----------------------------------------------------------------------------------------------------------------
+  def destructiveDateWalk (self):
     """ this function is a generator.  It yields a series of uuids for json files found by walking the date
     branch of the file system.  However, just before yielding a value, it deletes both the date branch link
     pointing to the json file and the radix branch link pointing to the date branch link.  If the deletion of
@@ -56,21 +65,21 @@ class JsonDumpStorage(object):
     """
     raise StopIteration
   #-----------------------------------------------------------------------------------------------------------------
-  def remove (uuid):
+  def remove (self,uuid):
     """ this function removes all instances of the uuid from the file system including the json file, the dump
     file, and the two links if they still exist.  In addition, after a deletion, it backs down the date branch,
     deleting any empty subdirectories left behind.
     """
     pass
   #-----------------------------------------------------------------------------------------------------------------
-  def move (uuid, newAbsolutePath):
+  def move (self, uuid, newAbsolutePath):
     """ this function moves the json and dump files to newAbsolutePath.  In addition, after a move, it removes
      the symbolic links if they still exist.  Then it backs down the date branch, deleting any empty subdirectories
      left behind. 
     """
     pass
   #-----------------------------------------------------------------------------------------------------------------
-  def removeOlderThan (timestamp):
+  def removeOlderThan (self, timestamp):
     """ this function walks the date branch removing all entries older than the timestamp.  It also reaches across
     and removes the corresponding entries in the radix branch.  Whenever it removes the last item in a date branch
     directory, it removes the directory, too.
