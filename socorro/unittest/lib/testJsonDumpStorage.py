@@ -8,7 +8,10 @@ class TestJsonDumpStorage(unittest.TestCase):
 
   def setUp(self):
     self.testDir = os.path.join('.','TEST-JSONDUMP')
+    self.testMoveTo = os.path.join('.','TEST-MOVETO')
     self.data = {
+      '0bba61c5-dfc3-43e7-87e6-8afda3564352': ('2007-10-25-05-04','webhead02','0b/ba/61/c5','2007/10/25/05/00/webhead02_0'),
+      '0bba929f-8721-460c-8e70-a43c95d04ed2': ('2007-10-25-05-04','webhead02','0b/ba/92/9f','2007/10/25/05/00/webhead02_0'),
       '0b9ff107-8672-4aac-8b75-b2bd825c3d58': ('2008-12-25-05-00','webhead01','0b/9f/f1/07','2008/12/25/05/00/webhead01_0'),
       '22adfb61-f75b-11dc-b6be-001321b0783d': ('2008-12-25-05-01','webhead01','22/ad/fb/61','2008/12/25/05/00/webhead01_0'),
       'b965de73-ae90-a935-1357-03ae102b893f': ('2008-12-25-05-04','webhead01','b9/65/de/73','2008/12/25/05/00/webhead01_0'),
@@ -21,8 +24,6 @@ class TestJsonDumpStorage(unittest.TestCase):
       '0bad640f-5825-4d42-b96e-21b8b1d250df': ('2008-11-25-05-04','webhead02','0b/ad/64/0f','2008/11/25/05/00/webhead02_0'),
       '0bae7049-bbff-49f2-b408-7e9f41602507': ('2008-11-25-05-05','webhead02','0b/ae/70/49','2008/11/25/05/05/webhead02_0'),
       '0baf1b4d-dad3-4d35-ae7e-b9dcb217d27f': ('2008-11-25-05-06','webhead02','0b/af/1b/4d','2008/11/25/05/05/webhead02_0'),
-      '0bba61c5-dfc3-43e7-87e6-8afda3564352': ('2019-10-25-05-04','webhead02','0b/ba/61/c5','2019/10/25/05/00/webhead02_0'),
-      '0bba929f-8721-460c-8e70-a43c95d04ed2': ('2019-10-25-05-04','webhead02','0b/ba/92/9f','2019/10/25/05/00/webhead02_0'),
       }
     self.badUuid = '66666666-6666-6666-6666-666666666666'
 
@@ -32,11 +33,15 @@ class TestJsonDumpStorage(unittest.TestCase):
       pass # ok if there is no such test directory 
     os.mkdir(self.testDir)
 
-#   def tearDown(self):
-#     try:
-#       shutil.rmtree(self.testDir)
-#     except OSError:
-#       pass # ok if there is no such test directory
+  def tearDown(self):
+    try:
+      shutil.rmtree(self.testDir)
+    except OSError:
+      pass # ok if there is no such test directory
+    try:
+      shutil.rmtree(self.testMoveTo)
+    except OSError:
+        pass
 
   def _createTestSet(self):
     storage = JDS.JsonDumpStorage(self.testDir)
@@ -151,126 +156,125 @@ class TestJsonDumpStorage(unittest.TestCase):
       assert False, 'Got unexpected error %s from attempt to openAndMarkAsSeen(non-existent-uuid' % e
     assert not os.listdir(storage.dateBranch), 'Expect empty, got %s' % os.listdir(storage.dateBranch)
 
-#   def testDestructiveDateWalk(self):
-#     self._createTestSet()
-#     storage = JDS.JsonDumpStorage(self.testDir)
-#     uuids = self.data.keys()
-#     seenids = []
-#     for id in storage.destructiveDateWalk():
-#       assert id in uuids, 'Expect that %s is among the uuids we stored' % uuid
-#       seenids.append(id)
-#     for id in uuids:
-#       assert id in seenids, 'Expect that we found every uuid we stored (%s)' % uuid
+  def testDestructiveDateWalk(self):
+    self._createTestSet()
+    storage = JDS.JsonDumpStorage(self.testDir)
+    uuids = self.data.keys()
+    seenids = []
+    for id in storage.destructiveDateWalk():
+      assert id in uuids, 'Expect that %s is among the uuids we stored' % uuid
+      seenids.append(id)
+    for id in uuids:
+      assert id in seenids, 'Expect that we found every uuid we stored (%s) from %s' % (id,seenids)
+    assert not os.listdir(storage.dateBranch), 'Expect that destructive walk will remove all date links, and their dirs'
 
-#     assert not os.listdir(storage.dateBranch), 'Expect that destructive walk will remove all date links, and their dirs'
+  def testRemove(self):
+    self._createTestSet()
+    storage = JDS.JsonDumpStorage(self.testDir)
+    for uuid in self.data.keys():
+      storage.remove(uuid)
+    allfiles = []
+    alllinks = []
+    for dir, dirs, files in os.walk(self.testDir):
+      for file in files:
+        allfiles.append(file)
+        if os.path.islink(os.path.join(dir,file)):
+          alllinks.append(file)
+      for d in dirs:
+        if os.path.islink(os.path.join(dir,d)):
+          alllinks.append(d)
+    assert [] == allfiles, 'Expect that all removed files are gone, but found %s' % allfiles
+    assert [] == alllinks, 'Expcet that all links are gone, but found %s' % alllinks
+    assert not os.listdir(storage.dateBranch), 'Expect that remove on each will remove all date dirs but %s ' % (os.listdir(datedir))
 
-#   def testRemove(self):
-#     self._createTestSet()
-#     storage = JDS.JsonDumpStorage(self.testDir)
-#     for uuid in self.data.keys():
-#       storage.remove(uuid)
-#     allfiles = []
-#     alllinks = []
-#     for dir, dirs, files in os.walk(self.testDir):
-#       for file in files:
-#         allfiles.append(file)
-#         if os.path.islink(os.path.join(dir,file)):
-#           alllinks.append(file)
-#       for d in dirs:
-#         if os.path.islink(os.path.join(dir,d)):
-#           alllinks.append(d)
-#     assert [] == allfiles, 'Expect that all removed files are gone, but found %s' % allfiles
-#     assert [] == alllinks, 'Expcet that all links are gone, but found %s' % alllinks
-#     assert not os.listdir(storage.dateBranch), 'Expect that remove on each will remove all date dirs but %s ' % (os.listdir(datedir))
+  def testMove(self):
+    self._createTestSet()
+    storage = JDS.JsonDumpStorage(self.testDir)
+    os.mkdir(self.testMoveTo)
+    for uuid in self.data.keys():
+      storage.move(uuid,os.path.join('.','TEST-MOVETO'))
+    allfiles = []
+    alllinks = []
+    for dir, dirs, files in os.walk(self.testDir):
+      for file in files:
+        allfiles.append(file)
+        if os.path.islink(os.path.join(dir,file)):
+          alllinks.append(file)
+      for d in dirs:
+        if os.path.islink(os.path.join(dir,d)):
+          alllinks.append(d)
+    assert [] == allfiles, 'Expect that all moved files are gone, but found %s' % allfiles
+    assert [] == alllinks, 'Expcet that all links are gone, but found %s' % alllinks
+    assert not os.listdir(storage.dateBranch), 'Expect that move on each will remove all date links, and their dirs'
+    allfiles = []
+    alllinks = []
+    expectedFiles = [x+'.json' for x in self.data.keys() ]
+    expectedFiles.extend([x+'.dump' for x in self.data.keys() ])
+    for dir, dirs, files in os.walk(os.path.join('.','TEST-MOVETO')):
+      for file in files:
+        allfiles.append(file)
+        assert file in expectedFiles, 'Expect that each moved file will be expected but found %s' % file
+        if os.path.islink(os.path.join(dir,file)): alllinks.append(file)
+      for d in dirs:
+        if os.path.islink(os.path.join(dir,d)): alllinks.append(d)
+    assert [] == alllinks, 'Expect no links in the move-to directory, but found %s' % alllinks
+    for file in expectedFiles:
+      assert file in allfiles, 'Expect that every file will be moved but did not find %s' % file
 
-#   def testMove(self):
-#     self._createTestSet()
-#     storage = JDS.JsonDumpStorage(self.testDir)
-#     for uuid in self.data.keys():
-#       storage.move(uuid,os.path.join('.','TEST-MOVETO'))
-#     allfiles = []
-#     alllinks = []
-#     for dir, dirs, files in os.walk(self.testDir):
-#       for file in files:
-#         allfiles.append(file)
-#         if os.path.islink(os.path.join(dir,file)):
-#           alllinks.append(file)
-#       for d in dirs:
-#         if os.path.islink(os.path.join(dir,d)):
-#           alllinks.append(d)
-#     assert [] == allfiles, 'Expect that all moved files are gone, but found %s' % allfiles
-#     assert [] == alllinks, 'Expcet that all links are gone, but found %s' % alllinks
-#     assert not os.listdir(storage.dateBranch), 'Expect that move on each will remove all date links, and their dirs'
-#     allfiles = []
-#     alllinks = []
-#     expectedFiles = [x+'.json' for x in self.data.keys() ]
-#     expectedFiles.extend([x+'.dump' for x in self.data.keys() ])
-#     for dir, dirs, files in os.walk(os.path.join('.','TEST-MOVETO')):
-#       for file in files:
-#         allfiles.append(file)
-#         assert file in expectedFiles, 'Expect that each moved file will be expected but found %s' % file
-#         if os.path.islink(os.path.join(dir,file)): alllinks.append(file)
-#       for d in dirs:
-#         if os.path.islink(os.path.join(dir,d)): alllinks.append(d)
-#     assert [] == alllinks, 'Expect no links in the move-to directory, but found %s' % alllinks
-#     for file in expectedFiles:
-#       assert file in allfiles, 'Expect that every file will be moved but did not find %s' % file
+  def testRemoveOlderThan(self):
+    self._createTestSet()
+    storage = JDS.JsonDumpStorage(self.testDir)
+    cutoff = datetime.datetime(2008,12,26,05,0)
+    youngkeys = [x for x,d in self.data.items() if datetime.datetime(*[int(i) for i in d[0].split('-')]) <= cutoff]
+    oldkeys = [x for x,d in self.data.items() if datetime.datetime(*[int(i) for i in d[0].split('-')]) > cutoff]
 
-
-#   def testRemoveOlderThan(self):
-#     self._createTestSet()
-#     storage = JDS.JsonDumpStorage(self.testDir)
-#     cutoff = datetime(2008,12,26,05,0)
-#     youngkeys = [x for x,d in self.data.items if datetime.datetime(*[int(x) for x in d[0].split('-')]) <= cutoff]
-#     oldkeys = [x for x,d in self.data.items if datetime.datetime(*[int(x) for x in d[0].split('-')]) > cutoff]
-#     for k in youngkeys:
-#       assert k in self.data.keys()
-#     for k in oldkeys:
-#       assert k in self.data.keys()
-#     for k in self.data.keys():
-#       assert (k in youngkeys or k in oldkeys)
-#     storage.removeOlderThan(cutoff)
-#     seenuuid = {}
-#     seendirs = []
-#     for dir,dirs,files in os.walk(storage.radixBranch):
-#       for f in files:
-#         if os.path.islink(os.path.join(dir,f)):
-#           uuid = os.path.splitext(f)[0]
-#           seenuuid[uuid] = True
-#           assert uuid in youngkeys, 'Expect that each remaining file has a young uuid, got %s' % uuid
-#           assert not uuid in oldkeys, 'Expect no remaining file has old uuid, got %s' % uuid
-#         else:
-#           assert False, 'Found a non-link file: %s in the radix directory' %(os.path.join(dir,f))
-#       for d in dirs:
-#         if os.path.islink(os.path.join(dir,d)):
-#           uuid = os.path.splitext(d)[0]
-#           seenuuid[uuid] = True
-#           assert uuid in youngkeys, 'Expect that each remaining link has a young uuid, got %s' % uuid
-#           assert not uuid in oldkeys, 'Expect no remaining link has old uuid, got %s' % uuid
-#     for id in oldkeys:
-#       assert not id in seenuuid,'Expect that no old key is found but %s' % id
-#     for id in younkeys:
-#       assert id in seenuuid, 'Expect that every new key is found, but %s' % id
+    for k in youngkeys:
+      assert k in self.data.keys(),"Expected %s in %s"%(k,self.data.keys())
+    for k in oldkeys:
+      assert k in self.data.keys()
+    for k in self.data.keys():
+      assert (k in youngkeys or k in oldkeys)
+    storage.removeOlderThan(cutoff)
+    seenuuid = {}
+    seendirs = []
+    for dir,dirs,files in os.walk(storage.radixBranch):
+      for f in files:
+        if os.path.islink(os.path.join(dir,f)):
+          uuid = os.path.splitext(f)[0]
+          seenuuid[uuid] = True
+          assert uuid in youngkeys, 'File: Expect that each remaining link has a young uuid, got %s' % uuid
+          assert not uuid in oldkeys, 'File Expect no remaining link has old uuid, got %s' % uuid
+      for d in dirs:
+        if os.path.islink(os.path.join(dir,d)):
+          uuid = os.path.splitext(d)[0]
+          seenuuid[uuid] = True
+          assert uuid in youngkeys, 'Dir: Expect that each remaining link has a young uuid, got %s' % uuid
+          assert not uuid in oldkeys, 'Dir: Expect no remaining link has old uuid, got %s' % uuid
+    for id in oldkeys:
+      assert not id in seenuuid,'Expect that no old key is found, but %s' % id
+    for id in youngkeys:
+      assert id in seenuuid, 'Expect that every new key is found, but %s' % id
       
-#     seenuuid = {}
-#     seendirs = []
-#     for dir, dirs, files in os.walk(storage.dateBranch):
-#       for f in files:
-#         uuid = os.path.splitext(f)[0]
-#         seenuuid[uuid] = True
-#         assert uuid in youngkeys, 'Expect that each remaining file has a young uuid, got %s' % uuid
-#         assert not uuid in oldkeys, 'Expect no remaining file has old uuid, got %s' % uuid
-#       for d in dirs:
-#         uuid = os.path.splitext(d)[0]
-#         seenuuid[uuid] = True
-#         assert uuid in youngkeys, 'Expect that each remaining file has a young uuid, got %s' % uuid
-#         assert not uuid in oldkeys, 'Expect no remaining file has old uuid, got %s' % uuid
-#     for id in oldkeys:
-#       assert not id in seenuuid,'Expect that no old key is found but %s' % id
-#       assert not os.path.isdir(os.path.join(storage.dateBranch,self.data[id][3]))
-#     for id in younkeys:
-#       assert id in seenuuid, 'Expect that every new key is found, but %s' % id
-#       assert os.path.isdir(os.path.join(storage.dateBranch,self.data[id][3]))
+    seenuuid = {}
+    seendirs = []
+    for dir, dirs, files in os.walk(storage.dateBranch):
+      for f in files:
+        uuid = os.path.splitext(f)[0]
+        seenuuid[uuid] = True
+        assert uuid in youngkeys, 'Expect that each remaining file has a young uuid, got %s' % uuid
+        assert not uuid in oldkeys, 'Expect no remaining file has old uuid, got %s' % uuid
+      for d in dirs:
+        uuid = os.path.splitext(d)[0]
+        if '-' in uuid:
+          seenuuid[uuid] = True
+          assert uuid in youngkeys, 'Expect that each remaining file has a young uuid, got %s' % uuid
+          assert not uuid in oldkeys, 'Expect no remaining file has old uuid, got %s' % uuid
+    for id in oldkeys:
+      assert not id in seenuuid,'Expect that no old key is found but %s' % id
+      assert not os.path.isdir(os.path.join(storage.dateBranch,self.data[id][3]))
+    for id in youngkeys:
+      assert id in seenuuid, 'Expect that every new key is found, but %s' % id
+      assert os.path.isdir(os.path.join(storage.dateBranch,self.data[id][3]))
     
 if __name__ == "__main__":
   unittest.main()

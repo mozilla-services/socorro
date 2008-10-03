@@ -52,8 +52,8 @@ class JsonDumpStorage(object):
     open for writing.  The first file handle will be set for ".../uuid.json", while the second will be for
     ".../uuid.dump"
     """
-    radixDir = self._makeRadixDir(uuid) # deliberately leave this dir behind if next line throws
-    dateDir = self._makeDateDir(timestamp,webheadHostName)
+    radixDir = self.__makeRadixDir(uuid) # deliberately leave this dir behind if next line throws
+    dateDir = self.__makeDateDir(timestamp,webheadHostName)
     df,jf = None,None
     try:
       os.symlink(radixDir,os.path.join(dateDir,uuid))
@@ -74,9 +74,9 @@ class JsonDumpStorage(object):
     """this function will return an absolute pathname for the json file for given uuid.
     If there is no such file or it is unreadable, it will raise an OSError
     """
-    path = "%s%s%s.%s" % (self._radixDirPath(uuid),os.sep,uuid,'json')
+    path = "%s%s%s.%s" % (self.__radixDirPath(uuid),os.sep,uuid,'json')
     # os.stat is moderately faster than trying to open for reading
-    self._readableOrThrow(path)
+    self.__readableOrThrow(path)
     return path
     
   #-----------------------------------------------------------------------------------------------------------------
@@ -84,9 +84,9 @@ class JsonDumpStorage(object):
     """this function will return an absolute pathname for the dump file for given uuid.
     If there is no such file, it will raise an IOError exception.
     """
-    path = "%s%s%s.%s" % (self._radixDirPath(uuid),os.sep,uuid,'dump')
+    path = "%s%s%s.%s" % (self.__radixDirPath(uuid),os.sep,uuid,'dump')
     # os.stat is moderately faster than trying to open for reading
-    self._readableOrThrow(path)
+    self.__readableOrThrow(path)
     return path
   
   #-----------------------------------------------------------------------------------------------------------------
@@ -96,9 +96,9 @@ class JsonDumpStorage(object):
     removes the links associated with these two files. Raises IOError if either file is missing. NOTE: You should
     call remove(uuid) after reading the data from the files.
     """
-    rpath = self._radixDirPath(uuid)
+    rpath = self.__radixDirPath(uuid)
     try:
-      dpath = os.readlink(os.path.join(self._radixDirPath(uuid),uuid))
+      dpath = os.readlink(os.path.join(self.__radixDirPath(uuid),uuid))
     except OSError, e:
       raise IOError(e)
     jf,df = None,None
@@ -110,9 +110,9 @@ class JsonDumpStorage(object):
         if jf: jf.close()
         if df: df.close()
       else:
-        os.unlink(os.path.join(self._radixDirPath(uuid),uuid))
+        os.unlink(os.path.join(self.__radixDirPath(uuid),uuid))
         os.unlink(os.path.join(dpath,uuid))
-        self._cleanDirectory(dpath)
+        self.__cleanDirectory(dpath)
     return (jf,df)
   
   #-----------------------------------------------------------------------------------------------------------------
@@ -122,8 +122,37 @@ class JsonDumpStorage(object):
     pointing to the json file and the radix branch link pointing to the date branch link.  If the deletion of
     the date branch link results in an empty directory, then it should back down the date branch path deleting
     these empty directories.
+    Since the file system may be manipulated in a different thread, if no .json or .dump file is found, the
+    links are left, and we do not yield that uuid
     """
-    raise StopIteration
+    def handleLink(dir,name):
+      radixDir = self.__radixDirPath(name)
+      if not os.path.isfile(os.path.join(radixDir,name+'.json')):
+        #print 'No json for %s'%name
+        return None
+      if not os.path.isfile(os.path.join(radixDir,name+'.dump')):
+        #print 'No dump for %s'%name
+        return None
+      if os.path.islink(os.path.join(radixDir,name)):
+        #print 'is link',name
+        os.unlink(os.path.join(radixDir,name))
+        os.unlink(os.path.join(dir,name))
+        return name
+        
+    for dir,dirs,files in os.walk(self.dateBranch):
+      # note: The docs say these should be found in dirs, but we seem to get them in files
+      # I don't understand the mismatch, so suspenders and belt (which should be reasonably cheap)
+      for f in files:
+        if os.path.islink(os.path.join(dir,f)):
+          r = handleLink(dir,f)
+          if r: yield r
+      for d in dirs:
+        if os.path.islink(os.path.join(dir,d)):
+          r = handleLink(dir,d)
+          if r: yield r
+      # after finishing a given directory...
+      self.__cleanDirectory(dir)
+  
   #-----------------------------------------------------------------------------------------------------------------
   def remove (self,uuid):
     """ this function removes all instances of the uuid from the file system including the json file, the dump
@@ -131,33 +160,67 @@ class JsonDumpStorage(object):
     deleting any empty subdirectories left behind. Raises IOError if either the json or dump file for the uuid
     is not found.
     """
-    pass
+    rpath = self.__radixDirPath(uuid)
+    dpath = None
+    try:
+      dpath = os.readlink(os.path.join(rpath,uuid))
+      os.unlink(os.path.join(dpath,uuid))
+      os.unlink(os.path.join(rpath,uuid))
+    except Exception, x:
+      pass
+    finally:
+      if dpath: self.__cleanDirectory(dpath)
+      try:
+        os.unlink(os.path.join(rpath,uuid+'.json'))
+      except:
+        pass
+      try:
+        os.unlink(os.path.join(rpath,uuid+'.dump'))
+      except:
+        pass
+    
   #-----------------------------------------------------------------------------------------------------------------
   def move (self, uuid, newAbsolutePath):
     """ this function moves the json and dump files to newAbsolutePath.  In addition, after a move, it removes
      the symbolic links if they still exist.  Then it backs down the date branch, deleting any empty subdirectories
      left behind. Raises IOError if either the json or dump file for the uuid is not found. 
     """
-    pass
+    rpath = self.__radixDirPath(uuid)
+    os.rename(os.path.join(rpath,uuid+'.json'), os.path.join(newAbsolutePath, uuid+'.json'))
+    os.rename(os.path.join(rpath,uuid+'.dump'), os.path.join(newAbsolutePath, uuid+'.dump'))
+
+    self.remove(uuid)
+      
+
   #-----------------------------------------------------------------------------------------------------------------
   def removeOlderThan (self, timestamp):
     """ this function walks the date branch removing all entries older than the timestamp.  It also reaches across
     and removes the corresponding entries in the radix branch.  Whenever it removes the last item in a date branch
     directory, it removes the directory, too.
     """
-    pass
+    for dir,dirs,files in os.walk(self.dateBranch,topdown = True):
+      thisStamp = self.__pathToDate(dir)
+      if thisStamp and (thisStamp > timestamp):
+        for i in files:
+          if os.path.islink(os.path.join(dir,i)):
+            self.remove(i)
+        for i in dirs:
+          if os.path.islink(os.path.join(dir,i)):
+            self.remove(i)
+      else:
+        continue
 
   #=================================================================================================================
   # private data, methods
   currentSuffix = {} #maps datepath including webhead to an integer suffix
-  def _radixDirPath(self,uuid):
+  def __radixDirPath(self,uuid):
     return "%s%s%s%s%s%s%s%s%s" %(self.radixBranch,os.sep,uuid[0:2],os.sep,uuid[2:4],os.sep,uuid[4:6],os.sep,uuid[6:8])
   
-  def _makeRadixDir(self, uuid):
+  def __makeRadixDir(self, uuid):
     """ parse the uuid into a directory path create directory as needed, return path to directory.
     Raises OSError on failure
     """
-    path = self._radixDirPath(uuid)
+    path = self.__radixDirPath(uuid)
     try:
       os.makedirs(path)
     except OSError, e:
@@ -165,7 +228,7 @@ class JsonDumpStorage(object):
         raise e
     return path
 
-  def _dateDirPath(self,dt,head):
+  def __dateDirPath(self,dt,head):
     m = dt.minute
     for slot in range(self.minutesPerSlot,60,self.minutesPerSlot):
       if slot > m:
@@ -181,12 +244,20 @@ class JsonDumpStorage(object):
     except OSError:
       pass
     return dpath
+
+  def __pathToDate(self,path):
+    part = path.split(self.dateBranch)[1] # cdr has the date part, starts with '/'
+    if part:
+      data = part.split(os.sep)[1:-1] # get rid of leading empty, trailing webhead
+      if len(data) < 5:
+        return None
+      return dt.datetime(*[int(x) for x in data])
       
-  def _makeDateDir(self, dt, head):
+  def __makeDateDir(self, dt, head):
     """ parse the datetime.datetime dt and webhead name head into a directory path, check for overflow,
     create directory as needed, return path to directory. Raises OSError on failure.
     """
-    dpath = self._dateDirPath(dt,head)
+    dpath = self.__dateDirPath(dt,head)
     try:
       os.makedirs(dpath)
     except OSError,e:
@@ -194,13 +265,13 @@ class JsonDumpStorage(object):
         raise e
     return dpath
 
-  def _readableOrThrow(self, path):
+  def __readableOrThrow(self, path):
     """ throws OSError if not """
     import stat
     if not os.stat(path).st_mode & (stat.S_IRUSR|stat.S_IRGRP|stat.S_IROTH):
       raise OSError('Cannot read')
 
-  def _cleanDirectory(self,datepath):
+  def __cleanDirectory(self,datepath):
     #FRANK: WORK ON THIS
     opath = datepath
     cur = os.listdir(opath)
