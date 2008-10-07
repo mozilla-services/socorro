@@ -1,7 +1,7 @@
 import unittest
 import os
 import shutil
-import datetime
+import datetime as DT
 import socorro.lib.JsonDumpStorage as JDS
 
 class TestJsonDumpStorage(unittest.TestCase):
@@ -9,6 +9,7 @@ class TestJsonDumpStorage(unittest.TestCase):
   def setUp(self):
     self.testDir = os.path.join('.','TEST-JSONDUMP')
     self.testMoveTo = os.path.join('.','TEST-MOVETO')
+    self.initKwargs =  {'dateName':'DATE','indexName':'INDEX','jsonSuffix':'JS','dumpSuffix':'.DS'}
     self.data = {
       '0bba61c5-dfc3-43e7-87e6-8afda3564352': ('2007-10-25-05-04','webhead02','0b/ba/61/c5','2007/10/25/05/00/webhead02_0'),
       '0bba929f-8721-460c-8e70-a43c95d04ed2': ('2007-10-25-05-04','webhead02','0b/ba/92/9f','2007/10/25/05/00/webhead02_0'),
@@ -37,6 +38,24 @@ class TestJsonDumpStorage(unittest.TestCase):
       '28adfb61-f75b-11dc-b6be-001321b0783d': ('2008-12-25-05-01','webhead01','28/ad/fb/61','2008/12/25/05/00'),
       '29adfb61-f75b-11dc-b6be-001321b0783d': ('2008-12-25-05-00','webhead01','29/ad/fb/61','2008/12/25/05/00'),
       }
+
+    self.currenttimes = {
+      '0bba61c5-dfc3-43e7-87e6-8afda3564352': ['+','webhead02','0b/ba/61/c5','webhead02_0'],
+      '0bba929f-8721-460c-8e70-a43c95d04ed2': ['+','webhead02','0b/ba/92/9f','webhead02_0'],
+      '0b9ff107-8672-4aac-8b75-b2bd825c3d58': ['+','webhead01','0b/9f/f1/07','webhead01_0'],
+      '22adfb61-f75b-11dc-b6be-001321b0783d': ['+','webhead01','22/ad/fb/61','webhead01_0'],
+      'b965de73-ae90-a935-1357-03ae102b893f': ['+','webhead01','b9/65/de/73','webhead01_0'],
+      '0b781b88-ecbe-4cc4-893f-6bbbfd50e548': ['+','webhead01','0b/78/1b/88','webhead01_0'],
+      '0b8344d6-9021-4db9-bf34-a15394f96ff5': ['+','webhead01','0b/83/44/d6','webhead01_0'],
+      '0b94199b-b90b-4683-a38a-4114d3fd5253': ['+','webhead01','0b/94/19/9b','webhead01_0'],
+      '0b9eedc3-9a79-4ce2-83eb-1559e5234fde': ['+','webhead01','0b/9e/ed/c3','webhead01_0'],
+      '0b9fd6da-27e4-46aa-bef3-3deb9ef0d364': ['+','webhead02','0b/9f/d6/da','webhead02_0'],
+      '0ba32a30-2476-4724-b825-de1727afa9cb': ['+','webhead02','0b/a3/2a/30','webhead02_0'],
+      '0bad640f-5825-4d42-b96e-21b8b1d250df': ['+','webhead02','0b/ad/64/0f','webhead02_0'],
+      '0bae7049-bbff-49f2-b408-7e9f41602507': ['+','webhead02','0b/ae/70/49','webhead02_0'],
+      '0baf1b4d-dad3-4d35-ae7e-b9dcb217d27f': ['+','webhead02','0b/af/1b/4d','webhead02_0'],
+      }
+
     try:
       shutil.rmtree(self.testDir)
     except OSError:
@@ -44,21 +63,25 @@ class TestJsonDumpStorage(unittest.TestCase):
     os.mkdir(self.testDir)
 
   def tearDown(self):
-    try:
-      shutil.rmtree(self.testDir)
-    except OSError, e:
-      print "E-E-E",e
-      pass # ok if there is no such test directory
+#     try:
+#       shutil.rmtree(self.testDir)
+#     except OSError, e:
+#       pass # ok if there is no such test directory
     try:
       shutil.rmtree(self.testMoveTo)
     except OSError:
       pass
 
-  def __createTestSet(self):
-    storage = JDS.JsonDumpStorage(self.testDir)
-    for uuid,data in self.data.items():
-      datetimedata = [int(x) for x in data[0].split('-')]
-      fj,fd = storage.newEntry(uuid,webheadHostName=data[1],timestamp = datetime.datetime(*datetimedata))
+  def __createTestSet(self,testData):
+    storage = JDS.JsonDumpStorage(self.testDir,**self.initKwargs)
+    thedt = DT.datetime.now()
+    for uuid,data in testData.items():
+      if data[0].startswith('+'):
+        d3h = '%d/%02d/%02d/%02d' %(thedt.year,thedt.month,thedt.day,thedt.hour)
+        data[3] = "%s/%s" % (d3h,data[3])
+      else:
+        thedt = DT.datetime(*[int(x) for x in data[0].split('-')])
+      fj,fd = storage.newEntry(uuid,webheadHostName=data[1],timestamp = thedt)
       try:
         fj.write('json test of %s\n' % uuid)
       finally:
@@ -72,13 +95,28 @@ class TestJsonDumpStorage(unittest.TestCase):
     storage = JDS.JsonDumpStorage(self.testDir)
     assert os.path.join(self.testDir,'date') == storage.dateBranch
     assert os.path.join(self.testDir,'radix') == storage.radixBranch
+    assert storage.dateName == 'date'
+    assert storage.indexName == 'radix'
+    assert storage.jsonSuffix == '.json'
+    assert storage.dumpSuffix == '.dump'
+    self.constructorAlt(self.testDir,**self.initKwargs)
+
+  def constructorAlt(self,*args,**kwargs):
+    storage = JDS.JsonDumpStorage(self.testDir,**kwargs)
+    assert storage.dateName == kwargs.get('dateName'),'From kwargs=%s'%kwargs
+    assert storage.indexName == kwargs.get('indexName'),'From kwargs=%s'%kwargs
+    assert storage.jsonSuffix == '.'+kwargs.get('jsonSuffix'),'We will always pass non-dot json suffix. From kwargs=%s'%kwargs
+    assert storage.dumpSuffix == kwargs.get('dumpSuffix'),'We will always pass dot dump suffix. From kwargs=%s'%kwargs
+    assert os.path.join(self.testDir,storage.dateName) == storage.dateBranch,'From kwargs=%s'%kwargs
+    assert os.path.join(self.testDir,storage.indexName) == storage.radixBranch,'From kwargs=%s'%kwargs
+
 
   def testNewEntry(self):
-    storage = JDS.JsonDumpStorage(self.testDir)
+    storage = JDS.JsonDumpStorage(self.testDir,**self.initKwargs)
     for uuid,data in self.data.items():
       datetimedata = [int(x) for x in data[0].split('-')]
       try:
-        fj,fd = storage.newEntry(uuid,webheadHostName=data[1],timestamp = datetime.datetime(*datetimedata))
+        fj,fd = storage.newEntry(uuid,webheadHostName=data[1],timestamp = DT.datetime(*datetimedata))
       except IOError:
         assert False, 'Expect to succeed with newEntry(%s,...)' % uuid
         
@@ -114,12 +152,12 @@ class TestJsonDumpStorage(unittest.TestCase):
 
   def testNewEntryDirectoryOverflow(self):
     ''' tests that we write new date links in appropriate overflow dir when we get too many in the regular dir'''
-    self.__createTestSet()
-    storage = JDS.JsonDumpStorage(self.testDir,maxDirectoryEntries=3)
+    self.__createTestSet(self.data)
+    storage = JDS.JsonDumpStorage(self.testDir,maxDirectoryEntries=3,**self.initKwargs)
     for uuid,data in self.toomany.items():
       abspathpart = data[3]
       datetimedata = [int(x) for x in data[0].split('-')]
-      storage.newEntry(uuid,webheadHostName=data[1],timestamp = datetime.datetime(*datetimedata))
+      storage.newEntry(uuid,webheadHostName=data[1],timestamp = DT.datetime(*datetimedata))
     datePathUpOne = os.path.join(storage.dateBranch,abspathpart)
     webheads = os.listdir(datePathUpOne)
     assert 3 == len(webheads)
@@ -129,15 +167,15 @@ class TestJsonDumpStorage(unittest.TestCase):
     for uuid,data in self.evenmore.items():
       abspathpart = data[3]
       datetimedata = [int(x) for x in data[0].split('-')]
-      storage2.newEntry(uuid,webheadHostName=data[1],timestamp = datetime.datetime(*datetimedata))
+      storage2.newEntry(uuid,webheadHostName=data[1],timestamp = DT.datetime(*datetimedata))
     webheads = os.listdir(datePathUpOne)
     assert 4 == len(webheads)
     for datePath in [os.path.join(datePathUpOne,x) for x in webheads]:
       assert 3 >= len(os.listdir(datePath))
 
   def testGetJson(self):
-    self.__createTestSet()
-    storage = JDS.JsonDumpStorage(self.testDir)
+    self.__createTestSet(self.data)
+    storage = JDS.JsonDumpStorage(self.testDir,**self.initKwargs)
     for uuid,data in self.data.items():
       expected = os.sep.join((storage.radixBranch,data[2],uuid+storage.jsonSuffix))
       got = storage.getJson(uuid)
@@ -151,8 +189,8 @@ class TestJsonDumpStorage(unittest.TestCase):
       assert False, 'Got unexpected error %s from attempt to getJson(non-existent-uuid' % e
       
   def testGetDump(self):
-    self.__createTestSet()
-    storage = JDS.JsonDumpStorage(self.testDir)
+    self.__createTestSet(self.data)
+    storage = JDS.JsonDumpStorage(self.testDir,**self.initKwargs)
     for uuid,data in self.data.items():
       expected = os.sep.join((storage.radixBranch,data[2],uuid+storage.dumpSuffix))
       got =  storage.getDump(uuid)
@@ -166,8 +204,8 @@ class TestJsonDumpStorage(unittest.TestCase):
       assert False, 'Got unexpected error(type) %s from attempt to getDump(non-existent-uuid' % e
 
   def markAsSeen(self):
-    self.__createTestSet()
-    storage = JDS.JsonDumpStorage(self.testDir)
+    self.__createTestSet(self.data)
+    storage = JDS.JsonDumpStorage(self.testDir,**self.initKwargs)
     for uuid,data in self.data.items():
       assert os.path.islink(os.sep.join((storage.dateBranch,data[3],uuid))), 'Expect a link from date to radix for %s' % uuid
       assert os.path.islink(os.sep.join((storage.radixBranch,data[2],uuid))), 'Expect link from radix to timed for %s' % uuid
@@ -183,8 +221,8 @@ class TestJsonDumpStorage(unittest.TestCase):
     assert not os.listdir(storage.dateBranch), 'Expect empty, got %s' % os.listdir(storage.dateBranch)
 
   def testDestructiveDateWalk(self):
-    self.__createTestSet()
-    storage = JDS.JsonDumpStorage(self.testDir)
+    self.__createTestSet(self.data)
+    storage = JDS.JsonDumpStorage(self.testDir,**self.initKwargs)
     uuids = self.data.keys()
     seenids = []
     for id in storage.destructiveDateWalk():
@@ -194,9 +232,18 @@ class TestJsonDumpStorage(unittest.TestCase):
       assert id in seenids, 'Expect that we found every uuid we stored (%s) from %s' % (id,seenids)
     assert not os.listdir(storage.dateBranch), 'Expect that destructive walk will remove all date links, and their dirs'
 
+  def testDestructiveDateWalkNotNow(self):
+    self.__createTestSet(self.currenttimes)
+    storage = JDS.JsonDumpStorage(self.testDir,**self.initKwargs)
+    uuids = self.currenttimes.keys()
+    seenids = []
+    for id in storage.destructiveDateWalk():
+      seenids.append(id)
+    assert [] == seenids
+
   def testRemove(self):
-    self.__createTestSet()
-    storage = JDS.JsonDumpStorage(self.testDir)
+    self.__createTestSet(self.data)
+    storage = JDS.JsonDumpStorage(self.testDir,**self.initKwargs)
     for uuid in self.data.keys():
       storage.remove(uuid)
     allfiles = []
@@ -217,8 +264,8 @@ class TestJsonDumpStorage(unittest.TestCase):
       assert False, 'Should be able to remove bogus data'
         
   def testMove(self):
-    self.__createTestSet()
-    storage = JDS.JsonDumpStorage(self.testDir)
+    self.__createTestSet(self.data)
+    storage = JDS.JsonDumpStorage(self.testDir,**self.initKwargs)
     os.mkdir(self.testMoveTo)
     for uuid in self.data.keys():
       storage.move(uuid,os.path.join('.','TEST-MOVETO'))
@@ -250,11 +297,11 @@ class TestJsonDumpStorage(unittest.TestCase):
       assert file in allfiles, 'Expect that every file will be moved but did not find %s' % file
 
   def testRemoveOlderThan(self):
-    self.__createTestSet()
-    storage = JDS.JsonDumpStorage(self.testDir)
-    cutoff = datetime.datetime(2008,12,26,05,0)
-    youngkeys = [x for x,d in self.data.items() if datetime.datetime(*[int(i) for i in d[0].split('-')]) <= cutoff]
-    oldkeys = [x for x,d in self.data.items() if datetime.datetime(*[int(i) for i in d[0].split('-')]) > cutoff]
+    self.__createTestSet(self.data)
+    storage = JDS.JsonDumpStorage(self.testDir,**self.initKwargs)
+    cutoff = DT.datetime(2008,12,26,05,0)
+    youngkeys = [x for x,d in self.data.items() if DT.datetime(*[int(i) for i in d[0].split('-')]) <= cutoff]
+    oldkeys = [x for x,d in self.data.items() if DT.datetime(*[int(i) for i in d[0].split('-')]) > cutoff]
 
     for k in youngkeys:
       assert k in self.data.keys(),"Expected %s in %s"%(k,self.data.keys())
@@ -305,4 +352,3 @@ class TestJsonDumpStorage(unittest.TestCase):
     
 if __name__ == "__main__":
   unittest.main()
-

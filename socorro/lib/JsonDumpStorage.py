@@ -43,7 +43,11 @@ class JsonDumpStorage(object):
     self.dateName = kwargs.get('dateName','date')
     self.indexName = kwargs.get('indexName','radix')
     self.jsonSuffix = kwargs.get('jsonSuffix','.json')
+    if not self.jsonSuffix.startswith('.'):
+      self.jsonSuffix = ".%s" % (self.jsonSuffix)
     self.dumpSuffix = kwargs.get('dumpSuffix','.dump')
+    if not self.dumpSuffix.startswith('.'):
+      self.dumpSuffix = ".%s" % (self.dumpSuffix)
     self.dateBranch = os.path.join(self.root,self.dateName)
     self.radixBranch = os.path.join(self.root,self.indexName)
     self.toRadixFromDate = os.sep.join(('..','..','..','..','..','..','..',self.indexName))
@@ -145,6 +149,8 @@ class JsonDumpStorage(object):
         return name
         
     for dir,dirs,files in os.walk(self.dateBranch):
+      if os.path.split(dir)[0] == os.path.split(self.__dateAbsPath(DT.datetime.now(),'',False))[0]:
+        continue
       # the links are all to (relative) directories, so we need not look at files
       for d in dirs:
         if os.path.islink(os.path.join(dir,d)):
@@ -152,8 +158,6 @@ class JsonDumpStorage(object):
           if r:
             yield r
       # after finishing a given directory...
-      if os.path.split(dir)[0] == os.path.split(self.__dateAbsPath(DT.datetime.now(),'',False))[0]:
-        continue
       self.__cleanDirectory(dir)
   
   #-----------------------------------------------------------------------------------------------------------------
