@@ -83,10 +83,10 @@ class TestJsonDumpStorage(unittest.TestCase):
         assert False, 'Expect to succeed with newEntry(%s,...)' % uuid
         
       assert fj, 'Expect a non-null json file handle from newEntry(%s,...)' % uuid
-      expectJson = os.sep.join((storage.radixBranch,data[2],uuid+'.json'))
+      expectJson = os.sep.join((storage.radixBranch,data[2],uuid+storage.jsonSuffix))
       assert expectJson == fj.name, 'For %s, expect %s, got %s' % (uuid,expectJson,fj.name)
       assert fd, 'Expect a non-null dump file handle from newEntry(%s,...)' % uuid
-      expectDump = os.sep.join((storage.radixBranch,data[2],uuid+'.dump'))
+      expectDump = os.sep.join((storage.radixBranch,data[2],uuid+storage.dumpSuffix))
       assert expectDump == fd.name, 'For %s, expect %s, got %s' % (uuid,expectDump,fj.name)
       lpath = os.sep.join((storage.dateBranch,data[3],uuid))
       assert os.path.islink(lpath), 'Expect a link from timed to storage for %s' % uuid
@@ -95,18 +95,20 @@ class TestJsonDumpStorage(unittest.TestCase):
       assert os.path.islink(lpath), 'Expect link from radix storage to timed for %s' % uuid
       assert storage.toDateFromRadix in os.readlink(lpath)
       try:
-        fj.write("testing\n")
-        assert True, 'must be able to write to the json file for uuid %s' % uuid
-      except:
-        assert False, 'must not fail to write to the json file for uuid %s' % uuid
+        try:
+          fj.write("testing\n")
+          assert True, 'must be able to write to the json file for uuid %s' % uuid
+        except:
+          assert False, 'must not fail to write to the json file for uuid %s' % uuid
       finally:
         if fj: fj.close()
 
       try:
-        fd.write("testing\n")
-        assert True, 'must be able to write to the dump file for uuid %s' % uuid
-      except:
-        assert False, 'must not fail to write to the dump file for uuid %s' % uuid
+        try:
+          fd.write("testing\n")
+          assert True, 'must be able to write to the dump file for uuid %s' % uuid
+        except:
+          assert False, 'must not fail to write to the dump file for uuid %s' % uuid
       finally:
         if fd: fd.close()
 
@@ -137,7 +139,7 @@ class TestJsonDumpStorage(unittest.TestCase):
     self.__createTestSet()
     storage = JDS.JsonDumpStorage(self.testDir)
     for uuid,data in self.data.items():
-      expected = os.sep.join((storage.radixBranch,data[2],uuid+'.json'))
+      expected = os.sep.join((storage.radixBranch,data[2],uuid+storage.jsonSuffix))
       got = storage.getJson(uuid)
       assert expected == got, 'Expected json file %s, got %s' % (expected,got)
     try:
@@ -152,7 +154,7 @@ class TestJsonDumpStorage(unittest.TestCase):
     self.__createTestSet()
     storage = JDS.JsonDumpStorage(self.testDir)
     for uuid,data in self.data.items():
-      expected = os.sep.join((storage.radixBranch,data[2],uuid+'.dump'))
+      expected = os.sep.join((storage.radixBranch,data[2],uuid+storage.dumpSuffix))
       got =  storage.getDump(uuid)
       assert expected == got, 'Expected dump file %s, got %s' % (expected,got)
     try:
@@ -163,26 +165,16 @@ class TestJsonDumpStorage(unittest.TestCase):
     except Exception, e:
       assert False, 'Got unexpected error(type) %s from attempt to getDump(non-existent-uuid' % e
 
-  def testOpenAndMarkAsSeen(self):
+  def markAsSeen(self):
     self.__createTestSet()
     storage = JDS.JsonDumpStorage(self.testDir)
     for uuid,data in self.data.items():
       assert os.path.islink(os.sep.join((storage.dateBranch,data[3],uuid))), 'Expect a link from date to radix for %s' % uuid
       assert os.path.islink(os.sep.join((storage.radixBranch,data[2],uuid))), 'Expect link from radix to timed for %s' % uuid
-      fj,fd = None,None
-      try:
-        expectJson = os.sep.join((storage.radixBranch,data[2],uuid+'.json'))
-        expectDump = os.sep.join((storage.radixBranch,data[2],uuid+'.dump'))
-        fj,fd = storage.openAndMarkAsSeen(uuid)
-        assert expectJson == fj.name, 'Expected json %s, got %s' % (expectJson,fj.name)
-        assert expectDump == fd.name, 'Expected dump %s, got %s' % (expectDump,fd.name)
-        assert not os.path.islink(os.sep.join((storage.dateBranch,data[3],uuid))), 'Expect no link from date to radix for %s' % uuid
-        assert not os.path.islink(os.sep.join((storage.radixBranch,data[2],uuid))), 'Expect no link from radix to date for %s' % uuid
-      finally:
-        if fj: fj.close()
-        if fd: fd.close()
+      assert not os.path.islink(os.sep.join((storage.dateBranch,data[3],uuid))), 'Expect no link from date to radix for %s' % uuid
+      assert not os.path.islink(os.sep.join((storage.radixBranch,data[2],uuid))), 'Expect no link from radix to date for %s' % uuid
     try:
-      storage.openAndMarkAsSeen(self.badUuid)
+      storage.markAsSeen(self.badUuid)
       assert False, 'Expect to throw IOError from attempt to openAndMarkAsSeen(non-existent-uuid)'
     except IOError:
       assert True, 'Got expected error from attempt to openAndMarkAsSeen(non-existent-uuid)'
@@ -219,7 +211,6 @@ class TestJsonDumpStorage(unittest.TestCase):
           alllinks.append(d)
     assert [] == allfiles, 'Expect that all removed files are gone, but found %s' % allfiles
     assert [] == alllinks, 'Expcet that all links are gone, but found %s' % alllinks
-    assert not os.listdir(storage.dateBranch), 'Expect that remove on each will remove all date dirs but %s ' % (os.listdir(datedir))
     try:
       storage.remove("bogusdata")
     except:
@@ -243,11 +234,10 @@ class TestJsonDumpStorage(unittest.TestCase):
           alllinks.append(d)
     assert [] == allfiles, 'Expect that all moved files are gone, but found %s' % allfiles
     assert [] == alllinks, 'Expcet that all links are gone, but found %s' % alllinks
-    assert not os.listdir(storage.dateBranch), 'Expect that move on each will remove all date links, and their dirs'
     allfiles = []
     alllinks = []
-    expectedFiles = [x+'.json' for x in self.data.keys() ]
-    expectedFiles.extend([x+'.dump' for x in self.data.keys() ])
+    expectedFiles = [x+storage.jsonSuffix for x in self.data.keys() ]
+    expectedFiles.extend([x+storage.dumpSuffix for x in self.data.keys() ])
     for dir, dirs, files in os.walk(os.path.join('.','TEST-MOVETO')):
       for file in files:
         allfiles.append(file)
@@ -309,7 +299,6 @@ class TestJsonDumpStorage(unittest.TestCase):
           assert not uuid in oldkeys, 'Expect no remaining file has old uuid, got %s' % uuid
     for id in oldkeys:
       assert not id in seenuuid,'Expect that no old key is found but %s' % id
-      assert not os.path.isdir(os.path.join(storage.dateBranch,self.data[id][3]))
     for id in youngkeys:
       assert id in seenuuid, 'Expect that every new key is found, but %s' % id
       assert os.path.isdir(os.path.join(storage.dateBranch,self.data[id][3]))
