@@ -2,6 +2,7 @@ import datetime as DT
 import os
 import stat
 import errno
+from stat import S_IRGRP, S_IXGRP, S_IWGRP, S_IRUSR, S_IXUSR, S_IWUSR, S_ISGID
 
 #-----------------------------------------------------------------------------------------------------------------
 class JsonDumpStorage(object):
@@ -50,6 +51,10 @@ class JsonDumpStorage(object):
       self.dumpSuffix = ".%s" % (self.dumpSuffix)
     self.dateBranch = os.path.join(self.root,self.dateName)
     self.radixBranch = os.path.join(self.root,self.indexName)
+    self.dumpPermissions = int(kwargs.get('dumpPermissions','%d'%(S_IRGRP | S_IWGRP | S_IRUSR | S_IWUSR)))
+    self.dirPermissions = int(kwargs.get('dirPermissions', '%d'%(S_IRGRP | S_IXGRP | S_IWGRP | S_IRUSR | S_IXUSR | S_IWUSR)))
+    self.dumpGID = kwargs.get('dumpGID',None)
+    if self.dumpGID: self.dumpGID = int(self.dumpGID)
     self.toRadixFromDate = os.sep.join(('..','..','..','..','..','..','..',self.indexName))
     self.toDateFromRadix = os.sep.join(('..','..','..','..','..',self.dateName))
     self.minutesPerSlot = 5
@@ -72,6 +77,9 @@ class JsonDumpStorage(object):
       os.symlink(self.__radixRelativePath(uuid),os.path.join(dateDir,uuid))
       jf = open(os.path.join(radixDir,uuid+self.jsonSuffix),'w')
       df = open(os.path.join(radixDir,uuid+self.dumpSuffix),'w')
+      if self.dumpGID:
+        os.chown(os.path.join(radixDir,uuid+self.jsonSuffix),-1,self.dumpGID)
+        os.chown(os.path.join(radixDir,uuid+self.dumpSuffix),-1,self.dumpGID)
     finally:
       if not jf or not df:
         if jf: jf.close()
@@ -245,7 +253,8 @@ class JsonDumpStorage(object):
     """
     path = self.__radixAbsPath(uuid)
     try:
-      os.makedirs(path)
+      os.makedirs(path,self.dirPermissions)
+      self.__fixupGroup(path,self.dumpGID)
     except OSError, e:
       if not os.path.isdir(path):
         raise e
@@ -304,7 +313,8 @@ class JsonDumpStorage(object):
     """
     dpath = self.__dateAbsPath(dt,head,checkSize=True)
     try:
-      os.makedirs(dpath)
+      os.makedirs(dpath,self.dirPermissions)
+      self.__fixupGroup(dpath,self.dumpGID)
     except OSError,e:
       if not os.path.isdir(dpath):
         raise e
@@ -314,6 +324,12 @@ class JsonDumpStorage(object):
     """ raises OSError if not """
     if not os.stat(path).st_mode & (stat.S_IRUSR|stat.S_IRGRP|stat.S_IROTH):
       raise OSError('Cannot read')
+
+  def __fixupGroup(self,path,gid):
+    if None == gid: return
+    while path != self.root:
+      chown(path,-1,gid)
+      path = os.split(path)[0]
 
   def __cleanDirectory(self,datepath):
     """Look higher and higher up the storage branch until you hit the top or a non-empty sub-directory"""
