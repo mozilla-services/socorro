@@ -63,10 +63,10 @@ class TestJsonDumpStorage(unittest.TestCase):
     os.mkdir(self.testDir)
 
   def tearDown(self):
-#     try:
-#       shutil.rmtree(self.testDir)
-#     except OSError, e:
-#       pass # ok if there is no such test directory
+    try:
+      shutil.rmtree(self.testDir)
+    except OSError, e:
+      pass # ok if there is no such test directory
     try:
       shutil.rmtree(self.testMoveTo)
     except OSError:
