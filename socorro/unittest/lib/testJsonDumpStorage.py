@@ -10,6 +10,7 @@ class TestJsonDumpStorage(unittest.TestCase):
   def setUp(self):
     self.testDir = os.path.join('.','TEST-JSONDUMP')
     self.testMoveTo = os.path.join('.','TEST-MOVETO')
+    self.testMoveFrom = os.path.join('.','TEST-MOVEFROM')
     self.initKwargs =  {
       0:{},
       1:{'dateName':'DATE','indexName':'INDEX','jsonSuffix':'JS','dumpSuffix':'.DS',},
@@ -77,11 +78,13 @@ class TestJsonDumpStorage(unittest.TestCase):
       shutil.rmtree(self.testMoveTo)
     except OSError:
       pass
+    try:
+      shutil.rmtree(self.testMoveFrom)
+    except OSError:
+      pass
     
   def __getSlot(self,minsperslot,minute):
-    for slot in range(minsperslot,60,minsperslot):
-      if slot > minute: break
-    return slot - minsperslot
+    return minsperslot * int(minute/minsperslot)
 
   def __createTestSet(self,testData, initIndex=1):
     storage = JDS.JsonDumpStorage(self.testDir,**self.initKwargs[initIndex])
@@ -190,6 +193,52 @@ class TestJsonDumpStorage(unittest.TestCase):
     assert 4 == len(webheads)
     for datePath in [os.path.join(datePathUpOne,x) for x in webheads]:
       assert 3 >= len(os.listdir(datePath))
+
+  def testCopyFrom(self):
+    os.makedirs(self.testMoveFrom)
+    fromdata = [('aabbccdd-something','2007-10-20-12-15','webalos',True,False),
+                ('aabbccee-something','2007-10-20-12-15','webalos',True,False),
+                ('aabbccff-something','2007-10-20-10-15','webalos',False,True),
+                ]
+    df = jf = None
+    storage = JDS.JsonDumpStorage(self.testDir,**self.initKwargs[1])
+    for (uuid,stampS,head,doLink,doRm) in fromdata:
+      jpath = "%s%s%s%s"%(self.testMoveFrom,os.sep,uuid,storage.jsonSuffix)
+      dpath = "%s%s%s%s"%(self.testMoveFrom,os.sep,uuid,storage.dumpSuffix)
+      jf = open(jpath,'w')
+      df = open(dpath,'w')
+      jf.write('json file: %s\n'%uuid)
+      df.write('dump file: %s\n'%uuid)
+      jf.close()
+      df.close()
+      stamp = DT.datetime(*[int(x) for x in stampS.split('-')])
+      newjpath = None
+      try:
+        ok = storage.copyFrom(uuid,jpath,dpath,head,stamp,doLink,doRm)
+        assert ok, "Expect to succeed with %s" % (uuid)
+      except Exception, e:
+        assert False,'Expected to not raise "%s" from id %s' % (e,uuid)
+      try:
+        newjpath = storage.getJson(uuid)
+      except Exception, e:
+        assert False, 'getJson(%s) should not raise %s'%(uuid, e)
+      try:
+        storage.getDump(uuid)
+      except Exception,e:
+        assert False, 'getDump(%s) should not raise %s'%(uuid,e)
+      if doLink:
+        assert newjpath
+        link = os.path.splitext(newjpath)[0]
+        assert os.path.islink(link)
+        dir = os.readlink(link)
+        dir = os.path.join(os.path.split(link)[0],dir)
+        assert os.path.islink(os.path.join(dir,uuid))
+      if doRm:
+        assert not os.path.isfile(jpath)
+        assert not os.path.isfile(dpath)
+      else:
+        assert os.path.isfile(jpath)
+        assert os.path.isfile(dpath)
 
   def testGetJson(self):
     self.__createTestSet(self.data, initIndex=0)

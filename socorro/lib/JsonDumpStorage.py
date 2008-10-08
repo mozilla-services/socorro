@@ -1,26 +1,28 @@
 import datetime as DT
 import os
+import shutil
 import stat
 import errno
 from stat import S_IRGRP, S_IXGRP, S_IWGRP, S_IRUSR, S_IXUSR, S_IWUSR, S_ISGID
 
 #-----------------------------------------------------------------------------------------------------------------
 class JsonDumpStorage(object):
-  """ This class implements a file system storage scheme for the JSON and dump files of the Socorro project.
+  """
+  This class implements a file system storage scheme for the JSON and dump files of the Socorro project.
   It create a tree with two branches: the radix branch and the date branch.
-  The radix branch consists of paths based on the first 8 characters of the uuid file name. It holds the two
-  data files and a relative symbolic link to the date branch directory associated with the particular uuid.
-    For the uuid:  22adfb61-f75b-11dc-b6be-001321b0783d
-      the json file is stored as %(root)s/radix/22/ad/fb/61/22adfb61-f75b-11dc-b6be-001321b0783d.json
-      the dump file is stored as %(root)s/radix/22/ad/fb/61/22adfb61-f75b-11dc-b6be-001321b0783d.dump
-      the symbolic link is stored as %(root)s/radix/22/ad/fb/61/22adfb61-f75b-11dc-b6be-001321b0783d
+   - The radix branch consists of paths based on the first 8 characters of the uuid file name. It holds the two
+     data files and a relative symbolic link to the date branch directory associated with the particular uuid.
+     For the uuid:  22adfb61-f75b-11dc-b6be-001321b0783d
+      - the json file is stored as %(root)s/radix/22/ad/fb/61/22adfb61-f75b-11dc-b6be-001321b0783d.json
+      - the dump file is stored as %(root)s/radix/22/ad/fb/61/22adfb61-f75b-11dc-b6be-001321b0783d.dump
+      - the symbolic link is stored as %(root)s/radix/22/ad/fb/61/22adfb61-f75b-11dc-b6be-001321b0783d
         and (see below) references %(toDateFromRadix)s/date/2008/09/30/12/05/webhead01_0
-  The date branch consists of paths based on the year, month, day, hour, minute-segment, webhead host name and
-  a small sequence number
-  For each uuid, it holds a relative symbolic link referring to the actual storage (radix) directory holding
-  the data for that uuid.
-    For the uuid above, submitted at 2008-09-30T12:05 from webhead01
-      the symbolic link is stored as %(root)s/date/2008/09/30/12/05/webhead01_0/22adfb61-f75b-11dc-b6be-001321b0783d
+   - The date branch consists of paths based on the year, month, day, hour, minute-segment, webhead host name and
+     a small sequence number. 
+     For each uuid, it holds a relative symbolic link referring to the actual storage (radix) directory holding
+     the data for that uuid.
+     For the uuid above, submitted at 2008-09-30T12:05 from webhead01
+      - the symbolic link is stored as %(root)s/date/2008/09/30/12/05/webhead01_0/22adfb61-f75b-11dc-b6be-001321b0783d
         and references %(toRadixFromDate)s/radix/22/ad/fb/61
 
   Note: The symbolic links are relative, so they begin with several rounds of '../'. This is to avoid issues that
@@ -58,10 +60,9 @@ class JsonDumpStorage(object):
     self.toRadixFromDate = os.sep.join(('..','..','..','..','..','..','..',self.indexName))
     self.toDateFromRadix = os.sep.join(('..','..','..','..','..',self.dateName))
     self.minutesPerSlot = 5
-    self.slotRange = range(self.minutesPerSlot, 60, self.minutesPerSlot)
     self.currentSuffix = {} #maps datepath including webhead to an integer suffix
   #-----------------------------------------------------------------------------------------------------------------
-  def newEntry (self, uuid, webheadHostName='webhead01', timestamp=DT.datetime.now()):
+  def newEntry (self, uuid, webheadHostName='webhead01', timestamp=None):
     """
     Sets up the radix and date storage directory branches for the given uuid.
     Creates any directories that it needs along the path to the appropriate storage location.
@@ -69,6 +70,7 @@ class JsonDumpStorage(object):
     the radix branch link pointing to the date branch directory holding that link.
     Returns a 2-tuple containing files open for reading: (jsonfile,dumpfile)
     """
+    if not timestamp: timestamp = DT.datetime.now()
     df,jf = None,None
     radixDir = self.__makeRadixDir(uuid) # deliberately leave this dir behind if next line throws
     dateDir = self.__makeDateDir(timestamp,webheadHostName)
@@ -88,6 +90,50 @@ class JsonDumpStorage(object):
         os.unlink(os.path.join(radixDir,uuid))
         df,jf = None,None
     return (jf,df)
+  
+  #-----------------------------------------------------------------------------------------------------------------
+  def copyFrom(self, uuid, jsonpath, dumppath, webheadHostName, timestamp, createLinks = False, removeOld = False):
+    """
+    Copy the two crash files from the given path to our current storage location in radixBranch
+    If createLinks, use webheadHostName and timestamp to insert links to and from the dateBranch
+    If removeOld, after the files are copied, attempt to unlink the originals
+    raises OSError if the paths are unreadable or if removeOld is true and either file cannot be unlinked
+
+    """
+    radixDir = self.__makeRadixDir(uuid) # deliberately leave this dir behind if next line throws
+    jsonNewPath = '%s%s%s%s' % (radixDir,os.sep,uuid,self.jsonSuffix)
+    dumpNewPath = '%s%s%s%s' % (radixDir,os.sep,uuid,self.dumpSuffix)
+    shutil.copy2(jsonpath,jsonNewPath)
+    try:
+      shutil.copy2(dumppath,dumpNewPath)
+      if self.dumpGID:
+        os.chown(dumpNewPath,-1,self.dumpGID)
+        os.chown(jsonNewPath,-1,self.dumpGID)
+    except OSError, e:
+      try:
+        os.unlink(jsonNewPath)
+      finally:
+        raise e
+    if createLinks:
+      dateDir = self.__makeDateDir(timestamp,webheadHostName)
+      os.symlink(self.__dateRelativePath(timestamp,webheadHostName),os.path.join(radixDir,uuid))
+      try:
+        os.symlink(self.__radixRelativePath(uuid),os.path.join(dateDir,uuid))
+      except OSError, e:
+        os.unlink(os.path.join(radixDir,uuid))
+        raise e
+    if removeOld:
+      try:
+        os.unlink(jsonpath)
+      except:
+        print "cannot unlink J", jsonpath, os.listdir(os.path.split(jsonpath)[0])
+        return False
+      try:
+        os.unlink(dumppath)
+      except:
+        print "cannot unlink D", dumppath, os.listdir(os.path.split(dumppath)[0])
+        return False
+    return True
   
   #-----------------------------------------------------------------------------------------------------------------
   def getJson (self, uuid):
@@ -200,7 +246,6 @@ class JsonDumpStorage(object):
     """
     Moves the json file then the dump file to newAbsolutePath.
     Removes associated symbolic links if they still exist.
-    Recursively travels up from the date location deleting any empty subdirectories
     Raises IOError if either the json or dump file for the uuid is not found, and retains any links, but does not roll
     back the json file if the dump file is not found.
     """
@@ -215,8 +260,7 @@ class JsonDumpStorage(object):
   def removeOlderThan (self, timestamp):
     """
     Walks the date branch removing all entries strictly older than the timestamp.
-    Removes the corresponding entries in the radix branch.  Whenever it removes the last item in a date branch
-    directory, it recursively removes the directory and its parents, as long as each is empty.
+    Removes the corresponding entries in the radix branch. Does NOT clean up empty date directories
     """
     for dir,dirs,files in os.walk(self.dateBranch,topdown = True):
       thisStamp = self.__pathToDate(dir)
@@ -267,20 +311,14 @@ class JsonDumpStorage(object):
 
   def __currentSlot(self):
     minute = DT.datetime.now().minute
-    for slot in self.slotRange:
-      if slot > minute:
-        break
-    slot -= self.minutesPerSlot
+    return self.minutesPerSlot * int(minute/self.minutesPerSlot)
 
   def __datePath(self,dt,head,startswith,checkSize=False):
     """A workhorse that makes a path from a date and some other things. Param checkSize is true if we are seeing
     whether to create a new subdirectory (from newEntry())
     """
     m = dt.minute
-    for slot in self.slotRange:
-      if slot > m:
-        break
-    slot -= self.minutesPerSlot
+    slot = self.minutesPerSlot * int(m/self.minutesPerSlot)
     #           bb//yyyy//mmmm//dddd//hhhh//5min//hd
     dpathKey = "%s%s%04d%s%02d%s%02d%s%02d%s%02d%s%s" %  (startswith,os.sep,dt.year,os.sep,dt.month,os.sep,dt.day,os.sep,dt.hour,os.sep,slot,os.sep,head)
     dpath = "%s_%d" %(dpathKey, self.currentSuffix.setdefault(dpathKey,0))
