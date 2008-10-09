@@ -9,42 +9,42 @@ from stat import S_IRGRP, S_IXGRP, S_IWGRP, S_IRUSR, S_IXUSR, S_IWUSR, S_ISGID
 class JsonDumpStorage(object):
   """
   This class implements a file system storage scheme for the JSON and dump files of the Socorro project.
-  It create a tree with two branches: the radix branch and the date branch.
-   - The radix branch consists of paths based on the first 8 characters of the uuid file name. It holds the two
+  It create a tree with two branches: the name branch and the date branch.
+   - The name branch consists of paths based on the first 8 characters of the uuid file name. It holds the two
      data files and a relative symbolic link to the date branch directory associated with the particular uuid.
      For the uuid:  22adfb61-f75b-11dc-b6be-001321b0783d
-      - the json file is stored as %(root)s/radix/22/ad/fb/61/22adfb61-f75b-11dc-b6be-001321b0783d.json
-      - the dump file is stored as %(root)s/radix/22/ad/fb/61/22adfb61-f75b-11dc-b6be-001321b0783d.dump
-      - the symbolic link is stored as %(root)s/radix/22/ad/fb/61/22adfb61-f75b-11dc-b6be-001321b0783d
-        and (see below) references %(toDateFromRadix)s/date/2008/09/30/12/05/webhead01_0
+      - the json file is stored as %(root)s/name/22/ad/fb/61/22adfb61-f75b-11dc-b6be-001321b0783d.json
+      - the dump file is stored as %(root)s/name/22/ad/fb/61/22adfb61-f75b-11dc-b6be-001321b0783d.dump
+      - the symbolic link is stored as %(root)s/name/22/ad/fb/61/22adfb61-f75b-11dc-b6be-001321b0783d
+        and (see below) references %(toDateFromName)s/date/2008/09/30/12/05/webhead01_0
    - The date branch consists of paths based on the year, month, day, hour, minute-segment, webhead host name and
      a small sequence number. 
-     For each uuid, it holds a relative symbolic link referring to the actual storage (radix) directory holding
+     For each uuid, it holds a relative symbolic link referring to the actual storage (name) directory holding
      the data for that uuid.
      For the uuid above, submitted at 2008-09-30T12:05 from webhead01
       - the symbolic link is stored as %(root)s/date/2008/09/30/12/05/webhead01_0/22adfb61-f75b-11dc-b6be-001321b0783d
-        and references %(toRadixFromDate)s/radix/22/ad/fb/61
+        and references %(toNameFromDate)s/name/22/ad/fb/61
 
   Note: The symbolic links are relative, so they begin with several rounds of '../'. This is to avoid issues that
-  might arise from variously mounted nfs volumes. If the layout changes, self.toRadixFromDate and toDateFromRadix
+  might arise from variously mounted nfs volumes. If the layout changes, self.toNameFromDate and toDateFromName
   must be changed to match, as well as a number of the private methods.
 
   Note: If the number of links in a particular webhead subdirectory would exceed maxDirectoryEntries, then a new
   webhead directory is created by appending a larger '_N' : .../webhead01_0 first, then .../webhead01_1 etc.
-  For the moment, maxDirectoryEntries is ignored for the radix branch. If this becomes a problem, another radix
+  For the moment, maxDirectoryEntries is ignored for the name branch. If this becomes a problem, another name
   level might be added, either skipping the '-' that is next, or perhaps better, using the last two characters.
   """
   #-----------------------------------------------------------------------------------------------------------------
   def __init__(self, root=".", maxDirectoryEntries=1024, **kwargs):
     """
-    Take note of our root directory, maximum allowed date->radix links per directory, some relative relations, and
+    Take note of our root directory, maximum allowed date->name links per directory, some relative relations, and
     whatever else we may need. Much of this (c|sh)ould be read from a config file.
     """
     super(JsonDumpStorage, self).__init__()
     self.root = root
     self.maxDirectoryEntries = maxDirectoryEntries
     self.dateName = kwargs.get('dateName','date')
-    self.indexName = kwargs.get('indexName','radix')
+    self.indexName = kwargs.get('indexName','name')
     self.jsonSuffix = kwargs.get('jsonSuffix','.json')
     if not self.jsonSuffix.startswith('.'):
       self.jsonSuffix = ".%s" % (self.jsonSuffix)
@@ -52,57 +52,57 @@ class JsonDumpStorage(object):
     if not self.dumpSuffix.startswith('.'):
       self.dumpSuffix = ".%s" % (self.dumpSuffix)
     self.dateBranch = os.path.join(self.root,self.dateName)
-    self.radixBranch = os.path.join(self.root,self.indexName)
+    self.nameBranch = os.path.join(self.root,self.indexName)
     self.dumpPermissions = int(kwargs.get('dumpPermissions','%d'%(S_IRGRP | S_IWGRP | S_IRUSR | S_IWUSR)))
     self.dirPermissions = int(kwargs.get('dirPermissions', '%d'%(S_IRGRP | S_IXGRP | S_IWGRP | S_IRUSR | S_IXUSR | S_IWUSR)))
     self.dumpGID = kwargs.get('dumpGID',None)
     if self.dumpGID: self.dumpGID = int(self.dumpGID)
-    self.toRadixFromDate = os.sep.join(('..','..','..','..','..','..','..',self.indexName))
-    self.toDateFromRadix = os.sep.join(('..','..','..','..','..',self.dateName))
+    self.toNameFromDate = os.sep.join(('..','..','..','..','..','..','..',self.indexName))
+    self.toDateFromName = os.sep.join(('..','..','..','..','..',self.dateName))
     self.minutesPerSlot = 5
     self.currentSuffix = {} #maps datepath including webhead to an integer suffix
   #-----------------------------------------------------------------------------------------------------------------
   def newEntry (self, uuid, webheadHostName='webhead01', timestamp=None):
     """
-    Sets up the radix and date storage directory branches for the given uuid.
+    Sets up the name and date storage directory branches for the given uuid.
     Creates any directories that it needs along the path to the appropriate storage location.
-    Creates two relative symbolic links: the date branch link pointing to the radix directory holding the files;
-    the radix branch link pointing to the date branch directory holding that link.
+    Creates two relative symbolic links: the date branch link pointing to the name directory holding the files;
+    the name branch link pointing to the date branch directory holding that link.
     Returns a 2-tuple containing files open for reading: (jsonfile,dumpfile)
     """
     if not timestamp: timestamp = DT.datetime.now()
     df,jf = None,None
-    radixDir = self.__makeRadixDir(uuid) # deliberately leave this dir behind if next line throws
+    nameDir = self.__makeNameDir(uuid) # deliberately leave this dir behind if next line throws
     dateDir = self.__makeDateDir(timestamp,webheadHostName)
     try:
-      os.symlink(self.__dateRelativePath(timestamp,webheadHostName),os.path.join(radixDir,uuid))
-      os.symlink(self.__radixRelativePath(uuid),os.path.join(dateDir,uuid))
-      jf = open(os.path.join(radixDir,uuid+self.jsonSuffix),'w')
-      df = open(os.path.join(radixDir,uuid+self.dumpSuffix),'w')
+      os.symlink(self.__dateRelativePath(timestamp,webheadHostName),os.path.join(nameDir,uuid))
+      os.symlink(self.__nameRelativePath(uuid),os.path.join(dateDir,uuid))
+      jf = open(os.path.join(nameDir,uuid+self.jsonSuffix),'w')
+      df = open(os.path.join(nameDir,uuid+self.dumpSuffix),'w')
       if self.dumpGID:
-        os.chown(os.path.join(radixDir,uuid+self.jsonSuffix),-1,self.dumpGID)
-        os.chown(os.path.join(radixDir,uuid+self.dumpSuffix),-1,self.dumpGID)
+        os.chown(os.path.join(nameDir,uuid+self.jsonSuffix),-1,self.dumpGID)
+        os.chown(os.path.join(nameDir,uuid+self.dumpSuffix),-1,self.dumpGID)
     finally:
       if not jf or not df:
         if jf: jf.close()
         if df: df.close()
         os.unlink(os.path.join(dateDir,uuid))
-        os.unlink(os.path.join(radixDir,uuid))
+        os.unlink(os.path.join(nameDir,uuid))
         df,jf = None,None
     return (jf,df)
   
   #-----------------------------------------------------------------------------------------------------------------
   def copyFrom(self, uuid, jsonpath, dumppath, webheadHostName, timestamp, createLinks = False, removeOld = False):
     """
-    Copy the two crash files from the given path to our current storage location in radixBranch
+    Copy the two crash files from the given path to our current storage location in nameBranch
     If createLinks, use webheadHostName and timestamp to insert links to and from the dateBranch
     If removeOld, after the files are copied, attempt to unlink the originals
     raises OSError if the paths are unreadable or if removeOld is true and either file cannot be unlinked
 
     """
-    radixDir = self.__makeRadixDir(uuid) # deliberately leave this dir behind if next line throws
-    jsonNewPath = '%s%s%s%s' % (radixDir,os.sep,uuid,self.jsonSuffix)
-    dumpNewPath = '%s%s%s%s' % (radixDir,os.sep,uuid,self.dumpSuffix)
+    nameDir = self.__makeNameDir(uuid) # deliberately leave this dir behind if next line throws
+    jsonNewPath = '%s%s%s%s' % (nameDir,os.sep,uuid,self.jsonSuffix)
+    dumpNewPath = '%s%s%s%s' % (nameDir,os.sep,uuid,self.dumpSuffix)
     shutil.copy2(jsonpath,jsonNewPath)
     try:
       shutil.copy2(dumppath,dumpNewPath)
@@ -116,11 +116,11 @@ class JsonDumpStorage(object):
         raise e
     if createLinks:
       dateDir = self.__makeDateDir(timestamp,webheadHostName)
-      os.symlink(self.__dateRelativePath(timestamp,webheadHostName),os.path.join(radixDir,uuid))
+      os.symlink(self.__dateRelativePath(timestamp,webheadHostName),os.path.join(nameDir,uuid))
       try:
-        os.symlink(self.__radixRelativePath(uuid),os.path.join(dateDir,uuid))
+        os.symlink(self.__nameRelativePath(uuid),os.path.join(dateDir,uuid))
       except OSError, e:
-        os.unlink(os.path.join(radixDir,uuid))
+        os.unlink(os.path.join(nameDir,uuid))
         raise e
     if removeOld:
       try:
@@ -141,7 +141,7 @@ class JsonDumpStorage(object):
     Returns an absolute pathname for the json file for a given uuid.
     Raises OSError if the file is missing
     """
-    path = "%s%s%s%s" % (self.__radixAbsPath(uuid),os.sep,uuid,self.jsonSuffix)
+    path = "%s%s%s%s" % (self.__nameAbsPath(uuid),os.sep,uuid,self.jsonSuffix)
     # os.stat is moderately faster than trying to open for reading
     self.__readableOrThrow(path)
     return path
@@ -152,7 +152,7 @@ class JsonDumpStorage(object):
     Returns an absolute pathname for the dump file for a given uuid.
     Raises OSError if the file is missing
     """
-    path = "%s%s%s%s" % (self.__radixAbsPath(uuid),os.sep,uuid,self.dumpSuffix)
+    path = "%s%s%s%s" % (self.__nameAbsPath(uuid),os.sep,uuid,self.dumpSuffix)
     # os.stat is moderately faster than trying to open for reading
     self.__readableOrThrow(path)
     return path
@@ -163,7 +163,7 @@ class JsonDumpStorage(object):
     Removes the links associated with the two data files for this uuid, thus marking them as seen.
     Quietly returns if the uuid has no associated links.
     """
-    rpath = self.__radixAbsPath(uuid)
+    rpath = self.__nameAbsPath(uuid)
     dpath = None
     try:
       dpath = os.path.join(rpath,os.readlink(os.path.join(rpath,uuid)))
@@ -186,19 +186,19 @@ class JsonDumpStorage(object):
   def destructiveDateWalk (self):
     """
     This function is a generator that yields all uuids found by walking the date branch of the file system.
-    Just before yielding a value, it deletes both the links (from date to radix and from radix to date)
+    Just before yielding a value, it deletes both the links (from date to name and from name to date)
     After visiting all the uuids in a given date branch, recursively travels up, deleting any empty subdirectories
     Since the file system may be manipulated in a different thread, if no .json or .dump file is found, the
     links are left, and we do not yield that uuid
     """
     def handleLink(dir,name):
-      radixDir = self.__radixAbsPath(name)
-      if not os.path.isfile(os.path.join(radixDir,name+self.jsonSuffix)):
+      nameDir = self.__nameAbsPath(name)
+      if not os.path.isfile(os.path.join(nameDir,name+self.jsonSuffix)):
         return None
-      if not os.path.isfile(os.path.join(radixDir,name+self.dumpSuffix)):
+      if not os.path.isfile(os.path.join(nameDir,name+self.dumpSuffix)):
         return None
-      if os.path.islink(os.path.join(radixDir,name)):
-        os.unlink(os.path.join(radixDir,name))
+      if os.path.islink(os.path.join(nameDir,name)):
+        os.unlink(os.path.join(nameDir,name))
         os.unlink(os.path.join(dir,name))
         return name
         
@@ -222,7 +222,7 @@ class JsonDumpStorage(object):
     Ignores missing link, json and dump files: You may call it with bogus data, though of course you
     should not
     """
-    rpath = self.__radixAbsPath(uuid)
+    rpath = self.__nameAbsPath(uuid)
     dpath = None
     try:
       try:
@@ -249,7 +249,7 @@ class JsonDumpStorage(object):
     Raises IOError if either the json or dump file for the uuid is not found, and retains any links, but does not roll
     back the json file if the dump file is not found.
     """
-    rpath = self.__radixAbsPath(uuid)
+    rpath = self.__nameAbsPath(uuid)
     os.rename(os.path.join(rpath,uuid+self.jsonSuffix), os.path.join(newAbsolutePath, uuid+self.jsonSuffix))
     os.rename(os.path.join(rpath,uuid+self.dumpSuffix), os.path.join(newAbsolutePath, uuid+self.dumpSuffix))
 
@@ -260,7 +260,7 @@ class JsonDumpStorage(object):
   def removeOlderThan (self, timestamp):
     """
     Walks the date branch removing all entries strictly older than the timestamp.
-    Removes the corresponding entries in the radix branch. Does NOT clean up empty date directories
+    Removes the corresponding entries in the name branch. Does NOT clean up empty date directories
     """
     for dir,dirs,files in os.walk(self.dateBranch,topdown = True):
       thisStamp = self.__pathToDate(dir)
@@ -274,28 +274,28 @@ class JsonDumpStorage(object):
 
   #=================================================================================================================
   # private methods
-  def __radixAbsPath(self,uuid):
-    """Get a radix path in absolute, i.e. %(root)s based format"""
-    return self.__radixPath(uuid,self.radixBranch)
+  def __nameAbsPath(self,uuid):
+    """Get a name path in absolute, i.e. %(root)s based format"""
+    return self.__namePath(uuid,self.nameBranch)
   
-  def __radixRelativePath(self,uuid):
-    """ get a radix path relative to a date-based location"""
-    return self.__radixPath(uuid,self.toRadixFromDate)
+  def __nameRelativePath(self,uuid):
+    """ get a name path relative to a date-based location"""
+    return self.__namePath(uuid,self.toNameFromDate)
 
   def __dateRelativePath(self,dt,head):
-    """Get a date path relative to a radix storage location"""
-    return self.__datePath(dt,head,self.toDateFromRadix)
+    """Get a date path relative to a name storage location"""
+    return self.__datePath(dt,head,self.toDateFromName)
 
   def __dateAbsPath(self,dt,head, checkSize = False):
     """Get a date path in absolute, i.e. %(root)s based format"""
     return self.__datePath(dt,head,self.dateBranch, checkSize)
                      
-  def __makeRadixDir(self, uuid):
+  def __makeNameDir(self, uuid):
     """
     Parse the uuid into a directory path create directory as needed, return path to directory.
     Raises OSError on failure
     """
-    path = self.__radixAbsPath(uuid)
+    path = self.__nameAbsPath(uuid)
     try:
       os.makedirs(path,self.dirPermissions)
       self.__fixupGroup(path,self.dumpGID)
@@ -304,8 +304,8 @@ class JsonDumpStorage(object):
         raise e
     return path
 
-  def __radixPath(self,uuid,startswith):
-    """Because the radix structure is simple, so is the method that creates one"""
+  def __namePath(self,uuid,startswith):
+    """Because the name structure is simple, so is the method that creates one"""
     #       bb//ra//di//xx//xx
     return "%s%s%s%s%s%s%s%s%s" %(startswith,os.sep,uuid[0:2],os.sep,uuid[2:4],os.sep,uuid[4:6],os.sep,uuid[6:8])
 
