@@ -16,7 +16,7 @@ import psycopg2.extras
 import socorro.lib.util
 
 
-def calc_tots(crashes, crash_count, configContext):
+def calc_tots(crashes, crash_count, configContext, logger):
   """ Calculate the total number of crashes per signature combo, as well as uptime averages. """
   for pvCombo, data in crashes.items():
     for signature, signatureData in crashes[pvCombo].items():
@@ -30,7 +30,7 @@ def calc_tots(crashes, crash_count, configContext):
         logger.debug("%s Total: %d" % ((pvCombo, signature), signatureData['total']))
         logger.debug("%s Uptime Average: %d" % ((pvCombo, signature), signatureData['uptime_average']))
 
-def calc_ranks(crashes, configContext):
+def calc_ranks(crashes, configContext, logger):
   """ Calculate the new ranks of the crashes, by total number of crashes """
   ranks = []
 
@@ -145,10 +145,10 @@ def calculateTopCrashes(configContext, logger):
             if row['os_name'] == "Linux":
               summary_crashes[key][signature]['lin'] += 1
 
-    calc_tots(summary_crashes,crash_count,configContext)
+    calc_tots(summary_crashes,crash_count,configContext, logger)
 
     for pvCombo, data in summary_crashes.items():
-        calc_ranks(summary_crashes[pvCombo], configContext)
+        calc_ranks(summary_crashes[pvCombo], configContext, logger)
 
     ### Do the DB updates ###
     update_time = end_time
