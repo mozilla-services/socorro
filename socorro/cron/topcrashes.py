@@ -75,7 +75,12 @@ def calculateTopCrashes(configContext, logger):
     except:
       socorro.lib.util.reportExceptionAndAbort(logger)
 
-    start_time = row[0]
+    if row:
+      start_time = row[0]
+    else:
+      msg = "topcrashers table is empty, use -I to run in initializing mode"
+      logger.warn(msg)
+      raise Exception(msg)
     end_time = start_time + p_interval
     now = now
 
@@ -111,39 +116,41 @@ def calculateTopCrashes(configContext, logger):
         signature = row['signature']
         if key not in summary_crashes:
           summary_crashes[key] = {}
+
+        if signature not in summary_crashes[key]:
+          summary_crashes[key][signature] = {}
+          summary_crashes[key][signature]['win'] = 0
+          summary_crashes[key][signature]['lin'] = 0
+          summary_crashes[key][signature]['mac'] = 0
+          summary_crashes[key][signature]['uptime'] = 0
+          summary_crashes[key][signature]['product'] = row['product']
+          summary_crashes[key][signature]['version'] = row['version']
+          summary_crashes[key][signature]['build'] = row['build']
+          summary_crashes[key][signature]['signature'] = row['signature']
+          summary_crashes[key][signature]['user_ids'] = []
+          summary_crashes[key][signature]['users'] = 0
+          crash_count[fullKey] = 0.0
+        
+        crash_count[fullKey] += 1.0
+        if not summary_crashes[key][signature]['user_ids'].count(row['user_id']):
+          summary_crashes[key][signature]['user_ids'].append(row['user_id'])
+          summary_crashes[key][signature]['users'] += 1
+
+        if summary_crashes[key][signature]['uptime']:
+          summary_crashes[key][signature]['uptime'] += row['uptime']
         else:
-          if signature not in summary_crashes[key]:
-            summary_crashes[key][signature] = {}
-            summary_crashes[key][signature]['win'] = 0
-            summary_crashes[key][signature]['lin'] = 0
-            summary_crashes[key][signature]['mac'] = 0
-            summary_crashes[key][signature]['uptime'] = 0
-            summary_crashes[key][signature]['product'] = row['product']
-            summary_crashes[key][signature]['version'] = row['version']
-            summary_crashes[key][signature]['build'] = row['build']
-            summary_crashes[key][signature]['signature'] = row['signature']
-            summary_crashes[key][signature]['user_ids'] = [row['user_id']]
-            summary_crashes[key][signature]['users'] = 1
-            crash_count[fullKey] = 1.0
-          else:
-            crash_count[fullKey] += 1.0
-            if not summary_crashes[key][signature]['user_ids'].count(row['user_id']):
-              summary_crashes[key][signature]['user_ids'].append(row['user_id'])
-              summary_crashes[key][signature]['users'] += 1
+          summary_crashes[key][signature]['uptime'] = row['uptime']
 
-            if summary_crashes[key][signature]['uptime']:
-              summary_crashes[key][signature]['uptime'] += row['uptime']
-            else:
-              summary_crashes[key][signature]['uptime'] = row['uptime']
+        if row['os_name'] == "Mac OS X":
+          summary_crashes[key][signature]['mac'] += 1
 
-            if row['os_name'] == "Mac OS X":
-              summary_crashes[key][signature]['mac'] += 1
+        if row['os_name'] == "Windows" or row['os_name'] == "Windows NT":
+          summary_crashes[key][signature]['win'] += 1
 
-            if row['os_name'] == "Windows" or row['os_name'] == "Windows NT":
-              summary_crashes[key][signature]['win'] += 1
-
-            if row['os_name'] == "Linux":
-              summary_crashes[key][signature]['lin'] += 1
+        if row['os_name'] == "Linux":
+          summary_crashes[key][signature]['lin'] += 1
+      else:
+        logger.info("Bad row Skipping product=%s version=%s signature=%s" % (row['product'], row['version'], row['signature']))
 
     calc_tots(summary_crashes,crash_count,configContext, logger)
 
