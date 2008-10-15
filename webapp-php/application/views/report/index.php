@@ -12,7 +12,7 @@
 
   <script type="text/javascript">
       $(document).ready(function(){
-        $('#report-index > ul').tabs();
+        $('#report-index > ul').tabs(2);
         $('#showallthreads').removeClass('hidden').click(function(){
         $('#allthreads').toggle(400);
           return false;

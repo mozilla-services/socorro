@@ -8,6 +8,7 @@ class Report_Controller extends Controller {
      * List reports for the given search query parameters.
      */
     public function do_list() {
+      
 
         $branch_data = $this->branch_model->getBranchData();
         $platforms   = $this->platform_model->getAll();
@@ -38,6 +39,25 @@ class Report_Controller extends Controller {
         $reports = $this->common_model->queryReports($params);
         $builds  = $this->common_model->queryFrequency($params);
 
+        $platLabels = array();
+        $plotData =   array();
+
+        foreach ($platforms as $platform){
+          $platLabels[] = "{label: \"" . substr($platform->name, 0, 3) . 
+                        "\", data: " . substr($platform->id, 0, 3) . "Data" .
+                         ", color: \"" . $platform->color . "\"}";
+
+          $plotData[$platform->id] = array();
+          for($i = 0; $i  < count($builds); $i = $i + 1){ 
+            $plotData[$platform->id][] = "[" . $i . ", " . $builds[$i]->{"count_$platform->id"} . "]";
+	  }
+        }
+ 
+        $buildTicks = array();
+        for($i = 0; $i  < count($builds); $i = $i + 1){
+          $buildTicks[] = "[" . $i . ", \"" . date('m/d', strtotime($builds[$i]->build_date)) . "\"]";
+        }
+         Kohana::log('info', Kohana::debug($plotData));       
         $this->setViewData(array(
             'params'  => $params,
             'reports' => $reports,
@@ -46,7 +66,11 @@ class Report_Controller extends Controller {
             'all_products'  => $branch_data['products'],
             'all_branches'  => $branch_data['branches'],
             'all_versions'  => $branch_data['versions'],
-            'all_platforms' => $platforms
+            'all_platforms' => $platforms,
+
+            'plotData'       => $plotData,
+            'buildTicks'     => $buildTicks,
+            'platformLabels' => $platLabels
         ));
     }
 

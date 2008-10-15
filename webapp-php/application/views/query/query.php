@@ -25,7 +25,7 @@
 
 <h1 class="first">Search Crash Reports</h1>
 
-<form name="query" method="GET" action="/">
+<form name="query" method="GET" action="<?php echo url::base() ?>">
     <input type="hidden" name="do_query" value="1" />
 
     <p>
