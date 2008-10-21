@@ -1,9 +1,12 @@
 import datetime as DT
 import os
+import os.path
 import shutil
 import stat
 import errno
 from stat import S_IRGRP, S_IXGRP, S_IWGRP, S_IRUSR, S_IXUSR, S_IWUSR, S_ISGID
+
+import socorro.lib.util as socorro_util
 
 #-----------------------------------------------------------------------------------------------------------------
 class JsonDumpStorage(object):
@@ -18,7 +21,7 @@ class JsonDumpStorage(object):
       - the symbolic link is stored as %(root)s/name/22/ad/fb/61/22adfb61-f75b-11dc-b6be-001321b0783d
         and (see below) references %(toDateFromName)s/date/2008/09/30/12/05/webhead01_0
    - The date branch consists of paths based on the year, month, day, hour, minute-segment, webhead host name and
-     a small sequence number. 
+     a small sequence number.
      For each uuid, it holds a relative symbolic link referring to the actual storage (name) directory holding
      the data for that uuid.
      For the uuid above, submitted at 2008-09-30T12:05 from webhead01
@@ -57,10 +60,12 @@ class JsonDumpStorage(object):
     self.dirPermissions = int(kwargs.get('dirPermissions', '%d'%(S_IRGRP | S_IXGRP | S_IWGRP | S_IRUSR | S_IXUSR | S_IWUSR)))
     self.dumpGID = kwargs.get('dumpGID',None)
     if self.dumpGID: self.dumpGID = int(self.dumpGID)
+    self.logger = kwargs.get('logger', None)
     self.toNameFromDate = os.sep.join(('..','..','..','..','..','..','..',self.indexName))
     self.toDateFromName = os.sep.join(('..','..','..','..','..',self.dateName))
     self.minutesPerSlot = 5
     self.currentSuffix = {} #maps datepath including webhead to an integer suffix
+
   #-----------------------------------------------------------------------------------------------------------------
   def newEntry (self, uuid, webheadHostName='webhead01', timestamp=None):
     """
@@ -75,7 +80,8 @@ class JsonDumpStorage(object):
     nameDir = self.__makeNameDir(uuid) # deliberately leave this dir behind if next line throws
     dateDir = self.__makeDateDir(timestamp,webheadHostName)
     try:
-      os.symlink(self.__dateRelativePath(timestamp,webheadHostName),os.path.join(nameDir,uuid))
+      #os.symlink(self.__dateRelativePath(timestamp,webheadHostName),os.path.join(nameDir,uuid))
+      os.symlink(os.path.join(self.toDateFromName, dateDir[len(self.root)+len(self.dateName)+2:]),os.path.join(nameDir,uuid))
       os.symlink(self.__nameRelativePath(uuid),os.path.join(dateDir,uuid))
       jf = open(os.path.join(nameDir,uuid+self.jsonSuffix),'w')
       df = open(os.path.join(nameDir,uuid+self.dumpSuffix),'w')
@@ -90,7 +96,7 @@ class JsonDumpStorage(object):
         os.unlink(os.path.join(nameDir,uuid))
         df,jf = None,None
     return (jf,df)
-  
+
   #-----------------------------------------------------------------------------------------------------------------
   def copyFrom(self, uuid, jsonpath, dumppath, webheadHostName, timestamp, createLinks = False, removeOld = False):
     """
@@ -126,15 +132,15 @@ class JsonDumpStorage(object):
       try:
         os.unlink(jsonpath)
       except:
-        print "cannot unlink J", jsonpath, os.listdir(os.path.split(jsonpath)[0])
+        self.logger.warning("cannot unlink Json", jsonpath, os.listdir(os.path.split(jsonpath)[0]))
         return False
       try:
         os.unlink(dumppath)
       except:
-        print "cannot unlink D", dumppath, os.listdir(os.path.split(dumppath)[0])
+        self.logger.warning("cannot unlink Dump", dumppath, os.listdir(os.path.split(dumppath)[0]))
         return False
     return True
-  
+
   #-----------------------------------------------------------------------------------------------------------------
   def getJson (self, uuid):
     """
@@ -145,7 +151,7 @@ class JsonDumpStorage(object):
     # os.stat is moderately faster than trying to open for reading
     self.__readableOrThrow(path)
     return path
-    
+
   #-----------------------------------------------------------------------------------------------------------------
   def getDump (self, uuid):
     """
@@ -156,7 +162,7 @@ class JsonDumpStorage(object):
     # os.stat is moderately faster than trying to open for reading
     self.__readableOrThrow(path)
     return path
-  
+
   #-----------------------------------------------------------------------------------------------------------------
   def markAsSeen (self,uuid):
     """
@@ -181,7 +187,6 @@ class JsonDumpStorage(object):
       else:
         raise e
 
-  
   #-----------------------------------------------------------------------------------------------------------------
   def destructiveDateWalk (self):
     """
@@ -201,7 +206,7 @@ class JsonDumpStorage(object):
         os.unlink(os.path.join(nameDir,name))
         os.unlink(os.path.join(dir,name))
         return name
-        
+
     for dir,dirs,files in os.walk(self.dateBranch):
       if os.path.split(dir)[0] == os.path.split(self.__dateAbsPath(DT.datetime.now(),'',False))[0]:
         continue
@@ -213,7 +218,7 @@ class JsonDumpStorage(object):
             yield r
       # after finishing a given directory...
       self.__cleanDirectory(dir)
-  
+
   #-----------------------------------------------------------------------------------------------------------------
   def remove (self,uuid):
     """
@@ -230,17 +235,20 @@ class JsonDumpStorage(object):
         os.unlink(os.path.join(dpath,uuid))
         os.unlink(os.path.join(rpath,uuid))
       except:
+        socorro_util.reportExceptionAndContinue(self.logger)
         pass
     finally:
       try:
         os.unlink(os.path.join(rpath,uuid+self.jsonSuffix))
       except:
+        socorro_util.reportExceptionAndContinue(self.logger)
         pass
       try:
         os.unlink(os.path.join(rpath,uuid+self.dumpSuffix))
       except:
+        socorro_util.reportExceptionAndContinue(self.logger)
         pass
-    
+
   #-----------------------------------------------------------------------------------------------------------------
   def move (self, uuid, newAbsolutePath):
     """
@@ -254,30 +262,34 @@ class JsonDumpStorage(object):
     os.rename(os.path.join(rpath,uuid+self.dumpSuffix), os.path.join(newAbsolutePath, uuid+self.dumpSuffix))
 
     self.remove(uuid)
-      
+
 
   #-----------------------------------------------------------------------------------------------------------------
   def removeOlderThan (self, timestamp):
     """
     Walks the date branch removing all entries strictly older than the timestamp.
-    Removes the corresponding entries in the name branch. Does NOT clean up empty date directories
+    Removes the corresponding entries in the name branch as well as cleans up empty date directories
     """
-    for dir,dirs,files in os.walk(self.dateBranch,topdown = True):
+    for dir,dirs,files in os.walk(self.dateBranch,topdown = False):
+      #self.logger.debug("considering: %s", dir)
       thisStamp = self.__pathToDate(dir)
-      if thisStamp and (thisStamp > timestamp):
+      if thisStamp and (thisStamp < timestamp):
         # The links are all to (relative) directories, so no need to handle files
         for i in dirs:
           if os.path.islink(os.path.join(dir,i)):
+            #self.logger.debug("removing: %s", i)
             self.remove(i)
-      else:
-        continue
+      contents = os.listdir(dir)
+      if contents == []:
+        #self.logger.debug("killing empty date directory: %s", dir)
+        os.rmdir(dir)
 
   #=================================================================================================================
   # private methods
   def __nameAbsPath(self,uuid):
     """Get a name path in absolute, i.e. %(root)s based format"""
     return self.__namePath(uuid,self.nameBranch)
-  
+
   def __nameRelativePath(self,uuid):
     """ get a name path relative to a date-based location"""
     return self.__namePath(uuid,self.toNameFromDate)
@@ -289,7 +301,7 @@ class JsonDumpStorage(object):
   def __dateAbsPath(self,dt,head, checkSize = False):
     """Get a date path in absolute, i.e. %(root)s based format"""
     return self.__datePath(dt,head,self.dateBranch, checkSize)
-                     
+
   def __makeNameDir(self, uuid):
     """
     Parse the uuid into a directory path create directory as needed, return path to directory.
@@ -344,7 +356,7 @@ class JsonDumpStorage(object):
         return None
       return DT.datetime(*[int(x) for x in data])
     return None
-      
+
   def __makeDateDir(self, dt, head):
     """ parse the datetime.datetime dt and webhead name head into a directory path, check for overflow,
     create directory as needed, return path to directory. Raises OSError on failure.
@@ -366,8 +378,8 @@ class JsonDumpStorage(object):
   def __fixupGroup(self,path,gid):
     if None == gid: return
     while path != self.root:
-      chown(path,-1,gid)
-      path = os.split(path)[0]
+      os.chown(path,-1,gid)
+      path = os.path.split(path)[0]
 
   def __cleanDirectory(self,datepath):
     """Look higher and higher up the storage branch until you hit the top or a non-empty sub-directory"""
@@ -384,4 +396,5 @@ class JsonDumpStorage(object):
         else:
           raise e
       opath = path
-  
+
+
