@@ -192,7 +192,7 @@ class TestJsonDumpStorage(unittest.TestCase):
     assert 3 == len(webheads)
     for datePath in [os.path.join(datePathUpOne,x) for x in webheads]:
       assert 3 >= len(os.listdir(datePath))
-    storage2 = JDS.JsonDumpStorage(self.testDir,maxDirectoryEntries=3)
+    storage2 = JDS.JsonDumpStorage(self.testDir,maxDirectoryEntries=3, **self.initKwargs[3])
     for uuid,data in self.evenmore.items():
       abspathpart = data[3]
       datetimedata = [int(x) for x in data[0].split('-')]
