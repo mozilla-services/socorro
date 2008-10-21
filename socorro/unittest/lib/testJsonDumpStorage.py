@@ -5,6 +5,14 @@ import datetime as DT
 import time
 import socorro.lib.JsonDumpStorage as JDS
 
+class FakeLogger(object):
+  def log(self,*x): pass
+  def debug(self,msg): pass
+  def info(self,msg): pass
+  def warning(self,msg): pass
+  def error(self,msg): pass
+  def critical(self,msg): pass
+
 class TestJsonDumpStorage(unittest.TestCase):
 
   def setUp(self):
@@ -12,10 +20,10 @@ class TestJsonDumpStorage(unittest.TestCase):
     self.testMoveTo = os.path.join('.','TEST-MOVETO')
     self.testMoveFrom = os.path.join('.','TEST-MOVEFROM')
     self.initKwargs =  {
-      0:{},
-      1:{'dateName':'DATE','indexName':'INDEX','jsonSuffix':'JS','dumpSuffix':'.DS',},
-      2:{'jsonSuffix':'JS','dumpSuffix':'.DS',},
-      3:{'dateName':'DATE','indexName':'INDEX',},
+      0:{'logger': FakeLogger()},
+      1:{'logger': FakeLogger(),'dateName':'DATE','indexName':'INDEX','jsonSuffix':'JS','dumpSuffix':'.DS',},
+      2:{'logger': FakeLogger(),'jsonSuffix':'JS','dumpSuffix':'.DS',},
+      3:{'logger': FakeLogger(),'dateName':'DATE','indexName':'INDEX',},
       }
     self.data = {
       '0bba61c5-dfc3-43e7-87e6-8afda3564352': ('2007-10-25-05-04','webhead02','0b/ba/61/c5','2007/10/25/05/00/webhead02_0'),
@@ -66,7 +74,7 @@ class TestJsonDumpStorage(unittest.TestCase):
     try:
       shutil.rmtree(self.testDir)
     except OSError:
-      pass # ok if there is no such test directory 
+      pass # ok if there is no such test directory
     os.mkdir(self.testDir)
 
   def tearDown(self):
@@ -82,7 +90,7 @@ class TestJsonDumpStorage(unittest.TestCase):
       shutil.rmtree(self.testMoveFrom)
     except OSError:
       pass
-    
+
   def __getSlot(self,minsperslot,minute):
     return minsperslot * int(minute/minsperslot)
 
@@ -140,7 +148,7 @@ class TestJsonDumpStorage(unittest.TestCase):
         fj,fd = storage.newEntry(uuid,webheadHostName=data[1],timestamp = DT.datetime(*datetimedata))
       except IOError:
         assert False, 'Expect to succeed with newEntry(%s,...)' % uuid
-        
+
       assert fj, 'Expect a non-null json file handle from newEntry(%s,...)' % uuid
       expectJson = os.sep.join((storage.nameBranch,data[2],uuid+storage.jsonSuffix))
       assert expectJson == fj.name, 'For %s, expect %s, got %s' % (uuid,expectJson,fj.name)
@@ -254,7 +262,7 @@ class TestJsonDumpStorage(unittest.TestCase):
       assert True, 'Got expected error from attempt to getJson(non-existent-uuid)'
     except Exception, e:
       assert False, 'Got unexpected error %s from attempt to getJson(non-existent-uuid' % e
-      
+
   def testGetDump(self):
     self.__createTestSet(self.data,initIndex=1)
     storage = JDS.JsonDumpStorage(self.testDir,**self.initKwargs[1])
@@ -329,7 +337,7 @@ class TestJsonDumpStorage(unittest.TestCase):
       storage.remove("bogusdata")
     except:
       assert False, 'Should be able to remove bogus data'
-        
+
   def testMove(self):
     self.__createTestSet(self.data,initIndex=3)
     storage = JDS.JsonDumpStorage(self.testDir,**self.initKwargs[3])
@@ -367,8 +375,8 @@ class TestJsonDumpStorage(unittest.TestCase):
     self.__createTestSet(self.data,initIndex=0)
     storage = JDS.JsonDumpStorage(self.testDir,**self.initKwargs[0])
     cutoff = DT.datetime(2008,12,26,05,0)
-    youngkeys = [x for x,d in self.data.items() if DT.datetime(*[int(i) for i in d[0].split('-')]) <= cutoff]
-    oldkeys = [x for x,d in self.data.items() if DT.datetime(*[int(i) for i in d[0].split('-')]) > cutoff]
+    youngkeys = [x for x,d in self.data.items() if DT.datetime(*[int(i) for i in d[0].split('-')]) >= cutoff]
+    oldkeys = [x for x,d in self.data.items() if DT.datetime(*[int(i) for i in d[0].split('-')]) < cutoff]
 
     for k in youngkeys:
       assert k in self.data.keys(),"Expected %s in %s"%(k,self.data.keys())
@@ -396,7 +404,7 @@ class TestJsonDumpStorage(unittest.TestCase):
       assert not id in seenuuid,'Expect that no old key is found, but %s' % id
     for id in youngkeys:
       assert id in seenuuid, 'Expect that every new key is found, but %s' % id
-      
+
     seenuuid = {}
     seendirs = []
     for dir, dirs, files in os.walk(storage.dateBranch):
@@ -416,6 +424,6 @@ class TestJsonDumpStorage(unittest.TestCase):
     for id in youngkeys:
       assert id in seenuuid, 'Expect that every new key is found, but %s' % id
       assert os.path.isdir(os.path.join(storage.dateBranch,self.data[id][3]))
-    
+
 if __name__ == "__main__":
   unittest.main()
