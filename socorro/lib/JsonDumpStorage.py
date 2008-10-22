@@ -81,6 +81,8 @@ class JsonDumpStorage(object):
     dateDir = self.__makeDateDir(timestamp,webheadHostName)
     try:
       #os.symlink(self.__dateRelativePath(timestamp,webheadHostName),os.path.join(nameDir,uuid))
+      # directly calculate the date relative path rather than calling the method which does a bit more work
+      # if this matters at all, we should re-write __dateRelativePath to do the next line and call it both places
       os.symlink(os.path.join(self.toDateFromName, dateDir[len(self.root)+len(self.dateName)+2:]),os.path.join(nameDir,uuid))
       os.symlink(self.__nameRelativePath(uuid),os.path.join(dateDir,uuid))
       jf = open(os.path.join(nameDir,uuid+self.jsonSuffix),'w')
