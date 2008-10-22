@@ -122,3 +122,17 @@ h1.loading {
   background: transparent url(../img/loading.png) no-repeat left;
   padding-left: 25px;
 }
+
+div.server-plot-label{ margin-left: 55px; margin-bottom: 10px; width: 700px;}
+.crashes-by-platform{ width: 200px; float: left; }
+.crash-frequency{width: 600px; float: left;}
+
+#at-a-glance, #toc{ 
+    float: left; 
+}
+#at-a-glance {
+    padding: 0px 5px; 
+    margin-left: 55px; 
+    margin-bottom: 10px;
+}
+#toc { margin-left: 10px; }

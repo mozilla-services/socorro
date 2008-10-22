@@ -91,8 +91,8 @@ class Common_Model extends Model {
             " SELECT " . join(', ', $columns) .
             " FROM   " . join(', ', array_keys($tables)) .
             " WHERE  " . join(' AND ', $where) .
-            " ORDER BY reports.date DESC " .
-            " LIMIT 500";
+	  " ORDER BY reports.date DESC " .
+	  " LIMIT 500";
 
         return $this->fetchRows($sql);
     }

@@ -48,7 +48,10 @@
         <li><a href="#reports"><span>Reports</span></a></li>
     </ul>
     <div id="graph">
-      <div id="buildid-graph" style="width:<?php echo max( min(50 * count($builds), 800), 200) ?>px;height:200px;"></div>
+      <div class="crashes-by-platform">
+        <h3 id="by_platform_graph">Crashes By OS</h3>
+        <div id="buildid-graph" style="width:200px;height:200px;"></div>
+      </div>
 
         <div class="clear"></div>
     </div>
@@ -93,16 +96,22 @@
 <!-- end content -->
 <script id="source" language="javascript" type="text/javascript">
 $(function () {
-    <?php foreach( $all_platforms as $platform ): ?>
-      var <?php out::H(substr($platform->id, 0, 3)) ?>Data = [	<?php echo implode(', ', $plotData[$platform->id]); ?> ];
-    <?php endforeach ?>
+
       $.plot($("#buildid-graph"), 
-             [<?php echo implode(', ', $platformLabels ) ?>], 
+             [<?php for($i = 0; $i < count($all_platforms); $i += 1){ 
+		      $platform = $all_platforms[$i]; ?>
+			{ label: <?php echo json_encode($platformLabels[$i]['label']) ?>,
+		          data: [<?php  echo json_encode($platformLabels[$i]['data']) ?>],
+			  color: <?php echo json_encode($platformLabels[$i]['color']); 
+			  if($i != (count($all_platforms) -1 )){ echo '},';}else{ echo '}';} ?>
+	       <?php } ?> ],
              { // options
-               lines: { show: true }, points: { show: true},
+               bars: { show: true },
                xaxis:{
-	         ticks: [<?php echo implode(', ', $buildTicks) ?>]
-               }
+   	         tickFormatter: function(n, o){ return ""; }
+               },
+		 
       });
+
   });
 </script>

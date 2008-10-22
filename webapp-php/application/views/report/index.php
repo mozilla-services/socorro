@@ -30,7 +30,6 @@
   </script> 
 
 <?php slot::end() ?>
-
 <h1 id="report-header" class="first"><?php out::H($report->product) ?> <?php out::H($report->version) ?> Crash Report [@ <?php out::H($report->signature) ?> ]</h1>
 <div id="report-header-details">ID: <span><?php out::H($report->uuid) ?></span><br/> Signature: <span><?php out::H($report->signature) ?></span></div>
 <div id="report-index" class="flora">

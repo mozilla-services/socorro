@@ -95,3 +95,9 @@ th a.expand {
 dt {
   font-weight: bold;
 }
+
+.caption { font-weight: bold; font-size: smaller }
+.happy{ color: green; }
+.grumpy{ color: orange; }
+.deathly{ color: red; }
+#at-a-glance { border: solid 1px #33C; }

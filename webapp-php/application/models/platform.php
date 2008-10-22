@@ -30,13 +30,15 @@ class Platform_Model extends Model {
     public function __construct() {
         parent::__construct();
 
-        // TODO: This should probably be in a config file somewhere.
-        $platforms = array(
-            new Platform('windows', 'Windows', 'Windows NT', '#99F'),
-            new Platform('mac', 'Mac OS X', 'Mac OS X', '#3C3'),
-            new Platform('linux', 'Linux', 'Linux', '#C90'),
-            new Platform('solaris', 'Solaris', 'Solaris', '#A91')
-        );
+        $platforms = array();
+        foreach(array('win', 'mac', 'lin', 'sol') as $os):
+ 	    $platforms[] = new Platform(
+                Kohana::config("platforms.${os}_id"),
+		Kohana::config("platforms.${os}_name"),
+		Kohana::config("platforms.${os}_os_name"),
+		Kohana::config("platforms.${os}_color")
+	    );
+	endforeach;
 
         $this->platform_list = array();
         foreach ($platforms as $platform) {
