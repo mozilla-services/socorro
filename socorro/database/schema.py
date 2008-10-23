@@ -402,7 +402,26 @@ class ReportsTable(PartitionedTable):
                                     BEFORE INSERT ON reports
                                     FOR EACH ROW EXECUTE PROCEDURE partition_insert_trigger();""")
 
-
+#==========================================================
+class ServerStatusTable(Table):
+  #-----------------------------------------------------------------------------------------------------------------
+  def __init__ (self, logger):
+    super(ServerStatusTable, self).__init__(name='server_status', logger=logger,
+                                       creationSql="""
+                                          CREATE TABLE server_status ( 
+                                              id serial NOT NULL,
+                                              date_recently_completed timestamp without time zone,
+                                              date_oldest_job_queued timestamp without time zone,
+                                              avg_process_sec real,
+                                              avg_wait_sec real,
+                                              waiting_job_count integer NOT NULL,
+                                              processors_count integer NOT NULL,
+                                              date_created timestamp without time zone NOT NULL
+                                          );
+                                          ALTER TABLE ONLY server_status
+                                              ADD CONSTRAINT server_status_pkey PRIMARY KEY (id);
+                                          CREATE INDEX idx_server_status_date ON server_status USING btree (date_created, id);
+                                          """)
 
 #==========================================================
 class ParititioningTriggerScript(DatabaseObject):
@@ -451,6 +470,7 @@ databaseObjectClassListForSetup = [ParititioningTriggerScript,
                                    DumpsTable,
                                    FramesTable,
                                    ExtensionsTable,
+                                   ServerStatusTable,
                                   ]
 
 #-----------------------------------------------------------------------------------------------------------------
@@ -479,6 +499,7 @@ databaseObjectClassListForUpdate = [ParititioningTriggerScript,
                                    DumpsTable,
                                    FramesTable,
                                    ExtensionsTable,
+                                   ServerStatusTable
                                   ]
 #-----------------------------------------------------------------------------------------------------------------
 def updateDatabase(config, logger):
