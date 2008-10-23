@@ -1,4 +1,5 @@
 body {
+  background: #fff url(../img/background-feature.jpg) repeat-x top left;
   margin: 0;
   padding: 0;
 }
@@ -127,12 +128,20 @@ div.server-plot-label{ margin-left: 55px; margin-bottom: 10px; width: 700px;}
 .crashes-by-platform{ width: 200px; float: left; }
 .crash-frequency{width: 600px; float: left;}
 
-#at-a-glance, #toc{ 
+#at-a-glance, #graphs { 
     float: left; 
 }
-#at-a-glance {
-    padding: 0px 5px; 
-    margin-left: 55px; 
-    margin-bottom: 10px;
+#at-a-glance dl {
+    padding: 0 12px;
 }
 #toc { margin-left: 10px; }
+#server-status-graph-comb,
+#server-status-graph-jobs-wait,
+#server-status-graph-proc-count,
+#server-status-graph-avg-proc,
+#server-status-graph-avg-wait {
+    width: 800px;
+    height: 300px;
+}
+#server-stats { clear: both; }
+#graph-chooser-container { text-align: right; float: right; }

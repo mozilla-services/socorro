@@ -97,7 +97,7 @@ dt {
 }
 
 .caption { font-weight: bold; font-size: smaller }
+.server-status { font-weight: bold; }
 .happy{ color: green; }
 .grumpy{ color: orange; }
 .deathly{ color: red; }
-#at-a-glance { border: solid 1px #33C; }
