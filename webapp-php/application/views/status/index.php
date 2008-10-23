@@ -3,6 +3,7 @@
     <?php echo html::stylesheet(array(
        'css/flora/flora.all.css'
     ), 'screen')?>
+    <!--[if IE]><script language="javascript" type="text/javascript" src="js/flot-0.5/excanvas.pack.js"></script><![endif]-->
     <?php echo html::script(array(
         'js/jquery/jquery-1.2.1.js',
         'js/jquery/plugins/ui/jquery.tablesorter.min.js',

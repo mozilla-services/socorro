@@ -109,7 +109,7 @@ $(function () {
                bars: { show: true },
                xaxis:{
    	         tickFormatter: function(n, o){ return ""; }
-               },
+               }
 		 
       });
 
