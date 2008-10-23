@@ -292,6 +292,8 @@ class JobsTable(Table):
     #  databaseCursor.execute("""CREATE INDEX jobs_priority_key ON jobs (priority);""")
     if 'jobs_owner_starteddatetime_priority_key' not in indexesList:
       databaseCursor.execute("""CREATE INDEX jobs_owner_starteddatetime_priority_key ON jobs (owner, starteddatetime, priority DESC);""")
+    if 'jobs_completeddatetime_queueddatetime_key' not in indexesList:
+      databaseCursor.execute("""CREATE INDEX jobs_completeddatetime_queueddatetime_key ON jobs (completeddatetime, queueddatetime);""")
 
 #==========================================================
 class PriorityJobsTable(Table):
