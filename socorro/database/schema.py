@@ -424,6 +424,33 @@ class ServerStatusTable(Table):
                                           """)
 
 #==========================================================
+class TopCrashersTable(Table):
+  #-----------------------------------------------------------------------------------------------------------------
+  def __init__ (self, logger):
+    super(TopCrashersTable, self).__init__(name='topcrashers', logger=logger,
+                                       creationSql="""
+                                          CREATE TABLE topcrashers (
+                                              id serial NOT NULL,
+                                              signature character varying(255) NOT NULL,
+                                              version character varying(30) NOT NULL,
+                                              product character varying(30) NOT NULL,
+                                              build character varying(30) NOT NULL,
+                                              total integer,
+                                              win integer,
+                                              mac integer,
+                                              linux integer,
+                                              rank integer,
+                                              last_rank integer,
+                                              trend character varying(30),
+                                              uptime real,
+                                              users integer,
+                                              last_updated timestamp without time zone
+                                          );
+                                          ALTER TABLE ONLY topcrashers
+                                              ADD CONSTRAINT topcrashers_pkey PRIMARY KEY (id);
+                                          """)
+
+#==========================================================
 class ParititioningTriggerScript(DatabaseObject):
   def __init__ (self, logger):
     super(ParititioningTriggerScript, self).__init__(name = "partition_insert_trigger", logger=logger,
@@ -471,6 +498,7 @@ databaseObjectClassListForSetup = [ParititioningTriggerScript,
                                    FramesTable,
                                    ExtensionsTable,
                                    ServerStatusTable,
+                                   TopCrashersTable,
                                   ]
 
 #-----------------------------------------------------------------------------------------------------------------
@@ -499,7 +527,8 @@ databaseObjectClassListForUpdate = [ParititioningTriggerScript,
                                    DumpsTable,
                                    FramesTable,
                                    ExtensionsTable,
-                                   ServerStatusTable
+                                   ServerStatusTable,
+                                   TopCrashersTable,
                                   ]
 #-----------------------------------------------------------------------------------------------------------------
 def updateDatabase(config, logger):
