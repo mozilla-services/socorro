@@ -154,9 +154,8 @@ class JsonDumpStorage(object):
     """
     if copyLinksBoolean and makeNewDateLinksBoolean:
       self.logger.warning("transferOne(...) True == (copyLinksBoolean AND makeNewDateLinksBoolean). Will not copy original links")
-    fromJson = JsonDumpStorage(anotherJsonDumpStorage, {'dateName':self.dateName, 'indexName':self.indexName, 'jsonSuffix':self.jsonSuffix, 'dumpSuffix':self.dumpSuffix})
     if not aDate: aDate = DT.datetime.now()
-    self.__transferOne(uuid,fromJson,copyLinksBoolean,makeNewDateLinksBoolean,aDate)
+    self.__transferOne(uuid,anotherJsonDumpStorage,copyLinksBoolean,makeNewDateLinksBoolean,aDate)
 
   #-----------------------------------------------------------------------------------------------------------------
   def transferMany (self, iterable, anotherJsonDumpStorage, copyLinksBoolean=True, makeNewDateLinksBoolean=False, aDate=None):
@@ -169,10 +168,9 @@ class JsonDumpStorage(object):
     """
     if copyLinksBoolean and makeNewDateLinksBoolean:
       self.logger.warning("transferOne(...) True == (copyLinksBoolean AND makeNewDateLinksBoolean). Will not copy original links")
-    fromJson = JsonDumpStorage(anotherJsonDumpStorage, {'dateName':self.dateName, 'indexName':self.indexName, 'jsonSuffix':self.jsonSuffix, 'dumpSuffix':self.dumpSuffix})
     if not aDate: aDate = DT.datetime.now()
     for uuid in iterable:
-      self.__transferOne(uuid,fromJson,copyLinksBoolean,makeNewDateLinksBoolean,aDate)
+      self.__transferOne(uuid,anotherJsonDumpStorage,copyLinksBoolean,makeNewDateLinksBoolean,aDate)
 
   #-----------------------------------------------------------------------------------------------------------------
   def getJson (self, uuid):

@@ -485,7 +485,7 @@ class TestJsonDumpStorage(unittest.TestCase):
       if(removeOldLink):
         oldStorage.markAsSeen(id)
         self.__hasNoLinkOrFail(oldStorage,id)
-      storage.transferOne(id,self.testMoveFrom,copyLinksBoolean=copyLinks,makeNewDateLinksBoolean=makeNewLinks,aDate=newDate)
+      storage.transferOne(id,oldStorage,copyLinksBoolean=copyLinks,makeNewDateLinksBoolean=makeNewLinks,aDate=newDate)
       try:
         storage.getJson(id)
       except Exception,x:
@@ -518,7 +518,7 @@ class TestJsonDumpStorage(unittest.TestCase):
       aDate = None
       if opts[i][1]: aDate = xmas
       storage = JDS.JsonDumpStorage(targets[i], **self.initKwargs[0])
-      storage.transferMany(self.data.keys(),self.testMoveFrom,copyLinksBoolean=opts[i][0],makeNewDateLinksBoolean=opts[i][1],aDate=aDate)
+      storage.transferMany(self.data.keys(),oldStorage,copyLinksBoolean=opts[i][0],makeNewDateLinksBoolean=opts[i][1],aDate=aDate)
       for id in self.data.keys():
         try:
           storage.getJson(id)
