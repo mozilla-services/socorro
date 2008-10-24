@@ -144,6 +144,33 @@ class JsonDumpStorage(object):
     return True
 
   #-----------------------------------------------------------------------------------------------------------------
+  def transferOne (self, uuid, anotherJsonDumpStorage, copyLinksBoolean=True, makeNewDateLinksBoolean=False, aDate=None):
+    """uuid - the id
+    anotherJsonDumpStorage - the directory holding the 'date' (if any) and 'name' data for the uuid
+    copyLinksBoolean - True: copy links, if any; False: copy no links
+    makeNewDateLinksBoolean - make new date entries in self using aDate
+    aDate - for creating new date links, None means now
+    NOTE: Assumes that the path names and suffixes for anotherJsonDumpStorage are the same as for self
+    """
+    fromJson = JsonDumpStorage(anotherJsonDumpStorage, {'dateName':self.dateName, 'indexName':self.indexName, 'jsonSuffix':self.jsonSuffix, 'dumpSuffix':self.dumpSuffix})
+    if not aDate: aDate = DT.datetime.now()
+    self.__transferOne(uuid,fromJson,copyLinksBoolean,makeNewDateLinksBoolean,aDate)
+
+  #-----------------------------------------------------------------------------------------------------------------
+  def transferMany (self, iterable, anotherJsonDumpStorage, copyLinksBoolean=True, makeNewDateLinksBoolean=False, aDate=None):
+    """the iterable giving a sequence of uuids
+    anotherJsonDumpStorage - the directory holding the 'date' (if any) and 'name' data for the uuid
+    copyLinksBoolean - True: copy links, if any; False: copy no links
+    makeNewDateLinksBoolean - make new date entries in self using aDate
+    aDate - for creating new date links, None means now
+    NOTE: Assumes that the path names and suffixes for anotherJsonDumpStorage are the same as for self
+    """
+    fromJson = JsonDumpStorage(anotherJsonDumpStorage, {'dateName':self.dateName, 'indexName':self.indexName, 'jsonSuffix':self.jsonSuffix, 'dumpSuffix':self.dumpSuffix})
+    if not aDate: aDate = DT.datetime.now()
+    for uuid in iterable:
+      self.__transferOne(uuid,fromJson,copyLinksBoolean,makeNewDateLinksBoolean,aDate)
+
+  #-----------------------------------------------------------------------------------------------------------------
   def getJson (self, uuid):
     """
     Returns an absolute pathname for the json file for a given uuid.
@@ -288,6 +315,38 @@ class JsonDumpStorage(object):
 
   #=================================================================================================================
   # private methods
+  def __transferOne(self,uuid,fromJson,copyLinksBoolean,makeNewDateLinksBoolean,aDate):
+    webheadHostName = "webhead01"
+    didCopy = False
+    if copyLinksBoolean and not makeNewDateLinksBoolean:
+      dpath = fromJson.getJson(uuid)[:-len(fromJson.jsonSuffix)]
+      try:
+        datePart, webheadHostName = os.path.split(os.readlink(dpath))
+        whparts = webheadHostName.split('_')
+        if len(whparts) > 1:
+          webheadHostName = '_'.join(whparts[:-1]) # lose the trailing sequence number
+        datePart = datePart[1+len(fromJson.toDateFromName):]
+        aDate = DT.datetime(*[int(x) for x in datePart.split(os.sep)])
+        self.copyFrom(uuid,fromJson.getJson(uuid), fromJson.getDump(uuid), webheadHostName, aDate, createLinks=True, removeOld = False)
+        didCopy = True
+      except OSError,e:
+        if 2 != e.errno:
+          raise e
+
+    if makeNewDateLinksBoolean:
+      dpath = fromJson.getJson(uuid)[:-len(fromJson.jsonSuffix)]
+      try:
+        webheadHostName = os.path.split(os.readlink(dpath))[1]
+        whparts = webheadHostName.split('_')
+        if len(whparts) > 1:
+          webheadHostName = '_'.join(whparts[:-1]) # lose the trailing sequence number
+      except OSError,e:
+        if 2 != e.errno:
+          raise e
+      self.copyFrom(uuid,fromJson.getJson(uuid), fromJson.getDump(uuid),webheadHostName,aDate,createLinks=True, removeOld = False)
+    elif not didCopy:
+      self.copyFrom(uuid,fromJson.getJson(uuid), fromJson.getDump(uuid),webheadHostName,aDate,createLinks=False, removeOld = False)
+      
   def __nameAbsPath(self,uuid):
     """Get a name path in absolute, i.e. %(root)s based format"""
     return self.__namePath(uuid,self.nameBranch)

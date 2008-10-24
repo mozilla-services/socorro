@@ -19,11 +19,12 @@ class TestJsonDumpStorage(unittest.TestCase):
     self.testDir = os.path.join('.','TEST-JSONDUMP')
     self.testMoveTo = os.path.join('.','TEST-MOVETO')
     self.testMoveFrom = os.path.join('.','TEST-MOVEFROM')
+    self.testMoveToAlt = os.path.join('.','TEST-MOVETO-ALT')
     self.initKwargs =  {
       0:{'logger': FakeLogger()},
-      1:{'logger': FakeLogger(),'dateName':'DATE','indexName':'INDEX','jsonSuffix':'JS','dumpSuffix':'.DS',},
+      1:{'logger': FakeLogger(),'dateName':'by_date','indexName':'by_name','jsonSuffix':'JS','dumpSuffix':'.DS',},
       2:{'logger': FakeLogger(),'jsonSuffix':'JS','dumpSuffix':'.DS',},
-      3:{'logger': FakeLogger(),'dateName':'DATE','indexName':'INDEX',},
+      3:{'logger': FakeLogger(),'dateName':'by_date','indexName':'index',},
       }
     self.data = {
       '0bba61c5-dfc3-43e7-87e6-8afda3564352': ('2007-10-25-05-04','webhead02','0b/ba/61/c5','2007/10/25/05/00/webhead02_0'),
@@ -80,7 +81,7 @@ class TestJsonDumpStorage(unittest.TestCase):
   def tearDown(self):
     try:
       shutil.rmtree(self.testDir)
-    except OSError, e:
+    except OSError:
       pass # ok if there is no such test directory
     try:
       shutil.rmtree(self.testMoveTo)
@@ -90,12 +91,17 @@ class TestJsonDumpStorage(unittest.TestCase):
       shutil.rmtree(self.testMoveFrom)
     except OSError:
       pass
+    try:
+      shutil.rmtree(self.testMoveToAlt)
+    except OSError:
+      pass
 
   def __getSlot(self,minsperslot,minute):
     return minsperslot * int(minute/minsperslot)
 
-  def __createTestSet(self,testData, initIndex=1):
-    storage = JDS.JsonDumpStorage(self.testDir,**self.initKwargs[initIndex])
+  def __createTestSet(self,testData, initIndex=1, rootDir=None):
+    if not rootDir: rootDir = self.testDir
+    storage = JDS.JsonDumpStorage(rootDir,**self.initKwargs[initIndex])
     thedt = DT.datetime.now()
     for uuid,data in testData.items():
       if data[0].startswith('+'):
@@ -121,6 +127,30 @@ class TestJsonDumpStorage(unittest.TestCase):
         fd.write('dump test of %s\n' % uuid)
       finally:
         if fd: fd.close()
+
+  def __hasLinkOrFail(self,jsonStorage,uuid):
+    linkPath = jsonStorage.getJson(uuid)[:-len(jsonStorage.jsonSuffix)]
+    try:
+      os.readlink(linkPath)
+    except Exception,x:
+      assert False, '(%s:%s) Expected to be able to readlink from %s'%(type(x),x,linkPath)
+  def __hasNoLinkOrFail(self,jsonStorage,uuid):
+    linkPath = jsonStorage.getJson(uuid)[:-len(jsonStorage.jsonSuffix)]
+    try:
+      os.readlink(linkPath)
+      assert False, 'Expected to find no link: %s '%linkPath
+    except OSError,x:
+      assert 2 == x.errno, "Expected errno=2, got %d for linkpath %s"%(x.errno,linkpath)
+    except Exception,x:
+      assert False, "Expected OSError, got %s for linkpath %s"%(x,linkpath)
+
+  def __hasDatePathOrFail(self,jsonStorage,dt):
+    slot =  jsonStorage.minutesPerSlot * int(dt.minute/jsonStorage.minutesPerSlot)
+    #        rt//yyyy//00mm//00dd//00hh//ss
+    dpath = "%s%s%04d%s%02d%s%02d%s%02d%s%s" %  (jsonStorage.dateBranch,os.sep,dt.year,os.sep,dt.month,os.sep,dt.day,os.sep,dt.hour,os.sep,slot)
+    assert os.path.isdir(dpath), 'Expect existing path for %s'%dt
+    for d in os.listdir(dpath):
+      assert os.path.isdir(os.path.join(dpath,d)), 'Expect %s/%s from %s is a directory'%(dpath,d,dt)
 
   def testConstructor(self):
     self.constructorAlt(self.testDir,**self.initKwargs[0])
@@ -424,6 +454,83 @@ class TestJsonDumpStorage(unittest.TestCase):
     for id in youngkeys:
       assert id in seenuuid, 'Expect that every new key is found, but %s' % id
       assert os.path.isdir(os.path.join(storage.dateBranch,self.data[id][3]))
+
+  def testTransferOne(self):
+    self.__createTestSet(self.data,initIndex=0, rootDir = self.testMoveFrom)
+    storage = JDS.JsonDumpStorage(self.testDir,**self.initKwargs[0])
+    oldStorage = JDS.JsonDumpStorage(self.testMoveFrom, **self.initKwargs[0])
+    itemNumber = 0
+    xmas = DT.datetime(2001,12,25,12,25)
+    for id in self.data.keys():
+      #case 0: copyLinks = True, makeNewDateLinks = False and there are links
+      #case 1: copyLinks = True, makeNewDateLinks = False  and there are no links
+      #case 2: makeNewDateLinks = True and there were existing date links
+      #case 3: makeNewDateLinks = True and there were no existing date links
+      copyLinks = True
+      makeNewLinks = False
+      removeOldLink = False
+      newDate = None
+      if 0 == itemNumber % 4:
+        pass
+      elif 1 == itemNumber % 4:
+        removeOldLink = True
+      elif 2 == itemNumber % 4:
+        makeNewLinks = True
+        newDate = xmas
+      elif 3 == itemNumber % 4:
+        removeOldLink = True
+        makeNewLinks = True
+        newDate = xmas
+      itemNumber += 1
+      if(removeOldLink):
+        oldStorage.markAsSeen(id)
+        self.__hasNoLinkOrFail(oldStorage,id)
+      storage.transferOne(id,self.testMoveFrom,copyLinksBoolean=copyLinks,makeNewDateLinksBoolean=makeNewLinks,aDate=newDate)
+      try:
+        storage.getJson(id)
+      except Exception,x:
+        print '(%s): %s'%(type(x),x)
+        assert False, 'Expected to find a transferred json file for %s' % id
+      if makeNewLinks or not removeOldLink:
+        self.__hasLinkOrFail(storage,id)
+        if makeNewLinks:
+          self.__hasDatePathOrFail(storage,xmas)
+      if not makeNewLinks and removeOldLink:
+        self.__hasNoLinkOrFail(storage,id)
+
+  def testTransferMany(self):
+    self.__createTestSet(self.data,initIndex=0, rootDir = self.testMoveFrom)
+    oldStorage = JDS.JsonDumpStorage(self.testMoveFrom, **self.initKwargs[0])
+    itemNumber = 0
+    xmas = DT.datetime(2001,12,25,12,25)
+    hasLinks = {}
+    for id in self.data.keys():
+      hasLinks[id] = True
+      if 0 == itemNumber %2 :
+        oldStorage.markAsSeen(id)
+        self.__hasNoLinkOrFail(oldStorage,id)
+        hasLinks[id] = False
+
+    opts = ((False,True),(True,False),(False,False)) #copyLinks, makeNewLinks
+    targets = (self.testMoveTo, self.testMoveToAlt,self.testDir)
+    assert len(opts) == len(targets), "set of opts must be one-to-one with set of targets, or fail"
+    for i in range(len(opts)):
+      aDate = None
+      if opts[i][1]: aDate = xmas
+      storage = JDS.JsonDumpStorage(targets[i], **self.initKwargs[0])
+      storage.transferMany(self.data.keys(),self.testMoveFrom,copyLinksBoolean=opts[i][0],makeNewDateLinksBoolean=opts[i][1],aDate=aDate)
+      for id in self.data.keys():
+        try:
+          storage.getJson(id)
+        except Exception,x:
+          print '(%s): %s'%(type(x),x)
+          assert False, 'Expected to find a transferred json file for %s' % id
+        if opts[i][1] or hasLinks[id]:
+          self.__hasLinkOrFail(storage,id)
+          if opts[i][1]:
+            self.__hasDatePathOrFail(storage,xmas)
+        if not opts[i][1] and not hasLinks[id]:
+          self.__hasNoLinkOrFail(storage,id)
 
 if __name__ == "__main__":
   unittest.main()
