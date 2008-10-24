@@ -36,8 +36,12 @@ class Topcrashers_Model extends Model {
             " ORDER BY last_updated DESC LIMIT 1 ";
         $rows = $this->fetchRows($update_sql);
         if ($rows) {
-            $last_updated = $rows[0]->last_updated;
-            $where[] = 'last_updated=' . $this->db->escape($last_updated);
+	  $last_updated = $rows[0]->last_updated;
+	  // make a 2 week window
+	  $last_updated = date("Y-m-d H:i:s", 
+			       strtotime($last_updated ) - (60 * 60 * 24 * 14) + 1);
+	  $where[] = "last_updated > " . $this->db->escape($last_updated);
+
         } else {
             $last_updated = '';
         }
@@ -46,8 +50,7 @@ class Topcrashers_Model extends Model {
             " SELECT topcrashers.* " .
             " FROM " . join(', ', array_keys($tables)) .
             " WHERE  " . join(' AND ', $where) .
-            " ORDER BY total DESC ";
-
+            " ORDER BY total DESC LIMIT 100";
         return array($last_updated, $this->fetchRows($sql));
     }
 

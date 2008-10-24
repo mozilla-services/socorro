@@ -3,9 +3,9 @@
 <?php else: ?>
     <div>
         <?php if ($last_updated): ?>
-            Below are the top 100 crashers as of <?php out::H($last_updated) ?>
+       Below are the top <?php echo count($top_crashers) ?> crashers as of <?php out::H($last_updated) ?>.
         <?php else: ?>
-            Below are the top 100 crashers over the last 2 weeks.
+       Below are the top <?php echo count($top_crashers) ?> crashers.
         <?php endif ?>
         <table class="tablesorter">
             <thead>

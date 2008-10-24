@@ -37,19 +37,19 @@ class Report_Controller extends Controller {
         $reports = $this->common_model->queryReports($params);
         $builds  = $this->common_model->queryFrequency($params);
 
-        $platLabels = array();
-        $plotData =   array();
-	
-        for($i = 0; $i < count($platforms); $i += 1){
-          $platform = $platforms[$i];
-          $plotData[$platform->id] = array($i, 0);
-          for($j = 0; $j  < count($builds); $j = $j + 1){ 
-            $plotData[$platform->id][1] += intval($builds[$j]->{"count_$platform->id"});
-	  }
-          $platLabels[] = array("label" => substr($platform->name, 0, 3),
-				"data" => $plotData[$platform->id],
-                                "color" => $platform->color);
-        }
+	if( count($builds) > 1){
+	  $crashGraphLabel = "Crashes By Build";
+	  $platLabels = $this->generateCrashesByBuild($platforms, $builds);
+	  
+	}else{
+          $crashGraphLabel = "Crashes By OS";
+	  $platLabels = $this->generateCrashesByOS($platforms, $builds);
+	}
+
+	$buildTicks = array();
+	for($i = 0; $i  < count($builds); $i = $i + 1){
+	  $buildTicks[] = array($i, date('m/d', strtotime($builds[$i]->build_date)));
+	}
  
         $this->setViewData(array(
             'params'  => $params,
@@ -61,8 +61,41 @@ class Report_Controller extends Controller {
             'all_versions'  => $branch_data['versions'],
             'all_platforms' => $platforms,
 
-            'platformLabels' => $platLabels
+            'crashGraphLabel' => $crashGraphLabel,
+            'platformLabels'  => $platLabels,
+	    'buildTicks'      => $buildTicks
         ));
+    }
+
+    private function generateCrashesByBuild($platforms, $builds){
+      $platLabels = array();
+      foreach ($platforms as $platform){
+	$plotData = array();
+	for($i = 0; $i  < count($builds); $i = $i + 1){
+	  $plotData[] = array($i, $builds[$i]->{"count_$platform->id"});
+	}
+	$platLabels[] = array("label" => substr($platform->name, 0, 3),
+			      "data"  => $plotData,
+			      "color" => $platform->color);
+	}
+      return $platLabels;
+    }
+
+    private function generateCrashesByOS($platforms, $builds){
+        $platLabels = array();
+        $plotData =   array();
+	
+        for($i = 0; $i < count($platforms); $i += 1){
+          $platform = $platforms[$i];
+          $plotData[$platform->id] = array($i, 0);
+          for($j = 0; $j  < count($builds); $j = $j + 1){ 
+            $plotData[$platform->id][1] += intval($builds[$j]->{"count_$platform->id"});
+	  }
+          $platLabels[] = array("label" => substr($platform->name, 0, 3),
+				"data" => array($plotData[$platform->id]),
+                                "color" => $platform->color);
+        }
+	return $platLabels;
     }
 
     /**

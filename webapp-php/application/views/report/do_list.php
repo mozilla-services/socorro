@@ -4,7 +4,7 @@
     <?php echo html::stylesheet(array(
         'css/flora/flora.all.css'
     ), 'screen')?>
-    <!--[if IE]><script language="javascript" type="text/javascript" src="js/flot-0.5/excanvas.pack.js"></script><![endif]-->
+    <!--[if IE]><?php echo html::script('js/flot-0.5/excanvas.pack.js') ?><![endif]-->
 
     <?php echo html::script(array(
         'js/jquery/jquery-1.2.1.js',
@@ -14,6 +14,7 @@
     ))?>
 
   <script type="text/javascript">
+
       $(document).ready(function() { 
         $('#buildid-table').tablesorter(); 
         $('#reportsList').tablesorter({sortList:[[9,1]]});
@@ -49,11 +50,11 @@
     </ul>
     <div id="graph">
       <div class="crashes-by-platform">
-        <h3 id="by_platform_graph">Crashes By OS</h3>
-        <div id="buildid-graph" style="width:200px;height:200px;"></div>
+        <h3 id="by_platform_graph"><?php echo $crashGraphLabel ?></h3>
+        <div id="graph-legend" class="crash-plot-label"></div>
+        <div id="buildid-graph"></div>
       </div>
-
-        <div class="clear"></div>
+      <div class="clear"></div>
     </div>
     <div id="table">
         <table id="buildid-table" class="tablesorter">
@@ -95,23 +96,39 @@
 
 <!-- end content -->
 <script id="source" language="javascript" type="text/javascript">
-$(function () {
-
+      $(document).ready(function() { 
+	  <?php if( count($builds) > 1){ ?>
+	    $("#buildid-graph").width(<?php echo max( min(50 * count($builds), 800), 200) ?>);
+	  <? } ?>
       $.plot($("#buildid-graph"), 
              [<?php for($i = 0; $i < count($all_platforms); $i += 1){ 
 		      $platform = $all_platforms[$i]; ?>
 			{ label: <?php echo json_encode($platformLabels[$i]['label']) ?>,
-		          data: [<?php  echo json_encode($platformLabels[$i]['data']) ?>],
+		          data: <?php  echo json_encode($platformLabels[$i]['data']) ?>,
 			  color: <?php echo json_encode($platformLabels[$i]['color']); 
 			  if($i != (count($all_platforms) -1 )){ echo '},';}else{ echo '}';} ?>
 	       <?php } ?> ],
              { // options
+
+             <?php if( count($builds) > 1){ ?>
+	       // Crashes by development builds Frequency over build day
+               lines: { show: true }, points: { show: true},
+	       xaxis:{
+                 labelWidth: 55,
+ 	         ticks: <?php echo json_encode( $buildTicks ) ?>
+	       },
+	       legend: { show: true, container: $("#graph-legend"), noColumns: 4 }
+
+	     <?php }else{ ?>
+	       //Crashes for production build OS bar chart
                bars: { show: true },
                xaxis:{
+                 labelWidth: 55,
    	         tickFormatter: function(n, o){ return ""; }
-               }
-		 
-      });
-
-  });
+	       },
+	       legend: { show: true, container: $("#graph-legend"), noColumns: 4 }
+	     <?php } ?>		 
+             }
+     );
+});
 </script>

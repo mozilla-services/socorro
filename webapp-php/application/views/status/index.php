@@ -3,7 +3,7 @@
     <?php echo html::stylesheet(array(
        'css/flora/flora.all.css'
     ), 'screen')?>
-    <!--[if IE]><script language="javascript" type="text/javascript" src="js/flot-0.5/excanvas.pack.js"></script><![endif]-->
+    <!--[if IE]><?php echo html::script('js/flot-0.5/excanvas.pack.js') ?><![endif]-->
     <?php echo html::script(array(
         'js/jquery/jquery-1.2.1.js',
         'js/jquery/plugins/ui/jquery.tablesorter.min.js',
@@ -52,7 +52,7 @@
   <div id="server-status-comb">
     <h3>Combined server status</h3>
     <div id="server-status-graph-comb"></div>
-    <div class="caption server-plot-label">Combined server status in 10 minute intervals. Measurements on left are for counts and the measurements on the right are in seconds</div>
+    <div class="caption server-plot-label">Combined server status in 5 minute intervals. Measurements on left are for counts and the measurements on the right are in seconds</div>
   </div>
   
   <div id="server-status-jobs-wait">

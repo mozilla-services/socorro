@@ -124,7 +124,11 @@ h1.loading {
   padding-left: 25px;
 }
 
+.crash-plot-label{ margin-left: 20px;}
+
 div.server-plot-label{ margin-left: 55px; margin-bottom: 10px; width: 700px;}
+
+#buildid-graph{ width: 200px; height: 200px; }
 .crashes-by-platform{ width: 200px; float: left; }
 .crash-frequency{width: 600px; float: left;}
 
