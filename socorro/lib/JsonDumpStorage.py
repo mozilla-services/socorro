@@ -152,6 +152,8 @@ class JsonDumpStorage(object):
     aDate - for creating new date links, None means now
     NOTE: Assumes that the path names and suffixes for anotherJsonDumpStorage are the same as for self
     """
+    if copyLinksBoolean and makeNewDateLinksBoolean:
+      self.logger.warning("transferOne(...) True == (copyLinksBoolean AND makeNewDateLinksBoolean). Will not copy original links")
     fromJson = JsonDumpStorage(anotherJsonDumpStorage, {'dateName':self.dateName, 'indexName':self.indexName, 'jsonSuffix':self.jsonSuffix, 'dumpSuffix':self.dumpSuffix})
     if not aDate: aDate = DT.datetime.now()
     self.__transferOne(uuid,fromJson,copyLinksBoolean,makeNewDateLinksBoolean,aDate)
@@ -165,6 +167,8 @@ class JsonDumpStorage(object):
     aDate - for creating new date links, None means now
     NOTE: Assumes that the path names and suffixes for anotherJsonDumpStorage are the same as for self
     """
+    if copyLinksBoolean and makeNewDateLinksBoolean:
+      self.logger.warning("transferOne(...) True == (copyLinksBoolean AND makeNewDateLinksBoolean). Will not copy original links")
     fromJson = JsonDumpStorage(anotherJsonDumpStorage, {'dateName':self.dateName, 'indexName':self.indexName, 'jsonSuffix':self.jsonSuffix, 'dumpSuffix':self.dumpSuffix})
     if not aDate: aDate = DT.datetime.now()
     for uuid in iterable:
