@@ -4,11 +4,16 @@ import os.path
 import shutil
 import stat
 import errno
+import threading
+
 from stat import S_IRGRP, S_IXGRP, S_IWGRP, S_IRUSR, S_IXUSR, S_IWUSR, S_ISGID
 
 import socorro.lib.util as socorro_util
 
-#-----------------------------------------------------------------------------------------------------------------
+class NoSuchUuidFound(Exception):
+  pass
+
+#=================================================================================================================
 class JsonDumpStorage(object):
   """
   This class implements a file system storage scheme for the JSON and dump files of the Socorro project.
@@ -60,7 +65,7 @@ class JsonDumpStorage(object):
     self.dirPermissions = int(kwargs.get('dirPermissions', '%d'%(S_IRGRP | S_IXGRP | S_IWGRP | S_IRUSR | S_IXUSR | S_IWUSR)))
     self.dumpGID = kwargs.get('dumpGID',None)
     if self.dumpGID: self.dumpGID = int(self.dumpGID)
-    self.logger = kwargs.get('logger', None)
+    self.logger = kwargs.get('logger', socorro_util.FakeLogger())
     self.toNameFromDate = os.sep.join(('..','..','..','..','..','..','..',self.indexName))
     self.toDateFromName = os.sep.join(('..','..','..','..','..',self.dateName))
     self.minutesPerSlot = 5
@@ -133,12 +138,12 @@ class JsonDumpStorage(object):
     if removeOld:
       try:
         os.unlink(jsonpath)
-      except:
+      except OSError:
         self.logger.warning("cannot unlink Json", jsonpath, os.listdir(os.path.split(jsonpath)[0]))
         return False
       try:
         os.unlink(dumppath)
-      except:
+      except OSError:
         self.logger.warning("cannot unlink Dump", dumppath, os.listdir(os.path.split(dumppath)[0]))
         return False
     return True
@@ -253,32 +258,32 @@ class JsonDumpStorage(object):
   #-----------------------------------------------------------------------------------------------------------------
   def remove (self,uuid):
     """
-    Removes all instances of the uuid from the file system including the json file, the dump
-    file, and the two links if they still exist.
-    Ignores missing link, json and dump files: You may call it with bogus data, though of course you
-    should not
+    Removes all instances of the uuid from the file system including the json file, the dump file, and the two links if they still exist.
+    If it finds no trace of the uuid: No links, no data files, it raises a NoSuchUuidFound exception.
     """
     rpath = self.__nameAbsPath(uuid)
-    dpath = None
+    seenCount = 0
     try:
-      try:
-        dpath = os.path.join(rpath,os.readlink(os.path.join(rpath,uuid)))
-        os.unlink(os.path.join(dpath,uuid))
-        os.unlink(os.path.join(rpath,uuid))
-      except:
-        socorro_util.reportExceptionAndContinue(self.logger)
-        pass
-    finally:
-      try:
-        os.unlink(os.path.join(rpath,uuid+self.jsonSuffix))
-      except:
-        socorro_util.reportExceptionAndContinue(self.logger)
-        pass
-      try:
-        os.unlink(os.path.join(rpath,uuid+self.dumpSuffix))
-      except:
-        socorro_util.reportExceptionAndContinue(self.logger)
-        pass
+      dpath = os.path.join(rpath,os.readlink(os.path.join(rpath,uuid)))
+      os.unlink(os.path.join(dpath,uuid))
+      seenCount += 1
+      os.unlink(os.path.join(rpath,uuid))
+      seenCount += 1
+    except OSError:
+      self.logger.debug("%s - %s Missing at least one link" % (threading.currentThread().getName(), uuid))
+    try:
+      os.unlink(os.path.join(rpath,uuid+self.jsonSuffix))
+      seenCount += 1
+    except:
+      self.logger.debug("%s - %s Missing json file" % (threading.currentThread().getName(), uuid))
+    try:
+      os.unlink(os.path.join(rpath,uuid+self.dumpSuffix))
+      seenCount += 1
+    except:
+      self.logger.debug("%s - %s Missing dump file" % (threading.currentThread().getName(), uuid))
+    if not seenCount:
+      self.logger.warning("%s - %s was totally unknown" % (threading.currentThread().getName(), uuid))
+      raise NoSuchUuidFound, "no trace of %s was found" % uuid
 
   #-----------------------------------------------------------------------------------------------------------------
   def move (self, uuid, newAbsolutePath):
@@ -289,10 +294,12 @@ class JsonDumpStorage(object):
     back the json file if the dump file is not found.
     """
     rpath = self.__nameAbsPath(uuid)
-    os.rename(os.path.join(rpath,uuid+self.jsonSuffix), os.path.join(newAbsolutePath, uuid+self.jsonSuffix))
-    os.rename(os.path.join(rpath,uuid+self.dumpSuffix), os.path.join(newAbsolutePath, uuid+self.dumpSuffix))
-
-    self.remove(uuid)
+    shutil.move(os.path.join(rpath,uuid+self.jsonSuffix), os.path.join(newAbsolutePath, uuid+self.jsonSuffix))
+    shutil.move(os.path.join(rpath,uuid+self.dumpSuffix), os.path.join(newAbsolutePath, uuid+self.dumpSuffix))
+    try:
+      self.remove(uuid) # remove links, if any
+    except NoSuchUuidFound:
+      pass # there were no links
 
 
   #-----------------------------------------------------------------------------------------------------------------

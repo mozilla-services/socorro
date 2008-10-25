@@ -3,28 +3,22 @@ import os
 import shutil
 import datetime as DT
 import time
+import sys
 import socorro.lib.JsonDumpStorage as JDS
-
-class FakeLogger(object):
-  def log(self,*x): pass
-  def debug(self,msg): pass
-  def info(self,msg): pass
-  def warning(self,msg): pass
-  def error(self,msg): pass
-  def critical(self,msg): pass
+import socorro.lib.util
 
 class TestJsonDumpStorage(unittest.TestCase):
-
   def setUp(self):
     self.testDir = os.path.join('.','TEST-JSONDUMP')
     self.testMoveTo = os.path.join('.','TEST-MOVETO')
     self.testMoveFrom = os.path.join('.','TEST-MOVEFROM')
     self.testMoveToAlt = os.path.join('.','TEST-MOVETO-ALT')
+    fakeLogger = socorro.lib.util.SilentFakeLogger()
     self.initKwargs =  {
-      0:{'logger': FakeLogger()},
-      1:{'logger': FakeLogger(),'dateName':'by_date','indexName':'by_name','jsonSuffix':'JS','dumpSuffix':'.DS',},
-      2:{'logger': FakeLogger(),'jsonSuffix':'JS','dumpSuffix':'.DS',},
-      3:{'logger': FakeLogger(),'dateName':'by_date','indexName':'index',},
+      0:{'logger': fakeLogger},
+      1:{'logger': fakeLogger,'dateName':'by_date','indexName':'by_name','jsonSuffix':'JS','dumpSuffix':'.DS',},
+      2:{'logger': fakeLogger,'jsonSuffix':'JS','dumpSuffix':'.DS',},
+      3:{'logger': fakeLogger,'dateName':'by_date','indexName':'index',},
       }
     self.data = {
       '0bba61c5-dfc3-43e7-87e6-8afda3564352': ('2007-10-25-05-04','webhead02','0b/ba/61/c5','2007/10/25/05/00/webhead02_0'),
@@ -349,8 +343,23 @@ class TestJsonDumpStorage(unittest.TestCase):
   def testRemove(self):
     self.__createTestSet(self.data,initIndex=2)
     storage = JDS.JsonDumpStorage(self.testDir,**self.initKwargs[2])
+    counter = 0
     for uuid in self.data.keys():
+      if 0 == counter % 3:
+        # test that we don't throw for missing links
+        storage.markAsSeen(uuid)
+      if 1 == counter % 3:
+        # test that we don't throw for one missing file
+        if 0 == counter % 2:
+          os.unlink(storage.getDump(uuid))
+        else:
+          os.unlink(storage.getJson(uuid))
+      if 2 == counter % 3:
+        # test that we don't throw for both missing files, but with links
+        os.unlink(storage.getJson(uuid))
+        os.unlink(storage.getDump(uuid))
       storage.remove(uuid)
+      counter += 1
     allfiles = []
     alllinks = []
     for dir, dirs, files in os.walk(self.testDir):
@@ -365,8 +374,10 @@ class TestJsonDumpStorage(unittest.TestCase):
     assert [] == alllinks, 'Expcet that all links are gone, but found %s' % alllinks
     try:
       storage.remove("bogusdata")
-    except:
-      assert False, 'Should be able to remove bogus data'
+    except JDS.NoSuchUuidFound:
+      pass
+    except Exception, x:
+      assert False, 'On remove(bogus) expect NoSuchUuidFound; got %s' % x
 
   def testMove(self):
     self.__createTestSet(self.data,initIndex=3)
