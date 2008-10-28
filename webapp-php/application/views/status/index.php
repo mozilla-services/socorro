@@ -12,7 +12,7 @@
 <?php slot::end() ?>
 
 <h1 class="first">Server Status</h1>
-<?php $stat = end($server_stats) ?>
+<?php $stat = $server_stats[0] ?>
 
 <div id="at-a-glance">
 <h2>At a Glance</h2>
