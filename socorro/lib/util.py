@@ -7,18 +7,43 @@ import collections
 
 import logging
 
+#=================================================================================================================
+class FakeLogger(object):
+  loggingLevelNames = { logging.DEBUG: "DEBUG",
+                        logging.INFO: "INFO",
+                        logging.WARNING: "WARNING",
+                        logging.ERROR: "ERROR",
+                        logging.CRITICAL: "CRITICAL"
+                      }
+  def log(self,*x):
+    try:
+      loggingLevelString = FakeLogger.loggingLevelNames[x[0]]
+    except KeyError:
+      loggingLevelString = "Level[%s]" % str(x[0])
+    print >>sys.stderr, loggingLevelString, x[1] % x[2:]
+  def debug(self,*x): self.log(logging.DEBUG, *x)
+  def info(self,*x): self.log(logging.INFO, *x)
+  def warning(self,*x): self.log(logging.WARNING, *x)
+  def error(self,*x): self.log(logging.ERROR, *x)
+  def critical(self,*x): self.log(logging.CRITICAL, *x)
+
+#=================================================================================================================
+class SilentFakeLogger(object):
+  def log(self,*x): pass
+  def debug(self,*x): pass
+  def info(self,*x): pass
+  def warning(self,*x): pass
+  def error(self,*x): pass
+  def critical(self,*x): pass
+
+#=================================================================================================================
+# logging routines
 #-----------------------------------------------------------------------------------------------------------------
+
 loggingReportLock = threading.RLock()
-def report(message):
-  loggingReportLock.acquire()  #make sure these multiple log entries stay together
-  try:
-    logger.info("*** thread %s ***", threading.currentThread().getName())
-    logger.info(message)
-  finally:
-    loggingReportLock.release()
 
 #-----------------------------------------------------------------------------------------------------------------
-def reportExceptionAndContinue(logger, loggingLevel=logging.ERROR, ignoreFunction=None):
+def reportExceptionAndContinue(logger=FakeLogger(), loggingLevel=logging.ERROR, ignoreFunction=None, showTraceback=True):
   try:
     exceptionType, exception, tracebackInfo = sys.exc_info()
     if ignoreFunction and ignoreFunction(exceptionType, exception, tracebackInfo):
@@ -29,14 +54,15 @@ def reportExceptionAndContinue(logger, loggingLevel=logging.ERROR, ignoreFunctio
     try:
       logger.log(loggingLevel, "%s Caught Error: %s", threading.currentThread().getName(), exceptionType)
       logger.log(loggingLevel, exception)
-      stringStream = cStringIO.StringIO()
-      try:
-        print >>stringStream,  "trace back follows:"
-        traceback.print_tb(tracebackInfo, None, stringStream)
-        tracebackString = stringStream.getvalue()
-        logger.info(tracebackString)
-      finally:
-        stringStream.close()
+      if showTraceback:
+        stringStream = cStringIO.StringIO()
+        try:
+          print >>stringStream,  "trace back follows:"
+          traceback.print_tb(tracebackInfo, None, stringStream)
+          tracebackString = stringStream.getvalue()
+          logger.info(tracebackString)
+        finally:
+          stringStream.close()
     finally:
       loggingReportLock.release()
   except Exception, x:
@@ -48,6 +74,8 @@ def reportExceptionAndAbort(logger):
   logger.critical("cannot continue - quitting")
   raise SystemExit
 
+#=================================================================================================================
+# utilities
 #-----------------------------------------------------------------------------------------------------------------
 def emptyFilter(x):
   return (x, None)[x==""]
@@ -103,20 +131,3 @@ class CachingIterator(object):
     self.secondaryCacheSize = 0
     self.secondaryLimitedSizeCache = collections.deque()
 
-#=================================================================================================================
-class FakeLogger(object):
-  def log(self,*x): print >>sys.stderr, x[1]
-  def debug(self,*x): print >>sys.stderr, x
-  def info(self,*x): print >>sys.stderr, x
-  def warning(self,*x): print >>sys.stderr, x
-  def error(self,*x): print >>sys.stderr, x
-  def critical(self,*x): print >>sys.stderr, x
-
-#=================================================================================================================
-class SilentFakeLogger(object):
-  def log(self,*x): pass
-  def debug(self,*x): pass
-  def info(self,*x): pass
-  def warning(self,*x): pass
-  def error(self,*x): pass
-  def critical(self,*x): pass
