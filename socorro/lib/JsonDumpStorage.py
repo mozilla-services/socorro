@@ -150,7 +150,9 @@ class JsonDumpStorage(object):
 
   #-----------------------------------------------------------------------------------------------------------------
   def transferOne (self, uuid, anotherJsonDumpStorage, copyLinksBoolean=True, makeNewDateLinksBoolean=False, aDate=None):
-    """uuid - the id
+    """
+    Transfer a uuid from anotherJsonDumpStorage into this instance of JsonDumpStorage
+    uuid - the id
     anotherJsonDumpStorage - the directory holding the 'date' (if any) and 'name' data for the uuid
     copyLinksBoolean - True: copy links, if any; False: copy no links
     makeNewDateLinksBoolean - make new date entries in self using aDate
@@ -164,7 +166,9 @@ class JsonDumpStorage(object):
 
   #-----------------------------------------------------------------------------------------------------------------
   def transferMany (self, iterable, anotherJsonDumpStorage, copyLinksBoolean=True, makeNewDateLinksBoolean=False, aDate=None):
-    """the iterable giving a sequence of uuids
+    """
+    Transfer a sequences of uuids from anotherJsonDumpStorage into this instance of JsonDumpStorage
+    iterable - the iterable giving a sequence of uuids
     anotherJsonDumpStorage - the directory holding the 'date' (if any) and 'name' data for the uuid
     copyLinksBoolean - True: copy links, if any; False: copy no links
     makeNewDateLinksBoolean - make new date entries in self using aDate
@@ -355,7 +359,7 @@ class JsonDumpStorage(object):
       self.copyFrom(uuid,fromJson.getJson(uuid), fromJson.getDump(uuid),webheadHostName,aDate,createLinks=True, removeOld = False)
     elif not didCopy:
       self.copyFrom(uuid,fromJson.getJson(uuid), fromJson.getDump(uuid),webheadHostName,aDate,createLinks=False, removeOld = False)
-      
+
   def __nameAbsPath(self,uuid):
     """Get a name path in absolute, i.e. %(root)s based format"""
     return self.__namePath(uuid,self.nameBranch)
