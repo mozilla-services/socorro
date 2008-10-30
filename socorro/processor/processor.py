@@ -18,11 +18,12 @@ logger = logging.getLogger("processor")
 import socorro.lib.util
 import socorro.lib.threadlib
 import socorro.lib.ConfigurationManager
-import socorro.lib.psycopghelper
+import socorro.lib.JsonDumpStorage as jds
+import socorro.lib.psycopghelper as psy
 
 import simplejson
 
-#==========================================================
+#=================================================================================================================
 class UTC(datetime.tzinfo):
   """
   """
@@ -44,11 +45,15 @@ class UTC(datetime.tzinfo):
   def dst(self, dt):
     return UTC.ZERO
 
-#==========================================================
+#=================================================================================================================
 class DuplicateEntryException(Exception):
   pass
 
-#==========================================================
+#=================================================================================================================
+class UuidNotFoundException(Exception):
+  pass
+
+#=================================================================================================================
 class Processor(object):
   """ This class is a mechanism for processing the json and dump file pairs.  It fetches assignments
       from the 'jobs' table in the database and uses a group of threads to process them.
@@ -77,7 +82,7 @@ class Processor(object):
         self.threadManager: an instance of a class that manages the tasks of a set of threads.  It accepts
             new tasks through the call to newTask.  New tasks are placed in the internal task queue.
             Threads pull tasks from the queue as they need them.
-        self.threadLocalDatabaseConnections: each thread uses its own connection to the database.
+        self.databaseConnectionPool: each thread uses its own connection to the database.
             This dictionary, indexed by thread name, is just a repository for the connections that
             persists between jobs.
   """
@@ -93,7 +98,22 @@ class Processor(object):
     """
     super(Processor, self).__init__()
 
-    self.databaseDSN = "host=%(databaseHost)s dbname=%(databaseName)s user=%(databaseUserName)s password=%(databasePassword)s" % config
+    assert "databaseHost" in config, "databaseHost is missing from the configuration"
+    assert "databaseName" in config, "databaseName is missing from the configuration"
+    assert "databaseUserName" in config, "databaseUserName is missing from the configuration"
+    assert "databasePassword" in config, "databasePassword is missing from the configuration"
+    assert "storageRoot" in config, "storageRoot is missing from the configuration"
+    assert "deferredStorageRoot" in config, "deferredStorageRoot is missing from the configuration"
+    assert "jsonFileSuffix" in config, "jsonFileSuffix is missing from the configuration"
+    assert "dumpFileSuffix" in config, "dumpFileSuffix is missing from the configuration"
+    assert "processorCheckInTime" in config, "processorCheckInTime is missing from the configuration"
+    assert "processorCheckInFrequency" in config, "processorCheckInFrequency is missing from the configuration"
+    assert "processorId" in config, "processorId is missing from the configuration"
+    assert "numberOfThreads" in config, "numberOfThreads is missing from the configuration"
+    assert "batchJobLimit" in config, "batchJobLimit is missing from the configuration"
+
+    self.databaseConnectionPool = psy.DatabaseConnectionPool(config.databaseHost, config.databaseName, config.databaseUserName, config.databasePassword, logger)
+
     self.processorLoopTime = config.processorLoopTime.seconds
 
     self.config = config
@@ -102,8 +122,7 @@ class Processor(object):
 
     logger.info("%s - connecting to database", threading.currentThread().getName())
     try:
-      self.mainThreadDatabaseConnection = psycopg2.connect(self.databaseDSN)
-      self.mainThreadCursor = self.mainThreadDatabaseConnection.cursor()
+      databaseConnection, databaseCursor = self.databaseConnectionPool.connectionCursorPair()
     except:
       self.quit = True
       logger.critical("%s - cannot connect to the database", threading.currentThread().getName())
@@ -115,12 +134,12 @@ class Processor(object):
       self.processorId = 0
       self.processorName = "%s_%d" % (os.uname()[1], os.getpid())
       if self.config.processorId == 'auto':  # take over for an existing processor
-        threshold = socorro.lib.psycopghelper.singleValueSql(self.mainThreadCursor, "select now() - interval '%s'" % self.config.processorCheckInTime)
+        threshold = psy.singleValueSql(databaseCursor, "select now() - interval '%s'" % self.config.processorCheckInTime)
         try:
           logger.debug("%s - looking for a dead processor", threading.currentThread().getName())
-          self.config.processorId = socorro.lib.psycopghelper.singleValueSql(self.mainThreadCursor, "select id from processors where lastSeenDateTime < '%s' limit 1" % threshold)
+          self.config.processorId = psy.singleValueSql(databaseCursor, "select id from processors where lastSeenDateTime < '%s' limit 1" % threshold)
           logger.info("%s - will step in for processor %d", threading.currentThread().getName(), self.config.processorId)
-        except socorro.lib.psycopghelper.SQLDidNotReturnSingleValue:
+        except psy.SQLDidNotReturnSingleValue:
           logger.debug("%s - no dead processor found", threading.currentThread().getName())
           self.config.processorId = '0'
       if self.config.processorId != '0':  # take over for a specific existing processor
@@ -130,24 +149,24 @@ class Processor(object):
           raise socorro.lib.ConfigurationManager.OptionError("%s is not a valid option for processorId" % self.config.processorId)
         try:
           logger.info("%s - stepping in for processor %d", threading.currentThread().getName(), processorId)
-          self.mainThreadCursor.execute("update processors set name = %s, startDateTime = now(), lastSeenDateTime = now() where id = %s", (self.processorName, processorId))
-          self.mainThreadCursor.execute("update jobs set starteddatetime = NULL where id in (select id from jobs where starteddatetime is not null and success is null and owner = %s)", (self.config.processorId, ))
+          databaseCursor.execute("update processors set name = %s, startDateTime = now(), lastSeenDateTime = now() where id = %s", (self.processorName, processorId))
+          databaseCursor.execute("update jobs set starteddatetime = NULL where id in (select id from jobs where starteddatetime is not null and success is null and owner = %s)", (self.config.processorId, ))
           self.processorId = processorId
         except:
-          self.mainThreadDatabaseConnection.rollback()
+          databaseConnection.rollback()
       else:  # be a new processor with a new id
-        self.mainThreadCursor.execute("insert into processors (name, startDateTime, lastSeenDateTime) values (%s, now(), now())", (self.processorName,))
-        self.processorId = socorro.lib.psycopghelper.singleValueSql(self.mainThreadCursor, "select id from processors where name = '%s'" % (self.processorName,))
+        databaseCursor.execute("insert into processors (name, startDateTime, lastSeenDateTime) values (%s, now(), now())", (self.processorName,))
+        self.processorId = psy.singleValueSql(databaseCursor, "select id from processors where name = '%s'" % (self.processorName,))
         logger.info("%s - initializing as processor %d", threading.currentThread().getName(), self.processorId)
       self.priorityJobsTableName = "priority_jobs_%d" % self.processorId
-      self.mainThreadDatabaseConnection.commit()
+      databaseConnection.commit()
       try:
-        self.mainThreadCursor.execute("create table %s (uuid varchar(50) not null primary key)" % self.priorityJobsTableName)
-        self.mainThreadDatabaseConnection.commit()
+        databaseCursor.execute("create table %s (uuid varchar(50) not null primary key)" % self.priorityJobsTableName)
+        databaseConnection.commit()
       except:
-        logger.warning("%s - failed in creating priority jobs table for this processor.  Does it already exist?",  threading.currentThread().getName())
-        self.mainThreadDatabaseConnection.rollback()
-        socorro.lib.util.reportExceptionAndContinue(logger)
+        logger.warning("%s - failed in creating priority jobs table for this processor.  Does it already exist?  This is probably OK",  threading.currentThread().getName())
+        databaseConnection.rollback()
+        #socorro.lib.util.reportExceptionAndContinue(logger)
     except:
       logger.critical("%s - cannot register with the database", threading.currentThread().getName())
       self.quit = True
@@ -163,9 +182,16 @@ class Processor(object):
     # the pending jobs from the database, then the job priority could not be changed by an external process.
     logger.info("%s - starting worker threads", threading.currentThread().getName())
     self.threadManager = socorro.lib.threadlib.TaskManager(self.config.numberOfThreads, self.config.numberOfThreads * 2)
-    self.threadLocalDatabaseConnections = {}
     logger.info("%s - I am processor #%d", threading.currentThread().getName(), self.processorId)
     logger.info("%s -   my priority jobs table is called: '%s'", threading.currentThread().getName(), self.priorityJobsTableName)
+    self.standardJobStorage = jds.JsonDumpStorage(root=self.config.storageRoot,
+                                                  jsonSuffix=self.config.jsonFileSuffix,
+                                                  dumpSuffix=self.config.dumpFileSuffix,
+                                                  logger=logger)
+    self.deferredJobStorage = jds.JsonDumpStorage(root=self.config.deferredStorageRoot,
+                                                  jsonSuffix=self.config.jsonFileSuffix,
+                                                  dumpSuffix=self.config.dumpFileSuffix,
+                                                  logger=logger)
 
   #-----------------------------------------------------------------------------------------------------------------
   def quitCheck(self):
@@ -187,8 +213,9 @@ class Processor(object):
     """
     if self.lastCheckInTimestamp + self.config.processorCheckInFrequency < datetime.datetime.now():
       logger.debug("%s - updating 'processor' table registration", threading.currentThread().getName())
-      self.mainThreadCursor.execute("update processors set lastSeenDateTime = %s where id = %s", (datetime.datetime.now(), self.processorId))
-      self.mainThreadDatabaseConnection.commit()
+      databaseConnection, databaseCursor = self.databaseConnectionPool.connectionCursorPairNoTest()
+      databaseCursor.execute("update processors set lastSeenDateTime = %s where id = %s", (datetime.datetime.now(), self.processorId))
+      databaseConnection.commit()
       self.lastCheckInTimestamp = datetime.datetime.now()
 
   #-----------------------------------------------------------------------------------------------------------------
@@ -199,35 +226,26 @@ class Processor(object):
     self.threadManager.waitForCompletion()
     logger.info("%s - all threads stopped", threading.currentThread().getName())
 
-    # we're done - kill all the threads' database connections
-    logger.debug("%s - killing thread database connections", threading.currentThread().getName())
-    for i, aDatabaseConnection in enumerate(self.threadLocalDatabaseConnections.values()):
-      try:
-        aDatabaseConnection.rollback()
-        aDatabaseConnection.close()
-        logger.debug("%s -   connection %d closed", threading.currentThread().getName(), i)
-      except psycopg2.InterfaceError:
-        logger.debug("%s -   connection %d already closed", threading.currentThread().getName(), i)
-      except:
-        socorro.lib.util.reportExceptionAndContinue(logger)
+    databaseConnection, databaseCursor = self.databaseConnectionPool.connectionCursorPairNoTest()
 
     try:
       # force the processor to record a lastSeenDateTime in the distant past so that the monitor will
       # mark it as dead.  The monitor will process its completed jobs and reallocate it unfinished ones.
       logger.debug("%s - unregistering processor", threading.currentThread().getName())
-      self.mainThreadCursor.execute("update processors set lastSeenDateTime = '1999-01-01' where id = %s", (self.processorId,))
-      self.mainThreadDatabaseConnection.commit()
+      databaseCursor.execute("update processors set lastSeenDateTime = '1999-01-01' where id = %s", (self.processorId,))
+      databaseConnection.commit()
     except Exception, x:
       logger.critical("%s - could not unregister %d from the database", threading.currentThread().getName(), self.processorId)
       socorro.lib.util.reportExceptionAndContinue(logger)
 
     try:
-      self.mainThreadCursor.execute("drop table %s" % self.priorityJobsTableName)
-      self.mainThreadDatabaseConnection.commit()
-      self.mainThreadDatabaseConnection.close()
+      databaseCursor.execute("drop table %s" % self.priorityJobsTableName)
     except psycopg2.Error:
       logger.error("%s - Cannot complete cleanup.  %s may need manual deletion", threading.currentThread().getName(), self.priorityJobsTableName)
       socorro.lib.util.reportExceptionAndContinue(logger)
+
+    # we're done - kill all the threads' database connections
+    self.databaseConnectionPool.cleanup()
 
     logger.debug("%s - done with work", threading.currentThread().getName())
 
@@ -268,16 +286,44 @@ class Processor(object):
     return '@%s' % instruction
 
   #-----------------------------------------------------------------------------------------------------------------
-  def submitJobToThreads(self, aJobTuple):
-    self.mainThreadCursor.execute("update jobs set startedDateTime = %s where id = %s", (datetime.datetime.now(), aJobTuple[0]))
-    self.mainThreadDatabaseConnection.commit()
+  def submitJobToThreads(self, databaseCursor, aJobTuple):
+    databaseCursor.execute("update jobs set startedDateTime = %s where id = %s", (datetime.datetime.now(), aJobTuple[0]))
+    databaseCursor.connection.commit()
     logger.info("%s - queuing job %d, %s, %s", threading.currentThread().getName(), aJobTuple[0], aJobTuple[2], aJobTuple[1])
     self.threadManager.newTask(self.processJob, aJobTuple)
 
   #-----------------------------------------------------------------------------------------------------------------
-  def incomingJobStream(self):
+  def jsonPathForUuidInJsonDumpStorage(self, uuid):
+    try:
+      jsonPath = self.standardJobStorage.getJson(uuid)
+    except (OSError, IOError):
+      try:
+        jsonPath = self.deferredJobStorage.getJson(uuid)
+      except (OSError, IOError):
+        raise UuidNotFoundException("%s cannot be found in standard or deferred storage" % uuid)
+    return jsonPath
+
+  #-----------------------------------------------------------------------------------------------------------------
+  def dumpPathForUuidInJsonDumpStorage(self, uuid):
+    try:
+      dumpPath = self.standardJobStorage.getDump(uuid)
+    except (OSError, IOError):
+      try:
+        dumpPath = self.deferredJobStorage.getDump(uuid)
+      except (OSError, IOError):
+        raise UuidNotFoundException("%s cannot be found in standard or deferred storage" % uuid)
+    return dumpPath
+
+  #-----------------------------------------------------------------------------------------------------------------
+  def moveJobFromLegacyToStandardStorage(self, uuid, legacyJsonPathName):
+    logger.debug("%s - moveJobFromLegacyToStandardStorage: %s, '%s'", threading.currentThread().getName(), uuid, legacyJsonPathName)
+    legacyDumpPathName = "%s%s" % (legacyJsonPathName[:-len(self.config.jsonFileSuffix)], self.config.dumpFileSuffix)
+    self.standardJobStorage.copyFrom(uuid, legacyJsonPathName, legacyDumpPathName, "legacy", datetime.datetime.now(), False, True)
+
+  #-----------------------------------------------------------------------------------------------------------------
+  def incomingJobStream(self, databaseCursor):
     """
-       aJobTuple has this form: (jobId, jobUuid, jobPathname, jobPriority) jobPriority is optional
+       aJobTuple has this form: (jobId, jobUuid, jobPriority, jobPathname)
     """
     jobList = {}
     preexistingPriorityJobs = set()
@@ -286,40 +332,44 @@ class Processor(object):
       self.checkin()
       try:
         lastPriorityCheckTimestamp = datetime.datetime.now()
-        self.mainThreadCursor.execute("select uuid from %s" % self.priorityJobsTableName)
-        setOfPriorityJobs = preexistingPriorityJobs | set([x[0] for x in self.mainThreadCursor.fetchall()])
+        databaseCursor.execute("select uuid from %s" % self.priorityJobsTableName)
+        setOfPriorityJobs = preexistingPriorityJobs | set([x[0] for x in databaseCursor.fetchall()])
         preexistingPriorityJobs = set()
-        logger.debug("%s - priorityJobs: %s", threading.currentThread().getName(), setOfPriorityJobs)
+        #logger.debug("%s - priorityJobs: %s", threading.currentThread().getName(), setOfPriorityJobs)
         if setOfPriorityJobs:
           for aPriorityJobUuid in setOfPriorityJobs:
             try:
               aJobTuple = jobList[aPriorityJobUuid]
               del jobList[aPriorityJobUuid]
-              self.mainThreadCursor.execute("delete from %s where uuid = '%s'" % (self.priorityJobsTableName, aPriorityJobUuid))
-              self.mainThreadDatabaseConnection.commit()
+              databaseCursor.execute("delete from %s where uuid = '%s'" % (self.priorityJobsTableName, aPriorityJobUuid))
+              databaseCursor.connection.commit()
               logger.debug("%s - incomingJobStream yielding priority from existing job list: %s", threading.currentThread().getName(), aJobTuple[1])
               yield aJobTuple
             except KeyError:
-              self.mainThreadCursor.execute("select j.id, j.uuid, j.pathname, j.priority from jobs j where j.uuid = '%s'" % aPriorityJobUuid)
               try:
                 try:
-                  aJobTuple = self.mainThreadCursor.fetchall()[0]
+                  aJobTuple = psy.singleRowSql(databaseCursor, "select j.id, j.uuid, j.priority, j.pathname from jobs j where j.uuid = '%s'" % aPriorityJobUuid)
+                  if aJobTuple[3] is not None and aJobTuple[3] != '':
+                    self.moveJobFromLegacyToStandardStorage(aJobTuple[0], aJobTuple[3])
+                  logger.debug("%s - incomingJobStream yielding priority from database: %s", threading.currentThread().getName(), aJobTuple[1])
                 finally:
-                  self.mainThreadCursor.execute("delete from %s where uuid = '%s'" % (self.priorityJobsTableName, aPriorityJobUuid))
-                  self.mainThreadDatabaseConnection.commit()
-                logger.debug("%s - incomingJobStream yielding priority from database: %s", threading.currentThread().getName(), aJobTuple[1])
+                  databaseCursor.execute("delete from %s where uuid = '%s'" % (self.priorityJobsTableName, aPriorityJobUuid))
+                  databaseCursor.connection.commit()
                 yield aJobTuple
-              except IndexError:
+              except psy.SQLDidNotReturnSingleRow, x:
                 logger.warning("%s - the priority job %s was never found", threading.currentThread().getName(), aPriorityJobUuid)
-                self.mainThreadCursor.execute("delete from %s where uuid = '%s'" % (self.priorityJobsTableName, aPriorityJobUuid))
-                self.mainThreadDatabaseConnection.commit()
+                databaseCursor.execute("delete from %s where uuid = '%s'" % (self.priorityJobsTableName, aPriorityJobUuid))
+                databaseCursor.connection.commit()
           continue  # done processing priorities - start the loop again in case there are more priorities
         preexistingPriorityJobs = set()
         if not jobList:
-          self.mainThreadCursor.execute("select j.id, j.uuid, j.pathname, j.priority from jobs j where j.owner = %d and j.starteddatetime is null order by j.priority desc limit %d" % (self.processorId, self.config.batchJobLimit))
-          for aJobTuple in self.mainThreadCursor.fetchall():
+          databaseCursor.execute("select j.id, j.uuid, j.priority, j.pathname from jobs j where j.owner = %d and j.starteddatetime is null order by j.priority desc limit %d" % (self.processorId, self.config.batchJobLimit))
+          for aJobTuple in databaseCursor.fetchall():
+            if aJobTuple[3] is not None and aJobTuple[3] != '':
+              logger.debug("%s - we've got a legacy job: '%s'", threading.currentThread().getName(), aJobTuple[3])
+              self.moveJobFromLegacyToStandardStorage(aJobTuple[0], aJobTuple[3])
             jobList[aJobTuple[1]] = aJobTuple
-            if aJobTuple[3]:  #check priority
+            if aJobTuple[2]:  #check priority
               logger.debug("%s - adding priority job found in database: %s", threading.currentThread().getName(), aJobTuple[1])
               preexistingPriorityJobs.add(aJobTuple[1])
           if not jobList:
@@ -347,14 +397,19 @@ class Processor(object):
     sqlErrorCounter = 0
     while (True):
       try:
+        databaseConnection, databaseCursor = self.databaseConnectionPool.connectionCursorPair()
+      except:
+        self.quit = True
+        socorro.lib.util.reportExceptionAndAbort(logger) # can't continue without a database connection
+      try:
         #get a job
-        for aJobTuple in self.incomingJobStream():
+        for aJobTuple in self.incomingJobStream(databaseCursor):
           self.quitCheck()
           logger.debug("%s - start got: %s", threading.currentThread().getName(), aJobTuple[1])
-          self.submitJobToThreads(aJobTuple)
+          self.submitJobToThreads(databaseCursor, aJobTuple)
       except KeyboardInterrupt:
         logger.info("%s - quit request detected", threading.currentThread().getName())
-        self.mainThreadDatabaseConnection.rollback()
+        databaseConnection.rollback()
         self.quit = True
         break
     self.cleanup()
@@ -366,53 +421,24 @@ class Processor(object):
         to create the record in the 'reports' table, then start the analysis of the dump file.
 
         input parameters:
-          jobTuple: a tuple containing three items: the jobId (the primary key from the jobs table), the
-              jobUuid (a unique string with the json file basename minus the extension) and the jobPathname
-              (a string with the full pathname of the json file that defines the job)
+          jobTuple: a tuple containing up to three items: the jobId (the primary key from the jobs table), the
+              jobUuid (a unique string with the json file basename minus the extension) and the priority (an integer)
     """
+    threadName = threading.currentThread().getName()
     try:
-      if self.quit: return
-      try:
-        threadLocalDatabaseConnection = self.threadLocalDatabaseConnections[threading.currentThread().getName()]
-      except KeyError:
-        try:
-          logger.info("%s - connecting to database", threading.currentThread().getName())
-          threadLocalDatabaseConnection = self.threadLocalDatabaseConnections[threading.currentThread().getName()] = psycopg2.connect(self.databaseDSN)
-        except:
-          self.quit = True
-          logger.critical("%s - cannot connect to the database", threading.currentThread().getName())
-          socorro.lib.util.reportExceptionAndAbort(logger) # can't continue without a database connection
-    except (KeyboardInterrupt, SystemExit):
-      logger.info("%s - quit request detected", threading.currentThread().getName())
-      self.quit = True
-      return
-
-    try:
-      threadLocalCursor = threadLocalDatabaseConnection.cursor()
-      threadLocalCursor.execute("select 1")
-    #except (psycopg2.OperationalError, psycopg2.ProgrammingError):
+      threadLocalDatabaseConnection, threadLocalCursor = self.databaseConnectionPool.connectionCursorPair()
     except:
-      # did the connection time out?
-      logger.info("%s - trying to re-establish a database connection", threading.currentThread().getName())
-      try:
-        threadLocalDatabaseConnection = self.threadLocalDatabaseConnections[threading.currentThread().getName()] = psycopg2.connect(self.databaseDSN)
-        threadLocalCursor = threadLocalDatabaseConnection.cursor()
-        threadLocalCursor.execute("select 1")
-      #except (psycopg2.OperationalError, psycopg2.ProgrammingError):
-      except:
-        logger.critical("%s - something's gone horribly wrong with the database connection", threading.currentThread().getName())
-        self.quit = True
-        socorro.lib.util.reportExceptionAndAbort(logger)
-
-
+      self.quit = True
+      socorro.lib.util.reportExceptionAndAbort(logger) # can't continue without a database connection
     try:
-      jobId, jobUuid, jobPathname, jobPriority = jobTuple
-      logger.info("%s - starting job: %s, %s", threading.currentThread().getName(), jobId, jobUuid)
-      threadLocalCursor = threadLocalDatabaseConnection.cursor()
+      jobId, jobUuid, jobPriority, jobPathname = jobTuple
+      logger.info("%s - starting job: %s, %s", threadName, jobId, jobUuid)
       startedDateTime = datetime.datetime.now()
       threadLocalCursor.execute("update jobs set startedDateTime = %s where id = %s", (startedDateTime, jobId))
       threadLocalDatabaseConnection.commit()
 
+      jobPathname = self.jsonPathForUuidInJsonDumpStorage(jobUuid)
+      dumpfilePathname = self.dumpPathForUuidInJsonDumpStorage(jobUuid)
       jsonFile = open(jobPathname)
       try:
         jsonDocument = simplejson.load(jsonFile)
@@ -420,7 +446,6 @@ class Processor(object):
         jsonFile.close()
       reportId = self.createReport(threadLocalCursor, jobUuid, jsonDocument, jobPathname)
       threadLocalDatabaseConnection.commit()
-      dumpfilePathname = "%s%s" % (jobPathname[:-len(self.config.jsonFileSuffix)], self.config.dumpFileSuffix)
       truncated = self.doBreakpadStackDumpAnalysis(reportId, jobUuid, dumpfilePathname, threadLocalCursor)
       self.quitCheck()
       #finished a job - cleanup
@@ -428,20 +453,20 @@ class Processor(object):
       threadLocalCursor.execute("update reports set startedDateTime = %s, completedDateTime = %s, success = True, truncated = %s where id = %s", (startedDateTime, datetime.datetime.now(), truncated, reportId))
       #self.updateRegistrationNoCommit(threadLocalCursor)
       threadLocalDatabaseConnection.commit()
-      logger.info("%s - succeeded and committed: %s, %s", threading.currentThread().getName(), jobId, jobUuid)
+      logger.info("%s - succeeded and committed: %s, %s", threadName, jobId, jobUuid)
     except (KeyboardInterrupt, SystemExit):
-      logger.info("%s - quit request detected", threading.currentThread().getName())
+      logger.info("%s - quit request detected", threadName)
       self.quit = True
       try:
-        logger.info("%s - abandoning job with rollback: %s, %s", threading.currentThread().getName(), jobId, jobUuid)
+        logger.info("%s - abandoning job with rollback: %s, %s", threadName, jobId, jobUuid)
         threadLocalDatabaseConnection.rollback()
         threadLocalDatabaseConnection.close()
       except:
         pass
     except DuplicateEntryException, x:
-      logger.warning("%s - duplicate entry: %s", threading.currentThread().getName(), jobUuid)
+      logger.warning("%s - duplicate entry: %s", threadName, jobUuid)
     except psycopg2.OperationalError:
-      logger.critical("%s - something's gone horribly wrong with the database connection", threading.currentThread().getName())
+      logger.critical("%s - something's gone horribly wrong with the database connection", threadName)
       self.quit = True
       socorro.lib.util.reportExceptionAndAbort(logger)
     except Exception, x:
@@ -523,9 +548,9 @@ class Processor(object):
       last_crash = None
     def insertReport():
       threadLocalCursor.execute ("""insert into reports
-                                    (id,                        uuid,      date,         product,      version,      build,       url,       install_age, last_crash, uptime, email,       build_date, user_id,      comments) values
-                                    (nextval('seq_reports_id'), %s,        %s,           %s,           %s,           %s,          %s,        %s,          %s,         %s,     %s,          %s,         %s,           %s)""",
-                                    (                           uuid, report_date,  product, version, build, url, install_age, last_crash, uptime, email, build_date, user_id, comments))
+                                    (id,                        uuid, date,        product, version, build, url, install_age, last_crash, uptime, email, build_date, user_id, comments) values
+                                    (nextval('seq_reports_id'), %s,   %s,          %s,      %s,      %s,    %s,  %s,          %s,         %s,     %s,    %s,         %s,      %s)""",
+                                    (                           uuid, report_date, product, version, build, url, install_age, last_crash, uptime, email, build_date, user_id, comments))
     try:
       insertReport()
     except psycopg2.IntegrityError:
