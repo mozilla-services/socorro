@@ -1,16 +1,16 @@
 import unittest
 import logging
-import util
+import socorro.lib.util as util
 import exceptions
 
 class TestingException(exceptions.Exception):
   pass
-    
+
 class TestingLogger:
   def __init__(self):
     self.levels = []
     self.buffer = []
-    
+
   def log(self, loggingLevel, message, *args):
     self.levels.append(loggingLevel)
     if not message: message = ''
@@ -31,11 +31,11 @@ def ignoreAlways(*args, **kwargs):
   return True
 def ignoreNever(*args,**kwargs):
   return False
-    
+
 class TestUtil(unittest.TestCase):
   def setUp(self):
     pass
-    
+
   def tearDown(self):
     pass
 
@@ -100,13 +100,13 @@ class TestUtil(unittest.TestCase):
     assert("key" == util.limitStringOrNone("key",8))
     assert("key" == util.limitStringOrNone("keyway",3))
     assert(None == util.limitStringOrNone(14,2))
-    
+
   def testLookupLimitedStringOrNone(self):
     dict = {"key":"value"}
     assert("value" == util.lookupLimitedStringOrNone(dict,"key",8))
     assert("val" == util.lookupLimitedStringOrNone(dict,"key",3))
     assert(None == util.lookupLimitedStringOrNone(dict,"not",33))
-  
+
   def testCachingIterator(self):
     max = 25
     data = [ x for x in range(0,max)]
@@ -135,4 +135,4 @@ class TestUtil(unittest.TestCase):
 
 if __name__ == "__main__":
   unittest.main()
-  
+
