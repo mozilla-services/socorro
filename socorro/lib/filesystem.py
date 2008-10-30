@@ -21,16 +21,11 @@
 
 import os
 
-#--------------------------------------------------
-# d e f a u l t A c c e p t a n c e F u n c t i o n
-#--------------------------------------------------
+#-----------------------------------------------------------------------------------------------------------------
 def defaultAcceptanceFunction (dummy):
   return True
 
-
-#----------------------------------
-# f i n d F i l e G e n e r a t o r
-#----------------------------------
+#-----------------------------------------------------------------------------------------------------------------
 def findFileGenerator(rootDirectory, acceptanceFunction=defaultAcceptanceFunction, directoryAcceptanceFunction=defaultAcceptanceFunction, directorySortFunction=cmp, maxDepth=100000, **kwargs):
   """This function returns a generator that walks a filesystem tree.  It applies a user supplied function
   to each file that it encounters.  It only returns files for which the user supplied function returns true.
@@ -45,9 +40,7 @@ def findFileGenerator(rootDirectory, acceptanceFunction=defaultAcceptanceFunctio
     if acceptanceFunction(aCurrentDirectoryItem):
       yield aCurrentDirectoryItem
 
-#
-
+#=================================================================================================================
 if __name__ == "__main__":
-
   for path, name, pathname in findFileGenerator("."):
     print pathname
