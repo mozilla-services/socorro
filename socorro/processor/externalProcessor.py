@@ -22,6 +22,11 @@ class ProcessorWithExternalBreakpad (processor.Processor):
   def __init__(self, config):
     super(ProcessorWithExternalBreakpad, self).__init__(config)
 
+    assert "processorSymbolsPathnameList" in config, "processorSymbolsPathnameList is missing from the configuration"
+    assert "crashingThreadFrameThreshold" in config, "crashingThreadFrameThreshold is missing from the configuration"
+    assert "crashingThreadTailFrameThreshold" in config, "crashingThreadTailFrameThreshold is missing from the configuration"
+    assert "stackwalkCommandLine" in config, "stackwalkCommandLine is missing from the configuration"
+
     #preprocess the breakpad_stackwalk command line
     # convert parameters of the form "$paramterName" into a python parameter of the form "%(paramterName)s"
     self.commandLine = re.compile(r'(\$(\w+))').sub(r'%(\2)s', config.stackwalkCommandLine)
