@@ -3,23 +3,12 @@
 #
 # A mod_python environment for the crash report collector
 #
-import socorro.lib.ConfigurationManager
 
-try:
-  import socorro.collector.collect as collect
-except ImportError:
-  import collect
+import datetime as dt
+import config.collectorconfig as configModule
+import socorro.collector.initializer
 
-try:
-  import config.collectorconfig as configModule
-except ImportError:
-  import collectorconfig as configModule
-
-config = socorro.lib.ConfigurationManager.newConfiguration(configurationModule=configModule,automaticHelp=False)
-collectObject = collect.Collect(config)
-
-import sys
-
+#-----------------------------------------------------------------------------------------------------------------
 if __name__ != "__main__":
   from mod_python import apache
   from mod_python import util
@@ -29,7 +18,20 @@ else:
   from socorro.collector.modpython_testhelper import apache
   from socorro.collector.modpython_testhelper import util
 
+#-----------------------------------------------------------------------------------------------------------------
 def handler(req):
+  global persistentStorage
+  try:
+    x = persistentStorage
+  except NameError:
+    persistentStorage = socorro.collector.initializer.createPersistentInitialization(configModule)
+
+  logger = persistentStorage["logger"]
+  config = persistentStorage["config"]
+  collectObject = persistentStorage["collectObject"]
+
+  logger.debug("handler invoked using subinterpreter: %s", req.interpreter)
+
   if req.method == "POST":
     try:
       theform = util.FieldStorage(req)
@@ -37,29 +39,37 @@ def handler(req):
       if not dump.file:
         return apache.HTTP_BAD_REQUEST
 
-      jsonData = collectObject.createJSON(theform)
-      if collectObject.throttle(jsonData):
-        storageRoot = config.deferredStorageRoot
-        useIndexSubdirectories = True
+      jsonDataDictionary = collectObject.makeJsonDictFromForm(theform)
+      if collectObject.throttle(jsonDataDictionary):
+        fileSystemStorage = persistentStorage["deferredFileSystemStorage"]
       else:
-        storageRoot = config.storageRoot
-        useIndexSubdirectories = False
+        fileSystemStorage = persistentStorage["standardFileSystemStorage"]
+      uuid = collectObject.generateUuid(jsonDataDictionary)
 
-      (dumpID, dumpPath, dateString) = collectObject.storeDump(dump.file, storageRoot)
-      collectObject.storeJSON(dumpID, dumpPath, jsonData, storageRoot, useIndexSubdirectories)
+      jsonFileHandle, dumpFileHandle = fileSystemStorage.newEntry(uuid, persistentStorage["hostname"], dt.datetime.now())
+      try:
+        collectObject.storeDump(dump.file, dumpFileHandle)
+        collectObject.storeJson(jsonDataDictionary, jsonFileHandle)
+      finally:
+        dumpFileHandle.close()
+        jsonFileHandle.close()
+
       req.content_type = "text/plain"
-      req.write(collectObject.makeResponseForClient(dumpID, dateString))
+      req.write("CrashID=%s%s\n" % (config.dumpIDPrefix, uuid))
     except:
-      print >>sys.stderr, "Exception: %s" % sys.exc_info()[0]
-      print >>sys.stderr, sys.exc_info()[1]
-      print >>sys.stderr
-      sys.stderr.flush()
+      logger.info("mod-python subinterpreter name: %s", req.interpreter)
+      sutil.reportExceptionAndContinue(logger)
+      #print >>sys.stderr, "Exception: %s" % sys.exc_info()[0]
+      #print >>sys.stderr, sys.exc_info()[1]
+      #print >>sys.stderr
+      #sys.stderr.flush()
       return apache.HTTP_INTERNAL_SERVER_ERROR
     return apache.OK
   else:
     return apache.HTTP_METHOD_NOT_ALLOWED
 
 
+#-----------------------------------------------------------------------------------------------------------------
 if __name__ == "__main__":
   from socorro.collector.modpython_testhelper import *
 
@@ -69,7 +79,7 @@ if __name__ == "__main__":
     "StartupTime": "1206120381",
     "Vendor": "Mozilla",
     "InstallTime": "1204828702",
-    "timestamp": "1206206829.56",
+    #"timestamp": "1206206829.56",
     "Add-ons": "{19503e42-ca3c-4c27-b1e2-9cdb2170ee34}:0.8.3,inspector@mozilla.org:1.9b4pre,{972ce4c6-7e08-4474-a285-3208198ce6fd}:2.0",
     "BuildID": "2008022517",
     "SecondsSinceLastCrash": "63935",
@@ -81,5 +91,6 @@ if __name__ == "__main__":
     "CrashTime": "1206120413",
     "upload_file_minidump":FakeDump(FakeFile("this is a dump"))
   }
+  req.interpreter = "FakeReq interpreter"
 
   print handler(req)
