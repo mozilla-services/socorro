@@ -121,8 +121,10 @@ class JsonDumpStorage(object):
     jsonNewPath = '%s%s%s%s' % (nameDir,os.sep,uuid,self.jsonSuffix)
     dumpNewPath = '%s%s%s%s' % (nameDir,os.sep,uuid,self.dumpSuffix)
     shutil.copy2(jsonpath,jsonNewPath)
+    os.chmod(jsonNewPath,self.dumpPermissions)
     try:
       shutil.copy2(dumppath,dumpNewPath)
+      os.chmod(dumpNewPath,self.dumpPermissions)
       if self.dumpGID:
         os.chown(dumpNewPath,-1,self.dumpGID)
         os.chown(jsonNewPath,-1,self.dumpGID)
