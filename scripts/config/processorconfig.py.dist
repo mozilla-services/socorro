@@ -61,12 +61,6 @@ batchJobLimit = cm.Option()
 batchJobLimit.doc = 'the number of jobs to pull in a time'
 batchJobLimit.default = 10000
 
-debug = cm.Option()
-debug.doc = 'do debug output and routines'
-debug.default = False
-debug.singleCharacter = 'D'
-debug.fromStringConverter = cm.booleanConverter
-
 logFilePathname = cm.Option()
 logFilePathname.doc = 'full pathname for the log file'
 logFilePathname.default = './processor.log'

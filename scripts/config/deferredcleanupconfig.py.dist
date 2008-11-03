@@ -1,10 +1,7 @@
 import socorro.lib.ConfigurationManager as cm
 
 # Storage constants
-try:
-  from config.commonconfig import storageRoot
-except ImportError:
-    from commonconfig import storageRoot
+
 try:
   from config.commonconfig import deferredStorageRoot
 except ImportError:
@@ -14,15 +11,9 @@ maximumDeferredJobAge = cm.Option()
 maximumDeferredJobAge.doc = 'the maximum number of days that deferred jobs stick around'
 maximumDeferredJobAge.default = 2
 
-dryRun = cm.Option()
-dryRun.doc =  "don't really delete anything"
-dryRun.default = False
-dryRun.fromStringConverter = cm.booleanConverter
-
-
 logFilePathname = cm.Option()
 logFilePathname.doc = 'full pathname for the log file'
-logFilePathname.default = './monitor.log'
+logFilePathname.default = './deferredCleanup.log'
 
 logFileMaximumSize = cm.Option()
 logFileMaximumSize.doc = 'maximum size in bytes of the log file'
