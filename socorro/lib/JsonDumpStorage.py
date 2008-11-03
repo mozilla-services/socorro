@@ -90,8 +90,12 @@ class JsonDumpStorage(object):
       # if this matters at all, we should re-write __dateRelativePath to do the next line and call it both places
       os.symlink(os.path.join(self.toDateFromName, dateDir[len(self.root)+len(self.dateName)+2:]),os.path.join(nameDir,uuid))
       os.symlink(self.__nameRelativePath(uuid),os.path.join(dateDir,uuid))
-      jf = open(os.path.join(nameDir,uuid+self.jsonSuffix),'w')
-      df = open(os.path.join(nameDir,uuid+self.dumpSuffix),'w')
+      jname = os.path.join(nameDir,uuid+self.jsonSuffix)
+      jf = open(jname,'w')
+      os.chmod(jname,self.dumpPermissions)
+      dname = os.path.join(nameDir,uuid+self.dumpSuffix)
+      df = open(dname,'w')
+      os.chmod(dname,self.dumpPermissions)
       if self.dumpGID:
         os.chown(os.path.join(nameDir,uuid+self.jsonSuffix),-1,self.dumpGID)
         os.chown(os.path.join(nameDir,uuid+self.dumpSuffix),-1,self.dumpGID)
@@ -382,12 +386,15 @@ class JsonDumpStorage(object):
     Raises OSError on failure
     """
     path = self.__nameAbsPath(uuid)
+    omask = os.umask(0)
     try:
       os.makedirs(path,self.dirPermissions)
       self.__fixupGroup(path,self.dumpGID)
     except OSError, e:
+      os.umask(omask)
       if not os.path.isdir(path):
         raise e
+    os.umask(omask)
     return path
 
   def __namePath(self,uuid,startswith):
@@ -436,12 +443,15 @@ class JsonDumpStorage(object):
     create directory as needed, return path to directory. Raises OSError on failure.
     """
     dpath = self.__dateAbsPath(dt,head,checkSize=True)
+    omask = os.umask(0)
     try:
       os.makedirs(dpath,self.dirPermissions)
       self.__fixupGroup(dpath,self.dumpGID)
     except OSError,e:
+      os.umask(omask)
       if not os.path.isdir(dpath):
         raise e
+    os.umask(omask)
     return dpath
 
   def __readableOrThrow(self, path):
