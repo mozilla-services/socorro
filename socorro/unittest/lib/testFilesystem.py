@@ -3,8 +3,8 @@ import os
 import shutil
 import types
 import sys
-#import socorro.lib.filesystem as f
-import testWalkVersusFilesystem as f
+import socorro.lib.filesystem as f
+#import testWalkVersusFilesystem as f
 
 # Describes the directory/file structure we will look at:
 # key is a name

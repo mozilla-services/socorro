@@ -1,4 +1,4 @@
-import ConfigurationManager as cm
+import socorro.lib.ConfigurationManager as cm
 
 testNil = cm.Option()
 

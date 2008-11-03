@@ -3,7 +3,7 @@ import sys
 import os
 import copy
 import cStringIO
-import ConfigurationManager as CM
+import socorro.lib.ConfigurationManager as CM
 import optionfile
 
 class HelpHandler:
