@@ -47,6 +47,7 @@ class ProcessorWithExternalBreakpad (processor.Processor):
           input parameters:
             dumpfilePathname: the complete pathname of the dumpfile to be analyzed
     """
+    logger.debug("%s - analyzing %s", threading.currentThread().getName(), dumpfilePathname)
     if type(self.config.processorSymbolsPathnameList) is list:
       symbol_path = ' '.join(['"%s"' % x for x in self.config.processorSymbolsPathnameList])
     else:
@@ -117,7 +118,10 @@ class ProcessorWithExternalBreakpad (processor.Processor):
     reportUpdateValues = {"id": reportId}
     reportUpdateSQLPhrases = {"osPhrase":"", "cpuPhrase":"", "crashPhrase":""}
 
+    analysisRerturnedLines = False
     for line in dumpAnalysisLineiterator:
+      analysisRerturnedLines = True
+      #logger.debug("%s -   %s", threading.currentThread().getName(), line)
       line = line.strip()
       # empty line separates header data from thread data
       if line == '':
@@ -154,6 +158,9 @@ class ProcessorWithExternalBreakpad (processor.Processor):
                                                       #(reportId, moduleCounter, filename, debug_id, module_version, debug_filename))
           #moduleCounter += 1
 
+    if not analysisRerturnedLines:
+      logger.error("%s - %s returned no header lines for reportid: %s", threading.currentThread().getName(), self.config.minidump_stackwalkPathname, reportId)
+
     if len(reportUpdateValues) > 1:
       reportUpdateSQL = ("""update reports set %(osPhrase)s%(cpuPhrase)s%(crashPhrase)s where id = PERCENT(id)s""" % reportUpdateSQLPhrases).replace(", w", " w").replace("PERCENT","%")
       databaseCursor.execute(reportUpdateSQL, reportUpdateValues)
@@ -179,7 +186,10 @@ class ProcessorWithExternalBreakpad (processor.Processor):
     logger.info("%s - analyzeFrames", threading.currentThread().getName())
     frameCounter = 0
     truncated = False
+    analysisRerturnedLines = False
     for line in dumpAnalysisLineiterator:
+      analysisRerturnedLines = True
+      #logger.debug("%s -   %s", threading.currentThread().getName(), line)
       line = line.strip()
       if line == '': continue  #some dumps have unexpected blank lines - ignore them
       (thread_num, frame_num, module_name, function, source, source_line, instruction) = [socorro.lib.util.emptyFilter(x) for x in line.split("|")]
@@ -200,5 +210,9 @@ class ProcessorWithExternalBreakpad (processor.Processor):
       elif frameCounter:
         break
     dumpAnalysisLineiterator.stopUsingSecondaryCache()
+
+    if not analysisRerturnedLines:
+      logger.error("%s - %s returned no frame lines for reportid: %s", threading.currentThread().getName(), self.config.minidump_stackwalkPathname, reportId)
+
     return truncated
 
