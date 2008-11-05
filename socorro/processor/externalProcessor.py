@@ -88,13 +88,9 @@ class ProcessorWithExternalBreakpad (processor.Processor):
     finally:
       dumpAnalysisLineiterator.theIterator.close() #this is really a handle to a file-like object - got to close it
     # is the return code from the invocation important?  Uncomment, if it is...
-    #waitCount = 0
-    #while subprocessHandle.returncode is None:
-    #  time.sleep(1)
-    #  waitCount += 1
-    #  if waitCount == 20: break
-    #if subprocessHandle.returncode is not None and subprocessHandle.returncode != 0:
-    #  raise Exception("%s failed with return code %s when processing dump %s" %(self.config.minidump_stackwalkPathname, subprocessHandle.returncode, uuid))
+    returncode = subprocessHandle.wait()
+    if returncode is not None and returncode != 0:
+      raise Exception("%s failed with return code %s when processing dump %s" %(self.config.minidump_stackwalkPathname, subprocessHandle.returncode, uuid))
     return truncated
 
 

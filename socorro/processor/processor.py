@@ -552,6 +552,7 @@ class Processor(object):
                                     (nextval('seq_reports_id'), %s,   %s,          %s,      %s,      %s,    %s,  %s,          %s,         %s,     %s,    %s,         %s,      %s)""",
                                     (                           uuid, report_date, product, version, build, url, install_age, last_crash, uptime, email, build_date, user_id, comments))
     try:
+      #logger.debug("%s - %s", threading.currentThread().getName(), str(jsonDocument))
       insertReport()
     except psycopg2.IntegrityError:
       logger.debug("%s - %s: this report already exists",  threading.currentThread().getName(), uuid)
