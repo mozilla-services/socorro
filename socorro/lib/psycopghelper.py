@@ -66,8 +66,7 @@ class SQLDidNotReturnSingleRow (Exception):
 
 #=================================================================================================================
 class CannotConnectToDatabase(Exception):
-  def __init__(self, msg):
-    super(CannotConnectToDatabase, self).__init__(msg)
+  pass
 
 #=================================================================================================================
 class DatabaseConnectionPool(dict):
