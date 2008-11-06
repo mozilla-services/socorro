@@ -135,7 +135,7 @@ class TestConfigurationManager(unittest.TestCase):
     except CM.NotAnOptionError, e:
       assert(True)
     except Exception, e:
-      assert(False)
+      assert(False), "Unexpected exception (%s): %s"% (type(e),e)
 
     copt = [('c',  'config', True, './config.tst', "the test config file"),('r','rabbit', True, 'bambi', 'rabbits are bunnies')]
     copt.append(('b','badger',True,'gentle','some badgers are gentle'))

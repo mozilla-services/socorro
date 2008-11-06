@@ -2,6 +2,7 @@ import unittest
 import socorro.lib.psycopghelper as ppghelper
 import psycopg2
 import psycopg2.extensions
+import datetime as DT
 """
 Assume that psycopg2 works, then all we need to do is assure ourselves
 that our simplistic wrap around a returned array is correct
@@ -15,16 +16,28 @@ class TestMultiCursor(psycopg2.extensions.cursor):
       for j in range(numCols):
         aRow.append('Row %d, Column %d' %(i,j))
       self.result.append(aRow)
-      
+    self.next = self.__next()
   def execute(self,sql, args=None):
     pass
   def fetchall(self):
     return self.result
+  def __next(self):
+    index = 0
+    while True:
+      try:
+        yield self.result[index]
+        index += 1
+      except:
+        yield None
+  def fetchone(self):
+    try:
+      return self.next.next()
+    except:
+      return None
         
 class TestEmptyCursor(psycopg2.extensions.cursor):
   def __init__(self):
     self.result = []
-      
   def execute(self,sql, args=None):
     pass
   def fetchall(self):
@@ -33,14 +46,22 @@ class TestEmptyCursor(psycopg2.extensions.cursor):
 class TestSingleCursor(psycopg2.extensions.cursor):
   def __init__(self):
     self.result = [['Row 0, Column 0']]
-      
   def execute(self,sql, args=None):
     pass
   def fetchall(self):
     return self.result
-        
+
 
 class TestPsycopghelper(unittest.TestCase):
+  def testExecute(self):
+    aCursor = TestMultiCursor(numCols=1,numRows=3)
+    f = ppghelper.execute(aCursor,"")
+    vals = [x for x in f]
+    assert 3 == len(vals)
+    assert 'Row 0, Column 0' == vals[0][0]
+    assert 'Row 2, Column 0' == vals[-1][0]
+    aCursor = TestMultiCursor(numCols=1,numRows=1)
+  
   def testSingleValueEmpty(self):
     try:
       cur = TestEmptyCursor()

@@ -34,14 +34,6 @@ def execute (aCursor, sql):
     else:
       break
 
-#-----------------------------------------------------------------------------------------------------------------
-def postgreSQLTypeConversion (x):
-  if type(x) == datetime.datetime:
-    return "'%4d-%2d-%2d %2d:%2d:%2d'" % (x.year, x.month, x.day, x.hour, x.minute, x.second)
-  if type(x) == str:
-    return "'%s'" % x
-  return str(x)
-
 #=================================================================================================================
 class LoggingCursor(psycopg2.extensions.cursor):
   #-----------------------------------------------------------------------------------------------------------------
@@ -78,6 +70,7 @@ class DatabaseConnectionPool(dict):
 
   #-----------------------------------------------------------------------------------------------------------------
   def connectToDatabase(self):
+    """ Deliberately do NOT put the connection into the pool"""
     threadName = threading.currentThread().getName()
     try:
       self.logger.info("%s - connecting to database", threadName)
@@ -89,6 +82,7 @@ class DatabaseConnectionPool(dict):
 
   #-----------------------------------------------------------------------------------------------------------------
   def connectionCursorPairNoTest(self):
+    """Try to re-use this thread's connection, else create one and use that"""
     threadName = threading.currentThread().getName()
     try:
       return self[threadName]
@@ -98,6 +92,7 @@ class DatabaseConnectionPool(dict):
 
   #-----------------------------------------------------------------------------------------------------------------
   def connectionCursorPair(self):
+    """Like connecionCursorPairNoTest, but test that the specified connection actually works"""
     connection, cursor = self.connectionCursorPairNoTest()
     try:
       cursor.execute("select 1")
