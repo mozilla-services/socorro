@@ -6,51 +6,72 @@ import socorro.database.postgresql as socorro_pg
 
 import socorro.lib.util as socorro_util
 
-class FakeCursor(object):
-  def __init__(self):
-    pass
-  def execute(self, sql):
-    print sql
+#-----------------------------------------------------------------------------------------------------------------
+def iterateBetweenDatesGeneratorCreator(minDate, maxDate):
+  def anIterator():
+    oneWeek = dt.timedelta(7)
+    beginWeekDay = minDate.weekday()
+    if beginWeekDay:
+      aDate = minDate - dt.timedelta(beginWeekDay) # begin on Monday before minDate
+    else:
+      aDate = minDate
+    while aDate < maxDate:
+      nextMonday = aDate + oneWeek
+      yield (aDate, nextMonday)
+      aDate = nextMonday
+  return anIterator
 
 #-----------------------------------------------------------------------------------------------------------------
-def iterateBetweenDatesByIsoWeekGeneratorCreator(minDate, maxDate):
-  def anIterator():
-    beginIsoYear, beginIsoWeek, beginIsoDay = minDate.isocalendar()
-    oneWeek = dt.timedelta(7)
-    aDate = minDate - dt.timedelta(beginIsoDay - 1) # begin on Monday before minDate
-    while aDate < maxDate:
-      yield aDate.isocalendar()[:2]
-      aDate += oneWeek
-  return anIterator
+def nowIterator():
+  oneWeek = dt.timedelta(7)
+  now = dt.datetime.now()
+  nowWeekDay = now.weekday()
+  if nowWeekDay:
+    mondayDate = now - dt.timedelta(nowWeekDay) # nearest Monday before now
+  else:
+    mondayDate = now
+  yield (mondayDate, mondayDate + oneWeek)
+
+#-----------------------------------------------------------------------------------------------------------------
+def nextWeekIterator():
+  oneWeek = dt.timedelta(7)
+  now = dt.datetime.now()
+  nowWeekDay = now.weekday()
+  if nowWeekDay:
+    nextMonday = now - dt.timedelta(nowWeekDay) + oneWeek
+  else:
+    nextMonday = now
+  yield (nextMonday, nextMonday + oneWeek)
 
 #-----------------------------------------------------------------------------------------------------------------
 def emptyFunction():
   return ''
 
-#==========================================================
+#=================================================================================================================
 class DatabaseObject(object):
   def __init__(self, name=None, logger=None, creationSql=None, **kwargs):
     super(Table, self).__init__()
     self.name = name
     self.creationSql = creationSql
     self.logger = logger
+  #-----------------------------------------------------------------------------------------------------------------
   def create(self, databaseCursor):
     databaseCursor.execute(self.creationSql)
     self.additionalCreationProcedures(databaseCursor)
+  #-----------------------------------------------------------------------------------------------------------------
   def additionalCreationProcedures(self, databaseCursor):
     pass
+  #-----------------------------------------------------------------------------------------------------------------
   def updateDefinition(self, databaseCursor):
     pass
+  #-----------------------------------------------------------------------------------------------------------------
   def createPartitions(self, databaseCursor, iterator):
     pass
 
+#=================================================================================================================
 Table = DatabaseObject
 
-#-----------------------------------------------------------------------------------------------------------------
-def nowIterator():
-  yield dt.datetime.now().isocalendar()[:2]
-
-#==========================================================
+#=================================================================================================================
 class PartitionedTable(Table):
   #-----------------------------------------------------------------------------------------------------------------
   def __init__ (self, name=None, logger=None, creationSql=None, partitionNameTemplate='%s', partitionCreationSqlTemplate='', partitionCreationIterablorCreator=nowIterator, **kwargs):
@@ -80,7 +101,7 @@ class PartitionedTable(Table):
     """must return a dictionary of string substitution parameters"""
     return {}
 
-#==========================================================
+#=================================================================================================================
 class BranchesTable(Table):
   #-----------------------------------------------------------------------------------------------------------------
   def __init__ (self, logger):
@@ -93,7 +114,7 @@ class BranchesTable(Table):
                                                 PRIMARY KEY (product, version)
                                             );""")
 
-#==========================================================
+#=================================================================================================================
 class DumpsTable(PartitionedTable):
   #-----------------------------------------------------------------------------------------------------------------
   def __init__ (self, logger):
@@ -109,13 +130,13 @@ class DumpsTable(PartitionedTable):
                                              FOR EACH ROW EXECUTE PROCEDURE partition_insert_trigger();""",
                                      partitionCreationSqlTemplate="""
                                          CREATE TABLE %(partitionName)s (
-                                             CONSTRAINT %(partitionName)s_date_check CHECK ((to_char(date, 'IW') = '%(isoweek)s')),
+                                             CONSTRAINT %(partitionName)s_date_check CHECK (TIMESTAMP with time zone '%(startDate)s' <= date and date < TIMESTAMP with time zone '%(endDate)s'),
                                              PRIMARY KEY (report_id)
                                          )
                                          INHERITS (dumps);
                                          CREATE INDEX %(partitionName)s_report_id_date_key ON %(partitionName)s (report_id, date);
                                          ALTER TABLE %(partitionName)s
-                                             ADD CONSTRAINT %(partitionName)s_report_id_fkey FOREIGN KEY (report_id) REFERENCES reports_%(year)s%(isoweek)02s(id) ON DELETE CASCADE;
+                                             ADD CONSTRAINT %(partitionName)s_report_id_fkey FOREIGN KEY (report_id) REFERENCES reports_%(compressedStartDate)s(id) ON DELETE CASCADE;
                                          """
                                     )
   #-----------------------------------------------------------------------------------------------------------------
@@ -136,13 +157,17 @@ class DumpsTable(PartitionedTable):
                                     FOR EACH ROW EXECUTE PROCEDURE partition_insert_trigger();""")
   #-----------------------------------------------------------------------------------------------------------------
   def partitionCreationParameters(self, uniqueIdentifier):
-    year, isoweek = uniqueIdentifier
-    return { "partitionName": "dumps_%d%02d" % (year, isoweek),
-             "isoweek": "%02d" % isoweek,
-             "year": "%d" % year
+    startDate, endDate = uniqueIdentifier
+    startDateAsString = "%4d-%02d-%02d" % startDate.timetuple()[:3]
+    compressedStartDateAsString = startDateAsString.replace("-", "")
+    endDateAsString = "%4d-%02d-%02d" % endDate.timetuple()[:3]
+    return { "partitionName": "dumps_%s" % compressedStartDateAsString,
+             "startDate": startDateAsString,
+             "endDate": endDateAsString,
+             "compressedStartDate": compressedStartDateAsString
            }
 
-#==========================================================
+#=================================================================================================================
 class ExtensionsTable(PartitionedTable):
   #-----------------------------------------------------------------------------------------------------------------
   def __init__ (self, logger):
@@ -160,13 +185,13 @@ class ExtensionsTable(PartitionedTable):
                                                   FOR EACH ROW EXECUTE PROCEDURE partition_insert_trigger();""",
                                           partitionCreationSqlTemplate="""
                                               CREATE TABLE %(partitionName)s (
-                                                  CONSTRAINT %(partitionName)s_date_check CHECK ((to_char(date, 'IW') = '%(isoweek)s')),
+                                                  CONSTRAINT %(partitionName)s_date_check CHECK (TIMESTAMP with time zone '%(startDate)s' <= date and date < TIMESTAMP with time zone '%(endDate)s'),
                                                   PRIMARY KEY (report_id)
                                                   )
                                                   INHERITS (extensions);
                                               CREATE INDEX %(partitionName)s_report_id_date_key ON %(partitionName)s (report_id, date);
                                               ALTER TABLE %(partitionName)s
-                                                  ADD CONSTRAINT %(partitionName)s_report_id_fkey FOREIGN KEY (report_id) REFERENCES reports_%(year)s%(isoweek)02s(id) ON DELETE CASCADE;
+                                                  ADD CONSTRAINT %(partitionName)s_report_id_fkey FOREIGN KEY (report_id) REFERENCES reports_%(compressedStartDate)s(id) ON DELETE CASCADE;
                                               """
                                           )
   #-----------------------------------------------------------------------------------------------------------------
@@ -187,13 +212,17 @@ class ExtensionsTable(PartitionedTable):
                                     FOR EACH ROW EXECUTE PROCEDURE partition_insert_trigger();""")
   #-----------------------------------------------------------------------------------------------------------------
   def partitionCreationParameters(self, uniqueIdentifier):
-    year, isoweek = uniqueIdentifier
-    return { "partitionName": "extensions_%d%02d" % (year, isoweek),
-             "isoweek": "%02d" % isoweek,
-             "year": "%d" % year
+    startDate, endDate = uniqueIdentifier
+    startDateAsString = "%4d-%02d-%02d" % startDate.timetuple()[:3]
+    compressedStartDateAsString = startDateAsString.replace("-", "")
+    endDateAsString = "%4d-%02d-%02d" % endDate.timetuple()[:3]
+    return { "partitionName": "extensions_%s" % compressedStartDateAsString,
+             "startDate": startDateAsString,
+             "endDate": endDateAsString,
+             "compressedStartDate": compressedStartDateAsString
            }
 
-#==========================================================
+#=================================================================================================================
 class FramesTable(PartitionedTable):
   #-----------------------------------------------------------------------------------------------------------------
   def __init__ (self, logger):
@@ -210,13 +239,13 @@ class FramesTable(PartitionedTable):
                                               FOR EACH ROW EXECUTE PROCEDURE partition_insert_trigger();""",
                                       partitionCreationSqlTemplate="""
                                           CREATE TABLE %(partitionName)s (
-                                              CONSTRAINT %(partitionName)s_date_check CHECK ((to_char(date, 'IW') = '%(isoweek)s')),
-                                              PRIMARY KEY (report_id)
+                                              CONSTRAINT %(partitionName)s_date_check CHECK (TIMESTAMP with time zone '%(startDate)s' <= date and date < TIMESTAMP with time zone '%(endDate)s'),
+                                              PRIMARY KEY (report_id, frame_num)
                                           )
                                           INHERITS (frames);
                                           CREATE INDEX %(partitionName)s_report_id_date_key ON %(partitionName)s (report_id, date);
                                           ALTER TABLE %(partitionName)s
-                                              ADD CONSTRAINT %(partitionName)s_report_id_fkey FOREIGN KEY (report_id) REFERENCES reports_%(year)s%(isoweek)02s(id) ON DELETE CASCADE;
+                                              ADD CONSTRAINT %(partitionName)s_report_id_fkey FOREIGN KEY (report_id) REFERENCES reports_%(compressedStartDate)s(id) ON DELETE CASCADE;
                                           """
                                      )
   #-----------------------------------------------------------------------------------------------------------------
@@ -237,13 +266,17 @@ class FramesTable(PartitionedTable):
                                     FOR EACH ROW EXECUTE PROCEDURE partition_insert_trigger();""")
   #-----------------------------------------------------------------------------------------------------------------
   def partitionCreationParameters(self, uniqueIdentifier):
-    year, isoweek = uniqueIdentifier
-    return { "partitionName": "frames_%d%02d" % (year, isoweek),
-             "isoweek": "%02d" % isoweek,
-             "year": "%d" % year
+    startDate, endDate = uniqueIdentifier
+    startDateAsString = "%4d-%02d-%02d" % startDate.timetuple()[:3]
+    compressedStartDateAsString = startDateAsString.replace("-", "")
+    endDateAsString = "%4d-%02d-%02d" % endDate.timetuple()[:3]
+    return { "partitionName": "frames_%s" % compressedStartDateAsString,
+             "startDate": startDateAsString,
+             "endDate": endDateAsString,
+             "compressedStartDate": compressedStartDateAsString
            }
 
-#==========================================================
+#=================================================================================================================
 class JobsTable(Table):
   #-----------------------------------------------------------------------------------------------------------------
   def __init__ (self, logger):
@@ -295,7 +328,7 @@ class JobsTable(Table):
     if 'jobs_completeddatetime_queueddatetime_key' not in indexesList:
       databaseCursor.execute("""CREATE INDEX jobs_completeddatetime_queueddatetime_key ON jobs (completeddatetime, queueddatetime);""")
 
-#==========================================================
+#=================================================================================================================
 class PriorityJobsTable(Table):
   #-----------------------------------------------------------------------------------------------------------------
   def __init__ (self, name="priorityjobs", logger=None):
@@ -305,7 +338,7 @@ class PriorityJobsTable(Table):
                                                     uuid varchar(255) NOT NULL PRIMARY KEY
                                                 );""" % name)
 
-#==========================================================
+#=================================================================================================================
 class ProcessorsTable(Table):
   #-----------------------------------------------------------------------------------------------------------------
   def __init__ (self, logger):
@@ -323,7 +356,7 @@ class ProcessorsTable(Table):
       databaseCursor.execute("""DROP INDEX idx_processor_name;
                                 ALTER TABLE processors ADD CONSTRAINT processors_name_key UNIQUE (name);""")
 
-#==========================================================
+#=================================================================================================================
 class ReportsTable(PartitionedTable):
   #-----------------------------------------------------------------------------------------------------------------
   def __init__ (self, logger):
@@ -363,7 +396,7 @@ class ReportsTable(PartitionedTable):
                                               FOR EACH ROW EXECUTE PROCEDURE partition_insert_trigger();""",
                                        partitionCreationSqlTemplate="""
                                           CREATE TABLE %(partitionName)s (
-                                              CONSTRAINT %(partitionName)s_date_check CHECK ((to_char(date, 'IW') = '%(isoweek)s')),
+                                              CONSTRAINT %(partitionName)s_date_check CHECK (TIMESTAMP with time zone '%(startDate)s' <= date and date < TIMESTAMP with time zone '%(endDate)s'),
                                               PRIMARY KEY(id)
                                           )
                                           INHERITS (reports);
@@ -377,10 +410,14 @@ class ReportsTable(PartitionedTable):
                                       )
   #-----------------------------------------------------------------------------------------------------------------
   def partitionCreationParameters(self, uniqueIdentifier):
-    year, isoweek = uniqueIdentifier
-    return { "partitionName": "reports_%d%02d" % (year, isoweek),
-             "isoweek": "%02d" % isoweek,
-             "year": "%d" % year
+    startDate, endDate = uniqueIdentifier
+    startDateAsString = "%4d-%02d-%02d" % startDate.timetuple()[:3]
+    compressedStartDateAsString = startDateAsString.replace("-", "")
+    endDateAsString = "%4d-%02d-%02d" % endDate.timetuple()[:3]
+    return { "partitionName": "reports_%s" % compressedStartDateAsString,
+             "startDate": startDateAsString,
+             "endDate": endDateAsString,
+             "compressedStartDate": compressedStartDateAsString
            }
   #-----------------------------------------------------------------------------------------------------------------
   def updateDefinition(self, databaseCursor):
@@ -402,13 +439,13 @@ class ReportsTable(PartitionedTable):
                                     BEFORE INSERT ON reports
                                     FOR EACH ROW EXECUTE PROCEDURE partition_insert_trigger();""")
 
-#==========================================================
+#=================================================================================================================
 class ServerStatusTable(Table):
   #-----------------------------------------------------------------------------------------------------------------
   def __init__ (self, logger):
     super(ServerStatusTable, self).__init__(name='server_status', logger=logger,
                                        creationSql="""
-                                          CREATE TABLE server_status ( 
+                                          CREATE TABLE server_status (
                                               id serial NOT NULL,
                                               date_recently_completed timestamp without time zone,
                                               date_oldest_job_queued timestamp without time zone,
@@ -423,7 +460,7 @@ class ServerStatusTable(Table):
                                           CREATE INDEX idx_server_status_date ON server_status USING btree (date_created, id);
                                           """)
 
-#==========================================================
+#=================================================================================================================
 class TopCrashersTable(Table):
   #-----------------------------------------------------------------------------------------------------------------
   def __init__ (self, logger):
@@ -450,8 +487,9 @@ class TopCrashersTable(Table):
                                               ADD CONSTRAINT topcrashers_pkey PRIMARY KEY (id);
                                           """)
 
-#==========================================================
+#=================================================================================================================
 class ParititioningTriggerScript(DatabaseObject):
+  #-----------------------------------------------------------------------------------------------------------------
   def __init__ (self, logger):
     super(ParititioningTriggerScript, self).__init__(name = "partition_insert_trigger", logger=logger,
                                                      creationSql = """
@@ -460,22 +498,64 @@ RETURNS TRIGGER AS $$
 import socorro.database.server as ds
 try:
   targetTableName = ds.targetTableName(TD["table_name"], TD['new']['date'])
-  plpy.info(targetTableName)
+  #plpy.info(targetTableName)
   planName = ds.targetTableInsertPlanName (targetTableName)
-  plpy.info("using plan: %s" % planName)
+  #plpy.info("using plan: %s" % planName)
   values = ds.getValuesList(TD, SD, plpy)
-  plpy.info(str(values))
-  plpy.info('about to execute plan')
+  #plpy.info(str(values))
+  #plpy.info('about to execute plan')
   result = plpy.execute(SD[planName], values)
   return None
 except KeyError:  #no plan
-  plpy.info("oops no plan for: %s" % planName)
+  #plpy.info("oops no plan for: %s" % planName)
   SD[planName] = ds.createNewInsertQueryPlan(TD, SD, targetTableName, planName, plpy)
-  plpy.info('about to execute plan for second time')
+  #plpy.info('about to execute plan for second time')
   result = plpy.execute(SD[planName], values)
   return None
 $$
 LANGUAGE plpythonu;""")
+  def updateDefinition(self, databaseCursor):
+    databaseCursor.execute(self.creationSql)
+
+#=================================================================================================================
+class ChattyParititioningTriggerScript(DatabaseObject):
+  #-----------------------------------------------------------------------------------------------------------------
+  def __init__ (self, logger):
+    super(ChattyParititioningTriggerScript, self).__init__(name = "partition_insert_trigger", logger=logger,
+                                                     creationSql = """
+CREATE OR REPLACE FUNCTION partition_insert_trigger()
+RETURNS TRIGGER AS $$
+import socorro.database.server as ds
+import logging
+import logging.handlers
+try:
+  targetTableName = ds.targetTableName(TD["table_name"], TD['new']['date'])
+  planName = ds.targetTableInsertPlanName (targetTableName)
+  try:
+    logger = SD["logger"]
+  except KeyError:
+    SD["logger"] = logger = logging.getLogger(targetTableName)
+    logger.setLevel(logging.DEBUG)
+    rotatingFileLog = logging.handlers.RotatingFileHandler("/tmp/partitionTrigger.log", "a", 100000000, 10)
+    rotatingFileLog.setLevel(logging.DEBUG)
+    rotatingFileLogFormatter = logging.Formatter('%(asctime)s %(levelname)s - %(message)s')
+    rotatingFileLog.setFormatter(rotatingFileLogFormatter)
+    logger.addHandler(rotatingFileLog)
+    logger.debug("---------- beginning new session ----------")
+    SD["counter"] = 0
+  values = ds.getValuesList(TD, SD, plpy)
+  logger.debug("%08d plan: %s", SD["counter"], planName)
+  SD["counter"] += 1
+  result = plpy.execute(SD[planName], values)
+  return None
+except KeyError:  #no plan
+  logger.debug('creating new plan for: %s', planName)
+  SD[planName] = ds.createNewInsertQueryPlan(TD, SD, targetTableName, planName, plpy)
+  result = plpy.execute(SD[planName], values)
+  return None
+$$
+LANGUAGE plpythonu;""")
+  #-----------------------------------------------------------------------------------------------------------------
   def updateDefinition(self, databaseCursor):
     databaseCursor.execute(self.creationSql)
 
@@ -546,4 +626,21 @@ def updateDatabase(config, logger):
     databaseConnection.rollback()
     socorro_util.reportExceptionAndAbort(logger)
 
+#-----------------------------------------------------------------------------------------------------------------
+databaseObjectClassListForWeeklyPartitions = [ReportsTable,
+                                              DumpsTable,
+                                              FramesTable,
+                                              ExtensionsTable,
+                                             ]
+#-----------------------------------------------------------------------------------------------------------------
+def createNextWeeksPartitions(config, logger):
+  databaseConnection, databaseCursor = connectToDatabase(config, logger)
+  try:
+    for aDatabaseObjectClass in databaseObjectClassListForWeeklyPartitions:
+      aDatabaseObject = aDatabaseObjectClass(logger=logger)
+      aDatabaseObject.createPartitions(databaseCursor,nextWeekIterator)
+    databaseConnection.commit()
+  except:
+    databaseConnection.rollback()
+    socorro_util.reportExceptionAndAbort(logger)
 
