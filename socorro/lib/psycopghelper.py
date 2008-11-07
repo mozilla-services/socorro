@@ -103,6 +103,7 @@ class DatabaseConnectionPool(dict):
       # did the connection time out?
       self.logger.info("%s - trying to re-establish a database connection", threading.currentThread().getName())
       try:
+        del self[threading.currentThread().getName()]
         connection, cursor = self.connectionCursorPairNoTest()
         cursor.execute("select 1")
         cursor.fetchall()
