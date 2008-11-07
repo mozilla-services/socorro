@@ -1,15 +1,18 @@
 #! /usr/bin/env python
 
 import logging
+import logging.handlers
 import sys
+import datetime as dt
 
 try:
-  import deferredcleanupconfig as config
+  import config.deferredcleanupconfig as config
 except ImportError:
-    import config.deferredcleanupconfig as config
+  import deferredcleanupconfig as config
 
 import socorro.lib.ConfigurationManager as configurationManager
-import socorro.deferredcleanup.deferredcleanup as deferred
+import socorro.lib.util as util
+import socorro.lib.JsonDumpStorage as jds
 
 try:
   configurationContext = configurationManager.newConfiguration(configurationModule=config, applicationName="Socorro Deferred Storage Cleanup 1.0")
@@ -36,7 +39,18 @@ logger.addHandler(rotatingFileLog)
 logger.info("current configuration\n%s", str(configurationContext))
 
 try:
-  deferred.deferredJobStorageCleanup(configurationContext, logger)
+  try:
+    logger.info("beginning deferredJobCleanup")
+    j = jds.JsonDumpStorage(root = configurationContext.deferredStorageRoot,
+                            logger=logger)
+    numberOfDaysAsTimeDelta = dt.timedelta(days=int(configurationContext.maximumDeferredJobAge))
+    threshold = dt.datetime.now() - numberOfDaysAsTimeDelta
+    logger.info("  removing older than: %s", threshold)
+    j.removeOlderThan(threshold)
+  except (KeyboardInterrupt, SystemExit):
+    logger.debug("got quit message")
+  except:
+    util.reportExceptionAndContinue(logger)
 finally:
   logger.info("done.")
   rotatingFileLog.flush()
