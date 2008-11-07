@@ -6,14 +6,14 @@ import datetime as dt
 
 #-----------------------------------------------------------------------------------------------------------------
 def targetTableName (parentTableName, dateAsString):
-  """ Given the name of the master table and a date, determine the name of the
-  partition table that new data should go into."""
   year = int(dateAsString[:4])
   month = int(dateAsString[5:7])
   day = int(dateAsString[8:10])
   date = dt.datetime(year, month, day)
-  isoYear, isoWeek, isoDay = date.isocalendar()
-  return'%s_%s%0d' % (parentTableName, year, isoWeek)
+  weekDay = date.weekday()
+  if weekDay:
+    date = date - dt.timedelta(weekDay) # begin on Monday before minDate
+  return'%s_%4d%02d%02d' %  ((parentTableName,) + date.timetuple()[:3])
 
 #-----------------------------------------------------------------------------------------------------------------
 def targetTableInsertPlanName (tableName):
@@ -37,7 +37,7 @@ def getValuesList (triggerData, savedData, plpy):
   valueList = []
   for columnName in sortedColumnList:
     try:
-      plpy.info("%s - %s" % (columnName, triggerData["new"][columnName]))
+      #plpy.info("%s - %s" % (columnName, triggerData["new"][columnName]))
       valueList.append (triggerData["new"][columnName])
     except KeyError, x:
       # column missing in the insert
@@ -47,15 +47,15 @@ def getValuesList (triggerData, savedData, plpy):
 
 #-----------------------------------------------------------------------------------------------------------------
 def createNewInsertQueryPlan (triggerData, savedData, targetTableName, planName, plpy):
-  plpy.info("making columnList")
+  #plpy.info("making columnList")
   columnAndTypeDictionary, sortedColumnList = columnAndTypeInformation(triggerData["table_name"], savedData, plpy)
-  plpy.info("column list: %s" % ",".join(sortedColumnList))
-  plpy.info("making typeList")
+  #plpy.info("column list: %s" % ",".join(sortedColumnList))
+  #plpy.info("making typeList")
   typeList = [columnAndTypeDictionary[x] for x in sortedColumnList]
-  plpy.info("making placeHolderList")
+  #plpy.info("making placeHolderList")
   placeHolderList = ["$%d" % (x+1,) for x in range(len(typeList))]
   sql = "insert into %s (%s) values (%s)" % (targetTableName, ",".join(sortedColumnList), ",".join(placeHolderList))
-  plpy.info(sql)
+  #plpy.info(sql)
   return plpy.prepare(sql, typeList)
 
 #-----------------------------------------------------------------------------------------------------------------
@@ -73,6 +73,6 @@ def columnNameTypeDictionaryForTable (tableName, plpy):
         pg_attribute.attname""" % tableName)
   namesToTypesDict = {}
   for aRow in result:
-    plpy.info(str(aRow))
+    #plpy.info(str(aRow))
     namesToTypesDict[aRow['columnname']] = aRow['columntype']
   return namesToTypesDict
