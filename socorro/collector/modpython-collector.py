@@ -7,6 +7,7 @@
 import datetime as dt
 import config.collectorconfig as configModule
 import socorro.collector.initializer
+import socorro.collector.util as sutil
 
 #-----------------------------------------------------------------------------------------------------------------
 if __name__ != "__main__":
