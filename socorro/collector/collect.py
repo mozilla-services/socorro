@@ -78,6 +78,8 @@ class Collect(object):
         else:
           #print "bad key"
           continue
+      except IndexError:
+        pass
       if throttleMatch:
         randint = random.randint(0, 100)
         #print "throttle: %d %d %s" % (randint, percentage, randint > percentage)
