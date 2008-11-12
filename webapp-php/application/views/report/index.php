@@ -118,7 +118,10 @@
             <?php } ?>
 
             <h2>Crashing Thread</h2>
-            <?php stack_trace($report->threads[$report->crashed_thread]) ?>
+            <?php if( count($report->threads) > $report->crashed_thread ){
+                    stack_trace( $report->threads[$report->crashed_thread] );
+                  } ?>    
+               
 
             <p id="showallthreads" class="hidden"><a href="#allthreads">Show/hide other threads</a></p>
             <div id="allthreads">
