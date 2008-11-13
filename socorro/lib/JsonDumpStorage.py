@@ -263,7 +263,7 @@ class JsonDumpStorage(object):
           if r:
             yield r
       # after finishing a given directory...
-      self.__cleanDirectory(dir)
+      self.__cleanDirectory(dir, self.dateName)
 
   #-----------------------------------------------------------------------------------------------------------------
   def remove (self,uuid):
@@ -271,26 +271,31 @@ class JsonDumpStorage(object):
     Removes all instances of the uuid from the file system including the json file, the dump file, and the two links if they still exist.
     If it finds no trace of the uuid: No links, no data files, it raises a NoSuchUuidFound exception.
     """
-    rpath = self.__nameAbsPath(uuid)
+    namePath = self.__nameAbsPath(uuid)
     seenCount = 0
     try:
-      dpath = os.path.join(rpath,os.readlink(os.path.join(rpath,uuid)))
-      os.unlink(os.path.join(dpath,uuid))
+      datePath = os.path.join(namePath,os.readlink(os.path.join(namePath,uuid)))
+      os.unlink(os.path.join(datePath,uuid))
       seenCount += 1
-      os.unlink(os.path.join(rpath,uuid))
+      os.unlink(os.path.join(namePath,uuid))
       seenCount += 1
+      self.__cleanDirectory(datePath, self.dateName)
     except OSError:
       self.logger.debug("%s - %s Missing at least one link" % (threading.currentThread().getName(), uuid))
     try:
-      os.unlink(os.path.join(rpath,uuid+self.jsonSuffix))
+      os.unlink(os.path.join(namePath,uuid+self.jsonSuffix))
       seenCount += 1
     except:
       self.logger.debug("%s - %s Missing json file" % (threading.currentThread().getName(), uuid))
     try:
-      os.unlink(os.path.join(rpath,uuid+self.dumpSuffix))
+      os.unlink(os.path.join(namePath,uuid+self.dumpSuffix))
       seenCount += 1
     except:
       self.logger.debug("%s - %s Missing dump file" % (threading.currentThread().getName(), uuid))
+    try:
+      self.__cleanDirectory(namePath, os.sep.join(namePath.split(os.sep)[:-3])) #clean onlyback as far as the first name level
+    except OSError:
+      pass
     if not seenCount:
       self.logger.warning("%s - %s was totally unknown" % (threading.currentThread().getName(), uuid))
       raise NoSuchUuidFound, "no trace of %s was found" % uuid
@@ -327,10 +332,10 @@ class JsonDumpStorage(object):
           if os.path.islink(os.path.join(dir,i)):
             #self.logger.debug("removing: %s", i)
             self.remove(i)
-      contents = os.listdir(dir)
-      if contents == []:
+      #contents = os.listdir(dir)
+      #if contents == []:
         #self.logger.debug("killing empty date directory: %s", dir)
-        os.rmdir(dir)
+      #  os.rmdir(dir)
 
   #=================================================================================================================
   # private methods
@@ -467,7 +472,7 @@ class JsonDumpStorage(object):
       os.chown(path,-1,gid)
       path = os.path.split(path)[0]
 
-  def __cleanDirectory(self,datepath):
+  def __cleanDirectory(self,datepath,basePathLimit):
     """Look higher and higher up the storage branch until you hit the top or a non-empty sub-directory"""
     opath = datepath
     while True:
