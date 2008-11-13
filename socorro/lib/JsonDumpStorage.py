@@ -477,7 +477,7 @@ class JsonDumpStorage(object):
     opath = datepath
     while True:
       path,tail = os.path.split(opath)
-      if self.dateName == tail:
+      if basePathLimit == tail:
         break
       try:
         os.rmdir(opath)
