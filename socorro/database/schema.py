@@ -67,6 +67,13 @@ class DatabaseObject(object):
   #-----------------------------------------------------------------------------------------------------------------
   def createPartitions(self, databaseCursor, iterator):
     pass
+  #-----------------------------------------------------------------------------------------------------------------
+  def drop(self, databaseCursor):
+    try:
+      databaseCursor.execute("DROP TABLE IF EXISTS %s CASCADE" % self.name)
+    except:# Exception, (errno, strerror):
+      self.logger.error("An error occured dropping %s" % self.name)
+
 
 #=================================================================================================================
 Table = DatabaseObject
@@ -487,8 +494,14 @@ class TopCrashersTable(Table):
                                               ADD CONSTRAINT topcrashers_pkey PRIMARY KEY (id);
                                           """)
 
+class DatabaseTrigger(DatabaseObject):
+  #-----------------------------------------------------------------------------------------------------------------
+  def drop(self, databaseCursor):
+    pass
+
+
 #=================================================================================================================
-class ParititioningTriggerScript(DatabaseObject):
+class ParititioningTriggerScript(DatabaseTrigger):
   #-----------------------------------------------------------------------------------------------------------------
   def __init__ (self, logger):
     super(ParititioningTriggerScript, self).__init__(name = "partition_insert_trigger", logger=logger,
@@ -518,7 +531,7 @@ LANGUAGE plpythonu;""")
     databaseCursor.execute(self.creationSql)
 
 #=================================================================================================================
-class ChattyParititioningTriggerScript(DatabaseObject):
+class ChattyParititioningTriggerScript(DatabaseTrigger):
   #-----------------------------------------------------------------------------------------------------------------
   def __init__ (self, logger):
     super(ChattyParititioningTriggerScript, self).__init__(name = "partition_insert_trigger", logger=logger,
@@ -570,8 +583,8 @@ def connectToDatabase(config, logger):
 #-----------------------------------------------------------------------------------------------------------------
 databaseObjectClassListForSetup = [ParititioningTriggerScript,
                                    BranchesTable,
-                                   ProcessorsTable,
                                    JobsTable,
+                                   ProcessorsTable,
                                    PriorityJobsTable,
                                    ReportsTable,
                                    DumpsTable,
@@ -600,8 +613,8 @@ def setupDatabase(config, logger):
 #-----------------------------------------------------------------------------------------------------------------
 databaseObjectClassListForUpdate = [ParititioningTriggerScript,
                                    BranchesTable,
-                                   ProcessorsTable,
                                    JobsTable,
+                                   ProcessorsTable,
                                    PriorityJobsTable,
                                    ReportsTable,
                                    DumpsTable,
