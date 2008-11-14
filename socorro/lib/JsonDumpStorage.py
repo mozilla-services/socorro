@@ -67,7 +67,6 @@ class JsonDumpStorage(object):
     if self.dumpGID: self.dumpGID = int(self.dumpGID)
     self.logger = kwargs.get('logger', socorro_util.FakeLogger())
     self.toNameFromDate = os.sep.join(('..','..','..','..','..','..','..',self.indexName))
-    self.toDateFromName = os.sep.join(('..','..','..','..','..',self.dateName))
     self.minutesPerSlot = 5
     self.currentSuffix = {} #maps datepath including webhead to an integer suffix
 
@@ -83,15 +82,22 @@ class JsonDumpStorage(object):
     if not timestamp: timestamp = DT.datetime.now()
     df,jf = None,None
     nameDir = self.__makeNameDir(uuid) # deliberately leave this dir behind if next line throws
+    jname = os.path.join(nameDir,uuid+self.jsonSuffix)
+    try:
+      jf = open(jname,'w')
+    except IOError,x:
+      if 2 == x.errno:
+        nameDir = self.__makeNameDir(uuid) # deliberately leave this dir behind if next line throws
+        jf = open(jname,'w')
+      else:
+        raise x
     dateDir = self.__makeDateDir(timestamp,webheadHostName)
     try:
       #os.symlink(self.__dateRelativePath(timestamp,webheadHostName),os.path.join(nameDir,uuid))
       # directly calculate the date relative path rather than calling the method which does a bit more work
       # if this matters at all, we should re-write __dateRelativePath to do the next line and call it both places
-      os.symlink(os.path.join(self.toDateFromName, dateDir[len(self.root)+len(self.dateName)+2:]),os.path.join(nameDir,uuid))
+      os.symlink(os.path.join(self.toDateFromName(uuid), dateDir[len(self.root)+len(self.dateName)+2:]),os.path.join(nameDir,uuid))
       os.symlink(self.__nameRelativePath(uuid),os.path.join(dateDir,uuid))
-      jname = os.path.join(nameDir,uuid+self.jsonSuffix)
-      jf = open(jname,'w')
       os.chmod(jname,self.dumpPermissions)
       dname = os.path.join(nameDir,uuid+self.dumpSuffix)
       df = open(dname,'w')
@@ -120,7 +126,14 @@ class JsonDumpStorage(object):
     nameDir = self.__makeNameDir(uuid) # deliberately leave this dir behind if next line throws
     jsonNewPath = '%s%s%s%s' % (nameDir,os.sep,uuid,self.jsonSuffix)
     dumpNewPath = '%s%s%s%s' % (nameDir,os.sep,uuid,self.dumpSuffix)
-    shutil.copy2(jsonpath,jsonNewPath)
+    try:
+      shutil.copy2(jsonpath,jsonNewPath)
+    except IOError,x:
+      if 2 == x.errno:
+        nameDir = self.__makeNameDir(uuid) # deliberately leave this dir behind if next line throws
+        shutil.copy2(jsonpath,jsonNewPath)
+      else:
+        raise x
     os.chmod(jsonNewPath,self.dumpPermissions)
     try:
       shutil.copy2(dumppath,dumpNewPath)
@@ -135,7 +148,7 @@ class JsonDumpStorage(object):
         raise e
     if createLinks:
       dateDir = self.__makeDateDir(timestamp,webheadHostName)
-      os.symlink(self.__dateRelativePath(timestamp,webheadHostName),os.path.join(nameDir,uuid))
+      os.symlink(self.__dateRelativePath(timestamp,webheadHostName,uuid),os.path.join(nameDir,uuid))
       try:
         os.symlink(self.__nameRelativePath(uuid),os.path.join(dateDir,uuid))
       except OSError, e:
@@ -215,10 +228,10 @@ class JsonDumpStorage(object):
     Removes the links associated with the two data files for this uuid, thus marking them as seen.
     Quietly returns if the uuid has no associated links.
     """
-    rpath = self.__nameAbsPath(uuid)
+    namePath = self.__nameAbsPath(uuid)
     dpath = None
     try:
-      dpath = os.path.join(rpath,os.readlink(os.path.join(rpath,uuid)))
+      dpath = os.path.join(namePath,os.readlink(os.path.join(namePath,uuid)))
       os.unlink(os.path.join(dpath,uuid))
     except OSError, e:
       if 2 == e.errno: # no such file or directory
@@ -226,7 +239,7 @@ class JsonDumpStorage(object):
       else:
         raise e
     try:
-      os.unlink(os.path.join(rpath,uuid))
+      os.unlink(os.path.join(namePath,uuid))
     except OSError, e:
       if 2 == e.errno: # no such file or directory
         pass
@@ -273,6 +286,8 @@ class JsonDumpStorage(object):
     """
     namePath = self.__nameAbsPath(uuid)
     seenCount = 0
+    depth = int(uuid[-7])
+    if not depth: depth = 4 # prior, when hardcoded depth=4, uuid[-8:] was yyyymmdd, year was always (20xx)
     try:
       datePath = os.path.join(namePath,os.readlink(os.path.join(namePath,uuid)))
       os.unlink(os.path.join(datePath,uuid))
@@ -293,7 +308,7 @@ class JsonDumpStorage(object):
     except:
       self.logger.debug("%s - %s Missing dump file" % (threading.currentThread().getName(), uuid))
     try:
-      self.__cleanDirectory(namePath, os.sep.join(namePath.split(os.sep)[:-3])) #clean onlyback as far as the first name level
+      self.__cleanDirectory(namePath, os.sep.join(namePath.split(os.sep)[:1-depth])) #clean only as far back as the first name level
     except OSError:
       pass
     if not seenCount:
@@ -308,9 +323,9 @@ class JsonDumpStorage(object):
     Raises IOError if either the json or dump file for the uuid is not found, and retains any links, but does not roll
     back the json file if the dump file is not found.
     """
-    rpath = self.__nameAbsPath(uuid)
-    shutil.move(os.path.join(rpath,uuid+self.jsonSuffix), os.path.join(newAbsolutePath, uuid+self.jsonSuffix))
-    shutil.move(os.path.join(rpath,uuid+self.dumpSuffix), os.path.join(newAbsolutePath, uuid+self.dumpSuffix))
+    namePath = self.__nameAbsPath(uuid)
+    shutil.move(os.path.join(namePath,uuid+self.jsonSuffix), os.path.join(newAbsolutePath, uuid+self.jsonSuffix))
+    shutil.move(os.path.join(namePath,uuid+self.dumpSuffix), os.path.join(newAbsolutePath, uuid+self.dumpSuffix))
     try:
       self.remove(uuid) # remove links, if any
     except NoSuchUuidFound:
@@ -337,6 +352,16 @@ class JsonDumpStorage(object):
         #self.logger.debug("killing empty date directory: %s", dir)
       #  os.rmdir(dir)
 
+  def toDateFromName(self,uuid):
+    """Given uuid, get the relative path to the top of the date directory from the name location"""
+    depth = int(uuid[-7])
+    if not depth: depth = 4 # prior, when hardcoded depth=4, uuid[-8:] was yyyymmdd, year was always (20xx)
+    ups = ['..' for x in range(depth+1)]
+    ups.append(self.dateName)
+    return os.sep.join(ups)
+    #= os.sep.join(('..','..','..','..','..',self.dateName))
+
+
   #=================================================================================================================
   # private methods
   def __transferOne(self,uuid,fromJson,copyLinksBoolean,makeNewDateLinksBoolean,aDate):
@@ -349,7 +374,7 @@ class JsonDumpStorage(object):
         whparts = webheadHostName.split('_')
         if len(whparts) > 1:
           webheadHostName = '_'.join(whparts[:-1]) # lose the trailing sequence number
-        datePart = datePart[1+len(fromJson.toDateFromName):]
+        datePart = datePart[1+len(fromJson.toDateFromName(uuid)):]
         aDate = DT.datetime(*[int(x) for x in datePart.split(os.sep)])
         self.copyFrom(uuid,fromJson.getJson(uuid), fromJson.getDump(uuid), webheadHostName, aDate, createLinks=True, removeOld = False)
         didCopy = True
@@ -379,9 +404,9 @@ class JsonDumpStorage(object):
     """ get a name path relative to a date-based location"""
     return self.__namePath(uuid,self.toNameFromDate)
 
-  def __dateRelativePath(self,dt,head):
+  def __dateRelativePath(self,dt,head,uuid):
     """Get a date path relative to a name storage location"""
-    return self.__datePath(dt,head,self.toDateFromName)
+    return self.__datePath(dt,head,self.toDateFromName(uuid))
 
   def __dateAbsPath(self,dt,head, checkSize = False):
     """Get a date path in absolute, i.e. %(root)s based format"""
@@ -405,9 +430,11 @@ class JsonDumpStorage(object):
     return path
 
   def __namePath(self,uuid,startswith):
-    """Because the name structure is simple, so is the method that creates one"""
-    #       bb//ra//di//xx//xx
-    return "%s%s%s%s%s%s%s%s%s" %(startswith,os.sep,uuid[0:2],os.sep,uuid[2:4],os.sep,uuid[4:6],os.sep,uuid[6:8])
+    """Because the name structure is almost simple, so is the method that creates one"""
+    depth = int(uuid[-7])
+    if not depth: depth = 4 # prior, when hardcoded depth=4, uuid[-8:] was yyyymmdd, year was always (20xx)
+    # split the first 2*depth characters into duples, join them, and prepend startswith
+    return os.sep.join([startswith,os.sep.join([ uuid[2*x:2*x+2] for x in range(depth)])])
 
   def __currentSlot(self):
     minute = DT.datetime.now().minute
