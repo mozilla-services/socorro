@@ -53,6 +53,8 @@ class JsonDumpStorage(object):
     self.maxDirectoryEntries = maxDirectoryEntries
     self.dateName = kwargs.get('dateName','date')
     self.indexName = kwargs.get('indexName','name')
+    tmp = kwargs.get('cleanIndexDirectories','false')
+    self.cleanIndexDirectories = 'true' == tmp.lower()
     self.jsonSuffix = kwargs.get('jsonSuffix','.json')
     if not self.jsonSuffix.startswith('.'):
       self.jsonSuffix = ".%s" % (self.jsonSuffix)
@@ -290,9 +292,8 @@ class JsonDumpStorage(object):
     if not depth: depth = 4 # prior, when hardcoded depth=4, uuid[-8:] was yyyymmdd, year was always (20xx)
     try:
       datePath = os.path.join(namePath,os.readlink(os.path.join(namePath,uuid)))
-      os.unlink(os.path.join(datePath,uuid))
-      seenCount += 1
       os.unlink(os.path.join(namePath,uuid))
+      os.unlink(os.path.join(datePath,uuid))
       seenCount += 1
       self.__cleanDirectory(datePath, self.dateName)
     except OSError:
@@ -307,10 +308,11 @@ class JsonDumpStorage(object):
       seenCount += 1
     except:
       self.logger.debug("%s - %s Missing dump file" % (threading.currentThread().getName(), uuid))
-    try:
-      self.__cleanDirectory(namePath, os.sep.join(namePath.split(os.sep)[:1-depth])) #clean only as far back as the first name level
-    except OSError:
-      pass
+    if self.cleanIndexDirectories:
+      try:
+        self.__cleanDirectory(namePath,namePath.split(os.sep)[-depth:1-depth][0]) #clean only as far back as the first name level
+      except OSError:
+        pass
     if not seenCount:
       self.logger.warning("%s - %s was totally unknown" % (threading.currentThread().getName(), uuid))
       raise NoSuchUuidFound, "no trace of %s was found" % uuid
@@ -499,9 +501,9 @@ class JsonDumpStorage(object):
       os.chown(path,-1,gid)
       path = os.path.split(path)[0]
 
-  def __cleanDirectory(self,datepath,basePathLimit):
+  def __cleanDirectory(self,basepath,basePathLimit):
     """Look higher and higher up the storage branch until you hit the top or a non-empty sub-directory"""
-    opath = datepath
+    opath = basepath
     while True:
       path,tail = os.path.split(opath)
       if basePathLimit == tail:
@@ -514,5 +516,7 @@ class JsonDumpStorage(object):
         else:
           raise e
       opath = path
+
+
 
 

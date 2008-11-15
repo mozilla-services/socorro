@@ -31,10 +31,10 @@ class TestJsonDumpStorage(unittest.TestCase):
       '0b94199b-b90b-4683-a38a-411420081226': ('2008-12-26-05-21','webhead01','0b/94/19/9b','2008/12/26/05/20/webhead01_0'),
       '0b9eedc3-9a79-4ce2-83eb-155920081226': ('2008-12-26-05-24','webhead01','0b/9e/ed/c3','2008/12/26/05/20/webhead01_0'),
       '0b9fd6da-27e4-46aa-bef3-3deb20081226': ('2008-12-26-05-25','webhead02','0b/9f/d6/da','2008/12/26/05/25/webhead02_0'),
-      '0ba32a30-2476-4724-b825-de1720081125': ('2008-11-25-05-00','webhead02','0b/a3/2a/30','2008/11/25/05/00/webhead02_0'),
-      '0bad640f-5825-4d42-b96e-21b820081125': ('2008-11-25-05-04','webhead02','0b/ad/64/0f','2008/11/25/05/00/webhead02_0'),
-      '0bae7049-bbff-49f2-b408-7e9f20081125': ('2008-11-25-05-05','webhead02','0b/ae/70/49','2008/11/25/05/05/webhead02_0'),
-      '0baf1b4d-dad3-4d35-ae7e-b9dc20081125': ('2008-11-25-05-06','webhead02','0b/af/1b/4d','2008/11/25/05/05/webhead02_0'),
+      '0ba32a30-2476-4724-b825-de17e3081125': ('2008-11-25-05-00','webhead02','0b/a3/2a','2008/11/25/05/00/webhead02_0'),
+      '0bad640f-5825-4d42-b96e-21b8e3081125': ('2008-11-25-05-04','webhead02','0b/ad/64','2008/11/25/05/00/webhead02_0'),
+      '0bae7049-bbff-49f2-b408-7e9fe2081125': ('2008-11-25-05-05','webhead02','0b/ae','2008/11/25/05/05/webhead02_0'),
+      '0baf1b4d-dad3-4d35-ae7e-b9dce2081125': ('2008-11-25-05-06','webhead02','0b/af','2008/11/25/05/05/webhead02_0'),
       }
     self.badUuid = '66666666-6666-6666-6666-666620081225'
     self.toomany = {
@@ -162,7 +162,6 @@ class TestJsonDumpStorage(unittest.TestCase):
     assert storage.dumpSuffix == kwargs.get('dumpSuffix','.dump'),'We will always pass dot dump suffix. From kwargs=%s'%kwargs
     assert os.path.join(self.testDir,storage.dateName) == storage.dateBranch,'From kwargs=%s'%kwargs
     assert os.path.join(self.testDir,storage.indexName) == storage.nameBranch,'From kwargs=%s'%kwargs
-
 
   def testNewEntry(self):
     storage = JDS.JsonDumpStorage(self.testDir,**self.initKwargs[2])
@@ -339,6 +338,65 @@ class TestJsonDumpStorage(unittest.TestCase):
     for id in storage.destructiveDateWalk():
       seenids.append(id)
     assert [] == seenids
+
+  def testRemoveAlsoNames(self):
+    self.__createTestSet(self.data,initIndex=2)
+    kwargs = self.initKwargs[2]
+    kwargs['cleanIndexDirectories'] = 'True'
+    storage = JDS.JsonDumpStorage(self.testDir,**kwargs)
+    expectedSubs = []
+    fullSubs = []
+    for uuid in self.data.keys():
+      storage.remove(uuid)
+      exp = os.path.join(storage.nameBranch,self.data[uuid][2][:2])
+      if not exp in expectedSubs:
+        expectedSubs.append(exp)
+      fullSubs.append(os.path.join(storage.nameBranch,self.data[uuid][2]))
+    alldirs = []
+    for dir, dirs, files in os.walk(storage.nameBranch):
+      for d in dirs:
+        alldirs.append(os.path.join(dir,d))
+    for d in fullSubs:
+      assert not d in alldirs, 'Expected %s NOT in alldirs, but it was' % d
+    for d in expectedSubs:
+      assert d in alldirs, 'Expected %s in all dirs(%s) but it was not' % (d,alldirs)
+
+  def testRemoveRemovesOnlyDate(self):
+    self.__createTestSet(self.data,initIndex=2)
+    storage = JDS.JsonDumpStorage(self.testDir,**self.initKwargs[2])
+    expectedSubs = []
+    for uuid in self.data.keys():
+      storage.remove(uuid)
+      expectedSubs.append(os.path.join(storage.nameBranch,self.data[uuid][2]))
+    allfiles = []
+    alllinks = []
+    alldirs = []
+    for dir, dirs, files in os.walk(storage.dateBranch):
+      for file in files:
+        allfiles.append(file)
+        if os.path.islink(os.path.join(dir,file)):
+          alllinks.append(file)
+      for d in dirs:
+        if os.path.islink(os.path.join(dir,d)):
+          alllinks.append(d)
+        alldirs.append(os.path.join(dir,d))
+    assert [] == allfiles, 'Expect that all removed files are gone, but found %s' % allfiles
+    assert [] == alllinks, 'Expcet that all links are gone, but found %s' % alllinks
+    assert [] == alldirs, 'Expect that all date dirs are gone, but found %s' % alldirs
+
+    for dir,dirs,files in os.walk(storage.nameBranch):
+      for file in files:
+        allfiles.append(file)
+        if os.path.islink(os.path.join(dir,file)):
+          alllinks.append(file)
+      for d in dirs:
+        if os.path.islink(os.path.join(dir,d)):
+          alllinks.append(d)
+        alldirs.append(os.path.join(dir,d))
+    assert [] == allfiles, 'Expect that all removed files are gone, but found %s' % allfiles
+    assert [] == alllinks, 'Expect that all links are gone, but found %s' % alllinks
+    for sub in expectedSubs:
+      assert sub in alldirs, "Expect each subdirectory is still there, but didn't find %s" % sub
 
   def testRemove(self):
     self.__createTestSet(self.data,initIndex=2)
