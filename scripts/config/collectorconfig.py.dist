@@ -38,6 +38,10 @@ dumpField.default = "upload_file_minidump"
 dumpDirCount = cm.Option()
 dumpDirCount.default = 1024
 
+# when storing in the file system, how deep should the radix directory depth be
+storageDepth = cm.Option()
+storageDepth.default = 2
+
 # Returned to the client with a uuid following
 dumpIDPrefix = cm.Option()
 dumpIDPrefix.default = "bp-"
