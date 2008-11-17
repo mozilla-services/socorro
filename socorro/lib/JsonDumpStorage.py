@@ -9,6 +9,7 @@ import threading
 from stat import S_IRGRP, S_IXGRP, S_IWGRP, S_IRUSR, S_IXUSR, S_IWUSR, S_ISGID
 
 import socorro.lib.util as socorro_util
+import socorro.lib.ooid as socorro_ooid
 
 class NoSuchUuidFound(Exception):
   pass
@@ -288,7 +289,7 @@ class JsonDumpStorage(object):
     """
     namePath = self.__nameAbsPath(uuid)
     seenCount = 0
-    depth = int(uuid[-7])
+    depth = socorro_ooid.depthFromOoid(uuid)
     if not depth: depth = 4 # prior, when hardcoded depth=4, uuid[-8:] was yyyymmdd, year was always (20xx)
     try:
       datePath = os.path.join(namePath,os.readlink(os.path.join(namePath,uuid)))
@@ -356,7 +357,7 @@ class JsonDumpStorage(object):
 
   def toDateFromName(self,uuid):
     """Given uuid, get the relative path to the top of the date directory from the name location"""
-    depth = int(uuid[-7])
+    depth = socorro_ooid.depthFromOoid(uuid)
     if not depth: depth = 4 # prior, when hardcoded depth=4, uuid[-8:] was yyyymmdd, year was always (20xx)
     ups = ['..' for x in range(depth+1)]
     ups.append(self.dateName)
@@ -433,7 +434,7 @@ class JsonDumpStorage(object):
 
   def __namePath(self,uuid,startswith):
     """Because the name structure is almost simple, so is the method that creates one"""
-    depth = int(uuid[-7])
+    depth = socorro_ooid.depthFromOoid(uuid)
     if not depth: depth = 4 # prior, when hardcoded depth=4, uuid[-8:] was yyyymmdd, year was always (20xx)
     # split the first 2*depth characters into duples, join them, and prepend startswith
     return os.sep.join([startswith,os.sep.join([ uuid[2*x:2*x+2] for x in range(depth)])])
