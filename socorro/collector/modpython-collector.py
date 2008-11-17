@@ -8,6 +8,7 @@ import datetime as dt
 import config.collectorconfig as configModule
 import socorro.collector.initializer
 import socorro.lib.util as sutil
+import socorro.lib.ooid as ooid
 
 #-----------------------------------------------------------------------------------------------------------------
 if __name__ != "__main__":
@@ -45,7 +46,8 @@ def handler(req):
         fileSystemStorage = persistentStorage["deferredFileSystemStorage"]
       else:
         fileSystemStorage = persistentStorage["standardFileSystemStorage"]
-      uuid = collectObject.generateUuid(jsonDataDictionary)
+      #uuid = collectObject.generateUuid(jsonDataDictionary)
+      uuid = ooid.createNewOoid(dt.datetime.now(), persistentStorage["config"].storageDepth)
 
       jsonFileHandle, dumpFileHandle = fileSystemStorage.newEntry(uuid, persistentStorage["hostname"], dt.datetime.now())
       try:

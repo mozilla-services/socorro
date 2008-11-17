@@ -7,6 +7,8 @@ try:
 except ImportError:
   import uuid
 
+import socorro.lib.ooid as ooid
+
 import os, cgi, sys, tempfile, simplejson
 import datetime as dt
 import time as tm
@@ -87,10 +89,10 @@ class Collect(object):
     return True
 
   #-----------------------------------------------------------------------------------------------------------------
-  def generateUuid (self, jsonDataDictionary):
-    newUuid = str(uuid.uuid4())
-    date = dt.datetime(*tm.localtime(jsonDataDictionary["timestamp"])[:3])
-    return "%s%4d%02d%02d" % (newUuid[:-8], date.year, date.month, date.day)
+  #def generateUuid (self, jsonDataDictionary):
+    #newUuid = str(uuid.uuid4())
+    #date = dt.datetime(*tm.localtime(jsonDataDictionary["timestamp"])[:3])
+    #return "%s%1d%2d%02d%02d" % (newUuid[:-7], self.config.storageDepth, date.year, date.month, date.day)
 
   #-----------------------------------------------------------------------------------------------------------------
   def storeDump(self, dumpInputStream, fileHandleOpenForWriting):
