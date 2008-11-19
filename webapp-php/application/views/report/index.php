@@ -54,6 +54,11 @@
             <tr>
                 <th>Uptime</th><td><?php out::H($report->uptime) ?></td>
             </tr>
+            <?php if ($report->last_crash): ?>
+            <tr>
+                <th>Last Crash</th><td><?php out::H($report->last_crash) ?> seconds before submission</td>
+            </tr>
+            <?php endif; ?>
             <tr>
                 <th>Product</th><td><?php out::H($report->product) ?></td>
             </tr>
