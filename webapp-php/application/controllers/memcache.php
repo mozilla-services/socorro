@@ -1,6 +1,6 @@
 <?php defined('SYSPATH') or die('No direct script access.');
 /**
- * Reporting on top crasher causes
+ * Simple memcache status page.
  */
 class Memcache_Controller extends Controller {
 
@@ -13,7 +13,7 @@ class Memcache_Controller extends Controller {
 
     public function index() {
         cachecontrol::set(array(
-            'expires' => time() + (60 * 60)
+            'expires' => time() + (60)
         ));
 
         if (class_exists('Memcache') && is_array($this->cache_config)) {
