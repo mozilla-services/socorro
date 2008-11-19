@@ -47,10 +47,10 @@ class Topcrashers_Model extends Model {
         }
 
         $sql =
-            " SELECT topcrashers.signature, topcrashers.version, topcrashers.product, topcrashers.build, SUM(topcrashers.total) AS total, SUM(topcrashers.win) AS win, SUM(topcrashers.mac) AS mac, SUM(topcrashers.linux) AS linux " .
+            " SELECT topcrashers.signature, topcrashers.version, topcrashers.product, SUM(topcrashers.total) AS total, SUM(topcrashers.win) AS win, SUM(topcrashers.mac) AS mac, SUM(topcrashers.linux) AS linux " .
             " FROM " . join(', ', array_keys($tables)) .
             " WHERE  " . join(' AND ', $where) .
-	    " GROUP BY topcrashers.signature, topcrashers.build, topcrashers.version, topcrashers.product" .
+	    " GROUP BY topcrashers.signature, topcrashers.version, topcrashers.product" .
 	    " HAVING SUM(topcrashers.total) > 0".
             " ORDER BY SUM(topcrashers.total) DESC LIMIT 100";
 	Kohana::log('info', $sql);

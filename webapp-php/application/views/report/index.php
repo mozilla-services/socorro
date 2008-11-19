@@ -42,46 +42,51 @@
     </ul>
     <div id="details">
         <table class="list record">
-            <tr class="odd">
+            <tr>
                 <th>Signature</th><td><?php out::H($report->signature) ?></td>
             </tr>
-            <tr class="even">
+            <tr>
                 <th>UUID</th><td><?php out::H($report->uuid) ?></td>
             </tr>
-            <tr class="odd">
+            <tr>
                 <th>Time</th><td><?php out::H($report->date) ?></td>
             </tr>
-            <tr class="even">
+            <tr>
                 <th>Uptime</th><td><?php out::H($report->uptime) ?></td>
             </tr>
-            <tr class="odd">
+            <tr>
                 <th>Product</th><td><?php out::H($report->product) ?></td>
             </tr>
-            <tr class="even">
+            <tr>
                 <th>Version</th><td><?php out::H($report->version) ?></td>
             </tr>
-            <tr class="odd">
+            <tr>
                 <th>Build ID</th><td><?php out::H($report->build) ?></td>
             </tr>
-            <tr class="even">
+            <?php if ($branch && !empty($branch->branch)): ?>
+            <tr>
+                <th>Branch</th><td><?php out::H($branch->branch) ?></td>
+            </tr>
+            <?php endif; ?>
+            <tr>
                 <th>OS</th><td><?php out::H($report->os_name) ?></td>
             </tr>
-            <tr class="odd">
+            <tr>
                 <th>OS Version</th><td><?php out::H($report->os_version) ?></td>
             </tr>
-            <tr class="even">
+            <tr>
                 <th>CPU</th><td><?php out::H($report->cpu_name) ?></td>
             </tr>
-            <tr class="odd">
+            <tr>
                 <th>CPU Info</th><td><?php out::H($report->cpu_info) ?></td>
             </tr>
-            <tr class="even">
+            <tr>
                 <th>Crash Reason</th><td><?php out::H($report->reason) ?></td>
             </tr>
-            <tr class="odd">
+            <tr>
                 <th>Crash Address</th><td><?php out::H($report->address) ?></td>
             </tr>
-            <tr class="even">
+            <tr>
                 <th>Comments</th><td><?php out::H($report->comments) ?></td>
             </tr>
         </table>
@@ -100,7 +105,7 @@
                     </tr>
                     <?php $row = 1 ?>
                     <?php foreach ($frames as $frame): ?>
-                        <tr class="<?php echo ( ($row-1) % 2) == 0 ? 'even' : 'odd' ?>">
+                        <tr>
                             <td><?php out::H($frame['frame_num']) ?></td>
                             <td><?php out::H($frame['module_name']) ?></td>
                             <td title="<?php out::H($frame['signature']) ?>"><?php out::H($frame['short_signature']) ?></td>
@@ -118,7 +123,7 @@
             <?php } ?>
 
             <h2>Crashing Thread</h2>
-            <?php if( count($report->threads) > $report->crashed_thread ){
+            <?php if (count($report->threads) > $report->crashed_thread ){
                     stack_trace( $report->threads[$report->crashed_thread] );
                   } ?>    
                
@@ -148,7 +153,7 @@
             </tr>
             <?php $row = 1 ?>
             <?php foreach ($report->modules as $module): ?>
-                <tr class="<?php echo ( ($row-1) % 2) == 0 ? 'even' : 'odd' ?>">
+                <tr>
                     <td><?php out::H($module['filename']) ?></td>
                     <td><?php out::H($module['module_version']) ?></td>
                     <td><?php out::H($module['debug_id']) ?></td>

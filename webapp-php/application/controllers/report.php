@@ -123,7 +123,8 @@ class Report_Controller extends Controller {
         ));
 
         $this->setViewData(array(
-            'report' => $report
+            'report' => $report,
+            'branch' => $this->branch_model->getByProductVersion($report->product, $report->version)
         ));
     }
 

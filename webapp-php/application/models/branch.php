@@ -57,4 +57,19 @@ class Branch_Model extends Model {
         return $data;        
     }
 
+    /**
+     * Fetch a single branch based on product and version.
+     *
+     * @param  string product 
+     * @param  string version
+     * @return object Branch data
+     */
+    public function getByProductVersion($product, $version) {
+
+        $branch = $this->db->query( 'SELECT branches.* FROM branches WHERE branches.product=? AND branches.version=?', $product, $version)->current();
+        if (!$branch) return FALSE;
+
+        return $branch;
+    }
+
 }

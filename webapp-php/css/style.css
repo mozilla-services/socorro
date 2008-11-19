@@ -38,6 +38,15 @@ h3 {
 }
 
 /*  lists  */
+.list tr:nth-child(2n+1) {
+  background-color: #ddd;
+}
+.list tr:nth-child(2n) {
+  background-color: #eee;
+}
+.list tr:hover {
+  background-color: #fff;
+}
 .list {
   margin-top:.5em;
 }
@@ -63,16 +72,6 @@ h3 {
 .list th a:hover {
   background-color: #fff;
 }
-.even {
-  background-color: #eee;
-}
-.odd {
-  background-color: #ddd;
-}
-.even:hover, .odd:hover {
-  background-color: #fff;
-}
-
 .record th {
   text-align: right;
 }

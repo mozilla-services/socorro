@@ -12,7 +12,6 @@
                 <tr>
                     <th>Rank</th>
                     <th>Signature</th>
-                    <th>Build ID</th>
                     <th>#</th>
                     <th>Win</th>
                     <th>Lin</th>
@@ -33,7 +32,6 @@
                     <tr class="<?php echo ( ($row-1) % 2) == 0 ? 'even' : 'odd' ?>">
                         <td><?php out::H($row) ?></td>
                         <td><a href="<?php out::H($link_url) ?>" title="View reports with this crasher."><?php out::H($crasher->signature) ?></a></td>
-                        <td><?php out::H($crasher->build) ?></td>
                         <td><?php out::H($crasher->total) ?></td>
                         <td><?php out::H($crasher->win) ?></td>
                         <td><?php out::H($crasher->linux) ?></td>
