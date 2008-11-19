@@ -7,6 +7,7 @@
         <link href="<?php echo url::base() ?>css/style.css" rel="stylesheet" type="text/css" media="all" />
         <link href="<?php echo url::base() ?>favicon.ico" rel="icon" type="image/png" />
         <?php slot::output('head') ?>
+        <?php echo html::script('js/__utm.js'); ?>
     </head>
 
     <body>
