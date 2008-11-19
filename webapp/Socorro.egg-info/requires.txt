@@ -1,5 +1,0 @@
-Pylons==0.9.5
-SQLAlchemy>=0.3,<0.4
-Genshi>=0.3.6
-Authkit==0.3.0pre5
-PasteScript>=1.3.6
