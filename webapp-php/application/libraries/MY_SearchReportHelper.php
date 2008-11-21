@@ -37,7 +37,10 @@ class SearchReportHelper{
     $valueInDays = 0;
     $limitValue = 0;
     $limitUnit = $params['range_unit'];
-    if($params['range_unit'] == 'days'){
+    if($params['range_unit'] == 'hours'){
+      $valueInDays = intval( $params['range_value'] ) / 24;
+      $limitValue = 14 * 24;
+    }elseif($params['range_unit'] == 'days'){
       $valueInDays = intval( $params['range_value'] );
       $limitValue = 14;
     }elseif( $params['range_unit'] == 'weeks'){
