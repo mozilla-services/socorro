@@ -13,6 +13,7 @@ class Report_Model extends Model {
     public function getByUUID($uuid) {
 
         $report = $this->db->query(
+            '/* soc.web report.byuuid */ '.
             'SELECT reports.*, dumps.data AS dump '.
             'FROM reports, dumps '.
             'WHERE reports.uuid=? AND dumps.report_id=reports.id', $uuid)->current();

@@ -8,35 +8,35 @@ class Branch_Model extends Model {
      * Fetch everything in the branches table
      */
     public function getAll() { 
-        return $this->fetchRows('SELECT DISTINCT * FROM branches ORDER BY branch');
+      return $this->fetchRows('/* soc.web branch.all */ SELECT DISTINCT * FROM branches ORDER BY branch');
     }
 
     /**
      * Fetch the names of all unique branches
      */
     public function getBranches() { 
-        return $this->fetchRows('SELECT DISTINCT branch FROM branches ORDER BY branch');
+        return $this->fetchRows('/* soc.web branch.branches */ SELECT DISTINCT branch FROM branches ORDER BY branch');
     }
 
     /**
      * Fetch all distinct product / branch combinations.
      */
     public function getProductBranches() {
-        return $this->fetchRows('SELECT DISTINCT product, branch FROM branches ORDER BY product, branch');
+        return $this->fetchRows('/* soc.web branch.prodbranches */ SELECT DISTINCT product, branch FROM branches ORDER BY product, branch');
     }
 
     /**
      * Fetch the names of all unique products.
      */
     public function getProducts() {
-        return $this->fetchRows('SELECT DISTINCT product FROM branches ORDER BY product');
+        return $this->fetchRows('/* soc.web branch.products */ SELECT DISTINCT product FROM branches ORDER BY product');
     }
 
     /**
      * Fetch all distinct product / version combinations.
      */
     public function getProductVersions() {
-        return $this->fetchRows('SELECT DISTINCT product, version FROM branches ORDER BY product, version');
+        return $this->fetchRows('/* soc.web branch.prodversions */ SELECT DISTINCT product, version FROM branches ORDER BY product, version');
     }
 
     /**
@@ -66,7 +66,7 @@ class Branch_Model extends Model {
      */
     public function getByProductVersion($product, $version) {
 
-        $branch = $this->db->query( 'SELECT branches.* FROM branches WHERE branches.product=? AND branches.version=?', $product, $version)->current();
+        $branch = $this->db->query( '/* soc.web branch.prodbyvers */ SELECT branches.* FROM branches WHERE branches.product=? AND branches.version=?', $product, $version)->current();
         if (!$branch) return FALSE;
 
         return $branch;

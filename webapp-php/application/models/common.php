@@ -41,6 +41,7 @@ class Common_Model extends Model {
         $where  += $params_where;
 
         $sql =
+	    "/* soc.web common.queryTopSig. */ " .
             " SELECT " . join(', ', $columns) .
             " FROM   " . join(', ', array_keys($tables)) .
             " WHERE  " . join(' AND ', $where) .
@@ -88,6 +89,7 @@ class Common_Model extends Model {
         $where  += $params_where;
 
         $sql =
+	    "/* soc.web common.queryReports */ " .
             " SELECT " . join(', ', $columns) .
             " FROM   " . join(', ', array_keys($tables)) .
             " WHERE  " . join(' AND ', $where) .
@@ -130,6 +132,7 @@ class Common_Model extends Model {
         $where  += $params_where;
 
         $sql =
+            "/* soc.web common.queryFreq */ " .
             " SELECT " . join(', ', $columns) .
             " FROM   " . join(', ', array_keys($tables)) .
             " WHERE  " . join(' AND ', $where) .

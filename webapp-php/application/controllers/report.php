@@ -1,4 +1,5 @@
 <?php
+require_once dirname(__FILE__).'/../libraries/MY_SearchReportHelper.php';
 /**
  * List, search, and show crash reports.
  */
@@ -8,26 +9,17 @@ class Report_Controller extends Controller {
      * List reports for the given search query parameters.
      */
     public function do_list() {
+
+        $helper = new SearchReportHelper();
+
         $branch_data = $this->branch_model->getBranchData();
         $platforms   = $this->platform_model->getAll();
 
-        $params = $this->getRequestParameters(array(
-            'signature'    => '',
+	$d = $helper->defaultParams();
+	$d['signature'] = '';
+        $params = $this->getRequestParameters($d);
 
-            'product'      => array(),
-            'branch'       => array(),
-            'version'      => array(),
-            'platform'     => array(),
-
-            'query_search' => 'signature',
-            'query_type'   => 'contains',
-            'query'        => '',
-            'date'         => '',
-            'range_value'  => '1',
-            'range_unit'   => 'weeks',
-
-            'do_query'     => FALSE
-        ));
+        $helper->normalizeParams( $params );
 
         cachecontrol::set(array(
             'etag'     => $params,
@@ -47,12 +39,15 @@ class Report_Controller extends Controller {
 	}
 
 	$buildTicks = array();
-	for($i = 0; $i  < count($builds); $i = $i + 1){
-	  $buildTicks[] = array($i, date('m/d', strtotime($builds[$i]->build_date)));
+        $index = 0;
+	for($i = count($builds) - 1; $i  >= 0 ; $i = $i - 1){
+	  $buildTicks[] = array($index, date('m/d', strtotime($builds[$i]->build_date)));
+          $index += 1;
 	}
- 
+
         $this->setViewData(array(
             'params'  => $params,
+            'queryTooBroad' => $helper->shouldShowWarning(),
             'reports' => $reports,
             'builds'  => $builds,
 
@@ -71,8 +66,10 @@ class Report_Controller extends Controller {
       $platLabels = array();
       foreach ($platforms as $platform){
 	$plotData = array();
-	for($i = 0; $i  < count($builds); $i = $i + 1){
-	  $plotData[] = array($i, $builds[$i]->{"count_$platform->id"});
+        $index = 0;
+	for($i = count($builds) - 1; $i  >= 0; $i = $i - 1){
+	  $plotData[] = array($index, $builds[$i]->{"count_$platform->id"});
+          $index += 1;
 	}
 	$platLabels[] = array("label" => substr($platform->name, 0, 3),
 			      "data"  => $plotData,

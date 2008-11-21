@@ -13,7 +13,7 @@ class Job_Model extends Model {
     public function getByUUID($uuid) {
 
         $job = $this->db->query(
-            'SELECT * FROM jobs WHERE uuid=?', $uuid
+            '/* soc.web job.byuuid */ SELECT * FROM jobs WHERE uuid=?', $uuid
         )->current();
 
         if (!$job) return FALSE;

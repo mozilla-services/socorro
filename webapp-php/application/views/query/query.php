@@ -108,12 +108,11 @@
         )?><?php echo form::dropdown(
             'range_unit',
             array(
-                'hours'=>'hours', 'days'=>'days', 'weeks'=>'weeks', 'months'=>'months'
+                'hours'=>'hours', 'days'=>'days', 'weeks'=>'weeks'
             ),
             $params['range_unit']
         )?>
     </p>
-
     <input type="submit" />
 </form>
 

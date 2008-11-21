@@ -1,4 +1,5 @@
 <?php defined('SYSPATH') or die('No direct script access.');
+require_once dirname(__FILE__).'/../libraries/MY_SearchReportHelper.php';
 /**
  *
  */
@@ -8,24 +9,13 @@ class Query_Controller extends Controller {
      *
      */
     public function query() {
+        $helper = new SearchReportHelper();
         $branch_data = $this->branch_model->getBranchData();
         $platforms   = $this->platform_model->getAll();
 
-        $params = $this->getRequestParameters(array(
-            'product'      => array(),
-            'branch'       => array(),
-            'version'      => array(),
-            'platform'     => array(),
-
-            'query_search' => 'signature',
-            'query_type'   => 'contains',
-            'query'        => '',
-            'date'         => '',
-            'range_value'  => '1',
-            'range_unit'   => 'weeks',
-
-            'do_query'     => FALSE
-        ));
+        $params = $this->getRequestParameters($helper->defaultParams());
+	Kohana::log('info', Kohana::debug($params));
+        $helper->normalizeParams( $params );
 
         cachecontrol::set(array(
             'etag'     => $params,
@@ -42,6 +32,8 @@ class Query_Controller extends Controller {
 
         $this->setViewData(array(
             'params'  => $params,
+            'queryTooBroad' => $helper->shouldShowWarning(),
+            'search_helper' => $helper,
             'reports' => $reports,
 
             'all_products'  => $branch_data['products'],

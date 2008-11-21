@@ -5,6 +5,12 @@
 ?>
 <p>
     <?php
+      if( isset($queryTooBroad) && $queryTooBroad ){
+    ?>
+  <strong>Warning:</strong> Your search was not specific enough. Please note we actually searched for:<br />
+    <?php
+       }
+
         if ($params['date'] == '' || $params['date'] == date('Y-m-d', time())) {
             $end_date = "now";
         } else {

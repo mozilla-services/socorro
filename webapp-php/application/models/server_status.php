@@ -6,7 +6,7 @@
 class Server_Status_Model extends Model {
   
   public function loadStats(){
-    return new Server_Stats( $this->fetchRows("SELECT * FROM server_status ORDER BY date_created DESC LIMIT 12") );
+    return new Server_Stats( $this->fetchRows("/* soc.web servstat.loadStat */ SELECT * FROM server_status ORDER BY date_created DESC LIMIT 12") );
   }
 
 }
@@ -49,10 +49,11 @@ class Server_Stats {
     return $plotData;
   }
   public function status(){
-    $stat = end($this->data);
-    if( $stat->avg_wait_sec < 60 ){
+    $stat = $this->data[0];
+    $stat->avg_wait_sec = 250;
+    if( $stat->avg_wait_sec < 300 ){
       return Server_Stats::HAPPY;
-    }elseif( $stat->avg_wait_sec < 120 ){
+    }elseif( $stat->avg_wait_sec < 600 ){
       return Server_Stats::GRUMPY;
     }else{
       return Server_Stats::DEATHLY;

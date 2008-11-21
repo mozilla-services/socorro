@@ -30,7 +30,8 @@ class Topcrashers_Model extends Model {
 
         // Find the time when the table was last updated, limit to that update.
         $update_sql = 
-            " SELECT topcrashers.last_updated AS last_updated".
+            "/* soc.web topcrash.lastupdate */ " .
+            " SELECT topcrashers.last_updated AS last_updated" .
             " FROM " . join(', ', array_keys($tables)) .
             " WHERE " . join(' AND ', $where) .
             " ORDER BY last_updated DESC LIMIT 1 ";
@@ -47,13 +48,13 @@ class Topcrashers_Model extends Model {
         }
 
         $sql =
+            "/* soc.web topcrash.topcrasherss */ " .
             " SELECT topcrashers.signature, topcrashers.version, topcrashers.product, SUM(topcrashers.total) AS total, SUM(topcrashers.win) AS win, SUM(topcrashers.mac) AS mac, SUM(topcrashers.linux) AS linux " .
             " FROM " . join(', ', array_keys($tables)) .
             " WHERE  " . join(' AND ', $where) .
 	    " GROUP BY topcrashers.signature, topcrashers.version, topcrashers.product" .
 	    " HAVING SUM(topcrashers.total) > 0".
             " ORDER BY SUM(topcrashers.total) DESC LIMIT 100";
-	Kohana::log('info', $sql);
         return array($last_updated, $this->fetchRows($sql));
     }
 
