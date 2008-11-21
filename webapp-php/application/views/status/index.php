@@ -178,3 +178,6 @@ function hideAllGraphs() {
   $('#server-status-avg-wait').hide();
 }
 </script>
+<!-- 
+<?php View::factory('common/version')->render(TRUE); ?>
+ -->
