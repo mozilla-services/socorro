@@ -50,7 +50,7 @@ class Server_Stats {
   }
   public function status(){
     $stat = $this->data[0];
-    $stat->avg_wait_sec = 250;
+
     if( $stat->avg_wait_sec < 300 ){
       return Server_Stats::HAPPY;
     }elseif( $stat->avg_wait_sec < 600 ){
