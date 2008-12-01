@@ -5,6 +5,7 @@ import shutil
 import stat
 import errno
 import threading
+import calendar
 
 from stat import S_IRGRP, S_IXGRP, S_IWGRP, S_IRUSR, S_IXUSR, S_IWUSR, S_ISGID
 
@@ -334,26 +335,24 @@ class JsonDumpStorage(object):
     except NoSuchUuidFound:
       pass # there were no links
 
-
   #-----------------------------------------------------------------------------------------------------------------
   def removeOlderThan (self, timestamp):
     """
     Walks the date branch removing all entries strictly older than the timestamp.
     Removes the corresponding entries in the name branch as well as cleans up empty date directories
     """
-    for dir,dirs,files in os.walk(self.dateBranch,topdown = False):
+    for dir,dirs,files in os.walk(self.dateBranch,topdown = True):
       #self.logger.debug("considering: %s", dir)
       thisStamp = self.__pathToDate(dir)
+      maybeStopStamp = self.__partialPathToDate(dir)
+      if maybeStopStamp and (maybeStopStamp >= timestamp):
+        dirs[:] = []
       if thisStamp and (thisStamp < timestamp):
         # The links are all to (relative) directories, so no need to handle files
         for i in dirs:
           if os.path.islink(os.path.join(dir,i)):
-            #self.logger.debug("removing: %s", i)
+            self.logger.debug("removing: %s", i)
             self.remove(i)
-      #contents = os.listdir(dir)
-      #if contents == []:
-        #self.logger.debug("killing empty date directory: %s", dir)
-      #  os.rmdir(dir)
 
   def toDateFromName(self,uuid):
     """Given uuid, get the relative path to the top of the date directory from the name location"""
@@ -465,8 +464,27 @@ class JsonDumpStorage(object):
           raise e
     return dpath
 
+  def __partialPathToDate(self,path):
+    """ Parse a (possibly partial) date path into a datetime instance.
+    For less than full date paths, sets missing bits to "small". e.g: for /year/ part == /2005/, date is 2005-01-01T00:00:00.0000
+    returns __pathToDate if this path is a full date path
+    """
+    
+    part = path.split(self.dateBranch)[1] # cdr has the date part, starts with '/'
+    astamp = None
+    if part:
+      data = part.split(os.sep)[1:] # get rid of leading empty
+      if len(data) == 0 or len(data) == 6:
+        return self.__pathToDate(path);
+      if 1 == len(data): # year: make it january
+        data.append(1) 
+      if 2 == len(data): # year/month: make it 1st
+        data.append(1)
+      # for deeper categories, use what you have: datetime defaults to zeros
+      return DT.datetime(*[int(x) for x in data]);
+    
   def __pathToDate(self,path):
-    """ Parse an index/date path into a datetime instance, or None if not possible"""
+    """ Parse full date path into a datetime instance, or None if not possible"""
     part = path.split(self.dateBranch)[1] # cdr has the date part, starts with '/'
     if part:
       data = part.split(os.sep)[1:-1] # get rid of leading empty, trailing webhead
