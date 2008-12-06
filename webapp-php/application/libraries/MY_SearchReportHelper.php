@@ -29,7 +29,6 @@ class SearchReportHelper{
   function normalizeParams( &$params ){
     $this->showWarning = FALSE;
     $this->normalizeDateUnitAndValue($params);
-    $this->normalizeDateInput($params);
     $this->normalizeProduct($params);
   }
 
@@ -60,19 +59,6 @@ class SearchReportHelper{
       $params['range_value'] = $limitValue;
       $params['range_unit'] = $limitUnit;
       $this->showWarning = TRUE;
-    }
-  }
-
-  function normalizeDateInput(&$params){
-    if( ! empty($params['date'])){
-      $dateValue = strtotime( $params['date'] );
-      $now = strtotime('now');
-      $thirtyDays = 60 * 60 * 24 * 14;
-      if(($now - $dateValue) > $thirtyDays){
-        $aMonthAgo = $now - $thirtyDays;
-        $params['date'] = date('Y-m-d',  $aMonthAgo);
-        $this->showWarning = TRUE;
-      }
     }
   }
 

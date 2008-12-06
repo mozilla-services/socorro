@@ -66,26 +66,18 @@ define('SYSPATH', '');
       $this->assertEquals( 336, $badSearch['range_value'], "Reduced to 14 days (in hours)");
     }
 
-    public function testDate(){
+    public function testDateBug466233(){
       $helper = new SearchReportHelper();
       $helper->setCurrentDateForTest('2008-10-31');
 
       $badSearch = $helper->defaultParams(); 
-      $badSearch['date'] = '2007-12-25';
+      $badSearch['date'] = '2008-08-25';
+      $badSearch['range_value'] = '2';
+      $badSearch['range_unit'] = 'weeks';
 
       $helper->normalizeParams( $badSearch );
-      $this->assertEquals('2008-11-06', $badSearch['date'], "date was too far in past, resetting");
-    }
-
-    public function testDateInRange(){
-      $helper = new SearchReportHelper();
-      $helper->setCurrentDateForTest('2008-10-31');
-      print "The current date is " . $helper->currentDate();
-      $params = $helper->defaultParams(); 
-      $params['date'] = '2008-10-28';
-
-      $helper->normalizeDateInput( $aarams );
-      $this->assertEquals('2008-10-28', $params['date'], "date was fine, 3 days ago");
+      $this->assertEquals('2008-08-25', $badSearch['date'], 
+			  "Even though over a month ago, this date is fine. The date field specifieis the beginning of date range");
     }
 
     public function testMinimalProductInfoNoChange(){
