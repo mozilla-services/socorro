@@ -25,13 +25,51 @@ CREATE TABLE productdims (
 CREATE UNIQUE INDEX productdims_product_version_os_name_release_key ON productdims USING btree (product, version, release, os_name);
 CREATE INDEX productdims_product_version_key ON productdims USING btree (product, version);
 
--- INSERT INTO productdims (product, version, os_name, release) VALUES ('Firefox', 'ALL', 'ALL', 'ALL');
 INSERT INTO productdims (product, version, os_name, release) VALUES ('Firefox', '3.0.4', 'ALL','major');
 INSERT INTO productdims (product, version, os_name, release) VALUES ('Firefox', '3.0.4', 'Win','major');
 INSERT INTO productdims (product, version, os_name, release) VALUES ('Firefox', '3.0.4', 'Mac','major');
 INSERT INTO productdims (product, version, os_name, release) VALUES ('Firefox', '3.0.5', 'ALL','major');
 INSERT INTO productdims (product, version, os_name, release) VALUES ('Firefox', '3.0.5', 'Win','major');
 INSERT INTO productdims (product, version, os_name, release) VALUES ('Firefox', '3.0.5', 'Mac','major');
+INSERT INTO productdims (product, version, os_name, release) VALUES ('Firefox', '3.0.6', 'ALL','major');
+INSERT INTO productdims (product, version, os_name, release) VALUES ('Firefox', '3.0.6', 'Win','major');
+INSERT INTO productdims (product, version, os_name, release) VALUES ('Firefox', '3.0.6', 'Mac','major');
+
+INSERT INTO productdims (product, version, os_name, release) VALUES ('Firefox', '3.1b2', 'ALL','milestone');
+INSERT INTO productdims (product, version, os_name, release) VALUES ('Firefox', '3.1b2', 'Win','milestone');
+INSERT INTO productdims (product, version, os_name, release) VALUES ('Firefox', '3.1b2', 'Mac','milestone');
+INSERT INTO productdims (product, version, os_name, release) VALUES ('Firefox', '3.1b1', 'ALL','milestone');
+INSERT INTO productdims (product, version, os_name, release) VALUES ('Firefox', '3.1b1', 'Win','milestone');
+INSERT INTO productdims (product, version, os_name, release) VALUES ('Firefox', '3.1b1', 'Mac','milestone');
+INSERT INTO productdims (product, version, os_name, release) VALUES ('Firefox', '3.1a2', 'ALL','milestone');
+INSERT INTO productdims (product, version, os_name, release) VALUES ('Firefox', '3.1a2', 'Win','milestone');
+INSERT INTO productdims (product, version, os_name, release) VALUES ('Firefox', '3.1a2', 'Mac','milestone');
+
+INSERT INTO productdims (product, version, os_name, release) VALUES ('Firefox', '3.0.6pre', 'ALL','development');
+INSERT INTO productdims (product, version, os_name, release) VALUES ('Firefox', '3.0.6pre', 'Win','development');
+INSERT INTO productdims (product, version, os_name, release) VALUES ('Firefox', '3.0.6pre', 'Mac','development');
+INSERT INTO productdims (product, version, os_name, release) VALUES ('Firefox', '3.0.5pre', 'ALL','development');
+INSERT INTO productdims (product, version, os_name, release) VALUES ('Firefox', '3.0.5pre', 'Win','development');
+INSERT INTO productdims (product, version, os_name, release) VALUES ('Firefox', '3.0.5pre', 'Mac','development');
+INSERT INTO productdims (product, version, os_name, release) VALUES ('Firefox', '3.0.4pre', 'ALL','development');
+INSERT INTO productdims (product, version, os_name, release) VALUES ('Firefox', '3.0.4pre', 'Win','development');
+INSERT INTO productdims (product, version, os_name, release) VALUES ('Firefox', '3.0.4pre', 'Mac','development');
+INSERT INTO productdims (product, version, os_name, release) VALUES ('Firefox', '3.1b3pre', 'ALL','development');
+INSERT INTO productdims (product, version, os_name, release) VALUES ('Firefox', '3.1b3pre', 'Mac','development');
+INSERT INTO productdims (product, version, os_name, release) VALUES ('Firefox', '3.1b3pre', 'Win','development');
+
+INSERT INTO productdims (product, version, os_name, release) VALUES ('Thunderbird', '2.0.0.18', 'ALL','major');
+INSERT INTO productdims (product, version, os_name, release) VALUES ('Thunderbird', '2.0.0.18', 'Mac','major');
+INSERT INTO productdims (product, version, os_name, release) VALUES ('Thunderbird', '2.0.0.18', 'Win','major');
+
+INSERT INTO productdims (product, version, os_name, release) VALUES ('Thunderbird', '3.0b1', 'ALL','milestone');
+INSERT INTO productdims (product, version, os_name, release) VALUES ('Thunderbird', '3.0b1', 'Mac','milestone');
+INSERT INTO productdims (product, version, os_name, release) VALUES ('Thunderbird', '3.0b1', 'Win','milestone');
+
+INSERT INTO productdims (product, version, os_name, release) VALUES ('Thunderbird', '3.0b2pre', 'ALL','development');
+INSERT INTO productdims (product, version, os_name, release) VALUES ('Thunderbird', '3.0b2pre', 'Mac','development');
+INSERT INTO productdims (product, version, os_name, release) VALUES ('Thunderbird', '3.0b2pre', 'Win','development');
+
 
 CREATE TABLE mtbffacts(
         id SERIAL NOT NULL PRIMARY KEY,
@@ -55,8 +93,27 @@ CREATE TABLE mtbfconfig(
 CREATE INDEX mtbfconfig_start_dt_key ON mtbfconfig USING btree (start_dt);
 CREATE INDEX mtbfconfig_end_dt_key ON mtbfconfig USING btree (end_dt);
 
--- TODO
-INSERT INTO mtbfconfig (productdims_id, start_dt, end_dt) VALUES (6, '2008-11-03', '2008-11-20');
+
+INSERT INTO mtbfconfig (productdims_id, start_dt, end_dt)
+  SELECT id, '2008-12-16', '2008-02-16' FROM productdims WHERE product = 'Firefox' AND version = '3.0.5';
+INSERT INTO mtbfconfig (productdims_id, start_dt, end_dt)
+  SELECT id, '2008-12-04', '2009-02-04' FROM productdims WHERE product = 'Firefox' AND version = '3.0.6pre';
+INSERT INTO mtbfconfig (productdims_id, start_dt, end_dt)
+  SELECT id, '2008-12-09', '2008-02-09' FROM productdims WHERE product = 'Thunderbird' AND version = '3.0b2pre';
+INSERT INTO mtbfconfig (productdims_id, start_dt, end_dt)
+  SELECT id, '2008-12-09', '2008-02-09' FROM productdims WHERE product = 'Thunderbird' AND version = '3.0b1';
+INSERT INTO mtbfconfig (productdims_id, start_dt, end_dt)
+  SELECT id, '2008-12-08', '2008-02-08' FROM productdims WHERE product = 'Firefox' AND version = '3.1b3pre';
+INSERT INTO mtbfconfig (productdims_id, start_dt, end_dt)
+  SELECT id, '2008-12-08', '2008-02-08' FROM productdims WHERE product = 'Firefox' AND version = '3.1b2';
+INSERT INTO mtbfconfig (productdims_id, start_dt, end_dt)
+  SELECT id, '2008-11-19', '2008-01-19' FROM productdims WHERE product = 'Thunderbird' AND version = '2.0.0.18';
+INSERT INTO mtbfconfig (productdims_id, start_dt, end_dt)
+  SELECT id, '2008-11-12', '2008-01-14' FROM productdims WHERE product = 'Firefox' AND version = '3.0.4';
+INSERT INTO mtbfconfig (productdims_id, start_dt, end_dt)
+  SELECT id, '2008-10-14', '2008-12-14' FROM productdims WHERE product = 'Firefox' AND version = '3.1b1';
+INSERT INTO mtbfconfig (productdims_id, start_dt, end_dt)
+  SELECT id, '2008-12-08', '2008-02-08' FROM productdims WHERE product = 'Firefox' AND version = '3.1a2';
 
 CREATE TABLE topcrashurlfacts(
     id SERIAL NOT NULL PRIMARY KEY,
@@ -91,9 +148,11 @@ CREATE TABLE tcbyurlconfig(
   enabled BOOLEAN
 );
 
--- TODO make this a query insteda of 7
-INSERT INTO tcbyurlconfig (productdims_id, enabled) VALUES (1, 'Y');
-INSERT INTO tcbyurlconfig (productdims_id, enabled) VALUES (4, 'Y');
-
-
-DELETE FROM topcrashurlfacts WHERE day = '2008-11-17';
+INSERT INTO tcbyurlconfig (productdims_id, enabled) 
+  SELECT id, 'Y' FROM productdims WHERE product = 'Firefox' AND version = '3.0.5' AND os_name = 'ALL';
+INSERT INTO tcbyurlconfig (productdims_id, enabled) 
+  SELECT id, 'Y' FROM productdims WHERE product = 'Firefox' AND version = '3.1b2' AND os_name = 'ALL';
+INSERT INTO tcbyurlconfig (productdims_id, enabled) 
+  SELECT id, 'Y' FROM productdims WHERE product = 'Firefox' AND version = '3.0.6pre' AND os_name = 'ALL';
+INSERT INTO tcbyurlconfig (productdims_id, enabled) 
+  SELECT id, 'Y' FROM productdims WHERE product = 'Firefox' AND version = '3.1b3pre' AND os_name = 'ALL';
