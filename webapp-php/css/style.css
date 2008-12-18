@@ -20,7 +20,7 @@ h1.first {
   text-decoration: none;
 }
 
-h1, h2, h3, h4, h5, h6 {
+h1, h2, h3, h4, h5, h6, h1 span, h2 span {
   color: #33c;
   font-family: 'Times New Roman', Times, serif;
 }
@@ -100,3 +100,24 @@ dt {
 .happy{ color: green; }
 .grumpy{ color: orange; }
 .deathly{ color: red; }
+
+
+#mtbf-data-details li{   
+    list-style: none;
+    margin-bottom: 0.75em;
+}
+
+.tcburl-toggler {
+  display: inline;
+  color: white;
+  background-color: #AAA;
+  font-size: 1.4em;
+  padding: 0em 0.3em;
+  margin: 0em 0.1em 0em 0em;
+  border: solid 1px #666;
+}
+/* specificity to beat flora tablesorter */
+
+table.tablesorter tbody td.url-crash-count{ font-weight: 600; color: #444; }
+table.tablesorter tbody td.domain-crash-count{ font-weight: 900; color: #000; }
+.url-spacer{ display: inline; margin-left: 20px; }

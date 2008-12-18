@@ -61,4 +61,92 @@ class Topcrasher_Controller extends Controller {
 
     }
 
+    public function byurl($product, $version, $build_id=NULL) {
+        $by_url_model = new TopcrashersByUrl_Model();
+        list($start_date, $end_date, $top_crashers) = 
+	  $by_url_model->getTopCrashersByUrl($product, $version);
+
+        cachecontrol::set(array(
+            'expires' => time() + (60 * 60)
+        ));
+
+        $this->setViewData(array(
+	    'beginning' => $start_date,
+            'ending_on' => $end_date,
+            'product'       => $product,
+            'version'       => $version,
+            'top_crashers'  => $top_crashers
+        ));
+    }
+
+    public function bydomain($product, $version, $build_id=NULL) {
+        $by_url_model = new TopcrashersByUrl_Model();
+        list($start_date, $end_date, $top_crashers) = 
+	  $by_url_model->getTopCrashersByDomain($product, $version);
+
+        cachecontrol::set(array(
+            'expires' => time() + (60 * 60)
+        ));
+
+        $this->setViewData(array(
+	    'beginning' => $start_date,
+            'ending_on' => $end_date,
+            'product'       => $product,
+            'version'       => $version,
+            'top_crashers'  => $top_crashers
+        ));
+    }
+
+    /**
+     * AJAX GET method which returns last 2 weeks of 
+     * Aggregated crash signatures based on
+     * signaturesforurl/{product}/{version}?url={url_encoded_url}&page={page}
+     * product - Firefox
+     * version - 3.0.3
+     * url - http://www.youtube.com/watch
+     * page - page offset, defaults to 1
+     */
+    public function signaturesforurl($product, $version){
+      $url = urldecode( $_GET['url']);
+      $page = 1;
+      if( array_key_exists('page', $_GET)){
+        $page = intval($_GET['page']);
+      }
+
+      header('Content-Type: text/javascript');
+      $this->auto_render = false;
+      $by_url_model =  new TopcrashersByUrl_Model();
+
+        cachecontrol::set(array(
+            'expires' => time() + (60 * 60)
+        ));
+      
+      echo json_encode($by_url_model->getSignaturesByUrl($product, $version, $url, $page));
+    }
+
+    /**
+     * AJAX GET method which returns all urls under this domain
+     * which have had crash reports in the last 2 weeks.
+     * urlsfordomain/{product}/{version}?domain={url_encoded_domain}&page={page}
+     * product - Firefox
+     * version - 3.0.3
+     * domain - www.youtube.com
+     * page - page offset, defaults to 1
+     */
+    public function urlsfordomain($product, $version){
+      $domain = urldecode( $_GET['domain']);
+      $page = 1;
+      if( array_key_exists('page', $_GET)){
+        $page = intval($_GET['page']);
+      }
+      header('Content-Type: text/javascript');
+      $this->auto_render = false;
+      $by_url_model =  new TopcrashersByUrl_Model();
+
+      cachecontrol::set(array(
+          'expires' => time() + (60 * 60)
+      ));
+      
+      echo json_encode($by_url_model->getUrlsByDomain($product, $version, $domain, $page));
+    }
 }

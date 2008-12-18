@@ -1,5 +1,4 @@
 body {
-  background: #fff url(../img/background-feature.jpg) repeat-x top left;
   margin: 0;
   padding: 0;
 }
@@ -126,7 +125,7 @@ h1.loading {
 
 .crash-plot-label{ margin-left: 20px;}
 
-div.server-plot-label{ margin-left: 55px; margin-bottom: 10px; width: 700px;}
+div.server-plot-label, div.plot-label{ margin-left: 55px; margin-bottom: 10px; width: 700px;}
 
 #buildid-graph{ width: 200px; height: 200px; }
 .crashes-by-platform{ width: 200px; float: left; }
@@ -149,3 +148,23 @@ div.server-plot-label{ margin-left: 55px; margin-bottom: 10px; width: 700px;}
 }
 #server-stats { clear: both; }
 #graph-chooser-container { text-align: right; float: right; }
+
+h2.mtbf-graph{ float: left; }
+.mtbf-nav-panel{
+  margin-left: 400px;
+}
+.mtbf-nav-panel ul li{
+  list-style: none;
+  display: inline;
+}
+#mtbf-graph{
+   width: 800px; 
+   height: 400px;
+    clear: both;
+}
+#overviewLegend {
+  position: absolute;
+  left: 830px;
+  margin-top: 20px;
+    
+}
