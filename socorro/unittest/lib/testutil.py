@@ -3,29 +3,10 @@ import logging
 import socorro.lib.util as util
 import exceptions
 
+from loggerForTest import TestingLogger
+
 class TestingException(exceptions.Exception):
   pass
-
-class TestingLogger:
-  def __init__(self):
-    self.levels = []
-    self.buffer = []
-
-  def log(self, loggingLevel, message, *args):
-    self.levels.append(loggingLevel)
-    if not message: message = ''
-    if args:
-      self.buffer.append(message % args)
-    else:
-      self.buffer.append(message)
-  def info(self, message):
-    self.log(logging.INFO,message)
-  def critical(self, message):
-    self.log(logging.CRITICAL,message)
-
-  def clear(self):
-    self.levels = []
-    self.buffer = []
 
 def ignoreAlways(*args, **kwargs):
   return True
@@ -132,6 +113,13 @@ class TestUtil(unittest.TestCase):
     assert(0 == len(ci.cache))
     assert(ci.secondaryCacheMaximumSize == len(ci.secondaryLimitedSizeCache))
     assert(ci.secondaryLimitedSizeCache[-1] == max - 1)
+
+  def testSignalNameFromNumber(self):
+    assert 'SIG_UNKNOWN' == util.signalNameFromNumberMap.get(1000,'SIG_UNKNOWN'), '...but got %s'%util.signalNameFromNumber(1000)
+    assert 'SIGTERM' == util.signalNameFromNumberMap.get(15), '...but got %s'%util.signalNameFromNumber(15)
+    assert 'SIGKILL' == util.signalNameFromNumberMap.get(9), '...but got %s'%util.signalNameFromNumber(9)
+    assert 'SIGHUP' == util.signalNameFromNumberMap.get(1), '...but got %s'%util.signalNameFromNumber(1)
+    assert 'SIG_UNKNOWN' == util.signalNameFromNumberMap.get(-1,'SIG_UNKNOWN'), '...but got %s'%util.signalNameFromNumber(-1)
 
 if __name__ == "__main__":
   unittest.main()

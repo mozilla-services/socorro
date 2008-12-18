@@ -10,7 +10,7 @@ import socorro.lib.uuid as suuid
 
 class TestJsonDumpStorageGid(unittest.TestCase):
   def setUp(self):
-    assert 'root' == pwd.getpwuid(os.geteuid())[0], 'You must run this test as root'
+    assert 'root' == pwd.getpwuid(os.geteuid())[0], "You must run this test as root (don't forget root's PYTHONPATH)"
     self.testDir = os.path.join('.','TESTGID')
     self.testMoveFrom = os.path.join('.','TESTGID-MOVEFROM')
     self.newGid = 0777

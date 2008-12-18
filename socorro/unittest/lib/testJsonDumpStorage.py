@@ -7,9 +7,11 @@ import sys
 import socorro.lib.JsonDumpStorage as JDS
 import socorro.lib.util
 
+import createJsonDumpStore as createJDS
+
 class TestJsonDumpStorage(unittest.TestCase):
   def setUp(self):
-    self.testDir = os.path.join('.','TEST-JSONDUMP')
+    self.testDir = os.path.join('.','TEST-JSONDUMP')+'/'
     self.testMoveTo = os.path.join('.','TEST-MOVETO')
     self.testMoveFrom = os.path.join('.','TEST-MOVEFROM')
     self.testMoveToAlt = os.path.join('.','TEST-MOVETO-ALT')
@@ -93,35 +95,6 @@ class TestJsonDumpStorage(unittest.TestCase):
   def __getSlot(self,minsperslot,minute):
     return minsperslot * int(minute/minsperslot)
 
-  def __createTestSet(self,testData, initIndex=1, rootDir=None):
-    if not rootDir: rootDir = self.testDir
-    storage = JDS.JsonDumpStorage(rootDir,**self.initKwargs[initIndex])
-    thedt = DT.datetime.now()
-    for uuid,data in testData.items():
-      if data[0].startswith('+'):
-        if thedt.second >= 58:
-          print "\nSleeping for %d seconds" %(61-thedt.second)
-          time.sleep(61-thedt.second)
-          thedt = DT.datetime.now()
-        slot = {
-          '+0': self.__getSlot(storage.minutesPerSlot,thedt.minute),
-          '+5': self.__getSlot(storage.minutesPerSlot,thedt.minute+5),
-          '+10':self.__getSlot(storage.minutesPerSlot,thedt.minute+10),
-        }
-        d3h = '%d/%02d/%02d/%02d/%s' %(thedt.year,thedt.month,thedt.day,thedt.hour,slot[data[0]])
-        data[3] = "%s/%s" % (d3h,data[3])
-      else:
-        thedt = DT.datetime(*[int(x) for x in data[0].split('-')])
-      fj,fd = storage.newEntry(uuid,webheadHostName=data[1],timestamp = thedt)
-      try:
-        fj.write('json test of %s\n' % uuid)
-      finally:
-        if fj: fj.close()
-      try:
-        fd.write('dump test of %s\n' % uuid)
-      finally:
-        if fd: fd.close()
-
   def __hasLinkOrFail(self,jsonStorage,uuid):
     linkPath = jsonStorage.getJson(uuid)[:-len(jsonStorage.jsonSuffix)]
     try:
@@ -180,10 +153,13 @@ class TestJsonDumpStorage(unittest.TestCase):
       assert expectDump == fd.name, 'For %s, expect %s, got %s' % (uuid,expectDump,fj.name)
       lpath = os.sep.join((storage.dateBranch,data[3],uuid))
       assert os.path.islink(lpath), 'Expect a link from timed to storage for %s' % uuid
+      relNamePath = os.sep.join((storage.dateBranch,data[3],os.readlink(lpath)))
+      assert os.path.isdir(relNamePath), 'Expected %s to be a Name directory'%(relNamePath)
       assert storage.toNameFromDate in os.readlink(lpath)
       lpath = os.sep.join((storage.nameBranch,data[2],uuid))
       assert os.path.islink(lpath), 'Expect link from name storage to timed for %s' % uuid
-      assert storage.toDateFromName(uuid) in os.readlink(lpath)
+      relDatePath = os.sep.join((storage.nameBranch,data[2],os.readlink(lpath)))
+      assert os.path.isdir(relDatePath), 'Expected %s to be a Date directory'%(relDatePath)
       try:
         try:
           fj.write("testing\n")
@@ -204,7 +180,7 @@ class TestJsonDumpStorage(unittest.TestCase):
 
   def testNewEntryDirectoryOverflow(self):
     ''' tests that we write new date links in appropriate overflow dir when we get too many in the regular dir'''
-    self.__createTestSet(self.data,initIndex=3)
+    createJDS.createTestSet(self.data,self.initKwargs[3],self.testDir)
     storage = JDS.JsonDumpStorage(self.testDir,maxDirectoryEntries=3,**self.initKwargs[3])
     for uuid,data in self.toomany.items():
       abspathpart = data[3]
@@ -272,7 +248,7 @@ class TestJsonDumpStorage(unittest.TestCase):
         assert os.path.isfile(dpath)
 
   def testGetJson(self):
-    self.__createTestSet(self.data, initIndex=0)
+    createJDS.createTestSet(self.data, self.initKwargs[0],self.testDir)
     storage = JDS.JsonDumpStorage(self.testDir,**self.initKwargs[0])
     for uuid,data in self.data.items():
       expected = os.sep.join((storage.nameBranch,data[2],uuid+storage.jsonSuffix))
@@ -287,7 +263,7 @@ class TestJsonDumpStorage(unittest.TestCase):
       assert False, 'Got unexpected error %s from attempt to getJson(non-existent-uuid' % e
 
   def testGetDump(self):
-    self.__createTestSet(self.data,initIndex=1)
+    createJDS.createTestSet(self.data,self.initKwargs[1],self.testDir)
     storage = JDS.JsonDumpStorage(self.testDir,**self.initKwargs[1])
     for uuid,data in self.data.items():
       expected = os.sep.join((storage.nameBranch,data[2],uuid+storage.dumpSuffix))
@@ -302,7 +278,7 @@ class TestJsonDumpStorage(unittest.TestCase):
       assert False, 'Got unexpected error(type) %s from attempt to getDump(non-existent-uuid' % e
 
   def markAsSeen(self):
-    self.__createTestSet(self.data,initIndex=3)
+    createJDS.createTestSet(self.data,self.initKwargs[3],self.testDir)
     storage = JDS.JsonDumpStorage(self.testDir,**self.initKwargs[3])
     for uuid,data in self.data.items():
       assert os.path.islink(os.sep.join((storage.dateBranch,data[3],uuid))), 'Expect a link from date to name for %s' % uuid
@@ -319,7 +295,7 @@ class TestJsonDumpStorage(unittest.TestCase):
     assert not os.listdir(storage.dateBranch), 'Expect empty, got %s' % os.listdir(storage.dateBranch)
 
   def testDestructiveDateWalk(self):
-    self.__createTestSet(self.data,initIndex=0)
+    createJDS.createTestSet(self.data,self.initKwargs[0],self.testDir)
     storage = JDS.JsonDumpStorage(self.testDir,**self.initKwargs[0])
     uuids = self.data.keys()
     seenids = []
@@ -331,7 +307,7 @@ class TestJsonDumpStorage(unittest.TestCase):
     assert not os.listdir(storage.dateBranch), 'Expect that destructive walk will remove all date links, and their dirs'
 
   def testDestructiveDateWalkNotNow(self):
-    self.__createTestSet(self.currenttimes,initIndex=1)
+    createJDS.createTestSet(self.currenttimes,self.initKwargs[1],self.testDir)
     storage = JDS.JsonDumpStorage(self.testDir,**self.initKwargs[1])
     uuids = self.currenttimes.keys()
     seenids = []
@@ -340,7 +316,7 @@ class TestJsonDumpStorage(unittest.TestCase):
     assert [] == seenids
 
   def testRemoveAlsoNames(self):
-    self.__createTestSet(self.data,initIndex=2)
+    createJDS.createTestSet(self.data,self.initKwargs[2],self.testDir)
     kwargs = self.initKwargs[2]
     kwargs['cleanIndexDirectories'] = 'True'
     storage = JDS.JsonDumpStorage(self.testDir,**kwargs)
@@ -362,7 +338,7 @@ class TestJsonDumpStorage(unittest.TestCase):
       assert d in alldirs, 'Expected %s in all dirs(%s) but it was not' % (d,alldirs)
 
   def testRemoveRemovesOnlyDate(self):
-    self.__createTestSet(self.data,initIndex=2)
+    createJDS.createTestSet(self.data,self.initKwargs[2],self.testDir)
     storage = JDS.JsonDumpStorage(self.testDir,**self.initKwargs[2])
     expectedSubs = []
     for uuid in self.data.keys():
@@ -398,8 +374,22 @@ class TestJsonDumpStorage(unittest.TestCase):
     for sub in expectedSubs:
       assert sub in alldirs, "Expect each subdirectory is still there, but didn't find %s" % sub
 
+  def testRemoveWithBadlyFormattedDateLink(self):
+    createJDS.createTestSet(self.data,self.initKwargs[2],self.testDir)
+    storage = JDS.JsonDumpStorage(self.testDir,**self.initKwargs[2])
+    uuid = self.data.keys()[0]
+    head,json = os.path.split(storage.getJson(uuid))
+    target = os.readlink(os.path.join(head,uuid))
+    idx = target.index('/date/')
+    target = "%s%s%s" %(target[:idx+6],target[idx+7:idx+10],target[idx+10:])
+    os.unlink(os.path.join(head,uuid))
+    os.symlink(target,os.path.join(head,uuid))
+    print "LINK:%s"%(os.readlink(os.path.join(head,uuid)))
+    # assure that we don't throw for a badly formatted path
+    storage.remove(uuid)
+
   def testRemove(self):
-    self.__createTestSet(self.data,initIndex=2)
+    createJDS.createTestSet(self.data,self.initKwargs[2],self.testDir)
     storage = JDS.JsonDumpStorage(self.testDir,**self.initKwargs[2])
     counter = 0
     for uuid in self.data.keys():
@@ -429,7 +419,7 @@ class TestJsonDumpStorage(unittest.TestCase):
         if os.path.islink(os.path.join(dir,d)):
           alllinks.append(d)
     assert [] == allfiles, 'Expect that all removed files are gone, but found %s' % allfiles
-    assert [] == alllinks, 'Expcet that all links are gone, but found %s' % alllinks
+    assert [] == alllinks, 'Expect that all links are gone, but found %s' % alllinks
     try:
       storage.remove("bogusdatax3yymmdd")
     except JDS.NoSuchUuidFound:
@@ -438,7 +428,7 @@ class TestJsonDumpStorage(unittest.TestCase):
       assert False, 'On remove(bogus) expect NoSuchUuidFound; got %s' % x
 
   def testMove(self):
-    self.__createTestSet(self.data,initIndex=3)
+    createJDS.createTestSet(self.data,self.initKwargs[3],self.testDir)
     storage = JDS.JsonDumpStorage(self.testDir,**self.initKwargs[3])
     os.mkdir(self.testMoveTo)
     for uuid in self.data.keys():
@@ -471,7 +461,7 @@ class TestJsonDumpStorage(unittest.TestCase):
       assert file in allfiles, 'Expect that every file will be moved but did not find %s' % file
 
   def testRemoveOlderThan(self):
-    self.__createTestSet(self.data,initIndex=0)
+    createJDS.createTestSet(self.data,self.initKwargs[0],self.testDir)
     storage = JDS.JsonDumpStorage(self.testDir,**self.initKwargs[0])
     cutoff = DT.datetime(2008,12,26,05,0)
     youngkeys = [x for x,d in self.data.items() if DT.datetime(*[int(i) for i in d[0].split('-')]) >= cutoff]
@@ -525,7 +515,7 @@ class TestJsonDumpStorage(unittest.TestCase):
       assert os.path.isdir(os.path.join(storage.dateBranch,self.data[id][3]))
 
   def testTransferOne(self):
-    self.__createTestSet(self.data,initIndex=0, rootDir = self.testMoveFrom)
+    createJDS.createTestSet(self.data,self.initKwargs[0],rootDir=self.testMoveFrom)
     storage = JDS.JsonDumpStorage(self.testDir,**self.initKwargs[0])
     oldStorage = JDS.JsonDumpStorage(self.testMoveFrom, **self.initKwargs[0])
     itemNumber = 0
@@ -568,7 +558,7 @@ class TestJsonDumpStorage(unittest.TestCase):
         self.__hasNoLinkOrFail(storage,id)
 
   def testTransferMany(self):
-    self.__createTestSet(self.data,initIndex=0, rootDir = self.testMoveFrom)
+    createJDS.createTestSet(self.data,self.initKwargs[0],rootDir=self.testMoveFrom)
     oldStorage = JDS.JsonDumpStorage(self.testMoveFrom, **self.initKwargs[0])
     itemNumber = 0
     xmas = DT.datetime(2001,12,25,12,25)

@@ -5,7 +5,6 @@ import shutil
 import stat
 import errno
 import threading
-import calendar
 
 from stat import S_IRGRP, S_IXGRP, S_IWGRP, S_IRUSR, S_IXUSR, S_IWUSR, S_ISGID
 
@@ -51,7 +50,7 @@ class JsonDumpStorage(object):
     whatever else we may need. Much of this (c|sh)ould be read from a config file.
     """
     super(JsonDumpStorage, self).__init__()
-    self.root = root
+    self.root = root.rstrip(os.sep)
     self.maxDirectoryEntries = maxDirectoryEntries
     self.dateName = kwargs.get('dateName','date')
     self.indexName = kwargs.get('indexName','name')
@@ -100,7 +99,7 @@ class JsonDumpStorage(object):
       #os.symlink(self.__dateRelativePath(timestamp,webheadHostName),os.path.join(nameDir,uuid))
       # directly calculate the date relative path rather than calling the method which does a bit more work
       # if this matters at all, we should re-write __dateRelativePath to do the next line and call it both places
-      os.symlink(os.path.join(self.toDateFromName(uuid), dateDir[len(self.root)+len(self.dateName)+2:]),os.path.join(nameDir,uuid))
+      os.symlink(os.path.join(self.toDateFromName(uuid), dateDir[len(os.path.join(self.root,self.dateName)):].strip(os.sep)),os.path.join(nameDir,uuid))
       os.symlink(self.__nameRelativePath(uuid),os.path.join(dateDir,uuid))
       os.chmod(jname,self.dumpPermissions)
       dname = os.path.join(nameDir,uuid+self.dumpSuffix)
@@ -290,16 +289,33 @@ class JsonDumpStorage(object):
     """
     namePath = self.__nameAbsPath(uuid)
     seenCount = 0
-    depth = socorro_ooid.depthFromOoid(uuid)
+    datestamp,depth = socorro_ooid.dateAndDepthFromOoid(uuid)
     if not depth: depth = 4 # prior, when hardcoded depth=4, uuid[-8:] was yyyymmdd, year was always (20xx)
+    datePath = self.dateBranch
     try:
       datePath = os.path.join(namePath,os.readlink(os.path.join(namePath,uuid)))
+    except OSError:
+      self.logger.debug("%s - %s Missing or bad link in %s" % (threading.currentThread().getName(), uuid, namePath))
+    try:
       os.unlink(os.path.join(namePath,uuid))
+      seenCount += 1
+    except OSError:
+      self.logger.debug("%s - %s Cannot unlink link at %s" % (threading.currentThread().getName(), uuid, namePath))
+    try:
       os.unlink(os.path.join(datePath,uuid))
       seenCount += 1
-      self.__cleanDirectory(datePath, self.dateName)
     except OSError:
-      self.logger.debug("%s - %s Missing at least one link" % (threading.currentThread().getName(), uuid))
+      # probably the root-has-trailing-slash bug. We need the name-to-date link to remove the date-to-name link.
+      # Since the first is wrong, lets just remove the date-to-name link directly
+      webheadHostName = os.path.split(datePath)[1]
+      if datestamp:
+        datePath = self.__makeDateDir(datestamp,webheadHostName)
+        try:
+          os.unlink(os.path.join(datePath,uuid))
+          seenCount += 1
+        except:
+          self.logger.debug("%s - %s Cannot unlink link at %s" % (threading.currentThread().getName(), uuid, datePath))
+    self.__cleanDirectory(datePath, self.dateName)
     try:
       os.unlink(os.path.join(namePath,uuid+self.jsonSuffix))
       seenCount += 1
@@ -335,24 +351,26 @@ class JsonDumpStorage(object):
     except NoSuchUuidFound:
       pass # there were no links
 
+
   #-----------------------------------------------------------------------------------------------------------------
   def removeOlderThan (self, timestamp):
     """
     Walks the date branch removing all entries strictly older than the timestamp.
     Removes the corresponding entries in the name branch as well as cleans up empty date directories
     """
-    for dir,dirs,files in os.walk(self.dateBranch,topdown = True):
+    for dir,dirs,files in os.walk(self.dateBranch,topdown = False):
       #self.logger.debug("considering: %s", dir)
       thisStamp = self.__pathToDate(dir)
-      maybeStopStamp = self.__partialPathToDate(dir)
-      if maybeStopStamp and (maybeStopStamp >= timestamp):
-        dirs[:] = []
       if thisStamp and (thisStamp < timestamp):
         # The links are all to (relative) directories, so no need to handle files
         for i in dirs:
           if os.path.islink(os.path.join(dir,i)):
-            self.logger.debug("removing: %s", i)
+            #self.logger.debug("removing: %s", i)
             self.remove(i)
+      #contents = os.listdir(dir)
+      #if contents == []:
+        #self.logger.debug("killing empty date directory: %s", dir)
+      #  os.rmdir(dir)
 
   def toDateFromName(self,uuid):
     """Given uuid, get the relative path to the top of the date directory from the name location"""
@@ -464,27 +482,8 @@ class JsonDumpStorage(object):
           raise e
     return dpath
 
-  def __partialPathToDate(self,path):
-    """ Parse a (possibly partial) date path into a datetime instance.
-    For less than full date paths, sets missing bits to "small". e.g: for /year/ part == /2005/, date is 2005-01-01T00:00:00.0000
-    returns __pathToDate if this path is a full date path
-    """
-    
-    part = path.split(self.dateBranch)[1] # cdr has the date part, starts with '/'
-    astamp = None
-    if part:
-      data = part.split(os.sep)[1:] # get rid of leading empty
-      if len(data) == 0 or len(data) == 6:
-        return self.__pathToDate(path);
-      if 1 == len(data): # year: make it january
-        data.append(1) 
-      if 2 == len(data): # year/month: make it 1st
-        data.append(1)
-      # for deeper categories, use what you have: datetime defaults to zeros
-      return DT.datetime(*[int(x) for x in data]);
-    
   def __pathToDate(self,path):
-    """ Parse full date path into a datetime instance, or None if not possible"""
+    """ Parse an index/date path into a datetime instance, or None if not possible"""
     part = path.split(self.dateBranch)[1] # cdr has the date part, starts with '/'
     if part:
       data = part.split(os.sep)[1:-1] # get rid of leading empty, trailing webhead
