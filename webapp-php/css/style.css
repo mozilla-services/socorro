@@ -106,6 +106,14 @@ dt {
     list-style: none;
     margin-bottom: 0.75em;
 }
+.nav.current{text-decoration: none; font-weight: 600; }
+
+.message{
+  margin: 3em;
+  padding: 1em;
+  border: solid 2px #CCC;
+  width: 25em;
+}
 
 .tcburl-toggler {
   display: inline;
