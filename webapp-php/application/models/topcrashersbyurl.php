@@ -13,7 +13,7 @@ class TopcrashersByUrl_Model extends Model {
   public function getTopCrashersByUrl($product=NULL, $version=NULL, $build_id=NULL, $branch=NULL, $page=1) {
     $offset = ($page -1) * 100;
     $aTime = time();
-    //$aTime = strtotime('2008-08-26');
+    //$aTime = strtotime('2008-11-20');
     $end_date = date("Y-m-d", $aTime);
     $start_date = date("Y-m-d", $aTime - (60 * 60 * 24 * 14) + 1);
     $product_id = $this->getProductId($product, $version);
@@ -39,7 +39,7 @@ class TopcrashersByUrl_Model extends Model {
   public function getTopCrashersByDomain($product=NULL, $version=NULL, $build_id=NULL, $branch=NULL, $page=1) {
     $offset = ($page -1) * 100;
     $aTime = time();
-    //$aTime = strtotime('2008-08-26');
+    //$aTime = strtotime('2008-11-20');
     $end_date = date("Y-m-d", $aTime);
     $start_date = date("Y-m-d", $aTime - (60 * 60 * 24 * 14) + 1);
     $product_id = $this->getProductId($product, $version);
@@ -66,7 +66,7 @@ class TopcrashersByUrl_Model extends Model {
     public function getUrlsByDomain($product, $version, $domain, $page){
       $offset = ($page -1) * 50;
       $aTime = time();
-      //$aTime = strtotime('2008-08-26');
+      //$aTime = strtotime('2008-11-20');
       $end_date = date("Y-m-d", $aTime);
       $start_date = date("Y-m-d", $aTime - (60 * 60 * 24 * 14) + 1);
       $product_id = $this->getProductId($product, $version);
@@ -92,7 +92,7 @@ class TopcrashersByUrl_Model extends Model {
     public function getSignaturesByUrl($product, $version, $url, $page){
       $offset = ($page -1) * 50;
       $aTime = time();
-      //$aTime = strtotime('2008-08-26');
+      //$aTime = strtotime('2008-11-20');
       $end_date = date("Y-m-d", $aTime);
       $start_date = date("Y-m-d", $aTime - (60 * 60 * 24 * 14) + 1);
       $product_id = $this->getProductId($product, $version);
@@ -121,7 +121,7 @@ class TopcrashersByUrl_Model extends Model {
     }
     public function getSigCommentsByUrl($product, $version, $url){
       $aTime = time();
-      //$aTime = strtotime('2008-08-26');
+      //$aTime = strtotime('2008-11-20');
       $end_date = date("Y-m-d", $aTime);
       $start_date = date("Y-m-d", $aTime - (60 * 60 * 24 * 14) + 1);
       $sql = "/* soc.web tbcurl comm4sig */ " . 
@@ -160,6 +160,11 @@ class TopcrashersByUrl_Model extends Model {
       if(count($rows) != 1){
 	Kohana::log('error', "Unable to getProductId for $product $version got " . Kohana::debug($rows));
       }
-      return $rows[0]->id;
+      if( count( $rows ) > 0 ){
+        return $rows[0]->id;
+      }else{
+	Kohana::log('error', "Unknown product $product $version");
+        return -1;
+      }
     }
 }

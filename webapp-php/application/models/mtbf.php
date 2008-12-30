@@ -23,6 +23,9 @@ WHERE product = '$product' AND release = '$release_level' AND os_name IN ('" . i
 
     $rs = $this->fetchRows($sql);
 
+    if( count($rs) == 0){
+      return array();
+    }
     $this->init_flot_friendly($mtbf);
 
     foreach($rs as $row){

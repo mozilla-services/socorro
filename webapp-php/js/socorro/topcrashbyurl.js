@@ -94,7 +94,7 @@ $(document).ready(function(){
                         upd += "' class='tcburl-toggler tcburl-urlToggler'>+</div>";
                         upd += "<a id='tcburl-url" + domainId + "_" + i + "' class='tcburl-urlToggler' href='#'>";
 
-		        upd += "" + data[i].url + "</a> <a href='" +  data[i].url + "' target='_new'>link</a></td><td class='url-crash-count'>";
+		        upd += "" + data[i].url + "</a> <a href='" +  data[i].url + "' target='_new'>&#35;</a></td><td class='url-crash-count'>";
                         upd += data[i].count + "</td></tr>";
 
                         upd += "<tr id='tcburl-urlToggle-row" + domainId + "_" + i + "' style='display: none'><td colspan='2'></td></tr>";

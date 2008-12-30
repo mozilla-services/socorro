@@ -24,18 +24,25 @@
 <h2 class="mtbf-graph"><span id="mtbf-product"><?php echo $product . "</span> <span id='mtbf-release-level'>" . $release_level ?></span> releases</h2>
       <?php echo Kohana::debug() ?>
 <div class="mtbf-nav-panel">
-  <ul>Other build release levels:
-<?php foreach($other_releases as $other){?>
-    <li><a href="../Firefox/<?php echo $other ?>"><?php echo ucwords($other) ?></a><li>
-<?php } ?>
+  <ul>Release type: 
+      <li><a href="major" class="nav <?php     if($release_level == 'major'){?> current<?php } ?>">Major</a><li>
+    <li><a href="milestone" class="nav <?php   if($release_level == 'milestone'){?> current<?php } ?>">Milestone</a><li>
+    <li><a href="development" class="nav <?php if($release_level == 'development'){?> current<?php } ?>">Development</a><li>
   </ul>
 </div>
+
+<?php
+    if( count($releases) ==0 ){
+?>
+<p class="message">No data is currently availabe for <?php echo $product . " " . $release_level; ?> releases.</p>
+<?php    
+    } else {
+?>
+
 <div id="overviewLegend"></div>
 
 <div id="mtbf-graph"></div>
 <div class="caption plot-label">Average number of seconds before a crash. Day 0 of release through day 60.</div>
-
-
 
 <table id="firefox3.0.3-legend"></table>
 
@@ -50,4 +57,7 @@
 <script type="text/javascript">
 var SocMtbfSeries = <?php echo json_encode( $releases ); ?>;
 </script>
-<?php } ?>
+<?php 
+    } //if/else no data
+} //if/else error message for url
+ ?>
