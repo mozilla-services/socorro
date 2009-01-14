@@ -50,8 +50,8 @@ def calculateMtbf(configContext, logger):
               SELECT AVG(uptime) AS avg_seconds, 
                 COUNT(date) AS report_count, COUNT(DISTINCT(user_id)) AS unique_users, DATE '%s', %d
               FROM reports  
-              WHERE date >= TIMESTAMP WITHOUT TIME ZONE '%s' 
-                AND date <= TIMESTAMP WITHOUT TIME ZONE '%s' %s
+              WHERE date_processed >= TIMESTAMP WITHOUT TIME ZONE '%s' 
+                AND date_processed <= TIMESTAMP WITHOUT TIME ZONE '%s' %s
               """ % (aDay, product.dimensionId, start, end, getWhereClauseFor(product))
     try:
       logger.info(sql)

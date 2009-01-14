@@ -101,8 +101,8 @@ def populateRelatedTables(context, conn, readCur, logger):
   selSql = """
         SELECT uuid, comments, signature, url
         FROM reports 
-        WHERE TIMESTAMP WITHOUT TIME ZONE %(start_date)s <= date
-          AND date <= TIMESTAMP WITHOUT TIME ZONE %(end_date)s
+        WHERE TIMESTAMP WITHOUT TIME ZONE %(start_date)s <= date_processed
+          AND date_processed <= TIMESTAMP WITHOUT TIME ZONE %(end_date)s
           AND comments IS NOT NULL AND url IS NOT NULL AND signature IS NOT NULL 
           AND comments != ''       AND url != ''       AND signature != '' 
           AND product = %(product_name)s AND version = %(product_version)s """
@@ -298,8 +298,8 @@ class ByUrlDomain:
     # about:blank is the #1 crashing url, but it isn't really an intereting url...
     sql = """/* soc.crn tcburl top domain */
              SELECT count(id) as crash_count, split_part(url, '/', 3) AS domain 
-             FROM reports WHERE TIMESTAMP WITHOUT TIME ZONE %(start_date)s <= date
-             AND  date <= TIMESTAMP WITHOUT TIME ZONE %(end_date)s 
+             FROM reports WHERE TIMESTAMP WITHOUT TIME ZONE %(start_date)s <= date_processed
+             AND  date_processed <= TIMESTAMP WITHOUT TIME ZONE %(end_date)s 
              AND product = %(product_name)s AND version = %(product_version)s
              AND url IS NOT NULL AND url != ''
              AND signature IS NOT NULL AND signature != ''
@@ -356,8 +356,8 @@ class ByUrlEachUrl:
     #rank is accomplished via ORDER BY here...
     sql = """/* soc.crn tcburl top domain */
              SELECT COUNT(id) AS crash_count,  split_part(url, '?', 1) AS url from reports 
-             WHERE TIMESTAMP WITHOUT TIME ZONE %(start_date)s <= date
-             AND date <= TIMESTAMP WITHOUT TIME ZONE %(end_date)s
+             WHERE TIMESTAMP WITHOUT TIME ZONE %(start_date)s <= date_processed
+             AND date_processed <= TIMESTAMP WITHOUT TIME ZONE %(end_date)s
              AND product = %(product_name)s AND version = %(product_version)s 
              AND url IS NOT NULL AND url != ''
              AND signature IS NOT NULL AND signature != ''
@@ -412,8 +412,8 @@ class BySignature:
     # Would it be more efficient to do a couple Sigs at a time...?
     sql = """/* soc.crn tcburl top sign */
              SELECT COUNT(id) AS crash_count, signature from reports 
-             WHERE TIMESTAMP WITHOUT TIME ZONE %(start_date)s <= date
-             AND date <= TIMESTAMP WITHOUT TIME ZONE %(end_date)s
+             WHERE TIMESTAMP WITHOUT TIME ZONE %(start_date)s <= date_processed
+             AND date_processed <= TIMESTAMP WITHOUT TIME ZONE %(end_date)s
              AND product = %(product_name)s AND version = %(product_version)s AND url = %(urldims_url)s 
              AND signature IS NOT NULL AND signature != ''
              GROUP BY signature

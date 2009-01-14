@@ -95,9 +95,9 @@ def calculateTopCrashes(configContext, logger):
       end_time = now
     if configContext.initMode:
       logger.info("Init mode selected. Using big query!")
-      sql = "SELECT %s FROM reports WHERE date>='%s'" % (",".join(columns), initModeDate)
+      sql = "SELECT %s FROM reports WHERE date_processed>='%s'" % (",".join(columns), initModeDate)
     else:
-      sql = "SELECT %s FROM reports WHERE date>='%s' AND date <='%s'" % (",".join(columns), start_time, end_time)
+      sql = "SELECT %s FROM reports WHERE date_processed >='%s' AND date_processed <='%s'" % (",".join(columns), start_time, end_time)
       logger.info("Beginning Data Slurp")
 
     try:

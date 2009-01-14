@@ -93,7 +93,7 @@ class Common_Model extends Model {
             " SELECT " . join(', ', $columns) .
             " FROM   " . join(', ', array_keys($tables)) .
             " WHERE  " . join(' AND ', $where) .
-	  " ORDER BY reports.date DESC " .
+	  " ORDER BY reports.date_processed DESC " .
 	  " LIMIT 500";
 
         return $this->fetchRows($sql);
@@ -226,11 +226,12 @@ class Common_Model extends Model {
         if ($params['range_value'] && $params['range_unit']) {
             if (!$params['date']) {
                 $interval = $this->db->escape($params['range_value'] . ' ' . $params['range_unit']);
-                $where[] = "reports.date BETWEEN now() - CAST($interval AS INTERVAL) AND now()";
+                $now = date('Y-m-d H:i:s');
+                $where[] = "reports.date_processed BETWEEN TIMESTAMP '$now' - CAST($interval AS INTERVAL) AND TIMESTAMP '$now'";
             } else {
                 $date = $this->db->escape($params['date']);
                 $interval = $this->db->escape($params['range_value'] . ' ' . $params['range_unit']);
-                $where[] = "reports.date BETWEEN CAST($date AS DATE) - CAST($interval AS INTERVAL) AND CAST($date AS DATE)";
+                $where[] = "reports.date_processed BETWEEN CAST($date AS DATE) - CAST($interval AS INTERVAL) AND CAST($date AS DATE)";
             }
         }
         
