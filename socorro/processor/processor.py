@@ -15,11 +15,14 @@ import logging
 
 logger = logging.getLogger("processor")
 
+import socorro.database.schema as sch
+
 import socorro.lib.util
 import socorro.lib.threadlib
 import socorro.lib.ConfigurationManager
 import socorro.lib.JsonDumpStorage as jds
 import socorro.lib.psycopghelper as psy
+import socorro.lib.ooid as ooid
 
 import simplejson
 
@@ -47,6 +50,10 @@ class UTC(datetime.tzinfo):
 
 #=================================================================================================================
 class DuplicateEntryException(Exception):
+  pass
+
+#=================================================================================================================
+class ErrorInBreakpadStackwalkException(Exception):
   pass
 
 #=================================================================================================================
@@ -90,6 +97,8 @@ class Processor(object):
   fixupSpace = re.compile(r' (?=[\*&,])')
   fixupComma = re.compile(r'(?<=,)(?! )')
   filename_re = re.compile('[/\\\\]([^/\\\\]+)$')
+  irrelevantSignaturePattern = re.compile('@0x[01234567890abcdefABCDEF]{2,}')
+  prefixSignaturePattern = re.compile('@0x0|strchr|memcpy|malloc|realloc|.*free.*|arena_dalloc_small')
   utctz = UTC()
 
   #-----------------------------------------------------------------------------------------------------------------
@@ -119,6 +128,12 @@ class Processor(object):
     self.config = config
     self.quit = False
     signal.signal(signal.SIGTERM, Processor.respondToSIGTERM)
+
+    self.reportsTable = sch.ReportsTable(logger=logger)
+    self.dumpsTable = sch.DumpsTable(logger=logger)
+    self.extensionsTable = sch.ExtensionsTable(logger=logger)
+    self.framesTable = sch.FramesTable(logger=logger)
+    self.reportsTable.setDependents([self.dumpsTable, self.extensionsTable, self.framesTable])
 
     logger.info("%s - connecting to database", threading.currentThread().getName())
     try:
@@ -286,6 +301,22 @@ class Processor(object):
     return '@%s' % instruction
 
   #-----------------------------------------------------------------------------------------------------------------
+  @staticmethod
+  def generateSignatureFromList(signatureList):
+    signatureNewSignatureList = []
+    prefixFound = False
+    for aSignature in signatureList:
+      if Processor.irrelevantSignaturePattern.match(aSignature):
+        if prefixFound:
+          signatureNewSignatureList.append(aSignature)
+        continue
+      signatureNewSignatureList.append(aSignature)
+      if not Processor.prefixSignaturePattern.match(aSignature):
+        break
+      prefixFound = True
+    return ' | '.join(signatureNewSignatureList)
+
+  #-----------------------------------------------------------------------------------------------------------------
   def submitJobToThreads(self, databaseCursor, aJobTuple):
     databaseCursor.execute("update jobs set startedDateTime = %s where id = %s", (datetime.datetime.now(), aJobTuple[0]))
     databaseCursor.connection.commit()
@@ -323,7 +354,7 @@ class Processor(object):
   #-----------------------------------------------------------------------------------------------------------------
   def incomingJobStream(self, databaseCursor):
     """
-       aJobTuple has this form: (jobId, jobUuid, jobPriority, jobPathname)
+       aJobTuple has this form: (jobId, jobUuid, jobPriority)
     """
     jobList = {}
     preexistingPriorityJobs = set()
@@ -348,9 +379,10 @@ class Processor(object):
             except KeyError:
               try:
                 try:
-                  aJobTuple = psy.singleRowSql(databaseCursor, "select j.id, j.uuid, j.priority, j.pathname from jobs j where j.uuid = '%s'" % aPriorityJobUuid)
-                  if aJobTuple[3] is not None and aJobTuple[3] != '':
-                    self.moveJobFromLegacyToStandardStorage(aJobTuple[0], aJobTuple[3])
+                  aJobTuple = psy.singleRowSql(databaseCursor, "select j.id, j.uuid, j.priority from jobs j where j.uuid = '%s'" % aPriorityJobUuid)
+                  #aJobTuple = psy.singleRowSql(databaseCursor, "select j.id, j.uuid, j.priority, j.pathname from jobs j where j.uuid = '%s'" % aPriorityJobUuid)
+                  #if aJobTuple[3] is not None and aJobTuple[3] != '':
+                    #self.moveJobFromLegacyToStandardStorage(aJobTuple[0], aJobTuple[3])
                   logger.debug("%s - incomingJobStream yielding priority from database: %s", threading.currentThread().getName(), aJobTuple[1])
                 finally:
                   databaseCursor.execute("delete from %s where uuid = '%s'" % (self.priorityJobsTableName, aPriorityJobUuid))
@@ -363,11 +395,12 @@ class Processor(object):
           continue  # done processing priorities - start the loop again in case there are more priorities
         preexistingPriorityJobs = set()
         if not jobList:
-          databaseCursor.execute("select j.id, j.uuid, j.priority, j.pathname from jobs j where j.owner = %d and j.starteddatetime is null order by j.priority desc limit %d" % (self.processorId, self.config.batchJobLimit))
+          #databaseCursor.execute("select j.id, j.uuid, j.priority, j.pathname from jobs j where j.owner = %d and j.starteddatetime is null order by j.priority desc limit %d" % (self.processorId, self.config.batchJobLimit))
+          databaseCursor.execute("select j.id, j.uuid, j.priority from jobs j where j.owner = %d and j.starteddatetime is null order by j.priority desc limit %d" % (self.processorId, self.config.batchJobLimit))
           for aJobTuple in databaseCursor.fetchall():
-            if aJobTuple[3] is not None and aJobTuple[3] != '':
-              logger.debug("%s - we've got a legacy job: '%s'", threading.currentThread().getName(), aJobTuple[3])
-              self.moveJobFromLegacyToStandardStorage(aJobTuple[0], aJobTuple[3])
+            #if aJobTuple[3] is not None and aJobTuple[3] != '':
+              #logger.debug("%s - we've got a legacy job: '%s'", threading.currentThread().getName(), aJobTuple[3])
+              #self.moveJobFromLegacyToStandardStorage(aJobTuple[0], aJobTuple[3])
             jobList[aJobTuple[1]] = aJobTuple
             if aJobTuple[2]:  #check priority
               logger.debug("%s - adding priority job found in database: %s", threading.currentThread().getName(), aJobTuple[1])
@@ -431,12 +464,14 @@ class Processor(object):
       self.quit = True
       socorro.lib.util.reportExceptionAndAbort(logger) # can't continue without a database connection
     try:
-      jobId, jobUuid, jobPriority, jobPathname = jobTuple
+      processorErrorMessages = []
+      jobId, jobUuid, jobPriority = jobTuple
       logger.info("%s - starting job: %s, %s", threadName, jobId, jobUuid)
       startedDateTime = datetime.datetime.now()
       threadLocalCursor.execute("update jobs set startedDateTime = %s where id = %s", (startedDateTime, jobId))
       threadLocalDatabaseConnection.commit()
 
+      date_processed = ooid.dateFromOoid(jobUuid)
       jobPathname = self.jsonPathForUuidInJsonDumpStorage(jobUuid)
       dumpfilePathname = self.dumpPathForUuidInJsonDumpStorage(jobUuid)
       jsonFile = open(jobPathname)
@@ -444,13 +479,13 @@ class Processor(object):
         jsonDocument = simplejson.load(jsonFile)
       finally:
         jsonFile.close()
-      reportId = self.createReport(threadLocalCursor, jobUuid, jsonDocument, jobPathname)
+      reportId = self.insertReportIntoDatabase(threadLocalCursor, jobUuid, jsonDocument, jobPathname, date_processed, processorErrorMessages)
       threadLocalDatabaseConnection.commit()
-      truncated = self.doBreakpadStackDumpAnalysis(reportId, jobUuid, dumpfilePathname, threadLocalCursor)
+      truncated = self.doBreakpadStackDumpAnalysis(reportId, jobUuid, dumpfilePathname, threadLocalCursor, date_processed, processorErrorMessages)
       self.quitCheck()
       #finished a job - cleanup
       threadLocalCursor.execute("update jobs set completedDateTime = %s, success = True where id = %s", (datetime.datetime.now(), jobId))
-      threadLocalCursor.execute("update reports set startedDateTime = %s, completedDateTime = %s, success = True, truncated = %s where id = %s", (startedDateTime, datetime.datetime.now(), truncated, reportId))
+      threadLocalCursor.execute("update reports set started_datetime = timestamp without time zone '%s', completed_datetime = timestamp without time zone '%s', success = True, truncated = %s where id = %s and date_processed = timestamp without time zone '%s'" % (startedDateTime, datetime.datetime.now(), truncated, reportId, date_processed))
       #self.updateRegistrationNoCommit(threadLocalCursor)
       threadLocalDatabaseConnection.commit()
       logger.info("%s - succeeded and committed: %s, %s", threadName, jobId, jobUuid)
@@ -470,18 +505,20 @@ class Processor(object):
       self.quit = True
       socorro.lib.util.reportExceptionAndAbort(logger)
     except Exception, x:
-      socorro.lib.util.reportExceptionAndContinue(logger)
+      if type(x) != ErrorInBreakpadStackwalkException:
+        socorro.lib.util.reportExceptionAndContinue(logger)
       threadLocalDatabaseConnection.rollback()
-      message = "%s:%s" % (type(x), str(x))
+      processorErrorMessages.append(str(x))
+      message = '\n'.join(processorErrorMessages).replace("'", "''")
       threadLocalCursor.execute("update jobs set completedDateTime = %s, success = False, message = %s where id = %s", (datetime.datetime.now(), message, jobId))
       try:
-        threadLocalCursor.execute("update reports set startedDateTime = %s, completedDateTime = %s, success = False, message = %s where id = %s", (startedDateTime, datetime.datetime.now(), message, reportId))
-      except:
+        threadLocalCursor.execute("update reports set started_datetime = timestamp without time zone '%s', completed_datetime = timestamp without time zone '%s', success = False, processor_notes = '%s' where id = %s and date_processed = timestamp without time zone '%s'" % (startedDateTime, datetime.datetime.now(), message, reportId, date_processed))
+      except AttributeError:
         pass
       threadLocalDatabaseConnection.commit()
 
   #-----------------------------------------------------------------------------------------------------------------
-  def createReport(self, threadLocalCursor, uuid, jsonDocument, jobPathname):
+  def insertReportIntoDatabase(self, threadLocalCursor, uuid, jsonDocument, jobPathname, date_processed, processorErrorMessages):
     """ This function is run only by a worker thread.
         Create the record for the current job in the 'reports' table
 
@@ -492,21 +529,33 @@ class Processor(object):
           jsonDocument: an object with a dictionary interface for fetching the components of
               the json document
           jobPathname:  the complete pathname for the json document
+          date_processed: when job came in (a key used in partitioning)
+          processorErrorMessages: list of strings of error messages
     """
+    logger.debug("%s - starting insertReportIntoDatabase", threading.currentThread().getName())
     try:
       product = socorro.lib.util.limitStringOrNone(jsonDocument['ProductName'], 30)
+    except KeyError:
+      processorErrorMessages.append("ERROR: Json file missing 'ProductName'")
+    try:
       version = socorro.lib.util.limitStringOrNone(jsonDocument['Version'], 16)
+    except KeyError:
+      processorErrorMessages.append("ERROR: Json file missing 'Version'")
+    try:
       build = socorro.lib.util.limitStringOrNone(jsonDocument['BuildID'], 30)
-    except KeyError, x:
-      raise Exception("Json file error: missing or improperly formated '%s' in %s" % (x, jobPathname))
+    except KeyError:
+      processorErrorMessages.append("ERROR: Json file missing 'BuildID'")
     url = socorro.lib.util.lookupLimitedStringOrNone(jsonDocument, 'URL', 255)
     email = socorro.lib.util.lookupLimitedStringOrNone(jsonDocument, 'Email', 100)
     user_id = socorro.lib.util.lookupLimitedStringOrNone(jsonDocument, 'UserID',  50)
-    comments = socorro.lib.util.lookupLimitedStringOrNone(jsonDocument, 'Comments', 500)
+    user_comments = socorro.lib.util.lookupLimitedStringOrNone(jsonDocument, 'Comments', 500)
+    app_notes = socorro.lib.util.lookupLimitedStringOrNone(jsonDocument, 'Notes', 1000)
+    distributor = socorro.lib.util.lookupLimitedStringOrNone(jsonDocument, 'Distributor', 20)
+    distributor_version = socorro.lib.util.lookupLimitedStringOrNone(jsonDocument, 'Distributor_version', 20)
     crash_time = None
     install_age = None
     uptime = 0
-    report_date = datetime.datetime.now()
+    report_date = date_processed
     try:
       crash_time = int(jsonDocument['CrashTime'])
       report_date = datetime.datetime.fromtimestamp(crash_time, Processor.utctz)
@@ -518,57 +567,36 @@ class Processor(object):
       except (ValueError, KeyError):
         logger.warning("%s - no 'report_date' calculated in %s", threading.currentThread().getName(), jobPathname)
         socorro.lib.util.reportExceptionAndContinue(logger, logging.WARNING)
-    #if 'CrashTime' in jsonDocument and timePattern.match(str(jsonDocument['CrashTime'])) and 'InstallTime' in jsonDocument and timePattern.match(str(jsonDocument['InstallTime'])):
-    #  try:
-    #    crash_time = int(jsonDocument['CrashTime'])
-    #    report_date = datetime.datetime.fromtimestamp(crash_time, utctz)
-    #    install_age = crash_time - int(jsonDocument['InstallTime'])
-    #    if 'StartupTime' in jsonDocument and timePattern.match(str(jsonDocument['StartupTime'])) and crash_time >= int(jsonDocument['StartupTime']):
-    #      uptime = crash_time - int(jsonDocument['StartupTime'])
-    #  except (ValueError):
-    #    print >>statusReportStream, "no 'uptime',  'crash_time' or 'install_age' calculated in %s" % jobPathname
-    #    socorro.lib.util.reportExceptionAndContinue()
-    #elif 'timestamp' in jsonDocument and timePattern.match(str(jsonDocument['timestamp'])):
-    #  try:
-    #    report_date = datetime.datetime.fromtimestamp(jsonDocument['timestamp'], utctz)
-    #  except (ValueError):
-    #    print >>statusReportStream, "no 'report_date' calculated in %s" % jobPathname
-    #    socorro.lib.util.reportExceptionAndContinue()
+        processorErrorMessages.append("WARNING: No 'client_report_date' could be determined from the Json file")
     build_date = None
     try:
-      y, m, d, h = [int(x) for x in Processor.buildDatePattern.match(str(jsonDocument['BuildID'])).groups()]
-      #(y, m, d, h) = map(int, Processor.buildDatePattern.match(str(jsonDocument['BuildID'])).groups())
-      build_date = datetime.datetime(y, m, d, h)
+      build_date = datetime.datetime(*[int(x) for x in Processor.buildDatePattern.match(str(jsonDocument['BuildID'])).groups()])
     except (AttributeError, ValueError, KeyError):
         logger.warning("%s - no 'build_date' calculated in %s", threading.currentThread().getName(), jobPathname)
+        processorErrorMessages.append("WARNING: No 'build_date' could be determined from the Json file")
         socorro.lib.util.reportExceptionAndContinue(logger, logging.WARNING)
     try:
       last_crash = int(jsonDocument['SecondsSinceLastCrash'])
     except:
       last_crash = None
-    def insertReport():
-      threadLocalCursor.execute ("""insert into reports
-                                    (id,                        uuid, date,        product, version, build, url, install_age, last_crash, uptime, email, build_date, user_id, comments) values
-                                    (nextval('seq_reports_id'), %s,   %s,          %s,      %s,      %s,    %s,  %s,          %s,         %s,     %s,    %s,         %s,      %s)""",
-                                    (                           uuid, report_date, product, version, build, url, install_age, last_crash, uptime, email, build_date, user_id, comments))
+    newReportsRowTuple = (uuid, report_date, date_processed, product, version, build, url, install_age, last_crash, uptime, email, build_date, user_id, user_comments, distributor, distributor_version)
     try:
-      #logger.debug("%s - %s", threading.currentThread().getName(), str(jsonDocument))
-      insertReport()
+      logger.debug("%s - inserting for %s", threading.currentThread().getName(), uuid)
+      self.reportsTable.insert(threadLocalCursor, newReportsRowTuple, self.databaseConnectionPool.connectToDatabase, date_processed=date_processed)
     except psycopg2.IntegrityError:
       logger.debug("%s - %s: this report already exists",  threading.currentThread().getName(), uuid)
       threadLocalCursor.connection.rollback()
-      threadLocalCursor.execute("select success from reports where uuid = %s", (uuid,))
-      previousTrialWasSuccessful = threadLocalCursor.fetchall()[0][0]
+      previousTrialWasSuccessful = psy.singleValueSql(threadLocalCursor, "select success from reports where uuid = '%s' and date_processed = timestamp without time zone '%s'" % (uuid, date_processed))
       if previousTrialWasSuccessful:
         raise DuplicateEntryException(uuid)
-      threadLocalCursor.execute("delete from reports where uuid = %s", (uuid,))
-      insertReport()
-    threadLocalCursor.execute("select id from reports where uuid = %s", (uuid,))
-    reportId = threadLocalCursor.fetchall()[0][0]
+      threadLocalCursor.execute("delete from reports where uuid = '%s' and date_processed = timestamp without time zone '%s'" % (uuid, date_processed))
+      processorErrorMessages.append("INFO: This record is a replacement for a previous record with the same uuid")
+      self.reportsTable.insert(threadLocalCursor, newReportsRowTuple)
+    reportId = psy.singleValueSql(threadLocalCursor, "select id from reports where uuid = '%s' and date_processed = timestamp without time zone '%s'" % (uuid, date_processed))
     return reportId
 
   #-----------------------------------------------------------------------------------------------------------------
-  def doBreakpadStackDumpAnalysis (self, reportId, uuid, dumpfilePathname, databaseCursor):
+  def doBreakpadStackDumpAnalysis (self, reportId, uuid, dumpfilePathname, databaseCursor, date_processed, processorErrorMessages):
     """ This function is run only by a worker thread.
         This function must be overriden in a subclass - this method will invoke the breakpad_stackwalk process
         (if necessary) and then do the anaylsis of the output

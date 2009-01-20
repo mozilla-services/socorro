@@ -16,9 +16,19 @@ class HelpHandler:
     self.stringIO.close()
 
 class TestConfigurationManager(unittest.TestCase):
+  def __findConfigTstPath(self):
+    if os.path.exists(os.path.join('.','config.tst')):
+      return os.path.join('.','config.tst')
+    # else
+    for dirpath,dirnames,filenames in os.walk("."):
+      if 'config.tst' in filenames:
+        return os.path.join(dirpath,'config.tst');
+    return os.path.join('.','config.tst') # this will give a nice failure message
+
   def setUp(self):
     self.keepargv = copy.copy(sys.argv)
     self.keepenviron = os.environ.copy()
+    self.configTstPath = self.__findConfigTstPath()
     
   def tearDown(self):
     sys.argv = copy.copy(self.keepargv)
@@ -52,10 +62,19 @@ class TestConfigurationManager(unittest.TestCase):
     conf = CM.newConfiguration(automaticHelp=False,configurationModule=optionfile)
     cd = conf.allowableOptionDictionary
     assert(5 == len(cd))
-    assert(['T', 'testSingleCharacter', True, None, 'testSingleCharacter imported from optionfile'] == cd.get('T'))
-    assert([None, 'testDefault', True, 'default', 'testDefault imported from optionfile'] == cd.get('testDefault'))
+    assert ['T', 'testSingleCharacter', True, None] == cd.get('T')[:-1],'but got %s' % (str(cd.get('T')[:-1]))
+    assert 'testSingleCharacter imported from' in cd.get('T')[-1],'but got %s' % (str(cd.get('T')[-1]))
+    assert 'optionfile' in cd.get('T')[-1],'but got %s' % (str(cd.get('T')[-1]))
+    #assert ['T', 'testSingleCharacter', True, None, 'testSingleCharacter imported from optionfile'] == cd.get('T'),'but got %s' % (str(cd.get('T')))
+    assert [None, 'testDefault', True, 'default'] == cd.get('testDefault')[:-1], "but got %s" %(str(cd.get('testDefault')[:-1]))
+    assert 'testDefault imported from' in cd.get('testDefault')[-1], "but got %s" %(cd.get('testDefault')[-1])
+    assert 'optionfile' in cd.get('testDefault')[-1],  "but got %s" %(cd.get('testDefault')[-1])
+    #assert([None, 'testDefault', True, 'default', 'testDefault imported from optionfile'] == cd.get('testDefault'))
     assert([None, 'testDoc', True, None, 'test doc'] == cd.get('testDoc'))
-    assert([None, 'testNil', True, None, 'testNil imported from optionfile'] == cd.get('testNil'))
+    assert [None, 'testNil', True, None] == cd.get('testNil')[:-1], "but got %s" %(str(cd.get('testNil')[:-1]))
+    assert 'testNil imported from' in cd.get('testNil')[-1], "but got %s" %(cd.get('testNil')[-1])
+    assert 'optionfile' in cd.get('testNil')[-1], "but got %s" %(cd.get('testNil')[-1])
+    #assert([None, 'testNil', True, None, 'testNil imported from optionfile'] == cd.get('testNil'))
 
     # Test failure with good option, bad file
     try:
@@ -129,7 +148,7 @@ class TestConfigurationManager(unittest.TestCase):
   def testAcceptConfigFile(self):
     # Test failure with good config file, unknown option in that file
     try:
-      copt = [('c',  'config', True, './config.tst', "the test config file")]
+      copt = [('c',  'config', True, self.configTstPath, "the test config file")]
       CM.newConfiguration(configurationOptionsList=copt,optionNameForConfigFile = 'config', configurationFileRequired = True)
       assert(False)
     except CM.NotAnOptionError, e:
@@ -137,17 +156,16 @@ class TestConfigurationManager(unittest.TestCase):
     except Exception, e:
       assert(False), "Unexpected exception (%s): %s"% (type(e),e)
 
-    copt = [('c',  'config', True, './config.tst', "the test config file"),('r','rabbit', True, 'bambi', 'rabbits are bunnies')]
+    copt = [('c',  'config', True, self.configTstPath, "the test config file"),('r','rabbit', True, 'bambi', 'rabbits are bunnies')]
     copt.append(('b','badger',True,'gentle','some badgers are gentle'))
     conf = CM.newConfiguration(automaticHelp=False,configurationOptionsList=copt,optionNameForConfigFile = 'config', configurationFileRequired = True)
     assert('bunny' == conf.rabbit)
     assert('this badger=awful' == conf.badger)
     assert(3 == len(conf.keys())) # None of the comment or blank lines got eaten
 
-
   def testAcceptTypePriority(self):
     '''Assure that commandline beats config file beats environment beats defaults'''
-    copt = [('c',  'config', True, './config.tst', "the test config file"),('r','rabbit', True, 'bambi', 'rabbits are bunnies')]
+    copt = [('c',  'config', True, self.configTstPath, "the test config file"),('r','rabbit', True, 'bambi', 'rabbits are bunnies')]
     copt.append(('b','badger',True,'gentle','some badgers are gentle'))
     copt.append(('z','zeta', True, 'zebra', 'zebras ooze'))
     os.environ['badger'] = 'bloody'

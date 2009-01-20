@@ -14,7 +14,7 @@ import socorro.lib.util
 
 import processor
 
-#==========================================================
+#=================================================================================================================
 class ProcessorWithExternalBreakpad (processor.Processor):
   """
   """
@@ -61,7 +61,7 @@ class ProcessorWithExternalBreakpad (processor.Processor):
 
 
 #-----------------------------------------------------------------------------------------------------------------
-  def doBreakpadStackDumpAnalysis (self, reportId, uuid, dumpfilePathname, databaseCursor):
+  def doBreakpadStackDumpAnalysis (self, reportId, uuid, dumpfilePathname, databaseCursor, date_processed, processorErrorMessages):
     """ This function overrides the base class version of this function.  This function coordinates the six
           steps of running the breakpad_stackdump process and analyzing the textual output for insertion
           into the database.
@@ -74,28 +74,30 @@ class ProcessorWithExternalBreakpad (processor.Processor):
             uuid - the unique string identifier for the crash report
             dumpfilePathname - the complete pathname for the =crash dump file
             databaseCursor - the cursor to use for insertion into the database
+            date_processed
+            processorErrorMessages
     """
 
-    dumpAnalysisLineiterator, subprocessHandle = self.invokeBreakpadStackdump(dumpfilePathname)
-    dumpAnalysisLineiterator.secondaryCacheMaximumSize = self.config.crashingThreadTailFrameThreshold + 1
+    dumpAnalysisLineIterator, subprocessHandle = self.invokeBreakpadStackdump(dumpfilePathname)
+    dumpAnalysisLineIterator.secondaryCacheMaximumSize = self.config.crashingThreadTailFrameThreshold + 1
     try:
-      crashedThread = self.analyzeHeader(reportId, dumpAnalysisLineiterator, databaseCursor)
-      truncated = self.analyzeFrames(reportId, dumpAnalysisLineiterator, databaseCursor, crashedThread)
-      for x in dumpAnalysisLineiterator:
+      crashedThread = self.analyzeHeader(reportId, dumpAnalysisLineIterator, databaseCursor, date_processed, processorErrorMessages)
+      truncated = self.analyzeFrames(reportId, dumpAnalysisLineIterator, databaseCursor, date_processed, crashedThread, processorErrorMessages)
+      for x in dumpAnalysisLineIterator:
         pass  #need to spool out the rest of the stream so the cache doesn't get truncated
-      dumpAnalysis = ''.join(dumpAnalysisLineiterator.cache)
-      databaseCursor.execute("insert into dumps (report_id, data) values (%s, %s)", (reportId, dumpAnalysis))
+      dumpAnalysis = (''.join(dumpAnalysisLineIterator.cache))
+      self.dumpsTable.insert(databaseCursor, (reportId, date_processed, dumpAnalysis), self.databaseConnectionPool.connectToDatabase, date_processed=date_processed)
     finally:
-      dumpAnalysisLineiterator.theIterator.close() #this is really a handle to a file-like object - got to close it
+      dumpAnalysisLineIterator.theIterator.close() #this is really a handle to a file-like object - got to close it
     # is the return code from the invocation important?  Uncomment, if it is...
     returncode = subprocessHandle.wait()
     if returncode is not None and returncode != 0:
-      raise Exception("%s failed with return code %s when processing dump %s" %(self.config.minidump_stackwalkPathname, subprocessHandle.returncode, uuid))
+      raise processor.ErrorInBreakpadStackwalkException("%s failed with return code %s when processing dump %s" %(self.config.minidump_stackwalkPathname, subprocessHandle.returncode, uuid))
     return truncated
 
 
 #-----------------------------------------------------------------------------------------------------------------
-  def analyzeHeader(self, reportId, dumpAnalysisLineiterator, databaseCursor):
+  def analyzeHeader(self, reportId, dumpAnalysisLineIterator, databaseCursor, date_processed, processorErrorMessages):
     """ Scan through the lines of the dump header, extracting the information for population of the
           'modules' table and the update of the record for this crash in 'reports'.  During the analysis
           of the header, the number of the thread that caused the crash is determined and saved.
@@ -105,8 +107,10 @@ class ProcessorWithExternalBreakpad (processor.Processor):
 
           input parameters:
             reportId - the associated primary key from the 'reports' table for this crash
-            dumpAnalysisLineiterator - an iterator object that feeds lines from crash dump data
+            dumpAnalysisLineIterator - an iterator object that feeds lines from crash dump data
             databaseCursor - for database inserts and updates
+            date_processed
+            processorErrorMessages
     """
     logger.info("%s - analyzeHeader", threading.currentThread().getName())
     crashedThread = None
@@ -114,9 +118,9 @@ class ProcessorWithExternalBreakpad (processor.Processor):
     reportUpdateValues = {"id": reportId}
     reportUpdateSQLPhrases = {"osPhrase":"", "cpuPhrase":"", "crashPhrase":""}
 
-    analysisRerturnedLines = False
-    for line in dumpAnalysisLineiterator:
-      analysisRerturnedLines = True
+    analyzeReturnedLines = False
+    for line in dumpAnalysisLineIterator:
+      analyzeReturnedLines = True
       #logger.debug("%s -   %s", threading.currentThread().getName(), line)
       line = line.strip()
       # empty line separates header data from thread data
@@ -154,17 +158,24 @@ class ProcessorWithExternalBreakpad (processor.Processor):
                                                       #(reportId, moduleCounter, filename, debug_id, module_version, debug_filename))
           #moduleCounter += 1
 
-    if not analysisRerturnedLines:
-      logger.error("%s - %s returned no header lines for reportid: %s", threading.currentThread().getName(), self.config.minidump_stackwalkPathname, reportId)
+    if not analyzeReturnedLines:
+      message = "%s returned no header lines for reportid: %s" % (self.config.minidump_stackwalkPathname, reportId)
+      processorErrorMessages.append(message)
+      logger.warning("%s - %s", threading.currentThread().getName(), message)
 
     if len(reportUpdateValues) > 1:
       reportUpdateSQL = ("""update reports set %(osPhrase)s%(cpuPhrase)s%(crashPhrase)s where id = PERCENT(id)s""" % reportUpdateSQLPhrases).replace(", w", " w").replace("PERCENT","%")
       databaseCursor.execute(reportUpdateSQL, reportUpdateValues)
 
+    if crashedThread is None:
+      message = "no thread was identified as the cause of the crash"
+      processorErrorMessages.append(message)
+      logger.warning("%s - %s", threading.currentThread().getName(), message)
+
     return crashedThread
 
 #-----------------------------------------------------------------------------------------------------------------
-  def analyzeFrames(self, reportId, dumpAnalysisLineiterator, databaseCursor, crashedThread):
+  def analyzeFrames(self, reportId, dumpAnalysisLineIterator, databaseCursor, date_processed, crashedThread, processorErrorMessages):
     """ After the header information, the dump file consists of just frame information.  This function
           cycles through the frame information looking for frames associated with the crashed thread
           (determined in analyzeHeader).  Each from from that thread is written to the database until
@@ -175,40 +186,53 @@ class ProcessorWithExternalBreakpad (processor.Processor):
 
            input parameters:
              reportId - the primary key from the 'reports' table for this crash report
-             dumpAnalysisLineiterator - an iterator that cycles through lines from the crash dump
+             dumpAnalysisLineIterator - an iterator that cycles through lines from the crash dump
              databaseCursor - for database insertions
+             date_processed
              crashedThread - the number of the thread that crashed - we want frames only from the crashed thread
     """
     logger.info("%s - analyzeFrames", threading.currentThread().getName())
     frameCounter = 0
     truncated = False
-    analysisRerturnedLines = False
-    for line in dumpAnalysisLineiterator:
-      analysisRerturnedLines = True
+    analyzeReturnedLines = False
+    signatureList = []
+    for line in dumpAnalysisLineIterator:
+      analyzeReturnedLines = True
       #logger.debug("%s -   %s", threading.currentThread().getName(), line)
       line = line.strip()
-      if line == '': continue  #some dumps have unexpected blank lines - ignore them
+      if line == '':
+        processorErrorMessages.append("An unexpected blank line in this dump was ignored")
+        continue  #some dumps have unexpected blank lines - ignore them
       (thread_num, frame_num, module_name, function, source, source_line, instruction) = [socorro.lib.util.emptyFilter(x) for x in line.split("|")]
       if crashedThread == int(thread_num):
-        if frameCounter < 10:
-          signature = processor.Processor.make_signature(module_name, function, source, source_line, instruction)
-          databaseCursor.execute("""insert into frames
-                                                    (report_id, frame_num, signature) values
-                                                    (%s, %s, %s)""",
-                                                    (reportId, frame_num, signature[:255]))
-          if frameCounter == 0:
-            databaseCursor.execute("update reports set signature = %s where id = %s", (signature, reportId))
+        if frameCounter < 30:
+          thisFramesSignature = processor.Processor.make_signature(module_name, function, source, source_line, instruction)
+          signatureList.append(thisFramesSignature)
+          if frameCounter < 10:
+            self.framesTable.insert(databaseCursor, (reportId, frame_num, date_processed, thisFramesSignature[:255]), self.databaseConnectionPool.connectToDatabase, date_processed=date_processed)
         if frameCounter == self.config.crashingThreadFrameThreshold:
+          processorErrorMessages.append("This dump is too long and has triggered the automatic truncation routine")
           logger.debug("%s - starting secondary cache with framecount = %d", threading.currentThread().getName(), frameCounter)
-          dumpAnalysisLineiterator.useSecondaryCache()
+          dumpAnalysisLineIterator.useSecondaryCache()
           truncated = True
         frameCounter += 1
       elif frameCounter:
         break
-    dumpAnalysisLineiterator.stopUsingSecondaryCache()
+    dumpAnalysisLineIterator.stopUsingSecondaryCache()
+    signature = self.generateSignatureFromList(signatureList)
+    if signature == '' or signature is None:
+      if crashedThread is None:
+        message = "No signature could be created because we don't know which thread crashed"
+      else:
+        message = "No signature could be created because no data for the crashing thread (%d) was found" % crashedThread
+      processorErrorMessages.append(message)
+      logger.warning("%s - %s", threading.currentThread().getName(), message)
+    databaseCursor.execute("update reports set signature = '%s' where id = %s and date_processed = timestamp without time zone '%s'" % (signature, reportId, date_processed))
 
-    if not analysisRerturnedLines:
-      logger.error("%s - %s returned no frame lines for reportid: %s", threading.currentThread().getName(), self.config.minidump_stackwalkPathname, reportId)
+    if not analyzeReturnedLines:
+      message = "%s returned no frame lines for reportid: %s" % (self.config.minidump_stackwalkPathname, reportId)
+      processorErrorMessages.append(message)
+      logger.warning("%s - %s", threading.currentThread().getName(), message)
 
     return truncated
 

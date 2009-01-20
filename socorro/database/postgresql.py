@@ -32,7 +32,6 @@ def indexesForTable(tableName, databaseCursor):
               join pg_class it on it.oid = i.indexrelid""" % tableName)
   return [x[0] for x in databaseCursor.fetchall()]
 
-
 #-----------------------------------------------------------------------------------------------------------------
 def rulesForTable(tableName, databaseCursor):
   """ return a list of the names of all rules for the given table"""
@@ -45,6 +44,16 @@ def rulesForTable(tableName, databaseCursor):
           tablename = '%s'""" % tableName)
   return [x[0] for x in databaseCursor.fetchall()]
 
+#-----------------------------------------------------------------------------------------------------------------
+def constraintsAndTypeForTable(tableName, databaseCursor):
+  """return a list of (constraintName, constraintType) tuples for the given table"""
+  databaseCursor.execute("""
+      select
+          conname,
+          contype
+      from
+          pg_constraint cn join pg_class cls on cn.conrelid = cls.oid and cls.relname = '%s'""" % tableName)
+  return [x for x in databaseCursor.fetchall()]
 
 #-----------------------------------------------------------------------------------------------------------------
 def columnNameTypeDictionaryForTable (tableName, databaseCursor):
@@ -64,3 +73,14 @@ def columnNameTypeDictionaryForTable (tableName, databaseCursor):
   for aRow in databaseCursor.fetchall():
     namesToTypesDict[aRow[0]] = aRow[0]
   return namesToTypesDict
+
+#-----------------------------------------------------------------------------------------------------------------
+def childTablesForTable(tableName, databaseCursor):
+  """ return a list of tables that are children (via inherits) for the given table"""
+  databaseCursor.execute("""
+      select
+          cls1.relname
+      from
+          pg_class cls1 join pg_inherits inh on cls1.oid = inh.inhrelid
+              join pg_class cls2 on inh.inhparent = cls2.oid and cls2.relname = '%s'""" % tableName)
+  return [x[0] for x in databaseCursor.fetchall()]

@@ -36,17 +36,32 @@ def execute (aCursor, sql):
 
 #=================================================================================================================
 class LoggingCursor(psycopg2.extensions.cursor):
+  """Use as cursor_factory when getting cursor from connection:
+  ...
+  cursor = connection.cursor(cursor_factory = socorro.lib.pyscopghelper.LoggingCursor)
+  cursor.setLogger(someLogger)
+  ...
+  """
   #-----------------------------------------------------------------------------------------------------------------
   def setLogger(self, logger):
     self.logger = logger
     self.logger.info("Now logging cursor")
   #-----------------------------------------------------------------------------------------------------------------
-  def execute(self, sql):
+  def execute(self, sql, args=None):
     try:
-      self.logger.info(sql)
+      self.logger.info(self.mogrify(sql,args))
     except AttributeError:
       pass
-    super(LoggingCursor, self).execute(sql)
+    super(LoggingCursor, self).execute(sql,args)
+  def executemany(self,sql,args=None):
+    try:
+      try:
+        self.logger.info("%s ..." % (self.mogrify(sql,args[0])))
+      except TypeError:
+        self.logger.info("%s ..." % (sql))
+    except AttributeError:
+      pass
+    super(LoggingCursor,self).executemany(sql,args)
 
 #=================================================================================================================
 class SQLDidNotReturnSingleValue (Exception):
@@ -120,9 +135,9 @@ class DatabaseConnectionPool(dict):
       try:
         aDatabaseConnectionPair[0].rollback()
         aDatabaseConnectionPair[0].close()
-        self.logger.debug("%s -   connection %s closed", threading.currentThread().getName(), i)
+        self.logger.debug("%s - connection %s closed", threading.currentThread().getName(), i)
       except psycopg2.InterfaceError:
-        self.logger.debug("%s -   connection %s already closed", threading.currentThread().getName(), i)
+        self.logger.debug("%s - connection %s already closed", threading.currentThread().getName(), i)
       except:
         util.reportExceptionAndContinue(self.logger)
 

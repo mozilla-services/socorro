@@ -5,7 +5,6 @@ import psycopg2
 import psycopg2.extras
 import sys
 
-import commonconfig as config
 import socorro.lib.util
 import socorro.lib.ConfigurationManager as cm
 import socorro.database.schema as schema
@@ -84,17 +83,30 @@ class IntDataset:
       table = klass(logger=self.log)
       # if we call table.create then we get partitions and extra stuff
       self.log.debug( table.creationSql )
-      self.cur.execute( table.creationSql )
+      try:
+        self.cur.execute( table.creationSql )
+      except Exception,x:
+        self.log.error('Attempting %s: %s says %s'%(table.creationSql,type(x),x))
       self.conn.commit()
     dbClasses.reverse()
 
   def _loadTable(self, table):
-    datafile = "../database/dataset/int/%s" % table
-    if os.path.isfile( datafile ):
+    dataDir = None
+    try:
+      dataDir = self.configContext.loadDataDirectory
+    except:
+      dataDir = '../database/dataset/int'
+      
+    datafile = os.path.join(dataDir,"%s" % table)
+    if os.path.isfile( datafile):
       dataset = open(datafile, "r")
       self.log.info("Starting %s COPY" % table)
       self.cur = self.conn.cursor()
-      self.cur.copy_from(dataset, table)
+      try:
+        self.cur.copy_from(dataset, table)
+      except Exception,x:
+        self.log.error('While loading %s: %s (%s)'%(table,type(x),x))
+        raise()
       self.conn.commit()
       self.log.info("Performed %s COPY %s " % (table, self.cur.rowcount))
     else:
@@ -149,7 +161,7 @@ class IntDataset:
       SET LOCAL TIMEZONE = 'PST8';
       UPDATE topcrashers SET last_updated = (last_updated + 
           (select CURRENT_TIMESTAMP - reference - INTERVAL '1 hour' from datasetmetadata));
-      UPDATE extensions SET date = (date + 
+      UPDATE extensions SET date_processed = (date_processed + 
           (select CURRENT_TIMESTAMP - reference - INTERVAL '1 hour' from datasetmetadata));
       UPDATE jobs SET 
         queueddatetime = (queueddatetime + 
@@ -164,11 +176,10 @@ class IntDataset:
         lastseendatetime = (lastseendatetime +
           (select CURRENT_TIMESTAMP - reference - INTERVAL '1 hour' from datasetmetadata));
       UPDATE reports SET  
-         date = (date + 
+         client_crash_date = (client_crash_date +
           (select CURRENT_TIMESTAMP - reference - INTERVAL '1 hour' from datasetmetadata)),
          date_processed = (date_processed +
           (select CURRENT_TIMESTAMP - reference - INTERVAL '1 hour' from datasetmetadata));
-
       UPDATE server_status SET  
          date_recently_completed = (date_recently_completed + 
           (select CURRENT_TIMESTAMP - reference - INTERVAL '1 hour' from datasetmetadata)),
@@ -184,10 +195,13 @@ class IntDataset:
     #todo jobstatus oldest_job_queued... and handle nulls in general
     self.conn.commit()
 
-  def refresh(self):
+  def refresh(self, useLarsCreate=False):
     "Creates a pristine copy of integration test dataset."
     self.dropTables()
-    self.createTables()
+    if useLarsCreate:
+      self.larscreateTables()
+    else:
+      self.createTables()
     self.loadTables()
     self.metadata()
     self.timeshift()
@@ -199,6 +213,7 @@ class IntDataset:
 
 if __name__ == "__main__":
 
+  import commonconfig as config
 
   config.command = cm.Option()
   config.command.doc = 'command to run avainst intdata - {refresh, dump, touch}'
@@ -206,7 +221,7 @@ if __name__ == "__main__":
   config.command.singleCharacter = 'C'
 
   config.force = cm.Option()
-  config.force.doc = 'force run regardless of databse name'
+  config.force.doc = 'force run regardless of database name'
   config.force.default = False
   config.force.singleCharacter = 'F'
   config.force.fromStringConverter = cm.booleanConverter

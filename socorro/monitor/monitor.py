@@ -56,12 +56,13 @@ class Monitor (object):
 
     self.databaseConnectionPool = psy.DatabaseConnectionPool(config.databaseHost, config.databaseName, config.databaseUserName, config.databasePassword, logger)
 
-    self.createLegacyPriorityJobsTable()
-    self.legacySearchEventTrigger = threading.Event()
-    self.legacySearchEventTrigger.clear()
+    #self.createLegacyPriorityJobsTable()
+    #self.legacySearchEventTrigger = threading.Event()
+    #self.legacySearchEventTrigger.clear()
 
     self.config = config
     signal.signal(signal.SIGTERM, Monitor.respondToSIGTERM)
+    signal.signal(signal.SIGHUP, Monitor.respondToSIGTERM)
 
     self.standardJobStorage = jds.JsonDumpStorage(root=self.config.storageRoot,
                                                   jsonSuffix=self.config.jsonFileSuffix,
@@ -97,7 +98,9 @@ class Monitor (object):
         This function, when given as a handler to for a SIGTERM event, will make the program respond
         to a SIGTERM as neatly as it responds to ^C.
     """
-    logger.info("%s - SIGTERM detected", threading.currentThread().getName())
+    signame = 'SIGTERM'
+    if signalNumber != signal.SIGTERM: signame = 'SIGHUP'
+    logger.info("%s - %s detected", threading.currentThread().getName(),signame)
     raise KeyboardInterrupt
 
   #-----------------------------------------------------------------------------------------------------------------
@@ -190,7 +193,7 @@ class Monitor (object):
           logger.debug("%s - deleting %s", threading.currentThread().getName(), uuid)
           currentStorageForThisUuid.remove(uuid)
         except jds.NoSuchUuidFound:
-          logger.warning("%s - %s wasn't found for cleanup. Was it in legacy storage?", threading.currentThread().getName(), uuid)
+          logger.warning("%s - %s wasn't found for cleanup.", threading.currentThread().getName(), uuid)
         databaseCursor.execute("delete from jobs where id = %s", (jobId,))
         databaseConnection.commit()
     except Exception, x:
@@ -267,7 +270,7 @@ class Monitor (object):
     """
     logger.debug("%s - balanced jobSchedulerIter: compiling list of active processors", threading.currentThread().getName())
     try:
-      sql = """select p.id, count(j.*) from processors p left join jobs j on p.id = j.owner group by p.id"""
+      sql = """select p.id, count(j.*) from processors p left join (select owner from jobs where success is null) as j on p.id = j.owner group by p.id;"""
       try:
         aCursor.execute(sql)
         logger.debug("%s - sql succeeded", threading.currentThread().getName())
@@ -430,7 +433,7 @@ class Monitor (object):
       if self.uuidInJsonDumpStorage(uuid):
         logger.info("%s - priority queuing %s", threading.currentThread().getName(), uuid)
         if not processorIdSequenceGenerator:
-          logger.debug("%s - about get unbalancedJobScheduler", threading.currentThread().getName())
+          logger.debug("%s - about to get unbalancedJobScheduler", threading.currentThread().getName())
           processorIdSequenceGenerator = self.unbalancedJobSchedulerIter(databaseCursor)
           logger.debug("%s - unbalancedJobScheduler successfully fetched", threading.currentThread().getName())
         processorIdAssignedToThisJob = self.queuePriorityJob(databaseCursor, uuid, processorIdSequenceGenerator)
@@ -456,7 +459,7 @@ class Monitor (object):
     try:
       try:
         while (True):
-          self.legacySearchEventTrigger.clear()
+          #self.legacySearchEventTrigger.clear()
           databaseConnection, databaseCursor = self.getDatabaseConnectionPair()
           try:
             self.quitCheck()
@@ -465,7 +468,7 @@ class Monitor (object):
               logger.debug("%s - beginning search for priority jobs", threading.currentThread().getName())
               self.lookForPriorityJobsAlreadyInQueue(databaseCursor, setOfPriorityUuids)
               self.lookForPriorityJobsInJsonDumpStorage(databaseCursor, setOfPriorityUuids)
-              self.queuePriorityJobsForSearchInLegacyStorage(databaseCursor, setOfPriorityUuids)
+              #self.queuePriorityJobsForSearchInLegacyStorage(databaseCursor, setOfPriorityUuids)
               self.priorityJobsNotFound(databaseCursor, setOfPriorityUuids)
           except KeyboardInterrupt:
             logger.debug("%s - inner detects quit", threading.currentThread().getName())
@@ -474,7 +477,7 @@ class Monitor (object):
             databaseConnection.rollback()
             socorro.lib.util.reportExceptionAndContinue(logger)
           self.quitCheck()
-          self.legacySearchEventTrigger.clear()
+          #self.legacySearchEventTrigger.clear()
           logger.debug("%s - sleeping", threading.currentThread().getName())
           self.responsiveSleep(self.priorityLoopDelay)
       except (KeyboardInterrupt, SystemExit):
@@ -482,7 +485,7 @@ class Monitor (object):
         databaseConnection.rollback()
         self.quit = True
     finally:
-      self.legacySearchEventTrigger.set()
+      #self.legacySearchEventTrigger.set()
       logger.info("%s - priorityLoop done.", threading.currentThread().getName())
 
   #-----------------------------------------------------------------------------------------------------------------
@@ -508,111 +511,111 @@ class Monitor (object):
   # legacy storage section: these routines are temporary for the transition between file system storage techniques
   #-----------------------------------------------------------------------------------------------------------------
 
-  #-----------------------------------------------------------------------------------------------------------------
-  def createLegacyPriorityJobsTable (self):
-    logger.debug("%s - createLegacyPriorityJobsTable starting.", threading.currentThread().getName())
-    databaseConnection, databaseCursor = self.getDatabaseConnectionPair()
-    try:
-      databaseCursor.execute("create table legacy_priority_jobs (uuid varchar)")
-      databaseConnection.commit()
-      logger.debug("%s - legacy_priority_jobs table created", threading.currentThread().getName())
-    except:
-      #socorro.lib.util.reportExceptionAndContinue(logger)
-      logger.warning("%s - can't create legacy_priority_jobs table, it probably already exists (this is OK)", threading.currentThread().getName())
-      databaseConnection.rollback()
+  ##-----------------------------------------------------------------------------------------------------------------
+  #def createLegacyPriorityJobsTable (self):
+    #logger.debug("%s - createLegacyPriorityJobsTable starting.", threading.currentThread().getName())
+    #databaseConnection, databaseCursor = self.getDatabaseConnectionPair()
+    #try:
+      #databaseCursor.execute("create table legacy_priority_jobs (uuid varchar)")
+      #databaseConnection.commit()
+      #logger.debug("%s - legacy_priority_jobs table created", threading.currentThread().getName())
+    #except:
+      ##socorro.lib.util.reportExceptionAndContinue(logger)
+      #logger.warning("%s - can't create legacy_priority_jobs table, it probably already exists (this is OK)", threading.currentThread().getName())
+      #databaseConnection.rollback()
 
-  #-----------------------------------------------------------------------------------------------------------------
-  def queuePriorityJobsForSearchInLegacyStorage(self, databaseCursor, setOfPriorityUuids):
-    # check for jobs in symlink directories
-    logger.debug("%s - starting queuePriorityJobsForSearchInLegacyStorage", threading.currentThread().getName())
-    if setOfPriorityUuids:
-      processorIdSequenceGenerator = None
-      for uuid in list(setOfPriorityUuids):
-        setOfPriorityUuids.remove(uuid)
-        databaseCursor.execute("delete from priorityjobs where uuid = %s", (uuid,))
-        databaseCursor.execute("insert into legacy_priority_jobs (uuid) values (%s)", (uuid,))
-      databaseCursor.connection.commit()
-      logger.debug("%s - triggering legacy search event", threading.currentThread().getName())
-      self.legacySearchEventTrigger.set()
+  ##-----------------------------------------------------------------------------------------------------------------
+  #def queuePriorityJobsForSearchInLegacyStorage(self, databaseCursor, setOfPriorityUuids):
+    ## check for jobs in symlink directories
+    #logger.debug("%s - starting queuePriorityJobsForSearchInLegacyStorage", threading.currentThread().getName())
+    #if setOfPriorityUuids:
+      #processorIdSequenceGenerator = None
+      #for uuid in list(setOfPriorityUuids):
+        #setOfPriorityUuids.remove(uuid)
+        #databaseCursor.execute("delete from priorityjobs where uuid = %s", (uuid,))
+        #databaseCursor.execute("insert into legacy_priority_jobs (uuid) values (%s)", (uuid,))
+      #databaseCursor.connection.commit()
+      #logger.debug("%s - triggering legacy search event", threading.currentThread().getName())
+      #self.legacySearchEventTrigger.set()
 
-  #-----------------------------------------------------------------------------------------------------------------
-  def legacyStoragePriorityJobSearchLoop (self):
-    logger.debug("%s - starting legacyStoragePriorityJobSearchLoop", threading.currentThread().getName())
-    symLinkIndexPath = os.path.join(self.config.storageRoot, "index")
-    deferredSymLinkIndexPath = os.path.join(self.config.deferredStorageRoot, "index")
-    try:
-      try:
-        while (True):
-          try:
-            logger.debug("%s - waiting for legacySearchEventTrigger", threading.currentThread().getName())
-            self.legacySearchEventTrigger.wait()
-            logger.debug("%s - received legacySearchEventTrigger", threading.currentThread().getName())
-            self.quitCheck()
-            databaseConnection, databaseCursor = self.getDatabaseConnectionPair()
-            processorIdSequenceGenerator = None
-            setOfPriorityUuids = sets.Set([x[0] for x in psy.execute(databaseCursor, "select * from legacy_priority_jobs")])
-            if setOfPriorityUuids:
-              logger.debug("%s - about get unbalancedJobScheduler", threading.currentThread().getName())
-              processorIdSequenceGenerator = self.unbalancedJobSchedulerIter(databaseCursor)
-              logger.debug("%s - unbalancedJobScheduler successfully fetched", threading.currentThread().getName())
-              self.searchForPriorityJobsInLegacyStorage(setOfPriorityUuids, processorIdSequenceGenerator, symLinkIndexPath, 1)
-              self.searchForPriorityJobsInLegacyStorage(setOfPriorityUuids, processorIdSequenceGenerator, deferredSymLinkIndexPath, 2)
-              self.priorityJobsNotFound(databaseCursor, setOfPriorityUuids, "legacy_priority_jobs")
-          except KeyboardInterrupt:
-            self.quit = True
-            raise
-          except psy.CannotConnectToDatabase:
-            socorro.lib.util.reportExceptionAndAbort(logger)
-          except:
-            socorro.lib.util.reportExceptionAndContinue(logger)
-      except (KeyboardInterrupt, SystemExit):
-        logger.debug("%s - quit detected", threading.currentThread().getName())
-        #databaseConnection.rollback()
-        self.quit = True
-    finally:
-      #databaseConnection.close()
-      logger.info("%s - legacy search loop done.", threading.currentThread().getName())
+  ##-----------------------------------------------------------------------------------------------------------------
+  #def legacyStoragePriorityJobSearchLoop (self):
+    #logger.debug("%s - starting legacyStoragePriorityJobSearchLoop", threading.currentThread().getName())
+    #symLinkIndexPath = os.path.join(self.config.storageRoot, "index")
+    #deferredSymLinkIndexPath = os.path.join(self.config.deferredStorageRoot, "index")
+    #try:
+      #try:
+        #while (True):
+          #try:
+            #logger.debug("%s - waiting for legacySearchEventTrigger", threading.currentThread().getName())
+            #self.legacySearchEventTrigger.wait()
+            #logger.debug("%s - received legacySearchEventTrigger", threading.currentThread().getName())
+            #self.quitCheck()
+            #databaseConnection, databaseCursor = self.getDatabaseConnectionPair()
+            #processorIdSequenceGenerator = None
+            #setOfPriorityUuids = sets.Set([x[0] for x in psy.execute(databaseCursor, "select * from legacy_priority_jobs")])
+            #if setOfPriorityUuids:
+              #logger.debug("%s - about get unbalancedJobScheduler", threading.currentThread().getName())
+              #processorIdSequenceGenerator = self.unbalancedJobSchedulerIter(databaseCursor)
+              #logger.debug("%s - unbalancedJobScheduler successfully fetched", threading.currentThread().getName())
+              #self.searchForPriorityJobsInLegacyStorage(setOfPriorityUuids, processorIdSequenceGenerator, symLinkIndexPath, 1)
+              #self.searchForPriorityJobsInLegacyStorage(setOfPriorityUuids, processorIdSequenceGenerator, deferredSymLinkIndexPath, 2)
+              #self.priorityJobsNotFound(databaseCursor, setOfPriorityUuids, "legacy_priority_jobs")
+          #except KeyboardInterrupt:
+            #self.quit = True
+            #raise
+          #except psy.CannotConnectToDatabase:
+            #socorro.lib.util.reportExceptionAndAbort(logger)
+          #except:
+            #socorro.lib.util.reportExceptionAndContinue(logger)
+      #except (KeyboardInterrupt, SystemExit):
+        #logger.debug("%s - quit detected", threading.currentThread().getName())
+        ##databaseConnection.rollback()
+        #self.quit = True
+    #finally:
+      ##databaseConnection.close()
+      #logger.info("%s - legacy search loop done.", threading.currentThread().getName())
 
-  #-----------------------------------------------------------------------------------------------------------------
-  def searchForPriorityJobsInLegacyStorage(self, priorityUuids, processorIdSequenceGenerator, symLinkIndexPath, searchDepth):
-    # check for jobs in legacy symlink directories
-    threadName = threading.currentThread().getName()
-    logger.debug("%s - starting searchForPriorityJobsInLegacyStorage in %s", threadName, symLinkIndexPath)
-    if not priorityUuids:
-      return
-    try:
-      for path, file, currentDirectory in socorro.lib.filesystem.findFileGenerator(symLinkIndexPath,lambda x: os.path.isdir(x[2]),maxDepth=searchDepth,directorySortFunction=lambda x,y:-cmp(x,y)):  # list all directories
-        if not priorityUuids:
-          break
-        for uuid in list(priorityUuids):
-          logger.debug("%s - looking for %s", threadName, uuid)
-          self.quitCheck()
-          absoluteSymLinkPathname = os.path.join(currentDirectory, "%s.symlink" % uuid)
-          logger.debug("%s -         as %s", threadName, absoluteSymLinkPathname)
-          try:
-            relativeJsonPathname = os.readlink(absoluteSymLinkPathname)
-            absoluteJsonPathname = os.path.normpath(os.path.join(currentDirectory, relativeJsonPathname))
-            absoluteDumpPathname = "%s%s" % (absoluteJsonPathname[:-len(self.config.jsonFileSuffix)], self.config.dumpFileSuffix)
-          except OSError:
-            logger.debug("%s -         Not it...", threadName)
-            continue
-          logger.debug("%s -         FOUND", threadName)
-          logger.info("%s - priority queuing %s", threadName, absoluteJsonPathname)
-          try:
-            self.standardJobStorage.copyFrom(uuid, absoluteJsonPathname, absoluteDumpPathname, "legacy", datetime.datetime.now(), False, True)
-            databaseConnection, databaseCursor = self.getDatabaseConnectionPair()
-            processorIdAssignedToThisJob = self.queuePriorityJob(databaseCursor, uuid, processorIdSequenceGenerator)
-            logger.info("%s - %s assigned to %d", threadName, uuid, processorIdAssignedToThisJob)
-          except IOError, x:
-            logger.warning("%s - unable to process %s because %s", threadName, uuid, x)
-          logger.warning("%s - about to remove %s from legacy_priority_jobs", threadName, uuid)
-          databaseCursor.execute("delete from legacy_priority_jobs where uuid = %s", (uuid,))
-          databaseCursor.connection.commit()
-          priorityUuids.remove(uuid)
-    except OSError, x:
-      logger.warning("%s - searchForPriorityJobsInLegacyStorage had trouble: %s", threadName, x)
+  ##-----------------------------------------------------------------------------------------------------------------
+  #def searchForPriorityJobsInLegacyStorage(self, priorityUuids, processorIdSequenceGenerator, symLinkIndexPath, searchDepth):
+    ## check for jobs in legacy symlink directories
+    #threadName = threading.currentThread().getName()
+    #logger.debug("%s - starting searchForPriorityJobsInLegacyStorage in %s", threadName, symLinkIndexPath)
+    #if not priorityUuids:
+      #return
+    #try:
+      #for path, file, currentDirectory in socorro.lib.filesystem.findFileGenerator(symLinkIndexPath,lambda x: os.path.isdir(x[2]),maxDepth=searchDepth,directorySortFunction=lambda x,y:-cmp(x,y)):  # list all directories
+        #if not priorityUuids:
+          #break
+        #for uuid in list(priorityUuids):
+          #logger.debug("%s - looking for %s", threadName, uuid)
+          #self.quitCheck()
+          #absoluteSymLinkPathname = os.path.join(currentDirectory, "%s.symlink" % uuid)
+          #logger.debug("%s -         as %s", threadName, absoluteSymLinkPathname)
+          #try:
+            #relativeJsonPathname = os.readlink(absoluteSymLinkPathname)
+            #absoluteJsonPathname = os.path.normpath(os.path.join(currentDirectory, relativeJsonPathname))
+            #absoluteDumpPathname = "%s%s" % (absoluteJsonPathname[:-len(self.config.jsonFileSuffix)], self.config.dumpFileSuffix)
+          #except OSError:
+            #logger.debug("%s -         Not it...", threadName)
+            #continue
+          #logger.debug("%s -         FOUND", threadName)
+          #logger.info("%s - priority queuing %s", threadName, absoluteJsonPathname)
+          #try:
+            #self.standardJobStorage.copyFrom(uuid, absoluteJsonPathname, absoluteDumpPathname, "legacy", datetime.datetime.now(), False, True)
+            #databaseConnection, databaseCursor = self.getDatabaseConnectionPair()
+            #processorIdAssignedToThisJob = self.queuePriorityJob(databaseCursor, uuid, processorIdSequenceGenerator)
+            #logger.info("%s - %s assigned to %d", threadName, uuid, processorIdAssignedToThisJob)
+          #except IOError, x:
+            #logger.warning("%s - unable to process %s because %s", threadName, uuid, x)
+          #logger.warning("%s - about to remove %s from legacy_priority_jobs", threadName, uuid)
+          #databaseCursor.execute("delete from legacy_priority_jobs where uuid = %s", (uuid,))
+          #databaseCursor.connection.commit()
+          #priorityUuids.remove(uuid)
+    #except OSError, x:
+      #logger.warning("%s - searchForPriorityJobsInLegacyStorage had trouble: %s", threadName, x)
 
-  # end of legacy storage section
+  ## end of legacy storage section
   #-----------------------------------------------------------------------------------------------------------------
 
   #-----------------------------------------------------------------------------------------------------------------
@@ -621,8 +624,8 @@ class Monitor (object):
     priorityJobThread.start()
     jobCleanupThread = threading.Thread(name="jobCleanupThread", target=self.jobCleanupLoop)
     jobCleanupThread.start()
-    legacySearchThread = threading.Thread(name="legacySearchThread", target=self.legacyStoragePriorityJobSearchLoop)
-    legacySearchThread.start()
+    #legacySearchThread = threading.Thread(name="legacySearchThread", target=self.legacyStoragePriorityJobSearchLoop)
+    #legacySearchThread.start()
     try:
       try:
         self.standardJobAllocationLoop()
@@ -630,10 +633,12 @@ class Monitor (object):
         logger.debug("%s - waiting to join.", threading.currentThread().getName())
         priorityJobThread.join()
         jobCleanupThread.join()
-        legacySearchThread.join()
+        #legacySearchThread.join()
         # we're done - kill all the database connections
+        logger.debug("%s - calling databaseConnectionPool.cleanup().", threading.currentThread().getName())
         self.databaseConnectionPool.cleanup()
     except KeyboardInterrupt:
+      logger.debug("%s - KeyboardInterrupt.", threading.currentThread().getName())
       raise SystemExit
 
 

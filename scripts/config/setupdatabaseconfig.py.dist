@@ -1,5 +1,4 @@
 import socorro.lib.ConfigurationManager as cm
-import datetime
 
 from config.commonconfig import databaseHost
 from config.commonconfig import databaseName
@@ -8,7 +7,7 @@ from config.commonconfig import databasePassword
 
 logFilePathname = cm.Option()
 logFilePathname.doc = 'full pathname for the log file'
-logFilePathname.default = './nextpartition.log'
+logFilePathname.default = './setup.log'
 
 logFileMaximumSize = cm.Option()
 logFileMaximumSize.doc = 'maximum size in bytes of the log file'
@@ -32,6 +31,4 @@ stderrLineFormatString.default = '%(asctime)s %(levelname)s - %(message)s'
 
 stderrErrorLoggingLevel = cm.Option()
 stderrErrorLoggingLevel.doc = 'logging level for the logging to stderr (10 - DEBUG, 20 - INFO, 30 - WARNING, 40 - ERROR, 50 - CRITICAL)'
-stderrErrorLoggingLevel.default = 40
-
-
+stderrErrorLoggingLevel.default = 10

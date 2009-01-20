@@ -1,5 +1,7 @@
 import psycopg2 as pg
 import datetime as dt
+import threading
+import sets
 
 import socorro.lib.psycopghelper as socorro_psy
 import socorro.database.postgresql as socorro_pg
@@ -33,9 +35,10 @@ def nowIterator():
   yield (mondayDate, mondayDate + oneWeek)
 
 #-----------------------------------------------------------------------------------------------------------------
-def nextWeekIterator():
+def nextWeekIterator(now=None):
   oneWeek = dt.timedelta(7)
-  now = dt.datetime.now()
+  if not now:
+    now = dt.datetime.now()
   nowWeekDay = now.weekday()
   if nowWeekDay:
     nextMonday = now - dt.timedelta(nowWeekDay) + oneWeek
@@ -47,10 +50,17 @@ def nextWeekIterator():
 def emptyFunction():
   return ''
 
+
+#=================================================================================================================
+class PartitionControlParameterRequired(Exception):
+  def __init__(self):
+    super(PartitionControlParameterRequired, self).__init__("No partition control paramter was supplied")
+
 #=================================================================================================================
 class DatabaseObject(object):
+  #-----------------------------------------------------------------------------------------------------------------
   def __init__(self, name=None, logger=None, creationSql=None, **kwargs):
-    super(Table, self).__init__()
+    super(DatabaseObject, self).__init__()
     self.name = name
     self.creationSql = creationSql
     self.logger = logger
@@ -65,18 +75,23 @@ class DatabaseObject(object):
   def updateDefinition(self, databaseCursor):
     pass
   #-----------------------------------------------------------------------------------------------------------------
-  def createPartitions(self, databaseCursor, iterator):
+  def drop(self, databaseCursor):
     pass
   #-----------------------------------------------------------------------------------------------------------------
-  def drop(self, databaseCursor):
-    try:
-      databaseCursor.execute("DROP TABLE IF EXISTS %s CASCADE" % self.name)
-    except:# Exception, (errno, strerror):
-      self.logger.error("An error occured dropping %s" % self.name)
-
+  def createPartitions(self, databaseCursor, iterator):
+    pass
 
 #=================================================================================================================
-Table = DatabaseObject
+class Table (DatabaseObject):
+  #-----------------------------------------------------------------------------------------------------------------
+  def __init__(self, name=None, logger=None, creationSql=None, **kwargs):
+    super(Table, self).__init__(name=name, logger=logger, creationSql=creationSql, **kwargs)
+  #-----------------------------------------------------------------------------------------------------------------
+  def drop(self, databaseCursor):
+    databaseCursor.execute("drop table if exists %s cascade" % self.name)
+  #-----------------------------------------------------------------------------------------------------------------
+  def insert(self, rowTuple=None, **kwargs):
+    pass
 
 #=================================================================================================================
 class PartitionedTable(Table):
@@ -86,33 +101,106 @@ class PartitionedTable(Table):
     self.partitionNameTemplate = partitionNameTemplate
     self.partitionCreationSqlTemplate = partitionCreationSqlTemplate
     self.partitionCreationIterablorCreator = partitionCreationIterablorCreator
+    self.insertSql = None
+    self.partitionCreationLock = threading.RLock()
+    self.partitionCreationHistory = sets.Set()
+    self.dependentDatabaseObjectsList = [self]
+
   #-----------------------------------------------------------------------------------------------------------------
-  def additionalCreationProcedures(self, databaseCursor):
-    self.createPartitions(databaseCursor, self.partitionCreationIterablorCreator)
+  #def additionalCreationProcedures(self, databaseCursor):
+    #self.createPartitions(databaseCursor, self.partitionCreationIterablorCreator)
   #-----------------------------------------------------------------------------------------------------------------
   def createPartitions(self, databaseCursor, iterator):
+    self.logger.debug("%s - in createPartitions", threading.currentThread().getName())
     for x in iterator():
       partitionCreationParameters = self.partitionCreationParameters(x)
       partitionName = self.partitionNameTemplate % partitionCreationParameters["partitionName"]
       partitionCreationSql = self.partitionCreationSqlTemplate % partitionCreationParameters
       aPartition = Table(name=partitionName, logger=self.logger, creationSql=partitionCreationSql)
-      databaseCursor.execute("savepoint %s" % partitionName)
+      #self.logger.debug("%s - savepoint createPartitions_%s",threading.currentThread().getName(), partitionName)
+      #databaseCursor.execute("savepoint createPartitions_%s" % partitionName)
       try:
+        self.logger.debug("%s - creating %s", threading.currentThread().getName(), partitionName)
         aPartition.create(databaseCursor)
-        databaseCursor.execute("release savepoint %s" % partitionName)
-      except:
-        socorro_util.reportExceptionAndContinue(self.logger)
-        databaseCursor.execute("rollback to %s; release savepoint %s;" % (partitionName, partitionName))
+        databaseCursor.connection.commit()
+        self.logger.debug("%s - successful - releasing savepoint", threading.currentThread().getName())
+        #databaseCursor.execute("release savepoint createPartitions_%s" % partitionName)
+      except pg.ProgrammingError, x:
+        self.logger.debug("%s -- creating %s failed in createPartitions: %s", threading.currentThread().getName(), partitionName, x)
+        databaseCursor.connection.rollback()
+        #self.logger.debug("%s - rolling back and releasing save points", threading.currentThread().getName())
+        #databaseCursor.execute("rollback to createPartitions_%s; release savepoint createPartitions_%s;" % (partitionName, partitionName))
   #-----------------------------------------------------------------------------------------------------------------
   def partitionCreationParameters(self):
     """must return a dictionary of string substitution parameters"""
     return {}
+  #-----------------------------------------------------------------------------------------------------------------
+  def setDependents(self, listOfDependentDatabaseObjects):
+    """new partitions are created automatically when an insert requires them.  Sometimes other database objects
+       should be created at the same time.  For example, if B has a foreign key to A, then the B partition should
+       be created when the new A partition is created.
+
+       parameters:
+         listOfDependentDatabaseObjects: a list of of database objects to be created"""
+    self.dependentDatabaseObjectsList.extend(listOfDependentDatabaseObjects)
+  #-----------------------------------------------------------------------------------------------------------------
+  def updateColumnDefinitions(self, databaseCursor):
+    childTableList = socorro_pg.childTablesForTable(self.name, databaseCursor)
+    for aChildTableName in childTableList:
+      databaseCursor.execute("alter table %s no inherit %s", (aTable, aChildTableName))
+    self.alterColumnDefinitions(databaseCursor, self.name)
+    for aChildTableName in childTableList:
+      self.alterColumnDefinitions(databaseCursor, aChildTableName)
+    for aChildTableName in childTableList:
+      databaseCursor.execute("alter table %s inherit %s", (aTable, aChildTableName))
+  #-----------------------------------------------------------------------------------------------------------------
+  def insert(self, databaseCursor, row, alternateCursorFunction, **kwargs):
+    try:
+      uniqueIdentifier = kwargs["date_processed"]
+    except KeyError:
+      raise PartitionControlParameterRequired()
+    dateIterator = iterateBetweenDatesGeneratorCreator(uniqueIdentifier, uniqueIdentifier)
+    dateRangeTuple = dateIterator().next()
+    partitionName = self.partitionCreationParameters(dateRangeTuple)["partitionName"]
+    insertSql = self.insertSql.replace('TABLENAME', partitionName)
+    try:
+      databaseCursor.execute("savepoint %s" % partitionName)
+      #self.logger.debug("%s -trying to insert into %s", threading.currentThread().getName(), self.name)
+      databaseCursor.execute(insertSql, row)
+      databaseCursor.execute("release savepoint %s" % partitionName)
+    except pg.ProgrammingError, x:
+      self.logger.debug('%s - failed: %s', threading.currentThread().getName(), x)
+      self.logger.debug('%s - rolling back and releasing savepoint', threading.currentThread().getName())
+      databaseCursor.execute("rollback to %s; release savepoint %s;" % (partitionName, partitionName))
+      try:
+        self.logger.debug('%s - acquiring %s lock', threading.currentThread().getName(), self.name)
+        self.partitionCreationLock.acquire()
+        try:
+          if partitionName not in self.partitionCreationHistory:
+            self.logger.debug('%s - need to create table for %s', threading.currentThread().getName(), partitionName)
+            self.partitionCreationHistory.add(partitionName)
+            self.logger.debug("%s - trying to create %s", threading.currentThread().getName(), partitionName)
+            altConnection, altCursor = alternateCursorFunction()
+            for aDatabaseObject in self.dependentDatabaseObjectsList:
+              aDatabaseObject.createPartitions(altCursor, dateIterator)
+            self.logger.debug("%s - committing creation of %s", threading.currentThread().getName(), partitionName)
+            altConnection.commit()
+            self.logger.debug("%s - succeeded create %s for %s", threading.currentThread().getName(), partitionName, dateRangeTuple)
+        finally:
+          self.logger.debug('%s - releasing %s lock', threading.currentThread().getName(), self.name)
+          self.partitionCreationLock.release()
+      except pg.DatabaseError, x:
+        self.logger.debug("%s - the partition %s already exists - no need to create it: %s:%s", threading.currentThread().getName(), partitionName, type(x), x)
+        altConnection.rollback()
+        altConnection.close()
+      self.logger.debug("%s -trying to insert into %s for the second time", threading.currentThread().getName(), self.name)
+      databaseCursor.execute(insertSql, row)
 
 #=================================================================================================================
 class BranchesTable(Table):
   #-----------------------------------------------------------------------------------------------------------------
-  def __init__ (self, logger):
-    super(BranchesTable, self).__init__(name = "branches", logger=logger,
+  def __init__ (self, logger, **kwargs):
+    super(BranchesTable, self).__init__(name="branches", logger=logger,
                                         creationSql = """
                                             CREATE TABLE branches (
                                                 product character varying(30) NOT NULL,
@@ -124,44 +212,47 @@ class BranchesTable(Table):
 #=================================================================================================================
 class DumpsTable(PartitionedTable):
   #-----------------------------------------------------------------------------------------------------------------
-  def __init__ (self, logger):
+  def __init__ (self, logger, **kwargs):
     super(DumpsTable, self).__init__(name='dumps', logger=logger,
                                      creationSql="""
                                          CREATE TABLE dumps (
                                              report_id integer NOT NULL,
-                                             date timestamp NOT NULL,
+                                             date_processed timestamp without time zone,
                                              data text
                                          );
-                                         CREATE TRIGGER dumps_insert_trigger
-                                             BEFORE INSERT ON dumps
-                                             FOR EACH ROW EXECUTE PROCEDURE partition_insert_trigger();""",
+                                         --CREATE TRIGGER dumps_insert_trigger
+                                         --   BEFORE INSERT ON dumps
+                                         --   FOR EACH ROW EXECUTE PROCEDURE partition_insert_trigger();""",
                                      partitionCreationSqlTemplate="""
                                          CREATE TABLE %(partitionName)s (
-                                             CONSTRAINT %(partitionName)s_date_check CHECK (TIMESTAMP with time zone '%(startDate)s' <= date and date < TIMESTAMP with time zone '%(endDate)s'),
+                                             CONSTRAINT %(partitionName)s_date_check CHECK (TIMESTAMP without time zone '%(startDate)s' <= date_processed and date_processed < TIMESTAMP without time zone '%(endDate)s'),
                                              PRIMARY KEY (report_id)
                                          )
                                          INHERITS (dumps);
-                                         CREATE INDEX %(partitionName)s_report_id_date_key ON %(partitionName)s (report_id, date);
+                                         CREATE INDEX %(partitionName)s_report_id_date_key ON %(partitionName)s (report_id, date_processed);
                                          ALTER TABLE %(partitionName)s
                                              ADD CONSTRAINT %(partitionName)s_report_id_fkey FOREIGN KEY (report_id) REFERENCES reports_%(compressedStartDate)s(id) ON DELETE CASCADE;
-                                         """
-                                    )
+                                         """)
+    self.insertSql = """insert into TABLENAME (report_id, date_processed, data) values (%s, %s, %s)"""
+  #-----------------------------------------------------------------------------------------------------------------
+  def alterColumnDefinitions(self, databaseCursor, tableName):
+    columnNameTypeDictionary = socorro_pg.columnNameTypeDictionaryForTable(tableName, databaseCursor)
+    #if 'date_processed' not in columnNameTypeDictionary:
+      #databaseCursor.execute("""ALTER TABLE %s
+                                    #ADD COLUMN date_processed TIMESTAMP without time zone;""" % tableName)
   #-----------------------------------------------------------------------------------------------------------------
   def updateDefinition(self, databaseCursor):
-    self.columnNameTypeDictionary = socorro_pg.columnNameTypeDictionaryForTable(self.name, databaseCursor)
-    if 'date' not in self.columnNameTypeDictionary:
-      databaseCursor.execute("""ALTER TABLE dumps
-                                    ADD COLUMN date TIMESTAMP;""")
+    self.updateColumnDefinitions(databaseCursor)
     indexesList = socorro_pg.indexesForTable(self.name, databaseCursor)
-    if 'dumps_pkey' in indexesList:
-      databaseCursor.execute("""ALTER TABLE dumps
-                                    DROP CONSTRAINT dumps_pkey;""")
-    databaseCursor.execute("""DROP RULE IF EXISTS rule_dumps_partition ON dumps;""")
-    triggersList = socorro_pg.triggersForTable(self.name, databaseCursor)
-    if 'dumps_insert_trigger' not in triggersList:
-      databaseCursor.execute("""CREATE TRIGGER dumps_insert_trigger
-                                    BEFORE INSERT ON dumps
-                                    FOR EACH ROW EXECUTE PROCEDURE partition_insert_trigger();""")
+    #if 'dumps_pkey' in indexesList:
+      #databaseCursor.execute("""ALTER TABLE dumps
+                                    #DROP CONSTRAINT dumps_pkey;""")
+    #databaseCursor.execute("""DROP RULE IF EXISTS rule_dumps_partition ON dumps;""")
+    #triggersList = socorro_pg.triggersForTable(self.name, databaseCursor)
+    #if 'dumps_insert_trigger' not in triggersList:
+      #databaseCursor.execute("""CREATE TRIGGER dumps_insert_trigger
+                                    #BEFORE INSERT ON dumps
+                                    #FOR EACH ROW EXECUTE PROCEDURE partition_insert_trigger();""")
   #-----------------------------------------------------------------------------------------------------------------
   def partitionCreationParameters(self, uniqueIdentifier):
     startDate, endDate = uniqueIdentifier
@@ -177,46 +268,49 @@ class DumpsTable(PartitionedTable):
 #=================================================================================================================
 class ExtensionsTable(PartitionedTable):
   #-----------------------------------------------------------------------------------------------------------------
-  def __init__ (self, logger):
+  def __init__ (self, logger, **kwargs):
     super(ExtensionsTable, self).__init__(name='extensions', logger=logger,
                                           creationSql="""
                                               CREATE TABLE extensions (
                                                   report_id integer NOT NULL,
-                                                  date timestamp NOT NULL,
+                                                  date_processed timestamp without time zone,
                                                   extension_key integer NOT NULL,
                                                   extension_id character varying(100) NOT NULL,
                                                   extension_version character varying(16)
                                               );
-                                              CREATE TRIGGER extensions_insert_trigger
-                                                  BEFORE INSERT ON extensions
-                                                  FOR EACH ROW EXECUTE PROCEDURE partition_insert_trigger();""",
+                                              --CREATE TRIGGER extensions_insert_trigger
+                                              --    BEFORE INSERT ON extensions
+                                              --    FOR EACH ROW EXECUTE PROCEDURE partition_insert_trigger();""",
                                           partitionCreationSqlTemplate="""
                                               CREATE TABLE %(partitionName)s (
-                                                  CONSTRAINT %(partitionName)s_date_check CHECK (TIMESTAMP with time zone '%(startDate)s' <= date and date < TIMESTAMP with time zone '%(endDate)s'),
+                                                  CONSTRAINT %(partitionName)s_date_check CHECK (TIMESTAMP without time zone '%(startDate)s' <= date_processed and date_processed < TIMESTAMP without time zone '%(endDate)s'),
                                                   PRIMARY KEY (report_id)
                                                   )
                                                   INHERITS (extensions);
-                                              CREATE INDEX %(partitionName)s_report_id_date_key ON %(partitionName)s (report_id, date);
+                                              CREATE INDEX %(partitionName)s_report_id_date_key ON %(partitionName)s (report_id, date_processed);
                                               ALTER TABLE %(partitionName)s
                                                   ADD CONSTRAINT %(partitionName)s_report_id_fkey FOREIGN KEY (report_id) REFERENCES reports_%(compressedStartDate)s(id) ON DELETE CASCADE;
-                                              """
-                                          )
+                                              """)
+    self.insertSql = """insert into TABLENAME (report_id, date_processed, extension_key, extension_id, extension_version) values (%s, %s, %s, %s, %s)"""
+  #-----------------------------------------------------------------------------------------------------------------
+  def alterColumnDefinitions(self, databaseCursor, tableName):
+    columnNameTypeDictionary = socorro_pg.columnNameTypeDictionaryForTable(tableName, databaseCursor)
+    #if 'date_processed' not in columnNameTypeDictionary:
+      #databaseCursor.execute("""ALTER TABLE %s
+                                    #ADD COLUMN date_processed TIMESTAMP without time zone;""" % tableName)
   #-----------------------------------------------------------------------------------------------------------------
   def updateDefinition(self, databaseCursor):
-    self.columnNameTypeDictionary = socorro_pg.columnNameTypeDictionaryForTable(self.name, databaseCursor)
-    if 'date' not in self.columnNameTypeDictionary:
-      databaseCursor.execute("""ALTER TABLE extensions
-                                    ADD COLUMN date TIMESTAMP;""")
+    self.updateColumnDefinitions(databaseCursor)
     indexesList = socorro_pg.indexesForTable(self.name, databaseCursor)
-    if 'extensions_pkey' in indexesList:
-      databaseCursor.execute("""ALTER TABLE extensions
-                                    DROP CONSTRAINT extensions_pkey;""")
-    databaseCursor.execute("""DROP RULE IF EXISTS rule_extensions_partition ON extensions;""")
-    triggersList = socorro_pg.triggersForTable(self.name, databaseCursor)
-    if 'extensions_insert_trigger' not in triggersList:
-      databaseCursor.execute("""CREATE TRIGGER extensions_insert_trigger
-                                    BEFORE INSERT ON extensions
-                                    FOR EACH ROW EXECUTE PROCEDURE partition_insert_trigger();""")
+    #if 'extensions_pkey' in indexesList:
+      #databaseCursor.execute("""ALTER TABLE extensions
+                                    #DROP CONSTRAINT extensions_pkey;""")
+    #databaseCursor.execute("""DROP RULE IF EXISTS rule_extensions_partition ON extensions;""")
+    #triggersList = socorro_pg.triggersForTable(self.name, databaseCursor)
+    #if 'extensions_insert_trigger' not in triggersList:
+      #databaseCursor.execute("""CREATE TRIGGER extensions_insert_trigger
+                                    #BEFORE INSERT ON extensions
+                                    #FOR EACH ROW EXECUTE PROCEDURE partition_insert_trigger();""")
   #-----------------------------------------------------------------------------------------------------------------
   def partitionCreationParameters(self, uniqueIdentifier):
     startDate, endDate = uniqueIdentifier
@@ -232,45 +326,49 @@ class ExtensionsTable(PartitionedTable):
 #=================================================================================================================
 class FramesTable(PartitionedTable):
   #-----------------------------------------------------------------------------------------------------------------
-  def __init__ (self, logger):
+  def __init__ (self, logger, **kwargs):
     super(FramesTable, self).__init__(name='frames', logger=logger,
                                       creationSql="""
                                           CREATE TABLE frames (
                                               report_id integer NOT NULL,
-                                              date timestamp NOT NULL,
+                                              date_processed timestamp without time zone,
                                               frame_num integer NOT NULL,
                                               signature varchar(255)
                                           );
-                                          CREATE TRIGGER frames_insert_trigger
-                                              BEFORE INSERT ON frames
-                                              FOR EACH ROW EXECUTE PROCEDURE partition_insert_trigger();""",
+                                          --CREATE TRIGGER frames_insert_trigger
+                                          --    BEFORE INSERT ON frames
+                                          --    FOR EACH ROW EXECUTE PROCEDURE partition_insert_trigger();""",
                                       partitionCreationSqlTemplate="""
                                           CREATE TABLE %(partitionName)s (
-                                              CONSTRAINT %(partitionName)s_date_check CHECK (TIMESTAMP with time zone '%(startDate)s' <= date and date < TIMESTAMP with time zone '%(endDate)s'),
+                                              CONSTRAINT %(partitionName)s_date_check CHECK (TIMESTAMP without time zone '%(startDate)s' <= date_processed and date_processed < TIMESTAMP without time zone '%(endDate)s'),
                                               PRIMARY KEY (report_id, frame_num)
                                           )
                                           INHERITS (frames);
-                                          CREATE INDEX %(partitionName)s_report_id_date_key ON %(partitionName)s (report_id, date);
+                                          CREATE INDEX %(partitionName)s_report_id_date_key ON %(partitionName)s (report_id, date_processed);
                                           ALTER TABLE %(partitionName)s
                                               ADD CONSTRAINT %(partitionName)s_report_id_fkey FOREIGN KEY (report_id) REFERENCES reports_%(compressedStartDate)s(id) ON DELETE CASCADE;
                                           """
                                      )
+    self.insertSql = """insert into TABLENAME (report_id, frame_num, date_processed, signature) values (%s, %s, %s, %s)"""
+  #-----------------------------------------------------------------------------------------------------------------
+  def alterColumnDefinitions(self, databaseCursor, tableName):
+    columnNameTypeDictionary = socorro_pg.columnNameTypeDictionaryForTable(tableName, databaseCursor)
+    #if 'date_processed' not in columnNameTypeDictionary:
+      #databaseCursor.execute("""ALTER TABLE %s
+                                    #ADD COLUMN date_processed TIMESTAMP without time zone;""" % tableName)
   #-----------------------------------------------------------------------------------------------------------------
   def updateDefinition(self, databaseCursor):
-    self.columnNameTypeDictionary = socorro_pg.columnNameTypeDictionaryForTable(self.name, databaseCursor)
-    if 'date' not in self.columnNameTypeDictionary:
-      databaseCursor.execute("""ALTER TABLE frames
-                                    ADD COLUMN date TIMESTAMP;""")
+    self.updateColumnDefinitions(databaseCursor)
     indexesList = socorro_pg.indexesForTable(self.name, databaseCursor)
-    if 'frames_pkey' in indexesList:
-      databaseCursor.execute("""ALTER TABLE frames
-                                    DROP CONSTRAINT frames_pkey;""")
-    databaseCursor.execute("""DROP RULE IF EXISTS rule_frames_partition ON frames;""")
-    triggersList = socorro_pg.triggersForTable(self.name, databaseCursor)
-    if 'frames_insert_trigger' not in triggersList:
-      databaseCursor.execute("""CREATE TRIGGER frames_insert_trigger
-                                    BEFORE INSERT ON frames
-                                    FOR EACH ROW EXECUTE PROCEDURE partition_insert_trigger();""")
+    #if 'frames_pkey' in indexesList:
+      #databaseCursor.execute("""ALTER TABLE frames
+                                    #DROP CONSTRAINT frames_pkey;""")
+    #databaseCursor.execute("""DROP RULE IF EXISTS rule_frames_partition ON frames;""")
+    #triggersList = socorro_pg.triggersForTable(self.name, databaseCursor)
+    #if 'frames_insert_trigger' not in triggersList:
+      #databaseCursor.execute("""CREATE TRIGGER frames_insert_trigger
+                                    #BEFORE INSERT ON frames
+                                    #FOR EACH ROW EXECUTE PROCEDURE partition_insert_trigger();""")
   #-----------------------------------------------------------------------------------------------------------------
   def partitionCreationParameters(self, uniqueIdentifier):
     startDate, endDate = uniqueIdentifier
@@ -286,7 +384,7 @@ class FramesTable(PartitionedTable):
 #=================================================================================================================
 class JobsTable(Table):
   #-----------------------------------------------------------------------------------------------------------------
-  def __init__ (self, logger):
+  def __init__ (self, logger, **kwargs):
     super(JobsTable, self).__init__(name = "jobs",  logger=logger,
                                     creationSql = """
                                         CREATE TABLE jobs (
@@ -334,11 +432,13 @@ class JobsTable(Table):
       databaseCursor.execute("""CREATE INDEX jobs_owner_starteddatetime_priority_key ON jobs (owner, starteddatetime, priority DESC);""")
     if 'jobs_completeddatetime_queueddatetime_key' not in indexesList:
       databaseCursor.execute("""CREATE INDEX jobs_completeddatetime_queueddatetime_key ON jobs (completeddatetime, queueddatetime);""")
+    if 'jobs_success_key' not in indexesList:
+      databaseCursor.execute("""CREATE INDEX jobs_success_key ON jobs (success);""")
 
 #=================================================================================================================
 class PriorityJobsTable(Table):
   #-----------------------------------------------------------------------------------------------------------------
-  def __init__ (self, name="priorityjobs", logger=None):
+  def __init__ (self, name="priorityjobs", logger=None, **kwargs):
     super(PriorityJobsTable, self).__init__(name=name, logger=logger,
                                             creationSql = """
                                                 CREATE TABLE %s (
@@ -348,7 +448,7 @@ class PriorityJobsTable(Table):
 #=================================================================================================================
 class ProcessorsTable(Table):
   #-----------------------------------------------------------------------------------------------------------------
-  def __init__ (self, logger):
+  def __init__ (self, logger, **kwargs):
     super(ProcessorsTable, self).__init__(name = "processors", logger=logger,
                                         creationSql = """
                                             CREATE TABLE processors (
@@ -359,20 +459,20 @@ class ProcessorsTable(Table):
                                             );""")
   def updateDefinition(self, databaseCursor):
     indexesList = socorro_pg.indexesForTable(self.name, databaseCursor)
-    if 'idx_processor_name' in indexesList:
-      databaseCursor.execute("""DROP INDEX idx_processor_name;
-                                ALTER TABLE processors ADD CONSTRAINT processors_name_key UNIQUE (name);""")
+    #if 'idx_processor_name' in indexesList:
+      #databaseCursor.execute("""DROP INDEX idx_processor_name;
+                                #ALTER TABLE processors ADD CONSTRAINT processors_name_key UNIQUE (name);""")
 
 #=================================================================================================================
 class ReportsTable(PartitionedTable):
   #-----------------------------------------------------------------------------------------------------------------
-  def __init__ (self, logger):
+  def __init__ (self, logger, **kwargs):
     super(ReportsTable, self).__init__(name='reports', logger=logger,
                                        creationSql="""
                                           CREATE TABLE reports (
                                               id serial NOT NULL,
-                                              date timestamp with time zone NOT NULL,
-                                              date_processed timestamp without time zone DEFAULT now() NOT NULL,
+                                              client_crash_date timestamp with time zone,
+                                              date_processed timestamp without time zone,
                                               uuid character varying(50) NOT NULL,
                                               product character varying(30),
                                               version character varying(16),
@@ -382,7 +482,6 @@ class ReportsTable(PartitionedTable):
                                               install_age integer,
                                               last_crash integer,
                                               uptime integer,
-                                              comments character varying(500),
                                               cpu_name character varying(100),
                                               cpu_info character varying(100),
                                               reason character varying(255),
@@ -392,29 +491,39 @@ class ReportsTable(PartitionedTable):
                                               email character varying(100),
                                               build_date timestamp without time zone,
                                               user_id character varying(50),
-                                              starteddatetime timestamp without time zone,
-                                              completeddatetime timestamp without time zone,
+                                              started_datetime timestamp without time zone,
+                                              completed_datetime timestamp without time zone,
                                               success boolean,
-                                              message text,
-                                              truncated boolean
+                                              truncated boolean,
+                                              processor_notes text,
+                                              user_comments character varying(1024),
+                                              app_notes character varying(1024),
+                                              distributor character varying(20),
+                                              distributor_version character varying(20)
                                           );
-                                          CREATE TRIGGER reports_insert_trigger
-                                              BEFORE INSERT ON reports
-                                              FOR EACH ROW EXECUTE PROCEDURE partition_insert_trigger();""",
+                                          --CREATE TRIGGER reports_insert_trigger
+                                          --    BEFORE INSERT ON reports
+                                          --    FOR EACH ROW EXECUTE PROCEDURE partition_insert_trigger();""",
                                        partitionCreationSqlTemplate="""
                                           CREATE TABLE %(partitionName)s (
-                                              CONSTRAINT %(partitionName)s_date_check CHECK (TIMESTAMP with time zone '%(startDate)s' <= date and date < TIMESTAMP with time zone '%(endDate)s'),
+                                              CONSTRAINT %(partitionName)s_date_check CHECK (TIMESTAMP without time zone '%(startDate)s' <= date_processed and date_processed < TIMESTAMP without time zone '%(endDate)s'),
                                               PRIMARY KEY(id)
                                           )
                                           INHERITS (reports);
-                                          CREATE INDEX %(partitionName)s_date_key ON %(partitionName)s (date);
+                                          CREATE INDEX %(partitionName)s_date_processed_key ON %(partitionName)s (date_processed);
                                           CREATE INDEX %(partitionName)s_uuid_key ON %(partitionName)s (uuid);
                                           CREATE INDEX %(partitionName)s_signature_key ON %(partitionName)s (signature);
                                           CREATE INDEX %(partitionName)s_url_key ON %(partitionName)s (url);
-                                          --CREATE INDEX %(partitionName)s_uuid_date_key ON %(partitionName)s (uuid, date);
-                                          CREATE INDEX %(partitionName)s_signature_date_key ON %(partitionName)s (signature, date);
+                                          --CREATE INDEX %(partitionName)s_uuid_date_processed_key ON %(partitionName)s (uuid, date_processed);
+                                          CREATE INDEX %(partitionName)s_signature_date_processed_key ON %(partitionName)s (signature, date_processed);
                                           """
                                       )
+    self.insertSql = """insert into TABLENAME
+                            (uuid, client_crash_date, date_processed, product, version, build, url, install_age, last_crash, uptime, email, build_date, user_id, user_comments, distributor, distributor_version) values
+                            (%s,   %s,                %s,             %s,      %s,      %s,    %s,  %s,          %s,         %s,     %s,    %s,         %s,      %s,            %s,          %s)"""
+  #-----------------------------------------------------------------------------------------------------------------
+  def additionalCreationProcedures(self, databaseCursor):
+    pass
   #-----------------------------------------------------------------------------------------------------------------
   def partitionCreationParameters(self, uniqueIdentifier):
     startDate, endDate = uniqueIdentifier
@@ -427,29 +536,49 @@ class ReportsTable(PartitionedTable):
              "compressedStartDate": compressedStartDateAsString
            }
   #-----------------------------------------------------------------------------------------------------------------
+  def alterColumnDefinitions(self, databaseCursor, tableName):
+    columnNameTypeDictionary = socorro_pg.columnNameTypeDictionaryForTable(tableName, databaseCursor)
+    #if 'user_comments' not in columnNameTypeDictionary:
+      #databaseCursor.execute("""ALTER TABLE %s rename column comments to user_comments""" % tableName)
+    #if 'client_crash_date' not in columnNameTypeDictionary:
+      #databaseCursor.execute("""ALTER TABLE %s rename column date to client_crash_date""" % tableName)
+    #if 'app_notes' not in columnNameTypeDictionary:
+      #databaseCursor.execute("""ALTER TABLE %s ADD COLUMN app_notes character varying(1024)""" % tableName)
+    #if 'distributor' not in columnNameTypeDictionary:
+      #databaseCursor.execute("""ALTER TABLE %s ADD COLUMN distributor character varying(20)""" % tableName)
+    #if 'distributor_version' not in columnNameTypeDictionary:
+      #databaseCursor.execute("""ALTER TABLE %s ADD COLUMN distributor_version character varying(20)""" % tableName)
+    #if 'message' in columnNameTypeDictionary:
+      #databaseCursor.execute("""ALTER TABLE %s rename column message to processor_notes""" % tableName)
+    #if 'started_datetime' not in columnNameTypeDictionary:
+      #databaseCursor.execute("""ALTER TABLE %s rename column starteddatetime to started_datetime""" % tableName)
+    #if 'completed_datetime' not in columnNameTypeDictionary:
+      #databaseCursor.execute("""ALTER TABLE %s rename column completeddatetime to completed_datetime""" % tableName)
+  #-----------------------------------------------------------------------------------------------------------------
   def updateDefinition(self, databaseCursor):
-    indexesList = socorro_pg.indexesForTable(self.name, databaseCursor)
-    if 'reports_pkey' in indexesList:
-      databaseCursor.execute("""ALTER TABLE reports DROP CONSTRAINT reports_pkey CASCADE;""")
-    if 'idx_reports_date' in indexesList:
-      databaseCursor.execute("""DROP INDEX idx_reports_date;""")
-    if 'ix_reports_signature' in indexesList:
-      databaseCursor.execute("""DROP INDEX ix_reports_signature;""")
-    if 'ix_reports_url' in indexesList:
-      databaseCursor.execute("""DROP INDEX ix_reports_url;""")
-    if 'ix_reports_uuid' in indexesList:
-      databaseCursor.execute("""DROP INDEX ix_reports_uuid;""")
     databaseCursor.execute("""DROP RULE IF EXISTS rule_reports_partition ON reports;""")
-    triggersList = socorro_pg.triggersForTable(self.name, databaseCursor)
-    if 'reports_insert_trigger' not in triggersList:
-      databaseCursor.execute("""CREATE TRIGGER reports_insert_trigger
-                                    BEFORE INSERT ON reports
-                                    FOR EACH ROW EXECUTE PROCEDURE partition_insert_trigger();""")
+    self.updateColumnDefinitions(databaseCursor)
+    indexesList = socorro_pg.indexesForTable(self.name, databaseCursor)
+    #if 'reports_pkey' in indexesList:
+      #databaseCursor.execute("""ALTER TABLE reports DROP CONSTRAINT reports_pkey CASCADE;""")
+    #if 'idx_reports_date' in indexesList:
+      #databaseCursor.execute("""DROP INDEX idx_reports_date;""")
+    #if 'ix_reports_signature' in indexesList:
+      #databaseCursor.execute("""DROP INDEX ix_reports_signature;""")
+    #if 'ix_reports_url' in indexesList:
+      #databaseCursor.execute("""DROP INDEX ix_reports_url;""")
+    #if 'ix_reports_uuid' in indexesList:
+      #databaseCursor.execute("""DROP INDEX ix_reports_uuid;""")
+    #triggersList = socorro_pg.triggersForTable(self.name, databaseCursor)
+    #if 'reports_insert_trigger' not in triggersList:
+      #databaseCursor.execute("""CREATE TRIGGER reports_insert_trigger
+                                    #BEFORE INSERT ON reports
+                                    #FOR EACH ROW EXECUTE PROCEDURE partition_insert_trigger();""")
 
 #=================================================================================================================
 class ServerStatusTable(Table):
   #-----------------------------------------------------------------------------------------------------------------
-  def __init__ (self, logger):
+  def __init__ (self, logger, **kwargs):
     super(ServerStatusTable, self).__init__(name='server_status', logger=logger,
                                        creationSql="""
                                           CREATE TABLE server_status (
@@ -470,7 +599,7 @@ class ServerStatusTable(Table):
 #=================================================================================================================
 class TopCrashersTable(Table):
   #-----------------------------------------------------------------------------------------------------------------
-  def __init__ (self, logger):
+  def __init__ (self, logger, **kwargs):
     super(TopCrashersTable, self).__init__(name='topcrashers', logger=logger,
                                        creationSql="""
                                           CREATE TABLE topcrashers (
@@ -494,83 +623,77 @@ class TopCrashersTable(Table):
                                               ADD CONSTRAINT topcrashers_pkey PRIMARY KEY (id);
                                           """)
 
-class DatabaseTrigger(DatabaseObject):
-  #-----------------------------------------------------------------------------------------------------------------
-  def drop(self, databaseCursor):
-    pass
-
+#=================================================================================================================
+#class ParititioningTriggerScript(DatabaseObject):
+  ##-----------------------------------------------------------------------------------------------------------------
+  #def __init__ (self, logger):
+    #super(ParititioningTriggerScript, self).__init__(name = "partition_insert_trigger", logger=logger,
+                                                     #creationSql = """
+#CREATE OR REPLACE FUNCTION partition_insert_trigger()
+#RETURNS TRIGGER AS $$
+#import socorro.database.server as ds
+#try:
+  #targetTableName = ds.targetTableName(TD["table_name"], TD['new']['date_processed'])
+  ##plpy.info(targetTableName)
+  #planName = ds.targetTableInsertPlanName (targetTableName)
+  ##plpy.info("using plan: %s" % planName)
+  #values = ds.getValuesList(TD, SD, plpy)
+  ##plpy.info(str(values))
+  ##plpy.info('about to execute plan')
+  #result = plpy.execute(SD[planName], values)
+  #return None
+#except KeyError:  #no plan
+  ##plpy.info("oops no plan for: %s" % planName)
+  #SD[planName] = ds.createNewInsertQueryPlan(TD, SD, targetTableName, planName, plpy)
+  ##plpy.info('about to execute plan for second time')
+  #result = plpy.execute(SD[planName], values)
+  #return None
+#$$
+#LANGUAGE plpythonu;""")
+  #def updateDefinition(self, databaseCursor):
+    #databaseCursor.execute(self.creationSql)
 
 #=================================================================================================================
-class ParititioningTriggerScript(DatabaseTrigger):
+#class ChattyParititioningTriggerScript(DatabaseObject):
   #-----------------------------------------------------------------------------------------------------------------
-  def __init__ (self, logger):
-    super(ParititioningTriggerScript, self).__init__(name = "partition_insert_trigger", logger=logger,
-                                                     creationSql = """
-CREATE OR REPLACE FUNCTION partition_insert_trigger()
-RETURNS TRIGGER AS $$
-import socorro.database.server as ds
-try:
-  targetTableName = ds.targetTableName(TD["table_name"], TD['new']['date'])
-  #plpy.info(targetTableName)
-  planName = ds.targetTableInsertPlanName (targetTableName)
-  #plpy.info("using plan: %s" % planName)
-  values = ds.getValuesList(TD, SD, plpy)
-  #plpy.info(str(values))
-  #plpy.info('about to execute plan')
-  result = plpy.execute(SD[planName], values)
-  return None
-except KeyError:  #no plan
-  #plpy.info("oops no plan for: %s" % planName)
-  SD[planName] = ds.createNewInsertQueryPlan(TD, SD, targetTableName, planName, plpy)
-  #plpy.info('about to execute plan for second time')
-  result = plpy.execute(SD[planName], values)
-  return None
-$$
-LANGUAGE plpythonu;""")
-  def updateDefinition(self, databaseCursor):
-    databaseCursor.execute(self.creationSql)
-
-#=================================================================================================================
-class ChattyParititioningTriggerScript(DatabaseTrigger):
-  #-----------------------------------------------------------------------------------------------------------------
-  def __init__ (self, logger):
-    super(ChattyParititioningTriggerScript, self).__init__(name = "partition_insert_trigger", logger=logger,
-                                                     creationSql = """
-CREATE OR REPLACE FUNCTION partition_insert_trigger()
-RETURNS TRIGGER AS $$
-import socorro.database.server as ds
-import logging
-import logging.handlers
-try:
-  targetTableName = ds.targetTableName(TD["table_name"], TD['new']['date'])
-  planName = ds.targetTableInsertPlanName (targetTableName)
-  try:
-    logger = SD["logger"]
-  except KeyError:
-    SD["logger"] = logger = logging.getLogger(targetTableName)
-    logger.setLevel(logging.DEBUG)
-    rotatingFileLog = logging.handlers.RotatingFileHandler("/tmp/partitionTrigger.log", "a", 100000000, 10)
-    rotatingFileLog.setLevel(logging.DEBUG)
-    rotatingFileLogFormatter = logging.Formatter('%(asctime)s %(levelname)s - %(message)s')
-    rotatingFileLog.setFormatter(rotatingFileLogFormatter)
-    logger.addHandler(rotatingFileLog)
-    logger.debug("---------- beginning new session ----------")
-    SD["counter"] = 0
-  values = ds.getValuesList(TD, SD, plpy)
-  logger.debug("%08d plan: %s", SD["counter"], planName)
-  SD["counter"] += 1
-  result = plpy.execute(SD[planName], values)
-  return None
-except KeyError:  #no plan
-  logger.debug('creating new plan for: %s', planName)
-  SD[planName] = ds.createNewInsertQueryPlan(TD, SD, targetTableName, planName, plpy)
-  result = plpy.execute(SD[planName], values)
-  return None
-$$
-LANGUAGE plpythonu;""")
-  #-----------------------------------------------------------------------------------------------------------------
-  def updateDefinition(self, databaseCursor):
-    databaseCursor.execute(self.creationSql)
+  #def __init__ (self, logger):
+    #super(ChattyParititioningTriggerScript, self).__init__(name = "partition_insert_trigger", logger=logger,
+                                                     #creationSql = """
+#CREATE OR REPLACE FUNCTION partition_insert_trigger()
+#RETURNS TRIGGER AS $$
+#import socorro.database.server as ds
+#import logging
+#import logging.handlers
+#try:
+  #targetTableName = ds.targetTableName(TD["table_name"], TD['new']['date_processed'])
+  #planName = ds.targetTableInsertPlanName (targetTableName)
+  #try:
+    #logger = SD["logger"]
+  #except KeyError:
+    #SD["logger"] = logger = logging.getLogger(targetTableName)
+    #logger.setLevel(logging.DEBUG)
+    #rotatingFileLog = logging.handlers.RotatingFileHandler("/tmp/partitionTrigger.log", "a", 100000000, 10)
+    #rotatingFileLog.setLevel(logging.DEBUG)
+    #rotatingFileLogFormatter = logging.Formatter('%(asctime)s %(levelname)s - %(message)s')
+    #rotatingFileLog.setFormatter(rotatingFileLogFormatter)
+    #logger.addHandler(rotatingFileLog)
+    #logger.debug("---------- beginning new session ----------")
+    #SD["counter"] = 0
+  #values = ds.getValuesList(TD, SD, plpy)
+  #logger.debug("%08d plan: %s", SD["counter"], planName)
+  #SD["counter"] += 1
+  #result = plpy.execute(SD[planName], values)
+  #return 'SKIP'
+#except KeyError:  #no plan
+  #logger.debug('creating new plan for: %s', planName)
+  #SD[planName] = ds.createNewInsertQueryPlan(TD, SD, targetTableName, planName, plpy)
+  #result = plpy.execute(SD[planName], values)
+  #return 'SKIP'
+#$$
+#LANGUAGE plpythonu;""")
+  ##-----------------------------------------------------------------------------------------------------------------
+  #def updateDefinition(self, databaseCursor):
+    #databaseCursor.execute(self.creationSql)
 
 #-----------------------------------------------------------------------------------------------------------------
 def connectToDatabase(config, logger):
@@ -581,10 +704,9 @@ def connectToDatabase(config, logger):
   return (databaseConnection, databaseCursor)
 
 #-----------------------------------------------------------------------------------------------------------------
-databaseObjectClassListForSetup = [ParititioningTriggerScript,
-                                   BranchesTable,
-                                   JobsTable,
+databaseObjectClassListForSetup = [BranchesTable,
                                    ProcessorsTable,
+                                   JobsTable,
                                    PriorityJobsTable,
                                    ReportsTable,
                                    DumpsTable,
@@ -611,10 +733,9 @@ def setupDatabase(config, logger):
     socorro_util.reportExceptionAndAbort(logger)
 
 #-----------------------------------------------------------------------------------------------------------------
-databaseObjectClassListForUpdate = [ParititioningTriggerScript,
-                                   BranchesTable,
-                                   JobsTable,
+databaseObjectClassListForUpdate = [BranchesTable,
                                    ProcessorsTable,
+                                   JobsTable,
                                    PriorityJobsTable,
                                    ReportsTable,
                                    DumpsTable,
@@ -646,12 +767,13 @@ databaseObjectClassListForWeeklyPartitions = [ReportsTable,
                                               ExtensionsTable,
                                              ]
 #-----------------------------------------------------------------------------------------------------------------
-def createNextWeeksPartitions(config, logger):
+def createPartitions(config, logger):
   databaseConnection, databaseCursor = connectToDatabase(config, logger)
+  weekIterator = iterateBetweenDatesGeneratorCreator(config.startDate, config.endDate)
   try:
     for aDatabaseObjectClass in databaseObjectClassListForWeeklyPartitions:
       aDatabaseObject = aDatabaseObjectClass(logger=logger)
-      aDatabaseObject.createPartitions(databaseCursor,nextWeekIterator)
+      aDatabaseObject.createPartitions(databaseCursor, weekIterator)
     databaseConnection.commit()
   except:
     databaseConnection.rollback()
