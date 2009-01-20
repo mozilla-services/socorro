@@ -49,7 +49,7 @@
                 <th>UUID</th><td><?php out::H($report->uuid) ?></td>
             </tr>
             <tr>
-                <th>Time</th><td><?php out::H($report->date) ?></td>
+                <th>Time</th><td><?php out::H($report->date_processed) ?></td>
             </tr>
             <tr>
                 <th>Uptime</th><td><?php out::H($report->uptime) ?></td>
@@ -92,7 +92,7 @@
                 <th>Crash Address</th><td><?php out::H($report->address) ?></td>
             </tr>
             <tr>
-                <th>Comments</th><td><?php out::H($report->comments) ?></td>
+                <th>Comments</th><td><?php out::H($report->user_comments) ?></td>
             </tr>
         </table>
     </div>

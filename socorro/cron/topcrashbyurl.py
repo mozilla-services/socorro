@@ -99,12 +99,12 @@ def populateALLFacts(configContext, logger):
 def populateRelatedTables(context, conn, readCur, logger):
   factUrlSigMap = getFactsUrlSigMap(context, conn, readCur, logger)
   selSql = """
-        SELECT uuid, comments, signature, url
+        SELECT uuid, user_comments, signature, url
         FROM reports 
         WHERE TIMESTAMP WITHOUT TIME ZONE %(start_date)s <= date_processed
           AND date_processed <= TIMESTAMP WITHOUT TIME ZONE %(end_date)s
-          AND comments IS NOT NULL AND url IS NOT NULL AND signature IS NOT NULL 
-          AND comments != ''       AND url != ''       AND signature != '' 
+          AND user_comments IS NOT NULL AND url IS NOT NULL AND signature IS NOT NULL 
+          AND user_comments != ''       AND url != ''       AND signature != '' 
           AND product = %(product_name)s AND version = %(product_version)s """
   logger.info("About to execute %s with %s" % (selSql, context))
   readCur.execute(selSql, context)
@@ -114,7 +114,7 @@ def populateRelatedTables(context, conn, readCur, logger):
   for row in rows:
     try:
       aUrl = url(row['url'])
-      d = {'uuid': row['uuid'], 'comments': row['comments'], 'fact_id': factUrlSigMap[aUrl][row['signature']]}
+      d = {'uuid': row['uuid'], 'user_comments': row['user_comments'], 'fact_id': factUrlSigMap[aUrl][row['signature']]}
       data.append(d)
     except KeyError:
       pass # A comment for a fact we haven't recorded. Example - a product/url/signature with only 1 crash
@@ -123,8 +123,8 @@ def populateRelatedTables(context, conn, readCur, logger):
       socorro.lib.util.reportExceptionAndContinue(logger)
 
   insSel = """/* soc.crn tcburl insr crash comm */
-        INSERT INTO topcrashurlfactsreports (uuid, comments, topcrashurlfacts_id)
-        VALUES (%(uuid)s, %(comments)s, %(fact_id)s) """
+        INSERT INTO topcrashurlfactsreports (uuid, user_comments, topcrashurlfacts_id)
+        VALUES (%(uuid)s, %(user_comments)s, %(fact_id)s) """
   readCur.executemany(insSel, data)
   conn.commit()
 

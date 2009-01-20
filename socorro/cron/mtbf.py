@@ -48,7 +48,7 @@ def calculateMtbf(configContext, logger):
     sql = """/* soc.crn mtbf read/insert facts */
             INSERT INTO mtbffacts (avg_seconds, report_count, unique_users, day, productdims_id) 
               SELECT AVG(uptime) AS avg_seconds, 
-                COUNT(date) AS report_count, COUNT(DISTINCT(user_id)) AS unique_users, DATE '%s', %d
+                COUNT(date_processed) AS report_count, COUNT(DISTINCT(user_id)) AS unique_users, DATE '%s', %d
               FROM reports  
               WHERE date_processed >= TIMESTAMP WITHOUT TIME ZONE '%s' 
                 AND date_processed <= TIMESTAMP WITHOUT TIME ZONE '%s' %s

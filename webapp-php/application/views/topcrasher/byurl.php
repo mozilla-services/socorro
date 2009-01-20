@@ -21,7 +21,7 @@
     <?php foreach($top_crashers as $crash){ ?>
       
       <tr class="<?php echo ( ($row) % 2) == 0 ? 'even' : 'odd' ?>">
-        <td><div id="url-to-sig<?php echo $row; ?>" class="tcburl-toggler tcburl-urlToggler">+</div> <a id="tcburl-url<?php echo $row ?>" class="tcburl-urlToggler" href="#"><?php out::H($crash->url) ?></a> <a  href="<?php echo $crash->url ?>" target="_new">&#35;</a> </td>
+        <td><div id="url-to-sig<?php echo $row; ?>" class="tcburl-toggler tcburl-urlToggler">+</div> <a id="tcburl-url<?php echo $row ?>" class="tcburl-urlToggler" href="#"><?php out::H($crash->url) ?></a> <a  href="<?php echo $crash->url ?>">&#35;</a> </td>
         <td class="url-crash-count"><?php out::H($crash->count)?></td>
       </tr>
       <tr id="tcburl-urlToggle-row<?php echo $row; ?>" style="display: none"><td colspan="2"><?php 

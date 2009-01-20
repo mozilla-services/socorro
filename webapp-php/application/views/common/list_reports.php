@@ -16,7 +16,7 @@
     <tbody>
         <?php foreach ($reports as $report): ?>
             <tr>
-                <td class="report-date">
+                <td class="report-date_processed">
                     <?php
                         $date = strtotime($report->date_processed);
                         // TODO: Find out why this is not $date = strtotime($report->date);
@@ -32,7 +32,7 @@
                 <td><?php out::H($report->reason) ?></td>
                 <td><?php out::H($report->address) ?></td>
                 <td><?php out::H($report->uptime) ?></td>
-                <td><?php out::H($report->comments) ?></td>
+                <td><?php out::H($report->user_comments) ?></td>
             </tr>
         <?php endforeach ?>
     </tbody>

@@ -58,10 +58,9 @@ class Common_Model extends Model {
     public function queryReports($params) {
 
         $columns = array(
-            'reports.date',
             'reports.date_processed',
             'reports.uptime',
-            'reports.comments',
+            'reports.user_comments',
             'reports.uuid',
             'reports.product',
             'reports.version',
