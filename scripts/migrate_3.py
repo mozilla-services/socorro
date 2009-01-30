@@ -132,7 +132,7 @@ def migrate (config, logger):
                         "oldReportsPartition":oldPartitionNames["reports"],
                         "newReportsPartition":newPartitionNames["reports"]
                       }
-      singleDayTuples = [(str(minPartitionDate + dt.timedelta(x))[:10], str(minPartitionDate + dt.timedelta(x + 1))[:10]) for x in range(6)]
+      singleDayTuples = [(str(minPartitionDate + dt.timedelta(x))[:10], str(minPartitionDate + dt.timedelta(x + 1))[:10]) for x in range(7)]
       try:
         databaseCursor.execute("""insert into %(newPartitionName)s
                                             (id, uuid, client_crash_date, date_processed, product, version, build, url, install_age, last_crash, uptime, email, build_date, user_id, user_comments, started_datetime, completed_datetime, success, truncated, processor_notes, app_notes, distributor, distributor_version)
