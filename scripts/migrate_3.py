@@ -122,7 +122,6 @@ def migrate (config, logger):
       logger.info("  %s", aPartitionedTable.name)
       aPartitionedTable.createPartitions(databaseCursor, wrapperIter)
     for minPartitionDate, maxPartitionDate in wrapperIter():
-      singleDayTuples = [(minPartitionDate + dt.timedelta(x), minPartitionDate + dt.timedelta(x + 1)) for x in range(6)]
       newPartitionNames = {}
       for aPartitionedTable in masterTableList:
         newPartitionNames[aPartitionedTable.name] = aPartitionedTable.partitionCreationParameters((minPartitionDate, maxPartitionDate))["partitionName"]
@@ -133,6 +132,7 @@ def migrate (config, logger):
                         "oldReportsPartition":oldPartitionNames["reports"],
                         "newReportsPartition":newPartitionNames["reports"]
                       }
+      singleDayTuples = [(str(minPartitionDate + dt.timedelta(x))[:10], str(minPartitionDate + dt.timedelta(x + 1))[:10]) for x in range(6)]
       try:
         databaseCursor.execute("""insert into %(newPartitionName)s
                                             (id, uuid, client_crash_date, date_processed, product, version, build, url, install_age, last_crash, uptime, email, build_date, user_id, user_comments, started_datetime, completed_datetime, success, truncated, processor_notes, app_notes, distributor, distributor_version)
@@ -177,9 +177,10 @@ def migrate (config, logger):
                                        where
                                          TIMESTAMP without time zone '%(lowDay)s' <= r.date_processed and r.date_processed < TIMESTAMP without time zone '%(highDay)s')""" % sqlParameters)
           databaseConnection.commit()
-        except:
+        except Exception, x:
+          logger.error("SQL failed: %s", str(x))
           databaseConnection.rollback()
-        sqlParameters["newPartitionName"] = newPartitionNames["dumps"]
+      sqlParameters["newPartitionName"] = newPartitionNames["dumps"]
       sqlParameters["oldPartitionName"] = oldPartitionNames["dumps"]
       for lowDay, highDay in singleDayTuples:
         sqlParameters["lowDay"] = lowDay
@@ -195,7 +196,8 @@ def migrate (config, logger):
                                        where
                                          TIMESTAMP without time zone '%(lowDay)s' <= r.date_processed and r.date_processed < TIMESTAMP without time zone '%(highDay)s')""" % sqlParameters)
           databaseConnection.commit()
-        except:
+        except Exception, x:
+          logger.error("SQL failed: %s", str(x))
           databaseConnection.rollback()
       databaseCursor.execute("""delete from %(oldReportsPartition)s
                                   where
