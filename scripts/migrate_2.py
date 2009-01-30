@@ -173,9 +173,9 @@ def migrate (config, logger):
                                          f.frame_num,
                                          f.signature
                                        from
-                                         %(oldPartitionName)s f join %(newReportsPartition)s r on f.report_id = r.id)
+                                         %(oldPartitionName)s f join %(newReportsPartition)s r on f.report_id = r.id
                                        where
-                                         TIMESTAMP without time zone '%(lowDay)s' <= r.date_processed and r.date_processed < TIMESTAMP without time zone '%(highDay)s'""" % sqlParameters)
+                                         TIMESTAMP without time zone '%(lowDay)s' <= r.date_processed and r.date_processed < TIMESTAMP without time zone '%(highDay)s')""" % sqlParameters)
           databaseConnection.commit()
         except:
           databaseConnection.rollback()
@@ -191,9 +191,9 @@ def migrate (config, logger):
                                          r.date_processed,
                                          d.data
                                        from
-                                         %(oldPartitionName)s d join %(newReportsPartition)s r on d.report_id = r.id)
+                                         %(oldPartitionName)s d join %(newReportsPartition)s r on d.report_id = r.id
                                        where
-                                         TIMESTAMP without time zone '%(lowDay)s' <= r.date_processed and r.date_processed < TIMESTAMP without time zone '%(highDay)s'""" % sqlParameters)
+                                         TIMESTAMP without time zone '%(lowDay)s' <= r.date_processed and r.date_processed < TIMESTAMP without time zone '%(highDay)s')""" % sqlParameters)
           databaseConnection.commit()
         except:
           databaseConnection.rollback()
