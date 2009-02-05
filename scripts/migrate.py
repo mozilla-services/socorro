@@ -8,7 +8,14 @@ import socorro.database.postgresql as socorro_pg
 import psycopg2.extras
 
 import datetime as dt
+import sys
 
+numberOfWeeksToPartition = 1
+
+def logResults (databaseCursor, sql, logger):
+  databaseCursor.executeSql(sql)
+  for aRow in databaseCursor.fetchall():
+    logger.info(str(aRow))
 
 def getOldPartitionList (databaseCursor, tableName):
   return sorted([x for x in socorro_pg.tablesMatchingPattern("%s_part%%%%" % tableName, databaseCursor)])
@@ -86,98 +93,112 @@ def migrate (config, logger):
                          "dumps": oldDumpsPartitionName
                         }
 
-    logger.info("adding some handy indexes")
-    try:
-      databaseCursor.execute("create index %(reports)s_date_processed_key on %(reports)s (date_processed)" % oldPartitionNames)
-    except:
-      databaseConnection.rollback()
-    databaseCursor.execute("create index %(extensions)s_report_id_key on %(extensions)s (report_id)" % oldPartitionNames)
-    databaseCursor.execute("create index %(frames)s_report_id_key on %(frames)s (report_id)" % oldPartitionNames)
-    databaseCursor.execute("create index %(dumps)s_report_id_key on %(dumps)s (report_id)" % oldPartitionNames)
+    #logger.info("adding some handy indexes")
+    #try:
+      #databaseCursor.execute("create index %(reports)s_date_processed_key on %(reports)s (date_processed)" % oldPartitionNames)
+    #except:
+      #databaseConnection.rollback()
+    #try:
+      #databaseCursor.execute("create index %(extensions)s_report_id_key on %(extensions)s (report_id)" % oldPartitionNames)
+    #except:
+      #databaseConnection.rollback()
+    #try:
+      #databaseCursor.execute("create index %(frames)s_report_id_key on %(frames)s (report_id)" % oldPartitionNames)
+      #databaseCursor.execute("analyze %(frames)s" % oldPartitionNames)
+    #except:
+      #databaseConnection.rollback()
+    #try:
+      #databaseCursor.execute("create index %(dumps)s_report_id_key on %(dumps)s (report_id)" % oldPartitionNames)
+      #databaseCursor.execute("analyze %(dumps)s" % oldPartitionNames)
+    #except:
+      #databaseConnection.rollback()
 
     partitionUniqueId = oldReportsPartitionName[len("reports_"):]
-    minDate, maxDate = socorro_psy.singleRowSql(databaseCursor, """select
-                                                                     min(date_processed) as minDate,
-                                                                     max(date_processed) as maxDate
-                                                                   from %s""" % oldReportsPartitionName)
-    if minDate is None or maxDate is None:
-      logger.info("this table is empty - delete corresponding table partitions")
-      for aPartitionName in [x.name for x in masterTableList]:
-        try:
-          partitionName = "%s_%s" % (aPartitionName, partitionUniqueId)
-          databaseCursor.execute("drop table %s cascade" % partitionName)
-          databaseCursor.connection.commit()
-        except Exception, x:
-          logger.info(str(x))
-          logger.info("%s doesn't exist - can't drop it", partitionName)
-          databaseCursor.connection.rollback()
-      continue
+    #minDate, maxDate = socorro_psy.singleRowSql(databaseCursor, """select
+                                                                     #min(date_processed) as minDate,
+                                                                     #max(date_processed) as maxDate
+                                                                   #from %s""" % oldReportsPartitionName)
+    #if minDate is None or maxDate is None:
+      #logger.info("this table is empty - delete corresponding table partitions")
+      #for aPartitionName in [x.name for x in masterTableList]:
+        #try:
+          #partitionName = "%s_%s" % (aPartitionName, partitionUniqueId)
+          #databaseCursor.execute("drop table %s cascade" % partitionName)
+          #databaseCursor.connection.commit()
+        #except Exception, x:
+          #logger.info(str(x))
+          #logger.info("%s doesn't exist - can't drop it", partitionName)
+          #databaseCursor.connection.rollback()
+      #continue
 
-    dateRangeIterator = socorro_schema.iterateBetweenDatesGeneratorCreator(minDate, maxDate)
-    #databaseConnection, databaseCursor = socorro_schema.connectToDatabase(config, logger)
-    def wrapperIter():
-      for x in list(dateRangeIterator())[::-1][:4]:
-        yield x
-    for aPartitionedTable in masterTableList[::-1]:
-      logger.info("  %s", aPartitionedTable.name)
-      aPartitionedTable.createPartitions(databaseCursor, wrapperIter)
-    for minPartitionDate, maxPartitionDate in wrapperIter():
-      newPartitionNames = {}
-      for aPartitionedTable in masterTableList:
-        newPartitionNames[aPartitionedTable.name] = aPartitionedTable.partitionCreationParameters((minPartitionDate, maxPartitionDate))["partitionName"]
-      sqlParameters = { "startDate":str(minPartitionDate)[:10],
-                        "endDate":str(maxPartitionDate)[:10],
-                        "newPartitionName":newPartitionNames["reports"],
-                        "oldPartitionName":oldPartitionNames["reports"],
-                        "oldReportsPartition":oldPartitionNames["reports"],
-                        "newReportsPartition":newPartitionNames["reports"]
-                      }
-      databaseCursor.execute("""insert into %(newPartitionName)s
-                                          (id, uuid, client_crash_date, date_processed, product, version, build, url, install_age, last_crash, uptime, email, build_date, user_id, user_comments, started_datetime, completed_datetime, success, truncated, processor_notes, app_notes, distributor, distributor_version)
-                                  (select
-                                           id, uuid, date,              date_processed, product, version, build, url, install_age, last_crash, uptime, email, build_date, user_id, comments,      starteddatetime,  completeddatetime,  success, truncated, message,         NULL,      NULL,        NULL
-                                   from %(oldPartitionName)s
-                                   where TIMESTAMP without time zone '%(startDate)s' <= date_processed and date_processed < TIMESTAMP without time zone '%(endDate)s')""" % sqlParameters)
-      databaseConnection.commit()
-      sqlParameters["newPartitionName"] = newPartitionNames["extensions"]
-      sqlParameters["oldPartitionName"] = oldPartitionNames["extensions"]
-      logger.info("#### %s / %s", str(oldPartitionNames), sqlParameters["oldPartitionName"])
-      databaseCursor.execute("""insert into %(newPartitionName)s
-                                  (select
-                                     e.report_id,
-                                     r.date_processed,
-                                     e.extension_key,
-                                     e.extension_id,
-                                     e.extension_version
-                                   from
-                                     %(oldPartitionName)s e join %(newReportsPartition)s r on e.report_id = r.id)
-                            """ % sqlParameters)
-      databaseConnection.commit()
-      sqlParameters["newPartitionName"] = newPartitionNames["frames"]
-      sqlParameters["oldPartitionName"] = oldPartitionNames["frames"]
-      databaseCursor.execute("""insert into %(newPartitionName)s
-                                  (select
-                                     f.report_id,
-                                     r.date_processed,
-                                     f.frame_num,
-                                     f.signature
-                                   from
-                                     %(oldPartitionName)s f join %(newReportsPartition)s r on f.report_id = r.id)""" % sqlParameters)
-      databaseConnection.commit()
-      sqlParameters["newPartitionName"] = newPartitionNames["dumps"]
-      sqlParameters["oldPartitionName"] = oldPartitionNames["dumps"]
-      databaseCursor.execute("""insert into %(newPartitionName)s
-                                  (select
-                                     d.report_id,
-                                     r.date_processed,
-                                     d.data
-                                   from
-                                     %(oldPartitionName)s d join %(newReportsPartition)s r on d.report_id = r.id)""" % sqlParameters)
-      databaseConnection.commit()
-      databaseCursor.execute("""delete from %(oldReportsPartition)s
-                                  where
-                                     TIMESTAMP without time zone '%(startDate)s' <= date_processed and date_processed < TIMESTAMP without time zone '%(endDate)s'
-                                  """ % sqlParameters)
+    #dateRangeIterator = socorro_schema.iterateBetweenDatesGeneratorCreator(minDate, maxDate)
+    ##databaseConnection, databaseCursor = socorro_schema.connectToDatabase(config, logger)
+    #def wrapperIter():
+      #for x in list(dateRangeIterator())[::-1][:numberOfWeeksToPartition]:
+        #yield x
+    #for aPartitionedTable in masterTableList[::-1]:
+      #logger.info("  %s", aPartitionedTable.name)
+      #aPartitionedTable.createPartitions(databaseCursor, wrapperIter)
+    #for minPartitionDate, maxPartitionDate in wrapperIter():
+      #newPartitionNames = {}
+      #for aPartitionedTable in masterTableList:
+        #newPartitionNames[aPartitionedTable.name] = aPartitionedTable.partitionCreationParameters((minPartitionDate, maxPartitionDate))["partitionName"]
+      #sqlParameters = { "startDate":str(minPartitionDate)[:10],
+                        #"endDate":str(maxPartitionDate)[:10],
+                        #"newPartitionName":newPartitionNames["reports"],
+                        #"oldPartitionName":oldPartitionNames["reports"],
+                        #"oldReportsPartition":oldPartitionNames["reports"],
+                        #"newReportsPartition":newPartitionNames["reports"]
+                      #}
+      #databaseCursor.execute("""insert into %(newPartitionName)s
+                                          #(id, uuid, client_crash_date, date_processed, product, version, build, url, install_age, last_crash, uptime, email, build_date, user_id, user_comments, started_datetime, completed_datetime, success, truncated, processor_notes, app_notes, distributor, distributor_version)
+                                  #(select
+                                           #id, uuid, date,              date_processed, product, version, build, url, install_age, last_crash, uptime, email, build_date, user_id, comments,      starteddatetime,  completeddatetime,  success, truncated, message,         NULL,      NULL,        NULL
+                                   #from %(oldPartitionName)s
+                                   #where TIMESTAMP without time zone '%(startDate)s' <= date_processed and date_processed < TIMESTAMP without time zone '%(endDate)s')""" % sqlParameters)
+      #databaseConnection.commit()
+      #logger.info("is this analyze necessary?")
+      #databaseCursor.execute('analyze %(newPartitionName)s' % sqlParameters)
+      #databaseConnection.commit()
+      ##sys.exit()
+      #sqlParameters["newPartitionName"] = newPartitionNames["extensions"]
+      #sqlParameters["oldPartitionName"] = oldPartitionNames["extensions"]
+      #databaseCursor.execute("""insert into %(newPartitionName)s
+                                  #(select
+                                     #e.report_id,
+                                     #r.date_processed,
+                                     #e.extension_key,
+                                     #e.extension_id,
+                                     #e.extension_version
+                                   #from
+                                     #%(oldPartitionName)s e join %(newReportsPartition)s r on e.report_id = r.id)
+                            #""" % sqlParameters)
+      #databaseConnection.commit()
+      #sqlParameters["newPartitionName"] = newPartitionNames["frames"]
+      #sqlParameters["oldPartitionName"] = oldPartitionNames["frames"]
+      #databaseCursor.execute("""insert into %(newPartitionName)s
+                                  #(select
+                                     #f.report_id,
+                                     #r.date_processed,
+                                     #f.frame_num,
+                                     #f.signature
+                                   #from
+                                     #%(oldPartitionName)s f join %(newReportsPartition)s r on f.report_id = r.id)""" % sqlParameters)
+      #databaseConnection.commit()
+      #sqlParameters["newPartitionName"] = newPartitionNames["dumps"]
+      #sqlParameters["oldPartitionName"] = oldPartitionNames["dumps"]
+      #databaseCursor.execute("""insert into %(newPartitionName)s
+                                  #(select
+                                     #d.report_id,
+                                     #r.date_processed,
+                                     #d.data
+                                   #from
+                                     #%(oldPartitionName)s d join %(newReportsPartition)s r on d.report_id = r.id)""" % sqlParameters)
+      #databaseConnection.commit()
+      #databaseCursor.execute("""delete from %(oldReportsPartition)s
+                                  #where
+                                     #TIMESTAMP without time zone '%(startDate)s' <= date_processed and date_processed < TIMESTAMP without time zone '%(endDate)s'
+                                  #""" % sqlParameters)
 
     logger.info("Now take the rest of the original partition as a big steaming lump")
 
