@@ -546,7 +546,8 @@ class Processor(object):
     except KeyError:
       processorErrorMessages.append("ERROR: Json file missing 'BuildID'")
     url = socorro.lib.util.lookupLimitedStringOrNone(jsonDocument, 'URL', 255)
-    email = socorro.lib.util.lookupLimitedStringOrNone(jsonDocument, 'Email', 100)
+    #email = socorro.lib.util.lookupLimitedStringOrNone(jsonDocument, 'Email', 100)
+    email = None
     user_id = socorro.lib.util.lookupLimitedStringOrNone(jsonDocument, 'UserID',  50)
     user_comments = socorro.lib.util.lookupLimitedStringOrNone(jsonDocument, 'Comments', 500)
     app_notes = socorro.lib.util.lookupLimitedStringOrNone(jsonDocument, 'Notes', 1000)
