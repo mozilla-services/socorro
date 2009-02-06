@@ -1,5 +1,5 @@
 <?php 
-$outage_message = "We are <a href='http://blog.mozilla.com/webdev/2009/01/20/socorro-database-partitioning-is-coming/'>repartitioning the database</a>. We don't know exactly how long this will take. Guestimation is early Friday. Thanks for your patience.";
+$outage_message = "We are <a href='http://blog.mozilla.com/webdev/2009/01/20/socorro-database-partitioning-is-coming/'>repartitioning the database</a>. We expect this to take at most 48 hours. Thanks for your patience.";
 ?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 
