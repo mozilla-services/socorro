@@ -585,7 +585,7 @@ class Processor(object):
       logger.debug("%s - inserting for %s", threading.currentThread().getName(), uuid)
       self.reportsTable.insert(threadLocalCursor, newReportsRowTuple, self.databaseConnectionPool.connectToDatabase, date_processed=date_processed)
     except psycopg2.IntegrityError, x:
-      logger.debug("%s - psycopg2.IntegrityError %s", str(x))
+      logger.debug("%s - psycopg2.IntegrityError %s", threading.currentThread().getName(), str(x))
       logger.debug("%s - %s: this report already exists for date: %s",  threading.currentThread().getName(), uuid, str(date_processed))
       threadLocalCursor.connection.rollback()
       previousTrialWasSuccessful = psy.singleValueSql(threadLocalCursor, "select success from reports where uuid = '%s' and date_processed = timestamp without time zone '%s'" % (uuid, date_processed))
