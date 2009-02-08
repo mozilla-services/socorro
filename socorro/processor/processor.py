@@ -513,7 +513,7 @@ class Processor(object):
       threadLocalCursor.execute("update jobs set completedDateTime = %s, success = False, message = %s where id = %s", (datetime.datetime.now(), message, jobId))
       try:
         threadLocalCursor.execute("update reports set started_datetime = timestamp without time zone '%s', completed_datetime = timestamp without time zone '%s', success = False, processor_notes = '%s' where id = %s and date_processed = timestamp without time zone '%s'" % (startedDateTime, datetime.datetime.now(), message, reportId, date_processed))
-      except AttributeError:
+      except Exception:
         pass
       threadLocalDatabaseConnection.commit()
 
