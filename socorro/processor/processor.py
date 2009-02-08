@@ -547,7 +547,7 @@ class Processor(object):
       processorErrorMessages.append("ERROR: Json file missing 'BuildID'")
     url = socorro.lib.util.lookupLimitedStringOrNone(jsonDocument, 'URL', 255)
     #email = socorro.lib.util.lookupLimitedStringOrNone(jsonDocument, 'Email', 100)
-    email = None
+    email = None # we are no longer allowed to collect email addresses
     user_id = socorro.lib.util.lookupLimitedStringOrNone(jsonDocument, 'UserID',  50)
     user_comments = socorro.lib.util.lookupLimitedStringOrNone(jsonDocument, 'Comments', 500)
     app_notes = socorro.lib.util.lookupLimitedStringOrNone(jsonDocument, 'Notes', 1000)
@@ -584,8 +584,9 @@ class Processor(object):
     try:
       logger.debug("%s - inserting for %s", threading.currentThread().getName(), uuid)
       self.reportsTable.insert(threadLocalCursor, newReportsRowTuple, self.databaseConnectionPool.connectToDatabase, date_processed=date_processed)
-    except psycopg2.IntegrityError:
-      logger.debug("%s - %s: this report already exists",  threading.currentThread().getName(), uuid)
+    except psycopg2.IntegrityError, x:
+      logger.debug("%s - psycopg2.IntegrityError %s", str(x))
+      logger.debug("%s - %s: this report already exists for date: %s",  threading.currentThread().getName(), uuid, str(date_processed))
       threadLocalCursor.connection.rollback()
       previousTrialWasSuccessful = psy.singleValueSql(threadLocalCursor, "select success from reports where uuid = '%s' and date_processed = timestamp without time zone '%s'" % (uuid, date_processed))
       if previousTrialWasSuccessful:
