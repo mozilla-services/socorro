@@ -17,7 +17,6 @@ def iterateBetweenDatesGeneratorCreator(minDate, maxDate):
       aDate = minDate - dt.timedelta(beginWeekDay) # begin on Monday before minDate
     else:
       aDate = minDate
-    print aDate, maxDate
     while aDate <= maxDate:
       nextMonday = aDate + oneWeek
       yield (aDate, nextMonday)
