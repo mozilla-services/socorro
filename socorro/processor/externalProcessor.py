@@ -222,7 +222,7 @@ class ProcessorWithExternalBreakpad (processor.Processor):
     signature = self.generateSignatureFromList(signatureList).replace("'", "''")
     if signature == '' or signature is None:
       if crashedThread is None:
-        message = "No signature could be created because we don't know which thread crashed"
+        message = "No signature could be created because we do not know which thread crashed"
       else:
         message = "No proper signature could be created because no good data for the crashing thread (%d) was found" % crashedThread
         try:
@@ -232,7 +232,7 @@ class ProcessorWithExternalBreakpad (processor.Processor):
       processorErrorMessages.append(message)
       logger.warning("%s - %s", threading.currentThread().getName(), message)
     #logger.debug("%s -   %s", threading.currentThread().getName(), (signature, '; '.join(processorErrorMessages), reportId, date_processed))
-    databaseCursor.execute("update reports set signature = '%s', processor_notes = '%s' where id = %s and date_processed = timestamp without time zone '%s'" % (signature, '; '.join(processorErrorMessages), reportId, date_processed))
+    databaseCursor.execute("update reports set signature = '%s', processor_notes = '%s' where id = %s and date_processed = timestamp without time zone '%s'" % (signature, '; '.join(processorErrorMessages).replace("'", "''"), reportId, date_processed))
 
     if not analyzeReturnedLines:
       message = "%s returned no frame lines for reportid: %s" % (self.config.minidump_stackwalkPathname, reportId)
