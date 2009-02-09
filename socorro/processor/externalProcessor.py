@@ -219,7 +219,7 @@ class ProcessorWithExternalBreakpad (processor.Processor):
       elif frameCounter:
         break
     dumpAnalysisLineIterator.stopUsingSecondaryCache()
-    signature = self.generateSignatureFromList(signatureList)
+    signature = self.generateSignatureFromList(signatureList).replace("'", "''")
     if signature == '' or signature is None:
       if crashedThread is None:
         message = "No signature could be created because we don't know which thread crashed"
@@ -231,6 +231,7 @@ class ProcessorWithExternalBreakpad (processor.Processor):
           pass
       processorErrorMessages.append(message)
       logger.warning("%s - %s", threading.currentThread().getName(), message)
+    #logger.debug("%s -   %s", threading.currentThread().getName(), (signature, '; '.join(processorErrorMessages), reportId, date_processed))
     databaseCursor.execute("update reports set signature = '%s', processor_notes = '%s' where id = %s and date_processed = timestamp without time zone '%s'" % (signature, '; '.join(processorErrorMessages), reportId, date_processed))
 
     if not analyzeReturnedLines:
