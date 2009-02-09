@@ -80,7 +80,10 @@ class DatabaseConnectionPool(dict):
   #-----------------------------------------------------------------------------------------------------------------
   def __init__(self, databaseHostName, databaseName, databaseUserName, databasePassword, logger=util.FakeLogger()):
     super(DatabaseConnectionPool, self).__init__()
-    self.dsn = "host=%s dbname=%s user=%s password=%s" % (databaseHostName, databaseName, databaseUserName, databasePassword)
+    if databaseHostName != '':
+      self.dsn = "host=%s dbname=%s user=%s password=%s" % (databaseHostName, databaseName, databaseUserName, databasePassword)
+    else:
+      self.dsn = "dbname=%s user=%s password=%s" % (databaseName, databaseUserName, databasePassword)
     self.logger = logger
 
   #-----------------------------------------------------------------------------------------------------------------
