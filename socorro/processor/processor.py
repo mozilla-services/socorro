@@ -580,9 +580,9 @@ class Processor(object):
       last_crash = int(jsonDocument['SecondsSinceLastCrash'])
     except:
       last_crash = None
-    newReportsRowTuple = (uuid, report_date, date_processed, product, version, build, url, install_age, last_crash, uptime, email, build_date, user_id, user_comments, distributor, distributor_version)
+    newReportsRowTuple = (uuid, report_date, date_processed, product, version, build, url, install_age, last_crash, uptime, email, build_date, user_id, user_comments, app_notes, distributor, distributor_version)
     try:
-      logger.debug("%s - inserting for %s", threading.currentThread().getName(), uuid)
+      logger.debug("%s - inserting for %s, %s", threading.currentThread().getName(), uuid, str(date_processed))
       self.reportsTable.insert(threadLocalCursor, newReportsRowTuple, self.databaseConnectionPool.connectToDatabase, date_processed=date_processed)
     except psycopg2.IntegrityError, x:
       logger.debug("%s - psycopg2.IntegrityError %s", threading.currentThread().getName(), str(x))
