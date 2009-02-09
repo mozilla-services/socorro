@@ -224,7 +224,11 @@ class ProcessorWithExternalBreakpad (processor.Processor):
       if crashedThread is None:
         message = "No signature could be created because we don't know which thread crashed"
       else:
-        message = "No signature could be created because no data for the crashing thread (%d) was found" % crashedThread
+        message = "No proper signature could be created because no good data for the crashing thread (%d) was found" % crashedThread
+        try:
+          signature = signatureList[0]
+        except IndexError:
+          pass
       processorErrorMessages.append(message)
       logger.warning("%s - %s", threading.currentThread().getName(), message)
     databaseCursor.execute("update reports set signature = '%s' where id = %s and date_processed = timestamp without time zone '%s'" % (signature, reportId, date_processed))
