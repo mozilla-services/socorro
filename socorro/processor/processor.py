@@ -98,7 +98,7 @@ class Processor(object):
   fixupComma = re.compile(r'(?<=,)(?! )')
   filename_re = re.compile('[/\\\\]([^/\\\\]+)$')
   irrelevantSignaturePattern = re.compile('@0x[01234567890abcdefABCDEF]{2,}')
-  prefixSignaturePattern = re.compile('@0x0|strchr|memcpy|malloc|realloc|.*free.*|arena_dalloc_small')
+  prefixSignaturePattern = re.compile('@0x0|strchr|strstr|strcmp|memcpy|memcmp|malloc|realloc|.*free|arena_dalloc_small|nsObjCExceptionLogAbort|nsCOMPtr_base::assign_from_qi(nsQueryInterface, nsID const&)')
   utctz = UTC()
 
   #-----------------------------------------------------------------------------------------------------------------
@@ -548,7 +548,8 @@ class Processor(object):
     url = socorro.lib.util.lookupLimitedStringOrNone(jsonDocument, 'URL', 255)
     #email = socorro.lib.util.lookupLimitedStringOrNone(jsonDocument, 'Email', 100)
     email = None # we are no longer allowed to collect email addresses
-    user_id = socorro.lib.util.lookupLimitedStringOrNone(jsonDocument, 'UserID',  50)
+    #user_id = socorro.lib.util.lookupLimitedStringOrNone(jsonDocument, 'UserID',  50)
+    user_id = None # we are no longer allowed to collect the user uuid
     user_comments = socorro.lib.util.lookupLimitedStringOrNone(jsonDocument, 'Comments', 500)
     app_notes = socorro.lib.util.lookupLimitedStringOrNone(jsonDocument, 'Notes', 1000)
     distributor = socorro.lib.util.lookupLimitedStringOrNone(jsonDocument, 'Distributor', 20)
