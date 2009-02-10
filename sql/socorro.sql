@@ -3,304 +3,19 @@
 --
 
 SET client_encoding = 'UTF8';
+SET standard_conforming_strings = off;
 SET check_function_bodies = false;
 SET client_min_messages = warning;
-
---
--- Name: plpgsql; Type: PROCEDURAL LANGUAGE; Schema: -; Owner: 
---
-
-CREATE PROCEDURAL LANGUAGE plpgsql;
-
+SET escape_string_warning = off;
 
 SET search_path = public, pg_catalog;
-
---
--- Name: create_partition_rules(integer); Type: FUNCTION; Schema: public; Owner: postgres
---
-
-CREATE FUNCTION create_partition_rules(partition integer) RETURNS void
-    AS $_$
-declare
-    cur_partition integer := partition;
-    tablename text;
-    cmd text;
-begin
-    IF cur_partition IS NULL THEN
-        SELECT INTO cur_partition get_latest_partition();
-    END IF;
-
-    tablename := 'reports_part' || cur_partition::text;
-    cmd := subst('CREATE OR REPLACE RULE rule_reports_partition AS
-                  ON INSERT TO reports
-                  DO INSTEAD INSERT INTO $$ VALUES (NEW.*)',
-                 ARRAY[ quote_ident(tablename) ]);
-    execute cmd;
-
-    tablename := 'frames_part' || cur_partition::text;
-    cmd := subst('CREATE OR REPLACE RULE rule_frames_partition AS
-                  ON INSERT TO frames
-                  DO INSTEAD INSERT INTO $$ VALUES (NEW.*)',
-                  ARRAY [ quote_ident(tablename) ]);
-    execute cmd;
-
-    tablename := 'modules_part' || cur_partition::text;
-    cmd := subst('CREATE OR REPLACE RULE rule_modules_partition AS
-                  ON INSERT TO modules
-                  DO INSTEAD INSERT INTO $$ VALUES (NEW.*)',
-                 ARRAY[ quote_ident(tablename) ]);
-    execute cmd;
-
-    tablename := 'extensions_part' || cur_partition::text;
-    cmd := subst('CREATE OR REPLACE RULE rule_extensions_partition AS
-                  ON INSERT TO extensions
-                  DO INSTEAD INSERT INTO $$ VALUES (NEW.*)',
-                 ARRAY[ quote_ident(tablename) ]);
-    execute cmd;
-
-    tablename := 'dumps_part' || cur_partition::text;
-    cmd := subst('CREATE OR REPLACE RULE rule_dumps_partition AS
-                  ON INSERT TO dumps
-                  DO INSTEAD INSERT INTO $$ VALUES (NEW.*)',
-                 ARRAY[ quote_ident(tablename) ]);
-    execute cmd;
-end;
-$_$
-    LANGUAGE plpgsql;
-
-
-ALTER FUNCTION public.create_partition_rules(partition integer) OWNER TO postgres;
-
---
--- Name: drop_partition_rules(); Type: FUNCTION; Schema: public; Owner: postgres
---
-
-CREATE FUNCTION drop_partition_rules() RETURNS void
-    AS $$
-declare
-    partition integer;
-begin
-    SELECT INTO partition get_latest_partition();
-    IF partition IS NULL THEN
-        RETURN;
-    END IF;
-
-    DROP RULE rule_reports_partition ON reports;
-    DROP RULE rule_frames_partition ON frames;
-    DROP RULE rule_modules_partition ON modules;
-    DROP RULE rule_extensions_partition ON extensions;
-    DROP RULE rule_dumps_partition ON dumps;
-end;
-$$
-    LANGUAGE plpgsql;
-
-
-ALTER FUNCTION public.drop_partition_rules() OWNER TO postgres;
-
---
--- Name: get_latest_partition(); Type: FUNCTION; Schema: public; Owner: postgres
---
-
-CREATE FUNCTION get_latest_partition() RETURNS integer
-    AS $_$
-declare
-    partition integer;
-begin
-    SELECT INTO partition
-        max(substring(tablename from '^reports_part(\\d+)$')::integer)
-        FROM pg_tables WHERE tablename LIKE 'reports_part%';
-    RETURN partition;
-end;
-$_$
-    LANGUAGE plpgsql;
-
-
-ALTER FUNCTION public.get_latest_partition() OWNER TO postgres;
-
---
--- Name: lock_for_changes(); Type: FUNCTION; Schema: public; Owner: postgres
---
-
-CREATE FUNCTION lock_for_changes() RETURNS void
-    AS $$
-declare
-begin
-    LOCK reports IN ROW EXCLUSIVE MODE;
-    LOCK frames IN ROW EXCLUSIVE MODE;
-    LOCK dumps IN ROW EXCLUSIVE MODE;
-    LOCK modules IN ROW EXCLUSIVE MODE;
-    LOCK extensions IN ROW EXCLUSIVE MODE;
-end;
-$$
-    LANGUAGE plpgsql;
-
-
-ALTER FUNCTION public.lock_for_changes() OWNER TO postgres;
-
---
--- Name: make_partition(); Type: FUNCTION; Schema: public; Owner: postgres
---
-
-CREATE FUNCTION make_partition() RETURNS void
-    AS $_$
-declare
-    new_partition integer;
-    old_partition integer;
-    old_start_date text;
-    old_end_date text;
-    old_end_id integer;
-    old_tablename text;
-    start_id integer := 0;
-    tablename text;
-    objname text;
-    rulename text;
-    cmd text;
-begin
-    PERFORM lock_for_changes();
-
-    SELECT INTO old_partition get_latest_partition();
-
-    IF old_partition IS NOT NULL THEN
-        new_partition := old_partition + 1;
-
-        old_tablename := 'reports_part' || old_partition::text;
-        cmd := subst('SELECT max(id), min(date), max(date) FROM $$',
-                     ARRAY[ quote_ident(old_tablename) ]);
-
-        execute cmd into old_end_id, old_start_date, old_end_date;
-
-        cmd := subst('ALTER TABLE $$ ADD CHECK( id <= $$ ),
-                                     ADD CHECK( date >= $$ AND date <= $$)',
-                     ARRAY[ quote_ident(old_tablename),
-                            quote_literal(old_end_id),
-                            quote_literal(old_start_date),
-                            quote_literal(old_end_date) ]);
-        execute cmd;
-
-        old_tablename := 'frames_part' || old_partition::text;
-        cmd := subst('ALTER TABLE $$ ADD CHECK( report_id <= $$ )',
-                     ARRAY[ quote_ident(old_tablename),
-                            quote_literal(old_end_id) ]);
-        execute cmd;
-
-        old_tablename := 'dumps_part' || old_partition::text;
-        cmd := subst('ALTER TABLE $$ ADD CHECK( report_id <= $$ )',
-                     ARRAY[ quote_ident(old_tablename),
-                            quote_literal(old_end_id) ]);
-        execute cmd;
-
-        old_tablename := 'modules_part' || old_partition::text;
-        cmd := subst('ALTER TABLE $$ ADD CHECK( report_id <= $$ )',
-                         ARRAY[ quote_ident(old_tablename),
-                            quote_literal(old_end_id) ]);
-        execute cmd;
-
-        old_tablename := 'extensions_part' || old_partition::text;
-        cmd := subst('ALTER TABLE $$ ADD CHECK( report_id <= $$ )',
-                     ARRAY[ quote_ident(old_tablename),
-                            quote_literal(old_end_id) ]);
-        execute cmd;
-
-        start_id := old_end_id + 1;
-    ELSE
-        new_partition := 1;
-    END IF;
-
-    tablename := 'reports_part' || new_partition::text;
-    cmd := subst('CREATE TABLE $$ (
-                    PRIMARY KEY(id),
-                    UNIQUE(uuid),
-                    CHECK(id >= $$)
-                  ) INHERITS (reports)',
-                 ARRAY[ quote_ident(tablename),
-                        quote_literal(start_id) ]);
-    execute cmd;
-
-    objname := 'idx_reports_part' || new_partition::text || '_date';
-    cmd := subst('CREATE INDEX $$ ON $$ (date, product, version, build)',
-                 ARRAY[ quote_ident(objname),
-                        quote_ident(tablename) ]);
-    execute cmd;
-
-    objname := 'frames_part' || new_partition::text;
-    cmd := subst('CREATE TABLE $$ (
-                    CHECK(report_id >= $$),
-                    PRIMARY KEY(report_id, frame_num),
-                    FOREIGN KEY(report_id) REFERENCES $$ (id) ON DELETE CASCADE
-                  ) INHERITS (frames)',
-                 ARRAY[ quote_ident(objname),
-                        quote_literal(start_id),
-                        quote_ident(tablename) ]);
-    execute cmd;
-
-    objname := 'modules_part' || new_partition::text;
-    cmd := subst('CREATE TABLE $$ (
-                    CHECK(report_id >= $$),
-                    PRIMARY KEY(report_id, module_key),
-                    FOREIGN KEY(report_id) REFERENCES $$ (id) ON DELETE CASCADE
-                  ) INHERITS (modules)',
-                 ARRAY[ quote_ident(objname),
-                        quote_literal(start_id),
-                        quote_ident(tablename) ]);
-    execute cmd;
-
-    objname := 'extensions_part' || new_partition::text;
-    cmd := subst('CREATE TABLE $$ (
-                    CHECK(report_id >= $$),
-                    PRIMARY KEY(report_id, extension_key),
-                    FOREIGN KEY(report_id) REFERENCES $$ (id) ON DELETE CASCADE
-                  ) INHERITS (extensions)',
-                 ARRAY[ quote_ident(objname),
-                        quote_literal(start_id),
-                        quote_ident(tablename) ]);
-    execute cmd;
-
-    objname := 'dumps_part' || new_partition::text;
-    cmd := subst('CREATE TABLE $$ (
-                    CHECK(report_id >= $$),
-                    PRIMARY KEY(report_id),
-                    FOREIGN KEY(report_id) REFERENCES $$ (id) ON DELETE CASCADE
-                  ) INHERITS (dumps)',
-                 ARRAY[ quote_ident(objname),
-                        quote_literal(start_id),
-                        quote_ident(tablename) ]);
-    execute cmd;
-
-    PERFORM create_partition_rules(new_partition);
-end;
-$_$
-    LANGUAGE plpgsql;
-
-
-ALTER FUNCTION public.make_partition() OWNER TO postgres;
-
---
--- Name: subst(text, text[]); Type: FUNCTION; Schema: public; Owner: postgres
---
-
-CREATE FUNCTION subst(str text, vals text[]) RETURNS text
-    AS $_$
-declare
-    split text[] := string_to_array(str,'$$');
-    result text[] := split[1:1];
-begin
-    for i in 2..array_upper(split,1) loop
-        result := result || vals[i-1] || split[i];
-    end loop;
-    return array_to_string(result,'');
-end;
-$_$
-    LANGUAGE plpgsql IMMUTABLE STRICT;
-
-
-ALTER FUNCTION public.subst(str text, vals text[]) OWNER TO postgres;
 
 SET default_tablespace = '';
 
 SET default_with_oids = false;
 
 --
--- Name: branches; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
+-- Name: branches; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
 CREATE TABLE branches (
@@ -310,91 +25,60 @@ CREATE TABLE branches (
 );
 
 
-ALTER TABLE public.branches OWNER TO postgres;
+ALTER TABLE public.branches OWNER TO breakpad_rw;
 
 --
--- Name: dumps; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
+-- Name: dumps; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
 CREATE TABLE dumps (
     report_id integer NOT NULL,
-    truncated boolean,
+    date_processed timestamp without time zone,
     data text
 );
 
 
-ALTER TABLE public.dumps OWNER TO postgres;
+ALTER TABLE public.dumps OWNER TO breakpad_rw;
 
 --
--- Name: dumps_part1; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
---
-
-CREATE TABLE dumps_part1 (CONSTRAINT dumps_part1_report_id_check CHECK ((report_id >= 0))
-)
-INHERITS (dumps);
-
-
-ALTER TABLE public.dumps_part1 OWNER TO postgres;
-
---
--- Name: extensions; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
+-- Name: extensions; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
 CREATE TABLE extensions (
     report_id integer NOT NULL,
+    date_processed timestamp without time zone,
     extension_key integer NOT NULL,
     extension_id character varying(100) NOT NULL,
     extension_version character varying(16)
 );
 
 
-ALTER TABLE public.extensions OWNER TO postgres;
+ALTER TABLE public.extensions OWNER TO breakpad_rw;
 
 --
--- Name: extensions_part1; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
---
-
-CREATE TABLE extensions_part1 (CONSTRAINT extensions_part1_report_id_check CHECK ((report_id >= 0))
-)
-INHERITS (extensions);
-
-
-ALTER TABLE public.extensions_part1 OWNER TO postgres;
-
---
--- Name: frames; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
+-- Name: frames; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
 CREATE TABLE frames (
     report_id integer NOT NULL,
+    date_processed timestamp without time zone,
     frame_num integer NOT NULL,
     signature character varying(255)
 );
 
 
-ALTER TABLE public.frames OWNER TO postgres;
+ALTER TABLE public.frames OWNER TO breakpad_rw;
 
 --
--- Name: frames_part1; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
---
-
-CREATE TABLE frames_part1 (CONSTRAINT frames_part1_report_id_check CHECK ((report_id >= 0))
-)
-INHERITS (frames);
-
-
-ALTER TABLE public.frames_part1 OWNER TO postgres;
-
---
--- Name: jobs; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
+-- Name: jobs; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
 CREATE TABLE jobs (
     id integer NOT NULL,
     pathname character varying(1024) NOT NULL,
     uuid character varying(50) NOT NULL,
-    "owner" integer,
-    priority integer,
+    owner integer,
+    priority integer DEFAULT 0,
     queueddatetime timestamp without time zone,
     starteddatetime timestamp without time zone,
     completeddatetime timestamp without time zone,
@@ -403,48 +87,51 @@ CREATE TABLE jobs (
 );
 
 
-ALTER TABLE public.jobs OWNER TO postgres;
+ALTER TABLE public.jobs OWNER TO breakpad_rw;
 
 --
--- Name: modules; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
+-- Name: mtbfconfig; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
-CREATE TABLE modules (
-    report_id integer NOT NULL,
-    module_key integer NOT NULL,
-    filename character varying(40) NOT NULL,
-    debug_id character varying(40),
-    module_version character varying(15),
-    debug_filename character varying(40)
+CREATE TABLE mtbfconfig (
+    id integer NOT NULL,
+    productdims_id integer,
+    start_dt date,
+    end_dt date
 );
 
 
-ALTER TABLE public.modules OWNER TO postgres;
+ALTER TABLE public.mtbfconfig OWNER TO breakpad_rw;
 
 --
--- Name: modules_part1; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
+-- Name: mtbffacts; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
-CREATE TABLE modules_part1 (CONSTRAINT modules_part1_report_id_check CHECK ((report_id >= 0))
-)
-INHERITS (modules);
+CREATE TABLE mtbffacts (
+    id integer NOT NULL,
+    avg_seconds integer NOT NULL,
+    report_count integer NOT NULL,
+    unique_users integer NOT NULL,
+    day date,
+    productdims_id integer
+);
 
 
-ALTER TABLE public.modules_part1 OWNER TO postgres;
+ALTER TABLE public.mtbffacts OWNER TO breakpad_rw;
 
 --
--- Name: priorityjobs; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
+-- Name: priorityjobs; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
 CREATE TABLE priorityjobs (
-    uuid character varying(50) NOT NULL
+    uuid character varying(255) NOT NULL
 );
 
 
-ALTER TABLE public.priorityjobs OWNER TO postgres;
+ALTER TABLE public.priorityjobs OWNER TO breakpad_rw;
 
 --
--- Name: processors; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
+-- Name: processors; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
 CREATE TABLE processors (
@@ -455,16 +142,31 @@ CREATE TABLE processors (
 );
 
 
-ALTER TABLE public.processors OWNER TO postgres;
+ALTER TABLE public.processors OWNER TO breakpad_rw;
 
 --
--- Name: reports; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
+-- Name: productdims; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+CREATE TABLE productdims (
+    id integer NOT NULL,
+    product character varying(30) NOT NULL,
+    version character varying(16) NOT NULL,
+    os_name character varying(100),
+    release character varying(50) NOT NULL
+);
+
+
+ALTER TABLE public.productdims OWNER TO breakpad_rw;
+
+--
+-- Name: reports; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
 CREATE TABLE reports (
     id integer NOT NULL,
-    date timestamp with time zone NOT NULL,
-    date_processed timestamp without time zone NOT NULL,
+    client_crash_date timestamp with time zone,
+    date_processed timestamp without time zone,
     uuid character varying(50) NOT NULL,
     product character varying(30),
     version character varying(16),
@@ -474,7 +176,6 @@ CREATE TABLE reports (
     install_age integer,
     last_crash integer,
     uptime integer,
-    comments character varying(500),
     cpu_name character varying(100),
     cpu_info character varying(100),
     reason character varying(255),
@@ -484,47 +185,95 @@ CREATE TABLE reports (
     email character varying(100),
     build_date timestamp without time zone,
     user_id character varying(50),
-    starteddatetime timestamp without time zone,
-    completeddatetime timestamp without time zone,
+    started_datetime timestamp without time zone,
+    completed_datetime timestamp without time zone,
     success boolean,
-    message text,
-    truncated boolean
+    truncated boolean,
+    processor_notes text,
+    user_comments character varying(1024),
+    app_notes character varying(1024),
+    distributor character varying(20),
+    distributor_version character varying(20)
 );
 
 
-ALTER TABLE public.reports OWNER TO postgres;
+ALTER TABLE public.reports OWNER TO breakpad_rw;
 
 --
--- Name: reports_part1; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
+-- Name: reports_id_seq; Type: SEQUENCE; Schema: public; Owner: breakpad_rw
 --
 
-CREATE TABLE reports_part1 (CONSTRAINT reports_part1_id_check CHECK ((id >= 0))
-)
-INHERITS (reports);
-
-
-ALTER TABLE public.reports_part1 OWNER TO postgres;
-
---
--- Name: seq_reports_id; Type: SEQUENCE; Schema: public; Owner: postgres
---
-
-CREATE SEQUENCE seq_reports_id
-    START WITH 1
+CREATE SEQUENCE reports_id_seq
     INCREMENT BY 1
     NO MAXVALUE
     NO MINVALUE
     CACHE 1;
 
 
-ALTER TABLE public.seq_reports_id OWNER TO postgres;
+ALTER TABLE public.reports_id_seq OWNER TO breakpad_rw;
 
 --
--- Name: topcrashers; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
+-- Name: reports_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: breakpad_rw
+--
+
+ALTER SEQUENCE reports_id_seq OWNED BY reports.id;
+
+
+--
+-- Name: reports_id_seq; Type: SEQUENCE SET; Schema: public; Owner: breakpad_rw
+--
+
+SELECT pg_catalog.setval('reports_id_seq', 2027, true);
+
+--
+-- Name: server_status; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+CREATE TABLE server_status (
+    id integer NOT NULL,
+    date_recently_completed timestamp without time zone,
+    date_oldest_job_queued timestamp without time zone,
+    avg_process_sec real,
+    avg_wait_sec real,
+    waiting_job_count integer NOT NULL,
+    processors_count integer NOT NULL,
+    date_created timestamp without time zone NOT NULL
+);
+
+
+ALTER TABLE public.server_status OWNER TO breakpad_rw;
+
+--
+-- Name: signaturedims; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+CREATE TABLE signaturedims (
+    id integer NOT NULL,
+    signature character varying(255) NOT NULL
+);
+
+
+ALTER TABLE public.signaturedims OWNER TO breakpad_rw;
+
+--
+-- Name: tcbyurlconfig; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+CREATE TABLE tcbyurlconfig (
+    id integer NOT NULL,
+    productdims_id integer,
+    enabled boolean
+);
+
+
+ALTER TABLE public.tcbyurlconfig OWNER TO breakpad_rw;
+
+--
+-- Name: topcrashers; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
 CREATE TABLE topcrashers (
-    id serial NOT NULL,
+    id integer NOT NULL,
     signature character varying(255) NOT NULL,
     version character varying(30) NOT NULL,
     product character varying(30) NOT NULL,
@@ -542,10 +291,494 @@ CREATE TABLE topcrashers (
 );
 
 
-ALTER TABLE public.topcrashers OWNER TO postgres;
+ALTER TABLE public.topcrashers OWNER TO breakpad_rw;
+
+SET default_with_oids = true;
 
 --
--- Name: branches_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
+-- Name: topcrashurlfacts; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+CREATE TABLE topcrashurlfacts (
+    id integer NOT NULL,
+    count integer NOT NULL,
+    rank integer,
+    day date NOT NULL,
+    productdims_id integer,
+    urldims_id integer,
+    signaturedims_id integer
+);
+
+
+ALTER TABLE public.topcrashurlfacts OWNER TO breakpad_rw;
+
+SET default_with_oids = false;
+
+--
+-- Name: topcrashurlfactsreports; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+CREATE TABLE topcrashurlfactsreports (
+    id integer NOT NULL,
+    uuid character varying(50) NOT NULL,
+    comments character varying(500),
+    topcrashurlfacts_id integer
+);
+
+
+ALTER TABLE public.topcrashurlfactsreports OWNER TO breakpad_rw;
+
+--
+-- Name: urldims; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+CREATE TABLE urldims (
+    id integer NOT NULL,
+    domain character varying(255) NOT NULL,
+    url character varying(255) NOT NULL
+);
+
+
+ALTER TABLE public.urldims OWNER TO breakpad_rw;
+
+--
+-- Name: jobs_id_seq; Type: SEQUENCE; Schema: public; Owner: breakpad_rw
+--
+
+CREATE SEQUENCE jobs_id_seq
+    INCREMENT BY 1
+    NO MAXVALUE
+    NO MINVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.jobs_id_seq OWNER TO breakpad_rw;
+
+--
+-- Name: jobs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: breakpad_rw
+--
+
+ALTER SEQUENCE jobs_id_seq OWNED BY jobs.id;
+
+
+--
+-- Name: jobs_id_seq; Type: SEQUENCE SET; Schema: public; Owner: breakpad_rw
+--
+
+SELECT pg_catalog.setval('jobs_id_seq', 252058, true);
+
+
+--
+-- Name: mtbfconfig_id_seq; Type: SEQUENCE; Schema: public; Owner: breakpad_rw
+--
+
+CREATE SEQUENCE mtbfconfig_id_seq
+    INCREMENT BY 1
+    NO MAXVALUE
+    NO MINVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.mtbfconfig_id_seq OWNER TO breakpad_rw;
+
+--
+-- Name: mtbfconfig_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: breakpad_rw
+--
+
+ALTER SEQUENCE mtbfconfig_id_seq OWNED BY mtbfconfig.id;
+
+
+--
+-- Name: mtbfconfig_id_seq; Type: SEQUENCE SET; Schema: public; Owner: breakpad_rw
+--
+
+SELECT pg_catalog.setval('mtbfconfig_id_seq', 30, true);
+
+
+--
+-- Name: mtbffacts_id_seq; Type: SEQUENCE; Schema: public; Owner: breakpad_rw
+--
+
+CREATE SEQUENCE mtbffacts_id_seq
+    INCREMENT BY 1
+    NO MAXVALUE
+    NO MINVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.mtbffacts_id_seq OWNER TO breakpad_rw;
+
+--
+-- Name: mtbffacts_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: breakpad_rw
+--
+
+ALTER SEQUENCE mtbffacts_id_seq OWNED BY mtbffacts.id;
+
+
+--
+-- Name: mtbffacts_id_seq; Type: SEQUENCE SET; Schema: public; Owner: breakpad_rw
+--
+
+SELECT pg_catalog.setval('mtbffacts_id_seq', 27, true);
+
+
+--
+-- Name: processors_id_seq; Type: SEQUENCE; Schema: public; Owner: breakpad_rw
+--
+
+CREATE SEQUENCE processors_id_seq
+    INCREMENT BY 1
+    NO MAXVALUE
+    NO MINVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.processors_id_seq OWNER TO breakpad_rw;
+
+--
+-- Name: processors_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: breakpad_rw
+--
+
+ALTER SEQUENCE processors_id_seq OWNED BY processors.id;
+
+
+--
+-- Name: processors_id_seq; Type: SEQUENCE SET; Schema: public; Owner: breakpad_rw
+--
+
+SELECT pg_catalog.setval('processors_id_seq', 360, true);
+
+
+--
+-- Name: productdims_id_seq; Type: SEQUENCE; Schema: public; Owner: breakpad_rw
+--
+
+CREATE SEQUENCE productdims_id_seq
+    INCREMENT BY 1
+    NO MAXVALUE
+    NO MINVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.productdims_id_seq OWNER TO breakpad_rw;
+
+--
+-- Name: productdims_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: breakpad_rw
+--
+
+ALTER SEQUENCE productdims_id_seq OWNED BY productdims.id;
+
+
+--
+-- Name: productdims_id_seq; Type: SEQUENCE SET; Schema: public; Owner: breakpad_rw
+--
+
+SELECT pg_catalog.setval('productdims_id_seq', 39, true);
+
+
+--
+-- Name: seq_reports_id; Type: SEQUENCE; Schema: public; Owner: breakpad_rw
+--
+
+CREATE SEQUENCE seq_reports_id
+    INCREMENT BY 1
+    NO MAXVALUE
+    NO MINVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.seq_reports_id OWNER TO breakpad_rw;
+
+--
+-- Name: seq_reports_id; Type: SEQUENCE SET; Schema: public; Owner: breakpad_rw
+--
+
+SELECT pg_catalog.setval('seq_reports_id', 68836, true);
+
+
+--
+-- Name: server_status_id_seq; Type: SEQUENCE; Schema: public; Owner: breakpad_rw
+--
+
+CREATE SEQUENCE server_status_id_seq
+    INCREMENT BY 1
+    NO MAXVALUE
+    NO MINVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.server_status_id_seq OWNER TO breakpad_rw;
+
+--
+-- Name: server_status_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: breakpad_rw
+--
+
+ALTER SEQUENCE server_status_id_seq OWNED BY server_status.id;
+
+
+--
+-- Name: server_status_id_seq; Type: SEQUENCE SET; Schema: public; Owner: breakpad_rw
+--
+
+SELECT pg_catalog.setval('server_status_id_seq', 2, true);
+
+
+--
+-- Name: signaturedims_id_seq; Type: SEQUENCE; Schema: public; Owner: breakpad_rw
+--
+
+CREATE SEQUENCE signaturedims_id_seq
+    INCREMENT BY 1
+    NO MAXVALUE
+    NO MINVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.signaturedims_id_seq OWNER TO breakpad_rw;
+
+--
+-- Name: signaturedims_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: breakpad_rw
+--
+
+ALTER SEQUENCE signaturedims_id_seq OWNED BY signaturedims.id;
+
+
+--
+-- Name: signaturedims_id_seq; Type: SEQUENCE SET; Schema: public; Owner: breakpad_rw
+--
+
+SELECT pg_catalog.setval('signaturedims_id_seq', 32, true);
+
+
+--
+-- Name: tcbyurlconfig_id_seq; Type: SEQUENCE; Schema: public; Owner: breakpad_rw
+--
+
+CREATE SEQUENCE tcbyurlconfig_id_seq
+    INCREMENT BY 1
+    NO MAXVALUE
+    NO MINVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.tcbyurlconfig_id_seq OWNER TO breakpad_rw;
+
+--
+-- Name: tcbyurlconfig_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: breakpad_rw
+--
+
+ALTER SEQUENCE tcbyurlconfig_id_seq OWNED BY tcbyurlconfig.id;
+
+
+--
+-- Name: tcbyurlconfig_id_seq; Type: SEQUENCE SET; Schema: public; Owner: breakpad_rw
+--
+
+SELECT pg_catalog.setval('tcbyurlconfig_id_seq', 4, true);
+
+
+--
+-- Name: topcrashers_id_seq; Type: SEQUENCE; Schema: public; Owner: breakpad_rw
+--
+
+CREATE SEQUENCE topcrashers_id_seq
+    INCREMENT BY 1
+    NO MAXVALUE
+    NO MINVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.topcrashers_id_seq OWNER TO breakpad_rw;
+
+--
+-- Name: topcrashers_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: breakpad_rw
+--
+
+ALTER SEQUENCE topcrashers_id_seq OWNED BY topcrashers.id;
+
+
+--
+-- Name: topcrashers_id_seq; Type: SEQUENCE SET; Schema: public; Owner: breakpad_rw
+--
+
+SELECT pg_catalog.setval('topcrashers_id_seq', 211, true);
+
+
+--
+-- Name: topcrashurlfacts_id_seq; Type: SEQUENCE; Schema: public; Owner: breakpad_rw
+--
+
+CREATE SEQUENCE topcrashurlfacts_id_seq
+    INCREMENT BY 1
+    NO MAXVALUE
+    NO MINVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.topcrashurlfacts_id_seq OWNER TO breakpad_rw;
+
+--
+-- Name: topcrashurlfacts_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: breakpad_rw
+--
+
+ALTER SEQUENCE topcrashurlfacts_id_seq OWNED BY topcrashurlfacts.id;
+
+
+--
+-- Name: topcrashurlfacts_id_seq; Type: SEQUENCE SET; Schema: public; Owner: breakpad_rw
+--
+
+SELECT pg_catalog.setval('topcrashurlfacts_id_seq', 410, true);
+
+
+--
+-- Name: topcrashurlfactsreports_id_seq; Type: SEQUENCE; Schema: public; Owner: breakpad_rw
+--
+
+CREATE SEQUENCE topcrashurlfactsreports_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MAXVALUE
+    NO MINVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.topcrashurlfactsreports_id_seq OWNER TO breakpad_rw;
+
+--
+-- Name: topcrashurlfactsreports_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: breakpad_rw
+--
+
+ALTER SEQUENCE topcrashurlfactsreports_id_seq OWNED BY topcrashurlfactsreports.id;
+
+
+--
+-- Name: topcrashurlfactsreports_id_seq; Type: SEQUENCE SET; Schema: public; Owner: breakpad_rw
+--
+
+SELECT pg_catalog.setval('topcrashurlfactsreports_id_seq', 1, false);
+
+
+--
+-- Name: urldims_id_seq; Type: SEQUENCE; Schema: public; Owner: breakpad_rw
+--
+
+CREATE SEQUENCE urldims_id_seq
+    INCREMENT BY 1
+    NO MAXVALUE
+    NO MINVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.urldims_id_seq OWNER TO breakpad_rw;
+
+--
+-- Name: urldims_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: breakpad_rw
+--
+
+ALTER SEQUENCE urldims_id_seq OWNED BY urldims.id;
+
+
+--
+-- Name: urldims_id_seq; Type: SEQUENCE SET; Schema: public; Owner: breakpad_rw
+--
+
+SELECT pg_catalog.setval('urldims_id_seq', 274, true);
+
+
+--
+-- Name: id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
+--
+
+ALTER TABLE jobs ALTER COLUMN id SET DEFAULT nextval('jobs_id_seq'::regclass);
+
+
+--
+-- Name: id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
+--
+
+ALTER TABLE mtbfconfig ALTER COLUMN id SET DEFAULT nextval('mtbfconfig_id_seq'::regclass);
+
+
+--
+-- Name: id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
+--
+
+ALTER TABLE mtbffacts ALTER COLUMN id SET DEFAULT nextval('mtbffacts_id_seq'::regclass);
+
+
+--
+-- Name: id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
+--
+
+ALTER TABLE processors ALTER COLUMN id SET DEFAULT nextval('processors_id_seq'::regclass);
+
+
+--
+-- Name: id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
+--
+
+ALTER TABLE productdims ALTER COLUMN id SET DEFAULT nextval('productdims_id_seq'::regclass);
+
+
+--
+-- Name: id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
+--
+
+ALTER TABLE reports ALTER COLUMN id SET DEFAULT nextval('reports_id_seq'::regclass);
+
+
+--
+-- Name: id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
+--
+
+ALTER TABLE server_status ALTER COLUMN id SET DEFAULT nextval('server_status_id_seq'::regclass);
+
+
+--
+-- Name: id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
+--
+
+ALTER TABLE signaturedims ALTER COLUMN id SET DEFAULT nextval('signaturedims_id_seq'::regclass);
+
+
+--
+-- Name: id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
+--
+
+ALTER TABLE tcbyurlconfig ALTER COLUMN id SET DEFAULT nextval('tcbyurlconfig_id_seq'::regclass);
+
+
+--
+-- Name: id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
+--
+
+ALTER TABLE topcrashers ALTER COLUMN id SET DEFAULT nextval('topcrashers_id_seq'::regclass);
+
+
+--
+-- Name: id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
+--
+
+ALTER TABLE topcrashurlfacts ALTER COLUMN id SET DEFAULT nextval('topcrashurlfacts_id_seq'::regclass);
+
+
+--
+-- Name: id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
+--
+
+ALTER TABLE topcrashurlfactsreports ALTER COLUMN id SET DEFAULT nextval('topcrashurlfactsreports_id_seq'::regclass);
+
+
+--
+-- Name: id; Type: DEFAULT; Schema: public; Owner: breakpad_rw
+--
+
+ALTER TABLE urldims ALTER COLUMN id SET DEFAULT nextval('urldims_id_seq'::regclass);
+
+
+--
+-- Name: branches_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
 ALTER TABLE ONLY branches
@@ -553,55 +786,7 @@ ALTER TABLE ONLY branches
 
 
 --
--- Name: dumps_part1_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
---
-
-ALTER TABLE ONLY dumps_part1
-    ADD CONSTRAINT dumps_part1_pkey PRIMARY KEY (report_id);
-
-
---
--- Name: dumps_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
---
-
-ALTER TABLE ONLY dumps
-    ADD CONSTRAINT dumps_pkey PRIMARY KEY (report_id);
-
-
---
--- Name: extensions_part1_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
---
-
-ALTER TABLE ONLY extensions_part1
-    ADD CONSTRAINT extensions_part1_pkey PRIMARY KEY (report_id, extension_key);
-
-
---
--- Name: extensions_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
---
-
-ALTER TABLE ONLY extensions
-    ADD CONSTRAINT extensions_pkey PRIMARY KEY (report_id, extension_key);
-
-
---
--- Name: frames_part1_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
---
-
-ALTER TABLE ONLY frames_part1
-    ADD CONSTRAINT frames_part1_pkey PRIMARY KEY (report_id, frame_num);
-
-
---
--- Name: frames_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
---
-
-ALTER TABLE ONLY frames
-    ADD CONSTRAINT frames_pkey PRIMARY KEY (report_id, frame_num);
-
-
---
--- Name: jobs_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
+-- Name: jobs_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
 ALTER TABLE ONLY jobs
@@ -609,23 +794,32 @@ ALTER TABLE ONLY jobs
 
 
 --
--- Name: modules_part1_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
+-- Name: jobs_uuid_key; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
-ALTER TABLE ONLY modules_part1
-    ADD CONSTRAINT modules_part1_pkey PRIMARY KEY (report_id, module_key);
-
-
---
--- Name: modules_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
---
-
-ALTER TABLE ONLY modules
-    ADD CONSTRAINT modules_pkey PRIMARY KEY (report_id, module_key);
+ALTER TABLE ONLY jobs
+    ADD CONSTRAINT jobs_uuid_key UNIQUE (uuid);
 
 
 --
--- Name: priorityjobs_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
+-- Name: mtbfconfig_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+ALTER TABLE ONLY mtbfconfig
+    ADD CONSTRAINT mtbfconfig_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: mtbffacts_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+ALTER TABLE ONLY mtbffacts
+    ADD CONSTRAINT mtbffacts_pkey PRIMARY KEY (id);
+
+
+
+--
+-- Name: priorityjobs_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
 ALTER TABLE ONLY priorityjobs
@@ -633,7 +827,7 @@ ALTER TABLE ONLY priorityjobs
 
 
 --
--- Name: processors_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
+-- Name: processors_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
 ALTER TABLE ONLY processors
@@ -641,31 +835,38 @@ ALTER TABLE ONLY processors
 
 
 --
--- Name: reports_part1_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
+-- Name: productdims_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
-ALTER TABLE ONLY reports_part1
-    ADD CONSTRAINT reports_part1_pkey PRIMARY KEY (id);
-
-
---
--- Name: reports_part1_uuid_key; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
---
-
-ALTER TABLE ONLY reports_part1
-    ADD CONSTRAINT reports_part1_uuid_key UNIQUE (uuid);
-
+ALTER TABLE ONLY productdims
+    ADD CONSTRAINT productdims_pkey PRIMARY KEY (id);
 
 --
--- Name: reports_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
+-- Name: server_status_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
-ALTER TABLE ONLY reports
-    ADD CONSTRAINT reports_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY server_status
+    ADD CONSTRAINT server_status_pkey PRIMARY KEY (id);
 
 
 --
--- Name: topcrashers_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
+-- Name: signaturedims_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+ALTER TABLE ONLY signaturedims
+    ADD CONSTRAINT signaturedims_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: tcbyurlconfig_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+ALTER TABLE ONLY tcbyurlconfig
+    ADD CONSTRAINT tcbyurlconfig_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: topcrashers_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
 ALTER TABLE ONLY topcrashers
@@ -673,153 +874,243 @@ ALTER TABLE ONLY topcrashers
 
 
 --
--- Name: idx_reports_date; Type: INDEX; Schema: public; Owner: postgres; Tablespace: 
+-- Name: topcrashurlfacts_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
-CREATE INDEX idx_reports_date ON reports USING btree (date, product, version, build);
-
-
---
--- Name: idx_reports_part1_date; Type: INDEX; Schema: public; Owner: postgres; Tablespace: 
---
-
-CREATE INDEX idx_reports_part1_date ON reports_part1 USING btree (date, product, version, build);
+ALTER TABLE ONLY topcrashurlfacts
+    ADD CONSTRAINT topcrashurlfacts_pkey PRIMARY KEY (id);
 
 
 --
--- Name: ix_jobs_uuid; Type: INDEX; Schema: public; Owner: postgres; Tablespace: 
+-- Name: topcrashurlfactsreports_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
-CREATE UNIQUE INDEX ix_jobs_uuid ON jobs USING btree (uuid);
-
-
---
--- Name: ix_reports_signature; Type: INDEX; Schema: public; Owner: postgres; Tablespace: 
---
-
-CREATE INDEX ix_reports_signature ON reports USING btree (signature);
+ALTER TABLE ONLY topcrashurlfactsreports
+    ADD CONSTRAINT topcrashurlfactsreports_pkey PRIMARY KEY (id);
 
 
 --
--- Name: ix_reports_url; Type: INDEX; Schema: public; Owner: postgres; Tablespace: 
+-- Name: urldims_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
-CREATE INDEX ix_reports_url ON reports USING btree (url);
-
-
---
--- Name: ix_reports_uuid; Type: INDEX; Schema: public; Owner: postgres; Tablespace: 
---
-
-CREATE UNIQUE INDEX ix_reports_uuid ON reports USING btree (uuid);
-
+ALTER TABLE ONLY urldims
+    ADD CONSTRAINT urldims_pkey PRIMARY KEY (id);
 
 --
--- Name: rule_dumps_partition; Type: RULE; Schema: public; Owner: postgres
+-- Name: idx_jobs_completed_queue_datetime; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
-CREATE RULE rule_dumps_partition AS ON INSERT TO dumps DO INSTEAD INSERT INTO dumps_part1 (report_id, truncated, data) VALUES (new.report_id, new.truncated, new.data);
+CREATE INDEX idx_jobs_completed_queue_datetime ON jobs USING btree (completeddatetime, queueddatetime);
 
 
 --
--- Name: rule_extensions_partition; Type: RULE; Schema: public; Owner: postgres
+-- Name: idx_processor_name; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
-CREATE RULE rule_extensions_partition AS ON INSERT TO extensions DO INSTEAD INSERT INTO extensions_part1 (report_id, extension_key, extension_id, extension_version) VALUES (new.report_id, new.extension_key, new.extension_id, new.extension_version);
-
-
---
--- Name: rule_frames_partition; Type: RULE; Schema: public; Owner: postgres
---
-
-CREATE RULE rule_frames_partition AS ON INSERT TO frames DO INSTEAD INSERT INTO frames_part1 (report_id, frame_num, signature) VALUES (new.report_id, new.frame_num, new.signature);
+CREATE INDEX idx_processor_name ON processors USING btree (name);
 
 
 --
--- Name: rule_modules_partition; Type: RULE; Schema: public; Owner: postgres
+-- Name: idx_server_status_date; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
-CREATE RULE rule_modules_partition AS ON INSERT TO modules DO INSTEAD INSERT INTO modules_part1 (report_id, module_key, filename, debug_id, module_version, debug_filename) VALUES (new.report_id, new.module_key, new.filename, new.debug_id, new.module_version, new.debug_filename);
-
-
---
--- Name: rule_reports_partition; Type: RULE; Schema: public; Owner: postgres
---
-
-CREATE RULE rule_reports_partition AS ON INSERT TO reports DO INSTEAD INSERT INTO reports_part1 (id, date, date_processed, uuid, product, version, build, signature, url, install_age, last_crash, uptime, comments, cpu_name, cpu_info, reason, address, os_name, os_version, email, build_date, user_id, starteddatetime, completeddatetime, success, message, truncated) VALUES (new.id, new.date, new.date_processed, new.uuid, new.product, new.version, new.build, new.signature, new.url, new.install_age, new.last_crash, new.uptime, new.comments, new.cpu_name, new.cpu_info, new.reason, new.address, new.os_name, new.os_version, new.email, new.build_date, new.user_id, new.starteddatetime, new.completeddatetime, new.success, new.message, new.truncated);
+CREATE INDEX idx_server_status_date ON server_status USING btree (date_created, id);
 
 
 --
--- Name: dumps_part1_report_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: jobs_completeddatetime_queueddatetime_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
-ALTER TABLE ONLY dumps_part1
-    ADD CONSTRAINT dumps_part1_report_id_fkey FOREIGN KEY (report_id) REFERENCES reports_part1(id) ON DELETE CASCADE;
-
-
---
--- Name: dumps_report_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY dumps
-    ADD CONSTRAINT dumps_report_id_fkey FOREIGN KEY (report_id) REFERENCES reports(id) ON DELETE CASCADE;
+CREATE INDEX jobs_completeddatetime_queueddatetime_key ON jobs USING btree (completeddatetime, queueddatetime);
 
 
 --
--- Name: extensions_part1_report_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: jobs_owner_started; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
-ALTER TABLE ONLY extensions_part1
-    ADD CONSTRAINT extensions_part1_report_id_fkey FOREIGN KEY (report_id) REFERENCES reports_part1(id) ON DELETE CASCADE;
-
-
---
--- Name: extensions_report_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY extensions
-    ADD CONSTRAINT extensions_report_id_fkey FOREIGN KEY (report_id) REFERENCES reports(id) ON DELETE CASCADE;
+CREATE INDEX jobs_owner_started ON jobs USING btree (owner, starteddatetime);
 
 
 --
--- Name: frames_part1_report_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: jobs_owner_starteddatetime_priority_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
-ALTER TABLE ONLY frames_part1
-    ADD CONSTRAINT frames_part1_report_id_fkey FOREIGN KEY (report_id) REFERENCES reports_part1(id) ON DELETE CASCADE;
-
-
---
--- Name: frames_report_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY frames
-    ADD CONSTRAINT frames_report_id_fkey FOREIGN KEY (report_id) REFERENCES reports(id) ON DELETE CASCADE;
+CREATE INDEX jobs_owner_starteddatetime_priority_key ON jobs USING btree (owner, starteddatetime, priority DESC);
 
 
 --
--- Name: jobs_owner_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: jobs_success_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+CREATE INDEX jobs_success_key ON jobs USING btree (success);
+
+
+--
+-- Name: mtbfconfig_end_dt_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+CREATE INDEX mtbfconfig_end_dt_key ON mtbfconfig USING btree (end_dt);
+
+
+--
+-- Name: mtbfconfig_start_dt_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+CREATE INDEX mtbfconfig_start_dt_key ON mtbfconfig USING btree (start_dt);
+
+
+--
+-- Name: mtbffacts_day_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+CREATE INDEX mtbffacts_day_key ON mtbffacts USING btree (day);
+
+
+--
+-- Name: mtbffacts_product_id_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+CREATE INDEX mtbffacts_product_id_key ON mtbffacts USING btree (productdims_id);
+
+
+--
+-- Name: os_name; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+CREATE INDEX os_name ON reports USING btree (os_name);
+
+
+--
+-- Name: productdims_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+CREATE INDEX productdims_product_version_key ON productdims USING btree (product, version);
+
+
+--
+-- Name: productdims_product_version_os_name_release_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+CREATE UNIQUE INDEX productdims_product_version_os_name_release_key ON productdims USING btree (product, version, release, os_name);
+
+--
+-- Name: signaturedims_signature_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+CREATE UNIQUE INDEX signaturedims_signature_key ON signaturedims USING btree (signature);
+
+
+--
+-- Name: topcrashurlfacts_count_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+CREATE INDEX topcrashurlfacts_count_key ON topcrashurlfacts USING btree (count);
+
+
+--
+-- Name: topcrashurlfacts_day_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+CREATE INDEX topcrashurlfacts_day_key ON topcrashurlfacts USING btree (day);
+
+
+--
+-- Name: topcrashurlfacts_productdims_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+CREATE INDEX topcrashurlfacts_productdims_key ON topcrashurlfacts USING btree (productdims_id);
+
+
+--
+-- Name: topcrashurlfacts_signaturedims_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+CREATE INDEX topcrashurlfacts_signaturedims_key ON topcrashurlfacts USING btree (signaturedims_id);
+
+
+--
+-- Name: topcrashurlfacts_urldims_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+CREATE INDEX topcrashurlfacts_urldims_key ON topcrashurlfacts USING btree (urldims_id);
+
+
+--
+-- Name: topcrashurlfactsreports_topcrashurlfacts_id_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+CREATE INDEX topcrashurlfactsreports_topcrashurlfacts_id_key ON topcrashurlfactsreports USING btree (topcrashurlfacts_id);
+
+
+--
+-- Name: urldims_url_domain_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+CREATE UNIQUE INDEX urldims_url_domain_key ON urldims USING btree (url, domain);
+
+
+--
+-- Name: jobs_owner_fkey; Type: FK CONSTRAINT; Schema: public; Owner: breakpad_rw
 --
 
 ALTER TABLE ONLY jobs
-    ADD CONSTRAINT jobs_owner_fkey FOREIGN KEY ("owner") REFERENCES processors(id);
+    ADD CONSTRAINT jobs_owner_fkey FOREIGN KEY (owner) REFERENCES processors(id) ON DELETE CASCADE;
 
 
 --
--- Name: modules_part1_report_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: mtbfconfig_productdims_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: breakpad_rw
 --
 
-ALTER TABLE ONLY modules_part1
-    ADD CONSTRAINT modules_part1_report_id_fkey FOREIGN KEY (report_id) REFERENCES reports_part1(id) ON DELETE CASCADE;
+ALTER TABLE ONLY mtbfconfig
+    ADD CONSTRAINT mtbfconfig_productdims_id_fkey FOREIGN KEY (productdims_id) REFERENCES productdims(id);
 
 
 --
--- Name: modules_report_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: mtbffacts_productdims_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: breakpad_rw
 --
 
-ALTER TABLE ONLY modules
-    ADD CONSTRAINT modules_report_id_fkey FOREIGN KEY (report_id) REFERENCES reports(id) ON DELETE CASCADE;
+ALTER TABLE ONLY mtbffacts
+    ADD CONSTRAINT mtbffacts_productdims_id_fkey FOREIGN KEY (productdims_id) REFERENCES productdims(id);
 
+
+--
+-- Name: tcbyurlconfig_productdims_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: breakpad_rw
+--
+
+ALTER TABLE ONLY tcbyurlconfig
+    ADD CONSTRAINT tcbyurlconfig_productdims_id_fkey FOREIGN KEY (productdims_id) REFERENCES productdims(id);
+
+
+--
+-- Name: topcrashurlfacts_productdims_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: breakpad_rw
+--
+
+ALTER TABLE ONLY topcrashurlfacts
+    ADD CONSTRAINT topcrashurlfacts_productdims_id_fkey FOREIGN KEY (productdims_id) REFERENCES productdims(id);
+
+
+--
+-- Name: topcrashurlfacts_signaturedims_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: breakpad_rw
+--
+
+ALTER TABLE ONLY topcrashurlfacts
+    ADD CONSTRAINT topcrashurlfacts_signaturedims_id_fkey FOREIGN KEY (signaturedims_id) REFERENCES signaturedims(id);
+
+
+--
+-- Name: topcrashurlfacts_urldims_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: breakpad_rw
+--
+
+ALTER TABLE ONLY topcrashurlfacts
+    ADD CONSTRAINT topcrashurlfacts_urldims_id_fkey FOREIGN KEY (urldims_id) REFERENCES urldims(id);
+
+
+--
+-- Name: topcrashurlfactsreports_topcrashurlfacts_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: breakpad_rw
+--
+
+ALTER TABLE ONLY topcrashurlfactsreports
+    ADD CONSTRAINT topcrashurlfactsreports_topcrashurlfacts_id_fkey FOREIGN KEY (topcrashurlfacts_id) REFERENCES topcrashurlfacts(id) ON DELETE CASCADE;
 
 --
 -- PostgreSQL database dump complete
