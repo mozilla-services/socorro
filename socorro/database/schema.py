@@ -720,10 +720,10 @@ databaseObjectClassListForSetup = [BranchesTable,
 def setupDatabase(config, logger):
   databaseConnection, databaseCursor = connectToDatabase(config, logger)
   try:
-    try:
-      databaseCursor.execute("CREATE LANGUAGE plpythonu")
-    except:
-      databaseConnection.rollback()
+    #try:
+      #databaseCursor.execute("CREATE LANGUAGE plpythonu")
+    #except:
+      #databaseConnection.rollback()
     for aDatabaseObjectClass in databaseObjectClassListForSetup:
       aDatabaseObject = aDatabaseObjectClass(logger=logger)
       aDatabaseObject.create(databaseCursor)
@@ -748,10 +748,10 @@ databaseObjectClassListForUpdate = [BranchesTable,
 def updateDatabase(config, logger):
   databaseConnection, databaseCursor = connectToDatabase(config, logger)
   try:
-    try:
-      databaseCursor.execute("CREATE LANGUAGE plpythonu")
-    except:
-      databaseConnection.rollback()
+    #try:
+      #databaseCursor.execute("CREATE LANGUAGE plpythonu")
+    #except:
+      #databaseConnection.rollback()
     for aDatabaseObjectClass in databaseObjectClassListForUpdate:
       aDatabaseObject = aDatabaseObjectClass(logger=logger)
       aDatabaseObject.updateDefinition(databaseCursor)
