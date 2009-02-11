@@ -192,7 +192,7 @@ class Monitor (object):
               self.failedJobStorage.transferOne(uuid, currentStorageForThisUuid, False, True, datetime.datetime.now())
           logger.debug("%s - deleting %s", threading.currentThread().getName(), uuid)
           currentStorageForThisUuid.remove(uuid)
-        except jds.NoSuchUuidFound:
+        except (jds.NoSuchUuidFound, UuidNotFoundException):
           logger.warning("%s - %s wasn't found for cleanup.", threading.currentThread().getName(), uuid)
         except OSError, x:
           if str(x) == '[Errno 17] File exists':
