@@ -194,8 +194,11 @@ class Monitor (object):
           currentStorageForThisUuid.remove(uuid)
         except jds.NoSuchUuidFound:
           logger.warning("%s - %s wasn't found for cleanup.", threading.currentThread().getName(), uuid)
-        except:
-          socorro.lib.util.reportExceptionAndContinue(logger)
+        except OSError, x:
+          if str(x) == '[Errno 17] File exists':
+            socorro.lib.util.reportExceptionAndContinue(logger)
+          else:
+            raise
         databaseCursor.execute("delete from jobs where id = %s", (jobId,))
         databaseConnection.commit()
     except Exception, x:
