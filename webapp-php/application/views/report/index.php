@@ -92,8 +92,31 @@
                 <th>Crash Address</th><td><?php out::H($report->address) ?></td>
             </tr>
             <tr>
-                <th>Comments</th><td><?php out::H($report->user_comments) ?></td>
+                <th>User Comments</th><td><?php out::H($report->user_comments) ?></td>
             </tr>
+<?php if (isset($report->app_notes)) { ?>
+            <tr>
+	    <th title="Notes added by the application's code during crash">App Notes</th>
+            <td><pre><?php echo nl2br( out::H($report->app_notes
+, FALSE))  ?></pre></td>
+            </tr>
+<?php } ?>
+<?php if (isset($report->processor_notes)) { ?>
+            <tr>
+	    <th title="Notes added by Socorro when accepting the crash report">Processor Notes</th>
+            <td><pre><?php echo nl2br( out::H($report->processor_notes, FALSE))  ?></pre></td>
+            </tr>
+<?php } ?>
+<?php if (isset($report->distributor)) { ?>
+            <tr>
+	    <th>Distributor</th><td><?php out::H($report->distributor) ?></td>
+            </tr>
+<?php } ?>
+<?php if (isset($report->distributor_version)) { ?>
+            <tr>
+	    <th>Distributor Version</th><td><?php out::H($report->distributor_version) ?></td>
+            </tr>
+<?php } ?>
         </table>
     </div>
 
