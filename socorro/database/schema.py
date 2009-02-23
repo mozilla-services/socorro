@@ -507,6 +507,7 @@ class ReportsTable(PartitionedTable):
                                        partitionCreationSqlTemplate="""
                                           CREATE TABLE %(partitionName)s (
                                               CONSTRAINT %(partitionName)s_date_check CHECK (TIMESTAMP without time zone '%(startDate)s' <= date_processed and date_processed < TIMESTAMP without time zone '%(endDate)s'),
+                                              CONSTRAINT %(partitionName)s_unique_uuid unique (uuid);
                                               PRIMARY KEY(id)
                                           )
                                           INHERITS (reports);
@@ -514,6 +515,7 @@ class ReportsTable(PartitionedTable):
                                           CREATE INDEX %(partitionName)s_uuid_key ON %(partitionName)s (uuid);
                                           CREATE INDEX %(partitionName)s_signature_key ON %(partitionName)s (signature);
                                           CREATE INDEX %(partitionName)s_url_key ON %(partitionName)s (url);
+                                          CREATE INDEX %(partitionName)s_product_version_key ON %(partitionName)s (product, version);
                                           --CREATE INDEX %(partitionName)s_uuid_date_processed_key ON %(partitionName)s (uuid, date_processed);
                                           CREATE INDEX %(partitionName)s_signature_date_processed_key ON %(partitionName)s (signature, date_processed);
                                           """
