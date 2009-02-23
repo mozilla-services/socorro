@@ -72,6 +72,7 @@ class Collect(object):
     #print processedThrottleConditions
     for key, condition, percentage in self.processedThrottleConditions:
       #print "testing  %s %s %d" % (key, condition, percentage)
+      throttleMatch = False
       try:
         throttleMatch = condition(json[key])
       except KeyError:

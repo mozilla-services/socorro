@@ -36,18 +36,30 @@ def handler(req):
 
   if req.method == "POST":
     try:
+      req.content_type = "text/plain"
+
       theform = util.FieldStorage(req)
       dump = theform[config.dumpField]
       if not dump.file:
         return apache.HTTP_BAD_REQUEST
 
+      currentTimestamp = dt.datetime.now()
+
       jsonDataDictionary = collectObject.makeJsonDictFromForm(theform)
-      if collectObject.throttle(jsonDataDictionary):
+      jsonDataDictionary["submitted_timestamp"] = currentTimestamp.isoformat()
+      try:
+        throttleable = int(jsonDataDictionary["Throttleable"])
+      except KeyError:
+        throttleable = 2
+      if not throttleable or (throttleable and not collectObject.throttle(jsonDataDictionary)):
+        fileSystemStorage = persistentStorage["standardFileSystemStorage"]
+      elif throttleable == 2:
         fileSystemStorage = persistentStorage["deferredFileSystemStorage"]
       else:
-        fileSystemStorage = persistentStorage["standardFileSystemStorage"]
-      #uuid = collectObject.generateUuid(jsonDataDictionary)
-      uuid = ooid.createNewOoid(dt.datetime.now(), persistentStorage["config"].storageDepth)
+        req.write("Discarded=1\n")
+        return apache.OK
+
+      uuid = ooid.createNewOoid(currentTimestamp, persistentStorage["config"].storageDepth)
 
       jsonFileHandle, dumpFileHandle = fileSystemStorage.newEntry(uuid, persistentStorage["hostname"], dt.datetime.now())
       try:
@@ -57,8 +69,8 @@ def handler(req):
         dumpFileHandle.close()
         jsonFileHandle.close()
 
-      req.content_type = "text/plain"
       req.write("CrashID=%s%s\n" % (config.dumpIDPrefix, uuid))
+      return apache.OK
     except:
       logger.info("mod-python subinterpreter name: %s", req.interpreter)
       sutil.reportExceptionAndContinue(logger)
@@ -67,7 +79,6 @@ def handler(req):
       #print >>sys.stderr
       #sys.stderr.flush()
       return apache.HTTP_INTERNAL_SERVER_ERROR
-    return apache.OK
   else:
     return apache.HTTP_METHOD_NOT_ALLOWED
 
