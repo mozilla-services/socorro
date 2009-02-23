@@ -23,7 +23,7 @@ import socorro.lib.ConfigurationManager
 import socorro.lib.JsonDumpStorage as jds
 import socorro.lib.psycopghelper as psy
 import socorro.lib.ooid as ooid
-import socorro.lib.datetime as sdt
+import socorro.lib.datetimeutil as sdt
 
 import simplejson
 
