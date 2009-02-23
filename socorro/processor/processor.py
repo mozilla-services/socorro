@@ -23,30 +23,11 @@ import socorro.lib.ConfigurationManager
 import socorro.lib.JsonDumpStorage as jds
 import socorro.lib.psycopghelper as psy
 import socorro.lib.ooid as ooid
+import socorro.lib.datetime as sdt
 
 import simplejson
 
-#=================================================================================================================
-class UTC(datetime.tzinfo):
-  """
-  """
-  ZERO = datetime.timedelta(0)
 
-  #-----------------------------------------------------------------------------------------------------------------
-  def __init__(self):
-    super(UTC, self).__init__(self)
-
-  #-----------------------------------------------------------------------------------------------------------------
-  def utcoffset(self, dt):
-    return UTC.ZERO
-
-  #-----------------------------------------------------------------------------------------------------------------
-  def tzname(self, dt):
-    return "UTC"
-
-  #-----------------------------------------------------------------------------------------------------------------
-  def dst(self, dt):
-    return UTC.ZERO
 
 #=================================================================================================================
 class DuplicateEntryException(Exception):
@@ -97,9 +78,9 @@ class Processor(object):
   fixupSpace = re.compile(r' (?=[\*&,])')
   fixupComma = re.compile(r'(?<=,)(?! )')
   filename_re = re.compile('[/\\\\]([^/\\\\]+)$')
-  irrelevantSignaturePattern = re.compile('@0x[01234567890abcdefABCDEF]{2,}')
-  prefixSignaturePattern = re.compile('@0x0|strchr|strstr|strcmp|memcpy|memcmp|malloc|realloc|.*free|arena_dalloc_small|nsObjCExceptionLogAbort|nsCOMPtr_base::assign_from_qi(nsQueryInterface, nsID const&)')
-  utctz = UTC()
+  irrelevantSignaturePattern = None
+  prefixSignaturePattern = None
+  utctz = sdt.UTC()
 
   #-----------------------------------------------------------------------------------------------------------------
   def __init__ (self, config):
@@ -120,6 +101,8 @@ class Processor(object):
     assert "processorId" in config, "processorId is missing from the configuration"
     assert "numberOfThreads" in config, "numberOfThreads is missing from the configuration"
     assert "batchJobLimit" in config, "batchJobLimit is missing from the configuration"
+    assert "irrelevantSignatureRegEx" in config, "irrelevantSignatureRegEx is missing from the configuration"
+    assert "prefixSignatureRegEx" in config, "prefixSignatureRegEx is missing from the configuration"
 
     self.databaseConnectionPool = psy.DatabaseConnectionPool(config.databaseHost, config.databaseName, config.databaseUserName, config.databasePassword, logger)
 
@@ -301,20 +284,19 @@ class Processor(object):
     return '@%s' % instruction
 
   #-----------------------------------------------------------------------------------------------------------------
-  @staticmethod
-  def generateSignatureFromList(signatureList):
-    signatureNewSignatureList = []
+  def generateSignatureFromList(self, signatureList):
+    newSignatureList = []
     prefixFound = False
     for aSignature in signatureList:
-      if Processor.irrelevantSignaturePattern.match(aSignature):
+      if self.config.irrelevantSignaturePattern.match(aSignature):
         if prefixFound:
-          signatureNewSignatureList.append(aSignature)
+          newSignatureList.append(aSignature)
         continue
-      signatureNewSignatureList.append(aSignature)
-      if not Processor.prefixSignaturePattern.match(aSignature):
+      newSignatureList.append(aSignature)
+      if not self.config.prefixSignaturePattern.match(aSignature):
         break
       prefixFound = True
-    return ' | '.join(signatureNewSignatureList)
+    return ' | '.join(newSignatureList)
 
   #-----------------------------------------------------------------------------------------------------------------
   def submitJobToThreads(self, databaseCursor, aJobTuple):
@@ -419,7 +401,6 @@ class Processor(object):
         logger.critical("%s - fatal database trouble - quitting", threading.currentThread().getName())
         socorro.lib.util.reportExceptionAndAbort()
 
-
   #-----------------------------------------------------------------------------------------------------------------
   def start(self):
     """ Run by the main thread, this function fetches jobs from the incoming job stream one at a time
@@ -471,7 +452,6 @@ class Processor(object):
       threadLocalCursor.execute("update jobs set startedDateTime = %s where id = %s", (startedDateTime, jobId))
       threadLocalDatabaseConnection.commit()
 
-      date_processed = ooid.dateFromOoid(jobUuid)
       jobPathname = self.jsonPathForUuidInJsonDumpStorage(jobUuid)
       dumpfilePathname = self.dumpPathForUuidInJsonDumpStorage(jobUuid)
       jsonFile = open(jobPathname)
@@ -479,6 +459,12 @@ class Processor(object):
         jsonDocument = simplejson.load(jsonFile)
       finally:
         jsonFile.close()
+
+      try:
+        date_processed = sdt.datetimeFromISOdateString(jsonDocument["submitted_timestamp"])
+      except KeyError:
+        date_processed = ooid.dateFromOoid(jobUuid)
+
       reportId = self.insertReportIntoDatabase(threadLocalCursor, jobUuid, jsonDocument, jobPathname, date_processed, processorErrorMessages)
       threadLocalDatabaseConnection.commit()
       truncated = self.doBreakpadStackDumpAnalysis(reportId, jobUuid, dumpfilePathname, threadLocalCursor, date_processed, processorErrorMessages)
