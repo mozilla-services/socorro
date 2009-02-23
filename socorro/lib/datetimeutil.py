@@ -26,7 +26,7 @@ def datetimeFromISOdateString(s):
 class UTC(dt.tzinfo):
   """
   """
-  ZERO = datetime.timedelta(0)
+  ZERO = dt.timedelta(0)
 
   #-----------------------------------------------------------------------------------------------------------------
   def __init__(self):
