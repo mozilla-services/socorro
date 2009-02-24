@@ -78,8 +78,6 @@ class Processor(object):
   fixupSpace = re.compile(r' (?=[\*&,])')
   fixupComma = re.compile(r'(?<=,)(?! )')
   filename_re = re.compile('[/\\\\]([^/\\\\]+)$')
-  irrelevantSignaturePattern = None
-  prefixSignaturePattern = None
   utctz = sdt.UTC()
 
   #-----------------------------------------------------------------------------------------------------------------
@@ -111,6 +109,9 @@ class Processor(object):
     self.config = config
     self.quit = False
     signal.signal(signal.SIGTERM, Processor.respondToSIGTERM)
+
+    self.irrelevantSignatureRegEx = re.compile(self.config.irrelevantSignatureRegEx)
+    self.prefixSignatureRegEx = re.compile(self.config.prefixSignatureRegEx)
 
     self.reportsTable = sch.ReportsTable(logger=logger)
     self.dumpsTable = sch.DumpsTable(logger=logger)
@@ -288,12 +289,12 @@ class Processor(object):
     newSignatureList = []
     prefixFound = False
     for aSignature in signatureList:
-      if self.config.irrelevantSignaturePattern.match(aSignature):
+      if self.prefixSignatureRegEx.match(aSignature):
         if prefixFound:
           newSignatureList.append(aSignature)
         continue
       newSignatureList.append(aSignature)
-      if not self.config.prefixSignaturePattern.match(aSignature):
+      if not self.prefixSignatureRegEx.match(aSignature):
         break
       prefixFound = True
     return ' | '.join(newSignatureList)

@@ -65,12 +65,10 @@ batchJobLimit.default = 10000
 irrelevantSignatureRegEx = cm.Option()
 irrelevantSignatureRegEx.doc = 'a regular expression matching frame signatures that should be ignored when generating an overall signature'
 irrelevantSignatureRegEx.default = '@0x[01234567890abcdefABCDEF]{2,}'
-irrelevantSignatureRegEx.fromStringConverter = re.compile
 
 prefixSignatureRegEx = cm.Option()
 prefixSignatureRegEx.doc = 'a regular expression matching frame signatures that should always be coupled with the following frame signature when generating an overall signature'
 prefixSignatureRegEx.default = '@0x0|strchr|strstr|strcmp|memcpy|memcmp|malloc|realloc|.*free|arena_dalloc_small|nsObjCExceptionLogAbort\(.*?\)|nsCOMPtr_base::assign_from_qi(nsQueryInterface, nsID const&)'
-prefixSignatureRegEx.fromStringConverter = re.compile
 
 logFilePathname = cm.Option()
 logFilePathname.doc = 'full pathname for the log file'
