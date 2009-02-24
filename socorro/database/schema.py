@@ -507,7 +507,7 @@ class ReportsTable(PartitionedTable):
                                        partitionCreationSqlTemplate="""
                                           CREATE TABLE %(partitionName)s (
                                               CONSTRAINT %(partitionName)s_date_check CHECK (TIMESTAMP without time zone '%(startDate)s' <= date_processed and date_processed < TIMESTAMP without time zone '%(endDate)s'),
-                                              CONSTRAINT %(partitionName)s_unique_uuid unique (uuid);
+                                              CONSTRAINT %(partitionName)s_unique_uuid unique (uuid),
                                               PRIMARY KEY(id)
                                           )
                                           INHERITS (reports);
