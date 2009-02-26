@@ -23,7 +23,6 @@ if (is_array($cache_stats)) {
         } else {
             echo "<ul><li>Failed to connect to {$server}</li></ul>";
         }
-        echo '</div>';
     }
 } else {
     echo '<p>Memcache is not connected or stats are unavailable.</p>';
