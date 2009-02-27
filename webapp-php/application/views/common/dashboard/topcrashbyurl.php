@@ -23,7 +23,7 @@
     $product = $widgetData[$j]['name'];
 ?>
 <a class="full-report" title="View the full <?php echo $widgetData[$j]['name'] ?> <?php echo $widgetData[$j]['version'] ?> report"
-     href="<?php echo url::base() ?>/topcrasher/byurl/<?php echo $widgetData[$j]['name'] ?>/<?php echo $widgetData[$j]['version'] ?>">Full Report</a>
+     href="<?php echo url::base() ?>topcrasher/byurl/<?php echo $widgetData[$j]['name'] ?>/<?php echo $widgetData[$j]['version'] ?>">Full Report</a>
 
            <div class="expandable-menu">
                <h4 class="show-all-topcrashers"><span class="icon">[+]</span>
