@@ -11,8 +11,7 @@
 
   <script type="text/javascript">//<![CDATA[
       $(document).ready(function(){
-	  $('#report-index > ul').tabs({selected: 2});
-	//$('#report-index > ul').tabs('select', 2);
+        $('#report-index > ul').tabs({selected: 1});
         $('#showallthreads').removeClass('hidden').click(function(){
         $('#allthreads').toggle(400);
           return false;
