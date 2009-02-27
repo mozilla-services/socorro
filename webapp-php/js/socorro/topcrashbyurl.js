@@ -1,10 +1,13 @@
 $(document).ready(function(){
+    //$('#raw_mtbf_data').tablesorter();
+
     var product = $('#tcburl-product').text();
     var version = $('#tcburl-version').text();
     var caches = {};
     var urlToggler = function(e){
-      function loadSignatureForUrl(urlId, domain, page){
+      function loadSignatureForUrl(urlId, domain, page, indent){
         page = page || 1;
+	indent = indent || 1;
         $.getJSON("../../signaturesforurl/" + product + "/" + version + "?url=" + url + "&page=" + page,
   	  	    function(data){
                       var upd = "";
@@ -20,9 +23,9 @@ $(document).ready(function(){
                         outterClass = " tcburl-urls" + domainRowId[1];
 		      }
                       for(var i=0; i < data.length; i++){
-  		        upd += "<tr class='tcburl-signatures" + urlId + outterClass + "'><td>" + data[i].signature + "</td><td>" + data[i].count + "</td></tr>";
+  		        upd += "<tr class='tcburl-signatures" + urlId + outterClass + "'><td class='in" + indent + "'>" + data[i].signature + "</td><td>" + data[i].count + "</td></tr>";
                         if(data[i]['comments']){
-                          upd += "<tr class='tcburl-signatures" + urlId + outterClass + "'><td colspan='2'><ul>";
+                          upd += "<tr class='tcburl-signatures" + urlId + outterClass + "'><td class='in" + indent + "' colspan='2'><ul>";
                           for( var j=0; j < data[i]['comments'].length; j++){
 
   			    var crash = data[i]['comments'][j];
@@ -30,7 +33,7 @@ $(document).ready(function(){
  			  }
                           upd += "</ul></td></tr>";
 		        }
-		        $('#tcburl-domainToggle-row' + urlId + ' td:first img').hide();
+		        //aok$('#tcburl-domainToggle-row' + urlId + ' td:first img').hide();
 
 			caches[index] = true;
 		      }//end for
@@ -50,6 +53,10 @@ $(document).ready(function(){
         return false;
       }//function loadSignatureForUrl
       var index = $(this).attr("id");
+      //As we get further nested we add _. We can see how many levels
+      //url signatures - 'tcburl-url0' - 1 indentation
+      //domain url signatures - 'tcburl-url0_0' - 2 indentation
+      var indent = function(index){ return index.split('_').length };
       var label = "+";
       if(e.target){
   	  var offset;
@@ -66,7 +73,7 @@ $(document).ready(function(){
 	  if(caches[index]){
 	    if(window.console) console.info("Using cached crashData");
 	  }else{
-            loadSignatureForUrl(id, url);
+            loadSignatureForUrl(id, url, null, indent(index));
           }
 
 	  if( $('#url-to-sig' + id).text() == "+"){
@@ -86,19 +93,20 @@ $(document).ready(function(){
     var domainToggler = function(e){
       function loadUrlsForDomain(domainId, domain, page){
         page = page || 1;
+        $('#tcburl-domainToggle-row' + id).show();
         $.getJSON("../../urlsfordomain/" + product + "/" + version + "?domain=" + domain + "&page=" + page,
   	  	    function(data){
                       var upd = "";
                       for(var i=0; i < data.length; i++){
-                        upd += "<tr class='tcburl-urls" + domainId + "'><td><div class='url-spacer' /><div id='url-to-sig" + domainId + "_" + i;
+                        upd += "<tr class='tcburl-urls" + domainId + "'><td class='in1'><div id='url-to-sig" + domainId + "_" + i;
                         upd += "' class='tcburl-toggler tcburl-urlToggler'>+</div>";
                         upd += "<a id='tcburl-url" + domainId + "_" + i + "' class='tcburl-urlToggler' href='#'>";
 
-		        upd += "" + data[i].url + "</a> <a href='" +  data[i].url + "' target='_new'>&#35;</a></td><td class='url-crash-count'>";
+		        upd += "" + data[i].url + "</a> <a href='" +  data[i].url + "'>&#35;</a></td><td class='url-crash-count'>";
                         upd += data[i].count + "</td></tr>";
 
                         upd += "<tr id='tcburl-urlToggle-row" + domainId + "_" + i + "' style='display: none'><td colspan='2'></td></tr>";
-		        $('#tcburl-domainToggle-row' + domainId + ' td:first img').hide();
+		        //aok $('#tcburl-domainToggle-row' + domainId + ' td:first img').hide();
                         
 			//TODO caches here ahave to be doman+urlindex
 			caches[index] = true;
@@ -117,7 +125,8 @@ $(document).ready(function(){
 		      }
                       $('#tcburl-domainToggle-row' + domainId).after(upd);
                       $('#tcburl-domainToggle-row' + domainId).remove();
-                      $('.tcburl-urlToggler').click(urlToggler);
+                      $('.tcburl-urlToggler').click(urlToggler, {"in": 2});
+                      $('#tcburl-domainToggle-row' + id).show();
 	      });
         return false;
       }
@@ -147,7 +156,7 @@ $(document).ready(function(){
 	    label = "+";
   	  }
 
-          $('#tcburl-urlToggle-row' + id).toggle();
+          $('#tcburl-urlToggle-row' + id).toggle();          
 
           var el = $('#domain-to-url' + id);
 
@@ -165,4 +174,4 @@ $(document).ready(function(){
    $('.tcburl-urlToggler').click(urlToggler);
    $('.tcburl-domainToggler').click(domainToggler);
    //TODO remove handlers
-});
+ });

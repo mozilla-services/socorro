@@ -34,14 +34,38 @@ class Topcrasher_Controller extends Controller {
         cachecontrol::set(array(
             'expires' => time() + (60 * 60)
         ));
+        if ($this->input->get('format') == "csv") {
+  	    $this->setViewData(array('top_crashers' => $this->_csvFormatArray($top_crashers)));
+  	    $this->renderCSV("${product}_${version}_" . date("Y-m-d"));
+	} else {
+          $this->setViewData(array(
+              'product'      => $product,
+              'version'      => $version,
+              'build_id'     => $build_id,
+              'last_updated' => $last_updated,
+              'top_crashers' => $top_crashers
+          ));
+	}
+    }
 
-        $this->setViewData(array(
-            'product'      => $product,
-            'version'      => $version,
-            'build_id'     => $build_id,
-            'last_updated' => $last_updated,
-            'top_crashers' => $top_crashers
-        ));
+    private function _csvFormatArray($topcrashers)
+    {
+        $csvData = array();
+        foreach ($topcrashers as $crash) {
+	    $line = array();
+	    $sig = strtr($crash->signature, array(
+                    ',' => ' ',
+                    '\n' => ' ',
+		    '"' => '&quot;'
+            ));
+	    array_push($line, $sig);
+	    array_push($line, $crash->total);
+	    array_push($line, $crash->win);
+	    array_push($line, $crash->mac);
+	    array_push($line, $crash->linux);
+	    array_push($csvData, $line);
+	}
+      return $csvData;
     }
 
     public function bybranch($branch) {
@@ -52,13 +76,16 @@ class Topcrasher_Controller extends Controller {
         cachecontrol::set(array(
             'expires' => time() + (60 * 60)
         ));
-
-        $this->setViewData(array(
-            'branch'       => $branch,
-            'last_updated' => $last_updated,
-            'top_crashers' => $top_crashers
-        ));
-
+        if ($this->input->get('format') == "csv") {
+  	    $this->setViewData(array('top_crashers' => $this->_csvFormatArray($top_crashers)));
+  	    $this->renderCSV("${branch}_" . date("Y-m-d"));
+	} else {
+            $this->setViewData(array(
+                'branch'       => $branch,
+                'last_updated' => $last_updated,
+                'top_crashers' => $top_crashers
+            ));
+	}
     }
 
     public function byurl($product, $version, $build_id=NULL) {

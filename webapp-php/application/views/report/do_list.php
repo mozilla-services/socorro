@@ -7,8 +7,7 @@
     <!--[if IE]><?php echo html::script('js/flot-0.5/excanvas.pack.js') ?><![endif]-->
 
     <?php echo html::script(array(
-        'js/jquery/jquery-1.2.1.js',
-        'js/jquery/plugins/ui/ui.tabs.js',
+        'js/jquery/plugins/ui/jquery.ui.all.js',
         'js/jquery/plugins/ui/jquery.tablesorter.min.js',
         'js/flot-0.5/jquery.flot.pack.js'
     ))?>
@@ -18,7 +17,7 @@
       $(document).ready(function() { 
         $('#buildid-table').tablesorter(); 
         $('#reportsList').tablesorter({sortList:[[9,1]]});
-        $('#report-list > ul').tabs();
+        $('#report-list > ul').tabs({selected: 2});
       }); 
   </script>
 
@@ -72,7 +71,7 @@
                 <tr>
 	   <td class="human-buildid"><?php out::H(date('YmdH', strtotime($build->build_date))) ?></td>
                     <?php if (count($all_platforms) != 1): ?>
-                    <td class="crash-count" py:if="len(c.params.platforms) != 1">
+                    <td class="crash-count">
 		    <?php out::H($build->count) ?> - <?php printf("%.3f%%", ($build->frequency * 100) ) ?>
                     </td>
                     <?php endif ?>
@@ -95,11 +94,22 @@
 </div>
 
 <!-- end content -->
-<script id="source" language="javascript" type="text/javascript">
+<script id="source" type="text/javascript">
+//<![CDATA[
       $(document).ready(function() { 
+          var shouldDrawPlot = true;
 	  <?php if( count($builds) > 1){ ?>
 	    $("#buildid-graph").width(<?php echo max( min(50 * count($builds), 800), 200) ?>);
 	  <? } ?>
+
+      $('#report-list > ul').bind('tabsshow', function(event, ui, data){
+	  if (shouldDrawPlot && $(data.panel).attr('id') == "graph") {
+            drawPlot();
+            shouldDrawPlot = false;
+        }
+    });
+
+    var drawPlot = function(){
       $.plot($("#buildid-graph"), 
              [<?php for($i = 0; $i < count($all_platforms); $i += 1){ 
 		      $platform = $all_platforms[$i]; ?>
@@ -130,5 +140,7 @@
 	     <?php } ?>		 
              }
      );
+    }//drawPlot
 });
+//]]>
 </script>

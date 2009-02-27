@@ -11,7 +11,7 @@ class SearchReportHelper{
 		 'platform'     => array(),
 		 
 		 'query_search' => 'signature',
-		 'query_type'   => 'contains',
+		 'query_type'   => 'exact',
 		 'query'        => '',
 		 'date'         => '',
 		 'range_value'  => '1',

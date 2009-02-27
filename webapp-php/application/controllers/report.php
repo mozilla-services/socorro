@@ -27,25 +27,29 @@ class Report_Controller extends Controller {
         ));
 
         $reports = $this->common_model->queryReports($params);
-        $builds  = $this->common_model->queryFrequency($params);
+	if (count($reports) == 0) {
+	  header("No data for this query", TRUE, 404);
+          $this->setView('common/nodata');
+	} else {
+          $builds  = $this->common_model->queryFrequency($params);
 
-	if( count($builds) > 1){
-	  $crashGraphLabel = "Crashes By Build";
-	  $platLabels = $this->generateCrashesByBuild($platforms, $builds);
+  	  if (count($builds) > 1){
+	    $crashGraphLabel = "Crashes By Build";
+	    $platLabels = $this->generateCrashesByBuild($platforms, $builds);
 	  
-	}else{
-          $crashGraphLabel = "Crashes By OS";
-	  $platLabels = $this->generateCrashesByOS($platforms, $builds);
-	}
+	  }else{
+            $crashGraphLabel = "Crashes By OS";
+	    $platLabels = $this->generateCrashesByOS($platforms, $builds);
+	  }
 
-	$buildTicks = array();
-        $index = 0;
-	for($i = count($builds) - 1; $i  >= 0 ; $i = $i - 1){
-	  $buildTicks[] = array($index, date('m/d', strtotime($builds[$i]->build_date)));
-          $index += 1;
-	}
+	  $buildTicks = array();
+          $index = 0;
+	  for($i = count($builds) - 1; $i  >= 0 ; $i = $i - 1){
+	    $buildTicks[] = array($index, date('m/d', strtotime($builds[$i]->build_date)));
+            $index += 1;
+	  }
 
-        $this->setViewData(array(
+          $this->setViewData(array(
             'params'  => $params,
             'queryTooBroad' => $helper->shouldShowWarning(),
             'reports' => $reports,
@@ -59,7 +63,8 @@ class Report_Controller extends Controller {
             'crashGraphLabel' => $crashGraphLabel,
             'platformLabels'  => $platLabels,
 	    'buildTicks'      => $buildTicks
-        ));
+          ));
+	}
     }
 
     private function generateCrashesByBuild($platforms, $builds){

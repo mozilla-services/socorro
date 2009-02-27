@@ -167,4 +167,15 @@ class TopcrashersByUrl_Model extends Model {
         return -1;
       }
     }
+    /**
+     * Returns a list of existing reports based on the 
+     * top crashers by url config table 'tcbyurlconfig'
+     */
+    public function listReports()
+    {
+        $sql = "SELECT p.product, p.version, conf.enabled FROM tcbyurlconfig conf
+                   JOIN productdims p ON conf.productdims_id = p.id
+                   ORDER BY p.id DESC";
+        return $this->fetchRows($sql);
+    }
 }

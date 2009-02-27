@@ -84,6 +84,6 @@
   $(document).ready(function(){      
       replot();
       $('#mtbf-os-drilldown').click(handleOS);
-    });
-  
+
+    });  
 })();

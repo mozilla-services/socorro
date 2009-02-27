@@ -5,6 +5,17 @@
 class Branch_Model extends Model {
 
     /**
+     * Add a new record to the branches table.
+     */
+    public function add($product, $version, $branch) {
+        $rv = $this->db->query(
+            'INSERT INTO branches ( product, version, branch ) VALUES (?,?,?)', 
+            $product, $version, $branch
+        );
+        return $rv;
+    }
+
+    /**
      * Fetch everything in the branches table
      */
     public function getAll() { 
@@ -70,6 +81,39 @@ class Branch_Model extends Model {
         if (!$branch) return FALSE;
 
         return $branch;
+    }
+
+    /**
+     * Query for potential branches in reports not yet present in the branches 
+     * table.
+     */
+    public function findMissingEntries() {
+
+        $now = date('Y-m-d');
+
+        $missing = $this->db->query("
+            SELECT 
+                reports.product, 
+                reports.version, 
+                COUNT(reports.product) AS total
+            FROM 
+                reports
+            LEFT OUTER JOIN 
+                branches ON 
+                    reports.product = branches.product AND 
+                    reports.version = branches.version
+            WHERE
+                branches.branch IS NULL AND
+                reports.product IS NOT NULL AND
+                reports.version IS NOT NULL AND
+                reports.date_processed BETWEEN 
+                    timestamp with time zone '$now' - CAST('1 week' AS INTERVAL) AND
+                    timestamp with time zone '$now'
+            GROUP BY 
+                reports.product, reports.version
+        ");
+
+        return $missing;
     }
 
 }

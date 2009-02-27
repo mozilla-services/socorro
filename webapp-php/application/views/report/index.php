@@ -6,13 +6,13 @@
     ), 'screen')?>
 
     <?php echo html::script(array(
-        'js/jquery/jquery-1.2.1.js',
-        'js/jquery/plugins/ui/ui.tabs.js'
+        'js/jquery/plugins/ui/jquery.ui.all.js'
     ))?>
 
-  <script type="text/javascript">
+  <script type="text/javascript">//<![CDATA[
       $(document).ready(function(){
-        $('#report-index > ul').tabs(2);
+	  $('#report-index > ul').tabs({selected: 2});
+	//$('#report-index > ul').tabs('select', 2);
         $('#showallthreads').removeClass('hidden').click(function(){
         $('#allthreads').toggle(400);
           return false;
@@ -27,7 +27,7 @@
           return false;
         });
       });
-  </script> 
+//]]></script> 
 
 <?php slot::end() ?>
 <h1 id="report-header" class="first"><?php out::H($report->product) ?> <?php out::H($report->version) ?> Crash Report [@ <?php out::H($report->signature) ?> ]</h1>
@@ -49,7 +49,8 @@
                 <th>UUID</th><td><?php out::H($report->uuid) ?></td>
             </tr>
             <tr>
-                <th>Time</th><td><?php out::H($report->date_processed) ?></td>
+                <th>Time
+</th><td><?php out::H($report->date_processed) ?></td>
             </tr>
             <tr>
                 <th>Uptime</th><td><?php out::H($report->uptime) ?></td>
@@ -92,7 +93,7 @@
                 <th>Crash Address</th><td><?php out::H($report->address) ?></td>
             </tr>
             <tr>
-                <th>User Comments</th><td><?php out::H($report->user_comments) ?></td>
+	    <th>User Comments</th><td><?php echo out::H($report->user_comments) ?></td>
             </tr>
 <?php if (isset($report->app_notes)) { ?>
             <tr>
@@ -124,7 +125,7 @@
         <?php if (count($report->threads)): ?>
            
             <?php function stack_trace($frames) { ?>
-                <table class="list" py:def="stack_trace(frames)">
+                <table class="list">
                     <tr>
                         <th>Frame</th>
                         <th>Module</th>
@@ -165,7 +166,7 @@
                 <?php endfor ?>
             </div>
 
-            <script>document.getElementById("allthreads").style.display="none";</script>
+            <script type="text/javascript">document.getElementById("allthreads").style.display="none";</script>
 
         <?php endif ?>
     </div>

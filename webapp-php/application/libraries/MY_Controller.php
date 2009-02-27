@@ -201,4 +201,26 @@ class Controller extends Controller_Core {
 
     }
 
+    /**
+     * Render a csv template to the given filenamePrefix.csv
+     * This method is mutually exclusive with the default
+     * rendering codepath. Instead of autorendering
+     * app/view/$controller/$method.php
+     * this function will automagicaly render
+     * app/view/$controller/$method_csv.php
+     *
+     * @param String filenamePrefix - Is sent in Content-Disposition Header
+     *        as the suggested filename. CSV extension will be automatically added.
+     * @return void - renders to browser
+     */
+    public function renderCSV($filenamePrefix)
+    {
+        $this->auto_render = FALSE;
+	header('Content-type: text/csv; charset=utf-8');
+        header("Content-disposition: attachment; filename=${filenamePrefix}.csv");
+        $view = new View(Router::$controller . '/' . Router::$method . '_csv');
+        $view->set_global($this->getViewData());
+	echo $view->render();
+    }
+
 }

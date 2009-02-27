@@ -1,8 +1,7 @@
 <?php slot::start('head') ?>
     <title>Top Crashers for  <?php out::H($product) ?> <?php out::H($version) ?> </title>
     <?php echo html::script(array(
-        'js/jquery/jquery-1.2.1.js',
-        'js/socorro/topcrashbyurl.js',
+        'js/socorro/topcrashbyurl.js'
     ))?>
     <?php echo html::stylesheet(array(
         'css/flora/flora.tablesorter.css'
@@ -28,12 +27,13 @@
         <td class="domain-crash-count"><?php out::H($crash->count)?></td>
       </tr>
       <tr id="tcburl-domainToggle-row<?php echo $row; ?>" style="display: none"><td colspan="2"><?php 
-           echo html::image( array('src' => 'img/loading.png', 'width' => '16', 'height' => '17' )); ?></td></tr>
+					    echo html::image( array('src' => 'img/loading.png', 'width' => '16', 'height' => '17', 
+								    'alt' => 'More Content Loading')); ?></td></tr>
     <?php $row += 1;
           } ?>
   </tbody>
 </table>
-<script>
+  <script type="text/javascript">//<![CDATA[
   var SocTCByURL = {};
   SocTCByURL.urls = <?php echo json_encode( $top_crashers ); ?>;
   SocTCByURL.domains = [
@@ -42,4 +42,4 @@
 		      {domain: 'www.youtube.com', count: 300, urls:
 		      [SocTCByURL.urls[0]]}
 			];
-</script>
+//]]></script>

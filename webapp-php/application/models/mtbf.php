@@ -84,4 +84,19 @@ WHERE product = '$product' AND release = '$release_level' AND os_name IN ('" . i
       }
 
     }
+    /**
+     * Returns a list of existing reports based on the 
+     * Mean Time Before Failure config table 'mtbfconfig'
+     */
+    public function listReports($product=NULL)
+    {
+        $whereClause = $product == NULL ? "" : "WHERE product = $product";
+
+        $sql = "SELECT distinct p.product, p.release FROM mtbfconfig conf
+                    JOIN productdims p ON conf.productdims_id = p.id
+                    $whereClause
+                    ORDER BY product, release;";
+
+        return $this->fetchRows($sql);
+    }
 }

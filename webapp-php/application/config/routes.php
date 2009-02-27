@@ -7,7 +7,7 @@
 # $config['_default'] = 'welcome';
 
 $config['_default'] = 
-    'query/query';
+    'home/dashboard';
 
 $config['query'] =
     'query/query';

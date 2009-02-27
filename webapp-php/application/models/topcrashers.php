@@ -7,7 +7,7 @@ class Topcrashers_Model extends Model {
     /**
      * Find top crashes from the aggregate topcrashers table.
      */
-    public function getTopCrashers($product=NULL, $version=NULL, $build_id=NULL, $branch=NULL) {
+  public function getTopCrashers($product=NULL, $version=NULL, $build_id=NULL, $branch=NULL, $limit=100) {
 
         $tables = array( 'topcrashers' => 1 );
         $where  = array();
@@ -54,7 +54,7 @@ class Topcrashers_Model extends Model {
             " WHERE  " . join(' AND ', $where) .
 	    " GROUP BY topcrashers.signature, topcrashers.version, topcrashers.product" .
 	    " HAVING SUM(topcrashers.total) > 0".
-            " ORDER BY SUM(topcrashers.total) DESC LIMIT 100";
+            " ORDER BY SUM(topcrashers.total) DESC LIMIT $limit";
         return array($last_updated, $this->fetchRows($sql));
     }
 

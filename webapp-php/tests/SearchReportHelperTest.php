@@ -1,7 +1,7 @@
 <?php
-  require_once 'PHPUnit/Framework.php';
+require_once 'PHPUnit/Framework.php';
 define('SYSPATH', '');
-  require_once dirname(__FILE__).'/../application/libraries/MY_SearchReportHelper.php';
+require_once dirname(__FILE__).'/../application/libraries/MY_SearchReportHelper.php';
 
   class SearchReportHelperTest extends PHPUnit_Framework_TestCase
 {
@@ -114,4 +114,3 @@ define('SYSPATH', '');
     }
 }
 ?>
-world

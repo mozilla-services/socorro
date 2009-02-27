@@ -5,7 +5,6 @@
     ), 'screen')?>
     <!--[if IE]><?php echo html::script('js/flot-0.5/excanvas.pack.js') ?><![endif]-->
     <?php echo html::script(array(
-        'js/jquery/jquery-1.2.1.js',
         'js/jquery/plugins/ui/jquery.tablesorter.min.js',
         'js/flot-0.5/jquery.flot.pack.js'
     ))?>

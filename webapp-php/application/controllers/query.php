@@ -1,5 +1,6 @@
 <?php defined('SYSPATH') or die('No direct script access.');
 require_once dirname(__FILE__).'/../libraries/MY_SearchReportHelper.php';
+require_once dirname(__FILE__).'/../libraries/MY_QueryFormHelper.php';
 /**
  *
  */
@@ -9,38 +10,40 @@ class Query_Controller extends Controller {
      *
      */
     public function query() {
-        $helper = new SearchReportHelper();
-        $branch_data = $this->branch_model->getBranchData();
-        $platforms   = $this->platform_model->getAll();
+      //Query Form Stuff
+        $searchHelper = new SearchReportHelper;
+        $queryFormHelper = new QueryFormHelper;
 
-        $params = $this->getRequestParameters($helper->defaultParams());
-	Kohana::log('info', Kohana::debug($params));
-        $helper->normalizeParams( $params );
+	$queryFormData = $queryFormHelper->prepareCommonViewData($this->branch_model, $this->platform_model);
+	$this->setViewData($queryFormData);
+
+	//Current Query Stuff
+        $params = $this->getRequestParameters($searchHelper->defaultParams());
+        $searchHelper->normalizeParams( $params );
 
         cachecontrol::set(array(
             'etag'     => $params,
             'expires'  => time() + ( 60 * 60 )
         ));
-
+        
         if ($params['do_query'] !== FALSE) {
             $reports = $this->common_model->queryTopSignatures($params);
         } else {
             $reports = array();
         }
 
+	//common getParams
+	//prepareAndSetCommonViewData($params)
+
         // TODO: redirect if there's one resulting report signature group
+
 
         $this->setViewData(array(
             'params'  => $params,
-            'queryTooBroad' => $helper->shouldShowWarning(),
-            'search_helper' => $helper,
-            'reports' => $reports,
+            'queryTooBroad' => $searchHelper->shouldShowWarning(),
+            'reports' => $reports
+	 ));
 
-            'all_products'  => $branch_data['products'],
-            'all_branches'  => $branch_data['branches'],
-            'all_versions'  => $branch_data['versions'],
-            'all_platforms' => $platforms
-        ));
 
     }
 

@@ -16,7 +16,7 @@
 
 /* Skin */
 .ui-tabs-nav, .ui-tabs-panel {
-    font-family: "Trebuchet MS", Trebuchet, Verdana, Helvetica, Arial, sans-serif;
+    font-family: Helvetica, Arial, sans-serif;
     font-size: 12px;
 }
 .ui-tabs-nav {
@@ -47,7 +47,7 @@
     outline: 0; /* @ Firefox, prevent dotted border after click */    
 }
 .ui-tabs-nav a:link, .ui-tabs-nav a:visited {
-    color: #fff;
+    color: #666;
 }
 .ui-tabs-nav .ui-tabs-selected a {
     position: relative;
@@ -55,6 +55,7 @@
     z-index: 2;
     margin-top: 0;
     background-position: 100% -23px;
+    color: #FFF;
 }
 .ui-tabs-nav a span {
     padding-top: 1px;
@@ -85,7 +86,7 @@
     color: #000;
 }
 .ui-tabs-panel {
-    border: 1px solid #519e2d;
+    border: 1px solid #999;
     padding: 10px;
     background: #fff; /* declare background color for container to avoid distorted fonts in IE while fading */
 }

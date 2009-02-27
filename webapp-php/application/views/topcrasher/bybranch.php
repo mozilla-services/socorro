@@ -1,7 +1,7 @@
 <?php slot::start('head') ?>
     <title>Top Crashers for the <?php out::H($branch) ?> Branch</title>
+    <link title="CSV formatted Top Crashers for the <?php out::H($branch) ?> Branch" type="text/csv" rel="alternate" href="?format=csv" />
     <?php echo html::script(array(
-        'js/jquery/jquery-1.2.1.js',
         'js/jquery/plugins/ui/jquery.tablesorter.min.js'
     ))?>
     <?php echo html::stylesheet(array(
@@ -19,5 +19,7 @@
     View::factory('common/list_topcrashers', array(
         'last_updated' => '',
         'top_crashers' => $top_crashers
-    ))->render(TRUE) 
+    ))->render(TRUE);
+    View::factory('common/csv_link_copy')->render(TRUE);
+
 ?>

@@ -1,11 +1,12 @@
 <?php slot::start('head') ?>
     <title><?php echo $title ?></title>
+    <link title="CSV formatted <?php echo $title ?>" type="text/csv" rel="alternate" href="?format=csv" />
+
     <?php echo html::stylesheet(array(
        'css/flora/flora.all.css'
     ), 'screen')?>
     <!--[if IE]><?php echo html::script('js/flot-0.5/excanvas.pack.js') ?><![endif]-->
     <?php echo html::script(array(
-        'js/jquery/jquery-1.2.1.js',
         'js/jquery/plugins/ui/jquery.tablesorter.min.js',
         'js/flot-0.5/jquery.flot.pack.js',
         'js/socorro/mtbf.js'
@@ -24,10 +25,17 @@
 <h2 class="mtbf-graph"><span id="mtbf-product"><?php echo $product . "</span> <span id='mtbf-release-level'>" . $release_level ?></span> releases</h2>
       <?php echo Kohana::debug() ?>
 <div class="mtbf-nav-panel">
-  <ul>Release type: 
-      <li><a href="major" class="nav <?php     if($release_level == 'major'){?> current<?php } ?>">Major</a><li>
-    <li><a href="milestone" class="nav <?php   if($release_level == 'milestone'){?> current<?php } ?>">Milestone</a><li>
-    <li><a href="development" class="nav <?php if($release_level == 'development'){?> current<?php } ?>">Development</a><li>
+  <h6>Release type: </h6>
+  <ul>
+    <?php if ($release_level == 'major' || in_array('major', $other_releases) ) { ?>
+      <li><a href="major" class="nav <?php     if($release_level == 'major'){?> current<?php } ?>">Major</a></li>
+    <?php }
+          if ($release_level == 'milestone' || in_array('milestone', $other_releases) ) { ?>
+    <li><a href="milestone" class="nav <?php   if($release_level == 'milestone'){?> current<?php } ?>">Milestone</a></li>
+    <?php }
+          if ($release_level == 'development' || in_array('development', $other_releases) ) { ?>
+    <li><a href="development" class="nav <?php if($release_level == 'development'){?> current<?php } ?>">Development</a></li>
+    <?php } ?>
   </ul>
 </div>
 
@@ -44,13 +52,11 @@
 <div id="mtbf-graph"></div>
 <div class="caption plot-label">Average number of seconds before a crash. Day 0 of release through day 60.</div>
 
-<table id="firefox3.0.3-legend"></table>
-
 <a id="mtbf-os-drilldown" href="#">Drill down on OS</a><?php 
   echo html::image( array('src' => 'img/loading.png', 'width' => '16', 'height' => '17' ),
-	            array('class' => 'ajax-loading', 'style' => 'display:none')); ?>
+	            array('class' => 'ajax-loading', 'style' => 'display:none', 'alt' => 'More content loading')); ?>
 <ul id="mtbf-data-details">
-
+  <li>Data Loading</li>
 </ul>
 
 
@@ -58,6 +64,8 @@
 var SocMtbfSeries = <?php echo json_encode( $releases ); ?>;
 </script>
 <?php 
+    View::factory('common/csv_link_copy')->render(TRUE);
+
     } //if/else no data
 } //if/else error message for url
  ?>
