@@ -289,7 +289,7 @@ class Processor(object):
     newSignatureList = []
     prefixFound = False
     for aSignature in signatureList:
-      if self.prefixSignatureRegEx.match(aSignature):
+      if self.irrelevantSignatureRegEx.match(aSignature):
         if prefixFound:
           newSignatureList.append(aSignature)
         continue
