@@ -213,47 +213,55 @@ class Monitor (object):
     """
     logger.info("%s - looking for dead processors", threading.currentThread().getName())
     try:
-      aCursor.execute("select now() - interval '%s'" % self.config.processorCheckInTime)
-      threshold = aCursor.fetchall()[0][0]
-      aCursor.execute("select id from processors where lastSeenDateTime < '%s'" % threshold)
+      threshold = psy.singleValueSql(aCursor, "select now() - interval '%s'" % self.config.processorCheckInTime)
+      #sql = "select id from processors where lastSeenDateTime < '%s'" % (threshold,)
+      #logger.info("%s - dead processors sql: %s", threading.currentThread().getName(), sql)
+      aCursor.execute("select id from processors where lastSeenDateTime < '%s'" % (threshold,))
       deadProcessors = aCursor.fetchall()
+      aCursor.connection.commit()
+      logger.info("%s - dead processors: %s", threading.currentThread().getName(), str(deadProcessors))
       if deadProcessors:
         logger.info("%s - found dead processor(s):", threading.currentThread().getName())
         for aDeadProcessorTuple in deadProcessors:
           logger.info("%s -   %d is dead", threading.currentThread().getName(), aDeadProcessorTuple[0])
+        stringOfDeadProcessorIds = ", ".join([str(x[0]) for x in deadProcessors])
+        logger.info("%s - getting list of live processor(s):", threading.currentThread().getName())
         aCursor.execute("select id from processors where lastSeenDateTime >= '%s'" % threshold)
         liveProcessors = aCursor.fetchall()
         if not liveProcessors:
           raise Monitor.NoProcessorsRegisteredException("There are no processors registered")
-        #
-        # This code section to reassign jobs from dead processors is blocked because it is very slow
-        #
-        #numberOfLiveProcessors = len(liveProcessors)
-        #aCursor.execute("select count(*) from jobs where owner in (select id from processors where lastSeenDateTime < '%s')" % threshold)
-        #numberOfJobsAssignedToDeadProcesors = aCursor.fetchall()[0][0]
-        #numberOfJobsPerNewProcessor = numberOfJobsAssignedToDeadProcesors / numberOfLiveProcessors
-        #leftOverJobs = numberOfJobsAssignedToDeadProcesors % numberOfLiveProcessors
-        #for aLiveProcessorTuple in liveProcessors:
-          #aLiveProcessorId = aLiveProcessorTuple[0]
-          #logger.info("%s - moving %d jobs from dead processors to procssor #%d", threading.currentThread().getName(), numberOfJobsPerNewProcessor + leftOverJobs, aLiveProcessorId)
-          #aCursor.execute("""update jobs set owner = %s, starteddatetime = null where id in
-                              #(select id from jobs where owner in
-                                #(select id from processors where lastSeenDateTime < %s) limit %s)""", (aLiveProcessorId, threshold, numberOfJobsPerNewProcessor + leftOverJobs))
-          #leftOverJobs = 0
-        #logger.info("%s - removing all dead processors", threading.currentThread().getName())
-        #aCursor.execute("delete from processors where lastSeenDateTime < '%s'" % threshold)
-        #aCursor.connection.commit()
-        ## remove dead processors' priority tables
-        #for aDeadProcessorTuple in deadProcessors:
-          #try:
-            #aCursor.execute("drop table priority_jobs_%d" % aDeadProcessorTuple[0])
-            #aCursor.connection.commit()
-          #except:
-            #logger.warning("%s - cannot clean up dead processor in database: the table 'priority_jobs_%d' may need manual deletion", threading.currentThread().getName(), aDeadProcessorTuple[0])
-            #aCursor.connection.rollback()
+        numberOfLiveProcessors = len(liveProcessors)
+        logger.info("%s - getting range of queued date for jobs associated with dead processor(s):", threading.currentThread().getName())
+        aCursor.execute("select min(queueddatetime), max(queueddatetime) from jobs where owner in (%s) and success is NULL" % stringOfDeadProcessorIds)
+        earliestDeadJob, latestDeadJob = aCursor.fetchall()[0]
+        timeIncrement = (latestDeadJob - earliestDeadJob) / numberOfLiveProcessors
+        for x, liveProcessorId in enumerate(liveProcessors):
+          lowQueuedTime = x * timeIncrement + earliestDeadJob
+          highQueuedTime = (x + 1) * timeIncrement + earliestDeadJob
+          logger.info("%s - assigning jobs from %s to %s to processor %s:", threading.currentThread().getName(), str(lowQueuedTime), str(highQueuedTime), liveProcessorId)
+          # why is the range >= at both ends? the range must be inclusive, the risk of moving a job twice is low and consequences low, too.
+          aCursor.execute("""update jobs
+                                set owner = %%s
+                             where
+                                %%s >= queueddatetime
+                                and queueddatetime >= %%s
+                                and owner in (%s)
+                                and success is NULL""" % stringOfDeadProcessorIds, (liveProcessorId, highQueuedTime, lowQueuedTime))
+          aCursor.connection.commit()
+        logger.info("%s - removing all dead processors", threading.currentThread().getName())
+        aCursor.execute("delete from processors where lastSeenDateTime < '%s'" % threshold)
+        aCursor.connection.commit()
+        # remove dead processors' priority tables
+        for aDeadProcessorTuple in deadProcessors:
+          try:
+            aCursor.execute("drop table priority_jobs_%d" % aDeadProcessorTuple[0])
+            aCursor.connection.commit()
+          except:
+            logger.warning("%s - cannot clean up dead processor in database: the table 'priority_jobs_%d' may need manual deletion", threading.currentThread().getName(), aDeadProcessorTuple[0])
+            aCursor.connection.rollback()
     except Monitor.NoProcessorsRegisteredException:
       self.quit = True
-      socorro.lib.util.reportExceptionAndAbort(logger)
+      socorro.lib.util.reportExceptionAndAbort(logger, showTraceback=False)
     except:
       socorro.lib.util.reportExceptionAndContinue(logger)
 
@@ -275,10 +283,18 @@ class Monitor (object):
     """
     logger.debug("%s - balanced jobSchedulerIter: compiling list of active processors", threading.currentThread().getName())
     try:
-      sql = """select p.id, count(j.*) from processors p left join (select owner from jobs where success is null) as j on p.id = j.owner group by p.id;"""
+      sql = """select
+                  p.id,
+                  count(j.owner)
+               from
+                  processors p left join jobs j on p.id = j.owner
+                                                   and p.lastSeenDateTime > now() - interval %s
+                                                   and j.success is null
+              group by p.id"""
       try:
-        aCursor.execute(sql)
+        aCursor.execute(sql, (self.config.processorCheckInTime,) )
         logger.debug("%s - sql succeeded", threading.currentThread().getName())
+        aCursor.connection.commit()
       except psycopg2.ProgrammingError:
         logger.debug("%s - some other database transaction failed and didn't close properly.  Roll it back and try to continue.", threading.currentThread().getName())
         try:
@@ -289,6 +305,7 @@ class Monitor (object):
           self.quit = True
           socorro.lib.util.reportExceptionAndAbort(logger)
       listOfProcessorIds = [[aRow[0], aRow[1]] for aRow in aCursor.fetchall()]  #processorId, numberOfAssignedJobs
+      logger.debug("%s - listOfProcessorIds: %s", threading.currentThread().getName(), str(listOfProcessorIds))
       if not listOfProcessorIds:
         raise Monitor.NoProcessorsRegisteredException("There are no processors registered")
       while True:
