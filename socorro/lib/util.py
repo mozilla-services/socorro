@@ -69,8 +69,8 @@ def reportExceptionAndContinue(logger=FakeLogger(), loggingLevel=logging.ERROR, 
     print x
 
 #-----------------------------------------------------------------------------------------------------------------
-def reportExceptionAndAbort(logger):
-  reportExceptionAndContinue(logger, logging.CRITICAL)
+def reportExceptionAndAbort(logger, showTraceback=True):
+  reportExceptionAndContinue(logger, logging.CRITICAL, showTraceback=showTraceback)
   logger.critical("cannot continue - quitting")
   raise SystemExit
 
