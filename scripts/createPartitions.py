@@ -3,6 +3,7 @@
 import logging
 import logging.handlers
 import sys
+import datetime as dt
 
 try:
   import config.createpartitionsconfig as config
@@ -37,6 +38,7 @@ logger.addHandler(rotatingFileLog)
 logger.info("current configuration\n%s", str(configurationContext))
 
 try:
+  configurationContext["endDate"] = configurationContext.startDate + dt.timedelta(weeksIntoFuture * 7)
   schema.createPartitions(configurationContext, logger)
 finally:
   logger.info("done.")
