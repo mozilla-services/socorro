@@ -4,8 +4,7 @@ import datetime as dt
 from config.commonconfig import databaseHost
 from config.commonconfig import databaseName
 from config.commonconfig import databaseUserName
-from config.setupdatabaseconfig import databaseSuperUserName
-from config.setupdatabaseconfig import databaseSuperUserPassword
+from config.commonconfig import databasePassword
 
 startDate = cm.Option()
 startDate.doc = 'create partitions beginning with this date'
