@@ -11,10 +11,10 @@ startDate.doc = 'create partitions beginning with this date'
 startDate.default = str(dt.datetime.now())[:10]
 startDate.fromStringConverter = cm.dateTimeConverter
 
-endDate = cm.Option()
-endDate.doc = 'create partitions ending with this date'
-endDate.default = str(dt.datetime.now())[:10]
-endDate.fromStringConverter = cm.dateTimeConverter
+weeksIntoFuture = cm.Option()
+weeksIntoFuture.doc = 'create partitions this many weeks into the future'
+weeksIntoFuture.default = 4
+weeksIntoFuture.fromStringConverter = int
 
 logFilePathname = cm.Option()
 logFilePathname.doc = 'full pathname for the log file'
