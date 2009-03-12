@@ -20,15 +20,22 @@ class TestConfigurationManager(unittest.TestCase):
     if os.path.exists(os.path.join('.','config.tst')):
       return os.path.join('.','config.tst')
     # else
-    for dirpath,dirnames,filenames in os.walk("."):
-      if 'config.tst' in filenames:
-        return os.path.join(dirpath,'config.tst');
-    return os.path.join('.','config.tst') # this will give a nice failure message
+    dir = os.path.split(__file__)[0]
+    return os.path.join(dir,'config.tst')
+#     for dirpath,dirnames,filenames in os.walk("."):
+#       if 'config.tst' in filenames:
+#         return os.path.join(dirpath,'config.tst');
+#     return os.path.join('.','config.tst') # this will give a nice failure message
 
   def setUp(self):
     self.keepargv = copy.copy(sys.argv)
     self.keepenviron = os.environ.copy()
     self.configTstPath = self.__findConfigTstPath()
+    assert os.path.exists(self.configTstPath), "Why is this not in existence: %s"%(self.configTstPath)
+    # all our tests depend on setting their own sys.argv AFTER the test has begun to run
+    # In order to avoid trouble, blow away all the params that nosetests should 'use up'
+    if 'nosetests' in sys.argv[0]:
+      sys.argv = sys.argv[:1] 
     
   def tearDown(self):
     sys.argv = copy.copy(self.keepargv)

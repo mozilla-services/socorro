@@ -735,6 +735,18 @@ def setupDatabase(config, logger):
     socorro_util.reportExceptionAndAbort(logger)
 
 #-----------------------------------------------------------------------------------------------------------------
+def teardownDatabase(config,logger):
+  databaseConnection,databaseCursor = connectToDatabase(config,logger)
+  try:
+    for databaseObjectClass in databaseObjectClassListForSetup:
+      aDatabaseObject = databaseObjectClass(logger=logger)
+      aDatabaseObject.drop(databaseCursor)
+    databaseConnection.commit()
+  except:
+    databaseConnection.rollback()
+    socorro_util.reportExceptionAndContinue(logger)
+      
+#-----------------------------------------------------------------------------------------------------------------
 databaseObjectClassListForUpdate = [BranchesTable,
                                    ProcessorsTable,
                                    JobsTable,

@@ -80,7 +80,7 @@ class JsonDumpStorage(object):
     Creates any directories that it needs along the path to the appropriate storage location.
     Creates two relative symbolic links: the date branch link pointing to the name directory holding the files;
     the name branch link pointing to the date branch directory holding that link.
-    Returns a 2-tuple containing files open for reading: (jsonfile,dumpfile)
+    Returns a 2-tuple containing files open for writing: (jsonfile,dumpfile)
     """
     if not timestamp: timestamp = DT.datetime.now()
     df,jf = None,None

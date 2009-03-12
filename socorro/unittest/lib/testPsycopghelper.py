@@ -6,7 +6,7 @@ import datetime as DT
 import logging
 import threading
 
-from loggerForTest import TestingLogger
+from socorro.unittest.testlib.loggerForTest import TestingLogger
 from createDBforTest import *
 
 """

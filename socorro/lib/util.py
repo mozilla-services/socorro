@@ -134,4 +134,4 @@ class CachingIterator(object):
 #-----------------------------------------------------------------------------------------------------------------
 import signal
 # Don't know why this isn't available by importing signal, but not.
-signalNameFromNumberMap = dict( ( (eval('signal.%s'%x),x) for x in dir(signal) if (x.startswith('SIG') and not x.startswith('SIG_')) ) )
+signalNameFromNumberMap = dict( ( (getattr(signal,x),x) for x in dir(signal) if (x.startswith('SIG') and not x.startswith('SIG_')) ) )

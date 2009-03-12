@@ -84,7 +84,6 @@ class Monitor (object):
                                                   jsonSuffix=self.config.jsonFileSuffix,
                                                   dumpSuffix=self.config.dumpFileSuffix,
                                                   logger=logger)
-
     self.quit = False
 
   #-----------------------------------------------------------------------------------------------------------------
@@ -275,6 +274,7 @@ class Monitor (object):
   #def secondOfSequence(x):
     #return x[1]
 
+  import sys # DEBUG
   #-----------------------------------------------------------------------------------------------------------------
   def jobSchedulerIter(self, aCursor):
     """ This takes a snap shot of the state of the processors as well as the number of jobs assigned to each
@@ -341,9 +341,14 @@ class Monitor (object):
   def queueJob (self, databaseCursor, uuid, processorIdSequenceGenerator, priority=0):
     logger.debug("%s - trying to insert %s", threading.currentThread().getName(), uuid)
     processorIdAssignedToThisJob = processorIdSequenceGenerator.next()
-    databaseCursor.execute("insert into jobs (pathname, uuid, owner, priority, queuedDateTime) values (%s, %s, %s, %s, %s)",
-                               ('', uuid, processorIdAssignedToThisJob, priority, datetime.datetime.now()))
-    databaseCursor.connection.commit()
+    try:
+      databaseCursor.execute("insert into jobs (pathname, uuid, owner, priority, queuedDateTime) values (%s, %s, %s, %s, %s)",
+                             ('', uuid, processorIdAssignedToThisJob, priority, datetime.datetime.now()))
+      logger.debug("%s - executed insert for %s",threading.currentThread().getName(), uuid)
+      databaseCursor.connection.commit()
+    except:
+      databaseCursor.connection.rollback()
+      raise
     logger.debug("%s - %s assigned to processor %d", threading.currentThread().getName(), uuid, processorIdAssignedToThisJob)
     return processorIdAssignedToThisJob
 
@@ -352,7 +357,7 @@ class Monitor (object):
     processorIdAssignedToThisJob = self.queueJob(databaseCursor, uuid, processorIdSequenceGenerator, priority=1)
     if processorIdAssignedToThisJob:
       databaseCursor.execute("insert into priority_jobs_%d (uuid) values ('%s')" % (processorIdAssignedToThisJob, uuid))
-    databaseCursor.execute("delete from priorityJobs where uuid = %s", (uuid,))
+    databaseCursor.execute("delete from priorityjobs where uuid = %s", (uuid,))
     databaseCursor.connection.commit()
     return processorIdAssignedToThisJob
 
@@ -400,7 +405,7 @@ class Monitor (object):
 
   #-----------------------------------------------------------------------------------------------------------------
   def getPriorityUuids(self, aCursor):
-    aCursor.execute("select * from priorityJobs")
+    aCursor.execute("select * from priorityjobs;")
     setOfPriorityUuids = sets.Set()
     for aUuidRow in aCursor.fetchall():
       setOfPriorityUuids.add(aUuidRow[0])
@@ -425,7 +430,7 @@ class Monitor (object):
           setOfPriorityUuids.remove(uuid)
           continue
         databaseCursor.execute("update jobs set priority = priority + 1 where uuid = %s", (uuid,))
-        databaseCursor.execute("delete from priorityJobs where uuid = %s", (uuid,))
+        databaseCursor.execute("delete from priorityjobs where uuid = %s", (uuid,))
         databaseCursor.connection.commit()
         setOfPriorityUuids.remove(uuid)
       except psy.SQLDidNotReturnSingleValue:
@@ -461,11 +466,11 @@ class Monitor (object):
         processorIdAssignedToThisJob = self.queuePriorityJob(databaseCursor, uuid, processorIdSequenceGenerator)
         logger.info("%s - %s assigned to %d", threading.currentThread().getName(), uuid, processorIdAssignedToThisJob)
         setOfPriorityUuids.remove(uuid)
-        databaseCursor.execute("delete from priorityJobs where uuid = %s", (uuid,))
+        databaseCursor.execute("delete from priorityjobs where uuid = %s", (uuid,))
         databaseCursor.connection.commit()
 
   #-----------------------------------------------------------------------------------------------------------------
-  def priorityJobsNotFound(self, databaseCursor, setOfPriorityUuids, priorityTableName="priorityJobs"):
+  def priorityJobsNotFound(self, databaseCursor, setOfPriorityUuids, priorityTableName="priorityjobs"):
     # we've failed to find the uuids anywhere
     for uuid in setOfPriorityUuids:
       self.quitCheck()

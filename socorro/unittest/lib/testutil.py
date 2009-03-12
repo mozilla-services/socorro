@@ -3,7 +3,7 @@ import logging
 import socorro.lib.util as util
 import exceptions
 
-from loggerForTest import TestingLogger
+from socorro.unittest.testlib.loggerForTest import TestingLogger
 
 class TestingException(exceptions.Exception):
   pass

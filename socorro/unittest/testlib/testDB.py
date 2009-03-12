@@ -1,0 +1,51 @@
+import psycopg2
+import socorro.database.schema as db_schema
+import socorro.database.postgresql as db_postgresql
+import sys
+
+class TestDB:
+  def __init__(self):
+    self.madeConnection = False
+    
+  def maybeCloseConnection(self,connection):
+    if self.madeConnection:
+      self.madeConnection = False
+      connection.close()
+    
+  def getCursor(self,**kwargs):
+    cursor = None
+    connection = None
+    try:
+      cursor = kwargs['cursor']
+    except:
+      try:
+        connection = kwargs['connection']
+      except:
+        connection = psycopg2.connect(kwargs['dsn'])
+        self.madeConnection = True
+      cursor = connection.cursor()
+    return cursor
+
+  
+  def createDB(self, config, logger):
+    """Convenience: Forward to schema to get actual work done each thing in exactly one place"""
+    db_schema.setupDatabase(config,logger)
+
+  def removeDB(self, config, logger):
+    """Convenience: Forward to schema to get actual work done each thing in exactly one place"""
+    db_schema.teardownDatabase(config, logger)
+    self.removePriorityTables(config,logger)
+
+  def removePriorityTables(self,config,logger):
+    dbCon,dbCur = db_schema.connectToDatabase(config,logger)
+    priorityTableNames = db_postgresql.tablesMatchingPattern('priority_job_%%',dbCur)
+    sql = "DROP TABLE IF EXISTS %s CASCADE;"%(", ".join(priorityTableNames))
+    dbCur.execute(sql)
+    dbCon.commit()
+    
+  def populateDB(self,**kwargs):
+    cursor = self.getCursor(**kwargs)
+    print >> sys.stderr, "PopulateDB() Not yet implemented"
+    self.maybeCloseConnection(cursor.connection)
+
+  

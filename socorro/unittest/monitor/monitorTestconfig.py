@@ -19,11 +19,15 @@ databasePassword.default = 't3st'
 
 storageRoot = cm.Option()
 storageRoot.doc = 'the root of the file system where dumps are found'
-storageRoot.default = './dumpTest/toBeProcessed/'
+storageRoot.default = '%(testDir)s/dumpTest/toBeProcessed/'
 
 deferredStorageRoot = cm.Option()
 deferredStorageRoot.doc = 'the root of the file system where dumps are found'
-deferredStorageRoot.default = './dumpTest/toBeDeferred/'
+deferredStorageRoot.default = '%(testDir)s/dumpTest/toBeDeferred/'
+
+bigStorageRoot = cm.Option()
+bigStorageRoot.doc = 'the root of the file system where big test set is found'
+bigStorageRoot.default = '%(testDir)s/testdata'
 
 dumpDirPrefix = cm.Option()
 dumpDirPrefix.doc = 'dump directory names begin with this prefix'
@@ -59,15 +63,15 @@ priorityLoopDelay.fromStringConverter = cm.timeDeltaConverter
 
 saveSuccessfulMinidumpsTo = cm.Option()
 saveSuccessfulMinidumpsTo.doc = 'the location for saving successfully processed dumps (leave blank to delete them instead)'
-saveSuccessfulMinidumpsTo.default = './dumpTest/socorro-sucessful'
+saveSuccessfulMinidumpsTo.default = '%(testDir)s/dumpTest/socorro-sucessful'
 
 saveFailedMinidumpsTo = cm.Option()
 saveFailedMinidumpsTo.doc = 'the location for saving dumps that failed processing (leave blank to delete them instead)'
-saveSuccessfulMinidumpsTo.default = './dumpTest/socorro-failed'
+saveFailedMinidumpsTo.default = '%(testDir)s/dumpTest/socorro-failed'
 
 logFilePathname = cm.Option()
 logFilePathname.doc = 'full pathname for the log file'
-logFilePathname.default = './logs/monitor_test.log'
+logFilePathname.default = '%(testDir)s/logs/monitor_test.log'
 
 logFileMaximumSize = cm.Option()
 logFileMaximumSize.doc = 'maximum size in bytes of the log file'
@@ -91,5 +95,5 @@ stderrLineFormatString.default = '%(asctime)s %(levelname)s - %(message)s'
 
 stderrErrorLoggingLevel = cm.Option()
 stderrErrorLoggingLevel.doc = 'logging level for the logging to stderr (10 - DEBUG, 20 - INFO, 30 - WARNING, 40 - ERROR, 50 - CRITICAL)'
-stderrErrorLoggingLevel.default = 40
+stderrErrorLoggingLevel.default = 10
 

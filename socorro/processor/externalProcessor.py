@@ -28,16 +28,17 @@ class ProcessorWithExternalBreakpad (processor.Processor):
     assert "stackwalkCommandLine" in config, "stackwalkCommandLine is missing from the configuration"
 
     #preprocess the breakpad_stackwalk command line
-    # convert parameters of the form "$paramterName" into a python parameter of the form "%(paramterName)s"
-    self.commandLine = re.compile(r'(\$(\w+))').sub(r'%(\2)s', config.stackwalkCommandLine)
-    # convert parameters of the form "$(paramterName)" into a python parameter of the form "%(paramterName)s"
-    self.commandLine = re.compile(r'(\$(\(\w+\)))').sub(r'%(\2)s', self.commandLine)
-    # treat the "dumpfilePathname" as a special paramter by changing its syntax
-    self.commandLine = self.commandLine.replace('%(dumpfilePathname)s', "DUMPFILEPATHNAME")
-    # treat the "processorSymbolsPathnameList" as a special paramter by changing its syntax
-    self.commandLine = self.commandLine.replace('%(processorSymbolsPathnameList)s', "SYMBOL_PATHS")
-    # finally make the substitutions to make a real command out of the template
-    self.commandLine = self.commandLine %  config
+    stripParensRE = re.compile(r'\$(\()(\w+)(\))')
+    toPythonRE = re.compile(r'\$(\w+)')
+    # Canonical form of $(param) is $param. Convert any that are needed
+    tmp = stripParensRE.sub(r'$\2',config.stackwalkCommandLine)
+    # Convert canonical $dumpfilePathname to DUMPFILEPATHNAME
+    tmp = tmp.replace('$dumpfilePathname','DUMPFILEPATHNAME')
+    # Convert canonical $processorSymbolsPathnameList to SYMBOL_PATHS
+    tmp = tmp.replace('$processorSymbolsPathnameList','SYMBOL_PATHS')
+    # finally, convert any remaining $param to pythonic %(param)s
+    tmp = toPythonRE.sub(r'%(\1)s',tmp)
+    self.commandLine = tmp % config
 
 #-----------------------------------------------------------------------------------------------------------------
   def invokeBreakpadStackdump(self, dumpfilePathname):
@@ -51,7 +52,7 @@ class ProcessorWithExternalBreakpad (processor.Processor):
     if type(self.config.processorSymbolsPathnameList) is list:
       symbol_path = ' '.join(['"%s"' % x for x in self.config.processorSymbolsPathnameList])
     else:
-      symbol_path = ' '.join(['"%s"' % x for x in self.config.processorSymbolsPathnameList.split(' ')])
+      symbol_path = ' '.join(['"%s"' % x for x in self.config.processorSymbolsPathnameList.split()])
     #commandline = '"%s" %s "%s" %s 2>/dev/null' % (self.config.minidump_stackwalkPathname, "-m", dumpfilePathname, symbol_path)
     newCommandLine = self.commandLine.replace("DUMPFILEPATHNAME", dumpfilePathname)
     newCommandLine = newCommandLine.replace("SYMBOL_PATHS", symbol_path)
@@ -116,33 +117,38 @@ class ProcessorWithExternalBreakpad (processor.Processor):
     crashedThread = None
     moduleCounter = 0
     reportUpdateValues = {"id": reportId}
-    reportUpdateSQLPhrases = {"osPhrase":"", "cpuPhrase":"", "crashPhrase":""}
 
     analyzeReturnedLines = False
+    reportUpdateSqlParts = []
     for line in dumpAnalysisLineIterator:
-      analyzeReturnedLines = True
-      #logger.debug("%s -   %s", threading.currentThread().getName(), line)
       line = line.strip()
       # empty line separates header data from thread data
       if line == '':
         break
-      values = map(socorro.lib.util.emptyFilter, line.split("|"))
+      analyzeReturnedLines = True
+      #logger.debug("%s -   %s", threading.currentThread().getName(), line)
+      values = map(lambda x: x.strip(), line.split('|'))
+      if len(values) < 3:
+        processorErrorMessages.append('Cannot parse header line "%s"'%line)
+        continue
+      values = map(socorro.lib.util.emptyFilter, values)
       if values[0] == 'OS':
         reportUpdateValues['os_name'] = socorro.lib.util.limitStringOrNone(values[1], 100)
         reportUpdateValues['os_version'] = socorro.lib.util.limitStringOrNone(values[2], 100)
-        reportUpdateSQLPhrases["osPhrase"] = "os_name = %(os_name)s, os_version = %(os_version)s, "
+        reportUpdateSqlParts.extend(['os_name = %(os_name)s','os_version = %(os_version)s'])
       elif values[0] == 'CPU':
         reportUpdateValues['cpu_name'] = socorro.lib.util.limitStringOrNone(values[1], 100)
         reportUpdateValues['cpu_info'] = socorro.lib.util.limitStringOrNone(values[2], 100)
-        reportUpdateSQLPhrases["cpuPhrase"] = "cpu_name = %(cpu_name)s, cpu_info = %(cpu_info)s, "
+        reportUpdateSqlParts.extend(['cpu_name = %(cpu_name)s','cpu_info = %(cpu_info)s'])
       elif values[0] == 'Crash':
         reportUpdateValues['reason'] = socorro.lib.util.limitStringOrNone(values[1], 255)
         reportUpdateValues['address'] = socorro.lib.util.limitStringOrNone(values[2], 20)
+        reportUpdateSqlParts.extend(['reason = %(reason)s','address = %(address)s'])
+        crashedThread = None
         try:
           crashedThread = int(values[3])
         except:
           crashedThread = None
-        reportUpdateSQLPhrases["crashPhrase"] = "reason = %(reason)s, address = %(address)s"
       elif values[0] == 'Module':
         pass
         # Module|{Filename}|{Version}|{Debug Filename}|{Debug ID}|{Base Address}|Max Address}|{Main}
@@ -164,11 +170,11 @@ class ProcessorWithExternalBreakpad (processor.Processor):
       logger.warning("%s - %s", threading.currentThread().getName(), message)
 
     if len(reportUpdateValues) > 1:
-      reportUpdateSQL = ("""update reports set %(osPhrase)s%(cpuPhrase)s%(crashPhrase)s where id = PERCENT(id)s""" % reportUpdateSQLPhrases).replace(", w", " w").replace("PERCENT","%")
+      reportUpdateSQL = """update reports set %s where id=%%(id)s AND date_processed = '%s'"""%(",".join(reportUpdateSqlParts),date_processed)
       databaseCursor.execute(reportUpdateSQL, reportUpdateValues)
 
     if crashedThread is None:
-      message = "no thread was identified as the cause of the crash"
+      message = "No thread was identified as the cause of the crash"
       processorErrorMessages.append(message)
       logger.warning("%s - %s", threading.currentThread().getName(), message)
 
@@ -178,7 +184,7 @@ class ProcessorWithExternalBreakpad (processor.Processor):
   def analyzeFrames(self, reportId, dumpAnalysisLineIterator, databaseCursor, date_processed, crashedThread, processorErrorMessages):
     """ After the header information, the dump file consists of just frame information.  This function
           cycles through the frame information looking for frames associated with the crashed thread
-          (determined in analyzeHeader).  Each from from that thread is written to the database until
+          (determined in analyzeHeader).  Each frame from that thread is written to the database until
            it has found a maximum of ten frames.
 
            returns:
