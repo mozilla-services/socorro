@@ -61,7 +61,6 @@ class Processor(object):
             what it is working on and throws away any subsequent tasks.  The main thread, on seeing
             this value as True, tells all threads to quit, waits for them to do so, unregisters itself in the
             database, closes the database connection and then quits.
-        self.getNextJobSQL: a string used as an SQL statement to fetch the next job assignment.
         self.threadManager: an instance of a class that manages the tasks of a set of threads.  It accepts
             new tasks through the call to newTask.  New tasks are placed in the internal task queue.
             Threads pull tasks from the queue as they need them.
@@ -184,8 +183,8 @@ class Processor(object):
       databaseConnection.rollback()
     # force checkin to run immediately after start(). I don't understand the need, since the database already reflects nearly-real reality. Oh well.
     self.lastCheckInTimestamp = datetime.datetime(1950, 1, 1)
-    self.getNextJobSQL = "select j.id, j.pathname, j.uuid from jobs j where j.owner = %d and startedDateTime is null order by priority desc, queuedDateTime asc limit 1" % self.processorId
-  
+    #self.getNextJobSQL = "select j.id, j.pathname, j.uuid from jobs j where j.owner = %d and startedDateTime is null order by priority desc, queuedDateTime asc limit 1" % self.processorId
+
     # start the thread manager with the number of threads specified in the configuration.  The second parameter controls the size
     # of the internal task queue within the thread manager.  It is constrained so that the queue remains starved.  This means that tasks
     # remain queued in the database until the last minute.  This allows some external process to change the priority of a job by changing
@@ -275,7 +274,7 @@ class Processor(object):
     raise KeyboardInterrupt
 
   #--- put these near where they are needed to avoid scrolling during maintenance ----------------------------------
-  fixupSpace = re.compile(r' (?=[\*&,])') 
+  fixupSpace = re.compile(r' (?=[\*&,])')
   fixupComma = re.compile(r',(?! )')
   #-----------------------------------------------------------------------------------------------------------------
   @staticmethod
@@ -382,9 +381,9 @@ class Processor(object):
       if fullJobsList:
         while fullJobsList:
           aFullJobTuple = fullJobsList.pop(-1)
+          databaseCursor.execute(deleteOnePriorityJobSql, (aFullJobTuple[1],)) #entry should be deleted even if it is not found
+          databaseCursor.connection.commit()
           if aFullJobTuple[0] is not None:
-            databaseCursor.execute(deleteOnePriorityJobSql, (aFullJobTuple[1],))
-            databaseCursor.connection.commit()
             if aFullJobTuple[3]:
               continue
             else:
@@ -393,7 +392,7 @@ class Processor(object):
             logger.debug("%s - the priority job %s was never found", threading.currentThread().getName(), nextValue[1])
       else:
         yield None
-  
+
   #-----------------------------------------------------------------------------------------------------------------
   def newNormalJobsIter (self, databaseCursor):
     """
@@ -428,7 +427,7 @@ class Processor(object):
        aJobTuple has this form: (jobId, jobUuid, jobPriority) ... of which jobPriority is pure excess, and should someday go away
        Yields the next job according to this pattern:
        START
-       Attempt to yield a priority job 
+       Attempt to yield a priority job
        If no priority job, attempt to yield a normal job
        If no priority or normal job, sleep self.processorLoopTime seconds
        loop back to START
@@ -455,7 +454,7 @@ class Processor(object):
         logger.info("%s - no jobs to do - sleeping %d seconds", threading.currentThread().getName(), self.processorLoopTime)
         seenUuids = set()
         self.responsiveSleep(self.processorLoopTime)
- 
+
   #-----------------------------------------------------------------------------------------------------------------
   def start(self):
     """ Run by the main thread, this function fetches jobs from the incoming job stream one at a time
@@ -552,11 +551,12 @@ class Processor(object):
       processorErrorMessages.append(str(x))
       message = '; '.join(processorErrorMessages).replace("'", "''")
       threadLocalCursor.execute("update jobs set completedDateTime = %s, success = False, message = %s where id = %s", (datetime.datetime.now(), message, jobId))
+      threadLocalDatabaseConnection.commit()
       try:
         threadLocalCursor.execute("update reports set started_datetime = timestamp without time zone '%s', completed_datetime = timestamp without time zone '%s', success = False, processor_notes = '%s' where id = %s and date_processed = timestamp without time zone '%s'" % (startedDateTime, datetime.datetime.now(), message, reportId, date_processed))
+        threadLocalDatabaseConnection.commit()
       except Exception:
-        pass
-      threadLocalDatabaseConnection.commit()
+        threadLocalDatabaseConnection.rollback()
 
   #-----------------------------------------------------------------------------------------------------------------
   @staticmethod
@@ -581,7 +581,7 @@ class Processor(object):
       errorMessageList.append("ERROR: jsonDoc[%s]: %s"%(repr(key),x))
       logger.error("%s - While extracting '%s' from jsonDoc %s, exception (%s): %s",threading.currentThread().getName(),key,jsonDoc,type(x),x)
     return ret
-    
+
   #-----------------------------------------------------------------------------------------------------------------
   def insertReportIntoDatabase(self, threadLocalCursor, uuid, jsonDocument, jobPathname, date_processed, processorErrorMessages):
     """
