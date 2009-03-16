@@ -170,7 +170,7 @@ class ProcessorWithExternalBreakpad (processor.Processor):
       logger.warning("%s - %s", threading.currentThread().getName(), message)
 
     if len(reportUpdateValues) > 1:
-      reportUpdateSQL = """update reports set %s where id=%%(id)s AND date_processed = '%s'"""%(",".join(reportUpdateSqlParts),date_processed)
+      reportUpdateSQL = """update reports set %s where id=%%(id)s AND date_processed = timestamp without time zone '%s'"""%(",".join(reportUpdateSqlParts),date_processed)
       databaseCursor.execute(reportUpdateSQL, reportUpdateValues)
 
     if crashedThread is None:
