@@ -1,4 +1,3 @@
-import copy
 import datetime as dt
 import errno
 import logging
@@ -14,6 +13,7 @@ import socorro.lib.ConfigurationManager as configurationManager
 
 import socorro.cron.mtbf as mtbf
 
+from createTables import createCronTables, dropCronTables
 import socorro.unittest.testlib.dbtestutil as dbtestutil
 from   socorro.unittest.testlib.loggerForTest import TestingLogger
 from   socorro.unittest.testlib.testDB import TestDB
@@ -42,15 +42,17 @@ def setup_module():
     except:
       pass
   me.logFilePathname = me.config.logFilePathname
-  logFileDir = os.path.split(me.config.logFilePathname)[0]
+  if not me.logFilePathname:
+    me.logFilePathname = 'logs/mtbf_test.log'
+  logFileDir = os.path.split(me.logFilePathname)[0]
   try:
     os.makedirs(logFileDir)
   except OSError,x:
     if errno.EEXIST == x.errno: pass
     else: raise
-  f = open(me.config.logFilePathname,'w')
+  f = open(me.logFilePathname,'w')
   f.close()
-  fileLog = logging.FileHandler(me.config.logFilePathname, 'a')
+  fileLog = logging.FileHandler(me.logFilePathname, 'a')
   fileLog.setLevel(logging.DEBUG)
   fileLogFormatter = logging.Formatter('%(asctime)s %(levelname)s - %(message)s')
   fileLog.setFormatter(fileLogFormatter)
@@ -59,67 +61,14 @@ def setup_module():
   me.dsn = "host=%s dbname=%s user=%s password=%s" % (me.config.databaseHost,me.config.databaseName,
                                                       me.config.databaseUserName,me.config.databasePassword)
 
+def teardown_module():
+  try:
+    os.unlink(me.logFilePathname)
+  except:
+    pass
+
 # Create and destroy these tables for MTBF testing. Create in this order
 mtbfTables = ["mtbfconfig","mtbffacts","productdims",]
-fbtmTables = copy.copy(mtbfTables)
-fbtmTables.reverse() # probably not needed, but not wrong, and maybe good
-def createMtbfTables(cursor,config):
-  '''Create tables for MTBF testing. Starts with dropping them all, in case'''
-  global mtbfTables
-  # always work from clear deck:
-  dropMtbfTables(cursor)
-  createSqls = {
-    'mtbffacts': ["""CREATE TABLE mtbffacts (
-                  id serial NOT NULL PRIMARY KEY,
-                  avg_seconds integer NOT NULL,
-                  report_count integer NOT NULL,
-                  unique_users integer NOT NULL,
-                  day date,
-                  productdims_id integer
-                  )""",
-                  """CREATE INDEX mtbffacts_day_key ON mtbffacts USING btree (day)""",
-                  """CREATE INDEX mtbffacts_product_id_key ON mtbffacts USING btree (productdims_id)""",
-                  ],
-    'mtbfconfig': ["""CREATE TABLE mtbfconfig (
-                     id serial NOT NULL PRIMARY KEY,
-                     productdims_id integer,
-                     start_dt date,
-                     end_dt date
-                     )""",
-                   """CREATE INDEX mtbfconfig_end_dt_key ON mtbfconfig USING btree (end_dt)""",
-                   """CREATE INDEX mtbfconfig_start_dt_key ON mtbfconfig USING btree (start_dt)""",
-                   ],
-    'productdims': [""" CREATE TABLE productdims (
-                    id serial NOT NULL PRIMARY KEY,
-                    product character varying(30) NOT NULL,
-                    version character varying(16) NOT NULL,
-                    os_name character varying(100),
-                    release character varying(50) NOT NULL
-                    )""",
-                    """CREATE UNIQUE INDEX productdims_product_version_os_name_release_key ON productdims USING btree (product, version, release, os_name)""",
-                    # Foreign key constraints using this table id as FK
-                    """ALTER TABLE ONLY mtbfconfig
-                    ADD CONSTRAINT mtbfconfig_productdims_id_fkey FOREIGN KEY (productdims_id) REFERENCES productdims(id)""",
-                    """ALTER TABLE ONLY mtbffacts
-                    ADD CONSTRAINT mtbffacts_productdims_id_fkey FOREIGN KEY (productdims_id) REFERENCES productdims(id)"""
-                    ],
-    }
-  try:
-    for table in mtbfTables:
-      for sql in createSqls[table]:
-        cursor.execute(sql)
-    cursor.connection.commit()
-  except Exception,x:
-    print "PROBLEM",x # DEBUG
-    cursor.connection.rollback()
-    raise
-    
-def dropMtbfTables(cursor):
-  '''unilaterally drop the mtbf-exclusive tables'''
-  sql = "DROP TABLE IF EXISTS %s CASCADE"%(", ".join(fbtmTables))
-  cursor.execute(sql)
-  cursor.connection.commit()
-
 class TestMtbf(unittest.TestCase):
   def setUp(self):
     global me
@@ -138,25 +87,27 @@ class TestMtbf(unittest.TestCase):
     self.connection = psycopg2.connect(me.dsn)
     cursor = self.connection.cursor()
     self.testDB = TestDB()
-    dropMtbfTables(cursor)
+    dropCronTables(cursor,mtbfTables)
     self.testDB.removeDB(self.config,self.logger)
 
     self.testDB.createDB(self.config,self.logger)
-    createMtbfTables(cursor,self.config)
+    self.prods = ['zorro','vogel','lizz',]
+    self.oss = ['OSX','LOX','WOX',]
+    self.productDimData = [] # filled in by fillMtbfTables
+    createCronTables(cursor,mtbfTables)
     
   def tearDown(self):
-    dropMtbfTables(self.connection.cursor())
+    dropCronTables(self.connection.cursor(),mtbfTables)
     self.testDB.removeDB(self.config,self.logger)
+    self.logger.clear()
 
   def fillMtbfTables(self,cursor):
     """
     Need some data to test with. Here's where we make it out of whole cloth...
     """
     # (id),product,version,os,release : what product is it, by id
-    prods = ['zorro','vogel','lizz',]
-    oss = ['OSX','LOX','WOX',]
-    productDimData = [ [prods[p],'%s.1.%s'%(p,r), oss[o], 'beta-%s'%r] for p in range(2) for o in range(2) for r in range(1,4) ]
-    cursor.executemany('INSERT into productdims (product,version,os_name,release) values (%s,%s,%s,%s)',productDimData)
+    self.productDimData = [ [self.prods[p],'%s.1.%s'%(p,r), self.oss[o], 'beta-%s'%r] for p in range(2) for o in range(2) for r in range(1,4) ]
+    cursor.executemany('INSERT into productdims (product,version,os_name,release) values (%s,%s,%s,%s)',self.productDimData)
     cursor.connection.commit()
     cursor.execute("SELECT id, product,version, os_name, release from productdims")
     productDimData = cursor.fetchall()
@@ -173,64 +124,141 @@ class TestMtbf(unittest.TestCase):
     # processing days are located at and beyond the extremes of the full range, and
     # at some interior points, midway between each pair of interior points
     # layout is: (a date, the day-offset from baseDate, the expected resulting [ids])
-    self.processingDays = [
-      (self.baseDate + dt.timedelta(days=-1), -1, []),
-      (self.baseDate + dt.timedelta(days= 0),  0, [1,4]),
-      (self.baseDate + dt.timedelta(days= 5),  5, [1,4]),
-      (self.baseDate + dt.timedelta(days=10), 10, [1,2,4,5,7,10]),
-      (self.baseDate + dt.timedelta(days=15), 15, [1,2,4,5,7,10]),
-      (self.baseDate + dt.timedelta(days=25), 25, [1,2,3,4,5,6,7,8,10,11]),
-      (self.baseDate + dt.timedelta(days=35), 35, [2,3,5,6,7,8,9,10,11,12]),
-      (self.baseDate + dt.timedelta(days=45), 45, [3,6,8,9,11,12]),
-      (self.baseDate + dt.timedelta(days=55), 55, [9,12]),
-      (self.baseDate + dt.timedelta(days=60), 60, [9,12]),
-      (self.baseDate + dt.timedelta(days=61), 61, []),
-    ]
-
+    PDindexes = [-1,0,5,10,15,25,35,45,55,60,61]
+    productsInProcessingDay = [
+      [], #  -1,
+      [1,4],#  0,
+      [1,4],#  5,
+      [1,2,4,5,7,10],#  10,
+      [1,2,4,5,7,10],#  15,
+      [1,2,3,4,5,6,7,8,10,11],#  25,
+      [2,3,5,6,7,8,9,10,11,12],#  35,
+      [3,6,8,9,11,12],#  45,
+      [9,12],#  55,
+      [9,12],#  60,
+      [],#  61,
+      ]
+    self.processingDays = [ (self.baseDate+dt.timedelta(days=PDindexes[x]),PDindexes[x],productsInProcessingDay[x]) for x in range(len(PDindexes))]
+    
     # (id), productdims_id, start_dt, end_dt : Date-interval when product is interesting
     configData =[ (x[0],self.intervals[x[2]][0],self.intervals[x[2]][1] ) for x in productDimData ]
     cursor.executemany('insert into mtbfconfig (productdims_id,start_dt,end_dt) values(%s,%s,%s)',configData)
     cursor.connection.commit()
 
+    self.expectedFacts = {
+      # key is offset from baseDate
+      # value is array of (productDims_id,day,avg_seconds,report_count,count(distinct(user))
+      # This data WAS NOT CALCULATED BY HAND: The test was run once with prints in place
+      # and that output was encoded here. As of 2009-Feb, count of unique users is always 0
+      -1: [],
+      0: [
+      (1, dt.date(2008,1,1), 5, 6, 0),
+      (4, dt.date(2008,1,1), 20, 6, 0),
+      ],
+      5: [
+      (1, dt.date(2008,1,6), 5, 6, 0),
+      (4, dt.date(2008,1,6), 20, 6, 0),
+      ],
+      10: [
+      (1, dt.date(2008,1,11), 5, 6, 0),
+      (2, dt.date(2008,1,11), 10, 6, 0),
+      (4, dt.date(2008,1,11), 20, 6, 0),
+      (5, dt.date(2008,1,11), 25, 6, 0),
+      (7, dt.date(2008,1,11), 35, 6, 0),
+      (10, dt.date(2008,1,11), 50, 6, 0),
+      ],
+      15: [
+      (1, dt.date(2008,1,16), 5, 6, 0),
+      (2, dt.date(2008,1,16), 10, 6, 0),
+      (4, dt.date(2008,1,16), 20, 6, 0),
+      (5, dt.date(2008,1,16), 25, 6, 0),
+      (7, dt.date(2008,1,16), 35, 6, 0),
+      (10, dt.date(2008,1,16), 50, 6, 0),
+      ],
+      25: [
+      (1, dt.date(2008,1,26), 5, 6, 0),
+      (2, dt.date(2008,1,26), 10, 6, 0),
+      (3, dt.date(2008,1,26), 15, 6, 0),
+      (4, dt.date(2008,1,26), 20, 6, 0),
+      (5, dt.date(2008,1,26), 25, 6, 0),
+      (6, dt.date(2008,1,26), 30, 6, 0),
+      (7, dt.date(2008,1,26), 35, 6, 0),
+      (8, dt.date(2008,1,26), 40, 6, 0),
+      (10, dt.date(2008,1,26), 50, 6, 0),
+      (11, dt.date(2008,1,26), 55, 6, 0),
+      ],
+      35: [
+      (2, dt.date(2008,2,5), 10, 6, 0),
+      (3, dt.date(2008,2,5), 15, 6, 0),
+      (5, dt.date(2008,2,5), 25, 6, 0),
+      (6, dt.date(2008,2,5), 30, 6, 0),
+      (7, dt.date(2008,2,5), 35, 6, 0),
+      (8, dt.date(2008,2,5), 40, 6, 0),
+      (9, dt.date(2008,2,5), 45, 6, 0),
+      (10, dt.date(2008,2,5), 50, 6, 0),
+      (11, dt.date(2008,2,5), 55, 6, 0),
+      (12, dt.date(2008,2,5), 60, 6, 0),
+      ],
+      45: [
+      (3, dt.date(2008,2,15), 15, 6, 0),
+      (6, dt.date(2008,2,15), 30, 6, 0),
+      (8, dt.date(2008,2,15), 40, 6, 0),
+      (9, dt.date(2008,2,15), 45, 6, 0),
+      (11, dt.date(2008,2,15), 55, 6, 0),
+      (12, dt.date(2008,2,15), 60, 6, 0),
+      ],
+      55: [
+      (9, dt.date(2008,2,25), 45, 6, 0),
+      (12, dt.date(2008,2,25), 60, 6, 0),
+      ],
+      60: [
+      (9, dt.date(2008,3,1), 45, 6, 0),
+      (12, dt.date(2008,3,1), 60, 6, 0),
+      ],
+      61: [],
+      }
+
   def fillReports(self,cursor):
     """fill enough data to test mtbf behavior:
        - AVG(uptime); COUNT(date_processed); COUNT(DISTINCT(user_id))
     """
-    sql = 'insert into reports (uuid, uptime, date_processed) values(%s, %s,%s)'
-    processTimes = ['00:00:00','10:00:00','20:00:00','23:59:59']
-    uptimes =  [0,10,100,150,200,450,500,700,900,1000,4000,]
-    upIdx = 0
+    self.fillMtbfTables(cursor) # prime the pump
+    sql = 'insert into reports (uuid, uptime, date_processed,product,version,os_name) values(%s,%s,%s,%s,%s,%s)'
+    processTimes = ['00:00:00','05:00:00','10:00:00','15:00:00','20:00:00','23:59:59']
+    uptimes = [5*x for x in range(1,15)]
     data = []
     uuidGen = dbtestutil.moreUuid()
-    for d,off,ig in self.processingDays:
-      for loop in range(7+upIdx%3+upIdx%5):
-        pt = processTimes[upIdx%len(processTimes)]
-        dp = "%s %s"%(d.isoformat(),pt)
-        data.append((uuidGen.next(), uptimes[upIdx%len(uptimes)],dp))
-        upIdx += 1
+    uptimeIndex = 0
+    for product in self.productDimData:
+      uptime = uptimes[uptimeIndex%len(uptimes)]
+      uptimeIndex += 1
+      for d,off,ig in self.processingDays:
+        for pt in processTimes:
+          dp = "%s %s"%(d.isoformat(),pt)
+          tup = (uuidGen.next(), uptime,dp,product[0],product[1],product[2])
+          data.append(tup)
     cursor.executemany(sql,data)
     cursor.connection.commit()
 
   # ========================================================================== #  
   def testCalculateMtbf(self):
+    """
+    testCalculateMtbf(self): slow(1)
+      check that we get the expected data. This is NOT hand-calculated, just a regression check
+    """
     cursor = self.connection.cursor()
-    self.fillMtbfTables(cursor)
     self.fillReports(cursor)
-    sql = 'select * from mtbffacts'
-    cursor.execute(sql)
-    print "\nPRE",cursor.fetchall()
+    sql = 'select productdims_id,day,avg_seconds,report_count,unique_users from mtbffacts WHERE day = %s'
     self.connection.commit()
     for pd in self.processingDays:
       self.config.processingDay = pd[0].isoformat()
-      products = mtbf.getProductsToUpdate(cursor,self.config,self.logger)
-      print "PD %s (%s) %s"%((pd[0]),pd[1],len(products)),["%s:%s"%(x.dimensionId,x.product) for x in products]
       mtbf.calculateMtbf(self.config, self.logger)
-      cursor.execute(sql)
+      cursor.execute(sql,(pd[0].isoformat(),))
       data = cursor.fetchall()
       self.connection.commit()
-      print 'INDEX %s, Length: %s'%(pd[1],len(data))
-      for d in data:
-        print "FACT",d
+      expected = set(self.expectedFacts[pd[1]])
+      got = set(data)
+      assert expected==got, 'Expected: %s\nGot: %s'%(expected,got)
     #end of loop through processingDay
   
   # ========================================================================== #  

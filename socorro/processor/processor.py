@@ -366,9 +366,9 @@ class Processor(object):
     This iterator is perpetual - it never raises the StopIteration exception
     """
     deleteOnePriorityJobSql = "delete from %s where uuid = %%s" % self.priorityJobsTableName
-    priorityJobsList = []
+    fullJobsList = []
     while True:
-      if not priorityJobsList:
+      if not fullJobsList:
         databaseCursor.execute("""select
                                       j.id,
                                       pj.uuid,

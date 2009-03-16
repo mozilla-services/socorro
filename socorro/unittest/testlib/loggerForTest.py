@@ -41,8 +41,7 @@ class TestingLogger:
     self.log(logging.FATAL,message, *args)
 
   def __str__(self):
-    return "\n".join( ("%-8s(%2d): %s"%(self.levelcode[self.levels[i]],self.levels[i],self.buffer[i]) for i in range(len(self.levels))) )
-    #return 'levels: %s\nbuffer: %s'%(self.levels,self.buffer)
+    return "\n".join( (self.formatOne(i) for i in range(len(self)))  )
 
   def __len__(self):
     return self.buffer.__len__()
