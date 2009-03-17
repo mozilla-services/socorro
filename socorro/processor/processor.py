@@ -662,7 +662,7 @@ class Processor(object):
         raise DuplicateEntryException(uuid)
       threadLocalCursor.execute("delete from reports where uuid = '%s' and date_processed = timestamp without time zone '%s'" % (uuid, date_processed))
       processorErrorMessages.append("INFO: This record is a replacement for a previous record with the same uuid")
-      self.reportsTable.insert(threadLocalCursor, newReportsRowTuple)
+      self.reportsTable.insert(threadLocalCursor, newReportsRowTuple, self.databaseConnectionPool.connectToDatabase, date_processed=date_processed)
     reportId = psy.singleValueSql(threadLocalCursor, "select id from reports where uuid = '%s' and date_processed = timestamp without time zone '%s'" % (uuid, date_processed))
     return reportId
 
