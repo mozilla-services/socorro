@@ -194,10 +194,10 @@ class Monitor (object):
         except (jds.NoSuchUuidFound, UuidNotFoundException):
           logger.warning("%s - %s wasn't found for cleanup.", threading.currentThread().getName(), uuid)
         except OSError, x:
-          if str(x) == '[Errno 17] File exists':
-            socorro.lib.util.reportExceptionAndContinue(logger)
-          else:
-            raise
+          #if str(x) == '[Errno 17] File exists':
+          socorro.lib.util.reportExceptionAndContinue(logger)
+          #else:
+          #  raise
         databaseCursor.execute("delete from jobs where id = %s", (jobId,))
         databaseConnection.commit()
     except Exception, x:
@@ -212,7 +212,7 @@ class Monitor (object):
     """
     logger.info("%s - looking for dead processors", threading.currentThread().getName())
     try:
-      threshold = psy.singleValueSql(aCursor, "select now() - interval '%s'" % self.config.processorCheckInTime)
+      threshold = psy.singleValueSql(aCursor, "select now() - interval '%s' * 2" % self.config.processorCheckInTime)
       #sql = "select id from processors where lastSeenDateTime < '%s'" % (threshold,)
       #logger.info("%s - dead processors sql: %s", threading.currentThread().getName(), sql)
       aCursor.execute("select id from processors where lastSeenDateTime < '%s'" % (threshold,))
@@ -231,22 +231,39 @@ class Monitor (object):
           raise Monitor.NoProcessorsRegisteredException("There are no processors registered")
         numberOfLiveProcessors = len(liveProcessors)
         logger.info("%s - getting range of queued date for jobs associated with dead processor(s):", threading.currentThread().getName())
-        aCursor.execute("select min(queueddatetime), max(queueddatetime) from jobs where owner in (%s) and success is NULL" % stringOfDeadProcessorIds)
+        aCursor.execute("select min(queueddatetime), max(queueddatetime) from jobs where owner in (%s)" % stringOfDeadProcessorIds)
         earliestDeadJob, latestDeadJob = aCursor.fetchall()[0]
-        timeIncrement = (latestDeadJob - earliestDeadJob) / numberOfLiveProcessors
-        for x, liveProcessorId in enumerate(liveProcessors):
-          lowQueuedTime = x * timeIncrement + earliestDeadJob
-          highQueuedTime = (x + 1) * timeIncrement + earliestDeadJob
-          logger.info("%s - assigning jobs from %s to %s to processor %s:", threading.currentThread().getName(), str(lowQueuedTime), str(highQueuedTime), liveProcessorId)
-          # why is the range >= at both ends? the range must be inclusive, the risk of moving a job twice is low and consequences low, too.
-          aCursor.execute("""update jobs
-                                set owner = %%s
-                             where
-                                %%s >= queueddatetime
-                                and queueddatetime >= %%s
-                                and owner in (%s)
-                                and success is NULL""" % stringOfDeadProcessorIds, (liveProcessorId, highQueuedTime, lowQueuedTime))
-          aCursor.connection.commit()
+        if earliestDeadJob is not None and latestDeadJob is not None:
+          timeIncrement = (latestDeadJob - earliestDeadJob) / numberOfLiveProcessors
+          for x, liveProcessorId in enumerate(liveProcessors):
+            lowQueuedTime = x * timeIncrement + earliestDeadJob
+            highQueuedTime = (x + 1) * timeIncrement + earliestDeadJob
+            logger.info("%s - assigning jobs from %s to %s to processor %s:", threading.currentThread().getName(), str(lowQueuedTime), str(highQueuedTime), liveProcessorId)
+            # why is the range >= at both ends? the range must be inclusive, the risk of moving a job twice is low and consequences low, too.
+            # 1st step: take any jobs of a dead processor that were in progress and reset them to unprocessed
+            aCursor.execute("""update jobs
+                                  set starteddatetime = NULL
+                               where
+                                  %%s >= queueddatetime
+                                  and queueddatetime >= %%s
+                                  and owner in (%s)
+                                  and success is NULL""" % stringOfDeadProcessorIds, (highQueuedTime, lowQueuedTime))
+            # 2nd step: take all jobs of a dead processor and give them to a new owner
+            aCursor.execute("""update jobs
+                                  set owner = %%s
+                               where
+                                  %%s >= queueddatetime
+                                  and queueddatetime >= %%s
+                                  and owner in (%s)""" % stringOfDeadProcessorIds, (liveProcessorId, highQueuedTime, lowQueuedTime))
+            aCursor.connection.commit()
+        #3rd step - transfer stalled priority jobs to new processor
+        for deadProcessorTuple in deadProcessors:
+          logger.info("%s - re-assigning priority jobs from processor %d:", threading.currentThread().getName(), deadProcessorTuple[0])
+          try:
+            aCursor.execute("""insert into priorityjobs (uuid) select uuid from priority_jobs_%d""" % deadProcessorTuple)
+            aCursor.connection.commit()
+          except:
+            aCursor.connection.rollback()
         logger.info("%s - removing all dead processors", threading.currentThread().getName())
         aCursor.execute("delete from processors where lastSeenDateTime < '%s'" % threshold)
         aCursor.connection.commit()
@@ -418,7 +435,7 @@ class Monitor (object):
       self.quitCheck()
       try:
         prexistingJobOwner = psy.singleValueSql(databaseCursor, "select owner from jobs where uuid = '%s'" % uuid)
-        logger.info("%s - priority job %s was already in the queue, assigned to %d - raising its priority", threading.currentThread().getName(), uuid, prexistingJobOwner)
+        logger.info("%s - priority job %s was already in the queue, assigned to %d", threading.currentThread().getName(), uuid, prexistingJobOwner)
         try:
           databaseCursor.execute("insert into priority_jobs_%d (uuid) values ('%s')" % (prexistingJobOwner, uuid))
         except psycopg2.ProgrammingError:
@@ -429,7 +446,6 @@ class Monitor (object):
           databaseCursor.connection.rollback()
           setOfPriorityUuids.remove(uuid)
           continue
-        databaseCursor.execute("update jobs set priority = priority + 1 where uuid = %s", (uuid,))
         databaseCursor.execute("delete from priorityjobs where uuid = %s", (uuid,))
         databaseCursor.connection.commit()
         setOfPriorityUuids.remove(uuid)
