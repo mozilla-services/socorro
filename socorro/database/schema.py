@@ -50,7 +50,6 @@ def nextWeekIterator(now=None):
 def emptyFunction():
   return ''
 
-
 #=================================================================================================================
 class PartitionControlParameterRequired(Exception):
   def __init__(self):
@@ -117,19 +116,19 @@ class PartitionedTable(Table):
       partitionName = self.partitionNameTemplate % partitionCreationParameters["partitionName"]
       partitionCreationSql = self.partitionCreationSqlTemplate % partitionCreationParameters
       aPartition = Table(name=partitionName, logger=self.logger, creationSql=partitionCreationSql)
-      #self.logger.debug("%s - savepoint createPartitions_%s",threading.currentThread().getName(), partitionName)
-      #databaseCursor.execute("savepoint createPartitions_%s" % partitionName)
+      self.logger.debug("%s - savepoint createPartitions_%s",threading.currentThread().getName(), partitionName)
+      databaseCursor.execute("savepoint createPartitions_%s" % partitionName)
       try:
         self.logger.debug("%s - creating %s", threading.currentThread().getName(), partitionName)
         aPartition.create(databaseCursor)
-        databaseCursor.connection.commit()
+        #databaseCursor.connection.commit()
         self.logger.debug("%s - successful - releasing savepoint", threading.currentThread().getName())
-        #databaseCursor.execute("release savepoint createPartitions_%s" % partitionName)
+        databaseCursor.execute("release savepoint createPartitions_%s" % partitionName)
       except pg.ProgrammingError, x:
         self.logger.debug("%s -- creating %s failed in createPartitions: %s", threading.currentThread().getName(), partitionName, x)
-        databaseCursor.connection.rollback()
-        #self.logger.debug("%s - rolling back and releasing save points", threading.currentThread().getName())
-        #databaseCursor.execute("rollback to createPartitions_%s; release savepoint createPartitions_%s;" % (partitionName, partitionName))
+        #databaseCursor.connection.rollback()
+        self.logger.debug("%s - rolling back and releasing save points", threading.currentThread().getName())
+        databaseCursor.execute("rollback to createPartitions_%s; release savepoint createPartitions_%s;" % (partitionName, partitionName))
   #-----------------------------------------------------------------------------------------------------------------
   def partitionCreationParameters(self):
     """must return a dictionary of string substitution parameters"""
@@ -181,7 +180,9 @@ class PartitionedTable(Table):
             self.partitionCreationHistory.add(partitionName)
             self.logger.debug("%s - trying to create %s", threading.currentThread().getName(), partitionName)
             altConnection, altCursor = alternateCursorFunction()
+            self.logger.debug("%s - dependents(%d): %s", threading.currentThread().getName(), len(self.dependentDatabaseObjectsList), str([x.name for x in self.dependentDatabaseObjectsList]))
             for aDatabaseObject in self.dependentDatabaseObjectsList:
+              self.logger.debug("%s - trying to partition for %s", threading.currentThread().getName(), aDatabaseObject.name)
               aDatabaseObject.createPartitions(altCursor, dateIterator)
             self.logger.debug("%s - committing creation of %s", threading.currentThread().getName(), partitionName)
             altConnection.commit()
@@ -520,6 +521,7 @@ class ReportsTable(PartitionedTable):
                                           CREATE INDEX %(partitionName)s_signature_date_processed_key ON %(partitionName)s (signature, date_processed);
                                           """
                                       )
+    #self.setDependents([FramesTable(logger=logger), DumpsTable(logger=logger), ExtensionsTable(logger=logger)])
     self.insertSql = """insert into TABLENAME
                             (uuid, client_crash_date, date_processed, product, version, build, url, install_age, last_crash, uptime, email, build_date, user_id, user_comments, app_notes, distributor, distributor_version) values
                             (%s,   %s,                %s,             %s,      %s,      %s,    %s,  %s,          %s,         %s,     %s,    %s,         %s,      %s,            %s,        %s,          %s)"""
@@ -745,7 +747,7 @@ def teardownDatabase(config,logger):
   except:
     databaseConnection.rollback()
     socorro_util.reportExceptionAndContinue(logger)
-      
+
 #-----------------------------------------------------------------------------------------------------------------
 databaseObjectClassListForUpdate = [BranchesTable,
                                    ProcessorsTable,
