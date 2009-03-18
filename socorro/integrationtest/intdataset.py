@@ -72,9 +72,17 @@ class IntDataset:
 
   def createTables(self):
 # DETAIL:  exceptions.ImportError: No module named  socorro.database.server
-#    self.log.info("Creating tables using schema.py setupDatabase");
-#    schema.setupDatabase(self.configContext, self.log)
-    self.log.info("Creating tables");
+    self.log.info("Creating tables using schema.py setupDatabase");
+    schema.setupDatabase(self.configContext, self.log)
+    triggers = ["dumps", "dumps", " extensions", "frames", "reports"]
+    cur = self.conn.cursor()
+    for triggerName in triggers:
+      triggerFullName = "%s_insert_trigger" % triggerName
+      self.log.debug("dropping trigger %s ON %s" % (triggerFullName, triggerName))
+      cur.execute("DROP TRIGGER IF EXISTS %s ON %s;" % (triggerFullName, triggerName))
+    self.conn.commit()
+      
+    foo = """self.log.info("Creating tables");
     dbClasses.reverse()
     
     for klass in dbClasses:
@@ -88,7 +96,7 @@ class IntDataset:
       except Exception,x:
         self.log.error('Attempting %s: %s says %s'%(table.creationSql,type(x),x))
       self.conn.commit()
-    dbClasses.reverse()
+    dbClasses.reverse()"""
 
   def _loadTable(self, table):
     dataDir = None
@@ -113,7 +121,7 @@ class IntDataset:
       self.log.warn("Skipping %s no such file" % datafile)
 
   def loadTables(self):
-    dbClasses.reverse()
+    #dbClasses.reverse()
     self.cur = self.conn.cursor()
     #self.cur.execute("DROP TRIGGER dumps_insert_trigger ON dumps")
     #self.cur.execute("DROP TRIGGER extensions_insert_trigger ON extensions")
@@ -123,7 +131,7 @@ class IntDataset:
       table = klass(logger=self.log)
       self._loadTable(table.name)
     self.conn.commit()
-    dbClasses.reverse()
+    #dbClasses.reverse()
 
   def dump(self, dir):
     if not os.path.isdir( dir ):
