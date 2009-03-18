@@ -601,6 +601,160 @@ class ServerStatusTable(Table):
                                           """)
 
 #=================================================================================================================
+class SignatureDimsTable(Table):
+  #-----------------------------------------------------------------------------------------------------------------
+  def __init__ (self, logger, **kwargs):
+    super(Table, self).__init__(name='signaturedims', logger=logger,
+                                       creationSql="""
+                                          CREATE TABLE signaturedims (
+                                              id serial NOT NULL,
+                                              signature character varying(255) NOT NULL);
+                                          ALTER TABLE ONLY signaturedims
+                                              ADD CONSTRAINT signaturedims_pkey PRIMARY KEY (id);
+                                          CREATE UNIQUE INDEX signaturedims_signature_key ON signaturedims USING btree (signature);
+                                          """)
+
+#=================================================================================================================
+class TCByUrlConfigTable(Table):
+  #-----------------------------------------------------------------------------------------------------------------
+  def __init__ (self, logger, **kwargs):
+    super(Table, self).__init__(name='tcbyurlconfig', logger=logger,
+                                       creationSql="""
+                                          CREATE TABLE tcbyurlconfig (
+                                              id serial NOT NULL,
+                                              productdims_id integer,
+                                              enabled boolean);
+                                          ALTER TABLE ONLY tcbyurlconfig
+                                              ADD CONSTRAINT tcbyurlconfig_pkey PRIMARY KEY (id);
+                                          ALTER TABLE ONLY tcbyurlconfig
+                                              ADD CONSTRAINT tcbyurlconfig_productdims_id_fkey FOREIGN KEY (productdims_id) REFERENCES productdims(id);
+
+                                          """)
+
+#=================================================================================================================
+class MTBFConfig(Table):
+  #-----------------------------------------------------------------------------------------------------------------
+  def __init__ (self, logger, **kwargs):
+    super(Table, self).__init__(name='mtbfconfig', logger=logger,
+                                       creationSql="""
+                                          CREATE TABLE mtbfconfig (
+                                              id serial NOT NULL,
+                                              productdims_id integer,
+                                              start_dt date,
+                                              end_dt date);
+                                          ALTER TABLE ONLY mtbfconfig
+                                              ADD CONSTRAINT mtbfconfig_pkey PRIMARY KEY (id);
+                                          CREATE INDEX mtbfconfig_end_dt_key ON mtbfconfig USING btree (end_dt);
+                                          CREATE INDEX mtbfconfig_start_dt_key ON mtbfconfig USING btree (start_dt);
+                                          CREATE INDEX mtbffacts_day_key ON mtbffacts USING btree (day);
+                                          CREATE INDEX mtbffacts_product_id_key ON mtbffacts USING btree (productdims_id);
+                                          ALTER TABLE ONLY mtbfconfig
+                                              ADD CONSTRAINT mtbfconfig_productdims_id_fkey FOREIGN KEY (productdims_id) REFERENCES productdims(id);
+                                          """)
+
+#=================================================================================================================
+class MTBFFacts(Table):
+  #-----------------------------------------------------------------------------------------------------------------
+  def __init__ (self, logger, **kwargs):
+    super(Table, self).__init__(name='mtbffacts', logger=logger,
+                                       creationSql="""
+                                          CREATE TABLE mtbffacts (
+                                              id serial NOT NULL,
+                                              avg_seconds integer NOT NULL,
+                                              report_count integer NOT NULL,
+                                              unique_users integer NOT NULL,
+                                              day date,
+                                              productdims_id integer);
+                                          ALTER TABLE ONLY mtbffacts
+                                              ADD CONSTRAINT mtbffacts_pkey PRIMARY KEY (id);
+                                          ALTER TABLE ONLY mtbffacts
+                                              ADD CONSTRAINT mtbffacts_productdims_id_fkey FOREIGN KEY (productdims_id) REFERENCES productdims(id);
+
+                                          """)
+
+#=================================================================================================================
+class ProductDimsTable(Table):
+  #-----------------------------------------------------------------------------------------------------------------
+  def __init__ (self, logger, **kwargs):
+    super(Table, self).__init__(name='productdims', logger=logger,
+                                       creationSql="""
+                                          CREATE TABLE productdims (
+                                              id serial NOT NULL,
+                                              product character varying(30) NOT NULL,
+                                              version character varying(16) NOT NULL,
+                                              os_name character varying(100),
+                                              release character varying(50) NOT NULL);                                          
+                                          ALTER TABLE ONLY productdims
+                                              ADD CONSTRAINT productdims_pkey PRIMARY KEY (id);
+                                          CREATE INDEX productdims_product_version_key ON productdims USING btree (product, version);
+                                          CREATE UNIQUE INDEX productdims_product_version_os_name_release_key ON productdims USING btree (product, version, release, os_name);
+
+                                          """)
+
+#=================================================================================================================
+class TopCrashUrlFactsTable(Table):
+  #-----------------------------------------------------------------------------------------------------------------
+  def __init__ (self, logger, **kwargs):
+    super(Table, self).__init__(name='topcrashurlfacts', logger=logger,
+                                       creationSql="""
+                                          CREATE TABLE topcrashurlfacts (
+                                              id serial NOT NULL,
+                                              count integer NOT NULL,
+                                              rank integer,
+                                              day date NOT NULL,
+                                              productdims_id integer,
+                                              urldims_id integer,
+                                              signaturedims_id integer
+                                          );
+                                          ALTER TABLE ONLY topcrashurlfacts
+                                              ADD CONSTRAINT topcrashurlfacts_pkey PRIMARY KEY (id);
+                                          CREATE INDEX topcrashurlfacts_count_key ON topcrashurlfacts USING btree (count);
+                                          CREATE INDEX topcrashurlfacts_day_key ON topcrashurlfacts USING btree (day);
+                                          CREATE INDEX topcrashurlfacts_productdims_key ON topcrashurlfacts USING btree (productdims_id);
+                                          CREATE INDEX topcrashurlfacts_signaturedims_key ON topcrashurlfacts USING btree (signaturedims_id);
+                                          CREATE INDEX topcrashurlfacts_urldims_key ON topcrashurlfacts USING btree (urldims_id);
+                                          ALTER TABLE ONLY topcrashurlfacts
+                                              ADD CONSTRAINT topcrashurlfacts_productdims_id_fkey FOREIGN KEY (productdims_id) REFERENCES productdims(id);
+                                          ALTER TABLE ONLY topcrashurlfacts
+                                              ADD CONSTRAINT topcrashurlfacts_signaturedims_id_fkey FOREIGN KEY (signaturedims_id) REFERENCES signaturedims(id);
+                                          ALTER TABLE ONLY topcrashurlfacts
+                                              ADD CONSTRAINT topcrashurlfacts_urldims_id_fkey FOREIGN KEY (urldims_id) REFERENCES urldims(id);
+                                          ALTER TABLE ONLY topcrashurlfactsreports
+                                              ADD CONSTRAINT topcrashurlfactsreports_topcrashurlfacts_id_fkey FOREIGN KEY (topcrashurlfacts_id) REFERENCES topcrashurlfacts(id) ON DELETE CASCADE;
+
+                                          """)
+
+#=================================================================================================================
+class UrlDimsTable(Table):
+  #-----------------------------------------------------------------------------------------------------------------
+  def __init__ (self, logger, **kwargs):
+    super(Table, self).__init__(name='urldims', logger=logger,
+                                       creationSql="""
+                                          CREATE TABLE urldims (
+                                              id serial NOT NULL,
+                                              domain character varying(255) NOT NULL,
+                                              url character varying(255) NOT NULL);                                   
+                                          ALTER TABLE ONLY urldims
+                                              ADD CONSTRAINT urldims_pkey PRIMARY KEY (id);
+                                          CREATE UNIQUE INDEX urldims_url_domain_key ON urldims USING btree (url, domain);
+                                          """)
+##=================================================================================================================
+class TopCrashUrlFactsReportsTable(Table):
+  #-----------------------------------------------------------------------------------------------------------------
+  def __init__ (self, logger, **kwargs):
+    super(Table, self).__init__(name='topcrashurlfactsreports', logger=logger,
+                                       creationSql="""
+                                          CREATE TABLE topcrashurlfactsreports (
+                                              id serial NOT NULL,
+                                              uuid character varying(50) NOT NULL,
+                                              comments character varying(500),
+                                              topcrashurlfacts_id integer);          
+                                          ALTER TABLE ONLY topcrashurlfactsreports
+                                              ADD CONSTRAINT topcrashurlfactsreports_pkey PRIMARY KEY (id);
+                                          CREATE INDEX topcrashurlfactsreports_topcrashurlfacts_id_key ON topcrashurlfactsreports USING btree (topcrashurlfacts_id);
+                                          """)
+
+##=================================================================================================================
 class TopCrashersTable(Table):
   #-----------------------------------------------------------------------------------------------------------------
   def __init__ (self, logger, **kwargs):
@@ -718,6 +872,14 @@ databaseObjectClassListForSetup = [BranchesTable,
                                    ExtensionsTable,
                                    ServerStatusTable,
                                    TopCrashersTable,
+                                   SignatureDimsTable,
+                                   ProductDimsTable,
+                                   UrlDimsTable,
+                                   MTBFFacts,
+                                   TopCrashUrlFactsTable,
+                                   TopCrashUrlFactsReportsTable,
+                                   TCByUrlConfigTable,
+                                   MTBFConfig
                                   ]
 
 #-----------------------------------------------------------------------------------------------------------------
@@ -759,6 +921,14 @@ databaseObjectClassListForUpdate = [BranchesTable,
                                    ExtensionsTable,
                                    ServerStatusTable,
                                    TopCrashersTable,
+                                   SignatureDimsTable,
+                                   ProductDimsTable,
+                                   UrlDimsTable,
+                                   MTBFFacts,
+                                   TopCrashUrlFactsTable,
+                                   TopCrashUrlFactsReportsTable,
+                                   TCByUrlConfigTable,
+                                   MTBFConfig
                                   ]
 #-----------------------------------------------------------------------------------------------------------------
 def updateDatabase(config, logger):
