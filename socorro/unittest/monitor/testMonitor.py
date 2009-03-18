@@ -89,7 +89,6 @@ def setup_module():
     if errno.EEXIST != x.errno: raise
   f = open(me.config.logFilePathname,'w')
   f.close()
-
   fileLog = logging.FileHandler(me.logFilePathname, 'a')
   fileLog.setLevel(logging.DEBUG)
   fileLogFormatter = logging.Formatter(me.config.logFileLineFormatString)
@@ -898,7 +897,6 @@ class TestMonitor:
     dbCon.commit()
     for uuid in priorityJobUuids:
       dbCur.execute(updateSql,(uuid,))
-
     self.markLog()
     m.lookForPriorityJobsAlreadyInQueue(dbCur,allUuids)
     self.markLog()
@@ -914,7 +912,6 @@ class TestMonitor:
     priCount = dbCur.fetchone()[0]
     assert 0 == priCount, 'Expect that all the priority jobs are removed, but found %s'%(priCount)
     countSql = "SELECT count(*) from priority_jobs_%s WHERE uuid = %%s;"
-    getPrioritySql = "SELECT priority from jobs WHERE uuid = %s"
     for uuid,procid in uuidToProcId.items():
       dbCur.execute(countSql%(procid),(uuid,))
       priCount = dbCur.fetchone()[0]
@@ -924,12 +921,6 @@ class TestMonitor:
         dbCur.execute(countSql%(badid),(uuid,))
         badCount = dbCur.fetchone()[0]
         assert 0 == badCount, 'Expect to find %s ONLY in other priority_jobs_NNN, found it in priority_jobs_%s'%(uuid,badid)
-      dbCur.execute(getPrioritySql,(uuid,))
-      priority = dbCur.fetchone()[0];
-      if (uuid,) in priorityJobUuids:
-        assert 2 == priority, 'Expect that priority for %s was bumped 1->2'%(uuid)
-      else:
-        assert 1 == priority, 'Expect that priority for %s was bumped 0->1'%(uuid)
     for uuid,procid in uuidToProcId.items():
       try:
         m.lookForPriorityJobsAlreadyInQueue(dbCur,(uuid,))

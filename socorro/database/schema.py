@@ -876,8 +876,8 @@ databaseObjectClassListForSetup = [BranchesTable,
                                    ProductDimsTable,
                                    UrlDimsTable,
                                    MTBFFacts,
-                                   TopCrashUrlFactsTable,
                                    TopCrashUrlFactsReportsTable,
+                                   TopCrashUrlFactsTable,
                                    TCByUrlConfigTable,
                                    MTBFConfig
                                   ]
