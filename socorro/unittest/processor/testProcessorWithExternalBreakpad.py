@@ -37,6 +37,7 @@ import socorro.lib.ConfigurationManager as configurationManager
 import socorro.lib.util as libutil
 import socorro.processor.externalProcessor as eProcessor
 import socorro.processor.processor as processor
+import socorro.database.schema as schema
 
 import socorro.unittest.testlib.createJsonDumpStore as createJDS
 import socorro.unittest.testlib.dbtestutil as dbtestutil
@@ -134,6 +135,7 @@ class TestProcessorWithExternalBreakpad:
     # create a useful database connection, and use it
     self.connection = psycopg2.connect(me.dsn)
     me.testDB.removeDB(me.config,me.logger)
+    schema.partitionCreationHistory = set() # an 'orrible 'ack
     me.testDB.createDB(me.config,me.logger)
 
   def tearDown(self):
@@ -378,7 +380,7 @@ class TestProcessorWithExternalBreakpad:
 
   def testAnalyzeFrames_Plain(self):
     """
-    TestProcessorWithExternalBreakpad.testAnalyzeFrames(self):
+    TestProcessorWithExternalBreakpad.testAnalyzeFrames_Plain(self):
       check that we get the expected cache, database entries with no messages for a 'plain jane' call
     """
     global me
@@ -436,7 +438,7 @@ class TestProcessorWithExternalBreakpad:
 
   def testAnalyzeFrames_WithBlankLine(self):
     """
-    TestProcessorWithExternalBreakpad.testAnalyzeFrames(self):
+    TestProcessorWithExternalBreakpad.testAnalyzeFrames_WithBlankLine(self):
       check that we get the expected cache, database entries with "unexpected blank line" message
     """
     global me
@@ -491,7 +493,7 @@ class TestProcessorWithExternalBreakpad:
 
   def testAnalyzeFrames_Long(self):
     """
-    TestProcessorWithExternalBreakpad.testAnalyzeFrames(self):
+    TestProcessorWithExternalBreakpad.testAnalyzeFrames_Long(self):
       check that we get the expected cache, database entries with secondary cache message for a 'long' set 
     """
     global me
@@ -553,7 +555,7 @@ class TestProcessorWithExternalBreakpad:
 
   def testAnalyzeFrames_WithThreadChange(self):
     """
-    TestProcessorWithExternalBreakpad.testAnalyzeFrames(self):
+    TestProcessorWithExternalBreakpad.testAnalyzeFrames_WithThreadChange(self):
       check that we get the expected cache, database entries with "unexpected blank line" message
     """
     global me
@@ -645,7 +647,6 @@ class TestProcessorWithExternalBreakpad:
     """
     global me
     p = TestProcessorWithExternalBreakpad.StubExternalProcessor(me.config)
-    p.returncode = 2
     con,cur = p.databaseConnectionPool.connectionCursorPair()
     data = dbtestutil.makeJobDetails({1:3})
     uuid0 = data[0][1]
@@ -676,6 +677,7 @@ class TestProcessorWithExternalBreakpad:
     ddata = cur.fetchall()
     con.commit()
     assert 0 == len(ddata) # just to be sure before we start.
+    p.returncode = 2
     assert_raises(processor.ErrorInBreakpadStackwalkException,p.doBreakpadStackDumpAnalysis,reportId,uuid0,dpath0,cur,now,messages)
     assert 4 == len(messages), 'Expected no header, no thread, no signature, no frame. But %s'%(str(messages))
     

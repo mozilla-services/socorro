@@ -13,7 +13,7 @@ import socorro.lib.ConfigurationManager as configurationManager
 
 import socorro.cron.mtbf as mtbf
 
-from createTables import createCronTables, dropCronTables
+#from createTables import createCronTables, dropCronTables
 import socorro.unittest.testlib.dbtestutil as dbtestutil
 from   socorro.unittest.testlib.loggerForTest import TestingLogger
 from   socorro.unittest.testlib.testDB import TestDB
@@ -67,14 +67,11 @@ def teardown_module():
   except:
     pass
 
-# Create and destroy these tables for MTBF testing. Create in this order
-mtbfTables = ["mtbfconfig","mtbffacts","productdims",]
 class TestMtbf(unittest.TestCase):
   def setUp(self):
     global me
     self.config = configurationManager.newConfiguration(configurationModule = testConfig, applicationName='Testing MTBF')
     
-    self.config.mtbfTables = ["mtbfconfig","mtbffacts","productdims",]
     myDir = os.path.split(__file__)[0]
     if not myDir: myDir = '.'
     replDict = {'testDir':'%s'%myDir}
@@ -87,17 +84,14 @@ class TestMtbf(unittest.TestCase):
     self.connection = psycopg2.connect(me.dsn)
     cursor = self.connection.cursor()
     self.testDB = TestDB()
-    dropCronTables(cursor,mtbfTables)
     self.testDB.removeDB(self.config,self.logger)
 
     self.testDB.createDB(self.config,self.logger)
     self.prods = ['zorro','vogel','lizz',]
     self.oss = ['OSX','LOX','WOX',]
     self.productDimData = [] # filled in by fillMtbfTables
-    createCronTables(cursor,mtbfTables)
     
   def tearDown(self):
-    dropCronTables(self.connection.cursor(),mtbfTables)
     self.testDB.removeDB(self.config,self.logger)
     self.logger.clear()
 
@@ -285,15 +279,15 @@ class TestMtbf(unittest.TestCase):
       else:
         # ignore the expected logging: It could change. Catch unexpected logging calls
         assert len(d[2])+2 == len(self.logger)
-        INF = 0
+        INFO = 0
         DBG = 0
         oth = 0
         for i in self.logger.levels:
-          if logging.INFO == i: INF += 1
+          if logging.INFO == i: INFO += 1
           elif logging.DEBUG == i: DBG += 1
           else: oth += 1
         # Don't care about DBG or INFO counts, except we expect no other
-        #assert len(d[2])+1 == INF, 'expected %d, but %s\n%s'%(len(d[2])+1,INF,str(self.logger))
+        #assert len(d[2])+1 == INFO, 'expected %d, but %s\n%s'%(len(d[2])+1,INFO,str(self.logger))
         #assert 1 == DBG
         assert 0 == oth
       pids = set([x.dimensionId for x in products])

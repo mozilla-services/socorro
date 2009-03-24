@@ -13,7 +13,8 @@ class FakeLogger(object):
                         logging.INFO: "INFO",
                         logging.WARNING: "WARNING",
                         logging.ERROR: "ERROR",
-                        logging.CRITICAL: "CRITICAL"
+                        logging.CRITICAL: "CRITICAL",
+                        logging.FATAL: "FATAL"
                       }
   def log(self,*x):
     try:
@@ -26,6 +27,7 @@ class FakeLogger(object):
   def warning(self,*x): self.log(logging.WARNING, *x)
   def error(self,*x): self.log(logging.ERROR, *x)
   def critical(self,*x): self.log(logging.CRITICAL, *x)
+  fatal = critical
 
 #=================================================================================================================
 class SilentFakeLogger(object):
@@ -35,6 +37,7 @@ class SilentFakeLogger(object):
   def warning(self,*x): pass
   def error(self,*x): pass
   def critical(self,*x): pass
+  def fatal(self,*x):pass
 
 #=================================================================================================================
 # logging routines

@@ -45,7 +45,7 @@ from nose.tools import *
 import socorro.lib.ConfigurationManager as configurationManager
 import socorro.lib.psycopghelper as psy
 import socorro.database.postgresql as db_postgresql
-import socorro.database.schema as sch
+import socorro.database.schema as schema
 
 import socorro.unittest.testlib.createJsonDumpStore as createJDS
 import socorro.unittest.testlib.dbtestutil as dbtestutil
@@ -153,6 +153,7 @@ class TestProcessor:
     self.connection = psycopg2.connect(me.dsn)
     # blow away any database stuff, in case we crashed on previous run
     me.testDB.removeDB(me.config,me.logger)
+    schema.partitionCreationHistory = set() # an 'orrible 'ack
     me.testDB.createDB(me.config,me.logger)
     # 0, 1,                2,             3,   4,      5,      6,    7,        8,  9,          10,        11,
     # id,client_crash_date,date_processed,uuid,product,version,build,signature,url,install_age,last_crash,uptime,
@@ -1142,7 +1143,7 @@ class TestProcessor:
     jsonDoc = {}
     messages = []
     now = dt.datetime.now()
-    
+
     p.insertReportIntoDatabase(cur,uuid,jsonDoc,path,now,messages)
     again = dt.datetime.now()
     assert 5 == len(messages)

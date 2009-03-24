@@ -1,11 +1,6 @@
-## Test config file for testMtbf
+## Test config file for database utilities
 import socorro.lib.ConfigurationManager as cm
 import datetime
-
-processingDay = cm.Option()
-processingDay.doc = 'Day to process in (YYYY-MM-DD) format'
-processingDay.default = (datetime.date.today() - datetime.timedelta(1)).isoformat() # yesterday
-processingDay.singleCharacter = 'd'
 
 databaseHost = cm.Option()
 databaseHost.doc = 'the hostname of the database servers'
@@ -25,5 +20,5 @@ databasePassword.default = 't3st'
 
 logFilePathname = cm.Option()
 logFilePathname.doc = 'full pathname for the log file'
-logFilePathname.default = '%(testDir)s/logs/mtbf_test.log'
+logFilePathname.default = '%(testDir)s/logs/db_test.log'
 

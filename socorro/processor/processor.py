@@ -109,7 +109,6 @@ class Processor(object):
     self.dumpsTable = sch.DumpsTable(logger=logger)
     self.extensionsTable = sch.ExtensionsTable(logger=logger)
     self.framesTable = sch.FramesTable(logger=logger)
-    self.reportsTable.setDependents([self.dumpsTable, self.extensionsTable, self.framesTable])
 
     logger.info("%s - connecting to database", threading.currentThread().getName())
     try:
@@ -635,7 +634,7 @@ class Processor(object):
     uptime = max(0, crash_time - startupTime)
     if crash_time == defaultCrashTime:
       logger.warning("%s - no 'crash_time' calculated in %s: Using date_processed", threading.currentThread().getName(), jobPathname)
-      socorro.lib.util.reportExceptionAndContinue(logger, logging.WARNING)
+      #socorro.lib.util.reportExceptionAndContinue(logger, logging.WARNING)
       processorErrorMessages.append("WARNING: No 'client_crash_date' could be determined from the Json file")
     build_date = None
     if buildID:
