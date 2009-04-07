@@ -8,48 +8,34 @@ import socorro.lib.psycopghelper as socorro_psy
 import socorro.database.postgresql as socorro_pg
 
 import socorro.lib.util as socorro_util
+"""
+Schema.py contains several utility functions and the code which describes all the database tables used by socorro. It has
+a test file: ../unittest/database/testSchema.py which MUST BE CHANGED IN PARALLEL to changes in schema.py. In particular,
+if you add, remove or rename any of the XxxTable classes in this file, you must make a parallel change to the list
+hardCodedSchemaClasses in the test file.
+"""
 
 #-----------------------------------------------------------------------------------------------------------------
-def iterateBetweenDatesGeneratorCreator(minDate, maxDate):
+def mondayPairsIteratorFactory(minDate, maxDate):
+  """
+  Given a pair of dates, creates iterator that returns (aMonday,theNextMonday) such that
+    - the first returned pair defines an interval holding minDate
+    - the last returned pair defines an interval holding maxDate
+  if minDate or maxDate are not instances of datetime.date, raises TypeError
+  if maxDate > minDate, raises ValueError
+  """
+  if not (isinstance(minDate,dt.date) and isinstance(maxDate,dt.date)):
+    raise TypeError("minDate and maxDate must be instances of datetime.date")
+  if maxDate < minDate:
+    raise ValueError("minDate must be <= maxDate")
   def anIterator():
     oneWeek = dt.timedelta(7)
-    beginWeekDay = minDate.weekday()
-    if beginWeekDay:
-      aDate = minDate - dt.timedelta(beginWeekDay) # begin on Monday before minDate
-    else:
-      aDate = minDate
+    aDate = minDate - dt.timedelta(minDate.weekday()) # begin on Monday before minDate
     while aDate <= maxDate:
       nextMonday = aDate + oneWeek
       yield (aDate, nextMonday)
       aDate = nextMonday
-  return anIterator
-
-#-----------------------------------------------------------------------------------------------------------------
-def nowIterator():
-  oneWeek = dt.timedelta(7)
-  now = dt.datetime.now()
-  nowWeekDay = now.weekday()
-  if nowWeekDay:
-    mondayDate = now - dt.timedelta(nowWeekDay) # nearest Monday before now
-  else:
-    mondayDate = now
-  yield (mondayDate, mondayDate + oneWeek)
-
-#-----------------------------------------------------------------------------------------------------------------
-def nextWeekIterator(now=None):
-  oneWeek = dt.timedelta(7)
-  if not now:
-    now = dt.datetime.now()
-  nowWeekDay = now.weekday()
-  if nowWeekDay:
-    nextMonday = now - dt.timedelta(nowWeekDay) + oneWeek
-  else:
-    nextMonday = now
-  yield (nextMonday, nextMonday + oneWeek)
-
-#-----------------------------------------------------------------------------------------------------------------
-def emptyFunction():
-  return ''
+  return anIterator()
 
 #-----------------------------------------------------------------------------------------------------------------
 # For each database TableClass below,
@@ -67,8 +53,7 @@ def getOrderedSetupList(whichTables = None):
 databaseDependenciesForPartition = {}
 def getOrderedPartitionList(whichTables):
   """
-  A helper function to get the correct order to create partition tables. Note that this is the
-  reverse of the expected order.
+  A helper function to get the needed PartionedTables for a given set of PartitionedTables
   """
   if not whichTables:
     return []
@@ -94,6 +79,23 @@ class PartitionControlParameterRequired(Exception):
 
 #=================================================================================================================
 class DatabaseObject(object):
+  """
+  Base class for all objects (Tables, Constraints, Indexes) that may be individually created and used in the database
+  Classes that inherit DatabaseObject:
+   - Must supply appropriate creationSql parameter to the superclass constructor
+   - May override method additionalCreationProcedure(self,aDatabaseCursor). If this is provided, it is
+     called after creationSql is executed in method create(self,aDatabaseCursor)
+     The cursor's connection is neither committed nor rolled back during the call to create
+   - May override methods which do nothing in this class:
+       = drop(self,aDatabaseCursor)
+       = updateDefinition(self,aDatabaseCursor)
+       = createPartitions(self,aDatabaseCursor,aPartitionDetailsIterator)
+   Every leaf class that inherits DatabaseObject should be aware of the module-level dictionary: databaseDependenciesForSetup.
+   If that leaf class should be created when the database is being set up, the class itself must be added as a key in the
+   databaseDependenciesForSetup dictionary. The value associated with that key is a possibly empty iterable containing the
+   classes on which the particular leaf class depends: Those that must already be created before the particular instance is
+   created. This is often because the particular table has one or more foreign keys referencing tables upon which it depends.
+   """
   #-----------------------------------------------------------------------------------------------------------------
   def __init__(self, name=None, logger=None, creationSql=None, **kwargs):
     super(DatabaseObject, self).__init__()
@@ -101,12 +103,25 @@ class DatabaseObject(object):
     self.creationSql = creationSql
     self.logger = logger
   #-----------------------------------------------------------------------------------------------------------------
-  def create(self, databaseCursor):
-    try:
-      databaseCursor.execute(self.creationSql)
-    except Exception,x:
-      self.logger.warning("%s - in create: %s", threading.currentThread().getName(),x)
+  def _createSelf(self,databaseCursor):
+    databaseCursor.execute(self.creationSql)
     self.additionalCreationProcedures(databaseCursor)
+  #-----------------------------------------------------------------------------------------------------------------
+  def create(self, databaseCursor):
+    orderedTableList = getOrderedSetupList([self.__class__])
+    for tableClass in orderedTableList:
+      tableObject = self
+      if not self.__class__ == tableClass:
+        tableObject = tableClass(logger = self.logger)
+      databaseCursor.execute("savepoint creating_%s"%tableObject.name)
+      try:
+        tableObject._createSelf(databaseCursor)
+        databaseCursor.execute("release savepoint creating_%s"%tableObject.name)
+      except pg.ProgrammingError,x:
+        databaseCursor.execute("rollback to creating_%s"%tableObject.name)
+        databaseCursor.connection.commit()
+        self.logger.debug("%s - in create for %s, table %s exists",threading.currentThread().getName(),self.name,tableObject.name)
+
   #-----------------------------------------------------------------------------------------------------------------
   def additionalCreationProcedures(self, databaseCursor):
     pass
@@ -122,6 +137,17 @@ class DatabaseObject(object):
 
 #=================================================================================================================
 class Table (DatabaseObject):
+  """
+  Base class for all Table objects that may be created and used in the database.
+  Classes that inherit DatabaseObject:
+   - Must supply appropriate creationSql parameter to the superclass constructor
+   - May override method insert(self,rowTuple, **kwargs) to do the right thing during an insert
+   - May provide method alterColumnDefinitions(self,aDatabaseCursor,tableName)
+   - May provide method updateDefinition(self,aDatabaseCursor)
+   - Must be aware of databaseDependenciesForSetup and how it is used
+  class Table inherits method create from DatabaseObject
+  class Table provides a reasonable implementation of method drop, overriding the empty one in DatabaseObject
+  """
   #-----------------------------------------------------------------------------------------------------------------
   def __init__(self, name=None, logger=None, creationSql=None, **kwargs):
     super(Table, self).__init__(name=name, logger=logger, creationSql=creationSql, **kwargs)
@@ -134,34 +160,59 @@ class Table (DatabaseObject):
 
 #=================================================================================================================
 class PartitionedTable(Table):
+  """
+  Base class for Tables that will be partitioned or are likely to be programmatically altered.
+  Classes that inherit PartitionedTable
+   - Must supply self.insertSql with 'TABLENAME' replacing the actual table name
+   - Must supply appropriate creationSql and partitionCreationSqlTemplate to the superclass constructor
+   - Should NOT override method insert, which does something special for PartitionedTables
+   - May override method partitionCreationParameters(self, partitionDetails) which returns a dictionary suitable for string formatting
+   
+   Every leaf class that inherits PartitionedTable should be aware of the module-level dictionary: databaseDependenciesForPartition
+   If that leaf class has a partition that depends upon some other partition, then it must be added as a key to the dictionary
+   databaseDependenciesForPartition. The value associated with that key is an iterable containing the classes that define the partitions
+   on which this particular leaf class depends: Those that must already be created before the particular instance is created. This is
+   most often because the particular partition table has one or more foreign keys referencing partition tables upon which it depends.
+  """
   #-----------------------------------------------------------------------------------------------------------------
-  def __init__ (self, name=None, logger=None, creationSql=None, partitionNameTemplate='%s', partitionCreationSqlTemplate='', partitionCreationIterablorCreator=nowIterator, **kwargs):
+  partitionCreationLock = threading.RLock()
+  def __init__ (self, name=None, logger=None, creationSql=None, partitionNameTemplate='%s', partitionCreationSqlTemplate='', weekInterval=None, **kwargs):
     super(PartitionedTable, self).__init__(name=name, logger=logger, creationSql=creationSql)
     self.partitionNameTemplate = partitionNameTemplate
     self.partitionCreationSqlTemplate = partitionCreationSqlTemplate
-    self.partitionCreationIterablorCreator = partitionCreationIterablorCreator
+    self.weekInterval = weekInterval
+    if not weekInterval:
+      today = dt.date.today()
+      self.weekInterval = mondayPairsIteratorFactory(today,today)
     self.insertSql = None
-    self.partitionCreationLock = threading.RLock()
 
   #-----------------------------------------------------------------------------------------------------------------
   #def additionalCreationProcedures(self, databaseCursor):
-    #self.createPartitions(databaseCursor, self.partitionCreationIterablorCreator)
+    #self.createPartitions(databaseCursor, self.weekInterval)
   #-----------------------------------------------------------------------------------------------------------------
-  def createPartitions(self, databaseCursor, iterator):
-    self.logger.debug("%s - in createPartitions", threading.currentThread().getName())
-    for x in iterator():
+  def _createOwnPartition(self, databaseCursor, uniqueItems):
+    """
+    Internal method that assumes all precursor partitions are already in place before creating this one. Called
+    from createPartitions(same parameters) to avoid bottomless recursion. Creates one or more partitions for
+    this particular table, (more if uniqueItems has more than one element)
+    side effect: Cursor's connection has been committed() by the time we return
+    """
+    self.logger.debug("%s - in createOwnPartition for %s",threading.currentThread().getName(),self.name)
+    for x in uniqueItems:
+      #self.logger.debug("DEBUG - item value is %s",x)
       partitionCreationParameters = self.partitionCreationParameters(x)
       partitionName = self.partitionNameTemplate % partitionCreationParameters["partitionName"]
       if partitionWasCreated(partitionName):
         #self.logger.debug("DEBUG - skipping creation of %s",partitionName)
         continue
       partitionCreationSql = self.partitionCreationSqlTemplate % partitionCreationParameters
+      #self.logger.debug("%s - Sql for %s is %s",threading.currentThread().getName(),self.name,partitionCreationSql)
       aPartition = Table(name=partitionName, logger=self.logger, creationSql=partitionCreationSql)
       self.logger.debug("%s - savepoint createPartitions_%s",threading.currentThread().getName(), partitionName)
       databaseCursor.execute("savepoint createPartitions_%s" % partitionName)
       try:
         self.logger.debug("%s - creating %s", threading.currentThread().getName(), partitionName)
-        aPartition.create(databaseCursor)
+        aPartition._createSelf(databaseCursor)
         markPartitionCreated(partitionName)
         self.logger.debug("%s - successful - releasing savepoint", threading.currentThread().getName())
         databaseCursor.execute("release savepoint createPartitions_%s" % partitionName)
@@ -169,9 +220,30 @@ class PartitionedTable(Table):
         self.logger.debug("%s -- Rolling back and releasing savepoint: Creating %s failed in createPartitions: %s", threading.currentThread().getName(), partitionName, str(x).strip())
         databaseCursor.execute("rollback to createPartitions_%s; release savepoint createPartitions_%s;" % (partitionName, partitionName))
       databaseCursor.connection.commit()
+    
   #-----------------------------------------------------------------------------------------------------------------
-  def partitionCreationParameters(self):
-    """must return a dictionary of string substitution parameters"""
+  def createPartitions(self, databaseCursor, iterator):
+    """
+    Create this table's partition(s) and all the precursor partition(s) needed to support this one
+    databaseCursor: as always
+    iterator: Supplies at least one unique identifier (a date). If more than one then more than one (family of)
+              partition(s) is created
+    side effects: The cursor's connection will be rolled back or committed by the end of this method
+    """
+    self.logger.debug("%s - in createPartitions", threading.currentThread().getName())
+    partitionTableClasses = getOrderedPartitionList([self.__class__])
+    #self.logger.debug("DEBUG - Classes are %s",partitionTableClasses)
+    uniqueItems = [x for x in iterator]
+    for tableClass in partitionTableClasses:
+      tableObject = self
+      if not self.__class__ == tableClass:
+        tableObject = tableClass(logger = self.logger)
+      #self.logger.debug("DEBUG - Handling %s /w/ sql %s",tableObject.name,tableObject.partitionCreationSqlTemplate)
+      tableObject._createOwnPartition(databaseCursor,uniqueItems)
+
+  #-----------------------------------------------------------------------------------------------------------------
+  def partitionCreationParameters(self,partitioningData):
+    """returns: a dictionary of string substitution parameters"""
     return {}
   #-----------------------------------------------------------------------------------------------------------------
   def updateColumnDefinitions(self, databaseCursor):
@@ -189,8 +261,7 @@ class PartitionedTable(Table):
       uniqueIdentifier = kwargs["date_processed"]
     except KeyError:
       raise PartitionControlParameterRequired()
-    dateIterator = iterateBetweenDatesGeneratorCreator(uniqueIdentifier, uniqueIdentifier)
-    dateRangeTuple = dateIterator().next()
+    dateRangeTuple = mondayPairsIteratorFactory(uniqueIdentifier, uniqueIdentifier).next()# create iterator and throw away
     partitionName = self.partitionCreationParameters(dateRangeTuple)["partitionName"]
     insertSql = self.insertSql.replace('TABLENAME', partitionName)
     try:
@@ -202,35 +273,19 @@ class PartitionedTable(Table):
       self.logger.debug('%s - Rolling back and releasing savepoint: failed: %s', threading.currentThread().getName(), str(x).strip())
       databaseCursor.execute("rollback to %s; release savepoint %s;" % (partitionName, partitionName))
       databaseCursor.connection.commit() # This line added after of hours of blood, sweat, tears. Remove only per deathwish.
+
+      altConnection, altCursor = alternateCursorFunction()
+      dateIterator = mondayPairsIteratorFactory(uniqueIdentifier, uniqueIdentifier)
       try:
-        self.logger.debug('%s - acquiring %s lock', threading.currentThread().getName(), self.name)
-        self.partitionCreationLock.acquire()
-        try:
-          if not partitionWasCreated(partitionName):
-            self.logger.debug('%s - need to create table for %s', threading.currentThread().getName(), partitionName)
-            self.logger.debug("%s - trying to create %s", threading.currentThread().getName(), partitionName)
-            altConnection, altCursor = alternateCursorFunction()
-            partitionTables = getOrderedPartitionList([self.__class__])
-            self.logger.debug("%s - dependents(%d): %s", threading.currentThread().getName(), len(partitionTables), [x.__name__ for x in partitionTables])
-            for aDatabaseObjectClass in partitionTables:
-              aDatabaseObject = aDatabaseObjectClass(logger=self.logger)
-              self.logger.debug("%s - trying to partition for %s", threading.currentThread().getName(), aDatabaseObject.name)
-              aDatabaseObject.createPartitions(altCursor, dateIterator)
-            self.logger.debug("%s - committing creation of %s", threading.currentThread().getName(), partitionName)
-            altConnection.commit()
-            self.logger.debug("%s - succeeded create %s for %s", threading.currentThread().getName(), partitionName, dateRangeTuple)
-        finally:
-          self.logger.debug('%s - releasing %s lock', threading.currentThread().getName(), self.name)
-          self.partitionCreationLock.release()
-      except pg.DatabaseError, x:
-        self.logger.debug("%s - the partition %s already exists - no need to create it: %s:%s", threading.currentThread().getName(), partitionName, type(x), x)
-        altConnection.rollback()
-        altConnection.close()
+        self.createPartitions(altCursor,dateIterator)
+      except pg.DatabaseError,x:
+        self.logger.debug("%s - Failed to create partition(s) %s: %s:%s", threading.currentThread().getName(), partitionName, type(x), x)
       self.logger.debug("%s - trying to insert into %s for the second time", threading.currentThread().getName(), self.name)
       databaseCursor.execute(insertSql, row)
 
-  #=================================================================================================================
+#=================================================================================================================
 class BranchesTable(Table):
+  """Define the table 'branches'"""
   #-----------------------------------------------------------------------------------------------------------------
   def __init__ (self, logger, **kwargs):
     super(BranchesTable, self).__init__(name="branches", logger=logger,
@@ -246,6 +301,7 @@ databaseDependenciesForSetup[BranchesTable] = []
 
 #=================================================================================================================
 class ReportsTable(PartitionedTable):
+  """Define the table 'reports'"""
   #-----------------------------------------------------------------------------------------------------------------
   def __init__ (self, logger, **kwargs):
     super(ReportsTable, self).__init__(name='reports', logger=logger,
@@ -361,6 +417,7 @@ databaseDependenciesForSetup[ReportsTable] = []
 
 #=================================================================================================================
 class DumpsTable(PartitionedTable):
+  """Define the table 'dumps'"""
   #-----------------------------------------------------------------------------------------------------------------
   def __init__ (self, logger, **kwargs):
     super(DumpsTable, self).__init__(name='dumps', logger=logger,
@@ -418,6 +475,7 @@ databaseDependenciesForPartition[DumpsTable] = [ReportsTable]
 
 #=================================================================================================================
 class ExtensionsTable(PartitionedTable):
+  """Define the table 'extensions'"""
   #-----------------------------------------------------------------------------------------------------------------
   def __init__ (self, logger, **kwargs):
     super(ExtensionsTable, self).__init__(name='extensions', logger=logger,
@@ -478,6 +536,7 @@ databaseDependenciesForSetup[ExtensionsTable] = []
 
 #=================================================================================================================
 class FramesTable(PartitionedTable):
+  """Define the table 'frames'"""
   #-----------------------------------------------------------------------------------------------------------------
   def __init__ (self, logger, **kwargs):
     super(FramesTable, self).__init__(name='frames', logger=logger,
@@ -538,6 +597,7 @@ databaseDependenciesForSetup[FramesTable] = []
 
 #=================================================================================================================
 class PriorityJobsTable(Table):
+  """Define the table 'priorityjobs'"""
   #-----------------------------------------------------------------------------------------------------------------
   def __init__ (self, name="priorityjobs", logger=None, **kwargs):
     super(PriorityJobsTable, self).__init__(name=name, logger=logger,
@@ -549,6 +609,7 @@ databaseDependenciesForSetup[PriorityJobsTable] = []
 
 #=================================================================================================================
 class ProcessorsTable(Table):
+  """Define the table 'processors'"""
   #-----------------------------------------------------------------------------------------------------------------
   def __init__ (self, logger, **kwargs):
     super(ProcessorsTable, self).__init__(name = "processors", logger=logger,
@@ -568,6 +629,7 @@ databaseDependenciesForSetup[ProcessorsTable] = []
 
 #=================================================================================================================
 class JobsTable(Table):
+  """Define the table 'jobs'"""
   #-----------------------------------------------------------------------------------------------------------------
   def __init__ (self, logger, **kwargs):
     super(JobsTable, self).__init__(name = "jobs",  logger=logger,
@@ -623,6 +685,7 @@ databaseDependenciesForSetup[JobsTable] = [ProcessorsTable]
 
 #=================================================================================================================
 class ServerStatusTable(Table):
+  """Define the table 'server_status'"""
   #-----------------------------------------------------------------------------------------------------------------
   def __init__ (self, logger, **kwargs):
     super(ServerStatusTable, self).__init__(name='server_status', logger=logger,
@@ -645,6 +708,7 @@ databaseDependenciesForSetup[ServerStatusTable] = []
 
 #=================================================================================================================
 class SignatureDimsTable(Table):
+  """Define the table 'signaturedims'"""
   #-----------------------------------------------------------------------------------------------------------------
   def __init__ (self, logger, **kwargs):
     super(Table, self).__init__(name='signaturedims', logger=logger,
@@ -660,6 +724,7 @@ databaseDependenciesForSetup[SignatureDimsTable] = []
 
 #=================================================================================================================
 class ProductDimsTable(Table):
+  """Define the table 'productdims'"""
   #-----------------------------------------------------------------------------------------------------------------
   def __init__ (self, logger, **kwargs):
     super(Table, self).__init__(name='productdims', logger=logger,
@@ -680,6 +745,7 @@ databaseDependenciesForSetup[ProductDimsTable] = []
 
 #=================================================================================================================
 class MTBFFactsTable(Table):
+  """Define the table 'mtbffacts'"""
   #-----------------------------------------------------------------------------------------------------------------
   def __init__ (self, logger, **kwargs):
     super(Table, self).__init__(name='mtbffacts', logger=logger,
@@ -702,6 +768,7 @@ databaseDependenciesForSetup[MTBFFactsTable] = [ProductDimsTable]
 
 #=================================================================================================================
 class MTBFConfigTable(Table):
+  """Define the table 'mtbfconfig'"""
   #-----------------------------------------------------------------------------------------------------------------
   def __init__ (self, logger, **kwargs):
     super(Table, self).__init__(name='mtbfconfig', logger=logger,
@@ -722,6 +789,7 @@ databaseDependenciesForSetup[MTBFConfigTable] = [ProductDimsTable]
 
 #=================================================================================================================
 class TCByUrlConfigTable(Table):
+  """Define the table 'tcbyurlconfig'"""
   #-----------------------------------------------------------------------------------------------------------------
   def __init__ (self, logger, **kwargs):
     super(Table, self).__init__(name='tcbyurlconfig', logger=logger,
@@ -740,6 +808,7 @@ databaseDependenciesForSetup[TCByUrlConfigTable] = [ProductDimsTable]
 
 #=================================================================================================================
 class UrlDimsTable(Table):
+  """Define the table 'urldims'"""
   #-----------------------------------------------------------------------------------------------------------------
   def __init__ (self, logger, **kwargs):
     super(Table, self).__init__(name='urldims', logger=logger,
@@ -756,6 +825,7 @@ databaseDependenciesForSetup[UrlDimsTable] = []
 
 #=================================================================================================================
 class TopCrashUrlFactsTable(Table):
+  """Define the table 'topcrashurlfacts'"""
   #-----------------------------------------------------------------------------------------------------------------
   def __init__ (self, logger, **kwargs):
     super(Table, self).__init__(name='topcrashurlfacts', logger=logger,
@@ -787,6 +857,7 @@ databaseDependenciesForSetup[TopCrashUrlFactsTable] = [ProductDimsTable,Signatur
 
 #=================================================================================================================
 class TopCrashUrlFactsReportsTable(Table):
+  """Define the table 'topcrashurlfactsreports'"""
   #-----------------------------------------------------------------------------------------------------------------
   def __init__ (self, logger, **kwargs):
     super(Table, self).__init__(name='topcrashurlfactsreports', logger=logger,
@@ -807,6 +878,7 @@ databaseDependenciesForSetup[TopCrashUrlFactsReportsTable] = [TopCrashUrlFactsTa
 
 #=================================================================================================================
 class TopCrashersTable(Table):
+  """Define the table 'topcrashers'"""
   #-----------------------------------------------------------------------------------------------------------------
   def __init__ (self, logger, **kwargs):
     super(TopCrashersTable, self).__init__(name='topcrashers', logger=logger,
@@ -917,18 +989,10 @@ def connectToDatabase(config, logger):
 def setupDatabase(config, logger):
   databaseConnection, databaseCursor = connectToDatabase(config, logger)
   try:
-    #try:
-      #databaseCursor.execute("CREATE LANGUAGE plpythonu")
-    #except:
-      #databaseConnection.rollback()
-    # The old way depends on getting order right by hand:
-    #for aDatabaseObjectClass in databaseObjectClassListForSetup:
-
-    # The new way allows programmer to provide dependencies in class code
     aList = getOrderedSetupList()
     for aDatabaseObjectClass in getOrderedSetupList():
       aDatabaseObject = aDatabaseObjectClass(logger=logger)
-      aDatabaseObject.create(databaseCursor)
+      aDatabaseObject._createSelf(databaseCursor)
     databaseConnection.commit()
   except:
     databaseConnection.rollback()
@@ -947,25 +1011,13 @@ def teardownDatabase(config,logger):
     socorro_util.reportExceptionAndContinue(logger)
 
 #-----------------------------------------------------------------------------------------------------------------
-databaseObjectClassListForUpdate = [BranchesTable,
-                                   ProcessorsTable,
-                                   JobsTable,
-                                   PriorityJobsTable,
-                                   ReportsTable,
-                                   DumpsTable,
-                                   FramesTable,
-                                   ExtensionsTable,
-                                   ServerStatusTable,
-                                   TopCrashersTable,
-                                   SignatureDimsTable,
-                                   ProductDimsTable,
-                                   UrlDimsTable,
-                                   MTBFFactsTable,
-                                   TopCrashUrlFactsTable,
-                                   TopCrashUrlFactsReportsTable,
-                                   TCByUrlConfigTable,
-                                   MTBFConfigTable
-                                  ]
+databaseObjectClassListForUpdate = [ReportsTable,
+                                    DumpsTable,
+                                    ExtensionsTable,
+                                    FramesTable,
+                                    ProcessorsTable,
+                                    JobsTable,
+                                    ]
 #-----------------------------------------------------------------------------------------------------------------
 def updateDatabase(config, logger):
   databaseConnection, databaseCursor = connectToDatabase(config, logger)
@@ -983,6 +1035,8 @@ def updateDatabase(config, logger):
     socorro_util.reportExceptionAndAbort(logger)
 
 #-----------------------------------------------------------------------------------------------------------------
+# list all the tables that should have weekly partitions pre-created. This is a subclass of all the PartitionedTables
+# since it may be that some PartitionedTables should not be pre-created.
 databaseObjectClassListForWeeklyPartitions = [ReportsTable,
                                               DumpsTable,
                                               FramesTable,
@@ -990,13 +1044,17 @@ databaseObjectClassListForWeeklyPartitions = [ReportsTable,
                                              ]
 #-----------------------------------------------------------------------------------------------------------------
 def createPartitions(config, logger):
+  """
+  Create a set of partitions for all the tables known to be efficient when they are created prior to being needed.
+  see the list databaseObjectClassListForWeeklyParitions above
+  """
   databaseConnection, databaseCursor = connectToDatabase(config, logger)
-  weekIterator = iterateBetweenDatesGeneratorCreator(config.startDate, config.endDate)
   try:
     for aDatabaseObjectClass in databaseObjectClassListForWeeklyPartitions:
+      weekIterator = mondayPairsIteratorFactory(config.startDate, config.endDate)
       aDatabaseObject = aDatabaseObjectClass(logger=logger)
       aDatabaseObject.createPartitions(databaseCursor, weekIterator)
-    databaseConnection.commit()
+      databaseConnection.commit()
   except:
     databaseConnection.rollback()
     socorro_util.reportExceptionAndAbort(logger)

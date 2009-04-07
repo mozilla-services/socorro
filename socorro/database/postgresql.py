@@ -71,7 +71,7 @@ def columnNameTypeDictionaryForTable (tableName, databaseCursor):
         pg_attribute.attname""" % tableName)
   namesToTypesDict = {}
   for aRow in databaseCursor.fetchall():
-    namesToTypesDict[aRow[0]] = aRow[0]
+    namesToTypesDict[aRow[0]] = aRow[1]
   return namesToTypesDict
 
 #-----------------------------------------------------------------------------------------------------------------
@@ -84,3 +84,14 @@ def childTablesForTable(tableName, databaseCursor):
           pg_class cls1 join pg_inherits inh on cls1.oid = inh.inhrelid
               join pg_class cls2 on inh.inhparent = cls2.oid and cls2.relname = '%s'""" % tableName)
   return [x[0] for x in databaseCursor.fetchall()]
+
+def connectionStatus(aConnection):
+  """Debugging aid. Particularly note transaction status of 'INTRANS' and 'INERROR'"""
+  statusStrings = {
+    0:'SETUP', 1:'READY', 2:'BEGIN', 3:'SYNC',4:'ASYNC',
+    }
+  transStatusStrings = {
+    0:'IDLE', 1:'ACTIVE', 2:'INTRANS', 3:'INERROR', 4:'UNKNOWN',
+    }
+  return "Status: %s, Transaction Status: %s"%(statusStrings.get(aConnection.status,'UNK'),transStatusStrings.get(aConnection.get_transaction_status(),"UNK"))
+  
