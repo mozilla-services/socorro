@@ -26,12 +26,14 @@ class ProcessedDumpStorage(object):
      - 'fileSuffix': The storage filename suffix. Default '.gmpgz'
      - 'gzipCompression': The level of compression to use. Default = 9
      - 'logger': A logger. Default: logging.getLogger('dumpStorage')
+     - 'storageDepth': the lenght of branches in the radix storage tree. Default = 2
     """
     super(ProcessedDumpStorage, self).__init__()
     self.root = root.rstrip(os.sep)
     self.rootName = kwargs.get('rootName','.')
     self.fileSuffix = kwargs.get('fileSuffix','.jsonz')
     self.gzipCompression = int(kwargs.get('gzipCompression',9))
+    self.storageDepth = int(kwargs.get('storageDepth',2))
     if not self.fileSuffix.startswith('.'):
       self.fileSuffix = ".%s" % (self.fileSuffix)
     self.storageBranch = os.path.join(self.root,self.rootName)
@@ -102,8 +104,9 @@ class ProcessedDumpStorage(object):
 
   def __dumpPath(self, uuid):
     """Return the path to the directory for this uuid"""
-    depth = socorro_ooid.depthFromOoid(uuid)
-    if not depth: depth = 4
+    # depth = socorro_ooid.depthFromOoid(uuid)
+    # if not depth: depth = 4
+    depth = self.storageDepth
     dirs = [self.storageBranch]
     dirs.extend([uuid[2*x:2*x+2] for x in range(depth)])
     return os.sep.join(dirs)

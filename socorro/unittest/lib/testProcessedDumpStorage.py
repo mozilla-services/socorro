@@ -46,6 +46,7 @@ class TestDmpStorage(unittest.TestCase):
       1:{'logger': fakeLogger,'fileSuffix':'DSgz',},
       2:{'logger': fakeLogger,'fileSuffix':'.DSgz',},
       3:{'logger': fakeLogger,'gzipCompression':'3',},
+      4:{'logger': fakeLogger,'storageDepth':'3',},
       }
 
     try:
@@ -65,6 +66,7 @@ class TestDmpStorage(unittest.TestCase):
     self.constructorAlt(self.testDir,**self.initKwargs[1])
     self.constructorAlt(self.testDir,**self.initKwargs[2])
     self.constructorAlt(self.testDir,**self.initKwargs[3])
+    self.constructorAlt(self.testDir,**self.initKwargs[4])
 
   def constructorAlt(self,*args,**kwargs):
     storage = dumpStorage.ProcessedDumpStorage(self.testDir,**kwargs)
@@ -76,21 +78,24 @@ class TestDmpStorage(unittest.TestCase):
     assert os.path.join(self.testDir,storage.rootName) == storage.storageBranch,'From kwargs=%s'%kwargs
     compression = int(kwargs.get('gzipCompression','9'))
     assert compression == storage.gzipCompression
+    storageDepth = int(kwargs.get('storageDepth',2))
+    assert storageDepth == storage.storageDepth,'Expected %s, got %s'%(storageDepth,storage.storageDepth)
 
   def testNewEntry(self):
     storage = dumpStorage.ProcessedDumpStorage(self.testDir,**self.initKwargs[0])
     for ooid,(ig0,ig1,pathprefix,ig2) in createJDS.jsonFileData.items():
+      pathprefix = os.sep.join(pathprefix.split('/')[:2]) # we are going to always use two for processedDumpStorage depth
       expectedDir = os.path.join(storage.storageBranch,pathprefix)
       expectedPath = os.path.join(expectedDir,"%s%s"%(ooid,storage.fileSuffix))
       fh = storage.newEntry(ooid)
       try:
-        assert expectedPath == fh.fileobj.name, 'Expected: %s, got: %s'%(expected,fh.name)
+        assert expectedPath == fh.fileobj.name, 'Expected: %s, got: %s'%(expectedPath,fh.name)
       finally:
         fh.close()
 
   def testPutDumpToFile(self):
     storage = dumpStorage.ProcessedDumpStorage(self.testDir,**self.initKwargs[2])
-    ooid = createJDS.jsonFileData.keys()[0]
+    ooid = createJDS.jsonFileData.keys()[12] # #12 is coded for depth 2 so we don't have to think
     pfx = createJDS.jsonFileData[ooid][2]
     expectedPath = os.sep.join([storage.storageBranch,pfx,ooid+storage.fileSuffix])
     assert not os.path.exists(expectedPath), 'Better not exist at start of test'
