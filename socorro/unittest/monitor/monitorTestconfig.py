@@ -1,21 +1,10 @@
 import socorro.lib.ConfigurationManager as cm
 import datetime
 
-databaseHost = cm.Option()
-databaseHost.doc = 'the hostname of the database servers'
-databaseHost.default = 'localhost'
-
-databaseName = cm.Option()
-databaseName.doc = 'the name of the database within the server'
-databaseName.default = 'test'
-
-databaseUserName = cm.Option()
-databaseUserName.doc = 'the user name for the database servers'
-databaseUserName.default = 'test'
-
-databasePassword = cm.Option()
-databasePassword.doc = 'the password for the database user'
-databasePassword.default = 't3st'
+from socorro.unittest.config.commonconfig import databaseHost
+from socorro.unittest.config.commonconfig import databaseName
+from socorro.unittest.config.commonconfig import databaseUserName
+from socorro.unittest.config.commonconfig import databasePassword
 
 storageRoot = cm.Option()
 storageRoot.doc = 'the root of the file system where dumps are found'
