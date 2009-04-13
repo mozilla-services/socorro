@@ -9,6 +9,10 @@ import threading
 from socorro.unittest.testlib.loggerForTest import TestingLogger
 from createDBforTest import *
 
+import socorro.lib.ConfigurationManager as cm
+import dbTestconfig as testConfig
+config = cm.newConfiguration(configurationModule = testConfig, applicationName='Testing Psycopghelper')
+
 """
 Assume that psycopg2 works, then all we need to do is assure ourselves
 that our simplistic wrap around a returned array is correct
@@ -40,7 +44,7 @@ class TestMultiCursor(psycopg2.extensions.cursor):
       return self.next.next()
     except:
       return None
-        
+
 class TestEmptyCursor(psycopg2.extensions.cursor):
   def __init__(self):
     self.result = []
@@ -48,7 +52,7 @@ class TestEmptyCursor(psycopg2.extensions.cursor):
     pass
   def fetchall(self):
     return self.result
-        
+
 class TestSingleCursor(psycopg2.extensions.cursor):
   def __init__(self):
     self.result = [['Row 0, Column 0']]
@@ -61,16 +65,16 @@ class TestSingleCursor(psycopg2.extensions.cursor):
 class TestPsycopghelper(unittest.TestCase):
   def setUp(self):
     self.logger = TestingLogger()
-    self.connectionData0 = ('localhost','test','test','t3st')
-    self.connectionDataL = ('localhost','test','test','t3st',self.logger)
+    self.connectionData0 = (config.databaseHost,config.databaseName,config.databaseUserName,config.databasePassword)
+    self.connectionDataL = (config.databaseHost,config.databaseName,config.databaseUserName,config.databasePassword,self.logger)
     self.dsn = "host=%s dbname=%s user=%s password=%s" % self.connectionData0
     self.connection = psycopg2.connect(self.dsn)
     createDB(self.connection)
-    
+
   def tearDown(self):
     dropDB(self.connection)
     self.connection.close()
-    
+
   def testExecute(self):
     aCursor = TestMultiCursor(numCols=1,numRows=3)
     f = ppghelper.execute(aCursor,"")
@@ -79,7 +83,7 @@ class TestPsycopghelper(unittest.TestCase):
     assert 'Row 0, Column 0' == vals[0][0]
     assert 'Row 2, Column 0' == vals[-1][0]
     aCursor = TestMultiCursor(numCols=1,numRows=1)
-  
+
   def testSingleValueEmpty(self):
     try:
       cur = TestEmptyCursor()
@@ -147,7 +151,7 @@ class TestPsycopghelper(unittest.TestCase):
   def testConnectionPoolConnectToDatabase(self):
     logger = self.logger
     logger.clear()
-    cp = ppghelper.DatabaseConnectionPool('localhost','test','test','t3st',logger)
+    cp = ppghelper.DatabaseConnectionPool(config.databaseHost,config.databaseName,config.databaseUserName,config.databasePassword,logger)
     logger.clear()
     try:
       connection,cursor = cp.connectToDatabase()
@@ -157,11 +161,11 @@ class TestPsycopghelper(unittest.TestCase):
       assert False, 'expected nothing, got %s: %s'%(type(x),x)
     assert logger.levels[0] == logging.INFO
     assert logger.buffer[0] == '%s - connecting to database' %threading.currentThread().getName()
- 
+
   def testConnectionPoolConnectionCursorPairNoTest(self):
     logger = self.logger
     logger.clear()
-    cp = ppghelper.DatabaseConnectionPool('localhost','test','test','t3st',logger)
+    cp = ppghelper.DatabaseConnectionPool(config.databaseHost,config.databaseName,config.databaseUserName,config.databasePassword,logger)
     connection0 = cursor0 = None
     try:
       connection0,cursor0 = cp.connectionCursorPairNoTest()
@@ -177,7 +181,7 @@ class TestPsycopghelper(unittest.TestCase):
   def testConnectionPoolConnectionCursorPair(self):
     logger = self.logger
     logger.clear()
-    cp = ppghelper.DatabaseConnectionPool('localhost','test','test','t3st',logger)
+    cp = ppghelper.DatabaseConnectionPool(config.databaseHost,config.databaseName,config.databaseUserName,config.databasePassword,logger)
     connection0 = cursor0 = None
     try:
       connection0,cursor0 = cp.connectionCursorPair()
@@ -189,19 +193,19 @@ class TestPsycopghelper(unittest.TestCase):
     assert 1 == len(logger.buffer) # only logged one actual connection attempt
     assert connection0 == connection1
     assert cursor0 == cursor1
-    
+
     logger.clear()
-    cp = ppghelper.DatabaseConnectionPool('localhost','test','test','t3st',logger)
+    cp = ppghelper.DatabaseConnectionPool(config.databaseHost,config.databaseName,config.databaseUserName,config.databasePassword,logger)
     connection0 = cursor0 = None
     try:
       connection0,cursor0 = cp.connectionCursorPair()
     except Exception,x:
       assert False, 'Expected OperationalError above, got %s: %s' %(type(x),x)
-      
+
   def testConnectionPoolCleanup(self):
     logger = self.logger
     logger.clear()
-    cp = ppghelper.DatabaseConnectionPool('localhost','test','test','t3st',logger)
+    cp = ppghelper.DatabaseConnectionPool(config.databaseHost,config.databaseName,config.databaseUserName,config.databasePassword,logger)
     conn,cur = cp.connectionCursorPairNoTest()
     logger.clear()
     cp.cleanup()
@@ -254,4 +258,4 @@ class TestPsycopghelper(unittest.TestCase):
 
 if __name__ == "__main__":
   unittest.main()
-  
+
