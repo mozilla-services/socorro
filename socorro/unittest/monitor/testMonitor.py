@@ -556,7 +556,7 @@ class TestMonitor:
     global me
     m = monitor.Monitor(me.config)
     dbCon,dbCur = m.getDatabaseConnectionPair()
-    stamp = dt.datetime.now() - dt.timedelta(minutes=10)
+    stamp = dbtestutil.datetimeNow(dbCur) - dt.timedelta(minutes=10)
     dbtestutil.fillProcessorTable(dbCur, 5, stamp=stamp)
     iter = m.unbalancedJobSchedulerIter(dbCur)
     assert_raises(SystemExit, iter.next)
@@ -569,7 +569,7 @@ class TestMonitor:
     global me
     m = monitor.Monitor(me.config)
     dbCon,dbCur = m.getDatabaseConnectionPair()
-    now = dt.datetime.now()
+    now = dbtestutil.datetimeNow(dbCur)
     then = now - dt.timedelta(minutes=10)
     dbtestutil.fillProcessorTable(dbCur, None, processorMap = {1:then,2:then,3:now,4:then,5:then })
     iter = m.unbalancedJobSchedulerIter(dbCur)
@@ -631,11 +631,12 @@ class TestMonitor:
     The default config asks for successful and failed jobs to be saved
     """
     global me
-    dbtestutil.fillProcessorTable(self.connection.cursor(),4)
+    cursor = self.connection.cursor()
+    dbtestutil.fillProcessorTable(cursor,4)
     m = monitor.Monitor(me.config)
     createJDS.createTestSet(createJDS.jsonFileData,jsonKwargs={'logger':me.logger},rootDir=me.config.storageRoot)
     runInOtherProcess(m.standardJobAllocationLoop, stopCondition=(lambda : self.jobsAllocated() == 14))
-    started = dt.datetime.now()
+    started = dbtestutil.datetimeNow(cursor)
     completed = started + dt.timedelta(microseconds=100)
     idTimesAndSuccessSeq = [
       [started,completed,True,1],
@@ -687,13 +688,14 @@ class TestMonitor:
     """
     global me
     cc = copy.copy(me.config)
-    dbtestutil.fillProcessorTable(self.connection.cursor(),4)
+    cursor = self.connection.cursor()
+    dbtestutil.fillProcessorTable(cursor,4)
     for conf in ['saveSuccessfulMinidumpsTo','saveFailedMinidumpsTo']:
       cc[conf] = ''
     m = monitor.Monitor(cc)
     createJDS.createTestSet(createJDS.jsonFileData,jsonKwargs={'logger':me.logger},rootDir=me.config.storageRoot)
     runInOtherProcess(m.standardJobAllocationLoop, stopCondition=(lambda : self.jobsAllocated() == 14))
-    started = dt.datetime.now()
+    started = dbtestutil.datetimeNow(cursor)
     completed = started + dt.timedelta(microseconds=100)
     idTimesAndSuccessSeq = [
       [started,completed,True,1],
@@ -739,14 +741,14 @@ class TestMonitor:
     
   def testCleanUpDeadProcessors_AllDead(self):
     """
-    testCleanUpDeadProcessors(self):
+    testCleanUpDeadProcessors_AllDead(self):
     As of 2009-01-xx, Monitor.cleanUpDeadProcessors(...) does nothing except write to a log file
     ... and fail if there are no live processors
     """
     global me
     m = monitor.Monitor(me.config)
     dbCon,dbCur = m.getDatabaseConnectionPair()
-    now = dt.datetime.now()
+    now = dbtestutil.datetimeNow(dbCur)
     then = now - dt.timedelta(minutes=10)
     dbtestutil.fillProcessorTable(dbCur, None, processorMap = {1:then,2:then,3:then,4:then,5:then })
     assert_raises(SystemExit,m.cleanUpDeadProcessors, dbCur)

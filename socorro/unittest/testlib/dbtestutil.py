@@ -7,6 +7,10 @@ import time
 import psycopg2
 import socorro.unittest.testlib.createJsonDumpStore as createJDS
 
+def datetimeNow(cursor):
+  cursor.execute("SELECT LOCALTIMESTAMP(6)")
+  return cursor.fetchone()[0]
+
 def fillProcessorTable(cursor, processorCount, stamp=None, processorMap = {},logger = None):
   """
   Puts some entries into the processor table.
