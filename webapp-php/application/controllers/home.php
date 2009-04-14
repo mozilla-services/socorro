@@ -128,7 +128,7 @@ class Home_Controller extends Controller
         $tmp = array();
         foreach ($prodToVersionMap as $product => $versions) {
 	    $version = $widget->featuredVersionOrValid($product, $prodToVersionMap, $featured);
-  	    $crashRes = $model->getTopCrashersByUrl($product, $version);
+  	    $crashRes = array(0, 0, array()); //$model->getTopCrashersByUrl($product, $version);
 	    array_push($data, array(
                                     'label'     => "$product $version",
 				    'name'    => $product,
