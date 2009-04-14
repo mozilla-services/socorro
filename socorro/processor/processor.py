@@ -138,7 +138,7 @@ class Processor(object):
       if requestedId == 'auto':  # take over for an existing processor
         logger.debug("%s - looking for a dead processor", threading.currentThread().getName())
         try:
-          self.processorId = psy.singleValueSql(databaseCursor, "select id from processors where lastSeenDateTime < '%s' limit 1" % threshold)
+          self.processorId = psy.singleValueSql(databaseCursor, "select id from processors where lastseendatetime < '%s' limit 1" % threshold)
           logger.info("%s - will step in for processor %d", threading.currentThread().getName(), self.processorId)
         except psy.SQLDidNotReturnSingleValue:
           logger.debug("%s - no dead processor found", threading.currentThread().getName())
@@ -153,7 +153,7 @@ class Processor(object):
           raise socorro.lib.ConfigurationManager.OptionError("ProcessorId %s is not in processors table or is still live."%requestedId)
       if requestedId == 0:
         try:
-          databaseCursor.execute("insert into processors (name, startDateTime, lastSeenDateTime) values (%s, now(), now())", (self.processorName,))
+          databaseCursor.execute("insert into processors (name, startdatetime, lastseendatetime) values (%s, now(), now())", (self.processorName,))
           self.processorId = psy.singleValueSql(databaseCursor, "select id from processors where name = '%s'" % (self.processorName,))
         except:
           databaseConnection.rollback()
@@ -162,7 +162,7 @@ class Processor(object):
         priorityCreateRuberic = "Does it already exist?"
         # We have a good processorId and a name. Register self with database
       try:
-        databaseCursor.execute("update processors set name = %s, startDateTime = now(), lastSeenDateTime = now() where id = %s", (self.processorName, self.processorId))
+        databaseCursor.execute("update processors set name = %s, startdatetime = now(), lastseendatetime = now() where id = %s", (self.processorName, self.processorId))
         databaseCursor.execute("update jobs set starteddatetime = NULL where id in (select id from jobs where starteddatetime is not null and success is null and owner = %s)", (self.processorId, ))
       except Exception,x:
         logger.critical("Constructor: Unable to update processors or jobs table: %s: %s",type(x),x)
@@ -225,7 +225,7 @@ class Processor(object):
       logger.debug("%s - updating 'processor' table registration", threading.currentThread().getName())
       tstamp = datetime.datetime.now()
       databaseConnection, databaseCursor = self.databaseConnectionPool.connectionCursorPairNoTest()
-      databaseCursor.execute("update processors set lastSeenDateTime = %s where id = %s", (tstamp, self.processorId))
+      databaseCursor.execute("update processors set lastseendatetime = %s where id = %s", (tstamp, self.processorId))
       databaseConnection.commit()
       self.lastCheckInTimestamp = datetime.datetime.now()
 
@@ -242,7 +242,7 @@ class Processor(object):
       # force the processor to record a lastSeenDateTime in the distant past so that the monitor will
       # mark it as dead.  The monitor will process its completed jobs and reallocate it unfinished ones.
       logger.debug("%s - unregistering processor", threading.currentThread().getName())
-      databaseCursor.execute("update processors set lastSeenDateTime = '1999-01-01' where id = %s", (self.processorId,))
+      databaseCursor.execute("update processors set lastseendatetime = '1999-01-01' where id = %s", (self.processorId,))
       databaseConnection.commit()
     except Exception, x:
       logger.critical("%s - could not unregister %d from the database", threading.currentThread().getName(), self.processorId)
@@ -326,7 +326,7 @@ class Processor(object):
 
   #-----------------------------------------------------------------------------------------------------------------
   def submitJobToThreads(self, databaseCursor, aJobTuple):
-    databaseCursor.execute("update jobs set startedDateTime = %s where id = %s", (datetime.datetime.now(), aJobTuple[0]))
+    databaseCursor.execute("update jobs set starteddatetime = %s where id = %s", (datetime.datetime.now(), aJobTuple[0]))
     databaseCursor.connection.commit()
     logger.info("%s - queuing job %d, %s, %s", threading.currentThread().getName(), aJobTuple[0], aJobTuple[2], aJobTuple[1])
     self.threadManager.newTask(self.processJob, aJobTuple)
@@ -504,7 +504,7 @@ class Processor(object):
       jobId, jobUuid, jobPriority = jobTuple
       logger.info("%s - starting job: %s, %s", threadName, jobId, jobUuid)
       startedDateTime = datetime.datetime.now()
-      threadLocalCursor.execute("update jobs set startedDateTime = %s where id = %s", (startedDateTime, jobId))
+      threadLocalCursor.execute("update jobs set starteddatetime = %s where id = %s", (startedDateTime, jobId))
       threadLocalDatabaseConnection.commit()
 
       jobPathname = self.jsonPathForUuidInJsonDumpStorage(jobUuid)
@@ -525,7 +525,7 @@ class Processor(object):
       truncated = self.doBreakpadStackDumpAnalysis(reportId, jobUuid, dumpfilePathname, threadLocalCursor, date_processed, processorErrorMessages)
       self.quitCheck()
       #finished a job - cleanup
-      threadLocalCursor.execute("update jobs set completedDateTime = %s, success = True where id = %s", (datetime.datetime.now(), jobId))
+      threadLocalCursor.execute("update jobs set completeddatetime = %s, success = True where id = %s", (datetime.datetime.now(), jobId))
       threadLocalCursor.execute("update reports set started_datetime = timestamp without time zone '%s', completed_datetime = timestamp without time zone '%s', success = True, truncated = %s where id = %s and date_processed = timestamp without time zone '%s'" % (startedDateTime, datetime.datetime.now(), truncated, reportId, date_processed))
       #self.updateRegistrationNoCommit(threadLocalCursor)
       threadLocalDatabaseConnection.commit()
@@ -551,7 +551,7 @@ class Processor(object):
       threadLocalDatabaseConnection.rollback()
       processorErrorMessages.append(str(x))
       message = '; '.join(processorErrorMessages).replace("'", "''")
-      threadLocalCursor.execute("update jobs set completedDateTime = %s, success = False, message = %s where id = %s", (datetime.datetime.now(), message, jobId))
+      threadLocalCursor.execute("update jobs set completeddatetime = %s, success = False, message = %s where id = %s", (datetime.datetime.now(), message, jobId))
       threadLocalDatabaseConnection.commit()
       try:
         threadLocalCursor.execute("update reports set started_datetime = timestamp without time zone '%s', completed_datetime = timestamp without time zone '%s', success = False, processor_notes = '%s' where id = %s and date_processed = timestamp without time zone '%s'" % (startedDateTime, datetime.datetime.now(), message, reportId, date_processed))

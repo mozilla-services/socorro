@@ -265,10 +265,10 @@ class TestProcessor:
     assert_raises(SystemExit,processor.Processor,me.config)
     schema.partitionCreationHistory = set() # an 'orrible 'ack
     me.testDB.createDB(me.config,me.logger)
-    self.setUp() # and put it back for further testing
-    now = dt.datetime.now()
-    then = dt.datetime.now() - dt.timedelta(minutes=10)
-    dbtestutil.fillProcessorTable(self.connection.cursor(),0,processorMap = {1:now,2:now,3:then,4:now})
+    cur = self.connection.cursor()
+    now = dbtestutil.datetimeNow(cur)
+    then = now - dt.timedelta(minutes=10)
+    dbtestutil.fillProcessorTable(cur,0,processorMap = {1:now,2:now,3:then,4:now})
     self.markLog()
     try:
       p = processor.Processor(me.config)
@@ -507,25 +507,28 @@ class TestProcessor:
     sqlU = "UPDATE processors SET lastseendatetime = %s WHERE id = %s"
     dummyDT = dt.datetime(2006, 6, 6)
     cur = self.connection.cursor();
-    nowDT = dt.datetime.now()
+    nowDTd = dbtestutil.datetimeNow(cur)
+    nowDTm = dt.datetime.now()
     p = processor.Processor(me.config)
 
     # Check initial state: Internal is very old, dbstamp is 'now'
     cur.execute(sqlS,(p.processorId,))
-    dbStamp0 = cur.fetchone()[0]
-    procStamp0 = p.lastCheckInTimestamp
-    assert procStamp0 < nowDT,"Expect that constructed in-memory timestamp (%s) < 'now' (%s)"%(p.lastCheckInTimestamp,nowDT)
-    assert nowDT < dbStamp0,"Expect 'now' (%s) < processors.lastseendatetime (%s) at least a little bit"%(nowDT,dbStamp0)
+    self.connection.commit()
+    dbStamp0 = cur.fetchone()[0] # sql:now() from p constructor
+    procStamp0 = p.lastCheckInTimestamp # should be 1950
+    assert procStamp0 < nowDTd,"Expect that constructed in-memory timestamp (%s) < 'now' (%s)"%(p.lastCheckInTimestamp,nowDT)
+    assert nowDTd < dbStamp0,"Expect 'now' (%s) < processors.lastseendatetime (%s) at least a little bit"%(nowDT,dbStamp0)
 
     # Check that first call to checkin updates internal and database timestamps
     p.checkin()
     procStamp1 = p.lastCheckInTimestamp
     cur.execute(sqlS,(p.processorId,))
     dbStamp1 = cur.fetchone()[0]
+    self.connection.commit()
     nowDT1 = dt.datetime.now()
-    assert nowDT < procStamp1
+    assert nowDTm < procStamp1
     assert procStamp1 < nowDT1
-    assert nowDT < dbStamp1
+    assert nowDTm < dbStamp1
     assert dbStamp0 < dbStamp1
     assert dbStamp1 < nowDT1
 
@@ -545,6 +548,7 @@ class TestProcessor:
     p.checkin()
     cur.execute(sqlS,(p.processorId,))
     dbStamp2 = cur.fetchone()[0]
+    self.connection.commit()
     procStamp2 = p.lastCheckInTimestamp
     assert procStamp1 == procStamp2, 'Expect checkin does nothing, but prior: %s current: %s'%(procStamp1,procStamp2)
     assert dbStamp2 == dummyDT, 'Expect to get what was put (checkin looks at internal state), but %s != %s'%(dbStamp2,dummyDT)
@@ -553,6 +557,7 @@ class TestProcessor:
     p.lastCheckInTimestamp = dummyDT
     cur.execute(sqlS,(p.processorId,))
     dbStamp2 = cur.fetchone()[0]
+    self.connection.commit()
     assert dbStamp2 == dummyDT, "changedinternal state but didn't call checkin yet: but %s != %s"%(dbStamp2,dummyDT)
     me.logger.clear()
     try:
@@ -587,14 +592,14 @@ class TestProcessor:
     priorityTables = db_postgresql.tablesMatchingPattern(p.priorityJobsTableName,cur)
     assert 1 == len(priorityTables), 'Processor __init__ makes exactly one. But %s'%(str(priorityTables))
     assert priorityTables[0] == p.priorityJobsTableName, 'But got %s, not %s'%(priorityTables[0],p.priorityJobsTableName)
-    nowDT = dt.datetime.now()
+    nowDTd = dbtestutil.datetimeNow(cur)
     sqlS = "select lastseendatetime from processors where id = %s"
     cur.execute(sqlS,(p.processorId,))
     val = cur.fetchone();
     dbStamp0 = val[0]
     cur.connection.commit()
-    assert dbStamp0 < nowDT, 'constructed dt: %s then a moment later dt: %s'%(dbStamp0,nowDT)
-    assert (nowDT - dbStamp0).seconds < 1, 'Expect only a little time to pass, but %s - %s'%(nowDT,dbStamp0)
+    assert dbStamp0 < nowDTd, 'constructed dt: %s then a moment later dt: %s'%(dbStamp0,nowDTd)
+    assert (nowDTd - dbStamp0).seconds < 1, 'Expect only a little time to pass, but %s - %s'%(nowDTd,dbStamp0)
     p.cleanup()
     priorityTables = db_postgresql.tablesMatchingPattern(p.priorityJobsTableName,cur)
     assert 0 == len(priorityTables), "Expect cleanup removed p's priority jobs table. But %s"%(str(priorityTables))
@@ -602,7 +607,7 @@ class TestProcessor:
     self.connection.commit()
     dbStamp1 = cur.fetchone()[0]
     # as of 2009-Feb, the year is in fact 1999
-    assert dbStamp1.year < nowDT.year, 'at least. But dbStamp1: %s and nowDT: %s'%(dbStamp1,nowDT)
+    assert dbStamp1.year < nowDTd.year, 'at least. But dbStamp1: %s and nowDT: %s'%(dbStamp1,nowDTd)
     # Assume that someday a test of threadManager proves that calling its waitForCompletion() works.
 
   def _markJobDuringTesting(self, jobTuple):
@@ -1102,6 +1107,9 @@ class TestProcessor:
     assert True, "Expect this task is no longer used, and in any case it is tested elsewhere"
 
   def testGetJsonOrWarn(self):
+    """
+    testGetJsonOrWarn(self):
+    """
     global me
     p = processor.Processor(me.config)
     me.logger.clear()
@@ -1149,7 +1157,6 @@ class TestProcessor:
       now = dt.datetime.now()
 
       p.insertReportIntoDatabase(cur,uuid,jsonDoc,path,now,messages)
-      again = dt.datetime.now()
       assert 5 == len(messages)
       expectedMessages = [
         "WARNING: Json file missing ProductName",
@@ -1359,7 +1366,6 @@ class TestProcessor:
       p.insertReportIntoDatabase(cur,uuid3,jsonDoc3,path2,now,[])#messages)
       messages.append("   == ALL DONE MESSAGES")
       # for i in messages:print i
-      after = dt.datetime.now()
       labels = ["\nnone","crash",'stamp','both']
       items = ['crash',"procd","age: ","last:","uptim","build",]
       expectedValues = [
