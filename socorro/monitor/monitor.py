@@ -119,6 +119,7 @@ class Monitor (object):
       return self.databaseConnectionPool.connectionCursorPair()
     except psy.CannotConnectToDatabase:
       self.quit = True
+      self.databaseConnectionPool.cleanup()
       socorro.lib.util.reportExceptionAndAbort(logger) # can't continue without a database connection
 
   ##-----------------------------------------------------------------------------------------------------------------
@@ -320,6 +321,7 @@ class Monitor (object):
         except:
           logger.debug("%s - sql failed for the 2nd time - quit", threading.currentThread().getName())
           self.quit = True
+          aCursor.connection.rollback()
           socorro.lib.util.reportExceptionAndAbort(logger)
       listOfProcessorIds = [[aRow[0], aRow[1]] for aRow in aCursor.fetchall()]  #processorId, numberOfAssignedJobs
       logger.debug("%s - listOfProcessorIds: %s", threading.currentThread().getName(), str(listOfProcessorIds))

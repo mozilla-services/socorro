@@ -119,6 +119,8 @@ class TestMonitor:
 
   def tearDown(self):
     global me
+    #import socorro.database.postgresql as db_pg #DEBUG
+    #print "\ntearDown",db_pg.connectionStatus(self.connection)
     me.testDB.removeDB(me.config,me.logger)
     try:
       shutil.rmtree(me.config.storageRoot)
@@ -138,6 +140,7 @@ class TestMonitor:
         shutil.rmtree(me.config.saveFailedMinidumpsTo)
     except OSError,x:
       pass
+    self.connection.close()
 
   def markLog(self):
     global me
@@ -371,8 +374,11 @@ class TestMonitor:
     mon = monitor.Monitor(me.config)
     tcon,tcur = mon.getDatabaseConnectionPair()
     mcon,mcur = mon.databaseConnectionPool.connectionCursorPair()
-    assert tcon == mcon
-    assert tcur == mcur
+    try:
+      assert tcon == mcon
+      assert tcur == mcur
+    finally:
+      mon.databaseConnectionPool.cleanup()
 
   def testGetStorageFor(self):
     """
@@ -441,8 +447,11 @@ class TestMonitor:
     global me
     m = monitor.Monitor(me.config)
     dbCon,dbCur = m.getDatabaseConnectionPair()
-    iter = m.jobSchedulerIter(dbCur)
-    assert_raises(SystemExit,iter.next)
+    try:
+      iter = m.jobSchedulerIter(dbCur)
+      assert_raises(SystemExit,iter.next)
+    finally:
+      m.databaseConnectionPool.cleanup()
  
 #   def testJobScheduleIter_AllOldProcessors(self):
 #     """
@@ -467,19 +476,23 @@ class TestMonitor:
     dbtestutil.fillProcessorTable(self.connection.cursor(),numProcessors)
     m = monitor.Monitor(me.config)
     dbCon,dbCur = m.getDatabaseConnectionPair()
-    iter = m.jobSchedulerIter(dbCur)
-    num = 0
-    hits = dict(((1+x,0) for x in range (numProcessors)))
-    for id in iter:
-      num += 1
-      hits[int(id)] += 1
-      if num >= numProcessors: break
-    for i in range(numProcessors):
-      assert hits[i+1] == 1, 'At index %d, got count %d'%(i+1, hits[i+1])
-    for id in iter:
-      num += 1
-      hits[int(id)] += 1
-      if num >= 3*numProcessors: break
+    try:
+     iter = m.jobSchedulerIter(dbCur)
+     dbCon.commit()
+     num = 0
+     hits = dict(((1+x,0) for x in range (numProcessors)))
+     for id in iter:
+       num += 1
+       hits[int(id)] += 1
+       if num >= numProcessors: break
+     for i in range(numProcessors):
+       assert hits[i+1] == 1, 'At index %d, got count %d'%(i+1, hits[i+1])
+     for id in iter:
+       num += 1
+       hits[int(id)] += 1
+       if num >= 3*numProcessors: break
+    finally:
+      m.databaseConnectionPool.cleanup()
     for i in range(numProcessors):
       assert hits[i+1] == 3, 'At index %d, got count %d'%(i+1, hits[i+1])
 
@@ -487,9 +500,9 @@ class TestMonitor:
     """Useful for figuring out what is there before we call some method or other."""
     global me
     sql = "select p.id, count(j.*) from processors p left join (select owner from jobs where success is null) as j on p.id = j.owner group by p.id;"
-    m = monitor.Monitor(me.config)
-    dbCon,dbCur = m.getDatabaseConnectionPair()
-    dbCur.execute(sql);
+    cur = self.connection.cursor()
+    cur.execute(sql);
+    self.connection.commit()
     return [(aRow[0], aRow[1]) for aRow in dbCur.fetchall()]  #processorId, numberOfAssignedJobs
 
   def testJobScheduleIter_StartUnbalanced(self):
@@ -499,20 +512,24 @@ class TestMonitor:
     """
     numProcessors = 5
     dbtestutil.fillProcessorTable(self.connection.cursor(),numProcessors)
+    self.connection.commit()
     m = monitor.Monitor(me.config)
     dbCon,dbCur = m.getDatabaseConnectionPair()
-    dbtestutil.addSomeJobs(dbCur,dict([(1+x,1+x) for x in range(numProcessors)]),logger=me.logger)
-    iter = m.jobSchedulerIter(dbCur)
-    num = 0
-    hits = dict(((1+x,0) for x in range (numProcessors)))
-    for id in iter:
-      num += 1
-      hits[int(id)] += 1
-      me.logger.debug('HIT on %d: %d'%(id,hits[id]))
-      if num >= 3*numProcessors: break
-    for i in range(numProcessors):
-      assert hits[i+1] == 5 - i, 'Expected num hits to be count down sequence from 5 to 1, but at idx %d, got %d'%(i+1,hits[i+1])
-      me.logger.debug('ONE: At index %d, got count %d'%(i+1, hits[i+1]))
+    try:
+      dbtestutil.addSomeJobs(dbCur,dict([(1+x,1+x) for x in range(numProcessors)]),logger=me.logger)
+      iter = m.jobSchedulerIter(dbCur)
+      num = 0
+      hits = dict(((1+x,0) for x in range (numProcessors)))
+      for id in iter:
+        num += 1
+        hits[int(id)] += 1
+        me.logger.debug('HIT on %d: %d'%(id,hits[id]))
+        if num >= 3*numProcessors: break
+      for i in range(numProcessors):
+        assert hits[i+1] == 5 - i, 'Expected num hits to be count down sequence from 5 to 1, but at idx %d, got %d'%(i+1,hits[i+1])
+        me.logger.debug('ONE: At index %d, got count %d'%(i+1, hits[i+1]))
+    finally:
+      m.databaseConnectionPool.cleanup()
 
 #   def testJobScheduleIter_SomeOldProcessors(self):
 #     """
@@ -522,8 +539,8 @@ class TestMonitor:
 #     """
 #     global me
 #     m = monitor.Monitor(me.config)
-#     dbCon,dbCur = m.getDatabaseConnectionPair()
-#     now = dt.datetime.now()
+#     dbCon,dbCur = m.etDatabaseConnectionPair() error: try:...(dbCon)...finally m.databaseConnectionPool.cleanup()
+#     now = dt.datetime.now() error: Use dbtestutil.datetimeNow(aCursor)
 #     then = now - dt.timedelta(minutes=10)
 #     dbtestutil.fillProcessorTable(dbCur, None, processorMap = {1:then,2:then,3:now,4:then,5:then })
 #     iter = m.jobScheduleIter(dbCur)
@@ -544,9 +561,12 @@ class TestMonitor:
     """
     global me
     m = monitor.Monitor(me.config)
-    dbCon,dbCur = m.getDatabaseConnectionPair()
-    iter = m.unbalancedJobSchedulerIter(dbCur)
-    assert_raises(SystemExit, iter.next)
+    cur = self.connection.cursor()
+    try:
+      iter = m.unbalancedJobSchedulerIter(cur)
+      assert_raises(SystemExit, iter.next)
+    finally:
+      self.connection.commit()
 
   def testUnbalancedJobSchedulerIter_AllOldProcs(self):
     """
@@ -555,11 +575,14 @@ class TestMonitor:
     """
     global me
     m = monitor.Monitor(me.config)
-    dbCon,dbCur = m.getDatabaseConnectionPair()
-    stamp = dbtestutil.datetimeNow(dbCur) - dt.timedelta(minutes=10)
-    dbtestutil.fillProcessorTable(dbCur, 5, stamp=stamp)
-    iter = m.unbalancedJobSchedulerIter(dbCur)
-    assert_raises(SystemExit, iter.next)
+    cur = self.connection.cursor()
+    try:
+      stamp = dbtestutil.datetimeNow(cur) - dt.timedelta(minutes=10)
+      dbtestutil.fillProcessorTable(cur, 5, stamp=stamp)
+      iter = m.unbalancedJobSchedulerIter(cur)
+      assert_raises(SystemExit, iter.next)
+    finally:
+      self.connection.commit()    
 
   def testUnbalancedJobSchedulerIter_SomeOldProcs(self):
     """
@@ -569,19 +592,22 @@ class TestMonitor:
     global me
     m = monitor.Monitor(me.config)
     dbCon,dbCur = m.getDatabaseConnectionPair()
-    now = dbtestutil.datetimeNow(dbCur)
-    then = now - dt.timedelta(minutes=10)
-    dbtestutil.fillProcessorTable(dbCur, None, processorMap = {1:then,2:then,3:now,4:then,5:then })
-    iter = m.unbalancedJobSchedulerIter(dbCur)
-    hits = dict(((x,0) for x in range (1,6)))
-    num = 0;
-    for id in iter:
-      num += 1
-      hits[int(id)] += 1
-      if num > 3: break
-    for i in (1,2,4,5):
-      assert hits[i] == 0, 'Expected that no old processors would be used in the iterator'
-    assert hits[3] == 4, 'Expected that all the iterations would choose the one live processor'
+    try:
+      now = dbtestutil.datetimeNow(dbCur)
+      then = now - dt.timedelta(minutes=10)
+      dbtestutil.fillProcessorTable(dbCur, None, processorMap = {1:then,2:then,3:now,4:then,5:then })
+      iter = m.unbalancedJobSchedulerIter(dbCur)
+      hits = dict(((x,0) for x in range (1,6)))
+      num = 0;
+      for id in iter:
+        num += 1
+        hits[int(id)] += 1
+        if num > 3: break
+      for i in (1,2,4,5):
+        assert hits[i] == 0, 'Expected that no old processors would be used in the iterator'
+      assert hits[3] == 4, 'Expected that all the iterations would choose the one live processor'
+    finally:
+      m.databaseConnectionPool.cleanup()
 
   def testUnbalancedJobSchedulerIter(self):
     """
@@ -592,18 +618,22 @@ class TestMonitor:
     numProcessors = 5
     loopCount = 3
     dbtestutil.fillProcessorTable(self.connection.cursor(),numProcessors)
+    self.connection.commit()
     m = monitor.Monitor(me.config)
     dbCon,dbCur = m.getDatabaseConnectionPair()
-    dbtestutil.addSomeJobs(dbCur,{1:12},logger=me.logger)
-    iter = m.unbalancedJobSchedulerIter(dbCur)
-    num = 0
-    hits = dict(((1+x,0) for x in range (numProcessors)))
-    for id in iter:
-      num += 1
-      hits[int(id)] += 1
-      if num >= loopCount*numProcessors: break
-    for i in range(numProcessors):
-      assert hits[i+1] == loopCount, 'expected %d for processor %d, but got %d'%(loopCount,i+1,hits[i+1])
+    try:
+      dbtestutil.addSomeJobs(dbCur,{1:12},logger=me.logger)
+      iter = m.unbalancedJobSchedulerIter(dbCur)
+      num = 0
+      hits = dict(((1+x,0) for x in range (numProcessors)))
+      for id in iter:
+        num += 1
+        hits[int(id)] += 1
+        if num >= loopCount*numProcessors: break
+      for i in range(numProcessors):
+        assert hits[i+1] == loopCount, 'expected %d for processor %d, but got %d'%(loopCount,i+1,hits[i+1])
+    finally:
+      m.databaseConnectionPool.cleanup()
 
   def setJobSuccess(self, cursor, idTimesAndSuccessSeq):
     global me
@@ -620,10 +650,11 @@ class TestMonitor:
   def jobsAllocated(self):
     global me
     m = monitor.Monitor(me.config)
-    dbCon,dbCur = m.getDatabaseConnectionPair()
+    cur = self.connection.cursor()
     sql = "SELECT count(*) from jobs"
-    dbCur.execute(sql)
-    return dbCur.fetchone()[0]
+    cur.execute(sql)
+    self.connection.commit()
+    return cur.fetchone()[0]
 
   def testCleanUpCompletedAndFailedJobs_WithSaves(self):
     """
@@ -637,6 +668,7 @@ class TestMonitor:
     createJDS.createTestSet(createJDS.jsonFileData,jsonKwargs={'logger':me.logger},rootDir=me.config.storageRoot)
     runInOtherProcess(m.standardJobAllocationLoop, stopCondition=(lambda : self.jobsAllocated() == 14))
     started = dbtestutil.datetimeNow(cursor)
+    self.connection.commit()
     completed = started + dt.timedelta(microseconds=100)
     idTimesAndSuccessSeq = [
       [started,completed,True,1],
@@ -649,8 +681,11 @@ class TestMonitor:
       [started,None,False,12],
       ]
     dbCon,dbCur = m.getDatabaseConnectionPair()
-    jobdata = self.setJobSuccess(dbCur,idTimesAndSuccessSeq)
-    m.cleanUpCompletedAndFailedJobs()
+    try:
+      jobdata = self.setJobSuccess(dbCur,idTimesAndSuccessSeq)
+      m.cleanUpCompletedAndFailedJobs()
+    finally:
+      m.databaseConnectionPool.cleanup()
     successSave = set()
     failSave = set()
     expectSuccessSave = set()
@@ -696,6 +731,7 @@ class TestMonitor:
     createJDS.createTestSet(createJDS.jsonFileData,jsonKwargs={'logger':me.logger},rootDir=me.config.storageRoot)
     runInOtherProcess(m.standardJobAllocationLoop, stopCondition=(lambda : self.jobsAllocated() == 14))
     started = dbtestutil.datetimeNow(cursor)
+    self.connection.commit()
     completed = started + dt.timedelta(microseconds=100)
     idTimesAndSuccessSeq = [
       [started,completed,True,1],
@@ -708,8 +744,11 @@ class TestMonitor:
       [started,None,False,12],
       ]
     dbCon,dbCur = m.getDatabaseConnectionPair()
-    jobdata = self.setJobSuccess(dbCur,idTimesAndSuccessSeq)
-    m.cleanUpCompletedAndFailedJobs()
+    try:
+      jobdata = self.setJobSuccess(dbCur,idTimesAndSuccessSeq)
+      m.cleanUpCompletedAndFailedJobs()
+    finally:
+      m.databaseConnectionPool.cleanup()
     successSave = set()
     failSave = set()
     expectSuccessSave = set()
@@ -748,10 +787,13 @@ class TestMonitor:
     global me
     m = monitor.Monitor(me.config)
     dbCon,dbCur = m.getDatabaseConnectionPair()
-    now = dbtestutil.datetimeNow(dbCur)
-    then = now - dt.timedelta(minutes=10)
-    dbtestutil.fillProcessorTable(dbCur, None, processorMap = {1:then,2:then,3:then,4:then,5:then })
-    assert_raises(SystemExit,m.cleanUpDeadProcessors, dbCur)
+    try:
+      now = dbtestutil.datetimeNow(dbCur)
+      then = now - dt.timedelta(minutes=10)
+      dbtestutil.fillProcessorTable(dbCur, None, processorMap = {1:then,2:then,3:then,4:then,5:then })
+      assert_raises(SystemExit,m.cleanUpDeadProcessors, dbCur)
+    finally:
+      m.databaseConnectionPool.cleanup()
 
   def testQueueJob(self):
     """
@@ -767,36 +809,39 @@ class TestMonitor:
     numProcessors = 4
     dbtestutil.fillProcessorTable(self.connection.cursor(),numProcessors)
     dbCon,dbCur = m.getDatabaseConnectionPair()
-    procIdGenerator = m.jobSchedulerIter(dbCur)
-    dbCur.execute(sql)
-    beforeJobsData = dbCur.fetchall()
-    assert 0 == len(beforeJobsData), 'There should be no queued jobs before we start our run'
-    expectedHits = dict(((1+x,0) for x in range (numProcessors)))
-    mapper = {}
-    hits = dict(((1+x,0) for x in range (numProcessors)))
-    for uuid,data in createJDS.jsonFileData.items():
-      procId = m.queueJob(dbCur,uuid,procIdGenerator)
-      expectedHits[procId] += 1;
-      mapper[uuid] = procId
-    dbCur.execute(sql)
-    afterJobsData = dbCur.fetchall()
-    for row in afterJobsData:
-      hits[row[2]] += 1
-      #me.logger.debug("ASSERT %s == %s for index %s"%(mapper.get(row[1],'WHAT?'), row[2], row[1]))
-      assert mapper[row[1]] == row[2], 'Expected %s from %s but got %s'%(mapper.get(row[1],"WOW"),row[1],row[2])
-    for key in expectedHits.keys():
-      #me.logger.debug("ASSERTING %s == %s for index %s"%(expectedHits.get(key,'BAD KEY'),hits.get(key,'EVIL KEY'),key))
-      assert expectedHits[key] == hits[key], "Expected count of %s for %s, but got %s"%(expectedHits[key],key,hits[key])
-    self.markLog()
-    dupUuid = createJDS.jsonFileData.keys()[0]
     try:
-      procId = m.queueJob(dbCur,dupUuid,procIdGenerator)
-      assert False, "Expected that IntegrityError would be raised queue-ing %s  but it wasn't"%(dupUuid)
-    except psycopg2.IntegrityError:
-      pass
-    except Exception,x:
-      assert False, "Expected that only IntegrityError would be raised, but got %s: %s"%(type(x),x)
-    self.markLog()
+      procIdGenerator = m.jobSchedulerIter(dbCur)
+      dbCur.execute(sql)
+      beforeJobsData = dbCur.fetchall()
+      assert 0 == len(beforeJobsData), 'There should be no queued jobs before we start our run'
+      expectedHits = dict(((1+x,0) for x in range (numProcessors)))
+      mapper = {}
+      hits = dict(((1+x,0) for x in range (numProcessors)))
+      for uuid,data in createJDS.jsonFileData.items():
+        procId = m.queueJob(dbCur,uuid,procIdGenerator)
+        expectedHits[procId] += 1;
+        mapper[uuid] = procId
+      dbCur.execute(sql)
+      afterJobsData = dbCur.fetchall()
+      for row in afterJobsData:
+        hits[row[2]] += 1
+        #me.logger.debug("ASSERT %s == %s for index %s"%(mapper.get(row[1],'WHAT?'), row[2], row[1]))
+        assert mapper[row[1]] == row[2], 'Expected %s from %s but got %s'%(mapper.get(row[1],"WOW"),row[1],row[2])
+      for key in expectedHits.keys():
+        #me.logger.debug("ASSERTING %s == %s for index %s"%(expectedHits.get(key,'BAD KEY'),hits.get(key,'EVIL KEY'),key))
+        assert expectedHits[key] == hits[key], "Expected count of %s for %s, but got %s"%(expectedHits[key],key,hits[key])
+      self.markLog()
+      dupUuid = createJDS.jsonFileData.keys()[0]
+      try:
+        procId = m.queueJob(dbCur,dupUuid,procIdGenerator)
+        assert False, "Expected that IntegrityError would be raised queue-ing %s  but it wasn't"%(dupUuid)
+      except psycopg2.IntegrityError:
+        pass
+      except Exception,x:
+        assert False, "Expected that only IntegrityError would be raised, but got %s: %s"%(type(x),x)
+      self.markLog()
+    finally:
+      m.databaseConnectionPool.cleanup()
       
   def testQueuePriorityJob(self):
     """
@@ -812,41 +857,44 @@ class TestMonitor:
     dbtestutil.fillProcessorTable(self.connection.cursor(),numProcessors)
     data = dbtestutil.makeJobDetails({1:2,2:2,3:3,4:3})
     dbCon,dbCur = m.getDatabaseConnectionPair()
-    procIdGenerator = m.jobSchedulerIter(dbCur)
-    insertSql = "INSERT into priorityjobs (uuid) VALUES (%s);"
-    uuidToId = {}
-    for tup in data:
-      uuidToId[tup[1]] = tup[2]
-    uuids = uuidToId.keys()
-    for uuid in uuids:
-      if uuidToId[uuid]%2:
-        dbCur.execute(insertSql,[uuid])
-    dbCon.commit()
-    countSql = "SELECT count(*) from %s;"
-    dbCur.execute(countSql%('priorityjobs'))
-    priorityJobCount = dbCur.fetchone()[0]
-    dbCur.execute(countSql%('jobs'))
-    jobCount = dbCur.fetchone()[0]
-    eachPriorityJobCount = {}
-    for uuid in uuids:
-      procId = m.queuePriorityJob(dbCur,uuid, procIdGenerator)
-      dbCur.execute('SELECT count(*) from jobs where jobs.priority > 0')
-      assert dbCur.fetchone()[0] == 1 + jobCount, 'Expect that each queuePriority will increase jobs table by one'
-      jobCount += 1
-      try:
-        eachPriorityJobCount[procId] += 1
-      except KeyError:
-        eachPriorityJobCount[procId] = 1
-      if uuidToId[uuid]%2:
-        dbCur.execute(countSql%('priorityjobs'))
-        curCount = dbCur.fetchone()[0]
-        assert curCount == priorityJobCount -1, 'Expected to remove one job from priorityjobs for %s'%uuid
-        priorityJobCount -= 1
-    for id in eachPriorityJobCount.keys():
-      dbCur.execute(countSql%('priority_jobs_%s'%id))
-      count = dbCur.fetchone()[0]
-      assert eachPriorityJobCount[id] == count, 'Expected that the count %s added to id %s matches %s found'%(eachPriorityJobCount[id],id,count)
-
+    try:
+      procIdGenerator = m.jobSchedulerIter(dbCur)
+      insertSql = "INSERT into priorityjobs (uuid) VALUES (%s);"
+      uuidToId = {}
+      for tup in data:
+        uuidToId[tup[1]] = tup[2]
+      uuids = uuidToId.keys()
+      for uuid in uuids:
+        if uuidToId[uuid]%2:
+          dbCur.execute(insertSql,[uuid])
+      dbCon.commit()
+      countSql = "SELECT count(*) from %s;"
+      dbCur.execute(countSql%('priorityjobs'))
+      priorityJobCount = dbCur.fetchone()[0]
+      dbCur.execute(countSql%('jobs'))
+      jobCount = dbCur.fetchone()[0]
+      eachPriorityJobCount = {}
+      for uuid in uuids:
+        procId = m.queuePriorityJob(dbCur,uuid, procIdGenerator)
+        dbCur.execute('SELECT count(*) from jobs where jobs.priority > 0')
+        assert dbCur.fetchone()[0] == 1 + jobCount, 'Expect that each queuePriority will increase jobs table by one'
+        jobCount += 1
+        try:
+          eachPriorityJobCount[procId] += 1
+        except KeyError:
+          eachPriorityJobCount[procId] = 1
+        if uuidToId[uuid]%2:
+          dbCur.execute(countSql%('priorityjobs'))
+          curCount = dbCur.fetchone()[0]
+          assert curCount == priorityJobCount -1, 'Expected to remove one job from priorityjobs for %s'%uuid
+          priorityJobCount -= 1
+      for id in eachPriorityJobCount.keys():
+        dbCur.execute(countSql%('priority_jobs_%s'%id))
+        count = dbCur.fetchone()[0]
+        assert eachPriorityJobCount[id] == count, 'Expected that the count %s added to id %s matches %s found'%(eachPriorityJobCount[id],id,count)
+    finally:
+      m.databaseConnectionPool.cleanup()
+      
   def testGetPriorityUuids(self):
     """
     testGetPriorityUuids(self):
@@ -862,8 +910,8 @@ class TestMonitor:
     self.connection.cursor().executemany(insertSql,[ [x[1]] for x in data ])
     self.connection.commit()
     count = len(m.getPriorityUuids(self.connection.cursor()))
+    self.connection.commit()
     assert len(data) == count,'expect same count in data as priorityJobs, got %d'%(count)
-    self.connection.close()
     
   def testLookForPriorityJobsAlreadyInQueue(self):
     """
@@ -879,59 +927,62 @@ class TestMonitor:
     m = monitor.Monitor(me.config)
     data = dbtestutil.makeJobDetails({1:2,2:2,3:3,4:3,5:2})
     dbCon,dbCur = m.getDatabaseConnectionPair()
-    procIdGenerator = m.jobSchedulerIter(dbCur)
-    insertSql = "INSERT into priorityjobs (uuid) VALUES (%s);"
-    updateSql = "UPDATE jobs set priority = 1 where uuid = %s;"
-    allUuids = [x[1] for x in data]
-    priorityJobUuids = [];
-    missingUuids = []
-    uuidToProcId = {}
-    for counter in range(len(allUuids)):
-      uuid = allUuids[counter]
-      if 0 == counter % 3: # add to jobs and priorityjobs table
-        uuidToProcId[uuid] = m.queueJob(dbCur,data[counter][1],procIdGenerator)
-        priorityJobUuids.append((uuid,))
-      elif 1 == counter % 3: # add to jobs table only
-        uuidToProcId[uuid] = m.queueJob(dbCur,data[counter][1],procIdGenerator)
-      else: # 2== counter %3 # don't add anywhere
-        missingUuids.append(uuid)
-    dbCur.executemany(insertSql,priorityJobUuids)
-    dbCon.commit()
-    for uuid in priorityJobUuids:
-      dbCur.execute(updateSql,(uuid,))
-    self.markLog()
-    m.lookForPriorityJobsAlreadyInQueue(dbCur,allUuids)
-    self.markLog()
-    seg = self.extractLogSegment()
-    for line in seg:
-      date,tyme,level,dash,thr,ddash,msg = line.split(None,6)
-      assert thr == 'MainThread','Expected only MainThread log lines, got[%s]'%(line)
-      uuid = msg.split()[2]
-      assert not uuid in missingUuids, 'Found %s that should not be in missingUuids'%(uuid)
-      assert uuid in uuidToProcId.keys(), 'Found %s that should be in uuidToProcId'%(uuid)
-    countSql = "SELECT count(*) from %s;"
-    dbCur.execute(countSql%('priorityjobs'))
-    priCount = dbCur.fetchone()[0]
-    assert 0 == priCount, 'Expect that all the priority jobs are removed, but found %s'%(priCount)
-    countSql = "SELECT count(*) from priority_jobs_%s WHERE uuid = %%s;"
-    for uuid,procid in uuidToProcId.items():
-      dbCur.execute(countSql%(procid),(uuid,))
+    try:
+      procIdGenerator = m.jobSchedulerIter(dbCur)
+      insertSql = "INSERT into priorityjobs (uuid) VALUES (%s);"
+      updateSql = "UPDATE jobs set priority = 1 where uuid = %s;"
+      allUuids = [x[1] for x in data]
+      priorityJobUuids = [];
+      missingUuids = []
+      uuidToProcId = {}
+      for counter in range(len(allUuids)):
+        uuid = allUuids[counter]
+        if 0 == counter % 3: # add to jobs and priorityjobs table
+          uuidToProcId[uuid] = m.queueJob(dbCur,data[counter][1],procIdGenerator)
+          priorityJobUuids.append((uuid,))
+        elif 1 == counter % 3: # add to jobs table only
+          uuidToProcId[uuid] = m.queueJob(dbCur,data[counter][1],procIdGenerator)
+        else: # 2== counter %3 # don't add anywhere
+          missingUuids.append(uuid)
+      dbCur.executemany(insertSql,priorityJobUuids)
+      dbCon.commit()
+      for uuid in priorityJobUuids:
+        dbCur.execute(updateSql,(uuid,))
+      self.markLog()
+      m.lookForPriorityJobsAlreadyInQueue(dbCur,allUuids)
+      self.markLog()
+      seg = self.extractLogSegment()
+      for line in seg:
+        date,tyme,level,dash,thr,ddash,msg = line.split(None,6)
+        assert thr == 'MainThread','Expected only MainThread log lines, got[%s]'%(line)
+        uuid = msg.split()[2]
+        assert not uuid in missingUuids, 'Found %s that should not be in missingUuids'%(uuid)
+        assert uuid in uuidToProcId.keys(), 'Found %s that should be in uuidToProcId'%(uuid)
+      countSql = "SELECT count(*) from %s;"
+      dbCur.execute(countSql%('priorityjobs'))
       priCount = dbCur.fetchone()[0]
-      assert priCount == 1, 'Expect to find %s in priority_jobs_%s exactly once'%(uuid,procid)
-      for badid in range(1,numProcessors+1):
-        if badid == procid: continue
-        dbCur.execute(countSql%(badid),(uuid,))
-        badCount = dbCur.fetchone()[0]
-        assert 0 == badCount, 'Expect to find %s ONLY in other priority_jobs_NNN, found it in priority_jobs_%s'%(uuid,badid)
-    for uuid,procid in uuidToProcId.items():
-      try:
-        m.lookForPriorityJobsAlreadyInQueue(dbCur,(uuid,))
-        assert False, 'Expected line above would raise IntegrityError or InternalError'
-      except psycopg2.IntegrityError,x:
-        dbCon.rollback()
-      except:
-        assert False, 'Expected only IntegrityError from the try block'
-
+      assert 0 == priCount, 'Expect that all the priority jobs are removed, but found %s'%(priCount)
+      countSql = "SELECT count(*) from priority_jobs_%s WHERE uuid = %%s;"
+      for uuid,procid in uuidToProcId.items():
+        dbCur.execute(countSql%(procid),(uuid,))
+        priCount = dbCur.fetchone()[0]
+        assert priCount == 1, 'Expect to find %s in priority_jobs_%s exactly once'%(uuid,procid)
+        for badid in range(1,numProcessors+1):
+          if badid == procid: continue
+          dbCur.execute(countSql%(badid),(uuid,))
+          badCount = dbCur.fetchone()[0]
+          assert 0 == badCount, 'Expect to find %s ONLY in other priority_jobs_NNN, found it in priority_jobs_%s'%(uuid,badid)
+      for uuid,procid in uuidToProcId.items():
+        try:
+          m.lookForPriorityJobsAlreadyInQueue(dbCur,(uuid,))
+          assert False, 'Expected line above would raise IntegrityError or InternalError'
+        except psycopg2.IntegrityError,x:
+          dbCon.rollback()
+        except:
+          assert False, 'Expected only IntegrityError from the try block'
+    finally:
+      m.databaseConnectionPool.cleanup()
+      
   def testUuidInJsonDumpStorage(self):
     """
     testUuidInJsonDumpStorage(self):
@@ -972,31 +1023,34 @@ class TestMonitor:
     allUuids.extend(defUuids)
     badUuid = '0bad0bad-0bad-6666-9999-0bad20001025'
     dbCon,dbCur = m.getDatabaseConnectionPair()
-    numProcessors = 5
-    dbtestutil.fillProcessorTable(self.connection.cursor(),numProcessors)
-    self.markLog()
-    m.lookForPriorityJobsInJsonDumpStorage(dbCur,allUuids)
-    assert [] == allUuids, 'Expect that all the uuids were found and removed from the looked for "set"'
-    m.lookForPriorityJobsInJsonDumpStorage(dbCur,(badUuid,))
-    self.markLog()
-    seg = self.extractLogSegment()
-    getIdAndPrioritySql = "SELECT owner,priority from jobs WHERE uuid = %s"
-    getCountSql = "SELECT count(*) from %s"
-    idCounts = dict( ( (x,0) for x in range(1,numProcessors+1) ) )
-    allUuids.extend(normUuids)
-    allUuids.extend(defUuids)
-    for uuid in allUuids:
-      dbCur.execute(getIdAndPrioritySql,(uuid,))
-      procid,pri = dbCur.fetchone()
-      assert 1 == pri, 'Expected priority of 1 for %s, but got %s'%(uuid,pri)
-      idCounts[procid] += 1
-    dbCur.execute(getIdAndPrioritySql,(badUuid,))
-    assert not dbCur.fetchone(), "Expect to get None entries in jobs table for badUuid"
-    for id,expectCount in idCounts.items():
-      dbCur.execute(getCountSql%('priority_jobs_%s'%id))
-      seenCount = dbCur.fetchone()[0]
-      assert expectCount == seenCount, 'Expected %s, got %s as count in priority_jobs_%s'%(expectCount,seenCount,id)
-
+    try:
+      numProcessors = 5
+      dbtestutil.fillProcessorTable(self.connection.cursor(),numProcessors)
+      self.markLog()
+      m.lookForPriorityJobsInJsonDumpStorage(dbCur,allUuids)
+      assert [] == allUuids, 'Expect that all the uuids were found and removed from the looked for "set"'
+      m.lookForPriorityJobsInJsonDumpStorage(dbCur,(badUuid,))
+      self.markLog()
+      seg = self.extractLogSegment()
+      getIdAndPrioritySql = "SELECT owner,priority from jobs WHERE uuid = %s"
+      getCountSql = "SELECT count(*) from %s"
+      idCounts = dict( ( (x,0) for x in range(1,numProcessors+1) ) )
+      allUuids.extend(normUuids)
+      allUuids.extend(defUuids)
+      for uuid in allUuids:
+        dbCur.execute(getIdAndPrioritySql,(uuid,))
+        procid,pri = dbCur.fetchone()
+        assert 1 == pri, 'Expected priority of 1 for %s, but got %s'%(uuid,pri)
+        idCounts[procid] += 1
+      dbCur.execute(getIdAndPrioritySql,(badUuid,))
+      assert not dbCur.fetchone(), "Expect to get None entries in jobs table for badUuid"
+      for id,expectCount in idCounts.items():
+        dbCur.execute(getCountSql%('priority_jobs_%s'%id))
+        seenCount = dbCur.fetchone()[0]
+        assert expectCount == seenCount, 'Expected %s, got %s as count in priority_jobs_%s'%(expectCount,seenCount,id)
+    finally:
+      m.databaseConnectionPool.cleanup()
+      
   def testPriorityJobsNotFound(self):
     """
     testPriorityJobsNotFound(self):
@@ -1005,31 +1059,34 @@ class TestMonitor:
     global me
     m = monitor.Monitor(me.config)
     dbCon,dbCur = m.getDatabaseConnectionPair()
-    dropBogusSql = "DROP TABLE IF EXISTS bogus;"
-    createBogusSql = "CREATE TABLE bogus (uuid varchar(55));"
-    insertBogusSql = "INSERT INTO bogus (uuid) VALUES ('NOPE'), ('NEVERMIND');"
-    countSql = "SELECT count(*) from %s"
-    dbCur.execute(dropBogusSql)
-    dbCon.commit()
-    dbCur.execute(createBogusSql)
-    dbCon.commit()
-    dbCur.execute(insertBogusSql)
-    dbCon.commit()
-    dbCur.execute(countSql%('bogus'))
-    bogusCount0 = dbCur.fetchone()[0]
-    assert 2 == bogusCount0
-    self.markLog()
-    m.priorityJobsNotFound(dbCur,['NOPE','NEVERMIND'])
-    dbCur.execute(countSql%('bogus'))
-    bogusCount1 = dbCur.fetchone()[0]
-    assert 2 == bogusCount1, 'Expect uuids deleted, if any, from priorityjobs by default'
-    m.priorityJobsNotFound(dbCur,['NOPE','NEVERMIND'], 'bogus')
-    dbCur.execute(countSql%('bogus'))
-    bogusCount2 = dbCur.fetchone()[0]
-    assert 0 == bogusCount2, 'Expect uuids deleted from bogus when it is specified'
-    self.markLog()
-    dbCur.execute(dropBogusSql)
-    dbCon.commit()
+    try:
+      dropBogusSql = "DROP TABLE IF EXISTS bogus;"
+      createBogusSql = "CREATE TABLE bogus (uuid varchar(55));"
+      insertBogusSql = "INSERT INTO bogus (uuid) VALUES ('NOPE'), ('NEVERMIND');"
+      countSql = "SELECT count(*) from %s"
+      dbCur.execute(dropBogusSql)
+      dbCon.commit()
+      dbCur.execute(createBogusSql)
+      dbCon.commit()
+      dbCur.execute(insertBogusSql)
+      dbCon.commit()
+      dbCur.execute(countSql%('bogus'))
+      bogusCount0 = dbCur.fetchone()[0]
+      assert 2 == bogusCount0
+      self.markLog()
+      m.priorityJobsNotFound(dbCur,['NOPE','NEVERMIND'])
+      dbCur.execute(countSql%('bogus'))
+      bogusCount1 = dbCur.fetchone()[0]
+      assert 2 == bogusCount1, 'Expect uuids deleted, if any, from priorityjobs by default'
+      m.priorityJobsNotFound(dbCur,['NOPE','NEVERMIND'], 'bogus')
+      dbCur.execute(countSql%('bogus'))
+      bogusCount2 = dbCur.fetchone()[0]
+      assert 0 == bogusCount2, 'Expect uuids deleted from bogus when it is specified'
+      self.markLog()
+      dbCur.execute(dropBogusSql)
+      dbCon.commit()
+    finally:
+      m.databaseConnectionPool.cleanup()
     neverCount = 0
     nopeCount = 0
     seg = self.extractLogSegment()

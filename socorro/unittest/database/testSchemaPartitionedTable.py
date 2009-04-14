@@ -80,6 +80,8 @@ class ThreePT(schema.PartitionedTable):
 class TestPartitionedTable:
   def setUp(self):
     self.connection = psycopg2.connect(me.dsn)
+  def tearDown(self):
+    self.connection.close()
     
   def testConstructor(self):
     """
@@ -111,24 +113,23 @@ class TestPartitionedTable:
       - assure that we create the expected partition(s) for a PartitionedTable that has no dependencies
     """
     global me
-    connection = psycopg2.connect(me.dsn)
-    cursor = connection.cursor()
+    cursor = self.connection.cursor()
     cursor.execute("DROP TABLE IF EXISTS tpt, tpt3 CASCADE")
-    connection.commit()
+    self.connection.commit()
     testPt = TPT(logger=me.logger)
     try:
       tptSet0 = set(socorro_psg.tablesMatchingPattern('tpt%',cursor))
       assert set() == tptSet0, 'Assure we start with clean slate'
       testPt.create(cursor)
-      connection.commit()
+      self.connection.commit()
       tptSet1 = set(socorro_psg.tablesMatchingPattern('tpt%',cursor))
       testPt.createPartitions(cursor,iter(range(2)))
-      connection.commit()
+      self.connection.commit()
       tptSet2 = set(socorro_psg.tablesMatchingPattern('tpt%',cursor))
       assert set(['tpt_0', 'tpt_1',]) == tptSet2 - tptSet1,'Got tptSet2: %s minus tptSet1: %s'%(tptSet2,tptSet1)
     finally:
       cursor.execute("DROP TABLE IF EXISTS tpt, tpt3 CASCADE")
-      connection.commit()
+      self.connection.commit()
     
   def testCreatePartitions_depend(self):
     """
@@ -136,10 +137,9 @@ class TestPartitionedTable:
       - assure that we create the expected partition(s) for a PartitionedTable that has dependencies
     """
     global me
-    connection = psycopg2.connect(me.dsn)
-    cursor = connection.cursor()
+    cursor = self.connection.cursor()
     cursor.execute("DROP TABLE IF EXISTS tpt, tpt3 CASCADE")
-    connection.commit()
+    self.connection.commit()
     testPt = ThreePT(logger = me.logger)
     try:
       tptSet0 = set(socorro_psg.tablesMatchingPattern('tpt%',cursor))
@@ -148,19 +148,19 @@ class TestPartitionedTable:
       assert set() == reportSet0
       testPt.create(cursor)
       schema.ReportsTable(me.logger).create(cursor)
-      connection.commit()
+      self.connection.commit()
       tptSet1 = set(socorro_psg.tablesMatchingPattern('tpt%',cursor))
       reportSet1 = set(socorro_psg.tablesMatchingPattern('report%',cursor))
       schema.databaseDependenciesForPartition[ThreePT] = [schema.ReportsTable]
       testPt.createPartitions(cursor,iter([(dt.date(2008,1,1),dt.date(2008,1,1)),(dt.date(2008,2,2),dt.date(2008,2,9))]))
-      connection.commit()
+      self.connection.commit()
       tptSet2 = set(socorro_psg.tablesMatchingPattern('tpt%',cursor))
       reportSet2 = set(socorro_psg.tablesMatchingPattern('report%',cursor))
       assert set(['tpt3_2008_1_1','tpt3_2008_2_2']) == tptSet2 - tptSet1
       assert set(['reports_20080101', 'reports_20080202']) == reportSet2 - reportSet1
     finally:
       cursor.execute("DROP TABLE IF EXISTS tpt, tpt3, reports CASCADE")
-      connection.commit()
+      self.connection.commit()
 
   def altConnectionCursor(self):
     global me
@@ -183,8 +183,7 @@ class TestPartitionedTable:
       [schema.DumpsTable,[1,dt.datetime(2007,12,25,5,4,3,33),"data"]],
       ]
     # call insert, expecting auto-creation of partitions
-    connection = psycopg2.connect(me.dsn)
-    cursor = connection.cursor()
+    cursor = self.connection.cursor()
     me.dsn = "host=%s dbname=%s user=%s password=%s" % (me.config.databaseHost,me.config.databaseName,
                                                       me.config.databaseUserName,me.config.databasePassword)
     schema.setupDatabase(me.config,me.logger)
@@ -192,7 +191,7 @@ class TestPartitionedTable:
     for t in insertRows:
       obj = t[0](logger=me.logger)
       obj.insert(cursor,t[1],self.altConnectionCursor,date_processed=dt.datetime(2007,12,25,5,4,3,33))
-      connection.commit()
+      self.connection.commit()
       current = set([x for x in socorro_psg.tablesMatchingPattern('%',cursor) if not 'pg_toast' in x])
       diff = current - before
       assert set(['%s_20071224'%obj.name]) == diff,'Expected set([%s_20071224]), got %s'%(obj.name,diff)

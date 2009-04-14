@@ -170,6 +170,7 @@ class Processor(object):
         raise
     except:
       logger.critical("%s - cannot register with the database", threading.currentThread().getName())
+      databaseConnection.rollback()
       self.quit = True
       socorro.lib.util.reportExceptionAndAbort(logger) # can't continue without a registration
     # We managed to get registered. Make sure we have our own priority_jobs table
@@ -245,6 +246,7 @@ class Processor(object):
       databaseConnection.commit()
     except Exception, x:
       logger.critical("%s - could not unregister %d from the database", threading.currentThread().getName(), self.processorId)
+      databaseConnection.rollback()
       socorro.lib.util.reportExceptionAndContinue(logger)
     try:
       databaseCursor.execute("drop table %s" % self.priorityJobsTableName)

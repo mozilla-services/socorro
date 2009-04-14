@@ -170,6 +170,7 @@ class TestProcessor:
 
   def tearDown(self):
     global me
+    #print "\ntearDown",db_postgresql.connectionStatus(self.connection)
     if TestProcessor.markingLog:
       me.logger.warn("AUTO-CLOSING the log marker")
       me.logger.info(me.markingTemplate%(TestProcessor.markingLog,me.endMark))
@@ -183,6 +184,7 @@ class TestProcessor:
       shutil.rmtree(me.config.deferredStorageRoot)
     except OSError:
       pass # ok if there is no such test directory
+    self.connection.close()
 
   def markLog(self):
     global me
@@ -258,9 +260,11 @@ class TestProcessor:
     for rc in requiredConfigs:
       del(cc[rc])
       assert_raises(AssertionError,processor.Processor,cc)
-    self.tearDown() # to get rid of the processors table
+    me.testDB.removeDB(me.config,me.logger)
     # Expect to fail if there is no processors table
     assert_raises(SystemExit,processor.Processor,me.config)
+    schema.partitionCreationHistory = set() # an 'orrible 'ack
+    me.testDB.createDB(me.config,me.logger)
     self.setUp() # and put it back for further testing
     now = dt.datetime.now()
     then = dt.datetime.now() - dt.timedelta(minutes=10)
@@ -564,7 +568,6 @@ class TestProcessor:
       assert dbStamp3 == dbStamp4, 'Expect that second checkin does nothing, but %s != %s'%(dbStamp3, dbStamp4)
     finally:
       self.connection.commit()
-    self.connection.close()
     # I expect someone to re-spell the log message to reflect reality, so lets do this kinda klunky. K?
     assert 1 == len(me.logger.buffer), 'Even though we ran checkin() two times, the second should just return quietly. Len=%s'%(len(me.logger.buffer))
     assert 'updating' in me.logger.buffer[0]
@@ -596,10 +599,10 @@ class TestProcessor:
     priorityTables = db_postgresql.tablesMatchingPattern(p.priorityJobsTableName,cur)
     assert 0 == len(priorityTables), "Expect cleanup removed p's priority jobs table. But %s"%(str(priorityTables))
     cur.execute(sqlS,(p.processorId,))
+    self.connection.commit()
     dbStamp1 = cur.fetchone()[0]
     # as of 2009-Feb, the year is in fact 1999
     assert dbStamp1.year < nowDT.year, 'at least. But dbStamp1: %s and nowDT: %s'%(dbStamp1,nowDT)
-    self.connection.close()
     # Assume that someday a test of threadManager proves that calling its waitForCompletion() works.
 
   def _markJobDuringTesting(self, jobTuple):
@@ -623,6 +626,7 @@ class TestProcessor:
         self.connection.commit()
       except Exception,x:
         me.logger.error("Unable to delete: %s: %s",type(x),x)
+        self.connection.rollback()
         raise
 
   def _dumpJobTables(self, title):
@@ -635,6 +639,7 @@ class TestProcessor:
       cur.execute(sql%tn)
       results.append(' -- %s --'%tn)
       results.extend(cur.fetchall())
+    self.connection.commit()
     for r in results:
       me.logger.debug(r)
 
@@ -683,10 +688,8 @@ class TestProcessor:
           break
     except KeyboardInterrupt,x:
       me.logger.info("%s - Caught KeyboardInterrupt",threading.currentThread().getName())
-      self.connection.close()
     except Exception,x:
       me.logger.info("%s - Caught unexpected %s: %s",threading.currentThread().getName(),type(x),x)
-      self.connection.close()
       raise
     assert expectedNormalIds == seenNormalIds, 'But got expected: %s versus %s'%(expectedNormalIds,seenNormalIds)
     assert expectedPriorityIds == seenPriorityIds, 'But got expected: %s versus %s'%(expectedPriorityIds,seenPriorityIds)
@@ -1140,177 +1143,180 @@ class TestProcessor:
     createJDS.createTestSet({uuid:createJDS.jsonFileData[uuid]},{'logger':me.logger},p.config.storageRoot)
     path = p.jsonPathForUuidInJsonDumpStorage(uuid)
     con,cur = p.databaseConnectionPool.connectionCursorPair()
-    jsonDoc = {}
-    messages = []
-    now = dt.datetime.now()
+    try:
+      jsonDoc = {}
+      messages = []
+      now = dt.datetime.now()
 
-    p.insertReportIntoDatabase(cur,uuid,jsonDoc,path,now,messages)
-    again = dt.datetime.now()
-    assert 5 == len(messages)
-    expectedMessages = [
-      "WARNING: Json file missing ProductName",
-      "WARNING: Json file missing Version",
-      "WARNING: Json file missing BuildID",
-      "WARNING: Json file missing CrashTime",
-      "WARNING: No 'client_crash_date' could be determined from the Json file"
+      p.insertReportIntoDatabase(cur,uuid,jsonDoc,path,now,messages)
+      again = dt.datetime.now()
+      assert 5 == len(messages)
+      expectedMessages = [
+        "WARNING: Json file missing ProductName",
+        "WARNING: Json file missing Version",
+        "WARNING: Json file missing BuildID",
+        "WARNING: Json file missing CrashTime",
+        "WARNING: No 'client_crash_date' could be determined from the Json file"
+        ]
+      for i in range(5):
+        assert expectedMessages[i] == messages[i],'Expected %s, got %s'%(expectedMessages[i],messages[i])
+      expectedData = [now.replace(microsecond=0),now,'no product','no version',None,None]
+      cur.execute('select client_crash_date,date_processed,product,version,build,build_date from reports where uuid = %s',(uuid,))
+      val = cur.fetchall()[0]
+      con.commit()
+      for i in range(len(expectedData)):
+        vi = val[i]
+        if 0 == i : vi = dt.datetime.combine(vi.date(),vi.time())
+        assert expectedData[i] == vi, 'At index %s: Expected %s, got %s'%(i,expectedData[i],vi)
+      cur.execute('delete from reports where uuid = %s',(uuid,))
+      con.commit()
+
+      product = 'bogus'
+      version = '3.xBogus'
+      buildId_notDate = '1966060699'
+      jsonDoc = {'ProductName':product}
+      messages = []
+      p.insertReportIntoDatabase(cur,uuid,jsonDoc,path,now,messages)
+      expectedMessages = [
+        "WARNING: Json file missing Version",
+        "WARNING: Json file missing BuildID",
+        "WARNING: Json file missing CrashTime",
+        "WARNING: No 'client_crash_date' could be determined from the Json file"
+        ]
+      assert len(expectedMessages) == len(messages)
+      for i in range(len(messages)):
+        assert expectedMessages[i] == messages[i]
+      expectedData = [now.replace(microsecond=0),now,product,'no version',None,None]
+      cur.execute('select client_crash_date,date_processed,product,version,build,build_date from reports where uuid = %s',(uuid,))
+      val = cur.fetchall()[0]
+      con.commit()
+      for i in range(len(expectedData)):
+        vi = val[i]
+        if 0 == i : vi = dt.datetime.combine(vi.date(),vi.time())
+        assert expectedData[i] == vi, 'At index %s: Expected %s, got %s'%(i,expectedData[i],vi)
+      cur.execute('delete from reports where uuid = %s',(uuid,))
+      con.commit()
+
+      jsonDoc = {'Version':version}
+      messages = []
+      p.insertReportIntoDatabase(cur,uuid,jsonDoc,path,now,messages)
+      expectedMessages = [
+        "WARNING: Json file missing ProductName",
+        "WARNING: Json file missing BuildID",
+        "WARNING: Json file missing CrashTime",
+        "WARNING: No 'client_crash_date' could be determined from the Json file"
+        ]
+      assert len(expectedMessages) == len(messages)
+      for i in range(len(messages)):
+        assert expectedMessages[i] == messages[i]
+      expectedData = [now.replace(microsecond=0),now,'no product',version,None,None]
+      cur.execute('select client_crash_date,date_processed,product,version,build,build_date from reports where uuid = %s',(uuid,))
+      val = cur.fetchall()[0]
+      con.commit()
+      for i in range(len(expectedData)):
+        vi = val[i]
+        if 0 == i : vi = dt.datetime.combine(vi.date(),vi.time())
+        assert expectedData[i] == vi, 'At index %s: Expected %s, got %s'%(i,expectedData[i],vi)
+      cur.execute('delete from reports where uuid = %s',(uuid,))
+      con.commit()
+
+      jsonDoc = {'BuildID':buildId_notDate}
+      messages = []
+      p.insertReportIntoDatabase(cur,uuid,jsonDoc,path,now,messages)
+      expectedMessages = [
+        "WARNING: Json file missing ProductName",
+        "WARNING: Json file missing Version",
+        "WARNING: Json file missing CrashTime",
+        "WARNING: No 'client_crash_date' could be determined from the Json file",
+        "WARNING: No 'build_date' could be determined from the Json file",
       ]
-    for i in range(5):
-      assert expectedMessages[i] == messages[i],'Expected %s, got %s'%(expectedMessages[i],messages[i])
-    expectedData = [now.replace(microsecond=0),now,'no product','no version',None,None]
-    cur.execute('select client_crash_date,date_processed,product,version,build,build_date from reports where uuid = %s',(uuid,))
-    val = cur.fetchall()[0]
-    con.commit()
-    for i in range(len(expectedData)):
-      vi = val[i]
-      if 0 == i : vi = dt.datetime.combine(vi.date(),vi.time())
-      assert expectedData[i] == vi, 'At index %s: Expected %s, got %s'%(i,expectedData[i],vi)
-    cur.execute('delete from reports where uuid = %s',(uuid,))
-    con.commit()
+      assert len(expectedMessages) == len(messages)
+      for i in range(len(messages)):
+        assert expectedMessages[i] == messages[i]
+      expectedData = [now.replace(microsecond=0),now,'no product','no version',buildId_notDate,None]
+      cur.execute('select client_crash_date,date_processed,product,version,build,build_date from reports where uuid = %s',(uuid,))
+      val = cur.fetchall()[0]
+      con.commit()
+      for i in range(len(expectedData)):
+        vi = val[i]
+        if 0 == i : vi = dt.datetime.combine(vi.date(),vi.time())
+        assert expectedData[i] == vi, 'At index %s: Expected %s, got %s'%(i,expectedData[i],vi)
+      cur.execute('delete from reports where uuid = %s',(uuid,))
+      con.commit()
 
-    product = 'bogus'
-    version = '3.xBogus'
-    buildId_notDate = '1966060699'
-    jsonDoc = {'ProductName':product}
-    messages = []
-    p.insertReportIntoDatabase(cur,uuid,jsonDoc,path,now,messages)
-    expectedMessages = [
-      "WARNING: Json file missing Version",
-      "WARNING: Json file missing BuildID",
-      "WARNING: Json file missing CrashTime",
-      "WARNING: No 'client_crash_date' could be determined from the Json file"
-      ]
-    assert len(expectedMessages) == len(messages)
-    for i in range(len(messages)):
-      assert expectedMessages[i] == messages[i]
-    expectedData = [now.replace(microsecond=0),now,product,'no version',None,None]
-    cur.execute('select client_crash_date,date_processed,product,version,build,build_date from reports where uuid = %s',(uuid,))
-    val = cur.fetchall()[0]
-    con.commit()
-    for i in range(len(expectedData)):
-      vi = val[i]
-      if 0 == i : vi = dt.datetime.combine(vi.date(),vi.time())
-      assert expectedData[i] == vi, 'At index %s: Expected %s, got %s'%(i,expectedData[i],vi)
-    cur.execute('delete from reports where uuid = %s',(uuid,))
-    con.commit()
+      jsonDoc = {'ProductName':product,'Version':version}
+      messages = []
+      p.insertReportIntoDatabase(cur,uuid,jsonDoc,path,now,messages)
+      expectedMessages = [
+        "WARNING: Json file missing BuildID",
+        "WARNING: Json file missing CrashTime",
+        "WARNING: No 'client_crash_date' could be determined from the Json file"
+        ]
+      assert len(expectedMessages) == len(messages)
+      for i in range(len(messages)):
+        assert expectedMessages[i] == messages[i]
+      expectedData = [now.replace(microsecond=0),now,product,version,None,None]
+      cur.execute('select client_crash_date,date_processed,product,version,build,build_date from reports where uuid = %s',(uuid,))
+      val = cur.fetchall()[0]
+      con.commit()
+      for i in range(len(expectedData)):
+        vi = val[i]
+        if 0 == i : vi = dt.datetime.combine(vi.date(),vi.time())
+        assert expectedData[i] == vi, 'At index %s: Expected %s, got %s'%(i,expectedData[i],vi)
+      cur.execute('delete from reports where uuid = %s',(uuid,))
+      con.commit()
 
-    jsonDoc = {'Version':version}
-    messages = []
-    p.insertReportIntoDatabase(cur,uuid,jsonDoc,path,now,messages)
-    expectedMessages = [
-      "WARNING: Json file missing ProductName",
-      "WARNING: Json file missing BuildID",
-      "WARNING: Json file missing CrashTime",
-      "WARNING: No 'client_crash_date' could be determined from the Json file"
-      ]
-    assert len(expectedMessages) == len(messages)
-    for i in range(len(messages)):
-      assert expectedMessages[i] == messages[i]
-    expectedData = [now.replace(microsecond=0),now,'no product',version,None,None]
-    cur.execute('select client_crash_date,date_processed,product,version,build,build_date from reports where uuid = %s',(uuid,))
-    val = cur.fetchall()[0]
-    con.commit()
-    for i in range(len(expectedData)):
-      vi = val[i]
-      if 0 == i : vi = dt.datetime.combine(vi.date(),vi.time())
-      assert expectedData[i] == vi, 'At index %s: Expected %s, got %s'%(i,expectedData[i],vi)
-    cur.execute('delete from reports where uuid = %s',(uuid,))
-    con.commit()
+      buildId_notDate = '1966060699'
+      jsonDoc = {'ProductName':product,'Version':version,'BuildID':buildId_notDate}
+      messages = []
+      p.insertReportIntoDatabase(cur,uuid,jsonDoc,path,now,messages)
+      expectedMessages = [
+        "WARNING: Json file missing CrashTime",
+        "WARNING: No 'client_crash_date' could be determined from the Json file",
+        "WARNING: No 'build_date' could be determined from the Json file",
+        ]
+      assert len(expectedMessages) == len(messages)
+      for i in range(len(messages)):
+        assert expectedMessages[i] == messages[i]
+      expectedData = [now.replace(microsecond=0),now,product,version,buildId_notDate,None]
+      cur.execute('select client_crash_date,date_processed,product,version,build,build_date from reports where uuid = %s',(uuid,))
+      val = cur.fetchall()[0]
+      con.commit()
+      for i in range(len(expectedData)):
+        vi = val[i]
+        if 0 == i : vi = dt.datetime.combine(vi.date(),vi.time())
+        assert expectedData[i] == vi, 'At index %s: Expected %s, got %s'%(i,expectedData[i],vi)
+      cur.execute('delete from reports where uuid = %s',(uuid,))
+      con.commit()
 
-    jsonDoc = {'BuildID':buildId_notDate}
-    messages = []
-    p.insertReportIntoDatabase(cur,uuid,jsonDoc,path,now,messages)
-    expectedMessages = [
-      "WARNING: Json file missing ProductName",
-      "WARNING: Json file missing Version",
-      "WARNING: Json file missing CrashTime",
-      "WARNING: No 'client_crash_date' could be determined from the Json file",
-      "WARNING: No 'build_date' could be determined from the Json file",
-    ]
-    assert len(expectedMessages) == len(messages)
-    for i in range(len(messages)):
-      assert expectedMessages[i] == messages[i]
-    expectedData = [now.replace(microsecond=0),now,'no product','no version',buildId_notDate,None]
-    cur.execute('select client_crash_date,date_processed,product,version,build,build_date from reports where uuid = %s',(uuid,))
-    val = cur.fetchall()[0]
-    con.commit()
-    for i in range(len(expectedData)):
-      vi = val[i]
-      if 0 == i : vi = dt.datetime.combine(vi.date(),vi.time())
-      assert expectedData[i] == vi, 'At index %s: Expected %s, got %s'%(i,expectedData[i],vi)
-    cur.execute('delete from reports where uuid = %s',(uuid,))
-    con.commit()
-
-    jsonDoc = {'ProductName':product,'Version':version}
-    messages = []
-    p.insertReportIntoDatabase(cur,uuid,jsonDoc,path,now,messages)
-    expectedMessages = [
-      "WARNING: Json file missing BuildID",
-      "WARNING: Json file missing CrashTime",
-      "WARNING: No 'client_crash_date' could be determined from the Json file"
-      ]
-    assert len(expectedMessages) == len(messages)
-    for i in range(len(messages)):
-      assert expectedMessages[i] == messages[i]
-    expectedData = [now.replace(microsecond=0),now,product,version,None,None]
-    cur.execute('select client_crash_date,date_processed,product,version,build,build_date from reports where uuid = %s',(uuid,))
-    val = cur.fetchall()[0]
-    con.commit()
-    for i in range(len(expectedData)):
-      vi = val[i]
-      if 0 == i : vi = dt.datetime.combine(vi.date(),vi.time())
-      assert expectedData[i] == vi, 'At index %s: Expected %s, got %s'%(i,expectedData[i],vi)
-    cur.execute('delete from reports where uuid = %s',(uuid,))
-    con.commit()
-
-    buildId_notDate = '1966060699'
-    jsonDoc = {'ProductName':product,'Version':version,'BuildID':buildId_notDate}
-    messages = []
-    p.insertReportIntoDatabase(cur,uuid,jsonDoc,path,now,messages)
-    expectedMessages = [
-      "WARNING: Json file missing CrashTime",
-      "WARNING: No 'client_crash_date' could be determined from the Json file",
-      "WARNING: No 'build_date' could be determined from the Json file",
-      ]
-    assert len(expectedMessages) == len(messages)
-    for i in range(len(messages)):
-      assert expectedMessages[i] == messages[i]
-    expectedData = [now.replace(microsecond=0),now,product,version,buildId_notDate,None]
-    cur.execute('select client_crash_date,date_processed,product,version,build,build_date from reports where uuid = %s',(uuid,))
-    val = cur.fetchall()[0]
-    con.commit()
-    for i in range(len(expectedData)):
-      vi = val[i]
-      if 0 == i : vi = dt.datetime.combine(vi.date(),vi.time())
-      assert expectedData[i] == vi, 'At index %s: Expected %s, got %s'%(i,expectedData[i],vi)
-    cur.execute('delete from reports where uuid = %s',(uuid,))
-    con.commit()
-
-    product = 'a-terrifically-long-product-name'
-    version = '1.2.3prebeta-98765'
-    idparts = ['1989','11','12','13','-','beta1234',]
-    buildId = ''.join(idparts)
-    expectedBuildStamp = dt.datetime( *(int(x) for x in idparts[:4]) )
-    jsonDoc = {'ProductName':product,'Version':version,'BuildID':buildId}
-    messages = []
-    p.insertReportIntoDatabase(cur,uuid,jsonDoc,path,now,messages)
-    expectedMessages = [
-      "WARNING: Json file missing CrashTime",
-      "WARNING: No 'client_crash_date' could be determined from the Json file",
-      ]
-    assert len(expectedMessages) == len(messages)
-    for i in range(len(messages)):
-      assert expectedMessages[i] == messages[i]
-    expectedData = [now.replace(microsecond=0),now,product[:30],version[:16],buildId[:16],expectedBuildStamp]
-    cur.execute('select client_crash_date,date_processed,product,version,build,build_date from reports where uuid = %s',(uuid,))
-    val = cur.fetchall()[0]
-    con.commit()
-    for i in range(len(expectedData)):
-      vi = val[i]
-      if 0 == i : vi = dt.datetime.combine(vi.date(),vi.time())
-      assert expectedData[i] == vi, 'At index %s: Expected %s, got %s'%(i,expectedData[i],vi)
-    cur.execute('delete from reports where uuid = %s',(uuid,))
-    con.commit()
-
+      product = 'a-terrifically-long-product-name'
+      version = '1.2.3prebeta-98765'
+      idparts = ['1989','11','12','13','-','beta1234',]
+      buildId = ''.join(idparts)
+      expectedBuildStamp = dt.datetime( *(int(x) for x in idparts[:4]) )
+      jsonDoc = {'ProductName':product,'Version':version,'BuildID':buildId}
+      messages = []
+      p.insertReportIntoDatabase(cur,uuid,jsonDoc,path,now,messages)
+      expectedMessages = [
+        "WARNING: Json file missing CrashTime",
+        "WARNING: No 'client_crash_date' could be determined from the Json file",
+        ]
+      assert len(expectedMessages) == len(messages)
+      for i in range(len(messages)):
+        assert expectedMessages[i] == messages[i]
+      expectedData = [now.replace(microsecond=0),now,product[:30],version[:16],buildId[:16],expectedBuildStamp]
+      cur.execute('select client_crash_date,date_processed,product,version,build,build_date from reports where uuid = %s',(uuid,))
+      val = cur.fetchall()[0]
+      con.commit()
+      for i in range(len(expectedData)):
+        vi = val[i]
+        if 0 == i : vi = dt.datetime.combine(vi.date(),vi.time())
+        assert expectedData[i] == vi, 'At index %s: Expected %s, got %s'%(i,expectedData[i],vi)
+      cur.execute('delete from reports where uuid = %s',(uuid,))
+      con.commit()
+    finally:
+      p.databaseConnectionPool.cleanup()
+      
   def testInsertReportIntoDatabase_CrashVsTimestamp(self):
     """
     testInsertReportIntoDatabase_CrashVsTimestamp(self):
@@ -1319,56 +1325,60 @@ class TestProcessor:
     global me
     p = processor.Processor(me.config)
     con,cur = p.databaseConnectionPool.connectionCursorPair()
-    data = dbtestutil.makeJobDetails({1:4})
-    uuid0 = data[0][1]
-    uuid1 = data[1][1]
-    uuid2 = data[2][1]
-    uuid3 = data[3][1]
-    what= {uuid0:createJDS.jsonFileData[uuid0],uuid1:createJDS.jsonFileData[uuid1], uuid2:createJDS.jsonFileData[uuid2], uuid3:createJDS.jsonFileData[uuid3]}
-    createJDS.createTestSet(what,{'logger':me.logger},p.config.storageRoot)
-    path0 = p.jsonPathForUuidInJsonDumpStorage(uuid0)
-    path1 = p.jsonPathForUuidInJsonDumpStorage(uuid1)
-    path2 = p.jsonPathForUuidInJsonDumpStorage(uuid2)
-    path3 = p.jsonPathForUuidInJsonDumpStorage(uuid3)
-    product = 'bogus'
-    version = '3.xBogus'
-    buildId = '1966060622'
-    crashTime = '1234522800'
-    timeStamp = str(int(crashTime)-60)
-    startupTime = str(int(timeStamp)-60)
-    installTime = str(int(timeStamp)-(24*60*60))
-    jsonDoc0 = {'ProductName':product,'Version':version,'BuildID':buildId}
-    jsonDoc1 = {'ProductName':product,'Version':version,'BuildID':buildId, 'CrashTime':crashTime,}
-    jsonDoc2 = {'ProductName':product,'Version':version,'BuildID':buildId, 'timestamp':timeStamp,}
-    jsonDoc3 = {'ProductName':product,'Version':version,'BuildID':buildId, 'CrashTime':crashTime, 'timestamp':timeStamp,}
-    now = dt.datetime.now()
-    messages = ["   == NONE"]
-    p.insertReportIntoDatabase(cur,uuid0,jsonDoc0,path0,now,[])#messages)
-    messages.append("   == CRASH ONLY")
-    p.insertReportIntoDatabase(cur,uuid1,jsonDoc1,path1,now,[])#messages)
-    messages.append("   == STAMP ONLY")
-    p.insertReportIntoDatabase(cur,uuid2,jsonDoc2,path2,now,[])#messages)
-    messages.append("   == BOTH")
-    p.insertReportIntoDatabase(cur,uuid3,jsonDoc3,path2,now,[])#messages)
-    messages.append("   == ALL DONE MESSAGES")
-    # for i in messages:print i
-    after = dt.datetime.now()
-    labels = ["\nnone","crash",'stamp','both']
-    items = ['crash',"procd","age: ","last:","uptim","build",]
-    expectedValues = [
-      [now.replace(microsecond=0),now],
-      [dt.datetime.fromtimestamp(int(crashTime)),now],
-      [dt.datetime.fromtimestamp(int(timeStamp)),now],
-      [dt.datetime.fromtimestamp(int(crashTime)),now],
-      ]
-    cur.execute("select client_crash_date,date_processed from reports where uuid in (%s,%s,%s,%s)",(uuid0,uuid1,uuid2,uuid3))
-    val = cur.fetchall()
-    for docIndex in range(len(val)):
-      for dateIndex in range(len(val[docIndex])):
-        value = val[docIndex][dateIndex]
-        value = value.combine(value.date(),value.time())
-        assert expectedValues[docIndex][dateIndex] == value, "But expected %s, got %s"%(expectedValues[docIndex][dateIndex],value)
-    con.commit()
+    try:
+      data = dbtestutil.makeJobDetails({1:4})
+      uuid0 = data[0][1]
+      uuid1 = data[1][1]
+      uuid2 = data[2][1]
+      uuid3 = data[3][1]
+      what= {uuid0:createJDS.jsonFileData[uuid0],uuid1:createJDS.jsonFileData[uuid1], uuid2:createJDS.jsonFileData[uuid2], uuid3:createJDS.jsonFileData[uuid3]}
+      createJDS.createTestSet(what,{'logger':me.logger},p.config.storageRoot)
+      path0 = p.jsonPathForUuidInJsonDumpStorage(uuid0)
+      path1 = p.jsonPathForUuidInJsonDumpStorage(uuid1)
+      path2 = p.jsonPathForUuidInJsonDumpStorage(uuid2)
+      path3 = p.jsonPathForUuidInJsonDumpStorage(uuid3)
+      product = 'bogus'
+      version = '3.xBogus'
+      buildId = '1966060622'
+      crashTime = '1234522800'
+      timeStamp = str(int(crashTime)-60)
+      startupTime = str(int(timeStamp)-60)
+      installTime = str(int(timeStamp)-(24*60*60))
+      jsonDoc0 = {'ProductName':product,'Version':version,'BuildID':buildId}
+      jsonDoc1 = {'ProductName':product,'Version':version,'BuildID':buildId, 'CrashTime':crashTime,}
+      jsonDoc2 = {'ProductName':product,'Version':version,'BuildID':buildId, 'timestamp':timeStamp,}
+      jsonDoc3 = {'ProductName':product,'Version':version,'BuildID':buildId, 'CrashTime':crashTime, 'timestamp':timeStamp,}
+      now = dt.datetime.now()
+      messages = ["   == NONE"]
+      p.insertReportIntoDatabase(cur,uuid0,jsonDoc0,path0,now,[])#messages)
+      messages.append("   == CRASH ONLY")
+      p.insertReportIntoDatabase(cur,uuid1,jsonDoc1,path1,now,[])#messages)
+      messages.append("   == STAMP ONLY")
+      p.insertReportIntoDatabase(cur,uuid2,jsonDoc2,path2,now,[])#messages)
+      messages.append("   == BOTH")
+      p.insertReportIntoDatabase(cur,uuid3,jsonDoc3,path2,now,[])#messages)
+      messages.append("   == ALL DONE MESSAGES")
+      # for i in messages:print i
+      after = dt.datetime.now()
+      labels = ["\nnone","crash",'stamp','both']
+      items = ['crash',"procd","age: ","last:","uptim","build",]
+      expectedValues = [
+        [now.replace(microsecond=0),now],
+        [dt.datetime.fromtimestamp(int(crashTime)),now],
+        [dt.datetime.fromtimestamp(int(timeStamp)),now],
+        [dt.datetime.fromtimestamp(int(crashTime)),now],
+        ]
+      cur.execute("select client_crash_date,date_processed from reports where uuid in (%s,%s,%s,%s)",(uuid0,uuid1,uuid2,uuid3))
+      val = cur.fetchall()
+      for docIndex in range(len(val)):
+        for dateIndex in range(len(val[docIndex])):
+          value = val[docIndex][dateIndex]
+          value = value.combine(value.date(),value.time())
+          assert expectedValues[docIndex][dateIndex] == value, "But expected %s, got %s"%(expectedValues[docIndex][dateIndex],value)
+      con.commit()
+    finally:
+      p.databaseConnectionPool.cleanup()
+      
   def testMake_signature(self):
     """
     testMake_signature(self):

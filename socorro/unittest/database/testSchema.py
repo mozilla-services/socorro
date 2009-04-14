@@ -191,6 +191,7 @@ def testConnectToDatabase():
   finally:
     cursor.execute("DROP TABLE IF EXISTS foo")
     connection.commit()
+    connection.close()
   
 def testSetupAndTeardownDatabase():
   """
@@ -202,25 +203,28 @@ def testSetupAndTeardownDatabase():
   tcon,tcur = schema.connectToDatabase(me.config,me.logger)
   tcur.execute("DROP TABLE IF EXISTS %s CASCADE"%','.join(me.expectedTableNames))
   tcon.commit()
-  schema.setupDatabase(me.config,me.logger)
   try:
-    for t in me.expectedTableNames:
-      # next line raises if the table does not exist
-      tcur.execute("SELECT count(*) from %s"%t)
-      tcon.commit()
-      count = tcur.fetchone()[0]
-      assert 0 == count
-  finally:
-    schema.teardownDatabase(me.config,me.logger)
-  for t in me.expectedTableNames:
+    schema.setupDatabase(me.config,me.logger)
     try:
-      tcur.execute("SELECT count(*) from %s"%t)
-      assert False, 'Expected table %s does not exist'%t
-    except psycopg2.ProgrammingError:
-      tcon.rollback()
-    except Exception,x:
-      assert False, 'Expected psycopg2.ProgrammingError, not %s: %s'%(type(x),x)
-
+      for t in me.expectedTableNames:
+        # next line raises if the table does not exist
+        tcur.execute("SELECT count(*) from %s"%t)
+        tcon.commit()
+        count = tcur.fetchone()[0]
+        assert 0 == count
+    finally:
+      schema.teardownDatabase(me.config,me.logger)
+    for t in me.expectedTableNames:
+      try:
+        tcur.execute("SELECT count(*) from %s"%t)
+        assert False, 'Expected table %s does not exist'%t
+      except psycopg2.ProgrammingError:
+        tcon.rollback()
+      except Exception,x:
+        assert False, 'Expected psycopg2.ProgrammingError, not %s: %s'%(type(x),x)
+  finally:
+    tcon.close()
+    
 updated = []
 def testUpdateDatabase():
   """
@@ -255,30 +259,35 @@ def testModuleCreatePartitions():
   """
   global me
   connection = psycopg2.connect(me.dsn)
-  cursor = connection.cursor()
-  me.testDB.removeDB(me.config,me.logger)
-  me.testDB.createDB(me.config,me.logger)
-  me.config.startDate = dt.date(2008,1,1)
-  me.config.endDate = dt.date(2008,1,1)
-  reportSet = set(socorro_psg.tablesMatchingPattern('reports%',cursor))
-  extensionSet = set(socorro_psg.tablesMatchingPattern('extensions%',cursor))
-  frameSet0 = set(socorro_psg.tablesMatchingPattern('frames%',cursor))
-  schema.databaseObjectClassListForWeeklyPartitions = [schema.ExtensionsTable]
-  schema.createPartitions(me.config,me.logger)
-  moreReportSet = set(socorro_psg.tablesMatchingPattern('report%',cursor))-reportSet
-  moreExtensionSet = set(socorro_psg.tablesMatchingPattern('extensions%',cursor))-extensionSet
-  assert set(['reports_20071231']) == moreReportSet
-  assert set(['extensions_20071231']) == moreExtensionSet
-  frameSet = set(socorro_psg.tablesMatchingPattern('frames%',cursor))
-  assert frameSet0 == frameSet
-  schema.databaseObjectClassListForWeeklyPartitions = [schema.FramesTable]
-  schema.createPartitions(me.config,me.logger)
-  moreFrameSet = set(socorro_psg.tablesMatchingPattern('frames%',cursor))-frameSet
-  assert set(['frames_20071231']) == moreFrameSet
+  try:
+    cursor = connection.cursor()
+    me.testDB.removeDB(me.config,me.logger)
+    me.testDB.createDB(me.config,me.logger)
+    me.config.startDate = dt.date(2008,1,1)
+    me.config.endDate = dt.date(2008,1,1)
+    reportSet = set(socorro_psg.tablesMatchingPattern('reports%',cursor))
+    extensionSet = set(socorro_psg.tablesMatchingPattern('extensions%',cursor))
+    frameSet0 = set(socorro_psg.tablesMatchingPattern('frames%',cursor))
+    schema.databaseObjectClassListForWeeklyPartitions = [schema.ExtensionsTable]
+    schema.createPartitions(me.config,me.logger)
+    moreReportSet = set(socorro_psg.tablesMatchingPattern('report%',cursor))-reportSet
+    moreExtensionSet = set(socorro_psg.tablesMatchingPattern('extensions%',cursor))-extensionSet
+    assert set(['reports_20071231']) == moreReportSet
+    assert set(['extensions_20071231']) == moreExtensionSet
+    frameSet = set(socorro_psg.tablesMatchingPattern('frames%',cursor))
+    assert frameSet0 == frameSet
+    schema.databaseObjectClassListForWeeklyPartitions = [schema.FramesTable]
+    schema.createPartitions(me.config,me.logger)
+    moreFrameSet = set(socorro_psg.tablesMatchingPattern('frames%',cursor))-frameSet
+    assert set(['frames_20071231']) == moreFrameSet
+  finally:
+    connection.close()
 
 class TestDatabaseObject:
   def setUp(self):
     self.connection = psycopg2.connect(me.dsn)
+  def tearDown(self):
+    self.connection.close()
     
   def testConstructor(self):
     """
@@ -330,6 +339,9 @@ class TestDatabaseObject:
 class TestTable:
   def setUp(self):
     self.connection = psycopg2.connect(me.dsn)
+  def tearDown(self):
+    self.connection.close()
+    
   def testCreateAndDrop(self):
     """
     TestTable.testCreateAndDrop():
@@ -360,7 +372,7 @@ class TestTable:
       self.connection.commit()
 
 # During maintenance on schema.py: If you add, remove or rename any of the tables in schema, make a parallel change here
-# value[0] is True iff the table is a PartitionedTable; value[1] is the expectedSet of tables (including precursors) for each Table
+# value[0] is True iff the table is a PartitionedTable; value[1] is the expectedSet of table names (including precursors) for each Table
 hardCodedSchemaClasses = {
   schema.BranchesTable:[False,set(['branches'])],
   schema.DumpsTable:[True,set(['dumps'])],
@@ -419,10 +431,10 @@ def checkOneClass(aClass,aType):
   expectedTableClasses = schema.getOrderedSetupList([aClass])
   for t in expectedTableClasses:
     expectedList.append(t(logger = me.logger))
-  schema.teardownDatabase(me.config,me.logger)
-  matchingTables = [x for x in socorro_psg.tablesMatchingPattern(table.name+'%',cursor) if not x.endswith('_id_seq')]
-  assert [] == matchingTables ,'For class %s saw %s'%(table.name,matchingTables)
   try:
+    schema.teardownDatabase(me.config,me.logger)
+    matchingTables = [x for x in socorro_psg.tablesMatchingPattern(table.name+'%',cursor) if not x.endswith('_id_seq')]
+    assert [] == matchingTables ,'For class %s saw %s'%(table.name,matchingTables)
     # call create
     before = set(socorro_psg.tablesMatchingPattern('%',cursor))
     ignore = [x for x in before if (x.startswith('pg_toast') or x.endswith('id_seq'))]
@@ -442,6 +454,7 @@ def checkOneClass(aClass,aType):
   finally:
     cursor.execute("DROP TABLE IF EXISTS %s CASCADE"%(','.join([x.name for x in expectedList])))
     connection.commit()
+    connection.close()
 
 def testCreateAndDropEachTable():
   """

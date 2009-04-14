@@ -96,6 +96,7 @@ class TestPostgresql:
     for tn in testTableNames:
       cursor.execute(dropSql%tn)
     self.connection.commit()
+    self.connection.close()
   
   def testTablesMatchingPattern(self):
     cursor = self.connection.cursor()
@@ -136,7 +137,7 @@ class TestPostgresql:
       cursor.execute("CREATE TRIGGER check_trigger_2 AFTER UPDATE ON ttrigs FOR EACH ROW EXECUTE PROCEDURE check_trigger();")
       self.connection.commit()
       theList = postg.triggersForTable('ttrigs',cursor)
-      assert ['check_trigger_t', 'check_trigger_2'] == theList
+      assert set(['check_trigger_t', 'check_trigger_2']) == set(theList),'but got %s'%(set(theList),)
     finally:
       cursor.execute("DROP TABLE IF EXISTS ttrigs")
       self.connection.commit()
@@ -160,7 +161,7 @@ class TestPostgresql:
       cursor.execute("CREATE INDEX ti_i ON tindex (i);")
       self.connection.commit()
       indices = postg.indexesForTable('tindex',cursor)
-      assert ['ti_id','ti_i'] == indices
+      assert set(['ti_id','ti_i']) == set(indices), "but got %s"%(set(indices))
       cursor.execute("CREATE INDEX ti_i_f ON tindex (i,f);")
       self.connection.commit()
       indices = postg.indexesForTable('tindex',cursor)
