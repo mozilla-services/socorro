@@ -18,7 +18,7 @@ import socorro.unittest.testlib.dbtestutil as dbtestutil
 from   socorro.unittest.testlib.loggerForTest import TestingLogger
 from   socorro.unittest.testlib.testDB import TestDB
 
-import mtbfTestconfig as testConfig
+import cronTestconfig as testConfig
 
 class Me(): # not quite "self"
   """

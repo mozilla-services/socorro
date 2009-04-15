@@ -14,5 +14,4 @@ processingDay.singleCharacter = 'd'
 
 logFilePathname = cm.Option()
 logFilePathname.doc = 'full pathname for the log file'
-logFilePathname.default = '%(testDir)s/logs/mtbf_test.log'
-
+logFilePathname.default = '%(testDir)s/logs/cron_test.log'
