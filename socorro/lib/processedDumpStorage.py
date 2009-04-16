@@ -1,3 +1,4 @@
+import datetime
 import gzip
 import logging
 import os
@@ -18,31 +19,45 @@ class ProcessedDumpStorage(object):
    - A suffix that encodes the date of assignment
    - information about the appropriate depth of the radix tree (by default: 4, but now always 2)
   The storage is a file whose name is ooid.suffix, whose path is determined by the ooid itself
+  
+  An additional 'date' branch is saved to facilitate finding files by date. It holds paths like
+  YYYY/mm/dd/HH/MM/uuid where MM is among ['00','05', ... '55'] and uuid is a symbolic link to the
+  directory in the name branch holding uuid.jsonz
   """
   def __init__(self, root = '.', **kwargs):
     """
     Set up the basic conditions for storing gmpgz files. Possible kwargs keys:
-     - 'rootName': The (absolute or relative) path to the top of the storage tree. Default '.'
-     - 'fileSuffix': The storage filename suffix. Default '.gmpgz'
+     - 'rootName': The relative path to the top of the name storage tree from root parameter. Default 'name'
+     - 'dateName': The relative path to the top of the date storage tree from root parameter. Default 'date'
+     - 'fileSuffix': The storage filename suffix. Default '.jsonz'
      - 'gzipCompression': The level of compression to use. Default = 9
+     - 'minutesPerSlot': The number of minutes in the lowest date directory. Default = 5
      - 'logger': A logger. Default: logging.getLogger('dumpStorage')
-     - 'storageDepth': the lenght of branches in the radix storage tree. Default = 2
+     - 'storageDepth': the length of branches in the radix storage tree. Default = 2
+          Do NOT change from 2 without updateing apache mod-rewrite rules and IT old-file removal scripts
     """
     super(ProcessedDumpStorage, self).__init__()
     self.root = root.rstrip(os.sep)
-    self.rootName = kwargs.get('rootName','.')
+    self.rootName = kwargs.get('rootName','name')
+    self.dateName = kwargs.get('dateName','date')
     self.fileSuffix = kwargs.get('fileSuffix','.jsonz')
+    self.minutesPerSlot = int(kwargs.get('minutesPerSlot',5))
     self.gzipCompression = int(kwargs.get('gzipCompression',9))
     self.storageDepth = int(kwargs.get('storageDepth',2))
     if not self.fileSuffix.startswith('.'):
       self.fileSuffix = ".%s" % (self.fileSuffix)
     self.storageBranch = os.path.join(self.root,self.rootName)
+    self.dateBranch = os.path.join(self.root,self.dateName)
     self.logger = kwargs.get('logger', logging.getLogger('dumpStorage'))
 
-  def newEntry(self, uuid):
+  def newEntry(self, uuid, timestamp=None):
     """
-    Given a uuid, create an empty file and hand back a writeable 'file' handle (actually GzipFile)
+    Given a uuid, create an empty file and a writeable 'file' handle (actually GzipFile) to it
+    Create the symbolic link from the date branch to the file's storage directory
+    Returns the 'file' handle, or None if there was a problem
     """
+    if not timestamp:
+      timestamp = datetime.datetime.now()
     dumpDir = self.__makeDumpDir(uuid)
     dname = os.path.join(dumpDir,uuid+self.fileSuffix)
     df = None
@@ -55,13 +70,19 @@ class ProcessedDumpStorage(object):
         df = gzip.open(dname,'w',self.gzipCompression)
       else:
         raise x
+    dateDir = self.__makeDateDir(timestamp)
+    try:
+      os.symlink(dumpDir,os.path.join(dateDir,uuid))
+    finally:
+      if not df:
+        os.unlink(os.path.join(dateDir,uuid))
     return df
 
-  def putDumpToFile(self,uuid,dumpObject):
+  def putDumpToFile(self,uuid,dumpObject, timestamp=None):
     """
     Given a uuid and an dumpObject, create the appropriate dump file and fill it with object's data
     """
-    fh = self.newEntry(uuid)
+    fh = self.newEntry(uuid, timestamp)
     try:
       simplejson.dump(dumpObject,fh)
     finally:
@@ -114,6 +135,21 @@ class ProcessedDumpStorage(object):
   def __makeDumpDir(self,uuid):
     """Make sure the dump directory exists, and return its path"""
     dpath = self.__dumpPath(uuid)
+    try:
+      os.makedirs(dpath)
+    except OSError,e:
+      if not os.path.isdir(dpath):
+        raise e
+    return dpath
+
+  def getDateDir(self,dt):
+    m = dt.minute
+    slot = self.minutesPerSlot * int(m/self.minutesPerSlot)
+    # dtbranch//yyyy//mmmm//dddd//hhhh//5min
+    return "%s%s%04d%s%02d%s%02d%s%02d%s%02d" %  (self.dateBranch,os.sep,dt.year,os.sep,dt.month,os.sep,dt.day,os.sep,dt.hour,os.sep,slot)
+
+  def __makeDateDir(self, dt):
+    dpath = self.getDateDir(dt)
     try:
       os.makedirs(dpath)
     except OSError,e:
