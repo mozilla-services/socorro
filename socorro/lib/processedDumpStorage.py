@@ -4,6 +4,7 @@ import logging
 import os
 import simplejson
 import stat
+import threading
 
 import socorro.lib.ooid as socorro_ooid
 import socorro.lib.util as socorro_util
@@ -130,15 +131,18 @@ class ProcessedDumpStorage(object):
     depth = self.storageDepth
     dirs = [self.storageBranch]
     dirs.extend([uuid[2*x:2*x+2] for x in range(depth)])
+    self.logger.debug("%s - %s -> %s",threading.currentThread().getName(),uuid,dirs)
     return os.sep.join(dirs)
 
   def __makeDumpDir(self,uuid):
     """Make sure the dump directory exists, and return its path"""
     dpath = self.__dumpPath(uuid)
+    self.logger.debug("%s - trying makedirs %s",threading.currentThread().getName(),dpath)
     try:
       os.makedirs(dpath)
     except OSError,e:
       if not os.path.isdir(dpath):
+        self.logger.debug("%s - OSError when not isdir(%s): %s",threading.currentThread().getName(),dpath,e)
         raise e
     return dpath
 
