@@ -104,6 +104,30 @@ class TestProcessedDumpStorage(unittest.TestCase):
       finally:
         fh.close()
 
+  def testNewEntryMaxDirectoryEntries0(self):
+    """
+    testNewEntryMaxDirectoryEntries0(self):
+      - test that we do NOT overflow if maxDirectoryEntries is 0
+    """
+    import socorro.unittest.testlib.dbtestutil as dbtestutil
+    gen = dbtestutil.moreUuid()
+    kwargs = self.initKwargs[0]
+    kwargs['maxDirectoryEntries'] = 0
+    storage = dumpStorage.ProcessedDumpStorage(self.testDir,**kwargs)
+    datedata = [2008,4,5,6,7,8]
+    expectdata = [2008,4,5,6,5]
+    testDate = dt.datetime(*datedata)
+    datepart = "%s_%d"%(os.sep.join(["%02d"%(x) for x in expectdata]),0)
+    expectedDateDir = os.path.join(storage.dateBranch,datepart)
+    for i in range(100):
+      ooid = gen.next()
+      fh = storage.newEntry(ooid,testDate)
+      try:
+        assert os.path.exists(expectedDateDir)
+        assert os.path.islink(os.path.join(expectedDateDir,ooid))
+      finally:
+        fh.close()
+
   def testNewEntryMaxDirectoryEntries(self):
     """
     testNewEntryMaxDirectoryEntries(self):

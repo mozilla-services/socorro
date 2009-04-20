@@ -171,7 +171,8 @@ class ProcessedDumpStorage(object):
     return dpath
   
   def __makeDateDir(self, dt):
-    dpath = self.getDateDir(dt,True)
+    doSizeCheck = (self.maxDirectoryEntries != 0)
+    dpath = self.getDateDir(dt,doSizeCheck)
     try:
       filesystem.makedirs(dpath)
     except OSError,e:
