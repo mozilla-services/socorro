@@ -1,4 +1,5 @@
 import datetime
+import errno
 import gzip
 import logging
 import os
@@ -6,6 +7,7 @@ import simplejson
 import stat
 import threading
 
+import socorro.lib.filesystem as filesystem
 import socorro.lib.ooid as socorro_ooid
 import socorro.lib.util as socorro_util
 
@@ -22,8 +24,8 @@ class ProcessedDumpStorage(object):
   The storage is a file whose name is ooid.suffix, whose path is determined by the ooid itself
   
   An additional 'date' branch is saved to facilitate finding files by date. It holds paths like
-  YYYY/mm/dd/HH/MM/uuid where MM is among ['00','05', ... '55'] and uuid is a symbolic link to the
-  directory in the name branch holding uuid.jsonz
+  YYYY/mm/dd/HH/MM_n/uuid where MM is among ['00','05', ... '55'], n is a (small) digit and
+  uuid is a symbolic link to the directory in the name branch holding uuid.jsonz
   """
   def __init__(self, root = '.', **kwargs):
     """
@@ -36,6 +38,8 @@ class ProcessedDumpStorage(object):
      - 'logger': A logger. Default: logging.getLogger('dumpStorage')
      - 'storageDepth': the length of branches in the radix storage tree. Default = 2
           Do NOT change from 2 without updateing apache mod-rewrite rules and IT old-file removal scripts
+     - 'maxDirectoryEntries: The (approximate) maximum number of links that may be put into a dateBranch leaf directory
+       If 0, then no limit is enforced. Default is 1024, so must deliberately set to 0 for that effect.
     """
     super(ProcessedDumpStorage, self).__init__()
     self.root = root.rstrip(os.sep)
@@ -45,11 +49,13 @@ class ProcessedDumpStorage(object):
     self.minutesPerSlot = int(kwargs.get('minutesPerSlot',5))
     self.gzipCompression = int(kwargs.get('gzipCompression',9))
     self.storageDepth = int(kwargs.get('storageDepth',2))
+    self.maxDirectoryEntries = int(kwargs.get('maxDirectoryEntries',1024))
     if not self.fileSuffix.startswith('.'):
       self.fileSuffix = ".%s" % (self.fileSuffix)
     self.storageBranch = os.path.join(self.root,self.rootName)
     self.dateBranch = os.path.join(self.root,self.dateName)
     self.logger = kwargs.get('logger', logging.getLogger('dumpStorage'))
+    self.currentSuffix = {} #maps datepath to an integer suffix
 
   def newEntry(self, uuid, timestamp=None):
     """
@@ -139,23 +145,35 @@ class ProcessedDumpStorage(object):
     dpath = self.__dumpPath(uuid)
     self.logger.debug("%s - trying makedirs %s",threading.currentThread().getName(),dpath)
     try:
-      os.makedirs(dpath)
+      filesystem.makedirs(dpath)
     except OSError,e:
       if not os.path.isdir(dpath):
         self.logger.debug("%s - OSError when not isdir(%s): %s",threading.currentThread().getName(),dpath,e)
         raise e
     return dpath
 
-  def getDateDir(self,dt):
+  def getDateDir(self,dt,checkSize=False):
     m = dt.minute
     slot = self.minutesPerSlot * int(m/self.minutesPerSlot)
-    # dtbranch//yyyy//mmmm//dddd//hhhh//5min
-    return "%s%s%04d%s%02d%s%02d%s%02d%s%02d" %  (self.dateBranch,os.sep,dt.year,os.sep,dt.month,os.sep,dt.day,os.sep,dt.hour,os.sep,slot)
-
+    #     dtbranch//yyyy//mmmm//dddd//hhhh//5min
+    dpathKey = "%s%s%04d%s%02d%s%02d%s%02d%s%02d" %  (self.dateBranch,os.sep,dt.year,os.sep,dt.month,os.sep,dt.day,os.sep,dt.hour,os.sep,slot)
+    dpath = "%s_%d" %(dpathKey, self.currentSuffix.setdefault(dpathKey,0))
+    if checkSize:
+      try:
+        while len(os.listdir(dpath)) >= self.maxDirectoryEntries:
+          self.currentSuffix[dpathKey] += 1
+          dpath = "%s_%d" %(dpathKey, self.currentSuffix[dpathKey])
+      except OSError,e:
+        if errno.ENOENT == e.errno:
+          pass
+        else:
+          raise
+    return dpath
+  
   def __makeDateDir(self, dt):
-    dpath = self.getDateDir(dt)
+    dpath = self.getDateDir(dt,True)
     try:
-      os.makedirs(dpath)
+      filesystem.makedirs(dpath)
     except OSError,e:
       if not os.path.isdir(dpath):
         raise e

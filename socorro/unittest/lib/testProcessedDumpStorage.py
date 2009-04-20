@@ -94,7 +94,7 @@ class TestProcessedDumpStorage(unittest.TestCase):
       pathprefix = os.sep.join(pathprefix.split('/')[:2]) # we are going to always use two for processedDumpStorage depth
       expectedDir = os.path.join(storage.storageBranch,pathprefix)
       expectedPath = os.path.join(expectedDir,"%s%s"%(ooid,storage.fileSuffix))
-      datepart = longDatePath.rsplit('/',1)[0]
+      datepart = "%s_0"%(longDatePath.rsplit('/',1)[0])
       expectedDateDir = os.path.join(storage.dateBranch,datepart)
       testStamp = dt.datetime(*[int(x) for x in tdate.split('-')])
       fh = storage.newEntry(ooid,testStamp)
@@ -104,6 +104,31 @@ class TestProcessedDumpStorage(unittest.TestCase):
       finally:
         fh.close()
 
+  def testNewEntryMaxDirectoryEntries(self):
+    """
+    testNewEntryMaxDirectoryEntries(self):
+      - test that we overflow as expected into a new date directory
+    """
+    kwargs = self.initKwargs[0]
+    kwargs['maxDirectoryEntries'] = 2
+    storage = dumpStorage.ProcessedDumpStorage(self.testDir,**kwargs)
+    count = 0
+    seq = 0
+    datedata = [2008,4,5,6,7,8]
+    expectdata = [2008,4,5,6,5]
+    testDate = dt.datetime(*datedata)
+    for ooid in createJDS.jsonFileData.keys():
+      datepart = "%s_%d"%(os.sep.join(["%02d"%(x) for x in expectdata]),seq)
+      expectedDateDir = os.path.join(storage.dateBranch,datepart)
+      fh = storage.newEntry(ooid,testDate)
+      count += 1
+      seq = count/2
+      try:
+        assert os.path.exists(expectedDateDir)
+        assert os.path.islink(os.path.join(expectedDateDir,ooid))
+      finally:
+        fh.close()
+    
   def testPutDumpToFile(self):
     """
     testPutDumpToFile(self):(slow=2)
@@ -135,12 +160,16 @@ class TestProcessedDumpStorage(unittest.TestCase):
         seenPaths.update([os.path.join(dirpath,x) for x in filenames])
     assert datePath, "Expect to find a symbolic link, sure 'nuf, but only saw %s"%seenPaths
     dateParts = datePath.rsplit(os.sep,5)[-5:]
+    minutes,seq = dateParts[-1].split('_')
+    dateParts[-1] = minutes
+    dateParts.append(seq)
     assert now.year == int(dateParts[0])
     assert now.month == int(dateParts[1])
     assert now.day == int(dateParts[2])
     assert now.hour == int(dateParts[3])
     assert now.minute >= int(dateParts[4])
     assert now.minute < int(dateParts[4])+5
+    assert 0 == int(dateParts[5])
     
     assert os.path.exists(expectedPath), 'Just a nicer way to say your test is FUBAR'
     f = gzip.open(expectedPath)
@@ -212,7 +241,7 @@ class TestProcessedDumpStorage(unittest.TestCase):
     dateStuff = [2008,9,10,11,12,13,14]
     aDate = dt.datetime(*dateStuff)
     dateHead = os.sep.join("%02d"%x for x in dateStuff[:4]) # handily, that 'just works' for year field
-    leafDir = str(storage.minutesPerSlot*(dateStuff[4]/storage.minutesPerSlot))
+    leafDir = "%s_0"%(storage.minutesPerSlot*(dateStuff[4]/storage.minutesPerSlot))
     expectedPath = os.sep.join((storage.dateBranch,dateHead,leafDir))
     assert expectedPath == storage.getDateDir(aDate), "But expected=%s, got=%s"%(expectedPath,storage.getDateDir(aDate))
 
