@@ -24,3 +24,9 @@ vim application/config/cache_memcache.php
 # Ensure that the application logs and cache directories can be written to
 chmod a+rw application/logs application/cache
 
+Development
+============
+
+Running Unit Tests
+cd tests/
+phpunit *.php

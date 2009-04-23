@@ -29,7 +29,7 @@
                             <li><a href="https://bugzilla.mozilla.org/" title="Bugzilla">Bugzilla</a></li>
                             <li><a href="http://tinderbox.mozilla.org/" title="Tinderbox">Tinderbox</a></li>
                             <li><a href="https://developer.mozilla.org/" title="MDC">Mozilla Developer Central</a></li>
-                            <li><a href="http://mxr.mozilla.org/">Source Code Cross-referene</a></li>
+                            <li><a href="http://mxr.mozilla.org/">Source Code Cross-reference</a></li>
                             </ul>
                     </li>
                 </ul> <!-- /DEV-LINKS -->

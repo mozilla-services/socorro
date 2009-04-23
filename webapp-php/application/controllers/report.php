@@ -1,5 +1,6 @@
 <?php
 require_once dirname(__FILE__).'/../libraries/MY_SearchReportHelper.php';
+
 /**
  * List, search, and show crash reports.
  */
@@ -108,26 +109,29 @@ class Report_Controller extends Controller {
         if (!preg_match('/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/', $uuid) ) {
             return Event::run('system.404');
         }
- 
-        $report = $this->report_model->getByUUID($uuid);
 
-        if (!$report) {
+        $crashDir = Kohana::config('application.dumpPath');
+	$report = $this->report_model->getByUUID($uuid, $crashDir);
+
+        if ( is_null($report)) {
             if (!isset($_GET['p'])) {
                 $this->priorityjob_model = new Priorityjobs_Model();
                 $this->priorityjob_model->add($uuid);
             }
-            return url::redirect('report/pending/'.$uuid);
-        }
+	    return url::redirect('report/pending/'.$uuid);
+        } else {
+            cachecontrol::set(array(
+                'etag'          => $uuid,
+                'last-modified' => strtotime($report->date_processed)
+            ));
+            $reportJsonZUri = url::file('dumps/' . $uuid . '.jsonz');
 
-        cachecontrol::set(array(
-            'etag'          => $uuid,
-            'last-modified' => strtotime($report->date_processed)
-        ));
-
-        $this->setViewData(array(
-            'report' => $report,
-            'branch' => $this->branch_model->getByProductVersion($report->product, $report->version)
-        ));
+            $this->setViewData(array(
+                'reportJsonZUri' => $reportJsonZUri,
+                'report' => $report,
+                'branch' => $this->branch_model->getByProductVersion($report->product, $report->version)
+            ));
+	}
     }
 
     /**
@@ -137,9 +141,8 @@ class Report_Controller extends Controller {
         if (!$uuid || !preg_match('/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/', $uuid)) {
             return Event::run('system.404');
         }
-
-        $report = $this->report_model->getByUUID($uuid);
-        if ($report) {
+        $crashDir = Kohana::config('application.dumpPath');
+        if ($this->report_model->exists($uuid, $crashDir)) {
             $this->setAutoRender(FALSE);
             return url::redirect('report/index/'.$uuid);
         }

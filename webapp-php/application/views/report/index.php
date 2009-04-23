@@ -1,6 +1,8 @@
 <?php slot::start('head') ?>
     <title>[@ <?php out::H($report->signature) ?> ] - <?php out::H($report->product) ?> <?php out::H($report->version) ?> Crash Report - Report ID: <?php out::H($report->uuid) ?></title>
 
+    <link rel='alternate' type='application/json' href='<?php echo $reportJsonZUri ?>' />
+
     <?php echo html::stylesheet(array(
         'css/flora/flora.all.css'
     ), 'screen')?>

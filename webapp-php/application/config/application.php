@@ -4,6 +4,8 @@
  */
 
 $config['dumpIDPrefix'] = 'bp-';
+// root directory for crash dump files
+$config['dumpPath'] = '/mnt/socorro_dumps/name';
 
 // Mappings of source code types to web links
 $config['vcsMappings'] = array(
@@ -16,3 +18,4 @@ $config['vcsMappings'] = array(
             'http://hg.mozilla.org/mozilla-central/index.cgi/annotate/%(revision)s/%(file)s#l%(line)s' 
     )
 );
+
