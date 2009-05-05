@@ -167,7 +167,7 @@ class PartitionedTable(Table):
    - Must supply appropriate creationSql and partitionCreationSqlTemplate to the superclass constructor
    - Should NOT override method insert, which does something special for PartitionedTables
    - May override method partitionCreationParameters(self, partitionDetails) which returns a dictionary suitable for string formatting
-   
+
    Every leaf class that inherits PartitionedTable should be aware of the module-level dictionary: databaseDependenciesForPartition
    If that leaf class has a partition that depends upon some other partition, then it must be added as a key to the dictionary
    databaseDependenciesForPartition. The value associated with that key is an iterable containing the classes that define the partitions
@@ -220,7 +220,7 @@ class PartitionedTable(Table):
         self.logger.debug("%s -- Rolling back and releasing savepoint: Creating %s failed in createPartitions: %s", threading.currentThread().getName(), partitionName, str(x).strip())
         databaseCursor.execute("rollback to createPartitions_%s; release savepoint createPartitions_%s;" % (partitionName, partitionName))
       databaseCursor.connection.commit()
-    
+
   #-----------------------------------------------------------------------------------------------------------------
   def createPartitions(self, databaseCursor, iterator):
     """
@@ -360,6 +360,7 @@ class ReportsTable(PartitionedTable):
     self.insertSql = """insert into TABLENAME
                             (uuid, client_crash_date, date_processed, product, version, build, url, install_age, last_crash, uptime, email, build_date, user_id, user_comments, app_notes, distributor, distributor_version) values
                             (%s,   %s,                %s,             %s,      %s,      %s,    %s,  %s,          %s,         %s,     %s,    %s,         %s,      %s,            %s,        %s,          %s)"""
+    self.columns = "uuid", "client_crash_date", "date_processed", "product", "version", "build", "url", "install_age", "last_crash", "uptime", "email", "build_date", "user_id", "user_comments", "app_notes", "distributor", "distributor_version"
   #-----------------------------------------------------------------------------------------------------------------
   def additionalCreationProcedures(self, databaseCursor):
     pass
@@ -416,62 +417,62 @@ class ReportsTable(PartitionedTable):
 databaseDependenciesForSetup[ReportsTable] = []
 
 #=================================================================================================================
-class DumpsTable(PartitionedTable):
-  """Define the table 'dumps'"""
-  #-----------------------------------------------------------------------------------------------------------------
-  def __init__ (self, logger, **kwargs):
-    super(DumpsTable, self).__init__(name='dumps', logger=logger,
-                                     creationSql="""
-                                         CREATE TABLE dumps (
-                                             report_id integer NOT NULL PRIMARY KEY,
-                                             date_processed timestamp without time zone,
-                                             data text
-                                         );
-                                         --CREATE TRIGGER dumps_insert_trigger
-                                         --   BEFORE INSERT ON dumps
-                                         --   FOR EACH ROW EXECUTE PROCEDURE partition_insert_trigger();""",
-                                     partitionCreationSqlTemplate="""
-                                         CREATE TABLE %(partitionName)s (
-                                             CONSTRAINT %(partitionName)s_date_check CHECK (TIMESTAMP without time zone '%(startDate)s' <= date_processed and date_processed < TIMESTAMP without time zone '%(endDate)s')
-                                         )
-                                         INHERITS (dumps);
-                                         CREATE INDEX %(partitionName)s_report_id_date_key ON %(partitionName)s (report_id, date_processed);
-                                         ALTER TABLE %(partitionName)s
-                                             ADD CONSTRAINT %(partitionName)s_report_id_fkey FOREIGN KEY (report_id) REFERENCES reports_%(compressedStartDate)s(id) ON DELETE CASCADE;
-                                         """)
-    self.insertSql = """insert into TABLENAME (report_id, date_processed, data) values (%s, %s, %s)"""
-  #-----------------------------------------------------------------------------------------------------------------
-  def alterColumnDefinitions(self, databaseCursor, tableName):
-    columnNameTypeDictionary = socorro_pg.columnNameTypeDictionaryForTable(tableName, databaseCursor)
-    #if 'date_processed' not in columnNameTypeDictionary:
-      #databaseCursor.execute("""ALTER TABLE %s
-                                    #ADD COLUMN date_processed TIMESTAMP without time zone;""" % tableName)
-  #-----------------------------------------------------------------------------------------------------------------
-  def updateDefinition(self, databaseCursor):
-    self.updateColumnDefinitions(databaseCursor)
-    indexesList = socorro_pg.indexesForTable(self.name, databaseCursor)
-    #if 'dumps_pkey' in indexesList:
-      #databaseCursor.execute("""ALTER TABLE dumps
-                                    #DROP CONSTRAINT dumps_pkey;""")
-    #databaseCursor.execute("""DROP RULE IF EXISTS rule_dumps_partition ON dumps;""")
-    #triggersList = socorro_pg.triggersForTable(self.name, databaseCursor)
-    #if 'dumps_insert_trigger' not in triggersList:
-      #databaseCursor.execute("""CREATE TRIGGER dumps_insert_trigger
-                                    #BEFORE INSERT ON dumps
-                                    #FOR EACH ROW EXECUTE PROCEDURE partition_insert_trigger();""")
-  #-----------------------------------------------------------------------------------------------------------------
-  def partitionCreationParameters(self, uniqueIdentifier):
-    startDate, endDate = uniqueIdentifier
-    startDateAsString = "%4d-%02d-%02d" % startDate.timetuple()[:3]
-    compressedStartDateAsString = startDateAsString.replace("-", "")
-    endDateAsString = "%4d-%02d-%02d" % endDate.timetuple()[:3]
-    return { "partitionName": "dumps_%s" % compressedStartDateAsString,
-             "startDate": startDateAsString,
-             "endDate": endDateAsString,
-             "compressedStartDate": compressedStartDateAsString
-           }
-databaseDependenciesForSetup[DumpsTable] = []
-databaseDependenciesForPartition[DumpsTable] = [ReportsTable]
+#class DumpsTable(PartitionedTable):
+  #"""Define the table 'dumps'"""
+  ##-----------------------------------------------------------------------------------------------------------------
+  #def __init__ (self, logger, **kwargs):
+    #super(DumpsTable, self).__init__(name='dumps', logger=logger,
+                                     #creationSql="""
+                                         #CREATE TABLE dumps (
+                                             #report_id integer NOT NULL PRIMARY KEY,
+                                             #date_processed timestamp without time zone,
+                                             #data text
+                                         #);
+                                         #--CREATE TRIGGER dumps_insert_trigger
+                                         #--   BEFORE INSERT ON dumps
+                                         #--   FOR EACH ROW EXECUTE PROCEDURE partition_insert_trigger();""",
+                                     #partitionCreationSqlTemplate="""
+                                         #CREATE TABLE %(partitionName)s (
+                                             #CONSTRAINT %(partitionName)s_date_check CHECK (TIMESTAMP without time zone '%(startDate)s' <= date_processed and date_processed < TIMESTAMP without time zone '%(endDate)s')
+                                         #)
+                                         #INHERITS (dumps);
+                                         #CREATE INDEX %(partitionName)s_report_id_date_key ON %(partitionName)s (report_id, date_processed);
+                                         #ALTER TABLE %(partitionName)s
+                                             #ADD CONSTRAINT %(partitionName)s_report_id_fkey FOREIGN KEY (report_id) REFERENCES reports_%(compressedStartDate)s(id) ON DELETE CASCADE;
+                                         #""")
+    #self.insertSql = """insert into TABLENAME (report_id, date_processed, data) values (%s, %s, %s)"""
+  ##-----------------------------------------------------------------------------------------------------------------
+  #def alterColumnDefinitions(self, databaseCursor, tableName):
+    #columnNameTypeDictionary = socorro_pg.columnNameTypeDictionaryForTable(tableName, databaseCursor)
+    ##if 'date_processed' not in columnNameTypeDictionary:
+      ##databaseCursor.execute("""ALTER TABLE %s
+                                    ##ADD COLUMN date_processed TIMESTAMP without time zone;""" % tableName)
+  ##-----------------------------------------------------------------------------------------------------------------
+  #def updateDefinition(self, databaseCursor):
+    #self.updateColumnDefinitions(databaseCursor)
+    #indexesList = socorro_pg.indexesForTable(self.name, databaseCursor)
+    ##if 'dumps_pkey' in indexesList:
+      ##databaseCursor.execute("""ALTER TABLE dumps
+                                    ##DROP CONSTRAINT dumps_pkey;""")
+    ##databaseCursor.execute("""DROP RULE IF EXISTS rule_dumps_partition ON dumps;""")
+    ##triggersList = socorro_pg.triggersForTable(self.name, databaseCursor)
+    ##if 'dumps_insert_trigger' not in triggersList:
+      ##databaseCursor.execute("""CREATE TRIGGER dumps_insert_trigger
+                                    ##BEFORE INSERT ON dumps
+                                    ##FOR EACH ROW EXECUTE PROCEDURE partition_insert_trigger();""")
+  ##-----------------------------------------------------------------------------------------------------------------
+  #def partitionCreationParameters(self, uniqueIdentifier):
+    #startDate, endDate = uniqueIdentifier
+    #startDateAsString = "%4d-%02d-%02d" % startDate.timetuple()[:3]
+    #compressedStartDateAsString = startDateAsString.replace("-", "")
+    #endDateAsString = "%4d-%02d-%02d" % endDate.timetuple()[:3]
+    #return { "partitionName": "dumps_%s" % compressedStartDateAsString,
+             #"startDate": startDateAsString,
+             #"endDate": endDateAsString,
+             #"compressedStartDate": compressedStartDateAsString
+           #}
+#databaseDependenciesForSetup[DumpsTable] = []
+#databaseDependenciesForPartition[DumpsTable] = [ReportsTable]
 
 #=================================================================================================================
 class ExtensionsTable(PartitionedTable):
@@ -734,7 +735,7 @@ class ProductDimsTable(Table):
                                               product character varying(30) NOT NULL,
                                               version character varying(16) NOT NULL,
                                               os_name character varying(100),
-                                              release character varying(50) NOT NULL);                                          
+                                              release character varying(50) NOT NULL);
                                           ALTER TABLE ONLY productdims
                                               ADD CONSTRAINT productdims_pkey PRIMARY KEY (id);
                                           CREATE INDEX productdims_product_version_key ON productdims USING btree (product, version);
@@ -816,7 +817,7 @@ class UrlDimsTable(Table):
                                           CREATE TABLE urldims (
                                               id serial NOT NULL,
                                               domain character varying(255) NOT NULL,
-                                              url character varying(255) NOT NULL);                                   
+                                              url character varying(255) NOT NULL);
                                           ALTER TABLE ONLY urldims
                                               ADD CONSTRAINT urldims_pkey PRIMARY KEY (id);
                                           CREATE UNIQUE INDEX urldims_url_domain_key ON urldims USING btree (url, domain);
@@ -866,7 +867,7 @@ class TopCrashUrlFactsReportsTable(Table):
                                               id serial NOT NULL,
                                               uuid character varying(50) NOT NULL,
                                               comments character varying(500),
-                                              topcrashurlfacts_id integer);          
+                                              topcrashurlfacts_id integer);
                                           ALTER TABLE ONLY topcrashurlfactsreports
                                               ADD CONSTRAINT topcrashurlfactsreports_pkey PRIMARY KEY (id);
                                           CREATE INDEX topcrashurlfactsreports_topcrashurlfacts_id_key ON topcrashurlfactsreports USING btree (topcrashurlfacts_id);
@@ -1012,7 +1013,7 @@ def teardownDatabase(config,logger):
 
 #-----------------------------------------------------------------------------------------------------------------
 databaseObjectClassListForUpdate = [ReportsTable,
-                                    DumpsTable,
+                                    #DumpsTable,
                                     ExtensionsTable,
                                     FramesTable,
                                     ProcessorsTable,
@@ -1038,7 +1039,7 @@ def updateDatabase(config, logger):
 # list all the tables that should have weekly partitions pre-created. This is a subclass of all the PartitionedTables
 # since it may be that some PartitionedTables should not be pre-created.
 databaseObjectClassListForWeeklyPartitions = [ReportsTable,
-                                              DumpsTable,
+                                              #DumpsTable,
                                               FramesTable,
                                               ExtensionsTable,
                                              ]
