@@ -1,4 +1,4 @@
-class Node:
+class Node(object):
   """
   Node is a generic node in a directed graph. It contains an item, a set of parents and a list of children
   It is not possible to have the same parent or child more than once (no duplicate edges). It is possible to
@@ -9,7 +9,7 @@ class Node:
     self.item = item
     self.children = []
     self.parents = set()
-    
+
   def addChild(self,item):
     """
     When you add a child to a Node, you are adding yourself as a parent to the child
@@ -48,7 +48,7 @@ class Node:
     parents =  set([x.item for x in self.parents])
     return "<node: %s<- %s ->%s>"%(parents,self.item,children)
 
-class FindChildVisitor:
+class FindChildVisitor(object):
   """Do a top down search for a particular item. Stop traversing when that item is found"""
   def __init__(self,item):
     self.item = item
@@ -67,14 +67,14 @@ class FindChildVisitor:
         return self.child
     return self.child
 
-class BottomUpVisitor:
+class BottomUpVisitor(object):
   """Visit each child before visiting self, retaining a list of visited Nodes in self.history"""
   def __init__(self):
     self.history = []
     self.marks = set()
     self.cycleMark = set()
   def visit(self,node):
-    if node in self.cycleMark: 
+    if node in self.cycleMark:
       return
     self.cycleMark.add(node)
     for c in node.children:
@@ -83,7 +83,7 @@ class BottomUpVisitor:
       self.history.append(node)
       self.marks.add(node)
 
-class TopDownVisitor():
+class TopDownVisitor(object):
   """Visit self before visiting each child, retaining a list of visited Nodes in self.history"""
   def __init__(self):
     self.history = []
