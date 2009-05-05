@@ -54,7 +54,8 @@ def setup_module():
   me.dsn = "host=%s dbname=%s user=%s password=%s" % (me.config.databaseHost,me.config.databaseName,
                                                       me.config.databaseUserName,me.config.databasePassword)
   me.testDB = TestDB()
-  me.expectedTableNames = set(['tcbyurlconfig', 'topcrashurlfacts', 'priorityjobs', 'branches', 'processors', 'productdims', 'topcrashurlfactsreports', 'urldims', 'mtbfconfig', 'signaturedims', 'reports', 'server_status', 'dumps', 'extensions', 'mtbffacts', 'frames', 'topcrashers', 'jobs',])
+  #me.expectedTableNames = set(['tcbyurlconfig', 'topcrashurlfacts', 'priorityjobs', 'branches', 'processors', 'productdims', 'topcrashurlfactsreports', 'urldims', 'mtbfconfig', 'signaturedims', 'reports', 'server_status', 'dumps', 'extensions', 'mtbffacts', 'frames', 'topcrashers', 'jobs',])
+  me.expectedTableNames = set(['tcbyurlconfig', 'topcrashurlfacts', 'priorityjobs', 'branches', 'processors', 'productdims', 'topcrashurlfactsreports', 'urldims', 'mtbfconfig', 'signaturedims', 'reports', 'server_status', 'extensions', 'mtbffacts', 'frames', 'topcrashers', 'jobs',])
   me.expectedTableDependencies = {
     'topcrashurlfactsreports': set(['productdims', 'signaturedims', 'urldims', 'topcrashurlfacts', 'topcrashurlfactsreports']),
     'signaturedims': set(['signaturedims']),
@@ -66,7 +67,7 @@ def setup_module():
     'topcrashurlfacts': set(['productdims', 'signaturedims', 'urldims', 'topcrashurlfacts']),
     'reports': set(['reports']),
     'server_status': set(['server_status']),
-    'dumps': set(['dumps']),
+    #'dumps': set(['dumps']),
     'tcbyurlconfig': set(['productdims', 'tcbyurlconfig']),
     'priorityjobs': set(['priorityjobs']),
     'mtbffacts': set(['productdims', 'mtbffacts']),
@@ -140,7 +141,7 @@ def testGetOrderedPartitionList():
   expected = {
     'frames': set(['frames', 'reports']),
     'extensions': set(['extensions', 'reports']),
-    'dumps': set(['dumps', 'reports']),
+    #'dumps': set(['dumps', 'reports']),
     }
   allTables = schema.getOrderedSetupList()
   for t in allTables:
@@ -154,7 +155,7 @@ def testGetOrderedPartitionList():
       assert expected[tableName] == gotValue, 'Expected %s, got %s'%(expected[tableName],gotValue)
     else:
       assert set([tableName]) == gotValue, 'Expected %s, got %s'%(set([tableName]),gotValue)
-  
+
 def testTwoPartitionCreatedFunctions():
   """
   testTwoPartitionCreatedFunctions():
@@ -166,7 +167,7 @@ def testTwoPartitionCreatedFunctions():
   assert set(['woo']) == schema.partitionCreationHistory
   assert schema.partitionWasCreated('woo')
   assert not schema.partitionWasCreated('foo')
-  
+
 def testConnectToDatabase():
   """
   testConnectToDatabase():
@@ -192,7 +193,7 @@ def testConnectToDatabase():
     cursor.execute("DROP TABLE IF EXISTS foo")
     connection.commit()
     connection.close()
-  
+
 def testSetupAndTeardownDatabase():
   """
   testSetupAndTeardownDatabase():
@@ -224,7 +225,7 @@ def testSetupAndTeardownDatabase():
         assert False, 'Expected psycopg2.ProgrammingError, not %s: %s'%(type(x),x)
   finally:
     tcon.close()
-    
+
 updated = []
 def testUpdateDatabase():
   """
@@ -233,7 +234,8 @@ def testUpdateDatabase():
   """
   global me, updated
   updated = []
-  expected = set(['reports','dumps','extensions','frames','processors','jobs'])
+  #expected = set(['reports','dumps','extensions','frames','processors','jobs'])
+  expected = set(['reports','extensions','frames','processors','jobs'])
   found = set([ x(logger=me.logger).name for x in schema.databaseObjectClassListForUpdate])
   assert expected == found
   class ReportsStub(schema.ReportsTable):
@@ -241,9 +243,9 @@ def testUpdateDatabase():
       super(ReportsStub,self).__init__(logger,**kwargs)
     def updateDefinition(self,cursor):
       updated.append(self.name)
-  class DumpsStub(schema.DumpsTable):
-    def __init__(self, logger, **kwargs):
-      super(DumpsStub,self).__init__(logger,**kwargs)
+  #class DumpsStub(schema.DumpsTable):
+    #def __init__(self, logger, **kwargs):
+      #super(DumpsStub,self).__init__(logger,**kwargs)
     def updateDefinition(self,cursor):
       updated.append(self.name)
   schema.databaseObjectClassListForUpdate = []
@@ -288,7 +290,7 @@ class TestDatabaseObject:
     self.connection = psycopg2.connect(me.dsn)
   def tearDown(self):
     self.connection.close()
-    
+
   def testConstructor(self):
     """
     TestDatabaseObject.testConstructor(self):
@@ -341,7 +343,7 @@ class TestTable:
     self.connection = psycopg2.connect(me.dsn)
   def tearDown(self):
     self.connection.close()
-    
+
   def testCreateAndDrop(self):
     """
     TestTable.testCreateAndDrop():
@@ -350,7 +352,7 @@ class TestTable:
     class Foo(schema.Table):
       def __init__(self):
         super(Foo,self).__init__(name='foo',logger=me.logger,creationSql='CREATE TABLE foo (name varchar)')
-        
+
     cursor = self.connection.cursor()
     cursor.execute("DROP TABLE IF EXISTS foo CASCADE")
     self.connection.commit()
@@ -375,7 +377,7 @@ class TestTable:
 # value[0] is True iff the table is a PartitionedTable; value[1] is the expectedSet of table names (including precursors) for each Table
 hardCodedSchemaClasses = {
   schema.BranchesTable:[False,set(['branches'])],
-  schema.DumpsTable:[True,set(['dumps'])],
+  #schema.DumpsTable:[True,set(['dumps'])],
   schema.ExtensionsTable:[True,set(['extensions'])],
   schema.FramesTable:[True,set(['frames'])],
   schema.JobsTable:[False,set(['jobs', 'processors'])],
@@ -421,7 +423,7 @@ def printDbTablenames(tag,aCursor):
   some = [x for x in some if (not x in ['triggers','views','sequences','tables','domains','parameters','routines','schemata','attributes','columns'])]
   some.sort()
   print tag,', '.join(some)
-  
+
 def checkOneClass(aClass,aType):
   global me
   connection = psycopg2.connect(me.dsn)
@@ -468,4 +470,4 @@ def testCreateAndDropEachTable():
   makeClassList()
   for c in schemaClasses:
     checkOneClass(c,schemaClasses[c])
-  
+

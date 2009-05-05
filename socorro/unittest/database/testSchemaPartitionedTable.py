@@ -82,7 +82,7 @@ class TestPartitionedTable:
     self.connection = psycopg2.connect(me.dsn)
   def tearDown(self):
     self.connection.close()
-    
+
   def testConstructor(self):
     """
     TestPartitionedTable.testConstructor(self):
@@ -130,7 +130,7 @@ class TestPartitionedTable:
     finally:
       cursor.execute("DROP TABLE IF EXISTS tpt, tpt3 CASCADE")
       self.connection.commit()
-    
+
   def testCreatePartitions_depend(self):
     """
     TestPartitionedTable.testCreatePartitions_depend():
@@ -167,7 +167,7 @@ class TestPartitionedTable:
     connection = psycopg2.connect(me.dsn)
     cursor = connection.cursor()
     return (connection,cursor)
-  
+
   def testPartitionInsert(self):
     """
     TestPartitionedTable.testPartitionInsert():
@@ -180,7 +180,7 @@ class TestPartitionedTable:
       [schema.ReportsTable,['0bba61c5-dfc3-43e7-dead-8afd20071025',dt.datetime(2007,12,25,5,4,3,21,tz),dt.datetime(2007,12,25,5,4,3,33),'product','version','build','url',3000,0,22,'email',dt.date(2007,12,1),None,"","","",""]],
       [schema.ExtensionsTable,[1,dt.datetime(2007,12,25,5,4,3,33),1,'extensionid','version']],
       [schema.FramesTable,[1,2,dt.datetime(2007,12,25,5,4,3,33),'somesignature']],
-      [schema.DumpsTable,[1,dt.datetime(2007,12,25,5,4,3,33),"data"]],
+      #[schema.DumpsTable,[1,dt.datetime(2007,12,25,5,4,3,33),"data"]],
       ]
     # call insert, expecting auto-creation of partitions
     cursor = self.connection.cursor()
@@ -196,4 +196,4 @@ class TestPartitionedTable:
       diff = current - before
       assert set(['%s_20071224'%obj.name]) == diff,'Expected set([%s_20071224]), got %s'%(obj.name,diff)
       before = current
-  
+
