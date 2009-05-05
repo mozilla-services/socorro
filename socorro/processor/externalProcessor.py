@@ -86,15 +86,14 @@ class ProcessorWithExternalBreakpad (processor.Processor):
       truncated = self.analyzeFrames(reportId, dumpAnalysisLineIterator, databaseCursor, date_processed, crashedThread, processorErrorMessages)
       for x in dumpAnalysisLineIterator:
         pass  #need to spool out the rest of the stream so the cache doesn't get truncated
-      dumpAnalysis = (''.join(dumpAnalysisLineIterator.cache))
-      self.dumpsTable.insert(databaseCursor, (reportId, date_processed, dumpAnalysis), self.databaseConnectionPool.connectToDatabase, date_processed=date_processed)
+      dumpAnalysisAsString = (''.join(dumpAnalysisLineIterator.cache))
     finally:
       dumpAnalysisLineIterator.theIterator.close() #this is really a handle to a file-like object - got to close it
     # is the return code from the invocation important?  Uncomment, if it is...
     returncode = subprocessHandle.wait()
     if returncode is not None and returncode != 0:
       raise processor.ErrorInBreakpadStackwalkException("%s failed with return code %s when processing dump %s" %(self.config.minidump_stackwalkPathname, subprocessHandle.returncode, uuid))
-    return truncated
+    return (dumpAnalysisAsString, truncated)
 
 
 #-----------------------------------------------------------------------------------------------------------------

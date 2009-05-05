@@ -21,6 +21,7 @@ import socorro.lib.JsonDumpStorage as jds
 import socorro.lib.psycopghelper as psy
 import socorro.lib.ooid as ooid
 import socorro.lib.datetimeutil as sdt
+import socorro.lib.processedDumpStorage as pds
 
 import simplejson
 
@@ -83,6 +84,7 @@ class Processor(object):
     assert "databasePassword" in config, "databasePassword is missing from the configuration"
     assert "storageRoot" in config, "storageRoot is missing from the configuration"
     assert "deferredStorageRoot" in config, "deferredStorageRoot is missing from the configuration"
+    assert "processedDumpStoragePath" in config, "processedDumpStoragePath is missing from the configuration"
     assert "jsonFileSuffix" in config, "jsonFileSuffix is missing from the configuration"
     assert "dumpFileSuffix" in config, "dumpFileSuffix is missing from the configuration"
     assert "processorCheckInTime" in config, "processorCheckInTime is missing from the configuration"
@@ -105,8 +107,10 @@ class Processor(object):
     self.irrelevantSignatureRegEx = re.compile(self.config.irrelevantSignatureRegEx)
     self.prefixSignatureRegEx = re.compile(self.config.prefixSignatureRegEx)
 
+    self.processedDumpStorage = pds.ProcessedDumpStorage(config.processedDumpStoragePath)
+
     self.reportsTable = sch.ReportsTable(logger=logger)
-    self.dumpsTable = sch.DumpsTable(logger=logger)
+    #self.dumpsTable = sch.DumpsTable(logger=logger)
     self.extensionsTable = sch.ExtensionsTable(logger=logger)
     self.framesTable = sch.FramesTable(logger=logger)
 
@@ -484,6 +488,17 @@ class Processor(object):
     self.cleanup()
 
   #-----------------------------------------------------------------------------------------------------------------
+  def createProcessedDumpJson (self, newReportRecord, processedDumpAsString):
+    processedDumpDict = {"dump": processedDumpAsString}
+    for name, value in zip(self.reportsTable.columns, newReportRecord):
+      if name not in ["url", "user_id", "email"]:
+        if type(value) == datetime.datetime:
+          processedDumpDict[name] = "%4d-%02d-%02d %02d:%02d:%02d.%d" % (value.year, value.month, value.day, value.hour, value.minute, value.second, value.microsecond)
+        else:
+          processedDumpDict[name] = value
+    return processedDumpDict
+
+  #-----------------------------------------------------------------------------------------------------------------
   def processJob (self, jobTuple):
     """ This function is run only by a worker thread.
         Given a job, fetch a thread local database connection and the json document.  Use these
@@ -520,9 +535,18 @@ class Processor(object):
       except KeyError:
         date_processed = ooid.dateFromOoid(jobUuid)
 
-      reportId = self.insertReportIntoDatabase(threadLocalCursor, jobUuid, jsonDocument, jobPathname, date_processed, processorErrorMessages)
+      reportId, newReportRecord = self.insertReportIntoDatabase(threadLocalCursor, jobUuid, jsonDocument, jobPathname, date_processed, processorErrorMessages)
       threadLocalDatabaseConnection.commit()
-      truncated = self.doBreakpadStackDumpAnalysis(reportId, jobUuid, dumpfilePathname, threadLocalCursor, date_processed, processorErrorMessages)
+      processedDumpAsString, truncated = self.doBreakpadStackDumpAnalysis(reportId, jobUuid, dumpfilePathname, threadLocalCursor, date_processed, processorErrorMessages)
+      dumpReportJson = self.createProcessedDumpJson(newReportRecord, processedDumpAsString)
+      try:
+        self.processedDumpStorage.putDumpToFile(jobUuid, dumpReportJson, date_processed)
+      except OSError, x:
+        if x.errno == 17:
+          self.processedDumpStorage.removeDumpFile(jobUuid)
+          self.processedDumpStorage.putDumpToFile(jobUuid, dumpReportJson, date_processed)
+        else:
+          raise
       self.quitCheck()
       #finished a job - cleanup
       threadLocalCursor.execute("update jobs set completeddatetime = %s, success = True where id = %s", (datetime.datetime.now(), jobId))
@@ -665,7 +689,7 @@ class Processor(object):
       processorErrorMessages.append("INFO: This record is a replacement for a previous record with the same uuid")
       self.reportsTable.insert(threadLocalCursor, newReportsRowTuple, self.databaseConnectionPool.connectToDatabase, date_processed=date_processed)
     reportId = psy.singleValueSql(threadLocalCursor, "select id from reports where uuid = '%s' and date_processed = timestamp without time zone '%s'" % (uuid, date_processed))
-    return reportId
+    return (reportId, newReportsRowTuple)
 
   #-----------------------------------------------------------------------------------------------------------------
   def doBreakpadStackDumpAnalysis (self, reportId, uuid, dumpfilePathname, databaseCursor, date_processed, processorErrorMessages):
