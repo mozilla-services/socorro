@@ -5,6 +5,8 @@ from config.commonconfig import databaseHost
 from config.commonconfig import databaseName
 from config.commonconfig import databaseUserName
 from config.commonconfig import databasePassword
+from config.commonconfig import processedDumpStoragePath
+
 
 numberOfTablesAtOnce = cm.Option()
 numberOfTablesAtOnce.doc = 'number of tables to move simultaneously'
