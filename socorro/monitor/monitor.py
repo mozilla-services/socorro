@@ -213,6 +213,7 @@ class Monitor (object):
     """
     logger.info("%s - looking for dead processors", threading.currentThread().getName())
     try:
+      logger.info("%s - threshold %s", threading.currentThread().getName(), self.config.processorCheckInTime)
       threshold = psy.singleValueSql(aCursor, "select now() - interval '%s' * 2" % self.config.processorCheckInTime)
       #sql = "select id from processors where lastSeenDateTime < '%s'" % (threshold,)
       #logger.info("%s - dead processors sql: %s", threading.currentThread().getName(), sql)
