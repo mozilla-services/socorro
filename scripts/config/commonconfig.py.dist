@@ -25,6 +25,10 @@ deferredStorageRoot = cm.Option()
 deferredStorageRoot.doc = 'the root of the file system where dumps are found'
 deferredStorageRoot.default = '/tmp/socorro/toBeDeferred/'
 
+processedDumpStoragePath = cm.Option()
+processedDumpStoragePath.doc = 'the path of the file system where processed dumps are stored'
+processedDumpStoragePath.default = '/tmp/socorro/processedDumpStorage/'
+
 dumpDirPrefix = cm.Option()
 dumpDirPrefix.doc = 'dump directory names begin with this prefix'
 dumpDirPrefix.default = 'bp_'
