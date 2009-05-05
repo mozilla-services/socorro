@@ -13,7 +13,7 @@ You must run this test module using nose (chant nosetests from the command line)
  *                    x > 1, # Per Test: Prints (first comment line, else function name) then status (ok/FAIL/ERROR)
  *                   ]
  *      NOSE_WHERE=directory_path[,directory_path[,...]] : run only tests in these directories. Note commas
- *      NOSE_ATTR=attrspec[,attrspec ...] : run only tests for which at least one attrspec evaluates true. 
+ *      NOSE_ATTR=attrspec[,attrspec ...] : run only tests for which at least one attrspec evaluates true.
  *         Accepts '!attr' and 'attr=False'. Does NOT accept natural python syntax ('atter != True', 'not attr')
  *      NOSE_NOCAPTURE=TrueValue : nosetests normally captures stdout and only displays it if the test has fail or error.
  *         print debugging works with this envariable, or you can instead print to stderr or use a logger
@@ -150,6 +150,11 @@ class TestProcessor:
     except OSError,x:
       if errno.EEXIST == x.errno: pass
       else: raise
+    try:
+      os.makedirs(me.config.processedDumpStoragePath)
+    except OSError,x:
+      if errno.EEXIST == x.errno: pass
+      else: raise
     self.connection = psycopg2.connect(me.dsn)
     # blow away any database stuff, in case we crashed on previous run
     me.testDB.removeDB(me.config,me.logger)
@@ -157,7 +162,7 @@ class TestProcessor:
     me.testDB.createDB(me.config,me.logger)
     # 0, 1,                2,             3,   4,      5,      6,    7,        8,  9,          10,        11,
     # id,client_crash_date,date_processed,uuid,product,version,build,signature,url,install_age,last_crash,uptime,
-    # 12,      13,      14,    15,     16,     17,        18,   19,        20,     21, 
+    # 12,      13,      14,    15,     16,     17,        18,   19,        20,     21,
     # cpu_name,cpu_info,reason,address,os_name,os_version,email,build_date,user_id,started_datetime,
     # 22,                23,     24,       25,             26,           27,       28,         29
     # completed_datetime,success,truncated,processor_notes,user_comments,app_notes,distributor,distributor_version,
@@ -182,6 +187,10 @@ class TestProcessor:
       pass # ok if there is no such test directory
     try:
       shutil.rmtree(me.config.deferredStorageRoot)
+    except OSError:
+      pass # ok if there is no such test directory
+    try:
+      shutil.rmtree(me.config.processedDumpStoragePath)
     except OSError:
       pass # ok if there is no such test directory
     self.connection.close()
@@ -297,7 +306,7 @@ class TestProcessor:
     p1 = processor.Processor(me.config)
     me.config.processorId = originalProcId
     assert_raises(SystemExit,processor.Processor,me.config)
-    
+
   def testConstructorAllProcessesLive(self):
     """
     testConstructorAllProcessesLive(self):
@@ -347,7 +356,7 @@ class TestProcessor:
       super(TestProcessor.StubProcessor_start,self).__init__(config)
       me.logger.info("Constructed StubProcessor_start: extends Processor")
       self.jobTuple = (1,'someUuid',0)
-      
+
     def incomingJobStream(self,databaseCursor):
       me.logger.info("#Yield#%s#",self.jobTuple)
       yield self.jobTuple
@@ -479,7 +488,7 @@ class TestProcessor:
   def _quitter(self):
     time.sleep(self.timeTilQuit)
     self.p.quit = True
-    
+
   def testResponsiveSleep(self):
     """
     testResponsiveSleep(self): (slow=3)
@@ -618,7 +627,7 @@ class TestProcessor:
     cursor.execute(sql,(now,jobId,))
     self.connection.commit()
     self._removeJobFromTables(jobTuple)
-    
+
   def _removeJobFromTables(self, jobTuple):
     global me
     cursor = self.connection.cursor()
@@ -698,7 +707,7 @@ class TestProcessor:
       raise
     assert expectedNormalIds == seenNormalIds, 'But got expected: %s versus %s'%(expectedNormalIds,seenNormalIds)
     assert expectedPriorityIds == seenPriorityIds, 'But got expected: %s versus %s'%(expectedPriorityIds,seenPriorityIds)
-    
+
   def testIncomingJobStream_NoJobs(self):
     """
     testProcessor:TestProcessor.testIncomingJobStream_NoJobs(self): (slow=3)
@@ -833,7 +842,7 @@ class TestProcessor:
         priIds.remove(aJob[0])
       else:
         assert aJob[0] in normIds, 'Expect %s in normIds: %s'%(aJob[0],str(normIds))
-    
+
   class BogusThreadManager:
     def newTask(self,threadJob,data):
       global me
@@ -879,7 +888,7 @@ class TestProcessor:
             queueing = -99
     assert 1 == bogosity, 'Expect one logging line from the BogusThread Manager, but got %s'%bogosity
     assert 1 == queueing, 'Expect one logging line about queueing a job, and must be job 1. Got %s'%queueing
-    
+
   def testProcessJob_NoStorage(self):
     """
     testProcessJob_NoStorage(self):
@@ -910,7 +919,7 @@ class TestProcessor:
     assert 2 == errs
     assert 1 == caught
     assert 1 == id
-      
+
   def testProcessJob_JsonBadSyntax(self):
     """
     testProcessJob_JsonBadSyntax(self):
@@ -981,11 +990,11 @@ class TestProcessor:
       me.logger.info("#jobPathname#%s#",jobPathname)
       me.logger.info("#date_processed#%s#", date_processed)
       me.logger.info("#processorErrorMessages#%s#",processorErrorMessages)
-      return self.reportIdToReport
+      return (self.reportIdToReport, (jobUuid, dt.datetime.now(), dt.datetime.now(), 'product', 'version', 'buildID', 'url', 'install_age', 'last_crash', 'uptime', 'email', 'build_date', 'user_id', 'user_comments', 'app_notes', 'distributor', 'distributor_version'))
 
     def doBreakpadStackDumpAnalysis(self, reportId, jobUuid, dumpfilePathname, threadLocalCursor,date_processed, processorErrorMessages):
       assert self.reportIdToReport == reportId, 'Because that is what we told it, but got %s'%reportId
-      return False # whether the analysis was truncated
+      return ("...the dump...", False) # whether the analysis was truncated
 
   def testProcessJob_LegalJson(self):
     """
@@ -1008,8 +1017,14 @@ class TestProcessor:
     me.logger.clear()
     
     stamp0 = dt.datetime.now()
-    p.processJob((data0[0][0],data0[0][1],data0[0][3],))
-    p.processJob((data0[1][0],data0[1][1],data0[1][3],))
+    try:
+      p.processJob((data0[0][0],data0[0][1],data0[0][3],))
+    except Exception, x:
+      assert false, "expected no exception - got '%s' instead" % str(x)
+    try:
+      p.processJob((data0[1][0],data0[1][1],data0[1][3],))
+    except Exception, x:
+      assert false, "expected no exception - got '%s' instead" % str(x)
     stamp1 = dt.datetime.now()
     cur.execute(sql)
     data1 = cur.fetchall()
@@ -1045,7 +1060,7 @@ class TestProcessor:
           if key=='jobUuid': curUuid = val
           if key == 'jsonDocument' or key == 'jobPathname':
             assert curUuid in val, 'expected %s to be found in %s [%s]'%(curUuid,key,val)
-          
+
     assert 0 == errs, 'expect 2 from each file got %s'%errs
     assert 0 == warns, 'expect none with replaced method, got %s'%warns
     assert 0 == caught, 'expect none with replaced method, got %s'%caught
@@ -1060,7 +1075,7 @@ class TestProcessor:
     global me
     p = processor.Processor(me.config)
     assert_raises(Exception,p.doBreakpadStackDumpAnalysis,('','','','','','',))
-    
+
   def testJsonPathForUuidInJsonDumpStorage(self):
     """
     testJsonPathForUuidInJsonDumpStorage(self):
@@ -1079,7 +1094,7 @@ class TestProcessor:
     assert p0 == p.jsonPathForUuidInJsonDumpStorage(uuid0)
     assert p1 == p.jsonPathForUuidInJsonDumpStorage(uuid1)
     assert_raises(processor.UuidNotFoundException,p.jsonPathForUuidInJsonDumpStorage,createJDS.jsonBadUuid)
-    
+
   def testDumpPathForUuidInJsonDumpStorage(self):
     """
     testDumpPathForUuidInJsonDumpStorage(self):
@@ -1127,7 +1142,7 @@ class TestProcessor:
     assert 'WARNING: Json file missing any' == messages[0], "But got [%s]"%messages[0]
     messages = []
     val = p.getJsonOrWarn({'key':'too long'},'key',messages,333,3)
-    assert 'too' == val 
+    assert 'too' == val
     assert 0 == len(me.logger.buffer)
     assert 0 == len(messages)
     messages = []
@@ -1323,7 +1338,7 @@ class TestProcessor:
       con.commit()
     finally:
       p.databaseConnectionPool.cleanup()
-      
+
   def testInsertReportIntoDatabase_CrashVsTimestamp(self):
     """
     testInsertReportIntoDatabase_CrashVsTimestamp(self):
@@ -1384,7 +1399,7 @@ class TestProcessor:
       con.commit()
     finally:
       p.databaseConnectionPool.cleanup()
-      
+
   def testMake_signature(self):
     """
     testMake_signature(self):
