@@ -994,7 +994,7 @@ class TestProcessor:
 
     def doBreakpadStackDumpAnalysis(self, reportId, jobUuid, dumpfilePathname, threadLocalCursor,date_processed, processorErrorMessages):
       assert self.reportIdToReport == reportId, 'Because that is what we told it, but got %s'%reportId
-      return ("...the dump...", False) # whether the analysis was truncated
+      return ("...the dump...", "aSignature", "some Processor notes", False) # whether the analysis was truncated
 
   def testProcessJob_LegalJson(self):
     """
@@ -1015,7 +1015,7 @@ class TestProcessor:
     createJDS.createTestSet({uuid0:createJDS.jsonFileData[uuid0]},{'logger':me.logger,'jsonIsBogus':False},p.config.storageRoot)
     createJDS.createTestSet({uuid1:createJDS.jsonFileData[uuid1]},{'logger':me.logger,'jsonIsBogus':False},p.config.deferredStorageRoot)
     me.logger.clear()
-    
+
     stamp0 = dt.datetime.now()
     try:
       p.processJob((data0[0][0],data0[0][1],data0[0][3],))

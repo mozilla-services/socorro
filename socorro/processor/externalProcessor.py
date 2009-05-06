@@ -83,7 +83,7 @@ class ProcessorWithExternalBreakpad (processor.Processor):
     dumpAnalysisLineIterator.secondaryCacheMaximumSize = self.config.crashingThreadTailFrameThreshold + 1
     try:
       crashedThread = self.analyzeHeader(reportId, dumpAnalysisLineIterator, databaseCursor, date_processed, processorErrorMessages)
-      truncated = self.analyzeFrames(reportId, dumpAnalysisLineIterator, databaseCursor, date_processed, crashedThread, processorErrorMessages)
+      signature, processor_notes, truncated = self.analyzeFrames(reportId, dumpAnalysisLineIterator, databaseCursor, date_processed, crashedThread, processorErrorMessages)
       for x in dumpAnalysisLineIterator:
         pass  #need to spool out the rest of the stream so the cache doesn't get truncated
       dumpAnalysisAsString = (''.join(dumpAnalysisLineIterator.cache))
@@ -93,7 +93,7 @@ class ProcessorWithExternalBreakpad (processor.Processor):
     returncode = subprocessHandle.wait()
     if returncode is not None and returncode != 0:
       raise processor.ErrorInBreakpadStackwalkException("%s failed with return code %s when processing dump %s" %(self.config.minidump_stackwalkPathname, subprocessHandle.returncode, uuid))
-    return (dumpAnalysisAsString, truncated)
+    return (dumpAnalysisAsString, signature, processor_notes, truncated)
 
 
 #-----------------------------------------------------------------------------------------------------------------
@@ -237,12 +237,13 @@ class ProcessorWithExternalBreakpad (processor.Processor):
       processorErrorMessages.append(message)
       logger.warning("%s - %s", threading.currentThread().getName(), message)
     #logger.debug("%s -   %s", threading.currentThread().getName(), (signature, '; '.join(processorErrorMessages), reportId, date_processed))
-    databaseCursor.execute("update reports set signature = '%s', processor_notes = '%s' where id = %s and date_processed = timestamp without time zone '%s'" % (signature, '; '.join(processorErrorMessages).replace("'", "''"), reportId, date_processed))
+    processor_notes = '; '.join(processorErrorMessages).replace("'", "''")
+    databaseCursor.execute("update reports set signature = '%s', processor_notes = '%s' where id = %s and date_processed = timestamp without time zone '%s'" % (signature, processor_notes, reportId, date_processed))
 
     if not analyzeReturnedLines:
       message = "%s returned no frame lines for reportid: %s" % (self.config.minidump_stackwalkPathname, reportId)
       processorErrorMessages.append(message)
       logger.warning("%s - %s", threading.currentThread().getName(), message)
 
-    return truncated
+    return signature, processor_notes, truncated
 

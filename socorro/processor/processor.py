@@ -488,12 +488,21 @@ class Processor(object):
     self.cleanup()
 
   #-----------------------------------------------------------------------------------------------------------------
-  def createProcessedDumpJson (self, newReportRecord, processedDumpAsString):
+  def createProcessedDumpJson (self, newReportRecord, processedDumpAsString, signature, processor_notes, truncated):
     processedDumpDict = {"dump": processedDumpAsString}
+    logger.debug("%s - creating json record: %s", threading.currentThread().getName(), str(self.reportsTable.columns))
+    logger.debug("%s - creating json record: %s", threading.currentThread().getName(), str(newReportRecord))
     for name, value in zip(self.reportsTable.columns, newReportRecord):
+      logger.debug("%s - creating json record: %s, %s", threading.currentThread().getName(), name, value)
       if name not in ["url", "user_id", "email"]:
         if type(value) == datetime.datetime:
           processedDumpDict[name] = "%4d-%02d-%02d %02d:%02d:%02d.%d" % (value.year, value.month, value.day, value.hour, value.minute, value.second, value.microsecond)
+        elif name == "signature":
+          processedDumpDict[name] = signature
+        elif name == "processor_notes":
+          processedDumpDict[name] = processor_notes
+        elif name == "truncated":
+          processedDumpDict[name] = truncated
         else:
           processedDumpDict[name] = value
     return processedDumpDict
@@ -537,8 +546,8 @@ class Processor(object):
 
       reportId, newReportRecord = self.insertReportIntoDatabase(threadLocalCursor, jobUuid, jsonDocument, jobPathname, date_processed, processorErrorMessages)
       threadLocalDatabaseConnection.commit()
-      processedDumpAsString, truncated = self.doBreakpadStackDumpAnalysis(reportId, jobUuid, dumpfilePathname, threadLocalCursor, date_processed, processorErrorMessages)
-      dumpReportJson = self.createProcessedDumpJson(newReportRecord, processedDumpAsString)
+      processedDumpAsString, signature, processor_notes, truncated = self.doBreakpadStackDumpAnalysis(reportId, jobUuid, dumpfilePathname, threadLocalCursor, date_processed, processorErrorMessages)
+      dumpReportJson = self.createProcessedDumpJson(newReportRecord, processedDumpAsString, signature, processor_notes, truncated)
       try:
         self.processedDumpStorage.putDumpToFile(jobUuid, dumpReportJson, date_processed)
       except OSError, x:

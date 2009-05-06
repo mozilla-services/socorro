@@ -432,7 +432,7 @@ class TestProcessorWithExternalBreakpad:
       assert None == d, 'Expected None for unanalyzed report, but got %s'%d
     con.commit()
 
-    truncated = p.analyzeFrames(1,dumper,cur,now,threadNum,messages)
+    signature, processor_notes, truncated = p.analyzeFrames(1,dumper,cur,now,threadNum,messages)
     con.commit()
     assert not truncated, 'Expected not to truncate here, but did. Huh.'
     assert not messages, 'Expected no error messages, but %s'%(str(messages))
@@ -489,7 +489,7 @@ class TestProcessorWithExternalBreakpad:
     for d in cur.fetchall()[0]:
       assert None == d, 'Expected None for unanalyzed report, but got %s'%d
     con.commit()
-    truncated = p.analyzeFrames(1,dumper,cur,now,threadNum,messages)
+    signature, processor_notes, truncated = p.analyzeFrames(1,dumper,cur,now,threadNum,messages)
     con.commit()
     assert not truncated, 'Expected not to truncate here, but did. Huh.'
     assert 1 == len(messages), 'Expected "blank line"  message, but %s'%(str(messages))
@@ -545,7 +545,7 @@ class TestProcessorWithExternalBreakpad:
       assert None == d, 'Expected None for unanalyzed report, but got %s'%d
     con.commit()
 
-    truncated = p.analyzeFrames(1,dumper,cur,now,threadNum,messages)
+    signature, processor_notes, truncated = p.analyzeFrames(1,dumper,cur,now,threadNum,messages)
     assert truncated, 'Expected it to be truncated with this setup'
     assert 1 == len(messages), 'Expected one error message, but %s'%(str(messages))
     assert 'This dump is too long and has triggered the automatic truncation' in messages[0],'But got %s'%(str(messages))
@@ -607,7 +607,7 @@ class TestProcessorWithExternalBreakpad:
     for d in cur.fetchall()[0]:
       assert None == d, 'Expected None for unanalyzed report, but got %s'%d
     con.commit()
-    truncated = p.analyzeFrames(1,dumper,cur,now,threadNum,messages)
+    signature, processor_notes, truncated = p.analyzeFrames(1,dumper,cur,now,threadNum,messages)
     con.commit()
     assert not truncated
     expectedThreadList = [0,0,0,0,0,1]
@@ -693,7 +693,7 @@ class TestProcessorWithExternalBreakpad:
 
       p.returncode = 2
       try:
-        processedDumpAsString, truncated = p.doBreakpadStackDumpAnalysis(reportId,uuid0,dpath0,cur,now,messages)
+        processedDumpAsString, signature, processor_notes, truncated = p.doBreakpadStackDumpAnalysis(reportId,uuid0,dpath0,cur,now,messages)
       except processor.ErrorInBreakpadStackwalkException, x:
         assert 4 == len(messages), 'Expected no header, no thread, no signature, no frame. But %s'%(str(messages))
       except Exception, x:
@@ -702,14 +702,14 @@ class TestProcessorWithExternalBreakpad:
       p.returncode = 0
       reportId += 1
       messages = []
-      processedDumpAsString, truncated = p.doBreakpadStackDumpAnalysis(reportId,uuid1,dpath1,cur,now,messages)
+      processedDumpAsString, signature, processor_notes, truncated = p.doBreakpadStackDumpAnalysis(reportId,uuid1,dpath1,cur,now,messages)
       assert 4 == len(messages), 'Expected no header, no thread, no signature, no frame. But %s'%(str(messages))
       assert processedDumpAsString =='', "Expected an empty processedDumpAsString, but got: %s" % processedDumpAsString
 
       p.returncode = None
       reportId += 1
       messages = []
-      p.doBreakpadStackDumpAnalysis(reportId,uuid2,dpath2,cur,now,messages)
+      processedDumpAsString, signature, processor_notes, truncated = p.doBreakpadStackDumpAnalysis(reportId,uuid2,dpath2,cur,now,messages)
       assert 4 == len(messages), 'Expected no header, no thread, no signature, no frame. But %s'%(str(messages))
       assert processedDumpAsString == '', "Expected an empty processedDumpAsString, but got: %s" % processedDumpAsString
     finally:
