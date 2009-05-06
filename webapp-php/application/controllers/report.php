@@ -143,8 +143,14 @@ class Report_Controller extends Controller {
         }
         $crashDir = Kohana::config('application.dumpPath');
         if ($this->report_model->exists($uuid, $crashDir)) {
-            $this->setAutoRender(FALSE);
-            return url::redirect('report/index/'.$uuid);
+	    $report = $this->report_model->getByUUID($uuid, $crashDir);
+	    if ($report) {
+	        $this->setAutoRender(FALSE);
+                return url::redirect('report/index/'.$uuid);
+	    } else {
+	        Kohana::log('alert', "jsonz crash report exists on disk, but the report database says it hasn't been processed $uuid");
+	    }
+            
         }
 
         $this->job_model = new Job_Model();
