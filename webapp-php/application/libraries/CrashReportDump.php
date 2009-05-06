@@ -42,6 +42,16 @@ class CrashReportDump {
   	        $report->{$key} = $val;
 	    }
             $this->_parseDump($report); 
+	    //Bulletproofing against bad JSON files
+            $basicKeys = array('signature', 'product', 'version', 'uuid', 
+			       'date_processed', 'uptime', 'build', 'os_name', 
+			       'os_version', 'cpu_name', 'cpu_info', 'reason', 
+			       'address', 'user_comments', 'dump');
+	    foreach ($basicKeys as $key) {
+                if (! isset($report->{$key})) {
+	            $report->{$key} = '';
+	        }
+	    }
         } else {
   	    throw new Exception("Crash Dump file not found or not readable $filename");
         }
