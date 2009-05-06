@@ -68,7 +68,7 @@ irrelevantSignatureRegEx.default = '@0x[01234567890abcdefABCDEF]{2,}'
 
 prefixSignatureRegEx = cm.Option()
 prefixSignatureRegEx.doc = 'a regular expression matching frame signatures that should always be coupled with the following frame signature when generating an overall signature'
-prefixSignatureRegEx.default = '@0x0|strchr|strstr|strcmp|memcpy|memcmp|malloc|realloc|.*free|arena_dalloc_small|nsObjCExceptionLogAbort\(.*?\)|nsCOMPtr_base::assign_from_qi(nsQueryInterface, nsID const&)'
+prefixSignatureRegEx.default = '@0x0|strchr|strstr|strcmp|memcpy|memcmp|malloc|realloc|.*free|arena_dalloc_small|nsObjCExceptionLogAbort(\(.*?\)){0,1}|libobjc.A.dylib@0x15688|nsCOMPtr_base::assign_from_qi(nsQueryInterface, nsID const&)'
 
 logFilePathname = cm.Option()
 logFilePathname.doc = 'full pathname for the log file'
