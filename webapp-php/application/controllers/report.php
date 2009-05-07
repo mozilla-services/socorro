@@ -139,6 +139,7 @@ class Report_Controller extends Controller {
      */
     public function pending($uuid) {
         if (!$uuid || !preg_match('/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/', $uuid)) {
+            Kohana::log('alert', "Improper UUID format for $uuid doing 404");
             return Event::run('system.404');
         }
         $crashDir = Kohana::config('application.dumpPath');
@@ -149,9 +150,10 @@ class Report_Controller extends Controller {
                 return url::redirect('report/index/'.$uuid);
 	    } else {
 	        Kohana::log('alert', "jsonz crash report exists on disk, but the report database says it hasn't been processed $uuid");
-	    }
-            
-        }
+	    }            
+        } else {
+            Kohana::log('info', "jsonz crash report doesn't exist yet $crashDir $uuid");
+	}
 
         $this->job_model = new Job_Model();
         $job = $this->job_model->getByUUID($uuid);
