@@ -358,9 +358,9 @@ class ReportsTable(PartitionedTable):
                                           """
                                       )
     self.insertSql = """insert into TABLENAME
-                            (uuid, client_crash_date, date_processed, product, version, build, url, install_age, last_crash, uptime, email, build_date, user_id, user_comments, app_notes, distributor, distributor_version) values
-                            (%s,   %s,                %s,             %s,      %s,      %s,    %s,  %s,          %s,         %s,     %s,    %s,         %s,      %s,            %s,        %s,          %s)"""
-    self.columns = "uuid", "client_crash_date", "date_processed", "product", "version", "build", "url", "install_age", "last_crash", "uptime", "email", "build_date", "user_id", "user_comments", "app_notes", "distributor", "distributor_version"
+                            ( uuid,   client_crash_date,   date_processed,   product,   version,   build,   url,   install_age,   last_crash,   uptime,   email,   build_date,   user_id,   user_comments,   app_notes,   distributor,   distributor_version) values
+                            ( %s,     %s,                  %s,               %s,        %s,        %s,      %s,    %s,            %s,           %s,       %s,      %s,           %s,        %s,              %s,          %s,            %s)"""
+    self.columns =           "uuid", "client_crash_date", "date_processed", "product", "version", "build", "url", "install_age", "last_crash", "uptime", "email", "build_date", "user_id", "user_comments", "app_notes", "distributor", "distributor_version"
   #-----------------------------------------------------------------------------------------------------------------
   def additionalCreationProcedures(self, databaseCursor):
     pass
