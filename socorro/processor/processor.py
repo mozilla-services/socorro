@@ -488,24 +488,33 @@ class Processor(object):
     self.cleanup()
 
   #-----------------------------------------------------------------------------------------------------------------
-  def createProcessedDumpJson (self, newReportRecord, processedDumpAsString, signature, processor_notes, truncated):
-    processedDumpDict = {"dump": processedDumpAsString}
-    logger.debug("%s - creating json record: %s", threading.currentThread().getName(), str(self.reportsTable.columns))
-    logger.debug("%s - creating json record: %s", threading.currentThread().getName(), str(newReportRecord))
-    for name, value in zip(self.reportsTable.columns, newReportRecord):
-      logger.debug("%s - creating json record: %s, %s", threading.currentThread().getName(), name, value)
-      if name not in ["url", "user_id", "email"]:
-        if type(value) == datetime.datetime:
-          processedDumpDict[name] = "%4d-%02d-%02d %02d:%02d:%02d.%d" % (value.year, value.month, value.day, value.hour, value.minute, value.second, value.microsecond)
-        elif name == "signature":
-          processedDumpDict[name] = signature
-        elif name == "processor_notes":
-          processedDumpDict[name] = processor_notes
-        elif name == "truncated":
-          processedDumpDict[name] = truncated
-        else:
-          processedDumpDict[name] = value
-    return processedDumpDict
+  @staticmethod
+  def convertDatesInDictToString (aDict):
+    for name, value in aDict.iteritems():
+      if type(value) == datetime.datetime:
+        aDict[name] = "%4d-%02d-%02d %02d:%02d:%02d.%d" % (value.year, value.month, value.day, value.hour, value.minute, value.second, value.microsecond)
+
+  #-----------------------------------------------------------------------------------------------------------------
+  @staticmethod
+  def sanitizeDict (aDict, listOfForbiddenKeys=['url','email','user_id']):
+    for aForbiddenKey in listOfForbiddenKeys:
+      if aForbiddenKey in aDict:
+        del aDict[aForbiddenKey]
+
+  #-----------------------------------------------------------------------------------------------------------------
+  def saveProcessedDumpJson (self, aReportRecordAsDict):
+    date_processed = aReportRecordAsDict["date_processed"]
+    Processor.sanitizeDict(aReportRecordAsDict)
+    Processor.convertDatesInDictToString(aReportRecordAsDict)
+    uuid = aReportRecordAsDict["uuid"]
+    try:
+      self.processedDumpStorage.putDumpToFile(uuid, aReportRecordAsDict, date_processed)
+    except OSError, x:
+      if x.errno == 17:
+        self.processedDumpStorage.removeDumpFile(uuid)
+        self.processedDumpStorage.putDumpToFile(uuid, aReportRecordAsDict, date_processed)
+      else:
+        raise
 
   #-----------------------------------------------------------------------------------------------------------------
   def processJob (self, jobTuple):
@@ -544,24 +553,21 @@ class Processor(object):
       except KeyError:
         date_processed = ooid.dateFromOoid(jobUuid)
 
-      reportId, newReportRecord = self.insertReportIntoDatabase(threadLocalCursor, jobUuid, jsonDocument, jobPathname, date_processed, processorErrorMessages)
+      newReportRecordAsDict = self.insertReportIntoDatabase(threadLocalCursor, jobUuid, jsonDocument, jobPathname, date_processed, processorErrorMessages)
+      reportId = newReportRecordAsDict["id"]
       threadLocalDatabaseConnection.commit()
-      processedDumpAsString, signature, processor_notes, truncated = self.doBreakpadStackDumpAnalysis(reportId, jobUuid, dumpfilePathname, threadLocalCursor, date_processed, processorErrorMessages)
-      dumpReportJson = self.createProcessedDumpJson(newReportRecord, processedDumpAsString, signature, processor_notes, truncated)
-      try:
-        self.processedDumpStorage.putDumpToFile(jobUuid, dumpReportJson, date_processed)
-      except OSError, x:
-        if x.errno == 17:
-          self.processedDumpStorage.removeDumpFile(jobUuid)
-          self.processedDumpStorage.putDumpToFile(jobUuid, dumpReportJson, date_processed)
-        else:
-          raise
+      additionalReportValuesAsDict = self.doBreakpadStackDumpAnalysis(reportId, jobUuid, dumpfilePathname, threadLocalCursor, date_processed, processorErrorMessages)
+      newReportRecordAsDict.update(additionalReportValuesAsDict)
+
       self.quitCheck()
       #finished a job - cleanup
-      threadLocalCursor.execute("update jobs set completeddatetime = %s, success = True where id = %s", (datetime.datetime.now(), jobId))
-      threadLocalCursor.execute("update reports set started_datetime = timestamp without time zone '%s', completed_datetime = timestamp without time zone '%s', success = True, truncated = %s where id = %s and date_processed = timestamp without time zone '%s'" % (startedDateTime, datetime.datetime.now(), truncated, reportId, date_processed))
+      newReportRecordAsDict["completeddatetime"] = completedDateTime = datetime.datetime.now()
+      newReportRecordAsDict["startedDateTime"] = startedDateTime
+      threadLocalCursor.execute("update jobs set completeddatetime = %s, success = True where id = %s", (completedDateTime, jobId))
+      threadLocalCursor.execute("update reports set started_datetime = timestamp without time zone '%s', completed_datetime = timestamp without time zone '%s', success = True, truncated = %s where id = %s and date_processed = timestamp without time zone '%s'" % (startedDateTime, completedDateTime, newReportRecordAsDict["truncated"], reportId, date_processed))
       #self.updateRegistrationNoCommit(threadLocalCursor)
       threadLocalDatabaseConnection.commit()
+      self.saveProcessedDumpJson(newReportRecordAsDict)
       logger.info("%s - succeeded and committed: %s, %s", threadName, jobId, jobUuid)
     except (KeyboardInterrupt, SystemExit):
       logger.info("%s - quit request detected", threadName)
@@ -683,10 +689,11 @@ class Processor(object):
       last_crash = int(jsonDocument['SecondsSinceLastCrash'])
     except:
       last_crash = None
-    newReportsRowTuple = (uuid, crash_date, date_processed, product, version, buildID, url, install_age, last_crash, uptime, email, build_date, user_id, user_comments, app_notes, distributor, distributor_version)
+    newReportRecordAsTuple = (uuid, crash_date, date_processed, product, version, buildID, url, install_age, last_crash, uptime, email, build_date, user_id, user_comments, app_notes, distributor, distributor_version)
+    newReportRecordAsDict = dict(x for x in zip(self.reportsTable.columns, newReportRecordAsTuple))
     try:
       logger.debug("%s - inserting for %s, %s", threading.currentThread().getName(), uuid, str(date_processed))
-      self.reportsTable.insert(threadLocalCursor, newReportsRowTuple, self.databaseConnectionPool.connectToDatabase, date_processed=date_processed)
+      self.reportsTable.insert(threadLocalCursor, newReportRecordAsTuple, self.databaseConnectionPool.connectToDatabase, date_processed=date_processed)
     except psycopg2.IntegrityError, x:
       logger.debug("%s - psycopg2.IntegrityError %s", threading.currentThread().getName(), str(x))
       logger.debug("%s - %s: this report already exists for date: %s",  threading.currentThread().getName(), uuid, str(date_processed))
@@ -696,9 +703,9 @@ class Processor(object):
         raise DuplicateEntryException(uuid)
       threadLocalCursor.execute("delete from reports where uuid = '%s' and date_processed = timestamp without time zone '%s'" % (uuid, date_processed))
       processorErrorMessages.append("INFO: This record is a replacement for a previous record with the same uuid")
-      self.reportsTable.insert(threadLocalCursor, newReportsRowTuple, self.databaseConnectionPool.connectToDatabase, date_processed=date_processed)
-    reportId = psy.singleValueSql(threadLocalCursor, "select id from reports where uuid = '%s' and date_processed = timestamp without time zone '%s'" % (uuid, date_processed))
-    return (reportId, newReportsRowTuple)
+      self.reportsTable.insert(threadLocalCursor, newReportRecordAsTuple, self.databaseConnectionPool.connectToDatabase, date_processed=date_processed)
+    newReportRecordAsDict["id"] = psy.singleValueSql(threadLocalCursor, "select id from reports where uuid = '%s' and date_processed = timestamp without time zone '%s'" % (uuid, date_processed))
+    return newReportRecordAsDict
 
   #-----------------------------------------------------------------------------------------------------------------
   def doBreakpadStackDumpAnalysis (self, reportId, uuid, dumpfilePathname, databaseCursor, date_processed, processorErrorMessages):

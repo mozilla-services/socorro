@@ -990,11 +990,29 @@ class TestProcessor:
       me.logger.info("#jobPathname#%s#",jobPathname)
       me.logger.info("#date_processed#%s#", date_processed)
       me.logger.info("#processorErrorMessages#%s#",processorErrorMessages)
-      return (self.reportIdToReport, (jobUuid, dt.datetime.now(), dt.datetime.now(), 'product', 'version', 'buildID', 'url', 'install_age', 'last_crash', 'uptime', 'email', 'build_date', 'user_id', 'user_comments', 'app_notes', 'distributor', 'distributor_version'))
+      reportRecordAsDict = { "id": self.reportIdToReport,
+                             "uuid": jobUuid,
+                             "client_crash_date": dt.datetime.now(),
+                             "date_processed": dt.datetime.now(),
+                             "product": 'product',
+                             'version': 'version',
+                             'buildID': 'buildID',
+                             'url': 'url',
+                             'install_age': 'install_age',
+                             'last_crash': 'last_crash',
+                             'uptime': 'uptime',
+                             'email': None,
+                             'build_date': 'build_date',
+                             'user_id': None,
+                             'user_comments': 'user_comments',
+                             'app_notes': 'app_notes',
+                             'distributor': 'distributor',
+                             'distributor_version': 'distributor_version'}
+      return reportRecordAsDict
 
     def doBreakpadStackDumpAnalysis(self, reportId, jobUuid, dumpfilePathname, threadLocalCursor,date_processed, processorErrorMessages):
       assert self.reportIdToReport == reportId, 'Because that is what we told it, but got %s'%reportId
-      return ("...the dump...", "aSignature", "some Processor notes", False) # whether the analysis was truncated
+      return {"signature": "aSignature", "processor_notes": "some Processor notes", "truncated": False, "dump": "...the dump..."}
 
   def testProcessJob_LegalJson(self):
     """
@@ -1034,8 +1052,9 @@ class TestProcessor:
       assert i[6] == None #completed
       assert i[7] == None #success
     for i in data1:
-      assert stamp0 < i[5] and i[5] < stamp1 #started
-      assert stamp0 < i[6] and i[6] < stamp1 #completed
+      print i
+      assert stamp0 < i[5] < stamp1 #started
+      assert stamp0 < i[6] < stamp1 #completed
       assert i[7] #success
 
     errs = 0

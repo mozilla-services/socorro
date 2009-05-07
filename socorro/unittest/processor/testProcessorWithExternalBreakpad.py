@@ -287,7 +287,7 @@ class TestProcessorWithExternalBreakpad:
     con.commit()
     for i in range(len(beforeData[0])):
       assert beforeData[0][i] == afterData[0][i], 'Column %s: Expected %s, got %s'%(dbFields[i],beforeData[0][i],afterData[0][i])
-    assert None == result
+    assert None == result["crashedThread"]
     assert 2 == len(messages), "Expected two messages, got %s"%(str(messages))
     assert 'returned no header lines for reportid: %s'%id in messages[0],'Got %s'%(messages[0])
     assert 'No thread' in messages[1], 'Expected "no thread was identified as the cause of the crash", got "%s"'%(messages[1])
@@ -300,7 +300,7 @@ class TestProcessorWithExternalBreakpad:
     con.commit()
     result = p.analyzeHeader(id,iter(['OS|osName|osVersion|','\n','CPU|cpuName|cpuInfo','\n']),cur,processDate,messages)
     con.commit() # because analyzeHeader should not do it
-    assert None == result,'Expected None crashedThread returned, got %s'%result
+    assert None == result["crashedThread"],'Expected None crashedThread returned, got %s'%result
     cur.execute(selectSql,(id,))
     afterData = cur.fetchall()
     con.commit()
@@ -328,7 +328,7 @@ class TestProcessorWithExternalBreakpad:
     testData = ['OS|osVersion','CPU|cpuName','Crash|oopsy','\n']
     result = p.analyzeHeader(id,iter(testData),cur,processDate,messages)
     con.commit() # because analyzeHeader should not do it
-    assert None == result, 'Expect no result, short crash data'
+    assert None == result["crashedThread"], 'Expect no result, short crash data'
     cur.execute(selectSql,(id,))
     afterData = cur.fetchall()
     for i in range(len(beforeData[0])):
@@ -357,7 +357,7 @@ class TestProcessorWithExternalBreakpad:
     expected = [None,None,'cpuName','cpuVersion','oopsy','0xdeadbeef','osName','osVersion']
     result = p.analyzeHeader(id,iter(testData),cur,processDate,messages)
     con.commit() # because analyzeHeader should not do it
-    assert None == result
+    assert None == result["crashedThread"]
     cur.execute(selectSql,(id,))
     afterData = cur.fetchall()
     for i in range(2,len(beforeData[0])):
@@ -381,7 +381,7 @@ class TestProcessorWithExternalBreakpad:
     expected = [None,None,'cpuName','cpuVersion',None,'0xdeadbeef','osName','osVersion']
     result = p.analyzeHeader(id,iter(testData),cur,processDate,messages)
     con.commit() # because analyzeHeader should not do it
-    assert 66 == result
+    assert 66 == result["crashedThread"]
     cur.execute(selectSql,(id,))
     afterData = cur.fetchall()
     for i in range(2,len(beforeData[0])):
@@ -432,9 +432,10 @@ class TestProcessorWithExternalBreakpad:
       assert None == d, 'Expected None for unanalyzed report, but got %s'%d
     con.commit()
 
-    signature, processor_notes, truncated = p.analyzeFrames(1,dumper,cur,now,threadNum,messages)
+    #signature, processor_notes, truncated = p.analyzeFrames(1,dumper,cur,now,threadNum,messages)
+    additionalReportValuesAsDict = p.analyzeFrames(1,dumper,cur,now,threadNum,messages)
     con.commit()
-    assert not truncated, 'Expected not to truncate here, but did. Huh.'
+    assert not additionalReportValuesAsDict["truncated"], 'Expected not to truncate here, but did. Huh.'
     assert not messages, 'Expected no error messages, but %s'%(str(messages))
     i = 0
     for c in dumper.cache:
@@ -489,9 +490,9 @@ class TestProcessorWithExternalBreakpad:
     for d in cur.fetchall()[0]:
       assert None == d, 'Expected None for unanalyzed report, but got %s'%d
     con.commit()
-    signature, processor_notes, truncated = p.analyzeFrames(1,dumper,cur,now,threadNum,messages)
+    d = p.analyzeFrames(1,dumper,cur,now,threadNum,messages)
     con.commit()
-    assert not truncated, 'Expected not to truncate here, but did. Huh.'
+    assert not d["truncated"], 'Expected not to truncate here, but did. Huh.'
     assert 1 == len(messages), 'Expected "blank line"  message, but %s'%(str(messages))
     assert 'An unexpected blank line in this dump was ignored' == messages[0], 'but %s'%messages[0]
     clist = [ c for c in dumper.cache ]
@@ -545,8 +546,8 @@ class TestProcessorWithExternalBreakpad:
       assert None == d, 'Expected None for unanalyzed report, but got %s'%d
     con.commit()
 
-    signature, processor_notes, truncated = p.analyzeFrames(1,dumper,cur,now,threadNum,messages)
-    assert truncated, 'Expected it to be truncated with this setup'
+    d = p.analyzeFrames(1,dumper,cur,now,threadNum,messages)
+    assert d["truncated"], 'Expected it to be truncated with this setup'
     assert 1 == len(messages), 'Expected one error message, but %s'%(str(messages))
     assert 'This dump is too long and has triggered the automatic truncation' in messages[0],'But got %s'%(str(messages))
 
@@ -607,9 +608,9 @@ class TestProcessorWithExternalBreakpad:
     for d in cur.fetchall()[0]:
       assert None == d, 'Expected None for unanalyzed report, but got %s'%d
     con.commit()
-    signature, processor_notes, truncated = p.analyzeFrames(1,dumper,cur,now,threadNum,messages)
+    d = p.analyzeFrames(1,dumper,cur,now,threadNum,messages)
     con.commit()
-    assert not truncated
+    assert not d["truncated"]
     expectedThreadList = [0,0,0,0,0,1]
     threadList = [int(x[0]) for x in dumper.cache ]
     assert threadList == expectedThreadList, 'expected %s, but %s'%(str(expectedThreadList),str(threadList))
@@ -685,15 +686,15 @@ class TestProcessorWithExternalBreakpad:
       processDate = now
       crashTime = "%d"%(nowstamp - 10000)
       jsonDoc = {'ProductName':product,'Version':version,'BuildID':buildId,'CrashTime':crashTime}
-      uuid0ReportId, uuid0ReportRecord = p.insertReportIntoDatabase(cur,uuid0,jsonDoc,jpath0,now,[])
-      uuid1ReportId, uuid1ReportRecord = p.insertReportIntoDatabase(cur,uuid1,jsonDoc,jpath1,now,[])
-      uuid2ReportId, uuid2ReportRecord = p.insertReportIntoDatabase(cur,uuid2,jsonDoc,jpath2,now,[])
+      uuid0ReportRecordAsDict = p.insertReportIntoDatabase(cur,uuid0,jsonDoc,jpath0,now,[])
+      uuid1ReportRecordAsDict = p.insertReportIntoDatabase(cur,uuid1,jsonDoc,jpath1,now,[])
+      uuid2ReportRecordAsDict = p.insertReportIntoDatabase(cur,uuid2,jsonDoc,jpath2,now,[])
       reportId = 1
       messages = []
 
       p.returncode = 2
       try:
-        processedDumpAsString, signature, processor_notes, truncated = p.doBreakpadStackDumpAnalysis(reportId,uuid0,dpath0,cur,now,messages)
+        additionalReportValuesAsDict = p.doBreakpadStackDumpAnalysis(reportId,uuid0,dpath0,cur,now,messages)
       except processor.ErrorInBreakpadStackwalkException, x:
         assert 4 == len(messages), 'Expected no header, no thread, no signature, no frame. But %s'%(str(messages))
       except Exception, x:
@@ -702,16 +703,16 @@ class TestProcessorWithExternalBreakpad:
       p.returncode = 0
       reportId += 1
       messages = []
-      processedDumpAsString, signature, processor_notes, truncated = p.doBreakpadStackDumpAnalysis(reportId,uuid1,dpath1,cur,now,messages)
+      additionalReportValuesAsDict = p.doBreakpadStackDumpAnalysis(reportId,uuid1,dpath1,cur,now,messages)
       assert 4 == len(messages), 'Expected no header, no thread, no signature, no frame. But %s'%(str(messages))
-      assert processedDumpAsString =='', "Expected an empty processedDumpAsString, but got: %s" % processedDumpAsString
+      assert additionalReportValuesAsDict["dump"] =='', "Expected an empty dump, but got: %s" % additionalReportValuesAsDict["dump"]
 
       p.returncode = None
       reportId += 1
       messages = []
-      processedDumpAsString, signature, processor_notes, truncated = p.doBreakpadStackDumpAnalysis(reportId,uuid2,dpath2,cur,now,messages)
+      additionalReportValuesAsDict = p.doBreakpadStackDumpAnalysis(reportId,uuid2,dpath2,cur,now,messages)
       assert 4 == len(messages), 'Expected no header, no thread, no signature, no frame. But %s'%(str(messages))
-      assert processedDumpAsString == '', "Expected an empty processedDumpAsString, but got: %s" % processedDumpAsString
+      assert additionalReportValuesAsDict["dump"] =='', "Expected an empty dump, but got: %s" % additionalReportValuesAsDict["dump"]
     finally:
       con.rollback()
 

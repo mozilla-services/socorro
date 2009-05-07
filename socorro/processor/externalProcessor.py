@@ -82,18 +82,21 @@ class ProcessorWithExternalBreakpad (processor.Processor):
     dumpAnalysisLineIterator, subprocessHandle = self.invokeBreakpadStackdump(dumpfilePathname)
     dumpAnalysisLineIterator.secondaryCacheMaximumSize = self.config.crashingThreadTailFrameThreshold + 1
     try:
-      crashedThread = self.analyzeHeader(reportId, dumpAnalysisLineIterator, databaseCursor, date_processed, processorErrorMessages)
-      signature, processor_notes, truncated = self.analyzeFrames(reportId, dumpAnalysisLineIterator, databaseCursor, date_processed, crashedThread, processorErrorMessages)
+      additionalReportValuesAsDict = self.analyzeHeader(reportId, dumpAnalysisLineIterator, databaseCursor, date_processed, processorErrorMessages)
+      crashedThread = additionalReportValuesAsDict["crashedThread"]
+      evenMoreReportValuesAsDict = self.analyzeFrames(reportId, dumpAnalysisLineIterator, databaseCursor, date_processed, crashedThread, processorErrorMessages)
+      additionalReportValuesAsDict.update(evenMoreReportValuesAsDict)
       for x in dumpAnalysisLineIterator:
         pass  #need to spool out the rest of the stream so the cache doesn't get truncated
       dumpAnalysisAsString = (''.join(dumpAnalysisLineIterator.cache))
+      additionalReportValuesAsDict["dump"] = dumpAnalysisAsString
     finally:
       dumpAnalysisLineIterator.theIterator.close() #this is really a handle to a file-like object - got to close it
     # is the return code from the invocation important?  Uncomment, if it is...
     returncode = subprocessHandle.wait()
     if returncode is not None and returncode != 0:
       raise processor.ErrorInBreakpadStackwalkException("%s failed with return code %s when processing dump %s" %(self.config.minidump_stackwalkPathname, subprocessHandle.returncode, uuid))
-    return (dumpAnalysisAsString, signature, processor_notes, truncated)
+    return additionalReportValuesAsDict
 
 
 #-----------------------------------------------------------------------------------------------------------------
@@ -103,7 +106,7 @@ class ProcessorWithExternalBreakpad (processor.Processor):
           of the header, the number of the thread that caused the crash is determined and saved.
 
           returns:
-            the number of the thread that crashed
+            a dictionary of the various values that were updated in the database.
 
           input parameters:
             reportId - the associated primary key from the 'reports' table for this crash
@@ -177,7 +180,9 @@ class ProcessorWithExternalBreakpad (processor.Processor):
       processorErrorMessages.append(message)
       logger.warning("%s - %s", threading.currentThread().getName(), message)
 
-    return crashedThread
+    reportUpdateValues["crashedThread"] = crashedThread
+
+    return reportUpdateValues
 
 #-----------------------------------------------------------------------------------------------------------------
   def analyzeFrames(self, reportId, dumpAnalysisLineIterator, databaseCursor, date_processed, crashedThread, processorErrorMessages):
@@ -187,7 +192,10 @@ class ProcessorWithExternalBreakpad (processor.Processor):
            it has found a maximum of ten frames.
 
            returns:
-             truncated - boolean: True - due to excessive length the frames of the crashing thread may have been truncated.
+             a dictionary will various values to be used to update report in the database, including:
+               truncated - boolean: True - due to excessive length the frames of the crashing thread may have been truncated.
+               signature - string: an overall signature calculated for this crash
+               processor_notes - string: any errors or warnings that happened during the processing
 
            input parameters:
              reportId - the primary key from the 'reports' table for this crash report
@@ -237,13 +245,17 @@ class ProcessorWithExternalBreakpad (processor.Processor):
       processorErrorMessages.append(message)
       logger.warning("%s - %s", threading.currentThread().getName(), message)
     #logger.debug("%s -   %s", threading.currentThread().getName(), (signature, '; '.join(processorErrorMessages), reportId, date_processed))
-    processor_notes = '; '.join(processorErrorMessages).replace("'", "''")
-    databaseCursor.execute("update reports set signature = '%s', processor_notes = '%s' where id = %s and date_processed = timestamp without time zone '%s'" % (signature, processor_notes, reportId, date_processed))
 
     if not analyzeReturnedLines:
       message = "%s returned no frame lines for reportid: %s" % (self.config.minidump_stackwalkPathname, reportId)
       processorErrorMessages.append(message)
       logger.warning("%s - %s", threading.currentThread().getName(), message)
 
-    return signature, processor_notes, truncated
+    processor_notes = '; '.join(processorErrorMessages).replace("'", "''")
+    databaseCursor.execute("update reports set signature = '%s', processor_notes = '%s' where id = %s and date_processed = timestamp without time zone '%s'" % (signature, processor_notes, reportId, date_processed))
+
+    return { "processor_notes": processor_notes,
+             "signature": signature,
+             "truncated": truncated
+           }
 
