@@ -20,7 +20,7 @@
             <div id="header">	        
                 <h1 id="logo"><a href="<?php echo url::base() ?>"><img
 	           src="<?php echo url::base() ?>img/slate/mozillalogo.png"
-	             width="61" height="33" alt="Mozillalogo" /></a></h1>
+	             width="200" height="33" alt="Mozilla" /></a></h1>
                 <ul id="dev-links">
                     <li class="current"><a href="#" id="subnavtoggle"><img
 		            src="<?php echo url::base() ?>img/slate/moz-developer.png"
