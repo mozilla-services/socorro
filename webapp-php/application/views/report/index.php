@@ -13,7 +13,15 @@
 
   <script type="text/javascript">//<![CDATA[
       $(document).ready(function(){
-        $('#report-index > ul').tabs({selected: 1});
+	  var tab = <?php if (isset($report->threads) && count($report->threads) > 0) { 
+	    //frames tab
+	    echo 1; 
+	  } else { 
+	    //Something is seriously wrong, show the details pane
+	    echo 0; 
+	  }
+        ?>;
+        $('#report-index > ul').tabs({selected: tab});
         $('#showallthreads').removeClass('hidden').click(function(){
         $('#allthreads').toggle(400);
           return false;
@@ -99,14 +107,14 @@
 <?php if (isset($report->app_notes)) { ?>
             <tr>
 	    <th title="Notes added by the application's code during crash">App Notes</th>
-            <td><pre><?php echo nl2br( out::H($report->app_notes
-, FALSE))  ?></pre></td>
+            <td><?php echo nl2br( out::H($report->app_notes
+, FALSE))  ?></td>
             </tr>
 <?php } ?>
 <?php if (isset($report->processor_notes)) { ?>
             <tr>
 	    <th title="Notes added by Socorro when accepting the crash report">Processor Notes</th>
-            <td><pre><?php echo nl2br( out::H($report->processor_notes, FALSE))  ?></pre></td>
+            <td><?php echo nl2br( out::H($report->processor_notes, FALSE))  ?></td>
             </tr>
 <?php } ?>
 <?php if (isset($report->distributor)) { ?>
@@ -123,7 +131,7 @@
     </div>
 
     <div id="frames">
-        <?php if (count($report->threads)): ?>
+    <?php if (isset($report->threads) && count($report->threads)): ?>
            
             <?php function stack_trace($frames) { ?>
                 <table class="list">
@@ -153,7 +161,7 @@
             <?php } ?>
 
             <h2>Crashing Thread</h2>
-            <?php if (count($report->threads) > $report->crashed_thread ){
+            <?php if (isset($report->threads) && count($report->threads) > $report->crashed_thread ){
                     stack_trace( $report->threads[$report->crashed_thread] );
                   } ?>    
                
