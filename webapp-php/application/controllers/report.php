@@ -151,9 +151,7 @@ class Report_Controller extends Controller {
 	    } else {
 	        Kohana::log('alert', "jsonz crash report exists on disk, but the report database says it hasn't been processed $uuid");
 	    }            
-        } else {
-            Kohana::log('info', "jsonz crash report doesn't exist yet $crashDir $uuid");
-	}
+        }
 
         $this->job_model = new Job_Model();
         $job = $this->job_model->getByUUID($uuid);
