@@ -555,17 +555,19 @@ class Processor(object):
 
       newReportRecordAsDict = self.insertReportIntoDatabase(threadLocalCursor, jobUuid, jsonDocument, jobPathname, date_processed, processorErrorMessages)
       reportId = newReportRecordAsDict["id"]
+      newReportRecordAsDict['dump'] = ''
+      newReportRecordAsDict["startedDateTime"] = startedDateTime
       threadLocalDatabaseConnection.commit()
-      additionalReportValuesAsDict = self.doBreakpadStackDumpAnalysis(reportId, jobUuid, dumpfilePathname, threadLocalCursor, date_processed, processorErrorMessages)
+      try:
+        additionalReportValuesAsDict = self.doBreakpadStackDumpAnalysis(reportId, jobUuid, dumpfilePathname, threadLocalCursor, date_processed, processorErrorMessages)
+      finally:
+        newReportRecordAsDict["completeddatetime"] = completedDateTime = datetime.datetime.now()
       newReportRecordAsDict.update(additionalReportValuesAsDict)
 
       self.quitCheck()
       #finished a job - cleanup
-      newReportRecordAsDict["completeddatetime"] = completedDateTime = datetime.datetime.now()
-      newReportRecordAsDict["startedDateTime"] = startedDateTime
       threadLocalCursor.execute("update jobs set completeddatetime = %s, success = True where id = %s", (completedDateTime, jobId))
       threadLocalCursor.execute("update reports set started_datetime = timestamp without time zone '%s', completed_datetime = timestamp without time zone '%s', success = True, truncated = %s where id = %s and date_processed = timestamp without time zone '%s'" % (startedDateTime, completedDateTime, newReportRecordAsDict["truncated"], reportId, date_processed))
-      #self.updateRegistrationNoCommit(threadLocalCursor)
       threadLocalDatabaseConnection.commit()
       self.saveProcessedDumpJson(newReportRecordAsDict)
       logger.info("%s - succeeded and committed: %s, %s", threadName, jobId, jobUuid)
@@ -590,11 +592,13 @@ class Processor(object):
       threadLocalDatabaseConnection.rollback()
       processorErrorMessages.append(str(x))
       message = '; '.join(processorErrorMessages).replace("'", "''")
+      newReportRecordAsDict['processor_notes'] = message
       threadLocalCursor.execute("update jobs set completeddatetime = %s, success = False, message = %s where id = %s", (datetime.datetime.now(), message, jobId))
       threadLocalDatabaseConnection.commit()
       try:
         threadLocalCursor.execute("update reports set started_datetime = timestamp without time zone '%s', completed_datetime = timestamp without time zone '%s', success = False, processor_notes = '%s' where id = %s and date_processed = timestamp without time zone '%s'" % (startedDateTime, datetime.datetime.now(), message, reportId, date_processed))
         threadLocalDatabaseConnection.commit()
+        self.saveProcessedDumpJson(newReportRecordAsDict)
       except Exception:
         threadLocalDatabaseConnection.rollback()
 
