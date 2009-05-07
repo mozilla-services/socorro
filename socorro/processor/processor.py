@@ -533,6 +533,7 @@ class Processor(object):
       self.quit = True
       socorro.lib.util.reportExceptionAndAbort(logger) # can't continue without a database connection
     try:
+      newReportRecordAsDict = {}
       processorErrorMessages = []
       jobId, jobUuid, jobPriority = jobTuple
       logger.info("%s - starting job: %s, %s", threadName, jobId, jobUuid)
