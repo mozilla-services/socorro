@@ -79,7 +79,11 @@ class ProcessedDumpStorage(object):
         raise x
     dateDir = self.__makeDateDir(timestamp)
     try:
-      os.symlink(dumpDir,os.path.join(dateDir,uuid))
+      try:
+        os.symlink(dumpDir,os.path.join(dateDir,uuid))
+      except OSError,e:
+        if not errno.EEXIST == e.errno:
+          raise
     finally:
       if not df:
         os.unlink(os.path.join(dateDir,uuid))

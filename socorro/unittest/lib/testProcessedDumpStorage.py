@@ -269,5 +269,19 @@ class TestProcessedDumpStorage(unittest.TestCase):
     expectedPath = os.sep.join((storage.dateBranch,dateHead,leafDir))
     assert expectedPath == storage.getDateDir(aDate), "But expected=%s, got=%s"%(expectedPath,storage.getDateDir(aDate))
 
+  def testSecondNewEntryAfterRemove(self):
+    storage = dumpStorage.ProcessedDumpStorage(self.testDir,**self.initKwargs[0])
+    ooid,(tdate,ig1,pathprefix,longDatePath) = createJDS.jsonFileData.items()[1]
+    testStamp = dt.datetime(*[int(x) for x in tdate.split('-')])
+    fh = storage.newEntry(ooid,testStamp)
+    fh.close()
+    try:
+      storage.removeDumpFile(ooid)
+      #Next line fails ugly and useless unless we have fixed the problem
+      fh = storage.newEntry(ooid,testStamp)
+    finally:
+      if fh:
+        fh.close()
+
 if __name__ == "__main__":
   unittest.main()
