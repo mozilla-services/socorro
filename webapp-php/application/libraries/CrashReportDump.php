@@ -101,7 +101,7 @@ class CrashReportDump {
                 case 'Crash':
                     $report->reason         = $values[1];
                     $report->address        = $values[2];
-                    $report->crashed_thread = $values[3];
+                    $report->crashed_thread = intval($values[3]);
                     break;
 
                 case 'Module':
