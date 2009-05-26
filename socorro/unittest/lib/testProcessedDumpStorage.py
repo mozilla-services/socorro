@@ -77,6 +77,8 @@ class TestProcessedDumpStorage(unittest.TestCase):
     assert storage.rootName == kwargs.get('rootName','name'),'From kwargs=%s'%kwargs
     assert os.path.join(self.testDir,kwargs.get('rootName','name')) == storage.storageBranch
     assert os.path.join(self.testDir,kwargs.get('dateName','date')) == storage.dateBranch
+    assert '..' in storage.relativePartsDateToRoot
+    assert 5 < len(storage.relativePartsDateToRoot)
     suffix = kwargs.get('fileSuffix','.jsonz')
     if not suffix.startswith('.'):suffix = '.%s'%suffix
     assert suffix == storage.fileSuffix,'expected "%s", got "%s" From kwargs=%s'%(suffix,storage.fileSuffix,kwargs)
@@ -101,6 +103,10 @@ class TestProcessedDumpStorage(unittest.TestCase):
       try:
         assert expectedPath == fh.fileobj.name, 'Expected: %s, got: %s'%(expectedPath,fh.name)
         assert os.path.islink(os.path.join(expectedDateDir,ooid))
+        datapath = os.readlink(os.path.join(expectedDateDir,ooid))
+        # The next lines prove we have a relative-path link
+        zigpath = os.path.join(expectedDateDir,datapath)
+        assert os.path.isfile(os.path.join(zigpath,"%s%s"%(ooid,storage.fileSuffix)))
       finally:
         fh.close()
 
@@ -177,11 +183,12 @@ class TestProcessedDumpStorage(unittest.TestCase):
     datePath = None
     seenPaths = set()
     for dirpath, dirnames, filenames in os.walk(storage.dateBranch):
-      if ooid in filenames:
+      if ooid in filenames or ooid in dirnames:
         datePath = dirpath
         break
       else:
         seenPaths.update([os.path.join(dirpath,x) for x in filenames])
+        seenPaths.update([os.path.join(dirpath,x) for x in dirnames])
     assert datePath, "Expect to find a symbolic link, sure 'nuf, but only saw %s"%seenPaths
     dateParts = datePath.rsplit(os.sep,5)[-5:]
     minutes,seq = dateParts[-1].split('_')
@@ -282,6 +289,14 @@ class TestProcessedDumpStorage(unittest.TestCase):
     finally:
       if fh:
         fh.close()
+
+  def testGetRelativeDateToDumpPath(self):
+    storage = dumpStorage.ProcessedDumpStorage(self.testDir,**self.initKwargs[1])
+    ooid,(tdate,ig1,pathprefix,longDatePath) = createJDS.jsonFileData.items()[1]
+    trail = "%s%s%s"%(ooid[:2],os.sep,ooid[2:4])
+    head = '../../../../../../name'
+    assert os.path.join(head,trail) == storage.getRelativeDateToDumpPath(ooid)
+    
 
 if __name__ == "__main__":
   unittest.main()

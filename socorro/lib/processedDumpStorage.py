@@ -56,6 +56,7 @@ class ProcessedDumpStorage(object):
     self.dateBranch = os.path.join(self.root,self.dateName)
     self.logger = kwargs.get('logger', logging.getLogger('dumpStorage'))
     self.currentSuffix = {} #maps datepath to an integer suffix
+    self.relativePartsDateToRoot = ['..']*6 # that is: up to [HH,dd,mm,YYYY,dateName,root]
 
   def newEntry(self, uuid, timestamp=None):
     """
@@ -78,9 +79,10 @@ class ProcessedDumpStorage(object):
       else:
         raise x
     dateDir = self.__makeDateDir(timestamp)
+    relDumpDir = self.getRelativeDateToDumpPath(uuid)
     try:
       try:
-        os.symlink(dumpDir,os.path.join(dateDir,uuid))
+        os.symlink(relDumpDir,os.path.join(dateDir,uuid))
       except OSError,e:
         if not errno.EEXIST == e.errno:
           raise
@@ -88,6 +90,12 @@ class ProcessedDumpStorage(object):
       if not df:
         os.unlink(os.path.join(dateDir,uuid))
     return df
+
+  def getRelativeDateToDumpPath(self,uuid):
+    parts = []
+    parts.extend(self.relativePartsDateToRoot)
+    parts.extend(self.__dumpPath(uuid)[1][1:])
+    return os.sep.join(parts)
 
   def putDumpToFile(self,uuid,dumpObject, timestamp=None):
     """
@@ -117,7 +125,7 @@ class ProcessedDumpStorage(object):
     Return an absolute path for the file for a given uuid
     Raise: OSError if the file is missing or unreadable
     """
-    path = "%s%s%s%s" % (self.__dumpPath(uuid),os.sep,uuid,self.fileSuffix)
+    path = "%s%s%s%s" % (self.__dumpPath(uuid)[0],os.sep,uuid,self.fileSuffix)
     # os.stat is moderately faster than trying to open for reading
     self.__readableOrThrow(path)
     return path
@@ -135,24 +143,24 @@ class ProcessedDumpStorage(object):
         socorro_util.reportExceptionAndContinue(self.logger)
 
   def __dumpPath(self, uuid):
-    """Return the path to the directory for this uuid"""
+    """Return the path to the directory for this uuid and the directory parts of the path"""
     # depth = socorro_ooid.depthFromOoid(uuid)
     # if not depth: depth = 4
     depth = self.storageDepth
-    dirs = [self.storageBranch]
+    dirs = [self.root,self.rootName]
     dirs.extend([uuid[2*x:2*x+2] for x in range(depth)])
     self.logger.debug("%s - %s -> %s",threading.currentThread().getName(),uuid,dirs)
-    return os.sep.join(dirs)
+    return os.sep.join(dirs),dirs
 
   def __makeDumpDir(self,uuid):
     """Make sure the dump directory exists, and return its path"""
-    dpath = self.__dumpPath(uuid)
+    dpath = self.__dumpPath(uuid)[0]
     self.logger.debug("%s - trying makedirs %s",threading.currentThread().getName(),dpath)
     try:
       filesystem.makedirs(dpath)
     except OSError,e:
       if not os.path.isdir(dpath):
-        self.logger.debug("%s - OSError when not isdir(%s): %s",threading.currentThread().getName(),dpath,e)
+        self.logger.debug("%s - in __makeDumpDir, got not isdir(%s): %s",threading.currentThread().getName(),dpath,e)
         raise e
     return dpath
 
