@@ -7,8 +7,8 @@ import threading
 import socorro.lib.util as util
 
 #-----------------------------------------------------------------------------------------------------------------
-def singleValueSql (aCursor, sql):
-  aCursor.execute(sql)
+def singleValueSql (aCursor, sql, parameters=None):
+  aCursor.execute(sql, parameters)
   result = aCursor.fetchall()
   try:
     return result[0][0]
@@ -16,8 +16,8 @@ def singleValueSql (aCursor, sql):
     raise SQLDidNotReturnSingleValue("%s: %s" % (str(x), sql))
 
 #-----------------------------------------------------------------------------------------------------------------
-def singleRowSql (aCursor, sql):
-  aCursor.execute(sql)
+def singleRowSql (aCursor, sql, parameters=None):
+  aCursor.execute(sql, parameters)
   result = aCursor.fetchall()
   try:
     return result[0]
@@ -25,8 +25,8 @@ def singleRowSql (aCursor, sql):
     raise SQLDidNotReturnSingleRow("%s: %s" % (str(x), sql))
 
 #-----------------------------------------------------------------------------------------------------------------
-def execute (aCursor, sql):
-  aCursor.execute(sql)
+def execute (aCursor, sql, parameters=None):
+  aCursor.execute(sql, parameters)
   while True:
     aRow = aCursor.fetchone()
     if aRow is not None:
