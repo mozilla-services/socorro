@@ -394,7 +394,7 @@ class Processor(object):
             else:
               yield (aFullJobTuple[0],aFullJobTuple[1],aFullJobTuple[2],)
           else:
-            logger.debug("%s - the priority job %s was never found", threading.currentThread().getName(), nextValue[1])
+            logger.debug("%s - the priority job %s was never found", threading.currentThread().getName(), aFullJobTuple[1])
       else:
         yield None
 
