@@ -164,7 +164,7 @@ class TestProcessedDumpStorage(unittest.TestCase):
     testPutDumpToFile(self):(slow=2)
     """
     storage = dumpStorage.ProcessedDumpStorage(self.testDir,**self.initKwargs[2])
-    ooid = createJDS.jsonFileData.keys()[12] # #12 is coded for depth 2 so we don't have to think
+    ooid = '0bae7049-bbff-49f2-dead-7e9fe2081125' # is coded for depth 2, so no special thought needed
     pfx = createJDS.jsonFileData[ooid][2]
     expectedPath = os.sep.join([storage.storageBranch,pfx,ooid+storage.fileSuffix])
     assert not os.path.exists(expectedPath), 'Better not exist at start of test'
