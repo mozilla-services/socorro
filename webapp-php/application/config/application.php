@@ -4,8 +4,9 @@
  */
 
 $config['dumpIDPrefix'] = 'bp-';
-// root directory for crash dump files
-$config['dumpPath'] = '/mnt/socorro_dumps/name';
+// root directories for crash dump files
+//$config['dumpPath'] = array('/mnt/socorro_dumps/name');
+$config['dumpPaths'] = array('/home/aking/fake_dumps1', '/home/aking/fake_dumps');
 
 // Mappings of source code types to web links
 $config['vcsMappings'] = array(
