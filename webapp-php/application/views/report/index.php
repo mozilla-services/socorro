@@ -161,6 +161,7 @@
             <?php } ?>
 
             <h2>Crashing Thread</h2>
+	    <?php Kohana::log('info', Kohana::debug($report->crashed_thread)) ?>
             <?php if (isset($report->threads) && count($report->threads) > $report->crashed_thread ){
                     stack_trace( $report->threads[$report->crashed_thread] );
                   } ?>    

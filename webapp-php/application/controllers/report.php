@@ -110,8 +110,14 @@ class Report_Controller extends Controller {
             return Event::run('system.404');
         }
 
-        $crashDir = Kohana::config('application.dumpPath');
-	$report = $this->report_model->getByUUID($uuid, $crashDir);
+        $crashDirs = Kohana::config('application.dumpPaths');
+	foreach ($crashDirs as $crashDir) {
+          $report = $this->report_model->getByUUID($uuid, $crashDir);
+	  if ($this->report_model->exists($uuid, $crashDir)) {
+	    break;
+	  }
+	}
+
 
         if ( is_null($report)) {
             if (!isset($_GET['p'])) {
@@ -142,17 +148,20 @@ class Report_Controller extends Controller {
             Kohana::log('alert', "Improper UUID format for $uuid doing 404");
             return Event::run('system.404');
         }
-        $crashDir = Kohana::config('application.dumpPath');
-        if ($this->report_model->exists($uuid, $crashDir)) {
+        $crashDirs = Kohana::config('application.dumpPaths');
+	foreach ($crashDirs as $crashDir) {
+	  if ($this->report_model->exists($uuid, $crashDir)) {
 	    $report = $this->report_model->getByUUID($uuid, $crashDir);
 	    if ($report) {
 	        $this->setAutoRender(FALSE);
                 return url::redirect('report/index/'.$uuid);
-	    } else {
-	        Kohana::log('alert', "jsonz crash report exists on disk, but the report database says it hasn't been processed $uuid");
-	    }            
-        }
+		break;
+	    } 
 
+	  }
+	  
+	}
+        
         $this->job_model = new Job_Model();
         $job = $this->job_model->getByUUID($uuid);
 
