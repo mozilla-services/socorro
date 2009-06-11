@@ -55,7 +55,7 @@ def setup_module():
                                                       me.config.databaseUserName,me.config.databasePassword)
   me.testDB = TestDB()
   #me.expectedTableNames = set(['tcbyurlconfig', 'topcrashurlfacts', 'priorityjobs', 'branches', 'processors', 'productdims', 'topcrashurlfactsreports', 'urldims', 'mtbfconfig', 'signaturedims', 'reports', 'server_status', 'dumps', 'extensions', 'mtbffacts', 'frames', 'topcrashers', 'jobs',])
-  me.expectedTableNames = set(['tcbyurlconfig', 'topcrashurlfacts', 'priorityjobs', 'branches', 'processors', 'productdims', 'topcrashurlfactsreports', 'urldims', 'mtbfconfig', 'signaturedims', 'reports', 'server_status', 'extensions', 'mtbffacts', 'frames', 'topcrashers', 'jobs',])
+  me.expectedTableNames = set(['tcbyurlconfig', 'topcrashurlfacts', 'priorityjobs', 'branches', 'processors', 'productdims', 'topcrashurlfactsreports', 'urldims', 'mtbfconfig', 'signaturedims', 'reports', 'server_status', 'extensions', 'mtbffacts', 'frames', 'topcrashers', 'jobs', 'bug_associations', 'bugs'])
   me.expectedTableDependencies = {
     'topcrashurlfactsreports': set(['productdims', 'signaturedims', 'urldims', 'topcrashurlfacts', 'topcrashurlfactsreports']),
     'signaturedims': set(['signaturedims']),
@@ -75,6 +75,8 @@ def setup_module():
     'frames': set(['frames']),
     'branches': set(['branches']),
     'extensions': set(['extensions']),
+    'bug_associations': set(['bugs', 'bug_associations']),
+    'bugs': set(['bugs']),
     }
 
 def teardown_module():
@@ -127,7 +129,7 @@ def testGetOrderedSetupList():
   gotDependencies = {}
   for t in allTables:
     gotDependencies[lookup[t]] = set([lookup[x] for x in schema.getOrderedSetupList((t,))])
-  assert me.expectedTableDependencies == gotDependencies, "Expected:\n  %s\nGot\n  %s"%(expectedDependencies,gotDependencies)
+  assert me.expectedTableDependencies == gotDependencies, "Expected:\n  %s\nGot\n  %s"%(me.expectedTableDependencies,gotDependencies)
   assert ['woohoo'] == schema.getOrderedSetupList(['woohoo'])
 
 def testGetOrderedPartitionList():
@@ -235,7 +237,7 @@ def testUpdateDatabase():
   global me, updated
   updated = []
   #expected = set(['reports','dumps','extensions','frames','processors','jobs'])
-  expected = set(['reports','extensions','frames','processors','jobs'])
+  expected = set(['reports','extensions','frames','processors','jobs','bug_associations', 'bugs'])
   found = set([ x(logger=me.logger).name for x in schema.databaseObjectClassListForUpdate])
   assert expected == found
   class ReportsStub(schema.ReportsTable):
@@ -379,6 +381,8 @@ hardCodedSchemaClasses = {
   schema.BranchesTable:[False,set(['branches'])],
   #schema.DumpsTable:[True,set(['dumps'])],
   schema.ExtensionsTable:[True,set(['extensions'])],
+  schema.BugAssociationsTable:[False,set(['bugs', 'bug_associations'])],
+  schema.BugsTable:[False,set(['bugs'])],
   schema.FramesTable:[True,set(['frames'])],
   schema.JobsTable:[False,set(['jobs', 'processors'])],
   schema.MTBFConfigTable:[False,set(['mtbfconfig', 'productdims'])],

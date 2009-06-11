@@ -1,7 +1,6 @@
 import psycopg2 as pg
 import datetime as dt
 import threading
-import sets
 
 import socorro.lib.prioritize as socorro_pri
 import socorro.lib.psycopghelper as socorro_psy
@@ -104,6 +103,7 @@ class DatabaseObject(object):
     self.logger = logger
   #-----------------------------------------------------------------------------------------------------------------
   def _createSelf(self,databaseCursor):
+    #print self.creationSql
     databaseCursor.execute(self.creationSql)
     self.additionalCreationProcedures(databaseCursor)
   #-----------------------------------------------------------------------------------------------------------------
@@ -199,6 +199,7 @@ class PartitionedTable(Table):
     """
     self.logger.debug("%s - in createOwnPartition for %s",threading.currentThread().getName(),self.name)
     for x in uniqueItems:
+      #print "creating for", x
       #self.logger.debug("DEBUG - item value is %s",x)
       partitionCreationParameters = self.partitionCreationParameters(x)
       partitionName = self.partitionNameTemplate % partitionCreationParameters["partitionName"]
@@ -217,6 +218,7 @@ class PartitionedTable(Table):
         self.logger.debug("%s - successful - releasing savepoint", threading.currentThread().getName())
         databaseCursor.execute("release savepoint createPartitions_%s" % partitionName)
       except pg.ProgrammingError, x:
+        #print "Error", x
         self.logger.debug("%s -- Rolling back and releasing savepoint: Creating %s failed in createPartitions: %s", threading.currentThread().getName(), partitionName, str(x).strip())
         databaseCursor.execute("rollback to createPartitions_%s; release savepoint createPartitions_%s;" % (partitionName, partitionName))
       databaseCursor.connection.commit()
@@ -278,6 +280,7 @@ class PartitionedTable(Table):
       dateIterator = mondayPairsIteratorFactory(uniqueIdentifier, uniqueIdentifier)
       try:
         self.createPartitions(altCursor,dateIterator)
+        altConnection.commit()
       except pg.DatabaseError,x:
         self.logger.debug("%s - Failed to create partition(s) %s: %s:%s", threading.currentThread().getName(), partitionName, type(x), x)
       self.logger.debug("%s - trying to insert into %s for the second time", threading.currentThread().getName(), self.name)
@@ -685,6 +688,55 @@ class JobsTable(Table):
 databaseDependenciesForSetup[JobsTable] = [ProcessorsTable]
 
 #=================================================================================================================
+class BugsTable(Table):
+  """Define the table 'bug_associations'"""
+  #-----------------------------------------------------------------------------------------------------------------
+  def __init__ (self, logger, **kwargs):
+    super(BugsTable, self).__init__(name = "bugs", logger=logger,
+                                        creationSql = """
+                                            CREATE TABLE bugs (
+                                                id int NOT NULL,
+                                                status text,
+                                                resolution text
+                                            );
+                                            ALTER TABLE ONLY bugs
+                                                ADD CONSTRAINT bugs_pkey PRIMARY KEY (id);
+                                            """)
+  #-----------------------------------------------------------------------------------------------------------------
+  def updateDefinition(self, databaseCursor):
+    if socorro_pg.tablesMatchingPattern(self.name) == []:
+      #this table doesn't exist yet, create it
+      self.create(databaseCursor)
+
+databaseDependenciesForSetup[BugsTable] = []
+
+#=================================================================================================================
+class BugAssociationsTable(Table):
+  """Define the table 'bug_associations'"""
+  #-----------------------------------------------------------------------------------------------------------------
+  def __init__ (self, logger, **kwargs):
+    super(BugAssociationsTable, self).__init__(name = "bug_associations", logger=logger,
+                                        creationSql = """
+                                            CREATE TABLE bug_associations (
+                                                signature text NOT NULL,
+                                                bug_id int NOT NULL
+                                            );
+                                            ALTER TABLE ONLY bug_associations
+                                                ADD CONSTRAINT bug_associations_pkey PRIMARY KEY (signature, bug_id);
+                                            CREATE INDEX idx_bug_associations_bug_id ON bug_associations (bug_id);
+                                            ALTER TABLE bug_associations
+                                                ADD CONSTRAINT bug_associations_bug_id_fkey FOREIGN KEY (bug_id) REFERENCES bugs(id) ON DELETE CASCADE;
+                                            """)
+  #-----------------------------------------------------------------------------------------------------------------
+  def updateDefinition(self, databaseCursor):
+    if socorro_pg.tablesMatchingPattern(self.name) == []:
+      #this table doesn't exist yet, create it
+      self.create(databaseCursor)
+
+databaseDependenciesForSetup[BugAssociationsTable] = [BugsTable]
+
+
+#=================================================================================================================
 class ServerStatusTable(Table):
   """Define the table 'server_status'"""
   #-----------------------------------------------------------------------------------------------------------------
@@ -906,78 +958,6 @@ class TopCrashersTable(Table):
                                           """)
 databaseDependenciesForSetup[TopCrashersTable] = []
 
-#=================================================================================================================
-#class ParititioningTriggerScript(DatabaseObject):
-  ##-----------------------------------------------------------------------------------------------------------------
-  #def __init__ (self, logger):
-    #super(ParititioningTriggerScript, self).__init__(name = "partition_insert_trigger", logger=logger,
-                                                     #creationSql = """
-#CREATE OR REPLACE FUNCTION partition_insert_trigger()
-#RETURNS TRIGGER AS $$
-#import socorro.database.server as ds
-#try:
-  #targetTableName = ds.targetTableName(TD["table_name"], TD['new']['date_processed'])
-  ##plpy.info(targetTableName)
-  #planName = ds.targetTableInsertPlanName (targetTableName)
-  ##plpy.info("using plan: %s" % planName)
-  #values = ds.getValuesList(TD, SD, plpy)
-  ##plpy.info(str(values))
-  ##plpy.info('about to execute plan')
-  #result = plpy.execute(SD[planName], values)
-  #return None
-#except KeyError:  #no plan
-  ##plpy.info("oops no plan for: %s" % planName)
-  #SD[planName] = ds.createNewInsertQueryPlan(TD, SD, targetTableName, planName, plpy)
-  ##plpy.info('about to execute plan for second time')
-  #result = plpy.execute(SD[planName], values)
-  #return None
-#$$
-#LANGUAGE plpythonu;""")
-  #def updateDefinition(self, databaseCursor):
-    #databaseCursor.execute(self.creationSql)
-
-#=================================================================================================================
-#class ChattyParititioningTriggerScript(DatabaseObject):
-  #-----------------------------------------------------------------------------------------------------------------
-  #def __init__ (self, logger):
-    #super(ChattyParititioningTriggerScript, self).__init__(name = "partition_insert_trigger", logger=logger,
-                                                     #creationSql = """
-#CREATE OR REPLACE FUNCTION partition_insert_trigger()
-#RETURNS TRIGGER AS $$
-#import socorro.database.server as ds
-#import logging
-#import logging.handlers
-#try:
-  #targetTableName = ds.targetTableName(TD["table_name"], TD['new']['date_processed'])
-  #planName = ds.targetTableInsertPlanName (targetTableName)
-  #try:
-    #logger = SD["logger"]
-  #except KeyError:
-    #SD["logger"] = logger = logging.getLogger(targetTableName)
-    #logger.setLevel(logging.DEBUG)
-    #rotatingFileLog = logging.handlers.RotatingFileHandler("/tmp/partitionTrigger.log", "a", 100000000, 10)
-    #rotatingFileLog.setLevel(logging.DEBUG)
-    #rotatingFileLogFormatter = logging.Formatter('%(asctime)s %(levelname)s - %(message)s')
-    #rotatingFileLog.setFormatter(rotatingFileLogFormatter)
-    #logger.addHandler(rotatingFileLog)
-    #logger.debug("---------- beginning new session ----------")
-    #SD["counter"] = 0
-  #values = ds.getValuesList(TD, SD, plpy)
-  #logger.debug("%08d plan: %s", SD["counter"], planName)
-  #SD["counter"] += 1
-  #result = plpy.execute(SD[planName], values)
-  #return 'SKIP'
-#except KeyError:  #no plan
-  #logger.debug('creating new plan for: %s', planName)
-  #SD[planName] = ds.createNewInsertQueryPlan(TD, SD, targetTableName, planName, plpy)
-  #result = plpy.execute(SD[planName], values)
-  #return 'SKIP'
-#$$
-#LANGUAGE plpythonu;""")
-  ##-----------------------------------------------------------------------------------------------------------------
-  #def updateDefinition(self, databaseCursor):
-    #databaseCursor.execute(self.creationSql)
-
 #-----------------------------------------------------------------------------------------------------------------
 def connectToDatabase(config, logger):
   databaseDSN = "host=%(databaseHost)s dbname=%(databaseName)s user=%(databaseUserName)s password=%(databasePassword)s" % config
@@ -1001,15 +981,18 @@ def setupDatabase(config, logger):
 
 #-----------------------------------------------------------------------------------------------------------------
 def teardownDatabase(config,logger):
+  global partitionCreationHistory
   databaseConnection,databaseCursor = connectToDatabase(config,logger)
   try:
     for databaseObjectClass in getOrderedSetupList():
       aDatabaseObject = databaseObjectClass(logger=logger)
       aDatabaseObject.drop(databaseCursor)
     databaseConnection.commit()
-  except:
+  except Exception, x:
+    print x
     databaseConnection.rollback()
     socorro_util.reportExceptionAndContinue(logger)
+  partitionCreationHistory = set()
 
 #-----------------------------------------------------------------------------------------------------------------
 databaseObjectClassListForUpdate = [ReportsTable,
@@ -1018,15 +1001,13 @@ databaseObjectClassListForUpdate = [ReportsTable,
                                     FramesTable,
                                     ProcessorsTable,
                                     JobsTable,
+                                    BugAssociationsTable,
+                                    BugsTable,
                                     ]
 #-----------------------------------------------------------------------------------------------------------------
 def updateDatabase(config, logger):
   databaseConnection, databaseCursor = connectToDatabase(config, logger)
   try:
-    #try:
-      #databaseCursor.execute("CREATE LANGUAGE plpythonu")
-    #except:
-      #databaseConnection.rollback()
     for aDatabaseObjectClass in databaseObjectClassListForUpdate:
       aDatabaseObject = aDatabaseObjectClass(logger=logger)
       aDatabaseObject.updateDefinition(databaseCursor)
