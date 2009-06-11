@@ -133,7 +133,11 @@ def record_associations(config):
   try:
     databaseConnection, databaseCursor = databaseConnectionPool.connectionCursorPair()
     lastRunDate = get_last_run_date(config)
-    for bug, status, resolution, signatureList in bug_id_to_signature_association_iterator(config.bugzillaQuery % lastRunDate.strftime('%Y-%m-%d')):
+    lastRunDateAsString = lastRunDate.strftime('%Y-%m-%d')
+    logger.info("beginning search from this date (YYYY-MM-DD): %s", lastRunDateAsString)
+    query = config.bugzillaQuery % lastRunDateAsString
+    logger.info("searching using: %s", query)
+    for bug, status, resolution, signatureList in bug_id_to_signature_association_iterator(query):
       logger.debug("bug %s (%s, %s): %s", bug, status, resolution, str(signatureList))
       insert_or_update_bug_in_database (bug, status, resolution, signatureList, databaseCursor)
     save_last_run_date(config)
