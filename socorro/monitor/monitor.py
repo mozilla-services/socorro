@@ -9,7 +9,6 @@ import os.path
 import dircache
 import shutil
 import signal
-import sets
 import threading
 import collections
 
@@ -426,7 +425,7 @@ class Monitor (object):
   #-----------------------------------------------------------------------------------------------------------------
   def getPriorityUuids(self, aCursor):
     aCursor.execute("select * from priorityjobs;")
-    setOfPriorityUuids = sets.Set()
+    setOfPriorityUuids = set()
     for aUuidRow in aCursor.fetchall():
       setOfPriorityUuids.add(aUuidRow[0])
     return setOfPriorityUuids
