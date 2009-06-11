@@ -46,6 +46,11 @@ storageDepth.default = 2
 dumpIDPrefix = cm.Option()
 dumpIDPrefix.default = "bp-"
 
+# Bugzilla 495700 - need to be able to ignore new Thottleable protocol
+ignoreThottleable = cm.Option()
+ignoreThottleable.default = True
+ignoreThottleable.fromStringConverter = cm.booleanConverter
+
 throttleConditions = cm.Option()
 throttleConditions.default = [
   ("Version", lambda x: x[-3:] == "pre" or x[3] in 'ab', 100), # queue 100% of crashes with version ending in "pre" or having 'a' or 'b'

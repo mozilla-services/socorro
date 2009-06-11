@@ -47,6 +47,11 @@ def handler(req):
 
       jsonDataDictionary = collectObject.makeJsonDictFromForm(theform)
       jsonDataDictionary["submitted_timestamp"] = currentTimestamp.isoformat()
+      if persistentStorage["config"].ignoreThottleable:
+        try:
+          del jsonDataDictionary["Throttleable"]
+        except KeyError:
+          pass
       try:
         throttleable = int(jsonDataDictionary["Throttleable"])
       except KeyError:
