@@ -417,6 +417,7 @@ class Processor(object):
                                   where
                                       j.owner = %d
                                       and j.starteddatetime is null
+                                  order by queueddatetime
                                   limit %d""" % (self.processorId, self.config.batchJobLimit))
         normalJobsList = databaseCursor.fetchall()
         databaseCursor.connection.commit()
@@ -694,6 +695,7 @@ class Processor(object):
       last_crash = int(jsonDocument['SecondsSinceLastCrash'])
     except:
       last_crash = None
+
     newReportRecordAsTuple = (uuid, crash_date, date_processed, product, version, buildID, url, install_age, last_crash, uptime, email, build_date, user_id, user_comments, app_notes, distributor, distributor_version)
     newReportRecordAsDict = dict(x for x in zip(self.reportsTable.columns, newReportRecordAsTuple))
     try:
