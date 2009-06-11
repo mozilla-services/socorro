@@ -12,11 +12,10 @@ import socorro.collector.collect as collect
 def createPersistentInitialization(configModule):
   storage = {}
 
-
   storage["config"] = config = socorro.lib.ConfigurationManager.newConfiguration(configurationModule=configModule,automaticHelp=False)
   storage["collectObject"] = collect.Collect(config)
   storage["hostname"] = os.uname()[1]
-  storage["logger"] = logger = logging.getLogger("monitor")
+  storage["logger"] = logger = logging.getLogger("collector")
 
   logger.setLevel(logging.DEBUG)
   rotatingFileLog = logging.handlers.RotatingFileHandler(config.logFilePathname, "a", config.logFileMaximumSize, config.logFileMaximumBackupHistory)
