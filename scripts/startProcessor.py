@@ -37,8 +37,11 @@ logger.addHandler(rotatingFileLog)
 logger.info("current configuration\n%s", str(configurationContext))
 
 try:
-  p = processor.ProcessorWithExternalBreakpad(configurationContext)
-  p.start()
+  try:
+    p = processor.ProcessorWithExternalBreakpad(configurationContext)
+    p.start()
+  except:
+    socorro.lib.util.reportExceptionAndContinue(logger)
 finally:
   logger.info("done.")
   rotatingFileLog.flush()
