@@ -149,7 +149,7 @@ class CrashReportDump {
                             // Attempt to build a VCS web link from app config 
                             // settings and a ghetto simulation of Python 
                             // string templates.
-                            $vcs_mappings = Kohana::config('application.vcsMappings');
+                            $vcs_mappings = Kohana::config('codebases.vcsMappings');
                             if (isset($vcs_mappings[$type][$root])) {
                                 $link = $vcs_mappings[$type][$root];
                                 $ns = array(
