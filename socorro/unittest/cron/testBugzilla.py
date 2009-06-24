@@ -159,25 +159,25 @@ class TestBugzilla(unittest.TestCase):
     d = { "short_desc": "short", "bug_id": 'Amtrak', "bug_status": "CLOSED", "resolution": "WONTFIX" }
     self.do_find_signatures(d, None)
     d = { "short_desc": "short", "bug_id": "22", "bug_status": "CLOSED", "resolution": "WONTFIX" }
-    self.do_find_signatures(d, (22, "CLOSED", "WONTFIX", []))
+    self.do_find_signatures(d, (22, "CLOSED", "WONTFIX", "short", []))
     d = { "short_desc": "short [@ bogus_incomplete_signature", "bug_id": "22", "bug_status": "NEW", "resolution": "" }
-    self.do_find_signatures(d, (22, "NEW", "", []))
+    self.do_find_signatures(d, (22, "NEW", "", "short [@ bogus_incomplete_signature", []))
     d = { "short_desc": "short [@ complete_signature]", "bug_id": "22", "bug_status": "CLOSED", "resolution": "RESOLVED" }
-    self.do_find_signatures(d, (22, "CLOSED", "RESOLVED", ["complete_signature"]))
+    self.do_find_signatures(d, (22, "CLOSED", "RESOLVED", "short [@ complete_signature]", ["complete_signature"]))
     d = { "short_desc": "short [@ complete_signature]othertext[@  second_signature !@#$%^&*()_   ]  [ not_a_signature @ hey ]", "bug_id": "22", "bug_status": "OPEN", "resolution": "ASSIGNED" }
-    self.do_find_signatures(d, (22, "OPEN", "ASSIGNED", ["complete_signature", "second_signature !@#$%^&*()_"]))
+    self.do_find_signatures(d, (22, "OPEN", "ASSIGNED", "short [@ complete_signature]othertext[@  second_signature !@#$%^&*()_   ]  [ not_a_signature @ hey ]", ["complete_signature", "second_signature !@#$%^&*()_"]))
     d = { "short_desc": "short [@ libobjc.A.dylib@0x1568c]othertext[   @]  INVALIDthird_signature !@#$%^&*()_   ]  [ not_a_signature @ hey ]", "bug_id": "22", "bug_status": "CLOSED", "resolution": "WONTFIX" }
-    self.do_find_signatures(d, (22, "CLOSED", "WONTFIX", ["libobjc.A.dylib@0x1568c"]))
+    self.do_find_signatures(d, (22, "CLOSED", "WONTFIX", "short [@ libobjc.A.dylib@0x1568c]othertext[   @]  INVALIDthird_signature !@#$%^&*()_   ]  [ not_a_signature @ hey ]", ["libobjc.A.dylib@0x1568c"]))
     d = { "short_desc": "short [[@ not_one]][ @ not_two] [@ this_is bad too", "bug_id": "22", "bug_status": "CLOSED", "resolution": "WONTFIX" }
-    self.do_find_signatures(d, (22, "CLOSED", "WONTFIX", []))
+    self.do_find_signatures(d, (22, "CLOSED", "WONTFIX", "short [[@ not_one]][ @ not_two] [@ this_is bad too", []))
     d = { "short_desc": "short [@ x.dll@0x123456 | free | not_free][ @ not_two] [@ goobers] [@[[[[[[[[[[[[[[[]]]]]]]]]]]]", "bug_id": "22", "bug_status": "CLOSED", "resolution": "WONTFIX" }
-    self.do_find_signatures(d, (22, "CLOSED", "WONTFIX", ['x.dll@0x123456 | free | not_free', 'goobers']))
+    self.do_find_signatures(d, (22, "CLOSED", "WONTFIX", "short [@ x.dll@0x123456 | free | not_free][ @ not_two] [@ goobers] [@[[[[[[[[[[[[[[[]]]]]]]]]]]]", ['x.dll@0x123456 | free | not_free', 'goobers']))
     d = { "short_desc": "short []]]]]]]]]]]][@one]", "bug_id": "22", "bug_status": "CLOSED", "resolution": "WONTFIX" }
-    self.do_find_signatures(d, (22, "CLOSED", "WONTFIX", ['one']))
+    self.do_find_signatures(d, (22, "CLOSED", "WONTFIX", "short []]]]]]]]]]]][@one]", ['one']))
     d = { "short_desc": "short [@ lots of nesting [ 1 [ 2 [ 3 [ 4]]]]][@one]", "bug_id": "22", "bug_status": "CLOSED", "resolution": "WONTFIX" }
-    self.do_find_signatures(d, (22, "CLOSED", "WONTFIX", ['lots of nesting [ 1 [ 2 [ 3 [ 4]]]]', 'one']))
+    self.do_find_signatures(d, (22, "CLOSED", "WONTFIX", "short [@ lots of nesting [ 1 [ 2 [ 3 [ 4]]]]][@one]", ['lots of nesting [ 1 [ 2 [ 3 [ 4]]]]', 'one']))
     d = { "short_desc": "short crazy real signature:[@ CDiaPropertyStorage<CDiaLineNumber>::Functor<IDiaSymbol*, {[thunk]:`vcall'{12, {flat}}' }', 0}>::~Functor<IDiaSymbol*, {[thunk]:`vcall'{12, {flat}}' }', 0}>()]", "bug_id": "22", "bug_status": "CLOSED", "resolution": "WONTFIX" }
-    self.do_find_signatures(d, (22, "CLOSED", "WONTFIX", ["""CDiaPropertyStorage<CDiaLineNumber>::Functor<IDiaSymbol*, {[thunk]:`vcall'{12, {flat}}' }', 0}>::~Functor<IDiaSymbol*, {[thunk]:`vcall'{12, {flat}}' }', 0}>()"""]))
+    self.do_find_signatures(d, (22, "CLOSED", "WONTFIX", "short crazy real signature:[@ CDiaPropertyStorage<CDiaLineNumber>::Functor<IDiaSymbol*, {[thunk]:`vcall'{12, {flat}}' }', 0}>::~Functor<IDiaSymbol*, {[thunk]:`vcall'{12, {flat}}' }', 0}>()]", ["""CDiaPropertyStorage<CDiaLineNumber>::Functor<IDiaSymbol*, {[thunk]:`vcall'{12, {flat}}' }', 0}>::~Functor<IDiaSymbol*, {[thunk]:`vcall'{12, {flat}}' }', 0}>()"""]))
 
   def test_bug_id_to_signature_association_iterator(self):
     csv = ['bug_id,"bug_severity","priority","op_sys","assigned_to","bug_status","resolution","short_desc"\n',
@@ -186,10 +186,10 @@ class TestBugzilla(unittest.TestCase):
            '343324,"critical","top","all","nobody","ASSIGNED",,"[@ js3250.dll@0x6cb96] this comment has two signatures [@ libobjc.A.dylib@0x1568c]"',
            '343325,"critical","top","all","nobody","CLOSED","RESOLVED","[@ nanojit::LIns::isTramp()] this comment has one valid and one broken signature [@ libobjc.A.dylib@0x1568c"',
           ]
-    correct = [ (1,     "NEW",    "",        []),
-                (2,     "CLOSED", "WONTFIX", ["BogusClass::bogus_signature (const char**, void *)"]),
-                (343324,"ASSIGNED","",       ["js3250.dll@0x6cb96","libobjc.A.dylib@0x1568c"]),
-                (343325,"CLOSED", "RESOLVED",["nanojit::LIns::isTramp()"]),
+    correct = [ (1,     "NEW",     "",         "this comment, while bogus, has commas and no signature.  It should be ignored.", []),
+                (2,     "CLOSED",  "WONTFIX",  "this comment has one signature [@ BogusClass::bogus_signature (const char**, void *)]", ["BogusClass::bogus_signature (const char**, void *)"]),
+                (343324,"ASSIGNED","",         "[@ js3250.dll@0x6cb96] this comment has two signatures [@ libobjc.A.dylib@0x1568c]", ["js3250.dll@0x6cb96","libobjc.A.dylib@0x1568c"]),
+                (343325,"CLOSED",  "RESOLVED", "[@ nanojit::LIns::isTramp()] this comment has one valid and one broken signature [@ libobjc.A.dylib@0x1568c", ["nanojit::LIns::isTramp()"]),
               ]
     for expected, actual in zip(bug.bug_id_to_signature_association_iterator(csv,iter), correct):
       assert expected == actual, "expected %s, got %s" % (str(expected), str(actual))
@@ -204,7 +204,7 @@ class TestBugzilla(unittest.TestCase):
     global me
     # bug_status
     count = 0
-    for expected, actual in zip(psy.execute(me.cur, "select id, status, resolution from bugs order by 1"), correct["bugs"]):
+    for expected, actual in zip(psy.execute(me.cur, "select id, status, resolution, short_desc from bugs order by 1"), correct["bugs"]):
       count += 1
       assert expected == actual, "expected %s, got %s" % (str(expected), str(actual))
     assert len(correct["bugs"]) == count, "expected %d entries in bugs but found %d" % (len(correct["bugs"]), count)
@@ -237,46 +237,46 @@ class TestBugzilla(unittest.TestCase):
     me.cur.connection.commit()
 
     # test intial insert
-    sample1 = [ (2,"CLOSED","WONTFIX",["aaaa"]),
-                (3,"NEW","",[]),
-                (343324,"ASSIGNED","",["bbbb","cccc"]),
-                (343325,"CLOSED","RESOLVED",["dddd"]),
+    sample1 = [ (2,"CLOSED","WONTFIX","a short desc",["aaaa"]),
+                (3,"NEW","","a short desc",[]),
+                (343324,"ASSIGNED","","a short desc",["bbbb","cccc"]),
+                (343325,"CLOSED","RESOLVED","a short desc",["dddd"]),
               ]
-    correct1 = { "bugs": [(2,     "CLOSED",  "WONTFIX"),
-                          (343324,"ASSIGNED",""),
-                          (343325,"CLOSED",  "RESOLVED")],
+    correct1 = { "bugs": [(2,     "CLOSED",  "WONTFIX", "a short desc"),
+                          (343324,"ASSIGNED","",        "a short desc"),
+                          (343325,"CLOSED",  "RESOLVED","a short desc")],
                  "bug_associations": [("aaaa", 2),
                                       ("bbbb", 343324),
                                       ("cccc", 343324),
                                       ("dddd", 343325)]
                }
-    for bugId, statusFromBugzilla, resolutionFromBugzilla, signatureListFromBugzilla in sample1:
-      bug.insert_or_update_bug_in_database(bugId, statusFromBugzilla, resolutionFromBugzilla, signatureListFromBugzilla, me.cur, true)
+    for bugId, statusFromBugzilla, resolutionFromBugzilla, shortDescFromBugzilla, signatureListFromBugzilla in sample1:
+      bug.insert_or_update_bug_in_database(bugId, statusFromBugzilla, resolutionFromBugzilla, shortDescFromBugzilla, signatureListFromBugzilla, me.cur, true)
     self.verify_tables(correct1)
 
     #test removing existing associations
-    sample2 = [ (2,"CLOSED","WONTFIX",[]),
-                (343324,"ASSIGNED","",["bbbb"]),
+    sample2 = [ (2,"CLOSED","WONTFIX","a short desc",[]),
+                (343324,"ASSIGNED","","a short desc",["bbbb"]),
               ]
-    correct2 = { "bugs": [(343324,"ASSIGNED",""),
-                          (343325,"CLOSED",  "RESOLVED")],
+    correct2 = { "bugs": [(343324,"ASSIGNED","","a short desc"),
+                          (343325,"CLOSED",  "RESOLVED","a short desc")],
                  "bug_associations": [("bbbb", 343324),
                                       ("dddd", 343325)]
                }
-    for bugId, statusFromBugzilla, resolutionFromBugzilla, signatureListFromBugzilla in sample2:
-      bug.insert_or_update_bug_in_database(bugId, statusFromBugzilla, resolutionFromBugzilla, signatureListFromBugzilla, me.cur, true)
+    for bugId, statusFromBugzilla, resolutionFromBugzilla, shortDescFromBugzilla, signatureListFromBugzilla in sample2:
+      bug.insert_or_update_bug_in_database(bugId, statusFromBugzilla, resolutionFromBugzilla, shortDescFromBugzilla, signatureListFromBugzilla, me.cur, true)
     self.verify_tables(correct2)
 
     #test updating existing associations
-    sample2 = [(343324,"CLOSED","RESOLVED",["bbbb"]),
+    sample2 = [(343324,"CLOSED","RESOLVED","a short desc",["bbbb"]),
               ]
-    correct2 = { "bugs": [(343324,"CLOSED","RESOLVED"),
-                          (343325,"CLOSED",  "RESOLVED")],
+    correct2 = { "bugs": [(343324,"CLOSED","RESOLVED","a short desc"),
+                          (343325,"CLOSED",  "RESOLVED","a short desc")],
                  "bug_associations": [("bbbb", 343324),
                                       ("dddd", 343325)]
                }
-    for bugId, statusFromBugzilla, resolutionFromBugzilla, signatureListFromBugzilla in sample2:
-      bug.insert_or_update_bug_in_database(bugId, statusFromBugzilla, resolutionFromBugzilla, signatureListFromBugzilla, me.cur, true)
+    for bugId, statusFromBugzilla, resolutionFromBugzilla, shortDescFromBugzilla, signatureListFromBugzilla in sample2:
+      bug.insert_or_update_bug_in_database(bugId, statusFromBugzilla, resolutionFromBugzilla, shortDescFromBugzilla, signatureListFromBugzilla, me.cur, true)
     self.verify_tables(correct2)
 
   def test_get_and_set_last_run_date(self):

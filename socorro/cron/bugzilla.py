@@ -34,7 +34,7 @@ def find_signatures(bugReportDict):
           listOfSignatures.append(candidateString[beginSignaturePosition:endSignaturePosition].strip())
     except IndexError:
       pass
-    return (int(bugReportDict["bug_id"]), bugReportDict["bug_status"], bugReportDict["resolution"], listOfSignatures)
+    return (int(bugReportDict["bug_id"]), bugReportDict["bug_status"], bugReportDict["resolution"], bugReportDict["short_desc"], listOfSignatures)
   except (KeyError, TypeError, ValueError):
     return None
 
@@ -54,8 +54,8 @@ def signature_is_found(signature, databaseCursor):
     return False
 
 #-----------------------------------------------------------------------------------------------------------------
-def insert_or_update_bug_in_database(bugId, statusFromBugzilla, resolutionFromBugzilla, signatureListFromBugzilla, databaseCursor,
-                                     signatureFoundInReportsFunction=signature_is_found):
+def insert_or_update_bug_in_database(bugId, statusFromBugzilla, resolutionFromBugzilla, shortDescFromBugzilla, signatureListFromBugzilla,
+                                     databaseCursor, signatureFoundInReportsFunction=signature_is_found):
   try:
     if len(signatureListFromBugzilla) == 0:
       databaseCursor.execute("delete from bugs where id = %s", (bugId,))
@@ -65,9 +65,9 @@ def insert_or_update_bug_in_database(bugId, statusFromBugzilla, resolutionFromBu
       useful = False
       insertMade = False
       try:
-        statusFromDatabase, resolutionFromDatabase = psy.singleRowSql(databaseCursor, "select status, resolution from bugs where id = %s", (bugId,))
-        if statusFromDatabase != statusFromBugzilla or resolutionFromDatabase != resolutionFromBugzilla:
-          databaseCursor.execute("update bugs set status = %s, resolution = %s where id = %s", (statusFromBugzilla, resolutionFromBugzilla, bugId))
+        statusFromDatabase, resolutionFromDatabase, shortDescFromDatabase = psy.singleRowSql(databaseCursor, "select status, resolution, short_desc from bugs where id = %s", (bugId,))
+        if statusFromDatabase != statusFromBugzilla or resolutionFromDatabase != resolutionFromBugzilla or shortDescFromDatabase != shortDescFromBugzilla:
+          databaseCursor.execute("update bugs set status = %s, resolution = %s, short_desc = %s where id = %s", (statusFromBugzilla, resolutionFromBugzilla, shortDescFromBugzilla, bugId))
           logger.info("bug status updated: %s - %s, %s", bugId, statusFromBugzilla, resolutionFromBugzilla)
           useful = True
         listOfSignaturesFromDatabase = [x[0] for x in psy.execute(databaseCursor, "select signature from bug_associations where bug_id = %s", (bugId,))]
@@ -77,7 +77,7 @@ def insert_or_update_bug_in_database(bugId, statusFromBugzilla, resolutionFromBu
             logger.info ('association removed: %s - "%s"', bugId, aSignature)
             useful = True
       except psy.SQLDidNotReturnSingleRow:
-        databaseCursor.execute("insert into bugs (id, status, resolution) values (%s, %s, %s)", (bugId, statusFromBugzilla, resolutionFromBugzilla))
+        databaseCursor.execute("insert into bugs (id, status, resolution, short_desc) values (%s, %s, %s, %s)", (bugId, statusFromBugzilla, resolutionFromBugzilla, shortDescFromBugzilla))
         insertMade = True
         listOfSignaturesFromDatabase = []
       for aSignature in signatureListFromBugzilla:
@@ -91,13 +91,13 @@ def insert_or_update_bug_in_database(bugId, statusFromBugzilla, resolutionFromBu
       if useful:
         databaseCursor.connection.commit()
         if insertMade:
-          logger.info("new bug: %s - %s, %s", bugId, statusFromBugzilla, resolutionFromBugzilla)
+          logger.info('new bug: %s - %s, %s, "%s"', bugId, statusFromBugzilla, resolutionFromBugzilla, shortDescFromBugzilla)
       else:
         databaseCursor.connection.rollback()
         if insertMade:
-          logger.info("rejecting bug (no useful information): %s - %s, %s", bugId, statusFromBugzilla, resolutionFromBugzilla)
+          logger.info('rejecting bug (no useful information): %s - %s, %s, "%s"', bugId, statusFromBugzilla, resolutionFromBugzilla, shortDescFromBugzilla)
         else:
-          logger.info("skipping bug (no new information): %s - %s, %s", bugId, statusFromBugzilla, resolutionFromBugzilla)
+          logger.info('skipping bug (no new information): %s - %s, %s, "%s"', bugId, statusFromBugzilla, resolutionFromBugzilla, shortDescFromBugzilla)
   except Exception, x:
     databaseCursor.connection.rollback()
     raise
@@ -137,9 +137,9 @@ def record_associations(config):
     logger.info("beginning search from this date (YYYY-MM-DD): %s", lastRunDateAsString)
     query = config.bugzillaQuery % lastRunDateAsString
     logger.info("searching using: %s", query)
-    for bug, status, resolution, signatureList in bug_id_to_signature_association_iterator(query):
-      logger.debug("bug %s (%s, %s): %s", bug, status, resolution, str(signatureList))
-      insert_or_update_bug_in_database (bug, status, resolution, signatureList, databaseCursor)
+    for bug, status, resolution, short_desc, signatureList in bug_id_to_signature_association_iterator(query):
+      logger.debug("bug %s (%s, %s) %s: %s", bug, status, resolution, short_desc, str(signatureList))
+      insert_or_update_bug_in_database (bug, status, resolution, short_desc, signatureList, databaseCursor)
     save_last_run_date(config)
   finally:
     databaseConnectionPool.cleanup()

@@ -697,7 +697,8 @@ class BugsTable(Table):
                                             CREATE TABLE bugs (
                                                 id int NOT NULL,
                                                 status text,
-                                                resolution text
+                                                resolution text,
+                                                short_desc text
                                             );
                                             ALTER TABLE ONLY bugs
                                                 ADD CONSTRAINT bugs_pkey PRIMARY KEY (id);
