@@ -1,10 +1,10 @@
 <?php
                                   if (! $bug['open']) {
-				      echo "<strike>";
+				      echo '<span class="strike">';
 				  } ?>
 				    <a href="<?= $bug['url'] ?>"
-                                       title="<?= $bug['status']?> <?= $bug['resolution']?> <?= $bug['summary']?>"><?= $bug['id'] ?></a><?php 
+                                       title="<?= $bug['status']?> <?= $bug['resolution']?> <?= out::H($bug['summary'])?>"><?= $bug['id'] ?></a><?php 
 				  if (! $bug['open']) {
-				      echo "</strike>";
+				      echo "</span>";
 				  }
 ?>

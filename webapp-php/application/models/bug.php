@@ -18,7 +18,7 @@ class Bug_Model extends Model {
       Kohana::log('info', "proocessing " . Kohana::debug($signatures));
         return $report = $this->db->query(
 "/* soc.web bugsForSigs */
-SELECT ba.signature, bugs.id, bugs.status, bugs.resolution FROM bugs
+SELECT ba.signature, bugs.id, bugs.status, bugs.resolution, bugs.short_desc FROM bugs
 JOIN bug_associations AS ba ON bugs.id = ba.bug_id
 WHERE EXISTS( 
     SELECT 1 FROM bug_associations

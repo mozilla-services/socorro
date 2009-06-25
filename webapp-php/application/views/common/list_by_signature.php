@@ -46,18 +46,24 @@
 			<?php if (count($bugs) > 0) { ?>
 			      <a href='#' title="Click to See all likely bug numbers" class="bug_ids_more">More</a>
                               <div class="bug_ids_expanded_list">						      
-		                  <h3>Bugs for <code><?= $report->signature ?></code></h3>
+						      <h3>Bugs for <code><?= out::H($report->signature) ?></code></h3>
                                   <dl class="sorted_bug_ids"><?php
 			          $last_res = NULL;
-				  $in_dt = FALSE;
+				  $open_ul = FALSE;
 				  foreach ($bugs as $bug) {
+				      
 				      if ($bug['resolution'] !== $last_res) { 
-					  $last_res = $bug['resolution']; ?>
-					  </ol></dd><dt><?php echo $bug['open'] ? 'OPEN' : $bug['resolution'] ?></dt><dl><ul class="full_bug_ids">
+					  $last_res = $bug['resolution']; 
+					  if ($open_ul) { ?>
+					    </ul></dd>
+				    <?php } else {
+					    $open_ul = TRUE;
+					  } ?>
+					  <dt><?php echo $bug['open'] ? 'OPEN' : $bug['resolution'] ?></dt><dd><ul class="full_bug_ids">
 			        <?php } ?>
 				      <li><?php View::factory('common/bug_number')->set('bug', $bug)->render(TRUE);?></li><?php 
 				  }
-                            ?></ul></dl></div>
+                            ?></ul></dd></dl></div>
 		        <?php }
                          } ?>
 

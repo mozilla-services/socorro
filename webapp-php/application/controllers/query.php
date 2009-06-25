@@ -53,12 +53,13 @@ class Query_Controller extends Controller {
 	      }
 	      $row['open'] = empty($row['resolution']);
 	      $row['url'] = $bugzillaUrl . $row['id'];
-	      $row['summary'] = "Summary Coming soon";
+	      $row['summary'] = $row['short_desc'];
 
 	      array_push($signature_to_bugzilla[$row['signature']], $row);
 	    }
 	    foreach ($signature_to_bugzilla as $k => $v) {
 	        $bugzilla->sortByResolution($signature_to_bugzilla[$k]);
+	        
 	    }
 	      
         } else {

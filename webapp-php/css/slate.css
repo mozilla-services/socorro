@@ -179,7 +179,7 @@ ul#occurs li, ul#stack li {
 	clear: left;
 	text-align: right;
 }
-
+.strike { text-decoration: line-through; }
 .button {
     -moz-border-radius: 11px;
    	-webkit-border-radius: 11px;
