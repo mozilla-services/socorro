@@ -62,14 +62,15 @@ $(document).ready(function(){
     window.updateVersion = updateVersion;  
 
     // Bugzilla Integration
-
-    $('.bug_ids_more').click(function(){
-	$(this).parents('td').find('.bug_ids_expanded_list')
-	  .show()
-	  .dialog();
+    $('.bug_ids_more').hover(function(){
+	var inset = 10;
+	var cell = $(this).parents('td');
+	var bugList = cell.find('.bug_ids_expanded_list');
+	bugList.show()
+          .css( {top: cell.position().top - inset, left: cell.position().left - bugList.width() + cell.width() - inset - 3 })
+	  .hover(function(){}, function(){ bugList.hide(); });
         return false;
-    //$('.bug_ids_expanded_list').draggable({handle: '.bug_ids_expanded_list > h3'});
-    });
+      }, function(){});
 
 
 });

@@ -45,7 +45,8 @@
 			      </div>
 			<?php if (count($bugs) > 0) { ?>
 			      <a href='#' title="Click to See all likely bug numbers" class="bug_ids_more">More</a>
-                              <div class="bug_ids_expanded_list" title="Bugs for <code><?= $report->signature ?></code>">						      
+                              <div class="bug_ids_expanded_list">						      
+		                  <h3>Bugs for <code><?= $report->signature ?></code></h3>
                                   <dl class="sorted_bug_ids"><?php
 			          $last_res = NULL;
 				  $in_dt = FALSE;
