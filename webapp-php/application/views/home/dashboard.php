@@ -2,8 +2,9 @@
     <title>Mozilla Crash Reports</title>
     <?php echo html::stylesheet(array(
         'css/datePicker.css',
-        'css/flora/flora.all.css',
-        'css/flora/flora.tablesorter.css'
+        /* 'css/flora/flora.all.css',*/
+        /*'css/flora/flora.tablesorter.css'*/
+	'css/jquery-ui-1.7.2/css/smoothness/jquery-ui-1.7.2.custom.css' /* jquery ui 1.7.2 */
     ), 'screen')?>
 
     <?php echo html::script(array(
@@ -37,12 +38,6 @@
         'extraClasses' => 'first',
         'widgetData'   => $topcrashesbyurl,
         'subWidget'    => 'common/dashboard/topcrashbyurl'
-     ))->render(TRUE);
-
-     View::factory('common/dashboard_crash_widget', array(
-        'widgetName' => "Mean Time Before FAIL",
-        'widgetData'   => $mtbf,
-        'subWidget'    => 'common/dashboard/mtbf'
      ))->render(TRUE);
 
 ?>

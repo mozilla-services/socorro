@@ -1,15 +1,14 @@
 $(document).ready(function(){
+    /* show / hide NOSCRIPT support */
+      $('.bug_ids_extra').hide();
+      $('.bug_ids_more').show();
       var dateFormat = 'mm/dd/yyyy';
-      $('#advfilter').hide();
+      $('#advfilter').hide();      
 	
       $('#advfiltertoggle').click(function() {
         $('#advfilter').toggle("fast");
       });
         
-      /*$('#subnavtoggle').click(function() {
-        $('#subnav').toggle();
-      });*/
-
       $(function() {
           Date.format='yyyy-mm-dd';
           $('.date-pick').datePicker();
@@ -61,6 +60,18 @@ $(document).ready(function(){
       $('#searchform').submit();
     });
     window.updateVersion = updateVersion;  
+
+    // Bugzilla Integration
+
+    $('.bug_ids_more').click(function(){
+	$(this).parents('td').find('.bug_ids_expanded_list')
+	  .show()
+	  .dialog();
+        return false;
+    //$('.bug_ids_expanded_list').draggable({handle: '.bug_ids_expanded_list > h3'});
+    });
+
+
 });
 
 

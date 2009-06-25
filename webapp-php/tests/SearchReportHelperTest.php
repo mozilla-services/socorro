@@ -80,6 +80,19 @@ require_once dirname(__FILE__).'/../application/libraries/MY_SearchReportHelper.
 			  "Even though over a month ago, this date is fine. The date field specifieis the beginning of date range");
     }
 
+    public function testURLEncoding498818(){
+      $helper = new SearchReportHelper();
+      $helper->setCurrentDateForTest('2008-10-31');
+
+      $spacesSearch = $helper->defaultParams(); 
+      //$spacesSearch['product'] = 'Firefox';
+      $spacesSearch['query'] = 'foo+bar';
+
+      $helper->normalizeParams( $spacesSearch );
+      $this->assertEquals('foo bar', $spacesSearch['query'], 
+			  "form GET encodes spaces as '+', should be decoded");
+    }
+
     public function testMinimalProductInfoNoChange(){
       $helper = new SearchReportHelper();
 

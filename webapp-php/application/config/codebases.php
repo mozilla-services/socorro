@@ -10,5 +10,5 @@ $config['vcsMappings'] = array(
 	    'http://hg.mozilla.org/mozilla-central/index.cgi/annotate/%(revision)s/%(file)s#l%(line)s',
 	'hg.mozilla.org/releases/mozilla-1.9.1' => 
             'http://hg.mozilla.org/releases/mozilla-1.9.1/annotate/%(revision)s/%(file)s#l%(line)s'));
-
+$config['bugTrackingUrl'] = 'https://bugzilla.mozilla.org/show_bug.cgi?id=';
 ?>

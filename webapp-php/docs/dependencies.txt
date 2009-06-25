@@ -11,14 +11,15 @@ Documents the versions and relationships between the various external components
 ./__utm.js Urchin Metrics
  No Dependencies
 
-jquery/jquery-1.2.6.js
+jquery/jquery-1.3.2.js
  No Dependencies
 
-./jquery/plugins/ui/jquery.ui.all.js jQuery UI 1.5.3
+./jquery/plugins/ui/jquery.ui.all.js jQuery UI 1.7.2
  Provides:
   ui.core.js (bundled)
  Dependencies:
-  jquery 1.2.6 +
+  jquery 1.3.2 +
+  css/jquery-ui-1.7.2/smoothness.custom.css
 
 ./jquery/plugins/superfish-1.4.8.js
  Dependencies:
@@ -39,9 +40,9 @@ Known Unknowns:
 Why do we have date.js? does datePicker depend on it?
 ./jquery/plugins/ui/i18n
 ./jquery/plugins/ui/jquery.tablesorter.min.js
+  depends on css/flora/flora.tablesorter.css
 
 TODO:
-Upgrade to jquery 1.3.2... which broke home/dashboard ... why?
 Replace jquery.datePicker.js with jquery.ui.all?
 Replace jquery.tablesorter  with jquery.ui.all?
 Move jquery/date.js to top level?

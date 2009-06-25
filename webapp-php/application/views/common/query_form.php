@@ -2,7 +2,8 @@
     var prodVersMap = <?php echo json_encode($versions_by_product); ?>
 </script>
 
-<form id="searchform" method="get" action="<?php echo url::base() . "query/query" ?>">
+<form id="searchform" method="get" action="<?php echo url::base() . "query/query" ?>"
+      enctype="application/x-www-form-urlencoded">
 <h2>Mozilla Crash Reports</h2>
 <fieldset>
     <input type="hidden" name="do_query" value="1" />

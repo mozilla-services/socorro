@@ -28,6 +28,7 @@ class SearchReportHelper{
    */
   function normalizeParams( &$params ){
     $this->showWarning = FALSE;
+    $params['query'] = urldecode($params['query']);
     $this->normalizeDateUnitAndValue($params);
     $this->normalizeProduct($params);
   }

@@ -163,6 +163,11 @@ ul#occurs li, ul#stack li {
 	width: 25px;
 	text-align: center;
 }
+/* Bugzilla in query results */
+.bug_ids_more, .bug_ids_expanded_list { display: none; }
+.sorted_bug_ids dt { clear: left; }
+.full_bug_ids li {float: left; list-style-type: none;  margin: auto 0.5em 0.5em auto; }
+.full_bug_ids { margin-left: 1.5em; }
 
 #stack_sig, #query, .wrong-name { 
 	width: 150px;

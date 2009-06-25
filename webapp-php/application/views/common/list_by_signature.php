@@ -7,6 +7,9 @@
             <?php foreach ($platforms as $platform): ?>
                 <th><?php out::H(substr($platform->name, 0, 3)) ?></th>
             <?php endforeach ?>
+	   <?php if (isset($sig2bugs)) {?>
+               <th>Bugzilla Ids</th>
+           <?php } ?>
         </tr>
     </thead>
     <tbody>
@@ -25,6 +28,40 @@
                 <?php foreach ($platforms as $platform): ?>
                     <td><?php out::H($report->{'is_'.$platform->id}) ?></td>
                 <?php endforeach ?>
+               <?php if (isset($sig2bugs)) {?>
+                    <td>
+		    <?php if (array_key_exists($report->signature, $sig2bugs)) { 
+			      $bugs = $sig2bugs[$report->signature];
+			      for ($i = 0; $i < 3 and $i < count($bugs); $i++) {
+				  $bug = $bugs[$i];
+				  View::factory('common/bug_number')->set('bug', $bug)->render(TRUE);
+				  echo ", ";
+			      } ?>
+                              <div class="bug_ids_extra">
+                        <?php for ($i = 3; $i < count($bugs); $i++) { 
+				  $bug = $bugs[$i];
+                                  View::factory('common/bug_number')->set('bug', $bug)->render(TRUE);
+                              } ?>
+			      </div>
+			<?php if (count($bugs) > 0) { ?>
+			      <a href='#' title="Click to See all likely bug numbers" class="bug_ids_more">More</a>
+                              <div class="bug_ids_expanded_list" title="Bugs for <code><?= $report->signature ?></code>">						      
+                                  <dl class="sorted_bug_ids"><?php
+			          $last_res = NULL;
+				  $in_dt = FALSE;
+				  foreach ($bugs as $bug) {
+				      if ($bug['resolution'] !== $last_res) { 
+					  $last_res = $bug['resolution']; ?>
+					  </ol></dd><dt><?php echo $bug['open'] ? 'OPEN' : $bug['resolution'] ?></dt><dl><ul class="full_bug_ids">
+			        <?php } ?>
+				      <li><?php View::factory('common/bug_number')->set('bug', $bug)->render(TRUE);?></li><?php 
+				  }
+                            ?></ul></dl></div>
+		        <?php }
+                         } ?>
+
+                    </td>
+               <?php } ?>
             </tr>
             <?php $row += 1 ?>
         <?php endforeach ?>

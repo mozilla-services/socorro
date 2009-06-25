@@ -130,6 +130,7 @@ class Report_Controller extends Controller {
                 'etag'          => $uuid,
                 'last-modified' => strtotime($report->date_processed)
             ));
+	    $report->sumo_signature = $this->_makeSumoSignature($report->signature);
             $reportJsonZUri = url::file('dumps/' . $uuid . '.jsonz');
 
             $this->setViewData(array(
@@ -192,6 +193,15 @@ class Report_Controller extends Controller {
             return url::redirect('report/index/'.$uuid);
         } else {
             return url::redirect('');
+        }
+    }
+
+    private function _makeSumoSignature($signature) {
+        $memory_addr = strpos($signature, '@');
+        if ($memory_addr === FALSE) {
+	    return $signature;
+        } else {
+	  return substr($signature, 0, $memory_addr);
         }
     }
 }
