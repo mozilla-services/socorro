@@ -1,4 +1,5 @@
 <?php
+require_once dirname(__FILE__).'/../libraries/bugzilla.php';
 require_once dirname(__FILE__).'/../libraries/MY_SearchReportHelper.php';
 
 /**
@@ -49,6 +50,11 @@ class Report_Controller extends Controller {
 	    $buildTicks[] = array($index, date('m/d', strtotime($builds[$i]->build_date)));
             $index += 1;
 	  }
+	  $bug_model = new Bug_Model;
+          $rows = $bug_model->bugsForSignatures(array($params['signature']));
+	  Kohana::log('info', "bugForSignaures gave " . Kohana::debug($rows));
+	  $bugzilla = new Bugzilla;
+	  $signature_to_bugzilla = $bugzilla->signature2bugzilla($rows, Kohana::config('codebases.bugTrackingUrl'));
 
           $this->setViewData(array(
             'params'  => $params,
@@ -63,7 +69,9 @@ class Report_Controller extends Controller {
 
             'crashGraphLabel' => $crashGraphLabel,
             'platformLabels'  => $platLabels,
-	    'buildTicks'      => $buildTicks
+	    'buildTicks'      => $buildTicks,
+
+            'sig2bugs' => $signature_to_bugzilla
           ));
 	}
     }

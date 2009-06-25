@@ -3,10 +3,6 @@
 
     <link rel='alternate' type='application/json' href='<?php echo $reportJsonZUri ?>' />
 
-    <?php echo html::stylesheet(array(
-        'css/flora/flora.all.css'
-    ), 'screen')?>
-
     <?php echo html::script(array(
         'js/jquery/plugins/ui/jquery.ui.all.js'
     ))?>

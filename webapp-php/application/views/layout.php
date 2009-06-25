@@ -4,8 +4,9 @@
     <head>
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
         <link href="<?php echo url::base() ?>css/slate.css" rel="stylesheet" type="text/css" media="all" />
-        <!-- link href="<?php echo url::base() ?>css/flora/flora.all.css" rel="stylesheet" type="text/css" media="all" / -->
-        <link href="<?php echo url::base() ?>css/flora/flora.tablesorter.css" rel="stylesheet" type="text/css" media="all" />
+        <link href="<?php echo url::base() ?>css/flora/flora.all.css" rel="stylesheet" type="text/css" media="all" />
+        <!-- link href="<?php echo url::base() ?>css/flora/flora.tablesorter.css" rel="stylesheet" type="text/css" media="all" />
+        <link href="<?php echo url::base() ?>css/flora/flora.tabs.css" rel="stylesheet" type="text/css" media="all" / -->
         <link href="<?php echo url::base() ?>favicon.ico" rel="icon" type="image/png" />
         <?php echo html::script(array('js/__utm.js',
                                       'js/jquery/jquery-1.3.2.min.js',

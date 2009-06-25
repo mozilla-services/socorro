@@ -17,7 +17,7 @@
       $(document).ready(function() { 
         $('#buildid-table').tablesorter(); 
         $('#reportsList').tablesorter({sortList:[[9,1]]});
-        $('#report-list > ul').tabs({selected: 2});
+        $('#report-list-nav').tabs({selected: 2}).show();
       }); 
   </script>
 
@@ -42,10 +42,13 @@
 ?>
 
 <div id="report-list">
-    <ul>
+    <ul id="report-list-nav">
         <li><a href="#graph"><span>Graph</span></a></li>
         <li><a href="#table"><span>Table</span></a></li>
         <li><a href="#reports"><span>Reports</span></a></li>
+<?php if (array_key_exists($params['signature'], $sig2bugs)) { ?>    
+        <li><a href="#bugzilla"><span>Bugzilla</span></a></li>
+<?php } ?>
     </ul>
     <div id="graph">
       <div class="crashes-by-platform">
@@ -91,6 +94,29 @@
             'reports' => $reports 
         ))->render(TRUE) ?>
     </div>
+<?php if (array_key_exists($params['signature'], $sig2bugs)) { ?>    
+    <div id="bugzilla">      
+        <?php View::factory('common/list_bugs', array(
+		     'signature' => $params['signature'],
+                     'bugs' => $sig2bugs[$params['signature']],
+                     'mode' => 'full'
+	      ))->render(TRUE); ?>
+       <?php if (count($sig2bugs) > 1) { ?>
+	    <h2>Related Crash Signatures:</h2>
+       <?php
+	        foreach ($sig2bugs as $sig => $bugs) {
+	            if ($sig != $params['signature']) {
+                        View::factory('common/list_bugs', array(
+		            'signature' => $sig,
+                            'bugs' => $bugs,
+                            'mode' => 'full'
+	      ))->render(TRUE);
+	            }
+	        }
+	     } ?>
+        <br class="cb" />
+    </div>
+<?php } ?>
 </div>
 
 <!-- end content -->

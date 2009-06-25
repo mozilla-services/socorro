@@ -167,8 +167,12 @@ ul#occurs li, ul#stack li {
 .bug_ids_more, .bug_ids_expanded_list { display: none; }
 .bug_ids_expanded_list { background-color: #FFF; border: solid 1px #CCC; margin-top: 1em; padding: 1em; position: absolute; max-width: 300px; top: 0px; left: 0px; -moz-border-radius: 3px; }
 .sorted_bug_ids dt { clear: left; }
-.full_bug_ids li {float: left; list-style-type: none;  margin: auto 0.5em 0.5em auto; }
+.full_bug_ids.popup li { float: left; }
+.sorted_bug_ids.full dd { margin-left: 0px; }
+.full_bug_ids li { list-style-type: none;  margin: auto 0.5em 0.5em auto; }
 .full_bug_ids { margin-left: 1.5em; }
+
+#bugzilla .bug_ids_expanded_list { display: block; position: inherit; max-width: 100%; }
 
 #stack_sig, #query, .wrong-name { 
 	width: 150px;
@@ -179,7 +183,8 @@ ul#occurs li, ul#stack li {
 	clear: left;
 	text-align: right;
 }
-.strike { text-decoration: line-through; }
+.strike { text-decoration: line-through;
+}
 .button {
     -moz-border-radius: 11px;
    	-webkit-border-radius: 11px;
@@ -448,3 +453,5 @@ th a.expand {
 
 /* about/throttling */
 #prose { width: 500px; margin: auto;}
+
+.cb { clear: both; }

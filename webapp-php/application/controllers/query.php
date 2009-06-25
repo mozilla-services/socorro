@@ -1,5 +1,5 @@
 <?php defined('SYSPATH') or die('No direct script access.');
-require_once dirname(__FILE__).'/../libraries/bugzilla.php';
+require_once dirname(__FILE__).'/../libraries/bugzilla.php'; 
 require_once dirname(__FILE__).'/../libraries/MY_SearchReportHelper.php';
 require_once dirname(__FILE__).'/../libraries/MY_QueryFormHelper.php';
 
@@ -46,21 +46,7 @@ class Query_Controller extends Controller {
 	    Kohana::log('info', "I am in query");
             $rows = $this->bug_model->bugsForSignatures(array_unique($signatures));
 	    $bugzilla = new Bugzilla;
-	    $bugzillaUrl = Kohana::config('codebases.bugTrackingUrl');
-            foreach ($rows as $row) {
-	      if ( ! array_key_exists($row['signature'], $signature_to_bugzilla)) {
-	  	  $signature_to_bugzilla[$row['signature']] = array();
-	      }
-	      $row['open'] = empty($row['resolution']);
-	      $row['url'] = $bugzillaUrl . $row['id'];
-	      $row['summary'] = $row['short_desc'];
-
-	      array_push($signature_to_bugzilla[$row['signature']], $row);
-	    }
-	    foreach ($signature_to_bugzilla as $k => $v) {
-	        $bugzilla->sortByResolution($signature_to_bugzilla[$k]);
-	        
-	    }
+	    $signature_to_bugzilla = $bugzilla->signature2bugzilla($rows, Kohana::config('codebases.bugTrackingUrl'));
 	      
         } else {
             $reports = array();

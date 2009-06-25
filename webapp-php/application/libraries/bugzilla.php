@@ -66,5 +66,30 @@ class Bugzilla{
   	    return 1;
 	}
     }
+    /**
+     * Creates a signature to bugilla bug associative array suitable for display.
+     * Sorts the bugs by resolution.
+     * @param array rows - array in the form that Bug_Model bugsForSignatures returns
+     * @return array - array with keys that are crash signatures and the value is a list of 
+     *    bug infos
+     */
+    public function signature2bugzilla($rows, $bugzillaUrl)
+    {	    
+        $signature_to_bugzilla = array();
+        foreach ($rows as $row) {
+	    if ( ! array_key_exists($row['signature'], $signature_to_bugzilla)) {
+	        $signature_to_bugzilla[$row['signature']] = array();
+	    }
+	    $row['open'] = empty($row['resolution']);
+	    $row['url'] = $bugzillaUrl . $row['id'];
+	    $row['summary'] = $row['short_desc'];
+
+	    array_push($signature_to_bugzilla[$row['signature']], $row);
+	}
+	foreach ($signature_to_bugzilla as $k => $v) {
+	    $this->sortByResolution($signature_to_bugzilla[$k]);	        
+	}
+	return $signature_to_bugzilla;
+    }
 }
 ?>

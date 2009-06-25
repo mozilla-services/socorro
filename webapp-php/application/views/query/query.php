@@ -2,7 +2,7 @@
     <title>Query Results - Mozilla Crash Reports</title>
     <?php echo html::stylesheet(array(
         'css/datePicker.css',
-        //'css/flora/flora.tablesorter.css'
+        'css/flora/flora.tablesorter.css',
 	'css/jquery-ui-1.7.2/smoothness.custom.css' /* jquery ui 1.7.2 */
     ), 'screen')?>
 
