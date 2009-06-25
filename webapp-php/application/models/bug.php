@@ -15,7 +15,6 @@ class Bug_Model extends Model {
     */
     public function bugsForSignatures($signatures)
     {
-      Kohana::log('info', "proocessing " . Kohana::debug($signatures));
         return $report = $this->db->query(
 "/* soc.web bugsForSigs */
 SELECT ba.signature, bugs.id, bugs.status, bugs.resolution, bugs.short_desc FROM bugs

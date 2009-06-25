@@ -1,10 +1,7 @@
 <?php slot::start('head') ?>
     <title>Mozilla Crash Reports</title>
     <?php echo html::stylesheet(array(
-        'css/datePicker.css',
-        /* 'css/flora/flora.all.css',*/
-        /*'css/flora/flora.tablesorter.css'*/
-	'css/jquery-ui-1.7.2/css/smoothness/jquery-ui-1.7.2.custom.css' /* jquery ui 1.7.2 */
+        'css/datePicker.css'
     ), 'screen')?>
 
     <?php echo html::script(array(

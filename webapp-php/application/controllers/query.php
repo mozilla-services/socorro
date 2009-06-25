@@ -43,7 +43,6 @@ class Query_Controller extends Controller {
             foreach ($reports as $report) {
 	          array_push($signatures, $report->signature);
 	    }
-	    Kohana::log('info', "I am in query");
             $rows = $this->bug_model->bugsForSignatures(array_unique($signatures));
 	    $bugzilla = new Bugzilla;
 	    $signature_to_bugzilla = $bugzilla->signature2bugzilla($rows, Kohana::config('codebases.bugTrackingUrl'));

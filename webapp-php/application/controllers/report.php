@@ -52,7 +52,6 @@ class Report_Controller extends Controller {
 	  }
 	  $bug_model = new Bug_Model;
           $rows = $bug_model->bugsForSignatures(array($params['signature']));
-	  Kohana::log('info', "bugForSignaures gave " . Kohana::debug($rows));
 	  $bugzilla = new Bugzilla;
 	  $signature_to_bugzilla = $bugzilla->signature2bugzilla($rows, Kohana::config('codebases.bugTrackingUrl'));
 
@@ -141,10 +140,16 @@ class Report_Controller extends Controller {
 	    $report->sumo_signature = $this->_makeSumoSignature($report->signature);
             $reportJsonZUri = url::file('dumps/' . $uuid . '.jsonz');
 
+	    $bug_model = new Bug_Model;
+            $rows = $bug_model->bugsForSignatures(array($report->signature));
+	    $bugzilla = new Bugzilla;
+	    $signature_to_bugzilla = $bugzilla->signature2bugzilla($rows, Kohana::config('codebases.bugTrackingUrl'));
+
             $this->setViewData(array(
                 'reportJsonZUri' => $reportJsonZUri,
                 'report' => $report,
-                'branch' => $this->branch_model->getByProductVersion($report->product, $report->version)
+                'branch' => $this->branch_model->getByProductVersion($report->product, $report->version),
+		'sig2bugs' => $signature_to_bugzilla
             ));
 	}
     }

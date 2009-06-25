@@ -3,24 +3,20 @@
 
     <link rel='alternate' type='application/json' href='<?php echo $reportJsonZUri ?>' />
 
+    <?php echo html::stylesheet(array(
+        'css/flora/flora.all.css'
+    ), 'screen')?>
+
     <?php echo html::script(array(
         'js/jquery/plugins/ui/jquery.ui.all.js'
     ))?>
 
   <script type="text/javascript">//<![CDATA[
       $(document).ready(function(){
-	  var tab = <?php if (isset($report->threads) && count($report->threads) > 0) { 
-	    //frames tab
-	    echo 1; 
-	  } else { 
-	    //Something is seriously wrong, show the details pane
-	    echo 0; 
-	  }
-        ?>;
-        $('#report-index > ul').tabs({selected: tab});
+        $('#report-index > ul').tabs({selected: 0});
         $('#showallthreads').removeClass('hidden').click(function(){
-        $('#allthreads').toggle(400);
-          return false;
+            $('#allthreads').toggle(400);
+            return false;
         });
         $('.signature-column').append(' <a class="expand" href="#">[Expand]</a>');
         $('.expand').click(function(){
@@ -35,13 +31,13 @@
 //]]></script> 
 
 <?php slot::end() ?>
-<h1 id="report-header" class="first"><?php out::H($report->product) ?> <?php out::H($report->version) ?> Crash Report [@ <?php out::H($report->signature) ?> ] <a href="http://support.mozilla.com/tiki-newsearch.php?where=all&q=<?= urlencode($report->sumo_signature) ?>">Get Help</a></h1>
+<h1 id="report-header" class="first"><?php out::H($report->product) ?> <?php out::H($report->version) ?> Crash Report 
+<a href="http://support.mozilla.com/tiki-newsearch.php?where=all&q=<?= urlencode($report->sumo_signature) ?>">Get Help</a></h1>
 <div id="report-header-details">ID: <span><?php out::H($report->uuid) ?></span><br/> Signature: <span><?php out::H($report->signature) ?></span></div>
 <div id="report-index" class="flora">
 
     <ul>
         <li><a href="#details"><span>Details</span></a></li>
-        <li><a href="#frames"><span>Frames</span></a></li>
         <li><a href="#modules"><span>Modules</span></a></li>
         <li><a href="#rawdump"><span>Raw Dump</span></a></li>
     </ul>
@@ -124,9 +120,17 @@
             </tr>
 <?php } ?>
         </table>
-    </div>
+<?php if (array_key_exists($report->signature, $sig2bugs)) { ?>    
+      <div id="bugzilla">      
+        <?php View::factory('common/list_bugs', array(
+		     'signature' => $report->signature,
+                     'bugs' => $sig2bugs[$report->signature],
+                     'mode' => 'full'
+	      ))->render(TRUE); ?>
+      </div><!-- /bugzilla -->
+    <?php }  ?>
 
-    <div id="frames">
+      <div id="frames">
     <?php if (isset($report->threads) && count($report->threads)): ?>
            
             <?php function stack_trace($frames) { ?>
@@ -174,7 +178,9 @@
             <script type="text/javascript">document.getElementById("allthreads").style.display="none";</script>
 
         <?php endif ?>
-    </div>
+      </div><!-- /frames -->
+    </div><!-- /details -->
+
 
     <div id="modules">
         <?php if (count($report->modules)): ?>
@@ -202,5 +208,29 @@
     <div id="rawdump">
         <div class="code"><?php out::H($report->dump) ?></div>
     </div>
+<?php /* if (array_key_exists($report->signature, $sig2bugs)) { ?>    
+    <div id="bugzilla">      
+        <?php View::factory('common/list_bugs', array(
+		     'signature' => $report->signature,
+                     'bugs' => $sig2bugs[$report->signature],
+                     'mode' => 'full'
+	      ))->render(TRUE); ?>
+       <?php if (count($sig2bugs) > 1) { ?>
+	    <h2>Related Crash Signatures:</h2>
+       <?php
+	        foreach ($sig2bugs as $sig => $bugs) {
+	            if ($sig != $report->signature) {
+                        View::factory('common/list_bugs', array(
+		            'signature' => $sig,
+                            'bugs' => $bugs,
+                            'mode' => 'full'
+	      ))->render(TRUE);
+	            }
+	        }
+	     } ?>
+        <br class="cb" />
+    </div>
+    <?php } */ ?>
+</div>
 
 </div>

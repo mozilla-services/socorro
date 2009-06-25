@@ -3,15 +3,13 @@
     <?php echo html::stylesheet(array(
         'css/datePicker.css',
         'css/flora/flora.tablesorter.css',
-	'css/jquery-ui-1.7.2/smoothness.custom.css' /* jquery ui 1.7.2 */
     ), 'screen')?>
 
     <?php echo html::script(array(
-				  //'js/jquery/plugins/ui/jquery.ui.all.js',       /* ui.accordion.js */
-        'js/jquery/plugins/ui/jquery-ui-1.7.2.custom.min.js',       /* ui.accordion.js jquery ui 1.7.2 */
+	'js/jquery/plugins/ui/jquery.ui.all.js',       /* ui.accordion.js */
         'js/jquery/date.js',
         'js/jquery/plugins/ui/jquery.datePicker.js',     /* old school not ui.datepicker.js */
-	        'js/jquery/plugins/ui/jquery.tablesorter.min.js',       /* old school not ui.sortable.js */
+	'js/jquery/plugins/ui/jquery.tablesorter.min.js',       /* old school not ui.sortable.js */
         'js/socorro/query.js'
     ))?>
 
