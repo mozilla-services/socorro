@@ -31,8 +31,9 @@
 //]]></script> 
 
 <?php slot::end() ?>
-<h1 id="report-header" class="first"><?php out::H($report->product) ?> <?php out::H($report->version) ?> Crash Report 
-<a href="http://support.mozilla.com/tiki-newsearch.php?where=all&q=<?= urlencode($report->sumo_signature) ?>">Get Help</a></h1>
+<h1 id="report-header" class="first"><?php out::H($report->product) ?> <?php out::H($report->version) ?> Crash Report [@ <?php out::H($report->signature) ?> ]</h1>
+<div id="sumo-link"><a href="http://support.mozilla.com/tiki-newsearch.php?where=all&q=<?=urlencode($report->sumo_signature) ?>" title="Find more answers at support.mozilla.com!">Get Help</a></div>
+
 <div id="report-header-details">ID: <span><?php out::H($report->uuid) ?></span><br/> Signature: <span><?php out::H($report->signature) ?></span></div>
 <div id="report-index" class="flora">
 
@@ -122,10 +123,12 @@
         </table>
 <?php if (array_key_exists($report->signature, $sig2bugs)) { ?>    
       <div id="bugzilla">      
+        <h2>Related Bugs</h2>
         <?php View::factory('common/list_bugs', array(
 		     'signature' => $report->signature,
                      'bugs' => $sig2bugs[$report->signature],
-                     'mode' => 'full'
+                     'mode' => 'full',
+                     'suppressHeader' => TRUE
 	      ))->render(TRUE); ?>
       </div><!-- /bugzilla -->
     <?php }  ?>
@@ -208,29 +211,6 @@
     <div id="rawdump">
         <div class="code"><?php out::H($report->dump) ?></div>
     </div>
-<?php /* if (array_key_exists($report->signature, $sig2bugs)) { ?>    
-    <div id="bugzilla">      
-        <?php View::factory('common/list_bugs', array(
-		     'signature' => $report->signature,
-                     'bugs' => $sig2bugs[$report->signature],
-                     'mode' => 'full'
-	      ))->render(TRUE); ?>
-       <?php if (count($sig2bugs) > 1) { ?>
-	    <h2>Related Crash Signatures:</h2>
-       <?php
-	        foreach ($sig2bugs as $sig => $bugs) {
-	            if ($sig != $report->signature) {
-                        View::factory('common/list_bugs', array(
-		            'signature' => $sig,
-                            'bugs' => $bugs,
-                            'mode' => 'full'
-	      ))->render(TRUE);
-	            }
-	        }
-	     } ?>
-        <br class="cb" />
-    </div>
-    <?php } */ ?>
-</div>
+</div><!-- /details -->
 
-</div>
+</div> <!-- /report-index -->

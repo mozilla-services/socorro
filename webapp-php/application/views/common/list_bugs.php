@@ -1,5 +1,7 @@
-                           <div class="bug_ids_expanded_list">						      
-						      <h3>Bugs for <code><?= out::H($signature) ?></code></h3>
+                           <div class="bug_ids_expanded_list">
+			      <?php if (! isset($suppressHeader)) { ?>
+			          <h3>Bugs for <code><?= out::H($signature) ?></code></h3>
+			      <?php } ?>
                                   <dl class="sorted_bug_ids <?= $mode ?>"><?php
 			          $last_res = NULL;
 				  $open_ul = FALSE;

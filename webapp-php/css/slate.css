@@ -399,6 +399,10 @@ td.in1 ul, td.in2 ul{ padding-left: 15px; }
 /* end server/status */
 
 /* A CRASH REPORT */
+#report-index h2, #report-index h3 {
+   margin: 10px 0;
+}
+#report-header { width: 850px; border: solid 1px green;}
 .list tr:nth-child(2n+1) {
   background-color: #ddd;
 }
@@ -407,9 +411,6 @@ td.in1 ul, td.in2 ul{ padding-left: 15px; }
 }
 .list tr:hover {
   background-color: #fff;
-}
-.list {
-  margin-top:.5em;
 }
 .list tr td {
   padding:.2em;
@@ -451,6 +452,30 @@ th a.expand {
   font-size: smaller;
 }
 #frames { margin-top: 1em; }
+#sumo-link { 
+    position: absolute; 
+    top: 50px; 
+    width: 970px; 
+    text-align: right; 
+    margin: 0 auto 25px;
+}
+
+#sumo-link a, #sumo-link a:visited {
+    color: green;
+    background: #eee;
+    display: block;
+    float: right;
+    font-weight: bold;
+    border: 1px solid #ccc;
+    padding: 5px;
+    -moz-border-radius: 5px;
+    text-decoration: none;
+}
+
+#sumo-link a:hover {
+   background: #fff;
+}
+
 /* END A CRASH REPORT */
 
 /* about/throttling */

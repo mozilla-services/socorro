@@ -22,7 +22,7 @@ class Report_Model extends Model {
             SELECT reports.date_processed
             FROM reports WHERE reports.uuid=? AND reports.success IS NOT NULL", $uuid)->current();
         if (!$report) {
-	    Kohana::log('info', "$uuid hasn't been processed");
+            Kohana::log('info', "$uuid hasn't been processed");
             return NULL;
 	} else {
 	    $crashReportDump = new CrashReportDump;
