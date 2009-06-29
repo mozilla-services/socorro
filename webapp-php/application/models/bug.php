@@ -15,6 +15,16 @@ class Bug_Model extends Model {
     */
     public function bugsForSignatures($signatures)
     {
+        $sigs = array();
+        foreach ($signatures as $sig) {
+	    if (trim($sig) != '') {
+	        array_push($sigs, $this->db->escape($sig));
+	    }
+        }
+	if (count($sigs) == 0) {
+	    return array();
+	}
+            
         return $report = $this->db->query(
 "/* soc.web bugsForSigs */
 SELECT ba.signature, bugs.id, bugs.status, bugs.resolution, bugs.short_desc FROM bugs
@@ -22,7 +32,7 @@ JOIN bug_associations AS ba ON bugs.id = ba.bug_id
 WHERE EXISTS( 
     SELECT 1 FROM bug_associations
     WHERE bug_associations.bug_id = bugs.id AND 
-          signature IN ('" . implode("', '", $signatures) . "'))", 
+          signature IN (" . implode(", ", $sigs) . "))", 
              TRUE)->result_array(FALSE);
     }
 }
