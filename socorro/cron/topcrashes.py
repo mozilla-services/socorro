@@ -65,7 +65,7 @@ def calculateTopCrashes(configContext, logger):
   end_time = datetime.datetime.now()
   now = datetime.datetime.now()
   p_interval = configContext.processingInterval
-  initModeDate = now - datetime.timedelta(days=14)
+  initModeDate = now - datetime.timedelta(days=1)
 
   if not configContext.initMode:
     startsql = "SELECT last_updated FROM topcrashers ORDER BY last_updated DESC LIMIT 1"
