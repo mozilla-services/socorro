@@ -402,7 +402,7 @@ td.in1 ul, td.in2 ul{ padding-left: 15px; }
 #report-index h2, #report-index h3 {
    margin: 10px 0;
 }
-#report-header { width: 850px; border: solid 1px green;}
+#report-header { width: 850px; }
 .list tr:nth-child(2n+1) {
   background-color: #ddd;
 }
