@@ -65,7 +65,7 @@ def calculateTopCrashes(configContext, logger):
   end_time = datetime.datetime.now()
   now = datetime.datetime.now()
   p_interval = configContext.processingInterval
-  initModeDate = now - datetime.timedelta(days=4)
+  initModeDate = now - datetime.timedelta(days=14)
 
   if not configContext.initMode:
     startsql = "SELECT last_updated FROM topcrashers ORDER BY last_updated DESC LIMIT 1"
@@ -110,7 +110,7 @@ def calculateTopCrashes(configContext, logger):
 
     ## This loop slurps up the data into our dictionary ##
     for row in rows:
-      if row['product'] and row['version'] and row['signature']:
+      if row['product'] and row['version'] and row['signature'] and row['build']:
         key = (row['product'], row['version'], row['build'])
         fullKey = (row['product'], row['version'], row['build'], row['signature'])
         signature = row['signature']
@@ -150,7 +150,7 @@ def calculateTopCrashes(configContext, logger):
         if row['os_name'] == "Linux":
           summary_crashes[key][signature]['lin'] += 1
       else:
-        logger.info("Bad row Skipping product=%s version=%s signature=%s" % (row['product'], row['version'], row['signature']))
+        logger.info("Bad row Skipping product=%s version=%s signature=%s build=%s" % (row['product'], row['version'], row['signature'], row['build']))
 
     calc_tots(summary_crashes,crash_count,configContext, logger)
 
