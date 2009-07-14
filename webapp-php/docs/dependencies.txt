@@ -1,5 +1,9 @@
 Documents the versions and relationships between the various external components.
 
+= PHP =
+Kohana 2.2
+eZ Components 2009.1
+
 = JavaScript =
 ./jquery/date.js
  No Dependencies
