@@ -49,4 +49,17 @@ class Report_Model extends Model {
         $crashFile = $crashReportDump->crashFilename($crashDir, $uuid);
         return file_exists($crashFile);
     }
+
+    public function sig_exists($signature)
+    {
+        $rs = $this->db->query(
+                "/* soc.web report sig exists */
+                SELECT signature FROM reports WHERE signature = ?
+                LIMIT 1", $signature)->current();
+        if ($rs) {
+	    return TRUE;
+        } else {
+	    return FALSE;
+	}
+    }
 }

@@ -1,7 +1,7 @@
 <?php
-require_once dirname(__FILE__).'/../libraries/bugzilla.php';
-require_once dirname(__FILE__).'/../libraries/MY_SearchReportHelper.php';
-
+require_once(Kohana::find_file('libraries', 'bugzilla', TRUE, 'php'));
+require_once(Kohana::find_file('libraries', 'MY_SearchReportHelper', TRUE, 'php'));
+require_once(Kohana::find_file('libraries', 'crash', TRUE, 'php'));
 /**
  * List, search, and show crash reports.
  */
@@ -191,16 +191,9 @@ class Report_Controller extends Controller {
      * This method should not touch the database!
      */
     public function find() {
+        $crash = new Crash();
         $id = isset($_GET['id']) ? $_GET['id'] : '';
-        $uuid = FALSE;
-
-        if ($id) {
-            $matches = array();
-            $prefix = Kohana::config('application.dumpIDPrefix');
-            if ( preg_match('/^('.$prefix.')?([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/', $id, $matches) ) {
-                $uuid = $matches[2];
-            }
-        }
+        $uuid = $crash->parseUUID($id);
 
         if ($uuid) {
             return url::redirect('report/index/'.$uuid);
