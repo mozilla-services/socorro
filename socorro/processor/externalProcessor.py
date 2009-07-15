@@ -60,7 +60,6 @@ class ProcessorWithExternalBreakpad (processor.Processor):
     subprocessHandle = subprocess.Popen(newCommandLine, shell=True, stdout=subprocess.PIPE)
     return (socorro.lib.util.CachingIterator(subprocessHandle.stdout), subprocessHandle)
 
-
 #-----------------------------------------------------------------------------------------------------------------
   def doBreakpadStackDumpAnalysis (self, reportId, uuid, dumpfilePathname, databaseCursor, date_processed, processorErrorMessages):
     """ This function overrides the base class version of this function.  This function coordinates the six
@@ -101,19 +100,17 @@ class ProcessorWithExternalBreakpad (processor.Processor):
 
 #-----------------------------------------------------------------------------------------------------------------
   def analyzeHeader(self, reportId, dumpAnalysisLineIterator, databaseCursor, date_processed, processorErrorMessages):
-    """ Scan through the lines of the dump header, extracting the information for population of the
-          'modules' table and the update of the record for this crash in 'reports'.  During the analysis
-          of the header, the number of the thread that caused the crash is determined and saved.
-
-          returns:
-            a dictionary of the various values that were updated in the database.
-
-          input parameters:
-            reportId - the associated primary key from the 'reports' table for this crash
-            dumpAnalysisLineIterator - an iterator object that feeds lines from crash dump data
-            databaseCursor - for database inserts and updates
-            date_processed
-            processorErrorMessages
+    """ Scan through the lines of the dump header:
+        - # deprecated: extract the information for populating the 'modules' table
+        - extract data to update the record for this crash in 'reports', including the id of the crashing thread
+        Returns: Dictionary of the various values that were updated in the database
+        Side effects: If at least two distinct values are parsed (any of them): the reports table is updated
+        Input parameters:
+        - reportId - the associated primary key from the 'reports' table for this crash
+        - dumpAnalysisLineIterator - an iterator object that feeds lines from crash dump data
+        - databaseCursor - for database inserts and updates
+        - date_processed
+        - processorErrorMessages
     """
     logger.info("%s - analyzeHeader", threading.currentThread().getName())
     crashedThread = None
@@ -135,9 +132,14 @@ class ProcessorWithExternalBreakpad (processor.Processor):
         continue
       values = map(socorro.lib.util.emptyFilter, values)
       if values[0] == 'OS':
-        reportUpdateValues['os_name'] = socorro.lib.util.limitStringOrNone(values[1], 100)
-        reportUpdateValues['os_version'] = socorro.lib.util.limitStringOrNone(values[2], 100)
-        reportUpdateSqlParts.extend(['os_name = %(os_name)s','os_version = %(os_version)s'])
+        name = socorro.lib.util.limitStringOrNone(values[1], 100)
+        version = socorro.lib.util.limitStringOrNone(values[2], 100)
+        reportUpdateValues['os_name']=name
+        reportUpdateValues['os_version']=version
+        reportUpdateSqlParts.extend(['os_name = %(os_name)s', 'os_version = %(os_version)s'])
+        #osId = self.idCache.getOsId(name,version)
+        #reportUpdateValues['osdims_id'] = osId
+        #reportUpdateSqlParts.append('osdims_id = %(osdims_id)s')
       elif values[0] == 'CPU':
         reportUpdateValues['cpu_name'] = socorro.lib.util.limitStringOrNone(values[1], 100)
         reportUpdateValues['cpu_info'] = socorro.lib.util.limitStringOrNone(values[2], 100)
@@ -225,7 +227,7 @@ class ProcessorWithExternalBreakpad (processor.Processor):
             self.framesTable.insert(databaseCursor, (reportId, frame_num, date_processed, thisFramesSignature[:255]), self.databaseConnectionPool.connectToDatabase, date_processed=date_processed)
         if frameCounter == self.config.crashingThreadFrameThreshold:
           processorErrorMessages.append("This dump is too long and has triggered the automatic truncation routine")
-          logger.debug("%s - starting secondary cache with framecount = %d", threading.currentThread().getName(), frameCounter)
+          #logger.debug("%s - starting secondary cache with framecount = %d", threading.currentThread().getName(), frameCounter)
           dumpAnalysisLineIterator.useSecondaryCache()
           truncated = True
         frameCounter += 1
@@ -245,15 +247,12 @@ class ProcessorWithExternalBreakpad (processor.Processor):
       processorErrorMessages.append(message)
       logger.warning("%s - %s", threading.currentThread().getName(), message)
     #logger.debug("%s -   %s", threading.currentThread().getName(), (signature, '; '.join(processorErrorMessages), reportId, date_processed))
-
     if not analyzeReturnedLines:
       message = "%s returned no frame lines for reportid: %s" % (self.config.minidump_stackwalkPathname, reportId)
       processorErrorMessages.append(message)
       logger.warning("%s - %s", threading.currentThread().getName(), message)
-
-    processor_notes = '; '.join(processorErrorMessages).replace("'", "''")
-    databaseCursor.execute("update reports set signature = '%s', processor_notes = '%s' where id = %s and date_processed = timestamp without time zone '%s'" % (signature, processor_notes, reportId, date_processed))
-
+    processor_notes = '; '.join(processorErrorMessages)
+    databaseCursor.execute("update reports set signature = %%s, processor_notes = %%s where id = %%s and date_processed = timestamp without time zone '%s'" % (date_processed),(signature, processor_notes,reportId))
     return { "processor_notes": processor_notes,
              "signature": signature,
              "truncated": truncated

@@ -1,18 +1,20 @@
 import psycopg2
 
-import time
 import datetime
+from operator import itemgetter
+import logging
 import os
 import os.path
-import threading
 import re
 import signal
 import sets
-import logging
+import threading
+import time
 
 logger = logging.getLogger("processor")
 
 import socorro.database.schema as sch
+import socorro.database.cachedIdAccess as cia
 
 import socorro.lib.util
 import socorro.lib.threadlib
@@ -69,6 +71,8 @@ class Processor(object):
             This dictionary, indexed by thread name, is just a repository for the connections that
             persists between jobs.
   """
+  #-----------------------------------------------------------------------------------------------------------------
+  # static data. Beware threading!
   buildDatePattern = re.compile('^(\\d{4})(\\d{2})(\\d{2})(\\d{2})')
   utctz = sdt.UTC()
 
@@ -94,8 +98,8 @@ class Processor(object):
     assert "batchJobLimit" in config, "batchJobLimit is missing from the configuration"
     assert "irrelevantSignatureRegEx" in config, "irrelevantSignatureRegEx is missing from the configuration"
     assert "prefixSignatureRegEx" in config, "prefixSignatureRegEx is missing from the configuration"
-
     self.databaseConnectionPool = psy.DatabaseConnectionPool(config.databaseHost, config.databaseName, config.databaseUserName, config.databasePassword, logger)
+    cia.maxIdCacheLength = int(config.get('maxIdCacheLength',1024))
 
     self.processorLoopTime = config.processorLoopTime.seconds
 
@@ -109,6 +113,7 @@ class Processor(object):
 
     self.processedDumpStorage = pds.ProcessedDumpStorage(config.processedDumpStoragePath)
 
+    #self.reportsTable = sch.CrashReportsTable(logger=logger)
     self.reportsTable = sch.ReportsTable(logger=logger)
     #self.dumpsTable = sch.DumpsTable(logger=logger)
     self.extensionsTable = sch.ExtensionsTable(logger=logger)
@@ -206,6 +211,8 @@ class Processor(object):
                                                   jsonSuffix=self.config.jsonFileSuffix,
                                                   dumpSuffix=self.config.dumpFileSuffix,
                                                   logger=logger)
+    # initialize dimension id caches
+    self.idCache = cia.IdCache(databaseCursor)
 
   #-----------------------------------------------------------------------------------------------------------------
   def quitCheck(self):
@@ -640,37 +647,31 @@ class Processor(object):
         jobPathname:  the complete pathname for the json document
         date_processed: when job came in (a key used in partitioning)
         processorErrorMessages: list of strings of error messages
-      jsonDocument MUST contain (to be useful)                       : stored in table `reports`
-        BuildID: 10-character date, as: datetime.strftime('%Y%m%d%H'): in column `build`
-        ProductName: Any string with length <= 30                    : in column `product`
-        Version: Any string with length <= 16                        : in column `version`
-        CrashTime(preferred), or
-        timestamp (deprecated): decimal unix timestamp               : in column `client_crash_date`
+      jsonDocument MUST contain                                      : stored in table reports
+        ProductName: Any string with length <= 30                    : in column productdims_id
+        Version: Any string with length <= 16                        : in column productdims_id
       jsonDocument SHOULD contain:
-        StartupTime: decimal unix timestamp of 10 or fewer digits    : in column `uptime` = crash_time - startupTime
-        InstallTime: decimal unix timestamp of 10 or fewer digits    : in column `install_age` = crash_time - installTime
-        SecondsSinceLastCrash: some integer value                    : in column `last_crash`
+        BuildID: 10-character date, as: datetime.strftime('%Y%m%d%H'): build_date (calculated from BuildID) (may also have minutes, seconds)
+        CrashTime(preferred), or
+        timestamp (deprecated): decimal unix timestamp               : in column client_crash_date
+        StartupTime: decimal unix timestamp of 10 or fewer digits    : in column uptime = client_crash_date - startupTime
+        InstallTime: decimal unix timestamp of 10 or fewer digits    : in column install_age = client_crash_date - installTime
+        SecondsSinceLastCrash: some integer value                    : in column last_crash
       jsonDocument MAY contain:
-        Comments: Length <= 500                                      : in column `user_comments`
-        Notes:    Length <= 1000                                     : in column `app_notes`
-        Distributor: Length <= 20                                    : in column `distributor`
-        Distributor_version: Length <= 20                            : in column `distributor_version`
+        Comments: Length <= 500                                      : in column user_comments
+        Notes:    Length <= 1000                                     : in column app_notes
+        Distributor: Length <= 20                                    : in column distributor
+        Distributor_version: Length <= 20                            : in column distributor_version
     """
     logger.debug("%s - starting insertReportIntoDatabase", threading.currentThread().getName())
-    product = Processor.getJsonOrWarn(jsonDocument,'ProductName',processorErrorMessages,"no product", 30)
-    version = Processor.getJsonOrWarn(jsonDocument,'Version', processorErrorMessages,'no version',16)
+    product = Processor.getJsonOrWarn(jsonDocument,'ProductName',processorErrorMessages,None, 30)
+    version = Processor.getJsonOrWarn(jsonDocument,'Version', processorErrorMessages,None,16)
     buildID =   Processor.getJsonOrWarn(jsonDocument,'BuildID', processorErrorMessages,None,16)
     url = socorro.lib.util.lookupLimitedStringOrNone(jsonDocument, 'URL', 255)
-    email = None   # we stopped collecting user email per user privacy concerns
-    user_id = None # we stopped collecting user id too
     user_comments = socorro.lib.util.lookupLimitedStringOrNone(jsonDocument, 'Comments', 500)
     app_notes = socorro.lib.util.lookupLimitedStringOrNone(jsonDocument, 'Notes', 1000)
     distributor = socorro.lib.util.lookupLimitedStringOrNone(jsonDocument, 'Distributor', 20)
     distributor_version = socorro.lib.util.lookupLimitedStringOrNone(jsonDocument, 'Distributor_version', 20)
-    crash_time = None
-    install_age = None
-    uptime = 0
-    crash_date = date_processed
     defaultCrashTime = int(time.mktime(date_processed.timetuple())) # must have crashed before date processed
     timestampTime = int(jsonDocument.get('timestamp',defaultCrashTime)) # the old name for crash time
     crash_time = int(Processor.getJsonOrWarn(jsonDocument,'CrashTime',processorErrorMessages,timestampTime,10))
@@ -683,6 +684,8 @@ class Processor(object):
       logger.warning("%s - no 'crash_time' calculated in %s: Using date_processed", threading.currentThread().getName(), jobPathname)
       #socorro.lib.util.reportExceptionAndContinue(logger, logging.WARNING)
       processorErrorMessages.append("WARNING: No 'client_crash_date' could be determined from the Json file")
+    productId = self.idCache.getProductId(product,version)
+    urlId,qpart = self.idCache.getUrlId(url)
     build_date = None
     if buildID:
       try:
@@ -695,9 +698,12 @@ class Processor(object):
       last_crash = int(jsonDocument['SecondsSinceLastCrash'])
     except:
       last_crash = None
-
+    email = user_id = None
     newReportRecordAsTuple = (uuid, crash_date, date_processed, product, version, buildID, url, install_age, last_crash, uptime, email, build_date, user_id, user_comments, app_notes, distributor, distributor_version)
     newReportRecordAsDict = dict(x for x in zip(self.reportsTable.columns, newReportRecordAsTuple))
+    if not productId:
+      logger.error("%s - Skipping report %s: no productId"%(threading.currentThread().getName(),str(newReportRecordAsDict)))
+      return {}
     try:
       logger.debug("%s - inserting for %s, %s", threading.currentThread().getName(), uuid, str(date_processed))
       self.reportsTable.insert(threadLocalCursor, newReportRecordAsTuple, self.databaseConnectionPool.connectToDatabase, date_processed=date_processed)

@@ -54,17 +54,45 @@ def setup_module():
   me.dsn = "host=%s dbname=%s user=%s password=%s" % (me.config.databaseHost,me.config.databaseName,
                                                       me.config.databaseUserName,me.config.databasePassword)
   me.testDB = TestDB()
-  #me.expectedTableNames = set(['tcbyurlconfig', 'topcrashurlfacts', 'priorityjobs', 'branches', 'processors', 'productdims', 'topcrashurlfactsreports', 'urldims', 'mtbfconfig', 'signaturedims', 'reports', 'server_status', 'dumps', 'extensions', 'mtbffacts', 'frames', 'topcrashers', 'jobs',])
-  me.expectedTableNames = set(['tcbyurlconfig', 'topcrashurlfacts', 'priorityjobs', 'branches', 'processors', 'productdims', 'topcrashurlfactsreports', 'urldims', 'mtbfconfig', 'signaturedims', 'reports', 'server_status', 'extensions', 'mtbffacts', 'frames', 'topcrashers', 'jobs', 'bug_associations', 'bugs'])
+  # During maintenance on schema.py: If you add, remove or rename any of the tables in schema, make a parallel change here
+  # value[0] is True iff the table is a PartitionedTable; value[1] is the expectedSet of table names (including precursors) for each Table
+  me.hardCodedSchemaClasses = {
+    schema.ReleaseEnum:[False,set(['release_enum'])],
+    schema.BranchesTable:[False,set(['branches'])],
+    schema.BugAssociationsTable:[False,set(['bugs', 'bug_associations'])],
+    schema.BugsTable:[False,set(['bugs'])],
+    schema.CrashReportsTable:[True,set(['crash_reports','osdims','productdims','urldims','release_enum','signaturedims'])],
+    # deprecated schema.DumpsTable:[True,set(['dumps'])],
+    schema.ExtensionsTable:[True,set(['extensions'])],
+    schema.FramesTable:[True,set(['frames'])],
+    schema.JobsTable:[False,set(['jobs', 'processors'])],
+    schema.MTBFConfigTable:[False,set(['mtbfconfig', 'productdims', 'osdims','release_enum'])],
+    schema.MTBFFactsTable:[False,set(['mtbffacts', 'productdims', 'osdims', 'release_enum'])],
+    schema.OsDimsTable:[False,set(['osdims'])],
+    schema.PriorityJobsTable:[False,set(['priorityjobs'])],
+    schema.ProcessorsTable:[False,set(['processors'])],
+    schema.ProductDimsTable:[False,set(['productdims','release_enum'])],
+    schema.ReportsTable:[True,set(['reports'])],
+    schema.ServerStatusTable:[False,set(['server_status'])],
+    schema.SignatureDimsTable:[False,set(['signaturedims'])],
+    schema.TCBySignatureConfigTable:[False, set(['tcbysignatureconfig', 'productdims', 'osdims','release_enum'])],
+    schema.TCByUrlConfigTable:[False,set(['tcbyurlconfig', 'productdims', 'osdims','release_enum'])],
+    schema.TopCrashFactsTable:[False,set(['topcrashfacts','osdims','productdims', 'release_enum','signaturedims'])],
+    schema.TopCrashUrlFactsReportsTable:[False,set(['topcrashurlfactsreports', 'urldims', 'topcrashurlfacts', 'productdims', 'osdims','release_enum','signaturedims'])],
+    schema.TopCrashUrlFactsTable:[False,set(['urldims', 'topcrashurlfacts', 'productdims', 'osdims','release_enum','signaturedims'])],
+    # deprecated schema.TopCrashersTable:[False,set(['topcrashers'])],
+    schema.UrlDimsTable:[False,set(['urldims'])],
+    }
+  me.expectedTableNames = set(['tcbyurlconfig', 'topcrashurlfacts', 'priorityjobs', 'branches', 'processors', 'productdims', 'topcrashurlfactsreports', 'urldims', 'mtbfconfig', 'reports', 'server_status', 'extensions', 'mtbffacts', 'frames', 'topcrashers', 'jobs', 'bug_associations', 'bugs'])
   me.expectedTableDependencies = {
-    'topcrashurlfactsreports': set(['productdims', 'signaturedims', 'urldims', 'topcrashurlfacts', 'topcrashurlfactsreports']),
-    'signaturedims': set(['signaturedims']),
+    'topcrashurlfactsreports': set(['productdims', 'urldims', 'topcrashurlfacts', 'topcrashurlfactsreports']),
+    #'signaturedims': set(['signaturedims']),
     'jobs': set(['processors', 'jobs']),
     'processors': set(['processors']),
     'mtbfconfig': set(['productdims', 'mtbfconfig']),
     'urldims': set(['urldims']),
     'productdims': set(['productdims']),
-    'topcrashurlfacts': set(['productdims', 'signaturedims', 'urldims', 'topcrashurlfacts']),
+    'topcrashurlfacts': set(['productdims', 'urldims', 'topcrashurlfacts']),
     'reports': set(['reports']),
     'server_status': set(['server_status']),
     #'dumps': set(['dumps']),
@@ -78,6 +106,9 @@ def setup_module():
     'bug_associations': set(['bugs', 'bug_associations']),
     'bugs': set(['bugs']),
     }
+  me.expectedTableNames = set()
+  for tableStuff in me.hardCodedSchemaClasses.values():
+    me.expectedTableNames |= tableStuff[1]
 
 def teardown_module():
   me.testDB.removeDB(me.config,me.logger)
@@ -124,12 +155,20 @@ def testGetOrderedSetupList():
     except:
       lookup[t] = t
   gotTableNames = set(lookup.values())
-  assert me.expectedTableNames == gotTableNames, "Expected:\n  %s\nGot:\n  %s"%(me.expectedTableNames,gotTableNames)
-
+  expected = set(me.hardCodedSchemaClasses.keys())
+  got = set(allTables)
+  assert expected == got,'Expected %s\n    got %s\n ex-got=%s\ngot-ex=%s'%(expected,got,expected-got, got-expected)
   gotDependencies = {}
   for t in allTables:
-    gotDependencies[lookup[t]] = set([lookup[x] for x in schema.getOrderedSetupList((t,))])
-  assert me.expectedTableDependencies == gotDependencies, "Expected:\n  %s\nGot\n  %s"%(me.expectedTableDependencies,gotDependencies)
+    gotDependencies[t] = set([lookup[x] for x in schema.getOrderedSetupList((t,))])
+  expectedDependencies = dict([(t,me.hardCodedSchemaClasses[t][1]) for t in me.hardCodedSchemaClasses])
+  # get better reporting than a simple assert ==, First assert same keys() then same values per key
+  #assert expectedDependencies == gotDependencies, "Expected:\n  %s\nGot\n  %s"%(expectedDependencies,gotDependencies)
+  exKeys = set(expectedDependencies.keys())
+  gotKeys = set(gotDependencies.keys())
+  assert exKeys == gotKeys, "Oops. ex-got = %s\ngot-x = %s"%(exKeys-gotKeys, gotKeys - exKeys)
+  for t in exKeys:
+    assert expectedDependencies[t] == gotDependencies[t], 'for %s, expected: %s, got %s'%(t,expectedDependencies[t], gotDependencies[t])
   assert ['woohoo'] == schema.getOrderedSetupList(['woohoo'])
 
 def testGetOrderedPartitionList():
@@ -141,9 +180,11 @@ def testGetOrderedPartitionList():
   global me
   lookup = {}
   expected = {
+    #'frames': set(['frames', 'crash_reports']),
+    #'extensions': set(['extensions', 'crash_reports']),
     'frames': set(['frames', 'reports']),
     'extensions': set(['extensions', 'reports']),
-    #'dumps': set(['dumps', 'reports']),
+    # deprecated 'dumps': set(['dumps', 'crash_reports']),
     }
   allTables = schema.getOrderedSetupList()
   for t in allTables:
@@ -210,6 +251,8 @@ def testSetupAndTeardownDatabase():
     schema.setupDatabase(me.config,me.logger)
     try:
       for t in me.expectedTableNames:
+        if '_enum' in t:
+          continue
         # next line raises if the table does not exist
         tcur.execute("SELECT count(*) from %s"%t)
         tcon.commit()
@@ -239,7 +282,8 @@ def testUpdateDatabase():
   #expected = set(['reports','dumps','extensions','frames','processors','jobs'])
   expected = set(['reports','extensions','frames','processors','jobs','bug_associations', 'bugs'])
   found = set([ x(logger=me.logger).name for x in schema.databaseObjectClassListForUpdate])
-  assert expected == found
+  assert expected == found, 'Expected: %s, Found: %s'%(expected,found)
+  #class ReportsStub(schema.CrashReportsTable):
   class ReportsStub(schema.ReportsTable):
     def __init__(self, logger, **kwargs):
       super(ReportsStub,self).__init__(logger,**kwargs)
@@ -255,6 +299,7 @@ def testUpdateDatabase():
   assert [] == updated
   schema.databaseObjectClassListForUpdate = [ReportsStub]
   schema.updateDatabase(me.config,me.logger)
+  #assert ['crash_reports'] == updated
   assert ['reports'] == updated
 
 def testModuleCreatePartitions():
@@ -269,21 +314,24 @@ def testModuleCreatePartitions():
     me.testDB.createDB(me.config,me.logger)
     me.config.startDate = dt.date(2008,1,1)
     me.config.endDate = dt.date(2008,1,1)
+    #reportSet = set(socorro_psg.tablesMatchingPattern('crash_reports%',cursor))
     reportSet = set(socorro_psg.tablesMatchingPattern('reports%',cursor))
     extensionSet = set(socorro_psg.tablesMatchingPattern('extensions%',cursor))
-    frameSet0 = set(socorro_psg.tablesMatchingPattern('frames%',cursor))
+    frameSet = set(socorro_psg.tablesMatchingPattern('frames%',cursor))
     schema.databaseObjectClassListForWeeklyPartitions = [schema.ExtensionsTable]
     schema.createPartitions(me.config,me.logger)
-    moreReportSet = set(socorro_psg.tablesMatchingPattern('report%',cursor))-reportSet
+    #moreReportSet = set(socorro_psg.tablesMatchingPattern('crash_reports%',cursor))-reportSet
+    moreReportSet = set(socorro_psg.tablesMatchingPattern('reports%',cursor))-reportSet
     moreExtensionSet = set(socorro_psg.tablesMatchingPattern('extensions%',cursor))-extensionSet
-    assert set(['reports_20071231']) == moreReportSet
-    assert set(['extensions_20071231']) == moreExtensionSet
-    frameSet = set(socorro_psg.tablesMatchingPattern('frames%',cursor))
-    assert frameSet0 == frameSet
+    #assert set(['crash_reports_20071231']) == moreReportSet,'but got %s'%moreReportSet
+    assert set(['reports_20071231']) == moreReportSet,'but got %s'%moreReportSet
+    assert set(['extensions_20071231']) == moreExtensionSet,'but got %s'%moreExtensionSet
+    moreFrameSet = set(socorro_psg.tablesMatchingPattern('frames%',cursor))
+    assert frameSet == moreFrameSet
     schema.databaseObjectClassListForWeeklyPartitions = [schema.FramesTable]
     schema.createPartitions(me.config,me.logger)
     moreFrameSet = set(socorro_psg.tablesMatchingPattern('frames%',cursor))-frameSet
-    assert set(['frames_20071231']) == moreFrameSet
+    assert set(['frames_20071231']) == moreFrameSet, 'but got %s'%moreFrameSet
   finally:
     connection.close()
 
@@ -375,34 +423,9 @@ class TestTable:
       cursor.execute("DROP TABLE IF EXISTS foo CASCADE")
       self.connection.commit()
 
-# During maintenance on schema.py: If you add, remove or rename any of the tables in schema, make a parallel change here
-# value[0] is True iff the table is a PartitionedTable; value[1] is the expectedSet of table names (including precursors) for each Table
-hardCodedSchemaClasses = {
-  schema.BranchesTable:[False,set(['branches'])],
-  #schema.DumpsTable:[True,set(['dumps'])],
-  schema.ExtensionsTable:[True,set(['extensions'])],
-  schema.BugAssociationsTable:[False,set(['bugs', 'bug_associations'])],
-  schema.BugsTable:[False,set(['bugs'])],
-  schema.FramesTable:[True,set(['frames'])],
-  schema.JobsTable:[False,set(['jobs', 'processors'])],
-  schema.MTBFConfigTable:[False,set(['mtbfconfig', 'productdims'])],
-  schema.MTBFFactsTable:[False,set(['mtbffacts', 'productdims'])],
-  schema.PriorityJobsTable:[False,set(['priorityjobs'])],
-  schema.ProcessorsTable:[False,set(['processors'])],
-  schema.ProductDimsTable:[False,set(['productdims'])],
-  schema.ReportsTable:[True,set(['reports'])],
-  schema.ServerStatusTable:[False,set(['server_status'])],
-  schema.SignatureDimsTable:[False,set(['signaturedims'])],
-  schema.TCByUrlConfigTable:[False,set(['tcbyurlconfig', 'productdims'])],
-  schema.TopCrashUrlFactsReportsTable:[False,set(['topcrashurlfactsreports', 'urldims', 'signaturedims', 'topcrashurlfacts', 'productdims'])],
-  schema.TopCrashUrlFactsTable:[False,set(['urldims', 'signaturedims', 'topcrashurlfacts', 'productdims'])],
-  schema.TopCrashersTable:[False,set(['topcrashers'])],
-  schema.UrlDimsTable:[False,set(['urldims'])],
-  }
-
 schemaClasses = {}
 def makeClassList():
-  global schemaClasses
+  global schemaClasses,me
   for thing in dir(schema):
     item = getattr(schema,thing)
     try:
@@ -415,8 +438,12 @@ def makeClassList():
           schemaClasses[item] = schema.Table
     except TypeError:
       pass
-  assert set(hardCodedSchemaClasses.keys()) == set(schemaClasses.keys()), "You probably didn't update 'hardCodedSchemaClasses' in this test when you made a change in schema.py. Please do so now."
-  expectedPartitionedTables = set([x for x in hardCodedSchemaClasses.keys() if hardCodedSchemaClasses[x][0]])
+  expected = set(me.hardCodedSchemaClasses.keys()) - set([schema.ReleaseEnum])
+  got = set(schemaClasses.keys())
+  x_g = expected-got
+  g_x = got-expected
+  assert expected == got, "Expected-Got: %s, got-expected: %s\nProbably you need to update 'hardCodedSchemaClasses' declared above."%(x_g,g_x)
+  expectedPartitionedTables = set([x for x in me.hardCodedSchemaClasses.keys() if me.hardCodedSchemaClasses[x][0]])
   seenPartitionedTables = set([x for x in schemaClasses.keys() if schema.PartitionedTable == schemaClasses[x]])
   assert expectedPartitionedTables == seenPartitionedTables, "Expected: %s, got: %s"%(expectedPartitionedTables,seenPartitionedTables)
 
@@ -427,6 +454,11 @@ def printDbTablenames(tag,aCursor):
   some = [x for x in some if (not x in ['triggers','views','sequences','tables','domains','parameters','routines','schemata','attributes','columns'])]
   some.sort()
   print tag,', '.join(some)
+
+def assertSameTableDiff(tablename,expected,before,after):
+  diff = after - before
+  diff -= set([x for x in diff if (x.startswith('pg_toast') or x.endswith('id_seq'))])
+  assert expected == diff, 'for table %s: after-before=\n   got: %s\nwanted: %s'%(tablename,diff,expected)
 
 def checkOneClass(aClass,aType):
   global me
@@ -443,15 +475,11 @@ def checkOneClass(aClass,aType):
     assert [] == matchingTables ,'For class %s saw %s'%(table.name,matchingTables)
     # call create
     before = set(socorro_psg.tablesMatchingPattern('%',cursor))
-    ignore = [x for x in before if (x.startswith('pg_toast') or x.endswith('id_seq'))]
-    before -= set(ignore)
     table.create(cursor)
     connection.commit()
     after = set(socorro_psg.tablesMatchingPattern('%',cursor))
-    ignore = [x for x in after if (x.startswith('pg_toast') or x.endswith('id_seq'))]
-    after -= set(ignore)
-    expectedDiff = hardCodedSchemaClasses[aClass][1]
-    assert expectedDiff ==  after - before, 'for %s: after-before=\n   got:%s\nwanted:%s'%(table.name,after-before,expectedDiff)
+    expected = me.hardCodedSchemaClasses[aClass][1] - set(['release_enum'])
+    assertSameTableDiff(table.name,expected,before,after)
     # call drop
     table.drop(cursor)
     connection.commit()
@@ -464,7 +492,7 @@ def checkOneClass(aClass,aType):
 
 def testCreateAndDropEachTable():
   """
-  testCreateAndDropEachTable(): (slow=1)
+  testCreateAndDropEachTable(): (slow=2)
   Loop through every table in the classes we discovered in schema.py and
    - check that the test is in sync with schema.py (in function makeClassList)
    - check that create works for each Table or PartitionedTable in schema.py

@@ -105,4 +105,69 @@ def addSomeJobs(cursor,idsMapToCounts, logger = None):
   cursor.connection.commit()
   return data
 
-  
+dimsData = {
+  'osdims': [
+  {'os_name':'Windows NT','os_version':'5.1.2600 Service Pack 2',},
+  {'os_name':'Windows NT','os_version':'6.0.6001 Service Pack 1',},
+  {'os_name':'Windows NT','os_version':'6.1.7000',},
+  {'os_name':'Mac OS X','os_version':'10.4.10 8R2218',},
+  {'os_name':'Mac OS X','os_version':'10.5.6 9G2110',},
+  {'os_name':'Linux','os_version':'0.0.0 Linux 2.6.28-11-generic #42-Ubuntu SMP Fri Apr 17 01:57:59 UTC 2009 i686 GNU/Linux',},
+  {'os_name':'Linux','os_version':'0.0.0 Linux 2.6.27.21-0.1-pae #1 SMP 2009-03-31 14:50:44 +0200 i686 GNU/Linux',},
+  ],
+  'productdims': [
+  {'product':'Firefox','version':'3.0.6','release':'major',},
+  {'product':'Firefox','version':'3.0.8','release':'major',},
+  {'product':'Firefox','version':'3.0.9','release':'major',},
+  {'product':'Firefox','version':'3.1.1','release':'major',},
+  {'product':'Firefox','version':'3.1.2b','release':'development',},
+  {'product':'Firefox','version':'3.1.3b','release':'development',},
+  {'product':'Firefox','version':'3.5b4pre','release':'milestone',},
+  {'product':'Thunderbird','version':'2.0.0.21','release':'major',},
+  ],
+  'signaturedims': [
+  {'signature':'js_Interpret'},
+  {'signature':'_PR_MD_SEND'},
+  {'signature':'nsAutoCompleteController::ClosePopup'},
+  {'signature':'nsFormFillController::SetPopupOpen'},
+  {'signature':'xpcom_core.dll@0x31b7a'},
+  {'signature':'morkRowObject::CloseRowObject(morkEnv*)'},
+  {'signature':'nsContainerFrame::ReflowChild(nsIFrame*, nsPresContext*, nsHTMLReflowMetrics&, nsHTMLReflowState const&, int, int, unsigned int, unsigned int&, nsOverflowContinuationTracker*)'},
+  ],
+  'urldims': [
+  {'domain':'www.mozilla.com','url':'http://www.mozilla.com/en-US/about/get-involved.html'},
+  {'domain':'www.google.com','url':'http://www.google.com/search'},
+  {'domain':'en.wikipedia.org','url':'http://en.wikipedia.org/wiki/Maroon'},
+  {'domain':'www.exactitudes.nl','url':'http://www.exactitudes.nl/'},
+  {'domain':'mac.appstorm.net','url':'http://mac.appstorm.net/category/reviews/internet-reviews/'},
+  {'domain':'www.phys.ufl.edu','url':'http://www.phys.ufl.edu/~det/phy2060/heavyboots.html'},
+  {'domain':'www.gracesmith.co.uk','url':'http://www.gracesmith.co.uk/84-amazingly-useful-css-tips-resources/'},
+  {'domain':'www.picocat.com','url':'http://www.picocat.com/2009/03/how-to-wash-cat.html'},
+  {'domain':'www.geeky-gadgets.com','url':'http://www.geeky-gadgets.com/necktie-spy-camera/'},
+  {'domain':'operaphantom.blogsome.com','url':'http://operaphantom.blogsome.com/images/11111kant.jpg'},
+  {'domain':'www.amazingplanetc.om','url':'http://www.amazing-planet.com/en/home'},
+  {'domain':'www.myfavoriteword.com','url':'http://www.myfavoriteword.com/'},
+  {'domain':'www.wildmoodswings.co.uk','url':'http://www.wildmoodswings.co.uk/'},
+  ]
+}
+
+def fillDimsTables(cursor, data = None):
+  """
+  By default, use dimsData above. Otherwise, process the provided table.
+  data must be of the form: {tablename:[{acolumn:avalue,bcolumn:bvalue,...},...],anothertablename:[...],...}.
+  tables are visited in hash order, when each is filled in list order.
+  cursor is the usual database cursor
+  """
+  if not data:
+    data = dimsData
+  tables = data.keys()
+  sqlTemplate = "INSERT INTO %(table)s (%(columnList)s) VALUES (%(valueList)s)"
+  for table in tables:
+    what = {'table':table}
+    k0 = dimsData[table][0].keys()
+    what['columnList'] = ','.join(k0)
+    what['valueList'] = ','.join(["%%(%s)s"%(x) for x in k0])
+    sql = sqlTemplate%(what)
+    cursor.executemany(sql,dimsData[table])
+  cursor.connection.commit()
+

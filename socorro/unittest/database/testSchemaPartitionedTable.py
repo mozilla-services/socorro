@@ -14,6 +14,7 @@ import socorro.database.schema as schema
 import socorro.database.postgresql as socorro_psg
 
 from socorro.unittest.testlib.testDB import TestDB
+import socorro.unittest.testlib.dbtestutil as dbtestutil
 
 import dbTestconfig as testConfig
 
@@ -58,7 +59,7 @@ def setup_module():
   me.testDB = TestDB()
 
 def teardown_module():
-  me.testDB.removeDB(me.config,me.logger)
+  pass
 
 tptCreationSql = "CREATE TABLE %s (id serial not null primary key, date_col timestamp without time zone)"
 partitionSql = "CREATE table %%(partitionName)s () INHERITS (%s)"
@@ -81,6 +82,7 @@ class TestPartitionedTable:
   def setUp(self):
     self.connection = psycopg2.connect(me.dsn)
   def tearDown(self):
+    me.testDB.removeDB(me.config,me.logger)
     self.connection.close()
 
   def testConstructor(self):
@@ -147,17 +149,17 @@ class TestPartitionedTable:
       assert set() == tptSet0
       assert set() == reportSet0
       testPt.create(cursor)
-      schema.ReportsTable(me.logger).create(cursor)
+      schema.CrashReportsTable(me.logger).create(cursor)
       self.connection.commit()
       tptSet1 = set(socorro_psg.tablesMatchingPattern('tpt%',cursor))
-      reportSet1 = set(socorro_psg.tablesMatchingPattern('report%',cursor))
-      schema.databaseDependenciesForPartition[ThreePT] = [schema.ReportsTable]
+      reportSet1 = set(socorro_psg.tablesMatchingPattern('crash_report%',cursor))
+      schema.databaseDependenciesForPartition[ThreePT] = [schema.CrashReportsTable]
       testPt.createPartitions(cursor,iter([(dt.date(2008,1,1),dt.date(2008,1,1)),(dt.date(2008,2,2),dt.date(2008,2,9))]))
       self.connection.commit()
       tptSet2 = set(socorro_psg.tablesMatchingPattern('tpt%',cursor))
-      reportSet2 = set(socorro_psg.tablesMatchingPattern('report%',cursor))
-      assert set(['tpt3_2008_1_1','tpt3_2008_2_2']) == tptSet2 - tptSet1
-      assert set(['reports_20080101', 'reports_20080202']) == reportSet2 - reportSet1
+      reportSet2 = set(socorro_psg.tablesMatchingPattern('crash_report%',cursor))
+      assert set(['tpt3_2008_1_1','tpt3_2008_2_2']) == tptSet2 - tptSet1, "But %s"%(tptSet2-tptSet1)
+      assert set(['crash_reports_20080101', 'crash_reports_20080202']) == reportSet2 - reportSet1, "But %s"%(reportSet2-reportSet1)
     finally:
       cursor.execute("DROP TABLE IF EXISTS tpt, tpt3, reports CASCADE")
       self.connection.commit()
@@ -175,18 +177,21 @@ class TestPartitionedTable:
     """
     global me
     tz = dtutil.UTC()
+    cursor = self.connection.cursor()
+    me.logger.debug("DEBUG before createDB")
     # test in this order, because other things depend on reports
-    insertRows = [
-      [schema.ReportsTable,['0bba61c5-dfc3-43e7-dead-8afd20071025',dt.datetime(2007,12,25,5,4,3,21,tz),dt.datetime(2007,12,25,5,4,3,33),'product','version','build','url',3000,0,22,'email',dt.date(2007,12,1),None,"","","",""]],
+    insertRows = [              # uuid,                                 client_crash_date,                 date_processed,            install_age,last_crash,uptime,user_comments, app_notes, distributor, distributor_version,productdims_id,urldims_id
+      #[schema.CrashReportsTable,['0bba61c5-dfc3-43e7-dead-8afd20071025',dt.datetime(2007,12,25,5,4,3,21,tz),dt.datetime(2007,12,25,5,4,3,33),10000,100,110,"","","","",1,1]],
+      [schema.ReportsTable, ['0bba61c5-dfc3-43e7-dead-8afd20071025',dt.datetime(2007,12,25,5,4,3,21,tz),dt.datetime(2007,12,25,5,4,3,33),'Firefox','1.0b4', '200403041354','http://www.a.com', 10000,       100,        110,    "",    dt.datetime(2004,3,4,13,54),"",      "",            "",        "",          ""]],
       [schema.ExtensionsTable,[1,dt.datetime(2007,12,25,5,4,3,33),1,'extensionid','version']],
       [schema.FramesTable,[1,2,dt.datetime(2007,12,25,5,4,3,33),'somesignature']],
       #[schema.DumpsTable,[1,dt.datetime(2007,12,25,5,4,3,33),"data"]],
       ]
     # call insert, expecting auto-creation of partitions
-    cursor = self.connection.cursor()
     me.dsn = "host=%s dbname=%s user=%s password=%s" % (me.config.databaseHost,me.config.databaseName,
                                                       me.config.databaseUserName,me.config.databasePassword)
-    schema.setupDatabase(me.config,me.logger)
+    me.testDB.createDB(me.config,me.logger)
+    dbtestutil.fillDimsTables(cursor)
     before = set([x for x in socorro_psg.tablesMatchingPattern('%',cursor) if not 'pg_toast' in x])
     for t in insertRows:
       obj = t[0](logger=me.logger)
@@ -196,4 +201,3 @@ class TestPartitionedTable:
       diff = current - before
       assert set(['%s_20071224'%obj.name]) == diff,'Expected set([%s_20071224]), got %s'%(obj.name,diff)
       before = current
-

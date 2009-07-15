@@ -165,7 +165,7 @@ class TestPostgresql:
       cursor.execute("CREATE INDEX ti_i_f ON tindex (i,f);")
       self.connection.commit()
       indices = postg.indexesForTable('tindex',cursor)
-      assert ['ti_id','ti_i','ti_i_f'] == indices
+      assert set(['ti_id','ti_i','ti_i_f']) == set(indices), 'but %s'%(indices)
     finally:
       cursor.execute("DROP TABLE IF EXISTS tindex;")
       self.connection.commit()

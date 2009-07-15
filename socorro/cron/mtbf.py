@@ -38,56 +38,53 @@ def calculateMtbf(configContext, logger):
     cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
   except:
     socorro.lib.util.reportExceptionAndAbort(logger)
-  
   products = getProductsToUpdate(cur, configContext, logger)
-  
+  aDay = datetime.date(*([int(x) for x in ("%s"%(configContext.processingDay)).split('-')][:3]))
+  sDay = aDay
+  eDay = aDay+datetime.timedelta(days=1)
+  # half open interval starts at the beginning of the day ...
+  dStart = aDay.isoformat()
+  # ... and stops just before beginning of next day
+  dEnd = (aDay + datetime.timedelta(days=1)).isoformat()
   for product in products:
-    aDay = configContext.processingDay
-    start = "%s 00:00:00" % aDay
-    end = "%s 23:59:59" % aDay
-    sql = """/* soc.crn mtbf read/insert facts */
-            INSERT INTO mtbffacts (avg_seconds, report_count, unique_users, day, productdims_id) 
-              SELECT AVG(uptime) AS avg_seconds, 
-                COUNT(date_processed) AS report_count, COUNT(DISTINCT(user_id)) AS unique_users, DATE '%s', %d
-              FROM reports  
-              WHERE date_processed >= TIMESTAMP WITHOUT TIME ZONE '%s' 
-                AND date_processed <= TIMESTAMP WITHOUT TIME ZONE '%s' %s
-              """ % (aDay, product.dimensionId, start, end, getWhereClauseFor(product))
+    sql = """INSERT INTO mtbffacts (avg_seconds, report_count, day, productdims_id, osdims_id)
+               SELECT AVG(r.uptime) AS avg_seconds, COUNT(r.*) AS report_count, DATE '%s', p.id, o.id -- << The day in question
+                  FROM mtbfconfig cfg JOIN crash_reports r on cfg.osdims_id = r.osdims_id AND cfg.productdims_id = r.productdims_id
+                  join productdims p on cfg.productdims_id = p.id
+                  join osdims o on cfg.osdims_id = o.id
+               WHERE r.date_processed >= %%(dStart)s
+                 AND %%(dEnd)s > r.date_processed
+               GROUP BY p.id, o.id
+          """%(aDay)
     try:
-      logger.info(sql)
-      cur.execute(sql)
-      logger.info("Commiting results")
+      cur.execute(sql,({'dStart':sDay,'dEnd':eDay}))
       conn.commit()
-    except psycopg2.IntegrityError, e:
+    except Exception,x:
       # if the inner select has no matches then AVG(uptime) is null, thus violating the avg_seconds not-null constraint.
       # This is good, we depend on this to keep
       # facts with 0 out of db
       # For properly configured products, this shouldn't happen very often
-      logger.warn("No facts generated for %s %s os=%s. Expected error [%s]" % (product.product, product.version, product.os_name, e));
-      conn.rollback()  
+      logger.warn("No facts generated for %s %s os=%s",product.get('product'), product.get('version'), product.get('os_name'));
+      conn.rollback() 
 
 def getProductsToUpdate(cur, conf, logger):
-  sql = "/* soc.crn mtbf config */ SELECT productdims_id FROM mtbfconfig WHERE start_dt <= %s AND end_dt >= %s;"
-        
+  sql = "SELECT productdims_id, osdims_id FROM mtbfconfig WHERE start_dt <= %s AND end_dt >= %s;"
   try:
     logger.debug(sql % (conf.processingDay, conf.processingDay))
     cur.execute(sql, (conf.processingDay, conf.processingDay))
     rows = cur.fetchall()
-  except:
+  except Exception,x:
     socorro.lib.util.reportExceptionAndAbort(logger)
     
   if rows:
     #TODO log info
-    ids = []
-    for row in rows:
-      #todo use ['id'] or whatever instead of index
-      ids.append( str(row[0]) )
-    sql = "/* soc.crn mtbf get prod dim */ SELECT id, product, version, os_name, release FROM productdims WHERE id IN (%s)" % (', '.join( ids ))
+    idpairs = tuple((str(x[0]),str(x[1])) for x in rows)
+    sql = "SELECT p.id, p.product, p.version, p.release, o.id, o.os_name, o.os_version FROM productdims as p, osdims as o  WHERE (p.id, o.id) IN %s"%(str(idpairs))
     logger.info(sql);
     cur.execute(sql);
     products = []
     for row in cur.fetchall():
-      products.append( ProductDimension(row, logger) )
+      products.append( ProductAndOsData(row, logger) )
     return products
   else:
     logger.warn("Currently there are no MTBF products configured")
@@ -96,28 +93,66 @@ def getProductsToUpdate(cur, conf, logger):
 def getWhereClauseFor(product):
     "Order of criteria is significant to query performance... version then product then os_name"
     criteria = []
-    if product.product == "ALL":
-        return ""
-    else:
-      if product.version != "ALL":
-        criteria.append("version = '%s'" % (product.version))
-      criteria.append("product = '%s'" % (product.product))
-      if product.os_name != "ALL":
-          criteria.append("substr(os_name, 1, 3) = '%s'" % (product.os_name))
+    if product.get('version','ALL') != "ALL":
+      criteria.append("version = '%s'" % (product.get('version','unknownversion')))
+    if product.get('product','ALL') != "ALL":
+      criteria.append("product = '%s'" % (product.get('product','unknownproduct')))
+    osName = product.get('os_name','ALL')
+    if product.get('os_version','ALL') != "ALL":
+      versionchunks = product.get('os_version','unknownos_version').split()
+      if 1 == len(versionchunks) and versionchunks[0]:
+        criteria.append("os_version = '%s'"%versionchunks[0])
+      else:
+        significant = None
+        startIndex = 1
+        for s in versionchunks:
+          if '0.0.0' == s:
+            startIndex += 1+len(s)
+            continue
+          elif osName.lower() == s.lower():
+            startIndex += 1+len(s)
+            continue
+          significant = s
+          break
+        if significant:
+          criteria.append("substr(os_version, %d, %d) = '%s'" % (startIndex,len(significant),significant))
+    if osName != "ALL":
+      criteria.append("substr(os_name, 1, 3) = '%s'" % osName.lower()[:3])
+    if criteria:
       return " AND " + ' AND '.join(criteria) + " "
+    else:
+      return ''
 
-class ProductDimension:
-  def __init__ (self, config, logger=None):
-    """Constructor requires an array with 5 elements, corrosponding to the columns of the productdims table.
-       config - [id, product, version, os_name, release] where
+class ProductAndOsData(dict):
+  def __init__ (self, data, logger=None, **kwargs):
+    """Constructor requires an array with 7 elements, corrosponding to the columns of the productdims and osdims tables.
+       data - [product_id, product, version, release, os_id, os_name, os_version] where
        product - the name of a product. Ex: Firefox
-       os_name - Win, Mac, etc
+       version - the numeric version. Ex: 3.0.5 or 3.5b4
        release - A build release level. One of ALL, major, milestone, or development
+       os_name - As we get it from the crash report. Ex: 'Windows NT'
+       os_version - As we get it from the crash report
     """
+    super(ProductAndOsData, self).__init__()
     if(logger):
-      logger.info(config)
-    self.dimensionId = config[0]
-    self.product = config[1]
-    self.version = config[2]
-    self.os_name = config[3]
-    self.release = config[4] 
+      logger.info(data)
+    self.product_id = data[0]
+    self.product = data[1]
+    self.version = data[2]
+    self.release = data[3]
+    self.os_id = data[4]
+    self.os_name = data[5]
+    self.os_version = data[6]
+    super(ProductAndOsData,self).update(kwargs)
+
+  def __setattr__(self,name,value):
+    self[name] = value
+
+  def __getattr__(self,name):
+    try:
+      return self[name]
+    except:
+      super(ProductAndOsData, self).__getattr__(name)
+
+  def __delattr__(self,name):
+    del self[name]

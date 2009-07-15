@@ -19,17 +19,17 @@ All URLs -> ALL Signatures (for a url)
 
 The following fields are updated in topcrashurlfacts table based on given dimensions:
   id - primary key
-  count - aggregate number of crashes [1]
-  rank - This crashes current rank 
+  count - aggregate number of crashes
+    Some filtering is done, removing:
+    * Urls with no domain such as 'about:crashes'
+    * Empty or null urls
+    * Empty or null signatures
+  rank - This crash's current rank 
   day - day the crashes where processed on ( usually yesterday when cron is run )  
-  productdims_id - foreign key reference into the product dimensions table  
-  urldims_id - foreign key reference into the product dimensions table  
-  signaturedims_id - foreign key reference into the product dimensions table
-
-[1] - Some filtering takes plus including
-* Urls with no domain such as 'about:crashes'
-* Empty or null urls
-* Empty or null signatures
+  productdims_id - foreign key reference into the product dimensions table
+  osdims_id - foreign key reference into the operating systems dimensions table
+  urldims_id - foreign key reference into the url dimensions table  
+  signaturedims_id - foreign key reference into the signature dimensions table
 
 TODO: BUG - duplicate urldims! No results for this url in facts table sig !=1
 select * from urldims
@@ -73,13 +73,13 @@ def populateALLFacts(configContext, logger):
   products = getProductDimensions(cur, logger)
   for product in products:
     staticProdDims = staticDimensions.copy()
-    staticProdDims.update({'signature_id': 1, 'product_id': product['id'], 'product_name': product['name'], 'product_version': product['version'] })
+    staticProdDims.update({'signature_id': 1, 'product_id': product[0], os_id: product[1]})
     populateFactsForDim(ByUrlDomain(), staticProdDims, conn, cur, logger)
     logger.info("Finished populateFactsForDim for urlByDomain(%s)" % (product['name']))
     populateFactsForDim(ByUrlEachUrl(), staticProdDims, conn, cur, logger)
     logger.info("Finished populateFactsForDim for urlByUrl(%s)" % (product['name']))
   for product in products:
-    urls = getUrlDimensions(product['id'], staticDimensions, cur, logger)
+    urls = getUrlDimensions(product, staticDimensions, cur, logger)
     logger.info("About to process %s urls for their signatues" % (len(urls)))
     c = 0
     for url in urls:
@@ -162,22 +162,20 @@ def getFactsUrlSigMap(context, conn, cur, logger):
 def getProductDimensions(cur, logger):
   try:
     sql = """/* soc.crn tcburl get prodconf */ 
-        SELECT productdims_id AS id, product AS name, version
-        FROM tcbyurlconfig JOIN productdims ON tcbyurlconfig.productdims_id = productdims.id
-        WHERE enabled = 'Y' """
+        SELECT productdims_id, osdims_id FROM tcbyurlconfig  WHERE enabled = 'Y' """
     cur.execute(sql)
     return cur.fetchall()
   except:
     socorro.lib.util.reportExceptionAndAbort(logger)
 
-def getUrlDimensions(productId, staticDimensions, cur, logger):
+def getUrlDimensions(productOsIds, staticDimensions, cur, logger):
   " Grab all the urls that had facts earlier. This wil cause us to processs say another 5000 records "
   try:
     sql = """ /* soc.crn tcburl get urls wcrsh */
           SELECT  urldims.id, urldims.url FROM urldims
           JOIN topcrashurlfacts AS facts ON urldims.id = facts.urldims_id
-          WHERE '%s' <= facts.day AND facts.day <= '%s'
-            AND productdims_id = %s AND url != 'ALL' """
+          WHERE %(start_date)s <= facts.day AND facts.day <= %(end_date)s
+            AND productdims_id = %(productdims_id)s AND osdims_id = %(osdims_id) AND url != 'ALL' """
     cur.execute(sql % (staticDimensions['start_date'], staticDimensions['end_date'], productId))
     return cur.fetchall()
   except:
@@ -295,16 +293,16 @@ class ByUrlDomain:
     return 'domain'
   def aggregateFacts(self, staticDimensions, cur, logger):
     #rank is accomplished via ORDER BY here...
-    # about:blank is the #1 crashing url, but it isn't really an intereting url...
+    # about:blank is the #1 crashing url, but it isn't really an interesting url...
     sql = """/* soc.crn tcburl top domain */
              SELECT count(id) as crash_count, split_part(url, '/', 3) AS domain 
-             FROM reports WHERE TIMESTAMP WITHOUT TIME ZONE %(start_date)s <= date_processed
-             AND  date_processed <= TIMESTAMP WITHOUT TIME ZONE %(end_date)s 
-             AND product = %(product_name)s AND version = %(product_version)s
+             FROM crash_reports WHERE TIMESTAMP WITHOUT TIME ZONE %(start_date)s <= date_processed
+             AND  date_processed < TIMESTAMP WITHOUT TIME ZONE %(end_date)s 
+             AND productdims_id = %(productdims_id)s AND osdims_id = %(osdims_id)s
              AND url IS NOT NULL AND url != ''
              AND signature IS NOT NULL AND signature != ''
              GROUP BY domain
-             HAVING count(id) > 1
+             HAVING count(id) > 1 AND split_part(url,'/',3) != ''
              ORDER BY crash_count DESC;"""
     try:
       logger.info("about to execute ByDomain")
@@ -431,14 +429,13 @@ class BySignature:
   def fetchProps(self, signatures, cur, logger):
     """
       fetches the signatures that exist in the db
-      signatures - a list of crash sigs, so may exist, some not
+      signatures - a list of crash sigs, some may exist, some not
   
       returns result set with keys id, signature for values dimension values that already exist in the DB
   
       TODO check signature in chunks of 500...
     """
-    selSql = """/* soc.crn tcburl sel urlindim */
-          SELECT id, signature FROM signaturedims WHERE signature IN ('%s');"""
+    selSql = """SELECT id, signature FROM signaturedims WHERE signature IN ('%s');"""
 
     try:
       escapedSigs = map( lambda s: s.replace("'", "\\'"), signatures)

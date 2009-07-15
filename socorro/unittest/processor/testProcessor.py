@@ -46,6 +46,7 @@ import socorro.lib.ConfigurationManager as configurationManager
 import socorro.lib.psycopghelper as psy
 import socorro.database.postgresql as db_postgresql
 import socorro.database.schema as schema
+import socorro.database.cachedIdAccess as cia
 
 import socorro.unittest.testlib.createJsonDumpStore as createJDS
 import socorro.unittest.testlib.dbtestutil as dbtestutil
@@ -172,6 +173,7 @@ class TestProcessor:
       'email','build_date','user_id','started_datetime','completed_datetime','success','truncated',
       'processor_notes','user_comments','app_notes','distributor','distributor_version',]
     self.maxTableColumnLength = max( (len(x) for x in self.reportTableColumns))
+    cia.clearCache()
 
   def tearDown(self):
     global me
@@ -994,20 +996,16 @@ class TestProcessor:
                              "uuid": jobUuid,
                              "client_crash_date": dt.datetime.now(),
                              "date_processed": dt.datetime.now(),
-                             "product": 'product',
-                             'version': 'version',
-                             'buildID': 'buildID',
-                             'url': 'url',
                              'install_age': 'install_age',
                              'last_crash': 'last_crash',
                              'uptime': 'uptime',
-                             'email': None,
-                             'build_date': 'build_date',
-                             'user_id': None,
                              'user_comments': 'user_comments',
                              'app_notes': 'app_notes',
                              'distributor': 'distributor',
-                             'distributor_version': 'distributor_version'}
+                             'distributor_version': 'distributor_version',
+                             'signaturedims_id':None,
+                             'productdims_id':1,
+                             'osdims_id':None,}
       return reportRecordAsDict
 
     def doBreakpadStackDumpAnalysis(self, reportId, jobUuid, dumpfilePathname, threadLocalCursor,date_processed, processorErrorMessages):
@@ -1035,14 +1033,9 @@ class TestProcessor:
     me.logger.clear()
 
     stamp0 = dt.datetime.now()
-    try:
-      p.processJob((data0[0][0],data0[0][1],data0[0][3],))
-    except Exception, x:
-      assert false, "expected no exception - got '%s' instead" % str(x)
-    try:
-      p.processJob((data0[1][0],data0[1][1],data0[1][3],))
-    except Exception, x:
-      assert false, "expected no exception - got '%s' instead" % str(x)
+    p.processJob((data0[0][0],data0[0][1],data0[0][3],))
+    p.processJob((data0[1][0],data0[1][1],data0[1][3],))
+
     stamp1 = dt.datetime.now()
     cur.execute(sql)
     data1 = cur.fetchall()
@@ -1052,7 +1045,6 @@ class TestProcessor:
       assert i[6] == None #completed
       assert i[7] == None #success
     for i in data1:
-      print i
       assert stamp0 < i[5] < stamp1 #started
       assert stamp0 < i[6] < stamp1 #completed
       assert i[7] #success
@@ -1189,7 +1181,6 @@ class TestProcessor:
       jsonDoc = {}
       messages = []
       now = dt.datetime.now()
-
       p.insertReportIntoDatabase(cur,uuid,jsonDoc,path,now,messages)
       assert 5 == len(messages)
       expectedMessages = [
@@ -1201,16 +1192,10 @@ class TestProcessor:
         ]
       for i in range(5):
         assert expectedMessages[i] == messages[i],'Expected %s, got %s'%(expectedMessages[i],messages[i])
-      expectedData = [now.replace(microsecond=0),now,'no product','no version',None,None]
-      cur.execute('select client_crash_date,date_processed,product,version,build,build_date from reports where uuid = %s',(uuid,))
-      val = cur.fetchall()[0]
+      cur.execute('select count(*) from crash_reports where uuid = %s',(uuid,))
       con.commit()
-      for i in range(len(expectedData)):
-        vi = val[i]
-        if 0 == i : vi = dt.datetime.combine(vi.date(),vi.time())
-        assert expectedData[i] == vi, 'At index %s: Expected %s, got %s'%(i,expectedData[i],vi)
-      cur.execute('delete from reports where uuid = %s',(uuid,))
-      con.commit()
+      val = cur.fetchone()[0]
+      assert 0 == val, 'but %s'%val
 
       product = 'bogus'
       version = '3.xBogus'
@@ -1227,16 +1212,10 @@ class TestProcessor:
       assert len(expectedMessages) == len(messages)
       for i in range(len(messages)):
         assert expectedMessages[i] == messages[i]
-      expectedData = [now.replace(microsecond=0),now,product,'no version',None,None]
-      cur.execute('select client_crash_date,date_processed,product,version,build,build_date from reports where uuid = %s',(uuid,))
-      val = cur.fetchall()[0]
+      cur.execute('select count(*) from crash_reports where uuid = %s',(uuid,))
       con.commit()
-      for i in range(len(expectedData)):
-        vi = val[i]
-        if 0 == i : vi = dt.datetime.combine(vi.date(),vi.time())
-        assert expectedData[i] == vi, 'At index %s: Expected %s, got %s'%(i,expectedData[i],vi)
-      cur.execute('delete from reports where uuid = %s',(uuid,))
-      con.commit()
+      val = cur.fetchone()[0]
+      assert 0 == val, 'but %s'%val
 
       jsonDoc = {'Version':version}
       messages = []
@@ -1250,16 +1229,10 @@ class TestProcessor:
       assert len(expectedMessages) == len(messages)
       for i in range(len(messages)):
         assert expectedMessages[i] == messages[i]
-      expectedData = [now.replace(microsecond=0),now,'no product',version,None,None]
-      cur.execute('select client_crash_date,date_processed,product,version,build,build_date from reports where uuid = %s',(uuid,))
-      val = cur.fetchall()[0]
+      cur.execute('select count(*) from crash_reports where uuid = %s',(uuid,))
       con.commit()
-      for i in range(len(expectedData)):
-        vi = val[i]
-        if 0 == i : vi = dt.datetime.combine(vi.date(),vi.time())
-        assert expectedData[i] == vi, 'At index %s: Expected %s, got %s'%(i,expectedData[i],vi)
-      cur.execute('delete from reports where uuid = %s',(uuid,))
-      con.commit()
+      val = cur.fetchone()[0]
+      assert 0 == val, 'but %s'%val
 
       jsonDoc = {'BuildID':buildId_notDate}
       messages = []
@@ -1273,21 +1246,16 @@ class TestProcessor:
       ]
       assert len(expectedMessages) == len(messages)
       for i in range(len(messages)):
-        assert expectedMessages[i] == messages[i]
-      expectedData = [now.replace(microsecond=0),now,'no product','no version',buildId_notDate,None]
-      cur.execute('select client_crash_date,date_processed,product,version,build,build_date from reports where uuid = %s',(uuid,))
-      val = cur.fetchall()[0]
+        assert expectedMessages[i] == messages[i], "at %s: Expected '%s' got '%s'"%(i,expectedMessages[i],messages[i])
+      cur.execute('select count(*) from reports where uuid = %s',(uuid,))
+      val = cur.fetchone()[0]
       con.commit()
-      for i in range(len(expectedData)):
-        vi = val[i]
-        if 0 == i : vi = dt.datetime.combine(vi.date(),vi.time())
-        assert expectedData[i] == vi, 'At index %s: Expected %s, got %s'%(i,expectedData[i],vi)
-      cur.execute('delete from reports where uuid = %s',(uuid,))
-      con.commit()
+      assert 0 == val, "but '%s'"%val
 
       jsonDoc = {'ProductName':product,'Version':version}
       messages = []
       p.insertReportIntoDatabase(cur,uuid,jsonDoc,path,now,messages)
+      con.commit()
       expectedMessages = [
         "WARNING: Json file missing BuildID",
         "WARNING: Json file missing CrashTime",
@@ -1296,8 +1264,8 @@ class TestProcessor:
       assert len(expectedMessages) == len(messages)
       for i in range(len(messages)):
         assert expectedMessages[i] == messages[i]
-      expectedData = [now.replace(microsecond=0),now,product,version,None,None]
-      cur.execute('select client_crash_date,date_processed,product,version,build,build_date from reports where uuid = %s',(uuid,))
+      expectedData = [now.replace(microsecond=0),now,None,product,version,None,None]
+      cur.execute('select client_crash_date,date_processed,build_date,product,version,os_name,os_version from reports where uuid = %s',(uuid,))
       val = cur.fetchall()[0]
       con.commit()
       for i in range(len(expectedData)):
@@ -1319,8 +1287,8 @@ class TestProcessor:
       assert len(expectedMessages) == len(messages)
       for i in range(len(messages)):
         assert expectedMessages[i] == messages[i]
-      expectedData = [now.replace(microsecond=0),now,product,version,buildId_notDate,None]
-      cur.execute('select client_crash_date,date_processed,product,version,build,build_date from reports where uuid = %s',(uuid,))
+      expectedData = [now.replace(microsecond=0),now,product,version,None]
+      cur.execute('select client_crash_date,date_processed,product,version,build_date from reports where uuid = %s',(uuid,))
       val = cur.fetchall()[0]
       con.commit()
       for i in range(len(expectedData)):
@@ -1345,8 +1313,8 @@ class TestProcessor:
       assert len(expectedMessages) == len(messages)
       for i in range(len(messages)):
         assert expectedMessages[i] == messages[i]
-      expectedData = [now.replace(microsecond=0),now,product[:30],version[:16],buildId[:16],expectedBuildStamp]
-      cur.execute('select client_crash_date,date_processed,product,version,build,build_date from reports where uuid = %s',(uuid,))
+      expectedData = [now.replace(microsecond=0),now,expectedBuildStamp,product[:30],version[:16]]
+      cur.execute('select client_crash_date,date_processed,build_date,product,version from reports where uuid = %s',(uuid,))
       val = cur.fetchall()[0]
       con.commit()
       for i in range(len(expectedData)):
@@ -1504,4 +1472,3 @@ class TestProcessor:
       result = p.generateSignatureFromList(aList)
       assert expected == result , 'From %s expected "%s" got "%s"'%(aList,expected,result)
       assert isLong == (len(result) > 255)
-
