@@ -74,7 +74,6 @@ class QueryFormHelper
       Kohana::log('info', "calling getBranchData");
         $branch_data = $branch_model->getBranchData();
 	$versionCompare = new VersioncompareComponent();
-	Kohana::log('info', "branch_data" . Kohana::debug($branch_data));
         $versions_by_product = array();
         foreach($branch_data['products'] as $product){
 	  $versions_by_product[$product->product] = array();      
