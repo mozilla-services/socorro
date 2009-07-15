@@ -5,6 +5,7 @@
 set_include_path(APPPATH . 'vendor' . PATH_SEPARATOR . get_include_path());
 
 require_once(Kohana::find_file('libraries', 'MY_QueryFormHelper', TRUE, 'php'));
+require_once(Kohana::find_file('libraries', 'socorro_cookies', TRUE, 'php'));
 
 class Controller extends Controller_Core {
 
@@ -19,6 +20,10 @@ class Controller extends Controller_Core {
 
     // Variables for templates
     protected $view_data;
+
+    // Track the global "Chosen" version
+    // This changes as user navigates Socorro UI
+    protected $chosen_version;
 
     /**
      * Constructor.
@@ -153,10 +158,22 @@ class Controller extends Controller_Core {
 
     protected function setNavigationData()
     {
-        $queryFormHelper = new QueryFormHelper;
-        $p2vs = $queryFormHelper->prepareAllProducts($this->branch_model);
-	$curProds = $queryFormHelper->currentProducts($p2vs['products2versions']);
+        $curProds = $this->currentProducts();
         $this->setViewData('common_products', $curProds);
+
+	$this->ensureChosenVersion($curProds);
+	$this->setViewData('chosen_version', $this->chosen_version);
+    }
+
+    private $_current_products;
+    protected function currentProducts()
+    {
+        if (is_null($this->_current_products)) {
+            $queryFormHelper = new QueryFormHelper;
+	    $p2vs = $queryFormHelper->prepareAllProducts($this->branch_model);
+ 	    $this->_current_products = $queryFormHelper->currentProducts($p2vs['products2versions']);
+	}
+	return $this->_current_products;
     }
 
     /**
@@ -235,4 +252,57 @@ class Controller extends Controller_Core {
 	echo $view->render();
     }
 
+    protected function navigationChooseVersion($product, $version, $release=NULL)
+    {
+        if (is_null($release)) {
+  	    $determine = new Release;
+	    $release = $determine->typeOfRelease($version);
+        }
+	$this->ensureChosenVersion($this->currentProducts());
+	if ($this->chosen_version['version'] != $version ||
+	    $this->chosen_version['product'] != $product) {
+	        $this->_chooseVersion(array('product' => $product,
+					    'version' => $version,
+					    'release' => $release));
+	} else {
+	  //no op, it's already chosen
+	}
+    }
+
+    private function _chooseVersion($version_info, $set_cookie=TRUE)
+    {
+        $this->chosen_version = $version_info;
+	$product = $version_info['product'];
+	$version = $version_info['version'];
+	$release = $version_info['release'];
+	cookie::set(Socorro_Cookies::CHOSEN_VERSION, 
+		    "p=${product}&v=${version}&r=${release}", 
+		    Socorro_Cookies::EXPIRES_IN_A_YEAR);
+    }
+
+    protected function ensureChosenVersion($curProds)
+    {
+        // if it's null, use Cookie
+        if (is_null($this->chosen_version)) {
+	    $cv = cookie::get(Socorro_Cookies::CHOSEN_VERSION);
+	    if (is_null($cv)) {
+	        foreach ($curProds as $product => $releases) {
+
+		    foreach (array_reverse($releases) as $release => $version) {
+		        $this->_chooseVersion(array('product' => $product,
+						    'version' => $version,
+						    'release' => $release));
+			break;
+		    }
+		    break;
+		}
+	    } else {
+	        $version_info = array();
+		parse_str($cv, $version_info);
+		$this->_chooseVersion(array('product' => $version_info['p'],
+					    'version' => $version_info['v'],
+					    'release' => $version_info['r']), FALSE);
+	    }
+        }
+    }
 }

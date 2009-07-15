@@ -31,6 +31,8 @@ class Query_Controller extends Controller {
         $params = $this->getRequestParameters($searchHelper->defaultParams());
         $searchHelper->normalizeParams( $params );
 
+	$this->_updateNavigation($params);
+
         $signature_to_bugzilla = array();
 
         cachecontrol::set(array(
@@ -68,6 +70,17 @@ class Query_Controller extends Controller {
 	 ));
     }
 
+    private function _updateNavigation($params)
+    {
+        if (array_key_exists('version', $params) &&
+  	    is_array($params['version']) && 
+	    count($params['version']) > 0 &&
+	    substr_count($params['version'][0], ':') == 1) {
+	        $parts = explode(':', $params['version'][0]);
+		$this->navigationChooseVersion(trim($parts[0]), trim($parts[1]));
+	}
+    }
+
     public function simple()
     {
         $searchHelper = new SearchReportHelper;
@@ -86,11 +99,14 @@ class Query_Controller extends Controller {
 		  if ($reportDb->sig_exists($q) === TRUE) {
   		      $query_type = 'exact';
 		  }
-		  // TODO We need to pick up the user's current global product/version preference
-		  // so that query/query won't be too broad and show an error... 
-		  //product=Firefox&version=Firefox%3A3.0
-		  $encq = urlencode($q);
-		  $query = "query/query?do_query=1&query_search=signature&query_type=${query_type}&query=${encq}";
+
+		  $this->ensureChosenVersion(array());
+
+		  $product = urlencode($this->chosen_version['product']);
+		  $version = urlencode($this->chosen_version['product'] . ':' . $this->chosen_version['version']);
+		  $encq    = urlencode($q);
+		  $query = "query/query?do_query=1&product=${product}&version=${version}&query_search=signature&query_type=${query_type}&query=${encq}";
+
                   return url::redirect($query);
 	      }
 	  }
