@@ -17,6 +17,8 @@ class ReleaseTest extends PHPUnit_Framework_TestCase
         $this->assertEquals($release->typeOfRelease('3.5a'), Release::MILESTONE);
 
         $this->assertEquals($release->typeOfRelease('3.6pre'), Release::DEVELOPMENT);
+
+        $this->assertEquals($release->typeOfRelease('3.5b99pre'), Release::DEVELOPMENT);
     }
 }
 ?>

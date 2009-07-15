@@ -36,8 +36,13 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+require_once(Kohana::find_file('libraries', 'versioncompare', TRUE, 'php'));
+require_once(Kohana::find_file('libraries', 'release', TRUE, 'php'));
+
 /**
  * Common code between query and home controllers. Prepares data for query form.
+ * NOTE: This is not a 'helper' in the sense of Kohana's helper classes (static 
+ * methods to be used from the view)
  */
 class QueryFormHelper
 {
@@ -62,6 +67,60 @@ class QueryFormHelper
             'versions_by_product'  => $versions_by_product,
             'all_platforms' => $platforms
         );
+    }
+
+    public function prepareAllProducts($branch_model)
+    {
+      Kohana::log('info', "calling getBranchData");
+        $branch_data = $branch_model->getBranchData();
+	$versionCompare = new VersioncompareComponent();
+	Kohana::log('info', "branch_data" . Kohana::debug($branch_data));
+        $versions_by_product = array();
+        foreach($branch_data['products'] as $product){
+	  $versions_by_product[$product->product] = array();      
+	}
+	foreach($branch_data['versions'] as $version){
+          array_push($versions_by_product[$version->product], 
+                    $version->version);
+	}
+        foreach ($versions_by_product as $versions) {
+            $versionCompare->sortAppversionArray($versions);
+        }
+
+        return array(
+            'products2versions'  => $versions_by_product,
+        );
+    }
+
+    /**
+     * Given an array with the format product to version list,
+     * this function will return an array of the current released 
+     * versions of each products.
+     * 
+     * @param array - Input Example: {'Firefox': ['3.5', '3.0.10'], ...}
+     * @return array - 
+     * Output Example: {'Firefox': {'major': '3.5', 
+     *                              'milestone': '3.5b99',
+     *                              'development': '3.6pre'} ...}
+     */
+    public function currentProducts($products2versions)
+    {
+        $current = array();
+	$release = new Release;
+        foreach ($products2versions as $product => $versions) {
+	    if (count($versions) > 0) {
+	        foreach (array_reverse($versions) as $v) {
+	  	    $release_type = $release->typeOfRelease($v);
+		    Kohana::log('info', "Looking at $v -> $release_type");
+		    if (! array_key_exists($product, $current) ||
+			! array_key_exists($release_type, $current[$product])) {
+		        $current[$product][$release_type] = $v;
+		    }
+	        }
+	    }
+        }
+	uksort($current, 'strcasecmp');
+	return $current;
     }
 }
 ?>

@@ -50,17 +50,17 @@ class Release
     //TODO pull in 'development' 'major' 'minor' strings from app into
     //const on this class
     const DEVELOPMENT = 'development';
-    const MILESTONE = 'development';
+    const MILESTONE = 'milestone';
     const MAJOR = 'major';
 
     public function typeOfRelease($version)
     {
-        if (strpos($version, 'b') !== false ||
+        if (strpos($version, 'pre') !== false) {
+  	    return self::DEVELOPMENT;
+	} elseif (strpos($version, 'b') !== false ||
             strpos($version, 'a') !== false) {
   	    return self::MILESTONE;
-        } elseif (strpos($version, 'pre') !== false) {
-  	    return self::DEVELOPMENT;
-	} else {
+        } else {
   	    return self::MAJOR;
 	}
     }
