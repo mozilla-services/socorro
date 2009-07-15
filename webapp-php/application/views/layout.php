@@ -33,6 +33,30 @@
                             </ul>
                     </li>
                 </ul> <!-- /DEV-LINKS -->
+		<h4>Quick Links</h4>
+		<ul id="product-nav">
+		<?php
+
+		  foreach ($common_products as $prod => $releases) { ?>
+		    <li class="product"><?= $prod ?>
+		      <ol>
+			<li class="product-nav-all-versions">All Versions</li>
+	                <?php
+			    foreach ($releases as $release => $version) { ?>
+			        <li><a href=""><?= $prod ?> <?= $version ?></a> <?= $release ?></li>
+			<?php } ?>
+		      
+
+     			<li class="product-nav-other-versions">Other Versions &hellip;</li>
+		      </ol>
+		      </li><!-- /product -->
+		  <?php
+		      
+		  }
+		  ?>
+		      <li id="adv-search-link"><a href="<?= url::base() ?>query/query">Advanced Search</a> or</li>
+		      <li><form id="simple-search" method="get" action="<?= url::base() ?>query/simple"><input type="text" name="q" value="Crash ID or Signature"/><input type="submit" /></form></li>
+		</ul>
             </div> <!-- /HEADER -->
       
         <div id="mainbody">

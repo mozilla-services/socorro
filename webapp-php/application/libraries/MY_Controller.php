@@ -4,6 +4,8 @@
  */
 set_include_path(APPPATH . 'vendor' . PATH_SEPARATOR . get_include_path());
 
+require_once(Kohana::find_file('libraries', 'MY_QueryFormHelper', TRUE, 'php'));
+
 class Controller extends Controller_Core {
 
     // Wrapper layout for current view
@@ -149,6 +151,14 @@ class Controller extends Controller_Core {
         return $this;
     }
 
+    protected function setNavigationData()
+    {
+        $queryFormHelper = new QueryFormHelper;
+        $p2vs = $queryFormHelper->prepareAllProducts($this->branch_model);
+	$curProds = $queryFormHelper->currentProducts($p2vs['products2versions']);
+        $this->setViewData('common_products', $curProds);
+    }
+
     /**
      * Get one or all view variables.
      *
@@ -172,6 +182,8 @@ class Controller extends Controller_Core {
     {
         // Do nothing if auto_render is false at this point.
         if ($this->auto_render) {
+
+	    $this->setNavigationData();
 
             // If no view set by this point, default to controller/method 
             // naming convention.
