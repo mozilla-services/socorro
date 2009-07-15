@@ -110,7 +110,6 @@ class QueryFormHelper
 	    if (count($versions) > 0) {
 	        foreach (array_reverse($versions) as $v) {
 	  	    $release_type = $release->typeOfRelease($v);
-		    Kohana::log('info', "Looking at $v -> $release_type");
 		    if (! array_key_exists($product, $current) ||
 			! array_key_exists($release_type, $current[$product])) {
 		        $current[$product][$release_type] = $v;
