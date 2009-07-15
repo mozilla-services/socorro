@@ -32,7 +32,7 @@
 
 <?php slot::end() ?>
 <h1 id="report-header" class="first"><?php out::H($report->product) ?> <?php out::H($report->version) ?> Crash Report [@<?php out::H($report->signature) ?> ]</h1>
-<div id="sumo-link"><a href="http://support.mozilla.com/tiki-newsearch.php?where=all&q=<?=urlencode($report->sumo_signature) ?>" title="Find more answers at support.mozilla.com!">Get Help</a></div>
+<div id="sumo-link"><a href="http://support.mozilla.com/tiki-newsearch.php?where=all&amp;q=<?=urlencode($report->sumo_signature) ?>" title="Find more answers at support.mozilla.com!">Get Help</a></div>
 
 <div id="report-header-details">ID: <span><?php out::H($report->uuid) ?></span><br/> Signature: <span><?php out::H($report->signature) ?></span></div>
 <div id="report-index" class="flora">
