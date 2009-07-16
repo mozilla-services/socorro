@@ -47,6 +47,8 @@
  */
 class Chosen_Version_Controller extends Controller 
 {
+  
+    const URL = 'chosen_version/update/';
    /**
     * Sets the chosen version cookie and redirects to the
     * query string parameter 'url'

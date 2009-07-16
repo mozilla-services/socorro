@@ -42,8 +42,12 @@
 		      <ul class="product-versions">
 			<li class="product-nav-all-versions">All Versions <strong title="I think this should only show up on the query filter bar">?</strong></li>
 	                <?php
-			    foreach ($releases as $release => $version) { ?>
-			        <li><a href="<?= url::base()?>query/query?do_query=1&amp;product=<?= urlencode($prod) ?>&amp;version=<?= urlencode($prod . ':' . $version) ?>"><?= $prod ?> <span class="version"><?= $version ?></span></a> <span class="release-type"><?= $release ?></span></li>
+			    foreach ($releases as $release => $version) {
+			        $url = Chosen_Version_Controller::URL . urlencode($prod) . '/' . urlencode($version) .
+			               '?url=' .
+			               urlencode('query/query?do_query=1&product=' . urlencode($prod) . '&version=' . urlencode($prod . ':' . $version));
+			?>
+			        <li><a href="<?= url::base() . $url ?>"><?= $prod ?> <span class="version"><?= $version ?></span></a> <span class="release-type"><?= $release ?></span></li>
 			<?php }
 		              if (array_key_exists($prod, $older_products)) { ?>
 			    <li class="product-nav-other-versions">Other Versions &hellip;
@@ -53,8 +57,12 @@
 			          foreach ($older_products[$prod] as $release => $versions) { ?>
 			            <dt class="release-type"><?= $release ?></dt>
 			            <dd><ol class="more-versions"><?php
-			              foreach ($versions as $version) { ?>
-				       <li><?= $version ?></li>
+			              foreach ($versions as $version) {
+				          $url = Chosen_Version_Controller::URL . urlencode($prod) . '/' . urlencode($version) .
+				                 '?url=' .
+			                         urlencode('query/query?do_query=1&product=' . urlencode($prod) . '&version=' . urlencode($prod . ':' . $version));
+				      ?>
+				       <li><a href="<?= url::base() . $url ?>"><?= $version ?></a></li>
 			    <?php     }
 				  }			      
 			     ?></ol></dt></dl>
