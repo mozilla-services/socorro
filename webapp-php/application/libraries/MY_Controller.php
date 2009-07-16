@@ -160,9 +160,11 @@ class Controller extends Controller_Core {
     {
         $curProds = $this->currentProducts();
         $this->setViewData('common_products', $curProds);
+	$this->setViewData('older_products', $this->olderProducts());
 
 	$this->ensureChosenVersion($curProds);
 	$this->setViewData('chosen_version', $this->chosen_version);
+
     }
 
     private $_current_products;
@@ -174,6 +176,17 @@ class Controller extends Controller_Core {
  	    $this->_current_products = $queryFormHelper->currentProducts($p2vs);
 	}
 	return $this->_current_products;
+    }
+
+    private $_older_products;
+    protected function olderProducts()
+    {
+        if (is_null($this->_older_products)) {
+            $queryFormHelper = new QueryFormHelper;
+	    $p2vs = $queryFormHelper->prepareAllProducts($this->branch_model);
+ 	    $this->_older_products = $queryFormHelper->olderProducts($this->currentProducts(), $p2vs);
+	}
+	return $this->_older_products;
     }
 
     /**

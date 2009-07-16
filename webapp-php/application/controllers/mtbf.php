@@ -20,7 +20,7 @@ class Mtbf_Controller extends Controller {
       cachecontrol::set(array(
   	  'expires' => time() + (60 * 5) // 5 minutes
       ));
-
+      $this->olderProducts();
       if( array_key_exists($product, $mtbf_product_dimensions_config )){
         if( in_array($release_level, $mtbf_product_dimensions_config[$product] )){
 
