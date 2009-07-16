@@ -43,7 +43,7 @@
 			<li class="product-nav-all-versions">All Versions</li>
 	                <?php
 			    foreach ($releases as $release => $version) { ?>
-			        <li><a href=""><?= $prod ?> <?= $version ?></a> <?= $release ?></li>
+			        <li><a href="<?= url::base()?>query/query?do_query=1&amp;product=<?= urlencode($prod) ?>&amp;version=<?= urlencode($prod . ':' . $version) ?>"><?= $prod ?> <?= $version ?></a> <?= $release ?></li>
 			<?php } ?>
 		      
 
@@ -61,7 +61,7 @@
       		        <li id="mtbf" class="trend-report-link"><a href="<?= url::base() ?>mtbf/of/<?= $chosen_version['product'] ?>/<?= $chosen_version['release'] ?>">MTBF</a></li>
 			</ul></li>
 		      <li id="adv-search-link"><a href="<?= url::base() ?>query/query">Advanced Search</a> or</li>
-		      <li><form id="simple-search" method="get" action="<?= url::base() ?>query/simple"><input type="text" name="q" value="Crash ID or Signature"/><input type="submit" /></form></li>
+		      <li><form id="simple-search" method="get" action="<?= url::base() ?>query/simple"><fieldset><input type="text" name="q" value="Crash ID or Signature" /><input type="submit" /></fieldset></form></li>
 		</ul>
             </div> <!-- /HEADER -->
       

@@ -6,7 +6,7 @@
       enctype="application/x-www-form-urlencoded">
 <h2>Mozilla Crash Reports</h2>
 <fieldset>
-    <input type="hidden" name="do_query" value="1" />
+    
 <ul>
 <li><label for="product">Product</label>
         <select id="product" name="product" size="4" multiple="multiple">
@@ -94,7 +94,8 @@
 	  </ul> <!-- /stack -->
 	</li></ul>
       </li>
-      <li id="gofilter"><a href="#" class="button">Filter Crash Reports</a></li>
+      <li id="gofilter"><button type="submit" name="do_query" value="1">Filter Crash Reports</button></a></li>
+
     </ul>
     </fieldset>
   </form>

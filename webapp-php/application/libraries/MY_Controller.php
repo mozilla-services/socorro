@@ -266,6 +266,7 @@ class Controller extends Controller_Core {
 					    'release' => $release));
 	} else {
 	  //no op, it's already chosen
+	  Kohana::log('debug', "Same $product $version skipping " . Kohana::debug($this->chosen_version));
 	}
     }
 

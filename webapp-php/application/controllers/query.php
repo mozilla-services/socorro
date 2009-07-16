@@ -34,11 +34,15 @@ class Query_Controller extends Controller {
 	$this->_updateNavigation($params);
 
         $signature_to_bugzilla = array();
-
+	/* TODO - controllers which can switch the chosen version, shouldn't be 
+	          cached, since this will break the cookies. 
+		  This should be fixed in a way that
+		  1) supports caching
+		  2) works with JS disabled
         cachecontrol::set(array(
             'etag'     => $params,
             'expires'  => time() + ( 60 * 60 )
-        ));
+	    ));*/
 
 
         if ($params['do_query'] !== FALSE) {
@@ -78,6 +82,8 @@ class Query_Controller extends Controller {
 	    substr_count($params['version'][0], ':') == 1) {
 	        $parts = explode(':', $params['version'][0]);
 		$this->navigationChooseVersion(trim($parts[0]), trim($parts[1]));
+	} else {
+	    Kohana::log('debug', "No version in params...skipping");
 	}
     }
 
