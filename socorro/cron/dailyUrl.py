@@ -60,7 +60,7 @@ def dailyUrlDump(config):
         '%s' >= date_processed and date_processed > '%s'
         %s %s
       order by
-        r.signature
+        r.date_processed
       """ % (nowAsString, yesterdayAsString, productPhrase, versionPhrase)
 
       try:
