@@ -42,6 +42,7 @@ import socorro.unittest.testlib.createJsonDumpStore as createJDS
 import socorro.unittest.testlib.dbtestutil as dbtestutil
 from   socorro.unittest.testlib.testDB import TestDB
 from   socorro.unittest.testlib.util import runInOtherProcess
+import socorro.unittest.testlib.util as tutil
 
 import monitorTestconfig as testConfig
 import socorro.database.schema as schema
@@ -66,6 +67,7 @@ def setup_module():
   me.endMark = 'end'
   me.testDB = TestDB()
   me.config = configurationManager.newConfiguration(configurationModule = testConfig, applicationName='Testing Monitor')
+  tutil.nosePrintModule(__file__)
   myDir = os.path.split(__file__)[0]
   if not myDir: myDir = '.'
   replDict = {'testDir':'%s'%myDir}

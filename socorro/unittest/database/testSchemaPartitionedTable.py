@@ -14,6 +14,7 @@ import socorro.database.schema as schema
 import socorro.database.postgresql as socorro_psg
 
 from socorro.unittest.testlib.testDB import TestDB
+import socorro.unittest.testlib.util as tutil
 import socorro.unittest.testlib.dbtestutil as dbtestutil
 
 import dbTestconfig as testConfig
@@ -27,6 +28,7 @@ def setup_module():
   if me:
     return
   me = Me()
+  tutil.nosePrintModule(__file__)
   me.config = configurationManager.newConfiguration(configurationModule = testConfig, applicationName='Testing Postgresql Utils')
   myDir = os.path.split(__file__)[0]
   if not myDir: myDir = '.'
@@ -149,17 +151,17 @@ class TestPartitionedTable:
       assert set() == tptSet0
       assert set() == reportSet0
       testPt.create(cursor)
-      schema.CrashReportsTable(me.logger).create(cursor)
+      schema.ReportsTable(me.logger).create(cursor)
       self.connection.commit()
       tptSet1 = set(socorro_psg.tablesMatchingPattern('tpt%',cursor))
-      reportSet1 = set(socorro_psg.tablesMatchingPattern('crash_report%',cursor))
-      schema.databaseDependenciesForPartition[ThreePT] = [schema.CrashReportsTable]
+      reportSet1 = set(socorro_psg.tablesMatchingPattern('reports%',cursor))
+      schema.databaseDependenciesForPartition[ThreePT] = [schema.ReportsTable]
       testPt.createPartitions(cursor,iter([(dt.date(2008,1,1),dt.date(2008,1,1)),(dt.date(2008,2,2),dt.date(2008,2,9))]))
       self.connection.commit()
       tptSet2 = set(socorro_psg.tablesMatchingPattern('tpt%',cursor))
-      reportSet2 = set(socorro_psg.tablesMatchingPattern('crash_report%',cursor))
+      reportSet2 = set(socorro_psg.tablesMatchingPattern('reports%',cursor))
       assert set(['tpt3_2008_1_1','tpt3_2008_2_2']) == tptSet2 - tptSet1, "But %s"%(tptSet2-tptSet1)
-      assert set(['crash_reports_20080101', 'crash_reports_20080202']) == reportSet2 - reportSet1, "But %s"%(reportSet2-reportSet1)
+      assert set(['reports_20080101', 'reports_20080202']) == reportSet2 - reportSet1, "But %s"%(reportSet2-reportSet1)
     finally:
       cursor.execute("DROP TABLE IF EXISTS tpt, tpt3, reports CASCADE")
       self.connection.commit()

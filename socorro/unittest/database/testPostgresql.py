@@ -8,8 +8,11 @@ import socorro.lib.ConfigurationManager as configurationManager
 import socorro.database.postgresql as postg
 import socorro.database.schema as schema
 
+import socorro.unittest.testlib.util as tutil
 from   socorro.unittest.testlib.loggerForTest import TestingLogger
 from   socorro.unittest.testlib.testDB import TestDB
+
+from nose.tools import *
 
 import dbTestconfig as testConfig
 
@@ -41,6 +44,7 @@ def setup_module():
   if me:
     return
   me = Me()
+  tutil.nosePrintModule(__file__)
   # config gets messed up by some tests. Use this one during module setup and teardown
   me.config = configurationManager.newConfiguration(configurationModule = testConfig, applicationName='Testing Postgresql Utils')
   myDir = os.path.split(__file__)[0]
@@ -111,6 +115,10 @@ class TestPostgresql:
     self.connection.commit()
     
   def testTriggersForTable(self):
+    """
+    TestPostgresql:testTriggersForTable(self)
+     - If you have trouble with (only) this test, be sure the db owner has executed CREATE LANGUAGE PLPGSQL; for the test db
+    """
     global me
     cursor = self.connection.cursor()
     setupSql = """
@@ -365,6 +373,50 @@ class TestPostgresql:
       cursor.execute("drop table if exists tcon")
       self.connection.commit()
       
+  def testGetSequenceNameForColumn(self):
+    global me
+    t0 = testTableNames[0]
+    t1 = testTableNames[1]
+    cursor = self.connection.cursor()
+    cursor.execute("CREATE TABLE %s (id SERIAL NOT NULL, junk TEXT)"%t0)
+    cursor.execute("CREATE TABLE %s (id SERIAL NOT NULL, two SERIAL NOT NULL)"%t1)
+    self.connection.commit()
+    got = postg.getSequenceNameForColumn(t1,'id',cursor)
+    self.connection.commit()
+    assert "%s_id_seq"%t1 == got, 'Expected "%s_id_seq", got "%s"'%(t1,got)
+    got = postg.getSequenceNameForColumn(t1,'junk',cursor)
+    assert None == got,'Expected "None", got "%s"'%(t1,got)
+    got = postg.getSequenceNameForColumn(t1,'id',cursor)
+    self.connection.commit()
+    assert "%s_id_seq"%t1 == got, 'Expected "%s_id_seq", got "%s"'%(t1,got)
+    got = postg.getSequenceNameForColumn(t1,'two',cursor)
+    self.connection.commit()
+    assert "%s_two_seq"%t1 == got, 'Expected "%s_two_seq", got "%s"'%(t1,got)
+    
+  def testGetCurrentValue(self):
+    global me
+    t0 = testTableNames[0]
+    t1 = testTableNames[1]
+    cursor = self.connection.cursor()
+    cursor.execute("CREATE TABLE %s (id SERIAL NOT NULL, junk TEXT)"%t0)
+    cursor.execute("CREATE TABLE %s (id integer, two SERIAL NOT NULL)"%t1)
+    self.connection.commit()
+    assert None == postg.getCurrentValue(t0,'id',cursor)
+    self.connection.rollback()
+    count = 0
+    for i in range(1,4):
+      cursor.execute("INSERT INTO %s (junk) values ('junk')"%t0)
+      got = postg.getCurrentValue(t0,'id',cursor)
+      self.connection.commit()
+      assert i == got, 'Expected %s, got %s'%(i,got)
+    for i in range(1,4):
+      cursor.execute("INSERT INTO %s (id) values (%s)"%(t1,i))
+      gotId = postg.getCurrentValue(t1,'id',cursor)
+      gotTwo = postg.getCurrentValue(t1,'two',cursor)
+      self.connection.commit()
+      assert None == gotId,'Expected "None", got "%s"'%(gotId)
+      assert i == gotTwo, 'Expected %s, got %s'%(i,gotTwo)
+  
 def _extractExpectedFromSql(sql):
   """Expect newline separated columns with trailing '--type' per line, nothing interesting unless there is a '--' comment"""
   ret = {}
@@ -376,3 +428,4 @@ def _extractExpectedFromSql(sql):
       ret[cname] = ctype
 
   return ret
+

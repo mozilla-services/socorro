@@ -19,6 +19,7 @@ import socorro.database.schema as sch
 import socorro.unittest.testlib.dbtestutil as dbtestutil
 from   socorro.unittest.testlib.loggerForTest import TestingLogger
 from   socorro.unittest.testlib.testDB import TestDB
+import socorro.unittest.testlib.util as tutil
 
 import cronTestconfig as testConfig
 
@@ -64,6 +65,7 @@ def setup_module():
     return
   me = Me()
   me.config = configurationManager.newConfiguration(configurationModule = testConfig, applicationName='Testing bugzilla')
+  tutil.nosePrintModule(__file__)
   myDir = os.path.split(__file__)[0]
   if not myDir: myDir = '.'
   replDict = {'testDir':'%s'%myDir}

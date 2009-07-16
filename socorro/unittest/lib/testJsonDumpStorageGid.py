@@ -7,6 +7,10 @@ import shutil
 import stat
 import socorro.lib.JsonDumpStorage as JDS
 import socorro.lib.uuid as suuid
+import socorro.unittest.testlib.util as tutil
+
+def setup_module():
+  tutil.nosePrintModule(__file__)
 
 class TestJsonDumpStorageGid(unittest.TestCase):
   def setUp(self):

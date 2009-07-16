@@ -12,6 +12,7 @@ import socorro.database.schema as schema
 import socorro.database.postgresql as socorro_psg
 
 from socorro.unittest.testlib.testDB import TestDB
+import socorro.unittest.testlib.util as tutil
 
 import dbTestconfig as testConfig
 
@@ -24,6 +25,7 @@ def setup_module():
   if me:
     return
   me = Me()
+  tutil.nosePrintModule(__file__)
   me.config = configurationManager.newConfiguration(configurationModule = testConfig, applicationName='Testing Postgresql Utils')
   myDir = os.path.split(__file__)[0]
   if not myDir: myDir = '.'
@@ -59,52 +61,31 @@ def setup_module():
   me.hardCodedSchemaClasses = {
     schema.ReleaseEnum:[False,set(['release_enum'])],
     schema.BranchesTable:[False,set(['branches'])],
-    schema.BugAssociationsTable:[False,set(['bugs', 'bug_associations'])],
-    schema.BugsTable:[False,set(['bugs'])],
-    schema.CrashReportsTable:[True,set(['crash_reports','osdims','productdims','urldims','release_enum','signaturedims'])],
+    schema.BugsTable:[False, set(['bugs'])],
+    schema.BugAssociationsTable:[False, set(['bugs','bug_associations'])],
+    #schema.CrashReportsTable:[True,set(['crash_reports','osdims','productdims','signaturedims','urldims','release_enum'])],
     # deprecated schema.DumpsTable:[True,set(['dumps'])],
     schema.ExtensionsTable:[True,set(['extensions'])],
     schema.FramesTable:[True,set(['frames'])],
     schema.JobsTable:[False,set(['jobs', 'processors'])],
-    schema.MTBFConfigTable:[False,set(['mtbfconfig', 'productdims', 'osdims','release_enum'])],
-    schema.MTBFFactsTable:[False,set(['mtbffacts', 'productdims', 'osdims', 'release_enum'])],
+    #schema.MTBFConfigTable:[False,set(['mtbfconfig', 'productdims', 'osdims','release_enum'])],
+    #schema.MTBFFactsTable:[False,set(['mtbffacts', 'productdims', 'osdims', 'release_enum'])],
+    schema.TimeBeforeFailureTable:[False,set(['time_before_failure', 'productdims', 'osdims', 'release_enum'])],
     schema.OsDimsTable:[False,set(['osdims'])],
     schema.PriorityJobsTable:[False,set(['priorityjobs'])],
     schema.ProcessorsTable:[False,set(['processors'])],
     schema.ProductDimsTable:[False,set(['productdims','release_enum'])],
+    schema.ProductVisibilityTable:[False,set(['product_visibility','productdims','release_enum'])],
     schema.ReportsTable:[True,set(['reports'])],
     schema.ServerStatusTable:[False,set(['server_status'])],
-    schema.SignatureDimsTable:[False,set(['signaturedims'])],
-    schema.TCBySignatureConfigTable:[False, set(['tcbysignatureconfig', 'productdims', 'osdims','release_enum'])],
-    schema.TCByUrlConfigTable:[False,set(['tcbyurlconfig', 'productdims', 'osdims','release_enum'])],
-    schema.TopCrashFactsTable:[False,set(['topcrashfacts','osdims','productdims', 'release_enum','signaturedims'])],
-    schema.TopCrashUrlFactsReportsTable:[False,set(['topcrashurlfactsreports', 'urldims', 'topcrashurlfacts', 'productdims', 'osdims','release_enum','signaturedims'])],
-    schema.TopCrashUrlFactsTable:[False,set(['urldims', 'topcrashurlfacts', 'productdims', 'osdims','release_enum','signaturedims'])],
+    #schema.TCBySignatureConfigTable:[False, set(['tcbysignatureconfig', 'productdims', 'osdims','release_enum'])],
+    #schema.TCByUrlConfigTable:[False,set(['tcbyurlconfig', 'productdims', 'osdims','release_enum'])],
+    schema.TopCrashesBySignatureTable:[False,set(['top_crashes_by_signature','osdims','productdims', 'release_enum'])],
+    schema.TopCrashUrlFactsReportsTable:[False,set(['topcrashurlfactsreports', 'urldims','top_crashes_by_url', 'productdims', 'osdims','release_enum'])],
+    schema.TopCrashesByUrlTable:[False,set(['urldims', 'top_crashes_by_url', 'productdims', 'osdims','release_enum'])],
+    schema.TopCrashByUrlSignatureTable:[False, set(['top_crashes_by_url','top_crashes_by_url_signature','urldims', 'top_crashes_by_url', 'productdims', 'osdims','release_enum'])],
     # deprecated schema.TopCrashersTable:[False,set(['topcrashers'])],
     schema.UrlDimsTable:[False,set(['urldims'])],
-    }
-  me.expectedTableNames = set(['tcbyurlconfig', 'topcrashurlfacts', 'priorityjobs', 'branches', 'processors', 'productdims', 'topcrashurlfactsreports', 'urldims', 'mtbfconfig', 'reports', 'server_status', 'extensions', 'mtbffacts', 'frames', 'topcrashers', 'jobs', 'bug_associations', 'bugs'])
-  me.expectedTableDependencies = {
-    'topcrashurlfactsreports': set(['productdims', 'urldims', 'topcrashurlfacts', 'topcrashurlfactsreports']),
-    #'signaturedims': set(['signaturedims']),
-    'jobs': set(['processors', 'jobs']),
-    'processors': set(['processors']),
-    'mtbfconfig': set(['productdims', 'mtbfconfig']),
-    'urldims': set(['urldims']),
-    'productdims': set(['productdims']),
-    'topcrashurlfacts': set(['productdims', 'urldims', 'topcrashurlfacts']),
-    'reports': set(['reports']),
-    'server_status': set(['server_status']),
-    #'dumps': set(['dumps']),
-    'tcbyurlconfig': set(['productdims', 'tcbyurlconfig']),
-    'priorityjobs': set(['priorityjobs']),
-    'mtbffacts': set(['productdims', 'mtbffacts']),
-    'topcrashers': set(['topcrashers']),
-    'frames': set(['frames']),
-    'branches': set(['branches']),
-    'extensions': set(['extensions']),
-    'bug_associations': set(['bugs', 'bug_associations']),
-    'bugs': set(['bugs']),
     }
   me.expectedTableNames = set()
   for tableStuff in me.hardCodedSchemaClasses.values():
@@ -168,7 +149,7 @@ def testGetOrderedSetupList():
   gotKeys = set(gotDependencies.keys())
   assert exKeys == gotKeys, "Oops. ex-got = %s\ngot-x = %s"%(exKeys-gotKeys, gotKeys - exKeys)
   for t in exKeys:
-    assert expectedDependencies[t] == gotDependencies[t], 'for %s, expected: %s, got %s'%(t,expectedDependencies[t], gotDependencies[t])
+    assert expectedDependencies[t] == gotDependencies[t], 'for %s\nexpected: %s\ngot       %s'%(t,expectedDependencies[t], gotDependencies[t])
   assert ['woohoo'] == schema.getOrderedSetupList(['woohoo'])
 
 def testGetOrderedPartitionList():
@@ -180,11 +161,8 @@ def testGetOrderedPartitionList():
   global me
   lookup = {}
   expected = {
-    #'frames': set(['frames', 'crash_reports']),
-    #'extensions': set(['extensions', 'crash_reports']),
     'frames': set(['frames', 'reports']),
     'extensions': set(['extensions', 'reports']),
-    # deprecated 'dumps': set(['dumps', 'crash_reports']),
     }
   allTables = schema.getOrderedSetupList()
   for t in allTables:
@@ -280,10 +258,9 @@ def testUpdateDatabase():
   global me, updated
   updated = []
   #expected = set(['reports','dumps','extensions','frames','processors','jobs'])
-  expected = set(['reports','extensions','frames','processors','jobs','bug_associations', 'bugs'])
+  expected = set(['extensions','frames','processors','jobs'])
   found = set([ x(logger=me.logger).name for x in schema.databaseObjectClassListForUpdate])
   assert expected == found, 'Expected: %s, Found: %s'%(expected,found)
-  #class ReportsStub(schema.CrashReportsTable):
   class ReportsStub(schema.ReportsTable):
     def __init__(self, logger, **kwargs):
       super(ReportsStub,self).__init__(logger,**kwargs)
@@ -299,7 +276,6 @@ def testUpdateDatabase():
   assert [] == updated
   schema.databaseObjectClassListForUpdate = [ReportsStub]
   schema.updateDatabase(me.config,me.logger)
-  #assert ['crash_reports'] == updated
   assert ['reports'] == updated
 
 def testModuleCreatePartitions():
@@ -314,20 +290,17 @@ def testModuleCreatePartitions():
     me.testDB.createDB(me.config,me.logger)
     me.config.startDate = dt.date(2008,1,1)
     me.config.endDate = dt.date(2008,1,1)
-    #reportSet = set(socorro_psg.tablesMatchingPattern('crash_reports%',cursor))
     reportSet = set(socorro_psg.tablesMatchingPattern('reports%',cursor))
     extensionSet = set(socorro_psg.tablesMatchingPattern('extensions%',cursor))
-    frameSet = set(socorro_psg.tablesMatchingPattern('frames%',cursor))
+    frameSet0 = set(socorro_psg.tablesMatchingPattern('frames%',cursor))
     schema.databaseObjectClassListForWeeklyPartitions = [schema.ExtensionsTable]
     schema.createPartitions(me.config,me.logger)
-    #moreReportSet = set(socorro_psg.tablesMatchingPattern('crash_reports%',cursor))-reportSet
     moreReportSet = set(socorro_psg.tablesMatchingPattern('reports%',cursor))-reportSet
     moreExtensionSet = set(socorro_psg.tablesMatchingPattern('extensions%',cursor))-extensionSet
-    #assert set(['crash_reports_20071231']) == moreReportSet,'but got %s'%moreReportSet
     assert set(['reports_20071231']) == moreReportSet,'but got %s'%moreReportSet
     assert set(['extensions_20071231']) == moreExtensionSet,'but got %s'%moreExtensionSet
-    moreFrameSet = set(socorro_psg.tablesMatchingPattern('frames%',cursor))
-    assert frameSet == moreFrameSet
+    frameSet = set(socorro_psg.tablesMatchingPattern('frames%',cursor))
+    assert frameSet0 == frameSet
     schema.databaseObjectClassListForWeeklyPartitions = [schema.FramesTable]
     schema.createPartitions(me.config,me.logger)
     moreFrameSet = set(socorro_psg.tablesMatchingPattern('frames%',cursor))-frameSet
@@ -458,6 +431,7 @@ def printDbTablenames(tag,aCursor):
 def assertSameTableDiff(tablename,expected,before,after):
   diff = after - before
   diff -= set([x for x in diff if (x.startswith('pg_toast') or x.endswith('id_seq'))])
+
   assert expected == diff, 'for table %s: after-before=\n   got: %s\nwanted: %s'%(tablename,diff,expected)
 
 def checkOneClass(aClass,aType):

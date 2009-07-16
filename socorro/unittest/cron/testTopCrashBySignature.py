@@ -10,41 +10,54 @@ from operator import itemgetter
 from nose.tools import *
 
 import socorro.lib.ConfigurationManager as configurationManager
+import socorro.database.cachedIdAccess as cia
 
 import socorro.cron.topcrasher as topcrasher
 
 from   socorro.unittest.testlib.testDB import TestDB
 import socorro.unittest.testlib.dbtestutil as dbtestutil
+import socorro.unittest.testlib.util as tutil
 import cronTestconfig as testConfig
 
 testBaseDate = dt.datetime(2008,1,1,1,1,1,1)
 testFirstIntervalBegin = dt.datetime(2008,1,1)
 
-
 class Me:
   pass
 me = None
 
+def setup_module():
+  tutil.nosePrintModule(__file__)
+
 def addReportData(cursor,dataToAdd):
-  sql = """INSERT INTO crash_reports
-     (uuid, client_crash_date,install_age, last_crash, uptime, date_processed, user_comments, signaturedims_id, productdims_id, osdims_id, urldims_id) VALUES
-     ( %(uuid)s, %(client_crash_date)s, %(install_age)s, %(last_crash)s, %(uptime)s, %(date_processed)s, %(user_comments)s, %(signaturedims_id)s, %(productdims_id)s, %(osdims_id)s, %(urldims_id)s)
+  sql = """INSERT INTO reports
+     (uuid, client_crash_date, date_processed, product, version, url, install_age, last_crash, uptime, os_name, os_version, user_comments, signature) VALUES
+     ( %(uuid)s, %(client_crash_date)s, %(date_processed)s, %(product)s, %(version)s, %(url)s, %(install_age)s, %(last_crash)s, %(uptime)s, %(os_name)s, %(os_version)s, %(user_comments)s, %(signature)s)
     """
   cursor.executemany(sql,dataToAdd)
-  
+    
 def addCrashData(cursor,dataToAdd):
   # dataToAdd is [{},...] for dictionaries of values as shown in sql below
-  sql = """INSERT INTO topcrashfacts
-    (  count,    rank,    uptime,    last_updated,    productdims_id,    osdims_id,    signaturedims_id) VALUES
-    (%(count)s,%(rank)s,%(uptime)s,%(last_updated)s,%(productdims_id)s,%(osdims_id)s,%(signaturedims_id)s) """
+  sql = """INSERT INTO top_crash_by_signature
+    (  count,    uptime,    last_updated,    signature,    productdims_id,    osdims_id) VALUES
+    (%(count)s,%(uptime)s,%(last_updated)s,%(signature)s,%(productdims_id)s,%(osdims_id)s) """
   cursor.executemany(sql,dataToAdd)
   cursor.connection.commit()
 
 dataForStartDateTest = [
-  {'count':18,'rank':1,'uptime':64.5,'last_updated':dt.datetime(2009,3,3,3,3,3), 'productdims_id':1,'osdims_id':1,'signaturedims_id':1},
-  {'count':10,'rank':2,'uptime':56.4,'last_updated':dt.datetime(2009,3,3,3,3,5), 'productdims_id':2,'osdims_id':1,'signaturedims_id':3},
-  {'count':1, 'rank':3,'uptime':45.6,'last_updated':dt.datetime(2009,3,3,3,3,7), 'productdims_id':3,'osdims_id':2,'signaturedims_id':4},
+  {'count':18,'uptime':64.5,'last_updated':dt.datetime(2009,3,3,3,3,3), 'productdims_id':1,'osdims_id':1,'signature':'_PR_MD_SEND'},
+  {'count':10,'uptime':56.4,'last_updated':dt.datetime(2009,3,3,3,3,5), 'productdims_id':2,'osdims_id':1,'signature':'nsAutoCompleteController::ClosePopup'},
+  {'count':1, 'uptime':45.6,'last_updated':dt.datetime(2009,3,3,3,3,7), 'productdims_id':3,'osdims_id':2,'signature':'nsFormFillController::SetPopupOpen'},
   ]
+
+def genOs():
+  data = dbtestutil.dimsData['osdims']
+  assert 7 == len(data), 'So we can correctly create weightedList below'
+  pairs = [(x['os_name'],x['os_version']) for x in data]
+  weightedList = [0,1,1,2,2,2,3,4,4,5,6] # len 11 is a nice prime number, different than all the others
+  while True:
+    for o in weightedList:
+      yield pairs[o]
 
 def genOsId(cursor):
   # the test rather naively weights the osDims. 11 is a prime number that isn't 5 or 7
@@ -57,6 +70,15 @@ def genOsId(cursor):
   while True:
     for o in weightedList:
       yield ids[o] # the actual id column
+
+def genProd():
+  data =  dbtestutil.dimsData['productdims']
+  assert 8 == len(data), 'So we can correctly create weightedList below'
+  pairs = [(x['product'],x['version']) for x in data]
+  weightedList = [0,0,1,1,2,2,2,3,3,4,4,5,5,6,6,7,7] # len 17 is a nice prime number, different than all the others
+  while True:
+    for o in weightedList:
+      yield pairs[o]
       
 def genProdId(cursor):
   productDimsData = dbtestutil.dimsData['productdims']
@@ -69,15 +91,29 @@ def genProdId(cursor):
     for p in weightedList:
       yield ids[p]
 
-def genSigId(cursor):
-  cursor.execute("select id from signaturedims order by id")
-  ids = [x[0] for x in cursor.fetchall()]
-  cursor.connection.commit()
-  assert 7 == len(ids), 'but %s: %s'%(len(ids),ids) # 7 is a nice prime number, different than all the others
+signatureData = ['js_Interpret',
+                 '_PR_MD_SEND',
+                 'nsAutoCompleteController::ClosePopup',
+                 'nsFormFillController::SetPopupOpen',
+                 'xpcom_core.dll@0x31b7a',
+                 'morkRowObject::CloseRowObject(morkEnv*)',
+                 'nsContainerFrame::ReflowChild(nsIFrame*, nsPresContext*, nsHTMLReflowMetrics&, nsHTMLReflowState const&, int, int, unsigned int, unsigned int&, nsOverflowContinuationTracker*)',
+                 ]
+def genSig():
+  global signatureData
+  assert 7 == len(signatureData), 'Better be 7!, but was %s'%(len(signatureData))
   while True:
-    for s in ids:
+    for s in signatureData:
       yield s
 
+def genUrl():
+  data = dbtestutil.dimsData['urldims']
+  assert 13 == len(data) # a nice prime number
+  pairs = [(x['domain'],x['url']) for x in data]
+  while True:
+    for p in pairs:
+      yield p
+      
 def genUrlId(cursor):
   cursor.execute("select id from urldims order by id")
   cursor.connection.commit()
@@ -108,12 +144,12 @@ def genBuild():
     for b in builds:
       yield b
 
-def makeReportData(sizePerDay,numDays, cursor):
+def makeReportData(sizePerDay,numDays):
   idGen = dbtestutil.moreUuid()
-  osGen = genOsId(cursor)
-  prodGen = genProdId(cursor)
-  sigGen = genSigId(cursor)
-  urlGen = genUrlId(cursor)
+  osGen = genOs()
+  prodGen = genProd()
+  sigGen = genSig()
+  urlGen = genUrl()
   bumpGen = genBump(sizePerDay)
   buildGen = genBuild()
   baseDate = testBaseDate
@@ -123,6 +159,8 @@ def makeReportData(sizePerDay,numDays, cursor):
     currentDate = baseDate
     count = 0
     while count < sizePerDay:
+      product,version = prodGen.next()
+      os_name,os_version = osGen.next()
       data = {
         'uuid':idGen.next(),
         'client_crash_date':currentDate,
@@ -132,10 +170,12 @@ def makeReportData(sizePerDay,numDays, cursor):
         'date_processed': currentDate+procOffset,
         'user_comments': 'oh help',
         'app_notes':"",
-        'signaturedims_id':sigGen.next(),
-        'productdims_id':prodGen.next(),
-        'osdims_id':osGen.next(),
-        'urldims_id':urlGen.next(),
+        'signature':sigGen.next(),
+        'product':product,
+        'version':version,
+        'os_name':os_name,
+        'os_version':os_version,
+        'url':urlGen.next()[1],
         }
       insData.append(data)
       currentDate += bumpGen.next()
@@ -143,14 +183,14 @@ def makeReportData(sizePerDay,numDays, cursor):
     baseDate = baseDate+dt.timedelta(days=1)
   #print "client_crash_date          | date_processed             | uptm | uuid                                 | inst |  u, o, p, s"
   #for j in insData:
-  #  print "%(client_crash_date)s | %(date_processed)s | %(uptime)s | %(uuid)s | %(install_age)s | %(urldims_id)2s,%(osdims_id)2s,%(productdims_id)2s,%(signaturedims_id)2s"%j
+  #  print "%(client_crash_date)s | %(date_processed)s | %(uptime)s | %(uuid)s | %(install_age)s | %(urldims_id)2s,%(osdims_id)2s,%(productdims_id)2s,%(signature)s"%j
   return insData
 
 def createMe():
   global me
   if not me:
     me = Me()
-  me.config = configurationManager.newConfiguration(configurationModule = testConfig, applicationName = "Testing TopCrashers")
+  me.config = configurationManager.newConfiguration(configurationModule = testConfig, applicationName = "Testing TopCrashBySignature")
   topcrasher.logger.setLevel(logging.DEBUG)
   myDir = os.path.split(__file__)[0]
   if not myDir: myDir = '.'
@@ -177,7 +217,7 @@ def createMe():
   me.logger = topcrasher.logger
   me.dsn = "host=%(databaseHost)s dbname=%(databaseName)s user=%(databaseUserName)s password=%(databasePassword)s" % (me.config)
 
-class TestTopCrashers(unittest.TestCase):
+class TestTopCrashBySignature(unittest.TestCase):
   def setUp(self):
     global me
     if not me:
@@ -196,8 +236,10 @@ class TestTopCrashers(unittest.TestCase):
     
   def prepareConfigForPeriod(self,idkeys,startDate,endDate):
    """enter a row for each idkey, start and end date. Do it repeatedly if you need different ones"""
-   cfgdata = [[x[0],x[1],startDate,endDate] for x in idkeys]
-   sql = "INSERT INTO tcbysignatureconfig (productdims_id,osdims_id,start_dt,end_dt) VALUES (%s,%s,%s,%s)"
+   cfgKeys = set([x[0] for x in idkeys])
+   cfgdata = [[x,startDate,endDate] for x in cfgKeys]
+   self.connection.cursor().execute("delete from product_visibility")
+   sql = "INSERT INTO product_visibility (productdims_id,start_date,end_date) VALUES (%s,%s,%s)"
    self.connection.cursor().executemany(sql,cfgdata)
    self.connection.commit()
 
@@ -205,7 +247,7 @@ class TestTopCrashers(unittest.TestCase):
     """Put some crash data into reports table, return their extrema for the columnName specified"""
     global me
     cursor = self.connection.cursor()
-    data = makeReportData(sizePerDay,numDays,cursor)
+    data = makeReportData(sizePerDay,numDays)
     self.connection.commit()
     # find the actual min and max dates
     minStamp = dt.datetime(2100,11,11)
@@ -219,17 +261,20 @@ class TestTopCrashers(unittest.TestCase):
     return minStamp,maxStamp,data
     
   def testConstructor(self):
+    """
+    TestTopCrashBySignature.testConstructor
+    """
     global me
     for reqd in ["databaseHost","databaseName","databaseUserName","databasePassword",]:
       cc = copy.copy(me.config)
       del(cc[reqd])
-      assert_raises(SystemExit,topcrasher.TopCrasher,cc)
+      assert_raises(SystemExit,topcrasher.TopCrashBySignature,cc)
     bogusMap = {'databaseHost':me.config.databaseHost,'databaseName':me.config.databaseName,'databaseUserName':'JoeLuser','databasePassword':me.config.databasePassword}
-    assert_raises(SystemExit,topcrasher.TopCrasher,bogusMap)
+    assert_raises(SystemExit,topcrasher.TopCrashBySignature,bogusMap)
 
     #check without a specified processingInterval, initialIntervalDays, startDate or endDate
     now = dt.datetime.now()
-    tc = topcrasher.TopCrasher(me.config)
+    tc = topcrasher.TopCrashBySignature(me.config)
     expectedStart = now.replace(hour=0,minute=0,second=0,microsecond=0) - dt.timedelta(days=tc.initialIntervalDays)
     expectedEnd = now.replace(hour=0,minute=0,second=0,microsecond=0)
     mark = now - tc.processingIntervalDelta
@@ -250,7 +295,7 @@ class TestTopCrashers(unittest.TestCase):
     for ipi in [-3,7]:
       config['processingInterval'] = ipi
       try:
-        tc = topcrasher.TopCrasher(config)
+        tc = topcrasher.TopCrashBySignature(config)
         raise Exception, "Can't assert here, because we expect to catch AssertionError in next line"
       except AssertionError,x:
         pass
@@ -259,7 +304,7 @@ class TestTopCrashers(unittest.TestCase):
     for pi in [0,1,12,720]:
       config['processingInterval'] = pi
       try:
-        tc = topcrasher.TopCrasher(config)
+        tc = topcrasher.TopCrashBySignature(config)
         assert tc.processingInterval==pi or (0==pi and tc.processingInterval == 12) , 'but pi=%s and got %s'%(pi,tc.processingInterval)
       except:
         assert False,'Expected success with processingInterval %s'%pi
@@ -267,23 +312,23 @@ class TestTopCrashers(unittest.TestCase):
     # check with illegal startDates
     config = copy.copy(me.config)
     config['startDate'] = dt.datetime(2009,01,01,0,0,1)
-    assert_raises(AssertionError,topcrasher.TopCrasher,config)
+    assert_raises(AssertionError,topcrasher.TopCrashBySignature,config)
     config['startDate'] = dt.datetime(2009,01,01,0,12,1)
-    assert_raises(AssertionError,topcrasher.TopCrasher,config)
+    assert_raises(AssertionError,topcrasher.TopCrashBySignature,config)
     config['startDate'] = dt.datetime(2009,01,01,2,11)
-    assert_raises(AssertionError,topcrasher.TopCrasher,config)
+    assert_raises(AssertionError,topcrasher.TopCrashBySignature,config)
     config['startDate'] = dt.datetime(2009,01,01,23,59)
-    assert_raises(AssertionError,topcrasher.TopCrasher,config)
+    assert_raises(AssertionError,topcrasher.TopCrashBySignature,config)
 
     # check with midnight startDate
     config = copy.copy(me.config)
     config['startDate'] = dt.datetime(2009,01,01)
-    tc = topcrasher.TopCrasher(config)
+    tc = topcrasher.TopCrashBySignature(config)
     assert config['startDate'] == tc.startDate
 
     # check with very late legal startDate
     config['startDate'] = dt.datetime(2009,01,01,23,48)
-    tc = topcrasher.TopCrasher(config)
+    tc = topcrasher.TopCrashBySignature(config)
     assert config['startDate'] == tc.startDate
     
     # check with a specified processingInterval, initialIntervalDays, startDate and endDate
@@ -292,7 +337,7 @@ class TestTopCrashers(unittest.TestCase):
     config['startDate']= specifiedStartDate = dt.datetime(2009,01,01,12,20)
     config['endDate'] = specifiedEndDate =    dt.datetime(2009,01,01,12,59)
     config['initialIntervalDays'] = 3
-    tc = topcrasher.TopCrasher(config)
+    tc = topcrasher.TopCrashBySignature(config)
     assert specifiedStartDate == tc.startDate
     assert 3 == tc.initialIntervalDays
     assert 20 == tc.processingInterval
@@ -303,30 +348,30 @@ class TestTopCrashers(unittest.TestCase):
 
   def testGetStartDate(self):
     cursor = self.connection.cursor()
-    tc = topcrasher.TopCrasher(me.config)
-    midNow = dt.datetime.now().replace(hour=0,minute=0,second=0,microsecond=0)
-    expectedDefault = midNow - dt.timedelta(days=tc.initialIntervalDays)
+    tc = topcrasher.TopCrashBySignature(me.config)
+    priorMidnight = dt.datetime.now().replace(hour=0,minute=0,second=0,microsecond=0)
+    expectedDefault = priorMidnight - dt.timedelta(days=tc.initialIntervalDays)
     tryDate = dt.datetime(2009,3,4,5,24,0,39)
     expectedTry = tryDate.replace(microsecond=0)
     assert expectedDefault==tc.getStartDate(), "Expected %s, got %s"%(expectedDefault,tc.getStartDate())
     assert expectedTry == tc.getStartDate(tryDate), "Expected %s, got %s"%(expectedTry,tc.getStartDate(tryDate))
     dbTryDate = dt.datetime(2009,1,2,12,12)
-    dbExpectDate = dbTryDate + dt.timedelta(seconds=60*12)
-    cursor.execute("""INSERT INTO topcrashfacts
-                      (productdims_id,osdims_id,signaturedims_id,interval_start,interval_minutes)
-               VALUES (1,1,1,%s,12)""",(dbTryDate,))
+    dbTryInterval = dt.timedelta(minutes=12)
+    cursor.execute("""INSERT INTO top_crashes_by_signature
+                      (productdims_id,osdims_id,signature,window_end,window_size)
+               VALUES (1,1,'js_wootery',%s,%s)""",(dbTryDate,dbTryInterval))
     self.connection.commit()
     # need new TopCrash since it reads the db on construction
-    tc = topcrasher.TopCrasher(me.config)
-    cursor.execute("SELECT interval_start,interval_minutes from topcrashfacts order by interval_start DESC LIMIT 1")
+    tc = topcrasher.TopCrashBySignature(me.config)
+    cursor.execute("SELECT window_end,window_size from top_crashes_by_signature order by window_end DESC LIMIT 1")
     self.connection.commit()
-    assert dbExpectDate==tc.getStartDate(),"But %s != %s"%(dbExpectDate,tc.getStartDate())
+    assert dbTryDate==tc.getStartDate(),"But expected %s != %s"%(dbTryDate,tc.getStartDate())
     result = tc.getStartDate(tryDate)
-    assert expectedTry == tc.getStartDate(tryDate),"But %s != %s"%(expectedTry,tc.getStartDate(tryDate))
+    assert expectedTry == tc.getStartDate(tryDate),"But expected %s != %s"%(expectedTry,tc.getStartDate(tryDate))
 
   def testGetEndDate(self):
     now = dt.datetime.now()
-    tc = topcrasher.TopCrasher(me.config)
+    tc = topcrasher.TopCrashBySignature(me.config)
     assert tc.endDate == tc.getEndDate()
     assert now - tc.processingIntervalDelta <= tc.endDate and tc.endDate <= now
     tneg = tc.startDate - dt.timedelta(microseconds=1)
@@ -360,7 +405,7 @@ class TestTopCrashers(unittest.TestCase):
 
   def testGetLegalProcessingInterval(self):
     cursor = self.connection.cursor()
-    tc = topcrasher.TopCrasher(me.config)
+    tc = topcrasher.TopCrashBySignature(me.config)
     illegals = [-3.0,-0.0000001,0.0000001,0.999999,11,13,14,17,19,21,22,23,123]
     for ipi in illegals:
       try:
@@ -377,16 +422,17 @@ class TestTopCrashers(unittest.TestCase):
         assert ans==pi or (0==pi and ans == 12) , 'but pi=%s and got %s'%(pi,ans)
       except:
         pass
-    cursor.execute("""INSERT INTO topcrashfacts
-                      (productdims_id,osdims_id,signaturedims_id,interval_start,interval_minutes)
-               VALUES (1,1,1,'2009-1-2 3:00',90)""")
+    ninety = dt.timedelta(minutes=90)
+    cursor.execute("""INSERT INTO top_crashes_by_signature
+                      (productdims_id,osdims_id,signature,window_end,window_size)
+               VALUES (1,1,'js_wookie','2009-1-2 4:30',%s)""",(ninety,))
     self.connection.commit()
-    tc = topcrasher.TopCrasher(me.config)
+    tc = topcrasher.TopCrashBySignature(me.config)
     assert 90 == tc.getLegalProcessingInterval(), 'but got %s'%(tc.getLegalProcessingInterval())
 
   def testExtractDataForPeriod_ByDateProcessed(self):
     """
-    testExtractDataForPeriod_ByDateProcessed(self):
+    TestTopCrashBySignature.testExtractDataForPeriod_ByDateProcessed(self):
      - Check that we get nothing for a period outside our data
      - Check that we get expected count for period inside our data
      - Check that we get half-open interval (don't get data exactly at last moment)
@@ -397,14 +443,15 @@ class TestTopCrashers(unittest.TestCase):
     """
     global me
     minStamp,maxStamp,data = self.prepareExtractDataForPeriod('date_processed')
-    keySet = set([(d['productdims_id'],d['osdims_id']) for d in data])
+    cursor = self.connection.cursor()
+    idCache = cia.IdCache(cursor)
+    keySet = set([(idCache.getProductId(d['product'],d['version']),idCache.getOsId(d['os_name'],d['os_version'])) for d in data])
     mminStamp = minStamp - dt.timedelta(days=1)
     mmaxStamp = maxStamp + dt.timedelta(days=1)
     self.prepareConfigForPeriod(keySet,mminStamp,mmaxStamp)
 
-    tc = topcrasher.TopCrasher(me.config)
+    tc = topcrasher.TopCrashBySignature(me.config)
     tc.dateColumnName = 'date_processed'
-
     # we should get nothing if we are outside our data
     start = minStamp - dt.timedelta(days=10)
     end = start + dt.timedelta(days=1)
@@ -416,22 +463,9 @@ class TestTopCrashers(unittest.TestCase):
     start = minStamp
     end = start + dt.timedelta(days=1)
     tc.extractDataForPeriod(start,end,crashData)
-    crashDataCount = 0
-    allCrashDataCount = 0
-    allCrashDataCount0 = 0
-    allCrashDataCount1 = 0
+    crashDataCount = 0 # all three known
     for k,d in crashData.items():
-      if (None,None) == k[:2]:
-        allCrashDataCount += d['count']
-      elif(None) == k[0]:
-        allCrashDataCount0 += d['count']
-      elif(None) == k[1]:
-        allCrashDataCount1 += d['count']
-      else:
-        crashDataCount += d['count']
-    assert 2 == allCrashDataCount, 'Expected 2, got %d'%allCrashDataCount
-    assert 2 == allCrashDataCount0, 'Expected 2, got %d'%allCrashDataCount0
-    assert 2 == allCrashDataCount1, 'Expected 2, got %d'%allCrashDataCount1
+      crashDataCount += d['count']
     assert 2 == crashDataCount, 'Expected 2, got %d'%crashDataCount
 
     # we should get all but the last 2 (or one) item: Half-open interval
@@ -439,46 +473,20 @@ class TestTopCrashers(unittest.TestCase):
     end = maxStamp
     crashData = {}
     tc.extractDataForPeriod(start,end,crashData)
-    crashDataCount = 0
-    allCrashDataCount = 0
-    allCrashDataCount0 = 0
-    allCrashDataCount1 = 0
+    crashDataCount = 0 # all three known
     for k,d in crashData.items():
-      if (None,None) == k[:2]:
-        allCrashDataCount += d['count']
-      elif(None) == k[0]:
-        allCrashDataCount0 += d['count']
-      elif(None) == k[1]:
-        allCrashDataCount1 += d['count']
-      else:
-        crashDataCount += d['count']
-    assert crashDataCount == 9, 'Expected 9 Got %s'%crashDataCount
-    assert allCrashDataCount == 9, 'Expected 9 Got %s'%allCrashDataCount
-    assert allCrashDataCount0 == 9, 'Expected 9 Got %s'%allCrashDataCount0
-    assert allCrashDataCount1 == 9, 'Expected 9 Got %s'%allCrashDataCount1
+      crashDataCount += d['count']
+    assert crashDataCount == 9, 'Expected 9. Got %s'%crashDataCount
 
     # we should get all the data
     start = minStamp
     end = maxStamp+dt.timedelta(milliseconds=1)
     crashData = {}
     tc.extractDataForPeriod(start,end,crashData)
-    crashDataCount = 0
-    allCrashDataCount = 0
-    allCrashDataCount0 = 0
-    allCrashDataCount1 = 0
+    crashDataCount = 0 # all three known
     for k,d in crashData.items():
-      if (None,None) == k[:2]:
-        allCrashDataCount += d['count']
-      elif(None) == k[0]:
-        allCrashDataCount0 += d['count']
-      elif(None) == k[1]:
-        allCrashDataCount1 += d['count']
-      else:
-        crashDataCount += d['count']
+      crashDataCount += d['count']
     assert crashDataCount == 10, 'Expected 10. Got %s'%crashDataCount
-    assert allCrashDataCount == 10, 'Expected 10. Got %s'%allCrashDataCount
-    assert allCrashDataCount0 == 10, 'Expected 10. Got %s'%allCrashDataCount0
-    assert allCrashDataCount1 == 10, 'Expected 10. Got %s'%allCrashDataCount1
 
     # we should get nothing if start == end (half open interval that stops juuuust before the start)
     start = minStamp
@@ -492,30 +500,17 @@ class TestTopCrashers(unittest.TestCase):
     end = start+dt.timedelta(microseconds=1)
     crashData = {}
     tc.extractDataForPeriod(start,end,crashData)
-    crashDataCount = 0
-    allCrashDataCount = 0
-    allCrashDataCount0 = 0
-    allCrashDataCount1 = 0
+    crashDataCount = 0 # all three known
     for k,d in crashData.items():
-      if (None,None) == k[:2]:
-        allCrashDataCount += d['count']
-      elif(None) == k[0]:
-        allCrashDataCount0 += d['count']
-      elif(None) == k[1]:
-        allCrashDataCount1 += d['count']
-      else:
-        crashDataCount += d['count']
+      crashDataCount += d['count']
     assert crashDataCount == 1, 'Expected 1. Got %s'%crashDataCount
-    assert allCrashDataCount == 1, 'Expected 1. Got %s'%allCrashDataCount
-    assert allCrashDataCount0 == 1, 'Expected 1. Got %s'%allCrashDataCount0
-    assert allCrashDataCount1 == 1, 'Expected 1. Got %s'%allCrashDataCount1
 
     # We should throw if start > end
     assert_raises(ValueError,tc.extractDataForPeriod,maxStamp,minStamp,crashData)
 
   def testExtractDataForPeriod_ByClientCrashDate(self):
     """
-    testExtractDataForPeriod_ByClientCrashDate(self):
+    TestTopCrashBySignature.testExtractDataForPeriod_ByClientCrashDate(self):
      - Check that we get nothing for a period outside our data
      - Check that we get expected count for period inside our data
      - Check that we get half-open interval (don't get data exactly at last moment)
@@ -524,11 +519,13 @@ class TestTopCrashers(unittest.TestCase):
     """
     global me
     minStamp,maxStamp,data = self.prepareExtractDataForPeriod('client_crash_date')
-    keySet = set([(d['productdims_id'],d['osdims_id']) for d in data])
+    cursor = self.connection.cursor()
+    idCache = cia.IdCache(cursor)
+    keySet = set([(idCache.getProductId(d['product'],d['version']),idCache.getOsId(d['os_name'],d['os_version'])) for d in data])
     mminStamp = minStamp - dt.timedelta(days=1)
     mmaxStamp = maxStamp + dt.timedelta(days=1)
     self.prepareConfigForPeriod(keySet,mminStamp,mmaxStamp)
-    tc = topcrasher.TopCrasher(me.config)
+    tc = topcrasher.TopCrashBySignature(me.config)
     tc.dateColumnName = 'client_crash_date'
     # we should get nothing if we are outside our data
     start = minStamp - dt.timedelta(days=10)
@@ -541,69 +538,30 @@ class TestTopCrashers(unittest.TestCase):
     start = minStamp
     end = start + dt.timedelta(days=1)
     tc.extractDataForPeriod(start,end,crashData)
-    crashDataCount = 0
-    allCrashDataCount = 0
-    allCrashDataCount0 = 0
-    allCrashDataCount1 = 0
+    crashDataCount0 = 0 # all three known
     for k,d in crashData.items():
-      if (None,None) == k[:2]:
-        allCrashDataCount += d['count']
-      elif(None) == k[0]:
-        allCrashDataCount0 += d['count']
-      elif(None) == k[1]:
-        allCrashDataCount1 += d['count']
-      else:
-        crashDataCount += d['count']
-    assert 2 == allCrashDataCount, 'Expected 2, got %d'%allCrashDataCount
-    assert 2 == allCrashDataCount0, 'Expected 2, got %d'%allCrashDataCount0
-    assert 2 == allCrashDataCount1, 'Expected 2, got %d'%allCrashDataCount1
-    assert 2 == crashDataCount, 'Expected 2, got %d'%crashDataCount
+      crashDataCount0 += d['count']
+    assert 2 == crashDataCount0, 'Expected 2, got %d'%crashDataCount0
 
     # we should get all but the last 2 (or one) item: Half-open interval
     start = minStamp
     end = maxStamp
     crashData = {}
     tc.extractDataForPeriod(start,end,crashData)
-    crashDataCount = 0
-    allCrashDataCount = 0
-    allCrashDataCount0 = 0
-    allCrashDataCount1 = 0
+    crashDataCount0 = 0 # all three known
     for k,d in crashData.items():
-      if (None,None) == k[:2]:
-        allCrashDataCount += d['count']
-      elif(None) == k[0]:
-        allCrashDataCount0 += d['count']
-      elif(None) == k[1]:
-        allCrashDataCount1 += d['count']
-      else:
-        crashDataCount += d['count']
-    assert crashDataCount == 9, 'Expected 9. Got %s'%allCrashDataCount
-    assert allCrashDataCount == 9, 'Expected 9. Got %s'%allCrashDataCount
-    assert allCrashDataCount0 == 9, 'Expected 9. Got %s'%allCrashDataCount
-    assert allCrashDataCount1 == 9, 'Expected 9. Got %s'%allCrashDataCount
+      crashDataCount0 += d['count']
+    assert crashDataCount0 == 9, 'Expected 9. Got %s'%crashDataCount0
 
     # we should get all the data
     start = minStamp
     end = maxStamp+dt.timedelta(milliseconds=1)
     crashData = {}
     tc.extractDataForPeriod(start,end,crashData)
-    crashDataCount = 0
-    allCrashDataCount = 0
-    allCrashDataCount0 = 0
-    allCrashDataCount1 = 0
+    crashDataCount0 = 0 # all three known
     for k,d in crashData.items():
-      if (None,None) == k[:2]:
-        allCrashDataCount += d['count']
-      elif(None) == k[0]:
-        allCrashDataCount0 += d['count']
-      elif(None) == k[1]:
-        allCrashDataCount1 += d['count']
-      else:
-        crashDataCount += d['count']
-    assert allCrashDataCount == 10, 'Expected 10. Got %s'%allCrashDataCount
-    assert allCrashDataCount0 == 10, 'Expected 10. Got %s'%allCrashDataCount0
-    assert allCrashDataCount1 == 10, 'Expected 10. Got %s'%allCrashDataCount1
-    assert crashDataCount == 10, 'Expected 10. Got %s'%crashDataCount
+      crashDataCount0 += d['count']
+    assert crashDataCount0 == 10, 'Expected 10. Got %s'%crashDataCount0
 
     # we should get nothing if start == end (half open interval that stops juuuust before the start)
     start = minStamp
@@ -617,55 +575,44 @@ class TestTopCrashers(unittest.TestCase):
     end = start+dt.timedelta(microseconds=1)
     crashData = {}
     tc.extractDataForPeriod(start,end,crashData)
-    crashDataCount = 0
-    allCrashDataCount = 0
-    allCrashDataCount0 = 0
-    allCrashDataCount1 = 0
+    crashDataCount0 = 0 # all three known
     for k,d in crashData.items():
-      if (None,None) == k[:2]:
-        allCrashDataCount += d['count']
-      elif(None) == k[0]:
-        allCrashDataCount0 += d['count']
-      elif(None) == k[1]:
-        allCrashDataCount1 += d['count']
-      else:
-        crashDataCount += d['count']
-    assert crashDataCount == 1, 'Expected 1. Got %s'%crashDataCount
-    assert allCrashDataCount == 1, 'Expected 1. Got %s'%allCrashDataCount
-    assert allCrashDataCount0 == 1, 'Expected 1. Got %s'%allCrashDataCount0
-    assert allCrashDataCount1 == 1, 'Expected 1. Got %s'%allCrashDataCount1
+      crashDataCount0 += d['count']
+    assert crashDataCount0 == 1, 'Expected 1. Got %s'%crashDataCount0
 
     # We should throw if start > end
     assert_raises(ValueError,tc.extractDataForPeriod,maxStamp,minStamp,crashData)
 
   def testFixupCrashData(self):
     """
-    testFixupCrashData(self):(slow=1)
+    TestTopCrashBySignature.testFixupCrashData(self):(slow=1)
       - create a bunch of data, count it in the test, put it into the reports table, then 
-        let TopCrasher get it back out, and assert that fixup gets the same count
+        let TopCrashBySignature get it back out, and assert that fixup gets the same count
     """
     global me
     cursor = self.connection.cursor()
-    data = makeReportData(211,5,cursor) # 211 is prime, which means we should get a nice spread of data
-    keySet = set([(d['productdims_id'],d['osdims_id']) for d in data])
+    idCache = cia.IdCache(cursor)
+    data = makeReportData(211,5) # 211 is prime, which means we should get a nice spread of data
+    keySet = set([(idCache.getProductId(d['product'],d['version']),idCache.getOsId(d['os_name'],d['os_version'])) for d in data])
+    #keySet = set([(d['productdims_id'],d['osdims_id']) for d in data])
     expect = {}
+    newCount = 0
+    oldCount = 0
     for d in data:
-      key = (d['productdims_id'],d['osdims_id'],d['signaturedims_id'])
-      akey = (None,None,d['signaturedims_id'])
-      akeyp = (None,d['osdims_id'],d['signaturedims_id'])
-      akeyo = (d['productdims_id'],None,d['signaturedims_id'])
-      keys = [key,akey,akeyp,akeyo]
-      for k in keys:
-        try:
-          expect[k]['count'] += 1
-          expect[k]['uptime'] += d['uptime']
-        except:
-          expect[k] = {}
-          expect[k]['count'] = 1
-          expect[k]['uptime'] = d['uptime']
+      # Keys are always signature,product,os
+      key =   (d['signature'],idCache.getProductId(d['product'],d['version']),idCache.getOsId(d['os_name'],d['os_version']))
+      try:
+        expect[key]['count'] += 1
+        expect[key]['uptime'] += d['uptime']
+        oldCount += 1
+      except:
+        expect[key] = {}
+        expect[key]['count'] = 1
+        expect[key]['uptime'] = d['uptime']
+        newCount += 1
     addReportData(cursor,data)
     self.connection.commit()
-    tc = topcrasher.TopCrasher(me.config)
+    tc = topcrasher.TopCrashBySignature(me.config)
     tc.dateColumnName = 'date_processed'
     baseDate = testBaseDate 
     start = baseDate - dt.timedelta(days=1)
@@ -685,45 +632,53 @@ class TestTopCrashers(unittest.TestCase):
 #     # check that everything we expect is in what we got
 #     for k,v in expect.items():
 #       assert getter(v) == getter(summaryCrashes[k]),  'for key %s: Expected %s but got %s'%(k,getter(v), getter(summaryCrashes[k]))
-    result = tc.fixupCrashData(summaryCrashes)
-    resultx = tc.fixupCrashData(expect)
+    
+    result = tc.fixupCrashData(summaryCrashes,baseDate,tc.processingIntervalDelta)
+    result.sort(key=itemgetter('count'),reverse=True)
+    resultx = tc.fixupCrashData(expect,baseDate,tc.processingIntervalDelta)
+    resultx.sort(key=itemgetter('count'),reverse=True)
     assert result == resultx
-    expectedLen = [376,56,49,7]
-    expectedAll0 = set([1,2,3,4,5])
-    expectedAll1 = set([6,7])
-    gotAll0 = set([ x['signaturedims_id'] for x in result[-1][:5]])
-    gotAll1 = set([ x['signaturedims_id'] for x in result[-1][-2:]])
-    assert expectedAll0 == gotAll0 , 'But got %s'%gotAll0
-    assert expectedAll1 == gotAll1 , 'But got %s'%gotAll1
-    countsAP = set([42,41,28,27,14,13])
-    for index in range(len(result)):
-      chain = result[index]
-      assert expectedLen[index] == len(chain)
-      ranks = [x['rank'] for x in chain]
-      counts = [x['count'] for x in chain]
-      assert ranks == sorted(ranks)
-      assert counts == sorted(counts, reverse=True)
-      if index == 2:
-        for r in chain:
-          assert r['count'] in countsAP, 'but found %s'%r['count']
+#    ## The next few lines show more detail if there's a problem. Comment above, uncomment below
+#    misscount = fullcount = 0
+#     if result != resultx:
+#       assert len(result) == len(resultx), 'expected len: %s, got %s'%(len(result), len(resultx))
+#       for i in range(len(result)):
+#         r = result[i]
+#         rx = resultx[i]
+#         assert len(r) == len(rx), 'at loop %s: expected len: %s got %s'(i,len(r),len(rx))
+#         for j in range(len(r)):
+#           fullcount += 1
+#           if r[j] != rx[j]:
+#             print "unequal at loop %s, item %s:\n  %s\n  %s"%(i,j,r[j],rx[j])
+#             misscount += 1
+#       print "Unequal for %s of %s (%3.1f%%) rows"%(misscount,fullcount,100.0*(1.0*misscount/fullcount))
+#     assert 0 == misscount, "They weren't equal. Look nearby for details"
+    expectedAll = set(['xpcom_core.dll@0x31b7a', 'js_Interpret', '_PR_MD_SEND', 'nsFormFillController::SetPopupOpen', 'nsAutoCompleteController::ClosePopup','morkRowObject::CloseRowObject(morkEnv*)', 'nsContainerFrame::ReflowChild(nsIFrame*, nsPresContext*, nsHTMLReflowMetrics&, nsHTMLReflowState const&, int, int, unsigned int, unsigned int&, nsOverflowContinuationTracker*)'])
+
+    gotAll = set([ x['signature'] for x in result])
+    assert expectedAll == gotAll , 'ex-got:%s\ngot-ex:%s'%(expectedAll-gotAll,gotAll-expectedAll)
 
   def testExtractDataForPeriod_ConfigLimitedDates(self):
+    """
+    TestTopCrashBySignature.testExtractDataForPeriod_ConfigLimitedDates(self)
+    """
     global me
     minStamp,maxStamp,data = self.prepareExtractDataForPeriod('date_processed',23,5)
-    keySet = set([(d['productdims_id'],d['osdims_id']) for d in data])
-    keySSet = set([(d['productdims_id'],d['osdims_id']) for d in data if 5 != d['osdims_id']])
+    cursor = self.connection.cursor()
+    idCache = cia.IdCache(cursor)
+    keySet = set([(idCache.getProductId(d['product'],d['version']),idCache.getOsId(d['os_name'],d['os_version'])) for d in data])
+    keySSet = set([x for x in keySet if 5 != x[0]])
     mminStamp = minStamp - dt.timedelta(days=1)
     mmaxStamp = maxStamp + dt.timedelta(days=1)
     self.prepareConfigForPeriod(keySet,mminStamp,mmaxStamp)
-    tc = topcrasher.TopCrasher(me.config)
+    tc = topcrasher.TopCrashBySignature(me.config)
     tc.dateColumnName = 'date_processed'
 
     summaryData = {}
     tc.extractDataForPeriod(minStamp,maxStamp,summaryData)
-    assert 222 == len(summaryData), 'Regression test only, value not calculated. Expect 222, got %s'%(len(summaryData))
+    assert 110 == len(summaryData), 'Regression test only, value not calculated. Expect 110, got %s'%(len(summaryData))
 
-    cursor = self.connection.cursor()
-    cursor.execute("DELETE from tcbysignatureconfig")
+    cursor.execute("DELETE from product_visibility")
     self.connection.commit()
 
     mminStamp = minStamp + dt.timedelta(days=1)
@@ -731,40 +686,47 @@ class TestTopCrashers(unittest.TestCase):
     self.prepareConfigForPeriod(keySet,mminStamp,mmaxStamp)
     summaryData = {}
     tc.extractDataForPeriod(minStamp,maxStamp,summaryData)
-    assert 199 == len(summaryData), 'Regression test only, value not calculated. Expect 199, got %s'%(len(summaryData))
+    assert 87 == len(summaryData), 'Regression test only, value not calculated. Expect 87, got %s'%(len(summaryData))
 
 
   def testExtractDataForPeriod_ConfigLimitedIds(self):
+    """
+    TestTopCrashBySignature.testExtractDataForPeriod_ConfigLimitedIds
+    """
     global me
+    cursor = self.connection.cursor()
+    idCache = cia.IdCache(cursor)
     minStamp,maxStamp,data = self.prepareExtractDataForPeriod('date_processed',23,5)
-    keySet = set([(d['productdims_id'],d['osdims_id']) for d in data])
-    keySSet = set([(d['productdims_id'],d['osdims_id']) for d in data if 5 != d['osdims_id']])
+    keySet = set([(idCache.getProductId(d['product'],d['version']),idCache.getOsId(d['os_name'],d['os_version'])) for d in data])
+    keySSet = set([x for x in keySet if 5 != x[0]])
     mminStamp = minStamp - dt.timedelta(days=1)
     mmaxStamp = maxStamp + dt.timedelta(days=1)
     self.prepareConfigForPeriod(keySet,mminStamp,mmaxStamp)
-    tc = topcrasher.TopCrasher(me.config)
+    tc = topcrasher.TopCrashBySignature(me.config)
     tc.dateColumnName = 'date_processed'
 
     summaryData = {}
     tc.extractDataForPeriod(minStamp,maxStamp,summaryData)
-    assert 222 == len(summaryData), 'Regression test only, value not calculated. Expect 222, got %s'%(len(summaryData))
+    assert 110 == len(summaryData), 'Regression test only, value not calculated. Expect 110, got %s'%(len(summaryData))
 
-    cursor = self.connection.cursor()
-    cursor.execute("DELETE from tcbysignatureconfig")
+    cursor.execute("DELETE from product_visibility")
     self.connection.commit()
 
     self.prepareConfigForPeriod(keySSet,mminStamp,mmaxStamp)
     summaryData = {}
     tc.extractDataForPeriod(minStamp,maxStamp,summaryData)
-    assert 194 == len(summaryData), 'Regression test only, value not calculated. Expect 194, got %s'%(len(summaryData))
+    assert 96 == len(summaryData), 'Regression test only, value not calculated. Expect 96, got %s'%(len(summaryData))
 
   def testStoreFacts(self):
+    """
+    TestTopCrashBySignature.testStoreFacts
+    """
     global me
     cursor = self.connection.cursor()
+    idCache = cia.IdCache(cursor)
     minStamp, maxStamp, data = self.prepareExtractDataForPeriod('date_processed',31,5) # full set of keys
-    self.connection.commit()
-    keySet = set([(d['productdims_id'],d['osdims_id']) for d in data])
-    tc = topcrasher.TopCrasher(me.config)
+    keySet = set([(idCache.getProductId(d['product'],d['version']),idCache.getOsId(d['os_name'],d['os_version'])) for d in data])
+    tc = topcrasher.TopCrashBySignature(me.config)
     tc.dateColumnName = 'date_processed'
     beforeDate = minStamp-dt.timedelta(minutes=30)
     afterDate = maxStamp+dt.timedelta(minutes=60)
@@ -772,14 +734,14 @@ class TestTopCrashers(unittest.TestCase):
     summaryCrashes = {}
     summaryCrashes = tc.extractDataForPeriod(beforeDate,afterDate,summaryCrashes)
 
-    countSql = "SELECT count(*) from topcrashfacts"
+    countSql = "SELECT count(*) from top_crashes_by_signature"
     cursor.execute(countSql)
     self.connection.commit()
     gotCount = cursor.fetchone()[0]
     assert 0 == gotCount, 'but got a count of %s'%gotCount
 
     #Try with none
-    tc.storeFacts([[],[],[],[]],testFirstIntervalBegin,tc.processingInterval)
+    tc.storeFacts([],"the test interval")
     cursor.execute(countSql)
     self.connection.commit()
     gotCount = cursor.fetchone()[0]
@@ -788,71 +750,76 @@ class TestTopCrashers(unittest.TestCase):
     #Try with three
     smKeys = summaryCrashes.keys()[:3]
     sum = dict((k,summaryCrashes[k]) for k in smKeys)
-    cd = tc.fixupCrashData(sum)
-    stime = dt.datetime(2009,9,8,7,15)
-    tc.storeFacts(cd,stime,15);
+    stime = dt.datetime(2009,9,8,7,30)
+    fifteen = dt.timedelta(minutes=15)
+    cd = tc.fixupCrashData(sum,stime,fifteen)
+    tc.storeFacts(cd,"interval three")
     cursor.execute(countSql)
     self.connection.commit()
     gotCount = cursor.fetchone()[0]
     assert 3 == gotCount, 'but got %s'%gotCount
-    cursor.execute("SELECT interval_start,interval_minutes from topcrashfacts")
+    cursor.execute("SELECT window_end, window_size from top_crashes_by_signature")
     got = cursor.fetchall()
     self.connection.commit()
-    expect = [(stime,15),] * gotCount
+    expect = [(stime,fifteen),] * gotCount
     assert expect == got, 'but got %s'%(got)
 
-    cursor.execute("DELETE FROM topcrashfacts")
+    cursor.execute("DELETE FROM top_crashes_by_signature")
     self.connection.commit()
 
     #Try with about half
     smKeys = summaryCrashes.keys()[-130:]
     sum = dict((k,summaryCrashes[k]) for k in smKeys)
-    cd = tc.fixupCrashData(sum)
-    tc.storeFacts(cd,dt.datetime(2009,9,8,7,15),15)
+    cd = tc.fixupCrashData(sum,dt.datetime(2009,9,8,7,30),fifteen)
+    tc.storeFacts(cd,"interval about half")
     cursor.execute(countSql)
     self.connection.commit()
     gotCount = cursor.fetchone()[0]
     assert 130 == gotCount, 'but got %s'%gotCount    
-    cursor.execute("SELECT interval_start,interval_minutes from topcrashfacts")
+    cursor.execute("SELECT window_end,window_size from top_crashes_by_signature")
     got = cursor.fetchall()
     self.connection.commit()
-    expect = [(stime,15),] * gotCount
+    expect = [(stime,fifteen),] * gotCount
     assert expect == got, 'but got %s'%(got)
 
-    cursor.execute("DELETE FROM topcrashfacts")
+    cursor.execute("DELETE FROM top_crashes_by_signature")
     self.connection.commit()
 
     #Try with all of them
-    cd = tc.fixupCrashData(summaryCrashes)
-    tc.storeFacts(cd,dt.datetime(2009,9,8,7,15),15)
+    cd = tc.fixupCrashData(summaryCrashes,dt.datetime(2009,9,8,7,30),fifteen)
+    tc.storeFacts(cd,"all of them")
     cursor.execute(countSql)
     self.connection.commit()
     gotCount = cursor.fetchone()[0]
     assert len(summaryCrashes) == gotCount, 'but got %s'%gotCount    
-    cursor.execute("SELECT interval_start,interval_minutes from topcrashfacts")
+    cursor.execute("SELECT window_end, window_size from top_crashes_by_signature")
     got = cursor.fetchall()
     self.connection.commit()
-    expect = [(stime,15),] * gotCount
+    expect = [(stime,fifteen),] * gotCount
     assert expect == got, 'but got %s'%(got)
 
   def testProcessIntervals(self):
+    """
+    TestTopCrashBySignature.testProcessIntervals
+    """
     global me
     cursor = self.connection.cursor()
+    idCache = cia.IdCache(cursor)
 
     # test a small full set of keys. Since we have already tested each component, that should be enough 
     minStamp, maxStamp, data = self.prepareExtractDataForPeriod('date_processed',31,5) # full set of keys
     configBegin = minStamp - dt.timedelta(hours=1)
     configEnd = maxStamp + dt.timedelta(hours=1)
-    keySet = set([(d['productdims_id'],d['osdims_id']) for d in data])
+    keySet = set([(idCache.getProductId(d['product'],d['version']),idCache.getOsId(d['os_name'],d['os_version'])) for d in data])
     self.prepareConfigForPeriod(keySet,configBegin,configEnd)
-    tc = topcrasher.TopCrasher(me.config)
+    tc = topcrasher.TopCrashBySignature(me.config)
 
     # first assure that we have a clean playing field
-    countSql = "SELECT count(*) from topcrashfacts"
+    countSql = "SELECT count(*) from top_crashes_by_signature"
     cursor.execute(countSql)
     self.connection.commit()
     gotCount = cursor.fetchone()[0]
-    assert 0 == gotCount, "but topcrashfacts isn't empty. Had %s rows"%gotCount
+    assert 0 == gotCount, "but top_crashes_by_signature isn't empty. Had %s rows"%gotCount
 
     sDate = minStamp.replace(hour=0,minute=0,second=0,microsecond=0)
     maxMin = 30
@@ -870,8 +837,8 @@ class TestTopCrashers(unittest.TestCase):
     cursor.execute(countSql)
     self.connection.commit()
     gotCount = cursor.fetchone()[0]
-    me.logger.debug("DEBUG testProcessIntervals after count topcrashfacts = %s",gotCount)
-    assert 496 == gotCount, 'Expect 496 rows (this is only a regression test, 620 was not calculated but found). Got %s'%gotCount
+    me.logger.debug("DEBUG testProcessIntervals after count top_crashes_by_signature = %s",gotCount)
+    assert 155 == gotCount, 'Regression test only, value not calculated. Expect 96, got %s'%gotCount
 
 if __name__ == "__main__":
   unittest.main()

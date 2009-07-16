@@ -2,6 +2,11 @@ from socorro.unittest.testlib.loggerForTest import TestingLogger
 
 import logging
 
+import socorro.unittest.testlib.util as tutil
+
+def setup_module():
+  tutil.nosePrintModule(__file__)
+
 class BogusLogger:
   def __init__(self):
     self.item = None

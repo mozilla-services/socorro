@@ -292,7 +292,6 @@ class Monitor (object):
   #def secondOfSequence(x):
     #return x[1]
 
-  import sys # DEBUG
   #-----------------------------------------------------------------------------------------------------------------
   def jobSchedulerIter(self, aCursor):
     """ This takes a snap shot of the state of the processors as well as the number of jobs assigned to each

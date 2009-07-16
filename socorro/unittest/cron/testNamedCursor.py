@@ -20,7 +20,11 @@ import socorro.lib.ConfigurationManager as configurationManager
 
 from   socorro.unittest.testlib.testDB import TestDB
 import socorro.unittest.testlib.dbtestutil as dbtestutil
+import socorro.unittest.testlib.util as tutil
 import cronTestconfig as testConfig
+
+def setup_module():
+  tutil.nosePrintModule(__file__)
 
 class Me:
   pass

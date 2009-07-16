@@ -41,20 +41,27 @@ jsonTooMany = {
 jsonBadUuid = '66666666-6666-6666-6666-666620081225'
 
 def getSlot(minsperslot,minute):
+  """Return the beginning minute of the slot of length minsperslot that contains minute"""
   return minsperslot * int(minute/minsperslot)
 
 def minimalJsonFileContents(dataMap = None):
+  """
+  Generate  minimal json file contents encoding by default:
+    a map of 'ProductName', 'Version' and 'BuildID'
+  or if dataMap is provided the contents of the map. Note that values in that map MUST be strings that can be formatted to contain a distinguishing integer
+  """
   if not dataMap:
     dataMap = {'ProductName':'bogusName-%02d',
                'Version':'bogusVersion-%02d',
                'BuildID':'bogusBuildID-%02d',
                }
-    cookie = 0
-    while True:
-      retMap = {}
-      for k,v in dataMap.entries():
-        retMap[k] = v%cookie
-      yield simplejson.dumps(retMap)
+  cookie = 0
+  while True:
+    retMap = {}
+    for k,v in dataMap.items():
+      retMap[k] = v%cookie
+    yield simplejson.dumps(retMap)
+    cookie += 1
 
 def createTestSet(testData,jsonKwargs,rootDir):
   try:
@@ -67,7 +74,7 @@ def createTestSet(testData,jsonKwargs,rootDir):
   jsonIsBogus = jsonKwargs.get('jsonIsBogus', True)
   jsonFileGenerator = jsonKwargs.get('jsonFileGenerator',None)
   if 'default' == jsonFileGenerator:
-    jsonFileGenerator = minimalJsonFileContents
+    jsonFileGenerator = minimalJsonFileContents()
   thedt = DT.datetime.now()
   for uuid,data in testData.items():
     if data[0].startswith('+'):

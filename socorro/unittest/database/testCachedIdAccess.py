@@ -11,6 +11,7 @@ import psycopg2
 
 import dbTestconfig as testConfig
 from   socorro.unittest.testlib.testDB import TestDB
+import socorro.unittest.testlib.util as tutil
 import socorro.lib.ConfigurationManager as configurationManager
 
 class Me: # Class 'Me' is just a way to say 'global' once per method
@@ -25,6 +26,7 @@ def setup_module():
   if me:
     return
   me = Me()
+  tutil.nosePrintModule(__file__)
   me.testDB = TestDB()
   me.config = configurationManager.newConfiguration(configurationModule = testConfig, applicationName='TestingCachedIdAccess')
   myDir = os.path.split(__file__)[0]
@@ -66,7 +68,6 @@ class TestCachedIdAccess:
     self.connection = psycopg2.connect(me.dsn)
     me.saveMaxOsIdCacheLength = cia.maxOsIdCacheLength
     me.saveMaxProductIdCacheLength = cia.maxProductIdCacheLength
-    me.saveMaxSignatureIdCacheLength = cia.maxSignatureIdCacheLength
     me.saveMaxUriIdCacheLength = cia.maxUriIdCacheLength
 
   def tearDown(self):
@@ -75,7 +76,6 @@ class TestCachedIdAccess:
     cursor = self.connection.cursor()
     cia.maxOsIdCacheLength = me.saveMaxOsIdCacheLength 
     cia.maxProductIdCacheLength = me.saveMaxProductIdCacheLength
-    cia.maxSignatureIdCacheLength = me.saveMaxSignatureIdCacheLength
     cia.maxUriIdCacheLength = me.saveMaxUriIdCacheLength
     cia.clearCache()
     me.testDB.removeDB(me.config,me.logger)
@@ -166,8 +166,6 @@ class TestCachedIdAccess:
     assert None != cia.productIdCount, 'But %s'%(cia.productIdCount)
     assert None == cia.uriIdCache, 'But %s'%(cia.uriIdCache)
     assert None == cia.uriIdCount, 'But %s'%(cia.uriIdCount)
-    assert None == cia.signatureIdCache, 'But %s'%(cia.signatureIdCache)
-    assert None == cia.signatureIdCount, 'But %s'%(cia.signatureIdCount)
     assert None != cia.osIdCache, 'But %s'%(cia.osIdCache)
     assert None != cia.osIdCount, 'But %s'%(cia.osIdCount)
     cia.clearCache()
@@ -175,18 +173,13 @@ class TestCachedIdAccess:
     assert None == cia.productIdCount, 'But %s'%(cia.productIdCount)
     assert None == cia.uriIdCache, 'But %s'%(cia.uriIdCache)
     assert None == cia.uriIdCount, 'But %s'%(cia.uriIdCount)
-    assert None == cia.signatureIdCache, 'But %s'%(cia.signatureIdCache)
-    assert None == cia.signatureIdCount, 'But %s'%(cia.signatureIdCount)
     assert None == cia.osIdCache, 'But %s'%(cia.osIdCache)
     assert None == cia.osIdCount, 'But %s'%(cia.osIdCount)
-    cia.maxSignatureIdCacheLength = 5
     tidc.initializeCache()
     assert None != cia.productIdCache, 'But %s'%(cia.productIdCache)
     assert None != cia.productIdCount, 'But %s'%(cia.productIdCount)
     assert None == cia.uriIdCache, 'But %s'%(cia.uriIdCache)
     assert None == cia.uriIdCount, 'But %s'%(cia.uriIdCount)
-    assert None != cia.signatureIdCache, 'But %s'%(cia.signatureIdCache)
-    assert None != cia.signatureIdCount, 'But %s'%(cia.signatureIdCount)
     assert None != cia.osIdCache, 'But %s'%(cia.osIdCache)
     assert None != cia.osIdCount, 'But %s'%(cia.osIdCount)
 
@@ -528,37 +521,3 @@ class TestCachedIdAccess:
       data = cursor.fetchone()
       self.connection.commit()
       assert rowCount == data[0]
-
-  def testGetSignatureId(self):
-    countSql = 'select count(id) from signaturedims'
-    cursor = self.connection.cursor()
-    cursor.execute(countSql)
-    count = cursor.fetchone()[0]
-    assert 0 == count, 'but got %s'%count
-    assert None == cia.signatureIdCache, 'but got %s'%cia.signatureIdCache
-    assert None == cia.signatureIdCount, 'but got %s'%cia.signatureIdCount
-    idc = cia.IdCache(cursor)
-    assert None == cia.signatureIdCache
-    assert None == cia.signatureIdCount
-    testSignatures = [
-      (None,None),
-      ('',1),
-      ('js_Interpret',2),
-      ('JS_Interpret',3),
-      ('js_interrupt',4),
-      ('js_Interpret',2),
-      ]
-    rowCount = 0
-    idSet = set()
-    for p in testSignatures:
-      key = p[0]
-      id = idc.getSignatureId(p[0])
-      assert p[1] == id, 'expected %s, got %s'%(p[1],id)
-      if id and not id in idSet:
-        rowCount += 1
-      idSet.add(id)
-      cursor.execute(countSql)
-      data = cursor.fetchone()
-      self.connection.commit()
-      assert rowCount == data[0]
-

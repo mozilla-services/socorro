@@ -94,4 +94,45 @@ def connectionStatus(aConnection):
     0:'IDLE', 1:'ACTIVE', 2:'INTRANS', 3:'INERROR', 4:'UNKNOWN',
     }
   return "Status: %s, Transaction Status: %s"%(statusStrings.get(aConnection.status,'UNK'),transStatusStrings.get(aConnection.get_transaction_status(),"UNK"))
-  
+
+def getSequenceNameForColumn(tableName, columnName, cursor):
+  """
+  Return the name of the sequence which provides defaults for columns of type serial
+  returns None if the values don't identify a column that owns a sequence
+  Does NOT commit() the connection.
+  Thanks to postgres experts Jonathan Daugherty and  Alvaro Herrera
+  http://archives.postgresql.org/pgsql-general/2004-10/msg01375.php # Re: determine sequence name for a serial
+  """
+  sql = """SELECT seq.relname::text
+             FROM pg_class src, pg_class seq, pg_namespace, pg_attribute, pg_depend
+             WHERE
+               pg_depend.refobjsubid = pg_attribute.attnum AND
+               pg_depend.refobjid = src.oid AND
+               seq.oid = pg_depend.objid AND
+               src.relnamespace = pg_namespace.oid AND
+               pg_attribute.attrelid = src.oid AND
+               pg_namespace.nspname = 'public' AND
+               src.relname = %s AND
+               pg_attribute.attname = %s"""
+  cursor.execute(sql,(tableName,columnName))
+  data = cursor.fetchone()
+  if data:
+    data = data[0]
+  return data
+
+def getCurrentValue(tableName, columnName, cursor):
+  """
+  Find out which (id) was most recently set for a table and column name. Else None if unavailable.
+  Does NOT commit() the connection
+  ----
+  NOTE: 'SELECT lastval()' is often better: http://www.postgresql.org/docs/8.3/interactive/functions-sequence.html
+  """
+  ret = None
+  seq = getSequenceNameForColumn(tableName,columnName,cursor)
+  if seq:
+    try:
+      cursor.execute("SELECT currval(%s)",(seq,))
+      ret = cursor.fetchone()[0]
+    except:
+      ret = None
+  return ret

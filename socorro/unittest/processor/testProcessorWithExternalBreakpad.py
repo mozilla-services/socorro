@@ -46,6 +46,7 @@ import socorro.unittest.testlib.createJsonDumpStore as createJDS
 import socorro.unittest.testlib.dbtestutil as dbtestutil
 from   socorro.unittest.testlib.loggerForTest import TestingLogger
 from   socorro.unittest.testlib.testDB import TestDB
+import socorro.unittest.testlib.util as tutil
 
 import processorTestconfig as testConfig
 
@@ -65,6 +66,7 @@ def setup_module():
   me.testDB = TestDB()
   # the next line is redundant with the same line in TestProcessorWithExternalBreakPad.setUp(). Deliberately.
   me.config = configurationManager.newConfiguration(configurationModule = testConfig, applicationName='Testing Processor')
+  tutil.nosePrintModule(__file__)
   myDir = os.path.split(__file__)[0]
   if not myDir: myDir = '.'
   replDict = {'testDir':'%s'%myDir}
@@ -270,21 +272,21 @@ class TestProcessorWithExternalBreakpad:
     processDate = now
     crashTime = "%d"%(nowstamp - 10000)
     jsonDoc = {'ProductName':product,'Version':version,'BuildID':buildId,'CrashTime':crashTime}
-    dbFields = ["date_processed","uuid","cpu_name","cpu_info","reason","address","os_name"]
+    dbFields = ["date_processed","uuid","cpu_name","cpu_info","reason","address","product", "version","os_name"]
     selectSql = 'SELECT %s FROM reports WHERE id=%%s'%(','.join(dbFields))
     p.insertReportIntoDatabase(cur,uuid,jsonDoc,path,now,[])
     # get the initial state of the data
     cur.execute(selectSql,(id,))
-    beforeData = cur.fetchall()
     con.commit()
+    beforeData = cur.fetchall()
 
     # check that we behave as expected for no header (no db update, two messages)
     messages = []
     result = p.analyzeHeader(id,iter(['\n']),cur,processDate,messages)
     con.commit() # because analyzeHeader should not do it
     cur.execute(selectSql,(id,))
-    afterData = cur.fetchall()
     con.commit()
+    afterData = cur.fetchall()
     for i in range(len(beforeData[0])):
       assert beforeData[0][i] == afterData[0][i], 'Column %s: Expected %s, got %s'%(dbFields[i],beforeData[0][i],afterData[0][i])
     assert None == result["crashedThread"]
@@ -295,8 +297,9 @@ class TestProcessorWithExternalBreakpad:
 
     # check that we see only stuff before header break
     messages = []
+    beforeData = cur.fetchall()
     result = p.analyzeHeader(id,iter(['OS|osName|osVersion|','\n','CPU|cpuName|cpuInfo','\n']),cur,processDate,messages)
-    expected = [processDate,uuid,None,None,None,None,'osName']
+    expected = [processDate,uuid,None,None,None,None,'bogus','3.xBogus','osName']
     assert None == result["crashedThread"],'Expected None crashedThread returned, got %s'%result
     cur.execute(selectSql,(id,))
     con.commit()
@@ -311,11 +314,10 @@ class TestProcessorWithExternalBreakpad:
     assert 'cause of the crash' in messages[0], 'Expected "no thread was identified as the cause of the crash", got "%s"'%(messages[0])
 
     # check that we appropriately handle too few or empty string items in header lines
-    cur.execute('update reports set cpu_name=%s,cpu_info=%s,os_name=%s,reason=%s,address=%s where id=%s',(None,None,None,None,None,id))
+    cur.execute('update reports set cpu_name=%s,cpu_info=%s,product=%s,version=%s,os_name=%s,reason=%s,address=%s where id=%s',(None,None,None,None,None,None,None,id))
     cur.execute(selectSql,(id,))
+    con.commit()
     beforeData = cur.fetchall()
-    con.commit()
-    con.commit()
     messages = []
     testData = ['OS|osVersion','CPU|cpuName','Crash|oopsy','\n']
     result = p.analyzeHeader(id,iter(testData),cur,processDate,messages)
@@ -340,24 +342,26 @@ class TestProcessorWithExternalBreakpad:
         assert 'cause of the crash' in messages[i], 'Expected "No thread was identified as the cause of the crash", got "%s"'%(messages[i])
 
     # check that we appropriately handle badly formatted header line
-    cur.execute('update reports set cpu_name=%s,cpu_info=%s,os_name=%s,reason=%s,address=%s where id=%s',(None,None,None,None,None,id))
+    cur.execute('update reports set cpu_name=%s,cpu_info=%s,product=%s,version=%s,os_name=%s,reason=%s,address=%s where id=%s',(None,None,None,None,None,None,None,id))
     cur.execute(selectSql,(id,))
-    beforeData = cur.fetchall()
     con.commit()
+    beforeData = cur.fetchall()
     messages = []
     testData = ['OS|osName|osVersion|||\n','CPU |cpuName | cpuVersion\n','Crash|oopsy|0xdeadbeef|tid\n','\n']
-    expected = [None,None,'cpuName','cpuVersion','oopsy','0xdeadbeef','osName']
+    expected = [None,None,'cpuName','cpuVersion','oopsy','0xdeadbeef',None,None,'osName']
     result = p.analyzeHeader(id,iter(testData),cur,processDate,messages)
     con.commit() # because analyzeHeader should not do it
     assert None == result["crashedThread"]
     cur.execute(selectSql,(id,))
+    con.commit()
     afterData = cur.fetchall()
     con.commit()
     for i in range(2,len(beforeData[0])):
       bd = beforeData[0][i]
       ad = afterData[0][i]
       assert str(ad) == str(ad).strip(), 'Expect no surrounding white space on data, but at %i: [%s]'%(dbFields[i],ad)
-      assert bd != ad, 'Expected None=>new value, but for %s, got %s'%(dbFields[i],ad)
+      if not dbFields[i] in ['product', 'version']:
+        assert bd != ad, 'Expected None=>new value, but for %s, got %s'%(dbFields[i],ad)
       assert expected[i] == ad, 'Expected %s, got %s'%(expected[i],ad)
     assert 1 == len(messages), 'Expected "No thread was identified" but %s'%(str(messages))
     assert 'No thread' in messages[0], 'Expected "No thread was identified as the cause of the crash", got "%s"'%(messages[0])
@@ -365,24 +369,24 @@ class TestProcessorWithExternalBreakpad:
     # check that "too much but ok" lines are correctly parsed
     cur.execute('update reports set cpu_name=%s,cpu_info=%s,os_name=%s,reason=%s,address=%s where id=%s',(None,None,None,None,None,id))
     cur.execute(selectSql,(id,))
-    beforeData = cur.fetchall()
     con.commit()
+    beforeData = cur.fetchall()
     messages = []
-    testData = ['CPU|cpuName | cpuVersion||\n','OS|osName|osVersion|osSubVersion\n',"BAD|IDEA\n",'Crash||0xdeadbeef|66|77|88','\n']
-    expected = [None,None,'cpuName','cpuVersion',None,'0xdeadbeef','osName']
+    testData = ['CPU|cpuName | cpuVersion||\n','OS|AnOsName|AnOsVersion|osSubVersion\n',"BAD|IDEA\n",'Crash||0xdeadbeef|66|77|88','\n']
+    expected = [processDate,uuid,'cpuName','cpuVersion',None,'0xdeadbeef',None,None,'AnOsName']
     result = p.analyzeHeader(id,iter(testData),cur,processDate,messages)
     con.commit() # because analyzeHeader should not do it
     assert 66 == result["crashedThread"]
     cur.execute(selectSql,(id,))
     con.commit()
     afterData = cur.fetchall()
-    for i in range(2,len(beforeData[0])):
+    for i in range(len(beforeData[0])):
       bd = beforeData[0][i]
       ad = afterData[0][i]
-      assert str(ad) == str(ad).strip(), 'Expect no surrounding white space on data, but at %i: [%s]'%(dbFields[i],ad)
-      if i != 4: # testing for empty field in 'reason'
+      assert str(ad) == str(ad).strip(), 'Expect no surrounding white space on data, but at %s: [%s]'%(dbFields[i],ad)
+      if i > 1 and expected[i]:
         assert bd != ad, 'Expected None=>new value, but for %s, got %s=>%s'%(dbFields[i],bd,ad)
-      assert expected[i] == ad, 'Expected %s, got %s'%(expected[i],ad)
+      assert expected[i] == ad, 'At %s expected %s, got %s'%(dbFields[i],expected[i],ad)
     assert 1 == len(messages), 'Expect unparseable "BAD|IDEA", but got %s'%(str(messages))
     assert 'Cannot parse header line' in messages[0], "but %s"%(messages[0])
     assert 'BAD|IDEA' in messages[0], "but %s"%(messages[0])
@@ -436,14 +440,12 @@ class TestProcessorWithExternalBreakpad:
     cur.execute(selectSql,(reportId,))
     con.commit()
     reportData = cur.fetchall()[0]
-    cur.execute("SELECT * from reports")
-    con.commit
     sigS = 'foo_%X(bar&)'%0
     assert sigS == reportData[0], 'Expected "%s", got %s'%(sigS,reportData[0])
     assert '' == reportData[1], 'Expected "None", got %s'%(reportData[1])
     cur.execute('select * from frames')
-    frameData = cur.fetchall()
     con.commit()
+    frameData = cur.fetchall()
     assert 10 == len(frameData)
     for i in range(len(frameData)):
       assert (1, now, i, 'foo_%X(bar&)'%(i),) == frameData[i], 'Expected "(1, %s, %d, foo_%X(bar&)", got %s'%(now,i,i,str(frameData[i]))
@@ -481,9 +483,9 @@ class TestProcessorWithExternalBreakpad:
     messages = []
     # check fields before the call
     cur.execute(selectSql,(reportId,))
+    con.commit()
     for d in cur.fetchall()[0]:
       assert None == d, 'Expected None for unanalyzed report, but got %s'%d
-    con.commit()
     d = p.analyzeFrames(1,dumper,cur,now,threadNum,messages)
     con.commit()
     assert not d["truncated"], 'Expected not to truncate here, but did. Huh.'
@@ -494,7 +496,7 @@ class TestProcessorWithExternalBreakpad:
     cur.execute(selectSql,(reportId,))
     reportData = cur.fetchall()[0]
     con.commit()
-    assert 'foo_0(bar&)' == reportData[0], 'Expected "1", got %s'%(reportData[0])
+    assert 'foo_0(bar&)' == reportData[0], 'Expected "foo_0(bar&)", got %s'%(reportData[0])
     assert messages[0] == reportData[1], 'Expected "None", got %s'%(reportData[1])
     cur.execute('select * from frames')
     frameData = cur.fetchall()
@@ -543,7 +545,6 @@ class TestProcessorWithExternalBreakpad:
     assert d["truncated"], 'Expected it to be truncated with this setup'
     assert 1 == len(messages), 'Expected one error message, but %s'%(str(messages))
     assert 'This dump is too long and has triggered the automatic truncation' in messages[0],'But got %s'%(str(messages))
-
     i = 0
     expectedValues = [x for x in range(6)]+[13,14]
     for c in dumper.cache:
@@ -610,7 +611,7 @@ class TestProcessorWithExternalBreakpad:
     cur.execute(selectSql,(reportId,))
     reportData = cur.fetchall()[0]
     con.commit()
-    assert 'foo_0(bar&)' == reportData[0], 'but "%s"'%(str(reportData[0]))
+    assert "foo_0(bar&)" == reportData[0], 'but "%s"'%(str(reportData[0]))
     assert '' == reportData[1], 'but "%s"'%(str(reportData[1]))
     cur.execute('select * from frames')
     frameData = cur.fetchall()

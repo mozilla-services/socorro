@@ -1,6 +1,7 @@
 import psycopg2 as pg
 import datetime as dt
 import threading
+import sets
 
 import socorro.lib.prioritize as socorro_pri
 import socorro.lib.psycopghelper as socorro_psy
@@ -272,15 +273,14 @@ class PartitionedTable(Table):
       self.logger.debug('%s - Rolling back and releasing savepoint: failed: %s', threading.currentThread().getName(), str(x).strip())
       databaseCursor.execute("rollback to %s; release savepoint %s;" % (partitionName, partitionName))
       databaseCursor.connection.commit() # This line added after of hours of blood, sweat, tears. Remove only per deathwish.
+
       altConnection, altCursor = alternateCursorFunction()
       dateIterator = mondayPairsIteratorFactory(uniqueIdentifier, uniqueIdentifier)
       try:
         self.createPartitions(altCursor,dateIterator)
-        altConnection.commit()
       except pg.DatabaseError,x:
         self.logger.debug("%s - Failed to create partition(s) %s: %s:%s", threading.currentThread().getName(), partitionName, type(x), x)
       self.logger.debug("%s - trying to insert into %s for the second time", threading.currentThread().getName(), self.name)
-      
       databaseCursor.execute(insertSql, row)
 
 #=================================================================================================================
@@ -293,7 +293,7 @@ class BranchesTable(Table):
                                             CREATE TABLE branches (
                                                 product character varying(30) NOT NULL,
                                                 version character varying(16) NOT NULL,
-                                                branch character varying(24) NOT NULL, -- gecko version
+                                                branch character varying(24) NOT NULL, -- gecko version 
                                                 PRIMARY KEY (product, version)
                                             );""")
 
@@ -362,7 +362,7 @@ class ReportsTable(PartitionedTable):
                             (uuid, client_crash_date, date_processed, product, version, build, url, install_age, last_crash, uptime, email, build_date, user_id, user_comments, app_notes, distributor, distributor_version) values
                             (%s,   %s,                %s,             %s,      %s,      %s,    %s,  %s,          %s,         %s,     %s,    %s,         %s,      %s,            %s,        %s,          %s)"""
   #-----------------------------------------------------------------------------------------------------------------
-  def additionalCroeationProcedures(self, databaseCursor):
+  def additionalCreationProcedures(self, databaseCursor):
     pass
   #-----------------------------------------------------------------------------------------------------------------
   def partitionCreationParameters(self, uniqueIdentifier):
@@ -505,6 +505,55 @@ class JobsTable(Table):
 databaseDependenciesForSetup[JobsTable] = [ProcessorsTable]
 
 #=================================================================================================================
+class BugsTable(Table):
+  """Define the table 'bug_associations'"""
+  #-----------------------------------------------------------------------------------------------------------------
+  def __init__ (self, logger, **kwargs):
+    super(BugsTable, self).__init__(name = "bugs", logger=logger,
+                                        creationSql = """
+                                            CREATE TABLE bugs (
+                                                id int NOT NULL,
+                                                status text,
+                                                resolution text,
+                                                short_desc text
+                                            );
+                                            ALTER TABLE ONLY bugs
+                                                ADD CONSTRAINT bugs_pkey PRIMARY KEY (id);
+                                            """)
+  #-----------------------------------------------------------------------------------------------------------------
+  def updateDefinition(self, databaseCursor):
+    if socorro_pg.tablesMatchingPattern(self.name) == []:
+      #this table doesn't exist yet, create it
+      self.create(databaseCursor)
+
+databaseDependenciesForSetup[BugsTable] = []
+
+#=================================================================================================================
+class BugAssociationsTable(Table):
+  """Define the table 'bug_associations'"""
+  #-----------------------------------------------------------------------------------------------------------------
+  def __init__ (self, logger, **kwargs):
+    super(BugAssociationsTable, self).__init__(name = "bug_associations", logger=logger,
+                                        creationSql = """
+                                            CREATE TABLE bug_associations (
+                                                signature text NOT NULL,
+                                                bug_id int NOT NULL
+                                            );
+                                            ALTER TABLE ONLY bug_associations
+                                                ADD CONSTRAINT bug_associations_pkey PRIMARY KEY (signature, bug_id);
+                                            CREATE INDEX idx_bug_associations_bug_id ON bug_associations (bug_id);
+                                            ALTER TABLE bug_associations
+                                                ADD CONSTRAINT bug_associations_bug_id_fkey FOREIGN KEY (bug_id) REFERENCES bugs(id) ON DELETE CASCADE;
+                                            """)
+  #-----------------------------------------------------------------------------------------------------------------
+  def updateDefinition(self, databaseCursor):
+    if socorro_pg.tablesMatchingPattern(self.name) == []:
+      #this table doesn't exist yet, create it
+      self.create(databaseCursor)
+
+databaseDependenciesForSetup[BugAssociationsTable] = [BugsTable]
+
+#=================================================================================================================
 class ServerStatusTable(Table):
   """Define the table 'server_status'"""
   #-----------------------------------------------------------------------------------------------------------------
@@ -527,21 +576,21 @@ class ServerStatusTable(Table):
                                           """)
 databaseDependenciesForSetup[ServerStatusTable] = []
 
-#=================================================================================================================
-class SignatureDimsTable(Table):
-  """Define the table 'signaturedims'"""
-  #-----------------------------------------------------------------------------------------------------------------
-  def __init__ (self, logger, **kwargs):
-    super(Table, self).__init__(name='signaturedims', logger=logger,
-                                       creationSql="""
-                                          CREATE TABLE signaturedims (
-                                              id serial NOT NULL,
-                                              signature character varying(255) NOT NULL);
-                                          ALTER TABLE ONLY signaturedims
-                                              ADD CONSTRAINT signaturedims_pkey PRIMARY KEY (id);
-                                          CREATE UNIQUE INDEX signaturedims_signature_key ON signaturedims USING btree (signature);
-                                          """)
-databaseDependenciesForSetup[SignatureDimsTable] = []
+# #=================================================================================================================
+# class SignatureDimsTable(Table):
+#   """Define the table 'signaturedims'"""
+#   #-----------------------------------------------------------------------------------------------------------------
+#   def __init__ (self, logger, **kwargs):
+#     super(SignatureDimsTable, self).__init__(name='signaturedims', logger=logger,
+#                                        creationSql="""
+#                                           CREATE TABLE signaturedims (
+#                                               id serial NOT NULL,
+#                                               signature character varying(255) NOT NULL);
+#                                           ALTER TABLE ONLY signaturedims
+#                                               ADD CONSTRAINT signaturedims_pkey PRIMARY KEY (id);
+#                                           CREATE UNIQUE INDEX signaturedims_signature_key ON signaturedims USING btree (signature);
+#                                           """)
+# databaseDependenciesForSetup[SignatureDimsTable] = []
 
 #=================================================================================================================
 class ReleaseEnum(DatabaseObject):
@@ -566,8 +615,8 @@ class ProductDimsTable(Table):
                                               version TEXT NOT NULL, -- varchar(16)
                                               release release_enum -- 'major':x.y.z..., 'milestone':x.ypre, 'development':x.y[ab]z
                                           );
-                                          CREATE UNIQUE INDEX productdims_product_version_key ON productdims USING btree (product, version);
-                                          CREATE INDEX productdims_product_release_key ON productdims USING btree (product, release);
+                                          CREATE UNIQUE INDEX productdims_product_version_key ON productdims (product, version);
+                                          CREATE INDEX productdims_release_key ON productdims (release);
                                           """)
 databaseDependenciesForSetup[ProductDimsTable] = [ReleaseEnum]
 
@@ -576,7 +625,7 @@ class UrlDimsTable(Table):
   """Define the table 'urldims'"""
   #-----------------------------------------------------------------------------------------------------------------
   def __init__ (self, logger, **kwargs):
-    super(Table, self).__init__(name='urldims', logger=logger,
+    super(UrlDimsTable, self).__init__(name='urldims', logger=logger,
                                        creationSql="""
                                           CREATE TABLE urldims (
                                               id serial NOT NULL,
@@ -596,88 +645,88 @@ class OsDimsTable(Table):
                                      creationSql="""
                                         CREATE TABLE osdims (
                                           id serial NOT NULL PRIMARY KEY,
-                                          os_name CHARACTER VARYING(100) NOT NULL,
-                                          os_version CHARACTER VARYING(100)
+                                          os_name TEXT NOT NULL,
+                                          os_version TEXT
                                         );
-                                        CREATE INDEX osdims_name_version_key on osdims USING btree (os_name,os_version);
+                                        CREATE INDEX osdims_name_version_key on osdims (os_name,os_version);
                                         """)
 databaseDependenciesForSetup[OsDimsTable] = []
 
-#=================================================================================================================
-class CrashReportsTable(PartitionedTable):
-  """Define the table 'crash_reports'"""
-  #-----------------------------------------------------------------------------------------------------------------
-  def __init__ (self, logger, **kwargs):
-    super(CrashReportsTable, self).__init__(name='crash_reports', logger=logger,
-                                        creationSql="""
-                                          CREATE TABLE crash_reports (
-                                              id serial NOT NULL,
-                                              uuid TEXT NOT NULL,
-                                              client_crash_date TIMESTAMP with time zone,
-                                              install_age INTEGER,
-                                              last_crash INTEGER,
-                                              uptime INTEGER,
-                                              cpu_name TEXT, -- varchar(100)
-                                              cpu_info TEXT, -- varchar(100)
-                                              reason TEXT,   -- varchar(255)
-                                              address TEXT,  -- varchar(20)
-                                              build_date TIMESTAMP without time zone,
-                                              started_datetime TIMESTAMP without time zone,
-                                              completed_datetime TIMESTAMP without time zone,
-                                              date_processed TIMESTAMP without time zone,
-                                              success BOOLEAN,
-                                              truncated BOOLEAN,
-                                              processor_notes TEXT, 
-                                              user_comments TEXT,  -- varchar(1024)
-                                              app_notes TEXT,  -- varchar(1024)
-                                              distributor TEXT, -- varchar(20)
-                                              distributor_version TEXT, -- varchar(20)
-                                              signaturedims_id INTEGER,
-                                              productdims_id INTEGER,
-                                              osdims_id INTEGER,
-                                              urldims_id INTEGER,
-                                              FOREIGN KEY (signaturedims_id) REFERENCES signaturedims(id) ON DELETE CASCADE,
-                                              FOREIGN KEY (productdims_id) REFERENCES productdims(id) ON DELETE CASCADE,
-                                              FOREIGN KEY (osdims_id) REFERENCES osdims(id) ON DELETE CASCADE,
-                                              FOREIGN KEY (urldims_id) REFERENCES urldims(id) ON DELETE CASCADE
-                                          );
-                                          --CREATE TRIGGER reports_insert_trigger
-                                          --    BEFORE INSERT ON reports
-                                          --    FOR EACH ROW EXECUTE PROCEDURE partition_insert_trigger();""",
-                                       partitionCreationSqlTemplate="""
-                                          CREATE TABLE %(partitionName)s (
-                                              CONSTRAINT %(partitionName)s_date_check CHECK (TIMESTAMP without time zone '%(startDate)s' <= date_processed and date_processed < TIMESTAMP without time zone '%(endDate)s'),
-                                              CONSTRAINT %(partitionName)s_unique_uuid unique (uuid),
-                                              PRIMARY KEY(id)
-                                          )
-                                          INHERITS (crash_reports);
-                                          CREATE INDEX %(partitionName)s_date_processed_key ON %(partitionName)s (date_processed);
-                                          CREATE INDEX %(partitionName)s_client_crash_date_key ON %(partitionName)s (client_crash_date);
-                                          CREATE INDEX %(partitionName)s_uuid_key ON %(partitionName)s (uuid);
-                                          CREATE INDEX %(partitionName)s_signaturedims_id_key ON %(partitionName)s (signaturedims_id);
-                                          CREATE INDEX %(partitionName)s_url_key ON %(partitionName)s (urldims_id);
-                                          CREATE INDEX %(partitionName)s_product_version_key ON %(partitionName)s (productdims_id);
-                                          --CREATE INDEX %(partitionName)s_uuid_date_processed_key ON %(partitionName)s (uuid, date_processed);
-                                          CREATE INDEX %(partitionName)s_signature_date_processed_key ON %(partitionName)s (signaturedims_id, date_processed);
-                                          """
-                                      )
-    self.columns =  ("uuid", "client_crash_date", "date_processed", "install_age", "last_crash", "uptime", "user_comments", "app_notes", "distributor", "distributor_version", "productdims_id", "urldims_id")
-    columnNames = ','.join(self.columns)
-    placeholders = ','.join(('%s' for x in self.columns))
-    self.insertSql = """insert into TABLENAME (%s) values (%s)"""%(columnNames,placeholders)
+# #=================================================================================================================
+# class CrashReportsTable(PartitionedTable):
+#   """Define the table 'crash_reports'"""
+#   #-----------------------------------------------------------------------------------------------------------------
+#   def __init__ (self, logger, **kwargs):
+#     super(CrashReportsTable, self).__init__(name='crash_reports', logger=logger,
+#                                         creationSql="""
+#                                           CREATE TABLE crash_reports (
+#                                               id serial NOT NULL,
+#                                               uuid TEXT NOT NULL,
+#                                               client_crash_date TIMESTAMP with time zone,
+#                                               install_age INTEGER,
+#                                               last_crash INTEGER,
+#                                               uptime INTEGER,
+#                                               cpu_name TEXT, -- varchar(100)
+#                                               cpu_info TEXT, -- varchar(100)
+#                                               reason TEXT,   -- varchar(255)
+#                                               address TEXT,  -- varchar(20)
+#                                               build_date TIMESTAMP without time zone,
+#                                               started_datetime TIMESTAMP without time zone,
+#                                               completed_datetime TIMESTAMP without time zone,
+#                                               date_processed TIMESTAMP without time zone,
+#                                               success BOOLEAN,
+#                                               truncated BOOLEAN,
+#                                               processor_notes TEXT, 
+#                                               user_comments TEXT,  -- varchar(1024)
+#                                               app_notes TEXT,  -- varchar(1024)
+#                                               distributor TEXT, -- varchar(20)
+#                                               distributor_version TEXT, -- varchar(20)
+#                                               signaturedims_id INTEGER,
+#                                               productdims_id INTEGER,
+#                                               osdims_id INTEGER,
+#                                               urldims_id INTEGER,
+#                                               FOREIGN KEY (signaturedims_id) REFERENCES signaturedims(id) ON DELETE CASCADE,
+#                                               FOREIGN KEY (productdims_id) REFERENCES productdims(id) ON DELETE CASCADE,
+#                                               FOREIGN KEY (osdims_id) REFERENCES osdims(id) ON DELETE CASCADE,
+#                                               FOREIGN KEY (urldims_id) REFERENCES urldims(id) ON DELETE CASCADE
+#                                           );
+#                                           --CREATE TRIGGER reports_insert_trigger
+#                                           --    BEFORE INSERT ON reports
+#                                           --    FOR EACH ROW EXECUTE PROCEDURE partition_insert_trigger();""",
+#                                        partitionCreationSqlTemplate="""
+#                                           CREATE TABLE %(partitionName)s (
+#                                               CONSTRAINT %(partitionName)s_date_check CHECK (TIMESTAMP without time zone '%(startDate)s' <= date_processed and date_processed < TIMESTAMP without time zone '%(endDate)s'),
+#                                               CONSTRAINT %(partitionName)s_unique_uuid unique (uuid),
+#                                               PRIMARY KEY(id)
+#                                           )
+#                                           INHERITS (crash_reports);
+#                                           CREATE INDEX %(partitionName)s_date_processed_key ON %(partitionName)s (date_processed);
+#                                           CREATE INDEX %(partitionName)s_client_crash_date_key ON %(partitionName)s (client_crash_date);
+#                                           CREATE INDEX %(partitionName)s_uuid_key ON %(partitionName)s (uuid);
+#                                           CREATE INDEX %(partitionName)s_signature_key ON %(partitionName)s (signaturedims_id);
+#                                           CREATE INDEX %(partitionName)s_url_key ON %(partitionName)s (urldims_id);
+#                                           CREATE INDEX %(partitionName)s_product_version_key ON %(partitionName)s (productdims_id);
+#                                           --CREATE INDEX %(partitionName)s_uuid_date_processed_key ON %(partitionName)s (uuid, date_processed);
+#                                           CREATE INDEX %(partitionName)s_signature_date_processed_key ON %(partitionName)s (signaturedims_id, date_processed);
+#                                           """
+#                                       )
+#     self.columns =  ("uuid", "client_crash_date", "date_processed", "install_age", "last_crash", "uptime", "user_comments", "app_notes", "distributor", "distributor_version", "productdims_id", "urldims_id")
+#     columnNames = ','.join(self.columns)
+#     placeholders = ','.join(('%s' for x in self.columns))
+#     self.insertSql = """insert into TABLENAME (%s) values (%s)"""%(columnNames,placeholders)
     
-  def partitionCreationParameters(self,uniqueIdentifier):
-    startDate, endDate = uniqueIdentifier
-    startDateAsString = "%4d-%02d-%02d" % startDate.timetuple()[:3]
-    compressedStartDateAsString = startDateAsString.replace("-", "")
-    endDateAsString = "%4d-%02d-%02d" % endDate.timetuple()[:3]
-    return { "partitionName": "crash_reports_%s" % compressedStartDateAsString,
-             "startDate": startDateAsString,
-             "endDate": endDateAsString,
-             "compressedStartDate": compressedStartDateAsString,
-           }
+#   def partitionCreationParameters(self,uniqueIdentifier):
+#     startDate, endDate = uniqueIdentifier
+#     startDateAsString = "%4d-%02d-%02d" % startDate.timetuple()[:3]
+#     compressedStartDateAsString = startDateAsString.replace("-", "")
+#     endDateAsString = "%4d-%02d-%02d" % endDate.timetuple()[:3]
+#     return { "partitionName": "crash_reports_%s" % compressedStartDateAsString,
+#              "startDate": startDateAsString,
+#              "endDate": endDateAsString,
+#              "compressedStartDate": compressedStartDateAsString,
+#            }
     
-databaseDependenciesForSetup[CrashReportsTable] = [ProductDimsTable,OsDimsTable,UrlDimsTable,SignatureDimsTable]
+# databaseDependenciesForSetup[CrashReportsTable] = [SignatureDimsTable,ProductDimsTable,OsDimsTable,UrlDimsTable]
 
 #=================================================================================================================
 class ExtensionsTable(PartitionedTable):
@@ -737,7 +786,6 @@ class ExtensionsTable(PartitionedTable):
              "endDate": endDateAsString,
              "compressedStartDate": compressedStartDateAsString
            }
-#databaseDependenciesForPartition[ExtensionsTable] = [CrashReportsTable]
 databaseDependenciesForPartition[ExtensionsTable] = [ReportsTable]
 databaseDependenciesForSetup[ExtensionsTable] = []
 
@@ -799,7 +847,6 @@ class FramesTable(PartitionedTable):
              "endDate": endDateAsString,
              "compressedStartDate": compressedStartDateAsString
            }
-#databaseDependenciesForPartition[FramesTable] = [CrashReportsTable]
 databaseDependenciesForPartition[FramesTable] = [ReportsTable]
 databaseDependenciesForSetup[FramesTable] = []
 
@@ -862,234 +909,232 @@ databaseDependenciesForSetup[FramesTable] = []
 # databaseDependenciesForPartition[DumpsTable] = [CrashReportsTable]
 
 #=================================================================================================================
-
-#=================================================================================================================
-class BugsTable(Table):
-  """Define the table 'bug_associations'"""
-  #-----------------------------------------------------------------------------------------------------------------
+class TimeBeforeFailureTable(Table):
+  """Define the table 'time_before_failure'"""
   def __init__ (self, logger, **kwargs):
-    super(BugsTable, self).__init__(name = "bugs", logger=logger,
-                                        creationSql = """
-                                            CREATE TABLE bugs (
-                                                id int NOT NULL,
-                                                status text,
-                                                resolution text,
-                                                short_desc text
-                                            );
-                                            ALTER TABLE ONLY bugs
-                                                ADD CONSTRAINT bugs_pkey PRIMARY KEY (id);
-                                            """)
-  #-----------------------------------------------------------------------------------------------------------------
-  def updateDefinition(self, databaseCursor):
-    if socorro_pg.tablesMatchingPattern(self.name) == []:
-      #this table doesn't exist yet, create it
-      self.create(databaseCursor)
-
-databaseDependenciesForSetup[BugsTable] = []
-
-#=================================================================================================================
-class BugAssociationsTable(Table):
-  """Define the table 'bug_associations'"""
-  #-----------------------------------------------------------------------------------------------------------------
-  def __init__ (self, logger, **kwargs):
-    super(BugAssociationsTable, self).__init__(name = "bug_associations", logger=logger,
-                                        creationSql = """
-                                            CREATE TABLE bug_associations (
-                                                signature text NOT NULL,
-                                                bug_id int NOT NULL
-                                            );
-                                            ALTER TABLE ONLY bug_associations
-                                                ADD CONSTRAINT bug_associations_pkey PRIMARY KEY (signature, bug_id);
-                                            CREATE INDEX idx_bug_associations_bug_id ON bug_associations (bug_id);
-                                            ALTER TABLE bug_associations
-                                                ADD CONSTRAINT bug_associations_bug_id_fkey FOREIGN KEY (bug_id) REFERENCES bugs(id) ON DELETE CASCADE;
-                                            """)
-  #-----------------------------------------------------------------------------------------------------------------
-  def updateDefinition(self, databaseCursor):
-    if socorro_pg.tablesMatchingPattern(self.name) == []:
-      #this table doesn't exist yet, create it
-      self.create(databaseCursor)
-
-databaseDependenciesForSetup[BugAssociationsTable] = [BugsTable]
-
-#=================================================================================================================
-class MTBFFactsTable(Table):
-  """Define the table 'mtbffacts'"""
-  #-----------------------------------------------------------------------------------------------------------------
-  def __init__ (self, logger, **kwargs):
-    super(Table, self).__init__(name='mtbffacts', logger=logger,
-                                       creationSql="""
-                                          CREATE TABLE mtbffacts (
-                                              id serial NOT NULL,
-                                              avg_seconds integer NOT NULL,
+    super(TimeBeforeFailureTable, self).__init__(name='time_before_failure', logger=logger,
+                                        creationSql="""
+                                          CREATE TABLE time_before_failure (
+                                              id serial NOT NULL PRIMARY KEY,
+                                              sum_uptime_seconds integer NOT NULL,
                                               report_count integer NOT NULL,
-                                              -- unique_users integer NOT NULL,
-                                              day date,
                                               productdims_id integer,
-                                              osdims_id integer
+                                              osdims_id integer,
+                                              window_end TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+                                              window_size INTERVAL NOT NULL
                                               );
-                                          CREATE INDEX mtbffacts_day_key ON mtbffacts USING btree (day);
-                                          CREATE INDEX mtbffacts_product_id_key ON mtbffacts USING btree (productdims_id);
-                                          ALTER TABLE ONLY mtbffacts
-                                              ADD CONSTRAINT mtbffacts_pkey PRIMARY KEY (id);
-                                          ALTER TABLE ONLY mtbffacts
-                                              ADD CONSTRAINT mtbffacts_productdims_id_fkey FOREIGN KEY (productdims_id) REFERENCES productdims(id);
-                                          ALTER TABLE ONLY mtbffacts
-                                              ADD CONSTRAINT mtbffacts_osdims_id_fkey FOREIGN KEY (osdims_id) REFERENCES osdims(id);
-                                          """)
-databaseDependenciesForSetup[MTBFFactsTable] = [OsDimsTable,ProductDimsTable]
+                                          CREATE INDEX time_before_failure_window_end_window_size_key ON time_before_failure (window_end,window_size);
+                                          CREATE INDEX time_before_failure_product_id_key ON time_before_failure (productdims_id);
+                                          CREATE INDEX time_before_failure_os_id_key ON time_before_failure (osdims_id);
+                                          ALTER TABLE ONLY time_before_failure
+                                              ADD CONSTRAINT time_before_failure_productdims_id_fkey FOREIGN KEY (productdims_id) REFERENCES productdims(id) ON DELETE CASCADE;
+                                          ALTER TABLE ONLY time_before_failure
+                                              ADD CONSTRAINT time_before_failure_osdims_id_fkey FOREIGN KEY (osdims_id) REFERENCES osdims(id) ON DELETE CASCADE;
+                                              """)
+databaseDependenciesForSetup[TimeBeforeFailureTable] = [ProductDimsTable, OsDimsTable]
+    
+# #=================================================================================================================
+# class MTBFFactsTable(Table):
+#   """Define the table 'mtbffacts'"""
+#   #-----------------------------------------------------------------------------------------------------------------
+#   def __init__ (self, logger, **kwargs):
+#     super(MTBFFactsTable, self).__init__(name='mtbffacts', logger=logger,
+#                                        creationSql="""
+#                                           CREATE TABLE mtbffacts (
+#                                               id serial NOT NULL,
+#                                               avg_seconds integer NOT NULL,
+#                                               report_count integer NOT NULL,
+#                                               unique_users integer NOT NULL,
+#                                               day date,
+#                                               productdims_id integer,
+#                                               );
+#                                           CREATE INDEX mtbffacts_day_key ON mtbffacts USING btree (day);
+#                                           CREATE INDEX mtbffacts_product_id_key ON mtbffacts USING btree (productdims_id);
+#                                           ALTER TABLE ONLY mtbffacts
+#                                               ADD CONSTRAINT mtbffacts_pkey PRIMARY KEY (id);
+#                                           ALTER TABLE ONLY mtbffacts
+#                                               ADD CONSTRAINT mtbffacts_productdims_id_fkey FOREIGN KEY (productdims_id) REFERENCES productdims(id);
+#                                           """)
+# databaseDependenciesForSetup[MTBFFactsTable] = [ProductDimsTable]
 
 #=================================================================================================================
-class MTBFConfigTable(Table):
-  """Define the table 'mtbfconfig'"""
-  #-----------------------------------------------------------------------------------------------------------------
-  def __init__ (self, logger, **kwargs):
-    super(Table, self).__init__(name='mtbfconfig', logger=logger,
-                                       creationSql="""
-                                          CREATE TABLE mtbfconfig (
-                                              id serial NOT NULL,
-                                              productdims_id integer,
-                                              osdims_id integer,
-                                              start_dt date,
-                                              end_dt date);
-                                          ALTER TABLE ONLY mtbfconfig
-                                              ADD CONSTRAINT mtbfconfig_pkey PRIMARY KEY (id);
-                                          CREATE INDEX mtbfconfig_end_dt_key ON mtbfconfig USING btree (end_dt);
-                                          CREATE INDEX mtbfconfig_start_dt_key ON mtbfconfig USING btree (start_dt);
-                                          ALTER TABLE ONLY mtbfconfig
-                                              ADD CONSTRAINT mtbfconfig_productdims_id_fkey FOREIGN KEY (productdims_id) REFERENCES productdims(id);
-                                          ALTER TABLE ONLY mtbfconfig
-                                              ADD CONSTRAINT mtbfconfig_osdims_id_fkey FOREIGN KEY (osdims_id) REFERENCES osdims(id);
-                                          """)
-databaseDependenciesForSetup[MTBFConfigTable] = [ProductDimsTable, OsDimsTable]
+class ProductVisibilityTable(Table):
+  """Define the table product_visibiilty: Used to decide what products are to be aggregated"""
+  def __init__(self,logger,**kwargs):
+    super(ProductVisibilityTable,self).__init__(name='product_visibility', logger=logger,
+                               creationSql = """
+                                 CREATE TABLE product_visibility (
+                                   productdims_id integer NOT NULL PRIMARY KEY,
+                                   start_date timestamp, -- set this manually for all mat views
+                                   end_date timestamp,   -- set this manually: Used by mat views that care
+                                   ignore boolean default False -- force aggregation off for this product id
+                                   );
+                                   CREATE INDEX product_visibility_end_date ON product_visibility (end_date);
+                                   CREATE INDEX product_visibility_start_date on product_visibility (start_date);
+                                   ALTER TABLE ONLY product_visibility
+                                     ADD CONSTRAINT product_visibility_id_fkey FOREIGN KEY (productdims_id) REFERENCES productdims(id) ON DELETE CASCADE;
+                                 """
+                                           )
+databaseDependenciesForSetup[ProductVisibilityTable] = [ProductDimsTable]
+# #=================================================================================================================
+# class MTBFConfigTable(Table):
+#   """Define the table 'mtbfconfig'"""
+#   #-----------------------------------------------------------------------------------------------------------------
+#   def __init__ (self, logger, **kwargs):
+#     super(Table, self).__init__(name='mtbfconfig', logger=logger,
+#                                        creationSql="""
+#                                           CREATE TABLE mtbfconfig (
+#                                               id serial NOT NULL,
+#                                               productdims_id integer,
+#                                               osdims_id integer,
+#                                               start_dt date,
+#                                               end_dt date);
+#                                           ALTER TABLE ONLY mtbfconfig
+#                                               ADD CONSTRAINT mtbfconfig_pkey PRIMARY KEY (id);
+#                                           CREATE INDEX mtbfconfig_end_dt_key ON mtbfconfig USING btree (end_dt);
+#                                           CREATE INDEX mtbfconfig_start_dt_key ON mtbfconfig USING btree (start_dt);
+#                                           ALTER TABLE ONLY mtbfconfig
+#                                               ADD CONSTRAINT mtbfconfig_productdims_id_fkey FOREIGN KEY (productdims_id) REFERENCES productdims(id);
+#                                           ALTER TABLE ONLY mtbfconfig
+#                                               ADD CONSTRAINT mtbfconfig_osdims_id_fkey FOREIGN KEY (osdims_id) REFERENCES osdims(id);
+#                                           """)
+# databaseDependenciesForSetup[MTBFConfigTable] = [ProductDimsTable, OsDimsTable]
 
 #=================================================================================================================
-class TCByUrlConfigTable(Table):
-  """Define the table 'tcbyurlconfig'"""
-  #-----------------------------------------------------------------------------------------------------------------
-  def __init__ (self, logger, **kwargs):
-    super(Table, self).__init__(name='tcbyurlconfig', logger=logger,
-                                       creationSql="""
-                                          CREATE TABLE tcbyurlconfig (
-                                              id serial NOT NULL,
-                                              productdims_id integer,
-                                              osdims_id integer,
-                                              enabled boolean);
-                                          ALTER TABLE ONLY tcbyurlconfig
-                                              ADD CONSTRAINT tcbyurlconfig_pkey PRIMARY KEY (id);
-                                          ALTER TABLE ONLY tcbyurlconfig
-                                              ADD CONSTRAINT tcbyurlconfig_productdims_id_fkey FOREIGN KEY (productdims_id) REFERENCES productdims(id);
-                                          ALTER TABLE ONLY tcbyurlconfig
-                                              ADD CONSTRAINT tcbyurlconfig_osdims_id_fkey FOREIGN KEY (osdims_id) REFERENCES osdims(id);
-                                          """)
-databaseDependenciesForSetup[TCByUrlConfigTable] = [ProductDimsTable, OsDimsTable]
+# class TCByUrlConfigTable(Table):
+#   """Define the table 'tcbyurlconfig'"""
+#   #-----------------------------------------------------------------------------------------------------------------
+#   def __init__ (self, logger, **kwargs):
+#     super(Table, self).__init__(name='tcbyurlconfig', logger=logger,
+#                                        creationSql="""
+#                                           CREATE TABLE tcbyurlconfig (
+#                                               id serial NOT NULL,
+#                                               productdims_id integer,
+#                                               osdims_id integer,
+#                                               enabled boolean);
+#                                           ALTER TABLE ONLY tcbyurlconfig
+#                                               ADD CONSTRAINT tcbyurlconfig_pkey PRIMARY KEY (id);
+#                                           ALTER TABLE ONLY tcbyurlconfig
+#                                               ADD CONSTRAINT tcbyurlconfig_productdims_id_fkey FOREIGN KEY (productdims_id) REFERENCES productdims(id);
+#                                           ALTER TABLE ONLY tcbyurlconfig
+#                                               ADD CONSTRAINT tcbyurlconfig_osdims_id_fkey FOREIGN KEY (osdims_id) REFERENCES osdims(id);
+#                                           """)
+# databaseDependenciesForSetup[TCByUrlConfigTable] = [ProductDimsTable, OsDimsTable]
+
+# #=================================================================================================================
+# class TCBySignatureConfigTable(Table):
+#   """Define the table tcbysignatureconfig"""
+#   #-----------------------------------------------------------------------------------------------------------------
+#   def __init__ (self, logger, **kwargs):
+#     super(Table, self).__init__(name='tcbysignatureconfig', logger = logger,
+#                                 creationSql="""
+#                                   CREATE TABLE tcbysignatureconfig (
+#                                       id serial NOT NULL PRIMARY KEY,
+#                                       productdims_id integer,
+#                                       osdims_id integer,
+#                                       start_dt date,
+#                                       end_dt date);
+#                                   ALTER TABLE tcbysignatureconfig
+#                                       ADD CONSTRAINT tcbysignatureconfig_productdims_id_fkey FOREIGN KEY (productdims_id) REFERENCES productdims(id);
+#                                   ALTER TABLE tcbysignatureconfig
+#                                       ADD CONSTRAINT tcbysignatureconfig_osdims_id_fkey FOREIGN KEY (osdims_id) REFERENCES osdims(id);
+#                                   CREATE INDEX tcbysignatureconfig_dates ON tcbysignatureconfig (start_dt,end_dt)
+#                                   """)
+# databaseDependenciesForSetup[TCBySignatureConfigTable] = [ProductDimsTable, OsDimsTable]
 
 #=================================================================================================================
-class TCBySignatureConfigTable(Table):
-  """Define the table tcbysignatureconfig"""
+class TopCrashesByUrlTable(Table):
+  """Define the table 'top_crashes_by_url'"""
   #-----------------------------------------------------------------------------------------------------------------
   def __init__ (self, logger, **kwargs):
-    super(Table, self).__init__(name='tcbysignatureconfig', logger = logger,
+    super(TopCrashesByUrlTable, self).__init__(name='top_crashes_by_url', logger=logger,
                                 creationSql="""
-                                  CREATE TABLE tcbysignatureconfig (
-                                      id serial NOT NULL PRIMARY KEY,
-                                      productdims_id integer,
-                                      osdims_id integer,
-                                      start_dt date,
-                                      end_dt date);
-                                  ALTER TABLE tcbysignatureconfig
-                                      ADD CONSTRAINT tcbysignatureconfig_productdims_id_fkey FOREIGN KEY (productdims_id) REFERENCES productdims(id);
-                                  ALTER TABLE tcbysignatureconfig
-                                      ADD CONSTRAINT tcbysignatureconfig_osdims_id_fkey FOREIGN KEY (osdims_id) REFERENCES osdims(id);
-                                  CREATE INDEX tcbysignatureconfig_dates ON tcbysignatureconfig (start_dt,end_dt)
+                                  CREATE TABLE top_crashes_by_url (
+                                  id serial NOT NULL PRIMARY KEY,
+                                  count integer NOT NULL,
+                                  urldims_id integer,
+                                  productdims_id integer,
+                                  osdims_id integer,
+                                  window_end TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+                                  window_size INTERVAL NOT NULL
+                                  );
+                                  ALTER TABLE ONLY top_crashes_by_url
+                                   ADD CONSTRAINT top_crashes_by_url_productdims_id_fkey FOREIGN KEY (productdims_id) REFERENCES productdims(id) ON DELETE CASCADE;
+                                  ALTER TABLE ONLY top_crashes_by_url
+                                   ADD CONSTRAINT top_crashes_by_url_osdims_id_fkey FOREIGN KEY (osdims_id) REFERENCES osdims(id) ON DELETE CASCADE;
+                                  ALTER TABLE ONLY top_crashes_by_url
+                                   ADD CONSTRAINT top_crashes_by_url_urldims_id_fkey FOREIGN KEY (urldims_id) REFERENCES urldims(id) ON DELETE CASCADE;
+                                  CREATE INDEX top_crashes_by_url_count_key ON top_crashes_by_url USING btree (count);
+                                  CREATE INDEX top_crashes_by_url_window_end_window_size_key ON top_crashes_by_url USING btree (window_end,window_size);
+                                  CREATE INDEX top_crashes_by_url_productdims_key ON top_crashes_by_url USING btree (productdims_id);
+                                  CREATE INDEX top_crashes_by_url_urldims_key ON top_crashes_by_url USING btree (urldims_id);
+                                  CREATE INDEX top_crashes_by_url_osdims_key ON top_crashes_by_url USING btree (osdims_id);
+
                                   """)
-databaseDependenciesForSetup[TCBySignatureConfigTable] = [ProductDimsTable, OsDimsTable]
+databaseDependenciesForSetup[TopCrashesByUrlTable] = [ProductDimsTable,OsDimsTable,UrlDimsTable]
 
 #=================================================================================================================
-class TopCrashUrlFactsTable(Table):
-  """Define the table 'topcrashurlfacts'"""
+class TopCrashByUrlSignatureTable(Table):
+  """Define the table top_crashes_by_url_signature"""
   #-----------------------------------------------------------------------------------------------------------------
   def __init__ (self, logger, **kwargs):
-    super(Table, self).__init__(name='topcrashurlfacts', logger=logger,
-                                       creationSql="""
-                                          CREATE TABLE topcrashurlfacts (
-                                              id serial NOT NULL,
-                                              count integer NOT NULL,
-                                              rank integer,
-                                              day date NOT NULL,
-                                              signaturedims_id integer,
-                                              productdims_id integer,
-                                              urldims_id integer,
-                                              osdims_id integer
-                                          );
-                                          ALTER TABLE ONLY topcrashurlfacts
-                                              ADD CONSTRAINT topcrashurlfacts_pkey PRIMARY KEY (id);
-                                          CREATE INDEX topcrashurlfacts_count_key ON topcrashurlfacts USING btree (count);
-                                          CREATE INDEX topcrashurlfacts_day_key ON topcrashurlfacts USING btree (day);
-                                          CREATE INDEX topcrashurlfacts_signaturedims_id_key ON topcrashurlfacts USING btree (signaturedims_id);
-                                          CREATE INDEX topcrashurlfacts_productdims_key ON topcrashurlfacts USING btree (productdims_id);
-                                          CREATE INDEX topcrashurlfacts_urldims_key ON topcrashurlfacts USING btree (urldims_id);
-                                          CREATE INDEX topcrashurlfacts_osdims_key ON topcrashurlfacts USING btree (osdims_id);
-                                          ALTER TABLE ONLY topcrashurlfacts
-                                              ADD CONSTRAINT topcrashurlfacts_signaturedims_id_fkey FOREIGN KEY (signaturedims_id) REFERENCES signaturedims(id);
-                                          ALTER TABLE ONLY topcrashurlfacts
-                                              ADD CONSTRAINT topcrashurlfacts_productdims_id_fkey FOREIGN KEY (productdims_id) REFERENCES productdims(id);
-                                          ALTER TABLE ONLY topcrashurlfacts
-                                              ADD CONSTRAINT topcrashurlfacts_osdims_id_fkey FOREIGN KEY (osdims_id) REFERENCES osdims(id);
-                                          ALTER TABLE ONLY topcrashurlfacts
-                                              ADD CONSTRAINT topcrashurlfacts_urldims_id_fkey FOREIGN KEY (urldims_id) REFERENCES urldims(id);
-                                          """)
-databaseDependenciesForSetup[TopCrashUrlFactsTable] = [ProductDimsTable,OsDimsTable,UrlDimsTable,SignatureDimsTable]
-
+    super(TopCrashByUrlSignatureTable, self).__init__(name='top_crashes_by_url_signature', logger=logger,
+                                creationSql="""
+                                CREATE TABLE top_crashes_by_url_signature (
+                                top_crashes_by_url_id integer NOT NULL, -- foreign key
+                                signature TEXT NOT NULL,
+                                count integer NOT NULL,
+                                CONSTRAINT top_crashes_by_url_signature_fkey FOREIGN KEY (top_crashes_by_url_id) REFERENCES top_crashes_by_url(id) ON DELETE CASCADE,
+                                CONSTRAINT top_crashes_by_url_signature_pkey PRIMARY KEY(top_crashes_by_url_id, signature)
+                                );
+                                """)
+databaseDependenciesForSetup[TopCrashByUrlSignatureTable] = [TopCrashesByUrlTable]
 #=================================================================================================================
 class TopCrashUrlFactsReportsTable(Table):
   """Define the table 'topcrashurlfactsreports'"""
   #-----------------------------------------------------------------------------------------------------------------
   def __init__ (self, logger, **kwargs):
-    super(Table, self).__init__(name='topcrashurlfactsreports', logger=logger,
+    super(TopCrashUrlFactsReportsTable, self).__init__(name='topcrashurlfactsreports', logger=logger,
                                        creationSql="""
                                           CREATE TABLE topcrashurlfactsreports (
                                               id serial NOT NULL,
                                               uuid character varying(50) NOT NULL,
-                                              comments character varying(500),
+                                              comments TEXT,
                                               topcrashurlfacts_id integer);          
                                           ALTER TABLE ONLY topcrashurlfactsreports
                                               ADD CONSTRAINT topcrashurlfactsreports_pkey PRIMARY KEY (id);
                                           CREATE INDEX topcrashurlfactsreports_topcrashurlfacts_id_key ON topcrashurlfactsreports USING btree (topcrashurlfacts_id);
                                           ALTER TABLE ONLY topcrashurlfactsreports
-                                              ADD CONSTRAINT topcrashurlfactsreports_topcrashurlfacts_id_fkey FOREIGN KEY (topcrashurlfacts_id) REFERENCES topcrashurlfacts(id) ON DELETE CASCADE;
+                                              ADD CONSTRAINT topcrashurlfactsreports_topcrashurlfacts_id_fkey FOREIGN KEY (topcrashurlfacts_id) REFERENCES top_crashes_by_url(id) ON DELETE CASCADE;
 
                                           """)
-databaseDependenciesForSetup[TopCrashUrlFactsReportsTable] = [TopCrashUrlFactsTable]
+databaseDependenciesForSetup[TopCrashUrlFactsReportsTable] = [TopCrashesByUrlTable]
 
 #=================================================================================================================
-class TopCrashFactsTable(Table):
-  """Define the table topcrashfacts"""
+class TopCrashesBySignatureTable(Table):
+  """Define the table top_crashes_by_signature"""
   def __init__(self, logger, **kwargs):
-    super(TopCrashFactsTable, self).__init__(name='topcrashfacts', logger=logger,
+    super(TopCrashesBySignatureTable, self).__init__(name='top_crashes_by_signature', logger=logger,
                                              creationSql= """
-                                             CREATE TABLE topcrashfacts (
+                                             CREATE TABLE top_crashes_by_signature (
                                                id serial NOT NULL PRIMARY KEY,
                                                count integer NOT NULL DEFAULT 0,
-                                               rank integer NOT NULL DEFAULT 0,
                                                uptime real DEFAULT 0.0,
+                                               signature TEXT,
                                                productdims_id integer,
-                                               signaturedims_id integer NOT NULL,
                                                osdims_id integer,
-                                               interval_start TIMESTAMP WITHOUT TIME ZONE NOT NULL,
-                                               interval_minutes INTEGER NOT NULL
+                                               window_end TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+                                               window_size INTERVAL NOT NULL
                                              );
-                                             ALTER TABLE ONLY topcrashfacts ADD CONSTRAINT signaturedims_id_fkey FOREIGN KEY (signaturedims_id) REFERENCES signaturedims(id) ON DELETE CASCADE;
-                                             ALTER TABLE ONLY topcrashfacts ADD CONSTRAINT productdims_id_fkey FOREIGN KEY (productdims_id) REFERENCES productdims(id) ON DELETE CASCADE;
-                                             ALTER TABLE ONLY topcrashfacts ADD CONSTRAINT osdims_id_fkey FOREIGN KEY (osdims_id) REFERENCES osdims(id) ON DELETE CASCADE;
-                                             CREATE INDEX topcrashfacts_signaturedims_id_key ON topcrashfacts USING btree(signaturedims_id);
-                                             CREATE INDEX topcrashfacts_productdims_key ON topcrashfacts USING btree(productdims_id);
-                                             CREATE INDEX topcrashfacts_osdims_key ON topcrashfacts USING btree(osdims_id);
-                                             CREATE INDEX topcrashfacts_rank ON topcrashfacts USING btree(rank);
-                                             CREATE INDEX topcrashfacts_last_updated on topcrashfacts USING btree(interval_start);
+                                             ALTER TABLE ONLY top_crashes_by_signature ADD CONSTRAINT productdims_id_fkey FOREIGN KEY (productdims_id) REFERENCES productdims(id) ON DELETE CASCADE;
+                                             ALTER TABLE ONLY top_crashes_by_signature ADD CONSTRAINT osdims_id_fkey FOREIGN KEY (osdims_id) REFERENCES osdims(id) ON DELETE CASCADE;
+                                             CREATE INDEX top_crashes_by_signature_productdims_key ON top_crashes_by_signature (productdims_id);
+                                             CREATE INDEX top_crashes_by_signature_osdims_key ON top_crashes_by_signature (osdims_id);
+                                             CREATE INDEX top_crashes_by_signature_signature_key ON top_crashes_by_signature (signature);
+                                             CREATE INDEX top_crashes_by_signature_window_end_window_start on top_crashes_by_signature (window_end,window_size);
                                             """
                                             )
-databaseDependenciesForSetup[TopCrashFactsTable] = [OsDimsTable,ProductDimsTable,SignatureDimsTable]
+databaseDependenciesForSetup[TopCrashesBySignatureTable] = [OsDimsTable,ProductDimsTable]
 
 # #=================================================================================================================
 # class TopCrashersTable(Table):
@@ -1208,7 +1253,7 @@ def setupDatabase(config, logger):
       aDatabaseObject = aDatabaseObjectClass(logger=logger)
       aDatabaseObject._createSelf(databaseCursor)
     databaseConnection.commit()
-  except BaseException,x:
+  except Exception,x:
     databaseConnection.rollback()
     socorro_util.reportExceptionAndAbort(logger)
 
@@ -1221,25 +1266,27 @@ def teardownDatabase(config,logger):
       aDatabaseObject = databaseObjectClass(logger=logger)
       aDatabaseObject.drop(databaseCursor)
     databaseConnection.commit()
+    partitionCreationHistory = set()
   except:
     databaseConnection.rollback()
     socorro_util.reportExceptionAndContinue(logger)
-  partitionCreationHistory = set()
 
 #-----------------------------------------------------------------------------------------------------------------
-databaseObjectClassListForUpdate = [ReportsTable,
+databaseObjectClassListForUpdate = [#ReportsTable,
                                     #DumpsTable,
                                     ExtensionsTable,
                                     FramesTable,
                                     ProcessorsTable,
                                     JobsTable,
-                                    BugAssociationsTable,
-                                    BugsTable,
                                     ]
 #-----------------------------------------------------------------------------------------------------------------
 def updateDatabase(config, logger):
   databaseConnection, databaseCursor = connectToDatabase(config, logger)
   try:
+    #try:
+      #databaseCursor.execute("CREATE LANGUAGE plpythonu")
+    #except:
+      #databaseConnection.rollback()
     for aDatabaseObjectClass in databaseObjectClassListForUpdate:
       aDatabaseObject = aDatabaseObjectClass(logger=logger)
       aDatabaseObject.updateDefinition(databaseCursor)
@@ -1252,7 +1299,6 @@ def updateDatabase(config, logger):
 # list all the tables that should have weekly partitions pre-created. This is a subclass of all the PartitionedTables
 # since it may be that some PartitionedTables should not be pre-created.
 databaseObjectClassListForWeeklyPartitions = [ReportsTable,
-                                              #CrashReportsTable,
                                               #DumpsTable,
                                               FramesTable,
                                               ExtensionsTable,

@@ -76,6 +76,7 @@ def setup_module():
   me.endMark = 'end'
   me.testDB = TestDB()
   me.config = configurationManager.newConfiguration(configurationModule = testConfig, applicationName='Testing Processor')
+  tutil.nosePrintModule(__file__)
   myDir = os.path.split(__file__)[0]
   if not myDir: myDir = '.'
   replDict = {'testDir':'%s'%myDir}
@@ -1192,7 +1193,7 @@ class TestProcessor:
         ]
       for i in range(5):
         assert expectedMessages[i] == messages[i],'Expected %s, got %s'%(expectedMessages[i],messages[i])
-      cur.execute('select count(*) from crash_reports where uuid = %s',(uuid,))
+      cur.execute('select count(*) from reports where uuid = %s',(uuid,))
       con.commit()
       val = cur.fetchone()[0]
       assert 0 == val, 'but %s'%val
@@ -1212,7 +1213,7 @@ class TestProcessor:
       assert len(expectedMessages) == len(messages)
       for i in range(len(messages)):
         assert expectedMessages[i] == messages[i]
-      cur.execute('select count(*) from crash_reports where uuid = %s',(uuid,))
+      cur.execute('select count(*) from reports where uuid = %s',(uuid,))
       con.commit()
       val = cur.fetchone()[0]
       assert 0 == val, 'but %s'%val
@@ -1229,7 +1230,7 @@ class TestProcessor:
       assert len(expectedMessages) == len(messages)
       for i in range(len(messages)):
         assert expectedMessages[i] == messages[i]
-      cur.execute('select count(*) from crash_reports where uuid = %s',(uuid,))
+      cur.execute('select count(*) from reports where uuid = %s',(uuid,))
       con.commit()
       val = cur.fetchone()[0]
       assert 0 == val, 'but %s'%val
@@ -1320,7 +1321,7 @@ class TestProcessor:
       for i in range(len(expectedData)):
         vi = val[i]
         if 0 == i : vi = dt.datetime.combine(vi.date(),vi.time())
-        assert expectedData[i] == vi, 'At index %s: Expected %s, got %s'%(i,expectedData[i],vi)
+        assert expectedData[i] == vi, 'At index %s: Expected "%s", got "%s"'%(i,expectedData[i],vi)
       cur.execute('delete from reports where uuid = %s',(uuid,))
       con.commit()
     finally:

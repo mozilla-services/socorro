@@ -1,3 +1,4 @@
+import copy
 import datetime
 import errno
 import logging
@@ -15,6 +16,7 @@ import socorro.cron.mtbf as mtbf
 
 #from createTables import createCronTables, dropCronTables
 import socorro.unittest.testlib.dbtestutil as dbtestutil
+import socorro.unittest.testlib.util as tutil
 from   socorro.unittest.testlib.loggerForTest import TestingLogger
 from   socorro.unittest.testlib.testDB import TestDB
 
@@ -31,6 +33,7 @@ def setup_module():
   global me
   if me:
     return
+  tutil.nosePrintModule(__file__)
   me = Me()
   me.config = configurationManager.newConfiguration(configurationModule = testConfig, applicationName='Testing MTBF')
   myDir = os.path.split(__file__)[0]
@@ -92,609 +95,104 @@ class TestMtbf(unittest.TestCase):
     self.testDB.removeDB(self.config,self.logger)
     self.logger.clear()
 
-  def fillMtbfTables(self,cursor):
-    cursor.execute("SELECT p.id, p.product, p.version, p.release, o.id, o.os_name, o.os_version from productdims as p, osdims as o LIMIT 12")
-    self.productDimData = cursor.fetchall()
-    cursor.connection.commit()
-    versionS = set([x[2] for x in self.productDimData])
-    versions = [x for x in versionS]
-    self.baseDate = datetime.date(2008,1,1)
-    intervals = [(self.baseDate                        ,self.baseDate+datetime.timedelta(days=30)),
-                 (self.baseDate + datetime.timedelta(days=10),self.baseDate + datetime.timedelta(days=40)),
-                 (self.baseDate + datetime.timedelta(days=20),self.baseDate + datetime.timedelta(days=50)),
-                 (self.baseDate + datetime.timedelta(days=10),self.baseDate + datetime.timedelta(days=40)),
-                 (self.baseDate + datetime.timedelta(days=20),self.baseDate + datetime.timedelta(days=50)),
-                 (self.baseDate + datetime.timedelta(days=30),self.baseDate + datetime.timedelta(days=60)),
-                 (self.baseDate + datetime.timedelta(days=90),self.baseDate + datetime.timedelta(days=91)),
-                 (self.baseDate + datetime.timedelta(days=90),self.baseDate + datetime.timedelta(days=91)),
-                 ]
-    assert len(versions) >= len(intervals), "Must add exactly %s versions to the productdims table"%(len(intervals)-len(versions))
-    assert len(intervals) >= len(versions), "Must add exatly %s more intervals above"%(len(versions)-len(intervals))
-    self.intervals = {}
-    for x in range(len(intervals)):
-      self.intervals[versions[x]] = intervals[x]
-
-    PDindexes = [-1,0,5,10,15,25,35,45,55,60,61]
-    productsInProcessingDay = [
-      [], #  -1,
-      [(1,1),(1,2)],#  0,
-      [(1,1),(1,2)],#  5,
-      [(1,1),(1,2),(4,1),(4,2),(5,1)],#  10,
-      [(1,1),(1,2),(4,1),(4,2),(5,1)],#  15,
-      [(1,1),(1,2),(4,1),(4,2),(5,1),(6,1),(8,1)],#  25,
-      [(2,1),(2,2),(4,1),(4,2),(5,1),(6,1),(8,1)],#  35,
-      [(2,1),(2,2),(6,1),(8,1)],#  45,
-      [(2,1),(2,2)],#  55,
-      [(2,1),(2,2)],#  60,
-      [],#  61,
-      ]
-    # processing days are located at and beyond the extremes of the full range, and
-    # at some interior points, midway between each pair of interior points
-    # layout is: (a date, the day-offset from baseDate, the expected resulting [(prod_id,os_id)])
-    self.processingDays = [ (self.baseDate+datetime.timedelta(days=PDindexes[x]),PDindexes[x],productsInProcessingDay[x]) for x in range(len(PDindexes))]
-    
-    # (id), productdims_id, osdims_id, start_dt, end_dt : Date-interval when product is interesting
-    configData =[ (x[0],x[4],self.intervals[x[2]][0],self.intervals[x[2]][1] ) for x in self.productDimData ]
-    cursor.executemany('insert into mtbfconfig (productdims_id,osdims_id,start_dt,end_dt) values(%s,%s,%s,%s)',configData)
-    cursor.connection.commit()
-    self.expectedNewFacts = {
-      -1: [],
-      0: [
-      (7, datetime.date(2008, 1, 1), 35, 6),
-      (5, datetime.date(2008, 1, 1), 25, 6),
-      (3, datetime.date(2008, 1, 1), 15, 6),
-      (8, datetime.date(2008, 1, 1), 40, 6),
-      (3, datetime.date(2008, 1, 1), 55, 6),
-      (1, datetime.date(2008, 1, 1), 5, 6),
-      (2, datetime.date(2008, 1, 1), 10, 6),
-      (4, datetime.date(2008, 1, 1), 20, 6),
-      (1, datetime.date(2008, 1, 1), 45, 6),
-      (2, datetime.date(2008, 1, 1), 50, 6),
-      (4, datetime.date(2008, 1, 1), 60, 6),
-      (6, datetime.date(2008, 1, 1), 30, 6),
-      (7, datetime.date(2008, 1, 1), 35, 6),
-      (5, datetime.date(2008, 1, 1), 25, 6),
-      (3, datetime.date(2008, 1, 1), 15, 6),
-      (8, datetime.date(2008, 1, 1), 40, 6),
-      (3, datetime.date(2008, 1, 1), 55, 6),
-      (1, datetime.date(2008, 1, 1), 5, 6),
-      (2, datetime.date(2008, 1, 1), 10, 6),
-      (4, datetime.date(2008, 1, 1), 20, 6),
-      (1, datetime.date(2008, 1, 1), 45, 6),
-      (2, datetime.date(2008, 1, 1), 50, 6),
-      (4, datetime.date(2008, 1, 1), 60, 6),
-      (6, datetime.date(2008, 1, 1), 30, 6),
-      ],
-      5: [
-      (7, datetime.date(2008, 1, 6), 35, 6),
-      (5, datetime.date(2008, 1, 6), 25, 6),
-      (3, datetime.date(2008, 1, 6), 15, 6),
-      (8, datetime.date(2008, 1, 6), 40, 6),
-      (3, datetime.date(2008, 1, 6), 55, 6),
-      (1, datetime.date(2008, 1, 6), 5, 6),
-      (2, datetime.date(2008, 1, 6), 10, 6),
-      (4, datetime.date(2008, 1, 6), 20, 6),
-      (1, datetime.date(2008, 1, 6), 45, 6),
-      (2, datetime.date(2008, 1, 6), 50, 6),
-      (4, datetime.date(2008, 1, 6), 60, 6),
-      (6, datetime.date(2008, 1, 6), 30, 6),
-      (7, datetime.date(2008, 1, 6), 35, 6),
-      (5, datetime.date(2008, 1, 6), 25, 6),
-      (3, datetime.date(2008, 1, 6), 15, 6),
-      (8, datetime.date(2008, 1, 6), 40, 6),
-      (3, datetime.date(2008, 1, 6), 55, 6),
-      (1, datetime.date(2008, 1, 6), 5, 6),
-      (2, datetime.date(2008, 1, 6), 10, 6),
-      (4, datetime.date(2008, 1, 6), 20, 6),
-      (1, datetime.date(2008, 1, 6), 45, 6),
-      (2, datetime.date(2008, 1, 6), 50, 6),
-      (4, datetime.date(2008, 1, 6), 60, 6),
-      (6, datetime.date(2008, 1, 6), 30, 6),
-      ],
-      10: [
-      (7, datetime.date(2008, 1, 11), 35, 6),
-      (5, datetime.date(2008, 1, 11), 25, 6),
-      (3, datetime.date(2008, 1, 11), 15, 6),
-      (8, datetime.date(2008, 1, 11), 40, 6),
-      (3, datetime.date(2008, 1, 11), 55, 6),
-      (1, datetime.date(2008, 1, 11), 5, 6),
-      (2, datetime.date(2008, 1, 11), 10, 6),
-      (4, datetime.date(2008, 1, 11), 20, 6),
-      (1, datetime.date(2008, 1, 11), 45, 6),
-      (2, datetime.date(2008, 1, 11), 50, 6),
-      (4, datetime.date(2008, 1, 11), 60, 6),
-      (6, datetime.date(2008, 1, 11), 30, 6),
-      (7, datetime.date(2008, 1, 11), 35, 6),
-      (5, datetime.date(2008, 1, 11), 25, 6),
-      (3, datetime.date(2008, 1, 11), 15, 6),
-      (8, datetime.date(2008, 1, 11), 40, 6),
-      (3, datetime.date(2008, 1, 11), 55, 6),
-      (1, datetime.date(2008, 1, 11), 5, 6),
-      (2, datetime.date(2008, 1, 11), 10, 6),
-      (4, datetime.date(2008, 1, 11), 20, 6),
-      (1, datetime.date(2008, 1, 11), 45, 6),
-      (2, datetime.date(2008, 1, 11), 50, 6),
-      (4, datetime.date(2008, 1, 11), 60, 6),
-      (6, datetime.date(2008, 1, 11), 30, 6),
-      (7, datetime.date(2008, 1, 11), 35, 6),
-      (5, datetime.date(2008, 1, 11), 25, 6),
-      (3, datetime.date(2008, 1, 11), 15, 6),
-      (8, datetime.date(2008, 1, 11), 40, 6),
-      (3, datetime.date(2008, 1, 11), 55, 6),
-      (1, datetime.date(2008, 1, 11), 5, 6),
-      (2, datetime.date(2008, 1, 11), 10, 6),
-      (4, datetime.date(2008, 1, 11), 20, 6),
-      (1, datetime.date(2008, 1, 11), 45, 6),
-      (2, datetime.date(2008, 1, 11), 50, 6),
-      (4, datetime.date(2008, 1, 11), 60, 6),
-      (6, datetime.date(2008, 1, 11), 30, 6),
-      (7, datetime.date(2008, 1, 11), 35, 6),
-      (5, datetime.date(2008, 1, 11), 25, 6),
-      (3, datetime.date(2008, 1, 11), 15, 6),
-      (8, datetime.date(2008, 1, 11), 40, 6),
-      (3, datetime.date(2008, 1, 11), 55, 6),
-      (1, datetime.date(2008, 1, 11), 5, 6),
-      (2, datetime.date(2008, 1, 11), 10, 6),
-      (4, datetime.date(2008, 1, 11), 20, 6),
-      (1, datetime.date(2008, 1, 11), 45, 6),
-      (2, datetime.date(2008, 1, 11), 50, 6),
-      (4, datetime.date(2008, 1, 11), 60, 6),
-      (6, datetime.date(2008, 1, 11), 30, 6),
-      (7, datetime.date(2008, 1, 11), 35, 6),
-      (5, datetime.date(2008, 1, 11), 25, 6),
-      (3, datetime.date(2008, 1, 11), 15, 6),
-      (8, datetime.date(2008, 1, 11), 40, 6),
-      (3, datetime.date(2008, 1, 11), 55, 6),
-      (1, datetime.date(2008, 1, 11), 5, 6),
-      (2, datetime.date(2008, 1, 11), 10, 6),
-      (4, datetime.date(2008, 1, 11), 20, 6),
-      (1, datetime.date(2008, 1, 11), 45, 6),
-      (2, datetime.date(2008, 1, 11), 50, 6),
-      (4, datetime.date(2008, 1, 11), 60, 6),
-      (6, datetime.date(2008, 1, 11), 30, 6),
-      ],
-      15: [
-      (7, datetime.date(2008, 1, 16), 35, 6),
-      (5, datetime.date(2008, 1, 16), 25, 6),
-      (3, datetime.date(2008, 1, 16), 15, 6),
-      (8, datetime.date(2008, 1, 16), 40, 6),
-      (3, datetime.date(2008, 1, 16), 55, 6),
-      (1, datetime.date(2008, 1, 16), 5, 6),
-      (2, datetime.date(2008, 1, 16), 10, 6),
-      (4, datetime.date(2008, 1, 16), 20, 6),
-      (1, datetime.date(2008, 1, 16), 45, 6),
-      (2, datetime.date(2008, 1, 16), 50, 6),
-      (4, datetime.date(2008, 1, 16), 60, 6),
-      (6, datetime.date(2008, 1, 16), 30, 6),
-      (7, datetime.date(2008, 1, 16), 35, 6),
-      (5, datetime.date(2008, 1, 16), 25, 6),
-      (3, datetime.date(2008, 1, 16), 15, 6),
-      (8, datetime.date(2008, 1, 16), 40, 6),
-      (3, datetime.date(2008, 1, 16), 55, 6),
-      (1, datetime.date(2008, 1, 16), 5, 6),
-      (2, datetime.date(2008, 1, 16), 10, 6),
-      (4, datetime.date(2008, 1, 16), 20, 6),
-      (1, datetime.date(2008, 1, 16), 45, 6),
-      (2, datetime.date(2008, 1, 16), 50, 6),
-      (4, datetime.date(2008, 1, 16), 60, 6),
-      (6, datetime.date(2008, 1, 16), 30, 6),
-      (7, datetime.date(2008, 1, 16), 35, 6),
-      (5, datetime.date(2008, 1, 16), 25, 6),
-      (3, datetime.date(2008, 1, 16), 15, 6),
-      (8, datetime.date(2008, 1, 16), 40, 6),
-      (3, datetime.date(2008, 1, 16), 55, 6),
-      (1, datetime.date(2008, 1, 16), 5, 6),
-      (2, datetime.date(2008, 1, 16), 10, 6),
-      (4, datetime.date(2008, 1, 16), 20, 6),
-      (1, datetime.date(2008, 1, 16), 45, 6),
-      (2, datetime.date(2008, 1, 16), 50, 6),
-      (4, datetime.date(2008, 1, 16), 60, 6),
-      (6, datetime.date(2008, 1, 16), 30, 6),
-      (7, datetime.date(2008, 1, 16), 35, 6),
-      (5, datetime.date(2008, 1, 16), 25, 6),
-      (3, datetime.date(2008, 1, 16), 15, 6),
-      (8, datetime.date(2008, 1, 16), 40, 6),
-      (3, datetime.date(2008, 1, 16), 55, 6),
-      (1, datetime.date(2008, 1, 16), 5, 6),
-      (2, datetime.date(2008, 1, 16), 10, 6),
-      (4, datetime.date(2008, 1, 16), 20, 6),
-      (1, datetime.date(2008, 1, 16), 45, 6),
-      (2, datetime.date(2008, 1, 16), 50, 6),
-      (4, datetime.date(2008, 1, 16), 60, 6),
-      (6, datetime.date(2008, 1, 16), 30, 6),
-      (7, datetime.date(2008, 1, 16), 35, 6),
-      (5, datetime.date(2008, 1, 16), 25, 6),
-      (3, datetime.date(2008, 1, 16), 15, 6),
-      (8, datetime.date(2008, 1, 16), 40, 6),
-      (3, datetime.date(2008, 1, 16), 55, 6),
-      (1, datetime.date(2008, 1, 16), 5, 6),
-      (2, datetime.date(2008, 1, 16), 10, 6),
-      (4, datetime.date(2008, 1, 16), 20, 6),
-      (1, datetime.date(2008, 1, 16), 45, 6),
-      (2, datetime.date(2008, 1, 16), 50, 6),
-      (4, datetime.date(2008, 1, 16), 60, 6),
-      (6, datetime.date(2008, 1, 16), 30, 6),
-      ],
-      25: [
-      (7, datetime.date(2008, 1, 26), 35, 6),
-      (5, datetime.date(2008, 1, 26), 25, 6),
-      (3, datetime.date(2008, 1, 26), 15, 6),
-      (8, datetime.date(2008, 1, 26), 40, 6),
-      (3, datetime.date(2008, 1, 26), 55, 6),
-      (1, datetime.date(2008, 1, 26), 5, 6),
-      (2, datetime.date(2008, 1, 26), 10, 6),
-      (4, datetime.date(2008, 1, 26), 20, 6),
-      (1, datetime.date(2008, 1, 26), 45, 6),
-      (2, datetime.date(2008, 1, 26), 50, 6),
-      (4, datetime.date(2008, 1, 26), 60, 6),
-      (6, datetime.date(2008, 1, 26), 30, 6),
-      (7, datetime.date(2008, 1, 26), 35, 6),
-      (5, datetime.date(2008, 1, 26), 25, 6),
-      (3, datetime.date(2008, 1, 26), 15, 6),
-      (8, datetime.date(2008, 1, 26), 40, 6),
-      (3, datetime.date(2008, 1, 26), 55, 6),
-      (1, datetime.date(2008, 1, 26), 5, 6),
-      (2, datetime.date(2008, 1, 26), 10, 6),
-      (4, datetime.date(2008, 1, 26), 20, 6),
-      (1, datetime.date(2008, 1, 26), 45, 6),
-      (2, datetime.date(2008, 1, 26), 50, 6),
-      (4, datetime.date(2008, 1, 26), 60, 6),
-      (6, datetime.date(2008, 1, 26), 30, 6),
-      (7, datetime.date(2008, 1, 26), 35, 6),
-      (5, datetime.date(2008, 1, 26), 25, 6),
-      (3, datetime.date(2008, 1, 26), 15, 6),
-      (8, datetime.date(2008, 1, 26), 40, 6),
-      (3, datetime.date(2008, 1, 26), 55, 6),
-      (1, datetime.date(2008, 1, 26), 5, 6),
-      (2, datetime.date(2008, 1, 26), 10, 6),
-      (4, datetime.date(2008, 1, 26), 20, 6),
-      (1, datetime.date(2008, 1, 26), 45, 6),
-      (2, datetime.date(2008, 1, 26), 50, 6),
-      (4, datetime.date(2008, 1, 26), 60, 6),
-      (6, datetime.date(2008, 1, 26), 30, 6),
-      (7, datetime.date(2008, 1, 26), 35, 6),
-      (5, datetime.date(2008, 1, 26), 25, 6),
-      (3, datetime.date(2008, 1, 26), 15, 6),
-      (8, datetime.date(2008, 1, 26), 40, 6),
-      (3, datetime.date(2008, 1, 26), 55, 6),
-      (1, datetime.date(2008, 1, 26), 5, 6),
-      (2, datetime.date(2008, 1, 26), 10, 6),
-      (4, datetime.date(2008, 1, 26), 20, 6),
-      (1, datetime.date(2008, 1, 26), 45, 6),
-      (2, datetime.date(2008, 1, 26), 50, 6),
-      (4, datetime.date(2008, 1, 26), 60, 6),
-      (6, datetime.date(2008, 1, 26), 30, 6),
-      (7, datetime.date(2008, 1, 26), 35, 6),
-      (5, datetime.date(2008, 1, 26), 25, 6),
-      (3, datetime.date(2008, 1, 26), 15, 6),
-      (8, datetime.date(2008, 1, 26), 40, 6),
-      (3, datetime.date(2008, 1, 26), 55, 6),
-      (1, datetime.date(2008, 1, 26), 5, 6),
-      (2, datetime.date(2008, 1, 26), 10, 6),
-      (4, datetime.date(2008, 1, 26), 20, 6),
-      (1, datetime.date(2008, 1, 26), 45, 6),
-      (2, datetime.date(2008, 1, 26), 50, 6),
-      (4, datetime.date(2008, 1, 26), 60, 6),
-      (6, datetime.date(2008, 1, 26), 30, 6),
-      (7, datetime.date(2008, 1, 26), 35, 6),
-      (5, datetime.date(2008, 1, 26), 25, 6),
-      (3, datetime.date(2008, 1, 26), 15, 6),
-      (8, datetime.date(2008, 1, 26), 40, 6),
-      (3, datetime.date(2008, 1, 26), 55, 6),
-      (1, datetime.date(2008, 1, 26), 5, 6),
-      (2, datetime.date(2008, 1, 26), 10, 6),
-      (4, datetime.date(2008, 1, 26), 20, 6),
-      (1, datetime.date(2008, 1, 26), 45, 6),
-      (2, datetime.date(2008, 1, 26), 50, 6),
-      (4, datetime.date(2008, 1, 26), 60, 6),
-      (6, datetime.date(2008, 1, 26), 30, 6),
-      (7, datetime.date(2008, 1, 26), 35, 6),
-      (5, datetime.date(2008, 1, 26), 25, 6),
-      (3, datetime.date(2008, 1, 26), 15, 6),
-      (8, datetime.date(2008, 1, 26), 40, 6),
-      (3, datetime.date(2008, 1, 26), 55, 6),
-      (1, datetime.date(2008, 1, 26), 5, 6),
-      (2, datetime.date(2008, 1, 26), 10, 6),
-      (4, datetime.date(2008, 1, 26), 20, 6),
-      (1, datetime.date(2008, 1, 26), 45, 6),
-      (2, datetime.date(2008, 1, 26), 50, 6),
-      (4, datetime.date(2008, 1, 26), 60, 6),
-      (6, datetime.date(2008, 1, 26), 30, 6),
-      ],
-      35: [
-      (7, datetime.date(2008, 2, 5), 35, 6),
-      (5, datetime.date(2008, 2, 5), 25, 6),
-      (3, datetime.date(2008, 2, 5), 15, 6),
-      (8, datetime.date(2008, 2, 5), 40, 6),
-      (3, datetime.date(2008, 2, 5), 55, 6),
-      (1, datetime.date(2008, 2, 5), 5, 6),
-      (2, datetime.date(2008, 2, 5), 10, 6),
-      (4, datetime.date(2008, 2, 5), 20, 6),
-      (1, datetime.date(2008, 2, 5), 45, 6),
-      (2, datetime.date(2008, 2, 5), 50, 6),
-      (4, datetime.date(2008, 2, 5), 60, 6),
-      (6, datetime.date(2008, 2, 5), 30, 6),
-      (7, datetime.date(2008, 2, 5), 35, 6),
-      (5, datetime.date(2008, 2, 5), 25, 6),
-      (3, datetime.date(2008, 2, 5), 15, 6),
-      (8, datetime.date(2008, 2, 5), 40, 6),
-      (3, datetime.date(2008, 2, 5), 55, 6),
-      (1, datetime.date(2008, 2, 5), 5, 6),
-      (2, datetime.date(2008, 2, 5), 10, 6),
-      (4, datetime.date(2008, 2, 5), 20, 6),
-      (1, datetime.date(2008, 2, 5), 45, 6),
-      (2, datetime.date(2008, 2, 5), 50, 6),
-      (4, datetime.date(2008, 2, 5), 60, 6),
-      (6, datetime.date(2008, 2, 5), 30, 6),
-      (7, datetime.date(2008, 2, 5), 35, 6),
-      (5, datetime.date(2008, 2, 5), 25, 6),
-      (3, datetime.date(2008, 2, 5), 15, 6),
-      (8, datetime.date(2008, 2, 5), 40, 6),
-      (3, datetime.date(2008, 2, 5), 55, 6),
-      (1, datetime.date(2008, 2, 5), 5, 6),
-      (2, datetime.date(2008, 2, 5), 10, 6),
-      (4, datetime.date(2008, 2, 5), 20, 6),
-      (1, datetime.date(2008, 2, 5), 45, 6),
-      (2, datetime.date(2008, 2, 5), 50, 6),
-      (4, datetime.date(2008, 2, 5), 60, 6),
-      (6, datetime.date(2008, 2, 5), 30, 6),
-      (7, datetime.date(2008, 2, 5), 35, 6),
-      (5, datetime.date(2008, 2, 5), 25, 6),
-      (3, datetime.date(2008, 2, 5), 15, 6),
-      (8, datetime.date(2008, 2, 5), 40, 6),
-      (3, datetime.date(2008, 2, 5), 55, 6),
-      (1, datetime.date(2008, 2, 5), 5, 6),
-      (2, datetime.date(2008, 2, 5), 10, 6),
-      (4, datetime.date(2008, 2, 5), 20, 6),
-      (1, datetime.date(2008, 2, 5), 45, 6),
-      (2, datetime.date(2008, 2, 5), 50, 6),
-      (4, datetime.date(2008, 2, 5), 60, 6),
-      (6, datetime.date(2008, 2, 5), 30, 6),
-      (7, datetime.date(2008, 2, 5), 35, 6),
-      (5, datetime.date(2008, 2, 5), 25, 6),
-      (3, datetime.date(2008, 2, 5), 15, 6),
-      (8, datetime.date(2008, 2, 5), 40, 6),
-      (3, datetime.date(2008, 2, 5), 55, 6),
-      (1, datetime.date(2008, 2, 5), 5, 6),
-      (2, datetime.date(2008, 2, 5), 10, 6),
-      (4, datetime.date(2008, 2, 5), 20, 6),
-      (1, datetime.date(2008, 2, 5), 45, 6),
-      (2, datetime.date(2008, 2, 5), 50, 6),
-      (4, datetime.date(2008, 2, 5), 60, 6),
-      (6, datetime.date(2008, 2, 5), 30, 6),
-      (7, datetime.date(2008, 2, 5), 35, 6),
-      (5, datetime.date(2008, 2, 5), 25, 6),
-      (3, datetime.date(2008, 2, 5), 15, 6),
-      (8, datetime.date(2008, 2, 5), 40, 6),
-      (3, datetime.date(2008, 2, 5), 55, 6),
-      (1, datetime.date(2008, 2, 5), 5, 6),
-      (2, datetime.date(2008, 2, 5), 10, 6),
-      (4, datetime.date(2008, 2, 5), 20, 6),
-      (1, datetime.date(2008, 2, 5), 45, 6),
-      (2, datetime.date(2008, 2, 5), 50, 6),
-      (4, datetime.date(2008, 2, 5), 60, 6),
-      (6, datetime.date(2008, 2, 5), 30, 6),
-      (7, datetime.date(2008, 2, 5), 35, 6),
-      (5, datetime.date(2008, 2, 5), 25, 6),
-      (3, datetime.date(2008, 2, 5), 15, 6),
-      (8, datetime.date(2008, 2, 5), 40, 6),
-      (3, datetime.date(2008, 2, 5), 55, 6),
-      (1, datetime.date(2008, 2, 5), 5, 6),
-      (2, datetime.date(2008, 2, 5), 10, 6),
-      (4, datetime.date(2008, 2, 5), 20, 6),
-      (1, datetime.date(2008, 2, 5), 45, 6),
-      (2, datetime.date(2008, 2, 5), 50, 6),
-      (4, datetime.date(2008, 2, 5), 60, 6),
-      (6, datetime.date(2008, 2, 5), 30, 6),
-      ],
-      45: [
-      (7, datetime.date(2008, 2, 15), 35, 6),
-      (5, datetime.date(2008, 2, 15), 25, 6),
-      (3, datetime.date(2008, 2, 15), 15, 6),
-      (8, datetime.date(2008, 2, 15), 40, 6),
-      (3, datetime.date(2008, 2, 15), 55, 6),
-      (1, datetime.date(2008, 2, 15), 5, 6),
-      (2, datetime.date(2008, 2, 15), 10, 6),
-      (4, datetime.date(2008, 2, 15), 20, 6),
-      (1, datetime.date(2008, 2, 15), 45, 6),
-      (2, datetime.date(2008, 2, 15), 50, 6),
-      (4, datetime.date(2008, 2, 15), 60, 6),
-      (6, datetime.date(2008, 2, 15), 30, 6),
-      (7, datetime.date(2008, 2, 15), 35, 6),
-      (5, datetime.date(2008, 2, 15), 25, 6),
-      (3, datetime.date(2008, 2, 15), 15, 6),
-      (8, datetime.date(2008, 2, 15), 40, 6),
-      (3, datetime.date(2008, 2, 15), 55, 6),
-      (1, datetime.date(2008, 2, 15), 5, 6),
-      (2, datetime.date(2008, 2, 15), 10, 6),
-      (4, datetime.date(2008, 2, 15), 20, 6),
-      (1, datetime.date(2008, 2, 15), 45, 6),
-      (2, datetime.date(2008, 2, 15), 50, 6),
-      (4, datetime.date(2008, 2, 15), 60, 6),
-      (6, datetime.date(2008, 2, 15), 30, 6),
-      (7, datetime.date(2008, 2, 15), 35, 6),
-      (5, datetime.date(2008, 2, 15), 25, 6),
-      (3, datetime.date(2008, 2, 15), 15, 6),
-      (8, datetime.date(2008, 2, 15), 40, 6),
-      (3, datetime.date(2008, 2, 15), 55, 6),
-      (1, datetime.date(2008, 2, 15), 5, 6),
-      (2, datetime.date(2008, 2, 15), 10, 6),
-      (4, datetime.date(2008, 2, 15), 20, 6),
-      (1, datetime.date(2008, 2, 15), 45, 6),
-      (2, datetime.date(2008, 2, 15), 50, 6),
-      (4, datetime.date(2008, 2, 15), 60, 6),
-      (6, datetime.date(2008, 2, 15), 30, 6),
-      (7, datetime.date(2008, 2, 15), 35, 6),
-      (5, datetime.date(2008, 2, 15), 25, 6),
-      (3, datetime.date(2008, 2, 15), 15, 6),
-      (8, datetime.date(2008, 2, 15), 40, 6),
-      (3, datetime.date(2008, 2, 15), 55, 6),
-      (1, datetime.date(2008, 2, 15), 5, 6),
-      (2, datetime.date(2008, 2, 15), 10, 6),
-      (4, datetime.date(2008, 2, 15), 20, 6),
-      (1, datetime.date(2008, 2, 15), 45, 6),
-      (2, datetime.date(2008, 2, 15), 50, 6),
-      (4, datetime.date(2008, 2, 15), 60, 6),
-      (6, datetime.date(2008, 2, 15), 30, 6),
-      ],
-      55: [
-      (7, datetime.date(2008, 2, 25), 35, 6),
-      (5, datetime.date(2008, 2, 25), 25, 6),
-      (3, datetime.date(2008, 2, 25), 15, 6),
-      (8, datetime.date(2008, 2, 25), 40, 6),
-      (3, datetime.date(2008, 2, 25), 55, 6),
-      (1, datetime.date(2008, 2, 25), 5, 6),
-      (2, datetime.date(2008, 2, 25), 10, 6),
-      (4, datetime.date(2008, 2, 25), 20, 6),
-      (1, datetime.date(2008, 2, 25), 45, 6),
-      (2, datetime.date(2008, 2, 25), 50, 6),
-      (4, datetime.date(2008, 2, 25), 60, 6),
-      (6, datetime.date(2008, 2, 25), 30, 6),
-      (7, datetime.date(2008, 2, 25), 35, 6),
-      (5, datetime.date(2008, 2, 25), 25, 6),
-      (3, datetime.date(2008, 2, 25), 15, 6),
-      (8, datetime.date(2008, 2, 25), 40, 6),
-      (3, datetime.date(2008, 2, 25), 55, 6),
-      (1, datetime.date(2008, 2, 25), 5, 6),
-      (2, datetime.date(2008, 2, 25), 10, 6),
-      (4, datetime.date(2008, 2, 25), 20, 6),
-      (1, datetime.date(2008, 2, 25), 45, 6),
-      (2, datetime.date(2008, 2, 25), 50, 6),
-      (4, datetime.date(2008, 2, 25), 60, 6),
-      (6, datetime.date(2008, 2, 25), 30, 6),
-      ],
-      60: [
-      (7, datetime.date(2008, 3, 1), 35, 6),
-      (5, datetime.date(2008, 3, 1), 25, 6),
-      (3, datetime.date(2008, 3, 1), 15, 6),
-      (8, datetime.date(2008, 3, 1), 40, 6),
-      (3, datetime.date(2008, 3, 1), 55, 6),
-      (1, datetime.date(2008, 3, 1), 5, 6),
-      (2, datetime.date(2008, 3, 1), 10, 6),
-      (4, datetime.date(2008, 3, 1), 20, 6),
-      (1, datetime.date(2008, 3, 1), 45, 6),
-      (2, datetime.date(2008, 3, 1), 50, 6),
-      (4, datetime.date(2008, 3, 1), 60, 6),
-      (6, datetime.date(2008, 3, 1), 30, 6),
-      (7, datetime.date(2008, 3, 1), 35, 6),
-      (5, datetime.date(2008, 3, 1), 25, 6),
-      (3, datetime.date(2008, 3, 1), 15, 6),
-      (8, datetime.date(2008, 3, 1), 40, 6),
-      (3, datetime.date(2008, 3, 1), 55, 6),
-      (1, datetime.date(2008, 3, 1), 5, 6),
-      (2, datetime.date(2008, 3, 1), 10, 6),
-      (4, datetime.date(2008, 3, 1), 20, 6),
-      (1, datetime.date(2008, 3, 1), 45, 6),
-      (2, datetime.date(2008, 3, 1), 50, 6),
-      (4, datetime.date(2008, 3, 1), 60, 6),
-      (6, datetime.date(2008, 3, 1), 30, 6),
-      ],
-      61: [],
-      }
+  def fillMtbfTables(self,cursor,limit=12):
+    self.processingDays, self.productDimData = dbtestutil.fillMtbfTables(cursor,limit)
     self.expectedFacts = {
-      # key is offset from baseDate
-      # value is array of (productdims_id,day,avg_seconds,report_count,count(distinct(user)))
-      # This data WAS NOT CALCULATED BY HAND: The test was run once with prints in place
-      # and that output was encoded here. As of 2009-Feb, count of unique users is always 0
+      #productdims_id, osdims_id, day, sum_uptime_seconds, report_count
       -1: [],
       0: [
-      (1, datetime.date(2008,1,1), 5, 6, 0),
-      (4, datetime.date(2008,1,1), 20, 6, 0),
+      (1, 5, datetime.datetime(2008, 1, 1, 0, 0), 270, 6),
+      (1, 4, datetime.datetime(2008, 1, 1, 0, 0), 60, 6),
       ],
       5: [
-      (1, datetime.date(2008,1,6), 5, 6, 0),
-      (4, datetime.date(2008,1,6), 20, 6, 0),
+      (1, 4, datetime.datetime(2008, 1, 6, 0, 0), 60, 6),
+      (1, 5, datetime.datetime(2008, 1, 6, 0, 0), 270, 6),
       ],
       10: [
-      (1, datetime.date(2008,1,11), 5, 6, 0),
-      (2, datetime.date(2008,1,11), 10, 6, 0),
-      (4, datetime.date(2008,1,11), 20, 6, 0),
-      (5, datetime.date(2008,1,11), 25, 6, 0),
-      (7, datetime.date(2008,1,11), 35, 6, 0),
-      (10, datetime.date(2008,1,11), 50, 6, 0),
+      (4, 4, datetime.datetime(2008, 1, 11, 0, 0), 240, 6),
+      (1, 4, datetime.datetime(2008, 1, 11, 0, 0), 60, 6),
+      (5, 4, datetime.datetime(2008, 1, 11, 0, 0), 90, 6),
+      (1, 5, datetime.datetime(2008, 1, 11, 0, 0), 270, 6),
+      (4, 5, datetime.datetime(2008, 1, 11, 0, 0), 330, 6),
       ],
       15: [
-      (1, datetime.date(2008,1,16), 5, 6, 0),
-      (2, datetime.date(2008,1,16), 10, 6, 0),
-      (4, datetime.date(2008,1,16), 20, 6, 0),
-      (5, datetime.date(2008,1,16), 25, 6, 0),
-      (7, datetime.date(2008,1,16), 35, 6, 0),
-      (10, datetime.date(2008,1,16), 50, 6, 0),
+      (4, 5, datetime.datetime(2008, 1, 16, 0, 0), 330, 6),
+      (1, 5, datetime.datetime(2008, 1, 16, 0, 0), 270, 6),
+      (5, 4, datetime.datetime(2008, 1, 16, 0, 0), 90, 6),
+      (4, 4, datetime.datetime(2008, 1, 16, 0, 0), 240, 6),
+      (1, 4, datetime.datetime(2008, 1, 16, 0, 0), 60, 6),
       ],
       25: [
-      (1, datetime.date(2008,1,26), 5, 6, 0),
-      (2, datetime.date(2008,1,26), 10, 6, 0),
-      (3, datetime.date(2008,1,26), 15, 6, 0),
-      (4, datetime.date(2008,1,26), 20, 6, 0),
-      (5, datetime.date(2008,1,26), 25, 6, 0),
-      (6, datetime.date(2008,1,26), 30, 6, 0),
-      (7, datetime.date(2008,1,26), 35, 6, 0),
-      (8, datetime.date(2008,1,26), 40, 6, 0),
-      (10, datetime.date(2008,1,26), 50, 6, 0),
-      (11, datetime.date(2008,1,26), 55, 6, 0),
+      (8, 4, datetime.datetime(2008, 1, 26, 0, 0), 30, 6),
+      (5, 4, datetime.datetime(2008, 1, 26, 0, 0), 90, 6),
+      (4, 5, datetime.datetime(2008, 1, 26, 0, 0), 330, 6),
+      (6, 4, datetime.datetime(2008, 1, 26, 0, 0), 150, 6),
+      (1, 4, datetime.datetime(2008, 1, 26, 0, 0), 60, 6),
+      (1, 5, datetime.datetime(2008, 1, 26, 0, 0), 270, 6),
+      (4, 4, datetime.datetime(2008, 1, 26, 0, 0), 240, 6),
       ],
       35: [
-      (2, datetime.date(2008,2,5), 10, 6, 0),
-      (3, datetime.date(2008,2,5), 15, 6, 0),
-      (5, datetime.date(2008,2,5), 25, 6, 0),
-      (6, datetime.date(2008,2,5), 30, 6, 0),
-      (7, datetime.date(2008,2,5), 35, 6, 0),
-      (8, datetime.date(2008,2,5), 40, 6, 0),
-      (9, datetime.date(2008,2,5), 45, 6, 0),
-      (10, datetime.date(2008,2,5), 50, 6, 0),
-      (11, datetime.date(2008,2,5), 55, 6, 0),
-      (12, datetime.date(2008,2,5), 60, 6, 0),
+      (4, 5, datetime.datetime(2008, 2, 5, 0, 0), 330, 6),
+      (6, 4, datetime.datetime(2008, 2, 5, 0, 0), 150, 6),
+      (2, 4, datetime.datetime(2008, 2, 5, 0, 0), 180, 6),
+      (1, 4, datetime.datetime(2008, 2, 5, 0, 0), 60, 6),
+      (1, 5, datetime.datetime(2008, 2, 5, 0, 0), 270, 6),
+      (8, 4, datetime.datetime(2008, 2, 5, 0, 0), 30, 6),
+      (5, 4, datetime.datetime(2008, 2, 5, 0, 0), 90, 6),
+      (2, 5, datetime.datetime(2008, 2, 5, 0, 0), 300, 6),
+      (4, 4, datetime.datetime(2008, 2, 5, 0, 0), 240, 6),
       ],
       45: [
-      (3, datetime.date(2008,2,15), 15, 6, 0),
-      (6, datetime.date(2008,2,15), 30, 6, 0),
-      (8, datetime.date(2008,2,15), 40, 6, 0),
-      (9, datetime.date(2008,2,15), 45, 6, 0),
-      (11, datetime.date(2008,2,15), 55, 6, 0),
-      (12, datetime.date(2008,2,15), 60, 6, 0),
+      (5, 4, datetime.datetime(2008, 2, 15, 0, 0), 90, 6),
+      (2, 4, datetime.datetime(2008, 2, 15, 0, 0), 180, 6),
+      (2, 5, datetime.datetime(2008, 2, 15, 0, 0), 300, 6),
+      (1, 4, datetime.datetime(2008, 2, 15, 0, 0), 60, 6),
+      (1, 5, datetime.datetime(2008, 2, 15, 0, 0), 270, 6),
+      (4, 5, datetime.datetime(2008, 2, 15, 0, 0), 330, 6),
+      (6, 4, datetime.datetime(2008, 2, 15, 0, 0), 150, 6),
+      (4, 4, datetime.datetime(2008, 2, 15, 0, 0), 240, 6),
+      (8, 4, datetime.datetime(2008, 2, 15, 0, 0), 30, 6),
       ],
       55: [
-      (9, datetime.date(2008,2,25), 45, 6, 0),
-      (12, datetime.date(2008,2,25), 60, 6, 0),
+      (6, 4, datetime.datetime(2008, 2, 25, 0, 0), 150, 6),
+      (2, 5, datetime.datetime(2008, 2, 25, 0, 0), 300, 6),
+      (8, 4, datetime.datetime(2008, 2, 25, 0, 0), 30, 6),
+      (4, 4, datetime.datetime(2008, 2, 25, 0, 0), 240, 6),
+      (2, 4, datetime.datetime(2008, 2, 25, 0, 0), 180, 6),
+      (1, 4, datetime.datetime(2008, 2, 25, 0, 0), 60, 6),
+      (4, 5, datetime.datetime(2008, 2, 25, 0, 0), 330, 6),
+      (1, 5, datetime.datetime(2008, 2, 25, 0, 0), 270, 6),
+      (5, 4, datetime.datetime(2008, 2, 25, 0, 0), 90, 6),
       ],
       60: [
-      (9, datetime.date(2008,3,1), 45, 6, 0),
-      (12, datetime.date(2008,3,1), 60, 6, 0),
+      (6, 4, datetime.datetime(2008, 3, 1, 0, 0), 150, 6),
+      (4, 5, datetime.datetime(2008, 3, 1, 0, 0), 330, 6),
+      (8, 4, datetime.datetime(2008, 3, 1, 0, 0), 30, 6),
+      (2, 4, datetime.datetime(2008, 3, 1, 0, 0), 180, 6),
+      (5, 4, datetime.datetime(2008, 3, 1, 0, 0), 90, 6),
+      (1, 5, datetime.datetime(2008, 3, 1, 0, 0), 270, 6),
+      (1, 4, datetime.datetime(2008, 3, 1, 0, 0), 60, 6),
+      (4, 4, datetime.datetime(2008, 3, 1, 0, 0), 240, 6),
+      (2, 5, datetime.datetime(2008, 3, 1, 0, 0), 300, 6),
       ],
-      61: [],
+      61: [
+      (8, 4, datetime.datetime(2008, 3, 2, 0, 0), 30, 6),
+      (4, 5, datetime.datetime(2008, 3, 2, 0, 0), 330, 6),
+      (4, 4, datetime.datetime(2008, 3, 2, 0, 0), 240, 6),
+      (6, 4, datetime.datetime(2008, 3, 2, 0, 0), 150, 6),
+      (2, 5, datetime.datetime(2008, 3, 2, 0, 0), 300, 6),
+      (5, 4, datetime.datetime(2008, 3, 2, 0, 0), 90, 6),
+      (2, 4, datetime.datetime(2008, 3, 2, 0, 0), 180, 6),
+      ],
       }
-
-  def fillReports(self,cursor):
+    
+  def fillReports(self,cursor,doFillMtbfTables = True,multiplier=1):
     """fill enough data to test mtbf behavior:
-       - AVG(uptime); COUNT(date_processed); COUNT(DISTINCT(user_id))
+       - SUM(uptime); COUNT(date_processed)
     """
-    self.fillMtbfTables(cursor) # prime the pump
-    sql2 = """INSERT INTO crash_reports
-                (uuid, client_crash_date, install_age, last_crash, uptime, date_processed, success, signaturedims_id, productdims_id, osdims_id)
-          VALUES(%s,   %s,                %s,          %s,         %s,     %s,             %s,      %s,               %s,             %s)"""
-    processTimes = ['00:00:00','05:00:00','10:00:00','15:00:00','20:00:00','23:59:59']
-    crashTimes =   ['00:00:00','04:59:40','9:55:00', '14:55:55','19:59:59','23:59:50']
-    assert len(processTimes) == len(crashTimes), 'Otherwise things get way too weird'
-    uptimes = [5*x for x in range(1,15)]
-    data = []
-    data2 = []
-    uuidGen = dbtestutil.moreUuid()
-    uptimeIndex = 0
-    for product in self.productDimData:
-      uptime = uptimes[uptimeIndex%len(uptimes)]
-      uptimeIndex += 1
-      for d,off,ig in self.processingDays:
-        for ptIndex in range(len(processTimes)):
-          pt = processTimes[ptIndex]
-          ct = crashTimes[ptIndex]
-          dp = "%s %s"%(d.isoformat(),pt)
-          ccd = "%s %s"%(d.isoformat(),ct)
-          tup = (uuidGen.next(), uptime,dp,product[1],product[2],product[5],product[6])
-          # Use ptIndex as signaturedims_id
-          tup2 = (tup[0], ccd, 10000, 100, uptime, dp, True, ptIndex+1, product[0], product[4])
-          data.append(tup)
-          data2.append(tup2)
-    cursor.executemany(sql2,data2)
+    if doFillMtbfTables:
+      self.fillMtbfTables(cursor) # prime the pump
+    self.processingDays, self.productDimData = dbtestutil.fillReportsTable(cursor,False,False, multiplier)
 
   # ========================================================================== #  
   def testCalculateMtbf(self):
@@ -705,25 +203,174 @@ class TestMtbf(unittest.TestCase):
     cursor = self.connection.cursor()
     self.fillReports(cursor)
     self.connection.commit()
-    sql = "SELECT productdims_id,day,avg_seconds,report_count FROM mtbffacts WHERE day = %s"
+
+    sql = "SELECT productdims_id,osdims_id,(window_end-window_size),sum_uptime_seconds,report_count FROM time_before_failure WHERE (window_end-window_size)=%s"
     for pd in self.processingDays:
-      self.config.processingDay = pd[0].isoformat()
+      self.config['processingDay'] = pd[0].isoformat()
       mtbf.calculateMtbf(self.config, self.logger)
-      cursor.execute(sql,(pd[0].isoformat(),))
-      data = cursor.fetchall()
+      cursor.execute(sql,(pd[0],))
       self.connection.commit()
+      data = cursor.fetchall()
       expected = set(self.expectedFacts[pd[1]])
       got = set(data)
-      if not expected == got:
-        expected = set(self.expectedNewFacts[pd[1]])
-        if not expected == got:
-          assert len(expected) == len(got), 'Except\n%s\n%s'%(expected,got)
-          for x in expected:
-            assert x in got, 'Except %s was not gotten: %s'%(x,got)
-          for g in got:
-            assert g in expected, 'Except %s was got, not expected : %s'%(g,expected)
+      assert expected == got, 'OOPS. Comment this line and uncomment the next block for details'
+#       if not expected == got:
+#         print
+#         print len(expected) == len(got), 'For PD (%s), expected %s, got %s\nex-got: %s\ngot-ex: %s'%(pd[1],len(expected),len(got),expected-got, got-expected)
+#         for x in expected:
+#           assert x in got, 'For PD (%s) expected %s was not in got: %s'%(pd[1],x,got)
+#         for g in got:
+#           assert g in expected, 'For PD (%s) got %s was not in expected: %s'%(pd[1],g,expected)
+#       # end of block: not expected == got
     #end of loop through processingDay
-  
+    
+  def whichProduct(self,data):
+    return "P:%s V:%s::OS:%s, OSV:%s"%(data.get('product','-'),data.get('version','-'),data.get('os_name','-'),data.get('os_version','-'))
+  # ========================================================================== #  
+  def testCalculateMtbf_kwargs(self):
+    """
+    testCalculateMtbf_kwargs(self):
+    check that we do NOT get the default-specified data, but instead get data specified in kwargs:
+      check that processingDay overrides config
+      check that product and version remove other product data
+      check that os_name and os_version remove other OSs
+      check that slotEnd beats processingDay
+      check that kwargs slotEnd beats config
+      check that slotSizeMinutes raises AssertionError unless slotEnd
+      check that slotSizeMinutes beats the default 1 day
+      check that kwargs slotSizeMinutes beats config
+    """
+    cursor = self.connection.cursor()
+    self.fillMtbfTables(cursor,limit=33)
+    self.fillReports(cursor, False)
+    self.connection.commit()
+    sql = "SELECT productdims_id,osdims_id,(window_end-window_size),sum_uptime_seconds,report_count FROM time_before_failure WHERE (window_end-window_size)=%s"
+    noTime = datetime.time(0,0,0)
+    pd = self.processingDays[5]
+    pdtS = datetime.datetime.combine(pd[0],noTime)
+    pdtE = pdtS + datetime.timedelta(days=1)
+    assert 25 == pd[1]
+    self.config.processingDay = self.processingDays[3][0].isoformat()
+    assert self.processingDays[3][0] != pd[0]
+    cursor.execute(sql,(pdtS,))
+    self.connection.commit()
+    assert [] == cursor.fetchall(), 'Better be empty before we start mucking about'
+    # override the day
+    mtbf.calculateMtbf(self.config,self.logger,processingDay=pd[0].isoformat())
+    # check that we got the overridden day
+    cursor.execute(sql,(pdtS,))
+    self.connection.commit()
+    data = cursor.fetchall()
+    for d in data:
+      assert pdtS == d[2], 'Expected date: %s, got: %s'%(pdtS,d[2])
+    # check that we did NOT get the config day
+    cursor.execute(sql,(self.processingDays[3][0],))
+    self.connection.commit()
+    data = cursor.fetchall()
+    assert [] == data, 'Expected empty, got %s'%(str(data))
+    delSql = 'DELETE from time_before_failure'
+    testList = [
+      {'processingDay':pd[0].isoformat(),'product':'Thunderbird',
+       'expected':[(pdtE, 'Thunderbird', '2.0.0.21', 'Mac OS X', '10.4.10 8R2218'),
+                   (pdtE, 'Thunderbird', '2.0.0.21', 'Mac OS X', '10.5.6 9G2110'),
+                   (pdtE, 'Thunderbird', '2.0.0.21', 'Linux', '2.6.27.21 i686'),
+                   (pdtE, 'Thunderbird', '2.0.0.21', 'Linux', '2.6.28 i686'),
+                   ],
+       },
+      {'processingDay':pd[0].isoformat(),'product':'Firefox','version':'3.1.1',
+       'expected':[(pdtE, 'Firefox', '3.1.1', 'Mac OS X', '10.5.6 9G2110'),
+                   (pdtE, 'Firefox', '3.1.1', 'Linux', '2.6.27.21 i686'),
+                   (pdtE, 'Firefox', '3.1.1', 'Linux', '2.6.28 i686'),
+                   (pdtE, 'Firefox', '3.1.1', 'Mac OS X', '10.4.10 8R2218'),
+                   ],
+       },
+      {'processingDay':pd[0].isoformat(),'os_name':'Mac OS X',
+       'expected':[(pdtE, 'Thunderbird', '2.0.0.21', 'Mac OS X', '10.4.10 8R2218'),
+                   (pdtE, 'Firefox', '3.0.6', 'Mac OS X', '10.5.6 9G2110'),
+                   (pdtE, 'Firefox', '3.0.6', 'Mac OS X', '10.4.10 8R2218'),
+                   (pdtE, 'Firefox', '3.1.1', 'Mac OS X', '10.4.10 8R2218'),
+                   (pdtE, 'Thunderbird', '2.0.0.21', 'Mac OS X', '10.5.6 9G2110'),
+                   (pdtE, 'Firefox', '3.1.3b', 'Mac OS X', '10.5.6 9G2110'),
+                   (pdtE, 'Firefox', '3.1.2b', 'Mac OS X', '10.5.6 9G2110'),
+                   (pdtE, 'Firefox', '3.1.3b', 'Mac OS X', '10.4.10 8R2218'),
+                   (pdtE, 'Firefox', '3.1.2b', 'Mac OS X', '10.4.10 8R2218'),
+                   (pdtE, 'Firefox', '3.1.1', 'Mac OS X', '10.5.6 9G2110'),
+                   ],
+       },
+      {'processingDay':pd[0].isoformat(),'os_name':'Mac OS X','os_version':'10.4.10 8R2218',
+       'expected':[(pdtE, 'Thunderbird', '2.0.0.21', 'Mac OS X', '10.4.10 8R2218'),
+                   (pdtE, 'Firefox', '3.0.6', 'Mac OS X', '10.4.10 8R2218'),
+                   (pdtE, 'Firefox', '3.1.3b', 'Mac OS X', '10.4.10 8R2218'),
+                   (pdtE, 'Firefox', '3.1.2b', 'Mac OS X', '10.4.10 8R2218'),
+                   (pdtE, 'Firefox', '3.1.1', 'Mac OS X', '10.4.10 8R2218'),
+                   ],
+       },
+      {'processingDay':pd[0].isoformat(),'product':'Thunderbird','os_name':'Mac OS X','os_version':'10.4.10 8R2218',
+       'expected':[(pdtE, 'Thunderbird', '2.0.0.21', 'Mac OS X', '10.4.10 8R2218'),],
+      },
+      {'processingDay':pd[0].isoformat(),'product':'Thunderbird','version':'2.0.0.21',
+                                         'os_name':'Mac OS X','os_version':'10.4.10 8R2218',
+       'expected':[(pdtE, 'Thunderbird', '2.0.0.21', 'Mac OS X', '10.4.10 8R2218'),],
+       },
+      {'processingDay':pd[0].isoformat(),'product':'Thunderbird','version':'bogus',
+                                         'os_name':'Mac OS X','os_version':'10.4.10 8R2218',
+       'expected':[],
+       },
+      ]
+    for testItem in testList:
+      cursor.execute(delSql)
+      self.connection.commit()
+      cursor.execute(sql,(pdtS,))
+      self.connection.commit()
+      assert [] == cursor.fetchall(), 'Better be empty before we mucking about again'
+      mtbf.calculateMtbf(self.config,self.logger,**testItem)
+      cursor.execute('select f.window_end, p.product,p.version,o.os_name,o.os_version from time_before_failure f JOIN productdims p ON f.productdims_id = p.id JOIN osdims o ON f.osdims_id = o.id')
+      self.connection.commit()
+      got = cursor.fetchall()
+      assert set(testItem.get('expected')) == set(got),"%s\nEX: %s\nGOT %s"%(self.whichProduct(testItem),testItem.get('expected'),got)
+
+    #check that slotSizeMinutes raises AssertionError unless slotEnd
+    goodProcessingDay = self.processingDays[4][0]
+    assert_raises(AssertionError,mtbf.calculateMtbf,self.config,self.logger,slotSizeMinutes=200)
+                  
+    #check that slotEnd beats processingDay
+    goodSlotEnd = goodProcessingDay+datetime.timedelta(days=1)
+    badProcessingDay = datetime.datetime(2000,11,12,0,0,0) # well outside useful range
+    self.config.processingDay = goodProcessingDay.isoformat()
+    self.config['slotEnd'] = badProcessingDay.isoformat()
+    cursor.execute(delSql)
+    self.connection.commit()
+    mtbf.calculateMtbf(self.config,self.logger)
+    self.connection.commit()
+    cursor.execute('select count(id) from time_before_failure')
+    self.connection.commit()
+    count = cursor.fetchone()[0]
+    assert 0 == count, 'Expect no data from year 2000, but %s'%(count)
+
+    #check that kwargs slotEnd beats config
+    cursor.execute(delSql)
+    self.connection.commit()
+    self.config['slotEnd'] = badProcessingDay.isoformat()
+    mtbf.calculateMtbf(self.config,self.logger,slotEnd=goodSlotEnd)
+    self.connection.commit()
+    cursor.execute('select count(id) from time_before_failure')
+    self.connection.commit()
+    count = cursor.fetchone()[0]
+    assert 13 == count, 'Expect 13 rows from this good day, but got %s'%count
+    
+    #check that slotSizeMinutes beats the default 1 day
+    cursor.execute("SELECT SUM(sum_uptime_seconds) from time_before_failure")
+    self.connection.commit()
+    fullDaySum = cursor.fetchone()[0]
+    cursor.execute(delSql)
+    self.connection.commit()
+    mtbf.calculateMtbf(self.config,self.logger,slotEnd=goodSlotEnd,slotSizeMinutes=6,show=True)
+    self.connection.commit()
+    cursor.execute("SELECT SUM(sum_uptime_seconds) from time_before_failure")
+    self.connection.commit()
+    partDaySum = cursor.fetchone()[0]
+    assert partDaySum < fullDaySum, 'Actually, expect full:2730 (got %s) , partial:455 (got %s)'%(fullDaySum,partDaySum)
+     
   # ========================================================================== #  
   def testGetProductsToUpdate(self):
     """
@@ -742,15 +389,15 @@ class TestMtbf(unittest.TestCase):
       self.connection.commit()
       if d[1] in (-1,61):
         # be sure that when appropriate we log a warning about no configured products
-        assert logging.WARNING == self.logger.levels[-1]
+        assert logging.WARNING == self.logger.levels[-1], "expected trailing WARNING, but %s"%(self.logger.levels)
         assert 'Currently there are no MTBF products configured' == self.logger.buffer[-1]
       else:
         pass # testing for expected log calls is sorta kinda stupid. 
-      pids = set([(x['product_id'],x['os_id']) for x in products])
-      expected = set(d[2])
+      pids = set([x['product_id'] for x in products])
+      expected = set(x[0] for x in d[2])
       # This is the meat of the test
       assert expected == pids, 'In day %s(%s), Expected %s, got %s'%(d[0],d[1],expected,pids)
-  
+
   # ========================================================================== #  
   def testGetWhereClauseFor(self):
     """
@@ -951,7 +598,7 @@ class TestMtbf(unittest.TestCase):
     assert_raises(IndexError,mtbf.ProductAndOsData,[1])
     assert_raises(IndexError,mtbf.ProductAndOsData,[1,2])
     assert_raises(IndexError,mtbf.ProductAndOsData,[1,2,3])
-    assert_raises(IndexError,mtbf.ProductAndOsData,[1,2,3,4])
+    #assert_raises(IndexError,mtbf.ProductAndOsData,[1,2,3,4]) 4 is a legal count
     assert_raises(IndexError,mtbf.ProductAndOsData,[1,2,3,4,5])
     assert_raises(IndexError,mtbf.ProductAndOsData,[1,2,3,4,5,6])
     self.logger.clear()

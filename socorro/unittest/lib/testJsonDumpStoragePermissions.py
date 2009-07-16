@@ -8,6 +8,11 @@ import stat
 import socorro.lib.JsonDumpStorage as JDS
 import socorro.lib.uuid as suuid
 
+import socorro.unittest.testlib.util as tutil
+
+def setup_module():
+  tutil.nosePrintModule(__file__)
+
 class TestJsonDumpStoragePermissions(unittest.TestCase):
   def setUp(self):
     self.testDir = os.path.join('.','TESTPERM')

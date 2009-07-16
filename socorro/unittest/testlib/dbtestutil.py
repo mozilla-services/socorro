@@ -70,27 +70,12 @@ def makeJobDetails(idsMapToCounts):
       data.append(("/hmm/%s/%s/%s"%(uuid[:2],uuid[2:4],uuid),uuid,id,))
   return data
 
-def setPriority(cursor,jobIds,priorityTableName=None):
-  """
-  if priorityTableName: for each id in jobIds, insert row in that table holding the uuid of that job
-  otherwise, set the job.priority column in the jobs table
-    BEWARE: The job ids must be actual ids from the jobs table or this will fail
-  """
-  if not jobIds: return
-  wherePart = 'WHERE id IN (%s)'%(', '.join((str(x) for x in jobIds)))
-  if priorityTableName:
-    sql = "INSERT INTO %s (uuid) SELECT uuid FROM jobs %s"%(priorityTableName,wherePart)
-  else:
-    sql = "UPDATE jobs SET priority = 1 %s"%(wherePart)
-  cursor.execute(sql)
-  cursor.connection.commit()
-
 def addSomeJobs(cursor,idsMapToCounts, logger = None):
   """
   Insert the requested rows into jobs table.
   idsMapToCounts: id:countOfjobsForProcessorWithThisId
     BEWARE: The ids must be actual ids from the processors table or this will fail.
-  returns
+  returns list of the inserted job details 
   """
   if not logger:
     logger = logging.getLogger()
@@ -101,9 +86,25 @@ def addSomeJobs(cursor,idsMapToCounts, logger = None):
     cursor.executemany(sql,data)
   except Exception,x:
     logger.error("Failed to addSomeJobs(%s): %s",str(idsMapToCounts),x)
+    cursor.connection.rollback()
     raise x
   cursor.connection.commit()
   return data
+
+def setPriority(cursor,jobIds,priorityTableName=None):
+  """
+  if priorityTableName: for each id in jobIds, insert row in that table holding the uuid of that job
+  otherwise, set the job.priority column in the jobs table
+    BEWARE: The job ids must be actual ids from the jobs table or this will quietly fail to do anything usefuld
+  """
+  if not jobIds: return
+  wherePart = 'WHERE id IN (%s)'%(', '.join((str(x) for x in jobIds)))
+  if priorityTableName:
+    sql = "INSERT INTO %s (uuid) SELECT uuid FROM jobs %s"%(priorityTableName,wherePart)
+  else:
+    sql = "UPDATE jobs SET priority = 1 %s"%(wherePart)
+  cursor.execute(sql)
+  cursor.connection.commit()
 
 dimsData = {
   'osdims': [
@@ -112,8 +113,8 @@ dimsData = {
   {'os_name':'Windows NT','os_version':'6.1.7000',},
   {'os_name':'Mac OS X','os_version':'10.4.10 8R2218',},
   {'os_name':'Mac OS X','os_version':'10.5.6 9G2110',},
-  {'os_name':'Linux','os_version':'0.0.0 Linux 2.6.28-11-generic #42-Ubuntu SMP Fri Apr 17 01:57:59 UTC 2009 i686 GNU/Linux',},
-  {'os_name':'Linux','os_version':'0.0.0 Linux 2.6.27.21-0.1-pae #1 SMP 2009-03-31 14:50:44 +0200 i686 GNU/Linux',},
+  {'os_name':'Linux','os_version':'2.6.28 i686',},
+  {'os_name':'Linux','os_version':'2.6.27.21 i686',},
   ],
   'productdims': [
   {'product':'Firefox','version':'3.0.6','release':'major',},
@@ -125,15 +126,7 @@ dimsData = {
   {'product':'Firefox','version':'3.5b4pre','release':'milestone',},
   {'product':'Thunderbird','version':'2.0.0.21','release':'major',},
   ],
-  'signaturedims': [
-  {'signature':'js_Interpret'},
-  {'signature':'_PR_MD_SEND'},
-  {'signature':'nsAutoCompleteController::ClosePopup'},
-  {'signature':'nsFormFillController::SetPopupOpen'},
-  {'signature':'xpcom_core.dll@0x31b7a'},
-  {'signature':'morkRowObject::CloseRowObject(morkEnv*)'},
-  {'signature':'nsContainerFrame::ReflowChild(nsIFrame*, nsPresContext*, nsHTMLReflowMetrics&, nsHTMLReflowState const&, int, int, unsigned int, unsigned int&, nsOverflowContinuationTracker*)'},
-  ],
+
   'urldims': [
   {'domain':'www.mozilla.com','url':'http://www.mozilla.com/en-US/about/get-involved.html'},
   {'domain':'www.google.com','url':'http://www.google.com/search'},
@@ -151,6 +144,11 @@ dimsData = {
   ]
 }
 
+# def moreSignatures():
+#   while True:
+#     for m in dimsData['signaturedims']:
+#       yield m['signature']
+
 def fillDimsTables(cursor, data = None):
   """
   By default, use dimsData above. Otherwise, process the provided table.
@@ -164,10 +162,627 @@ def fillDimsTables(cursor, data = None):
   sqlTemplate = "INSERT INTO %(table)s (%(columnList)s) VALUES (%(valueList)s)"
   for table in tables:
     what = {'table':table}
-    k0 = dimsData[table][0].keys()
+    k0 = data[table][0].keys()
     what['columnList'] = ','.join(k0)
     what['valueList'] = ','.join(["%%(%s)s"%(x) for x in k0])
     sql = sqlTemplate%(what)
-    cursor.executemany(sql,dimsData[table])
+    cursor.executemany(sql,data[table])
   cursor.connection.commit()
 
+processingDays = None
+productDimData = None
+  
+def fillMtbfTables(cursor, limit=12):
+  global processingDays, productDimData
+  cursor.execute("SELECT count(id) from productdims")
+  cursor.connection.commit()
+  if not cursor.fetchone()[0]:
+    fillDimsTables(cursor)
+  cursor.execute("SELECT p.id, p.product, p.version, p.release, o.id, o.os_name, o.os_version from productdims as p, osdims as o order by o.os_version LIMIT %s"%limit) # MUST use order by to enforce same data from run to run
+  productDimData = cursor.fetchall()
+  cursor.connection.commit()
+  versionSet = set([x[2] for x in productDimData]) # lose duplicates
+  versions = [x for x in versionSet][:8] # Get the right number
+  baseDate = dt.date(2008,1,1)
+  lintervals = [(baseDate + dt.timedelta(days=0), baseDate + dt.timedelta(days=30)),
+                (baseDate + dt.timedelta(days=10),baseDate + dt.timedelta(days=40)),
+                (baseDate + dt.timedelta(days=20),baseDate + dt.timedelta(days=50)),
+                (baseDate + dt.timedelta(days=10),baseDate + dt.timedelta(days=40)),
+                (baseDate + dt.timedelta(days=20),baseDate + dt.timedelta(days=50)),
+                (baseDate + dt.timedelta(days=30),baseDate + dt.timedelta(days=60)),
+                (baseDate + dt.timedelta(days=90),baseDate + dt.timedelta(days=91)),
+                (baseDate + dt.timedelta(days=90),baseDate + dt.timedelta(days=91)),
+                ]
+  assert len(versions) >= len(lintervals), "Must add exactly %s versions to the productdims table"%(len(lintervals)-len(versions))
+  assert len(lintervals) >= len(versions), "Must add exatly %s more intervals above"%(len(versions)-len(lintervals))
+  intervals = {}
+  for x in range(len(lintervals)):
+    intervals[versions[x]] = lintervals[x]
+
+  PDindexes = [-1,0,5,10,15,25,35,45,55,60,61]
+  productsInProcessingDay = [
+    [], #  -1,
+    [(1,1),(1,2)],#  0,
+    [(1,1),(1,2)],#  5,
+    [(1,1),(1,2),(4,1),(4,2),(5,1)],#  10,
+    [(1,1),(1,2),(4,1),(4,2),(5,1)],#  15,
+    [(1,1),(1,2),(4,1),(4,2),(5,1),(6,1),(8,1)],#  25,
+    [(2,1),(2,2),(4,1),(4,2),(5,1),(6,1),(8,1)],#  35,
+    [(2,1),(2,2),(6,1),(8,1)],#  45,
+    [(2,1),(2,2)],#  55,
+    [(2,1),(2,2)],#  60,
+    [],#  61,
+    ]
+  # processing days are located at and beyond the extremes of the full range, and
+  # at some interior points, midway between each pair of interior points
+  # layout is: (a date, the day-offset from baseDate, the expected resulting [(prod_id,os_id)])
+  processingDays = [ (baseDate+dt.timedelta(days=PDindexes[x]),PDindexes[x],productsInProcessingDay[x]) for x in range(len(PDindexes))]
+
+  # (id), productdims_id, start_date, end_date : Date-interval when product is interesting
+  configData =set([(x[0],intervals[x[2]][0],intervals[x[2]][1] ) for x in productDimData ])
+  cursor.execute("delete from product_visibility")
+  cursor.executemany('insert into product_visibility (productdims_id,start_date,end_date) values(%s,%s,%s)',configData)
+  cursor.connection.commit()
+  return processingDays,productDimData
+
+signatureData = [
+  'js_Interpret',
+  '_PR_MD_SEND',
+  'nsAutoCompleteController::ClosePopup',
+  'nsFormFillController::SetPopupOpen',
+  'xpcom_core.dll@0x31b7a',
+  'morkRowObject::CloseRowObject(morkEnv*)',
+  'NSSRWLock_LockRead_Util',
+  'memmove',
+  'nsXPConnect::Traverse(void*, nsCycleCollectionTraversalCallback&)',
+  'nsWindow::GetParentWindow(int)',
+  'nsStyleSet::FileRules(int (*)(nsIStyleRuleProcessor*, void*), RuleProcessorData*)',
+  'NPSWF32.dll@0x1b9cf9',
+  'PL_DHashTableOperate',
+  'Flash_EnforceLocalSecurity',
+  'arena_dalloc_small',
+  'GraphWalker::DoWalk(nsDeque&)',
+  'GoogleDesktopMozilla.dll@0x5512',
+  'NPSWF32.dll@0x1c6168',
+  'js_MonitorLoopEdge(JSContext*, unsigned int&)',
+  'NPSWF32.dll@0xa7edc',
+  'user32.dll@0x8815',
+  'nsCycleCollectingAutoRefCnt::decr(nsISupports*)',
+  'nsBaseWidget::Destroy()',
+  'avgssff.dll@0x9ba3',
+  'CFReadStreamGetStatus',
+  'NPSWF32.dll@0x15a4bf',
+  'nsEventListenerManager::Release()',
+  'dtoa',
+  'GoogleDesktopMozilla.dll@0x5500',
+  'RtlpWaitForCriticalSection',
+  'js_TraceObject',
+  'nsDocShell::SetupNewViewer(nsIContentViewer*)',
+  'nsCycleCollector::MarkRoots(GCGraphBuilder&)',
+  'ntdll.dll@0x1b21a',
+  'nsFrame::BoxReflow(nsBoxLayoutState&, nsPresContext*, nsHTMLReflowMetrics&, nsIRenderingContext*, int, int, int, int, int)',
+  'XPCCallContext::XPCCallContext(XPCContext::LangType, JSContext*, JSObject*, JSObject*, int, unsigned int, int*, int*)',
+  'DTToolbarFF.dll@0x4bc19',
+  'ntdll.dll@0x43387',
+  'NPSWF32.dll@0xce422',
+  'NPSWF32.dll@0x1c6510',
+  'kernel32.dll@0x12afb',
+  'JS_RemoveRootRT',
+  'TraceRecorder::emitIf(unsigned char*, bool, nanojit::LIns*)',
+  'NPSWF32.dll@0x143c15',
+  'Flash Player@0x91bd0',
+  'nppl3260.dll@0x4341',
+  'NPSWF32.dll@0x1c791a',
+  'RtlpCoalesceFreeBlocks',
+  'ntdll.dll@0x10a19',
+  'nsGlobalWindow::cycleCollection::UnmarkPurple(nsISupports*)',
+  'RuleHash_ClassTable_GetKey',
+  'arena_chunk_init',
+  'nsSocketTransport::OnSocketEvent(unsigned int, unsigned int, nsISupports*)',
+  'user32.dll@0x11911',
+  'RaiseException',
+  'UserCallWinProcCheckWow',
+  'radhslib.dll@0x3b6f',
+  'NPSWF32.dll@0x172a4e',
+  '_PR_MD_ATOMIC_DECREMENT',
+  'NPSWF32.dll@0x2166f3',
+  'js_GetGCThingTraceKind',
+  'nppl3260.dll@0x54bb',
+  'NPSWF32.dll@0xbbff7',
+  'NPSWF32.dll@0x20a8db',
+  'NPSWF32.dll@0x2cc09a',
+  'JS_TraceChildren',
+  'xul.dll@0x326f0d',
+  'NPSWF32.dll@0x2571',
+  'NPSWF32.dll@0x3f245',
+  'msvcr80.dll@0xf880',
+  'fun_trace',
+  'nsXULDocument::OnStreamComplete(nsIStreamLoader*, nsISupports*, unsigned int, unsigned int, unsigned char const*)',
+  'GCGraphBuilder::NoteXPCOMChild(nsISupports*)',
+  'BtwVdpCapFilter.dll@0xa345',
+  'nsChromeTreeOwner::GetInterface(nsID const&, void**)',
+  'NPSWF32.dll@0x13b4c2',
+  'libnssutil3.dylib@0x59bf',
+  '@0x61636f6c',
+  'user32.dll@0x1f793',
+  'ntdll.dll@0xe514',
+  'NoteJSChild',
+  'NPSWF32.dll@0x5b2c8',
+  'iml32.dll@0x10efb',
+  'nsHttpChannel::Release()',
+  'closeAudio',
+  'js3250.dll@0x68bec',
+  'AutoCXPusher::AutoCXPusher(JSContext*)',
+  'NPSWF32.dll@0x7c043',
+  'fastcopy_I',
+  'nsDocShell::EnsureContentViewer()',
+  'nsGenericElement::cycleCollection::Traverse(void*, nsCycleCollectionTraversalCallback&)',
+  'nsPluginHostImpl::TrySetUpPluginInstance(char const*, nsIURI*, nsIPluginInstanceOwner*)',
+  'nsMimeTypeArray::GetMimeTypes()',
+  'ntdll.dll@0x100b',
+  'GoogleDesktopMozilla.dll@0x56bc',
+  'nsCOMPtr_base::~nsCOMPtr_base()',
+  'nsCOMPtr_base::assign_from_qi(nsQueryInterface, nsID const&)',
+  ]
+def genSig(countOfSignatures=7):
+  global signatureData
+  assert countOfSignatures <= len(signatureData), 'Better be at least %s!, but was %s'%(countOfSignatures,len(signatureData))
+  while True:
+    for s in signatureData[:countOfSignatures]:
+      yield s
+
+        
+def fillReportsTable(cursor, doFillMtbfTables=True, createUrls=False, multiplier=1, signatureCount=7):
+  """fill enough data to test mtbf and topcrashbyurl behavior:
+    - mtbf: SUM(uptime); COUNT(date_processed);
+    - url: some duplicates, some distinct
+    """
+  global processingDays
+  if doFillMtbfTables or not processingDays:
+    fillMtbfTables(cursor) # prime the pump
+  sql2 = """INSERT INTO reports
+                (uuid, client_crash_date, install_age, last_crash, uptime, date_processed, success, signature, url, product, version, os_name, os_version)
+          VALUES(%s,   %s,                %s,          %s,         %s,     %s,             %s,      %s,        %s,  %s,      %s,      %s,      %s)"""
+  processTimes = [dt.time(0,0,0),dt.time(5,0,0),  dt.time(10,0,0),dt.time(15,0,0),  dt.time(20,0,0),  dt.time(23,59,59)]
+  crashTimes =   [dt.time(0,0,0),dt.time(4,59,40),dt.time(9,55,0),dt.time(14,55,55),dt.time(19,59,59),dt.time(23,59,50)]
+  assert len(processTimes) == len(crashTimes), 'Otherwise things get way too weird'
+  uptimes = [5*x for x in range(1,15)]
+  data2 = []
+  uuidGen = moreUuid()
+  sigGen = genSig(signatureCount)
+  urlGen = moreUrl(createUrls)
+  uptimeIndex = 0
+  for mm in range(multiplier):
+    for product in productDimData:
+      uptime = uptimes[uptimeIndex%len(uptimes)]
+      uptimeIndex += 1
+      for d,off,ig in processingDays:
+        for ptIndex in range(len(processTimes)):
+          pt = processTimes[ptIndex].replace(microsecond = 10000*mm)
+          ct = crashTimes[ptIndex].replace(microsecond = 9000*mm)
+          dp = "%s %s"%(d.isoformat(),pt.isoformat())
+          ccd = "%s %s"%(d.isoformat(),ct.isoformat())
+          tup = (uuidGen.next(), uptime,dp,product[1],product[2],product[5],product[6])
+          tup2 = (tup[0], ccd, 10000, 100, uptime, dp, True, sigGen.next(), urlGen.next(), product[1], product[2], product[5], product[6])
+          data2.append(tup2)
+  cursor.executemany(sql2,data2)
+  return processingDays,productDimData
+
+def moreUrl(realUrls):
+  if not realUrls:
+    while True:
+      yield None
+  else:
+    suffixes = ['']
+    for i in range(97,123):
+      suffixes.append(chr(i))
+    for i in range(65,91):
+      suffixes.append(chr(i))
+    while True:
+      for suffix in suffixes:
+        # This list is deliberatly redundant to force some multiples.
+        for url in [
+          "http://yachats/uncwiki/LarsLocalPortal/",
+          None,
+          "http://www.google.it/ig?hl=it",
+          "about:blank",
+          None,
+          None,
+          "https://forums.quitnet.com/aspBanjo/Message_List.asp?View_By=Latest&Conference_ID=10&Forum_ID=8&ts={E086BCDA-EE3C-492B-91C2-974D7AFFD782}&r=34545.39",
+          "http://www.lagaceta.com.ar/nota/262953/Notas_tapa/salario_minimo_estatal_sera_$_1.394.html",
+          "http://www.fsicrew.info/streams/validate/dir.php?sop://broker.sopcast.com:3912/22260",
+          "http://www.google.pl/search?hl=pl&q=NASZA+KLASA&btnG=Szukaj+w+Google&lr=",
+          "http://www.taringa.net/",
+          None,
+          "http://ftvthumbs.com/",
+          "http://www.mozilla.org/projects/firefox/3.0b4pre/whatsnew/",
+          "http://www.caleffi.it/caleffi/it_IT/Site/Products/Catalogue/index.sdo",
+          "file:///E:/Bookmarks.html",
+          "http://www.hybrid-synergy.eu/member.php?action=resetpassword&uid=321&code=sZ7cFQoh",
+          None,
+          "http://passivelymultiplayer.com/",
+          None,
+          "http://yachats/uncwiki/LarsLocalPortal/",
+          "http://www.google.it/",
+          "http://www.google.it/firefox",
+          "http://nasza-klasa.pl/",
+          "chrome://speeddial/content/speeddial.xul",
+          "http://www.google.com.ar/",
+          None,
+          "http://www.mozilla.org/projects/firefox/3.0b4pre/whatsnew/",
+          "http://www.mozilla.org/projects/firefox/3.0b4pre/whatsnew/",
+          "http://www.archijob.co.il/index_asp.asp?showpage=aj-classifieds/jobs11.htm",
+          "http://www.google.it/ig?hl=it",
+          "http://taringa.net/",
+          "http://www.google.it/",
+          None,
+          "http://www.google.it/",
+          None,
+          "http://www.google.it/",
+          None,
+          None,
+          None,
+          "http://yachats/uncwiki/LarsLocalPortal/",
+          None,
+          "about:blank",
+          "http://www.google.it/ig?hl=it",
+          "http://www.taringa.net/",
+          "http://www.mozilla.org/projects/firefox/3.0b4pre/whatsnew/",
+          "http://mail.163.com/",
+          None,
+          "http://ikariam.es/nologin_wrongPw.php",
+          None,
+          "http://nasza-klasa.pl/",
+          "http://s5.travian.it/berichte.php",
+          None,
+          "http://www.lagazzettaweb.it/Pages/rub_sal/2005/salute/r_nssal_05-24.html",
+          None,
+          "http://yachats/uncwiki/LarsLocalPortal/",
+          "http://www.google.com.ar/firefox?client=firefox-a&rls=org.mozilla:es-ES:official",
+          "http://www.taringa.net/posts/tv-peliculas-series/1041876/Lost---1%C2%AA",
+          None,
+          "http://www.mozilla.org/projects/firefox/",
+          "file:///E:/Bookmarks.html",
+          "http://www.forocoches.com/foro/forumdisplay.php?f=18",
+          "http://www.grafamania.net/page/1/",
+          None,
+          None,
+          "http://www.poringa.net/posts/poringueras/894156/mi-sra-y-sus-personalidades___.html",
+          None,
+          "http://yachats/uncwiki/LarsLocalPortal/",
+          None,
+          "http://www.google.it/",
+          None,
+          "http://www.upct.es/contenido/centros/index_centros.php",
+          "http://www.google.pl/ig?hl=pl",
+          "http://www.mozilla.org/projects/minefield/",
+          "http://www.quimutuo.it/privati.htm",
+          "http://www.google.com.ar/language_tools?hl=es",
+          None,
+          "http://www.speedyshare.com/751947163.html",
+          None,
+          "http://www.google.com.my/",
+          "http://yachats/uncwiki/LarsLocalPortal/",
+          "http://www.google.pl/",
+          "http://www.ole.clarin.com/",
+          "http://forums.quitnet.com/aspBanjo/Message_View.asp?conference_id=10&forum_id=8&Message_ID=12753925",
+          "http://www.mozilla.org/projects/minefield/",
+          None,
+          "http://photo.poco.cn/m/action_show.htx&id=12171",
+          "http://www.taringa.net/",
+          None,
+          "http://www.e-shop-italia.it/catalog/login.php",
+          "http://www.velocidadmaxima.com/forum/showthread.php?t=99464",
+          "http://yachats/uncwiki/LarsLocalPortal/",
+          "http://www.mozilla.org/projects/minefield/",
+          "http://www.continental.com.ar/envivo.htm",
+          "http://yachats/uncwiki/LarsLocalPortal/",
+          None,
+          "http://nfriedly.com/dotk/",
+          "http://www.c4dzone.it/libro/CFattoriClaudio-8.zip",
+          "http://www.google.it/",
+          "http://taringa.net/posts/noticias/120254/marihuana",
+          None,
+          "http://yachats/uncwiki/LarsLocalPortal/",
+          "http://www.italiansubs.net/index.php?option=com_remository&Itemid=27&func=fileinfo&id=5471",
+          None,
+          "http://www.microsiervos.com/archivo//bigdog-robot.html",
+          "http://www.google.com.ar/search?hl=es&client=firefox-a&channel=s&rls=org.mozilla%3Aes-AR%3Aofficial&hs=qDO&q=un+ejecutable+y+2+archivos+bin&btnG=Buscar&meta=",
+          "http://www.yazakpro.com/chatstuff/yahoo/vistayahoovoicefix.html",
+          None,
+          "http://www.elmundo.es/traductor/",
+          "http://adblockplus.org/en/subscriptions",
+          "http://yachats/uncwiki/LarsLocalPortal/",
+          "http://yachats/uncwiki/LarsLocalPortal/",
+          "http://taringa.net/categorias/imagenes/",
+          "http://www.ggopisy.pl/",
+          None,
+          "http://www.baidu.com/",
+          None,
+          "http://www.google.it/",
+          None,
+          "http://www.gg-opisy.eu/opisy",
+          None,
+          None,
+          "http://www.google.co.jp/sorry/?continue=http://www.google.co.jp/search%3Fhl%3Dja%26q%3Ddiggirl%26btnI%3DI%27m%2BFeeling%2BLucky%26lr%3D",
+          "http://www.google.com.ar/firefox?client=firefox-a&rls=org.mozilla:es-AR:official",
+          "http://www.google.com.ar/",
+          "http://s5.travian.it/berichte.php?id=17587213",
+          "http://guia-fucion.blogcindario.com/2006/11/00015-como-crear-servers.html",
+          "http://yachats/uncwiki/LarsLocalPortal/",
+          "http://www.google.it/",
+          None,
+          None,
+          None,
+          "http://www.google.se/search?q=hammond&hl=sv&client=firefox-a&rls=org.mozilla:en-US:unofficial&hs=YBv&start=20&sa=N",
+          "http://www.google.pl/",
+          "http://www.stocking-movies.com/",
+          "http://taringa.net/posts/imagenes/1120030/Los-autos-mas-feos-del-mundo.html",
+          "http://www.google.com.ar/",
+          None,
+          "http://www.google.com.ar/",
+          "http://www.petardas.com/galerias/peludas.php",
+          "http://www.google.es/firefox",
+          None,
+          "http://www.abisource.com/download/",
+          None,
+          "http://www.mozilla.org/projects/firefox/3.0b4pre/whatsnew/",
+          "http://www.winionline.com.ar/indexC.php",
+          "http://www.google.cl/search?hl=es&rlz=1G1GGLQ_ESCL268&sa=X&oi=spell&resnum=1&ct=result&cd=1&q=hentai.ro%2Bimperium&spell=1",
+          "http://www.google.com.ar/",
+          "http://www.google.it/search?source=ig&hl=it&rlz=&q=msn+firefox&btnG=Cerca+con+Google&meta=",
+          "about:blank",
+          None,
+          None,
+          "about:blank",
+          "file:///C:/Documents%20and%20Settings/Administrador/Mis%20documentos/Mis%20historiales%20de%20conversaci%C3%B3n/Marzo%202008/gmo__13@hotmail.com.html",
+          "http://www.mozilla.org/projects/firefox/3.0b4pre/whatsnew/",
+          "http://www.amazon.com/b/ref=sv_bt_1/104-5407176-9232754?ie=UTF8&node=13889001",
+          "http://www.google.it/search?hl=it&q=apup+vista&btnG=Cerca+con+Google&meta=",
+          "http://yachats/uncwiki/LarsLocalPortal/",
+          "http://www.youtube.com/results?search_query=alonso&search_sort=video_date_uploaded",
+          "http://yachats/uncwiki/LarsLocalPortal/",
+          "http://www.dailyoffers.nl/index.php",
+          None,
+          None,
+          None,
+          "about:blank",
+          "http://www.mozilla.org/projects/minefield/",
+          None,
+          "http://www.google.it/ig?hl=it",
+          "https://cs.ap.dell.com/support/orderstatus/details.aspx?l=zh&c=cn&oi=3g2DdTHs3diTV8M5DBT96Q%3d%3d&country=cn",
+          "http://nasza-klasa.pl/",
+          "http://poringa.net/",
+          "http://www.traparentesi.it/sms.htm",
+          None,
+          "about:blank",
+          "http://www.mozilla.org/projects/minefield/",
+          "http://yachats/uncwiki/LarsLocalPortal/",
+          "about:blank",
+          None,
+          "http://www.eka.pwr.wroc.pl/dydaktyka/plan_zajec_let/search_kurs.php?termid=40618",
+          "http://www.mozilla.org/projects/minefield/",
+          "http://www.google.pl/search?hl=pl&q=NASZA+KLASA&btnG=Szukaj+w+Google&lr=",
+          "http://www.google.es/",
+          "http://www.sistemaeasy.it/Main.aspx?FRAME=DettaglioOrdine.aspx?P1=36908",
+          "http://yachats/uncwiki/LarsLocalPortal/",
+          None,
+          "http://www.hwupgrade.it/forum/archive/index.php/t-1163999-p-33.html",
+          "http://yachats/uncwiki/LarsLocalPortal/",
+          "https://www.unicaja.es/univia/servlet/ConnectionServlet;jsessionid=0001t2pLTWIQOi0AV8IFuqMsOeO:12aocnh3o",
+          "https://forums.quitnet.com/aspBanjo/Message_List.asp?View_By=Latest&Conference_ID=10&Forum_ID=8&ts={E086BCDA-EE3C-492B-91C2-974D7AFFD782}&r=34545.39",
+          "http://www.kartkiflash.pl/img_kartki/kartka_51.swf",
+          None,
+          "http://yachats/uncwiki/LarsLocalPortal/",
+          "http://rs20.rapidshare.com/files/37941175/Mortal_Kombat_II__Annihilation.avi.001",
+          "http://www.velocidadmaxima.com/forum/forumdisplay.php?f=24",
+          "http://www.mozilla.org/projects/minefield/",
+          "http://www.mozilla.org/projects/firefox/3.0b4pre/whatsnew/",
+          "http://www.google.com.ar/search?hl=es&defl=es&q=define:ARN&sa=X&oi=glossary_definition&ct=title",
+          None,
+          "http://www.fotolog.com/conycony88",
+          "http://www.google.com.ar/",
+          "about:blank",
+          None,
+          "http://www.20minutos.es/",
+          None,
+          "http://felipex.net/",
+          None,
+          "about:blank",
+          None,
+          "http://by116w.bay116.mail.live.com/mail/ReadMessageLight.aspx?Aux=4%7c0%7c8CA57558A80A7A0%7c&FolderID=00000000-0000-0000-0000-000000000001&InboxSortAscending=False&InboxSortBy=Date&ReadMessageId=70de04b2-8a8e-403b-8425-398042d1e090&n=1112917858",
+          "http://www.google.pl/",
+          "http://www.taringa.net/",
+          "http://www.smh.com.au/",
+          None,
+          "http://adblockplus.org/en/subscriptions",
+          "http://ar.search.yahoo.com/search?ei=ISO-8859-1&fr=megaup&p=www%C3%B1l",
+          None,
+          "http://www.google.pl/",
+          "http://www.google.it/search?hl=it&q=firefox&btnG=Cerca+con+Google&meta=",
+          None,
+          "http://xtreme-mod.net/",
+          "http://www.google.it/",
+          "http://www.google.com.pe/",
+          "about:blank",
+          "http://demo.softwarefx.com/Silverlight/Chart/Galleries/CfxSilverlightDemoPage.aspx",
+          "http://www.google.pl/",
+          None,
+          "http://abc.go.com/primetime/lost/index?pn=connection",
+          "http://www.eliteclasica.com/foro/viewforum.php?f=2&sid=346ae116153c0115d85a8bceac26750d",
+          None,
+          "http://www.youtube.com/watch?v=EY0sIovSwuU",
+          "file:///E:/Bookmarks.html",
+          "http://www.mozilla.org/projects/minefield/",
+          "about:blank",
+          "about:blank",
+          "http://eztv.it/frontpage.php",
+          None,
+          "http://www.netvibes.com/#General",
+          None,
+          "http://i164.photobucket.com/albums/u16/gregg1971/one-thirds_cool.jpg?t=1206025729",
+          None,
+          "http://www.google.co.ve/",
+          "http://www.google.it/search?hl=it&q=meteofrance&btnG=Cerca+con+Google&meta=",
+          "http://bl136w.blu136.mail.live.com/mail/InboxLight.aspx?FolderID=00000000-0000-0000-0000-000000000001&InboxSortAscending=False&InboxSortBy=Date&n=1153441711",
+          None,
+          None,
+          "http://yachats/uncwiki/LarsLocalPortal/",
+          "http://www.google.it/",
+          "http://poringa.net/posts/imagenes/927342/Tetas____eran-las-de-antes!!.html",
+          "http://www.mozilla.org/projects/minefield/",
+          None,
+          "http://zagaglioni.stumbleupon.com/",
+          "http://www.codeproject.com/KB/system/usbeject.aspx",
+          "http://www.smh.com.au/news/music/cowell-pays-off-cancer-sufferers-mortgage/2008/03/19/1205602441951.html",
+          None,
+          "about:blank",
+          "http://www.freestreamingxxxcams.com/",
+          None,
+          "http://nasza-klasa.pl/login?target=%2Fprofile%2F832900%2Fgallery%2F2",
+          "http://www.google.it/",
+          None,
+          "http://www.augustaonline.it/",
+          None,
+          "chrome://speeddial/content/speeddial.xul",
+          None,
+          None,
+          "http://www.forocoches.com/foro/forumdisplay.php?f=18",
+          "http://www.forocoches.com/foro/forumdisplay.php?f=18",
+          "http://www.google.cl/",
+          "http://www.imdb.com/title/tt0181852/",
+          "http://www.mozilla.org/projects/firefox/3.0b4pre/whatsnew/",
+          None,
+          None,
+          "http://www.taringa.net/posts/imagenes/1118913/La-ARA-de-visita-en-Puerto-Madryn.html",
+          "http://www.google.it/",
+          None,
+          "file:///E:/Bookmarks.html",
+          "http://www.pornfile.com/gal1-bin/imageFolio.cgi?direct=NEW",
+          "http://www.google.cn/search?hl=zh-CN&q=opera&btnG=Google+%E6%90%9C%E7%B4%A2&meta=&aq=1&oq=oper",
+          "http://news.wintricks.it/software/multimedia-giochi/24850/express-burn-4.07/",
+          "http://www.winionline.com.ar/indexC.php",
+          "http://www.youtube.com/watch?v=6uLUVI3Y0q0",
+          "about:blank",
+          None,
+          "http://www.google.pl/search?hl=pl&q=wyszukiwarka+mp3&btnG=Szukaj+w+Google&lr=",
+          "http://adblockplus.org/en/subscriptions",
+          None,
+          "http://www.google.es/",
+          "http://meneame.net/shakeit.php",
+          "http://allegro.pl/search.php?string=alfa+33&order=p&p=3",
+          "http://www.google.it/ig?hl=it",
+          "about:blank",
+          "http://poczta.wp.pl/wylogowany.html?pfba=1206107523.834&advdyn=1",
+          None,
+          "http://g1a115.mail.163.com/a/p/main.htm?sid=YCnJtArrgfPNSCLYoGrrMjnHPMkIxnvA",
+          None,
+          "http://www.google.it/",
+          "http://www.snai.it/",
+          "http://www.mozilla.org/projects/firefox/3.0b4pre/whatsnew/",
+          "http://www.mozilla.org/projects/minefield/",
+          "http://www.mozilla.org/projects/firefox/3.0b4pre/firstrun/",
+          "http://poczta.wp.pl/wylogowany.html?pfba=1206107523.834&advdyn=1",
+          "http://www.poringa.net/posts/poringueras/927658/Lolita-y-su-empanadita_____.html",
+          "http://www.velocidadmaxima.com/forum/attachment.php?attachmentid=96633&d=1203906310",
+          "http://www.mozilla.org/projects/minefield/",
+          "https://login.facebook.com/login.php",
+          "http://www.iuav.it/homepage/",
+          "http://sexcity-blog.excite.it/news/8035/Parte-Naked-News-Italia-il-tg-senza-veli-",
+          None,
+          "https://www.google.com/accounts/ServiceLogin?service=mail&passive=true&rm=false&continue=https%3A%2F%2Fmail.google.com%2Fmail%2F%3Fnsr%3D1%26ui%3Dhtml%26zy%3Dl&ltmpl=default&ltmplcache=2",
+          "about:blank",
+          "http://www.mundoplus.tv/",
+          None,
+          "http://www.addictinggames.com/guitarmasters.html",
+          "http://www.incom.pl/?strona=sprzedaz&modul=opis_produktu&symbol=PGASA4N25010",
+          "http://www.whitehouse.gov/news/releases/2008/03/20080320-7.wm.v.html",
+          "http://www.wrzuta.pl/search.php?type=A&words=talk+dance&header_search-submit.x=0&header_search-submit.y=0",
+          "http://www.mozilla.org/projects/minefield/",
+          "http://www.mozilla.org/projects/firefox/3.0b4pre/releasenotes/",
+          "http://www.google.es/search?q=lyirics+are+you+ready%3F+someone%27s+coming+to+take+you+home&ie=utf-8&oe=utf-8&aq=t&rls=org.mozilla:en-US:unofficial&client=firefox-a",
+          None,
+          "about:blank",
+          None,
+          "http://www.google.com.ar/",
+          "http://images.google.it/images?hl=it&client=firefox-a&rls=org.mozilla:en-US:unofficial&hs=F7S&resnum=0&q=ecobox&um=1&ie=UTF-8&sa=N&tab=wi",
+          None,
+          None,
+          "http://www.google.it/search?q=moteur+de+recherche+pour+torrent&ie=utf-8&oe=utf-8&aq=t&rls=org.mozilla:en-US:unofficial&client=firefox-a",
+          "http://www.google.pl/search?hl=pl&q=model+camp&btnG=Szukaj+w+Google&lr=lang_pl",
+          "http://it.msn.com/",
+          "http://www.popomundo.com/common/index.html",
+          "http://hard.pcpop.com/",
+          "http://www.google.it/webhp?hl=it&btnG=Cerca+con+Google",
+          None,
+          "http://www.mozilla.org/projects/minefield/",
+          "http://www.mozilla.org/projects/minefield/",
+          "https://www.187.alice.it/cgi-bin/di_187/di/187/di3/demand/homeSecure.do?tabId=2&actionHda=Y&BV_UseBVCookie=yes",
+          "http://www.fotolog.com/sooniicoo",
+          "http://webkit.org/perf/sunspider-0.9/sunspider-results.html?%7B%223d-cube%22:%5B516",
+          "http://www.google.pl/",
+          "http://www.popomundo.com/common/index.html",
+          "http://www1.plala.or.jp/tete009/en-US/software.html",
+          None,
+          None,
+          "http://morgamic.khan.mozilla.org/amo-reskin/site/en-US/firefox/addon/3615",
+          "http://www.mozilla.org/projects/firefox/3.0b4pre/whatsnew/",
+          None,
+          "http://demomx.zucchetti.com/MX/jsp/home.jsp",
+          "http://www.mozilla.org/projects/firefox/3.0b4pre/whatsnew/",
+          "http://www.google.it/search?source=ig&hl=it&rlz=1G1GGLQ_ITIT267&q=i+e+8&btnG=Cerca+con+Google&meta=",
+          "http://yachats/uncwiki/LarsLocalPortal/",
+          "http://www.hi5.com/friend/photos/displayPhotoUser.do?photoId=1278930341&ownerId=202933330&albumId=156144600",
+          "http://www.mozilla.org/projects/minefield/",
+          "http://cgi.ebay.it/Nintendo-Wii-Sports-Pack-Wii-Mote-e-Nunchuk-2Giochi-Acc_W0QQitemZ220214114863QQcmdZViewItem?hash=item220214114863&_trksid=p3285.c76.l1288",
+          "http://www.google.es/",
+          None,
+          "http://www.google.it/",
+          "http://yachats/uncwiki/LarsLocalPortal/",
+          "http://www.taringa.net/",
+          "http://www.google.it/ig?hl=it",
+          "http://www.hwupgrade.it/download/file/1640.html",
+          "http://www.psichiatriademocratica.com/leggi.htm",
+          "https://p2.profabrica.pl/hphadm/index.php?db=dbMagiaPodrozy&table=tripTable_7&lang=pl-iso-8859-2&target=sql.php&token=f9e3e0b3de00e7d2c2cb874bf8f50588",
+          "https://forums.quitnet.com/aspBanjo/Message_List.asp?View_By=Latest&Conference_ID=10&Forum_ID=8&ts={E086BCDA-EE3C-492B-91C2-974D7AFFD782}&r=34545.39",
+          "https://forums.quitnet.com/aspBanjo/Message_List.asp?View_By=Latest&Conference_ID=10&Forum_ID=8&ts={E086BCDA-EE3C-492B-91C2-974D7AFFD782}&r=34545.39",
+          "http://www.adobe.com/shockwave/download/download.cgi?P1_Prod_Version=ShockwaveFlash",
+          "http://geizhals.at/?fs=lacie&x=0&y=0&in=",
+          "http://www.forocoches.com/foro/showthread.php?t=873375&page=46",
+          "http://cgi.ebay.it/Nintendo-Wii-Sports-Pack-Wii-Mote-e-Nunchuk-2Giochi-Acc_W0QQitemZ220214114863QQcmdZViewItem?hash=item220214114863&_trksid=p3285.c76.l1288",
+          "http://www.landi.ch/fra/0804_niederschlagsradar.asp",
+          None,
+          None,
+          "http://nfriedly.com/dotk/includes/",
+          "http://youporn.com/search?query=home%20lesbian&page=6",
+          "http://www.bluewin.ch/index_i.html",
+          "https://forums.quitnet.com/aspBanjo/Message_View.asp?Conference_ID=10&Forum_ID=8&Message_ID=12754128#12754128",
+          "http://hobbyfantasy.forumfree.net/",
+          None,
+          "http://yachats/uncwiki/LarsLocalPortal/",
+          "http://cgi.ebay.it/DUCATI-MULTISTRADA-620-DECATALIZZATORE-MARMITTA_W0QQitemZ120174020838QQihZ002QQcategoryZ126601QQcmdZViewItem",
+          "http://www.mininova.org/cat-list/4/added/2",
+          "https://www.bookmyname.com/",
+          None,
+          "http://digg.com/",
+          None,
+          "http://yachats/uncwiki/LarsLocalPortal/",
+          "http://www.google.it/",
+          "http://ar.mg0.mail.yahoo.com/dc/launch?.rand=boehdndle28ir",
+          "http://search.utorrent.com/search.php?q=ita&e=http%3a%2f%2fwww.meganova.org%2fsearch.php%3fsearch%3d&u=1",
+          "http://www.mozilla.org/projects/firefox/3.0b4pre/whatsnew/",
+          "http://www.mozilla.org/projects/minefield/",
+          "http://yachats/uncwiki/LarsLocalPortal/",
+          None,
+          "http://www.mozilla.org/projects/minefield/",
+          None,
+          "http://www.google.pl/",
+          "http://yachats/uncwiki/LarsLocalPortal/",
+          "about:blank",
+          None,
+          "http://taringa.net/usuarios-online/",
+          "http://www.onet.pl/",
+          ]:
+          if url:
+            url += suffix
+          yield url

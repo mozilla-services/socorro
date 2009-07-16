@@ -3,6 +3,31 @@ import signal
 import sys
 import time
 
+
+def getModuleFromFile(filename, depth=4, decorate=True):
+  """
+  Extract the bottom (depth) items in filename's path and return the items, dot-separated
+  If fewer than depth: extract them all
+  If decorate is boolean True, embed the module data in "\n==== %(module)s ====\n=====%(underline)s====="
+  If decorate is a string, embed the module data as decorate%(data)
+  Used to display which test is being run (helpful when multiple directories are nosetested from one command)
+  """
+  assert depth > 0, "You cannot ask for a depth less than one"
+  template = "\n==== %(module)s ====\n=====%(underline)s====="
+  if not decorate:
+    template = "%(module)s"
+  elif decorate and True != decorate:
+    template = decorate
+  if not filename:
+    disp = "Unknown Module"
+  else:
+    disp = '.'.join(os.path.splitext(filename.lstrip(os.path.sep))[0].rsplit(os.path.sep,depth)[-depth:])
+  bar = '='*len(disp)
+  return template%({'module':disp,'underline':bar})
+
+def nosePrintModule(filename,depth=4, decorate=True):
+  print >> sys.stderr, getModuleFromFile(filename,depth,decorate)
+  
 def stopImmediately():
   return True;
 

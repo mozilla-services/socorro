@@ -3,6 +3,11 @@ import socorro.lib.uuid as uu
 import socorro.lib.ooid as oo
 import datetime as dt
 
+import socorro.unittest.testlib.util as tutil
+
+def setup_module():
+  tutil.nosePrintModule(__file__)
+
 class TestOoid(unittest.TestCase):
   def setUp(self):
     self.baseDate = dt.datetime(2008,12,25)

@@ -1,458 +1,267 @@
-#!/usr/bin/python
-
 """
-This script is what populates the topcrashurlfacts facts table for the Top Crashers By Url report
+Populate top_crashes_by_url and top_crashes_by_url_signature
 
-This fact table contains crash count and rank facts from a couple of dimensions
-* Products - Versions level
-* Urls - Domain (course) and Url (finer)
-** Domain is calculated only against signature.ALL
-* Signatures - ALL (course) and Each (finer)
-** Each is calculated only against Urls.Url
-* Days - Each Day
+For each day, product/version, os/version, domain/url associate a count of known crashes
+For each row in table above, associate all signatures that were in a crash
 
-This table allows two style of drilling down and conversly rolling up.
+To show counts associated with a particular domain, appropriate SELECT statements will be needed.
 
-ALL Domain -> All URLs (for a domain) -> ALL Signatures (for a url)
+Counts will be done for only the top N most commonly encountered URLs for the particular day where N is configurable default 500
 
-All URLs -> ALL Signatures (for a url)  
-
-The following fields are updated in topcrashurlfacts table based on given dimensions:
-  id - primary key
-  count - aggregate number of crashes
-    Some filtering is done, removing:
-    * Urls with no domain such as 'about:crashes'
-    * Empty or null urls
-    * Empty or null signatures
-  rank - This crash's current rank 
-  day - day the crashes where processed on ( usually yesterday when cron is run )  
-  productdims_id - foreign key reference into the product dimensions table
-  osdims_id - foreign key reference into the operating systems dimensions table
-  urldims_id - foreign key reference into the url dimensions table  
-  signaturedims_id - foreign key reference into the signature dimensions table
-
-TODO: BUG - duplicate urldims! No results for this url in facts table sig !=1
-select * from urldims
-WHERE urldims.url = 'http://home.myspace.com/index.cfm' ;
-
-select * from topcrashurlfacts 
-JOIN signaturedims ON topcrashurlfacts.signaturedims_id = signaturedims.id
-WHERE urldims_id IN (
-select id from urldims
-WHERE urldims.url = 'http://home.myspace.com/index.cfm' 
-) AND signaturedims.id != 1;
-
-TODO: delete from facts table old facts
-TODO: delete from dimension table unused dimensions
- 
-Options:
--d, --processingDay
-		Day to process in (YYYY-MM-DD) format. Defaults to yesterday.
-  
+expects to run exactly once per day
 """
-import time
+# table names (in case we want to make a quick-n-dirty change right here)
+reportsTable = 'reports'
+topCrashesByUrlTable = 'top_crashes_by_url'
+topCrashesByUrlSignatureTable = 'top_crashes_by_url_signature'
+topCrashesByUrlReportsTable =  'topcrashurlfactsreports'
+
+import copy
 import datetime
-
+import logging
 import psycopg2
-import psycopg2.extras
+import time
 
-import socorro.lib.util
+import socorro.database.cachedIdAccess as socorro_cia
+import socorro.lib.util as socorro_util
 
-def populateALLFacts(configContext, logger):
-  try:
-    databaseDSN = "host=%(databaseHost)s dbname=%(databaseName)s user=%(databaseUserName)s password=%(databasePassword)s" % configContext
-    conn = psycopg2.connect(databaseDSN)
-    cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
-  except:
-    socorro.lib.util.reportExceptionAndAbort(logger)
+logger = logging.getLogger('topCrashesByUrl')
 
-  staticDimensions = {'date': configContext.processingDay }
-  staticDimensions['start_date'] = "%s 00:00:00" % (configContext.processingDay)
-  staticDimensions['end_date']   = "%s 23:59:59" % (configContext.processingDay)
+class TopCrashesByUrl(object):
+  """
+  TopCrashesByUrl knows how to
+   - extract crash data from reports
+   - update facts table top_crashes_by_url holding the top (count of) crashes by url
+     = key columns are productdims_id, urldims_id, osdims_id
+     = value column is count
+     = book-keeping columns: window_end (timestamp) and window_size (interval) which is 'nearly constant'
+   - update correlation table holding facts table id and signatures
+     = columns are top_crashes_by_url_id and signature
+   - update correlation table holding facts table id and uuid with user_comment
+     = columns are topcrashurlfacts_id (a historical name), uuid and comments
 
-  products = getProductDimensions(cur, logger)
-  for product in products:
-    staticProdDims = staticDimensions.copy()
-    staticProdDims.update({'signature_id': 1, 'product_id': product[0], os_id: product[1]})
-    populateFactsForDim(ByUrlDomain(), staticProdDims, conn, cur, logger)
-    logger.info("Finished populateFactsForDim for urlByDomain(%s)" % (product['name']))
-    populateFactsForDim(ByUrlEachUrl(), staticProdDims, conn, cur, logger)
-    logger.info("Finished populateFactsForDim for urlByUrl(%s)" % (product['name']))
-  for product in products:
-    urls = getUrlDimensions(product, staticDimensions, cur, logger)
-    logger.info("About to process %s urls for their signatues" % (len(urls)))
-    c = 0
-    for url in urls:
-      c += 1
-      if (c % 500) == 0:
-        logger.info("Progress processed %s of %s" % (c, len(urls)))
-      staticUrlDims = staticDimensions.copy()
-      staticUrlDims.update({'product_id': product['id'], 'product_name': product['name'], 'product_version': product['version'], 'urldims_id': url['id'], 'urldims_url': url['url'] })
-      populateFactsForDim(BySignature(), staticUrlDims, conn, cur, logger)    
-      #logger.info("Finished populateFactsForDim for urlByUrl(%s, %s)" % (product['name'], url['url']))
-    staticSigDims = staticDimensions.copy()
-    staticSigDims['product_id'] = product['id']
-    staticSigDims['product_name'] = product['name']
-    staticSigDims['product_version'] = product['version']
-    populateRelatedTables(staticSigDims, conn, cur, logger)
-
-def populateRelatedTables(context, conn, readCur, logger):
-  factUrlSigMap = getFactsUrlSigMap(context, conn, readCur, logger)
-  selSql = """
-        SELECT uuid, user_comments, signature, url
-        FROM reports 
-        WHERE TIMESTAMP WITHOUT TIME ZONE %(start_date)s <= date_processed
-          AND date_processed <= TIMESTAMP WITHOUT TIME ZONE %(end_date)s
-          AND user_comments IS NOT NULL AND url IS NOT NULL AND signature IS NOT NULL 
-          AND user_comments != ''       AND url != ''       AND signature != '' 
-          AND product = %(product_name)s AND version = %(product_version)s """
-  logger.info("About to execute %s with %s" % (selSql, context))
-  readCur.execute(selSql, context)
-  logger.info("Finished affecting %s rows" % (readCur.rowcount))
-  rows = readCur.fetchall()
-  data = []
-  for row in rows:
+  Constructor takes a configContext, optional kwargs that override the context
+  Required details for constructor are database dsn values
+  Optional details for constructor are:
+   - topCrashesByUrlTable to change the name of the facts table
+   - topCrashesByUrlSignatureTable for the signature correlation table
+   - topCrashesByUrlReportsTable for the reports correlation table
+   - minimumHitsPerUrl: default 1
+   - maximumUrls: default 500
+   - dateColumn: default 'date_processed' (in reports table)
+   - windowSize: default exactly one day
+  You may either use the various methods yourself, or invoke myTopCrashByUrlInstance.processIntervals(**kwargs)
+  processIntervals simply loops from the beginning time until there is not enough remaining time calling:
+    - getNextAppropriateWindowStart: Assures us that there is sufficient time in the window
+    - countCrashesPerUrlPerWindow: Collects as many as maximumUrls for crashes that have at least minimumHitsPerUrl
+    - saveData: Uses the provided urls to collect aggregated and correlated data and save it
+  """
+  def __init__(self, configContext, **kwargs):
+    super(TopCrashesByUrl, self).__init__()
+    configContext.update(kwargs)
     try:
-      aUrl = url(row['url'])
-      d = {'uuid': row['uuid'], 'user_comments': row['user_comments'], 'fact_id': factUrlSigMap[aUrl][row['signature']]}
-      data.append(d)
-    except KeyError:
-      pass # A comment for a fact we haven't recorded. Example - a product/url/signature with only 1 crash
-    except:
-      logger.info("Error populating related table for %s " % (row))
-      socorro.lib.util.reportExceptionAndContinue(logger)
+      assert "databaseHost" in configContext, "databaseHost is missing from the configuration"
+      assert "databaseName" in configContext, "databaseName is missing from the configuration"
+      assert "databaseUserName" in configContext, "databaseUserName is missing from the configuration"
+      assert "databasePassword" in configContext, "databasePassword is missing from the configuration"
+      # Be sure self.connection is fully committed, rolled back or better yet closed before you quit!
+    except (psycopg2.OperationalError, AssertionError),x:
+      socorro_util.reportExceptionAndAbort(logger)
+    self.configContext = configContext
+    self.dsn = "host=%(databaseHost)s dbname=%(databaseName)s user=%(databaseUserName)s password=%(databasePassword)s" % configContext
+    self.connection = psycopg2.connect(self.dsn)
 
-  insSel = """/* soc.crn tcburl insr crash comm */
-        INSERT INTO topcrashurlfactsreports (uuid, user_comments, topcrashurlfacts_id)
-        VALUES (%(uuid)s, %(user_comments)s, %(fact_id)s) """
-  readCur.executemany(insSel, data)
-  conn.commit()
+    # handle defaults
+    configContext.setdefault('reportsTable',reportsTable)
+    configContext.setdefault('topCrashesByUrlTable',topCrashesByUrlTable)
+    configContext.setdefault('topCrashesByUrlSignatureTable',topCrashesByUrlSignatureTable)
+    configContext.setdefault('topCrashesByUrlReportsTable',topCrashesByUrlReportsTable)
+    configContext.setdefault('minimumHitsPerUrl',1)
+    configContext.setdefault('maximumUrls',500)
+    configContext.setdefault('dateColumn','date_processed')
+    configContext.setdefault('windowSize',datetime.timedelta(days=1))
+    self.idCache = None
 
-def getFactsUrlSigMap(context, conn, cur, logger):
-  """ This map caches db ids for the facts table which will be too expensive 
-      to retrieve when created the topcrashurlfactsreports table it is in the form of 
-  { 'http://www.example.com/foo':
-     { 'nsJSChannel::Init(nsIURI*)': 12345 } 
-  }
-      where 12345 is the topcrashbyurl.id
-"""
-  sql = """
-        SELECT topcrashurlfacts.id, count, urldims.url, signaturedims.signature
-        FROM topcrashurlfacts 
-        JOIN urldims ON urldims_id = urldims.id
-        JOIN signaturedims ON signaturedims_id = signaturedims.id
-        JOIN productdims ON productdims_id = productdims.id
-        WHERE topcrashurlfacts.day = %(date)s
-          AND productdims.product = %(product_name)s AND productdims.version = %(product_version)s
-          AND topcrashurlfacts.signaturedims_id != 1 
-          AND urldims.url != 'ALL' """
-  cur.execute(sql, context)
-  rows = cur.fetchall()
-  urlSigMap = {}
-  for row in rows:
-    try:
-      if not urlSigMap.has_key(row['url']):
-        urlSigMap[row['url']] = {}
-      urlSigMap[row['url']][row['signature']] = row['id']
-    except:
-      logger.info("Error getFactsUrlSigMap for %s " % (row))
-      socorro.lib.util.reportExceptionAndContinue(logger)
-  return urlSigMap
-
-def getProductDimensions(cur, logger):
-  try:
-    sql = """/* soc.crn tcburl get prodconf */ 
-        SELECT productdims_id, osdims_id FROM tcbyurlconfig  WHERE enabled = 'Y' """
-    cur.execute(sql)
-    return cur.fetchall()
-  except:
-    socorro.lib.util.reportExceptionAndAbort(logger)
-
-def getUrlDimensions(productOsIds, staticDimensions, cur, logger):
-  " Grab all the urls that had facts earlier. This wil cause us to processs say another 5000 records "
-  try:
-    sql = """ /* soc.crn tcburl get urls wcrsh */
-          SELECT  urldims.id, urldims.url FROM urldims
-          JOIN topcrashurlfacts AS facts ON urldims.id = facts.urldims_id
-          WHERE %(start_date)s <= facts.day AND facts.day <= %(end_date)s
-            AND productdims_id = %(productdims_id)s AND osdims_id = %(osdims_id) AND url != 'ALL' """
-    cur.execute(sql % (staticDimensions['start_date'], staticDimensions['end_date'], productId))
-    return cur.fetchall()
-  except:
-    socorro.lib.util.reportExceptionAndAbort(logger)
-  
-def domain(url):
-  "Behavior is the same as Postgres SQL used for report.url -> urldims.domain"
-  try:
-    return url.split('/')[2]
-  except IndexError:
-    return ""
-def url(url):
-  "Behavior is the same as Postgres SQL used for report.url -> urldims.url"
-  try:
-    return url.split('?')[0]
-  except IndexError:
-    return ""
-
-def populateFactsForDim(dimension, staticDimensions, conn, cur, logger):
-  """For the given dimension, read operational DB. Aggregate facts. 
-     Make sure we have dimension properties ready, then add new
-     facts to the fact table. This is for a single level of granularity
-     in the dimension"""
-  propertyName = dimension.level()
-  rs = dimension.aggregateFacts(staticDimensions, cur, logger)
-
-  dimValues = map( lambda x: x[propertyName], rs )
-  #TODO perf do we get called with empty dimIdMap? Why?
-  #if len(dimensionIdMap) == 0:
-  #  logger.warn("========== dimensionIdMap %s ============ for %s =====" % (dimensionIdMap, propertyName))
-  #TODO perf cache known values in weak memory reference
-  dimensionIdMap = ensureDimensionExist(conn, cur, dimension, propertyName, dimValues, logger )
-  facts = prepareFacts(rs, propertyName, dimensionIdMap, staticDimensions, logger) 
-  insertFacts(conn, cur, facts, rs, logger)
-
-#TODO rename domains to dimIdMap
-#Rewrite for clarity - process keys and then copy fact[propertyName] = dimIdMap[propertyName]
-def prepareFacts(rows, propertyName, propertyToDimIdMap, staticDimensions, logger):
-  """ Given a set of facts which we want to populate the facts table with, 
-      associate them with their lookup dimensions. Some of these are static and one of them varies
-      across the facts.
-
-      rows - a resultset with domain and crash_count
-      propertyName - the 1 property which varies
-      propertyToDimIdMap - a mapping from a property's name to the property's dimension id 
-      staticDimensions - the unchaning dimension properties associated with this fact
-      
-      Returns a list of dict obejcts suitable for use with executemany. """
-  facts = []
-  i = 0
-  for row in rows:
-    i += 1
-    try:
-      fact = {'rank': int(i), 'crash_count': int(row['crash_count']), 'day': staticDimensions['date']}       
-      fact['product_id'] = int(staticDimensions['product_id']) 
-      if staticDimensions.has_key('urldims_id'):
-        fact['urldims_id'] = int(staticDimensions['urldims_id'])
+  def getNextAppropriateWindowStart(self, lastWindowEnd=None):
+    """
+    Returns (nextWindowStart,tooCloseToNow).
+     - If nextWindowStart is None, tooCloseToNow is False if we can't determine from db, else True
+    If windowEnd, check it for appropriate as described below and return (windowEnd,False) else (None, True)
+    Otherwise: Get the last updated windowEnd in the topCrashesByUrlTable.
+    Check that the next windowSize time chunk ends strictly before 'now' (ignoring seconds and microseconds)
+    If that check passes, return (windowEnd,False) of the next appropriate slot; else return (None,True)
+    If there is no row in the table with a set windowEnd column, return (None,False)
+    """
+    now = datetime.datetime.now().replace(second=0,microsecond=0)
+    tooCloseToNow = None
+    doDB = True
+    if lastWindowEnd:
+      lastWindowEnd = datetime.datetime.fromtimestamp(time.mktime(lastWindowEnd.timetuple()))
+      doDB = False
+      if lastWindowEnd + self.configContext.windowSize > now:
+        logger.info("Parameter windowEnd: %s is too close to now (%s) to allow full window size (%s)",lastWindowEnd,now,self.configContext.windowSize)
+        lastWindowEnd = None      # too close to now. Wait until we have a whole slot's work to do
+        tooCloseToNow = True
+    if doDB:
+      cur = self.connection.cursor()
+      cur.execute("SELECT window_end FROM %s ORDER BY window_end DESC LIMIT 1"%topCrashesByUrlTable)
+      lastWindowEnd = cur.fetchone()
+      if not lastWindowEnd:
+        logger.info("No row with window_end in table %s",topCrashesByUrlTable)
+        lastWindowEnd = None
+        tooCloseToNow = False
       else:
-        fact['urldims_id'] = int(propertyToDimIdMap[row[propertyName]])
-      if staticDimensions.has_key('signature_id'):
-        fact['signature_id'] = int(staticDimensions['signature_id'])
-      else:
-        fact['signature_id'] = propertyToDimIdMap[row[propertyName]]
-      facts.append(fact)
-    except StandardError, e:
-      i -= 1
-      logger.warn("There was an error while preparing this fact %s %s" % (propertyName, staticDimensions))
-      socorro.lib.util.reportExceptionAndContinue(logger)
+        lastWindowEnd = lastWindowEnd[0]
+        if lastWindowEnd +self.configContext.windowSize > now:
+          logger.info("Database column window_end: %s is too close to now (%s) to allow full window size (%s)",lastWindowEnd,now,self.configContext.windowSize)
+          lastWindowEnd = None
+          tooCloseToNow = True
+    return lastWindowEnd,tooCloseToNow
 
-  return facts
+  def countCrashesPerUrlPerWindow(self,lastWindowEnd=None):
+    """
+    Collect the count of all crashes per url within this time window.
+    Deliberately ignore platform and os details to get counts per url on a global basis
+    return [(count, url),...] for as many as maximumUrls hits within the time window, each with at least minimumHitsPerUrl.
+    """
+    cur = self.connection.cursor()
+    windowStart,tooClose = self.getNextAppropriateWindowStart(lastWindowEnd)
+    if not windowStart: # we don't care why
+      logger.warn("with prior window ending at %s, unable to get good windowStart: %s",lastWindowEnd,windowStart)
+      return []
+    selector = {'startDate':windowStart,'endDate':(windowStart + self.configContext.windowSize)}
+    topUrlSql = """SELECT COUNT(r.id), r.url FROM %(reportsTable)s r
+                     JOIN productdims p ON r.product = p.product AND r.version = p.version
+                     JOIN product_visibility cfg ON p.id = cfg.productdims_id
+                     WHERE r.url IS NOT NULL AND r.%(dateColumn)s >= %%(startDate)s AND r.%(dateColumn)s < %%(endDate)s
+                     AND cfg.start_date <= r.%(dateColumn)s AND r.%(dateColumn)s <= cfg.end_date
+                     GROUP BY r.url
+                     HAVING count(r.id) >= %(minimumHitsPerUrl)s
+                     ORDER BY COUNT(r.id) desc
+                     LIMIT %(maximumUrls)s"""%(self.configContext)
+    cur.execute(topUrlSql,selector)
+    data = cur.fetchall() # count (implicit rank) and url here.
+    self.connection.rollback() # per suggestion in psycopg mailing list: Rollback if no db modification
+    if not data:
+      logger.warn("No url crash data collected between %(startDate)s and %(endDate)s",selector)
+    return data
 
-def insertFacts(conn, cur, facts, rs, logger):
-  "Takes a list of fact dictionaries and populates the database. "
-  inSql = """/* soc.crn tcburl ins urlfacts */
-             INSERT INTO topcrashurlfacts (count, rank, day, productdims_id, urldims_id, signaturedims_id)
-             VALUES (%(crash_count)s, %(rank)s, %(day)s, %(product_id)s, %(urldims_id)s, %(signature_id)s)"""
-  
-  cur.executemany(inSql, facts)
-  conn.commit()
+  def getUrlId(self,url):
+    if not self.idCache:
+      cursor = self.connection.cursor()
+      self.idCache = socorro_cia.IdCache(cursor)
+    return self.idCache.getUrlId(url)[0]
 
-def ensureDimensionExist(conn, cur, dimension, propertyName, propertyList, logger):
-  rows = dimension.fetchProps(propertyList, cur, logger)
-  oldProps = {}
-  for row in rows:
-    oldProps[row[propertyName]] = row['id']
+  def saveData(self, windowStart, countUrlData):
+    """
+    given a time-window (start) and a list of (count,fullUrl), for each fullUrl:
+      - assure that the fullUrl is legal and available in in urldims
+      - collect count, window_end, window_size, productdims_id,osdims_id,urldims_id,signature for all quads that match
+      - merge the counts for all the signatures with the same (product,os,url) and insert that data into top_crashes_by_url...
+      - ...collecting all the signatures for the merged data.
+      - Insert the new row id and each signature into top_crashes_by_url_signature
+      - return the number of rows added to top_crashes_by_url
+    """
+    if not countUrlData:
+      return 0
+    selectSql = """SELECT COUNT(r.id), %%(windowEnd)s, %%(windowSize)s, p.id, o.id, r.signature, r.uuid, r.user_comments
+                     FROM %(reportsTable)s r JOIN productdims p on r.product = p.product AND r.version = p.version
+                                    JOIN osdims o on r.os_name = o.os_name AND r.os_version = o.os_version
+                     WHERE %%(windowStart)s <= r.%(dateColumn)s
+                       AND r.%(dateColumn)s < %%(windowEnd)s
+                       AND r.url = %%(fullUrl)s
+                     GROUP BY p.id, o.id, r.signature, r.uuid, r.user_comments""" % (self.configContext)
+    getIdSql = """SELECT lastval()"""
+    insertUrlSql = """INSERT INTO %(topCrashesByUrlTable)s (count, urldims_id, productdims_id, osdims_id, window_end, window_size)
+                      VALUES (%%(count)s,%%(urldimsId)s,%%(productdimsId)s,%%(osdimsId)s,%%(windowEnd)s,%%(windowSize)s)""" % (self.configContext)
+    insertSigSql = """INSERT INTO %(topCrashesByUrlSignatureTable)s (top_crashes_by_url_id,signature,count)
+                      VALUES(%%s,%%s,%%s)""" % (self.configContext)
+    insertUuidSql = """INSERT INTO %(topCrashesByUrlReportsTable)s (uuid,comments,topcrashurlfacts_id)
+                       VALUES (%%s,%%s,%%s)""" % (self.configContext)
+    windowData= {
+      'windowStart': windowStart,
+      'windowEnd': windowStart + self.configContext.windowSize,
+      'windowSize': self.configContext.windowSize,
+      }
+    insertCount = 0
+    cursor = self.connection.cursor()
+    insData = {}
+    for expectedCount,fullUrl in countUrlData:
+      urldimsId = self.getUrlId(fullUrl)
+      if not urldimsId:
+        continue
+      selector = {'fullUrl':fullUrl}
+      selector.update(windowData)
+      cursor.execute(selectSql,selector)
+      self.connection.rollback() # didn't modify, so rollback is enough
+      data = cursor.fetchall() #
+      for (count, windowEnd, windowSize, productdimsId, osdimsId, signature, uuid, comment) in data:
+        key = (productdimsId,urldimsId,osdimsId)
+        insData.setdefault(key,{'count':0,'signatures':[], 'uuidAndComments':[]})
+        insData[key]['count'] += count # Count all urls that had a crash
+        if signature:
+          insData[key]['signatures'].append((count,signature)) # but don't handle empty signatures
+        if uuid or comment: # always True, because uuid, but what the heck.
+          insData[key]['uuidAndComments'].append((uuid,comment))
+    try:
+      # Looping 'quite awhile' without closing transaction. Rollback *should* revert everything except urldims which is benign
+      # 'quite awhile' is up to 500 urls with up to (maybe nine or ten thousand?) correlations total. So ~~ 10K rows awaiting commit()
+      signatureCorrelationData = []
+      uuidCommentCorrelationData = []
+      for key in insData:
+        # the next line overwrites prior values (except the first time through)  with current values
+        selector.update({'count':insData[key]['count'],'productdimsId':key[0],'urldimsId':key[1],'osdimsId':key[2]})
+        # save the 'main' facts
+        cursor.execute(insertUrlSql,selector)
+        # grab the new row id
+        cursor.execute(getIdSql)
+        newId = cursor.fetchone()[0]
+        # update data for correlations tables
+        for count,signature in insData[key]['signatures']:
+          signatureCorrelationData.append([newId,signature,count])
+        for uuid,comment in insData[key]['uuidAndComments']:
+          uuidCommentCorrelationData.append([uuid,comment,newId])
+        insertCount += 1
+      # end of loop over keys in insData
+      # update the two correlation tables
+      cursor.executemany(insertSigSql,signatureCorrelationData)
+      cursor.executemany(insertUuidSql,uuidCommentCorrelationData)
+      self.connection.commit()
+      logger.info("Committed data for %s crashes for period %s up to %s",insertCount,windowStart,windowData['windowEnd'])
+    except Exception,x:
+      self.connection.rollback()
+      socorro_util.reportExceptionAndAbort(logger)
+    return insertCount
 
-  # for each property, if it isn't in results, then add it to DB
-  newProps = []
-  newPropsSeen = {}
-  for prop in propertyList:
-    if not oldProps.has_key(prop) and not newPropsSeen.has_key(prop):
-      #logger.info("We haven't seen %s before" % (prop))
-      newProp = {propertyName: prop}
-      dimension.prepareNewProp(newProp, prop, logger)
-      newProps.append(newProp)
-      newPropsSeen[prop] = True
-    #else:
-      #if propertyName == 'signature':
-        #logger.info("We've already seen %s before, it's %s" % (prop, oldProps[prop]))
+  def processIntervals(self, **kwargs):
+    keepConfigContext = copy.copy(self.configContext)
+    self.configContext.update(kwargs)
+    outerStart = self.configContext.get('windowStart')
+    pd = None
+    if not outerStart:
+      pd = self.configContext.get('processingDay')
+      if pd:
+        outerStart = datetime.datetime(pd.year,pd.month,pd.day)
+    if not outerStart:
+      outerStart = self.getNextAppropriateWindowStart()[0]
+    if not outerStart:
+      logger.warn("Will not process intervals: No appropriate start time is available")
+      return
 
-  if len( newProps ) == 0:
-    #logger.info("All values already in dim table for %s" % (propertyName))
-    return oldProps
-  else:
-    dimension.insertNewProps(conn, cur, newProps, logger)
-    rows = dimension.fetchProps(map( lambda x: x[propertyName], newProps), cur, logger)
-    for row in rows:
-      oldProps[row[propertyName]] = row['id']
+    outerEnd = self.configContext.get('windowEnd')
+    if not outerEnd and pd:
+      outerEnd = outerStart +self.configContext.get('windowSize')
+    startTime = outerStart
+    while startTime and startTime < outerEnd:
+      data = self.countCrashesPerUrlPerWindow(startTime)
+      logger.info("Looking at %s items in window starting at %s",len(data),startTime)
+      if not data:
+        # _maybe_ we just hit a blank spot in reportsTable. Advance and retry
+        startTime += self.configContext.windowSize
+        logger.info("Window at %s had no data. Trying next window",startTime)
+        continue
+      self.saveData(startTime,data)
+      startTime += self.configContext.windowSize
+    logger.info("Done processIntervals")
+    self.configContext = keepConfigContext
       
-    return oldProps
-
-class ByUrlDomain:
-  #'domain', getResultsByDomain, fetchDomainsFromDB, insertDomainsToDB
-  def level(self):
-    return 'domain'
-  def aggregateFacts(self, staticDimensions, cur, logger):
-    #rank is accomplished via ORDER BY here...
-    # about:blank is the #1 crashing url, but it isn't really an interesting url...
-    sql = """/* soc.crn tcburl top domain */
-             SELECT count(id) as crash_count, split_part(url, '/', 3) AS domain 
-             FROM crash_reports WHERE TIMESTAMP WITHOUT TIME ZONE %(start_date)s <= date_processed
-             AND  date_processed < TIMESTAMP WITHOUT TIME ZONE %(end_date)s 
-             AND productdims_id = %(productdims_id)s AND osdims_id = %(osdims_id)s
-             AND url IS NOT NULL AND url != ''
-             AND signature IS NOT NULL AND signature != ''
-             GROUP BY domain
-             HAVING count(id) > 1 AND split_part(url,'/',3) != ''
-             ORDER BY crash_count DESC;"""
-    try:
-      logger.info("about to execute ByDomain")
-      cur.execute(sql, staticDimensions)
-      logger.info("executed %s with %s" % (sql, staticDimensions))
-      logger.info("affecting %s rows" % (cur.rowcount))
-      rs = cur.fetchall()
-      return filter(lambda row: row['domain'] != '', rs)
-    except StandardError, e:
-      logger.warn("There was an error during aggregateFacts by domain with %s" % (staticDimensions))
-      socorro.lib.util.reportExceptionAndContinue(logger)
-      
-
-  def fetchProps(self, domains, cur, logger):
-    """
-      fetches the domains that exist in the db
-      domains - a list of domain names like www.example.com. Some may exist, some not
-  
-      returns all of the domains with their ids, if they were found in the urldims table.
-  
-      TODO check domains in chunks of 500...
-    """
-    selSql = """/* soc.crn tcburl sel domaindim */
-          SELECT id, domain FROM urldims WHERE url = 'ALL' AND domain IN ('%s')
-          """
-    try:
-      cur.execute( selSql % "', '".join(domains))
-      return cur.fetchall()
-    except:
-      socorro.lib.util.reportExceptionAndAbort(logger)
-
-  def prepareNewProp(self, newProp, value, logger):
-    pass
-
-  def insertNewProps(self, conn, cur, newValues, logger):
-    "Takes a list of fact dictionaries and populates the database. "
-    try:
-      inSql = """/* soc.crn tcburl ins domaindim */
-              INSERT INTO urldims (domain, url) VALUES ( %(domain)s, 'ALL')"""
-      cur.executemany(inSql, newValues)
-      conn.commit()
-    except:
-      socorro.lib.util.reportExceptionAndAbort(logger)
-
-class ByUrlEachUrl:
-  def level(self):
-    return 'url'
-  def aggregateFacts(self, staticDimensions, cur, logger):
-    #rank is accomplished via ORDER BY here...
-    sql = """/* soc.crn tcburl top domain */
-             SELECT COUNT(id) AS crash_count,  split_part(url, '?', 1) AS url from reports 
-             WHERE TIMESTAMP WITHOUT TIME ZONE %(start_date)s <= date_processed
-             AND date_processed <= TIMESTAMP WITHOUT TIME ZONE %(end_date)s
-             AND product = %(product_name)s AND version = %(product_version)s 
-             AND url IS NOT NULL AND url != ''
-             AND signature IS NOT NULL AND signature != ''
-             GROUP BY url
-             HAVING COUNT(id) > 1
-             ORDER BY crash_count DESC;
-             """
-    try:
-      cur.execute(sql, staticDimensions)
-      rs = cur.fetchall()
-      return filter(lambda row: domain(row['url']) != '', rs)
-    except StandardError, e:
-      logger.warn("There was an error during aggregateFacts by URL with %s" % (staticDimensions))
-      socorro.lib.util.reportExceptionAndContinue(logger) 
-
-  def fetchProps(self, urls, cur, logger):
-    """
-      fetches the urls that exist in the db
-      urls - a list of urls (http://www.example.com/foo.html, some which may exists and some which do not.
-  
-      returns results set for urls in the urldims table and it's id
-  
-      TODO check urls in chunks of 500...
-    """
-    selSql = """/* soc.crn tcburl sel urlindim */
-          SELECT id, url FROM urldims WHERE url IN ('%s');"""
-
-    try:
-      cur.execute( selSql % "', '".join(urls))
-      return cur.fetchall()      
-    except:
-      socorro.lib.util.reportExceptionAndAbort(logger)
-
-  def prepareNewProp(self, newProp, value, logger):
-    newProp['domain'] = domain( value )
-
-  def insertNewProps(self, conn, cur, newValues, logger):
-    "Takes a list of fact dictionaries and populates the database. "
-    try:
-      inSql = """/* soc.crn tcburl ins url domaindim */
-              INSERT INTO urldims (domain, url) VALUES ( %(domain)s, %(url)s)"""
-      cur.executemany(inSql, newValues)
-      conn.commit()
-    except:
-      socorro.lib.util.reportExceptionAndAbort(logger)
-
-class BySignature:
-  def level(self):
-    return 'signature'
-  def aggregateFacts(self, staticDimensions, cur, logger):
-    #rank is accomplished via ORDER BY here...
-    # Would it be more efficient to do a couple Sigs at a time...?
-    sql = """/* soc.crn tcburl top sign */
-             SELECT COUNT(id) AS crash_count, signature from reports 
-             WHERE TIMESTAMP WITHOUT TIME ZONE %(start_date)s <= date_processed
-             AND date_processed <= TIMESTAMP WITHOUT TIME ZONE %(end_date)s
-             AND product = %(product_name)s AND version = %(product_version)s AND url = %(urldims_url)s 
-             AND signature IS NOT NULL AND signature != ''
-             GROUP BY signature
-             HAVING COUNT(id) > 1
-             ORDER BY crash_count DESC;
-             """ 
-    try:
-      cur.execute(sql, staticDimensions)
-      rs = cur.fetchall()
-      return rs
-    except StandardError, e:
-      logger.warn("There was an error during aggregateFacts by Signature with %s" % (staticDimensions))
-      socorro.lib.util.reportExceptionAndContinue(logger) 
-
-  def fetchProps(self, signatures, cur, logger):
-    """
-      fetches the signatures that exist in the db
-      signatures - a list of crash sigs, some may exist, some not
-  
-      returns result set with keys id, signature for values dimension values that already exist in the DB
-  
-      TODO check signature in chunks of 500...
-    """
-    selSql = """SELECT id, signature FROM signaturedims WHERE signature IN ('%s');"""
-
-    try:
-      escapedSigs = map( lambda s: s.replace("'", "\\'"), signatures)
-      cur.execute( selSql % "', '".join(escapedSigs))
-      return cur.fetchall()      
-    except:
-      socorro.lib.util.reportExceptionAndAbort(logger)
-
-  def prepareNewProp(self, newProp, value, logger):
-    pass
-
-  def insertNewProps(self, conn, cur, newValues, logger):
-    "Takes a list of fact dictionaries and populates the database. "
-    try:
-      inSql = """/* soc.crn tcburl ins sign signaturedims */
-              INSERT INTO signaturedims (signature) VALUES ( %(signature)s ) """
-      cur.executemany(inSql, newValues)
-      conn.commit()
-    except:
-      socorro.lib.util.reportExceptionAndAbort(logger)

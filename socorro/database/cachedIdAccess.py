@@ -9,14 +9,14 @@ import psycopg2
 
 maxOsIdCacheLength = 1024
 maxProductIdCacheLength = 1024
-maxSignatureIdCacheLength = 0
+#maxSignatureIdCacheLength = 0
 maxUriIdCacheLength = 0
 osIdCache = None     # may become {(os_name,os_version): osdims_id}
 osIdCount = None     # may become {(os_name,os_version): count_of_cache_hits}
 productIdCache = None # may become {(product_name,version_string): productdims_id}
 productIdCount = None # may become {(product_name,version_string): count_of_cache_hits}
-signatureIdCache = None  # may become {(signature,): signatureims_id}
-signatureIdCount = None  # may become {(signature,): count_of_cache_hits}
+#signatureIdCache = None  # may become {(signature,): signatureims_id}
+#signatureIdCount = None  # may become {(signature,): count_of_cache_hits}
 uriIdCache = None     # may become {(domain,url): urldims_id}
 uriIdCount = None     # may become {(domain,url): count_of_cache_hits}
   
@@ -40,7 +40,7 @@ def createProductRelease(version):
 
 #-----------------------------------------------------------------------------------------------------------------
 def initializeIdCache(keyColumns, idColumn, tableName, cursor):
-  """create maps {key:id} and {key:0} for all keys in the given table, and return them"""
+  """create maps {key:id} (actual cache) and {key:0} (cache count) for all keys in the given table, and return them"""
   sql = "SELECT %s,%s from %s"%(','.join(keyColumns),idColumn,tableName)
   cursor.execute(sql)
   data = cursor.fetchall()
@@ -51,16 +51,16 @@ def initializeIdCache(keyColumns, idColumn, tableName, cursor):
   
 #-----------------------------------------------------------------------------------------------------------------
 def clearCache():
-  global productIdCache,productIdCount,uriIdCache,uriIdCount
-  global signatureIdCache,signatureIdCount,osIdCache,osIdCount
+  global productIdCache,productIdCount,uriIdCache,uriIdCount,osIdCache,osIdCount
   productIdCache = productIdCount = uriIdCache = uriIdCount = None
-  signatureIdCache = signatureIdCount = osIdCache = osIdCount = None
+  osIdCache = osIdCount = None
 
 #-----------------------------------------------------------------------------------------------------------------
 def shrinkIdCache(cacheMap, cacheCount, oneKeyToSave=None):
   """
   Remove the least-used half of the cached data, retaining oneKeyToSave (most recently used) if provided
   return two new cache maps. Raises KeyError if oneKeyToSave is not a key in both maps
+  counts for retained keys are reset to 1
   """
   if oneKeyToSave:
     oneIdToSave = cacheMap[oneKeyToSave]
@@ -84,10 +84,9 @@ class IdCache:
     self.initializeCache()
     
   def initializeCache(self):
-    global maxOsIdCacheLength, maxProductIdCacheLength, maxSignatureIdCacheLength, maxUriIdCacheLength
+    global maxOsIdCacheLength, maxProductIdCacheLength, maxUriIdCacheLength
     global productIdCache,productIdCount
     global uriIdCache,uriIdCount
-    global signatureIdCache,signatureIdCount
     global osIdCache,osIdCount
     if not productIdCache:
       if maxProductIdCacheLength:
@@ -95,9 +94,6 @@ class IdCache:
     if not uriIdCache:
       if maxUriIdCacheLength:
         uriIdCache, uriIdCount = initializeIdCache(('domain','url'),'id','urldims',self.cursor)
-    if not signatureIdCache:
-      if maxSignatureIdCacheLength:
-        signatureIdCache,signatureIdCount = initializeIdCache(('signature',),'id','signaturedims',self.cursor)
     if not osIdCache:
       if maxOsIdCacheLength:
         osIdCache,osIdCount = initializeIdCache(('os_name','os_version',),'id','osdims',self.cursor)
@@ -111,7 +107,7 @@ class IdCache:
     return the id, which may be None if all attempts to get the id fail.
     Called by individual getSomeKindId() methods
     key is a tuple, suitable for key in a dictionary. Must be present if caching is turned on.
-    dkey is a dictionary, suitable for select and insert statements. It may be null if key is sufficient for insert
+    dkey is a dictionary, suitable as data for select and insert statements. It may be null if key alone is sufficient for insert
     """
     sqlKey = key
     if dkey: sqlKey = dkey
@@ -197,7 +193,7 @@ class IdCache:
                                 "INSERT INTO urldims (domain,url) VALUES (%s,%s)",
                                 uriIdCache, uriIdCount)
     return uriId,queryPart
-  
+
   #---------------------------------------------------------------------------------------------------------------
   def getProductId(self,product,version):
     """
@@ -232,18 +228,3 @@ class IdCache:
                                 osIdCache, osIdCount)
     return osId
 
-  #-----------------------------------------------------------------------------------------------------------------
-  def getSignatureId(self,signature):
-    """
-    Get signature id given a signature string. Cache results. Clean cache if length is too great.
-    """
-    global signatureIdCache,signatureIdCount
-    signatureId = None
-    if None == signature:
-      return signatureId
-    key = (signature.strip(),)
-    signatureId = self.assureAndGetId(key,'signaturedims',
-                                      "SELECT id FROM signaturedims WHERE signature=%s",
-                                      "INSERT INTO signaturedims (signature) VALUES (%s)",
-                                      signatureIdCache, signatureIdCount)
-    return signatureId

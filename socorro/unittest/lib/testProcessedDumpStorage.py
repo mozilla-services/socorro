@@ -8,9 +8,13 @@ import unittest
 from nose.tools import *
 
 import socorro.unittest.testlib.createJsonDumpStore as createJDS
+import socorro.unittest.testlib.util as tutil
 
 import socorro.lib.util as socorro_util
 import socorro.lib.processedDumpStorage as dumpStorage
+
+def setup_module():
+  tutil.nosePrintModule(__file__)
 
 bogusData= {
   "signature": "nsThread::ProcessNextEvent(int, int*)",

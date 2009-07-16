@@ -4,7 +4,13 @@ import os
 import copy
 import cStringIO
 import socorro.lib.ConfigurationManager as CM
+
+import socorro.unittest.testlib.util as tutil
+
 import optionfile
+
+def setup_module():
+  tutil.nosePrintModule(__file__)
 
 class HelpHandler:
   def __init__(self):

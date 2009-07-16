@@ -8,6 +8,10 @@ import socorro.lib.JsonDumpStorage as JDS
 import socorro.lib.util
 
 import socorro.unittest.testlib.createJsonDumpStore as createJDS
+import socorro.unittest.testlib.util as tutil
+
+def setup_module():
+  print tutil.getModuleFromFile(__file__)
 
 class TestJsonDumpStorage(unittest.TestCase):
   def setUp(self):

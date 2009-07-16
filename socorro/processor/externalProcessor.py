@@ -125,7 +125,7 @@ class ProcessorWithExternalBreakpad (processor.Processor):
       if line == '':
         break
       analyzeReturnedLines = True
-      #logger.debug("%s -   %s", threading.currentThread().getName(), line)
+      #logger.debug("%s - [%s]", threading.currentThread().getName(), line)
       values = map(lambda x: x.strip(), line.split('|'))
       if len(values) < 3:
         processorErrorMessages.append('Cannot parse header line "%s"'%line)
@@ -167,7 +167,6 @@ class ProcessorWithExternalBreakpad (processor.Processor):
                                                      #(%s, %s, %s, %s, %s, %s)""",
                                                       #(reportId, moduleCounter, filename, debug_id, module_version, debug_filename))
           #moduleCounter += 1
-
     if not analyzeReturnedLines:
       message = "%s returned no header lines for reportid: %s" % (self.config.minidump_stackwalkPathname, reportId)
       processorErrorMessages.append(message)
@@ -181,9 +180,7 @@ class ProcessorWithExternalBreakpad (processor.Processor):
       message = "No thread was identified as the cause of the crash"
       processorErrorMessages.append(message)
       logger.warning("%s - %s", threading.currentThread().getName(), message)
-
     reportUpdateValues["crashedThread"] = crashedThread
-
     return reportUpdateValues
 
 #-----------------------------------------------------------------------------------------------------------------

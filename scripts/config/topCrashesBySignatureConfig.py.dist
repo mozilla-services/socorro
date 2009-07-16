@@ -12,20 +12,23 @@ debug.default = False
 debug.singleCharacter = 'D'
 debug.fromStringConverter = cm.booleanConverter
 
-initMode = cm.Option()
-initMode.doc = 'Use this the first time you run the script.'
-initMode.default = False
-initMode.singleCharacter = 'I'
-initMode.fromStringConverter = cm.booleanConverter
-
 processingInterval = cm.Option()
-processingInterval.doc = 'how often to process reports (HHH:MM:SS)'
-processingInterval.default = '00:12:00'
-processingInterval.fromStringConverter = cm.timeDeltaConverter
+processingInterval.doc = 'how often to process reports (minutes)'
+processingInterval.default = 12
+
+startDate = cm.Option()
+startDate.doc = 'The datetime next needing processing (YYYY-MM-DD hh:mm:ss)'
+startDate.default = None
+startDate.fromStringConverter = cm.dateTimeConverter
+
+endDate = cm.Option()
+endDate.doc = 'Moment after last datetime to process (YYYY-MM-DD hh:mm:ss)'
+endDate.default = None
+endDate.fromStringConverter = cm.dateTimeConverter
 
 logFilePathname = cm.Option()
 logFilePathname.doc = 'full pathname for the log file'
-logFilePathname.default = './topcrashes.log'
+logFilePathname.default = './topcrasher.log'
 
 logFileMaximumSize = cm.Option()
 logFileMaximumSize.doc = 'maximum size in bytes of the log file'
@@ -40,8 +43,8 @@ logFileLineFormatString.doc = 'python logging system format for log file entries
 logFileLineFormatString.default = '%(asctime)s %(levelname)s - %(message)s'
 
 logFileErrorLoggingLevel = cm.Option()
-logFileErrorLoggingLevel.doc = 'logging level for the log file (10 - DEBUG, 20 - INFO, 30 - WARNING, 40 - ERROR, 50 - CRITICAL)'
-logFileErrorLoggingLevel.default = 10
+logFileErrorLoggingLevel.doc = 'logging level for the log file (10 - DEBUG, 20 - INFO, 30 - WARNING, 40 - ERROR, 50 - CRITICAL) X < 40 causes very much output'
+logFileErrorLoggingLevel.default = 40
 
 stderrLineFormatString = cm.Option()
 stderrLineFormatString.doc = 'python logging system format for logging to stderr'

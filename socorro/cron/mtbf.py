@@ -1,85 +1,159 @@
 #!/usr/bin/python
 
 """
-This script is what populates the mtbf facts table for the Mean Time Before failure report.
+This script is what populates the time before failure table for the Mean Time Before failure report.
 
 It will aggregate the previous days crash report informaiton, specifically the
 average uptime, number of unique users, and number of reports. It does this across
-products based on mtbfconfig for two dimensions - time and products.
+products based on product_visibility for two dimensions - time and products.
 
-The following fields are updated in mtbffacts table:
+The following fields are updated in time_before_failure table:
   id - primary key
-  avg_seconds - average number of seconds (reports.uptime)
-  report_count - number of crash reports
-  unique_users - number of unique users
-  day - the day for this time period (yesterday)
-  productdims_id - foreign key reference into the product dimensions table
+  avg_seconds - average number of seconds (reports.uptime) for crashes in the window, per product, version, os, os-version
+  - Note that outlier data are cleaned up in this process
+  report_count - number of crash reports 
+  window_end - the end point of the aggregation slot. By default, midnight 00:00:00 of 'tomorrow'
+  window_size - the size of the aggregation slot. By default 1 day (slot is end-size <= x < end)
+  productdims_id - foreign key reference the product dimensions table
+  osdims_id - foreign key references the os dimentions table
   
-On the frontend various products from mtbfconfig are grouped into reports based on product and type of release.
-active, release, and development.
- 
-Options:
--d, --processingDay
-		Day to process in (YYYY-MM-DD) format. Defaults to yesterday.
-  
+On the front end various products from product_visibility are grouped into reports based on
+ - product and product version (and thus the type of release: major, milestone, development)
+ - operating system and os version
 """
 import time
 import datetime
+import re
 
 import psycopg2
 import psycopg2.extras
 
-import socorro.lib.util
+import socorro.lib.util as soc_util
 
-def calculateMtbf(configContext, logger):
+configTable = 'product_visibility'
+
+def calculateMtbf(configContext, logger, **kwargs):
+  """
+  Extract data from reports into time_before_failure
+  kwargs options beat configContext, and within those two:
+   - slotSizeMinutes is the number of minutes for this calculation slot. Default: One day's worth
+   - slotEnd is the moment past the end of the calculation slot.
+   - processingDay (old style): the calculation slot starts at midnight and ends just before next midnight
+
+   You may limit the calculation with one or more of the following:
+   - product: name the product to be looked at
+   - version: name the version of the product to be looked at
+   - os_name: name the OS to be looked at
+   - os_version: name the version of the OS to be looked at
+  """
   try:
     databaseDSN = "host=%(databaseHost)s dbname=%(databaseName)s user=%(databaseUserName)s password=%(databasePassword)s" % configContext
     conn = psycopg2.connect(databaseDSN)
     cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
   except:
-    socorro.lib.util.reportExceptionAndAbort(logger)
-  products = getProductsToUpdate(cur, configContext, logger)
-  aDay = datetime.date(*([int(x) for x in ("%s"%(configContext.processingDay)).split('-')][:3]))
-  sDay = aDay
-  eDay = aDay+datetime.timedelta(days=1)
-  # half open interval starts at the beginning of the day ...
-  dStart = aDay.isoformat()
-  # ... and stops just before beginning of next day
-  dEnd = (aDay + datetime.timedelta(days=1)).isoformat()
-  for product in products:
-    sql = """INSERT INTO mtbffacts (avg_seconds, report_count, day, productdims_id, osdims_id)
-               SELECT AVG(r.uptime) AS avg_seconds, COUNT(r.*) AS report_count, DATE '%s', p.id, o.id -- << The day in question
-                  FROM mtbfconfig cfg JOIN crash_reports r on cfg.osdims_id = r.osdims_id AND cfg.productdims_id = r.productdims_id
-                  join productdims p on cfg.productdims_id = p.id
-                  join osdims o on cfg.osdims_id = o.id
-               WHERE r.date_processed >= %%(dStart)s
-                 AND %%(dEnd)s > r.date_processed
-               GROUP BY p.id, o.id
-          """%(aDay)
-    try:
-      cur.execute(sql,({'dStart':sDay,'dEnd':eDay}))
-      conn.commit()
-    except Exception,x:
-      # if the inner select has no matches then AVG(uptime) is null, thus violating the avg_seconds not-null constraint.
-      # This is good, we depend on this to keep
-      # facts with 0 out of db
-      # For properly configured products, this shouldn't happen very often
-      logger.warn("No facts generated for %s %s os=%s",product.get('product'), product.get('version'), product.get('os_name'));
-      conn.rollback() 
+    soc_util.reportExceptionAndAbort(logger)
+  oneDay = datetime.timedelta(days=1)
+  # If we specify slotSizeMinutes, use that interval, else use 1 day
+  if kwargs and 'slotSizeMinutes' in kwargs:
+    slotInterval = datetime.timedelta(minutes = int(kwargs['slotSizeMinutes']))
+  elif 'slotSizeMinutes' in configContext:
+    slotInterval = datetime.timedelta(minutes = int(configContext.slotSizeMinutes))
+  else:
+    slotInterval = oneDay
+  # If we have slotEnd, it wins:
+  if kwargs and 'slotEnd' in kwargs:
+    eWindow = soc_util.parseIsoDateTimeString("%s"%(kwargs['slotEnd']))
+  elif 'slotEnd' in configContext:
+    eWindow = soc_util.parseIsoDateTimeString("%s"%(configContext.slotEnd))
+    # If no slotEnd and we have the old processing day, then use it
+  else:
+    if kwargs and 'processingDay' in kwargs:
+      aDay = soc_util.parseIsoDateTimeString("%s"%(kwargs.get('processingDay')))
+    else:
+      aDay = soc_util.parseIsoDateTimeString("%s"%(configContext.processingDay))
+    assert oneDay == slotInterval, 'If you specify "processingDay", then slot size must be one day'
+    eWindow = aDay.replace(hour=0,minute=0,second=0,microsecond=0)+slotInterval
+  sWindow = eWindow - slotInterval
+  sqlDict = {
+    'configTable': configTable, 'startDate':'start_date', 'endDate':'end_date',
+    'windowStart':sWindow, 'windowEnd':eWindow, 'windowSize':slotInterval,
+    }
+  extraWhereClause = ''
+  if kwargs:
+    specs = []
+    if 'product' in kwargs:
+      specs.append('p.product = %(product)s')
+      sqlDict['product'] = kwargs['product']
+    elif 'product' in configContext and configContext.product: # ignore empty
+      specs.append('p.product = %(product)s')
+      sqlDict['product'] = configContext.product
+    if 'version' in kwargs:
+      specs.append('p.version = %(version)s')
+      sqlDict['version'] = kwargs['version']
+    elif 'version' in configContext and configContext.version: # ignore empty
+      specs.append('p.version = %(version)s')
+      sqlDict['version'] = configContext.version
+    if 'os_name' in kwargs:
+      specs.append('o.os_name = %(os_name)s')
+      sqlDict['os_name'] = kwargs['os_name']
+    elif 'os_name' in configContext and configContext.os_name: # ignore empty
+      specs.append('o.os_name = %(os_name)s')
+      sqlDict['os_name'] = configContext.os_name
+    if 'os_version' in kwargs:
+      specs.append('o.os_version = %(os_version)s')
+      sqlDict['os_version'] = kwargs['os_version']
+    elif 'os_version' in configContext and configContext.os_version: # ignore empty
+      specs.append('o.os_version = %(os_version)s')
+      sqlDict['os_version'] = configContext.os_version
+    if specs:
+      extraWhereClause = ' AND '+' AND '.join(specs)
+  sqlDict['extraWhereClause'] = extraWhereClause
+  # per ss: mtbf runs for 60 days from the time it starts: Ignore cfg.end
+  sql = """INSERT INTO time_before_failure (sum_uptime_seconds, report_count, productdims_id, osdims_id, window_end, window_size)
+              SELECT SUM(r.uptime) AS sum_uptime_seconds,
+                     COUNT(r.*) AS report_count,
+                     p.id,
+                     o.id,
+                     timestamp %%(windowEnd)s,
+                     interval %%(windowSize)s
+                 FROM reports r JOIN productdims p ON r.product = p.product AND r.version = p.version
+                                JOIN osdims o on r.os_name = o.os_name AND r.os_version = o.os_version
+                                JOIN %(configTable)s cfg ON p.id = productdims_id
+              WHERE NOT cfg.ignore
+                 AND cfg.%(startDate)s <= %%(windowStart)s
+              -- AND %%(windowStart)s <= cfg.%(endDate)s  -- ignored per ss
+                 AND %%(windowStart)s <= cfg.%(startDate)s+interval '60 days' -- per ss
+                 AND %%(windowStart)s <= r.date_processed AND r.date_processed < %%(windowEnd)s
+                 %(extraWhereClause)s
+              GROUP BY p.id, o.id
+        """%(sqlDict)
+  try:
+    cur.execute(sql,sqlDict)
+    conn.commit()
+  except Exception,x:
+    # if the inner select has no matches then AVG(uptime) is null, thus violating the avg_seconds not-null constraint.
+    # This is good, we depend on this to keep
+    # facts with 0 out of db
+    # For properly configured products, this shouldn't happen very often
+    logger.warn("No facts aggregated for day %s"%aDay)
+    conn.rollback()
 
 def getProductsToUpdate(cur, conf, logger):
-  sql = "SELECT productdims_id, osdims_id FROM mtbfconfig WHERE start_dt <= %s AND end_dt >= %s;"
+  params = {
+    'configTable': configTable, 'startDate':'start_date', 'endDate':'end_date',
+    }
+  sql = "SELECT DISTINCT productdims_id FROM %(configTable)s WHERE %(startDate)s <= %%s AND %(endDate)s >= %%s;"%(params)
   try:
     logger.debug(sql % (conf.processingDay, conf.processingDay))
     cur.execute(sql, (conf.processingDay, conf.processingDay))
     rows = cur.fetchall()
   except Exception,x:
-    socorro.lib.util.reportExceptionAndAbort(logger)
-    
+    soc_util.reportExceptionAndAbort(logger)
+  
   if rows:
     #TODO log info
-    idpairs = tuple((str(x[0]),str(x[1])) for x in rows)
-    sql = "SELECT p.id, p.product, p.version, p.release, o.id, o.os_name, o.os_version FROM productdims as p, osdims as o  WHERE (p.id, o.id) IN %s"%(str(idpairs))
+    ids = '(%s)'%(','.join(str(x[0]) for x in rows))
+    sql = "SELECT p.id, p.product, p.version, p.release FROM productdims as p WHERE p.id IN %s"%(str(ids))
     logger.info(sql);
     cur.execute(sql);
     products = []
@@ -125,13 +199,13 @@ def getWhereClauseFor(product):
 
 class ProductAndOsData(dict):
   def __init__ (self, data, logger=None, **kwargs):
-    """Constructor requires an array with 7 elements, corrosponding to the columns of the productdims and osdims tables.
+    """Constructor requires an array with 4 elements, corrosponding to the columns of the productdims table.
+       If array instead has 7 elements, then the final 3 elemets are columns of the osdims table.      
        data - [product_id, product, version, release, os_id, os_name, os_version] where
        product - the name of a product. Ex: Firefox
        version - the numeric version. Ex: 3.0.5 or 3.5b4
        release - A build release level. One of ALL, major, milestone, or development
-       os_name - As we get it from the crash report. Ex: 'Windows NT'
-       os_version - As we get it from the crash report
+       os_name and os_version are as provided by the system
     """
     super(ProductAndOsData, self).__init__()
     if(logger):
@@ -140,9 +214,10 @@ class ProductAndOsData(dict):
     self.product = data[1]
     self.version = data[2]
     self.release = data[3]
-    self.os_id = data[4]
-    self.os_name = data[5]
-    self.os_version = data[6]
+    if len(data) > 4:
+      self.os_id = data[4]
+      self.os_name = data[5]
+      self.os_version = data[6]
     super(ProductAndOsData,self).update(kwargs)
 
   def __setattr__(self,name,value):

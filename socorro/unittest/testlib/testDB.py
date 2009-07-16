@@ -3,6 +3,11 @@ import socorro.database.schema as db_schema
 import socorro.database.postgresql as db_postgresql
 import sys
 
+import socorro.unittest.testlib.util as tutil
+
+def setup_module():
+  tutil.nosePrintModule(__file__)
+
 class TestDB:
   def __init__(self):
     self.madeConnection = False

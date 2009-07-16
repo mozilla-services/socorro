@@ -1,5 +1,10 @@
 import socorro.lib.prioritize as prioritize
 
+import socorro.unittest.testlib.util as tutil
+
+def setup_module():
+  tutil.nosePrintModule(__file__)
+
 class TestNode:
   def testConstructor(self):
     n = prioritize.Node()

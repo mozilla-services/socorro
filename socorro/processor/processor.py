@@ -14,7 +14,6 @@ import time
 logger = logging.getLogger("processor")
 
 import socorro.database.schema as sch
-import socorro.database.cachedIdAccess as cia
 
 import socorro.lib.util
 import socorro.lib.threadlib
@@ -99,7 +98,6 @@ class Processor(object):
     assert "irrelevantSignatureRegEx" in config, "irrelevantSignatureRegEx is missing from the configuration"
     assert "prefixSignatureRegEx" in config, "prefixSignatureRegEx is missing from the configuration"
     self.databaseConnectionPool = psy.DatabaseConnectionPool(config.databaseHost, config.databaseName, config.databaseUserName, config.databasePassword, logger)
-    cia.maxIdCacheLength = int(config.get('maxIdCacheLength',1024))
 
     self.processorLoopTime = config.processorLoopTime.seconds
 
@@ -211,8 +209,6 @@ class Processor(object):
                                                   jsonSuffix=self.config.jsonFileSuffix,
                                                   dumpSuffix=self.config.dumpFileSuffix,
                                                   logger=logger)
-    # initialize dimension id caches
-    self.idCache = cia.IdCache(databaseCursor)
 
   #-----------------------------------------------------------------------------------------------------------------
   def quitCheck(self):
@@ -679,13 +675,13 @@ class Processor(object):
     installTime = int(jsonDocument.get('InstallTime',startupTime)) # must have installed some time before startup
     crash_date = datetime.datetime.fromtimestamp(crash_time, Processor.utctz)
     install_age = crash_time - installTime
+    # email and userId are now deprecated and replace with empty string
+    email = userId = ""
     uptime = max(0, crash_time - startupTime)
     if crash_time == defaultCrashTime:
       logger.warning("%s - no 'crash_time' calculated in %s: Using date_processed", threading.currentThread().getName(), jobPathname)
       #socorro.lib.util.reportExceptionAndContinue(logger, logging.WARNING)
       processorErrorMessages.append("WARNING: No 'client_crash_date' could be determined from the Json file")
-    productId = self.idCache.getProductId(product,version)
-    urlId,qpart = self.idCache.getUrlId(url)
     build_date = None
     if buildID:
       try:
@@ -701,8 +697,8 @@ class Processor(object):
     email = user_id = None
     newReportRecordAsTuple = (uuid, crash_date, date_processed, product, version, buildID, url, install_age, last_crash, uptime, email, build_date, user_id, user_comments, app_notes, distributor, distributor_version)
     newReportRecordAsDict = dict(x for x in zip(self.reportsTable.columns, newReportRecordAsTuple))
-    if not productId:
-      logger.error("%s - Skipping report %s: no productId"%(threading.currentThread().getName(),str(newReportRecordAsDict)))
+    if not product or not version:
+      logger.error("%%s - Skipping report (uuid=%s,crash_date=%s,date_processed=%s,product=%s,version=%s,buildId=%s,url=%s,age=%s,last_crash=%s,uptime=%s,(email:%s),buildDate=%s,(userId:%s),comments=%s,app_notes=%s,distributor,dist_version:%s,%s) not (product & version)"%newReportRecordAsTuple,threading.currentThread().getName())
       return {}
     try:
       logger.debug("%s - inserting for %s, %s", threading.currentThread().getName(), uuid, str(date_processed))
