@@ -126,12 +126,24 @@ html {
     #top-nav .shortcuts {
         float: left;
         }
-        #top-nav .shortcuts li {
+        .shortcuts li {
             position: relative;
-            display: inline;
+            display: block;
+            float: left;
             margin-right: 1em;
             }
+            .product-versions {
+                display: block;
+                padding-top: 0.8em;
+                position: absolute;
+                }
+                .product-versions li {
+                    display: block;
+
+                    text-align: left;
+                    }
     #top-nav .search {
+        float: right;
         text-align: right;
         }
         #top-nav .search li {

@@ -10,6 +10,7 @@
 <ul>
 <li><label for="product">Product</label>
         <select id="product" name="product" size="4" multiple="multiple">
+            <option value="ALL">All</option>
             <?php foreach ($all_products as $row): ?>
                 <option value="<?php out::H($row->product) ?>" <?php echo in_array($row->product, $params['product']) ? 'selected="selected"' : '' ?>>
                     <?php out::H($row->product) ?>
@@ -19,6 +20,7 @@
 </li>
 <li><label for="version">Version: </label>
         <select id="version" name="version" size="4" multiple="multiple">
+            <option value="ALL:ALL">All</option>
             <?php foreach ($all_versions as $row): ?>
                 <?php $row_version  = $row->product . ':' . $row->version; ?>
                 <option value="<?php out::H($row_version) ?>" <?php echo in_array($row_version, $params['version']) ? 'selected="selected"' : '' ?>>

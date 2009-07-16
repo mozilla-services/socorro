@@ -33,22 +33,8 @@
                           <ul class="product-versions">
                                 <?php
                             foreach ($releases as $release => $version) { ?>
-                                <li><a href="<?= url::base()?>query/query?do_query=1&amp;product=<?= urlencode($prod) ?>&amp;version=<?= urlencode($prod . ':' . $version) ?>"><?= $prod ?> <span class="version"><?= $version ?></span></a> <span class="release-type"><?= $release ?></span></li>
-                        <?php }
-                                  if (array_key_exists($prod, $older_products)) { ?>
-                            <li class="product-nav-other-versions"><a href="#" class="functional">Other Versions &#9662;</a>
-                              <ul>
-                              <?php
-                                  foreach ($older_products[$prod] as $release => $versions) {
-                                      foreach ($versions as $version) { ?>
-                                   <li><?= $version ?> (<?= $release ?>)</li>
-                            <?php     }
-                              }			      
-                             ?></ul>
-                             </li>
-                         <?php } ?>
-
-                              
+                                <li><a href="<?= url::base()?>query/query?do_query=1&amp;product=<?= urlencode($prod) ?>&amp;version=<?= urlencode($prod . ':' . $version) ?>"><span class="release-type"><?= $release ?></span>(<span class="version"><?= $version ?></span>)</a></li>
+                        <?php } ?>
                           </ul>
                           </li><!-- /product -->
                       <?php
@@ -76,6 +62,8 @@
      		        <li id="topcrash-byurl" class="trend-report-link"><span class="label">Top Crashes: </span><a href="<?= url::base() ?>topcrasher/byurl/<?= $chosen_version['product'] ?>/<?= $chosen_version['version'] ?>">By URL</a></li>
       		        <li id="mtbf" class="trend-report-link"><a href="<?= url::base() ?>mtbf/of/<?= $chosen_version['product'] ?>/<?= $chosen_version['release'] ?>">MTBF</a></li>
 			</ul></li>
+		      <li id="adv-search-link"><a href="<?= url::base() ?>query/query">Advanced Search</a> or</li>
+		      <li><form id="simple-search" method="get" action="<?= url::base() ?>query/simple"><fieldset><input type="text" name="q" value="Crash ID or Signature" /><input id="simple-search-submit" type="submit" /></fieldset></form></li>
 		</ul>
             </div> <!-- /HEADER -->
       

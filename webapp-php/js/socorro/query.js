@@ -28,12 +28,23 @@ $(document).ready(function(){
   $('select[name=product]').bind('change', function(){
       var selected =  $('select[name=product]').val();
       if(selected.length > 0){
-        updateVersion(selected);
+	  if (selected == "ALL") {
+	      updateVersionWithAllVersions();
+	  } else {
+	      updateVersion(selected);
+	  }
       }
   });
+  function updateVersionWithAllVersions() {
+      var prods = [];
+      for (var key in prodVersMap) { prods.push(key); }
+      console.info(prods);
+      updateVersion(prods, [])
+  }
   function updateVersion(products, selected){
+    console.log(products);
     var sel = selected || [];
-    var s = "";
+    var s = "<option value='ALL:ALL'>All</option>";
     for(var j=0; j < products.length; j++){
       var product = products[j];
       for(var i=0; i < prodVersMap[product].length; i++){
