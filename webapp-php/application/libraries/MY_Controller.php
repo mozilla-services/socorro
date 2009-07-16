@@ -271,7 +271,7 @@ class Controller extends Controller_Core {
   	    $determine = new Release;
 	    $release = $determine->typeOfRelease($version);
         }
-	$this->ensureChosenVersion($this->currentProducts());
+	$this->ensureChosenVersion($this->currentProducts(), FALSE);
 	if ($this->chosen_version['version'] != $version ||
 	    $this->chosen_version['product'] != $product) {
 	        $this->_chooseVersion(array('product' => $product,
@@ -289,12 +289,14 @@ class Controller extends Controller_Core {
 	$product = $version_info['product'];
 	$version = $version_info['version'];
 	$release = $version_info['release'];
-	cookie::set(Socorro_Cookies::CHOSEN_VERSION, 
-		    "p=${product}&v=${version}&r=${release}", 
-		    Socorro_Cookies::EXPIRES_IN_A_YEAR);
+	if ($set_cookie) {
+	    cookie::set(Socorro_Cookies::CHOSEN_VERSION, 
+			"p=${product}&v=${version}&r=${release}", 
+			Socorro_Cookies::EXPIRES_IN_A_YEAR);
+	}
     }
 
-    protected function ensureChosenVersion($curProds)
+    protected function ensureChosenVersion($curProds, $set_cookie=TRUE)
     {
         // if it's null, use Cookie
         if (is_null($this->chosen_version)) {
@@ -305,7 +307,7 @@ class Controller extends Controller_Core {
 		    foreach (array_reverse($releases) as $release => $version) {
 		        $this->_chooseVersion(array('product' => $product,
 						    'version' => $version,
-						    'release' => $release));
+						    'release' => $release), $set_cookie);
 			break;
 		    }
 		    break;
