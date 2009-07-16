@@ -13,7 +13,7 @@ outputPath.default = '.'
 
 product = cm.Option()
 product.doc = 'the name of the product to track (leave blank for all)'
-product.default = ''
+product.default = 'Firefox'
 
 version = cm.Option()
 version.doc = 'the name of the version to track (leave blank for all)'
@@ -21,7 +21,7 @@ version.default = ''
 
 logFilePathname = cm.Option()
 logFilePathname.doc = 'full pathname for the log file'
-logFilePathname.default = './bugzilla.log'
+logFilePathname.default = './dailyUrl.log'
 
 logFileMaximumSize = cm.Option()
 logFileMaximumSize.doc = 'maximum size in bytes of the log file'
