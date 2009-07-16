@@ -16,75 +16,66 @@
     </head>
 
     <body>
-        <div id="page">
-            <div id="header">	        
-                <h1 id="logo"><a href="<?php echo url::base() ?>"><img
-	           src="<?php echo url::base() ?>img/slate/mozillalogo.png"
-	             width="200" height="33" alt="Mozilla" /></a></h1>
-                <ul id="dev-links">
-                    <li class="current"><a href="#" id="subnavtoggle"><img
-		            src="<?php echo url::base() ?>img/slate/moz-developer.png"
-		              width="124" height="32" alt="Moz Developer" /></a>
-                        <ul id="subnav">
-                            <li><a href="https://bugzilla.mozilla.org/" title="Bugzilla">Bugzilla</a></li>
-                            <li><a href="http://tinderbox.mozilla.org/" title="Tinderbox">Tinderbox</a></li>
-                            <li><a href="https://developer.mozilla.org/" title="MDC">Mozilla Developer Central</a></li>
-                            <li><a href="http://mxr.mozilla.org/">Source Code Cross-reference</a></li>
-                            </ul>
+
+        <div id="page-header">
+        <div class="header-wrapper">
+            <h1><a href="<?php echo url::base() ?>" title="Home">
+                <span>Mozilla Crash Reports</span>
+            </a></h1>
+
+            <div id="top-nav">
+                <ul id="product-nav" class="shortcuts">
+                    <li>Quick Links:</li>
+                    <?php
+
+                      foreach ($common_products as $prod => $releases) { ?>
+                        <li class="product"><a class="functional" href="#"><?= $prod ?> &#9662;</a>
+                          <ul class="product-versions">
+                                <?php
+                            foreach ($releases as $release => $version) { ?>
+                                <li><a href="<?= url::base()?>query/query?do_query=1&amp;product=<?= urlencode($prod) ?>&amp;version=<?= urlencode($prod . ':' . $version) ?>"><?= $prod ?> <span class="version"><?= $version ?></span></a> <span class="release-type"><?= $release ?></span></li>
+                        <?php }
+                                  if (array_key_exists($prod, $older_products)) { ?>
+                            <li class="product-nav-other-versions"><a href="#" class="functional">Other Versions &#9662;</a>
+                              <ul>
+                              <?php
+                                  foreach ($older_products[$prod] as $release => $versions) {
+                                      foreach ($versions as $version) { ?>
+                                   <li><?= $version ?> (<?= $release ?>)</li>
+                            <?php     }
+                              }			      
+                             ?></ul>
+                             </li>
+                         <?php } ?>
+
+                              
+                          </ul>
+                          </li><!-- /product -->
+                      <?php
+                          
+                      }
+                      ?>
+                </ul>
+                <ul class="search">
+                    <li><a href="<?= url::base() ?>query/query">Advanced Search</a></li>
+                    <li>or</li>
+                    <li>
+                        <form id="simple-search" method="get" action="<?= url::base() ?>query/simple">
+                            <input type="text" name="q" value="Crash ID or Signature" />
+                            <input type="submit" class="hidden" />
+                        </form>
                     </li>
-                </ul> <!-- /DEV-LINKS -->
-		<h4>Quick Links</h4>
-		<ul id="product-nav">
-		<?php
+                </ul>
+            </div>
+        </div>
+        </div>
 
-		  foreach ($common_products as $prod => $releases) { ?>
-		    <li class="product"><span class="name"><?= $prod ?></span>
-		      <ul class="product-versions">
-			<li class="product-nav-all-versions">All Versions <strong title="I think this should only show up on the query filter bar">?</strong></li>
-	                <?php
-			    foreach ($releases as $release => $version) {
-			        $url = Chosen_Version_Controller::URL . urlencode($prod) . '/' . urlencode($version) .
-			               '?url=' .
-			               urlencode('query/query?do_query=1&product=' . urlencode($prod) . '&version=' . urlencode($prod . ':' . $version));
-			?>
-			        <li><a href="<?= url::base() . $url ?>"><?= $prod ?> <span class="version"><?= $version ?></span></a> <span class="release-type"><?= $release ?></span></li>
-			<?php }
-		              if (array_key_exists($prod, $older_products)) { ?>
-			    <li class="product-nav-other-versions">Other Versions &hellip;
-			      <ul><li>
-			        <dl>
-		          <?php
-			          foreach ($older_products[$prod] as $release => $versions) { ?>
-			            <dt class="release-type"><?= $release ?></dt>
-			            <dd><ol class="more-versions"><?php
-			              foreach ($versions as $version) {
-				          $url = Chosen_Version_Controller::URL . urlencode($prod) . '/' . urlencode($version) .
-				                 '?url=' .
-			                         urlencode('query/query?do_query=1&product=' . urlencode($prod) . '&version=' . urlencode($prod . ':' . $version));
-				      ?>
-				       <li><a href="<?= url::base() . $url ?>"><?= $version ?></a></li>
-			    <?php     }
-				  }			      
-			     ?></ol></dt></dl>
-			     </li></ul>
-			   </li>
-			 <?php } ?>
-
-			      
-		      </ul>
-		      </li><!-- /product -->
-		  <?php
-		      
-		  }
-		  ?>
-		      <li id="trend-nav"><ul>
+          <li id="trend-nav"><ul>
 			<!-- TODO Global current product / version -->
   		        <li id="topcrash-bysig" class="trend-report-link"><span class="label">Top Crashes: </span><a href="<?= url::base() ?>topcrasher/byversion/<?= $chosen_version['product'] ?>/<?= $chosen_version['version'] ?>">By Signature</a></li>
      		        <li id="topcrash-byurl" class="trend-report-link"><span class="label">Top Crashes: </span><a href="<?= url::base() ?>topcrasher/byurl/<?= $chosen_version['product'] ?>/<?= $chosen_version['version'] ?>">By URL</a></li>
       		        <li id="mtbf" class="trend-report-link"><a href="<?= url::base() ?>mtbf/of/<?= $chosen_version['product'] ?>/<?= $chosen_version['release'] ?>">MTBF</a></li>
 			</ul></li>
-		      <li id="adv-search-link"><a href="<?= url::base() ?>query/query">Advanced Search</a> or</li>
-		      <li><form id="simple-search" method="get" action="<?= url::base() ?>query/simple"><fieldset><input type="text" name="q" value="Crash ID or Signature" /><input type="submit" /></fieldset></form></li>
 		</ul>
             </div> <!-- /HEADER -->
       
