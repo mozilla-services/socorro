@@ -79,6 +79,8 @@ def dailyUrlDump(config):
             if i == 14:
               aCrashAsAList.append(','.join(str(bugid) for bugid in x))
               continue
+            if type(x) == str:
+              x = x.strip()
             aCrashAsAList.append(x)
           csvFormatter.writerow(aCrashAsAList)
       finally:
