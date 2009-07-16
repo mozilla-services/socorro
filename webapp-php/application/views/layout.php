@@ -38,16 +38,17 @@
 		<?php
 
 		  foreach ($common_products as $prod => $releases) { ?>
-		    <li class="product"><?= $prod ?>
-		      <ol>
+		    <li class="product"><span class="name"><?= $prod ?></span>
+		      <ul class="product-versions">
 			<li class="product-nav-all-versions">All Versions <strong title="I think this should only show up on the query filter bar">?</strong></li>
 	                <?php
 			    foreach ($releases as $release => $version) { ?>
-			        <li><a href="<?= url::base()?>query/query?do_query=1&amp;product=<?= urlencode($prod) ?>&amp;version=<?= urlencode($prod . ':' . $version) ?>"><?= $prod ?> <?= $version ?></a> <?= $release ?></li>
+			        <li><a href="<?= url::base()?>query/query?do_query=1&amp;product=<?= urlencode($prod) ?>&amp;version=<?= urlencode($prod . ':' . $version) ?>"><?= $prod ?> <span class="version"><?= $version ?></span></a> <span class="release-type"><?= $release ?></span></li>
 			<?php }
 		              if (array_key_exists($prod, $older_products)) { ?>
 			    <li class="product-nav-other-versions">Other Versions &hellip;
-			    <dl>
+			      <ul><li>
+			        <dl>
 		          <?php
 			          foreach ($older_products[$prod] as $release => $versions) { ?>
 			            <dt class="release-type"><?= $release ?></dt>
@@ -56,11 +57,13 @@
 				       <li><?= $version ?></li>
 			    <?php     }
 				  }			      
-			     ?></ol></dt></dl></li>
+			     ?></ol></dt></dl>
+			     </li></ul>
+			   </li>
 			 <?php } ?>
 
 			      
-		      </ol>
+		      </ul>
 		      </li><!-- /product -->
 		  <?php
 		      
