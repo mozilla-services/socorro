@@ -171,7 +171,7 @@ class Controller extends Controller_Core {
         if (is_null($this->_current_products)) {
             $queryFormHelper = new QueryFormHelper;
 	    $p2vs = $queryFormHelper->prepareAllProducts($this->branch_model);
- 	    $this->_current_products = $queryFormHelper->currentProducts($p2vs['products2versions']);
+ 	    $this->_current_products = $queryFormHelper->currentProducts($p2vs);
 	}
 	return $this->_current_products;
     }

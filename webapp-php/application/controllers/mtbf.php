@@ -1,6 +1,7 @@
 <?php defined('SYSPATH') or die('No direct script access.');
 
-require_once dirname(__FILE__).'/../libraries/MY_WidgetDataHelper.php';
+require_once(Kohana::find_file('libraries', 'MY_QueryFormHelper', TRUE, 'php'));
+require_once(Kohana::find_file('libraries', 'MY_WidgetDataHelper', TRUE, 'php'));
 /**
  * This controller displays system status.
  */
@@ -39,14 +40,24 @@ class Mtbf_Controller extends Controller {
             ));
 	  }
 	}else{
+
           $this->setViewData(array( 'title' => "MTBF of $product ERROR",
-				    'error_message' => "Unknown build release version $release_level"
+				    'error_message' => "No <strong>$release_level</strong> builds of $product are configured to generate MTBF reports yet."
 				   ));
 	}
       }else{
-          $this->setViewData(array( 'title' => "MTBF ERROR",
-				    'error_message' => "Unknown product $product"
-				   ));
+	  $productsHelper = new QueryFormHelper;
+	  $p2vs = $productsHelper->prepareAllProducts($this->branch_model);
+	  if (array_key_exists($product, $p2vs)) {
+	      $this->setViewData(array( 'title' => "No MTBF Report",
+					'error_message' => "$product is not configured to generate MTBF reports yet."
+					));
+	  } else {
+	      $this->setViewData(array( 'title' => "MTBF ERROR",
+					'error_message' => "Unknown product $product "
+					));          
+	  }
+
       }
     }
 

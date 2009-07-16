@@ -86,9 +86,7 @@ class QueryFormHelper
             $versionCompare->sortAppversionArray($versions);
         }
 
-        return array(
-            'products2versions'  => $versions_by_product,
-        );
+        return $versions_by_product;
     }
 
     /**
