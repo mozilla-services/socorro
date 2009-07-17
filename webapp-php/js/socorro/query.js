@@ -1,4 +1,5 @@
 $(document).ready(function(){
+    if (window.console) window.console.log("page loading");
     /* show / hide NOSCRIPT support */
       $('.bug_ids_extra').hide();
       $('.bug_ids_more').show();
@@ -38,11 +39,9 @@ $(document).ready(function(){
   function updateVersionWithAllVersions() {
       var prods = [];
       for (var key in prodVersMap) { prods.push(key); }
-      console.info(prods);
       updateVersion(prods, [])
   }
   function updateVersion(products, selected){
-    console.log(products);
     var sel = selected || [];
     var s = "<option value='ALL:ALL'>All</option>";
     for(var j=0; j < products.length; j++){

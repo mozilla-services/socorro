@@ -24,7 +24,7 @@
                         $url = url::base().'report/list?'.html::query_string($url_params);
                     ?><a href="<?php out::H($url) ?>" title="View reports with this signature."><?php out::H($report->signature) ?></a>
                 </td>
-                <?php if (count($platforms) > 1): ?><th><?php out::H($report->count) ?></th><?php endif ?>
+                <?php if (count($platforms) > 1): ?><td><?php out::H($report->count) ?></td><?php endif ?>
                 <?php foreach ($platforms as $platform): ?>
                     <td><?php out::H($report->{'is_'.$platform->id}) ?></td>
                 <?php endforeach ?>

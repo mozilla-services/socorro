@@ -43,9 +43,8 @@
                       ?>
                 </ul>
                 <ul class="search">
-                    <li><a href="<?= url::base() ?>query/query">Advanced Search</a></li>
-                    <li>or</li>
-                    <li>
+                    <li><a href="<?= url::base() ?>query/query">Advanced Search</a> or </li>
+                   <li>
                         <form id="simple-search" method="get" action="<?= url::base() ?>query/simple">
                             <input type="text" name="q" value="Crash ID or Signature" />
                             <input type="submit" class="hidden" />
@@ -57,8 +56,7 @@
           </div> <!-- /page-header -->
       
         <div id="mainbody">
-	  <div id="vertical-furniture"></div>
-  	  <?php echo $content ?></div>
+ 	  <?php echo $content ?></div>
 
         </div> <!-- /PAGE -->
 	
