@@ -554,3 +554,110 @@ html {
 .hidden {
     display: none;
 }
+
+
+/* page specific CSS */
+         #searchform fieldset ul, #searchform fieldset ul li{
+             display: block;
+             float: left;
+         }
+         #advfilter, #gofilter {
+             clear: left;
+         }
+/* SEARCH FORM
+-------------------------------------------------------------- */
+
+#searchform { 
+	width: 65%;
+	margin: 0 0 10px 0;
+	float: left;
+}
+
+#searchform select {
+	width: 180px;
+	font-size: 100%;
+}
+
+#searchform fieldset { 
+	-moz-border-radius: 5px;
+	-webkit-border-radius: 5px;
+	background: #efefef;
+	border: 1px solid #ddd;
+	padding: 10px 10px 10px 20px;
+}
+
+#searchform ul { 
+	list-style: none;
+}
+
+#searchform label { 
+	font-weight: bold;
+	display: block;
+	font-size: 125%;
+}
+
+#searchform ul li { 
+	float: left;
+	margin-right: 10px;
+}
+
+#searchform #advfilter select {
+	width: 100px;
+}
+
+#advfiltertoggle { 
+	margin: 10px 0;
+	padding-left: 15px;
+	display: block;
+	color: #000;
+}
+
+.not-toggled { 
+	background: url(../img/slate/disclosure.png) no-repeat 0 2px;	
+}
+
+.toggled { 
+	background: url(../img/slate/disclosure-down.png) no-repeat 0 2px;
+}
+
+#advfilter select { 
+	font-size: 80%;
+	width: 85px !important;
+}
+
+#occurs, #stack { 
+	border-left: 1px dotted  #bbb;
+	margin-left: 10px;
+	padding-left: 20px;
+}
+
+ul#occurs li, ul#stack li { 
+	float: none;
+}
+
+#occurs-date, #date, .wrong-name { 
+	width: 100px;
+	font-style: italic;
+	color: #aaa;
+	margin-bottom: 10px;
+	text-align: center;
+}
+
+#occurs_calendar, .dp-choose-date, .wrong-name { 
+	padding-right: 20px;
+	background: url(../img/slate/calendar.png) no-repeat 2px -1px;
+}
+
+#within, #range_value, .wrong-name { 
+	width: 25px;
+	text-align: center;
+}
+*|*:-moz-any-link:focus {
+    outline-width: 0px;
+}
+
+/* end search-form */
+
+/* ozten working start */
+
+/* ozten working end */

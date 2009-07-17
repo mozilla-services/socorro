@@ -52,20 +52,9 @@
                         </form>
                     </li>
                 </ul>
-            </div>
-        </div>
-        </div>
-
-          <li id="trend-nav"><ul>
-			<!-- TODO Global current product / version -->
-  		        <li id="topcrash-bysig" class="trend-report-link"><span class="label">Top Crashes: </span><a href="<?= url::base() ?>topcrasher/byversion/<?= $chosen_version['product'] ?>/<?= $chosen_version['version'] ?>">By Signature</a></li>
-     		        <li id="topcrash-byurl" class="trend-report-link"><span class="label">Top Crashes: </span><a href="<?= url::base() ?>topcrasher/byurl/<?= $chosen_version['product'] ?>/<?= $chosen_version['version'] ?>">By URL</a></li>
-      		        <li id="mtbf" class="trend-report-link"><a href="<?= url::base() ?>mtbf/of/<?= $chosen_version['product'] ?>/<?= $chosen_version['release'] ?>">MTBF</a></li>
-			</ul></li>
-		      <li id="adv-search-link"><a href="<?= url::base() ?>query/query">Advanced Search</a> or</li>
-		      <li><form id="simple-search" method="get" action="<?= url::base() ?>query/simple"><fieldset><input type="text" name="q" value="Crash ID or Signature" /><input id="simple-search-submit" type="submit" /></fieldset></form></li>
-		</ul>
-            </div> <!-- /HEADER -->
+            </div><!-- top-nav -->
+	   </div>
+          </div> <!-- /page-header -->
       
         <div id="mainbody">
 	  <div id="vertical-furniture"></div>
