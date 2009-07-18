@@ -11,7 +11,7 @@
 
     <h1 class="first">Top Crashers By URL for <span id="tcburl-product"><?php out::H($product) ?></span> <span id="tcburl-version"><?php out::H($version)?></span> </h1>
 <div>Below are the top crash signatures by URL from <?php echo $beginning ?> to <?php echo $ending_on ?></div>
-<a href="../../bydomain/<?php echo $product ?>/<?php echo $version ?>">Switch to by breakdown by Domain</a>
+<a class="trend-nav" href="../../bydomain/<?php echo $product ?>/<?php echo $version ?>">Switch to by breakdown by Domain</a>
 <table class="tablesorter">
   <thead>
   <tr><th>URL</th><th>&#35;</th></tr>

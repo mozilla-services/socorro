@@ -1,3 +1,4 @@
+
 /*
 Copyright (c) 2009, Yahoo! Inc. All rights reserved.
 Code licensed under the BSD License:
@@ -31,16 +32,16 @@ html {
     line-height: 1;
     }
     a {
-        color: #fd0;
+        color: #009;
         }
     a:hover {
         text-decoration: underline;
         }
-/*
+
     a:visited {
-        color: #d4b700;
+        color: #303;
         }
-*/
+
     a.functional {
         color: #fd0;
         }
@@ -182,7 +183,7 @@ html {
 			left: auto;
 			right: .25em;
 			-moz-border-radius: .5em 0 .5em .5em;
-			-moz-column-count: 2;
+			-moz-column-count: 2; /*  TODO: Equal to the number of Products in the "Other" Drop down. This should be generated server side or via JS */
 			-moz-column-gap: 0;
 			-moz-column-rule: 1px solid #406080;
 			}
@@ -1085,8 +1086,7 @@ h2.mtbf-graph{ float: left; }
 .legendLabel{ width: 90px; overflow: hidden; }
 
 #overviewLegend table tbody tr td, #overviewLegend table thead tr th, #graph-legend table tbody tr td { border: none; }
-.topcrashersaccord div a, p a, .report-date_processed a, .full_bug_ids li a, .full_bug_ids li .strike a, .list tbody tr th a, .list tbody tr td a { color: blue; text-decoration: underline; }
-.topcrashersaccord div a:visited, p a:visited, .report-date_processed a:visited, .full_bug_ids li a:visited, .full_bug_ids li .strike a:visited, .list tbody tr th a:visited, .list tbody tr td a:visited { color: purple; }
+.topcrashersaccord div a, p a, .report-date_processed a, .full_bug_ids li a, .full_bug_ids li .strike a, .list tbody tr th a, .list tbody tr td a, .trend-nav a { text-decoration: underline; }
 .header-wrapper h1 { position: absolute; top:0px left: 0px; }
 /* end dashboard widgets */
 /* ozten working end */

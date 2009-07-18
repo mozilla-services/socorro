@@ -10,7 +10,7 @@
 
     <h1 class="first">Top Crashers By Domain for <span id="tcburl-product"><?php out::H($product) ?></span> <span id="tcburl-version"><?php out::H($version)?></span> </h1>
 <div>Below are the top crash signatures by Domain from <?php echo $beginning ?> to <?php echo $ending_on ?></div>
-<a href="../../byurl/<?php echo $product ?>/<?php echo $version ?>">Switch to by breakdown by URL</a>
+<a class="trend-nav" href="../../byurl/<?php echo $product ?>/<?php echo $version ?>">Switch to by breakdown by URL</a>
 <?php
     // Bug# 470525 - no link to domain
 ?>
