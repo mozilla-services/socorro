@@ -22,36 +22,79 @@
             <h1><a href="<?php echo url::base() ?>" title="Home">
                 <span>Mozilla Crash Reports</span>
             </a></h1>
-
-            <div id="top-nav">
-                <ul id="product-nav" class="shortcuts">
-                    <li>Quick Links:</li>
-                    <?php
-
-                      foreach ($common_products as $prod => $releases) { ?>
-                        <li class="product"><a class="functional" href="#"><?= $prod ?> &#9662;</a>
-                          <ul class="product-versions">
-                                <?php
-                            foreach ($releases as $release => $version) { ?>
-                                <li><a href="<?= url::base()?>query/query?do_query=1&amp;product=<?= urlencode($prod) ?>&amp;version=<?= urlencode($prod . ':' . $version) ?>"><span class="release-type"><?= $release ?></span>(<span class="version"><?= $version ?></span>)</a></li>
-                        <?php } ?>
-                          </ul>
-                          </li><!-- /product -->
-                      <?php
-                          
-                      }
-                      ?>
-                </ul>
-                <ul class="search">
-                    <li><a href="<?= url::base() ?>query/query">Advanced Search</a> or </li>
-                   <li>
-                        <form id="simple-search" method="get" action="<?= url::base() ?>query/simple">
+		<form id="simple-search" method="get" action="<?= url::base() ?>query/simple">
                             <input type="text" name="q" value="Crash ID or Signature" />
                             <input type="submit" class="hidden" />
                         </form>
-                    </li>
+               <ul id="top-nav" class="shortcuts">
+                    <!-- li>Quick Links:</li -->
+                    <?php
+		      // TODO Kludgy, fix this duplicate code
+                      foreach ($common_products as $prod => $releases) {
+		          if ( $prod != "Firefox" && $prod != "Thunderbird") {
+		              continue;
+		          }
+		      ?>
+                        <li class="product dropdown"><strong><?= $prod ?> &#9662;</strong>
+		          <div>
+                          <ul class="product-versions">
+                                <?php
+                            foreach ($releases as $release => $version) { ?>
+                                <li><a href="<?= url::base()?>query/query?do_query=1&amp;product=<?= urlencode($prod) ?>&amp;version=<?= urlencode($prod . ':' . $version) ?>"><span class="release-type"><?= ucwords($release) ?></span> (<span class="version"><?= $version ?></span>)</a></li>
+                        <?php } ?>
+				<li class="more"><a href="<?= url::base() ?>query/query?do_query=1&amp;product=<?= urlencode($prod) ?>">More Versions</a></li>
+                          </ul>
+			  </div>
+                          </li><!-- /product -->
+
+                      <?php
+                      }
+			  ?>
+			  <li class="dropdown"><strong>More &#9662;</strong>
+			  <div class="large">
+	         <?php
+                      foreach ($common_products as $prod => $releases) {
+		          if ( $prod == "Firefox" || $prod == "Thunderbird") {
+		              continue;
+		          }
+		      ?>
+                          <ul class="xproduct-versions">
+                            <li class="xproduct all"><strong><?= $prod ?></strong></li>
+                                <?php
+                            foreach ($releases as $release => $version) { ?>
+                                <li><a href="<?= url::base()?>query/query?do_query=1&amp;product=<?= urlencode($prod) ?>&amp;version=<?= urlencode($prod . ':' . $version) ?>"><?= ucwords($release) ?> (<span class="xversion"><?= $version ?></span>)</a></li>
+                        <?php } ?>
+				  <li class="more"><a href="<?= url::base() ?>query/query?do_query=1&amp;product=<?= urlencode($prod) ?>">More Versions</a></li>
+                              </ul>
+                     <?php
+                      }			  
+                      ?>
+			 </div><!-- /large -->
+                      </li><!-- /more -->
+ 		      <li class="separated"><strong>Trend Reports &#9662;</strong>
+		        <div>
+			  
+<ul>
+		        <li id="topcrash-bysig" class="trend-report-link"><a href="<?= url::base() ?>topcrasher/byversion/<?= $chosen_version['product'] ?>/<?= $chosen_version['version'] ?>"
+                                                                             >Top Crashes By Signature</a></li>
+    		        <li id="topcrash-byurl" class="trend-report-link"><a href="<?= url::base() ?>topcrasher/byurl/<?= $chosen_version['product'] ?>/<?= $chosen_version['version'] ?>"
+			                                                     >Top Crashes By URL</a></li>
+			<li id="topcrash-bydomain" class="trend-report-link"><a href="<?= url::base() ?>topcrasher/bydomain/<?= $chosen_version['product'] ?>/<?= $chosen_version['version'] ?>"
+									        >Top Crashes By Domain</a></li>
+     		        <li id="mtbf" class="trend-report-link"><a href="<?= url::base() ?>mtbf/of/<?= $chosen_version['product'] ?>/<?= $chosen_version['release'] ?>">Mean Time Before FAIL</a></li>
+		</ul>
+    		        </div>
+
+		      </li>
+		      <li class="separated"><a href="<?= url::base() ?>query/query">Advanced Search</a></li>
                 </ul>
-            </div><!-- top-nav -->
+
+                   
+                   
+                        
+                    
+                </ul>
+
 	   </div>
           </div> <!-- /page-header -->
       
