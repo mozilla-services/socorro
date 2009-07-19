@@ -96,7 +96,7 @@ html {
 	}
 	#page-header .header-wrapper {
 		position: relative;
-		width: 72.3em;
+		width: 75.3em;
 		height: 7.385em;
 		margin: 0 auto;
 		}
@@ -371,14 +371,13 @@ html {
         }
 
 
-#content {
+#mainbody {
     position: relative;
+    min-height: 500px;
+    text-align: left;
+    width: 72.3em;
+    margin: 1em auto;
     }
-    #content .content-wrapper {
-        width: 58.75em;
-        margin: 0 auto;
-        }
-
 
 #crash-lists {
     overflow: auto;
@@ -697,18 +696,19 @@ html {
          }
          #advfilter, #gofilter {
              clear: left;
+             margin-top: 1.5em;
          }
 /* SEARCH FORM
 -------------------------------------------------------------- */
 
 #searchform { 
-	width: 65%;
-	margin: 0 0 10px 0;
+	width: 50em;
 	float: left;
+    margin-bottom: 1em;
 }
 
 #searchform select {
-	width: 180px;
+	width: 15em;
 	font-size: 100%;
 }
 
@@ -717,7 +717,7 @@ html {
 	-webkit-border-radius: 5px;
 	background: #efefef;
 	border: 1px solid #ddd;
-	padding: 10px 10px 10px 20px;
+	padding: 1em;
 }
 
 #searchform ul { 
@@ -802,14 +802,13 @@ th, strong { font-weight: bold; }
 td a, .product-versions li a { color: blue; }
 .link-label { color: #FFDD00 }
 .header-wrapper { text-align: left; }
-#mainbody { min-height: 500px; min-width: 970px; text-align: left; padding-left: 0.85em; padding-right: 0.85em;}
 h1, h2, h3, h4, h5, h6 { font-weight: bold; }
 h2 { font-size: 140%; }
 h3 { font-size: 120%; }
 h4 { font-size: 100%; }
 #footer {
   border-top: 1px solid #000;
-  background: #fff url(../img/footer_bg.png) repeat-x top left;
+  background: #fff;
   clear: both;
   min-height: 4em;
   text-align: center;
