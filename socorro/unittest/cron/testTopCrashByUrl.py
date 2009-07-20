@@ -11,6 +11,7 @@ import socorro.unittest.testlib.dbtestutil as dbtutil
 from   socorro.unittest.testlib.testDB import TestDB
 
 import socorro.lib.ConfigurationManager as configurationManager
+import socorro.database.cachedIdAccess as socorro_cia
 
 import cronTestconfig as testConfig
 
@@ -50,6 +51,7 @@ def setup_module():
   fileLogFormatter = logging.Formatter('%(asctime)s %(levelname)s - %(message)s')
   fileLog.setFormatter(fileLogFormatter)
   tcbu.logger.addHandler(fileLog)
+  socorro_cia.logger.addHandler(fileLog)
   me.logger = tcbu.logger
   me.dsn = "host=%s dbname=%s user=%s password=%s" % (me.config.databaseHost,me.config.databaseName,
                                                       me.config.databaseUserName,me.config.databasePassword)
@@ -138,33 +140,30 @@ class TestTopCrashByUrl:
     t = tcbu.TopCrashesByUrl(config)
     data = t.countCrashesPerUrlPerWindow(lastWindowEnd = datetime.datetime(2008,1,1))
     # the following are JUST regression tests: The data has been only very lightly examined to be sure it makes sense.
-    assert 15 ==  len(data), 'This is (just) a regression test. Did you change the data somehow? (%s)'%len(data)
-    assert 2 == data[0][0]
-    for d in data[1:]:
+    assert 24 ==  len(data), 'This is (just) a regression test. Did you change the data somehow? (%s)'%len(data)
+    for d in data:
       assert 1 == d[0]
-
     # test /w/ small maximumUrls
     config = copy.copy(me.config)
     t = tcbu.TopCrashesByUrl(config, maximumUrls=50)
     data = t.countCrashesPerUrlPerWindow(lastWindowEnd = datetime.datetime(2008,1,1))
-    assert 15 == len(data), 'This is (just) a regression test. Did you change the data somehow? (%s)'%len(data)
-    assert 2 == data[0][0]
-    for d in data[1:]:
+    assert 24 == len(data), 'This is (just) a regression test. Did you change the data somehow? (%s)'%len(data)
+    for d in data:
       assert 1 == d[0]
-
     # test /w/ minimumHitsPerUrl larger
     config = copy.copy(me.config)
     t = tcbu.TopCrashesByUrl(config, minimumHitsPerUrl=2)
     data = t.countCrashesPerUrlPerWindow(lastWindowEnd = datetime.datetime(2008,1,1))
-    assert 1 == len(data)
-    assert 2 == data[0][0]
+    assert 24 == len(data), len(data)
+    for d in data:
+      assert 1 == d[0]
     
     # test /w/ shorter window
     config = copy.copy(me.config)
     halfDay = datetime.timedelta(hours=12)
     t = tcbu.TopCrashesByUrl(config, windowSize = halfDay)
     data = t.countCrashesPerUrlPerWindow(lastWindowEnd = datetime.datetime(2008,1,1))
-    assert 10 == len(data), 'This is (just) a regression test. Did you change the data somehow? (%s)'%len(data)
+    assert 12 == len(data), 'This is (just) a regression test. Did you change the data somehow? (%s)'%len(data)
     for d in data:
       assert 1 == d[0]
 
@@ -172,9 +171,10 @@ class TestTopCrashByUrl:
     config = copy.copy(me.config)
     t = tcbu.TopCrashesByUrl(config)
     data = t.countCrashesPerUrlPerWindow(lastWindowEnd = datetime.datetime(2008,1,11))
-    assert 42 == len(data), 'This is (just) a regression test. Did you change the data somehow? (%s)'%len(data)
-    assert 2 == data[0][0]
-    for d in data[1:]:
+    assert 57 == len(data), 'This is (just) a regression test. Did you change the data somehow? (%s)'%len(data)
+    for d in data[:3]:
+      assert 2 == d[0]
+    for d in data[3:]:
       assert 1 == d[0]
 
   def testSaveData(self):
@@ -237,48 +237,44 @@ class TestTopCrashByUrl:
     cursor.execute("SELECT COUNT(id) from top_crashes_by_url")
     self.connection.rollback()
     count = cursor.fetchone()[0]
-    assert 19 == count, 'This is (just) a regression test. Did you change the data somehow? (%s)'%(count)
-
+    assert 35 == count, 'This is (just) a regression test. Did you change the data somehow? (%s)'%(count)
     # expect 80 distinct urls
     cursor.execute("SELECT COUNT(distinct urldims_id) from top_crashes_by_url")
     self.connection.rollback()
     count = cursor.fetchone()[0]
-    assert 15 == count, 'This is (just) a regression test. Did you change the data somehow? (%s)'%(count)
+    assert 21 == count, 'This is (just) a regression test. Did you change the data somehow? (%s)'%(count)
 
-    # expect 6 multiples: 3 2's and 3 3's
     cursor.execute("SELECT count from top_crashes_by_url where count > 1 order by count")
     self.connection.rollback()
     data = cursor.fetchall()
-    assert [(2,)] == data, 'This is (just) a regression test. Did you change the data somehow?'
+    assert [(2,),(2,),(2,)] == data, 'This is (just) a regression test. Did you change the data somehow? (%s)'%(str(data))
 
     cursor.execute("SELECT COUNT(top_crashes_by_url_id) from top_crashes_by_url_signature")
     self.connection.rollback()
     count = cursor.fetchone()[0]
-    assert 20 == count, 'This is (just) a regression test. Did you change the data somehow? (%s)'%(count)
+    assert 38 == count, 'This is (just) a regression test. Did you change the data somehow? (%s)'%(count)
 
     cursor.execute("SELECT COUNT(distinct top_crashes_by_url_id) from top_crashes_by_url_signature")
     self.connection.rollback()
     count = cursor.fetchone()[0]
-    assert 19 == count, 'This is (just) a regression test. Did you change the data somehow? (%s)'%(count)
+    assert 35 == count, 'This is (just) a regression test. Did you change the data somehow? (%s)'%(count)
 
     # Expect 3 rows with sums of 2 and three rows with counts of 2, none with both
     cursor.execute("SELECT count, COUNT(top_crashes_by_url_id) AS sum FROM top_crashes_by_url_signature GROUP BY top_crashes_by_url_id, count ORDER BY sum DESC, count DESC LIMIT 6")
     self.connection.rollback()
     data = cursor.fetchall()
     assert 6 == len(data)
-    assert (1,2) == data[0], 'This is (just) a regression test. Did you change the data somehow?'
-    for d in data[1:]:
-      assert (1,1) == d, 'This is (just) a regression test. Did you change the data somehow?'
+    assert [(1, 2L), (1, 2L), (1, 2L), (1, 1L), (1, 1L), (1, 1L)] == data, 'This is (just) a regression test. Did you change the data somehow? (%s)'%(str(data))
 
     cursor.execute("SELECT count(*) from topcrashurlfactsreports")
     self.connection.rollback()
     count = cursor.fetchone()[0]
-    assert 20 == count, 'This is (just) a regression test. Did you change the data somehow? (%s)'%(count)
+    assert 38 == count, 'This is (just) a regression test. Did you change the data somehow? (%s)'%(count)
     
     cursor.execute("SELECT COUNT(topcrashurlfacts_id) AS sum FROM topcrashurlfactsreports GROUP BY topcrashurlfacts_id ORDER BY sum DESC LIMIT 7")
     self.connection.rollback()
     data = cursor.fetchall()
-    assert [(2,),(1,),(1,),(1,),(1,),(1,),(1,)] == data, 'This is (just) a regression test. Did you change the data somehow?'
+    assert [(2L,), (2L,), (2L,), (1L,), (1L,), (1L,), (1L,)] == data, 'This is (just) a regression test. Did you change the data somehow? (%s)'%(str(data))
 
   def testProcessIntervals(self):
     """
@@ -300,21 +296,20 @@ class TestTopCrashByUrl:
 
     t.processIntervals(windowStart = datetime.datetime(2008,1,1), windowEnd=datetime.datetime(2008,1,6))
 
-    # expect 97 rows
     cursor.execute("SELECT COUNT(id) from top_crashes_by_url")
     self.connection.rollback()
     count = cursor.fetchone()[0]
-    assert 18 == count, 'This is (just) a regression test. Did you change the data somehow? (%s)'%(count)
+    assert 35 == count, 'This is (just) a regression test. Did you change the data somehow? (%s)'%(count)
 
     cursor.execute("SELECT COUNT(*) from top_crashes_by_url_signature")
     self.connection.rollback()
     count = cursor.fetchone()[0]
-    assert 19 ==  count, 'This is (just) a regression test. Did you change the data somehow? (%s)'%(count)
+    assert 38 ==  count, 'This is (just) a regression test. Did you change the data somehow? (%s)'%(count)
 
     cursor.execute("SELECT COUNT(*) from topcrashurlfactsreports")
     self.connection.rollback()
     count = cursor.fetchone()[0]
-    assert 19 == count, 'This is (just) a regression test. Did you change the data somehow? (%s)'%(count)
+    assert 38 == count, 'This is (just) a regression test. Did you change the data somehow? (%s)'%(count)
 
     cursor.execute("delete from top_crashes_by_url; delete from top_crashes_by_url_signature; delete from topcrashurlfactsreports")
     self.connection.commit()
@@ -324,17 +319,17 @@ class TestTopCrashByUrl:
     cursor.execute("SELECT COUNT(id) from top_crashes_by_url")
     self.connection.rollback()
     count = cursor.fetchone()[0]
-    assert 22 == count, 'This is (just) a regression test. Did you change the data somehow? (%s)'%(count)
+    assert 31 == count, 'This is (just) a regression test. Did you change the data somehow? (%s)'%(count)
 
     cursor.execute("SELECT COUNT(*) from top_crashes_by_url_signature")
     self.connection.rollback()
     count = cursor.fetchone()[0]
-    assert 22 == count, 'This is (just) a regression test. Did you change the data somehow? (%s)'%(count)
+    assert 32 == count, 'This is (just) a regression test. Did you change the data somehow? (%s)'%(count)
 
     cursor.execute("SELECT COUNT(*) from topcrashurlfactsreports")
     self.connection.rollback()
     count = cursor.fetchone()[0]
-    assert 22 == count, 'This is (just) a regression test. Did you change the data somehow? (%s)'%(count)
+    assert 32 == count, 'This is (just) a regression test. Did you change the data somehow? (%s)'%(count)
 
     cursor.execute("delete from top_crashes_by_url; delete from top_crashes_by_url_signature; delete from topcrashurlfactsreports")
     self.connection.commit()
@@ -344,16 +339,16 @@ class TestTopCrashByUrl:
     cursor.execute("SELECT COUNT(id) from top_crashes_by_url")
     self.connection.rollback()
     count = cursor.fetchone()[0]
-    assert 346 == count, 'This is (just) a regression test. Did you change the data somehow? (%s)'%(count)
+    assert 483 == count, 'This is (just) a regression test. Did you change the data somehow? (%s)'%(count)
 
     cursor.execute("SELECT COUNT(*) from top_crashes_by_url_signature")
     self.connection.rollback()
     count = cursor.fetchone()[0]
-    assert 369 == count, 'This is (just) a regression test. Did you change the data somehow? (%s)'%(count)
+    assert 514 == count, 'This is (just) a regression test. Did you change the data somehow? (%s)'%(count)
 
     cursor.execute("SELECT COUNT(*) from topcrashurlfactsreports")
     self.connection.rollback()
     count = cursor.fetchone()[0]
-    assert 369 == count, 'This is (just) a regression test. Did you change the data somehow? (%s)'%(count)
+    assert 514 == count, 'This is (just) a regression test. Did you change the data somehow? (%s)'%(count)
 
     

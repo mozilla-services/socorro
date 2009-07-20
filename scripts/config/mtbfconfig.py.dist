@@ -12,16 +12,29 @@ debug.default = False
 debug.singleCharacter = 'D'
 debug.fromStringConverter = cm.booleanConverter
 
-initMode = cm.Option()
-initMode.doc = 'Use this the first time you run the script.'
-initMode.default = False
-initMode.singleCharacter = 'I'
-initMode.fromStringConverter = cm.booleanConverter
+slotSizeMinutes = cm.Option()
+slotSizeMinutes.doc = 'number of minutes per processing slot'
+slotSizeMinutes.default = 60*24 #minutes per day
+slotSizeMinutes.singleCharacter = 's'
+
+slotEnd = cm.Option()
+slotEnd.doc = 'Datetime that ends the processing slot'
+slotEnd.default = datetime.date.today()
+slotEnd.fromStringConverter = cm.dateTimeConverter
+slotEnd.singleCharacter = 'e'
 
 processingDay = cm.Option()
 processingDay.doc = 'Day to process in (YYYY-MM-DD) format'
 processingDay.default = (datetime.date.today() - datetime.timedelta(1)).isoformat() # yesterday
 processingDay.singleCharacter = 'd'
+
+startDate = cm.Option()
+startDate.fromStringConverter = cm.dateTimeConverter
+startDate.doc = 'Datetime to begin processing, in (YYYY-MM-DD [hh:mm]) format'
+
+endDate = cm.Option()
+endDate.fromStringConverter = cm.dateTimeConverter
+endDate.doc = 'First datetime moment not to process, in (YYYY-MM-DD [hh:mm]) format'
 
 logFilePathname = cm.Option()
 logFilePathname.doc = 'full pathname for the log file'

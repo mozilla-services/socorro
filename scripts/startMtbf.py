@@ -39,8 +39,8 @@ logger.info("current configuration\n%s", str(configContext))
 
 try:
   before = time.time()
-  mtbf.calculateMtbf(configContext, logger)
-  logger.info("Successfully ran in %d seconds" % (time.time() - before))
+  count = mtbf.processIntervals(configContext, logger)
+  logger.info("Successfully handled %d intervals in %d seconds", count, (time.time() - before))
 finally:
   logger.info("done.")
   rotatingFileLog.flush()

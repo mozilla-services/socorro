@@ -49,7 +49,7 @@ def calculateMtbf(configContext, logger, **kwargs):
   try:
     databaseDSN = "host=%(databaseHost)s dbname=%(databaseName)s user=%(databaseUserName)s password=%(databasePassword)s" % configContext
     conn = psycopg2.connect(databaseDSN)
-    cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    cur = conn.cursor()
   except:
     soc_util.reportExceptionAndAbort(logger)
   oneDay = datetime.timedelta(days=1)
@@ -137,6 +137,47 @@ def calculateMtbf(configContext, logger, **kwargs):
     # For properly configured products, this shouldn't happen very often
     logger.warn("No facts aggregated for day %s"%aDay)
     conn.rollback()
+
+def processIntervals(configContext, logger, **kwargs):
+  """
+  call calculateMtbf repeatedly for each slot in the provided range preferring config data in this order:
+   from startDate /else/ processingDay /else/ slotEnd - slotSize
+     if startDate: to endDate /else/ midnight before now()
+     if processingDay: to end of processingDay
+     if slotEnd: to slotEnd
+  Other kwargs/context values are passed unchanged to calculateMtbf
+  """
+  context = {}
+  context.update(configContext)
+  context.update(kwargs)
+  slotSizeMinutes = context.get('slotSizeMinutes',24*60)
+  slotSize = datetime.timedelta(minutes=slotSizeMinutes)
+  startDate = context.get('startDate')
+  processingDay = context.get('processingDay')
+  slotEnd = context.get('slotEnd')
+  if startDate:
+    endDate = context.get('endDate')
+    if not endDate:
+      myMidnight = datetime.datetime.now().replace(hour=0,minute=0,second=0,microsecond=0)
+      endDate = myMidnight - datetime.deltatime(days=1)
+  elif processingDay:
+    startDate = datetime.datetime.fromtimestamp(time.mktime(processingDay.timetuple()))
+    endDate = startDate + datetime.deltatime(days=1)
+  elif slotEnd:
+    startDate = slotEnd - datetime.deltatime(minutes=slotSizeMinutes)
+  else:
+    logger.warn("Must provide startDate or processingDay or slotEnd. Quitting")
+    return 0
+
+  slotEnd = startDate + slotSize
+  kwargs.setdefault('slotSizeMinutes',slotSizeMinutes)
+  count = 0
+  while slotEnd < endDate:
+    kwargs['slotEnd'] = slotEnd
+    calculateMtbf(configContext,logger,**kwargs)
+    slotEnd += slotSize
+    count += 1
+  return count
 
 def getProductsToUpdate(cur, conf, logger):
   params = {

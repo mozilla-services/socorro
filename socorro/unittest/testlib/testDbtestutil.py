@@ -330,5 +330,34 @@ def testFillDimsTables_MyData():
     for inst in toBeCleanedInstances:
       inst._createSelf(cursor)
     me.connection.commit()
-    
 
+def testMoreUrl():
+  global me
+  noneGen = dbtu.moreUrl(False)
+  for i in range(100):
+    assert None == noneGen.next()
+
+  allGen = dbtu.moreUrl(True,0)
+  setAll = set()
+  for i in range(40000):
+    setAll.add(allGen.next())
+  assert 2001 > len(setAll)
+  assert 1998 < len(setAll)
+
+  someGen5 = dbtu.moreUrl(True,5)
+  set5 = set()
+  for i in range(100):
+    set5.add(someGen5.next())
+  assert 5 >= len(set5)
+  
+  someGen100 = dbtu.moreUrl(True,100)
+  set100 = set()
+  for i in range(500):
+    set100.add(someGen100.next())
+  assert 100 >= len(set100)
+
+  tooGen = dbtu.moreUrl(True,40000)
+  setToo = set()
+  for i in range(40000):
+    setToo.add(tooGen.next())
+  assert setToo == setAll

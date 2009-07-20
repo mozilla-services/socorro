@@ -13,9 +13,22 @@ debug.singleCharacter = 'D'
 debug.fromStringConverter = cm.booleanConverter
 
 processingDay = cm.Option()
-processingDay.doc = 'Day to process in (YYYY-MM-DD) format'
+processingDay.doc = 'One day to process in (YYYY-MM-DD) format'
 processingDay.default = (datetime.date.today() - datetime.timedelta(1)).isoformat() # yesterday
 processingDay.singleCharacter = 'd'
+processingDay.fromStringConverter = cm.dateTimeConverter
+
+windowStart = cm.Option()
+windowStart.doc = 'Process all intervals starting with this datetime (YYYY-MM-DD [hh:mm])'
+windowStart.default = None
+windowStart.singleCharacter = 's'
+windowStart.fromStringConverter = cm.dateTimeConverter
+
+windowEnd = cm.Option()
+windowEnd.doc = 'Process all intervals up to this datetime (YYYY-MM-DD [hh:mm])'
+windowEnd.default = None
+windowEnd.singleCharacter = 'e'
+windowEnd.fromStringConverter = cm.dateTimeConverter
 
 logFilePathname = cm.Option()
 logFilePathname.doc = 'full pathname for the log file'

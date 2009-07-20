@@ -46,7 +46,7 @@ class TopCrashesByUrl(object):
    - topCrashesByUrlTable to change the name of the facts table
    - topCrashesByUrlSignatureTable for the signature correlation table
    - topCrashesByUrlReportsTable for the reports correlation table
-   - minimumHitsPerUrl: default 1
+   - minimumHitsPerUrl: default 1 (ignored)
    - maximumUrls: default 500
    - dateColumn: default 'date_processed' (in reports table)
    - windowSize: default exactly one day
@@ -59,14 +59,10 @@ class TopCrashesByUrl(object):
   def __init__(self, configContext, **kwargs):
     super(TopCrashesByUrl, self).__init__()
     configContext.update(kwargs)
-    try:
-      assert "databaseHost" in configContext, "databaseHost is missing from the configuration"
-      assert "databaseName" in configContext, "databaseName is missing from the configuration"
-      assert "databaseUserName" in configContext, "databaseUserName is missing from the configuration"
-      assert "databasePassword" in configContext, "databasePassword is missing from the configuration"
-      # Be sure self.connection is fully committed, rolled back or better yet closed before you quit!
-    except (psycopg2.OperationalError, AssertionError),x:
-      socorro_util.reportExceptionAndAbort(logger)
+    assert "databaseHost" in configContext, "databaseHost is missing from the configuration"
+    assert "databaseName" in configContext, "databaseName is missing from the configuration"
+    assert "databaseUserName" in configContext, "databaseUserName is missing from the configuration"
+    assert "databasePassword" in configContext, "databasePassword is missing from the configuration"
     self.configContext = configContext
     self.dsn = "host=%(databaseHost)s dbname=%(databaseName)s user=%(databaseUserName)s password=%(databasePassword)s" % configContext
     self.connection = psycopg2.connect(self.dsn)
@@ -76,11 +72,16 @@ class TopCrashesByUrl(object):
     configContext.setdefault('topCrashesByUrlTable',topCrashesByUrlTable)
     configContext.setdefault('topCrashesByUrlSignatureTable',topCrashesByUrlSignatureTable)
     configContext.setdefault('topCrashesByUrlReportsTable',topCrashesByUrlReportsTable)
-    configContext.setdefault('minimumHitsPerUrl',1)
+    configContext.setdefault('minimumHitsPerUrl',1) # ignored
     configContext.setdefault('maximumUrls',500)
+    # There's an issue with diff between raw and cooked urls (cooked: drop from '?' to end)
+    # Based on exhastive analysis of three data points, want 15% more to cover. Pad to 20%
+    # *** THIS IS A HACK ***:
+    configContext.setdefault('fatMaximumUrls',configContext.maximumUrls + configContext.maximumUrls/5)
     configContext.setdefault('dateColumn','date_processed')
     configContext.setdefault('windowSize',datetime.timedelta(days=1))
     self.idCache = None
+    logger.info("After constructor, config=\n%s",str(configContext))
 
   def getNextAppropriateWindowStart(self, lastWindowEnd=None):
     """
@@ -133,12 +134,11 @@ class TopCrashesByUrl(object):
     topUrlSql = """SELECT COUNT(r.id), r.url FROM %(reportsTable)s r
                      JOIN productdims p ON r.product = p.product AND r.version = p.version
                      JOIN product_visibility cfg ON p.id = cfg.productdims_id
-                     WHERE r.url IS NOT NULL AND r.%(dateColumn)s >= %%(startDate)s AND r.%(dateColumn)s < %%(endDate)s
+                     WHERE r.url IS NOT NULL AND %%(startDate)s <= r.%(dateColumn)s AND r.%(dateColumn)s < %%(endDate)s
                      AND cfg.start_date <= r.%(dateColumn)s AND r.%(dateColumn)s <= cfg.end_date
                      GROUP BY r.url
-                     HAVING count(r.id) >= %(minimumHitsPerUrl)s
                      ORDER BY COUNT(r.id) desc
-                     LIMIT %(maximumUrls)s"""%(self.configContext)
+                     LIMIT %(fatMaximumUrls)s"""%(self.configContext) # fatMaximumUrls is a HACK to assure enough cooked urls
     cur.execute(topUrlSql,selector)
     data = cur.fetchall() # count (implicit rank) and url here.
     self.connection.rollback() # per suggestion in psycopg mailing list: Rollback if no db modification
@@ -164,13 +164,15 @@ class TopCrashesByUrl(object):
     """
     if not countUrlData:
       return 0
-    selectSql = """SELECT COUNT(r.id), %%(windowEnd)s, %%(windowSize)s, p.id, o.id, r.signature, r.uuid, r.user_comments
-                     FROM %(reportsTable)s r JOIN productdims p on r.product = p.product AND r.version = p.version
-                                    JOIN osdims o on r.os_name = o.os_name AND r.os_version = o.os_version
-                     WHERE %%(windowStart)s <= r.%(dateColumn)s
-                       AND r.%(dateColumn)s < %%(windowEnd)s
-                       AND r.url = %%(fullUrl)s
-                     GROUP BY p.id, o.id, r.signature, r.uuid, r.user_comments""" % (self.configContext)
+    # No need to get the count: It is always exactly 1 because uuid is unique and we group by it.
+    selectSql = """SELECT %%(windowEnd)s, %%(windowSize)s, p.id as prod, o.id as os, r.signature, r.uuid, r.user_comments
+                     FROM %(reportsTable)s r
+                     JOIN productdims p on r.product = p.product AND r.version = p.version
+                     JOIN osdims o on r.os_name = o.os_name AND r.os_version = o.os_version
+                    WHERE %%(windowStart)s <= r.%(dateColumn)s AND r.%(dateColumn)s < %%(windowEnd)s
+                      AND r.url = %%(fullUrl)s
+                    GROUP BY prod, os, r.signature, r.uuid, r.user_comments
+                    """ % (self.configContext)
     getIdSql = """SELECT lastval()"""
     insertUrlSql = """INSERT INTO %(topCrashesByUrlTable)s (count, urldims_id, productdims_id, osdims_id, window_end, window_size)
                       VALUES (%%(count)s,%%(urldimsId)s,%%(productdimsId)s,%%(osdimsId)s,%%(windowEnd)s,%%(windowSize)s)""" % (self.configContext)
@@ -183,52 +185,67 @@ class TopCrashesByUrl(object):
       'windowEnd': windowStart + self.configContext.windowSize,
       'windowSize': self.configContext.windowSize,
       }
-    insertCount = 0
     cursor = self.connection.cursor()
     insData = {}
+    urldimsIdSet = set()
     for expectedCount,fullUrl in countUrlData:
-      urldimsId = self.getUrlId(fullUrl)
+      urldimsId = self.getUrlId(fullUrl) # updates urldims if needed
+      urldimsIdSet.add(urldimsId)
       if not urldimsId:
         continue
       selector = {'fullUrl':fullUrl}
       selector.update(windowData)
       cursor.execute(selectSql,selector)
       self.connection.rollback() # didn't modify, so rollback is enough
-      data = cursor.fetchall() #
-      for (count, windowEnd, windowSize, productdimsId, osdimsId, signature, uuid, comment) in data:
+      data = cursor.fetchall()
+      for (windowEnd, windowSize, productdimsId, osdimsId, signature, uuid, comment) in data:
         key = (productdimsId,urldimsId,osdimsId)
-        insData.setdefault(key,{'count':0,'signatures':[], 'uuidAndComments':[]})
-        insData[key]['count'] += count # Count all urls that had a crash
-        if signature:
-          insData[key]['signatures'].append((count,signature)) # but don't handle empty signatures
+        insData.setdefault(key,{'count':0,'signatures':{}, 'uuidAndComments':[]})
+        insData[key]['count'] += 1 # Count all urls that had a crash
+        if signature: #don't handle empty signatures
+          insData[key]['signatures'].setdefault(signature,0)
+          insData[key]['signatures'][signature] += 1
         if uuid or comment: # always True, because uuid, but what the heck.
           insData[key]['uuidAndComments'].append((uuid,comment))
+      if len(urldimsIdSet) > self.configContext.maximumUrls:
+        break
+    insertCount = 0
     try:
       # Looping 'quite awhile' without closing transaction. Rollback *should* revert everything except urldims which is benign
       # 'quite awhile' is up to 500 urls with up to (maybe nine or ten thousand?) correlations total. So ~~ 10K rows awaiting commit()
       signatureCorrelationData = []
       uuidCommentCorrelationData = []
+      aKey = None
+      stage = "in pre-loop"
       for key in insData:
+        aKey = key
+        stage = "inserting url crash for %s"%(str(aKey))
         # the next line overwrites prior values (except the first time through)  with current values
         selector.update({'count':insData[key]['count'],'productdimsId':key[0],'urldimsId':key[1],'osdimsId':key[2]})
         # save the 'main' facts
         cursor.execute(insertUrlSql,selector)
         # grab the new row id
+        stage = "getting new row id for %s"%(str(aKey))
         cursor.execute(getIdSql)
         newId = cursor.fetchone()[0]
+        stage = "calculating secondary data for %s"%(str(aKey))
         # update data for correlations tables
-        for count,signature in insData[key]['signatures']:
+        for signature,count in insData[key]['signatures'].items():
           signatureCorrelationData.append([newId,signature,count])
         for uuid,comment in insData[key]['uuidAndComments']:
           uuidCommentCorrelationData.append([uuid,comment,newId])
         insertCount += 1
       # end of loop over keys in insData
       # update the two correlation tables
+      stage = "inserting signature correlations for %s"%(str(aKey))
       cursor.executemany(insertSigSql,signatureCorrelationData)
+      stage = "inserting uuid correlations for %s"%(str(aKey))
       cursor.executemany(insertUuidSql,uuidCommentCorrelationData)
+      stage = "commiting updates for %s"%(str(aKey))
       self.connection.commit()
       logger.info("Committed data for %s crashes for period %s up to %s",insertCount,windowStart,windowData['windowEnd'])
     except Exception,x:
+      logger.warn("Exception while %s",stage)
       self.connection.rollback()
       socorro_util.reportExceptionAndAbort(logger)
     return insertCount
@@ -252,15 +269,15 @@ class TopCrashesByUrl(object):
     if not outerEnd and pd:
       outerEnd = outerStart +self.configContext.get('windowSize')
     startTime = outerStart
+    logger.info("Starting loop from %s up to %s step %s",startTime.isoformat(),outerEnd.isoformat(),self.configContext.windowSize)
     while startTime and startTime < outerEnd:
       data = self.countCrashesPerUrlPerWindow(startTime)
-      logger.info("Looking at %s items in window starting at %s",len(data),startTime)
-      if not data:
-        # _maybe_ we just hit a blank spot in reportsTable. Advance and retry
-        startTime += self.configContext.windowSize
-        logger.info("Window at %s had no data. Trying next window",startTime)
-        continue
-      self.saveData(startTime,data)
+      if data:
+        logger.info("Saving %s items in window starting at %s",len(data),startTime)
+        self.saveData(startTime,data)
+      else:
+        logger.info("Window starting at %s had no data",startTime)
+      # whether or not we saved some data, advance to next slot
       startTime += self.configContext.windowSize
     logger.info("Done processIntervals")
     self.configContext = keepConfigContext
