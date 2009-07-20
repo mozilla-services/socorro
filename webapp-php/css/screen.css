@@ -183,7 +183,7 @@ html {
 			left: auto;
 			right: .25em;
 			-moz-border-radius: .5em 0 .5em .5em;
-			-moz-column-count: 2; /*  TODO: Equal to the number of Products in the "Other" Drop down. This should be generated server side or via JS */
+			-moz-column-count: 3; /*  TODO: Equal to the number of Products in the "Other" Drop down. This should be generated server side or via JS */
 			-moz-column-gap: 0;
 			-moz-column-rule: 1px solid #406080;
 			}
