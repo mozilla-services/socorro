@@ -5,6 +5,7 @@
 set_include_path(APPPATH . 'vendor' . PATH_SEPARATOR . get_include_path());
 
 require_once(Kohana::find_file('libraries', 'MY_QueryFormHelper', TRUE, 'php'));
+require_once(Kohana::find_file('libraries', 'release', TRUE, 'php'));
 require_once(Kohana::find_file('libraries', 'socorro_cookies', TRUE, 'php'));
 
 class Controller extends Controller_Core {
@@ -302,16 +303,35 @@ class Controller extends Controller_Core {
         if (is_null($this->chosen_version)) {
 	    $cv = cookie::get(Socorro_Cookies::CHOSEN_VERSION);
 	    if (is_null($cv)) {
-	        foreach ($curProds as $product => $releases) {
-
-		    foreach (array_reverse($releases) as $release => $version) {
-		        $this->_chooseVersion(array('product' => $product,
-						    'version' => $version,
-						    'release' => $release), $set_cookie);
-			break;
+	        $defaultProduct = Kohana::config('dashboard.default_product');
+		Kohana::log('info', $defaultProduct);
+	        if ($defaultProduct && array_key_exists($defaultProduct, $curProds)) {
+		    $product = $defaultProduct;
+		    $releases = $curProds[$defaultProduct];
+		    if (array_key_exists(Release::MAJOR, $releases)) {
+		        $version = $releases[Release::MAJOR];
+		    } elseif (array_key_exists(Release::MILESTONE, $releases)) {
+		        $version = $releases[Release::MILESTONE];
+		    } else {
+		        $version = $releases[Release::DEVELOPMENT];
 		    }
-		    break;
-		}
+		    $r = new Release;
+		    $release = $r->typeOfRelease($version);
+		    $this->_chooseVersion(array('product' => $product,
+		   			        'version' => $version,
+					        'release' => $release), $set_cookie);
+	        } else {
+		    Kohana::log('debug', "config/dashboard.php no default_product set, using first project / version");
+	            foreach ($curProds as $product => $releases) {
+		        foreach (array_reverse($releases) as $release => $version) {
+		            $this->_chooseVersion(array('product' => $product,
+			    			        'version' => $version,
+						        'release' => $release), $set_cookie);
+			    break;
+		        }
+		        break;
+		    }
+	        }
 	    } else {
 	        $version_info = array();
 		parse_str($cv, $version_info);
