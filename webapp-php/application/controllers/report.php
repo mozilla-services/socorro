@@ -111,9 +111,10 @@ class Report_Controller extends Controller {
     /**
      * Fetch and display a single report.
      */
-    public function index($uuid) {
-        // Validate UUID to make sure there aren't any bullshit characters in it.
-        if (!preg_match('/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/', $uuid) ) {
+    public function index($id) {
+        $crash = new Crash();
+        $uuid = $crash->parseUUID($id);
+        if ($uuid == FALSE ) {
             return Event::run('system.404');
         }
 
@@ -157,8 +158,10 @@ class Report_Controller extends Controller {
     /**
      * Wait while a pending job is processed.
      */
-    public function pending($uuid) {
-        if (!$uuid || !preg_match('/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/', $uuid)) {
+    public function pending($id) {
+        $crash = new Crash();
+        $uuid = $crash->parseUUID($id);
+        if ($uuid == FALSE) {
             Kohana::log('alert', "Improper UUID format for $uuid doing 404");
             return Event::run('system.404');
         }
