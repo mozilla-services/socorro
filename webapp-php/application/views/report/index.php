@@ -206,11 +206,10 @@
             <?php endforeach ?>
         </table>
     <?php endif ?>
-    </div>
+    </div><!-- /modules -->
 
     <div id="rawdump">
         <div class="code"><?php out::H($report->dump) ?></div>
     </div>
-</div><!-- /details -->
 
 </div> <!-- /report-index -->

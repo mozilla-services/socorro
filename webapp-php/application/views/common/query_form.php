@@ -96,7 +96,7 @@
 	  </ul> <!-- /stack -->
 	</li></ul>
       </li>
-      <li id="gofilter"><button type="submit" name="do_query" value="1">Filter Crash Reports</button></a></li>
+      <li id="gofilter"><button type="submit" name="do_query" value="1">Filter Crash Reports</button></li>
 
     </ul>
     </fieldset>

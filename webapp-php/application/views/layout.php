@@ -23,8 +23,10 @@
                 <span>Mozilla Crash Reports</span>
             </a></h1>
 		<form id="simple-search" method="get" action="<?= url::base() ?>query/simple">
+	            <fieldset>
                             <input type="text" name="q" value="Crash ID or Signature" />
                             <input type="submit" class="hidden" />
+	            </fieldset>
                         </form>
                <ul id="top-nav" class="shortcuts">
                     <!-- li>Quick Links:</li -->
@@ -43,7 +45,7 @@
                                 <li><a href="<?= url::base()?>query/query?do_query=1&amp;product=<?= urlencode($prod) ?>&amp;version=<?= urlencode($prod . ':' . $version) ?>"><span class="release-type"><?= ucwords($release) ?></span> (<span class="version"><?= $version ?></span>)</a></li>
                         <?php } ?>
 				<li class="more"><a href="<?= url::base() ?>query/query?do_query=1&amp;product=<?= urlencode($prod) ?>">More Versions</a></li>
-                          </ul>
+                          </ul><!-- /product-versions -->
 			  </div>
                           </li><!-- /product -->
 
@@ -66,10 +68,12 @@
 			               ><span class="release-type"><?= ucwords($release) ?></span> (<span class="xversion"><?= $version ?></span>)</a></li>
                         <?php } ?>
 				  <li class="more"><a href="<?= url::base() ?>query/query?do_query=1&amp;product=<?= urlencode($prod) ?>">More Versions</a></li>
-                              </ul>
+			   </ul><!-- /xproduct-versions -->		          
+
                      <?php
                       }			  
                       ?>
+
 			 </div><!-- /large -->
                       </li><!-- /more -->
  		      <li class="separated"><strong>Trend Reports &#9662;</strong>
@@ -89,20 +93,13 @@
 		      </li>
 		      <li class="separated"><a href="<?= url::base() ?>query/query">Advanced Search</a></li>
                 </ul>
-
-                   
-                   
-                        
-                    
-                </ul>
-
-	   </div>
+	   </div><!-- /header-wrapper -->
           </div> <!-- /page-header -->
       
         <div id="mainbody">
- 	  <?php echo $content ?></div>
+ 	  <?php echo $content ?>
 
-        </div> <!-- /PAGE -->
+        </div> <!-- /mainbody -->
 	
         <div id="footer">
 	    <div id="footer-links">
@@ -112,8 +109,8 @@
                 <li><a href="http://code.google.com/p/socorro/source">Get the Source</a></li>
                 <li><a href="http://wiki.mozilla.org/Breakpad">Breakpad Wiki</a></li>
             </ul>
-	    </div>
-        </div><!-- /FOOTER -->
+	    </div><!-- footer-links -->
+       </div><!-- /FOOTER -->
 
     </body>
 </html>
