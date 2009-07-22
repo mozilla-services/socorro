@@ -86,7 +86,6 @@
 			                                                     >Top Crashes By URL</a></li>
 			<li id="topcrash-bydomain" class="trend-report-link"><a href="<?= url::base() ?>topcrasher/bydomain/<?= $chosen_version['product'] ?>/<?= $chosen_version['version'] ?>"
 									        >Top Crashes By Domain</a></li>
-     		        <li id="mtbf" class="trend-report-link"><a href="<?= url::base() ?>mtbf/of/<?= $chosen_version['product'] ?>/<?= $chosen_version['release'] ?>">Mean Time Before FAIL</a></li>
 		</ul>
     		        </div>
 

@@ -1,5 +1,6 @@
 <?php defined('SYSPATH') or die('No direct script access.');
-$config['default_product'] = "Firefox";
+$config['default_product'] = "
+Firefox";
 $config['topcrashbysig_numberofsignatures'] = 3;
 $config['topcrashbysig_featured'] = array(
     array('product' => 'Firefox',         'version' => '3.6a1pre'),
@@ -10,7 +11,7 @@ $config['topcrashbysig_featured'] = array(
 );
 $config['topcrashbyurl_numberofurls'] = 3;
 $config['topcrashbyurl_featured'] = array(
-    array('product' => 'Firefox',         'version' => '3.0b4pre')
+    array('product' => 'Firefox',         'version' => '3.5')
 );
 $config['mtbf_featured'] = array(
     array('product' => 'Firefox',     'release' => 'development'),
