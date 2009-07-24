@@ -1,16 +1,17 @@
 import re
 from operator import itemgetter
 import logging
-logger = logging.getLogger("cachedIdAccess")
+import sys
 import threading
 import time
 
 import psycopg2
 
-maxOsIdCacheLength = 1024
-maxProductIdCacheLength = 1024
-#maxSignatureIdCacheLength = 0
-maxUriIdCacheLength = 0
+logger = logging.getLogger("cachedIdAccess")
+
+maxOsIdCacheLength = 2048
+maxProductIdCacheLength = 256
+maxUriIdCacheLength = 32768
 osIdCache = None     # may become {(os_name,os_version): osdims_id}
 osIdCount = None     # may become {(os_name,os_version): count_of_cache_hits}
 productIdCache = None # may become {(product_name,version_string): productdims_id}
@@ -79,6 +80,9 @@ def shrinkIdCache(cacheMap, cacheCount, oneKeyToSave=None):
 
 #=================================================================================================================
 class IdCache:
+  linuxLineRE = re.compile(r'0\.0\.0 [lL]inux.+[lL]inux$|[0-9.]+.+(i586|i686|sun4u|i86pc|x86_64)')
+  linuxVersionRE = re.compile(r'(0\.0\.0 [lL]inux.)?([0-9.]+[0-9]).*(i586|i686|sun4u|i86pc|x86_64).*')
+
   def __init__(self,databaseCursor):
     self.cursor = databaseCursor
     self.initializeCache()
@@ -120,7 +124,7 @@ class IdCache:
         pass
     if not id:
       self.cursor.execute(getSql,sqlKey)
-      self.cursor.connection.commit()
+      self.cursor.connection.rollback() # we didn't change the data, no need to commit
       try:
         id = self.cursor.fetchone()[0]
         if None != cacheMap:
@@ -213,18 +217,39 @@ class IdCache:
     return productId
 
   #-----------------------------------------------------------------------------------------------------------------
+  def getAppropriateOsVersion(self, name,origVersion):
+    """
+    If this is a linux os, chop out all the gubbish retaining only the actual version numbers
+    and the architecture name
+    """
+    ret = origVersion
+    if 'Linux' != name:
+      pass
+    elif not IdCache.linuxLineRE.match(origVersion):
+      ret = ''
+    else:
+      m = IdCache.linuxVersionRE.sub(r'\2 \3',origVersion)
+      if origVersion == m:
+        ret = ''
+      ret = m
+    return ret
+    
+  #-----------------------------------------------------------------------------------------------------------------
   def getOsId(self,osName,osVersion):
     """
     Get the os id given the name and version. Cache results. Clean cache if length is too great.
     """
     global osIdCache, osIdCount
     osId = None
-    if not osName or not osVersion:
+    if None == osName: return osId
+    oName = osName.strip()
+    if None == osVersion: osVersion = ''
+    oVersion = osVersion.strip()
+    if not oName: # osVersion can be ''
       return osId
-    key = (osName.strip(),osVersion.strip())
+    key = (oName,self.getAppropriateOsVersion(oName,oVersion))
     osId = self.assureAndGetId(key,'osdims',
                                "SELECT id FROM osdims WHERE os_name=%s and os_version=%s",
                                "INSERT INTO osdims (os_name,os_version) VALUES (%s,%s)",
                                 osIdCache, osIdCount)
     return osId
-

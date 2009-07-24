@@ -164,8 +164,8 @@ class TestCachedIdAccess:
     tidc = cia.IdCache(cursor)
     assert None != cia.productIdCache, 'But %s'%(cia.productIdCache)
     assert None != cia.productIdCount, 'But %s'%(cia.productIdCount)
-    assert None == cia.uriIdCache, 'But %s'%(cia.uriIdCache)
-    assert None == cia.uriIdCount, 'But %s'%(cia.uriIdCount)
+    assert None != cia.uriIdCache, 'But %s'%(cia.uriIdCache)
+    assert None != cia.uriIdCount, 'But %s'%(cia.uriIdCount)
     assert None != cia.osIdCache, 'But %s'%(cia.osIdCache)
     assert None != cia.osIdCount, 'But %s'%(cia.osIdCount)
     cia.clearCache()
@@ -178,8 +178,8 @@ class TestCachedIdAccess:
     tidc.initializeCache()
     assert None != cia.productIdCache, 'But %s'%(cia.productIdCache)
     assert None != cia.productIdCount, 'But %s'%(cia.productIdCount)
-    assert None == cia.uriIdCache, 'But %s'%(cia.uriIdCache)
-    assert None == cia.uriIdCount, 'But %s'%(cia.uriIdCount)
+    assert None != cia.uriIdCache, 'But %s'%(cia.uriIdCache)
+    assert None != cia.uriIdCount, 'But %s'%(cia.uriIdCount)
     assert None != cia.osIdCache, 'But %s'%(cia.osIdCache)
     assert None != cia.osIdCount, 'But %s'%(cia.osIdCount)
 
@@ -500,20 +500,27 @@ class TestCachedIdAccess:
     assert {} == cia.osIdCount
     testOss = [
       (('','5.1.2600 SP2'),None),
-      (('Windows NT',''),None),
-      (('Windows NT','5.1.2600 SP2'),1),
-      (('Windows NT','5.1.2600 SP3'),2),
-      (('Windows','5.1.2600 SP2'),3),
-      (('Windows NT','5.1.2600 SP3'),2),
+      (('Windows NT',''),1),
+      (('Windows NT','5.1.2600 SP2'),2),
+      (('Windows NT','5.1.2600 SP3'),3),
+      (('Windows','5.1.2600 SP2'),4),
+      (('Windows NT','5.1.2600 SP3'),3),
+      (('Linux', '0.0.0 Linux 1.2.3 i586 Linux'),5),
+      (('Linux', '1.2.3 i586'),5),
+      (('Linux', '0.0.0 Linux 2.4.6_flitteration x86_64 Linux'),6),
+      (('Linux', '0.0.0 Linux 2.4.6.flapitation x86_64 Linux'),6),
+      (('Linux', '1.2.3 i686'),7),
+      (('Namby', 'wiggle room'),8),
       ]
     rowCount = 0
     idSet = set()
     for p in testOss:
       key = p[0]
       id = idc.getOsId(*p[0])
-      assert p[1] == id
-      if id:
-        assert key in cia.osIdCache, 'Expected cached %s. Woops.'%key
+      assert p[1] == id,'/w/ %s: Expected %s but got %s'%(str(p),p[1],id)
+      if p[1]:
+        trueKey = (p[0][0],idc.getAppropriateOsVersion(*p[0]))
+        assert trueKey in cia.osIdCache, 'Expected cached %s. Woops.'%(str(trueKey))
       if id and not id in idSet:
         rowCount += 1
       idSet.add(id)
@@ -521,3 +528,24 @@ class TestCachedIdAccess:
       data = cursor.fetchone()
       self.connection.commit()
       assert rowCount == data[0]
+
+  def testGetAppropriateOsVersion(self):
+    cursor = self.connection.cursor()
+    idc = cia.IdCache(cursor)
+    testList = [
+      (('','5.1.2600 SP2'),'5.1.2600 SP2'),
+      (('Windows NT',''),''),
+      (('Windows NT','5.1.2600 SP2'),'5.1.2600 SP2'),
+      (('Windows NT','5.1.2600 SP3'),'5.1.2600 SP3'),
+      (('Windows','5.1.2600 SP2'),'5.1.2600 SP2'),
+      (('Windows NT','5.1.2600 SP3'),'5.1.2600 SP3'),
+      (('Linux', '0.0.0 Linux 1.2.3 i586 Linux'),'1.2.3 i586'),
+      (('Linux', '0.0.0 Linux 2.4.6_flitteration x86_64 Linux'),'2.4.6 x86_64'),
+      (('Linux', '0.0.0 Linux 2.4.6.flapitation x86_64 Linux'),'2.4.6 x86_64'),
+      (('Linux', '1.2.3 i686'),'1.2.3 i686'),
+      (('Namby', 'wiggle room'),'wiggle room'),
+      ]
+    for testCase in testList:
+      got = idc.getAppropriateOsVersion(*testCase[0])
+      assert testCase[1] == got,'Expected "%s", got "%s"'%(testCase[1],got)
+    

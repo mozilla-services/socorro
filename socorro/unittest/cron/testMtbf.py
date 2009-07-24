@@ -276,6 +276,7 @@ class TestMtbf(unittest.TestCase):
                    (pdtE, 'Thunderbird', '2.0.0.21', 'Linux', '2.6.27.21 i686'),
                    (pdtE, 'Thunderbird', '2.0.0.21', 'Linux', '2.6.28 i686'),
                    ],
+       'debug':False,
        },
       {'processingDay':pd[0].isoformat(),'product':'Firefox','version':'3.1.1',
        'expected':[(pdtE, 'Firefox', '3.1.1', 'Mac OS X', '10.5.6 9G2110'),
@@ -283,6 +284,7 @@ class TestMtbf(unittest.TestCase):
                    (pdtE, 'Firefox', '3.1.1', 'Linux', '2.6.28 i686'),
                    (pdtE, 'Firefox', '3.1.1', 'Mac OS X', '10.4.10 8R2218'),
                    ],
+       'debug':False,
        },
       {'processingDay':pd[0].isoformat(),'os_name':'Mac OS X',
        'expected':[(pdtE, 'Thunderbird', '2.0.0.21', 'Mac OS X', '10.4.10 8R2218'),
@@ -296,6 +298,7 @@ class TestMtbf(unittest.TestCase):
                    (pdtE, 'Firefox', '3.1.2b', 'Mac OS X', '10.4.10 8R2218'),
                    (pdtE, 'Firefox', '3.1.1', 'Mac OS X', '10.5.6 9G2110'),
                    ],
+       'debug':True,
        },
       {'processingDay':pd[0].isoformat(),'os_name':'Mac OS X','os_version':'10.4.10 8R2218',
        'expected':[(pdtE, 'Thunderbird', '2.0.0.21', 'Mac OS X', '10.4.10 8R2218'),
@@ -304,17 +307,21 @@ class TestMtbf(unittest.TestCase):
                    (pdtE, 'Firefox', '3.1.2b', 'Mac OS X', '10.4.10 8R2218'),
                    (pdtE, 'Firefox', '3.1.1', 'Mac OS X', '10.4.10 8R2218'),
                    ],
+       'debug':True,
        },
       {'processingDay':pd[0].isoformat(),'product':'Thunderbird','os_name':'Mac OS X','os_version':'10.4.10 8R2218',
        'expected':[(pdtE, 'Thunderbird', '2.0.0.21', 'Mac OS X', '10.4.10 8R2218'),],
+       'debug':False,
       },
       {'processingDay':pd[0].isoformat(),'product':'Thunderbird','version':'2.0.0.21',
                                          'os_name':'Mac OS X','os_version':'10.4.10 8R2218',
        'expected':[(pdtE, 'Thunderbird', '2.0.0.21', 'Mac OS X', '10.4.10 8R2218'),],
+       'debug':False,
        },
       {'processingDay':pd[0].isoformat(),'product':'Thunderbird','version':'bogus',
                                          'os_name':'Mac OS X','os_version':'10.4.10 8R2218',
        'expected':[],
+       'debug':False,
        },
       ]
     for testItem in testList:
@@ -328,6 +335,11 @@ class TestMtbf(unittest.TestCase):
       self.connection.commit()
       got = cursor.fetchall()
       assert set(testItem.get('expected')) == set(got),"%s\nEX: %s\nGOT %s"%(self.whichProduct(testItem),testItem.get('expected'),got)
+#       print "EXP: %s, GOT: %s"%(len(testItem.get('expected')), len(set(got)))
+#       if not len(testItem.get('expected')) == len(set(got)):
+#         print "OOPS "*5,self.whichProduct(testItem)
+#         print "GOT - EXPECTED:",set(got)-set(testItem.get('expected'))
+#         print "EXPECTED - GOT:",set(testItem.get('expected'))-set(got)
 
     #check that slotSizeMinutes raises AssertionError unless slotEnd
     goodProcessingDay = self.processingDays[4][0]

@@ -145,7 +145,6 @@ dimsData = {
   ]
 }
 
-
 def fillDimsTables(cursor, data = None):
   """
   By default, use dimsData above. Otherwise, process the provided table.
@@ -176,8 +175,14 @@ def fillMtbfTables(cursor, limit=12):
   if not cursor.fetchone()[0]:
     fillDimsTables(cursor)
   cursor.execute("SELECT p.id, p.product, p.version, p.release, o.id, o.os_name, o.os_version from productdims as p, osdims as o order by o.os_version LIMIT %s"%limit) # MUST use order by to enforce same data from run to run
-  productDimData = cursor.fetchall()
-  cursor.connection.commit()
+  cursor.connection.rollback()
+  tmpDimData = cursor.fetchall()
+  productDimData = []
+  for p in tmpDimData:
+    p = list(p)
+    if 'Linux' == p[5]:
+      p[6] = "0.0.0 Linux %s GNU/Linux"%(p[6])
+    productDimData.append(p)
   versionSet = set([x[2] for x in productDimData]) # lose duplicates
   versions = [x for x in versionSet][:8] # Get the right number
   baseDate = dt.date(2008,1,1)

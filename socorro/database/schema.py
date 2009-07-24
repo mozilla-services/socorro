@@ -648,7 +648,7 @@ class OsDimsTable(Table):
                                           os_name TEXT NOT NULL,
                                           os_version TEXT
                                         );
-                                        CREATE INDEX osdims_name_version_key on osdims (os_name,os_version);
+                                        CREATE UNIQUE INDEX osdims_name_version_key on osdims (os_name,os_version);
                                         """)
 databaseDependenciesForSetup[OsDimsTable] = []
 

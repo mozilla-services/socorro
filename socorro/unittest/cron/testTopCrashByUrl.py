@@ -67,6 +67,7 @@ class TestTopCrashByUrl:
 
   def tearDown(self):
     self.testDB.removeDB(me.config,self.logger)
+    socorro_cia.clearCache()
 
   def testConstructor(self):
     global me
@@ -350,5 +351,6 @@ class TestTopCrashByUrl:
     self.connection.rollback()
     count = cursor.fetchone()[0]
     assert 514 == count, 'This is (just) a regression test. Did you change the data somehow? (%s)'%(count)
+
 
     

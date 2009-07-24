@@ -8,6 +8,7 @@ import time
 import psycopg2
 
 import socorro.lib.util as lib_util
+import socorro.database.cachedIdAccess as socorro_cia
 
 logger = logging.getLogger("topcrasher")
 
@@ -150,17 +151,18 @@ class TopCrashBySignature(object):
     Parameter summaryCrashes is a dictionary that will contain signature:data. Passed as a parameter to allow external looping
     returns (and is in-out parameter) summaryCrashes where for each signature as key, the value is {'count':N,'uptime':N}
     """
+    cur = self.connection.cursor()
+    idCache = socorro_cia.IdCache(cur)
     if startTime > endTime:
       raise ValueError("startTime(%s) must be <= endTime(%s)"%(startTime,endTime))
-    inputColumns = ["uptime", "signature", "productdims_id", "osdims_id"]
+    inputColumns = ["uptime", "signature", "productdims_id", "os_name", "os_version"]
     columnIndexes = dict((x,inputColumns.index(x)) for x in inputColumns)
     cI = columnIndexes # Spare the typing and spoil the editor's line-wrapping
 
-    resultColumnlist = 'r.uptime, r.signature, cfg.productdims_id, o.id'
+    resultColumnlist = 'r.uptime, r.signature, cfg.productdims_id, r.os_name, r.os_version'
     sql = """SELECT %(resultColumnlist)s FROM product_visibility cfg
                 JOIN productdims p on cfg.productdims_id = p.id
                 JOIN reports r on p.product = r.product AND p.version = r.version
-                JOIN osdims o on r.os_name = o.os_name AND r.os_version = o.os_version
               WHERE NOT cfg.ignore AND %%(startTime)s <= r.%(dcolumn)s and r.%(dcolumn)s < %%(endTime)s
               AND   r.%(dcolumn)s >= cfg.start_date AND r.%(dcolumn)s <= cfg.end_date
           """%({'dcolumn':self.dateColumnName, 'resultColumnlist':resultColumnlist})
@@ -174,7 +176,7 @@ class TopCrashBySignature(object):
         chunk = cursor.fetchmany(self.dbFetchChunkSize)
         if chunk and chunk[0]:
           for row in chunk:
-            key = (row[cI['signature']],row[cI['productdims_id']],row[cI['osdims_id']])
+            key = (row[cI['signature']],row[cI['productdims_id']],idCache.getOsId(row[cI['os_name']],row[cI['os_version']]))
             value = summaryCrashes.setdefault(key,copy.copy(zero))
             value['count'] += 1
             value['uptime'] += row[cI['uptime']]
@@ -187,9 +189,6 @@ class TopCrashBySignature(object):
     except:
       self.connection.rollback()
       raise
-
-  osdims_cache = {}
-  productdims_cache = {}
 
   def fixupCrashData(self,crashMap, windowEnd, windowSize):
     """

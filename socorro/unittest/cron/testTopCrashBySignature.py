@@ -232,6 +232,7 @@ class TestTopCrashBySignature(unittest.TestCase):
   def tearDown(self):
     global me
     self.testDB.removeDB(me.config,me.logger)
+    cia.clearCache()
     self.connection.close()
     
   def prepareConfigForPeriod(self,idkeys,startDate,endDate):

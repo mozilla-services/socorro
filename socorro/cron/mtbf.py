@@ -28,6 +28,7 @@ import re
 import psycopg2
 import psycopg2.extras
 
+import socorro.database.cachedIdAccess as socorro_cia
 import socorro.lib.util as soc_util
 
 configTable = 'product_visibility'
@@ -94,49 +95,57 @@ def calculateMtbf(configContext, logger, **kwargs):
       specs.append('p.version = %(version)s')
       sqlDict['version'] = configContext.version
     if 'os_name' in kwargs:
-      specs.append('o.os_name = %(os_name)s')
+      specs.append('r.os_name = %(os_name)s')
       sqlDict['os_name'] = kwargs['os_name']
     elif 'os_name' in configContext and configContext.os_name: # ignore empty
-      specs.append('o.os_name = %(os_name)s')
+      specs.append('r.os_name = %(os_name)s')
       sqlDict['os_name'] = configContext.os_name
     if 'os_version' in kwargs:
-      specs.append('o.os_version = %(os_version)s')
-      sqlDict['os_version'] = kwargs['os_version']
+      specs.append('r.os_version LIKE %(os_version)s')
+      sqlDict['os_version'] = "%%%s%%"%(kwargs['os_version'])
     elif 'os_version' in configContext and configContext.os_version: # ignore empty
-      specs.append('o.os_version = %(os_version)s')
-      sqlDict['os_version'] = configContext.os_version
+      specs.append('r.os_version LIKE %(os_version)s')
+      sqlDict['os_version'] = "%%%s%%"%(configContext.os_version)
     if specs:
       extraWhereClause = ' AND '+' AND '.join(specs)
   sqlDict['extraWhereClause'] = extraWhereClause
   # per ss: mtbf runs for 60 days from the time it starts: Ignore cfg.end
-  sql = """INSERT INTO time_before_failure (sum_uptime_seconds, report_count, productdims_id, osdims_id, window_end, window_size)
-              SELECT SUM(r.uptime) AS sum_uptime_seconds,
-                     COUNT(r.*) AS report_count,
-                     p.id,
-                     o.id,
-                     timestamp %%(windowEnd)s,
-                     interval %%(windowSize)s
-                 FROM reports r JOIN productdims p ON r.product = p.product AND r.version = p.version
-                                JOIN osdims o on r.os_name = o.os_name AND r.os_version = o.os_version
-                                JOIN %(configTable)s cfg ON p.id = productdims_id
-              WHERE NOT cfg.ignore
+  sql = """SELECT SUM(r.uptime) AS sum_uptime_seconds,
+                  COUNT(r.*) AS report_count,
+                  p.id,
+                  -- o.id, -- would go here
+                  timestamp %%(windowEnd)s,
+                  interval %%(windowSize)s,
+                  r.os_name,
+                  r.os_version
+           FROM reports r JOIN productdims p ON r.product = p.product AND r.version = p.version
+                          JOIN %(configTable)s cfg ON p.id = productdims_id
+           WHERE NOT cfg.ignore
                  AND cfg.%(startDate)s <= %%(windowStart)s
-              -- AND %%(windowStart)s <= cfg.%(endDate)s  -- ignored per ss
                  AND %%(windowStart)s <= cfg.%(startDate)s+interval '60 days' -- per ss
                  AND %%(windowStart)s <= r.date_processed AND r.date_processed < %%(windowEnd)s
                  %(extraWhereClause)s
-              GROUP BY p.id, o.id
+              GROUP BY p.id, r.os_name,r.os_version
         """%(sqlDict)
   try:
+    idCache = socorro_cia.IdCache(cur)
     cur.execute(sql,sqlDict)
+    conn.rollback()
+    data = cur.fetchall()
+    idData = [ [d[0],d[1],d[2],idCache.getOsId(d[5],d[6]),d[3],d[4]] for d in data ]
+    cur.executemany("INSERT INTO time_before_failure (sum_uptime_seconds, report_count, productdims_id, osdims_id, window_end, window_size) VALUES(%s,%s,%s,%s,%s,%s)",idData)
     conn.commit()
-  except Exception,x:
+
+  except psycopg2.IntegrityError,x:
     # if the inner select has no matches then AVG(uptime) is null, thus violating the avg_seconds not-null constraint.
     # This is good, we depend on this to keep
     # facts with 0 out of db
     # For properly configured products, this shouldn't happen very often
-    logger.warn("No facts aggregated for day %s"%aDay)
     conn.rollback()
+    logger.warn("No facts aggregated for day %s"%sWindow)
+  except Exception:
+    conn.rollback()
+    soc_util.reportExceptionAndContinue(logger)
 
 def processIntervals(configContext, logger, **kwargs):
   """
