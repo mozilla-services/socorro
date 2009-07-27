@@ -80,7 +80,7 @@ def dailyUrlDump(config):
               aCrashAsAList.append(','.join(str(bugid) for bugid in x))
               continue
             if type(x) == str:
-              x = x.strip()
+              x = x.strip().replace('\r','')
             aCrashAsAList.append(x)
           csvFormatter.writerow(aCrashAsAList)
       finally:
