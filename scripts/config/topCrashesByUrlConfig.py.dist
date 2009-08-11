@@ -6,29 +6,24 @@ from config.commonconfig import databaseName
 from config.commonconfig import databaseUserName
 from config.commonconfig import databasePassword
 
-debug = cm.Option()
-debug.doc = 'do debug output and routines'
-debug.default = False
-debug.singleCharacter = 'D'
-debug.fromStringConverter = cm.booleanConverter
+from config.commonconfig import startWindow
+from config.commonconfig import endWindow
+from config.commonconfig import deltaWindow
+from config.commonconfig import defaultDeltaWindow
+defaultDeltaWindow.default = '24:00:00'
+
+from config.commonconfig import startDate
+from config.commonconfig import endDate
+from config.commonconfig import deltaDate
+from config.commonconfig import initialDeltaDate
+initialDeltaDate.default = '96:00:00'
+
+from config.commonconfig import debug
 
 processingDay = cm.Option()
 processingDay.doc = 'One day to process in (YYYY-MM-DD) format'
-processingDay.default = (datetime.date.today() - datetime.timedelta(1)).isoformat() # yesterday
 processingDay.singleCharacter = 'd'
 processingDay.fromStringConverter = cm.dateTimeConverter
-
-windowStart = cm.Option()
-windowStart.doc = 'Process all intervals starting with this datetime (YYYY-MM-DD [hh:mm])'
-windowStart.default = None
-windowStart.singleCharacter = 's'
-windowStart.fromStringConverter = cm.dateTimeConverter
-
-windowEnd = cm.Option()
-windowEnd.doc = 'Process all intervals up to this datetime (YYYY-MM-DD [hh:mm])'
-windowEnd.default = None
-windowEnd.singleCharacter = 'e'
-windowEnd.fromStringConverter = cm.dateTimeConverter
 
 logFilePathname = cm.Option()
 logFilePathname.doc = 'full pathname for the log file'

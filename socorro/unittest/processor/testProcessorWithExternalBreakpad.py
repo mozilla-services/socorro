@@ -190,7 +190,7 @@ class TestProcessorWithExternalBreakpad:
       # that entry causes a spurious (non-unique name) failure on the next cycle, so erase it:
       self.connection.cursor().execute("DELETE FROM processors")
       self.connection.commit()
-    me.config.stackwalkCommandLine = '$one -a$(two) -b $(dumpfilePathname) -s$processorSymbolsPathnameList'
+    me.config['stackwalkCommandLine'] = '$one -a$(two) -b $(dumpfilePathname) -s$processorSymbolsPathnameList'
     me.config['one'] = 'ONE'
     me.config['two'] = 'TWO'
     p = eProcessor.ProcessorWithExternalBreakpad(me.config)
@@ -235,11 +235,11 @@ class TestProcessorWithExternalBreakpad:
     assert echoExe, "Cannot run this test without an 'echo' command"
     expected = 'one two three target'
     p.commandLine = '%s SYMBOL_PATHS DUMPFILEPATHNAME'%(echoExe)
-    p.config.processorSymbolsPathnameList = "one     two\tthree"
+    p.config['processorSymbolsPathnameList'] = "one     two\tthree"
     getter,handle = p.invokeBreakpadStackdump('target')
     for line in getter:
       assert expected == line.strip(), 'Expected "%s" got "%s"'%(expected,line)
-    p.config.processorSymbolsPathnameList = ["one", "two","three"]
+    p.config['processorSymbolsPathnameList'] = ["one", "two","three"]
     getter,handle = p.invokeBreakpadStackdump('target')
     for line in getter:
       assert expected == line.strip(), 'Expected "%s" got "%s"'%(expected,line)
@@ -398,7 +398,7 @@ class TestProcessorWithExternalBreakpad:
     """
     global me
     p = eProcessor.ProcessorWithExternalBreakpad(me.config)
-    p.config.crashingThreadFrameThreshold = 15
+    p.config['crashingThreadFrameThreshold'] = 15
     con,cur = p.databaseConnectionPool.connectionCursorPair()
     data = dbtestutil.makeJobDetails({1:1})
     uuid = data[0][1]
@@ -457,7 +457,7 @@ class TestProcessorWithExternalBreakpad:
     """
     global me
     p = eProcessor.ProcessorWithExternalBreakpad(me.config)
-    p.config.crashingThreadFrameThreshold = 15
+    p.config['crashingThreadFrameThreshold'] = 15
     con,cur = p.databaseConnectionPool.connectionCursorPair()
     data = dbtestutil.makeJobDetails({1:1})
     uuid = data[0][1]
@@ -512,7 +512,7 @@ class TestProcessorWithExternalBreakpad:
     """
     global me
     p = eProcessor.ProcessorWithExternalBreakpad(me.config)
-    p.config.crashingThreadFrameThreshold = 5
+    p.config['crashingThreadFrameThreshold'] = 5
     con,cur = p.databaseConnectionPool.connectionCursorPair()
     data = dbtestutil.makeJobDetails({1:1})
     uuid = data[0][1]
@@ -572,7 +572,7 @@ class TestProcessorWithExternalBreakpad:
     """
     global me
     p = eProcessor.ProcessorWithExternalBreakpad(me.config)
-    p.config.crashingThreadFrameThreshold = 15
+    p.config['crashingThreadFrameThreshold'] = 15
     con,cur = p.databaseConnectionPool.connectionCursorPair()
     data = dbtestutil.makeJobDetails({1:1})
     uuid = data[0][1]
@@ -717,8 +717,8 @@ class TestProcessorWithExternalBreakpad:
     """
     global me
     p = TestProcessorWithExternalBreakpad.StubExternalProcessor(me.config)
-    p.config.crashingThreadTailFrameThreshold = 3
-    p.config.crashingThreadFrameThreshold = 8
+    p.config['crashingThreadTailFrameThreshold'] = 3
+    p.config['crashingThreadFrameThreshold'] = 8
     p.secondaryCacheMaximumSize = 2
     threadNum = 0
     headerList = ['CPU|cpuName|cpuVersion','OS|osName|osVersion','Crash|gerbils|0xdeadbeef|0','']

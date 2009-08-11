@@ -23,7 +23,7 @@ red_help() {
   testLog=$(glog)
   cat<<EOF
 
-Usage: red ... eventually followed by Cntrl-C
+Usage: red ... eventually followed by Ctrl-C
 Named because 'red' is shorter than 'redo' or 'doitagain'
 Effect: Clear screen; remove, touch and tail -F the logfile.
   For $testName, that logfile is $testLog
@@ -45,4 +45,46 @@ red() {
   touch $logf
   clears
   tail -F $logf
+}
+
+noseErrors_help() {
+  cat <<EOF
+Usage: noseErrors outputFile
+  shows all output lines that aren't 'ok'
+EOF
+}
+
+noseErrors() {
+  logfile=''
+  if [ $# -lt 1 ]  ; then
+    echo "Must supply name of outputfile"
+    noseErrors_help
+    return
+  fi
+  while [ $# -gt 0 ] ; do
+  case $1 in
+  -h|--h*)
+    noseErrors_help
+    return ;;
+  -*) 
+    echo "Don't understand flag $1. Quitting"
+    noseErrors_help
+    return ;;
+  *) 
+    if [ -f $1 ] ; then
+      logfile="$logfile $1"
+    else
+      echo "$1 is not a file. Skipping"
+    fi
+    shift ;;
+  esac
+  done
+  if [ "$logfile" ] ; then
+    for i in $logfile ; do
+      echo "$i"
+      echo "$i" | sed 's/./=/g'
+      cat $i | egrep -v '^====|^$|ok$'
+      echo " ======== ======== ======== ======== ======== ========"
+    done
+  fi
 }

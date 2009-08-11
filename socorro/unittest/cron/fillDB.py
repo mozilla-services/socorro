@@ -3,12 +3,12 @@
 Just set up the database and exit. Assume we can get config details from the test config file, but allow sys.argv to override
 """
 import datetime
-import psycopg2
 import logging
 import os
+import psycopg2
 import sys
-import socorro.lib.ConfigurationManager as configurationManager
 
+import socorro.lib.ConfigurationManager as configurationManager
 import socorro.database.cachedIdAccess as socorro_cia
 import socorro.cron.mtbf as mtbf
 import socorro.cron.topcrasher as topcrasher
@@ -35,6 +35,7 @@ def main():
     ('u','url-fill',False,True,'Fill the top_crashes_by_url table',lambda x: True),
     ('s','sig-fill',False,True,'Fill the top_crashes_by_signature table',lambda x: True),
     ('a','all-fill',False,True,'Fill all three matrialized view tables',[('mtbf-fill',None),('url-fill',None),('sig-fill',None)]),
+    ('D','drop-all',False,True,'Drop all the database tables. Do no other work',lambda x: True),
     (None,'logFileErrorLoggingLevel',True,logging.WARNING,'logging level for the log file (10 - DEBUG, 20 - INFO, 30 - WARNING, 40 - ERROR, 50 - CRITICAL)',None),
     ]
   config = configurationManager.newConfiguration(configurationModule = commonConfig, applicationName='fillSchema.py',configurationOptionsList = addedConfigOptions)
@@ -63,14 +64,20 @@ def main():
   topcrashbyurl.logger.setLevel(int(config.logFileErrorLoggingLevel))
   
   logger.info("Config is\n%s",str(config))
+    
+  createData(config,logger)
 
+def createData(config,logger):
+  # Now do the work in several steps
   connection = psycopg2.connect("host=%(databaseHost)s dbname=%(databaseName)s user=%(databaseUserName)s password=%(databasePassword)s"%config)
   cursor = connection.cursor()
   testDB = TestDB()
-  # Now do the work in several steps
   try:
-    print "Creating the database tables..."
     testDB.removeDB(config,logger)
+    if config.get('drop-all'):
+      print "Dropped the database tables ..."
+      return
+    print "Creating the database tables..."
     testDB.createDB(config,logger)
     print "populating the dimensions tables..."
     processingDays,ignore = dbtestutil.fillMtbfTables(cursor,limit=int(config.get('product-os-count')))
@@ -92,7 +99,7 @@ def main():
       for startDay in startDays:
         if not starter: starter = startDay
         ender = startDay
-        mtbf.calculateMtbf(config,logger,processingDay=startDay)
+        mtbf.processOneMtbfWindow(config,logger,processingDay=startDay)
       extras.append(" - Time before fail: for days in %s through %s"%(starter,ender))
     if config.get('sig-fill'):
       print "Filling the top_crashes_by_signature table (takes about %s seconds)..."%(20+11*multiplier) # R=1: 27.3 secs; 2:38.5s; 3=48.3 ##  = 20 +R*11
@@ -103,7 +110,7 @@ def main():
       print "Filling the top_crashes_by_url table (takes about %s seconds)..."%(4+multiplier*2) # R=1: 4 secs; 2: 5s, 3: 7.6 ## = 4+R*2
       logger.info("Filling the top_crashes_by_url table (takes about %s seconds)..."%(4+multiplier*2))
       tu = topcrashbyurl.TopCrashesByUrl(config)
-      tu.processIntervals(windowStart=startDays[0],windowEnd=startDays[-1])
+      tu.processCrashesByUrlWindows(startDate=startDays[0],endDate = startDays[-1])
       extras.append(" - Top crash by url: for days in %s through %s"%(startDays[0],startDays[-1]))
     print "DONE populating the database tables"
     if extras:
@@ -113,5 +120,4 @@ def main():
     connection.close()
     
 if __name__ == '__main__':
-  main(
-)
+  main()

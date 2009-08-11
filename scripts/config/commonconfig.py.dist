@@ -42,6 +42,51 @@ dumpFileSuffix.doc = 'the suffix used to identify a dump file'
 dumpFileSuffix.default = '.dump'
 
 processorCheckInTime = cm.Option()
-processorCheckInTime.doc = 'the time after which a processor is considered dead (HH:MM:SS)'
+processorCheckInTime.doc = 'the time after which a processor is considered dead (hh:mm:ss)'
 processorCheckInTime.default = "00:05:00"
 processorCheckInTime.fromStringConverter = lambda x: str(cm.timeDeltaConverter(x))
+
+startWindow = cm.Option()
+startWindow.doc = 'The start of the single aggregation window (YYYY-MM-DD [hh:mm:ss])'
+startWindow.fromStringConverter = cm.dateTimeConverter
+
+deltaWindow = cm.Option()
+deltaWindow.doc = 'The length of the single aggregation window  ([dd:]hh:mm:ss)'
+deltaWindow.fromStringConverter = cm.timeDeltaConverter
+
+defaultDeltaWindow = cm.Option()
+defaultDeltaWindow.doc = 'The length of the single aggregation window  ([dd:]hh:mm:ss)'
+defaultDeltaWindow.fromStringConverter = cm.timeDeltaConverter
+
+# override this default for your particular cron task
+defaultDeltaWindow.default = '00:12:00'
+
+endWindow = cm.Option()
+endWindow.doc = 'The end of the single aggregation window (YYYY-MM-DD [hh:mm:ss])'
+endWindow.fromStringConverter = cm.dateTimeConverter
+
+startDate = cm.Option()
+startDate.doc = 'The start of the overall/outer aggregation window (YYYY-MM-DD [hh:mm])'
+startDate.fromStringConverter = cm.dateTimeConverter
+
+deltaDate = cm.Option()
+deltaDate.doc = 'The length of the overall/outer aggregation window  ([dd:]hh:mm:ss)'
+deltaDate.fromStringConverter = cm.timeDeltaConverter
+
+initialDeltaDate = cm.Option()
+initialDeltaDate.doc = 'The length of the overall/outer aggregation window  ([dd:]hh:mm:ss)'
+initialDeltaDate.fromStringConverter = cm.timeDeltaConverter
+
+# override this default for your particular cron task
+initialDeltaDate.default = '4:00:00:00'
+
+endDate = cm.Option()
+endDate.doc = 'The end of the overall/outer aggregation window (YYYY-MM-DD [hh:mm:ss])'
+endDate.fromStringConverter = cm.dateTimeConverter
+
+debug = cm.Option()
+debug.doc = 'do debug output and routines'
+debug.default = False
+debug.singleCharacter = 'D'
+debug.fromStringConverter = cm.booleanConverter
+

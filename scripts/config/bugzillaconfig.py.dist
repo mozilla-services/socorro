@@ -1,6 +1,4 @@
 import socorro.lib.ConfigurationManager as cm
-import datetime
-import re
 
 try:
   from config.commonconfig import *

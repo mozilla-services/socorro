@@ -3,6 +3,7 @@ import sys
 import os
 import copy
 import cStringIO
+import datetime
 import socorro.lib.ConfigurationManager as CM
 
 import socorro.unittest.testlib.util as tutil
@@ -49,6 +50,7 @@ class TestConfigurationManager(unittest.TestCase):
 
   def testNewConfiguration(self):
     '''
+    TestConfigurationManager.testNewConfiguration(self)
     Trick: To call f(**kwargs) with a dictionary d as the single arg, chant f(**d)
     '''
     opts = []
@@ -188,6 +190,19 @@ class TestConfigurationManager(unittest.TestCase):
     assert('kangaroo' == conf.rabbit) # command line beats config file
     assert('this badger=awful' == conf.badger) # config file beats environment
     assert('zymurgy' == conf.zeta)
+
+  def testTimeDeltaConverter(self):
+    testCases = [
+      ('1',datetime.timedelta(seconds=1)),
+      ('1:2',datetime.timedelta(minutes=1,seconds=2)),
+      ('1:2:3',datetime.timedelta(hours=1,minutes=2,seconds=3)),
+      ('1:2:3:4',datetime.timedelta(days=1,hours=2,minutes=3,seconds=4)),
+      (datetime.timedelta(days=12,microseconds=11),datetime.timedelta(days=12,microseconds=11)),
+      (39,39),
+      ]
+    for t in testCases:
+      val = CM.timeDeltaConverter(t[0])
+      assert t[1] == val,'From %s, got %s (not %s)'%(str(t),str(val),str(t[1]))
 
 if __name__ == "__main__":
   unittest.main()

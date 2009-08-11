@@ -75,10 +75,14 @@ class TopCrashBySignature(object):
       cursor = self.connection.cursor()
       try:
         cursor.execute("SELECT window_end,window_size FROM top_crashes_by_signature ORDER BY window_end DESC LIMIT 1")
+        self.connection.rollback()
         (self.lastEnd,windowSize) = cursor.fetchone()
         assert 0 == windowSize.microseconds, "processingInterval must be a whole number of minutes, but got %s microseconds"%windowSize.microseconds
         assert 0 == windowSize.days, "processingInterval must be less than a full day, but got %s days"%windowSize.days
         min = windowSize.seconds/60
+      except TypeError: # Don't log 'NoneType object is not iterable'
+        self.connection.rollback()
+        self.lastEnd, windowSize = None,None
       except Exception,x:
         self.connection.rollback()
         lib_util.reportExceptionAndContinue(logger)        

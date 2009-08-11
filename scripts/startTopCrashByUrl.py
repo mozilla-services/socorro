@@ -36,7 +36,7 @@ logger.info("current configuration\n%s", str(configContext))
 try:
   before = time.time()
   tu = tcbyurl.TopCrashesByUrl(configContext)
-  tu.processIntervals()
+  tu.processDateInterval()
   logger.info("Successfully ran in %d seconds" % (time.time() - before))
 finally:
   logger.info("done.")

@@ -1,30 +1,23 @@
 import socorro.lib.ConfigurationManager as cm
-import datetime
+
+from config.commonconfig import debug
 
 from config.commonconfig import databaseHost
 from config.commonconfig import databaseName
 from config.commonconfig import databaseUserName
 from config.commonconfig import databasePassword
 
-debug = cm.Option()
-debug.doc = 'do debug output and routines'
-debug.default = False
-debug.singleCharacter = 'D'
-debug.fromStringConverter = cm.booleanConverter
+from config.commonconfig import startWindow
+from config.commonconfig import endWindow
+from config.commonconfig import deltaWindow
+from config.commonconfig import defaultDeltaWindow
+defaultDeltaWindow.default = '24:00:00'
 
-processingInterval = cm.Option()
-processingInterval.doc = 'how often to process reports (minutes)'
-processingInterval.default = 12
-
-startDate = cm.Option()
-startDate.doc = 'The datetime next needing processing (YYYY-MM-DD hh:mm:ss)'
-startDate.default = None
-startDate.fromStringConverter = cm.dateTimeConverter
-
-endDate = cm.Option()
-endDate.doc = 'Moment after last datetime to process (YYYY-MM-DD hh:mm:ss)'
-endDate.default = None
-endDate.fromStringConverter = cm.dateTimeConverter
+from config.commonconfig import startDate
+from config.commonconfig import endDate
+from config.commonconfig import deltaDate
+from config.commonconfig import initialDeltaDate
+initialDeltaDate.default = '96:00:00'
 
 logFilePathname = cm.Option()
 logFilePathname.doc = 'full pathname for the log file'

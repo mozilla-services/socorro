@@ -307,7 +307,7 @@ class TestProcessor:
     global me
     originalProcId = me.config.processorId # Processor() alters this in place. Be sure to put it back...
     p1 = processor.Processor(me.config)
-    me.config.processorId = originalProcId
+    me.config['processorId'] = originalProcId
     assert_raises(SystemExit,processor.Processor,me.config)
 
   def testConstructorAllProcessesLive(self):
@@ -331,9 +331,9 @@ class TestProcessor:
       If the config processId is valid, but outside current range of running ids. then fail
     """
     global me
-    me.config.processorId = 'invalidId'
+    me.config['processorId'] = 'invalidId'
     assert_raises(SystemExit,processor.Processor,me.config)
-    me.config.processorId = '234'
+    me.config['processorId'] = '234'
     self.markLog()
     try:
       assert_raises(SystemExit,processor.Processor,me.config)
@@ -347,7 +347,7 @@ class TestProcessor:
     """
     global me
     dbtestutil.fillProcessorTable(self.connection.cursor(),3)
-    me.config.processorId = '2'
+    me.config['processorId'] = '2'
     self.markLog()
     try:
       assert_raises(SystemExit,processor.Processor,me.config)
@@ -752,7 +752,7 @@ class TestProcessor:
     global me
     cur = self.connection.cursor()
     p = processor.Processor(me.config)
-    p.config.checkForPriorityFrequency = dt.timedelta(milliseconds=100)
+    p.config['checkForPriorityFrequency'] = dt.timedelta(milliseconds=100)
     p.processorLoopTime = 1
     normalJobsExpected = 3
     dbtestutil.addSomeJobs(cur,{1:normalJobsExpected} ,logger=me.logger)
@@ -819,7 +819,7 @@ class TestProcessor:
     global me
     cur = self.connection.cursor()
     p = processor.Processor(me.config)
-    p.config.checkForPriorityFrequency = dt.timedelta(milliseconds=100)
+    p.config['checkForPriorityFrequency'] = dt.timedelta(milliseconds=100)
     totalJobsExpected = 6
     data = dbtestutil.addSomeJobs(cur,{1:totalJobsExpected})
     cur.execute("SELECT id from jobs")

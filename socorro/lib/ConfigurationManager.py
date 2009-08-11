@@ -429,8 +429,17 @@ def timeDeltaConverter(inputString):
   """ a conversion function for time deltas
   """
   if type(inputString) is str:
-    hours, minutes, seconds = inputString.split(":")
-    return datetime.timedelta(hours = int(hours), minutes = int(minutes), seconds = int(seconds))
+    days,hours,minutes,seconds = 0,0,0,0
+    details = inputString.split(':')
+    if len(details) >= 4:
+      days = int(details[-4])
+    if len(details) >= 3:
+      hours = int(details[-3])
+    if len(details) >= 2:
+      minutes = int(details[-2])
+    if len(details) >= 1:
+      seconds = int(details[-1])
+    return datetime.timedelta(days = days, hours = hours, minutes = minutes, seconds = seconds)
   return inputString
 
 

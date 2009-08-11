@@ -1,40 +1,29 @@
 import socorro.lib.ConfigurationManager as cm
 import datetime
 
+from config.commonconfig import debug
+
 from config.commonconfig import databaseHost
 from config.commonconfig import databaseName
 from config.commonconfig import databaseUserName
 from config.commonconfig import databasePassword
 
-debug = cm.Option()
-debug.doc = 'do debug output and routines'
-debug.default = False
-debug.singleCharacter = 'D'
-debug.fromStringConverter = cm.booleanConverter
+from config.commonconfig import startWindow
+from config.commonconfig import deltaWindow
+from config.commonconfig import defaultDeltaWindow
+defaultDeltaWindow.default = '24:00:00'
+from config.commonconfig import endWindow
 
-slotSizeMinutes = cm.Option()
-slotSizeMinutes.doc = 'number of minutes per processing slot'
-slotSizeMinutes.default = 60*24 #minutes per day
-slotSizeMinutes.singleCharacter = 's'
-
-slotEnd = cm.Option()
-slotEnd.doc = 'Datetime that ends the processing slot'
-slotEnd.default = datetime.date.today()
-slotEnd.fromStringConverter = cm.dateTimeConverter
-slotEnd.singleCharacter = 'e'
+from config.commonconfig import startDate
+from config.commonconfig import deltaDate
+from config.commonconfig import initialDeltaDate
+initialDeltaDate.default = '96:00:00'
+from config.commonconfig import endDate
 
 processingDay = cm.Option()
 processingDay.doc = 'Day to process in (YYYY-MM-DD) format'
 processingDay.default = (datetime.date.today() - datetime.timedelta(1)).isoformat() # yesterday
 processingDay.singleCharacter = 'd'
-
-startDate = cm.Option()
-startDate.fromStringConverter = cm.dateTimeConverter
-startDate.doc = 'Datetime to begin processing, in (YYYY-MM-DD [hh:mm]) format'
-
-endDate = cm.Option()
-endDate.fromStringConverter = cm.dateTimeConverter
-endDate.doc = 'First datetime moment not to process, in (YYYY-MM-DD [hh:mm]) format'
 
 logFilePathname = cm.Option()
 logFilePathname.doc = 'full pathname for the log file'
