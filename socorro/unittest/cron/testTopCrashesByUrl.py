@@ -15,7 +15,7 @@ import socorro.database.cachedIdAccess as socorro_cia
 
 import cronTestconfig as testConfig
 
-import socorro.cron.topcrashbyurl as tcbu
+import socorro.cron.topCrashesByUrl as tcbu
 
 class Me(): pass
 me = None

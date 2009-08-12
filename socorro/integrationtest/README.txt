@@ -28,7 +28,7 @@ Go to socorro/scripts
 invoke in turn:
 
 startXxx.py --databaseHost=localhost --databaseName=test --databaseUserName=test --databasePassword=t3st --startDate=2007-12-31 --endDate=$DATE
-for Xxx in TopCrashByUrl.py, TopCrashesBySignature.py, Mtbf.py
+for Xxx in TopCrashesByUrl.py, TopCrashesBySignature.py, Mtbf.py
 $DATE is 2008-03-05 for signature and mtbf, but 2008-03-01 for url
 
 Now, do the "get database results" step again, this time using a different csv name in each case, such as mtbf_external.csv

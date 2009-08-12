@@ -11,7 +11,7 @@ except ImportError:
   import topCrashesByUrlconfig as config
 
 import socorro.lib.ConfigurationManager as configurationManager
-import socorro.cron.topcrashbyurl as tcbyurl
+import socorro.cron.topCrashesByUrl as tcbyurl
 
 configContext = configurationManager.newConfiguration(configurationModule=config, applicationName="Top Crash By URL Summary")
 

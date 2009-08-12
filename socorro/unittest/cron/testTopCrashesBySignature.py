@@ -12,7 +12,7 @@ from nose.tools import *
 import socorro.lib.ConfigurationManager as configurationManager
 import socorro.database.cachedIdAccess as cia
 
-import socorro.cron.topcrasher as topcrasher
+import socorro.cron.topCrashesBySignature as topcrasher
 
 from   socorro.unittest.testlib.testDB import TestDB
 import socorro.unittest.testlib.dbtestutil as dbtestutil
