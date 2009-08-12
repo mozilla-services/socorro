@@ -21,8 +21,6 @@ from   socorro.unittest.testlib.loggerForTest import TestingLogger
 from   socorro.unittest.testlib.testDB import TestDB
 
 import cronTestconfig as testConfig
-for i in dir(testConfig):
-  print "CONFIG",i,type(i)
 
 class Me(): # not quite "self"
   """
@@ -207,9 +205,10 @@ class TestMtbf(unittest.TestCase):
     self.connection.commit()
 
     sql = "SELECT productdims_id,osdims_id,(window_end-window_size),sum_uptime_seconds,report_count FROM time_before_failure WHERE (window_end-window_size)=%s"
+    mt = mtbf.Mtbf(self.config,self.logger)
     for pd in self.processingDays:
       self.config['processingDay'] = pd[0].isoformat()
-      mtbf.processOneMtbfWindow(self.config, self.logger)
+      mt.processOneMtbfWindow()
       cursor.execute(sql,(pd[0],))
       self.connection.commit()
       data = cursor.fetchall()
@@ -254,8 +253,9 @@ class TestMtbf(unittest.TestCase):
     cursor.execute(sql,(pdtS,))
     self.connection.commit()
     assert [] == cursor.fetchall(), 'Better be empty before we start mucking about'
+    mt = mtbf.Mtbf(self.config, self.logger)
     # override the day
-    mtbf.processOneMtbfWindow(self.config,self.logger,processingDay=pd[0].isoformat())
+    mt.processOneMtbfWindow(processingDay=pd[0].isoformat())
     # check that we got the overridden day
     cursor.execute(sql,(pdtS,))
     self.connection.commit()
@@ -329,7 +329,7 @@ class TestMtbf(unittest.TestCase):
       cursor.execute(sql,(pdtS,))
       self.connection.commit()
       assert [] == cursor.fetchall(), 'Better be empty before we mucking about again'
-      mtbf.processOneMtbfWindow(self.config,self.logger,**testItem)
+      mt.processOneMtbfWindow(**testItem)
       cursor.execute('SELECT f.window_end, p.product,p.version,o.os_name,o.os_version FROM time_before_failure f JOIN productdims p ON f.productdims_id = p.id JOIN osdims o ON f.osdims_id = o.id')
       self.connection.rollback() # select needs no commit
       got = cursor.fetchall()
@@ -349,7 +349,7 @@ class TestMtbf(unittest.TestCase):
     self.config['startWindow'] = (badProcessingDay-datetime.timedelta(days=1)).isoformat()
     cursor.execute(delSql)
     self.connection.commit()
-    mtbf.processOneMtbfWindow(self.config,self.logger)
+    mt.processOneMtbfWindow()
     self.connection.commit()
     cursor.execute('select count(id) from time_before_failure')
     self.connection.rollback()
@@ -361,7 +361,7 @@ class TestMtbf(unittest.TestCase):
     self.connection.commit()
     self.config['endWindow'] = badProcessingDay.isoformat()
     self.config['startWindow'] = (badProcessingDay-datetime.timedelta(days=1)).isoformat()
-    mtbf.processOneMtbfWindow(self.config,self.logger,endWindow=goodEndWindow,startWindow=goodEndWindow-datetime.timedelta(days=1))
+    mt.processOneMtbfWindow(endWindow=goodEndWindow,startWindow=goodEndWindow-datetime.timedelta(days=1))
     self.connection.commit()
     cursor.execute('select count(id) from time_before_failure')
     self.connection.commit()
@@ -375,7 +375,7 @@ class TestMtbf(unittest.TestCase):
     cursor.execute(delSql)
     self.connection.commit()
     del self.config['startWindow']
-    mtbf.processOneMtbfWindow(self.config,self.logger,endWindow=goodEndWindow,deltaWindow=datetime.timedelta(seconds=360),show=True)
+    mt.processOneMtbfWindow(endWindow=goodEndWindow,deltaWindow=datetime.timedelta(seconds=360),show=True)
     self.connection.commit()
     cursor.execute("SELECT SUM(sum_uptime_seconds) from time_before_failure")
     self.connection.commit()
@@ -405,11 +405,12 @@ class TestMtbf(unittest.TestCase):
       (),
       (),
      ]
+    mt = mtbf.Mtbf(self.config,self.logger)
     for j in testIntervals:
       if not j: continue
       cursor.execute(delSql)
       self.connection.commit()
-      mtbf.processDateInterval(self.config,self.logger,startDate=j[0],endDate=j[1])
+      mt.processDateInterval(startDate=j[0],endDate=j[1])
       cursor.execute(sql)
       self.connection.rollback()
     

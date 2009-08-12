@@ -39,7 +39,8 @@ logger.info("current configuration\n%s", str(configContext))
 
 try:
   before = time.time()
-  count = mtbf.processDateInterval(configContext, logger)
+  mt = mtbf.Mtbf(configContext,logger)
+  count = mt.processDateInterval()
   logger.info("Successfully handled %d intervals in %d seconds", count, (time.time() - before))
 finally:
   logger.info("done.")
