@@ -1086,6 +1086,6 @@ h2.mtbf-graph{ float: left; }
 
 #overviewLegend table tbody tr td, #overviewLegend table thead tr th, #graph-legend table tbody tr td { border: none; }
 .topcrashersaccord div a, p a, .report-date_processed a, .full_bug_ids li a, .full_bug_ids li .strike a, .list tbody tr th a, .list tbody tr td a, .trend-nav a { text-decoration: underline; }
-.header-wrapper h1 { position: absolute; top:0px left: 0px; }
+.header-wrapper h1 { position: absolute; top:0px; left: 0px; }
 /* end dashboard widgets */
 /* ozten working end */
