@@ -1,46 +1,46 @@
 Socorro Integration tests
 
-= Requierments =
-httplib2-0.4.0 - http://code.google.com/p/httplib2/downloads/list
+Nothing much to say here: The old code was made obsolete by the materialized
+views code checked in 2009, August.
 
-= Notes =
-I ran into permissions erros with using 
-Postgres COPY FROM '/file'
-so switched to STDIN format
+Small amount of testing can be done, as follows:
 
-= Data =
-There is a data set for use with integration tests.
+From the unittest/cron directory, run fillDB -a [your choice of fill options] # note use -a
+ Note: fillDB --help gives a list of options. I usually use values like  
+   -P55 -R4 -S111 but feel free.
 
-== Use Cases ==
-=== Top Crashers ===
-Production build - Firefox, 3.0.3
-==== JS_RestoreFrameChain ====
-2 weeks of JS_RestoreFrameChain for Firefox, 3.0.3, build = 2008092417 ( 1967 records )
+From the command line, do the  "get database results" step:
 
-Note: Windows crashes only
-==== @0x0 ====
-2 weeks of @0x0 for Firefox, 3.0.3 ( 2857 records )
-cross platform crashes
-multiple builds (mac = 2008092414, linux = 2008092416, win = 2008092417)
+echo "$sql" | psql -F"	" -A -f - -o $output.csv -Utest  test
+  # note that's -F<tab> though it almost doesn't matter
 
-==== Flash Player@0x49a6be ====
-4 'Flash Player@0x49a6be' - data consistent with report table
-(report 12 - khan, 840826, 450317, 634030 from load)
+for these sql values and appropriate output names such as mtbf_internal.csv:
+  "SELECT productdims_id as pid, osdims_id as oid,sum_uptime_seconds as su,report_count as rc, window_end from time_before_failure order by pid,oid,window_end;"
+  "SELECT window_end as window_end_woohoo,productdims_id as pid, osdims_id as oid, count as c, uptime as upt, signature from top_crashes_by_signature order by pid,oid,signature,window_end;"
+  "SELECT window_end as window_end_woohoo,productdims_id as pid, osdims_id as oid, count as c, urldims_id as u_id from top_crashes_by_url order by pid,oid,u_id,window_end;"
 
-Development build - Firefox 3.0.3pre
-==== @0x0 ====
-4 entries @0x0 for Firefox, 3.0.3pre describing 4 crashes
-builds (20081025013618, 20081024020254, 20081023034205, 2008102306)
-data consistent with report table ( 13 - 16 )
-cross platform crashes
+Back to unittest/cron and invoke fillDB [ SAME choice of fill options] # note: No -a
+Go to socorro/scripts/config
+for each of four config.dist files: commonconfig.py.dist, mtbfconfig.py.dist, topCrashesBy*Config.py.dist
+  cp the .dist file to the same name without the .dist (e.g: cp commonconfig.py.dist commonconfig.py)
+(Note that ln -s doesn't work)
+Go to socorro/scripts
+invoke in turn:
 
-Build values can vary across os...
+startXxx.py --databaseHost=localhost --databaseName=test --databaseUserName=test --databasePassword=t3st --startDate=2007-12-31 --endDate=$DATE
+for Xxx in TopCrashByUrl.py, TopCrashesBySignature.py, Mtbf.py
+$DATE is 2008-03-05 for signature and mtbf, but 2008-03-01 for url
+
+Now, do the "get database results" step again, this time using a different csv name in each case, such as mtbf_external.csv
+
+Compare the interal versus the external results.
+
+You can do similar things for two other tables   
+  'top_crashes_by_url_signature': "SELECT * from top_crashes_by_url_signature order by signature;",
+  'topcrashurlfactsreports':      "SELECT * from topcrashurlfactsreports order by uuid;",
+But beware that there WILL be diffs because there were bulk insert statments that created ids in different orders. 
+You may be able to help by selecting only some columns, but you will then lose correlation data.
 
 
 
-extensions - empty
-modules - only has report_id 12, was empty on stage db
 
-server_status - two hours of data
-cron had a hickup between 
-id 17 and 18 missing 1 datapoint and time starts on different interval

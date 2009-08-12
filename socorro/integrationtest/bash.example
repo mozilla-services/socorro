@@ -1,1 +1,0 @@
-export PYTHONPATH=$SOCORRO_PATH/socorro/scripts/config:$SOCORRO_PATH/socorro/scripts:$SOCORRO_PATH/socorro/socorro/lib:$SOCORRO_PATH/socorro/scripts:$SOCORRO_PATH/socorro
