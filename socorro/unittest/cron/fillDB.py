@@ -11,8 +11,8 @@ import sys
 import socorro.lib.ConfigurationManager as configurationManager
 import socorro.database.cachedIdAccess as socorro_cia
 import socorro.cron.mtbf as mtbf
-import socorro.cron.topcrasher as topcrasher
-import socorro.cron.topcrashbyurl as topcrashbyurl
+import socorro.cron.topCrashesBySignature as topcrasher
+import socorro.cron.topCrashesByUrl as topcrashbyurl
 
 from socorro.unittest.testlib.testDB import TestDB
 import socorro.unittest.testlib.dbtestutil as dbtestutil

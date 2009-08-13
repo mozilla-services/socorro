@@ -38,8 +38,11 @@ class Mtbf(object):
     assert "databasePassword" in configContext, "databasePassword is missing from the configuration"
     self.configContext = configContext
     self.configContext.update(kwargs)
+    self.debugging = self.configContext.get('debug',False)
     self.dsn = "host=%(databaseHost)s dbname=%(databaseName)s user=%(databaseUserName)s password=%(databasePassword)s" % configContext
     self.connection = psycopg2.connect(self.dsn)
+    if self.debugging:
+      self.logger.debug("MTBF contstructor /w/ configContext=\n%s",configContext)
 
   def processOneMtbfWindow(self, **kwargs):
     """
@@ -57,6 +60,8 @@ class Mtbf(object):
     """
     cur = self.connection.cursor()
     startWindow,deltaWindow,endWindow = cron_util.getProcessingWindow(self.configContext,resultTable,cur,self.logger,**kwargs)
+    if self.debugging:
+      self.logger.debug("startWindow: %s, deltaWindow: %s, endWindow: %s",startWindow,deltaWindow,endWindow)
     sqlDict = {
       'configTable': configTable, 'startDate':'start_date', 'endDate':'end_date',
       'windowStart':startWindow, 'windowEnd':endWindow, 'windowSize':deltaWindow,
@@ -114,10 +119,14 @@ class Mtbf(object):
             VALUES(%%s,%%s,%%s,%%s,%%s,%%s)"""%resultTable
     try:
       idCache = socorro_cia.IdCache(cur)
+      if self.debugging:
+        self.logger.debug("Using select sql:\n%s",cur.mogrify(sql,sqlDict))
       cur.execute(sql,sqlDict)
       self.connection.rollback()
       data = cur.fetchall()
       idData = [ [d[0],d[1],d[2],idCache.getOsId(d[5],d[6]),d[3],d[4]] for d in data ]
+      if self.debugging:
+        self.logger.debug("Will insert %s new rows",len(data))
       cur.executemany(inSql,idData)
       self.connection.commit()
 
@@ -157,6 +166,10 @@ class Mtbf(object):
       self.logger.warn("MTBF (%s) startDate (%s) too close to endDate (%s). Did not run.",now, startDate,endDate)
       return 0
     count = 0
+    if self.debugging:
+      self.logger.debug("""mtbf.processDateInterval:
+      startDate: %s, deltaDate: %s, endDate: %s
+      startWindow: %s, deltaWindow: %s, endWindow: %s """,startDate,deltaDate,endDate,startWindow,deltaWindow,endWindow)
     kwargs['deltaWindow'] = deltaWindow
     startWindow = startDate
     while startWindow + deltaWindow < endDate:
