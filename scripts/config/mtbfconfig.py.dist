@@ -22,7 +22,7 @@ from config.commonconfig import endDate
 
 processingDay = cm.Option()
 processingDay.doc = 'Day to process in (YYYY-MM-DD) format'
-processingDay.default = (datetime.date.today() - datetime.timedelta(1)).isoformat() # yesterday
+#processingDay.default = (datetime.date.today() - datetime.timedelta(1)).isoformat() # yesterday
 processingDay.singleCharacter = 'd'
 
 logFilePathname = cm.Option()
