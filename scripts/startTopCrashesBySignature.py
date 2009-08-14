@@ -3,6 +3,7 @@
 import logging
 import logging.handlers
 import sys
+import time
 
 try:
   import config.topCrashesBySignatureConfig as config
@@ -39,8 +40,10 @@ logger.addHandler(rotatingFileLog)
 logger.info("current configuration\n%s", str(configContext))
 
 try:
-  tc = topcrasher.TopCrashBySignature(configContext)
-  tc.processIntervals()
+  before = time.time()
+  tc = topcrasher.TopCrashesBySignature(configContext)
+  count = tc.processDateInterval()
+  logger.info("Successfully processed %s items in %3.2f seconds",count, time.time()-before)
 finally:
   logger.info("done.")
   rotatingFileLog.flush()

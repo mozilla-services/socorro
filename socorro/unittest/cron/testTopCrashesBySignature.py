@@ -190,7 +190,7 @@ def createMe():
   global me
   if not me:
     me = Me()
-  me.config = configurationManager.newConfiguration(configurationModule = testConfig, applicationName = "Testing TopCrashBySignature")
+  me.config = configurationManager.newConfiguration(configurationModule = testConfig, applicationName = "Testing TopCrashesBySignature")
   topcrasher.logger.setLevel(logging.DEBUG)
   myDir = os.path.split(__file__)[0]
   if not myDir: myDir = '.'
@@ -217,7 +217,7 @@ def createMe():
   me.logger = topcrasher.logger
   me.dsn = "host=%(databaseHost)s dbname=%(databaseName)s user=%(databaseUserName)s password=%(databasePassword)s" % (me.config)
 
-class TestTopCrashBySignature(unittest.TestCase):
+class TestTopCrashesBySignature(unittest.TestCase):
   def setUp(self):
     global me
     if not me:
@@ -263,24 +263,24 @@ class TestTopCrashBySignature(unittest.TestCase):
     
   def testConstructor(self):
     """
-    TestTopCrashBySignature.testConstructor
+    TestTopCrashesBySignature.testConstructor
     """
     global me
     for reqd in ["databaseHost","databaseName","databaseUserName","databasePassword",]:
       cc = copy.copy(me.config)
       del(cc[reqd])
-      assert_raises(SystemExit,topcrasher.TopCrashBySignature,cc)
+      assert_raises(SystemExit,topcrasher.TopCrashesBySignature,cc)
     bogusMap = {'databaseHost':me.config.databaseHost,'databaseName':me.config.databaseName,'databaseUserName':'JoeLuser','databasePassword':me.config.databasePassword}
-    assert_raises(SystemExit,topcrasher.TopCrashBySignature,bogusMap)
+    assert_raises(SystemExit,topcrasher.TopCrashesBySignature,bogusMap)
 
     #check without a specified processingInterval, initialIntervalDays, startDate or endDate
     now = dt.datetime.now()
-    tc = topcrasher.TopCrashBySignature(me.config)
+    tc = topcrasher.TopCrashesBySignature(me.config)
     expectedStart = now.replace(hour=0,minute=0,second=0,microsecond=0) - dt.timedelta(days=tc.initialIntervalDays)
     expectedEnd = now.replace(hour=0,minute=0,second=0,microsecond=0)
-    mark = now - tc.processingIntervalDelta
+    mark = now - tc.deltaWindow
     while expectedEnd < mark:
-      expectedEnd += tc.processingIntervalDelta
+      expectedEnd += tc.deltaWindow
     after = now
     assert expectedStart == tc.startDate
     assert expectedEnd == tc.endDate and tc.endDate <= now, 'But NOT %s == %s <= %s'%(expectedEnd,tc.endDate,now)
@@ -296,7 +296,7 @@ class TestTopCrashBySignature(unittest.TestCase):
     for ipi in [-3,7]:
       config['processingInterval'] = ipi
       try:
-        tc = topcrasher.TopCrashBySignature(config)
+        tc = topcrasher.TopCrashesBySignature(config)
         raise Exception, "Can't assert here, because we expect to catch AssertionError in next line"
       except AssertionError,x:
         pass
@@ -305,7 +305,7 @@ class TestTopCrashBySignature(unittest.TestCase):
     for pi in [0,1,12,720]:
       config['processingInterval'] = pi
       try:
-        tc = topcrasher.TopCrashBySignature(config)
+        tc = topcrasher.TopCrashesBySignature(config)
         assert tc.processingInterval==pi or (0==pi and tc.processingInterval == 12) , 'but pi=%s and got %s'%(pi,tc.processingInterval)
       except:
         assert False,'Expected success with processingInterval %s'%pi
@@ -313,23 +313,23 @@ class TestTopCrashBySignature(unittest.TestCase):
     # check with illegal startDates
     config = copy.copy(me.config)
     config['startDate'] = dt.datetime(2009,01,01,0,0,1)
-    assert_raises(AssertionError,topcrasher.TopCrashBySignature,config)
+    assert_raises(AssertionError,topcrasher.TopCrashesBySignature,config)
     config['startDate'] = dt.datetime(2009,01,01,0,12,1)
-    assert_raises(AssertionError,topcrasher.TopCrashBySignature,config)
+    assert_raises(AssertionError,topcrasher.TopCrashesBySignature,config)
     config['startDate'] = dt.datetime(2009,01,01,2,11)
-    assert_raises(AssertionError,topcrasher.TopCrashBySignature,config)
+    assert_raises(AssertionError,topcrasher.TopCrashesBySignature,config)
     config['startDate'] = dt.datetime(2009,01,01,23,59)
-    assert_raises(AssertionError,topcrasher.TopCrashBySignature,config)
+    assert_raises(AssertionError,topcrasher.TopCrashesBySignature,config)
 
     # check with midnight startDate
     config = copy.copy(me.config)
     config['startDate'] = dt.datetime(2009,01,01)
-    tc = topcrasher.TopCrashBySignature(config)
+    tc = topcrasher.TopCrashesBySignature(config)
     assert config['startDate'] == tc.startDate
 
     # check with very late legal startDate
     config['startDate'] = dt.datetime(2009,01,01,23,48)
-    tc = topcrasher.TopCrashBySignature(config)
+    tc = topcrasher.TopCrashesBySignature(config)
     assert config['startDate'] == tc.startDate
     
     # check with a specified processingInterval, initialIntervalDays, startDate and endDate
@@ -338,18 +338,18 @@ class TestTopCrashBySignature(unittest.TestCase):
     config['startDate']= specifiedStartDate = dt.datetime(2009,01,01,12,20)
     config['endDate'] = specifiedEndDate =    dt.datetime(2009,01,01,12,59)
     config['initialIntervalDays'] = 3
-    tc = topcrasher.TopCrashBySignature(config)
+    tc = topcrasher.TopCrashesBySignature(config)
     assert specifiedStartDate == tc.startDate
     assert 3 == tc.initialIntervalDays
     assert 20 == tc.processingInterval
     expectedEndDate = specifiedEndDate.replace(hour=0,minute=0,second=0,microsecond=0)
-    while expectedEndDate < specifiedEndDate - tc.processingIntervalDelta:
-      expectedEndDate += tc.processingIntervalDelta
+    while expectedEndDate < specifiedEndDate - tc.deltaWindow:
+      expectedEndDate += tc.deltaWindow
     assert expectedEndDate == tc.endDate, "%s:%s"%(expectedEndDate,tc.endDate)
 
   def testGetStartDate(self):
     cursor = self.connection.cursor()
-    tc = topcrasher.TopCrashBySignature(me.config)
+    tc = topcrasher.TopCrashesBySignature(me.config)
     priorMidnight = dt.datetime.now().replace(hour=0,minute=0,second=0,microsecond=0)
     expectedDefault = priorMidnight - dt.timedelta(days=tc.initialIntervalDays)
     tryDate = dt.datetime(2009,3,4,5,24,0,39)
@@ -363,7 +363,7 @@ class TestTopCrashBySignature(unittest.TestCase):
                VALUES (1,1,'js_wootery',%s,%s)""",(dbTryDate,dbTryInterval))
     self.connection.commit()
     # need new TopCrash since it reads the db on construction
-    tc = topcrasher.TopCrashBySignature(me.config)
+    tc = topcrasher.TopCrashesBySignature(me.config)
     cursor.execute("SELECT window_end,window_size from top_crashes_by_signature order by window_end DESC LIMIT 1")
     self.connection.commit()
     assert dbTryDate==tc.getStartDate(),"But expected %s != %s"%(dbTryDate,tc.getStartDate())
@@ -372,9 +372,9 @@ class TestTopCrashBySignature(unittest.TestCase):
 
   def testGetEndDate(self):
     now = dt.datetime.now()
-    tc = topcrasher.TopCrashBySignature(me.config)
+    tc = topcrasher.TopCrashesBySignature(me.config)
     assert tc.endDate == tc.getEndDate()
-    assert now - tc.processingIntervalDelta <= tc.endDate and tc.endDate <= now
+    assert now - tc.deltaWindow <= tc.endDate and tc.endDate <= now
     tneg = tc.startDate - dt.timedelta(microseconds=1)
     assert tc.startDate == tc.getEndDate(tneg)
     startDate = tc.getStartDate(dt.datetime(2009,1,2,3,12))
@@ -384,7 +384,7 @@ class TestTopCrashBySignature(unittest.TestCase):
     assert expectedEndDate == endDate, 'Got %s != %s'%(expectedEndDate,endDate)
     minusEps = tryDate - dt.timedelta(microseconds=1)
     endDate = tc.getEndDate(minusEps)
-    assert expectedEndDate -tc.processingIntervalDelta == endDate, 'Got %s != %s'%(expectedEndDate -tc.processingIntervalDelta,endDate)
+    assert expectedEndDate -tc.deltaWindow == endDate, 'Got %s != %s'%(expectedEndDate -tc.deltaWindow,endDate)
     plusEps = tryDate + dt.timedelta(microseconds=1)
     endDate = tc.getEndDate(plusEps)
     assert expectedEndDate == endDate, 'Got %s != %s'%(expectedEndDate,endDate)
@@ -406,7 +406,7 @@ class TestTopCrashBySignature(unittest.TestCase):
 
   def testGetLegalProcessingInterval(self):
     cursor = self.connection.cursor()
-    tc = topcrasher.TopCrashBySignature(me.config)
+    tc = topcrasher.TopCrashesBySignature(me.config)
     illegals = [-3.0,-0.0000001,0.0000001,0.999999,11,13,14,17,19,21,22,23,123]
     for ipi in illegals:
       try:
@@ -428,12 +428,12 @@ class TestTopCrashBySignature(unittest.TestCase):
                       (productdims_id,osdims_id,signature,window_end,window_size)
                VALUES (1,1,'js_wookie','2009-1-2 4:30',%s)""",(ninety,))
     self.connection.commit()
-    tc = topcrasher.TopCrashBySignature(me.config)
+    tc = topcrasher.TopCrashesBySignature(me.config)
     assert 90 == tc.getLegalProcessingInterval(), 'but got %s'%(tc.getLegalProcessingInterval())
 
   def testExtractDataForPeriod_ByDateProcessed(self):
     """
-    TestTopCrashBySignature.testExtractDataForPeriod_ByDateProcessed(self):
+    TestTopCrashesBySignature.testExtractDataForPeriod_ByDateProcessed(self):
      - Check that we get nothing for a period outside our data
      - Check that we get expected count for period inside our data
      - Check that we get half-open interval (don't get data exactly at last moment)
@@ -451,7 +451,7 @@ class TestTopCrashBySignature(unittest.TestCase):
     mmaxStamp = maxStamp + dt.timedelta(days=1)
     self.prepareConfigForPeriod(keySet,mminStamp,mmaxStamp)
 
-    tc = topcrasher.TopCrashBySignature(me.config)
+    tc = topcrasher.TopCrashesBySignature(me.config)
     tc.dateColumnName = 'date_processed'
     # we should get nothing if we are outside our data
     start = minStamp - dt.timedelta(days=10)
@@ -511,7 +511,7 @@ class TestTopCrashBySignature(unittest.TestCase):
 
   def testExtractDataForPeriod_ByClientCrashDate(self):
     """
-    TestTopCrashBySignature.testExtractDataForPeriod_ByClientCrashDate(self):
+    TestTopCrashesBySignature.testExtractDataForPeriod_ByClientCrashDate(self):
      - Check that we get nothing for a period outside our data
      - Check that we get expected count for period inside our data
      - Check that we get half-open interval (don't get data exactly at last moment)
@@ -526,7 +526,7 @@ class TestTopCrashBySignature(unittest.TestCase):
     mminStamp = minStamp - dt.timedelta(days=1)
     mmaxStamp = maxStamp + dt.timedelta(days=1)
     self.prepareConfigForPeriod(keySet,mminStamp,mmaxStamp)
-    tc = topcrasher.TopCrashBySignature(me.config)
+    tc = topcrasher.TopCrashesBySignature(me.config)
     tc.dateColumnName = 'client_crash_date'
     # we should get nothing if we are outside our data
     start = minStamp - dt.timedelta(days=10)
@@ -586,9 +586,9 @@ class TestTopCrashBySignature(unittest.TestCase):
 
   def testFixupCrashData(self):
     """
-    TestTopCrashBySignature.testFixupCrashData(self):(slow=1)
+    TestTopCrashesBySignature.testFixupCrashData(self):(slow=1)
       - create a bunch of data, count it in the test, put it into the reports table, then 
-        let TopCrashBySignature get it back out, and assert that fixup gets the same count
+        let TopCrashesBySignature get it back out, and assert that fixup gets the same count
     """
     global me
     cursor = self.connection.cursor()
@@ -613,7 +613,7 @@ class TestTopCrashBySignature(unittest.TestCase):
         newCount += 1
     addReportData(cursor,data)
     self.connection.commit()
-    tc = topcrasher.TopCrashBySignature(me.config)
+    tc = topcrasher.TopCrashesBySignature(me.config)
     tc.dateColumnName = 'date_processed'
     baseDate = testBaseDate 
     start = baseDate - dt.timedelta(days=1)
@@ -634,9 +634,9 @@ class TestTopCrashBySignature(unittest.TestCase):
 #     for k,v in expect.items():
 #       assert getter(v) == getter(summaryCrashes[k]),  'for key %s: Expected %s but got %s'%(k,getter(v), getter(summaryCrashes[k]))
     
-    result = tc.fixupCrashData(summaryCrashes,baseDate,tc.processingIntervalDelta)
+    result = tc.fixupCrashData(summaryCrashes,baseDate,tc.deltaWindow)
     result.sort(key=itemgetter('count'),reverse=True)
-    resultx = tc.fixupCrashData(expect,baseDate,tc.processingIntervalDelta)
+    resultx = tc.fixupCrashData(expect,baseDate,tc.deltaWindow)
     resultx.sort(key=itemgetter('count'),reverse=True)
     assert result == resultx
 #    ## The next few lines show more detail if there's a problem. Comment above, uncomment below
@@ -661,7 +661,7 @@ class TestTopCrashBySignature(unittest.TestCase):
 
   def testExtractDataForPeriod_ConfigLimitedDates(self):
     """
-    TestTopCrashBySignature.testExtractDataForPeriod_ConfigLimitedDates(self)
+    TestTopCrashesBySignature.testExtractDataForPeriod_ConfigLimitedDates(self)
     """
     global me
     minStamp,maxStamp,data = self.prepareExtractDataForPeriod('date_processed',23,5)
@@ -672,7 +672,7 @@ class TestTopCrashBySignature(unittest.TestCase):
     mminStamp = minStamp - dt.timedelta(days=1)
     mmaxStamp = maxStamp + dt.timedelta(days=1)
     self.prepareConfigForPeriod(keySet,mminStamp,mmaxStamp)
-    tc = topcrasher.TopCrashBySignature(me.config)
+    tc = topcrasher.TopCrashesBySignature(me.config)
     tc.dateColumnName = 'date_processed'
 
     summaryData = {}
@@ -692,7 +692,7 @@ class TestTopCrashBySignature(unittest.TestCase):
 
   def testExtractDataForPeriod_ConfigLimitedIds(self):
     """
-    TestTopCrashBySignature.testExtractDataForPeriod_ConfigLimitedIds
+    TestTopCrashesBySignature.testExtractDataForPeriod_ConfigLimitedIds
     """
     global me
     cursor = self.connection.cursor()
@@ -703,7 +703,7 @@ class TestTopCrashBySignature(unittest.TestCase):
     mminStamp = minStamp - dt.timedelta(days=1)
     mmaxStamp = maxStamp + dt.timedelta(days=1)
     self.prepareConfigForPeriod(keySet,mminStamp,mmaxStamp)
-    tc = topcrasher.TopCrashBySignature(me.config)
+    tc = topcrasher.TopCrashesBySignature(me.config)
     tc.dateColumnName = 'date_processed'
 
     summaryData = {}
@@ -720,14 +720,14 @@ class TestTopCrashBySignature(unittest.TestCase):
 
   def testStoreFacts(self):
     """
-    TestTopCrashBySignature.testStoreFacts
+    TestTopCrashesBySignature.testStoreFacts
     """
     global me
     cursor = self.connection.cursor()
     idCache = cia.IdCache(cursor)
     minStamp, maxStamp, data = self.prepareExtractDataForPeriod('date_processed',31,5) # full set of keys
     keySet = set([(idCache.getProductId(d['product'],d['version']),idCache.getOsId(d['os_name'],d['os_version'])) for d in data])
-    tc = topcrasher.TopCrashBySignature(me.config)
+    tc = topcrasher.TopCrashesBySignature(me.config)
     tc.dateColumnName = 'date_processed'
     beforeDate = minStamp-dt.timedelta(minutes=30)
     afterDate = maxStamp+dt.timedelta(minutes=60)
@@ -799,9 +799,9 @@ class TestTopCrashBySignature(unittest.TestCase):
     expect = [(stime,fifteen),] * gotCount
     assert expect == got, 'but got %s'%(got)
 
-  def testProcessIntervals(self):
+  def testProcessDateInterval(self):
     """
-    TestTopCrashBySignature.testProcessIntervals
+    TestTopCrashesBySignature.testProcessDateInterval
     """
     global me
     cursor = self.connection.cursor()
@@ -813,7 +813,7 @@ class TestTopCrashBySignature(unittest.TestCase):
     configEnd = maxStamp + dt.timedelta(hours=1)
     keySet = set([(idCache.getProductId(d['product'],d['version']),idCache.getOsId(d['os_name'],d['os_version'])) for d in data])
     self.prepareConfigForPeriod(keySet,configBegin,configEnd)
-    tc = topcrasher.TopCrashBySignature(me.config)
+    tc = topcrasher.TopCrashesBySignature(me.config)
 
     # first assure that we have a clean playing field
     countSql = "SELECT count(*) from top_crashes_by_signature"
@@ -831,7 +831,7 @@ class TestTopCrashBySignature(unittest.TestCase):
     eDate = maxStamp.replace(minute=maxMin,second=0,microsecond=0)+dHour
     tc.setProcessingInterval(15)
     tc.dateColumnName= 'client_crash_date'
-    tc.processIntervals(startDate=sDate, endDate=eDate, dateColumnName='date_processed',processingInterval=30)
+    tc.processDateInterval(startDate=sDate, endDate=eDate, dateColumnName='date_processed',processingInterval=30)
     assert 15 == tc.processingInterval
     assert 'client_crash_date' == tc.dateColumnName
 
