@@ -916,7 +916,7 @@ class TimeBeforeFailureTable(Table):
                                         creationSql="""
                                           CREATE TABLE time_before_failure (
                                               id serial NOT NULL PRIMARY KEY,
-                                              sum_uptime_seconds integer NOT NULL,
+                                              sum_uptime_seconds float NOT NULL, -- integer is too small
                                               report_count integer NOT NULL,
                                               productdims_id integer,
                                               osdims_id integer,
