@@ -97,7 +97,7 @@ class Mtbf(object):
         extraWhereClause = ' AND '+' AND '.join(specs)
     sqlDict['extraWhereClause'] = extraWhereClause
     # per ss: mtbf runs for 60 days from the time it starts: Ignore cfg.end
-    sql = """SELECT SUM(r.uptime) AS sum_uptime_seconds,
+    sql = """SELECT SUM(cast(r.uptime as float)) AS sum_uptime_seconds,
                   COUNT(r.*) AS report_count,
                   p.id,
                   -- o.id, -- would go here
@@ -124,7 +124,7 @@ class Mtbf(object):
       cur.execute(sql,sqlDict)
       self.connection.rollback()
       data = cur.fetchall()
-      idData = [ [d[0],d[1],d[2],idCache.getOsId(d[5],d[6]),d[3],d[4]] for d in data ]
+      idData = [ [d[0],d[1],d[2],idCache.getOsId(d[5],d[6]),d[3],d[4]] for d in data if idCache.getOsId(d[5],d[6]) ]
       if self.debugging:
         self.logger.debug("Will insert %s new rows",len(data))
       cur.executemany(inSql,idData)

@@ -35,7 +35,7 @@ class TopCrashesBySignature(object):
     --- if parameter endDate <= startDate: endDate is set to startDate (an empty enterval)
     --- otherwise, endDate is adjusted to be in range(startDate,endDate) inclusive and on a processingInterval
     - dateColumnName default is date_processed to mimic old code, but could be client_crash_date
-    - dbFetchChunkSize default is 512 items per fetchmany() call, adjust for your database/file-system
+    - dbFetchChunkSize default is 512 items per fetchmany() call, adjust for your database/file-system (obsolete)
   Usage:
   Once constructed, invoke processIntervals(**kwargs) where kwargs may override the constructor parameters.
   method processIntervals loops through the intervals between startDate and endDate effectively calling:
@@ -175,32 +175,26 @@ class TopCrashesBySignature(object):
           """%({'dcolumn':self.dateColumnName, 'resultColumnlist':resultColumnlist})
     startEndData = {'startTime':startTime, 'endTime':endTime,}
     if self.debugging:
-      logger.debug("%s - Collecting data in range[%s,%s) on column %s",threading.currentThread().getName(),startTime,endTime, self.dateColumnName)
+      logger.debug("Collecting data in range[%s,%s) on column %s",startTime,endTime, self.dateColumnName)
     zero = {'count':0,'uptime':0}
     try:
-      cursor = self.connection.cursor('extractFromReports')
+      #fetchmany(size) /w/ namedcursor => intermittent "ProgrammingError: named cursor isn't valid anymore"
+      #per http://www.velocityreviews.com/forums/t649192-psycopg2-and-large-queries.html we should not use
+      # unnamed cursors for fetchmany() calls. Thus, after some thought: Drop back to fetchall() on unnamed
+      #cursor = self.connection.cursor('extractFromReports')
+      cursor = self.connection.cursor()
       if self.debugging:
         logger.debug(cursor.mogrify(sql,startEndData))
-      chunkCounter = 0
       cursor.execute(sql,startEndData)
-      while True:
-        chunk = cursor.fetchmany(self.dbFetchChunkSize)
-        if chunk and chunk[0]:
-          if self.debugging:
-            logger.debug("Handling chunk %d starts: %s",chunkCounter,chunk[0])
-            chunkCounter += 1
-          for row in chunk:
-            key = (row[cI['signature']],row[cI['productdims_id']],idCache.getOsId(row[cI['os_name']],row[cI['os_version']]))
-            value = summaryCrashes.setdefault(key,copy.copy(zero))
-            value['count'] += 1
-            value['uptime'] += row[cI['uptime']]
-          # end of 'for row in chunk'
-        else: # no more chunks
-          break
+      chunk = cursor.fetchall()
+      if chunk and chunk[0]:
+        for row in chunk:
+          key = (row[cI['signature']],row[cI['productdims_id']],idCache.getOsId(row[cI['os_name']],row[cI['os_version']]))
+          value = summaryCrashes.setdefault(key,copy.copy(zero))
+          value['count'] += 1
+          value['uptime'] += row[cI['uptime']]
       self.connection.commit()
       logger.debug("%s - Returning %s items of data",threading.currentThread().getName(),len(summaryCrashes))
-      if self.debugging:
-        logger.debug("Connection status: %s",db_pgsql.connectionStatus(self.connection))
       return summaryCrashes # redundantly
     except:
       self.connection.rollback()
@@ -274,6 +268,7 @@ class TopCrashesBySignature(object):
         summaryCrashes = {}
         startWindow += self.deltaWindow
     finally:
+      self.connection.close()
       if revertDateColumnName:
         self.dateColumnName = oldDateColumnName
       if revertProcessingInterval:

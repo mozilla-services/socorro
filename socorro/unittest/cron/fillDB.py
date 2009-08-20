@@ -96,21 +96,22 @@ def createData(config,logger):
       print "Filling the time_before_failure table %s..."%blurb # R=1: .35 seconds; 2:0.49s; 3:.064s; 4:.9 ## = .20 + R*.15
       starter = None
       ender = None
+      mtbfInstance = mtbf.Mtbf(config,logger)
       for startDay in startDays:
         if not starter: starter = startDay
         ender = startDay
-        mtbf.processOneMtbfWindow(config,logger,processingDay=startDay)
+        mtbfInstance.processOneMtbfWindow(processingDay=startDay)
       extras.append(" - Time before fail: for days in %s through %s"%(starter,ender))
     if config.get('sig-fill'):
       print "Filling the top_crashes_by_signature table (takes about %s seconds)..."%(20+11*multiplier) # R=1: 27.3 secs; 2:38.5s; 3=48.3 ##  = 20 +R*11
-      tc = topcrasher.TopCrashBySignature(config)
-      tc.processIntervals(startDate=startDays[0],endDate = startDays[-1])
+      tc = topcrasher.TopCrashesBySignature(config)
+      tc.processDateInterval(startDate=startDays[0],endDate = startDays[-1])
       extras.append(" - Top crash by sig: for days in %s through %s"%(startDays[0],startDays[-1]))
     if config.get('url-fill'):
       print "Filling the top_crashes_by_url table (takes about %s seconds)..."%(4+multiplier*2) # R=1: 4 secs; 2: 5s, 3: 7.6 ## = 4+R*2
       logger.info("Filling the top_crashes_by_url table (takes about %s seconds)..."%(4+multiplier*2))
       tu = topcrashbyurl.TopCrashesByUrl(config)
-      tu.processCrashesByUrlWindows(startDate=startDays[0],endDate = startDays[-1])
+      tu.processDateInterval(startDate=startDays[0],endDate = startDays[-1])
       extras.append(" - Top crash by url: for days in %s through %s"%(startDays[0],startDays[-1]))
     print "DONE populating the database tables"
     if extras:
