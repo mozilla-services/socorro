@@ -16,18 +16,19 @@ class TopcrashersByUrl_Model extends Model {
     //$aTime = strtotime('2008-11-20');
     $end_date = date("Y-m-d", $aTime);
     $start_date = date("Y-m-d", $aTime - (60 * 60 * 24 * 14) + 1);
+
     $product_id = $this->getProductId($product, $version);
-    $sql = "/* soc.web tcbyrul geturls */ " .
-           "SELECT SUM(facts.count) AS count, urldims.url FROM topcrashurlfacts AS facts " .
-           "JOIN urldims ON urldims.id = facts.urldims_id " .
-           "WHERE TIMESTAMP WITHOUT TIME ZONE '$start_date' <= day " . 
-           "  AND day <= TIMESTAMP WITHOUT TIME ZONE '$end_date' " .
-           "  AND productdims_id = $product_id " .
-           "  AND urldims.url != 'ALL' " .
-           "  AND signaturedims_id != 1 " .
-           "GROUP BY (urldims.url) " .
-           "ORDER BY count DESC " .
-           "LIMIT 100 OFFSET $offset";
+    $sql = "/* soc.web tcbyrul geturls */ 
+           SELECT SUM(facts.count) AS count, urldims.url 
+           FROM top_crashes_by_url AS facts
+           JOIN urldims ON urldims.id = facts.urldims_id 
+           WHERE TIMESTAMP WITHOUT TIME ZONE '$start_date' <= facts.window_end
+             AND facts.window_end <= TIMESTAMP WITHOUT TIME ZONE '$end_date' 
+             AND productdims_id = $product_id 
+           GROUP BY (urldims.url) 
+           ORDER BY count DESC 
+           LIMIT 100 OFFSET $offset";
+
     return array($start_date, $end_date, 
       //list of crash objects, which have a url and count
       $this->fetchRows($sql)
@@ -39,76 +40,63 @@ class TopcrashersByUrl_Model extends Model {
   public function getTopCrashersByDomain($product=NULL, $version=NULL, $build_id=NULL, $branch=NULL, $page=1) {
     $offset = ($page -1) * 100;
     $aTime = time();
-    //$aTime = strtotime('2008-11-20');
     $end_date = date("Y-m-d", $aTime);
     $start_date = date("Y-m-d", $aTime - (60 * 60 * 24 * 14) + 1);
     $product_id = $this->getProductId($product, $version);
-    $sql = "/* soc.web tcbyrul getdmns */ " .
-           "SELECT SUM(facts.count) AS count, urldims.domain FROM topcrashurlfacts AS facts " .
-           "JOIN urldims ON urldims.id = facts.urldims_id " .
-           "WHERE TIMESTAMP WITHOUT TIME ZONE '$start_date' <= day " . 
-           "AND day <= TIMESTAMP WITHOUT TIME ZONE '$end_date' " .
-           "AND productdims_id = $product_id " .
-           "AND urldims.url = 'ALL' " .
-           "AND signaturedims_id = 1 " .
-           "GROUP BY (urldims.domain) " .
-           "ORDER BY count DESC " .
-           "LIMIT 100 OFFSET $offset";
+    $sql = "/* soc.web tcbyrul getdmns */
+           SELECT SUM(facts.count) AS count, urldims.domain
+           FROM top_crashes_by_url AS facts
+           JOIN urldims ON urldims.id = facts.urldims_id 
+           WHERE TIMESTAMP WITHOUT TIME ZONE '$start_date' <= facts.window_end
+             AND facts.window_end <= TIMESTAMP WITHOUT TIME ZONE '$end_date' 
+             AND productdims_id = $product_id 
+           GROUP BY (urldims.domain) 
+           ORDER BY count DESC 
+           LIMIT 100 OFFSET $offset";
       return array($start_date, $end_date, 
       //list of crash objects, which have a url and count
       $this->fetchRows($sql)
       );
     }
-    public function endingOn(){
-      return '2008-09-20';
-    }
 
-    public function getUrlsByDomain($product, $version, $domain, $page){
+    public function getUrlsByDomain($product, $version, $tDomain, $page=0){
+      $domain = $this->db->escape($tDomain);
       $offset = ($page -1) * 50;
       $aTime = time();
-      //$aTime = strtotime('2008-11-20');
       $end_date = date("Y-m-d", $aTime);
       $start_date = date("Y-m-d", $aTime - (60 * 60 * 24 * 14) + 1);
       $product_id = $this->getProductId($product, $version);
-      $sqlFromReports =  "/* soc.web tcburl urlsbydomain */ " .
-        "SELECT SUM(facts.count) AS count, urldims.url FROM topcrashurlfacts AS facts " .
-        "JOIN urldims ON urldims.id = facts.urldims_id " .
-        "WHERE TIMESTAMP WITHOUT TIME ZONE '$start_date' <= day " .
-        "AND day <= TIMESTAMP WITHOUT TIME ZONE '$end_date' " . 
-        "AND productdims_id = $product_id " . 
-        "AND urldims.url != 'ALL' " .
-        "AND urldims.domain = '$domain' " .
-        "AND signaturedims_id = 1 " .
-        "GROUP BY (urldims.url) " .
-        "ORDER BY count DESC " .
-        "LIMIT 50 OFFSET $offset ";
-
+      $sqlFromReports =  "/* soc.web tcburl urlsbydomain */
+SELECT SUM(top_crashes_by_url.count) AS count, urldims.url FROM top_crashes_by_url
+JOIN urldims ON urldims.id = top_crashes_by_url.urldims_id 
+WHERE top_crashes_by_url.window_end <= '$end_date' AND 
+      top_crashes_by_url.window_end > '$start_date'
+      AND productdims_id = 1 AND urldims.domain = $domain
+GROUP BY (urldims.url) 
+ORDER BY count DESC LIMIT 50 OFFSET $offset";
       $signatures = $this->fetchRows($sqlFromReports);
 
       return $signatures;
 
     }
 
-    public function getSignaturesByUrl($product, $version, $url, $page){
+    public function getSignaturesByUrl($product, $version, $tUrl, $page){
+      $url = $this->db->escape($tUrl);
       $offset = ($page -1) * 50;
       $aTime = time();
-      //$aTime = strtotime('2008-11-20');
+      
       $end_date = date("Y-m-d", $aTime);
       $start_date = date("Y-m-d", $aTime - (60 * 60 * 24 * 14) + 1);
+
       $product_id = $this->getProductId($product, $version);
-      $sqlFromReports = "/* soc.web tcburl sigbyurl */ " .
-        "SELECT SUM(count) as count, signaturedims.signature " .
-        "FROM topcrashurlfacts AS facts  " .
-        "JOIN signaturedims ON facts.signaturedims_id = signaturedims.id " .
-        "JOIN urldims ON facts.urldims_id = urldims.id " .
-        "WHERE TIMESTAMP WITHOUT TIME ZONE '$start_date' <= day " .
-        "AND day <= TIMESTAMP WITHOUT TIME ZONE '$end_date' " .
-        "AND urldims.url = '$url' " .
-        "AND productdims_id = $product_id " . 
-        "AND signaturedims.id != 1 " .
-        "GROUP BY signature " .
-        "ORDER BY count DESC " .
-        "LIMIT 50 OFFSET $offset;";
+      $sqlFromReports = "/* soc.web tcburl sigbyurl */
+                         SELECT tcu.count, tcus.signature 
+                           FROM top_crashes_by_url tcu
+                           JOIN urldims u ON tcu.urldims_id = u.id
+                           JOIN top_crashes_by_url_signature tcus ON tcu.id = tcus.top_crashes_by_url_id
+                         WHERE u.url = $url
+                           AND '$start_date' <= (tcu.window_end - tcu.window_size)
+                           AND tcu.window_end < '$end_date'";
 
       $signatures = $this->fetchRows($sqlFromReports);
       $comments = $this->getSigCommentsByUrl($product, $version, $url);
@@ -119,7 +107,9 @@ class TopcrashersByUrl_Model extends Model {
       }
       return $signatures;
     }
-    public function getSigCommentsByUrl($product, $version, $url){
+
+    public function getSigCommentsByUrl($product, $version, $tUrl){
+      $url = $this->db->escape($tUrl);
       $aTime = time();
       //$aTime = strtotime('2008-11-20');
       $end_date = date("Y-m-d", $aTime);
@@ -132,7 +122,7 @@ class TopcrashersByUrl_Model extends Model {
         "JOIN signaturedims ON facts.signaturedims_id = signaturedims.id " .
         "WHERE TIMESTAMP WITHOUT TIME ZONE '$start_date' <= facts.day " .
         "AND facts.day <= TIMESTAMP WITHOUT TIME ZONE '$end_date' " .
-        "AND urldims.url = '$url' ";
+        "AND urldims.url = $url ";
       $rows = $this->fetchRows($sql);
       $sigToCommentMap = array();
       foreach( $rows as $row ){
@@ -146,16 +136,14 @@ class TopcrashersByUrl_Model extends Model {
       return $sigToCommentMap;
     }
 
-    /**
-     * TODO: We should cache all calls to this method. 
-     * There aren't many values and it is reused heavily.
-     */
-    public function getProductId($product, $version){
-      $sql = "/* soc.web tcburl proddim.id */ " .
-         "SELECT id FROM productdims " .
-         "WHERE version = '$version' " .
-         "AND product = '$product' " .
-	"AND os_name = 'ALL' ";
+    public function getProductId($tProduct, $tVersion){
+      $product = $this->db->escape($tProduct);
+      $version = $this->db->escape($tVersion);
+
+      $sql = "/* soc.web tcburl proddim.id */
+              SELECT id FROM productdims
+              WHERE version = $version
+              AND product = $product";
       $rows = $this->fetchRows($sql);
       if(count($rows) != 1){
 	Kohana::log('error', "Unable to getProductId for $product $version got " . Kohana::debug($rows));

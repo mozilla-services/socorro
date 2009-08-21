@@ -27,8 +27,15 @@ class Mtbf_Controller extends Controller {
           $releases = $mtbf->getMtbfOf($product, $release_level);
 
 	  if ($this->input->get('format') == "csv") {
-              $eachOs = $mtbf->getMtbfOf($product, $release_level, array('Win', 'Mac', 'Lin', 'Sol'));
-              $this->setViewData(array('releases' => $this->_csvFormatArray($releases + $eachOs)));
+              $eachOs = $mtbf->getMtbfOf($product, $release_level, array('Windows NT', 'MacMac OS X', 'Linux', 'Solaris'));
+	      $both = array();
+	      foreach ($releases as $release) {
+		array_push($both, $release);
+	      }
+	      foreach ($eachOs as $each) {
+		array_push($both, $each);
+	      }
+              $this->setViewData(array('releases' => $this->_csvFormatArray($both)));
   	      $this->renderCSV("${product}_${release_level}_" . date("Y-m-d"));
 	  } else {
             $this->setViewData(array(
@@ -97,14 +104,14 @@ class Mtbf_Controller extends Controller {
      * AJAX GET method which /mtbf/ajax/{product}/{release level}/{OS name}
      * product - name of a product like Firefox or Thunderbird
      * release level - flavor of release [major | milestone | developer]
-     * OS name - Optional defaults to ALL, [Win | Mac | ALL | Each]. 
+     * OS name - Optional defaults to ALL, ['Windows NT', 'Mac OS X', 'Linux', etc]. 
      *           Each will retrieve each of the available OSes
      * returns series of MTBF data JSON encoded
      */
-    public function ajax($product, $release_level, $os_name=array('ALL')){
+    public function ajax($product, $release_level, $os_name=array()){
       $widget = new WidgetDataHelper;
       if($os_name == 'Each'){
-        $os_name = array('Win', 'Mac', 'Lin', 'Sol');
+        $os_name = array('Windows NT', 'Mac OS X', 'Linux', 'Solaris');
       }
       header('Content-Type: text/javascript');
       $this->auto_render = false;
