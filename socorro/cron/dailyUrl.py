@@ -19,7 +19,7 @@ def dailyUrlDump(config):
     try:
       databaseConnection, databaseCursor = databaseConnectionPool.connectionCursorPair()
 
-      now = dt.datetime.now()
+      now = config.day
       nowAsString = "%4d-%02d-%02d" % now.timetuple()[:3]
       yesterday = now - dt.timedelta(1)
       yesterdayAsString = "%4d-%02d-%02d" % yesterday.timetuple()[:3]
@@ -55,7 +55,7 @@ def dailyUrlDump(config):
         array(select ba.bug_id from bug_associations ba where ba.signature = r.signature) as bug_list,
         r.user_comments
       from
-        reports r join branches b on r.product = b.product and r.version = b.version
+        reports r left join branches b on r.product = b.product and r.version = b.version
       where
         '%s' >= date_processed and date_processed > '%s'
         %s %s
