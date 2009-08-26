@@ -157,13 +157,16 @@ ORDER BY count DESC LIMIT 50 OFFSET $offset";
     }
     /**
      * Returns a list of existing reports based on the 
-     * top crashers by url config table 'tcbyurlconfig'
+     * product visibility table
      */
-    public function listReports()
+    public function listReports($aDate = NULL)
     {
-        $sql = "SELECT p.product, p.version, conf.enabled FROM tcbyurlconfig conf
-                   JOIN productdims p ON conf.productdims_id = p.id
-                   ORDER BY p.id DESC";
-        return $this->fetchRows($sql);
+      if(! $aDate) {
+        $aDate = date("Y-m-d",time());
+      }
+      $sql = "SELECT p.product, p.version, (NOT ignore and start_date <= ? and ? <= end_date) as enabled FROM product_visibility pv
+                JOIN productdims p ON pv.productdims_id = p.id
+               ORDER BY p.id DESC";
+      return $this->db->query($sql,$aDate,$aDate);
     }
 }

@@ -57,7 +57,7 @@ class Mtbf_Model extends Model {
 	$uptime = 0;
 	$nodes = 0;
 	foreach ($release['mtbf-avg'] as $a) {
-	    $crashes += $a[0];
+            $crashes += $a[0];
 	    $nodes ++;
 	    $uptime  += $a[1];
 	}
@@ -101,10 +101,9 @@ class Mtbf_Model extends Model {
 		                'mtbf-product-id'   => $row->id,
                                 'mtbf-report_count' => $row->report_count,
 				'mtbf-unique_users' => 0,
-                                'mtbf-avg'          => array($row->report_count, $row->avg_seconds),
+                                'mtbf-avg'          => array(array($row->report_count, $row->avg_seconds)),
 				'data'              => array( array(0, $row->avg_seconds) )
   	        );
-
 		if ($by_os) {
 		    $mtbf[$i]['label'] = $mtbf[$i]['label'] . " " . $row->os_name;
 		}
@@ -119,13 +118,13 @@ class Mtbf_Model extends Model {
 
     /**
      * Returns a list of existing reports based on the 
-     * Mean Time Before Failure config table 'mtbfconfig'
+     * product_visibility table
      */
     public function listReports($product=NULL)
     {
         $whereClause = $product == NULL ? "" : "WHERE product = " . $this->db->escape($product);
 
-        $sql = "SELECT distinct p.product, p.release FROM mtbfconfig conf
+        $sql = "SELECT distinct p.product, p.release FROM product_visibility conf
                     JOIN productdims p ON conf.productdims_id = p.id
                     $whereClause
                     ORDER BY product, release;";
