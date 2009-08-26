@@ -3,9 +3,20 @@ import datetime
 import re
 
 try:
-  from config.commonconfig import *
+  from config.commonconfig import databaseHost
+  from config.commonconfig import databaseName
+  from config.commonconfig import databaseUserName
+  from config.commonconfig import databasePassword
 except ImportError:
-  from commonconfig import *
+  from commonconfig import databasehost
+  from commonconfig import databaseName
+  from commonconfig import databaseUserName
+  from commonconfig import databasePassword
+
+day = cm.Option()
+day.doc = 'the date to dump (YYYY-MM-DD)'
+day.default = datetime.date.today().isoformat()
+day.fromStringConverter = cm.dateTimeConverter
 
 outputPath = cm.Option()
 outputPath.doc = 'file system location to put the output csv file'
