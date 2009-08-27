@@ -15,6 +15,7 @@ maxUriIdCacheLength = 32768
 osIdCache = None     # may become {(os_name,os_version): osdims_id}
 osIdCount = None     # may become {(os_name,os_version): count_of_cache_hits}
 productIdCache = None # may become {(product_name,version_string): productdims_id}
+productBranchCache = None # may become {productdims_id: branch}
 productIdCount = None # may become {(product_name,version_string): count_of_cache_hits}
 #signatureIdCache = None  # may become {(signature,): signatureims_id}
 #signatureIdCount = None  # may become {(signature,): count_of_cache_hits}
@@ -49,11 +50,19 @@ def initializeIdCache(keyColumns, idColumn, tableName, cursor):
   idCount = dict((tuple(x[:-1]),0) for x in data)
   cursor.connection.commit()
   return idCache, idCount
+
+#-----------------------------------------------------------------------------------------------------------------
+def initializeProductBranchCache(idMap,cursor):
+  cursor.execute("SELECT id,branch from productdims")
+  data = cursor.fetchall()
+  cursor.connection.rollback()
+  return dict(data)
   
 #-----------------------------------------------------------------------------------------------------------------
 def clearCache():
-  global productIdCache,productIdCount,uriIdCache,uriIdCount,osIdCache,osIdCount
-  productIdCache = productIdCount = uriIdCache = uriIdCount = None
+  global productIdCache,productIdCount,productBranchCache,uriIdCache,uriIdCount,osIdCache,osIdCount
+  productIdCache = productIdCount = productBranchCache = None
+  uriIdCache = uriIdCount = None
   osIdCache = osIdCount = None
 
 #-----------------------------------------------------------------------------------------------------------------
@@ -83,18 +92,22 @@ class IdCache:
   linuxLineRE = re.compile(r'0\.0\.0 [lL]inux.+[lL]inux$|[0-9.]+.+(i586|i686|sun4u|i86pc|x86_64)')
   linuxVersionRE = re.compile(r'(0\.0\.0 [lL]inux.)?([0-9.]+[0-9]).*(i586|i686|sun4u|i86pc|x86_64).*')
 
-  def __init__(self,databaseCursor):
+  def __init__(self,databaseCursor, **kwargs):
+    global logger
+    if kwargs.get('logger'):
+      logger = kwargs.get('logger')
     self.cursor = databaseCursor
     self.initializeCache()
     
   def initializeCache(self):
     global maxOsIdCacheLength, maxProductIdCacheLength, maxUriIdCacheLength
-    global productIdCache,productIdCount
+    global productIdCache,productIdCount,productBranchCache
     global uriIdCache,uriIdCount
     global osIdCache,osIdCount
     if not productIdCache:
       if maxProductIdCacheLength:
         productIdCache,productIdCount = initializeIdCache(('product','version'),'id','productdims',self.cursor)
+        productBranchCache = initializeProductBranchCache(productIdCache,self.cursor)
     if not uriIdCache:
       if maxUriIdCacheLength:
         uriIdCache, uriIdCount = initializeIdCache(('domain','url'),'id','urldims',self.cursor)
@@ -199,7 +212,42 @@ class IdCache:
     return uriId,queryPart
 
   #---------------------------------------------------------------------------------------------------------------
-  def getProductId(self,product,version):
+  def getBestBranch(self,pvKey):
+    """
+    Look up branch by key (product,version). If unavailable:
+     SELECT WHERE product=product ORDER BY id DESC LIMIT 1 -- assume id is in date order
+     if THAT is unavailable return None
+    """
+    global productBranchCache
+    id = branch = None
+    if None != productIdCache:
+      id = productIdCache.get(pvKey)
+    if id:
+      branch = productBranchCache.get(id)
+    if branch:
+      return branch
+    elif id:
+      self.cursor.execute("SELECT branch from productdims WHERE product = %s AND version = %s",(pvKey[0],pvKey[1]))
+      self.cursor.connection.rollback()
+      try:
+        branch = self.cursor.fetchone()[0]
+        if None != productBranchCache:
+          productBranchCache['id'] = branch
+        return branch
+      except (IndexError, TypeError): # might be empty list or None
+        pass
+    # no cached branch, no id, no branch in db. begin heuristic:
+    self.cursor.execute("SELECT branch FROM productdims WHERE product = %s ORDER BY id DESC LIMIT 1")
+    self.cursor.connection.rollback()
+    try:
+      branch = self.cursor.fetchone()[0]
+      logger.warn("Interpolating branch (%s) for product,version %s)",branch,str(pvKey))
+      return branch
+    except:
+      return None
+
+  #---------------------------------------------------------------------------------------------------------------
+  def getProductId(self,product,version,branch=''):
     """
     Get product id given a product and version. Cache results. Clean cache if length is too great.
     """
@@ -207,12 +255,18 @@ class IdCache:
     productId = None
     if not product or not version:
       return productId
+    if not branch:
+      branch = self.getBestBranch((product,version))
+    if not branch:
+      # Fail if we don't have a reasonable idea of the correct gecko version aka branch
+      return productId
     release = createProductRelease(version)
     key = (product.strip(),version.strip())
-    dkey = {'product':product.strip(),'version':version.strip(),'release':release}
+    dkey = {'product':key[0],'version':key[1],'branch':branch.strip(),'release':release}
     productId = self.assureAndGetId(key,'productdims',
-                                "SELECT id FROM productdims WHERE product=%(product)s and version=%(version)s",
-                                "INSERT INTO productdims (product,version,release) VALUES (%(product)s,%(version)s,%(release)s)",
+                                    """SELECT id FROM productdims WHERE product=%(product)s and version=%(version)s""",
+                                    """INSERT INTO productdims (product,version,branch,release)
+                                             VALUES (%(product)s,%(version)s,%(branch)s,%(release)s)""",
                                 productIdCache, productIdCount, dkey=dkey)
     return productId
 

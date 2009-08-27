@@ -60,7 +60,7 @@ def setup_module():
   # value[0] is True iff the table is a PartitionedTable; value[1] is the expectedSet of table names (including precursors) for each Table
   me.hardCodedSchemaClasses = {
     schema.ReleaseEnum:[False,set(['release_enum'])],
-    schema.BranchesTable:[False,set(['branches'])],
+    #schema.BranchesTable:[False,set(['branches'])],
     schema.BugsTable:[False, set(['bugs'])],
     schema.BugAssociationsTable:[False, set(['bugs','bug_associations'])],
     #schema.CrashReportsTable:[True,set(['crash_reports','osdims','productdims','signaturedims','urldims','release_enum'])],

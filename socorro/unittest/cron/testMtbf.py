@@ -195,9 +195,9 @@ class TestMtbf(unittest.TestCase):
     self.processingDays, self.productDimData = dbtestutil.fillReportsTable(cursor,False,False, multiplier)
 
   # ========================================================================== #  
-  def testCalculateMtbf(self):
+  def testProcessOneMtbfWindow(self):
     """
-    testCalculateMtbf(self): slow(1)
+    TestMtbf:testProcessOneMtbfWindow(self): slow(1)
       check that we get the expected data. This is NOT hand-calculated, just a regression check
     """
     cursor = self.connection.cursor()
@@ -228,9 +228,9 @@ class TestMtbf(unittest.TestCase):
   def whichProduct(self,data):
     return "P:%s V:%s::OS:%s, OSV:%s"%(data.get('product','-'),data.get('version','-'),data.get('os_name','-'),data.get('os_version','-'))
   # ========================================================================== #  
-  def testCalculateMtbf_kwargs(self):
+  def testProcessOneMtbfWindow_kwargs(self):
     """
-    testCalculateMtbf_kwargs(self):
+    TestMtbf:testProcessOneMtbfWindow_kwargs(self):
     check that we do NOT get the default-specified data, but instead get data specified in kwargs:
       check that processingDay overrides config
       check that product and version remove other product data

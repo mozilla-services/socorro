@@ -466,12 +466,13 @@ class TestCachedIdAccess:
     assert {} == cia.productIdCache
     assert {} == cia.productIdCount
     testProducts = [
-      (('','3.0.9'), None,),
-      (('Firefox',''), None,),
-      (('Firefox','3.0.9'), 1,),
-      (('Firefox','3.0.9a'), 2,),
-      (('FireFox','3.0.9'), 3,),
-      (('Firefox','3.0.9'), 1,),
+      (('','3.0.9',''), None,),
+      (('','3.0.9','1.9'), None,),
+      (('Firefox','',''), None,),
+      (('Firefox','3.0.9','1.9'), 1,),
+      (('Firefox','3.0.9a','1.9'), 2,),
+      (('FireFox','3.0.9','1.9'), 3,),
+      (('Firefox','3.0.9','1.9'), 1,),
       ]
     rowCount = 0
     idSet = set()

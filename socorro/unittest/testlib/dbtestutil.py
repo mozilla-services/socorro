@@ -118,14 +118,14 @@ dimsData = {
   {'os_name':'Linux','os_version':'2.6.27.21 i686',},
   ],
   'productdims': [
-  {'product':'Firefox','version':'3.0.6','release':'major',},
-  {'product':'Firefox','version':'3.0.8','release':'major',},
-  {'product':'Firefox','version':'3.0.9','release':'major',},
-  {'product':'Firefox','version':'3.1.1','release':'major',},
-  {'product':'Firefox','version':'3.1.2b','release':'development',},
-  {'product':'Firefox','version':'3.1.3b','release':'development',},
-  {'product':'Firefox','version':'3.5b4pre','release':'milestone',},
-  {'product':'Thunderbird','version':'2.0.0.21','release':'major',},
+  {'product':'Firefox','version':'3.0.6','release':'major','branch':'1.9'},
+  {'product':'Firefox','version':'3.0.8','release':'major','branch':'1,9'},
+  {'product':'Firefox','version':'3.0.9','release':'major','branch':'1.9'},
+  {'product':'Firefox','version':'3.1.1','release':'major','branch':'1.9.1'},
+  {'product':'Firefox','version':'3.1.2b','release':'development','branch':'1.9.1'},
+  {'product':'Firefox','version':'3.1.3b','release':'development','branch':'1.9.1'},
+  {'product':'Firefox','version':'3.5b4pre','release':'milestone','branch':'1.9.1'},
+  {'product':'Thunderbird','version':'2.0.0.21','release':'major','branch':'1.9.2'},
   ],
 
   'urldims': [

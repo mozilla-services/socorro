@@ -307,9 +307,18 @@ def testFillDimsTables_MyData():
   dimsTables = [db_schema.ProductDimsTable, db_schema.UrlDimsTable, db_schema.OsDimsTable]
   toBeCleanedInstances = [x(logger) for x in db_schema.getOrderedSetupList(dimsTables)]
   data = {
-    'productdims':[{'product':'P1','version':'V1','release':'major'},{'product':'P2','version':'V2','release':'milestone'},{'product':'P1','version':'V3','release':'development'}],
-    'urldims':[{'domain':'www.woot.com','url':'http://www.woot.com/patootie#bleep'},{'domain':'google.com','url':'http://google.com/search'}],
-    'osdims':[{'os_name':'AnOS','os_version':'6.6.6'}],
+    'productdims':[
+    {'product':'P1','version':'V1','release':'major','branch':'b1'},
+    {'product':'P2','version':'V2','release':'milestone','branch':'b2'},
+    {'product':'P1','version':'V3','release':'development','branch':'b3'}
+    ],
+    'urldims':[
+    {'domain':'www.woot.com','url':'http://www.woot.com/patootie#bleep'},
+    {'domain':'google.com','url':'http://google.com/search'}
+    ],
+    'osdims':[
+    {'os_name':'AnOS','os_version':'6.6.6'}
+    ],
     }
   try:
     dbtu.fillDimsTables(cursor,data)

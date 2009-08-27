@@ -284,20 +284,20 @@ class PartitionedTable(Table):
       databaseCursor.execute(insertSql, row)
 
 #=================================================================================================================
-class BranchesTable(Table):
-  """Define the table 'branches'"""
-  #-----------------------------------------------------------------------------------------------------------------
-  def __init__ (self, logger, **kwargs):
-    super(BranchesTable, self).__init__(name="branches", logger=logger,
-                                        creationSql = """
-                                            CREATE TABLE branches (
-                                                product character varying(30) NOT NULL,
-                                                version character varying(16) NOT NULL,
-                                                branch character varying(24) NOT NULL, -- gecko version 
-                                                PRIMARY KEY (product, version)
-                                            );""")
+# class BranchesTable(Table):
+#   """Define the table 'branches'"""
+#   #-----------------------------------------------------------------------------------------------------------------
+#   def __init__ (self, logger, **kwargs):
+#     super(BranchesTable, self).__init__(name="branches", logger=logger,
+#                                         creationSql = """
+#                                             CREATE TABLE branches (
+#                                                 product character varying(30) NOT NULL,
+#                                                 version character varying(16) NOT NULL,
+#                                                 branch character varying(24) NOT NULL, -- gecko version 
+#                                                 PRIMARY KEY (product, version)
+#                                             );""")
 
-databaseDependenciesForSetup[BranchesTable] = []
+# databaseDependenciesForSetup[BranchesTable] = []
 
 #=================================================================================================================
 class ReportsTable(PartitionedTable):
@@ -613,6 +613,7 @@ class ProductDimsTable(Table):
                                               id serial NOT NULL PRIMARY KEY,
                                               product TEXT NOT NULL, -- varchar(30)
                                               version TEXT NOT NULL, -- varchar(16)
+                                              branch TEXT NOT NULL, -- from branches table: 'gecko version'
                                               release release_enum -- 'major':x.y.z..., 'milestone':x.ypre, 'development':x.y[ab]z
                                           );
                                           CREATE UNIQUE INDEX productdims_product_version_key ON productdims (product, version);
