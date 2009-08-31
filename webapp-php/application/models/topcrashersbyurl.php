@@ -114,15 +114,15 @@ ORDER BY count DESC LIMIT 50 OFFSET $offset";
       //$aTime = strtotime('2008-11-20');
       $end_date = date("Y-m-d", $aTime);
       $start_date = date("Y-m-d", $aTime - (60 * 60 * 24 * 14) + 1);
-      $sql = "/* soc.web tbcurl comm4sig */ " . 
-        "SELECT signaturedims.signature, crashes.comments, crashes,uuid " .
-        "FROM topcrashurlfacts AS facts " .
-        "JOIN topcrashurlfactsreports AS crashes ON facts.id = crashes.topcrashurlfacts_id " .
-        "JOIN urldims ON facts.urldims_id = urldims.id " .
-        "JOIN signaturedims ON facts.signaturedims_id = signaturedims.id " .
-        "WHERE TIMESTAMP WITHOUT TIME ZONE '$start_date' <= facts.day " .
-        "AND facts.day <= TIMESTAMP WITHOUT TIME ZONE '$end_date' " .
-        "AND urldims.url = $url ";
+      $sql = "/* soc.web tbcurl comm4sig */ 
+              SELECT top_crashes_by_url_signature.signature, crashes.comments, crashes,uuid 
+              FROM top_crashes_by_url AS facts 
+              JOIN topcrashurlfactsreports AS crashes ON facts.id = crashes.topcrashurlfacts_id 
+              JOIN urldims ON facts.urldims_id = urldims.id 
+              JOIN top_crashes_by_url_signature ON facts.id = top_crashes_by_url_signature.top_crashes_by_url_id
+              WHERE '$start_date' <= (facts.window_end - facts.window_size) AND  
+                facts.window_end < '$end_date' AND 
+                urldims.url = $url";
       $rows = $this->fetchRows($sql);
       $sigToCommentMap = array();
       foreach( $rows as $row ){
