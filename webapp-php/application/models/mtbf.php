@@ -50,7 +50,7 @@ class Mtbf_Model extends Model {
     $prod_id_to_index = array();
 
     $this->load_product_info($mtbf, $rs, $prod_id_to_index, $by_os);
-    
+    Kohana::log('info', Kohana::debug($mtbf));
     for ($i = 0; $i < count($mtbf); $i++) {
         $release = $mtbf[$i];
         $crashes = 0;
@@ -109,7 +109,8 @@ class Mtbf_Model extends Model {
 		}
 	    } else {
 	        $i = $prod_id_to_index[$prod_id];
-		$mtbf[$i]['data'][] = array( $i, $row->avg_seconds);
+		$d = $mtbf[$i]['data'];
+		$mtbf[$i]['data'][] = array(count($d) , $row->avg_seconds);
                 $mtbf[$i]['mtbf-avg'][] = array($row->report_count, $row->avg_seconds);
                 $mtbf[$i]['mtbf-report_count'] += $row->report_count;
 	    }

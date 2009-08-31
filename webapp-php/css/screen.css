@@ -1075,12 +1075,9 @@ h2.mtbf-graph{ float: left; }
     clear: left;
 }
 #overviewLegend {
-/*  position: absolute;
+  position: absolute;
   left: 830px;
-  margin-top: 20px;*/
-  float: right;
   margin-top: 20px;
-  padding-right: 50px;    
 }
 .legendLabel{ width: 90px; overflow: hidden; }
 
