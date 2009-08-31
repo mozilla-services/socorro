@@ -68,6 +68,9 @@ class Mtbf_Model extends Model {
 	    Kohana::log('error', "Unable to average uptime across crashes, crashes=$crashes uptime=$uptime");
             $mtbf[$i]['mtbf-avg'] = 0;
 	}
+	for ($k = count($release['data']); $k < 60; $k++) {
+	    $mtbf[$i]['data'][] = array($k, NULL);
+	}
     }
     return $mtbf;
   }

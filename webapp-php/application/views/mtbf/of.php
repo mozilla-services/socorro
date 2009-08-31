@@ -23,7 +23,6 @@
    ?>
 <h1 class="first">Mean Time Before Failure</h1>
 <h2 class="mtbf-graph"><span id="mtbf-product"><?php echo $product . "</span> <span id='mtbf-release-level'>" . $release_level ?></span> releases</h2>
-      <?php echo Kohana::debug() ?>
 <div class="mtbf-nav-panel">
   <h6>Release type: </h6>
   <ul>
