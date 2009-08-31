@@ -50,7 +50,6 @@ class Mtbf_Model extends Model {
     $prod_id_to_index = array();
 
     $this->load_product_info($mtbf, $rs, $prod_id_to_index, $by_os);
-    Kohana::log('info', Kohana::debug($mtbf));
     for ($i = 0; $i < count($mtbf); $i++) {
         $release = $mtbf[$i];
         $crashes = 0;
@@ -69,7 +68,6 @@ class Mtbf_Model extends Model {
 	    Kohana::log('error', "Unable to average uptime across crashes, crashes=$crashes uptime=$uptime");
             $mtbf[$i]['mtbf-avg'] = 0;
 	}
-	$i++;
     }
     return $mtbf;
   }
