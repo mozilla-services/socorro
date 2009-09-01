@@ -1,3 +1,13 @@
+Requirements
+============
+PHP 5.2+
+php.ini settings - You should enable support for <?= style tags
+short_open_tag = On 
+
+Apache
+Configure your document root and allow for .htaccess files
+AllowOverride All
+
 Installation
 ============
 
