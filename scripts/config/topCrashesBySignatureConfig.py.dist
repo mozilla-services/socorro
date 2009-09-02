@@ -11,7 +11,7 @@ from config.commonconfig import startWindow
 from config.commonconfig import endWindow
 from config.commonconfig import deltaWindow
 from config.commonconfig import defaultDeltaWindow
-defaultDeltaWindow.default = '24:00:00'
+defaultDeltaWindow.default = '00:12:00'
 
 from config.commonconfig import startDate
 from config.commonconfig import endDate
@@ -19,13 +19,14 @@ from config.commonconfig import deltaDate
 from config.commonconfig import initialDeltaDate
 initialDeltaDate.default = '96:00:00'
 
+# specific to this script
 logFilePathname = cm.Option()
 logFilePathname.doc = 'full pathname for the log file'
-logFilePathname.default = './topcrasher.log'
+logFilePathname.default = './topCrashesBySignature.log'
 
 logFileMaximumSize = cm.Option()
 logFileMaximumSize.doc = 'maximum size in bytes of the log file'
-logFileMaximumSize.default = 1000000
+logFileMaximumSize.default = 5000000
 
 logFileMaximumBackupHistory = cm.Option()
 logFileMaximumBackupHistory.doc = 'maximum number of log files to keep'
@@ -37,7 +38,7 @@ logFileLineFormatString.default = '%(asctime)s %(levelname)s - %(message)s'
 
 logFileErrorLoggingLevel = cm.Option()
 logFileErrorLoggingLevel.doc = 'logging level for the log file (10 - DEBUG, 20 - INFO, 30 - WARNING, 40 - ERROR, 50 - CRITICAL) X < 40 causes very much output'
-logFileErrorLoggingLevel.default = 40
+logFileErrorLoggingLevel.default = 30
 
 stderrLineFormatString = cm.Option()
 stderrLineFormatString.doc = 'python logging system format for logging to stderr'
