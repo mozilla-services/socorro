@@ -96,7 +96,9 @@ ORDER BY count DESC LIMIT 50 OFFSET $offset";
                            JOIN top_crashes_by_url_signature tcus ON tcu.id = tcus.top_crashes_by_url_id
                          WHERE u.url = $url
                            AND '$start_date' <= (tcu.window_end - tcu.window_size)
-                           AND tcu.window_end < '$end_date'";
+                           AND tcu.window_end < '$end_date'
+                         ORDER BY tcu.count DESC
+                         LIMIT 20";
 
       $signatures = $this->fetchRows($sqlFromReports);
       $comments = $this->getSigCommentsByUrl($product, $version, $url);
