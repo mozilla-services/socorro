@@ -1,8 +1,11 @@
 Requirements
 ============
 PHP 5.2+
-php.ini settings - You should enable support for <?= style tags
+php.ini settings 
+- You should enable support for <?= style tags:
 short_open_tag = On 
+- You may wish to configure php how (not) to report certain errors:
+display_errors, display_startup_errors, error_reporting, log_errors
 
 Apache
 Configure your document root and allow for .htaccess files
@@ -12,11 +15,13 @@ Installation
 ============
 
 # Copy htaccess-dist to .htaccess, tweak for installation host path if it's not
-# at the domain root.
+# at the domain root: Edit RewriteBase from / to the actual root.
 cp htaccess-dist .htaccess 
 vim htaccess
 
 # Change hosting path and domain in application/config/config.php
+# Edit config['site_domain'] to exactly match the rewriteBase above
+# unless you know what you are doing ...
 cp application/config/config.php-dist application/config/config.php
 vim application/config/config.php
 
