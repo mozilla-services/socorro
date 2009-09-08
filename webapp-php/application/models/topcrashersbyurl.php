@@ -90,14 +90,16 @@ ORDER BY count DESC LIMIT 50 OFFSET $offset";
 
       $product_id = $this->getProductId($product, $version);
       $sqlFromReports = "/* soc.web tcburl sigbyurl */
-                         SELECT tcu.count, tcus.signature 
+                         SELECT sum(tcu.count), tcus.signature 
                            FROM top_crashes_by_url tcu
                            JOIN urldims u ON tcu.urldims_id = u.id
                            JOIN top_crashes_by_url_signature tcus ON tcu.id = tcus.top_crashes_by_url_id
+                           JOIN productdims pd ON pd.id = tcu.productdims_id and pd.product = '$product' and pd.version = '$version'
                          WHERE u.url = $url
                            AND '$start_date' <= (tcu.window_end - tcu.window_size)
                            AND tcu.window_end < '$end_date'
-                         ORDER BY tcu.count DESC
+                           GROUP BY tcus.signature
+                       ORDER BY tcu.count DESC
                          LIMIT 20";
 
       $signatures = $this->fetchRows($sqlFromReports);
