@@ -22,7 +22,7 @@ class TopcrashersByUrl_Model extends Model {
            SELECT SUM(facts.count) AS count, urldims.url
            FROM top_crashes_by_url AS facts
            JOIN urldims ON urldims.id = facts.urldims_id
-           WHERE TIMESTAMP WITHOUT TIME ZONE '$start_date' <= facts.window_end
+           WHERE TIMESTAMP WITHOUT TIME ZONE '$start_date' <= (facts.window_end - facts.window_size)
              AND facts.window_end <= TIMESTAMP WITHOUT TIME ZONE '$end_date'
              AND productdims_id = $product_id
            GROUP BY (urldims.url)
@@ -47,7 +47,7 @@ class TopcrashersByUrl_Model extends Model {
            SELECT SUM(facts.count) AS count, urldims.domain
            FROM top_crashes_by_url AS facts
            JOIN urldims ON urldims.id = facts.urldims_id
-           WHERE TIMESTAMP WITHOUT TIME ZONE '$start_date' <= facts.window_end
+           WHERE TIMESTAMP WITHOUT TIME ZONE '$start_date' <= (facts.window_end - facts.window_size)
              AND facts.window_end <= TIMESTAMP WITHOUT TIME ZONE '$end_date'
              AND productdims_id = $product_id
            GROUP BY (urldims.domain)
@@ -69,8 +69,8 @@ class TopcrashersByUrl_Model extends Model {
       $sqlFromReports =  "/* soc.web tcburl urlsbydomain */
 SELECT SUM(top_crashes_by_url.count) AS count, urldims.url FROM top_crashes_by_url
 JOIN urldims ON urldims.id = top_crashes_by_url.urldims_id
-WHERE top_crashes_by_url.window_end <= '$end_date' AND
-      top_crashes_by_url.window_end > '$start_date'
+WHERE TIMESTAMP WITHOUT TIME ZONE '$start_date' <= (top_crashes_by_url.window_end - top_crashes_by_url.window_size)
+  AND top_crashes_by_url.window_end <= TIMESTAMP WITHOUT TIME ZONE '$end_date'
       AND productdims_id = 1 AND urldims.domain = $domain
 GROUP BY (urldims.url)
 ORDER BY count DESC LIMIT 50 OFFSET $offset";
@@ -119,7 +119,7 @@ ORDER BY count DESC LIMIT 50 OFFSET $offset";
       $end_date = date("Y-m-d", $aTime);
       $start_date = date("Y-m-d", $aTime - (60 * 60 * 24 * 14) + 1);
       $sql = "/* soc.web tbcurl comm4sig */
-              SELECT top_crashes_by_url_signature.signature, crashes.comments, crashes,uuid
+              SELECT top_crashes_by_url_signature.signature, crashes.comments, crashes.uuid
               FROM top_crashes_by_url AS facts
               JOIN topcrashurlfactsreports AS crashes ON facts.id = crashes.topcrashurlfacts_id
               JOIN urldims ON facts.urldims_id = urldims.id
