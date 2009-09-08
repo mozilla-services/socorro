@@ -99,7 +99,7 @@ ORDER BY count DESC LIMIT 50 OFFSET $offset";
                            AND '$start_date' <= (tcu.window_end - tcu.window_size)
                            AND tcu.window_end < '$end_date'
                            GROUP BY tcus.signature
-                       ORDER BY tcu.count DESC
+                         ORDER BY 1 DESC
                          LIMIT 20";
 
       $signatures = $this->fetchRows($sqlFromReports);
