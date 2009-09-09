@@ -109,7 +109,7 @@ ORDER BY count DESC LIMIT 50 OFFSET $offset";
                             join productdims pd on pd.id = tcu.productdims_id and pd.product = '$product' and pd.version = '$version'
                               join top_crashes_by_url_signature tucs on tucs.top_crashes_by_url_id = tcu.id
                         where
-                          ud.url = '$url'
+                          ud.url = $url
                         group by
                           tucs.signature
                         order by 1 desc
