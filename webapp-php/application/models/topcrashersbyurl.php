@@ -123,12 +123,11 @@ class TopcrashersByUrl_Model extends Model {
                         top_crashes_by_url tcu join urldims ud on tcu.urldims_id = ud.id
                                                                   and '$start_date' <= (tcu.window_end - tcu.window_size)
                                                                   and tcu.window_end < '$end_date'
+                                                                  and ud.url = $url
                           join productdims pd on pd.id = tcu.productdims_id
                                                  and pd.product = $product
                                                  and pd.version = $version
                             join top_crashes_by_url_signature tucs on tucs.top_crashes_by_url_id = tcu.id
-                      where
-                        ud.url = $url
                       group by
                         tucs.signature
                       order by 1 desc
