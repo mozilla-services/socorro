@@ -19,7 +19,18 @@ class TopcrashersByUrl_Model extends Model {
 
     $product_id = $this->getProductId($product, $version);
     $sql = "/* soc.web tcbyrul geturls */
-           SELECT SUM(facts.count) AS count, urldims.url
+            select
+              sum(tcu.count) as count,
+              ud.url
+            from
+              top_crashes_by_url tcu join urldims ud on tcu.urldims_id = ud.id and '$start_date' <= (tcu.window_end - tcu.window_size) and tcu.window_end < '$end_date'
+                 join productdims pd on pd.id = tcu.productdims_id and pd.product = '$product' and pd.version = '$version'
+            group by
+              ud.url
+            order by
+              count desc
+            limit 100 offset $offset";
+           /*SELECT SUM(facts.count) AS count, urldims.url
            FROM top_crashes_by_url AS facts
            JOIN urldims ON urldims.id = facts.urldims_id
            WHERE TIMESTAMP WITHOUT TIME ZONE '$start_date' <= (facts.window_end - facts.window_size)
@@ -27,7 +38,7 @@ class TopcrashersByUrl_Model extends Model {
              AND productdims_id = $product_id
            GROUP BY (urldims.url)
            ORDER BY count DESC
-           LIMIT 100 OFFSET $offset";
+           LIMIT 100 OFFSET $offset";*/
 
     return array($start_date, $end_date,
       //list of crash objects, which have a url and count
@@ -90,7 +101,20 @@ ORDER BY count DESC LIMIT 50 OFFSET $offset";
 
       $product_id = $this->getProductId($product, $version);
       $sqlFromReports = "/* soc.web tcburl sigbyurl */
-                         SELECT sum(tcu.count) as count, tcus.signature
+                        select
+                          count(tucs.signature) as count,
+                          tucs.signature
+                        from
+                          top_crashes_by_url tcu join urldims ud on tcu.urldims_id = ud.id and '$start_date' <= (tcu.window_end - tcu.window_size) and tcu.window_end < '$end_date'
+                            join productdims pd on pd.id = tcu.productdims_id and pd.product = '$product' and pd.version = '$version'
+                              join top_crashes_by_url_signature tucs on tucs.top_crashes_by_url_id = tcu.id
+                        where
+                          ud.url = '$url'
+                        group by
+                          tucs.signature
+                        order by 1 desc
+                        limit 20";
+                         /*SELECT sum(tcu.count) as count, tcus.signature
                            FROM top_crashes_by_url tcu
                            JOIN urldims u ON tcu.urldims_id = u.id
                            JOIN top_crashes_by_url_signature tcus ON tcu.id = tcus.top_crashes_by_url_id
@@ -100,14 +124,14 @@ ORDER BY count DESC LIMIT 50 OFFSET $offset";
                            AND tcu.window_end < '$end_date'
                            GROUP BY tcus.signature
                          ORDER BY 1 DESC
-                         LIMIT 20";
+                         LIMIT 20";*/
 
       $signatures = $this->fetchRows($sqlFromReports);
       $comments = $this->getSigCommentsByUrl($product, $version, $url);
       foreach($signatures as $sig){
         if( array_key_exists( $sig->signature, $comments )){
           $sig->comments = $comments[$sig->signature];
-	}
+  }
       }
       return $signatures;
     }
@@ -132,7 +156,7 @@ ORDER BY count DESC LIMIT 50 OFFSET $offset";
       foreach( $rows as $row ){
         if( ! array_key_exists( $row->signature, $sigToCommentMap )){
           $sigToCommentMap[$row->signature] = array();
-	}
+  }
         array_push($sigToCommentMap[$row->signature],
                                        array('comments' => $row->comments,
                                             'report-id' => $row->uuid));
@@ -150,12 +174,12 @@ ORDER BY count DESC LIMIT 50 OFFSET $offset";
               AND product = $product";
       $rows = $this->fetchRows($sql);
       if(count($rows) != 1){
-	Kohana::log('error', "Unable to getProductId for $product $version got " . Kohana::debug($rows));
+  Kohana::log('error', "Unable to getProductId for $product $version got " . Kohana::debug($rows));
       }
       if( count( $rows ) > 0 ){
         return $rows[0]->id;
       }else{
-	Kohana::log('error', "Unknown product $product $version");
+  Kohana::log('error', "Unknown product $product $version");
         return -1;
       }
     }
