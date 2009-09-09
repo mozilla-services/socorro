@@ -123,7 +123,7 @@ class TopCrashesByUrl(object):
     topUrlSql = """SELECT COUNT(r.id), r.url FROM %(reportsTable)s r
                      JOIN productdims p ON r.product = p.product AND r.version = p.version
                      JOIN product_visibility cfg ON p.id = cfg.productdims_id
-                     WHERE r.url IS NOT NULL AND %%(startDate)s <= r.%(dateColumn)s AND r.%(dateColumn)s < %%(endDate)s
+                     WHERE r.url IS NOT NULL AND r.url <> '' AND %%(startDate)s <= r.%(dateColumn)s AND r.%(dateColumn)s < %%(endDate)s
                      AND cfg.start_date <= r.%(dateColumn)s AND r.%(dateColumn)s <= cfg.end_date
                      GROUP BY r.url
                      ORDER BY COUNT(r.id) desc
