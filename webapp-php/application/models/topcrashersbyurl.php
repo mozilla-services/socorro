@@ -96,8 +96,10 @@ class TopcrashersByUrl_Model extends Model {
                             join productdims pd on tcu.productdims_id = pd.id
                                                    and pd.product = $product
                                                    and pd.version = $version
-                        group by ud.url
-                        order by ud.url
+                        group by
+                          ud.url
+                        order by
+                          count
                         limit 50 offset $offset";
     $signatures = $this->fetchRows($sqlFromReports);
 
