@@ -134,42 +134,43 @@ class TopcrashersByUrl_Model extends Model {
                       limit 50";
 
     $signatures = $this->fetchRows($sqlFromReports);
-    $comments = $this->getSigCommentsByUrl($product, $version, $url);
-    foreach($signatures as $sig){
-      if( array_key_exists( $sig->signature, $comments )){
-        $sig->comments = $comments[$sig->signature];
-      }
-    }
+    # $comments = $this->getSigCommentsByUrl($product, $version, $url);
+    # foreach($signatures as $sig){
+    #  if( array_key_exists( $sig->signature, $comments )){
+    #    $sig->comments = $comments[$sig->signature];
+    #  }
+    # }
     return $signatures;
   }
-
-  public function getSigCommentsByUrl($product, $version, $tUrl){
-    $url = $this->db->escape($tUrl);
-    $aTime = time();
-    //$aTime = strtotime('2008-11-20');
-    $end_date = date("Y-m-d", $aTime);
-    $start_date = date("Y-m-d", $aTime - (60 * 60 * 24 * 14) + 1);
-    $sql = "/* soc.web tbcurl comm4sig */
-            SELECT top_crashes_by_url_signature.signature, crashes.comments, crashes.uuid
-            FROM top_crashes_by_url AS facts
-            JOIN topcrashurlfactsreports AS crashes ON facts.id = crashes.topcrashurlfacts_id
-            JOIN urldims ON facts.urldims_id = urldims.id
-            JOIN top_crashes_by_url_signature ON facts.id = top_crashes_by_url_signature.top_crashes_by_url_id
-            WHERE '$start_date' <= (facts.window_end - facts.window_size) AND
-              facts.window_end < '$end_date' AND
-              urldims.url = $url";
-    $rows = $this->fetchRows($sql);
-    $sigToCommentMap = array();
-    foreach( $rows as $row ){
-      if( ! array_key_exists( $row->signature, $sigToCommentMap )){
-        $sigToCommentMap[$row->signature] = array();
-      }
-      array_push($sigToCommentMap[$row->signature],
-                                     array('comments' => $row->comments,
-                                          'report-id' => $row->uuid));
-    }
-    return $sigToCommentMap;
-  }
+#  /* This method is never called, and that's a GOOD thing: It is very far from efficient */
+#  public function getSigCommentsByUrl($product, $version, $tUrl){
+#    $url = $this->db->escape($tUrl);
+#    $aTime = time();
+#    //$aTime = strtotime('2008-11-20');
+#    $end_date = date("Y-m-d", $aTime);
+#    $start_date = date("Y-m-d", $aTime - (60 * 60 * 24 * 14) + 1);
+#    $sql = "/* soc.web tbcurl comm4sig */
+#            SELECT top_crashes_by_url_signature.signature, crashes.comments, crashes.uuid
+#            FROM top_crashes_by_url AS facts
+#            JOIN topcrashurlfactsreports AS crashes ON facts.id = crashes.topcrashurlfacts_id
+#            JOIN urldims ON facts.urldims_id = urldims.id
+#            JOIN top_crashes_by_url_signature ON facts.id = top_crashes_by_url_signature.top_crashes_by_url_id
+#            WHERE '$start_date' <= (facts.window_end - facts.window_size) AND
+#              facts.window_end < '$end_date' AND
+#              urldims.url = $url";
+#    $rows = $this->fetchRows($sql);
+#    $sigToCommentMap = array();
+#    foreach( $rows as $row ){
+#      if( ! array_key_exists( $row->signature, $sigToCommentMap )){
+#        $sigToCommentMap[$row->signature] = array();
+#      }
+#      array_push($sigToCommentMap[$row->signature],
+#                                     array('comments' => $row->comments,
+#                                          'report-id' => $row->uuid));
+#    }
+#    return $sigToCommentMap;
+#  }
+#  END OF comment-out function  getSigCommentsByUrl
 
   public function getProductId($tProduct, $tVersion){
     $product = $this->db->escape($tProduct);
