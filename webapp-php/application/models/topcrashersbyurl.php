@@ -99,7 +99,7 @@ class TopcrashersByUrl_Model extends Model {
                         group by
                           ud.url
                         order by
-                          count
+                          count desc
                         limit 50 offset $offset";
     $signatures = $this->fetchRows($sqlFromReports);
 
