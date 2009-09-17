@@ -734,7 +734,7 @@ class Processor(object):
         self.extensionsTable.insert(threadLocalCursor, (reportId, date_processed, i, x[0], x[1]), self.databaseConnectionPool.connectToDatabase, date_processed=date_processed)
         listOfAddonsForOutput.append(x)
       except IndexError:
-        processorErrorMessages.append('WARNING: "%s" as deficient as a name and version for an addon' % str(x))
+        processorErrorMessages.append('WARNING: "%s" is deficient as a name and version for an addon' % str(x))
     return listOfAddonsForOutput
 
   #-----------------------------------------------------------------------------------------------------------------
