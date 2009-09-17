@@ -97,6 +97,7 @@ class Processor(object):
     assert "batchJobLimit" in config, "batchJobLimit is missing from the configuration"
     assert "irrelevantSignatureRegEx" in config, "irrelevantSignatureRegEx is missing from the configuration"
     assert "prefixSignatureRegEx" in config, "prefixSignatureRegEx is missing from the configuration"
+    assert "collectAddon" in config, "collectAddon is missing from the configuration"
     self.databaseConnectionPool = psy.DatabaseConnectionPool(config.databaseHost, config.databaseName, config.databaseUserName, config.databasePassword, logger)
 
     self.processorLoopTime = config.processorLoopTime.seconds
@@ -563,6 +564,12 @@ class Processor(object):
       newReportRecordAsDict['dump'] = ''
       newReportRecordAsDict["startedDateTime"] = startedDateTime
       threadLocalDatabaseConnection.commit()
+
+      if self.config.collectAddon:
+        logger.info("%s - collecting Addons", threadName)
+        addonsAsAListOfTuples = self.insertAdddonsIntoDatabase(threadLocalCursor, reportId, jsonDocument, date_processed, processorErrorMessages)
+        newReportRecordAsDict["addons"] = addonsAsAListOfTuples
+
       try:
         additionalReportValuesAsDict = self.doBreakpadStackDumpAnalysis(reportId, jobUuid, dumpfilePathname, threadLocalCursor, date_processed, processorErrorMessages)
       finally:
@@ -715,6 +722,20 @@ class Processor(object):
       self.reportsTable.insert(threadLocalCursor, newReportRecordAsTuple, self.databaseConnectionPool.connectToDatabase, date_processed=date_processed)
     newReportRecordAsDict["id"] = psy.singleValueSql(threadLocalCursor, "select id from reports where uuid = '%s' and date_processed = timestamp without time zone '%s'" % (uuid, date_processed))
     return newReportRecordAsDict
+
+  #-----------------------------------------------------------------------------------------------------------------
+  def insertAdddonsIntoDatabase (self, threadLocalCursor, reportId, jsonDocument, date_processed, processorErrorMessages):
+    jsonAddonString = Processor.getJsonOrWarn(jsonDocument, 'Add-ons', processorErrorMessages, "")
+    if not jsonAddonString: return []
+    listOfAddonsForInput = [x.split(":") for x in jsonAddonString.split(',')]
+    listOfAddonsForOutput = []
+    for i, x in enumerate(listOfAddonsForInput):
+      try:
+        self.extensionsTable.insert(threadLocalCursor, (reportId, date_processed, i, x[0], x[1]), self.databaseConnectionPool.connectToDatabase, date_processed=date_processed)
+        listOfAddonsForOutput.append(x)
+      except IndexError:
+        processorErrorMessages.append('WARNING: "%s" as deficient as a name and version for an addon' % str(x))
+    return listOfAddonsForOutput
 
   #-----------------------------------------------------------------------------------------------------------------
   def doBreakpadStackDumpAnalysis (self, reportId, uuid, dumpfilePathname, databaseCursor, date_processed, processorErrorMessages):
