@@ -167,7 +167,7 @@ class PartitionedTable(Table):
    - Must supply appropriate creationSql and partitionCreationSqlTemplate to the superclass constructor
    - Should NOT override method insert, which does something special for PartitionedTables
    - May override method partitionCreationParameters(self, partitionDetails) which returns a dictionary suitable for string formatting
-   
+
    Every leaf class that inherits PartitionedTable should be aware of the module-level dictionary: databaseDependenciesForPartition
    If that leaf class has a partition that depends upon some other partition, then it must be added as a key to the dictionary
    databaseDependenciesForPartition. The value associated with that key is an iterable containing the classes that define the partitions
@@ -220,7 +220,7 @@ class PartitionedTable(Table):
         self.logger.debug("%s -- Rolling back and releasing savepoint: Creating %s failed in createPartitions: %s", threading.currentThread().getName(), partitionName, str(x).strip())
         databaseCursor.execute("rollback to createPartitions_%s; release savepoint createPartitions_%s;" % (partitionName, partitionName))
       databaseCursor.connection.commit()
-    
+
   #-----------------------------------------------------------------------------------------------------------------
   def createPartitions(self, databaseCursor, iterator):
     """
@@ -293,7 +293,7 @@ class PartitionedTable(Table):
 #                                             CREATE TABLE branches (
 #                                                 product character varying(30) NOT NULL,
 #                                                 version character varying(16) NOT NULL,
-#                                                 branch character varying(24) NOT NULL, -- gecko version 
+#                                                 branch character varying(24) NOT NULL, -- gecko version
 #                                                 PRIMARY KEY (product, version)
 #                                             );""")
 
@@ -631,7 +631,7 @@ class UrlDimsTable(Table):
                                           CREATE TABLE urldims (
                                               id serial NOT NULL,
                                               domain character varying(255) NOT NULL,
-                                              url character varying(255) NOT NULL);                                   
+                                              url character varying(255) NOT NULL);
                                           ALTER TABLE ONLY urldims
                                               ADD CONSTRAINT urldims_pkey PRIMARY KEY (id);
                                           CREATE UNIQUE INDEX urldims_url_domain_key ON urldims USING btree (url, domain);
@@ -677,7 +677,7 @@ databaseDependenciesForSetup[OsDimsTable] = []
 #                                               date_processed TIMESTAMP without time zone,
 #                                               success BOOLEAN,
 #                                               truncated BOOLEAN,
-#                                               processor_notes TEXT, 
+#                                               processor_notes TEXT,
 #                                               user_comments TEXT,  -- varchar(1024)
 #                                               app_notes TEXT,  -- varchar(1024)
 #                                               distributor TEXT, -- varchar(20)
@@ -715,7 +715,7 @@ databaseDependenciesForSetup[OsDimsTable] = []
 #     columnNames = ','.join(self.columns)
 #     placeholders = ','.join(('%s' for x in self.columns))
 #     self.insertSql = """insert into TABLENAME (%s) values (%s)"""%(columnNames,placeholders)
-    
+
 #   def partitionCreationParameters(self,uniqueIdentifier):
 #     startDate, endDate = uniqueIdentifier
 #     startDateAsString = "%4d-%02d-%02d" % startDate.timetuple()[:3]
@@ -726,7 +726,7 @@ databaseDependenciesForSetup[OsDimsTable] = []
 #              "endDate": endDateAsString,
 #              "compressedStartDate": compressedStartDateAsString,
 #            }
-    
+
 # databaseDependenciesForSetup[CrashReportsTable] = [SignatureDimsTable,ProductDimsTable,OsDimsTable,UrlDimsTable]
 
 #=================================================================================================================
@@ -749,10 +749,11 @@ class ExtensionsTable(PartitionedTable):
                                           partitionCreationSqlTemplate="""
                                               CREATE TABLE %(partitionName)s (
                                                   CONSTRAINT %(partitionName)s_date_check CHECK (TIMESTAMP without time zone '%(startDate)s' <= date_processed and date_processed < TIMESTAMP without time zone '%(endDate)s'),
-                                                  PRIMARY KEY (report_id)
+                                                  PRIMARY KEY (report_id, extension_key)
                                                   )
                                                   INHERITS (extensions);
-                                              CREATE INDEX %(partitionName)s_report_id_date_key ON %(partitionName)s (report_id, date_processed);
+                                              CREATE INDEX %(partitionName)s_report_id_date_key ON %(partitionName)s (report_id, date_processed, extension_key);
+                                              CREATE INDEX %(partitionName)s_extension_id_extension_version_idx ON %(partitionName)s (extension_id, extension_version);
                                               ALTER TABLE %(partitionName)s
                                                   ADD CONSTRAINT %(partitionName)s_report_id_fkey FOREIGN KEY (report_id) REFERENCES reports_%(compressedStartDate)s(id) ON DELETE CASCADE;
                                               """)
@@ -933,7 +934,7 @@ class TimeBeforeFailureTable(Table):
                                               ADD CONSTRAINT time_before_failure_osdims_id_fkey FOREIGN KEY (osdims_id) REFERENCES osdims(id) ON DELETE CASCADE;
                                               """)
 databaseDependenciesForSetup[TimeBeforeFailureTable] = [ProductDimsTable, OsDimsTable]
-    
+
 # #=================================================================================================================
 # class MTBFFactsTable(Table):
 #   """Define the table 'mtbffacts'"""
@@ -1101,7 +1102,7 @@ class TopCrashUrlFactsReportsTable(Table):
                                               id serial NOT NULL,
                                               uuid character varying(50) NOT NULL,
                                               comments TEXT,
-                                              topcrashurlfacts_id integer);          
+                                              topcrashurlfacts_id integer);
                                           ALTER TABLE ONLY topcrashurlfactsreports
                                               ADD CONSTRAINT topcrashurlfactsreports_pkey PRIMARY KEY (id);
                                           CREATE INDEX topcrashurlfactsreports_topcrashurlfacts_id_key ON topcrashurlfactsreports USING btree (topcrashurlfacts_id);
