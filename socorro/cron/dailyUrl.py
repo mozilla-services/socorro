@@ -19,12 +19,13 @@ def dailyUrlDump(config):
     try:
       databaseConnection, databaseCursor = databaseConnectionPool.connectionCursorPair()
 
-      now = config.day
+      now = config.day + dt.timedelta(1)
       nowAsString = "%4d-%02d-%02d" % now.timetuple()[:3]
-      yesterday = now - dt.timedelta(1)
+      yesterday = config.day
       yesterdayAsString = "%4d-%02d-%02d" % yesterday.timetuple()[:3]
-      outputFileName = "%4d%02d%02d-crashdata.csv.gz" % now.timetuple()[:3]
+      outputFileName = "%4d%02d%02d-crashdata.csv.gz" % config.day.timetuple()[:3]
       outputPathName = os.path.join(config.outputPath, outputFileName)
+      logger.debug("config.day = %s; now = %s; yesterday = %s", config.day, now, yesterday)
 
       if config.product == '':
         productPhrase = ''
