@@ -8,7 +8,7 @@ import time
 try:
   import config.topCrashesByUrlConfig as config
 except ImportError:
-  import topCrashesByUrlconfig as config
+  import topCrashesByUrlConfig as config
 
 import socorro.lib.ConfigurationManager as configurationManager
 import socorro.cron.topCrashesByUrl as tcbyurl
