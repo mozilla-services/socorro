@@ -731,7 +731,7 @@ class Processor(object):
     listOfAddonsForOutput = []
     for i, x in enumerate(listOfAddonsForInput):
       try:
-        self.extensionsTable.insert(threadLocalCursor, (reportId, date_processed, i, socorro.lib.util.limitStringOrNone(x[0], 100), socorro.lib.util.limitStringOrNone(x[1], 16)), self.databaseConnectionPool.connectToDatabase, date_processed=date_processed)
+        self.extensionsTable.insert(threadLocalCursor, (reportId, date_processed, i, x[0][:100], x[1][:16]), self.databaseConnectionPool.connectToDatabase, date_processed=date_processed)
         listOfAddonsForOutput.append(x)
       except IndexError:
         processorErrorMessages.append('WARNING: "%s" is deficient as a name and version for an addon' % str(x))
