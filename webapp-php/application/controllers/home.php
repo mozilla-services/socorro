@@ -72,7 +72,9 @@ class Home_Controller extends Controller
         $this->setViewData(array(
             'params'  => $params,
             'searchFormModel' => $params,
+            /* Bug#517585 - uncomment once queries are fixed 
             'topcrashes'   => $this->_topCrashesBySig($topcrashers, $versions_by_product),
+            */
             'topcrashesbyurl' => $this->_topCrashesByUrl(),
 	    'mtbf' => $mtbf,
             'mtbfChartRangeMax' => $this->_chartRangeMax($mtbf)

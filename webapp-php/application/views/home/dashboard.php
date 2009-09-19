@@ -5,7 +5,7 @@
     ), 'screen')?>
 
     <?php echo html::script(array(
-        'js/jquery/plugins/ui/jquery.ui.all.js',       /* ui.accordion.js */
+        'js/jquery/plugins/ui/jquery.ui.all.js',       /*2 ui.accordion.js */
         'js/jquery/date.js',
         'js/jquery/plugins/ui/jquery.datePicker.js',     /* old school not ui.datepicker.js */
         'js/jquery/plugins/ui/jquery.tablesorter.min.js',       /* old school not ui.sortable.js */
@@ -24,11 +24,12 @@
         'versions_by_product' => $versions_by_product
      ))->render(TRUE);
 
+/* Bug#517585 - uncomment once queries are fixed 
      View::factory('common/dashboard_crash_widget', array(
         'widgetName' => "Top Crashes By Signature",
         'widgetData'   => $topcrashes,
         'subWidget'    => 'common/dashboard/topcrashbysig'
-     ))->render(TRUE);
+	))->render(TRUE);*/
 
      View::factory('common/dashboard_crash_widget', array(
         'widgetName' => "Top Crashes By Url",
