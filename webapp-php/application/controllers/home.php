@@ -72,9 +72,7 @@ class Home_Controller extends Controller
         $this->setViewData(array(
             'params'  => $params,
             'searchFormModel' => $params,
-            /* Bug#517585 - uncomment once queries are fixed 
             'topcrashes'   => $this->_topCrashesBySig($topcrashers, $versions_by_product),
-            */
             'topcrashesbyurl' => $this->_topCrashesByUrl(),
 	    'mtbf' => $mtbf,
             'mtbfChartRangeMax' => $this->_chartRangeMax($mtbf)
@@ -102,17 +100,16 @@ class Home_Controller extends Controller
         $featured = Kohana::config("dashboard.topcrashbysig_featured");
 
         $widget = new WidgetDataHelper;
-        $prodToVersionMap = $widget->convertArrayProductToVersionMap($versions_by_product);
         $topcrashes = array();
-        foreach ($prodToVersionMap as $product => $versions) {
-  	    $version = $widget->featuredVersionOrValid($product, $prodToVersionMap, $featured);
+        foreach ($featured as $feature) {
+	    $product = $feature['product'];
+            $version = $feature['version'];
             $data = $topcrashers->getTopCrashers($product, $version, null, null, $sigSize);
 	    array_push($topcrashes, array(
 	        'label' => "$product $version",
                 'name' => $product,
                 'version' => $version,
                 'crashes' => $data[1], // 0 is last_updated time 1 is list of signatures and counts
-                'other-versions' => $versions
             ));
         }
         return $topcrashes;

@@ -24,12 +24,11 @@
         'versions_by_product' => $versions_by_product
      ))->render(TRUE);
 
-/* Bug#517585 - uncomment once queries are fixed 
      View::factory('common/dashboard_crash_widget', array(
         'widgetName' => "Top Crashes By Signature",
         'widgetData'   => $topcrashes,
         'subWidget'    => 'common/dashboard/topcrashbysig'
-	))->render(TRUE);*/
+	))->render(TRUE);
 
      View::factory('common/dashboard_crash_widget', array(
         'widgetName' => "Top Crashes By Url",
