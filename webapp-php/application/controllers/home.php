@@ -43,7 +43,7 @@ require_once dirname(__FILE__).'/../libraries/MY_QueryFormHelper.php';
 /**
  *
  */
-class Home_Controller extends Controller 
+class Home_Controller extends Controller
 {
     /**
      * SocorroUI homepage  is a Search form (query) and set of dashboard widgets
@@ -66,7 +66,7 @@ class Home_Controller extends Controller
             'etag'     => $params,
             'expires'  => time() + ( 60 * 60 )
         ));
-        
+
         $mtbf = $this->_mtbf( new Mtbf_Model );
 
         $this->setViewData(array(
@@ -117,23 +117,23 @@ class Home_Controller extends Controller
 
     private function _topCrashesByUrl()
     {
+        $sigSize = Kohana::config("dashboard.topcrashbyurl_numberofurls");
+        $featured = Kohana::config("dashboard.topcrashbyurl_featured");
+
         $widget = new WidgetDataHelper;
         $model = new TopcrashersByUrl_Model;
-        $all_reports = $model->listReports();
-        $prodToVersionMap = $widget->convertProductToVersionMap($all_reports);
-        $featured = Kohana::config("dashboard.topcrashbyurl_featured");
-        
+
         $data = array();
         $tmp = array();
-        foreach ($prodToVersionMap as $product => $versions) {
-	    $version = $widget->featuredVersionOrValid($product, $prodToVersionMap, $featured);
+        foreach ($featured as $feature) {
+            $product = $feature['product'];
+            $version = $feature['version'];
   	    $crashRes = $model->getTopCrashersByUrl($product, $version);
 	    array_push($data, array(
                                     'label'     => "$product $version",
 				    'name'    => $product,
 				    'version' => $version,
-				    'crashes' => array_slice($crashRes[2], 0, 3),
-				    'other-versions' => $this->_findOtherReleases($all_reports, $product, 'version')
+				    'crashes' => array_slice($crashRes[2], 0, 3)
             ));
 	}
 	return $data;
@@ -147,7 +147,7 @@ class Home_Controller extends Controller
 
         $mtbf_all_releases = $model->listReports();
         $prodToReleaseMap = $widget->convertProductToReleaseMap($mtbf_all_releases);
-        
+
         foreach ($prodToReleaseMap as $product => $releases) {
   	    $release = $widget->featuredReleaseOrValid($product, $prodToReleaseMap, $featured);
 
