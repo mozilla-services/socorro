@@ -36,11 +36,10 @@ class Topcrashers_Model extends Model {
         // Find the time when the table was last updated, limit to that update.
         $update_sql = 
             "/* soc.web topcrash.lastupdate */ 
-              SELECT window_end AS last_updated
+              SELECT max(window_end) AS last_updated
               FROM " . join(', ', array_keys($tables)) . "
               $join
-              WHERE " . join(' AND ', $where) . "
-              ORDER BY window_end DESC LIMIT 1 ";
+              WHERE " . join(' AND ', $where);
         $rows = $this->fetchRows($update_sql);
         if ($rows) {
 	  $last_updated = $rows[0]->last_updated;
