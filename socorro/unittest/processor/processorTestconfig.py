@@ -49,6 +49,10 @@ batchJobLimit = cm.Option()
 batchJobLimit.doc = 'the number of jobs to pull in a time'
 batchJobLimit.default = 10000
 
+signatureSentinels = cm.Option()
+signatureSentinels.doc = 'a list of frame signatures that should always be considered top of the stack if present in the stack'
+signatureSentinels.default = ['sentinel_1', 'sentinel_2']
+
 irrelevantSignatureRegEx = cm.Option()
 irrelevantSignatureRegEx.doc = 'a regular expression matching frame signatures that should be ignored when generating an overall signature'
 irrelevantSignatureRegEx.default = '@0x[01234567890abcdefABCDEF]{2,}'
@@ -93,6 +97,12 @@ stackwalkCommandLine.default = '$minidump_stackwalkPathname -m $dumpfilePathname
 minidump_stackwalkPathname = cm.Option()
 minidump_stackwalkPathname.doc = 'the full pathname of the extern program minidump_stackwalk (quote path with embedded spaces)'
 minidump_stackwalkPathname.default = '/usr/local/bin/minidump_stackwalk'
+
+
+collectAddon = cm.Option()
+collectAddon.doc = "if true, parse and collect information about addons from the json file; if false, don't"
+collectAddon.default = False
+collectAddon.fromStringConverter = cm.booleanConverter
 
 logFilePathname = cm.Option()
 logFilePathname.doc = 'full pathname for the log file'

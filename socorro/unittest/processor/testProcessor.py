@@ -57,6 +57,28 @@ import processorTestconfig as testConfig
 
 import socorro.processor.processor as processor
 
+class DummyObjectWithExpectations(object):
+  """a class that will accept a series of method calls with arguments, but will raise assertion
+     errors if the calls and arguments are not what is expected.
+  """
+  def __init__(self):
+    self._expected = []
+    self.counter = 0
+  def expect (self, attribute, args, kwargs, returnValue = None):
+    self._expected.append((attribute, args, kwargs, returnValue))
+  def __getattr__(self, attribute):
+    def f(*args, **kwargs):
+      try:
+        attributeExpected, argsExpected, kwargsExpected, returnValue = self._expected[self.counter]
+      except IndexError:
+        assert False, "expected no further calls, but got '%s' with args: %s and kwargs: %s" % (attribute, args, kwargs)
+      self.counter += 1
+      assert attributeExpected == attribute, "expected attribute '%s', but got '%s'" % (attributeExpected, attribute)
+      assert argsExpected == args, "expected '%s' arguments %s, but got %s" % (attribute, argsExpected, args)
+      assert kwargsExpected == kwargs, "expected '%s' keyword arguments %s, but got %s" % (attribute, kwargsExpected, kwargs)
+      return returnValue
+    return f
+
 class Me(): # not quite "self"
   """
   I need stuff to be initialized once per module. Rather than having a bazillion globals, lets just have 'me'
@@ -1388,6 +1410,71 @@ class TestProcessor:
     finally:
       p.databaseConnectionPool.cleanup()
 
+  def test_insertAdddonsIntoDatabase_addons_missing(self):
+    p = processor.Processor(me.config)
+    p.extensionsTable = DummyObjectWithExpectations()
+    errorMessages = []
+    assert p.insertAdddonsIntoDatabase('dummycursor', 1, {}, '2009-09-01', errorMessages) == []
+    assert errorMessages == ['WARNING: Json file missing Add-ons']
+
+  def test_insertAdddonsIntoDatabase_addons_empty(self):
+    p = processor.Processor(me.config)
+    p.extensionsTable = DummyObjectWithExpectations()
+    errorMessages = []
+    assert p.insertAdddonsIntoDatabase('dummycursor', 1, {"Add-ons":''}, '2009-09-01', errorMessages) == []
+    assert errorMessages == []
+
+  def test_insertAdddonsIntoDatabase_addons_normal_one(self):
+    p = processor.Processor(me.config)
+    p.extensionsTable = DummyObjectWithExpectations()
+    p.extensionsTable.expect('insert', ('dummycursor', (1, '2009-09-01', 0, "{463F6CA5-EE3C-4be1-B7E6-7FEE11953374}", "3.0.5.1"), p.databaseConnectionPool.connectToDatabase), {"date_processed": '2009-09-01'})
+    errorMessages = []
+    result = p.insertAdddonsIntoDatabase('dummycursor', 1, {"Add-ons":"{463F6CA5-EE3C-4be1-B7E6-7FEE11953374}:3.0.5.1"}, '2009-09-01', errorMessages)
+    assert result == [["{463F6CA5-EE3C-4be1-B7E6-7FEE11953374}", "3.0.5.1"]], "got %s" % result
+    assert errorMessages == []
+
+  def test_insertAdddonsIntoDatabase_addons_normal_many(self):
+    p = processor.Processor(me.config)
+    p.extensionsTable = DummyObjectWithExpectations()
+    p.extensionsTable.expect('insert', ('dummycursor', (1, '2009-09-01', 0, "{463F6CA5-EE3C-4be1-B7E6-7FEE11953374}", "3.0.5.1"), p.databaseConnectionPool.connectToDatabase), {"date_processed": '2009-09-01'})
+    p.extensionsTable.expect('insert', ('dummycursor', (1, '2009-09-01', 1, "{CAFEEFAC-0016-0000-0007-ABCDEFFEDCBA}", "6.0.07"), p.databaseConnectionPool.connectToDatabase), {"date_processed": '2009-09-01'})
+    p.extensionsTable.expect('insert', ('dummycursor', (1, '2009-09-01', 2, "moveplayer@movenetworks.com", "1.0.0.0711010000"), p.databaseConnectionPool.connectToDatabase), {"date_processed": '2009-09-01'})
+    p.extensionsTable.expect('insert', ('dummycursor', (1, '2009-09-01', 3, "{3EC9C995-8072-4fc0-953E-4F30620D17F3}", "2.0.0.4"), p.databaseConnectionPool.connectToDatabase), {"date_processed": '2009-09-01'})
+    p.extensionsTable.expect('insert', ('dummycursor', (1, '2009-09-01', 4, "{635abd67-4fe9-1b23-4f01-e679fa7484c1}", "1.6.5.2008121015"), p.databaseConnectionPool.connectToDatabase), {"date_processed": '2009-09-01'})
+    p.extensionsTable.expect('insert', ('dummycursor', (1, '2009-09-01', 5, "{CAFEEFAC-0016-0000-0011-ABCDEFFEDCBA}", "6.0.11"), p.databaseConnectionPool.connectToDatabase), {"date_processed": '2009-09-01'})
+    p.extensionsTable.expect('insert', ('dummycursor', (1, '2009-09-01', 6, "{972ce4c6-7e08-4474-a285-3208198ce6fd}", "3.0.6"), p.databaseConnectionPool.connectToDatabase), {"date_processed": '2009-09-01'})
+    errorMessages = []
+    result = p.insertAdddonsIntoDatabase('dummycursor', 1, {"Add-ons":"{463F6CA5-EE3C-4be1-B7E6-7FEE11953374}:3.0.5.1,{CAFEEFAC-0016-0000-0007-ABCDEFFEDCBA}:6.0.07,moveplayer@movenetworks.com:1.0.0.071101000055,{3EC9C995-8072-4fc0-953E-4F30620D17F3}:2.0.0.4,{635abd67-4fe9-1b23-4f01-e679fa7484c1}:1.6.5.200812101546,{CAFEEFAC-0016-0000-0011-ABCDEFFEDCBA}:6.0.11,{972ce4c6-7e08-4474-a285-3208198ce6fd}:3.0.6"}, '2009-09-01', errorMessages)
+    assert result == [["{463F6CA5-EE3C-4be1-B7E6-7FEE11953374}", "3.0.5.1"],
+                      ["{CAFEEFAC-0016-0000-0007-ABCDEFFEDCBA}", "6.0.07"],
+                      ["moveplayer@movenetworks.com", "1.0.0.071101000055"],
+                      ["{3EC9C995-8072-4fc0-953E-4F30620D17F3}", "2.0.0.4"],
+                      ["{635abd67-4fe9-1b23-4f01-e679fa7484c1}", "1.6.5.200812101546"],
+                      ["{CAFEEFAC-0016-0000-0011-ABCDEFFEDCBA}", "6.0.11"],
+                      ["{972ce4c6-7e08-4474-a285-3208198ce6fd}", "3.0.6"],
+                      ], "got %s" % result
+    assert errorMessages == []
+
+  def test_insertAdddonsIntoDatabase_addons_normal_many_with_bad_one(self):
+    p = processor.Processor(me.config)
+    p.extensionsTable = DummyObjectWithExpectations()
+    p.extensionsTable.expect('insert', ('dummycursor', (1, '2009-09-01', 0, "{463F6CA5-EE3C-4be1-B7E6-7FEE11953374}", "3.0.5.1"), p.databaseConnectionPool.connectToDatabase), {"date_processed": '2009-09-01'})
+    p.extensionsTable.expect('insert', ('dummycursor', (1, '2009-09-01', 1, "{CAFEEFAC-0016-0000-0007-ABCDEFFEDCBA}", "6.0.07"), p.databaseConnectionPool.connectToDatabase), {"date_processed": '2009-09-01'})
+    p.extensionsTable.expect('insert', ('dummycursor', (1, '2009-09-01', 2, "moveplayer@movenetworks.com", "1.0.0.0711010000"), p.databaseConnectionPool.connectToDatabase), {"date_processed": '2009-09-01'})
+    p.extensionsTable.expect('insert', ('dummycursor', (1, '2009-09-01', 3, "{3EC9C995-8072-4fc0-953E-4F30620D17F3}", "2.0.0.4"), p.databaseConnectionPool.connectToDatabase), {"date_processed": '2009-09-01'})
+    p.extensionsTable.expect('insert', ('dummycursor', (1, '2009-09-01', 4, "{635abd67-4fe9-1b23-4f01-e679fa7484c1}", "1.6.5.2008121015"), p.databaseConnectionPool.connectToDatabase), {"date_processed": '2009-09-01'})
+    p.extensionsTable.expect('insert', ('dummycursor', (1, '2009-09-01', 6, "{972ce4c6-7e08-4474-a285-3208198ce6fd}", "3.0.6"), p.databaseConnectionPool.connectToDatabase), {"date_processed": '2009-09-01'})
+    errorMessages = []
+    result = p.insertAdddonsIntoDatabase('dummycursor', 1, {"Add-ons":"{463F6CA5-EE3C-4be1-B7E6-7FEE11953374}:3.0.5.1,{CAFEEFAC-0016-0000-0007-ABCDEFFEDCBA}:6.0.07,moveplayer@movenetworks.com:1.0.0.071101000055,{3EC9C995-8072-4fc0-953E-4F30620D17F3}:2.0.0.4,{635abd67-4fe9-1b23-4f01-e679fa7484c1}:1.6.5.200812101546,{CAFEEFAC-0016-0000-0011-ABCDEFFEDCBA}6.0.11,{972ce4c6-7e08-4474-a285-3208198ce6fd}:3.0.6"}, '2009-09-01', errorMessages)
+    assert result == [["{463F6CA5-EE3C-4be1-B7E6-7FEE11953374}", "3.0.5.1"],
+                      ["{CAFEEFAC-0016-0000-0007-ABCDEFFEDCBA}", "6.0.07"],
+                      ["moveplayer@movenetworks.com", "1.0.0.071101000055"],
+                      ["{3EC9C995-8072-4fc0-953E-4F30620D17F3}", "2.0.0.4"],
+                      ["{635abd67-4fe9-1b23-4f01-e679fa7484c1}", "1.6.5.200812101546"],
+                      ["{972ce4c6-7e08-4474-a285-3208198ce6fd}", "3.0.6"],
+                      ], "got %s" % result
+    assert errorMessages == ['WARNING: "[\'{CAFEEFAC-0016-0000-0011-ABCDEFFEDCBA}6.0.11\']" is deficient as a name and version for an addon']
+
   def testMake_signature(self):
     """
     testMake_signature(self):
@@ -1455,7 +1542,7 @@ class TestProcessor:
     """
     global me
     p = processor.Processor(me.config)
-    p.prefixSignatureRegEx = re.compile('PFX_') # bogus but easy
+    p.prefixSignatureRegEx = re.compile('PFX_|sentinel_1') # bogus but easy
     fs='f'*150
     isLong = True
     aintLong = False
@@ -1466,7 +1553,9 @@ class TestProcessor:
       (['PFX_0','@0xaa','@0xbb'],'PFX_0 | @0xaa | @0xbb',aintLong),
       (['PFX_1','PFX_2'],        'PFX_1 | PFX_2',aintLong),
       (['PFX_1','end','PFX_2'],  'PFX_1 | end',aintLong),
-      (['PFX_1%s'%fs,'PFX_2%s'%fs,'end'],'PFX_1%s | PFX_2%s | end'%(fs,fs),isLong)
+      (['PFX_1%s'%fs,'PFX_2%s'%fs,'end'],'PFX_1%s | PFX_2%s | end'%(fs,fs),isLong),
+      (['a', 'b', 'c', 'sentinel_1', 'e', 'f'], 'sentinel_1 | e', aintLong),
+      (['a', 'b', 'c', 'sentinel_2', 'e', 'f'], 'sentinel_2', aintLong),
       ]
 
     for aList,expected,isLong in testCases:
