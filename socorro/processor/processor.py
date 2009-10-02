@@ -98,6 +98,7 @@ class Processor(object):
     assert "irrelevantSignatureRegEx" in config, "irrelevantSignatureRegEx is missing from the configuration"
     assert "prefixSignatureRegEx" in config, "prefixSignatureRegEx is missing from the configuration"
     assert "collectAddon" in config, "collectAddon is missing from the configuration"
+    assert "signatureSentinels" in config, "signatureSentinels is missing from the configuration"
     self.databaseConnectionPool = psy.DatabaseConnectionPool(config.databaseHost, config.databaseName, config.databaseUserName, config.databasePassword, logger)
 
     self.processorLoopTime = config.processorLoopTime.seconds
@@ -319,6 +320,16 @@ class Processor(object):
     The signature is a ' | ' separated string of frame names
     Although the database holds only 255 characters, we don't truncate here
     """
+    # shorten signatureList to the first signatureSentinel
+    sentinelLocations = []
+    for aSentinel in self.config.signatureSentinels:
+      try:
+        sentinelLocations.append(signatureList.index(aSentinel))
+      except ValueError:
+        pass
+    if sentinelLocations:
+      signatureList = signatureList[min(sentinelLocations):]
+
     newSignatureList = []
     prefixFound = False
     for aSignature in signatureList:
