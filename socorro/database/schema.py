@@ -284,22 +284,6 @@ class PartitionedTable(Table):
       databaseCursor.execute(insertSql, row)
 
 #=================================================================================================================
-# class BranchesTable(Table):
-#   """Define the table 'branches'"""
-#   #-----------------------------------------------------------------------------------------------------------------
-#   def __init__ (self, logger, **kwargs):
-#     super(BranchesTable, self).__init__(name="branches", logger=logger,
-#                                         creationSql = """
-#                                             CREATE TABLE branches (
-#                                                 product character varying(30) NOT NULL,
-#                                                 version character varying(16) NOT NULL,
-#                                                 branch character varying(24) NOT NULL, -- gecko version
-#                                                 PRIMARY KEY (product, version)
-#                                             );""")
-
-# databaseDependenciesForSetup[BranchesTable] = []
-
-#=================================================================================================================
 class ReportsTable(PartitionedTable):
   """Define the table 'reports'"""
   #-----------------------------------------------------------------------------------------------------------------
@@ -620,6 +604,15 @@ class ProductDimsTable(Table):
                                           CREATE INDEX productdims_release_key ON productdims (release);
                                           """)
 databaseDependenciesForSetup[ProductDimsTable] = [ReleaseEnum]
+
+class BranchesView(DatabaseObject):
+  """Define the view 'branches'"""
+  def __init__(self, logger, **kwargs):
+    super(BranchesView, self).__init__(name='branches', logger=logger,
+                                       creationSql = """
+                                         CREATE VIEW branches AS SELECT product,version,branch FROM productdims
+                                         """)
+databaseDependenciesForSetup[BranchesView] = [ProductDimsTable]
 
 #=================================================================================================================
 class UrlDimsTable(Table):

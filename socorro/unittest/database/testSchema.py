@@ -75,6 +75,7 @@ def setup_module():
     schema.PriorityJobsTable:[False,set(['priorityjobs'])],
     schema.ProcessorsTable:[False,set(['processors'])],
     schema.ProductDimsTable:[False,set(['productdims','release_enum'])],
+    schema.BranchesView:[False,set(['branches','productdims','release_enum'])],
     schema.ProductVisibilityTable:[False,set(['product_visibility','productdims','release_enum'])],
     schema.ReportsTable:[True,set(['reports'])],
     schema.ServerStatusTable:[False,set(['server_status'])],
@@ -411,7 +412,7 @@ def makeClassList():
           schemaClasses[item] = schema.Table
     except TypeError:
       pass
-  expected = set(me.hardCodedSchemaClasses.keys()) - set([schema.ReleaseEnum])
+  expected = set(me.hardCodedSchemaClasses.keys()) - set([schema.ReleaseEnum, schema.BranchesView])
   got = set(schemaClasses.keys())
   x_g = expected-got
   g_x = got-expected
