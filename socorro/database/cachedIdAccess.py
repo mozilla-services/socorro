@@ -89,8 +89,9 @@ def shrinkIdCache(cacheMap, cacheCount, oneKeyToSave=None):
 
 #=================================================================================================================
 class IdCache:
-  linuxLineRE = re.compile(r'0\.0\.0 [lL]inux.+[lL]inux$|[0-9.]+.+(i586|i686|sun4u|i86pc|x86_64)')
-  linuxVersionRE = re.compile(r'(0\.0\.0 [lL]inux.)?([0-9.]+[0-9]).*(i586|i686|sun4u|i86pc|x86_64).*')
+  linuxLineRE = re.compile(r'0\.0\.0 [lL]inux.+[lL]inux$|[0-9.]+.+(i586|i686|sun4u|i86pc|x86_64)?')
+  linuxVersionRE = re.compile(r'(0\.0\.0 [lL]inux.)([0-9.]+[0-9]).*(i586|i686|sun4u|i86pc|x86_64).*')
+  linuxShortVersionRE = re.compile(r'(0\.0\.0 [lL]inux.)([0-9.]+[0-9]).*')
 
   def __init__(self,databaseCursor, **kwargs):
     global logger
@@ -274,7 +275,15 @@ class IdCache:
   def getAppropriateOsVersion(self, name,origVersion):
     """
     If this is a linux os, chop out all the gubbish retaining only the actual version numbers
-    and the architecture name
+    and, if available, the architecture name. Uses Regular expressions as:
+    Is this a legal Linux version string?
+    linuxLineRE = re.compile(r'0\.0\.0 [lL]inux.+[lL]inux$|[0-9.]+.+(i586|i686|sun4u|i86pc|x86_64)?')
+
+    If FULL legal Linux version string, substitute "\2 \3"
+    linuxVersionRE = re.compile(r'(0\.0\.0 [lL]inux.)?([0-9.]+[0-9]).*(i586|i686|sun4u|i86pc|x86_64).*')
+
+    If TRUNCATED legal Linux version string, substitute "\2 ?arch?"
+    linuxShortVersionRE = re.compile(r'(0\.0\.0 [lL]inux.)?([0-9.]+[0-9]).*')
     """
     ret = origVersion
     if 'Linux' != name:
@@ -283,9 +292,12 @@ class IdCache:
       ret = ''
     else:
       m = IdCache.linuxVersionRE.sub(r'\2 \3',origVersion)
-      if origVersion == m:
-        ret = ''
       ret = m
+      if origVersion == m:
+        m = IdCache.linuxShortVersionRE.sub(r'\2',origVersion)
+        ret = "%s ?arch?"%(m)
+        if origVersion == m:
+          ret = ''
     return ret
     
   #-----------------------------------------------------------------------------------------------------------------

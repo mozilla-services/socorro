@@ -507,7 +507,7 @@ class TestCachedIdAccess:
       (('Windows','5.1.2600 SP2'),4),
       (('Windows NT','5.1.2600 SP3'),3),
       (('Linux', '0.0.0 Linux 1.2.3 i586 Linux'),5),
-      (('Linux', '1.2.3 i586'),5),
+      (('Linux', '0.0.0 Linux 1.2.3 i586'),5),
       (('Linux', '0.0.0 Linux 2.4.6_flitteration x86_64 Linux'),6),
       (('Linux', '0.0.0 Linux 2.4.6.flapitation x86_64 Linux'),6),
       (('Linux', '1.2.3 i686'),7),
@@ -543,10 +543,16 @@ class TestCachedIdAccess:
       (('Linux', '0.0.0 Linux 1.2.3 i586 Linux'),'1.2.3 i586'),
       (('Linux', '0.0.0 Linux 2.4.6_flitteration x86_64 Linux'),'2.4.6 x86_64'),
       (('Linux', '0.0.0 Linux 2.4.6.flapitation x86_64 Linux'),'2.4.6 x86_64'),
-      (('Linux', '1.2.3 i686'),'1.2.3 i686'),
+      (('Linux', '0.0.0 Linux 2.4.6.flapitation-very-long'),'2.4.6 ?arch?'),
+      (('Linux', '0.0.0 Linux 2.4.6.flapitation-very-long x86_6'),'2.4.6 ?arch?'),
+      (('Linux', '0.0.0 Linux 2.4.6.flapitation-very-very-very-long-really'),'2.4.6 ?arch?'),
+      (('Linux', '0.0.0 Linux 1.2.3 i586 Linux'),'1.2.3 i586'),
+      (('Linux', '1.2.3 i686'),''),
       (('Namby', 'wiggle room'),'wiggle room'),
+      (('Linux', 'Linux 1.2.3 i586 Linux'),''),
+      (('Linux', '0.0.0 Linux non-numeric-version-string i586 Linux'),''),
       ]
     for testCase in testList:
       got = idc.getAppropriateOsVersion(*testCase[0])
-      assert testCase[1] == got,'Expected "%s", got "%s"'%(testCase[1],got)
+      assert testCase[1] == got,'From "%s": Expected "%s", got "%s"'%(testCase[0][1],testCase[1],got)
     
