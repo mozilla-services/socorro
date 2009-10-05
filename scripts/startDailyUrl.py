@@ -13,7 +13,7 @@ import socorro.lib.ConfigurationManager as configurationManager
 import socorro.cron.dailyUrl as url
 
 try:
-  configurationContext = configurationManager.newConfiguration(configurationModule=config, applicationName="Bugzilla Associations 0.1")
+  configurationContext = configurationManager.newConfiguration(configurationModule=config, applicationName="Daily URL Dump 0.1")
 except configurationManager.NotAnOptionError, x:
   print >>sys.stderr, x
   print >>sys.stderr, "for usage, try --help"
