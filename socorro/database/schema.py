@@ -734,7 +734,7 @@ class ExtensionsTable(PartitionedTable):
                                                   date_processed timestamp without time zone,
                                                   extension_key integer NOT NULL,
                                                   extension_id character varying(100) NOT NULL,
-                                                  extension_version character varying(16)
+                                                  extension_version character varying(30)
                                               );
                                               --CREATE TRIGGER extensions_insert_trigger
                                               --    BEFORE INSERT ON extensions
