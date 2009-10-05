@@ -62,6 +62,10 @@ batchJobLimit = cm.Option()
 batchJobLimit.doc = 'the number of jobs to pull in a time'
 batchJobLimit.default = 10000
 
+signatureSentinels = cm.Option()
+signatureSentinels.doc = 'a list of frame signatures that should always be considered top of the stack if present in the stack'
+signatureSentinels.default = ['_purecall']
+
 irrelevantSignatureRegEx = cm.Option()
 irrelevantSignatureRegEx.doc = 'a regular expression matching frame signatures that should be ignored when generating an overall signature'
 irrelevantSignatureRegEx.default = '@0x[01234567890abcdefABCDEF]{2,}'
