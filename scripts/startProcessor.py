@@ -11,6 +11,7 @@ except ImportError:
 
 import socorro.processor.externalProcessor as processor
 import socorro.lib.ConfigurationManager as configurationManager
+import socorro.lib.util as util
 
 try:
   configurationContext = configurationManager.newConfiguration(configurationModule=config, applicationName="Socorro Processor 2.0")
@@ -41,7 +42,7 @@ try:
     p = processor.ProcessorWithExternalBreakpad(configurationContext)
     p.start()
   except:
-    socorro.lib.util.reportExceptionAndContinue(logger)
+    util.reportExceptionAndContinue(logger)
 finally:
   logger.info("done.")
   rotatingFileLog.flush()
