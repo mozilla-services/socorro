@@ -162,6 +162,8 @@ class TestBugzilla(unittest.TestCase):
     self.do_find_signatures(d, None)
     d = { "short_desc": "short", "bug_id": "22", "bug_status": "CLOSED", "resolution": "WONTFIX" }
     self.do_find_signatures(d, (22, "CLOSED", "WONTFIX", "short", []))
+    d = { "short_desc": " Crash at [@ RtlpWaitOnCriticalSection]", "bug_id": "22", "bug_status": "CLOSED", "resolution": "WONTFIX" }
+    self.do_find_signatures(d, (22, "CLOSED", "WONTFIX", " Crash at [@ RtlpWaitOnCriticalSection]", ["RtlpWaitOnCriticalSection"]))
     d = { "short_desc": "short [@ bogus_incomplete_signature", "bug_id": "22", "bug_status": "NEW", "resolution": "" }
     self.do_find_signatures(d, (22, "NEW", "", "short [@ bogus_incomplete_signature", []))
     d = { "short_desc": "short [@ complete_signature]", "bug_id": "22", "bug_status": "CLOSED", "resolution": "RESOLVED" }
