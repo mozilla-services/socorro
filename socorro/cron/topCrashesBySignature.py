@@ -266,7 +266,7 @@ class TopCrashesBySignature(object):
     try:
       fullCount = 0
       while startWindow + self.deltaWindow <= endDate:
-        logger.debug("%s - Processing with interval from %s, size=%s)",threading.currentThread().getName(),startDate,self.deltaWindow)
+        logger.debug("%s - Processing with interval from %s, size=%s)",threading.currentThread().getName(),startWindow,self.deltaWindow)
         summaryCrashes = self.extractDataForPeriod(startWindow, startWindow+self.deltaWindow, summaryCrashes)
         data = self.fixupCrashData(summaryCrashes,startWindow+self.deltaWindow,self.deltaWindow)
         fullCount += self.storeFacts(data, "Start: %s, size=%s"%(startWindow,self.deltaWindow))
