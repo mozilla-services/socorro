@@ -57,6 +57,8 @@ class TopCrashesBySignature(object):
     self.configContext = configContext
     self.defaultProcessingInterval = 12
     self.lastEnd = None # cache for db hit in self.getLegalProcessingInterval
+    self.outTable = 'top_crashes_by_signature'
+    self.inTable = 'reports'
     ## WARNING: Next line has important side effect: Should call before getStartDate ##
     self.processingInterval = self.getLegalProcessingInterval(int(configContext.get('processingInterval',0)))
     self.deltaWindow = datetime.timedelta(minutes = self.processingInterval)
@@ -77,7 +79,9 @@ class TopCrashesBySignature(object):
     if not min:
       cursor = self.connection.cursor()
       try:
-        cursor.execute("SELECT window_end,window_size FROM top_crashes_by_signature ORDER BY window_end DESC LIMIT 1")
+        sql="SELECT window_end,window_size FROM %s ORDER BY window_end DESC LIMIT 1"%(self.outTable)
+        logger.debug("Running %s",sql)
+        cursor.execute(sql);
         self.connection.rollback()
         (self.lastEnd,windowSize) = cursor.fetchone()
         assert 0 == windowSize.microseconds, "processingInterval must be a whole number of minutes, but got %s microseconds"%windowSize.microseconds
@@ -159,7 +163,7 @@ class TopCrashesBySignature(object):
     returns (and is in-out parameter) summaryCrashes where for each signature as key, the value is {'count':N,'uptime':N}
     """
     cur = self.connection.cursor()
-    idCache = socorro_cia.IdCache(cur)
+    idCache = socorro_cia.IdCache(cur,logger=logger)
     if startTime > endTime:
       raise ValueError("startTime(%s) must be <= endTime(%s)"%(startTime,endTime))
     inputColumns = ["uptime", "signature", "productdims_id", "os_name", "os_version"]
@@ -169,10 +173,10 @@ class TopCrashesBySignature(object):
     resultColumnlist = 'r.uptime, r.signature, cfg.productdims_id, r.os_name, r.os_version'
     sql = """SELECT %(resultColumnlist)s FROM product_visibility cfg
                 JOIN productdims p on cfg.productdims_id = p.id
-                JOIN reports r on p.product = r.product AND p.version = r.version
+                JOIN %(inTable)s r on p.product = r.product AND p.version = r.version
               WHERE NOT cfg.ignore AND %%(startTime)s <= r.%(dcolumn)s and r.%(dcolumn)s < %%(endTime)s
               AND   r.%(dcolumn)s >= cfg.start_date AND r.%(dcolumn)s <= cfg.end_date
-          """%({'dcolumn':self.dateColumnName, 'resultColumnlist':resultColumnlist})
+          """%({'dcolumn':self.dateColumnName, 'resultColumnlist':resultColumnlist,'inTable':self.inTable})
     startEndData = {'startTime':startTime, 'endTime':endTime,}
     if self.debugging:
       logger.debug("Collecting data in range[%s,%s) on column %s",startTime,endTime, self.dateColumnName)
@@ -194,9 +198,10 @@ class TopCrashesBySignature(object):
           value['count'] += 1
           value['uptime'] += row[cI['uptime']]
       self.connection.commit()
-      logger.debug("%s - Returning %s items of data",threading.currentThread().getName(),len(summaryCrashes))
+      logger.debug("Returning %s items for window [%s,%s)",len(summaryCrashes),startTime,endTime)
       return summaryCrashes # redundantly
-    except:
+    except Exception, x:
+      logger.warn('Exception during extractDataForPeriod: %s',x)
       self.connection.rollback()
       raise
 
@@ -226,11 +231,11 @@ class TopCrashesBySignature(object):
       return 0
     # else
     if self.debugging:
-      logger.debug('Storing %s rows into top_crashes_by_signature table %s',len(crashData),intervalString)
-    sql = """INSERT INTO top_crashes_by_signature
+      logger.debug('Storing %s rows into table %s at %s',len(crashData),self.outTable,intervalString)
+    sql = """INSERT INTO %s
           (count, uptime, signature, productdims_id, osdims_id, window_end, window_size)
-          VALUES (%(count)s,%(uptime)s,%(signature)s,%(productdims_id)s,%(osdims_id)s,%(windowEnd)s,%(windowSize)s)
-          """
+          VALUES (%%(count)s,%%(uptime)s,%%(signature)s,%%(productdims_id)s,%%(osdims_id)s,%%(windowEnd)s,%%(windowSize)s)
+          """%(self.outTable)
     cursor = self.connection.cursor()
     try:
       cursor.executemany(sql,crashData)

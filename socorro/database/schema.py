@@ -639,7 +639,7 @@ class OsDimsTable(Table):
                                      creationSql="""
                                         CREATE TABLE osdims (
                                           id serial NOT NULL PRIMARY KEY,
-                                          os_name TEXT NOT NULL,
+                                          os_name TEXT,
                                           os_version TEXT
                                         );
                                         CREATE UNIQUE INDEX osdims_name_version_key on osdims (os_name,os_version);

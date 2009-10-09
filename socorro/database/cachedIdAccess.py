@@ -307,13 +307,11 @@ class IdCache:
     """
     global osIdCache, osIdCount
     osId = None
-    if None == osName: return osId
-    oName = osName.strip()
-    if None == osVersion: osVersion = ''
-    oVersion = osVersion.strip()
-    if not oName: # osVersion can be ''
-      return osId
-    key = (oName,self.getAppropriateOsVersion(oName,oVersion))
+    if None != osName:
+      osName = osName.strip()
+    if None != osVersion: 
+      osVersion = osVersion.strip()
+    key = (osName,self.getAppropriateOsVersion(osName,osVersion))
     osId = self.assureAndGetId(key,'osdims',
                                "SELECT id FROM osdims WHERE os_name=%s and os_version=%s",
                                "INSERT INTO osdims (os_name,os_version) VALUES (%s,%s)",
