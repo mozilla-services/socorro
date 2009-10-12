@@ -500,7 +500,6 @@ class TestCachedIdAccess:
     assert {} == cia.osIdCache
     assert {} == cia.osIdCount
     testOss = [
-      (('','5.1.2600 SP2'),None),
       (('Windows NT',''),1),
       (('Windows NT','5.1.2600 SP2'),2),
       (('Windows NT','5.1.2600 SP3'),3),
@@ -512,6 +511,8 @@ class TestCachedIdAccess:
       (('Linux', '0.0.0 Linux 2.4.6.flapitation x86_64 Linux'),6),
       (('Linux', '1.2.3 i686'),7),
       (('Namby', 'wiggle room'),8),
+      ((None,'weenie'),9),
+      (('','weenie'),10),
       ]
     rowCount = 0
     idSet = set()

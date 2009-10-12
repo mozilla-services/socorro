@@ -13,6 +13,8 @@ import socorro.database.cachedIdAccess as socorro_cia
 import socorro.database.postgresql as db_pgsql
 
 logger = logging.getLogger("topCrashBySignature")
+resultTable = 'top_crashes_by_signature'
+sourceTable = 'reports'
 
 class TopCrashesBySignature(object):
   """
@@ -26,16 +28,13 @@ class TopCrashesBySignature(object):
   Constructor parameters are:
     - database connection details as usual
     - processingInterval defaults to 12 minutes: 5 per hour. Must evenly divide a 24-hour period
-    - startDate: First moment to examine. Must be exactly N*processingInterval minutes past midnight
+    - startDate: First moment to examine
     --- Default is discovered by inspecting top_crashes_by_signature for most recent update (usually),
     --- or fails over to midnight of initialInterval days in the past
-    --- a specified startDate must be exactly N*processingInterval minutes past midnight. Asserted, not calculated.
     - initialIntervalDays defaults to 4: How many days before now to start working if there is no prior data
     - endDate default is end of the latest processingInterval that is before now().
-    --- if parameter endDate <= startDate: endDate is set to startDate (an empty enterval)
-    --- otherwise, endDate is adjusted to be in range(startDate,endDate) inclusive and on a processingInterval
-    - dateColumnName default is date_processed to mimic old code, but could be client_crash_date
-    - dbFetchChunkSize default is 512 items per fetchmany() call, adjust for your database/file-system (obsolete)
+    - deltaDate what is the 'outer' processing interval. No default.
+    --- if no xxxxDate is provided, defaults are used. Providing one is an error, any two are ok, if three, they must be self-consistent
   Usage:
   Once constructed, invoke processIntervals(**kwargs) where kwargs may override the constructor parameters.
   method processIntervals loops through the intervals between startDate and endDate effectively calling:
@@ -55,106 +54,10 @@ class TopCrashesBySignature(object):
     except (psycopg2.OperationalError, AssertionError),x:
       lib_util.reportExceptionAndAbort(logger)
     self.configContext = configContext
-    self.defaultProcessingInterval = 12
-    self.lastEnd = None # cache for db hit in self.getLegalProcessingInterval
-    self.outTable = 'top_crashes_by_signature'
-    self.inTable = 'reports'
-    ## WARNING: Next line has important side effect: Should call before getStartDate ##
-    self.processingInterval = self.getLegalProcessingInterval(int(configContext.get('processingInterval',0)))
-    self.deltaWindow = datetime.timedelta(minutes = self.processingInterval)
-    self.initialIntervalDays = int(configContext.get('initialIntervalDays',4)) # must come before self.startDate
-    self.startDate = self.getStartDate(configContext.get('startDate',None))
-    self.endDate = self.getEndDate(configContext.get('endDate',None))
-    self.dbFetchChunkSize = int(configContext.get('dbFetchChunkSize',512))
-    self.dateColumnName = configContext.get('dateColumnName', 'date_processed') # could be client_crash_date
     self.debugging = configContext.get('debug',False)
-
-  def setProcessingInterval(self, processingIntervalInMinutes):
-    """Set processingInterval AND deltaWindow"""
-    self.processingInterval = processingIntervalInMinutes
-    self.deltaWindow = datetime.timedelta(minutes = self.processingInterval)
-    
-  def getLegalProcessingInterval(self,target=0):
-    min = target
-    if not min:
-      cursor = self.connection.cursor()
-      try:
-        sql="SELECT window_end,window_size FROM %s ORDER BY window_end DESC LIMIT 1"%(self.outTable)
-        logger.debug("Running %s",sql)
-        cursor.execute(sql);
-        self.connection.rollback()
-        (self.lastEnd,windowSize) = cursor.fetchone()
-        assert 0 == windowSize.microseconds, "processingInterval must be a whole number of minutes, but got %s microseconds"%windowSize.microseconds
-        assert 0 == windowSize.days, "processingInterval must be less than a full day, but got %s days"%windowSize.days
-        min = windowSize.seconds/60
-      except TypeError: # Don't log 'NoneType object is not iterable'
-        self.connection.rollback()
-        self.lastEnd, windowSize = None,None
-      except Exception,x:
-        self.connection.rollback()
-        lib_util.reportExceptionAndContinue(logger)        
-        self.lastEnd, windowSize = None,None
-    if not min:
-      min = self.defaultProcessingInterval
-    assert min > 0, 'Negative processing interval is not allowed, but got %s'%min
-    assert min == int(min), 'processingInterval must be whole number of minutes, but got %s'%min
-    assert 0 == (24*60)%min, 'Minutes in processing interval must divide evenly into a day, but got %d'%min
-    return min
-
-  def getStartDate(self, startDate=None):
-    """
-    Return the appropriate startDate for this invocation of TopCrashesBySignature
-     - if no startDate param, try to use the cached startDate (window_end from top_crashes_by_signature) if any
-     - if no cached startDate, return midnight of initialIntervalDays before now
-     - if startDate parameter, truncate it to exact seconds
-     Finally assert that the start date is midnight, or exactly some number of processingIntervals after midnight
-     then return the (calculated) date
-    """
-    if not startDate:
-      if self.lastEnd:
-        startDate = self.lastEnd
-      else:
-        startDate = datetime.datetime.now() - datetime.timedelta(days=self.initialIntervalDays)
-        startDate = startDate.replace(hour=0,minute=0,second=0,microsecond=0)
-    else:
-      startDate = datetime.datetime.fromtimestamp(time.mktime(startDate.timetuple()))
-    check = startDate.replace(hour=0,minute=0,second=0,microsecond=0)
-    deltah = datetime.timedelta(hours=1)
-    while deltah>self.deltaWindow and check < startDate-deltah:
-      check += deltah
-    while check < startDate:
-      check += self.deltaWindow
-    assert check == startDate,'startDate %s is not on a processingInterval division (%s)'%(startDate,self.processingInterval)
-    return startDate
-
-  def getEndDate(self, endDate = None, startDate=None):
-    if not startDate:
-      startDate = self.startDate
-    now = datetime.datetime.now()
-    now -= self.deltaWindow
-    deltah = datetime.timedelta(hours=1)
-    if endDate:
-      endDate = datetime.datetime.fromtimestamp(time.mktime(endDate.timetuple()))
-    if endDate and endDate <= startDate:
-      return startDate
-    if (not endDate) or endDate >= now:
-      endDate = now
-      endDate = endDate.replace(hour=0,minute=0,second=0,microsecond=0)
-      while endDate < now - deltah: # At worst 23 (22?) loops
-        endDate += deltah
-      while endDate < now: # at worst, about 59 (58?) loops
-        endDate += self.deltaWindow
-    else:
-      mark = endDate - self.deltaWindow
-      deltad = datetime.timedelta(days=1)
-      endDate = startDate
-      while endDate < mark - deltad: # x < initialIntervalDays loops
-        endDate += deltad
-      while endDate < mark - deltah: # x < 23 loops
-        endDate += deltah
-      while endDate <= mark: # x < 59 loops
-        endDate += self.deltaWindow
-    return endDate
+    self.dateColumnName = configContext.get('dateColumnName', 'date_processed') # could be client_crash_date
+    cursor = self.connection.cursor()
+    self.startDate,self.deltaDate,self.endDate = cron_util.getProcessingDates(self.configContext,resultTable,cursor,logger)
 
   def extractDataForPeriod(self, startTime, endTime, summaryCrashes):
     """
@@ -176,7 +79,7 @@ class TopCrashesBySignature(object):
                 JOIN %(inTable)s r on p.product = r.product AND p.version = r.version
               WHERE NOT cfg.ignore AND %%(startTime)s <= r.%(dcolumn)s and r.%(dcolumn)s < %%(endTime)s
               AND   r.%(dcolumn)s >= cfg.start_date AND r.%(dcolumn)s <= cfg.end_date
-          """%({'dcolumn':self.dateColumnName, 'resultColumnlist':resultColumnlist,'inTable':self.inTable})
+          """%({'dcolumn':self.dateColumnName, 'resultColumnlist':resultColumnlist,'inTable':sourceTable})
     startEndData = {'startTime':startTime, 'endTime':endTime,}
     if self.debugging:
       logger.debug("Collecting data in range[%s,%s) on column %s",startTime,endTime, self.dateColumnName)
@@ -231,11 +134,11 @@ class TopCrashesBySignature(object):
       return 0
     # else
     if self.debugging:
-      logger.debug('Storing %s rows into table %s at %s',len(crashData),self.outTable,intervalString)
+      logger.debug('Storing %s rows into table %s at %s',len(crashData),resultTable,intervalString)
     sql = """INSERT INTO %s
           (count, uptime, signature, productdims_id, osdims_id, window_end, window_size)
           VALUES (%%(count)s,%%(uptime)s,%%(signature)s,%%(productdims_id)s,%%(osdims_id)s,%%(windowEnd)s,%%(windowSize)s)
-          """%(self.outTable)
+          """%(resultTable)
     cursor = self.connection.cursor()
     try:
       cursor.executemany(sql,crashData)
@@ -254,29 +157,24 @@ class TopCrashesBySignature(object):
     In addition, you may pass a map as summaryCrashes which will be extended in the first processing interval
     """
     summaryCrashes = kwargs.get('summaryCrashes',{})
-    startDate = self.getStartDate(startDate=kwargs.get('startDate',self.startDate))
-    endDate = self.getEndDate(endDate=kwargs.get('endDate',self.endDate),startDate=startDate)
     oldDateColumnName = self.dateColumnName
     self.dateColumnName = kwargs.get('dateColumnName',self.dateColumnName)
     revertDateColumnName = (self.dateColumnName != oldDateColumnName)
-    oldProcessingInterval = self.processingInterval
-    self.setProcessingInterval(self.getLegalProcessingInterval(kwargs.get('processingInterval',self.processingInterval)))
-    revertProcessingInterval = (oldProcessingInterval != self.processingInterval)
-    startWindow = startDate
+    cursor = self.connection.cursor()
+    startWindow,deltaWindow,endWindow = cron_util.getProcessingWindow(self.configContext,resultTable,cursor,logger,**kwargs)
+    startWindow = self.startDate
     try:
       fullCount = 0
-      while startWindow + self.deltaWindow <= endDate:
-        logger.debug("%s - Processing with interval from %s, size=%s)",threading.currentThread().getName(),startWindow,self.deltaWindow)
-        summaryCrashes = self.extractDataForPeriod(startWindow, startWindow+self.deltaWindow, summaryCrashes)
-        data = self.fixupCrashData(summaryCrashes,startWindow+self.deltaWindow,self.deltaWindow)
-        fullCount += self.storeFacts(data, "Start: %s, size=%s"%(startWindow,self.deltaWindow))
+      while startWindow + deltaWindow <= self.endDate:
+        logger.debug("%s - Processing with interval from %s, size=%s)",threading.currentThread().getName(),startWindow,deltaWindow)
+        summaryCrashes = self.extractDataForPeriod(startWindow, startWindow+deltaWindow, summaryCrashes)
+        data = self.fixupCrashData(summaryCrashes,startWindow+deltaWindow,deltaWindow)
+        fullCount += self.storeFacts(data, "Start: %s, size=%s"%(startWindow,deltaWindow))
         summaryCrashes = {}
-        startWindow += self.deltaWindow
+        startWindow += deltaWindow
     finally:
       self.connection.close()
       if revertDateColumnName:
         self.dateColumnName = oldDateColumnName
-      if revertProcessingInterval:
-        self.setProcessingInterval(oldProcessingInterval)
     return fullCount
       

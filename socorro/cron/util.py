@@ -22,7 +22,7 @@ def getProcessingDates(configContext, tableName, cursor, logger, **kwargs):
   if two among startDate, deltaDate, endDate: they are used
   Checks the table for most recent window_end
     if startDate < window_end:
-      startDate = endWindow
+      startDate = window_end
       logger.info(...that change...)
   if startDate >= endDate, or deltaDate <= 0, or three provided are inconsistent:
     logs the inconsistency and aborts

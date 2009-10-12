@@ -273,164 +273,31 @@ class TestTopCrashesBySignature(unittest.TestCase):
     bogusMap = {'databaseHost':me.config.databaseHost,'databaseName':me.config.databaseName,'databaseUserName':'JoeLuser','databasePassword':me.config.databasePassword}
     assert_raises(SystemExit,topcrasher.TopCrashesBySignature,bogusMap)
 
-    #check without a specified processingInterval, initialIntervalDays, startDate or endDate
+    #check without specific config items
     now = dt.datetime.now()
     tc = topcrasher.TopCrashesBySignature(me.config)
-    expectedStart = now.replace(hour=0,minute=0,second=0,microsecond=0) - dt.timedelta(days=tc.initialIntervalDays)
+    expectedStart = now.replace(hour=0,minute=0,second=0,microsecond=0) - tc.configContext.get('initialDeltaDate',dt.timedelta(days=4))
     expectedEnd = now.replace(hour=0,minute=0,second=0,microsecond=0)
-    mark = now - tc.deltaWindow
-    while expectedEnd < mark:
-      expectedEnd += tc.deltaWindow
-    after = now
     assert expectedStart == tc.startDate
-    assert expectedEnd == tc.endDate and tc.endDate <= now, 'But NOT %s == %s <= %s'%(expectedEnd,tc.endDate,now)
+    assert tc.endDate <= now, 'But NOT %s <= %s'%(tc.endDate,now)
+    assert dt.timedelta(days=4) <= tc.deltaDate, 'But got %s'%(tc.deltaDate)
     # Check for defaults. If the defaults are hard-code changed, this block needs equivalent changes
-    assert 12 == tc.processingInterval
-    assert 4 == tc.initialIntervalDays
-    assert 512 == tc.dbFetchChunkSize
     assert 'date_processed' == tc.dateColumnName
     # end Check for defaults
 
-    # check with some illegal and some legal processingIntervals
-    config = copy.copy(me.config)
-    for ipi in [-3,7]:
-      config['processingInterval'] = ipi
-      try:
-        tc = topcrasher.TopCrashesBySignature(config)
-        raise Exception, "Can't assert here, because we expect to catch AssertionError in next line"
-      except AssertionError,x:
-        pass
-      except:
-        assert False,'Expected AssertionError with processingInterval %s'%ipi
-    for pi in [0,1,12,720]:
-      config['processingInterval'] = pi
-      try:
-        tc = topcrasher.TopCrashesBySignature(config)
-        assert tc.processingInterval==pi or (0==pi and tc.processingInterval == 12) , 'but pi=%s and got %s'%(pi,tc.processingInterval)
-      except:
-        assert False,'Expected success with processingInterval %s'%pi
-
-    # check with illegal startDates
+    # check with solo startDate, endDate or deltaDate
     config = copy.copy(me.config)
     config['startDate'] = dt.datetime(2009,01,01,0,0,1)
-    assert_raises(AssertionError,topcrasher.TopCrashesBySignature,config)
-    config['startDate'] = dt.datetime(2009,01,01,0,12,1)
-    assert_raises(AssertionError,topcrasher.TopCrashesBySignature,config)
-    config['startDate'] = dt.datetime(2009,01,01,2,11)
-    assert_raises(AssertionError,topcrasher.TopCrashesBySignature,config)
-    config['startDate'] = dt.datetime(2009,01,01,23,59)
-    assert_raises(AssertionError,topcrasher.TopCrashesBySignature,config)
+    assert_raises(SystemExit,topcrasher.TopCrashesBySignature,config)
 
-    # check with midnight startDate
     config = copy.copy(me.config)
-    config['startDate'] = dt.datetime(2009,01,01)
-    tc = topcrasher.TopCrashesBySignature(config)
-    assert config['startDate'] == tc.startDate
+    config['endDate'] = dt.datetime(2009,01,01,0,0,1)
+    assert_raises(SystemExit,topcrasher.TopCrashesBySignature,config)
 
-    # check with very late legal startDate
-    config['startDate'] = dt.datetime(2009,01,01,23,48)
-    tc = topcrasher.TopCrashesBySignature(config)
-    assert config['startDate'] == tc.startDate
+    config = copy.copy(me.config)
+    config['deltaDate'] = dt.timedelta(days=3)
+    assert_raises(SystemExit,topcrasher.TopCrashesBySignature,config)
     
-    # check with a specified processingInterval, initialIntervalDays, startDate and endDate
-    config = copy.copy(me.config)
-    config['processingInterval'] = 20
-    config['startDate']= specifiedStartDate = dt.datetime(2009,01,01,12,20)
-    config['endDate'] = specifiedEndDate =    dt.datetime(2009,01,01,12,59)
-    config['initialIntervalDays'] = 3
-    tc = topcrasher.TopCrashesBySignature(config)
-    assert specifiedStartDate == tc.startDate
-    assert 3 == tc.initialIntervalDays
-    assert 20 == tc.processingInterval
-    expectedEndDate = specifiedEndDate.replace(hour=0,minute=0,second=0,microsecond=0)
-    while expectedEndDate < specifiedEndDate - tc.deltaWindow:
-      expectedEndDate += tc.deltaWindow
-    assert expectedEndDate == tc.endDate, "%s:%s"%(expectedEndDate,tc.endDate)
-
-  def testGetStartDate(self):
-    cursor = self.connection.cursor()
-    tc = topcrasher.TopCrashesBySignature(me.config)
-    priorMidnight = dt.datetime.now().replace(hour=0,minute=0,second=0,microsecond=0)
-    expectedDefault = priorMidnight - dt.timedelta(days=tc.initialIntervalDays)
-    tryDate = dt.datetime(2009,3,4,5,24,0,39)
-    expectedTry = tryDate.replace(microsecond=0)
-    assert expectedDefault==tc.getStartDate(), "Expected %s, got %s"%(expectedDefault,tc.getStartDate())
-    assert expectedTry == tc.getStartDate(tryDate), "Expected %s, got %s"%(expectedTry,tc.getStartDate(tryDate))
-    dbTryDate = dt.datetime(2009,1,2,12,12)
-    dbTryInterval = dt.timedelta(minutes=12)
-    cursor.execute("""INSERT INTO top_crashes_by_signature
-                      (productdims_id,osdims_id,signature,window_end,window_size)
-               VALUES (1,1,'js_wootery',%s,%s)""",(dbTryDate,dbTryInterval))
-    self.connection.commit()
-    # need new TopCrash since it reads the db on construction
-    tc = topcrasher.TopCrashesBySignature(me.config)
-    cursor.execute("SELECT window_end,window_size from top_crashes_by_signature order by window_end DESC LIMIT 1")
-    self.connection.commit()
-    assert dbTryDate==tc.getStartDate(),"But expected %s != %s"%(dbTryDate,tc.getStartDate())
-    result = tc.getStartDate(tryDate)
-    assert expectedTry == tc.getStartDate(tryDate),"But expected %s != %s"%(expectedTry,tc.getStartDate(tryDate))
-
-  def testGetEndDate(self):
-    now = dt.datetime.now()
-    tc = topcrasher.TopCrashesBySignature(me.config)
-    assert tc.endDate == tc.getEndDate()
-    assert now - tc.deltaWindow <= tc.endDate and tc.endDate <= now
-    tneg = tc.startDate - dt.timedelta(microseconds=1)
-    assert tc.startDate == tc.getEndDate(tneg)
-    startDate = tc.getStartDate(dt.datetime(2009,1,2,3,12))
-    tc.startDate = startDate
-    tryDate = expectedEndDate = dt.datetime(2009,1,2,3,48)
-    endDate = tc.getEndDate(tryDate)
-    assert expectedEndDate == endDate, 'Got %s != %s'%(expectedEndDate,endDate)
-    minusEps = tryDate - dt.timedelta(microseconds=1)
-    endDate = tc.getEndDate(minusEps)
-    assert expectedEndDate -tc.deltaWindow == endDate, 'Got %s != %s'%(expectedEndDate -tc.deltaWindow,endDate)
-    plusEps = tryDate + dt.timedelta(microseconds=1)
-    endDate = tc.getEndDate(plusEps)
-    assert expectedEndDate == endDate, 'Got %s != %s'%(expectedEndDate,endDate)
-    endDate = tc.getEndDate(dt.datetime(2009,1,2,3,52))
-    assert expectedEndDate == endDate, 'Got %s != %s'%(expectedEndDate,endDate)
-    #try with explicit startDate
-    sDate = dt.datetime(2007,12,25,12,24)
-    eDate = dt.datetime(2007,12,25,12,23,55)
-    tc.setProcessingInterval(12)
-    gotDate = tc.getEndDate(endDate=eDate, startDate=sDate)
-    assert sDate == gotDate, "expected %s, got %s"%(sDate,gotDate)
-    eDate = dt.datetime(2007,12,25,12,24,5)
-    gotDate = tc.getEndDate(endDate=eDate, startDate=sDate)
-    assert sDate == gotDate, "expected %s, got %s"%(sDate,gotDate)
-    eDate = dt.datetime(2007,12,25,12,37)
-    expectDate = dt.datetime(2007,12,25,12,36)
-    gotDate = tc.getEndDate(endDate=eDate, startDate=sDate)
-    assert expectDate == gotDate, "expected %s, got %s"%(sDate,gotDate)
-
-  def testGetLegalProcessingInterval(self):
-    cursor = self.connection.cursor()
-    tc = topcrasher.TopCrashesBySignature(me.config)
-    illegals = [-3.0,-0.0000001,0.0000001,0.999999,11,13,14,17,19,21,22,23,123]
-    for ipi in illegals:
-      try:
-        tc.getLegalProcessingInterval(ipi)
-        raise Exception, "Can't assert here because next line catches assertionError"
-      except AssertionError,x:
-        pass
-      except:
-        assert False, "Expected assertion error trying a processingInterval of %s"%ipi
-    legals = [0,1,2.0,3,4,5,6,8,9,10,12,15,16,18,20,24,30,32,36,40,45,48,240,360,720]
-    for pi in legals:
-      try:
-        ans = tc.getLegalProcessingInterval(pi)
-        assert ans==pi or (0==pi and ans == 12) , 'but pi=%s and got %s'%(pi,ans)
-      except:
-        pass
-    ninety = dt.timedelta(minutes=90)
-    cursor.execute("""INSERT INTO top_crashes_by_signature
-                      (productdims_id,osdims_id,signature,window_end,window_size)
-               VALUES (1,1,'js_wookie','2009-1-2 4:30',%s)""",(ninety,))
-    self.connection.commit()
-    tc = topcrasher.TopCrashesBySignature(me.config)
-    assert 90 == tc.getLegalProcessingInterval(), 'but got %s'%(tc.getLegalProcessingInterval())
-
   def testExtractDataForPeriod_ByDateProcessed(self):
     """
     TestTopCrashesBySignature.testExtractDataForPeriod_ByDateProcessed(self):
@@ -634,9 +501,9 @@ class TestTopCrashesBySignature(unittest.TestCase):
 #     for k,v in expect.items():
 #       assert getter(v) == getter(summaryCrashes[k]),  'for key %s: Expected %s but got %s'%(k,getter(v), getter(summaryCrashes[k]))
     
-    result = tc.fixupCrashData(summaryCrashes,baseDate,tc.deltaWindow)
+    result = tc.fixupCrashData(summaryCrashes,baseDate,dt.timedelta(minutes=19))
     result.sort(key=itemgetter('count'),reverse=True)
-    resultx = tc.fixupCrashData(expect,baseDate,tc.deltaWindow)
+    resultx = tc.fixupCrashData(expect,baseDate,dt.timedelta(minutes=19))
     resultx.sort(key=itemgetter('count'),reverse=True)
     assert result == resultx
 #    ## The next few lines show more detail if there's a problem. Comment above, uncomment below
@@ -799,6 +666,55 @@ class TestTopCrashesBySignature(unittest.TestCase):
     expect = [(stime,fifteen),] * gotCount
     assert expect == got, 'but got %s'%(got)
 
+  def testChangeWindowSize(self):
+    """
+    TestTopCrashesBySignature.testChangeWindowSize
+    """
+    global me
+    cursor = self.connection.cursor()
+    idCache = cia.IdCache(cursor)
+    minStamp, maxStamp, data = self.prepareExtractDataForPeriod('date_processed',31,5) # full set of keys
+    bogusEnd = dt.datetime(2007,12,30)
+    bogusSize = dt.timedelta(minutes=20)
+    configBegin = minStamp - dt.timedelta(hours=1)
+    configEnd = maxStamp + dt.timedelta(hours=1)
+    keySet = set([(idCache.getProductId(d['product'],d['version']),idCache.getOsId(d['os_name'],d['os_version'])) for d in data])
+    self.prepareConfigForPeriod(keySet,configBegin,configEnd)
+    getSql = "SELECT window_end,window_size FROM top_crashes_by_signature ORDER BY id DESC LIMIT 1"
+    cursor.execute(getSql)
+    got = cursor.fetchone()
+    assert None == got, 'Expect no data at this point, but %s'%(str(got))
+    self.connection.rollback()
+    inSql = "INSERT INTO top_crashes_by_signature (window_end,window_size) VALUES (%s,%s)"
+    cursor.execute(inSql,(bogusEnd,bogusSize))
+    self.connection.commit()
+    cursor.execute(getSql)
+    got = cursor.fetchone()
+    self.connection.rollback()
+    assert bogusSize == got[1],'But it was %s'%(str(got))
+    config = copy.copy(me.config)
+    config['startDate'] = dt.datetime(2008,1,2,1)
+    config['endDate'] = dt.datetime(2008,1,2,2)
+    config['startWindow'] = config['startDate']
+    config['deltaWindow'] = dt.timedelta(minutes=10)
+    tc = topcrasher.TopCrashesBySignature(config)
+    tc.processDateInterval()
+    cursor.execute(getSql)
+    got = cursor.fetchone()
+    self.connection.rollback()
+    assert config['deltaWindow'] == got[1], 'But it was %s'%(str(got))
+    
+    config['startDate'] = config['endDate']
+    config['endDate'] = dt.datetime(2008,1,2,3)
+    config['startWindow'] = config['startDate']
+    config['deltaWindow'] = dt.timedelta(minutes=60)
+    tc = topcrasher.TopCrashesBySignature(config)
+    tc.processDateInterval()
+    cursor.execute(getSql)
+    got = cursor.fetchone()
+    self.connection.rollback()
+    assert config['deltaWindow'] == got[1], 'But it was %s'%(str(got))
+
   def testProcessDateInterval(self):
     """
     TestTopCrashesBySignature.testProcessDateInterval
@@ -814,6 +730,12 @@ class TestTopCrashesBySignature(unittest.TestCase):
     keySet = set([(idCache.getProductId(d['product'],d['version']),idCache.getOsId(d['os_name'],d['os_version'])) for d in data])
     self.prepareConfigForPeriod(keySet,configBegin,configEnd)
     tc = topcrasher.TopCrashesBySignature(me.config)
+    config = copy.copy(me.config)
+    config['startWindow'] = dt.datetime(2008,1,2,0,0)
+    config['deltaWindow'] = dt.timedelta(minutes=12)
+    config['startDate'] =  dt.datetime(2008,1,2,0,0)
+    config['endDate'] = dt.datetime(2008,1,6,5,0)
+    tc = topcrasher.TopCrashesBySignature(config)
 
     # first assure that we have a clean playing field
     countSql = "SELECT count(*) from top_crashes_by_signature"
@@ -829,17 +751,16 @@ class TestTopCrashesBySignature(unittest.TestCase):
       maxMin = 0
       dHour = dt.timedelta(hours=1)
     eDate = maxStamp.replace(minute=maxMin,second=0,microsecond=0)+dHour
-    tc.setProcessingInterval(15)
     tc.dateColumnName= 'client_crash_date'
-    tc.processDateInterval(startDate=sDate, endDate=eDate, dateColumnName='date_processed',processingInterval=30)
-    assert 15 == tc.processingInterval
+    tc.processDateInterval(startDate=sDate, endDate=eDate, dateColumnName='date_processed')
     assert 'client_crash_date' == tc.dateColumnName
 
     cursor.execute(countSql)
     self.connection.commit()
     gotCount = cursor.fetchone()[0]
     me.logger.debug("DEBUG testProcessIntervals after count top_crashes_by_signature = %s",gotCount)
-    assert 155 == gotCount, 'Regression test only, value not calculated. Expect 96, got %s'%gotCount
+    expect = 155
+    assert expect == gotCount, 'Regression test only, value not calculated. Expect %s, got %s'%(expect,gotCount)
 
 if __name__ == "__main__":
   unittest.main()
