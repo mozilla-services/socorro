@@ -14,28 +14,29 @@
                     <th>Signature</th>
                     <th>#</th>
                     <th>Win</th>
-                    <th>Lin</th>
                     <th>Mac</th>
+                    <th>Lin</th>
                 </tr>
             </thead>
             <tbody>
                 <?php $row = 1 ?>
                 <?php foreach ($top_crashers as $crasher): ?>
                     <?php
+                        $nonBlankSignature = $crasher->signature?$crasher->signature:'(signature unavailable)';
                         $link_url =  url::base() . 'report/list?' . html::query_string(array(
                             'range_value' => '2',
                             'range_unit'  => 'weeks',
                             'version'     => $crasher->product . ':' . $crasher->version,
-                            'signature'   => $crasher->signature
+                            'signature'   => $nonBlankSignature
                         ));
                     ?>
                     <tr class="<?php echo ( ($row-1) % 2) == 0 ? 'even' : 'odd' ?>">
                         <td><?php out::H($row) ?></td>
-                        <td><a href="<?php out::H($link_url) ?>" title="View reports with this crasher."><?php out::H($crasher->signature) ?></a></td>
+                        <td><a href="<?php out::H($link_url) ?>" title="View reports with this crasher."><?php out::H($nonBlankSignature) ?></a></td>
                         <td><?php out::H($crasher->total) ?></td>
                         <td><?php out::H($crasher->win) ?></td>
-                        <td><?php out::H($crasher->linux) ?></td>
                         <td><?php out::H($crasher->mac) ?></td>
+                        <td><?php out::H($crasher->linux) ?></td>
                         <?php $row+=1 ?>
                     </tr>
                 <?php endforeach ?>
