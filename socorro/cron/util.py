@@ -144,7 +144,7 @@ def getDefaultDateInterval(cursor,tableName,initialDeltaDate,defaultDeltaWindow,
     startDate = latestWindowEnd
   else:
     startDate = myMidnight - initialDeltaDate
-    logger.info("Table %s has no latest entry. Using default = %s",tableName,startDate)
+    logger.info("Table %s has no latest entry. Default startDate is  %s",tableName,startDate)
   if not deltaWindow:
     deltaWindow = defaultDeltaWindow
     logger.info("Table %s has no window_size entry. Using default = %s",tableName,deltaWindow)
