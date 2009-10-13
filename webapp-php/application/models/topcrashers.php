@@ -65,7 +65,7 @@ class Topcrashers_Model extends Model {
                  p.version AS version,
                  tcs.signature,
                  sum(tcs.count) as total,
-                 sum(case when o.os_name = 'Windows NT' then tcs.count else 0 end) as win,
+                 sum(case when o.os_name LIKE 'Windows%' then tcs.count else 0 end) as win,
                  sum(case when o.os_name = 'Mac OS X' then tcs.count else 0 end) as mac,
                  sum(case when o.os_name = 'Linux' then tcs.count else 0 end) as linux 
              FROM " . join(', ', array_keys($tables)) . "
