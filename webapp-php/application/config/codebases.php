@@ -11,6 +11,11 @@ $config['vcsMappings'] = array(
 	'hg.mozilla.org/releases/mozilla-1.9.1' => 
 	    'http://hg.mozilla.org/releases/mozilla-1.9.1/annotate/%(revision)s/%(file)s#l%(line)s',
 	'hg.mozilla.org/releases/mozilla-1.9.2' => 
-            'http://hg.mozilla.org/releases/mozilla-1.9.2/annotate/%(revision)s/%(file)s#l%(line)s'));
+	    'http://hg.mozilla.org/releases/mozilla-1.9.2/annotate/%(revision)s/%(file)s#l%(line)s',
+        'hg.mozilla.org/comm-central' =>
+	    'http://hg.mozilla.org/comm-central/annotate/%(revision)s/%(file)s#l%(line)s',
+        'hg.mozilla.org/releases/comm-1.9.1' =>
+            'http://hg.mozilla.org/releases/comm-1.9.1/annotate/%(revision)s/%(file)s#l%(line)s'
+));
 $config['bugTrackingUrl'] = 'https://bugzilla.mozilla.org/show_bug.cgi?id=';
 ?>
