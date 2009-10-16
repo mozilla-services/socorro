@@ -1,6 +1,7 @@
 """ Shared utilities for the cron scripts """
 
 import socorro.lib.util as lib_util
+import socorro.lib.psycopghelper as psy
 import socorro.lib.ConfigurationManager as cm
 import datetime
 import logging
@@ -10,11 +11,42 @@ import time
 globalDefaultDeltaWindow = datetime.timedelta(seconds=12*60)
 globalInitialDeltaDate = datetime.timedelta(days=4)
 
-def getProcessingDates(configContext, tableName, cursor, logger, **kwargs):
+class ProcessingIsTooFarBehind(Exception):
+  pass
+
+def getTimestampOfMostRecentlyCompletedReport(cursor, logger, nowFunction=datetime.datetime.now):
+  """ get the date of the earliest unfinished job from the 'reports' table.  Only look back as far as
+      seven days plus fifteen minutes.  If the oldest job is in that final fifteen minute time segment
+      refuse to continue because processing is too far behind."""
+  now = nowFunction()
+  sql = """
+           select
+               min(date_processed)
+           from
+               reports
+           where
+               '%s' < date_processed
+               and success is null
+        """ % (now - datetime.timedelta(7,0,15))
+  try:
+    try:
+      earliestUnfinishedJobTimestamp = psy.singleValueSql (cursor, sql)
+    except psy.SQLDidNotReturnSingleValue:
+      return now # processing is completely up to date
+    if earliestUnfinishedJobTimestamp < now - datetime.timedelta(7):
+      raise ProcessingIsTooFarBehind("there are unfinished jobs older than 7 days")
+    elif earliestUnfinishedJobTimestamp:
+      return earliestUnfinishedJobTimestamp
+    else:
+      return now
+  except ProcessingIsTooFarBehind:
+    lib_util.reportExceptionAndAbort(logger)
+
+def getProcessingDates(configContext, tableName, cursor, logger, nowFunction=getTimestampOfMostRecentlyCompletedReport, **kwargs):
   """
   A processing interval is a time interval greater or equal to a processing window. Used to
   calculate a series of adjacent materialized view aggregates.
-  
+
   Returns (startDate, deltaDate, endDate) using this heuristic:
   kwargs beats configContext
   if none are provided, calculates based on latest row of table, now()
@@ -47,7 +79,7 @@ def getProcessingDates(configContext, tableName, cursor, logger, **kwargs):
   defaultDeltaWindow = config.get('defaultDeltaWindow',config.get('deltaWindow'))
   if not defaultDeltaWindow: defaultDeltaWindow = globalDefaultDeltaWindow
   try:
-    startDateFromTable,endDateFromTable,latestWindowEnd = getDefaultDateInterval(cursor,tableName,initialDeltaDate,defaultDeltaWindow,logger)
+    startDateFromTable,endDateFromTable,latestWindowEnd = getDefaultDateInterval(cursor,tableName,initialDeltaDate,defaultDeltaWindow,logger,nowFunction)
     if startDate and endDate and deltaDate:
       assert startDate + deltaDate == endDate,"inconsistent: %s + %s != %s"%(startDate,deltaDate,endDate)
     elif startDate and endDate:
@@ -70,13 +102,14 @@ def getProcessingDates(configContext, tableName, cursor, logger, **kwargs):
       deltaDate = endDate - startDate
       assert deltaDate > delta0, 'inconsistent (after check with db table %s): deltaDate %s <= 0'%(tableName,deltaDate)
     return (startDate,deltaDate,endDate)
-  except:
+  except Exception, x:
+    print x
     lib_util.reportExceptionAndAbort(logger)
 
 def getProcessingWindow(configContext,tableName,cursor,logger, **kwargs):
   """
   ProcessingWindow is a single time window over which to aggregate materialized view data.
-  
+
   Returns (startWindow,deltaWindow,endWindow) using this heuristic:
   kwargs beats configContext which beats latest table row
   if two among startWindow, endWindow, deltaWindow in config or kwargs: they are used.
@@ -129,16 +162,18 @@ def getProcessingWindow(configContext,tableName,cursor,logger, **kwargs):
   except:
     lib_util.reportExceptionAndAbort(logger)
 
-def getDefaultDateInterval(cursor,tableName,initialDeltaDate,defaultDeltaWindow,logger):
+
+
+def getDefaultDateInterval(cursor,tableName,initialDeltaDate,defaultDeltaWindow,logger,nowFunction=getTimestampOfMostRecentlyCompletedReport):
   """
   Calculates startDate, deltaWindow from latest entry in tableName (else initialDeltaDate, defaultDeltaWindow)
-  if no such table, logs failure and exits 
+  if no such table, logs failure and exits
   Calculates endDate from now and deltaWindow
   if initialDeltaDate or defaultDeltaWindow is used, logs an info message
   returns (startDate, endDate, latestWindowEnd)
   """
-  now = datetime.datetime.now()
-  myMidnight = now.replace(hour=0,minute=0,second=0,microsecond=0)
+  timestampOfMostRecentlyCompletedReport = nowFunction(cursor, logger)
+  myMidnight = timestampOfMostRecentlyCompletedReport.replace(hour=0,minute=0,second=0,microsecond=0)
   latestWindowEnd,deltaWindow = getLastWindowAndSizeFromTable(cursor,tableName,logger)
   if latestWindowEnd:
     startDate = latestWindowEnd
@@ -149,10 +184,10 @@ def getDefaultDateInterval(cursor,tableName,initialDeltaDate,defaultDeltaWindow,
     deltaWindow = defaultDeltaWindow
     logger.info("Table %s has no window_size entry. Using default = %s",tableName,deltaWindow)
   endDate = myMidnight
-  while endDate + deltaWindow < now:
+  while endDate + deltaWindow < timestampOfMostRecentlyCompletedReport:
     endDate += deltaWindow
   return (startDate,endDate,latestWindowEnd)
-  
+
 def getLastWindowAndSizeFromTable(cursor, table, logger):
   """
   cursor: database cursor
@@ -196,3 +231,4 @@ def getLastWindowAndSizeFromTable(cursor, table, logger):
   except:
     lib_util.reportExceptionAndAbort(logger)
   return (lastEnd,lastSize)
+

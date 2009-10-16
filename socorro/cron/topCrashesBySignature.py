@@ -26,22 +26,27 @@ class TopCrashesBySignature(object):
       = window_end: for book-keeping, restart
       = window_size: for book-keeping, restart
   Constructor parameters are:
-    - database connection details as usual
-    - processingInterval defaults to 12 minutes: 5 per hour. Must evenly divide a 24-hour period
-    - startDate: First moment to examine
-    --- Default is discovered by inspecting top_crashes_by_signature for most recent update (usually),
-    --- or fails over to midnight of initialInterval days in the past
-    - initialIntervalDays defaults to 4: How many days before now to start working if there is no prior data
-    - endDate default is end of the latest processingInterval that is before now().
-    - deltaDate what is the 'outer' processing interval. No default.
-    --- if no xxxxDate is provided, defaults are used. Providing one is an error, any two are ok, if three, they must be self-consistent
+      via configContext dict:
+      - database connection details as usual
+      - processingInterval defaults to 12 minutes: 5 per hour. Must evenly divide a 24-hour period
+      - startDate: First moment to examine
+      --- Default is discovered by inspecting top_crashes_by_signature for most recent update (usually),
+      --- or fails over to midnight of initialInterval days in the past
+      - initialIntervalDays defaults to 4: How many days before now to start working if there is no prior data
+      - endDate default is end of the latest processingInterval that is before now().
+      - deltaDate what is the 'outer' processing interval. No default.
+      --- if no xxxxDate is provided, defaults are used. Providing one is an error, any two are ok, if three, they must be self-consistent
+      nowFunctionDependencyInjection - a function that returns a datetime instance with the current concept of "now".
+        The default is to look into the 'reports' table to see how far behind the processors are.  The concept of "now"
+        in that case is the timestamp of the oldest job not yet processed.  To simplify testing, it is possible to
+        just pass in a function that returns any appropriate datetime instance.
   Usage:
   Once constructed, invoke processIntervals(**kwargs) where kwargs may override the constructor parameters.
   method processIntervals loops through the intervals between startDate and endDate effectively calling:
     storeFacts(fixupCrashData(extractDataForPeriod(startPeriod,endPeriod,data),startPeriod,processingInterval)
   If you prefer to handle the details in your own code, you may mimic or override processIntervals.
   """
-  def __init__(self,configContext):
+  def __init__(self,configContext,nowFunctionDependencyInjection=cron_util.getTimestampOfMostRecentlyCompletedReport):
     super(TopCrashesBySignature,self).__init__()
     try:
       assert "databaseHost" in configContext, "databaseHost is missing from the configuration"
@@ -57,7 +62,7 @@ class TopCrashesBySignature(object):
     self.debugging = configContext.get('debug',False)
     self.dateColumnName = configContext.get('dateColumnName', 'date_processed') # could be client_crash_date
     cursor = self.connection.cursor()
-    self.startDate,self.deltaDate,self.endDate = cron_util.getProcessingDates(self.configContext,resultTable,cursor,logger)
+    self.startDate,self.deltaDate,self.endDate = cron_util.getProcessingDates(self.configContext,resultTable,cursor,logger,nowFunctionDependencyInjection)
 
   def extractDataForPeriod(self, startTime, endTime, summaryCrashes):
     """
@@ -177,4 +182,4 @@ class TopCrashesBySignature(object):
       if revertDateColumnName:
         self.dateColumnName = oldDateColumnName
     return fullCount
-      
+
