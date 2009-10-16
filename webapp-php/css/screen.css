@@ -180,10 +180,10 @@ html {
 			-moz-box-shadow: 0 2px 4px rgba(0, 0, 0, .25);
 			}
 		#top-nav > li > div.large {
+                     /* Some rules also dynamic in layout.css */
 			left: auto;
 			right: .25em;
 			-moz-border-radius: .5em 0 .5em .5em;
-			-moz-column-count: 3; /*  TODO: Equal to the number of Products in the "Other" Drop down. This should be generated server side or via JS */
 			-moz-column-gap: 0;
 			-moz-column-rule: 1px solid #406080;
 			}
@@ -1086,3 +1086,7 @@ h2.mtbf-graph{ float: left; }
 .header-wrapper h1 { position: absolute; top:0px; left: 0px; }
 /* end dashboard widgets */
 /* ozten working end */
+
+#auth-box {position: absolute; top:0px; right: 0px;}
+
+.messages{ border: solid 1px grey; }

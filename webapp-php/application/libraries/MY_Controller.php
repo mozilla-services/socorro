@@ -165,7 +165,10 @@ class Controller extends Controller_Core {
 
 	$this->ensureChosenVersion($curProds);
 	$this->setViewData('chosen_version', $this->chosen_version);
-
+        
+        $this->setViewData('num_other_products', 
+                  count($this->branch_model->getProducts()) - 
+			   count(Kohana::config('dashboard.feat_nav_products')));
     }
 
     private $_current_products;

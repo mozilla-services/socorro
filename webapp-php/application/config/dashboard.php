@@ -1,6 +1,6 @@
 <?php defined('SYSPATH') or die('No direct script access.');
-$config['default_product'] = "
-Firefox";
+$config['default_product'] = "Firefox";
+$config['feat_nav_products'] = array("Firefox", "Thunderbird");
 $config['topcrashbysig_numberofsignatures'] = 3;
 $config['topcrashbysig_featured'] = array(
     array('product' => 'Firefox',     'version' => '3.6a2pre'),

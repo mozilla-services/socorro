@@ -12,6 +12,12 @@
                                 )); ?>
 
         <?php slot::output('head') ?>
+            <style type="text/css">
+   /* Only calculated CSS should go in this block */
+#top-nav > li > div.large {                                                                                                  
+  -moz-column-count: <?= $num_other_products ?>;
+}
+        </style>
 
     </head>
 
