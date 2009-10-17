@@ -188,12 +188,14 @@ class Common_Model extends Model {
         }
 
         if ($params['platform']) {
+	    $or = array();
             foreach ($params['platform'] as $platform_id) {
                 $platform = $this->platform_model->get($platform_id);
                 if ($platform) {
-                    $where[] = 'reports.os_name = ' . $this->db->escape($platform->os_name);
+		    $or[] = 'reports.os_name = ' . $this->db->escape($platform->os_name);
                 }
             }
+	    $where[] = '(' . join(" OR ", $or) . ')';
         }
 
         if ($params['query']) {
