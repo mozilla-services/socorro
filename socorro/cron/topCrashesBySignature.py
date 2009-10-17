@@ -63,6 +63,7 @@ class TopCrashesBySignature(object):
     self.dateColumnName = configContext.get('dateColumnName', 'date_processed') # could be client_crash_date
     cursor = self.connection.cursor()
     self.startDate,self.deltaDate,self.endDate = cron_util.getProcessingDates(self.configContext,resultTable,cursor,logger,nowFunctionDependencyInjection)
+    logger.info("self.startDate=%s, self.deltaDate=%s, self.endDate=%s", self.startDate,self.deltaDate,self.endDate)
 
   def extractDataForPeriod(self, startTime, endTime, summaryCrashes):
     """
