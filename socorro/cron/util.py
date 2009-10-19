@@ -14,9 +14,6 @@ globalInitialDeltaDate = datetime.timedelta(days=4)
 class ProcessingIsTooFarBehind(Exception):
   pass
 
-def xxgetTimestampOfMostRecentlyCompletedReport(cursor, logger, nowFunction=datetime.datetime.now):
-  return nowFunction()
-
 def getTimestampOfMostRecentlyCompletedReport(cursor, logger, nowFunction=datetime.datetime.now):
   """ get the date of the earliest unfinished job from the 'reports' table.  Only look back as far as
       seven days plus fifteen minutes.  If the oldest job is in that final fifteen minute time segment
@@ -31,7 +28,7 @@ def getTimestampOfMostRecentlyCompletedReport(cursor, logger, nowFunction=dateti
                '%s' < date_processed
                and success is null
         """ % (now - datetime.timedelta(7,0,15))
-  logger.debug(sql)
+  #logger.debug(sql)
   try:
     try:
       earliestUnfinishedJobTimestamp = psy.singleValueSql (cursor, sql)
