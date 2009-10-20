@@ -792,7 +792,6 @@ ul#occurs li, ul#stack li {
 
 /* end search-form */
 
-/* ozten working start */
 #query-results-h { clear: left; }
 /* label { color: #000; } */
 fieldset ul li { text-align: left; }
@@ -1082,11 +1081,10 @@ h2.mtbf-graph{ float: left; }
 .legendLabel{ width: 90px; overflow: hidden; }
 
 #overviewLegend table tbody tr td, #overviewLegend table thead tr th, #graph-legend table tbody tr td { border: none; }
-.topcrashersaccord div a, p a, .report-date_processed a, .full_bug_ids li a, .full_bug_ids li .strike a, .list tbody tr th a, .list tbody tr td a, .trend-nav a { text-decoration: underline; }
+.topcrashersaccord div a, p a, .report-date_processed a, .full_bug_ids li a, .list tbody tr th a, .list tbody tr td a, .trend-nav a { text-decoration: underline; }
 .strike a { text-decoration: line-through; }
 .header-wrapper h1 { position: absolute; top:0px; left: 0px; }
 /* end dashboard widgets */
-/* ozten working end */
 
 #auth-box {position: absolute; top:0px; right: 0px;}
 
