@@ -30,6 +30,9 @@ $config['topcrasher'] =
 $config['error/(.*)/(.*)'] =
     'error/$1/$2';
 
+$config['dumps/(.*)'] =
+    'dumps/file/$1';
+
 $config['report/list'] =
     'report/do_list'; // 'list' is a PHP reserved word
 
