@@ -30,6 +30,9 @@ def makedirs(name, mode=0777):
     #be happy if someone already created the path
     if e.errno != errno.EEXIST:
       raise
+    else: # it might be an existing non-directory
+      if not os.path.isdir(name):
+        raise OSError(errno.ENOTDIR,"Not a directory: '%s'"%name)
 
 #-----------------------------------------------------------------------------------------------------------------
 #!/usr/bin/python

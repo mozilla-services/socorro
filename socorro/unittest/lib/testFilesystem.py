@@ -185,6 +185,29 @@ class TestFilesystem(unittest.TestCase):
     for o in expected:
       assert o in items
 
+  def testFailMakedirsOnFileInPath(self):
+    path = 'TestDir/1/2/3/4'
+    tpath = path
+    while True:
+      head,tail = os.path.split(tpath)
+      if tail == 'TestDir': break
+      try:
+        shutil.rmtree('TestDir')
+      except:
+        pass
+      f.makedirs(head)
+      t = open(tpath,'w')
+      t.write('nothing\n')
+      t.close()
+      try:
+        f.makedirs(path)
+        assert False, 'We should have had an OSError, but success for %s a file'%tpath
+      except OSError:
+        pass
+      except Exception,x:
+        assert False, 'We should have had an OSError, got %s: %s'%(type(x),x)
+      tpath = head
+
 if __name__ == "__main__":
   unittest.main()
   
