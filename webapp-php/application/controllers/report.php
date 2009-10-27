@@ -180,8 +180,8 @@ class Report_Controller extends Controller {
 
         // Check for the report
 		if ($report = $this->report_model->isReportAvailable($uuid)) {
-//			$this->setAutoRender(FALSE);
-//			return url::redirect('report/index/'.$uuid);
+			$this->setAutoRender(FALSE);
+			return url::redirect('report/index/'.$uuid);
 		}
 
         // Fetch Job 

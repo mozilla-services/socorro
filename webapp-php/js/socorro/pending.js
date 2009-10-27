@@ -2,7 +2,7 @@
 /* Javascript for the Pending Reports page */
 
 // Begin the timer and Ajax calls for reports
-var original_seconds = 5;
+var original_seconds = 30;
 var seconds = original_seconds; 
 var number_calls = 1;
 
@@ -13,7 +13,7 @@ function pendingReportTimer(url){
         $('#processing').show();
 
         // Upon the third attempt, state that this failed 
-        if (number_calls == 3) {
+        if (number_calls == 10) {
             $('#checking').hide();
             $('#fail').show();
         } else {
