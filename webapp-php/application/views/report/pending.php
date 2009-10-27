@@ -1,16 +1,33 @@
-<?php slot::start('head') ?>
-    <title>Please wait... we are processing your report.</title>
-    <meta http-equiv="refresh" content="21; url=<?php out::H( url::base() . 'report/index/' . $uuid . '?p=1' ) ?>"/>
-<?php slot::end() ?>
 
-<h1 class="loading">Your report is being processed</h1>
-<ul>
-    <li>We've given <a href="<?php out::H( url::base() . 'report/index/' . $uuid . '?p=1' ) ?>">your report</a> priority</li>
-    <li>Your report should be ready in a minute</li>
-    <li>This page will refresh and display your report's status</li>
-    <li>When your report has been processed, we will redirect you to your
-    report</li>
-</ul>
+<?php if (empty($status)) { ?>
+
+	<div id="checking" class="pendingStatus">
+	    <form><input type="hidden" id="count" name="count" value="0" /></form>
+	    <h3>Please Wait...</h3>
+	    <p>Fetching this archived report will take 30 seconds to 5 minutes</p>
+	    <img src="<?php echo url::site(); ?>img/ajax-loader.gif">
+	    <p id="next_attempt">Next attempt in <span id="counter" name="counter">5</span> seconds...</p> 
+	    <p id="processing" class="pendingProcessing" style="display:none">Querying for archived report...</p>
+	</div>
+	
+	<div id="fail" class="pendingStatus" style="display:none;">
+	    <h3>Oh Noes!</h3>
+	    <p>This archived report could not be located.</p>
+	</div>
+
+	<script type="text/javascript" src="<?php echo url::site(); ?>js/socorro/pending.js"></script>
+	<script type="text/javascript">
+	document.onload = pendingReportTimer("<?php echo html::specialchars($url_ajax); ?>");
+	</script>
+
+<?php } elseif ($status == 410) { ?>
+
+	<div id="fail" class="pendingStatus">
+	    <h3>Oh Noes!</h3>
+	    <p>This archived report has expired because it is greater than 3 years of age.</p>
+	</div>
+<?php } ?>
+
 
 <?php if ($job): ?>
     <h2>Queue Info</h2>
@@ -29,3 +46,5 @@
         <?php endif ?>
     </dl>
 <?php endif ?>
+
+

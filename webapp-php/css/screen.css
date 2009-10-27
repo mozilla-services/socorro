@@ -1089,3 +1089,27 @@ h2.mtbf-graph{ float: left; }
 #auth-box {position: absolute; top:0px; right: 0px;}
 
 .messages{ border: solid 1px grey; }
+
+
+/* REPORT PENDING STATUS PAGE */
+div.pendingStatus {
+    background: #FFFFFF;
+    border: 4px solid #999;
+    color: #333;
+    font: 12px "Lucida Grande", "Lucida Sans Unicode", verdana, lucida, arial, helvetica, sans-serif;
+    text-align: center;
+    margin: 20px auto;
+    padding: 10px;
+    -moz-border-radius: 25px;
+    width: 400px; 
+}
+div.pendingStatus p {
+    font-size: 12px;
+}
+div.pendingStatus img {
+    margin: 10px 0;
+}
+div.pendingStatus p.pendingProcessing {
+    color: green;
+    font-weight: bold;
+}

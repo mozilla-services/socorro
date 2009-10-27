@@ -157,36 +157,68 @@ class Report_Controller extends Controller {
 
     /**
      * Wait while a pending job is processed.
+     * 
+     * @access  public
+     * @param   int     The UUID for this report
+     * @return  void
      */
     public function pending($id) {
         $crash = new Crash();
+		$status = null;
         $uuid = $crash->parseUUID($id);
         if ($uuid == FALSE) {
             Kohana::log('alert', "Improper UUID format for $uuid doing 404");
             return Event::run('system.404');
         }
-        $crashDirs = Kohana::config('application.dumpPaths');
-	foreach ($crashDirs as $crashDir) {
-	  if ($this->report_model->exists($uuid, $crashDir)) {
-	    $report = $this->report_model->getByUUID($uuid, $crashDir);
-	    if ($report) {
-	        $this->setAutoRender(FALSE);
-                return url::redirect('report/index/'.$uuid);
-		break;
-	    } 
-
-	  }
-	  
-	}
         
+        // If the YYMMDD date on the end of the $uuid string is over 3 years ago, fail.
+        if (!$this->report_model->isReportValid($id)) {
+            Kohana::log('alert', "UUID indicates report for $id is greater than 3 years of age.");
+            header("HTTP/1.0 410 Gone"); 
+			$status = intval(410);
+        }        
+
+        // Check for the report
+		if ($report = $this->report_model->isReportAvailable($uuid)) {
+//			$this->setAutoRender(FALSE);
+//			return url::redirect('report/index/'.$uuid);
+		}
+
+        // Fetch Job 
         $this->job_model = new Job_Model();
         $job = $this->job_model->getByUUID($uuid);
 
         $this->setViewData(array(
             'uuid' => $uuid,
-            'job'  => $job
+            'job'  => $job,
+			'status' => $status,
+			'url_ajax' => url::site() . 'report/pending_ajax/' . $uuid 
         ));
     }
+
+    /**
+    * Determine whether or not pending report has been found yet.  If so,
+    * redirect the user to that url.
+    *
+    * @access   public
+    * @param    string  The $uuid for this report
+    * @return   string  Return the url to which the user should be redirected.
+    */
+    public function pending_ajax ($uuid)
+    {
+		$status = array();
+        if ($report = $this->report_model->isReportAvailable($uuid)) {
+			$status['status'] = 'ready';
+			$status['status_message'] = 'The report for ' . $uuid . ' is now available.';
+			$status['url_redirect'] = url::site('report/index/'.$uuid);
+        } else {
+			$status['status'] = 'error';
+			$status['status_message'] = 'The report for ' . $uuid . ' is not available yet.';
+			$status['url_redirect'] = '';
+		}
+		echo json_encode($status);
+        exit;
+     }
 
     /**
      * Linking reports with ID validation.
@@ -213,4 +245,6 @@ class Report_Controller extends Controller {
 	  return substr($signature, 0, $memory_addr);
         }
     }
+
+    /* */
 }
