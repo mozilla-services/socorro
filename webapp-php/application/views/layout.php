@@ -12,17 +12,15 @@
                                 )); ?>
 
         <?php slot::output('head') ?>
-            <style type="text/css">
-   /* Only calculated CSS should go in this block */
+<style type="text/css">
+/* Only calculated CSS should go in this block */
 #top-nav > li > div.large {                                                                                                  
   -moz-column-count: <?= $num_other_products ?>;
 }
-        </style>
-
+</style>
     </head>
 
     <body>
-
         <div id="page-header">
         <div class="header-wrapper">
             <h1><a href="<?php echo url::base() ?>" title="Home">
@@ -96,12 +94,24 @@
     		        </div>
 
 		      </li>
+		      <?php if( $auth_is_active && Auth::instance()->logged_in() ) {?>
+	                  <li id="auth-box" class="known"><?= Auth::instance()->get_user() ?><a href="<?= url::site('auth/logout', Kohana::config('auth.proto')) ?>">Log out</a></li>
+		      <?php } elseif ($auth_is_active == FALSE) { ?>
+                          <li id="auth-box" class="disabled">Auth Disabled</li>
+                      <?php  } else { ?>
+                          <li id="auth-box" class="anonymous"><a href="<?= url::site('auth/login', Kohana::config('auth.proto')) ?>">Log in</a></li>
+                      <?php  }?>
+			 
 		      <li class="separated"><a href="<?= url::base() ?>query/query">Advanced Search</a></li>
                 </ul>
+                
 	   </div><!-- /header-wrapper -->
           </div> <!-- /page-header -->
       
         <div id="mainbody">
+            <div class="messages">
+                 <?= client::messageFetchHtml()  ?>
+          </div>
  	  <?php echo $content ?>
 
         </div> <!-- /mainbody -->

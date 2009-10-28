@@ -26,6 +26,12 @@ class Controller extends Controller_Core {
     // This changes as user navigates Socorro UI
     protected $chosen_version;
 
+    // Available in all controllers and views
+    // TRUE for Mozilla's deployment of Socorro UI
+    // which is backed by LDAP authentication
+    // but can be FALSE if auth.driver is set to NoAuth
+    protected $auth_is_active = TRUE;
+
     /**
      * Constructor.
      */
@@ -43,7 +49,9 @@ class Controller extends Controller_Core {
         $this->view_data = array(
             'controller' => $this
         );
+	$this->auth_is_active = Kohana::config('auth.driver', 'NoAuth') != "NoAuth";
 
+        Event::add('system.post_controller_constructor', array($this, '_auth_prep'));
         // Display the template immediately after the controller method
         Event::add('system.post_controller', array($this, '_display'));
     }
@@ -207,6 +215,11 @@ class Controller extends Controller_Core {
         } else {
             return $this->view_data;
         }
+    }
+
+    public function _auth_prep()
+    {
+	$this->setViewData('auth_is_active', $this->auth_is_active);
     }
 
     /**

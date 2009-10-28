@@ -1,0 +1,2 @@
+There is no Auth_NoAuth_Driver. The application is responsable for *not*
+instanciating the Auth library if the auth.driver variable is set to NoAuth.
