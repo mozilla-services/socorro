@@ -67,7 +67,10 @@ class JsonDumpStorage(object):
     self.dumpPermissions = int(kwargs.get('dumpPermissions','%d'%(S_IRGRP | S_IWGRP | S_IRUSR | S_IWUSR)))
     self.dirPermissions = int(kwargs.get('dirPermissions', '%d'%(S_IRGRP | S_IXGRP | S_IWGRP | S_IRUSR | S_IXUSR | S_IWUSR)))
     self.dumpGID = kwargs.get('dumpGID',None)
-    if self.dumpGID: self.dumpGID = int(self.dumpGID)
+    try:
+      self.dumpGID = int(self.dumpGID)
+    except:
+      self.dumpGID = None
     self.logger = kwargs.get('logger', socorro_util.FakeLogger())
     self.toNameFromDate = os.sep.join(('..','..','..','..','..','..','..',self.indexName))
     self.minutesPerSlot = 5

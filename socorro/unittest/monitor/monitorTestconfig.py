@@ -1,5 +1,6 @@
 import socorro.lib.ConfigurationManager as cm
 import datetime
+import stat
 
 from socorro.unittest.config.commonconfig import databaseHost
 from socorro.unittest.config.commonconfig import databaseName
@@ -57,6 +58,18 @@ saveSuccessfulMinidumpsTo.default = '%(testDir)s/dumpTest/socorro-sucessful'
 saveFailedMinidumpsTo = cm.Option()
 saveFailedMinidumpsTo.doc = 'the location for saving dumps that failed processing (leave blank to delete them instead)'
 saveFailedMinidumpsTo.default = '%(testDir)s/dumpTest/socorro-failed'
+
+dumpPermissions = cm.Option()
+dumpPermissions.doc = 'when saving dumps, the pemission flags to be used'
+dumpPermissions.default = '%d'%(stat.S_IRGRP | stat.S_IWGRP | stat.S_IRUSR | stat.S_IWUSR)
+
+dirPermissions = cm.Option()
+dirPermissions.doc = 'when saving dumps, the pemission flags to be used on directories'
+dirPermissions.default = '%d'%(stat.S_IRGRP | stat.S_IXGRP | stat.S_IWGRP | stat.S_IRUSR | stat.S_IXUSR | stat.S_IWUSR)
+
+dumpGID = cm.Option()
+dumpGID.doc = 'when saving dumps, the group to save the files under (leave blank for file system default)'
+dumpGID.default = ''
 
 logFilePathname = cm.Option()
 logFilePathname.doc = 'full pathname for the log file'

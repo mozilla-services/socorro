@@ -40,6 +40,9 @@ class Monitor (object):
     assert "databasePassword" in config, "databasePassword is missing from the configuration"
     assert "storageRoot" in config, "storageRoot is missing from the configuration"
     assert "deferredStorageRoot" in config, "deferredStorageRoot is missing from the configuration"
+    assert "dumpPermissions" in config, "dumpPermissions is missing from the configuration"
+    assert "dirPermissions" in config, "dirPermissions is missing from the configuration"
+    assert "dumpGID" in config, "dumpGID is missing from the configuration"
     assert "jsonFileSuffix" in config, "jsonFileSuffix is missing from the configuration"
     assert "dumpFileSuffix" in config, "dumpFileSuffix is missing from the configuration"
     assert "processorCheckInTime" in config, "processorCheckInTime is missing from the configuration"
@@ -76,12 +79,18 @@ class Monitor (object):
       self.successfulJobStorage = jds.JsonDumpStorage(root=self.config.saveSuccessfulMinidumpsTo,
                                                       jsonSuffix=self.config.jsonFileSuffix,
                                                       dumpSuffix=self.config.dumpFileSuffix,
+                                                      dumpPermissions=self.config.dumpPermissions,
+                                                      dirPermissions=self.config.dirPermissions,
+                                                      dumpGID=self.config.dumpGID,
                                                       logger=logger)
     self.failedJobStorage = None
     if self.config.saveFailedMinidumpsTo:
       self.failedJobStorage = jds.JsonDumpStorage(root=self.config.saveFailedMinidumpsTo,
                                                   jsonSuffix=self.config.jsonFileSuffix,
                                                   dumpSuffix=self.config.dumpFileSuffix,
+                                                  dumpPermissions=self.config.dumpPermissions,
+                                                  dirPermissions=self.config.dirPermissions,
+                                                  dumpGID=self.config.dumpGID,
                                                   logger=logger)
     self.quit = False
 
