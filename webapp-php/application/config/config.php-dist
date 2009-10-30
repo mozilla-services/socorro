@@ -98,4 +98,5 @@ $config['extension_prefix'] = 'MY_';
 $config['modules'] = array
 (
     MODPATH . 'ezcomponents',
+    MODPATH . 'auth',
 );
