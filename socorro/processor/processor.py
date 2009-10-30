@@ -694,7 +694,10 @@ class Processor(object):
     crash_date = datetime.datetime.fromtimestamp(crash_time, Processor.utctz)
     install_age = crash_time - installTime
     # email and userId are now deprecated and replace with empty string
-    email = userId = ""
+    email = socorro.lib.util.lookupLimitedStringOrNone(jsonDocument, 'Email', 100)
+    logger.debug ('Email: %s', email)
+    logger.debug ('Email: %s', str(jsonDocument))
+    user_id = ""
     uptime = max(0, crash_time - startupTime)
     if crash_time == defaultCrashTime:
       logger.warning("%s - no 'crash_time' calculated in %s: Using date_processed", threading.currentThread().getName(), jobPathname)
@@ -712,7 +715,7 @@ class Processor(object):
       last_crash = int(jsonDocument['SecondsSinceLastCrash'])
     except:
       last_crash = None
-    email = user_id = None
+    #email = user_id = None
     newReportRecordAsTuple = (uuid, crash_date, date_processed, product, version, buildID, url, install_age, last_crash, uptime, email, build_date, user_id, user_comments, app_notes, distributor, distributor_version)
     newReportRecordAsDict = dict(x for x in zip(self.reportsTable.columns, newReportRecordAsTuple))
     if not product or not version:
