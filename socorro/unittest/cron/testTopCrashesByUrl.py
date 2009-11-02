@@ -20,9 +20,6 @@ import socorro.cron.topCrashesByUrl as tcbu
 class Me(): pass
 me = None
 
-def nowWithIgnoredParameters(*args):
-  return datetime.datetime.now()
-
 def setup_module():
   global me
   tutil.nosePrintModule(__file__)
@@ -77,7 +74,7 @@ class TestTopCrashByUrl:
     global me
     config = copy.copy(me.config)
     t = tcbu.TopCrashesByUrl(config)
-
+    
     assert 1 == t.configContext['minimumHitsPerUrl']
     assert 500 == t.configContext['maximumUrls']
     assert tcbu.logger.name
@@ -129,7 +126,7 @@ class TestTopCrashByUrl:
     assert 24 == len(data), len(data)
     for d in data:
       assert 1 == d[0]
-
+    
     # test /w/ shorter window
     config = copy.copy(me.config)
     halfDay = datetime.timedelta(hours=12)
@@ -157,7 +154,7 @@ class TestTopCrashByUrl:
     global me
     cursor = self.connection.cursor()
 
-    ## Set up
+    ## Set up 
     dbtutil.fillReportsTable(cursor,createUrls=True,multiplier=2,signatureCount=83) # just some data...
     self.connection.commit()
     # ... now assure some duplicates
@@ -243,7 +240,7 @@ class TestTopCrashByUrl:
     self.connection.rollback()
     count = cursor.fetchone()[0]
     assert 38 == count, 'This is (just) a regression test. Did you change the data somehow? (%s)'%(count)
-
+    
     cursor.execute("SELECT COUNT(topcrashurlfacts_id) AS sum FROM topcrashurlfactsreports GROUP BY topcrashurlfacts_id ORDER BY sum DESC LIMIT 7")
     self.connection.rollback()
     data = cursor.fetchall()
@@ -258,7 +255,7 @@ class TestTopCrashByUrl:
     cursor = self.connection.cursor()
     config = copy.copy(me.config)
 
-    ## Set up
+    ## Set up 
     dbtutil.fillReportsTable(cursor,createUrls=True,multiplier=2,signatureCount=83) # just some data...
     self.connection.commit()
     t = tcbu.TopCrashesByUrl(config)
@@ -266,7 +263,7 @@ class TestTopCrashByUrl:
     cursor.execute("SELECT COUNT(*) from top_crashes_by_url")
     self.connection.rollback()
     assert 0 == cursor.fetchone()[0]
-    t.processDateInterval(nowWithIgnoredParameters, startDate = datetime.datetime(2008,1,1), endDate=datetime.datetime(2008,1,6))
+    t.processDateInterval(startDate = datetime.datetime(2008,1,1), endDate=datetime.datetime(2008,1,6))
 
     cursor.execute("SELECT COUNT(id) from top_crashes_by_url")
     self.connection.rollback()
@@ -286,7 +283,7 @@ class TestTopCrashByUrl:
     cursor.execute("delete from top_crashes_by_url; delete from top_crashes_by_url_signature; delete from topcrashurlfactsreports")
     self.connection.commit()
     t = tcbu.TopCrashesByUrl(copy.copy(me.config))
-    t.processDateInterval(nowWithIgnoredParameters, startDate = datetime.datetime(2008,1,4), endDate=datetime.datetime(2008,1,8))
+    t.processDateInterval(startDate = datetime.datetime(2008,1,4), endDate=datetime.datetime(2008,1,8))
 
     cursor.execute("SELECT COUNT(id) from top_crashes_by_url")
     self.connection.rollback()
@@ -307,8 +304,8 @@ class TestTopCrashByUrl:
     self.connection.commit()
 
     t = tcbu.TopCrashesByUrl(copy.copy(me.config))
-    t.processDateInterval(nowWithIgnoredParameters, startDate = datetime.datetime(2008,1,1), endDate=datetime.datetime(2008,3,3))
-
+    t.processDateInterval(startDate = datetime.datetime(2008,1,1), endDate=datetime.datetime(2008,3,3))
+    
     cursor.execute("SELECT COUNT(id) from top_crashes_by_url")
     self.connection.rollback()
     count = cursor.fetchone()[0]
@@ -325,4 +322,4 @@ class TestTopCrashByUrl:
     assert 514 == count, 'This is (just) a regression test. Did you change the data somehow? (%s)'%(count)
 
 
-
+    

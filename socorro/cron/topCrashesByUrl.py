@@ -91,7 +91,7 @@ class TopCrashesByUrl(object):
     # Based on exhastive analysis of three data points, want 15% more to cover. Pad to 20%
     # *** THIS IS A HACK ***:
     configContext.setdefault('fatMaximumUrls',configContext.maximumUrls + configContext.maximumUrls/5)
-
+    
     configContext.setdefault('dateColumn',kwargs.get('dateColumn','date_processed'))
     self.fixupContextByProcessingDay(configContext)
     self.idCache = None
@@ -245,10 +245,10 @@ class TopCrashesByUrl(object):
       socorro_util.reportExceptionAndAbort(logger)
     return insertCount
 
-  def processDateInterval(self, nowFunction=cron_util.getTimestampOfMostRecentlyCompletedReport, **kwargs):
+  def processDateInterval(self, **kwargs):
     cursor = self.connection.cursor()
     kwargs.setdefault('defaultDeltaWindow',defaultDeltaWindow)
-    startDate,deltaDate,endDate = cron_util.getProcessingDates(self.configContext, resultTable, cursor, logger, nowFunction, **kwargs)
+    startDate,deltaDate,endDate = cron_util.getProcessingDates(self.configContext, resultTable, cursor, logger, **kwargs)
     startWindow,deltaWindow,endWindow = cron_util.getProcessingWindow(self.configContext, resultTable,cursor, logger, **kwargs)
     logger.info("Starting loop from %s up to %s step (%s)",startDate.isoformat(),endDate.isoformat(),deltaWindow)
     if not startWindow:
@@ -265,4 +265,4 @@ class TopCrashesByUrl(object):
       # whether or not we saved some data, advance to next slot
       startWindow += deltaWindow
     logger.info("Done processIntervals")
-
+      

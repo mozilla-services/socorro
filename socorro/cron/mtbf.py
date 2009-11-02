@@ -23,7 +23,7 @@ class Mtbf(object):
     id - primary key
     avg_seconds - average number of seconds (reports.uptime) for crashes in the window, per product, version, os, os-version
       - Note that outlier data are cleaned up in this process
-    report_count - number of crash reports
+    report_count - number of crash reports 
     window_end - the end point of the aggregation window. By default, 00:00:00 of 'tomorrow'
     window_size - the size of the aggregation window. By default 1 day.
       The window is (end - size) <= x < end
@@ -141,14 +141,14 @@ class Mtbf(object):
       self.connection.rollback()
       soc_util.reportExceptionAndContinue(self.logger)
 
-  def processDateInterval(self, nowFunction=cron_util.getTimestampOfMostRecentlyCompletedReport, **kwargs):
+  def processDateInterval(self, **kwargs):
     """
     call processOneMtbfWindow repeatedly for each window in the range defined by at least two paramerters among (start|delta|end)Date
     Other kwargs/context values are passed unchanged to processOneMtbfWindow
     """
     cur = self.connection.cursor()
     now = datetime.datetime.now()
-    startDate, deltaDate, endDate = cron_util.getProcessingDates(self.configContext,resultTable,cur,self.logger,nowFunction,**kwargs)
+    startDate, deltaDate, endDate = cron_util.getProcessingDates(self.configContext,resultTable,cur,self.logger,**kwargs)
     startWindow,deltaWindow,endWindow = cron_util.getProcessingWindow(self.configContext,resultTable,cur,self.logger,**kwargs)
     if not startDate and not startWindow:
       self.logger.warn("MTBF (%s): No startDate, no startWindow. Did not run.",now)

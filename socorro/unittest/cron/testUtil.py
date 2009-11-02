@@ -64,32 +64,6 @@ def teardown_module():
   except:
     pass
 
-
-class DummyObjectWithExpectations(object):
-  """a class that will accept a series of method calls with arguments, but will raise assertion
-     errors if the calls and arguments are not what is expected.
-  """
-  def __init__(self):
-    self._expected = []
-    self.counter = 0
-  def expect (self, attribute, args, kwargs, returnValue = None):
-    self._expected.append((attribute, args, kwargs, returnValue))
-  def __getattr__(self, attribute):
-    def f(*args, **kwargs):
-      try:
-        attributeExpected, argsExpected, kwargsExpected, returnValue = self._expected[self.counter]
-      except IndexError:
-        assert False, "expected no further calls, but got '%s' with args: %s and kwargs: %s" % (attribute, args, kwargs)
-      self.counter += 1
-      assert attributeExpected == attribute, "expected attribute '%s', but got '%s'" % (attributeExpected, attribute)
-      assert argsExpected == args, "expected '%s' arguments %s, but got %s" % (attribute, argsExpected, args)
-      assert kwargsExpected == kwargs, "expected '%s' keyword arguments %s, but got %s" % (attribute, kwargsExpected, kwargs)
-      return returnValue
-    return f
-
-def nowWithIgnoredParameters(*args):
-  return datetime.datetime.now()
-
 class TestUtil(unittest.TestCase):
   def setUp(self):
     global me
@@ -110,6 +84,7 @@ class TestUtil(unittest.TestCase):
 
   def testGetProcessingDates(self):
     config = {}
+    config['processingDelay'] = datetime.timedelta(0)
     cursor = self.connection.cursor()
     self.connection.rollback()
     self.createBunny()
@@ -120,61 +95,61 @@ class TestUtil(unittest.TestCase):
     while defEnd + cron_util.globalDefaultDeltaWindow < now:
       defEnd += cron_util.globalDefaultDeltaWindow
 
-    mm = cron_util.getProcessingDates(config,self.tableName,cursor,me.fileLogger,nowWithIgnoredParameters)
+    mm = cron_util.getProcessingDates(config,self.tableName,cursor,me.fileLogger)
     assert (defStart,defEnd-defStart,defEnd) == mm, 'But got %s'%(str(mm))
     start = datetime.datetime(2000,1,2,12,12)
     delta = datetime.timedelta(days=3)
     end = start+delta
 
     # check that just one kwarg raises SystemExit
-    assert_raises(SystemExit,cron_util.getProcessingDates,config,self.tableName,cursor,me.fileLogger,nowWithIgnoredParameters,startDate=start)
-    assert_raises(SystemExit,cron_util.getProcessingDates,config,self.tableName,cursor,me.fileLogger,nowWithIgnoredParameters,endDate=end)
-    assert_raises(SystemExit,cron_util.getProcessingDates,config,self.tableName,cursor,me.fileLogger,nowWithIgnoredParameters,deltaDate=delta)
+    assert_raises(SystemExit,cron_util.getProcessingDates,config,self.tableName,cursor,me.fileLogger,startDate=start)
+    assert_raises(SystemExit,cron_util.getProcessingDates,config,self.tableName,cursor,me.fileLogger,endDate=end)
+    assert_raises(SystemExit,cron_util.getProcessingDates,config,self.tableName,cursor,me.fileLogger,deltaDate=delta)
 
     # check that just one config raises SystemExit
-    assert_raises(SystemExit,cron_util.getProcessingDates,{'startDate':start},self.tableName,cursor,me.fileLogger,nowWithIgnoredParameters)
-    assert_raises(SystemExit,cron_util.getProcessingDates,{'endDate':end},self.tableName,cursor,me.fileLogger,nowWithIgnoredParameters)
-    assert_raises(SystemExit,cron_util.getProcessingDates,{'deltaDate':delta},self.tableName,cursor,me.fileLogger,nowWithIgnoredParameters)
+    assert_raises(SystemExit,cron_util.getProcessingDates,{'startDate':start},self.tableName,cursor,me.fileLogger)
+    assert_raises(SystemExit,cron_util.getProcessingDates,{'endDate':end},self.tableName,cursor,me.fileLogger)
+    assert_raises(SystemExit,cron_util.getProcessingDates,{'deltaDate':delta},self.tableName,cursor,me.fileLogger)
 
     # check that two are sufficient
-    mm = cron_util.getProcessingDates({'startDate':start},self.tableName,cursor,me.fileLogger,nowWithIgnoredParameters,endDate=end)
+    mm = cron_util.getProcessingDates({'startDate':start},self.tableName,cursor,me.fileLogger,endDate=end)
     assert (start,delta,end) == mm, "But got %s"%(str(mm))
-    mm = cron_util.getProcessingDates({'startDate':start},self.tableName,cursor,me.fileLogger,nowWithIgnoredParameters,deltaDate=delta)
+    mm = cron_util.getProcessingDates({'startDate':start},self.tableName,cursor,me.fileLogger,deltaDate=delta)
     assert (start,delta,end) == mm, "But got %s"%(str(mm))
-    mm = cron_util.getProcessingDates({'endDate':end},self.tableName,cursor,me.fileLogger,nowWithIgnoredParameters,startDate=start)
+    mm = cron_util.getProcessingDates({'endDate':end},self.tableName,cursor,me.fileLogger,startDate=start)
     assert (start,delta,end) == mm, "But got %s"%(str(mm))
-    mm = cron_util.getProcessingDates({'endDate':end},self.tableName,cursor,me.fileLogger,nowWithIgnoredParameters,deltaDate=delta)
+    mm = cron_util.getProcessingDates({'endDate':end},self.tableName,cursor,me.fileLogger,deltaDate=delta)
     assert (start,delta,end) == mm, "But got %s"%(str(mm))
-    mm = cron_util.getProcessingDates({'deltaDate':delta},self.tableName,cursor,me.fileLogger,nowWithIgnoredParameters,endDate=end)
+    mm = cron_util.getProcessingDates({'deltaDate':delta},self.tableName,cursor,me.fileLogger,endDate=end)
     assert (start,delta,end) == mm, "But got %s"%(str(mm))
-    mm = cron_util.getProcessingDates({'deltaDate':delta},self.tableName,cursor,me.fileLogger,nowWithIgnoredParameters,startDate=start)
+    mm = cron_util.getProcessingDates({'deltaDate':delta},self.tableName,cursor,me.fileLogger,startDate=start)
     assert (start,delta,end) == mm, "But got %s"%(str(mm))
 
     # check various inconsistencies
-    assert_raises(SystemExit,cron_util.getProcessingDates,{'startDate':start},self.tableName,cursor,me.fileLogger,nowWithIgnoredParameters,endDate=start)
-    assert_raises(SystemExit,cron_util.getProcessingDates,{'startDate':start},self.tableName,cursor,me.fileLogger,nowWithIgnoredParameters,endDate=start-delta)
-    assert_raises(SystemExit,cron_util.getProcessingDates,{'startDate':start},self.tableName,cursor,me.fileLogger,nowWithIgnoredParameters,deltaDate=datetime.timedelta(0))
-    assert_raises(SystemExit,cron_util.getProcessingDates,{'startDate':start},self.tableName,cursor,me.fileLogger,nowWithIgnoredParameters,deltaDate=datetime.timedelta(days=-1))
+    assert_raises(SystemExit,cron_util.getProcessingDates,{'startDate':start},self.tableName,cursor,me.fileLogger,endDate=start)
+    assert_raises(SystemExit,cron_util.getProcessingDates,{'startDate':start},self.tableName,cursor,me.fileLogger,endDate=start-delta)
+    assert_raises(SystemExit,cron_util.getProcessingDates,{'startDate':start},self.tableName,cursor,me.fileLogger,deltaDate=datetime.timedelta(0))
+    assert_raises(SystemExit,cron_util.getProcessingDates,{'startDate':start},self.tableName,cursor,me.fileLogger,deltaDate=datetime.timedelta(days=-1))
 
     # Check that table with earlier row is ignored
     early = start-datetime.timedelta(days=1)
     cursor.execute("INSERT INTO %s (window_end,window_size) VALUES(%%s,%%s)"%self.tableName,(early,delta))
     self.connection.commit()
-    mm = cron_util.getProcessingDates(config,self.tableName,cursor,me.fileLogger,nowWithIgnoredParameters,startDate=start,endDate=end)
+    mm = cron_util.getProcessingDates(config,self.tableName,cursor,me.fileLogger,startDate=start,endDate=end)
     assert (start,delta,end) == mm, "But got %s"%(str(mm))
 
     # Check that table with later row is used
     later = start+datetime.timedelta(days=1)
     cursor.execute("INSERT INTO %s (window_end,window_size) VALUES(%%s,%%s)"%self.tableName,(later,delta))
     self.connection.commit()
-    mm = cron_util.getProcessingDates(config,self.tableName,cursor,me.fileLogger,nowWithIgnoredParameters,startDate=start,endDate=end)
+    mm = cron_util.getProcessingDates(config,self.tableName,cursor,me.fileLogger,startDate=start,endDate=end)
     assert (later,end-later,end) == mm, 'Expected %s, got %s'%(str((later,end-later,end)),str(mm))
 
     # Check that table with 'too late' time causes assertion
     later = later+datetime.timedelta(days=4)
     cursor.execute("INSERT INTO %s (window_end,window_size) VALUES(%%s,%%s)"%self.tableName,(later,delta))
     self.connection.commit()
-    assert_raises(SystemExit,cron_util.getProcessingDates,config,self.tableName,cursor,me.fileLogger,nowWithIgnoredParameters,startDate=start,endDate=end)
+    assert_raises(SystemExit,cron_util.getProcessingDates,config,self.tableName,cursor,me.fileLogger,startDate=start,endDate=end)
 
   def testGetProcessingWindow(self):
     cursor = self.connection.cursor()
@@ -341,7 +316,7 @@ class TestUtil(unittest.TestCase):
     defaultDeltaWindow = datetime.timedelta(minutes=24)
 
     # check expected exception with no table
-    assert_raises(SystemExit,cron_util.getDefaultDateInterval,cursor,self.tableName,initialDeltaDate,defaultDeltaWindow,me.fileLogger,nowWithIgnoredParameters)
+    assert_raises(SystemExit,cron_util.getDefaultDateInterval,cursor,self.tableName,datetime.timedelta(0),initialDeltaDate,defaultDeltaWindow,me.fileLogger)
 
     # check with empty table
     self.createBunny()
@@ -351,7 +326,7 @@ class TestUtil(unittest.TestCase):
     defEnd = midNight
     while defEnd+defaultDeltaWindow < now:
       defEnd += defaultDeltaWindow
-    ddi = cron_util.getDefaultDateInterval(cursor,self.tableName,initialDeltaDate,defaultDeltaWindow,me.fileLogger,nowWithIgnoredParameters)
+    ddi = cron_util.getDefaultDateInterval(cursor,self.tableName,datetime.timedelta(0),initialDeltaDate,defaultDeltaWindow,me.fileLogger)
     assert (defStart,defEnd,None) == ddi, "But got %s"%(str(ddi))
 
     # check with one row in table
@@ -359,88 +334,11 @@ class TestUtil(unittest.TestCase):
     delta0 = datetime.timedelta(minutes=15)
     cursor.execute("INSERT INTO %s (window_end,window_size) VALUES(%%s,%%s)"%self.tableName,(end0,delta0))
     self.connection.commit()
-    ddi = cron_util.getDefaultDateInterval(cursor,self.tableName,initialDeltaDate,defaultDeltaWindow,me.fileLogger,nowWithIgnoredParameters)
+    ddi = cron_util.getDefaultDateInterval(cursor,self.tableName,datetime.timedelta(0),initialDeltaDate,defaultDeltaWindow,me.fileLogger)
     now = datetime.datetime.now()
     midNight = now.replace(hour=0,minute=0,second=0,microsecond=0)
     defEnd = midNight
     while defEnd+delta0 < now:
       defEnd += delta0
     assert (end0,defEnd,end0) == ddi, 'But %s != %s'%(str((end0,defEnd,end0,)),str(ddi))
-
-  def testGetTimestampOfMostRecentlyCompletedReport_normalUpToDate(self):
-    dateToUse = datetime.datetime(2009,10,15,12)
-    def fakeNowFunction():
-      return dateToUse
-    fakeCursor = DummyObjectWithExpectations()
-    fakeCursor.expect('execute', ("""
-           select
-               min(date_processed)
-           from
-               reports
-           where
-               '%s' < date_processed
-               and success is null
-        """ % (dateToUse - datetime.timedelta(7,0,15)), None), {}, None)
-    fakeCursor.expect('fetchall', (), {}, [])
-    fakeLogger = DummyObjectWithExpectations()
-    result = cron_util.getTimestampOfMostRecentlyCompletedReport(fakeCursor,fakeLogger,fakeNowFunction)
-    assert result == dateToUse, "expected '%s' but got '%s'" % (dateToUse, result)
-
-  def testGetTimestampOfMostRecentlyCompletedReport_normalUpToDate2(self):
-    dateToUse = datetime.datetime(2009,10,15,12)
-    def fakeNowFunction():
-      return dateToUse
-    fakeCursor = DummyObjectWithExpectations()
-    fakeCursor.expect('execute', ("""
-           select
-               min(date_processed)
-           from
-               reports
-           where
-               '%s' < date_processed
-               and success is null
-        """ % (dateToUse - datetime.timedelta(7,0,15)), None), {}, None)
-    fakeCursor.expect('fetchall', (), {}, [])
-    fakeLogger = DummyObjectWithExpectations()
-    result = cron_util.getTimestampOfMostRecentlyCompletedReport(fakeCursor,fakeLogger,fakeNowFunction)
-    assert result == dateToUse, "expected '%s' but got '%s'" % (dateToUse, result)
-
-  def testGetTimestampOfMostRecentlyCompletedReport_20MinutesBehind(self):
-    dateToUse = datetime.datetime(2009,10,15,12)
-    twentyMinutesBehind = dateToUse - datetime.timedelta(0,0,20)
-    def fakeNowFunction():
-      return dateToUse
-    fakeCursor = DummyObjectWithExpectations()
-    fakeCursor.expect('execute', ("""
-           select
-               min(date_processed)
-           from
-               reports
-           where
-               '%s' < date_processed
-               and success is null
-        """ % (dateToUse - datetime.timedelta(7,0,15)), None), {}, None)
-    fakeCursor.expect('fetchall', (), {}, [(twentyMinutesBehind,)])
-    fakeLogger = DummyObjectWithExpectations()
-    result = cron_util.getTimestampOfMostRecentlyCompletedReport(fakeCursor,fakeLogger,fakeNowFunction)
-    assert result == twentyMinutesBehind, "expected '%s' but got '%s'" % (dateToUse, result)
-
-  def testGetTimestampOfMostRecentlyCompletedReport_2WeeksBehind(self):
-    dateToUse = datetime.datetime(2009,10,15,12)
-    twentyMinutesBehind = dateToUse - datetime.timedelta(14,0,0)
-    def fakeNowFunction():
-      return dateToUse
-    fakeCursor = DummyObjectWithExpectations()
-    fakeCursor.expect('execute', ("""
-           select
-               min(date_processed)
-           from
-               reports
-           where
-               '%s' < date_processed
-               and success is null
-        """ % (dateToUse - datetime.timedelta(7,0,15)), None), {}, None)
-    fakeCursor.expect('fetchall', (), {}, [(twentyMinutesBehind,)])
-    fakeLogger = DummyObjectWithExpectations()
-    assert_raises(SystemExit,cron_util.getTimestampOfMostRecentlyCompletedReport,fakeCursor,me.fileLogger,fakeNowFunction)
 
