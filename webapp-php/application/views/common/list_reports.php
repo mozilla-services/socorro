@@ -22,7 +22,7 @@
                         // TODO: Find out why this is not $date = strtotime($report->date);
                         $url = url::base().'report/index/'.out::H($report->uuid, FALSE);
                     ?><a href="<?php out::H($url) ?>" title="View reports with this signature.">
-                        <?php echo date('Y-m-d', $date) ?>&nbsp;<?php echo date('H:i', $date) ?>
+                        <?php echo date('M d, Y H:i', $date) ?>
                     </a>
                 </td> <td><?php out::H($report->product) ?></td>
                 <td><?php out::H($report->version) ?></td>
