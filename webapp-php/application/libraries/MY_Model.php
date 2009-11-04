@@ -21,7 +21,12 @@ class Model extends Model_Core {
 
         if ($do_cache) {
             // Kind of dirty, but hashing the whole query seems to work.
-            $cache_key = 'query_hash_' . md5($sql);
+	    if (is_array($binds)) {
+		$cache_key = 'query_hash_' . md5($sql . implode('_', $binds));
+	    } else {
+		$cache_key = 'query_hash_' . md5($sql);
+	    }
+
             $data = $this->cache->get($cache_key);
             if ($data) {
                 return $data;
