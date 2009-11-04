@@ -14,9 +14,10 @@ class Model extends Model_Core {
      *
      * @param  string  SQL query to attempt
      * @param  boolean Whether or not to try caching the query results
+     * @param  array Parameters to be escaped and bound in the SQL using Kohana Database query method.
      * @return array   Set of rows returned
      */
-    public function fetchRows($sql, $do_cache=TRUE) {
+	public function fetchRows($sql, $do_cache=TRUE, $binds=NULL) {
 
         if ($do_cache) {
             // Kind of dirty, but hashing the whole query seems to work.
@@ -28,7 +29,12 @@ class Model extends Model_Core {
         }
 
         // The DB abstraction works on iterators, so slurp it all down.
-        $result = $this->db->query($sql);
+	if (is_null($binds)) {
+	    $result = $this->db->query($sql);
+	} else {
+	    $result = $this->db->query($sql, $binds);
+	}
+
         $data = array();
         foreach ($result as $row) $data[] = $row;
 
@@ -42,10 +48,16 @@ class Model extends Model_Core {
     /**
      *
      * @param  string SQL query
+     * @param  array Parameters to be escaped and bound in the SQL using Kohana Database query method.
      * @return array
      */
-    public function fetchSingleColumn($sql, $col_name) {
-        $result = $this->db->query($sql);
+    public function fetchSingleColumn($sql, $col_name, $binds=NULL) {
+	if (is_null($binds)) {
+	    $result = $this->db->query($sql);
+	} else {
+	    $result = $this->db->query($sql, $binds);
+	}
+
         $data = array();
         foreach ($result as $row) {
             $data[] = $row->{$col_name};
