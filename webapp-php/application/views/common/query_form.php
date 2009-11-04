@@ -4,7 +4,6 @@
 
 <form id="searchform" method="get" action="<?php echo url::base() . "query/query" ?>"
       enctype="application/x-www-form-urlencoded">
-<h2>Mozilla Crash Reports</h2>
 <fieldset>
     
 <ul>

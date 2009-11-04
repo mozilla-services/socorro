@@ -109,7 +109,7 @@ class Auth_Core {
 			} else {
 				client::messageSend(Kohana::lang('auth.auth_login_required_not_logged_in'), E_USER_WARNING);
 				session::instance()->set("requested_url", "/" . url::current());
-				url::redirect(url::site('login', 'https'));				
+				url::redirect(url::site('login', $this->config['proto']));				
 			}
 		}
 	}

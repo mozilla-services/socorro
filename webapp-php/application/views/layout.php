@@ -1,6 +1,5 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html lang="en" dir="ltr" xmlns="http://www.w3.org/1999/xhtml">
-
     <head>
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
         <link href="<?php echo url::base() ?>css/screen.css" rel="stylesheet" type="text/css" media="screen" />
@@ -10,6 +9,7 @@
                                       'js/jquery/plugins/superfish-1.4.8.js',
                                       'js/socorro/nav.js'
                                 )); ?>
+		<?php if (isset($js)) echo $js; // Javascript includes from Controller ?>
 
         <?php slot::output('head') ?>
 <style type="text/css">
@@ -78,42 +78,30 @@
                       }			  
                       ?>
 
-			 </div><!-- /large -->
-                      </li><!-- /more -->
- 		      <li class="separated"><strong>Trend Reports &#9662;</strong>
-		        <div>
-			  
-<ul>
-		        <li id="topcrash-bysig" class="trend-report-link"><a href="<?= url::base() ?>topcrasher/byversion/<?= $chosen_version['product'] ?>/<?= $chosen_version['version'] ?>"
-                                                                             >Top Crashes By Signature</a></li>
-    		        <li id="topcrash-byurl" class="trend-report-link"><a href="<?= url::base() ?>topcrasher/byurl/<?= $chosen_version['product'] ?>/<?= $chosen_version['version'] ?>"
-			                                                     >Top Crashes By URL</a></li>
-			<li id="topcrash-bydomain" class="trend-report-link"><a href="<?= url::base() ?>topcrasher/bydomain/<?= $chosen_version['product'] ?>/<?= $chosen_version['version'] ?>"
-									        >Top Crashes By Domain</a></li>
-		</ul>
-    		        </div>
+				</div><!-- /large -->
+			</li><!-- /more -->
 
-		      </li>
-		      <?php if( $auth_is_active && Auth::instance()->logged_in() ) {?>
-	                  <li id="auth-box" class="known"><?= Auth::instance()->get_user() ?><a href="<?= url::site('auth/logout', Kohana::config('auth.proto')) ?>">Log out</a></li>
-		      <?php } elseif ($auth_is_active == FALSE) { ?>
-                          <li id="auth-box" class="disabled">Auth Disabled</li>
-                      <?php  } else { ?>
-                          <li id="auth-box" class="anonymous"><a href="<?= url::site('auth/login', Kohana::config('auth.proto')) ?>">Log in</a></li>
-                      <?php  }?>
-			 
-		      <li class="separated"><a href="<?= url::base() ?>query/query">Advanced Search</a></li>
-                </ul>
+			<li class="separated"><strong>Trend Reports &#9662;</strong>
+			<div>
+				<ul>
+					<li id="topcrash-bysig" class="trend-report-link"><a href="<?= url::base() ?>topcrasher/byversion/<?= $chosen_version['product'] ?>/<?= $chosen_version['version'] ?>"
+                    	>Top Crashes By Signature</a></li>
+    		        <li id="topcrash-byurl" class="trend-report-link"><a href="<?= url::base() ?>topcrasher/byurl/<?= $chosen_version['product'] ?>/<?= $chosen_version['version'] ?>"
+			            >Top Crashes By URL</a></li>
+					<li id="topcrash-bydomain" class="trend-report-link"><a href="<?= url::base() ?>topcrasher/bydomain/<?= $chosen_version['product'] ?>/<?= $chosen_version['version'] ?>"
+						>Top Crashes By Domain</a></li>
+				</ul>
+			</div>
+			</li>
+			<li class="separated"><a href="<?= url::base() ?>query/query">Advanced Search</a></li>
+		</ul>
                 
-	   </div><!-- /header-wrapper -->
-          </div> <!-- /page-header -->
+		</div><!-- /header-wrapper -->
+		</div> <!-- /page-header -->
       
         <div id="mainbody">
-            <div class="messages">
-                 <?= client::messageFetchHtml()  ?>
-          </div>
- 	  <?php echo $content ?>
-
+          	<?php echo client::messageFetchHtml(); ?>
+	  		<?php echo $content; ?>
         </div> <!-- /mainbody -->
 	
         <div id="footer">
@@ -123,9 +111,19 @@
                 <li><a href="http://code.google.com/p/socorro/">Project Info</a></li>
                 <li><a href="http://code.google.com/p/socorro/source">Get the Source</a></li>
                 <li><a href="http://wiki.mozilla.org/Breakpad">Breakpad Wiki</a></li>
+				<li>|</li>
+				<?php if( $auth_is_active && Auth::instance()->logged_in() ) {?>
+					<li><a><?php echo html::specialchars(Auth::instance()->get_user()); ?></a></li>
+					<li><a href="<?php echo url::site(); ?>admin">Admin</a></li>
+					<li><a href="<?= url::site('auth/logout', Kohana::config('auth.proto')) ?>">Log out</a></li>
+			    <?php } elseif ($auth_is_active == FALSE) { ?>
+					<li>Auth Disabled</li>
+				<?php } else { ?>
+					<li><a href="<?= url::site('auth/login', Kohana::config('auth.proto')) ?>">Log in</a></li>
+				<?php } ?>
             </ul>
-	    </div><!-- footer-links -->
-       </div><!-- /FOOTER -->
+		</div><!-- footer-links -->
+		</div><!-- /FOOTER -->
 
     </body>
 </html>

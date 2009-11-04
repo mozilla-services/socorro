@@ -816,7 +816,7 @@ h4 { font-size: 100%; }
 #footer div ul {
   float: left;
   list-style-type: none;
-  margin: 0 0 0 1em;
+  margin: 0;
   padding: 0;
 }
 
@@ -833,7 +833,7 @@ h4 { font-size: 100%; }
 }
 
 #footer-links {
-  width: 320px;
+  width: 500px;
   margin: 0.2em auto;
 }
 /* may not need htis if we don't float query form left */
@@ -1086,10 +1086,14 @@ h2.mtbf-graph{ float: left; }
 .header-wrapper h1 { position: absolute; top:0px; left: 0px; }
 /* end dashboard widgets */
 
-#auth-box {position: absolute; top:0px; right: 0px;}
 
-.messages{ border: solid 1px grey; }
-
+/* Authentication */
+#auth-box {
+	position: absolute; 
+	top:0px; 
+	right: 0px;
+	margin-right: 5px;
+}
 
 /* REPORT PENDING STATUS PAGE */
 div.pendingStatus {
@@ -1112,4 +1116,67 @@ div.pendingStatus img {
 div.pendingStatus p.pendingProcessing {
     color: green;
     font-weight: bold;
+}
+
+/* STATUS MESSAGES */
+div.error, div.success {
+	margin: 10px 0;
+	padding: 5px;
+}
+div.error {
+	background-color: #fc0;
+	border: 1px solid #333;
+}
+div.success {
+	background-color: green;
+	border: 1px solid #eee;
+	color: #eee;
+}
+div.error h2, div.success h2 {
+	font-size: 1.2em;
+}
+
+/* ADMIN SECTION */
+div.admin h3, div.admin h4 {
+	margin-top: 20px;
+}
+div.admin p, 
+div.admin ul, 
+div.admin li { 
+	margin: 5px 0;
+}
+div.admin ul {
+	list-style-type: disc;
+	list-style-position: inside;	
+}
+div.admin ul li:before {
+	content: "\00BB \0020";
+}
+div.admin div.add_item {
+	border: 2px solid #333; 
+	-moz-border-radius: 5px;
+	-webkit-border-radius: 5px;
+	background-color: #ccc; 
+	margin-top: 10px; 
+	padding: 5px;
+}
+div.admin form.span {
+	margin-right: 10px;
+}
+div.admin td.text,
+div.admin input.text {
+	width: 125px;
+}
+div.admin td.action {
+	width: 50px;
+}
+div.admin td.date {
+	width: 75px;
+}
+#delete_product_display, #delete_version_display,
+#update_product_display, #update_version_display {
+	font-style: italic;
+}
+span.push_right {
+	margin-right: 10px;
 }
