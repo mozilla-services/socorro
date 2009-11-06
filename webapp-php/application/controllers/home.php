@@ -58,8 +58,6 @@ class Home_Controller extends Controller
 
 	$versions_by_product = $this->getViewData('versions_by_product');
 
-        $topcrashers = $this->topcrashers_model = new Topcrashers_Model();
-
         $params = $this->getRequestParameters($helper->defaultParams());
 
         cachecontrol::set(array(
@@ -72,7 +70,7 @@ class Home_Controller extends Controller
         $this->setViewData(array(
             'params'  => $params,
             'searchFormModel' => $params,
-            'topcrashes'   => $this->_topCrashesBySig($topcrashers, $versions_by_product),
+            'topcrashes'   => $this->_topCrashesBySig($versions_by_product),
             'topcrashesbyurl' => $this->_topCrashesByUrl(),
 	    'mtbf' => $mtbf,
             'mtbfChartRangeMax' => $this->_chartRangeMax($mtbf)
@@ -94,8 +92,11 @@ class Home_Controller extends Controller
 	return $chartRangeMax;
     }
 
-    private function _topCrashesBySig($topcrashers, $versions_by_product)
+    private function _topCrashesBySig($versions_by_product)
     {
+        $topcrashers = new Topcrashers_Model();
+
+
         $sigSize = Kohana::config("dashboard.topcrashbysig_numberofsignatures");
         $featured = Kohana::config("dashboard.topcrashbysig_featured");
 
@@ -104,12 +105,15 @@ class Home_Controller extends Controller
         foreach ($featured as $feature) {
 	    $product = $feature['product'];
             $version = $feature['version'];
-            $data = $topcrashers->getTopCrashers($product, $version, null, null, $sigSize);
+	    $end = $topcrashers->lastUpdatedByVersion($product, $version);
+	    $start = $topcrashers->timeBeforeOffset(14, $end);
+
+            $data = $topcrashers->getTopCrashersByVersion($product, $version, $sigSize, $start, $end);
 	    array_push($topcrashes, array(
 	        'label' => "$product $version",
                 'name' => $product,
                 'version' => $version,
-                'crashes' => $data[1], // 0 is last_updated time 1 is list of signatures and counts
+                'crashes' => $data
             ));
         }
         return $topcrashes;

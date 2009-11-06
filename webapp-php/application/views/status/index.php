@@ -18,7 +18,9 @@
 <dl>
   <dt>Mood</dt>
   <dd><span class="server-status <?php echo $status ?>"><?php echo ucwords($status); ?></span></dd>
-  <dt>Time</dt>
+  <dt>Server Time</dt>
+  <dd><?= date('Y-m-d H:i:s', time()) ?></dd>
+  <dt>Stats Created At</dt>
   <dd><?php echo $stat->date_created ?></dd>
   <dt>Waiting Jobs</dt>
   <dd><?php echo $stat->waiting_job_count ?></dd>

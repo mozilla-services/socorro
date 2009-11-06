@@ -1,15 +1,22 @@
 <?php defined('SYSPATH') or die('No direct script access.');
 /**
- * Reporting on top crasher causes
+ * Reports based on top crashing signatures
  */
 class Topcrasher_Controller extends Controller {
 
+    /**
+     * Constructor
+     */
     public function __construct()
     {
         parent::__construct();
         $this->topcrashers_model = new Topcrashers_Model();
     }
 
+    /**
+     * Generates the index page. In practise this is a sad unhappy page,
+     * not used by very many people.
+     */
     public function index() {
         $branch_data = $this->branch_model->getBranchData();
         $platforms   = $this->platform_model->getAll();
@@ -24,13 +31,41 @@ class Topcrasher_Controller extends Controller {
             'all_versions'  => $branch_data['versions'],
             'all_platforms' => $platforms
         ));
-
     }
 
-    public function byversion($product, $version, $build_id=NULL) {
-        list($last_updated, $top_crashers) = 
-            $this->topcrashers_model->getTopCrashers($product, $version, $build_id);
+    /**
+     * Generates the report based on version info
+     * 
+     * @param string product name 
+     * @param string version Example: 3.7a1pre
+     * @param int duration in days that this report should cover
+     */
+    public function byversion($product, $version, $duration=14) {
+	$other_durations = array_diff(Kohana::config('topcrashbysig.durations'),
+				      array($duration));
+	$top_crashers = array();
+	$start = "";
+        $last_updated = $this->topcrashers_model->lastUpdatedByVersion($product, $version);
 
+	$percentTotal = 0;
+	$totalCrashes = 0;
+	if ($last_updated !== FALSE) {
+	    $start = $this->topcrashers_model->timeBeforeOffset($duration, $last_updated);
+	    $totalCrashes = $this->topcrashers_model->getTotalCrashesByVersion($product, $version, $start, $last_updated);
+	    if ($totalCrashes > 0) {
+		$top_crashers = $this->topcrashers_model->getTopCrashersByVersion($product, $version, 100, $start, $last_updated, $totalCrashes);		
+		for($i=0; $i < count($top_crashers); $i++) {
+		    if( $i==0 ) {
+			Kohana::log('info', json_encode($top_crashers[$i]));
+		    }
+		    $percentTotal += $top_crashers[$i]->percent;
+                    if ($this->input->get('format') != "csv") {
+			$top_crashers[$i]->percent = number_format($top_crashers[$i]->percent * 100, 2) . "%";
+		    }
+		}
+	    }
+	}
+       
         cachecontrol::set(array(
             'expires' => time() + (60 * 60)
         ));
@@ -38,19 +73,33 @@ class Topcrasher_Controller extends Controller {
   	    $this->setViewData(array('top_crashers' => $this->_csvFormatArray($top_crashers)));
   	    $this->renderCSV("${product}_${version}_" . date("Y-m-d"));
 	} else {
-          $this->setViewData(array(
+	    $duration_url_path = array(Router::$controller, Router::$method, $product, $version);
+	    $this->setViewData(array(
+	      'duration_url' => url::site(implode($duration_url_path, '/') . '/'),
+              'last_updated' => $last_updated,
+	      'other_durations' => $other_durations,
+	      'percentTotal' => $percentTotal,
               'product'      => $product,
               'version'      => $version,
-              'build_id'     => $build_id,
-              'last_updated' => $last_updated,
-              'top_crashers' => $top_crashers
+	      'start'        => $start,
+              'top_crashers' => $top_crashers,
+	      'total_crashes' => $totalCrashes
           ));
 	}
     }
 
+
+    /**
+     * Helper method for formatting a topcrashers list of objects into data 
+     * suitable for CSV output
+     * @param array of topCrashersBySignature object
+     * @return array of strings
+     * @see Topcrashers_Model
+     */
     private function _csvFormatArray($topcrashers)
     {
         $csvData = array();
+	$i = 0;
         foreach ($topcrashers as $crash) {
 	    $line = array();
 	    $sig = strtr($crash->signature, array(
@@ -58,21 +107,47 @@ class Topcrasher_Controller extends Controller {
                     '\n' => ' ',
 		    '"' => '&quot;'
             ));
+	    array_push($line, $i);
+	    array_push($line, $crash->percent);
 	    array_push($line, $sig);
 	    array_push($line, $crash->total);
 	    array_push($line, $crash->win);
 	    array_push($line, $crash->mac);
 	    array_push($line, $crash->linux);
 	    array_push($csvData, $line);
+	    $i++;
 	}
       return $csvData;
     }
 
-    public function bybranch($branch) {
+    /**
+     * Generates the report based on branch info
+     * 
+     * @param string branch
+     * @param int duration in days that this report should cover
+     */
+    public function bybranch($branch, $duration = 14) {
+	$other_durations = array_diff(Kohana::config('topcrashbysig.durations'),
+				      array($duration));
+	$top_crashers = array();
+	$start = "";
+        $last_updated = $this->topcrashers_model->lastUpdatedByBranch($branch);
 
-        list($last_updated, $top_crashers) = 
-            $this->topcrashers_model->getTopCrashers(NULL, NULL, NULL, $branch);
-
+	$percentTotal = 0;
+	$totalCrashes = 0;
+	if ($last_updated !== FALSE) {
+	    $start = $this->topcrashers_model->timeBeforeOffset($duration, $last_updated);
+	    $totalCrashes = $this->topcrashers_model->getTotalCrashesByBranch($branch, $start, $last_updated);
+	    if ($totalCrashes > 0) {
+		$top_crashers = $this->topcrashers_model->getTopCrashersByBranch($branch, 100, $start, $last_updated, $totalCrashes);
+		for($i=0; $i < count($top_crashers); $i++) {
+		    $percentTotal += $top_crashers[$i]->percent;
+                    if ($this->input->get('format') != "csv") {
+		        $top_crashers[$i]->percent = number_format($top_crashers[$i]->percent * 100, 2) . "%";
+		    }
+		}
+	    }
+	}
         cachecontrol::set(array(
             'expires' => time() + (60 * 60)
         ));
@@ -80,15 +155,28 @@ class Topcrasher_Controller extends Controller {
   	    $this->setViewData(array('top_crashers' => $this->_csvFormatArray($top_crashers)));
   	    $this->renderCSV("${branch}_" . date("Y-m-d"));
 	} else {
-            $this->setViewData(array(
+	    $duration_url_path = array(Router::$controller, Router::$method, $branch, "");
+	    $this->setViewData(array(
                 'branch'       => $branch,
-                'last_updated' => $last_updated,
-                'top_crashers' => $top_crashers
-            ));
+		'last_updated' => $last_updated, 
+		'percentTotal' => $percentTotal,
+		'other_durations' => $other_durations,
+	        'duration_url' => url::site(implode($duration_url_path, '/')),
+		'start'        => $start,
+		'top_crashers' => $top_crashers,
+		'total_crashes' => $totalCrashes
+				       ));
 	}
     }
 
-    public function byurl($product, $version, $build_id=NULL) {
+    /**
+     * Generates the report from a URI perspective.
+     * URLs are truncated after the query string
+     * 
+     * @param string product name 
+     * @param string version Example: 3.7a1pre
+     */
+    public function byurl($product, $version) {
         $by_url_model = new TopcrashersByUrl_Model();
         list($start_date, $end_date, $top_crashers) = 
 	  $by_url_model->getTopCrashersByUrl($product, $version);
@@ -106,7 +194,13 @@ class Topcrasher_Controller extends Controller {
         ));
     }
 
-    public function bydomain($product, $version, $build_id=NULL) {
+    /**
+     * Generates the report from a domain name perspective
+     * 
+     * @param string product name 
+     * @param string version Example: 3.7a1pre
+     */
+    public function bydomain($product, $version) {
         $by_url_model = new TopcrashersByUrl_Model();
         list($start_date, $end_date, $top_crashers) = 
 	  $by_url_model->getTopCrashersByDomain($product, $version);
