@@ -43,6 +43,7 @@ class Topcrasher_Controller extends Controller {
     public function byversion($product, $version, $duration=14) {
 	$other_durations = array_diff(Kohana::config('topcrashbysig.durations'),
 				      array($duration));
+	$limit = Kohana::config('topcrashbysig.byversion_limit', 100);
 	$top_crashers = array();
 	$start = "";
         $last_updated = $this->topcrashers_model->lastUpdatedByVersion($product, $version);
@@ -53,7 +54,7 @@ class Topcrasher_Controller extends Controller {
 	    $start = $this->topcrashers_model->timeBeforeOffset($duration, $last_updated);
 	    $totalCrashes = $this->topcrashers_model->getTotalCrashesByVersion($product, $version, $start, $last_updated);
 	    if ($totalCrashes > 0) {
-		$top_crashers = $this->topcrashers_model->getTopCrashersByVersion($product, $version, 100, $start, $last_updated, $totalCrashes);		
+		$top_crashers = $this->topcrashers_model->getTopCrashersByVersion($product, $version, $limit, $start, $last_updated, $totalCrashes);		
 		for($i=0; $i < count($top_crashers); $i++) {
 		    if( $i==0 ) {
 			Kohana::log('info', json_encode($top_crashers[$i]));
@@ -129,6 +130,7 @@ class Topcrasher_Controller extends Controller {
     public function bybranch($branch, $duration = 14) {
 	$other_durations = array_diff(Kohana::config('topcrashbysig.durations'),
 				      array($duration));
+	$limit = Kohana::config('topcrashbysig.bybranch_limit', 100);
 	$top_crashers = array();
 	$start = "";
         $last_updated = $this->topcrashers_model->lastUpdatedByBranch($branch);
@@ -139,7 +141,7 @@ class Topcrasher_Controller extends Controller {
 	    $start = $this->topcrashers_model->timeBeforeOffset($duration, $last_updated);
 	    $totalCrashes = $this->topcrashers_model->getTotalCrashesByBranch($branch, $start, $last_updated);
 	    if ($totalCrashes > 0) {
-		$top_crashers = $this->topcrashers_model->getTopCrashersByBranch($branch, 100, $start, $last_updated, $totalCrashes);
+		$top_crashers = $this->topcrashers_model->getTopCrashersByBranch($branch, $limit, $start, $last_updated, $totalCrashes);
 		for($i=0; $i < count($top_crashers); $i++) {
 		    $percentTotal += $top_crashers[$i]->percent;
                     if ($this->input->get('format') != "csv") {
