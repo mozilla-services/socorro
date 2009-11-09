@@ -4,7 +4,8 @@
           type="text/csv" rel="alternate" href="?format=csv" />
     <?php echo html::script(array(
        'js/jquery/plugins/ui/jquery.tablesorter.min.js',
-       'js/socorro/topcrash.js'
+       'js/socorro/topcrash.js',
+       'js/socorro/bugzilla.js'
     ))?>
     <?php echo html::stylesheet(array(
         'css/flora/flora.tablesorter.css'

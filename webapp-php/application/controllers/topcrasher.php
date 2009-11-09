@@ -1,4 +1,7 @@
 <?php defined('SYSPATH') or die('No direct script access.');
+
+require_once(Kohana::find_file('libraries', 'bugzilla', TRUE, 'php'));
+
 /**
  * Reports based on top crashing signatures
  */
@@ -11,6 +14,7 @@ class Topcrasher_Controller extends Controller {
     {
         parent::__construct();
         $this->topcrashers_model = new Topcrashers_Model();
+        $this->bug_model = new Bug_Model;
     }
 
     /**
@@ -50,6 +54,10 @@ class Topcrasher_Controller extends Controller {
 
 	$percentTotal = 0;
 	$totalCrashes = 0;
+
+        $signature_to_bugzilla = array();
+	$signatures = array();
+
 	if ($last_updated !== FALSE) {
 	    $start = $this->topcrashers_model->timeBeforeOffset($duration, $last_updated);
 	    $totalCrashes = $this->topcrashers_model->getTotalCrashesByVersion($product, $version, $start, $last_updated);
@@ -62,11 +70,15 @@ class Topcrasher_Controller extends Controller {
 		    $percentTotal += $top_crashers[$i]->percent;
                     if ($this->input->get('format') != "csv") {
 			$top_crashers[$i]->percent = number_format($top_crashers[$i]->percent * 100, 2) . "%";
+			array_push($signatures, $top_crashers[$i]->signature);
 		    }
 		}
+		$rows = $this->bug_model->bugsForSignatures(array_unique($signatures));
+		$bugzilla = new Bugzilla;
+		$signature_to_bugzilla = $bugzilla->signature2bugzilla($rows, Kohana::config('codebases.bugTrackingUrl'));
 	    }
 	}
-       
+
         cachecontrol::set(array(
             'expires' => time() + (60 * 60)
         ));
@@ -82,6 +94,7 @@ class Topcrasher_Controller extends Controller {
 	      'percentTotal' => $percentTotal,
               'product'      => $product,
               'version'      => $version,
+	      'sig2bugs' => $signature_to_bugzilla,
 	      'start'        => $start,
               'top_crashers' => $top_crashers,
 	      'total_crashes' => $totalCrashes
@@ -137,6 +150,10 @@ class Topcrasher_Controller extends Controller {
 
 	$percentTotal = 0;
 	$totalCrashes = 0;
+
+        $signature_to_bugzilla = array();
+	$signatures = array();
+
 	if ($last_updated !== FALSE) {
 	    $start = $this->topcrashers_model->timeBeforeOffset($duration, $last_updated);
 	    $totalCrashes = $this->topcrashers_model->getTotalCrashesByBranch($branch, $start, $last_updated);
@@ -146,8 +163,12 @@ class Topcrasher_Controller extends Controller {
 		    $percentTotal += $top_crashers[$i]->percent;
                     if ($this->input->get('format') != "csv") {
 		        $top_crashers[$i]->percent = number_format($top_crashers[$i]->percent * 100, 2) . "%";
+			array_push($signatures, $top_crashers[$i]->signature);
 		    }
 		}
+		$rows = $this->bug_model->bugsForSignatures(array_unique($signatures));
+		$bugzilla = new Bugzilla;
+		$signature_to_bugzilla = $bugzilla->signature2bugzilla($rows, Kohana::config('codebases.bugTrackingUrl'));
 	    }
 	}
         cachecontrol::set(array(
@@ -164,6 +185,7 @@ class Topcrasher_Controller extends Controller {
 		'percentTotal' => $percentTotal,
 		'other_durations' => $other_durations,
 	        'duration_url' => url::site(implode($duration_url_path, '/')),
+		'sig2bugs' => $signature_to_bugzilla,
 		'start'        => $start,
 		'top_crashers' => $top_crashers,
 		'total_crashes' => $totalCrashes

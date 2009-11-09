@@ -10,7 +10,8 @@
         'js/jquery/date.js',
         'js/jquery/plugins/ui/jquery.datePicker.js',     /* old school not ui.datepicker.js */
 	'js/jquery/plugins/ui/jquery.tablesorter.min.js',       /* old school not ui.sortable.js */
-        'js/socorro/query.js'
+        'js/socorro/query.js',
+       'js/socorro/bugzilla.js'
     ))?>
 
     <script type="text/javascript">
