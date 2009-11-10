@@ -23,7 +23,7 @@
     <?php foreach($top_crashers as $crash){ ?>
       
       <tr class="<?php echo ( ($row) % 2) == 0 ? 'even' : 'odd' ?>">
-        <td><div id="domain-to-url<?php echo $row; ?>" class="tcburl-toggler tcburl-domainToggler">+</div><a id="tcburl-url<?php echo $row ?>" class="tcburl-domainToggler" href="#"><?php out::H($crash->domain) ?></a></td>
+        <td><div id="domain-to-url<?php echo $row; ?>" class="tcburl-toggler tcburl-domainToggler">+</div><a id="tcburl-url<?php echo $row ?>" class="tcburl-domainToggler" href="#">Expand <span class="url"><?php out::H($crash->domain) ?></span></a></td>
         <td class="domain-crash-count"><?php out::H($crash->count)?></td>
       </tr>
       <tr id="tcburl-domainToggle-row<?php echo $row; ?>" style="display: none"><td colspan="2"><?php 

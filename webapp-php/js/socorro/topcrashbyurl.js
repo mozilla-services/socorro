@@ -23,7 +23,11 @@ $(document).ready(function(){
                         outterClass = " tcburl-urls" + domainRowId[1];
 		      }
                       for(var i=0; i < data.length; i++){
-  		        upd += "<tr class='tcburl-signatures" + urlId + outterClass + "'><td class='in" + indent + "'>" + data[i].signature + "</td><td>" + data[i].count + "</td></tr>";
+                        var signatureLink = "../../../report/list?product=" + product + "&version=" + product + "%3A" + version +
+	                                    "&date=&range_value=1&range_unit=weeks&query_search=signature&query=" + 
+				            data[i].signature + "&query_type=exact&do_query=1&signature=" + data[i].signature;
+
+  		        upd += "<tr class='tcburl-signatures" + urlId + outterClass + "'><td class='in" + indent + "'><a href='" + signatureLink+ "'>" + data[i].signature + "</a></td><td>" + data[i].count + "</td></tr>";
                         if(data[i]['comments']){
                           upd += "<tr class='tcburl-signatures" + urlId + outterClass + "'><td class='in" + indent + "' colspan='2'><ul>";
                           for( var j=0; j < data[i]['comments'].length; j++){
@@ -59,17 +63,19 @@ $(document).ready(function(){
       var indent = function(index){ return index.split('_').length };
       var label = "+";
       if(e.target){
+          var theId = $(e.target).parent().attr('id');
   	  var offset;
 	  var id;
 	  var url;
           //Either + widget or link with url text can trigger this event
-          if( /^url-to-sig.*/.test(e.target.id) ){
+          if( /^url-to-sig.*/.test(theId) ){
   	    offset = "url-to-sig".length;
 	  }else{
   	    offset = "tcburl-url".length;
 	  }
-          id = e.target.id.substring(offset);
-	  url = escape( $('#tcburl-url' + id).text() );
+          id = theId.substring(offset);
+	  url = escape( $('#tcburl-url' + id + " .url").text() );
+
 	  if(caches[index]){
 	    if(window.console) console.info("Using cached crashData");
 	  }else{
@@ -100,9 +106,9 @@ $(document).ready(function(){
                       for(var i=0; i < data.length; i++){
                         upd += "<tr class='tcburl-urls" + domainId + "'><td class='in1'><div id='url-to-sig" + domainId + "_" + i;
                         upd += "' class='tcburl-toggler tcburl-urlToggler'>+</div>";
-                        upd += "<a id='tcburl-url" + domainId + "_" + i + "' class='tcburl-urlToggler' href='#'>";
+                        upd += "<a id='tcburl-url" + domainId + "_" + i + "' class='tcburl-urlToggler' href='#'>Expand ";
 
-		        upd += "" + data[i].url + "</a> <a href='" +  data[i].url + "'>&#35;</a></td><td class='url-crash-count'>";
+		        upd += "<span class='url'>" + data[i].url + "</span></a> <a href='" +  data[i].url + "'>Open This URL</a></td><td class='url-crash-count'>";
                         upd += data[i].count + "</td></tr>";
 
                         upd += "<tr id='tcburl-urlToggle-row" + domainId + "_" + i + "' style='display: none'><td colspan='2'></td></tr>";
@@ -133,16 +139,18 @@ $(document).ready(function(){
       var index = $(this).attr("id");
       var label = "+";
       if(e.target){
+          var theId = $(e.target).parent().attr('id');
   	  var offset;
           var id;
           var url
-	  if( /^domain-to-url.*/.test(e.target.id) ){
+	  if( /^domain-to-url.*/.test(theId) ){
             offset = "domain-to-url".length;
 	  }else{
             offset = "tcburl-url".length;
 	  }
-          id = e.target.id.substring(offset);
-          url = escape( $('#tcburl-url' + id).text() );
+          id = theId.substring(offset);
+          url = escape( $('#tcburl-url' + id + " .url").text() );
+
 	  if(caches[index]){
 	    if(window.console) console.info("Using cached crashData");
 	  }else{
