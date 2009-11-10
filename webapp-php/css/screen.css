@@ -965,6 +965,9 @@ th a.expand {
 #sumo-link a:hover {
    background: #fff;
 }
+p.crash_comments {
+	margin: 10px 0;
+}
 
 /* END A CRASH REPORT */
 

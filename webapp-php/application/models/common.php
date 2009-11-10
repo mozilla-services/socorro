@@ -14,6 +14,48 @@ class Common_Model extends Model {
         $this->platform_model = new Platform_Model();
     }
 
+	/**
+     * Fetch all of the comments associated with a particular Crash Signature.
+	 *
+	 * @access 	public
+	 * @param	array 	An array of parameters
+	 * @return  array 	An array of comments
+     */
+    public function getCommentsBySignature($params) {
+        $columns = array('reports.signature', 'count(reports.id)');
+        $tables = array();
+        $where = array();
+
+        $platforms = $this->platform_model->getAll();
+        foreach ($platforms as $platform) {
+            $columns[] = 
+                "count(CASE WHEN (reports.os_name = '{$platform->os_name}') THEN 1 END) ".
+                "AS is_{$platform->id}";
+        }
+
+        list($params_tables, $params_where) = $this->_buildCriteriaFromSearchParams($params);
+        $tables += $params_tables;
+        $where  += $params_where;
+
+		// Performing 2 queries because email can be either null or a string with 0 characters and 
+		// skews returned results that are ordered by reports.email ASC
+        $sql =
+	    "/* soc.web report.getCommentsBySignature.1. */ " .
+            " SELECT 
+				reports.client_crash_date, 
+				reports.user_comments, 
+				CASE 
+					WHEN reports.email = '' THEN null
+					WHEN reports.email IS NULL THEN null
+					ELSE reports.email
+					END " .
+            " FROM  " . join(', ', array_keys($tables)) .
+            " WHERE reports.user_comments IS NOT NULL " . 
+ 			" AND " . join(' AND ', $where) .
+			" ORDER BY email ASC, reports.client_crash_date ASC ";
+		return $this->fetchRows($sql);
+    }
+
     /**
      * Find top report signatures for the given search parameters.
      */
