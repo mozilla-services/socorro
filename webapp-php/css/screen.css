@@ -827,7 +827,16 @@ h4 { font-size: 100%; }
 #footer-auth {
   float: right;
   margin: 0.2em auto;
+  width: auto;
 }
+#footer-auth {
+  float: right;
+}
+#footer-auth li {
+  float: left;
+  margin-right: 0.2em;
+}
+
 /* may not need htis if we don't float query form left */
 #query-results-h{ clear: left; }
 
