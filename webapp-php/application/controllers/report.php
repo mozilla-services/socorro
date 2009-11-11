@@ -1,5 +1,7 @@
 <?php
 require_once(Kohana::find_file('libraries', 'bugzilla', TRUE, 'php'));
+#moz_pagination/libraries/moz_pager.php
+require_once(Kohana::find_file('libraries', 'moz_pager', TRUE, 'php'));
 require_once(Kohana::find_file('libraries', 'MY_SearchReportHelper', TRUE, 'php'));
 require_once(Kohana::find_file('libraries', 'crash', TRUE, 'php'));
 /**
@@ -29,56 +31,87 @@ class Report_Controller extends Controller {
             'etag'     => $params,
             'expires'  => time() + ( 60 * 60 )
         ));
+	$input = new Input;
+        $page = $input->get('page');
 
-        $reports = $this->common_model->queryReports($params);
-		if (count($reports) == 0) {
-	  		header("No data for this query", TRUE, 404);
-			$this->setView('common/nodata');
-		} else {
-          	$builds  = $this->common_model->queryFrequency($params);
+	if ($page === NULL) {
+	    $page = 1;
+	}
+        $totalCount = $this->common_model->totalNumberReports($params);
+        $pager = new MozPager(Kohana::config('search.number_report_list'), $totalCount, $page);
 
-  	  		if (count($builds) > 1){
-	    		$crashGraphLabel = "Crashes By Build";
-	    		$platLabels = $this->generateCrashesByBuild($platforms, $builds); 
-	  		} else {
-        	    $crashGraphLabel = "Crashes By OS";
-	    		$platLabels = $this->generateCrashesByOS($platforms, $builds);
-	  		}
-        	
-	  		$buildTicks = array();
-			$index = 0;
-			for($i = count($builds) - 1; $i  >= 0 ; $i = $i - 1) {
-				$buildTicks[] = array($index, date('m/d', strtotime($builds[$i]->build_date)));
-				$index += 1;
-			}
-			$bug_model = new Bug_Model;
-        	$rows = $bug_model->bugsForSignatures(array($params['signature']));
-			$bugzilla = new Bugzilla;
-			$signature_to_bugzilla = $bugzilla->signature2bugzilla($rows, Kohana::config('codebases.bugTrackingUrl'));
-        	
-			$this->setViewData(array(
-        	    'params'  => $params,
-        	    'queryTooBroad' => $helper->shouldShowWarning(),
-        	    'reports' => $reports,
-        	    'builds'  => $builds,
-        	
-        	    'all_products'  => $branch_data['products'],
-        	    'all_branches'  => $branch_data['branches'],
-        	    'all_versions'  => $branch_data['versions'],
-        	    'all_platforms' => $platforms,
-        	
-        	    'crashGraphLabel' => $crashGraphLabel,
-        	    'platformLabels'  => $platLabels,
-				'buildTicks'      => $buildTicks,
-        	
-        	    'sig2bugs' => $signature_to_bugzilla,
+        $reports = $this->common_model->queryReports($params, $pager);
 
-				'comments' => $this->common_model->getCommentsBySignature($params),
+        if (count($reports) == 0) {
+            header("No data for this query", TRUE, 404);
+	    $this->setView('common/nodata');
+	} else {
+	    $builds  = $this->common_model->queryFrequency($params);
+	    
+	    if (count($builds) > 1){
+		$crashGraphLabel = "Crashes By Build";
+		$platLabels = $this->generateCrashesByBuild($platforms, $builds); 
+	    } else {
+		$crashGraphLabel = "Crashes By OS";
+		$platLabels = $this->generateCrashesByOS($platforms, $builds);
+	    }
+        	
+	    $buildTicks = array();
+	    $index = 0;
+	    for($i = count($builds) - 1; $i  >= 0 ; $i = $i - 1) {
+		$buildTicks[] = array($index, date('m/d', strtotime($builds[$i]->build_date)));
+		$index += 1;
+	    }
+	    $bug_model = new Bug_Model;
+	    $rows = $bug_model->bugsForSignatures(array($params['signature']));
+	    $bugzilla = new Bugzilla;
+	    $signature_to_bugzilla = $bugzilla->signature2bugzilla($rows, Kohana::config('codebases.bugTrackingUrl'));
+	    $linkParams = array();
 
-				'logged_in' => Auth::instance()->logged_in(),
-			));
+	    //prepare a query string for pagination (use incoming query but skip page param)
+	    // We can't use http_build_query because our url supports multiple product and multiple version
+	    // entries. Example ?product=Firefox&product=Camino&version=3.5&version=2.0
+	    foreach ($params as $k => $v) {
+		if ($k != 'page') {
+		    if (is_array($v)) {
+		       foreach($v as $dup_value) {
+			   array_push($linkParams, "${k}=${dup_value}");
+		       }
+		    } else {
+			array_push($linkParams, "${k}=${v}");
+		    }
 		}
+	    }
+	    $currentPath = url::site('report/list') . '?' . implode('&', $linkParams) . '&page=';
+        	
+	    $this->setViewData(array(
+		'navPathPrefix' => $currentPath,
+		'nextLinkText' => 'Older Crashes',
+		'pager' => $pager,
+		'params'  => $params,
+		'previousLinkText' => 'Newer Crashes',
+		'queryTooBroad' => $helper->shouldShowWarning(),
+		'reports' => $reports,
+		'totalItemText' => " Crash Reports",
+
+        	
+		'all_products'  => $branch_data['products'],
+		'all_branches'  => $branch_data['branches'],
+		'all_versions'  => $branch_data['versions'],
+		'all_platforms' => $platforms,
+
+		'builds'  => $builds,        	
+		'buildTicks'      => $buildTicks,
+		'crashGraphLabel' => $crashGraphLabel,
+		'platformLabels'  => $platLabels,
+        	
+		'sig2bugs' => $signature_to_bugzilla,
+		'comments' => $this->common_model->getCommentsByParams($params),
+		'logged_in' => Auth::instance()->logged_in(),
+	    ));
+	}
     }
+
 
     /**
      * Linking reports with ID validation.
@@ -181,23 +214,25 @@ class Report_Controller extends Controller {
                 'etag'          => $uuid,
                 'last-modified' => strtotime($report->date_processed)
             ));
-	    	$report->sumo_signature = $this->_makeSumoSignature($report->signature);
+	    $report->sumo_signature = $this->_makeSumoSignature($report->signature);
             $reportJsonZUri = url::file('dumps/' . $uuid . '.jsonz');
 
-	    	$bug_model = new Bug_Model;
+	    $bug_model = new Bug_Model;
             $rows = $bug_model->bugsForSignatures(array($report->signature));
-	    	$bugzilla = new Bugzilla;
-	    	$signature_to_bugzilla = $bugzilla->signature2bugzilla($rows, Kohana::config('codebases.bugTrackingUrl'));
+	    $bugzilla = new Bugzilla;
+	    $signature_to_bugzilla = $bugzilla->signature2bugzilla($rows, Kohana::config('codebases.bugTrackingUrl'));
 
-			$Extension_Model = new Extension_Model;
-			$extensions = $Extension_Model->getExtensionsForReport($uuid, $report->date_processed);
-
+	    $Extension_Model = new Extension_Model;
+	    $extensions = $Extension_Model->getExtensionsForReport($uuid, $report->date_processed);
+	    
             $this->setViewData(array(
                 'branch' => $this->branch_model->getByProductVersion($report->product, $report->version),
-				'extensions' => $extensions,
+		'comments' => $this->common_model->getCommentsBySignature($report->signature),
+		'extensions' => $extensions,
+		'logged_in' => Auth::instance()->logged_in(),
                 'reportJsonZUri' => $reportJsonZUri,
                 'report' => $report,
-				'sig2bugs' => $signature_to_bugzilla
+		'sig2bugs' => $signature_to_bugzilla
             ));
 		}
     }

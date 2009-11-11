@@ -23,6 +23,8 @@ html{color:#000;background:#FFF;}body,div,dl,dt,dd,ul,ol,li,h1,h2,h3,h4,h5,h6,pr
     list-style: none;
 }
 
+br { clear: both; }
+
 
 html {
     font: 16px Lucida Sans, Lucida Grande, Arial, sans-serif;
@@ -771,10 +773,17 @@ ul#occurs li, ul#stack li {
 
 /* end search-form */
 
+/* Search Results */
 #query-results-h { clear: left; }
 /* label { color: #000; } */
 fieldset ul li { text-align: left; }
 #advfiltertoggle.not-toggled { text-decoration: underline; }
+
+.pagination { float: right; }
+.pagination ol {float: right; margin-left: 0.5em;}
+.pagination ol li {float: left; margin-right: 0.3em;}
+
+/* END Search Results */
 body { color: #333333 }
 th, strong { font-weight: bold; }
 td a, .product-versions li a { color: blue; }

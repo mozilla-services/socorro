@@ -1,4 +1,7 @@
 <?php defined('SYSPATH') or die('No direct script access.');
+
+require_once(Kohana::find_file('libraries', 'moz_pager', TRUE, 'php'));
+
 /**
  * Common DB queries that span multiple tables and perform aggregate calculations or statistics.
  */
@@ -14,31 +17,40 @@ class Common_Model extends Model {
         $this->platform_model = new Platform_Model();
     }
 
-	/**
-     * Fetch all of the comments associated with a particular Crash Signature.
-	 *
-	 * @access 	public
-	 * @param	array 	An array of parameters
-	 * @return  array 	An array of comments
+    /**
+     *
      */
-    public function getCommentsBySignature($params) {
-        $columns = array('reports.signature', 'count(reports.id)');
+   /**
+     * Fetch all of the comments associated with a particular Crash Signature.
+     *
+     * @access 	public
+     * @param   string A Crash Signature
+     * @return  array 	An array of comments
+     * @see getCommentsBySignature
+     */
+    public function getCommentsBySignature($signature) {
+        $params = array('signature' => $signature, 
+			'range_value' => 2, 'range_unit' => 'weeks',
+			'product' => NULL,  'version' => NULL, 
+			'branch' => NULL,   'platform' => NULL,
+			'query' => NULL, 'date' => NULL);
+	return $this->getCommentsByParams($params);
+    }
+    /**
+     * Fetch all of the comments associated with a particular Crash Signature.
+     * 
+     * @access 	public
+     * @param	array 	An array of parameters
+     * @return  array 	An array of comments
+     */
+    public function getCommentsByParams($params) {
         $tables = array();
         $where = array();
-
-        $platforms = $this->platform_model->getAll();
-        foreach ($platforms as $platform) {
-            $columns[] = 
-                "count(CASE WHEN (reports.os_name = '{$platform->os_name}') THEN 1 END) ".
-                "AS is_{$platform->id}";
-        }
 
         list($params_tables, $params_where) = $this->_buildCriteriaFromSearchParams($params);
         $tables += $params_tables;
         $where  += $params_where;
 
-		// Performing 2 queries because email can be either null or a string with 0 characters and 
-		// skews returned results that are ordered by reports.email ASC
         $sql =
 	    "/* soc.web report.getCommentsBySignature.1. */ " .
             " SELECT 
@@ -95,9 +107,48 @@ class Common_Model extends Model {
     }
 
     /**
-     * Find reports for the given search parameters.
+     * Find total number of crash reports for the given search parameters.
+     * @param array Parameters that vary
+     * @pager object optional MozPager instance
+     * @return int total number of crashes
      */
-    public function queryReports($params) {
+    public function totalNumberReports($params) {
+        $tables = array();
+        $where = array();
+
+        list($params_tables, $params_where) = 
+            $this->_buildCriteriaFromSearchParams($params);
+
+        $tables += $params_tables;
+        $where  += $params_where;
+
+        $sql = "/* soc.web common.totalQueryReports */ 
+            SELECT COUNT(uuid) as total
+            FROM   " . join(', ', array_keys($tables)) .
+          " WHERE  " . join(' AND ', $where);
+	$rs = $this->fetchRows($sql);
+	if ($rs && count($rs) > 0) {
+	    return $rs[0]->total;
+	} else {
+	    return 0;
+	}
+    }
+
+    /**
+     * Find all crash reports for the given search parameters and
+     * paginate the results.
+     * 
+     * @param array Parameters that vary
+     * @pager object optional MozPager instance
+     * @return array of objects
+     */
+    public function queryReports($params, $pager=NULL) {
+	if ($pager === NULL) {
+	    $pager = new stdClass;
+	    $pager->offset = 0;
+	    $pager->itemsPerPage = Kohana::config('search.number_report_list');
+	    $pager->currentPage = 1;
+	}
 
         $columns = array(
             'reports.date_processed',
@@ -129,15 +180,14 @@ class Common_Model extends Model {
         $tables += $params_tables;
         $where  += $params_where;
 
-        $sql =
-	    "/* soc.web common.queryReports */ " .
-            " SELECT " . join(', ', $columns) .
-            " FROM   " . join(', ', array_keys($tables)) .
-            " WHERE  " . join(' AND ', $where) .
-	  " ORDER BY reports.date_processed DESC " .
-	  " LIMIT 500";
+        $sql = "/* soc.web common.queryReports */ 
+            SELECT " . join(', ', $columns) .
+          " FROM   " . join(', ', array_keys($tables)) .
+          " WHERE  " . join(' AND ', $where) .
+	  " ORDER BY reports.date_processed DESC 
+	    LIMIT ? OFFSET ? ";
 
-        return $this->fetchRows($sql);
+        return $this->fetchRows($sql, TRUE, array($pager->itemsPerPage, $pager->offset));
     }
 
     /**

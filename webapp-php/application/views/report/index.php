@@ -44,6 +44,7 @@
         <li><a href="#modules"><span>Modules</span></a></li>
         <li><a href="#rawdump"><span>Raw Dump</span></a></li>
         <li><a href="#extensions"><span>Extensions</span></a></li>
+        <li><a href="#comments"><span>Comments</span></a></li>
     </ul>
     <div id="details">
         <table class="list record">
@@ -252,6 +253,6 @@
 			<p><em>No extensions were installed.</em></p>
 		<?php } ?>
     </div><!-- /extensions -->
-
+<?php View::factory('common/comments')->render(TRUE); ?>
 
 </div> <!-- /report-index -->
