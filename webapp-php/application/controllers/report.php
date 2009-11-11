@@ -177,9 +177,6 @@ class Report_Controller extends Controller {
             }
 	    	return url::redirect('report/pending/'.$uuid);
         } else {
-
-				echo $report->date_processed;
-				
             cachecontrol::set(array(
                 'etag'          => $uuid,
                 'last-modified' => strtotime($report->date_processed)
