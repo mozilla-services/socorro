@@ -11,15 +11,14 @@ class Status_Controller extends Controller {
       $server_status_model = new Server_Status_Model();
       $serverStats = $server_status_model->loadStats();
         cachecontrol::set(array(
-  	  'expires' => time() + (60 * 5) // 5 minutes
+            'last-modified' => time(),
+            'expires' => time() + (120) // 120 seconds
         ));
 
         $this->setViewData(array(
-	    'server_stats'            => $serverStats->data,
+            'server_stats'            => $serverStats->data,
             'plotData'                => $serverStats->getPlotData(),
             'status'                  => $serverStats->status()
         ));
-
     }
-
 }

@@ -107,7 +107,7 @@
         <div id="footer">
 	    <div id="footer-links">
             <ul>
-                <li><a href="<?php echo url::base() ?>status?cache_bust=<?php echo time();?>">Server Status</a></li>
+                <li><a href="<?php echo url::base() ?>status">Server Status</a></li>
                 <li><a href="http://code.google.com/p/socorro/">Project Info</a></li>
                 <li><a href="http://code.google.com/p/socorro/source">Get the Source</a></li>
                 <li><a href="http://wiki.mozilla.org/Breakpad">Breakpad Wiki</a></li>
