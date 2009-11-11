@@ -3,6 +3,8 @@ import os
 import shutil
 import types
 import sys
+
+from nose.tools import *
 import socorro.lib.filesystem as f
 import socorro.unittest.testlib.util as tutil
 
@@ -207,6 +209,79 @@ class TestFilesystem(unittest.TestCase):
       except Exception,x:
         assert False, 'We should have had an OSError, got %s: %s'%(type(x),x)
       tpath = head
+
+  def testCleanEmptySubdirectories(self):
+    f.makedirs('TestDir/A/B/C/D')
+    f.makedirs('TestDir/AA/BB/C')
+    f.makedirs('TestDir/AA/BB/CC/DD')
+    fi = open('TestDir/A/a','w')
+    fi.write('file a\n')
+    fi.close()
+    # Test short-circuit path, full stopper
+    assert os.path.isdir('TestDir/A/B/C/D')
+    f.cleanEmptySubdirectories('TestDir/A/B/C/D','TestDir/A/B/C/D')
+    assert os.path.isdir('TestDir/A/B/C/D')
+    # Test short-circuit path, name stopper
+    f.cleanEmptySubdirectories('D','TestDir/A/B/C/D')
+    assert os.path.isdir('TestDir/A/B/C/D')
+
+    # Test some empties, name stopper
+    f.cleanEmptySubdirectories('C','TestDir/A/B/C/D')
+    assert not os.path.exists('TestDir/A/B/C/D')
+    assert os.path.isdir('TestDir/A/B/C')
+    # Test some empties, path stopper
+    f.cleanEmptySubdirectories('TestDir/A/B','TestDir/A/B/C')
+    assert not os.path.exists('TestDir/A/B/C')
+    assert os.path.isdir('TestDir/A/B')
+
+    #Test stopping on a file in a subdir 
+    f.cleanEmptySubdirectories('TestDir','TestDir/A/B')
+    assert not os.path.exists('TestDir/A/B')
+    assert os.path.isdir('TestDir/A')
+
+    #Test stopping on another subdir
+    f.cleanEmptySubdirectories('TestDir/AA','TestDir/AA/BB/CC/DD')
+    assert not os.path.exists('TestDir/AA/BB/CC')
+    assert os.path.isdir('TestDir/AA/BB')
+
+    #Test for stopper not in path
+    assert_raises(OSError,f.cleanEmptySubdirectories,'Woo','TestDir/AA/BB')
+
+    #Test for non-existent leaf
+    assert_raises(OSError,f.cleanEmptySubdirectories,'TestDir','TestDir/AA/BB/CC/DD')
+
+  def testVisitPath(self):
+    f.makedirs('TestDir/a/b/c/d/e/f')
+    fi = open('TestDir/a/b/c/d/D0','w')
+    fi.write("hi\n")
+    fi.close
+    seen = set()
+    def collector(x):
+      seen.add(x)
+    top = 'TestDir/a'
+    last = 'TestDir/a/b/c/d'
+    absTop = os.path.normpath(top)
+    expected = set([absTop])
+    for i in [['b'],['b','c'],['b','c','d']]:
+      expected.add(os.path.join(absTop,os.sep.join(i)))
+    f.visitPath(top,last,collector)
+    assert expected == seen, 'but x-s=%s and s-x=%s'%(expected-seen,seen-expected)
+
+    seen.clear()
+    top = 'TestDir/a/b'
+    last = 'TestDir/a/b/c/d/D0'
+    normTop = os.path.normpath(top)
+    expected = set([normTop])
+    for i in [['c'],['c','d']]:
+      expected.add(os.path.join(absTop,os.sep.join(i)))
+    f.visitPath(top,last,collector)
+    assert expected == seen, 'but x-s=%s and s-x=%s'%(expected-seen,seen-expected)
+
+    #Test for non-existent leaf
+    assert_raises(OSError,f.visitPath,'TestDir','TestDir/A/BB',collector)
+
+    #Test for rootDir not abover fullPath
+    assert_raises(OSError,f.visitPath,'TestDir/A/B','TestDir/A',collector)
 
 if __name__ == "__main__":
   unittest.main()

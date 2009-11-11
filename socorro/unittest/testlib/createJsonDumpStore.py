@@ -5,7 +5,12 @@ import time
 
 import simplejson
 
-import socorro.lib.JsonDumpStorage as JDS
+import socorro.lib.JsonDumpStorage as NJDS
+try:
+  import socorro.lib.oldJsonDumpStorage as JDS
+except Exception,x:
+  print type(x),x
+  raise
 
 jsonFileData = {
   '0bba61c5-dfc3-43e7-dead-8afd20071025': ('2007-10-25-05-04','webhead02','0b/ba/61/c5','2007/10/25/05/00/webhead02_0'),
@@ -18,10 +23,10 @@ jsonFileData = {
   '0b94199b-b90b-4683-dead-411420081226': ('2008-12-26-05-21','webhead01','0b/94/19/9b','2008/12/26/05/20/webhead01_0'),
   '0b9eedc3-9a79-4ce2-dead-155920081226': ('2008-12-26-05-24','webhead01','0b/9e/ed/c3','2008/12/26/05/20/webhead01_0'),
   '0b9fd6da-27e4-46aa-dead-3deb20081226': ('2008-12-26-05-25','webhead02','0b/9f/d6/da','2008/12/26/05/25/webhead02_0'),
-  '0ba32a30-2476-4724-dead-de17e3081125': ('2008-11-25-05-00','webhead02','0b/a3/2a','2008/11/25/05/00/webhead02_0'),
-  '0bad640f-5825-4d42-dead-21b8e3081125': ('2008-11-25-05-04','webhead02','0b/ad/64','2008/11/25/05/00/webhead02_0'),
-  '0bae7049-bbff-49f2-dead-7e9fe2081125': ('2008-11-25-05-05','webhead02','0b/ae','2008/11/25/05/05/webhead02_0'),
-  '0baf1b4d-dad3-4d35-dead-b9dce2081125': ('2008-11-25-05-06','webhead02','0b/af','2008/11/25/05/05/webhead02_0'),
+  '0ba32a30-2476-4724-dead-de17e3081125': ('2008-11-25-05-00','webhead02','0b/a3/2a',   '2008/11/25/05/00/webhead02_0'),
+  '0bad640f-5825-4d42-dead-21b8e3081125': ('2008-11-25-05-04','webhead02','0b/ad/64',   '2008/11/25/05/00/webhead02_0'),
+  '0bae7049-bbff-49f2-dead-7e9fe2081125': ('2008-11-25-05-05','webhead02','0b/ae',      '2008/11/25/05/05/webhead02_0'),
+  '0baf1b4d-dad3-4d35-dead-b9dce2081125': ('2008-11-25-05-06','webhead02','0b/af',      '2008/11/25/05/05/webhead02_0'),
 }
 
 jsonMoreData =  {
@@ -63,13 +68,15 @@ def minimalJsonFileContents(dataMap = None):
     yield simplejson.dumps(retMap)
     cookie += 1
 
-def createTestSet(testData,jsonKwargs,rootDir):
+def createTestSet(testData,jsonKwargs,rootDir, newStyle=False):
   try:
     os.makedirs(rootDir)
   except OSError,x:
     if errno.EEXIST != x.errno: raise
-
-  storage = JDS.JsonDumpStorage(rootDir, **jsonKwargs)
+  if newStyle:
+    storage = NJDS.JsonDumpStorage(rootDir, **jsonKwargs)
+  else:
+    storage = JDS.JsonDumpStorage(rootDir, **jsonKwargs)
   jsonIsEmpty = jsonKwargs.get('jsonIsEmpty', False)
   jsonIsBogus = jsonKwargs.get('jsonIsBogus', True)
   jsonFileGenerator = jsonKwargs.get('jsonFileGenerator',None)

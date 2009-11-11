@@ -5,8 +5,11 @@ import os
 import os.path as p
 import shutil
 import stat
+import time
+
 import socorro.lib.JsonDumpStorage as JDS
-import socorro.lib.uuid as suuid
+import socorro.lib.uuid as socorro_uuid
+import socorro.lib.filesystem as socorro_fs
 
 import socorro.unittest.testlib.util as tutil
 
@@ -29,14 +32,13 @@ class TestJsonDumpStoragePermissions(unittest.TestCase):
 
 
   def testNewEntryPermissions(self):
-    dirPermissions=0777
-    dumpPermissions=0755
+    dirPermissions=0707
+    dumpPermissions=0500
     j = JDS.JsonDumpStorage(root=self.testDir,dirPermissions=dirPermissions,dumpPermissions=dumpPermissions)
-    u = str(suuid.uuid1())
+    u = str(socorro_uuid.uuid1())
     f1, f2 = j.newEntry(u)
     f1.close()
     f2.close()
-
     jpath = j.getJson(u)
     gotPermissions = stat.S_IMODE(os.stat(jpath)[0])
     assert stat.S_IMODE(os.stat(jpath)[0]) == dumpPermissions, "%s: Expected %o, got %o" % (jpath, dumpPermissions, gotPermissions)
@@ -46,22 +48,25 @@ class TestJsonDumpStoragePermissions(unittest.TestCase):
     assert stat.S_IMODE(os.stat(dpath)[0]) == dumpPermissions, "%s: Expected %o, got %o" % (dpath, dumpPermissions, gotPermissions)
 
     udir = os.path.split(dpath)[0]
-    datePath = os.path.join(udir,os.readlink(os.path.abspath(os.path.splitext(dpath)[0])))
+    datePath = os.path.abspath(os.path.join(udir,os.readlink(os.path.splitext(dpath)[0])))
+    namePath = os.path.abspath(os.path.splitext(dpath)[0])
+    topPath = os.path.abspath(self.testDir)
+    dailies = os.listdir(topPath)
 
-    x = p.split(jpath)[0]
-    y = os.path.abspath(datePath)
-    for tp in (x,y):
-      while tp != j.nameBranch and tp != os.path.abspath(j.dateBranch):
-        gotPermissions = stat.S_IMODE(os.stat(tp)[0])
-        assert dirPermissions == gotPermissions, "%s: Expected %o, got %o"%(tp,dirPermissions,gotPermissions)
-        tp = p.split(tp)[0]
+    def assertPermVisitor(p):
+      gotPerm = stat.S_IMODE(os.stat(p)[0])
+      assert dirPermissions == gotPerm, "%s: Expected %0o, got %0o"%(p,dirPermissions,gotPerm)
+    for d in dailies:
+      # visitPath quietly ignores a file as the leaf
+      socorro_fs.visitPath(os.path.join(topPath,d),datePath,assertPermVisitor)
+      socorro_fs.visitPath(os.path.join(topPath,d),namePath,assertPermVisitor)
 
   def testCopyFromPermissions(self):
     dirPermissions=0777
     dumpPermissions=0755
     j = JDS.JsonDumpStorage(root=self.testDir,dirPermissions=dirPermissions,dumpPermissions=dumpPermissions)
     os.makedirs(self.testMoveFrom)
-    u = str(suuid.uuid1())
+    u = str(socorro_uuid.uuid1())
     jopath = os.path.join(self.testMoveFrom,u+j.jsonSuffix)
     dopath = os.path.join(self.testMoveFrom,u+j.dumpSuffix)
     fj = open(jopath,'w')
@@ -79,15 +84,18 @@ class TestJsonDumpStoragePermissions(unittest.TestCase):
     assert dumpPermissions == stat.S_IMODE(os.stat(dpath)[0]), "%s: Expected %o, got %o" % (dpath, dumpPermissions, gotPermissions)
 
     udir = os.path.split(dpath)[0]
-    datePath = os.path.join(udir,os.readlink(os.path.abspath(os.path.splitext(dpath)[0])))
+    datePath = os.path.abspath(os.path.join(udir,os.readlink(os.path.splitext(dpath)[0])))
+    namePath = os.path.abspath(os.path.splitext(dpath)[0])
+    topPath = os.path.abspath(self.testDir)
+    dailies = os.listdir(topPath)
 
-    x = p.split(jpath)[0]
-    y = os.path.abspath(datePath)
-    for tp in (x,y):
-      while tp != j.nameBranch and tp != os.path.abspath(j.dateBranch):
-        gotPermissions = stat.S_IMODE(os.stat(tp)[0])
-        assert dirPermissions == gotPermissions, "%s: Expected %o, got %o"%(tp,dirPermissions,gotPermissions)
-        tp = p.split(tp)[0]
+    def assertPermVisitor(p):
+      gotPerm = stat.S_IMODE(os.stat(p)[0])
+      assert dirPermissions == gotPerm, "%s: Expected %0o, got %0o"%(p,dirPermissions,gotPerm)
+    for d in dailies:
+      # visitPath quietly ignores a file as the leaf
+      socorro_fs.visitPath(os.path.join(topPath,d),datePath,assertPermVisitor)
+      socorro_fs.visitPath(os.path.join(topPath,d),namePath,assertPermVisitor)
 
 if __name__ == "__main__":
   unittest.main()

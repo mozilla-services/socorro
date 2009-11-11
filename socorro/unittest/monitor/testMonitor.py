@@ -71,6 +71,7 @@ def setup_module():
   myDir = os.path.split(__file__)[0]
   if not myDir: myDir = '.'
   replDict = {'testDir':'%s'%myDir}
+  print "USING testDir",myDir
   for i in me.config:
     try:
       me.config[i] = me.config.get(i)%(replDict)
@@ -253,7 +254,12 @@ class TestMonitor:
     runInOtherProcess(self.runStartChild)
     self.markLog()
     seg = self.extractLogSegment()
-
+    print "SEG"
+    prior = ''
+    for s in seg:
+      if not s.startswith('2009'):
+        print prior
+      prior = s
     dateWalk = 0
     connectionClosed = 0
 
@@ -266,7 +272,11 @@ class TestMonitor:
     cleanupDone = 0
 
     for i in seg:
-      date,tyme,level,dash,msg = i.split(None,4)
+      data = i.split(None,4)
+      if 4 == len(data):
+        date,tyme,level,dash,msg = i.split(None,4)
+      else:
+        msg = i
       if msg.startswith('MainThread'):
         if 'connection' in msg and 'closed' in msg: connectionClosed += 1
         if 'destructiveDateWalk' in msg: dateWalk += 1
@@ -389,8 +399,8 @@ class TestMonitor:
     """
     global me
     self.markLog()
-    createJDS.createTestSet(createJDS.jsonFileData,jsonKwargs={'logger':me.logger},rootDir=me.config.storageRoot)
-    createJDS.createTestSet(createJDS.jsonMoreData,jsonKwargs={'logger':me.logger},rootDir=me.config.deferredStorageRoot)
+    createJDS.createTestSet(createJDS.jsonFileData,jsonKwargs={'logger':me.logger},rootDir=me.config.storageRoot,newStyle=True)
+    createJDS.createTestSet(createJDS.jsonMoreData,jsonKwargs={'logger':me.logger},rootDir=me.config.deferredStorageRoot,newStyle=True)
     mon = monitor.Monitor(me.config)
     assert_raises(monitor.UuidNotFoundException,mon.getStorageFor,'nothing')
     expected = me.config.storageRoot.rstrip(os.sep)
@@ -409,7 +419,7 @@ class TestMonitor:
     This just wraps JsonDumpStorage. Assure we aren't futzing up the wrap (fail with non-exist uuid)
     """
     global me
-    createJDS.createTestSet(createJDS.jsonFileData,jsonKwargs={'logger':me.logger},rootDir=me.config.storageRoot)
+    createJDS.createTestSet(createJDS.jsonFileData,jsonKwargs={'logger':me.logger},rootDir=me.config.storageRoot,newStyle=True)
     mon = monitor.Monitor(me.config)
     badUuid = '0bad0bad-0bad-6666-9999-0bad20001025'
     assert_raises(monitor.UuidNotFoundException,mon.removeUuidFromJsonDumpStorage,badUuid)
@@ -420,8 +430,8 @@ class TestMonitor:
     This really just wraps JsonDumpStorage call. Assure we aren't futzing up the wrap (succeed with existing uuids)
     """
     global me
-    createJDS.createTestSet(createJDS.jsonFileData,jsonKwargs={'logger':me.logger},rootDir=me.config.storageRoot)
-    createJDS.createTestSet(createJDS.jsonMoreData,jsonKwargs={'logger':me.logger},rootDir=me.config.deferredStorageRoot)
+    createJDS.createTestSet(createJDS.jsonFileData,jsonKwargs={'logger':me.logger},rootDir=me.config.storageRoot,newStyle=True)
+    createJDS.createTestSet(createJDS.jsonMoreData,jsonKwargs={'logger':me.logger},rootDir=me.config.deferredStorageRoot,newStyle=True)
     mon = monitor.Monitor(me.config)
     goodUuid = '0b781b88-ecbe-4cc4-dead-6bbb20081225';
     # this should work the first time...
@@ -667,7 +677,7 @@ class TestMonitor:
     cursor = self.connection.cursor()
     dbtestutil.fillProcessorTable(cursor,4)
     m = monitor.Monitor(me.config)
-    createJDS.createTestSet(createJDS.jsonFileData,jsonKwargs={'logger':me.logger},rootDir=me.config.storageRoot)
+    createJDS.createTestSet(createJDS.jsonFileData,jsonKwargs={'logger':me.logger},rootDir=me.config.storageRoot,newStyle=True)
     runInOtherProcess(m.standardJobAllocationLoop, stopCondition=(lambda : self.jobsAllocated() == 14))
     started = dbtestutil.datetimeNow(cursor)
     self.connection.commit()
@@ -730,7 +740,7 @@ class TestMonitor:
     for conf in ['saveSuccessfulMinidumpsTo','saveFailedMinidumpsTo']:
       cc[conf] = ''
     m = monitor.Monitor(cc)
-    createJDS.createTestSet(createJDS.jsonFileData,jsonKwargs={'logger':me.logger},rootDir=me.config.storageRoot)
+    createJDS.createTestSet(createJDS.jsonFileData,jsonKwargs={'logger':me.logger},rootDir=me.config.storageRoot,newStyle=True)
     runInOtherProcess(m.standardJobAllocationLoop, stopCondition=(lambda : self.jobsAllocated() == 14))
     started = dbtestutil.datetimeNow(cursor)
     self.connection.commit()
@@ -994,8 +1004,8 @@ class TestMonitor:
     """
     global me
     m = monitor.Monitor(me.config)
-    createJDS.createTestSet(createJDS.jsonFileData,jsonKwargs={'logger':me.logger},rootDir=me.config.storageRoot)
-    createJDS.createTestSet(createJDS.jsonMoreData,jsonKwargs={'logger':me.logger},rootDir=me.config.deferredStorageRoot)
+    createJDS.createTestSet(createJDS.jsonFileData,jsonKwargs={'logger':me.logger},rootDir=me.config.storageRoot,newStyle=True)
+    createJDS.createTestSet(createJDS.jsonMoreData,jsonKwargs={'logger':me.logger},rootDir=me.config.deferredStorageRoot,newStyle=True)
     self.markLog()
     badUuid = '0bad0bad-0bad-6666-9999-0bad20001025'
     goodUuid = '0bba929f-8721-460c-dead-a43c20071025'
@@ -1016,8 +1026,8 @@ class TestMonitor:
     """
     global me
     m = monitor.Monitor(me.config)
-    createJDS.createTestSet(createJDS.jsonFileData,jsonKwargs={'logger':me.logger},rootDir=me.config.storageRoot)
-    createJDS.createTestSet(createJDS.jsonMoreData,jsonKwargs={'logger':me.logger},rootDir=me.config.deferredStorageRoot)
+    createJDS.createTestSet(createJDS.jsonFileData,jsonKwargs={'logger':me.logger},rootDir=me.config.storageRoot,newStyle=True)
+    createJDS.createTestSet(createJDS.jsonMoreData,jsonKwargs={'logger':me.logger},rootDir=me.config.deferredStorageRoot,newStyle=True)
     normUuids = createJDS.jsonFileData.keys()
     defUuids =  createJDS.jsonMoreData.keys()
     allUuids = []

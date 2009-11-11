@@ -1,4 +1,4 @@
-import datetime as dt
+import datetime as datetime
 import gzip
 import os
 import shutil
@@ -69,6 +69,23 @@ class TestProcessedDumpStorage(unittest.TestCase):
     except OSError:
       pass # ok if there is no such test directory
 
+  def dailyFromNow(self):
+    return ''.join(datetime.date.today().isoformat().split('-'))
+  
+  def dailyFromDate(self,dateString):
+    """given "YYYY-mm-dd-hh-mm" return YYYYmmdd string"""
+    return ''.join(dateString.split('-')[:3])
+  
+  def relativeDateParts(self,dateString,minutesPerSlot):
+    """ given "YYYY-mm-dd-hh-mm", return [hh,slot]"""
+    hh,mm = dateString.split('-')[-2:]
+    slot = int(mm) - int(mm)%minutesPerSlot
+    return [hh,"%02d"%slot]
+  def hourSlotFromNow(self,minutesPerSlot):
+    hh,mm = datetime.datetime.now().isoformat('T').split('T')[1].split(':')[:2]
+    slot = int(mm) - int(mm)%minutesPerSlot
+    return hh,"%02d"%slot
+
   def testConstructor(self):
     self.constructorAlt(self.testDir,**self.initKwargs[0])
     self.constructorAlt(self.testDir,**self.initKwargs[1])
@@ -78,35 +95,34 @@ class TestProcessedDumpStorage(unittest.TestCase):
 
   def constructorAlt(self,*args,**kwargs):
     storage = dumpStorage.ProcessedDumpStorage(self.testDir,**kwargs)
-    assert storage.rootName == kwargs.get('rootName','name'),'From kwargs=%s'%kwargs
-    assert os.path.join(self.testDir,kwargs.get('rootName','name')) == storage.storageBranch
-    assert os.path.join(self.testDir,kwargs.get('dateName','date')) == storage.dateBranch
-    assert '..' in storage.relativePartsDateToRoot
-    assert 5 < len(storage.relativePartsDateToRoot)
+    assert self.testDir.rstrip(os.sep) == storage.root,'From kwargs=%s'%kwargs
+    assert storage.indexName == kwargs.get('indexName','name'),'From kwargs=%s'%kwargs
     suffix = kwargs.get('fileSuffix','.jsonz')
     if not suffix.startswith('.'):suffix = '.%s'%suffix
     assert suffix == storage.fileSuffix,'expected "%s", got "%s" From kwargs=%s'%(suffix,storage.fileSuffix,kwargs)
-    assert os.path.join(self.testDir,storage.rootName) == storage.storageBranch,'From kwargs=%s'%kwargs
     compression = int(kwargs.get('gzipCompression','9'))
     assert compression == storage.gzipCompression
     storageDepth = int(kwargs.get('storageDepth',2))
     assert storageDepth == storage.storageDepth,'Expected %s, got %s'%(storageDepth,storage.storageDepth)
-    mps = int(kwargs.get('minutesPerSlot',5))
+    mps = int(kwargs.get('minutesPerSlot',1))
     assert mps == storage.minutesPerSlot,'Expected %s, got %s'%(mps,storage.minutesPerSlot)
 
   def testNewEntry(self):
     storage = dumpStorage.ProcessedDumpStorage(self.testDir,**self.initKwargs[0])
-    for ooid,(tdate,ig1,pathprefix,longDatePath) in createJDS.jsonFileData.items():
+    for ooid,(tdate,wh,pathprefix,longDatePath) in createJDS.jsonFileData.items():
       pathprefix = os.sep.join(pathprefix.split('/')[:2]) # we are going to always use two for processedDumpStorage depth
-      expectedDir = os.path.join(storage.storageBranch,pathprefix)
+      dailyPart = ''.join(tdate.split('-')[:3])
+      expectedDir = os.sep.join((storage.root,dailyPart,storage.indexName,pathprefix))
       expectedPath = os.path.join(expectedDir,"%s%s"%(ooid,storage.fileSuffix))
-      datepart = "%s_0"%(longDatePath.rsplit('/',1)[0])
-      expectedDateDir = os.path.join(storage.dateBranch,datepart)
-      testStamp = dt.datetime(*[int(x) for x in tdate.split('-')])
+      hourPart,slot = self.relativeDateParts(tdate,storage.minutesPerSlot)
+      datepart = "%s_0"%(os.path.join(hourPart,slot))
+      expectedDateDir = os.sep.join((storage.root,dailyPart,storage.dateName,datepart))
+      testStamp = datetime.datetime(*[int(x) for x in tdate.split('-')])
       fh = storage.newEntry(ooid,testStamp)
       try:
         assert expectedPath == fh.fileobj.name, 'Expected: %s, got: %s'%(expectedPath,fh.name)
-        assert os.path.islink(os.path.join(expectedDateDir,ooid))
+        dToN = os.path.join(expectedDateDir,ooid)
+        assert os.path.islink(dToN),'Expected %s to be link exists:%s'%(dToN,os.path.exists(dToN))
         datapath = os.readlink(os.path.join(expectedDateDir,ooid))
         # The next lines prove we have a relative-path link
         zigpath = os.path.join(expectedDateDir,datapath)
@@ -114,100 +130,43 @@ class TestProcessedDumpStorage(unittest.TestCase):
       finally:
         fh.close()
 
-  def testNewEntryMaxDirectoryEntries0(self):
-    """
-    testNewEntryMaxDirectoryEntries0(self):
-      - test that we do NOT overflow if maxDirectoryEntries is 0
-    """
-    import socorro.unittest.testlib.dbtestutil as dbtestutil
-    gen = dbtestutil.moreUuid()
-    kwargs = self.initKwargs[0]
-    kwargs['maxDirectoryEntries'] = 0
-    storage = dumpStorage.ProcessedDumpStorage(self.testDir,**kwargs)
-    datedata = [2008,4,5,6,7,8]
-    expectdata = [2008,4,5,6,5]
-    testDate = dt.datetime(*datedata)
-    datepart = "%s_%d"%(os.sep.join(["%02d"%(x) for x in expectdata]),0)
-    expectedDateDir = os.path.join(storage.dateBranch,datepart)
-    for i in range(100):
-      ooid = gen.next()
-      fh = storage.newEntry(ooid,testDate)
-      try:
-        assert os.path.exists(expectedDateDir)
-        assert os.path.islink(os.path.join(expectedDateDir,ooid))
-      finally:
-        fh.close()
-
-  def testNewEntryMaxDirectoryEntries(self):
-    """
-    testNewEntryMaxDirectoryEntries(self):
-      - test that we overflow as expected into a new date directory
-    """
-    kwargs = self.initKwargs[0]
-    kwargs['maxDirectoryEntries'] = 2
-    storage = dumpStorage.ProcessedDumpStorage(self.testDir,**kwargs)
-    count = 0
-    seq = 0
-    datedata = [2008,4,5,6,7,8]
-    expectdata = [2008,4,5,6,5]
-    testDate = dt.datetime(*datedata)
-    for ooid in createJDS.jsonFileData.keys():
-      datepart = "%s_%d"%(os.sep.join(["%02d"%(x) for x in expectdata]),seq)
-      expectedDateDir = os.path.join(storage.dateBranch,datepart)
-      fh = storage.newEntry(ooid,testDate)
-      count += 1
-      seq = count/2
-      try:
-        assert os.path.exists(expectedDateDir)
-        assert os.path.islink(os.path.join(expectedDateDir,ooid))
-      finally:
-        fh.close()
-    
   def testPutDumpToFile(self):
     """
     testPutDumpToFile(self):(slow=2)
     """
     storage = dumpStorage.ProcessedDumpStorage(self.testDir,**self.initKwargs[2])
     ooid = '0bae7049-bbff-49f2-dead-7e9fe2081125' # is coded for depth 2, so no special thought needed
-    pfx = createJDS.jsonFileData[ooid][2]
-    expectedPath = os.sep.join([storage.storageBranch,pfx,ooid+storage.fileSuffix])
+    data = createJDS.jsonFileData[ooid]
+    stamp = datetime.datetime(*[int(x) for x in data[0].split('-')])
+    expectedPath = os.sep.join((storage.root,self.dailyFromNow(),storage.indexName,data[2]))
+    expectedFile = os.path.join(expectedPath,ooid+storage.fileSuffix)
     assert not os.path.exists(expectedPath), 'Better not exist at start of test'
     data = {"header":"header","data":['line ONE','lineTWO','last line']}
-    now = dt.datetime.now()
+    now = datetime.datetime.now()
     if now.second > 57:
       time.sleep(60-now.second)
-    now = dt.datetime.now()
-    datePath = None
-    for dirpath, dirnames, filenames in os.walk(storage.dateBranch):
-      if ooid in filenames:
-        datePath = dirpath
-        break
-    assert not datePath, 'tearDown should have removed this. If not, go fix it and try again.'
+    now = datetime.datetime.now()
     storage.putDumpToFile(ooid,data) # default timestamp
     datePath = None
-    seenPaths = set()
-    for dirpath, dirnames, filenames in os.walk(storage.dateBranch):
-      if ooid in filenames or ooid in dirnames:
-        datePath = dirpath
-        break
-      else:
-        seenPaths.update([os.path.join(dirpath,x) for x in filenames])
-        seenPaths.update([os.path.join(dirpath,x) for x in dirnames])
-    assert datePath, "Expect to find a symbolic link, sure 'nuf, but only saw %s"%seenPaths
-    dateParts = datePath.rsplit(os.sep,5)[-5:]
-    minutes,seq = dateParts[-1].split('_')
-    dateParts[-1] = minutes
-    dateParts.append(seq)
-    assert now.year == int(dateParts[0])
-    assert now.month == int(dateParts[1])
-    assert now.day == int(dateParts[2])
-    assert now.hour == int(dateParts[3])
-    assert now.minute >= int(dateParts[4])
-    assert now.minute < int(dateParts[4])+5
-    assert 0 == int(dateParts[5])
-    
-    assert os.path.exists(expectedPath), 'Just a nicer way to say your test is FUBAR'
-    f = gzip.open(expectedPath)
+    seenDirs = set()
+    seenFiles = set()
+    for dirpath, dirnames, filenames in os.walk(storage.root):
+      for f in filenames:
+        if f.startswith(ooid):
+          seenFiles.add(os.path.join(dirpath,f))
+      for d in dirnames:
+        if d.startswith(ooid):
+          seenDirs.add(os.path.join(dirpath,d))
+
+    for p in seenFiles:
+      assert storage.fileSuffix in p
+      assert storage.indexName in p
+    for p in seenDirs:
+      assert ooid == os.path.split(p)[1]
+      assert storage.dateName in p
+
+    assert os.path.exists(expectedFile), 'Just a nicer way to say your test is FUBAR'
+    f = gzip.open(expectedFile)
     lines = " ".join(f.readlines())
     f.close()
     assert """{"header": "header", "data": ["line ONE", "lineTWO", "last line"]}""" == lines
@@ -216,11 +175,13 @@ class TestProcessedDumpStorage(unittest.TestCase):
     storage = dumpStorage.ProcessedDumpStorage(self.testDir,**self.initKwargs[1])
     seq = 0
     seqs = {}
-    for ooid,(ig0,ig1,pathprefix,ig2) in createJDS.jsonFileData.items():
+    for ooid,(tdate,wh,pathprefix,longdatepath) in createJDS.jsonFileData.items():
+      hh,slot = self.relativeDateParts(tdate,storage.minutesPerSlot)
       seqs[ooid] = seq
-      expectedDir = os.path.join(storage.storageBranch,pathprefix)
+      expectedDir = os.sep.join((storage.root,self.dailyFromDate(tdate),storage.dateName,hh,"%s_0"%slot))
       expectedPath = os.path.join(expectedDir,"%s%s"%(ooid,storage.fileSuffix))
-      fh = storage.newEntry(ooid)
+      stamp = datetime.datetime(*[int(x) for x in tdate.split('-')])
+      fh = storage.newEntry(ooid,stamp)
       fh.write("Sequence Number %d\n"%seq)
       fh.close()
       seq += 1
@@ -234,9 +195,10 @@ class TestProcessedDumpStorage(unittest.TestCase):
     assert_raises(OSError, storage.getDumpPath,createJDS.jsonBadUuid)
 
   def createDumpSet(self, dumpStorage):
-    for ooid in createJDS.jsonFileData.keys():
+    for ooid,data in createJDS.jsonFileData.items():
       bogusData["uuid"] = ooid
-      dumpStorage.putDumpToFile(ooid,bogusData)
+      stamp = datetime.datetime(*[int(x) for x in data[0].split('-')])
+      dumpStorage.putDumpToFile(ooid,bogusData,stamp)
 
   def testRemoveDumpFile(self):
     storage = dumpStorage.ProcessedDumpStorage(self.testDir,**self.initKwargs[0])
@@ -248,7 +210,7 @@ class TestProcessedDumpStorage(unittest.TestCase):
     storage.removeDumpFile(createJDS.jsonBadUuid)
     
     ooids = createJDS.jsonFileData.keys()
-    for dir,dirs,files in os.walk(storage.storageBranch):
+    for dir,dirs,files in os.walk(storage.root):
       dumpFiles.update(files)
     assert expectedCount == len(dumpFiles)
 
@@ -257,7 +219,7 @@ class TestProcessedDumpStorage(unittest.TestCase):
       dumpFiles = set()
       storage.removeDumpFile(ooid)
       expectedCount -= 1
-      for dir,dirs,files in os.walk(storage.storageBranch):
+      for dir,dirs,files in os.walk(storage.root):
         dumpFiles.update(files)
       assert expectedCount == len(dumpFiles)
       
@@ -271,36 +233,25 @@ class TestProcessedDumpStorage(unittest.TestCase):
       assert bogusData == o
     assert_raises(OSError,storage.getDumpFromFile,createJDS.jsonBadUuid)
 
-  def testGetDateDir(self):
-    storage = dumpStorage.ProcessedDumpStorage(self.testDir,**self.initKwargs[0])
-    dateStuff = [2008,9,10,11,12,13,14]
-    aDate = dt.datetime(*dateStuff)
-    dateHead = os.sep.join("%02d"%x for x in dateStuff[:4]) # handily, that 'just works' for year field
-    leafDir = "%s_0"%(storage.minutesPerSlot*(dateStuff[4]/storage.minutesPerSlot))
-    expectedPath = os.sep.join((storage.dateBranch,dateHead,leafDir))
-    assert expectedPath == storage.getDateDir(aDate), "But expected=%s, got=%s"%(expectedPath,storage.getDateDir(aDate))
-
   def testSecondNewEntryAfterRemove(self):
     storage = dumpStorage.ProcessedDumpStorage(self.testDir,**self.initKwargs[0])
     ooid,(tdate,ig1,pathprefix,longDatePath) = createJDS.jsonFileData.items()[1]
-    testStamp = dt.datetime(*[int(x) for x in tdate.split('-')])
+    testStamp = datetime.datetime(*[int(x) for x in tdate.split('-')])
     fh = storage.newEntry(ooid,testStamp)
     fh.close()
     try:
       storage.removeDumpFile(ooid)
       #Next line fails ugly and useless unless we have fixed the problem
+      print "OK YY"
       fh = storage.newEntry(ooid,testStamp)
+      print "OK THAT WORKED"
+    except Exception,x:
+      print type(x),x
     finally:
       if fh:
+        print fh
         fh.close()
 
-  def testGetRelativeDateToDumpPath(self):
-    storage = dumpStorage.ProcessedDumpStorage(self.testDir,**self.initKwargs[1])
-    ooid,(tdate,ig1,pathprefix,longDatePath) = createJDS.jsonFileData.items()[1]
-    trail = "%s%s%s"%(ooid[:2],os.sep,ooid[2:4])
-    head = '../../../../../../name'
-    assert os.path.join(head,trail) == storage.getRelativeDateToDumpPath(ooid)
-    
 
 if __name__ == "__main__":
   unittest.main()

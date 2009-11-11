@@ -1,10 +1,59 @@
-
-
 import os
-import os.path
 from os.path import curdir
 import errno
 
+#-----------------------------------------------------------------------------------------------------------------
+def cleanEmptySubdirectories(topLimit,leafPath):
+  """cleanEmptySubdirectories(topLimit,leafPath)
+
+  walks backward up the directory tree from leafPath, calling os.rmdir(branch-below-me) until:
+   - branch-below-me isn't empty
+   - my current directory matches the name topLimit
+   """
+  opath = os.path.normpath(leafPath)     # allows relative paths to work as expected
+  topLimit = os.path.split(os.path.normpath(topLimit))[1] # allows either name or path
+  if not topLimit in opath:
+    raise OSError(errno.ENOENT,'%s not on path to %s'%(topLimit,leafPath))
+  while True:
+    path,tail = os.path.split(opath)
+    if topLimit == tail:
+      break
+    try:
+      os.rmdir(opath)
+    except OSError,e:
+      if errno.ENOTEMPTY == e.errno:
+        break
+      else:
+        raise
+    opath = path
+
+#-----------------------------------------------------------------------------------------------------------------
+def visitPath(rootDir,fullPath,visit):
+  """
+  Visit for each directory:
+  for each directory along the path rootDir/.../fullPath,
+  including rootDir as the first instance, and .../fullPath as last instance:
+  call visit(currentPath)
+  if fullPath is a non-directory it is skipped (link too)
+  Raise OSError (errno.ENOENT) if rootDir is not a parent of fullpath
+  # ?Optimization option: Memoize visited paths to avoid them? How to deal with prefix paths?
+  """
+  fpath = os.path.normpath(fullPath)     # allows relative paths to work as expected
+  root = os.path.normpath(rootDir)
+  if not fpath.startswith(root):
+    raise OSError(errno.ENOENT,'%s not on path to %s'%(rootDir,fullPath))
+  pathParts = fpath[len(os.sep)+len(root):].split(os.sep)
+  visit(root)
+  for p in pathParts:
+    root = os.path.join(root,p)
+    if os.path.isdir(root) and not os.path.islink(root):
+      visit(root)
+    elif os.path.exists(root):
+      pass
+    else:
+      raise OSError(errno.ENOENT,'%s does not exist'%(root))
+    
+  
 #-----------------------------------------------------------------------------------------------------------------
 def makedirs(name, mode=0777):
   """makedirs(path [, mode=0777])
