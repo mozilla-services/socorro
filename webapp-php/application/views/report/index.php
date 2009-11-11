@@ -8,7 +8,8 @@
     ), 'screen')?>
 
     <?php echo html::script(array(
-        'js/jquery/plugins/ui/jquery.ui.all.js'
+        'js/jquery/plugins/ui/jquery.ui.all.js',
+        'js/jquery/plugins/ui/jquery.tablesorter.min.js',
     ))?>
 
   <script type="text/javascript">//<![CDATA[
@@ -27,6 +28,7 @@
           $(this).remove();
           return false;
         });
+        $('#modules-list').tablesorter({sortList:[[1,2]]});
       });
 //]]></script> 
 
@@ -188,7 +190,7 @@
 
     <div id="modules">
         <?php if (count($report->modules)): ?>
-        <table class="list">
+        <table class="list" id="modules-list">
             <tr>
                 <th>Filename</th>
                 <th>Version</th>
