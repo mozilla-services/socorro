@@ -58,19 +58,17 @@ def testCreateTestSet():
       pass
 
   expected = {
-    '%s/date/2007'%testDir: (['10'], []),
-    '%s/name/0b/ba/61'%testDir: (['c5'], []),
-    '%s/date/2007/10/25'%testDir: (['05'], []),
-    '%s/name'%testDir: (['0b'], []),
-    '%s/date'%testDir: (['2007'], []),
-    '%s/date/2007/10/25/05'%testDir: (['00'], []),
-    '%s/date/2007/10'%testDir: (['25'], []),
-    '%s/name/0b/ba'%testDir: (['61'], []),
-    '%s/date/2007/10/25/05/00'%testDir: (['webhead02_0'], []),
-    '%s/name/0b'%testDir: (['ba'], []),
-    '%s/date/2007/10/25/05/00/webhead02_0'%testDir: (['0bba61c5-dfc3-43e7-effe-8afd20071025'], []),
-    '%s/name/0b/ba/61/c5'%testDir: (['0bba61c5-dfc3-43e7-effe-8afd20071025'], ['0bba61c5-dfc3-43e7-effe-8afd20071025.dump', '0bba61c5-dfc3-43e7-effe-8afd20071025.json']),
-    '%s'%testDir: (['date', 'name'], []),
+    '%s/20071025/date/05'%testDir:(['04'], []),
+    '%s/20071025/date'%testDir:(['05'], []),
+    '%s/20071025/name/0b/ba/61/c5'%testDir:(['0bba61c5-dfc3-43e7-effe-8afd20071025'], ['0bba61c5-dfc3-43e7-effe-8afd20071025.dump', '0bba61c5-dfc3-43e7-effe-8afd20071025.json']),
+    '%s/20071025/name/0b'%testDir:(['ba'], []),
+    '%s/20071025/date/05/04'%testDir:(['webhead02_0'], []),
+    '%s/20071025/name/0b/ba/61'%testDir:(['c5'], []),
+    '%s/20071025'%testDir:(['date', 'name'], []),
+    '%s/20071025/date/05/04/webhead02_0'%testDir:(['0bba61c5-dfc3-43e7-effe-8afd20071025'], []),
+    '%s/20071025/name'%testDir:(['0b'], []),
+    '%s'%testDir:(['20071025'], []),
+    '%s/20071025/name/0b/ba'%testDir:(['61'], []),
     }
   minSet = {'0bba61c5-dfc3-43e7-effe-8afd20071025': ('2007-10-25-05-04','webhead02','0b/ba/61/c5','2007/10/25/05/00/webhead02_0')}
   try:
@@ -78,13 +76,18 @@ def testCreateTestSet():
     got = {}
     for dirpath, files, dirs in os.walk(testDir):
       got[dirpath] = (files,dirs)
-    assert expected == got
-    f = open(os.path.join(testDir,'name/0b/ba/61/c5/0bba61c5-dfc3-43e7-effe-8afd20071025.dump'))
+    if expected != got:
+      for k, v in expected.items():
+        print 'X',k,v
+      for k,v in got.items():
+        print 'G',k,v
+    assert expected == got, 'Expected "%s" but got "%s"'%(expected,got)
+    f = open(os.path.join(testDir,'20071025/name/0b/ba/61/c5/0bba61c5-dfc3-43e7-effe-8afd20071025.dump'))
     data = f.readlines()
     assert 1 == len(data)
     assert 'dump test of 0bba61c5-dfc3-43e7-effe-8afd20071025' == data[0].strip()
     f.close()
-    f = open(os.path.join(testDir,'name/0b/ba/61/c5/0bba61c5-dfc3-43e7-effe-8afd20071025.json'))
+    f = open(os.path.join(testDir,'20071025/name/0b/ba/61/c5/0bba61c5-dfc3-43e7-effe-8afd20071025.json'))
     data = f.readlines()
     assert 1 == len(data)
     assert 'json test of 0bba61c5-dfc3-43e7-effe-8afd20071025' == data[0].strip()
@@ -97,12 +100,12 @@ def testCreateTestSet():
 
   try:
     createJDS.createTestSet(minSet,{'jsonIsEmpty':True},testDir)
-    f = open(os.path.join(testDir,'name/0b/ba/61/c5/0bba61c5-dfc3-43e7-effe-8afd20071025.dump'))
+    f = open(os.path.join(testDir,'20071025/name/0b/ba/61/c5/0bba61c5-dfc3-43e7-effe-8afd20071025.dump'))
     data = f.readlines()
     assert 1 == len(data)
     assert 'dump test of 0bba61c5-dfc3-43e7-effe-8afd20071025' == data[0].strip()
     f.close()
-    f = open(os.path.join(testDir,'name/0b/ba/61/c5/0bba61c5-dfc3-43e7-effe-8afd20071025.json'))
+    f = open(os.path.join(testDir,'20071025/name/0b/ba/61/c5/0bba61c5-dfc3-43e7-effe-8afd20071025.json'))
     data = f.readlines()
     assert 0 == len(data)
     f.close()
@@ -114,12 +117,12 @@ def testCreateTestSet():
 
   try:
     createJDS.createTestSet(minSet,{'jsonIsBogus':False, 'jsonFileGenerator':'default'},testDir)
-    f = open(os.path.join(testDir,'name/0b/ba/61/c5/0bba61c5-dfc3-43e7-effe-8afd20071025.dump'))
+    f = open(os.path.join(testDir,'20071025/name/0b/ba/61/c5/0bba61c5-dfc3-43e7-effe-8afd20071025.dump'))
     data = f.readlines()
     assert 1 == len(data)
     assert 'dump test of 0bba61c5-dfc3-43e7-effe-8afd20071025' == data[0].strip()
     f.close()
-    f = open(os.path.join(testDir,'name/0b/ba/61/c5/0bba61c5-dfc3-43e7-effe-8afd20071025.json'))
+    f = open(os.path.join(testDir,'20071025/name/0b/ba/61/c5//0bba61c5-dfc3-43e7-effe-8afd20071025.json'))
     data = f.readlines()
     assert 1 == len(data)
     expect='{"BuildID": "bogusBuildID-00", "Version": "bogusVersion-00", "ProductName": "bogusName-00"}'
@@ -133,12 +136,12 @@ def testCreateTestSet():
 
   try:
     createJDS.createTestSet(minSet,{'jsonIsBogus':False},testDir)
-    f = open(os.path.join(testDir,'name/0b/ba/61/c5/0bba61c5-dfc3-43e7-effe-8afd20071025.dump'))
+    f = open(os.path.join(testDir,'20071025/name/0b/ba/61/c5/0bba61c5-dfc3-43e7-effe-8afd20071025.dump'))
     data = f.readlines()
     assert 1 == len(data)
     assert 'dump test of 0bba61c5-dfc3-43e7-effe-8afd20071025' == data[0].strip()
     f.close()
-    f = open(os.path.join(testDir,'name/0b/ba/61/c5/0bba61c5-dfc3-43e7-effe-8afd20071025.json'))
+    f = open(os.path.join(testDir,'20071025/name/0b/ba/61/c5/0bba61c5-dfc3-43e7-effe-8afd20071025.json'))
     data = f.readlines()
     assert 1 == len(data)
     expect='{"what": "legal json, bad contents", "uuid": "0bba61c5-dfc3-43e7-effe-8afd20071025"}'

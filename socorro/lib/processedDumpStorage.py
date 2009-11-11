@@ -3,6 +3,7 @@ import logging
 import os
 import simplejson
 import socorro.lib.dumpStorage as socorro_dumpStorage
+import socorro.lib.util as socorro_util
 
 class ProcessedDumpStorage(socorro_dumpStorage.DumpStorage):
   """
@@ -11,14 +12,14 @@ class ProcessedDumpStorage(socorro_dumpStorage.DumpStorage):
   default suffix '.jsonz'
   Files are located using a radix structure based on the ooid or uuid of the data, a (nearly) unique
   identifier assigned at time of collection. The ooid has three parts:
-   - The uuid prefix
+   - The ooid prefix
    - A suffix that encodes the date of assignment
    - information about the appropriate depth of the radix tree (by default: 4, but now always 2)
   The storage is a file whose name is ooid.suffix, whose path is determined by the ooid itself
   
   An additional 'date' branch is saved to facilitate finding files by date. It holds paths like
-  YYYY/mm/dd/HH/MM_n/uuid where MM is among ['00','05', ... '55'], n is a (small) digit and
-  uuid is a symbolic link to the directory in the name branch holding uuid.jsonz
+  YYYY/mm/dd/HH/MM_n/ooid where MM is among ['00','05', ... '55'], n is a (small) digit and
+  ooid is a symbolic link to the directory in the name branch holding ooid.jsonz
   """
   def __init__(self, root = '.', **kwargs):
     """
@@ -49,77 +50,70 @@ class ProcessedDumpStorage(socorro_dumpStorage.DumpStorage):
       self.fileSuffix = ".%s" % (self.fileSuffix)
     self.logger = kwargs.get('logger', logging.getLogger('dumpStorage'))
 
-  def newEntry(self, uuid, timestamp=None):
+  def newEntry(self, ooid, timestamp=None):
     """
-    Given a uuid, create an empty file and a writeable 'file' handle (actually GzipFile) to it
+    Given a ooid, create an empty file and a writeable 'file' handle (actually GzipFile) to it
     Create the symbolic link from the date branch to the file's storage directory
     Returns the 'file' handle, or None if there was a problem
     """
-    print "ENTR",uuid,timestamp
-    nameDir, dateDir = super(ProcessedDumpStorage,self).newEntry(uuid,timestamp)
-    print "SUPER DONE",nameDir,dateDir
-    dname = os.path.join(nameDir,uuid+self.fileSuffix)
-    print "DNAME",dname
+    nameDir, dateDir = super(ProcessedDumpStorage,self).newEntry(ooid,timestamp)
+    dname = os.path.join(nameDir,ooid+self.fileSuffix)
     df = None
     try:
-      print 'try'
       df = gzip.open(dname,'w',self.gzipCompression)
-      print 'that worked'
     except IOError,x:
-      print 'oopsy',x
       if 2 == x.errno:
         # We might have lost this directory during a cleanup in another thread or process. Do again.
-        nameDir,nparts = self.makeNameDir(uuid,timestamp)
+        nameDir,nparts = self.makeNameDir(ooid,timestamp)
         df = gzip.open(dname,'w',self.gzipCompression)
       else:
         raise x
     except Exception,x:
-      print 'DAMIT',type(x),x
       raise
     finally:
       if not df:
-        os.unlink(os.path.join(dateDir,uuid))
+        os.unlink(os.path.join(dateDir,ooid))
     return df
 
-  def putDumpToFile(self,uuid,dumpObject, timestamp=None):
+  def putDumpToFile(self,ooid,dumpObject, timestamp=None):
     """
-    Given a uuid and an dumpObject, create the appropriate dump file and fill it with object's data
+    Given a ooid and an dumpObject, create the appropriate dump file and fill it with object's data
     """
-    fh = self.newEntry(uuid, timestamp)
+    fh = self.newEntry(ooid, timestamp)
     try:
       simplejson.dump(dumpObject,fh)
     finally:
       fh.close()
 
-  def getDumpFromFile(self,uuid):
+  def getDumpFromFile(self,ooid):
     """
-    Given a uuid, extract and return a dumpObject from the associated file if possible.
+    Given a ooid, extract and return a dumpObject from the associated file if possible.
     raises OSError if the file is missing or unreadable
     """
     df = None
     try:
-      df = gzip.open(self.getDumpPath(uuid))
+      df = gzip.open(self.getDumpPath(ooid))
       return simplejson.load(df)
     finally:
       if df:
         df.close()
 
-  def getDumpPath(self,uuid):
+  def getDumpPath(self,ooid):
     """
-    Return an absolute path for the file for a given uuid
+    Return an absolute path for the file for a given ooid
     Raise: OSError if the file is missing or unreadable
     """
-    path = os.path.join(self.namePath(uuid)[0],uuid+self.fileSuffix)
+    path = os.path.join(self.namePath(ooid)[0],ooid+self.fileSuffix)
     self.readableOrThrow(path)
     return path
 
-  def removeDumpFile(self, uuid):
+  def removeDumpFile(self, ooid):
     """
-    Find and remove the dump file for the given uuid.
+    Find and remove the dump file for the given ooid.
     Quietly continue if unfound. Log problem and continue if irremovable.
     """
     try:
-      filePath = self.getDumpPath(uuid)
+      filePath = self.getDumpPath(ooid)
       os.unlink(filePath)
     except OSError,x:
       if 2 != x.errno:

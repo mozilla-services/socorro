@@ -1,7 +1,7 @@
 import unittest
 import os
 import shutil
-import datetime as DT
+import datetime
 import time
 import sys
 
@@ -90,13 +90,9 @@ class TestJsonDumpStorage(unittest.TestCase):
     except Exception,x:
       assert False, "Expected OSError, got %s for linkpath %s"%(x,linkpath)
 
-  def __hasDatePathOrFail(self,jsonStorage,dt):
-    slot =  jsonStorage.minutesPerSlot * int(dt.minute/jsonStorage.minutesPerSlot)
-    dparts = (jsonStorage.root,jsonStorage.dailyPart('',dt),jsonStorage.dateName,"%02d"%dt.hour,"%02d"%slot)
-    dpath = os.sep.join(dparts)
-    assert os.path.isdir(dpath), 'Expect existing path for %s'%dt
-    for d in os.listdir(dpath):
-      assert os.path.isdir(os.path.join(dpath,d)), 'Expect %s/%s from %s is a directory'%(dpath,d,dt)
+  def __hasDatePathOrFail(self,jsonStorage,ooid,dt):
+    dpath,dpathParts = jsonStorage.lookupOoidInDatePath(dt,ooid)
+    assert os.path.isdir(dpath), 'Expect %s is a directory'%(dpath)
 
   def __relativeDateParts(self,dateString,minutesPerSlot):
     """ given "YYYY-mm-dd-hh-mm", return [hh,slot]"""
@@ -122,7 +118,8 @@ class TestJsonDumpStorage(unittest.TestCase):
     storage = JDS.JsonDumpStorage(self.testDir,**self.initKwargs[2])
     for uuid,data in createJDS.jsonFileData.items():
       datetimedata = [int(x) for x in data[0].split('-')]
-      stamp = DT.datetime(*datetimedata)
+      uuid = ''.join((uuid[:-7],'2',uuid[-6:]))
+      stamp = datetime.datetime(*datetimedata)
       try:
         fj,fd = storage.newEntry(uuid,webheadHostName=data[1],timestamp = stamp)
       except IOError:
@@ -183,7 +180,7 @@ class TestJsonDumpStorage(unittest.TestCase):
       df.write('dump file: %s\n'%uuid)
       jf.close()
       df.close()
-      stamp = DT.datetime(*[int(x) for x in stampS.split('-')])
+      stamp = datetime.datetime(*[int(x) for x in stampS.split('-')])
       newjpath = None
       try:
         ok = storage.copyFrom(uuid,jpath,dpath,head,stamp,doLink,doRm)
@@ -212,13 +209,35 @@ class TestJsonDumpStorage(unittest.TestCase):
         assert os.path.isfile(jpath)
         assert os.path.isfile(dpath)
 
+  def testTransferOne(self):
+    createJDS.createTestSet(createJDS.jsonFileData,self.initKwargs[0],rootDir=self.testMoveFrom)
+    storage = JDS.JsonDumpStorage(self.testDir,**self.initKwargs[0])
+    oldStorage = JDS.JsonDumpStorage(self.testMoveFrom, **self.initKwargs[0])
+    itemNumber = 0
+    xmas = datetime.datetime(2001,12,25,12,25)
+    for id in createJDS.jsonFileData.keys():
+      createLinks = 0 == itemNumber%2
+      removeOld = 0 == itemNumber%3
+      itemNumber += 1
+      storage.transferOne(id,oldStorage,createLinks=createLinks,removeOld=removeOld,aDate=xmas)
+      try:
+        storage.getJson(id)
+      except Exception,x:
+        print '(%s): %s'%(type(x),x)
+        assert False, 'Expected to find a transferred json file for %s' % id
+      if createLinks:
+        self.__hasLinkOrFail(storage,id)
+        self.__hasDatePathOrFail(storage,id,xmas)
+      if removeOld:
+        assert_raises(OSError,oldStorage.getJson,id)
+
   def testGetJson(self):
-    createJDS.createTestSet(createJDS.jsonFileData, self.initKwargs[0],self.testDir,newStyle=True)
+    createJDS.createTestSet(createJDS.jsonFileData, self.initKwargs[0],self.testDir)
     storage = JDS.JsonDumpStorage(self.testDir,**self.initKwargs[0])
     for uuid,data in createJDS.jsonFileData.items():
       dateparts = data[0].split('-')
       daily = "%4d%02d%02d"%tuple([int(x) for x in dateparts[:3]])
-      expected = os.sep.join((storage.root,daily,storage.indexName,data[2][:5],uuid+storage.jsonSuffix))
+      expected = os.sep.join((storage.root,daily,storage.indexName,data[2],uuid+storage.jsonSuffix))
       got = storage.getJson(uuid)
       assert expected == got, 'Expected json file %s, got %s' % (expected,got)
     try:
@@ -230,12 +249,12 @@ class TestJsonDumpStorage(unittest.TestCase):
       assert False, 'Got unexpected error %s from attempt to getJson(non-existent-uuid' % e
 
   def testGetDump(self):
-    createJDS.createTestSet(createJDS.jsonFileData,self.initKwargs[1],self.testDir,newStyle=True)
+    createJDS.createTestSet(createJDS.jsonFileData,self.initKwargs[1],self.testDir)
     storage = JDS.JsonDumpStorage(self.testDir,**self.initKwargs[1])
     for uuid,data in createJDS.jsonFileData.items():
       dateparts = data[0].split('-')
       daily = "%4d%02d%02d"%tuple([int(x) for x in dateparts[:3]])
-      expected = os.sep.join((storage.root,daily,storage.indexName,data[2][:5],uuid+storage.dumpSuffix))
+      expected = os.sep.join((storage.root,daily,storage.indexName,data[2],uuid+storage.dumpSuffix))
       got =  storage.getDump(uuid)
       assert expected == got, 'Expected dump file %s, got %s' % (expected,got)
     try:
@@ -247,7 +266,7 @@ class TestJsonDumpStorage(unittest.TestCase):
       assert False, 'Got unexpected error(type) %s from attempt to getDump(non-existent-uuid' % e
 
   def markAsSeen(self):
-    createJDS.createTestSet(createJDS.jsonFileData,self.initKwargs[3],self.testDir,newStyle=True)
+    createJDS.createTestSet(createJDS.jsonFileData,self.initKwargs[3],self.testDir)
     storage = JDS.JsonDumpStorage(self.testDir,**self.initKwargs[3])
     for uuid,data in createJDS.jsonFileData.items():
       assert os.path.islink(os.sep.join((storage.dateBranch,data[3],uuid))), 'Expect a link from date to name for %s' % uuid
@@ -264,7 +283,7 @@ class TestJsonDumpStorage(unittest.TestCase):
     assert not os.listdir(storage.dateBranch), 'Expect empty, got %s' % os.listdir(storage.dateBranch)
 
   def testDestructiveDateWalk(self):
-    createJDS.createTestSet(createJDS.jsonFileData,self.initKwargs[0],self.testDir,newStyle=True)
+    createJDS.createTestSet(createJDS.jsonFileData,self.initKwargs[0],self.testDir)
     storage = JDS.JsonDumpStorage(self.testDir,**self.initKwargs[0])
     uuids = createJDS.jsonFileData.keys()
     uuidsSet = set(uuids)
@@ -278,8 +297,25 @@ class TestJsonDumpStorage(unittest.TestCase):
     for d in daily:
       assert not storage.dateName in os.listdir(os.path.join(storage.root,d)), 'Expected all date subdirs to be gone, but %s'%d
 
+  def testMarkAsSeen(self):
+    """testNewJsonDumpStorage:TestJsonDumpStorage.testMarkAsSeen()
+    somewhat bogus test: Doesn't look for failure modes
+    """
+    createJDS.createTestSet(createJDS.jsonFileData,self.initKwargs[0],rootDir=self.testDir)
+    storage = JDS.JsonDumpStorage(self.testDir,**self.initKwargs[2])
+    for ooid in createJDS.jsonFileData.keys():
+      namePath,parts = storage.namePath(ooid)
+      linkInName = os.path.join(namePath,ooid)
+      assert os.path.islink(linkInName), 'expected %s as link'%linkInName
+      dpath = os.path.join(namePath,os.readlink(linkInName))
+      linkInDate = os.path.join(dpath,ooid)
+      assert os.path.islink(linkInDate), 'expected %s as link'%linkInDate
+      storage.markAsSeen(ooid)
+      assert not os.path.exists(linkInName), 'expected %s gone'%linkInName
+      assert not os.path.exists(linkInDate), 'expected %s gone'%linkInDate
+
   def testDestructiveDateWalkNotNow(self):
-    createJDS.createTestSet(self.currenttimes,self.initKwargs[1],self.testDir,newStyle=True)
+    createJDS.createTestSet(self.currenttimes,self.initKwargs[1],self.testDir)
     storage = JDS.JsonDumpStorage(self.testDir,**self.initKwargs[1])
     uuids = self.currenttimes.keys()
     seenids = []
@@ -288,7 +324,7 @@ class TestJsonDumpStorage(unittest.TestCase):
     assert [] == seenids
 
   def testRemove(self):
-    createJDS.createTestSet(createJDS.jsonFileData,self.initKwargs[2],self.testDir,newStyle=True)
+    createJDS.createTestSet(createJDS.jsonFileData,self.initKwargs[2],self.testDir)
     storage = JDS.JsonDumpStorage(self.testDir,**self.initKwargs[2])
     counter = 0
     for uuid in createJDS.jsonFileData.keys():
@@ -322,45 +358,11 @@ class TestJsonDumpStorage(unittest.TestCase):
     assert [] == alllinks, 'Expect that all links are gone, but found %s' % alllinks
     assert_raises(JDS.NoSuchUuidFound,storage.remove,"bogusdatax3yymmdd")
 
-#   def testMove(self):
-#     createJDS.createTestSet(createJDS.jsonFileData,self.initKwargs[3],self.testDir,newStyle=True)
-#     storage = JDS.JsonDumpStorage(self.testDir,**self.initKwargs[3])
-#     os.mkdir(self.testMoveTo)
-#     for uuid in createJDS.jsonFileData.keys():
-#       storage.move(uuid,os.path.join('.','TEST-MOVETO'))
-#     allfiles = []
-#     alllinks = []
-#     for dir, dirs, files in os.walk(self.testDir):
-#       for file in files:
-#         allfiles.append(file)
-#         if os.path.islink(os.path.join(dir,file)):
-#           alllinks.append(file)
-#       for d in dirs:
-#         if os.path.islink(os.path.join(dir,d)):
-#           alllinks.append(d)
-#     assert [] == allfiles, 'Expect that all moved files are gone, but found %s' % allfiles
-#     assert [] == alllinks, 'Expcet that all links are gone, but found %s' % alllinks
-#     allfiles = []
-#     alllinks = []
-#     expectedFiles = [x+storage.jsonSuffix for x in createJDS.jsonFileData.keys() ]
-#     expectedFiles.extend([x+storage.dumpSuffix for x in createJDS.jsonFileData.keys() ])
-#     for dir, dirs, files in os.walk(os.path.join('.','TEST-MOVETO')):
-#       for file in files:
-#         allfiles.append(file)
-#         assert file in expectedFiles, 'Expect that each moved file will be expected but found %s' % file
-#         if os.path.islink(os.path.join(dir,file)): alllinks.append(file)
-#       for d in dirs:
-#         if os.path.islink(os.path.join(dir,d)): alllinks.append(d)
-#     assert [] == alllinks, 'Expect no links in the move-to directory, but found %s' % alllinks
-#     for file in expectedFiles:
-#       assert file in allfiles, 'Expect that every file will be moved but did not find %s' % file
-
   def testRemoveAlsoNames(self):
     """testJsonDumpStorage:TestJsonDumpStorage.testRemoveAlsoNames(self)
     Try to remove them all, and check that they are indeed all gone.
     """
-    print
-    createJDS.createTestSet(createJDS.jsonFileData,self.initKwargs[2],self.testDir,newStyle=True)
+    createJDS.createTestSet(createJDS.jsonFileData,self.initKwargs[2],self.testDir)
     kwargs = self.initKwargs[2]
     kwargs['cleanIndexDirectories'] = 'True'
     storage = JDS.JsonDumpStorage(self.testDir,**kwargs)
@@ -369,7 +371,7 @@ class TestJsonDumpStorage(unittest.TestCase):
     assert not os.listdir(storage.root), 'Expected them all to go, but %s'%(os.listdir(storage.root))
 
   def testRemoveRemovesOnlyDate(self):
-    createJDS.createTestSet(createJDS.jsonFileData,self.initKwargs[2],self.testDir,newStyle=True)
+    createJDS.createTestSet(createJDS.jsonFileData,self.initKwargs[2],self.testDir)
     storage = JDS.JsonDumpStorage(self.testDir,**self.initKwargs[2])
     dailies = set([])
     expectedSubs = []
@@ -409,7 +411,7 @@ class TestJsonDumpStorage(unittest.TestCase):
       assert sub in alldirs, "Expect each subdirectory is still there, but didn't find %s" % sub
 
   def testRemoveWithBadlyFormattedDateLink(self):
-    createJDS.createTestSet(createJDS.jsonFileData,self.initKwargs[2],self.testDir,newStyle=True)
+    createJDS.createTestSet(createJDS.jsonFileData,self.initKwargs[2],self.testDir)
     storage = JDS.JsonDumpStorage(self.testDir,**self.initKwargs[2])
     uuid = createJDS.jsonFileData.keys()[0]
     head,json = os.path.split(storage.getJson(uuid))
@@ -423,11 +425,11 @@ class TestJsonDumpStorage(unittest.TestCase):
     storage.remove(uuid)
 
 #   def testRemoveOlderThan(self):
-#     createJDS.createTestSet(createJDS.jsonFileData,self.initKwargs[0],self.testDir,newStyle=True)
+#     createJDS.createTestSet(createJDS.jsonFileData,self.initKwargs[0],self.testDir)
 #     storage = JDS.JsonDumpStorage(self.testDir,**self.initKwargs[0])
-#     cutoff = DT.datetime(2008,12,26,05,0)
-#     youngkeys = [x for x,d in createJDS.jsonFileData.items() if DT.datetime(*[int(i) for i in d[0].split('-')]) >= cutoff]
-#     oldkeys = [x for x,d in createJDS.jsonFileData.items() if DT.datetime(*[int(i) for i in d[0].split('-')]) < cutoff]
+#     cutoff = datetime.datetime(2008,12,26,05,0)
+#     youngkeys = [x for x,d in createJDS.jsonFileData.items() if datetime.datetime(*[int(i) for i in d[0].split('-')]) >= cutoff]
+#     oldkeys = [x for x,d in createJDS.jsonFileData.items() if datetime.datetime(*[int(i) for i in d[0].split('-')]) < cutoff]
 
 #     for k in youngkeys:
 #       assert k in createJDS.jsonFileData.keys(),"Expected %s in %s"%(k,createJDS.jsonFileData.keys())
@@ -476,29 +478,45 @@ class TestJsonDumpStorage(unittest.TestCase):
 #       assert id in seenuuid, 'Expect that every new key is found, but %s' % id
 #       assert os.path.isdir(os.path.join(storage.dateBranch,createJDS.jsonFileData[id][3]))
 
-  def testMarkAsSeen(self):
-    """testNewJsonDumpStorage:TestJsonDumpStorage.testMarkAsSeen()
-    somewhat bogus test: Doesn't look for failure modes
-    """
-    createJDS.createTestSet(createJDS.jsonFileData,self.initKwargs[0],rootDir=self.testDir,newStyle=True)
-    storage = JDS.JsonDumpStorage(self.testDir,**self.initKwargs[2])
-    for ooid in createJDS.jsonFileData.keys():
-      namePath,parts = storage.namePath(ooid)
-      linkInName = os.path.join(namePath,ooid)
-      assert os.path.islink(linkInName), 'expected %s as link'%linkInName
-      dpath = os.path.join(namePath,os.readlink(linkInName))
-      linkInDate = os.path.join(dpath,ooid)
-      assert os.path.islink(linkInDate), 'expected %s as link'%linkInDate
-      storage.markAsSeen(ooid)
-      assert not os.path.exists(linkInName), 'expected %s gone'%linkInName
-      assert not os.path.exists(linkInDate), 'expected %s gone'%linkInDate
+#   def testMove(self):
+#     createJDS.createTestSet(createJDS.jsonFileData,self.initKwargs[3],self.testDir)
+#     storage = JDS.JsonDumpStorage(self.testDir,**self.initKwargs[3])
+#     os.mkdir(self.testMoveTo)
+#     for uuid in createJDS.jsonFileData.keys():
+#       storage.move(uuid,os.path.join('.','TEST-MOVETO'))
+#     allfiles = []
+#     alllinks = []
+#     for dir, dirs, files in os.walk(self.testDir):
+#       for file in files:
+#         allfiles.append(file)
+#         if os.path.islink(os.path.join(dir,file)):
+#           alllinks.append(file)
+#       for d in dirs:
+#         if os.path.islink(os.path.join(dir,d)):
+#           alllinks.append(d)
+#     assert [] == allfiles, 'Expect that all moved files are gone, but found %s' % allfiles
+#     assert [] == alllinks, 'Expcet that all links are gone, but found %s' % alllinks
+#     allfiles = []
+#     alllinks = []
+#     expectedFiles = [x+storage.jsonSuffix for x in createJDS.jsonFileData.keys() ]
+#     expectedFiles.extend([x+storage.dumpSuffix for x in createJDS.jsonFileData.keys() ])
+#     for dir, dirs, files in os.walk(os.path.join('.','TEST-MOVETO')):
+#       for file in files:
+#         allfiles.append(file)
+#         assert file in expectedFiles, 'Expect that each moved file will be expected but found %s' % file
+#         if os.path.islink(os.path.join(dir,file)): alllinks.append(file)
+#       for d in dirs:
+#         if os.path.islink(os.path.join(dir,d)): alllinks.append(d)
+#     assert [] == alllinks, 'Expect no links in the move-to directory, but found %s' % alllinks
+#     for file in expectedFiles:
+#       assert file in allfiles, 'Expect that every file will be moved but did not find %s' % file
 
 #   def testTransferOne(self):
-#     createJDS.createTestSet(createJDS.jsonFileData,self.initKwargs[0],rootDir=self.testMoveFrom,newStyle=True)
+#     createJDS.createTestSet(createJDS.jsonFileData,self.initKwargs[0],rootDir=self.testMoveFrom)
 #     storage = JDS.JsonDumpStorage(self.testDir,**self.initKwargs[0])
 #     oldStorage = JDS.JsonDumpStorage(self.testMoveFrom, **self.initKwargs[0])
 #     itemNumber = 0
-#     xmas = DT.datetime(2001,12,25,12,25)
+#     xmas = datetime.datetime(2001,12,25,12,25)
 #     for id in createJDS.jsonFileData.keys():
 #       #case 0: copyLinks = True, makeNewDateLinks = False and there are links
 #       #case 1: copyLinks = True, makeNewDateLinks = False  and there are no links
@@ -537,10 +555,10 @@ class TestJsonDumpStorage(unittest.TestCase):
 #         self.__hasNoLinkOrFail(storage,id)
 
 #   def testTransferMany(self):
-#     createJDS.createTestSet(createJDS.jsonFileData,self.initKwargs[0],rootDir=self.testMoveFrom,newStyle=True)
+#     createJDS.createTestSet(createJDS.jsonFileData,self.initKwargs[0],rootDir=self.testMoveFrom)
 #     oldStorage = JDS.JsonDumpStorage(self.testMoveFrom, **self.initKwargs[0])
 #     itemNumber = 0
-#     xmas = DT.datetime(2001,12,25,12,25)
+#     xmas = datetime.datetime(2001,12,25,12,25)
 #     hasLinks = {}
 #     for id in createJDS.jsonFileData.keys():
 #       hasLinks[id] = True

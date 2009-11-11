@@ -110,7 +110,6 @@ class TestProcessedDumpStorage(unittest.TestCase):
   def testNewEntry(self):
     storage = dumpStorage.ProcessedDumpStorage(self.testDir,**self.initKwargs[0])
     for ooid,(tdate,wh,pathprefix,longDatePath) in createJDS.jsonFileData.items():
-      pathprefix = os.sep.join(pathprefix.split('/')[:2]) # we are going to always use two for processedDumpStorage depth
       dailyPart = ''.join(tdate.split('-')[:3])
       expectedDir = os.sep.join((storage.root,dailyPart,storage.indexName,pathprefix))
       expectedPath = os.path.join(expectedDir,"%s%s"%(ooid,storage.fileSuffix))
@@ -118,17 +117,28 @@ class TestProcessedDumpStorage(unittest.TestCase):
       datepart = "%s_0"%(os.path.join(hourPart,slot))
       expectedDateDir = os.sep.join((storage.root,dailyPart,storage.dateName,datepart))
       testStamp = datetime.datetime(*[int(x) for x in tdate.split('-')])
-      fh = storage.newEntry(ooid,testStamp)
+      fh = None
       try:
-        assert expectedPath == fh.fileobj.name, 'Expected: %s, got: %s'%(expectedPath,fh.name)
-        dToN = os.path.join(expectedDateDir,ooid)
-        assert os.path.islink(dToN),'Expected %s to be link exists:%s'%(dToN,os.path.exists(dToN))
-        datapath = os.readlink(os.path.join(expectedDateDir,ooid))
-        # The next lines prove we have a relative-path link
-        zigpath = os.path.join(expectedDateDir,datapath)
-        assert os.path.isfile(os.path.join(zigpath,"%s%s"%(ooid,storage.fileSuffix)))
+        fh = storage.newEntry(ooid,testStamp)
+        fh.write(expectedPath)
       finally:
         fh.close()
+      assert os.path.exists(expectedPath), 'Expected: gzip file %s but none there'%(expectedPath)
+      try:
+        fh = gzip.open(expectedPath)
+        firstline = fh.readline()
+        assert expectedPath == firstline, 'Expected this file to contain its own path, but %s'%firstline
+        nextline = fh.readline()
+        assert '' == nextline, 'Expected this file to contain ONLY its own path, but %s'%nextline
+      finally:
+        fh.close()
+      dToN = os.path.join(expectedDateDir,ooid)
+      assert os.path.islink(dToN),'Expected %s to be link exists:%s'%(dToN,os.path.exists(dToN))
+      datapath = os.readlink(os.path.join(expectedDateDir,ooid))
+      # The next lines prove we have a relative-path link
+      zigpath = os.path.join(expectedDateDir,datapath)
+      assert os.path.isfile(os.path.join(zigpath,"%s%s"%(ooid,storage.fileSuffix)))
+      assert os.path.pardir in zigpath,'But zigpath has no "parent directory" parts?: %s'%(zigpath)
 
   def testPutDumpToFile(self):
     """
@@ -221,7 +231,7 @@ class TestProcessedDumpStorage(unittest.TestCase):
       expectedCount -= 1
       for dir,dirs,files in os.walk(storage.root):
         dumpFiles.update(files)
-      assert expectedCount == len(dumpFiles)
+      assert expectedCount == len(dumpFiles),'\n   %s: expected %d, but %d\n - %s'%(ooid,expectedCount,len(dumpFiles), '\n - '.join(dumpFiles))
       
   def testGetDumpFromFile(self):
     storage = dumpStorage.ProcessedDumpStorage(self.testDir,**self.initKwargs[0])
@@ -239,18 +249,14 @@ class TestProcessedDumpStorage(unittest.TestCase):
     testStamp = datetime.datetime(*[int(x) for x in tdate.split('-')])
     fh = storage.newEntry(ooid,testStamp)
     fh.close()
+    storage.removeDumpFile(ooid)
+    #Next line fails ugly and useless unless we have fixed the problem
+    nh = None
     try:
-      storage.removeDumpFile(ooid)
-      #Next line fails ugly and useless unless we have fixed the problem
-      print "OK YY"
-      fh = storage.newEntry(ooid,testStamp)
-      print "OK THAT WORKED"
-    except Exception,x:
-      print type(x),x
+      nh = storage.newEntry(ooid,testStamp)
     finally:
-      if fh:
-        print fh
-        fh.close()
+      if nh:
+        nh.close()
 
 
 if __name__ == "__main__":

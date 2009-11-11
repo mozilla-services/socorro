@@ -1123,8 +1123,12 @@ class TestProcessor:
     uuid1 = data[1][1]
     createJDS.createTestSet({uuid0:createJDS.jsonFileData[uuid0]},{'logger':me.logger},p.config.storageRoot)
     createJDS.createTestSet({uuid1:createJDS.jsonFileData[uuid1]},{'logger':me.logger},p.config.deferredStorageRoot)
-    p0 = os.sep.join((p.config.storageRoot+'name',createJDS.jsonFileData[uuid0][2], uuid0+'.json'))
-    p1 = os.sep.join((p.config.deferredStorageRoot+'name',createJDS.jsonFileData[uuid1][2], uuid1+'.json',))
+    data0 = createJDS.jsonFileData[uuid0]
+    data1 = createJDS.jsonFileData[uuid1]
+    dy0 = ''.join(data0[0].split('-')[:3])
+    dy1 = ''.join(data1[0].split('-')[:3])
+    p0 = os.sep.join((p.config.storageRoot.rstrip(os.path.sep),dy0,'name',createJDS.jsonFileData[uuid0][2], uuid0+'.json'))
+    p1 = os.sep.join((p.config.deferredStorageRoot.rstrip(os.path.sep),dy1,'name',createJDS.jsonFileData[uuid1][2], uuid1+'.json',))
     assert p0 == p.jsonPathForUuidInJsonDumpStorage(uuid0)
     assert p1 == p.jsonPathForUuidInJsonDumpStorage(uuid1)
     assert_raises(processor.UuidNotFoundException,p.jsonPathForUuidInJsonDumpStorage,createJDS.jsonBadUuid)
@@ -1142,8 +1146,12 @@ class TestProcessor:
     uuid1 = data[1][1]
     createJDS.createTestSet({uuid0:createJDS.jsonFileData[uuid0]},{'logger':me.logger},p.config.storageRoot)
     createJDS.createTestSet({uuid1:createJDS.jsonFileData[uuid1]},{'logger':me.logger},p.config.deferredStorageRoot)
-    p0 = os.sep.join((p.config.storageRoot+'name',createJDS.jsonFileData[uuid0][2], uuid0+'.dump'))
-    p1 = os.sep.join((p.config.deferredStorageRoot+'name',createJDS.jsonFileData[uuid1][2], uuid1+'.dump',))
+    data0 = createJDS.jsonFileData[uuid0]
+    data1 = createJDS.jsonFileData[uuid1]
+    dy0 = ''.join(data0[0].split('-')[:3])
+    dy1 = ''.join(data1[0].split('-')[:3])
+    p0 = os.sep.join((p.config.storageRoot.rstrip(os.path.sep),dy0,'name',createJDS.jsonFileData[uuid0][2], uuid0+'.dump'))
+    p1 = os.sep.join((p.config.deferredStorageRoot.rstrip(os.path.sep),dy1,'name',createJDS.jsonFileData[uuid1][2], uuid1+'.dump',))
     assert p0 == p.dumpPathForUuidInJsonDumpStorage(uuid0)
     assert p1 == p.dumpPathForUuidInJsonDumpStorage(uuid1)
     assert_raises(processor.UuidNotFoundException,p.dumpPathForUuidInJsonDumpStorage,createJDS.jsonBadUuid)

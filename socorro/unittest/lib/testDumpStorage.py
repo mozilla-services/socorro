@@ -11,6 +11,7 @@ import socorro.lib.dumpStorage as dumpStorage
 import socorro.lib.util as socorro_util
 
 import socorro.unittest.testlib.util as test_util
+import socorro.unittest.testlib.createJsonDumpStore as createJDS
 
 def setup_module():
   print test_util.getModuleFromFile(__file__)
@@ -20,26 +21,24 @@ class TestDumpStorage():
     self.expectedTestDir = os.path.join('.','TEST-DUMP')
     self.testDir = self.expectedTestDir+os.sep
     self.testData = {
-      '0bba61c5-dfc3-43e7-dead-8afd20081225': ['0b/ba',datetime.datetime(2008,12,25,12,0, 0),'12/00'],
-      '0bba929f-8721-460c-dead-a43c20081225': ['0b/ba',datetime.datetime(2008,12,25,12,0, 1),'12/00'],
-      '0b9ff107-8672-4aac-dead-b2bd20081225': ['0b/9f',datetime.datetime(2008,12,25,12,0,59),'12/00'],
-      '22adfb61-f75b-11dc-dead-001320081225': ['22/ad',datetime.datetime(2008,12,25,12,55,0),'12/55'],
-      'b965de73-ae90-a935-dead-03ae20080101': ['b9/65',datetime.datetime(2008, 1, 1,1,20,31),'01/20'],
-      '0b781b88-ecbe-4cc4-dead-6bbb20080203': ['0b/78',datetime.datetime(2008, 2, 3, 4,1,45),'04/00'],
+      '0bba61c5-dfc3-43e7-dead-8afd22081225': ['0b/ba',datetime.datetime(2008,12,25,12,0, 0),'12/00'],
+      '0bba929f-8721-460c-dead-a43c20081225': ['0b/ba/92/9f',datetime.datetime(2008,12,25,12,0, 1),'12/00'],
+      '0b9ff107-8672-4aac-dead-b2bd22081225': ['0b/9f',datetime.datetime(2008,12,25,12,0,59),'12/00'],
+      '22adfb61-f75b-11dc-dead-001322081225': ['22/ad',datetime.datetime(2008,12,25,12,55,0),'12/55'],
+      'b965de73-ae90-a935-dead-03ae22080101': ['b9/65',datetime.datetime(2008, 1, 1,1,20,31),'01/20'],
+      '0b781b88-ecbe-4cc4-dead-6bbb20080203': ['0b/78/1b/88',datetime.datetime(2008, 2, 3, 4,1,45),'04/00'],
       }
     self.ctorData = {
       0:{'dateName':'otherDate','logger':logging.getLogger('otherLogger')},
-      1:{'indexName':'otherIndex','storageDepth':3},
-      2:{'storageDepth':'4','minutesPerSlot':10},
-      3:{'minutesPerSlot':'10','dirPermissions':0577},
-      4:{'dumpGID':32111,'subSlotCount':3},
-      5:{}
+      1:{'indexName':'otherIndex','minutesPerSlot':10},
+      2:{'minutesPerSlot':'10','dirPermissions':0577},
+      3:{'dumpGID':32111,'subSlotCount':3},
+      4:{}
       }
     self.expectedCtor = {
       0:{'root':self.expectedTestDir,
          'dateName':'otherDate',
          'indexName':'name',
-         'storageDepth':2,
          'minutesPerSlot':5,
          'dirPermissions':0770,
          'dumpGID':None,
@@ -49,8 +48,7 @@ class TestDumpStorage():
       1:{'root':self.expectedTestDir,
          'dateName':'date',
          'indexName':'otherIndex',
-         'storageDepth':3,
-         'minutesPerSlot':5,
+         'minutesPerSlot':10,
          'dirPermissions':0770,
          'dumpGID':None,
          'logger.name':'dumpStorage',
@@ -59,9 +57,8 @@ class TestDumpStorage():
       2:{'root':self.expectedTestDir,
          'dateName':'date',
          'indexName':'name',
-         'storageDepth':4,
          'minutesPerSlot':10,
-         'dirPermissions':0770,
+         'dirPermissions':0577,
          'dumpGID':None,
          'logger.name':'dumpStorage',
          'subSlotCount': 0,
@@ -69,27 +66,15 @@ class TestDumpStorage():
       3:{'root':self.expectedTestDir,
          'dateName':'date',
          'indexName':'name',
-         'storageDepth':2,
-         'minutesPerSlot':10,
-         'dirPermissions':0577,
-         'dumpGID':None,
-         'logger.name':'dumpStorage',
-         'subSlotCount': 0,
-         },
-      4:{'root':self.expectedTestDir,
-         'dateName':'date',
-         'indexName':'name',
-         'storageDepth':2,
          'minutesPerSlot':5,
          'dirPermissions':0770,
          'dumpGID':32111,
          'logger.name':'dumpStorage',
          'subSlotCount': 3,
          },
-      5:{'root':self.expectedTestDir,
+      4:{'root':self.expectedTestDir,
          'dateName':'date',
          'indexName':'name',
-         'storageDepth':2,
          'minutesPerSlot':5,
          'dirPermissions':0770,
          'dumpGID':None,
@@ -114,23 +99,82 @@ class TestDumpStorage():
       for k in self.expectedCtor[i]:
         e = self.expectedCtor[i][k]
         g = eval("d."+k)
-        assert e == g,'At loop %d, key %s: Wanted "%s", got "%s"'%(i,k,e,g)
+        if type(1) == type(e):
+          assert e == g,'At loop %d, key %s: Wanted "%0o", got "%0o"'%(i,k,e,g)
+        else:
+          assert e == g,'At loop %d, key %s: Wanted "%s", got "%s"'%(i,k,e,g)
 
-  def testReadableOrThrow(self):
-    d = dumpStorage.DumpStorage
-    assert_raises(OSError,d.readableOrThrow,self.testDir)
-    os.mkdir(self.testDir)
-    tname = 'someUselessFile_'
-    d.readableOrThrow(self.testDir)
-    f = open(tname,'w')
-    f.write('something')
-    f.close()
-    os.chmod(tname,0)
-    try:
-      assert_raises(OSError,d.readableOrThrow,tname)
-    finally:
-      os.chmod(tname,0200)
-      os.unlink(tname)
+  def testNewEntry(self):
+    # test the default case
+    d = dumpStorage.DumpStorage(self.testDir)
+    dateLeafSet = set()
+    expectedLeafs = set(['55', '00', '20'])
+    for k,v in self.testData.items():
+      nd,dd = d.newEntry(k,v[1])
+      dateLeafSet.add(os.path.split(dd)[1])
+      assert os.path.isdir(nd)
+      assert os.path.isdir(dd)
+      assert os.path.islink(os.path.join(dd,k))
+      e = os.path.abspath(nd)
+      g = os.path.abspath(os.path.join(dd,os.readlink(os.path.join(dd,k))))
+      assert e == g,'Expected %s, got %s'%(e,g)
+    assert expectedLeafs == dateLeafSet, 'Expected %s, got %s'%(expectedLeafs,dateLeafSet)
+
+    # test the for JsonDumpStorage default
+    d = dumpStorage.DumpStorage(self.testDir,subSlotCount=1)
+    dateLeafSet = set()
+    expectedLeafs = set(['55_0', '00_0', '20_0'])
+    for k,v in self.testData.items():
+      nd,dd = d.newEntry(k,v[1])
+      dateLeafSet.add(os.path.split(dd)[1])
+      assert os.path.isdir(nd)
+      assert os.path.isdir(dd)
+      assert os.path.islink(os.path.join(dd,k))
+      e = os.path.abspath(nd)
+      g = os.path.abspath(os.path.join(dd,os.readlink(os.path.join(dd,k))))
+      assert e == g,'Expected %s, got %s'%(e,g)
+    assert expectedLeafs == dateLeafSet, 'Expected %s, got %s'%(expectedLeafs,dateLeafSet)
+
+    # test the trailing _n case at same level
+    d = dumpStorage.DumpStorage(self.testDir,subSlotCount=3)
+    dateLeafSet = set()
+    expectedLeafs = set(['00_0', '20_0', '55_0'])
+    for k,v in self.testData.items():
+      nd,dd = d.newEntry(k,v[1])
+      dateLeafSet.add(os.path.split(dd)[1])
+      assert os.path.isdir(nd)
+      assert os.path.isdir(dd)
+      assert os.path.islink(os.path.join(dd,k))
+      e = os.path.abspath(nd)
+      g = os.path.abspath(os.path.join(dd,os.readlink(os.path.join(dd,k))))
+      assert e == g,'Expected %s, got %s'%(e,g)
+    assert expectedLeafs == dateLeafSet, 'Expected %s, got %s'%(expectedLeafs,dateLeafSet)
+
+    # test with subdirectory further down
+    d = dumpStorage.DumpStorage(self.testDir,subSlotCount=3)
+    dateLeafSet = set()
+    expectedLeafs = set(['wh_0', 'wh_1', 'wh_2'])
+    for k,v in self.testData.items():
+      nd,dd = d.newEntry(k,v[1],webheadName='wh')
+      dateLeafSet.add(os.path.split(dd)[1])
+      assert os.path.isdir(nd)
+      assert os.path.isdir(dd)
+      assert os.path.islink(os.path.join(dd,k))
+      e = os.path.abspath(nd)
+      g = os.path.abspath(os.path.join(dd,os.readlink(os.path.join(dd,k))))
+      assert e == g,'Expected %s, got %s'%(e,g)
+    assert expectedLeafs == dateLeafSet, 'Expected %s, got %s'%(expectedLeafs,dateLeafSet)
+
+  def testChownGidVisitor(self):
+    pass # this is too simple to bother testing
+
+  def testRelativeNameParts(self):
+    ooid = '12345678-dead-beef-feeb-daed2%d081225'
+    expected = {1:['12'],2:['12','34'],3:['12','34','56'],0:['12','34','56','78']}
+    d = dumpStorage.DumpStorage(self.testDir)
+    for depth in range(4):
+      tooid = ooid%(depth)
+      assert expected[depth] == d.relativeNameParts(tooid)
       
   def testDailyPart(self):
     d = dumpStorage.DumpStorage(self.testDir)
@@ -147,17 +191,54 @@ class TestDumpStorage():
         got = d.dailyPart(ooid,date)
         assert expected == got, 'Expected "%s" but got "%s"'%(expected,got)
       else:
-        expectedErrorType = TypeError
-        if '' == ooid: expectedError = IndexError
-        assert_raises(expectedErrorType, d.dailyPart, (ooid,date))
-    
-  def testRelativeNameParts(self):
-    ooid = '12345678-dead-beef-feeb-daed20081225'
-    expected = {1:['12'],2:['12','34'],3:['12','34','56'],4:['12','34','56','78']}
-    for depth in range(1,5):
-      d = dumpStorage.DumpStorage(self.testDir,storageDepth = depth)
-      assert expected[depth] == d.relativeNameParts(ooid)
-      
+        now = datetime.date.today()
+        expected = "%4d%02d%02d"%(now.year,now.month,now.day)
+        assert expected == d.dailyPart(ooid,date), 'From (%s,%s) Expected "%s" but got "%s"'%(ooid,date,expected,got)
+  def testPathToDate(self):
+    d = dumpStorage.DumpStorage(self.testDir)
+    testCases = [
+      (['blob','fook','nigl',d.root,'20081211',d.dateName,'10','09_0'],[2008,12,11,10,9]),
+      (['blob','fook','nigl',d.root,'20081211',d.dateName,'10','09','wh_0'],[2008,12,11,10,9]),
+      ([d.root,'20081211',d.dateName,'10','09','wh_3'],[2008,12,11,10,9]),
+      ([d.root,'200z1211',d.dateName,'10','09','wh_3'],None),
+      ([d.root,'20081g11',d.dateName,'10','09','wh_3'],None),
+      ([d.root,'2008121-',d.dateName,'10','09','wh_3'],None),
+      ([d.root,'20081211',d.dateName,'26','09','wh_3'],None),
+      ([d.root,'20081211',d.dateName,'10','65','wh_3'],None),
+      ([d.root,'20081311',d.dateName,'10','09','wh_3'],None),
+      ([d.root,'20081232',d.dateName,'10','09','wh_3'],None),
+      ]
+    for (pathInfo,dateParts) in testCases:
+      path = os.sep.join(pathInfo)
+      if dateParts:
+        expected = datetime.datetime(*dateParts)
+        got = d.pathToDate(path)
+        assert expected == got, 'Expected: %s but got %s'%(expected,got)
+      else:
+        assert_raises(ValueError,d.pathToDate,path)
+
+  def testLookupNamePath(self):
+    d = dumpStorage.DumpStorage(self.testDir)
+    count = 0
+    expected ={}
+    for ooid,v in createJDS.jsonFileData.items():
+      dateS = v[0]
+      if 0 == count%2:
+        nd,dd = d.newEntry(ooid,datetime.datetime(*[int(x) for x in dateS.split('-')]))
+        expected[ooid] = nd
+      elif 0 == count%5:
+        expected[ooid] = None
+        pass
+      else:
+        nd,dd = d.newEntry(ooid)
+        expected[ooid] = nd
+      count += 1
+    for ooid,v in createJDS.jsonFileData.items():
+      dateS = v[0]
+      testDate = datetime.datetime(*[int(x) for x in dateS.split('-')])
+      got,ignore =  d.lookupNamePath(ooid,testDate)
+      assert expected[ooid] == got, 'For %s, expected path %s, got %s'%(ooid,expected,got)
+
   def testNamePath(self):
     d = dumpStorage.DumpStorage(self.testDir)
     for k,v in self.testData.items():
@@ -176,13 +257,13 @@ class TestDumpStorage():
     for k,v in self.testData.items():
       g = d.datePath(v[1])[0]
       e = os.sep.join((d.root,d.dailyPart(k,v[1]),d.dateName,"%s_%d"%(v[2],curcount)))
-      curcount = (curcount + 1) % d.subSlotCount
+      #curcount = (curcount + 1) % d.subSlotCount
       assert e == g, 'Expected "%s", got "%s"'%(e,g)
     curcount = 0
     for k,v in self.testData.items():
       g = d.datePath(v[1],webheadName='boot')[0]
       e = os.sep.join((d.root,d.dailyPart(k,v[1]),d.dateName,v[2],"%s_%d"%('boot',curcount)))
-      curcount = (curcount + 1) % d.subSlotCount
+      #curcount = (curcount + 1) % d.subSlotCount
       assert e == g, 'Expected "%s", got "%s"'%(e,g)
     
   def testMakeDateDir(self):
@@ -212,18 +293,15 @@ class TestDumpStorage():
       shutil.rmtree(d.root)
     except:
       pass
-    curSS = d3.currentSubSlot
     for k,v in self.testData.items():
       g,dum = d.makeDateDir(v[1])
       e = os.sep.join((d.root, d.dailyPart(k,v[1]),d.dateName,v[2]))
 
       g0,dum0 = d3.makeDateDir(v[1])
-      e0 = os.sep.join((d.root, d.dailyPart(k,v[1]),d.dateName,"%s_%d"%(v[2],curSS)))
-      curSS = (curSS+1)%3
+      e0 = os.sep.join((d.root, d.dailyPart(k,v[1]),d.dateName,"%s_%d"%(v[2],0)))
 
       g3,dum3 = d3.makeDateDir(v[1],'boot')
-      e3 = os.sep.join((d.root, d.dailyPart(k,v[1]),d.dateName,v[2],"%s_%d"%('boot',curSS)))
-      curSS = (curSS+1)%3
+      e3 = os.sep.join((d.root, d.dailyPart(k,v[1]),d.dateName,v[2],"%s_%d"%('boot',0)))
 
       assert e == g, 'Expected "%s", got "%s"'%(e,g)
       assert os.path.isdir(g), 'But "%s" is not a dir'%g
@@ -264,34 +342,48 @@ class TestDumpStorage():
       e = os.path.join(d.root,d.dailyPart(k,v[1]),d.indexName,v[0])
       assert e == g, 'Expected "%s" got "%s"'%(e,g)
 
-  def testNewEntry(self):
-    # test the default case
+  def testLookupOoidInDatePath(self):
     d = dumpStorage.DumpStorage(self.testDir)
-    for k,v in self.testData.items():
-      nd,dd = d.newEntry(k,v[1])
-      assert os.path.isdir(nd)
-      assert os.path.isdir(dd)
-      assert os.path.islink(os.path.join(dd,k))
-      e = os.path.abspath(nd)
-      g = os.path.abspath(os.path.join(dd,os.readlink(os.path.join(dd,k))))
-      assert e == g,'Expected %s, got %s'%(e,g)
-    # test the trailing _n case at same level
-    d = dumpStorage.DumpStorage(self.testDir,subSlotCount=3)
-    for k,v in self.testData.items():
-      nd,dd = d.newEntry(k,v[1])
-      assert os.path.isdir(nd)
-      assert os.path.isdir(dd)
-      assert os.path.islink(os.path.join(dd,k))
-      e = os.path.abspath(nd)
-      g = os.path.abspath(os.path.join(dd,os.readlink(os.path.join(dd,k))))
-      assert e == g,'Expected %s, got %s'%(e,g)
-    # test with subdirectory further down
-    d = dumpStorage.DumpStorage(self.testDir,subSlotCount=3)
-    for k,v in self.testData.items():
-      nd,dd = d.newEntry(k,v[1],webheadName='wh')
-      assert os.path.isdir(nd)
-      assert os.path.isdir(dd)
-      assert os.path.islink(os.path.join(dd,k))
-      e = os.path.abspath(nd)
-      g = os.path.abspath(os.path.join(dd,os.readlink(os.path.join(dd,k))))
-      assert e == g,'Expected %s, got %s'%(e,g)
+    expected = {}
+    count = 0
+    for ooid,v in createJDS.jsonFileData.items():
+      dateS = v[0]
+      if 0 == count%2:
+        nd,dd = d.newEntry(ooid,datetime.datetime(*[int(x) for x in dateS.split('-')]))
+        expected[ooid] = dd
+      elif 0 == count%5:
+        expected[ooid] = None
+        pass
+      else:
+        nd,dd = d.newEntry(ooid)
+        expected[ooid] = dd
+      count += 1
+      dateS = v[0]
+    count = 0
+    for ooid in createJDS.jsonFileData.keys():
+      dateS = v[0]
+      if expected[ooid]:
+        exEnd = datetime.datetime(*[int(x) for x in dateS.split('-')])
+        passDate = datetime.datetime.now()
+        if 0 == count%3:
+          passDate = None
+        else:
+          passDate = exEnd
+        got,ignore = d.lookupOoidInDatePath(passDate,ooid)
+        assert expected[ooid] == got, 'For %s: Expected %s, got %s'%(ooid,expected[ooid],got)
+
+  def testReadableOrThrow(self):
+    d = dumpStorage.DumpStorage
+    assert_raises(OSError,d.readableOrThrow,self.testDir)
+    os.mkdir(self.testDir)
+    tname = 'someUselessFile_'
+    d.readableOrThrow(self.testDir)
+    f = open(tname,'w')
+    f.write('something')
+    f.close()
+    os.chmod(tname,0)
+    try:
+      assert_raises(OSError,d.readableOrThrow,tname)
+    finally:
+      os.chmod(tname,0200)
+      os.unlink(tname)

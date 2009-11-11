@@ -1,8 +1,10 @@
 import unittest
+
 import os
 import shutil
-import types
 import sys
+import time
+import types
 
 from nose.tools import *
 import socorro.lib.filesystem as f
@@ -273,7 +275,7 @@ class TestFilesystem(unittest.TestCase):
     normTop = os.path.normpath(top)
     expected = set([normTop])
     for i in [['c'],['c','d']]:
-      expected.add(os.path.join(absTop,os.sep.join(i)))
+      expected.add(os.path.join(normTop,os.sep.join(i)))
     f.visitPath(top,last,collector)
     assert expected == seen, 'but x-s=%s and s-x=%s'%(expected-seen,seen-expected)
 

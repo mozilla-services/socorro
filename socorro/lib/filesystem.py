@@ -8,7 +8,7 @@ def cleanEmptySubdirectories(topLimit,leafPath):
 
   walks backward up the directory tree from leafPath, calling os.rmdir(branch-below-me) until:
    - branch-below-me isn't empty
-   - my current directory matches the name topLimit
+   - my current directory matches the name topLimit (therefore, topLimit is never removed)
    """
   opath = os.path.normpath(leafPath)     # allows relative paths to work as expected
   topLimit = os.path.split(os.path.normpath(topLimit))[1] # allows either name or path
@@ -34,7 +34,7 @@ def visitPath(rootDir,fullPath,visit):
   for each directory along the path rootDir/.../fullPath,
   including rootDir as the first instance, and .../fullPath as last instance:
   call visit(currentPath)
-  if fullPath is a non-directory it is skipped (link too)
+  if fullPath is a non-directory or a link it is skipped
   Raise OSError (errno.ENOENT) if rootDir is not a parent of fullpath
   # ?Optimization option: Memoize visited paths to avoid them? How to deal with prefix paths?
   """

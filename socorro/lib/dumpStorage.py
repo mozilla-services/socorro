@@ -29,14 +29,13 @@ class DumpStorage(object):
   The 'name' path is as follows:
   - Below the storage root and daily branch is the 'name' directory (can be configured)
   - Below that are one or more subdirectories each named with the next pair of characters from the ooid
-    The depth of that path is 2 (can be configured)
-    Note that the ooid contains a depth encoding which is ignored
+    The depth of that path is 2 (as encoded in the ooid when it is generated)
   - One or more files may be stored at that location.
   Example: For the ooid '4dd21cc0-49d9-46ae-a42b-fadb42090928', the name path is
-   root/20090928/name/4d/d2 (assuming depth of 2, as defaulted)
+   root/20090928/name/4d/d2 (depth of 2 is encoded at ooid[-7])
                 
   The 'date' path is as follows:
-  - Below the storage root and daily branch is the 'date' directory (can be configured)
+  - Below the storage root and daily branch is the 'date' directory (name can be configured)
   - Below that are 2 subdirectories corresponding to hour and minute-window
   - For each stored item, a single symbolic link is stored in the date directory.
     The name of the link is the ooid, the value is a relative path to the 'name' directory of the ooid
@@ -47,8 +46,6 @@ class DumpStorage(object):
     Take note of our root directory, and override defaults if any in kwargs:
      - dateName overrides 'date'
      - indexName overrides 'name'
-     - 'storageDepth': the length of branches in the radix storage tree. Default = 2
-          Do NOT change from 2 without updateing apache mod-rewrite rules and IT old-file removal scripts
      - minutesPerSlot is the size of each bin in the date path. Default 5
      - dirPermissions sets the permissions for all directories in name and date paths. Default 'rwxrwx---'
      - dumpPermissions sets the permissions for actual stored files (this class creates no files)
@@ -58,7 +55,6 @@ class DumpStorage(object):
     self.root = root.rstrip(os.sep)
     self.dateName = kwargs.get('dateName','date')
     self.indexName = kwargs.get('indexName','name')
-    self.storageDepth = int(kwargs.get('storageDepth',2))
     self.minutesPerSlot = int(kwargs.get('minutesPerSlot',5))
     self.subSlotCount = int(kwargs.get('subSlotCount',0))
     self.dirPermissions = int(kwargs.get('dirPermissions', '%d'%(S_IRGRP | S_IXGRP | S_IWGRP | S_IRUSR | S_IXUSR | S_IWUSR)))
@@ -67,8 +63,7 @@ class DumpStorage(object):
     self.dumpPermissions = int(kwargs.get('dumpPermissions','%d'%(S_IRGRP | S_IWGRP | S_IRUSR | S_IWUSR)))
 
     self.logger = kwargs.get('logger', logging.getLogger('dumpStorage'))
-    upCount = 3
-    self.currentSubSlot = 0
+    self.currentSubSlots = {}
 
   def newEntry(self,ooid,timestamp=None,webheadName = None):
     """
@@ -83,6 +78,11 @@ class DumpStorage(object):
       os.mkdir(self.root)
     nameDir,nparts = self.makeNameDir(ooid,timestamp)
     dateDir,dparts = self.makeDateDir(timestamp,webheadName)
+    # adjust the current subslot only when inserting a new entry
+    if self.subSlotCount:
+      k = dparts[-1].split('_')[0]
+      curcount = self.currentSubSlots.setdefault(k,0)
+      self.currentSubSlots[k] = (curcount + 1)%self.subSlotCount
     parts = [os.path.pardir,]*(len(dparts)-2) # lose root and dailypart
     parts.append(self.indexName)
     parts.extend(self.relativeNameParts(ooid))
@@ -95,6 +95,9 @@ class DumpStorage(object):
         nameDir = self.makeNameDir(ooid) # might be overkill, but reasonably cheap insurance
         dateDir = self.makeDateDir(timestamp) 
         os.symlink(relNameDir,os.path.join(dateDir,ooid))
+      elif errno.EEXIST == x.errno:
+        os.unlink(os.path.join(dateDir,ooid))
+        os.symlink(relNameDir,os.path.join(dateDir,ooid))
       else:
         raise
     if self.dumpGID:
@@ -102,10 +105,12 @@ class DumpStorage(object):
     return (nameDir,dateDir)
 
   def chownGidVisitor(self,path):
+    """a convenience function"""
     os.chown(path,-1,self.dumpGID)
 
   def relativeNameParts(self, ooid):
-    depth = self.storageDepth
+    depth = socorro_ooid.depthFromOoid(ooid)
+    if not depth: depth = 4
     return [ooid[2*x:2*x+2] for x in range(depth)]
 
   def dailyPart(self, ooid, timestamp=None):
@@ -114,15 +119,36 @@ class DumpStorage(object):
     use the timestamp if any, else the ooid's last 6 chars if reasonable, else now()
     """
     year,month,day = None,None,None
-    if timestamp:
-      (year,month,day) = (timestamp.year,timestamp.month,timestamp.day)
-    else:
-      try:
-        (year,month,day) = (int('20%s'%(ooid[-6:-4])),int(ooid[-4:-2]),int(ooid[-2:]))
-      except ValueError:
-        timestamp = datetime.datetime.now()
-        (year,month,day) = (timestamp.year,timestamp.month,timestamp.day)
+    if not timestamp:
+      timestamp = socorro_ooid.dateFromOoid(ooid)
+    if not timestamp:
+      timestamp = datetime.datetime.now()
+    (year,month,day) = (timestamp.year,timestamp.month,timestamp.day)
     return "%4d%02d%02d"%(year,month,day)
+
+  def pathToDate(self,datePath):
+    """
+    Given a path to the date branch leaf node, return a corresponding datetime.datetime()
+    Note that because of bucketing, the minute will be no more accurate than the bucket size
+    """
+    # normalize to self.root
+    if not datePath:
+      return None
+    parts = os.path.abspath(datePath).split(os.sep)
+    root = os.path.split(self.root)[1]
+    parts = parts[parts.index(root):]
+    minute = 0
+    hour = 0
+    try:
+      minute = int(parts[-1].split('_')[0])
+      hour = int(parts[-2])
+    except ValueError:
+      try:
+        minute = int(parts[-2].split('_')[0])
+        hour = int(parts[-3])
+      except ValueError:
+        pass
+    return datetime.datetime(int(parts[1][:4]),int(parts[1][4:6]),int(parts[1][-2:]),int(hour),minute)
 
   def lookupNamePath(self,ooid,timestamp=None):
     """
@@ -146,9 +172,8 @@ class DumpStorage(object):
     Return the path to the directory for this ooid and the directory parts of the path
     Ignores encoded ooid depth, uses depth from __init__ (default 2)
     """
-    # depth = socorro_ooid.depthFromOoid(ooid)
-    # if not depth: depth = 4
-    depth = self.storageDepth
+    ooidDay,depth = socorro_ooid.dateAndDepthFromOoid(ooid)
+    if not depth: depth = 4
     dirs = [self.root,self.dailyPart(ooid,timestamp),self.indexName]
     dirs.extend(self.relativeNameParts(ooid))
     #self.logger.debug("%s - %s -> %s",threading.currentThread().getName(),ooid,dirs)
@@ -176,16 +201,16 @@ class DumpStorage(object):
 
   def lookupOoidInDatePath(self,date,ooid,webheadName=None):
     """
-    Look for the date path holding a symbolic link named 'ooid', return dirPath,dirParts
+    Look for the date path holding a symbolic link named 'ooid', return datePath,dateParts
     on failure return None,[]
     """
+    if not date:
+      date = socorro_ooid.dateFromOoid(ooid)
     if date:
       datePath,dateParts = self.datePath(date,webheadName)
       if os.path.exists(os.path.join(datePath,ooid)):
         return datePath,dateParts
-      
-    dailyDirs = os.listdir(self.root)
-    for d in dailyDirs:
+    for d in os.listdir(self.root):
       # We don't know webhead if any, so avoid confusion by looking everywhere
       for dir,dirs,files in os.walk(os.sep.join((self.root,d,self.dateName))):
         if ooid in dirs or ooid in files: # probably dirs
@@ -202,10 +227,11 @@ class DumpStorage(object):
     parts = [self.root, self.dailyPart('',date),self.dateName,'%02d'%date.hour,'%02d'%slot]
     if self.subSlotCount:
       if webheadName:
-        parts.append("%s_%d"%(webheadName,self.currentSubSlot))
+        subSlot = self.currentSubSlots.setdefault(webheadName,0)
+        parts.append("%s_%d"%(webheadName,subSlot))
       else:
-        parts[-1] = '%02d_%d'%(slot,self.currentSubSlot)
-      self.currentSubSlot = (self.currentSubSlot+1)%self.subSlotCount
+        subSlot = self.currentSubSlots.setdefault(slot,0)
+        parts[-1] = '%02d_%d'%(slot,subSlot)
     return os.sep.join(parts),parts
 
   def makeDateDir(self,date, webheadName = None):

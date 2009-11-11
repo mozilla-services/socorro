@@ -1,16 +1,11 @@
-import datetime as DT
+import datetime
 import errno
 import os
 import time
 
 import simplejson
 
-import socorro.lib.JsonDumpStorage as NJDS
-try:
-  import socorro.lib.oldJsonDumpStorage as JDS
-except Exception,x:
-  print type(x),x
-  raise
+import socorro.lib.JsonDumpStorage as JDS
 
 jsonFileData = {
   '0bba61c5-dfc3-43e7-dead-8afd20071025': ('2007-10-25-05-04','webhead02','0b/ba/61/c5','2007/10/25/05/00/webhead02_0'),
@@ -68,27 +63,24 @@ def minimalJsonFileContents(dataMap = None):
     yield simplejson.dumps(retMap)
     cookie += 1
 
-def createTestSet(testData,jsonKwargs,rootDir, newStyle=False):
+def createTestSet(testData,jsonKwargs,rootDir):
   try:
     os.makedirs(rootDir)
   except OSError,x:
     if errno.EEXIST != x.errno: raise
-  if newStyle:
-    storage = NJDS.JsonDumpStorage(rootDir, **jsonKwargs)
-  else:
-    storage = JDS.JsonDumpStorage(rootDir, **jsonKwargs)
+  storage = JDS.JsonDumpStorage(rootDir, **jsonKwargs)
   jsonIsEmpty = jsonKwargs.get('jsonIsEmpty', False)
   jsonIsBogus = jsonKwargs.get('jsonIsBogus', True)
   jsonFileGenerator = jsonKwargs.get('jsonFileGenerator',None)
   if 'default' == jsonFileGenerator:
     jsonFileGenerator = minimalJsonFileContents()
-  thedt = DT.datetime.now()
+  thedt = datetime.datetime.now()
   for uuid,data in testData.items():
     if data[0].startswith('+'):
       if thedt.second >= 58:
         print "\nSleeping for %d seconds" %(61-thedt.second)
         time.sleep(61-thedt.second)
-        thedt = DT.datetime.now()
+        thedt = datetime.datetime.now()
       slot = {
         '+0': getSlot(storage.minutesPerSlot,thedt.minute),
         '+5': getSlot(storage.minutesPerSlot,thedt.minute+5),
@@ -97,7 +89,7 @@ def createTestSet(testData,jsonKwargs,rootDir, newStyle=False):
       d3h = '%d/%02d/%02d/%02d/%s' %(thedt.year,thedt.month,thedt.day,thedt.hour,slot[data[0]])
       data[3] = "%s/%s" % (d3h,data[3])
     else:
-      thedt = DT.datetime(*[int(x) for x in data[0].split('-')])
+      thedt = datetime.datetime(*[int(x) for x in data[0].split('-')])
     fj,fd = storage.newEntry(uuid,webheadHostName=data[1],timestamp = thedt)
     try:
       if jsonIsEmpty:
