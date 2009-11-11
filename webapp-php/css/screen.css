@@ -784,6 +784,11 @@ fieldset ul li { text-align: left; }
 .pagination ol li {float: left; margin-right: 0.3em;}
 
 /* END Search Results */
+
+/* List of Reports report/list */
+#reportsList .comments { max-width: 138px; word-wrap: break-word; } /* Extremely long rants with no spaces break the table... */
+/* END List of Reports report/list */
+
 body { color: #333333 }
 th, strong { font-weight: bold; }
 td a, .product-versions li a { color: blue; }

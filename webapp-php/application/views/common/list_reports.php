@@ -32,7 +32,7 @@
                 <td><?php out::H($report->reason) ?></td>
                 <td><?php out::H($report->address) ?></td>
                 <td><?php out::H($report->uptime) ?></td>
-                <td><?php out::H($report->user_comments) ?></td>
+                <td class="comments"><?php out::H($report->user_comments) ?></td>
             </tr>
         <?php endforeach ?>
     </tbody>
