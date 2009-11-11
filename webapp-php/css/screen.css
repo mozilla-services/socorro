@@ -663,26 +663,6 @@ html {
             vertical-align: middle;
             }
 
-#footer {
-    overflow: auto;
-    margin: 3.12em 0 0 0;
-    background: url(../img/body-vrule.png) repeat-x;
-    }
-    #footer .arch {
-        float: left;
-        font-size: 62.5%;
-        padding: 2em 0;
-        }
-    #footer .nav {
-        float: right;
-        font-size: 62.5%;
-        padding: 2em 0;
-        }
-        #footer .nav li {
-            display: inline;
-            margin-left: 1.5em;
-            }
-
 .hidden {
     display: none;
 }
@@ -805,11 +785,13 @@ h2 { font-size: 140%; }
 h3 { font-size: 120%; }
 h4 { font-size: 100%; }
 #footer {
-  border-top: 1px solid #000;
+  width: 72.3em;
+  border-top: 1px solid #ccc;
   background: #fff;
   clear: both;
   min-height: 4em;
-  text-align: center;
+  margin-right: auto;
+  margin-left: auto;
 }
 
 #footer div ul {
@@ -824,15 +806,17 @@ h4 { font-size: 100%; }
 }
 
 #footer div ul li a {
-  color: #000;
   display: block;
-  font-size: smaller;
   margin: 4px;
-  text-decoration: underline;
 }
 
 #footer-links {
-  width: 500px;
+  float: left;
+  margin: 0.2em auto;
+}
+
+#footer-auth {
+  float: right;
   margin: 0.2em auto;
 }
 /* may not need htis if we don't float query form left */

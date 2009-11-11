@@ -111,18 +111,19 @@
                 <li><a href="http://code.google.com/p/socorro/">Project Info</a></li>
                 <li><a href="http://code.google.com/p/socorro/source">Get the Source</a></li>
                 <li><a href="http://wiki.mozilla.org/Breakpad">Breakpad Wiki</a></li>
-				<li>|</li>
-				<?php if( $auth_is_active && Auth::instance()->logged_in() ) {?>
-					<li><a><?php echo html::specialchars(Auth::instance()->get_user()); ?></a></li>
-					<li><a href="<?php echo url::site(); ?>admin">Admin</a></li>
-					<li><a href="<?= url::site('auth/logout', Kohana::config('auth.proto')) ?>">Log out</a></li>
-			    <?php } elseif ($auth_is_active == FALSE) { ?>
-					<li>Auth Disabled</li>
-				<?php } else { ?>
-					<li><a href="<?= url::site('auth/login', Kohana::config('auth.proto')) ?>">Log in</a></li>
-				<?php } ?>
             </ul>
 		</div><!-- footer-links -->
+        <div id="footer-auth">
+            <?php if( $auth_is_active && Auth::instance()->logged_in() ) {?>
+                <li><a><?php echo html::specialchars(Auth::instance()->get_user()); ?></a></li>
+                <li><a href="<?php echo url::site(); ?>admin">Admin</a></li>
+                <li><a href="<?= url::site('auth/logout', Kohana::config('auth.proto')) ?>">Log out</a></li>
+            <?php } elseif ($auth_is_active == FALSE) { ?>
+                <li>Auth Disabled</li>
+            <?php } else { ?>
+                <li><a href="<?= url::site('auth/login', Kohana::config('auth.proto')) ?>">Log in</a></li>
+            <?php } ?>
+        </div>
 		</div><!-- /FOOTER -->
 
     </body>
