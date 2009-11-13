@@ -224,6 +224,31 @@ class Controller extends Controller_Core {
     {
 	$this->setViewData('auth_is_active', $this->auth_is_active);
     }
+   /**
+    * Ensure that if a user is authorized for sensitive information
+    * that this page is being served over HTTPS. If not, then the
+    * user is redirected to a secure version of the page and this current
+    * request dies.
+    *
+    * @param string The current path and query string params to be switched over to the https protocol
+    * @return void string exists if a redirect is performed
+    */
+    public function sensitivePageHTTPSorRedirectAndDie($path)
+    {
+	if (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS']) {
+	    // Cool, this page was requested via https.
+	    // no-op
+	} else {
+	    $secureUrl = url::site($path, Kohana::config('auth.proto'));
+	    // For devs without https... don't do this redirect or it would be an infinite loop
+	    if (Kohana::config('auth.proto') == 'https') {
+		url::redirect($secureUrl);
+		exit();
+	    } else {
+		Kohana::log('alert', "Dev mode, skipping redirect to " . $secureUrl);
+	    }
+	}
+    }
 
     /**
      * Render a template wrapped in the global layout.

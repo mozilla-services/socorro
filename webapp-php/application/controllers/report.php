@@ -46,6 +46,31 @@ class Report_Controller extends Controller {
             header("No data for this query", TRUE, 404);
 	    $this->setView('common/nodata');
 	} else {
+	    $linkParams = array();
+
+	    //prepare a query string for pagination (use incoming query but skip page param)
+	    // We can't use http_build_query because our url supports multiple product and multiple version
+	    // entries. Example ?product=Firefox&product=Camino&version=3.5&version=2.0
+	    foreach ($params as $k => $v) {
+		if ($k != 'page') {
+		    if (is_array($v)) {
+		       foreach($v as $dup_value) {
+			   array_push($linkParams, "${k}=${dup_value}");
+		       }
+		    } else {
+			array_push($linkParams, "${k}=${v}");
+		    }
+		}
+	    }
+
+	    // Code for $secureUrl should stay in sync with code for $currentPath above
+	    $currentPath = url::site('report/list') . '?' . implode('&', $linkParams) . '&page=';
+            
+            $logged_in = Auth::instance()->logged_in();
+	    if ($logged_in) {
+		$this->sensitivePageHTTPSorRedirectAndDie($currentPath . $page);
+	    }
+
 	    $builds  = $this->common_model->queryFrequency($params);
 	    
 	    if (count($builds) > 1){
@@ -66,23 +91,6 @@ class Report_Controller extends Controller {
 	    $rows = $bug_model->bugsForSignatures(array($params['signature']));
 	    $bugzilla = new Bugzilla;
 	    $signature_to_bugzilla = $bugzilla->signature2bugzilla($rows, Kohana::config('codebases.bugTrackingUrl'));
-	    $linkParams = array();
-
-	    //prepare a query string for pagination (use incoming query but skip page param)
-	    // We can't use http_build_query because our url supports multiple product and multiple version
-	    // entries. Example ?product=Firefox&product=Camino&version=3.5&version=2.0
-	    foreach ($params as $k => $v) {
-		if ($k != 'page') {
-		    if (is_array($v)) {
-		       foreach($v as $dup_value) {
-			   array_push($linkParams, "${k}=${dup_value}");
-		       }
-		    } else {
-			array_push($linkParams, "${k}=${v}");
-		    }
-		}
-	    }
-	    $currentPath = url::site('report/list') . '?' . implode('&', $linkParams) . '&page=';
         	
 	    $this->setViewData(array(
 		'navPathPrefix' => $currentPath,
@@ -107,7 +115,7 @@ class Report_Controller extends Controller {
         	
 		'sig2bugs' => $signature_to_bugzilla,
 		'comments' => $this->common_model->getCommentsByParams($params),
-		'logged_in' => Auth::instance()->logged_in(),
+		'logged_in' => $logged_in,
 	    ));
 	}
     }
@@ -210,6 +218,11 @@ class Report_Controller extends Controller {
             }
 	    	return url::redirect('report/pending/'.$uuid);
         } else {
+            $logged_in = Auth::instance()->logged_in();
+	    if ($logged_in) {
+		$this->sensitivePageHTTPSorRedirectAndDie('/report/index/' . $id);
+	    }
+
             cachecontrol::set(array(
                 'etag'          => $uuid,
                 'last-modified' => strtotime($report->date_processed)
@@ -229,7 +242,7 @@ class Report_Controller extends Controller {
                 'branch' => $this->branch_model->getByProductVersion($report->product, $report->version),
 		'comments' => $this->common_model->getCommentsBySignature($report->signature),
 		'extensions' => $extensions,
-		'logged_in' => Auth::instance()->logged_in(),
+		'logged_in' => $logged_in,
                 'reportJsonZUri' => $reportJsonZUri,
                 'report' => $report,
 		'sig2bugs' => $signature_to_bugzilla

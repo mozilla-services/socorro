@@ -181,4 +181,8 @@ function hideAllGraphs() {
 </script>
 <!-- 
 <?php View::factory('common/version')->render(TRUE); ?>
+SERVER is HTTPS PRESENT? <?= isset($_SERVER['HTTPS']) ?>
+    <?php if(isset($_SERVER['HTTPS'])) { ?>
+    VALUE= <?= isset($_SERVER['HTTPS']) ?>
+<?php } ?>
  -->
