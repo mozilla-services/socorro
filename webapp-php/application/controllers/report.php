@@ -66,7 +66,7 @@ class Report_Controller extends Controller {
 	    // Code for $secureUrl should stay in sync with code for $currentPath above
 	    $currentPath = url::site('report/list') . '?' . implode('&', $linkParams) . '&page=';
             
-            $logged_in = Auth::instance()->logged_in();
+            $logged_in = $this->auth_is_active && Auth::instance()->logged_in();
 	    if ($logged_in) {
 		$this->sensitivePageHTTPSorRedirectAndDie($currentPath . $page);
 	    }
@@ -218,7 +218,7 @@ class Report_Controller extends Controller {
             }
 	    	return url::redirect('report/pending/'.$uuid);
         } else {
-            $logged_in = Auth::instance()->logged_in();
+            $logged_in = $this->auth_is_active && Auth::instance()->logged_in();
 	    if ($logged_in) {
 		$this->sensitivePageHTTPSorRedirectAndDie('/report/index/' . $id);
 	    }
