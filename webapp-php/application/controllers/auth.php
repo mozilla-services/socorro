@@ -28,6 +28,7 @@ class Auth_Controller extends Controller {
       */
      public function login()
      {
+         $this->sensitivePageHTTPSorRedirectAndDie('/auth/login');
 	 $this->_setReferrerButIgnore('auth/login');
 	 if (Auth::instance()->logged_in()) {
 	     client::messageSend(Kohana::lang('auth_already_logged_in'), E_USER_WARNING);
@@ -75,6 +76,7 @@ class Auth_Controller extends Controller {
       */
      public function logout()
      {
+         $this->sensitivePageHTTPSorRedirectAndDie('/auth/logout');
 	 $auth = Auth::instance();
 	 if (method_exists($auth->driver, 'ldap_logout')) {
 	     $auth->driver->ldap_logout();
