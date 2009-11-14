@@ -31,18 +31,18 @@
                 <?php foreach ($top_crashers as $crasher): ?>
                     <?php
                         $nonBlankSignature = $crasher->signature?$crasher->signature:'(signature unavailable)';
-                        $nonBlankSigParams = array(
+                        $sigParams = array(
                             'range_value' => '2',
                             'range_unit'  => 'weeks',
-                            'signature'   => $nonBlankSignature
+                            'signature'   => $crasher->signature
 			    );
                         if (property_exists($crasher, 'version')) {
-			    $nonBlankSigParams['version'] = $crasher->product . ':' . $crasher->version;
+			    $sigParams['version'] = $crasher->product . ':' . $crasher->version;
 			} else {
-			    $nonBlankSigParams['branch'] = $crasher->branch;
+			    $sigParams['branch'] = $crasher->branch;
 			}
 
-                        $link_url =  url::base() . 'report/list?' . html::query_string($nonBlankSigParams);
+                        $link_url =  url::base() . 'report/list?' . html::query_string($sigParams);
                         $percent = '';
                         if (property_exists($crasher, 'percent')) {
                             $percent = $crasher->percent;

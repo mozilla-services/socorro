@@ -20,10 +20,10 @@
                 <td>
                     <?php
                         $url_params = $params;
-                        $url_params['signature'] = $report->signature ? $report->signature:'(signature unavailable)';
+                        $nonBlankSignature = $report->signature ? $report->signature:'(signature unavailable)';
                         $url = url::base().'report/list?'.html::query_string($url_params);
                     ?>
-                        <a href="<?php out::H($url) ?>" title="View reports with this signature."><?php out::H($url_params['signature']) ?></a>
+                        <a href="<?php out::H($url) ?>" title="View reports with this signature."><?php out::H($nonBlankSignature) ?></a>
                 </td>
                 <?php if (count($platforms) > 1): ?><td><?php out::H($report->count) ?></td><?php endif ?>
                 <?php foreach ($platforms as $platform): ?>
