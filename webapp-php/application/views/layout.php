@@ -114,6 +114,7 @@
             </ul>
 		</div><!-- footer-links -->
         <div id="footer-auth">
+            <ul>
             <?php if( $auth_is_active && Auth::instance()->logged_in() ) {?>
                 <li><a><?php echo html::specialchars(Auth::instance()->get_user()); ?></a></li>
                 <li><a href="<?php echo url::site(); ?>admin">Admin</a></li>
@@ -123,6 +124,7 @@
             <?php } else { ?>
                 <li><a href="<?= url::site('auth/login', Kohana::config('auth.proto')) ?>">Log in</a></li>
             <?php } ?>
+	    </ul>
         </div>
 		</div><!-- /FOOTER -->
 
