@@ -222,31 +222,29 @@
         <?php if (!empty($extensions)) { ?>
 	        <table class="list">
 	            <tr>
-	                <?php /* <th>Extension</th> */ ?>
+					<th>Extension</th>
 	                <th>Extension Id</th>
 	                <th>Version</th>
-	                <?php /* ><th>Current?</th>*/ ?>
+					<th>Current?</th>
 	            </tr>
 	            <?php $row = 1 ?>
 	            <?php foreach ($extensions as $extension) { ?>
 	                <tr>
-						<?php /* 
 	                    <td><a href="<?php out::H($extension['link']) ?>"><?php out::H($extension['name']) ?></a></td>
-						*/ ?>
-	                    <td><?php out::H($extension->extension_id) ?></td>
-	                    <td><?php out::H($extension->extension_version) ?></td>
-						
-						<?php /* 
-						<td>
-							<?php if ($extension['current_version'] !== $extension['version']) { ?>
-								<strong><?php out::H($extension['current_version']); ?></strong>
+	                    <td><?php if (isset($extension['extension_id'])) out::H($extension['extension_id']) ?></td>
+	                    <td><?php if (isset($extension['extension_version']))  out::H($extension['extension_version']) ?></td>
+						<td><?php 
+								if (isset($extension['extension_version']) && isset($extension['latest_version'])) {
+									if ($extension['extension_version'] !== $extension['latest_version']) {
+							?>
+									<strong><?php out::H($extension['latest_version']); ?></strong>
 							<?php } else { ?>
-								current
+									current
+								<?php } ?>
 							<?php } ?>
 						</td>
-						*/ ?>
-	                </tr>
-	                <?php $row += 1 ?>
+					<?php $row += 1; ?>
+					</tr>
 	            <?php } ?>
 	        </table>    	
 		<?php } else { ?>

@@ -9,6 +9,20 @@
 class Extension_Model extends Model {
 
 	/**
+	* Cache the results from the AMO API call.
+	*
+	* @access 	private
+	* @param 	string 	The URL for the AMO API call
+	* @return 	array|bool 	An array of extensions from AMO; false if expired
+	*/
+	private function cacheResults($url, $results) {
+		if (!empty($results)) {
+			$cache = new Cache();
+			$cache->set($this->getCacheKey($url), $results);	
+		}
+	}
+
+	/**
      * Take an array of extensions and return that same array with enhanced data about each extension.
 	 *
 	 * 1. Pull the GUIDs out of the extensions array.
@@ -17,73 +31,130 @@ class Extension_Model extends Model {
 	 * 4. Flag all extensions that are out of date.
      *
  	 * @access	public
-     * @param  	array 	UUID by which to look up report
-     * @return 	object 	Report data and dump data OR NULL
+     * @param  	array 	An array of installed extensions
+ 	 * @param 	string 	The product that crashed ('firefox', 'thunderbird', 'seamonkey', 'sunbird')
+     * @return 	array  	The array of installed extensions merged with meta data for those extensions
      */
-    public function combineExtensionData(array $extensions)
+    public function combineExtensionData($extensions, $product='firefox')
     {
-		$guids = array();
-		foreach ($extensions as $extension) {
-			$guids[] = $extension['id'];
-		}
-		
-		if ($amo_extensions = $this->getExtensionsFromAMO($guids)) {
-			$new_extensions = array();
+		if (!empty($extensions) && is_array($extensions)) {
+			$guids = array();
+			foreach ($extensions as $extension) {
+				$guids[] = rawurlencode($extension->extension_id);
+			}
+			$amo_extensions = $this->getExtensionsFromAMO($guids);
+
+			$link_prefix = Kohana::config('application.amo_url') . 'en-US/' . strtolower(rawurlencode($product)) . '/addon/';
+			$merged_extensions = array();
 			$i = 0;
 			foreach ($extensions as $extension) {
-				$new_extensions[$i];
-				foreach ($amo_extensions as $guid => $ae) {
-					if ($extension['id'] == $guid) {
-						$new_extensions['current_version'] = $ae['version'];
-						$new_extensions['name'] = $ae['name'];
-						$new_extensions['link'] = 'https://addons.mozilla.org/en-US/firefox/addon/' . $guid;
+				$merged_extensions[$i] = array(
+					'extension_id' => $extension->extension_id,
+					'name' => '',
+					'link' => '',
+					'extension_version' => $extension->extension_version, // version installed at time of crash
+					'latest_version' => '',
+				);
+
+				if (!empty($amo_extensions)) {
+					foreach ($amo_extensions as $amo_id => $ae) {
+						if ($extension->extension_id == $ae->guid) {
+							$merged_extensions[$i]['name'] = $ae->name; // name of extension
+							$merged_extensions[$i]['link'] = $link_prefix . $amo_id; // link to AMO website
+							$merged_extensions[$i]['latest_version'] = $ae->latest_version; // current version according to AMO
+						}
 					}
 				}
 				$i++;
 			}
-			return $new_extensions;
-		} else {
-			return $extensions;
-		}
-	}
 
+			if (!empty($merged_extensions)) {
+				return $merged_extensions;
+			}
+		}
+		return false;
+	}
+	
 	/**
-	* Query the AMO API for more information about the Extensions installed in the browser upon crash.
+	* Return the cache key for the AMO API call.
+	*
+	* @access 	private
+	* @param 	string 	The url for the API call
+	* @return 	string	The cache key
+	*/
+	private function getCacheKey($url) {
+		return 'amo_api_' . md5($url);
+	}
+	
+	/**
+	* Fetch the cached results for an AMO API call, if available.
+	*
+	* @access 	private
+	* @param 	string 	The URL for the AMO API call
+	* @return 	array|bool 	An array of extensions from AMO; false if expired
+	*/
+	private function getCachedAMOExtensions($url) {
+		$cache = new Cache();
+        if ($results = $cache->get($this->getCacheKey($url))) {
+            return $results;
+        }
+		return false;
+	}
+	
+	/**
+	* Query the AMO API for more information about the Extensions installed in the 
+	* browser upon crash.
+	*
+	* Sample URL to reference once the API call is available.
+	* https://services.addons.mozilla.org/en-US/firefox/api/search/guid:
+	* %7B20a82645-c095-46ed-80e3-08825760534b%7D,%7B972ce4c6-7e08-4474-a285-3208198ce6fd%7D?format=json
 	*
 	* @access 	private
 	* @param 	array 	An array of extension GUIDs
-	* @return 	array 	An array of json-decoded API results
+	* @param 	string 	The product that crashed ('firefox', 'thunderbird', 'seamonkey', 'sunbird')
+	* @return 	array|bool 	An array of json-decoded API results; false if empty
 	*/
-	private function getExtensionsFromAMO(array $guids) {
-		
-		// Sample URL to reference once the API call is available.
-		// https://preview.addons.mozilla.org/en-US/firefox/api/search/guid:canuckstoolbar@canucks.nhl.com,%7B78518e5b-4eb1-0d61-ff3e-fd645642a4e2%7D/?format=json
-		
-		$url 	 = 'http://addons.mozilla.dev/en-US/firefox/api/1.2/search/guid:';
-		$url 	.= implode(",", $guids);
-		$url	.= '/?format=json';
-		
-		$curl = curl_init('http://addons.mozilla.com/' . $url);
-		curl_setopt($curl, CURLOPT_CONNECTTIMEOUT, 30);
-		curl_setopt($curl, CURLOPT_TIMEOUT, 30);
-		curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-		curl_setopt($curl, CURLOPT_CUSTOMREQUEST, 'GET');
-		$curl_response = curl_exec($curl);
-	 	$header  = curl_getinfo($curl);
-		$http_status_code = $header['http_code'];
-		curl_close($curl);
-		if ($http_status_code == 200) {
-			return json_decode($curl_response);
+	private function getExtensionsFromAMO($guids, $product='firefox') {
+		$url 	 = Kohana::config('application.amo_api');
+		$url 	.= 'en-US/' . strtolower(rawurlencode($product)) . '/api/search/guid:';
+		$url 	.= implode(",", $guids) . '?format=json';
+
+		if ($results = $this->getCachedAMOExtensions($url)) {
+			return $results;
+		} else {
+			$curl = curl_init($url);
+			curl_setopt($curl, CURLOPT_CONNECTTIMEOUT, 30);
+			curl_setopt($curl, CURLOPT_TIMEOUT, 30);
+			curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+			curl_setopt($curl, CURLOPT_CUSTOMREQUEST, 'GET');
+			$curl_response = curl_exec($curl);
+	 		$header  = curl_getinfo($curl);
+			$http_status_code = $header['http_code'];
+			curl_close($curl);
+        	
+			if ($http_status_code == 200) {
+				$results = json_decode($curl_response);
+				if (count($guids) != count($results)) {
+					Kohana::log('error', "`soc.web extensions.getExtensionsFromAMO` - AMO API Call " . $url . " only returns " . count($results) . " results.  Expected " . count($guids) . " results.");
+				}
+				$this->cacheResults($url, $results);
+				return $results;
+			} else {
+				Kohana::log('error', "`soc.web extensions.getExtensionsFromAMO` - AMO API Call " . $url . " returns 0 results.  Expected " . count($guids) . " results.");
+			}
+			return false;
 		}
 	}
-
+	
 	/**
      * Fetch all of the extensions that are installed in a browser at the time of crash.
      *
-     * @param  string UUID by which to look up report
-     * @return object Report data and dump data OR NULL
+     * @param  	string 	UUID by which to look up report
+ 	 * @param 	string 	The date / time of the crash, e.g. '2009-10-01 08:00:40.832089'
+ 	 * @param 	string 	The product that crashed ('firefox', 'thunderbird', 'seamonkey', 'sunbird')
+     * @return 	object 	Report data and dump data OR NULL
      */
-    public function getExtensionsForReport($uuid, $date)
+    public function getExtensionsForReport($uuid, $date, $product='firefox')
     {
 		$sql = "/* soc.web extensions.getExtensions */
             SELECT extensions.*
@@ -96,12 +167,7 @@ class Extension_Model extends Model {
 		$extensions = $this->fetchRows($sql, true, array($uuid, $date, $date));
 
 		if (!empty($extensions)) { 
-
-			// Commented out until AMO API Call is available 
-			// https://bugzilla.mozilla.org/show_bug.cgi?id=410277
-			// return $this->combineExtensionData($extensions);
-			
-			return $extensions;
+			return $this->combineExtensionData($extensions, $product);
 		}
 		return false;
 	}

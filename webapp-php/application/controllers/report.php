@@ -227,26 +227,26 @@ class Report_Controller extends Controller {
                 'etag'          => $uuid,
                 'last-modified' => strtotime($report->date_processed)
             ));
-	    $report->sumo_signature = $this->_makeSumoSignature($report->signature);
-            $reportJsonZUri = url::file('dumps/' . $uuid . '.jsonz');
-
-	    $bug_model = new Bug_Model;
-            $rows = $bug_model->bugsForSignatures(array($report->signature));
-	    $bugzilla = new Bugzilla;
-	    $signature_to_bugzilla = $bugzilla->signature2bugzilla($rows, Kohana::config('codebases.bugTrackingUrl'));
-
-	    $Extension_Model = new Extension_Model;
-	    $extensions = $Extension_Model->getExtensionsForReport($uuid, $report->date_processed);
-	    
-            $this->setViewData(array(
-                'branch' => $this->branch_model->getByProductVersion($report->product, $report->version),
-		'comments' => $this->common_model->getCommentsBySignature($report->signature),
-		'extensions' => $extensions,
-		'logged_in' => $logged_in,
-                'reportJsonZUri' => $reportJsonZUri,
-                'report' => $report,
-		'sig2bugs' => $signature_to_bugzilla
-            ));
+	    	$report->sumo_signature = $this->_makeSumoSignature($report->signature);
+        	    $reportJsonZUri = url::file('dumps/' . $uuid . '.jsonz');
+        	
+	    	$bug_model = new Bug_Model;
+        	    $rows = $bug_model->bugsForSignatures(array($report->signature));
+	    	$bugzilla = new Bugzilla;
+	    	$signature_to_bugzilla = $bugzilla->signature2bugzilla($rows, Kohana::config('codebases.bugTrackingUrl'));
+        	
+	    	$Extension_Model = new Extension_Model;
+	    	$extensions = $Extension_Model->getExtensionsForReport($uuid, $report->date_processed, $report->product);
+	    	
+			$this->setViewData(array(
+        	    'branch' => $this->branch_model->getByProductVersion($report->product, $report->version),
+        	    'comments' => $this->common_model->getCommentsBySignature($report->signature),
+        	    'extensions' => $extensions,
+        	    'logged_in' => $logged_in,
+        	    'reportJsonZUri' => $reportJsonZUri,
+        	    'report' => $report,
+        	    'sig2bugs' => $signature_to_bugzilla
+        	));
 		}
     }
 

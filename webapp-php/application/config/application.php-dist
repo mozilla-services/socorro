@@ -3,6 +3,20 @@
  * Application-specific settings separate from installation concerns.
  */
 
+
+/**
+ * URL prefix for the AMO API call
+ * e.g. 'https://services.addons.mozilla.org/'
+ */
+$config['amo_api'] = 'https://services.addons.mozilla.org/';
+
+/**
+ * URL prefix for the Extension page on AMO.
+ * e.g. 'https://addons.mozilla.org/'
+ */
+$config['amo_url'] = 'http://addons.mozilla.org/';
+
+
 $config['dumpIDPrefix'] = 'bp-';
 // root directories for crash dump files
 //$config['dumpPath'] = array('/mnt/socorro_dumps/name');
