@@ -15,8 +15,9 @@ class CrashReportDump {
      */
     public function crashFilename($dir, $uuid)
     {
-        if (strlen($uuid) > 4) {
-	    return implode("/", array($dir, substr($uuid, 0, 2), substr($uuid, 2, 2), $uuid)) . ".jsonz";
+        if (strlen($uuid) > 10) {
+	    $date = '20' . substr($uuid, -6);
+	    return implode("/", array($dir, $date, 'name', substr($uuid, 0, 2), substr($uuid, 2, 2), $uuid)) . ".jsonz";
         } else {
 	  throw new Exception("Bad arguments to crashFilename uuid too short $uuid");
 	}

@@ -203,13 +203,8 @@ class Report_Controller extends Controller {
             return Event::run('system.404');
         }
 
-        $crashDirs = Kohana::config('application.dumpPaths');
-		foreach ($crashDirs as $crashDir) {
-			$report = $this->report_model->getByUUID($uuid, $crashDir);
-			if ($this->report_model->exists($uuid, $crashDir)) {
-				break;
-			}
-		}
+	$crashDir = Kohana::config('application.dumpPath');
+	$report = $this->report_model->getByUUID($uuid, $crashDir);
 
         if ( is_null($report)) {
             if (!isset($_GET['p'])) {

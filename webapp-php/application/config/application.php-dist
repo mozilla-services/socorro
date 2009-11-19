@@ -18,9 +18,9 @@ $config['amo_url'] = 'http://addons.mozilla.org/';
 
 
 $config['dumpIDPrefix'] = 'bp-';
-// root directories for crash dump files
-//$config['dumpPath'] = array('/mnt/socorro_dumps/name');
-$config['dumpPaths'] = array('/home/aking/fake_dumps1', '/home/aking/fake_dumps');
+
+// root directory for crash dump files
+$config['dumpPath'] = '/mnt/socorro_dumps';
 
 // Mappings of source code types to web links
 $config['vcsMappings'] = array(

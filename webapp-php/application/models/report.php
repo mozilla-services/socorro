@@ -65,14 +65,12 @@ class Report_Model extends Model {
      */
     public function isReportAvailable ($uuid)
     {
-        $crashDirs = Kohana::config('application.dumpPaths');
-        foreach ($crashDirs as $crashDir) {
-            if ($this->exists($uuid, $crashDir)) {
-                if ($report = $this->getByUUID($uuid, $crashDir)) {
-                    return true;
-                }
-            }
-        }
+	$crashDir = Kohana::config('application.dumpPath');
+	if ($this->exists($uuid, $crashDir)) {
+	    if ($report = $this->getByUUID($uuid, $crashDir)) {
+		return true;
+	    }
+	}
         return false;
     }
 
