@@ -81,7 +81,7 @@ initialDeltaDate.fromStringConverter = cm.timeDeltaConverter
 initialDeltaDate.default = '4:00:00:00'
 
 minutesPerSlot = cm.Option()
-minutesPerSlot.doc 'how many minutes per leaf directory in the date storage branch'
+minutesPerSlot.doc = 'how many minutes per leaf directory in the date storage branch'
 minutesPerSlot.default = 1
 
 endDate = cm.Option()
