@@ -46,9 +46,9 @@
                           <ul class="product-versions">
                                 <?php
                             foreach ($releases as $release => $version) { ?>
-                                <li><a href="<?= url::base()?>query/query?do_query=1&amp;product=<?= urlencode($prod) ?>&amp;version=<?= urlencode($prod . ':' . $version) ?>"><span class="release-type"><?= ucwords($release) ?></span> (<span class="version"><?= $version ?></span>)</a></li>
+                                <li><a href="<?= url::base()?>topcrasher/byversion/<?= urlencode($prod) ?>/<?= urlencode($version) ?>"><span class="release-type"><?= ucwords($release) ?></span> (<span class="version"><?= $version ?></span>)</a></li>
                         <?php } ?>
-				<li class="more"><a href="<?= url::base() ?>query/query?do_query=1&amp;product=<?= urlencode($prod) ?>">More Versions</a></li>
+				<li class="more"><a href="<?= url::base() ?>topcrasher/">More Versions</a></li>
                           </ul><!-- /product-versions -->
 			  </div>
                           </li><!-- /product -->
@@ -68,10 +68,10 @@
                             <li class="xproduct all"><strong><?= $prod ?></strong></li>
                                 <?php
                             foreach ($releases as $release => $version) { ?>
-                                <li><a href="<?= url::base()?>query/query?do_query=1&amp;product=<?= urlencode($prod) ?>&amp;version=<?= urlencode($prod . ':' . $version) ?>"
+                                <li><a href="<?= url::base()?>topcrasher/byversion/<?= urlencode($prod) ?>/<?= urlencode($version) ?>"
 			               ><span class="release-type"><?= ucwords($release) ?></span> (<span class="xversion"><?= $version ?></span>)</a></li>
                         <?php } ?>
-				  <li class="more"><a href="<?= url::base() ?>query/query?do_query=1&amp;product=<?= urlencode($prod) ?>">More Versions</a></li>
+				  <li class="more"><a href="<?= url::base() ?>topcrasher/">More Versions</a></li>
 			   </ul><!-- /xproduct-versions -->		          
 
                      <?php
