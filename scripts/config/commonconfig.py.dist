@@ -80,6 +80,10 @@ initialDeltaDate.fromStringConverter = cm.timeDeltaConverter
 # override this default for your particular cron task
 initialDeltaDate.default = '4:00:00:00'
 
+minutesPerSlot = cm.Option()
+minutesPerSlot.doc 'how many minutes per leaf directory in the date storage branch'
+minutesPerSlot.default = 1
+
 endDate = cm.Option()
 endDate.doc = 'The end of the overall/outer aggregation window (YYYY-MM-DD [hh:mm:ss])'
 endDate.fromStringConverter = cm.dateTimeConverter
