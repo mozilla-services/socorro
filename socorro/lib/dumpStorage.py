@@ -188,11 +188,12 @@ class DumpStorage(object):
     #self.logger.debug("%s - trying makedirs %s",threading.currentThread().getName(),npath)
     um = os.umask(0)
     try:
-      socorro_fs.makedirs(npath,self.dirPermissions)
-    except OSError,e:
-      if not os.path.isdir(npath):
-        #self.logger.debug("%s - in makeNameDir, got not isdir(%s): %s",threading.currentThread().getName(),npath,e)
-        raise
+      try:
+        socorro_fs.makedirs(npath,self.dirPermissions)
+      except OSError,e:
+        if not os.path.isdir(npath):
+          #self.logger.debug("%s - in makeNameDir, got not isdir(%s): %s",threading.currentThread().getName(),npath,e)
+          raise
     finally:
       os.umask(um)
     if self.dumpGID:
@@ -239,11 +240,12 @@ class DumpStorage(object):
     dpath,dparts = self.datePath(date,webheadName)
     um = os.umask(0)
     try:
-      socorro_fs.makedirs(dpath,self.dirPermissions)
-    except OSError,e:
-      if not os.path.isdir(dpath):
-        #self.logger.debug("%s - in makeDateDir, got not isdir(%s): %s",threading.currentThread().getName(),dpath,e)
-        raise
+      try:
+        socorro_fs.makedirs(dpath,self.dirPermissions)
+      except OSError,e:
+        if not os.path.isdir(dpath):
+          #self.logger.debug("%s - in makeDateDir, got not isdir(%s): %s",threading.currentThread().getName(),dpath,e)
+          raise
     finally:
       os.umask(um)
     if self.dumpGID:

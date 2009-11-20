@@ -60,16 +60,17 @@ class ProcessedDumpStorage(socorro_dumpStorage.DumpStorage):
     dname = os.path.join(nameDir,ooid+self.fileSuffix)
     df = None
     try:
-      df = gzip.open(dname,'w',self.gzipCompression)
-    except IOError,x:
-      if 2 == x.errno:
-        # We might have lost this directory during a cleanup in another thread or process. Do again.
-        nameDir,nparts = self.makeNameDir(ooid,timestamp)
+      try:
         df = gzip.open(dname,'w',self.gzipCompression)
-      else:
-        raise x
-    except Exception,x:
-      raise
+      except IOError,x:
+        if 2 == x.errno:
+          # We might have lost this directory during a cleanup in another thread or process. Do again.
+          nameDir,nparts = self.makeNameDir(ooid,timestamp)
+          df = gzip.open(dname,'w',self.gzipCompression)
+        else:
+          raise x
+      except Exception,x:
+        raise
     finally:
       if not df:
         os.unlink(os.path.join(dateDir,ooid))
