@@ -35,7 +35,7 @@ def addReportData(cursor,dataToAdd):
      ( %(uuid)s, %(client_crash_date)s, %(date_processed)s, %(product)s, %(version)s, %(url)s, %(install_age)s, %(last_crash)s, %(uptime)s, %(os_name)s, %(os_version)s, %(user_comments)s, %(signature)s)
     """
   cursor.executemany(sql,dataToAdd)
-    
+
 def addCrashData(cursor,dataToAdd):
   # dataToAdd is [{},...] for dictionaries of values as shown in sql below
   sql = """INSERT INTO top_crash_by_signature
@@ -79,7 +79,7 @@ def genProd():
   while True:
     for o in weightedList:
       yield pairs[o]
-      
+
 def genProdId(cursor):
   productDimsData = dbtestutil.dimsData['productdims']
   assert 8 == len(productDimsData), 'So we can correctly create weightedList below'
@@ -113,7 +113,7 @@ def genUrl():
   while True:
     for p in pairs:
       yield p
-      
+
 def genUrlId(cursor):
   cursor.execute("select id from urldims order by id")
   cursor.connection.commit()
@@ -234,15 +234,15 @@ class TestTopCrashesBySignature(unittest.TestCase):
     self.testDB.removeDB(me.config,me.logger)
     cia.clearCache()
     self.connection.close()
-    
+
   def prepareConfigForPeriod(self,idkeys,startDate,endDate):
-   """enter a row for each idkey, start and end date. Do it repeatedly if you need different ones"""
-   cfgKeys = set([x[0] for x in idkeys])
-   cfgdata = [[x,startDate,endDate] for x in cfgKeys]
-   self.connection.cursor().execute("delete from product_visibility")
-   sql = "INSERT INTO product_visibility (productdims_id,start_date,end_date) VALUES (%s,%s,%s)"
-   self.connection.cursor().executemany(sql,cfgdata)
-   self.connection.commit()
+    """enter a row for each idkey, start and end date. Do it repeatedly if you need different ones"""
+    cfgKeys = set([x[0] for x in idkeys])
+    cfgdata = [[x,startDate,endDate] for x in cfgKeys]
+    self.connection.cursor().execute("delete from product_visibility")
+    sql = "INSERT INTO product_visibility (productdims_id,start_date,end_date) VALUES (%s,%s,%s)"
+    self.connection.cursor().executemany(sql,cfgdata)
+    self.connection.commit()
 
   def prepareExtractDataForPeriod(self, columnName, sizePerDay=2, numDays=5):
     """Put some crash data into reports table, return their extrema for the columnName specified"""
@@ -260,7 +260,7 @@ class TestTopCrashesBySignature(unittest.TestCase):
     addReportData(cursor,data)
     self.connection.commit()
     return minStamp,maxStamp,data
-    
+
   def testConstructor(self):
     """
     TestTopCrashesBySignature.testConstructor
@@ -297,7 +297,7 @@ class TestTopCrashesBySignature(unittest.TestCase):
     config = copy.copy(me.config)
     config['deltaDate'] = dt.timedelta(days=3)
     assert_raises(SystemExit,topcrasher.TopCrashesBySignature,config)
-    
+
   def testExtractDataForPeriod_ByDateProcessed(self):
     """
     TestTopCrashesBySignature.testExtractDataForPeriod_ByDateProcessed(self):
@@ -454,7 +454,7 @@ class TestTopCrashesBySignature(unittest.TestCase):
   def testFixupCrashData(self):
     """
     TestTopCrashesBySignature.testFixupCrashData(self):(slow=1)
-      - create a bunch of data, count it in the test, put it into the reports table, then 
+      - create a bunch of data, count it in the test, put it into the reports table, then
         let TopCrashesBySignature get it back out, and assert that fixup gets the same count
     """
     global me
@@ -482,11 +482,11 @@ class TestTopCrashesBySignature(unittest.TestCase):
     self.connection.commit()
     tc = topcrasher.TopCrashesBySignature(me.config)
     tc.dateColumnName = 'date_processed'
-    baseDate = testBaseDate 
+    baseDate = testBaseDate
     start = baseDate - dt.timedelta(days=1)
     end = baseDate + dt.timedelta(days=6)
     self.prepareConfigForPeriod(keySet,start,end)
-    
+
     summaryCrashes = {}
     tc.extractDataForPeriod(start,end,summaryCrashes)
     assert expect == summaryCrashes, 'Oops. You will need to debug on this. Sorry. Try commenting this line and un-commenting the next bunch'
@@ -500,7 +500,7 @@ class TestTopCrashesBySignature(unittest.TestCase):
 #     # check that everything we expect is in what we got
 #     for k,v in expect.items():
 #       assert getter(v) == getter(summaryCrashes[k]),  'for key %s: Expected %s but got %s'%(k,getter(v), getter(summaryCrashes[k]))
-    
+
     result = tc.fixupCrashData(summaryCrashes,baseDate,dt.timedelta(minutes=19))
     result.sort(key=itemgetter('count'),reverse=True)
     resultx = tc.fixupCrashData(expect,baseDate,dt.timedelta(minutes=19))
@@ -643,7 +643,7 @@ class TestTopCrashesBySignature(unittest.TestCase):
     cursor.execute(countSql)
     self.connection.commit()
     gotCount = cursor.fetchone()[0]
-    assert 130 == gotCount, 'but got %s'%gotCount    
+    assert 130 == gotCount, 'but got %s'%gotCount
     cursor.execute("SELECT window_end,window_size from top_crashes_by_signature")
     got = cursor.fetchall()
     self.connection.commit()
@@ -659,7 +659,7 @@ class TestTopCrashesBySignature(unittest.TestCase):
     cursor.execute(countSql)
     self.connection.commit()
     gotCount = cursor.fetchone()[0]
-    assert len(summaryCrashes) == gotCount, 'but got %s'%gotCount    
+    assert len(summaryCrashes) == gotCount, 'but got %s'%gotCount
     cursor.execute("SELECT window_end, window_size from top_crashes_by_signature")
     got = cursor.fetchall()
     self.connection.commit()
@@ -703,7 +703,7 @@ class TestTopCrashesBySignature(unittest.TestCase):
     got = cursor.fetchone()
     self.connection.rollback()
     assert config['deltaWindow'] == got[1], 'But it was %s'%(str(got))
-    
+
     config['startDate'] = config['endDate']
     config['endDate'] = dt.datetime(2008,1,2,3)
     config['startWindow'] = config['startDate']
@@ -723,7 +723,7 @@ class TestTopCrashesBySignature(unittest.TestCase):
     cursor = self.connection.cursor()
     idCache = cia.IdCache(cursor)
 
-    # test a small full set of keys. Since we have already tested each component, that should be enough 
+    # test a small full set of keys. Since we have already tested each component, that should be enough
     minStamp, maxStamp, data = self.prepareExtractDataForPeriod('date_processed',31,5) # full set of keys
     configBegin = minStamp - dt.timedelta(hours=1)
     configEnd = maxStamp + dt.timedelta(hours=1)
