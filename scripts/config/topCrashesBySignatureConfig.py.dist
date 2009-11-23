@@ -19,6 +19,14 @@ from config.commonconfig import deltaDate
 from config.commonconfig import initialDeltaDate
 initialDeltaDate.default = '96:00:00'
 
+product = cm.Option()
+product.doc = 'the name of the product to restrict to (leave blank for all)'
+product.default = 'Firefox'
+
+version = cm.Option()
+version.doc = 'the name of the version to restrict to (leave blank for all)'
+version.default = ''
+
 # specific to this script
 logFilePathname = cm.Option()
 logFilePathname.doc = 'full pathname for the log file'
