@@ -95,71 +95,71 @@ class TestUtil(unittest.TestCase):
     while defEnd + cron_util.globalDefaultDeltaWindow < now:
       defEnd += cron_util.globalDefaultDeltaWindow
 
-    mm = cron_util.getProcessingDates(config,self.tableName,cursor,me.fileLogger)
+    mm = cron_util.getProcessingDates(config,self.tableName,None,cursor,me.fileLogger)
     assert (defStart,defEnd-defStart,defEnd) == mm, 'But got %s'%(str(mm))
     start = datetime.datetime(2000,1,2,12,12)
     delta = datetime.timedelta(days=3)
     end = start+delta
 
     # check that just one kwarg raises SystemExit
-    assert_raises(SystemExit,cron_util.getProcessingDates,config,self.tableName,cursor,me.fileLogger,startDate=start)
-    assert_raises(SystemExit,cron_util.getProcessingDates,config,self.tableName,cursor,me.fileLogger,endDate=end)
-    assert_raises(SystemExit,cron_util.getProcessingDates,config,self.tableName,cursor,me.fileLogger,deltaDate=delta)
+    assert_raises(SystemExit,cron_util.getProcessingDates,config,self.tableName,None,cursor,me.fileLogger,startDate=start)
+    assert_raises(SystemExit,cron_util.getProcessingDates,config,self.tableName,None,cursor,me.fileLogger,endDate=end)
+    assert_raises(SystemExit,cron_util.getProcessingDates,config,self.tableName,None,cursor,me.fileLogger,deltaDate=delta)
 
     # check that just one config raises SystemExit
-    assert_raises(SystemExit,cron_util.getProcessingDates,{'startDate':start},self.tableName,cursor,me.fileLogger)
-    assert_raises(SystemExit,cron_util.getProcessingDates,{'endDate':end},self.tableName,cursor,me.fileLogger)
-    assert_raises(SystemExit,cron_util.getProcessingDates,{'deltaDate':delta},self.tableName,cursor,me.fileLogger)
+    assert_raises(SystemExit,cron_util.getProcessingDates,{'startDate':start},self.tableName,None,cursor,me.fileLogger)
+    assert_raises(SystemExit,cron_util.getProcessingDates,{'endDate':end},self.tableName,None,cursor,me.fileLogger)
+    assert_raises(SystemExit,cron_util.getProcessingDates,{'deltaDate':delta},self.tableName,None,cursor,me.fileLogger)
 
     # check that two are sufficient
-    mm = cron_util.getProcessingDates({'startDate':start},self.tableName,cursor,me.fileLogger,endDate=end)
+    mm = cron_util.getProcessingDates({'startDate':start},self.tableName,None,cursor,me.fileLogger,endDate=end)
     assert (start,delta,end) == mm, "But got %s"%(str(mm))
-    mm = cron_util.getProcessingDates({'startDate':start},self.tableName,cursor,me.fileLogger,deltaDate=delta)
+    mm = cron_util.getProcessingDates({'startDate':start},self.tableName,None,cursor,me.fileLogger,deltaDate=delta)
     assert (start,delta,end) == mm, "But got %s"%(str(mm))
-    mm = cron_util.getProcessingDates({'endDate':end},self.tableName,cursor,me.fileLogger,startDate=start)
+    mm = cron_util.getProcessingDates({'endDate':end},self.tableName,None,cursor,me.fileLogger,startDate=start)
     assert (start,delta,end) == mm, "But got %s"%(str(mm))
-    mm = cron_util.getProcessingDates({'endDate':end},self.tableName,cursor,me.fileLogger,deltaDate=delta)
+    mm = cron_util.getProcessingDates({'endDate':end},self.tableName,None,cursor,me.fileLogger,deltaDate=delta)
     assert (start,delta,end) == mm, "But got %s"%(str(mm))
-    mm = cron_util.getProcessingDates({'deltaDate':delta},self.tableName,cursor,me.fileLogger,endDate=end)
+    mm = cron_util.getProcessingDates({'deltaDate':delta},self.tableName,None,cursor,me.fileLogger,endDate=end)
     assert (start,delta,end) == mm, "But got %s"%(str(mm))
-    mm = cron_util.getProcessingDates({'deltaDate':delta},self.tableName,cursor,me.fileLogger,startDate=start)
+    mm = cron_util.getProcessingDates({'deltaDate':delta},self.tableName,None,cursor,me.fileLogger,startDate=start)
     assert (start,delta,end) == mm, "But got %s"%(str(mm))
 
     # check various inconsistencies
-    assert_raises(SystemExit,cron_util.getProcessingDates,{'startDate':start},self.tableName,cursor,me.fileLogger,endDate=start)
-    assert_raises(SystemExit,cron_util.getProcessingDates,{'startDate':start},self.tableName,cursor,me.fileLogger,endDate=start-delta)
-    assert_raises(SystemExit,cron_util.getProcessingDates,{'startDate':start},self.tableName,cursor,me.fileLogger,deltaDate=datetime.timedelta(0))
-    assert_raises(SystemExit,cron_util.getProcessingDates,{'startDate':start},self.tableName,cursor,me.fileLogger,deltaDate=datetime.timedelta(days=-1))
+    assert_raises(SystemExit,cron_util.getProcessingDates,{'startDate':start},self.tableName,None,cursor,me.fileLogger,endDate=start)
+    assert_raises(SystemExit,cron_util.getProcessingDates,{'startDate':start},self.tableName,None,cursor,me.fileLogger,endDate=start-delta)
+    assert_raises(SystemExit,cron_util.getProcessingDates,{'startDate':start},self.tableName,None,cursor,me.fileLogger,deltaDate=datetime.timedelta(0))
+    assert_raises(SystemExit,cron_util.getProcessingDates,{'startDate':start},self.tableName,None,cursor,me.fileLogger,deltaDate=datetime.timedelta(days=-1))
 
     # Check that table with earlier row is ignored
     early = start-datetime.timedelta(days=1)
     cursor.execute("INSERT INTO %s (window_end,window_size) VALUES(%%s,%%s)"%self.tableName,(early,delta))
     self.connection.commit()
-    mm = cron_util.getProcessingDates(config,self.tableName,cursor,me.fileLogger,startDate=start,endDate=end)
+    mm = cron_util.getProcessingDates(config,self.tableName,None,cursor,me.fileLogger,startDate=start,endDate=end)
     assert (start,delta,end) == mm, "But got %s"%(str(mm))
 
     # Check that table with later row is used
     later = start+datetime.timedelta(days=1)
     cursor.execute("INSERT INTO %s (window_end,window_size) VALUES(%%s,%%s)"%self.tableName,(later,delta))
     self.connection.commit()
-    mm = cron_util.getProcessingDates(config,self.tableName,cursor,me.fileLogger,startDate=start,endDate=end)
+    mm = cron_util.getProcessingDates(config,self.tableName,None,cursor,me.fileLogger,startDate=start,endDate=end)
     assert (later,end-later,end) == mm, 'Expected %s, got %s'%(str((later,end-later,end)),str(mm))
 
     # Check that table with 'too late' time causes assertion
     later = later+datetime.timedelta(days=4)
     cursor.execute("INSERT INTO %s (window_end,window_size) VALUES(%%s,%%s)"%self.tableName,(later,delta))
     self.connection.commit()
-    assert_raises(SystemExit,cron_util.getProcessingDates,config,self.tableName,cursor,me.fileLogger,startDate=start,endDate=end)
+    assert_raises(SystemExit,cron_util.getProcessingDates,config,self.tableName,None,cursor,me.fileLogger,startDate=start,endDate=end)
 
   def testGetProcessingWindow(self):
     cursor = self.connection.cursor()
     config = {}
     # check that a really empty system fails
-    assert_raises(SystemExit,cron_util.getProcessingWindow,config,self.tableName,cursor,me.fileLogger)
+    assert_raises(SystemExit,cron_util.getProcessingWindow,config,self.tableName,None,cursor,me.fileLogger)
 
     self.createBunny()
     # check that nothing useful yields nothing
-    mm = cron_util.getProcessingWindow(config,self.tableName,cursor,me.fileLogger)
+    mm = cron_util.getProcessingWindow(config,self.tableName,None,cursor,me.fileLogger)
     assert (None,None,None) == mm, 'Expected None*3, got %s'%(str(mm))
 
     start = datetime.datetime(2000,1,2,12,12)
@@ -172,78 +172,78 @@ class TestUtil(unittest.TestCase):
     procEnd = procStart+procDelta
 
     # check that just one kwarg raises SystemExit
-    assert_raises(SystemExit,cron_util.getProcessingWindow,config,self.tableName,cursor,me.fileLogger,startWindow=start)
-    assert_raises(SystemExit,cron_util.getProcessingWindow,config,self.tableName,cursor,me.fileLogger,endWindow=start)
-    assert_raises(SystemExit,cron_util.getProcessingWindow,config,self.tableName,cursor,me.fileLogger,deltaWindow=delta)
+    assert_raises(SystemExit,cron_util.getProcessingWindow,config,self.tableName,None,cursor,me.fileLogger,startWindow=start)
+    assert_raises(SystemExit,cron_util.getProcessingWindow,config,self.tableName,None,cursor,me.fileLogger,endWindow=start)
+    assert_raises(SystemExit,cron_util.getProcessingWindow,config,self.tableName,None,cursor,me.fileLogger,deltaWindow=delta)
 
     # check that just one config raises SystemExit
-    assert_raises(SystemExit,cron_util.getProcessingWindow,{'startWindow':start},self.tableName,cursor,me.fileLogger)
-    assert_raises(SystemExit,cron_util.getProcessingWindow,{'endWindow':end},self.tableName,cursor,me.fileLogger)
-    assert_raises(SystemExit,cron_util.getProcessingWindow,{'deltaWindow':delta},self.tableName,cursor,me.fileLogger)
+    assert_raises(SystemExit,cron_util.getProcessingWindow,{'startWindow':start},self.tableName,None,cursor,me.fileLogger)
+    assert_raises(SystemExit,cron_util.getProcessingWindow,{'endWindow':end},self.tableName,None,cursor,me.fileLogger)
+    assert_raises(SystemExit,cron_util.getProcessingWindow,{'deltaWindow':delta},self.tableName,None,cursor,me.fileLogger)
 
     # check that processingDay doesn't help
-    assert_raises(SystemExit,cron_util.getProcessingWindow,config,self.tableName,cursor,me.fileLogger,deltaWindow=delta,processingDay=procDay)
-    assert_raises(SystemExit,cron_util.getProcessingWindow,config,self.tableName,cursor,me.fileLogger,startWindow=start,processingDay=procDay)
-    assert_raises(SystemExit,cron_util.getProcessingWindow,config,self.tableName,cursor,me.fileLogger,endWindow=start,processingDay=procDay)
+    assert_raises(SystemExit,cron_util.getProcessingWindow,config,self.tableName,None,cursor,me.fileLogger,deltaWindow=delta,processingDay=procDay)
+    assert_raises(SystemExit,cron_util.getProcessingWindow,config,self.tableName,None,cursor,me.fileLogger,startWindow=start,processingDay=procDay)
+    assert_raises(SystemExit,cron_util.getProcessingWindow,config,self.tableName,None,cursor,me.fileLogger,endWindow=start,processingDay=procDay)
     # ... with config either
-    assert_raises(SystemExit,cron_util.getProcessingWindow,{'startWindow':start},self.tableName,cursor,me.fileLogger,processingDay=procDay)
-    assert_raises(SystemExit,cron_util.getProcessingWindow,{'endWindow':end},self.tableName,cursor,me.fileLogger,processingDay=procDay)
-    assert_raises(SystemExit,cron_util.getProcessingWindow,{'deltaWindow':delta,'processingDay':procDay},self.tableName,cursor,me.fileLogger)
+    assert_raises(SystemExit,cron_util.getProcessingWindow,{'startWindow':start},self.tableName,None,cursor,me.fileLogger,processingDay=procDay)
+    assert_raises(SystemExit,cron_util.getProcessingWindow,{'endWindow':end},self.tableName,None,cursor,me.fileLogger,processingDay=procDay)
+    assert_raises(SystemExit,cron_util.getProcessingWindow,{'deltaWindow':delta,'processingDay':procDay},self.tableName,None,cursor,me.fileLogger)
 
     # check that any two kwargs work correctly
-    mm = cron_util.getProcessingWindow(config,self.tableName,cursor,me.fileLogger,endWindow=end,startWindow=start)
+    mm = cron_util.getProcessingWindow(config,self.tableName,None,cursor,me.fileLogger,endWindow=end,startWindow=start)
     assert (start,delta,end) == mm, 'But got %s'%(str(mm))
-    mm = cron_util.getProcessingWindow(config,self.tableName,cursor,me.fileLogger,deltaWindow=delta,startWindow=start)
+    mm = cron_util.getProcessingWindow(config,self.tableName,None,cursor,me.fileLogger,deltaWindow=delta,startWindow=start)
     assert (start,delta,end) == mm, 'But got %s'%(str(mm))
-    mm = cron_util.getProcessingWindow(config,self.tableName,cursor,me.fileLogger,endWindow=end,deltaWindow=delta)
+    mm = cron_util.getProcessingWindow(config,self.tableName,None,cursor,me.fileLogger,endWindow=end,deltaWindow=delta)
     assert (start,delta,end) == mm, 'But got %s'%(str(mm))
 
     # and that two configs work
-    mm = cron_util.getProcessingWindow({'endWindow':end,'startWindow':start},self.tableName,cursor,me.fileLogger)
+    mm = cron_util.getProcessingWindow({'endWindow':end,'startWindow':start},self.tableName,None,cursor,me.fileLogger)
     assert (start,delta,end) == mm, 'But got %s'%(str(mm))
 
     # and that one of each works  (not full test because using transparent box testing)
-    mm = cron_util.getProcessingWindow({'deltaWindow':delta},self.tableName,cursor,me.fileLogger,startWindow=start)
+    mm = cron_util.getProcessingWindow({'deltaWindow':delta},self.tableName,None,cursor,me.fileLogger,startWindow=start)
 
     # check that three good kwargs works
-    mm = cron_util.getProcessingWindow(config,self.tableName,cursor,me.fileLogger,endWindow=end,deltaWindow=delta,startWindow=start)
+    mm = cron_util.getProcessingWindow(config,self.tableName,None,cursor,me.fileLogger,endWindow=end,deltaWindow=delta,startWindow=start)
     assert (start,delta,end) == mm, 'But got %s'%(str(mm))
 
     # check that three incompatible kwargs fails
     badDelta = delta + delta
-    assert_raises(SystemExit,cron_util.getProcessingWindow,config,self.tableName,cursor,me.fileLogger,endWindow=end,deltaWindow=badDelta,startWindow=start)
+    assert_raises(SystemExit,cron_util.getProcessingWindow,config,self.tableName,None,cursor,me.fileLogger,endWindow=end,deltaWindow=badDelta,startWindow=start)
 
     # check that good processingDay works as expected
-    mm = cron_util.getProcessingWindow(config,self.tableName,cursor,me.fileLogger,processingDay=procDay)
+    mm = cron_util.getProcessingWindow(config,self.tableName,None,cursor,me.fileLogger,processingDay=procDay)
     assert (procStart,procDelta,procEnd) == mm, 'But got %s'%(str(mm))
 
     #check that invalid date (because it is a datetime) fails
     extraProcDay = datetime.datetime(2001,9,8,7,6,5)
-    assert_raises(SystemExit,cron_util.getProcessingWindow,config,self.tableName,cursor,me.fileLogger,processingDay=extraProcDay)
+    assert_raises(SystemExit,cron_util.getProcessingWindow,config,self.tableName,None,cursor,me.fileLogger,processingDay=extraProcDay)
 
     # check that kwargs beats config (not full test because using transparent box testing)
     otherProcDay = datetime.datetime(2003,9,8,7,6,5)
-    mm = cron_util.getProcessingWindow({'processingDay':otherProcDay},self.tableName,cursor,me.fileLogger,processingDay=procDay)
+    mm = cron_util.getProcessingWindow({'processingDay':otherProcDay},self.tableName,None,cursor,me.fileLogger,processingDay=procDay)
     assert (procStart,procDelta,procEnd) == mm, 'But got %s'%(str(mm))
 
 
   def testGetLastWindowAndSizeFromTable(self):
     cursor = self.connection.cursor()
     # test the no-such-table case
-    assert_raises(SystemExit,cron_util.getLastWindowAndSizeFromTable,cursor,self.tableName,me.fileLogger)
+    assert_raises(SystemExit,cron_util.getLastWindowAndSizeFromTable,cursor,self.tableName,None,me.fileLogger)
     self.connection.rollback()
 
     # test the missing-column case
     self.createBunny()
     cursor.execute("ALTER TABLE %s drop column window_end"%self.tableName)
     self.connection.commit()
-    assert_raises(SystemExit,cron_util.getLastWindowAndSizeFromTable,cursor,self.tableName,me.fileLogger)
+    assert_raises(SystemExit,cron_util.getLastWindowAndSizeFromTable,cursor,self.tableName,None,me.fileLogger)
     self.connection.rollback()
     self.dropBunny()
 
     # test the correct but empty case
     self.createBunny()
-    mm = cron_util.getLastWindowAndSizeFromTable(cursor,self.tableName,me.fileLogger)
+    mm = cron_util.getLastWindowAndSizeFromTable(cursor,self.tableName,None,me.fileLogger)
     assert (None,None) == mm, 'Expect no time data, got %s'%(str(mm))
 
     end = datetime.datetime(2001,2,3,12)
@@ -252,7 +252,7 @@ class TestUtil(unittest.TestCase):
     delta = datetime.timedelta(seconds=-600)
     cursor.execute("INSERT INTO %s (window_end,window_size) VALUES(%%s,%%s)"%self.tableName,(end,delta))
     self.connection.commit()
-    assert_raises(SystemExit,cron_util.getLastWindowAndSizeFromTable,cursor,self.tableName,me.fileLogger)
+    assert_raises(SystemExit,cron_util.getLastWindowAndSizeFromTable,cursor,self.tableName,None,me.fileLogger)
     self.connection.rollback()
     self.dropBunny()
 
@@ -261,7 +261,7 @@ class TestUtil(unittest.TestCase):
     delta = datetime.timedelta(days=0)
     cursor.execute("INSERT INTO %s (window_end,window_size) VALUES(%%s,%%s)"%self.tableName,(end,delta))
     self.connection.commit()
-    assert_raises(SystemExit,cron_util.getLastWindowAndSizeFromTable,cursor,self.tableName,me.fileLogger)
+    assert_raises(SystemExit,cron_util.getLastWindowAndSizeFromTable,cursor,self.tableName,None,me.fileLogger)
     self.connection.rollback()
     self.dropBunny()
 
@@ -270,7 +270,7 @@ class TestUtil(unittest.TestCase):
     delta = datetime.timedelta(days=-2)
     cursor.execute("INSERT INTO %s (window_end,window_size) VALUES(%%s,%%s)"%self.tableName,(end,delta))
     self.connection.commit()
-    assert_raises(SystemExit,cron_util.getLastWindowAndSizeFromTable,cursor,self.tableName,me.fileLogger)
+    assert_raises(SystemExit,cron_util.getLastWindowAndSizeFromTable,cursor,self.tableName,None,me.fileLogger)
     self.connection.rollback()
     self.dropBunny()
 
@@ -279,7 +279,7 @@ class TestUtil(unittest.TestCase):
     delta = datetime.timedelta(seconds=1234)
     cursor.execute("INSERT INTO %s (window_end,window_size) VALUES(%%s,%%s)"%self.tableName,(end,delta))
     self.connection.commit()
-    assert_raises(SystemExit,cron_util.getLastWindowAndSizeFromTable,cursor,self.tableName,me.fileLogger)
+    assert_raises(SystemExit,cron_util.getLastWindowAndSizeFromTable,cursor,self.tableName,None,me.fileLogger)
     self.connection.rollback()
     self.dropBunny()
 
@@ -288,7 +288,7 @@ class TestUtil(unittest.TestCase):
     delta = datetime.timedelta(days=1,seconds=4)
     cursor.execute("INSERT INTO %s (window_end,window_size) VALUES(%%s,%%s)"%self.tableName,(end,delta))
     self.connection.commit()
-    assert_raises(SystemExit,cron_util.getLastWindowAndSizeFromTable,cursor,self.tableName,me.fileLogger)
+    assert_raises(SystemExit,cron_util.getLastWindowAndSizeFromTable,cursor,self.tableName,None,me.fileLogger)
     self.connection.rollback()
     self.dropBunny()
 
@@ -297,7 +297,7 @@ class TestUtil(unittest.TestCase):
     delta = datetime.timedelta(seconds=720)
     cursor.execute("INSERT INTO %s (window_end,window_size) VALUES(%%s,%%s)"%self.tableName,(end,delta))
     self.connection.commit()
-    mm = cron_util.getLastWindowAndSizeFromTable(cursor,self.tableName,me.fileLogger)
+    mm = cron_util.getLastWindowAndSizeFromTable(cursor,self.tableName,None,me.fileLogger)
     assert (end,delta) == mm, 'Expected %s, got %s'%(str((end,delta)),str(mm))
 
     # be sure we get the correct row
@@ -307,7 +307,7 @@ class TestUtil(unittest.TestCase):
     end1 = end-delta0
     cursor.execute("INSERT INTO %s (window_end,window_size) VALUES(%%s,%%s),(%%s,%%s)"%self.tableName,(end0,delta0,end1,delta1))
     self.connection.commit()
-    mm = cron_util.getLastWindowAndSizeFromTable(cursor,self.tableName,me.fileLogger)
+    mm = cron_util.getLastWindowAndSizeFromTable(cursor,self.tableName,None,me.fileLogger)
     assert (end0,delta0) == mm, 'Expected %s, got %s'%(str((end0,delta0)),str(mm))
 
   def testGetDefaultDateInterval(self):
@@ -316,7 +316,7 @@ class TestUtil(unittest.TestCase):
     defaultDeltaWindow = datetime.timedelta(minutes=24)
 
     # check expected exception with no table
-    assert_raises(SystemExit,cron_util.getDefaultDateInterval,cursor,self.tableName,datetime.timedelta(0),initialDeltaDate,defaultDeltaWindow,me.fileLogger)
+    assert_raises(SystemExit,cron_util.getDefaultDateInterval,cursor,self.tableName,datetime.timedelta(0),initialDeltaDate,defaultDeltaWindow,None,me.fileLogger)
 
     # check with empty table
     self.createBunny()
@@ -326,7 +326,7 @@ class TestUtil(unittest.TestCase):
     defEnd = midNight
     while defEnd+defaultDeltaWindow < now:
       defEnd += defaultDeltaWindow
-    ddi = cron_util.getDefaultDateInterval(cursor,self.tableName,datetime.timedelta(0),initialDeltaDate,defaultDeltaWindow,me.fileLogger)
+    ddi = cron_util.getDefaultDateInterval(cursor,self.tableName,datetime.timedelta(0),initialDeltaDate,defaultDeltaWindow,None,me.fileLogger)
     assert (defStart,defEnd,None) == ddi, "But got %s"%(str(ddi))
 
     # check with one row in table
@@ -334,7 +334,7 @@ class TestUtil(unittest.TestCase):
     delta0 = datetime.timedelta(minutes=15)
     cursor.execute("INSERT INTO %s (window_end,window_size) VALUES(%%s,%%s)"%self.tableName,(end0,delta0))
     self.connection.commit()
-    ddi = cron_util.getDefaultDateInterval(cursor,self.tableName,datetime.timedelta(0),initialDeltaDate,defaultDeltaWindow,me.fileLogger)
+    ddi = cron_util.getDefaultDateInterval(cursor,self.tableName,datetime.timedelta(0),initialDeltaDate,defaultDeltaWindow,None,me.fileLogger)
     now = datetime.datetime.now()
     midNight = now.replace(hour=0,minute=0,second=0,microsecond=0)
     defEnd = midNight
