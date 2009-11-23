@@ -16,7 +16,7 @@ class ProcessedDumpStorage(socorro_dumpStorage.DumpStorage):
    - A suffix that encodes the date of assignment
    - information about the appropriate depth of the radix tree (by default: 4, but now always 2)
   The storage is a file whose name is ooid.suffix, whose path is determined by the ooid itself
-  
+
   An additional 'date' branch is saved to facilitate finding files by date. It holds paths like
   YYYY/mm/dd/HH/MM_n/ooid where MM is among ['00','05', ... '55'], n is a (small) digit and
   ooid is a symbolic link to the directory in the name branch holding ooid.jsonz
@@ -25,7 +25,7 @@ class ProcessedDumpStorage(socorro_dumpStorage.DumpStorage):
     """
     Set up the basic conditions for storing gmpgz files. Possible kwargs keys:
      - 'indexName': The relative path to the top of the name storage tree from root parameter. Default 'name'
-     - //deprecated// rootName: now is indexName 
+     - //deprecated// rootName: now is indexName
      - 'dateName': The relative path to the top of the date storage tree from root parameter. Default 'date'
      - 'fileSuffix': The storage filename suffix. Default '.jsonz'
      - 'gzipCompression': The level of compression to use. Default = 9
@@ -71,6 +71,7 @@ class ProcessedDumpStorage(socorro_dumpStorage.DumpStorage):
           raise x
       except Exception,x:
         raise
+      os.chmod(dname,self.dumpPermissions)
     finally:
       if not df:
         os.unlink(os.path.join(dateDir,ooid))
