@@ -57,7 +57,16 @@ class TopCrashesBySignature(object):
     self.debugging = configContext.get('debug',False)
     self.dateColumnName = configContext.get('dateColumnName', 'date_processed') # could be client_crash_date
     cursor = self.connection.cursor()
-    self.startDate,self.deltaDate,self.endDate = cron_util.getProcessingDates(self.configContext,resultTable,cursor,logger)
+    try:
+      self.productVersionRestriction = cron_util.getProductId(configContext.product, configContext.version, cursor, logger)
+    except:
+      self.productVersionRestriction = None
+    if self.productVersionRestriction:
+      self.productVersionSqlRestrictionPhrase = "and p.id = %s" % self.productVersionRestriction
+    else:
+      self.productVersionSqlRestrictionPhrase = ""
+    logger.debug('%s %s', self.productVersionRestriction, self.productVersionSqlRestrictionPhrase)
+    self.startDate,self.deltaDate,self.endDate = cron_util.getProcessingDates(self.configContext,resultTable,self.productVersionRestriction,cursor,logger)
 
   def extractDataForPeriod(self, startTime, endTime, summaryCrashes):
     """
@@ -79,7 +88,8 @@ class TopCrashesBySignature(object):
                 JOIN %(inTable)s r on p.product = r.product AND p.version = r.version
               WHERE NOT cfg.ignore AND %%(startTime)s <= r.%(dcolumn)s and r.%(dcolumn)s < %%(endTime)s
               AND   r.%(dcolumn)s >= cfg.start_date AND r.%(dcolumn)s <= cfg.end_date
-          """%({'dcolumn':self.dateColumnName, 'resultColumnlist':resultColumnlist,'inTable':sourceTable})
+              %(productVersionSqlRestrictionPhrase)s
+          """%({'dcolumn':self.dateColumnName, 'resultColumnlist':resultColumnlist,'inTable':sourceTable, 'productVersionSqlRestrictionPhrase':self.productVersionSqlRestrictionPhrase})
     startEndData = {'startTime':startTime, 'endTime':endTime,}
     if self.debugging:
       logger.debug("Collecting data in range[%s,%s) on column %s",startTime,endTime, self.dateColumnName)
@@ -161,7 +171,8 @@ class TopCrashesBySignature(object):
     self.dateColumnName = kwargs.get('dateColumnName',self.dateColumnName)
     revertDateColumnName = (self.dateColumnName != oldDateColumnName)
     cursor = self.connection.cursor()
-    startWindow,deltaWindow,endWindow = cron_util.getProcessingWindow(self.configContext,resultTable,cursor,logger,**kwargs)
+    startWindow,deltaWindow,endWindow = cron_util.getProcessingWindow(self.configContext,resultTable,self.productVersionRestriction,cursor,logger,**kwargs)
+    print 'here - startWindow,deltaWindow,endWindow', startWindow,deltaWindow,endWindow
     startWindow = self.startDate
     try:
       fullCount = 0
@@ -177,4 +188,4 @@ class TopCrashesBySignature(object):
       if revertDateColumnName:
         self.dateColumnName = oldDateColumnName
     return fullCount
-      
+

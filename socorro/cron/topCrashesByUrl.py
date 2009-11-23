@@ -91,10 +91,20 @@ class TopCrashesByUrl(object):
     # Based on exhastive analysis of three data points, want 15% more to cover. Pad to 20%
     # *** THIS IS A HACK ***:
     configContext.setdefault('fatMaximumUrls',configContext.maximumUrls + configContext.maximumUrls/5)
-    
+
     configContext.setdefault('dateColumn',kwargs.get('dateColumn','date_processed'))
     self.fixupContextByProcessingDay(configContext)
     self.idCache = None
+    try:
+      self.productVersionRestriction = cron_util.getProductId(configContext.product, configContext.version, self.connection.cursor(), logger)
+    except:
+      self.productVersionRestriction = None
+    if self.productVersionRestriction:
+      self.productVersionSqlRestrictionPhrase = "and p.id = %s" % self.productVersionRestriction
+    else:
+      self.productVersionSqlRestrictionPhrase = ""
+    self.configContext['productVersionSqlRestrictionPhrase'] = self.productVersionSqlRestrictionPhrase
+    logger.debug('%s %s', self.productVersionRestriction, self.productVersionSqlRestrictionPhrase)
     logger.info("After constructor, config=\n%s",str(configContext))
 
   def fixupContextByProcessingDay(self,context):
@@ -115,7 +125,7 @@ class TopCrashesByUrl(object):
     return [(count, url),...] for as many as maximumUrls hits within the time window, each with at least minimumHitsPerUrl.
     """
     cur = self.connection.cursor()
-    windowStart,deltaWindow,endWindow = cron_util.getProcessingWindow(self.configContext,resultTable,cur,logger,**kwargs)
+    windowStart,deltaWindow,endWindow = cron_util.getProcessingWindow(self.configContext,resultTable,self.productVersionRestriction,cur,logger,**kwargs)
     if not windowStart: # we don't care why
       return []
     self.configContext['deltaWindow'] = deltaWindow
@@ -125,6 +135,7 @@ class TopCrashesByUrl(object):
                      JOIN product_visibility cfg ON p.id = cfg.productdims_id
                      WHERE r.url IS NOT NULL AND r.url <> '' AND %%(startDate)s <= r.%(dateColumn)s AND r.%(dateColumn)s < %%(endDate)s
                      AND cfg.start_date <= r.%(dateColumn)s AND r.%(dateColumn)s <= cfg.end_date
+                     %(productVersionSqlRestrictionPhrase)s
                      GROUP BY r.url
                      ORDER BY COUNT(r.id) desc
                      LIMIT %(fatMaximumUrls)s"""%(self.configContext) # fatMaximumUrls is a HACK to assure enough cooked urls
@@ -160,6 +171,7 @@ class TopCrashesByUrl(object):
                      JOIN osdims o on r.os_name = o.os_name AND r.os_version = o.os_version
                     WHERE %%(windowStart)s <= r.%(dateColumn)s AND r.%(dateColumn)s < %%(windowEnd)s
                       AND r.url = %%(fullUrl)s
+                      %(productVersionSqlRestrictionPhrase)s
                     GROUP BY prod, os, r.signature, r.uuid, r.user_comments
                     """ % (self.configContext)
     getIdSql = """SELECT lastval()"""
@@ -248,8 +260,8 @@ class TopCrashesByUrl(object):
   def processDateInterval(self, **kwargs):
     cursor = self.connection.cursor()
     kwargs.setdefault('defaultDeltaWindow',defaultDeltaWindow)
-    startDate,deltaDate,endDate = cron_util.getProcessingDates(self.configContext, resultTable, cursor, logger, **kwargs)
-    startWindow,deltaWindow,endWindow = cron_util.getProcessingWindow(self.configContext, resultTable,cursor, logger, **kwargs)
+    startDate,deltaDate,endDate = cron_util.getProcessingDates(self.configContext, resultTable, self.productVersionRestriction, cursor, logger, **kwargs)
+    startWindow,deltaWindow,endWindow = cron_util.getProcessingWindow(self.configContext, resultTable,self.productVersionRestriction,cursor, logger, **kwargs)
     logger.info("Starting loop from %s up to %s step (%s)",startDate.isoformat(),endDate.isoformat(),deltaWindow)
     if not startWindow:
       startWindow = startDate
@@ -265,4 +277,4 @@ class TopCrashesByUrl(object):
       # whether or not we saved some data, advance to next slot
       startWindow += deltaWindow
     logger.info("Done processIntervals")
-      
+

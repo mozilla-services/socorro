@@ -2,6 +2,7 @@
 
 import socorro.lib.util as lib_util
 import socorro.lib.ConfigurationManager as cm
+import socorro.lib.psycopghelper as psy
 import datetime
 import logging
 import time
@@ -10,7 +11,7 @@ import time
 globalDefaultDeltaWindow = datetime.timedelta(seconds=12*60)
 globalInitialDeltaDate = datetime.timedelta(days=4)
 
-def getProcessingDates(configContext, tableName, cursor, logger, **kwargs):
+def getProcessingDates(configContext, tableName, productVersionRestriction, cursor, logger, **kwargs):
   """
   A processing interval is a time interval greater or equal to a processing window. Used to
   calculate a series of adjacent materialized view aggregates.
@@ -49,7 +50,8 @@ def getProcessingDates(configContext, tableName, cursor, logger, **kwargs):
   if not defaultDeltaWindow: defaultDeltaWindow = globalDefaultDeltaWindow
   try:
     try:
-      startDateFromTable,endDateFromTable,latestWindowEnd = getDefaultDateInterval(cursor,tableName,delay,initialDeltaDate,defaultDeltaWindow,logger)
+      logger.debug('trying getDefaultDateInterval')
+      startDateFromTable,endDateFromTable,latestWindowEnd = getDefaultDateInterval(cursor,tableName,delay,initialDeltaDate,defaultDeltaWindow,productVersionRestriction,logger)
     except Exception, x:
       print x
     if startDate and endDate and deltaDate:
@@ -77,7 +79,7 @@ def getProcessingDates(configContext, tableName, cursor, logger, **kwargs):
   except:
     lib_util.reportExceptionAndAbort(logger)
 
-def getProcessingWindow(configContext,tableName,cursor,logger, **kwargs):
+def getProcessingWindow(configContext,tableName, productVersionRestriction,cursor,logger, **kwargs):
   """
   ProcessingWindow is a single time window over which to aggregate materialized view data.
 
@@ -126,14 +128,14 @@ def getProcessingWindow(configContext,tableName,cursor,logger, **kwargs):
       deltaWindow = datetime.timedelta(days=1)
       endWindow = startWindow + deltaWindow
     else: # no params: try table
-      startWindow,deltaWindow = getLastWindowAndSizeFromTable(cursor,tableName,logger)
+      startWindow,deltaWindow = getLastWindowAndSizeFromTable(cursor,tableName, productVersionRestriction,logger)
       if startWindow:
         endWindow = startWindow+deltaWindow
     return (startWindow,deltaWindow,endWindow)
   except:
     lib_util.reportExceptionAndAbort(logger)
 
-def getDefaultDateInterval(cursor,tableName,delay,initialDeltaDate,defaultDeltaWindow,logger):
+def getDefaultDateInterval(cursor,tableName,delay,initialDeltaDate,defaultDeltaWindow,productVersionRestriction,logger):
   """
   Calculates startDate, deltaWindow from latest entry in tableName (else initialDeltaDate, defaultDeltaWindow)
   if no such table, logs failure and exits
@@ -144,7 +146,7 @@ def getDefaultDateInterval(cursor,tableName,delay,initialDeltaDate,defaultDeltaW
   #raise IndexError
   now = datetime.datetime.now() - delay
   myMidnight = now.replace(hour=0,minute=0,second=0,microsecond=0)
-  latestWindowEnd,deltaWindow = getLastWindowAndSizeFromTable(cursor,tableName,logger)
+  latestWindowEnd,deltaWindow = getLastWindowAndSizeFromTable(cursor, tableName, productVersionRestriction, logger)
   if latestWindowEnd:
     startDate = latestWindowEnd
   else:
@@ -158,7 +160,7 @@ def getDefaultDateInterval(cursor,tableName,delay,initialDeltaDate,defaultDeltaW
     endDate += deltaWindow
   return (startDate,endDate,latestWindowEnd)
 
-def getLastWindowAndSizeFromTable(cursor, table, logger):
+def getLastWindowAndSizeFromTable(cursor, table, productVersionRestriction, logger):
   """
   cursor: database cursor
   table: name of table to check
@@ -173,7 +175,10 @@ def getLastWindowAndSizeFromTable(cursor, table, logger):
   """
   lastEnd, lastSize = None,None
   try:
-    cursor.execute("SELECT window_end,window_size FROM %s ORDER BY window_end DESC LIMIT 1"%table)
+    if productVersionRestriction:
+      cursor.execute("SELECT window_end,window_size FROM %s where productdims_id = %s ORDER BY window_end DESC LIMIT 1" % (table, productVersionRestriction))
+    else:
+      cursor.execute("SELECT window_end,window_size FROM %s ORDER BY window_end DESC LIMIT 1" % table)
     cursor.connection.rollback()
   except:
     cursor.connection.rollback()
@@ -201,3 +206,12 @@ def getLastWindowAndSizeFromTable(cursor, table, logger):
   except:
     lib_util.reportExceptionAndAbort(logger)
   return (lastEnd,lastSize)
+
+def getProductId(aProduct, aVersion, aCursor, logger):
+  logger.debug("getProductId")
+  if not aProduct or not aVersion:
+    return None
+  try:
+    return psy.singleValueSql(aCursor, "select id from productdims where product = %s and version = %s", (aProduct, aVersion))
+  except psy.SQLDidNotReturnSingleValue:
+    lib_util.reportExceptionAndAbort(logger)
