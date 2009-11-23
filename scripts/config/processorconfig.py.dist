@@ -1,6 +1,7 @@
 import socorro.lib.ConfigurationManager as cm
 import datetime
 import re
+import stat
 
 try:
   from config.commonconfig import *
@@ -73,11 +74,23 @@ irrelevantSignatureRegEx.default = '@0x[0-9a-fA-F]{2,}|@0x[1-9a-fA-F]|RaiseExcep
 prefixSignatureRegEx = cm.Option()
 prefixSignatureRegEx.doc = 'a regular expression matching frame signatures that should always be coupled with the following frame signature when generating an overall signature'
 prefixSignatureRegEx.default = '@0x0|strchr|strstr|strlen|PL_strlen|strcmp|wcslen|memcpy|memmove|memcmp|malloc|realloc|.*free|arena_dalloc_small|arena_alloc|arena_dalloc|nsObjCExceptionLogAbort(\(.*?\))0,1}|libobjc.A.dylib@0x1568.|nsCOMPtr_base::assign_from_qi(nsQueryInterface,nsIDconst&)|objc_msgSend|_purecall|nsTArray_base::ShiftData(unsigned int, unsigned int, unsigned int, unsigned int)|PL_DHashTableOperate|EtwEventEnabled|RtlpFreeHandleForAtom|RtlpDeCommitFreeBlock|RtlpAllocateAffinityIndex|RtlAddAccessAllowedAce|RtlQueryPerformanceFrequency|RtlpWaitOnCriticalSection|RtlpWaitForCriticalSection'
-                               
+
 collectAddon = cm.Option()
 collectAddon.doc = "if true, parse and collect information about addons from the json file; if false, don't"
 collectAddon.default = True
 collectAddon.fromStringConverter = cm.booleanConverter
+
+dumpPermissions = cm.Option()
+dumpPermissions.doc = 'when saving processed dumps, the pemission flags to be used'
+dumpPermissions.default = '%d'%(stat.S_IRGRP | stat.S_IWGRP | stat.S_IRUSR | stat.S_IWUSR)
+
+dirPermissions = cm.Option()
+dirPermissions.doc = 'when saving processed dumps, the pemission flags to be used on directories'
+dirPermissions.default = '%d'%(stat.S_IRGRP | stat.S_IXGRP | stat.S_IWGRP | stat.S_IRUSR | stat.S_IXUSR | stat.S_IWUSR)
+
+dumpGID = cm.Option()
+dumpGID.doc = 'when saving processed dumps, the group to save the files under (leave blank for file system default)'
+dumpGID.default = ''
 
 logFilePathname = cm.Option()
 logFilePathname.doc = 'full pathname for the log file'
