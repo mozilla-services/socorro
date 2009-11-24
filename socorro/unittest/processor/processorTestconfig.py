@@ -1,5 +1,6 @@
 import socorro.lib.ConfigurationManager as cm
 import datetime
+import stat
 
 from socorro.unittest.config.commonconfig import databaseHost
 from socorro.unittest.config.commonconfig import databaseName
@@ -61,6 +62,10 @@ prefixSignatureRegEx = cm.Option()
 prefixSignatureRegEx.doc = 'a regular expression matching frame signatures that should always be coupled with the following frame signature when generating an overall signature'
 prefixSignatureRegEx.default = '@0x0|strchr|strstr|strcmp|memcpy|memcmp|malloc|realloc|.*free|arena_dalloc_small|nsObjCExceptionLogAbort\(.*?\)|nsCOMPtr_base::assign_from_qi(nsQueryInterface, nsID const&)'
 
+signaturesWithLineNumbersRegEx = cm.Option()
+signaturesWithLineNumbersRegEx.doc = 'any signatures that match this list should be combined with their associated source code line numbers'
+signaturesWithLineNumbersRegEx.default = 'js_Interpret'
+
 processorLoopTime = cm.Option()
 processorLoopTime.doc = 'the time to wait between attempts to get jobs (HHH:MM:SS)'
 processorLoopTime.default = '0:00:06'
@@ -98,11 +103,22 @@ minidump_stackwalkPathname = cm.Option()
 minidump_stackwalkPathname.doc = 'the full pathname of the extern program minidump_stackwalk (quote path with embedded spaces)'
 minidump_stackwalkPathname.default = '/usr/local/bin/minidump_stackwalk'
 
-
 collectAddon = cm.Option()
 collectAddon.doc = "if true, parse and collect information about addons from the json file; if false, don't"
 collectAddon.default = False
 collectAddon.fromStringConverter = cm.booleanConverter
+
+dumpPermissions = cm.Option()
+dumpPermissions.doc = 'when saving processed dumps, the pemission flags to be used'
+dumpPermissions.default = '%d'%(stat.S_IRGRP | stat.S_IWGRP | stat.S_IRUSR | stat.S_IWUSR)
+
+dirPermissions = cm.Option()
+dirPermissions.doc = 'when saving processed dumps, the pemission flags to be used on directories'
+dirPermissions.default = '%d'%(stat.S_IRGRP | stat.S_IXGRP | stat.S_IWGRP | stat.S_IRUSR | stat.S_IXUSR | stat.S_IWUSR)
+
+dumpGID = cm.Option()
+dumpGID.doc = 'when saving processed dumps, the group to save the files under (leave blank for file system default)'
+dumpGID.default = ''
 
 logFilePathname = cm.Option()
 logFilePathname.doc = 'full pathname for the log file'

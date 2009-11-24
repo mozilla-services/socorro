@@ -99,6 +99,11 @@ class Processor(object):
     assert "prefixSignatureRegEx" in config, "prefixSignatureRegEx is missing from the configuration"
     assert "collectAddon" in config, "collectAddon is missing from the configuration"
     assert "signatureSentinels" in config, "signatureSentinels is missing from the configuration"
+    assert "signaturesWithLineNumbersRegEx" in config, "signaturesWithLineNumbersRegEx is missing from the configuration"
+    assert "dumpPermissions" in config, "dumpPermissions is missing from the configuration"
+    assert "dirPermissions" in config, "dirPermissions is missing from the configuration"
+    assert "dumpGID" in config, "dumpGID is missing from the configuration"
+
     self.databaseConnectionPool = psy.DatabaseConnectionPool(config.databaseHost, config.databaseName, config.databaseUserName, config.databasePassword, logger)
 
     self.processorLoopTime = config.processorLoopTime.seconds
@@ -110,8 +115,13 @@ class Processor(object):
 
     self.irrelevantSignatureRegEx = re.compile(self.config.irrelevantSignatureRegEx)
     self.prefixSignatureRegEx = re.compile(self.config.prefixSignatureRegEx)
+    self.signaturesWithLineNumbersRegEx = re.compile(self.config.signaturesWithLineNumbersRegEx)
 
-    self.processedDumpStorage = pds.ProcessedDumpStorage(config.processedDumpStoragePath)
+    self.processedDumpStorage = pds.ProcessedDumpStorage(root=config.processedDumpStoragePath,
+                                                         dumpPermissions=config.dumpPermissions,
+                                                         dirPermissions=config.dirPermissions,
+                                                         dumpGID=config.dumpGID,
+                                                         logger=logger)
 
     #self.reportsTable = sch.CrashReportsTable(logger=logger)
     self.reportsTable = sch.ReportsTable(logger=logger)
@@ -287,11 +297,13 @@ class Processor(object):
   fixupSpace = re.compile(r' (?=[\*&,])')
   fixupComma = re.compile(r',(?! )')
   #-----------------------------------------------------------------------------------------------------------------
-  @staticmethod
-  def make_signature(module_name, function, source, source_line, instruction):
+  def make_signature(self, module_name, function, source, source_line, instruction):
     """ returns a structured conglomeration of the input parameters to serve as a signature
     """
     if function is not None:
+      if self.signaturesWithLineNumbersRegEx.match(function):
+        function = "%s:%s" % (function, source_line)
+
       # Remove spaces before all stars, ampersands, and commas
       function = Processor.fixupSpace.sub('',function)
 

@@ -218,7 +218,7 @@ class ProcessorWithExternalBreakpad (processor.Processor):
       (thread_num, frame_num, module_name, function, source, source_line, instruction) = [socorro.lib.util.emptyFilter(x) for x in line.split("|")]
       if crashedThread == int(thread_num):
         if frameCounter < 30:
-          thisFramesSignature = processor.Processor.make_signature(module_name, function, source, source_line, instruction)
+          thisFramesSignature = self.make_signature(module_name, function, source, source_line, instruction)
           signatureList.append(thisFramesSignature)
           if frameCounter < 10:
             self.framesTable.insert(databaseCursor, (reportId, frame_num, date_processed, thisFramesSignature[:255]), self.databaseConnectionPool.connectToDatabase, date_processed=date_processed)

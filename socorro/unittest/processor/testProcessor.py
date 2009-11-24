@@ -1492,6 +1492,7 @@ class TestProcessor:
         - elif module_name: return 'module_name@instruction'
         - else: return '@instruction'
     """
+    p = processor.Processor(me.config)
     for func,expected in { ' *foo':  '*foo',
                            '  &foo' : ' &foo',
                            '   ,foo':  '  , foo',
@@ -1503,8 +1504,9 @@ class TestProcessor:
                            'foo * ,&': 'foo*, &',
                            'foo ,& bar': 'foo, & bar',
                            '*foo&bar' : '*foo&bar',
+                           'js_Interpret' : 'js_Interpret:123',
                            }.items():
-      result = processor.Processor.make_signature(None,func,None,None,None)
+      result = p.make_signature(None,func,None,'123',None)
       assert expected == result, 'Expected [%s], got [%s]'%(expected,result)
     for source,expected in {'C:': 'C:#LINE',
                             'C:\\': 'C:#LINE',
@@ -1527,7 +1529,7 @@ class TestProcessor:
                             '/a/b/':'b#LINE',
                             '/a/b/c':'c#LINE',
                             }.items():
-      result = processor.Processor.make_signature(None,None,source,'LINE',None)
+      result = p.make_signature(None,None,source,'LINE',None)
       assert expected == result, 'From [%s] expected [%s] but got [%s]'%(source,expected,result)
 
     modules = {('mod','LDa'): 'mod@LDa',
@@ -1538,7 +1540,7 @@ class TestProcessor:
                }
 
     for (mname,instr),expected in modules.items():
-      result = processor.Processor.make_signature(mname,None,None,None,instr)
+      result = p.make_signature(mname,None,None,None,instr)
       assert expected == result, 'From [%s,%s] expected %s, got %s'%(mname,instr,expected,result)
 
   def testGenerateSignatureFromList(self):
