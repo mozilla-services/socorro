@@ -55,7 +55,7 @@ class Feed_Controller extends Controller {
 
 	$this->auto_render = FALSE;
 
-	$feed = moz_feed(url::base(), 
+	$feed = moz_feed(url::site(), 
 			 url::current(TRUE),
 			 "Mozilla $platform Recent Crashes", 
 			 $reports);
