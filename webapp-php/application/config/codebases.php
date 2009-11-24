@@ -7,11 +7,17 @@ $config['vcsMappings'] = array(
     ),
     'hg' => array( 
         'hg.mozilla.org/mozilla-central' => 
-	    'http://hg.mozilla.org/mozilla-central/index.cgi/annotate/%(revision)s/%(file)s#l%(line)s',
+	    'http://hg.mozilla.org/mozilla-central/annotate/%(revision)s/%(file)s#l%(line)s',
 	'hg.mozilla.org/releases/mozilla-1.9.1' => 
 	    'http://hg.mozilla.org/releases/mozilla-1.9.1/annotate/%(revision)s/%(file)s#l%(line)s',
 	'hg.mozilla.org/releases/mozilla-1.9.2' => 
 	    'http://hg.mozilla.org/releases/mozilla-1.9.2/annotate/%(revision)s/%(file)s#l%(line)s',
+        'hg.mozilla.org/projects/electrolysis' => 
+	    'http://hg.mozilla.org/projects/electrolysis/annotate/%(revision)s/%(file)s#l%(line)s',
+        'hg.mozilla.org/tracemonkey' => 
+	    'http://hg.mozilla.org/tracemonkey/annotate/%(revision)s/%(file)s#l%(line)s',
+        'hg.mozilla.org/projects/places' => 
+	    'http://hg.mozilla.org/projects/places/annotate/%(revision)s/%(file)s#l%(line)s',
         'hg.mozilla.org/comm-central' =>
 	    'http://hg.mozilla.org/comm-central/annotate/%(revision)s/%(file)s#l%(line)s',
         'hg.mozilla.org/releases/comm-1.9.1' =>
