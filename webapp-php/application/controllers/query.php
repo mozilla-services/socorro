@@ -79,7 +79,7 @@ class Query_Controller extends Controller {
 	        $parts = explode(':', $params['version'][0]);
 		$this->navigationChooseVersion(trim($parts[0]), trim($parts[1]));
 	} else {
-	    Kohana::log('debug', "No version in params...skipping");
+	    Kohana::log('debug', "updateNavigation No version in params...skipping");
 	}
     }
 

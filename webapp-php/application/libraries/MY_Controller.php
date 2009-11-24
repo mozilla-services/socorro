@@ -311,6 +311,16 @@ class Controller extends Controller_Core {
 	echo $view->render();
     }
 
+   /**
+    * The app has a notion of a "Current release" that you are
+    * interested in for global navigation. This is a specific
+    * product / version pair. All pages that detect a single 
+    * product version should update this value.
+    * @param string product
+    * @param string version
+    * @param string optional release
+    * @void
+    */
     protected function navigationChooseVersion($product, $version, $release=NULL)
     {
         if (is_null($release)) {
