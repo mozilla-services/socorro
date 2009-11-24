@@ -87,6 +87,9 @@ class Me(): # not quite "self"
 
 me = None
 
+loglineS = '^[1-9][0-9]{3}-[0-9]{2}-[0-9]{2}.*'
+loglineRE = re.compile(loglineS)
+
 def setup_module():
   global me
   if me:
@@ -469,10 +472,11 @@ class TestProcessor:
     sighup = 0
     sigterm = 0
     for line in seg:
-      date,time,level,dash,msg = line.split(None,4)
-      if msg.startswith('MainThread'):
-        if 'SIGHUP detected' in msg: sighup += 1
-        if 'SIGTERM detected' in msg: sigterm += 1
+      if loglineRE.match(line):
+        date,time,level,dash,msg = line.split(None,4)
+        if msg.startswith('MainThread'):
+          if 'SIGHUP detected' in msg: sighup += 1
+          if 'SIGTERM detected' in msg: sigterm += 1
     assert 1 == sighup, 'Better see exactly one sighup event, got %d' % (sighup)
     assert 0 == sigterm, 'Better not see sigterm event, got %d' % (sigterm)
 
@@ -493,10 +497,11 @@ class TestProcessor:
     sighup = 0
     sigterm = 0
     for line in seg:
-      date,time,level,dash,msg = line.split(None,4)
-      if msg.startswith('MainThread'):
-        if 'SIGTERM detected' in msg: sigterm += 1
-        if 'SIGHUP detected' in msg: sighup += 1
+      if loglineRE.match(line):
+        date,time,level,dash,msg = line.split(None,4)
+        if msg.startswith('MainThread'):
+          if 'SIGTERM detected' in msg: sigterm += 1
+          if 'SIGHUP detected' in msg: sighup += 1
     assert 1 == sigterm, 'Better see exactly one sigterm event, got %d' % (sigterm)
     assert 0 == sighup, 'Better not see sighup event, got %d' % (sighup)
 

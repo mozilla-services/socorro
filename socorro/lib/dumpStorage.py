@@ -58,12 +58,21 @@ class DumpStorage(object):
     self.minutesPerSlot = int(kwargs.get('minutesPerSlot',5))
     self.subSlotCount = int(kwargs.get('subSlotCount',0))
     self.dirPermissions = int(kwargs.get('dirPermissions', '%d'%(S_IRGRP | S_IXGRP | S_IWGRP | S_IRUSR | S_IXUSR | S_IWUSR)))
+    self.dumpPermissions = int(kwargs.get('dumpPermissions','%d'%(S_IRGRP | S_IWGRP | S_IRUSR | S_IWUSR)))
     self.dumpGID = kwargs.get('dumpGID',None)
     if self.dumpGID: self.dumpGID = int(self.dumpGID)
-    self.dumpPermissions = int(kwargs.get('dumpPermissions','%d'%(S_IRGRP | S_IWGRP | S_IRUSR | S_IWUSR)))
 
     self.logger = kwargs.get('logger', logging.getLogger('dumpStorage'))
     self.currentSubSlots = {}
+    self.logger.debug("""Constructor has set the following values:
+      self.root: %s
+      self.dateName: %s
+      self.indexName: %s
+      self.minutesPerSlot: %s
+      self.subSlotCount: %s
+      self.dirPermissions: %o
+      self.dumpPermissions: %o
+      self.dumpGID: %s"""%(self.root,self.dateName,self.indexName,self.minutesPerSlot,self.subSlotCount,self.dirPermissions,self.dumpPermissions,self.dumpGID))
 
   def newEntry(self,ooid,timestamp=None,webheadName = None):
     """
@@ -75,7 +84,11 @@ class DumpStorage(object):
     if not timestamp:
       timestamp = datetime.datetime.now()
     if not os.path.isdir(self.root):
-      os.mkdir(self.root)
+      um = os.umask(0)
+      try:
+        os.mkdir(self.root,self.dirPermissions)
+      finally:
+        os.umask(um)
     nameDir,nparts = self.makeNameDir(ooid,timestamp)
     dateDir,dparts = self.makeDateDir(timestamp,webheadName)
     # adjust the current subslot only when inserting a new entry

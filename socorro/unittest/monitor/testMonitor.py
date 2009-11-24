@@ -25,6 +25,7 @@ import errno
 import logging
 import logging.handlers
 import os
+import re
 import shutil
 import signal
 import threading
@@ -54,6 +55,9 @@ class Me(): # not quite "self"
   pass
 
 me = None
+
+loglineS = '^[1-9][0-9]{3}-[0-9]{2}-[0-9]{2}.*'
+loglineRE = re.compile(loglineS)
 
 def setup_module():
   global me
@@ -228,7 +232,15 @@ class TestMonitor:
       cc[rc] = me.config[rc]
     monitor.Monitor(me.config) # expect this to work. If it raises an error, we'll see it
     self.markLog()
-    assert [] == self.extractLogSegment(), 'expected no logging for constructor call (success or failure) but %s'%(str(self.extractLogSegment()))
+    seg = self.extractLogSegment()
+    cleanSeg = []
+    for line in seg:
+      if 'Constructor has set the following values' in line:
+        continue
+      if line.startswith('self.'):
+        continue
+      cleanSeg.append(line)
+    assert [] == cleanSeg, 'expected no logging for constructor call (success or failure) but %s'%(str(cleanSeg))
 
   def runStartChild(self):
     global me
@@ -307,11 +319,12 @@ class TestMonitor:
     sighup = 0
     sigterm = 0
     for line in seg:
-      date,tyme,level,dash,msg = line.split(None,4)
-      if msg.startswith('MainThread'):
-        if 'KeyboardInterrupt' in msg: kbd += 1
-        if 'SIGHUP detected' in msg: sighup += 1
-        if 'SIGTERM detected' in msg: sigterm += 1
+      if loglineRE.match(line):
+        date,tyme,level,dash,msg = line.split(None,4)
+        if msg.startswith('MainThread'):
+          if 'KeyboardInterrupt' in msg: kbd += 1
+          if 'SIGHUP detected' in msg: sighup += 1
+          if 'SIGTERM detected' in msg: sigterm += 1
     assert 1 == kbd, 'Better see exactly one keyboard interrupt, got %d' % (kbd)
     assert 1 == sighup, 'Better see exactly one sighup event, got %d' % (sighup)
     assert 0 == sigterm, 'Better not see sigterm event, got %d' % (sigterm)
@@ -332,11 +345,12 @@ class TestMonitor:
     sighup = 0
     sigterm = 0
     for line in seg:
-      date,tyme,level,dash,msg = line.split(None,4)
-      if msg.startswith('MainThread'):
-        if 'KeyboardInterrupt' in msg: kbd += 1
-        if 'SIGTERM detected' in msg: sigterm += 1
-        if 'SIGHUP detected' in msg: sighup += 1
+      if loglineRE.match(line):
+        date,tyme,level,dash,msg = line.split(None,4)
+        if msg.startswith('MainThread'):
+          if 'KeyboardInterrupt' in msg: kbd += 1
+          if 'SIGTERM detected' in msg: sigterm += 1
+          if 'SIGHUP detected' in msg: sighup += 1
     assert 1 == kbd, 'Better see exactly one keyboard interrupt, got %d' % (kbd)
     assert 1 == sigterm, 'Better see exactly one sigterm event, got %d' % (sigterm)
     assert 0 == sighup, 'Better not see sighup event, got %d' % (sighup)
@@ -405,7 +419,15 @@ class TestMonitor:
     got = mon.getStorageFor('29adfb61-f75b-11dc-b6be-001320081225').root
     assert expected == got, 'Expected [%s] got [%s]'%(expected,got)
     self.markLog()
-    assert [] == self.extractLogSegment(), 'expected no logging for this test'
+    seg = self.extractLogSegment()
+    cleanSeg = []
+    for line in seg:
+      if 'Constructor has set the following values' in line:
+        continue
+      if line.startswith('self.'):
+        continue
+      cleanSeg.append(line)
+    assert [] == cleanSeg, 'unexpected logging for this test: %s'%(str(cleanSeg))
 
   def testRemoveBadUuidFromJsonDumpStorage(self):
     """
