@@ -35,7 +35,8 @@
               $sig = $crasher->signature;
             }
           ?>
-          <td class="sig"><a href="<?php out::H($link_url)?>"><?php out::H($sig)?></a></td>
+          <td class="sig"><a href="<?php out::H($link_url)?>"
+            title="<?php out::H($sig)?>"><?php out::H($sig)?></a></td>
           <td><?php out::H($crasher->total)?></td>
         </tr>
         <?php endforeach; ?>
@@ -50,17 +51,25 @@
     <h1>Other Versions</h1>
     <div class="other_vers">
       <?php
-      $prod = '';
       foreach ($all_versions as $product => $versions):
+        $ver_count = count($all_versions[$product]);
+        $first = $all_versions[$product][$ver_count-1];
+        $last = $all_versions[$product][0];
         ?>
-        <ul>
-        <?php
-        foreach ($versions as $version):
-          $url = url::base() . "topcrasher/byversion/{$product}/{$version}";
-          ?>
-          <li><a href="<?php out::H($url)?>"><?php out::H($product.' '.$version)?></a></li>
-        <?php endforeach; ?>
-        </ul>
+        <div class="other_ver">
+          <form method="get" action="<?php echo url::base().'topcrasher/byversion'?>">
+            <h2><?php out::H($product)?></h2>
+            <input type="hidden" name="product" value="<?php out::H($product)?>"/>
+            <select name="version" onchange="this.form.submit()">
+              <option value=""><?php out::H($first)?>&ndash;<?php out::H($last)?></option>
+              <option value="">---</option>
+              <?php foreach ($versions as $version): ?>
+              <option value="<?php out::H($version)?>"><?php out::H($version)?></option>
+              <?php endforeach; ?>
+            </select>
+            <noscript><button type="submit">Go</button></noscript>
+          </form>
+        </div>
       <?php endforeach; ?>
       <div class="clear"></div>
     </div>

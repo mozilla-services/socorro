@@ -86,7 +86,10 @@ class Topcrasher_Controller extends Controller {
      * @param string version Example: 3.7a1pre
      * @param int duration in days that this report should cover
      */
-    public function byversion($product, $version, $duration=14) {
+    public function byversion($product='', $version='', $duration=14) {
+        if (empty($product)) $product = @$_GET['product'];
+        if (empty($version)) $version = @$_GET['version'];
+
 	$other_durations = array_diff(Kohana::config('topcrashbysig.durations'),
 				      array($duration));
 	$limit = Kohana::config('topcrashbysig.byversion_limit', 100);
