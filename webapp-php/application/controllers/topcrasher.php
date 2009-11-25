@@ -1,6 +1,7 @@
 <?php defined('SYSPATH') or die('No direct script access.');
 
 require_once(Kohana::find_file('libraries', 'bugzilla', TRUE, 'php'));
+require_once(Kohana::find_file('libraries', 'release', TRUE, 'php'));
 
 /**
  * Reports based on top crashing signatures
@@ -18,23 +19,55 @@ class Topcrasher_Controller extends Controller {
     }
 
     /**
-     * Generates the index page. In practise this is a sad unhappy page,
-     * not used by very many people.
+     * Generates the index page.
      */
     public function index() {
-        $branch_data = $this->branch_model->getBranchData();
-        $platforms   = $this->platform_model->getAll();
-
         cachecontrol::set(array(
             'expires' => time() + (60 * 60)
         ));
 
+        $featured = Kohana::config('dashboard.feat_nav_products');
+        $all_products = $this->currentProducts();
+
+        $i = 0;
+        $crasher_data = array();
+        foreach ($featured as $prod_name) {
+            foreach (array(Release::MAJOR, Release::DEVELOPMENT,
+                Release::MILESTONE) as $release) {
+                if (empty($all_products[$prod_name][$release])) continue;
+                if (++$i > 4) break 2;
+
+                $version = $all_products[$prod_name][$release];
+                $crasher_data[] = array(
+                    'product' => $prod_name,
+                    'version' => $version,
+                    'crashers' => $this->_getTopCrashers($prod_name, $version)
+                    );
+            }
+        }
+        $branch_data = $this->branch_model->getBranchData();
+        //$platforms   = $this->platform_model->getAll();
+
         $this->setViewData(array(
+            'crasher_data' => $crasher_data,
             'all_products'  => $branch_data['products'],
-            'all_branches'  => $branch_data['branches'],
+//            'all_branches'  => $branch_data['branches'],
             'all_versions'  => $branch_data['versions'],
-            'all_platforms' => $platforms
+//            'all_platforms' => $platforms
         ));
+    }
+
+    /**
+     * get top crashers for a given product and version
+     */
+    private function _getTopCrashers($product, $version) {
+        $topcrashers = new Topcrashers_Model();
+        $sigSize = Kohana::config("topcrashers.numberofsignatures");
+
+        $end = $topcrashers->lastUpdatedByVersion($product, $version);
+        $start = $topcrashers->timeBeforeOffset(14, $end);
+
+        return $topcrashers->getTopCrashersByVersion($product, $version, $sigSize, $start, $end);
     }
 
     /**

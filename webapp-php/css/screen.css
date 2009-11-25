@@ -1204,3 +1204,30 @@ div.admin td.date {
 span.push_right {
 	margin-right: 10px;
 }
+
+/* TOP CRASHERS INDEX PAGE */
+#topcrashers h1 {
+    font-size: 2em;
+    font-weight: normal;
+}
+#topcrashers .crasher_list {
+    float: left;
+    width: 24%;
+    margin: 1em 1% 1em 0;
+}
+#topcrashers table {
+    margin: 1em 0 .5em;
+}
+#topcrashers th {
+    background: url("../img/slate/white-grad.png") repeat-x scroll bottom left #fff;
+    padding: .1em .5em;
+}
+#topcrashers td {
+    padding: .5em;
+}
+#topcrashers .sig {
+    max-width: 12em;
+    overflow: hidden;
+    white-space: nowrap;
+}
+/* END TOP CRASHERS */
