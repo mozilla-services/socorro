@@ -43,6 +43,7 @@ class Admin_Controller extends Controller {
 			) {
 				if ($rv = $this->branch_model->add($_POST['product'], $_POST['version'], $_POST['branch'], $_POST['start_date'], $_POST['end_date'])) {
 					client::messageSend("This new product/version has been added to the database.", E_USER_NOTICE);
+					url::redirect('admin/branch_data_sources'); 
 				} else {
 					client::messageSend("There was an error adding this product/version to the database.", E_USER_WARNING);
 				}
@@ -59,7 +60,8 @@ class Admin_Controller extends Controller {
 				!empty($_POST['update_end_date'])
 			) {
 				if ($rv = $this->branch_model->update($_POST['update_product'], $_POST['update_version'], $_POST['update_branch'], $_POST['update_start_date'], $_POST['update_end_date'])) {
-					client::messageSend("This product/version has been added to the database.", E_USER_NOTICE);
+					client::messageSend("This product/version has been updated in the database.", E_USER_NOTICE);
+					url::redirect('admin/branch_data_sources'); 					
 				} else {
 					client::messageSend("There was an error updating this product/version.", E_USER_WARNING);
 				}
@@ -71,6 +73,7 @@ class Admin_Controller extends Controller {
 			if (!empty($_POST['delete_product']) && !empty($_POST['delete_version'])) {
 				if ($rv = $this->branch_model->delete($_POST['delete_product'], $_POST['delete_version'])) {
 					client::messageSend("This product/version has been deleted from the database.", E_USER_NOTICE);
+					url::redirect('admin/branch_data_sources');					
 				} else {
 					client::messageSend("There was an error deleting this product/version.", E_USER_WARNING);
 				}

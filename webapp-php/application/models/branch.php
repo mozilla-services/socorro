@@ -1,6 +1,9 @@
 <?php defined('SYSPATH') or die('No direct script access.');
 /**
  * Common model class managing the branches table.
+ *
+ * @package 	SocorroUI
+ * @subpackage 	Models
  */
 class Branch_Model extends Model {
 
@@ -11,29 +14,45 @@ class Branch_Model extends Model {
 	 * @param 	string 	The product name (e.g. 'Camino', 'Firefox', 'Seamonkey, 'Thunderbird')
 	 * @param 	string 	The version number (e.g. '3.5', '3.5.1', '3.5.1pre', '3.5.2', '3.5.2pre')
 	 * @param 	string 	The Gecko branch number (e.g. '1.9', '1.9.1', '1.9.2', '1.9.3', '1.9.4')
-	 * @param 	string	The this release date for this product YYYY-MM-DD
-	 * @param 	string	The this end date for this product YYYY-MM-DD (usually +90 days)
+	 * @param 	string	The start date for this product YYYY-MM-DD
+	 * @param 	string	The end date for this product YYYY-MM-DD (usually +90 days)
 	 * @return 	object	The database query object
      */
     public function add($product, $version, $branch, $start_date, $end_date) {
-		$release = $this->determine_release($version);
-
-		$rv = $this->db->query(
-			"INSERT INTO productdims (product, version, branch, release) 
-			 	VALUES (?, ?, ?, ?)",
+		if ($product_version = $this->getByProductVersion($product, $version)) {
+			return $this->update($product, $version, $branch, $start_date, $end_date);
+		} else {
+			$release = $this->determine_release($version);
+			$rv = $this->db->query("/* soc.web branch.add */
+				INSERT INTO productdims (product, version, branch, release) 
+				VALUES (?, ?, ?, ?)",
 				$product, $version, $branch, $release
-		);
-		
-		$this->db->query(
-			"INSERT INTO product_visibility (productdims_id, start_date, end_date) 
-				SELECT id, ? as start_date, ? as end_date 
-			    FROM productdims 
-			    WHERE product = ? AND version = ?
-			", $start_date, $end_date, $product, $version
-		);
+			);
 
-        return $rv;
+			$this->addProductVisibility($product, $version, $start_date, $end_date);
+			return $rv;
+		}
     }
+
+    /**
+     * Fetch a product from the productdims table, and add a new record to the product_visibility table.
+	 * 
+	 * @access 	private
+	 * @param 	string 	The product name (e.g. 'Camino', 'Firefox', 'Seamonkey, 'Thunderbird')
+	 * @param 	string 	The version number (e.g. '3.5', '3.5.1', '3.5.1pre', '3.5.2', '3.5.2pre')
+	 * @param 	string	The release date for this product YYYY-MM-DD
+	 * @param 	string	The end date for this product YYYY-MM-DD (usually +90 days)
+	 * @return 	void
+     */
+	private function addProductVisibility($product, $version, $start_date, $end_date) {
+		$this->db->query("/* soc.web branch.addProductVisibility */
+				INSERT INTO product_visibility (productdims_id, start_date, end_date) 
+                SELECT id, ? as start_date, ? as end_date 
+	            FROM productdims 
+	            WHERE product = ? AND version = ?
+		        ", $start_date, $end_date, $product, $version
+		);
+	}
 
     /**
      * Remove an existing record from the branches view, via the productdims tables.
@@ -41,16 +60,40 @@ class Branch_Model extends Model {
 	 * @access 	public
 	 * @param 	string 	The product name (e.g. 'Camino', 'Firefox', 'Seamonkey, 'Thunderbird')
 	 * @param 	string 	The version number (e.g. '3.5', '3.5.1', '3.5.1pre', '3.5.2', '3.5.2pre')
-	 * @return 	object	The database query object
+	 * @return 	void
      */
     public function delete($product, $version) {
-		$rv = $this->db->query(
-			"DELETE FROM productdims 
-				WHERE product = ? 
-				AND	version = ?
-			 ", $product, $version
-		);
-		return $rv;
+		if ($product_version = $this->getByProductVersion($product, $version)) {
+			$this->deleteProductVisibility($product, $version);
+
+			$rv = $this->db->query("/* soc.web branch.delete */
+					DELETE FROM productdims 
+					WHERE product = ? 
+					AND	version = ?
+			 	", $product, $version
+			);
+			return $rv; 
+		}
+	}
+	
+	/**
+     * Remove an existing record from the branches view, via the productdims tables.
+	 * 
+	 * @access 	private
+	 * @param 	string 	The product name (e.g. 'Camino', 'Firefox', 'Seamonkey, 'Thunderbird')
+	 * @param 	string 	The version number (e.g. '3.5', '3.5.1', '3.5.1pre', '3.5.2', '3.5.2pre')
+	 * @return 	void
+     */
+	private function deleteProductVisibility ($product, $version) {
+		if ($product_version = $this->getByProductVersion($product, $version)) {
+			if ($product_visibility = $this->getProductVisibility($product_version->id)) {
+				$sql = "/* soc.web branch.deleteProductVisibility */
+					DELETE FROM product_visibility
+					WHERE productdims_id = ?
+				";
+				$this->db->query($sql, $product_version->id);
+			}
+		}
 	}
 	
 	/**
@@ -79,11 +122,10 @@ class Branch_Model extends Model {
 	 * @return 	array 	An array of branches / products / versions	
      */
     public function findMissingEntries() {
-
 		$start_date = date('Y-m-d', (time()-604800)); // 1 week ago
         $end_date = date('Y-m-d');
 
-        $missing = $this->db->query("
+        $missing = $this->db->query("/* soc.web branch.findMissingEntries */
             SELECT 
                 reports.product, 
                 reports.version, 
@@ -164,6 +206,22 @@ class Branch_Model extends Model {
     }
 
     /**
+     * Fetch a record from the product_visibility table by its productdims_id.
+ 	 *
+ 	 * @param 	int 	The id for the product/version record.
+	 * @return 	array 	An array of product objects
+     */
+	public function getProductVisibility($productdims_id) {
+		$sql = "
+			/* soc.web branch.getProductVisibility */ 
+			SELECT * 
+			FROM product_visibility
+			WHERE productdims_id = ?
+		";
+		return $this->fetchRows($sql, true, array($productdims_id));
+	}
+
+    /**
      * Fetch all distinct product / version combinations.
 	 *
 	 * @return array 	An array of version objects
@@ -204,7 +262,6 @@ class Branch_Model extends Model {
      * @return object Branch data
      */
     public function getByProductVersion($product, $version) {
-
         $result = $this->db->query(
 				'/* soc.web branch.prodbyvers */ 
 				SELECT * 
@@ -221,42 +278,59 @@ class Branch_Model extends Model {
     }
 
     /**
-     * Update the `branch` and `release` fields of an existing record in the branches view, 
+     * Update the branch and release fields of an existing record in the branches view, 
  	 * via the productdims tables.
 	 * 
 	 * @access 	public
 	 * @param 	string 	The product name (e.g. 'Camino', 'Firefox', 'Seamonkey, 'Thunderbird')
 	 * @param 	string 	The version number (e.g. '3.5', '3.5.1', '3.5.1pre', '3.5.2', '3.5.2pre')
 	 * @param 	string 	The Gecko branch number (e.g. '1.9', '1.9.1', '1.9.2', '1.9.3', '1.9.4')
-	 * @param 	string	The this release date for this product YYYY-MM-DD
-	 * @param 	string	The this end date for this product YYYY-MM-DD (usually +90 days)
+	 * @param 	string	The start date for this product YYYY-MM-DD
+	 * @param 	string	The end date for this product YYYY-MM-DD (usually +90 days)
 	 * @return 	object	The database query object
      */
     public function update($product, $version, $branch, $start_date, $end_date) {
- 		$release = $this->determine_release($version);
-
-		$rv = $this->db->query(
-			"UPDATE productdims 
-				SET 
-					branch = ?, 
-					release = ? 
+		if ($product_version = $this->getByProductVersion($product, $version)) {
+ 			$release = $this->determine_release($version);
+			$rv = $this->db->query("/* soc.web branch.update */
+				UPDATE productdims 
+				SET branch = ?, release = ? 
 				WHERE product = ?
 				AND version = ?
 			 	", $branch, $release, $product, $version
-		);
-		
-		$branch = $this->getByProductVersion($product, $version);
-
-		$this->db->query(
-			"UPDATE product_visibility
-				SET start_date = ?, end_date = ?
-			    WHERE productdims_id = ?
-			", trim($start_date), trim($end_date), $branch->id
-		);
-
-		return $rv;
+			);
+			$this->updateProductVisibility($product, $version, $start_date, $end_date);
+			return $rv;
+		} else {
+			return $this->add($product, $version, $branch, $start_date, $end_date);
+		}
 	}
 
+    /**
+     * Update the start_date and end_date fields of an existing record in the branches view, 
+ 	 * via the productdims tables.
+	 * 
+	 * @access 	private
+	 * @param 	string 	The product name (e.g. 'Camino', 'Firefox', 'Seamonkey, 'Thunderbird')
+	 * @param 	string 	The version number (e.g. '3.5', '3.5.1', '3.5.1pre', '3.5.2', '3.5.2pre')
+	 * @param 	string	The start date for this product YYYY-MM-DD
+	 * @param 	string	The end date for this product YYYY-MM-DD (usually +90 days)
+	 * @return 	void
+     */
+	private function updateProductVisibility($product, $version, $start_date, $end_date) {
+		if ($product_version = $this->getByProductVersion($product, $version)) {
+			if ($product_visibility = $this->getProductVisibility($product_version->id)) {
+				$sql = "/* soc.web branch.updateProductVisibility */ 
+					UPDATE product_visibility
+					SET start_date = ?, end_date = ?
+					WHERE productdims_id = ?
+				"; 		
+				$this->db->query($sql, trim($start_date), trim($end_date), $product_version->id);
+			} else {
+				$this->addProductVisibility($product, $version, $start_date, $end_date);
+			}
+		}
+	}
 
 	/* */
 }

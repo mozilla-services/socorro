@@ -34,3 +34,9 @@ function branchDeleteProductVersionFill(product, version) {
 	$('#delete_version_display').html(version);
 	$('#delete_product').focus();
 }
+
+// Replace the submit button with a progress icon 
+function hideShow(hideId, showId) {
+	$('#'+hideId).hide(); 
+	$('#'+showId).show('fast'); 
+}

@@ -52,7 +52,8 @@
 			<tr><td>Start Date: </td><td><input class="text" type="text" id="start_date" name="start_date" value="<?php echo html::specialchars($default_start_date); ?>" /></td></tr>
 			<tr><td>End Date:</td><td><input class="text" type="text" id="end_date" name="end_date" value="<?php echo html::specialchars($default_end_date); ?>" /></td></tr>
 			</table>
-			<p><input type="submit" name="submit" value="Add Product Version" /></p>
+			<p id="add_submit"><input type="submit" name="submit" value="Add Product Version" onclick="hideShow('add_submit', 'add_submit_progress');" /></p>
+			<p id="add_submit_progress" style="display:none;"><img src="<?php echo url::site(); ?>img/loading.png" /> <em>please wait...</em></p>
 		</form>
 	</div>
 	
@@ -79,9 +80,11 @@
 			<tr><td>End Date: 	</td><td><input class="text" type="text" id="update_end_date" name="update_end_date" value="" /></td></tr>
 			</table>
 
-			<p><input type="submit" name="submit" value="Update Product Version" /></p>
+			<p id="update_submit"><input type="submit" name="submit" value="Update Product Version" onclick="hideShow('update_submit', 'update_submit_progress');" /></p>
+			<p id="update_submit_progress" style="display:none;"><img src="<?php echo url::site(); ?>img/loading.png" /> <em>please wait...</em></p>
 		</form>
 	</div>
+	
 	
 	<div id="delete_product_version" name="delete_product_version" class="add_item" style="display: none;">
 		<p>Do you really want to delete this product version?</p>
@@ -100,7 +103,8 @@
 				<span id="delete_version_display" name="delete_version_display"></span>
 			</span>
 
-			<input type="submit" name="submit" value="Yes, I want to Delete this Product Version" />
+			<p id="delete_submit"><input type="submit" name="submit" value="Yes, I want to Delete this Product Version" onclick="hideShow('delete_submit', 'delete_submit_progress');" /></p>
+			<p id="delete_submit_progress" style="display:none;"><img src="<?php echo url::site(); ?>img/loading.png" /> <em>please wait...</em></p>
 		</form>
 	</div>
 	
