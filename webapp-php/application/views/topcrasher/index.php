@@ -51,17 +51,17 @@
     <div class="other_vers">
       <?php
       $prod = '';
-      foreach ($all_versions as $version):
-        if ($prod != $version->product) {
-          if (!empty($prod)) echo '</ul>';
-          echo '<ul>';
-          $prod = $version->product;
-        }
-        $url = url::base() . "topcrasher/byversion/{$version->product}/{$version->version}";
-      ?>
-        <li><a href="<?php out::H($url)?>"><?php out::H($version->product.' '.$version->version)?></a></li>
+      foreach ($all_versions as $product => $versions):
+        ?>
+        <ul>
+        <?php
+        foreach ($versions as $version):
+          $url = url::base() . "topcrasher/byversion/{$product}/{$version}";
+          ?>
+          <li><a href="<?php out::H($url)?>"><?php out::H($product.' '.$version)?></a></li>
+        <?php endforeach; ?>
+        </ul>
       <?php endforeach; ?>
-      </ul>
       <div class="clear"></div>
     </div>
 </div>

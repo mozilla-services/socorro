@@ -2,6 +2,7 @@
 
 require_once(Kohana::find_file('libraries', 'bugzilla', TRUE, 'php'));
 require_once(Kohana::find_file('libraries', 'release', TRUE, 'php'));
+require_once(Kohana::find_file('libraries', 'versioncompare', TRUE, 'php'));
 
 /**
  * Reports based on top crashing signatures
@@ -46,9 +47,19 @@ class Topcrasher_Controller extends Controller {
             }
         }
 
-        // generate list of other versions
+        // generate list of all versions
         $branches = new Branch_Model();
-        $all_versions = $branches->getProductVersions();
+        $prod_versions = $branches->getProductVersions();
+        $all_versions = array();
+        foreach ($prod_versions as $ver) {
+            $all_versions[$ver->product][] = $ver->version;
+        }
+        // sort
+        $vc = new VersioncompareComponent();
+        foreach (array_keys($all_versions) as $prod) {
+            $vc->sortAppversionArray($all_versions[$prod]);
+            $all_versions[$prod] = array_reverse($all_versions[$prod]);
+        }
 
         $this->setViewData(array(
             'crasher_data' => $crasher_data,
