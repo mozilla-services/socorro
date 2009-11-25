@@ -71,7 +71,7 @@
           <form method="get" action="<?php echo url::base().'topcrasher/byversion'?>">
             <h2><?php out::H($product)?></h2>
             <input type="hidden" name="product" value="<?php out::H($product)?>"/>
-            <select name="version" onchange="if (this.value) this.form.submit()">
+            <select name="version">
               <option value=""><?php out::H($first)?>&ndash;<?php out::H($last)?></option>
               <option value="">---</option>
               <?php foreach ($versions as $version): ?>

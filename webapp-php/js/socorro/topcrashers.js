@@ -13,4 +13,7 @@ $(document).ready(function() {
         }).end()
         .find('a:first').click().end()
         .show();
+    $('.other_ver select').change(function() {
+        if ($(this).val()) this.form.submit();
+    });
 });
