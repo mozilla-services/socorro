@@ -1209,6 +1209,26 @@ span.push_right {
 #topcrashers h1 {
     font-size: 2em;
     font-weight: normal;
+    clear: both;
+}
+#topcrashers #show {
+    display: none;
+    clear: right;
+    margin-left: 1em;
+    padding: .3em;
+    vertical-align: middle;
+    -moz-border-radius: 5px;
+    -webkit-border-radius: 5px;
+    border-radius: 5px;
+    background-color: #f8f8f8;
+    border: 1px solid #d5d5d5;
+    font-size: 60%;
+}
+#topcrashers #show a {
+    margin-left: .4em;
+}
+#topcrashers #show a.selected {
+    font-weight: bold;
 }
 #topcrashers .crasher_list {
     float: left;
@@ -1218,6 +1238,7 @@ span.push_right {
 #topcrashers table {
     margin: .3em 0 .5em;
     width: 95%;
+    border: 1px solid #ccc;
 }
 #topcrashers th {
     background: url("../img/slate/white-grad.png") repeat-x scroll bottom left #fff;
@@ -1230,6 +1251,9 @@ span.push_right {
     max-width: 12em;
     overflow: hidden;
     white-space: nowrap;
+}
+#topcrashers .count {
+    text-align: center;
 }
 #topcrashers .crasher_list p {
     text-align: center;

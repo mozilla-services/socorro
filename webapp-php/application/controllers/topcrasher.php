@@ -64,6 +64,7 @@ class Topcrasher_Controller extends Controller {
         $this->setViewData(array(
             'crasher_data' => $crasher_data,
             'all_versions'  => $all_versions,
+            'sig_sizes'  => Kohana::config('topcrashers.numberofsignatures'),
         ));
     }
 
@@ -72,11 +73,12 @@ class Topcrasher_Controller extends Controller {
      */
     private function _getTopCrashers($product, $version) {
         $sigSize = Kohana::config("topcrashers.numberofsignatures");
+        $maxSigSize = max($sigSize);
 
         $end = $this->topcrashers_model->lastUpdatedByVersion($product, $version);
         $start = $this->topcrashers_model->timeBeforeOffset(14, $end);
 
-        return $this->topcrashers_model->getTopCrashersByVersion($product, $version, $sigSize, $start, $end);
+        return $this->topcrashers_model->getTopCrashersByVersion($product, $version, $maxSigSize, $start, $end);
     }
 
     /**

@@ -1,8 +1,19 @@
 <?php slot::start('head') ?>
   <title>Top Crashers</title>
+  <?php echo html::script(array(
+    'js/socorro/topcrashers.js',
+  ))?>
 <?php slot::end() ?>
 <div id="topcrashers">
-    <h1>Top Crashers</h1>
+    <h1>
+      Top Crashers
+      <span id="show">
+        Show
+        <?php foreach ($sig_sizes as $sig_size): ?>
+        <a href="#"><?php out::H($sig_size)?></a>
+        <?php endforeach; ?>
+      </span>
+    </h1>
     <?php foreach ($crasher_data as $prodversion): ?>
       <div class="crasher_list">
       <h2><?=$prodversion['product']?> <?=$prodversion['version']?></h2>
@@ -37,7 +48,7 @@
           ?>
           <td class="sig"><a href="<?php out::H($link_url)?>"
             title="<?php out::H($sig)?>"><?php out::H($sig)?></a></td>
-          <td><?php out::H($crasher->total)?></td>
+          <td class="count"><?php out::H($crasher->total)?></td>
         </tr>
         <?php endforeach; ?>
         </tbody>
@@ -60,7 +71,7 @@
           <form method="get" action="<?php echo url::base().'topcrasher/byversion'?>">
             <h2><?php out::H($product)?></h2>
             <input type="hidden" name="product" value="<?php out::H($product)?>"/>
-            <select name="version" onchange="this.form.submit()">
+            <select name="version" onchange="if (this.value) this.form.submit()">
               <option value=""><?php out::H($first)?>&ndash;<?php out::H($last)?></option>
               <option value="">---</option>
               <?php foreach ($versions as $version): ?>
