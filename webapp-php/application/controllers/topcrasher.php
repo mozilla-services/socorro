@@ -45,15 +45,14 @@ class Topcrasher_Controller extends Controller {
                     );
             }
         }
-        $branch_data = $this->branch_model->getBranchData();
-        //$platforms   = $this->platform_model->getAll();
+
+        // generate list of other versions
+        $branches = new Branch_Model();
+        $all_versions = $branches->getProductVersions();
 
         $this->setViewData(array(
             'crasher_data' => $crasher_data,
-            'all_products'  => $branch_data['products'],
-//            'all_branches'  => $branch_data['branches'],
-            'all_versions'  => $branch_data['versions'],
-//            'all_platforms' => $platforms
+            'all_versions'  => $all_versions,
         ));
     }
 
@@ -61,13 +60,12 @@ class Topcrasher_Controller extends Controller {
      * get top crashers for a given product and version
      */
     private function _getTopCrashers($product, $version) {
-        $topcrashers = new Topcrashers_Model();
         $sigSize = Kohana::config("topcrashers.numberofsignatures");
 
-        $end = $topcrashers->lastUpdatedByVersion($product, $version);
-        $start = $topcrashers->timeBeforeOffset(14, $end);
+        $end = $this->topcrashers_model->lastUpdatedByVersion($product, $version);
+        $start = $this->topcrashers_model->timeBeforeOffset(14, $end);
 
-        return $topcrashers->getTopCrashersByVersion($product, $version, $sigSize, $start, $end);
+        return $this->topcrashers_model->getTopCrashersByVersion($product, $version, $sigSize, $start, $end);
     }
 
     /**

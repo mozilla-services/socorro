@@ -46,5 +46,23 @@
       <p><a href="<?php out::H($url)?>">View all current crashers</a></p>
       </div>
     <?php endforeach; ?>
+
+    <h1>Other Versions</h1>
+    <div class="other_vers">
+      <?php
+      $prod = '';
+      foreach ($all_versions as $version):
+        if ($prod != $version->product) {
+          if (!empty($prod)) echo '</ul>';
+          echo '<ul>';
+          $prod = $version->product;
+        }
+        $url = url::base() . "topcrasher/byversion/{$version->product}/{$version->version}";
+      ?>
+        <li><a href="<?php out::H($url)?>"><?php out::H($version->product.' '.$version->version)?></a></li>
+      <?php endforeach; ?>
+      </ul>
+      <div class="clear"></div>
+    </div>
 </div>
 
