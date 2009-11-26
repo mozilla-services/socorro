@@ -1,4 +1,6 @@
 <?php slot::start('head') ?>
+<?php /* Bug#530306 - don't reformat the [@ signature ] part below, it affects
+                      our Bugzilla integration. No really. */ ?>
     <title>[@ <?php out::H($report->signature) ?> ] - <?php out::H($report->product) ?> <?php out::H($report->version) ?> Crash Report - Report ID: <?php out::H($report->uuid) ?></title>
 
     <link rel='alternate' type='application/json' href='<?php echo $reportJsonZUri ?>' />
@@ -33,7 +35,7 @@
 //]]></script> 
 
 <?php slot::end() ?>
-<h1 id="report-header" class="first"><?php out::H($report->product) ?> <?php out::H($report->version) ?> Crash Report [@<?php out::H($report->signature) ?> ]</h1>
+<h1 id="report-header" class="first"><?php out::H($report->product) ?> <?php out::H($report->version) ?> Crash Report [@ <?php out::H($report->signature) ?> ]</h1>
 <div id="sumo-link"><a href="http://support.mozilla.com/tiki-newsearch.php?where=all&amp;q=<?=urlencode($report->sumo_signature) ?>" title="Find more answers at support.mozilla.com!">Search Mozilla Support for Help</a></div>
 
 <div id="report-header-details">ID: <span><?php out::H($report->uuid) ?></span><br/> Signature: <span><?php out::H($report->signature) ?></span></div>

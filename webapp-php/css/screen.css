@@ -899,7 +899,7 @@ td.in1 ul, td.in2 ul{ padding-left: 15px; }
 #report-index h2, #report-index h3 {
    margin: 10px 0;
 }
-#report-header { font-size: 150%; position: relative; width: 850px; z-index: 1; }
+#report-header { font-size: 150%; position: relative; width: 39em; z-index: 1; }
 .list tr:nth-child(2n+1) {
   background-color: #ddd;
 }
