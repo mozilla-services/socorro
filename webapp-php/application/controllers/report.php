@@ -4,7 +4,7 @@ require_once(Kohana::find_file('libraries', 'bugzilla', TRUE, 'php'));
 require_once(Kohana::find_file('libraries', 'moz_pager', TRUE, 'php'));
 require_once(Kohana::find_file('libraries', 'MY_SearchReportHelper', TRUE, 'php'));
 require_once(Kohana::find_file('libraries', 'crash', TRUE, 'php'));
-require_once(Kohana::find_file('libraries', 'Web_Service', TRUE, 'php'));
+
 /**
  * List, search, and show crash reports.
  */
