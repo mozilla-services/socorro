@@ -7,23 +7,6 @@
  */
 class CrashReportDump {
     /**
-     * Creates a filename and path for a crash report
-     * based on the dump directory and the UUID of a crash.
-     * @param  string dumps directory
-     * @param  string uuid of the crash
-     * @return a filesystem full filename
-     */
-    public function crashFilename($dir, $uuid)
-    {
-        if (strlen($uuid) > 10) {
-	    $date = '20' . substr($uuid, -6);
-	    return implode("/", array($dir, $date, 'name', substr($uuid, 0, 2), substr($uuid, 2, 2), $uuid)) . ".jsonz";
-        } else {
-	  throw new Exception("Bad arguments to crashFilename uuid too short $uuid");
-	}
-    }
-
-    /**
      * Populates a crash report with the contents
      * of a JSON encoded crash report dump.
      *
@@ -33,40 +16,67 @@ class CrashReportDump {
      * crash dump file on the filesystem.
      *
      * @param stdClass report object
-     * @param string filename of gzip JSON file
+     * @param string JSON encoded processed crash report
      * @return void report will be altered
      */
-    public function populate($report, $filename) {
-        if (file_exists($filename) && is_readable($filename) ) {	    
-    	    $data = json_decode($this->_readFile($filename));
-            foreach ($data as $key => $val) {
-  	        $report->{$key} = $val;
+    public function populate($report, $json) {
+	$data = json_decode($json);
+
+	foreach ($data as $key => $val) {
+	    $report->{$key} = $val;
+	}
+	$this->_parseDump($report); 
+	//Bulletproofing against bad JSON files
+	$basicKeys = array('signature', 'product', 'version', 'uuid', 
+			   'date_processed', 'uptime', 'build', 'os_name', 
+			   'os_version', 'cpu_name', 'cpu_info', 'reason', 
+			   'address', 'user_comments', 'dump');
+	foreach ($basicKeys as $key) {
+	    if (! isset($report->{$key})) {
+		$report->{$key} = '';
 	    }
-            $this->_parseDump($report); 
-	    //Bulletproofing against bad JSON files
-            $basicKeys = array('signature', 'product', 'version', 'uuid', 
-			       'date_processed', 'uptime', 'build', 'os_name', 
-			       'os_version', 'cpu_name', 'cpu_info', 'reason', 
-			       'address', 'user_comments', 'dump');
-	    foreach ($basicKeys as $key) {
-                if (! isset($report->{$key})) {
-	            $report->{$key} = '';
-	        }
-	    }
-        } else {
-  	    throw new Exception("Crash Dump file not found or not readable $filename");
-        }
+	}
     }
 
-    private function _readFile($filename)
+    /**
+     * Handels errors in the getJsonZ method.
+     * Callers must rest $this->error_reading_file to FALSE
+     * before use and then check it after IO calls.
+     * @see getJsonZ
+     * @see set_error_handler
+     */
+    public function handleError($errno, $errstr, $errfile, $errline)
+    {
+	Kohana::log('error', "$errstr $errfile line $errline");
+	$this->error_reading_file = TRUE;
+    }
+
+   /**
+    * The processed crash dump metadata is stored in
+    * a gzipped JSON encoded file. This method retreieves
+    * it and de-compresses it
+    *
+    * @param string A valid uri to the crash dump
+    * @return string with JSON data or FALSE if their is a issue getting JSON
+    */
+    public function getJsonZ($uri)
     {
         $output="";
-        $file = gzopen($filename, "r");
-        while(!feof($file)) {
-            $output = $output . fgets($file, 4096);
-        }
-        gzclose ($file);
-        return $output; 
+	$this->error_reading_file = FALSE;
+
+	$eh = set_error_handler(array($this, 'handleError'));
+	    $file = gzopen($uri, "r");
+	    while($this->error_reading_file === FALSE &&
+		  !feof($file)) {
+		$output = $output . fgets($file, 4096);
+	    }
+	    gzclose ($file);
+        set_error_handler($eh);
+	if ($this->error_reading_file === TRUE) {
+	    return FALSE;
+	} else {
+	    return $output; 
+	}
     }
 
     /**

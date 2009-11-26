@@ -4,6 +4,7 @@ require_once(Kohana::find_file('libraries', 'bugzilla', TRUE, 'php'));
 require_once(Kohana::find_file('libraries', 'moz_pager', TRUE, 'php'));
 require_once(Kohana::find_file('libraries', 'MY_SearchReportHelper', TRUE, 'php'));
 require_once(Kohana::find_file('libraries', 'crash', TRUE, 'php'));
+require_once(Kohana::find_file('libraries', 'Web_Service', TRUE, 'php'));
 /**
  * List, search, and show crash reports.
  */
@@ -192,9 +193,9 @@ class Report_Controller extends Controller {
 
     /**
      * Fetch and display a single report.
-	 * 
-	 * @param 	string 	The uuid
-	 * @return 	void
+     * 
+     * @param 	string 	The uuid
+     * @return 	void
      */
     public function index($id) {
         $crash = new Crash();
@@ -203,15 +204,17 @@ class Report_Controller extends Controller {
             return Event::run('system.404');
         }
 
-	$crashDir = Kohana::config('application.dumpPath');
-	$report = $this->report_model->getByUUID($uuid, $crashDir);
+	$crash_uri = sprintf(Kohana::config('application.crash_dump_local_url'), $uuid);
+	$reportJsonZUri = sprintf(Kohana::config('application.crash_dump_public_url'), $uuid);
+
+	$report = $this->report_model->getByUUID($uuid, $crash_uri);
 
         if ( is_null($report)) {
             if (!isset($_GET['p'])) {
                 $this->priorityjob_model = new Priorityjobs_Model();
                 $this->priorityjob_model->add($uuid);
             }
-	    	return url::redirect('report/pending/'.$uuid);
+	    return url::redirect('report/pending/'.$uuid);
         } else {
             $logged_in = $this->auth_is_active && Auth::instance()->logged_in();
 	    if ($logged_in) {
@@ -222,11 +225,10 @@ class Report_Controller extends Controller {
                 'etag'          => $uuid,
                 'last-modified' => strtotime($report->date_processed)
             ));
-	    	$report->sumo_signature = $this->_makeSumoSignature($report->signature);
-        	    $reportJsonZUri = url::file('dumps/' . $uuid . '.jsonz');
+	    $report->sumo_signature = $this->_makeSumoSignature($report->signature);
         	
 	    	$bug_model = new Bug_Model;
-        	    $rows = $bug_model->bugsForSignatures(array($report->signature));
+		$rows = $bug_model->bugsForSignatures(array($report->signature));
 	    	$bugzilla = new Bugzilla;
 	    	$signature_to_bugzilla = $bugzilla->signature2bugzilla($rows, Kohana::config('codebases.bugTrackingUrl'));
         	
@@ -254,7 +256,7 @@ class Report_Controller extends Controller {
      */
     public function pending($id) {
         $crash = new Crash();
-		$status = null;
+	$status = null;
         $uuid = $crash->parseUUID($id);
         if ($uuid == FALSE) {
             Kohana::log('alert', "Improper UUID format for $uuid doing 404");
@@ -269,10 +271,12 @@ class Report_Controller extends Controller {
         }        
 
         // Check for the report
-		if ($report = $this->report_model->isReportAvailable($uuid)) {
-			$this->setAutoRender(FALSE);
-			return url::redirect('report/index/'.$uuid);
-		}
+	$crash_uri = sprintf(Kohana::config('application.crash_dump_local_url'), $uuid);
+	$report = $this->report_model->getByUUID($uuid, $crash_uri);
+
+        if (! is_null($report)) {
+	    return url::redirect('report/index/'.$uuid);
+	}
 
         // Fetch Job 
         $this->job_model = new Job_Model();
@@ -286,29 +290,34 @@ class Report_Controller extends Controller {
         ));
     }
 
-    /**
-    * Determine whether or not pending report has been found yet.  If so,
-    * redirect the user to that url.
-    *
-    * @access   public
-    * @param    string  The $uuid for this report
-    * @return   string  Return the url to which the user should be redirected.
-    */
+  /**
+   * Determine whether or not pending report has been found yet.  If so,
+   * redirect the user to that url.
+   *
+   * @access   public
+   * @param    string  The $uuid for this report
+   * @return   string  Return the url to which the user should be redirected.
+   */
     public function pending_ajax ($uuid)
     {
-		$status = array();
-        if ($report = $this->report_model->isReportAvailable($uuid)) {
-			$status['status'] = 'ready';
-			$status['status_message'] = 'The report for ' . $uuid . ' is now available.';
-			$status['url_redirect'] = url::site('report/index/'.$uuid);
-        } else {
-			$status['status'] = 'error';
-			$status['status_message'] = 'The report for ' . $uuid . ' is not available yet.';
-			$status['url_redirect'] = '';
-		}
-		echo json_encode($status);
-        exit;
-     }
+	$status = array();
+        // Check for the report
+	$crash_uri = sprintf(Kohana::config('application.crash_dump_local_url'), $uuid);
+	$report = $this->report_model->getByUUID($uuid, $crash_uri);
+
+        if (! is_null($report)) {
+	    $status['status'] = 'ready';
+	    $status['status_message'] = 'The report for ' . $uuid . ' is now available.';
+	    $status['url_redirect'] = url::site('report/index/'.$uuid);
+	} else {
+	    $status['status'] = 'error';
+	    $status['status_message'] = 'The report for ' . $uuid . ' is not available yet.';
+	    $status['url_redirect'] = '';
+	}
+	echo json_encode($status);
+	exit;
+    }
+
 
     /**
     * Create the Sumo signature for this report.
@@ -320,11 +329,9 @@ class Report_Controller extends Controller {
     private function _makeSumoSignature($signature) {
         $memory_addr = strpos($signature, '@');
         if ($memory_addr === FALSE) {
-	    	return $signature;
+	    return $signature;
         } else {
-	  		return substr($signature, 0, $memory_addr);
+	    return substr($signature, 0, $memory_addr);
         }
     }
-
-    /* */
 }

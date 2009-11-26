@@ -16,11 +16,22 @@ $config['amo_api'] = 'https://services.addons.mozilla.org/';
  */
 $config['amo_url'] = 'http://addons.mozilla.org/';
 
+/**
+ * The PHP app access the processed crash dump files (jsonz)
+ * via an HTTP request. The php_access config variable is a
+ * single quoted string which includes the following variables:
+ * %1$s - UUID of the crash
+ */
+$config['crash_dump_local_url']  = 'http://aking.khan.mozilla.org/reporter/dumps/%1$s.jsonz';
+
+/**
+ * Exactly like local_url but is used for public links
+ * to the processed dumps files
+ * %1$s - UUID of the crash
+ */
+$config['crash_dump_public_url'] = 'http://aking.khan.mozilla.org/reporter/dumps/%1$s.jsonz';
 
 $config['dumpIDPrefix'] = 'bp-';
-
-// root directory for crash dump files
-$config['dumpPath'] = '/mnt/socorro_dumps';
 
 // Mappings of source code types to web links
 $config['vcsMappings'] = array(
