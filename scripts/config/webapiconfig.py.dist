@@ -6,6 +6,10 @@ from config.commonconfig import databaseName
 from config.commonconfig import databaseUserName
 from config.commonconfig import databasePassword
 
+wsgiInstallation = cm.Option()
+wsgiInstallation.doc = 'True or False, this app is istalled under WSGI'
+wsgiInstallation.default = False
+
 logFilePathname = cm.Option()
 logFilePathname.doc = 'full pathname for the log file'
 logFilePathname.default = './webapi.log'

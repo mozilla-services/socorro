@@ -22,6 +22,11 @@ def datetimeFromISOdateString(s):
   return dt.datetime(year, month, day, hour, minute, second, millisecond)
 
 
+#-----------------------------------------------------------------------------------------------------------------
+def strHoursToTimeDelta(hoursAsString):
+  return dt.timedelta(hours=int(hoursAsString))
+
+
 #=================================================================================================================
 class UTC(dt.tzinfo):
   """

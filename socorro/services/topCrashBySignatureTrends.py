@@ -1,30 +1,33 @@
 import logging
-logger = logging.getLogger("tcbs")
+logger = logging.getLogger("webapi")
 
 import socorro.lib.psycopghelper as psy
+import socorro.webapi.webapiService as webapi
+import socorro.lib.datetimeutil as dtutil
+
 import psycopg2.extras as psyext
 
 import simplejson
 
 
+# theoretical sample output
 #  [ [ (key, rank, rankDelta, ...), ... ], ... ]
-
-{
-  "resource": "http://socorro.mozilla.org/trends/topcrashes/bysig/Firefox/3.5.3/from/2009-10-03/to/2009-10-13/page/0",
-  "page": "0",
-  "previous": "null",
-  "next": "http://socorro.mozilla.org/trends/topcrashes/bysig/Firefox/3.5.3/from/2009-10-03/to/2009-10-13/page/0",
-  "ranks":[
-    {"signature": "LdrAlternateResourcesEnabled",
-    "previousRank": 3,
-    "currentRank": 8,
-    "change": -5},
-    {"signature": "OtherSignature",
-    "previousRank": "null",
-    "currentRank": 10,
-    "change": 10}
-    ],
-}
+#{
+  #"resource": "http://socorro.mozilla.org/trends/topcrashes/bysig/Firefox/3.5.3/from/2009-10-03/to/2009-10-13/page/0",
+  #"page": "0",
+  #"previous": "null",
+  #"next": "http://socorro.mozilla.org/trends/topcrashes/bysig/Firefox/3.5.3/from/2009-10-03/to/2009-10-13/page/0",
+  #"ranks":[
+    #{"signature": "LdrAlternateResourcesEnabled",
+    #"previousRank": 3,
+    #"currentRank": 8,
+    #"change": -5},
+    #{"signature": "OtherSignature",
+    #"previousRank": "null",
+    #"currentRank": 10,
+    #"change": 10}
+    #],
+#}
 
 #-----------------------------------------------------------------------------------------------------------------
 def totalNumberOfCrashesForPeriod (aCursor, databaseParameters):
@@ -119,18 +122,18 @@ def find (iterable, targetToSearchFor, equalityFunction=lambda x, y: x == y, tra
       the returned result is a transformation of the targetToSearchFor, the index at which the match was found,
       and the matchng item in the iteratble.
   """
-  for i, x in enumerate(iterable):
-    if equalityFunction(targetToSearchFor, x):
-      return transformFunction(targetToSearchFor, i, x)
+  for i, y in enumerate(iterable):
+    if equalityFunction(targetToSearchFor, y):
+      return transformFunction(targetToSearchFor, i, y)
   raise NotFound
 
 #-----------------------------------------------------------------------------------------------------------------
-def listOfListsWithChangeInRank (listOfQueryResultsIterator):
+def listOfListsWithChangeInRank (listOfQueryResultsIterable):
   """ Step through a list of query results, altering them by adding prior ranking.
       return all but the very first item of the input.
   """
   listOfTopCrasherLists = []
-  for i, aListOfTopCrashers in enumerate(listOfQueryResultsIterator):
+  for i, aListOfTopCrashers in enumerate(listOfQueryResultsIterable):
     try:
       previousList = listOfTopCrasherLists[-1]
     except IndexError:
@@ -163,22 +166,28 @@ def latestEntryBeforeOrEqualTo(aCursor, aDate):
   return psy.singleValueSql(aCursor, sql, (aDate,))
 
 #-----------------------------------------------------------------------------------------------------------------
-def twoPeriodTopCrasherComparison (databaseCursor, context):
-  context['logger'].debug('entered twoPeriodTopCrasherComparison')
+def twoPeriodTopCrasherComparison (databaseCursor, context, closestEntryFunction=latestEntryBeforeOrEqualTo, listOfTopCrashersFunction=getListOfTopCrashersBySignature):
+  try:
+    context['logger'].debug('entered twoPeriodTopCrasherComparison')
+  except KeyError:
+    import socorro.lib.util as util
+    context['logger'] = util.SilentFakeLogger()
   assert "endDate" in context, "endDate is missing from the configuration"
   assert "duration" in context, "duration is missing from the configuration"
   assert "product" in context, "product is missing from the configuration"
   assert "version" in context, "version is missing from the configuration"
+  assert "os_name" in context, "os_name is missing from the configuration"
+  assert "os_version" in context, "os_version is missing from the configuration"
   assert "listSize" in context, "listSize is missing from the configuration"
   context['numberOfComparisonPoints'] = 2
   if not context['listSize']:
     context['listSize'] = 100
   #context['logger'].debug('about to latestEntryBeforeOrEqualTo')
-  context['endDate'] = latestEntryBeforeOrEqualTo(databaseCursor, context['endDate'])
+  context['endDate'] = closestEntryFunction(databaseCursor, context['endDate'])
   #context['logger'].debug('before %s' % context)
   context['startDate'] = context.endDate - context.duration * context.numberOfComparisonPoints
   #context['logger'].debug('after %s' % context)
-  listOfTopCrashers = listOfListsWithChangeInRank(rangeOfQueriesGenerator(databaseCursor, context, getListOfTopCrashersBySignature))[0]
+  listOfTopCrashers = listOfListsWithChangeInRank(rangeOfQueriesGenerator(databaseCursor, context, listOfTopCrashersFunction))[0]
   context['logger'].debug('listOfTopCrashers %s' % listOfTopCrashers)
   totalNumberOfCrashes = totalPercentOfTotal = 0
   for x in listOfTopCrashers:
@@ -194,16 +203,33 @@ def twoPeriodTopCrasherComparison (databaseCursor, context):
   return result
 
 #-----------------------------------------------------------------------------------------------------------------
-def main (config):
-  """
-  """
-  connPool = psy.DatabaseConnectionPool(config.databaseHost, config.databaseName, config.databaseUserName, config.databasePassword, logger)
-  aConnection, aCursor = connPool.connectionCursorPair()
+def typeConversion (listOfTypeConverters, listOfValuesToConvert):
+  return (t(v) for t, v in zip(listOfTypeConverters, listOfValuesToConvert))
 
-  config["numberOfComparisonPoints"] = 2
+#=================================================================================================================
+class DotDict(dict):
+  __getattr__= dict.__getitem__
+  __setattr__= dict.__setitem__
+  __delattr__= dict.__delitem__
 
-  return json.dumps(compareTopCrashBySignatureOverTime(aCursor, **config))
-
-
+#=================================================================================================================
+#import socorro.services.topCrashBySignatureTrends as tcbst
+class TopCrashBySignatureTrends(webapi.JsonServiceBase):
+  #-----------------------------------------------------------------------------------------------------------------
+  def __init__(self, configContext):
+    super(TopCrashBySignatureTrends, self).__init__(configContext)
+    logger.debug('TopCrashBySignatureTrends __init__')
+  #-----------------------------------------------------------------------------------------------------------------
+  uri = '/200911/topcrash/sig/trend/rank/p/(.*)/v/(.*)/end/(.*)/duration/(.*)/listsize/(.*)'
+  #-----------------------------------------------------------------------------------------------------------------
+  def get(self, *args):
+    convertedArgs = typeConversion([str, str, dtutil.datetimeFromISOdateString, dtutil.strHoursToTimeDelta, int], args)
+    parameters = DotDict(zip(['product','version', 'endDate','duration', 'listSize'], convertedArgs))
+    parameters.os_name = ''
+    parameters.os_version = ''
+    logger.debug("TopCrashBySignatureTrends %s", parameters)
+    parameters.logger = logger
+    connection, cursor = self.databaseConnectionCursorPair()
+    return twoPeriodTopCrasherComparison(cursor, parameters)
 
 
