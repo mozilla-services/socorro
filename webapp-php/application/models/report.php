@@ -45,6 +45,27 @@ class Report_Model extends Model {
     	}
     }
 
+	/**
+	 * Determine whether or not the raw dumps are still on the system and return the URLs
+	 * by which they may be downloaded.  UUID must contain a timestamp that is within the given 
+	 * acceptable timeframe found in Kohana::config('application.raw_dump_availability').
+	 *
+	 * @param 	string	The $uuid for the dump
+	 * @return  array|bool 	Return an array containing the dump and json urls for download; else 
+	 *					return false if unavailable
+	 */
+	public function formatRawDumpURLs ($uuid) {
+		if ($uuid_timestamp = $this->uuidTimestamp($uuid)) {
+			if ($uuid_timestamp > (time() - Kohana::config('application.raw_dump_availability'))) {
+				return array(
+					Kohana::config('application.raw_dump_url') . $uuid . '.dump',
+					Kohana::config('application.raw_dump_url') . $uuid . '.json',
+				);
+			}
+ 		}
+		return false;
+	}
+
     /**
      * Check the UUID to determine if this report is still valid.
      *
@@ -54,19 +75,14 @@ class Report_Model extends Model {
      */
     public function isReportValid ($uuid)
     {
-        $uuid_chunks = str_split($uuid, 6);
-        if (isset($uuid_chunks[5]) && is_numeric($uuid_chunks[5])) {
-            $uuid_date = str_split($uuid_chunks[5], 2);
-            if (isset($uuid_date[0]) && isset($uuid_date[1]) && isset($uuid_date[2])) {
-                $uuid_timestamp = mktime(0, 0, 0, $uuid_date[1], $uuid_date[2], $uuid_date[0]);
-                if ($uuid_timestamp < (mktime(0, 0, 0, date("m"), date("d"), date("Y")-3))) {
-                    return false;
-                } else {
-                    return true;
-                }
+		if ($uuid_timestamp = $this->uuidTimestamp($uuid)) {
+            if ($uuid_timestamp < (mktime(0, 0, 0, date("m"), date("d"), date("Y")-3))) {
+                return false;
+            } else {
+                return true;
             }
-        }
-
+		}
+	
         // Can't determine just by looking at the UUID. Return TRUE.
         return true;
     }
@@ -92,4 +108,25 @@ class Report_Model extends Model {
 	    return FALSE;
 	}
     }
+
+    /**
+     * Determine the timestamp for this report by the given UUID.
+     *
+     * @access  public 
+     * @param   string  The $uuid for this report
+     * @return  int    	The timestamp for this report.
+     */
+    public function uuidTimestamp ($uuid)
+    {
+        $uuid_chunks = str_split($uuid, 6);
+        if (isset($uuid_chunks[5]) && is_numeric($uuid_chunks[5])) {
+            $uuid_date = str_split($uuid_chunks[5], 2);
+            if (isset($uuid_date[0]) && isset($uuid_date[1]) && isset($uuid_date[2])) {
+                return mktime(0, 0, 0, $uuid_date[1], $uuid_date[2], $uuid_date[0]);
+            }
+        }
+		return false;
+	}
+
+	/* */
 }

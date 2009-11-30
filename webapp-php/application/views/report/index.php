@@ -226,6 +226,13 @@
 
     <div id="rawdump">
         <div class="code"><?php out::H($report->dump) ?></div>
+
+		<?php if ($logged_in && !empty($raw_dump_urls)) { ?>
+			<h3>Download the Raw Dump</h3>
+			<?php foreach ($raw_dump_urls as $url) { ?>
+				<p><a href="<?php out::H($url); ?>"><?php out::H($url); ?></a></p>
+			<?php } ?>
+		<?php } ?>
     </div><!-- /rawdump -->
 
 

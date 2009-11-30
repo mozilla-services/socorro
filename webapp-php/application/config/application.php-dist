@@ -31,6 +31,18 @@ $config['crash_dump_local_url']  = 'http://aking.khan.mozilla.org/reporter/dumps
  */
 $config['crash_dump_public_url'] = 'http://aking.khan.mozilla.org/reporter/dumps/%1$s.jsonz';
 
+/**
+ * The amount of time in seconds which the raw dump will be accessible. Originally set 
+ * to 604,800 seconds (7 days).
+ */
+$config['raw_dump_availability'] = 604800;
+
+/**
+ * The PHP app will provide links to the raw crash dump files (.jsonz and 
+ * .dump) to logged in users.  In production this link must be prefixed with https://.
+ */
+$config['raw_dump_url']  = 'https://rsnyder.khan.mozilla.org/reporter/rawdumps/';
+
 $config['dumpIDPrefix'] = 'bp-';
 
 // Mappings of source code types to web links

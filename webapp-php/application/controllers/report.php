@@ -206,6 +206,7 @@ class Report_Controller extends Controller {
 
 	$crash_uri = sprintf(Kohana::config('application.crash_dump_local_url'), $uuid);
 	$reportJsonZUri = sprintf(Kohana::config('application.crash_dump_public_url'), $uuid);
+	$raw_dump_urls = $this->report_model->formatRawDumpURLs($uuid);
 
 	$report = $this->report_model->getByUUID($uuid, $crash_uri);
 
@@ -240,6 +241,7 @@ class Report_Controller extends Controller {
         	    'comments' => $this->common_model->getCommentsBySignature($report->signature),
         	    'extensions' => $extensions,
         	    'logged_in' => $logged_in,
+				'raw_dump_urls' => $raw_dump_urls,
         	    'reportJsonZUri' => $reportJsonZUri,
         	    'report' => $report,
         	    'sig2bugs' => $signature_to_bugzilla
