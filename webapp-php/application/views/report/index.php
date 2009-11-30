@@ -100,6 +100,15 @@
             <tr>
                 <th>Crash Address</th><td><?php out::H($report->address) ?></td>
             </tr>
+<?php if ($logged_in === TRUE) { ?>
+	    <tr>
+	  <th>Email Address</th><td>
+	  <?php if(property_exists($report, 'email') && ! empty($report->email)){?>
+               <a href="mailto:<? out::H($report->email) ?>"><? out::H($report->email) ?></a> - Super Sensitive! Don't mess around!
+<?php } ?></td>
+	    </tr>
+<?php } ?>
+
             <tr>
 	    <th>User Comments</th><td><?php echo out::H($report->user_comments) ?></td>
             </tr>

@@ -56,6 +56,7 @@ class Common_Model extends Model {
             " SELECT 
 				reports.client_crash_date, 
 				reports.user_comments, 
+                                reports.uuid, 
 				CASE 
 					WHEN reports.email = '' THEN null
 					WHEN reports.email IS NULL THEN null

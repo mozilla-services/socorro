@@ -16,9 +16,14 @@ class Report_Model extends Model {
       */
     public function getByUUID($uuid, $crash_uri)
     {
+	/* Note: 99% of our data comes from the processed crash dump
+	         jsonz file. Only select columns that aren't in the json file
+	         such as email which is SENSATIVE and should never appear in
+                 the publically accessable jsonz file. Anything here will be 
+                 merged into the model object + jsonz data */
         $report = $this->db->query(
             "/* soc.web report.dateProcessed */
-                SELECT reports.date_processed
+                SELECT reports.email
                 FROM reports 
                 WHERE reports.uuid=? 
                 AND reports.success 
