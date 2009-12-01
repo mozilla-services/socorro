@@ -26,6 +26,10 @@ def datetimeFromISOdateString(s):
 def strHoursToTimeDelta(hoursAsString):
   return dt.timedelta(hours=int(hoursAsString))
 
+#-----------------------------------------------------------------------------------------------------------------
+def timeDeltaToSeconds(td):
+  return td.days * 24 * 60 * 60 + td.seconds
+
 
 #=================================================================================================================
 class UTC(dt.tzinfo):
