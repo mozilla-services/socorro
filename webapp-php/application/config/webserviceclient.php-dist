@@ -1,0 +1,22 @@
+<?php defined('SYSPATH') or die('No direct script access.');
+/**
+ * The hostname for backend data access
+ */
+$config['socorro_hostname'] = 'http://localhost:8083';
+/**
+ * Default settings for web service clients
+ */
+$config['defaults'] = array(
+    'connection_timeout' => '3',
+    'timeout' => '30'
+);
+
+/**
+ * Number of minutes to cache results to the 
+ * /200911/topcrash/sig/trend/rank/p/${product}/v/${version}/end/${end_date}/duration/${dur}/listsize/${limit}
+ * service call.
+ * This materialized views is updated every 60 minutes, so we'll cache the results for that long
+ */
+$config['topcrash_vers_rank_cache_minutes'] = 60;
+
+?>
