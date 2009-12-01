@@ -39,7 +39,10 @@ def proxyClassWithContext (aClass):
 
 #=================================================================================================================
 
+web.webapi.internalerror = web.debugerror
+
 urls = tuple(y for aTuple in ((x.uri, proxyClassWithContext(x)) for x in configContext.servicesList) for y in aTuple)
+logger.info(str(urls))
 
 if configContext.wsgiInstallation:
   app = web.application(urls, globals()).wsgifunc()

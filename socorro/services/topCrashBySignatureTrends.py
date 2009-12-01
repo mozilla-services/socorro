@@ -3,6 +3,7 @@ logger = logging.getLogger("webapi")
 
 import socorro.lib.psycopghelper as psy
 import socorro.webapi.webapiService as webapi
+import socorro.lib.util as util
 import socorro.lib.datetimeutil as dtutil
 
 import psycopg2.extras as psyext
@@ -184,7 +185,7 @@ def twoPeriodTopCrasherComparison (databaseCursor, context, closestEntryFunction
     context['listSize'] = 100
   #context['logger'].debug('about to latestEntryBeforeOrEqualTo')
   context['endDate'] = closestEntryFunction(databaseCursor, context['endDate'])
-  #context['logger'].debug('before %s' % context)
+  context['logger'].debug('endDate %s' % context['endDate'])
   context['startDate'] = context.endDate - context.duration * context.numberOfComparisonPoints
   #context['logger'].debug('after %s' % context)
   listOfTopCrashers = listOfListsWithChangeInRank(rangeOfQueriesGenerator(databaseCursor, context, listOfTopCrashersFunction))[0]
@@ -202,18 +203,7 @@ def twoPeriodTopCrasherComparison (databaseCursor, context, closestEntryFunction
   context['logger'].debug('about to return %s', result)
   return result
 
-#-----------------------------------------------------------------------------------------------------------------
-def typeConversion (listOfTypeConverters, listOfValuesToConvert):
-  return (t(v) for t, v in zip(listOfTypeConverters, listOfValuesToConvert))
-
 #=================================================================================================================
-class DotDict(dict):
-  __getattr__= dict.__getitem__
-  __setattr__= dict.__setitem__
-  __delattr__= dict.__delitem__
-
-#=================================================================================================================
-#import socorro.services.topCrashBySignatureTrends as tcbst
 class TopCrashBySignatureTrends(webapi.JsonServiceBase):
   #-----------------------------------------------------------------------------------------------------------------
   def __init__(self, configContext):
@@ -223,13 +213,17 @@ class TopCrashBySignatureTrends(webapi.JsonServiceBase):
   uri = '/200911/topcrash/sig/trend/rank/p/(.*)/v/(.*)/end/(.*)/duration/(.*)/listsize/(.*)'
   #-----------------------------------------------------------------------------------------------------------------
   def get(self, *args):
-    convertedArgs = typeConversion([str, str, dtutil.datetimeFromISOdateString, dtutil.strHoursToTimeDelta, int], args)
-    parameters = DotDict(zip(['product','version', 'endDate','duration', 'listSize'], convertedArgs))
+    logger.debug('TopCrashBySignatureTrends get')
+    convertedArgs = webapi.typeConversion([str, str, dtutil.datetimeFromISOdateString, dtutil.strHoursToTimeDelta, int], args)
+    parameters = util.DotDict(zip(['product','version', 'endDate','duration', 'listSize'], convertedArgs))
     parameters.os_name = ''
     parameters.os_version = ''
     logger.debug("TopCrashBySignatureTrends %s", parameters)
     parameters.logger = logger
-    connection, cursor = self.databaseConnectionCursorPair()
-    return twoPeriodTopCrasherComparison(cursor, parameters)
+    try:
+      connection, cursor = self.connectionPool.connectToDatabase()
+      return twoPeriodTopCrasherComparison(cursor, parameters)
+    finally:
+      connection.close()
 
 
