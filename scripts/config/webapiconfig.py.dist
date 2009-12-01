@@ -10,6 +10,11 @@ wsgiInstallation = cm.Option()
 wsgiInstallation.doc = 'True or False, this app is istalled under WSGI'
 wsgiInstallation.default = False
 
+import socorro.services.topCrashBySignatureTrends as tcbst
+servicesList = cm.Option()
+servicesList.doc = 'a python list of classes to offer as services'
+servicesList.default = [tcbst.TopCrashBySignatureTrends]
+
 logFilePathname = cm.Option()
 logFilePathname.doc = 'full pathname for the log file'
 logFilePathname.default = './webapi.log'
