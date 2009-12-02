@@ -45,8 +45,10 @@ urls = tuple(y for aTuple in ((x.uri, proxyClassWithContext(x)) for x in configC
 logger.info(str(urls))
 
 if configContext.wsgiInstallation:
-  app = web.application(urls, globals()).wsgifunc()
+  logger.info('This is a wsgi installation')
+  application = web.wsgifunc(web.webpyfunc(urls, globals()))
 else:
+  logger.info('This is stand alone installation without wsgi')
   app = web.application(urls, globals())
 
 
