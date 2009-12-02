@@ -246,7 +246,7 @@ class Common_Model extends Model {
             'reports.signature IS NOT NULL'
         );
 
-        if (isset($params['signature'])) {
+        if (isset($params['signature']) && ! empty($params['signature'])) {
             $where[] = 'reports.signature = ' . $this->db->escape($params['signature']);
         }
 
