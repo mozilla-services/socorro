@@ -20,7 +20,14 @@
                 <td>
                     <?php
                         $url_params = $params;
-                        $nonBlankSignature = $report->signature ? $report->signature:'(signature unavailable)';
+                        if ( $report->signature ) {
+                            $url_params['signature'] =  $report->signature;
+                            $nonBlankSignature = $report->signature;
+                        } else { 
+                            $url_params['signature'] = 'NULL';
+			    $nonBlankSignature = Topcrasher_Controller::$no_sig;
+			}
+                        
                         $url = url::base().'report/list?'.html::query_string($url_params);
                     ?>
                         <a href="<?php out::H($url) ?>" title="View reports with this signature."><?php out::H($nonBlankSignature) ?></a>
