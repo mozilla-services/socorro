@@ -210,6 +210,7 @@ class IdCache:
       dpart = ''
     upart = m.group('uri').rstrip('/')
     if(self.truncateUrlLength and upart):
+      logger.info('Truncating url from "%s" to "%s"',upart,upart[:self.truncateUrlLength])
       upart = upart[:self.truncateUrlLength]
     key = (dpart, upart)
     queryPart = m.group('query')
