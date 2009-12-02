@@ -306,7 +306,7 @@ class Controller extends Controller_Core {
         $this->auto_render = FALSE;
 	header('Content-type: text/csv; charset=utf-8');
         header("Content-disposition: attachment; filename=${filenamePrefix}.csv");
-        $view = new View(Router::$controller . '/' . Router::$method . '_csv');
+        $view = new View('common/csv');
         $view->set_global($this->getViewData());
 	echo $view->render();
     }

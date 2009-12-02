@@ -860,6 +860,8 @@ a.disabled{ text-decoration: none; color: #999; }
 #duration-nav {float: right;}
 #duration-nav ul li { float: left; padding-right: 1em;}
 #signatureList{ clear: both; }
+.sig-history-graph { width: 400px; height: 100px; /* position: absolute; top: 100px; left: 100px; */ display: none; float: left}
+.sig-history-legend { width: 1em; float: left;}
 div.expandable-menu, div.each-sparkline { margin-left: 12px; border: none; }
 
 .tcburl-toggler {

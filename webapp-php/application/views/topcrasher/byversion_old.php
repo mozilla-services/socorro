@@ -16,12 +16,8 @@
          <span class="current-version"><?php out::H($version) ?></span></h1>
 
 <?php 
-if ($resp) {
-    View::factory('common/list_topcrashers', array(
+    View::factory('common/list_topcrashers_old', array(
 		      'last_updated' => $last_updated,
 		      'top_crashers' => $top_crashers
 		      ))->render(TRUE);
-} else {
-    View::factory('common/data_access_error')->render(TRUE);
-}
 ?>

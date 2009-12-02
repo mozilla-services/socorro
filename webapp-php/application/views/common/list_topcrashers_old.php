@@ -1,8 +1,8 @@
 <?php if (count($top_crashers) > 0) { ?>
 <div>
     Top <?php echo count($top_crashers) ?> Crashing Signatures
-    <span class="start-date"><?= $start ?></span> through
-    <span class="end-date"><?= $last_updated ?></span>.
+    <span class="start-date"><?php out::H(date('m/d H:i', $start)) ?></span> through
+    <span class="end-date"><?php out::H(date('m/d H:i', $last_updated)) ?></span>.
     The  report covers <span class="percentage" title="<?=$percentTotal?>"><?= number_format($percentTotal * 100, 2)?>%</span> of all <span class="total-num-crashes" title="<?= $total_crashes ?>"><?= number_format($total_crashes) ?></span> crashes during this period.
 	<div id="duration-nav">
   	  <h3>Other Periods:</h3>
@@ -15,11 +15,9 @@
             <thead>
                 <tr>
                     <th>Rank</th>
-                    <th title="Movement in Rank since the <?= $start ?> report">Trend</th>
-	            <th title="The percentage of crashes against overall crash volume">%</th>
-	            <th title="The change in percentage since the <?= $start ?> report">Diff</th>
+	            <th>% of Total</th>
                     <th>Signature</th>	  
-                    <th title="Crashes across platforms">Count</th>
+                    <th>Count</th>
                     <th>Win</th>
                     <th>Mac</th>
                     <th>Lin</th>
@@ -38,25 +36,26 @@
                             'range_unit'  => 'weeks',
                             'signature'   => $crasher->signature
 			    );
-                        if (property_exists($crasher, 'branch')) {
-			    $sigParams['branch'] = $crasher->branch;
+                        if (property_exists($crasher, 'version')) {
+			    $sigParams['version'] = $crasher->product . ':' . $crasher->version;
 			} else {
-			    $sigParams['version'] = $product . ':' . $version;
+			    $sigParams['branch'] = $crasher->branch;
 			}
 
                         $link_url =  url::base() . 'report/list?' . html::query_string($sigParams);
+                        $percent = '';
+                        if (property_exists($crasher, 'percent')) {
+                            $percent = $crasher->percent;
+                        }
                     ?>
                     <tr class="<?php echo ( ($row-1) % 2) == 0 ? 'even' : 'odd' ?>">
                         <td><?php out::H($row) ?></td>
-                        <td><div class="trend <?= $crasher->trendClass ?>"><?php echo $crasher->changeInRank ?></div></td>
-			 <td><span class="percentOfTotal"><?php out::H($crasher->{'display_percent'}) ?></span></td>
-			 <td><div title="A change of <?php out::H($crasher->{'display_change_percent'})?> from <?php out::H($crasher->{'display_previous_percent'}) ?>"
-                                ><?php out::H($crasher->{'display_change_percent'}) ?></div></td>
-                        <td><a class="signature" href="<?php out::H($link_url) ?>" title="View reports with this crasher."><?php out::H($nonBlankSignature) ?></a><div class="sig-history-graph"></div><div class="sig-history-legend"></div></td>
-                        <td><?php out::H($crasher->count) ?></td>
-                        <td><?php out::H($crasher->win_count) ?></td>
-                        <td><?php out::H($crasher->mac_count) ?></td>
-                        <td><?php out::H($crasher->linux_count) ?></td>
+		        <td><span class="percentOfTotal"><?php echo $percent ?></span></td>
+                        <td><a href="<?php out::H($link_url) ?>" title="View reports with this crasher."><?php out::H($nonBlankSignature) ?></a></td>
+                        <td><?php out::H($crasher->total) ?></td>
+                        <td><?php out::H($crasher->win) ?></td>
+                        <td><?php out::H($crasher->mac) ?></td>
+                        <td><?php out::H($crasher->linux) ?></td>
 
 
                <?php if (isset($sig2bugs)) {?>
@@ -94,14 +93,6 @@
             </tbody>
         </table>
     </div>
-    <!--[if IE]><?php echo html::script('js/flot-0.5/excanvas.pack.js') ?><![endif]-->
-    <?php echo html::script(array(
-        'js/flot-0.5/jquery.flot.pack.js'
-    ))?>
-    <script type="text/javascript">
-    var SocAjax = '<?= url::site('topcrasher/plot_signature') . '/' . $product . '/' . $version . '/' ?>';
-    </script>
-    
     <?php View::factory('common/csv_link_copy')->render(TRUE); ?>
 <?php } else { ?>
     <p>No results were found.</p>

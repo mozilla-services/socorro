@@ -18,7 +18,7 @@
 
 <h1 class="first">Top Crashers for the <span class="current-branch"><?php out::H($branch) ?></span> Branch</h1>
 <?php 
-    View::factory('common/list_topcrashers', array(
+    View::factory('common/list_topcrashers_old', array(
 		      'last_updated' => $last_updated,
 		      'top_crashers' => $top_crashers
 		      ))->render(TRUE);
