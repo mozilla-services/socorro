@@ -14,9 +14,17 @@ import datetime as dt
 import time as tm
 import re
 import random
+import logging
+logger = logging.getLogger("collector")
 
 compiledRegularExpressionType = type(re.compile(''))
 functionType = type(lambda x: x)
+
+pattern_str = r'(\d+)\.(\d+)\.?(\d+)?\.?(\d+)?([a|b]?)(\d*)(pre)?(\d)?'
+pattern = re.compile(pattern_str)
+
+pattern_plus = re.compile(r'((\d+)\+)')
+
 
 #=================================================================================================================
 class Collect(object):
@@ -66,6 +74,74 @@ class Collect(object):
         newCondition = Collect.genericHandlerFactor(condition)
       newThrottleConditions.append((key, newCondition, percentage))
     return newThrottleConditions
+
+  #-----------------------------------------------------------------------------------------------------------------
+  def terminated (self, json):
+    return False
+
+  #-----------------------------------------------------------------------------------------------------------------
+  @staticmethod
+  def normalizeVersionToInt(version_string):
+    # replace \d+\+ with $1++
+    match = re.search(pattern_plus, version_string)
+    if match:
+      (old, ver) = match.groups()
+      replacement = "%dpre0"%(int(ver)+1)
+      version_string = version_string.replace(old, replacement)
+
+    # version_string.replace()
+    match = re.match(pattern, version_string)
+    if match:
+      (major, minor1, minor2, minor3, alpha, alpha_n, pre, pre_n) = match.groups()
+
+      # normalize data
+      major  = int(major)
+      minor1 = int(minor1)
+      if not minor2:
+        minor2 = 0
+      else:
+        minor2 = int(minor2)
+
+      if not minor3:
+        minor3 = 0
+      else:
+        minor3 = int(minor3)
+
+      if alpha == 'a':
+        alpha = 0
+      elif alpha == 'b':
+        alpha = 1
+      else:
+        alpha = 2
+
+      if alpha_n:
+        alpha_n  = int(alpha_n)
+      else:
+        alpha_n = 0
+
+      if pre == 'pre':
+        pre = 0
+      else:
+        pre = 1
+
+      if pre_n:
+        pre_n = int(pre_n)
+      else:
+        pre_n = 0
+
+      # print (major,minor1,minor2,alpha,alpha_n,pre,pre_n)
+      # print version_string
+      int_str = "%02d%02d%02d%02d%d%02d%d%02d"  % (major, minor1, minor2, minor3, alpha, alpha_n, pre, pre_n)
+
+      return int(int_str)
+
+  #-----------------------------------------------------------------------------------------------------------------
+  def understandsRefusal (self, json):
+    try:
+      #logger.debug('understandsRefusal - %s, %s, %s, %s, %s', json['ProductName'], json['Version'], self.config.minimalVersionForUnderstandingRefusal[json['ProductName']], Collect.normalizeVersionToInt(json['Version']), Collect.normalizeVersionToInt(self.config.minimalVersionForUnderstandingRefusal[json['ProductName']]))
+      return Collect.normalizeVersionToInt(json['Version']) >= Collect.normalizeVersionToInt(self.config.minimalVersionForUnderstandingRefusal[json['ProductName']])
+    except KeyError:
+      return False
 
   #-----------------------------------------------------------------------------------------------------------------
   def throttle (self, json):

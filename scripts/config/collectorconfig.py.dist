@@ -47,9 +47,9 @@ dumpIDPrefix = cm.Option()
 dumpIDPrefix.default = "bp-"
 
 # Bugzilla 495700 - need to be able to ignore new Thottleable protocol
-ignoreThottleable = cm.Option()
-ignoreThottleable.default = True
-ignoreThottleable.fromStringConverter = cm.booleanConverter
+neverDiscard = cm.Option()
+neverDiscard.default = True
+neverDiscard.fromStringConverter = cm.booleanConverter
 
 throttleConditions = cm.Option()
 throttleConditions.default = [
@@ -59,6 +59,9 @@ throttleConditions.default = [
   #("SecondsSinceLastCrash", lambda x: 300 >= int(x) >= 0, 100), # queue all crashes that happened within 5 minutes of another crash
   (None, True, 10) # queue 10% of what's left
 ]
+
+minimalVersionForUnderstandingRefusal = cm.Option()
+minimalVersionForUnderstandingRefusal.default = { 'Firefox': '3.5.4' }
 
 logFilePathname = cm.Option()
 logFilePathname.doc = 'full pathname for the log file'

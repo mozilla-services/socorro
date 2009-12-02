@@ -32,7 +32,7 @@ def handler(req):
   config = persistentStorage["config"]
   collectObject = persistentStorage["collectObject"]
 
-  logger.debug("handler invoked using subinterpreter: %s", req.interpreter)
+  #logger.debug("handler invoked using subinterpreter: %s", req.interpreter)
 
   if req.method == "POST":
     try:
@@ -47,24 +47,31 @@ def handler(req):
 
       jsonDataDictionary = collectObject.makeJsonDictFromForm(theform)
       jsonDataDictionary["submitted_timestamp"] = currentTimestamp.isoformat()
-      if persistentStorage["config"].ignoreThottleable:
-        try:
-          del jsonDataDictionary["Throttleable"]
-        except KeyError:
-          pass
-      try:
-        throttleable = int(jsonDataDictionary["Throttleable"])
-      except KeyError:
-        throttleable = 2
-      if not throttleable or (throttleable and not collectObject.throttle(jsonDataDictionary)):
-        fileSystemStorage = persistentStorage["standardFileSystemStorage"]
-      elif throttleable == 2:
-        fileSystemStorage = persistentStorage["deferredFileSystemStorage"]
+
+      #for future use when we start sunsetting products
+      #if collectObject.terminated(jsonDataDictionary):
+        #req.write("Terminated=%s" % jsonDataDictionary['version'])
+        #return apache.OK
+
+      if "Throttleable" not in jsonDataDictionary or int(jsonDataDictionary["Throttleable"]):
+        if collectObject.throttle(jsonDataDictionary):
+          #logger.debug('yes, throttle this one')
+          if collectObject.understandsRefusal(jsonDataDictionary) and not config.neverDiscard:
+            logger.debug("discarding %s %s", jsonDataDictionary["ProductName"], jsonDataDictionary["Version"])
+            req.write("Discarded=1\n")
+            return apache.OK
+          else:
+            logger.debug("deferring %s %s", jsonDataDictionary["ProductName"], jsonDataDictionary["Version"])
+            fileSystemStorage = persistentStorage["deferredFileSystemStorage"]
+        else:
+          logger.debug("not throttled %s %s", jsonDataDictionary["ProductName"], jsonDataDictionary["Version"])
+          fileSystemStorage = persistentStorage["standardFileSystemStorage"]
       else:
-        req.write("Discarded=1\n")
-        return apache.OK
+        logger.debug("cannot be throttled %s %s", jsonDataDictionary["ProductName"], jsonDataDictionary["Version"])
+        fileSystemStorage = persistentStorage["standardFileSystemStorage"]
 
       uuid = ooid.createNewOoid(currentTimestamp, persistentStorage["config"].storageDepth)
+      logger.debug("    %s", uuid)
 
       jsonFileHandle, dumpFileHandle = fileSystemStorage.newEntry(uuid, persistentStorage["hostname"], dt.datetime.now())
       try:
