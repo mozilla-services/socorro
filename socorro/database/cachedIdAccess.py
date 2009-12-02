@@ -97,6 +97,7 @@ class IdCache:
     global logger
     if kwargs.get('logger'):
       logger = kwargs.get('logger')
+    self.truncateUrlLength = kwargs.get('truncateUrlLength',0)
     self.cursor = databaseCursor
     self.initializeCache()
     
@@ -184,11 +185,14 @@ class IdCache:
     'ssh', 'sftp', 'smb', 'sms', 'soldat', 'steam', 'svn', 'unreal', 'ut2004', 'view-source', 'vzochat', 'webcal', 'wtai',
     'wyciwyg', 'xfire', 'xri', 'ymsgr',
   ])
-  URIstring = r'^(?P<uri>(?P<proto>\w+):(?P<lead>//)?(?P<domain>[^/]+)?(?P<tail>[^?]*))(?P<query>.*)$'
+  # Bug 532500: further restrict the tail group to end with [?&=;] (was: [?])
+  URIstring = r'^(?P<uri>(?P<proto>\w+):(?P<lead>//)?(?P<domain>[^/]+)?(?P<tail>[^?&=;]*))(?P<query>.*)$'
   uriPattern = re.compile(URIstring)
   def getUrlId(self,fullUrl):
     """
     Get the uri id given a full string. Cache results. Clean cache if length is too great.
+    Note that the 'full url' that is stored will be truncated at any of [?&=;] after the first '/'
+    Note that the 'full url' that is stored may be truncated at self.truncateUrlLength if set
     """
     global uriIdCache,uriIdCount
     uriId = None
@@ -201,10 +205,13 @@ class IdCache:
       return uriId,queryPart
     dpart = m.group('domain')
     if not dpart:
-      if not m.group('lead'): # chrome:// and wyciwyg:// are legal, but not chrome: or wyciwg:
+      if not m.group('lead'): # chrome:// and wyciwyg:// are legal, but not chrome: or wyciwyg:
         return None,''
       dpart = ''
-    key = (dpart, m.group('uri').rstrip('/'))
+    upart = m.group('uri').rstrip('/')
+    if(self.truncateUrlLength and upart):
+      upart = upart[:self.truncateUrlLength]
+    key = (dpart, upart)
     queryPart = m.group('query')
     uriId = self.assureAndGetId(key,'urldims',
                                 "SELECT id FROM urldims WHERE domain=%s and url=%s",

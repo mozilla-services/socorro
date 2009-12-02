@@ -149,7 +149,8 @@ class TopCrashesByUrl(object):
   def getUrlId(self,url):
     if not self.idCache:
       cursor = self.connection.cursor()
-      self.idCache = socorro_cia.IdCache(cursor)
+      # if you want to truncate the length of stored url, pass it as truncateUrlLength=length in ctor below
+      self.idCache = socorro_cia.IdCache(cursor,logger=logger)
     return self.idCache.getUrlId(url)[0]
 
   def saveData(self, windowStart, countUrlData):

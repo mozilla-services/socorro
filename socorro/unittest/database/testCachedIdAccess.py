@@ -370,7 +370,7 @@ class TestCachedIdAccess:
     assert 0 == count, 'but got %s'%count
     assert None == cia.uriIdCache, 'but got %s'%cia.uriIdCache
     assert None == cia.uriIdCount, 'but got %s'%cia.uriIdCount
-    idc = cia.IdCache(cursor)
+    idc = cia.IdCache(cursor,truncateUrlLength=12)
     testUrls = [
       ('', None, ''),
       ('illegal/thing',None, ''),
@@ -379,6 +379,9 @@ class TestCachedIdAccess:
       ('http://moo.boo.ru/am?not=f',2, '?not=f'),
       ('http://woo.foo.too',3, ''),
       ('http://moo.boo.ru/am?not=t',2, '?not=t'),
+      ('http://moo.boo.ru/am&not=t',2, '&not=t'),
+      ('http://moo.boo.ru/am=not=t',2, '=not=t'),
+      ('http://moo.boo.ru/am;not=t',2, ';not=t'),
       ('https://woo.foo.too',4, ''),
       ('https://woo.foo.too/',4, ''),
       ('ftp://m.n.o',5, ''),
@@ -407,6 +410,10 @@ class TestCachedIdAccess:
     else:
       assert rowCount == len(cia.uriIdCache)
       assert rowCount == len(cia.uriIdCount)
+    cursor.execute('select url from urldims')
+    cursor.connection.rollback()
+    for i in cursor.fetchall():
+      assert 12 >= len(i[0]), 'Expected maxiumum length of 12, got %s: %s'%(len(i[0]),i[0])
       
   def testGetUrlId_Cached(self):
     countSql = 'select count(id) from urldims'
@@ -417,7 +424,7 @@ class TestCachedIdAccess:
     assert None == cia.uriIdCache
     assert None == cia.uriIdCount
     cia.maxUriIdCacheLength = 30
-    idc = cia.IdCache(cursor)
+    idc = cia.IdCache(cursor,truncateUrlLength=13)
     testUrls = [
       ('', None, ''),
       ('illegal/thing',None, ''),
@@ -426,6 +433,9 @@ class TestCachedIdAccess:
       ('http://moo.boo.ru/am?not=f',2, '?not=f'),
       ('http://woo.foo.too',3, ''),
       ('http://moo.boo.ru/am?not=t',2, '?not=t'),
+      ('http://moo.boo.ru/am&not=t',2, '&not=t'),
+      ('http://moo.boo.ru/am=not=t',2, '=not=t'),
+      ('http://moo.boo.ru/am;not=t',2, ';not=t'),
       ('https://woo.foo.too',4, ''),
       ('https://woo.foo.too/',4, ''),
       ('ftp://m.n.o',5, ''),
@@ -453,6 +463,10 @@ class TestCachedIdAccess:
     else:
       assert rowCount == len(cia.uriIdCache)
       assert rowCount == len(cia.uriIdCount)
+    cursor.execute('select url from urldims')
+    cursor.connection.rollback()
+    for i in cursor.fetchall():
+      assert 13 >= len(i[0]), 'Expected maxiumum length of 12, got %s: %s'%(len(i[0]),i[0])
       
   def testGetProductId(self):
     countSql = 'select count(id) from productdims'
