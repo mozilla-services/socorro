@@ -1,210 +1,224 @@
 <?php
 /**
- * Manage data in the topcrashers table.
+ * Manage data in the `topcrashers` table.
  *
- * TODO: these methdos should take a start and an end date as parameters.
- *       they should not return an array with dates.
+ * @todo	These methods should take a start and an end date as parameters.
+ * @todo   	They should not return an array with dates.
  */
 class TopcrashersByUrl_Model extends Model {
 
-  /**
-   * Find top crashing urls from the TBD table
-   */
-  public function getTopCrashersByUrl($tProduct=NULL, $tVersion=NULL, $build_id=NULL, $branch=NULL, $page=1) {
-    $product = $this->db->escape($tProduct);
-    $version = $this->db->escape($tVersion);
-    $offset = ($page -1) * 100;
-    $aTime = time();
-    //$aTime = strtotime('2008-11-20');
-    $end_date = date("Y-m-d", $aTime);
-    $start_date = date("Y-m-d", $aTime - (60 * 60 * 24 * 14) + 1);
+	/**
+	 * Find the top crashing urls from the TBD table
+	 *
+	 * @access 	public
+	 * @param	string	The product name
+	 * @param 	string	The product version number
+	 * @param 	string	The build ID of the product (?)
+	 * @param 	string 	The branch number (1.9, 1.9.1, 1.9.2, etc.)
+	 * @param 	int 	The page number, used for pagination
+	 * @return 	array 	An array of topcrasher objects by domain
+	 */
+	public function getTopCrashersByUrl($tProduct=NULL, $tVersion=NULL, $build_id=NULL, $branch=NULL, $page=1) {
+		$product = $this->db->escape($tProduct);
+		$version = $this->db->escape($tVersion);
+		$offset = ($page -1) * 100;
+		$aTime = time();
+		$end_date = date("Y-m-d", $aTime);
+		$start_date = date("Y-m-d", $aTime - (60 * 60 * 24 * 14) + 1);
 
-    //$product_id = $this->getProductId($product, $version);
-    $sql = "/* soc.web tcbyrul geturls */
-            select
-              sum(tcu.count) as count,
-              ud.url
-            from
-              top_crashes_by_url tcu join urldims ud on tcu.urldims_id = ud.id
-                                                        and '$start_date' <= (tcu.window_end - tcu.window_size)
-                                                        and tcu.window_end < '$end_date'
-                 join productdims pd on pd.id = tcu.productdims_id
-                                        and pd.product = $product
-                                        and pd.version = $version
-            group by
-              ud.url
-            order by
-              count desc
-            limit 100 offset $offset";
-    return array($start_date, $end_date,
-      //list of crash objects, which have a url and count
-      $this->fetchRows($sql)
-      );
-  }
+    	$sql = "/* soc.web tcbyrul geturls */
+            SELECT SUM(tcu.count) as count,	ud.url, at.rank
+            FROM top_crashes_by_url tcu 
+			JOIN urldims ud 
+			 	ON tcu.urldims_id = ud.id
+                AND '$start_date' <= (tcu.window_end - tcu.window_size)
+                AND tcu.window_end < '$end_date'
+            JOIN productdims pd 
+ 				ON pd.id = tcu.productdims_id
+                AND pd.product = $product
+                AND pd.version = $version
+			LEFT JOIN alexa_topsites at ON ud.domain LIKE '%' || at.domain
+            GROUP BY ud.url, at.rank
+            ORDER BY count DESC
+            LIMIT 100 OFFSET $offset";
 
-  /**
-   * Find top crashing domains from the TBD table
-   */
-  public function getTopCrashersByDomain($tProduct=NULL, $tVersion=NULL, $build_id=NULL, $branch=NULL, $page=1) {
-    $product = $this->db->escape($tProduct);
-    $version = $this->db->escape($tVersion);
-    $offset = ($page -1) * 100;
-    $aTime = time();
-    $end_date = date("Y-m-d", $aTime);
-    $start_date = date("Y-m-d", $aTime - (60 * 60 * 24 * 14) + 1);
-    //$product_id = $this->getProductId($product, $version);
-    $sql = "/* soc.web tcbyrul getdmns */
-            select
-              sum(tcu.count) as count,
-              ud.domain
-            from
-              top_crashes_by_url tcu join urldims ud on tcu.urldims_id = ud.id
-                                                        and '$start_date' <= (tcu.window_end - tcu.window_size)
-                                                        and tcu.window_end < '$end_date'
-                 join productdims pd on pd.id = tcu.productdims_id
-                                        and pd.product = $product
-                                        and pd.version = $version
-            group by
-              ud.domain
-            order by
-              count desc
-            limit 100 offset $offset";
-      return array($start_date, $end_date,
-      //list of crash objects, which have a url and count
-      $this->fetchRows($sql)
-      );
-  }
+		$results = $this->fetchRows($sql);
+      	return array($start_date, $end_date, $results);
+	}
 
-  public function getUrlsByDomain($tProduct, $tVersion, $tDomain, $page=0){
-    $product = $this->db->escape($tProduct);
-    $version = $this->db->escape($tVersion);
-    $domain = $this->db->escape($tDomain);
-    $offset = ($page -1) * 50;
-    $aTime = time();
-    $end_date = date("Y-m-d", $aTime);
-    $start_date = date("Y-m-d", $aTime - (60 * 60 * 24 * 14) + 1);
-    $product_id = $this->getProductId($product, $version);
-    $sqlFromReports =  "/* soc.web tcburl urlsbydomain */
-                        select
-                          sum(tcu.count) as count,
-                          ud.url
-                        from
-                          top_crashes_by_url tcu join urldims ud on tcu.urldims_id = ud.id
-                                                                    and ud.domain = $domain
-                                                                    and '$start_date' <= (tcu.window_end - tcu.window_size)
-                                                                    and tcu.window_end < '$end_date'
-                            join productdims pd on tcu.productdims_id = pd.id
-                                                   and pd.product = $product
-                                                   and pd.version = $version
-                        group by
-                          ud.url
-                        order by
-                          count desc
-                        limit 50 offset $offset";
-    $signatures = $this->fetchRows($sqlFromReports);
+  	/**
+   	 * Find top crashing domains from the TBD table
+	 *
+	 * @access 	public
+	 * @param	string	The product name
+	 * @param 	string	The product version number
+	 * @param 	string	The build ID of the product (?)
+	 * @param 	string 	The branch number (1.9, 1.9.1, 1.9.2, etc.)
+	 * @param 	int 	The page number, used for pagination
+	 * @return 	array 	An array of topcrasher objects by domain
+   	 */
+  	public function getTopCrashersByDomain($tProduct=NULL, $tVersion=NULL, $build_id=NULL, $branch=NULL, $page=1) {
+		$product = $this->db->escape($tProduct);
+		$version = $this->db->escape($tVersion);
+		$offset = ($page -1) * 100;
+		$aTime = time();
+		$end_date = date("Y-m-d", $aTime);
+		$start_date = date("Y-m-d", $aTime - (60 * 60 * 24 * 14) + 1);
 
-    return $signatures;
+		$sql = "/* soc.web tcbyrul getdmns */
+		        SELECT sum(tcu.count) as count, ud.domain, at.rank
+		        FROM top_crashes_by_url tcu 
+		 		JOIN urldims ud 
+					ON tcu.urldims_id = ud.id
+					AND '$start_date' <= (tcu.window_end - tcu.window_size)
+		            AND tcu.window_end < '$end_date'
+				JOIN productdims pd 
+					ON pd.id = tcu.productdims_id
+		            AND pd.product = $product
+		            AND pd.version = $version
+				LEFT JOIN alexa_topsites at ON ud.domain LIKE '%' || at.domain
+		        GROUP BY ud.domain, at.rank
+		        ORDER BY count DESC
+		        LIMIT 100 OFFSET $offset";
+		
+		$results = $this->fetchRows($sql);
+      	return array($start_date, $end_date, $results);
+  	}
 
-  }
+	/**
+   	 * Find top crashing domains from the TBD table ordered by their topsite ranking.
+	 *
+	 * @access 	public
+	 * @param	string	The product name
+	 * @param 	string	The product version number
+	 * @param 	int 	The page number
+	 * @return 	array 	An array of topcrasher objects by domain
+	 */
+  	public function getTopCrashersByTopsiteRank($tProduct=NULL, $tVersion=NULL, $page = 1) {
+		$product = $this->db->escape($tProduct);
+		$version = $this->db->escape($tVersion);
+		$offset = ($page - 1) * 100;
+		$aTime = time();
+		$end_date = date("Y-m-d", $aTime);
+		$start_date = date("Y-m-d", $aTime - (60 * 60 * 24 * 14) + 1);
+	
+		$sql = "/* soc.web topcrashersbyurl.getTopCrashersByTopsiteRank */
+			SELECT 
+				sum(tcu.count) as count, 
+				at.domain, at.rank
+	        FROM top_crashes_by_url tcu 
+	 		JOIN urldims ud 
+				ON tcu.urldims_id = ud.id
+				AND '$start_date' <= (tcu.window_end - tcu.window_size)
+	            AND tcu.window_end < '$end_date'
+			JOIN productdims pd 
+				ON pd.id = tcu.productdims_id
+	            AND pd.product = $product
+	            AND pd.version = $version
+			JOIN alexa_topsites at ON ud.domain LIKE '%' || at.domain
+	        GROUP BY at.domain, at.rank
+	        ORDER BY count DESC
+	        LIMIT 100 OFFSET $offset";
 
-  public function getSignaturesByUrl($tProduct, $tVersion, $tUrl, $page){
-    $product = $this->db->escape($tProduct);
-    $version = $this->db->escape($tVersion);
-    $url = $this->db->escape($tUrl);
-    $offset = ($page -1) * 50;
-    $aTime = time();
+		$results = $this->fetchRows($sql);
+	  	return array($start_date, $end_date, $results);
+	}
 
-    $end_date = date("Y-m-d", $aTime);
-    $start_date = date("Y-m-d", $aTime - (60 * 60 * 24 * 14) + 1);
+  	/**
+   	 * Fetch all of the crashing URLs associated with a particular domain.
+	 *
+	 * @access 	public
+	 * @param	string	The product name
+	 * @param 	string	The product version number
+	 * @param 	string 	The domain name
+	 * @param 	int 	The page number, used for pagination
+	 * @return 	array 	An array of signatures
+   	 */
+	public function getUrlsByDomain($tProduct, $tVersion, $tDomain, $page=0){
+ 		$product = $this->db->escape($tProduct);
+ 		$version = $this->db->escape($tVersion);
+ 		$domain = $this->db->escape($tDomain);
+ 		$offset = ($page -1) * 50;
+ 		$aTime = time();
+ 		$end_date = date("Y-m-d", $aTime);
+ 		$start_date = date("Y-m-d", $aTime - (60 * 60 * 24 * 14) + 1);
+ 		$sql =  "/* soc.web tcburl urlsbydomain */
+ 		        SELECT sum(tcu.count) as count, ud.url
+				FROM top_crashes_by_url tcu 
+				JOIN urldims ud 
+					ON tcu.urldims_id = ud.id
+					AND ud.domain = $domain
+ 		        	AND '$start_date' <= (tcu.window_end - tcu.window_size)
+ 		        	AND tcu.window_end < '$end_date'
+ 		        JOIN productdims pd 
+					ON tcu.productdims_id = pd.id
+ 		            AND pd.product = $product
+ 		            AND pd.version = $version
+				GROUP BY ud.url
+				ORDER BY count DESC
+				LIMIT 50 OFFSET $offset";
 
-    $sqlFromReports = "/* soc.web tcburl sigbyurl */
-                      select
-                        sum(tucs.count) as count,
-                        tucs.signature
-                      from
-                        top_crashes_by_url tcu join urldims ud on tcu.urldims_id = ud.id
-                                                                  and '$start_date' <= (tcu.window_end - tcu.window_size)
-                                                                  and tcu.window_end < '$end_date'
-                                                                  and ud.url = $url
-                          join productdims pd on pd.id = tcu.productdims_id
-                                                 and pd.product = $product
-                                                 and pd.version = $version
-                            join top_crashes_by_url_signature tucs on tucs.top_crashes_by_url_id = tcu.id
-                      group by
-                        tucs.signature
-                      order by 1 desc
-                      limit 50";
+ 		return $this->fetchRows($sql);
+	}
 
-    $signatures = $this->fetchRows($sqlFromReports);
-    # $comments = $this->getSigCommentsByUrl($product, $version, $url);
-    # foreach($signatures as $sig){
-    #  if( array_key_exists( $sig->signature, $comments )){
-    #    $sig->comments = $comments[$sig->signature];
-    #  }
-    # }
-    return $signatures;
-  }
-#  /* This method is never called, and that's a GOOD thing: It is very far from efficient */
-#  public function getSigCommentsByUrl($product, $version, $tUrl){
-#    $url = $this->db->escape($tUrl);
-#    $aTime = time();
-#    //$aTime = strtotime('2008-11-20');
-#    $end_date = date("Y-m-d", $aTime);
-#    $start_date = date("Y-m-d", $aTime - (60 * 60 * 24 * 14) + 1);
-#    $sql = "/* soc.web tbcurl comm4sig */
-#            SELECT top_crashes_by_url_signature.signature, crashes.comments, crashes.uuid
-#            FROM top_crashes_by_url AS facts
-#            JOIN topcrashurlfactsreports AS crashes ON facts.id = crashes.topcrashurlfacts_id
-#            JOIN urldims ON facts.urldims_id = urldims.id
-#            JOIN top_crashes_by_url_signature ON facts.id = top_crashes_by_url_signature.top_crashes_by_url_id
-#            WHERE '$start_date' <= (facts.window_end - facts.window_size) AND
-#              facts.window_end < '$end_date' AND
-#              urldims.url = $url";
-#    $rows = $this->fetchRows($sql);
-#    $sigToCommentMap = array();
-#    foreach( $rows as $row ){
-#      if( ! array_key_exists( $row->signature, $sigToCommentMap )){
-#        $sigToCommentMap[$row->signature] = array();
-#      }
-#      array_push($sigToCommentMap[$row->signature],
-#                                     array('comments' => $row->comments,
-#                                          'report-id' => $row->uuid));
-#    }
-#    return $sigToCommentMap;
-#  }
-#  END OF comment-out function  getSigCommentsByUrl
+  	/**
+   	 * Fetch all of the crash signatures associated with a particular URL.
+	 *
+	 * @access 	public
+	 * @param	string	The product name
+	 * @param 	string	The product version number
+	 * @param 	string 	The URL
+	 * @param 	int 	The page number, used for pagination
+	 * @return 	array 	An array of signatures
+   	 */
+	public function getSignaturesByUrl($tProduct, $tVersion, $tUrl, $page){
+		$product = $this->db->escape($tProduct);
+		$version = $this->db->escape($tVersion);
+		$url = $this->db->escape($tUrl);
+		$offset = ($page -1) * 50;
+		$aTime = time();
+		
+		$end_date = date("Y-m-d", $aTime);
+		$start_date = date("Y-m-d", $aTime - (60 * 60 * 24 * 14) + 1);
+		
+		$sql = "/* soc.web tcburl sigbyurl */
+		  		SELECT sum(tucs.count) as count, tucs.signature
+		  		FROM top_crashes_by_url tcu 
+		  		JOIN urldims ud 
+					ON tcu.urldims_id = ud.id
+		  			AND '$start_date' <= (tcu.window_end - tcu.window_size)
+					AND tcu.window_end < '$end_date'
+					AND ud.url = $url
+		  		JOIN productdims pd 
+					ON pd.id = tcu.productdims_id
+		  			AND pd.product = $product
+					AND pd.version = $version
+				JOIN top_crashes_by_url_signature tucs ON tucs.top_crashes_by_url_id = tcu.id
+		  		GROUP BY tucs.signature
+		  		ORDER BY 1 DESC
+		  		LIMIT 50";
+		
+		return $this->fetchRows($sql);
+	}
 
-  public function getProductId($tProduct, $tVersion){
-    $product = $this->db->escape($tProduct);
-    $version = $this->db->escape($tVersion);
-
-    $sql = "/* soc.web tcburl proddim.id */
-            SELECT id FROM productdims
-            WHERE version = $version
-            AND product = $product";
-    $rows = $this->fetchRows($sql);
-    if(count($rows) != 1){
-      Kohana::log('error', "Unable to getProductId for $product $version got " . Kohana::debug($rows));
-    }
-    if( count( $rows ) > 0 ){
-      return $rows[0]->id;
-    }else{
-      Kohana::log('error', "Unknown product $product $version");
-      return -1;
-    }
-  }
-  /**
-   * Returns a list of existing reports based on the
-   * product visibility table
-   */
-  public function listReports($aDate = NULL)
-  {
-    if(! $aDate) {
-      $aDate = date("Y-m-d",time());
-    }
-    $sql = "SELECT p.product, p.version, (NOT ignore and start_date <= ? and ? <= end_date) as enabled FROM product_visibility pv
-              JOIN productdims p ON pv.productdims_id = p.id
-             ORDER BY p.id DESC";
-    return $this->db->query($sql,$aDate,$aDate);
-  }
+	/**
+   	 * Returns a list of existing reports based on the product visibility table.
+	 *
+	 * @access 	public
+	 * @param	string	The date YYYY-MM-DD
+	 * @return 	array 	An array of reports
+   	 */
+	public function listReports($aDate = NULL)
+	{
+	  if(! $aDate) {
+	    $aDate = date("Y-m-d",time());
+	  }
+	  $sql = "SELECT p.product, p.version, (NOT ignore and start_date <= ? and ? <= end_date) as enabled
+	 			FROM product_visibility pv
+	            JOIN productdims p ON pv.productdims_id = p.id
+	           	ORDER BY p.id DESC";
+	  return $this->db->query($sql,$aDate,$aDate);
+	}
+	
+	/* */
 }

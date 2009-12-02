@@ -290,6 +290,32 @@ class Topcrasher_Controller extends Controller {
     }
 
     /**
+     * List the top 100 (x) Alexa top site domains, ordered by site ranking, and 
+ 	 * show the bugs that affect them.
+     * 
+	 * @access 	public
+     * @param 	string 	The product name (e.g. 'Firefox')
+     * @param 	string 	The version (e.g. '3.7a1pre')
+ 	 * @return 	void
+     */
+    public function bytopsite($product, $version) {
+		$by_url_model = new TopcrashersByUrl_Model();
+        list($start_date, $end_date, $top_crashers) = $by_url_model->getTopCrashersByTopsiteRank($product, $version);
+
+        cachecontrol::set(array(
+            'expires' => time() + (60 * 60)
+        ));
+
+        $this->setViewData(array(
+	    	'beginning' 	=> $start_date,
+            'ending_on' 	=> $end_date,
+            'product'       => $product,
+            'version'       => $version,
+            'top_crashers'  => $top_crashers
+        ));
+    }
+
+    /**
      * AJAX GET method which returns last 2 weeks of 
      * Aggregated crash signatures based on
      * signaturesforurl/{product}/{version}?url={url_encoded_url}&page={page}

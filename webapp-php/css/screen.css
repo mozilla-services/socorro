@@ -24,6 +24,9 @@ html{color:#000;background:#FFF;}body,div,dl,dt,dd,ul,ol,li,h1,h2,h3,h4,h5,h6,pr
 }
 
 br { clear: both; }
+p {
+	margin: 10px 0;
+}
 
 
 html {
@@ -971,9 +974,6 @@ th a.expand {
 
 #sumo-link a:hover {
    background: #fff;
-}
-p.crash_comments {
-	margin: 10px 0;
 }
 
 /* END A CRASH REPORT */

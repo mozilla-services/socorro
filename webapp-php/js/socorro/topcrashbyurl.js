@@ -27,7 +27,7 @@ $(document).ready(function(){
 	                                    "&date=&range_value=1&range_unit=weeks&query_search=signature&query=" + 
 				            data[i].signature + "&query_type=exact&do_query=1&signature=" + data[i].signature;
 
-  		        upd += "<tr class='tcburl-signatures" + urlId + outterClass + "'><td class='in" + indent + "'><a href='" + signatureLink+ "'>" + data[i].signature + "</a></td><td>" + data[i].count + "</td></tr>";
+  		        upd += "<tr class='tcburl-signatures" + urlId + outterClass + "'><td class='in" + indent + "'><a href='" + signatureLink+ "'>" + data[i].signature + "</a></td><td>" + data[i].count + "</td><td></td></tr>";
                         if(data[i]['comments']){
                           upd += "<tr class='tcburl-signatures" + urlId + outterClass + "'><td class='in" + indent + "' colspan='2'><ul>";
                           for( var j=0; j < data[i]['comments'].length; j++){
@@ -35,7 +35,7 @@ $(document).ready(function(){
   			    var crash = data[i]['comments'][j];
                             upd += "<li class='commented'><a href='../../../report/index/" + crash['report-id'] + "'>" + crash.comments + "</a></li>";
  			  }
-                          upd += "</ul></td></tr>";
+                          upd += "</ul></td><td></td></tr>";
 		        }
 		        //aok$('#tcburl-domainToggle-row' + urlId + ' td:first img').hide();
 
@@ -109,9 +109,9 @@ $(document).ready(function(){
                         upd += "<a id='tcburl-url" + domainId + "_" + i + "' class='tcburl-urlToggler' href='#'>Expand ";
 
 		        upd += "<span class='url'>" + data[i].url + "</span></a> <a href='" +  data[i].url + "'>Open This URL</a></td><td class='url-crash-count'>";
-                        upd += data[i].count + "</td></tr>";
+                        upd += data[i].count + "</td><td></td></tr>";
 
-                        upd += "<tr id='tcburl-urlToggle-row" + domainId + "_" + i + "' style='display: none'><td colspan='2'></td></tr>";
+                        upd += "<tr id='tcburl-urlToggle-row" + domainId + "_" + i + "' style='display: none'><td colspan='2'></td><td></td></tr>";
 		        //aok $('#tcburl-domainToggle-row' + domainId + ' td:first img').hide();
                         
 			//TODO caches here ahave to be doman+urlindex
