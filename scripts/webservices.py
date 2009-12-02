@@ -46,7 +46,7 @@ logger.info(str(urls))
 
 if configContext.wsgiInstallation:
   logger.info('This is a wsgi installation')
-  application = web.wsgifunc(web.webpyfunc(urls, globals()))
+  application = web.application(urls, globals()).wsgifunc()
 else:
   logger.info('This is stand alone installation without wsgi')
   app = web.application(urls, globals())
