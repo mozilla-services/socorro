@@ -7,13 +7,14 @@ from config.commonconfig import databaseUserName
 from config.commonconfig import databasePassword
 
 wsgiInstallation = cm.Option()
-wsgiInstallation.doc = 'True or False, this app is istalled under WSGI'
+wsgiInstallation.doc = 'True or False, this app is installed under WSGI'
 wsgiInstallation.default = False
 
 import socorro.services.topCrashBySignatureTrends as tcbst
+import socorro.services.signatureHistory as sighist
 servicesList = cm.Option()
 servicesList.doc = 'a python list of classes to offer as services'
-servicesList.default = [tcbst.TopCrashBySignatureTrends]
+servicesList.default = [tcbst.TopCrashBySignatureTrends, sighist.SignatureHistory]
 
 logFilePathname = cm.Option()
 logFilePathname.doc = 'full pathname for the log file'
