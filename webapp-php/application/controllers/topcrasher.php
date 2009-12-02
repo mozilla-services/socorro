@@ -252,8 +252,26 @@ class Topcrasher_Controller extends Controller {
 	}
     }
 
+    /**
+     * Copy used for NULL signatures
+     */
+    public static $no_sig = '(signature unavailable)';
+
+    /**
+     * AJAX request for grabbing crash history data to be plotted
+     * @param string - the product
+     * @param string - the version
+     * @param string - the signature OR $no_sig
+     * @return responds with JSON suitable for plotting
+     */
     public function plot_signature($product, $version, $signature)
     {
+	//Bug#532434 Kohana is escaping some characters with html entity encoding for security purposes
+	$signature = html_entity_decode($signature);
+	if ($signature == self::$no_sig) {
+	    $signature = '';
+	}
+
 	header('Content-Type: text/javascript');
 	$this->auto_render = FALSE;
 	$duration=7;
@@ -278,10 +296,12 @@ class Topcrasher_Controller extends Controller {
 
 	$p = urlencode($product);
 	$v = urlencode($version);
+	
 	$sig = urlencode($signature); //NPSWF32.dll%400x136a29
-
+	$rsig = rawurlencode($signature); //NPSWF32.dll%400x136a29
+	Kohana::log('info', "Turning \n$signature \n$sig \n$rsig");
 	// Every 3 hours
-        $resp = $service->get("${host}/200911/topcrash/sig/trend/history/p/${p}/v/${v}/sig/${sig}/end/${end_date}/duration/180/steps/60",
+        $resp = $service->get("${host}/200911/topcrash/sig/trend/history/p/${p}/v/${v}/sig/${rsig}/end/${end_date}/duration/180/steps/60",
 			      'json', $lifetime);
 
 
