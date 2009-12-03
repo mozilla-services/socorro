@@ -29,6 +29,8 @@ class Branch_Model extends Model {
 				$product, $version, $branch, $release
 			);
 
+echo $this->db->last_query(); exit;
+
 			$this->addProductVisibility($product, $version, $start_date, $end_date);
 			return $rv;
 		}
@@ -239,11 +241,14 @@ class Branch_Model extends Model {
     /**
      * Fetch data on products, branches, and versions for the front 
      * page query form.
+	 * 
+	 * @param 	bool	True if you want cached results; false if you don't.
+	 * @return 	array 	An array of products, branches and versions results.
      */
-    public function getBranchData() { 
+    public function getBranchData($cache=true) { 
         $cache_key = 'query_branch_data';
         $data = $this->cache->get($cache_key);
-        if (!$data) {
+        if (!$data || !$cache) {
             $data = array(
                 'products' => $this->getProducts(),
                 'branches' => $this->getBranches(),
