@@ -49,7 +49,7 @@ def totalNumberOfCrashesForPeriod (aCursor, databaseParameters):
         %%(startDate)s < tcbs.window_end
         and tcbs.window_end <= %%(endDate)s
     """ % databaseParameters
-  #logger.debug(aCursor.mogrify(sql, databaseParameters))
+  logger.debug(aCursor.mogrify(sql, databaseParameters))
   return db.singleValueSql(aCursor, sql, databaseParameters)
 
 #-----------------------------------------------------------------------------------------------------------------
@@ -82,7 +82,7 @@ def getListOfTopCrashersBySignature(aCursor, databaseParameters, totalNumberOfCr
   order by
     2 desc
   limit %%(listSize)s""" % databaseParameters
-  #logger.debug(aCursor.mogrify(sql, databaseParameters))
+  logger.debug(aCursor.mogrify(sql, databaseParameters))
   return db.execute(aCursor, sql, databaseParameters)
 
 #-----------------------------------------------------------------------------------------------------------------
@@ -141,6 +141,7 @@ def listOfListsWithChangeInRank (listOfQueryResultsIterable):
       previousList = [] # this was the 1st processed - it has no previous history
     currentListOfTopCrashers = []
     for rank, aRow in enumerate(aListOfTopCrashers):
+      logger.debug('YYYY %s %s', rank, str(aRow))
       aRowAsDict = dict(zip(['signature', 'count', 'percentOfTotal', 'win_count', 'mac_count', 'linux_count'], aRow))
       aRowAsDict['currentRank'] = rank
       try:
@@ -151,18 +152,23 @@ def listOfListsWithChangeInRank (listOfQueryResultsIterable):
         aRowAsDict['previousRank'] = aRowAsDict['previousPercentOfTotal'] = "null"
         aRowAsDict['changeInRank'] = aRowAsDict['changeInPercentOfTotal'] = "new"
       currentListOfTopCrashers.append(aRowAsDict)
+    logger.debug('xXXX %s', str(currentListOfTopCrashers))
     listOfTopCrasherLists.append(currentListOfTopCrashers)
   return listOfTopCrasherLists[1:]
 
 #-----------------------------------------------------------------------------------------------------------------
-def latestEntryBeforeOrEqualTo(aCursor, aDate):
+def latestEntryBeforeOrEqualTo(aCursor, aDate, product, version):
   sql = """
     select
         max(window_end)
     from
         top_crashes_by_signature tcbs
+          join productdims pd on tcbs.productdims_id = pd.id
+                                 and pd.product = %s
+                                 and pd.version = %s
     where
         tcbs.window_end <= %s
+        and
     """
   return db.singleValueSql(aCursor, sql, (aDate,))
 
@@ -184,7 +190,7 @@ def twoPeriodTopCrasherComparison (databaseCursor, context, closestEntryFunction
   if not context['listSize']:
     context['listSize'] = 100
   #context['logger'].debug('about to latestEntryBeforeOrEqualTo')
-  context['endDate'] = closestEntryFunction(databaseCursor, context['endDate'])
+  context['endDate'] = closestEntryFunction(databaseCursor, context['endDate'], context['product'], context['version'])
   context['logger'].debug('endDate %s' % context['endDate'])
   context['startDate'] = context.endDate - context.duration * context.numberOfComparisonPoints
   #context['logger'].debug('after %s' % context)
