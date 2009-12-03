@@ -6,6 +6,7 @@ import threading
 import collections
 
 import logging
+l = logging.getLogger('webapi')
 
 #=================================================================================================================
 class FakeLogger(object):
@@ -16,18 +17,22 @@ class FakeLogger(object):
                         logging.CRITICAL: "CRITICAL",
                         logging.FATAL: "FATAL"
                       }
-  def log(self,*x):
+  def createLogMessage(self,*x):
     try:
       loggingLevelString = FakeLogger.loggingLevelNames[x[0]]
     except KeyError:
       loggingLevelString = "Level[%s]" % str(x[0])
-    print >>sys.stderr, loggingLevelString, x[1] % x[2:]
+    message = x[1] % x[2:]
+    return '%s %s' % (loggingLevelString, message)
+  def log(self,*x):
+    print >>sys.stderr, self.createLogMessage(*x)
   def debug(self,*x): self.log(logging.DEBUG, *x)
   def info(self,*x): self.log(logging.INFO, *x)
   def warning(self,*x): self.log(logging.WARNING, *x)
   def error(self,*x): self.log(logging.ERROR, *x)
   def critical(self,*x): self.log(logging.CRITICAL, *x)
   fatal = critical
+
 
 #=================================================================================================================
 class SilentFakeLogger(object):
@@ -38,6 +43,20 @@ class SilentFakeLogger(object):
   def error(self,*x): pass
   def critical(self,*x): pass
   def fatal(self,*x):pass
+
+#=================================================================================================================
+class StringLogger(FakeLogger):
+  def __init__(self):
+    super(StringLogger, self).__init__()
+    self.messages = []
+  def log(self,*x):
+    message = self.createLogMessage(*x)
+    self.messages.append(message)
+  def getMessages(self):
+    log = '\n'.join(self.messages)
+    self.messages = []
+    return log
+
 
 #=================================================================================================================
 # logging routines
@@ -56,7 +75,7 @@ def reportExceptionAndContinue(logger=FakeLogger(), loggingLevel=logging.ERROR, 
     loggingReportLock.acquire()   #make sure these multiple log entries stay together
     try:
       logger.log(loggingLevel, "%s Caught Error: %s", threading.currentThread().getName(), exceptionType)
-      logger.log(loggingLevel, exception)
+      logger.log(loggingLevel, str(exception))
       if showTraceback:
         stringStream = cStringIO.StringIO()
         try:
