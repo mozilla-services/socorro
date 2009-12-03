@@ -35,6 +35,7 @@ function moz_feed($base_url, $feed_link, $title, $reports)
 	$link->href = $base_url . $feed_link; 
 
 	foreach ($reports as $report) {
+	  $report->url = '';
 	  $item = $feed->add( 'item' ); 
 	  $item->id = htmlentities($report->uuid);
 	  $item->title = htmlentities($report->signature);
