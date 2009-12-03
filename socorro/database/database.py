@@ -81,19 +81,10 @@ class CannotConnectToDatabase(Exception):
 class Database(object):
   """a simple factory for creating connections for a database.  It doesn't track what it gives out"""
   #-----------------------------------------------------------------------------------------------------------------
-  def __init__(self, parameters, logger=None):
+  def __init__(self, config, logger=None):
     super(Database, self).__init__()
-    self.databaseHost = parameters['databaseHost']
-    self.databasePort = parameters.setdefault('databasePort', 5432)
-    self.databaseUser = parameters['databaseUser']
-    self.databasePassword = parameters['databasePassword']
-    self.dsn = "host=%s port=%s dbname=%s user=%s password=%s" % (self.databaseHostName,
-                                                                  self.databasePort,
-                                                                  self.databaseName,
-                                                                  self.databaseUserName,
-                                                                  self.databasePassword)
-
-    self.logger = parameters.setdefault('logger', None)
+    self.dsn = "host=%(databaseHost)s port=%(databasePort)s dbname=%(databaseName)s user=%(databaseUserName)s password=%(databasePassword)s" % config
+    self.logger = config.setdefault('logger', None)
     if logger:
       self.logger = logger
     if not self.logger:
@@ -101,7 +92,9 @@ class Database(object):
 
   #-----------------------------------------------------------------------------------------------------------------
   def connection (self):
+    threadName = threading.currentThread().getName()
     self.logger.info("%s - connecting to database", threadName)
+    #self.logger.info("%s - %s", threadName, self.dsn)
     try:
       return psycopg2.connect(self.dsn)
     except Exception, x:
