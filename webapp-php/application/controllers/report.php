@@ -56,11 +56,11 @@ class Report_Controller extends Controller {
 		    if (is_array($v)) {
 		       foreach($v as $dup_value) {
 			   $u_dup_value = urlencode($dup_value);
-			   array_push($linkParams, "${k}=x${u_dup_value}");
+			   array_push($linkParams, "${k}=${u_dup_value}");
 		       }
 		    } else {
 			$u_v = urlencode($v);
-			array_push($linkParams, "${k}=x${u_v}");
+			array_push($linkParams, "${k}=${u_v}");
 		    }
 		}
 	    }
