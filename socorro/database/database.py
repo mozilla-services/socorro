@@ -91,12 +91,12 @@ class Database(object):
       self.logger = util.FakeLogger()
 
   #-----------------------------------------------------------------------------------------------------------------
-  def connection (self):
+  def connection (self, databaseModule=psycopg2):
     threadName = threading.currentThread().getName()
     self.logger.info("%s - connecting to database", threadName)
     #self.logger.info("%s - %s", threadName, self.dsn)
     try:
-      return psycopg2.connect(self.dsn)
+      return databaseModule.connect(self.dsn)
     except Exception, x:
       self.logger.critical("%s - cannot connect to the database", threadName)
       raise CannotConnectToDatabase(x)

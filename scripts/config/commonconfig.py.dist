@@ -5,6 +5,10 @@ databaseHost = cm.Option()
 databaseHost.doc = 'the hostname of the database servers'
 databaseHost.default = 'localhost'
 
+databasePort = cm.Option()
+databasePort.doc = 'the port of the database on the host'
+databasePort.default = 5432
+
 databaseName = cm.Option()
 databaseName.doc = 'the name of the database within the server'
 databaseName.default = ''

@@ -2,6 +2,7 @@ import socorro.lib.ConfigurationManager as cm
 import datetime
 
 from config.commonconfig import databaseHost
+from config.commonconfig import databasePort
 from config.commonconfig import databaseName
 from config.commonconfig import databaseUserName
 from config.commonconfig import databasePassword

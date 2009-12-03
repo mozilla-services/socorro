@@ -1,7 +1,11 @@
 import simplejson as json
-
-import socorro.lib.psycopghelper as psy
 import logging
+import web
+
+import socorro.lib.util as util
+import socorro.database.database as db
+
+logger = logging.getLogger("webapi")
 
 #-----------------------------------------------------------------------------------------------------------------
 def typeConversion (listOfTypeConverters, listOfValuesToConvert):
@@ -17,24 +21,22 @@ class JsonServiceBase (object):
   def __init__(self, config):
     try:
       self.context = config
-      self.connectionPool = psy.DatabaseConnectionPool(config.databaseHost,
-                                                       config.databaseName,
-                                                       config.databaseUserName,
-                                                       config.databasePassword)
+      self.database = db.Database(config)
     except (AttributeError, KeyError):
-      pass
-
-  #-----------------------------------------------------------------------------------------------------------------
-  def databaseConnectionCursorPair(self):
-    return self.connectionPool.connectToDatabase()
+      util.reportExceptionAndContinue(logger)
 
   #-----------------------------------------------------------------------------------------------------------------
   def GET(self, *args):
-    #try:
-      #return json.dumps(self.get(*args))
-    #except Exception, x:
-      #return str(x)
-    return json.dumps(self.get(*args))
+    try:
+      return json.dumps(self.get(*args))
+    except Exception, x:
+      stringLogger = util.StringLogger()
+      util.reportExceptionAndContinue(stringLogger)
+      try:
+        util.reportExceptionAndContinue(self.context.logger)
+      except (AttributeError, KeyError):
+        pass
+      return stringLogger.getMessages()
 
   #-----------------------------------------------------------------------------------------------------------------
   def get(self, *args):

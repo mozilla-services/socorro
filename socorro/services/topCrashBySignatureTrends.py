@@ -1,7 +1,7 @@
 import logging
 logger = logging.getLogger("webapi")
 
-import socorro.lib.psycopghelper as psy
+import socorro.database.database as db
 import socorro.webapi.webapiService as webapi
 import socorro.lib.util as util
 import socorro.lib.datetimeutil as dtutil
@@ -50,7 +50,7 @@ def totalNumberOfCrashesForPeriod (aCursor, databaseParameters):
         and tcbs.window_end <= %%(endDate)s
     """ % databaseParameters
   #logger.debug(aCursor.mogrify(sql, databaseParameters))
-  return psy.singleValueSql(aCursor, sql, databaseParameters)
+  return db.singleValueSql(aCursor, sql, databaseParameters)
 
 #-----------------------------------------------------------------------------------------------------------------
 def getListOfTopCrashersBySignature(aCursor, databaseParameters, totalNumberOfCrashesForPeriodFunc=totalNumberOfCrashesForPeriod):
@@ -83,7 +83,7 @@ def getListOfTopCrashersBySignature(aCursor, databaseParameters, totalNumberOfCr
     2 desc
   limit %%(listSize)s""" % databaseParameters
   #logger.debug(aCursor.mogrify(sql, databaseParameters))
-  return psy.execute(aCursor, sql, databaseParameters)
+  return db.execute(aCursor, sql, databaseParameters)
 
 #-----------------------------------------------------------------------------------------------------------------
 def rangeOfQueriesGenerator(aCursor, databaseParameters, queryExecutionFunction):
@@ -164,7 +164,7 @@ def latestEntryBeforeOrEqualTo(aCursor, aDate):
     where
         tcbs.window_end <= %s
     """
-  return psy.singleValueSql(aCursor, sql, (aDate,))
+  return db.singleValueSql(aCursor, sql, (aDate,))
 
 #-----------------------------------------------------------------------------------------------------------------
 def twoPeriodTopCrasherComparison (databaseCursor, context, closestEntryFunction=latestEntryBeforeOrEqualTo, listOfTopCrashersFunction=getListOfTopCrashersBySignature):
@@ -189,7 +189,7 @@ def twoPeriodTopCrasherComparison (databaseCursor, context, closestEntryFunction
   context['startDate'] = context.endDate - context.duration * context.numberOfComparisonPoints
   #context['logger'].debug('after %s' % context)
   listOfTopCrashers = listOfListsWithChangeInRank(rangeOfQueriesGenerator(databaseCursor, context, listOfTopCrashersFunction))[0]
-  context['logger'].debug('listOfTopCrashers %s' % listOfTopCrashers)
+  #context['logger'].debug('listOfTopCrashers %s' % listOfTopCrashers)
   totalNumberOfCrashes = totalPercentOfTotal = 0
   for x in listOfTopCrashers:
     totalNumberOfCrashes += x['count']
@@ -200,7 +200,7 @@ def twoPeriodTopCrasherComparison (databaseCursor, context, closestEntryFunction
              'totalNumberOfCrashes': totalNumberOfCrashes,
              'totalPercentage': totalPercentOfTotal,
            }
-  context['logger'].debug('about to return %s', result)
+  #context['logger'].debug('about to return %s', result)
   return result
 
 #=================================================================================================================
@@ -218,10 +218,11 @@ class TopCrashBySignatureTrends(webapi.JsonServiceBase):
     parameters = util.DotDict(zip(['product','version', 'endDate','duration', 'listSize'], convertedArgs))
     parameters.os_name = ''
     parameters.os_version = ''
-    logger.debug("TopCrashBySignatureTrends %s", parameters)
+    logger.debug("TopCrashBySignatureTrends get %s", parameters)
     parameters.logger = logger
+    connection = self.database.connection()
     try:
-      connection, cursor = self.connectionPool.connectToDatabase()
+      cursor = connection.cursor()
       return twoPeriodTopCrasherComparison(cursor, parameters)
     finally:
       connection.close()
