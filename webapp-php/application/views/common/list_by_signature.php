@@ -30,10 +30,7 @@
                         
                         $url = url::base() . 'report/list?' . html::query_string($url_params);
                     ?>
-			<!-- url <?= $url ?>
-			     h url <?php out::H($url) ?>
-			     sig <?= $report->signature ?> -->
-                        <a href="<?= $url ?>" title="View reports with this signature"><?php out::H($nonBlankSignature) ?></a>
+                        <a href="<?= $url ?>" title="View reports with this signature."><?php out::H($nonBlankSignature) ?></a>
                 </td>
                 <?php if (count($platforms) > 1): ?><td><?php out::H($report->count) ?></td><?php endif ?>
                 <?php foreach ($platforms as $platform): ?>

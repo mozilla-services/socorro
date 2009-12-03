@@ -46,28 +46,10 @@ class Report_Controller extends Controller {
             header("No data for this query", TRUE, 404);
 	    $this->setView('common/nodata');
 	} else {
-	    $linkParams = array();
-
-	    //prepare a query string for pagination (use incoming query but skip page param)
-	    // We can't use http_build_query because our url supports multiple product and multiple version
-	    // entries. Example ?product=Firefox&product=Camino&version=3.5&version=2.0
-	    foreach ($params as $k => $v) {
-		if ($k != 'page') {
-		    if (is_array($v)) {
-		       foreach($v as $dup_value) {
-			   $u_dup_value = urlencode($dup_value);
-			   array_push($linkParams, "${k}=${u_dup_value}");
-		       }
-		    } else {
-			$u_v = urlencode($v);
-			array_push($linkParams, "${k}=${u_v}");
-		    }
-		}
-	    }
-
 	    // Code for $secureUrl should stay in sync with code for $currentPath above
-	    $currentPath = url::site('report/list') . '?' . implode('&', $linkParams) . '&page=';
-            
+	    $currentPath = url::site('report/list') . '?' . html::query_string($params) . '&page=';
+            echo "current == hcurrent " . ($currentPath == $hcurrentPath);
+	    
             $logged_in = $this->auth_is_active && Auth::instance()->logged_in();
 	    if ($logged_in) {
 		$this->sensitivePageHTTPSorRedirectAndDie($currentPath . $page);
