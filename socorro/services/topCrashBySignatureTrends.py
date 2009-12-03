@@ -168,9 +168,8 @@ def latestEntryBeforeOrEqualTo(aCursor, aDate, product, version):
                                  and pd.version = %s
     where
         tcbs.window_end <= %s
-        and
     """
-  return db.singleValueSql(aCursor, sql, (aDate, product, version))
+  return db.singleValueSql(aCursor, sql, (product, version, aDate))
 
 #-----------------------------------------------------------------------------------------------------------------
 def twoPeriodTopCrasherComparison (databaseCursor, context, closestEntryFunction=latestEntryBeforeOrEqualTo, listOfTopCrashersFunction=getListOfTopCrashersBySignature):
