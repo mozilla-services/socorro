@@ -29,6 +29,36 @@
 	<?php } else { ?>
 		<p>All entries in the reports are accounted for in the `branches` table.</p>
 	<?php } ?>
+	
+	<h3>Incomplete Entries</h3>
+	<?php if (isset($missing_entries) && !empty($missing_entries)) { ?>
+		<p>The following entries appear in the productdims table but do not have corresponding entries in the product_visibility table.</p>
+		<table class="branch">
+			<tr>
+			<th>Product</th>
+			<th>Version</th>
+			<th># Records</th>
+			<th>Add?</th>
+			</tr>
+		<?php foreach ($missing_visibility_entries as $missing_entry) { ?>
+			<tr>
+				<td class="text"><?php echo html::specialchars($missing_entry->product); ?></td>
+				<td class="text"><?php echo html::specialchars($missing_entry->version); ?></td>
+				<td class="text"><?php if (isset($missing_entry->total)) echo html::specialchars($missing_entry->total); ?></td>
+				<td class="action"><a href="#form_add_version" onclick="branchAddProductVersionFill(
+					'<?php echo trim(html::specialchars($missing_entry->product)); ?>', 
+					'<?php echo trim(html::specialchars($missing_entry->version)); ?>'
+				);">add</a></td>
+				<td class="action"><a href="#delete_product_version" onclick="branchDeleteProductVersionFill(
+					'<?php echo trim(html::specialchars($missing_entry->product)); ?>',
+					'<?php echo trim(html::specialchars($missing_entry->version)); ?>'
+				);">delete</a></td>
+			</tr>
+		<?php } ?>
+		</table>
+	<?php } else { ?>
+		<p>All entries in the productdims table have corresponding entries in the product_visibility table.</p>
+	<?php } ?>
 
 
 	<h3>Products</h3>

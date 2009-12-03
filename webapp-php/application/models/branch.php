@@ -23,16 +23,19 @@ class Branch_Model extends Model {
 			return $this->update($product, $version, $branch, $start_date, $end_date);
 		} else {
 			$release = $this->determine_release($version);
-			$rv = $this->db->query("/* soc.web branch.add */
-				INSERT INTO productdims (product, version, branch, release) 
-				VALUES (?, ?, ?, ?)",
-				$product, $version, $branch, $release
-			);
-
-echo $this->db->last_query(); exit;
-
+			try {
+				$rv = $this->db->query("/* soc.web branch.add */
+					INSERT INTO productdims (product, version, branch, release) 
+					VALUES (?, ?, ?, ?)",
+					$product, $version, $branch, $release
+				);
+			} catch (Exception $e) {
+				Kohana::log('error', "Could not add \"$product\" \"$version\" in soc.web branch.add \r\n " . $e->getMessage());
+			}
 			$this->addProductVisibility($product, $version, $start_date, $end_date);
-			return $rv;
+			if (isset($rv)) {
+				return $rv;
+			}
 		}
     }
 
@@ -237,6 +240,22 @@ echo $this->db->last_query(); exit;
 				ORDER BY pd.product, pd.version
 			');
     }
+
+	/**
+	 * Fetch all distinct product / version combinations from productdims
+	 * that do not have matching entries from product_visibility.
+	 *
+	 * @return arary 	An array of version objects
+	 */
+	public function getProductVersionsWithoutVisibility () {
+        return $this->fetchRows('/* soc.web branch.getProductVersionsWithoutVisibility */
+			SELECT DISTINCT pd.id, pd.product, pd.version, pd.branch, pd.release, pv.start_date, pv.end_date
+			FROM productdims pd
+			LEFT OUTER JOIN product_visibility pv ON pv.productdims_id = pd.id
+			WHERE pv.start_date IS NULL and pv.end_date IS NULL
+			ORDER BY pd.product, pd.version
+		');
+	}
 
     /**
      * Fetch data on products, branches, and versions for the front 

@@ -103,6 +103,7 @@ class Admin_Controller extends Controller {
 				'products' => $branch_data['products'],
 				'versions' => $branch_data['versions'],
 				'missing_entries' => $this->branch_model->findMissingEntries(),
+				'missing_visibility_entries' => $this->branch_model->getProductVersionsWithoutVisibility(),
 				'default_start_date' => date('Y-m-d'),
 				'default_end_date' => date('Y-m-d', (time()+7776000)) // time() + 90 days
 			)			
