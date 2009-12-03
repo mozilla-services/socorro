@@ -271,13 +271,13 @@ echo $this->db->last_query(); exit;
 				'/* soc.web branch.prodbyvers */ 
 				SELECT * 
 				FROM productdims 
-				WHERE product=? 
-				AND version=?
+				WHERE product = ? 
+				AND version = ?
 				LIMIT 1'
-				, $product, $version
-			)->current();
-		if (isset($result->id)) {
-			return $result;
+				, trim($product), trim($version)
+			);
+		if (isset($result[0]->id)) {
+			return $result[0];
 		}
 		return false;
     }

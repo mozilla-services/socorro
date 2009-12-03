@@ -41,7 +41,13 @@ class Admin_Controller extends Controller {
 				!empty($_POST['start_date']) &&
 				!empty($_POST['end_date'])
 			) {
-				if ($rv = $this->branch_model->add($_POST['product'], $_POST['version'], $_POST['branch'], $_POST['start_date'], $_POST['end_date'])) {
+				if ($rv = $this->branch_model->add(
+                        trim($_POST['product']), 
+                        trim($_POST['version']), 
+                        trim($_POST['branch']), 
+                        trim($_POST['start_date']), 
+                        trim($_POST['end_date'])
+                )) {
 					client::messageSend("This new product/version has been added to the database.", E_USER_NOTICE);
 					url::redirect('admin/branch_data_sources'); 
 				} else {
@@ -59,7 +65,13 @@ class Admin_Controller extends Controller {
 				!empty($_POST['update_start_date']) && 
 				!empty($_POST['update_end_date'])
 			) {
-				if ($rv = $this->branch_model->update($_POST['update_product'], $_POST['update_version'], $_POST['update_branch'], $_POST['update_start_date'], $_POST['update_end_date'])) {
+				if ($rv = $this->branch_model->update(
+                    trim($_POST['update_product']), 
+                    trim($_POST['update_version']), 
+                    trim($_POST['update_branch']),
+                    trim($_POST['update_start_date']), 
+                    trim($_POST['update_end_date']) 
+                )) {
 					client::messageSend("This product/version has been updated in the database.", E_USER_NOTICE);
 					url::redirect('admin/branch_data_sources'); 					
 				} else {
@@ -71,7 +83,7 @@ class Admin_Controller extends Controller {
 		}
 		elseif (isset($_POST['action_delete_version'])) {
 			if (!empty($_POST['delete_product']) && !empty($_POST['delete_version'])) {
-				if ($rv = $this->branch_model->delete($_POST['delete_product'], $_POST['delete_version'])) {
+				if ($rv = $this->branch_model->delete(trim($_POST['delete_product']), trim($_POST['delete_version']))) {
 					client::messageSend("This product/version has been deleted from the database.", E_USER_NOTICE);
 					url::redirect('admin/branch_data_sources');					
 				} else {
