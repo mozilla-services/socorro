@@ -48,7 +48,6 @@ class Report_Controller extends Controller {
 	} else {
 	    // Code for $secureUrl should stay in sync with code for $currentPath above
 	    $currentPath = url::site('report/list') . '?' . html::query_string($params) . '&page=';
-            echo "current == hcurrent " . ($currentPath == $hcurrentPath);
 	    
             $logged_in = $this->auth_is_active && Auth::instance()->logged_in();
 	    if ($logged_in) {
