@@ -1,6 +1,5 @@
 <?php
 require_once(Kohana::find_file('libraries', 'bugzilla', TRUE, 'php'));
-#moz_pagination/libraries/moz_pager.php
 require_once(Kohana::find_file('libraries', 'moz_pager', TRUE, 'php'));
 require_once(Kohana::find_file('libraries', 'MY_SearchReportHelper', TRUE, 'php'));
 require_once(Kohana::find_file('libraries', 'crash', TRUE, 'php'));
@@ -56,10 +55,12 @@ class Report_Controller extends Controller {
 		if ($k != 'page') {
 		    if (is_array($v)) {
 		       foreach($v as $dup_value) {
-			   array_push($linkParams, "${k}=${dup_value}");
+			   $u_dup_value = urlencode($dup_value);
+			   array_push($linkParams, "${k}=x${u_dup_value}");
 		       }
 		    } else {
-			array_push($linkParams, "${k}=${v}");
+			$u_v = urlencode($v);
+			array_push($linkParams, "${k}=x${u_v}");
 		    }
 		}
 	    }
