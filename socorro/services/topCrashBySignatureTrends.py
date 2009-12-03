@@ -49,7 +49,7 @@ def totalNumberOfCrashesForPeriod (aCursor, databaseParameters):
         %%(startDate)s < tcbs.window_end
         and tcbs.window_end <= %%(endDate)s
     """ % databaseParameters
-  logger.debug(aCursor.mogrify(sql, databaseParameters))
+  #logger.debug(aCursor.mogrify(sql, databaseParameters))
   return db.singleValueSql(aCursor, sql, databaseParameters)
 
 #-----------------------------------------------------------------------------------------------------------------
@@ -82,7 +82,7 @@ def getListOfTopCrashersBySignature(aCursor, databaseParameters, totalNumberOfCr
   order by
     2 desc
   limit %%(listSize)s""" % databaseParameters
-  logger.debug(aCursor.mogrify(sql, databaseParameters))
+  #logger.debug(aCursor.mogrify(sql, databaseParameters))
   return db.execute(aCursor, sql, databaseParameters)
 
 #-----------------------------------------------------------------------------------------------------------------
@@ -141,7 +141,7 @@ def listOfListsWithChangeInRank (listOfQueryResultsIterable):
       previousList = [] # this was the 1st processed - it has no previous history
     currentListOfTopCrashers = []
     for rank, aRow in enumerate(aListOfTopCrashers):
-      logger.debug('YYYY %s %s', rank, str(aRow))
+      #logger.debug('YYYY %s %s', rank, str(aRow))
       aRowAsDict = dict(zip(['signature', 'count', 'percentOfTotal', 'win_count', 'mac_count', 'linux_count'], aRow))
       aRowAsDict['currentRank'] = rank
       try:
@@ -152,7 +152,7 @@ def listOfListsWithChangeInRank (listOfQueryResultsIterable):
         aRowAsDict['previousRank'] = aRowAsDict['previousPercentOfTotal'] = "null"
         aRowAsDict['changeInRank'] = aRowAsDict['changeInPercentOfTotal'] = "new"
       currentListOfTopCrashers.append(aRowAsDict)
-    logger.debug('xXXX %s', str(currentListOfTopCrashers))
+    #logger.debug('xXXX %s', str(currentListOfTopCrashers))
     listOfTopCrasherLists.append(currentListOfTopCrashers)
   return listOfTopCrasherLists[1:]
 
@@ -169,7 +169,12 @@ def latestEntryBeforeOrEqualTo(aCursor, aDate, product, version):
     where
         tcbs.window_end <= %s
     """
-  return db.singleValueSql(aCursor, sql, (product, version, aDate))
+  try:
+    result = db.singleValueSql(aCursor, sql, (product, version, aDate))
+    if result: return result
+    return aDate
+  except:
+    return aDate
 
 #-----------------------------------------------------------------------------------------------------------------
 def twoPeriodTopCrasherComparison (databaseCursor, context, closestEntryFunction=latestEntryBeforeOrEqualTo, listOfTopCrashersFunction=getListOfTopCrashersBySignature):
@@ -224,7 +229,6 @@ class TopCrashBySignatureTrends(webapi.JsonServiceBase):
     parameters.os_name = ''
     parameters.os_version = ''
     logger.debug("TopCrashBySignatureTrends get %s", parameters)
-    logger.debug('Lars was here')
     parameters.logger = logger
     connection = self.database.connection()
     try:
