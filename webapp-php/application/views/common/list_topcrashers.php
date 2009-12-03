@@ -3,7 +3,7 @@
     Top <?php echo count($top_crashers) ?> Crashing Signatures
     <span class="start-date"><?= $start ?></span> through
     <span class="end-date"><?= $last_updated ?></span>.
-    The  report covers <span class="percentage" title="<?=$percentTotal?>"><?= number_format($percentTotal * 100, 2)?>%</span> of all <span class="total-num-crashes" title="<?= $total_crashes ?>"><?= number_format($total_crashes) ?></span> crashes during this period.
+	  The  report covers <span class="percentage" title="<?=$percentTotal?>"><?= number_format($percentTotal * 100, 2)?>%</span> of all <span class="total-num-crashes" title="<?= $total_crashes ?>"><?= number_format($total_crashes) ?></span> crashes during this period. Graphs below are dual-axis, having <strong>Count</strong> (Number of Crashes) on the left X axis and <strong>Percent</strong> of total of Crashes on the right X axis. 
 	<div id="duration-nav">
   	  <h3>Other Periods:</h3>
   	  <ul>
