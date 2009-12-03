@@ -170,7 +170,7 @@ def latestEntryBeforeOrEqualTo(aCursor, aDate, product, version):
         tcbs.window_end <= %s
         and
     """
-  return db.singleValueSql(aCursor, sql, (aDate,))
+  return db.singleValueSql(aCursor, sql, (aDate, product, version))
 
 #-----------------------------------------------------------------------------------------------------------------
 def twoPeriodTopCrasherComparison (databaseCursor, context, closestEntryFunction=latestEntryBeforeOrEqualTo, listOfTopCrashersFunction=getListOfTopCrashersBySignature):
@@ -225,6 +225,7 @@ class TopCrashBySignatureTrends(webapi.JsonServiceBase):
     parameters.os_name = ''
     parameters.os_version = ''
     logger.debug("TopCrashBySignatureTrends get %s", parameters)
+    logger.debug('Lars was here')
     parameters.logger = logger
     connection = self.database.connection()
     try:
