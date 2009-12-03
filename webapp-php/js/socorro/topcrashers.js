@@ -1,4 +1,6 @@
-$(document).ready(function() {
+$(document).ready(function() { 
+    $('.other_ver form').show();
+    $('.no_script_other_ver').remove();
     $("#topcrashers #show")
         .find('a').click(function(e) {
             e.preventDefault();
@@ -14,6 +16,12 @@ $(document).ready(function() {
         .find('a:first').click().end()
         .show();
     $('.other_ver select').change(function() {
-        if ($(this).val()) this.form.submit();
+	var form = $(this).parents('form');
+	var product = form.find('input[name=product]').attr('value');
+	var version = $(this).val();
+
+        if ($(this).val()) {
+	    window.location = form.attr('action') + '/' + product + '/' + version + '/' + 7;
+        }
     });
 });

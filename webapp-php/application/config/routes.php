@@ -21,9 +21,6 @@ $config['topcrasher/byversion/([a-zA-Z.]+)/([0-9a-zA-Z.]+)/([0-9]+)'] =
 $config['topcrasher/byversion/([a-zA-Z.]+)/([0-9a-zA-Z.]+)'] =
     'topcrasher/byversion/$1/$2';
 
-$config['topcrasher/byversion'] =
-    'topcrasher/byversion';
-
 $config['topcrasher/bybranch/([0-9a-zA-Z.]+)'] =
     'topcrasher/bybranch/$1';
 

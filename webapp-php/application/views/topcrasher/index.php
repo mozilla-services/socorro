@@ -68,7 +68,12 @@
         $last = $all_versions[$product][0];
         ?>
         <div class="other_ver">
-          <form method="get" action="<?php echo url::base().'topcrasher/byversion'?>">
+	  <ol class="no_script_other_ver">
+              <?php foreach ($versions as $version): ?>
+	        <li><a href="<?= url::base() . 'topcrasher/byversion/' . $product . '/' . $version . '/7' ?>"><?= $product ?> <?= $version ?></a></li>
+              <?php endforeach; ?>
+          </ol>
+          <form method="get" action="<?php echo url::base().'topcrasher/byversion'?>" style="display: none;">
             <h2><?php out::H($product)?></h2>
             <input type="hidden" name="product" value="<?php out::H($product)?>"/>
             <select name="version">
