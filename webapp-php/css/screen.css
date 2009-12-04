@@ -1118,9 +1118,6 @@ h2.mtbf-graph{ float: left; }
   font-weight: 900;
   text-align: right;
 }
-.trend.up { background: #D00 url(http://aking.khan.mozilla.org/reporter/img/up_arrow.png) no-repeat top right; }
-.trend.down { background: #080 url(http://aking.khan.mozilla.org/reporter/img/down_arrow.png) no-repeat top right; }
-
 
 /* REPORT PENDING STATUS PAGE */
 div.pendingStatus {
