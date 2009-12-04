@@ -126,14 +126,6 @@ class Auth_LDAP_Driver extends Auth_Driver {
     {
         header('HTTP/1.0 401 Unauthorized');
     }
-    /**
-     * Validates that the user input is a valid email address
-     * @param string user
-     * @return boolean
-     */
-    private function _check_valid_user($user) {
-        return preg_match('/^[a-z]+@(.+?)\.(.+)$|^[a-z]+$/', $user);
-    }
 
     /**
      * Prompt the user for Basic Auth Credentials via HTTP headers
@@ -165,17 +157,12 @@ class Auth_LDAP_Driver extends Auth_Driver {
      */
     private function _is_LDAP_login_successful($username, $password)
     {
-        if ($this->_check_valid_user($_SERVER["PHP_AUTH_USER"])) {
-	    // Shared LDAP access (not based on user's identity yet)
-	    $bind_dn = Kohana::config('ldap.bind_dn');
-	    $bind_pass = Kohana::config('ldap.bind_password');
-	    $search_dn = Kohana::config('ldap.search_dn', 'dc=mozilla');
-	    $user_filter = "mail=" . trim($_SERVER['PHP_AUTH_USER']);
-	    return $this->_authenticate_and_authorize($bind_dn, $bind_pass, $search_dn, $user_filter);
-        } else {
-	    Kohana::log('debug', "Expected an email address, got " . $_SERVER["PHP_AUTH_USER"] . " skipping auth");
-        }
-	return FALSE;
+	// Shared LDAP access (not based on user's identity yet)
+	$bind_dn = Kohana::config('ldap.bind_dn');
+	$bind_pass = Kohana::config('ldap.bind_password');
+	$search_dn = Kohana::config('ldap.search_dn', 'dc=mozilla');
+	$user_filter = "mail=" . trim($_SERVER['PHP_AUTH_USER']);
+	return $this->_authenticate_and_authorize($bind_dn, $bind_pass, $search_dn, $user_filter);
     }
 
     /**
