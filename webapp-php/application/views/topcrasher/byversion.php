@@ -15,8 +15,8 @@
 
 <style type="text/css">
 <?php /* TODO we should set a page base so that images can be relative to that base */ ?>
-.trend.up { background: #D00 url(<?= url::base() ?>/img/up_arrow.png) no-repeat top right; }
-.trend.down { background: #080 url(<?= url::base() ?>/img/down_arrow.png) no-repeat top right; }
+.trend.up { background: #D00 url(<?= url::site('/img/up_arrow.png') ?>) no-repeat top right; }
+.trend.down { background: #080 url(<?= url::site('/img/down_arrow.png') ?>) no-repeat top right; }
 </style>
     <h1 class="first">Top Crashers for <span class="current-product"><?php out::H($product) ?></span> 
          <span class="current-version"><?php out::H($version) ?></span></h1>
