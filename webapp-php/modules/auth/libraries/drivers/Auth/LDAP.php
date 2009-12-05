@@ -234,11 +234,16 @@ class Auth_LDAP_Driver extends Auth_Driver {
 	$filter = "(&(member=" . $user_dn . ")(${cn}))";
 	$group_dn = Kohana::config('ldap.group_dn', 'ou=groups,dc=mozilla');
 	$rs = ldap_list($ldapconn, $group_dn, $filter);
+
 	if ($rs) {
 	    $info = ldap_get_entries($ldapconn, $rs);
 	    if ($info && $info['count'] > 0) {
 		return TRUE;
-	    } 
+	    } else {
+		Kohana::log('debug', "ldap_get_entries failed after successful ldap_list on $group_dn and $filter");
+	    }
+	} else {
+	    Kohana::log('debug', "ldap_list failed for $group_dn and $filter");
 	}
 	return FALSE;
     }
