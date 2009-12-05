@@ -194,12 +194,12 @@ class Monitor (object):
           if success:
             if saveSuccessfulJobs:
               logger.debug("%s - saving %s", threading.currentThread().getName(), uuid)
-              self.successfulJobStorage.transferOne(uuid, currentStorageForThisUuid, False, True, ooid.dateFromOoid(uuid))
+              self.successfulJobStorage.transferOne(uuid, currentStorageForThisUuid, False, True, aDate=ooid.dateFromOoid(uuid))
               #self.successfulJobStorage.transferOne(uuid, currentStorageForThisUuid, False, True, datetime.datetime.now())
           else:
             if saveFailedJobs:
               logger.debug("%s - saving %s", threading.currentThread().getName(), uuid)
-              self.failedJobStorage.transferOne(uuid, currentStorageForThisUuid, False, True, ooid.dateFromOoid(uuid))
+              self.failedJobStorage.transferOne(uuid, currentStorageForThisUuid, False, True, aDate=ooid.dateFromOoid(uuid))
               #self.failedJobStorage.transferOne(uuid, currentStorageForThisUuid, False, True, datetime.datetime.now())
           logger.debug("%s - deleting %s", threading.currentThread().getName(), uuid)
           currentStorageForThisUuid.remove(uuid)
