@@ -230,11 +230,10 @@ class Auth_LDAP_Driver extends Auth_Driver {
      */
     private function _authorize($ldapconn, $user_dn, $cn)
     {
-	// Example "(&(aking@mozilla.com,o=com,dc=mozilla)(cn=sekritCabal))"
-	$filter = "(&(member=" . $user_dn . ")(${cn}))";
-	$group_dn = Kohana::config('ldap.group_dn', 'ou=groups,dc=mozilla');
-	$rs = ldap_list($ldapconn, $group_dn, $filter);
 
+	$filter = "(member=" . $user_dn . ')';
+	$group_dn =  $cn . ',' . Kohana::config('ldap.group_dn', 'ou=groups,dc=mozilla');
+	$rs = ldap_search($ldapconn, $group_dn , $filter);
 	if ($rs) {
 	    $info = ldap_get_entries($ldapconn, $rs);
 	    if ($info && $info['count'] > 0) {
