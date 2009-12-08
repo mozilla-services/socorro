@@ -203,7 +203,12 @@ class JsonDumpStorage(socorro_dumpStorage.DumpStorage):
     jsonFromFile = anotherJsonDumpStorage.getJson(ooid)
     self.logger.debug('%s - fetched json', threading.currentThread().getName())
     dumpFromFile = os.path.splitext(jsonFromFile)[0]+anotherJsonDumpStorage.dumpSuffix
-    stamp = anotherJsonDumpStorage.pathToDate(anotherJsonDumpStorage.lookupOoidInDatePath(None,ooid,None)[0])
+    if createLinks:
+      self.logger.debug('%s - fetching stamp', threading.currentThread().getName())
+      stamp = anotherJsonDumpStorage.pathToDate(anotherJsonDumpStorage.lookupOoidInDatePath(None,ooid,None)[0])
+    else:
+      self.logger.debug('%s - not bothering to fetch stamp', threading.currentThread().getName())
+      stamp = None
     self.logger.debug('%s - fetched pathToDate ', threading.currentThread().getName())
     if not stamp:
       if not aDate:
