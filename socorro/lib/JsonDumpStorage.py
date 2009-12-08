@@ -131,23 +131,23 @@ class JsonDumpStorage(socorro_dumpStorage.DumpStorage):
     raises OSError if the paths are unreadable or if removeOld is true and either file cannot be unlinked
 
     """
-    self.logger.debug('copyFrom %s %s', jsonpath, dumppath)
+    self.logger.debug('%s - copyFrom %s %s', threading.currentThread().getName(), jsonpath, dumppath)
     nameDir,nparts = self.makeNameDir(ooid,timestamp) # deliberately leave this dir behind if next line throws
     jsonNewPath = '%s%s%s%s' % (nameDir,os.sep,ooid,self.jsonSuffix)
     dumpNewPath = '%s%s%s%s' % (nameDir,os.sep,ooid,self.dumpSuffix)
     try:
-      self.logger.debug('about to copy json %s to %s', jsonpath,jsonNewPath)
+      self.logger.debug('%s - about to copy json %s to %s', threading.currentThread().getName(), jsonpath,jsonNewPath)
       shutil.copy2(jsonpath,jsonNewPath)
     except IOError,x:
       if 2 == x.errno:
         nameDir = self.makeNameDir(ooid,timestamp) # deliberately leave this dir behind if next line throws
-        self.logger.debug('oops, needed to make dir first - 2nd try copy json %s to %s', jsonpath,jsonNewPath)
+        self.logger.debug('%s - oops, needed to make dir first - 2nd try copy json %s to %s', threading.currentThread().getName(), jsonpath,jsonNewPath)
         shutil.copy2(jsonpath,jsonNewPath)
       else:
         raise x
     os.chmod(jsonNewPath,self.dumpPermissions)
     try:
-      self.logger.debug('about to copy dump %s to %s', dumppath,dumpNewPath)
+      self.logger.debug('%s - about to copy dump %s to %s', threading.currentThread().getName(), dumppath,dumpNewPath)
       shutil.copy2(dumppath,dumpNewPath)
       os.chmod(dumpNewPath,self.dumpPermissions)
       if self.dumpGID:
@@ -159,7 +159,7 @@ class JsonDumpStorage(socorro_dumpStorage.DumpStorage):
       finally:
         raise e
     if createLinks:
-      self.logger.debug('building links')
+      self.logger.debug('%s - building links', threading.currentThread().getName())
       dateDir,dparts = self.makeDateDir(timestamp,webheadHostName)
       nameDepth = socorro_ooid.depthFromOoid(ooid)
       if not nameDepth: nameDepth = 4
@@ -174,16 +174,16 @@ class JsonDumpStorage(socorro_dumpStorage.DumpStorage):
         os.unlink(os.path.join(nameDir,ooid))
         raise e
     if removeOld:
-      self.logger.debug('removing old %s, %s', jsonpath, dumppath)
+      self.logger.debug('%s - removing old %s, %s', threading.currentThread().getName(), jsonpath, dumppath)
       try:
         os.unlink(jsonpath)
       except OSError:
-        self.logger.warning("cannot unlink Json", jsonpath, os.listdir(os.path.split(jsonpath)[0]))
+        self.logger.warning("%s - cannot unlink Json", threading.currentThread().getName(), jsonpath, os.listdir(os.path.split(jsonpath)[0]))
         return False
       try:
         os.unlink(dumppath)
       except OSError:
-        self.logger.warning("cannot unlink Dump", dumppath, os.listdir(os.path.split(dumppath)[0]))
+        self.logger.warning("%s - cannot unlink Dump", threading.currentThread().getName(), dumppath, os.listdir(os.path.split(dumppath)[0]))
         return False
     return True
 
@@ -199,23 +199,26 @@ class JsonDumpStorage(socorro_dumpStorage.DumpStorage):
     aDate: Used if unable to parse date from source directories and uuid
     NOTE: Assumes that the path names and suffixes for anotherJsonDumpStorage are the same as for self
     """
-    self.logger.debug('transferOne %s %s', ooid, aDate)
+    self.logger.debug('%s - transferOne %s %s', threading.currentThread().getName(), ooid, aDate)
     jsonFromFile = anotherJsonDumpStorage.getJson(ooid)
+    self.logger.debug('%s - fetched json', threading.currentThread().getName())
     dumpFromFile = os.path.splitext(jsonFromFile)[0]+anotherJsonDumpStorage.dumpSuffix
     stamp = anotherJsonDumpStorage.pathToDate(anotherJsonDumpStorage.lookupOoidInDatePath(None,ooid,None)[0])
+    self.logger.debug('%s - fetched pathToDate ', threading.currentThread().getName())
     if not stamp:
       if not aDate:
         aDate = datetime.datetime.now()
       stamp = aDate
+    self.logger.debug('%s - about to copyFrom ', threading.currentThread().getName())
     self.copyFrom(ooid,jsonFromFile, dumpFromFile, webheadHostName, stamp, createLinks, removeOld)
 
   #-----------------------------------------------------------------------------------------------------------------
-
   def getJson (self, ooid):
     """
     Returns an absolute pathname for the json file for a given ooid.
     Raises OSError if the file is missing
     """
+    self.logger.debug('%s - getJson %s', threading.currentThread().getName(), ooid)
     fname = "%s%s"%(ooid,self.jsonSuffix)
     path,parts = self.lookupNamePath(ooid)
     if path:

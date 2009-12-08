@@ -212,6 +212,7 @@ class Monitor (object):
           #  raise
         databaseCursor.execute("delete from jobs where id = %s", (jobId,))
         databaseConnection.commit()
+        logger.debug("%s - end of this cleanup iteration", threading.currentThread().getName())
     except Exception, x:
       logger.debug("%s - it died: %s", threading.currentThread().getName(), x)
       databaseConnection.rollback()
