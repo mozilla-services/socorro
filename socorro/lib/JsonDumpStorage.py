@@ -131,19 +131,23 @@ class JsonDumpStorage(socorro_dumpStorage.DumpStorage):
     raises OSError if the paths are unreadable or if removeOld is true and either file cannot be unlinked
 
     """
+    self.logger.debug('copyFrom %s %s', jsonpath, dumppath)
     nameDir,nparts = self.makeNameDir(ooid,timestamp) # deliberately leave this dir behind if next line throws
     jsonNewPath = '%s%s%s%s' % (nameDir,os.sep,ooid,self.jsonSuffix)
     dumpNewPath = '%s%s%s%s' % (nameDir,os.sep,ooid,self.dumpSuffix)
     try:
+      self.logger.debug('about to copy json %s to %s', jsonpath,jsonNewPath)
       shutil.copy2(jsonpath,jsonNewPath)
     except IOError,x:
       if 2 == x.errno:
         nameDir = self.makeNameDir(ooid,timestamp) # deliberately leave this dir behind if next line throws
+        self.logger.debug('oops, needed to make dir first - 2nd try copy json %s to %s', jsonpath,jsonNewPath)
         shutil.copy2(jsonpath,jsonNewPath)
       else:
         raise x
     os.chmod(jsonNewPath,self.dumpPermissions)
     try:
+      self.logger.debug('about to copy dump %s to %s', dumppath,dumpNewPath)
       shutil.copy2(dumppath,dumpNewPath)
       os.chmod(dumpNewPath,self.dumpPermissions)
       if self.dumpGID:
@@ -155,6 +159,7 @@ class JsonDumpStorage(socorro_dumpStorage.DumpStorage):
       finally:
         raise e
     if createLinks:
+      self.logger.debug('building links')
       dateDir,dparts = self.makeDateDir(timestamp,webheadHostName)
       nameDepth = socorro_ooid.depthFromOoid(ooid)
       if not nameDepth: nameDepth = 4
@@ -169,6 +174,7 @@ class JsonDumpStorage(socorro_dumpStorage.DumpStorage):
         os.unlink(os.path.join(nameDir,ooid))
         raise e
     if removeOld:
+      self.logger.debug('removing old %s, %s', jsonpath, dumppath)
       try:
         os.unlink(jsonpath)
       except OSError:
@@ -193,6 +199,7 @@ class JsonDumpStorage(socorro_dumpStorage.DumpStorage):
     aDate: Used if unable to parse date from source directories and uuid
     NOTE: Assumes that the path names and suffixes for anotherJsonDumpStorage are the same as for self
     """
+    self.logger.debug('transferOne %s %s', ooid, aDate)
     jsonFromFile = anotherJsonDumpStorage.getJson(ooid)
     dumpFromFile = os.path.splitext(jsonFromFile)[0]+anotherJsonDumpStorage.dumpSuffix
     stamp = anotherJsonDumpStorage.pathToDate(anotherJsonDumpStorage.lookupOoidInDatePath(None,ooid,None)[0])
@@ -285,7 +292,7 @@ class JsonDumpStorage(socorro_dumpStorage.DumpStorage):
       dailyParts = os.listdir(self.root)
     except OSError:
       # If root doesn't exist, quietly do nothing, eh?
-      return 
+      return
     for daily in dailyParts:
       for dir,dirs,files in os.walk(os.sep.join((self.root,daily,self.dateName))):
         if os.path.split(dir)[0] == os.path.split(self.datePath(datetime.datetime.now())[0]):
@@ -305,7 +312,7 @@ class JsonDumpStorage(socorro_dumpStorage.DumpStorage):
     Removes all instances of the ooid from the file system including
       the json file, the dump file, and the two links if they still exist.
     If it finds no trace of the ooid: No links, no data files, it raises a NoSuchUuidFound exception.
-    Attempts to remove root/daily/date subtree for empty levels above this date 
+    Attempts to remove root/daily/date subtree for empty levels above this date
     If self.cleanIndexDirectories, attempts to remove root/daily subtree, for empty levels above this name storage
     """
     namePath,nameParts = self.lookupNamePath(ooid,timestamp)
@@ -392,7 +399,7 @@ class JsonDumpStorage(socorro_dumpStorage.DumpStorage):
     if not seenCount:
       self.logger.warning("%s - %s was totally unknown" % (threading.currentThread().getName(), ooid))
       raise NoSuchUuidFound, "no trace of %s was found" % ooid
-    
+
 #   #-----------------------------------------------------------------------------------------------------------------
 #   def move (self, ooid, newAbsolutePath):
 #     """
