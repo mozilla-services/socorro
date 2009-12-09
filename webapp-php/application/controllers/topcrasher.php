@@ -268,9 +268,6 @@ class Topcrasher_Controller extends Controller {
     {
 	//Bug#532434 Kohana is escaping some characters with html entity encoding for security purposes
 	$signature = html_entity_decode($signature);
-	if ($signature == self::$no_sig) {
-	    $signature = '';
-	}
 
 	header('Content-Type: text/javascript');
 	$this->auto_render = FALSE;
