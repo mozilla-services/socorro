@@ -201,8 +201,9 @@ class Monitor (object):
               logger.debug("%s - saving %s", threading.currentThread().getName(), uuid)
               self.failedJobStorage.transferOne(uuid, currentStorageForThisUuid, False, True, aDate=ooid.dateFromOoid(uuid))
               #self.failedJobStorage.transferOne(uuid, currentStorageForThisUuid, False, True, datetime.datetime.now())
-          logger.debug("%s - deleting %s", threading.currentThread().getName(), uuid)
-          currentStorageForThisUuid.remove(uuid)
+          # we no longer need to manually remove it, the transfer already did it
+          #logger.debug("%s - deleting %s", threading.currentThread().getName(), uuid)
+          #currentStorageForThisUuid.remove(uuid)
         except (jds.NoSuchUuidFound, UuidNotFoundException):
           logger.warning("%s - %s wasn't found for cleanup.", threading.currentThread().getName(), uuid)
         except OSError, x:
