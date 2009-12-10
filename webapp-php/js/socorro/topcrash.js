@@ -11,7 +11,7 @@ $(document).ready(function() {
         button.get(0).disabled = true;
         button.html("<img src='" + SocImg + "ajax-loader.gif' />");
 
-	$.getJSON(SocAjax + encodeURI(sig), function(data){
+	$.getJSON(SocAjax + encodeURI(sig) + SocAjaxStartEnd, function(data){
   	    graph.show();
 	    button.remove();
             $.plot(graph,

@@ -52,7 +52,7 @@
 			 <td><span class="percentOfTotal"><?php out::H($crasher->{'display_percent'}) ?></span></td>
 			 <td><div title="A change of <?php out::H($crasher->{'display_change_percent'})?> from <?php out::H($crasher->{'display_previous_percent'}) ?>"
                                 ><?php out::H($crasher->{'display_change_percent'}) ?></div></td>
-			 <td><a class="signature" href="<?php out::H($link_url) ?>" title="View reports with this crasher."><?php out::H($nonBlankSignature) ?></a><div class="sig-history-graph"></div><div class="sig-history-legend"></div><button name="ajax-signature-<?= $row ?>" value="<?= $nonBlankSignature?>">7 Day Graph</button></td>
+			 <td><a class="signature" href="<?php out::H($link_url) ?>" title="View reports with this crasher."><?php out::H($nonBlankSignature) ?></a><div class="sig-history-graph"></div><div class="sig-history-legend"></div><button name="ajax-signature-<?= $row ?>" value="<?= $nonBlankSignature?>">Graph</button></td>
                         <td><?php out::H($crasher->count) ?></td>
                         <td><?php out::H($crasher->win_count) ?></td>
                         <td><?php out::H($crasher->mac_count) ?></td>
@@ -99,7 +99,8 @@
         'js/flot-0.5/jquery.flot.pack.js'
     ))?>
     <script type="text/javascript">
-    var SocAjax = '<?= url::site('topcrasher/plot_signature') . '/' . $product . '/' . $version . '/' ?>';
+    var SocAjax = '<?= url::site('topcrasher/plot_signature') . '/' . $product . '/' . $version . '/'; ?>';
+	var SocAjaxStartEnd = '<?= '/' . $start . '/' . $last_updated . '/'; ?>';
     var SocImg = '<?= url::site('img') ?>/';
     </script>
     

@@ -262,16 +262,17 @@ class Topcrasher_Controller extends Controller {
      * @param string - the product
      * @param string - the version
      * @param string - the signature OR $no_sig
+	 * @param string	The start date by which to begin the plot
+	 * @param string	The end date by which to end the plot
      * @return responds with JSON suitable for plotting
      */
-    public function plot_signature($product, $version, $signature)
+    public function plot_signature($product, $version, $signature, $start_date, $end_date)
     {
 	//Bug#532434 Kohana is escaping some characters with html entity encoding for security purposes
 	$signature = html_entity_decode($signature);
 
 	header('Content-Type: text/javascript');
 	$this->auto_render = FALSE;
-	$duration=7;
 
 	$config = array();
 	$credentials = Kohana::config('webserviceclient.basic_auth');
@@ -283,13 +284,15 @@ class Topcrasher_Controller extends Controller {
 	$host = Kohana::config('webserviceclient.socorro_hostname');
 
 	$cache_in_minutes = Kohana::config('webserviceclient.topcrash_vers_rank_cache_minutes', 60);
-	$end_date = urlencode(date('o-m-d\TH:i:s\T+0000', TimeUtil::roundOffByMinutes($cache_in_minutes)));
-	$end_date = '2009-11-19T12%3A00%3A00T%2B0000';
-	// $dur is number of hours 
-	$dur = $duration * 24;
+	$start_date = str_replace(" ", "T", $start_date.'+0000', TimeUtil::roundOffByMinutes($cache_in_minutes));
+	$end_date = str_replace(" ", "T", $end_date.'+0000', TimeUtil::roundOffByMinutes($cache_in_minutes));
+	$duration = TimeUtil::determineHourDifferential($start_date, $end_date); // Number of hours
+
+	$start_date = urlencode($start_date);
+	$end_date = urlencode($end_date);
+
 	$limit = Kohana::config('topcrashbysig.byversion_limit', 300);
-	// lifetime in seconds
-	$lifetime = $cache_in_minutes * 60;
+	$lifetime = $cache_in_minutes * 60; // Lifetime in seconds
 
 	$p = urlencode($product);
 	$v = urlencode($version);
@@ -298,7 +301,7 @@ class Topcrasher_Controller extends Controller {
 	$rsig = rawurlencode($signature); //NPSWF32.dll%400x136a29
 	Kohana::log('info', "Turning \n$signature \n$sig \n$rsig");
 	// Every 3 hours
-        $resp = $service->get("${host}/200911/topcrash/sig/trend/history/p/${p}/v/${v}/sig/${rsig}/end/${end_date}/duration/180/steps/60",
+        $resp = $service->get("${host}/200911/topcrash/sig/trend/history/p/${p}/v/${v}/sig/${rsig}/end/${end_date}/duration/${duration}/steps/60",
 			      'json', $lifetime);
 
 
