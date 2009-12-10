@@ -89,7 +89,7 @@
         ) ?>	      
         <?php echo form::input(
             array('size' => '40', 'name'=>'query', 'id'=>'query'), 
-            $params['query']
+            trim($params['query'])
         )?>
 	    </li>
 	  </ul> <!-- /stack -->

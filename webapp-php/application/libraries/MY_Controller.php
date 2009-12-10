@@ -77,14 +77,13 @@ class Controller extends Controller_Core {
         foreach ($pairs as $i) {
             if (!$i) continue;
             list($name, $value) = explode('=', $i, 2);
-            $value = rawurldecode($value);
+            $value = urldecode($value);
             if (isset($params[$name])) {
-                $params[$name][] = $value;
+                $params[$name][] = trim($value);
             } else {
-                $params[$name] = array( $value );
+                $params[$name] = array(trim($value));
             }
         }
-
         return $params;
     }
 
