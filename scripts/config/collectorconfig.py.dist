@@ -53,11 +53,11 @@ neverDiscard.fromStringConverter = cm.booleanConverter
 
 throttleConditions = cm.Option()
 throttleConditions.default = [
-  ("Version", lambda x: x[-3:] == "pre" or x[3] in 'ab', 100), # queue 100% of crashes with version ending in "pre" or having 'a' or 'b'
-  #("Add-ons", re.compile('inspector\@mozilla\.org\:1\..*'), 75), # queue 75% of crashes where the inspector addon is at 1.x
-  #("UserID", "d6d2b6b0-c9e0-4646-8627-0b1bdd4a92bb", 100), # queue all of this user's crashes
-  #("SecondsSinceLastCrash", lambda x: 300 >= int(x) >= 0, 100), # queue all crashes that happened within 5 minutes of another crash
-  (None, True, 10) # queue 10% of what's left
+  ("Version", lambda x: x[-3:] == "pre" or x[3] in 'ab', 100.0), # queue 100% of crashes with version ending in "pre" or having 'a' or 'b'
+  #("Add-ons", re.compile('inspector\@mozilla\.org\:1\..*'), 75.0), # queue 75% of crashes where the inspector addon is at 1.x
+  #("UserID", "d6d2b6b0-c9e0-4646-8627-0b1bdd4a92bb", 100.0), # queue all of this user's crashes
+  #("SecondsSinceLastCrash", lambda x: 300 >= int(x) >= 0, 100.0), # queue all crashes that happened within 5 minutes of another crash
+  (None, True, 10.0) # queue 10% of what's left
 ]
 
 minimalVersionForUnderstandingRefusal = cm.Option()

@@ -144,7 +144,7 @@ class Collect(object):
   #-----------------------------------------------------------------------------------------------------------------
   def understandsRefusal (self, json):
     try:
-      #logger.debug('understandsRefusal - %s, %s, %s, %s, %s', json['ProductName'], json['Version'], self.config.minimalVersionForUnderstandingRefusal[json['ProductName']], Collect.normalizeVersionToInt(json['Version']), Collect.normalizeVersionToInt(self.config.minimalVersionForUnderstandingRefusal[json['ProductName']]))
+      #logger.debug('understandsRefusal - %s, %s, %s, %s, %s', json['ProductName'], json['Version'], self.config.minimalVersionForUnderstandingRefusal[json['ProductName']], self.normalizeVersionToInt(json['Version']), self.normalizeVersionToInt(self.config.minimalVersionForUnderstandingRefusal[json['ProductName']]))
       return self.normalizeVersionToInt(json['Version']) >= self.normalizeVersionToInt(self.config.minimalVersionForUnderstandingRefusal[json['ProductName']])
     except KeyError:
       return False
@@ -153,7 +153,7 @@ class Collect(object):
   def throttle (self, json):
     #print processedThrottleConditions
     for key, condition, percentage in self.processedThrottleConditions:
-      #print "testing  %s %s %d" % (key, condition, percentage)
+      #logger.debug("throttle testing  %s %s %d", key, condition, percentage)
       throttleMatch = False
       try:
         throttleMatch = condition(json[key])
@@ -166,9 +166,12 @@ class Collect(object):
       except IndexError:
         pass
       if throttleMatch:
-        randint = random.randint(0, 100)
+        #randint = random.randint(0, 100)
         #print "throttle: %d %d %s" % (randint, percentage, randint > percentage)
-        return randint > percentage
+        #return randint > percentage
+        randomRealPercent = random.random() * 100.0
+        #logger.debug("throttle: %f %f %s", randomRealPercent, percentage, randomRealPercent > percentage)
+        return randomRealPercent > percentage
     return True
 
   #-----------------------------------------------------------------------------------------------------------------
