@@ -421,8 +421,11 @@ class TestMonitor:
     self.markLog()
     seg = self.extractLogSegment()
     cleanSeg = []
-    for line in seg:
+    for lline in seg:
+      line = lline.strip()
       if 'Constructor has set the following values' in line:
+        continue
+      if 'DEBUG - MainThread - getJson' in line:
         continue
       if line.startswith('self.'):
         continue
@@ -747,7 +750,7 @@ class TestMonitor:
   def testCleanUpCompletedAndFailedJobs_WithoutSaves(self):
     """
     testCleanUpCompletedAndFailedJobs_WithoutSaves(self):
-    First, dynamically set config to not save successful or failed jobs. They are still removed from the file system
+    First, dynamically set config to not save successful or failed jobs. They are NOT removed from the file system
     """
     global me
     cc = copy.copy(me.config)
@@ -793,6 +796,7 @@ class TestMonitor:
     remainBehind = set()
     for dir, dirs, files in os.walk(me.config.storageRoot):
       remainBehind.update(os.path.splitext(x)[0] for x in files)
+
     assert len(successSave) == 0, "We expect not to save any successful jobs with this setting"
     assert len(failSave) == 0, "We expect not to save any failed jobs with this setting"
     for x in jobdata:
@@ -800,10 +804,8 @@ class TestMonitor:
         assert  not x[0] in expectFailSave and not x[0] in expectSuccessSave, "database should match expectatations for id=%s"%(x[0])
         assert x[1] in remainBehind, "if we didn't set success state for %s, then it should remain behind"%(x[1])
       elif True ==  x[2]:
-        assert not x[1] in remainBehind, "if we did set success state for %s, then it should not remain behind"%(x[1])
         assert not x[0] in expectFailSave and x[0] in expectSuccessSave, "database should match expectatations for id=%s"%(x[0])
       elif False == x[2]:
-        assert not x[1] in remainBehind, "if we did set success state for %s, then it should not remain behind"%(x[1])
         assert x[0] in expectFailSave and not x[0] in expectSuccessSave, "database should match expectatations for id=%s"%(x[0])
     
   def testCleanUpDeadProcessors_AllDead(self):
@@ -1031,7 +1033,12 @@ class TestMonitor:
     assert not m.uuidInJsonDumpStorage(badUuid), 'Dunno how that happened'
     self.markLog()
     seg = self.extractLogSegment()
-    assert [] == seg, "Shouldn't log for success or failure"
+    cleanSeg = []
+    for lline in seg:
+      if 'DEBUG - MainThread - getJson ' in lline:
+        continue
+      cleanSeg.append(lline)
+    assert [] == cleanSeg, "Shouldn't log for success or failure: %s"%cleanSeg
     
   def testLookForPriorityJobsInJsonDumpStorage(self):
     """

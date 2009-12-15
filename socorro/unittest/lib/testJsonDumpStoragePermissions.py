@@ -9,6 +9,7 @@ import time
 
 import socorro.lib.JsonDumpStorage as JDS
 import socorro.lib.uuid as socorro_uuid
+from socorro.lib.util import SilentFakeLogger
 import socorro.lib.filesystem as socorro_fs
 
 import socorro.unittest.testlib.util as tutil
@@ -34,7 +35,8 @@ class TestJsonDumpStoragePermissions(unittest.TestCase):
   def testNewEntryPermissions(self):
     dirPermissions=0707
     dumpPermissions=0500
-    j = JDS.JsonDumpStorage(root=self.testDir,dirPermissions=dirPermissions,dumpPermissions=dumpPermissions)
+    sfl = SilentFakeLogger()
+    j = JDS.JsonDumpStorage(root=self.testDir,dirPermissions=dirPermissions,dumpPermissions=dumpPermissions,logger=sfl)
     u = str(socorro_uuid.uuid1())
     f1, f2 = j.newEntry(u)
     f1.close()
@@ -64,7 +66,8 @@ class TestJsonDumpStoragePermissions(unittest.TestCase):
   def testCopyFromPermissions(self):
     dirPermissions=0777
     dumpPermissions=0755
-    j = JDS.JsonDumpStorage(root=self.testDir,dirPermissions=dirPermissions,dumpPermissions=dumpPermissions)
+    sfl = SilentFakeLogger()
+    j = JDS.JsonDumpStorage(root=self.testDir,dirPermissions=dirPermissions,dumpPermissions=dumpPermissions,logger=sfl)
     os.makedirs(self.testMoveFrom)
     u = str(socorro_uuid.uuid1())
     jopath = os.path.join(self.testMoveFrom,u+j.jsonSuffix)

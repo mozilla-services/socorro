@@ -172,7 +172,6 @@ class TopCrashesBySignature(object):
     revertDateColumnName = (self.dateColumnName != oldDateColumnName)
     cursor = self.connection.cursor()
     startWindow,deltaWindow,endWindow = cron_util.getProcessingWindow(self.configContext,resultTable,self.productVersionRestriction,cursor,logger,**kwargs)
-    print 'here - startWindow,deltaWindow,endWindow', startWindow,deltaWindow,endWindow
     startWindow = self.startDate
     try:
       fullCount = 0
