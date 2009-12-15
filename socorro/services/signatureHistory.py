@@ -47,20 +47,27 @@ class SignatureHistory(webapi.JsonServiceBase):
 
   #-----------------------------------------------------------------------------------------------------------------
   def fetchSignatureHistory (self, parameters):
+    if parameters['signature'] == '##null##':
+      signatureCriterionPhrase = '          and signature is null'
+    else:
+      signatureCriterionPhrase = '          and signature = %(signature)s'
+    if parameters['signature'] == '##empty##':
+      parameters['signature'] = ''
     sql = """
       select
-          CAST(ceil(EXTRACT(EPOCH FROM (window_end - %(startDate)s)) / %(stepSize)s) AS INT) as bucket_number,
+          CAST(ceil(EXTRACT(EPOCH FROM (window_end - %%(startDate)s)) / %%(stepSize)s) AS INT) as bucket_number,
           sum(count)
       from
           top_crashes_by_signature tcbs
       where
-          %(startDate)s < window_end
-          and window_end <= %(endDate)s
-          and signature = %(signature)s
+          %%(startDate)s < window_end
+          and window_end <= %%(endDate)s
+          %s
       group by
           bucket_number
       order by
-          1"""
+          1""" % signatureCriterionPhrase
+    #logger.debug('%s', self.connection.cursor().mogrify(sql, parameters))
     return dict(((bucket, count) for bucket, count in db.execute(self.connection.cursor(), sql, parameters)))
 
   #-----------------------------------------------------------------------------------------------------------------
