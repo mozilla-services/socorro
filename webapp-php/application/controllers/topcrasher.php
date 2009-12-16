@@ -199,6 +199,20 @@ class Topcrasher_Controller extends Controller {
 		$this->_ensureProperties($top_crasher, $req_props, 'top crash sig trend crashes');
 
 		if ($this->input->get('format') != "csv") {
+                    //$top_crasher->{'missing_sig_param'} - optional param, used for formating url to /report/list
+		    if (is_null($top_crasher->signature)) {
+			$top_crasher->{'display_signature'} = self::$null_sig;
+			$top_crasher->{'display_null_sig_help'} = TRUE;
+		        $top_crasher->{'missing_sig_param'} = "NULL";
+		    } else if(empty($top_crasher->signature)) {
+			$top_crasher->{'display_signature'} = self::$empty_sig;
+			$top_crasher->{'display_null_sig_help'} = TRUE;
+		        $top_crasher->{'missing_sig_param'} = "EMPTY_STRING";
+		    } else {
+			$top_crasher->{'display_signature'} = $top_crasher->signature;
+			$top_crasher->{'display_null_sig_help'} = FALSE;
+		    }
+
 		    $top_crasher->{'display_percent'} = number_format($top_crasher->percentOfTotal * 100, 2) . "%";
 		    $top_crasher->{'display_previous_percent'} = number_format($top_crasher->previousPercentOfTotal * 100, 2) . "%";
 		    $top_crasher->{'display_change_percent'} = number_format($top_crasher->changeInPercentOfTotal * 100, 2) . "%";
@@ -253,15 +267,20 @@ class Topcrasher_Controller extends Controller {
     }
 
     /**
+     * Copy used for empty signatures
+     */
+    public static $empty_sig = '(empty signature)';
+
+    /**
      * Copy used for NULL signatures
      */
-    public static $no_sig = '(signature unavailable)';
+    public static $null_sig = '(null signature)';
 
     /**
      * AJAX request for grabbing crash history data to be plotted
      * @param string - the product
      * @param string - the version
-     * @param string - the signature OR $no_sig
+     * @param string - the signature OR $null_sig TODO
 	 * @param string	The start date by which to begin the plot
 	 * @param string	The end date by which to end the plot
      * @return responds with JSON suitable for plotting
@@ -297,9 +316,13 @@ class Topcrasher_Controller extends Controller {
 	$p = urlencode($product);
 	$v = urlencode($version);
 	
-	$sig = urlencode($signature); //NPSWF32.dll%400x136a29
+	//Bug#534063
+	if ($signature == self::$null_sig) {
+	    $signature = '##null##';
+        } else if($signature == self::$empty_sig) {
+	    $signature = '##empty##';
+        }
 	$rsig = rawurlencode($signature); //NPSWF32.dll%400x136a29
-	Kohana::log('info', "Turning \n$signature \n$sig \n$rsig");
 	// Every 3 hours
         $resp = $service->get("${host}/200911/topcrash/sig/trend/history/p/${p}/v/${v}/sig/${rsig}/end/${end_date}/duration/${duration}/steps/60",
 			      'json', $lifetime);

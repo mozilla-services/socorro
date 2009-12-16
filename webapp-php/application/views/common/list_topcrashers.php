@@ -32,12 +32,14 @@
                 <?php $row = 1 ?>
                 <?php foreach ($top_crashers as $crasher): ?>
                     <?php
-		      $nonBlankSignature = $crasher->signature ? $crasher->signature : Topcrasher_Controller::$no_sig;
                         $sigParams = array(
                             'range_value' => '2',
                             'range_unit'  => 'weeks',
                             'signature'   => $crasher->signature
 			    );
+                        if (property_exists($crasher, 'missing_sig_param')) {
+			    $sigParams['missing_sig'] = $crasher->{'missing_sig_param'};
+                        }
                         if (property_exists($crasher, 'branch')) {
 			    $sigParams['branch'] = $crasher->branch;
 			} else {
@@ -52,7 +54,12 @@
 			 <td><span class="percentOfTotal"><?php out::H($crasher->{'display_percent'}) ?></span></td>
 			 <td><div title="A change of <?php out::H($crasher->{'display_change_percent'})?> from <?php out::H($crasher->{'display_previous_percent'}) ?>"
                                 ><?php out::H($crasher->{'display_change_percent'}) ?></div></td>
-			 <td><a class="signature" href="<?php out::H($link_url) ?>" title="View reports with this crasher."><?php out::H($nonBlankSignature) ?></a><div class="sig-history-graph"></div><div class="sig-history-legend"></div><button name="ajax-signature-<?= $row ?>" value="<?= $nonBlankSignature?>">Graph</button></td>
+			 <td><a class="signature" href="<?php out::H($link_url) ?>" 
+                                title="View reports with this crasher."><?php out::H($crasher->{'display_signature'}) ?></a><?php
+			 if ($crasher->{'display_null_sig_help'}) {
+			     echo " <a href='http://code.google.com/p/socorro/wiki/NullOrEmptySignatures' class='inline-help'>Learn More</a> ";
+			 }
+?><div class="sig-history-graph"></div><div class="sig-history-legend"></div><button name="ajax-signature-<?= $row ?>" value="<?= $crasher->{'display_signature'}?>">Graph</button></td>
                         <td><?php out::H($crasher->count) ?></td>
                         <td><?php out::H($crasher->win_count) ?></td>
                         <td><?php out::H($crasher->mac_count) ?></td>
