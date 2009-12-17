@@ -1,7 +1,7 @@
 <?php slot::start('head') ?>
 <?php /* Bug#530306 - don't reformat the [@ signature ] part below, it affects
                       our Bugzilla integration. No really. */ ?>
-    <title>[@ <?php out::H($report->signature) ?> ] - <?php out::H($report->product) ?> <?php out::H($report->version) ?> Crash Report - Report ID: <?php out::H($report->uuid) ?></title>
+<title><?php if (! empty($report->signature)) { echo '[@ '; out::H($report->signature); echo '] - ';} ?> <?php out::H($report->product) ?> <?php out::H($report->version) ?> Crash Report - Report ID: <?php out::H($report->uuid) ?></title>
 
     <link rel='alternate' type='application/json' href='<?php echo $reportJsonZUri ?>' />
 
@@ -35,10 +35,18 @@
 //]]></script> 
 
 <?php slot::end() ?>
-<h1 id="report-header" class="first"><?php out::H($report->product) ?> <?php out::H($report->version) ?> Crash Report [@ <?php out::H($report->signature) ?> ]</h1>
-<div id="sumo-link"><a href="http://support.mozilla.com/tiki-newsearch.php?where=all&amp;q=<?=urlencode($report->sumo_signature) ?>" title="Find more answers at support.mozilla.com!">Search Mozilla Support for Help</a></div>
+<h1 id="report-header" class="first"><?php out::H($report->product) ?> <?php out::H($report->version) ?> Crash Report <?php
+if (! empty($report->signature)) {?>
+    [@ <?php out::H($report->signature) ?> ]
+<?php }?></h1>
+<div id="sumo-link"><?php
+if (is_null($report->signature) || empty($report->signature)) { ?>
+<a href="http://support.mozilla.com">Visit Mozilla Support for Help</a>
+<?php } else { ?>
+<a href="http://support.mozilla.com/tiki-newsearch.php?where=all&amp;q=<?=urlencode($report->sumo_signature) ?>" title="Find more answers at support.mozilla.com!">Search Mozilla Support for Help</a>
+<?php } ?></div>
 
-<div id="report-header-details">ID: <span><?php out::H($report->uuid) ?></span><br/> Signature: <span><?php out::H($report->signature) ?></span></div>
+<div id="report-header-details">ID: <span><?php out::H($report->uuid) ?></span><br/> Signature: <span><?php out::H($report->{'display_signature'}) ?></span></div>
 <div id="report-index" class="flora">
 
     <ul>
@@ -51,7 +59,7 @@
     <div id="details">
         <table class="list record">
             <tr>
-                <th>Signature</th><td><?php out::H($report->signature) ?></td>
+<th>Signature</th><td><?php out::H($report->signature) ?></td>
             </tr>
             <tr>
                 <th>UUID</th><td><?php out::H($report->uuid) ?></td>

@@ -232,8 +232,16 @@ class Report_Controller extends Controller {
                 'etag'          => $uuid,
                 'last-modified' => strtotime($report->date_processed)
             ));
+	    
 	    $report->sumo_signature = $this->_makeSumoSignature($report->signature);
-        	
+	    if (is_null($report->signature)) {
+		$report->{'display_signature'} = Crash::$null_sig;
+	    } else if (empty($report->signature)) {
+		$report->{'display_signature'} = Crash::$empty_sig;
+	    } else {
+		$report->{'display_signature'} = $report->signature;
+	    }
+
 	    	$bug_model = new Bug_Model;
 		$rows = $bug_model->bugsForSignatures(array($report->signature));
 	    	$bugzilla = new Bugzilla;
