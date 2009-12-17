@@ -1,6 +1,7 @@
 <?php defined('SYSPATH') or die('No direct script access.');
 
 require_once(Kohana::find_file('libraries', 'bugzilla', TRUE, 'php'));
+require_once(Kohana::find_file('libraries', 'crash', TRUE, 'php'));
 require_once(Kohana::find_file('libraries', 'release', TRUE, 'php'));
 require_once(Kohana::find_file('libraries', 'timeutil', TRUE, 'php'));
 require_once(Kohana::find_file('libraries', 'versioncompare', TRUE, 'php'));
@@ -201,13 +202,13 @@ class Topcrasher_Controller extends Controller {
 		if ($this->input->get('format') != "csv") {
                     //$top_crasher->{'missing_sig_param'} - optional param, used for formating url to /report/list
 		    if (is_null($top_crasher->signature)) {
-			$top_crasher->{'display_signature'} = self::$null_sig;
+			$top_crasher->{'display_signature'} = Crash::$null_sig;
 			$top_crasher->{'display_null_sig_help'} = TRUE;
-		        $top_crasher->{'missing_sig_param'} = "NULL";
+		        $top_crasher->{'missing_sig_param'} = Crash::$null_sig_code;
 		    } else if(empty($top_crasher->signature)) {
-			$top_crasher->{'display_signature'} = self::$empty_sig;
+			$top_crasher->{'display_signature'} = Crash::$empty_sig;
 			$top_crasher->{'display_null_sig_help'} = TRUE;
-		        $top_crasher->{'missing_sig_param'} = "EMPTY_STRING";
+		        $top_crasher->{'missing_sig_param'} = Crash::$empty_sig_code;
 		    } else {
 			$top_crasher->{'display_signature'} = $top_crasher->signature;
 			$top_crasher->{'display_null_sig_help'} = FALSE;
@@ -267,16 +268,6 @@ class Topcrasher_Controller extends Controller {
     }
 
     /**
-     * Copy used for empty signatures
-     */
-    public static $empty_sig = '(empty signature)';
-
-    /**
-     * Copy used for NULL signatures
-     */
-    public static $null_sig = '(null signature)';
-
-    /**
      * AJAX request for grabbing crash history data to be plotted
      * @param string - the product
      * @param string - the version
@@ -317,10 +308,10 @@ class Topcrasher_Controller extends Controller {
 	$v = urlencode($version);
 	
 	//Bug#534063
-	if ($signature == self::$null_sig) {
-	    $signature = '##null##';
-        } else if($signature == self::$empty_sig) {
-	    $signature = '##empty##';
+	if ($signature == Crash::$null_sig) {
+	    $signature = Crash::$null_sig_api_value;
+        } else if($signature == Crash::$empty_sig) {
+	    $signature = Crash::$empty_sig_api_value;
         }
 	$rsig = rawurlencode($signature); //NPSWF32.dll%400x136a29
 	// Every 3 hours

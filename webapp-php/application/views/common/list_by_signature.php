@@ -20,17 +20,19 @@
                 <td>
                     <?php
                         $url_params = $params;
-                        if ( $report->signature ) {
-                            $url_params['signature'] =  $report->signature;
-                            $nonBlankSignature = $report->signature;
-                        } else { 
-                            $url_params['signature'] = 'NULL';
-			    $nonBlankSignature = Topcrasher_Controller::$no_sig;
+                        if (property_exists($report, 'missing_sig_param')) {
+			    $url_params['missing_sig'] = $report->{'missing_sig_param'};
+                        } else {
+			    $url_params['signature'] = $report->signature;
 			}
-                        
+
                         $url = url::base() . 'report/list?' . html::query_string($url_params);
                     ?>
-                        <a href="<?= $url ?>" title="View reports with this signature."><?php out::H($nonBlankSignature) ?></a>
+                        <a href="<?= $url ?>" title="View reports with this signature."><?php out::H($report->{'display_signature'}) ?></a><?php
+			 if ($report->{'display_null_sig_help'}) {
+			     echo " <a href='http://code.google.com/p/socorro/wiki/NullOrEmptySignatures' class='inline-help'>Learn More</a> ";
+			 }
+?>			
                 </td>
                 <?php if (count($platforms) > 1): ?><td><?php out::H($report->count) ?></td><?php endif ?>
                 <?php foreach ($platforms as $platform): ?>

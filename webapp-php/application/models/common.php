@@ -1,5 +1,6 @@
 <?php defined('SYSPATH') or die('No direct script access.');
 
+require_once(Kohana::find_file('libraries', 'crash', TRUE, 'php'));
 require_once(Kohana::find_file('libraries', 'moz_pager', TRUE, 'php'));
 
 /**
@@ -242,15 +243,31 @@ class Common_Model extends Model {
         $tables = array( 
             'reports' => 1 
         );
-        $where  = array(
-            'reports.signature IS NOT NULL'
-        );
+	$where  = array();
+	// Bug#518144 - Support retrieving NULL or Empty signatures
+	if (isset($params['missing_sig'])) {
+	    if ($params['missing_sig'] == Crash::$empty_sig_code) {
+		$params['signature'] = '';
+	    } else if ($params['missing_sig'] == Crash::$null_sig_code) {
+		$where[] = 'reports.signature IS NULL';
+		unset($params['signature']);
+	    }
+	}
 
         if (isset($params['signature'])) {
             $where[] = 'reports.signature = ' . $this->db->escape($params['signature']);
         }
 
-        if ($params['product']) {
+        if ($params['version']) {
+            $or = array();
+            foreach ($params['version'] as $spec) {
+                list($product, $version) = split(':', $spec);
+                $or[] = 
+                    "(reports.product = " . $this->db->escape($product) . " AND " .
+                    "reports.version = " . $this->db->escape($version) . ")";
+            }
+            $where[] = '(' . join(' OR ', $or) . ')';
+        } else if ($params['product']) {
             $or = array();
             foreach ($params['product'] as $product) {
                 $or[] = "reports.product = " . $this->db->escape($product);
@@ -267,17 +284,6 @@ class Common_Model extends Model {
             $where[] = '(' . join(' OR ', $or) . ')';
             $where[] = 'branches.product = reports.product';
             $where[] = 'branches.version = reports.version';
-        }
-
-        if ($params['version']) {
-            $or = array();
-            foreach ($params['version'] as $spec) {
-                list($product, $version) = split(':', $spec);
-                $or[] = 
-                    "(reports.product = " . $this->db->escape($product) . " AND " .
-                    "reports.version = " . $this->db->escape($version) . ")";
-            }
-            $where[] = '(' . join(' OR ', $or) . ')';
         }
 
         if ($params['platform']) {

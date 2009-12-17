@@ -45,6 +45,18 @@ class Query_Controller extends Controller {
             $reports = $this->common_model->queryTopSignatures($params);
             $signatures = array();
             foreach ($reports as $report) {
+		    if (is_null($report->signature)) {
+			$report->{'display_signature'} = Crash::$null_sig;
+			$report->{'display_null_sig_help'} = TRUE;
+		        $report->{'missing_sig_param'} = Crash::$null_sig_code;
+		    } else if(empty($report->signature)) {
+			$report->{'display_signature'} = Crash::$empty_sig;
+			$report->{'display_null_sig_help'} = TRUE;
+		        $report->{'missing_sig_param'} = Crash::$empty_sig_code;
+		    } else {
+			$report->{'display_signature'} = $report->signature;
+			$report->{'display_null_sig_help'} = FALSE;
+		    }		
 	          array_push($signatures, $report->signature);
 	    }
             $rows = $this->bug_model->bugsForSignatures(array_unique($signatures));

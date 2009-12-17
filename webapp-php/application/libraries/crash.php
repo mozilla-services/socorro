@@ -42,6 +42,42 @@
  */
 class Crash
 {
+
+    /**
+     * Constant used internally to track 
+     * "empty" signatures
+     */
+    public static $empty_sig_code = 'EMPTY_STRING';
+
+    /**
+     * Copy used for empty signatures
+     */
+    public static $empty_sig = '(empty signature)';
+
+    /**
+     * API value the backend web service expects for
+     * "empty" signatures.
+     */
+    public static $empty_sig_api_value = '##empty##';
+
+    /**
+     * Constant used internally to track 
+     * "null" signatures
+     */
+    public static $null_sig_code = 'NULL';
+
+    /**
+     * Copy used for NULL signatures
+     */
+    public static $null_sig = '(null signature)';
+
+    /**
+     * API value the backend web service expects for
+     * "null" signatures.
+     */
+    public static $null_sig_api_value = '##null##';
+
+
   /**
    * Parses a UUID from a string. Doens't check in database for it's existance
    * - about:crashes style id

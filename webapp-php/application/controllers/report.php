@@ -1,8 +1,8 @@
 <?php
 require_once(Kohana::find_file('libraries', 'bugzilla', TRUE, 'php'));
+require_once(Kohana::find_file('libraries', 'crash', TRUE, 'php'));
 require_once(Kohana::find_file('libraries', 'moz_pager', TRUE, 'php'));
 require_once(Kohana::find_file('libraries', 'MY_SearchReportHelper', TRUE, 'php'));
-require_once(Kohana::find_file('libraries', 'crash', TRUE, 'php'));
 
 /**
  * List, search, and show crash reports.
@@ -21,11 +21,15 @@ class Report_Controller extends Controller {
         $branch_data = $this->branch_model->getBranchData();
         $platforms   = $this->platform_model->getAll();
 
-		$d = $helper->defaultParams();
-		$d['signature'] = '';
+	$d = $helper->defaultParams();
+	// params allowed in the query string
+	$d['signature'] = '';
+	$d['missing_sig'] = '';
+
         $params = $this->getRequestParameters($d);
 
         $helper->normalizeParams( $params );
+        $this->_setupDisplaySignature($params);
 
         cachecontrol::set(array(
             'etag'     => $params,
@@ -102,7 +106,27 @@ class Report_Controller extends Controller {
 	    ));
 	}
     }
+    private function _setupDisplaySignature($params)
+    {
+	if (array_key_exists('missing_sig', $params) &&
+	    ! empty($params['missing_sig'])) {
+	    if ($params['missing_sig'] == Crash::$empty_sig_code) {
+		$signature = Crash::$null_sig;		
+	    } else {
+		$signature =  Crash::$empty_sig;		
+	    }
+	} else if (array_key_exists('signature', $params)) {
+	    $signature = $params['signature'];
+	} else if (array_key_exists('query_search', $params) &&
+		   $params['query_search'] == 'signature' &&
+	           array_key_exists('query', $params)) {
+	    $signature = $params['query'];
+	}
+	if (isset($signature)) {
+	    $this->setViewData(array('display_signature' => $signature));
+	}
 
+    }
 
     /**
      * Linking reports with ID validation.

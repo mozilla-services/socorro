@@ -32,7 +32,9 @@
 
 <?php slot::end() ?>
 
-<h1 class="first">Crash Reports in <?php out::H($params['signature']) ?></h1>
+<?php if (isset($display_signature)) { ?>
+    <h1 class="first">Crash Reports for <?php out::H($display_signature) ?></h1>      
+<?php } ?>
 
 <?php 
     View::factory('common/prose_params', array(
