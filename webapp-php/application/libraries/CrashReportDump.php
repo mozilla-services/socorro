@@ -27,7 +27,7 @@ class CrashReportDump {
 	}
 	$this->_parseDump($report); 
 	//Bulletproofing against bad JSON files
-	$basicKeys = array('signature', 'product', 'version', 'uuid', 
+	$basicKeys = array('product', 'version', 'uuid', 
 			   'date_processed', 'uptime', 'build', 'os_name', 
 			   'os_version', 'cpu_name', 'cpu_info', 'reason', 
 			   'address', 'user_comments', 'dump');
