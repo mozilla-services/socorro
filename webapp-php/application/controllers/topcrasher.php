@@ -375,7 +375,7 @@ class Topcrasher_Controller extends Controller {
     {
         $csvData = array(array('Rank', 'Change In Rank', 'Percentage of All Crashes', 
 			       'Previous Percentage', 'Signature', 
-			       'Total', 'Win', 'Linux', 'Mac'));
+			       'Total', 'Win', 'Mac', 'Linux'));
 	$i = 0;
         foreach ($topcrashers as $crash) {
 	    $line = array();
