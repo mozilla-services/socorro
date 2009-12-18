@@ -111,9 +111,9 @@ class Report_Controller extends Controller {
 	if (array_key_exists('missing_sig', $params) &&
 	    ! empty($params['missing_sig'])) {
 	    if ($params['missing_sig'] == Crash::$empty_sig_code) {
-		$signature = Crash::$null_sig;		
-	    } else {
 		$signature =  Crash::$empty_sig;		
+	    } else {
+		$signature = Crash::$null_sig;		
 	    }
 	} else if (array_key_exists('signature', $params)) {
 	    $signature = $params['signature'];
