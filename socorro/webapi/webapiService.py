@@ -36,7 +36,7 @@ class JsonServiceBase (object):
         util.reportExceptionAndContinue(self.context.logger)
       except (AttributeError, KeyError):
         pass
-      return stringLogger.getMessages()
+      raise Exception(stringLogger.getMessages())
 
   #-----------------------------------------------------------------------------------------------------------------
   def get(self, *args):

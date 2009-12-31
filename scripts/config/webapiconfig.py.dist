@@ -13,9 +13,10 @@ wsgiInstallation.default = False
 
 import socorro.services.topCrashBySignatureTrends as tcbst
 import socorro.services.signatureHistory as sighist
+import socorro.services.aduByDay as adubd
 servicesList = cm.Option()
 servicesList.doc = 'a python list of classes to offer as services'
-servicesList.default = [tcbst.TopCrashBySignatureTrends, sighist.SignatureHistory]
+servicesList.default = [tcbst.TopCrashBySignatureTrends, sighist.SignatureHistory, adubd.AduByDay]
 
 logFilePathname = cm.Option()
 logFilePathname.doc = 'full pathname for the log file'

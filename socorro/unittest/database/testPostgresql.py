@@ -101,7 +101,7 @@ class TestPostgresql:
       cursor.execute(dropSql%tn)
     self.connection.commit()
     self.connection.close()
-  
+
   def testTablesMatchingPattern(self):
     cursor = self.connection.cursor()
     createSql = "CREATE TABLE %s (id integer)" # postgresql allows empty tables, but it makes me itch...
@@ -113,43 +113,44 @@ class TestPostgresql:
       expected = testTablePatterns[pat]
       assert set(expected)==set(result), "for %s: expected:%s, result:%s"%(pat,expected,result)
     self.connection.commit()
-    
-  def testTriggersForTable(self):
-    """
-    TestPostgresql:testTriggersForTable(self)
-     - If you have trouble with (only) this test, be sure the db owner has executed CREATE LANGUAGE PLPGSQL; for the test db
-    """
-    global me
-    cursor = self.connection.cursor()
-    setupSql = """
-    DROP TABLE IF EXISTS ttrigs;
-    CREATE TABLE ttrigs (id serial);
-    """
-    makeTriggerSql = """
-    CREATE OR REPLACE FUNCTION check_trigger() returns trigger AS '
-      BEGIN
-        RETURN new;
-      END
-      ' LANGUAGE plpgsql;
-    CREATE TRIGGER check_trigger_t AFTER INSERT ON ttrigs FOR EACH ROW EXECUTE PROCEDURE check_trigger();
-    """
-    try:
-      cursor.execute(setupSql)
-      self.connection.commit()
-      theList = postg.triggersForTable('ttrigs',cursor)
-      assert [] == theList
-      cursor.execute(makeTriggerSql)
-      self.connection.commit()
-      theList = postg.triggersForTable('ttrigs',cursor)
-      assert ['check_trigger_t'] == theList
-      cursor.execute("CREATE TRIGGER check_trigger_2 AFTER UPDATE ON ttrigs FOR EACH ROW EXECUTE PROCEDURE check_trigger();")
-      self.connection.commit()
-      theList = postg.triggersForTable('ttrigs',cursor)
-      assert set(['check_trigger_t', 'check_trigger_2']) == set(theList),'but got %s'%(set(theList),)
-    finally:
-      cursor.execute("DROP TABLE IF EXISTS ttrigs")
-      self.connection.commit()
-    
+
+  #our database is not currently using any triggers
+  #def testTriggersForTable(self):
+    #"""
+    #TestPostgresql:testTriggersForTable(self)
+     #- If you have trouble with (only) this test, be sure the db owner has executed CREATE LANGUAGE PLPGSQL; for the test db
+    #"""
+    #global me
+    #cursor = self.connection.cursor()
+    #setupSql = """
+    #DROP TABLE IF EXISTS ttrigs;
+    #CREATE TABLE ttrigs (id serial);
+    #"""
+    #makeTriggerSql = """
+    #CREATE OR REPLACE FUNCTION check_trigger() returns trigger AS '
+      #BEGIN
+        #RETURN new;
+      #END
+      #' LANGUAGE plpgsql;
+    #CREATE TRIGGER check_trigger_t AFTER INSERT ON ttrigs FOR EACH ROW EXECUTE PROCEDURE check_trigger();
+    #"""
+    #try:
+      #cursor.execute(setupSql)
+      #self.connection.commit()
+      #theList = postg.triggersForTable('ttrigs',cursor)
+      #assert [] == theList
+      #cursor.execute(makeTriggerSql)
+      #self.connection.commit()
+      #theList = postg.triggersForTable('ttrigs',cursor)
+      #assert ['check_trigger_t'] == theList
+      #cursor.execute("CREATE TRIGGER check_trigger_2 AFTER UPDATE ON ttrigs FOR EACH ROW EXECUTE PROCEDURE check_trigger();")
+      #self.connection.commit()
+      #theList = postg.triggersForTable('ttrigs',cursor)
+      #assert set(['check_trigger_t', 'check_trigger_2']) == set(theList),'but got %s'%(set(theList),)
+    #finally:
+      #cursor.execute("DROP TABLE IF EXISTS ttrigs")
+      #self.connection.commit()
+
   def testIndexesForTable(self):
     global me
     cursor = self.connection.cursor()
@@ -177,7 +178,7 @@ class TestPostgresql:
     finally:
       cursor.execute("DROP TABLE IF EXISTS tindex;")
       self.connection.commit()
-  
+
   def testRulesForTable(self):
     global me
     cursor = self.connection.cursor()
@@ -223,7 +224,7 @@ class TestPostgresql:
     finally:
       cursor.execute("DROP TABLE IF EXISTS tcnt, fkcnt CASCADE")
       self.connection.commit()
-    
+
   def testColumnNameTypeDictionaryForTable(self):
     global me
     dropSql = "DROP TABLE IF EXISTS typet;"
@@ -295,19 +296,19 @@ class TestPostgresql:
        """,),
       ("miscellany",
        """CREATE TABLE typet (
-           by bytea,              --bytea  
-           bo boolean,            --bool   
-           c cidr,                --cidr   
-           i inet,                --inet   
+           by bytea,              --bytea
+           bo boolean,            --bool
+           c cidr,                --cidr
+           i inet,                --inet
            m macaddr,             --macaddr
-           b1 bit,                --bit    
-           b2 bit(2),             --bit    
-           bv bit varying,        --varbit 
-           bv3 bit varying(3),    --varbit 
-           at1_ text[],           --_text  
-           ai1_ integer[],        --_int4  
-           at1_2 text[2],         --_text  
-           ai1_3 integer[3],      --_int4  
+           b1 bit,                --bit
+           b2 bit(2),             --bit
+           bv bit varying,        --varbit
+           bv3 bit varying(3),    --varbit
+           at1_ text[],           --_text
+           ai1_ integer[],        --_int4
+           at1_2 text[2],         --_text
+           ai1_3 integer[3],      --_int4
            ac2_  char[][],        --_bpchar
            av2_12 varchar[1][2],  --_varchar
            av1_3 varchar ARRAY[3] --_varchar
@@ -327,7 +328,7 @@ class TestPostgresql:
       finally:
         cursor.execute(dropSql)
         self.connection.commit()
-  
+
   def testChildTablesForTable(self):
     global me
     cursor = self.connection.cursor()
@@ -372,7 +373,7 @@ class TestPostgresql:
     finally:
       cursor.execute("drop table if exists tcon")
       self.connection.commit()
-      
+
   def testGetSequenceNameForColumn(self):
     global me
     t0 = testTableNames[0]
@@ -392,7 +393,7 @@ class TestPostgresql:
     got = postg.getSequenceNameForColumn(t1,'two',cursor)
     self.connection.commit()
     assert "%s_two_seq"%t1 == got, 'Expected "%s_two_seq", got "%s"'%(t1,got)
-    
+
   def testGetCurrentValue(self):
     global me
     t0 = testTableNames[0]
@@ -416,7 +417,7 @@ class TestPostgresql:
       self.connection.commit()
       assert None == gotId,'Expected "None", got "%s"'%(gotId)
       assert i == gotTwo, 'Expected %s, got %s'%(i,gotTwo)
-  
+
 def _extractExpectedFromSql(sql):
   """Expect newline separated columns with trailing '--type' per line, nothing interesting unless there is a '--' comment"""
   ret = {}

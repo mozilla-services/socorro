@@ -39,16 +39,11 @@ def totalNumberOfCrashesForPeriod (aCursor, databaseParameters):
         sum(tcbs.count)
     from
         top_crashes_by_signature tcbs
-            join productdims pd on tcbs.productdims_id = pd.id
-                                   %(productNameJoinPhrase)s
-                                   %(productVersionJoinPhrase)s
-                join osdims os on tcbs.osdims_id = os.id
-                                  %(osNameJoinPhrase)s
-                                  %(osVersionJoinPhrase)s
     where
-        %%(startDate)s < tcbs.window_end
-        and tcbs.window_end <= %%(endDate)s
-    """ % databaseParameters
+        %(startDate)s < tcbs.window_end
+        and tcbs.window_end <= %(endDate)s
+        and tcbs.productdims_id = %(productdims_id)s
+    """
   #logger.debug(aCursor.mogrify(sql, databaseParameters))
   return db.singleValueSql(aCursor, sql, databaseParameters)
 
@@ -61,27 +56,21 @@ def getListOfTopCrashersBySignature(aCursor, databaseParameters, totalNumberOfCr
   select
       tcbs.signature,
       sum(tcbs.count) as count,
-      cast(sum(tcbs.count) as float) / %%(totalNumberOfCrashes)s as percentOfTotal,
-      sum(case when os.os_name LIKE 'Windows%%%%' then tcbs.count else 0 end) as win_count,
+      cast(sum(tcbs.count) as float) / %(totalNumberOfCrashes)s as percentOfTotal,
+      sum(case when os.os_name LIKE 'Windows%%' then tcbs.count else 0 end) as win_count,
       sum(case when os.os_name = 'Mac OS X' then tcbs.count else 0 end) as mac_count,
       sum(case when os.os_name = 'Linux' then tcbs.count else 0 end) as linux_count
   from
       top_crashes_by_signature tcbs
-          join productdims pd on tcbs.productdims_id = pd.id
-                                 and %%(startDate)s < tcbs.window_end
-                                 and tcbs.window_end <= %%(endDate)s
-                                 %(productNameJoinPhrase)s
-                                 %(productVersionJoinPhrase)s
-              join osdims os on tcbs.osdims_id = os.id
-                                %(osNameJoinPhrase)s
-                                %(osVersionJoinPhrase)s
+          join osdims os on tcbs.osdims_id = os.id
+                            and %(startDate)s < tcbs.window_end
+                            and tcbs.window_end <= %(endDate)s
+                            and tcbs.productdims_id = %(productdims_id)s
   group by
-      tcbs.signature,
-      pd.product,
-      pd.version
+      tcbs.signature
   order by
     2 desc
-  limit %%(listSize)s""" % databaseParameters
+  limit %(listSize)s"""
   #logger.debug(aCursor.mogrify(sql, databaseParameters))
   return db.execute(aCursor, sql, databaseParameters)
 
@@ -89,23 +78,10 @@ def getListOfTopCrashersBySignature(aCursor, databaseParameters, totalNumberOfCr
 def rangeOfQueriesGenerator(aCursor, databaseParameters, queryExecutionFunction):
   """  returns a list of the results of multiple queries.
   """
-  baseParameters = {'productNameJoinPhrase':'',
-                    'productVersionJoinPhrase':'',
-                    'osNameJoinPhrase':'',
-                    'osVersionJoinPhrase':''}
-  #print databaseParameters
-  if databaseParameters.product:
-    baseParameters['productNameJoinPhrase'] = 'and pd.product = %(product)s'
-  if databaseParameters.version:
-    baseParameters['productVersionJoinPhrase'] = 'and pd.version = %(version)s'
-  if databaseParameters.os_name:
-    baseParameters['osNameJoinPhrase'] = 'and os.os_name = %(os_name)s'
-  if databaseParameters.os_version:
-    baseParameters['osVersionJoinPhrase'] = 'and os.os_version = %(os_version)s'
   i = databaseParameters.startDate
   endDate = databaseParameters.endDate
   while i < endDate:
-    parameters = baseParameters.copy()
+    parameters = {}
     parameters.update(databaseParameters)
     parameters["startDate"] = i
     parameters["endDate"] = i + databaseParameters.duration
@@ -114,19 +90,21 @@ def rangeOfQueriesGenerator(aCursor, databaseParameters, queryExecutionFunction)
     i += databaseParameters.duration
 
 #-----------------------------------------------------------------------------------------------------------------
-class NotFound(Exception):
-  pass
+class DictList(object):
+  def __init__(self, sourceIterable):
+    super(DictList, self).__init__()
+    self.rowsBySignature = {}
+    self.indexes = {}
+    self.rows = list(sourceIterable)
+    for i, x in enumerate(self.rows):
+      self.rowsBySignature[x['signature']] = x
+      self.indexes[x['signature']] = i
 
-#-----------------------------------------------------------------------------------------------------------------
-def find (iterable, targetToSearchFor, equalityFunction=lambda x, y: x == y, transformFunction=lambda x, i, y: i):
-  """ linear search through an iterable for some target.  Equality is determined by the equalityFunction.
-      the returned result is a transformation of the targetToSearchFor, the index at which the match was found,
-      and the matchng item in the iteratble.
-  """
-  for i, y in enumerate(iterable):
-    if equalityFunction(targetToSearchFor, y):
-      return transformFunction(targetToSearchFor, i, y)
-  raise NotFound
+  def find (self, aSignature):
+    return self.indexes[aSignature], self.rowsBySignature[aSignature]['percentOfTotal']
+
+  def __iter__(self):
+    return iter(self.rows)
 
 #-----------------------------------------------------------------------------------------------------------------
 def listOfListsWithChangeInRank (listOfQueryResultsIterable):
@@ -136,41 +114,37 @@ def listOfListsWithChangeInRank (listOfQueryResultsIterable):
   listOfTopCrasherLists = []
   for i, aListOfTopCrashers in enumerate(listOfQueryResultsIterable):
     try:
-      previousList = listOfTopCrasherLists[-1]
+      previousList = DictList(listOfTopCrasherLists[-1])
     except IndexError:
-      previousList = [] # this was the 1st processed - it has no previous history
+      previousList = DictList([]) # this was the 1st processed - it has no previous history
     currentListOfTopCrashers = []
     for rank, aRow in enumerate(aListOfTopCrashers):
-      #logger.debug('YYYY %s %s', rank, str(aRow))
       aRowAsDict = dict(zip(['signature', 'count', 'percentOfTotal', 'win_count', 'mac_count', 'linux_count'], aRow))
       aRowAsDict['currentRank'] = rank
       try:
-        aRowAsDict['previousRank'], aRowAsDict['previousPercentOfTotal'] = find(previousList, aRowAsDict, lambda x, y: x['signature'] == y['signature'], lambda x, i, y: (i, y['percentOfTotal']))
+        aRowAsDict['previousRank'], aRowAsDict['previousPercentOfTotal'] = previousList.find(aRowAsDict['signature'])
         aRowAsDict['changeInRank'] = aRowAsDict['previousRank'] - rank  #reversed sign as requested
         aRowAsDict['changeInPercentOfTotal'] = aRowAsDict['percentOfTotal'] - aRowAsDict['previousPercentOfTotal']
-      except NotFound:
+      except KeyError:
         aRowAsDict['previousRank'] = aRowAsDict['previousPercentOfTotal'] = "null"
         aRowAsDict['changeInRank'] = aRowAsDict['changeInPercentOfTotal'] = "new"
       currentListOfTopCrashers.append(aRowAsDict)
-    #logger.debug('xXXX %s', str(currentListOfTopCrashers))
     listOfTopCrasherLists.append(currentListOfTopCrashers)
   return listOfTopCrasherLists[1:]
 
 #-----------------------------------------------------------------------------------------------------------------
-def latestEntryBeforeOrEqualTo(aCursor, aDate, product, version):
+def latestEntryBeforeOrEqualTo(aCursor, aDate, productdims_id):
   sql = """
     select
         max(window_end)
     from
         top_crashes_by_signature tcbs
-          join productdims pd on tcbs.productdims_id = pd.id
-                                 and pd.product = %s
-                                 and pd.version = %s
     where
         tcbs.window_end <= %s
+        and tcbs.productdims_id = %s
     """
   try:
-    result = db.singleValueSql(aCursor, sql, (product, version, aDate))
+    result = db.singleValueSql(aCursor, sql, (aDate, productdims_id))
     if result: return result
     return aDate
   except:
@@ -187,14 +161,12 @@ def twoPeriodTopCrasherComparison (databaseCursor, context, closestEntryFunction
   assert "duration" in context, "duration is missing from the configuration"
   assert "product" in context, "product is missing from the configuration"
   assert "version" in context, "version is missing from the configuration"
-  assert "os_name" in context, "os_name is missing from the configuration"
-  assert "os_version" in context, "os_version is missing from the configuration"
   assert "listSize" in context, "listSize is missing from the configuration"
   context['numberOfComparisonPoints'] = 2
   if not context['listSize']:
     context['listSize'] = 100
   #context['logger'].debug('about to latestEntryBeforeOrEqualTo')
-  context['endDate'] = closestEntryFunction(databaseCursor, context['endDate'], context['product'], context['version'])
+  context['endDate'] = closestEntryFunction(databaseCursor, context['endDate'], context['productdims_id'])
   context['logger'].debug('endDate %s' % context['endDate'])
   context['startDate'] = context.endDate - context.duration * context.numberOfComparisonPoints
   #context['logger'].debug('after %s' % context)
@@ -226,8 +198,7 @@ class TopCrashBySignatureTrends(webapi.JsonServiceBase):
     logger.debug('TopCrashBySignatureTrends get')
     convertedArgs = webapi.typeConversion([str, str, dtutil.datetimeFromISOdateString, dtutil.strHoursToTimeDelta, int], args)
     parameters = util.DotDict(zip(['product','version', 'endDate','duration', 'listSize'], convertedArgs))
-    parameters.os_name = ''
-    parameters.os_version = ''
+    parameters.productdims_id = self.context['productVersionCache'].getId(parameters.product, parameters.version)
     logger.debug("TopCrashBySignatureTrends get %s", parameters)
     parameters.logger = logger
     connection = self.database.connection()

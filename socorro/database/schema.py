@@ -1127,6 +1127,7 @@ class TopCrashesBySignatureTable(Table):
                                              CREATE INDEX top_crashes_by_signature_osdims_key ON top_crashes_by_signature (osdims_id);
                                              CREATE INDEX top_crashes_by_signature_signature_key ON top_crashes_by_signature (signature);
                                              CREATE INDEX top_crashes_by_signature_window_end_idx on top_crashes_by_signature (window_end desc);
+                                             CREATE INDEX top_crashes_by_signature_window_end_productdims_id_idx on top_crashes_by_signature (window_end desc, productdims_id);
                                             """
                                             )
 databaseDependenciesForSetup[TopCrashesBySignatureTable] = [OsDimsTable,ProductDimsTable]

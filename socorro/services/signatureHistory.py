@@ -20,6 +20,7 @@ class SignatureHistory(webapi.JsonServiceBase):
   def get(self, *args):
     convertedArgs = webapi.typeConversion([str, str, u2.unquote, dtutil.datetimeFromISOdateString, dtutil.strHoursToTimeDelta, int], args)
     parameters = util.DotDict(zip(['product','version', 'signature', 'endDate','duration', 'steps'], convertedArgs))
+    parameters.productdims_id = self.context['productVersionCache'].getId(parameters.product, parameters.version)
     logger.debug("SignatureHistory get %s", parameters)
     self.connection = self.database.connection()
     #logger.debug('connection: %s', self.connection)
@@ -39,6 +40,7 @@ class SignatureHistory(webapi.JsonServiceBase):
       where
           %(startDate)s < window_end
           and window_end <= %(endDate)s
+          and productdims_id = %(productdims_id)s
       group by
           bucket_number
       order by
@@ -62,6 +64,7 @@ class SignatureHistory(webapi.JsonServiceBase):
       where
           %%(startDate)s < window_end
           and window_end <= %%(endDate)s
+          and productdims_id = %%(productdims_id)s
           %s
       group by
           bucket_number

@@ -7,6 +7,7 @@ import config.webapiconfig as config
 
 import socorro.lib.ConfigurationManager as configurationManager
 import socorro.lib.datetimeutil as dtutil
+import socorro.lib.productVersionCache as pvc
 import socorro.webapi.webapiService as webapi
 #import socorro.webapi.hello as hello
 
@@ -28,6 +29,7 @@ if not logger.handlers: #we're in a multithreaded environment and logger is a gl
 logger.info("current configuration\n%s", str(configContext))
 
 configContext['logger'] = logger
+configContext['productVersionCache'] = pvc.ProductVersionCache(configContext)
 
 #=================================================================================================================
 def proxyClassWithContext (aClass):
