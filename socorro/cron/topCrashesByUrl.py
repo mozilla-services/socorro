@@ -81,13 +81,14 @@ class TopCrashesByUrl(object):
     self.connection = psycopg2.connect(self.dsn)
 
     # handle defaults
-    configContext.setdefault('reportsTable',kwargs.get('reportsTable',reportsTable))
-    configContext.setdefault('resultTable',kwargs.get('resultTable',resultTable))
-    configContext.setdefault('resultSignatureTable',kwargs.get('resultsSignatureTable',resultSignatureTable))
-    configContext.setdefault('resultReportsTable',kwargs.get('resultReportsTable',resultReportsTable))
-    configContext.setdefault('minimumHitsPerUrl',kwargs.get('minimumHitsPerUrl',defaultMinimumHitsPerUrl))
-    configContext.setdefault('maximumUrls',kwargs.get('maximumUrls',defaultMaximumUrls))
-    # There's an issue with diff between raw and cooked urls (cooked: drop from '?' to end)
+    configContext.setdefault('reportsTable',reportsTable)
+    configContext.setdefault('resultTable',resultTable)
+    configContext.setdefault('resultSignatureTable',resultSignatureTable)
+    configContext.setdefault('resultReportsTable',resultReportsTable)
+    configContext.setdefault('minimumHitsPerUrl',defaultMinimumHitsPerUrl)
+    configContext.setdefault('maximumUrls',defaultMaximumUrls)
+    configContext.setdefault('truncateUrlLength',None)
+    # There's an issue with diff between raw and cooked urls (cooked: drop from '[?&=;]' to end, possibly truncate)
     # Based on exhastive analysis of three data points, want 15% more to cover. Pad to 20%
     # *** THIS IS A HACK ***:
     configContext.setdefault('fatMaximumUrls',configContext.maximumUrls + configContext.maximumUrls/5)
@@ -150,7 +151,7 @@ class TopCrashesByUrl(object):
     if not self.idCache:
       cursor = self.connection.cursor()
       # if you want to truncate the length of stored url, pass it as truncateUrlLength=length in ctor below
-      self.idCache = socorro_cia.IdCache(cursor,logger=logger)
+      self.idCache = socorro_cia.IdCache(cursor,logger=logger, truncateUrlLength=self.configContext.truncateUrlLength)
     return self.idCache.getUrlId(url)[0]
 
   def saveData(self, windowStart, countUrlData):

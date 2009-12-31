@@ -58,30 +58,39 @@ def testCreateTestSet():
       pass
 
   expected = {
-    '%s/20071025/date/05'%testDir:(['04'], []),
-    '%s/20071025/date'%testDir:(['05'], []),
-    '%s/20071025/name/0b/ba/61/c5'%testDir:(['0bba61c5-dfc3-43e7-effe-8afd20071025'], ['0bba61c5-dfc3-43e7-effe-8afd20071025.dump', '0bba61c5-dfc3-43e7-effe-8afd20071025.json']),
-    '%s/20071025/name/0b'%testDir:(['ba'], []),
-    '%s/20071025/date/05/04'%testDir:(['webhead02_0'], []),
-    '%s/20071025/name/0b/ba/61'%testDir:(['c5'], []),
-    '%s/20071025'%testDir:(['date', 'name'], []),
-    '%s/20071025/date/05/04/webhead02_0'%testDir:(['0bba61c5-dfc3-43e7-effe-8afd20071025'], []),
-    '%s/20071025/name'%testDir:(['0b'], []),
-    '%s'%testDir:(['20071025'], []),
-    '%s/20071025/name/0b/ba'%testDir:(['61'], []),
+    '%s/20071025/date/05'%testDir:(set(['04']), set([])),
+    '%s/20071025/date'%testDir:(set(['05']), set([])),
+    '%s/20071025/name/0b/ba/61/c5'%testDir:(set(['0bba61c5-dfc3-43e7-effe-8afd20071025']), set(['0bba61c5-dfc3-43e7-effe-8afd20071025.dump', '0bba61c5-dfc3-43e7-effe-8afd20071025.json'])),
+    '%s/20071025/name/0b'%testDir:(set(['ba']), set([])),
+    '%s/20071025/date/05/04'%testDir:(set(['webhead02_0']), set([])),
+    '%s/20071025/name/0b/ba/61'%testDir:(set(['c5']), set([])),
+    '%s/20071025'%testDir:(set(['date', 'name']), set([])),
+    '%s/20071025/date/05/04/webhead02_0'%testDir:(set(['0bba61c5-dfc3-43e7-effe-8afd20071025']), set([])),
+    '%s/20071025/name'%testDir:(set(['0b']), set([])),
+    '%s'%testDir:(set(['20071025']), set([])),
+    '%s/20071025/name/0b/ba'%testDir:(set(['61']), set([])),
     }
   minSet = {'0bba61c5-dfc3-43e7-effe-8afd20071025': ('2007-10-25-05-04','webhead02','0b/ba/61/c5','2007/10/25/05/00/webhead02_0')}
   try:
     createJDS.createTestSet(minSet,{},testDir)
     got = {}
     for dirpath, files, dirs in os.walk(testDir):
-      got[dirpath] = (files,dirs)
+      got[dirpath] = (set(files),set(dirs))
     if expected != got:
+      print
       for k, v in expected.items():
-        print 'X',k,v
+        print '   X %s: %s'%(k,v)
+        if k in got:
+          if got[k] == expected[k]:
+            print '   G %s: %s'%(k,got[k])
+          else:
+            print 'xx G %s: %s'%(k,got[k])
+        else:
+          print 'xx G %s: (IS MISSING)'%(k)
       for k,v in got.items():
-        print 'G',k,v
-    assert expected == got, 'Expected "%s" but got "%s"'%(expected,got)
+        if not k in expected:
+          print '++ G %s: %s'%(k,v)
+    assert expected == got
     f = open(os.path.join(testDir,'20071025/name/0b/ba/61/c5/0bba61c5-dfc3-43e7-effe-8afd20071025.dump'))
     data = f.readlines()
     assert 1 == len(data)

@@ -56,7 +56,7 @@ def setup_module():
   me.dsn = "host=%s dbname=%s user=%s password=%s" % (me.config.databaseHost,me.config.databaseName,
                                                       me.config.databaseUserName,me.config.databasePassword)
 
-class TestTopCrashByUrl:
+class TestTopCrashesByUrl:
   def setUp(self):
     global me
     self.logger = me.logger
@@ -70,7 +70,7 @@ class TestTopCrashByUrl:
     socorro_cia.clearCache()
 
   def testConstructor(self):
-    """TestTopCrashByUrl.testConstructor(self)"""
+    """testTopCrashesByUrl:TestTopCrashesByUrl.testConstructor(self)"""
     global me
     config = copy.copy(me.config)
     t = tcbu.TopCrashesByUrl(config)
@@ -95,7 +95,7 @@ class TestTopCrashByUrl:
     assert halfDay == t.configContext.get('deltaWindow')
 
   def testCountCrashesByUrlInWindow(self):
-    """TestTopCrashByUrl.testCountCrashesByUrlInWindow(self):"""
+    """testTopCrashesByUrl:TestTopCrashesByUrl.testCountCrashesByUrlInWindow(self):"""
     global me
     cursor = self.connection.cursor()
     dbtutil.fillReportsTable(cursor,createUrls=True,multiplier=2,signatureCount=83) # just some data...
@@ -148,7 +148,7 @@ class TestTopCrashByUrl:
 
   def testSaveData(self):
     """
-    testTopCrashByUrl:TestTopCrashByUrl.testSaveData(slow=2)
+    testTopCrashesByUrl:TestTopCrashesByUrl.testSaveData(slow=2)
     This is a reasonably realistic amount of time (about 1.5 seconds) to handle about 150 reports
     """
     global me
@@ -246,9 +246,109 @@ class TestTopCrashByUrl:
     data = cursor.fetchall()
     assert [(2L,), (2L,), (2L,), (1L,), (1L,), (1L,), (1L,)] == data, 'This is (just) a regression test. Did you change the data somehow? (%s)'%(str(data))
 
+  def testSaveTruncatedData(self):
+    """
+    testTopCrashesByUrl:TestTopCrashesByUrl.testSaveData(slow=2)
+    This is a reasonably realistic amount of time (about 1.5 seconds) to handle about 150 reports
+    """
+    global me
+    cursor = self.connection.cursor()
+
+    ## Set up 
+    dbtutil.fillReportsTable(cursor,createUrls=True,multiplier=2,signatureCount=83) # just some data...
+    self.connection.commit()
+    # ... now assure some duplicates
+    sqls = "SELECT uuid, client_crash_date, install_age, last_crash, uptime, date_processed, success, signature, url, product, version, os_name, os_version from reports where date_processed >= '2008-01-01' and date_processed < '2008-01-02' LIMIT 4"
+    cursor.execute(sqls)
+    self.connection.rollback() # db not altered
+    rows3 = cursor.fetchall()
+    add11 = datetime.timedelta(seconds=1,microseconds=1000)
+    addData = []
+    for i in range(3):
+      r = list(rows3[i])
+      r[0] = r[0].replace('-dead-','-f00f-')
+      r[1] += add11
+      r[2] += 1
+      r[3] += 1
+      r[7] = rows3[i+1][7]
+      addData.append(r)
+      r[0] = r[0].replace('-f00f-','-fead-')
+      r[1] += add11
+      r[2] += 1
+      r[3] += 1
+      r[7] = 'js_blatherskytes'
+      addData.append(r)
+    sqli = """INSERT INTO reports
+                (uuid, client_crash_date, install_age, last_crash, uptime, date_processed, success, signature, url, product, version, os_name, os_version)
+          VALUES(%s,   %s,                %s,          %s,         %s,     %s,             %s,      %s,        %s,  %s,      %s,      %s,      %s)"""
+    addData.extend([
+      ['b965de73-ae90-b936-deaf-03ae20081225','2007-12-31 23:59:50',9000,110,222,'2008-01-01 11:12:13',True,'UserCallWinProcCheckWow','http://www.mozilla.org/projects/minefield/a','Firefox','3.0.9','Windows NT','5.1.2600 Service Pack 2'],
+      ['b965de73-ae90-b935-deaf-03ae20081225','2007-12-31 23:59:40',9009,220,333,'2008-01-01 11:12:14',True,'UserCallWinProcCheckWow','http://yachats/uncwiki/LarsLocalPortal/b',   'Firefox','3.0.9','Windows NT','5.1.2600 Service Pack 2'],
+      ])
+    cursor.executemany(sqli,addData)
+    self.connection.commit()
+    config = copy.copy(me.config)
+    startWindow = datetime.datetime(2008,1,1)
+    deltaWindow = datetime.timedelta(days=1)
+
+    ## On your mark...
+    t = tcbu.TopCrashesByUrl(config,truncateUrlLength=25)
+    data = t.countCrashesByUrlInWindow(startWindow = startWindow, deltaWindow = deltaWindow)
+
+    ## assure we have an empty playing field
+    cursor.execute("SELECT COUNT(*) from top_crashes_by_url")
+    self.connection.rollback()
+    assert 0 == cursor.fetchone()[0]
+
+    ## Call the method
+    t.saveData(startWindow,data)
+
+    # expect 99 rows
+    cursor.execute("SELECT COUNT(id) from top_crashes_by_url")
+    self.connection.rollback()
+    count = cursor.fetchone()[0]
+    assert 30 == count, 'This is (just) a regression test. Did you change the data somehow? (%s)'%(count)
+    # expect 80 distinct urls
+    cursor.execute("SELECT COUNT(distinct urldims_id) from top_crashes_by_url")
+    self.connection.rollback()
+    count = cursor.fetchone()[0]
+    assert 17 == count, 'This is (just) a regression test. Did you change the data somehow? (%s)'%(count)
+
+    cursor.execute("SELECT count from top_crashes_by_url where count > 1 order by count")
+    self.connection.rollback()
+    data = cursor.fetchall()
+    assert [(2,), (2,), (2,), (2,), (2,), (4,)] == data, 'This is (just) a regression test. Did you change the data somehow? (%s)'%(str(data))
+
+    cursor.execute("SELECT COUNT(top_crashes_by_url_id) from top_crashes_by_url_signature")
+    self.connection.rollback()
+    count = cursor.fetchone()[0]
+    assert 38 == count, 'This is (just) a regression test. Did you change the data somehow? (%s)'%(count)
+
+    cursor.execute("SELECT COUNT(distinct top_crashes_by_url_id) from top_crashes_by_url_signature")
+    self.connection.rollback()
+    count = cursor.fetchone()[0]
+    assert 30 == count, 'This is (just) a regression test. Did you change the data somehow? (%s)'%(count)
+
+    # Expect 3 rows with sums of 2 and three rows with counts of 2, none with both
+    cursor.execute("SELECT count, COUNT(top_crashes_by_url_id) AS sum FROM top_crashes_by_url_signature GROUP BY top_crashes_by_url_id, count ORDER BY sum DESC, count DESC LIMIT 6")
+    self.connection.rollback()
+    data = cursor.fetchall()
+    assert 6 == len(data)
+    assert [(1, 4L), (1, 2L), (1, 2L), (1, 2L), (1, 2L), (1, 2L)] == data, 'This is (just) a regression test. Did you change the data somehow? (%s)'%(str(data))
+
+    cursor.execute("SELECT count(*) from topcrashurlfactsreports")
+    self.connection.rollback()
+    count = cursor.fetchone()[0]
+    assert 38 == count, 'This is (just) a regression test. Did you change the data somehow? (%s)'%(count)
+    
+    cursor.execute("SELECT COUNT(topcrashurlfacts_id) AS sum FROM topcrashurlfactsreports GROUP BY topcrashurlfacts_id ORDER BY sum DESC LIMIT 7")
+    self.connection.rollback()
+    data = cursor.fetchall()
+    assert [(4L,), (2L,), (2L,), (2L,), (2L,), (2L,), (1L,)] == data, 'This is (just) a regression test. Did you change the data somehow? (%s)'%(str(data))
+
   def testProcessDateInterval(self):
     """
-    testTopCrashByUrl:TestTopCrashByUrl.testProcessDateInterval(slow=7)
+    testTopCrashesByUrl:TestTopCrashesByUrl.testProcessDateInterval(slow=7)
     Takes a long time, first to set up the data (about 1.5 seconds), then to process it several times
     """
     global me

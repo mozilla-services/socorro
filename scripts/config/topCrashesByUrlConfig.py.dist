@@ -18,6 +18,10 @@ from config.commonconfig import deltaDate
 from config.commonconfig import initialDeltaDate
 initialDeltaDate.default = '96:00:00'
 
+truncateUrlLength = cm.Option()
+truncateUrlLength.doc = 'The maximum stored length of a URL (leave None for no truncation)'
+truncateUrlLength.default = None
+
 product = cm.Option()
 product.doc = 'the name of the product to restrict to (leave blank for all)'
 product.default = 'Firefox'

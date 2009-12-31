@@ -47,6 +47,8 @@ red() {
   tail -F $logf
 }
 
+alias taillog=red
+
 noseErrors_help() {
   cat <<EOF
 Usage: noseErrors outputFile
@@ -55,6 +57,7 @@ EOF
 }
 
 noseErrors() {
+  verbose = ''
   logfile=''
   if [ $# -lt 1 ]  ; then
     echo "Must supply name of outputfile"
@@ -66,6 +69,9 @@ noseErrors() {
   -h|--h*)
     noseErrors_help
     return ;;
+  -v|--v*)
+    verbose='t'
+    shift ;;
   -*) 
     echo "Don't understand flag $1. Quitting"
     noseErrors_help
@@ -83,7 +89,11 @@ noseErrors() {
     for i in $logfile ; do
       echo "$i"
       echo "$i" | sed 's/./=/g'
-      cat $i | egrep -v '^====|^$|ok$'
+      if [ "$verbose" ] ; then
+        cat $i | egrep -v 'ok$'
+      else
+        cat $i | egrep -v '^====|^$|ok$'
+      fi
       echo " ======== ======== ======== ======== ======== ========"
     done
   fi

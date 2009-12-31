@@ -98,6 +98,8 @@ class IdCache:
     if kwargs.get('logger'):
       logger = kwargs.get('logger')
     self.truncateUrlLength = kwargs.get('truncateUrlLength',0)
+    if self.truncateUrlLength:
+      self.truncateUrlLength = int(self.truncateUrlLength)
     self.cursor = databaseCursor
     self.initializeCache()
     
