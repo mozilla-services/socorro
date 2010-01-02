@@ -99,8 +99,8 @@ class AduByDay(webapi.JsonServiceBase):
 
   #-----------------------------------------------------------------------------------------------------------------
   def combineAduCrashHistory (self, aduHistory, crashHistory):
-    print "adu ->", aduHistory
-    print "crash ->", crashHistory
+    #print "adu ->", aduHistory
+    #print "crash ->", crashHistory
     result = []
     for aKey in sorted(crashHistory.keys()):
       row = util.DotDict()
