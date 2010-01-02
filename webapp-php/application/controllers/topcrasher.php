@@ -171,7 +171,7 @@ class Topcrasher_Controller extends Controller {
 	$host = Kohana::config('webserviceclient.socorro_hostname');
 
 	$cache_in_minutes = Kohana::config('webserviceclient.topcrash_vers_rank_cache_minutes', 60);
-	$end_date = urlencode(date('o-m-d\TH:i:s\T+0000', TimeUtil::roundOffByMinutes($cache_in_minutes)));
+	$end_date = urlencode(date('Y-m-d\TH:i:s\T+0000', TimeUtil::roundOffByMinutes($cache_in_minutes)));
 	// $dur is number of hours 
 	$dur = $duration * 24;
 	$limit = Kohana::config('topcrashbysig.byversion_limit', 300);
