@@ -4,7 +4,12 @@ import os
 import copy
 import cStringIO
 import datetime
-import socorro.lib.ConfigurationManager as CM
+
+### DynamicConfig and its module should be a drop-in replacement for Config and its module
+### The line below works, but it seemed overkill to duplicate the whole test so
+### Just left this here as a reminder to play with it from time to time.
+#import socorro.lib.ConfigurationManager as CM
+import socorro.lib.dynamicConfigurationManager as CM
 
 import socorro.unittest.testlib.util as tutil
 
@@ -42,7 +47,7 @@ class TestConfigurationManager(unittest.TestCase):
     # all our tests depend on setting their own sys.argv AFTER the test has begun to run
     # In order to avoid trouble, blow away all the params that nosetests should 'use up'
     if 'nosetests' in sys.argv[0]:
-      sys.argv = sys.argv[:1] 
+      sys.argv = sys.argv[:1] # yes: Throw away all the params but the executable name
     
   def tearDown(self):
     sys.argv = copy.copy(self.keepargv)
@@ -59,24 +64,24 @@ class TestConfigurationManager(unittest.TestCase):
 
     # Test for empty
     conf = CM.newConfiguration(**args)
-    assert(not conf.allowableOptionDictionary)
+    assert(not conf.internal.allowableOptionDictionary)
 
     # Test for autoHelp
     args['automaticHelp'] = True
     conf = CM.newConfiguration(**args)
-    assert(2 == len(conf.allowableOptionDictionary))
+    assert(2 == len(conf.internal.allowableOptionDictionary))
 
     # Test for another legal option
     opts.append(('c','chickensoup',False,False,'Help for the ailing'))
     args['automaticHelp'] = True
     args['configurationOptionsList'] = opts
     conf = CM.newConfiguration(**args)
-    assert(4 == len(conf.allowableOptionDictionary))
+    assert(4 == len(conf.internal.allowableOptionDictionary))
 
     # Test a config module
     conf = CM.newConfiguration(automaticHelp=False,configurationModule=optionfile)
-    cd = conf.allowableOptionDictionary
-    assert(5 == len(cd))
+    cd = conf.internal.allowableOptionDictionary
+    assert(5 == len(cd)),'but cd is %s'%cd
     assert ['T', 'testSingleCharacter', True, None] == cd.get('T')[:-1],'but got %s' % (str(cd.get('T')[:-1]))
     assert 'testSingleCharacter imported from' in cd.get('T')[-1],'but got %s' % (str(cd.get('T')[-1]))
     assert 'optionfile' in cd.get('T')[-1],'but got %s' % (str(cd.get('T')[-1]))
@@ -179,7 +184,8 @@ class TestConfigurationManager(unittest.TestCase):
     assert(3 == len(conf.keys())) # None of the comment or blank lines got eaten
 
   def testAcceptTypePriority(self):
-    '''Assure that commandline beats config file beats environment beats defaults'''
+    '''testConfigurationManager:TestConfigurationManager.testAcceptTypePriority
+    Assure that commandline beats config file beats environment beats defaults'''
     copt = [('c',  'config', True, self.configTstPath, "the test config file"),('r','rabbit', True, 'bambi', 'rabbits are bunnies')]
     copt.append(('b','badger',True,'gentle','some badgers are gentle'))
     copt.append(('z','zeta', True, 'zebra', 'zebras ooze'))

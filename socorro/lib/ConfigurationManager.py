@@ -55,27 +55,42 @@ class CannotConvert (ValueError):
 class Option(object):
   pass
 
+class Internal(object):
+  pass
+
+def getDefaultedConfigOptions():
+  """
+  Used in Config subclass so as to pass only appropriate args to its super()
+  Is a function as a way to decouple the empty configurationOptionsList from prior invocations
+  """
+  return {
+    'configurationOptionsList':[],
+    'optionNameForConfigFile':'config',
+    'configurationFileRequired':False,
+    'configurationModule':None,
+    'automaticHelp':True,
+    'applicationName':'',
+    'helpHandler':None,
+    }
+
+namedConfigOptions = [
+  'configurationOptionsList',
+  'optionNameForConfigFile',
+  'ConfigurationFileRequired',
+  'configurationModule',
+  'automaticHelp',
+  'applicationName',
+  'helpHandler',
+  ]
+
 #------------------------------------------------------------------------------------------
 def newConfiguration(**kwargs):
   """ This used as an alternate constructor for class Config so that applications can
       be lax in defining all the required paramters in the right order.
   """
-  if "configurationOptionsList" not in kwargs:
-    kwargs["configurationOptionsList"] = []
-  if "optionNameForConfigFile" not in kwargs:
-    kwargs["optionNameForConfigFile"] = "config"
-  if "configurationFileRequired" not in kwargs:
-    kwargs["configurationFileRequired"] = False
-  if "configurationModule" not in kwargs:
-    kwargs["configurationModule"] = None
-  if "automaticHelp" not in kwargs:
-    kwargs["automaticHelp"] = True
-  if "applicationName" not in kwargs:
-    kwargs["applicationName"] = ''
-  if "helpHandler" not in kwargs:
-    kwargs["helpHandler"] = None
-
-  return Config(kwargs["configurationOptionsList"], kwargs["optionNameForConfigFile"], kwargs["configurationFileRequired"], kwargs["configurationModule"], kwargs["automaticHelp"], kwargs["applicationName"], kwargs["helpHandler"])
+  kw = getDefaultedConfigOptions()
+  kw.update(kwargs)
+  return Config(**kw)
 
  #============================================================================================
 class Config (dict):
@@ -97,29 +112,30 @@ class Config (dict):
         is no configuration file and one will not be tried
       configurationFileRequired: if True, the lack of a configuration file is considered a fatal error
     """
-    self.originalConfigurationOptionsList = configurationOptionsList
-    self.applicationName = applicationName
+    self.internal = Internal()
+    self.internal.originalConfigurationOptionsList = configurationOptionsList
+    self.internal.applicationName = applicationName
     # incorporate config options from configuration module
     try:
       for key, value in configurationModule.__dict__.items():
         if type(value) == Option:
           optionDefinition = []
           try:
-            optionDefinition.append(value.singleCharacter)
+            optionDefinition.append(value.singleCharacter) #0
           except AttributeError:
             optionDefinition.append(None)
-          optionDefinition.append(key)
-          optionDefinition.append(True)
+          optionDefinition.append(key) #1
+          optionDefinition.append(True) #2
           try:
-            optionDefinition.append(value.default)
+            optionDefinition.append(value.default) #3
           except AttributeError:
             optionDefinition.append(None)
           try:
-            optionDefinition.append(value.doc)
+            optionDefinition.append(value.doc) #4
           except AttributeError:
             optionDefinition.append("%s imported from %s" % (key, configurationModule.__name__))
           try:
-            optionDefinition.append(value.fromStringConverter)
+            optionDefinition.append(value.fromStringConverter) #5
           except AttributeError:
             pass
           configurationOptionsList.append(optionDefinition)
@@ -129,31 +145,31 @@ class Config (dict):
     except AttributeError:
       pass #we're apparently not using an initialization module
 
-    self.singleLetterCommandLineOptionsForGetopt = ""
-    self.expandedCommandLineOptionsForGetopt = []
+    self.internal.singleLetterCommandLineOptionsForGetopt = ""
+    self.internal.expandedCommandLineOptionsForGetopt = []
 
-    self.allowableOptionDictionary = {}
-    self.allowableLongFormOptionDictionary = {}
+    self.internal.allowableOptionDictionary = {}
+    self.internal.allowableLongFormOptionDictionary = {}
     for x in configurationOptionsList:
       if x[0]:
-        self.allowableOptionDictionary[x[0]] = x
-      self.allowableOptionDictionary[x[1]] = self.allowableLongFormOptionDictionary[x[1]] = x
+        self.internal.allowableOptionDictionary[x[0]] = x
+      self.internal.allowableOptionDictionary[x[1]] = self.internal.allowableLongFormOptionDictionary[x[1]] = x
       self.__addOptionsForGetopt(x)
 
     # add autohelp if needed
-    if automaticHelp and ("help" not in self.allowableLongFormOptionDictionary):
+    if automaticHelp and ("help" not in self.internal.allowableLongFormOptionDictionary):
       helpOptionTuple = ('?', 'help', False, None, 'print this list')
       configurationOptionsList.append(helpOptionTuple)
-      self.allowableOptionDictionary[helpOptionTuple[0]] = helpOptionTuple
-      self.allowableOptionDictionary[helpOptionTuple[1]] = self.allowableLongFormOptionDictionary[helpOptionTuple[1]] = helpOptionTuple
+      self.internal.allowableOptionDictionary[helpOptionTuple[0]] = helpOptionTuple
+      self.internal.allowableOptionDictionary[helpOptionTuple[1]] = self.internal.allowableLongFormOptionDictionary[helpOptionTuple[1]] = helpOptionTuple
       self.__addOptionsForGetopt(helpOptionTuple)
 
     # handle help requests appropriately
-    self.helpHandler = self.__nothingHelpHandler # default is no autohelp
+    self.internal.helpHandler = self.__nothingHelpHandler # default is no autohelp
     if helpHandler:                              # if user handed us one, use it
-      self.helpHandler = helpHandler
-    elif "help" in self.allowableLongFormOptionDictionary: # if needed, use default
-      self.helpHandler = self.__defaultHelpHandler
+      self.internal.helpHandler = helpHandler
+    elif "help" in self.internal.allowableLongFormOptionDictionary: # if needed, use default
+      self.internal.helpHandler = self.__defaultHelpHandler
 
     # setup all defaults for options:
     for x in configurationOptionsList:
@@ -163,27 +179,27 @@ class Config (dict):
 
     # get options from the environment - these override defaults
     for x in os.environ:
-      if self.allowableOptionDictionary.has_key(x):
-        self[self.allowableOptionDictionary[x][1]] = os.environ.get(x)
+      if self.internal.allowableOptionDictionary.has_key(x):
+        self[self.internal.allowableOptionDictionary[x][1]] = os.environ.get(x)
         self.__insertCombinedOption(x, self)
 
     # get the options from the command line - these will eventually override all other methods of setting options
     try:
-      options, self.arguments = getopt.getopt(sys.argv[1:], self.singleLetterCommandLineOptionsForGetopt, self.expandedCommandLineOptionsForGetopt)
+      options, ignoreArgs = getopt.getopt(sys.argv[1:], self.internal.singleLetterCommandLineOptionsForGetopt, self.internal.expandedCommandLineOptionsForGetopt)
     except getopt.GetoptError, e:
       raise NotAnOptionError, e
     commandLineEnvironment = {} # save these options for merging later
     for x in options:
       if len(x[0]) == 2: #single letter option
-        longFormOfSingleLetterOption = self.allowableOptionDictionary[x[0][1]][1]
-        if self.allowableOptionDictionary[longFormOfSingleLetterOption][2]:
+        longFormOfSingleLetterOption = self.internal.allowableOptionDictionary[x[0][1]][1]
+        if self.internal.allowableOptionDictionary[longFormOfSingleLetterOption][2]:
           commandLineEnvironment[longFormOfSingleLetterOption] = x[1]
         else:
           commandLineEnvironment[longFormOfSingleLetterOption] = None
         self.__insertCombinedOption(longFormOfSingleLetterOption, commandLineEnvironment)
       else:
         longFormOption = x[0][2:]
-        if self.allowableOptionDictionary[longFormOption][2]:
+        if self.internal.allowableOptionDictionary[longFormOption][2]:
           commandLineEnvironment[longFormOption] = x[1]
         else:
           commandLineEnvironment[longFormOption] = None
@@ -208,8 +224,8 @@ class Config (dict):
             key = key.rstrip()
             if not key: continue
             value = value.lstrip()
-            if self.allowableOptionDictionary.has_key(key):
-              longFormOption = self.allowableOptionDictionary[key][1]
+            if self.internal.allowableOptionDictionary.has_key(key):
+              longFormOption = self.internal.allowableOptionDictionary[key][1]
               self.__insertCombinedOption(longFormOption, self)
               try:
                 self[longFormOption] = value
@@ -217,7 +233,7 @@ class Config (dict):
                 self[longFormOption] = None
             else:
               raise NotAnOptionError, "option '%s' in the config file is not recognized" % key
-        except KeyError:
+        except KeyError,x:
           if configurationFileRequired:
             raise ConfigFileOptionNameMissingError()
         except IOError:
@@ -233,7 +249,7 @@ class Config (dict):
       self[x] = commandLineEnvironment[x]
 
     # mix in combo commandline arguments
-    for optionTuple in self.allowableLongFormOptionDictionary.values():
+    for optionTuple in self.internal.allowableLongFormOptionDictionary.values():
       try:
         if type(optionTuple[5]) == list and optionTuple[1] in self:
           for longFormOptionFromCombo, valueFromCombo in optionTuple[5]:
@@ -245,7 +261,7 @@ class Config (dict):
     # have the right type.  Assume the default value has the right
     # type and cast the existing value to that type iff no conversion
     # function was supplied
-    for optionTuple in self.allowableLongFormOptionDictionary.values():
+    for optionTuple in self.internal.allowableLongFormOptionDictionary.values():
       try:
         conversionFunction = optionTuple[5]
       except IndexError:
@@ -260,7 +276,7 @@ class Config (dict):
 
     # do help (auto or otherwise)
     if 'help' in self:
-      self.helpHandler(self)
+      self.internal.helpHandler(self)
 
   #------------------------------------------------------------------------------------------
   def __nothingHelpHandler(self, config):
@@ -268,8 +284,8 @@ class Config (dict):
 
   #------------------------------------------------------------------------------------------
   def __defaultHelpHandler(self, config):
-    if self.applicationName:
-      print >>sys.stderr, self.applicationName
+    if self.internal.applicationName:
+      print >>sys.stderr, self.internal.applicationName
     self.outputCommandSummary(sys.stderr, 1)
     sys.exit()
 
@@ -282,12 +298,12 @@ class Config (dict):
     """
     if optionTuple[2]: #does this option have parameters?
       if optionTuple[0]:
-        self.singleLetterCommandLineOptionsForGetopt = "%s%s:" % (self.singleLetterCommandLineOptionsForGetopt, optionTuple[0])
-      self.expandedCommandLineOptionsForGetopt.append("%s=" % optionTuple[1])
+        self.internal.singleLetterCommandLineOptionsForGetopt = "%s%s:" % (self.internal.singleLetterCommandLineOptionsForGetopt, optionTuple[0])
+      self.internal.expandedCommandLineOptionsForGetopt.append("%s=" % optionTuple[1])
     else:
       if optionTuple[0]:
-        self.singleLetterCommandLineOptionsForGetopt = "%s%s" % (self.singleLetterCommandLineOptionsForGetopt, optionTuple[0])
-      self.expandedCommandLineOptionsForGetopt.append(optionTuple[1])
+        self.internal.singleLetterCommandLineOptionsForGetopt = "%s%s" % (self.internal.singleLetterCommandLineOptionsForGetopt, optionTuple[0])
+      self.internal.expandedCommandLineOptionsForGetopt.append(optionTuple[1])
 
   #------------------------------------------------------------------------------------------
   def __insertCombinedOption (self, anOption, theDictionaryToInsertInto):
@@ -300,7 +316,7 @@ class Config (dict):
       For each short-cut found, set the short-cut key and value in the given dictionary.
     """
     try:
-      for x in self.allowableOptionDictionary[anOption][5]:
+      for x in self.internal.allowableOptionDictionary[anOption][5]:
         theDictionaryToInsertInto[x[0]] = x[1]
     except (KeyError, IndexError, TypeError) :
       pass
@@ -310,8 +326,8 @@ class Config (dict):
     """ for debugging and understanding what the heck is going on
     """
     try:
-      for k in self.allowableOptionDictionary.keys():
-        v = self.allowableOptionDictionary.get(k)
+      for k in self.internal.allowableOptionDictionary.keys():
+        v = self.internal.allowableOptionDictionary.get(k)
         print "%-8s (%d) %s" % (k,len(v),str(v))
     except:
       print 'No dictionary available'
@@ -332,7 +348,7 @@ class Config (dict):
       outputTemplatePrefixForSingleLetter: a string template for the first part of a listing where there is a single letter form of the command
       outputTemplatePrefixForNo: a string template for the first part of a listing where there is no single letter form of the command
     """
-    optionsList = [ x for x in self.originalConfigurationOptionsList ]
+    optionsList = [ x for x in self.internal.originalConfigurationOptionsList ]
     optionsList.sort(lambda a, b: (a[sortOption] > b[sortOption]) or -(a[sortOption] < b[sortOption]))
     for x in optionsList:
       if x[0]:

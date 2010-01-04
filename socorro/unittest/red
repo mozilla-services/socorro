@@ -57,7 +57,7 @@ EOF
 }
 
 noseErrors() {
-  verbose = ''
+  verbose=''
   logfile=''
   if [ $# -lt 1 ]  ; then
     echo "Must supply name of outputfile"
