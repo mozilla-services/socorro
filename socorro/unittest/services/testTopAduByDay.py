@@ -28,19 +28,19 @@ singleQueryReturn2 = [(dt.datetime(2009,12,1), 'Windows', 10),
                      ]
 singleQueryReturn3 = [(dt.datetime(2009,12,1), 'Windows', 10),
                       (dt.datetime(2009,12,1), 'Linux', 11),
-                      (dt.datetime(2009,12,1), 'Mac OS/X', 111),
+                      (dt.datetime(2009,12,1), 'Mac', 111),
                       (dt.datetime(2009,12,2), 'Windows', 12),
                       (dt.datetime(2009,12,2), 'Linux', 13),
-                      (dt.datetime(2009,12,2), 'Mac OS/X', 113),
+                      (dt.datetime(2009,12,2), 'Mac', 113),
                       (dt.datetime(2009,12,3), 'Windows', 14),
                       (dt.datetime(2009,12,3), 'Linux', 15),
-                      (dt.datetime(2009,12,3), 'Mac OS/X', 115),
+                      (dt.datetime(2009,12,3), 'Mac', 115),
                       (dt.datetime(2009,12,4), 'Windows', 16),
                       (dt.datetime(2009,12,4), 'Linux', 17),
-                      (dt.datetime(2009,12,4), 'Mac OS/X', 117),
+                      (dt.datetime(2009,12,4), 'Mac', 117),
                       (dt.datetime(2009,12,5), 'Windows', 18),
                       (dt.datetime(2009,12,5), 'Linux', 19),
-                      (dt.datetime(2009,12,5), 'Mac OS/X', 119),
+                      (dt.datetime(2009,12,5), 'Mac', 119),
                      ]
 expectedHistory1 = { (dt.datetime(2009,12,1), 'Windows'): 1000,
                      (dt.datetime(2009,12,1), 'Linux'): 999,
@@ -66,19 +66,19 @@ expectedHistory2 = { (dt.datetime(2009,12,1), 'Windows'): 10,
                   }
 expectedHistory3 = { (dt.datetime(2009,12,1), 'Windows'): 10,
                      (dt.datetime(2009,12,1), 'Linux'): 11,
-                     (dt.datetime(2009,12,1), 'Mac OS/X'): 111,
+                     (dt.datetime(2009,12,1), 'Mac'): 111,
                      (dt.datetime(2009,12,2), 'Windows'): 12,
                      (dt.datetime(2009,12,2), 'Linux'): 13,
-                     (dt.datetime(2009,12,2), 'Mac OS/X'): 113,
+                     (dt.datetime(2009,12,2), 'Mac'): 113,
                      (dt.datetime(2009,12,3), 'Windows'): 14,
                      (dt.datetime(2009,12,3), 'Linux'): 15,
-                     (dt.datetime(2009,12,3), 'Mac OS/X'): 115,
+                     (dt.datetime(2009,12,3), 'Mac'): 115,
                      (dt.datetime(2009,12,4), 'Windows'): 16,
                      (dt.datetime(2009,12,4), 'Linux'): 17,
-                     (dt.datetime(2009,12,4), 'Mac OS/X'): 117,
+                     (dt.datetime(2009,12,4), 'Mac'): 117,
                      (dt.datetime(2009,12,5), 'Windows'): 18,
                      (dt.datetime(2009,12,5), 'Linux'): 19,
-                     (dt.datetime(2009,12,5), 'Mac OS/X'): 119,
+                     (dt.datetime(2009,12,5), 'Mac'): 119,
                   }
 combineAduCrashHistoryResult = [
                      util.DotDict({'date': '2009-12-01',
@@ -244,7 +244,11 @@ def testAduByDay_fetchAduHistory1():
   sql = """
       select
           date,
-          product_os_platform,
+          case when product_os_platform = 'Mac OS/X' then
+            'Mac'
+          else
+            product_os_platform
+          end as product_os_platform,
           sum(adu_count)
       from
           raw_adu ra
@@ -253,7 +257,7 @@ def testAduByDay_fetchAduHistory1():
           and date <= %(end_date)s
           and product_name = %(product)s
           and product_version = %(version)s
-          and product_os_platform in ('Windows','Mac')
+          and product_os_platform in ('Windows','Mac OS/X')
       group by
           date,
           product_os_platform
@@ -290,7 +294,11 @@ def testAduByDay_fetchAduHistory2():
   sql = """
       select
           date,
-          product_os_platform,
+          case when product_os_platform = 'Mac OS/X' then
+            'Mac'
+          else
+            product_os_platform
+          end as product_os_platform,
           sum(adu_count)
       from
           raw_adu ra
@@ -333,8 +341,10 @@ def testAduByDay_fetchCrashHistory():
   sql = """
       select
           CAST(ceil(EXTRACT(EPOCH FROM (window_end - timestamp without time zone %(start_date)s - interval %(socorroTimeToUTCInterval)s)) / 86400) AS INT) * interval '24 hours' + timestamp without time zone %(start_date)s as day,
-          case when os.os_name like 'Windows%%' then
+          case when os.os_name = 'Windows NT' then
             'Windows'
+          when os.os_name = 'Mac OS X' then
+            'Mac'
           else
             os.os_name
           end as os_name,
@@ -342,7 +352,7 @@ def testAduByDay_fetchCrashHistory():
       from
           top_crashes_by_signature tcbs
               join osdims os on tcbs.osdims_id = os.id
-                  and os.os_name in ('Windows','Mac','Windows NT')
+                  and os.os_name in ('Windows','Mac OS X','Windows NT')
       where
           (timestamp without time zone %(start_date)s - interval %(socorroTimeToUTCInterval)s) < window_end
           and window_end <= (timestamp without time zone %(end_date)s - interval %(socorroTimeToUTCInterval)s)

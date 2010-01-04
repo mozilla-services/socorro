@@ -37,14 +37,18 @@ class AduByDay(webapi.JsonServiceBase):
   #-----------------------------------------------------------------------------------------------------------------
   def fetchAduHistory (self, parameters):
     if parameters.listOfOs_names and parameters.listOfOs_names != ['']:
-      osNameListPhrase = ','.join("'%s'" % x for x in parameters.listOfOs_names)
+      osNameListPhrase = (','.join("'%s'" % x for x in parameters.listOfOs_names)).replace('Mac', 'Mac OS/X')
       parameters.os_phrase = "and product_os_platform in (%s)" % osNameListPhrase
     else:
       parameters.os_phrase = ''
     sql = """
       select
           date,
-          product_os_platform,
+          case when product_os_platform = 'Mac OS/X' then
+            'Mac'
+          else
+            product_os_platform
+          end as product_os_platform,
           sum(adu_count)
       from
           raw_adu ra
@@ -68,15 +72,17 @@ class AduByDay(webapi.JsonServiceBase):
       localOsList = [x for x in parameters.listOfOs_names]
       if 'Windows' in localOsList:
         localOsList.append('Windows NT')
-      osNameListPhrase = ','.join("'%s'" % x for x in localOsList)
+      osNameListPhrase = (','.join("'%s'" % x for x in localOsList)).replace('Mac', 'Mac OS X')
       parameters.os_phrase = "and os.os_name in (%s)" % osNameListPhrase
     else:
       parameters.os_phrase = '--'
     sql = """
       select
           CAST(ceil(EXTRACT(EPOCH FROM (window_end - timestamp without time zone %%(start_date)s - interval %%(socorroTimeToUTCInterval)s)) / 86400) AS INT) * interval '24 hours' + timestamp without time zone %%(start_date)s as day,
-          case when os.os_name like 'Windows%%%%' then
+          case when os.os_name = 'Windows NT' then
             'Windows'
+          when os.os_name = 'Mac OS X' then
+            'Mac'
           else
             os.os_name
           end as os_name,
