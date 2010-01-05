@@ -115,6 +115,12 @@ if (is_null($report->signature) || empty($report->signature)) { ?>
                <a href="mailto:<? out::H($report->email) ?>"><? out::H($report->email) ?></a> - Super Sensitive! Don't mess around!
 <?php } ?></td>
 	    </tr>
+            <tr>
+	  <th>URL</th><td>
+	  <?php if(property_exists($report, 'url') && ! empty($report->url)){?>
+               <a href="<? out::H($report->url) ?>"><? out::H($report->url) ?></a> - Super Sensitive! Don't mess around!
+<?php } ?></td>
+	    </tr>
 <?php } ?>
 
             <tr>

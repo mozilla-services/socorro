@@ -23,7 +23,7 @@ class Report_Model extends Model {
                  merged into the model object + jsonz data */
         $report = $this->db->query(
             "/* soc.web report.dateProcessed */
-                SELECT reports.email
+                SELECT reports.email, reports.url
                 FROM reports 
                 WHERE reports.uuid=? 
                 AND reports.success 
