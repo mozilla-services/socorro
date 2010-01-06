@@ -1,5 +1,5 @@
 	<div id="comments">
-		<h2>Comments</h2>
+	     <h2>Comments</h2>
 		<?php if (!empty($comments)) { ?>
 			<?php foreach ($comments as $comment) { ?>
 				<p class="crash_comments"><?php echo nl2br(out::h($comment->user_comments)); ?></p>

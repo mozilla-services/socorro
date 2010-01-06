@@ -49,9 +49,9 @@
         <li><a href="#table"><span>Table</span></a></li>
         <li><a href="#reports"><span>Reports</span></a></li>
 <?php if (array_key_exists($params['signature'], $sig2bugs)) { ?>    
-        <li><a href="#bugzilla"><span>Bugzilla</span></a></li>
+							       <li><a href="#bugzilla"><span>Bugzilla (<?= count($sig2bugs[$params['signature']])?>)</span></a></li>
 <?php } ?>
-		<li><a href="#comments"><span>Comments</span></a></li>
+		<li><a href="#comments"><span>Comments (<?= count($comments) ?>)</span></a></li>
     </ul>
     <div id="graph">
       <div class="crashes-by-platform">
