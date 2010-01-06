@@ -32,6 +32,9 @@ class Controller extends Controller_Core {
     // but can be FALSE if auth.driver is set to NoAuth
     protected $auth_is_active = TRUE;
 
+	// CSS inclusion
+	protected $css = '';
+
 	// Javascript inclusion
 	protected $js = '';
 
@@ -276,6 +279,7 @@ class Controller extends Controller_Core {
             if ($this->layout) {
                 // Finally, render the layout wrapper to the browser.
                 $layout = new View($this->layout);
+				$layout->css = $this->css;
 				$layout->js = $this->js;
                 $layout->set_global($this->getViewData());
                 $layout->render(TRUE);

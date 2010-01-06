@@ -22,6 +22,28 @@ class TimeUtil {
     }
 
 	/**
+	 * Determine the day differential between 2 date strings.  Using strtotime()
+	 * which allows a variety of date strings to be used.
+	 *
+	 * @access public
+	 * @param 	string 	The $start_date
+	 * @param 	string 	The $end_date
+	 * @param 	int 	The number of days 
+	 */
+	public static function determineDayDifferential ($start_date, $end_date)
+	{
+		$start_time = strtotime($start_date);
+		$end_time = strtotime($end_date);
+		if (is_numeric($start_time) && is_numeric($end_time)) {
+			$differential = $end_time - $start_time;
+			if ($differential > 0) {
+				return round($differential / 86400);
+			}
+		}
+		return false;
+	}
+	
+	/**
 	 * Determine the hour differential between 2 date strings.  Using strtotime()
 	 * which allows a variety of date strings to be used.
 	 *

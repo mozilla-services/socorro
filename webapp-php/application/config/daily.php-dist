@@ -1,0 +1,18 @@
+<?php defined('SYSPATH') or die('No direct script access.');
+/**
+ * @package  Daily
+ *
+ * Config settings for the ADU / Active Daily Users / Active Daily Installs report. 
+ */
+
+/**
+ * The products that should be featured in this report.
+ */
+$config['products'] = array('Camino', 'Firefox', 'Seamonkey', 'Thunderbird');
+
+/**
+ * The operating systems that should be featured in this report.
+ */
+$config['operating_systems'] = array('Windows', 'Mac', 'Linux');
+
+

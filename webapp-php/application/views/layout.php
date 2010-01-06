@@ -4,13 +4,7 @@
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
         <link href="<?php echo url::base() ?>css/screen.css" rel="stylesheet" type="text/css" media="screen" />
         <link href="<?php echo url::base() ?>favicon.ico" rel="icon" type="image/png" />
-        <?php echo html::script(array('js/__utm.js',
-                                      'js/jquery/jquery-1.3.2.min.js',
-                                      'js/jquery/plugins/superfish-1.4.8.js',
-                                      'js/socorro/nav.js'
-                                )); ?>
-		<?php if (isset($js)) echo $js; // Javascript includes from Controller ?>
-
+		<?php if (isset($css)) echo $css; // CSS includes from Controller ?> 
         <?php slot::output('head') ?>
 <style type="text/css">
 /* Only calculated CSS should go in this block */
@@ -18,6 +12,19 @@
   -moz-column-count: <?= $num_other_products ?>;
 }
 </style>
+
+<?php 
+	/* Javascript Includes */
+	echo html::script(array('js/__utm.js',
+                              'js/jquery/jquery-1.3.2.min.js',
+                              'js/jquery/plugins/superfish-1.4.8.js',
+                              'js/socorro/nav.js'
+                        ));
+
+	// Javascript includes from Controller 
+	if (isset($js)) echo $js; 
+?>
+
     </head>
 
     <body>
@@ -84,6 +91,8 @@
 			<li class="separated"><strong>Trend Reports &#9662;</strong>
 			<div>
 				<ul>
+					<li id="adu" class="trend-report-link"><a href="<?= url::base() ?>daily?p=<?= $chosen_version['product'] ?>&v[]=<?= $chosen_version['version'] ?>"
+                    	>Crashes per Active Daily User</a></li>
 					<li id="topcrash-bysig" class="trend-report-link"><a href="<?= url::base() ?>topcrasher/byversion/<?= $chosen_version['product'] ?>/<?= $chosen_version['version'] ?>"
                     	>Top Crashes By Signature</a></li>
     		        <li id="topcrash-byurl" class="trend-report-link"><a href="<?= url::base() ?>topcrasher/byurl/<?= $chosen_version['product'] ?>/<?= $chosen_version['version'] ?>"
@@ -131,4 +140,5 @@
 		</div><!-- /FOOTER -->
 
     </body>
+
 </html>

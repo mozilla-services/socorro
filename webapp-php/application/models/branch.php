@@ -241,6 +241,47 @@ class Branch_Model extends Model {
 			');
     }
 
+    /**
+     * Fetch all of the versions for a particular product that were released between 
+ 	 * the specified start and end dates. Only return versions that are of a major or 
+ 	 * milestone release.
+	 *
+	 * @param 	string 	The product name
+	 * @param 	string	The release date for a product YYYY-MM-DD
+	 * @param 	string	The end date for this product YYYY-MM-DD (usually +90 days)
+	 * @return 	array 	An array of version objects
+     */
+    public function getProductVersionsByDate($product, $start_date, $end_date) {
+        return $this->fetchRows(
+			'/* soc.web branch.prodversions */ 
+				SELECT DISTINCT pd.id, pd.product, pd.version, pd.branch, pd.release, pv.start_date, pv.end_date
+				FROM productdims pd
+				INNER JOIN product_visibility pv ON pv.productdims_id = pd.id
+				WHERE pd.product = ? 
+				AND (pd.release = ? OR pd.release = ?)
+				AND pv.start_date >= ?
+				AND pv.end_date <= ?
+				ORDER BY pd.product, pd.version
+			', true, array($product, "major", "milestone", $start_date, $end_date));
+    }
+
+    /**
+     * Fetch all of the versions for a particular product.
+	 *
+	 * @param 	string 	The product name
+	 * @return 	array 	An array of version objects
+     */
+    public function getProductVersionsByProduct($product) {
+        return $this->fetchRows(
+			'/* soc.web branch.prodversions */ 
+				SELECT DISTINCT pd.id, pd.product, pd.version, pd.branch, pd.release, pv.start_date, pv.end_date
+				FROM productdims pd
+				INNER JOIN product_visibility pv ON pv.productdims_id = pd.id
+				WHERE pd.product = ? 
+				ORDER BY pd.product, pd.version
+			', true, array($product));
+    }
+
 	/**
 	 * Fetch all distinct product / version combinations from productdims
 	 * that do not have matching entries from product_visibility.
@@ -294,6 +335,29 @@ class Branch_Model extends Model {
 				AND version = ?
 				LIMIT 1'
 				, trim($product), trim($version)
+			);
+		if (isset($result[0]->id)) {
+			return $result[0];
+		}
+		return false;
+    }
+
+    /**
+     * Fetch the most recent major version for a product.
+     *
+     * @param  string product 
+     * @return object Branch data
+     */
+    public function getRecentProductVersion($product) {
+        $result = $this->db->query(
+				'/* soc.web branch.prodbyvers */ 
+				SELECT * 
+				FROM productdims 
+				WHERE product = ? 
+				AND release = ?
+				ORDER BY version DESC
+				LIMIT 1'
+				, trim($product), "major"
 			);
 		if (isset($result[0]->id)) {
 			return $result[0];
