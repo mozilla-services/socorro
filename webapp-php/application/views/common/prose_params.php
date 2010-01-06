@@ -44,6 +44,11 @@
             }
         }
 
+        if (array_key_exists('build_id', $params) &&
+            ! empty($params['build_id'])) {
+            $msg .= " for build " . $params['build_id'];
+        }
+
         $msg .= '.';
         
         out::H($msg);

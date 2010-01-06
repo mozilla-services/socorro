@@ -26,6 +26,11 @@
 			    $url_params['signature'] = $report->signature;
 			}
 
+			if (array_key_exists('build_id', $url_params) &&
+			    empty($url_params['build_id'])) {
+			    unset($url_params['build_id']);
+			}
+
                         $url = url::base() . 'report/list?' . html::query_string($url_params);
                     ?>
                         <a href="<?= $url ?>" title="View reports with this signature."><?php out::H($report->{'display_signature'}) ?></a><?php
