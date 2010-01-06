@@ -742,7 +742,10 @@ html {
 	font-size: 80%;
 	width: 85px !important;
 }
-
+#build-id-el {
+        clear: left;
+	margin-top: 1em;
+}
 #occurs, #stack { 
 	border-left: 1px dotted  #bbb;
 	margin-left: 10px;

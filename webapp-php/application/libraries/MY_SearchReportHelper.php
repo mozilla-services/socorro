@@ -9,6 +9,7 @@ class SearchReportHelper{
 		 'branch'       => array(),
 		 'version'      => array(),
 		 'platform'     => array(),
+		 'build_id'     => '',
 		 
 		 'query_search' => 'signature',
 		 'query_type'   => 'exact',
@@ -66,8 +67,9 @@ class SearchReportHelper{
   function normalizeProduct(&$params){
     $productEmpty = $this->empty_param($params['product']);
     $versionEmpty = $this->empty_param($params['version']);
+    $buildIdEmpty = $this->empty_param($params['build_id']);
     
-    if($productEmpty && $versionEmpty){
+    if($productEmpty && $versionEmpty && $buildIdEmpty){
       $params['product'] = array('Firefox');
       $this->showWarning = TRUE;
     }

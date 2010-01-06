@@ -92,6 +92,12 @@
             trim($params['query'])
         )?>
 	    </li>
+            <li id="build-id-el"><label for="build_id">Build Id</label>
+<?php echo form::input(
+            array('size' => '14', 'name'=>'build_id', 'id'=>'build_id'), 
+            trim($params['build_id'])
+        )?>
+            </li>
 	  </ul> <!-- /stack -->
 	</li></ul>
       </li>

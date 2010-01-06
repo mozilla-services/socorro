@@ -297,6 +297,10 @@ class Common_Model extends Model {
 	    $where[] = '(' . join(" OR ", $or) . ')';
         }
 
+        if ($params['build_id']) {
+	    $where[] = 'reports.build = ' . $this->db->escape($params['build_id']);
+	}
+
         if ($params['query']) {
 
             $term = FALSE;
