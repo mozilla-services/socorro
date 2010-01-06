@@ -4,15 +4,6 @@
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
         <link href="<?php echo url::base() ?>css/screen.css" rel="stylesheet" type="text/css" media="screen" />
         <link href="<?php echo url::base() ?>favicon.ico" rel="icon" type="image/png" />
-		<?php if (isset($css)) echo $css; // CSS includes from Controller ?> 
-        <?php slot::output('head') ?>
-<style type="text/css">
-/* Only calculated CSS should go in this block */
-#top-nav > li > div.large {                                                                                                  
-  -moz-column-count: <?= $num_other_products ?>;
-}
-</style>
-
 <?php 
 	/* Javascript Includes */
 	echo html::script(array('js/__utm.js',
@@ -24,6 +15,14 @@
 	// Javascript includes from Controller 
 	if (isset($js)) echo $js; 
 ?>
+		<?php if (isset($css)) echo $css; // CSS includes from Controller ?> 
+        <?php slot::output('head') ?>
+<style type="text/css">
+/* Only calculated CSS should go in this block */
+#top-nav > li > div.large {                                                                                                  
+  -moz-column-count: <?= $num_other_products ?>;
+}
+</style>
 
     </head>
 
