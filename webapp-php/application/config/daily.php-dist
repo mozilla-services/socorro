@@ -8,7 +8,7 @@
 /**
  * The products that should be featured in this report.
  */
-$config['products'] = array('Camino', 'Firefox', 'Seamonkey', 'Thunderbird');
+$config['products'] = array('Camino', 'Firefox', 'SeaMonkey', 'Thunderbird');
 
 /**
  * The operating systems that should be featured in this report.
