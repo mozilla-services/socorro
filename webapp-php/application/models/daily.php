@@ -23,7 +23,14 @@ class Daily_Model extends Model {
     public function __construct()
     {
         parent::__construct();
-		$this->service = new Web_Service(array('credentials' => Kohana::config('webserviceclient.basic_auth')));
+    
+        $config = array();
+        $credentials = Kohana::config('webserviceclient.basic_auth');
+        if ($credentials) {
+            $config['basic_auth'] = $credentials;
+        }
+
+		$this->service = new Web_Service($config);
     }
 
 	/**
