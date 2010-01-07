@@ -1,6 +1,7 @@
 $(document).ready(function() { 
   var graph = $('#sig-history-graph');
   var legend = $('#sig-history-legend');
+  try {
   $.plot(graph,
 	  [ 
 		{ label: data.item1, data: data.ratio1 },
@@ -17,6 +18,9 @@ $(document).ready(function() {
 	  },
 	  grid:   { backgroundColor: "#ffffff" }
   });
+  } catch(err) {
+
+  }
 
   $("#click_by_version").bind("click", function(){
 	showHideSelection("daily_search_version_form");
