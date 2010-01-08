@@ -11,6 +11,7 @@ class Debugging_Controller extends Controller {
      */
     public function index() {
 	$this->auto_render = false;
+	echo "2nd try\n";
 	$m = new Common_Model;
 	$rs = $m->fetchRows("select
           CAST(ceil(EXTRACT(EPOCH FROM (window_end - timestamp without time zone '2009-12-25 00:00:00' - interval '8 hours')) / 86400) AS INT) * interval '24 hours' + timestamp without time zone '2009-12-25 00:00:00' as day,
@@ -24,7 +25,7 @@ class Debugging_Controller extends Controller {
           sum(count)
       from
           top_crashes_by_signature tcbs
-              join osdims os on tcbs.osdims_id = os.id
+              outer join osdims os on tcbs.osdims_id = os.id
                   and os.os_name in ('Windows','Mac OS X','Linux','Windows NT')
       where
           (timestamp without time zone '2009-12-25 00:00:00' - interval '8 hours') < window_end
