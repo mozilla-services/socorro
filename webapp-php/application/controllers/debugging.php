@@ -11,9 +11,10 @@ class Debugging_Controller extends Controller {
      */
     public function index() {
 	$this->auto_render = false;
-	echo "2nd try\n";
+	echo "3rd try\n";
 	$m = new Common_Model;
-	$rs = $m->fetchRows("select
+	$rs = $m->fetchRows("SELECT id FROM productdims WHERE product = 'Firefox' AND version = '3.5.6';");
+/*"select
           CAST(ceil(EXTRACT(EPOCH FROM (window_end - timestamp without time zone '2009-12-25 00:00:00' - interval '8 hours')) / 86400) AS INT) * interval '24 hours' + timestamp without time zone '2009-12-25 00:00:00' as day,
           case when os.os_name = 'Windows NT' then
             'Windows'
@@ -36,6 +37,7 @@ class Debugging_Controller extends Controller {
           os_name
       order by
           1, 2;");
+*/
 	echo var_dump($rs);
     }
 }
