@@ -52,13 +52,7 @@
 								<td><?php 
 									if (isset($statistics['versions'][$key][$date]['ratio'])) {
 										$ratio = round($statistics['versions'][$key][$date]['ratio'] * 100, 3);
-										if ($ratio == 0.000 && $statistics['versions'][$key][$date]['crashes'] > 0) {
-											echo '0.001';
-										} elseif ($ratio == 0) {
-											echo '0.000';
-										} else {
-											out::H($ratio);
-										}
+										out::H($ratio);
 										echo "%";
 									} else {
 										echo '-';
@@ -93,13 +87,7 @@
 				<td class="stat"><strong><?php 
 					if (isset($statistics['versions'][$key]['ratio'])) {
 						$ratio = round($statistics['versions'][$key]['ratio'] * 100, 3);
-						if ($ratio == 0.000 && $statistics['versions'][$key]['crashes'] > 0) {
-							echo '0.001';
-						} elseif ($ratio == 0) {
-							echo '0.000';
-						} else {
-							out::H($ratio);
-						}
+						out::H($ratio);
 						echo "%"; 
 					}
 				?></strong></td>							
