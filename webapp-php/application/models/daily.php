@@ -1,4 +1,42 @@
 <?php defined('SYSPATH') or die('No direct script access.');
+
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is Socorro Crash Reporter
+ *
+ * The Initial Developer of the Original Code is
+ * The Mozilla Foundation.
+ * Portions created by the Initial Developer are Copyright (C) 2006
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *   Ryan Snyder <rsnyder@mozilla.com>
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either the GNU General Public License Version 2 or later (the "GPL"), or
+ * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
+
 /**
  * Model class for ADU, a.k.a. Active Daily Users / Installs.
  *
@@ -6,11 +44,12 @@
  * @subpackage 	Models
  * @author 		Ryan Snyder <rsnyder@mozilla.com>
  */
-
-/**
- * Begin Daily_Model class
- */
 class Daily_Model extends Model {
+
+	/** 
+	 * The timestamp for today's date.
+	 */
+ 	public $today = 0;
 
 	/** 
 	 * The Web Service class.
@@ -31,6 +70,7 @@ class Daily_Model extends Model {
         }
 
 		$this->service = new Web_Service($config);
+		$this->today = strtotime(date('Y-m-d'));
     }
 
 	/**
@@ -52,42 +92,44 @@ class Daily_Model extends Model {
 
 			foreach ($results->versions as $version) {
 				foreach ($version->statistics as $v) {
-					$date = $v->date;
-					$key = $v->os;
-					
-					if (!isset($statistics['os'][$key])) {
-						$statistics['os'][$key] = array(
-							'crashes' => 0,
-							'users' => 0,
-							'ratio' => 0.00,
-						);						
-					} 				
-
-					if (!isset($statistics['os'][$key][$date])) {
-						$statistics['os'][$key][$date] = array(
-							'crashes' => 0,
-							'users' => 0,
-							'ratio' => 0.00,
-						);						
-					} 				
-						
-					$statistics['os'][$key][$date]['crashes'] += $v->crashes;
-					$statistics['os'][$key][$date]['users'] += $v->users;
-					if ($statistics['os'][$key][$date]['crashes'] > 0 && $statistics['os'][$key][$date]['users'] > 0) {
-						$statistics['os'][$key][$date]['ratio'] = $statistics['os'][$key][$date]['crashes'] / $statistics['os'][$key][$date]['users'];
-					} else {
-						$statistics['os'][$key][$date]['ratio'] = 0.00;
-					}
-
-					$statistics['crashes'] += $v->crashes;
-					$statistics['users'] += $v->users;					
-					$statistics['os'][$key]['crashes'] += $v->crashes;
-					$statistics['os'][$key]['users'] += $v->users;
-
-					if ($statistics['os'][$key]['crashes'] > 0 && $statistics['os'][$key]['users'] > 0) { 
-						$statistics['os'][$key]['ratio'] = $statistics['os'][$key]['crashes'] / $statistics['os'][$key]['users'];
-					} else {
-						$statistics['os'][$key]['ratio'] = 0.00;
+				    $date = $v->date;
+				    if (strtotime($date) < $this->today) {
+					    $key = $v->os;
+					    
+					    if (!isset($statistics['os'][$key])) {
+					    	$statistics['os'][$key] = array(
+					    		'crashes' => 0,
+					    		'users' => 0,
+					    		'ratio' => 0.00,
+					    	);						
+					    } 				
+                        
+					    if (!isset($statistics['os'][$key][$date])) {
+					    	$statistics['os'][$key][$date] = array(
+					    		'crashes' => 0,
+					    		'users' => 0,
+					    		'ratio' => 0.00,
+					    	);						
+					    } 				
+					    	
+					    $statistics['os'][$key][$date]['crashes'] += $v->crashes;
+					    $statistics['os'][$key][$date]['users'] += $v->users;
+					    if ($statistics['os'][$key][$date]['crashes'] > 0 && $statistics['os'][$key][$date]['users'] > 0) {
+					    	$statistics['os'][$key][$date]['ratio'] = $statistics['os'][$key][$date]['crashes'] / $statistics['os'][$key][$date]['users'];
+					    } else {
+					    	$statistics['os'][$key][$date]['ratio'] = 0.00;
+					    }
+                        
+					    $statistics['crashes'] += $v->crashes;
+					    $statistics['users'] += $v->users;					
+					    $statistics['os'][$key]['crashes'] += $v->crashes;
+					    $statistics['os'][$key]['users'] += $v->users;
+                        
+					    if ($statistics['os'][$key]['crashes'] > 0 && $statistics['os'][$key]['users'] > 0) { 
+					    	$statistics['os'][$key]['ratio'] = $statistics['os'][$key]['crashes'] / $statistics['os'][$key]['users'];
+					    } else {
+					    	$statistics['os'][$key]['ratio'] = 0.00;
+					    }
 					}
 				}
 			}
@@ -130,27 +172,29 @@ class Daily_Model extends Model {
 				);
 
 				foreach ($version->statistics as $v) {
-					$date = $v->date;
-					if (!isset($statistics['versions'][$key][$date])) {
-						$statistics['versions'][$key][$date] = array(
-							'crashes' => 0,
-							'users' => 0,
-							'ratio' => 0.00,
-						);						
-					} 				
-						
-					$statistics['versions'][$key][$date]['crashes'] += $v->crashes;
-					$statistics['versions'][$key][$date]['users'] += $v->users;
-					if ($statistics['versions'][$key][$date]['crashes'] > 0 && $statistics['versions'][$key][$date]['users'] > 0) {
-						$statistics['versions'][$key][$date]['ratio'] = $statistics['versions'][$key][$date]['crashes'] / $statistics['versions'][$key][$date]['users'];
-					} else {
-						$statistics['versions'][$key][$date]['ratio'] = 0.00;
+				    $date = $v->date;
+				    if (strtotime($date) < $this->today) {
+					    if (!isset($statistics['versions'][$key][$date])) {
+					    	$statistics['versions'][$key][$date] = array(
+					    		'crashes' => 0,
+					    		'users' => 0,
+					    		'ratio' => 0.00,
+					    	);						
+					    } 				
+					    	
+					    $statistics['versions'][$key][$date]['crashes'] += $v->crashes;
+					    $statistics['versions'][$key][$date]['users'] += $v->users;
+					    if ($statistics['versions'][$key][$date]['crashes'] > 0 && $statistics['versions'][$key][$date]['users'] > 0) {
+					    	$statistics['versions'][$key][$date]['ratio'] = $statistics['versions'][$key][$date]['crashes'] / $statistics['versions'][$key][$date]['users'];
+					    } else {
+					    	$statistics['versions'][$key][$date]['ratio'] = 0.00;
+					    }
+                        
+					    $statistics['crashes'] += $v->crashes;
+					    $statistics['users'] += $v->users;					
+					    $statistics['versions'][$key]['crashes'] += $v->crashes;
+					    $statistics['versions'][$key]['users'] += $v->users;
 					}
-
-					$statistics['crashes'] += $v->crashes;
-					$statistics['users'] += $v->users;					
-					$statistics['versions'][$key]['crashes'] += $v->crashes;
-					$statistics['versions'][$key]['users'] += $v->users;
 				}
 				
 				if ($statistics['versions'][$key]['crashes'] > 0 && $statistics['versions'][$key]['users'] > 0) { 
@@ -267,10 +311,12 @@ class Daily_Model extends Model {
 				$data[$key_item] = $item;
 				$data[$key_ratio] = array();
 				foreach ($dates as $date) {
-					if (isset($statistics['os'][$item][$date])) {
-						array_push($data[$key_ratio], array(strtotime($date)*1000, $statistics['os'][$item][$date]['ratio']));
-					} else {
-						array_push($data[$key_ratio], array(strtotime($date)*1000, null));
+				    if (strtotime($date) < $this->today) {
+					    if (isset($statistics['os'][$item][$date])) {
+					    	array_push($data[$key_ratio], array(strtotime($date)*1000, $statistics['os'][$item][$date]['ratio']));
+					    } else {
+					    	array_push($data[$key_ratio], array(strtotime($date)*1000, null));
+					    }
 					}
 				}
 			}
@@ -305,10 +351,12 @@ class Daily_Model extends Model {
 				$data[$key_item] = $item;
 				$data[$key_ratio] = array();
 				foreach ($dates as $date) {
-					if (isset($statistics['versions'][$item][$date])) {
-						array_push($data[$key_ratio], array(strtotime($date)*1000, $statistics['versions'][$item][$date]['ratio']));
-					} else {
-						array_push($data[$key_ratio], array(strtotime($date)*1000, null));
+				    if (strtotime($date) < $this->today) {
+					    if (isset($statistics['versions'][$item][$date])) {
+					    	array_push($data[$key_ratio], array(strtotime($date)*1000, $statistics['versions'][$item][$date]['ratio']));
+					    } else {
+					    	array_push($data[$key_ratio], array(strtotime($date)*1000, null));
+					    }
 					}
 				}
 			}
