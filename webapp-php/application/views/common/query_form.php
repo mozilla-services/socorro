@@ -101,7 +101,10 @@
 	  </ul> <!-- /stack -->
 	</li></ul>
       </li>
-      <li id="gofilter"><button type="submit" name="do_query" value="1">Filter Crash Reports</button></li>
+      <li id="gofilter">
+          <button type="submit">Filter Crash Reports</button>
+          <input type="hidden" name="do_query" value="1" />
+      </li>
 
     </ul>
     </fieldset>
