@@ -313,7 +313,7 @@ class Daily_Model extends Model {
 				foreach ($dates as $date) {
 				    if (strtotime($date) < $this->today) {
 					    if (isset($statistics['os'][$item][$date])) {
-					    	array_push($data[$key_ratio], array(strtotime($date)*1000, $statistics['os'][$item][$date]['ratio']));
+					    	array_push($data[$key_ratio], array(strtotime($date)*1000, $statistics['os'][$item][$date]['ratio'] * 100));
 					    } else {
 					    	array_push($data[$key_ratio], array(strtotime($date)*1000, null));
 					    }
@@ -353,7 +353,7 @@ class Daily_Model extends Model {
 				foreach ($dates as $date) {
 				    if (strtotime($date) < $this->today) {
 					    if (isset($statistics['versions'][$item][$date])) {
-					    	array_push($data[$key_ratio], array(strtotime($date)*1000, $statistics['versions'][$item][$date]['ratio']));
+					    	array_push($data[$key_ratio], array(strtotime($date)*1000, $statistics['versions'][$item][$date]['ratio'] * 100));
 					    } else {
 					    	array_push($data[$key_ratio], array(strtotime($date)*1000, null));
 					    }
