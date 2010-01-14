@@ -686,16 +686,20 @@ html {
 -------------------------------------------------------------- */
 
 #searchform { 
-	width: 50em;
+	width: 100%;
 	float: left;
     margin-bottom: 1em;
 }
-
 #searchform select {
-	width: 15em;
+	width: 12em;
 	font-size: 100%;
 }
-
+#searchform #query_type {
+	width: 4em;
+}
+#searchform #range_unit {
+	width: 3em;
+}
 #searchform fieldset { 
 	-moz-border-radius: 5px;
 	-webkit-border-radius: 5px;
@@ -703,81 +707,67 @@ html {
 	border: 1px solid #ddd;
 	padding: 1em;
 }
-
 #searchform ul { 
 	list-style: none;
 }
-
-#searchform label { 
+#searchform label.basic { 
 	font-weight: bold;
 	display: block;
 	font-size: 125%;
 }
-
+#searchform label { 
+	font-weight: bold;
+	font-size: 100%;
+}
 #searchform ul li { 
 	float: left;
 	margin-right: 10px;
 }
-
-#searchform #advfilter select {
-	width: 100px;
-}
-
 #advfiltertoggle { 
-	margin: 10px 0;
-	padding-left: 15px;
+	color: #333;
 	display: block;
-	color: #000;
+	font-weight: bold;
+	padding-left: 15px;
+	margin-bottom: 0;
+	text-decoration: none;
 }
-
 .not-toggled { 
 	background: url(../img/slate/disclosure.png) no-repeat 0 2px;	
 }
-
 .toggled { 
 	background: url(../img/slate/disclosure-down.png) no-repeat 0 2px;
 }
-
 #advfilter select { 
 	font-size: 80%;
 	width: 85px !important;
 }
 #build-id-el {
-        clear: left;
+	clear: left;
 	margin-top: 1em;
 }
-#occurs, #stack { 
-	border-left: 1px dotted  #bbb;
-	margin-left: 10px;
-	padding-left: 20px;
-}
-
-ul#occurs li, ul#stack li { 
-	float: none;
-}
-
 #occurs-date, #date, .wrong-name { 
-	width: 100px;
+	width: 5.5em;
 	font-style: italic;
 	color: #aaa;
-	margin-bottom: 10px;
 	text-align: center;
 }
-
-#occurs_calendar, .dp-choose-date, .wrong-name { 
-	padding-right: 20px;
-	background: url(../img/slate/calendar.png) no-repeat 2px -1px;
-}
-
 #within, #range_value, .wrong-name { 
-	width: 25px;
+	width: 2em;
 	text-align: center;
 }
 *|*:-moz-any-link:focus {
-    outline-width: 0px;
+    outline-width: 0;
 }
-
+p.advanced {
+	border-top: 1px dashed #999;
+	padding: .6em 0;
+	margin: 0;
+}
+#searchform button {
+	margin: 1em 0 0 1em;
+} 
 /* end search-form */
+
 
 /* Search Results */
 #query-results-h { clear: left; }
