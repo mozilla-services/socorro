@@ -1,0 +1,57 @@
+
+Linux
+
+
+Mac OS X
+
+
+Windows NT
+  __delayLoadHelper2|EXCEPTION_ACCESS_VIOLATION (14 crashes)
+    100% (14/14) vs.  30% (15/50) AcGenral.dll
+    100% (14/14) vs.  30% (15/50) TSAPPCMP.dll
+    100% (14/14) vs.  30% (15/50) samcli.dll
+    100% (14/14) vs.  30% (15/50) AcXtrnal.dll
+    100% (14/14) vs.  30% (15/50) AcLayers.dll
+    100% (14/14) vs.  30% (15/50) SortServer2003Compat.dll
+    100% (14/14) vs.  30% (15/50) shunimpl.dll
+    100% (14/14) vs.  32% (16/50) sfc.dll
+    100% (14/14) vs.  32% (16/50) sfc_os.dll
+    100% (14/14) vs.  34% (17/50) sspicli.dll
+    100% (14/14) vs.  38% (19/50) slc.dll
+    100% (14/14) vs.  38% (19/50) CRYPTBASE.dll
+    100% (14/14) vs.  38% (19/50) sechost.dll
+    100% (14/14) vs.  38% (19/50) cryptsp.dll
+    100% (14/14) vs.  38% (19/50) profapi.dll
+    100% (14/14) vs.  38% (19/50) RpcRtRemote.dll
+    100% (14/14) vs.  38% (19/50) devobj.dll
+    100% (14/14) vs.  38% (19/50) KERNELBASE.dll
+    100% (14/14) vs.  38% (19/50) srvcli.dll
+    100% (14/14) vs.  38% (19/50) cfgmgr32.dll
+    100% (14/14) vs.  40% (20/50) mpr.dll
+    100% (14/14) vs.  42% (21/50) cscapi.dll
+    100% (14/14) vs.  46% (23/50) EhStorShell.dll
+     93% (13/14) vs.  40% (20/50) dhcpcsvc6.DLL
+    100% (14/14) vs.  48% (24/50) dwmapi.dll
+    100% (14/14) vs.  48% (24/50) nsi.dll
+    100% (14/14) vs.  48% (24/50) WindowsCodecs.dll
+    100% (14/14) vs.  48% (24/50) winnsi.dll
+    100% (14/14) vs.  48% (24/50) NapiNSP.dll
+    100% (14/14) vs.  48% (24/50) IPHLPAPI.DLL
+    100% (14/14) vs.  48% (24/50) nlaapi.dll
+    100% (14/14) vs.  48% (24/50) propsys.dll
+    100% (14/14) vs.  48% (24/50) powrprof.dll
+    100% (14/14) vs.  48% (24/50) WSHTCPIP.DLL
+    100% (14/14) vs.  54% (27/50) rsaenh.dll
+     93% (13/14) vs.  48% (24/50) dhcpcsvc.dll
+    100% (14/14) vs.  56% (28/50) iertutil.dll
+    100% (14/14) vs.  56% (28/50) lpk.dll
+    100% (14/14) vs.  60% (30/50) ntshrui.dll
+    100% (14/14) vs.  64% (32/50) urlmon.dll
+    100% (14/14) vs.  66% (33/50) msctf.dll
+    100% (14/14) vs.  80% (40/50) userenv.dll
+    100% (14/14) vs.  80% (40/50) msacm32.dll
+    100% (14/14) vs.  84% (42/50) crypt32.dll
+    100% (14/14) vs.  84% (42/50) msasn1.dll
+    100% (14/14) vs.  86% (43/50) apphelp.dll
+
+

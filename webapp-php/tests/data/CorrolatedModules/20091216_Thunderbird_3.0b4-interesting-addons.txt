@@ -1,0 +1,12 @@
+
+Linux
+
+
+Mac OS X
+
+
+Windows NT
+  __delayLoadHelper2|EXCEPTION_ACCESS_VIOLATION (14 crashes)
+     50% (7/14) vs.  16% (8/50) FiltersImportExport@mozilla.org (Thunderbird Message Filter Import/Export, https://addons.mozilla.org/addon/2474)
+
+

@@ -16,6 +16,7 @@ class Report_Controller extends Controller {
 	 * @return 	void
      */
     public function do_list() {
+
         $helper = new SearchReportHelper();
 
         $branch_data = $this->branch_model->getBranchData();
@@ -78,7 +79,7 @@ class Report_Controller extends Controller {
 	    $rows = $bug_model->bugsForSignatures(array($params['signature']));
 	    $bugzilla = new Bugzilla;
 	    $signature_to_bugzilla = $bugzilla->signature2bugzilla($rows, Kohana::config('codebases.bugTrackingUrl'));
-        	
+
 	    $this->setViewData(array(
 		'navPathPrefix' => $currentPath,
 		'nextLinkText' => 'Older Crashes',
@@ -105,6 +106,7 @@ class Report_Controller extends Controller {
 		'logged_in' => $logged_in,
 	    ));
 	}
+
     }
     private function _setupDisplaySignature($params)
     {
@@ -210,6 +212,7 @@ class Report_Controller extends Controller {
             return Event::run('system.404');
         }
 
+	
 	$crash_uri = sprintf(Kohana::config('application.crash_dump_local_url'), $uuid);
 	$reportJsonZUri = sprintf(Kohana::config('application.crash_dump_public_url'), $uuid);
 	$raw_dump_urls = $this->report_model->formatRawDumpURLs($uuid);
@@ -235,7 +238,7 @@ class Report_Controller extends Controller {
 
 	    $comments = array();
 	    $signature_to_bugzilla = array();
-	    
+
             // If the signature is NULL in the DB, we will have an empty raw dump
 	    // We can't trust signature, it is empty string for both NULL and Empty String
 	    // To make it easy for pages that don't handel missing or NULL signatures
@@ -255,8 +258,13 @@ class Report_Controller extends Controller {
         	
 	    	$Extension_Model = new Extension_Model;
 	    	$extensions = $Extension_Model->getExtensionsForReport($uuid, $report->date_processed, $report->product);
-	    	
-			$this->setViewData(array(
+
+		// JavaScript uses these values for slurping in Correlation reports
+		$url_path = '/' . join('/', 
+				    array_map('rawurlencode', 
+				      array($report->product, $report->version, $report->os_name, $report->signature))) . '/';
+
+		$this->setViewData(array(
         	    'branch' => $this->branch_model->getByProductVersion($report->product, $report->version),
         	    'comments' => $comments,
         	    'extensions' => $extensions,
@@ -264,9 +272,10 @@ class Report_Controller extends Controller {
 				'raw_dump_urls' => $raw_dump_urls,
         	    'reportJsonZUri' => $reportJsonZUri,
         	    'report' => $report,
-        	    'sig2bugs' => $signature_to_bugzilla
+        	    'sig2bugs' => $signature_to_bugzilla,
+		    'url_path' => $url_path
         	));
-		}
+	}
     }
 
     /**
