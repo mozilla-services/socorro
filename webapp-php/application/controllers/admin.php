@@ -94,7 +94,7 @@ class Admin_Controller extends Controller {
 			}
 		}
 
-		$branch_data = $this->branch_model->getBranchData(false);
+		$branch_data = $this->branch_model->getBranchData(false, false);
 		
  		$this->setView('admin/branch_data_sources');	
 		$this->setViewData(

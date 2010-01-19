@@ -46,41 +46,60 @@ require_once(Kohana::find_file('libraries', 'release', TRUE, 'php'));
  */
 class QueryFormHelper
 {
-  public function prepareCommonViewData($branch_model, $platform_model)
+    
+    /**
+     * Prepare the branch and platform data for the view.
+     *
+     * @param   Model   The Branch Model
+     * @param   Model   The Platform Model
+     * @return  array   An array consisting of all of the products, branches, versions, versions by product and platforms.
+     */
+    public function prepareCommonViewData($branch_model, $platform_model)
     {
         $branch_data = $branch_model->getBranchData();
         $platforms   = $platform_model->getAll();
 
         $versions_by_product = array();
         foreach($branch_data['products'] as $product){
-	  $versions_by_product[$product->product] = array();      
-	}
-	foreach($branch_data['versions'] as $version){
-          array_push($versions_by_product[$version->product], 
-                    $version);
-	}
+	        $versions_by_product[$product->product] = array();      
+	    }
+	    $versions_by_product_reversed = $versions_by_product;
+
+	    foreach($branch_data['versions'] as $version){
+            array_push($versions_by_product[$version->product], $version);
+	    }
+
+        $versions_by_product_reversed = array();
+        foreach ($versions_by_product as $product => $versions) {
+            $versions_by_product_reversed[$product] = array_reverse($versions);
+        }
 
         return array(
             'all_products'  => $branch_data['products'],
             'all_branches'  => $branch_data['branches'],
             'all_versions'  => $branch_data['versions'],
-            'versions_by_product'  => $versions_by_product,
+            'versions_by_product'  => $versions_by_product_reversed,
             'all_platforms' => $platforms
         );
     }
 
+    /**
+     * Prepare the branch and platform data for the view.
+     *
+     * @param   Model   The Branch Model
+     * @return  array   An array of versions ordered by product
+     */
     public function prepareAllProducts($branch_model)
     {
         $branch_data = $branch_model->getBranchData();
-	$versionCompare = new VersioncompareComponent();
+	    $versionCompare = new VersioncompareComponent();
         $versions_by_product = array();
         foreach($branch_data['products'] as $product){
-	  $versions_by_product[$product->product] = array();      
-	}
-	foreach($branch_data['versions'] as $version){
-          array_push($versions_by_product[$version->product], 
-                    $version->version);
-	}
+	        $versions_by_product[$product->product] = array();      
+	    }
+	    foreach($branch_data['versions'] as $version){
+            array_push($versions_by_product[$version->product], $version->version);
+	    }
         foreach ($versions_by_product as $versions) {
             $versionCompare->sortAppversionArray($versions);
         }
@@ -102,20 +121,22 @@ class QueryFormHelper
     public function currentProducts($products2versions)
     {
         $current = array();
-	$release = new Release;
+	    $release = new Release;
         foreach ($products2versions as $product => $versions) {
 	    if (count($versions) > 0) {
 	        foreach (array_reverse($versions) as $v) {
-	  	    $release_type = $release->typeOfRelease($v);
-		    if (! array_key_exists($product, $current) ||
-			! array_key_exists($release_type, $current[$product])) {
-		        $current[$product][$release_type] = $v;
-		    }
+	  	        $release_type = $release->typeOfRelease($v);
+		        if (
+		            ! array_key_exists($product, $current) ||
+			        ! array_key_exists($release_type, $current[$product])
+			        ) {
+		                $current[$product][$release_type] = $v;
+		            }
+	            }
 	        }
-	    }
         }
-	uksort($current, 'strcasecmp');
-	return $current;
+	    uksort($current, 'strcasecmp');
+	    return $current;
     }
 
     /**
@@ -132,28 +153,29 @@ class QueryFormHelper
     public function olderProducts($current, $products2versions)
     {
         $older = array();
-	$release = new Release;
+	    $release = new Release;
         foreach ($products2versions as $product => $versions) {
-	    if (count($versions) > 0) {
-
-	        foreach (array_reverse($versions) as $v) {
-	  	    $release_type = $release->typeOfRelease($v);
-		    if (! array_key_exists($product, $current) ||
-			! array_key_exists($release_type, $current[$product]) ||
-			$v != $current[$product][$release_type]) {
-		        if (! array_key_exists($product, $older)) {
-			    $older[$product] = array();
-			}
-		        if (! array_key_exists($release_type, $older[$product])) {
-			    $older[$product][$release_type] = array();
-		        }
-		        array_push($older[$product][$release_type], $v);
-		    } 
+	        if (count($versions) > 0) {
+    	        foreach (array_reverse($versions) as $v) {
+	      	        $release_type = $release->typeOfRelease($v);
+    	    	    if (
+                        ! array_key_exists($product, $current) ||
+    			        ! array_key_exists($release_type, $current[$product]) ||
+        			    $v != $current[$product][$release_type] 
+                    ) {
+            		    if (! array_key_exists($product, $older)) {
+    	    		        $older[$product] = array();
+    		    	    }
+    		            if (! array_key_exists($release_type, $older[$product])) {
+    			            $older[$product][$release_type] = array();
+        		        }
+    	    	        array_push($older[$product][$release_type], $v);
+        		    } 
+	            }
 	        }
-	    }
         }
-	uksort($older, 'strcasecmp');
-	return $older;
+	    uksort($older, 'strcasecmp');
+	    return $older;
     }
 }
 ?>

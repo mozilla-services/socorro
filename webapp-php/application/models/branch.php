@@ -240,6 +240,25 @@ class Branch_Model extends Model {
 				ORDER BY pd.product, pd.version
 			');
     }
+    
+    /**
+     * Fetch all distinct product / version combinations that have a start date that is prior to today's
+     * date and an end date that is after today's date.
+     *
+     * @return array    An array of version objects
+     */
+    public function getCurrentProductVersions() {
+        $date = date("Y-m-d");
+        return $this->fetchRows(
+			'/* soc.web branch.prodversions */ 
+				SELECT DISTINCT pd.id, pd.product, pd.version, pd.branch, pd.release, pv.start_date, pv.end_date
+				FROM productdims pd
+				INNER JOIN product_visibility pv ON pv.productdims_id = pd.id
+				WHERE pv.start_date <= ?
+				AND pv.end_date >= ?
+				ORDER BY pd.product, pd.version
+			', true, array($date, $date));
+    }
 
     /**
      * Fetch all of the versions for a particular product that were released between 
@@ -303,16 +322,21 @@ class Branch_Model extends Model {
      * page query form.
 	 * 
 	 * @param 	bool	True if you want cached results; false if you don't.
+	 * @param   bool    True if you want only current versions; false if you want all versions.
 	 * @return 	array 	An array of products, branches and versions results.
      */
-    public function getBranchData($cache=true) { 
+    public function getBranchData($cache=true, $current_versions=true) { 
         $cache_key = 'query_branch_data';
+        if ($current_versions) {
+            $cache_key = '_current';
+        }
         $data = $this->cache->get($cache_key);
+        
         if (!$data || !$cache) {
             $data = array(
                 'products' => $this->getProducts(),
                 'branches' => $this->getBranches(),
-                'versions' => $this->getProductVersions()
+                'versions' => ($current_versions) ? $this->getCurrentProductVersions() : $this->getProductVersions()
             ); 
             $this->cache->set($cache_key, $data);
         }
