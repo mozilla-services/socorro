@@ -17,7 +17,7 @@ import cronTestconfig as testConfig
 
 import socorro.cron.topCrashesByUrl as tcbu
 
-class Me(): pass
+class Me: pass
 me = None
 
 def setup_module():

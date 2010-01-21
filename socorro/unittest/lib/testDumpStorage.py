@@ -16,7 +16,7 @@ import socorro.unittest.testlib.createJsonDumpStore as createJDS
 def setup_module():
   print test_util.getModuleFromFile(__file__)
 
-class TestDumpStorage():
+class TestDumpStorage:
   def setUp(self):
     self.expectedTestDir = os.path.join('.','TEST-DUMP')
     self.testDir = self.expectedTestDir+os.sep

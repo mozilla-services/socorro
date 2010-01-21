@@ -48,7 +48,7 @@ import socorro.unittest.testlib.util as tutil
 import monitorTestconfig as testConfig
 import socorro.database.schema as schema
 
-class Me(): # not quite "self"
+class Me: # not quite "self"
   """
   I need stuff to be initialized once per module. Rather than having a bazillion globals, lets just have 'me'
   """

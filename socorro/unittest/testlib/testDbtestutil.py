@@ -22,8 +22,7 @@ import time
 
 logger = logging.getLogger()
 
-class Me():
-  pass
+class Me:  pass
 me = None
 
 def setup_module():
