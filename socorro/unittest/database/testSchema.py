@@ -87,6 +87,8 @@ def setup_module():
     schema.TopCrashByUrlSignatureTable:[False, set(['top_crashes_by_url','top_crashes_by_url_signature','urldims', 'top_crashes_by_url', 'productdims', 'osdims','release_enum'])],
     # deprecated schema.TopCrashersTable:[False,set(['topcrashers'])],
     schema.UrlDimsTable:[False,set(['urldims'])],
+    schema.AlexaTopsitesTable:[False,set(['alexa_topsites'])],
+    schema.RawAduTable:[False,set(['raw_adu'])],
     }
   me.expectedTableNames = set()
   for tableStuff in me.hardCodedSchemaClasses.values():
