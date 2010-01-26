@@ -37,7 +37,7 @@ class TestDynamicConfigurationManager:
 
   def testDefaultExecUpdater(self):
     testDir = os.path.dirname(__file__)
-    tu = dcm.createDefaultExecUpdater(os.path.join(testDir,'dynamicTestConfig.py'))
+    tu = dcm.createDefaultExecUpdater(os.path.join(testDir,'dynamicTestconfig.py'))
     assert 'testOption0' not in self.config
     assert 'testOption1' not in self.config
     assert 'logFilePathname' in self.config
