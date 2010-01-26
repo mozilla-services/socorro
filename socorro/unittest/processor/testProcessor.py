@@ -402,8 +402,15 @@ class TestProcessor:
       theProcessor = TestProcessor.StubProcessor_start(me.config)
       theProcessor.start()
       assert False, 'Cannot get to this line: Parent will kill'
-    except BaseException,x:
-      me.logger.debug("%s - CHILD Exception in %s: %s [%s]"%(threading.currentThread().getName(),type(x),x))
+    # following sequence of except: handles both 2.4.x and 2.5.x hierarchy
+    except SystemExit,x:
+      me.logger.info("CHILD SystemExit in %s: %s [%s]"%(threading.currentThread().getName(),type(x),x))
+      os._exit(0)
+    except KeyboardInterrupt,x:
+      me.logger.info("CHILD KeyboardInterrupt in %s: %s [%s]"%(threading.currentThread().getName(),type(x),x))
+      os._exit(0)
+    except Exception,x:
+      me.logger.info("CHILD Exception in %s: %s [%s]"%(threading.currentThread().getName(),type(x),x))
       os._exit(0)
 
   def _pause1(self):
@@ -1198,7 +1205,8 @@ class TestProcessor:
     assert logging.ERROR == me.logger.levels[0]
     assert "While extracting 'key' from jsonDoc" in me.logger.buffer[0], 'But log is %s'%me.logger.buffer[0]
     assert 1 == len(messages)
-    assert "ERROR: jsonDoc['key']: 'int' object is unsubscriptable" in messages[0]
+    assert "ERROR: jsonDoc['key']:" in messages[0], "but %s"%(str(messages))
+    assert "unsubscriptable" in messages[0], "but %s"%(str(messages))
 
   def testInsertReportIntoDatabase_VariousBadFormat(self):
     """

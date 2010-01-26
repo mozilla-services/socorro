@@ -67,6 +67,14 @@ def runInOtherProcess(executable, *args, **kwargs):
   else: # I am the child process: Run the executable that will be killed
     try:
       executable(*args)
-    except BaseException,x:
+    # following sequence of except: handles both 2.4.x and 2.5.x hierarchy
+    except SystemExit,x:
+      me.logger.info("CHILD SystemExit in %s: %s [%s]"%(threading.currentThread().getName(),type(x),x))
+      os._exit(0)
+    except KeyboardInterrupt,x:
+      me.logger.info("CHILD KeyboardInterrupt in %s: %s [%s]"%(threading.currentThread().getName(),type(x),x))
+      os._exit(0)
+    except Exception,x:
+      me.logger.info("CHILD Exception in %s: %s [%s]"%(threading.currentThread().getName(),type(x),x))
       os._exit(0)
 

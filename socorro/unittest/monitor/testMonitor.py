@@ -248,7 +248,14 @@ class TestMonitor:
       m = monitor.Monitor(me.config)
       m.start()
       me.logger.fail("This line forces a wrong count in later assertions: We expected a SIGTERM before getting here.")
-    except BaseException,x:
+    # following sequence of except: handles both 2.4.x and 2.5.x hierarchy
+    except SystemExit,x:
+      me.logger.info("CHILD SystemExit in %s: %s [%s]"%(threading.currentThread().getName(),type(x),x))
+      os._exit(0)
+    except KeyboardInterrupt,x:
+      me.logger.info("CHILD KeyboardInterrupt in %s: %s [%s]"%(threading.currentThread().getName(),type(x),x))
+      os._exit(0)
+    except Exception,x:
       me.logger.info("CHILD Exception in %s: %s [%s]"%(threading.currentThread().getName(),type(x),x))
       os._exit(0)
 
