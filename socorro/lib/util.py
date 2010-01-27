@@ -29,6 +29,7 @@ class FakeLogger(object):
   def debug(self,*x): self.log(logging.DEBUG, *x)
   def info(self,*x): self.log(logging.INFO, *x)
   def warning(self,*x): self.log(logging.WARNING, *x)
+  warn = warning
   def error(self,*x): self.log(logging.ERROR, *x)
   def critical(self,*x): self.log(logging.CRITICAL, *x)
   fatal = critical
