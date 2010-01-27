@@ -45,12 +45,7 @@ class Common_Model extends Model {
      * @return  array 	An array of comments
      */
     public function getCommentsByParams($params) {
-        $tables = array();
-        $where = array();
-
-        list($params_tables, $params_where) = $this->_buildCriteriaFromSearchParams($params);
-        $tables += $params_tables;
-        $where  += $params_where;
+        list($from_tables, $join_tables, $where) = $this->_buildCriteriaFromSearchParams($params);
 
         $sql =
 	    "/* soc.web report.getCommentsBySignature.1. */ " .
@@ -63,11 +58,14 @@ class Common_Model extends Model {
 					WHEN reports.email IS NULL THEN null
 					ELSE reports.email
 					END " .
-            " FROM  " . join(', ', array_keys($tables)) .
-            " WHERE reports.user_comments IS NOT NULL " . 
- 			" AND " . join(' AND ', $where) .
-			" ORDER BY email ASC, reports.client_crash_date ASC ";
-		return $this->fetchRows($sql);
+            " FROM  " . join(', ', $from_tables);
+        if(count($join_tables) > 0) {
+	    $sql .= " JOIN  " . join("\nJOIN ", $join_tables);
+        }
+        $sql .= " WHERE reports.user_comments IS NOT NULL " . 
+	        " AND " . join(' AND ', $where) .
+	        " ORDER BY email ASC, reports.client_crash_date ASC ";
+	return $this->fetchRows($sql);
     }
 
     /**
@@ -89,19 +87,26 @@ class Common_Model extends Model {
                 "count(CASE WHEN (reports.os_name = '{$platform->os_name}') THEN 1 END) ".
                 "AS is_{$platform->id}";
         }
+	$extra_group_by = "";
+	if (array_key_exists('process_type', $params) && 'plugin' == $params['process_type']) {
+	    array_push($columns, 'plugins.name AS pluginName, plugins_reports.version AS pluginVersion');
+	    $extra_group_by = "\n, pluginName, pluginVersion\n";
+	}
 
-        list($params_tables, $params_where) = 
+        list($from_tables, $join_tables, $where) = 
             $this->_buildCriteriaFromSearchParams($params);
-
-        $tables += $params_tables;
-        $where  += $params_where;
 
         $sql =
 	    "/* soc.web common.queryTopSig. */ " .
             " SELECT " . join(', ', $columns) .
-            " FROM   " . join(', ', array_keys($tables)) .
+            " FROM   " . join(', ', $from_tables);
+        if(count($join_tables) > 0) {
+	    $sql .= " JOIN  " . join("\nJOIN ", $join_tables);
+        }
+	$sql .=
             " WHERE  " . join(' AND ', $where) .
             " GROUP BY reports.signature " .
+	    $extra_group_by .
             " ORDER BY count(reports.id) DESC " .
             " LIMIT 100";
 
@@ -115,19 +120,17 @@ class Common_Model extends Model {
      * @return int total number of crashes
      */
     public function totalNumberReports($params) {
-        $tables = array();
-        $where = array();
-
-        list($params_tables, $params_where) = 
+        list($from_tables, $join_tables, $where) = 
             $this->_buildCriteriaFromSearchParams($params);
-
-        $tables += $params_tables;
-        $where  += $params_where;
 
         $sql = "/* soc.web common.totalQueryReports */ 
             SELECT COUNT(uuid) as total
-            FROM   " . join(', ', array_keys($tables)) .
-          " WHERE  " . join(' AND ', $where);
+            FROM   " . join(', ', $from_tables);
+        if(count($join_tables) > 0) {
+	    $sql .= " JOIN  " . join("\nJOIN ", $join_tables);
+        }
+	$sql .= " WHERE  " . join(' AND ', $where);
+
 	$rs = $this->fetchRows($sql);
 	if ($rs && count($rs) > 0) {
 	    return $rs[0]->total;
@@ -171,23 +174,20 @@ class Common_Model extends Model {
             'reports.last_crash',
             'reports.install_age'
         );
-        $tables = array(
-        );
-        $where = array(
-        );
 
-        list($params_tables, $params_where) = 
+        list($from_tables, $join_tables, $where) = 
             $this->_buildCriteriaFromSearchParams($params);
-
-        $tables += $params_tables;
-        $where  += $params_where;
 
         $sql = "/* soc.web common.queryReports */ 
             SELECT " . join(', ', $columns) .
-          " FROM   " . join(', ', array_keys($tables)) .
-          " WHERE  " . join(' AND ', $where) .
-	  " ORDER BY reports.date_processed DESC 
-	    LIMIT ? OFFSET ? ";
+	    " FROM   " . join(', ', $from_tables);
+        if(count($join_tables) > 0) {
+	    $sql .= " JOIN  " . join("\nJOIN ", $join_tables);
+        }
+
+	$sql .= " WHERE  " . join(' AND ', $where) .
+    	        " ORDER BY reports.date_processed DESC 
+	          LIMIT ? OFFSET ? ";
 
         return $this->fetchRows($sql, TRUE, array($pager->itemsPerPage, $pager->offset));
     }
@@ -205,10 +205,6 @@ class Common_Model extends Model {
             "CAST(count(CASE WHEN (reports.signature = $signature) THEN 1 END) AS FLOAT(10)) / count(reports.id) AS frequency", 
             "count(reports.id) AS total"
         );
-        $tables = array(
-        );
-        $where = array(
-        );
 
         $platforms = $this->platform_model->getAll();
         foreach ($platforms as $platform) {
@@ -218,31 +214,32 @@ class Common_Model extends Model {
                 "CASE WHEN (count(CASE WHEN (reports.os_name = '{$platform->os_name}') THEN 1 END) > 0) THEN (CAST(count(CASE WHEN (reports.signature = $signature AND reports.os_name = '{$platform->os_name}') THEN 1 END) AS FLOAT(10)) / count(CASE WHEN (reports.os_name = '{$platform->os_name}') THEN 1 END)) ELSE 0.0 END AS frequency_{$platform->id}";
         }
 
-        list($params_tables, $params_where) = 
+        list($from_tables, $join_tables, $where) = 
             $this->_buildCriteriaFromSearchParams($params);
-
-        $tables += $params_tables;
-        $where  += $params_where;
 
         $sql =
             "/* soc.web common.queryFreq */ " .
             " SELECT " . join(', ', $columns) .
-            " FROM   " . join(', ', array_keys($tables)) .
-            " WHERE  " . join(' AND ', $where) .
-            " GROUP BY date_trunc('day', reports.build_date) ".
-            " ORDER BY date_trunc('day', reports.build_date) DESC";
+            " FROM   " . join(', ', $from_tables);
+        if(count($join_tables) > 0) {
+	    $sql .= " JOIN  " . join("\nJOIN ", $join_tables);
+        }
+	$sql .= " WHERE  " . join(' AND ', $where) .
+                " GROUP BY date_trunc('day', reports.build_date) ".
+                " ORDER BY date_trunc('day', reports.build_date) DESC";
 
         return $this->fetchRows($sql);
     }
 
     /**
-     * Build the WHERE part of a DB query based on search from parameters.
+     * Build the FROM tables, JOIN tables, and WHERE clauses part of a DB query based on search from parameters.
+     * @return array of arrays of strings
+     *     Example: [['reports'], ['plugins_reports], ['reports.uuid = "blah"]}
      */
     public function _buildCriteriaFromSearchParams($params) {
+	$join_tables = array();
 
-        $tables = array( 
-            'reports' => 1 
-        );
+        $from_tables = array('reports');
 	$where  = array();
 	// Bug#518144 - Support retrieving NULL or Empty signatures
 	if (isset($params['missing_sig'])) {
@@ -276,14 +273,14 @@ class Common_Model extends Model {
         }
 
         if ($params['branch']) {
-            $tables['branches'] = 1;
+            array_push($join_tables, 'branches ON (branches.product = reports.product AND branches.version = reports.version)');
             $or = array();
             foreach ($params['branch'] as $branch) {
                 $or[] = "branches.branch = " . $this->db->escape($branch);
             }
             $where[] = '(' . join(' OR ', $or) . ')';
-            $where[] = 'branches.product = reports.product';
-            $where[] = 'branches.version = reports.version';
+            #$where[] = 'branches.product = reports.product';
+            #$where[] = 'branches.version = reports.version';
         }
 
         if ($params['platform']) {
@@ -299,6 +296,31 @@ class Common_Model extends Model {
 
         if (array_key_exists('build_id', $params) && $params['build_id']) {
 	    $where[] = 'reports.build = ' . $this->db->escape($params['build_id']);
+	}
+
+	if (array_key_exists('process_type', $params) && 'plugin' == $params['process_type']) {
+            array_push($join_tables, 'plugins_reports ON plugins_reports.report_id = reports.id');
+            array_push($join_tables, 'plugins ON plugins_reports.plugin_id = plugins.id');
+	    if (trim($params['plugin_query']) != '') {
+		switch ($params['plugin_query_type']) {
+                    case 'exact':
+			$plugin_query_term = ' = ' . $this->db->escape($params['plugin_query']); 
+			break;
+                    case 'startswith':
+			$plugin_query_term = ' LIKE ' . $this->db->escape($params['plugin_query'].'%'); 
+			break;
+                    case 'contains':
+                    default:
+                        $plugin_query_term = ' LIKE ' . $this->db->escape('%'.$params['plugin_query'].'%'); 
+			break;
+		}
+		if ('filename' == $params['plugin_field']) {
+		    $where[] = 'plugins.filename ' . $plugin_query_term;
+		} else {
+		    $where[] = 'plugins.name ' . $plugin_query_term;
+		}
+
+	    }
 	}
 
         if ($params['query']) {
@@ -339,7 +361,7 @@ class Common_Model extends Model {
             }
         }
         
-        return array($tables, $where);
+        return array($from_tables, $join_tables, $where);
     }
 
 }

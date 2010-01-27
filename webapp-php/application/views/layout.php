@@ -9,6 +9,7 @@
 	echo html::script(array('js/__utm.js',
                               'js/jquery/jquery-1.3.2.min.js',
                               'js/jquery/plugins/superfish-1.4.8.js',
+                              'js/jquery/plugins/jquery.cookies.2.2.0.min.js',
                               'js/socorro/nav.js'
                         ));
 

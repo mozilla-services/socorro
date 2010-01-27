@@ -17,6 +17,11 @@ class SearchReportHelper{
 		 'date'         => '',
 		 'range_value'  => '1',
 		 'range_unit'   => 'weeks',
+
+		 'process_type' => 'all',
+		 'plugin_field' => '',
+		 'plugin_query_type' => '',
+		 'plugin_query' => '',
 		 
 		 'do_query'     => FALSE
 		 );

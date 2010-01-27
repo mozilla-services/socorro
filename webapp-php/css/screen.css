@@ -766,6 +766,13 @@ p.advanced {
 #searchform button {
 	margin: 1em 0 0 1em;
 } 
+.radio-item {
+    float: left;
+    margin-right: 1em;
+}
+#plugin-inputs {
+    clear: left;
+}
 /* end search-form */
 
 
@@ -846,7 +853,7 @@ a.full-report{ display: block; clear: left; margin-left: 12px; }
 
 .expandable-menu{ padding-left: 6px; border: solid 1px #CCC; }
 
-a.disabled{ text-decoration: none; color: #999; }
+a.disabled, div.disabled, p.disabled{ text-decoration: none; color: #999; }
 .topcrashers.first { clear: left; }
 .topcrashers dt { white-space: nowrap; overflow: hidden; }
 

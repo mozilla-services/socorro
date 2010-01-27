@@ -53,6 +53,19 @@ if (is_null($report->signature) || empty($report->signature)) { ?>
             <tr>
                 <th>UUID</th><td><?php out::H($report->uuid) ?></td>
             </tr>
+<?php if (property_exists($report, 'processType')) { ?>
+            <tr><th>Process Type</th><td><?= out::H($report->processType) ?>
+    <?php if (property_exists($report, 'pluginName')) { ?>
+	    <strong class="name"><?= out::H($report->pluginName) ?></strong>
+    <?php } ?>
+    <?php if (property_exists($report, 'pluginVersion')) { ?>
+	    <span>Version:</span><span class="version"><?= out::H($report->pluginVersion) ?></span>
+    <?php } ?>
+    <?php if (property_exists($report, 'pluginFilename')) { ?>
+            <span>Filename:</span> <span class="filename"><?= out::H($report->pluginFilename) ?></span>
+    <?php } ?>
+                </td></tr>
+<?php } ?>
             <tr>
                 <th>Time
 </th><td><?php out::H($report->date_processed) ?></td>

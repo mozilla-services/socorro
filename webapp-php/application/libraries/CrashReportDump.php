@@ -99,6 +99,7 @@ class CrashReportDump {
 	    gzclose ($file);
         set_error_handler($eh);
 	if ($err->error_reading_file === TRUE) {
+	    Kohana::log('alert', "Could not load $uri");
 	    return FALSE;
 	} else {
 	    return $output; 

@@ -73,13 +73,16 @@
             <label for="query_type">Stack signature</label>
             <input type="hidden" name="query_search" value="signature" />
             <!-- input type="hidden" name="query_search" value="signature" stack  -->
-            <?php echo form::dropdown(
-                'query_type',
-                array(
+            <?php
+	    //used by query and plugin_query
+	    $query_type_options = array(
                     'exact'      => 'is exactly',
                     'contains'   => 'contains',
                     'startswith' => 'starts with'
-                ),
+                );
+	    echo form::dropdown(
+                'query_type',
+                $query_type_options,
                 $params['query_type']
             ) ?>	      
             <?php echo form::input(
@@ -95,7 +98,36 @@
             trim($params['build_id'])
         )?>
         </p>
-    </div>
+	<p class="advanced">
+	<div class="radio-item"><label>All 
+            <?= form::radio('process_type', 'all',     $params['process_type'] == 'all'); ?></label></div>
+	<div class="radio-item"><label>Plugins Only 
+            <?= form::radio('process_type', 'plugin', $params['process_type'] == 'plugin'); ?></label></div>
+	<?php /* When out of process plugins support content as a type, we can add:
+	       <div class="radio-item disabled"><label>Content Only form::radio('process_type', 'plugin', $params['process_type'] == 'plugin'); </label></div> */ ?>
+
+        </p>
+	<p id="plugin-inputs" class="advanced"><?= form::label('plugin_field', 'Search By Plugin') ?>
+            <?= form::dropdown(
+		    array('id'   => 'plugin_field',
+			  'name' => 'plugin_field'),
+		    array('filename' => 'Filename',
+			  'name'     => 'Name'),
+		    $params['plugin_field']); ?>
+
+	    <?= form::dropdown(
+		    array('id'         => 'plugin_query_type',
+			  'name'       => 'plugin_query_type'),
+		    $query_type_options,
+		    $params['plugin_query_type']) ?>
+
+            <?= form::input(array('id'   => 'plugin_query',
+				  'name' => 'plugin_query',
+				  'size' => '25'),
+			    trim($params['plugin_query'])) ?>
+
+        </p>
+    </div><!-- /advfilter -->
             
     <button type="submit">Filter Crash Reports</button>
     <input type="hidden" name="do_query" value="1" />
