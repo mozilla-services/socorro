@@ -248,7 +248,7 @@ class TestTopCrashesByUrl:
 
   def testSaveTruncatedData(self):
     """
-    testTopCrashesByUrl:TestTopCrashesByUrl.testSaveData(slow=2)
+    testTopCrashesByUrl:TestTopCrashesByUrl.testSaveTruncatedData(slow=2)
     This is a reasonably realistic amount of time (about 1.5 seconds) to handle about 150 reports
     """
     global me
