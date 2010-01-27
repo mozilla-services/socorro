@@ -691,7 +691,7 @@ class Processor(object):
     """
     logger.debug("%s - starting insertReportIntoDatabase", threading.currentThread().getName())
     product = Processor.getJsonOrWarn(jsonDocument,'ProductName',processorErrorMessages,None, 30)
-    version = Processor.getJsonOrWarn(jsonDocument,'Version', processorErrorMessages,None,16)
+    version = Processor.getJsonOrWarn(jsonDocument,'Version', processorErrorMessages,None)
     buildID =   Processor.getJsonOrWarn(jsonDocument,'BuildID', processorErrorMessages,None,16)
     url = socorro.lib.util.lookupLimitedStringOrNone(jsonDocument, 'URL', 255)
     user_comments = socorro.lib.util.lookupLimitedStringOrNone(jsonDocument, 'Comments', 500)
