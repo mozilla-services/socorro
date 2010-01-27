@@ -19,8 +19,16 @@ day.default = datetime.date.today().isoformat()
 day.fromStringConverter = cm.dateTimeConverter
 
 outputPath = cm.Option()
-outputPath.doc = 'file system location to put the output csv file'
-outputPath.default = '.'
+outputPath.doc = "file system location to put the 'internal/private' output csv file"
+default = '.'
+
+publicOutputPath = cm.Option()
+publicOutputPath.doc = "file system location to put the 'external/public' output csv file"
+publicOutputPath.default = '.'
+
+rawFileMountPoints = cm.Option()
+rawFileMountPoints.doc = 'priority ordered, space-separated list of mount points for raw json and dump files'
+rawFileMountPoints.default = ''
 
 product = cm.Option()
 product.doc = 'the name of the product to track (leave blank for all)'
