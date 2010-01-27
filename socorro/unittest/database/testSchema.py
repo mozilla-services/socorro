@@ -72,6 +72,8 @@ def setup_module():
     #schema.MTBFFactsTable:[False,set(['mtbffacts', 'productdims', 'osdims', 'release_enum'])],
     schema.TimeBeforeFailureTable:[False,set(['time_before_failure', 'productdims', 'osdims', 'release_enum'])],
     schema.OsDimsTable:[False,set(['osdims'])],
+    schema.PluginsTable:[False,set(['plugins'])],
+    schema.PluginsReportsTable:[True,set(['plugins_reports'])],
     schema.PriorityJobsTable:[False,set(['priorityjobs'])],
     schema.ProcessorsTable:[False,set(['processors'])],
     schema.ProductDimsTable:[False,set(['productdims','release_enum'])],
@@ -166,6 +168,7 @@ def testGetOrderedPartitionList():
   expected = {
     'frames': set(['frames', 'reports']),
     'extensions': set(['extensions', 'reports']),
+    'plugins_reports': set(['plugins_reports', 'reports']),
     }
   allTables = schema.getOrderedSetupList()
   for t in allTables:
@@ -261,7 +264,7 @@ def testUpdateDatabase():
   global me, updated
   updated = []
   #expected = set(['reports','dumps','extensions','frames','processors','jobs'])
-  expected = set(['extensions','frames','processors','jobs'])
+  expected = set(['extensions','frames','processors','jobs', 'plugins'])
   found = set([ x(logger=me.logger).name for x in schema.databaseObjectClassListForUpdate])
   assert expected == found, 'Expected: %s, Found: %s'%(expected,found)
   class ReportsStub(schema.ReportsTable):

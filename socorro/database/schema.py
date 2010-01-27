@@ -1132,6 +1132,69 @@ class TopCrashesBySignatureTable(Table):
                                             )
 databaseDependenciesForSetup[TopCrashesBySignatureTable] = [OsDimsTable,ProductDimsTable]
 
+#=================================================================================================================
+class PluginsTable(Table):
+  """Define the table 'plugins'"""
+  #-----------------------------------------------------------------------------------------------------------------
+  def __init__ (self, name="plugins", logger=None, **kwargs):
+    super(PluginsTable, self).__init__(name=name, logger=logger,
+                                            creationSql = """
+                                                CREATE TABLE %s (
+                                                    id SERIAL NOT NULL,
+                                                    filename TEXT NOT NULL,
+                                                    name TEXT NOT NULL,
+                                                    PRIMARY KEY (id),
+                                                    CONSTRAINT filename_name_key UNIQUE (filename, name)
+                                                );""" % name)
+
+  def insert(self, databaseCursor, rowTuple=None):
+    databaseCursor.execute("insert into plugins (filename, name) values (%s, %s)", rowTuple)
+    
+databaseDependenciesForSetup[PluginsTable] = []
+
+#=================================================================================================================
+class PluginsReportsTable(PartitionedTable):
+  """Define the table 'plugins_reports'"""
+  #-----------------------------------------------------------------------------------------------------------------
+  def __init__ (self, logger, **kwargs):
+    super(PluginsReportsTable, self).__init__(name='plugins_reports', logger=logger,
+                                          creationSql="""
+                                              CREATE TABLE plugins_reports (
+                                                  report_id integer NOT NULL,
+                                                  plugin_id integer NOT NULL,
+                                                  date_processed timestamp without time zone,
+                                                  version TEXT NOT NULL
+                                              );""",
+
+                                          partitionCreationSqlTemplate="""
+                                              CREATE TABLE %(partitionName)s (
+                                                  CONSTRAINT %(partitionName)s_date_check CHECK (TIMESTAMP without time zone '%(startDate)s' <= date_processed and date_processed < TIMESTAMP without time zone '%(endDate)s'),
+                                                  PRIMARY KEY (report_id, plugin_id)
+                                                  )
+                                                  INHERITS (plugins_reports);
+                                              CREATE INDEX %(partitionName)s_report_id_date_key ON %(partitionName)s (report_id, date_processed, plugin_id);
+                                              ALTER TABLE %(partitionName)s
+                                                  ADD CONSTRAINT %(partitionName)s_report_id_fkey FOREIGN KEY (report_id) REFERENCES reports_%(compressedStartDate)s(id) ON DELETE CASCADE;
+                                              ALTER TABLE %(partitionName)s
+                                                  ADD CONSTRAINT %(partitionName)s_plugin_id_fkey FOREIGN KEY (plugin_id) REFERENCES plugins(id) ON DELETE CASCADE;
+                                              """)
+    self.insertSql = """insert into TABLENAME (report_id, plugin_id, date_processed, version) values
+                                              (%s, (select id from plugins where filename = %s and name = %s),
+                                              %s, %s)"""
+  #-----------------------------------------------------------------------------------------------------------------
+  def partitionCreationParameters(self, uniqueIdentifier):
+    startDate, endDate = uniqueIdentifier
+    startDateAsString = "%4d-%02d-%02d" % startDate.timetuple()[:3]
+    compressedStartDateAsString = startDateAsString.replace("-", "")
+    endDateAsString = "%4d-%02d-%02d" % endDate.timetuple()[:3]
+    return { "partitionName": "plugins_reports_%s" % compressedStartDateAsString,
+             "startDate": startDateAsString,
+             "endDate": endDateAsString,
+             "compressedStartDate": compressedStartDateAsString
+           }
+databaseDependenciesForPartition[PluginsReportsTable] = [ReportsTable]
+databaseDependenciesForSetup[PluginsReportsTable] = []
+
 class AlexaTopsitesTable(Table):
   """Define the table 'alexa_topsites'"""
   def __init__(self, logger, **kwargs):
@@ -1167,6 +1230,7 @@ class RawAduTable(Table):
                                        """
                                     )
 databaseDependenciesForSetup[RawAduTable] = []
+
 # #=================================================================================================================
 # class TopCrashersTable(Table):
 #   """Define the table 'topcrashers'"""
@@ -1333,6 +1397,7 @@ databaseObjectClassListForWeeklyPartitions = [ReportsTable,
                                               #DumpsTable,
                                               FramesTable,
                                               ExtensionsTable,
+                                              PluginsReportsTable,
                                              ]
 #-----------------------------------------------------------------------------------------------------------------
 def createPartitions(config, logger):

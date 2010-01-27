@@ -98,6 +98,7 @@ class Processor(object):
     assert "irrelevantSignatureRegEx" in config, "irrelevantSignatureRegEx is missing from the configuration"
     assert "prefixSignatureRegEx" in config, "prefixSignatureRegEx is missing from the configuration"
     assert "collectAddon" in config, "collectAddon is missing from the configuration"
+    assert "collectCrashProcess" in config, "collectCrashProcess is missing from the configuration"
     assert "signatureSentinels" in config, "signatureSentinels is missing from the configuration"
     assert "signaturesWithLineNumbersRegEx" in config, "signaturesWithLineNumbersRegEx is missing from the configuration"
     assert "dumpPermissions" in config, "dumpPermissions is missing from the configuration"
@@ -128,6 +129,8 @@ class Processor(object):
     #self.dumpsTable = sch.DumpsTable(logger=logger)
     self.extensionsTable = sch.ExtensionsTable(logger=logger)
     self.framesTable = sch.FramesTable(logger=logger)
+    self.pluginsTable = sch.PluginsTable(logger=logger)
+    self.pluginsReportsTable = sch.PluginsReportsTable(logger=logger)
 
     logger.info("%s - connecting to database", threading.currentThread().getName())
     try:
@@ -593,6 +596,11 @@ class Processor(object):
         addonsAsAListOfTuples = self.insertAdddonsIntoDatabase(threadLocalCursor, reportId, jsonDocument, date_processed, processorErrorMessages)
         newReportRecordAsDict["addons"] = addonsAsAListOfTuples
 
+      if self.config.collectCrashProcess:
+        logger.info("%s - collecting Crash Process", threadName)
+        crashProcessAsDict = self.insertCrashProcess(threadLocalCursor, reportId, jsonDocument, date_processed, processorErrorMessages)
+        newReportRecordAsDict.update( crashProcessAsDict )
+
       try:
         additionalReportValuesAsDict = self.doBreakpadStackDumpAnalysis(reportId, jobUuid, dumpfilePathname, threadLocalCursor, date_processed, processorErrorMessages)
       finally:
@@ -762,6 +770,40 @@ class Processor(object):
       except IndexError:
         processorErrorMessages.append('WARNING: "%s" is deficient as a name and version for an addon' % str(x))
     return listOfAddonsForOutput
+
+  #-----------------------------------------------------------------------------------------------------------------
+  def insertCrashProcess (self, threadLocalCursor, reportId, jsonDocument, date_processed, processorErrorMessages):
+    """ Electrolysis Support - Optional - jsonDocument may contain a ProcessType of plugin. In the future this
+        value would be default, content, maybe even Jetpack... This indicates which process was the crashing process.
+        plugin - When set to plugin, the jsonDocument MUST calso contain PluginFilename, PluginName, and PluginVersion
+    """
+    listOfCrashProcessOutput = {}
+    processType = socorro.lib.util.lookupLimitedStringOrNone(jsonDocument, 'ProcessType', 10)
+    if not processType: return listOfCrashProcessOutput
+    listOfCrashProcessOutput['processType'] = processType
+    if "plugin" == processType:
+      pluginFilename = Processor.getJsonOrWarn(jsonDocument, 'PluginFilename', processorErrorMessages, None, 255)
+      pluginName     = Processor.getJsonOrWarn(jsonDocument, 'PluginName',     processorErrorMessages, None, 255)
+      pluginVersion  = Processor.getJsonOrWarn(jsonDocument, 'Version',        processorErrorMessages, None, 16)
+      if pluginFilename and pluginName and pluginVersion:
+        listOfCrashProcessOutput.update({'pluginFilename': pluginFilename,'pluginName': pluginName,'pluginVersion': pluginVersion})
+        
+        pluginId = None
+        try:
+          self.pluginsTable.insert(threadLocalCursor, (pluginFilename, pluginName))
+        except psycopg2.IntegrityError, x:
+          threadLocalCursor.connection.rollback()
+          logger.info("%s - No Big Deal - this plugin already exists for pluginFilename: %s pluginName: %s",  threading.currentThread().getName(), pluginFilename, pluginName)
+
+        try:
+          self.pluginsReportsTable.insert(threadLocalCursor,
+                                          (reportId, pluginFilename, pluginName, date_processed, pluginVersion),
+                                          self.databaseConnectionPool.connectToDatabase, date_processed=date_processed)
+        except psycopg2.IntegrityError, x:
+          logger.error("%s - psycopg2.IntegrityError %s", threading.currentThread().getName(), str(x))
+          logger.error("%s - %s: Unable to save record for plugin report. pluginId: %s reportId: %s version: %s",  threading.currentThread().getName(), reportId, pluginId, pluginVersion)
+          processorErrorMessages.append("Detected out of process plugin crash, but unable to record %s %s %s" % (pluginFilename, pluginName, pluginVersion))
+        return listOfCrashProcessOutput
 
   #-----------------------------------------------------------------------------------------------------------------
   def doBreakpadStackDumpAnalysis (self, reportId, uuid, dumpfilePathname, databaseCursor, date_processed, processorErrorMessages):
