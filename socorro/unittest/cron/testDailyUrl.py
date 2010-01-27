@@ -6,8 +6,11 @@ import simplejson
 import socorro.lib.filesystem as soc_filesys
 
 import socorro.unittest.testlib.util as tutil
+import socorro.unittest.testlib.loggerForTest as tLogger
 
 import socorro.cron.dailyUrl as dailyUrl
+
+dailyUrl.logger = tLogger.TestingLogger()
 
 jsonData = [
   # [testMount_index,uuid,json dict]
@@ -137,3 +140,21 @@ class TestDailyUrl(unittest.TestCase):
       assert iExpected[i] == iF.data[i]
     for i in range(len(pF.data)):
       assert pExpected[i] == pF.data[i]
+
+  def testAddonsChecked(self):
+    cases = [
+      ['1', 'checked'],
+      ['0', 'checked'],
+      [0, 'not'],
+      [1, 'checked'],
+      ['false', 'not'],
+      ['true', 'checked'],
+      ['FALSE', 'not'],
+      ['TRUE', 'checked'],
+      [[],'not'],
+      [{}, 'not'],
+      [('toot'),'checked'],
+     ]
+    for arg,expected in cases:
+      got = dailyUrl.addonsChecked(arg)
+      assert expected == got, 'Got %s, expected %s'%(got,expected)
