@@ -32,7 +32,6 @@
 
      View::factory('common/dashboard_crash_widget', array(
         'widgetName' => "Top Crashes By Url",
-        'extraClasses' => 'first',
         'widgetData'   => $topcrashesbyurl,
         'subWidget'    => 'common/dashboard/topcrashbyurl'
      ))->render(TRUE);
