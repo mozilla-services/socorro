@@ -21,7 +21,7 @@ import socorro.lib.ConfigurationManager
 import socorro.lib.JsonDumpStorage as jds
 import socorro.lib.psycopghelper as psy
 import socorro.lib.ooid as ooid
-import socorro.lib.datetimeutil as sdt
+import socorro.lib.datetimeutil as soc_dtutil
 import socorro.lib.processedDumpStorage as pds
 
 import simplejson
@@ -73,7 +73,7 @@ class Processor(object):
   #-----------------------------------------------------------------------------------------------------------------
   # static data. Beware threading!
   buildDatePattern = re.compile('^(\\d{4})(\\d{2})(\\d{2})(\\d{2})')
-  utctz = sdt.UTC()
+  utctz = soc_dtutil.UTC()
 
   #-----------------------------------------------------------------------------------------------------------------
   def __init__ (self, config):
@@ -581,7 +581,7 @@ class Processor(object):
         jsonFile.close()
 
       try:
-        date_processed = sdt.datetimeFromISOdateString(jsonDocument["submitted_timestamp"])
+        date_processed = soc_dtutil.datetimeFromISOdateString(jsonDocument["submitted_timestamp"])
       except KeyError:
         date_processed = ooid.dateFromOoid(jobUuid)
 
@@ -765,7 +765,7 @@ class Processor(object):
     listOfAddonsForOutput = []
     for i, x in enumerate(listOfAddonsForInput):
       try:
-        self.extensionsTable.insert(threadLocalCursor, (reportId, date_processed, i, x[0][:100], x[1][:16]), self.databaseConnectionPool.connectToDatabase, date_processed=date_processed)
+        self.extensionsTable.insert(threadLocalCursor, (reportId, date_processed, i, x[0][:100], x[1]), self.databaseConnectionPool.connectToDatabase, date_processed=date_processed)
         listOfAddonsForOutput.append(x)
       except IndexError:
         processorErrorMessages.append('WARNING: "%s" is deficient as a name and version for an addon' % str(x))

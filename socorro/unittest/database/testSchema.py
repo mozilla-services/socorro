@@ -264,7 +264,7 @@ def testUpdateDatabase():
   global me, updated
   updated = []
   #expected = set(['reports','dumps','extensions','frames','processors','jobs'])
-  expected = set(['extensions','frames','processors','jobs', 'plugins'])
+  expected = set(['extensions','frames','processors','jobs'])
   found = set([ x(logger=me.logger).name for x in schema.databaseObjectClassListForUpdate])
   assert expected == found, 'Expected: %s, Found: %s'%(expected,found)
   class ReportsStub(schema.ReportsTable):

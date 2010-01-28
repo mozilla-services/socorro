@@ -108,6 +108,11 @@ collectAddon.doc = "if true, parse and collect information about addons from the
 collectAddon.default = False
 collectAddon.fromStringConverter = cm.booleanConverter
 
+collectCrashProcess = cm.Option()
+collectCrashProcess.doc = "if true, parse and collect information about out of process crashes; if false, don't"
+collectCrashProcess.default = True
+collectCrashProcess.fromStringConverter = cm.booleanConverter
+
 dumpPermissions = cm.Option()
 dumpPermissions.doc = 'when saving processed dumps, the pemission flags to be used'
 dumpPermissions.default = '%d'%(stat.S_IRGRP | stat.S_IWGRP | stat.S_IRUSR | stat.S_IWUSR)

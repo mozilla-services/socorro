@@ -36,6 +36,7 @@ import psycopg2
 
 from nose.tools import *
 
+import socorro.database.postgresql as soc_pg
 import socorro.lib.ConfigurationManager as configurationManager
 import socorro.monitor.monitor as monitor
 
@@ -269,7 +270,7 @@ class TestMonitor:
     """
     global me
     self.markLog()
-    runInOtherProcess(self.runStartChild)
+    runInOtherProcess(self.runStartChild,logger=me.logger)
     self.markLog()
     seg = self.extractLogSegment()
     prior = ''
@@ -396,7 +397,6 @@ class TestMonitor:
     testGetDatabaseConnectionPair(self):
     test that the wrapper for psycopghelper.DatabaseConnectionPool works as expected
     """
-    # print 'TEST: testGetDatabaseConnectionPair'
     global me
     mon = monitor.Monitor(me.config)
     tcon,tcur = mon.getDatabaseConnectionPair()
@@ -704,7 +704,7 @@ class TestMonitor:
     dbtestutil.fillProcessorTable(cursor,4)
     m = monitor.Monitor(me.config)
     createJDS.createTestSet(createJDS.jsonFileData,jsonKwargs={'logger':me.logger},rootDir=me.config.storageRoot)
-    runInOtherProcess(m.standardJobAllocationLoop, stopCondition=(lambda : self.jobsAllocated() == 14))
+    runInOtherProcess(m.standardJobAllocationLoop, stopCondition=(lambda : self.jobsAllocated() == 14),logger=me.logger)
     started = dbtestutil.datetimeNow(cursor)
     self.connection.commit()
     completed = started + dt.timedelta(microseconds=100)
@@ -767,7 +767,7 @@ class TestMonitor:
       cc[conf] = ''
     m = monitor.Monitor(cc)
     createJDS.createTestSet(createJDS.jsonFileData,jsonKwargs={'logger':me.logger},rootDir=me.config.storageRoot)
-    runInOtherProcess(m.standardJobAllocationLoop, stopCondition=(lambda : self.jobsAllocated() == 14))
+    runInOtherProcess(m.standardJobAllocationLoop, stopCondition=(lambda : self.jobsAllocated() == 14),logger=me.logger)
     started = dbtestutil.datetimeNow(cursor)
     self.connection.commit()
     completed = started + dt.timedelta(microseconds=100)

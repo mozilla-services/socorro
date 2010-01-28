@@ -1,6 +1,7 @@
 import os
 import signal
 import sys
+import threading
 import time
 
 
@@ -69,12 +70,12 @@ def runInOtherProcess(executable, *args, **kwargs):
       executable(*args)
     # following sequence of except: handles both 2.4.x and 2.5.x hierarchy
     except SystemExit,x:
-      me.logger.info("CHILD SystemExit in %s: %s [%s]"%(threading.currentThread().getName(),type(x),x))
+      logger.info("CHILD SystemExit in %s: %s [%s]"%(threading.currentThread().getName(),type(x),x))
       os._exit(0)
     except KeyboardInterrupt,x:
-      me.logger.info("CHILD KeyboardInterrupt in %s: %s [%s]"%(threading.currentThread().getName(),type(x),x))
+      logger.info("CHILD KeyboardInterrupt in %s: %s [%s]"%(threading.currentThread().getName(),type(x),x))
       os._exit(0)
     except Exception,x:
-      me.logger.info("CHILD Exception in %s: %s [%s]"%(threading.currentThread().getName(),type(x),x))
+      logger.info("CHILD Exception in %s: %s [%s]"%(threading.currentThread().getName(),type(x),x))
       os._exit(0)
 

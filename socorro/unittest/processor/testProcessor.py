@@ -74,7 +74,7 @@ class DummyObjectWithExpectations(object):
         assert False, "expected no further calls, but got '%s' with args: %s and kwargs: %s" % (attribute, args, kwargs)
       self.counter += 1
       assert attributeExpected == attribute, "expected attribute '%s', but got '%s'" % (attributeExpected, attribute)
-      assert argsExpected == args, "expected '%s' arguments %s, but got %s" % (attribute, argsExpected, args)
+      assert argsExpected == args, "expected '%s' arguments %s, \nbut got\n %s" % (attribute, argsExpected, args)
       assert kwargsExpected == kwargs, "expected '%s' keyword arguments %s, but got %s" % (attribute, kwargsExpected, kwargs)
       return returnValue
     return f
@@ -1459,9 +1459,9 @@ class TestProcessor:
     p.extensionsTable = DummyObjectWithExpectations()
     p.extensionsTable.expect('insert', ('dummycursor', (1, '2009-09-01', 0, "{463F6CA5-EE3C-4be1-B7E6-7FEE11953374}", "3.0.5.1"), p.databaseConnectionPool.connectToDatabase), {"date_processed": '2009-09-01'})
     p.extensionsTable.expect('insert', ('dummycursor', (1, '2009-09-01', 1, "{CAFEEFAC-0016-0000-0007-ABCDEFFEDCBA}", "6.0.07"), p.databaseConnectionPool.connectToDatabase), {"date_processed": '2009-09-01'})
-    p.extensionsTable.expect('insert', ('dummycursor', (1, '2009-09-01', 2, "moveplayer@movenetworks.com", "1.0.0.0711010000"), p.databaseConnectionPool.connectToDatabase), {"date_processed": '2009-09-01'})
+    p.extensionsTable.expect('insert', ('dummycursor', (1, '2009-09-01', 2, "moveplayer@movenetworks.com", "1.0.0.071101000055"), p.databaseConnectionPool.connectToDatabase), {"date_processed": '2009-09-01'})
     p.extensionsTable.expect('insert', ('dummycursor', (1, '2009-09-01', 3, "{3EC9C995-8072-4fc0-953E-4F30620D17F3}", "2.0.0.4"), p.databaseConnectionPool.connectToDatabase), {"date_processed": '2009-09-01'})
-    p.extensionsTable.expect('insert', ('dummycursor', (1, '2009-09-01', 4, "{635abd67-4fe9-1b23-4f01-e679fa7484c1}", "1.6.5.2008121015"), p.databaseConnectionPool.connectToDatabase), {"date_processed": '2009-09-01'})
+    p.extensionsTable.expect('insert', ('dummycursor', (1, '2009-09-01', 4, "{635abd67-4fe9-1b23-4f01-e679fa7484c1}", "1.6.5.200812101546"), p.databaseConnectionPool.connectToDatabase), {"date_processed": '2009-09-01'})
     p.extensionsTable.expect('insert', ('dummycursor', (1, '2009-09-01', 5, "{CAFEEFAC-0016-0000-0011-ABCDEFFEDCBA}", "6.0.11"), p.databaseConnectionPool.connectToDatabase), {"date_processed": '2009-09-01'})
     p.extensionsTable.expect('insert', ('dummycursor', (1, '2009-09-01', 6, "{972ce4c6-7e08-4474-a285-3208198ce6fd}", "3.0.6"), p.databaseConnectionPool.connectToDatabase), {"date_processed": '2009-09-01'})
     errorMessages = []
@@ -1481,9 +1481,9 @@ class TestProcessor:
     p.extensionsTable = DummyObjectWithExpectations()
     p.extensionsTable.expect('insert', ('dummycursor', (1, '2009-09-01', 0, "{463F6CA5-EE3C-4be1-B7E6-7FEE11953374}", "3.0.5.1"), p.databaseConnectionPool.connectToDatabase), {"date_processed": '2009-09-01'})
     p.extensionsTable.expect('insert', ('dummycursor', (1, '2009-09-01', 1, "{CAFEEFAC-0016-0000-0007-ABCDEFFEDCBA}", "6.0.07"), p.databaseConnectionPool.connectToDatabase), {"date_processed": '2009-09-01'})
-    p.extensionsTable.expect('insert', ('dummycursor', (1, '2009-09-01', 2, "moveplayer@movenetworks.com", "1.0.0.0711010000"), p.databaseConnectionPool.connectToDatabase), {"date_processed": '2009-09-01'})
+    p.extensionsTable.expect('insert', ('dummycursor', (1, '2009-09-01', 2, "moveplayer@movenetworks.com", "1.0.0.071101000055"), p.databaseConnectionPool.connectToDatabase), {"date_processed": '2009-09-01'})
     p.extensionsTable.expect('insert', ('dummycursor', (1, '2009-09-01', 3, "{3EC9C995-8072-4fc0-953E-4F30620D17F3}", "2.0.0.4"), p.databaseConnectionPool.connectToDatabase), {"date_processed": '2009-09-01'})
-    p.extensionsTable.expect('insert', ('dummycursor', (1, '2009-09-01', 4, "{635abd67-4fe9-1b23-4f01-e679fa7484c1}", "1.6.5.2008121015"), p.databaseConnectionPool.connectToDatabase), {"date_processed": '2009-09-01'})
+    p.extensionsTable.expect('insert', ('dummycursor', (1, '2009-09-01', 4, "{635abd67-4fe9-1b23-4f01-e679fa7484c1}", "1.6.5.200812101546"), p.databaseConnectionPool.connectToDatabase), {"date_processed": '2009-09-01'})
     p.extensionsTable.expect('insert', ('dummycursor', (1, '2009-09-01', 6, "{972ce4c6-7e08-4474-a285-3208198ce6fd}", "3.0.6"), p.databaseConnectionPool.connectToDatabase), {"date_processed": '2009-09-01'})
     errorMessages = []
     result = p.insertAdddonsIntoDatabase('dummycursor', 1, {"Add-ons":"{463F6CA5-EE3C-4be1-B7E6-7FEE11953374}:3.0.5.1,{CAFEEFAC-0016-0000-0007-ABCDEFFEDCBA}:6.0.07,moveplayer@movenetworks.com:1.0.0.071101000055,{3EC9C995-8072-4fc0-953E-4F30620D17F3}:2.0.0.4,{635abd67-4fe9-1b23-4f01-e679fa7484c1}:1.6.5.200812101546,{CAFEEFAC-0016-0000-0011-ABCDEFFEDCBA}6.0.11,{972ce4c6-7e08-4474-a285-3208198ce6fd}:3.0.6"}, '2009-09-01', errorMessages)
