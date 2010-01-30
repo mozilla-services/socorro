@@ -401,7 +401,9 @@ class TestProcessor:
     try:
       theProcessor = TestProcessor.StubProcessor_start(me.config)
       theProcessor.start()
-      assert False, 'Cannot get to this line: Parent will kill'
+      me.logger.info('CHILD following processor.start()."Cannot get to this line":) thread: %s'%(threading.currentThread().getName()))
+      # if we arrive here, weirdly, lets just curl up and die                                                                 
+      os._exit(1)
     # following sequence of except: handles both 2.4.x and 2.5.x hierarchy
     except SystemExit,x:
       me.logger.info("CHILD SystemExit in %s: %s [%s]"%(threading.currentThread().getName(),type(x),x))
@@ -1448,24 +1450,26 @@ class TestProcessor:
   def test_insertAdddonsIntoDatabase_addons_normal_one(self):
     p = processor.Processor(me.config)
     p.extensionsTable = DummyObjectWithExpectations()
-    p.extensionsTable.expect('insert', ('dummycursor', (1, '2009-09-01', 0, "{463F6CA5-EE3C-4be1-B7E6-7FEE11953374}", "3.0.5.1"), p.databaseConnectionPool.connectToDatabase), {"date_processed": '2009-09-01'})
+    dummycursor = self.connection.cursor()
+    p.extensionsTable.expect('insert', (dummycursor, (1, '2009-09-01', 0, "{463F6CA5-EE3C-4be1-B7E6-7FEE11953374}", "3.0.5.1"), p.databaseConnectionPool.connectToDatabase), {"date_processed": '2009-09-01'})
     errorMessages = []
-    result = p.insertAdddonsIntoDatabase('dummycursor', 1, {"Add-ons":"{463F6CA5-EE3C-4be1-B7E6-7FEE11953374}:3.0.5.1"}, '2009-09-01', errorMessages)
+    result = p.insertAdddonsIntoDatabase(dummycursor, 1, {"Add-ons":"{463F6CA5-EE3C-4be1-B7E6-7FEE11953374}:3.0.5.1"}, '2009-09-01', errorMessages)
     assert result == [["{463F6CA5-EE3C-4be1-B7E6-7FEE11953374}", "3.0.5.1"]], "got %s" % result
     assert errorMessages == []
 
   def test_insertAdddonsIntoDatabase_addons_normal_many(self):
     p = processor.Processor(me.config)
     p.extensionsTable = DummyObjectWithExpectations()
-    p.extensionsTable.expect('insert', ('dummycursor', (1, '2009-09-01', 0, "{463F6CA5-EE3C-4be1-B7E6-7FEE11953374}", "3.0.5.1"), p.databaseConnectionPool.connectToDatabase), {"date_processed": '2009-09-01'})
-    p.extensionsTable.expect('insert', ('dummycursor', (1, '2009-09-01', 1, "{CAFEEFAC-0016-0000-0007-ABCDEFFEDCBA}", "6.0.07"), p.databaseConnectionPool.connectToDatabase), {"date_processed": '2009-09-01'})
-    p.extensionsTable.expect('insert', ('dummycursor', (1, '2009-09-01', 2, "moveplayer@movenetworks.com", "1.0.0.071101000055"), p.databaseConnectionPool.connectToDatabase), {"date_processed": '2009-09-01'})
-    p.extensionsTable.expect('insert', ('dummycursor', (1, '2009-09-01', 3, "{3EC9C995-8072-4fc0-953E-4F30620D17F3}", "2.0.0.4"), p.databaseConnectionPool.connectToDatabase), {"date_processed": '2009-09-01'})
-    p.extensionsTable.expect('insert', ('dummycursor', (1, '2009-09-01', 4, "{635abd67-4fe9-1b23-4f01-e679fa7484c1}", "1.6.5.200812101546"), p.databaseConnectionPool.connectToDatabase), {"date_processed": '2009-09-01'})
-    p.extensionsTable.expect('insert', ('dummycursor', (1, '2009-09-01', 5, "{CAFEEFAC-0016-0000-0011-ABCDEFFEDCBA}", "6.0.11"), p.databaseConnectionPool.connectToDatabase), {"date_processed": '2009-09-01'})
-    p.extensionsTable.expect('insert', ('dummycursor', (1, '2009-09-01', 6, "{972ce4c6-7e08-4474-a285-3208198ce6fd}", "3.0.6"), p.databaseConnectionPool.connectToDatabase), {"date_processed": '2009-09-01'})
+    dummycursor = self.connection.cursor()
+    p.extensionsTable.expect('insert', (dummycursor, (1, '2009-09-01', 0, "{463F6CA5-EE3C-4be1-B7E6-7FEE11953374}", "3.0.5.1"), p.databaseConnectionPool.connectToDatabase), {"date_processed": '2009-09-01'})
+    p.extensionsTable.expect('insert', (dummycursor, (1, '2009-09-01', 1, "{CAFEEFAC-0016-0000-0007-ABCDEFFEDCBA}", "6.0.07"), p.databaseConnectionPool.connectToDatabase), {"date_processed": '2009-09-01'})
+    p.extensionsTable.expect('insert', (dummycursor, (1, '2009-09-01', 2, "moveplayer@movenetworks.com", "1.0.0.071101000055"), p.databaseConnectionPool.connectToDatabase), {"date_processed": '2009-09-01'})
+    p.extensionsTable.expect('insert', (dummycursor, (1, '2009-09-01', 3, "{3EC9C995-8072-4fc0-953E-4F30620D17F3}", "2.0.0.4"), p.databaseConnectionPool.connectToDatabase), {"date_processed": '2009-09-01'})
+    p.extensionsTable.expect('insert', (dummycursor, (1, '2009-09-01', 4, "{635abd67-4fe9-1b23-4f01-e679fa7484c1}", "1.6.5.200812101546"), p.databaseConnectionPool.connectToDatabase), {"date_processed": '2009-09-01'})
+    p.extensionsTable.expect('insert', (dummycursor, (1, '2009-09-01', 5, "{CAFEEFAC-0016-0000-0011-ABCDEFFEDCBA}", "6.0.11"), p.databaseConnectionPool.connectToDatabase), {"date_processed": '2009-09-01'})
+    p.extensionsTable.expect('insert', (dummycursor, (1, '2009-09-01', 6, "{972ce4c6-7e08-4474-a285-3208198ce6fd}", "3.0.6"), p.databaseConnectionPool.connectToDatabase), {"date_processed": '2009-09-01'})
     errorMessages = []
-    result = p.insertAdddonsIntoDatabase('dummycursor', 1, {"Add-ons":"{463F6CA5-EE3C-4be1-B7E6-7FEE11953374}:3.0.5.1,{CAFEEFAC-0016-0000-0007-ABCDEFFEDCBA}:6.0.07,moveplayer@movenetworks.com:1.0.0.071101000055,{3EC9C995-8072-4fc0-953E-4F30620D17F3}:2.0.0.4,{635abd67-4fe9-1b23-4f01-e679fa7484c1}:1.6.5.200812101546,{CAFEEFAC-0016-0000-0011-ABCDEFFEDCBA}:6.0.11,{972ce4c6-7e08-4474-a285-3208198ce6fd}:3.0.6"}, '2009-09-01', errorMessages)
+    result = p.insertAdddonsIntoDatabase(dummycursor, 1, {"Add-ons":"{463F6CA5-EE3C-4be1-B7E6-7FEE11953374}:3.0.5.1,{CAFEEFAC-0016-0000-0007-ABCDEFFEDCBA}:6.0.07,moveplayer@movenetworks.com:1.0.0.071101000055,{3EC9C995-8072-4fc0-953E-4F30620D17F3}:2.0.0.4,{635abd67-4fe9-1b23-4f01-e679fa7484c1}:1.6.5.200812101546,{CAFEEFAC-0016-0000-0011-ABCDEFFEDCBA}:6.0.11,{972ce4c6-7e08-4474-a285-3208198ce6fd}:3.0.6"}, '2009-09-01', errorMessages)
     assert result == [["{463F6CA5-EE3C-4be1-B7E6-7FEE11953374}", "3.0.5.1"],
                       ["{CAFEEFAC-0016-0000-0007-ABCDEFFEDCBA}", "6.0.07"],
                       ["moveplayer@movenetworks.com", "1.0.0.071101000055"],
@@ -1479,14 +1483,15 @@ class TestProcessor:
   def test_insertAdddonsIntoDatabase_addons_normal_many_with_bad_one(self):
     p = processor.Processor(me.config)
     p.extensionsTable = DummyObjectWithExpectations()
-    p.extensionsTable.expect('insert', ('dummycursor', (1, '2009-09-01', 0, "{463F6CA5-EE3C-4be1-B7E6-7FEE11953374}", "3.0.5.1"), p.databaseConnectionPool.connectToDatabase), {"date_processed": '2009-09-01'})
-    p.extensionsTable.expect('insert', ('dummycursor', (1, '2009-09-01', 1, "{CAFEEFAC-0016-0000-0007-ABCDEFFEDCBA}", "6.0.07"), p.databaseConnectionPool.connectToDatabase), {"date_processed": '2009-09-01'})
-    p.extensionsTable.expect('insert', ('dummycursor', (1, '2009-09-01', 2, "moveplayer@movenetworks.com", "1.0.0.071101000055"), p.databaseConnectionPool.connectToDatabase), {"date_processed": '2009-09-01'})
-    p.extensionsTable.expect('insert', ('dummycursor', (1, '2009-09-01', 3, "{3EC9C995-8072-4fc0-953E-4F30620D17F3}", "2.0.0.4"), p.databaseConnectionPool.connectToDatabase), {"date_processed": '2009-09-01'})
-    p.extensionsTable.expect('insert', ('dummycursor', (1, '2009-09-01', 4, "{635abd67-4fe9-1b23-4f01-e679fa7484c1}", "1.6.5.200812101546"), p.databaseConnectionPool.connectToDatabase), {"date_processed": '2009-09-01'})
-    p.extensionsTable.expect('insert', ('dummycursor', (1, '2009-09-01', 6, "{972ce4c6-7e08-4474-a285-3208198ce6fd}", "3.0.6"), p.databaseConnectionPool.connectToDatabase), {"date_processed": '2009-09-01'})
+    dummycursor = self.connection.cursor()
+    p.extensionsTable.expect('insert', (dummycursor, (1, '2009-09-01', 0, "{463F6CA5-EE3C-4be1-B7E6-7FEE11953374}", "3.0.5.1"), p.databaseConnectionPool.connectToDatabase), {"date_processed": '2009-09-01'})
+    p.extensionsTable.expect('insert', (dummycursor, (1, '2009-09-01', 1, "{CAFEEFAC-0016-0000-0007-ABCDEFFEDCBA}", "6.0.07"), p.databaseConnectionPool.connectToDatabase), {"date_processed": '2009-09-01'})
+    p.extensionsTable.expect('insert', (dummycursor, (1, '2009-09-01', 2, "moveplayer@movenetworks.com", "1.0.0.071101000055"), p.databaseConnectionPool.connectToDatabase), {"date_processed": '2009-09-01'})
+    p.extensionsTable.expect('insert', (dummycursor, (1, '2009-09-01', 3, "{3EC9C995-8072-4fc0-953E-4F30620D17F3}", "2.0.0.4"), p.databaseConnectionPool.connectToDatabase), {"date_processed": '2009-09-01'})
+    p.extensionsTable.expect('insert', (dummycursor, (1, '2009-09-01', 4, "{635abd67-4fe9-1b23-4f01-e679fa7484c1}", "1.6.5.200812101546"), p.databaseConnectionPool.connectToDatabase), {"date_processed": '2009-09-01'})
+    p.extensionsTable.expect('insert', (dummycursor, (1, '2009-09-01', 6, "{972ce4c6-7e08-4474-a285-3208198ce6fd}", "3.0.6"), p.databaseConnectionPool.connectToDatabase), {"date_processed": '2009-09-01'})
     errorMessages = []
-    result = p.insertAdddonsIntoDatabase('dummycursor', 1, {"Add-ons":"{463F6CA5-EE3C-4be1-B7E6-7FEE11953374}:3.0.5.1,{CAFEEFAC-0016-0000-0007-ABCDEFFEDCBA}:6.0.07,moveplayer@movenetworks.com:1.0.0.071101000055,{3EC9C995-8072-4fc0-953E-4F30620D17F3}:2.0.0.4,{635abd67-4fe9-1b23-4f01-e679fa7484c1}:1.6.5.200812101546,{CAFEEFAC-0016-0000-0011-ABCDEFFEDCBA}6.0.11,{972ce4c6-7e08-4474-a285-3208198ce6fd}:3.0.6"}, '2009-09-01', errorMessages)
+    result = p.insertAdddonsIntoDatabase(dummycursor, 1, {"Add-ons":"{463F6CA5-EE3C-4be1-B7E6-7FEE11953374}:3.0.5.1,{CAFEEFAC-0016-0000-0007-ABCDEFFEDCBA}:6.0.07,moveplayer@movenetworks.com:1.0.0.071101000055,{3EC9C995-8072-4fc0-953E-4F30620D17F3}:2.0.0.4,{635abd67-4fe9-1b23-4f01-e679fa7484c1}:1.6.5.200812101546,{CAFEEFAC-0016-0000-0011-ABCDEFFEDCBA}6.0.11,{972ce4c6-7e08-4474-a285-3208198ce6fd}:3.0.6"}, '2009-09-01', errorMessages)
     assert result == [["{463F6CA5-EE3C-4be1-B7E6-7FEE11953374}", "3.0.5.1"],
                       ["{CAFEEFAC-0016-0000-0007-ABCDEFFEDCBA}", "6.0.07"],
                       ["moveplayer@movenetworks.com", "1.0.0.071101000055"],
