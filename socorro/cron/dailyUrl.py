@@ -86,7 +86,11 @@ def dailyUrlDump(config):
         csvPublicFormatter = csv.writer(gzippedPublicOutputFile, delimiter='\t', lineterminator='\n')
         columnHeadersAreNotYetWritten = True
         crashData = psy.execute(databaseCursor, sql)
-        logger.info("For %s, handling %s crashes",nowAsString,len(crashData))
+        if crashData:
+          logger.info("For %s, handling %s crashes",nowAsString,len(crashData))
+        else:
+          logger.info("No crash data found for dates between %s and %s",yesterdayAsString,nowAsString)
+        
         for aCrash in crashData:
           if columnHeadersAreNotYetWritten:
             writeRowToInternalAndExternalFiles(csvFormatter,csvPublicFormatter,getColumnHeader([x[0] for x in databaseCursor.description]))
