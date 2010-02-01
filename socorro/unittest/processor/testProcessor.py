@@ -312,6 +312,7 @@ class TestProcessor:
       assert 3 == p.processorId, "Expected to take over processor #3, but got %s"%(p.processorId)
     finally:
       self.markLog()
+      p.cleanup()
     seg = self.extractLogSegment()
     got2 = 0
     for line in seg:
@@ -332,8 +333,11 @@ class TestProcessor:
     global me
     originalProcId = me.config.processorId # Processor() alters this in place. Be sure to put it back...
     p1 = processor.Processor(me.config)
-    me.config['processorId'] = originalProcId
-    assert_raises(SystemExit,processor.Processor,me.config)
+    try:
+      me.config['processorId'] = originalProcId
+      assert_raises(SystemExit,processor.Processor,me.config)
+    finally:
+      p1.cleanup()
 
   def testConstructorAllProcessesLive(self):
     """
@@ -348,6 +352,7 @@ class TestProcessor:
       assert 3 < p1.processorId,'Expected to get the next available id, but got %s'%(p1.processorId)
     finally:
       self.markLog()
+      p1.cleanup()
 
   def testConstructorInvalidId(self):
     """
@@ -418,6 +423,14 @@ class TestProcessor:
   def _pause1(self):
     time.sleep(.1)
     return True
+  
+  def _pause5(self):
+    time.sleep(.5)
+    return True
+
+  def _pause10(self):
+    time.sleep(1.0)
+    return True
 
   def testStart(self):
     """
@@ -474,7 +487,7 @@ class TestProcessor:
     global me
     self.markLog()
     try:
-      tutil.runInOtherProcess(self._runStartChild,logger=me.logger,signal=signal.SIGHUP)
+      tutil.runInOtherProcess(self._runStartChild,logger=me.logger,signal=signal.SIGHUP,maxWait=1,stopCondition=self._pause10)
     finally:
       self.markLog()
     seg = self.extractLogSegment()
@@ -499,7 +512,7 @@ class TestProcessor:
     global me
     self.markLog()
     try:
-      tutil.runInOtherProcess(self._runStartChild,logger=me.logger,signal=signal.SIGTERM)
+      tutil.runInOtherProcess(self._runStartChild,logger=me.logger,signal=signal.SIGTERM, maxWait=1, stopCondition=self._pause10)
     finally:
       self.markLog()
     seg = self.extractLogSegment()
@@ -523,6 +536,7 @@ class TestProcessor:
     p = processor.Processor(me.config)
     p.quit = True
     assert_raises(KeyboardInterrupt,p.quitCheck)
+    p.cleanup()
 
   def _quitter(self):
     time.sleep(self.timeTilQuit)
@@ -536,13 +550,16 @@ class TestProcessor:
     """
     global me
     p = processor.Processor(me.config)
-    p.processorLoopTime = 1
-    self.timeTilQuit = 2
-    self.p = p
-    _quitter = threading.Thread(name='Quitter', target=self._quitter)
-    _quitter.start()
-    assert_raises(KeyboardInterrupt,p.responsiveSleep,5)
-    _quitter.join()
+    try:
+      p.processorLoopTime = 1
+      self.timeTilQuit = 2
+      self.p = p
+      _quitter = threading.Thread(name='Quitter', target=self._quitter)
+      _quitter.start()
+      assert_raises(KeyboardInterrupt,p.responsiveSleep,5)
+      _quitter.join()
+    finally:
+      p.cleanup()
 
   def testCheckin(self):
     """
@@ -558,75 +575,77 @@ class TestProcessor:
     nowDTd = dbtestutil.datetimeNow(cur)
     nowDTm = dt.datetime.now()
     p = processor.Processor(me.config)
-
-    # Check initial state: Internal is very old, dbstamp is 'now'
-    cur.execute(sqlS,(p.processorId,))
-    self.connection.commit()
-    dbStamp0 = cur.fetchone()[0] # sql:now() from p constructor
-    procStamp0 = p.lastCheckInTimestamp # should be 1950
-    assert procStamp0 < nowDTd,"Expect that constructed in-memory timestamp (%s) < 'now' (%s)"%(p.lastCheckInTimestamp,nowDT)
-    assert nowDTd < dbStamp0,"Expect 'now' (%s) < processors.lastseendatetime (%s) at least a little bit"%(nowDT,dbStamp0)
-
-    # Check that first call to checkin updates internal and database timestamps
-    p.checkin()
-    procStamp1 = p.lastCheckInTimestamp
-    cur.execute(sqlS,(p.processorId,))
-    dbStamp1 = cur.fetchone()[0]
-    self.connection.commit()
-    nowDT1 = dt.datetime.now()
-    assert nowDTm < procStamp1
-    assert procStamp1 < nowDT1
-    assert nowDTm < dbStamp1
-    assert dbStamp0 < dbStamp1
-    assert dbStamp1 < nowDT1
-
-    # Check that immediate subsequent checkin does nothing to internal or db stamp
-    p.checkin()
-    assert procStamp1 == p.lastCheckInTimestamp
-    cur.execute(sqlS,(p.processorId,))
-    assert dbStamp1 == cur.fetchone()[0]
-    self.connection.commit()
-
-    # Check that changing the database stamp still doesn't cause checkin to fire
-    cur.execute(sqlU,(dummyDT,p.processorId,))
-    self.connection.commit()
-    cur.execute(sqlS,(p.processorId,))
-    dbStamp1 = cur.fetchone()[0]
-    assert dbStamp1 == dummyDT, 'It had better. But I got %s, not %s'%(dbStamp1,dummyDT)
-    p.checkin()
-    cur.execute(sqlS,(p.processorId,))
-    dbStamp2 = cur.fetchone()[0]
-    self.connection.commit()
-    procStamp2 = p.lastCheckInTimestamp
-    assert procStamp1 == procStamp2, 'Expect checkin does nothing, but prior: %s current: %s'%(procStamp1,procStamp2)
-    assert dbStamp2 == dummyDT, 'Expect to get what was put (checkin looks at internal state), but %s != %s'%(dbStamp2,dummyDT)
-
-    # Check that a change to the internal state without calling checkin is nilpotent
-    p.lastCheckInTimestamp = dummyDT
-    cur.execute(sqlS,(p.processorId,))
-    dbStamp2 = cur.fetchone()[0]
-    self.connection.commit()
-    assert dbStamp2 == dummyDT, "changedinternal state but didn't call checkin yet: but %s != %s"%(dbStamp2,dummyDT)
-    me.logger.clear()
     try:
-      nowDT = dt.datetime.now()
-      p.checkin()
+      # Check initial state: Internal is very old, dbstamp is 'now'
       cur.execute(sqlS,(p.processorId,))
-      dbStamp3 = cur.fetchone()[0]
-      assert (dbStamp3 - nowDT).microseconds >= 0, 'Expect a little time to pass, but %s - %s'%(dbstamp3,nowDT)
-      assert (dbStamp3 - nowDT).microseconds < 3000, 'Expect only a little time to pass, but %s - %s'%(dbstamp3,nowDT)
-      p.checkin()
-      cur.execute(sqlS,(p.processorId,))
-      dbStamp4 = cur.fetchone()[0]
-      assert dbStamp3 == dbStamp4, 'Expect that second checkin does nothing, but %s != %s'%(dbStamp3, dbStamp4)
-    finally:
       self.connection.commit()
-    # I expect someone to re-spell the log message to reflect reality, so lets do this kinda klunky. K?
-    assert 1 == len(me.logger.buffer), 'Even though we ran checkin() two times, the second should just return quietly. Len=%s'%(len(me.logger.buffer))
-    assert 'updating' in me.logger.buffer[0]
-    assert 'processor' in me.logger.buffer[0]
-    assert 'table registration' in me.logger.buffer[0]
+      dbStamp0 = cur.fetchone()[0] # sql:now() from p constructor
+      procStamp0 = p.lastCheckInTimestamp # should be 1950
+      assert procStamp0 < nowDTd,"Expect that constructed in-memory timestamp (%s) < 'now' (%s)"%(p.lastCheckInTimestamp,nowDT)
+      assert nowDTd < dbStamp0,"Expect 'now' (%s) < processors.lastseendatetime (%s) at least a little bit"%(nowDT,dbStamp0)
 
+      # Check that first call to checkin updates internal and database timestamps
+      p.checkin()
+      procStamp1 = p.lastCheckInTimestamp
+      cur.execute(sqlS,(p.processorId,))
+      dbStamp1 = cur.fetchone()[0]
+      self.connection.commit()
+      nowDT1 = dt.datetime.now()
+      assert nowDTm < procStamp1
+      assert procStamp1 < nowDT1
+      assert nowDTm < dbStamp1
+      assert dbStamp0 < dbStamp1
+      assert dbStamp1 < nowDT1
+
+      # Check that immediate subsequent checkin does nothing to internal or db stamp
+      p.checkin()
+      assert procStamp1 == p.lastCheckInTimestamp
+      cur.execute(sqlS,(p.processorId,))
+      assert dbStamp1 == cur.fetchone()[0]
+      self.connection.commit()
+
+      # Check that changing the database stamp still doesn't cause checkin to fire
+      cur.execute(sqlU,(dummyDT,p.processorId,))
+      self.connection.commit()
+      cur.execute(sqlS,(p.processorId,))
+      dbStamp1 = cur.fetchone()[0]
+      assert dbStamp1 == dummyDT, 'It had better. But I got %s, not %s'%(dbStamp1,dummyDT)
+      p.checkin()
+      cur.execute(sqlS,(p.processorId,))
+      dbStamp2 = cur.fetchone()[0]
+      self.connection.commit()
+      procStamp2 = p.lastCheckInTimestamp
+      assert procStamp1 == procStamp2, 'Expect checkin does nothing, but prior: %s current: %s'%(procStamp1,procStamp2)
+      assert dbStamp2 == dummyDT, 'Expect to get what was put (checkin looks at internal state), but %s != %s'%(dbStamp2,dummyDT)
+
+      # Check that a change to the internal state without calling checkin is nilpotent
+      p.lastCheckInTimestamp = dummyDT
+      cur.execute(sqlS,(p.processorId,))
+      dbStamp2 = cur.fetchone()[0]
+      self.connection.commit()
+      assert dbStamp2 == dummyDT, "changedinternal state but didn't call checkin yet: but %s != %s"%(dbStamp2,dummyDT)
+      me.logger.clear()
+      try:
+        nowDT = dt.datetime.now()
+        p.checkin()
+        cur.execute(sqlS,(p.processorId,))
+        dbStamp3 = cur.fetchone()[0]
+        assert (dbStamp3 - nowDT).microseconds >= 0, 'Expect a little time to pass, but %s - %s'%(dbstamp3,nowDT)
+        assert (dbStamp3 - nowDT).microseconds < 3000, 'Expect only a little time to pass, but %s - %s'%(dbstamp3,nowDT)
+        p.checkin()
+        cur.execute(sqlS,(p.processorId,))
+        dbStamp4 = cur.fetchone()[0]
+        assert dbStamp3 == dbStamp4, 'Expect that second checkin does nothing, but %s != %s'%(dbStamp3, dbStamp4)
+      finally:
+        self.connection.commit()
+      # I expect someone to re-spell the log message to reflect reality, so lets do this kinda klunky. K?
+      assert 1 == len(me.logger.buffer), 'Even though we ran checkin() two times, the second should just return quietly. Len=%s'%(len(me.logger.buffer))
+      assert 'updating' in me.logger.buffer[0]
+      assert 'processor' in me.logger.buffer[0]
+      assert 'table registration' in me.logger.buffer[0]
+    finally:
+      p.cleanup()
+      
   def testCleanup(self):
     """
     testCleanup(self):
@@ -638,17 +657,19 @@ class TestProcessor:
     p = processor.Processor(me.config)
     cur = self.connection.cursor()
     priorityTables = db_postgresql.tablesMatchingPattern(p.priorityJobsTableName,cur)
-    assert 1 == len(priorityTables), 'Processor __init__ makes exactly one. But %s'%(str(priorityTables))
-    assert priorityTables[0] == p.priorityJobsTableName, 'But got %s, not %s'%(priorityTables[0],p.priorityJobsTableName)
-    nowDTd = dbtestutil.datetimeNow(cur)
-    sqlS = "select lastseendatetime from processors where id = %s"
-    cur.execute(sqlS,(p.processorId,))
-    val = cur.fetchone();
-    dbStamp0 = val[0]
-    cur.connection.commit()
-    assert dbStamp0 < nowDTd, 'constructed dt: %s then a moment later dt: %s'%(dbStamp0,nowDTd)
-    assert (nowDTd - dbStamp0).seconds < 1, 'Expect only a little time to pass, but %s - %s'%(nowDTd,dbStamp0)
-    p.cleanup()
+    try:
+      assert 1 == len(priorityTables), 'Processor __init__ makes exactly one. But %s'%(str(priorityTables))
+      assert priorityTables[0] == p.priorityJobsTableName, 'But got %s, not %s'%(priorityTables[0],p.priorityJobsTableName)
+      nowDTd = dbtestutil.datetimeNow(cur)
+      sqlS = "select lastseendatetime from processors where id = %s"
+      cur.execute(sqlS,(p.processorId,))
+      val = cur.fetchone();
+      dbStamp0 = val[0]
+      cur.connection.commit()
+      assert dbStamp0 < nowDTd, 'constructed dt: %s then a moment later dt: %s'%(dbStamp0,nowDTd)
+      assert (nowDTd - dbStamp0).seconds < 1, 'Expect only a little time to pass, but %s - %s'%(nowDTd,dbStamp0)
+    finally:
+      p.cleanup()
     priorityTables = db_postgresql.tablesMatchingPattern(p.priorityJobsTableName,cur)
     assert 0 == len(priorityTables), "Expect cleanup removed p's priority jobs table. But %s"%(str(priorityTables))
     cur.execute(sqlS,(p.processorId,))
@@ -766,6 +787,7 @@ class TestProcessor:
     finally:
       self.markLog()
       p.quit = True
+      p.cleanup()
     seg = self.extractLogSegment()
     gotjob=0
     caught=0
@@ -789,15 +811,18 @@ class TestProcessor:
     cur = self.connection.cursor()
     p = processor.Processor(me.config)
     p.config['checkForPriorityFrequency'] = dt.timedelta(milliseconds=100)
-    p.processorLoopTime = 1
-    normalJobsExpected = 3
-    dbtestutil.addSomeJobs(cur,{1:normalJobsExpected} ,logger=me.logger)
-    self.expectedNormalIds = set(range(1,normalJobsExpected+1))
-    self.processor = p
     try:
-      self.incomingJobStreamTester()
+      p.processorLoopTime = 1
+      normalJobsExpected = 3
+      dbtestutil.addSomeJobs(cur,{1:normalJobsExpected} ,logger=me.logger)
+      self.expectedNormalIds = set(range(1,normalJobsExpected+1))
+      self.processor = p
+      try:
+        self.incomingJobStreamTester()
+      finally:
+        p.quit = True
     finally:
-      p.quit = True
+      p.cleanup()
 
   def testIncomingJobStream_NormalAndPriorityJobs(self):
     """
@@ -816,37 +841,40 @@ class TestProcessor:
     jobCountInPriority = 1 # look in priorityjobs table
     jobCountNormal = 2 # look in jobs table, but priority column is null/0
     sumJobCount = priorityJobCountInJobs+priorityJobCountInOwnPriority+jobCountInPriority+jobCountNormal
-    dbtestutil.addSomeJobs(cur,{1:sumJobCount} ,logger=me.logger)
-    cur.execute("SELECT id from jobs")
-    jobIds = [x[0] for x in cur.fetchall()]
-    self.connection.commit()
-    expectedJobIds = [x for x in range(1,sumJobCount+1)]
-    assert set(jobIds) == set(expectedJobIds), 'Setup assurance. But got expected % vs %s'%(str(expectedJobIds),str(jobIds))
-    dbtestutil.setPriority(cur,jobIds[:priorityJobCountInJobs])
-    self.expectedNormalIds = set(jobIds[:priorityJobCountInJobs])
-    dbtestutil.setPriority(cur,jobIds[priorityJobCountInJobs:priorityJobCountInJobs+priorityJobCountInOwnPriority],p.priorityJobsTableName)
-    self.expectedPriorityIds = set(jobIds[priorityJobCountInJobs:priorityJobCountInJobs+priorityJobCountInOwnPriority])
-    dbtestutil.setPriority(cur,jobIds[priorityJobCountInJobs+priorityJobCountInOwnPriority:],'priorityjobs')
-    self.expectedNormalIds.update(jobIds[priorityJobCountInJobs+priorityJobCountInOwnPriority:])
-    self.checkPriorityOrdering = True
-    self.processor = p
-    me.logger.clear()
-    self.incomingJobStreamTester()
-    loggedPriorities = set()
-    loggedNormals = set()
-    for i in range(len(me.logger.buffer)):
-      line = me.logger.buffer[i]
-      level = me.logger.levels[i]
-      assert level != logging.ERROR, 'Expect no ERROR logs, but %s'%line
-      if 'MainThread' in line:
-        if 'incomingJobStream yielding' in line:
-          car,cdr = line.split('(',1)
-          id = int(cdr[0])
-          if 'priority' in car: loggedPriorities.add(id)
-          if 'standard' in car: loggedNormals.add(id)
-    assert self.expectedPriorityIds == loggedPriorities, 'But expected = %s vs %s'%(self.expectedPriorityIds,loggedPriorities)
-    assert self.expectedNormalIds == loggedNormals, 'But expected = %s vs %s'%(self.expectedNormalIds,loggedNormals)
-
+    try:
+      dbtestutil.addSomeJobs(cur,{1:sumJobCount} ,logger=me.logger)
+      cur.execute("SELECT id from jobs")
+      jobIds = [x[0] for x in cur.fetchall()]
+      self.connection.commit()
+      expectedJobIds = [x for x in range(1,sumJobCount+1)]
+      assert set(jobIds) == set(expectedJobIds), 'Setup assurance. But got expected % vs %s'%(str(expectedJobIds),str(jobIds))
+      dbtestutil.setPriority(cur,jobIds[:priorityJobCountInJobs])
+      self.expectedNormalIds = set(jobIds[:priorityJobCountInJobs])
+      dbtestutil.setPriority(cur,jobIds[priorityJobCountInJobs:priorityJobCountInJobs+priorityJobCountInOwnPriority],p.priorityJobsTableName)
+      self.expectedPriorityIds = set(jobIds[priorityJobCountInJobs:priorityJobCountInJobs+priorityJobCountInOwnPriority])
+      dbtestutil.setPriority(cur,jobIds[priorityJobCountInJobs+priorityJobCountInOwnPriority:],'priorityjobs')
+      self.expectedNormalIds.update(jobIds[priorityJobCountInJobs+priorityJobCountInOwnPriority:])
+      self.checkPriorityOrdering = True
+      self.processor = p
+      me.logger.clear()
+      self.incomingJobStreamTester()
+      loggedPriorities = set()
+      loggedNormals = set()
+      for i in range(len(me.logger.buffer)):
+        line = me.logger.buffer[i]
+        level = me.logger.levels[i]
+        assert level != logging.ERROR, 'Expect no ERROR logs, but %s'%line
+        if 'MainThread' in line:
+          if 'incomingJobStream yielding' in line:
+            car,cdr = line.split('(',1)
+            id = int(cdr[0])
+            if 'priority' in car: loggedPriorities.add(id)
+            if 'standard' in car: loggedNormals.add(id)
+      assert self.expectedPriorityIds == loggedPriorities, 'But expected = %s vs %s'%(self.expectedPriorityIds,loggedPriorities)
+      assert self.expectedNormalIds == loggedNormals, 'But expected = %s vs %s'%(self.expectedNormalIds,loggedNormals)
+    finally:
+      p.cleanup()
+      
   def testIncomingJobStream_StopsForMore(self):
     """
     testIncomingJobStream_StopsForMore(self):
@@ -855,33 +883,36 @@ class TestProcessor:
     global me
     cur = self.connection.cursor()
     p = processor.Processor(me.config)
-    p.config['checkForPriorityFrequency'] = dt.timedelta(milliseconds=100)
-    totalJobsExpected = 6
-    data = dbtestutil.addSomeJobs(cur,{1:totalJobsExpected})
-    cur.execute("SELECT id from jobs")
-    jobIds = [ x[0] for x in cur.fetchall() ]
-    ijs = p.incomingJobStream(cur)
-    job = ijs.next()
-    seenId = job[0]
-    jobIds.remove(seenId)
-    priIds = set( (jobIds[i] for i in range(0,len(jobIds),2)) )
-    normIds = set(jobIds) - set(priIds)
-    me.logger.debug("HERE ids:%s, pri:%s, norm:%s",jobIds,priIds,normIds)
-    dbtestutil.setPriority(cur,priIds,p.priorityJobsTableName)
-    cur.execute("select j.id,j.uuid,j.priority from jobs j, %s p where j.uuid = p.uuid"%p.priorityJobsTableName)
-    for i in cur.fetchall():
-      me.logger.debug("A PRI  %s",i)
-    self.connection.commit()
-    time.sleep(.5) # slow down enough to let the job-generator loop over
-    for i in range(len(jobIds)):
-      aJob = ijs.next()
-      me.logger.debug("Job %s",aJob)
-      if priIds:
-        assert aJob[0] in priIds
-        priIds.remove(aJob[0])
-      else:
-        assert aJob[0] in normIds, 'Expect %s in normIds: %s'%(aJob[0],str(normIds))
-
+    try:
+      p.config['checkForPriorityFrequency'] = dt.timedelta(milliseconds=100)
+      totalJobsExpected = 6
+      data = dbtestutil.addSomeJobs(cur,{1:totalJobsExpected})
+      cur.execute("SELECT id from jobs")
+      jobIds = [ x[0] for x in cur.fetchall() ]
+      ijs = p.incomingJobStream(cur)
+      job = ijs.next()
+      seenId = job[0]
+      jobIds.remove(seenId)
+      priIds = set( (jobIds[i] for i in range(0,len(jobIds),2)) )
+      normIds = set(jobIds) - set(priIds)
+      me.logger.debug("HERE ids:%s, pri:%s, norm:%s",jobIds,priIds,normIds)
+      dbtestutil.setPriority(cur,priIds,p.priorityJobsTableName)
+      cur.execute("select j.id,j.uuid,j.priority from jobs j, %s p where j.uuid = p.uuid"%p.priorityJobsTableName)
+      for i in cur.fetchall():
+        me.logger.debug("A PRI  %s",i)
+      self.connection.commit()
+      time.sleep(.5) # slow down enough to let the job-generator loop over
+      for i in range(len(jobIds)):
+        aJob = ijs.next()
+        me.logger.debug("Job %s",aJob)
+        if priIds:
+          assert aJob[0] in priIds
+          priIds.remove(aJob[0])
+        else:
+          assert aJob[0] in normIds, 'Expect %s in normIds: %s'%(aJob[0],str(normIds))
+    finally:
+      p.cleanup()
+      
   class BogusThreadManager:
     def newTask(self,threadJob,data):
       global me
@@ -896,37 +927,42 @@ class TestProcessor:
     """
     cur = self.connection.cursor()
     p = processor.Processor(me.config)
+    keepThreadManager = p.threadManager
     p.threadManager = TestProcessor.BogusThreadManager()
-    cur = self.connection.cursor()
-    dbtestutil.addSomeJobs(cur,{1:1} ,logger=me.logger)
-    cur.execute('SELECT id,uuid,priority,starteddatetime from jobs')
-    id,uuid,priority,startedDT = cur.fetchall()[0]
-    self.connection.commit()
-    assert id == 1, 'but %s'%id
-    assert priority == 0, 'but %s'%priority
-    assert not startedDT, 'but %s'%startedDT
-    before = dt.datetime.now()
-    me.logger.clear()
-    p.submitJobToThreads(cur,(id,uuid,priority,))
-    after = dt.datetime.now()
-    cur.execute('SELECT id,uuid,priority,starteddatetime from jobs')
-    id,uuid,priority,startedDT = cur.fetchall()[0]
-    self.connection.commit()
-    assert startedDT > before, 'but started %s, versus now: %s'%(startedDT, before)
-    assert after > startedDT, 'but later %s, versus started: %s'%(after,startedDT)
-    bogosity = 0
-    queueing = 0
-    for i in range(len(me.logger.buffer)):
-      line = me.logger.buffer[i]
-      if 'BogusThread' in line: bogosity += 1
-      if 'MainThread' in line:
-        if 'queuing job' in line:
-          if 'job 1' in line:
-            queueing += 1
-          else:
-            queueing = -99
-    assert 1 == bogosity, 'Expect one logging line from the BogusThread Manager, but got %s'%bogosity
-    assert 1 == queueing, 'Expect one logging line about queueing a job, and must be job 1. Got %s'%queueing
+    try:
+      cur = self.connection.cursor()
+      dbtestutil.addSomeJobs(cur,{1:1} ,logger=me.logger)
+      cur.execute('SELECT id,uuid,priority,starteddatetime from jobs')
+      id,uuid,priority,startedDT = cur.fetchall()[0]
+      self.connection.commit()
+      assert id == 1, 'but %s'%id
+      assert priority == 0, 'but %s'%priority
+      assert not startedDT, 'but %s'%startedDT
+      before = dt.datetime.now()
+      me.logger.clear()
+      p.submitJobToThreads(cur,(id,uuid,priority,))
+      after = dt.datetime.now()
+      cur.execute('SELECT id,uuid,priority,starteddatetime from jobs')
+      id,uuid,priority,startedDT = cur.fetchall()[0]
+      self.connection.commit()
+      assert startedDT > before, 'but started %s, versus now: %s'%(startedDT, before)
+      assert after > startedDT, 'but later %s, versus started: %s'%(after,startedDT)
+      bogosity = 0
+      queueing = 0
+      for i in range(len(me.logger.buffer)):
+        line = me.logger.buffer[i]
+        if 'BogusThread' in line: bogosity += 1
+        if 'MainThread' in line:
+          if 'queuing job' in line:
+            if 'job 1' in line:
+              queueing += 1
+            else:
+              queueing = -99
+      assert 1 == bogosity, 'Expect one logging line from the BogusThread Manager, but got %s'%bogosity
+      assert 1 == queueing, 'Expect one logging line about queueing a job, and must be job 1. Got %s'%queueing
+    finally:
+      p.threadManager = keepThreadManager
+      p.cleanup()
 
   def testProcessJob_NoStorage(self):
     """
@@ -943,6 +979,7 @@ class TestProcessor:
     self.connection.commit()
     me.logger.clear()
     p.processJob((data0[0][0],data0[0][1],data0[0][3],))
+    p.cleanup()
     errs = 0
     caught = 0
     id = 0
@@ -969,54 +1006,57 @@ class TestProcessor:
     p = processor.Processor(me.config)
     dbtestutil.addSomeJobs(cur,{1:2})
     sql = 'select id,uuid,owner,priority,queueddatetime,starteddatetime,completeddatetime,success,message from jobs'
-    cur.execute(sql)
-    data0 = cur.fetchall()
-    self.connection.commit()
-    uuid0 = data0[0][1]
-    uuid1 = data0[1][1]
-    createJDS.createTestSet({uuid0:createJDS.jsonFileData[uuid0]},{'logger':me.logger},p.config.storageRoot)
-    createJDS.createTestSet({uuid1:createJDS.jsonFileData[uuid1]},{'logger':me.logger,'jsonIsEmpty':True},p.config.deferredStorageRoot)
+    try:
+      cur.execute(sql)
+      data0 = cur.fetchall()
+      self.connection.commit()
+      uuid0 = data0[0][1]
+      uuid1 = data0[1][1]
+      createJDS.createTestSet({uuid0:createJDS.jsonFileData[uuid0]},{'logger':me.logger},p.config.storageRoot)
+      createJDS.createTestSet({uuid1:createJDS.jsonFileData[uuid1]},{'logger':me.logger,'jsonIsEmpty':True},p.config.deferredStorageRoot)
 
-    me.logger.clear()
-    # try a bad-syntax json file
-    p.processJob((data0[0][0],uuid0,data0[0][3],))
-    errs = 0
-    caught = 0
-    id = 0
-    noJson = 0
-    toplen = len(me.logger.buffer)
-    for i in range(len(me.logger.buffer)):
-      line = me.logger.buffer[i]
-      level = me.logger.levels[i]
-      if logging.ERROR == level:
-        errs += 1
-        if 'Caught Error:' in line:
-          caught += 1
-        if data0[0][1] in line:
-          id += 1
-        if 'No JSON object could be decoded' in line:
-          noJson += 1
-    assert 2 == errs
-    assert 1 == caught
-    assert 1 == noJson
-    # try an empty json file
-    p.processJob((data0[1][0],uuid1,data0[1][3],))
-    for i in range(toplen,len(me.logger.buffer)):
-      line = me.logger.buffer[i]
-      level = me.logger.levels[i]
-      if logging.ERROR == level:
-        errs += 1
-        if 'Caught Error:' in line:
-          caught += 1
-        if data0[0][1] in line:
-          id += 1
-        if 'No JSON object could be decoded' in line:
-          noJson += 1
-    assert 4 == errs,"but %s"%errs
-    assert 2 == caught
-    assert 2 == noJson
-    assert 0 == id
-
+      me.logger.clear()
+      # try a bad-syntax json file
+      p.processJob((data0[0][0],uuid0,data0[0][3],))
+      errs = 0
+      caught = 0
+      id = 0
+      noJson = 0
+      toplen = len(me.logger.buffer)
+      for i in range(len(me.logger.buffer)):
+        line = me.logger.buffer[i]
+        level = me.logger.levels[i]
+        if logging.ERROR == level:
+          errs += 1
+          if 'Caught Error:' in line:
+            caught += 1
+          if data0[0][1] in line:
+            id += 1
+          if 'No JSON object could be decoded' in line:
+            noJson += 1
+      assert 2 == errs
+      assert 1 == caught
+      assert 1 == noJson
+      # try an empty json file
+      p.processJob((data0[1][0],uuid1,data0[1][3],))
+      for i in range(toplen,len(me.logger.buffer)):
+        line = me.logger.buffer[i]
+        level = me.logger.levels[i]
+        if logging.ERROR == level:
+          errs += 1
+          if 'Caught Error:' in line:
+            caught += 1
+          if data0[0][1] in line:
+            id += 1
+          if 'No JSON object could be decoded' in line:
+            noJson += 1
+      assert 4 == errs,"but %s"%errs
+      assert 2 == caught
+      assert 2 == noJson
+      assert 0 == id
+    finally:
+      p.cleanup()
+      
   class StubProcessor_processJob(processor.Processor):
     def __init__(self, config):
       super(TestProcessor.StubProcessor_processJob, self).__init__(config)
@@ -1068,52 +1108,54 @@ class TestProcessor:
     createJDS.createTestSet({uuid0:createJDS.jsonFileData[uuid0]},{'logger':me.logger,'jsonIsBogus':False},p.config.storageRoot)
     createJDS.createTestSet({uuid1:createJDS.jsonFileData[uuid1]},{'logger':me.logger,'jsonIsBogus':False},p.config.deferredStorageRoot)
     me.logger.clear()
-
     stamp0 = dt.datetime.now()
+    # try:
     p.processJob((data0[0][0],data0[0][1],data0[0][3],))
     p.processJob((data0[1][0],data0[1][1],data0[1][3],))
+    try:
+      stamp1 = dt.datetime.now()
+      cur.execute(sql)
+      data1 = cur.fetchall()
+      self.connection.commit()
+      for i in data0:
+        assert i[5] == None #started
+        assert i[6] == None #completed
+        assert i[7] == None #success
+      for i in data1:
+        assert stamp0 < i[5] < stamp1 #started
+        assert stamp0 < i[6] < stamp1 #completed
+        assert i[7], "but 7th: %s from %s"%(i[7],i) #success
 
-    stamp1 = dt.datetime.now()
-    cur.execute(sql)
-    data1 = cur.fetchall()
-    self.connection.commit()
-    for i in data0:
-      assert i[5] == None #started
-      assert i[6] == None #completed
-      assert i[7] == None #success
-    for i in data1:
-      assert stamp0 < i[5] < stamp1 #started
-      assert stamp0 < i[6] < stamp1 #completed
-      assert i[7] #success
+      errs = 0
+      warns = 0
+      caught = 0
+      noJson = 0
+      reportDates = 0
+      buildDates = 0
+      hashCount = 0
+      for i in range(len(me.logger.levels)):
+        line = me.logger.buffer[i]
+        level = me.logger.levels[i]
+        if 'No JSON object could be decoded' in line: noJson += 1
+        if logging.WARNING == level:
+          warns += 1
+          if 'Caught Error:' in line: caught += 1
+        if logging.ERROR == level: errs += 1
+        if logging.INFO == level:
+          if '#' in line:
+            hashCount += 1
+            d,key,val,dd = line.split('#')
+            if key=='jobUuid': curUuid = val
+            if key == 'jsonDocument' or key == 'jobPathname':
+              assert curUuid in val, 'expected %s to be found in %s [%s]'%(curUuid,key,val)
 
-    errs = 0
-    warns = 0
-    caught = 0
-    noJson = 0
-    reportDates = 0
-    buildDates = 0
-    hashCount = 0
-    for i in range(len(me.logger.levels)):
-      line = me.logger.buffer[i]
-      level = me.logger.levels[i]
-      if 'No JSON object could be decoded' in line: noJson += 1
-      if logging.WARNING == level:
-        warns += 1
-        if 'Caught Error:' in line: caught += 1
-      if logging.ERROR == level: errs += 1
-      if logging.INFO == level:
-        if '#' in line:
-          hashCount += 1
-          d,key,val,dd = line.split('#')
-          if key=='jobUuid': curUuid = val
-          if key == 'jsonDocument' or key == 'jobPathname':
-            assert curUuid in val, 'expected %s to be found in %s [%s]'%(curUuid,key,val)
-
-    assert 0 == errs, 'expect 2 from each file got %s'%errs
-    assert 0 == warns, 'expect none with replaced method, got %s'%warns
-    assert 0 == caught, 'expect none with replaced method, got %s'%caught
-    assert 0 == noJson, 'better not see any Json syntax issues, got%s'%noJson
-    assert 10 == hashCount, 'expect 5 in each job, got %s'%hashCount
+      assert 0 == errs, 'expect 2 from each file got %s'%errs
+      assert 0 == warns, 'expect none with replaced method, got %s'%warns
+      assert 0 == caught, 'expect none with replaced method, got %s'%caught
+      assert 0 == noJson, 'better not see any Json syntax issues, got%s'%noJson
+      assert 10 == hashCount, 'expect 5 in each job, got %s'%hashCount
+    finally:
+      p.cleanup()
 
   def testDoBreakpadStackDumpAnalysis(self):
     """
@@ -1121,8 +1163,12 @@ class TestProcessor:
       check that the method in base Processor class raises an Exception
     """
     global me
-    p = processor.Processor(me.config)
-    assert_raises(Exception,p.doBreakpadStackDumpAnalysis,('','','','','','',))
+    try:
+      p = processor.Processor(me.config)
+      assert_raises(Exception,p.doBreakpadStackDumpAnalysis,('','','','','','',))
+    finally:
+      p.cleanup()
+    
 
   def testJsonPathForUuidInJsonDumpStorage(self):
     """
@@ -1132,21 +1178,24 @@ class TestProcessor:
     """
     global me
     p = processor.Processor(me.config)
-    data = dbtestutil.makeJobDetails({1:2})
-    uuid0 = data[0][1]
-    uuid1 = data[1][1]
-    createJDS.createTestSet({uuid0:createJDS.jsonFileData[uuid0]},{'logger':me.logger},p.config.storageRoot)
-    createJDS.createTestSet({uuid1:createJDS.jsonFileData[uuid1]},{'logger':me.logger},p.config.deferredStorageRoot)
-    data0 = createJDS.jsonFileData[uuid0]
-    data1 = createJDS.jsonFileData[uuid1]
-    dy0 = ''.join(data0[0].split('-')[:3])
-    dy1 = ''.join(data1[0].split('-')[:3])
-    p0 = os.sep.join((p.config.storageRoot.rstrip(os.path.sep),dy0,'name',createJDS.jsonFileData[uuid0][2], uuid0+'.json'))
-    p1 = os.sep.join((p.config.deferredStorageRoot.rstrip(os.path.sep),dy1,'name',createJDS.jsonFileData[uuid1][2], uuid1+'.json',))
-    assert p0 == p.jsonPathForUuidInJsonDumpStorage(uuid0)
-    assert p1 == p.jsonPathForUuidInJsonDumpStorage(uuid1)
-    assert_raises(processor.UuidNotFoundException,p.jsonPathForUuidInJsonDumpStorage,createJDS.jsonBadUuid)
-
+    try:
+      data = dbtestutil.makeJobDetails({1:2})
+      uuid0 = data[0][1]
+      uuid1 = data[1][1]
+      createJDS.createTestSet({uuid0:createJDS.jsonFileData[uuid0]},{'logger':me.logger},p.config.storageRoot)
+      createJDS.createTestSet({uuid1:createJDS.jsonFileData[uuid1]},{'logger':me.logger},p.config.deferredStorageRoot)
+      data0 = createJDS.jsonFileData[uuid0]
+      data1 = createJDS.jsonFileData[uuid1]
+      dy0 = ''.join(data0[0].split('-')[:3])
+      dy1 = ''.join(data1[0].split('-')[:3])
+      p0 = os.sep.join((p.config.storageRoot.rstrip(os.path.sep),dy0,'name',createJDS.jsonFileData[uuid0][2], uuid0+'.json'))
+      p1 = os.sep.join((p.config.deferredStorageRoot.rstrip(os.path.sep),dy1,'name',createJDS.jsonFileData[uuid1][2], uuid1+'.json',))
+      assert p0 == p.jsonPathForUuidInJsonDumpStorage(uuid0)
+      assert p1 == p.jsonPathForUuidInJsonDumpStorage(uuid1)
+      assert_raises(processor.UuidNotFoundException,p.jsonPathForUuidInJsonDumpStorage,createJDS.jsonBadUuid)
+    finally:
+      p.cleanup()
+      
   def testDumpPathForUuidInJsonDumpStorage(self):
     """
     testDumpPathForUuidInJsonDumpStorage(self):
@@ -1155,20 +1204,23 @@ class TestProcessor:
     """
     global me
     p = processor.Processor(me.config)
-    data = dbtestutil.makeJobDetails({1:2})
-    uuid0 = data[0][1]
-    uuid1 = data[1][1]
-    createJDS.createTestSet({uuid0:createJDS.jsonFileData[uuid0]},{'logger':me.logger},p.config.storageRoot)
-    createJDS.createTestSet({uuid1:createJDS.jsonFileData[uuid1]},{'logger':me.logger},p.config.deferredStorageRoot)
-    data0 = createJDS.jsonFileData[uuid0]
-    data1 = createJDS.jsonFileData[uuid1]
-    dy0 = ''.join(data0[0].split('-')[:3])
-    dy1 = ''.join(data1[0].split('-')[:3])
-    p0 = os.sep.join((p.config.storageRoot.rstrip(os.path.sep),dy0,'name',createJDS.jsonFileData[uuid0][2], uuid0+'.dump'))
-    p1 = os.sep.join((p.config.deferredStorageRoot.rstrip(os.path.sep),dy1,'name',createJDS.jsonFileData[uuid1][2], uuid1+'.dump',))
-    assert p0 == p.dumpPathForUuidInJsonDumpStorage(uuid0)
-    assert p1 == p.dumpPathForUuidInJsonDumpStorage(uuid1)
-    assert_raises(processor.UuidNotFoundException,p.dumpPathForUuidInJsonDumpStorage,createJDS.jsonBadUuid)
+    try:
+      data = dbtestutil.makeJobDetails({1:2})
+      uuid0 = data[0][1]
+      uuid1 = data[1][1]
+      createJDS.createTestSet({uuid0:createJDS.jsonFileData[uuid0]},{'logger':me.logger},p.config.storageRoot)
+      createJDS.createTestSet({uuid1:createJDS.jsonFileData[uuid1]},{'logger':me.logger},p.config.deferredStorageRoot)
+      data0 = createJDS.jsonFileData[uuid0]
+      data1 = createJDS.jsonFileData[uuid1]
+      dy0 = ''.join(data0[0].split('-')[:3])
+      dy1 = ''.join(data1[0].split('-')[:3])
+      p0 = os.sep.join((p.config.storageRoot.rstrip(os.path.sep),dy0,'name',createJDS.jsonFileData[uuid0][2], uuid0+'.dump'))
+      p1 = os.sep.join((p.config.deferredStorageRoot.rstrip(os.path.sep),dy1,'name',createJDS.jsonFileData[uuid1][2], uuid1+'.dump',))
+      assert p0 == p.dumpPathForUuidInJsonDumpStorage(uuid0)
+      assert p1 == p.dumpPathForUuidInJsonDumpStorage(uuid1)
+      assert_raises(processor.UuidNotFoundException,p.dumpPathForUuidInJsonDumpStorage,createJDS.jsonBadUuid)
+    finally:
+      p.cleanup()
 
   def testMoveJobFromLegacyToStandardStorage(self):
     """
@@ -1183,33 +1235,36 @@ class TestProcessor:
     """
     global me
     p = processor.Processor(me.config)
-    me.logger.clear()
-    messages = []
-    val = p.getJsonOrWarn({},'any',messages)
-    assert None == val
-    assert 0 == len(me.logger.buffer)
-    assert 1 == len(messages)
-    assert 'WARNING: Json file missing any' == messages[0], "But got [%s]"%messages[0]
-    messages = []
-    val = p.getJsonOrWarn({'key':'too long'},'any',messages,333,3)
-    assert 333 == val
-    assert 0 == len(me.logger.buffer)
-    assert 1 == len(messages)
-    assert 'WARNING: Json file missing any' == messages[0], "But got [%s]"%messages[0]
-    messages = []
-    val = p.getJsonOrWarn({'key':'too long'},'key',messages,333,3)
-    assert 'too' == val
-    assert 0 == len(me.logger.buffer)
-    assert 0 == len(messages)
-    messages = []
-    val = p.getJsonOrWarn(33,'key',messages,333,3)
-    assert 1 == len(me.logger.buffer)
-    assert logging.ERROR == me.logger.levels[0]
-    assert "While extracting 'key' from jsonDoc" in me.logger.buffer[0], 'But log is %s'%me.logger.buffer[0]
-    assert 1 == len(messages)
-    assert "ERROR: jsonDoc['key']:" in messages[0], "but %s"%(str(messages))
-    assert "unsubscriptable" in messages[0], "but %s"%(str(messages))
-
+    try:
+      me.logger.clear()
+      messages = []
+      val = p.getJsonOrWarn({},'any',messages)
+      assert None == val
+      assert 0 == len(me.logger.buffer)
+      assert 1 == len(messages)
+      assert 'WARNING: Json file missing any' == messages[0], "But got [%s]"%messages[0]
+      messages = []
+      val = p.getJsonOrWarn({'key':'too long'},'any',messages,333,3)
+      assert 333 == val
+      assert 0 == len(me.logger.buffer)
+      assert 1 == len(messages)
+      assert 'WARNING: Json file missing any' == messages[0], "But got [%s]"%messages[0]
+      messages = []
+      val = p.getJsonOrWarn({'key':'too long'},'key',messages,333,3)
+      assert 'too' == val
+      assert 0 == len(me.logger.buffer)
+      assert 0 == len(messages)
+      messages = []
+      val = p.getJsonOrWarn(33,'key',messages,333,3)
+      assert 1 == len(me.logger.buffer)
+      assert logging.ERROR == me.logger.levels[0]
+      assert "While extracting 'key' from jsonDoc" in me.logger.buffer[0], 'But log is %s'%me.logger.buffer[0]
+      assert 1 == len(messages)
+      assert "ERROR: jsonDoc['key']:" in messages[0], "but %s"%(str(messages))
+      assert "unsubscriptable" in messages[0], "but %s"%(str(messages))
+    finally:
+      p.cleanup()
+    
   def testInsertReportIntoDatabase_VariousBadFormat(self):
     """
     testInsertReportIntoDatabase_VariousBadFormat(self):
@@ -1370,7 +1425,7 @@ class TestProcessor:
       cur.execute('delete from reports where uuid = %s',(uuid,))
       con.commit()
     finally:
-      p.databaseConnectionPool.cleanup()
+      p.cleanup()
 
   def testInsertReportIntoDatabase_CrashVsTimestamp(self):
     """
@@ -1431,45 +1486,49 @@ class TestProcessor:
           assert expectedValues[docIndex][dateIndex] == value, "But expected %s, got %s"%(expectedValues[docIndex][dateIndex],value)
       con.commit()
     finally:
-      p.databaseConnectionPool.cleanup()
+      p.cleanup()
 
   def test_insertAdddonsIntoDatabase_addons_missing(self):
     p = processor.Processor(me.config)
     p.extensionsTable = DummyObjectWithExpectations()
     errorMessages = []
-    assert p.insertAdddonsIntoDatabase('dummycursor', 1, {}, '2009-09-01', errorMessages) == []
+    result = p.insertAdddonsIntoDatabase('dummycursor', 1, {}, '2009-09-01', errorMessages)
+    p.cleanup()
+    assert [] == result
     assert errorMessages == ['WARNING: Json file missing Add-ons']
 
   def test_insertAdddonsIntoDatabase_addons_empty(self):
     p = processor.Processor(me.config)
     p.extensionsTable = DummyObjectWithExpectations()
     errorMessages = []
-    assert p.insertAdddonsIntoDatabase('dummycursor', 1, {"Add-ons":''}, '2009-09-01', errorMessages) == []
+    result = p.insertAdddonsIntoDatabase('dummycursor', 1, {"Add-ons":''}, '2009-09-01', errorMessages)
+    p.cleanup()
+    assert  [] == result
     assert errorMessages == []
 
   def test_insertAdddonsIntoDatabase_addons_normal_one(self):
     p = processor.Processor(me.config)
     p.extensionsTable = DummyObjectWithExpectations()
-    dummycursor = self.connection.cursor()
-    p.extensionsTable.expect('insert', (dummycursor, (1, '2009-09-01', 0, "{463F6CA5-EE3C-4be1-B7E6-7FEE11953374}", "3.0.5.1"), p.databaseConnectionPool.connectToDatabase), {"date_processed": '2009-09-01'})
+    p.extensionsTable.expect('insert', ('dummycursor', (1, '2009-09-01', 0, "{463F6CA5-EE3C-4be1-B7E6-7FEE11953374}", "3.0.5.1"), p.databaseConnectionPool.connectToDatabase), {"date_processed": '2009-09-01'})
     errorMessages = []
-    result = p.insertAdddonsIntoDatabase(dummycursor, 1, {"Add-ons":"{463F6CA5-EE3C-4be1-B7E6-7FEE11953374}:3.0.5.1"}, '2009-09-01', errorMessages)
+    result = p.insertAdddonsIntoDatabase('dummycursor', 1, {"Add-ons":"{463F6CA5-EE3C-4be1-B7E6-7FEE11953374}:3.0.5.1"}, '2009-09-01', errorMessages)
+    p.cleanup()
     assert result == [["{463F6CA5-EE3C-4be1-B7E6-7FEE11953374}", "3.0.5.1"]], "got %s" % result
     assert errorMessages == []
 
   def test_insertAdddonsIntoDatabase_addons_normal_many(self):
     p = processor.Processor(me.config)
     p.extensionsTable = DummyObjectWithExpectations()
-    dummycursor = self.connection.cursor()
-    p.extensionsTable.expect('insert', (dummycursor, (1, '2009-09-01', 0, "{463F6CA5-EE3C-4be1-B7E6-7FEE11953374}", "3.0.5.1"), p.databaseConnectionPool.connectToDatabase), {"date_processed": '2009-09-01'})
-    p.extensionsTable.expect('insert', (dummycursor, (1, '2009-09-01', 1, "{CAFEEFAC-0016-0000-0007-ABCDEFFEDCBA}", "6.0.07"), p.databaseConnectionPool.connectToDatabase), {"date_processed": '2009-09-01'})
-    p.extensionsTable.expect('insert', (dummycursor, (1, '2009-09-01', 2, "moveplayer@movenetworks.com", "1.0.0.071101000055"), p.databaseConnectionPool.connectToDatabase), {"date_processed": '2009-09-01'})
-    p.extensionsTable.expect('insert', (dummycursor, (1, '2009-09-01', 3, "{3EC9C995-8072-4fc0-953E-4F30620D17F3}", "2.0.0.4"), p.databaseConnectionPool.connectToDatabase), {"date_processed": '2009-09-01'})
-    p.extensionsTable.expect('insert', (dummycursor, (1, '2009-09-01', 4, "{635abd67-4fe9-1b23-4f01-e679fa7484c1}", "1.6.5.200812101546"), p.databaseConnectionPool.connectToDatabase), {"date_processed": '2009-09-01'})
-    p.extensionsTable.expect('insert', (dummycursor, (1, '2009-09-01', 5, "{CAFEEFAC-0016-0000-0011-ABCDEFFEDCBA}", "6.0.11"), p.databaseConnectionPool.connectToDatabase), {"date_processed": '2009-09-01'})
-    p.extensionsTable.expect('insert', (dummycursor, (1, '2009-09-01', 6, "{972ce4c6-7e08-4474-a285-3208198ce6fd}", "3.0.6"), p.databaseConnectionPool.connectToDatabase), {"date_processed": '2009-09-01'})
+    p.extensionsTable.expect('insert', ('dummycursor', (1, '2009-09-01', 0, "{463F6CA5-EE3C-4be1-B7E6-7FEE11953374}", "3.0.5.1"), p.databaseConnectionPool.connectToDatabase), {"date_processed": '2009-09-01'})
+    p.extensionsTable.expect('insert', ('dummycursor', (1, '2009-09-01', 1, "{CAFEEFAC-0016-0000-0007-ABCDEFFEDCBA}", "6.0.07"), p.databaseConnectionPool.connectToDatabase), {"date_processed": '2009-09-01'})
+    p.extensionsTable.expect('insert', ('dummycursor', (1, '2009-09-01', 2, "moveplayer@movenetworks.com", "1.0.0.071101000055"), p.databaseConnectionPool.connectToDatabase), {"date_processed": '2009-09-01'})
+    p.extensionsTable.expect('insert', ('dummycursor', (1, '2009-09-01', 3, "{3EC9C995-8072-4fc0-953E-4F30620D17F3}", "2.0.0.4"), p.databaseConnectionPool.connectToDatabase), {"date_processed": '2009-09-01'})
+    p.extensionsTable.expect('insert', ('dummycursor', (1, '2009-09-01', 4, "{635abd67-4fe9-1b23-4f01-e679fa7484c1}", "1.6.5.200812101546"), p.databaseConnectionPool.connectToDatabase), {"date_processed": '2009-09-01'})
+    p.extensionsTable.expect('insert', ('dummycursor', (1, '2009-09-01', 5, "{CAFEEFAC-0016-0000-0011-ABCDEFFEDCBA}", "6.0.11"), p.databaseConnectionPool.connectToDatabase), {"date_processed": '2009-09-01'})
+    p.extensionsTable.expect('insert', ('dummycursor', (1, '2009-09-01', 6, "{972ce4c6-7e08-4474-a285-3208198ce6fd}", "3.0.6"), p.databaseConnectionPool.connectToDatabase), {"date_processed": '2009-09-01'})
     errorMessages = []
-    result = p.insertAdddonsIntoDatabase(dummycursor, 1, {"Add-ons":"{463F6CA5-EE3C-4be1-B7E6-7FEE11953374}:3.0.5.1,{CAFEEFAC-0016-0000-0007-ABCDEFFEDCBA}:6.0.07,moveplayer@movenetworks.com:1.0.0.071101000055,{3EC9C995-8072-4fc0-953E-4F30620D17F3}:2.0.0.4,{635abd67-4fe9-1b23-4f01-e679fa7484c1}:1.6.5.200812101546,{CAFEEFAC-0016-0000-0011-ABCDEFFEDCBA}:6.0.11,{972ce4c6-7e08-4474-a285-3208198ce6fd}:3.0.6"}, '2009-09-01', errorMessages)
+    result = p.insertAdddonsIntoDatabase('dummycursor', 1, {"Add-ons":"{463F6CA5-EE3C-4be1-B7E6-7FEE11953374}:3.0.5.1,{CAFEEFAC-0016-0000-0007-ABCDEFFEDCBA}:6.0.07,moveplayer@movenetworks.com:1.0.0.071101000055,{3EC9C995-8072-4fc0-953E-4F30620D17F3}:2.0.0.4,{635abd67-4fe9-1b23-4f01-e679fa7484c1}:1.6.5.200812101546,{CAFEEFAC-0016-0000-0011-ABCDEFFEDCBA}:6.0.11,{972ce4c6-7e08-4474-a285-3208198ce6fd}:3.0.6"}, '2009-09-01', errorMessages)
+    p.cleanup()
     assert result == [["{463F6CA5-EE3C-4be1-B7E6-7FEE11953374}", "3.0.5.1"],
                       ["{CAFEEFAC-0016-0000-0007-ABCDEFFEDCBA}", "6.0.07"],
                       ["moveplayer@movenetworks.com", "1.0.0.071101000055"],
@@ -1484,14 +1543,15 @@ class TestProcessor:
     p = processor.Processor(me.config)
     p.extensionsTable = DummyObjectWithExpectations()
     dummycursor = self.connection.cursor()
-    p.extensionsTable.expect('insert', (dummycursor, (1, '2009-09-01', 0, "{463F6CA5-EE3C-4be1-B7E6-7FEE11953374}", "3.0.5.1"), p.databaseConnectionPool.connectToDatabase), {"date_processed": '2009-09-01'})
-    p.extensionsTable.expect('insert', (dummycursor, (1, '2009-09-01', 1, "{CAFEEFAC-0016-0000-0007-ABCDEFFEDCBA}", "6.0.07"), p.databaseConnectionPool.connectToDatabase), {"date_processed": '2009-09-01'})
-    p.extensionsTable.expect('insert', (dummycursor, (1, '2009-09-01', 2, "moveplayer@movenetworks.com", "1.0.0.071101000055"), p.databaseConnectionPool.connectToDatabase), {"date_processed": '2009-09-01'})
-    p.extensionsTable.expect('insert', (dummycursor, (1, '2009-09-01', 3, "{3EC9C995-8072-4fc0-953E-4F30620D17F3}", "2.0.0.4"), p.databaseConnectionPool.connectToDatabase), {"date_processed": '2009-09-01'})
-    p.extensionsTable.expect('insert', (dummycursor, (1, '2009-09-01', 4, "{635abd67-4fe9-1b23-4f01-e679fa7484c1}", "1.6.5.200812101546"), p.databaseConnectionPool.connectToDatabase), {"date_processed": '2009-09-01'})
-    p.extensionsTable.expect('insert', (dummycursor, (1, '2009-09-01', 6, "{972ce4c6-7e08-4474-a285-3208198ce6fd}", "3.0.6"), p.databaseConnectionPool.connectToDatabase), {"date_processed": '2009-09-01'})
+    p.extensionsTable.expect('insert', ('dummycursor', (1, '2009-09-01', 0, "{463F6CA5-EE3C-4be1-B7E6-7FEE11953374}", "3.0.5.1"), p.databaseConnectionPool.connectToDatabase), {"date_processed": '2009-09-01'})
+    p.extensionsTable.expect('insert', ('dummycursor', (1, '2009-09-01', 1, "{CAFEEFAC-0016-0000-0007-ABCDEFFEDCBA}", "6.0.07"), p.databaseConnectionPool.connectToDatabase), {"date_processed": '2009-09-01'})
+    p.extensionsTable.expect('insert', ('dummycursor', (1, '2009-09-01', 2, "moveplayer@movenetworks.com", "1.0.0.071101000055"), p.databaseConnectionPool.connectToDatabase), {"date_processed": '2009-09-01'})
+    p.extensionsTable.expect('insert', ('dummycursor', (1, '2009-09-01', 3, "{3EC9C995-8072-4fc0-953E-4F30620D17F3}", "2.0.0.4"), p.databaseConnectionPool.connectToDatabase), {"date_processed": '2009-09-01'})
+    p.extensionsTable.expect('insert', ('dummycursor', (1, '2009-09-01', 4, "{635abd67-4fe9-1b23-4f01-e679fa7484c1}", "1.6.5.200812101546"), p.databaseConnectionPool.connectToDatabase), {"date_processed": '2009-09-01'})
+    p.extensionsTable.expect('insert', ('dummycursor', (1, '2009-09-01', 6, "{972ce4c6-7e08-4474-a285-3208198ce6fd}", "3.0.6"), p.databaseConnectionPool.connectToDatabase), {"date_processed": '2009-09-01'})
     errorMessages = []
-    result = p.insertAdddonsIntoDatabase(dummycursor, 1, {"Add-ons":"{463F6CA5-EE3C-4be1-B7E6-7FEE11953374}:3.0.5.1,{CAFEEFAC-0016-0000-0007-ABCDEFFEDCBA}:6.0.07,moveplayer@movenetworks.com:1.0.0.071101000055,{3EC9C995-8072-4fc0-953E-4F30620D17F3}:2.0.0.4,{635abd67-4fe9-1b23-4f01-e679fa7484c1}:1.6.5.200812101546,{CAFEEFAC-0016-0000-0011-ABCDEFFEDCBA}6.0.11,{972ce4c6-7e08-4474-a285-3208198ce6fd}:3.0.6"}, '2009-09-01', errorMessages)
+    result = p.insertAdddonsIntoDatabase('dummycursor', 1, {"Add-ons":"{463F6CA5-EE3C-4be1-B7E6-7FEE11953374}:3.0.5.1,{CAFEEFAC-0016-0000-0007-ABCDEFFEDCBA}:6.0.07,moveplayer@movenetworks.com:1.0.0.071101000055,{3EC9C995-8072-4fc0-953E-4F30620D17F3}:2.0.0.4,{635abd67-4fe9-1b23-4f01-e679fa7484c1}:1.6.5.200812101546,{CAFEEFAC-0016-0000-0011-ABCDEFFEDCBA}6.0.11,{972ce4c6-7e08-4474-a285-3208198ce6fd}:3.0.6"}, '2009-09-01', errorMessages)
+    p.cleanup()
     assert result == [["{463F6CA5-EE3C-4be1-B7E6-7FEE11953374}", "3.0.5.1"],
                       ["{CAFEEFAC-0016-0000-0007-ABCDEFFEDCBA}", "6.0.07"],
                       ["moveplayer@movenetworks.com", "1.0.0.071101000055"],
@@ -1511,6 +1571,7 @@ class TestProcessor:
         - else: return '@instruction'
     """
     p = processor.Processor(me.config)
+    p.cleanup()
     for func,expected in { ' *foo':  '*foo',
                            '  &foo' : ' &foo',
                            '   ,foo':  '  , foo',
@@ -1570,6 +1631,7 @@ class TestProcessor:
     """
     global me
     p = processor.Processor(me.config)
+    p.cleanup()
     p.prefixSignatureRegEx = re.compile('PFX_|sentinel_1') # bogus but easy
     fs='f'*150
     isLong = True

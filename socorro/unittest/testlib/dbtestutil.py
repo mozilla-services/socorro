@@ -30,20 +30,24 @@ def fillProcessorTable(cursor, processorCount, stamp=None, processorMap = {},log
     data.extend([('test_%d'%(id),stamp,processorMap.get(id,stamp)) for id in processorMap.keys() ])
   else:
     data.extend([('test_%d'%(x),stamp, stamp) for x in range(1,processorCount+1) ])
-  cursor.executemany(sql,data)
-  cursor.connection.commit()
+  try:
+    cursor.executemany(sql,data)
+    cursor.connection.commit()
 
-  sql = "SELECT id from processors;"
-  cursor.execute(sql)
-  allIds = cursor.fetchall()
-  sql = "CREATE TABLE priority_jobs_%s (uuid varchar(50) not null primary key);"
-  for tup in allIds:
-    try:
-      cursor.execute(sql%(tup[0]))
-      cursor.connection.commit()
-    except psycopg2.ProgrammingError:
-      cursor.connection.rollback()
-
+    sql = "SELECT id from processors;"
+    cursor.execute(sql)
+    allIds = cursor.fetchall()
+    cursor.connection.rollback()
+    sql = "CREATE TABLE priority_jobs_%s (uuid varchar(50) not null primary key);"
+    for tup in allIds:
+      try:
+        cursor.execute(sql%(tup[0]))
+        cursor.connection.commit()
+      except psycopg2.ProgrammingError:
+        cursor.connection.rollback()
+  finally:
+    cursor.connection.rollback()
+      
 def moreUuid():
   data = [ x for x in createJDS.jsonFileData.keys() ] # fixed order
   jdsIndex = 0
@@ -85,11 +89,11 @@ def addSomeJobs(cursor,idsMapToCounts, logger = None):
   sql = "INSERT INTO jobs (pathname,uuid,owner) VALUES (%s,%s,%s)"
   try:
     cursor.executemany(sql,data)
+    cursor.connection.commit()
   except Exception,x:
     logger.error("Failed to addSomeJobs(%s): %s",str(idsMapToCounts),x)
     cursor.connection.rollback()
     raise x
-  cursor.connection.commit()
   return data
 
 def setPriority(cursor,jobIds,priorityTableName=None):

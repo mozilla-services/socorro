@@ -44,9 +44,12 @@ class TestDB:
   def removePriorityTables(self,config,logger):
     dbCon,dbCur = db_schema.connectToDatabase(config,logger)
     priorityTableNames = db_postgresql.tablesMatchingPattern('priority_job_%%',dbCur)
-    sql = "DROP TABLE IF EXISTS %s CASCADE;"%(", ".join(priorityTableNames))
-    dbCur.execute(sql)
-    dbCon.commit()
+    if priorityTableNames:
+      sql = "DROP TABLE IF EXISTS %s CASCADE;"%(", ".join(priorityTableNames))
+      dbCur.execute(sql)
+      dbCon.commit()
+    else:
+      logger.info("There were no priority_job tables to close")
     
   def populateDB(self,**kwargs):
     cursor = self.getCursor(**kwargs)
