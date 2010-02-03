@@ -42,8 +42,50 @@ class TopcrashersByUrl_Model extends Model {
             ORDER BY count DESC
             LIMIT 100 OFFSET $offset";
 
-		$results = $this->fetchRows($sql);
+	$results = $this->fetchRows($sql);
+	$this->cleanseUrlsAndDomains($results);
       	return array($start_date, $end_date, $results);
+	}
+
+	/**
+	 * Given a database result containing 
+	 * urls and/or domains, modifies the results
+	 * by applying privacy policies such as
+	 * replacing file urls with a hardcoded
+	 * file_detected_XXX, etc.
+	 *
+	 * @param results - Database query results
+	 * @return results - Database query results with modifications
+	 */
+	protected function cleanseUrlsAndDomains(&$results)
+	{
+	    foreach($results as $result) {
+		if (property_exists($result, 'url')) {
+		    $result->url = $this->cleanseUrl($result->url);
+		}
+		if (property_exists($result, 'domain')) {
+		    $result->domain = $this->cleanseUrl($result->domain);
+		}
+	    }
+	}
+
+	/**
+	 * Given a url, will return the url or
+	 * a version of it with privacy policies 
+	 * applied.
+	 *
+	 * @param url - an url
+	 * @return url or other string
+	 */
+	protected function cleanseUrl($url)
+	{
+	    if (preg_match('/^file/', $url)) {
+		return 'loca_file_detected_XXX';
+	    } else if (preg_match('/^https?:\/\/[^\/]*@[^\/]*\/.*$/', $url)) {
+		return 'username_detected_XXX';
+	    } else {
+		return $url;
+	    }
 	}
 
   	/**
@@ -82,6 +124,7 @@ class TopcrashersByUrl_Model extends Model {
 		        LIMIT 100 OFFSET $offset";
 		
 		$results = $this->fetchRows($sql);
+		$this->cleanseUrlsAndDomains($results);
       	return array($start_date, $end_date, $results);
   	}
 
@@ -120,7 +163,8 @@ class TopcrashersByUrl_Model extends Model {
 	        ORDER BY count DESC
 	        LIMIT 100 OFFSET $offset";
 
-		$results = $this->fetchRows($sql);
+		$results = $this->fetchRows($sql);		
+		$this->cleanseUrlsAndDomains($results);
 	  	return array($start_date, $end_date, $results);
 	}
 
