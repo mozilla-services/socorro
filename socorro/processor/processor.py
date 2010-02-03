@@ -21,7 +21,7 @@ import socorro.lib.ConfigurationManager
 import socorro.lib.JsonDumpStorage as jds
 import socorro.lib.psycopghelper as psy
 import socorro.lib.ooid as ooid
-import socorro.lib.datetimeutil as soc_dtutil
+import socorro.lib.datetimeutil as sdt
 import socorro.lib.processedDumpStorage as pds
 
 import simplejson
@@ -73,7 +73,7 @@ class Processor(object):
   #-----------------------------------------------------------------------------------------------------------------
   # static data. Beware threading!
   buildDatePattern = re.compile('^(\\d{4})(\\d{2})(\\d{2})(\\d{2})')
-  utctz = soc_dtutil.UTC()
+  utctz = sdt.UTC()
 
   #-----------------------------------------------------------------------------------------------------------------
   def __init__ (self, config):
@@ -581,7 +581,7 @@ class Processor(object):
         jsonFile.close()
 
       try:
-        date_processed = soc_dtutil.datetimeFromISOdateString(jsonDocument["submitted_timestamp"])
+        date_processed = sdt.datetimeFromISOdateString(jsonDocument["submitted_timestamp"])
       except KeyError:
         date_processed = ooid.dateFromOoid(jobUuid)
 
@@ -589,6 +589,7 @@ class Processor(object):
       reportId = newReportRecordAsDict["id"]
       newReportRecordAsDict['dump'] = ''
       newReportRecordAsDict["startedDateTime"] = startedDateTime
+      threadLocalDatabaseConnection.commit()
 
       if self.config.collectAddon:
         logger.info("%s - collecting Addons", threadName)
@@ -613,18 +614,19 @@ class Processor(object):
       threadLocalDatabaseConnection.commit()
       self.saveProcessedDumpJson(newReportRecordAsDict)
       logger.info("%s - succeeded and committed: %s, %s", threadName, jobId, jobUuid)
-      threadLocalDatabaseConnection.commit()
     except (KeyboardInterrupt, SystemExit):
       logger.info("%s - quit request detected", threadName)
       self.quit = True
-      logger.info("%s - abandoning job with rollback: %s, %s", threadName, jobId, jobUuid)
-      threadLocalDatabaseConnection.rollback()
+      try:
+        logger.info("%s - abandoning job with rollback: %s, %s", threadName, jobId, jobUuid)
+        threadLocalDatabaseConnection.rollback()
+        threadLocalDatabaseConnection.close()
+      except:
+        pass
     except DuplicateEntryException, x:
       logger.warning("%s - duplicate entry: %s", threadName, jobUuid)
-      threadLocalDatabaseConnection.rollback()
     except psycopg2.OperationalError:
       logger.critical("%s - something's gone horribly wrong with the database connection", threadName)
-      threadLocalDatabaseConnection.rollback()
       self.quit = True
       socorro.lib.util.reportExceptionAndAbort(logger)
     except Exception, x:
@@ -636,12 +638,12 @@ class Processor(object):
       newReportRecordAsDict['processor_notes'] = message
       threadLocalCursor.execute("update jobs set completeddatetime = %s, success = False, message = %s where id = %s", (datetime.datetime.now(), message, jobId))
       threadLocalDatabaseConnection.commit()
-    try:
-      threadLocalCursor.execute("update reports set started_datetime = timestamp without time zone '%s', completed_datetime = timestamp without time zone '%s', success = False, processor_notes = '%s' where id = %s and date_processed = timestamp without time zone '%s'" % (startedDateTime, datetime.datetime.now(), message, reportId, date_processed))
-      threadLocalDatabaseConnection.commit()
-      self.saveProcessedDumpJson(newReportRecordAsDict)
-    except Exception:
-      threadLocalDatabaseConnection.rollback()
+      try:
+        threadLocalCursor.execute("update reports set started_datetime = timestamp without time zone '%s', completed_datetime = timestamp without time zone '%s', success = False, processor_notes = '%s' where id = %s and date_processed = timestamp without time zone '%s'" % (startedDateTime, datetime.datetime.now(), message, reportId, date_processed))
+        threadLocalDatabaseConnection.commit()
+        self.saveProcessedDumpJson(newReportRecordAsDict)
+      except Exception:
+        threadLocalDatabaseConnection.rollback()
 
   #-----------------------------------------------------------------------------------------------------------------
   @staticmethod
@@ -697,7 +699,7 @@ class Processor(object):
     """
     logger.debug("%s - starting insertReportIntoDatabase", threading.currentThread().getName())
     product = Processor.getJsonOrWarn(jsonDocument,'ProductName',processorErrorMessages,None, 30)
-    version = Processor.getJsonOrWarn(jsonDocument,'Version', processorErrorMessages,None,16)
+    version = Processor.getJsonOrWarn(jsonDocument,'Version', processorErrorMessages,None)
     buildID =   Processor.getJsonOrWarn(jsonDocument,'BuildID', processorErrorMessages,None,16)
     url = socorro.lib.util.lookupLimitedStringOrNone(jsonDocument, 'URL', 255)
     user_comments = socorro.lib.util.lookupLimitedStringOrNone(jsonDocument, 'Comments', 500)
@@ -749,13 +751,9 @@ class Processor(object):
       previousTrialWasSuccessful = psy.singleValueSql(threadLocalCursor, "select success from reports where uuid = '%s' and date_processed = timestamp without time zone '%s'" % (uuid, date_processed))
       if previousTrialWasSuccessful:
         raise DuplicateEntryException(uuid)
-      try:
-        threadLocalCursor.execute("delete from reports where uuid = '%s' and date_processed = timestamp without time zone '%s'" % (uuid, date_processed))
-        processorErrorMessages.append("INFO: This record is a replacement for a previous record with the same uuid")
-        self.reportsTable.insert(threadLocalCursor, newReportRecordAsTuple, self.databaseConnectionPool.connectToDatabase, date_processed=date_processed)
-        threadLocalCursor.connection.commit()
-      except:
-        threaLocalCursor.connection.rollback()
+      threadLocalCursor.execute("delete from reports where uuid = '%s' and date_processed = timestamp without time zone '%s'" % (uuid, date_processed))
+      processorErrorMessages.append("INFO: This record is a replacement for a previous record with the same uuid")
+      self.reportsTable.insert(threadLocalCursor, newReportRecordAsTuple, self.databaseConnectionPool.connectToDatabase, date_processed=date_processed)
     newReportRecordAsDict["id"] = psy.singleValueSql(threadLocalCursor, "select id from reports where uuid = '%s' and date_processed = timestamp without time zone '%s'" % (uuid, date_processed))
     return newReportRecordAsDict
 
@@ -767,7 +765,7 @@ class Processor(object):
     listOfAddonsForOutput = []
     for i, x in enumerate(listOfAddonsForInput):
       try:
-        self.extensionsTable.insert(threadLocalCursor, (reportId, date_processed, i, x[0][:100], x[1]), self.databaseConnectionPool.connectToDatabase, date_processed=date_processed)
+        self.extensionsTable.insert(threadLocalCursor, (reportId, date_processed, i, x[0][:100], x[1][:16]), self.databaseConnectionPool.connectToDatabase, date_processed=date_processed)
         listOfAddonsForOutput.append(x)
       except IndexError:
         processorErrorMessages.append('WARNING: "%s" is deficient as a name and version for an addon' % str(x))
