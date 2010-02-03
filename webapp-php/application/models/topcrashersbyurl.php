@@ -64,7 +64,7 @@ class TopcrashersByUrl_Model extends Model {
 		    $result->url = $this->cleanseUrl($result->url);
 		}
 		if (property_exists($result, 'domain')) {
-		    $result->domain = $this->cleanseUrl($result->domain);
+		    $result->domain = $this->cleanseDomain($result->domain);
 		}
 	    }
 	}
@@ -79,12 +79,29 @@ class TopcrashersByUrl_Model extends Model {
 	 */
 	protected function cleanseUrl($url)
 	{
-	    if (preg_match('/^file/', $url)) {
+	    if (strpos($url, 'file') === 0) {
 		return 'loca_file_detected_XXX';
 	    } else if (preg_match('/^https?:\/\/[^\/]*@[^\/]*\/.*$/', $url)) {
 		return 'username_detected_XXX';
 	    } else {
 		return $url;
+	    }
+	}
+
+	/**
+	 * Given a domain, will return the domain or
+	 * a version of it with privacy policies 
+	 * applied.
+	 *
+	 * @param domain - an domain
+	 * @return url or other string
+	 */
+	protected function cleanseDomain($domain)
+	{
+	    if (strpos($domain, '@') !== false) {
+		return 'username_detected_XXX';
+	    } else {
+		return $domain;
 	    }
 	}
 
