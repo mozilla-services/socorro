@@ -18,8 +18,8 @@ from socorro.database.cachedIdAccess import IdCache
 #-----------------------------------------------------------------------------------------------------------------
 def dailyUrlDump(config):
   databaseConnectionPool = psy.DatabaseConnectionPool(config.databaseHost, config.databaseName, config.databaseUserName, config.databasePassword, logger)
-  try:
-    try:
+  try: # outer try/except: level 0
+    try: # mid try/finally: level 1
       databaseConnection, databaseCursor = databaseConnectionPool.connectionCursorPair()
 
       now = config.day + dt.timedelta(1)
@@ -67,37 +67,30 @@ def dailyUrlDump(config):
         r.uptime as uptime_seconds, -- 16
         case when (r.email is NULL OR r.email='') then '' else r.email end as email, -- 17
         (select sum(adu_count) from raw_adu adu
-           where adu.date = '%s'
+           where adu.date = '%(nowAsString)s'
              AND pd.product = adu.product_name AND pd.version = adu.product_version
              AND substring(r.os_name from 1 for 3) = substring(adu.product_os_platform from 1 for 3)
              AND r.os_version LIKE '%%'||adu.product_os_version||'%%') as adu_count -- 18
       from
         reports r left join productdims pd on r.product = pd.product and r.version = pd.version
       where
-        '%s' >= r.date_processed and r.date_processed > '%s'
-        %s %s
+        '%(yesterdayAsString)s' <= r.date_processed and r.date_processed < '%(nowAsString)s'
+        %(productPhrase)s %(versionPhrase)s
       order by 5 -- r.date_processed, munged
-      """ % (nowAsString, nowAsString, yesterdayAsString, productPhrase, versionPhrase) # adu date, date_processed, date_processed, where(product) where(version)
-      idCache = IdCache(databaseCursor)
-      try:
+      """ % {'nowAsString':nowAsString, 'yesterdayAsString':yesterdayAsString, 'productPhrase':productPhrase, 'versionPhrase':versionPhrase}
+      logger.debug("SQL is\n%s",sql)
+      try: # inner try/finally level 2: write gzipped files
         gzippedOutputFile = gzip.open(outputPathName, "w")
         gzippedPublicOutputFile = gzip.open(publicOutputPathName, "w")
         csvFormatter = csv.writer(gzippedOutputFile, delimiter='\t', lineterminator='\n')
         csvPublicFormatter = csv.writer(gzippedPublicOutputFile, delimiter='\t', lineterminator='\n')
         columnHeadersAreNotYetWritten = True
-        psy.execute(databaseCursor, sql)
-        crashData = databaseCursor.fetchall()
-        try:
-          logger.info("For %s, handling %s crashes",nowAsString,len(crashData))
-        except:
-          logger.debug("Type of crashData is %s",type(crashData))
-          logger.info("No useful crash data found for dates between %s and %s",yesterdayAsString,nowAsString)
-        
-        for aCrash in crashData:
+        idCache = IdCache(databaseCursor)
+        for aCrash in psy.execute(databaseCursor, sql):
           if columnHeadersAreNotYetWritten:
             writeRowToInternalAndExternalFiles(csvFormatter,csvPublicFormatter,getColumnHeader([x[0] for x in databaseCursor.description]))
             columnHeadersAreNotYetWritten = False
-          logger.debug("iterating through crash %s (%s)",aCrash,len(aCrash))
+          #logger.debug("iterating through crash %s (%s)",aCrash,len(aCrash))
           aCrashAsAList = []
           currentName = ''
           currentUuid = ''
@@ -130,13 +123,13 @@ def dailyUrlDump(config):
             aCrashAsAList.append(x)
           appendDetailsFromJson(config,aCrashAsAList,currentUuid)
           writeRowToInternalAndExternalFiles(csvFormatter,csvPublicFormatter,aCrashAsAList)
-      finally:
+          # end for loop over each aCrash
+      finally: # level 2
         gzippedOutputFile.close()
         gzippedPublicOutputFile.close()
-
-    finally:
+    finally: # level 1
       databaseConnectionPool.cleanup()
-  except:
+  except: # level 0
     util.reportExceptionAndContinue(logger)
 
 def pathFromUuidAndMount(mount,uuid,suffix):
@@ -187,7 +180,7 @@ def appendDetailsFromJson(config,aCrashAsAList,uuid, infoList=jsonInformation):
   if not uuid:
     logger.warn("No uuid from %s",aCrashAsAList)
     return
-  logger.debug("Attempting to get json from uuid '%s'",uuid)
+  #logger.debug("Attempting to get json from uuid '%s'",uuid)
   jsonDoc = getJson(config,uuid)
   if jsonDoc:
     for key,func in [(x['key'],x['valueFunction']) for x in infoList]:
@@ -204,7 +197,7 @@ def writeRowToInternalAndExternalFiles(internalFormatter,externalFormatter,aCras
   """
   Write a row to each file: Seen by internal users (full details), and external users (bowdlerized)
   """
-  logger.debug("Writing crash %s (%s)",aCrashAsAList,len(aCrashAsAList))
+  # logger.debug("Writing crash %s (%s)",aCrashAsAList,len(aCrashAsAList))
   internalFormatter.writerow(aCrashAsAList)
   # per bug 529431
   bowdlerList = copy.copy(aCrashAsAList)
