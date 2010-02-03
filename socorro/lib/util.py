@@ -117,6 +117,13 @@ def lookupLimitedStringOrNone(aDict, aKey, maxLength):
   except KeyError:
     return None
 
+#-----------------------------------------------------------------------------------------------------------------
+def lookupStringOrEmptyString(aDict, aKey):
+  try:
+    return aDict[aKey]
+  except KeyError:
+    return ''
+
 #=================================================================================================================
 class DotDict(dict):
   __getattr__= dict.__getitem__

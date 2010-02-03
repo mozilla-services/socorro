@@ -783,28 +783,30 @@ class Processor(object):
     processType = socorro.lib.util.lookupLimitedStringOrNone(jsonDocument, 'ProcessType', 10)
     if not processType: return listOfCrashProcessOutput
     listOfCrashProcessOutput['processType'] = processType
-    if "plugin" == processType:
-      pluginFilename = Processor.getJsonOrWarn(jsonDocument, 'PluginFilename', processorErrorMessages, None, 255)
-      pluginName     = Processor.getJsonOrWarn(jsonDocument, 'PluginName',     processorErrorMessages, None, 255)
-      pluginVersion  = Processor.getJsonOrWarn(jsonDocument, 'Version',        processorErrorMessages, None, 16)
-      if pluginFilename and pluginName and pluginVersion:
-        listOfCrashProcessOutput.update({'pluginFilename': pluginFilename,'pluginName': pluginName,'pluginVersion': pluginVersion})
-        
-        pluginId = None
-        try:
-          self.pluginsTable.insert(threadLocalCursor, (pluginFilename, pluginName))
-        except psycopg2.IntegrityError, x:
-          logger.info("%s - plugin already exists for pluginFilename: %s pluginName: %s",  threading.currentThread().getName(), pluginFilename, pluginName)
 
-        try:
-          self.pluginsReportsTable.insert(threadLocalCursor,
+    if "plugin" == processType:
+      # Bug#543776 We actually will are relaxing the non-null policy... a null filename, name, and version is OK. We'll use empty strings
+      pluginFilename = socorro.lib.util.lookupStringOrEmptyString(jsonDocument, 'PluginFilename')
+      pluginName     = socorro.lib.util.lookupStringOrEmptyString(jsonDocument, 'PluginName')
+      pluginVersion  = socorro.lib.util.lookupStringOrEmptyString(jsonDocument, 'PluginVersion')
+      listOfCrashProcessOutput.update({'pluginFilename': pluginFilename,'pluginName': pluginName,'pluginVersion': pluginVersion})
+
+      pluginId = None
+      try:
+        self.pluginsTable.insert(threadLocalCursor, (pluginFilename, pluginName))
+      except psycopg2.IntegrityError, x:
+        threadLocalCursor.connection.rollback()
+        logger.info("%s - No Big Deal - this plugin already exists for pluginFilename: %s pluginName: %s",  threading.currentThread().getName(), pluginFilename, pluginName)
+
+      try:
+        self.pluginsReportsTable.insert(threadLocalCursor,
                                           (reportId, pluginFilename, pluginName, date_processed, pluginVersion),
                                           self.databaseConnectionPool.connectToDatabase, date_processed=date_processed)
-        except psycopg2.IntegrityError, x:
-          logger.error("%s - psycopg2.IntegrityError %s", threading.currentThread().getName(), str(x))
-          logger.error("%s - %s: Unable to save record for plugin report. pluginId: %s reportId: %s version: %s",  threading.currentThread().getName(), reportId, pluginId, pluginVersion)
-          processorErrorMessages.append("Detected out of process plugin crash, but unable to record %s %s %s" % (pluginFilename, pluginName, pluginVersion))
-        return listOfCrashProcessOutput
+      except psycopg2.IntegrityError, x:
+        logger.error("%s - psycopg2.IntegrityError %s", threading.currentThread().getName(), str(x))
+        logger.error("%s - %s: Unable to save record for plugin report. pluginId: %s reportId: %s version: %s",  threading.currentThread().getName(), reportId, pluginId, pluginVersion)
+        processorErrorMessages.append("Detected out of process plugin crash, but unable to record %s %s %s" % (pluginFilename, pluginName, pluginVersion))
+      return listOfCrashProcessOutput
 
   #-----------------------------------------------------------------------------------------------------------------
   def doBreakpadStackDumpAnalysis (self, reportId, uuid, dumpfilePathname, databaseCursor, date_processed, processorErrorMessages):
