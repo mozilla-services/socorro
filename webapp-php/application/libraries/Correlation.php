@@ -214,10 +214,15 @@ class Correlation
      */
     public function parseSignature($line)
     {
-	$parts = explode('|', $line);
-	// Grab the 2nd one from the right, it seems these reports show their SkipList
-	$i = count($parts) - 2;
-	return trim($parts[$i]);
+	if (strpos($line, '|') === false) {
+	    return $line;
+	} else {
+	    $parts = explode('|', $line);
+	    // Grab the 2nd one from the right, it seems these reports show their SkipList
+	    $i = count($parts) - 2;
+
+	    return trim($parts[$i]);
+	}
     }
 
     /**

@@ -1,15 +1,25 @@
 <?php
 require_once 'PHPUnit/Framework.php';
 define('SYSPATH', '');
-require_once dirname(__FILE__).'/../application/libraries/Correlation.php';
 
 class Kohana
 {
+    public static function find_file($dir, $filename, $errorNotFound, $file_ext)
+    {
+	return dirname(__FILE__) . "/../application/${dir}/${filename}.${file_ext}";
+    }
+
     public static function log($level, $msg)
     {
 	echo $level . ":" . $msg;
     }
+    public static function debug($thing)
+    {
+	echo $thing;
+    }
 }
+
+require_once dirname(__FILE__).'/../application/libraries/Correlation.php';
 
 /**
  * run via phpunit CorrelationTest.php
@@ -136,6 +146,15 @@ class  CorrelationTest extends PHPUnit_Framework_TestCase
 	$this->assertEquals($c->parseSignature('  objc_msgSend | HPSmartPrint@0xe1ef|EXC_BAD_ACCESS / KERN_INVALID_ADDRESS (89 crashes)'),
 					       'HPSmartPrint@0xe1ef',
 					       'A signature after a SkipList item');
+    }
+
+    public function testUndefinedOffsetParseSignature()
+    {
+	
+	$c = new Correlation;
+	$this->assertEquals($c->parseSignature('0x0003bcf8'),
+					       '0x0003bcf8',
+					       'bogus signature lines, just use contents of the lne');
     }
 }
 ?>
