@@ -699,7 +699,7 @@ class Processor(object):
     """
     logger.debug("%s - starting insertReportIntoDatabase", threading.currentThread().getName())
     product = Processor.getJsonOrWarn(jsonDocument,'ProductName',processorErrorMessages,None, 30)
-    version = Processor.getJsonOrWarn(jsonDocument,'Version', processorErrorMessages,None)
+    version = Processor.getJsonOrWarn(jsonDocument,'Version', processorErrorMessages,None,16)
     buildID =   Processor.getJsonOrWarn(jsonDocument,'BuildID', processorErrorMessages,None,16)
     url = socorro.lib.util.lookupLimitedStringOrNone(jsonDocument, 'URL', 255)
     user_comments = socorro.lib.util.lookupLimitedStringOrNone(jsonDocument, 'Comments', 500)
@@ -765,7 +765,7 @@ class Processor(object):
     listOfAddonsForOutput = []
     for i, x in enumerate(listOfAddonsForInput):
       try:
-        self.extensionsTable.insert(threadLocalCursor, (reportId, date_processed, i, x[0][:100], x[1][:16]), self.databaseConnectionPool.connectToDatabase, date_processed=date_processed)
+        self.extensionsTable.insert(threadLocalCursor, (reportId, date_processed, i, x[0][:100], x[1]), self.databaseConnectionPool.connectToDatabase, date_processed=date_processed)
         listOfAddonsForOutput.append(x)
       except IndexError:
         processorErrorMessages.append('WARNING: "%s" is deficient as a name and version for an addon' % str(x))
