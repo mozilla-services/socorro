@@ -12,25 +12,26 @@ h1 {
 /**
  * Search
  */
-#daily_search {
-	border: 1px solid #999;	
-	float: left;
-	width: 350px;
+div.daily_search, div.daily_graph {
+    float: left;
+}
+
+div.daily_search {
+    width: 360px;
+}
+
+div.daily_graph {
+    margin-left: 1em;
+}
+
+#daily_search_version {
+    border-bottom: 1px solid #999;
 }
 
 #daily_search_version,
 #daily_search_os {
-	background-color: #eee;
-	border-bottom: 1px solid #999;
 	margin: 0px;
-	padding: 5px;
-}
-
-#daily_search h2 {
-	background-color: #ddd;
-	border-bottom: 1px solid #999;	
-	margin: 0;
-	padding: 3px;
+	padding-bottom: 5px;
 }
 #daily_search h3 {
 	margin-bottom: 5px;	
@@ -43,20 +44,20 @@ h1 {
 
 table.by_version {
 	border: 0;
-	padding: 4px;
+	padding: 4px 0;
 }
 
 table.by_version tr {
 }
 
 table.by_version th {
-	padding: 4px;
+	padding: 4px 0;
 	width: 60px;
 }
 
 table.by_version td {
 	border: 0;
-	padding: 4px;
+	padding: 4px 0;
 }
 
 input.submit {
@@ -118,12 +119,13 @@ table.graph {
  * Crash Data
  */
 #crash_data {
+    clear: both;
 	color: #000;
 	font-family: Helvetica;
 	margin-top: 20px;
 }
 #crash_data h2 {
-	float: left;
+    float: left;
 	margin-bottom: 5px;
 }
 #crash_data span.csv {
@@ -184,5 +186,8 @@ table.crash_data td.date {
 table.crash_data td.stat {
 	background-color: #eee;
 	text-align: right;
+}
+br.clear {
+    clear:both;
 }
 

@@ -37,6 +37,10 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+
+require_once(Kohana::find_file('libraries', 'timeutil', TRUE, 'php'));
+
+
 /**
  * Model class for ADU, a.k.a. Active Daily Users / Installs.
  *
@@ -366,6 +370,68 @@ class Daily_Model extends Model {
 		return false;
 	}
 
+    /**
+     * Prepare the dates that will be used for statistic collection.
+     *
+     * @param   string  The end date
+     * @param   int     The number of dates to query
+     * @return  array   
+     */
+    public function prepareDates($date_end, $duration) {
+        $dates = array();
+        $date_diff = TimeUtil::determineDayDifferential($date_end, date('Y-m-d', mktime(0, 0, 0, date("m"), date("d")-1, date("Y"))));
+        for($i = 0; $i <= $duration; $i++) {
+            $date = date('Y-m-d', mktime(0, 0, 0, date("m"), date("d")-($i+$date_diff), date("Y")));
+            if (strtotime($date) < $this->today) { 
+        	    $dates[] = $date;
+        	}
+        }
+        return $dates;
+    }
+
+    /**
+     * Prepare the Crash Data for the Crash Graphs.
+     *
+     * @param   array   The array of crash data statistics
+     * @param   string  The graph type, whether reporting by version or by O/S
+     * @param   string  The start date
+     * @param   string  The end date
+     * @param   array   The array of O/S that will be reported
+     * @param   array   The array of versions that will be reported  
+     * @return  array   
+     */
+    public function prepareGraphData($statistics, $form_selection='by_version', $date_start, $date_end, $dates, $operating_systems=null, $versions=null)
+    {
+        $graph_data = null;
+		if ($form_selection == 'by_version') { 
+        	$graph_data = $this->prepareCrashGraphDataByVersion($date_start, $date_end, $dates, $versions, $statistics);
+        } elseif ($form_selection == 'by_os') {
+        	$graph_data = $this->prepareCrashGraphDataByOS($date_start, $date_end, $dates, $operating_systems, $statistics);
+        }
+        return $graph_data;
+    }
+
+    /**
+     * Prepare the Crash Data for the Crash Graphs.
+     *
+     * @param   array   The array of crash stats data results
+     * @param   string  The graph type, whether reporting by version or by O/S
+     * @param   string  The product name
+     * @param   array   An array of versions
+     * @param   array   An array of operating systems
+     * @param   string  The start date
+     * @param   string  The end date
+     * @return  array   The array of crash stats data statistics
+     */
+    public function prepareStatistics($results, $form_selection='by_version', $product, $versions, $operating_system, $date_start, $date_end) {
+        $statistics = null;
+        if ($form_selection == 'by_version') { 
+        	$statistics = (!empty($results)) ? $this->calculateStatisticsByVersion($results) : null;
+        } elseif ($form_selection == 'by_os') {
+        	$statistics = (!empty($results)) ? $this->calculateStatisticsByOS($results) : null;
+        }
+        return $statistics;
+    }
 
 	/* */
 }

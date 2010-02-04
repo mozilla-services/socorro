@@ -1,5 +1,42 @@
 <?php defined('SYSPATH') or die('No direct script access.');
 
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is Socorro Crash Reporter
+ *
+ * The Initial Developer of the Original Code is
+ * The Mozilla Foundation.
+ * Portions created by the Initial Developer are Copyright (C) 2006
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *   Ryan Snyder <rsnyder@mozilla.com>
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either the GNU General Public License Version 2 or later (the "GPL"), or
+ * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
+ 
 require_once(Kohana::find_file('libraries', 'bugzilla', TRUE, 'php'));
 require_once(Kohana::find_file('libraries', 'crash', TRUE, 'php'));
 require_once(Kohana::find_file('libraries', 'release', TRUE, 'php'));
@@ -19,6 +56,26 @@ class Topcrasher_Controller extends Controller {
         parent::__construct();
         $this->topcrashers_model = new Topcrashers_Model();
         $this->bug_model = new Bug_Model;
+    }
+    
+    /**
+     * Handle empty version values in the methods below, and redirect accordingly.
+     *
+     * @param   string  The product name
+     * @param   string  The method name
+     * @return  void
+     */
+    private function _handleEmptyVersion($product, $method) {
+        $product_version = $this->branch_model->getRecentProductVersion($product);
+        $version = $product_version->version;
+        $this->chooseVersion(
+            array(
+                'product' => $product,
+                'version' => $version,
+                'release' => null
+            )
+        );
+        url::redirect('topcrasher/'.$method.'/Firefox/'.$version);
     }
 
     /**
@@ -66,7 +123,9 @@ class Topcrasher_Controller extends Controller {
         $this->setViewData(array(
             'crasher_data' => $crasher_data,
             'all_versions'  => $all_versions,
-            'sig_sizes'  => Kohana::config('topcrashers.numberofsignatures'),
+    	    'nav_selection' => 'top_crashes',
+            'sig_sizes'  => Kohana::config('topcrashers.numberofsignatures'),            
+            'url_nav' => url::site('products/'.$product),
         ));
     }
 
@@ -140,6 +199,7 @@ class Topcrasher_Controller extends Controller {
   	    $this->renderCSV("${product}_${version}_" . date("Y-m-d"));
 	} else {
 	    $duration_url_path = array(Router::$controller, Router::$method, $product, $version);
+
 	    $this->setViewData(array(
 	      'duration_url' => url::site(implode($duration_url_path, '/') . '/'),
               'last_updated' => $last_updated,
@@ -150,13 +210,26 @@ class Topcrasher_Controller extends Controller {
 	      'sig2bugs' => $signature_to_bugzilla,
 	      'start'        => $start,
               'top_crashers' => $top_crashers,
-	      'total_crashes' => $totalCrashes
+	      'total_crashes' => $totalCrashes,
+          'url_nav' => url::site('products/'.$product),
           ));
 	}
     }
 
-    public function byversion($product, $version, $duration=14)
+    /**
+     * Display the top crashers by product & version.
+     *
+     * @param   string  The name of the product
+     * @param   version The version  number for this product
+     * @param   int     The number of days for which to display results
+     * @return  void
+     */
+    public function byversion($product, $version=null, $duration=14)
     {
+        if (empty($version)) {
+            $this->_handleEmptyVersion($product, 'byversion');
+        }
+        
 	$duration_url_path = array(Router::$controller, Router::$method, $product, $version);
 	$other_durations = array_diff(Kohana::config('topcrashbysig.durations'),
 				      array($duration));
@@ -183,7 +256,7 @@ class Topcrasher_Controller extends Controller {
         $resp = $service->get("${host}/200911/topcrash/sig/trend/rank/p/${p}/v/${v}/end/${end_date}/duration/${dur}/listsize/${limit}",
 			      'json', $lifetime);
 	if($resp) {
-	    $this->_ensureProperties($resp, array(
+	    $this->topcrashers_model->ensureProperties($resp, array(
 				     'start_date' => '',
 				     'end_date' => '',
 				     'totalPercentage' => 0,
@@ -197,7 +270,7 @@ class Topcrasher_Controller extends Controller {
 				'percentOfTotal' => 0, 'previousPercentOfTotal' => 0, 'changeInPercentOfTotal' => 0);
 
 	    foreach($resp->crashes as $top_crasher) {
-		$this->_ensureProperties($top_crasher, $req_props, 'top crash sig trend crashes');
+		$this->topcrashers_model->ensureProperties($top_crasher, $req_props, 'top crash sig trend crashes');
 
 		if ($this->input->get('format') != "csv") {
                     //$top_crasher->{'missing_sig_param'} - optional param, used for formating url to /report/list
@@ -220,20 +293,8 @@ class Topcrasher_Controller extends Controller {
 
 		    array_push($signatures, $top_crasher->signature);
 		}
-
-		$change = $top_crasher->changeInRank;
-		$top_crasher->trendClass = "new";
-		if (is_numeric($change)) {
-		    if ($change > 0) {
-			$top_crasher->trendClass = "up";
-		    } else {
-			$top_crasher->trendClass = "down";
-		    }
-		    if (abs($change) < 5) {
-			$top_crasher->trendClass = "static";
-		    }
-		}
-	    }
+		$top_crasher->trendClass = $this->topcrashers_model->addTrendClass($top_crasher->changeInRank);
+        }
 
 	    $rows = $this->bug_model->bugsForSignatures(array_unique($signatures));
 	    $bugzilla = new Bugzilla;
@@ -253,18 +314,26 @@ class Topcrasher_Controller extends Controller {
 				       'percentTotal' => $resp->totalPercentage,
 				       'product'      => $product,
 				       'version'      => $version,
+               	       'nav_selection' => 'top_crashes',
 				       'sig2bugs'     => $signature_to_bugzilla,
 				       'start'        => $resp->start_date,
 				       'top_crashers' => $resp->crashes,
-				       'total_crashes' => $resp->totalNumberOfCrashes
+				       'total_crashes' => $resp->totalNumberOfCrashes,
+				       'url_nav'     => url::site('products/'.$product),
 				       ));
 	    }
 	} else {
 	    header("Data access error", TRUE, 500);
-	    $this->setViewData(array('product'      => $product,
-				     'version'      => $version,
-				     'resp'         => $resp));
-	}
+	    $this->setViewData(
+	        array(
+           	       'nav_selection' => 'top_crashes',
+                   'product'        => $product,
+                   'url_nav'        => url::site('products/'.$product),
+				   'version'      => $version,
+				   'resp'         => $resp
+			    )
+            );
+	     }
     }
 
     /**
@@ -330,37 +399,10 @@ class Topcrasher_Controller extends Controller {
 		$item = $resp->signatureHistory[$i];
 		array_push($data['counts'], array(strtotime($item->date) * 1000, $item->count));
 		array_push($data['percents'], array(strtotime($item->date) * 1000, $item->percentOfTotal * 100));
-	    }
+	    } 
 	    echo json_encode($data);
 	} else {
 	    echo json_encode(array('error' => 'There was an error loading the data'));
-	}
-    }
-
-   /**
-    * Utility method for checking for expected properties
-    * in the output of a web service call. If any are missing
-    * then an alert will be logged and a default value will be set.
-    * @param object - The object that is the result of a web service call
-    * @param array - An assocative array where the key is a property and the value is a default
-    * @param string - A useful log msg for tracking down which 
-    *                 part of the results object was missing parameters
-    * @void - logs on missing properties, $crash is altered when missing properties
-    */
-    private function _ensureProperties(&$crash, $req_props, $log_msg)
-    {
-
-	$missing_prop = FALSE;
-	$missing_prop_names = array();
-	foreach ($req_props as $prop => $default_value) {
-	    if (! property_exists($crash, $prop)) {
-		$missing_prop = TRUE;
-		$crash->{$prop} = $default_value;
-		array_push($missing_prop_names, $prop);
-	    }
-	}
-	if ($missing_prop) {
-	    Kohana::log('alert', "Required properites are missing from $log_msg - " . implode(', ', $missing_prop_names));
 	}
     }
 
@@ -479,12 +521,13 @@ class Topcrasher_Controller extends Controller {
                 'branch'       => $branch,
 		'last_updated' => $last_updated, 
 		'percentTotal' => $percentTotal,
+	    'nav_selection' => 'top_crashes',
 		'other_durations' => $other_durations,
-	        'duration_url' => url::site(implode($duration_url_path, '/')),
+        'duration_url' => url::site(implode($duration_url_path, '/')),
 		'sig2bugs' => $signature_to_bugzilla,
 		'start'        => $start,
 		'top_crashers' => $top_crashers,
-		'total_crashes' => $totalCrashes
+		'total_crashes' => $totalCrashes,
 				       ));
 	}
     }
@@ -493,10 +536,15 @@ class Topcrasher_Controller extends Controller {
      * Generates the report from a URI perspective.
      * URLs are truncated after the query string
      * 
-     * @param string product name 
-     * @param string version Example: 3.7a1pre
+     * @param   string product name 
+     * @param   string version Example: 3.7a1pre
+     * @return  null
      */
-    public function byurl($product, $version) {
+    public function byurl($product, $version=null) {
+        if (empty($version)) {
+            $this->_handleEmptyVersion($product, 'byurl');
+        }
+        
 	$this->navigationChooseVersion($product, $version);
         $by_url_model = new TopcrashersByUrl_Model();
         list($start_date, $end_date, $top_crashers) = 
@@ -509,9 +557,11 @@ class Topcrasher_Controller extends Controller {
         $this->setViewData(array(
 	    'beginning' => $start_date,
             'ending_on' => $end_date,
+    	    'nav_selection' => 'top_url',
             'product'       => $product,
             'version'       => $version,
-            'top_crashers'  => $top_crashers
+            'top_crashers'  => $top_crashers,
+            'url_nav' => url::site('products/'.$product),
         ));
     }
 
@@ -521,7 +571,11 @@ class Topcrasher_Controller extends Controller {
      * @param string product name 
      * @param string version Example: 3.7a1pre
      */
-    public function bydomain($product, $version) {
+    public function bydomain($product, $version=null) {
+        if (empty($version)) {
+            $this->_handleEmptyVersion($product, 'bydomain');
+        }
+
 	$this->navigationChooseVersion($product, $version);
         $by_url_model = new TopcrashersByUrl_Model();
         list($start_date, $end_date, $top_crashers) = 
@@ -534,9 +588,11 @@ class Topcrasher_Controller extends Controller {
         $this->setViewData(array(
 	    'beginning' => $start_date,
             'ending_on' => $end_date,
+    	    'nav_selection' => 'top_domain',            
             'product'       => $product,
             'version'       => $version,
-            'top_crashers'  => $top_crashers
+            'top_crashers'  => $top_crashers,
+            'url_nav' => url::site('products/'.$product),
         ));
     }
 
@@ -549,7 +605,11 @@ class Topcrasher_Controller extends Controller {
      * @param 	string 	The version (e.g. '3.7a1pre')
  	 * @return 	void
      */
-    public function bytopsite($product, $version) {
+    public function bytopsite($product, $version=null) {
+        if (empty($version)) {
+            $this->_handleEmptyVersion($product, 'bytopsite');
+        }
+
 		$by_url_model = new TopcrashersByUrl_Model();
         list($start_date, $end_date, $top_crashers) = $by_url_model->getTopCrashersByTopsiteRank($product, $version);
 
@@ -560,9 +620,11 @@ class Topcrasher_Controller extends Controller {
         $this->setViewData(array(
 	    	'beginning' 	=> $start_date,
             'ending_on' 	=> $end_date,
+    	    'nav_selection' => 'top_topsite',            
             'product'       => $product,
             'version'       => $version,
-            'top_crashers'  => $top_crashers
+            'top_crashers'  => $top_crashers,
+            'url_nav' => url::site('products/'.$product),
         ));
     }
 

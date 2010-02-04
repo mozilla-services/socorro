@@ -121,6 +121,7 @@ class Query_Controller extends Controller {
 
 
         $this->setViewData(array(
+            'nav_selection' => 'query',
             'params'  => $params,
             'queryTooBroad' => $searchHelper->shouldShowWarning(),
             'reports' => $reports,

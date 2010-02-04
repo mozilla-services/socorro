@@ -1,0 +1,26 @@
+<?php defined('SYSPATH') or die('No direct script access.');
+
+/**
+ * The number of seconds to maintain cached data.
+ */
+$config['cache_expires'] = 14400; // 6 hours
+
+/**
+ * The default duration used for the calls in number of days.
+ */
+$config['duration'] = 7;
+
+/**
+ * The default product to redirect the user to.
+ */
+$config['default_product'] = 'Firefox';
+
+/**
+ * The number of topchangers to feature on the product dashboard.
+ */
+$config['topchangers_count'] = 10;
+
+/**
+ * The number of topcrashers to feature on the product dashboard.
+ */
+$config['topcrashers_count'] = 20;

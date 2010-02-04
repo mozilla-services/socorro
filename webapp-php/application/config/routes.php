@@ -9,6 +9,12 @@
 $config['_default'] = 
     'home/dashboard';
 
+$config['products/([0-9a-zA-Z.]+)'] =
+    'products/index/$1';
+
+$config['products/([0-9a-zA-Z.]+)/versions/([0-9a-zA-Z.]+)'] =
+    'products/index/$1/$2';
+
 $config['query'] =
     'query/query';
 

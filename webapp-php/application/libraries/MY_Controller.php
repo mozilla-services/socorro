@@ -1,4 +1,42 @@
 <?php defined('SYSPATH') or die('No direct script access.');
+
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is Socorro Crash Reporter
+ *
+ * The Initial Developer of the Original Code is
+ * The Mozilla Foundation.
+ * Portions created by the Initial Developer are Copyright (C) 2006
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *   Ryan Snyder <rsnyder@mozilla.com>
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either the GNU General Public License Version 2 or later (the "GPL"), or
+ * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
+
 /**
  * Custom controller subclass used throughout application
  */
@@ -173,15 +211,15 @@ class Controller extends Controller_Core {
     protected function setNavigationData()
     {
         $curProds = $this->currentProducts();
+        $this->setViewData('current_product_versions', $this->branch_model->getCurrentProductVersions());
         $this->setViewData('common_products', $curProds);
-	$this->setViewData('older_products', $this->olderProducts());
+	    $this->setViewData('older_products', $this->olderProducts());
 
-	$this->ensureChosenVersion($curProds);
-	$this->setViewData('chosen_version', $this->chosen_version);
+	    $this->ensureChosenVersion($curProds);
+	    $this->setViewData('chosen_version', $this->chosen_version);
         
         $this->setViewData('num_other_products', 
-                  count($this->branch_model->getProducts()) - 
-			   count(Kohana::config('dashboard.feat_nav_products')));
+            count($this->branch_model->getProducts()) - count(Kohana::config('dashboard.feat_nav_products')));
     }
 
     private $_current_products;
@@ -333,7 +371,7 @@ class Controller extends Controller_Core {
 	$this->ensureChosenVersion($this->currentProducts(), FALSE);
 	if ($this->chosen_version['version'] != $version ||
 	    $this->chosen_version['product'] != $product) {
-	        $this->_chooseVersion(array('product' => $product,
+	        $this->chooseVersion(array('product' => $product,
 					    'version' => $version,
 					    'release' => $release));
 	} else {
@@ -342,19 +380,33 @@ class Controller extends Controller_Core {
 	}
     }
 
-    private function _chooseVersion($version_info, $set_cookie=TRUE)
+    /**
+     * Manually specify the selected product / version and save to cookie.
+     *
+     * @param   array  An Array containing the select product, version, release.
+     * @param   bool   True to save selection to a cookie; False if not
+     * @return  void
+     */
+    public function chooseVersion($version_info, $set_cookie=TRUE)
     {
         $this->chosen_version = $version_info;
-	$product = $version_info['product'];
-	$version = $version_info['version'];
-	$release = $version_info['release'];
-	if ($set_cookie) {
-	    cookie::set(Socorro_Cookies::CHOSEN_VERSION, 
-			"p=${product}&v=${version}&r=${release}", 
-			Socorro_Cookies::EXPIRES_IN_A_YEAR);
-	}
+	    $product = $version_info['product'];
+	    $version = $version_info['version'];
+	    $release = $version_info['release'];
+	    if ($set_cookie) {
+	        cookie::set(Socorro_Cookies::CHOSEN_VERSION, 
+	    		"p=${product}&v=${version}&r=${release}", 
+	    		Socorro_Cookies::EXPIRES_IN_A_YEAR);
+	    }
     }
 
+    /**
+     * Ensure that a product / version has been selected, even if one was not specifically selected.
+     *
+     * @param   array  An array of current products / versions
+     * @param   bool   True to save selection to a cookie; False if not
+     * @return  void
+     */
     protected function ensureChosenVersion($curProds, $set_cookie=TRUE)
     {
         // if it's null, use Cookie
@@ -375,14 +427,14 @@ class Controller extends Controller_Core {
 		    }
 		    $r = new Release;
 		    $release = $r->typeOfRelease($version);
-		    $this->_chooseVersion(array('product' => $product,
+		    $this->chooseVersion(array('product' => $product,
 		   			        'version' => $version,
 					        'release' => $release), $set_cookie);
 	        } else {
 		    Kohana::log('debug', "config/dashboard.php no default_product set, using first project / version");
 	            foreach ($curProds as $product => $releases) {
 		        foreach (array_reverse($releases) as $release => $version) {
-		            $this->_chooseVersion(array('product' => $product,
+		            $this->chooseVersion(array('product' => $product,
 			    			        'version' => $version,
 						        'release' => $release), $set_cookie);
 			    break;
@@ -393,7 +445,7 @@ class Controller extends Controller_Core {
 	    } else {
 	        $version_info = array();
 		parse_str($cv, $version_info);
-		$this->_chooseVersion(array('product' => $version_info['p'],
+		$this->chooseVersion(array('product' => $version_info['p'],
 					    'version' => $version_info['v'],
 					    'release' => $version_info['r']), FALSE);
 	    }

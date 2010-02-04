@@ -1,7 +1,5 @@
 <?php defined('SYSPATH') or die('No direct script access.');
 
-require_once dirname(__FILE__).'/../libraries/MY_WidgetDataHelper.php';
-
 /* ***** BEGIN LICENSE BLOCK *****
  * Version: MPL 1.1/GPL 2.0/LGPL 2.1
  *
@@ -24,6 +22,7 @@ require_once dirname(__FILE__).'/../libraries/MY_WidgetDataHelper.php';
  *
  * Contributor(s):
  *   Austin King <aking@mozilla.com> (Original Author)
+ *   Ryan Snyder <rsnyder@mozilla.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -38,143 +37,29 @@ require_once dirname(__FILE__).'/../libraries/MY_WidgetDataHelper.php';
  * the terms of any one of the MPL, the GPL or the LGPL.
  *
  * ***** END LICENSE BLOCK ***** */
-require_once dirname(__FILE__).'/../libraries/MY_SearchReportHelper.php';
-require_once dirname(__FILE__).'/../libraries/MY_QueryFormHelper.php';
+
 /**
- *
+ * Handle the homepage and specific pages within the / root uri.
  */
 class Home_Controller extends Controller
 {
+    
     /**
-     * SocorroUI homepage  is a Search form (query) and set of dashboard widgets
+     * SocorroUI homepage is temporarily serving as a redirect to the
+     * default product dashboard.
      */
     public function dashboard()
     {
-        $helper = new SearchReportHelper();
-        $queryFormHelper = new QueryFormHelper;
-
-	$queryFormData = $queryFormHelper->prepareCommonViewData($this->branch_model, $this->platform_model);
-	$this->setViewData($queryFormData);
-
-	$versions_by_product = $this->getViewData('versions_by_product');
-
-        $params = $this->getRequestParameters($helper->defaultParams());
-
-        cachecontrol::set(array(
-            'etag'     => $params,
-            'expires'  => time() + ( 60 * 60 )
-        ));
-
-        $mtbf = $this->_mtbf( new Mtbf_Model );
-
-        $this->setViewData(array(
-            'params'  => $params,
-            'searchFormModel' => $params,
-            'topcrashes'   => $this->_topCrashesBySig($versions_by_product),
-            'topcrashesbyurl' => $this->_topCrashesByUrl(),
-	    'mtbf' => $mtbf,
-            'mtbfChartRangeMax' => $this->_chartRangeMax($mtbf)
-        ));
-    }
-
-    private function _chartRangeMax($mtbf)
-    {
-        $chartRangeMax = 10;
-        foreach($mtbf as $m){
-            foreach($m['crashes'] as $c){
-                foreach($c['data'] as $datum){
-  	            if( is_numeric($datum[1]) && $datum[1] > $chartRangeMax) {
-		        $chartRangeMax = $datum[1];
-	            }
-		}
-	    }
-	}
-	return $chartRangeMax;
-    }
-
-    private function _topCrashesBySig($versions_by_product)
-    {
-        $topcrashers = new Topcrashers_Model();
-
-
-        $sigSize = Kohana::config("dashboard.topcrashbysig_numberofsignatures");
-        $featured = Kohana::config("dashboard.topcrashbysig_featured");
-
-        $widget = new WidgetDataHelper;
-        $topcrashes = array();
-        foreach ($featured as $feature) {
-	    $product = $feature['product'];
-            $version = $feature['version'];
-	    $end = $topcrashers->lastUpdatedByVersion($product, $version);
-	    $start = $topcrashers->timeBeforeOffset(14, $end);
-
-            $data = $topcrashers->getTopCrashersByVersion($product, $version, $sigSize, $start, $end);
-	    array_push($topcrashes, array(
-	        'label' => "$product $version",
-                'name' => $product,
-                'version' => $version,
-                'crashes' => $data
-            ));
+        if (isset($this->chosen_version)) {
+            $url = 'products/'.$this->chosen_version['product'];
+            if (isset($this->chosen_version['version']) && !empty($this->chosen_version['product'])) {
+                $url .= 'versions/' . $this->chosen_version['version'];
+            }
+        } else {
+            $url = 'products/' . Kohana::config('products.default_product');
         }
-        return $topcrashes;
+        url::redirect($url);
     }
-
-    private function _topCrashesByUrl()
-    {
-        $sigSize = Kohana::config("dashboard.topcrashbyurl_numberofurls");
-        $featured = Kohana::config("dashboard.topcrashbyurl_featured");
-
-        $widget = new WidgetDataHelper;
-        $model = new TopcrashersByUrl_Model;
-
-        $data = array();
-        $tmp = array();
-        foreach ($featured as $feature) {
-            $product = $feature['product'];
-            $version = $feature['version'];
-  	    $crashRes = $model->getTopCrashersByUrl($product, $version);
-	    array_push($data, array(
-                                    'label'     => "$product $version",
-				    'name'    => $product,
-				    'version' => $version,
-				    'crashes' => array_slice($crashRes[2], 0, 3)
-            ));
-	}
-	return $data;
-    }
-
-    private function _mtbf($model)
-    {
-        $widget = new WidgetDataHelper;
-        $featured = Kohana::config("dashboard.mtbf_featured");
-        $mtbfData = array();
-
-        $mtbf_all_releases = $model->listReports();
-        $prodToReleaseMap = $widget->convertProductToReleaseMap($mtbf_all_releases);
-
-        foreach ($prodToReleaseMap as $product => $releases) {
-  	    $release = $widget->featuredReleaseOrValid($product, $prodToReleaseMap, $featured);
-
-	    $crashes = $model->getMtbfOf($product, $release);
-
-	     array_push($mtbfData, array(
-	     'label'       => "$product $release",
-	     'product'  => $product,
-             'release'   => $release,
-             'crashes'  => $crashes,
-	     'other-versions' => $releases //$this->_findOtherReleases($mtbf_all_releases, $mtbf['product'])
-		));
-        }
-        return $mtbfData;
-    }
-    private function _findOtherReleases($mtbf_all_releases, $product, $prop='release')
-    {
-        $other = array();
-        foreach($mtbf_all_releases as $i => $release){
-	    if ($release->product == $product) {
-	      array_push($other, $release->{$prop});
-	    }
-        }
-	return $other;
-    }
+     
+    /* */   
 }

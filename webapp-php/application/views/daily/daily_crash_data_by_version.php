@@ -1,7 +1,16 @@
 
-<div id="crash_data">
 
-	<h2>Crash Data</h2> <span class="csv"><a href="<?php echo $url_csv; ?>">download csv</a></span><br />
+<div class="panel daily_">
+	<div class="title">
+		<h2>Crashes per 1k ADU</h2>
+		<div class="choices">
+			<ul>
+				<li><a href="<?php echo $url_csv; ?>">csv</a></li>
+			</ul>
+		</div>
+    </div>
+
+    <div class="body">
 	
 	<?php if (isset($results->versions) && isset($versions) && !empty($versions)) { ?>
 		
@@ -107,5 +116,8 @@
 		<p>No data is available for this query.</p>
 		
 	<?php } ?>
+
+
+    </div>
 
 </div>

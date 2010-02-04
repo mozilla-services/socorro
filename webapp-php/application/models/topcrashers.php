@@ -52,6 +52,54 @@ class Topcrashers_Model extends Model {
 	}
 	return FALSE;
     }
+    
+    /**
+     * Return the trendClass value that will be used with this top crasher.
+     *
+     * @param   int     The changeInRank value
+     * @return  string  The class name 
+     */
+    public function addTrendClass($change) {
+		$trendClass = "new";
+		if (is_numeric($change)) {
+		    if ($change > 0) {
+			    $trendClass = "up";
+		    } else {
+			    $trendClass = "down";
+		    }
+		    if (abs($change) < 5) {
+			    $trendClass = "static";
+		    }
+		}
+		return $trendClass;
+	}
+    
+    /**
+     * Utility method for checking for expected properties
+     * in the output of a web service call. If any are missing
+     * then an alert will be logged and a default value will be set.
+     * @param object - The object that is the result of a web service call
+     * @param array - An assocative array where the key is a property and the value is a default
+     * @param string - A useful log msg for tracking down which 
+     *                 part of the results object was missing parameters
+     * @void - logs on missing properties, $crash is altered when missing properties
+     */
+     public function ensureProperties(&$crash, $req_props, $log_msg)
+     {
+ 	    $missing_prop = FALSE;
+ 	    $missing_prop_names = array();
+ 	    foreach ($req_props as $prop => $default_value) {
+ 	        if (! property_exists($crash, $prop)) {
+ 		        $missing_prop = TRUE;
+ 		        $crash->{$prop} = $default_value;
+ 		        array_push($missing_prop_names, $prop);
+ 	        }
+ 	    }
+ 	    if ($missing_prop) {
+ 	        Kohana::log('alert', "Required properites are missing from $log_msg - " . implode(', ', $missing_prop_names));
+ 	    }
+     }
+    
     /**
      * Retrieves the total number of crashes for given perio
      * @param string The branch id Example: 1.9.1

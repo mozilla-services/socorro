@@ -37,8 +37,6 @@
  *
  * ***** END LICENSE BLOCK ***** */
  
-require_once(Kohana::find_file('libraries', 'timeutil', TRUE, 'php'));
-
 /**
  * Controller class for ADU, a.k.a. Active Daily Users / Installs.
  *
@@ -144,17 +142,8 @@ class Daily_Controller extends Controller {
         $date_start = (isset($parameters['date_start'])) ? $parameters['date_start'] : date('Y-m-d', mktime(0, 0, 0, date("m"), date("d")-15, date("Y")));
         $date_end = (isset($parameters['date_end'])) ? $parameters['date_end'] : date('Y-m-d', mktime(0, 0, 0, date("m"), date("d")-1, date("Y")));
         $duration = TimeUtil::determineDayDifferential($date_start, $date_end);
+        $dates = $this->model->prepareDates($date_end, $duration);
         $form_selection = (isset($parameters['form_selection']) && $parameters['form_selection'] == 'by_os') ? $parameters['form_selection'] : 'by_version';
-        
-        // Prepare dates
-        $dates = array();
-        $date_diff = TimeUtil::determineDayDifferential($date_end, date('Y-m-d', mktime(0, 0, 0, date("m"), date("d")-1, date("Y"))));
-        for($i = 0; $i <= $duration; $i++) {
-            $date = date('Y-m-d', mktime(0, 0, 0, date("m"), date("d")-($i+$date_diff), date("Y")));
-            if (strtotime($date) < $this->model->today) { 
-        	    $dates[] = $date;
-        	}
-        }
         
         // If no version is available, include the most recent version of this product
         if (isset($parameters['v'])){
@@ -169,24 +158,12 @@ class Daily_Controller extends Controller {
 
         // Statistics on crashes for time period
         $results = $this->model->get($product, $versions, $operating_system, $date_start, $date_end);
-        $statistics = null;
-        if ($form_selection == 'by_version') { 
-        	$statistics = (!empty($results)) ? $this->model->calculateStatisticsByVersion($results) : null;
-        } elseif ($form_selection == 'by_os') {
-        	$statistics = (!empty($results)) ? $this->model->calculateStatisticsByOS($results) : null;
-        }
+        $statistics = $this->model->prepareStatistics($results, $form_selection, $product, $versions, $operating_system, $date_start, $date_end);
+        $graph_data = $this->model->prepareGraphData($statistics, $form_selection, $date_start, $date_end, $dates, $operating_systems, $versions);
         
         // Download the CSV, if applicable
         if (isset($parameters['csv'])) {
         	return $this->csv($product, $versions, $operating_systems, $dates, $results, $statistics, $form_selection);
-        }
-        
-        // Prepare the data for the Crash Graph section of the page
-        $graph_data = null;
-		if ($form_selection == 'by_version') { 
-        	$graph_data = $this->model->prepareCrashGraphDataByVersion($date_start, $date_end, $dates, $versions, $statistics);
-        } elseif ($form_selection == 'by_os') {
-        	$graph_data = $this->model->prepareCrashGraphDataByOS($date_start, $date_end, $dates, $operating_systems, $statistics);
         }
         
         // Set the View
@@ -199,6 +176,7 @@ class Daily_Controller extends Controller {
 				'file_crash_data' => 'daily/daily_crash_data_' . $form_selection,
                 'form_selection' => $form_selection,
 				'graph_data' => $graph_data,
+        	    'nav_selection' => 'crashes_user',
                 'operating_system' => $operating_system,
                 'operating_systems' => $operating_systems,    		
                 'product' => $product,                       	
@@ -211,6 +189,7 @@ class Daily_Controller extends Controller {
 			)
 		);
     }
+    
 
 	/* */
 }

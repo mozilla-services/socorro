@@ -1,23 +1,15 @@
 $(document).ready(function(){
-    $('.show-all-topcrashers').click(function(){
+    $('#click_up').click(function(){
+        $('#click_down').removeClass('selected');
+        $('#click_up').addClass('selected');
+        $('#top_changers_down').hide()
+        $('#top_changers_up').show('fast');
+    });
 
-        var product = $('.product', this).text();
-        var icon = $('.icon', this).text();
-        var localsOnly = $(this).parent();
-        $('.widgetData-' + product + '-full-list', localsOnly).toggle();
-
-        if(icon.indexOf('+') == -1){
-	  $('.icon', this).text("[+]");
-	} else {
-	  $('.icon', this).text("[-]");
-	}
-      });
-        //TODO does autoHeight have a bug?
-      $(".topcrashersaccord").accordion({
-	header: 'h3',
-        autoHeight: false
-      });
-      //When First widget is small we want the second widget to clear it and 
-      //start a new row...
-      $( $(".topcrashersaccord").get(0) ).css('margin-bottom', '33px');
+    $('#click_down').click(function(){
+        $('#click_up').removeClass('selected');
+        $('#click_down').addClass('selected');
+        $('#top_changers_up').hide();
+        $('#top_changers_down').show('fast');
+    });
 });
