@@ -63,6 +63,12 @@ throttleConditions.default = [
 minimalVersionForUnderstandingRefusal = cm.Option()
 minimalVersionForUnderstandingRefusal.default = { 'Firefox': '3.5.4' }
 
+hbaseHost = cm.Option()
+hbaseHost.default = 'somehost'
+
+hbasePort = cm.Option()
+hbasePort.default = 666 #some port number
+
 logFilePathname = cm.Option()
 logFilePathname.doc = 'full pathname for the log file'
 logFilePathname.default = './collector.log'
