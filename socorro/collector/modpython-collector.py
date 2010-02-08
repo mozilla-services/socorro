@@ -1,5 +1,4 @@
 #!/usr/bin/python
-
 #
 # A mod_python environment for the crash report collector
 #
@@ -9,6 +8,11 @@ import config.collectorconfig as configModule
 import socorro.collector.initializer
 import socorro.lib.util as sutil
 import socorro.lib.ooid as ooid
+
+#profiling, remove me soon
+import time
+def mprofile(message, before, logger):
+  logger.info("%s %s" % (time.time() - before, message))
 
 #-----------------------------------------------------------------------------------------------------------------
 if __name__ != "__main__":
@@ -22,6 +26,7 @@ else:
 
 #-----------------------------------------------------------------------------------------------------------------
 def handler(req):
+  beforeHandler = time.time()
   global persistentStorage
   try:
     x = persistentStorage
@@ -33,7 +38,6 @@ def handler(req):
   collectObject = persistentStorage["collectObject"]
 
   #logger.debug("handler invoked using subinterpreter: %s", req.interpreter)
-
   if req.method == "POST":
     try:
       req.content_type = "text/plain"
@@ -75,13 +79,25 @@ def handler(req):
 
       jsonFileHandle, dumpFileHandle = fileSystemStorage.newEntry(uuid, persistentStorage["hostname"], dt.datetime.now())
       try:
-        collectObject.storeDump(dump.file, dumpFileHandle)
+
+        beforeDisk = time.time()
+        collectObject.storeDump(dumpData, dumpFileHandle)
         collectObject.storeJson(jsonDataDictionary, jsonFileHandle)
+        mprofile("Wrote to disk", beforeDisk, logger) 
       finally:
         dumpFileHandle.close()
         jsonFileHandle.close()
 
+      try:
+        logger.info("about to create ooid %s" % str(jsonDataDictionary))
+        beforeHbase = time.time()
+        persistentStorage["hbaseConnection"].create_ooid(uuid, str(jsonDataDictionary), dumpData)
+        mprofile("Wrote to hbase", beforeHbase, logger)
+      except:
+        sutil.reportExceptionAndContinue(logger)
+
       req.write("CrashID=%s%s\n" % (config.dumpIDPrefix, uuid))
+      mprofile("Finished Handler", beforeHandler, logger)
       return apache.OK
     except:
       logger.info("mod-python subinterpreter name: %s", req.interpreter)
