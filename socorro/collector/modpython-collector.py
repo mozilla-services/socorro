@@ -77,6 +77,8 @@ def handler(req):
       uuid = ooid.createNewOoid(currentTimestamp, persistentStorage["config"].storageDepth)
       logger.debug("    %s", uuid)
 
+      dumpData = dump.file.read()
+
       jsonFileHandle, dumpFileHandle = fileSystemStorage.newEntry(uuid, persistentStorage["hostname"], dt.datetime.now())
       try:
 
