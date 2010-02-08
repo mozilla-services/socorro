@@ -5,7 +5,7 @@ from thrift import Thrift
 from thrift.transport import TSocket, TTransport
 from thrift.protocol import TBinaryProtocol
 from socorro.hbase import ttypes
-from socorro.hbase.Hbase import Client, ColumnDescriptor, Mutation
+from socorro.hbase.hbasethrift import Client, ColumnDescriptor, Mutation
 
 class HBaseConnection(object):
   def __init__(self,host,port):
