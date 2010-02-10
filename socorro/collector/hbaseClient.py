@@ -57,6 +57,9 @@ class HBaseConnectionForCrashReports(HBaseConnection):
   def get_dump(self,ooid):
     return self.client.getRowWithColumns('crash_reports',ooid[-6:]+ooid,['raw_data:dump'])[0].columns['raw_data:dump'].value
 
+  def get_jsonz(self,ooid):
+    return json.loads(self._make_rows_nice(self.client.getRowWithColumns('crash_reports',ooid[-6:]+ooid,['processed_data:json']))[0]["processed_data:json"])
+
   def scan_starting_with(self,prefix,limit=None):
     scanner = self.client.scannerOpenWithPrefix('crash_reports', prefix, ['meta_data:json'])
     i = 0
@@ -80,6 +83,11 @@ class HBaseConnectionForCrashReports(HBaseConnection):
     json_file.close()
     dump_file.close()
     self.create_ooid(ooid,json,dump)
+
+  def create_ooid_from_jsonz(self,ooid,jsonz_string):
+    row_id = ooid[-6:]+ooid
+    self.client.mutateRow('crash_reports',row_id,[Mutation(column="processed_data:json",value=jsonz_string)])
+
 
 if __name__=="__main__":
   import pprint
