@@ -34,5 +34,5 @@ if __name__=="__main__":
       print i,'reports loaded'
   loader.close()
   input_file.close()
-  
+  print "%s jsonz file(s) loaded" % i
     
