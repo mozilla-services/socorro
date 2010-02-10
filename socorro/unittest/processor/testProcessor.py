@@ -1584,6 +1584,11 @@ class TestProcessor:
                            'foo ,& bar': 'foo, & bar',
                            '*foo&bar' : '*foo&bar',
                            'js_Interpret' : 'js_Interpret:123',
+                           'apple<3, core3, 15>' : 'apple<int, core3, int>',
+                           'apple<3u, 3core, 15U>' : 'apple<int, 3core, int>',
+                           'apple<3l,core,15L>' : 'apple<int, core, int>',
+                           'apple< <3l,core,15L>>' : 'apple< <int, core, int>>',
+                           'apple<3l,<core,15L>>' : 'apple<int, <core, int>>',
                            }.items():
       result = p.make_signature(None,func,None,'123',None)
       assert expected == result, 'Expected [%s], got [%s]'%(expected,result)

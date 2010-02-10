@@ -299,6 +299,7 @@ class Processor(object):
   #--- put these near where they are needed to avoid scrolling during maintenance ----------------------------------
   fixupSpace = re.compile(r' (?=[\*&,])')
   fixupComma = re.compile(r',(?! )')
+  fixupInteger = re.compile(r'(<|, )(\d+)([uUlL]?)([^\w])')
   #-----------------------------------------------------------------------------------------------------------------
   def make_signature(self, module_name, function, source, source_line, instruction):
     """ returns a structured conglomeration of the input parameters to serve as a signature
@@ -312,6 +313,10 @@ class Processor(object):
 
       # Ensure a space after commas
       function = Processor.fixupComma.sub(', ', function)
+      
+      # normalize template signatures with manifest const integers to 'int': Bug 481445
+      function = Processor.fixupInteger.sub(r'\1int\4', function)
+
       return function
 
     if source is not None and source_line is not None:
