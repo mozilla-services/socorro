@@ -96,8 +96,7 @@ class AduByDay(webapi.JsonServiceBase):
           and window_end <= (timestamp without time zone %%(end_date)s - interval %%(socorroTimeToUTCInterval)s)
           and productdims_id = %%(productdims_id)s
       group by
-          day,
-          os_name
+          1, 2
       order by
           1, 2""" % parameters
     logger.debug('%s', (sql % parameters))

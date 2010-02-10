@@ -337,6 +337,8 @@ def testAduByDay_fetchCrashHistory():
                               'product': 'Firefox',
                               'version': '3.5.5',
                               'listOfOs_names': ['Windows', 'Mac'],
+                              'socorroTimeToUTCInterval':'8 hours',
+                              'productdims_id':171,
                            })
   sql = """
       select
@@ -358,8 +360,7 @@ def testAduByDay_fetchCrashHistory():
           and window_end <= (timestamp without time zone %(end_date)s - interval %(socorroTimeToUTCInterval)s)
           and productdims_id = %(productdims_id)s
       group by
-          day,
-          os_name
+          1, 2
       order by
           1, 2"""
   sqlReturn = singleQueryReturn1
