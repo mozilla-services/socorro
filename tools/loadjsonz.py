@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 
 import sys
-import socorro.collector.hbase.hbase as hbase
+import socorro.collector.hbaseClient as hbase
 import gzip
 
 class JsonzLoader(object):
@@ -23,8 +23,8 @@ if __name__=="__main__":
     sys.exit(1)
   input_file_path = sys.argv[1]
   host, port = sys.argv[2].split(':')
-  loader = JsonzLoader(host,port)
-  input_file = open(path,'rb')
+  loader = JsonzLoader(host,int(port))
+  input_file = open(input_file_path,'rb')
   i = 0
   for line in input_file:
     uuid, path = line.strip().split('\t')
