@@ -8,7 +8,7 @@ import socorro.lib.JsonDumpStorage as jds
 
 import socorro.collector.collect as collect
 
-import socorro.hbase.hbase as hbase
+import hbaseClient
 
 #for perf, remove me soon
 import time
@@ -51,7 +51,7 @@ def createPersistentInitialization(configModule):
   storage["deferredFileSystemStorage"] = deferredFileSystemStorage
 
   beforeCreate = time.time()
-  hbaseConnection = hbase.HBaseConnectionForCrashReports( config.hbaseHost, config.hbasePort)
+  hbaseConnection = hbaseClient.HBaseConnectionForCrashReports( config.hbaseHost, config.hbasePort)
   storage["hbaseConnection"] = hbaseConnection
   logger.info("Time to Create hbase conn %s" % (time.time() - beforeCreate))
 

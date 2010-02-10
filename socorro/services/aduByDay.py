@@ -100,7 +100,7 @@ class AduByDay(webapi.JsonServiceBase):
           os_name
       order by
           1, 2""" % parameters
-    #logger.debug('%s', self.connection.cursor().mogrify(sql, parameters))
+    logger.debug('%s', (sql % parameters))
     return dict((((bucket, os_name), count) for bucket, os_name, count in db.execute(self.connection.cursor(), sql, parameters)))
 
   #-----------------------------------------------------------------------------------------------------------------

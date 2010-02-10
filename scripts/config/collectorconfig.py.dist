@@ -64,10 +64,12 @@ minimalVersionForUnderstandingRefusal = cm.Option()
 minimalVersionForUnderstandingRefusal.default = { 'Firefox': '3.5.4' }
 
 hbaseHost = cm.Option()
-hbaseHost.default = 'somehost'
+hbaseHost.doc = 'Hostname for hbase hadoop cluster. May be a VIP or load balancer'
+hbaseHost.default = 'thrift-socorro-hadoop'
 
 hbasePort = cm.Option()
-hbasePort.default = 666 #some port number
+hbasePort.doc = 'hbase port number'
+hbasePort.default = 9090
 
 logFilePathname = cm.Option()
 logFilePathname.doc = 'full pathname for the log file'
