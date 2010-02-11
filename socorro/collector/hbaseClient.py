@@ -8,7 +8,14 @@ from hbase import ttypes
 from hbase.hbasethrift import Client, ColumnDescriptor, Mutation
 
 class HBaseConnection(object):
+  """
+  Base class for hbase connections.  Supplies methods for a few basic
+  queries and methods for cleanup of thrift results.
+  """
   def __init__(self,host,port):
+    """
+    Establishes the underlying connection to hbase
+    """
     # Make socket
     transport = TSocket.TSocket(host, port)
     # Buffering is critical. Raw sockets are very slow
@@ -21,13 +28,22 @@ class HBaseConnection(object):
     self.transport.open()
 
   def close(self):
+    """
+    Close the hbase connection
+    """
     self.transport.close()
 
   def _make_rows_nice(self,client_result_object):
+    """
+    Apply _make_row_nice to multiple rows
+    """
     res = [self._make_row_nice(row) for row in client_result_object]
     return res
 
   def _make_row_nice(self,client_row_object):
+    """
+    Pull out the contents of the thrift column result objects into a python dict
+    """
     columns = {}
     for column in client_row_object.columns.keys():
       columns[column]=client_row_object.columns[column].value
@@ -37,9 +53,15 @@ class HBaseConnection(object):
     return self.client.getColumnDescriptors(table_name)
 
   def get_full_row(self,table_name, row_id):
+    """
+    Get back every column value for a specific row_id
+    """
     return self._make_rows_nice(self.client.getRow(table_name, row_id))
 
-class HBaseConnectionForCrashReports(HBaseConnection):
+class HBaseConnectionForCrashReports(HBaseConnection):i
+  """
+  A subclass of the HBaseConnection class providing more crah report specific methods
+  """
   def __init__(self,host,port):
     super(HBaseConnectionForCrashReports,self).__init__(host,port)
 
@@ -49,18 +71,34 @@ class HBaseConnectionForCrashReports(HBaseConnection):
     return columns
 
   def get_report(self,ooid):
+    """
+    Return the full row for a given ooid
+    """
     return self.get_full_row('crash_reports',ooid[-6:]+ooid)[0]
 
   def get_json(self,ooid):
+    """
+    Return the json metadata for a given ooid
+    """
     return json.loads(self._make_rows_nice(self.client.getRowWithColumns('crash_reports',ooid[-6:]+ooid,['meta_data:json']))[0]["meta_data:json"])
 
   def get_dump(self,ooid):
+    """
+    Return the minidump for a given ooid
+    """
     return self.client.getRowWithColumns('crash_reports',ooid[-6:]+ooid,['raw_data:dump'])[0].columns['raw_data:dump'].value
 
   def get_jsonz(self,ooid):
+    """
+    Return the cooked json for a given ooid
+    """
     return json.loads(self._make_rows_nice(self.client.getRowWithColumns('crash_reports',ooid[-6:]+ooid,['processed_data:json']))[0]["processed_data:json"])
 
   def scan_starting_with(self,prefix,limit=None):
+    """
+    Reurns a generator yield rows starting with prefix.  Remember
+    that ooids are stored internally with their 6 digit date used as a prefix!
+    """
     scanner = self.client.scannerOpenWithPrefix('crash_reports', prefix, ['meta_data:json'])
     i = 0
     r = self.client.scannerGet(scanner)
@@ -71,10 +109,17 @@ class HBaseConnectionForCrashReports(HBaseConnection):
     self.client.scannerClose(scanner)
 
   def create_ooid(self,ooid,json,dump):
+    """
+    Create a crash report record in hbase from serialized json and 
+    bytes of the minidump
+    """
     row_id = ooid[-6:]+ooid
     self.client.mutateRow('crash_reports',row_id,[Mutation(column="meta_data:json",value=json), Mutation(column="raw_data:dump",value=dump)])
 
   def create_ooid_from_file(self,ooid,json_path,dump_path):
+    """
+    Convenience method for creating an ooid from disk
+    """
     json_file = open(json_path,'r')
     #Apparently binary mode only matters in windows, but it won't hurt anything on unix systems.
     dump_file = open(dump_path,'rb')
@@ -85,6 +130,9 @@ class HBaseConnectionForCrashReports(HBaseConnection):
     self.create_ooid(ooid,json,dump)
 
   def create_ooid_from_jsonz(self,ooid,jsonz_string):
+    """
+    Create a crash report from the cooked json output of the processor
+    """
     row_id = ooid[-6:]+ooid
     self.client.mutateRow('crash_reports',row_id,[Mutation(column="processed_data:json",value=jsonz_string)])
 
