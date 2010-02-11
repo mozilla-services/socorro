@@ -89,6 +89,7 @@ def handler(req):
         jsonFileHandle.close()
 
       try:
+        dumpData = dump.file.read()
         logger.info("about to create ooid %s" % str(jsonDataDictionary))
         beforeHbase = time.time()
         persistentStorage["hbaseConnection"].create_ooid(uuid, str(jsonDataDictionary), dumpData)
