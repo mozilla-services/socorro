@@ -77,13 +77,11 @@ def handler(req):
       uuid = ooid.createNewOoid(currentTimestamp, persistentStorage["config"].storageDepth)
       logger.debug("    %s", uuid)
 
-      dumpData = dump.file.read()
-
       jsonFileHandle, dumpFileHandle = fileSystemStorage.newEntry(uuid, persistentStorage["hostname"], dt.datetime.now())
       try:
 
         beforeDisk = time.time()
-        collectObject.storeDump(dumpData, dumpFileHandle)
+        collectObject.storeDump(dump.file, dumpFileHandle)
         collectObject.storeJson(jsonDataDictionary, jsonFileHandle)
         mprofile("Wrote to disk", beforeDisk, logger) 
       finally:
