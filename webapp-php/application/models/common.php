@@ -18,9 +18,6 @@ class Common_Model extends Model {
         $this->platform_model = new Platform_Model();
     }
 
-    /**
-     *
-     */
    /**
      * Fetch all of the comments associated with a particular Crash Signature.
      *
@@ -37,6 +34,7 @@ class Common_Model extends Model {
 			'query' => NULL, 'date' => NULL);
 	return $this->getCommentsByParams($params);
     }
+    
     /**
      * Fetch all of the comments associated with a particular Crash Signature.
      * 
@@ -255,13 +253,17 @@ class Common_Model extends Model {
             $where[] = 'reports.signature = ' . $this->db->escape($params['signature']);
         }
 
-        if ($params['version']) {
+        if (isset($params['version']) && !empty($params['version'])) {
             $or = array();
             foreach ($params['version'] as $spec) {
-                list($product, $version) = split(':', $spec);
-                $or[] = 
-                    "(reports.product = " . $this->db->escape($product) . " AND " .
-                    "reports.version = " . $this->db->escape($version) . ")";
+                if (strstr($spec, ":")) {
+                    list($product, $version) = split(':', $spec);
+                    $or[] = 
+                        "(reports.product = " . $this->db->escape($product) . " AND " .
+                        "reports.version = " . $this->db->escape($version) . ")";
+                } else {
+                    $or[] = "(reports.product = " . $this->db->escape($spec) . ")";
+                }
             }
             $where[] = '(' . join(' OR ', $or) . ')';
         } else if ($params['product']) {
