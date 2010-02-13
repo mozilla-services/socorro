@@ -926,7 +926,9 @@ div.expandable-menu, div.each-sparkline {
 
 .product_dashboard_left th,
 .product_dashboard_left td {
+    max-width: 280px;
     padding: .1em;
+    width: 280px;
 }
 
 .product_dashboard_right {
