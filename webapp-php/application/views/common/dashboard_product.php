@@ -20,60 +20,65 @@
 		<h2>Top Changers</h2>
 		<div class="choices">
         	<ul>
-                <li><a href="#" id="click_up" class="selected">Up</a></li>
-                <li><a href="#" id="click_down">Down</a></li>
+                <li><a href="#" id="click_up" class="selected">Increasing</a></li>
+                <li><a href="#" id="click_down">Decreasing</a></li>
         	</ul>
         </div>
     </div>
 
     <div class="body">
         
-        <?php foreach ($top_changers as $key => $changers) { ?>
-            <table id="top_changers_<?= $key; ?>" <?php if ($key != 'up') echo 'class="hidden"'; ?> >
-                <tr>
-                    <th>Change</th>
-                    <th>&nbsp; Signature</th>
-                </tr>
-                <?php 
-                    foreach ($changers as $changer) { 
-                        $range_value = 1;
-                        if ($duration == 14) {
-                            $range_value = 2;
-                        } elseif ($duration == 28) {
-                            $range_value = 4;
-                        }
-
-                        $sigParams = array(
-                            'range_value' => $range_value,
-                            'range_unit'  => 'weeks',
-                            'signature' => $changer['signature'],
-                            'version' => $product
-            	        );
-                    
-                        if (!empty($version)) {
-                            $sigParams['version'] .= ":" . $version;
-                        }
-
-            	        if (is_null($changer['signature'])) {
-            			    $display_signature = Crash::$null_sig;
-            		    } else if(empty($changer['signature'])) {
-            			    $display_signature = Crash::$empty_sig;
-            		    } else {
-            			    $display_signature = $changer['signature'];
-            		    }
-            		    
-                        $link_url =  url::base() . 'report/list?' . html::query_string($sigParams);
-                    ?>
-    
+        <?php if (isset($top_changers) && !empty($top_changers)) { ?>
+            <?php foreach ($top_changers as $key => $changers) { ?>
+                <table id="top_changers_<?= $key; ?>" <?php if ($key != 'up') echo 'class="hidden"'; ?> >
                     <tr>
-                        <td><div class="trend <?= $changer['trendClass'] ?>"><?= $changer['changeInRank']; ?></div></td>        
-                        <td><a class="signature" href="<?php out::H($link_url) ?>" 
-                           title="View reports with this crasher."><?php out::H($display_signature); ?></a>
-                        </td> 
+                        <th>Change</th>
+                        <th>&nbsp; Signature</th>
                     </tr>
-                <?php } ?>
-            </table>
+                    <?php 
+                        foreach ($changers as $changer) { 
+                            $range_value = 1;
+                            if ($duration == 14) {
+                                $range_value = 2;
+                            } elseif ($duration == 28) {
+                                $range_value = 4;
+                            }
+            
+                            $sigParams = array(
+                                'range_value' => $range_value,
+                                'range_unit'  => 'weeks',
+                                'signature' => $changer['signature'],
+                                'version' => $product
+                	        );
+                        
+                            if (!empty($version)) {
+                                $sigParams['version'] .= ":" . $version;
+                            }
+            
+                	        if (is_null($changer['signature'])) {
+                			    $display_signature = Crash::$null_sig;
+                		    } else if(empty($changer['signature'])) {
+                			    $display_signature = Crash::$empty_sig;
+                		    } else {
+                			    $display_signature = $changer['signature'];
+                		    }
+                		    
+                            $link_url =  url::base() . 'report/list?' . html::query_string($sigParams);
+                        ?>
+            
+                        <tr>
+                            <td><div class="trend <?= $changer['trendClass'] ?>"><?= $changer['changeInRank']; ?></div></td>        
+                            <td><a class="signature" href="<?php out::H($link_url) ?>" 
+                               title="View reports with this crasher."><?php out::H($display_signature); ?></a>
+                            </td> 
+                        </tr>
+                    <?php } ?>
+                </table>
+            <?php } ?>
+        <?php } else { ?>
+            <p>Top changers currently unavailable.</p>
         <?php } ?>
+        
         <br class="clear_both">
 
     </div>
@@ -134,36 +139,39 @@
         $i = 0;
         foreach ($top_crashers as $prodversion){ 
             $num_columns = count($top_crashers);
-            $url = url::base() . "topcrasher/byversion/{$prodversion['product']}/{$prodversion['version']}";
+            $url = url::base() . "topcrasher/byversion/" . $prodversion->product . "/" . $prodversion->version;
             $i++;
     ?>
+ 
+    
 
         <div class="product_topcrasher<?php if ($i < $num_columns) echo ' border_right'; ?>">
-            <h4><?=$prodversion['product']?> <?=$prodversion['version']?> <span class="view_all"><a href="<?php out::H($url)?>">View all</a></span></h4>
+            <h4><?=$prodversion->product?> <?=$prodversion->version?> <span class="view_all"><a href="<?php out::H($url)?>">View all</a></span></h4>
             <?php 
-                foreach ($prodversion['crashers'] as $crasher) {
-                    $sigParams = array(
-                      'range_value' => '2',
-                      'range_unit'  => 'weeks',
-                      'signature'   => $crasher->signature
-                    );
-                    if (property_exists($crasher, 'version')) {
-                      $sigParams['version'] = $crasher->product . ':' . $crasher->version;
-                    } else {
-                      $sigParams['branch'] = $crasher->branch;
-                    }
-                    $link_url =  url::base() . 'report/list?' . html::query_string($sigParams);
+                $tc_count = 1;
+                foreach ($prodversion->crashes as $crasher) {
+                    if ($tc_count <= $top_crashers_limit) { 
+                        $tc_count++;
                     
-                    if (empty($crasher->signature)) {
-                      $sig = '(no signature)';
-                    } else {
-                      $sig = $crasher->signature;
-                    }
-                ?>
-                <div class="crash">
-                    <p><a href="<?php out::H($link_url)?>" title="<?php out::H($sig)?>"><?php out::H($sig)?></a></p>
-                    <span><?php out::H($crasher->total)?></span>
-                </div>
+                        $sigParams = array(
+                          'range_value' => '2',
+                          'range_unit'  => 'weeks',
+                          'signature'   => $crasher->signature,
+                          'version' => $prodversion->product . ':' . $prodversion->version
+                        );
+                        $link_url =  url::base() . 'report/list?' . html::query_string($sigParams);
+                        
+                        if (empty($crasher->signature)) {
+                          $sig = '(no signature)';
+                        } else {
+                          $sig = $crasher->signature;
+                        }
+                    ?>
+                    <div class="crash">
+                        <p><a href="<?php out::H($link_url)?>" title="<?php out::H($sig)?>"><?php out::H($sig)?></a></p>
+                        <span><?php out::H(number_format($crasher->count)); ?></span>
+                    </div>
+                <?php } ?>
             <?php } ?>
         </div>
     <?php } ?>
@@ -171,6 +179,7 @@
     <br class="clear" />
 
     </div>
+
 
 </div>
 

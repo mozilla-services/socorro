@@ -146,11 +146,15 @@ class Daily_Controller extends Controller {
         $form_selection = (isset($parameters['form_selection']) && $parameters['form_selection'] == 'by_os') ? $parameters['form_selection'] : 'by_version';
         
         // If no version is available, include the most recent version of this product
-        if (isset($parameters['v'])){
+        if (isset($parameters['v']) && !empty($parameters['v'])){
         	$versions = $parameters['v']; 
-        } else {
-        	$recent_version = $this->branch_model->getRecentProductVersion($product);
-        	$versions = array(0 => $recent_version->version);
+        } 
+        if (count($versions) == 0 || empty($versions[0])) {
+            $current_products = $this->currentProducts();
+            $versions = array();
+            foreach (array(Release::MAJOR, Release::MILESTONE, Release::DEVELOPMENT) as $release) {
+                $versions[] = $current_products[$product][$release];
+            }
         }
         
 		// Prepare URL for CSV

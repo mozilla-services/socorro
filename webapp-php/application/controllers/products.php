@@ -78,44 +78,103 @@ class Products_Controller extends Controller {
      * @param   array   An array of top crashers
      * @return  array   An array of top changers
      */
-    private function _determineTopchangers($top_crashers) {
-        $req_props = array(
-            'signature' => '',
-            'changeInRank' => 0 
-        );
-        
-        $changers = array();
-	    foreach($top_crashers as $top_crasher) {
-	        foreach ($top_crasher['crashers'] as $key => $crasher) {
-    	        $this->topcrashers_model->ensureProperties($crasher, $req_props, 'Could not find changeInRank');
-        		$crasher->trendClass = $this->topcrashers_model->addTrendClass($crasher->changeInRank);
-
-                $tc_key = $crasher->changeInRank.'.'.$key;
-                $changers[$tc_key] = array(
-                    'changeInRank' => $crasher->changeInRank,
-                    'signature' => $crasher->signature,
-                    'trendClass' => $crasher->trendClass,
-                );
+    private function _determineTopchangersProductVersion($top_crashers) {
+        if (isset($top_crashers->crashes) && !empty($top_crashers->crashes)) {
+            $changers = array();
+	        foreach($top_crashers->crashes as $key => $top_crasher) {
+                $tc_key = $top_crasher->changeInRank.'.'.$key;
+                if (!in_array($top_crasher->changeInRank, array('new', 0))) {
+                    $changers[$tc_key] = array(
+                        'changeInRank' => $top_crasher->changeInRank,
+                        'signature' => $top_crasher->signature,
+                        'trendClass' => $top_crasher->trendClass,
+                    );
+                }
 	        }
-	    }
-	    
-	    $topchangers_count = Kohana::config('products.topchangers_count');
-	    $top_changers = array(
-	        'up' => array(), 
-	        'down' => array()
-	    );
-	    
-	    krsort($top_changers); 
-        for ($i = 1; $i <= $topchangers_count; $i++) {
-            $top_changers['up'][] = array_shift($changers);
-	    }
-
-	    ksort($top_changers); 
-        for ($i = 1; $i <= $topchangers_count; $i++) {
-            $top_changers['down'][] = array_shift($changers);
-	    }
+            
+	        $topchangers_count = Kohana::config('products.topchangers_count');
+	        $top_changers = array(
+	            'up' => array(), 
+	            'down' => array()
+	        );
+            
+	        krsort($changers); 
+            for ($i = 1; $i <= $topchangers_count; $i++) {
+                $top_changers['up'][] = array_shift($changers);
+	        }
+            
+	        ksort($changers); 
+            for ($i = 1; $i <= $topchangers_count; $i++) {
+                $top_changers['down'][] = array_shift($changers);
+	        }
+            
+            return $top_changers;
+        }
+        return false;
+    }
+    
+    /**
+     * Prepare top changers data for top crashers that have more than one version.
+     *
+     * @param   array   An array of top crashers
+     * @return  array   An array of top changers
+     */
+    private function _determineTopchangersProduct($top_crashers) {
+        $crashes = array();
+        $changers = array();
         
-        return $top_changers;
+        foreach ($top_crashers as $top_crasher) {
+            if (isset($top_crasher->crashes) && !empty($top_crasher->crashes)) {
+                $top_changers = array();
+    	        foreach($top_crasher->crashes as $key => $top_crasher) {
+                    $tc_key = $top_crasher->changeInRank.'.'.$key;
+                    if (!in_array($top_crasher->changeInRank, array('new', 0))) {
+                        $signature = $top_crasher->signature;
+                        if (!isset($top_changers['signature'])) {
+                            $top_changers[$signature] = array(
+                                'changeInRank' => $top_crasher->changeInRank,
+                                'signature' => $top_crasher->signature,
+                                'trendClass' => $top_crasher->trendClass,
+                            );
+                        } else {
+                            $top_changers['changeInRank'] += $top_crasher->changeInRank;
+                        }
+                    }
+    	        }
+    	        
+    	        foreach($top_changers as $top_changer) {
+                    if (!in_array($top_changer['changeInRank'], array('new', 0))) {
+    	                $tc_key = $top_changer['changeInRank'].'.'.$key;
+                        $changers[$tc_key] = array(
+                            'changeInRank' => $top_changer['changeInRank'],
+                            'signature' => $top_changer['signature'],
+                            'trendClass' => $top_changer['trendClass'],
+                        );
+                    }
+    	        }
+            }
+        }
+
+        if (isset($changers) && !empty($changers)) {
+            $topchangers_count = Kohana::config('products.topchangers_count');
+            $top_changers = array(
+                'up' => array(), 
+                'down' => array()
+            );
+            
+            krsort($changers); 
+            for ($i = 1; $i <= $topchangers_count; $i++) {
+                $top_changers['up'][] = array_shift($changers);
+            }
+            
+            ksort($changers); 
+            for ($i = 1; $i <= $topchangers_count; $i++) {
+                $top_changers['down'][] = array_shift($changers);
+            }
+
+            return $top_changers;
+        }
+        return false;
     }
 
     /**
@@ -188,28 +247,25 @@ class Products_Controller extends Controller {
         }
 
         $current_products = $this->currentProducts();
+        $top_changers = null;
         $top_crashers = array();
         $daily_versions = array();
         $num_signatures = Kohana::config("products.topcrashers_count");
-        foreach (array(Release::MAJOR, Release::DEVELOPMENT, Release::MILESTONE) as $release) {
+        $i = 0;
+        foreach (array(Release::MAJOR, Release::MILESTONE, Release::DEVELOPMENT) as $release) {
             if (isset($current_products[$product][$release]) && !empty($current_products[$product][$release])) {
-                $current_version = $current_products[$product][$release];
-                $end = $this->topcrashers_model->lastUpdatedByVersion($product, $current_version);
-                $start = $this->topcrashers_model->timeBeforeOffset($duration, $end);
-
-                $key = $product . "_" . $current_version;
-                $top_crashers[$key] = array(
-                    'product' => $product,
-                    'version' => $current_version,
-                    'crashers' => $this->topcrashers_model->getTopCrashersByVersion(
-                        $product, $current_version, $num_signatures, $start, $end
-                    )
+                $top_crashers[$i] = $this->topcrashers_model->getTopCrashersViaWebService(
+                    $product, 
+                    $current_products[$product][$release], 
+                    $duration                    
                 );
-                $daily_versions[] = $current_version;
+                $top_crashers[$i]->product = $product;
+                $top_crashers[$i]->version = $current_products[$product][$release];
+                $i++;
             }
         }
         
-        $top_changers = $this->_determineTopchangers($top_crashers);
+        $top_changers = $this->_determineTopchangersProduct($top_crashers);
         
         $results = $this->daily_model->get($product, $daily_versions, $operating_systems, $date_start, $date_end);
         $statistics = $this->daily_model->prepareStatistics($results, 'by_version', $product, $daily_versions, $operating_systems, $date_start, $date_end);
@@ -229,6 +285,7 @@ class Products_Controller extends Controller {
                'statistics' => $statistics,
                'top_changers' => $top_changers,
                'top_crashers' => $top_crashers,
+               'top_crashers_limit' => Kohana::config('products.topcrashers_count'),
                'url_base' => url::site('products/'.$product),
                'url_csv' => $url_csv,
                'url_nav' => url::site('products/'.$product),
@@ -271,19 +328,13 @@ class Products_Controller extends Controller {
         $graph_data = $this->daily_model->prepareGraphData($statistics, 'by_version', $date_start, $date_end, $dates, $operating_systems, array($version));
         
         $num_signatures = Kohana::config("products.topcrashers_count");
-        $end = $this->topcrashers_model->lastUpdatedByVersion($product, $version);
-        $start = $this->topcrashers_model->timeBeforeOffset($duration, $end);
-        $top_crashers = array(
-            0 => array(
-                'product' => $product,
-                'version' => $version,
-                'crashers' => $this->topcrashers_model->getTopCrashersByVersion(
-                    $product, $version, $num_signatures, $start, $end
-                )
-            )
-        );
+
+        $tc = $this->topcrashers_model->getTopCrashersViaWebService($product, $version, $duration);
+        $top_crashers = array(0 => $tc);
+        $top_crashers[0]->product = $product;
+        $top_crashers[0]->version = $version;
         
-        $top_changers = $this->_determineTopchangers($top_crashers);
+        $top_changers = $this->_determineTopchangersProductVersion($tc);
         
         $this->setView('products/product_version');
         $this->setViewData(
@@ -299,6 +350,7 @@ class Products_Controller extends Controller {
                'statistics' => $statistics,
                'top_changers' => $top_changers,
                'top_crashers' => $top_crashers,
+               'top_crashers_limit' => Kohana::config('products.topcrashers_count'),
                'url_base' => url::site('products/'.$product.'/versions/'.$version),
                'url_csv' => $url_csv,
                'url_nav' => url::site('products/'.$product),

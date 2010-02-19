@@ -260,4 +260,70 @@ class Topcrashers_Model extends Model {
 				array($total_crashes, $branch, $this->t($start), $this->t($end), $limit));
     }
 
+    /**
+     * Fetch the top crashers data via a web service call.
+     *
+     * @param   string      The product name
+     * @param   string      The version number
+     * @param   int         The number of days
+     * @return  array       Returns 
+     */
+    public function getTopCrashersViaWebService($product, $version, $duration)
+    {
+        $config = array();
+    	$credentials = Kohana::config('webserviceclient.basic_auth');
+    	if ($credentials) {
+    	    $config['basic_auth'] = $credentials;
+    	}
+    	$service = new Web_Service($config);
+    	$host = Kohana::config('webserviceclient.socorro_hostname');
+    	$cache_in_minutes = Kohana::config('webserviceclient.topcrash_vers_rank_cache_minutes', 60);
+    	$end_date = urlencode(date('Y-m-d\TH:i:s\T+0000', TimeUtil::roundOffByMinutes($cache_in_minutes)));
+    	$dur = $duration * 24;
+    	$limit = Kohana::config('topcrashbysig.byversion_limit', 300);
+    	$lifetime = Kohana::config('products.cache_expires');
+    	$p = urlencode($product);
+    	$v = urlencode($version);
+        
+        $resp = $service->get("${host}/200911/topcrash/sig/trend/rank/p/${p}/v/${v}/end/${end_date}/duration/${dur}/listsize/${limit}",'json', $lifetime);
+    	if($resp) {
+    	    $this->ensureProperties(
+    	        $resp, 
+    	        array(
+                    'start_date' => '',
+                    'end_date' => '',
+                    'totalPercentage' => 0,
+                    'crashes' => array(),
+                    'totalNumberOfCrashes' => 0
+                ), 
+                'top crash sig overall'
+            );
+    	
+            $signatures = array();
+            $req_props = array( 
+                'signature' => '', 
+                'count' => 0, 
+            	'win_count' => 0, 
+            	'mac_count' => 0, 
+            	'linux_count' => 0,
+            	'currentRank' => 0, 
+            	'previousRank' => 0, 
+            	'changeInRank' => 0, 
+            	'percentOfTotal' => 0, 
+            	'previousPercentOfTotal' => 0, 
+            	'changeInPercentOfTotal' => 0
+            );
+
+            foreach($resp->crashes as $crasher) {
+        	    $this->ensureProperties($crasher, $req_props, 'Could not find changeInRank');
+        		$crasher->trendClass = $this->addTrendClass($crasher->changeInRank);
+        		$crasher->product = $product;
+        		$crasher->version = $version;
+    	    }
+    	    return $resp;
+        }
+        return false;
+    }
+
+
 }
