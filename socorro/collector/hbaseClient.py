@@ -58,7 +58,7 @@ class HBaseConnection(object):
     """
     return self._make_rows_nice(self.client.getRow(table_name, row_id))
 
-class HBaseConnectionForCrashReports(HBaseConnection):i
+class HBaseConnectionForCrashReports(HBaseConnection):
   """
   A subclass of the HBaseConnection class providing more crah report specific methods
   """
