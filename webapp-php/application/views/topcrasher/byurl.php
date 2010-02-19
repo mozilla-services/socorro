@@ -31,7 +31,14 @@ Top Crashers:
     <?php foreach($top_crashers as $crash){ ?>
       
       <tr class="<?php echo ( ($row) % 2) == 0 ? 'even' : 'odd' ?>">
-        <td><div id="url-to-sig<?php echo $row; ?>" class="tcburl-toggler tcburl-urlToggler">+</div> <a id="tcburl-url<?php echo $row ?>" class="tcburl-urlToggler" href="#">Expand <span class="url"><?php out::H($crash->url) ?></span></a> <a  href="<?php out::H($crash->url) ?>">Open This URL</a> </td>
+        <td>
+        <?php if (!strstr($crash->url, '_detected_BLOCKED')) { ?>
+            <div id="url-to-sig<?php echo $row; ?>" class="tcburl-toggler tcburl-urlToggler">+</div> <a id="tcburl-url<?php echo $row ?>" class="tcburl-urlToggler" href="#">Expand <span class="url"><?php out::H($crash->url) ?></span></a> 
+            <a  href="<?php out::H($crash->url) ?>">Open This URL</a>
+        <?php } else { ?>
+            <?php out::h($crash->url); ?>
+        <?php } ?>
+        </td>
         <td class="url-crash-count"><?php out::H($crash->count)?></td>
         <td><?php if(isset($crash->rank)) out::H($crash->rank); ?></td>
       </tr>

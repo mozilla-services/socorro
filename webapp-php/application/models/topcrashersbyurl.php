@@ -8,6 +8,72 @@
 class TopcrashersByUrl_Model extends Model {
 
 	/**
+	 * Given a database result containing 
+	 * urls and/or domains, modifies the results
+	 * by applying privacy policies such as
+	 * replacing file urls with a hardcoded
+	 * file_detected_BLOCKED, etc.
+	 *
+	 * @param results - Database query results
+	 * @return results - Database query results with modifications
+	 */
+	protected function cleanseUrlsAndDomains(&$results)
+	{
+	    foreach($results as $result) {
+		if (property_exists($result, 'url')) {
+		    $result->url = $this->cleanseUrl($result->url);
+		}
+		if (property_exists($result, 'domain')) {
+		    $result->domain = $this->cleanseDomain($result->domain);
+		}
+	    }
+	}
+
+	/**
+	 * Given a url, will return the url or
+	 * a version of it with privacy policies 
+	 * applied.
+	 *
+	 * @param url - an url
+	 * @return url or other string
+	 */
+	protected function cleanseUrl($url)
+	{
+        if (strpos($url, 'file') === 0) {
+            return 'local_file_detected_BLOCKED';
+        } else if (preg_match('/^https?:\/\/[^\/]*@[^\/]*\/.*$/', $url)) {
+            return 'username_detected_BLOCKED';
+        } else if (
+            preg_match('/^https?:\/\/.*$/', $url) ||
+            preg_match('/^http?:\/\/.*$/', $url) 
+        ) {     
+            return $url;
+        } else {
+            return 'non_http_url_detected_BLOCKED';            
+        }
+	}
+
+	/**
+	 * Given a domain, will return the domain or
+	 * a version of it with privacy policies 
+	 * applied.
+	 *
+	 * @param domain - an domain
+	 * @return url or other string
+	 */
+	protected function cleanseDomain($domain)
+	{
+	    if (strpos($domain, '@') !== false) {
+		    return 'username_detected_BLOCKED';
+	    } elseif (!strstr($domain, '.')) {
+	        return 'invalid_domain_detected_BLOCKED';
+	    } else {
+		    return $domain;
+	    }
+	}
+
+
+	/**
 	 * Find the top crashing urls from the TBD table
 	 *
 	 * @access 	public
@@ -42,67 +108,9 @@ class TopcrashersByUrl_Model extends Model {
             ORDER BY count DESC
             LIMIT 100 OFFSET $offset";
 
-	$results = $this->fetchRows($sql);
-	$this->cleanseUrlsAndDomains($results);
+	    $results = $this->fetchRows($sql);
+	    $this->cleanseUrlsAndDomains($results);
       	return array($start_date, $end_date, $results);
-	}
-
-	/**
-	 * Given a database result containing 
-	 * urls and/or domains, modifies the results
-	 * by applying privacy policies such as
-	 * replacing file urls with a hardcoded
-	 * file_detected_XXX, etc.
-	 *
-	 * @param results - Database query results
-	 * @return results - Database query results with modifications
-	 */
-	protected function cleanseUrlsAndDomains(&$results)
-	{
-	    foreach($results as $result) {
-		if (property_exists($result, 'url')) {
-		    $result->url = $this->cleanseUrl($result->url);
-		}
-		if (property_exists($result, 'domain')) {
-		    $result->domain = $this->cleanseDomain($result->domain);
-		}
-	    }
-	}
-
-	/**
-	 * Given a url, will return the url or
-	 * a version of it with privacy policies 
-	 * applied.
-	 *
-	 * @param url - an url
-	 * @return url or other string
-	 */
-	protected function cleanseUrl($url)
-	{
-	    if (strpos($url, 'file') === 0) {
-		return 'loca_file_detected_XXX';
-	    } else if (preg_match('/^https?:\/\/[^\/]*@[^\/]*\/.*$/', $url)) {
-		return 'username_detected_XXX';
-	    } else {
-		return $url;
-	    }
-	}
-
-	/**
-	 * Given a domain, will return the domain or
-	 * a version of it with privacy policies 
-	 * applied.
-	 *
-	 * @param domain - an domain
-	 * @return url or other string
-	 */
-	protected function cleanseDomain($domain)
-	{
-	    if (strpos($domain, '@') !== false) {
-		return 'username_detected_XXX';
-	    } else {
-		return $domain;
-	    }
 	}
 
   	/**

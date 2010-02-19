@@ -32,7 +32,14 @@ Top Crashers:
     <?php foreach($top_crashers as $crash){ ?>
       
       <tr class="<?php echo ( ($row) % 2) == 0 ? 'even' : 'odd' ?>">
-        	<td><div id="domain-to-url<?php echo $row; ?>" class="tcburl-toggler tcburl-domainToggler">+</div><a id="tcburl-url<?php echo $row ?>" class="tcburl-domainToggler" href="#">Expand <span class="url"><?php out::H($crash->domain) ?></span></a></td>
+            <td>
+            <?php if (!strstr($crash->domain, '_BLOCKED')) { ?>
+        	<div id="domain-to-url<?php echo $row; ?>" class="tcburl-toggler tcburl-domainToggler">+</div><a id="tcburl-url<?php echo $row ?>" class="tcburl-domainToggler" href="#">Expand <span class="url"><?php out::H($crash->domain) ?></span></a>
+            <?php } else { ?>
+            <?php out::H($crash->domain); ?>
+            <?php } ?>
+            </td>
+
         	<td class="domain-crash-count"><?php out::H($crash->count)?></td>
         	<td><?php if (isset($crash->rank)) out::H($crash->rank); ?></td>
       </tr>
