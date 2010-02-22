@@ -39,7 +39,7 @@ def benchmark(fn):
   def t(*args, **kwargs):
     before = tm.time()
     fn(*args, **kwargs)
-    logger.info("%s for %s", time.time() - before, str(fn))
+    logger.info("%s for %s", tm.time() - before, str(fn))
   return t
 
 
