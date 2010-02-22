@@ -110,7 +110,7 @@ class HBaseConnectionForCrashReports(HBaseConnection):
 
   def create_ooid(self,ooid,json,dump):
     """
-    Create a crash report record in hbase from serialized json and 
+    Create a crash report record in hbase from serialized json and
     bytes of the minidump
     """
     row_id = ooid[-6:]+ooid

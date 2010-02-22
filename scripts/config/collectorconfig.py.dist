@@ -71,6 +71,14 @@ hbasePort = cm.Option()
 hbasePort.doc = 'hbase port number'
 hbasePort.default = 9090
 
+# the percentage of submissions should be passed on to hbase
+hbaseSubmissionRate = cm.Option()
+hbaseSubmissionRate.default = 100
+
+benchmark = cm.Option()
+benchmark.default = False
+benchmark.fromStringConverter = cm.booleanConverter
+
 logFilePathname = cm.Option()
 logFilePathname.doc = 'full pathname for the log file'
 logFilePathname.default = './collector.log'

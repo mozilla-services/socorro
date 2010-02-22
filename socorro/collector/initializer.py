@@ -15,12 +15,10 @@ import time
 
 #-----------------------------------------------------------------------------------------------------------------
 def createPersistentInitialization(configModule):
-  storage = {}
+  storage = sutil.DotDict()
 
-  storage["config"] = config = socorro.lib.ConfigurationManager.newConfiguration(configurationModule=configModule,automaticHelp=False)
-  storage["collectObject"] = collect.Collect(config)
-  storage["hostname"] = os.uname()[1]
-  storage["logger"] = logger = logging.getLogger("collector")
+  storage.config = config = socorro.lib.ConfigurationManager.newConfiguration(configurationModule=configModule,automaticHelp=False)
+  storage.logger = logger = logging.getLogger("collector")
 
   logger.setLevel(logging.DEBUG)
   rotatingFileLog = logging.handlers.RotatingFileHandler(config.logFilePathname, "a", config.logFileMaximumSize, config.logFileMaximumBackupHistory)
@@ -31,28 +29,13 @@ def createPersistentInitialization(configModule):
 
   logger.info("current configuration\n%s", str(config))
 
-  standardFileSystemStorage = jds.JsonDumpStorage(root = config.storageRoot,
-                                                  maxDirectoryEntries = config.dumpDirCount,
-                                                  jsonSuffix = config.jsonFileSuffix,
-                                                  dumpSuffix = config.dumpFileSuffix,
-                                                  dumpGID = config.dumpGID,
-                                                  dumpPermissions = config.dumpPermissions,
-                                                  dirPermissions = config.dirPermissions,
-                                                 )
-  storage["standardFileSystemStorage"] = standardFileSystemStorage
-  deferredFileSystemStorage = jds.JsonDumpStorage(root = config.deferredStorageRoot,
-                                                  maxDirectoryEntries = config.dumpDirCount,
-                                                  jsonSuffix = config.jsonFileSuffix,
-                                                  dumpSuffix = config.dumpFileSuffix,
-                                                  dumpGID = config.dumpGID,
-                                                  dumpPermissions = config.dumpPermissions,
-                                                  dirPermissions = config.dirPermissions,
-                                                 )
-  storage["deferredFileSystemStorage"] = deferredFileSystemStorage
+  storage.nfsStorage = collect.CrashStorageSystemForNFS(config)
 
-  beforeCreate = time.time()
-  hbaseConnection = hbaseClient.HBaseConnectionForCrashReports( config.hbaseHost, config.hbasePort)
-  storage["hbaseConnection"] = hbaseConnection
-  logger.info("Time to Create hbase conn %s" % (time.time() - beforeCreate))
+  if config.hbaseSubmissionRate:
+    beforeCreate = time.time()
+    storage.hbaseStorage = collect.CrashStorageSystemForHBase(config)
+    logger.info("Time to Create hbase conn %s" % (time.time() - beforeCreate))
+  else:
+    logger.info("because the config.hbaseSubmissionRate is zero or None, no hbaseConnection is created.")
 
   return storage

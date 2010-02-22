@@ -5,14 +5,12 @@
 
 import datetime as dt
 import config.collectorconfig as configModule
-import socorro.collector.initializer
+import socorro.collector.initializer as init
+import socorro.collector.collect as collect
 import socorro.lib.util as sutil
 import socorro.lib.ooid as ooid
 
-#profiling, remove me soon
-import time
-def mprofile(message, before, logger):
-  logger.info("%s %s" % (time.time() - before, message))
+import random
 
 #-----------------------------------------------------------------------------------------------------------------
 if __name__ != "__main__":
@@ -26,16 +24,16 @@ else:
 
 #-----------------------------------------------------------------------------------------------------------------
 def handler(req):
-  beforeHandler = time.time()
   global persistentStorage
   try:
     x = persistentStorage
   except NameError:
-    persistentStorage = socorro.collector.initializer.createPersistentInitialization(configModule)
+    persistentStorage = init.createPersistentInitialization(configModule)
 
-  logger = persistentStorage["logger"]
-  config = persistentStorage["config"]
-  collectObject = persistentStorage["collectObject"]
+  logger = persistentStorage.logger
+  config = persistentStorage.config
+  nfsCrashStorage = persistentStorage.nfsStorage
+  hbaseCrashStorage = persistentStorage.hbaseStorage
 
   #logger.debug("handler invoked using subinterpreter: %s", req.interpreter)
   if req.method == "POST":
@@ -46,71 +44,44 @@ def handler(req):
       dump = theform[config.dumpField]
       if not dump.file:
         return apache.HTTP_BAD_REQUEST
+      dump = collect.RepeatableStreamReader(dump.file)
 
       currentTimestamp = dt.datetime.now()
 
-      jsonDataDictionary = collectObject.makeJsonDictFromForm(theform)
-      jsonDataDictionary["submitted_timestamp"] = currentTimestamp.isoformat()
+      jsonDataDictionary = nfsCrashStorage.makeJsonDictFromForm(theform)
+      jsonDataDictionary.submitted_timestamp = currentTimestamp.isoformat()
 
       #for future use when we start sunsetting products
-      #if collectObject.terminated(jsonDataDictionary):
-        #req.write("Terminated=%s" % jsonDataDictionary['version'])
+      #if nfsCrashStorage.terminated(jsonDataDictionary):
+        #req.write("Terminated=%s" % jsonDataDictionary.Version)
         #return apache.OK
 
-      if "Throttleable" not in jsonDataDictionary or int(jsonDataDictionary["Throttleable"]):
-        if collectObject.throttle(jsonDataDictionary):
-          #logger.debug('yes, throttle this one')
-          if collectObject.understandsRefusal(jsonDataDictionary) and not config.neverDiscard:
-            logger.debug("discarding %s %s", jsonDataDictionary["ProductName"], jsonDataDictionary["Version"])
-            req.write("Discarded=1\n")
-            return apache.OK
-          else:
-            logger.debug("deferring %s %s", jsonDataDictionary["ProductName"], jsonDataDictionary["Version"])
-            fileSystemStorage = persistentStorage["deferredFileSystemStorage"]
-        else:
-          logger.debug("not throttled %s %s", jsonDataDictionary["ProductName"], jsonDataDictionary["Version"])
-          fileSystemStorage = persistentStorage["standardFileSystemStorage"]
-      else:
-        logger.debug("cannot be throttled %s %s", jsonDataDictionary["ProductName"], jsonDataDictionary["Version"])
-        fileSystemStorage = persistentStorage["standardFileSystemStorage"]
-
-      uuid = ooid.createNewOoid(currentTimestamp, persistentStorage["config"].storageDepth)
+      uuid = ooid.createNewOoid(currentTimestamp, config.storageDepth)
       logger.debug("    %s", uuid)
 
-      jsonFileHandle, dumpFileHandle = fileSystemStorage.newEntry(uuid, persistentStorage["hostname"], dt.datetime.now())
-      try:
+      nfsResult = nfsCrashStorage.save(uuid, jsonDataDictionary, dump)
 
-        beforeDisk = time.time()
-        collectObject.storeDump(dump.file, dumpFileHandle)
-        collectObject.storeJson(jsonDataDictionary, jsonFileHandle)
-        mprofile("Wrote to disk", beforeDisk, logger) 
-      finally:
-        dumpFileHandle.close()
-        jsonFileHandle.close()
+      if config.hbaseSubmissionRate:
+        if random.random() * 100.0 < config.hbaseSubmissionRate:
+          logger.info("about to create ooid %s in hbase" % uuid)
+          hbaseResult = hbaseCrashStorage.save(uuid, jsonDataDictionary, dump)
+        else:
+          logger.info('%s throttled and not submitted to hbase', uuid)
 
-      try:
-        dumpData = dump.file.read()
-        logger.info("about to create ooid %s" % str(jsonDataDictionary))
-        beforeHbase = time.time()
-        persistentStorage["hbaseConnection"].create_ooid(uuid, str(jsonDataDictionary), dumpData)
-        mprofile("Wrote to hbase", beforeHbase, logger)
-      except:
-        sutil.reportExceptionAndContinue(logger)
-
+      if nfsResult == collect.CrashStorageSystem.DISCARDED:
+        req.write("Discarded=1\n")
+        return apache.OK
+      elif nfsResult == collect.CrashStorageSystem.ERROR:
+        return apache.HTTP_INTERNAL_SERVER_ERROR
       req.write("CrashID=%s%s\n" % (config.dumpIDPrefix, uuid))
-      mprofile("Finished Handler", beforeHandler, logger)
       return apache.OK
     except:
       logger.info("mod-python subinterpreter name: %s", req.interpreter)
       sutil.reportExceptionAndContinue(logger)
-      #print >>sys.stderr, "Exception: %s" % sys.exc_info()[0]
-      #print >>sys.stderr, sys.exc_info()[1]
-      #print >>sys.stderr
-      #sys.stderr.flush()
+
       return apache.HTTP_INTERNAL_SERVER_ERROR
   else:
     return apache.HTTP_METHOD_NOT_ALLOWED
-
 
 #-----------------------------------------------------------------------------------------------------------------
 if __name__ == "__main__":
