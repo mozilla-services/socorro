@@ -27,7 +27,7 @@
 					<?php if (!empty($os)) { ?>
 						<th class="stat">Crashes</th>
 						<th class="stat">ADU</th>
-						<th class="stat">Throttle</th>
+						<th class="stat" title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling.">Throttle</th>
 						<th class="stat">Ratio</th>
 					<?php } ?>
 				<?php } ?>
@@ -55,7 +55,7 @@
 										echo '-';
 									}
 								?></td>	
-								<td><?php
+								<td title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling."><?php
 							        if (isset($statistics['os'][$os][$date]['throttle'])) {
 										out::H($statistics['os'][$os][$date]['throttle']*100);
 										echo '%';
@@ -93,7 +93,7 @@
 						out::H(number_format(round($statistics['os'][$os]['users']))); 
 					}
 				?></strong></td>	
-				<td class="stat"><strong><?php 
+				<td class="stat" title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling."><strong><?php 
 					if (isset($statistics['os'][$os]['throttle'])) {
 						out::H($statistics['os'][$os]['throttle'] * 100);
 						echo '%'; 
