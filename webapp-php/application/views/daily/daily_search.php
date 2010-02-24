@@ -29,14 +29,18 @@
 	    			</tr>
         
 	    			<tr>
-	    				<th>Versions</th> 	
-	    				<td>
-	    				<input class="version" type="text" name="v[]" value="<?php if (!empty($versions[0])) out::H($versions[0]); ?>" />
-	    				<input class="version" type="text" name="v[]" value="<?php if (!empty($versions[1])) out::H($versions[1]); ?>" />
-	    				<input class="version" type="text" name="v[]" value="<?php if (!empty($versions[2])) out::H($versions[2]); ?>" />
-	    				<input class="version" type="text" name="v[]" value="<?php if (!empty($versions[3])) out::H($versions[3]); ?>" />								
-	    				</td>
-	    			</tr>
+	    				<th rowspan="4" valign="top">Versions</th> 	
+	    				<td>1. <input class="version" type="text" name="v[]" value="<?php if (!empty($versions[0])) out::H($versions[0]); ?>" />throttle <input class="version" type="text" name="throttle[]" value="<?php if (isset($throttle[0]) && !empty($throttle[0]) && $throttle[0] <= 100) out::H($throttle[0]); else echo '100'?>" />%</td>
+                    </tr>                                                                                                                               
+                    <tr>                                                                                                                                
+	    				<td>2. <input class="version" type="text" name="v[]" value="<?php if (!empty($versions[1])) out::H($versions[1]); ?>" />throttle <input class="version" type="text" name="throttle[]" value="<?php if (isset($throttle[1]) && !empty($throttle[1]) && $throttle[1] <= 100) out::H($throttle[1]); else echo '100'?>" />%</td>
+                    </tr>                                                                                                                               
+                    <tr>                                                                                                                                
+	    				<td>3. <input class="version" type="text" name="v[]" value="<?php if (!empty($versions[2])) out::H($versions[2]); ?>" />throttle <input class="version" type="text" name="throttle[]" value="<?php if (isset($throttle[2]) && !empty($throttle[2]) && $throttle[2] <= 100) out::H($throttle[2]); else echo '100'?>" />%</td>
+                    </tr>                                                                                                                               
+                    <tr>                                                                                                                                
+	    				<td>4. <input class="version" type="text" name="v[]" value="<?php if (!empty($versions[3])) out::H($versions[3]); ?>" />throttle <input class="version" type="text" name="throttle[]" value="<?php if (isset($throttle[3]) && !empty($throttle[3]) && $throttle[3] <= 100) out::H($throttle[3]); else echo '100'?>" />%</td>
+                    </tr>
 	    			
 	    			<tr>
 	    				<th>O/S</th> 	
@@ -89,6 +93,11 @@
 	    			<tr>
 	    				<th>Version</th> 	
 	    				<td><input class="version" type="text" name="v[]" value="<?php if (!empty($versions)) out::H(array_shift($versions)); ?>" /></td>
+	    			</tr>
+
+	    			<tr>
+	    				<th>Throttle</th> 	
+	    				<td><input class="version" type="text" name="throttle[]" value="<?php if (!empty($throttle)) out::H(array_shift($throttle)); ?>" />%</td>
 	    			</tr>
         
 	    			<tr>

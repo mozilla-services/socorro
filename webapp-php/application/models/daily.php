@@ -80,17 +80,35 @@ class Daily_Model extends Model {
 	/**
      * Prepare the statistics for Crashes per ADU by Operating System.
 	 * 
+	 * The idea of throttled users were implemented in Socorro 1.5 - https://bugzilla.mozilla.org/show_bug.cgi?id=539337
+	 *
+	 * Throttling is inputted into the UI.  It is an effective throttling of client throttling * server throttling. Reported
+	 * Active Daily Users are updated according to throttling percentages.
+	 *
 	 * @access 	public
 	 * @param 	object	The response object from the API call
+	 * @param   array   An array of effective throttle rates for each version
 	 * @return 	array 	An array of statistics
      */
-	public function calculateStatisticsByOS ($results)
+	public function calculateStatisticsByOS ($results, $throttle)
 	{
 		if (!empty($results)) {
+            if (!empty($throttle)) {
+                $t = array_shift($throttle);
+                $throttle_1 = ($t > 0) ? ($t / 100) : 1;
+                $throttle_2 = 1 - $throttle_1;
+                $throttle_ratio = $throttle_2 / $throttle_1;
+            } else {
+                $throttle_1 = 1;
+                $throttle_2 = 0;
+                $throttle_ratio = 0;
+            }
+
 			$statistics = array(
 				'ratio' => 0.00,
 				'crashes' => 0,
 				'os' => array(),
+                'throttle' => $throttle_1,
 				'users' => 0,
 			);
 
@@ -115,18 +133,26 @@ class Daily_Model extends Model {
 					    		'ratio' => 0.00,
 					    	);						
 					    } 				
+
+					    $throttled_crashes = $v->crashes;
+					    if ($throttle_ratio > 0) {
+				            $throttled_crashes += ($v->crashes * $throttle_ratio);
+    					}
 					    	
-					    $statistics['os'][$key][$date]['crashes'] += $v->crashes;
+					    $statistics['os'][$key][$date]['crashes'] += $throttled_crashes;
+                        $statistics['os'][$key][$date]['throttle'] = $throttle_1;
 					    $statistics['os'][$key][$date]['users'] += $v->users;
+					    
 					    if ($statistics['os'][$key][$date]['crashes'] > 0 && $statistics['os'][$key][$date]['users'] > 0) {
 					    	$statistics['os'][$key][$date]['ratio'] = $statistics['os'][$key][$date]['crashes'] / $statistics['os'][$key][$date]['users'];
 					    } else {
 					    	$statistics['os'][$key][$date]['ratio'] = 0.00;
 					    }
                         
-					    $statistics['crashes'] += $v->crashes;
-					    $statistics['users'] += $v->users;					
-					    $statistics['os'][$key]['crashes'] += $v->crashes;
+					    $statistics['crashes'] += $throttled_crashes;
+					    $statistics['users'] += $v->users;
+
+					    $statistics['os'][$key]['crashes'] += $throttled_crashes;
 					    $statistics['os'][$key]['users'] += $v->users;
                         
 					    if ($statistics['os'][$key]['crashes'] > 0 && $statistics['os'][$key]['users'] > 0) { 
@@ -139,7 +165,7 @@ class Daily_Model extends Model {
 			}
 
 			if ($statistics['crashes'] > 0 && $statistics['users'] > 0) { 
-				$statistics['ratio'] = $statistics['crashes'] / $statistics['users'];
+				$statistics['ratio'] = round(($statistics['crashes'] / $statistics['users']), 2);
 			} else {
 				$statistics['ratio'] = 0.00;
 			}
@@ -152,11 +178,17 @@ class Daily_Model extends Model {
 	/**
      * Prepare the statistics for Crashes per ADU by Version.
 	 * 
+	 * The idea of throttled users were implemented in Socorro 1.5 - https://bugzilla.mozilla.org/show_bug.cgi?id=539337
+	 *
+	 * Throttling is inputted into the UI.  It is an effective throttling of client throttling * server throttling. Reported
+	 * Active Daily Users are updated according to throttling percentages.
+	 *
 	 * @access 	public
 	 * @param 	object	The response object from the API call
+	 * @param   array   An array of effective throttle rates for each version
 	 * @return 	array 	An array of statistics
      */
-	public function calculateStatisticsByVersion ($results)
+	public function calculateStatisticsByVersion ($results, $throttle)
 	{
 		if (!empty($results)) {
 			$statistics = array(
@@ -168,9 +200,22 @@ class Daily_Model extends Model {
 
 			foreach ($results->versions as $version) {
 				$key = $version->version;
+
+                if (!empty($throttle)) {
+                    $t = array_shift($throttle);
+                    $throttle_1 = ($t > 0) ? ($t / 100) : 1;
+                    $throttle_2 = 1 - $throttle_1;
+                    $throttle_ratio = $throttle_2 / $throttle_1;
+                } else {
+                    $throttle_1 = 1;
+                    $throttle_2 = 0;
+                    $throttle_ratio = 0;
+                }
+                				
 				$statistics['versions'][$key] = array(
 					'ratio' => 0.00,
 					'crashes' => 0,
+					'throttle' => $throttle_1,
 					'users' => 0,
 					'version' => $key,
 				);
@@ -186,17 +231,24 @@ class Daily_Model extends Model {
 					    	);						
 					    } 				
 					    	
-					    $statistics['versions'][$key][$date]['crashes'] += $v->crashes;
+					    $throttled_crashes = $v->crashes;
+					    if ($throttle_ratio > 0) {
+					        $throttled_crashes += ($v->crashes * $throttle_ratio);
+					    }
+					    	
+					    $statistics['versions'][$key][$date]['crashes'] += $throttled_crashes;
+                        $statistics['versions'][$key][$date]['throttle'] = $throttle_1;
 					    $statistics['versions'][$key][$date]['users'] += $v->users;
+
 					    if ($statistics['versions'][$key][$date]['crashes'] > 0 && $statistics['versions'][$key][$date]['users'] > 0) {
 					    	$statistics['versions'][$key][$date]['ratio'] = $statistics['versions'][$key][$date]['crashes'] / $statistics['versions'][$key][$date]['users'];
 					    } else {
 					    	$statistics['versions'][$key][$date]['ratio'] = 0.00;
 					    }
                         
-					    $statistics['crashes'] += $v->crashes;
+					    $statistics['crashes'] += $throttled_crashes;
 					    $statistics['users'] += $v->users;					
-					    $statistics['versions'][$key]['crashes'] += $v->crashes;
+					    $statistics['versions'][$key]['crashes'] += $throttled_crashes;
 					    $statistics['versions'][$key]['users'] += $v->users;
 					}
 				}
@@ -421,14 +473,15 @@ class Daily_Model extends Model {
      * @param   array   An array of operating systems
      * @param   string  The start date
      * @param   string  The end date
+     * @param   array   An array of effective throttling rates for each version
      * @return  array   The array of crash stats data statistics
      */
-    public function prepareStatistics($results, $form_selection='by_version', $product, $versions, $operating_system, $date_start, $date_end) {
+    public function prepareStatistics($results, $form_selection='by_version', $product, $versions, $operating_system, $date_start, $date_end, $throttle) {
         $statistics = null;
         if ($form_selection == 'by_version') { 
-        	$statistics = (!empty($results)) ? $this->calculateStatisticsByVersion($results) : null;
+        	$statistics = (!empty($results)) ? $this->calculateStatisticsByVersion($results, $throttle) : null;
         } elseif ($form_selection == 'by_os') {
-        	$statistics = (!empty($results)) ? $this->calculateStatisticsByOS($results) : null;
+        	$statistics = (!empty($results)) ? $this->calculateStatisticsByOS($results, $throttle) : null;
         }
         return $statistics;
     }

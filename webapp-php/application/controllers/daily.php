@@ -71,9 +71,10 @@ class Daily_Controller extends Controller {
      * @param 	array  	The array of results from the API
      * @param 	array 	The array of statistics processed in the model
      * @param 	string 	The type of results display - "by_version" or "by_os"
+     * @param   array   The effective trottling rate (client throttle * server throttle) for each version
      * @return 	file	
      */
-    private function csv($product, $versions, $operating_systems, $dates, $results, $statistics, $form_selection) {
+    private function csv($product, $versions, $operating_systems, $dates, $results, $statistics, $form_selection, $throttle) {
         $title = "ADU_" . $product . "_" . implode("_", $versions) . "_" . $form_selection;
         
         $this->auto_render = FALSE;
@@ -87,6 +88,7 @@ class Daily_Controller extends Controller {
         $view->product = $product;
         $view->results = $results;
         $view->statistics = $statistics;
+        $view->throttle = $throttle;
         $view->versions = $versions;
         
         echo $view->render();
@@ -105,11 +107,15 @@ class Daily_Controller extends Controller {
      * @param 	string 	The type of results display - "by_version" or "by_os"	
      * @return 	string 	The url to download this CSV
      */
-    private function csvURL ($product, $versions, $operating_systems, $date_start, $date_end, $form_selection) {
+    private function csvURL ($product, $versions, $operating_systems, $date_start, $date_end, $form_selection, $throttle) {
         $url 	= 'daily?p=' . html::specialchars($product);
         
         foreach ($versions as $version) {
         	$url .= "&v[]=" . html::specialchars($version);
+        }
+
+        foreach ($throttle as $t) {
+        	$url .= "&throttle[]=" . html::specialchars($t);
         }
         
         foreach ($operating_systems as $operating_system) {
@@ -149,7 +155,7 @@ class Daily_Controller extends Controller {
         if (isset($parameters['v']) && !empty($parameters['v'])){
         	$versions = $parameters['v']; 
         } 
-        if (count($versions) == 0 || empty($versions[0])) {
+        if (!isset($versions) || count($versions) == 0 || empty($versions[0])) {
             $current_products = $this->currentProducts();
             $versions = array();
             foreach (array(Release::MAJOR, Release::MILESTONE, Release::DEVELOPMENT) as $release) {
@@ -157,17 +163,39 @@ class Daily_Controller extends Controller {
             }
         }
         
+        // Determine throttling rates
+        $throttle = null;
+        if (isset($parameters['throttle']) && !empty($parameters['throttle'])) {
+            $throttle = $parameters['throttle'];
+        }         
+        if (count($throttle) == 0 || empty($throttle[0])) {
+            $throttle = array();
+            $throttle_key = 0;
+            $throttle_rates = Kohana::config('daily.throttle_rates');            
+            $product_versions = $this->branch_model->getProductVersionsByProduct($product);
+            foreach ($versions as $version) {
+                if (isset($throttle_rates[$product][$version])) {
+                    $throttle[$throttle_key] = $throttle_rates[$product][$version];
+                }
+
+                if (!isset($throttle[$throttle_key])) {
+                    $throttle[$throttle_key] = 100;
+                }
+                $throttle_key++;
+            }
+        }
+        
 		// Prepare URL for CSV
-		$url_csv = $this->csvURL($product, $versions, $operating_systems, $date_start, $date_end, $form_selection);
+		$url_csv = $this->csvURL($product, $versions, $operating_systems, $date_start, $date_end, $form_selection, $throttle);
 
         // Statistics on crashes for time period
         $results = $this->model->get($product, $versions, $operating_system, $date_start, $date_end);
-        $statistics = $this->model->prepareStatistics($results, $form_selection, $product, $versions, $operating_system, $date_start, $date_end);
+        $statistics = $this->model->prepareStatistics($results, $form_selection, $product, $versions, $operating_system, $date_start, $date_end, $throttle);
         $graph_data = $this->model->prepareGraphData($statistics, $form_selection, $date_start, $date_end, $dates, $operating_systems, $versions);
         
         // Download the CSV, if applicable
         if (isset($parameters['csv'])) {
-        	return $this->csv($product, $versions, $operating_systems, $dates, $results, $statistics, $form_selection);
+        	return $this->csv($product, $versions, $operating_systems, $dates, $results, $statistics, $form_selection, $throttle);
         }
         
         // Set the View
@@ -187,6 +215,7 @@ class Daily_Controller extends Controller {
                 'products' => $products,
                 'results' => $results,
 				'statistics' => $statistics,
+				'throttle' => $throttle,
 				'url_csv' => $url_csv,
                 'url_form' => url::site("daily", 'http'),				
                 'versions' => $versions,

@@ -88,7 +88,7 @@
 
 <div class="panel product_dashboard_right">
 	<div class="title">
-		<h2>Crashes per 1k ADU</h2>
+		<h2>Crashes per ADU</h2>
     </div>
 
 <?php if (!empty($graph_data)) { ?>
@@ -149,30 +149,34 @@
             <h4><?=$prodversion->product?> <?=$prodversion->version?> <span class="view_all"><a href="<?php out::H($url)?>">View all</a></span></h4>
             <?php 
                 $tc_count = 1;
-                foreach ($prodversion->crashes as $crasher) {
-                    if ($tc_count <= $top_crashers_limit) { 
-                        $tc_count++;
-                    
-                        $sigParams = array(
-                          'range_value' => '2',
-                          'range_unit'  => 'weeks',
-                          'signature'   => $crasher->signature,
-                          'version' => $prodversion->product . ':' . $prodversion->version
-                        );
-                        $link_url =  url::base() . 'report/list?' . html::query_string($sigParams);
+                if (isset($proversion->crashes) && !empty($prodversion->crashes)) {
+                    foreach ($prodversion->crashes as $crasher) {
+                        if ($tc_count <= $top_crashers_limit) { 
+                            $tc_count++;
                         
-                        if (empty($crasher->signature)) {
-                          $sig = '(no signature)';
-                        } else {
-                          $sig = $crasher->signature;
+                            $sigParams = array(
+                              'range_value' => '2',
+                              'range_unit'  => 'weeks',
+                              'signature'   => $crasher->signature,
+                              'version' => $prodversion->product . ':' . $prodversion->version
+                            );
+                            $link_url =  url::base() . 'report/list?' . html::query_string($sigParams);
+                            
+                            if (empty($crasher->signature)) {
+                              $sig = '(no signature)';
+                            } else {
+                              $sig = $crasher->signature;
+                            }
+                        ?>
+                        <div class="crash">
+                            <p><a href="<?php out::H($link_url)?>" title="<?php out::H($sig)?>"><?php out::H($sig)?></a></p>
+                            <span><?php out::H(number_format($crasher->count)); ?></span>
+                        </div>
+                    <?php 
                         }
-                    ?>
-                    <div class="crash">
-                        <p><a href="<?php out::H($link_url)?>" title="<?php out::H($sig)?>"><?php out::H($sig)?></a></p>
-                        <span><?php out::H(number_format($crasher->count)); ?></span>
-                    </div>
-                <?php } ?>
-            <?php } ?>
+                    } 
+                }
+            ?>
         </div>
     <?php } ?>
 

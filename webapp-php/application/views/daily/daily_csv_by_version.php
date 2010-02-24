@@ -3,7 +3,8 @@
 echo "Date";
 foreach ($statistics['versions'] as $key => $version) {
 	echo "," . $product . " " . $key . " Crashes";
-	echo "," . $product . " " . $key . " 1k ADU";
+	echo "," . $product . " " . $key . " ADU";
+	echo "," . $product . " " . $key . " Throttle";
 	echo "," . $product . " " . $key . " Ratio";
 } 
 echo "\n";
@@ -18,21 +19,28 @@ foreach ($dates as $date) {
 			$key = $version->version;
 
 			if (isset($statistics['versions'][$key][$date]['crashes'])) {
-				echo $statistics['versions'][$key][$date]['crashes']; 
+				echo round($statistics['versions'][$key][$date]['crashes']); 
 			} else {
 				echo '-';
 			}
 			echo ",";
 			
 			if (isset($statistics['versions'][$key][$date]['users'])) {
-				echo $statistics['versions'][$key][$date]['users'] / 1000; 
+				echo round($statistics['versions'][$key][$date]['users']); 
 			} else {
 				echo '-';
 			}
 			echo ",";
 			
+			if (isset($statistics['versions'][$key][$date]['throttle'])) {
+    			echo $statistics['versions'][$key][$date]['throttle'] * 100 . '%'; 
+    		} else {
+    			echo '-';
+    		}
+    		echo ",";
+			
 			if (isset($statistics['versions'][$key][$date]['ratio'])) {
-				$ratio = round($statistics['versions'][$key][$date]['ratio'] * 100, 3);
+				$ratio = round($statistics['versions'][$key][$date]['ratio'] * 100, 2);
 				echo $ratio . "%";
 			} else {
 				echo '-';
@@ -53,17 +61,22 @@ foreach($results->versions as $version) {
 		$key = $version->version;
 
 		if (isset($statistics['versions'][$key]['crashes'])) {
-			echo $statistics['versions'][$key]['crashes']; 
+			echo round($statistics['versions'][$key]['crashes']); 
 		}
 		echo ",";
 
 		if (isset($statistics['versions'][$key]['users'])) {
-			echo $statistics['versions'][$key]['users'] / 1000; 
+			echo round($statistics['versions'][$key]['users']); 
 		}
 		echo ",";
+		
+    	if (isset($statistics['versions'][$key]['throttle'])) {
+    		echo $statistics['versions'][$key]['throttle'] * 100 . '%'; 
+    	}
+    	echo ",";
 
 		if (isset($statistics['versions'][$key]['ratio'])) {
-			$ratio = round($statistics['versions'][$key]['ratio'] * 100, 3);
+			$ratio = round($statistics['versions'][$key]['ratio'] * 100, 2);
 			echo $ratio . "%"; 
 		}
 		echo ",";

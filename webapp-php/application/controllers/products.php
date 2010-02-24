@@ -261,6 +261,9 @@ class Products_Controller extends Controller {
                 );
                 $top_crashers[$i]->product = $product;
                 $top_crashers[$i]->version = $current_products[$product][$release];
+
+                $daily_versions[] = $current_products[$product][$release];
+
                 $i++;
             }
         }
@@ -268,7 +271,7 @@ class Products_Controller extends Controller {
         $top_changers = $this->_determineTopchangersProduct($top_crashers);
         
         $results = $this->daily_model->get($product, $daily_versions, $operating_systems, $date_start, $date_end);
-        $statistics = $this->daily_model->prepareStatistics($results, 'by_version', $product, $daily_versions, $operating_systems, $date_start, $date_end);
+        $statistics = $this->daily_model->prepareStatistics($results, 'by_version', $product, $daily_versions, $operating_systems, $date_start, $date_end, array());
         $graph_data = $this->daily_model->prepareGraphData($statistics, 'by_version', $date_start, $date_end, $dates, $operating_systems, $daily_versions);
         
         $this->setView('products/product');
@@ -324,7 +327,7 @@ class Products_Controller extends Controller {
         }
 
         $results = $this->daily_model->get($product, array($version), $operating_systems, $date_start, $date_end);
-        $statistics = $this->daily_model->prepareStatistics($results, 'by_version', $product, array($version), $operating_systems, $date_start, $date_end);
+        $statistics = $this->daily_model->prepareStatistics($results, 'by_version', $product, array($version), $operating_systems, $date_start, $date_end, array(100));
         $graph_data = $this->daily_model->prepareGraphData($statistics, 'by_version', $date_start, $date_end, $dates, $operating_systems, array($version));
         
         $num_signatures = Kohana::config("products.topcrashers_count");
