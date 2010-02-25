@@ -75,7 +75,7 @@ class Topcrasher_Controller extends Controller {
                 'release' => null
             )
         );
-        url::redirect('topcrasher/'.$method.'/Firefox/'.$version);
+        url::redirect('topcrasher/'.$method.'/'.$product.'/'.$version);
     }
 
     /**
