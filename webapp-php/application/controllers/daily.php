@@ -159,7 +159,9 @@ class Daily_Controller extends Controller {
             $current_products = $this->currentProducts();
             $versions = array();
             foreach (array(Release::MAJOR, Release::MILESTONE, Release::DEVELOPMENT) as $release) {
-                $versions[] = $current_products[$product][$release];
+                if (isset($current_products[$product][$release])) {
+                    $versions[] = $current_products[$product][$release];
+                }
             }
         }
         
