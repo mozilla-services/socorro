@@ -149,7 +149,7 @@
             <h4><?=$prodversion->product?> <?=$prodversion->version?> <span class="view_all"><a href="<?php out::H($url)?>">View all</a></span></h4>
             <?php 
                 $tc_count = 1;
-                if (isset($proversion->crashes) && !empty($prodversion->crashes)) {
+                if (isset($prodversion->crashes) && !empty($prodversion->crashes)) {
                     foreach ($prodversion->crashes as $crasher) {
                         if ($tc_count <= $top_crashers_limit) { 
                             $tc_count++;
