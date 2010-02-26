@@ -276,7 +276,7 @@ class CrashStorageSystemForNFS(CrashStorageSystem):
       if "Throttleable" not in jsonDataDictionary or int(jsonDataDictionary.Throttleable):
         if self.throttle(jsonDataDictionary):
           #logger.debug('yes, throttle this one')
-          if self.understandsRefusal(jsonDataDictionary) and not config.neverDiscard:
+          if self.understandsRefusal(jsonDataDictionary) and not self.config.neverDiscard:
             logger.debug("discarding %s %s", jsonDataDictionary.ProductName, jsonDataDictionary.Version)
             return CrashStorageSystem.DISCARDED
           else:
