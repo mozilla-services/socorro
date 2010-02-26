@@ -33,7 +33,10 @@ def handler(req):
   logger = persistentStorage.logger
   config = persistentStorage.config
   nfsCrashStorage = persistentStorage.nfsStorage
-  hbaseCrashStorage = persistentStorage.hbaseStorage
+  try:
+    hbaseCrashStorage = persistentStorage.hbaseStorage
+  except KeyError:
+    pass
 
   #logger.debug("handler invoked using subinterpreter: %s", req.interpreter)
   if req.method == "POST":
