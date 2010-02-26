@@ -1030,7 +1030,10 @@ th.bugzilla_numbers {
 .sorted_bug_ids.full dd { 
     margin-left: 0px; 
 }
-
+/* Bug548746 */
+.strike a { 
+    text-decoration: line-through; 
+}
 .full_bug_ids li { 
     list-style-type: none;  
     margin: auto 0.5em 0.5em auto; 
