@@ -40,7 +40,8 @@ class ProductVersionCache(object):
             and version = %s
           """
       try:
-        self.cache[(product, version)] = db.singleValueSql(cursor, sql, (product, version))
+        self.cache[(product, version)] = id = db.singleValueSql(cursor, sql, (product, version))
+        return id
       except Exception:
         util.reportExceptionAndContinue(self.config['logger'])
         raise KeyError((product, version))

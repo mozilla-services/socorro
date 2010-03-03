@@ -16,7 +16,7 @@ import socorro.lib.ooid as ooid
 import socorro.lib.util as sutil
 import socorro.lib.JsonDumpStorage as jds
 
-import hbaseClient
+import socorro.hbase.hbaseClient as hbc
 
 import os
 import datetime as dt
@@ -90,14 +90,14 @@ class CrashStorageSystem(object):
 #=================================================================================================================
 class CrashStorageSystemForHBase(CrashStorageSystem):
   #-----------------------------------------------------------------------------------------------------------------
-  def __init__ (self, config, hbaseClient=hbaseClient):
+  def __init__ (self, config, hbaseClient=hbc):
     super(CrashStorageSystemForHBase, self).__init__(config)
     self.hbaseConnection = hbaseClient.HBaseConnectionForCrashReports(config.hbaseHost, config.hbasePort)
 
   #-----------------------------------------------------------------------------------------------------------------
   def save (self, uuid, jsonDataDictionary, dump):
     try:
-      self.hbaseConnection.create_ooid(uuid, str(jsonDataDictionary), dump.read())
+      self.hbaseConnection.put_json_dump(uuid, str(jsonDataDictionary), dump.read())
       return CrashStorageSystem.OK
     except:
       sutil.reportExceptionAndContinue(logger)

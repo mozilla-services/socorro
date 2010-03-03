@@ -9,17 +9,32 @@ class DummyObjectWithExpectations(object):
   def expect (self, attribute, args, kwargs, returnValue=None, exceptionToRaise=None):
     self._expected.append((attribute, args, kwargs, returnValue, exceptionToRaise))
   def __getattr__(self, attribute):
-    def f(*args, **kwargs):
-      try:
-        attributeExpected, argsExpected, kwargsExpected, returnValue, exceptionToRaise = self._expected[self.counter]
-      except IndexError:
-        assert False, "%s expected no further calls, but got '%s' with args: %s and kwargs: %s" % (self.name, attribute, args, kwargs)
-      self.counter += 1
-      assert attributeExpected == attribute, "%s expected attribute '%s', but got '%s'" % (self.name, attributeExpected, attribute)
-      assert argsExpected == args, "%s expected '%s' arguments %s, but got %s" % (self.name, attribute, argsExpected, args)
-      assert kwargsExpected == kwargs, "%s expected '%s' keyword arguments %s, but got %s" % (self.name, attribute, kwargsExpected, kwargs)
-      if exceptionToRaise:
-        raise exceptionToRaise
+    try:
+      attributeExpected, argsExpected, kwargsExpected, returnValue, exceptionToRaise = self._expected[self.counter]
+    except IndexError:
+      assert False, "%s expected no further references, but got '%s'" % (self.name, attribute)
+    self.counter += 1
+    if argsExpected is not None and kwargsExpected is not None:
+      def f(*args, **kwargs):
+        assert attributeExpected == attribute, "%s expected attribute '%s', but got '%s'" % (self.name, attributeExpected, attribute)
+        assert argsExpected == args, "%s expected '%s' arguments %s, but got %s" % (self.name, attribute, argsExpected, args)
+        assert kwargsExpected == kwargs, "%s expected '%s' keyword arguments %s, but got %s" % (self.name, attribute, kwargsExpected, kwargs)
+        if exceptionToRaise:
+          raise exceptionToRaise
+        return returnValue
+      return f
+    else:
       return returnValue
-    return f
-
+  def __call__(self, *args, **kwargs):
+    attribute = '__call__'
+    try:
+      attributeExpected, argsExpected, kwargsExpected, returnValue, exceptionToRaise = self._expected[self.counter]
+    except IndexError:
+      assert False, "%s expected no further references, but got '%s'" % (self.name, attribute)
+    self.counter += 1
+    assert attributeExpected == '__call__', "%s expected attribute '%s', but got '%s'" % (self.name, attributeExpected, attribute)
+    assert argsExpected == args, "%s expected '%s' arguments %s, but got %s" % (self.name, attribute, argsExpected, args)
+    assert kwargsExpected == kwargs, "%s expected '%s' keyword arguments %s, but got %s" % (self.name, attribute, kwargsExpected, kwargs)
+    if exceptionToRaise:
+      raise exceptionToRaise
+    return returnValue

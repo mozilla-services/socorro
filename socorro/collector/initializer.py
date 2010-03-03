@@ -8,8 +8,6 @@ import socorro.lib.JsonDumpStorage as jds
 
 import socorro.collector.collect as collect
 
-import hbaseClient
-
 #for perf, remove me soon
 import time
 
