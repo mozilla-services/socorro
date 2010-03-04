@@ -1,4 +1,4 @@
-import socorro.collector.hbaseClient as hbc
+import socorro.hbase.hbaseClient as hbc
 import socorro.unittest.testlib.expectations as exp
 
 try:

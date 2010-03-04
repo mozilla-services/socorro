@@ -70,7 +70,7 @@ def testCrashStorageSystemForHBase_save_1():
   d.hbasePort = 'ethel'
 
   fakeHbaseConnection = exp.DummyObjectWithExpectations('fakeHbaseConnection')
-  fakeHbaseConnection.expect('create_ooid', ('uuid', '1111', expectedReadResult), {}, None, None)
+  fakeHbaseConnection.expect('put_json_dump', ('uuid', '1111', expectedReadResult), {}, None, None)
 
   fakeHbaseModule = exp.DummyObjectWithExpectations('fakeHbaseModule')
   fakeHbaseModule.expect('HBaseConnectionForCrashReports', ('fred', 'ethel'), {}, fakeHbaseConnection, None)
