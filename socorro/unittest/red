@@ -51,8 +51,9 @@ alias taillog=red
 
 noseErrors_help() {
   cat <<EOF
-Usage: noseErrors outputFile
-  shows all output lines that aren't 'ok'
+Usage: noseErrors [--verbose] outputFile
+  Shows output lines that aren't 'ok'.
+  if --verbose: Also shows test filenames and some formatting 
 EOF
 }
 

@@ -34,20 +34,23 @@ def dailyUrlDump(config):
       if publicOutputDirectory:
         publicOutputPathName = os.path.join(publicOutputDirectory,publicOutputFileName)
       logger.debug("config.day = %s; now = %s; yesterday = %s", config.day, now, yesterday)
+      productPhrase = ''
+      try:
+        if config.product != '':
+          productPhrase = "and r.product = '%s'" % config.product
+      except:
+        pass
 
-      if config.product == '':
-        productPhrase = ''
-      else:
-        productPhrase = "and r.product = '%s'" % config.product
-
-      if config.version == '':
-        versionPhrase = ''
-      else:
-        versionPhrase = "and r.version = '%s'" % config.version
+      versionPhrase = ''
+      try:
+        if config.version != '':
+          versionPhrase = "and r.version = '%s'" % config.version
+      except:
+        pass
 
       # -- N : array index. SQL's idea of the index is one greater
       sql = """
-      select distinct
+      select
         r.signature,  -- 0
         r.url,        -- 1
         'http://crash-stats.mozilla.com/report/index/' || r.uuid as uuid_url, -- 2
@@ -64,13 +67,16 @@ def dailyUrlDump(config):
         r.address,    --13
         array(select ba.bug_id from bug_associations ba where ba.signature = r.signature) as bug_list, --14
         r.user_comments, --15
-        r.uptime as uptime_seconds, -- 16
-        case when (r.email is NULL OR r.email='') then '' else r.email end as email, -- 17
+        r.uptime as uptime_seconds, --16
+        case when (r.email is NULL OR r.email='') then '' else r.email end as email, --17
         (select sum(adu_count) from raw_adu adu
            where adu.date = '%(nowAsString)s'
-             AND pd.product = adu.product_name AND pd.version = adu.product_version
-             AND substring(r.os_name from 1 for 3) = substring(adu.product_os_platform from 1 for 3)
-             AND r.os_version LIKE '%%'||adu.product_os_version||'%%') as adu_count -- 18
+             and pd.product = adu.product_name and pd.version = adu.product_version
+             and substring(r.os_name from 1 for 3) = substring(adu.product_os_platform from 1 for 3)
+             and r.os_version LIKE '%%'||adu.product_os_version||'%%') as adu_count, --18
+        r.topmost_filenames, --19
+        case when (r.addons_checked is NULL) then '[unknown]'when (r.addons_checked) then 'checked' else 'not' end as addons_checked, --20
+        r.flash_version --21
       from
         reports r left join productdims pd on r.product = pd.product and r.version = pd.version
       where
@@ -78,17 +84,24 @@ def dailyUrlDump(config):
         %(productPhrase)s %(versionPhrase)s
       order by 5 -- r.date_processed, munged
       """ % {'nowAsString':nowAsString, 'yesterdayAsString':yesterdayAsString, 'productPhrase':productPhrase, 'versionPhrase':versionPhrase}
-      logger.debug("SQL is\n%s",sql)
+      logger.debug("SQL is%s",sql)
+      gzippedOutputFile = None
+      gzippedPublicOutputFile = None
       try: # inner try/finally level 2: write gzipped files
         gzippedOutputFile = gzip.open(outputPathName, "w")
-        gzippedPublicOutputFile = gzip.open(publicOutputPathName, "w")
         csvFormatter = csv.writer(gzippedOutputFile, delimiter='\t', lineterminator='\n')
-        csvPublicFormatter = csv.writer(gzippedPublicOutputFile, delimiter='\t', lineterminator='\n')
+        csvPublicFormatter = None
+        if publicOutputPathName:
+          gzippedPublicOutputFile = gzip.open(publicOutputPathName, "w")
+          csvPublicFormatter = csv.writer(gzippedPublicOutputFile, delimiter='\t', lineterminator='\n')
+        else:
+          logger.info("Will not create External (bowdlerized) gzip file")
+
         columnHeadersAreNotYetWritten = True
         idCache = IdCache(databaseCursor)
         for aCrash in psy.execute(databaseCursor, sql):
           if columnHeadersAreNotYetWritten:
-            writeRowToInternalAndExternalFiles(csvFormatter,csvPublicFormatter,getColumnHeader([x[0] for x in databaseCursor.description]))
+            writeRowToInternalAndExternalFiles(csvFormatter,csvPublicFormatter,[x[0] for x in databaseCursor.description])
             columnHeadersAreNotYetWritten = False
           #logger.debug("iterating through crash %s (%s)",aCrash,len(aCrash))
           aCrashAsAList = []
@@ -121,88 +134,36 @@ def dailyUrlDump(config):
             if type(x) == str:
               x = x.strip().replace('\r','').replace('\n',' | ')
             aCrashAsAList.append(x)
-          appendDetailsFromJson(config,aCrashAsAList,currentUuid)
           writeRowToInternalAndExternalFiles(csvFormatter,csvPublicFormatter,aCrashAsAList)
           # end for loop over each aCrash
       finally: # level 2
-        gzippedOutputFile.close()
-        gzippedPublicOutputFile.close()
+        if gzippedOutputFile:
+          gzippedOutputFile.close()
+        if gzippedPublicOutputFile:
+          gzippedPublicOutputFile.close()
     finally: # level 1
+      print psy.connectionStatus(databaseConnection)
       databaseConnectionPool.cleanup()
+      print psy.connectionStatus(databaseConnection)
+      
   except: # level 0
     util.reportExceptionAndContinue(logger)
 
-def pathFromUuidAndMount(mount,uuid,suffix):
-  tmp = "%%s%s%%s%s%%s.%%s"%(os.path.sep,os.path.sep)
-  return os.path.join(mount,tmp%(uuid[0:2],uuid[2:4],uuid,suffix))
-
-def getJson(config,uuid):
-  mountPoints = config.get('rawFileMountPoints').split()
-  fh = None
-  jsonDoc = None
-  for mount in mountPoints:
-    try:
-      try:
-        fh = open(pathFromUuidAndMount(mount,uuid,'json'),'r')
-        jsonDoc = simplejson.load(fh)
-        return jsonDoc
-      except IOError,x:
-        if(2 == x.errno):
-          pass
-        else:
-          raise
-      except ValueError:
-        pass
-    finally:
-      if fh:
-        fh.close()
-  return None
-
-
-def addonsChecked(addonVal):
-  ret = 'not'
-  if addonVal and not 'false' == ("%s"%addonVal).lower():
-    ret = 'checked'
-  return ret
-
-# extend this list to handle more json data
-# header: columnHeader text
-# key:    key in json Document
-# valueFunction: convert jsonDoc[key] to column value
-jsonInformation = [
-  {'header':'addons_checked','key':'EMCheckCompatibility','valueFunction': addonsChecked}
-  ]
-def getColumnHeader(dbItems, infoList=jsonInformation):
-  dbItems.extend([x['header'] for x in infoList])
-  return dbItems
-  
-def appendDetailsFromJson(config,aCrashAsAList,uuid, infoList=jsonInformation):
-  if not uuid:
-    logger.warn("No uuid from %s",aCrashAsAList)
-    return
-  #logger.debug("Attempting to get json from uuid '%s'",uuid)
-  jsonDoc = getJson(config,uuid)
-  if jsonDoc:
-    for key,func in [(x['key'],x['valueFunction']) for x in infoList]:
-      value = 'unknown'
-      try:
-        value = func(jsonDoc[key])
-      except:
-        pass
-    aCrashAsAList.append(value)
-  else:
-    logger.warn("No %s.json file was accessible",uuid)
-  
 def writeRowToInternalAndExternalFiles(internalFormatter,externalFormatter,aCrashAsAList):
   """
   Write a row to each file: Seen by internal users (full details), and external users (bowdlerized)
   """
   # logger.debug("Writing crash %s (%s)",aCrashAsAList,len(aCrashAsAList))
-  internalFormatter.writerow(aCrashAsAList)
+  if internalFormatter:
+    internalFormatter.writerow(aCrashAsAList)
+  else:
+    logger.error("Failed to write to Interal (full) gzip file: %s",aCrashAsAList)
   # per bug 529431
   bowdlerList = copy.copy(aCrashAsAList)
   if bowdlerList[1]:
-    bowdlerList[1] = 'URL removed'
+    bowdlerList[1] = 'URL (removed)'
   if len(bowdlerList) > 17: # This *should* always be true
     bowdlerList[17] = ''
-  externalFormatter.writerow(bowdlerList)
+  if externalFormatter:
+    externalFormatter.writerow(bowdlerList)
+

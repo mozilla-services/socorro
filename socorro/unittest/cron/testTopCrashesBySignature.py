@@ -672,7 +672,7 @@ class TestTopCrashesBySignature(unittest.TestCase):
     """
     global me
     cursor = self.connection.cursor()
-    idCache = cia.IdCache(cursor)
+    idCache = cia.IdCache(cursor,logger=me.logger)
     minStamp, maxStamp, data = self.prepareExtractDataForPeriod('date_processed',31,5) # full set of keys
     bogusEnd = dt.datetime(2007,12,30)
     bogusSize = dt.timedelta(minutes=20)

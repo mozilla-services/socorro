@@ -124,9 +124,7 @@ class Processor(object):
                                                          dumpGID=config.dumpGID,
                                                          logger=logger)
 
-    #self.reportsTable = sch.CrashReportsTable(logger=logger)
     self.reportsTable = sch.ReportsTable(logger=logger)
-    #self.dumpsTable = sch.DumpsTable(logger=logger)
     self.extensionsTable = sch.ExtensionsTable(logger=logger)
     self.framesTable = sch.FramesTable(logger=logger)
     self.pluginsTable = sch.PluginsTable(logger=logger)
@@ -591,10 +589,10 @@ class Processor(object):
         date_processed = ooid.dateFromOoid(jobUuid)
 
       newReportRecordAsDict = self.insertReportIntoDatabase(threadLocalCursor, jobUuid, jsonDocument, jobPathname, date_processed, processorErrorMessages)
+      threadLocalDatabaseConnection.commit()
       reportId = newReportRecordAsDict["id"]
       newReportRecordAsDict['dump'] = ''
       newReportRecordAsDict["startedDateTime"] = startedDateTime
-      threadLocalDatabaseConnection.commit()
 
       if self.config.collectAddon:
         logger.info("%s - collecting Addons", threadName)
@@ -608,23 +606,45 @@ class Processor(object):
 
       try:
         additionalReportValuesAsDict = self.doBreakpadStackDumpAnalysis(reportId, jobUuid, dumpfilePathname, threadLocalCursor, date_processed, processorErrorMessages)
+        newReportRecordAsDict.update(additionalReportValuesAsDict)
       finally:
         newReportRecordAsDict["completeddatetime"] = completedDateTime = datetime.datetime.now()
-      newReportRecordAsDict.update(additionalReportValuesAsDict)
 
-      self.quitCheck()
       #finished a job - cleanup
       threadLocalCursor.execute("update jobs set completeddatetime = %s, success = True where id = %s", (completedDateTime, jobId))
-      threadLocalCursor.execute("update reports set started_datetime = timestamp without time zone '%s', completed_datetime = timestamp without time zone '%s', success = True, truncated = %s where id = %s and date_processed = timestamp without time zone '%s'" % (startedDateTime, completedDateTime, newReportRecordAsDict["truncated"], reportId, date_processed))
+      # Bug 519703: Collect setting for topmost source filename(s), addon compatibility check override, flash version
+      reportsSql = """
+      update reports set
+        started_datetime = timestamp without time zone %%s,
+        completed_datetime = timestamp without time zone %%s,
+        success = True,
+        truncated = %%s,
+        topmost_filenames = %%s,
+        addons_checked = %%s,
+        flash_version = %%s
+      where id = %s and date_processed = timestamp without time zone '%s'
+      """ % (reportId,date_processed)
+      topmost_filenames = "|".join(jsonDocument.get('topmost_filenames',[]))
+      addons_checked = None
+      try:
+        ac = jsonDocument['EMCheckCompatibility']
+        addons_checked = False
+        if ac and not  'false' == ("%s"%ac).lower():
+          addons_checked = True
+      except:
+        pass # leaving it as None if not in the document
+      flash_version = jsonDocument.get('flash_version')
+      infoTuple = (startedDateTime, completedDateTime, newReportRecordAsDict["truncated"], topmost_filenames, addons_checked, flash_version)
+      logger.debug("%s - Updated report %s (%s): %s",threadName,reportId,jobUuid,str(infoTuple))
+      threadLocalCursor.execute(reportsSql, infoTuple)
       threadLocalDatabaseConnection.commit()
       self.saveProcessedDumpJson(newReportRecordAsDict)
       logger.info("%s - succeeded and committed: %s, %s", threadName, jobId, jobUuid)
+      self.quitCheck()
     except (KeyboardInterrupt, SystemExit):
       logger.info("%s - quit request detected", threadName)
       self.quit = True
       try:
-        logger.info("%s - abandoning job with rollback: %s, %s", threadName, jobId, jobUuid)
-        threadLocalDatabaseConnection.rollback()
         threadLocalDatabaseConnection.close()
       except:
         pass
@@ -718,10 +738,10 @@ class Processor(object):
     installTime = int(jsonDocument.get('InstallTime',startupTime)) # must have installed some time before startup
     crash_date = datetime.datetime.fromtimestamp(crash_time, Processor.utctz)
     install_age = crash_time - installTime
-    # email and userId are now deprecated and replace with empty string
     email = socorro.lib.util.lookupLimitedStringOrNone(jsonDocument, 'Email', 100)
     logger.debug ('Email: %s', email)
     logger.debug ('Email: %s', str(jsonDocument))
+    # userId is now deprecated and replace with empty string
     user_id = ""
     uptime = max(0, crash_time - startupTime)
     if crash_time == defaultCrashTime:
@@ -740,11 +760,12 @@ class Processor(object):
       last_crash = int(jsonDocument['SecondsSinceLastCrash'])
     except:
       last_crash = None
-    #email = user_id = None
-    newReportRecordAsTuple = (uuid, crash_date, date_processed, product, version, buildID, url, install_age, last_crash, uptime, email, build_date, user_id, user_comments, app_notes, distributor, distributor_version)
+    
+    newReportRecordAsTuple = (uuid, crash_date, date_processed, product, version, buildID, url, install_age, last_crash, uptime, email, build_date, user_id, user_comments, app_notes, distributor, distributor_version,None,None,None)
     newReportRecordAsDict = dict(x for x in zip(self.reportsTable.columns, newReportRecordAsTuple))
     if not product or not version:
-      logger.error("%%s - Skipping report (uuid=%s,crash_date=%s,date_processed=%s,product=%s,version=%s,buildId=%s,url=%s,age=%s,last_crash=%s,uptime=%s,(email:%s),buildDate=%s,(userId:%s),comments=%s,app_notes=%s,distributor,dist_version:%s,%s) not (product & version)"%newReportRecordAsTuple,threading.currentThread().getName())
+      msgTemplate = "%%s - Skipping report: Missing product&version: ["+", ".join(["%s:%%s"%x for x in self.reportsTable.columns])+"]"
+      logger.error(msgTemplate % newReportRecordAsTuple,threading.currentThread().getName())
       return {}
     try:
       logger.debug("%s - inserting for %s, %s", threading.currentThread().getName(), uuid, str(date_processed))

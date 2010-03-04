@@ -119,6 +119,7 @@ class ProcessorWithExternalBreakpad (processor.Processor):
 
     analyzeReturnedLines = False
     reportUpdateSqlParts = []
+    flash_version = None
     for line in dumpAnalysisLineIterator:
       line = line.strip()
       # empty line separates header data from thread data
@@ -154,7 +155,10 @@ class ProcessorWithExternalBreakpad (processor.Processor):
         except:
           crashedThread = None
       elif values[0] == 'Module':
-        pass
+        # grab only the flash version, which is not quite as easy as it looks
+        if not flash_version:
+          flash_version = self.getVersionIfFlashModule(values)
+        # pass
         # Module|{Filename}|{Version}|{Debug Filename}|{Debug ID}|{Base Address}|Max Address}|{Main}
         # we should ignore modules with no filename
         #if values[1]:
@@ -181,8 +185,29 @@ class ProcessorWithExternalBreakpad (processor.Processor):
       processorErrorMessages.append(message)
       logger.warning("%s - %s", threading.currentThread().getName(), message)
     reportUpdateValues["crashedThread"] = crashedThread
+    if not flash_version:
+      flash_version = '[blank]'
+    reportUpdateValues['flash_version'] = flash_version
+      
     return reportUpdateValues
 
+#-----------------------------------------------------------------------------------------------------------------
+  flashRE = re.compile(r'NPSWF32\.dll|libflashplayer(.*)\.(.*)|Flash ?Player-?(.*)')
+  def getVersionIfFlashModule(self,moduleData):
+    """If (we recognize this module as Flash and figure out a version): Returns version; else (None or '')"""
+    module,filename,version,debugFilename,debugId = moduleData[:5]
+    m = ProcessorWithExternalBreakpad.flashRE.match(filename)
+    if m:
+      if not version:
+        version = m.groups()[0]
+      if not version:
+        version = m.groups()[2]
+      if not version and 'knownFlashDebugIdentifiers' in self.config:
+        version = self.config.knownFlashDebugIdentifiers.get(debugId) # probably a miss
+    else:
+      version = None
+    return version
+  
 #-----------------------------------------------------------------------------------------------------------------
   def analyzeFrames(self, reportId, dumpAnalysisLineIterator, databaseCursor, date_processed, crashedThread, processorErrorMessages):
     """ After the header information, the dump file consists of just frame information.  This function
@@ -208,6 +233,8 @@ class ProcessorWithExternalBreakpad (processor.Processor):
     truncated = False
     analyzeReturnedLines = False
     signatureList = []
+    topmost_sourcefiles = []
+    max_topmost_sourcefiles = 1 # Bug 519703 calls for just one. Lets build in some flex
     for line in dumpAnalysisLineIterator:
       analyzeReturnedLines = True
       #logger.debug("%s -   %s", threading.currentThread().getName(), line)
@@ -216,6 +243,8 @@ class ProcessorWithExternalBreakpad (processor.Processor):
         processorErrorMessages.append("An unexpected blank line in this dump was ignored")
         continue  #some dumps have unexpected blank lines - ignore them
       (thread_num, frame_num, module_name, function, source, source_line, instruction) = [socorro.lib.util.emptyFilter(x) for x in line.split("|")]
+      if len(topmost_sourcefiles) < max_topmost_sourcefiles and source:
+        topmost_sourcefiles.append(source)
       if crashedThread == int(thread_num):
         if frameCounter < 30:
           thisFramesSignature = self.make_signature(module_name, function, source, source_line, instruction)
@@ -252,6 +281,7 @@ class ProcessorWithExternalBreakpad (processor.Processor):
     databaseCursor.execute("update reports set signature = %%s, processor_notes = %%s where id = %%s and date_processed = timestamp without time zone '%s'" % (date_processed),(signature, processor_notes,reportId))
     return { "processor_notes": processor_notes,
              "signature": signature,
-             "truncated": truncated
+             "truncated": truncated,
+             "topmost_sourcefiles":topmost_sourcefiles,
            }
 

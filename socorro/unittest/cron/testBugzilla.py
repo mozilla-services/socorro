@@ -27,17 +27,17 @@ def makeBogusReports (connection, cursor, logger):
   # make some bogus data in the reports table
   reportsTable = sch.ReportsTable(logger)
                     # ( uuid,    client_crash_date,   date_processed,             product,   version,   build,   url,              install_age,   last_crash,   uptime,   email,   build_date,   user_id,   user_comments,   app_notes,   distributor,   distributor_version) values
-  fakeReportData = [ (( "uuid1", None,                dt.datetime(2009, 05, 04),  "bogus",   "1.0",     "xxx",   "http://cnn.com", 100,           14,           10,       None,    None,         None,      "bogus",         "",          "",            ","), "BogusClass::bogus_signature (const char**, void *)"),
-                     (( "uuid2", None,                dt.datetime(2009, 05, 04),  "bogus",   "1.0",     "xxx",   "http://cnn.com", 100,           14,           10,       None,    None,         None,      "bogus",         "",          "",            ","), "js3250.dll@0x6cb96"),
-                     (( "uuid3", None,                dt.datetime(2009, 05, 04),  "bogus",   "1.0",     "xxx",   "http://cnn.com", 100,           14,           10,       None,    None,         None,      "bogus",         "",          "",            ","), "libobjc.A.dylib@0x1568c"),
-                     (( "uuid4", None,                dt.datetime(2009, 05, 04),  "bogus",   "1.0",     "xxx",   "http://cnn.com", 100,           14,           10,       None,    None,         None,      "bogus",         "",          "",            ","), "nanojit::LIns::isTramp()"),
-                     (( "uuid5", None,                dt.datetime(2009, 05, 04),  "bogus",   "1.0",     "xxx",   "http://cnn.com", 100,           14,           10,       None,    None,         None,      "bogus",         "",          "",            ","), "libobjc.A.dylib@0x1568c"),
+  fakeReportData = [ (( "uuid1", None,                dt.datetime(2009, 05, 04),  "bogus",   "1.0",     "xxx",   "http://cnn.com", 100,           14,           10,       None,    None,         None,      "bogus",         "",          "",            ",",None,None,None), "BogusClass::bogus_signature (const char**, void *)"),
+                     (( "uuid2", None,                dt.datetime(2009, 05, 04),  "bogus",   "1.0",     "xxx",   "http://cnn.com", 100,           14,           10,       None,    None,         None,      "bogus",         "",          "",            ",",None,None,None), "js3250.dll@0x6cb96"),
+                     (( "uuid3", None,                dt.datetime(2009, 05, 04),  "bogus",   "1.0",     "xxx",   "http://cnn.com", 100,           14,           10,       None,    None,         None,      "bogus",         "",          "",            ",",None,None,None), "libobjc.A.dylib@0x1568c"),
+                     (( "uuid4", None,                dt.datetime(2009, 05, 04),  "bogus",   "1.0",     "xxx",   "http://cnn.com", 100,           14,           10,       None,    None,         None,      "bogus",         "",          "",            ",",None,None,None), "nanojit::LIns::isTramp()"),
+                     (( "uuid5", None,                dt.datetime(2009, 05, 04),  "bogus",   "1.0",     "xxx",   "http://cnn.com", 100,           14,           10,       None,    None,         None,      "bogus",         "",          "",            ",",None,None,None), "libobjc.A.dylib@0x1568c"),
                    ]
   try:
     altconn = psycopg2.connect(me.dsn)
     altcur = altconn.cursor()
   except Exception, x:
-    print x
+    print "Exception at line 40:",type(x),x
     raise
   def cursorFunction():
     return altconn, altcur
@@ -48,7 +48,7 @@ def makeBogusReports (connection, cursor, logger):
       cursor.execute("update reports set signature=%s where date_processed = %s and uuid = %s", (sig, rep[2], rep[0]))
       connection.commit()
     except Exception, x:
-      print x
+      print "Exception at line 51", type(x),x
       connection.rollback()
   altconn.close()
 
@@ -104,7 +104,7 @@ def setup_module():
     me.conn = psycopg2.connect(me.dsn)
     me.cur = me.conn.cursor(cursor_factory=psy.LoggingCursor)
   except Exception, x:
-    print x
+    print "Exception at line 107",type(x),x
     socorro.lib.util.reportExceptionAndAbort(me.fileLogger)
   makeBogusReports(me.conn, me.cur, me.fileLogger)
 

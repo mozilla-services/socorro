@@ -1,9 +1,24 @@
 import unittest
 import os
-import socorro.collector.collect as collect
+import sys
+## WARNING: in next line, if you get
+## ERROR: Failure: ImportError (No module named thrift)
+## You can fix it by checking out https://socorro.googlecode.com/svn/trunk/thirdparty
+## and adding .../thirdparty to your PYTHONPATH (or equivalent)
+try:
+  import socorro.collector.collect as collect
+except ImportError,x:
+  print>> sys.stderr,"""
+## If you see "Failure: ImportError (No module named thrift) ... ERROR"
+## * check out https://socorro.googlecode.com/svn/trunk/thirdparty
+## * read .../thirdparty/README.txt
+## * add .../thirdparty to your PYTHONPATH (or equivalent)
+  """
+  raise
 import socorro.unittest.testlib.expectations as exp
 import socorro.lib.util as util
 
+import socorro.unittest.testlib.loggerForTest as loggerForTest
 
 def testRepeatableStreamReader():
   expectedReadResult = '1234567890/n'
@@ -85,22 +100,21 @@ def testCrashStorageSystemForHBase_save_2():
   fakeStream = exp.DummyObjectWithExpectations('fakeStream')
   fakeStream.expect('read', (), {}, expectedReadResult, None)
   rsr = collect.RepeatableStreamReader(fakeStream)
-
   d = util.DotDict()
   d.hbaseHost = 'fred'
   d.hbasePort = 'ethel'
-
   fakeHbaseConnection = exp.DummyObjectWithExpectations('fakeHbaseConnection')
   fakeHbaseConnection.expect('create_ooid', ('uuid', '1111', expectedReadResult), {}, None, Exception())
 
   fakeHbaseModule = exp.DummyObjectWithExpectations('fakeHbaseModule')
   fakeHbaseModule.expect('HBaseConnectionForCrashReports', ('fred', 'ethel'), {}, fakeHbaseConnection, None)
 
+  collect.logger = loggerForTest.TestingLogger()
   css = collect.CrashStorageSystemForHBase(d, fakeHbaseModule)
   expectedResult = collect.CrashStorageSystem.ERROR
-  result = css.save('uuid', 1111, rsr)
-  assert result == expectedResult, 'expected %s but got %s' % (expectedResult, result)
+  result = css.save('uuid', 1111, rsr) # HERE 
 
+  assert result == expectedResult, 'expected %s but got %s' % (expectedResult, result)
 
 def testCrashStorageSystemForNFS__init__():
   d = util.DotDict()

@@ -248,7 +248,7 @@ class IdCache:
       except (IndexError, TypeError): # might be empty list or None
         pass
     # no cached branch, no id, no branch in db. begin heuristic:
-    self.cursor.execute("SELECT branch FROM productdims WHERE product = %s ORDER BY id DESC LIMIT 1")
+    self.cursor.execute("SELECT branch FROM productdims WHERE product = %s ORDER BY id DESC LIMIT 1",(pvKey[0],))
     self.cursor.connection.rollback()
     try:
       branch = self.cursor.fetchone()[0]

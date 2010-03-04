@@ -763,4 +763,100 @@ class TestProcessorWithExternalBreakpad:
     #assert len(p.data) > len(p.iterator.cache), "Expected to lose some to the tailframe truncation, but %s ?>? %s"%(len(p.data),len(p.iterator.cache))
     #assert ''.join(p.iterator.cache) == ddata[-1]
 
+  def testGetVersionIfFlashModule_noKnownFlashDebugIdentifiers(self):
+    """
+    testProcessorWithExternalBreakpad:TestProcessorWithExternalBreakpad.testGetVersionIfFlashModule_noKnownFlashDebugIdentifiers(self):
+    """
+    # the final item of the data part is an index number into the list of cases, used for debugging a failure
+    cases = [
+      #[[module,filename,version,debugfilename,debugid,junk,junk,index],expected] # where debugid = SOMETHING-index
+      [['Module','Athabasca','toot','NPSWF32.dll','DBGID','0x00','0x01','0'],None],
+      [['Module','NPSWF32.dll','','NPSWF32.dll','DBGID','0x00','0x01','1'],None],
+      [['Module','NPSWF32.dll','toot','NPSWF32.dll','DBGID','0x00','0x01','2'],'toot'],
+      [['Module','NPSWF32.exe','toot','NPSWF32.exe','DBGID','0x00','0x01','3'],None],
+      [['Module','NPSWF32alpha.dll','toot','NPSWF32alpha.dll','DBGID','0x00','0x01','4'],None],
+      [['Module','npswf32.dll','toot','npswf32.dll','DBGID','0x00','0x01','5'],None],
+      [['Module','libflashplayer.so','','libflashplayer.so','DBGID','0x00','0x01','6'],None],
+      [['Module','libflashplayer.a','','libflashpayer.a','DBGID','0x00','0x01','7'],None],
+      [['Module','libflashplayer.so','toot','libflashplayer.so','DBGID','0x00','0x01','8'],'toot'],
+      [['Module','libflashplayer.a','toot','libflashplayer.a','DBGID','0x00','0x01','9'],'toot'],
+      [['Module','libflashplayer-3.2.1.so','toot','libflashplayer-3.2.1.so','DBGID','0x00','0x01','10'],'toot'],
+      [['Module','libflashplayer-3.2.1.a','toot','libflashplayer-3.2.1.a','DBGID','0x00','0x01','11'],'toot'],
+      [['Module','libflashplayer-3.2.1.so','','libflashplayer-3.2.1.so','DBGID','0x00','0x01','12'],'-3.2.1'],
+      [['Module','libflashplayer-3.2.1.a','','libflashplayer-3.2.1.a','DBGID','0x00','0x01','13'],'-3.2.1'],
+      [['Module','Flash Player','','Flash Player','DBGID','0x00','0x01','14'],''],
+      [['Module','Flash Player','toot','Flash Player','DBGID','0x00','0x01','15'],'toot'],
+      [['Module','FlashPlayer','','FlashPlayer','DBGID','0x00','0x01','16'],''],
+      [['Module','FlashPlayer','toot','FlashPlayer','DBGID','0x00','0x01','17'],'toot'],
+      [['Module','FlashPlayer-10.3','','FlashPlayer-10.3','DBGID','0x00','0x01','18'],'10.3'],
+      [['Module','FlashPlayer-10.3','toot','FlashPlayer-10.3','DBGID','0x00','0x01','19'],'toot'],
+      [['Module','Flash Player-10.3','','Flash Player-10.3','DBGID','0x00','0x01','20'],'10.3'],
+      [['Module','Flash Player-10.3','toot','Flash Player-10.3','DBGID','0x00','0x01','21'],'toot'],
+      ]
+    global me
+    p = TestProcessorWithExternalBreakpad.StubExternalProcessor(me.config)
 
+    for data,expected in cases:
+      got = p.getVersionIfFlashModule(data)
+      assert expected == got, 'At %s: Given "%s", expected "%s" but got "%s"'%(data[-1],data[1],expected,got)
+
+  def testGetVersionIfFlashModule_withKnownFlashDebugIdentifiers(self):
+    """
+    testProcessorWithExternalBreakpad:TestProcessorWithExternalBreakpad.testGetVersionIfFlashModule_withKnownFlashDebugIdentifiers
+    """
+    cases = [
+      [['Module','Athabasca','toot','NPSWF32.dll','DBGID-0','0x00','0x01','0'],None],
+      [['Module','NPSWF32.dll','','NPSWF32.dll','DBGID-1','0x00','0x01','1'],'moo'],
+      [['Module','NPSWF32.dll','toot','NPSWF32.dll','DBGID-2','0x00','0x01','2'],'toot'],
+      [['Module','NPSWF32.exe','toot','NPSWF32.exe','DBGID-3','0x00','0x01','3'],None],
+      [['Module','NPSWF32alpha.dll','toot','NPSWF32alpha.dll','DBGID-4','0x00','0x01','4'],None],
+      [['Module','npswf32.dll','toot','npswf32.dll','DBGID-5','0x00','0x01','5'],None],
+      [['Module','libflashplayer.so','','libflashplayer.so','DBGID-6','0x00','0x01','6'],'moo'],
+      [['Module','libflashplayer.a','','libflashpayer.a','DBGID-7','0x00','0x01','7'],'moo'],
+      [['Module','libflashplayer.so','toot','libflashplayer.so','DBGID-8','0x00','0x01','8'],'toot'],
+      [['Module','libflashplayer.a','toot','libflashplayer.a','DBGID-9','0x00','0x01','9'],'toot'],
+      [['Module','libflashplayer-3.2.1.so','toot','libflashplayer-3.2.1.so','DBGID-10','0x00','0x01','10'],'toot'],
+      [['Module','libflashplayer-3.2.1.a','toot','libflashplayer-3.2.1.a','DBGID-11','0x00','0x01','11'],'toot'],
+      [['Module','libflashplayer-3.2.1.so','','libflashplayer-3.2.1.so','DBGID-12','0x00','0x01','12'],'-3.2.1'],
+      [['Module','libflashplayer-3.2.1.a','','libflashplayer-3.2.1.a','DBGID-13','0x00','0x01','13'],'-3.2.1'],
+      [['Module','Flash Player','','Flash Player','DBGID-14','0x00','0x01','14'],'moo'],
+      [['Module','Flash Player','toot','Flash Player','DBGID-15','0x00','0x01','15'],'toot'],
+      [['Module','FlashPlayer','','FlashPlayer','DBGID-16','0x00','0x01','16'],'moo'],
+      [['Module','FlashPlayer','toot','FlashPlayer','DBGID-17','0x00','0x01','17'],'toot'],
+      [['Module','FlashPlayer-10.3','','FlashPlayer-10.3','DBGID-18','0x00','0x01','18'],'10.3'],
+      [['Module','FlashPlayer-10.3','toot','FlashPlayer-10.3','DBGID-19','0x00','0x01','19'],'toot'],
+      [['Module','Flash Player-10.3','','Flash Player-10.3','DBGID-20','0x00','0x01','20'],'10.3'],
+      [['Module','Flash Player-10.3','toot','Flash Player-10.3','DBGID-21','0x00','0x01','21'],'toot'],
+      ]
+    global me
+    config = copy.copy(me.config)
+    config['knownFlashDebugIdentifiers'] = {
+      'DBGID-0':'moo',
+      'DBGID-1':'moo',
+      'DBGID-2':'moo',
+      'DBGID-3':'moo',
+      'DBGID-4':'moo',
+      'DBGID-5':'moo',
+      'DBGID-6':'moo',
+      'DBGID-7':'moo',
+      'DBGID-8':'moo',
+      'DBGID-9':'moo',
+      'DBGID-10':'moo',
+      'DBGID-11':'moo',
+      'DBGID-12':'moo',
+      'DBGID-13':'moo',
+      'DBGID-14':'moo',
+      'DBGID-15':'moo',
+      'DBGID-16':'moo',
+      'DBGID-17':'moo',
+      'DBGID-18':'moo',
+      'DBGID-19':'moo',
+      'DBGID-20':'moo',
+      'DBGID-21':'moo',
+      }
+
+    p = TestProcessorWithExternalBreakpad.StubExternalProcessor(config)
+
+    for data,expected in cases:
+      got = p.getVersionIfFlashModule(data)
+      assert expected == got, 'At %s: Given "%s", expected "%s" but got "%s"'%(data[-1],data[1],expected,got)

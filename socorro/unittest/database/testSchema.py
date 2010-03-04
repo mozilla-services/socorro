@@ -73,7 +73,7 @@ def setup_module():
     schema.TimeBeforeFailureTable:[False,set(['time_before_failure', 'productdims', 'osdims', 'release_enum'])],
     schema.OsDimsTable:[False,set(['osdims'])],
     schema.PluginsTable:[False,set(['plugins'])],
-    schema.PluginsReportsTable:[True,set(['plugins_reports'])],
+    schema.PluginsReportsTable:[True,set(['plugins_reports','plugins'])],
     schema.PriorityJobsTable:[False,set(['priorityjobs'])],
     schema.ProcessorsTable:[False,set(['processors'])],
     schema.ProductDimsTable:[False,set(['productdims','release_enum'])],
@@ -169,6 +169,7 @@ def testGetOrderedPartitionList():
     'frames': set(['frames', 'reports']),
     'extensions': set(['extensions', 'reports']),
     'plugins_reports': set(['plugins_reports', 'reports']),
+    'reports_more':set(['reports','reports_more']),
     }
   allTables = schema.getOrderedSetupList()
   for t in allTables:
