@@ -203,6 +203,7 @@ body > h1 {
 		display: none;
 		list-style: none;
 		border: 1px solid #304f60;
+        margin: 1em 0 0 1em;
 		padding: 4px;
 		background: #dae2e5 url(../img/2.0/version-bg.png) repeat-x top left;
 		color: #303233;
