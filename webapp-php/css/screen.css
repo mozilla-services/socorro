@@ -19,7 +19,7 @@ body{font:13px/1.231 arial,helvetica,clean,sans-serif;*font-size:small;*font:x-s
 
 
 /** 
- * Base + Nav
+ * Base
  */
 
 html {
@@ -33,6 +33,83 @@ body > h1 {
 	font-size: 200%;
 	margin-top: 1.5em;
 	}
+	
+    
+/** 
+* Global
+*/
+
+h1 {
+    font-size: 153.9%; /* 20px */
+    font-weight: bold;
+    margin: 1em 0;    
+}
+
+h2 {
+    font-size: 138.5%; /* 18px */
+    font-weight: bold;
+    margin: 1em 0;
+}
+
+h3 {
+    font-size: 123.1%; /* 16px */
+    font-style: italic;
+    font-weight: normal;
+    margin: 1em 0;
+}
+
+h4 {
+    font-size: 108%; /* 14px */
+    font-style: italic;
+    font-weight: normal;
+    margin: 1em 0;
+}
+
+p {
+    font-size: 100%; /* 13px */
+    font-weight: normal;
+    margin: 1em 0;
+}
+
+a, a:link, a:hover, a:active  {
+    color: #0033FF;
+    text-decoration: underline;
+}
+
+a:visited {
+    color: #800080;
+}
+
+clear {
+    clear: both;
+}
+
+.clear_left {
+    clear: left;
+}
+
+.clear_right {
+    clear: right;
+}
+
+.hidden {
+    display: none;
+}
+
+table thead tr th, 
+table tbody tr td {
+    border: solid 1px #CCC; 
+}
+
+th {
+    font-weight: bold;
+    padding: 0 .25em;
+}
+
+
+/** 
+ * Nav
+ */ 	
 	
 .choices {
 	display: inline;
@@ -393,74 +470,7 @@ body > h1 {
 		line-height: 18px;
 		padding-top: 2px;
 		}
-
 			
-/** 
- * Global
- */
-
-h1 {
-    font-size: 153.9%; /* 20px */
-    font-weight: bold;
-    margin: 1em 0;    
-}
-
-h2 {
-    font-size: 138.5%; /* 18px */
-    font-weight: bold;
-    margin: 1em 0;
-}
-
-h3 {
-    font-size: 123.1%; /* 16px */
-    font-style: italic;
-    font-weight: normal;
-    margin: 1em 0;
-}
-
-h4 {
-    font-size: 108%; /* 14px */
-    font-style: italic;
-    font-weight: normal;
-    margin: 1em 0;
-}
-
-p {
-    font-size: 100%; /* 13px */
-    font-weight: normal;
-    margin: 1em 0;
-}
-
-a {
-    color: #0033FF;
-    text-decoration: underline;
-}
-
-.clear {
-    clear: both;
-}
-
-.clear_left {
-    clear: left;
-}
-
-.clear_right {
-    clear: right;
-}
-
-.hidden {
-    display: none;
-}
-
-table thead tr th, 
-table tbody tr td {
-    border: solid 1px #CCC; 
-}
-
-th {
-    font-weight: bold;
-    padding: 0 .25em;
-}
 
 /**
  * Status Messages
