@@ -68,32 +68,60 @@ class TopCrashesBySignature(object):
     logger.debug('%s %s', self.productVersionRestriction, self.productVersionSqlRestrictionPhrase)
     self.startDate,self.deltaDate,self.endDate = cron_util.getProcessingDates(self.configContext,resultTable,self.productVersionRestriction,cursor,logger)
 
+  def tallyPVpairs(self, rows, columns, startDateAsCompactString, previousDateAsCompactString, summaryCrashes, idCache):
+    """
+    This function iterates through the results of the database query in the extractDataForPeriod function.
+    Each row represents a single crash.
+    """
+    for r in rows:
+      row = lib_util.DotDict((key, value) for key, value in zip(columns, r)) # make a row object addressable by column name
+      logger.debug('%s %s', row.version, row.build)
+      # products with a version ending in 'pre' are development builds known as nightlies.
+      # the following 'if' block filters out crashes that are not from a nightly build
+      # from the last 48 hours
+      if row.version[-3:] == 'pre':
+        try:
+          buildDateAsCompactString = row.build[:8]
+        except TypeError:
+          continue
+        if buildDateAsCompactString != startDateAsCompactString and buildDateAsCompactString != previousDateAsCompactString:
+          logger.debug('skipping: %s != %s and %s != %s', buildDateAsCompactString, startDateAsCompactString, buildDateAsCompactString, previousDateAsCompactString)
+          continue
+      key = (row.signature, row.productdims_id, idCache.getOsId(row.os_name, row.os_version))
+      value = summaryCrashes.setdefault(key, lib_util.DotDict({'count':0,'uptime':0}))
+      value.count += 1
+      value.uptime += row.uptime
+
   def extractDataForPeriod(self, startTime, endTime, summaryCrashes):
     """
     Given a start and end time, return tallies for the data from the half-open interval startTime <= (date_column) < endTime
     Parameter summaryCrashes is a dictionary that will contain signature:data. Passed as a parameter to allow external looping
     returns (and is in-out parameter) summaryCrashes where for each signature as key, the value is {'count':N,'uptime':N}
     """
+    startDateAsCompactString = '%4d%02d%02d' % (startTime.year, startTime.month, startTime.day)
+    previousDate = startTime - datetime.timedelta(1)
+    previousDateAsCompactString = '%4d%02d%02d' % (previousDate.year, previousDate.month, previousDate.day)
     cur = self.connection.cursor()
     idCache = socorro_cia.IdCache(cur,logger=logger)
     if startTime > endTime:
       raise ValueError("startTime(%s) must be <= endTime(%s)"%(startTime,endTime))
-    inputColumns = ["uptime", "signature", "productdims_id", "os_name", "os_version"]
-    columnIndexes = dict((x,inputColumns.index(x)) for x in inputColumns)
-    cI = columnIndexes # Spare the typing and spoil the editor's line-wrapping
 
-    resultColumnlist = 'r.uptime, r.signature, cfg.productdims_id, r.os_name, r.os_version'
-    sql = """SELECT %(resultColumnlist)s FROM product_visibility cfg
-                JOIN productdims p on cfg.productdims_id = p.id
-                JOIN %(inTable)s r on p.product = r.product AND p.version = r.version
-              WHERE NOT cfg.ignore AND %%(startTime)s <= r.%(dcolumn)s and r.%(dcolumn)s < %%(endTime)s
-              AND   r.%(dcolumn)s >= cfg.start_date AND r.%(dcolumn)s <= cfg.end_date
-              %(productVersionSqlRestrictionPhrase)s
+    resultColumnlist = 'r.uptime, r.signature, r.build, r.version, cfg.productdims_id, r.os_name, r.os_version'
+    inputColumns = [x.split('.')[1] for x in resultColumnlist.split(',')]
+    sql = """SELECT
+                 %(resultColumnlist)s
+             FROM product_visibility cfg JOIN productdims p on cfg.productdims_id = p.id
+                 JOIN %(inTable)s r on p.product = r.product AND p.version = r.version
+             WHERE
+                 NOT cfg.ignore
+                 AND %%(startTime)s <= r.%(dcolumn)s AND r.%(dcolumn)s < %%(endTime)s
+                 AND cfg.start_date <= r.%(dcolumn)s AND r.%(dcolumn)s <= cfg.end_date
+                 %(productVersionSqlRestrictionPhrase)s
           """%({'dcolumn':self.dateColumnName, 'resultColumnlist':resultColumnlist,'inTable':sourceTable, 'productVersionSqlRestrictionPhrase':self.productVersionSqlRestrictionPhrase})
     startEndData = {'startTime':startTime, 'endTime':endTime,}
     if self.debugging:
       logger.debug("Collecting data in range[%s,%s) on column %s",startTime,endTime, self.dateColumnName)
-    zero = {'count':0,'uptime':0}
+    #zero = {'count':0,'uptime':0}
     try:
       #fetchmany(size) /w/ namedcursor => intermittent "ProgrammingError: named cursor isn't valid anymore"
       #per http://www.velocityreviews.com/forums/t649192-psycopg2-and-large-queries.html we should not use
@@ -104,13 +132,8 @@ class TopCrashesBySignature(object):
         logger.debug(cursor.mogrify(sql,startEndData))
       cursor.execute(sql,startEndData)
       chunk = cursor.fetchall()
-      if chunk and chunk[0]:
-        for row in chunk:
-          key = (row[cI['signature']],row[cI['productdims_id']],idCache.getOsId(row[cI['os_name']],row[cI['os_version']]))
-          value = summaryCrashes.setdefault(key,copy.copy(zero))
-          value['count'] += 1
-          value['uptime'] += row[cI['uptime']]
       self.connection.commit()
+      self.tallyPVpairs(chunk, inputColumns, startDateAsCompactString, previousDateAsCompactString, summaryCrashes, idCache)
       logger.debug("Returning %s items for window [%s,%s)",len(summaryCrashes),startTime,endTime)
       return summaryCrashes # redundantly
     except Exception, x:

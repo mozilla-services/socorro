@@ -469,6 +469,7 @@ class TestTopCrashesBySignature(unittest.TestCase):
     for d in data:
       # Keys are always signature,product,os
       key =   (d['signature'],idCache.getProductId(d['product'],d['version']),idCache.getOsId(d['os_name'],d['os_version']))
+      if d['version'][-3:] == 'pre': continue    # Lars buildid
       try:
         expect[key]['count'] += 1
         expect[key]['uptime'] += d['uptime']
@@ -544,7 +545,8 @@ class TestTopCrashesBySignature(unittest.TestCase):
 
     summaryData = {}
     tc.extractDataForPeriod(minStamp,maxStamp,summaryData)
-    assert 110 == len(summaryData), 'Regression test only, value not calculated. Expect 110, got %s'%(len(summaryData))
+    #assert 110 == len(summaryData), 'Regression test only, value not calculated. Expect 110, got %s'%(len(summaryData)) #Lars buildid
+    assert 99 == len(summaryData), 'Regression test only, value not calculated. Expect 99, got %s'%(len(summaryData))
 
     cursor.execute("DELETE from product_visibility")
     self.connection.commit()
@@ -554,7 +556,8 @@ class TestTopCrashesBySignature(unittest.TestCase):
     self.prepareConfigForPeriod(keySet,mminStamp,mmaxStamp)
     summaryData = {}
     tc.extractDataForPeriod(minStamp,maxStamp,summaryData)
-    assert 87 == len(summaryData), 'Regression test only, value not calculated. Expect 87, got %s'%(len(summaryData))
+    #assert 87 == len(summaryData), 'Regression test only, value not calculated. Expect 87, got %s'%(len(summaryData)) #Lars buildid
+    assert 78 == len(summaryData), 'Regression test only, value not calculated. Expect 78, got %s'%(len(summaryData))
 
 
   def testExtractDataForPeriod_ConfigLimitedIds(self):
@@ -575,7 +578,8 @@ class TestTopCrashesBySignature(unittest.TestCase):
 
     summaryData = {}
     tc.extractDataForPeriod(minStamp,maxStamp,summaryData)
-    assert 110 == len(summaryData), 'Regression test only, value not calculated. Expect 110, got %s'%(len(summaryData))
+    #assert 110 == len(summaryData), 'Regression test only, value not calculated. Expect 110, got %s'%(len(summaryData)) #Lars buildid
+    assert 99 == len(summaryData), 'Regression test only, value not calculated. Expect 99, got %s'%(len(summaryData))
 
     cursor.execute("DELETE from product_visibility")
     self.connection.commit()
@@ -583,7 +587,8 @@ class TestTopCrashesBySignature(unittest.TestCase):
     self.prepareConfigForPeriod(keySSet,mminStamp,mmaxStamp)
     summaryData = {}
     tc.extractDataForPeriod(minStamp,maxStamp,summaryData)
-    assert 96 == len(summaryData), 'Regression test only, value not calculated. Expect 96, got %s'%(len(summaryData))
+    #assert 96 == len(summaryData), 'Regression test only, value not calculated. Expect 96, got %s'%(len(summaryData)) #Lars buildid
+    assert 85 == len(summaryData), 'Regression test only, value not calculated. Expect 85, got %s'%(len(summaryData))
 
   def testStoreFacts(self):
     """
@@ -643,7 +648,8 @@ class TestTopCrashesBySignature(unittest.TestCase):
     cursor.execute(countSql)
     self.connection.commit()
     gotCount = cursor.fetchone()[0]
-    assert 130 == gotCount, 'but got %s'%gotCount
+    #assert 130 == gotCount, 'but got %s'%gotCount #Lars buildid
+    assert 129 == gotCount, 'but got %s'%gotCount
     cursor.execute("SELECT window_end,window_size from top_crashes_by_signature")
     got = cursor.fetchall()
     self.connection.commit()
@@ -759,7 +765,8 @@ class TestTopCrashesBySignature(unittest.TestCase):
     self.connection.commit()
     gotCount = cursor.fetchone()[0]
     me.logger.debug("DEBUG testProcessIntervals after count top_crashes_by_signature = %s",gotCount)
-    expect = 155
+    expect = 137
+    #expect = 155 # Lars buildid
     assert expect == gotCount, 'Regression test only, value not calculated. Expect %s, got %s'%(expect,gotCount)
 
 if __name__ == "__main__":

@@ -21,7 +21,7 @@ def fillProcessorTable(cursor, processorCount, stamp=None, processorMap = {},log
   """
   if not logger:
     logger = logging.getLogger()
-    
+
   if not stamp: stamp = dt.datetime.now()
   if not processorCount and not processorMap: return
   sql = "INSERT INTO processors (name,startdatetime,lastseendatetime) VALUES (%s,%s,%s);"
@@ -47,7 +47,7 @@ def fillProcessorTable(cursor, processorCount, stamp=None, processorMap = {},log
         cursor.connection.rollback()
   finally:
     cursor.connection.rollback()
-      
+
 def moreUuid():
   data = [ x for x in createJDS.jsonFileData.keys() ] # fixed order
   jdsIndex = 0
@@ -80,7 +80,7 @@ def addSomeJobs(cursor,idsMapToCounts, logger = None):
   Insert the requested rows into jobs table.
   idsMapToCounts: id:countOfjobsForProcessorWithThisId
     BEWARE: The ids must be actual ids from the processors table or this will fail.
-  returns list of the inserted job details 
+  returns list of the inserted job details
   """
   if not logger:
     logger = logging.getLogger()
@@ -126,9 +126,9 @@ dimsData = {
   {'product':'Firefox','version':'3.0.8','release':'major','branch':'1,9'},
   {'product':'Firefox','version':'3.0.9','release':'major','branch':'1.9'},
   {'product':'Firefox','version':'3.1.1','release':'major','branch':'1.9.1'},
-  {'product':'Firefox','version':'3.1.2b','release':'development','branch':'1.9.1'},
-  {'product':'Firefox','version':'3.1.3b','release':'development','branch':'1.9.1'},
-  {'product':'Firefox','version':'3.5b4pre','release':'milestone','branch':'1.9.1'},
+  {'product':'Firefox','version':'3.1.2b','release':'milestone','branch':'1.9.1'},
+  {'product':'Firefox','version':'3.1.3b','release':'milestone','branch':'1.9.1'},
+  {'product':'Firefox','version':'3.5b4pre','release':'development','branch':'1.9.1'},
   {'product':'Thunderbird','version':'2.0.0.21','release':'major','branch':'1.9.2'},
   ],
 
@@ -171,7 +171,7 @@ def fillDimsTables(cursor, data = None):
 
 processingDays = None
 productDimData = None
-  
+
 def fillMtbfTables(cursor, limit=12):
   global processingDays, productDimData
   cursor.execute("SELECT count(id) from productdims")
@@ -361,7 +361,7 @@ def genSig(countOfSignatures=7):
     for s in signatureData[:countOfSignatures]:
       yield s
 
-        
+
 def fillReportsTable(cursor, doFillMtbfTables=True, createUrls=False, numUrls=300, multiplier=1, signatureCount=7):
   """fill enough data to test mtbf and topcrashbyurl behavior:
     - mtbf: SUM(uptime); COUNT(date_processed);
@@ -435,4 +435,4 @@ def moreUrl(realUrls, count=430):
     while True:
       for url in data:
         yield url[:255]
-        
+
