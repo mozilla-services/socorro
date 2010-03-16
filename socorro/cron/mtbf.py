@@ -43,6 +43,7 @@ class Mtbf(object):
     self.connection = psycopg2.connect(self.dsn)
     if self.debugging:
       self.logger.debug("MTBF contstructor /w/ configContext=\n%s",configContext)
+    ignore = cron_util.getDateAndWindow(self.configContext,resultTable,None,self.connection.cursor(),logger,**kwargs)
 
   def processOneMtbfWindow(self, **kwargs):
     """

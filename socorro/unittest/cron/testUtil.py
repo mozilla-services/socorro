@@ -181,14 +181,14 @@ class TestUtil(unittest.TestCase):
     assert_raises(SystemExit,cron_util.getProcessingWindow,{'endWindow':end},self.tableName,None,cursor,me.fileLogger)
     assert_raises(SystemExit,cron_util.getProcessingWindow,{'deltaWindow':delta},self.tableName,None,cursor,me.fileLogger)
 
-    # check that processingDay doesn't help
-    assert_raises(SystemExit,cron_util.getProcessingWindow,config,self.tableName,None,cursor,me.fileLogger,deltaWindow=delta,processingDay=procDay)
-    assert_raises(SystemExit,cron_util.getProcessingWindow,config,self.tableName,None,cursor,me.fileLogger,startWindow=start,processingDay=procDay)
-    assert_raises(SystemExit,cron_util.getProcessingWindow,config,self.tableName,None,cursor,me.fileLogger,endWindow=start,processingDay=procDay)
-    # ... with config either
-    assert_raises(SystemExit,cron_util.getProcessingWindow,{'startWindow':start},self.tableName,None,cursor,me.fileLogger,processingDay=procDay)
-    assert_raises(SystemExit,cron_util.getProcessingWindow,{'endWindow':end},self.tableName,None,cursor,me.fileLogger,processingDay=procDay)
-    assert_raises(SystemExit,cron_util.getProcessingWindow,{'deltaWindow':delta,'processingDay':procDay},self.tableName,None,cursor,me.fileLogger)
+    # check that processingDay makes it work with kwargs
+    assert (procStart,procDelta,procEnd) == cron_util.getProcessingWindow(config,self.tableName,None,cursor,me.fileLogger,deltaWindow=delta,processingDay=procDay)
+    assert (procStart,procDelta,procEnd) == cron_util.getProcessingWindow(config,self.tableName,None,cursor,me.fileLogger,startWindow=start,processingDay=procDay)
+    assert (procStart,procDelta,procEnd) == cron_util.getProcessingWindow(config,self.tableName,None,cursor,me.fileLogger,endWindow=start,processingDay=procDay)
+    # ... and with config
+    assert (procStart,procDelta,procEnd) == cron_util.getProcessingWindow({'startWindow':start},self.tableName,None,cursor,me.fileLogger,processingDay=procDay)
+    assert (procStart,procDelta,procEnd) == cron_util.getProcessingWindow({'endWindow':end},self.tableName,None,cursor,me.fileLogger,processingDay=procDay)
+    assert (procStart,procDelta,procEnd) == cron_util.getProcessingWindow({'deltaWindow':delta,'processingDay':procDay},self.tableName,None,cursor,me.fileLogger)
 
     # check that any two kwargs work correctly
     mm = cron_util.getProcessingWindow(config,self.tableName,None,cursor,me.fileLogger,endWindow=end,startWindow=start)

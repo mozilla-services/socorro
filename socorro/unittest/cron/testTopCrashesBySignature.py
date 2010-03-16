@@ -285,18 +285,15 @@ class TestTopCrashesBySignature(unittest.TestCase):
     assert 'date_processed' == tc.dateColumnName
     # end Check for defaults
 
-    # check with solo startDate, endDate or deltaDate
+    # check with solo startDate, endDate or deltaDate. Now should work
     config = copy.copy(me.config)
     config['startDate'] = dt.datetime(2009,01,01,0,0,1)
-    assert_raises(SystemExit,topcrasher.TopCrashesBySignature,config)
 
     config = copy.copy(me.config)
     config['endDate'] = dt.datetime(2009,01,01,0,0,1)
-    assert_raises(SystemExit,topcrasher.TopCrashesBySignature,config)
 
     config = copy.copy(me.config)
     config['deltaDate'] = dt.timedelta(days=3)
-    assert_raises(SystemExit,topcrasher.TopCrashesBySignature,config)
 
   def testExtractDataForPeriod_ByDateProcessed(self):
     """
@@ -712,8 +709,10 @@ class TestTopCrashesBySignature(unittest.TestCase):
 
     config['startDate'] = config['endDate']
     config['endDate'] = dt.datetime(2008,1,2,3)
+    config['deltaDate'] = config['endDate'] - config['startDate']
     config['startWindow'] = config['startDate']
     config['deltaWindow'] = dt.timedelta(minutes=60)
+    config['endWindow'] = config['startWindow']+config['deltaWindow']
     tc = topcrasher.TopCrashesBySignature(config)
     tc.processDateInterval()
     cursor.execute(getSql)
@@ -739,8 +738,10 @@ class TestTopCrashesBySignature(unittest.TestCase):
     config = copy.copy(me.config)
     config['startWindow'] = dt.datetime(2008,1,2,0,0)
     config['deltaWindow'] = dt.timedelta(minutes=12)
+    config['endWindow'] = config['startWindow']+config['deltaWindow']
     config['startDate'] =  dt.datetime(2008,1,2,0,0)
     config['endDate'] = dt.datetime(2008,1,6,5,0)
+    config['deltaDate'] = config['endDate'] - config['startDate']
     tc = topcrasher.TopCrashesBySignature(config)
 
     # first assure that we have a clean playing field
