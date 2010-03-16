@@ -166,4 +166,3 @@ def writeRowToInternalAndExternalFiles(internalFormatter,externalFormatter,aCras
     bowdlerList[17] = ''
   if externalFormatter:
     externalFormatter.writerow(bowdlerList)
-
