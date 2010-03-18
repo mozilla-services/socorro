@@ -1,4 +1,39 @@
 <?php
+
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is Socorro Crash Reporter
+ *
+ * The Initial Developer of the Original Code is
+ * The Mozilla Foundation.
+ * Portions created by the Initial Developer are Copyright (C) 2006
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either the GNU General Public License Version 2 or later (the "GPL"), or
+ * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
+
 require_once(Kohana::find_file('libraries', 'bugzilla', TRUE, 'php'));
 require_once(Kohana::find_file('libraries', 'crash', TRUE, 'php'));
 require_once(Kohana::find_file('libraries', 'moz_pager', TRUE, 'php'));
@@ -80,6 +115,7 @@ class Report_Controller extends Controller {
 	    $bugzilla = new Bugzilla;
 	    $signature_to_bugzilla = $bugzilla->signature2bugzilla($rows, Kohana::config('codebases.bugTrackingUrl'));
 
+        $product = (isset($product) && !empty($product)) ? $product : Kohana::config('products.default_product');
 	    $this->setViewData(array(
 		'navPathPrefix' => $currentPath,
 		'nextLinkText' => 'Older Crashes',
@@ -104,6 +140,7 @@ class Report_Controller extends Controller {
 		'sig2bugs' => $signature_to_bugzilla,
 		'comments' => $this->common_model->getCommentsByParams($params),
 		'logged_in' => $logged_in,
+		'url_nav' => url::site('products/'.$product),        
 	    ));
 	}
 
@@ -264,6 +301,8 @@ class Report_Controller extends Controller {
 				    array_map('rawurlencode', 
 				      array($report->product, $report->version, $report->os_name, $report->signature))) . '/';
 
+
+        $product = (isset($report->product) && !empty($report->product)) ? $report->product : Kohana::config('products.default_product');
 		$this->setViewData(array(
         	    'branch' => $this->branch_model->getByProductVersion($report->product, $report->version),
         	    'comments' => $comments,
@@ -273,7 +312,8 @@ class Report_Controller extends Controller {
         	    'reportJsonZUri' => $reportJsonZUri,
         	    'report' => $report,
         	    'sig2bugs' => $signature_to_bugzilla,
-		    'url_path' => $url_path
+		    'url_path' => $url_path,
+                'url_nav' => url::site('products/'.$product),
         	));
 	}
     }
@@ -312,12 +352,14 @@ class Report_Controller extends Controller {
         // Fetch Job 
         $this->job_model = new Job_Model();
         $job = $this->job_model->getByUUID($uuid);
-
+        
+        $product = (isset($product) && !empty($product)) ? $product : Kohana::config('products.default_product');
         $this->setViewData(array(
             'uuid' => $uuid,
             'job'  => $job,
 			'status' => $status,
-			'url_ajax' => url::site() . 'report/pending_ajax/' . $uuid 
+			'url_ajax' => url::site() . 'report/pending_ajax/' . $uuid,
+            'url_nav' => url::site('products/'.$product),			
         ));
     }
 
