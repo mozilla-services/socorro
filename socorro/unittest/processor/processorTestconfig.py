@@ -3,6 +3,10 @@ import datetime
 import stat
 
 from socorro.unittest.config.commonconfig import databaseHost
+try:
+  from socorro.unittest.config.commonconfig import databasePort
+except:
+  databasePort = 5432
 from socorro.unittest.config.commonconfig import databaseName
 from socorro.unittest.config.commonconfig import databaseUserName
 from socorro.unittest.config.commonconfig import databasePassword

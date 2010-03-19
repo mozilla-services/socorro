@@ -13,6 +13,7 @@ import socorro.database.cachedIdAccess as socorro_cia
 import socorro.cron.mtbf as mtbf
 import socorro.cron.topCrashesBySignature as topcrasher
 import socorro.cron.topCrashesByUrl as topcrashbyurl
+import socorro.database.database as sdatabase
 
 from socorro.unittest.testlib.testDB import TestDB
 import socorro.unittest.testlib.dbtestutil as dbtestutil
@@ -62,14 +63,15 @@ def main():
   topcrasher.logger.setLevel(int(config.logFileErrorLoggingLevel))
   topcrashbyurl.logger.addHandler(fileLog)
   topcrashbyurl.logger.setLevel(int(config.logFileErrorLoggingLevel))
-  
+
   logger.info("Config is\n%s",str(config))
-    
+
   createData(config,logger)
 
 def createData(config,logger):
   # Now do the work in several steps
-  connection = psycopg2.connect("host=%(databaseHost)s dbname=%(databaseName)s user=%(databaseUserName)s password=%(databasePassword)s"%config)
+  connection = sdatabase.Database(config).connection()
+  #connection = psycopg2.connect("host=%(databaseHost)s dbname=%(databaseName)s user=%(databaseUserName)s password=%(databasePassword)s"%config)
   cursor = connection.cursor()
   testDB = TestDB()
   try:
@@ -119,6 +121,6 @@ def createData(config,logger):
   finally:
     logger.info("All done. Closing connection")
     connection.close()
-    
+
 if __name__ == '__main__':
   main()

@@ -46,6 +46,7 @@ import socorro.lib.ConfigurationManager as configurationManager
 import socorro.lib.psycopghelper as psy
 import socorro.database.postgresql as db_postgresql
 import socorro.database.schema as schema
+import socorro.database.database as sdatabase
 import socorro.database.cachedIdAccess as cia
 
 import socorro.unittest.testlib.createJsonDumpStore as createJDS
@@ -129,8 +130,9 @@ def setup_module():
   fileLog.setFormatter(fileLogFormatter)
   processor.logger.addHandler(fileLog)
   me.logger = TestingLogger(processor.logger)
-  me.dsn = "host=%s dbname=%s user=%s password=%s" % (me.config.databaseHost,me.config.databaseName,
-                                                      me.config.databaseUserName,me.config.databasePassword)
+  #me.dsn = "host=%s dbname=%s user=%s password=%s" % (me.config.databaseHost,me.config.databaseName,
+                                                      #me.config.databaseUserName,me.config.databasePassword)
+  me.database = sdatabase.Database(me.config)
 
 # commented out because nosetests doesn't like the logger turned off before all the tests are run.
 # def teardown_module():
@@ -182,7 +184,8 @@ class TestProcessor:
     except OSError,x:
       if errno.EEXIST == x.errno: pass
       else: raise
-    self.connection = psycopg2.connect(me.dsn)
+    self.connection = me.database.connection()
+    #self.connection = psycopg2.connect(me.dsn)
     # blow away any database stuff, in case we crashed on previous run
     me.testDB.removeDB(me.config,me.logger)
     schema.partitionCreationHistory = set() # an 'orrible 'ack
@@ -407,7 +410,7 @@ class TestProcessor:
       theProcessor = TestProcessor.StubProcessor_start(me.config)
       theProcessor.start()
       me.logger.info('CHILD following processor.start()."Cannot get to this line":) thread: %s'%(threading.currentThread().getName()))
-      # if we arrive here, weirdly, lets just curl up and die                                                                 
+      # if we arrive here, weirdly, lets just curl up and die
       os._exit(1)
     # following sequence of except: handles both 2.4.x and 2.5.x hierarchy
     except SystemExit,x:
@@ -423,7 +426,7 @@ class TestProcessor:
   def _pause1(self):
     time.sleep(.1)
     return True
-  
+
   def _pause5(self):
     time.sleep(.5)
     return True
@@ -645,7 +648,7 @@ class TestProcessor:
       assert 'table registration' in me.logger.buffer[0]
     finally:
       p.cleanup()
-      
+
   def testCleanup(self):
     """
     testCleanup(self):
@@ -874,7 +877,7 @@ class TestProcessor:
       assert self.expectedNormalIds == loggedNormals, 'But expected = %s vs %s'%(self.expectedNormalIds,loggedNormals)
     finally:
       p.cleanup()
-      
+
   def testIncomingJobStream_StopsForMore(self):
     """
     testIncomingJobStream_StopsForMore(self):
@@ -912,7 +915,7 @@ class TestProcessor:
           assert aJob[0] in normIds, 'Expect %s in normIds: %s'%(aJob[0],str(normIds))
     finally:
       p.cleanup()
-      
+
   class BogusThreadManager:
     def newTask(self,threadJob,data):
       global me
@@ -1056,7 +1059,7 @@ class TestProcessor:
       assert 0 == id
     finally:
       p.cleanup()
-      
+
   class StubProcessor_processJob(processor.Processor):
     def __init__(self, config):
       super(TestProcessor.StubProcessor_processJob, self).__init__(config)
@@ -1168,7 +1171,7 @@ class TestProcessor:
       assert_raises(Exception,p.doBreakpadStackDumpAnalysis,('','','','','','',))
     finally:
       p.cleanup()
-    
+
 
   def testJsonPathForUuidInJsonDumpStorage(self):
     """
@@ -1195,7 +1198,7 @@ class TestProcessor:
       assert_raises(processor.UuidNotFoundException,p.jsonPathForUuidInJsonDumpStorage,createJDS.jsonBadUuid)
     finally:
       p.cleanup()
-      
+
   def testDumpPathForUuidInJsonDumpStorage(self):
     """
     testDumpPathForUuidInJsonDumpStorage(self):
@@ -1264,7 +1267,7 @@ class TestProcessor:
       assert "unsubscriptable" in messages[0], "but %s"%(str(messages))
     finally:
       p.cleanup()
-    
+
   def testInsertReportIntoDatabase_VariousBadFormat(self):
     """
     testInsertReportIntoDatabase_VariousBadFormat(self):

@@ -373,10 +373,10 @@ class UsefulHBaseConnectionForCrashReports(object):
 def test_HBaseConnectionForCrashReports():
   hbcfcr = UsefulHBaseConnectionForCrashReports()
 
-def test_ooid():
+def test_ooid_to_row_id():
   ooid = 'abcdefghijklmnopqrstuvwxy20100102'
   expectedOoid = '100102abcdefghijklmnopqrstuvwxy20100102'
-  result = hbc.HBaseConnectionForCrashReports.ooid(ooid)
+  result = hbc.ooid_to_row_id(ooid)
   assert result == expectedOoid, 'expected %s, but got %s' % (expectedOoid, result)
 
 def test_make_row_nice_2():

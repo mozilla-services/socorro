@@ -6,7 +6,7 @@
 import datetime as dt
 import config.collectorconfig as configModule
 import socorro.collector.initializer as init
-import socorro.collector.collect as collect
+import socorro.collector.crashstorage as cstore
 import socorro.lib.util as sutil
 import socorro.lib.ooid as ooid
 
@@ -47,7 +47,7 @@ def handler(req):
       dump = theform[config.dumpField]
       if not dump.file:
         return apache.HTTP_BAD_REQUEST
-      dump = collect.RepeatableStreamReader(dump.file)
+      dump = cstore.RepeatableStreamReader(dump.file)
 
       currentTimestamp = dt.datetime.now()
 
@@ -62,19 +62,21 @@ def handler(req):
       uuid = ooid.createNewOoid(currentTimestamp, config.storageDepth)
       logger.debug("    %s", uuid)
 
-      nfsResult = nfsCrashStorage.save(uuid, jsonDataDictionary, dump)
+      nfsResult = nfsCrashStorage.save(uuid, jsonDataDictionary, dump, currentTimestamp)
+
+      #logger.debug('nfsCrashStorage returned: %d', nfsResult)
 
       if config.hbaseSubmissionRate:
         if random.random() * 100.0 < config.hbaseSubmissionRate:
           logger.info("about to create ooid %s in hbase" % uuid)
-          hbaseResult = hbaseCrashStorage.save(uuid, jsonDataDictionary, dump)
+          hbaseResult = hbaseCrashStorage.save(uuid, jsonDataDictionary, dump, currentTimestamp)
         else:
           logger.info('%s throttled and not submitted to hbase', uuid)
 
-      if nfsResult == collect.CrashStorageSystem.DISCARDED:
+      if nfsResult == cstore.CrashStorageSystem.DISCARDED:
         req.write("Discarded=1\n")
         return apache.OK
-      elif nfsResult == collect.CrashStorageSystem.ERROR:
+      elif nfsResult == cstore.CrashStorageSystem.ERROR:
         return apache.HTTP_INTERNAL_SERVER_ERROR
       req.write("CrashID=%s%s\n" % (config.dumpIDPrefix, uuid))
       return apache.OK

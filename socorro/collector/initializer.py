@@ -6,7 +6,7 @@ import socorro.lib.ConfigurationManager
 import socorro.lib.util as sutil
 import socorro.lib.JsonDumpStorage as jds
 
-import socorro.collector.collect as collect
+import socorro.collector.crashstorage as cstore
 
 #for perf, remove me soon
 import time
@@ -27,11 +27,11 @@ def createPersistentInitialization(configModule):
 
   logger.info("current configuration\n%s", str(config))
 
-  storage.nfsStorage = collect.CrashStorageSystemForNFS(config)
+  storage.nfsStorage = cstore.CrashStorageSystemForNFS(config)
 
   if config.hbaseSubmissionRate:
     beforeCreate = time.time()
-    storage.hbaseStorage = collect.CrashStorageSystemForHBase(config)
+    storage.hbaseStorage = cstore.CrashStorageSystemForHBase(config)
     logger.info("Time to Create hbase conn %s" % (time.time() - beforeCreate))
   else:
     logger.info("because the config.hbaseSubmissionRate is zero or None, no hbaseConnection is created.")

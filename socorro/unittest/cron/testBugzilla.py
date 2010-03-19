@@ -14,6 +14,7 @@ import socorro.lib.util
 import socorro.lib.psycopghelper as psy
 import socorro.cron.bugzilla as bug
 import socorro.database.schema as sch
+import socorro.database.database as sdatabase
 
 #from createTables import createCronTables, dropCronTables
 import socorro.unittest.testlib.dbtestutil as dbtestutil
@@ -34,7 +35,8 @@ def makeBogusReports (connection, cursor, logger):
                      (( "uuid5", None,                dt.datetime(2009, 05, 04),  "bogus",   "1.0",     "xxx",   "http://cnn.com", 100,           14,           10,       None,    None,         None,      "bogus",         "",          "",            ",",None,None,None), "libobjc.A.dylib@0x1568c"),
                    ]
   try:
-    altconn = psycopg2.connect(me.dsn)
+    #altconn = psycopg2.connect(me.dsn)
+    altconn = me.database.connection()
     altcur = altconn.cursor()
   except Exception, x:
     print "Exception at line 40:",type(x),x
@@ -95,13 +97,15 @@ def setup_module():
   me.fileLogger.addHandler(fileLog)
   me.fileLogger.addHandler(stderrLog)
 
-  me.dsn = "host=%s dbname=%s user=%s password=%s" % (me.config.databaseHost,me.config.databaseName,
-                                                      me.config.databaseUserName,me.config.databasePassword)
+  me.database = sdatabase.Database(me.config)
+  #me.dsn = "host=%s dbname=%s user=%s password=%s" % (me.config.databaseHost,me.config.databaseName,
+                                                      #me.config.databaseUserName,me.config.databasePassword)
   me.testDB = TestDB()
   me.testDB.removeDB(me.config,me.fileLogger)
   me.testDB.createDB(me.config,me.fileLogger)
   try:
-    me.conn = psycopg2.connect(me.dsn)
+    me.conn = me.database.connection()
+    #me.conn = psycopg2.connect(me.dsn)
     me.cur = me.conn.cursor(cursor_factory=psy.LoggingCursor)
   except Exception, x:
     print "Exception at line 107",type(x),x
@@ -131,6 +135,7 @@ class TestBugzilla(unittest.TestCase):
       except:
         pass
     self.logger = TestingLogger(me.fileLogger)
+    self.connection = me.database.connection()
     #self.connection = psycopg2.connect(me.dsn)
 
     self.testConfig = configurationManager.Config([('t','testPath', True, './TEST-BUGZILLA', ''),

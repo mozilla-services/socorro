@@ -14,6 +14,7 @@ import socorro.lib.filesystem as soc_filesys
 import socorro.database.schema as soc_schema
 import socorro.database.postgresql as soc_pg
 import socorro.lib.dynamicConfigurationManager as configManager
+import socorro.database.database as sdatabase
 
 import socorro.unittest.testlib.util as tutil
 import socorro.unittest.testlib.loggerForTest as tLogger
@@ -89,8 +90,9 @@ class TestDailyUrl(unittest.TestCase):
   def setUp(self):
     self.outDir = os.path.join(os.path.split(__file__)[0],'Outdir')
     self.config = configManager.newConfiguration(configurationModule=commonconfig, applicationName='Test DailyUrl')
-    dsn = "host=%(databaseHost)s dbname=%(databaseName)s user=%(databaseUserName)s password=%(databasePassword)s" % self.config
-    self.connection = pg.connect(dsn)
+    self.connection = sdatabase.Database(self.config).connection()
+    #dsn = "host=%(databaseHost)s dbname=%(databaseName)s user=%(databaseUserName)s password=%(databasePassword)s" % self.config
+    #self.connection = pg.connect(dsn)
     cursor = self.connection.cursor()
     # First clean, just in case
     try:

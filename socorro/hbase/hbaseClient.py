@@ -26,6 +26,9 @@ def retry_wrapper(fn):
       return fn(self, *args, **kwargs)
   return f
 
+def ooid_to_row_id(ooid):
+  return ooid[-6:]+ooid
+
 class HBaseConnection(object):
   """
   Base class for hbase connections.  Supplies methods for a few basic
@@ -132,10 +135,6 @@ class HBaseConnectionForCrashReports(HBaseConnection):
                                                         protocol,ttp,client,column,
                                                         mutation)
 
-  @staticmethod
-  def ooid(ooid):
-    return ooid[-6:]+ooid
-
   def _make_row_nice(self,client_row_object):
     columns = super(HBaseConnectionForCrashReports,self)._make_row_nice(client_row_object)
     columns['ooid'] = client_row_object.row[6:]
@@ -145,16 +144,18 @@ class HBaseConnectionForCrashReports(HBaseConnection):
     """
     Return the full row for a given ooid
     """
-    return self.get_full_row('crash_reports',ooid[-6:]+ooid)[0]
+    row_id = ooid_to_row_id(ooid)
+    return self.get_full_row('crash_reports',row_id)[0]
 
   @retry_wrapper
-  def get_json(self,ooid):
-    """Return the json metadata for a given ooid"""
+  def get_json_meta_as_string(self,ooid):
+    """Return the json metadata for a given ooid as an unexpanded string"""
+    row_id = ooid_to_row_id(ooid)
     # original code
-    #return json.loads(self._make_rows_nice(self.client.getRowWithColumns('crash_reports',ooid[-6:]+ooid,['meta_data:json']))[0]["meta_data:json"])
+    #return json.loads(self._make_rows_nice(self.client.getRowWithColumns('crash_reports',row_id,['meta_data:json']))[0]["meta_data:json"])
 
     # original code expanded for readability:
-    #listOfRawRows = self.client.getRowWithColumns('crash_reports',ooid[-6:]+ooid,['meta_data:json'])
+    #listOfRawRows = self.client.getRowWithColumns('crash_reports',row_id,['meta_data:json'])
     #listOfRows = self._make_rows_nice(listOfRawRows)
     #aRow = listOfRows[0]
     #jsonColumnOfRow = aRow["meta_data:json"]
@@ -162,10 +163,18 @@ class HBaseConnectionForCrashReports(HBaseConnection):
     #return jsonData
 
     # code made more efficient:
-    listOfRawRows = self.client.getRowWithColumns('crash_reports',ooid[-6:]+ooid,['meta_data:json'])
+    listOfRawRows = self.client.getRowWithColumns('crash_reports',row_id,['meta_data:json'])
     aRow = listOfRawRows[0]
-    jsonColumnOfRow = aRow.columns["meta_data:json"]
-    jsonData = json.loads(jsonColumnOfRow.value)
+    return aRow.columns["meta_data:json"]
+
+  def get_json(self,ooid):
+    """Return the json metadata for a given ooid as an json data object"""
+    jsonColumnOfRow = self.get_json_meta_as_string(ooid)
+    try:
+      jsonData = json.loads(jsonColumnOfRow.value)
+    except ValueError:
+      raise
+      #jsonData = eval(jsonColumnOfRow.value)  #dangerous but required for Bug 552539
     return jsonData
 
   @retry_wrapper
@@ -173,23 +182,25 @@ class HBaseConnectionForCrashReports(HBaseConnection):
     """
     Return the minidump for a given ooid
     """
+    row_id = ooid_to_row_id(ooid)
     # original code
-    #return self.client.getRowWithColumns('crash_reports',ooid[-6:]+ooid,['raw_data:dump'])[0].columns['raw_data:dump'].value
+    #return self.client.getRowWithColumns('crash_reports',row_id,['raw_data:dump'])[0].columns['raw_data:dump'].value
 
     # original code expanded for readability
-    listOfRawRows = self.client.getRowWithColumns('crash_reports',ooid[-6:]+ooid,['raw_data:dump'])
+    listOfRawRows = self.client.getRowWithColumns('crash_reports',row_id,['raw_data:dump'])
     aRow = listOfRawRows[0]
     aRowAsDict = aRow.columns
     return aRowAsDict['raw_data:dump'].value
 
   @retry_wrapper
-  def get_jsonz(self,ooid):
+  def get_jsonz_as_string (self,ooid):
     """Return the cooked json for a given ooid"""
+    row_id = ooid_to_row_id(ooid)
     # original code:
-    #return json.loads(self._make_rows_nice(self.client.getRowWithColumns('crash_reports',ooid[-6:]+ooid,['processed_data:json']))[0]["processed_data:json"])
+    #return json.loads(self._make_rows_nice(self.client.getRowWithColumns('crash_reports',row_id,['processed_data:json']))[0]["processed_data:json"])
 
     # original code expanded for readability:
-    #listOfRawRows = self.client.getRowWithColumns('crash_reports',ooid[-6:]+ooid,['processed_data:json'])
+    #listOfRawRows = self.client.getRowWithColumns('crash_reports',row_id,['processed_data:json'])
     #listOfRows = self._make_rows_nice(listOfRawRows)
     #aRow = listOfRows[0]
     #jsonColumnOfRow = aRow["processed_data:json"]
@@ -197,9 +208,13 @@ class HBaseConnectionForCrashReports(HBaseConnection):
     #return jsonData
 
     # code made more efficient:
-    listOfRawRows = self.client.getRowWithColumns('crash_reports',ooid[-6:]+ooid,['processed_data:json'])
+    listOfRawRows = self.client.getRowWithColumns('crash_reports',row_id,['processed_data:json'])
     aRow = listOfRawRows[0]
-    jsonColumnOfRow = aRow.columns["processed_data:json"]
+    return aRow.columns["processed_data:json"]
+
+  def get_jsonz(self,ooid):
+    """Return the cooked json for a given ooid"""
+    jsonColumnOfRow = self.get_jsonz_as_string(ooid)
     jsonData = json.loads(jsonColumnOfRow.value)
     return jsonData
 
@@ -219,16 +234,24 @@ class HBaseConnectionForCrashReports(HBaseConnection):
     self.client.scannerClose(scanner)
 
   @retry_wrapper
-  def put_json_dump(self,ooid,json,dump):
+  def put_json_dump(self,ooid,jsonString,dump):
     """
     Create a crash report record in hbase from serialized json and
     bytes of the minidump
     """
-    row_id = ooid[-6:]+ooid
-    jsonMutationObject = self.mutationClass(column="meta_data:json",value=json)
+    row_id = ooid_to_row_id(ooid)
+    jsonMutationObject = self.mutationClass(column="meta_data:json",value=jsonString)
     dumpMutationObject = self.mutationClass(column="raw_data:dump",value=dump)
     self.client.mutateRow('crash_reports',row_id,[jsonMutationObject, dumpMutationObject])
   create_ooid = put_json_dump  # backward compatabity
+
+  def put_json_data_dump(self,ooid,jsonData,dump):
+    """
+    Create a crash report record in hbase from json data object and
+    bytes of the minidump
+    """
+    jsonAsString = json.dumps(jsonData)
+    self.put_json_dump(ooid, jsonAsString, dump)
 
   def put_json_dump_from_files(self,ooid,json_path,dump_path,openFn=open):
     """
@@ -253,7 +276,7 @@ class HBaseConnectionForCrashReports(HBaseConnection):
     """
     Create a crash report from the cooked json output of the processor
     """
-    row_id = ooid[-6:]+ooid
+    row_id = ooid_to_row_id(ooid)
     self.client.mutateRow('crash_reports',row_id,[self.mutationClass(column="processed_data:json",value=jsonz_string)])
   create_ooid_from_jsonz = put_jsonz
 

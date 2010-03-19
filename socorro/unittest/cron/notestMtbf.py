@@ -17,6 +17,7 @@ import socorro.cron.mtbf as mtbf
 #from createTables import createCronTables, dropCronTables
 import socorro.unittest.testlib.dbtestutil as dbtestutil
 import socorro.unittest.testlib.util as tutil
+import socorro.database.database as sdatabase
 from   socorro.unittest.testlib.loggerForTest import TestingLogger
 from   socorro.unittest.testlib.testDB import TestDB
 
@@ -61,8 +62,9 @@ def setup_module():
   fileLog.setFormatter(fileLogFormatter)
   me.fileLogger = logging.getLogger("testMtbf")
   me.fileLogger.addHandler(fileLog)
-  me.dsn = "host=%s dbname=%s user=%s password=%s" % (me.config.databaseHost,me.config.databaseName,
-                                                      me.config.databaseUserName,me.config.databasePassword)
+  me.database = sdatabase.Database(me.config)
+  #me.dsn = "host=%s dbname=%s user=%s password=%s" % (me.config.databaseHost,me.config.databaseName,
+                                                      #me.config.databaseUserName,me.config.databasePassword)
 
 def teardown_module():
   try:
@@ -74,7 +76,7 @@ class TestMtbf(unittest.TestCase):
   def setUp(self):
     global me
     self.config = configurationManager.newConfiguration(configurationModule = testConfig, applicationName='Testing MTBF')
-    
+
     myDir = os.path.split(__file__)[0]
     if not myDir: myDir = '.'
     replDict = {'testDir':'%s'%myDir}
@@ -84,13 +86,14 @@ class TestMtbf(unittest.TestCase):
       except:
         pass
     self.logger = TestingLogger(me.fileLogger)
-    self.connection = psycopg2.connect(me.dsn)
+    self.connection = me.database.connection()
+    #self.connection = psycopg2.connect(me.dsn)
     cursor = self.connection.cursor()
     self.testDB = TestDB()
     self.testDB.removeDB(self.config,self.logger)
     self.testDB.createDB(self.config,self.logger)
     dbtestutil.fillDimsTables(self.connection.cursor())
-    
+
   def tearDown(self):
     self.testDB.removeDB(self.config,self.logger)
     self.logger.clear()
@@ -185,7 +188,7 @@ class TestMtbf(unittest.TestCase):
       (2, 4, datetime.datetime(2008, 3, 2, 0, 0), 180, 6),
       ],
       }
-    
+
   def fillReports(self,cursor,doFillMtbfTables = True,multiplier=1):
     """fill enough data to test mtbf behavior:
        - SUM(uptime); COUNT(date_processed)
@@ -194,7 +197,7 @@ class TestMtbf(unittest.TestCase):
       self.fillMtbfTables(cursor) # prime the pump
     self.processingDays, self.productDimData = dbtestutil.fillReportsTable(cursor,False,False, multiplier)
 
-  # ========================================================================== #  
+  # ========================================================================== #
   def testProcessOneMtbfWindow(self):
     """
     TestMtbf:testProcessOneMtbfWindow(self): slow(1)
@@ -224,10 +227,10 @@ class TestMtbf(unittest.TestCase):
 #           assert g in expected, 'For PD (%s) got %s was not in expected: %s'%(pd[1],g,expected)
 #       # end of block: not expected == got
     #end of loop through processingDay
-    
+
   def whichProduct(self,data):
     return "P:%s V:%s::OS:%s, OSV:%s"%(data.get('product','-'),data.get('version','-'),data.get('os_name','-'),data.get('os_version','-'))
-  # ========================================================================== #  
+  # ========================================================================== #
   def testProcessOneMtbfWindow_kwargs(self):
     """
     TestMtbf:testProcessOneMtbfWindow_kwargs(self):
@@ -367,7 +370,7 @@ class TestMtbf(unittest.TestCase):
     self.connection.commit()
     count = cursor.fetchone()[0]
     assert 13 == count, 'Expect 13 rows from this good day, but got %s'%count
-    
+
     #check that deltaWindow beats the default 1 day
     cursor.execute("SELECT SUM(sum_uptime_seconds) from time_before_failure")
     self.connection.commit()
@@ -382,7 +385,7 @@ class TestMtbf(unittest.TestCase):
     partDaySum = cursor.fetchone()[0]
     assert partDaySum < fullDaySum, 'Actually, expect full:2730 (got %s) , partial:455 (got %s)'%(fullDaySum,partDaySum)
 
-  # ========================================================================== #  
+  # ========================================================================== #
   def testDateInterval(self):
     """
     TestMtbf.testProcessDateInterval(self):
@@ -413,6 +416,6 @@ class TestMtbf(unittest.TestCase):
       mt.processDateInterval(startDate=j[0],endDate=j[1])
       cursor.execute(sql)
       self.connection.rollback()
-    
+
 if __name__ == "__main__":
   unittest.main()

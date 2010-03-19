@@ -9,6 +9,7 @@ import time
 import socorro.unittest.testlib.util as tutil
 import socorro.unittest.testlib.dbtestutil as dbtutil
 from   socorro.unittest.testlib.testDB import TestDB
+import socorro.database.database as sdatabase
 
 import socorro.lib.ConfigurationManager as configurationManager
 import socorro.database.cachedIdAccess as socorro_cia
@@ -53,14 +54,16 @@ def setup_module():
   tcbu.logger.addHandler(fileLog)
   socorro_cia.logger.addHandler(fileLog)
   me.logger = tcbu.logger
-  me.dsn = "host=%s dbname=%s user=%s password=%s" % (me.config.databaseHost,me.config.databaseName,
-                                                      me.config.databaseUserName,me.config.databasePassword)
+  #me.dsn = "host=%s dbname=%s user=%s password=%s" % (me.config.databaseHost,me.config.databaseName,
+                                                      #me.config.databaseUserName,me.config.databasePassword)
+  me.database = sdatabase.Database(me.config)
 
 class TestTopCrashesByUrl:
   def setUp(self):
     global me
     self.logger = me.logger
-    self.connection = psycopg2.connect(me.dsn)
+    #self.connection = psycopg2.connect(me.dsn)
+    self.connection = me.database.connection()
     self.testDB = TestDB()
     self.testDB.removeDB(me.config,self.logger)
     self.testDB.createDB(me.config,self.logger)
@@ -74,7 +77,7 @@ class TestTopCrashesByUrl:
     global me
     config = copy.copy(me.config)
     t = tcbu.TopCrashesByUrl(config)
-    
+
     assert 1 == t.configContext['minimumHitsPerUrl']
     assert 500 == t.configContext['maximumUrls']
     assert tcbu.logger.name
@@ -128,7 +131,7 @@ class TestTopCrashesByUrl:
     assert 24 == len(data), len(data)
     for d in data:
       assert 1 == d[0]
-    
+
     # test /w/ shorter window
     config = copy.copy(me.config)
     halfDay = datetime.timedelta(hours=12)
@@ -157,7 +160,7 @@ class TestTopCrashesByUrl:
     global me
     cursor = self.connection.cursor()
 
-    ## Set up 
+    ## Set up
     dbtutil.fillReportsTable(cursor,createUrls=True,multiplier=2,signatureCount=83) # just some data...
     self.connection.commit()
     # ... now assure some duplicates
@@ -243,7 +246,7 @@ class TestTopCrashesByUrl:
     self.connection.rollback()
     count = cursor.fetchone()[0]
     assert 38 == count, 'This is (just) a regression test. Did you change the data somehow? (%s)'%(count)
-    
+
     cursor.execute("SELECT COUNT(topcrashurlfacts_id) AS sum FROM topcrashurlfactsreports GROUP BY topcrashurlfacts_id ORDER BY sum DESC LIMIT 7")
     self.connection.rollback()
     data = cursor.fetchall()
@@ -257,7 +260,7 @@ class TestTopCrashesByUrl:
     global me
     cursor = self.connection.cursor()
 
-    ## Set up 
+    ## Set up
     dbtutil.fillReportsTable(cursor,createUrls=True,multiplier=2,signatureCount=83) # just some data...
     self.connection.commit()
     # ... now assure some duplicates
@@ -343,7 +346,7 @@ class TestTopCrashesByUrl:
     self.connection.rollback()
     count = cursor.fetchone()[0]
     assert 38 == count, 'This is (just) a regression test. Did you change the data somehow? (%s)'%(count)
-    
+
     cursor.execute("SELECT COUNT(topcrashurlfacts_id) AS sum FROM topcrashurlfactsreports GROUP BY topcrashurlfacts_id ORDER BY sum DESC LIMIT 7")
     self.connection.rollback()
     data = cursor.fetchall()
@@ -358,7 +361,7 @@ class TestTopCrashesByUrl:
     cursor = self.connection.cursor()
     config = copy.copy(me.config)
 
-    ## Set up 
+    ## Set up
     dbtutil.fillReportsTable(cursor,createUrls=True,multiplier=2,signatureCount=83) # just some data...
     self.connection.commit()
     t = tcbu.TopCrashesByUrl(config,deltaWindow=datetime.timedelta(days=1))
@@ -424,4 +427,4 @@ class TestTopCrashesByUrl:
     assert 514 == count, 'This is (just) a regression test. Did you change the data somehow? (%s)'%(count)
 
 
-    
+

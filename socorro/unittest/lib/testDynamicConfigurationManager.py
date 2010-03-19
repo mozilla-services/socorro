@@ -6,7 +6,7 @@ import time
 
 import socorro.lib.ConfigurationManager as cm
 import socorro.lib.dynamicConfigurationManager as dcm
-
+import socorro.database.database as sdatabase
 import socorro.unittest.testlib.util as tutil
 
 import dbTestconfig as dbConfig
@@ -22,12 +22,14 @@ def weird(item):
 class TestDynamicConfigurationManager:
   def setUp(self):
     self.config = cm.newConfiguration(configurationModule = dbConfig, applicationName = 'testDynamicConfigurationManager')
-    dbData = (self.config.databaseHost,self.config.databaseName,self.config.databaseUserName,self.config.databasePassword)
-    dsn = "host=%s dbname=%s user=%s password=%s" % dbData
-    self.connection = psycopg2.connect(dsn)
+    #dbData = (self.config.databaseHost,self.config.databaseName,self.config.databaseUserName,self.config.databasePassword)
+    #dsn = "host=%s dbname=%s user=%s password=%s" % dbData
+    #self.connection = psycopg2.connect(dsn)
+    database = sdatabase.Database(self.config)
+    self.connection = database.connection()
     cursor = self.connection.cursor()
     cursor.execute('drop table if exists dbConfig cascade')
-    
+
   def tearDown(self):
     cursor = self.connection.cursor()
     cursor.execute('drop table if exists dbConfig cascade')
@@ -99,7 +101,7 @@ class TestDynamicConfigurationManager:
         'logFilePathname':'/some/bogus/location',
         'markCount':1,
         }, 0),
-      
+
       ({'configurationModule':dyConfig,
        'updateInterval':'10:0',
        #'updateFunction':mark,
@@ -115,7 +117,7 @@ class TestDynamicConfigurationManager:
         'logFilePathname':'/some/bogus/location',
         'markCount':0,
         },1),
-      
+
        ({'configurationModule':dyConfig,
        #'updateInterval':0,
        'updateFunction':mark,
@@ -168,7 +170,7 @@ class TestDynamicConfigurationManager:
       expectedLen -= 1
       assert id(tcdms[i]) not in dcm.DynamicConfig.instances
       assert expectedLen == len(dcm.DynamicConfig.instances)
-      
+
   def testItemAccess(self):
     """testDynamicConfigurationManager:TestDynamicConfigurationManager.testItemAccess (slow=2.5)"""
     markers = []
@@ -228,4 +230,4 @@ class TestDynamicConfigurationManager:
     del(markers[:])
     tcdm.doUpdate()
     assert 2 == len(markers)
-      
+

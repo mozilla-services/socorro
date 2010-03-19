@@ -5,6 +5,7 @@ import unittest
 import socorro.cron.util as cron_util
 import socorro.lib.ConfigurationManager as configurationManager
 import cronTestconfig as testConfig
+import socorro.database.database as sdatabase
 
 import socorro.unittest.testlib.util as tutil
 from socorro.unittest.testlib.loggerForTest import TestingLogger
@@ -29,12 +30,14 @@ def setup_module():
       me.config[i] = me.config.get(i)%(replDict)
     except:
       pass
-  me.dsn = "host=%(databaseHost)s dbname=%(databaseName)s user=%(databaseUserName)s password=%(databasePassword)s" % (me.config)
+  #me.dsn = "host=%(databaseHost)s dbname=%(databaseName)s user=%(databaseUserName)s password=%(databasePassword)s" % (me.config)
+  me.database = sdatabase.Database(me.config)
 
 class TestUtilProcessingInterval(unittest.TestCase):
   def setUp(self):
     global me
-    self.connection = psycopg2.connect(me.dsn)
+    self.connection = me.database.connection()
+    #self.connection = psycopg2.connect(me.dsn)
     self.tableName = 'bunny_test'
     self.dropBunny()
     self.createBunny()
@@ -297,6 +300,6 @@ class TestUtilProcessingInterval(unittest.TestCase):
     for k,v in expected.items():
       assert v == config.get(k), "but %s: Expected %s, got %s"%(k,v,config.get(k))
 
-    
-    
-    
+
+
+

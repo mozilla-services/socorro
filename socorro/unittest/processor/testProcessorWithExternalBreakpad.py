@@ -39,6 +39,7 @@ import socorro.lib.util as libutil
 import socorro.processor.externalProcessor as eProcessor
 import socorro.processor.processor as processor
 import socorro.database.schema as schema
+import socorro.database.database as sdatabase
 import socorro.lib.filesystem as filesystem
 
 
@@ -90,8 +91,9 @@ def setup_module():
   fileLog.setFormatter(fileLogFormatter)
   eProcessor.logger.addHandler(fileLog)
   me.logger = TestingLogger(eProcessor.logger)
-  me.dsn = "host=%s dbname=%s user=%s password=%s" % (me.config.databaseHost,me.config.databaseName,
-                                                      me.config.databaseUserName,me.config.databasePassword)
+  #me.dsn = "host=%s dbname=%s user=%s password=%s" % (me.config.databaseHost,me.config.databaseName,
+                                                      #me.config.databaseUserName,me.config.databasePassword)
+  me.database = sdatabase.Database(me.config)
   try:
     filesystem.makedirs(me.config.processedDumpStoragePath) #create place for processed Dumps to go
   except OSError, x:
@@ -148,7 +150,8 @@ class TestProcessorWithExternalBreakpad:
       else: raise
 
     # create a useful database connection, and use it
-    self.connection = psycopg2.connect(me.dsn)
+    self.connection = me.database.connection()
+    #self.connection = psycopg2.connect(me.dsn)
     me.testDB.removeDB(me.config,me.logger)
     schema.partitionCreationHistory = set() # an 'orrible 'ack
     me.testDB.createDB(me.config,me.logger)

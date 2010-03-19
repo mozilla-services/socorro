@@ -13,6 +13,8 @@ from createDBforTest import *
 import socorro.lib.ConfigurationManager as cm
 import dbTestconfig as testConfig
 config = cm.newConfiguration(configurationModule = testConfig, applicationName='Testing Psycopghelper')
+if 'databasePort' not in config:
+  config['databasePort'] = 5432
 def setup_module():
   tutil.nosePrintModule(__file__)
 

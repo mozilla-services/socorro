@@ -38,8 +38,9 @@ pattern_plus = re.compile(r'((\d+)\+)')
 def benchmark(fn):
   def t(*args, **kwargs):
     before = tm.time()
-    fn(*args, **kwargs)
+    result = fn(*args, **kwargs)
     logger.info("%s for %s", tm.time() - before, str(fn))
+    return result
   return t
 
 
@@ -61,6 +62,7 @@ class CrashStorageSystem(object):
   #-----------------------------------------------------------------------------------------------------------------
   def __init__ (self, config):
     self.config = config
+    self.hostname = os.uname()[1]
     try:
       if config.benchmark:
         self.save = benchmark(self.save)
@@ -83,24 +85,54 @@ class CrashStorageSystem(object):
   DISCARDED = 2
   ERROR = 3
   #-----------------------------------------------------------------------------------------------------------------
-  def save (self, uuid, json, dump):
+  def save (self, uuid, jsonData, dump):
     return CrashStorageSystem.NO_ACTION
 
 
 #=================================================================================================================
 class CrashStorageSystemForHBase(CrashStorageSystem):
   #-----------------------------------------------------------------------------------------------------------------
-  def __init__ (self, config, hbaseClient=hbc):
+  def __init__ (self, config, hbaseClient=hbc, jsonDumpStorage=jds):
     super(CrashStorageSystemForHBase, self).__init__(config)
-    self.hbaseConnection = hbaseClient.HBaseConnectionForCrashReports(config.hbaseHost, config.hbasePort)
+    try:
+      self.hbaseConnection = hbaseClient.HBaseConnectionForCrashReports(config.hbaseHost, config.hbasePort)
+    except Exception:
+      sutil.reportExceptionAndContinue(logger)
+      self.hbaseConnection = None
+    if config.hbaseFallbackFS:
+      self.fallbackCrashStorage = jsonDumpStorage.JsonDumpStorage(root=config.hbaseFallbackFS,
+                                                                  maxDirectoryEntries = config.dumpDirCount,
+                                                                  jsonSuffix = config.jsonFileSuffix,
+                                                                  dumpSuffix = config.dumpFileSuffix,
+                                                                  dumpGID = config.dumpGID,
+                                                                  dumpPermissions = config.dumpPermissions,
+                                                                  dirPermissions = config.dirPermissions,
+                                                                 )
+    else:
+      self.fallbackCrashStorage = None
 
   #-----------------------------------------------------------------------------------------------------------------
-  def save (self, uuid, jsonDataDictionary, dump):
+  def save (self, uuid, jsonData, dump, currentTimestamp):
     try:
-      self.hbaseConnection.put_json_dump(uuid, str(jsonDataDictionary), dump.read())
+      jsonData = json.dumps(jsonData)
+      self.hbaseConnection.put_json_dump(uuid, jsonData, dump.read())
       return CrashStorageSystem.OK
-    except:
+    except Exception, x:
       sutil.reportExceptionAndContinue(logger)
+      if self.fallbackCrashStorage:
+        logger.warning('cannot save %s in hbase, falling back to filesystem', uuid)
+        try:
+          jsonFileHandle, dumpFileHandle = self.fallbackCrashStorage.newEntry(uuid, self.hostname, currentTimestamp)
+          try:
+            dumpFileHandle.write(dump.read())
+            json.dump(jsonData, jsonFileHandle)
+          finally:
+            dumpFileHandle.close()
+            jsonFileHandle.close()
+          return CrashStorageSystem.OK
+        except Exception, x:
+          sutil.reportExceptionAndContinue(logger)
+          print x
       return CrashStorageSystem.ERROR
 
 
@@ -128,7 +160,6 @@ class CrashStorageSystemForNFS(CrashStorageSystem):
                                                          dumpPermissions = config.dumpPermissions,
                                                          dirPermissions = config.dirPermissions,
                                                         )
-    self.hostname = os.uname()[1]
 
 
   #-----------------------------------------------------------------------------------------------------------------
@@ -174,7 +205,7 @@ class CrashStorageSystemForNFS(CrashStorageSystem):
     return newThrottleConditions
 
   #-----------------------------------------------------------------------------------------------------------------
-  def terminated (self, json):
+  def terminated (self, jsonData):
     return False
 
   #-----------------------------------------------------------------------------------------------------------------
@@ -238,21 +269,21 @@ class CrashStorageSystemForNFS(CrashStorageSystem):
         return normalizedVersion
 
   #-----------------------------------------------------------------------------------------------------------------
-  def understandsRefusal (self, json):
+  def understandsRefusal (self, jsonData):
     try:
-      #logger.debug('understandsRefusal - %s, %s, %s, %s, %s', json['ProductName'], json['Version'], self.config.minimalVersionForUnderstandingRefusal[json['ProductName']], self.normalizeVersionToInt(json['Version']), self.normalizeVersionToInt(self.config.minimalVersionForUnderstandingRefusal[json['ProductName']]))
-      return self.normalizeVersionToInt(json['Version']) >= self.normalizeVersionToInt(self.config.minimalVersionForUnderstandingRefusal[json['ProductName']])
+      #logger.debug('understandsRefusal - %s, %s, %s, %s, %s', jsonData['ProductName'], jsonData['Version'], self.config.minimalVersionForUnderstandingRefusal[jsonData['ProductName']], self.normalizeVersionToInt(jsonData['Version']), self.normalizeVersionToInt(self.config.minimalVersionForUnderstandingRefusal[jsonData['ProductName']]))
+      return self.normalizeVersionToInt(jsonData['Version']) >= self.normalizeVersionToInt(self.config.minimalVersionForUnderstandingRefusal[jsonData['ProductName']])
     except KeyError:
       return False
 
   #-----------------------------------------------------------------------------------------------------------------
-  def throttle (self, json):
+  def throttle (self, jsonData):
     #print processedThrottleConditions
     for key, condition, percentage in self.processedThrottleConditions:
       #logger.debug("throttle testing  %s %s %d", key, condition, percentage)
       throttleMatch = False
       try:
-        throttleMatch = condition(json[key])
+        throttleMatch = condition(jsonData[key])
       except KeyError:
         if key == None:
           throttleMatch = condition(None)
@@ -271,28 +302,31 @@ class CrashStorageSystemForNFS(CrashStorageSystem):
     return True
 
   #-----------------------------------------------------------------------------------------------------------------
-  def save (self, uuid, jsonDataDictionary, dump):
+  def save (self, uuid, jsonData, dump, currentTimestamp):
     try:
-      if "Throttleable" not in jsonDataDictionary or int(jsonDataDictionary.Throttleable):
-        if self.throttle(jsonDataDictionary):
+      if "Throttleable" not in jsonData or int(jsonData.Throttleable):
+        if self.throttle(jsonData):
           #logger.debug('yes, throttle this one')
-          if self.understandsRefusal(jsonDataDictionary) and not self.config.neverDiscard:
-            logger.debug("discarding %s %s", jsonDataDictionary.ProductName, jsonDataDictionary.Version)
+          if self.understandsRefusal(jsonData) and not self.config.neverDiscard:
+            logger.debug("discarding %s %s", jsonData.ProductName, jsonData.Version)
             return CrashStorageSystem.DISCARDED
           else:
-            logger.debug("deferring %s %s", jsonDataDictionary.ProductName, jsonDataDictionary.Version)
+            logger.debug("deferring %s %s", jsonData.ProductName, jsonData.Version)
             fileSystemStorage = self.deferredFileSystemStorage
         else:
-          logger.debug("not throttled %s %s", jsonDataDictionary.ProductName, jsonDataDictionary.Version)
+          logger.debug("not throttled %s %s", jsonData.ProductName, jsonData.Version)
           fileSystemStorage = self.standardFileSystemStorage
       else:
-        logger.debug("cannot be throttled %s %s", jsonDataDictionary.ProductName, jsonDataDictionary.Version)
+        logger.debug("cannot be throttled %s %s", jsonData.ProductName, jsonData.Version)
         fileSystemStorage = self.standardFileSystemStorage
 
-      jsonFileHandle, dumpFileHandle = fileSystemStorage.newEntry(uuid, self.hostname, dt.datetime.now())
+      jsonFileHandle, dumpFileHandle = fileSystemStorage.newEntry(uuid, self.hostname, currentTimestamp)
       try:
-        dumpFileHandle.write(dump.read())
-        json.dump(jsonDataDictionary, jsonFileHandle)
+        try:
+          dumpFileHandle.write(dump.read())
+        except AttributeError:
+          dumpFileHandle.write(dump)
+        json.dump(jsonData, jsonFileHandle)
       finally:
         dumpFileHandle.close()
         jsonFileHandle.close()

@@ -4,6 +4,7 @@ import socorro.lib.psycopghelper as psycopghelper
 import socorro.lib.ConfigurationManager as configurationManager
 import socorro.database.postgresql as db_postgresql
 import socorro.database.schema as db_schema
+import socorro.database.database as sdatabase
 
 from nose.tools import *
 from socorro.unittest.testlib.testDB import TestDB
@@ -56,12 +57,14 @@ def setup_module():
   fileLogFormatter = logging.Formatter(me.config.logFileLineFormatString)
   fileLog.setFormatter(fileLogFormatter)
   logger.addHandler(fileLog)
-  me.dsn = "host=%(databaseHost)s dbname=%(databaseName)s user=%(databaseUserName)s password=%(databasePassword)s" % (me.config)
-  me.connection = psycopg2.connect(me.dsn)
+  me.database = sdatabase.Database(me.config)
+  me.connection = me.database.connection()
+  #me.dsn = "host=%(databaseHost)s dbname=%(databaseName)s user=%(databaseUserName)s password=%(databasePassword)s" % (me.config)
+  #me.connection = psycopg2.connect(me.dsn)
   me.testDB = TestDB()
   me.testDB.removeDB(me.config,logger)
   me.testDB.createDB(me.config,logger)
-  
+
 def teardown_module():
   me.testDB.removeDB(me.config,logger)
   me.connection.close()
@@ -148,7 +151,7 @@ def testFillProcessorTable_WithMap():
     pt.create(cursor)
     cursor.execute('DELETE FROM jobs')
     me.connection.commit()
-  
+
 def testMoreUuid():
   m = {'hexD':'[0-9a-fA-F]'}
   p = '^%(hexD)s{8}-%(hexD)s{4}-%(hexD)s{4}-%(hexD)s{4}-%(hexD)s{12}$'%m
@@ -156,7 +159,7 @@ def testMoreUuid():
   gen = dbtu.moreUuid()
   seen = set()
   # surely no test set has more than 150K uuids... and we want to run in < 1 second
-  for i in range(150000): 
+  for i in range(150000):
     d = gen.next()
     assert 36 == len(d)
     assert d not in seen
@@ -265,7 +268,7 @@ def testSetPriority_PriorityJobs():
     got2Uuid = [x[0] for x in cursor.fetchall()]
     me.connection.commit()
     assert expect1Uuid == got1Uuid
-    assert expect2Uuid == got2Uuid 
+    assert expect2Uuid == got2Uuid
   finally:
     jt = db_schema.JobsTable(logger)
     jt.drop(cursor)
@@ -357,7 +360,7 @@ def testMoreUrl():
   for i in range(100):
     set5.add(someGen5.next())
   assert 5 >= len(set5)
-  
+
   someGen100 = dbtu.moreUrl(True,100)
   set100 = set()
   for i in range(500):

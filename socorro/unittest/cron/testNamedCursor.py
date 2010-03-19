@@ -17,6 +17,7 @@ import unittest
 from nose.tools import *
 
 import socorro.lib.ConfigurationManager as configurationManager
+import socorro.database.database as sdatabase
 
 from   socorro.unittest.testlib.testDB import TestDB
 import socorro.unittest.testlib.dbtestutil as dbtestutil
@@ -43,10 +44,10 @@ def addReportData(cursor, dataToAdd):
       0,
     %(user_comments)s,
     %(app_notes)s,        %(distributor)s,          %(distributor_version)s)"""
-  
+
   cursor.executemany(sql,dataToAdd)
   cursor.connection.commit()
-  
+
 def createMe():
   global me
   if not me:
@@ -76,7 +77,8 @@ def createMe():
   me.logger = logging.getLogger('cron_test')
   me.logger.setLevel(logging.DEBUG)
   me.logger.addHandler(fileLog)
-  me.dsn = "host=%(databaseHost)s dbname=%(databaseName)s user=%(databaseUserName)s password=%(databasePassword)s" % (me.config)
+  me.database = sdatabase.Database(me.config)
+  #me.dsn = "host=%(databaseHost)s dbname=%(databaseName)s user=%(databaseUserName)s password=%(databasePassword)s" % (me.config)
 
 class TestNamedCursor(unittest.TestCase):
   def setUp(self):
@@ -86,13 +88,14 @@ class TestNamedCursor(unittest.TestCase):
     self.testDB = TestDB()
     self.testDB.removeDB(me.config, me.logger)
     self.testDB.createDB(me.config, me.logger)
-    self.connection = psycopg2.connect(me.dsn)
-  
+    #self.connection = psycopg2.connect(me.dsn)
+    self.connection = me.database.connection()
+
   def tearDown(self):
     global me
     self.testDB.removeDB(me.config,me.logger)
     self.connection.close()
-  
+
   def reportDataGenerator(self,sizePerDay,numDays):
     idGen = dbtestutil.moreUuid()
     initialDate = dt.datetime(2008,1,1,1,1,1,1)

@@ -12,7 +12,7 @@ You must run this test module using nose (chant nosetests from the command line)
  *                                 x >= 2, # Prints first comment line if exists, else the function name per test
  *                                ]
  *      NOSE_WHERE=directory_path[,directoroy_path[,...]] : run only tests in these directories. Note commas
- *      NOSE_ATTR=attrspec[,attrspec ...] : run only tests for which at least one attrspec evaluates true. 
+ *      NOSE_ATTR=attrspec[,attrspec ...] : run only tests for which at least one attrspec evaluates true.
  *         Accepts '!attr' and 'attr=False'. Does NOT accept natural python syntax ('atter != True', 'not attr')
  *      NOSE_NOCAPTURE=TrueValue : nosetests normally captures stdout and only displays it if the test has fail or error.
  *         print debugging works with this envariable, or you can instead print to stderr or use a logger
@@ -37,6 +37,7 @@ import psycopg2
 from nose.tools import *
 
 import socorro.database.postgresql as soc_pg
+import socorro.database.database as sdatabase
 import socorro.lib.ConfigurationManager as configurationManager
 import socorro.monitor.monitor as monitor
 
@@ -101,8 +102,9 @@ def setup_module():
   fileLogFormatter = logging.Formatter(me.config.logFileLineFormatString)
   fileLog.setFormatter(fileLogFormatter)
   me.logger.addHandler(fileLog)
-  me.dsn = "host=%s dbname=%s user=%s password=%s" % (me.config.databaseHost,me.config.databaseName,
-                                                   me.config.databaseUserName,me.config.databasePassword)
+  me.database = sdatabase.Database(me.config)
+  #me.dsn = "host=%s dbname=%s user=%s password=%s" % (me.config.databaseHost,me.config.databaseName,
+                                                   #me.config.databaseUserName,me.config.databasePassword)
 
 def teardown_module():
   global me
@@ -118,7 +120,8 @@ class TestMonitor:
 
   def setUp(self):
     global me
-    self.connection = psycopg2.connect(me.dsn)
+    self.connection = me.database.connection()
+    #self.connection = psycopg2.connect(me.dsn)
 
     # just in case there was a crash on prior run
     me.testDB.removeDB(me.config,me.logger)
@@ -174,7 +177,7 @@ class TestMonitor:
         raise
       else:
         return []
-      
+
     me.logWasExtracted[testName] = True
     startTag = me.markingTemplate%(testName,me.startMark)
     stopTag = me.markingTemplate%(testName,me.endMark)
@@ -336,7 +339,7 @@ class TestMonitor:
     assert 1 == kbd, 'Better see exactly one keyboard interrupt, got %d' % (kbd)
     assert 1 == sighup, 'Better see exactly one sighup event, got %d' % (sighup)
     assert 0 == sigterm, 'Better not see sigterm event, got %d' % (sigterm)
-     
+
   def testRespondToSIGTERM(self):
     """
     testRespondToSIGTERM(self): (slow=1)
@@ -362,7 +365,7 @@ class TestMonitor:
     assert 1 == kbd, 'Better see exactly one keyboard interrupt, got %d' % (kbd)
     assert 1 == sigterm, 'Better see exactly one sigterm event, got %d' % (sigterm)
     assert 0 == sighup, 'Better not see sighup event, got %d' % (sighup)
-     
+
   def testQuitCheck(self):
     """
     testQuitCheck(self):
@@ -376,7 +379,7 @@ class TestMonitor:
   def quitter(self):
     time.sleep(self.timeTilQuit)
     self.mon.quit = True
-  
+
   def testResponsiveSleep(self):
     """
     testResponsiveSleep(self): (slow=4)
@@ -449,7 +452,7 @@ class TestMonitor:
     mon = monitor.Monitor(me.config)
     badUuid = '0bad0bad-0bad-6666-9999-0bad20001025'
     assert_raises(monitor.UuidNotFoundException,mon.removeUuidFromJsonDumpStorage,badUuid)
-    
+
   def testRemoveGoodUuidFromJsonDumpStorage(self):
     """
     testRemoveGoodUuidFromJsonDumpStorage(self):
@@ -464,7 +467,7 @@ class TestMonitor:
     mon.removeUuidFromJsonDumpStorage(goodUuid)
     # ... and then fail the second time
     assert_raises(monitor.UuidNotFoundException,mon.removeUuidFromJsonDumpStorage, goodUuid)
-    
+
   def testCompareSecondOfSequence(self):
     """
     testCompareSecondOfSequence(self):
@@ -476,7 +479,7 @@ class TestMonitor:
     assert monitor.Monitor.compareSecondOfSequence(x,y) > 0
     assert cmp(y,x) > 0
     assert monitor.Monitor.compareSecondOfSequence(y,x) < 0
-    
+
   def testJobSchedulerIterNoProcs(self):
     """
     testJobSchedulerIterNoProcs(self):
@@ -490,7 +493,7 @@ class TestMonitor:
       assert_raises(SystemExit,iter.next)
     finally:
       m.databaseConnectionPool.cleanup()
- 
+
 #   def testJobScheduleIter_AllOldProcessors(self):
 #     """
 #     testJobScheduleIter_AllOldProcessors(self):
@@ -620,7 +623,7 @@ class TestMonitor:
       iter = m.unbalancedJobSchedulerIter(cur)
       assert_raises(SystemExit, iter.next)
     finally:
-      self.connection.commit()    
+      self.connection.commit()
 
   def testUnbalancedJobSchedulerIter_SomeOldProcs(self):
     """
@@ -753,7 +756,7 @@ class TestMonitor:
         assert  x[1] in failSave and not x[1] in successSave, "if we set failure for %s, it is copied to %s"%(x[1],me.config.saveFailedMinidumpsTo)
         assert  x[0] in expectFailSave and not x[0] in expectSuccessSave, "database should match expectatations for id=%s"%(x[0])
         assert not x[1] in remainBehind, "if we did set success state for %s, then it should not remain behind"%(x[1])
-    
+
   def testCleanUpCompletedAndFailedJobs_WithoutSaves(self):
     """
     testCleanUpCompletedAndFailedJobs_WithoutSaves(self):
@@ -814,7 +817,7 @@ class TestMonitor:
         assert not x[0] in expectFailSave and x[0] in expectSuccessSave, "database should match expectatations for id=%s"%(x[0])
       elif False == x[2]:
         assert x[0] in expectFailSave and not x[0] in expectSuccessSave, "database should match expectatations for id=%s"%(x[0])
-    
+
   def testCleanUpDeadProcessors_AllDead(self):
     """
     testCleanUpDeadProcessors_AllDead(self):
@@ -879,7 +882,7 @@ class TestMonitor:
       self.markLog()
     finally:
       m.databaseConnectionPool.cleanup()
-      
+
   def testQueuePriorityJob(self):
     """
     testQueuePriorityJob(self):
@@ -931,7 +934,7 @@ class TestMonitor:
         assert eachPriorityJobCount[id] == count, 'Expected that the count %s added to id %s matches %s found'%(eachPriorityJobCount[id],id,count)
     finally:
       m.databaseConnectionPool.cleanup()
-      
+
   def testGetPriorityUuids(self):
     """
     testGetPriorityUuids(self):
@@ -949,7 +952,7 @@ class TestMonitor:
     count = len(m.getPriorityUuids(self.connection.cursor()))
     self.connection.commit()
     assert len(data) == count,'expect same count in data as priorityJobs, got %d'%(count)
-    
+
   def testLookForPriorityJobsAlreadyInQueue(self):
     """
     testLookForPriorityJobsAlreadyInQueue(self):
@@ -1019,7 +1022,7 @@ class TestMonitor:
           assert False, 'Expected only IntegrityError from the try block'
     finally:
       m.databaseConnectionPool.cleanup()
-      
+
   def testUuidInJsonDumpStorage(self):
     """
     testUuidInJsonDumpStorage(self):
@@ -1046,7 +1049,7 @@ class TestMonitor:
         continue
       cleanSeg.append(lline)
     assert [] == cleanSeg, "Shouldn't log for success or failure: %s"%cleanSeg
-    
+
   def testLookForPriorityJobsInJsonDumpStorage(self):
     """
     testLookForPriorityJobsInJsonDumpStorage(self):
@@ -1092,7 +1095,7 @@ class TestMonitor:
         assert expectCount == seenCount, 'Expected %s, got %s as count in priority_jobs_%s'%(expectCount,seenCount,id)
     finally:
       m.databaseConnectionPool.cleanup()
-      
+
   def testPriorityJobsNotFound(self):
     """
     testPriorityJobsNotFound(self):

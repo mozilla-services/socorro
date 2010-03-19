@@ -83,6 +83,8 @@ class Database(object):
   #-----------------------------------------------------------------------------------------------------------------
   def __init__(self, config, logger=None):
     super(Database, self).__init__()
+    if 'databasePort' not in config:
+      config['databasePort'] = 5432
     self.dsn = "host=%(databaseHost)s port=%(databasePort)s dbname=%(databaseName)s user=%(databaseUserName)s password=%(databasePassword)s" % config
     self.logger = config.setdefault('logger', None)
     if logger:
@@ -93,7 +95,7 @@ class Database(object):
   #-----------------------------------------------------------------------------------------------------------------
   def connection (self, databaseModule=psycopg2):
     threadName = threading.currentThread().getName()
-    self.logger.info("%s - connecting to database", threadName)
+    #self.logger.debug("%s - connecting to database", threadName)
     #self.logger.info("%s - %s", threadName, self.dsn)
     try:
       return databaseModule.connect(self.dsn)

@@ -11,6 +11,7 @@ import socorro.lib.ConfigurationManager as configurationManager
 
 import socorro.unittest.testlib.dbtestutil as dbtestutil
 import socorro.unittest.testlib.util as tutil
+import socorro.database.database as sdatabase
 
 import socorro.cron.util as cron_util
 import cronTestconfig as testConfig
@@ -55,8 +56,9 @@ def setup_module():
   fileLog.setFormatter(fileLogFormatter)
   me.fileLogger = logging.getLogger("testUtil")
   me.fileLogger.addHandler(fileLog)
-  me.dsn = "host=%s dbname=%s user=%s password=%s" % (me.config.databaseHost,me.config.databaseName,
-                                                      me.config.databaseUserName,me.config.databasePassword)
+  me.database = sdatabase.Database(me.config)
+  #me.dsn = "host=%s dbname=%s user=%s password=%s" % (me.config.databaseHost,me.config.databaseName,
+                                                      #me.config.databaseUserName,me.config.databasePassword)
 
 def teardown_module():
   try:
@@ -67,7 +69,8 @@ def teardown_module():
 class TestUtil(unittest.TestCase):
   def setUp(self):
     global me
-    self.connection = psycopg2.connect(me.dsn)
+    self.connection = me.database.connection()
+    #self.connection = psycopg2.connect(me.dsn)
     self.tableName = 'bunny_test'
 
   def tearDown(self):

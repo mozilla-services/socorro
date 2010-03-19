@@ -11,6 +11,7 @@ from nose.tools import *
 
 import socorro.lib.ConfigurationManager as configurationManager
 import socorro.database.cachedIdAccess as cia
+import socorro.database.database as sdatabase
 
 import socorro.cron.topCrashesBySignature as topcrasher
 
@@ -215,14 +216,16 @@ def createMe():
   fileLog.setFormatter(fileLogFormatter)
   topcrasher.logger.addHandler(fileLog)
   me.logger = topcrasher.logger
-  me.dsn = "host=%(databaseHost)s dbname=%(databaseName)s user=%(databaseUserName)s password=%(databasePassword)s" % (me.config)
+  #me.dsn = "host=%(databaseHost)s dbname=%(databaseName)s user=%(databaseUserName)s password=%(databasePassword)s" % (me.config)
+  me.database = sdatabase.Database(me.config)
 
 class TestTopCrashesBySignature(unittest.TestCase):
   def setUp(self):
     global me
     if not me:
       createMe()
-    self.connection = psycopg2.connect(me.dsn)
+    self.connection = me.database.connection()
+    #self.connection = psycopg2.connect(me.dsn)
     self.testDB = TestDB()
     self.testDB.removeDB(me.config, me.logger)
     self.testDB.createDB(me.config, me.logger)
