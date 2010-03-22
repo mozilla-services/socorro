@@ -86,24 +86,34 @@ class Query_Controller extends Controller {
             'expires'  => time() + ( 60 * 60 )
 	    ));
 
+	$showPluginName = false;
+	$showPluginFilename = false;
 
         if ($params['do_query'] !== FALSE) {
             $reports = $this->common_model->queryTopSignatures($params);
             $signatures = array();
+
             foreach ($reports as $report) {
-		    if (is_null($report->signature)) {
-			$report->{'display_signature'} = Crash::$null_sig;
-			$report->{'display_null_sig_help'} = TRUE;
-		        $report->{'missing_sig_param'} = Crash::$null_sig_code;
-		    } else if(empty($report->signature)) {
-			$report->{'display_signature'} = Crash::$empty_sig;
-			$report->{'display_null_sig_help'} = TRUE;
-		        $report->{'missing_sig_param'} = Crash::$empty_sig_code;
-		    } else {
-			$report->{'display_signature'} = $report->signature;
-			$report->{'display_null_sig_help'} = FALSE;
-		    }		
-	          array_push($signatures, $report->signature);
+		if (is_null($report->signature)) {
+		    $report->{'display_signature'} = Crash::$null_sig;
+		    $report->{'display_null_sig_help'} = TRUE;
+		    $report->{'missing_sig_param'} = Crash::$null_sig_code;
+		} else if(empty($report->signature)) {
+		    $report->{'display_signature'} = Crash::$empty_sig;
+		    $report->{'display_null_sig_help'} = TRUE;
+		    $report->{'missing_sig_param'} = Crash::$empty_sig_code;
+		} else {
+		    $report->{'display_signature'} = $report->signature;
+		    $report->{'display_null_sig_help'} = FALSE;
+		}           
+		if (property_exists($report, 'pluginname') && ! empty($report->pluginname) ||
+                    property_exists($report, 'pluginversion') && ! empty($report->pluginversion)) {
+                    $showPluginName = true;
+                }
+		if (property_exists($report, 'pluginfilename') && ! empty($report->pluginfilename)) {
+                    $showPluginFilename = true;
+                }
+		array_push($signatures, $report->signature);
 	    }
             $rows = $this->bug_model->bugsForSignatures(array_unique($signatures));
 	    $bugzilla = new Bugzilla;
@@ -125,6 +135,8 @@ class Query_Controller extends Controller {
             'params'  => $params,
             'queryTooBroad' => $searchHelper->shouldShowWarning(),
             'reports' => $reports,
+            'showPluginName' => $showPluginName,
+            'showPluginFilename' => $showPluginFilename,
             'sig2bugs' => $signature_to_bugzilla
 	 ));
     }

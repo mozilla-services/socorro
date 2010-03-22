@@ -3,8 +3,11 @@
         <tr>
             <th>Rank</th>
             <th>Signature</th>
-<?php if (array_key_exists('process_type', $params) && 'plugin' == $params['process_type']) { ?>
-            <th>Plugin</th>
+<?php if ($showPluginName) { ?>
+            <th>Plugin Name/Ver</th>
+<?php } ?>
+<?php if ($showPluginFilename) { ?>
+            <th>Plugin Filename</th>
 <?php } ?>
             <?php if (count($platforms) > 1): ?><th>#</th><?php endif ?>
             <?php foreach ($platforms as $platform): ?>
@@ -42,11 +45,12 @@
 			 }
 ?>			
                 </td>
-		<?php if (array_key_exists('process_type', $params) && 'plugin' == $params['process_type']) { ?>
-			    <td><? if (property_exists($report, 'pluginname')) {
-				       out::H($report->pluginname . ' ' . $report->pluginversion);
-				   } ?></td>
-<?php } ?>
+		<?php if ($showPluginName) { ?>
+			    <td><?= out::H($report->pluginname . ' ' . $report->pluginversion) ?></td>
+                <?php } ?>
+		<?php if ($showPluginFilename) { ?>
+			    <td><?= out::H($report->pluginfilename) ?></td>
+                <?php } ?>
                 <?php if (count($platforms) > 1): ?><td><?php out::H($report->count) ?></td><?php endif ?>
                 <?php foreach ($platforms as $platform): ?>
                     <td><?php out::H($report->{'is_'.$platform->id}) ?></td>

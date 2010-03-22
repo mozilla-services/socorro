@@ -87,8 +87,8 @@ class Common_Model extends Model {
         }
 	$extra_group_by = "";
 	if (array_key_exists('process_type', $params) && 'plugin' == $params['process_type']) {
-	    array_push($columns, 'plugins.name AS pluginName, plugins_reports.version AS pluginVersion');
-	    $extra_group_by = "\n, pluginName, pluginVersion\n";
+	    array_push($columns, 'plugins.name AS pluginName, plugins_reports.version AS pluginVersion, plugins.filename AS pluginFilename');
+	    $extra_group_by = "\n, pluginName, pluginVersion, pluginFilename\n";
 	}
 
         list($from_tables, $join_tables, $where) = 
