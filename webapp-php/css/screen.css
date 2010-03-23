@@ -866,6 +866,57 @@ td.in1 ul, td.in2 ul{
     -moz-border-radius: 7px;
 }
 
+.signature-preview {
+    display: block;
+    overflow: hidden;
+    white-space: nowrap;
+    width: 420px;
+}
+tr{ z-index: 50; }
+.signature-popup {
+    background-color: #EEE;
+    border: solid 1px #AAA;
+    width: auto;
+}
+.correlation-preview {
+    display: block;
+    overflow: hidden;
+    white-space: nowrap;
+    width: 200px;
+}
+.correlation-popup {
+    position: absolute;
+    right: 0px;
+    width: auto;
+    background-color: #EEE;
+    border: solid 1px #AAA;
+    z-index: 2;
+}
+.complete {
+    position: absolute;    
+    right: 0px;
+    background-color: #FFF;
+    border: solid 1px #AAA;
+    margin: 1em;
+}
+.correlation-module-preview {
+    width: 320px;
+    overflow: hidden;
+}
+.correlation-module-popup {
+    background-color: #CCC;
+    /* some addons are like 1000px wide */
+    max-width: 600px;
+    overflow: scroll;
+}
+.correlation-module {
+    position: relative;
+    float: left;
+    padding: 1em;
+}
+.correlation-module h3 {
+    font-weight: bold;
+}
 #duration-nav {
     float: right;
 }
@@ -909,6 +960,23 @@ div.expandable-menu, div.each-sparkline {
     background: #080 url('../img/down_arrow.png') no-repeat top right; 
 }
 
+.correlation-cell div div.complete {
+    display: none;
+}
+
+.correlation pre{
+    clear: left;
+}
+.complete h3, .correlation, .cpus, .addons, .modules {
+/*    float: left;
+    clear: left;*/
+}
+.complete h3 {
+    margin: 0.75em 0em 0em 0em;
+}
+.correlation h3 {
+    margin-top: 0.1em;
+}
 
 /**
  * Product / Version dashboards

@@ -38,6 +38,7 @@
  * ***** END LICENSE BLOCK ***** */
  
 require_once(Kohana::find_file('libraries', 'bugzilla', TRUE, 'php'));
+require_once(Kohana::find_file('libraries', 'Correlation', TRUE, 'php'));
 require_once(Kohana::find_file('libraries', 'crash', TRUE, 'php'));
 require_once(Kohana::find_file('libraries', 'release', TRUE, 'php'));
 require_once(Kohana::find_file('libraries', 'timeutil', TRUE, 'php'));
@@ -292,6 +293,8 @@ class Topcrasher_Controller extends Controller {
 		    $top_crasher->{'display_change_percent'} = number_format($top_crasher->changeInPercentOfTotal * 100, 2) . "%";
 
 		    array_push($signatures, $top_crasher->signature);
+
+                    $top_crasher->{'correlation_os'} = Correlation::correlationOsName($top_crasher->win_count, $top_crasher->mac_count, $top_crasher->linux_count);
 		}
 		$top_crasher->trendClass = $this->topcrashers_model->addTrendClass($top_crasher->changeInRank);
         }

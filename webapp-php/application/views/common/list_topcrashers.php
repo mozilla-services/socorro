@@ -1,9 +1,9 @@
 <?php if (count($top_crashers) > 0) { ?>
 <div>
-    Top <?php echo count($top_crashers) ?> Crashing Signatures
+    Top <?php echo count($top_crashers) ?> Crashing Signatures.
     <span class="start-date"><?= $start ?></span> through
     <span class="end-date"><?= $last_updated ?></span>.
-	  The  report covers <span class="percentage" title="<?=$percentTotal?>"><?= number_format($percentTotal * 100, 2)?>%</span> of all <span class="total-num-crashes" title="<?= $total_crashes ?>"><?= number_format($total_crashes) ?></span> crashes during this period. Graphs below are dual-axis, having <strong>Count</strong> (Number of Crashes) on the left X axis and <strong>Percent</strong> of total of Crashes on the right X axis. 
+	  The  report covers <span class="percentage" title="<?=$percentTotal?>"><?= number_format($percentTotal * 100, 2)?>%</span> of all <?= $percentTotal > 0 ? round($total_crashes / $percentTotal) : $total_crashes ?> crashes during this period. Graphs below are dual-axis, having <strong>Count</strong> (Number of Crashes) on the left X axis and <strong>Percent</strong> of total of Crashes on the right X axis. 
 	<div id="duration-nav">
   	  <h3>Other Periods:</h3>
   	  <ul>
@@ -26,7 +26,9 @@
            <?php if (isset($sig2bugs)) {?>
                <th class="bugzilla_numbers">Bugzilla Ids</th>
            <?php } ?>
+                    <th title="Does not imply Causation">Correlation</th>
                 </tr>
+		    
             </thead>
             <tbody>
                 <?php $row = 1 ?>
@@ -49,13 +51,13 @@
                         $link_url =  url::base() . 'report/list?' . html::query_string($sigParams);
                     ?>
                     <tr class="<?php echo ( ($row-1) % 2) == 0 ? 'even' : 'odd' ?>">
-                        <td><?php out::H($row) ?></td>
+                        <td class="rank"><?php out::H($row) ?></td>
                         <td><div class="trend <?= $crasher->trendClass ?>"><?php echo $crasher->changeInRank ?></div></td>
 			 <td><span class="percentOfTotal"><?php out::H($crasher->{'display_percent'}) ?></span></td>
 			 <td><div title="A change of <?php out::H($crasher->{'display_change_percent'})?> from <?php out::H($crasher->{'display_previous_percent'}) ?>"
                                 ><?php out::H($crasher->{'display_change_percent'}) ?></div></td>
 			 <td><a class="signature" href="<?php out::H($link_url) ?>" 
-                                title="View reports with this crasher."><?php out::H($crasher->{'display_signature'}) ?></a><?php
+                                title="View reports with this crasher."><span><?php out::H($crasher->{'display_signature'}) ?></span></a><?php
 			 if ($crasher->{'display_null_sig_help'}) {
 			     echo " <a href='http://code.google.com/p/socorro/wiki/NullOrEmptySignatures' class='inline-help'>Learn More</a> ";
 			 }
@@ -92,9 +94,21 @@
                          } ?>
                     </td>
                <?php } ?>
-
-
-
+       <?php if ($crasher->{'display_signature'} == Crash::$empty_sig ||
+                 $crasher->{'display_signature'} == Crash::$null_sig) { ?>
+                   <td>N/A</td>
+       <?php } else { ?>
+                   <td class="correlation-cell">
+                       <div id="correlation-panel<?=$row?>">
+                           <div class="top"><span></span></div><a class="correlation-toggler" href="#">Show More</a>
+                           <div class="complete">
+			      <h3>Based on <span class='osname'><?= $crasher->{'correlation_os'} ?></span> crashes</h3>
+			      <div class="correlation-module"><h3>CPU</h3><div class="cpus"></div></div>
+                              <div class="correlation-module"><h3>Add-ons</h3><div class="addons"></div></div>
+                              <div class="correlation-module"><h3>Modules</h3><div class="modules"></div></div>
+                           </div>
+                       </div></td>
+       <?php } ?>
                         <?php $row+=1 ?>
                     </tr>
                 <?php endforeach ?>
@@ -104,13 +118,19 @@
     <!--[if IE]><?php echo html::script('js/flot-0.5/excanvas.pack.js') ?><![endif]-->
     <?php echo html::script(array(
         'js/flot-0.5/jquery.flot.pack.js'
-    ))?>
-    <script type="text/javascript">
+				));
+    $partial_url_path = '/' . join('/', array_map('rawurlencode', array($product, $version))) . '/';
+?>
+    <script type="text/javascript">//<![CDATA[
     var SocAjax = '<?= url::site('topcrasher/plot_signature') . '/' . $product . '/' . $version . '/'; ?>';
 	var SocAjaxStartEnd = '<?= '/' . $start . '/' . $last_updated . '/'; ?>';
     var SocImg = '<?= url::site('img') ?>/';
-    </script>
-    
+     var SocReport = {
+          base: '<?= url::site('/correlation/bulk_ajax') ?>/',
+          path: '<?= $partial_url_path ?>',
+	  loading: 'Loading <?= html::image( array('src' => 'img/loading.png', 'width' => '16', 'height' => '17')) ?>'
+      };
+//]]></script>     
     <?php View::factory('common/csv_link_copy')->render(TRUE); ?>
 <?php } else { ?>
     <p>No results were found.</p>

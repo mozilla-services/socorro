@@ -36,7 +36,7 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-require_once(Kohana::find_file('libraries', 'ErrorHandler', TRUE, 'php'));
+require_once Kohana::find_file('libraries', 'ErrorHandler', true, 'php');
 
 /**
  * Responsible for loading Correlation reports from people.mozilla.com.
@@ -50,7 +50,7 @@ require_once(Kohana::find_file('libraries', 'ErrorHandler', TRUE, 'php'));
  * only load correlation.max_file_size worth of data from
  * each section of a text file.
  *
- * @author     	Austin King <aking@mozilla.com>
+ * @author Austin King <aking@mozilla.com>
  */
 class Correlation
 {
@@ -61,28 +61,28 @@ class Correlation
 
     /**
      * Wrapper which opens text files
-     * @param - url or filename which contains a Correlation report
-     * @param - The maximum data in megabytes we should read for each 
-     *          platform section. -1 for unlimited.
+     *
+     * @param string $uri Url or filename which contains a Correlation report
+     *
      * @see _get
      * @return The Correlation report organized by signature and platforms
      */
-    function getTxt($uri, $max_read = -1)
+    function getTxt($uri)
     {
-	return $this->_get($uri, $max_read, 'fopen', 'fclose');
+        return $this->_get($uri, 'fopen', 'fclose');
     }
 
     /**
      * Wrapper which opens gzip compressed text files
-     * @param - url or filename which contains a Correlation report
-     * @param - The maximum data in megabytes we should read for each 
-     *          platform section. -1 for unlimited.
+     *
+     * @param string $uri Url or filename which contains a Correlation report
+     *
      * @see _get
      * @return The Correlation report organized by signature and platforms
      */
-    function getGz($uri, $max_read = -1)
+    function getGz($uri)
     {
-	return $this->_get($uri, $max_read, 'gzopen', 'gzclose');
+        return $this->_get($uri, 'gzopen', 'gzclose');
     }
 
     /**
@@ -90,158 +90,238 @@ class Correlation
      * A platform section is a line like ^Windows$. Each time a platform section is encountered
      * the reader counter is reset.
      *
-     * @param - locale or remote file
-     * @param - The maximum data in megabytes we should read for each 
-     *          platform section. -1 for unlimited.
-     * @param - callback suitable for opening a file or stream
-     * @param - callback suitable for closing a file or stream
-     * @return The Correlation report organized by signature and platforms
+     * @param string   $uri      Url or remote file
+     * @param callback $open_fn  callback suitable for opening a file or stream
+     * @param callback $close_fn callback suitable for closing a file or stream
+     *
+     * @return array The Correlation report organized by signature and platforms
      *
      * Example: {'nsAppShell::ProcessNextNativeEvent(int)' => 
      *                    {'Mac OS X' => ['99% (6026/6058) vs.   6% (6245/102490) overlapp32.dll',
      *                                    '66% (4010/6058) vs.  20% (20236/102490) MSCTFIME.IME'] }}
      * 
      */
-    function _get($uri, $max_read, $open_fn, $close_fn)
+    function _get($uri, $open_fn, $close_fn)
     {
-	$platforms = array('None', 'Linux', 'Mac OS X', 'Windows', 'Windows NT');
-	$platforms_seen_count = 0;
-	$this->sig2modules = array();
-	$err = new ErrorHandler;
+        $platforms = array('None', 'Linux', 'Mac OS X', 'Windows', 'Windows NT');
+        $platforms_seen_count = 0;
+        $this->sig2modules = array();
+        $err = new ErrorHandler;
 
-	$eh = set_error_handler(array($err, 'handleError'));
-	$file = call_user_func($open_fn, $uri, "r"); //gzopen($uri, "r");
-	$amount_read = 0;
+        $eh = set_error_handler(array($err, 'handleError'));
+        $file = call_user_func($open_fn, $uri, "r"); //gzopen($uri, "r");
 
-	#Kohana::log('info', "Reading with $open_fn");
-	#Kohana::log('info', "file is " . var_dump($file) . Kohana::debug($file));
+        // Stop reading the file once you've seen all the platforms AND you've read the max from each
+        while ($err->error_reading_file === false &&
+              !feof($file)) {
+            $line = fgets($file, 4096);
+            $platform_line = false;
 
-	// Stop reading the file once you've seen all the platforms AND you've read the max from each
-	while($err->error_reading_file === FALSE &&
-	      !feof($file) &&
-	      ($platforms_seen_count < count($platforms) || $amount_read < $max_read)) {
-	    $line = fgets($file, 4096);
-	    $platform_line = FALSE;
+            $ch = substr($line, 0, 1);
+            if ($ch == 'N' || $ch == 'L' || $ch == 'M' || $ch == 'W') {
+                    //cache so we don't check twice
+                    $platform_line = true;
+                    $platforms_seen_count++;
+            }
 
-	    //if (in_array(trim($line), $platforms)) {
-	    $ch = substr($line, 0, 1);
-	    if ($ch == 'N' || $ch == 'L' || $ch == 'M' || $ch == 'W') {
-		    //cache so we don't check twice
-		    $platform_line = TRUE;
-		    $amount_read = 0;
-		    $platforms_seen_count++;
-		    //}
-	    }
-
-	    if ($max_read == -1 || $amount_read < $max_read) {
-		if ($platform_line) {
-		    $this->parsePlatform($line);
-		} else {
-		    $this->parseText($line);
-		}
-
-		$amount_read += strlen($line);;
-	    }
-	}
-	if ($file !== FALSE) {
-	    call_user_func($close_fn, $file);
-	}
+            if ($platform_line) {
+                $this->parsePlatform($line);
+            } else {
+                $this->parseText($line);                   
+            }
+        }
+        if ($file !== false) {
+            call_user_func($close_fn, $file);
+        }
         set_error_handler($eh);
-	if ($err->error_reading_file === TRUE) {
-	    return FALSE;
-	} else {
-	    return $this->sig2modules; 
-	}
+        $results = array();
+
+        foreach ($this->sig2modules as $sig => $oses) {
+            $results[$sig] = array();
+            foreach ($oses as $os => $reasons) {
+                
+                $results[$sig][$os] = array();
+                $crashiest = null;
+                foreach ($reasons as $reason => $details) {
+                    $details['crash_reason'] = $reason;
+                    if (is_null($crashiest)) {
+                        $crashiest = $details;
+                    } else {
+                        if ($crashiest['count'] < $reason['count']) {
+                            $crashiest = $details;
+                        }
+                    }               
+                }
+                // replace the list of reasons with the single most popular crash reason
+                // Example: EXCEPTION_ACCESS_VIOLATION (2724 crashes)
+                $results[$sig][$os] = $crashiest;
+            }
+        }
+        if ($err->error_reading_file === true) {
+            return false;
+        } else {
+            return $results;
+        }
     }
 
     /**
      * Handle a line of text that should be a platform.
      * Platforms create 'sections' of a long text document. We
      * only read 2MB or whatever passed this line.
-     * @param A String such as 'Mac OS X'
+     *
+     * @param string $line A String such as 'Mac OS X'
+     * 
+     * @return void
      */
     public function parsePlatform($line)
     {
-	$this->current_platform = trim($line);
-	$this->current_signature = NULL;
+        $this->current_platform = trim($line);
+        $this->current_signature = null;
     }
 
     /**
      * Handle a line of text from the correlation report
-     * @param A String that is either blank, a signature line, or the body of a report
+     *
+     * @param string $line A String that is either blank, 
+     *                     a signature line, or the body of a report
+     *
+     * @return void
      */
     public function parseText($line)
     {
-	$l = trim($line);
-	if ($this->isSignature($l)) {
-	    $this->parseSignatureLine($l);
-	} else if ($l === '') {
-	    $this->current_signature = NULL;
-	} else {
-	    $this->parseCorrelation($l);
-	}
+        $l = trim($line);
+        if ($this->isSignature($l)) {
+            $this->parseSignatureLine($l);
+        } else if ($l === '') {
+            $this->current_signature = null;
+        } else {
+            $this->parseCorrelation($l);
+        }
     }
 
     /**
      * Checks to see if a given line is a signature.
      * This is largely dependent on the state the parser
      *
-     * @param - A String
+     * @param string $line A line from a correlation report
+     *
      * @return Boolean
      */
     public function isSignature($line)
     {
-	return is_null($this->current_signature) &&
-	       $line !== '';
+        return is_null($this->current_signature) &&
+               $line !== '';
     }
 
     /**
-     * Handle a line of text which contains a Signature and other data.
+     * Handle a line of text which contains a Signature, Crash Reason, and other data.
      * Updates parser state.
-     * @param A String that is a signature line
+     *
+     * @param string $line A Line from the report which contains 
+     *                     a crash signature.
+     *
+     * @return void
      */
     public function parseSignatureLine($line) 
     {
-	$this->current_signature = $this->parseSignature($line);
+        list($this->current_signature, $this->current_reason) = $this->parseSignature($line);
     }
 
     /**
      * Parses the Crashing Signature of a "signature line" of a report
      * Updates parser state. It will skip to the last signature present.
      * 
-     * @param A String that is a signature line
-     * @return - The Signature
+     * @param string $line A signature line from a report
+     *
+     * @return - array with 2 elements: The Signature and The Crash Reason
      */
     public function parseSignature($line)
     {
-	if (strpos($line, '|') === false) {
-	    return $line;
-	} else {
-	    $parts = explode('|', $line);
-	    // Grab the 2nd one from the right, it seems these reports show their SkipList
-	    $i = count($parts) - 2;
+        if (strpos($line, '|') === false) {
+            return array($line, $this->_makeReason('UNKNOWN', -1));
+        } else {
+            $parts = explode('|', $line);
+            // Grab the 2nd one from the right, it seems these reports show their SkipList
+            $i = count($parts) - 2;
+            $r = end($parts);
+            $reason = '';
+            if (strpos($r, ' ') === false) {
+                $reason = $this->_makeReason(trim($r), -1);
+            } else {
+                //EXCEPTION_ACCESS_VIOLATION (2724 crashes)
+                $reasonParts = explode(' ', $r);
+                $reasonCount = -1;
+                if (substr($reasonParts[1], 0, 1)  == '(') {
+                    $reasonCountLength = strlen($reasonParts[1]) - 1;
+                    $reasonCount = intval(substr($reasonParts[1], 1, $reasonCountLength));
+                }
+                $reason = $this->_makeReason(trim($reasonParts[0]), $reasonCount);
+            }
+            return array(trim($parts[$i]), $reason);
+        }
+    }
 
-	    return trim($parts[$i]);
-	}
+    /**
+     * Helper method to make an array that contains the
+     * reason the crash happened and the total count of crashes
+     * 
+     * @param string  $crash_reason A reason Example:
+     *                              EXCEPTION_ACCESS_VIOLATION
+     * @param integer $count        The total count
+     * 
+     * @return array with keys for 'reason' and 'count'
+     */
+    private function _makeReason($crash_reason, $count)
+    {
+        return array('reason' => $crash_reason,
+                     'count' => $count);
     }
 
     /**
      * Handels a line from the body of a correlation report
      * and updates the parsers state.
      *
-     * @param - A String that is the body of a report
+     * @param string $line A line from the body of a report
+     * 
+     * @return void
      */
     public function parseCorrelation($line)
     {
-	$sig = $this->current_signature;
+        $sig = $this->current_signature;
         //$line trim by callee
-	if (! array_key_exists($sig, $this->sig2modules)) {
-	    $this->sig2modules[$sig] = array();
-	}
-	if (! array_key_exists($this->current_platform, $this->sig2modules[$sig])) {
-	    $this->sig2modules[$sig][$this->current_platform] = array();
-	}
-	array_push($this->sig2modules[$sig][$this->current_platform], $line);
+        if (! array_key_exists($sig, $this->sig2modules)) {
+            $this->sig2modules[$sig] = array();
+        }
+        if (! array_key_exists($this->current_platform, $this->sig2modules[$sig])) {
+            $this->sig2modules[$sig][$this->current_platform] = array();
+        }
+        $crash_reason = $this->current_reason['reason'];
+        if (! array_key_exists($crash_reason, $this->sig2modules[$sig][$this->current_platform])) {
+            $this->sig2modules[$sig][$this->current_platform][$crash_reason] = array(
+                'count' => $this->current_reason['count'],
+                'correlations' => array());
+        }
+        array_push($this->sig2modules[$sig][$this->current_platform][$crash_reason]['correlations'], $line);
+    }
+
+    /**
+     * Fragile mapping between OS names in dbaron's reports
+     *
+     * @param int $win_count Total crash count for Windows
+     * @param int $mac_count Total crash count for Mac
+     * @param int $lin_count Total crash count for Linux
+     *
+     * @return string OS name for use with /correlation/ajax
+     */
+    public static function correlationOsName($win_count, $mac_count, $lin_count)
+    {
+        if ($win_count >= $mac_count && $win_count >= $lin_count) {
+            return 'Windows NT';
+        } elseif ($mac_count >= $win_count && $mac_count >= $lin_count) {
+            return 'Mac OS X';
+        } else {
+            return 'Linux';
+        }
     }
 }
 ?>

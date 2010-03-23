@@ -35,6 +35,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 require_once(Kohana::find_file('libraries', 'bugzilla', TRUE, 'php'));
+require_once(Kohana::find_file('libraries', 'Correlation', TRUE, 'php'));
 require_once(Kohana::find_file('libraries', 'crash', TRUE, 'php'));
 require_once(Kohana::find_file('libraries', 'moz_pager', TRUE, 'php'));
 require_once(Kohana::find_file('libraries', 'MY_SearchReportHelper', TRUE, 'php'));
@@ -95,7 +96,7 @@ class Report_Controller extends Controller {
 	    }
 
 	    $builds  = $this->common_model->queryFrequency($params);
-	    
+
 	    if (count($builds) > 1){
 		$crashGraphLabel = "Crashes By Build";
 		$platLabels = $this->generateCrashesByBuild($platforms, $builds); 
@@ -103,7 +104,7 @@ class Report_Controller extends Controller {
 		$crashGraphLabel = "Crashes By OS";
 		$platLabels = $this->generateCrashesByOS($platforms, $builds);
 	    }
-        	
+
 	    $buildTicks = array();
 	    $index = 0;
 	    for($i = count($builds) - 1; $i  >= 0 ; $i = $i - 1) {
@@ -114,6 +115,8 @@ class Report_Controller extends Controller {
 	    $rows = $bug_model->bugsForSignatures(array($params['signature']));
 	    $bugzilla = new Bugzilla;
 	    $signature_to_bugzilla = $bugzilla->signature2bugzilla($rows, Kohana::config('codebases.bugTrackingUrl'));
+
+	    list($correlation_product, $correlation_version) = $this->_correlationProdVers($reports);
 
         $product = (isset($product) && !empty($product)) ? $product : Kohana::config('products.default_product');
 	    $this->setViewData(array(
@@ -139,12 +142,71 @@ class Report_Controller extends Controller {
         	
 		'sig2bugs' => $signature_to_bugzilla,
 		'comments' => $this->common_model->getCommentsByParams($params),
+		'correlation_product' => $correlation_product,
+		'correlation_version' => $correlation_version,
+		'correlation_os' => $this->_correlations($builds),
 		'logged_in' => $logged_in,
 		'url_nav' => url::site('products/'.$product),        
 	    ));
 	}
-
     }
+
+    /**
+     * Determines the crashiest product/version combo for a given set
+     * of crashes. Useful for search results that may have mixed
+     * products and versions
+     *
+     * @param array $reports Database results for top crashes which is an array 
+     *              of objects
+     *
+     * @return array An array of strings. The product and version with the most 
+     *              crashes. Example: ['Firefox', '3.6']
+     */
+    private function _correlationProdVers($reports)
+    {
+        $product_versions = array();
+
+        $crashiest_product = '';
+        $crashiest_version = '';
+        $crashiest_product_version_count = 0;
+
+        foreach ($reports as $report) {
+            $key = $report->product . $report->version;
+            if ( ! array_key_exists($key, $report)) {
+                $product_versions[$key] = 0;
+            }
+            $product_versions[$key]++;
+            if ($product_versions[$key] > $crashiest_product_version_count) {
+                $crashiest_product = $report->product;
+                $crashiest_version = $report->version;
+                $crashiest_product_version_count = $product_versions[$key];
+            }
+        }
+        return array($crashiest_product, $crashiest_version);
+    }
+
+    /**
+     * Determines the crashiest Operating System for a 
+     * given set of builds. Useful for search results which 
+     * may contain multiple builds.
+     *
+     * @param array $builds Database results for builds. An array of objects
+     *
+     * @return string - Correlation Operating System code Example: 'Windows NT'
+     */
+    private function _correlations($builds)
+    {
+        $windows = 0;
+        $mac     = 0;
+        $linux   = 0;
+        foreach($builds as $build) {
+            $windows += $build->count_windows;
+            $mac     += $build->count_mac;
+            $linux   += $build->count_linux;
+        }
+        return Correlation::correlationOsName($windows, $mac, $linux);
+    }
+
     private function _setupDisplaySignature($params)
     {
 	if (array_key_exists('missing_sig', $params) &&
@@ -184,7 +246,7 @@ class Report_Controller extends Controller {
         }
     }
 
-   	/**
+ 	/**
      * Generate crashes by given platforms / builds
      *
 	 * @access 	private
@@ -238,6 +300,8 @@ class Report_Controller extends Controller {
 
     /**
      * Fetch and display a single report.
+     *
+     * Note: Correlation tab is populated via /correlation/ajax/cpu/{product}/{version}/{os_name}/{signature}/
      * 
      * @param 	string 	The uuid
      * @return 	void
@@ -295,11 +359,6 @@ class Report_Controller extends Controller {
         	
 	    	$Extension_Model = new Extension_Model;
 	    	$extensions = $Extension_Model->getExtensionsForReport($uuid, $report->date_processed, $report->product);
-
-		// JavaScript uses these values for slurping in Correlation reports
-		$url_path = '/' . join('/', 
-				    array_map('rawurlencode', 
-				      array($report->product, $report->version, $report->os_name, $report->signature))) . '/';
 
 
         $product = (isset($report->product) && !empty($report->product)) ? $report->product : Kohana::config('products.default_product');

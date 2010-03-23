@@ -9,7 +9,8 @@
     <?php echo html::script(array(
         'js/jquery/plugins/ui/jquery.ui.all.js',
         'js/jquery/plugins/ui/jquery.tablesorter.min.js',
-        'js/flot-0.5/jquery.flot.pack.js'
+        'js/flot-0.5/jquery.flot.pack.js',
+        'js/socorro/report_list.js'
     ))?>
 
   <script type="text/javascript">
@@ -31,7 +32,7 @@
   </style>    
 
 <?php slot::end() ?>
-
+<h1><?= $correlation_os ?></h1>
 <?php if (isset($display_signature)) { ?>
     <h1 class="first">Crash Reports for <?php out::H($display_signature) ?></h1>      
 <?php } ?>
@@ -51,7 +52,8 @@
 <?php if (array_key_exists($params['signature'], $sig2bugs)) { ?>    
 							       <li><a href="#bugzilla"><span>Bugzilla (<?= count($sig2bugs[$params['signature']])?>)</span></a></li>
 <?php } ?>
-		<li><a href="#comments"><span>Comments (<?= count($comments) ?>)</span></a></li>
+	<li><a href="#comments"><span>Comments (<?= count($comments) ?>)</span></a></li>
+        <li><a href="#correlation"><span>Correlations</span></a></li>
     </ul>
     <div id="graph">
       <div class="crashes-by-platform">
@@ -127,6 +129,11 @@
 
 <?php } 
     View::factory('common/comments')->render(TRUE);
+    View::factory('common/correlation', array(
+		      'current_signature' => $params['signature'],
+		      'current_product' => $correlation_product,
+		      'current_version' => $correlation_version,
+		      'current_os' => $correlation_os))->render(TRUE);
 ?>
 
 
@@ -180,6 +187,7 @@
              }
      );
     }//drawPlot
+
 });
 //]]>
 </script>
