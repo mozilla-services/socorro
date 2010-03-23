@@ -913,6 +913,7 @@ tr{ z-index: 50; }
     position: relative;
     float: left;
     padding: 1em;
+    width: 320px;
 }
 .correlation-module h3 {
     font-weight: bold;
