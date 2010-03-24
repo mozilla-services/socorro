@@ -17,6 +17,12 @@ $config['amo_api'] = 'https://services.addons.mozilla.org/';
 $config['amo_url'] = 'http://addons.mozilla.org/';
 
 /**
+ * The amount of time in seconds in which the Alexa topsites file will be valid. Originally set 
+ * to 604,800 seconds (7 days).
+ */
+$config['topsites_validity'] = 604800;
+
+/**
  * The PHP app access the processed crash dump files (jsonz)
  * via an HTTP request. The php_access config variable is a
  * single quoted string which includes the following variables:
