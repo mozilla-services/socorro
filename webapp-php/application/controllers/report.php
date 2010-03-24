@@ -371,7 +371,6 @@ class Report_Controller extends Controller {
         	    'reportJsonZUri' => $reportJsonZUri,
         	    'report' => $report,
         	    'sig2bugs' => $signature_to_bugzilla,
-		    'url_path' => $url_path,
                 'url_nav' => url::site('products/'.$product),
         	));
 	}
