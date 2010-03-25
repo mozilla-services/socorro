@@ -75,6 +75,10 @@ hbasePort.default = 9090
 hbaseSubmissionRate = cm.Option()
 hbaseSubmissionRate.default = 100
 
+# a path to a local file system to use if hbase fails
+hbaseFallbackFS = cm.Option()
+hbaseFallbackFS.default = './'
+
 benchmark = cm.Option()
 benchmark.default = False
 benchmark.fromStringConverter = cm.booleanConverter
