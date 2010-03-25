@@ -20,7 +20,7 @@ day.fromStringConverter = cm.dateTimeConverter
 
 outputPath = cm.Option()
 outputPath.doc = "file system location to put the 'internal/private' output csv file"
-default = '.'
+outputPath.default = '.'
 
 publicOutputPath = cm.Option()
 publicOutputPath.doc = "file system location to put the 'external/public' output csv file"

@@ -1,4 +1,4 @@
-#!/usr/bin/python
+###!/usr/bin/python
 
 import logging
 import copy
@@ -142,10 +142,10 @@ def dailyUrlDump(config):
         if gzippedPublicOutputFile:
           gzippedPublicOutputFile.close()
     finally: # level 1
-      print psy.connectionStatus(databaseConnection)
+      #print psy.connectionStatus(databaseConnection)
       databaseConnectionPool.cleanup()
-      print psy.connectionStatus(databaseConnection)
-      
+      #print psy.connectionStatus(databaseConnection)
+
   except: # level 0
     util.reportExceptionAndContinue(logger)
 
