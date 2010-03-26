@@ -75,11 +75,11 @@ class TopCrashesBySignature(object):
     """
     for r in rows:
       row = lib_util.DotDict((key, value) for key, value in zip(columns, r)) # make a row object addressable by column name
-      logger.debug('%s %s', row.version, row.build)
       # products with a version ending in 'pre' are development builds known as nightlies.
       # the following 'if' block filters out crashes that are not from a nightly build
       # from the last 48 hours
       if row.version[-3:] == 'pre':
+        logger.debug('%s %s', row.version, row.build)
         try:
           buildDateAsCompactString = row.build[:8]
         except TypeError:
