@@ -41,7 +41,7 @@ class TopCrashesBySignature(object):
     storeFacts(fixupCrashData(extractDataForPeriod(startPeriod,endPeriod,data),startPeriod,processingInterval)
   If you prefer to handle the details in your own code, you may mimic or override processIntervals.
   """
-  def __init__(self,configContext,**kwargs):
+  def __init__(self,configContext):
     super(TopCrashesBySignature,self).__init__()
     try:
       assert "databaseHost" in configContext, "databaseHost is missing from the configuration"
@@ -66,7 +66,7 @@ class TopCrashesBySignature(object):
     else:
       self.productVersionSqlRestrictionPhrase = ""
     logger.debug('%s %s', self.productVersionRestriction, self.productVersionSqlRestrictionPhrase)
-    self.startDate,self.deltaDate,self.endDate,self.startWindow, self.deltaWindow, self.endWindow = cron_util.getDateAndWindow(self.configContext,resultTable,self.productVersionRestriction,cursor,logger,**kwargs)
+    self.startDate,self.deltaDate,self.endDate = cron_util.getProcessingDates(self.configContext,resultTable,self.productVersionRestriction,cursor,logger)
 
   def tallyPVpairs(self, rows, columns, startDateAsCompactString, previousDateAsCompactString, summaryCrashes, idCache):
     """
@@ -194,16 +194,17 @@ class TopCrashesBySignature(object):
     self.dateColumnName = kwargs.get('dateColumnName',self.dateColumnName)
     revertDateColumnName = (self.dateColumnName != oldDateColumnName)
     cursor = self.connection.cursor()
+    startWindow,deltaWindow,endWindow = cron_util.getProcessingWindow(self.configContext,resultTable,self.productVersionRestriction,cursor,logger,**kwargs)
     startWindow = self.startDate
     try:
       fullCount = 0
-      while startWindow + self.deltaWindow <= self.endDate:
-        logger.debug("%s - Processing with interval from %s, size=%s)",threading.currentThread().getName(),startWindow,self.deltaWindow)
-        summaryCrashes = self.extractDataForPeriod(startWindow, startWindow+self.deltaWindow, summaryCrashes)
-        data = self.fixupCrashData(summaryCrashes,startWindow+self.deltaWindow,self.deltaWindow)
-        fullCount += self.storeFacts(data, "Start: %s, size=%s"%(startWindow,self.deltaWindow))
+      while startWindow + deltaWindow <= self.endDate:
+        logger.debug("%s - Processing with interval from %s, size=%s)",threading.currentThread().getName(),startWindow,deltaWindow)
+        summaryCrashes = self.extractDataForPeriod(startWindow, startWindow+deltaWindow, summaryCrashes)
+        data = self.fixupCrashData(summaryCrashes,startWindow+deltaWindow,deltaWindow)
+        fullCount += self.storeFacts(data, "Start: %s, size=%s"%(startWindow,deltaWindow))
         summaryCrashes = {}
-        startWindow += self.deltaWindow
+        startWindow += deltaWindow
     finally:
       self.connection.close()
       if revertDateColumnName:

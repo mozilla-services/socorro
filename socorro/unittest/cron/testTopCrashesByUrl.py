@@ -106,28 +106,26 @@ class TestTopCrashesByUrl:
     config = copy.copy(me.config)
 
     # test /w/ 'normal' params
+    t = tcbu.TopCrashesByUrl(config)
     startWindow = datetime.datetime(2008,1,1)
     deltaWindow = datetime.timedelta(days=1)
     endWindow = startWindow + deltaWindow
-    t = tcbu.TopCrashesByUrl(config,deltaWindow=deltaWindow)
-    data = t.countCrashesByUrlInWindow(startWindow = startWindow)
+    data = t.countCrashesByUrlInWindow(startWindow = startWindow, deltaWindow = deltaWindow)
     # the following are JUST regression tests: The data has been only very lightly examined to be sure it makes sense.
     assert 24 ==  len(data), 'This is (just) a regression test. Did you change the data somehow? (%s)'%len(data)
     for d in data:
       assert 1 == d[0]
     # test /w/ small maximumUrls
     config = copy.copy(me.config)
-    startWindow = datetime.datetime(2008,1,1)
-    deltaWindow = endWindow - startWindow
-    t = tcbu.TopCrashesByUrl(config, maximumUrls=50, deltaWindow = deltaWindow)
-    data = t.countCrashesByUrlInWindow(startWindow = startWindow)
+    t = tcbu.TopCrashesByUrl(config, maximumUrls=50)
+    data = t.countCrashesByUrlInWindow(startWindow = datetime.datetime(2008,1,1), endWindow = endWindow)
     assert 24 == len(data), 'This is (just) a regression test. Did you change the data somehow? (%s)'%len(data)
     for d in data:
       assert 1 == d[0]
     # test /w/ minimumHitsPerUrl larger
     config = copy.copy(me.config)
-    t = tcbu.TopCrashesByUrl(config, minimumHitsPerUrl=2, deltaWindow = deltaWindow)
-    data = t.countCrashesByUrlInWindow(startWindow = startWindow)
+    t = tcbu.TopCrashesByUrl(config, minimumHitsPerUrl=2)
+    data = t.countCrashesByUrlInWindow(startWindow = datetime.datetime(2008,1,1),endWindow = endWindow)
     assert 24 == len(data), len(data)
     for d in data:
       assert 1 == d[0]
@@ -136,16 +134,15 @@ class TestTopCrashesByUrl:
     config = copy.copy(me.config)
     halfDay = datetime.timedelta(hours=12)
     t = tcbu.TopCrashesByUrl(config, deltaWindow = halfDay)
-    startWindow = datetime.datetime(2008,1,1)
-    data = t.countCrashesByUrlInWindow(startWindow = startWindow)
+    data = t.countCrashesByUrlInWindow(startWindow = datetime.datetime(2008,1,1))
     assert 12 == len(data), 'This is (just) a regression test. Did you change the data somehow? (%s)'%len(data)
     for d in data:
       assert 1 == d[0]
 
     # test a different day, to be sure we get different data
     config = copy.copy(me.config)
-    t = tcbu.TopCrashesByUrl(config, deltaWindow=deltaWindow)
-    data = t.countCrashesByUrlInWindow(startWindow = datetime.datetime(2008,1,11))
+    t = tcbu.TopCrashesByUrl(config)
+    data = t.countCrashesByUrlInWindow(startWindow = datetime.datetime(2008,1,11),deltaWindow=deltaWindow)
     assert 57 == len(data), 'This is (just) a regression test. Did you change the data somehow? (%s)'%len(data)
     for d in data[:3]:
       assert 2 == d[0]
@@ -198,8 +195,8 @@ class TestTopCrashesByUrl:
     deltaWindow = datetime.timedelta(days=1)
 
     ## On your mark...
-    t = tcbu.TopCrashesByUrl(config,deltaWindow = deltaWindow)
-    data = t.countCrashesByUrlInWindow(startWindow = startWindow)
+    t = tcbu.TopCrashesByUrl(config)
+    data = t.countCrashesByUrlInWindow(startWindow = startWindow, deltaWindow = deltaWindow)
 
     ## assure we have an empty playing field
     cursor.execute("SELECT COUNT(*) from top_crashes_by_url")
@@ -298,8 +295,8 @@ class TestTopCrashesByUrl:
     deltaWindow = datetime.timedelta(days=1)
 
     ## On your mark...
-    t = tcbu.TopCrashesByUrl(config,truncateUrlLength=25,deltaWindow=deltaWindow)
-    data = t.countCrashesByUrlInWindow(startWindow = startWindow)
+    t = tcbu.TopCrashesByUrl(config,truncateUrlLength=25)
+    data = t.countCrashesByUrlInWindow(startWindow = startWindow, deltaWindow = deltaWindow)
 
     ## assure we have an empty playing field
     cursor.execute("SELECT COUNT(*) from top_crashes_by_url")
@@ -364,7 +361,7 @@ class TestTopCrashesByUrl:
     ## Set up
     dbtutil.fillReportsTable(cursor,createUrls=True,multiplier=2,signatureCount=83) # just some data...
     self.connection.commit()
-    t = tcbu.TopCrashesByUrl(config,deltaWindow=datetime.timedelta(days=1))
+    t = tcbu.TopCrashesByUrl(config)
     ## assure we have an empty playing field
     cursor.execute("SELECT COUNT(*) from top_crashes_by_url")
     self.connection.rollback()
@@ -388,8 +385,8 @@ class TestTopCrashesByUrl:
 
     cursor.execute("delete from top_crashes_by_url; delete from top_crashes_by_url_signature; delete from topcrashurlfactsreports")
     self.connection.commit()
-    t = tcbu.TopCrashesByUrl(copy.copy(me.config),deltaWindow=datetime.timedelta(days=1))
-    t.processDateInterval(startDate = datetime.datetime(2008,1,4), endDate=datetime.datetime(2008,1,8), deltaWindow=datetime.timedelta(days=1))
+    t = tcbu.TopCrashesByUrl(copy.copy(me.config))
+    t.processDateInterval(startDate = datetime.datetime(2008,1,4), endDate=datetime.datetime(2008,1,8))
 
     cursor.execute("SELECT COUNT(id) from top_crashes_by_url")
     self.connection.rollback()
@@ -409,8 +406,9 @@ class TestTopCrashesByUrl:
     cursor.execute("delete from top_crashes_by_url; delete from top_crashes_by_url_signature; delete from topcrashurlfactsreports")
     self.connection.commit()
 
-    t = tcbu.TopCrashesByUrl(copy.copy(me.config),deltaWindow=datetime.timedelta(days=1))
-    t.processDateInterval(startDate = datetime.datetime(2008,1,1), endDate=datetime.datetime(2008,3,3), deltaWindow=datetime.timedelta(days=1))
+    t = tcbu.TopCrashesByUrl(copy.copy(me.config))
+    t.processDateInterval(startDate = datetime.datetime(2008,1,1), endDate=datetime.datetime(2008,3,3))
+    
     cursor.execute("SELECT COUNT(id) from top_crashes_by_url")
     self.connection.rollback()
     count = cursor.fetchone()[0]

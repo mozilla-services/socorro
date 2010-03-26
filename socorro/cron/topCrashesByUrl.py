@@ -94,6 +94,7 @@ class TopCrashesByUrl(object):
     configContext.setdefault('fatMaximumUrls',configContext.maximumUrls + configContext.maximumUrls/5)
 
     configContext.setdefault('dateColumn',kwargs.get('dateColumn','date_processed'))
+    self.fixupContextByProcessingDay(configContext)
     self.idCache = None
     try:
       self.productVersionRestriction = cron_util.getProductId(configContext.product, configContext.version, self.connection.cursor(), logger)
@@ -106,22 +107,30 @@ class TopCrashesByUrl(object):
     self.configContext['productVersionSqlRestrictionPhrase'] = self.productVersionSqlRestrictionPhrase
     logger.debug('%s %s', self.productVersionRestriction, self.productVersionSqlRestrictionPhrase)
     logger.info("After constructor, config=\n%s",str(configContext))
-    # put the calculated date and window stuff into self.config
-    kwargs.setdefault('defaultDeltaWindow',defaultDeltaWindow)
-#    ignore = cron_util.getDateAndWindow(self.configContext,resultTable,self.productVersionRestriction,self.connection.cursor(),logger,**kwargs)
 
-  def countCrashesByUrlInWindow(self, startWindow=None):
+  def fixupContextByProcessingDay(self,context):
+    pday = context.get('processingDay')
+    if pday:
+      logger.info("Adjusting startDate and deltaDate per processingDay %s",pday)
+      pday = cm.dateTimeConverter(pday)
+      startDate = datetime.datetime.fromtimestamp(time.mktime(pday.timetuple()))
+      startDate.replace(hour=0,minute=0,second=0,microsecond=0)
+      context['startDate'] = startDate
+      context['deltaDate'] = datetime.timedelta(days=1)
+      context['startWindw'] = startDate
+
+  def countCrashesByUrlInWindow(self,**kwargs):
     """
     Collect the count of all crashes per url within this time window.
     Deliberately ignore platform and os details to get counts per url on a global basis
     return [(count, url),...] for as many as maximumUrls hits within the time window, each with at least minimumHitsPerUrl.
     """
     cur = self.connection.cursor()
-    if not startWindow: # we don't care why
+    windowStart,deltaWindow,endWindow = cron_util.getProcessingWindow(self.configContext,resultTable,self.productVersionRestriction,cur,logger,**kwargs)
+    if not windowStart: # we don't care why
       return []
-    deltaWindow = self.configContext.get('deltaWindow')
-    assert deltaWindow, 'Cannot calculate crash count with deltaWindow="%s"'%deltaWindow
-    selector = {'startDate':startWindow,'endDate':(startWindow+deltaWindow),}
+    self.configContext['deltaWindow'] = deltaWindow
+    selector = {'startDate':windowStart,'endDate':(windowStart + deltaWindow)}
     topUrlSql = """SELECT COUNT(r.id), r.url FROM %(reportsTable)s r
                      JOIN productdims p ON r.product = p.product AND r.version = p.version
                      JOIN product_visibility cfg ON p.id = cfg.productdims_id
@@ -253,10 +262,15 @@ class TopCrashesByUrl(object):
   def processDateInterval(self, **kwargs):
     cursor = self.connection.cursor()
     kwargs.setdefault('defaultDeltaWindow',defaultDeltaWindow)
-    startDate,deltaDate,endDate,startWindow,deltaWindow,endWindow = cron_util.getDateAndWindow(self.configContext, resultTable, self.productVersionRestriction, cursor, logger, **kwargs)
+    startDate,deltaDate,endDate = cron_util.getProcessingDates(self.configContext, resultTable, self.productVersionRestriction, cursor, logger, **kwargs)
+    startWindow,deltaWindow,endWindow = cron_util.getProcessingWindow(self.configContext, resultTable,self.productVersionRestriction,cursor, logger, **kwargs)
     logger.info("Starting loop from %s up to %s step (%s)",startDate.isoformat(),endDate.isoformat(),deltaWindow)
+    if not startWindow:
+      startWindow = startDate
+    if not deltaWindow:
+      deltaWindow = defaultDeltaWindow
     while startWindow + deltaWindow < endDate:
-      data = self.countCrashesByUrlInWindow(startWindow=startWindow)
+      data = self.countCrashesByUrlInWindow(startWindow=startWindow,deltaWindow=deltaWindow)
       if data:
         logger.info("Saving %s items in window starting at %s",len(data),startWindow)
         self.saveData(startWindow,data)
