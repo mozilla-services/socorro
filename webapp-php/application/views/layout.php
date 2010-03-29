@@ -121,6 +121,8 @@
                             href="<?= url::base() ?>daily?p=<?= $chosen_version['product'] ?>&v[]=<?= $chosen_version['version'] ?>">Crashes/User</a></li>
                         <li><a <?php if (isset($nav_selection) && $nav_selection == 'top_crashes') echo 'class="selected"'; ?> 
                              href="<?= url::base() ?>topcrasher/byversion/<?= $chosen_version['product'] ?>/<?= $chosen_version['version'] ?>">Top Crashes</a></li>
+                        <li><a <?php if (isset($nav_selection) && $nav_selection == 'nightlies') echo 'class="selected"'; ?> 
+                             href="<?= url::base() ?>products/<?= $chosen_version['product'] ?><?php if (isset($chosen_version['version']) && !empty($chosen_version)) echo '/versions/'.$chosen_version['version']; ?>/builds">Nightlies</a></li>
                         <li><span class="more">
                              <select id="report" name="report">
                                  <option>More Reports</option>

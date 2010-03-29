@@ -1,0 +1,21 @@
+import socorro.lib.ConfigurationManager as cm
+import datetime
+
+from config.commonconfig import databaseHost
+from config.commonconfig import databasePort
+from config.commonconfig import databaseName
+from config.commonconfig import databaseUserName
+from config.commonconfig import databasePassword
+
+base_url = "http://ftp.mozilla.org/pub/mozilla.org/firefox/nightly/latest-"
+
+platforms = cm.Option()
+platforms.doc = 'a comma-delimited list of platforms'
+platforms.default = 'linux-i686,linux-x86_64,mac,win32'
+platforms.fromStringConverter = lambda x: tuple(x.split(','))
+
+versions = cm.Option()
+versions.doc = 'a comma-delimited list of versions'
+versions.default = 'mozilla-1.9.1,mozilla-1.9.2,mozilla-central' 
+versions.fromStringConverter = lambda x: tuple(x.split(','))
+

@@ -539,6 +539,7 @@ class BugAssociationsTable(Table):
 
 databaseDependenciesForSetup[BugAssociationsTable] = [BugsTable]
 
+
 #=================================================================================================================
 class ServerStatusTable(Table):
   """Define the table 'server_status'"""
@@ -1232,6 +1233,36 @@ class RawAduTable(Table):
                                        """
                                     )
 databaseDependenciesForSetup[RawAduTable] = []
+
+
+#=================================================================================================================
+class BuildsTable(Table):
+  """Define the table 'builds'"""
+  #-----------------------------------------------------------------------------------------------------------------
+  def __init__ (self, logger, **kwargs):
+    super(BuildsTable, self).__init__(name = "builds", logger=logger,
+                                        creationSql = """
+                                            CREATE TABLE builds (
+                                                product text,
+                                                version text,
+                                                platform text,
+                                                buildid BIGINT,
+                                                changeset text,
+                                                filename text,
+                                                date timestamp without time zone default now(),
+                                            CONSTRAINT builds_key UNIQUE (product, version, platform, buildid));
+                                        """)
+    self.insertSql = """INSERT INTO TABLENAME (product, version, platform, buildid, changeset, filename, date) values (%s, %s, %s, %s, %s, %s, %s)"""
+
+  #-----------------------------------------------------------------------------------------------------------------
+  def updateDefinition(self, databaseCursor):
+    if socorro_pg.tablesMatchingPattern(self.name) == []:
+      #this table doesn't exist yet, create it
+      self.create(databaseCursor)
+
+databaseDependenciesForSetup[BuildsTable] = []
+
+
 
 # #=================================================================================================================
 # class TopCrashersTable(Table):

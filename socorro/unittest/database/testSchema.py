@@ -91,6 +91,7 @@ def setup_module():
     schema.UrlDimsTable:[False,set(['urldims'])],
     schema.AlexaTopsitesTable:[False,set(['alexa_topsites'])],
     schema.RawAduTable:[False,set(['raw_adu'])],
+    schema.BuildsTable:[False,set(['builds'])],
     }
   me.expectedTableNames = set()
   for tableStuff in me.hardCodedSchemaClasses.values():

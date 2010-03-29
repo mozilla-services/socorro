@@ -73,6 +73,40 @@ class Products_Controller extends Controller {
     }
     
     /**
+     * Display RSS feeds for nightly builds.
+     *
+     * @param   string  The product name
+     * @param   string  The version number
+     * @param   array   An array of nightly builds
+     * @return  void
+     */
+    public function _buildsRSS($product, $version=null, $builds)
+    {        
+        $title = "Crash Stats for Mozilla Nightly Builds for " . $product;
+        if (isset($version) && !empty($version)) { 
+            $title .= " " . $version;
+        }
+        $info = array("title" => $title);
+
+        $items = array();
+        if (isset($builds) && !empty($builds)) {
+            foreach($builds as $build) {
+                $title = $build->product . ' ' . $build->version . ' - ' . $build->platform . ' - Build ID# ' . $build->buildid;
+                $link = url::base() . 'query/query?build_id=' . html::specialchars($build->buildid) . '&do_query=1';
+                $pubdate = date("r", strtotime($build->date));
+                $items[] = array(
+                    'title' => $title,
+                    'link' => html::specialchars($link),
+                    'description' => $title,
+                    'pubDate' => $pubdate
+                );  
+            }         
+        }
+        echo feed::create($info, $items);
+        exit;
+    }
+    
+    /**
      * Determine which signatures are the top changers
      *
      * @param   array   An array of top crashers
@@ -180,11 +214,15 @@ class Products_Controller extends Controller {
     /**
      * Display the dashboard for a product or a product/version combination.
      *
+     * We're running all products and versions through this method in order to verify that they exist.
+     *
      * @param   string  The name of a product
      * @param   string  The name of a version
+     * @param   string  'builds' if the builds page should be displayed, null if not
+     * @param   bool    True if requesting rss feed of data; false if not
      * @return  void
      */
-    public function index($product=null, $version=null)
+    public function index($product=null, $version=null, $builds=null, $rss=false)
     {
         if (empty($product)) {
             $this->products();
@@ -201,8 +239,12 @@ class Products_Controller extends Controller {
                                 'version' => $version,
                                 'release' => null
                             )
-                        );
-                        $this->productVersion($product, $version);
+                        );                        
+                        if ($builds == 'builds') {
+                            $this->productVersionBuilds($product, $version, $rss);                            
+                        } else {
+                            $this->productVersion($product, $version);
+                        }
                     }
                 }
                 
@@ -217,7 +259,11 @@ class Products_Controller extends Controller {
                         'release' => null
                     )
                 );
-                $this->product($product);
+                if ($builds == 'builds') {
+                    $this->productBuilds($product, $rss);                            
+                } else {
+                    $this->product($product);
+                }
             }
         } else {
             Kohana::show_404();
@@ -303,6 +349,52 @@ class Products_Controller extends Controller {
     }
     
     /**
+     * Display the nightly builds page.
+     *
+     * @param   string  The product name
+     * @param   bool    True if requesting rss feed of data; false if not
+     * @return  void
+     */
+    public function productBuilds($product, $rss=false)
+    {
+        $duration = Kohana::config('products.duration');
+
+        $Build_Model = new Build_Model;
+        $builds = $Build_Model->getBuildsByProduct($product, $duration);
+
+        if ($rss) {
+            $this->_buildsRSS($product, null, $builds);
+        } else {
+            $versions = array();
+            if (isset($builds) && !empty($builds)) {
+                foreach($builds as $build) {
+                    $version = $build->version;
+                    if (!in_array($version, $versions)) {
+                        $versions[] = $version;
+                    }
+                }
+            }
+            
+            $date_end = date('Y-m-d', mktime(0, 0, 0, date("m"), date("d"), date("Y")));
+            $dates = $Build_Model->prepareDates($date_end, $duration);
+            
+            $this->setView('products/product_builds');
+            $this->setViewData(
+                array(
+                    'builds' => $builds,
+                    'dates' => $dates,
+                    'nav_selection' => 'nightlies',
+                    'product' => $product,
+                    'url_base' => url::site('products/'.$product),
+                    'url_nav' => url::site('products/'.$product),
+                    'url_rss' => 'products/'.$product.'/builds.rss',
+                    'versions' => $versions
+                )
+            );
+        }
+    }
+    
+    /**
      * Display the dashboard for a product and version.
      *
      * @param   string  The product name
@@ -365,6 +457,45 @@ class Products_Controller extends Controller {
                'versions' => $versions
    	        )
    	    );
+    }
+    
+    /**
+     * Display the dashboard for the nightly builds for a product and version.
+     *
+     * @param   string  The product name
+     * @param   string  The version number
+     * @param   bool    True if requesting rss feed of data; false if not     
+     * @return  void
+     */
+    public function productVersionBuilds($product, $version, $rss)
+    {
+        $duration = Kohana::config('products.duration');
+
+        $Build_Model = new Build_Model;
+        $builds = $Build_Model->getBuildsByProductAndVersion($product, $version, $duration);
+
+        if ($rss) {
+            $this->_buildsRSS($product, $version, $builds);
+        } else {
+            $date_end = date('Y-m-d');
+            $dates = $Build_Model->prepareDates($date_end, $duration);
+            
+            $this->setView('products/product_version_builds');
+            $this->setViewData(
+                array(
+                    'builds' => $builds,
+                    'dates' => $dates,
+                    'nav_selection' => 'nightlies',
+                    'product' => $product,
+                    'url_base' => url::site('products/'.$product.'/versions/'.$version),
+                    'url_nav' => url::site('products/'.$product),
+                    'url_rss' => 'products/'.$product.'/versions/'.$version.'/builds.rss',
+                    'version' => $version,
+                    'versions' => array($version)         
+                )
+            );
+        }
+
     }
     
     /**

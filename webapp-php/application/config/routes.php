@@ -15,6 +15,18 @@ $config['products/([0-9a-zA-Z.]+)'] =
 $config['products/([0-9a-zA-Z.]+)/versions/([0-9a-zA-Z.]+)'] =
     'products/index/$1/$2';
 
+$config['products/([0-9a-zA-Z.]+)/builds'] =
+    'products/index/$1//builds';
+
+$config['products/([0-9a-zA-Z.]+)/builds.rss'] =
+    'products/index/$1//builds/rss';
+    
+$config['products/([0-9a-zA-Z.]+)/versions/([0-9a-zA-Z.]+)/builds'] =
+    'products/index/$1/$2/builds';
+
+$config['products/([0-9a-zA-Z.]+)/versions/([0-9a-zA-Z.]+)/builds.rss'] =
+    'products/index/$1/$2/builds/rss';
+
 $config['query'] =
     'query/query';
 

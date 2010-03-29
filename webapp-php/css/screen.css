@@ -1204,3 +1204,15 @@ th.bugzilla_numbers {
     max-width: 138px; 
     word-wrap: break-word;  /* Extremely long rants with no spaces break the table... */
 }
+
+
+/**
+ * Nightly Builds 
+ */
+table.builds th, table.builds td {
+    padding: 1em;
+}
+
+a.builds {
+    margin-right: 1em;
+}
