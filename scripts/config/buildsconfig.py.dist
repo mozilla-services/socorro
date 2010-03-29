@@ -7,7 +7,9 @@ from config.commonconfig import databaseName
 from config.commonconfig import databaseUserName
 from config.commonconfig import databasePassword
 
-base_url = "http://ftp.mozilla.org/pub/mozilla.org/firefox/nightly/latest-"
+base_url = cm.Option()
+base_url.doc = 'The base url to use for fetching builds'
+base_url.default = 'http://ftp.mozilla.org/pub/mozilla.org/firefox/nightly/latest-'
 
 platforms = cm.Option()
 platforms.doc = 'a comma-delimited list of platforms'
@@ -19,3 +21,30 @@ versions.doc = 'a comma-delimited list of versions'
 versions.default = 'mozilla-1.9.1,mozilla-1.9.2,mozilla-central' 
 versions.fromStringConverter = lambda x: tuple(x.split(','))
 
+logFilePathname = cm.Option()
+logFilePathname.doc = 'full pathname for the log file'
+logFilePathname.default = './builds.log'
+
+logFileMaximumSize = cm.Option()
+logFileMaximumSize.doc = 'maximum size in bytes of the log file'
+logFileMaximumSize.default = 1000000
+
+logFileMaximumBackupHistory = cm.Option()
+logFileMaximumBackupHistory.doc = 'maximum number of log files to keep'
+logFileMaximumBackupHistory.default = 50
+
+logFileLineFormatString = cm.Option()
+logFileLineFormatString.doc = 'python logging system format for log file entries'
+logFileLineFormatString.default = '%(asctime)s %(levelname)s - %(message)s'
+
+logFileErrorLoggingLevel = cm.Option()
+logFileErrorLoggingLevel.doc = 'logging level for the log file (10 - DEBUG, 20 - INFO, 30 - WARNING, 40 - ERROR, 50 - CRITICAL)'
+logFileErrorLoggingLevel.default = 20
+
+stderrLineFormatString = cm.Option()
+stderrLineFormatString.doc = 'python logging system format for logging to stderr'
+stderrLineFormatString.default = '%(asctime)s %(levelname)s - %(message)s'
+
+stderrErrorLoggingLevel = cm.Option()
+stderrErrorLoggingLevel.doc = 'logging level for the logging to stderr (10 - DEBUG, 20 - INFO, 30 - WARNING, 40 - ERROR, 50 - CRITICAL)'
+stderrErrorLoggingLevel.default = 40
