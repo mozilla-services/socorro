@@ -17,10 +17,19 @@
 
 
 <?php slot::end() ?>
-<h1 id="report-header" class="first"><?php out::H($report->product) ?> <?php out::H($report->version) ?> Crash Report <?php
-if (! empty($report->signature)) {?>
-    [@ <?php out::H($report->signature) ?> ]
-<?php }?></h1>
+
+
+<div class="page-heading">
+	<h2><?php out::H($report->product) ?> <?php out::H($report->version) ?> Crash Report <?php
+    if (! empty($report->signature)) {?>
+        [@ <?php out::H($report->signature) ?> ]
+    <?php }?></h2>
+</div>
+
+
+<div class="panel">
+    <div class="body notitle">
+        
 <div id="sumo-link"><?php
 if (is_null($report->signature) || empty($report->signature)) { ?>
 <a href="http://support.mozilla.com">Visit Mozilla Support for Help</a>
@@ -288,6 +297,12 @@ if (is_null($report->signature) || empty($report->signature)) { ?>
 			    'current_os'        => $report->os_name))->render(TRUE); ?>
 
 </div> <!-- /report-index -->
+
+    
+    </div>
+</div>
+
+
     <?php echo html::script(
 	array(
 	    'js/socorro/report.js',

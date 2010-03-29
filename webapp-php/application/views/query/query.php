@@ -25,7 +25,10 @@
      ))->render(TRUE);
 
     if ($params['do_query'] !== FALSE): ?>
-    <h2 id="query-results-h">Query Results</h2>
+
+    <div class="page-heading">
+    	<h2>Query Results</h2>
+    </div>
 
     <?php 
         View::factory('common/prose_params', array(

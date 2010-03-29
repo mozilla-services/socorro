@@ -2,7 +2,12 @@
   <title>Memcache Status</title>
 <?php slot::end() ?>
 
-<h1>Memcache Status</h1>
+<div class="page-heading">
+	<h2>Memcache Status</h2>
+</div>	
+
+<div class="panel">
+    <div class="body notitle">
 <?php 
 if (is_array($cache_stats)) {
     foreach ($cache_stats  as $server=>$stats) {
@@ -28,3 +33,5 @@ if (is_array($cache_stats)) {
     echo '<p>Memcache is not connected or stats are unavailable.</p>';
 }
 ?>
+    </div>
+</div>

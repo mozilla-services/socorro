@@ -227,10 +227,27 @@ class Controller extends Controller_Core {
     {
         if (is_null($this->_current_products)) {
             $queryFormHelper = new QueryFormHelper;
-	    $p2vs = $queryFormHelper->prepareAllProducts($this->branch_model);
- 	    $this->_current_products = $queryFormHelper->currentProducts($p2vs);
-	}
-	return $this->_current_products;
+            $p2vs = $queryFormHelper->prepareAllProducts($this->branch_model);
+            $this->_current_products = $queryFormHelper->currentProducts($p2vs);
+        }
+
+        // Resort the products array according to product order importance.
+        $product_weights = Kohana::config('products.product_weights');
+        asort($product_weights);
+        
+        $products = array();
+        foreach($product_weights as $product => $weight) {
+            if (isset($this->_current_products[$product])) {
+                $products[$product] = $this->_current_products[$product];
+            }
+        }
+        foreach($this->_current_products as $product => $versions) {
+            if (!isset($products[$product])) {
+                $products[$product] = $versions;
+            }
+        }
+
+        return $products;
     }
 
     private $_older_products;

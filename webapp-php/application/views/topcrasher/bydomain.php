@@ -8,13 +8,21 @@
     ), 'screen')?>
 <?php slot::end() ?>
 
-    <h1 class="first">Top Crashers By Domain for <span id="tcburl-product"><?php out::H($product) ?></span> <span id="tcburl-version"><?php out::H($version)?></span> </h1>
-<div>Below are the top crash signatures by Domain from <?php echo $beginning ?> to <?php echo $ending_on ?></div>
-<p>
-Top Crashers:
-<a class="trend-nav" href="../../bytopsite/<?php echo $product ?>/<?php echo $version ?>">Breakdown by Topsite</a>,
-<a class="trend-nav" href="../../byurl/<?php echo $product ?>/<?php echo $version ?>">Breakdown by URL</a>
-</p>
+
+<div class="page-heading">
+	<h2>Top Crashers By Domain for <span id="tcburl-product"><?php out::H($product) ?></span> <span id="tcburl-version"><?php out::H($version)?></span></h2>
+    <ul class="options">
+        <li><a href="<?php echo url::base(); ?>topcrasher/bydomain/<?php echo $product ?>/<?php echo $version ?>" class="selected">By Domain</a></li>
+        <li><a href="<?php echo url::base(); ?>topcrasher/byversion/<?php echo $product ?>/<?php echo $version ?>">By Signature</a></li>
+        <li><a href="<?php echo url::base(); ?>topcrasher/bytopsite/<?php echo $product ?>/<?php echo $version ?>">By Topsite</a></li>
+        <li><a href="<?php echo url::base(); ?>topcrasher/byurl/<?php echo $product ?>/<?php echo $version ?>">By URL</a></li>
+	</ul>
+</div>
+
+
+<div class="panel">
+    <div class="body notitle">
+        <p>Below are the top crash signatures by Domain from <?php echo $beginning ?> to <?php echo $ending_on ?></p>
 
 <?php
     // Bug# 470525 - no link to domain
@@ -50,6 +58,10 @@ Top Crashers:
           } ?>
   </tbody>
 </table>
+
+    </div>
+</div>
+
   <script type="text/javascript">//<![CDATA[
   var SocTCByURL = {};
   SocTCByURL.urls = <?php echo json_encode( $top_crashers ); ?>;

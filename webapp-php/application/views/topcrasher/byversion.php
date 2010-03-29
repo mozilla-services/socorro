@@ -15,9 +15,20 @@
 
 <?php slot::end() ?>
 
-    <h1 class="first">Top Crashers for <span class="current-product"><?php out::H($product) ?></span> 
-         <span class="current-version"><?php out::H($version) ?></span></h1>
 
+<div class="page-heading">
+	<h2>Top Crashers for <span class="current-product"><?php out::H($product) ?></span> <span class="current-version"><?php out::H($version) ?></span></h2>
+    <ul class="options">
+        <li><a href="<?php echo url::base(); ?>topcrasher/bydomain/<?php echo $product ?>/<?php echo $version ?>">By Domain</a></li>
+        <li><a href="<?php echo url::base(); ?>topcrasher/byversion/<?php echo $product ?>/<?php echo $version ?>" class="selected">By Signature</a></li>
+        <li><a href="<?php echo url::base(); ?>topcrasher/bytopsite/<?php echo $product ?>/<?php echo $version ?>">By Topsite</a></li>
+        <li><a href="<?php echo url::base(); ?>topcrasher/byurl/<?php echo $product ?>/<?php echo $version ?>">By URL</a></li>
+	</ul>
+</div>
+
+
+<div class="panel">
+    <div class="body notitle">
 <?php 
 if ($resp) {
     View::factory('common/list_topcrashers', array(
@@ -28,3 +39,5 @@ if ($resp) {
     View::factory('common/data_access_error')->render(TRUE);
 }
 ?>
+    </div>
+</div>

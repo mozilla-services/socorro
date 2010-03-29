@@ -220,6 +220,7 @@ class Daily_Controller extends Controller {
 				'throttle' => $throttle,
 				'url_csv' => $url_csv,
                 'url_form' => url::site("daily", 'http'),				
+                'url_nav' => url::site('products/'.$product),
                 'versions' => $versions,
 			)
 		);

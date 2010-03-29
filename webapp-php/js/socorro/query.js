@@ -25,6 +25,10 @@ $(document).ready(function() {
           }
       });
 
+      $("#date").focus(function () {
+          $(this).attr('value', '');
+      });
+
       //Process/Plugin area
       $('[name=process_type]').cookieBind();
       $('[name=plugin_field]').cookieBind();

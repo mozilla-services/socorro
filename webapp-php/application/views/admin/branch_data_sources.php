@@ -1,5 +1,11 @@
 
-<h2><a href="<?php echo url::site('admin'); ?>">Admin</a> | Branch Data Sources</h2>
+<div class="page-heading">
+	<h2>Branch Data Sources</h2>
+</div>
+
+
+<div class="panel">
+    <div class="body notitle">
 
 <div class="admin">
 	<p>Manage thy branch data sources here.</p>
@@ -191,3 +197,5 @@
 
 </div>
 
+    </div>
+</div>

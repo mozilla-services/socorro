@@ -10,74 +10,108 @@
     ))?>
 <?php slot::end() ?>
 
-<h1 class="first">Server Status</h1>
+
+<div class="page-heading">
+	<h2>Server Status</h2>
+</div>
+
+
 <?php $stat = $server_stats[0] ?>
 
-<div id="at-a-glance">
-<h2>At a Glance</h2>
-<dl>
-  <dt>Mood</dt>
-  <dd><span class="server-status <?php echo $status ?>"><?php echo ucwords($status); ?></span></dd>
-  <dt>Server Time</dt>
-  <dd><?= date('Y-m-d H:i:s', time()) ?></dd>
-  <dt>Stats Created At</dt>
-  <dd><?php echo $stat->date_created ?></dd>
-  <dt>Waiting Jobs</dt>
-  <dd><?php echo $stat->waiting_job_count ?></dd>
-  <dt>Processors Running</dt>
-  <dd><?php echo $stat->processors_count ?></dd>
-  <dt>Average Seconds to Process</dt>
-  <dd><?php echo $stat->avg_process_sec ?></dd>
-  <dt>Average Wait in Seconds</dt>
-  <dd><?php echo $stat->avg_wait_sec ?></dd>
-  <dt>Recently Completed</dt>
-  <dd><?php echo $stat->date_recently_completed ?></dd>
-  <dt>Oldest Job In Queue</dt>
-  <dd><?php echo $stat->date_oldest_job_queued ?></dd>
-</dl>
+
+<div class="panel">
+    <div class="title">At a Glance</div>
+    <div class="body">
+        <table class="server_status">
+            <tr>
+                <td>Mood</td>
+                <td><span class="server-status <?php echo $status ?>"><?php echo ucwords($status); ?></span></td>
+            </tr>
+            <tr>
+                <td>Server Time</td>
+                <td><?= date('Y-m-d H:i:s', time()) ?></td>
+            </tr>
+            <tr>
+                <td>Stats Created At</td>
+                <td><?php echo $stat->date_created ?></td>                
+            </tr>
+            <tr>
+                <td>Waiting Jobs</td>
+                <td><?php echo $stat->waiting_job_count ?></td>
+            </tr>
+            <tr>
+                <td>Processors Running</td>
+                <td><?php echo $stat->processors_count ?></td>
+            </tr>
+            <tr>
+                <td>Average Seconds to Process</td>
+                <td><?php echo $stat->avg_process_sec ?></td>
+            </tr>
+            <tr>
+                <td>Average Wait in Seconds</td>
+                <td><?php echo $stat->avg_wait_sec ?></td>
+            </tr>
+            <tr>
+                <td>Recently Completed</td>
+                <td><?php echo $stat->date_recently_completed ?></td>
+            </tr>
+            <tr>
+                <td>Oldest Job In Queue</td>
+                <td><?php echo $stat->date_oldest_job_queued ?></td>
+            </tr>
+        </table>
+        
+    </div>
 </div>
 
-<div id="graphs" class="hidden">
-  <h2>Graphs</h2>
-  <div id="graph-chooser-container">
-  <label for="graph-chooser">Choose a graph:</label>
-  <select id="graph-chooser">
-  <option value="server-status-comb">Combined server status</option>
-  <option value="server-status-jobs-wait">Total number of jobs waiting</option>
-  <option value="server-status-proc-count">Total number of processors</option>
-  <option value="server-status-avg-proc">Average time to process a job</option>
-  <option value="server-status-avg-wait">Average time a job waits</option>
-  </select>
-  </div>
-  
-  <div id="server-status-comb">
-    <h3>Combined server status</h3>
-    <div id="server-status-graph-comb"></div>
-    <div class="caption server-plot-label">Combined server status in 5 minute intervals. Measurements on left are for counts and the measurements on the right are in seconds</div>
-  </div>
-  
-  <div id="server-status-jobs-wait">
-    <h3>Total number of jobs waiting</h3>
-    <div id="server-status-graph-jobs-wait"></div>
-  </div>
-  
-  <div id="server-status-proc-count">
-    <h3>Total number of processors</h3>
-    <div id="server-status-graph-proc-count"></div>
-  </div>
-  
-  <div id="server-status-avg-proc">
-    <h3>Average time to process a job</h3>
-    <div id="server-status-graph-avg-proc"></div>
-  </div>
-  
-  <div id="server-status-avg-wait">
-    <h3>Average time a job waits</h3>
-    <div id="server-status-graph-avg-wait"></div>
-  </div>
+<div class="panel">
+    <div class="title">Graphs</div>
+    <div class="body">
+
+        <div id="graph-chooser-container">
+        <label for="graph-chooser">Choose a graph:</label>
+        <select id="graph-chooser">
+        <option value="server-status-comb">Combined server status</option>
+        <option value="server-status-jobs-wait">Total number of jobs waiting</option>
+        <option value="server-status-proc-count">Total number of processors</option>
+        <option value="server-status-avg-proc">Average time to process a job</option>
+        <option value="server-status-avg-wait">Average time a job waits</option>
+        </select>
+        </div>
+        
+        <div id="server-status-comb">
+          <h3>Combined server status</h3>
+          <div id="server-status-graph-comb"></div>
+          <div class="caption server-plot-label">Combined server status in 5 minute intervals. Measurements on left are for counts and the measurements on the right are in seconds</div>
+        </div>
+        
+        <div id="server-status-jobs-wait">
+          <h3>Total number of jobs waiting</h3>
+          <div id="server-status-graph-jobs-wait"></div>
+        </div>
+        
+        <div id="server-status-proc-count">
+          <h3>Total number of processors</h3>
+          <div id="server-status-graph-proc-count"></div>
+        </div>
+        
+        <div id="server-status-avg-proc">
+          <h3>Average time to process a job</h3>
+          <div id="server-status-graph-avg-proc"></div>
+        </div>
+        
+        <div id="server-status-avg-wait">
+          <h3>Average time a job waits</h3>
+          <div id="server-status-graph-avg-wait"></div>
+        </div>
+    </div>
 </div>
 
-<h3 id="server-stats">Latest Raw Stats</h3>
+
+<div class="panel">
+    <div class="title">Latest Raw Stats</div>
+    <div class="body">
+
 <table id="server-stats-table" class="tablesorter">
   <thead>
     <tr>
@@ -104,6 +138,10 @@
   <?php endforeach ?>
   </tbody>
 </table>
+
+    </div>
+</div>
+
 
 <script id="source" type="text/javascript">
 $('#graphs').removeClass('hidden');

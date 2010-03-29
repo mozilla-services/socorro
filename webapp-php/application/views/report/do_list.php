@@ -32,17 +32,27 @@
   </style>    
 
 <?php slot::end() ?>
-<h1><?= $correlation_os ?></h1>
-<?php if (isset($display_signature)) { ?>
-    <h1 class="first">Crash Reports for <?php out::H($display_signature) ?></h1>      
-<?php } ?>
 
+
+<div class="page-heading">
+	<h2><?= $correlation_os ?>
+        <?php if (isset($display_signature)) { ?>
+            - Crash Reports for <?php out::H($display_signature) ?>
+        <?php } ?>	    
+	</h2>
+</div>
+
+<div class="panel">
+    <div class="body notitle">
+        
+<p>
 <?php 
     View::factory('common/prose_params', array(
         'params'    => $params,
         'platforms' => $all_platforms
     ))->render(TRUE) 
 ?>
+</p>
 
 <div id="report-list">
     <ul id="report-list-nav">
@@ -137,7 +147,10 @@
 ?>
 
 
+        </div>
+    </div>
 </div>
+
 
 <!-- end content -->
 <script id="source" type="text/javascript">

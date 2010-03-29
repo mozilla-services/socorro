@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" dir="ltr">
+<html class="production">
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
     <link href="<?php echo url::base() ?>css/screen.css" rel="stylesheet" type="text/css" media="screen" />
@@ -44,7 +44,9 @@
                             echo ' class="selected"'; 
                         } 
                     ?>
-                ><span><?php out::H($product); ?></span></a>
+                ><span><?php out::H($product); ?><?php /* Commented out in https://bugzilla.mozilla.org/show_bug.cgi?id=546773     &#9662; */ ?></span></a>
+                
+                <?php /* Commented out in https://bugzilla.mozilla.org/show_bug.cgi?id=546773
                 
                 <?php if ($chosen_version['product'] != $product) { ?>
                 <ul class="dropdown">
@@ -59,6 +61,7 @@
 		            <li><a href="<?php echo url::base() ?>products/<?php out::H($product); ?>"><?php out::H($product); ?> <span>All Versions</span></a></li>
 			    </ul>
 			    <?php } ?>
+			    <?php */ ?>
 			    
 			</li>
         <?php } ?>
@@ -120,16 +123,12 @@
                         <li><a <?php if (isset($nav_selection) && $nav_selection == 'crashes_user') echo 'class="selected"'; ?> 
                             href="<?= url::base() ?>daily?p=<?= $chosen_version['product'] ?>&v[]=<?= $chosen_version['version'] ?>">Crashes/User</a></li>
                         <li><a <?php if (isset($nav_selection) && $nav_selection == 'top_crashes') echo 'class="selected"'; ?> 
-                             href="<?= url::base() ?>topcrasher/byversion/<?= $chosen_version['product'] ?>/<?= $chosen_version['version'] ?>">Top Crashes</a></li>
+                            href="<?= url::base() ?>topcrasher/byversion/<?= $chosen_version['product'] ?>/<?= $chosen_version['version'] ?>">Top Crashes</a></li>
                         <li><a <?php if (isset($nav_selection) && $nav_selection == 'nightlies') echo 'class="selected"'; ?> 
-                             href="<?= url::base() ?>products/<?= $chosen_version['product'] ?><?php if (isset($chosen_version['version']) && !empty($chosen_version)) echo '/versions/'.$chosen_version['version']; ?>/builds">Nightlies</a></li>
+                            href="<?= url::base() ?>products/<?= $chosen_version['product'] ?><?php if (isset($chosen_version['version']) && !empty($chosen_version)) echo '/versions/'.$chosen_version['version']; ?>/builds">Nightlies</a></li>
                         <li><span class="more">
-                             <select id="report" name="report">
+                            <select id="report" name="report">
                                  <option>More Reports</option>
-                        		 <option <?php if (isset($nav_selection) && $nav_selection == 'crashes_user') echo 'selected'; ?> 
-                        		    value="<?= url::base() ?>daily?p=<?= $chosen_version['product'] ?>&v[]=<?= $chosen_version['version'] ?>">Crashes per User</option>
-                        		 <option <?php if (isset($nav_selection) && $nav_selection == 'top_crashes') echo 'selected'; ?> 
-                        		    value="<?= url::base() ?>topcrasher/byversion/<?= $chosen_version['product'] ?>/<?= $chosen_version['version'] ?>">Top Crashes By Signature</option>
                                  <option <?php if (isset($nav_selection) && $nav_selection == 'top_url') echo 'selected'; ?> 
                                     value="<?= url::base() ?>topcrasher/byurl/<?= $chosen_version['product'] ?>/<?= $chosen_version['version'] ?>">Top Crashes By URL</option>
                         		 <option <?php if (isset($nav_selection) && $nav_selection == 'top_domain') echo 'selected'; ?> 

@@ -16,6 +16,17 @@ $config['duration'] = 7;
 $config['default_product'] = 'Firefox';
 
 /**
+ * Weights that describe the order in which the products should be displayed in the navigation header. Will
+ * be ordered lightest to heaviest.
+ */
+$config['product_weights'] = array(
+   'Firefox' => 1,
+   'Thunderbird' => 2,
+   'Camino' => 3,
+   'SeaMonkey' => 4,
+);
+
+/**
  * The number of topchangers to feature on the product dashboard.
  */
 $config['topchangers_count'] = 10;

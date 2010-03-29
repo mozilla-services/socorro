@@ -9,46 +9,55 @@
     ), 'screen')?>
 <?php slot::end() ?>
 
-    <h1 class="first">Top Crashers By URL for <span id="tcburl-product"><?php out::H($product) ?></span> <span id="tcburl-version"><?php out::H($version)?></span> </h1>
-<div>Below are the top crash signatures by URL from <?php echo $beginning ?> to <?php echo $ending_on ?></div>
-<p>
-Top Crashers:
-<a class="trend-nav" href="../../bydomain/<?php echo $product ?>/<?php echo $version ?>">Breakdown by Domain</a>,
-<a class="trend-nav" href="../../bytopsite/<?php echo $product ?>/<?php echo $version ?>">Breakdown by Topsite</a>
-</p>
+<div class="page-heading">
+	<h2>Top Crashers By URL for <span id="tcburl-product"><?php out::H($product) ?></span> <span id="tcburl-version"><?php out::H($version)?></span></h2>
+    <ul class="options">
+        <li><a href="<?php echo url::base(); ?>topcrasher/bydomain/<?php echo $product ?>/<?php echo $version ?>">By Domain</a></li>
+        <li><a href="<?php echo url::base(); ?>topcrasher/byversion/<?php echo $product ?>/<?php echo $version ?>">By Signature</a></li>
+        <li><a href="<?php echo url::base(); ?>topcrasher/bytopsite/<?php echo $product ?>/<?php echo $version ?>">By Topsite</a></li>
+        <li><a href="<?php echo url::base(); ?>topcrasher/byurl/<?php echo $product ?>/<?php echo $version ?>" class="selected">By URL</a></li>
+	</ul>
+</div>
 
 
-<table class="tablesorter">
-	<thead>
-		<tr>
-	  		<th>URL</th>
-	  		<th>&#35;</th>
-	  		<th>Top 1000 Site</th>
-	  	</tr>
-	</thead>
-  <tbody>
-    <?php $row = 0 ?>
-    <?php foreach($top_crashers as $crash){ ?>
-      
-      <tr class="<?php echo ( ($row) % 2) == 0 ? 'even' : 'odd' ?>">
-        <td>
-        <?php if (!strstr($crash->url, '_detected_BLOCKED')) { ?>
-            <div id="url-to-sig<?php echo $row; ?>" class="tcburl-toggler tcburl-urlToggler">+</div> <a id="tcburl-url<?php echo $row ?>" class="tcburl-urlToggler" href="#">Expand <span class="url"><?php out::H($crash->url) ?></span></a> 
-            <a  href="<?php out::H($crash->url) ?>">Open This URL</a>
-        <?php } else { ?>
-            <?php out::h($crash->url); ?>
-        <?php } ?>
-        </td>
-        <td class="url-crash-count"><?php out::H($crash->count)?></td>
-        <td><?php if(isset($crash->rank)) out::H($crash->rank); ?></td>
-      </tr>
-      <tr id="tcburl-urlToggle-row<?php echo $row; ?>" style="display: none"><td colspan="2"><?php 
-					    echo html::image( array('src' => 'img/loading.png', 'width' => '16', 'height' => '17', 
-								    'alt' => 'More Content Loading')); ?></td></tr>
-    <?php $row += 1;
-          } ?>
-  </tbody>
-</table>
+<div class="panel">
+    <div class="body notitle">
+        <p>Below are the top crash signatures by URL from <?php echo $beginning ?> to <?php echo $ending_on ?></p>
+        
+        <table class="tablesorter">
+        	<thead>
+        		<tr>
+        	  		<th>URL</th>
+        	  		<th>&#35;</th>
+        	  		<th>Top 1000 Site</th>
+        	  	</tr>
+        	</thead>
+          <tbody>
+            <?php $row = 0 ?>
+            <?php foreach($top_crashers as $crash){ ?>
+              
+              <tr class="<?php echo ( ($row) % 2) == 0 ? 'even' : 'odd' ?>">
+                <td>
+                <?php if (!strstr($crash->url, '_detected_BLOCKED')) { ?>
+                    <div id="url-to-sig<?php echo $row; ?>" class="tcburl-toggler tcburl-urlToggler">+</div> <a id="tcburl-url<?php echo $row ?>" class="tcburl-urlToggler" href="#">Expand <span class="url"><?php out::H($crash->url) ?></span></a> 
+                    <a  href="<?php out::H($crash->url) ?>">Open This URL</a>
+                <?php } else { ?>
+                    <?php out::h($crash->url); ?>
+                <?php } ?>
+                </td>
+                <td class="url-crash-count"><?php out::H($crash->count)?></td>
+                <td><?php if(isset($crash->rank)) out::H($crash->rank); ?></td>
+              </tr>
+              <tr id="tcburl-urlToggle-row<?php echo $row; ?>" style="display: none"><td colspan="2"><?php 
+        					    echo html::image( array('src' => 'img/loading.png', 'width' => '16', 'height' => '17', 
+        								    'alt' => 'More Content Loading')); ?></td></tr>
+            <?php $row += 1;
+                  } ?>
+          </tbody>
+        </table>
+    </div>
+</div>
+    
   <script type="text/javascript">//<![CDATA[
   var SocTCByURL = {};
   SocTCByURL.urls = <?php echo json_encode( $top_crashers ); ?>;

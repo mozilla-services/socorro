@@ -17,6 +17,7 @@ echo html::script(array(
 	));
 ?>
 
+
 <div class="page-heading">
 	<h2>Crashes per Active Daily User</h2>
 </div>
@@ -42,14 +43,12 @@ echo html::script(array(
 		<h2>Crashes per ADU</h2>
     </div>
 
-    <div class="body">
+	<div class="body">
         <?php if (!empty($graph_data)) { ?>
-		    <div id="sig-history-graph"></div>
-		<?php } else { ?>
-		    <p>No crash data is available for this report.</p>
-		<?php } ?>
-
-        <br class="clear">
+		    <div id="adu-chart"></div>
+        <?php } else { ?>
+            <p>No Active Daily User crash data is available for this report.</p>
+        <?php } ?>
 	</div>
 </div>
 
