@@ -17,8 +17,12 @@ div.daily_search, div.daily_graph {
     float: left;
 }
 
+div.daily_graph {
+    width: 60%;
+}
+
 div.daily_search {
-    width: 360px;
+    width: 30%;
 }
 
 div.daily_graph {
