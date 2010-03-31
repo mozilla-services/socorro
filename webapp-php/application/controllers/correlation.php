@@ -170,7 +170,8 @@ class Correlation_Controller extends Controller
      */
     private function _getCorrelations($report_name, $product, $version, $platform, $signature)
     {
-        $day = '20100224';//date('Ymd'); //
+        $day = //'20100224';
+               date('Ymd'); //
         $correlation = new Correlation;
 
         $cache = new Cache(Kohana::config('correlation.caching'));
