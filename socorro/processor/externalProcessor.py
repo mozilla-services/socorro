@@ -120,8 +120,12 @@ class ProcessorWithExternalBreakpad (processor.Processor):
     analyzeReturnedLines = False
     reportUpdateSqlParts = []
     flash_version = None
-    for line in dumpAnalysisLineIterator:
-      line = line.strip()
+    for lineNumber, line in enumerate(dumpAnalysisLineIterator):
+      try:
+        line = unicode(line.strip())
+      except UnicodeDecodeError, x:
+        processorErrorMessages.append('Cannot parse header line #%d because "%s"' % (lineNumber, str(x)))
+        continue
       # empty line separates header data from thread data
       if line == '':
         break
@@ -188,7 +192,7 @@ class ProcessorWithExternalBreakpad (processor.Processor):
     if not flash_version:
       flash_version = '[blank]'
     reportUpdateValues['flash_version'] = flash_version
-      
+
     return reportUpdateValues
 
 #-----------------------------------------------------------------------------------------------------------------
@@ -207,7 +211,7 @@ class ProcessorWithExternalBreakpad (processor.Processor):
     else:
       version = None
     return version
-  
+
 #-----------------------------------------------------------------------------------------------------------------
   def analyzeFrames(self, reportId, dumpAnalysisLineIterator, databaseCursor, date_processed, crashedThread, processorErrorMessages):
     """ After the header information, the dump file consists of just frame information.  This function
