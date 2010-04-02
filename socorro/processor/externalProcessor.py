@@ -195,7 +195,10 @@ class ProcessorWithExternalBreakpad (processor.Processor):
   flashRE = re.compile(r'NPSWF32\.dll|libflashplayer(.*)\.(.*)|Flash ?Player-?(.*)')
   def getVersionIfFlashModule(self,moduleData):
     """If (we recognize this module as Flash and figure out a version): Returns version; else (None or '')"""
-    module,filename,version,debugFilename,debugId = moduleData[:5]
+    try:
+      module,filename,version,debugFilename,debugId = moduleData[:5]
+    except ValueError:
+      return None
     m = ProcessorWithExternalBreakpad.flashRE.match(filename)
     if m:
       if not version:
