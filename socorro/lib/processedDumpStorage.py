@@ -83,7 +83,7 @@ class ProcessedDumpStorage(socorro_dumpStorage.DumpStorage):
     """
     fh = self.newEntry(ooid, timestamp)
     try:
-      simplejson.dump(dumpObject,fh)
+      simplejson.dump(dumpObject, fh, ensure_ascii=False) #sometimes there are some non-ascii chars in a dump
     finally:
       fh.close()
 
