@@ -106,7 +106,7 @@ class TestUtil(unittest.TestCase):
       assert(expected == citer.next())
       expected += 1
       if expected == max: break
-    assert(data == ci.cache)
+    assert(data == ci.cache), 'expected %s but got: %s' % (data, ci.cache)
     assert(0 == len(ci.secondaryLimitedSizeCache))
 
     # start over, using secondary cache instead

@@ -166,6 +166,29 @@ class CachingIterator(object):
     self.secondaryCacheSize = 0
     self.secondaryLimitedSizeCache = collections.deque()
 
+#=================================================================================================================
+class StrCachingIterator(CachingIterator):
+  #-----------------------------------------------------------------------------------------------------------------
+  def __init__(self, anIterator):
+    super(StrCachingIterator, self).__init__(anIterator)
+  #-----------------------------------------------------------------------------------------------------------------
+  def __iter__(self):
+    #try:  #to be used in Python 2.5 or greater
+      for x in self.theIterator:
+        y = repr(x)[1:-3]  #warning expecting a '\n' on the end of every line
+        if self.useSecondary:
+          if self.secondaryCacheSize == self.secondaryCacheMaximumSize:
+            self.secondaryLimitedSizeCache.popleft()
+            self.secondaryLimitedSizeCache.append(y)
+          else:
+            self.secondaryLimitedSizeCache.append(y)
+            self.secondaryCacheSize += 1
+        else:
+          self.cache.append(y)
+        yield y
+    #finally:
+    #  self.stopUsingSecondaryCache()
+
 #-----------------------------------------------------------------------------------------------------------------
 import signal
 # Don't know why this isn't available by importing signal, but not.

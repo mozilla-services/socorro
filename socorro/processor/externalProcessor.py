@@ -58,7 +58,7 @@ class ProcessorWithExternalBreakpad (processor.Processor):
     newCommandLine = newCommandLine.replace("SYMBOL_PATHS", symbol_path)
     logger.info("%s - invoking: %s", threading.currentThread().getName(), newCommandLine)
     subprocessHandle = subprocess.Popen(newCommandLine, shell=True, stdout=subprocess.PIPE)
-    return (socorro.lib.util.CachingIterator(subprocessHandle.stdout), subprocessHandle)
+    return (socorro.lib.util.StrCachingIterator(subprocessHandle.stdout), subprocessHandle)
 
 #-----------------------------------------------------------------------------------------------------------------
   def doBreakpadStackDumpAnalysis (self, reportId, uuid, dumpfilePathname, databaseCursor, date_processed, processorErrorMessages):
@@ -121,11 +121,7 @@ class ProcessorWithExternalBreakpad (processor.Processor):
     reportUpdateSqlParts = []
     flash_version = None
     for lineNumber, line in enumerate(dumpAnalysisLineIterator):
-      try:
-        line = unicode(line.strip())
-      except UnicodeDecodeError, x:
-        processorErrorMessages.append('Cannot parse header line #%d because "%s"' % (lineNumber, str(x)))
-        continue
+      line = line.strip()
       # empty line separates header data from thread data
       if line == '':
         break
