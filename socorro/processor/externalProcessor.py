@@ -87,7 +87,7 @@ class ProcessorWithExternalBreakpad (processor.Processor):
       additionalReportValuesAsDict.update(evenMoreReportValuesAsDict)
       for x in dumpAnalysisLineIterator:
         pass  #need to spool out the rest of the stream so the cache doesn't get truncated
-      dumpAnalysisAsString = (''.join(dumpAnalysisLineIterator.cache))
+      dumpAnalysisAsString = ('\n'.join(dumpAnalysisLineIterator.cache))
       additionalReportValuesAsDict["dump"] = dumpAnalysisAsString
     finally:
       dumpAnalysisLineIterator.theIterator.close() #this is really a handle to a file-like object - got to close it
