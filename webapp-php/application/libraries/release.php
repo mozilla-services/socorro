@@ -57,8 +57,11 @@ class Release
     {
         if (strpos($version, 'pre') !== false) {
   	    return self::DEVELOPMENT;
-	} elseif (strpos($version, 'b') !== false ||
-            strpos($version, 'a') !== false) {
+	} elseif (
+            strpos($version, 'b') !== false ||
+            strpos($version, 'a') !== false ||
+            strpos($version, 'p') !== false
+        ) {
   	    return self::MILESTONE;
         } else {
   	    return self::MAJOR;
