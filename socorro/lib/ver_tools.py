@@ -127,7 +127,7 @@ def normalize(version_string, max_version_parts=4):
         except Exception, x:
             raise NotAVersionException(version_string)
         version_list.extend(t(x) for x, t in zip(groups, _normalize_fn_list))
-    version_list.extend(_padding_list * (max_version_parts - part_count))
+    version_list.extend(_padding_list * (max_version_parts - part_count - 1))
     return version_list
 
 @memoize(1000)

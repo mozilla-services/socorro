@@ -15,6 +15,7 @@ except ImportError:
 import socorro.lib.ooid as ooid
 import socorro.lib.util as sutil
 import socorro.lib.JsonDumpStorage as jds
+import socorro.lib.ver_tools as vtl
 
 import socorro.hbase.hbaseClient as hbc
 
@@ -209,70 +210,10 @@ class CrashStorageSystemForNFS(CrashStorageSystem):
     return False
 
   #-----------------------------------------------------------------------------------------------------------------
-  def normalizeVersionToInt(self, version_string):
-    try:
-      return self.normalizedVersionDict[version_string]
-    except KeyError:
-      # replace \d+\+ with $1++
-      match = re.search(pattern_plus, version_string)
-      if match:
-        (old, ver) = match.groups()
-        replacement = "%dpre0"%(int(ver)+1)
-        version_string = version_string.replace(old, replacement)
-
-      # version_string.replace()
-      match = re.match(pattern, version_string)
-      if match:
-        (major, minor1, minor2, minor3, alpha, alpha_n, pre, pre_n) = match.groups()
-
-        # normalize data
-        major  = int(major)
-        minor1 = int(minor1)
-        if not minor2:
-          minor2 = 0
-        else:
-          minor2 = int(minor2)
-
-        if not minor3:
-          minor3 = 0
-        else:
-          minor3 = int(minor3)
-
-        if alpha == 'a':
-          alpha = 0
-        elif alpha == 'b':
-          alpha = 1
-        else:
-          alpha = 2
-
-        if alpha_n:
-          alpha_n  = int(alpha_n)
-        else:
-          alpha_n = 0
-
-        if pre == 'pre':
-          pre = 0
-        else:
-          pre = 1
-
-        if pre_n:
-          pre_n = int(pre_n)
-        else:
-          pre_n = 0
-
-        int_str = "%02d%02d%02d%02d%d%02d%d%02d"  % (major, minor1, minor2, minor3, alpha, alpha_n, pre, pre_n)
-        self.normalizedVersionDict[version_string] = normalizedVersion = int(int_str)
-        self.normalizedVersionDictEntryCounter += 1
-        if self.normalizedVersionDictEntryCounter > 1000:
-          logger.warning("we've seem more than 1000 different version strings.  This is really suspicous")
-          self.normalizedVersionDict = {}  #reset to avoid eating up all the memory
-        return normalizedVersion
-
-  #-----------------------------------------------------------------------------------------------------------------
   def understandsRefusal (self, jsonData):
     try:
       #logger.debug('understandsRefusal - %s, %s, %s, %s, %s', jsonData['ProductName'], jsonData['Version'], self.config.minimalVersionForUnderstandingRefusal[jsonData['ProductName']], self.normalizeVersionToInt(jsonData['Version']), self.normalizeVersionToInt(self.config.minimalVersionForUnderstandingRefusal[jsonData['ProductName']]))
-      return self.normalizeVersionToInt(jsonData['Version']) >= self.normalizeVersionToInt(self.config.minimalVersionForUnderstandingRefusal[jsonData['ProductName']])
+      return vtl.normalize(jsonData['Version']) >= vtl.normalize(self.config.minimalVersionForUnderstandingRefusal[jsonData['ProductName']])
     except KeyError:
       return False
 
