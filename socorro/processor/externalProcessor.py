@@ -188,16 +188,18 @@ class ProcessorWithExternalBreakpad (processor.Processor):
     if not flash_version:
       flash_version = '[blank]'
     reportUpdateValues['flash_version'] = flash_version
-
+    logger.debug("%s -  updated values  %s", threading.currentThread().getName(), reportUpdateValues)
     return reportUpdateValues
 
 #-----------------------------------------------------------------------------------------------------------------
   flashRE = re.compile(r'NPSWF32\.dll|libflashplayer(.*)\.(.*)|Flash ?Player-?(.*)')
   def getVersionIfFlashModule(self,moduleData):
     """If (we recognize this module as Flash and figure out a version): Returns version; else (None or '')"""
+    #logger.debug("%s -  flash?  %s", threading.currentThread().getName(), moduleData)
     try:
       module,filename,version,debugFilename,debugId = moduleData[:5]
     except ValueError:
+      logger.debug("%s - bad module line  %s", threading.currentThread().getName(), moduleData)
       return None
     m = ProcessorWithExternalBreakpad.flashRE.match(filename)
     if m:
@@ -282,9 +284,10 @@ class ProcessorWithExternalBreakpad (processor.Processor):
       logger.warning("%s - %s", threading.currentThread().getName(), message)
     processor_notes = '; '.join(processorErrorMessages)
     databaseCursor.execute("update reports set signature = %%s, processor_notes = %%s where id = %%s and date_processed = timestamp without time zone '%s'" % (date_processed),(signature, processor_notes,reportId))
+    logger.debug ("%s -  topmost_sourcefiles  %s", threading.currentThread().getName(), topmost_sourcefiles)
     return { "processor_notes": processor_notes,
              "signature": signature,
              "truncated": truncated,
-             "topmost_sourcefiles":topmost_sourcefiles,
+             "topmost_filenames":topmost_sourcefiles,
            }
 

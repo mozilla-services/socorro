@@ -311,7 +311,7 @@ class Processor(object):
 
       # Ensure a space after commas
       function = Processor.fixupComma.sub(', ', function)
-      
+
       # normalize template signatures with manifest const integers to 'int': Bug 481445
       function = Processor.fixupInteger.sub(r'\1int\4', function)
 
@@ -624,16 +624,20 @@ class Processor(object):
         flash_version = %%s
       where id = %s and date_processed = timestamp without time zone '%s'
       """ % (reportId,date_processed)
-      topmost_filenames = "|".join(jsonDocument.get('topmost_filenames',[]))
+      #logger.debug("%s - newReportRecordAsDict %s, %s",threadName, newReportRecordAsDict['topmost_filenames'], newReportRecordAsDict['flash_version'])
+      #topmost_filenames = "|".join(jsonDocument.get('topmost_filenames',[]))
+      topmost_filenames = "|".join(newReportRecordAsDict.get('topmost_filenames',[]))
       addons_checked = None
       try:
-        ac = jsonDocument['EMCheckCompatibility']
-        addons_checked = False
+        #ac = jsonDocument['EMCheckCompatibility']
+        ac = newReportRecordAsDict['EMCheckCompatibility']
+        #addons_checked = False
         if ac and not  'false' == ("%s"%ac).lower():
           addons_checked = True
       except:
         pass # leaving it as None if not in the document
-      flash_version = jsonDocument.get('flash_version')
+      #flash_version = jsonDocument.get('flash_version')
+      flash_version = newReportRecordAsDict.get('flash_version')
       infoTuple = (startedDateTime, completedDateTime, newReportRecordAsDict["truncated"], topmost_filenames, addons_checked, flash_version)
       logger.debug("%s - Updated report %s (%s): %s",threadName,reportId,jobUuid,str(infoTuple))
       threadLocalCursor.execute(reportsSql, infoTuple)
@@ -760,7 +764,7 @@ class Processor(object):
       last_crash = int(jsonDocument['SecondsSinceLastCrash'])
     except:
       last_crash = None
-    
+
     newReportRecordAsTuple = (uuid, crash_date, date_processed, product, version, buildID, url, install_age, last_crash, uptime, email, build_date, user_id, user_comments, app_notes, distributor, distributor_version,None,None,None)
     newReportRecordAsDict = dict(x for x in zip(self.reportsTable.columns, newReportRecordAsTuple))
     if not product or not version:
