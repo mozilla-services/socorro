@@ -59,7 +59,7 @@ $config['vcsMappings'] = array(
     ),
     'hg' => array( 
         'hg.mozilla.org/mozilla-central' => 
-            'http://hg.mozilla.org/mozilla-central/index.cgi/annotate/%(revision)s/%(file)s#l%(line)s' 
+            'http://hg.mozilla.org/mozilla-central/annotate/%(revision)s/%(file)s#l%(line)s' 
     )
 );
 
