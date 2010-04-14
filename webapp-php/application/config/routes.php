@@ -57,5 +57,10 @@ $config['report/list'] =
 $config['report/find'] =
     'report/find';
 
-$config['report/index/([0-9a-zA-Z.]+)'] =
+$config['report/index/([0-9a-zA-Z.-]+)'] =
     'report/index/$1';
+
+$config['report/([0-9a-zA-Z.-]+)'] =
+    'report/index/$1';
+
+
