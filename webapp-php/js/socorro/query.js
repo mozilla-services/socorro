@@ -49,7 +49,9 @@ $(document).ready(function() {
           Date.format='yyyy-mm-dd';
           $('.date-pick').datePicker();
           $('.date-pick').dpSetStartDate('2007-01-01');
-          $('#signatureList').tablesorter(); 
+          $('#signatureList').tablesorter(
+              headers: { 0: { sorter: 'digit' }, 2: { sorter: 'digit' }, 3: { sorter: 'digit' }, 4: { sorter: 'digit' }, 5: { sorter: 'digit' }, 6: { sorter: 'digit' } }              
+          ); 
       });
 
     $('#searchform').bind('submit', function(){
