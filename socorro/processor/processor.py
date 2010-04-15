@@ -629,8 +629,8 @@ class Processor(object):
       topmost_filenames = "|".join(newReportRecordAsDict.get('topmost_filenames',[]))
       addons_checked = None
       try:
-        #ac = jsonDocument['EMCheckCompatibility']
-        ac = newReportRecordAsDict['EMCheckCompatibility']
+        ac = jsonDocument['EMCheckCompatibility']
+        #ac = newReportRecordAsDict['EMCheckCompatibility']
         #addons_checked = False
         if ac and not  'false' == ("%s"%ac).lower():
           addons_checked = True
