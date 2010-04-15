@@ -13,7 +13,7 @@ $(document).ready(function () {
         i;
 
     $("#signatureList").tablesorter({
-        headers: { 0: { sorter: false }, 1: { sorter: false }}
+        headers: { 0: { sorter: false }, 1: { sorter: false }, 5: { sorter: 'digit' }, 6: { sorter: 'digit' }, 7: { sorter: 'digit' }, 8: { sorter: 'digit' } }
     });
     $("#signatureList button").click(function (e) {
         var button = $(this),
