@@ -648,13 +648,15 @@ th a.expand {
   display: inline;
   font-size: smaller;
 }
-#frames { margin-top: 1em; }
+
+#frames { 
+  margin-top: 1em; 
+}
+
 #sumo-link { 
-    position: absolute; 
-    top: 0px; 
-    width: 970px; 
-    text-align: right; 
-    margin: 0px auto 25px;
+  float: right;
+  text-align: right; 
+  margin: 0px auto 25px;
 }
 
 #sumo-link a, #sumo-link a:visited {
