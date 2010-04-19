@@ -725,6 +725,7 @@ class Processor(object):
         Notes:    Length <= 1000                                     : in column app_notes
         Distributor: Length <= 20                                    : in column distributor
         Distributor_version: Length <= 20                            : in column distributor_version
+        HangId: uuid-like                                            : in column hangid
     """
     logger.debug("%s - starting insertReportIntoDatabase", threading.currentThread().getName())
     product = Processor.getJsonOrWarn(jsonDocument,'ProductName',processorErrorMessages,None, 30)
@@ -743,8 +744,9 @@ class Processor(object):
     crash_date = datetime.datetime.fromtimestamp(crash_time, Processor.utctz)
     install_age = crash_time - installTime
     email = socorro.lib.util.lookupLimitedStringOrNone(jsonDocument, 'Email', 100)
-    logger.debug ('Email: %s', email)
-    logger.debug ('Email: %s', str(jsonDocument))
+    hangid = jsonDocument.get('HangID',None)
+    logger.debug ('hangid: %s', hangid)
+    #logger.debug ('Email: %s', str(jsonDocument))
     # userId is now deprecated and replace with empty string
     user_id = ""
     uptime = max(0, crash_time - startupTime)
@@ -765,7 +767,7 @@ class Processor(object):
     except:
       last_crash = None
 
-    newReportRecordAsTuple = (uuid, crash_date, date_processed, product, version, buildID, url, install_age, last_crash, uptime, email, build_date, user_id, user_comments, app_notes, distributor, distributor_version,None,None,None)
+    newReportRecordAsTuple = (uuid, crash_date, date_processed, product, version, buildID, url, install_age, last_crash, uptime, email, build_date, user_id, user_comments, app_notes, distributor, distributor_version,None,None,None,hangid)
     newReportRecordAsDict = dict(x for x in zip(self.reportsTable.columns, newReportRecordAsTuple))
     if not product or not version:
       msgTemplate = "%%s - Skipping report: Missing product&version: ["+", ".join(["%s:%%s"%x for x in self.reportsTable.columns])+"]"

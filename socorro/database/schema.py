@@ -323,7 +323,8 @@ class ReportsTable(PartitionedTable):
                                               distributor_version character varying(20),
                                               topmost_filenames TEXT,
                                               addons_checked boolean,
-                                              flash_version TEXT
+                                              flash_version TEXT,
+                                              hangid TEXT
                                           );
                                           --CREATE TRIGGER reports_insert_trigger
                                           --    BEFORE INSERT ON reports
@@ -341,12 +342,13 @@ class ReportsTable(PartitionedTable):
                                           CREATE INDEX %(partitionName)s_build_key ON %(partitionName)s (build);
                                           CREATE INDEX %(partitionName)s_product_version_key ON %(partitionName)s (product, version);
                                           CREATE INDEX %(partitionName)s_signature_date_processed_build_key ON %(partitionName)s (signature, date_processed, build);
+                                          CREATE INDEX %(partitionName)s_hangid_idx ON %(partitionName)s (hangid);
                                           """
                                       )
-    self.columns = ("uuid", "client_crash_date", "date_processed", "product", "version", "build", "url", "install_age", "last_crash", "uptime", "email", "build_date", "user_id", "user_comments", "app_notes", "distributor", "distributor_version", "topmost_filenames", "addons_checked", "flash_version")
+    self.columns = ("uuid", "client_crash_date", "date_processed", "product", "version", "build", "url", "install_age", "last_crash", "uptime", "email", "build_date", "user_id", "user_comments", "app_notes", "distributor", "distributor_version", "topmost_filenames", "addons_checked", "flash_version", "hangid")
     self.insertSql = """insert into TABLENAME
-                            (uuid, client_crash_date, date_processed, product, version, build, url, install_age, last_crash, uptime, email, build_date, user_id, user_comments, app_notes, distributor, distributor_version, topmost_filenames, addons_checked, flash_version) values
-                            (%s,   %s,                %s,             %s,      %s,      %s,    %s,  %s,          %s,         %s,     %s,    %s,         %s,      %s,            %s,        %s,          %s,                  %s,                %s,             %s)"""
+                            (uuid, client_crash_date, date_processed, product, version, build, url, install_age, last_crash, uptime, email, build_date, user_id, user_comments, app_notes, distributor, distributor_version, topmost_filenames, addons_checked, flash_version, hangid) values
+                            (%s,   %s,                %s,             %s,      %s,      %s,    %s,  %s,          %s,         %s,     %s,    %s,         %s,      %s,            %s,        %s,          %s,                  %s,                %s,             %s,            %s)"""
   #-----------------------------------------------------------------------------------------------------------------
   def additionalCreationProcedures(self, databaseCursor):
     pass
@@ -1152,7 +1154,7 @@ class PluginsTable(Table):
 
   def insert(self, databaseCursor, rowTuple=None):
     databaseCursor.execute("insert into plugins (filename, name) values (%s, %s)", rowTuple)
-    
+
 databaseDependenciesForSetup[PluginsTable] = []
 
 #=================================================================================================================
@@ -1225,8 +1227,8 @@ class RawAduTable(Table):
                                          product_os_version text,
                                          product_version text
                                          );
-                                         CREATE INDEX raw_adu_1_idx ON raw_adu (date, 
-                                         product_name, 
+                                         CREATE INDEX raw_adu_1_idx ON raw_adu (date,
+                                         product_name,
                                          product_version,
                                          product_os_platform,
                                          product_os_version);

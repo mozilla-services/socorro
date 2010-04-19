@@ -184,7 +184,7 @@ class TestPartitionedTable:
     # test in this order, because other things depend on reports
     insertRows = [              # uuid,                                 client_crash_date,                 date_processed,            install_age,last_crash,uptime,user_comments, app_notes, distributor, distributor_version,productdims_id,urldims_id
       #[schema.CrashReportsTable,['0bba61c5-dfc3-43e7-dead-8afd20071025',dt.datetime(2007,12,25,5,4,3,21,tz),dt.datetime(2007,12,25,5,4,3,33),10000,100,110,"","","","",1,1]],
-      [schema.ReportsTable, ['0bba61c5-dfc3-43e7-dead-8afd20071025',dt.datetime(2007,12,25,5,4,3,21,tz),dt.datetime(2007,12,25,5,4,3,33),'Firefox','1.0b4', '200403041354','http://www.a.com', 10000,       100,        110,    "",    dt.datetime(2004,3,4,13,54),"",      "",            "",        "",          "",None,None,None]],
+      [schema.ReportsTable, ['0bba61c5-dfc3-43e7-dead-8afd20071025',dt.datetime(2007,12,25,5,4,3,21,tz),dt.datetime(2007,12,25,5,4,3,33),'Firefox','1.0b4', '200403041354','http://www.a.com', 10000,       100,        110,    "",    dt.datetime(2004,3,4,13,54),"",      "",            "",        "",          "",None,None,None,'bogus_hangid']],
       [schema.ExtensionsTable,[1,dt.datetime(2007,12,25,5,4,3,33),1,'extensionid','version']],
       [schema.FramesTable,[1,2,dt.datetime(2007,12,25,5,4,3,33),'somesignature']],
       #[schema.DumpsTable,[1,dt.datetime(2007,12,25,5,4,3,33),"data"]],
