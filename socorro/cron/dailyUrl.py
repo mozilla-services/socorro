@@ -76,7 +76,9 @@ def dailyUrlDump(config):
              and r.os_version LIKE '%%'||adu.product_os_version||'%%') as adu_count, --18
         r.topmost_filenames, --19
         case when (r.addons_checked is NULL) then '[unknown]'when (r.addons_checked) then 'checked' else 'not' end as addons_checked, --20
-        r.flash_version --21
+        r.flash_version, --21
+        r.hangid, --22
+        r.reason --23
       from
         reports r left join productdims pd on r.product = pd.product and r.version = pd.version
       where
