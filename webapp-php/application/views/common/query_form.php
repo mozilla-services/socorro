@@ -9,7 +9,7 @@
         
     <ul>
     <li><label class="basic" for="product">Product</label>
-            <select id="product" name="product" size="4" multiple="multiple">
+            <select id="product" name="product" size="4" multiple="multiple" class="primary">
                 <option value="ALL">All</option>
                 <?php foreach ($all_products as $row): ?>
                     <option value="<?php out::H($row->product) ?>" <?php echo in_array($row->product, $params['product']) ? 'selected="selected"' : '' ?>>
@@ -19,7 +19,7 @@
             </select>
     </li>
     <li><label class="basic" for="version">Version: </label>
-            <select id="version" name="version" size="4" multiple="multiple">
+            <select id="version" name="version" size="4" multiple="multiple" class="primary">
                 <option value="ALL:ALL">All</option>
                 <?php foreach ($all_versions as $row): ?>
                     <?php $row_version  = $row->product . ':' . $row->version; ?>
@@ -30,7 +30,7 @@
             </select>
     </li>
     <li><label class="basic" for="platform">Operating System</label>
-            <select id="platform" name="platform" size="<?php echo count($all_platforms) ?>" multiple="multiple">
+            <select id="platform" name="platform" size="<?php echo count($all_platforms) ?>" multiple="multiple" class="primary">
                 <?php foreach ($all_platforms as $row): ?>
                     <option value="<?php out::H($row->id) ?>" <?php echo in_array($row->id, $params['platform']) ? 'selected="selected"' : '' ?>>
                         <?php out::H($row->name) ?>
