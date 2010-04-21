@@ -119,7 +119,6 @@ class CrashStorageSystemForHBase(CrashStorageSystem):
       self.hbaseConnection.put_json_dump(uuid, jsonData, dump.read())
       return CrashStorageSystem.OK
     except Exception, x:
-      sutil.reportExceptionAndContinue(logger)
       if self.fallbackCrashStorage:
         logger.warning('cannot save %s in hbase, falling back to filesystem', uuid)
         try:
@@ -133,7 +132,8 @@ class CrashStorageSystemForHBase(CrashStorageSystem):
           return CrashStorageSystem.OK
         except Exception, x:
           sutil.reportExceptionAndContinue(logger)
-          print x
+      else:
+        logger.warning('there is no fallback storage for hbase: dropping %s on the floor', uuid)
       return CrashStorageSystem.ERROR
 
 

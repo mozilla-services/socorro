@@ -1371,8 +1371,9 @@ databaseDependenciesForSetup[BuildsTable] = []
 def connectToDatabase(config, logger):
   databaseDSN = "host=%(databaseHost)s dbname=%(databaseName)s user=%(databaseUserName)s password=%(databasePassword)s" % config
   databaseConnection = pg.connect(databaseDSN)
-  databaseCursor = databaseConnection.cursor(cursor_factory=socorro_psy.LoggingCursor)
-  databaseCursor.setLogger(logger)
+  #databaseCursor = databaseConnection.cursor(cursor_factory=socorro_psy.LoggingCursor)
+  #databaseCursor.setLogger(logger)
+  databaseCursor = databaseConnection.cursor()
   return (databaseConnection, databaseCursor)
 
 #-----------------------------------------------------------------------------------------------------------------
