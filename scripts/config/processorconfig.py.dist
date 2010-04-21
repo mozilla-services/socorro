@@ -74,11 +74,13 @@ signalNumber.default = signal.SIGALRM
 
 signatureSentinels = cm.Option()
 signatureSentinels.doc = 'a list of frame signatures that should always be considered top of the stack if present in the stack'
-signatureSentinels.default = ['_purecall']
+signatureSentinels.default = ['_purecall',
+                              ('mozilla::ipc::RPCChannel::Call',
+                                  lambda x: 'CrashReporter::CreatePairedMinidumps(void*, unsigned long, nsAString_internal*, nsILocalFile**, nsILocalFile**)' in x)]
 
 irrelevantSignatureRegEx = cm.Option()
 irrelevantSignatureRegEx.doc = 'a regular expression matching frame signatures that should be ignored when generating an overall signature'
-irrelevantSignatureRegEx.default = '@0x[0-9a-fA-F]{2,}|@0x[1-9a-fA-F]|RaiseException|_CxxThrowException'
+irrelevantSignatureRegEx.default = '@0x[0-9a-fA-F]{2,}|@0x[1-9a-fA-F]|RaiseException|_CxxThrowException|mozilla::ipc::RPCChannel::Call\(IPC::Message\*, IPC::Message\*\)'
 
 prefixSignatureRegEx = cm.Option()
 prefixSignatureRegEx.doc = 'a regular expression matching frame signatures that should always be coupled with the following frame signature when generating an overall signature'

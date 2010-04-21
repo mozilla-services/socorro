@@ -282,11 +282,10 @@ class ProcessorWithExternalBreakpad (processor.Processor):
       message = "%s returned no frame lines for reportid: %s" % (self.config.minidump_stackwalkPathname, reportId)
       processorErrorMessages.append(message)
       logger.warning("%s - %s", threading.currentThread().getName(), message)
-    processor_notes = '; '.join(processorErrorMessages)
-    databaseCursor.execute("update reports set signature = %%s, processor_notes = %%s where id = %%s and date_processed = timestamp without time zone '%s'" % (date_processed),(signature, processor_notes,reportId))
+    #processor_notes = '; '.join(processorErrorMessages)
+    #databaseCursor.execute("update reports set signature = %%s, processor_notes = %%s where id = %%s and date_processed = timestamp without time zone '%s'" % (date_processed),(signature, processor_notes,reportId))
     logger.debug ("%s -  topmost_sourcefiles  %s", threading.currentThread().getName(), topmost_sourcefiles)
-    return { "processor_notes": processor_notes,
-             "signature": signature,
+    return { "signature": signature,
              "truncated": truncated,
              "topmost_filenames":topmost_sourcefiles,
            }

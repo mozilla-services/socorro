@@ -341,6 +341,10 @@ class Processor(object):
     # shorten signatureList to the first signatureSentinel
     sentinelLocations = []
     for aSentinel in self.config.signatureSentinels:
+      if type(aSentinel) == tuple:
+        aSentinel, conditionFn = aSentinel
+        if not conditionFn(signatureList):
+          continue
       try:
         sentinelLocations.append(signatureList.index(aSentinel))
       except ValueError:
@@ -606,6 +610,11 @@ class Processor(object):
 
       try:
         additionalReportValuesAsDict = self.doBreakpadStackDumpAnalysis(reportId, jobUuid, dumpfilePathname, threadLocalCursor, date_processed, processorErrorMessages)
+        try:
+          if newReportRecordAsDict['hangid']:
+            additionalReportValuesAsDict['signature'] = "hang | %s" % additionalReportValuesAsDict['signature']
+        except KeyError:
+          pass
         newReportRecordAsDict.update(additionalReportValuesAsDict)
       finally:
         newReportRecordAsDict["completeddatetime"] = completedDateTime = datetime.datetime.now()
@@ -615,6 +624,8 @@ class Processor(object):
       # Bug 519703: Collect setting for topmost source filename(s), addon compatibility check override, flash version
       reportsSql = """
       update reports set
+        signature = %%s,
+        processor_notes = %%s,
         started_datetime = timestamp without time zone %%s,
         completed_datetime = timestamp without time zone %%s,
         success = True,
@@ -638,7 +649,8 @@ class Processor(object):
         pass # leaving it as None if not in the document
       #flash_version = jsonDocument.get('flash_version')
       flash_version = newReportRecordAsDict.get('flash_version')
-      infoTuple = (startedDateTime, completedDateTime, newReportRecordAsDict["truncated"], topmost_filenames, addons_checked, flash_version)
+      processor_notes = '; '.join(processorErrorMessages)
+      infoTuple = (newReportRecordAsDict['signature'], processor_notes, startedDateTime, completedDateTime, newReportRecordAsDict["truncated"], topmost_filenames, addons_checked, flash_version)
       logger.debug("%s - Updated report %s (%s): %s",threadName,reportId,jobUuid,str(infoTuple))
       threadLocalCursor.execute(reportsSql, infoTuple)
       threadLocalDatabaseConnection.commit()
@@ -745,7 +757,7 @@ class Processor(object):
     install_age = crash_time - installTime
     email = socorro.lib.util.lookupLimitedStringOrNone(jsonDocument, 'Email', 100)
     hangid = jsonDocument.get('HangID',None)
-    logger.debug ('hangid: %s', hangid)
+    #logger.debug ('hangid: %s', hangid)
     #logger.debug ('Email: %s', str(jsonDocument))
     # userId is now deprecated and replace with empty string
     user_id = ""

@@ -440,12 +440,12 @@ class TestProcessorWithExternalBreakpad:
       expected = "%d|%d|module_%x|foo_%X(bar&)|||"%(threadNum,i,i,i)
       assert expected == c, 'Expected "%s" got "%s"'%(expected, c)
       i += 1
-    cur.execute(selectSql,(reportId,))
-    con.commit()
-    reportData = cur.fetchall()[0]
-    sigS = 'foo_%X(bar&)'%0
-    assert sigS == reportData[0], 'Expected "%s", got %s'%(sigS,reportData[0])
-    assert '' == reportData[1], 'Expected "None", got %s'%(reportData[1])
+    #cur.execute(selectSql,(reportId,))
+    #con.commit()
+    #reportData = cur.fetchall()[0]
+    #sigS = 'foo_%X(bar&)'%0
+    #assert sigS == reportData[0], 'Expected "%s", got %s'%(sigS,reportData[0])
+    #assert '' == reportData[1], 'Expected "None", got %s'%(reportData[1])
     cur.execute('select * from frames')
     con.commit()
     frameData = cur.fetchall()
@@ -496,11 +496,11 @@ class TestProcessorWithExternalBreakpad:
     assert 'An unexpected blank line in this dump was ignored' == messages[0], 'but %s'%messages[0]
     clist = [ c for c in dumper.cache ]
     assert clist == frameList, 'but\nclist=%s\nflist=%s'%(str(clist),str(frameList))
-    cur.execute(selectSql,(reportId,))
-    reportData = cur.fetchall()[0]
-    con.commit()
-    assert 'foo_0(bar&)' == reportData[0], 'Expected "foo_0(bar&)", got %s'%(reportData[0])
-    assert messages[0] == reportData[1], 'Expected "None", got %s'%(reportData[1])
+    #cur.execute(selectSql,(reportId,))
+    #reportData = cur.fetchall()[0]
+    #con.commit()
+    #assert 'foo_0(bar&)' == reportData[0], 'Expected "foo_0(bar&)", got %s'%(reportData[0])
+    #assert messages[0] == reportData[1], 'Expected "None", got %s'%(reportData[1])
     cur.execute('select * from frames')
     frameData = cur.fetchall()
     con.commit()
@@ -554,11 +554,12 @@ class TestProcessorWithExternalBreakpad:
       expected = "%d|%d|module_%x|foo_%X(bar&)|||"%(threadNum,expectedValues[i],expectedValues[i],expectedValues[i])
       assert expected == c, 'Expected "%s" got "%s"'%(expected, c)
       i += 1
-    cur.execute(selectSql,(reportId,))
-    reportData = cur.fetchall()[0]
-    con.commit()
-    assert 'foo_0(bar&)' == reportData[0], 'expected "1", got %s'%(str(reportData[0]))
-    assert messages[0] == reportData[1], 'Expected %s, but got %s'%(messages[0],reportData[1])
+    # commented out because the database isn't updated by analyzeFrames anymore
+    #cur.execute(selectSql,(reportId,))
+    #reportData = cur.fetchall()[0]
+    #con.commit()
+    #assert 'foo_0(bar&)' == reportData[0], 'expected "1", got %s'%(str(reportData[0]))
+    #assert messages[0] == reportData[1], 'Expected %s, but got %s'%(messages[0],reportData[1])
 
     cur.execute('select * from frames')
     frameData = cur.fetchall()
@@ -611,11 +612,12 @@ class TestProcessorWithExternalBreakpad:
     expectedThreadList = [0,0,0,0,0,1]
     threadList = [int(x[0]) for x in dumper.cache ]
     assert threadList == expectedThreadList, 'expected %s, but %s'%(str(expectedThreadList),str(threadList))
-    cur.execute(selectSql,(reportId,))
-    reportData = cur.fetchall()[0]
-    con.commit()
-    assert "foo_0(bar&)" == reportData[0], 'but "%s"'%(str(reportData[0]))
-    assert '' == reportData[1], 'but "%s"'%(str(reportData[1]))
+    # commented out because the database isn't updated by analyzeFrames anymore
+    #cur.execute(selectSql,(reportId,))
+    #reportData = cur.fetchall()[0]
+    #con.commit()
+    #assert "foo_0(bar&)" == reportData[0], 'but "%s"'%(str(reportData[0]))
+    #assert '' == reportData[1], 'but "%s"'%(str(reportData[1]))
     cur.execute('select * from frames')
     frameData = cur.fetchall()
     con.commit()

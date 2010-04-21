@@ -27,12 +27,12 @@ import cronTestconfig as testConfig
 def makeBogusReports (connection, cursor, logger):
   # make some bogus data in the reports table
   reportsTable = sch.ReportsTable(logger)
-                    # ( uuid,    client_crash_date,   date_processed,             product,   version,   build,   url,              install_age,   last_crash,   uptime,   email,   build_date,   user_id,   user_comments,   app_notes,   distributor,   distributor_version) values
-  fakeReportData = [ (( "uuid1", None,                dt.datetime(2009, 05, 04),  "bogus",   "1.0",     "xxx",   "http://cnn.com", 100,           14,           10,       None,    None,         None,      "bogus",         "",          "",            ",",None,None,None), "BogusClass::bogus_signature (const char**, void *)"),
-                     (( "uuid2", None,                dt.datetime(2009, 05, 04),  "bogus",   "1.0",     "xxx",   "http://cnn.com", 100,           14,           10,       None,    None,         None,      "bogus",         "",          "",            ",",None,None,None), "js3250.dll@0x6cb96"),
-                     (( "uuid3", None,                dt.datetime(2009, 05, 04),  "bogus",   "1.0",     "xxx",   "http://cnn.com", 100,           14,           10,       None,    None,         None,      "bogus",         "",          "",            ",",None,None,None), "libobjc.A.dylib@0x1568c"),
-                     (( "uuid4", None,                dt.datetime(2009, 05, 04),  "bogus",   "1.0",     "xxx",   "http://cnn.com", 100,           14,           10,       None,    None,         None,      "bogus",         "",          "",            ",",None,None,None), "nanojit::LIns::isTramp()"),
-                     (( "uuid5", None,                dt.datetime(2009, 05, 04),  "bogus",   "1.0",     "xxx",   "http://cnn.com", 100,           14,           10,       None,    None,         None,      "bogus",         "",          "",            ",",None,None,None), "libobjc.A.dylib@0x1568c"),
+                    # ( uuid,    client_crash_date,   date_processed,             product,   version,   build,   url,              install_age,   last_crash,   uptime,   email,   build_date,   user_id,   user_comments,   app_notes,   distributor,   distributor_version, topmost_filenames, addons_checked, flash_version, hangid) values
+  fakeReportData = [ (( "uuid1", None,                dt.datetime(2009, 05, 04),  "bogus",   "1.0",     "xxx",   "http://cnn.com", 100,           14,           10,       None,    None,         None,      "bogus",         "",          "",            ",",                 None,              None,           None,          None), "BogusClass::bogus_signature (const char**, void *)"),
+                     (( "uuid2", None,                dt.datetime(2009, 05, 04),  "bogus",   "1.0",     "xxx",   "http://cnn.com", 100,           14,           10,       None,    None,         None,      "bogus",         "",          "",            ",",                 None,              None,           None,          None), "js3250.dll@0x6cb96"),
+                     (( "uuid3", None,                dt.datetime(2009, 05, 04),  "bogus",   "1.0",     "xxx",   "http://cnn.com", 100,           14,           10,       None,    None,         None,      "bogus",         "",          "",            ",",                 None,              None,           None,          None), "libobjc.A.dylib@0x1568c"),
+                     (( "uuid4", None,                dt.datetime(2009, 05, 04),  "bogus",   "1.0",     "xxx",   "http://cnn.com", 100,           14,           10,       None,    None,         None,      "bogus",         "",          "",            ",",                 None,              None,           None,          None), "nanojit::LIns::isTramp()"),
+                     (( "uuid5", None,                dt.datetime(2009, 05, 04),  "bogus",   "1.0",     "xxx",   "http://cnn.com", 100,           14,           10,       None,    None,         None,      "bogus",         "",          "",            ",",                 None,              None,           None,          None), "libobjc.A.dylib@0x1568c"),
                    ]
   try:
     #altconn = psycopg2.connect(me.dsn)
@@ -106,7 +106,8 @@ def setup_module():
   try:
     me.conn = me.database.connection()
     #me.conn = psycopg2.connect(me.dsn)
-    me.cur = me.conn.cursor(cursor_factory=psy.LoggingCursor)
+    #me.cur = me.conn.cursor(cursor_factory=psy.LoggingCursor)
+    me.cur = me.conn.cursor()
   except Exception, x:
     print "Exception at line 107",type(x),x
     socorro.lib.util.reportExceptionAndAbort(me.fileLogger)
@@ -239,8 +240,9 @@ class TestBugzilla(unittest.TestCase):
     def hasYES(x, y):
       return "YES" in x
 
-    me.cur = me.conn.cursor(cursor_factory=psy.LoggingCursor)
-    me.cur.setLogger(me.fileLogger)
+    me.cur = me.conn.cursor()
+    #me.cur = me.conn.cursor(cursor_factory=psy.LoggingCursor)
+    #me.cur.setLogger(me.fileLogger)
 
     psy.execute(me.cur, "delete from bug_status")
     me.cur.connection.commit()

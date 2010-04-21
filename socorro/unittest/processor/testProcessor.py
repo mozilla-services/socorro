@@ -1124,6 +1124,7 @@ class TestProcessor:
         assert i[5] == None #started
         assert i[6] == None #completed
         assert i[7] == None #success
+      print data1
       for i in data1:
         assert stamp0 < i[5] < stamp1 #started
         assert stamp0 < i[6] < stamp1 #completed
