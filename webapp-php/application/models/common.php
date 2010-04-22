@@ -359,10 +359,10 @@ class Common_Model extends Model {
             } else {
                 $date = $this->db->escape($params['date']);
                 $interval = $this->db->escape($params['range_value'] . ' ' . $params['range_unit']);
-                $where[] = "reports.date_processed BETWEEN CAST($date AS DATE) - CAST($interval AS INTERVAL) AND CAST($date AS DATE)";
+                $where[] = "reports.date_processed BETWEEN CAST($date AS TIMESTAMP WITHOUT TIME ZONE) - CAST($interval AS INTERVAL) AND CAST($date AS TIMESTAMP WITHOUT TIME ZONE)";
             }
         }
-        
+
         return array($from_tables, $join_tables, $where);
     }
 

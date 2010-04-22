@@ -50,24 +50,25 @@
             </p>
             
             <p class="advanced">
-            <label for="date">Before</label>
-            <?php echo form::input(
-            	       array('size' => '20', 'name'=>'date', 'id'=>'date'), 
-                $params['date']
-            )?>
-            
-           <label for="range_value">OR Within Last</label>
-              <?php echo form::input(
-                  array('size' => '2', 'name'=>'range_value', 'id'=>'range_value'), 
-                  $params['range_value']
-              )?>
-              <?php echo form::dropdown(
-                  'range_unit',
-                  array(
-                      'hours'=>'Hours', 'days'=>'Days', 'weeks'=>'Weeks'
-                  ),
-                  $params['range_unit']
-              )?>
+	           <label for="range_value">For the period of </label>
+	              <?php echo form::input(
+	                  array('size' => '2', 'name'=>'range_value', 'id'=>'range_value'), 
+	                  $params['range_value']
+	              )?>
+	              <?php echo form::dropdown(
+	                  'range_unit',
+	                  array(
+	                      'hours'=>'Hours', 'days'=>'Days', 'weeks'=>'Weeks'
+	                  ),
+	                  $params['range_unit']
+	              )?>
+	
+            	<label for="date"> before </label>
+            	<?php echo form::input(
+            		       array('size' => '20', 'name'=>'date', 'id'=>'date'), 
+            	    $params['date']
+            	)?>
+
             </p>
             
             <p class="advanced">

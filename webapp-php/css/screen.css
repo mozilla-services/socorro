@@ -1177,9 +1177,9 @@ div.query_removemargin { /* Removes margin from the main content area */
     padding-bottom: 1em;
 	width: 100%;
 }
-#searchform select {    
-	font-size: 100%;
+#searchform select {
 	width: 12em;
+	font-size: 100%;
 }
 #searchform select.primary {
     height: 6.5em;	
@@ -1240,10 +1240,7 @@ div.query_removemargin { /* Removes margin from the main content area */
 	margin-top: 1em;
 }
 #occurs-date, #date, .wrong-name { 
-	width: 6em;
-	font-style: italic;
-	color: #aaa;
-	text-align: center;
+	width: 11em;
 }
 #within, #range_value, .wrong-name { 
 	width: 2em;

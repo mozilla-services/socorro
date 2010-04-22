@@ -77,6 +77,7 @@ class Query_Controller extends Controller {
         $params = $this->getRequestParameters($searchHelper->defaultParams());
         $searchHelper->normalizeParams( $params );
 
+
 	$this->_updateNavigation($params);
 
         $signature_to_bugzilla = array();
@@ -129,6 +130,9 @@ class Query_Controller extends Controller {
 
         // TODO: redirect if there's one resulting report signature group
 
+        if (empty($params['date'])) {
+            $params['date'] = date('m/d/Y H:i:s');
+        }
 
         $this->setViewData(array(
             'nav_selection' => 'query',
