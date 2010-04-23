@@ -6,6 +6,8 @@ $config['vcsMappings'] = array(
           'http://bonsai.mozilla.org/cvsblame.cgi?file=%(file)s&rev=%(revision)s&mark=%(line)s#%(line)s' 
     ),
     'hg' => array( 
+        'hg.mozilla.org/camino' =>
+	    'http://hg.mozilla.org/camino/annotate/%(revision)s/%(file)s#l%(line)s',
         'hg.mozilla.org/mozilla-central' => 
 	    'http://hg.mozilla.org/mozilla-central/annotate/%(revision)s/%(file)s#l%(line)s',
 	'hg.mozilla.org/releases/mozilla-1.9.1' => 
@@ -23,7 +25,9 @@ $config['vcsMappings'] = array(
         'hg.mozilla.org/comm-central' =>
 	    'http://hg.mozilla.org/comm-central/annotate/%(revision)s/%(file)s#l%(line)s',
         'hg.mozilla.org/releases/comm-1.9.1' =>
-            'http://hg.mozilla.org/releases/comm-1.9.1/annotate/%(revision)s/%(file)s#l%(line)s'
+	    'http://hg.mozilla.org/releases/comm-1.9.1/annotate/%(revision)s/%(file)s#l%(line)s',
+        'hg.mozilla.org/releases/comm-1.9.2' =>
+            'http://hg.mozilla.org/releases/comm-1.9.2/annotate/%(revision)s/%(file)s#l%(line)s'
 ));
 $config['bugTrackingUrl'] = 'https://bugzilla.mozilla.org/show_bug.cgi?id=';
 ?>
