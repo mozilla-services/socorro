@@ -21,4 +21,15 @@ $(document).ready(function () {
         $('#' + t + '-panel').html(SocReport.loading)
                                      .load(SocReport.base + t + SocReport.path);
     });
+    $('#buildid-table').tablesorter(); 
+    $('#reportsList').tablesorter(
+        { textExtraction: 'complex' },
+        { sortList : [[9,1]] },
+        { 
+          headers: {
+            7: { sorter: 'digit' } 
+          }
+        }
+    );
+    $('#report-list-nav').tabs({selected: 2}).show();
 });

@@ -10,17 +10,9 @@
         'js/jquery/plugins/ui/jquery.ui.all.js',
         'js/jquery/plugins/ui/jquery.tablesorter.min.js',
         'js/flot-0.5/jquery.flot.pack.js',
+        'js/socorro/correlation.js',
         'js/socorro/report_list.js'
     ))?>
-
-  <script type="text/javascript">
-
-      $(document).ready(function() { 
-        $('#buildid-table').tablesorter(); 
-        $('#reportsList').tablesorter({sortList:[[9,1]]});
-        $('#report-list-nav').tabs({selected: 2}).show();
-      }); 
-  </script>
 
   <style type="text/css">
    #buildid-outer {
