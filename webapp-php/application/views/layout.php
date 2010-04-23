@@ -2,7 +2,7 @@
 <html class="production">
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <link href="<?php echo url::base() ?>css/screen.css" rel="stylesheet" type="text/css" media="screen" />
+    <link href="<?php echo url::base() ?>css/screen.css?v=1.6.2" rel="stylesheet" type="text/css" media="screen" />
     <link href="<?php echo url::base() ?>favicon.ico" rel="icon" type="image/png" />
     <?php 
     	echo html::script(
