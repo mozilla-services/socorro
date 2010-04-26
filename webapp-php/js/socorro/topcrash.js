@@ -15,7 +15,14 @@ $(document).ready(function () {
     $("#signatureList").tablesorter({
         headers: { 0: { sorter: false }, 1: { sorter: false }, 5: { sorter: 'digit' }, 6: { sorter: 'digit' }, 7: { sorter: 'digit' }, 8: { sorter: 'digit' } }
     });
-    $("#signatureList button").click(function (e) {
+    $("#signatureList tr").hover(function(){
+
+            $('.graph-icon', this).show();
+        }, function(){
+            $('.graph-icon', this).hide();
+    });
+    //$("#signatureList button").click(function (e) {
+      $("#signatureList .graph-icon").click(function (e) {
         var button = $(this),
             sig = button.attr('value'),
             graph = button.parents('tr').find('.sig-history-graph'),

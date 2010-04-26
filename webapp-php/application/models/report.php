@@ -125,8 +125,65 @@ class Report_Model extends Model {
                 return mktime(0, 0, 0, $uuid_date[1], $uuid_date[2], $uuid_date[0]);
             }
         }
-		return false;
-	}
+	return false;
+    }
 
-	/* */
+    /**
+     * Lorentz crashes come in pairs which are matched up via a
+     * hangid.
+     *
+     * @param string $hangid      of this crash report pair
+     * @param string $currentUuid of this crash
+     *
+     * @return string uuid for the other crash in this crash pair
+     */
+    public function getPairedUUID($hangid, $currentUuid)
+    {
+        $uuidDate = date('Y-m-d', $this->uuidTimestamp($currentUuid));
+        $rs = $this->db->query(
+                "/* soc.web report uuid from hangid */
+                    SELECT uuid
+                    FROM reports 
+                    WHERE date_processed BETWEEN TIMESTAMP ? - CAST('1 day' AS INTERVAL) AND TIMESTAMP ? + CAST('1 day' AS INTERVAL) AND
+                          hangid = ? AND uuid != ?
+                    LIMIT 1
+                ", array($uuidDate, $uuidDate, $hangid, $currentUuid))->current();
+        if ($rs) {
+            return $rs->uuid;
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * Lorentz crashes come in pairs, but if a crash is
+     * resubmitted, it's possible to have more than 2
+     * crash reports per hangid. This variation on
+     * getPairedUUID is used via AJAX to populate
+     * the UI and also to aid in debugging.
+     * 
+     * Call retrieves all crashes related to this uuid. Does
+     * not return this uuid.
+     * 
+     * @param string $uuid of a hang crash
+     *
+     * @return object Database results with 'uuid'
+     */
+    public function getAllPairedUUIDByUUid($uuid)
+    {
+        $uuidDate = date('Y-m-d', $this->uuidTimestamp($uuid));
+        $rs = $this->db->query(
+                "/* soc.web report hangpairs from uuid */
+                 SELECT uuid
+                 FROM reports
+                 WHERE 
+                     date_processed BETWEEN TIMESTAMP ? - CAST('1 day' AS INTERVAL) AND TIMESTAMP ? + CAST('1 day' AS INTERVAL) AND
+                     hangid IN (
+                       SELECT hangid
+                       FROM reports
+                       WHERE date_processed BETWEEN TIMESTAMP ? - CAST('1 day' AS INTERVAL) AND TIMESTAMP ? + CAST('1 day' AS INTERVAL) AND
+                             reports.uuid = ?) AND
+                     uuid != ?;", array($uuidDate, $uuidDate, $uuidDate, $uuidDate, $uuid, $uuid));
+        return $rs;
+    }
 }

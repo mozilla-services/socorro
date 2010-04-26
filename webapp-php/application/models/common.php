@@ -60,6 +60,9 @@ class Common_Model extends Model {
         if(count($join_tables) > 0) {
 	    $sql .= " JOIN  " . join("\nJOIN ", $join_tables);
         }
+        $sql .= "\nLEFT OUTER JOIN plugins_reports ON plugins_reports.report_id = reports.id";
+        $sql .= "\nLEFT OUTER JOIN plugins ON plugins_reports.plugin_id = plugins.id\n";
+
         $sql .= " WHERE reports.user_comments IS NOT NULL " . 
 	        " AND " . join(' AND ', $where) .
 	        " ORDER BY email ASC, reports.client_crash_date ASC ";
@@ -85,11 +88,13 @@ class Common_Model extends Model {
                 "count(CASE WHEN (reports.os_name = '{$platform->os_name}') THEN 1 END) ".
                 "AS is_{$platform->id}";
         }
-	$extra_group_by = "";
-	if (array_key_exists('process_type', $params) && 'plugin' == $params['process_type']) {
-	    array_push($columns, 'plugins.name AS pluginName, plugins_reports.version AS pluginVersion, plugins.filename AS pluginFilename');
-	    $extra_group_by = "\n, pluginName, pluginVersion, pluginFilename\n";
-	}
+        $extra_group_by = "";
+
+        array_push($columns, 'plugins.name AS pluginName, plugins_reports.version AS pluginVersion');
+        array_push($columns, 'plugins.filename AS pluginFilename');
+        array_push($columns, 'SUM (CASE WHEN hangid IS NULL THEN 0  ELSE 1 END) AS numhang');
+        array_push($columns, 'SUM (CASE WHEN plugins_reports.plugin_id IS NULL THEN 0  ELSE 1 END) AS numplugin');
+        $extra_group_by = "\n, pluginName, pluginVersion, pluginFilename\n";
 
         list($from_tables, $join_tables, $where) = 
             $this->_buildCriteriaFromSearchParams($params);
@@ -101,6 +106,10 @@ class Common_Model extends Model {
         if(count($join_tables) > 0) {
 	    $sql .= " JOIN  " . join("\nJOIN ", $join_tables);
         }
+
+        $sql .= "\nLEFT OUTER JOIN plugins_reports ON plugins_reports.report_id = reports.id";
+        $sql .= "\nLEFT OUTER JOIN plugins ON plugins_reports.plugin_id = plugins.id\n";
+
 	$sql .=
             " WHERE  " . join(' AND ', $where) .
             " GROUP BY reports.signature " .
@@ -127,6 +136,9 @@ class Common_Model extends Model {
         if(count($join_tables) > 0) {
 	    $sql .= " JOIN  " . join("\nJOIN ", $join_tables);
         }
+        $sql .= "\nLEFT OUTER JOIN plugins_reports ON plugins_reports.report_id = reports.id";
+        $sql .= "\nLEFT OUTER JOIN plugins ON plugins_reports.plugin_id = plugins.id\n";
+
 	$sql .= " WHERE  " . join(' AND ', $where);
 
 	$rs = $this->fetchRows($sql);
@@ -170,7 +182,9 @@ class Common_Model extends Model {
             'reports.address',
             'reports.reason',
             'reports.last_crash',
-            'reports.install_age'
+            'reports.install_age',
+            'reports.hangid',
+            'plugins_reports.plugin_id'
         );
 
         list($from_tables, $join_tables, $where) = 
@@ -182,7 +196,7 @@ class Common_Model extends Model {
         if(count($join_tables) > 0) {
 	    $sql .= " JOIN  " . join("\nJOIN ", $join_tables);
         }
-
+        $sql .= "\nLEFT OUTER JOIN plugins_reports ON plugins_reports.report_id = reports.id\n";
 	$sql .= " WHERE  " . join(' AND ', $where) .
     	        " ORDER BY reports.date_processed DESC 
 	          LIMIT ? OFFSET ? ";
@@ -222,6 +236,9 @@ class Common_Model extends Model {
         if(count($join_tables) > 0) {
 	    $sql .= " JOIN  " . join("\nJOIN ", $join_tables);
         }
+        $sql .= " LEFT OUTER JOIN plugins_reports ON plugins_reports.report_id = reports.id\n";
+        $sql .= " LEFT OUTER JOIN plugins ON plugins_reports.plugin_id = plugins.id\n";
+
 	$sql .= " WHERE  " . join(' AND ', $where) .
                 " GROUP BY date_trunc('day', reports.build_date) ".
                 " ORDER BY date_trunc('day', reports.build_date) DESC";
@@ -300,30 +317,39 @@ class Common_Model extends Model {
 	    $where[] = 'reports.build = ' . $this->db->escape($params['build_id']);
 	}
 
-	if (array_key_exists('process_type', $params) && 'plugin' == $params['process_type']) {
-            array_push($join_tables, 'plugins_reports ON plugins_reports.report_id = reports.id');
-            array_push($join_tables, 'plugins ON plugins_reports.plugin_id = plugins.id');
-	    if (trim($params['plugin_query']) != '') {
-		switch ($params['plugin_query_type']) {
+        // Constrain crashes to hang on browser
+        if (array_key_exists('hangtype', $params) && 
+            'crash' == $params['hangtype']) {
+                $where[] = 'reports.hangid IS NOT NULL';
+                $where[] = 'plugins_reports.plugin_id IS NULL';
+
+        // Constrain crashes to hang from a plugin
+        } elseif (array_key_exists('process_type', $params) && 
+                  'plugin' == $params['process_type'] && 
+                  $params['hangtype'] == 'hang') {
+            
+            $where[] = 'plugins_reports.plugin_id IS NOT NULL';
+            if (trim($params['plugin_query']) != '') {
+                switch ($params['plugin_query_type']) {
                     case 'exact':
-			$plugin_query_term = ' = ' . $this->db->escape($params['plugin_query']); 
-			break;
+                        $plugin_query_term = ' = ' . $this->db->escape($params['plugin_query']); 
+                        break;
                     case 'startswith':
-			$plugin_query_term = ' LIKE ' . $this->db->escape($params['plugin_query'].'%'); 
-			break;
+                        $plugin_query_term = ' LIKE ' . $this->db->escape($params['plugin_query'].'%'); 
+                        break;
                     case 'contains':
                     default:
                         $plugin_query_term = ' LIKE ' . $this->db->escape('%'.$params['plugin_query'].'%'); 
-			break;
-		}
-		if ('filename' == $params['plugin_field']) {
-		    $where[] = 'plugins.filename ' . $plugin_query_term;
-		} else {
-		    $where[] = 'plugins.name ' . $plugin_query_term;
-		}
+                        break;
+                }
+                if ('filename' == $params['plugin_field']) {
+                    $where[] = 'plugins.filename ' . $plugin_query_term;
+                } else {
+                    $where[] = 'plugins.name ' . $plugin_query_term;
+                }
 
-	    }
-	}
+            }
+        }
 
         if ($params['query']) {
 
@@ -356,10 +382,12 @@ class Common_Model extends Model {
                 $interval = $this->db->escape($params['range_value'] . ' ' . $params['range_unit']);
                 $now = date('Y-m-d H:i:s');
                 $where[] = "reports.date_processed BETWEEN TIMESTAMP '$now' - CAST($interval AS INTERVAL) AND TIMESTAMP '$now'";
+                $where[] = "plugins_reports.date_processed BETWEEN TIMESTAMP '$now' - CAST($interval AS INTERVAL) AND TIMESTAMP '$now'";
             } else {
                 $date = $this->db->escape($params['date']);
                 $interval = $this->db->escape($params['range_value'] . ' ' . $params['range_unit']);
                 $where[] = "reports.date_processed BETWEEN CAST($date AS TIMESTAMP WITHOUT TIME ZONE) - CAST($interval AS INTERVAL) AND CAST($date AS TIMESTAMP WITHOUT TIME ZONE)";
+                $where[] = "plugins_reports.date_processed BETWEEN CAST($date AS DATE) - CAST($interval AS INTERVAL) AND CAST($date AS DATE)";
             }
         }
 

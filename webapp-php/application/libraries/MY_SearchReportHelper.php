@@ -57,6 +57,7 @@ class SearchReportHelper{
 		 'range_value'  => '1',
 		 'range_unit'   => 'weeks',
 
+		 'hangtype' => 'all',
 		 'process_type' => 'all',
 		 'plugin_field' => '',
 		 'plugin_query_type' => '',

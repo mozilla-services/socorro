@@ -118,6 +118,15 @@ class Report_Controller extends Controller {
 
 	    list($correlation_product, $correlation_version) = $this->_correlationProdVers($reports);
 
+            foreach ($reports as $report) {
+                $hang_details = array();
+                $hang_details['is_hang'] = ! is_null($report->hangid);
+                $hang_details['is_plugin'] = ! is_null($report->plugin_id);
+                $hang_details['uuid'] = $report->uuid;
+                $hang_details['hangid'] = $report->hangid;
+                $report->{'hang_details'} = $hang_details;
+            }
+
         $product = (isset($product) && !empty($product)) ? $product : Kohana::config('products.default_product');
 	    $this->setViewData(array(
 		'navPathPrefix' => $currentPath,
@@ -313,7 +322,6 @@ class Report_Controller extends Controller {
             return Event::run('system.404');
         }
 
-	
 	$crash_uri = sprintf(Kohana::config('application.crash_dump_local_url'), $uuid);
 	$reportJsonZUri = sprintf(Kohana::config('application.crash_dump_public_url'), $uuid);
 	$raw_dump_urls = $this->report_model->formatRawDumpURLs($uuid);
@@ -357,11 +365,12 @@ class Report_Controller extends Controller {
                 $comments = $this->common_model->getCommentsBySignature($report->signature);
 	    }	    	
         	
-	    	$Extension_Model = new Extension_Model;
-	    	$extensions = $Extension_Model->getExtensionsForReport($uuid, $report->date_processed, $report->product);
+            $Extension_Model = new Extension_Model;
+            $extensions = $Extension_Model->getExtensionsForReport($uuid, $report->date_processed, $report->product);
 
+            $ooppDetails = $this->_makeOoppDetails($report);
 
-        $product = (isset($report->product) && !empty($report->product)) ? $report->product : Kohana::config('products.default_product');
+            $product = (isset($report->product) && !empty($report->product)) ? $report->product : Kohana::config('products.default_product');
 		$this->setViewData(array(
         	    'branch' => $this->branch_model->getByProductVersion($report->product, $report->version),
         	    'comments' => $comments,
@@ -371,9 +380,64 @@ class Report_Controller extends Controller {
         	    'reportJsonZUri' => $reportJsonZUri,
         	    'report' => $report,
         	    'sig2bugs' => $signature_to_bugzilla,
-                'url_nav' => url::site('products/'.$product),
+                    'url_nav' => url::site('products/'.$product),
+                    'oopp_details' => $ooppDetails,
         	));
 	}
+    }
+
+    /**
+     * Helper method for formatting the Hang Type
+     * 
+     * @param object $report
+     *
+     * @return string Examples: 'Plugin' or 'Browser'
+     */
+    private function _hangType($report)
+    {
+        if (property_exists($report, 'processType')) {
+            return ucfirst($report->processType);
+        } else {
+            return 'Browser';
+        }
+    }
+
+    /**
+     * Helper method for determining the hang details
+     * of a crash report, by gathering more data about
+     * related crashes.
+     *
+     * This method doesn't check for hang versus non-hang
+     * crash status.
+     *
+     * @param object $report
+     * 
+     * @return array with keys 'hangtype' and possibly 
+     *         'other_uuid', 'pair_error', 'pair_label'
+     */
+    private function _makeOoppDetails($report)
+    {
+        $details = array();
+        $details['hangtype'] = $this->_hangType($report);
+        if (property_exists($report, 'hangid')) {
+
+            $otherUuid = $this->report_model->getPairedUUID($report->hangid, $report->uuid);
+            $details['other_uuid'] = $otherUuid;
+
+
+            $crash_uri = sprintf(Kohana::config('application.crash_dump_local_url'), $otherUuid);
+            $reportJsonZUri = sprintf(Kohana::config('application.crash_dump_public_url'), $otherUuid);
+            $raw_dump_urls = $this->report_model->formatRawDumpURLs($otherUuid);
+
+            $otherReport = $this->report_model->getByUUID($otherUuid, $crash_uri);
+
+            if ( is_null($otherReport)) {
+                $details['pair_error'] = "Unable to load <a href='$otherUuid'>$otherUuid</a> please reload this page in a few minutes";
+            } else {
+                $details['pair_label'] = $this->_hangType($otherReport);
+            }
+        }
+        return $details;
     }
 
     /**
@@ -447,6 +511,32 @@ class Report_Controller extends Controller {
 	}
 	echo json_encode($status);
 	exit;
+    }
+
+    /**
+     * Ajax method for getting related crash
+     *
+     * @param string $uuid
+     *
+     * @return string JSON formatted list of crash reports
+     */
+    public function hang_pairs($uuid)
+    {
+        $this->auto_render = false;
+
+        $rs = $this->report_model->getAllPairedUUIDByUUid($uuid);
+        $crashes = array();
+        foreach ($rs as $row) {
+            $crash_uri = sprintf(Kohana::config('application.crash_dump_local_url'), $row->uuid);
+            $report = $this->report_model->getByUUID($row->uuid, $crash_uri);
+            if ($report && property_exists($report, 'date_processed' )) {
+                $d = strtotime($report->{'date_processed'});
+                $report->{'display_date_processed'} = date('M d, Y H:i', $d);
+                array_push($crashes, $report);
+	    }
+        }
+        echo json_encode($crashes);
+        exit;
     }
 
 

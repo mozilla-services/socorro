@@ -60,8 +60,14 @@
                                 title="View reports with this crasher."><span><?php out::H($crasher->{'display_signature'}) ?></span></a><?php
 			 if ($crasher->{'display_null_sig_help'}) {
 			     echo " <a href='http://code.google.com/p/socorro/wiki/NullOrEmptySignatures' class='inline-help'>Learn More</a> ";
-			 }
-?><div class="sig-history-graph"></div><div class="sig-history-legend"></div><button name="ajax-signature-<?= $row ?>" value="<?= $crasher->{'display_signature'}?>">Graph</button></td>
+			 } ?>
+                         <div class="signature-icons">
+                         <?php View::factory('common/hang_details', array(
+			     'crash' => $crasher->{'hang_details'}
+                         ))->render(TRUE) ?>
+                         <img src="<?= url::site('/img/3rdparty/silk/chart_curve.png')?>" width="16" height="16" alt="Graph this" class="graph-icon" />
+                         </div>
+<div class="sig-history-graph"></div><div class="sig-history-legend"></div><!--button name="ajax-signature-<?= $row ?>" value="<?= $crasher->{'display_signature'}?>">Graph</button --></td>
                         <td><?php out::H($crasher->count) ?></td>
                         <td><?php out::H($crasher->win_count) ?></td>
                         <td><?php out::H($crasher->mac_count) ?></td>

@@ -656,7 +656,7 @@ th a.expand {
 #sumo-link { 
   float: right;
   text-align: right; 
-  margin: 0px auto 25px;
+  margin: 0px auto 10px;
 }
 
 #sumo-link a, #sumo-link a:visited {
@@ -674,8 +674,30 @@ th a.expand {
 #sumo-link a:hover {
    background: #fff;
 } 
- 
-
+.oopp-hang {
+    clear: right;
+    float: right;
+}
+.oopp-hang .current {
+    background-image: url("../img/3rdparty/fatcow/stop16x16.png");
+    background-repeat: no-repeat;
+    color: red;
+    float: right;
+    font-weight: 900;
+    padding-left: 20px;
+}
+.oopp-hang .current .type {
+    color: #303030;
+}
+.oopp-hang .pair {
+    clear: right;
+}
+.oopp-hang .pair a {
+    text-decoration: none;
+}
+#report-index {
+    clear: right;
+}
 /** 
  * Report Pending Status page
  */
@@ -778,7 +800,20 @@ div.pendingStatus p.pendingProcessing {
     clear: both;
     margin: 0;
 }
-
+.signature-icons {
+    float: right;
+    width: 70px;
+    text-align: right;
+}
+#reportsList .signature-icons {
+    width: 38px;
+}
+.non-hang {
+    width: 40px
+}
+.graph-icon {
+    display: none;
+}
 .tcburl-toggler {
   display: inline;
   color: white;
@@ -1198,14 +1233,15 @@ div.query_removemargin { /* Removes margin from the main content area */
 #searchform ul { 
 	list-style: none;
 }
-#searchform label.basic { 
+#searchform label.basic, #searchform .basic.label { 
 	display: block;
 	font-size: 135%;
 	font-weight: bold;
 	line-height: 1.25em;
 	padding: 0;
 }
-#searchform label { 
+#searchform label, #searchform .label { 
+        color: #333;
 	font-weight: bold;
 	font-size: 100%;
 }
@@ -1257,8 +1293,7 @@ p.advanced {
 #searchform button {
 	margin: 1em 0 0 1em;
 }
-#searchform div.radio-item {
-    display:inline;
+#searchform .radio-item {
     margin-right: 1em;
     padding-bottom: 1em;
 }

@@ -37,6 +37,17 @@ if (is_null($report->signature) || empty($report->signature)) { ?>
 <a href="http://support.mozilla.com/tiki-newsearch.php?where=all&amp;q=<?=urlencode($report->sumo_signature) ?>" title="Find more answers at support.mozilla.com!">Search Mozilla Support for Help</a>
 <?php } ?></div>
 
+<?php if (array_key_exists('hangtype', $oopp_details)) { ?>
+      <div class="oopp-hang"><div class="current">Lorentz Hang Minidump <span class="type">(<?= $oopp_details['hangtype'] ?>)</div>
+	  <div class="pair"><?php if (array_key_exists('pair_error', $oopp_details)) { ?>
+                                <?= $oopp_details['pair_error'] ?>
+                            <?php } else { ?>
+	                        <?= $oopp_details['pair_label'] ?> Report: <a href="<?= $oopp_details['other_uuid'] ?>"><?= $oopp_details['other_uuid'] ?></a>
+	                    <?php } ?>
+          </div>
+      </div><!-- /oopp-hang -->
+<?php } ?>
+
 <div id="report-header-details">ID: <span><?php out::H($report->uuid) ?></span><br/> Signature: <span><?php out::H($report->{'display_signature'}) ?></span></div>
 <div id="report-index" class="flora">
 
