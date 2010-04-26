@@ -431,13 +431,15 @@ class Report_Controller extends Controller {
                 $raw_dump_urls = $this->report_model->formatRawDumpURLs($otherUuid);
 
                 $otherReport = $this->report_model->getByUUID($otherUuid, $crash_uri);
-	    } else {
-                $details['pair_error'] = "Hang ID " . $report->hangid . " but no other UUID pair found";
-	    }
-            if ( is_null($otherReport)) {
+	    } 
+            if (isset($otherReport) && is_null($otherReport)) {
                 $details['pair_error'] = "Unable to load <a href='$otherUuid'>$otherUuid</a> please reload this page in a few minutes";
             } else {
-                $details['pair_label'] = $this->_hangType($otherReport);
+                if (isset($otherReport)) {
+                    $details['pair_label'] = $this->_hangType($otherReport);
+		} else {
+		    $details['pair_error'] = "Hang ID " . $report->hangid . " but no other UUID pair found";
+		}
             }
         }
         return $details;
