@@ -189,7 +189,6 @@ class Topcrasher_Controller extends Controller {
 				     'totalPercentage' => 0,
 				     'crashes' => array(),
 				     'totalNumberOfCrashes' => 0), 'top crash sig overall');
-echo $resp->start_date . ' ' . $resp->end_date;
 	    $signatures = array();
 	    $req_props = array( 'signature' => '', 'count' => 0, 
 				'win_count' => 0, 'mac_count' => 0, 'linux_count' => 0,
