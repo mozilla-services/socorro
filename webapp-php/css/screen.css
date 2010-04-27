@@ -105,7 +105,6 @@ html.production { margin: 0; }
 html.production body > h1 { display: none; }
 html.production .page-heading { margin: 20px; margin-top: 30px; }
 html.production .panel { margin: 20px; }
-html.production .page-footer { margin-top: 800px; }
 	
 .choices {
 	display: inline;
