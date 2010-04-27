@@ -301,7 +301,7 @@ class Topcrashers_Model extends Model {
                      signature IN (" . implode(", ", $sigs) . ")
                 GROUP BY signature, hangid
                 ORDER BY signature;";
-        $rows = $this->fetchRows($sql, FALSE, array($product, $version, $endtime, $duration, $endtime,
+        $rows = $this->fetchRows($sql, TRUE, array($product, $version, $endtime, $duration, $endtime,
                                                                         $endtime, $duration, $endtime));
         $sig2oopp = array();
         foreach ($rows as $row) {

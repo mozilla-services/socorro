@@ -317,17 +317,19 @@ class Common_Model extends Model {
 	    $where[] = 'reports.build = ' . $this->db->escape($params['build_id']);
 	}
 
-        // Constrain crashes to hang on browser
+        // Constrain crashes to hang on browser aka Report Type all, crashes, hang
         if (array_key_exists('hangtype', $params) && 
             'crash' == $params['hangtype']) {
-                $where[] = 'reports.hangid IS NOT NULL';
-                $where[] = 'plugins_reports.plugin_id IS NULL';
+                $where[] = 'reports.hangid IS NULL';
+	} elseif (array_key_exists('hangtype', $params) && 
+		  'hang' == $params['hangtype']) {
+                      $where[] = 'reports.hangid IS NOT NULL';
+	} // else hangtype is all
 
-        // Constrain crashes to hang from a plugin
-        } elseif (array_key_exists('process_type', $params) && 
-                  'plugin' == $params['process_type'] && 
-                  $params['hangtype'] == 'hang') {
-            
+        // Constrain crashes to hang from a plugin aka Process All, Plugins Only
+        if (array_key_exists('process_type', $params) && 
+	    'plugin' == $params['process_type'] ) {
+
             $where[] = 'plugins_reports.plugin_id IS NOT NULL';
             if (trim($params['plugin_query']) != '') {
                 switch ($params['plugin_query_type']) {
@@ -347,7 +349,6 @@ class Common_Model extends Model {
                 } else {
                     $where[] = 'plugins.name ' . $plugin_query_term;
                 }
-
             }
         }
 
