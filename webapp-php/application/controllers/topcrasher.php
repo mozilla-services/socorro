@@ -189,7 +189,7 @@ class Topcrasher_Controller extends Controller {
 				     'totalPercentage' => 0,
 				     'crashes' => array(),
 				     'totalNumberOfCrashes' => 0), 'top crash sig overall');
-
+echo $resp->start_date . ' ' . $resp->end_date;
 	    $signatures = array();
 	    $req_props = array( 'signature' => '', 'count' => 0, 
 				'win_count' => 0, 'mac_count' => 0, 'linux_count' => 0,
@@ -229,8 +229,8 @@ class Topcrasher_Controller extends Controller {
 	    $bugzilla = new Bugzilla;
 	    $signature_to_bugzilla = $bugzilla->signature2bugzilla($rows, Kohana::config('codebases.bugTrackingUrl'));
  
-            $endtime =  date('Y-m-d H:i:s');
-	    $signature_to_oopp = $this->topcrashers_model->ooppForSignatures($product, $version, $endtime, $duration, $unique_signatures);
+
+	    $signature_to_oopp = $this->topcrashers_model->ooppForSignatures($product, $version, $resp->end_date, $duration, $unique_signatures);
 	    foreach($resp->crashes as $top_crasher) {
 		$hang_details = array();
                 $known = array_key_exists($top_crasher->signature, $signature_to_oopp);
@@ -255,6 +255,7 @@ class Topcrasher_Controller extends Controller {
                	       'nav_selection' => 'top_crashes',
 				       'sig2bugs'     => $signature_to_bugzilla,
 				       'start'        => $resp->start_date,
+				       'end_date'          => $resp->end_date,
 				       'top_crashers' => $resp->crashes,
 				       'total_crashes' => $resp->totalNumberOfCrashes,
 				       'url_nav'     => url::site('products/'.$product),
