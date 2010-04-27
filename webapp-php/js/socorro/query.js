@@ -30,19 +30,6 @@ $(document).ready(function() {
       $('[name=plugin_field]').cookieBind();
       $('[name=plugin_query_type]').cookieBind();
 
-      $('[name=hangtype]').bind('change', function(){
-          // Hangs
-          if ($('input[name=hangtype][value=hang]').attr('checked') == true) {
-              $('[name=process_type]').attr('disabled', null).trigger('change');
-          
-          // All, Crash
-          } else {
-              $('[name=process_type]').attr('disabled', true);
-	      $('#plugin-inputs').addClass('disabled');
-	      $('#plugin-inputs *').attr('disabled', 'disabled');
-          }
-      });
-
       $('[name=process_type]').bind('change', function(){
           if ($('[name=process_type]:checked').val() == "plugin") {
 	      $('#plugin-inputs').removeClass('disabled');
@@ -52,8 +39,6 @@ $(document).ready(function() {
 	      $('#plugin-inputs *').attr('disabled', 'disabled');
           }
       }).trigger('change');
-
-      $('[name=hangtype]').trigger('change');
 
       $(function() {
           Date.format='yyyy-mm-dd';
