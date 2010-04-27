@@ -37,6 +37,7 @@
                         $sigParams = array(
                             'range_value' => '2',
                             'range_unit'  => 'weeks',
+			    'date'        => $end_date,
                             'signature'   => $crasher->signature
 			    );
                         if (property_exists($crasher, 'missing_sig_param')) {
