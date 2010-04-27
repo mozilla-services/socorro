@@ -41,7 +41,8 @@ if (is_null($report->signature) || empty($report->signature)) { ?>
       <div class="oopp-hang"><div class="current">Lorentz Hang Minidump <span class="type">(<?= $oopp_details['hangtype'] ?>)</div>
 	  <div class="pair"><?php if (array_key_exists('pair_error', $oopp_details)) { ?>
                                 <?= $oopp_details['pair_error'] ?>
-                            <?php } else { ?>
+                            <?php } elseif (array_key_exists('pair_label', $oopp_details) &&
+                                            array_key_exists('other_uuid', $oopp_details)) { ?>
 	                        <?= $oopp_details['pair_label'] ?> Report: <a href="<?= $oopp_details['other_uuid'] ?>"><?= $oopp_details['other_uuid'] ?></a>
 	                    <?php } ?>
           </div>
