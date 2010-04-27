@@ -68,7 +68,7 @@
                          ))->render(TRUE) ?>
                          <img src="<?= url::site('/img/3rdparty/silk/chart_curve.png')?>" width="16" height="16" alt="Graph this" class="graph-icon" />
                          </div>
-<div class="sig-history-graph"></div><div class="sig-history-legend"></div><!--button name="ajax-signature-<?= $row ?>" value="<?= $crasher->{'display_signature'}?>">Graph</button --></td>
+<div class="sig-history-graph"></div><div class="sig-history-legend"></div><input type="hidden" class='ajax-signature' name="ajax-signature-<?= $row ?>" value="<?= $crasher->{'display_signature'}?>" /></td>
                         <td><?php out::H($crasher->count) ?></td>
                         <td><?php out::H($crasher->win_count) ?></td>
                         <td><?php out::H($crasher->mac_count) ?></td>

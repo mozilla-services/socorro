@@ -24,7 +24,7 @@ $(document).ready(function () {
     //$("#signatureList button").click(function (e) {
       $("#signatureList .graph-icon").click(function (e) {
         var button = $(this),
-            sig = button.attr('value'),
+            sig = button.parents('tr').find('input').val();
             graph = button.parents('tr').find('.sig-history-graph'),
             legend = button.parents('tr').find('.sig-history-legend');
 
