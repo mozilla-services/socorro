@@ -420,28 +420,25 @@ class Report_Controller extends Controller {
         $details = array();
         $details['hangtype'] = $this->_hangType($report);
         if (property_exists($report, 'hangid')) {
-
             $otherUuid = $this->report_model->getPairedUUID($report->hangid, $report->uuid);
 	    if ($otherUuid) {
                 $details['other_uuid'] = $otherUuid;
-
-
                 $crash_uri = sprintf(Kohana::config('application.crash_dump_local_url'), $otherUuid);
                 $reportJsonZUri = sprintf(Kohana::config('application.crash_dump_public_url'), $otherUuid);
                 $raw_dump_urls = $this->report_model->formatRawDumpURLs($otherUuid);
 
                 $otherReport = $this->report_model->getByUUID($otherUuid, $crash_uri);
-	    } 
-            if (isset($otherReport) && is_null($otherReport)) {
+	    } else {
+		$details['pair_error'] = "Hang ID " . $report->hangid . " but no other UUID pair found";
+                return $details;
+	    }
+            if (is_null($otherReport)) {
                 $details['pair_error'] = "Unable to load <a href='$otherUuid'>$otherUuid</a> please reload this page in a few minutes";
             } else {
-                if (isset($otherReport)) {
-                    $details['pair_label'] = $this->_hangType($otherReport);
-		} else {
-		    $details['pair_error'] = "Hang ID " . $report->hangid . " but no other UUID pair found";
-		}
+		$details['pair_label'] = $this->_hangType($otherReport);
             }
         }
+
         return $details;
     }
 
