@@ -9,15 +9,12 @@
             <th>CPU</th>
             <th>Reason</th>
             <th>Address</th>
-            <th>Hang</th>
             <th>Uptime</th>
             <th>Comments</th>
         </tr>
     </thead>
     <tbody>
-        <?php 
-           $i = 0;
-           foreach ($reports as $report): ?>
+        <?php foreach ($reports as $report): ?>
             <tr>
                 <td class="report-date_processed">
                     <?php
@@ -26,8 +23,7 @@
                         $url = url::base().'report/index/'.out::H($report->uuid, FALSE);
                     ?><a href="<?php out::H($url) ?>" title="View reports with this signature.">
                         <?php echo date('M d, Y H:i', $date) ?>
-                    </a>        
-        <div class="hang-pair"></div>
+                    </a>
                 </td> <td><?php out::H($report->product) ?></td>
                 <td><?php out::H($report->version) ?></td>
                 <td><?php out::H($report->build) ?></td>
@@ -35,17 +31,9 @@
                 <td><?php out::H($report->cpu_name) ?></td>
                 <td><?php out::H($report->reason) ?></td>
                 <td><?php out::H($report->address) ?></td>
-                <td><div class="signature-icons">
-        <?php View::factory('common/hang_details', array(
-            'crash' => $report->{'hang_details'}
-        ))->render(TRUE) ?>
-        <input type="hidden" name="url<?= $i ?>" value="<?= url::site('/report/hang_pairs/' . $report->uuid) ?>" class="ajax_endpoint" />
-        </div></td>
                 <td><?php out::H($report->uptime) ?></td>
                 <td class="comments"><?php out::H($report->user_comments) ?></td>
             </tr>
-        <?php 
-	       $i++;
-           endforeach ?>
+        <?php endforeach ?>
     </tbody>
 </table>

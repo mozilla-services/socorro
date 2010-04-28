@@ -38,16 +38,17 @@
                 <?php endforeach ?>
             </select>
     </li>
-    <li><span class="basic label"><a href="#" id="advfiltertoggle" class="not-toggled">Advanced Filters</a></span> 
+    <li><label class="basic" for="advfiltertoggle"><a href="#" id="advfiltertoggle" class="not-toggled">Advanced Filters</a></label> 
     
         <div id="advfilter">
             <p class="advanced">
-            <span class="label">Branch</span>
+            <label for="branch">Branch</label>
             <?php foreach ($all_branches as $row): ?>
                 <input type="checkbox" name="branch" value="<?php out::H($row->branch) ?>" <?php echo in_array($row->branch, $params['branch']) ? 'checked' : '' ?>>
                 <?php out::H($row->branch) ?> &nbsp;
             <?php endforeach ?>
-
+            </p>
+            
             <p class="advanced">
 	           <label for="range_value">For the period of </label>
 	              <?php echo form::input(
@@ -99,23 +100,13 @@
                 trim($params['build_id'])
             )?>
             </p>
-	    <p class="advanced">
-	        <span class="label">Report Type:</span>
-                <span class="radio-item"><label><?= form::radio('hangtype', 'all',    $params['hangtype'] == 'all'); ?>
-		    All</label></span>
-		<span class="radio-item"><label><?= form::radio('hangtype', 'crash', $params['hangtype'] == 'crash'); ?>
-		    Crash</label></span>
-		<span class="radio-item"><label><?= form::radio('hangtype', 'hang', $params['hangtype'] == 'hang'); ?>
-		    Hang</label></span>
-            </p>
-      	<p class="advanced">
-		<span class="label">Process:</span>
-    	<span class="radio-item"><label><?= form::radio('process_type', 'all',     $params['process_type'] == 'all'); ?>
-		    All</label></span>
-    	<span class="radio-item"><label><?= form::radio('process_type', 'plugin', $params['process_type'] == 'plugin'); ?>
-		    Plugins Only</label></span>
+    	<p class="advanced">
+    	<div class="radio-item"><label>All 
+                <?= form::radio('process_type', 'all',     $params['process_type'] == 'all'); ?></label></div>
+    	<div class="radio-item"><label>Plugins Only 
+                <?= form::radio('process_type', 'plugin', $params['process_type'] == 'plugin'); ?></label></div>
     	<?php /* When out of process plugins support content as a type, we can add:
-    	       <span class="radio-item disabled"><label>Content Only form::radio('process_type', 'plugin', $params['process_type'] == 'plugin'); </label></span> */ ?>
+    	       <div class="radio-item disabled"><label>Content Only form::radio('process_type', 'plugin', $params['process_type'] == 'plugin'); </label></div> */ ?>
     
             </p>
     	<p id="plugin-inputs" class="advanced"><?= form::label('plugin_field', 'Search By Plugin') ?>

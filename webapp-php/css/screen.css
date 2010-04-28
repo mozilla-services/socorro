@@ -1290,9 +1290,8 @@ p.advanced {
 #searchform button {
 	margin: 1em 0 0 1em;
 }
-#searchform .radio-item {
-    margin-right: 1em;
-    padding-bottom: 1em;
+#searchform div.radio-item {
+    display:inline;
 }
 #formspacer {
     margin-bottom: 2em;

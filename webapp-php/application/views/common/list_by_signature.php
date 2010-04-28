@@ -35,11 +35,9 @@
     			    $url_params['signature'] = $report->signature;
     			}
     
-			    if (array_key_exists('build_id', $url_params)){
-				$b = trim($url_params['build_id']);
-    			        if (empty($b)) {
-				    unset($url_params['build_id']);
-				}
+    			if (array_key_exists('build_id', $url_params) &&
+    			    empty($url_params['build_id'])) {
+    			    unset($url_params['build_id']);
     			}
     
                             $url = url::base() . 'report/list?' . html::query_string($url_params);
@@ -47,13 +45,8 @@
                             <a href="<?= $url ?>" title="View reports with this signature."><?php out::H($report->{'display_signature'}) ?></a><?php
     			 if ($report->{'display_null_sig_help'}) {
     			     echo " <a href='http://code.google.com/p/socorro/wiki/NullOrEmptySignatures' class='inline-help'>Learn More</a> ";
-    			 } ?>
-                         <div class="signature-icons"><?php
-                         View::factory('common/hang_details', array(
-			     'crash' => $report->{'hang_details'}
-			 ))->render(TRUE);
-                         ?>
-                         </div>
+    			 }
+    ?>			
                     </td>
     		<?php if ($showPluginName) { ?>
     			    <td><?= out::H($report->pluginname . ' ' . $report->pluginversion) ?></td>

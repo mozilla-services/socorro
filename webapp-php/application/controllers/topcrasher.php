@@ -189,6 +189,7 @@ class Topcrasher_Controller extends Controller {
 				     'totalPercentage' => 0,
 				     'crashes' => array(),
 				     'totalNumberOfCrashes' => 0), 'top crash sig overall');
+
 	    $signatures = array();
 	    $req_props = array( 'signature' => '', 'count' => 0, 
 				'win_count' => 0, 'mac_count' => 0, 'linux_count' => 0,
@@ -222,21 +223,12 @@ class Topcrasher_Controller extends Controller {
                     $top_crasher->{'correlation_os'} = Correlation::correlationOsName($top_crasher->win_count, $top_crasher->mac_count, $top_crasher->linux_count);
 		}
 		$top_crasher->trendClass = $this->topcrashers_model->addTrendClass($top_crasher->changeInRank);
-            }
-            $unique_signatures = array_unique($signatures);
-	    $rows = $this->bug_model->bugsForSignatures($unique_signatures);
+        }
+
+	    $rows = $this->bug_model->bugsForSignatures(array_unique($signatures));
 	    $bugzilla = new Bugzilla;
 	    $signature_to_bugzilla = $bugzilla->signature2bugzilla($rows, Kohana::config('codebases.bugTrackingUrl'));
- 
 
-	    $signature_to_oopp = $this->topcrashers_model->ooppForSignatures($product, $version, $resp->end_date, $duration, $unique_signatures);
-	    foreach($resp->crashes as $top_crasher) {
-		$hang_details = array();
-                $known = array_key_exists($top_crasher->signature, $signature_to_oopp);
-		$hang_details['is_hang'] = $known && $signature_to_oopp[$top_crasher->signature]['hang'] == true;
-		$hang_details['is_plugin'] = $known && $signature_to_oopp[$top_crasher->signature]['process'] == 'Plugin';
-		$top_crasher->{'hang_details'} = $hang_details;
-	    }
 	    $this->navigationChooseVersion($product, $version);
 
 	    if ($this->input->get('format') == "csv") {
@@ -254,7 +246,6 @@ class Topcrasher_Controller extends Controller {
                	       'nav_selection' => 'top_crashes',
 				       'sig2bugs'     => $signature_to_bugzilla,
 				       'start'        => $resp->start_date,
-				       'end_date'          => $resp->end_date,
 				       'top_crashers' => $resp->crashes,
 				       'total_crashes' => $resp->totalNumberOfCrashes,
 				       'url_nav'     => url::site('products/'.$product),
