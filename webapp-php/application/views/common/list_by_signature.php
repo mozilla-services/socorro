@@ -35,9 +35,11 @@
     			    $url_params['signature'] = $report->signature;
     			}
     
-    			if (array_key_exists('build_id', $url_params) &&
-    			    empty($url_params['build_id'])) {
-    			    unset($url_params['build_id']);
+			    if (array_key_exists('build_id', $url_params)){
+				$b = trim($url_params['build_id']);
+    			        if (empty($b)) {
+				    unset($url_params['build_id']);
+				}
     			}
     
                             $url = url::base() . 'report/list?' . html::query_string($url_params);
