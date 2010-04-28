@@ -23,16 +23,16 @@ $(document).ready(function () {
     });
       $("#signatureList .graph-icon").click(function (e) {
         var button = $(this),
-            sig = button.parents('tr').find('input').val();
+            sig = button.parents('tr').find('input').val(),
             graph = button.parents('tr').find('.sig-history-graph'),
             legend = button.parents('tr').find('.sig-history-legend');
-
+        button.remove();
         button.get(0).disabled = true;
         button.html("<img src='" + window.SocImg + "ajax-loader.gif' />");
 
         $.getJSON(window.SocAjax + encodeURI(sig) + window.SocAjaxStartEnd, function (data) {
             graph.show();
-            button.remove();
+
             $.plot(graph,
                [{ data: data.counts,   label: 'Count',  yaxis: 1},
                 { data: data.percents, label: 'Percent',   yaxis: 2}],
@@ -45,6 +45,7 @@ $(document).ready(function () {
                 }
             });
         });
+	return false;
     });
 
     // Grab the div.rank....
