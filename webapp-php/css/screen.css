@@ -801,8 +801,6 @@ div.pendingStatus p.pendingProcessing {
 }
 .signature-icons {
     float: right;
-    width: 70px;
-    text-align: right;
 }
 #reportsList .signature-icons {
     width: 38px;
@@ -811,7 +809,7 @@ div.pendingStatus p.pendingProcessing {
     width: 40px
 }
 .graph-icon {
-    display: none;
+    visibility: hidden;
 }
 .tcburl-toggler {
   display: inline;

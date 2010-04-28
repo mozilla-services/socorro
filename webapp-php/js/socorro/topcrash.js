@@ -17,11 +17,10 @@ $(document).ready(function () {
     });
     $("#signatureList tr").hover(function(){
 
-            $('.graph-icon', this).show();
+            $('.graph-icon', this).css('visibility', 'visible');
         }, function(){
-            $('.graph-icon', this).hide();
+            $('.graph-icon', this).css('visibility', 'hidden');
     });
-    //$("#signatureList button").click(function (e) {
       $("#signatureList .graph-icon").click(function (e) {
         var button = $(this),
             sig = button.parents('tr').find('input').val();
