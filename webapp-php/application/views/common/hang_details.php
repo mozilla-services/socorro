@@ -7,12 +7,16 @@ Optional:
 * hangid - current report's hangid
 If uuid and hangid are preesnt, then AJAX widget will be enabled to show the hang's pair
 */
+$linked = false;
+if (array_key_exists('link', $crash)) {
+    $linked = true;
+}
 if ($crash['is_hang'] == true) { ?>
-    <a href="#" class="hang-pair-btn"><img src="<?= url::site('/img/3rdparty/fatcow/stop16x16.png')?>" width="16" height="16" alt="Hanged Crash" class="hang" /></a>
+    <?php if ($linked) { ?><a href="<?= $crash['link'] ?>" class="hang-pair-btn"><?php } ?><img src="<?= url::site('/img/3rdparty/fatcow/stop16x16.png')?>" width="16" height="16" alt="Hanged Crash" class="hang" /><?php if ($linked) { echo '</a>'; } ?>
     <?php if ($crash['is_plugin'] == true) {?>
-	     <a href="#" class="hang-pair-btn"><img src="<?= url::site('/img/3rdparty/fatcow/brick16x16.png')?>" width="16" height="16" alt="Plugin Crash" class="plugin" /></a>
+																													      <?php if ($linked) { ?><a href="<?= $crash['link'] ?>" class="hang-pair-btn"><?php } ?><img src="<?= url::site('/img/3rdparty/fatcow/brick16x16.png')?>" width="16" height="16" alt="Plugin Crash" class="plugin" /><?php if ($linked) { echo '</a>'; } ?>
      <?php } else { ?>
-            <a href="#" class="hang-pair-btn"><img src="<?= url::site('/img/3rdparty/fatcow/application16x16.png')?>" width="16" height="16" alt="Browser Crash" class="browser" /></a>
+	      <?php if ($linked) { ?><a href="<?= $crash['link'] ?>" class="hang-pair-btn"><?php } ?><img src="<?= url::site('/img/3rdparty/fatcow/application16x16.png')?>" width="16" height="16" alt="Browser Crash" class="browser" /><?php if ($linked) { echo '</a>'; } ?>
     <?php }
 } else { ?>
     <div class="no-hang"></div>

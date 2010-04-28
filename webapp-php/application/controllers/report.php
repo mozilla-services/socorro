@@ -122,6 +122,7 @@ class Report_Controller extends Controller {
                 $hang_details = array();
                 $hang_details['is_hang'] = ! is_null($report->hangid);
                 $hang_details['is_plugin'] = ! is_null($report->plugin_id);
+                $hang_details['link'] = '#';//Crash level view, linkify widgets
                 $hang_details['uuid'] = $report->uuid;
                 $hang_details['hangid'] = $report->hangid;
                 $report->{'hang_details'} = $hang_details;
