@@ -120,8 +120,8 @@ class Report_Controller extends Controller {
 
             foreach ($reports as $report) {
                 $hang_details = array();
-                $hang_details['is_hang'] = ! is_null($report->hangid);
-                $hang_details['is_plugin'] = ! is_null($report->plugin_id);
+                $hang_details['is_hang'] = ! empty($report->hangid);
+                $hang_details['is_plugin'] = ! empty($report->plugin_id);
                 $hang_details['link'] = '#';//Crash level view, linkify widgets
                 $hang_details['uuid'] = $report->uuid;
                 $hang_details['hangid'] = $report->hangid;
@@ -419,8 +419,8 @@ class Report_Controller extends Controller {
     private function _makeOoppDetails($report)
     {
         $details = array();
-        $details['hangtype'] = $this->_hangType($report);
-        if (property_exists($report, 'hangid')) {
+        if (property_exists($report, 'hangid') && ! empty($report->hangid)) {
+            $details['hangtype'] = $this->_hangType($report);
             $otherUuid = $this->report_model->getPairedUUID($report->hangid, $report->uuid);
 	    if ($otherUuid) {
                 $details['other_uuid'] = $otherUuid;
