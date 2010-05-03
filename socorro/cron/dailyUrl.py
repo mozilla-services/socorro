@@ -78,7 +78,8 @@ def dailyUrlDump(config):
         case when (r.addons_checked is NULL) then '[unknown]'when (r.addons_checked) then 'checked' else 'not' end as addons_checked, --20
         r.flash_version, --21
         r.hangid, --22
-        r.reason --23
+        r.reason, --23
+        r.process_type --24
       from
         reports r left join productdims pd on r.product = pd.product and r.version = pd.version
       where

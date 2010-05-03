@@ -324,7 +324,8 @@ class ReportsTable(PartitionedTable):
                                               topmost_filenames TEXT,
                                               addons_checked boolean,
                                               flash_version TEXT,
-                                              hangid TEXT
+                                              hangid TEXT,
+                                              process_type TEXT
                                           );
                                           --CREATE TRIGGER reports_insert_trigger
                                           --    BEFORE INSERT ON reports
@@ -345,10 +346,10 @@ class ReportsTable(PartitionedTable):
                                           CREATE INDEX %(partitionName)s_hangid_idx ON %(partitionName)s (hangid);
                                           """
                                       )
-    self.columns = ("uuid", "client_crash_date", "date_processed", "product", "version", "build", "url", "install_age", "last_crash", "uptime", "email", "build_date", "user_id", "user_comments", "app_notes", "distributor", "distributor_version", "topmost_filenames", "addons_checked", "flash_version", "hangid")
+    self.columns = ("uuid", "client_crash_date", "date_processed", "product", "version", "build", "url", "install_age", "last_crash", "uptime", "email", "build_date", "user_id", "user_comments", "app_notes", "distributor", "distributor_version", "topmost_filenames", "addons_checked", "flash_version", "hangid", "process_type")
     self.insertSql = """insert into TABLENAME
-                            (uuid, client_crash_date, date_processed, product, version, build, url, install_age, last_crash, uptime, email, build_date, user_id, user_comments, app_notes, distributor, distributor_version, topmost_filenames, addons_checked, flash_version, hangid) values
-                            (%s,   %s,                %s,             %s,      %s,      %s,    %s,  %s,          %s,         %s,     %s,    %s,         %s,      %s,            %s,        %s,          %s,                  %s,                %s,             %s,            %s)"""
+                            (uuid, client_crash_date, date_processed, product, version, build, url, install_age, last_crash, uptime, email, build_date, user_id, user_comments, app_notes, distributor, distributor_version, topmost_filenames, addons_checked, flash_version, hangid, process_type) values
+                            (%s,   %s,                %s,             %s,      %s,      %s,    %s,  %s,          %s,         %s,     %s,    %s,         %s,      %s,            %s,        %s,          %s,                  %s,                %s,             %s,            %s,     %s)"""
   #-----------------------------------------------------------------------------------------------------------------
   def additionalCreationProcedures(self, databaseCursor):
     pass
