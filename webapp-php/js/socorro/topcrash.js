@@ -15,8 +15,10 @@ $(document).ready(function () {
     $("#signatureList").tablesorter({
         headers: { 0: { sorter: false }, 1: { sorter: false }, 5: { sorter: 'digit' }, 6: { sorter: 'digit' }, 7: { sorter: 'digit' }, 8: { sorter: 'digit' } }
     });
+    $("#signatureList tr").each(function() {
+	$.data(this, 'graphable', true);
+    });
     $("#signatureList tr").hover(function(){
-
             $('.graph-icon', this).css('visibility', 'visible');
         }, function(){
             $('.graph-icon', this).css('visibility', 'hidden');
@@ -26,13 +28,13 @@ $(document).ready(function () {
             sig = button.parents('tr').find('input').val(),
             graph = button.parents('tr').find('.sig-history-graph'),
             legend = button.parents('tr').find('.sig-history-legend');
-        button.remove();
         button.get(0).disabled = true;
-        button.html("<img src='" + window.SocImg + "ajax-loader.gif' />");
+        legend.html("<img src='" + window.SocImg + "ajax-loader.gif' alt='Loading Graph' />");
 
         $.getJSON(window.SocAjax + encodeURI(sig) + window.SocAjaxStartEnd, function (data) {
             graph.show();
-
+	    button.remove();
+            var tr = button.parents('tr');
             $.plot(graph,
                [{ data: data.counts,   label: 'Count',  yaxis: 1},
                 { data: data.percents, label: 'Percent',   yaxis: 2}],

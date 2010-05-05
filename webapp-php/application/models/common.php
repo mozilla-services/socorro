@@ -46,7 +46,7 @@ class Common_Model extends Model {
         list($from_tables, $join_tables, $where) = $this->_buildCriteriaFromSearchParams($params);
 
         $sql =
-	    "/* soc.web report.getCommentsBySignature.1. */ " .
+	    "/* soc.web report.getCommentsBySignature */ " .
             " SELECT 
 				reports.client_crash_date, 
 				reports.user_comments, 
@@ -60,6 +60,7 @@ class Common_Model extends Model {
         if(count($join_tables) > 0) {
 	    $sql .= " JOIN  " . join("\nJOIN ", $join_tables);
         }
+
         $sql .= " WHERE reports.user_comments IS NOT NULL " . 
 	        " AND " . join(' AND ', $where) .
 	        " ORDER BY email ASC, reports.client_crash_date ASC ";
@@ -85,11 +86,16 @@ class Common_Model extends Model {
                 "count(CASE WHEN (reports.os_name = '{$platform->os_name}') THEN 1 END) ".
                 "AS is_{$platform->id}";
         }
-	$extra_group_by = "";
-	if (array_key_exists('process_type', $params) && 'plugin' == $params['process_type']) {
-	    array_push($columns, 'plugins.name AS pluginName, plugins_reports.version AS pluginVersion, plugins.filename AS pluginFilename');
-	    $extra_group_by = "\n, pluginName, pluginVersion, pluginFilename\n";
+        $extra_group_by = "";
+        if (array_key_exists('process_type', $params) && 
+	    'plugin' == $params['process_type'] ) {
+            array_push($columns, 'plugins.name AS pluginName, plugins_reports.version AS pluginVersion');
+            array_push($columns, 'plugins.filename AS pluginFilename');
+           $extra_group_by  = "\n, pluginName, pluginVersion, pluginFilename\n";
 	}
+        array_push($columns, 'SUM (CASE WHEN hangid IS NULL THEN 0  ELSE 1 END) AS numhang');
+        array_push($columns, 'SUM (CASE WHEN process_type IS NULL THEN 0  ELSE 1 END) AS numplugin');
+
 
         list($from_tables, $join_tables, $where) = 
             $this->_buildCriteriaFromSearchParams($params);
@@ -101,6 +107,7 @@ class Common_Model extends Model {
         if(count($join_tables) > 0) {
 	    $sql .= " JOIN  " . join("\nJOIN ", $join_tables);
         }
+
 	$sql .=
             " WHERE  " . join(' AND ', $where) .
             " GROUP BY reports.signature " .
@@ -127,6 +134,7 @@ class Common_Model extends Model {
         if(count($join_tables) > 0) {
 	    $sql .= " JOIN  " . join("\nJOIN ", $join_tables);
         }
+
 	$sql .= " WHERE  " . join(' AND ', $where);
 
 	$rs = $this->fetchRows($sql);
@@ -172,6 +180,7 @@ class Common_Model extends Model {
             'reports.last_crash',
             'reports.install_age',
             'reports.hangid',
+            'reports.process_type'
         );
 
         list($from_tables, $join_tables, $where) = 
@@ -183,7 +192,6 @@ class Common_Model extends Model {
         if(count($join_tables) > 0) {
 	    $sql .= " JOIN  " . join("\nJOIN ", $join_tables);
         }
-
 	$sql .= " WHERE  " . join(' AND ', $where) .
     	        " ORDER BY reports.date_processed DESC 
 	          LIMIT ? OFFSET ? ";
@@ -223,6 +231,7 @@ class Common_Model extends Model {
         if(count($join_tables) > 0) {
 	    $sql .= " JOIN  " . join("\nJOIN ", $join_tables);
         }
+
 	$sql .= " WHERE  " . join(' AND ', $where) .
                 " GROUP BY date_trunc('day', reports.build_date) ".
                 " ORDER BY date_trunc('day', reports.build_date) DESC";
@@ -301,30 +310,57 @@ class Common_Model extends Model {
 	    $where[] = 'reports.build = ' . $this->db->escape($params['build_id']);
 	}
 
-	if (array_key_exists('process_type', $params) && 'plugin' == $params['process_type']) {
-            array_push($join_tables, 'plugins_reports ON plugins_reports.report_id = reports.id');
-            array_push($join_tables, 'plugins ON plugins_reports.plugin_id = plugins.id');
-	    if (trim($params['plugin_query']) != '') {
-		switch ($params['plugin_query_type']) {
+        /* Bug#562375 - Add search support for Hang and OOPP
+
+              | ANY Report Type   | CRASH                | OOPP HANG
+  ------------+-------------------+----------------------+---------------
+  ANY PROCESS | hang=Any proc=Any | hangid=null proc=Any | hangid = 123 Proc=Any
+  ------------+-------------------+----------------------+---------------
+      BROWSER | hang=Any proc=Bro | hangid=null proc=Bro | hangid=123 Proc=Bro
+  ------------+-------------------+----------------------+---------------
+      PLUG-IN | hang=Any proc=Plu | hangid=null proc=Plu | hangid=123 Proc=Plu
+	*/
+
+        // Report Type hang_type - [any|crash|hang]
+        if (array_key_exists('hang_type', $params) && 
+            'crash' == $params['hang_type']) {
+                $where[] = 'reports.hangid IS NULL';
+	} elseif (array_key_exists('hang_type', $params) && 
+		  'hang' == $params['hang_type']) {
+                      $where[] = 'reports.hangid IS NOT NULL';
+	} // else hang_type is ANY
+
+        // Report Process process_type - [any|browser|plugin|
+        if (array_key_exists('process_type', $params) && 
+	    'plugin' == $params['process_type'] ) {
+            $where[] = "reports.process_type = 'plugin'";
+
+	    array_push($join_tables, 'plugins_reports ON plugins_reports.report_id = reports.id');
+	    array_push($join_tables, 'plugins ON plugins_reports.plugin_id = plugins.id');
+
+            if (trim($params['plugin_query']) != '') {
+                switch ($params['plugin_query_type']) {
                     case 'exact':
-			$plugin_query_term = ' = ' . $this->db->escape($params['plugin_query']); 
-			break;
+                        $plugin_query_term = ' = ' . $this->db->escape($params['plugin_query']); 
+                        break;
                     case 'startswith':
-			$plugin_query_term = ' LIKE ' . $this->db->escape($params['plugin_query'].'%'); 
-			break;
+                        $plugin_query_term = ' LIKE ' . $this->db->escape($params['plugin_query'].'%'); 
+                        break;
                     case 'contains':
                     default:
                         $plugin_query_term = ' LIKE ' . $this->db->escape('%'.$params['plugin_query'].'%'); 
-			break;
-		}
-		if ('filename' == $params['plugin_field']) {
-		    $where[] = 'plugins.filename ' . $plugin_query_term;
-		} else {
-		    $where[] = 'plugins.name ' . $plugin_query_term;
-		}
-
-	    }
-	}
+                        break;
+                }
+                if ('filename' == $params['plugin_field']) {
+                    $where[] = 'plugins.filename ' . $plugin_query_term;
+                } else {
+                    $where[] = 'plugins.name ' . $plugin_query_term;
+                }
+            }
+	} elseif (array_key_exists('process_type', $params) && 
+	          'browser' == $params['process_type']) {
+                      $where[] = 'reports.process_type IS NULL';
+	} // else process_type is ANY
 
         if ($params['query']) {
 
@@ -357,10 +393,18 @@ class Common_Model extends Model {
                 $interval = $this->db->escape($params['range_value'] . ' ' . $params['range_unit']);
                 $now = date('Y-m-d H:i:s');
                 $where[] = "reports.date_processed BETWEEN TIMESTAMP '$now' - CAST($interval AS INTERVAL) AND TIMESTAMP '$now'";
+                if (array_key_exists('process_type', $params) && 
+                    'plugin' == $params['process_type'] ) {
+                        $where[] = "plugins_reports.date_processed BETWEEN TIMESTAMP '$now' - CAST($interval AS INTERVAL) AND TIMESTAMP '$now'";
+                }
             } else {
                 $date = $this->db->escape($params['date']);
                 $interval = $this->db->escape($params['range_value'] . ' ' . $params['range_unit']);
                 $where[] = "reports.date_processed BETWEEN CAST($date AS TIMESTAMP WITHOUT TIME ZONE) - CAST($interval AS INTERVAL) AND CAST($date AS TIMESTAMP WITHOUT TIME ZONE)";
+                if (array_key_exists('process_type', $params) && 
+                    'plugin' == $params['process_type'] ) {
+                        $where[] = "plugins_reports.date_processed BETWEEN CAST($date AS DATE) - CAST($interval AS INTERVAL) AND CAST($date AS DATE)";
+                }
             }
         }
 

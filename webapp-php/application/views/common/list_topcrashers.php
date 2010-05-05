@@ -37,6 +37,7 @@
                         $sigParams = array(
                             'range_value' => '2',
                             'range_unit'  => 'weeks',
+			    'date'        => $end_date,
                             'signature'   => $crasher->signature
 			    );
                         if (property_exists($crasher, 'missing_sig_param')) {
@@ -62,6 +63,9 @@
 			     echo " <a href='http://code.google.com/p/socorro/wiki/NullOrEmptySignatures' class='inline-help'>Learn More</a> ";
 			 } ?>
                          <div class="signature-icons">
+                         <?php View::factory('common/hang_details', array(
+			     'crash' => $crasher->{'hang_details'}
+                         ))->render(TRUE) ?>
                          <a href="#"><img src="<?= url::site('/img/3rdparty/silk/chart_curve.png')?>" width="16" height="16" alt="Graph this" class="graph-icon" /></a>
                          </div>
 <div class="sig-history-graph"></div><div class="sig-history-legend"></div><input type="hidden" class='ajax-signature' name="ajax-signature-<?= $row ?>" value="<?= $crasher->{'display_signature'}?>" /></td>

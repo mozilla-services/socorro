@@ -32,12 +32,16 @@ $(document).ready(function () {
 
         $('.hang-pair', tr).html("<img src='../img/ajax-loader16x16.gif' alt='Loading data' />");
         $.getJSON(url, function(data) {
-	    for (var i=0; data.length; i++) {
-	        var hangType = data[i].processType && data[i].processType == 'plugin' ? 'Plugin' : 'Browser';
-	        $('.hang-pair', tr).html(hangType + " Hang:<br /><a href='" + data[i].uuid + "'>" + data[i].display_date_processed  + "</a>");
-                $('img', tr).unbind('click');
-	        break;
-            } 	    
+            if (data.length > 0 ) {
+	        for (var i=0; data.length; i++) {
+	            var hangType = data[i].processType && data[i].processType == 'plugin' ? 'Plugin' : 'Browser';
+	            $('.hang-pair', tr).html(hangType + " Hang:<br /><a href='" + data[i].uuid + "'>" + data[i].display_date_processed  + "</a>");
+                    $('img', tr).unbind('click');
+	            break;
+                }
+            } else {
+                $('.hang-pair', tr).html("Unable to locate other Hang Part.");
+            }    
         });
         return false;
     });

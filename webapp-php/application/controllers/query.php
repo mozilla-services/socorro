@@ -115,11 +115,19 @@ class Query_Controller extends Controller {
                     $showPluginFilename = true;
                 }
 		array_push($signatures, $report->signature);
+		
+                $hang_details = array();
+                $hang_details['is_hang'] = $report->numhang > 0;
+                $hang_details['is_plugin'] = $report->numplugin > 0;
+                $report->{'hang_details'} = $hang_details;
+                if(empty($report->signature)) {
+		    Kohana::log('info', 'seeing an empty signature ' . Kohana::debug($report->signature) . ' details ' . Kohana::debug($hang_details));
+		}
 	    }
             $rows = $this->bug_model->bugsForSignatures(array_unique($signatures));
-	    $bugzilla = new Bugzilla;
-	    $signature_to_bugzilla = $bugzilla->signature2bugzilla($rows, Kohana::config('codebases.bugTrackingUrl'));
-	      
+            $bugzilla = new Bugzilla;
+            $signature_to_bugzilla = $bugzilla->signature2bugzilla($rows, Kohana::config('codebases.bugTrackingUrl'));
+
         } else {
             $reports = array();
 

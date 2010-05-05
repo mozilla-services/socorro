@@ -292,20 +292,16 @@ class Topcrashers_Model extends Model {
         $sql = "/* soc.web topcrash.oop */
                 SELECT signature, COUNT(signature), 
                        SUM (CASE WHEN hangid IS NULL THEN 0  ELSE 1 END) AS numhang,
-                       SUM (CASE WHEN plugins_reports.plugin_id IS NULL THEN 0  ELSE 1 END) AS numplugin
+                       SUM (CASE WHEN process_type IS NULL THEN 0  ELSE 1 END) AS numplugin
                 FROM reports
-                LEFT OUTER JOIN  plugins_reports ON plugins_reports.report_id = reports.id
                 WHERE ((reports.product = ?) AND (reports.version = ?)) AND
                      reports.date_processed BETWEEN TIMESTAMP ? - CAST(? AS INTERVAL) AND TIMESTAMP ?  AND
-                     plugins_reports.date_processed BETWEEN TIMESTAMP ? - CAST(? AS INTERVAL) AND TIMESTAMP ?  AND
                      signature IN (" . implode(", ", $sigs) . ")
-                GROUP BY signature, hangid
-                ORDER BY signature;";
+                GROUP BY signature";
         $rows = $this->fetchRows($sql, TRUE, array($product, $version, $endtime, $duration, $endtime,
                                                                         $endtime, $duration, $endtime));
         $sig2oopp = array();
         foreach ($rows as $row) {
-            $row->numhang = 3;
             $sig2oopp[$row->signature] = array();
             $sig2oopp[$row->signature]['hang'] = $row->numhang > 0 ? true : false;
             $sig2oopp[$row->signature]['process'] = $row->numplugin > 0 ? 'Plugin' : 'Browser';

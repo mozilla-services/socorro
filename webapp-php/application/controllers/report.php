@@ -118,6 +118,16 @@ class Report_Controller extends Controller {
 
 	    list($correlation_product, $correlation_version) = $this->_correlationProdVers($reports);
 
+            foreach ($reports as $report) {
+                $hang_details = array();
+                $hang_details['is_hang'] = ! empty($report->hangid);
+                $hang_details['is_plugin'] = ! empty($report->plugin_id);
+                $hang_details['link'] = '#';//Crash level view, linkify widgets
+                $hang_details['uuid'] = $report->uuid;
+                $hang_details['hangid'] = $report->hangid;
+                $report->{'hang_details'} = $hang_details;
+            }
+
         $product = (isset($product) && !empty($product)) ? $product : Kohana::config('products.default_product');
 	    $this->setViewData(array(
 		'navPathPrefix' => $currentPath,

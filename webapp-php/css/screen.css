@@ -850,6 +850,7 @@ td.in1 ul, td.in2 ul{
 
 .signature-preview {
     display: block;
+    float: left;
     overflow: hidden;
     white-space: nowrap;
     width: 420px;
@@ -1290,8 +1291,9 @@ p.advanced {
 #searchform button {
 	margin: 1em 0 0 1em;
 }
-#searchform div.radio-item {
-    display:inline;
+#searchform .radio-item {
+    margin-right: 1em;
+    padding-bottom: 1em;
 }
 #formspacer {
     margin-bottom: 2em;
