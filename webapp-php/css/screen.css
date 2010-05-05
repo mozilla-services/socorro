@@ -1214,9 +1214,6 @@ div.query_removemargin { /* Removes margin from the main content area */
 	width: 12em;
 	font-size: 100%;
 }
-#searchform select.primary {
-    height: 6.5em;	
-}
 #searchform #query_type {
 	width: 4em;
 }
