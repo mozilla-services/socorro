@@ -120,9 +120,6 @@ class Query_Controller extends Controller {
                 $hang_details['is_hang'] = $report->numhang > 0;
                 $hang_details['is_plugin'] = $report->numplugin > 0;
                 $report->{'hang_details'} = $hang_details;
-                if(empty($report->signature)) {
-		    Kohana::log('info', 'seeing an empty signature ' . Kohana::debug($report->signature) . ' details ' . Kohana::debug($hang_details));
-		}
 	    }
             $rows = $this->bug_model->bugsForSignatures(array_unique($signatures));
             $bugzilla = new Bugzilla;
