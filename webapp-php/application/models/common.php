@@ -403,7 +403,7 @@ class Common_Model extends Model {
                 $where[] = "reports.date_processed BETWEEN CAST($date AS TIMESTAMP WITHOUT TIME ZONE) - CAST($interval AS INTERVAL) AND CAST($date AS TIMESTAMP WITHOUT TIME ZONE)";
                 if (array_key_exists('process_type', $params) && 
                     'plugin' == $params['process_type'] ) {
-                        $where[] = "plugins_reports.date_processed BETWEEN CAST($date AS DATE) - CAST($interval AS INTERVAL) AND CAST($date AS DATE)";
+                        $where[] = "plugins_reports.date_processed BETWEEN CAST($date AS TIMESTAMP WITHOUT TIME ZONE) - CAST($interval AS INTERVAL) AND CAST($date AS TIMESTAMP WITHOUT TIME ZONE)";
                 }
             }
         }
