@@ -70,9 +70,6 @@ def main():
         conn.close()
       except (psycopg2.OperationalError, AssertionError),x:
         lib_util.reportExceptionAndAbort(logger)
-      #TODO finally close
-      
-      #cursor.execute(sql,startEndData)
   finally:
     logger.info("done.")
 
