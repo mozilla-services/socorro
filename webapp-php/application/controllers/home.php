@@ -45,6 +45,17 @@ class Home_Controller extends Controller
 {
     
     /**
+     * Class constructor.
+     *
+     * @return void
+     */
+    public function __construct()
+    {
+        parent::__construct();
+        $this->ensureChosenVersion($this->currentProducts(), FALSE); // Force product selection (Not always working on this page)
+    }
+
+    /**
      * SocorroUI homepage is temporarily serving as a redirect to the
      * default product dashboard.
      */
@@ -52,9 +63,6 @@ class Home_Controller extends Controller
     {
         if (isset($this->chosen_version)) {
             $url = 'products/'.$this->chosen_version['product'];
-            if (isset($this->chosen_version['version']) && !empty($this->chosen_version['product'])) {
-                $url .= 'versions/' . $this->chosen_version['version'];
-            }
         } else {
             $url = 'products/' . Kohana::config('products.default_product');
         }

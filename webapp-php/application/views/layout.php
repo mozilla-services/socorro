@@ -33,117 +33,96 @@
             <input type="submit" class="hidden" />
         </form>
     </div>
-    
-    <div class="product-nav">
-    	<ul>
-        <?php foreach ($common_products as $product => $versions) { ?>
+
+
+	<h1>Product Navigation</h1>	
+
+	<div class="version-nav">
+
+		<input type="hidden" id="url_base" name="url_base" value="<?php if (isset($url_nav)) out::H($url_nav); else out::H(url::site()); ?>" />
+		<input type="hidden" id="url_site" name="url_site" value="<?php out::H(url::site()); ?>" />
+
+		<ul class="filter">
     		<li>
-                <a href="<?php echo url::base() ?>products/<?php out::H($product); ?>" 
-                    <?php 
-                        if ($product == $chosen_version['product'] && !(isset($nav_selection) && $nav_selection == 'query')) { 
-                            echo ' class="selected"'; 
-                        } 
-                    ?>
-                ><span><?php out::H($product); ?><?php /* Commented out in https://bugzilla.mozilla.org/show_bug.cgi?id=546773     &#9662; */ ?></span></a>
-                
-                <?php /* Commented out in https://bugzilla.mozilla.org/show_bug.cgi?id=546773
-                
-                <?php if ($chosen_version['product'] != $product) { ?>
-                <ul class="dropdown">
-                    <?php 
-                        $releases = array('Dev', 'Major', 'Release'); 
-                        foreach ($versions as $version) { 
-                    ?>
-
-                       <li><a href="<?php echo url::base() ?>products/<?php out::H($product); ?>/versions/<?php out::H($version); ?>"><?php out::H($product); ?> <?php out::H($version); ?> <span><?php // out::H(array_shift($releases)); ?></span></a></li>
-                    <?php } ?>
-		            <li class="sep"></li>
-		            <li><a href="<?php echo url::base() ?>products/<?php out::H($product); ?>"><?php out::H($product); ?> <span>All Versions</span></a></li>
-			    </ul>
-			    <?php } ?>
-			    <?php */ ?>
-			    
+			Product:
+			<select id="products_select">
+			<?php foreach ($common_products as $product => $versions) { ?>
+				<option <?php if ($product == $chosen_version['product']) echo 'SELECTED'; ?> value="<?php out::H($product); ?>"><?php out::H($product); ?></option>
+			<?php } ?>
+			</select>
 			</li>
-        <?php } ?>
-        </ul>
+		
+			<select id="product_version_select">
+				<optgroup>
+					<option value="Current Versions">Current Versions</option>
+				</optgroup>
+				<optgroup>
+					<?php 
+						foreach ($common_products as $product => $versions) {
+							if ($chosen_version['product'] == $product) { 
+	                        	$releases = array('Dev', 'Major', 'Release'); 
+	                        	foreach ($versions as $version) { 
+                    ?>
+							<option value="<?php out::H($version); ?>"
+								<?php if ($version == $chosen_version['version']) echo 'SELECTED'; ?>
+							><?php out::H($version); ?></option>
+                    <?php 
+								}
+							} 
+						}
+					?>
+				</optgroup>
+				<optgroup>
+					<?php
+						krsort($current_product_versions);					
+						foreach ($current_product_versions as $version) { 
+                        	if (
+								$version->product == $chosen_version['product'] &&
+								!in_array($version->version, $common_products[$version->product])
+							) {
+					?>
+                            	<option value="<?php out::H($version->version); ?>"
+                            	    <?php if ($version->version == $chosen_version['version']) echo ' SELECTED'; ?>
+                            	><?php out::H($version->version); ?></option>
+					<?php 
+							}
+ 						}
+					?>
+				</optgroup>
+			</select>
+		
+            <li>
+                <label>Report:</label>
+                <select id="report_select">
+                    <optgroup>
+                        <option <?php if (isset($nav_selection) && $nav_selection == 'overview') echo 'class="selected"'; ?> 
+							value="<?= url::base() ?>products/<?= $chosen_version['product'] ?><?php if (isset($chosen_version['version']) && !empty($chosen_version['version'])) echo '/versions/'.html::specialchars($chosen_version['version']); ?>">Overview</option>
+                    </optgroup>
+                    <optgroup>
+                        <option <?php if (isset($nav_selection) && $nav_selection == 'crashes_user') echo 'class="selected"'; ?>
+							value="<?= url::base() ?>daily?p=<?= $chosen_version['product'] ?>&v[]=<?= $chosen_version['version'] ?>">Crashes per User</option>
+                        <option <?php if (isset($nav_selection) && $nav_selection == 'nightlies') echo 'class="selected"'; ?>
+							value="<?= url::base() ?>products/<?= $chosen_version['product'] ?><?php if (isset($chosen_version['version']) && !empty($chosen_version['version'])) echo '/versions/'.html::specialchars($chosen_version['version']); ?>/builds">Nightly Builds</option>
+                    </optgroup>
+                    <optgroup>	
+                        <option <?php if (isset($nav_selection) && $nav_selection == 'top_crashes') echo '"selected"'; ?>
+                            value="<?= url::base() ?>topcrasher/byversion/<?= $chosen_version['product'] ?>/<?= $chosen_version['version'] ?>">Top Crashers</option>
+                        <option <?php if (isset($nav_selection) && $nav_selection == 'top_url') echo 'selected'; ?> 
+                            value="<?= url::base() ?>topcrasher/byurl/<?= $chosen_version['product'] ?>/<?= $chosen_version['version'] ?>">Top Crashers by URL</option>
+                        <option <?php if (isset($nav_selection) && $nav_selection == 'top_domain') echo 'selected'; ?> 
+                            value="<?= url::base() ?>topcrasher/bydomain/<?= $chosen_version['product'] ?>/<?= $chosen_version['version'] ?>">Top Crashers by Domain</option>
+                        <option <?php if (isset($nav_selection) && $nav_selection == 'top_topsite') echo 'selected'; ?> 
+                            value="<?= url::base() ?>topcrasher/bytopsite/<?= $chosen_version['product'] ?>/<?= $chosen_version['version'] ?>">Top Crashers by Topsite</option>  
+                    </optgroup>
+				</select>
+            </li>
+		
+		</ul>
 
-        <ul class="search">
-    		<li><a href="<?php echo url::base() ?>query"
-                <?php 
-                    if (isset($nav_selection) && $nav_selection == 'query') {
-                        echo ' class="selected"'; 
-                    }
-                ?>
-            >Advanced Search</a></li>
-    	</ul>
-
-    </div>
-
-
-    <?php if (!isset($nav_selection) || (isset($nav_selection ) && $nav_selection != 'query')) { ?>
-    <div class="version-nav">
-        
-        <?php foreach ($common_products as $product => $versions) { ?>
-            <?php if ($product == $chosen_version['product']) { ?>
-            	<div class="choices">
-                    <input type="hidden" id="base_url" name="base_url" value="<?php if (isset($url_nav)) out::H($url_nav); else out::H(url::site()); ?>" />
-        		    <div class="label">Version:</div>
-                    <ul>
-                        <li><a href="<?php echo url::base() ?>products/<?php out::H($product); ?>"
-                            <?php if (empty($chosen_version['version'])) echo ' class="selected"'; ?>
-                        >All</a></li>
-                        
-                        <?php foreach ($versions as $version) { ?>
-                           <a href="<?php echo url::base() ?>products/<?php out::H($product); ?>/versions/<?php out::H($version); ?>"
-                               <?php if ($version == $chosen_version['version']) echo ' class="selected"'; ?>
-                           ><?php out::H($version); ?></a>
-                        <?php } ?>
-                        
-                        <li><span class="more">
-                            <select id="product_version" name="product_version">
-                               <option>More Versions</option>
-                                <?php foreach ($current_product_versions as $version) { ?>
-                                    <?php if ($version->product == $product) { ?>
-                                       <option value="<?php out::H($version->version); ?>"
-                                           <?php if ($version->version == $chosen_version['version']) echo ' SELECTED'; ?>
-                                       ><?php out::H($version->version); ?></option>
-                                   <?php } ?>
-                               <?php } ?>
-                            </select>    
-                        </span></li>
-                    
-                    </ul>
-                </div>
-
-    	        <div class="choices">
-    		        <div class="label">Report:</div>
-                    <ul>
-                        <li><a <?php if (isset($nav_selection) && $nav_selection == 'overview') echo 'class="selected"'; ?> 
-                            href="<?= url::base() ?>products/<?= $chosen_version['product'] ?>">Overview</a></li>
-                        <li><a <?php if (isset($nav_selection) && $nav_selection == 'crashes_user') echo 'class="selected"'; ?> 
-                            href="<?= url::base() ?>daily?p=<?= $chosen_version['product'] ?>&v[]=<?= $chosen_version['version'] ?>">Crashes/User</a></li>
-                        <li><a <?php if (isset($nav_selection) && $nav_selection == 'top_crashes') echo 'class="selected"'; ?> 
-                            href="<?= url::base() ?>topcrasher/byversion/<?= $chosen_version['product'] ?>/<?= $chosen_version['version'] ?>">Top Crashes</a></li>
-                        <li><a <?php if (isset($nav_selection) && $nav_selection == 'nightlies') echo 'class="selected"'; ?> 
-                            href="<?= url::base() ?>products/<?= $chosen_version['product'] ?><?php if (isset($chosen_version['version']) && !empty($chosen_version)) echo '/versions/'.$chosen_version['version']; ?>/builds">Nightlies</a></li>
-                        <li><span class="more">
-                            <select id="report" name="report">
-                                 <option>More Reports</option>
-                                 <option <?php if (isset($nav_selection) && $nav_selection == 'top_url') echo 'selected'; ?> 
-                                    value="<?= url::base() ?>topcrasher/byurl/<?= $chosen_version['product'] ?>/<?= $chosen_version['version'] ?>">Top Crashes By URL</option>
-                        		 <option <?php if (isset($nav_selection) && $nav_selection == 'top_domain') echo 'selected'; ?> 
-                        		    value="<?= url::base() ?>topcrasher/bydomain/<?= $chosen_version['product'] ?>/<?= $chosen_version['version'] ?>">Top Crashes By Domain</option>
-                                 <option <?php if (isset($nav_selection) && $nav_selection == 'top_topsite') echo 'selected'; ?> 
-                                    value="<?= url::base() ?>topcrasher/bytopsite/<?= $chosen_version['product'] ?>/<?= $chosen_version['version'] ?>">Top Crashes By Topsite</option>  
-                            </select>
-                        </span></li>
-                    </ul>
-    	        </div>
-            <?php } ?>
-    <?php } ?>
-
-    </div>
-    <?php } ?>
+		<div class="search">
+			<a href="<?php out::H(url::site()); ?>query">Advanced Search</a>
+		</div>
+	</div>
 
       
     <div id="mainbody">
@@ -155,11 +134,8 @@
     <div class="page-footer">
     	<div class="nav">
     		<div class="about">
-    			<strong>Mozilla Crash Reports</strong>
-    			-
-    			Powered by Socorro
+    			<strong>Mozilla Crash Reports</strong> - Powered by <a href="http://code.google.com/p/socorro/">Socorro</a>
     		</div>
-
 
     		<ul>
                 <li><a href="<?php echo url::base() ?>status">Server Status</a></li>

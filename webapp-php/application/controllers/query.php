@@ -57,7 +57,8 @@ class Query_Controller extends Controller {
     public function __construct()
     {
         parent::__construct();
-	    $this->bug_model = new Bug_Model;
+        $this->bug_model = new Bug_Model;
+        $this->ensureChosenVersion($this->currentProducts(), FALSE); // Force product selection (Not always working on this page)
     }
 
     /**
@@ -129,12 +130,8 @@ class Query_Controller extends Controller {
             $reports = array();
 
         }
-
-	//common getParams
-	//prepareAndSetCommonViewData($params)
-
-        // TODO: redirect if there's one resulting report signature group
-
+        
+        // If no date is specified, add today's date.
         if (empty($params['date'])) {
             $params['date'] = date('m/d/Y H:i:s');
         }
@@ -146,8 +143,9 @@ class Query_Controller extends Controller {
             'reports' => $reports,
             'showPluginName' => $showPluginName,
             'showPluginFilename' => $showPluginFilename,
-            'sig2bugs' => $signature_to_bugzilla
-	 ));
+            'sig2bugs' => $signature_to_bugzilla,
+            'url_nav' => url::site('products/'.$this->chosen_version['product']),
+        ));
     }
 
     /**
