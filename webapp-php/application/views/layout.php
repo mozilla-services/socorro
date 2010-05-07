@@ -95,17 +95,17 @@
                 <label>Report:</label>
                 <select id="report_select">
                     <optgroup>
-                        <option <?php if (isset($nav_selection) && $nav_selection == 'overview') echo 'class="selected"'; ?> 
+                        <option <?php if (isset($nav_selection) && $nav_selection == 'overview') echo 'selected'; ?> 
 							value="<?= url::base() ?>products/<?= $chosen_version['product'] ?><?php if (isset($chosen_version['version']) && !empty($chosen_version['version'])) echo '/versions/'.html::specialchars($chosen_version['version']); ?>">Overview</option>
                     </optgroup>
                     <optgroup>
-                        <option <?php if (isset($nav_selection) && $nav_selection == 'crashes_user') echo 'class="selected"'; ?>
+                        <option <?php if (isset($nav_selection) && $nav_selection == 'crashes_user') echo 'selected'; ?>
 							value="<?= url::base() ?>daily?p=<?= $chosen_version['product'] ?>&v[]=<?= $chosen_version['version'] ?>">Crashes per User</option>
-                        <option <?php if (isset($nav_selection) && $nav_selection == 'nightlies') echo 'class="selected"'; ?>
+                        <option <?php if (isset($nav_selection) && $nav_selection == 'nightlies') echo 'selected'; ?>
 							value="<?= url::base() ?>products/<?= $chosen_version['product'] ?><?php if (isset($chosen_version['version']) && !empty($chosen_version['version'])) echo '/versions/'.html::specialchars($chosen_version['version']); ?>/builds">Nightly Builds</option>
                     </optgroup>
                     <optgroup>	
-                        <option <?php if (isset($nav_selection) && $nav_selection == 'top_crashes') echo '"selected"'; ?>
+                        <option <?php if (isset($nav_selection) && $nav_selection == 'top_crashes') echo 'selected'; ?>
                             value="<?= url::base() ?>topcrasher/byversion/<?= $chosen_version['product'] ?>/<?= $chosen_version['version'] ?>">Top Crashers</option>
                         <option <?php if (isset($nav_selection) && $nav_selection == 'top_url') echo 'selected'; ?> 
                             value="<?= url::base() ?>topcrasher/byurl/<?= $chosen_version['product'] ?>/<?= $chosen_version['version'] ?>">Top Crashers by URL</option>

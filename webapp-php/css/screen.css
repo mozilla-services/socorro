@@ -1342,7 +1342,6 @@ div.query_removemargin { /* Removes margin from the main content area */
     background-color: #dae2e5;
 	background-image: url(../img/2.0/version-bg.png);
     padding: 0 0 1em 112px;
-	width: 100%;
 }
 #searchform select {
 	width: 12em;
