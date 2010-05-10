@@ -130,6 +130,11 @@ class Query_Controller extends Controller {
             $reports = array();
 
         }
+
+        // If no product is specified, add the user's last selected product
+        if (!isset($_GET['product']) || !isset($params['product']) || empty($params['product'])) {
+            $params['product'] = array( 0 => $this->chosen_version['product'] );
+        }
         
         // If no date is specified, add today's date.
         if (empty($params['date'])) {

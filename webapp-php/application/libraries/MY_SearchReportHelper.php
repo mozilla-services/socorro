@@ -118,9 +118,6 @@ class SearchReportHelper{
       $params['product'] = array();
       $this->showWarning = TRUE;
     }
-    if (! $productEmpty  && $params['product'][0] == 'ALL') {
-      $params['product'] = array();
-    }
     if (! $versionEmpty  && $params['version'][0] == 'ALL:ALL') {
       $params['version'] = array();
     }

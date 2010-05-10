@@ -67,20 +67,11 @@ $(document).ready(function() {
     function productUpdater() {
         var selected =  $('select[name=product]').val();
         if(selected.length > 0){
-	    if (selected == "ALL") {
-	       updateVersionWithAllVersions();
-  	    } else {
 	       updateVersion(selected);
-	    }
         }
     }
   $('select[name=product]').bind('change', productUpdater);
 
-  function updateVersionWithAllVersions() {
-      var prods = [];
-      for (var key in prodVersMap) { prods.push(key); }
-      updateVersion(prods, [])
-  }
   function updateVersion(products, selected){
     var sel = selected || [];
     var s = "<option value='ALL:ALL'>All</option>";
