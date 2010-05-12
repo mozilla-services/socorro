@@ -175,6 +175,11 @@ if (is_null($report->signature) || empty($report->signature)) { ?>
 	    <th>Distributor Version</th><td><?php out::H($report->distributor_version) ?></td>
             </tr>
 <?php } ?>
+<?php if (property_exists($report, 'addons_checked')) { ?>
+            <tr>
+	    <th>EMCheckCompatibility</th><td><?php if ($report->addons_checked) { echo 'True'; } else { echo 'False'; } ?></td>
+            </tr>
+<?php } ?>
         </table>
 <?php if (array_key_exists($report->signature, $sig2bugs)) { ?>    
       <div id="bugzilla">      
