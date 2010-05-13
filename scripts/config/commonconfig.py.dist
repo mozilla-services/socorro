@@ -1,5 +1,9 @@
 import socorro.lib.ConfigurationManager as cm
 import datetime
+import stat
+
+#---------------------------------------------------------------------------
+# Relational Database Section
 
 databaseHost = cm.Option()
 databaseHost.doc = 'the hostname of the database servers'
@@ -21,21 +25,12 @@ databasePassword = cm.Option()
 databasePassword.doc = 'the password for the database user'
 databasePassword.default = ''
 
-storageRoot = cm.Option()
-storageRoot.doc = 'the root of the file system where dumps are found'
-storageRoot.default = '/tmp/socorro/toBeProcessed/'
+#---------------------------------------------------------------------------
+# Crash storage system
 
-deferredStorageRoot = cm.Option()
-deferredStorageRoot.doc = 'the root of the file system where dumps are found'
-deferredStorageRoot.default = '/tmp/socorro/toBeDeferred/'
-
-processedDumpStoragePath = cm.Option()
-processedDumpStoragePath.doc = 'the path of the file system where processed dumps are stored'
-processedDumpStoragePath.default = '/tmp/socorro/processedDumpStorage/'
-
-dumpDirPrefix = cm.Option()
-dumpDirPrefix.doc = 'dump directory names begin with this prefix'
-dumpDirPrefix.default = 'bp_'
+crashStorageClass = cm.Option()
+crashStorageClass.doc = 'the name of the class used to store crashes (CrashStorageSystemForHBase or CrashStorageSystemForNFS)'
+crashStorageClass.default = 'CrashStorageSystemForHBase'
 
 jsonFileSuffix = cm.Option()
 jsonFileSuffix.doc = 'the suffix used to identify a json file'
@@ -44,6 +39,55 @@ jsonFileSuffix.default = '.json'
 dumpFileSuffix = cm.Option()
 dumpFileSuffix.doc = 'the suffix used to identify a dump file'
 dumpFileSuffix.default = '.dump'
+
+#---------------------------------------------------------------------------
+# HBase storage system
+if crashStorageClass.default == 'CrashStorageSystemForHBase':
+  hbaseHost = cm.Option()
+  hbaseHost.doc = 'Hostname for hbase hadoop cluster. May be a VIP or load balancer'
+  hbaseHost.default = 'localhost'
+
+  hbasePort = cm.Option()
+  hbasePort.doc = 'hbase port number'
+  hbasePort.default = 9090
+
+#---------------------------------------------------------------------------
+# NFS storage system
+if crashStorageClass.default == 'CrashStorageSystemForNFS':
+  storageRoot = cm.Option()
+  storageRoot.doc = 'the root of the file system where dumps are found'
+  storageRoot.default = '/tmp/socorro/toBeProcessed/'
+
+  deferredStorageRoot = cm.Option()
+  deferredStorageRoot.doc = 'the root of the file system where dumps are found'
+  deferredStorageRoot.default = '/tmp/socorro/toBeDeferred/'
+
+  processedDumpStoragePath = cm.Option()
+  processedDumpStoragePath.doc = 'the path of the file system where processed dumps are stored'
+  processedDumpStoragePath.default = '/tmp/socorro/processedDumpStorage/'
+
+  dumpDirPrefix = cm.Option()
+  dumpDirPrefix.doc = 'dump directory names begin with this prefix'
+  dumpDirPrefix.default = 'bp_'
+
+  dumpDirCount = cm.Option()
+  dumpDirCount.doc = 'the number of dumps to be stored in a single directory'
+  dumpDirCount.default = 1024
+
+  dumpGID = cm.Option()
+  dumpGID.doc="the group ID on minidumps so that they can be deleted by other users (optional)"
+  dumpGID.default = None
+
+  dumpPermissions = cm.Option()
+  dumpPermissions.doc = 'when saving dumps, the pemission flags to be used'
+  dumpPermissions.default = '%d'%(stat.S_IRGRP | stat.S_IWGRP | stat.S_IRUSR | stat.S_IWUSR)
+
+  dirPermissions = cm.Option()
+  dirPermissions.doc = 'when saving dumps, the permission flags to be used on directories'
+  dirPermissions.default = '%d'%(stat.S_IRGRP | stat.S_IXGRP | stat.S_IWGRP | stat.S_IRUSR | stat.S_IXUSR | stat.S_IWUSR)
+
+#---------------------------------------------------------------------------
+# misc
 
 processorCheckInTime = cm.Option()
 processorCheckInTime.doc = 'the time after which a processor is considered dead (hh:mm:ss)'

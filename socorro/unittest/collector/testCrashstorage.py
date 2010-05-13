@@ -1,6 +1,7 @@
 import unittest
 import os
 import sys
+import re
 try:
   import json
 except ImportError:
@@ -37,6 +38,98 @@ def testRepeatableStreamReader():
   result = rsr.read()
   assert result == expectedReadResult, '3rd expected %s but got %s' % (expectedReadResult, result)
 
+def testLegacyThrottler():
+  config = util.DotDict()
+  config.throttleConditions = [ ('alpha', re.compile('ALPHA'), 100),
+                                ('beta',  'BETA', 100),
+                                ('gamma', lambda x: x == 'GAMMA', 100),
+                                ('delta', True, 100),
+                                (None, True, 0)
+                              ]
+  config.minimalVersionForUnderstandingRefusal = { 'product1': '3.5', 'product2': '4.0' }
+  config.neverDiscard = False
+  thr = cstore.LegacyThrottler(config)
+  expected = 5
+  actual = len(thr.processedThrottleConditions)
+  assert expected == actual, "expected thr.preprocessThrottleConditions to have length %d, but got %d instead" % (expected, actual)
+
+  json1 = util.DotDict({ 'ProductName':'product1',
+                         'Version':'3.0',
+                         'alpha':'ALPHA',
+                       })
+  expected = False
+  actual = thr.understandsRefusal(json1)
+  assert expected == actual, "understand refusal expected %d, but got %d instead" % (expected, actual)
+
+  json1 = util.DotDict({ 'ProductName':'product1',
+                         'Version':'3.6',
+                         'alpha':'ALPHA',
+                       })
+  expected = True
+  actual = thr.understandsRefusal(json1)
+  assert expected == actual, "understand refusal expected %d, but got %d instead" % (expected, actual)
+
+  expected = cstore.LegacyThrottler.ACCEPT
+  actual = thr.throttle(json1)
+  assert expected == actual, "regexp throttle expected %d, but got %d instead" % (expected, actual)
+
+  json1 = util.DotDict({ 'ProductName':'product1',
+                         'Version':'3.4',
+                         'alpha':'not correct',
+                       })
+  expected = cstore.LegacyThrottler.DEFER
+  actual = thr.throttle(json1)
+  assert expected == actual, "regexp throttle expected %d, but got %d instead" % (expected, actual)
+
+  json1 = util.DotDict({ 'ProductName':'product1',
+                         'Version':'3.6',
+                         'alpha':'not correct',
+                       })
+  expected = cstore.LegacyThrottler.DISCARD
+  actual = thr.throttle(json1)
+  assert expected == actual, "regexp throttle expected %d, but got %d instead" % (expected, actual)
+
+  json1 = util.DotDict({ 'ProductName':'product1',
+                         'Version':'3.6',
+                         'beta':'BETA',
+                       })
+  expected = cstore.LegacyThrottler.ACCEPT
+  actual = thr.throttle(json1)
+  assert expected == actual, "string equality throttle expected %d, but got %d instead" % (expected, actual)
+
+  json1 = util.DotDict({ 'ProductName':'product1',
+                         'Version':'3.6',
+                         'beta':'not BETA',
+                       })
+  expected = cstore.LegacyThrottler.DISCARD
+  actual = thr.throttle(json1)
+  assert expected == actual, "string equality throttle expected %d, but got %d instead" % (expected, actual)
+
+  json1 = util.DotDict({ 'ProductName':'product1',
+                         'Version':'3.6',
+                         'gamma':'GAMMA',
+                       })
+  expected = cstore.LegacyThrottler.ACCEPT
+  actual = thr.throttle(json1)
+  assert expected == actual, "string equality throttle expected %d, but got %d instead" % (expected, actual)
+
+  json1 = util.DotDict({ 'ProductName':'product1',
+                         'Version':'3.6',
+                         'gamma':'not GAMMA',
+                       })
+  expected = cstore.LegacyThrottler.DISCARD
+  actual = thr.throttle(json1)
+  assert expected == actual, "string equality throttle expected %d, but got %d instead" % (expected, actual)
+
+  json1 = util.DotDict({ 'ProductName':'product1',
+                         'Version':'3.6',
+                         'delta':"value doesn't matter",
+                       })
+  expected = cstore.LegacyThrottler.ACCEPT
+  actual = thr.throttle(json1)
+  assert expected == actual, "string equality throttle expected %d, but got %d instead" % (expected, actual)
+
+
 def testCrashStorageSystem__init__():
   d = util.DotDict()
   d.benchmark = False
@@ -67,7 +160,7 @@ def testCrashStorageSystem_makeJsonDictFromForm():
 
 def testCrashStorageSystem_save():
   css = cstore.CrashStorageSystem({})
-  result = css.save('fred', 'ethel', 'lucy')
+  result = css.save_raw('fred', 'ethel', 'lucy')
   assert result == cstore.CrashStorageSystem.NO_ACTION
 
 def testCrashStorageSystemForHBase___init__():
@@ -76,12 +169,14 @@ def testCrashStorageSystemForHBase___init__():
   d.hbaseHost = 'fred'
   d.hbasePort = 'ethel'
   j.root = d.hbaseFallbackFS = '.'
-  j.maxDirectoryEntries = d.dumpDirCount = 1000000
+  d.throttleConditions = []
+  j.maxDirectoryEntries = d.hbaseFallbackDumpDirCount = 1000000
   j.jsonSuffix = d.jsonFileSuffix = '.json'
   j.dumpSuffix = d.dumpFileSuffix = '.dump'
-  j.dumpGID = d.dumpGID = 666
-  j.dumpPermissions = d.dumpPermissions = 660
-  j.dirPermissions = d.dirPermissions = 770
+  j.dumpGID = d.hbaseFallbackdumpGID = 666
+  j.dumpPermissions = d.hbaseFallbackDumpPermissions = 660
+  j.dirPermissions = d.hbaseFallbackDirPermissions = 770
+  j.logger = d.logger = util.SilentFakeLogger()
   fakeHbaseModule = exp.DummyObjectWithExpectations('fakeHbaseModule')
   fakeHbaseModule.expect('HBaseConnectionForCrashReports', ('fred', 'ethel'), {}, 'a fake connection', None)
   fakeJsonDumpStore = exp.DummyObjectWithExpectations('fakeJsonDumpStore')
@@ -98,23 +193,24 @@ def testCrashStorageSystemForHBase_save_1():
   fakeDumpStream.expect('read', (), {}, expectedDumpResult, None)
   rsr = cstore.RepeatableStreamReader(fakeDumpStream)
 
-  jdict = {'a':2, 'b':'hello'}
-  jdictAsJsonStr = json.dumps(jdict)
+  jdict = util.DotDict({'ProductName':'FireFloozy', 'Version':'3.6', 'legacy_processing':1})
 
   d = util.DotDict()
   j = util.DotDict()
   d.hbaseHost = 'fred'
   d.hbasePort = 'ethel'
   j.root = d.hbaseFallbackFS = '.'
-  j.maxDirectoryEntries = d.dumpDirCount = 1000000
+  d.throttleConditions = []
+  j.maxDirectoryEntries = d.hbaseFallbackDumpDirCount = 1000000
   j.jsonSuffix = d.jsonFileSuffix = '.json'
   j.dumpSuffix = d.dumpFileSuffix = '.dump'
-  j.dumpGID = d.dumpGID = 666
-  j.dumpPermissions = d.dumpPermissions = 660
-  j.dirPermissions = d.dirPermissions = 770
+  j.dumpGID = d.hbaseFallbackdumpGID = 666
+  j.dumpPermissions = d.hbaseFallbackDumpPermissions = 660
+  j.dirPermissions = d.hbaseFallbackDirPermissions = 770
+  j.logger = d.logger = util.SilentFakeLogger()
 
   fakeHbaseConnection = exp.DummyObjectWithExpectations('fakeHbaseConnection')
-  fakeHbaseConnection.expect('put_json_dump', ('uuid', jdictAsJsonStr, expectedDumpResult), {}, None, None)
+  fakeHbaseConnection.expect('put_json_dump', ('uuid', jdict, expectedDumpResult), {}, None, None)
 
   fakeHbaseModule = exp.DummyObjectWithExpectations('fakeHbaseModule')
   fakeHbaseModule.expect('HBaseConnectionForCrashReports', ('fred', 'ethel'), {}, fakeHbaseConnection, None)
@@ -125,7 +221,7 @@ def testCrashStorageSystemForHBase_save_1():
 
   css = cstore.CrashStorageSystemForHBase(d, fakeHbaseModule, fakeJsonDumpModule)
   expectedResult = cstore.CrashStorageSystem.OK
-  result = css.save('uuid', jdict, rsr, currentTimestamp)
+  result = css.save_raw('uuid', jdict, rsr, currentTimestamp)
   assert result == expectedResult, 'expected %s but got %s' % (expectedResult, result)
 
 def testCrashStorageSystemForHBase_save_2():
@@ -136,23 +232,24 @@ def testCrashStorageSystemForHBase_save_2():
   fakeDumpStream.expect('read', (), {}, expectedDumpResult, None)
   #fakeDumpStream.expect('read', (), {}, expectedDumpResult, None)
   rsr = cstore.RepeatableStreamReader(fakeDumpStream)
-  jdict = {'a':2, 'b':'hello'}
-  jdictAsJsonStr = json.dumps(jdict)
+  jdict = util.DotDict({'ProductName':'FireFloozy', 'Version':'3.6', 'legacy_processing':1})
 
   d = util.DotDict()
   j = util.DotDict()
   d.hbaseHost = 'fred'
   d.hbasePort = 'ethel'
   j.root = d.hbaseFallbackFS = '.'
-  j.maxDirectoryEntries = d.dumpDirCount = 1000000
+  d.throttleConditions = []
+  j.maxDirectoryEntries = d.hbaseFallbackDumpDirCount = 1000000
   j.jsonSuffix = d.jsonFileSuffix = '.json'
   j.dumpSuffix = d.dumpFileSuffix = '.dump'
-  j.dumpGID = d.dumpGID = 666
-  j.dumpPermissions = d.dumpPermissions = 660
-  j.dirPermissions = d.dirPermissions = 770
+  j.dumpGID = d.hbaseFallbackdumpGID = 666
+  j.dumpPermissions = d.hbaseFallbackDumpPermissions = 660
+  j.dirPermissions = d.hbaseFallbackDirPermissions = 770
+  j.logger = d.logger = util.SilentFakeLogger()
 
   fakeHbaseConnection = exp.DummyObjectWithExpectations('fakeHbaseConnection')
-  fakeHbaseConnection.expect('create_ooid', ('uuid', jdictAsJsonStr, expectedDumpResult), {}, None, Exception())
+  fakeHbaseConnection.expect('create_ooid', ('uuid', jdict, expectedDumpResult), {}, None, Exception())
 
   fakeHbaseModule = exp.DummyObjectWithExpectations('fakeHbaseModule')
   fakeHbaseModule.expect('HBaseConnectionForCrashReports', ('fred', 'ethel'), {}, fakeHbaseConnection, None)
@@ -174,7 +271,7 @@ def testCrashStorageSystemForHBase_save_2():
   cstore.logger = loggerForTest.TestingLogger()
   css = cstore.CrashStorageSystemForHBase(d, fakeHbaseModule, fakeJsonDumpModule)
   expectedResult = cstore.CrashStorageSystem.OK
-  result = css.save('uuid', jdict, rsr, currentTimestamp)
+  result = css.save_raw('uuid', jdict, rsr, currentTimestamp)
 
   assert result == expectedResult, 'expected %s but got %s' % (expectedResult, result)
 
@@ -186,21 +283,22 @@ def testCrashStorageSystemForHBase_save_3():
   fakeDumpStream.expect('read', (), {}, expectedDumpResult, None)
   rsr = cstore.RepeatableStreamReader(fakeDumpStream)
   jdict = {'a':2, 'b':'hello'}
-  jdictAsJsonStr = json.dumps(jdict)
 
   d = util.DotDict()
   d.hbaseHost = 'fred'
   d.hbasePort = 'ethel'
   d.hbaseFallbackFS = ''
-  d.dumpDirCount = 1000000
+  d.throttleConditions = []
+  d.hbaseFallbackDumpDirCount = 1000000
   d.jsonFileSuffix = '.json'
   d.dumpFileSuffix = '.dump'
-  d.dumpGID = 666
-  d.dumpPermissions = 660
-  d.dirPermissions = 770
+  d.hbaseFallbackdumpGID = 666
+  d.hbaseFallbackDumpPermissions = 660
+  d.hbaseFallbackDirPermissions = 770
+  d.logger = util.SilentFakeLogger()
 
   fakeHbaseConnection = exp.DummyObjectWithExpectations('fakeHbaseConnection')
-  fakeHbaseConnection.expect('create_ooid', ('uuid', jdictAsJsonStr, expectedDumpResult), {}, None, Exception())
+  fakeHbaseConnection.expect('create_ooid', ('uuid', jdict, expectedDumpResult), {}, None, Exception())
 
   fakeHbaseModule = exp.DummyObjectWithExpectations('fakeHbaseModule')
   fakeHbaseModule.expect('HBaseConnectionForCrashReports', ('fred', 'ethel'), {}, fakeHbaseConnection, None)
@@ -210,7 +308,7 @@ def testCrashStorageSystemForHBase_save_3():
   cstore.logger = loggerForTest.TestingLogger()
   css = cstore.CrashStorageSystemForHBase(d, fakeHbaseModule, fakeJsonDumpModule)
   expectedResult = cstore.CrashStorageSystem.ERROR
-  result = css.save('uuid', jdict, rsr, currentTimestamp)
+  result = css.save_raw('uuid', jdict, rsr, currentTimestamp)
 
   assert result == expectedResult, 'expected %s but got %s' % (expectedResult, result)
 
@@ -233,8 +331,6 @@ def testCrashStorageSystemForNFS__init__():
   ]
 
   css = cstore.CrashStorageSystemForNFS(d)
-  assert css.normalizedVersionDict == {}
-  assert css.normalizedVersionDictEntryCounter == 0
   assert css.standardFileSystemStorage.root == d.storageRoot
   assert css.deferredFileSystemStorage.root == d.deferredStorageRoot
   assert css.hostname == os.uname()[1]

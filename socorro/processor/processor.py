@@ -20,9 +20,11 @@ import socorro.lib.threadlib
 import socorro.lib.ConfigurationManager
 import socorro.lib.JsonDumpStorage as jds
 import socorro.lib.psycopghelper as psy
+import socorro.database.database as sdb
 import socorro.lib.ooid as ooid
 import socorro.lib.datetimeutil as sdt
 import socorro.lib.processedDumpStorage as pds
+import socorro.collector.crashstorage as cstore
 
 import simplejson
 
@@ -34,9 +36,7 @@ class DuplicateEntryException(Exception):
 class ErrorInBreakpadStackwalkException(Exception):
   pass
 
-#=================================================================================================================
-class UuidNotFoundException(Exception):
-  pass
+
 
 #=================================================================================================================
 class Processor(object):
@@ -75,54 +75,79 @@ class Processor(object):
   buildDatePattern = re.compile('^(\\d{4})(\\d{2})(\\d{2})(\\d{2})')
   utctz = sdt.UTC()
 
+  _config_requirements = ("databaseHost",
+                          "databaseName",
+                          "databaseUserName",
+                          "databasePassword",
+                          "processorCheckInTime",
+                          "processorCheckInFrequency",
+                          "crashStorageClass",
+                          "jsonFileSuffix",
+                          "dumpFileSuffix",
+                          "processorId",
+                          "numberOfThreads",
+                          "batchJobLimit",
+                          "irrelevantSignatureRegEx",
+                          "prefixSignatureRegEx",
+                          "collectAddon",
+                          "collectCrashProcess",
+                          "signatureSentinels",
+                          "signaturesWithLineNumbersRegEx",
+                         )
+  _hbase_config_requirements = ("hbaseHost",
+                                "hbasePort",
+                                "hbaseFallbackFS",
+                                "hbaseFallbackDumpDirCount",
+                                "hbaseFallbackDumpGID",
+                                "hbaseFallbackDumpPermissions",
+                                "hbaseFallbackDirPermissions",
+                                "temporaryFileSystemStoragePath",
+                               )
+  _nfs_config_requirements = ("storageRoot",
+                              "deferredStorageRoot",
+                              "processedDumpStoragePath"
+                              "dumpDirPrefix",
+                              "dumpPermissions",
+                              "dirPermissions",
+                              "dumpGID",
+                              "saveSuccessfulMinidumpsTo",
+                              "saveFailedMinidumpsTo",
+                             )
+
   #-----------------------------------------------------------------------------------------------------------------
-  def __init__ (self, config):
+  def __init__ (self, config, sdb=sdb):
     """
     """
     super(Processor, self).__init__()
 
-    assert "databaseHost" in config, "databaseHost is missing from the configuration"
-    assert "databaseName" in config, "databaseName is missing from the configuration"
-    assert "databaseUserName" in config, "databaseUserName is missing from the configuration"
-    assert "databasePassword" in config, "databasePassword is missing from the configuration"
-    assert "storageRoot" in config, "storageRoot is missing from the configuration"
-    assert "deferredStorageRoot" in config, "deferredStorageRoot is missing from the configuration"
-    assert "processedDumpStoragePath" in config, "processedDumpStoragePath is missing from the configuration"
-    assert "jsonFileSuffix" in config, "jsonFileSuffix is missing from the configuration"
-    assert "dumpFileSuffix" in config, "dumpFileSuffix is missing from the configuration"
-    assert "processorCheckInTime" in config, "processorCheckInTime is missing from the configuration"
-    assert "processorCheckInFrequency" in config, "processorCheckInFrequency is missing from the configuration"
-    assert "processorId" in config, "processorId is missing from the configuration"
-    assert "numberOfThreads" in config, "numberOfThreads is missing from the configuration"
-    assert "batchJobLimit" in config, "batchJobLimit is missing from the configuration"
-    assert "irrelevantSignatureRegEx" in config, "irrelevantSignatureRegEx is missing from the configuration"
-    assert "prefixSignatureRegEx" in config, "prefixSignatureRegEx is missing from the configuration"
-    assert "collectAddon" in config, "collectAddon is missing from the configuration"
-    assert "collectCrashProcess" in config, "collectCrashProcess is missing from the configuration"
-    assert "signatureSentinels" in config, "signatureSentinels is missing from the configuration"
-    assert "signaturesWithLineNumbersRegEx" in config, "signaturesWithLineNumbersRegEx is missing from the configuration"
-    assert "dumpPermissions" in config, "dumpPermissions is missing from the configuration"
-    assert "dirPermissions" in config, "dirPermissions is missing from the configuration"
-    assert "dumpGID" in config, "dumpGID is missing from the configuration"
+    config.logger = logger
 
-    self.databaseConnectionPool = psy.DatabaseConnectionPool(config.databaseHost, config.databaseName, config.databaseUserName, config.databasePassword, logger)
+    for x in Processor._config_requirements:
+      assert x in config, '%s missing from configuration' % x
 
+    if config.crashStorageClass == 'CrashStorageSystemForNFS':
+      for x in Processor._nfs_config_requirements:
+        assert x in config, '%s missing from configuration' % x
+      self.processedDumpStorage = pds.ProcessedDumpStorage(root=config.processedDumpStoragePath,
+                                                           dumpPermissions=config.dumpPermissions,
+                                                           dirPermissions=config.dirPermissions,
+                                                           dumpGID=config.dumpGID,
+                                                           logger=logger)
+    else:
+      for x in Processor._hbase_config_requirements:
+        assert x in config, '%s missing from configuration' % x
+    self.crashStorePool = cstore.CrashStoragePool(config)
+
+    self.sdb = sdb
+    self.databaseConnectionPool = sdb.DatabaseConnectionPool(config, logger)
     self.processorLoopTime = config.processorLoopTime.seconds
-
     self.config = config
     self.quit = False
     signal.signal(signal.SIGTERM, Processor.respondToSIGTERM)
     signal.signal(signal.SIGHUP, Processor.respondToSIGTERM)
-
     self.irrelevantSignatureRegEx = re.compile(self.config.irrelevantSignatureRegEx)
     self.prefixSignatureRegEx = re.compile(self.config.prefixSignatureRegEx)
     self.signaturesWithLineNumbersRegEx = re.compile(self.config.signaturesWithLineNumbersRegEx)
-
-    self.processedDumpStorage = pds.ProcessedDumpStorage(root=config.processedDumpStoragePath,
-                                                         dumpPermissions=config.dumpPermissions,
-                                                         dirPermissions=config.dirPermissions,
-                                                         dumpGID=config.dumpGID,
-                                                         logger=logger)
 
     self.reportsTable = sch.ReportsTable(logger=logger)
     self.extensionsTable = sch.ExtensionsTable(logger=logger)
@@ -154,27 +179,27 @@ class Processor(object):
         else:
           raise socorro.lib.ConfigurationManager.OptionError("%s is not a valid option for processorId" % self.config.processorId)
       self.processorName = "%s_%d" % (os.uname()[1], os.getpid())
-      threshold = psy.singleValueSql(databaseCursor, "select now() - interval '%s'" % self.config.processorCheckInTime)
+      threshold = self.sdb.singleValueSql(databaseCursor, "select now() - interval '%s'" % self.config.processorCheckInTime)
       if requestedId == 'auto':  # take over for an existing processor
         logger.debug("%s - looking for a dead processor", threading.currentThread().getName())
         try:
-          self.processorId = psy.singleValueSql(databaseCursor, "select id from processors where lastseendatetime < '%s' limit 1" % threshold)
+          self.processorId = self.sdb.singleValueSql(databaseCursor, "select id from processors where lastseendatetime < '%s' limit 1" % threshold)
           logger.info("%s - will step in for processor %d", threading.currentThread().getName(), self.processorId)
-        except psy.SQLDidNotReturnSingleValue:
+        except self.sdb.SQLDidNotReturnSingleValue:
           logger.debug("%s - no dead processor found", threading.currentThread().getName())
           requestedId = 0 # signal that we found no dead processors
       else: # requestedId is an integer: We already raised OptionError if not
         try:
           # singleValueSql should actually accept sql with placeholders and an array of values instead of just a string. Enhancement needed...
           checkSql = "select id from processors where lastSeenDateTime < '%s' and id = %s" % (threshold,requestedId)
-          self.processorId = psy.singleValueSql(databaseCursor, checkSql)
+          self.processorId = self.sdb.singleValueSql(databaseCursor, checkSql)
           logger.info("%s - stepping in for processor %d", threading.currentThread().getName(), self.processorId)
-        except psy.SQLDidNotReturnSingleValue,x:
+        except self.sdb.SQLDidNotReturnSingleValue,x:
           raise socorro.lib.ConfigurationManager.OptionError("ProcessorId %s is not in processors table or is still live."%requestedId)
       if requestedId == 0:
         try:
           databaseCursor.execute("insert into processors (name, startdatetime, lastseendatetime) values (%s, now(), now())", (self.processorName,))
-          self.processorId = psy.singleValueSql(databaseCursor, "select id from processors where name = '%s'" % (self.processorName,))
+          self.processorId = self.sdb.singleValueSql(databaseCursor, "select id from processors where name = '%s'" % (self.processorName,))
         except:
           databaseConnection.rollback()
           raise
@@ -214,14 +239,6 @@ class Processor(object):
     self.threadManager = socorro.lib.threadlib.TaskManager(self.config.numberOfThreads, self.config.numberOfThreads * 2)
     logger.info("%s - I am processor #%d", threading.currentThread().getName(), self.processorId)
     logger.info("%s - my priority jobs table is called: '%s'", threading.currentThread().getName(), self.priorityJobsTableName)
-    self.standardJobStorage = jds.JsonDumpStorage(root=self.config.storageRoot,
-                                                  jsonSuffix=self.config.jsonFileSuffix,
-                                                  dumpSuffix=self.config.dumpFileSuffix,
-                                                  logger=logger)
-    self.deferredJobStorage = jds.JsonDumpStorage(root=self.config.deferredStorageRoot,
-                                                  jsonSuffix=self.config.jsonFileSuffix,
-                                                  dumpSuffix=self.config.dumpFileSuffix,
-                                                  logger=logger)
 
   #-----------------------------------------------------------------------------------------------------------------
   def quitCheck(self):
@@ -244,7 +261,7 @@ class Processor(object):
     if self.lastCheckInTimestamp + self.config.processorCheckInFrequency < datetime.datetime.now():
       logger.debug("%s - updating 'processor' table registration", threading.currentThread().getName())
       tstamp = datetime.datetime.now()
-      databaseConnection, databaseCursor = self.databaseConnectionPool.connectionCursorPairNoTest()
+      databaseConnection, databaseCursor = self.databaseConnectionPool.connectionCursorPair()
       databaseCursor.execute("update processors set lastseendatetime = %s where id = %s", (tstamp, self.processorId))
       databaseConnection.commit()
       self.lastCheckInTimestamp = datetime.datetime.now()
@@ -256,7 +273,7 @@ class Processor(object):
     logger.info("%s - waiting for threads to stop", threading.currentThread().getName())
     self.threadManager.waitForCompletion()
     logger.info("%s - all threads stopped", threading.currentThread().getName())
-    databaseConnection, databaseCursor = self.databaseConnectionPool.connectionCursorPairNoTest()
+    databaseConnection, databaseCursor = self.databaseConnectionPool.connectionCursorPair()
 
     try:
       # force the processor to record a lastSeenDateTime in the distant past so that the monitor will
@@ -278,6 +295,7 @@ class Processor(object):
 
     # we're done - kill all the threads' database connections
     self.databaseConnectionPool.cleanup()
+    self.crashStorePool.cleanup()
 
     logger.debug("%s - done with work", threading.currentThread().getName())
 
@@ -371,34 +389,6 @@ class Processor(object):
     databaseCursor.connection.commit()
     logger.info("%s - queuing job %d, %s, %s", threading.currentThread().getName(), aJobTuple[0], aJobTuple[2], aJobTuple[1])
     self.threadManager.newTask(self.processJob, aJobTuple)
-
-  #-----------------------------------------------------------------------------------------------------------------
-  def jsonPathForUuidInJsonDumpStorage(self, uuid):
-    try:
-      jsonPath = self.standardJobStorage.getJson(uuid)
-    except (OSError, IOError):
-      try:
-        jsonPath = self.deferredJobStorage.getJson(uuid)
-      except (OSError, IOError):
-        raise UuidNotFoundException("%s cannot be found in standard or deferred storage" % uuid)
-    return jsonPath
-
-  #-----------------------------------------------------------------------------------------------------------------
-  def dumpPathForUuidInJsonDumpStorage(self, uuid):
-    try:
-      dumpPath = self.standardJobStorage.getDump(uuid)
-    except (OSError, IOError):
-      try:
-        dumpPath = self.deferredJobStorage.getDump(uuid)
-      except (OSError, IOError):
-        raise UuidNotFoundException("%s cannot be found in standard or deferred storage" % uuid)
-    return dumpPath
-
-  #-----------------------------------------------------------------------------------------------------------------
-  def moveJobFromLegacyToStandardStorage(self, uuid, legacyJsonPathName):
-    logger.debug("%s - moveJobFromLegacyToStandardStorage: %s, '%s'", threading.currentThread().getName(), uuid, legacyJsonPathName)
-    legacyDumpPathName = "%s%s" % (legacyJsonPathName[:-len(self.config.jsonFileSuffix)], self.config.dumpFileSuffix)
-    self.standardJobStorage.copyFrom(uuid, legacyJsonPathName, legacyDumpPathName, "legacy", datetime.datetime.now(), False, True)
 
   #-----------------------------------------------------------------------------------------------------------------
   def newPriorityJobsIter (self, databaseCursor):
@@ -540,19 +530,22 @@ class Processor(object):
         del aDict[aForbiddenKey]
 
   #-----------------------------------------------------------------------------------------------------------------
-  def saveProcessedDumpJson (self, aReportRecordAsDict):
+  def saveProcessedDumpJson (self, aReportRecordAsDict, threadLocalCrashStorage):
     date_processed = aReportRecordAsDict["date_processed"]
     Processor.sanitizeDict(aReportRecordAsDict)
     Processor.convertDatesInDictToString(aReportRecordAsDict)
     uuid = aReportRecordAsDict["uuid"]
-    try:
-      self.processedDumpStorage.putDumpToFile(uuid, aReportRecordAsDict, date_processed)
-    except OSError, x:
-      if x.errno == 17:
-        self.processedDumpStorage.removeDumpFile(uuid)
+    if self.config.crashStorageClass == 'CrashStorageSystemForNFS':
+      try:
         self.processedDumpStorage.putDumpToFile(uuid, aReportRecordAsDict, date_processed)
-      else:
-        raise
+      except OSError, x:
+        if x.errno == 17:
+          self.processedDumpStorage.removeDumpFile(uuid)
+          self.processedDumpStorage.putDumpToFile(uuid, aReportRecordAsDict, date_processed)
+        else:
+          raise
+    else:  #hbase storage
+      threadLocalCrashStorage.save_processed(uuid, aReportRecordAsDict)
 
   #-----------------------------------------------------------------------------------------------------------------
   def processJob (self, jobTuple):
@@ -567,9 +560,10 @@ class Processor(object):
     threadName = threading.currentThread().getName()
     try:
       threadLocalDatabaseConnection, threadLocalCursor = self.databaseConnectionPool.connectionCursorPair()
+      threadLocalCrashStorage = self.crashStorePool.crashStorage(threadName)
     except:
       self.quit = True
-      socorro.lib.util.reportExceptionAndAbort(logger) # can't continue without a database connection
+      socorro.lib.util.reportExceptionAndAbort(logger) # can't continue without a database connection or crash storage
     try:
       newReportRecordAsDict = {}
       processorErrorMessages = []
@@ -579,20 +573,13 @@ class Processor(object):
       threadLocalCursor.execute("update jobs set starteddatetime = %s where id = %s", (startedDateTime, jobId))
       threadLocalDatabaseConnection.commit()
 
-      jobPathname = self.jsonPathForUuidInJsonDumpStorage(jobUuid)
-      dumpfilePathname = self.dumpPathForUuidInJsonDumpStorage(jobUuid)
-      jsonFile = open(jobPathname)
-      try:
-        jsonDocument = simplejson.load(jsonFile)
-      finally:
-        jsonFile.close()
-
+      jsonDocument = threadLocalCrashStorage.get_meta(jobUuid)
       try:
         date_processed = sdt.datetimeFromISOdateString(jsonDocument["submitted_timestamp"])
       except KeyError:
         date_processed = ooid.dateFromOoid(jobUuid)
 
-      newReportRecordAsDict = self.insertReportIntoDatabase(threadLocalCursor, jobUuid, jsonDocument, jobPathname, date_processed, processorErrorMessages)
+      newReportRecordAsDict = self.insertReportIntoDatabase(threadLocalCursor, jobUuid, jsonDocument, date_processed, processorErrorMessages)
       threadLocalDatabaseConnection.commit()
       reportId = newReportRecordAsDict["id"]
       newReportRecordAsDict['dump'] = ''
@@ -609,15 +596,20 @@ class Processor(object):
         newReportRecordAsDict.update( crashProcessAsDict )
 
       try:
+        dumpfilePathname = threadLocalCrashStorage.dumpPathForUuid(jobUuid,
+                                                             self.config.temporaryFileSystemStoragePath)
         additionalReportValuesAsDict = self.doBreakpadStackDumpAnalysis(reportId, jobUuid, dumpfilePathname, threadLocalCursor, date_processed, processorErrorMessages)
         try:
           if newReportRecordAsDict['hangid']:
             additionalReportValuesAsDict['signature'] = "hang | %s" % additionalReportValuesAsDict['signature']
         except KeyError:
           pass
+        if len(additionalReportValuesAsDict['signature']) > 255:
+          additionalReportValuesAsDict['signature'] = '%s...' % additionalReportValuesAsDict['signature'][:252]
         newReportRecordAsDict.update(additionalReportValuesAsDict)
       finally:
         newReportRecordAsDict["completeddatetime"] = completedDateTime = datetime.datetime.now()
+        threadLocalCrashStorage.cleanUpTempDumpStorage(jobUuid, self.config.temporaryFileSystemStoragePath)
 
       #finished a job - cleanup
       threadLocalCursor.execute("update jobs set completeddatetime = %s, success = True where id = %s", (completedDateTime, jobId))
@@ -654,7 +646,7 @@ class Processor(object):
       logger.debug("%s - Updated report %s (%s): %s",threadName,reportId,jobUuid,str(infoTuple))
       threadLocalCursor.execute(reportsSql, infoTuple)
       threadLocalDatabaseConnection.commit()
-      self.saveProcessedDumpJson(newReportRecordAsDict)
+      self.saveProcessedDumpJson(newReportRecordAsDict, threadLocalCrashStorage)
       logger.info("%s - succeeded and committed: %s, %s", threadName, jobId, jobUuid)
       self.quitCheck()
     except (KeyboardInterrupt, SystemExit):
@@ -711,7 +703,7 @@ class Processor(object):
     return ret
 
   #-----------------------------------------------------------------------------------------------------------------
-  def insertReportIntoDatabase(self, threadLocalCursor, uuid, jsonDocument, jobPathname, date_processed, processorErrorMessages):
+  def insertReportIntoDatabase(self, threadLocalCursor, uuid, jsonDocument, date_processed, processorErrorMessages):
     """
     This function is run only by a worker thread.
       Create the record for the current job in the 'reports' table
@@ -719,7 +711,6 @@ class Processor(object):
         threadLocalCursor: a database cursor for exclusive use by the calling thread
         uuid: the unique id identifying the job - corresponds with the uuid column in the 'jobs' and the 'reports' tables
         jsonDocument: an object with a dictionary interface for fetching the components of the json document
-        jobPathname:  the complete pathname for the json document
         date_processed: when job came in (a key used in partitioning)
         processorErrorMessages: list of strings of error messages
       jsonDocument MUST contain                                      : stored in table reports
@@ -764,7 +755,7 @@ class Processor(object):
     user_id = ""
     uptime = max(0, crash_time - startupTime)
     if crash_time == defaultCrashTime:
-      logger.warning("%s - no 'crash_time' calculated in %s: Using date_processed", threading.currentThread().getName(), jobPathname)
+      logger.warning("%s - no 'crash_time' calculated in %s: Using date_processed", threading.currentThread().getName(), uuid)
       #socorro.lib.util.reportExceptionAndContinue(logger, logging.WARNING)
       processorErrorMessages.append("WARNING: No 'client_crash_date' could be determined from the Json file")
     build_date = None
@@ -772,7 +763,7 @@ class Processor(object):
       try:
         build_date = datetime.datetime(*[int(x) for x in Processor.buildDatePattern.match(str(buildID)).groups()])
       except (AttributeError, ValueError, KeyError):
-        logger.warning("%s - no 'build_date' calculated in %s", threading.currentThread().getName(), jobPathname)
+        logger.warning("%s - no 'build_date' calculated in %s", threading.currentThread().getName(), uuid)
         processorErrorMessages.append("WARNING: No 'build_date' could be determined from the Json file")
         socorro.lib.util.reportExceptionAndContinue(logger, logging.WARNING)
     try:
@@ -788,18 +779,18 @@ class Processor(object):
       return {}
     try:
       logger.debug("%s - inserting for %s, %s", threading.currentThread().getName(), uuid, str(date_processed))
-      self.reportsTable.insert(threadLocalCursor, newReportRecordAsTuple, self.databaseConnectionPool.connectToDatabase, date_processed=date_processed)
+      self.reportsTable.insert(threadLocalCursor, newReportRecordAsTuple, self.databaseConnectionPool.connectionCursorPair, date_processed=date_processed)
     except psycopg2.IntegrityError, x:
       logger.debug("%s - psycopg2.IntegrityError %s", threading.currentThread().getName(), str(x))
       logger.debug("%s - %s: this report already exists for date: %s",  threading.currentThread().getName(), uuid, str(date_processed))
       threadLocalCursor.connection.rollback()
-      previousTrialWasSuccessful = psy.singleValueSql(threadLocalCursor, "select success from reports where uuid = '%s' and date_processed = timestamp without time zone '%s'" % (uuid, date_processed))
+      previousTrialWasSuccessful = self.sdb.singleValueSql(threadLocalCursor, "select success from reports where uuid = '%s' and date_processed = timestamp without time zone '%s'" % (uuid, date_processed))
       if previousTrialWasSuccessful:
         raise DuplicateEntryException(uuid)
       threadLocalCursor.execute("delete from reports where uuid = '%s' and date_processed = timestamp without time zone '%s'" % (uuid, date_processed))
       processorErrorMessages.append("INFO: This record is a replacement for a previous record with the same uuid")
-      self.reportsTable.insert(threadLocalCursor, newReportRecordAsTuple, self.databaseConnectionPool.connectToDatabase, date_processed=date_processed)
-    newReportRecordAsDict["id"] = psy.singleValueSql(threadLocalCursor, "select id from reports where uuid = '%s' and date_processed = timestamp without time zone '%s'" % (uuid, date_processed))
+      self.reportsTable.insert(threadLocalCursor, newReportRecordAsTuple, self.databaseConnectionPool.connectionCursorPair, date_processed=date_processed)
+    newReportRecordAsDict["id"] = self.sdb.singleValueSql(threadLocalCursor, "select id from reports where uuid = '%s' and date_processed = timestamp without time zone '%s'" % (uuid, date_processed))
     return newReportRecordAsDict
 
   #-----------------------------------------------------------------------------------------------------------------
@@ -810,7 +801,7 @@ class Processor(object):
     listOfAddonsForOutput = []
     for i, x in enumerate(listOfAddonsForInput):
       try:
-        self.extensionsTable.insert(threadLocalCursor, (reportId, date_processed, i, x[0][:100], x[1]), self.databaseConnectionPool.connectToDatabase, date_processed=date_processed)
+        self.extensionsTable.insert(threadLocalCursor, (reportId, date_processed, i, x[0][:100], x[1]), self.databaseConnectionPool.connectionCursorPair, date_processed=date_processed)
         listOfAddonsForOutput.append(x)
       except IndexError:
         processorErrorMessages.append('WARNING: "%s" is deficient as a name and version for an addon' % str(x))
@@ -844,7 +835,7 @@ class Processor(object):
       try:
         self.pluginsReportsTable.insert(threadLocalCursor,
                                           (reportId, pluginFilename, pluginName, date_processed, pluginVersion),
-                                          self.databaseConnectionPool.connectToDatabase, date_processed=date_processed)
+                                          self.databaseConnectionPool.connectionCursorPair, date_processed=date_processed)
       except psycopg2.IntegrityError, x:
         logger.error("%s - psycopg2.IntegrityError %s", threading.currentThread().getName(), str(x))
         logger.error("%s - %s: Unable to save record for plugin report. pluginId: %s reportId: %s version: %s",  threading.currentThread().getName(), reportId, pluginId, pluginVersion)

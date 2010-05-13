@@ -20,7 +20,7 @@ class Iface:
     """
     Brings a table on-line (enables it)
     @param tableName name of the table
-    
+
     Parameters:
      - tableName
     """
@@ -31,7 +31,7 @@ class Iface:
     Disables a table (takes it off-line) If it is being served, the master
     will tell the servers to stop serving it.
     @param tableName name of the table
-    
+
     Parameters:
      - tableName
     """
@@ -41,7 +41,7 @@ class Iface:
     """
     @param tableName name of table to check
     @return true if table is on-line
-    
+
     Parameters:
      - tableName
     """
@@ -73,7 +73,7 @@ class Iface:
     List all the column families assoicated with a table.
     @param tableName table name
     @return list of column family descriptors
-    
+
     Parameters:
      - tableName
     """
@@ -84,7 +84,7 @@ class Iface:
     List the regions associated with a table.
     @param tableName table name
     @return list of region descriptors
-    
+
     Parameters:
      - tableName
     """
@@ -96,13 +96,13 @@ class Iface:
     field for each ColumnDescriptor must be set and must end in a
     colon (:).  All other fields are optional and will get default
     values if not explicitly specified.
-    
+
     @param tableName name of table to create
     @param columnFamilies list of column family descriptors
-    
+
     @throws IllegalArgument if an input parameter is invalid
     @throws AlreadyExists if the table name already exists
-    
+
     Parameters:
      - tableName
      - columnFamilies
@@ -115,7 +115,7 @@ class Iface:
     @param tableName name of table to delete
     @throws IOError if table doesn't exist on server or there was some other
     problem
-    
+
     Parameters:
      - tableName
     """
@@ -125,12 +125,12 @@ class Iface:
     """
     Get a single TCell for the specified table, row, and column at the
     latest timestamp. Returns an empty list if no such value exists.
-    
+
     @param tableName name of table
     @param row row key
     @param column column name
     @return value for specified row/column
-    
+
     Parameters:
      - tableName
      - row
@@ -142,13 +142,13 @@ class Iface:
     """
     Get the specified number of versions for the specified table,
     row, and column.
-    
+
     @param tableName name of table
     @param row row key
     @param column column name
     @param numVersions number of versions to retrieve
     @return list of cells for specified row/column
-    
+
     Parameters:
      - tableName
      - row
@@ -162,14 +162,14 @@ class Iface:
     Get the specified number of versions for the specified table,
     row, and column.  Only versions less than or equal to the specified
     timestamp will be returned.
-    
+
     @param tableName name of table
     @param row row key
     @param column column name
     @param timestamp timestamp
     @param numVersions number of versions to retrieve
     @return list of cells for specified row/column
-    
+
     Parameters:
      - tableName
      - row
@@ -183,11 +183,11 @@ class Iface:
     """
     Get all the data for the specified table and row at the latest
     timestamp. Returns an empty list if the row does not exist.
-    
+
     @param tableName name of table
     @param row row key
     @return TRowResult containing the row and map of columns to TCells
-    
+
     Parameters:
      - tableName
      - row
@@ -198,12 +198,12 @@ class Iface:
     """
     Get the specified columns for the specified table and row at the latest
     timestamp. Returns an empty list if the row does not exist.
-    
+
     @param tableName name of table
     @param row row key
     @param columns List of columns to return, null for all columns
     @return TRowResult containing the row and map of columns to TCells
-    
+
     Parameters:
      - tableName
      - row
@@ -215,12 +215,12 @@ class Iface:
     """
     Get all the data for the specified table and row at the specified
     timestamp. Returns an empty list if the row does not exist.
-    
+
     @param tableName of table
     @param row row key
     @param timestamp timestamp
     @return TRowResult containing the row and map of columns to TCells
-    
+
     Parameters:
      - tableName
      - row
@@ -232,12 +232,12 @@ class Iface:
     """
     Get the specified columns for the specified table and row at the specified
     timestamp. Returns an empty list if the row does not exist.
-    
+
     @param tableName name of table
     @param row row key
     @param columns List of columns to return, null for all columns
     @return TRowResult containing the row and map of columns to TCells
-    
+
     Parameters:
      - tableName
      - row
@@ -252,11 +252,11 @@ class Iface:
     single transaction.  If an exception is thrown, then the
     transaction is aborted.  Default current timestamp is used, and
     all entries will have an identical timestamp.
-    
+
     @param tableName name of table
     @param row row key
     @param mutations list of mutation commands
-    
+
     Parameters:
      - tableName
      - row
@@ -270,12 +270,12 @@ class Iface:
     single transaction.  If an exception is thrown, then the
     transaction is aborted.  The specified timestamp is used, and
     all entries will have an identical timestamp.
-    
+
     @param tableName name of table
     @param row row key
     @param mutations list of mutation commands
     @param timestamp timestamp
-    
+
     Parameters:
      - tableName
      - row
@@ -290,10 +290,10 @@ class Iface:
     in a single transaction.  If an exception is thrown, then the
     transaction is aborted.  Default current timestamp is used, and
     all entries will have an identical timestamp.
-    
+
     @param tableName name of table
     @param rowBatches list of row batches
-    
+
     Parameters:
      - tableName
      - rowBatches
@@ -306,11 +306,11 @@ class Iface:
     in a single transaction.  If an exception is thrown, then the
     transaction is aborted.  The specified timestamp is used, and
     all entries will have an identical timestamp.
-    
+
     @param tableName name of table
     @param rowBatches list of row batches
     @param timestamp timestamp
-    
+
     Parameters:
      - tableName
      - rowBatches
@@ -325,7 +325,7 @@ class Iface:
     @param row row to increment
     @param column name of column
     @param value amount to increment by
-    
+
     Parameters:
      - tableName
      - row
@@ -337,11 +337,11 @@ class Iface:
   def deleteAll(self, tableName, row, column):
     """
     Delete all cells that match the passed row and column.
-    
+
     @param tableName name of table
     @param row Row to update
     @param column name of column whose value is to be deleted
-    
+
     Parameters:
      - tableName
      - row
@@ -353,12 +353,12 @@ class Iface:
     """
     Delete all cells that match the passed row and column and whose
     timestamp is equal-to or older than the passed timestamp.
-    
+
     @param tableName name of table
     @param row Row to update
     @param column name of column whose value is to be deleted
     @param timestamp timestamp
-    
+
     Parameters:
      - tableName
      - row
@@ -370,10 +370,10 @@ class Iface:
   def deleteAllRow(self, tableName, row):
     """
     Completely delete the row's cells.
-    
+
     @param tableName name of table
     @param row key of the row to be completely deleted.
-    
+
     Parameters:
      - tableName
      - row
@@ -384,11 +384,11 @@ class Iface:
     """
     Completely delete the row's cells marked with a timestamp
     equal-to or older than the passed timestamp.
-    
+
     @param tableName name of table
     @param row key of the row to be completely deleted.
     @param timestamp timestamp
-    
+
     Parameters:
      - tableName
      - row
@@ -400,16 +400,16 @@ class Iface:
     """
     Get a scanner on the current table starting at the specified row and
     ending at the last row in the table.  Return the specified columns.
-    
+
     @param columns columns to scan. If column name is a column family, all
     columns of the specified column family are returned.  Its also possible
     to pass a regex in the column qualifier.
     @param tableName name of table
     @param startRow starting row in table to scan.  send "" (empty string) to
                     start at the first row.
-    
+
     @return scanner id to be used with other scanner procedures
-    
+
     Parameters:
      - tableName
      - startRow
@@ -422,7 +422,7 @@ class Iface:
     Get a scanner on the current table starting and stopping at the
     specified rows.  ending at the last row in the table.  Return the
     specified columns.
-    
+
     @param columns columns to scan. If column name is a column family, all
     columns of the specified column family are returned.  Its also possible
     to pass a regex in the column qualifier.
@@ -431,9 +431,9 @@ class Iface:
                     start at the first row.
     @param stopRow row to stop scanning on.  This row is *not* included in the
                    scanner's results
-    
+
     @return scanner id to be used with other scanner procedures
-    
+
     Parameters:
      - tableName
      - startRow
@@ -446,12 +446,12 @@ class Iface:
     """
     Open a scanner for a given prefix.  That is all rows will have the specified
     prefix. No other rows will be returned.
-    
+
     @param tableName name of table
     @param startAndPrefix the prefix (and thus start row) of the keys you want
     @param columns the columns you want returned
     @return scanner id to use with other scanner calls
-    
+
     Parameters:
      - tableName
      - startAndPrefix
@@ -464,7 +464,7 @@ class Iface:
     Get a scanner on the current table starting at the specified row and
     ending at the last row in the table.  Return the specified columns.
     Only values with the specified timestamp are returned.
-    
+
     @param columns columns to scan. If column name is a column family, all
     columns of the specified column family are returned.  Its also possible
     to pass a regex in the column qualifier.
@@ -472,9 +472,9 @@ class Iface:
     @param startRow starting row in table to scan.  send "" (empty string) to
                     start at the first row.
     @param timestamp timestamp
-    
+
     @return scanner id to be used with other scanner procedures
-    
+
     Parameters:
      - tableName
      - startRow
@@ -489,7 +489,7 @@ class Iface:
     specified rows.  ending at the last row in the table.  Return the
     specified columns.  Only values with the specified timestamp are
     returned.
-    
+
     @param columns columns to scan. If column name is a column family, all
     columns of the specified column family are returned.  Its also possible
     to pass a regex in the column qualifier.
@@ -499,9 +499,9 @@ class Iface:
     @param stopRow row to stop scanning on.  This row is *not* included
                    in the scanner's results
     @param timestamp timestamp
-    
+
     @return scanner id to be used with other scanner procedures
-    
+
     Parameters:
      - tableName
      - startRow
@@ -517,12 +517,12 @@ class Iface:
     row in the table.  When there are no more rows in the table, or a key
     greater-than-or-equal-to the scanner's specified stopRow is reached,
     an empty list is returned.
-    
+
     @param id id of a scanner returned by scannerOpen
     @return a TRowResult containing the current row and a map of the columns to TCells.
     @throws IllegalArgument if ScannerID is invalid
     @throws NotFound when the scanner reaches the end
-    
+
     Parameters:
      - id
     """
@@ -534,13 +534,13 @@ class Iface:
     rows and advances to the next row in the table.  When there are no more
     rows in the table, or a key greater-than-or-equal-to the scanner's
     specified stopRow is reached,  an empty list is returned.
-    
+
     @param id id of a scanner returned by scannerOpen
     @param nbRows number of results to regturn
     @return a TRowResult containing the current row and a map of the columns to TCells.
     @throws IllegalArgument if ScannerID is invalid
     @throws NotFound when the scanner reaches the end
-    
+
     Parameters:
      - id
      - nbRows
@@ -550,10 +550,10 @@ class Iface:
   def scannerClose(self, id):
     """
     Closes the server-state associated with an open scanner.
-    
+
     @param id id of a scanner returned by scannerOpen
     @throws IllegalArgument if ScannerID is invalid
-    
+
     Parameters:
      - id
     """
@@ -571,7 +571,7 @@ class Client(Iface):
     """
     Brings a table on-line (enables it)
     @param tableName name of the table
-    
+
     Parameters:
      - tableName
     """
@@ -605,7 +605,7 @@ class Client(Iface):
     Disables a table (takes it off-line) If it is being served, the master
     will tell the servers to stop serving it.
     @param tableName name of the table
-    
+
     Parameters:
      - tableName
     """
@@ -638,7 +638,7 @@ class Client(Iface):
     """
     @param tableName name of table to check
     @return true if table is on-line
-    
+
     Parameters:
      - tableName
     """
@@ -765,7 +765,7 @@ class Client(Iface):
     List all the column families assoicated with a table.
     @param tableName table name
     @return list of column family descriptors
-    
+
     Parameters:
      - tableName
     """
@@ -801,7 +801,7 @@ class Client(Iface):
     List the regions associated with a table.
     @param tableName table name
     @return list of region descriptors
-    
+
     Parameters:
      - tableName
     """
@@ -838,13 +838,13 @@ class Client(Iface):
     field for each ColumnDescriptor must be set and must end in a
     colon (:).  All other fields are optional and will get default
     values if not explicitly specified.
-    
+
     @param tableName name of table to create
     @param columnFamilies list of column family descriptors
-    
+
     @throws IllegalArgument if an input parameter is invalid
     @throws AlreadyExists if the table name already exists
-    
+
     Parameters:
      - tableName
      - columnFamilies
@@ -885,7 +885,7 @@ class Client(Iface):
     @param tableName name of table to delete
     @throws IOError if table doesn't exist on server or there was some other
     problem
-    
+
     Parameters:
      - tableName
     """
@@ -918,12 +918,12 @@ class Client(Iface):
     """
     Get a single TCell for the specified table, row, and column at the
     latest timestamp. Returns an empty list if no such value exists.
-    
+
     @param tableName name of table
     @param row row key
     @param column column name
     @return value for specified row/column
-    
+
     Parameters:
      - tableName
      - row
@@ -962,13 +962,13 @@ class Client(Iface):
     """
     Get the specified number of versions for the specified table,
     row, and column.
-    
+
     @param tableName name of table
     @param row row key
     @param column column name
     @param numVersions number of versions to retrieve
     @return list of cells for specified row/column
-    
+
     Parameters:
      - tableName
      - row
@@ -1010,14 +1010,14 @@ class Client(Iface):
     Get the specified number of versions for the specified table,
     row, and column.  Only versions less than or equal to the specified
     timestamp will be returned.
-    
+
     @param tableName name of table
     @param row row key
     @param column column name
     @param timestamp timestamp
     @param numVersions number of versions to retrieve
     @return list of cells for specified row/column
-    
+
     Parameters:
      - tableName
      - row
@@ -1060,11 +1060,11 @@ class Client(Iface):
     """
     Get all the data for the specified table and row at the latest
     timestamp. Returns an empty list if the row does not exist.
-    
+
     @param tableName name of table
     @param row row key
     @return TRowResult containing the row and map of columns to TCells
-    
+
     Parameters:
      - tableName
      - row
@@ -1101,12 +1101,12 @@ class Client(Iface):
     """
     Get the specified columns for the specified table and row at the latest
     timestamp. Returns an empty list if the row does not exist.
-    
+
     @param tableName name of table
     @param row row key
     @param columns List of columns to return, null for all columns
     @return TRowResult containing the row and map of columns to TCells
-    
+
     Parameters:
      - tableName
      - row
@@ -1145,12 +1145,12 @@ class Client(Iface):
     """
     Get all the data for the specified table and row at the specified
     timestamp. Returns an empty list if the row does not exist.
-    
+
     @param tableName of table
     @param row row key
     @param timestamp timestamp
     @return TRowResult containing the row and map of columns to TCells
-    
+
     Parameters:
      - tableName
      - row
@@ -1189,12 +1189,12 @@ class Client(Iface):
     """
     Get the specified columns for the specified table and row at the specified
     timestamp. Returns an empty list if the row does not exist.
-    
+
     @param tableName name of table
     @param row row key
     @param columns List of columns to return, null for all columns
     @return TRowResult containing the row and map of columns to TCells
-    
+
     Parameters:
      - tableName
      - row
@@ -1237,11 +1237,11 @@ class Client(Iface):
     single transaction.  If an exception is thrown, then the
     transaction is aborted.  Default current timestamp is used, and
     all entries will have an identical timestamp.
-    
+
     @param tableName name of table
     @param row row key
     @param mutations list of mutation commands
-    
+
     Parameters:
      - tableName
      - row
@@ -1282,12 +1282,12 @@ class Client(Iface):
     single transaction.  If an exception is thrown, then the
     transaction is aborted.  The specified timestamp is used, and
     all entries will have an identical timestamp.
-    
+
     @param tableName name of table
     @param row row key
     @param mutations list of mutation commands
     @param timestamp timestamp
-    
+
     Parameters:
      - tableName
      - row
@@ -1330,10 +1330,10 @@ class Client(Iface):
     in a single transaction.  If an exception is thrown, then the
     transaction is aborted.  Default current timestamp is used, and
     all entries will have an identical timestamp.
-    
+
     @param tableName name of table
     @param rowBatches list of row batches
-    
+
     Parameters:
      - tableName
      - rowBatches
@@ -1372,11 +1372,11 @@ class Client(Iface):
     in a single transaction.  If an exception is thrown, then the
     transaction is aborted.  The specified timestamp is used, and
     all entries will have an identical timestamp.
-    
+
     @param tableName name of table
     @param rowBatches list of row batches
     @param timestamp timestamp
-    
+
     Parameters:
      - tableName
      - rowBatches
@@ -1418,7 +1418,7 @@ class Client(Iface):
     @param row row to increment
     @param column name of column
     @param value amount to increment by
-    
+
     Parameters:
      - tableName
      - row
@@ -1460,11 +1460,11 @@ class Client(Iface):
   def deleteAll(self, tableName, row, column):
     """
     Delete all cells that match the passed row and column.
-    
+
     @param tableName name of table
     @param row Row to update
     @param column name of column whose value is to be deleted
-    
+
     Parameters:
      - tableName
      - row
@@ -1501,12 +1501,12 @@ class Client(Iface):
     """
     Delete all cells that match the passed row and column and whose
     timestamp is equal-to or older than the passed timestamp.
-    
+
     @param tableName name of table
     @param row Row to update
     @param column name of column whose value is to be deleted
     @param timestamp timestamp
-    
+
     Parameters:
      - tableName
      - row
@@ -1544,10 +1544,10 @@ class Client(Iface):
   def deleteAllRow(self, tableName, row):
     """
     Completely delete the row's cells.
-    
+
     @param tableName name of table
     @param row key of the row to be completely deleted.
-    
+
     Parameters:
      - tableName
      - row
@@ -1582,11 +1582,11 @@ class Client(Iface):
     """
     Completely delete the row's cells marked with a timestamp
     equal-to or older than the passed timestamp.
-    
+
     @param tableName name of table
     @param row key of the row to be completely deleted.
     @param timestamp timestamp
-    
+
     Parameters:
      - tableName
      - row
@@ -1623,16 +1623,16 @@ class Client(Iface):
     """
     Get a scanner on the current table starting at the specified row and
     ending at the last row in the table.  Return the specified columns.
-    
+
     @param columns columns to scan. If column name is a column family, all
     columns of the specified column family are returned.  Its also possible
     to pass a regex in the column qualifier.
     @param tableName name of table
     @param startRow starting row in table to scan.  send "" (empty string) to
                     start at the first row.
-    
+
     @return scanner id to be used with other scanner procedures
-    
+
     Parameters:
      - tableName
      - startRow
@@ -1672,7 +1672,7 @@ class Client(Iface):
     Get a scanner on the current table starting and stopping at the
     specified rows.  ending at the last row in the table.  Return the
     specified columns.
-    
+
     @param columns columns to scan. If column name is a column family, all
     columns of the specified column family are returned.  Its also possible
     to pass a regex in the column qualifier.
@@ -1681,9 +1681,9 @@ class Client(Iface):
                     start at the first row.
     @param stopRow row to stop scanning on.  This row is *not* included in the
                    scanner's results
-    
+
     @return scanner id to be used with other scanner procedures
-    
+
     Parameters:
      - tableName
      - startRow
@@ -1724,12 +1724,12 @@ class Client(Iface):
     """
     Open a scanner for a given prefix.  That is all rows will have the specified
     prefix. No other rows will be returned.
-    
+
     @param tableName name of table
     @param startAndPrefix the prefix (and thus start row) of the keys you want
     @param columns the columns you want returned
     @return scanner id to use with other scanner calls
-    
+
     Parameters:
      - tableName
      - startAndPrefix
@@ -1769,7 +1769,7 @@ class Client(Iface):
     Get a scanner on the current table starting at the specified row and
     ending at the last row in the table.  Return the specified columns.
     Only values with the specified timestamp are returned.
-    
+
     @param columns columns to scan. If column name is a column family, all
     columns of the specified column family are returned.  Its also possible
     to pass a regex in the column qualifier.
@@ -1777,9 +1777,9 @@ class Client(Iface):
     @param startRow starting row in table to scan.  send "" (empty string) to
                     start at the first row.
     @param timestamp timestamp
-    
+
     @return scanner id to be used with other scanner procedures
-    
+
     Parameters:
      - tableName
      - startRow
@@ -1822,7 +1822,7 @@ class Client(Iface):
     specified rows.  ending at the last row in the table.  Return the
     specified columns.  Only values with the specified timestamp are
     returned.
-    
+
     @param columns columns to scan. If column name is a column family, all
     columns of the specified column family are returned.  Its also possible
     to pass a regex in the column qualifier.
@@ -1832,9 +1832,9 @@ class Client(Iface):
     @param stopRow row to stop scanning on.  This row is *not* included
                    in the scanner's results
     @param timestamp timestamp
-    
+
     @return scanner id to be used with other scanner procedures
-    
+
     Parameters:
      - tableName
      - startRow
@@ -1879,12 +1879,12 @@ class Client(Iface):
     row in the table.  When there are no more rows in the table, or a key
     greater-than-or-equal-to the scanner's specified stopRow is reached,
     an empty list is returned.
-    
+
     @param id id of a scanner returned by scannerOpen
     @return a TRowResult containing the current row and a map of the columns to TCells.
     @throws IllegalArgument if ScannerID is invalid
     @throws NotFound when the scanner reaches the end
-    
+
     Parameters:
      - id
     """
@@ -1923,13 +1923,13 @@ class Client(Iface):
     rows and advances to the next row in the table.  When there are no more
     rows in the table, or a key greater-than-or-equal-to the scanner's
     specified stopRow is reached,  an empty list is returned.
-    
+
     @param id id of a scanner returned by scannerOpen
     @param nbRows number of results to regturn
     @return a TRowResult containing the current row and a map of the columns to TCells.
     @throws IllegalArgument if ScannerID is invalid
     @throws NotFound when the scanner reaches the end
-    
+
     Parameters:
      - id
      - nbRows
@@ -1967,10 +1967,10 @@ class Client(Iface):
   def scannerClose(self, id):
     """
     Closes the server-state associated with an open scanner.
-    
+
     @param id id of a scanner returned by scannerOpen
     @throws IllegalArgument if ScannerID is invalid
-    
+
     Parameters:
      - id
     """
@@ -3329,7 +3329,7 @@ class getColumnDescriptors_result:
       if fid == 0:
         if ftype == TType.MAP:
           self.success = {}
-          (_ktype24, _vtype25, _size23 ) = iprot.readMapBegin() 
+          (_ktype24, _vtype25, _size23 ) = iprot.readMapBegin()
           for _i27 in xrange(_size23):
             _key28 = iprot.readString();
             _val29 = ColumnDescriptor()

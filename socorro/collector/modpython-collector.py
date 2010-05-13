@@ -32,11 +32,7 @@ def handler(req):
 
   logger = persistentStorage.logger
   config = persistentStorage.config
-  nfsCrashStorage = persistentStorage.nfsStorage
-  try:
-    hbaseCrashStorage = persistentStorage.hbaseStorage
-  except KeyError:
-    pass
+  crashStorage = persistentStorage.crashStorage
 
   #logger.debug("handler invoked using subinterpreter: %s", req.interpreter)
   if req.method == "POST":
@@ -51,32 +47,25 @@ def handler(req):
 
       currentTimestamp = dt.datetime.now()
 
-      jsonDataDictionary = nfsCrashStorage.makeJsonDictFromForm(theform)
+      jsonDataDictionary = crashStorage.makeJsonDictFromForm(theform)
       jsonDataDictionary.submitted_timestamp = currentTimestamp.isoformat()
 
       #for future use when we start sunsetting products
-      #if nfsCrashStorage.terminated(jsonDataDictionary):
+      #if crashStorage.terminated(jsonDataDictionary):
         #req.write("Terminated=%s" % jsonDataDictionary.Version)
         #return apache.OK
 
       uuid = ooid.createNewOoid(currentTimestamp, config.storageDepth)
       logger.debug("    %s", uuid)
 
-      nfsResult = nfsCrashStorage.save(uuid, jsonDataDictionary, dump, currentTimestamp)
+      result = crashStorage.save_raw(uuid, jsonDataDictionary, dump, currentTimestamp)
 
-      #logger.debug('nfsCrashStorage returned: %d', nfsResult)
+      #logger.debug('crashStorage returned: %d', result)
 
-      if config.hbaseSubmissionRate:
-        if random.random() * 100.0 < config.hbaseSubmissionRate:
-          logger.info("about to create ooid %s in hbase" % uuid)
-          hbaseResult = hbaseCrashStorage.save(uuid, jsonDataDictionary, dump, currentTimestamp)
-        else:
-          logger.info('%s throttled and not submitted to hbase', uuid)
-
-      if nfsResult == cstore.CrashStorageSystem.DISCARDED:
+      if result == cstore.CrashStorageSystem.DISCARDED:
         req.write("Discarded=1\n")
         return apache.OK
-      elif nfsResult == cstore.CrashStorageSystem.ERROR:
+      elif result == cstore.CrashStorageSystem.ERROR:
         return apache.HTTP_INTERNAL_SERVER_ERROR
       req.write("CrashID=%s%s\n" % (config.dumpIDPrefix, uuid))
       return apache.OK

@@ -22,7 +22,7 @@ class FakeFile(object):
   def __init__(self, data):
     self.data = data
     self.numberOfReadCalls = 0
-  def read(self, x):
+  def read(self):
     if self.numberOfReadCalls > 0:
       return None
     else:

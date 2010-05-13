@@ -2,10 +2,49 @@ import socorro.lib.ConfigurationManager as cm
 import datetime
 import stat
 
-try:
-  from commonconfig import *
-except ImportError:
-  from config.commonconfig import *
+#---------------------------------------------------------------------------
+# imported config
+
+from config.commonconfig import databaseHost
+from config.commonconfig import databaseName
+from config.commonconfig import databaseUserName
+from config.commonconfig import databasePassword
+from config.commonconfig import processorCheckInTime
+from config.commonconfig import crashStorageClass
+
+#---------------------------------------------------------------------------
+# HBase storage system
+if crashStorageClass.default == 'CrashStorageSystemForHBase':
+  from config.commonconfig import hbaseHost
+  from config.commonconfig import hbasePort
+  from config.commonconfig import hbaseFallbackFS
+  from config.commonconfig import hbaseFallbackDumpDirCount
+  from config.commonconfig import hbaseFallbackDumpGID
+  from config.commonconfig import hbaseFallbackDumpPermissions
+  from config.commonconfig import hbaseFallbackDirPermissions
+
+#---------------------------------------------------------------------------
+# NFS storage system
+if crashStorageClass.default == 'CrashStorageSystemForNFS':
+  from config.commonconfig import storageRoot
+  from config.commonconfig import deferredStorageRoot
+  from config.commonconfig import jsonFileSuffix
+  from config.commonconfig import dumpFileSuffix
+  from config.commonconfig import dumpDirPrefix
+  from config.commonconfig import dumpPermissions
+  from config.commonconfig import dirPermissions
+  from config.commonconfig import dumpGID
+
+  saveSuccessfulMinidumpsTo = cm.Option()
+  saveSuccessfulMinidumpsTo.doc = 'the location for saving successfully processed dumps (leave blank to delete them instead)'
+  saveSuccessfulMinidumpsTo.default = '/tmp/s1/suc'
+
+  saveFailedMinidumpsTo = cm.Option()
+  saveFailedMinidumpsTo.doc = 'the location for saving dumps that failed processing (leave blank to delete them instead)'
+  saveSuccessfulMinidumpsTo.default = '/tmp/socorro-failed'
+
+#---------------------------------------------------------------------------
+# monitor local config
 
 standardLoopDelay = cm.Option()
 standardLoopDelay.doc = 'the time between scans for jobs (HHH:MM:SS)'
@@ -22,25 +61,8 @@ priorityLoopDelay.doc = 'the time between checks for priority jobs (HHH:MM:SS)'
 priorityLoopDelay.default = '00:01:00'
 priorityLoopDelay.fromStringConverter = cm.timeDeltaConverter
 
-saveSuccessfulMinidumpsTo = cm.Option()
-saveSuccessfulMinidumpsTo.doc = 'the location for saving successfully processed dumps (leave blank to delete them instead)'
-saveSuccessfulMinidumpsTo.default = '/tmp/socorro-sucessful'
-
-saveFailedMinidumpsTo = cm.Option()
-saveFailedMinidumpsTo.doc = 'the location for saving dumps that failed processing (leave blank to delete them instead)'
-saveFailedMinidumpsTo.default = '/tmp/socorro-failed'
-
-dumpPermissions = cm.Option()
-dumpPermissions.doc = 'when saving dumps, the pemission flags to be used'
-dumpPermissions.default = '%d'%(stat.S_IRGRP | stat.S_IWGRP | stat.S_IRUSR | stat.S_IWUSR)
-
-dirPermissions = cm.Option()
-dirPermissions.doc = 'when saving dumps, the pemission flags to be used on directories'
-dirPermissions.default = '%d'%(stat.S_IRGRP | stat.S_IXGRP | stat.S_IWGRP | stat.S_IRUSR | stat.S_IXUSR | stat.S_IWUSR)
-
-dumpGID = cm.Option()
-dumpGID.doc = 'when saving dumps, the group to save the files under (leave blank for file system default)'
-dumpGID.default = ''
+#---------------------------------------------------------------------------
+# Logging Config Section
 
 logFilePathname = cm.Option()
 logFilePathname.doc = 'full pathname for the log file'

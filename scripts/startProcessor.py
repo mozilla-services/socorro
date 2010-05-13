@@ -37,6 +37,8 @@ logger.addHandler(rotatingFileLog)
 
 logger.info("current configuration\n%s", str(configurationContext))
 
+configurationContext['logger'] = logger
+
 try:
   try:
     p = processor.ProcessorWithExternalBreakpad(configurationContext)

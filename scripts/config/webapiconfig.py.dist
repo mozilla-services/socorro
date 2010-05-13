@@ -6,6 +6,23 @@ from config.commonconfig import databasePort
 from config.commonconfig import databaseName
 from config.commonconfig import databaseUserName
 from config.commonconfig import databasePassword
+from config.commonconfig import crashStorageClass
+
+#---------------------------------------------------------------------------
+# HBase storage system
+if crashStorageClass.default == 'CrashStorageSystemForHBase':
+  from config.commonconfig import hbaseHost
+  from config.commonconfig import hbasePort
+
+#---------------------------------------------------------------------------
+# NFS storage system
+if crashStorageClass.default == 'CrashStorageSystemForNFS':
+  from config.commonconfig import storageRoot
+  from config.commonconfig import deferredStorageRoot
+  from config.commonconfig import dumpDirPrefix
+  from config.commonconfig import dumpPermissions
+  from config.commonconfig import dirPermissions
+  from config.commonconfig import dumpGID
 
 wsgiInstallation = cm.Option()
 wsgiInstallation.doc = 'True or False, this app is installed under WSGI'
@@ -14,9 +31,10 @@ wsgiInstallation.default = False
 import socorro.services.topCrashBySignatureTrends as tcbst
 import socorro.services.signatureHistory as sighist
 import socorro.services.aduByDay as adubd
+import socorro.services.getCrash as crash
 servicesList = cm.Option()
 servicesList.doc = 'a python list of classes to offer as services'
-servicesList.default = [tcbst.TopCrashBySignatureTrends, sighist.SignatureHistory, adubd.AduByDay]
+servicesList.default = [tcbst.TopCrashBySignatureTrends, sighist.SignatureHistory, adubd.AduByDay, crash.GetCrash]
 
 logFilePathname = cm.Option()
 logFilePathname.doc = 'full pathname for the log file'

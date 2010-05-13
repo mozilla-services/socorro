@@ -141,6 +141,12 @@ class DatabaseConnectionPool(dict):
         raise CannotConnectToDatabase(x)
 
   #-----------------------------------------------------------------------------------------------------------------
+  def connectionCursorPair(self, name=None):
+    """Just like connection, but returns a tuple with a connection and a cursor"""
+    connection = self.connection(name)
+    return (connection, connection.cursor())
+
+  #-----------------------------------------------------------------------------------------------------------------
   def cleanup (self):
     self.logger.debug("%s - killing database connections", threading.currentThread().getName())
     for name, aConnection in self.iteritems():

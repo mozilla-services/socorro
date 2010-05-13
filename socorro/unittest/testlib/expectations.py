@@ -24,6 +24,7 @@ class DummyObjectWithExpectations(object):
         return returnValue
       return f
     else:
+      assert attributeExpected == attribute, "%s expected attribute '%s', but got '%s'" % (self.name, attributeExpected, attribute)
       return returnValue
   def __call__(self, *args, **kwargs):
     attribute = '__call__'

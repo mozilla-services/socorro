@@ -2,12 +2,47 @@ import socorro.lib.ConfigurationManager as cm
 import datetime
 import re
 import stat
-import signal
 
-try:
-  from config.commonconfig import *
-except ImportError:
-  from commonconfig import *
+#---------------------------------------------------------------------------
+# imported config
+
+from config.commonconfig import databaseHost
+from config.commonconfig import databaseName
+from config.commonconfig import databaseUserName
+from config.commonconfig import databasePassword
+from config.commonconfig import processorCheckInTime
+from config.commonconfig import crashStorageClass
+from config.commonconfig import jsonFileSuffix
+from config.commonconfig import dumpFileSuffix
+
+#---------------------------------------------------------------------------
+# HBase storage system
+if crashStorageClass.default == 'CrashStorageSystemForHBase':
+  from config.commonconfig import hbaseHost
+  from config.commonconfig import hbasePort
+  from config.commonconfig import hbaseFallbackFS
+  from config.commonconfig import hbaseFallbackDumpDirCount
+  from config.commonconfig import hbaseFallbackDumpGID
+  from config.commonconfig import hbaseFallbackDumpPermissions
+  from config.commonconfig import hbaseFallbackDirPermissions
+
+  temporaryFileSystemStoragePath = cm.Option()
+  temporaryFileSystemStoragePath.doc = 'a local filesystem path where processor can write dumps temporarily for processing'
+  temporaryFileSystemStoragePath.default = './'
+
+#---------------------------------------------------------------------------
+# NFS storage system
+if crashStorageClass.default == 'CrashStorageSystemForNFS':
+  from config.commonconfig import storageRoot
+  from config.commonconfig import deferredStorageRoot
+  from config.commonconfig import dumpDirPrefix
+  from config.commonconfig import dumpPermissions
+  from config.commonconfig import dirPermissions
+  from config.commonconfig import dumpGID
+
+#---------------------------------------------------------------------------
+# local processor config
+
 
 numberOfThreads = cm.Option()
 numberOfThreads.doc = 'the number of threads to use'
@@ -64,13 +99,9 @@ batchJobLimit = cm.Option()
 batchJobLimit.doc = 'the number of jobs to pull in a time'
 batchJobLimit.default = 10000
 
-updateInterval = cm.Option()
-updateInterval.doc = 'How often to check for updates in this config file. Format 'dd:hh:mm:ss'. If 0, never update'
-updateInteval.default = '0:0:0:0'
-
-signalNumber = cmOption()
-signalNumber.doc 'kill -signal_number the_process' causes configuration to be dynamically updated.
-signalNumber.default = signal.SIGALRM
+#updateInterval = cm.Option()
+#updateInterval.doc = 'How often to check for updates in this config file. Format 'dd:hh:mm:ss'. If 0, never update'
+#updateInteval.default = '0:0:0:0'
 
 signatureSentinels = cm.Option()
 signatureSentinels.doc = 'a list of frame signatures that should always be considered top of the stack if present in the stack'
@@ -100,17 +131,8 @@ collectCrashProcess.doc = "if true, parse and collect information about out of p
 collectCrashProcess.default = True
 collectCrashProcess.fromStringConverter = cm.booleanConverter
 
-dumpPermissions = cm.Option()
-dumpPermissions.doc = 'when saving processed dumps, the pemission flags to be used'
-dumpPermissions.default = '%d'%(stat.S_IRGRP | stat.S_IWGRP | stat.S_IRUSR | stat.S_IWUSR)
-
-dirPermissions = cm.Option()
-dirPermissions.doc = 'when saving processed dumps, the pemission flags to be used on directories'
-dirPermissions.default = '%d'%(stat.S_IRGRP | stat.S_IXGRP | stat.S_IWGRP | stat.S_IRUSR | stat.S_IXUSR | stat.S_IWUSR)
-
-dumpGID = cm.Option()
-dumpGID.doc = 'when saving processed dumps, the group to save the files under (leave blank for file system default)'
-dumpGID.default = ''
+#---------------------------------------------------------------------------
+# Logging
 
 logFilePathname = cm.Option()
 logFilePathname.doc = 'full pathname for the log file'

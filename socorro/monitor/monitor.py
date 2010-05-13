@@ -21,9 +21,11 @@ logger = logging.getLogger("monitor")
 import socorro.lib.util
 import socorro.lib.filesystem
 import socorro.lib.psycopghelper as psy
+import socorro.database.database as sdb
 import socorro.lib.JsonDumpStorage as jds
 import socorro.lib.threadlib as thr
 import socorro.lib.ooid as ooid
+import socorro.collector.crashstorage as cstore
 
 #=================================================================================================================
 class UuidNotFoundException(Exception):
@@ -31,68 +33,64 @@ class UuidNotFoundException(Exception):
 
 #=================================================================================================================
 class Monitor (object):
-  #-----------------------------------------------------------------------------------------------------------------
-  def __init__(self, config):
-    super(Monitor, self).__init__()
+  _config_requirements = ("databaseHost",
+                          "databaseName",
+                          "databaseUserName",
+                          "databasePassword",
+                          "processorCheckInTime",
+                          "standardLoopDelay",
+                          "cleanupJobsLoopDelay",
+                          "priorityLoopDelay",
+                          "crashStorageClass",
+                         )
+  _hbase_config_requirements = ("hbaseHost",
+                                "hbasePort",
+                                "hbaseFallbackFS",
+                                "hbaseFallbackDumpDirCount",
+                                "hbaseFallbackDumpGID",
+                                "hbaseFallbackDumpPermissions",
+                                "hbaseFallbackDirPermissions",
+                               )
+  _nfs_config_requirements = ("storageRoot",
+                              "deferredStorageRoot",
+                              "dumpDirPrefix",
+                              "dumpPermissions",
+                              "dirPermissions",
+                              "dumpGID",
+                              "saveSuccessfulMinidumpsTo",
+                              "saveFailedMinidumpsTo",
+                              "jsonFileSuffix",
+                              "dumpFileSuffix",
+                             )
 
-    assert "databaseHost" in config, "databaseHost is missing from the configuration"
-    assert "databaseName" in config, "databaseName is missing from the configuration"
-    assert "databaseUserName" in config, "databaseUserName is missing from the configuration"
-    assert "databasePassword" in config, "databasePassword is missing from the configuration"
-    assert "storageRoot" in config, "storageRoot is missing from the configuration"
-    assert "deferredStorageRoot" in config, "deferredStorageRoot is missing from the configuration"
-    assert "dumpPermissions" in config, "dumpPermissions is missing from the configuration"
-    assert "dirPermissions" in config, "dirPermissions is missing from the configuration"
-    assert "dumpGID" in config, "dumpGID is missing from the configuration"
-    assert "jsonFileSuffix" in config, "jsonFileSuffix is missing from the configuration"
-    assert "dumpFileSuffix" in config, "dumpFileSuffix is missing from the configuration"
-    assert "processorCheckInTime" in config, "processorCheckInTime is missing from the configuration"
-    assert "standardLoopDelay" in config, "standardLoopDelay is missing from the configuration"
-    assert "cleanupJobsLoopDelay" in config, "cleanupJobsLoopDelay is missing from the configuration"
-    assert "priorityLoopDelay" in config, "priorityLoopDelay is missing from the configuration"
-    assert "saveSuccessfulMinidumpsTo" in config, "saveSuccessfulMinidumpsTo is missing from the configuration"
-    assert "saveFailedMinidumpsTo" in config, "saveFailedMinidumpsTo is missing from the configuration"
+  #-----------------------------------------------------------------------------------------------------------------
+  def __init__(self, config, logger=logger, sdb=sdb, cstore=cstore, signal=signal):
+    super(Monitor, self).__init__()
+    config.logger = logger
+
+    for x in Monitor._config_requirements:
+      assert x in config, '%s missing from configuration' % x
+
+    if config.crashStorageClass == 'CrashStorageSystemForNFS':
+      for x in Monitor._nfs_config_requirements:
+        assert x in config, '%s missing from configuration' % x
+    else:
+      for x in Monitor._hbase_config_requirements:
+        assert x in config, '%s missing from configuration' % x
+    self.crashStorePool = cstore.CrashStoragePool(config)
+
+    self.sdb = sdb
 
     self.standardLoopDelay = config.standardLoopDelay.seconds
     self.cleanupJobsLoopDelay = config.cleanupJobsLoopDelay.seconds
     self.priorityLoopDelay = config.priorityLoopDelay.seconds
 
-    self.databaseConnectionPool = psy.DatabaseConnectionPool(config.databaseHost, config.databaseName, config.databaseUserName, config.databasePassword, logger)
-
-    #self.createLegacyPriorityJobsTable()
-    #self.legacySearchEventTrigger = threading.Event()
-    #self.legacySearchEventTrigger.clear()
+    self.databaseConnectionPool = self.sdb.DatabaseConnectionPool(config, logger)
 
     self.config = config
     signal.signal(signal.SIGTERM, Monitor.respondToSIGTERM)
     signal.signal(signal.SIGHUP, Monitor.respondToSIGTERM)
 
-    self.standardJobStorage = jds.JsonDumpStorage(root=self.config.storageRoot,
-                                                  jsonSuffix=self.config.jsonFileSuffix,
-                                                  dumpSuffix=self.config.dumpFileSuffix,
-                                                  logger=logger)
-    self.deferredJobStorage = jds.JsonDumpStorage(root=self.config.deferredStorageRoot,
-                                                  jsonSuffix=self.config.jsonFileSuffix,
-                                                  dumpSuffix=self.config.dumpFileSuffix,
-                                                  logger=logger)
-    self.successfulJobStorage = None
-    if self.config.saveSuccessfulMinidumpsTo:
-      self.successfulJobStorage = jds.JsonDumpStorage(root=self.config.saveSuccessfulMinidumpsTo,
-                                                      jsonSuffix=self.config.jsonFileSuffix,
-                                                      dumpSuffix=self.config.dumpFileSuffix,
-                                                      dumpPermissions=self.config.dumpPermissions,
-                                                      dirPermissions=self.config.dirPermissions,
-                                                      dumpGID=self.config.dumpGID,
-                                                      logger=logger)
-    self.failedJobStorage = None
-    if self.config.saveFailedMinidumpsTo:
-      self.failedJobStorage = jds.JsonDumpStorage(root=self.config.saveFailedMinidumpsTo,
-                                                  jsonSuffix=self.config.jsonFileSuffix,
-                                                  dumpSuffix=self.config.dumpFileSuffix,
-                                                  dumpPermissions=self.config.dumpPermissions,
-                                                  dirPermissions=self.config.dirPermissions,
-                                                  dumpGID=self.config.dumpGID,
-                                                  logger=logger)
     self.quit = False
 
   #-----------------------------------------------------------------------------------------------------------------
@@ -125,55 +123,13 @@ class Monitor (object):
   #-----------------------------------------------------------------------------------------------------------------
   def getDatabaseConnectionPair (self):
     try:
-      return self.databaseConnectionPool.connectionCursorPair()
-    except psy.CannotConnectToDatabase:
+      connection = self.databaseConnectionPool.connection()
+      cursor = connection.cursor()
+      return (connection, cursor)
+    except self.sdb.CannotConnectToDatabase:
       self.quit = True
       self.databaseConnectionPool.cleanup()
       socorro.lib.util.reportExceptionAndAbort(logger) # can't continue without a database connection
-
-  ##-----------------------------------------------------------------------------------------------------------------
-  #def jsonPathForUuidInJsonDumpStorage(self, uuid):
-    #try:
-      #jsonPath = self.standardJobStorage.getJson(uuid)
-    #except (OSError, IOError):
-      #try:
-        #jsonPath = self.deferredJobStorage.getJson(uuid)
-      #except (OSError, IOError):
-        #raise UuidNotFoundException("%s cannot be found in standard or deferred storage" % uuid)
-    #return jsonPath
-
-  ##-----------------------------------------------------------------------------------------------------------------
-  #def dumpPathForUuidInJsonDumpStorage(self, uuid):
-    #try:
-      #dumpPath = self.standardJobStorage.getDump(uuid)
-    #except (OSError, IOError):
-      #try:
-        #dumpPath = self.deferredJobStorage.getDump(uuid)
-      #except (OSError, IOError):
-        #raise UuidNotFoundException("%s cannot be found in standard or deferred storage" % uuid)
-    #return dumpPath
-
-  #-----------------------------------------------------------------------------------------------------------------
-  def getStorageFor(self, uuid):
-    try:
-      self.standardJobStorage.getJson(uuid)
-      return self.standardJobStorage
-    except (OSError, IOError):
-      try:
-        self.deferredJobStorage.getJson(uuid)
-        return self.deferredJobStorage
-      except (OSError, IOError):
-        raise UuidNotFoundException("%s cannot be found in standard or deferred storage" % uuid)
-
-  #-----------------------------------------------------------------------------------------------------------------
-  def removeUuidFromJsonDumpStorage(self, uuid, **kwargs):
-    try:
-      self.standardJobStorage.remove(uuid)
-    except (jds.NoSuchUuidFound, OSError, IOError):
-      try:
-        self.deferredJobStorage.remove(uuid)
-      except (jds.NoSuchUuidFound, OSError, IOError):
-        raise UuidNotFoundException("%s cannot be found in standard or deferred storage" % uuid)
 
   #-----------------------------------------------------------------------------------------------------------------
   def cleanUpCompletedAndFailedJobs (self):
@@ -182,38 +138,9 @@ class Monitor (object):
     databaseConnection, databaseCursor = self.getDatabaseConnectionPair()
     try:
       logger.debug("%s - starting loop", threading.currentThread().getName())
-      saveSuccessfulJobs = bool(self.config.saveSuccessfulMinidumpsTo)
-      saveFailedJobs = bool(self.config.saveFailedMinidumpsTo)
-      databaseCursor.execute("select id, uuid, success from jobs where success is not NULL")
-      logger.debug("%s - sql submitted", threading.currentThread().getName())
-      for jobId, uuid, success in databaseCursor.fetchall():
-        self.quitCheck()
-        logger.debug("%s - checking %s, %s", threading.currentThread().getName(), uuid, success)
-        try:
-          currentStorageForThisUuid = self.getStorageFor(uuid)
-          if success:
-            if saveSuccessfulJobs:
-              logger.debug("%s - saving %s", threading.currentThread().getName(), uuid)
-              self.successfulJobStorage.transferOne(uuid, currentStorageForThisUuid, False, True, aDate=ooid.dateFromOoid(uuid))
-              #self.successfulJobStorage.transferOne(uuid, currentStorageForThisUuid, False, True, datetime.datetime.now())
-          else:
-            if saveFailedJobs:
-              logger.debug("%s - saving %s", threading.currentThread().getName(), uuid)
-              self.failedJobStorage.transferOne(uuid, currentStorageForThisUuid, False, True, aDate=ooid.dateFromOoid(uuid))
-              #self.failedJobStorage.transferOne(uuid, currentStorageForThisUuid, False, True, datetime.datetime.now())
-          # we no longer need to manually remove it, the transfer already did it
-          #logger.debug("%s - deleting %s", threading.currentThread().getName(), uuid)
-          #currentStorageForThisUuid.remove(uuid)
-        except (jds.NoSuchUuidFound, UuidNotFoundException):
-          logger.warning("%s - %s wasn't found for cleanup.", threading.currentThread().getName(), uuid)
-        except OSError, x:
-          #if str(x) == '[Errno 17] File exists':
-          socorro.lib.util.reportExceptionAndContinue(logger)
-          #else:
-          #  raise
-        databaseCursor.execute("delete from jobs where id = %s", (jobId,))
-        databaseConnection.commit()
-        logger.debug("%s - end of this cleanup iteration", threading.currentThread().getName())
+      databaseCursor.execute("delete from jobs where id = %s", (jobId,))
+      databaseConnection.commit()
+      logger.debug("%s - end of this cleanup iteration", threading.currentThread().getName())
     except Exception, x:
       logger.debug("%s - it died: %s", threading.currentThread().getName(), x)
       databaseConnection.rollback()
@@ -397,6 +324,7 @@ class Monitor (object):
   def standardJobAllocationLoop(self):
     """
     """
+    crashStorage = self.crashStorePool.crashStorage()
     try:
       try:
         while (True):
@@ -409,7 +337,7 @@ class Monitor (object):
           logger.debug("%s - beginning index scan", threading.currentThread().getName())
           try:
             logger.debug("%s - starting destructiveDateWalk", threading.currentThread().getName())
-            for uuid in self.standardJobStorage.destructiveDateWalk():
+            for uuid in crashStorage.newUuids():
               try:
                 logger.debug("%s - looping: %s", threading.currentThread().getName(), uuid)
                 self.quitCheck()
@@ -469,26 +397,13 @@ class Monitor (object):
         pass
 
   #-----------------------------------------------------------------------------------------------------------------
-  def uuidInJsonDumpStorage(self, uuid):
-    try:
-      uuidPath = self.standardJobStorage.getJson(uuid)
-      self.standardJobStorage.markAsSeen(uuid)
-    except (OSError, IOError):
-      try:
-        uuidPath = self.deferredJobStorage.getJson(uuid)
-        self.deferredJobStorage.markAsSeen(uuid)
-      except (OSError, IOError):
-        return False
-    return True
-
-  #-----------------------------------------------------------------------------------------------------------------
-  def lookForPriorityJobsInJsonDumpStorage(self, databaseCursor, setOfPriorityUuids):
+  def lookForPriorityJobsInDumpStorage(self, databaseCursor, setOfPriorityUuids):
     # check for jobs in symlink directories
-    logger.debug("%s - starting lookForPriorityJobsInJsonDumpStorage", threading.currentThread().getName())
+    logger.debug("%s - starting lookForPriorityJobsInDumpStorage", threading.currentThread().getName())
     processorIdSequenceGenerator = None
     for uuid in list(setOfPriorityUuids):
       logger.debug("%s - looking for %s", threading.currentThread().getName(), uuid)
-      if self.uuidInJsonDumpStorage(uuid):
+      if self.crashStorePool.crashStorage().uuidInStorage(uuid):
         logger.info("%s - priority queuing %s", threading.currentThread().getName(), uuid)
         if not processorIdSequenceGenerator:
           logger.debug("%s - about to get unbalancedJobScheduler", threading.currentThread().getName())
@@ -512,12 +427,11 @@ class Monitor (object):
   #-----------------------------------------------------------------------------------------------------------------
   def priorityJobAllocationLoop(self):
     logger.info("%s - priorityJobAllocationLoop starting.", threading.currentThread().getName())
-    symLinkIndexPath = os.path.join(self.config.storageRoot, "index")
-    deferredSymLinkIndexPath = os.path.join(self.config.deferredStorageRoot, "index")
+    #symLinkIndexPath = os.path.join(self.config.storageRoot, "index")
+    #deferredSymLinkIndexPath = os.path.join(self.config.deferredStorageRoot, "index")
     try:
       try:
         while (True):
-          #self.legacySearchEventTrigger.clear()
           databaseConnection, databaseCursor = self.getDatabaseConnectionPair()
           try:
             self.quitCheck()
@@ -525,8 +439,7 @@ class Monitor (object):
             if setOfPriorityUuids:
               logger.debug("%s - beginning search for priority jobs", threading.currentThread().getName())
               self.lookForPriorityJobsAlreadyInQueue(databaseCursor, setOfPriorityUuids)
-              self.lookForPriorityJobsInJsonDumpStorage(databaseCursor, setOfPriorityUuids)
-              #self.queuePriorityJobsForSearchInLegacyStorage(databaseCursor, setOfPriorityUuids)
+              self.lookForPriorityJobsInDumpStorage(databaseCursor, setOfPriorityUuids)
               self.priorityJobsNotFound(databaseCursor, setOfPriorityUuids)
           except KeyboardInterrupt:
             logger.debug("%s - inner detects quit", threading.currentThread().getName())
@@ -535,7 +448,6 @@ class Monitor (object):
             databaseConnection.rollback()
             socorro.lib.util.reportExceptionAndContinue(logger)
           self.quitCheck()
-          #self.legacySearchEventTrigger.clear()
           logger.debug("%s - sleeping", threading.currentThread().getName())
           self.responsiveSleep(self.priorityLoopDelay)
       except (KeyboardInterrupt, SystemExit):
@@ -543,7 +455,6 @@ class Monitor (object):
         databaseConnection.rollback()
         self.quit = True
     finally:
-      #self.legacySearchEventTrigger.set()
       logger.info("%s - priorityLoop done.", threading.currentThread().getName())
 
   #-----------------------------------------------------------------------------------------------------------------
@@ -566,124 +477,11 @@ class Monitor (object):
       logger.info("%s - jobCleanupLoop done.", threading.currentThread().getName())
 
   #-----------------------------------------------------------------------------------------------------------------
-  # legacy storage section: these routines are temporary for the transition between file system storage techniques
-  #-----------------------------------------------------------------------------------------------------------------
-
-  ##-----------------------------------------------------------------------------------------------------------------
-  #def createLegacyPriorityJobsTable (self):
-    #logger.debug("%s - createLegacyPriorityJobsTable starting.", threading.currentThread().getName())
-    #databaseConnection, databaseCursor = self.getDatabaseConnectionPair()
-    #try:
-      #databaseCursor.execute("create table legacy_priority_jobs (uuid varchar)")
-      #databaseConnection.commit()
-      #logger.debug("%s - legacy_priority_jobs table created", threading.currentThread().getName())
-    #except:
-      ##socorro.lib.util.reportExceptionAndContinue(logger)
-      #logger.warning("%s - can't create legacy_priority_jobs table, it probably already exists (this is OK)", threading.currentThread().getName())
-      #databaseConnection.rollback()
-
-  ##-----------------------------------------------------------------------------------------------------------------
-  #def queuePriorityJobsForSearchInLegacyStorage(self, databaseCursor, setOfPriorityUuids):
-    ## check for jobs in symlink directories
-    #logger.debug("%s - starting queuePriorityJobsForSearchInLegacyStorage", threading.currentThread().getName())
-    #if setOfPriorityUuids:
-      #processorIdSequenceGenerator = None
-      #for uuid in list(setOfPriorityUuids):
-        #setOfPriorityUuids.remove(uuid)
-        #databaseCursor.execute("delete from priorityjobs where uuid = %s", (uuid,))
-        #databaseCursor.execute("insert into legacy_priority_jobs (uuid) values (%s)", (uuid,))
-      #databaseCursor.connection.commit()
-      #logger.debug("%s - triggering legacy search event", threading.currentThread().getName())
-      #self.legacySearchEventTrigger.set()
-
-  ##-----------------------------------------------------------------------------------------------------------------
-  #def legacyStoragePriorityJobSearchLoop (self):
-    #logger.debug("%s - starting legacyStoragePriorityJobSearchLoop", threading.currentThread().getName())
-    #symLinkIndexPath = os.path.join(self.config.storageRoot, "index")
-    #deferredSymLinkIndexPath = os.path.join(self.config.deferredStorageRoot, "index")
-    #try:
-      #try:
-        #while (True):
-          #try:
-            #logger.debug("%s - waiting for legacySearchEventTrigger", threading.currentThread().getName())
-            #self.legacySearchEventTrigger.wait()
-            #logger.debug("%s - received legacySearchEventTrigger", threading.currentThread().getName())
-            #self.quitCheck()
-            #databaseConnection, databaseCursor = self.getDatabaseConnectionPair()
-            #processorIdSequenceGenerator = None
-            #setOfPriorityUuids = sets.Set([x[0] for x in psy.execute(databaseCursor, "select * from legacy_priority_jobs")])
-            #if setOfPriorityUuids:
-              #logger.debug("%s - about get unbalancedJobScheduler", threading.currentThread().getName())
-              #processorIdSequenceGenerator = self.unbalancedJobSchedulerIter(databaseCursor)
-              #logger.debug("%s - unbalancedJobScheduler successfully fetched", threading.currentThread().getName())
-              #self.searchForPriorityJobsInLegacyStorage(setOfPriorityUuids, processorIdSequenceGenerator, symLinkIndexPath, 1)
-              #self.searchForPriorityJobsInLegacyStorage(setOfPriorityUuids, processorIdSequenceGenerator, deferredSymLinkIndexPath, 2)
-              #self.priorityJobsNotFound(databaseCursor, setOfPriorityUuids, "legacy_priority_jobs")
-          #except KeyboardInterrupt:
-            #self.quit = True
-            #raise
-          #except psy.CannotConnectToDatabase:
-            #socorro.lib.util.reportExceptionAndAbort(logger)
-          #except:
-            #socorro.lib.util.reportExceptionAndContinue(logger)
-      #except (KeyboardInterrupt, SystemExit):
-        #logger.debug("%s - quit detected", threading.currentThread().getName())
-        ##databaseConnection.rollback()
-        #self.quit = True
-    #finally:
-      ##databaseConnection.close()
-      #logger.info("%s - legacy search loop done.", threading.currentThread().getName())
-
-  ##-----------------------------------------------------------------------------------------------------------------
-  #def searchForPriorityJobsInLegacyStorage(self, priorityUuids, processorIdSequenceGenerator, symLinkIndexPath, searchDepth):
-    ## check for jobs in legacy symlink directories
-    #threadName = threading.currentThread().getName()
-    #logger.debug("%s - starting searchForPriorityJobsInLegacyStorage in %s", threadName, symLinkIndexPath)
-    #if not priorityUuids:
-      #return
-    #try:
-      #for path, file, currentDirectory in socorro.lib.filesystem.findFileGenerator(symLinkIndexPath,lambda x: os.path.isdir(x[2]),maxDepth=searchDepth,directorySortFunction=lambda x,y:-cmp(x,y)):  # list all directories
-        #if not priorityUuids:
-          #break
-        #for uuid in list(priorityUuids):
-          #logger.debug("%s - looking for %s", threadName, uuid)
-          #self.quitCheck()
-          #absoluteSymLinkPathname = os.path.join(currentDirectory, "%s.symlink" % uuid)
-          #logger.debug("%s -         as %s", threadName, absoluteSymLinkPathname)
-          #try:
-            #relativeJsonPathname = os.readlink(absoluteSymLinkPathname)
-            #absoluteJsonPathname = os.path.normpath(os.path.join(currentDirectory, relativeJsonPathname))
-            #absoluteDumpPathname = "%s%s" % (absoluteJsonPathname[:-len(self.config.jsonFileSuffix)], self.config.dumpFileSuffix)
-          #except OSError:
-            #logger.debug("%s -         Not it...", threadName)
-            #continue
-          #logger.debug("%s -         FOUND", threadName)
-          #logger.info("%s - priority queuing %s", threadName, absoluteJsonPathname)
-          #try:
-            #self.standardJobStorage.copyFrom(uuid, absoluteJsonPathname, absoluteDumpPathname, "legacy", datetime.datetime.now(), False, True)
-            #databaseConnection, databaseCursor = self.getDatabaseConnectionPair()
-            #processorIdAssignedToThisJob = self.queuePriorityJob(databaseCursor, uuid, processorIdSequenceGenerator)
-            #logger.info("%s - %s assigned to %d", threadName, uuid, processorIdAssignedToThisJob)
-          #except IOError, x:
-            #logger.warning("%s - unable to process %s because %s", threadName, uuid, x)
-          #logger.warning("%s - about to remove %s from legacy_priority_jobs", threadName, uuid)
-          #databaseCursor.execute("delete from legacy_priority_jobs where uuid = %s", (uuid,))
-          #databaseCursor.connection.commit()
-          #priorityUuids.remove(uuid)
-    #except OSError, x:
-      #logger.warning("%s - searchForPriorityJobsInLegacyStorage had trouble: %s", threadName, x)
-
-  ## end of legacy storage section
-  #-----------------------------------------------------------------------------------------------------------------
-
-  #-----------------------------------------------------------------------------------------------------------------
   def start (self):
     priorityJobThread = threading.Thread(name="priorityLoopingThread", target=self.priorityJobAllocationLoop)
     priorityJobThread.start()
     jobCleanupThread = threading.Thread(name="jobCleanupThread", target=self.jobCleanupLoop)
     jobCleanupThread.start()
-    #legacySearchThread = threading.Thread(name="legacySearchThread", target=self.legacyStoragePriorityJobSearchLoop)
-    #legacySearchThread.start()
     try:
       try:
         self.standardJobAllocationLoop()
@@ -691,10 +489,10 @@ class Monitor (object):
         logger.debug("%s - waiting to join.", threading.currentThread().getName())
         priorityJobThread.join()
         jobCleanupThread.join()
-        #legacySearchThread.join()
         # we're done - kill all the database connections
         logger.debug("%s - calling databaseConnectionPool.cleanup().", threading.currentThread().getName())
         self.databaseConnectionPool.cleanup()
+        self.crashStorePool.cleanup()
     except KeyboardInterrupt:
       logger.debug("%s - KeyboardInterrupt.", threading.currentThread().getName())
       raise SystemExit

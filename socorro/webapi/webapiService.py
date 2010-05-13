@@ -4,6 +4,7 @@ import web
 
 import socorro.lib.util as util
 import socorro.database.database as db
+import socorro.collector.crashstorage as cs
 
 logger = logging.getLogger("webapi")
 
@@ -22,6 +23,7 @@ class JsonServiceBase (object):
     try:
       self.context = config
       self.database = db.Database(config)
+      self.crashStoragePool = cs.CrashStoragePool(config)
     except (AttributeError, KeyError):
       util.reportExceptionAndContinue(logger)
 

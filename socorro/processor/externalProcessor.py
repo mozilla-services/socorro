@@ -77,7 +77,7 @@ class ProcessorWithExternalBreakpad (processor.Processor):
             date_processed
             processorErrorMessages
     """
-
+    logger.debug('doBreakpadStackDumpAnalysis')
     dumpAnalysisLineIterator, subprocessHandle = self.invokeBreakpadStackdump(dumpfilePathname)
     dumpAnalysisLineIterator.secondaryCacheMaximumSize = self.config.crashingThreadTailFrameThreshold + 1
     try:
@@ -255,7 +255,7 @@ class ProcessorWithExternalBreakpad (processor.Processor):
           thisFramesSignature = self.make_signature(module_name, function, source, source_line, instruction)
           signatureList.append(thisFramesSignature)
           if frameCounter < 10:
-            self.framesTable.insert(databaseCursor, (reportId, frame_num, date_processed, thisFramesSignature[:255]), self.databaseConnectionPool.connectToDatabase, date_processed=date_processed)
+            self.framesTable.insert(databaseCursor, (reportId, frame_num, date_processed, thisFramesSignature[:255]), self.databaseConnectionPool.connectionCursorPair, date_processed=date_processed)
         if frameCounter == self.config.crashingThreadFrameThreshold:
           processorErrorMessages.append("This dump is too long and has triggered the automatic truncation routine")
           #logger.debug("%s - starting secondary cache with framecount = %d", threading.currentThread().getName(), frameCounter)
