@@ -103,6 +103,10 @@ batchJobLimit.default = 10000
 #updateInterval.doc = 'How often to check for updates in this config file. Format 'dd:hh:mm:ss'. If 0, never update'
 #updateInteval.default = '0:0:0:0'
 
+#signalNumber = cmOption()
+#signalNumber.doc 'kill -signal_number the_process' causes configuration to be dynamically updated.
+#signalNumber.default = signal.SIGALRM
+
 signatureSentinels = cm.Option()
 signatureSentinels.doc = 'a list of frame signatures that should always be considered top of the stack if present in the stack'
 signatureSentinels.default = ['_purecall',
