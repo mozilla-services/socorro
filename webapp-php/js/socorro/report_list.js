@@ -47,15 +47,25 @@ $(document).ready(function () {
     });
 
     $('#buildid-table').tablesorter(); 
-    $('#reportsList').tablesorter(
-        { textExtraction: 'complex' },
-        { sortList : [[9,1]] },
-        { 
-          headers: {
-            7: { sorter: 'digit' } 
-          }
-        }
-    );
+    
+    $.tablesorter.addParser({  
+        id: "hexToInt",  
+        is: function(s) {  
+            return false;  
+        },  
+        format: function(s) {  
+            return parseInt(s, 16);
+        },  
+        type: "digit"  
+    });
+    
+    $('#reportsList').tablesorter({ 
+        textExtraction: "complex",
+        headers: { 
+            7: { sorter: "hexToInt" }
+        }, 
+        sortList : [[9,1]]
+    });
+    
     $('#report-list-nav').tabs({selected: 2}).show();
 });
-
