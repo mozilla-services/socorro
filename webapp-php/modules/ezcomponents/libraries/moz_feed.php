@@ -54,7 +54,11 @@ function moz_feed($base_url, $feed_link, $title, $reports)
 	  $link->rel = 'alternate';
 	  $link->type = 'application/x-gzip';
 	  $link->title = 'Crash Report as gzip compressed JSON file';
-	  $link->href = $base_url . 'dumps/' . htmlentities($report->uuid) . '.jsonz'; 
+          if (isset($config['crash_dump_public_url'])) {
+              $link->href = sprintf($config['crash_dump_public_url'], htmlentities($report->uuid));
+          } else {
+	      $link->href = $base_url . 'dumps/' . htmlentities($report->uuid) . '.jsonz'; 
+          }
 	}
 
 	$feedXml = $feed->generate( 'atom' );
