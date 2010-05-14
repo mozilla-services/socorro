@@ -243,12 +243,8 @@ class CrashStorageSystemForHBase(CrashStorageSystem):
     super(CrashStorageSystemForHBase, self).__init__(config)
     assert "hbaseHost" in config, "hbaseHost is missing from the configuration"
     assert "hbasePort" in config, "hbasePort is missing from the configuration"
-    try:
-      self.logger.info('connecting to hbase')
-      self.hbaseConnection = hbaseClient.HBaseConnectionForCrashReports(config.hbaseHost, config.hbasePort, logger=config.logger)
-    except Exception:
-      sutil.reportExceptionAndContinue(self.logger)
-      self.hbaseConnection = None
+    self.logger.info('connecting to hbase')
+    self.hbaseConnection = hbaseClient.HBaseConnectionForCrashReports(config.hbaseHost, config.hbasePort, logger=config.logger)
 
   #-----------------------------------------------------------------------------------------------------------------
   def close (self):

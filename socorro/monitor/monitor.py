@@ -26,6 +26,7 @@ import socorro.lib.JsonDumpStorage as jds
 import socorro.lib.threadlib as thr
 import socorro.lib.ooid as ooid
 import socorro.collector.crashstorage as cstore
+import socorro.hbase.hbaseClient as hbc
 
 #=================================================================================================================
 class UuidNotFoundException(Exception):
@@ -324,7 +325,12 @@ class Monitor (object):
   def standardJobAllocationLoop(self):
     """
     """
-    crashStorage = self.crashStorePool.crashStorage()
+    try:
+      crashStorage = self.crashStorePool.crashStorage()
+    except hbc.NoConnectionException:
+      self.quit = True
+      logger.critical("%s - hbase is gone! hbase is gone!", threading.currentThread().getName())
+      socorro.lib.util.reportExceptionAndAbort(logger)
     try:
       try:
         while (True):
@@ -349,6 +355,8 @@ class Monitor (object):
               except:
                 socorro.lib.util.reportExceptionAndContinue(logger)
             logger.debug("%s - ended destructiveDateWalk", threading.currentThread().getName())
+          except hbc.NoConnectionException:
+            socorro.lib.util.reportExceptionAndAbort(logger)
           except:
             socorro.lib.util.reportExceptionAndContinue(logger)
           logger.debug("%s - end of loop - about to sleep", threading.currentThread().getName())
@@ -444,6 +452,8 @@ class Monitor (object):
           except KeyboardInterrupt:
             logger.debug("%s - inner detects quit", threading.currentThread().getName())
             raise
+          except hbc.NoConnectionException:
+            socorro.lib.util.reportExceptionAndAbort(logger)
           except:
             databaseConnection.rollback()
             socorro.lib.util.reportExceptionAndContinue(logger)

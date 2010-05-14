@@ -25,6 +25,7 @@ import socorro.lib.ooid as ooid
 import socorro.lib.datetimeutil as sdt
 import socorro.lib.processedDumpStorage as pds
 import socorro.collector.crashstorage as cstore
+import socorro.hbase.hbaseClient as hbc
 
 import simplejson
 
@@ -557,14 +558,20 @@ class Processor(object):
           jobTuple: a tuple containing up to three items: the jobId (the primary key from the jobs table), the
               jobUuid (a unique string with the json file basename minus the extension) and the priority (an integer)
     """
+    if self.quit: return
     threadName = threading.currentThread().getName()
     try:
       threadLocalDatabaseConnection, threadLocalCursor = self.databaseConnectionPool.connectionCursorPair()
       threadLocalCrashStorage = self.crashStorePool.crashStorage(threadName)
+    except hbc.NoConnectionException:
+      logger.critical("%s - something's gone horribly wrong with the HBase connection", threadName)
+      self.quit = True
+      socorro.lib.util.reportExceptionAndContinue(logger, loggingLevel=logging.CRITICAL)
     except:
       self.quit = True
-      socorro.lib.util.reportExceptionAndAbort(logger) # can't continue without a database connection or crash storage
+      socorro.lib.util.reportExceptionAndContinue(logger, loggingLevel=logging.CRITICAL) # can't continue without a database connection or crash storage
     try:
+      self.quitCheck()
       newReportRecordAsDict = {}
       processorErrorMessages = []
       jobId, jobUuid, jobPriority = jobTuple
@@ -661,7 +668,11 @@ class Processor(object):
     except psycopg2.OperationalError:
       logger.critical("%s - something's gone horribly wrong with the database connection", threadName)
       self.quit = True
-      socorro.lib.util.reportExceptionAndAbort(logger)
+      socorro.lib.util.reportExceptionAndContinue(logger, loggingLevel=logging.CRITICAL)
+    except hbc.NoConnectionException:
+      logger.critical("%s - something's gone horribly wrong with the HBase connection", threadName)
+      self.quit = True
+      socorro.lib.util.reportExceptionAndContinue(logger, loggingLevel=logging.CRITICAL)
     except Exception, x:
       if type(x) != ErrorInBreakpadStackwalkException:
         socorro.lib.util.reportExceptionAndContinue(logger)
