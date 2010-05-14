@@ -143,8 +143,15 @@
             </p>
         </div><!-- /advfilter -->
                 
-        <button type="submit">Filter Crash Reports</button>
+        <button id="query_submit" type="submit">Filter Crash Reports</button>
         <input type="hidden" name="do_query" value="1" />
+
+		<div id="query_waiting" class="hidden">
+			<p class="advanced">
+				<img src="<?php echo url::base(); ?>img/loading.png" />
+				<i>processing query, please wait...</i>
+			</p>
+		</div>
         </li>
     
         </ul>

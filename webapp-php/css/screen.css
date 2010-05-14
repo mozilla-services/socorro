@@ -644,9 +644,11 @@ html.production .page-footer { margin-top: 80px; }
 /**
  * Status Messages
  */
+div#message {
+	margin: 1em;
+}
 div.error, div.success {
-	margin: 1em 0;
-	padding: 0 1em;
+	padding: 1em;
     -moz-border-radius: .25em;
     -webkit-border-radius: .25em;
 }

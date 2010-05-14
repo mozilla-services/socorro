@@ -63,3 +63,20 @@ $config['vcsMappings'] = array(
     )
 );
 
+/**
+ * The query range limit for users who have the role of user and admin.
+ *
+ * @see My_SearchReportHelper->normalizeDateUnitAndValue()
+ */
+$config['query_range_defaults'] = array(
+    'admin' => array(
+	    'range_default_value' => 14,
+	    'range_default_unit' => 'days',
+        'range_limit_value_in_days' => 120
+    ),    
+    'user' => array(
+	    'range_default_value' => 14,
+	    'range_default_unit' => 'days',
+        'range_limit_value_in_days' => 30
+	)
+);

@@ -67,19 +67,26 @@ class Query_Controller extends Controller {
      * @return void
      */
     public function query() {
-      //Query Form Stuff
+
+        //Query Form Stuff
         $searchHelper = new SearchReportHelper;
         $queryFormHelper = new QueryFormHelper;
 
-	$queryFormData = $queryFormHelper->prepareCommonViewData($this->branch_model, $this->platform_model);
-	$this->setViewData($queryFormData);
+        $queryFormData = $queryFormHelper->prepareCommonViewData($this->branch_model, $this->platform_model);
+        $this->setViewData($queryFormData);
 
-	//Current Query Stuff
+        //Current Query Stuff
         $params = $this->getRequestParameters($searchHelper->defaultParams());
+
+        // If no product is specified, add the user's last selected product
+        if (!isset($_GET['product']) || !isset($params['product']) || empty($params['product'])) {
+            $params['product'] = array( 0 => $this->chosen_version['product'] );
+        }
+
+        $params['admin'] = ($this->auth_is_active && Auth::instance()->logged_in()) ? true : false;
         $searchHelper->normalizeParams( $params );
 
-
-	$this->_updateNavigation($params);
+        $this->_updateNavigation($params);
 
         $signature_to_bugzilla = array();
 
@@ -92,7 +99,7 @@ class Query_Controller extends Controller {
 	$showPluginFilename = false;
 
         if ($params['do_query'] !== FALSE) {
-            $reports = $this->common_model->queryTopSignatures($params);
+			$reports = $this->common_model->queryTopSignatures($params);
             $signatures = array();
 
             foreach ($reports as $report) {
@@ -131,11 +138,6 @@ class Query_Controller extends Controller {
 
         }
 
-        // If no product is specified, add the user's last selected product
-        if (!isset($_GET['product']) || !isset($params['product']) || empty($params['product'])) {
-            $params['product'] = array( 0 => $this->chosen_version['product'] );
-        }
-        
         // If no date is specified, add today's date.
         if (empty($params['date'])) {
             $params['date'] = date('m/d/Y H:i:s');
@@ -144,7 +146,6 @@ class Query_Controller extends Controller {
         $this->setViewData(array(
             'nav_selection' => 'query',
             'params'  => $params,
-            'queryTooBroad' => $searchHelper->shouldShowWarning(),
             'reports' => $reports,
             'showPluginName' => $showPluginName,
             'showPluginFilename' => $showPluginFilename,

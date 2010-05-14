@@ -56,11 +56,23 @@ $(document).ready(function() {
           }); 
       });
 
-    $('#searchform').bind('submit', function(){
-	if($('input[name=date]').val() == dateFormat){
-	  $('input[name=date]').val('');
-	}
-      });
+    // Upon submitting the form, hide the submit button and disable refresh options.
+    $('#searchform').bind('submit', function () {
+        if ($('input[name=date]').val() == dateFormat) {
+            $('input[name=date]').val('');
+        }
+        
+        $('input[type=submit]', this).attr('disabled', 'disabled');
+        $('#query_submit').hide();
+        $('#query_waiting').show();
+    
+        $(document).bind("keypress", function(e) {
+            if (e.keyCode == 13 || e.keyCode == 116) {
+                return false;
+            }            
+        });
+    });
+    
     if($.trim($('input[name=date]').val()) == ""){
       $('input[name=date]').val(dateFormat);
     }
@@ -101,5 +113,3 @@ $(document).ready(function() {
     });
     window.updateVersion = updateVersion;  
 });
-
-

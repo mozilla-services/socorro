@@ -136,7 +136,6 @@ class Report_Controller extends Controller {
 		'pager' => $pager,
 		'params'  => $params,
 		'previousLinkText' => 'Newer Crashes',
-		'queryTooBroad' => $helper->shouldShowWarning(),
 		'reports' => $reports,
 		'totalItemText' => " Crash Reports",
 
