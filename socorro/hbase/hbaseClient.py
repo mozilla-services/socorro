@@ -8,6 +8,11 @@ import sys
 import heapq
 import threading
 
+#import logging
+#glogger = logging.getLogger('monitor')
+
+import socket
+
 from thrift import Thrift  #get Thrift modue
 from thrift.transport import TSocket, TTransport #get modules
 from thrift.protocol import TBinaryProtocol #get module
@@ -34,10 +39,15 @@ class NotInJsonFormatException(HBaseClientException):
     #super(NotInJsonFormatException, self).__init__("Improper JSON format: %s" % str(reason))
     HBaseClientException.__init__(self, "Improper JSON format: %s" % str(reason))
 
-class NoConnectionException(HBaseClientException):
+class FatalException(HBaseClientException):
+  def __init__(self, wrapped_exception_class, reason=''):
+    #super(FatalException, self).__init__("Improper JSON format: %s" % str(reason))
+    HBaseClientException.__init__(self, "the connection is not viable.  retries conituously fail: %s" % str(reason))
+
+class NoConnectionException(FatalException):
   def __init__(self, wrapped_exception_class, reason='', tries=0):
     #super(NoConnectionException, self).__init__("No connection was made to HBase (%d tries): %s-%s" % (tries, str(wrapped_exception_class), str(reason)))
-    HBaseClientException.__init__(self, "No connection was made to HBase (%d tries): %s-%s" % (tries, str(wrapped_exception_class), str(reason)))
+    FatalException.__init__(self, "No connection was made to HBase (%d tries): %s-%s" % (tries, str(wrapped_exception_class), str(reason)))
 
 class UnhandledInternalException(HBaseClientException):
   def __init__(self, wrapped_exception_class, reason=''):
@@ -53,27 +63,113 @@ def exception_wrapper(xClass):
   def wrapper (fn):
     def f(*args, **kwargs):
       try:
-        return fn(*args, **kwargs)
+        #glogger.info('***exception_wrapper: trying first time, %s', fn.__name__)
+        result = fn(*args, **kwargs)
+        #glogger.info('***exception_wrapper: completed without trouble, %s', fn.__name__)
+        return result
       except HBaseClientException, x:
+        #glogger.info('***exception_wrapper: handled HBaseClientException, %s', str(x))
         raise
       except Exception, x:
+        #glogger.info('***exception_wrapper: reraising Exception, %s', str(x))
         txClass, tx, txtb = sys.exc_info()
         raise xClass, xClass(txClass,tx), txtb
+    f.__name__ = fn.__name__
     return f
   return wrapper
 
-def retry_wrapper(fn):
+def exception_wrapper_for_generator(xClass):
+  """This decorator ensures that no exception escapes that isn't from the
+  HBaseClientException hierarchy.  Any unexpected exceptions are wrapped in the
+  exception class passed into this function.  The original exception is preserved
+  as the text of the wrapping expression.  Traceback info of the original
+  exception is also preserved as the traceback for the wrapping exception."""
+  def wrapper (fn):
+    def f(*args, **kwargs):
+      try:
+        #glogger.info('***exception_wrapper_for_generator: trying first time, %s', fn.__name__)
+        for x in fn(*args, **kwargs):
+          yield x
+        #glogger.info('***exception_wrapper_for_generator: completed without trouble, %s', fn.__name__)
+      except HBaseClientException, x:
+        #glogger.info('***exception_wrapper_for_generator: handled HBaseClientException, %s', str(x))
+        raise
+      except Exception, x:
+        #glogger.info('***exception_wrapper_for_generator: reraising Exception, %s', str(x))
+        txClass, tx, txtb = sys.exc_info()
+        raise xClass, xClass(txClass,tx), txtb
+    f.__name__ = fn.__name__
+    return f
+  return wrapper
+
+def retry_wrapper_for_generators(fn):
+  """a decorator to add retry symantics to any generator that uses hbase.  Don't wrap iterators
+  that themselves wrap iterators.  In other words, don't nest these."""
+  def f(self, *args, **kwargs):
+    self.logger.info('%s - retry_wrapper_for_generators: trying first time, %s', threading.currentThread().getName(), fn.__name__)
+    fail_counter = 0
+    while True:  #we have to loop forever, we don't know the length of the wrapped iterator
+      try:
+        for x in fn(self, *args, **kwargs):
+          fail_counter = 0
+          yield x
+        self.logger.info('%s - retry_wrapper_for_generators: completed without trouble, %s', threading.currentThread().getName(), fn.__name__)
+        break # this is the sucessful exit from this function
+      except self.hbaseThriftExceptions, x:
+        self.logger.info('%s - retry_wrapper_for_generators: handled exception, threading.currentThread().getName(), %s', threading.currentThread().getName(), str(x))
+        fail_counter += 1
+        if fail_counter > 1:
+          self.logger.info('%s - retry_wrapper_for_generators: failed too many times on this one operation, %s', threading.currentThread().getName(), fn.__name__)
+          txClass, tx, txtb = sys.exc_info()
+          raise FatalException, FatalException(tx), txtb
+        try:
+          self.close()
+        except self.hbaseThriftExceptions:
+          pass
+        self.logger.info('%s - retry_wrapper_for_generators: about to retry connection', threading.currentThread().getName())
+        self.make_connection()
+        self.logger.info('%s - retry_wrapper_for_generators: about to retry function, %s', threading.currentThread().getName(), fn.__name__)
+      except Exception, x:  #lars
+        self.logger.info('%s - retry_wrapper_for_generators: unhandled exception, %s', threading.currentThread().getName(), str(x)) #lars
+        raise
+  f.__name__ = fn.__name__
+  return f
+
+def optional_retry_wrapper(fn):
   """a decorator to add retry symantics to any method that uses hbase"""
   def f(self, *args, **kwargs):
-    try:
-      return fn(self, *args, **kwargs)
-    except self.hbaseThriftExceptions:
+    number_of_retries = kwargs.setdefault('number_of_retries', 0)
+    del kwargs['number_of_retries']
+    wait_between_retries = kwargs.setdefault('wait_between_retries', 0)
+    del kwargs['wait_between_retries']
+    countdown = number_of_retries + 1
+    while countdown:
+      countdown -= 1
       try:
-        self.close()
-      except self.hbaseThriftExceptions:
-        pass
-      self.make_connection()
-      return fn(self, *args, **kwargs)
+        self.logger.info('%s - retry_wrapper: %s, try number %s', threading.currentThread().getName(), fn.__name__, number_of_retries + 1 - countdown)
+        result = fn(self, *args, **kwargs)
+        self.logger.info('%s - retry_wrapper: completed without trouble, %s', threading.currentThread().getName(), fn.__name__)
+        return result
+      # drop and remake connection
+      except self.hbaseThriftExceptions, x:
+        self.logger.info('%s - retry_wrapper: handled exception, %s', threading.currentThread().getName(), str(x))
+        if not countdown:
+          # we've gone through all the retries that we're allowed
+          txClass, tx, txtb = sys.exc_info()
+          raise FatalException, FatalException(tx), txtb
+        try:
+          self.close()
+        except self.hbaseThriftExceptions:
+          pass
+        self.logger.info('%s - retry_wrapper: about to retry connection', threading.currentThread().getName())
+        self.make_connection()
+      # unknown error - abort
+      except Exception, x:  #lars
+        self.logger.info('%s - retry_wrapper: unhandled exception, %s', threading.currentThread().getName(), str(x)) #lars
+        raise
+      if wait_between_retries:
+        time.sleep(wait_between_retries)
+  f.__name__ = fn.__name__
   return f
 
 @exception_wrapper(BadOoidException)
@@ -144,21 +240,25 @@ class HBaseConnection(object):
     self.mutationClass = mutation
     self.logger = logger
     self.hbaseThriftExceptions = (self.ttypesModule.IOError,
-                                  self.ttypesModule.IllegalArgument,
-                                  self.ttypesModule.AlreadyExists,
-                                  self.thriftModule.TException)
+                                  #self.ttypesModule.IllegalArgument,
+                                  #self.ttypesModule.AlreadyExists,
+                                  self.thriftModule.TException,
+                                  #HBaseClientException,
+                                  socket.timeout
+                                 )
 
     self.make_connection()
 
-  def make_connection(self, retry=2):
+  def make_connection(self, retry=2, timeout=9000):
     """Establishes the underlying connection to hbase"""
+    self.logger.debug('make_connection, timeout = %d', timeout)
     count = retry
     while count:
       count -= 1
       try:
         # Make socket
         transport = self.tsocketModule.TSocket(self.host, self.port)
-        transport.setTimeout(1000) #in ms
+        transport.setTimeout(timeout) #in ms
         # Buffering is critical. Raw sockets are very slow
         self.transport = self.transportModule.TBufferedTransport(transport)
         # Wrap in a protocol
@@ -167,20 +267,20 @@ class HBaseConnection(object):
         self.client = self.clientClass(self.protocol)
         # Connect!
         self.transport.open()
+        self.logger.debug('connection successful')
         return
       except self.hbaseThriftExceptions, x:
+        self.logger.debug('connection fails: %s', str(x))
         pass
     exceptionType, exception, tracebackInfo = sys.exc_info()
     raise NoConnectionException, NoConnectionException(exceptionType, exception, retry), tracebackInfo
 
-  @exception_wrapper(UnhandledInternalException)
   def close(self):
     """
     Close the hbase connection
     """
     self.transport.close()
 
-  @exception_wrapper(UnhandledInternalException)
   def _make_rows_nice(self,client_result_object):
     """
     Apply _make_row_nice to multiple rows
@@ -188,20 +288,17 @@ class HBaseConnection(object):
     res = [self._make_row_nice(row) for row in client_result_object]
     return res
 
-  @exception_wrapper(UnhandledInternalException)
   def _make_row_nice(self,client_row_object):
     """
     Pull out the contents of the thrift column result objects into a python dict
     """
     return dict(((x,y.value) for x,y in client_row_object.columns.items()))
 
-  @exception_wrapper(UnhandledInternalException)
-  @retry_wrapper
+  @optional_retry_wrapper
   def describe_table(self,table_name):
     return self.client.getColumnDescriptors(table_name)
 
-  @exception_wrapper(UnhandledInternalException)
-  @retry_wrapper
+  @optional_retry_wrapper
   def get_full_row(self,table_name, row_id):
     """
     Get back every column value for a specific row_id
@@ -228,7 +325,6 @@ class HBaseConnectionForCrashReports(HBaseConnection):
                                                         protocol,ttp,client,column,
                                                         mutation,logger)
 
-  @exception_wrapper(UnhandledInternalException)
   def _make_row_nice(self,client_row_object):
     """
     This method allows the CrashReports subclass to output an additional column called ooid
@@ -239,8 +335,7 @@ class HBaseConnectionForCrashReports(HBaseConnection):
     return columns
 
 
-  @exception_wrapper(UnhandledInternalException)
-  @retry_wrapper
+  @optional_retry_wrapper
   def get_json_meta_as_string(self,ooid):
     """
     Return the json metadata for a given ooid as an unexpanded string.
@@ -249,12 +344,16 @@ class HBaseConnectionForCrashReports(HBaseConnection):
     row_id = ooid_to_row_id(ooid)
     listOfRawRows = self.client.getRowWithColumns('crash_reports',row_id,['meta_data:json'])
     #return listOfRawRows[0].columns["meta_data:json"].value if listOfRawRows else ""
-    if listOfRawRows:
-      return listOfRawRows[0].columns["meta_data:json"].value
-    else:
-      raise OoidNotFoundException(ooid)
+    try:
+      if listOfRawRows:
+        return listOfRawRows[0].columns["meta_data:json"].value
+      else:
+        raise OoidNotFoundException(ooid)
+    except KeyError, k:
+      self.logger.debug('%s - key error trying to get "meta_data:json" from %s', threading.currentThread().getName(), str(listOfRawRows))
+      raise
 
-  @exception_wrapper(UnhandledInternalException)
+  @optional_retry_wrapper
   def get_json(self,ooid):
     """Return the json metadata for a given ooid as an json data object"""
     jsonColumnOfRow = self.get_json_meta_as_string(ooid)
@@ -262,8 +361,7 @@ class HBaseConnectionForCrashReports(HBaseConnection):
     json_data = json.loads(jsonColumnOfRow)
     return json_data
 
-  @exception_wrapper(UnhandledInternalException)
-  @retry_wrapper
+  @optional_retry_wrapper
   def get_dump(self,ooid):
     """
     Return the minidump for a given ooid as a string of bytes
@@ -272,13 +370,16 @@ class HBaseConnectionForCrashReports(HBaseConnection):
     row_id = ooid_to_row_id(ooid)
     listOfRawRows = self.client.getRowWithColumns('crash_reports',row_id,['raw_data:dump'])
     #return listOfRawRows[0].columns["raw_data:dump"].value if listOfRawRows else ""
-    if listOfRawRows:
-      return listOfRawRows[0].columns["raw_data:dump"].value
-    else:
-      raise OoidNotFoundException(ooid)
+    try:
+      if listOfRawRows:
+        return listOfRawRows[0].columns["raw_data:dump"].value
+      else:
+        raise OoidNotFoundException(ooid)
+    except KeyError, k:
+      self.logger.debug('%s - key error trying to get "raw_data:dump" from %s', threading.currentThread().getName(), str(listOfRawRows))
+      raise
 
-  @exception_wrapper(UnhandledInternalException)
-  @retry_wrapper
+  @optional_retry_wrapper
   def get_raw_report(self,ooid):
     """
     Return the json and dump for a given ooid
@@ -292,8 +393,7 @@ class HBaseConnectionForCrashReports(HBaseConnection):
     else:
       raise OoidNotFoundException(ooid)
 
-  @exception_wrapper(UnhandledInternalException)
-  @retry_wrapper
+  @optional_retry_wrapper
   def get_processed_json_as_string (self,ooid):
     """
     Return the cooked json (jsonz) for a given ooid as a string
@@ -307,7 +407,6 @@ class HBaseConnectionForCrashReports(HBaseConnection):
     else:
       raise OoidNotFoundException(ooid)
 
-  @exception_wrapper(UnhandledInternalException)
   def get_processed_json(self,ooid):
     """
     Return the cooked json (jsonz) for a given ooid as a json object
@@ -317,7 +416,7 @@ class HBaseConnectionForCrashReports(HBaseConnection):
     json_data = json.loads(jsonColumnOfRow)
     return json_data
 
-  @exception_wrapper(UnhandledInternalException)
+  @optional_retry_wrapper
   def get_report_processing_state(self,ooid):
     """
     Return the current state of processing for this report and the submitted_timestamp needed
@@ -333,7 +432,6 @@ class HBaseConnectionForCrashReports(HBaseConnection):
     else:
       raise OoidNotFoundException(ooid)
 
-  @exception_wrapper(UnhandledInternalException)
   def union_scan_with_prefix(self,table,prefix,columns):
     #TODO: Need assertion for columns contains at least 1 element
     """
@@ -348,7 +446,6 @@ class HBaseConnectionForCrashReports(HBaseConnection):
       for rowkey,row in salted_scanner_iterable(self.logger,self.client,self._make_row_nice,salted_prefix,scanner):
         yield row
 
-  @exception_wrapper(UnhandledInternalException)
   def merge_scan_with_prefix(self,table,prefix,columns):
     #TODO: Need assertion that columns is array containing at least one string
     """
@@ -385,20 +482,20 @@ class HBaseConnectionForCrashReports(HBaseConnection):
       except IndexError:
         return
 
-  @exception_wrapper(UnhandledInternalException)
   def limited_iteration(self,iterable,limit=10**6):
     self.logger.info('limit = %d' % limit)
     return itertools.islice(iterable,limit)
 
-  @exception_wrapper(UnhandledInternalException)
+  @retry_wrapper_for_generators
   def iterator_for_all_legacy_to_be_processed(self):
+    self.logger.debug('iterator_for_all_legacy_to_be_processed')
     for row in self.limited_iteration(self.merge_scan_with_prefix('crash_reports_index_legacy_unprocessed_flag',
                                                                   '',
                                                                   ['ids:ooid'])):
       self.delete_from_legacy_processing_index(row['_rowkey'])
       yield row['ids:ooid']
 
-  @exception_wrapper(UnhandledInternalException)
+  @retry_wrapper_for_generators
   def acknowledge_ooid_as_legacy_priority_job (self, ooid):
     try:
       state = self.get_report_processing_state(ooid)
@@ -409,20 +506,18 @@ class HBaseConnectionForCrashReports(HBaseConnection):
     except OoidNotFoundException:
       return False
 
-  @exception_wrapper(UnhandledInternalException)
+  @optional_retry_wrapper
   def delete_from_legacy_processing_index(self, index_row_key):
     self.client.deleteAllRow('crash_reports_index_legacy_unprocessed_flag', index_row_key)
     self.client.atomicIncrement('metrics','crash_report_queue','counters:current_legacy_unprocessed_size',-1)
 
-  @exception_wrapper(UnhandledInternalException)
-  @retry_wrapper
+  @optional_retry_wrapper
   def put_crash_report_indices(self,ooid,timestamp,indices):
     row_id = guid_to_timestamped_row_id(ooid,timestamp)
     for index_name in indices:
       self.client.mutateRow(index_name,row_id,[self.mutationClass(column="ids:ooid",value=ooid)])
 
-  @exception_wrapper(UnhandledInternalException)
-  @retry_wrapper
+  @optional_retry_wrapper
   def put_crash_report_hang_indices(self,ooid,hang_id,process_type,timestamp):
     ooid_column_name = "ids:ooid:"+process_type
     self.client.mutateRow('crash_reports_index_hang_id_submitted_time',
@@ -432,8 +527,7 @@ class HBaseConnectionForCrashReports(HBaseConnection):
                           hang_id,
                           [self.mutationClass(column=ooid_column_name,value=ooid)])
 
-  @exception_wrapper(UnhandledInternalException)
-  @retry_wrapper
+  @optional_retry_wrapper
   def update_metrics_counters_for_submit(self, submitted_timestamp,
                                          legacy_processing, process_type,is_hang,
                                          add_to_unprocessed_queue):
@@ -465,8 +559,7 @@ class HBaseConnectionForCrashReports(HBaseConnection):
         self.client.atomicIncrement('metrics',rowkey,column,1)
 
 
-  @exception_wrapper(UnhandledInternalException)
-  @retry_wrapper
+  @optional_retry_wrapper
   def put_json_dump(self, ooid, json_data, dump, add_to_unprocessed_queue = True):
     """
     Create a crash report record in hbase from serialized json and
@@ -512,7 +605,6 @@ class HBaseConnectionForCrashReports(HBaseConnection):
     self.update_metrics_counters_for_submit(submitted_timestamp,legacy_processing,process_type,is_hang,add_to_unprocessed_queue)
 
 
-  @exception_wrapper(UnhandledInternalException)
   def put_json_dump_from_files(self,ooid,json_path,dump_path,openFn=open):
     """
     Convenience method for creating an ooid from disk
@@ -530,8 +622,7 @@ class HBaseConnectionForCrashReports(HBaseConnection):
       dump_file.close()
     self.put_json_dump(ooid,json,dump)
 
-  @exception_wrapper(UnhandledInternalException)
-  @retry_wrapper
+  @optional_retry_wrapper
   def put_processed_json(self,ooid,processed_json):
     """
     Create a crash report from the cooked json output of the processor
@@ -568,13 +659,12 @@ class HBaseConnectionForCrashReports(HBaseConnection):
     self.client.mutateRow('crash_reports_index_signature_ooid', sig_ooid_idx_row_key,
                           [self.mutationClass(column="ids:ooid",value=ooid)])
 
-@exception_wrapper(UnhandledInternalException)
 def salted_scanner_iterable(logger,client,make_row_nice,salted_prefix,scanner):
   """
   Generator based iterable that runs over an HBase scanner
   yields a tuple of the un-salted rowkey and the nice format of the row.
   """
-  logger.info('Scanner %s generated' % salted_prefix)
+  logger.info('Scanner %s generated', salted_prefix)
   raw_rows = client.scannerGet(scanner)
   while raw_rows:
     nice_row = make_row_nice(raw_rows[0])

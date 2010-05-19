@@ -331,6 +331,10 @@ class Monitor (object):
       self.quit = True
       logger.critical("%s - hbase is gone! hbase is gone!", threading.currentThread().getName())
       socorro.lib.util.reportExceptionAndAbort(logger)
+    except Exception:
+      self.quit = True
+      socorro.lib.util.reportExceptionAndContinue(logger)
+      raise
     try:
       try:
         while (True):
@@ -355,13 +359,18 @@ class Monitor (object):
               except:
                 socorro.lib.util.reportExceptionAndContinue(logger)
             logger.debug("%s - ended destructiveDateWalk", threading.currentThread().getName())
-          except hbc.NoConnectionException:
-            socorro.lib.util.reportExceptionAndAbort(logger)
+          except hbc.FatalException:
+            raise
           except:
-            socorro.lib.util.reportExceptionAndContinue(logger)
+            socorro.lib.util.reportExceptionAndContinue(logger, loggingLevel=logging.CRITICAL)
           logger.debug("%s - end of loop - about to sleep", threading.currentThread().getName())
           self.quitCheck()
           self.responsiveSleep(self.standardLoopDelay)
+      except hbc.FatalException, x:
+        logger.debug("%s - somethings gone horribly wrong with HBase", threading.currentThread().getName())
+        socorro.lib.util.reportExceptionAndContinue(logger, loggingLevel=logging.CRITICAL)
+        databaseConnection.rollback()
+        self.quit = True
       except (KeyboardInterrupt, SystemExit):
         logger.debug("%s - outer detects quit", threading.currentThread().getName())
         databaseConnection.rollback()
@@ -452,14 +461,19 @@ class Monitor (object):
           except KeyboardInterrupt:
             logger.debug("%s - inner detects quit", threading.currentThread().getName())
             raise
-          except hbc.NoConnectionException:
-            socorro.lib.util.reportExceptionAndAbort(logger)
+          except hbc.FatalException:
+            raise
           except:
             databaseConnection.rollback()
             socorro.lib.util.reportExceptionAndContinue(logger)
           self.quitCheck()
           logger.debug("%s - sleeping", threading.currentThread().getName())
           self.responsiveSleep(self.priorityLoopDelay)
+      except hbc.FatalException, x:
+        logger.debug("%s - somethings gone horribly wrong with HBase", threading.currentThread().getName())
+        socorro.lib.util.reportExceptionAndContinue(logger, loggingLevel=logging.CRITICAL)
+        databaseConnection.rollback()
+        self.quit = True
       except (KeyboardInterrupt, SystemExit):
         logger.debug("%s - outer detects quit", threading.currentThread().getName())
         databaseConnection.rollback()

@@ -563,7 +563,7 @@ class Processor(object):
     try:
       threadLocalDatabaseConnection, threadLocalCursor = self.databaseConnectionPool.connectionCursorPair()
       threadLocalCrashStorage = self.crashStorePool.crashStorage(threadName)
-    except hbc.NoConnectionException:
+    except hbc.FatalException:
       logger.critical("%s - something's gone horribly wrong with the HBase connection", threadName)
       self.quit = True
       socorro.lib.util.reportExceptionAndContinue(logger, loggingLevel=logging.CRITICAL)
@@ -669,7 +669,7 @@ class Processor(object):
       logger.critical("%s - something's gone horribly wrong with the database connection", threadName)
       self.quit = True
       socorro.lib.util.reportExceptionAndContinue(logger, loggingLevel=logging.CRITICAL)
-    except hbc.NoConnectionException:
+    except hbc.FatalException:
       logger.critical("%s - something's gone horribly wrong with the HBase connection", threadName)
       self.quit = True
       socorro.lib.util.reportExceptionAndContinue(logger, loggingLevel=logging.CRITICAL)
