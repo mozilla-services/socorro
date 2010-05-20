@@ -46,11 +46,6 @@ class Monitor (object):
                          )
   _hbase_config_requirements = ("hbaseHost",
                                 "hbasePort",
-                                "hbaseFallbackFS",
-                                "hbaseFallbackDumpDirCount",
-                                "hbaseFallbackDumpGID",
-                                "hbaseFallbackDumpPermissions",
-                                "hbaseFallbackDirPermissions",
                                )
   _nfs_config_requirements = ("storageRoot",
                               "deferredStorageRoot",

@@ -97,11 +97,6 @@ class Processor(object):
                          )
   _hbase_config_requirements = ("hbaseHost",
                                 "hbasePort",
-                                "hbaseFallbackFS",
-                                "hbaseFallbackDumpDirCount",
-                                "hbaseFallbackDumpGID",
-                                "hbaseFallbackDumpPermissions",
-                                "hbaseFallbackDirPermissions",
                                 "temporaryFileSystemStoragePath",
                                )
   _nfs_config_requirements = ("storageRoot",
