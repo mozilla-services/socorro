@@ -133,8 +133,16 @@ class Monitor (object):
     # check the jobs table to and deal with the completed and failed jobs
     databaseConnection, databaseCursor = self.getDatabaseConnectionPair()
     try:
-      logger.debug("%s - starting loop", threading.currentThread().getName())
-      databaseCursor.execute("delete from jobs where id = %s", (jobId,))
+      logger.debug("%s - starting deletion", threading.currentThread().getName())
+      databaseCursor.execute("""delete from jobs
+                                where
+                                    uuid in (select
+                                                 uuid
+                                             from
+                                                 jobs j
+                                             where
+                                                 j.success is not null)
+                             """)
       databaseConnection.commit()
       logger.debug("%s - end of this cleanup iteration", threading.currentThread().getName())
     except Exception, x:
@@ -481,8 +489,8 @@ class Monitor (object):
     logger.info("%s - jobCleanupLoop starting.", threading.currentThread().getName())
     try:
       try:
-        logger.info("%s - sleeping first.", threading.currentThread().getName())
-        self.responsiveSleep(self.cleanupJobsLoopDelay)
+        #logger.info("%s - sleeping first.", threading.currentThread().getName())
+        #self.responsiveSleep(self.cleanupJobsLoopDelay)
         while True:
           logger.info("%s - beginning jobCleanupLoop cycle.", threading.currentThread().getName())
           self.cleanUpCompletedAndFailedJobs()

@@ -63,15 +63,11 @@ def exception_wrapper(xClass):
   def wrapper (fn):
     def f(*args, **kwargs):
       try:
-        #glogger.info('***exception_wrapper: trying first time, %s', fn.__name__)
         result = fn(*args, **kwargs)
-        #glogger.info('***exception_wrapper: completed without trouble, %s', fn.__name__)
         return result
       except HBaseClientException, x:
-        #glogger.info('***exception_wrapper: handled HBaseClientException, %s', str(x))
         raise
       except Exception, x:
-        #glogger.info('***exception_wrapper: reraising Exception, %s', str(x))
         txClass, tx, txtb = sys.exc_info()
         raise xClass, xClass(txClass,tx), txtb
     f.__name__ = fn.__name__
@@ -87,15 +83,11 @@ def exception_wrapper_for_generator(xClass):
   def wrapper (fn):
     def f(*args, **kwargs):
       try:
-        #glogger.info('***exception_wrapper_for_generator: trying first time, %s', fn.__name__)
         for x in fn(*args, **kwargs):
           yield x
-        #glogger.info('***exception_wrapper_for_generator: completed without trouble, %s', fn.__name__)
       except HBaseClientException, x:
-        #glogger.info('***exception_wrapper_for_generator: handled HBaseClientException, %s', str(x))
         raise
       except Exception, x:
-        #glogger.info('***exception_wrapper_for_generator: reraising Exception, %s', str(x))
         txClass, tx, txtb = sys.exc_info()
         raise xClass, xClass(txClass,tx), txtb
     f.__name__ = fn.__name__
@@ -106,31 +98,31 @@ def retry_wrapper_for_generators(fn):
   """a decorator to add retry symantics to any generator that uses hbase.  Don't wrap iterators
   that themselves wrap iterators.  In other words, don't nest these."""
   def f(self, *args, **kwargs):
-    self.logger.info('%s - retry_wrapper_for_generators: trying first time, %s', threading.currentThread().getName(), fn.__name__)
+    self.logger.debug('%s - retry_wrapper_for_generators: trying first time, %s', threading.currentThread().getName(), fn.__name__)
     fail_counter = 0
     while True:  #we have to loop forever, we don't know the length of the wrapped iterator
       try:
         for x in fn(self, *args, **kwargs):
           fail_counter = 0
           yield x
-        self.logger.info('%s - retry_wrapper_for_generators: completed without trouble, %s', threading.currentThread().getName(), fn.__name__)
+        self.logger.debug('%s - retry_wrapper_for_generators: completed without trouble, %s', threading.currentThread().getName(), fn.__name__)
         break # this is the sucessful exit from this function
       except self.hbaseThriftExceptions, x:
-        self.logger.info('%s - retry_wrapper_for_generators: handled exception, threading.currentThread().getName(), %s', threading.currentThread().getName(), str(x))
+        self.logger.debug('%s - retry_wrapper_for_generators: handled exception, threading.currentThread().getName(), %s', threading.currentThread().getName(), str(x))
         fail_counter += 1
         if fail_counter > 1:
-          self.logger.info('%s - retry_wrapper_for_generators: failed too many times on this one operation, %s', threading.currentThread().getName(), fn.__name__)
+          self.logger.error('%s - retry_wrapper_for_generators: failed too many times on this one operation, %s', threading.currentThread().getName(), fn.__name__)
           txClass, tx, txtb = sys.exc_info()
           raise FatalException, FatalException(tx), txtb
         try:
           self.close()
         except self.hbaseThriftExceptions:
           pass
-        self.logger.info('%s - retry_wrapper_for_generators: about to retry connection', threading.currentThread().getName())
+        self.logger.debug('%s - retry_wrapper_for_generators: about to retry connection', threading.currentThread().getName())
         self.make_connection()
-        self.logger.info('%s - retry_wrapper_for_generators: about to retry function, %s', threading.currentThread().getName(), fn.__name__)
+        self.logger.debug('%s - retry_wrapper_for_generators: about to retry function, %s', threading.currentThread().getName(), fn.__name__)
       except Exception, x:  #lars
-        self.logger.info('%s - retry_wrapper_for_generators: unhandled exception, %s', threading.currentThread().getName(), str(x)) #lars
+        self.logger.debug('%s - retry_wrapper_for_generators: unhandled exception, %s', threading.currentThread().getName(), str(x)) #lars
         raise
   f.__name__ = fn.__name__
   return f
@@ -146,13 +138,13 @@ def optional_retry_wrapper(fn):
     while countdown:
       countdown -= 1
       try:
-        self.logger.info('%s - retry_wrapper: %s, try number %s', threading.currentThread().getName(), fn.__name__, number_of_retries + 1 - countdown)
+        self.logger.debug('%s - retry_wrapper: %s, try number %s', threading.currentThread().getName(), fn.__name__, number_of_retries + 1 - countdown)
         result = fn(self, *args, **kwargs)
-        self.logger.info('%s - retry_wrapper: completed without trouble, %s', threading.currentThread().getName(), fn.__name__)
+        self.logger.debug('%s - retry_wrapper: completed without trouble, %s', threading.currentThread().getName(), fn.__name__)
         return result
       # drop and remake connection
       except self.hbaseThriftExceptions, x:
-        self.logger.info('%s - retry_wrapper: handled exception, %s', threading.currentThread().getName(), str(x))
+        self.logger.debug('%s - retry_wrapper: handled exception, %s', threading.currentThread().getName(), str(x))
         if not countdown:
           # we've gone through all the retries that we're allowed
           txClass, tx, txtb = sys.exc_info()
@@ -161,11 +153,11 @@ def optional_retry_wrapper(fn):
           self.close()
         except self.hbaseThriftExceptions:
           pass
-        self.logger.info('%s - retry_wrapper: about to retry connection', threading.currentThread().getName())
+        self.logger.debug('%s - retry_wrapper: about to retry connection', threading.currentThread().getName())
         self.make_connection()
       # unknown error - abort
       except Exception, x:  #lars
-        self.logger.info('%s - retry_wrapper: unhandled exception, %s', threading.currentThread().getName(), str(x)) #lars
+        self.logger.debug('%s - retry_wrapper: unhandled exception, %s', threading.currentThread().getName(), str(x)) #lars
         raise
       if wait_between_retries:
         time.sleep(wait_between_retries)
@@ -484,7 +476,7 @@ class HBaseConnectionForCrashReports(HBaseConnection):
         return
 
   def limited_iteration(self,iterable,limit=10**6):
-    self.logger.info('limit = %d' % limit)
+    self.logger.debug('limit = %d' % limit)
     return itertools.islice(iterable,limit)
 
   @retry_wrapper_for_generators
@@ -665,14 +657,14 @@ def salted_scanner_iterable(logger,client,make_row_nice,salted_prefix,scanner):
   Generator based iterable that runs over an HBase scanner
   yields a tuple of the un-salted rowkey and the nice format of the row.
   """
-  logger.info('Scanner %s generated', salted_prefix)
+  logger.debug('Scanner %s generated', salted_prefix)
   raw_rows = client.scannerGet(scanner)
   while raw_rows:
     nice_row = make_row_nice(raw_rows[0])
     #logger.debug('Scanner %s returning nice_row (%s) for raw_rows (%s)' % (self.salted_prefix,nice_row,raw_rows))
     yield (nice_row['_rowkey'][1:], nice_row)
     raw_rows = client.scannerGet(scanner)
-  logger.info('Scanner %s exhausted' % salted_prefix)
+  logger.debug('Scanner %s exhausted' % salted_prefix)
   client.scannerClose(scanner)
 
 # TODO: Warning, the command line methods haven't been tested for bitrot

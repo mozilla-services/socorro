@@ -669,8 +669,10 @@ class Processor(object):
       self.quit = True
       socorro.lib.util.reportExceptionAndContinue(logger, loggingLevel=logging.CRITICAL)
     except Exception, x:
-      if type(x) != ErrorInBreakpadStackwalkException:
+      if x.__class__ != ErrorInBreakpadStackwalkException:
         socorro.lib.util.reportExceptionAndContinue(logger)
+      else:
+        socorro.lib.util.reportExceptionAndContinue(logger, logging.WARNING, showTraceback=False)
       threadLocalDatabaseConnection.rollback()
       processorErrorMessages.append(str(x))
       message = '; '.join(processorErrorMessages).replace("'", "''")
