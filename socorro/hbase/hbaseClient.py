@@ -407,6 +407,7 @@ class HBaseConnectionForCrashReports(HBaseConnection):
     else:
       raise OoidNotFoundException(ooid)
 
+  @optional_retry_wrapper
   def get_processed_json(self,ooid):
     """
     Return the cooked json (jsonz) for a given ooid as a json object

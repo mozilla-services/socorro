@@ -30,7 +30,11 @@ class JsonServiceBase (object):
   #-----------------------------------------------------------------------------------------------------------------
   def GET(self, *args):
     try:
-      return json.dumps(self.get(*args))
+      result = self.get(*args)
+      if type(result) is tuple:
+        web.header('Content-Type', result[1])
+        return result[0]
+      return json.dumps(result)
     except Exception, x:
       stringLogger = util.StringLogger()
       util.reportExceptionAndContinue(stringLogger)

@@ -10,7 +10,7 @@ import socorro.lib.datetimeutil as dtutil
 import socorro.collector.crashstorage as cs
 
 datatype_options = ('meta', 'raw_crash', 'processed')
-crashStorageFunctions = ('get_meta', 'get_raw_dump_base64', 'get_processed')
+crashStorageFunctions = ('get_meta', 'get_raw_dump', 'get_processed')
 datatype_function_associations = dict(zip(datatype_options, crashStorageFunctions))
 
 class NotADataTypeOption(Exception):
@@ -39,5 +39,9 @@ class GetCrash(webapi.JsonServiceBase):
     crashStorage = self.crashStoragePool.crashStorage()
     function_name = datatype_function_associations[parameters.datatype]
     function = crashStorage.__getattribute__(function_name)
+    logger.debug('function name: %s', function_name)
+    if function_name == 'get_raw_dump':
+      logger.debug('returning raw_crash')
+      return(function(parameters.uuid), "application/octet-stream")
     return function(parameters.uuid)
 
