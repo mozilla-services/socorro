@@ -39,9 +39,7 @@ class GetCrash(webapi.JsonServiceBase):
     crashStorage = self.crashStoragePool.crashStorage()
     function_name = datatype_function_associations[parameters.datatype]
     function = crashStorage.__getattribute__(function_name)
-    logger.debug('function name: %s', function_name)
     if function_name == 'get_raw_dump':
-      logger.debug('returning raw_crash')
       return(function(parameters.uuid), "application/octet-stream")
     return function(parameters.uuid)
 
