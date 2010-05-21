@@ -693,6 +693,7 @@ if __name__=="__main__":
       get_json ooid
       get_dump ooid
       get_processed_json ooid
+      get_report_processing_state ooid
       union_scan_with_prefix table prefix columns [limit]
       merge_scan_with_prefix table prefix columns [limit]
       put_json_dump ooid json dump
@@ -747,6 +748,12 @@ if __name__=="__main__":
       usage()
       sys.exit(1)
     ppjson(connection.get_processed_json(*args))
+
+  elif cmd == 'get_report_processing_state':
+    if len(args) != 1:
+      usage()
+      sys.exit(1)
+    pp.pprint(connection.get_report_processing_state(*args))
 
   elif cmd == 'union_scan_with_prefix':
     if len(args) < 3:
