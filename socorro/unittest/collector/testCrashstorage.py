@@ -178,7 +178,7 @@ def testCrashStorageSystemForHBase___init__():
   j.dirPermissions = d.hbaseFallbackDirPermissions = 770
   j.logger = d.logger = util.SilentFakeLogger()
   fakeHbaseModule = exp.DummyObjectWithExpectations('fakeHbaseModule')
-  fakeHbaseModule.expect('HBaseConnectionForCrashReports', ('fred', 'ethel'), {}, 'a fake connection', None)
+  fakeHbaseModule.expect('HBaseConnectionForCrashReports', ('fred', 'ethel'), {"logger":d.logger}, 'a fake connection', None)
   fakeJsonDumpStore = exp.DummyObjectWithExpectations('fakeJsonDumpStore')
   fakeJsonDumpModule = exp.DummyObjectWithExpectations('fakeJsonDumpModule')
   fakeJsonDumpModule.expect('JsonDumpStorage', (), j, fakeJsonDumpStore, None)
@@ -207,13 +207,13 @@ def testCrashStorageSystemForHBase_save_1():
   j.dumpGID = d.hbaseFallbackdumpGID = 666
   j.dumpPermissions = d.hbaseFallbackDumpPermissions = 660
   j.dirPermissions = d.hbaseFallbackDirPermissions = 770
-  j.logger = d.logger = util.SilentFakeLogger()
+  d.logger = util.SilentFakeLogger()
 
   fakeHbaseConnection = exp.DummyObjectWithExpectations('fakeHbaseConnection')
-  fakeHbaseConnection.expect('put_json_dump', ('uuid', jdict, expectedDumpResult), {}, None, None)
+  fakeHbaseConnection.expect('put_json_dump', ('uuid', jdict, expectedDumpResult), {"number_of_retries":1}, None, None)
 
   fakeHbaseModule = exp.DummyObjectWithExpectations('fakeHbaseModule')
-  fakeHbaseModule.expect('HBaseConnectionForCrashReports', ('fred', 'ethel'), {}, fakeHbaseConnection, None)
+  fakeHbaseModule.expect('HBaseConnectionForCrashReports', ('fred', 'ethel'), {"logger":d.logger}, fakeHbaseConnection, None)
 
   fakeJsonDumpStore = exp.DummyObjectWithExpectations('fakeJsonDumpStore')
   fakeJsonDumpModule = exp.DummyObjectWithExpectations('fakeJsonDumpModule')
@@ -243,16 +243,17 @@ def testCrashStorageSystemForHBase_save_2():
   j.maxDirectoryEntries = d.hbaseFallbackDumpDirCount = 1000000
   j.jsonSuffix = d.jsonFileSuffix = '.json'
   j.dumpSuffix = d.dumpFileSuffix = '.dump'
-  j.dumpGID = d.hbaseFallbackdumpGID = 666
+  j.dumpGID = d.hbaseFallbackDumpGID = 666
   j.dumpPermissions = d.hbaseFallbackDumpPermissions = 660
   j.dirPermissions = d.hbaseFallbackDirPermissions = 770
   j.logger = d.logger = util.SilentFakeLogger()
 
   fakeHbaseConnection = exp.DummyObjectWithExpectations('fakeHbaseConnection')
-  fakeHbaseConnection.expect('create_ooid', ('uuid', jdict, expectedDumpResult), {}, None, Exception())
+  #fakeHbaseConnection.expect('create_ooid', ('uuid', jdict, expectedDumpResult), {}, None, Exception())
+  fakeHbaseConnection.expect('put_json_dump', ('uuid', jdict, expectedDumpResult), {"number_of_retries":1}, None, Exception())
 
   fakeHbaseModule = exp.DummyObjectWithExpectations('fakeHbaseModule')
-  fakeHbaseModule.expect('HBaseConnectionForCrashReports', ('fred', 'ethel'), {}, fakeHbaseConnection, None)
+  fakeHbaseModule.expect('HBaseConnectionForCrashReports', ('fred', 'ethel'), {"logger":d.logger}, fakeHbaseConnection, None)
 
   class FakeFile(object):
     def write(self, x): pass
@@ -269,7 +270,7 @@ def testCrashStorageSystemForHBase_save_2():
   fakeJsonDumpModule.expect('JsonDumpStorage', (), j, fakeJsonDumpStore, None)
 
   cstore.logger = loggerForTest.TestingLogger()
-  css = cstore.CrashStorageSystemForHBase(d, fakeHbaseModule, fakeJsonDumpModule)
+  css = cstore.CollectorCrashStorageSystemForHBase(d, fakeHbaseModule, fakeJsonDumpModule)
   expectedResult = cstore.CrashStorageSystem.OK
   result = css.save_raw('uuid', jdict, rsr, currentTimestamp)
 
@@ -292,21 +293,22 @@ def testCrashStorageSystemForHBase_save_3():
   d.hbaseFallbackDumpDirCount = 1000000
   d.jsonFileSuffix = '.json'
   d.dumpFileSuffix = '.dump'
-  d.hbaseFallbackdumpGID = 666
+  d.hbaseFallbackDumpGID = 666
   d.hbaseFallbackDumpPermissions = 660
   d.hbaseFallbackDirPermissions = 770
   d.logger = util.SilentFakeLogger()
 
   fakeHbaseConnection = exp.DummyObjectWithExpectations('fakeHbaseConnection')
-  fakeHbaseConnection.expect('create_ooid', ('uuid', jdict, expectedDumpResult), {}, None, Exception())
+  #fakeHbaseConnection.expect('create_ooid', ('uuid', jdict, expectedDumpResult), {}, None, Exception())
+  fakeHbaseConnection.expect('put_json_dump', ('uuid', jdict, expectedDumpResult), {"number_of_retries":1}, None, Exception())
 
   fakeHbaseModule = exp.DummyObjectWithExpectations('fakeHbaseModule')
-  fakeHbaseModule.expect('HBaseConnectionForCrashReports', ('fred', 'ethel'), {}, fakeHbaseConnection, None)
+  fakeHbaseModule.expect('HBaseConnectionForCrashReports', ('fred', 'ethel'), {"logger":d.logger}, fakeHbaseConnection, None)
 
   fakeJsonDumpModule = exp.DummyObjectWithExpectations('fakeJsonDumpModule')
 
   cstore.logger = loggerForTest.TestingLogger()
-  css = cstore.CrashStorageSystemForHBase(d, fakeHbaseModule, fakeJsonDumpModule)
+  css = cstore.CollectorCrashStorageSystemForHBase(d, fakeHbaseModule, fakeJsonDumpModule)
   expectedResult = cstore.CrashStorageSystem.ERROR
   result = css.save_raw('uuid', jdict, rsr, currentTimestamp)
 
