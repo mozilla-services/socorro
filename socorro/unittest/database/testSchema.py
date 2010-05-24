@@ -92,6 +92,7 @@ def setup_module():
     schema.AlexaTopsitesTable:[False,set(['alexa_topsites'])],
     schema.RawAduTable:[False,set(['raw_adu'])],
     schema.BuildsTable:[False,set(['builds'])],
+    schema.DailyCrashesTable:[False,set(['daily_crashes'])],    
     }
   me.expectedTableNames = set()
   for tableStuff in me.hardCodedSchemaClasses.values():

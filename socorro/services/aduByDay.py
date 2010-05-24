@@ -1,5 +1,3 @@
-import datetime as dt
-import urllib2 as u2
 import logging
 logger = logging.getLogger("webapi")
 
@@ -12,23 +10,24 @@ import socorro.lib.datetimeutil as dtutil
 def semicolonStringToListSanitized(aString):
   return [x.strip() for x in aString.replace("'","").split(';') if x.strip() != '']
 
+  
 #=================================================================================================================
 class AduByDay(webapi.JsonServiceBase):
   #-----------------------------------------------------------------------------------------------------------------
   def __init__(self, configContext):
     super(AduByDay, self).__init__(configContext)
-    logger.debug('aduHistory __init__')
+    self.connection = None
+
+    
   #-----------------------------------------------------------------------------------------------------------------
-  "/200912/adu/byday/p/{product}/v/{versions}/os/{os_names}/start/{start_date}/end/{end_date} "
-  uri = '/200912/adu/byday/p/(.*)/v/(.*)/os/(.*)/start/(.*)/end/(.*)'
+  "/201005/adu/byday/p/{product}/v/{versions}/report_type/{report_type}/os/{os_names}/start/{start_date}/end/{end_date} "
+  uri = '/201005/adu/byday/p/(.*)/v/(.*)/rt/(.*)/os/(.*)/start/(.*)/end/(.*)'
   #-----------------------------------------------------------------------------------------------------------------
   def get(self, *args):
-    convertedArgs = webapi.typeConversion([str, semicolonStringToListSanitized, semicolonStringToListSanitized, dtutil.datetimeFromISOdateString, dtutil.datetimeFromISOdateString], args)
-    parameters = util.DotDict(zip(['product','listOfVersions', 'listOfOs_names', 'start_date', 'end_date'], convertedArgs))
+    convertedArgs = webapi.typeConversion([str, semicolonStringToListSanitized, str, semicolonStringToListSanitized, dtutil.datetimeFromISOdateString, dtutil.datetimeFromISOdateString], args)
+    parameters = util.DotDict(zip(['product', 'listOfVersions', 'report_type', 'listOfOs_names',  'start_date', 'end_date'], convertedArgs))
     parameters.productdims_idList = [self.context['productVersionCache'].getId(parameters.product, x) for x in parameters.listOfVersions]
-    logger.debug("AduByDay get %s", parameters)
     self.connection = self.database.connection()
-    #logger.debug('connection: %s', self.connection)
     try:
       return self.aduByDay(parameters)
     finally:
@@ -44,11 +43,7 @@ class AduByDay(webapi.JsonServiceBase):
     sql = """
       select
           date,
-          case when product_os_platform = 'Mac OS/X' then
-            'Mac'
-          else
-            product_os_platform
-          end as product_os_platform,
+          substring(product_os_platform, 1, 3) as product_os_platform,
           sum(adu_count)
       from
           raw_adu ra
@@ -63,49 +58,41 @@ class AduByDay(webapi.JsonServiceBase):
           product_os_platform
       order by
           1""" % parameters
-    #logger.debug('%s', self.connection.cursor().mogrify(sql, parameters))
+    #logger.debug('%s', self.connection.cursor().mogrify(sql.encode(self.connection.encoding), parameters))
     return dict((((date, os_name), count) for date, os_name, count in db.execute(self.connection.cursor(), sql, parameters)))
 
   #-----------------------------------------------------------------------------------------------------------------
   def fetchCrashHistory (self, parameters):
     if parameters.listOfOs_names and parameters.listOfOs_names != ['']:
-      localOsList = [x for x in parameters.listOfOs_names]
-      if 'Windows' in localOsList:
-        localOsList.append('Windows NT')
-      osNameListPhrase = (','.join("'%s'" % x for x in localOsList)).replace('Mac', 'Mac OS X')
-      parameters.os_phrase = "and os.os_name in (%s)" % osNameListPhrase
+      localOsList = [x[0:3] for x in parameters.listOfOs_names]
+      osNameListPhrase = (','.join("'%s'" % x for x in localOsList)) 
+      parameters.os_phrase = "os_short_name in (%s)" % osNameListPhrase
     else:
-      parameters.os_phrase = '--'
+      parameters.os_phrase = '1=1'
+    parameters.report_type_phrase = '1=1'  
+    if parameters.report_type == 'crash':
+      parameters.report_type_phrase = "report_type = 'C'"
+    elif parameters.report_type == 'hang':
+      parameters.report_type_phrase = "report_type = 'H'"
     sql = """
-      select
-          CAST(ceil(EXTRACT(EPOCH FROM (window_end - timestamp without time zone %%(start_date)s - interval %%(socorroTimeToUTCInterval)s)) / 86400) AS INT) * interval '24 hours' + timestamp without time zone %%(start_date)s as day,
-          case when os.os_name = 'Windows NT' then
-            'Windows'
-          when os.os_name = 'Mac OS X' then
-            'Mac'
-          else
-            os.os_name
-          end as os_name,
-          sum(count)
-      from
-          top_crashes_by_signature tcbs
-              join osdims os on tcbs.osdims_id = os.id
-                  %(os_phrase)s
-      where
-          (timestamp without time zone %%(start_date)s - interval %%(socorroTimeToUTCInterval)s) < window_end
-          and window_end <= (timestamp without time zone %%(end_date)s - interval %%(socorroTimeToUTCInterval)s)
-          and productdims_id = %%(productdims_id)s
-      group by
-          1, 2
+      SELECT adu_day, os_short_name, count
+      FROM daily_crashes
+      WHERE timestamp without time zone %%(start_date)s < adu_day AND
+            adu_day <= timestamp without time zone %%(end_date)s AND
+            productdims_id = %%(productdims_id)s AND
+             %(os_phrase)s AND
+             %(report_type_phrase)s
       order by
           1, 2""" % parameters
-    logger.debug('%s', (sql % parameters))
+    #logger.debug('%s', self.connection.cursor().mogrify(sql.encode(self.connection.encoding), parameters))
     return dict((((bucket, os_name), count) for bucket, os_name, count in db.execute(self.connection.cursor(), sql, parameters)))
 
   #-----------------------------------------------------------------------------------------------------------------
   def combineAduCrashHistory (self, aduHistory, crashHistory):
     #print "adu ->", aduHistory
     #print "crash ->", crashHistory
+    #print crashHistory.keys()
+    
     result = []
     for aKey in sorted(crashHistory.keys()):
       row = util.DotDict()
@@ -126,8 +113,7 @@ class AduByDay(webapi.JsonServiceBase):
   #-----------------------------------------------------------------------------------------------------------------
   def aduByDay (self, parameters):
     #logger.debug('aduByDay %s  %s', parameters, self.connection)
-    parameters.stepSize = 24 * 60 * 60 # number of seconds in 24 hours for the crash history query
-    parameters.socorroTimeToUTCInterval = '8 hours'
+
     versionsResultData = []
     result = { 'product': parameters.product,
                'start_date': str(parameters.start_date),
@@ -139,7 +125,11 @@ class AduByDay(webapi.JsonServiceBase):
       parameters.productdims_id = aProductDimsId
       aduHistory = self.fetchAduHistory(parameters)
       crashHistory = self.fetchCrashHistory(parameters)
+      logger.info("CrashHistory=")
+      logger.info(crashHistory)
       combinedAduCrashHistoryList = self.combineAduCrashHistory(aduHistory, crashHistory)
+      logger.info("Combined Adu Crash History=")
+      logger.info(combinedAduCrashHistoryList)
       singleVersionResult = { 'version': aVersion,
                               'statistics': combinedAduCrashHistoryList
                             }
@@ -147,3 +137,15 @@ class AduByDay(webapi.JsonServiceBase):
       #logger.debug(result)
 
     return result
+
+class AduByDay200912(AduByDay):
+  """ Deprecated Web Service, uses 201005 with report_type set to 'any' """
+  def __init__(self, configContext):
+    super(AduByDay200912, self).__init__(configContext)
+
+  "/200912/adu/byday/p/{product}/v/{versions}/os/{os_names}/start/{start_date}/end/{end_date} "
+  uri = '/200912/adu/byday/p/(.*)/v/(.*)/os/(.*)/start/(.*)/end/(.*)'
+
+  def get(self, *args):
+    logger.info("child get called %s" % str(args))
+    return AduByDay.get(self, args[0], args[1], 'any', args[2],  args[3], args[4])

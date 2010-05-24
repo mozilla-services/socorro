@@ -1,3 +1,4 @@
+""" Deprecated Module """
 
 import psycopg2
 import psycopg2.extensions
@@ -8,6 +9,7 @@ import socorro.lib.util as util
 
 #-----------------------------------------------------------------------------------------------------------------
 def singleValueSql (aCursor, sql, parameters=None):
+  """ Deprecated """
   aCursor.execute(sql, parameters)
   result = aCursor.fetchall()
   try:
@@ -17,6 +19,7 @@ def singleValueSql (aCursor, sql, parameters=None):
 
 #-----------------------------------------------------------------------------------------------------------------
 def singleRowSql (aCursor, sql, parameters=None):
+  """ Deprecated """
   aCursor.execute(sql, parameters)
   result = aCursor.fetchall()
   try:
@@ -26,6 +29,7 @@ def singleRowSql (aCursor, sql, parameters=None):
 
 #-----------------------------------------------------------------------------------------------------------------
 def execute (aCursor, sql, parameters=None):
+  """ Deprecated """
   aCursor.execute(sql, parameters)
   while True:
     aRow = aCursor.fetchone()
@@ -77,6 +81,7 @@ class CannotConnectToDatabase(Exception):
 
 #=================================================================================================================
 class DatabaseConnectionPool(dict):
+  """ Deprecated """
   #-----------------------------------------------------------------------------------------------------------------
   def __init__(self, databaseHostName, databaseName, databaseUserName, databasePassword, logger=util.FakeLogger()):
     super(DatabaseConnectionPool, self).__init__()

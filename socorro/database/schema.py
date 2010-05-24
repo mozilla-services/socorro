@@ -1265,6 +1265,39 @@ class BuildsTable(Table):
 
 databaseDependenciesForSetup[BuildsTable] = []
 
+#=================================================================================================================
+class DailyCrashesTable(Table):
+  """Define the table 'daily_crashes'
+     Notes:
+        report_type - single character code 'C' or 'H' for  Crash or Hang
+        os_short_name - Cron does inserts directly into this table for 'Win, Mac, Lin'.
+            This is a different processes than the osdims table, so osdims is not used.
+
+        adu_day - These values are time shifted to match raw_adu. Example: 2010-05-24T00:00:00
+  """
+  #-----------------------------------------------------------------------------------------------------------------
+  def __init__ (self, logger, **kwargs):
+    super(DailyCrashesTable, self).__init__(name = "daily_crashes", logger=logger,
+                                        creationSql = """
+                                            CREATE TABLE daily_crashes (
+                                                id serial NOT NULL PRIMARY KEY,
+                                                count INTEGER DEFAULT 0 NOT NULL,
+                                                report_type CHAR(1) NOT NULL DEFAULT 'C',
+                                                productdims_id INTEGER REFERENCES productdims(id),
+                                                os_short_name CHAR(3),
+                                                adu_day TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+                                                CONSTRAINT day_product_os_report_type_unique UNIQUE (adu_day, productdims_id, os_short_name, report_type);
+                                        """)
+    self.insertSql = """INSERT INTO TABLENAME (count, report_type, productdims_id, os_short_name, adu_day) values (%s, %s, %s, %s, %s)"""
+
+  #-----------------------------------------------------------------------------------------------------------------
+  def updateDefinition(self, databaseCursor):
+    if socorro_pg.tablesMatchingPattern(self.name) == []:
+      #this table doesn't exist yet, create it
+      self.create(databaseCursor)
+
+databaseDependenciesForSetup[DailyCrashesTable] = []
+
 
 
 # #=================================================================================================================
