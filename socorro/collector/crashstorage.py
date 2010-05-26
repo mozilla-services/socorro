@@ -180,7 +180,7 @@ class CrashStorageSystem(object):
   def __init__ (self, config):
     self.config = config
     self.hostname = os.uname()[1]
-    if config.logger:
+    if "logger" in config and config.logger:
       self.logger = config.logger
     else:
       self.logger = logger
@@ -244,7 +244,7 @@ class CrashStorageSystemForHBase(CrashStorageSystem):
     assert "hbaseHost" in config, "hbaseHost is missing from the configuration"
     assert "hbasePort" in config, "hbasePort is missing from the configuration"
     self.logger.info('connecting to hbase')
-    self.hbaseConnection = hbaseClient.HBaseConnectionForCrashReports(config.hbaseHost, config.hbasePort, logger=config.logger)
+    self.hbaseConnection = hbaseClient.HBaseConnectionForCrashReports(config.hbaseHost, config.hbasePort, logger=self.logger)
 
   #-----------------------------------------------------------------------------------------------------------------
   def close (self):
@@ -309,7 +309,7 @@ class CrashStorageSystemForHBase(CrashStorageSystem):
 class CollectorCrashStorageSystemForHBase(CrashStorageSystemForHBase):
   #-----------------------------------------------------------------------------------------------------------------
   def __init__ (self, config, hbaseClient=hbc, jsonDumpStorage=jds):
-    super(CollectorCrashStorageSystemForHBase, self).__init__(config)
+    super(CollectorCrashStorageSystemForHBase, self).__init__(config, hbaseClient=hbaseClient, jsonDumpStorage=jsonDumpStorage)
     assert "hbaseFallbackFS" in config, "hbaseFallbackFS is missing from the configuration"
     assert "hbaseFallbackDumpDirCount" in config, "hbaseFallbackDumpDirCount is missing from the configuration"
     assert "hbaseFallbackDumpGID" in config, "hbaseFallbackDumpGID is missing from the configuration"
