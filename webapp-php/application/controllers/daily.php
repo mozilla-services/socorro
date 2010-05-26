@@ -164,6 +164,11 @@ class Daily_Controller extends Controller {
                 }
             }
         }
+        if ( isset($parameters['hang_type'])) {
+	    $hang_type = $parameters['hang_type'];
+	} else {
+            $hang_type = 'any';
+	}
         
         // Determine throttling rates
         $throttle = null;
@@ -191,7 +196,7 @@ class Daily_Controller extends Controller {
 		$url_csv = $this->csvURL($product, $versions, $operating_systems, $date_start, $date_end, $form_selection, $throttle);
 
         // Statistics on crashes for time period
-        $results = $this->model->get($product, $versions, $operating_system, $date_start, $date_end);
+	$results = $this->model->get($product, $versions, $operating_system, $date_start, $date_end, $hang_type);
         $statistics = $this->model->prepareStatistics($results, $form_selection, $product, $versions, $operating_system, $date_start, $date_end, $throttle);
         $graph_data = $this->model->prepareGraphData($statistics, $form_selection, $date_start, $date_end, $dates, $operating_systems, $versions);
         
@@ -201,29 +206,28 @@ class Daily_Controller extends Controller {
         }
         
         // Set the View
-        $this->setViewData(
-        	array(
+        $this->setViewData(array(
                 'date_start' => $date_start,
                 'date_end' => $date_end,
-				'dates' => $dates,
+                'dates' => $dates,
                 'duration' => $duration,
-				'file_crash_data' => 'daily/daily_crash_data_' . $form_selection,
+                'file_crash_data' => 'daily/daily_crash_data_' . $form_selection,
                 'form_selection' => $form_selection,
-				'graph_data' => $graph_data,
-        	    'nav_selection' => 'crashes_user',
+                'graph_data' => $graph_data,
+                'nav_selection' => 'crashes_user',
                 'operating_system' => $operating_system,
-                'operating_systems' => $operating_systems,    		
-                'product' => $product,                       	
+                'operating_systems' => $operating_systems,              
+                'product' => $product,                          
                 'products' => $products,
+                'hang_type' => $hang_type,
                 'results' => $results,
-				'statistics' => $statistics,
-				'throttle' => $throttle,
-				'url_csv' => $url_csv,
-                'url_form' => url::site("daily", 'http'),				
+                'statistics' => $statistics,
+                'throttle' => $throttle,
+                'url_csv' => $url_csv,
+                'url_form' => url::site("daily", 'http'),                               
                 'url_nav' => url::site('products/'.$product),
                 'versions' => $versions,
-			)
-		);
+                    ));
     }
     
 

@@ -43,6 +43,17 @@
                     </tr>
 	    			
 	    			<tr>
+				<th>Type:</th> 	
+	    				<td>
+                                            <span class="radio-item"><label><?= form::radio('hang_type', 'any',   $hang_type == 'any'); ?>
+		    Any</label></span>
+                                	    <span class="radio-item"><label><?= form::radio('hang_type', 'crash', $hang_type == 'crash'); ?>
+		    Crash</label></span>
+                                	    <span class="radio-item"><label><?= form::radio('hang_type', 'hang',  $hang_type == 'hang'); ?>
+		    Hang</label></span>	    					
+	    				</td>
+	    			</tr>
+	    			<tr>
 	    				<th>O/S</th> 	
 	    				<td>
 	    					<?php foreach ($operating_systems as $os) { ?>

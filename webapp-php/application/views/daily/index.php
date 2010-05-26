@@ -33,6 +33,7 @@ echo html::script(array(
         'operating_systems' => $operating_systems,    		
         'product' => $product,                       	
         'products' => $products,                      		
+        'hang_type' => $hang_type,
         'url_form' => $url_form,
         'versions' => $versions
 	))->render(TRUE);

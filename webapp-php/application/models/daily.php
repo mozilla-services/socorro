@@ -300,11 +300,12 @@ class Daily_Model extends Model {
 	 * @access 	private
 	 * @param 	string 	The product name (e.g. 'Camino', 'Firefox', 'Seamonkey, 'Thunderbird')
 	 * @param 	string 	The version number (e.g. '3.5', '3.5.1', '3.5.1pre', '3.5.2', '3.5.2pre')
+	 * @param       string  The Report Type [any|crash|hang]
 	 * @param 	string	The start date for this product YYYY-MM-DD
 	 * @param 	string	The end date for this product YYYY-MM-DD (usually +90 days)
 	 * @return 	string 	The URL.
      */
-	private function formatURL ($product, $versions, $operating_systems, $start_date, $end_date) {
+	private function formatURL ($product, $versions, $hang_type, $operating_systems, $start_date, $end_date) {
 		$host = Kohana::config('webserviceclient.socorro_hostname');
 		
 		$p = urlencode($product);
@@ -313,7 +314,7 @@ class Daily_Model extends Model {
 		$start = urlencode($start_date);
 		$end = urlencode($end_date);
 		
-		$url = $host . "/200912/adu/byday/p/".$p."/v/".$v."/os/".$os."/start/".$start."/end/".$end;
+		$url = $host . "/201005/adu/byday/p/".$p."/v/".$v."/rt/".$hang_type."/os/".$os."/start/".$start."/end/".$end;
 		return $url;
 	}
 	
@@ -327,9 +328,10 @@ class Daily_Model extends Model {
 	 * @param 	string	The start date for this product YYYY-MM-DD
 	 * @param 	string	The end date for this product YYYY-MM-DD (usually +90 days)
 	 * @return 	object	The database query object
+	 * @param       string  The Report Type [any|crash|hang] - defaults to 'any'
      */
-	public function get($product, $versions, $operating_systems, $start_date, $end_date) {
-		$url = $this->formatURL($product, $versions, $operating_systems, $start_date, $end_date);
+	public function get($product, $versions, $operating_systems, $start_date, $end_date, $hang_type='any') {
+	    $url = $this->formatURL($product, $versions, $hang_type, $operating_systems, $start_date, $end_date);
 		$lifetime = Kohana::config('webserviceclient.topcrash_vers_rank_cache_minutes', 60) * 60; // number of seconds
 		$response = $this->service->get($url, 'json', $lifetime);
 
