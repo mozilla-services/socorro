@@ -34,7 +34,7 @@ import socorro.services.aduByDay as adubd
 import socorro.services.getCrash as crash
 servicesList = cm.Option()
 servicesList.doc = 'a python list of classes to offer as services'
-servicesList.default = [tcbst.TopCrashBySignatureTrends, sighist.SignatureHistory, adubd.AduByDay, crash.GetCrash]
+servicesList.default = [tcbst.TopCrashBySignatureTrends, sighist.SignatureHistory, adubd.AduByDay, adubd.AduByDay200912, crash.GetCrash]
 
 logFilePathname = cm.Option()
 logFilePathname.doc = 'full pathname for the log file'
