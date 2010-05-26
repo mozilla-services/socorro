@@ -34,20 +34,20 @@ class OoidNotFoundException(HBaseClientException):
     #super(OoidNotFoundException, self).__init__("OOID not found: %s" % str(reason))
     HBaseClientException.__init__(self, "OOID not found: %s" % str(reason))
 
-class NotInJsonFormatException(HBaseClientException):
-  def __init__(self, wrapped_exception_class, reason=''):
-    #super(NotInJsonFormatException, self).__init__("Improper JSON format: %s" % str(reason))
-    HBaseClientException.__init__(self, "Improper JSON format: %s" % str(reason))
+#class NotInJsonFormatException(HBaseClientException):
+  #def __init__(self, wrapped_exception_class, reason=''):
+    ##super(NotInJsonFormatException, self).__init__("Improper JSON format: %s" % str(reason))
+    #HBaseClientException.__init__(self, "Improper JSON format: %s" % str(reason))
 
 class FatalException(HBaseClientException):
   def __init__(self, wrapped_exception_class, reason=''):
     #super(FatalException, self).__init__("Improper JSON format: %s" % str(reason))
-    HBaseClientException.__init__(self, "the connection is not viable.  retries conituously fail: %s" % str(reason))
+    HBaseClientException.__init__(self, "the connection is not viable.  retries fail: %s" % str(reason))
 
 class NoConnectionException(FatalException):
   def __init__(self, wrapped_exception_class, reason='', tries=0):
     #super(NoConnectionException, self).__init__("No connection was made to HBase (%d tries): %s-%s" % (tries, str(wrapped_exception_class), str(reason)))
-    FatalException.__init__(self, "No connection was made to HBase (%d tries): %s-%s" % (tries, str(wrapped_exception_class), str(reason)))
+    FatalException.__init__(self, NoConnectionException, "No connection was made to HBase (%d tries): %s-%s" % (tries, str(wrapped_exception_class), str(reason)))
 
 class UnhandledInternalException(HBaseClientException):
   def __init__(self, wrapped_exception_class, reason=''):
@@ -74,7 +74,7 @@ def exception_wrapper(xClass):
     return f
   return wrapper
 
-def exception_wrapper_for_generator(xClass):
+def exception_wrapper_for_generators(xClass):
   """This decorator ensures that no exception escapes that isn't from the
   HBaseClientException hierarchy.  Any unexpected exceptions are wrapped in the
   exception class passed into this function.  The original exception is preserved
