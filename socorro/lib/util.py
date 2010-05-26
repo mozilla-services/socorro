@@ -83,7 +83,7 @@ def reportExceptionAndContinue(logger=FakeLogger(), loggingLevel=logging.ERROR, 
           print >>stringStream,  "trace back follows:"
           traceback.print_tb(tracebackInfo, None, stringStream)
           tracebackString = stringStream.getvalue()
-          logger.info(tracebackString)
+          logger.log(loggingLevel, tracebackString)
         finally:
           stringStream.close()
     finally:
