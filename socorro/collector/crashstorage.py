@@ -244,7 +244,7 @@ class CrashStorageSystemForHBase(CrashStorageSystem):
     assert "hbasePort" in config, "hbasePort is missing from the configuration"
     assert "hbaseTimeout" in config, "hbaseTimeout is missing from the configuration"
     self.logger.info('connecting to hbase')
-    self.hbaseConnection = hbaseClient.HBaseConnectionForCrashReports(config.hbaseHost, config.hbasePort, logger=self.logger)
+    self.hbaseConnection = hbaseClient.HBaseConnectionForCrashReports(config.hbaseHost, config.hbasePort, config.hbaseTimeout, logger=self.logger)
 
   #-----------------------------------------------------------------------------------------------------------------
   def close (self):

@@ -116,7 +116,7 @@ def retry_wrapper_for_generators(fn):
         except self.hbaseThriftExceptions:
           pass
         self.logger.debug('%s - retry_wrapper_for_generators: about to retry connection', threading.currentThread().getName())
-        self.make_connection()
+        self.make_connection(timeout=self.timeout)
         self.logger.debug('%s - retry_wrapper_for_generators: about to retry function, %s', threading.currentThread().getName(), fn.__name__)
       except Exception, x:  #lars
         self.logger.debug('%s - retry_wrapper_for_generators: unhandled exception, %s', threading.currentThread().getName(), str(x)) #lars
@@ -151,7 +151,7 @@ def optional_retry_wrapper(fn):
         except self.hbaseThriftExceptions:
           pass
         self.logger.debug('%s - retry_wrapper: about to retry connection', threading.currentThread().getName())
-        self.make_connection()
+        self.make_connection(timeout=self.timeout)
       # unknown error - abort
       except Exception, x:  #lars
         self.logger.debug('%s - retry_wrapper: unhandled exception, %s', threading.currentThread().getName(), str(x)) #lars
@@ -207,7 +207,7 @@ class HBaseConnection(object):
   Base class for hbase connections.  Supplies methods for a few basic
   queries and methods for cleanup of thrift results.
   """
-  def __init__(self,host,port,
+  def __init__(self,host,port,timeout,
                thrift=Thrift,
                tsocket=TSocket,
                ttrans=TTransport,
@@ -219,6 +219,7 @@ class HBaseConnection(object):
                logger=utl.SilentFakeLogger()):
     self.host = host
     self.port = port
+    self.timeout = timeout
     self.thriftModule = thrift
     self.tsocketModule = tsocket
     self.transportModule = ttrans
@@ -236,7 +237,7 @@ class HBaseConnection(object):
                                   socket.timeout
                                  )
 
-    self.make_connection()
+    self.make_connection(timeout=self.timeout)
 
   def make_connection(self, retry=2, timeout=9000):
     """Establishes the underlying connection to hbase"""
@@ -301,6 +302,7 @@ class HBaseConnectionForCrashReports(HBaseConnection):
   def __init__(self,
                host,
                port,
+               timeout,
                thrift=Thrift,
                tsocket=TSocket,
                ttrans=TTransport,
@@ -310,7 +312,7 @@ class HBaseConnectionForCrashReports(HBaseConnection):
                column=ColumnDescriptor,
                mutation=Mutation,
                logger=utl.SilentFakeLogger()):
-    super(HBaseConnectionForCrashReports,self).__init__(host,port,thrift,tsocket,ttrans,
+    super(HBaseConnectionForCrashReports,self).__init__(host,port,timeout,thrift,tsocket,ttrans,
                                                         protocol,ttp,client,column,
                                                         mutation,logger)
 
@@ -547,7 +549,6 @@ class HBaseConnectionForCrashReports(HBaseConnection):
     for rowkey in timeLevels:
       for column in counterIncrementList:
         self.client.atomicIncrement('metrics',rowkey,column,1)
-
 
   @optional_retry_wrapper
   def put_json_dump(self, ooid, json_data, dump, add_to_unprocessed_queue = True):
