@@ -10,8 +10,6 @@ import socorro.collector.crashstorage as cstore
 import socorro.lib.util as sutil
 import socorro.lib.ooid as ooid
 
-import random
-
 #-----------------------------------------------------------------------------------------------------------------
 if __name__ != "__main__":
   from mod_python import apache
@@ -58,7 +56,11 @@ def handler(req):
       uuid = ooid.createNewOoid(currentTimestamp, config.storageDepth)
       logger.debug("    %s", uuid)
 
+      jsonDataDictionary.legacy_processing = persistentStorage.legacyThrottler.throttle(jsonDataDictionary)
+
       result = crashStorage.save_raw(uuid, jsonDataDictionary, dump, currentTimestamp)
+      if config.useBackupNFSStorage:
+        ignoredResult = persistentStorage.altCrashStorage.save_raw(uuid, jsonDataDictionary, dump, currentTimestamp)
 
       #logger.debug('crashStorage returned: %d', result)
 

@@ -28,7 +28,11 @@ def createPersistentInitialization(configModule):
 
   if config.crashStorageClass == 'CrashStorageSystemForHBase':
     storage.crashStorage = cstore.CollectorCrashStorageSystemForHBase(config)
+    if config.useBackupNFSStorage:
+      storage.altCrashStorage = cstore.CrashStorageSystemForNFS(config)
   else:
     storage.crashStorage = cstore.CrashStorageSystemForNFS(config)
+
+  storage.legacyThrottler = cstore.LegacyThrottler(config)
 
   return storage

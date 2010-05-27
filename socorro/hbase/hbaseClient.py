@@ -8,9 +8,6 @@ import sys
 import heapq
 import threading
 
-#import logging
-#glogger = logging.getLogger('monitor')
-
 import socket
 
 from thrift import Thrift  #get Thrift modue

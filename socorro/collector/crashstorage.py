@@ -67,7 +67,6 @@ class RepeatableStreamReader(object):
       self.cache = self.stream.read()
     return self.cache
 
-
 #=================================================================================================================
 class LegacyThrottler(object):
   #-----------------------------------------------------------------------------------------------------------------
@@ -243,6 +242,7 @@ class CrashStorageSystemForHBase(CrashStorageSystem):
     super(CrashStorageSystemForHBase, self).__init__(config)
     assert "hbaseHost" in config, "hbaseHost is missing from the configuration"
     assert "hbasePort" in config, "hbasePort is missing from the configuration"
+    assert "hbaseTimeout" in config, "hbaseTimeout is missing from the configuration"
     self.logger.info('connecting to hbase')
     self.hbaseConnection = hbaseClient.HBaseConnectionForCrashReports(config.hbaseHost, config.hbasePort, logger=self.logger)
 
@@ -315,7 +315,6 @@ class CollectorCrashStorageSystemForHBase(CrashStorageSystemForHBase):
     assert "hbaseFallbackDumpGID" in config, "hbaseFallbackDumpGID is missing from the configuration"
     assert "hbaseFallbackDumpPermissions" in config, "hbaseFallbackDumpPermissions is missing from the configuration"
     assert "hbaseFallbackDirPermissions" in config, "hbaseFallbackDirPermissions is missing from the configuration"
-    self.legacyThrottler = LegacyThrottler(config)
     if config.hbaseFallbackFS:
       self.fallbackCrashStorage = jsonDumpStorage.JsonDumpStorage(root=config.hbaseFallbackFS,
                                                                   maxDirectoryEntries = config.hbaseFallbackDumpDirCount,
@@ -332,7 +331,6 @@ class CollectorCrashStorageSystemForHBase(CrashStorageSystemForHBase):
   #-----------------------------------------------------------------------------------------------------------------
   def save_raw (self, uuid, jsonData, dump, currentTimestamp):
     try:
-      jsonData['legacy_processing'] = self.legacyThrottler.throttle(jsonData)
       jsonDataAsString = json.dumps(jsonData)
       self.hbaseConnection.put_json_dump(uuid, jsonData, dump.read(), number_of_retries=1)
       return CrashStorageSystem.OK
@@ -369,7 +367,7 @@ class CrashStorageSystemForNFS(CrashStorageSystem):
     assert "jsonFileSuffix" in config, "jsonFileSuffix is missing from the configuration"
     assert "dumpFileSuffix" in config, "dumpFileSuffix is missing from the configuration"
 
-    self.throttler = LegacyThrottler(config)
+    #self.throttler = LegacyThrottler(config)
     self.standardFileSystemStorage = jds.JsonDumpStorage(root = config.storageRoot,
                                                          maxDirectoryEntries = config.dumpDirCount,
                                                          jsonSuffix = config.jsonFileSuffix,
@@ -391,7 +389,8 @@ class CrashStorageSystemForNFS(CrashStorageSystem):
   #-----------------------------------------------------------------------------------------------------------------
   def save_raw (self, uuid, jsonData, dump, currentTimestamp):
     try:
-      throttleAction = self.throttler.throttle(jsonData)
+      #throttleAction = self.throttler.throttle(jsonData)
+      throttleAction = jsonData.legacy_processing
       if throttleAction == LegacyThrottler.DISCARD:
         self.logger.debug("discarding %s %s", jsonData.ProductName, jsonData.Version)
         return CrashStorageSystem.DISCARDED

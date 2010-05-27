@@ -9,8 +9,9 @@ from config.collectorconfig import dumpGID
 from config.collectorconfig import dumpDirCount
 from config.collectorconfig import storageDepth
 from config.collectorconfig import hbaseFallbackFS
-from config.collectorconfig import hbaseHost
-from config.collectorconfig import hbasePort
+from config.commonconfig import hbaseHost
+from config.commonconfig import hbasePort
+from config.commonconfig import hbaseTimeout
 
 logFilePathname = cm.Option()
 logFilePathname.doc = 'full pathname for the log file'

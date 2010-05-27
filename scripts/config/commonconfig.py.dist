@@ -51,6 +51,10 @@ if crashStorageClass.default == 'CrashStorageSystemForHBase':
   hbasePort.doc = 'hbase port number'
   hbasePort.default = 9090
 
+  hbaseTimeout = cm.Option()
+  hbaseTimeout.doc = 'timeout in seconds for an HBase connection'
+  hbaseTimeout.default = 5
+
 #---------------------------------------------------------------------------
 # NFS storage system
 if crashStorageClass.default == 'CrashStorageSystemForNFS':
