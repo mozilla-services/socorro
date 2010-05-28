@@ -444,5 +444,26 @@ class Branch_Model extends Model {
 		}
 	}
 
+    /**
+     * Given a list of versions for a product, returns only the
+     * versions which are in the system.
+     *
+     * @param string $product  - Name of a product
+     * @param array  $versions - List of version numbers (string)
+     * 
+     * @return array of strings
+     */
+    public function verifyVersions($product, $versions)
+    {
+        $prep = array();
+        foreach ($versions as $version) {
+            array_push($prep, '?');
+        }
+        $sql = "SELECT version FROM productdims WHERE product = ? AND version IN (" . join(', ', $prep) . ")";
+        $bind_params = array_merge(array($product), $versions);
+        return $this->fetchSingleColumn($sql, 'version', $bind_params);
+    }
+
+
 	/* */
 }

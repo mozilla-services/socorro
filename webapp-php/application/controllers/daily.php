@@ -153,7 +153,7 @@ class Daily_Controller extends Controller {
         
         // If no version is available, include the most recent version of this product
         if (isset($parameters['v']) && !empty($parameters['v'])){
-        	$versions = $parameters['v']; 
+	    $versions = $this->_filterInvalidVersions($product, $parameters['v']);
         } 
         if (!isset($versions) || count($versions) == 0 || empty($versions[0])) {
             $current_products = $this->currentProducts();
@@ -231,5 +231,16 @@ class Daily_Controller extends Controller {
     }
     
 
-	/* */
+   /**
+     * Removes invalid version numbers
+     *
+     * @param string $product        - Name of a product
+     * @param array  $version_inputs - List of version numbers (string)
+     * 
+     * @return array of strings
+     */
+    private function _filterInvalidVersions($product, $version_inputs)
+    {
+        return $this->branch_model->verifyVersions($product, $version_inputs);
+    }
 }
