@@ -7,6 +7,7 @@ import itertools
 import sys
 import heapq
 import threading
+import time
 
 import socket
 
@@ -127,9 +128,9 @@ def retry_wrapper_for_generators(fn):
 def optional_retry_wrapper(fn):
   """a decorator to add retry symantics to any method that uses hbase"""
   def f(self, *args, **kwargs):
-    number_of_retries = kwargs.setdefault('number_of_retries', 0)
+    number_of_retries = kwargs.setdefault('number_of_retries', 1)
     del kwargs['number_of_retries']
-    wait_between_retries = kwargs.setdefault('wait_between_retries', 0)
+    wait_between_retries = kwargs.setdefault('wait_between_retries', 1)
     del kwargs['wait_between_retries']
     countdown = number_of_retries + 1
     while countdown:
