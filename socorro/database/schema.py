@@ -1129,10 +1129,9 @@ class TopCrashesBySignatureTable(Table):
                                              );
                                              ALTER TABLE ONLY top_crashes_by_signature ADD CONSTRAINT productdims_id_fkey FOREIGN KEY (productdims_id) REFERENCES productdims(id) ON DELETE CASCADE;
                                              ALTER TABLE ONLY top_crashes_by_signature ADD CONSTRAINT osdims_id_fkey FOREIGN KEY (osdims_id) REFERENCES osdims(id) ON DELETE CASCADE;
-                                             CREATE INDEX top_crashes_by_signature_productdims_key ON top_crashes_by_signature (productdims_id);
+                                             CREATE INDEX top_crashes_by_signature_productdims_window_end_idx ON top_crashes_by_signature (productdims_id, window_end DESC);
                                              CREATE INDEX top_crashes_by_signature_osdims_key ON top_crashes_by_signature (osdims_id);
                                              CREATE INDEX top_crashes_by_signature_signature_key ON top_crashes_by_signature (signature);
-                                             CREATE INDEX top_crashes_by_signature_window_end_idx on top_crashes_by_signature (window_end desc);
                                              CREATE INDEX top_crashes_by_signature_window_end_productdims_id_idx on top_crashes_by_signature (window_end desc, productdims_id);
                                             """
                                             )
@@ -1286,7 +1285,7 @@ class DailyCrashesTable(Table):
                                                 productdims_id INTEGER REFERENCES productdims(id),
                                                 os_short_name CHAR(3),
                                                 adu_day TIMESTAMP WITHOUT TIME ZONE NOT NULL,
-                                                CONSTRAINT day_product_os_report_type_unique UNIQUE (adu_day, productdims_id, os_short_name, report_type);
+                                                CONSTRAINT day_product_os_report_type_unique UNIQUE (adu_day, productdims_id, os_short_name, report_type));
                                         """)
     self.insertSql = """INSERT INTO TABLENAME (count, report_type, productdims_id, os_short_name, adu_day) values (%s, %s, %s, %s, %s)"""
 
