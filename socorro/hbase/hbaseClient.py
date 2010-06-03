@@ -176,7 +176,7 @@ def guid_to_timestamped_row_id(id, timestamp):
   return "%s%s%s" % (id[0], timestamp, id)
 
 @exception_wrapper(BadOoidException)
-def ooid_to_row_id(ooid):
+def ooid_to_row_id(ooid,old_format=False):
   """
   Returns a row_id suitable for the HBase crash_reports table.
   The first hex character of the ooid is used to "salt" the rowkey
@@ -188,7 +188,10 @@ def ooid_to_row_id(ooid):
   Finally, we append the normal ooid string.
   """
   try:
-    return "%s%s%s" % (ooid[0],ooid[-6:],ooid)
+    if old_format:
+      return "%s%s" % (ooid[-6:],ooid)
+    else:
+      return "%s%s%s" % (ooid[0],ooid[-6:],ooid)
   except Exception, x:
     raise BadOoidException(x)
 
@@ -328,27 +331,27 @@ class HBaseConnectionForCrashReports(HBaseConnection):
 
 
   @optional_retry_wrapper
-  def get_json_meta_as_string(self,ooid):
+  def get_json_meta_as_string(self,ooid,old_format=False):
     """
     Return the json metadata for a given ooid as an unexpanded string.
     If the ooid doesn't exist, raise not found.
     """
-    row_id = ooid_to_row_id(ooid)
+    row_id = ooid_to_row_id(ooid,old_format)
     listOfRawRows = self.client.getRowWithColumns('crash_reports',row_id,['meta_data:json'])
     #return listOfRawRows[0].columns["meta_data:json"].value if listOfRawRows else ""
     try:
       if listOfRawRows:
         return listOfRawRows[0].columns["meta_data:json"].value
       else:
-        raise OoidNotFoundException(ooid)
+        raise OoidNotFoundException("%s - %s" % (ooid, row_id))
     except KeyError, k:
       self.logger.debug('%s - key error trying to get "meta_data:json" from %s', threading.currentThread().getName(), str(listOfRawRows))
       raise
 
   @optional_retry_wrapper
-  def get_json(self,ooid):
+  def get_json(self,ooid,old_format=False):
     """Return the json metadata for a given ooid as an json data object"""
-    jsonColumnOfRow = self.get_json_meta_as_string(ooid)
+    jsonColumnOfRow = self.get_json_meta_as_string(ooid,old_format)
     self.logger.debug('%s - jsonColumnOfRow: %s', threading.currentThread().getName(), jsonColumnOfRow)
     json_data = json.loads(jsonColumnOfRow)
     return json_data
@@ -588,7 +591,7 @@ class HBaseConnectionForCrashReports(HBaseConnection):
       hang_id = json_data['HangID']
       mutationList.append(self.mutationClass(column="ids:hang",value=hang_id))
 
-    self.client.mutateRow('crash_reports', row_id, mutationList)
+    self.client.mutateRow('crash_reports', row_id, mutationList) # unit test marker 233
 
     self.put_crash_report_indices(ooid,submitted_timestamp,indices)
     if is_hang:
@@ -714,7 +717,7 @@ if __name__=="__main__":
   cmd = sys.argv[argi]
   args = sys.argv[argi+1:]
 
-  connection = HBaseConnectionForCrashReports(host, port, logger=utl.FakeLogger())
+  connection = HBaseConnectionForCrashReports(host, port, 5000, logger=utl.FakeLogger())
 
   if cmd == 'get_report':
     if len(args) != 1:
@@ -723,10 +726,11 @@ if __name__=="__main__":
     pp.pprint(connection.get_report(*args))
 
   elif cmd == 'get_json':
-    if len(args) != 1:
+    if len(args) < 1:
       usage()
       sys.exit(1)
-    ppjson(connection.get_json(*args))
+    old = len(args) == 2
+    ppjson(connection.get_json(args[0], old))
 
   elif cmd == 'get_dump':
     if len(args) != 1:
