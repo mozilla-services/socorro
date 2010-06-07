@@ -30,16 +30,16 @@
         
 	    			<tr>
 	    				<th rowspan="4" valign="top">Versions</th> 	
-	    				<td>1. <input class="version" type="text" name="v[]" value="<?php if (!empty($versions[0])) out::H($versions[0]); ?>" />throttle <input class="version" type="text" name="throttle[]" value="<?php if (isset($throttle[0]) && !empty($throttle[0]) && $throttle[0] <= 100) out::H($throttle[0]); else echo '100'?>"  title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling." />%</td>
+	    				<td>1. <input id="version1" class="version" type="text" name="v[]" value="<?php if (!empty($versions[0])) out::H($versions[0]); ?>" />throttle <input id="throttle1" class="version" type="text" name="throttle[]" value="<?php if (isset($throttle[0]) && !empty($throttle[0]) && $throttle[0] <= 100) out::H($throttle[0]); else echo '100'?>"  title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling." />%</td>
                     </tr>                                                                                                                               
                     <tr>                                                                                                                                
-	    				<td>2. <input class="version" type="text" name="v[]" value="<?php if (!empty($versions[1])) out::H($versions[1]); ?>" />throttle <input class="version" type="text" name="throttle[]" value="<?php if (isset($throttle[1]) && !empty($throttle[1]) && $throttle[1] <= 100) out::H($throttle[1]); else echo '100'?>"  title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling." />%</td>
+	    				<td>2. <input id="version2" class="version" type="text" name="v[]" value="<?php if (!empty($versions[1])) out::H($versions[1]); ?>" />throttle <input id="throttle2" class="version" type="text" name="throttle[]" value="<?php if (isset($throttle[1]) && !empty($throttle[1]) && $throttle[1] <= 100) out::H($throttle[1]); else echo '100'?>"  title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling." />%</td>
                     </tr>                                                                                                                               
                     <tr>                                                                                                                                
-	    				<td>3. <input class="version" type="text" name="v[]" value="<?php if (!empty($versions[2])) out::H($versions[2]); ?>" />throttle <input class="version" type="text" name="throttle[]" value="<?php if (isset($throttle[2]) && !empty($throttle[2]) && $throttle[2] <= 100) out::H($throttle[2]); else echo '100'?>"  title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling." />%</td>
+	    				<td>3. <input id="version3" class="version" type="text" name="v[]" value="<?php if (!empty($versions[2])) out::H($versions[2]); ?>" />throttle <input id="throttle3" class="version" type="text" name="throttle[]" value="<?php if (isset($throttle[2]) && !empty($throttle[2]) && $throttle[2] <= 100) out::H($throttle[2]); else echo '100'?>"  title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling." />%</td>
                     </tr>                                                                                                                               
                     <tr>                                                                                                                                
-	    				<td>4. <input class="version" type="text" name="v[]" value="<?php if (!empty($versions[3])) out::H($versions[3]); ?>" />throttle <input class="version" type="text" name="throttle[]" value="<?php if (isset($throttle[3]) && !empty($throttle[3]) && $throttle[3] <= 100) out::H($throttle[3]); else echo '100'?>"  title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling." />%</td>
+	    				<td>4. <input id="version4" class="version" type="text" name="v[]" value="<?php if (!empty($versions[3])) out::H($versions[3]); ?>" />throttle <input id="throttle4" class="version" type="text" name="throttle[]" value="<?php if (isset($throttle[3]) && !empty($throttle[3]) && $throttle[3] <= 100) out::H($throttle[3]); else echo '100'?>"  title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling." />%</td>
                     </tr>
 	    			
 	    			<tr>
@@ -57,7 +57,7 @@
 	    				<th>O/S</th> 	
 	    				<td>
 	    					<?php foreach ($operating_systems as $os) { ?>
-	    						<input type="checkbox" name="os[]" value="<?php out::H($os); ?>" 
+	    						<input id="os_<?=$os?>_check" type="checkbox" name="os[]" value="<?php out::H($os); ?>" 
 	    							<?php if (in_array($os, $operating_system)) { ?>
 	    								CHECKED
 	    							<?php } ?>
@@ -76,7 +76,7 @@
 	    			</tr>
 	    		</table>
         
-	    		<input type="submit" name="submit" value="Generate">
+	    		<input id="daily_search_version_form_submit" type="submit" name="submit" value="Generate">
 	    	</form>
 	    </div>
 	    

@@ -14,7 +14,7 @@
 	
 	<?php if (isset($results->versions) && isset($versions) && !empty($versions)) { ?>
 		
-		<table class="crash_data">
+		<table id="crash_data" class="crash_data">
 			<tr>
 				<th class="date" rowspan="2">Date</th>
 				<?php foreach ($versions as $key => $version) { ?>
