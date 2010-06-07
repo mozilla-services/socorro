@@ -644,6 +644,7 @@ class Processor(object):
       #flash_version = jsonDocument.get('flash_version')
       flash_version = newReportRecordAsDict.get('flash_version')
       processor_notes = '; '.join(processorErrorMessages)
+      newReportRecordAsDict['processor_notes'] = processor_notes
       infoTuple = (newReportRecordAsDict['signature'], processor_notes, startedDateTime, completedDateTime, newReportRecordAsDict["truncated"], topmost_filenames, addons_checked, flash_version)
       logger.debug("%s - Updated report %s (%s): %s",threadName,reportId,jobUuid,str(infoTuple))
       threadLocalCursor.execute(reportsSql, infoTuple)
