@@ -17,8 +17,8 @@ def most_recent_day(databaseCursor, logger):
   try:
     day = db.singleValueSql(databaseCursor, "SELECT MAX(adu_day) FROM daily_crashes")
     if day:
-      return day
-      logger.info("daily_crashes was empty, using product_visibility to determine start date")
+      return day + datetime.timedelta(days=1)
+    logger.info("daily_crashes was empty, using product_visibility to determine start date")
   except Exception:
     util.reportExceptionAndContinue(logger)
     databaseCursor.connection.rollback()
@@ -45,7 +45,7 @@ def fail_most_recent_day(logger):
   """ Corner case, no useful dates... fresh install?
       Returns the current date """
   logger.error("Unable to determine where to start. daily_crashes and product_visibility are empty.")
-  return datetime.date.today()
+  return datetime.date.today() - datetime.timedelta(7)
 
 insert_crashes_sql = """
   INSERT INTO daily_crashes (count, report_type, productdims_id, os_short_name, adu_day)
@@ -73,6 +73,9 @@ insert_crashes_sql = """
             hangid IS NOT NULL
       GROUP BY p.id, os_short_name """
 
+def continue_aggregating(previousDay, today):
+  return previousDay.date() < today.date()
+
 #-----------------------------------------------------------------------------------------------------------------
 def record_crash_stats(config, logger):
   database = db.Database(config)
@@ -80,18 +83,20 @@ def record_crash_stats(config, logger):
   try:
     databaseCursor = databaseConnection.cursor()
     today = datetime.datetime.today()
-    one_day = datetime.timedelta(1)
+    one_day = datetime.timedelta(days=1)
     
     previousDay = most_recent_day(databaseCursor, logger) # + one_day
 
     logger.info("Beginning search from this date (YYYY-MM-DD): %s", previousDay)
-    while previousDay.date() < today.date():
+    while continue_aggregating(previousDay, today):
+      # This should be zero hour if pulled from daily_crashes or product_visibility, but make sure
+      previousZeroHour = datetime.datetime(previousDay.year, previousDay.month, previousDay.day)
       socorroTimeToUTCInterval = config.socorroTimeToUTCInterval
-      parameters = (previousDay.date(), previousDay, socorroTimeToUTCInterval, previousDay, socorroTimeToUTCInterval,
-                    previousDay.date(), previousDay, socorroTimeToUTCInterval, previousDay, socorroTimeToUTCInterval)
+      parameters = (previousDay.date(), previousZeroHour, socorroTimeToUTCInterval, previousZeroHour, socorroTimeToUTCInterval,
+                    previousDay.date(), previousZeroHour, socorroTimeToUTCInterval, previousZeroHour, socorroTimeToUTCInterval)
       try:
         logger.debug("Processing %s crashes for use with ADU data" % previousDay)
-        #logger.debug(databaseCursor.mogrify(insert_crashes_sql.encode(databaseCursor.connection.encoding), parameters))        
+        logger.debug(databaseCursor.mogrify(insert_crashes_sql.encode(databaseCursor.connection.encoding), parameters))        
         databaseCursor.execute(insert_crashes_sql, parameters)
         logger.info("Inserted %d rows" % databaseCursor.rowcount)
         databaseCursor.connection.commit()
