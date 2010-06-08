@@ -75,13 +75,14 @@ class AduByDay(webapi.JsonServiceBase):
     elif parameters.report_type == 'hang':
       parameters.report_type_phrase = "report_type = 'H'"
     sql = """
-      SELECT adu_day, os_short_name, count
+      SELECT adu_day, os_short_name, SUM(count)
       FROM daily_crashes
       WHERE timestamp without time zone %%(start_date)s < adu_day AND
             adu_day <= timestamp without time zone %%(end_date)s AND
             productdims_id = %%(productdims_id)s AND
              %(os_phrase)s AND
              %(report_type_phrase)s
+      GROUP BY adu_day, os_short_name
       order by
           1, 2""" % parameters
     #logger.debug('%s', self.connection.cursor().mogrify(sql.encode(self.connection.encoding), parameters))
