@@ -365,7 +365,7 @@ class Daily_Model extends Model {
 			for($i = 1; $i <= $data['count']; $i++) {
 				$key_ratio = 'ratio' . $i;
 				$key_item = 'item' . $i; 
-				$item = array_shift($operating_systems);
+				$item = substr(array_shift($operating_systems), 0, 3);
 				$data[$key_item] = $item;
 				$data[$key_ratio] = array();
 				foreach ($dates as $date) {

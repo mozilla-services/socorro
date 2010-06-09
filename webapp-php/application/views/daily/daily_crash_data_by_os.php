@@ -39,6 +39,7 @@
 
 					<?php 
 						foreach ($operating_systems as $os) { 
+				                    $os = substr($os, 0, 3);
 					?>
 					
 								<td><?php 

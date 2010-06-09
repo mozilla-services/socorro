@@ -36,7 +36,7 @@
  * the terms of any one of the MPL, the GPL or the LGPL.
  *
  * ***** END LICENSE BLOCK ***** */
- 
+
 /**
  * Controller class for ADU, a.k.a. Active Daily Users / Installs.
  *
@@ -107,7 +107,7 @@ class Daily_Controller extends Controller {
      * @param 	string 	The type of results display - "by_version" or "by_os"	
      * @return 	string 	The url to download this CSV
      */
-    private function csvURL ($product, $versions, $operating_systems, $date_start, $date_end, $form_selection, $throttle) {
+    private function csvURL ($product, $versions, $operating_systems, $date_start, $date_end, $hang_type, $form_selection, $throttle) {
         $url 	= 'daily?p=' . html::specialchars($product);
         
         foreach ($versions as $version) {
@@ -124,6 +124,7 @@ class Daily_Controller extends Controller {
         
         $url .= "&date_start=" . html::specialchars($date_start);
         $url .= "&date_end=" . html::specialchars($date_end);
+        $url .= "&hang_type=" . html::specialchars($hang_type);
         $url .= "&form_selection=" . html::specialchars($form_selection);
         $url .= "&csv=1";
         
@@ -193,13 +194,13 @@ class Daily_Controller extends Controller {
         }
         
 		// Prepare URL for CSV
-		$url_csv = $this->csvURL($product, $versions, $operating_systems, $date_start, $date_end, $form_selection, $throttle);
+	$url_csv = $this->csvURL($product, $versions, $operating_systems, $date_start, $date_end, $hang_type, $form_selection, $throttle);
 
         // Statistics on crashes for time period
 	$results = $this->model->get($product, $versions, $operating_system, $date_start, $date_end, $hang_type);
         $statistics = $this->model->prepareStatistics($results, $form_selection, $product, $versions, $operating_system, $date_start, $date_end, $throttle);
         $graph_data = $this->model->prepareGraphData($statistics, $form_selection, $date_start, $date_end, $dates, $operating_systems, $versions);
-        
+
         // Download the CSV, if applicable
         if (isset($parameters['csv'])) {
         	return $this->csv($product, $versions, $operating_systems, $dates, $results, $statistics, $form_selection, $throttle);

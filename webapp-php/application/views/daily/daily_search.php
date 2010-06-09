@@ -105,7 +105,16 @@
 	    				<th>Version</th> 	
 	    				<td><input class="version" type="text" name="v[]" value="<?php if (!empty($versions)) out::H(array_shift($versions)); ?>" /></td>
 	    			</tr>
-
+<th>Type:</th> 	
+	    				<td>
+                                            <span class="radio-item"><label><?= form::radio('hang_type', 'any',   $hang_type == 'any'); ?>
+		    Any</label></span>
+                                	    <span class="radio-item"><label><?= form::radio('hang_type', 'crash', $hang_type == 'crash'); ?>
+		    Crash</label></span>
+                                	    <span class="radio-item"><label><?= form::radio('hang_type', 'hang',  $hang_type == 'hang'); ?>
+		    Hang</label></span>	    					
+	    				</td>
+	    			</tr>
 	    			<tr>
 	    				<th>Throttle</th> 	
 	    				<td><input class="version" type="text" name="throttle[]" value="<?php if (!empty($throttle)) out::H(array_shift($throttle)); ?>" title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling." />%</td>

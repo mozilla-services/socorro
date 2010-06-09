@@ -14,6 +14,7 @@ foreach ($dates as $date) {
 	echo ",";
 	
 	foreach ($operating_systems as $operating_system) { 
+            $operating_system = substr($operating_system, 0, 3);
 		if (isset($statistics['os'][$operating_system][$date]['crashes'])) {
 			echo round($statistics['os'][$operating_system][$date]['crashes']); 
 		} else {
@@ -50,6 +51,7 @@ echo "Total,";
 
 $i = 0;
 foreach($operating_systems as $operating_system) { 
+    $operating_system = substr($operating_system, 0, 3);
 	if (isset($statistics['os'][$operating_system]['crashes'])) {
 		echo round($statistics['os'][$operating_system]['crashes']); 
 	}
