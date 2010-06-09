@@ -537,8 +537,7 @@ class HBaseConnectionForCrashReports(HBaseConnection):
                    submitted_timestamp[: 4]  # year   yyyy
                  ]
     counterIncrementList = [ 'counters:submitted_crash_reports' ]
-    if legacy_processing > 0:
-      counterIncrementList.append("counters:submitted_crash_reports_legacy_throttle_%d" % legacy_processing)
+    counterIncrementList.append("counters:submitted_crash_reports_legacy_throttle_%d" % legacy_processing)
     if process_type != 'default':
       if is_hang:
         counterIncrementList.append("counters:submitted_crash_report_hang_pairs")
@@ -547,7 +546,7 @@ class HBaseConnectionForCrashReports(HBaseConnection):
 
     if add_to_unprocessed_queue:
       self.client.atomicIncrement('metrics','crash_report_queue','counters:current_unprocessed_size',1)
-      if legacy_processing > 0:
+      if legacy_processing == 0:
         self.client.atomicIncrement('metrics','crash_report_queue','counters:current_legacy_unprocessed_size',1)
 
     for rowkey in timeLevels:
