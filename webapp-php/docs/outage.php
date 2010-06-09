@@ -1,5 +1,5 @@
 <?php 
-$outage_message = "We are upgrading our hardware. This impacts this application, so it will be unavailable from 7pm to 1am PDT. Thanks for your patience.";
+$outage_message = "We are migrating our backend storage from NFS to Hbase. This impacts this application, so it will be unavailable from 10am to 2pm PDT. Thanks for your patience.";
 ?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 
