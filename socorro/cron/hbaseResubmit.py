@@ -12,7 +12,9 @@ import socorro.lib.datetimeutil as dtutil
 def resubmit (conf, jds=jds, hbc=hbc, open=open):
   logger = conf.logger
   logger.info('creating hbase connection: host: %s, port: %s', conf.hbaseHost, conf.hbasePort)
-  hbaseConnection = hbc.HBaseConnectionForCrashReports(conf.hbaseHost, conf.hbasePort)
+  hbaseConnection = hbc.HBaseConnectionForCrashReports(conf.hbaseHost, 
+                                                       conf.hbasePort, 
+                                                       conf.hbaseTimeout)
   logger.info('creating json/dump store object: root: %s', conf.hbaseFallbackFS)
   fallbackStorage = jds.JsonDumpStorage(root=conf.hbaseFallbackFS,
                                         maxDirectoryEntries = conf.dumpDirCount,
