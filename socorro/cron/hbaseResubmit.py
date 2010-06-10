@@ -17,12 +17,12 @@ def resubmit (conf, jds=jds, hbc=hbc, open=open):
                                                        conf.hbaseTimeout)
   logger.info('creating json/dump store object: root: %s', conf.hbaseFallbackFS)
   fallbackStorage = jds.JsonDumpStorage(root=conf.hbaseFallbackFS,
-                                        maxDirectoryEntries = conf.dumpDirCount,
+                                        maxDirectoryEntries = conf.hbaseFallbackDumpDirCount,
                                         jsonSuffix = conf.jsonFileSuffix,
                                         dumpSuffix = conf.dumpFileSuffix,
-                                        dumpGID = conf.dumpGID,
-                                        dumpPermissions = conf.dumpPermissions,
-                                        dirPermissions = conf.dirPermissions,
+                                        dumpGID = conf.hbaseFallbackDumpGID,
+                                        dumpPermissions = conf.hbaseFallbackDumpPermissions,
+                                        dirPermissions = conf.hbaseFallbackDirPermissions,
                                        )
   processedCrashList = []
   for uuid in fallbackStorage.destructiveDateWalk():
@@ -30,7 +30,7 @@ def resubmit (conf, jds=jds, hbc=hbc, open=open):
     try:
       jsonFile = open(fallbackStorage.getJson(uuid))
       try:
-        jsonContents = jsonFile.read()
+        jsonContents = json.load(jsonFile)
       finally:
         jsonFile.close()
       dumpFile = open(fallbackStorage.getDump(uuid))

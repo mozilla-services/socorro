@@ -4,10 +4,7 @@ import sys
 import logging
 import logging.handlers
 
-try:
-  import config.hbaseresubmitconfig as hbrconf
-except ImportError:
-  import hbaseresubmitconfig as  hbrconf
+import config.hbaseresubmitconfig as hbrconf
 
 import socorro.lib.ConfigurationManager as configurationManager
 import socorro.cron.hbaseResubmit as hbr

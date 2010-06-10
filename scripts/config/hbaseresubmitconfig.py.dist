@@ -3,11 +3,10 @@ import socorro.lib.ConfigurationManager as cm
 from config.commonconfig import jsonFileSuffix
 from config.commonconfig import dumpFileSuffix
 
-from config.collectorconfig import dumpPermissions
-from config.collectorconfig import dirPermissions
-from config.collectorconfig import dumpGID
-from config.collectorconfig import dumpDirCount
-from config.collectorconfig import storageDepth
+from config.collectorconfig import hbaseFallbackDumpPermissions
+from config.collectorconfig import hbaseFallbackDirPermissions
+from config.collectorconfig import hbaseFallbackDumpGID
+from config.collectorconfig import hbaseFallbackDumpDirCount
 from config.collectorconfig import hbaseFallbackFS
 from config.commonconfig import hbaseHost
 from config.commonconfig import hbasePort
