@@ -4,10 +4,13 @@ try:
 except ImportError:
   import simplejson as json
 import itertools
+import os
 import sys
+import gzip
 import heapq
 import threading
 import time
+import tarfile
 
 import socket
 
@@ -428,6 +431,54 @@ class HBaseConnectionForCrashReports(HBaseConnection):
     else:
       raise OoidNotFoundException(ooid)
 
+  def export_jsonz_for_date(self,date,path):
+    """
+    Iterates through all rows for a given date and dumps the processed_data:json out as a jsonz file.
+    The implementation opens up 16 scanners (one for each leading hex character of the salt)
+    one at a time and returns all of the rows matching
+    """
+
+    for row in self.limited_iteration(self.union_scan_with_prefix('crash_reports', date, ['processed_data:json']),10):
+      ooid = row_id_to_ooid(row['_rowkey'])
+      if row['processed_data:json']:
+        file_name = os.path.join(path,ooid+'.jsonz')
+        file_handle = None
+        try:
+          file_handle = gzip.open(file_name,'w',9)
+        except IOError,x:
+          raise
+        try:
+          json.dump(row['processed_data:json'],file_handle)
+        finally:
+          file_handle.close()
+          
+  def export_jsonz_tarball_for_date(self,date,path,tarball_name):
+    """
+    Iterates through all rows for a given date and dumps the processed_data:json out as a jsonz file.
+    The implementation opens up 16 scanners (one for each leading hex character of the salt)
+    one at a time and returns all of the rows matching
+    """
+    tf = tarfile.open(tarball_name, 'w:gz')
+    try:
+      for i, row in enumerate(self.limited_iteration(self.union_scan_with_prefix('crash_reports', date, ['processed_data:json']),10)):
+        #if i > 10: break
+        ooid = row_id_to_ooid(row['_rowkey'])
+        if row['processed_data:json']:
+          file_name = os.path.join(path, ooid+'.jsonz')
+          file_handle = None
+          try:
+            file_handle = gzip.open(file_name,'w',9)
+          except IOError,x:
+            raise
+          try:
+            json.dump(row['processed_data:json'],file_handle)
+          finally:
+            file_handle.close()
+          tf.add(file_name, os.path.join(ooid[:2], ooid[2:4], ooid +'.jsonz'))
+          os.unlink(file_name)
+    finally:
+      tf.close()
+        
   def union_scan_with_prefix(self,table,prefix,columns):
     #TODO: Need assertion for columns contains at least 1 element
     """
@@ -691,6 +742,8 @@ if __name__=="__main__":
       merge_scan_with_prefix table prefix columns [limit]
       put_json_dump ooid json dump
       put_json_dump_from_files ooid json_path dump_path
+      export_jsonz_for_date YYMMDD export_path
+      export_jsonz_tarball_for_date YYMMDD temp_path tarball_name
     HBase generic:
       describe_table table_name
       get_full_row table_name row_id
@@ -717,7 +770,7 @@ if __name__=="__main__":
   args = sys.argv[argi+1:]
 
   connection = HBaseConnectionForCrashReports(host, port, 5000, logger=utl.FakeLogger())
-
+  
   if cmd == 'get_report':
     if len(args) != 1:
       usage()
@@ -784,6 +837,18 @@ if __name__=="__main__":
       usage()
       sys.exit(1)
     ppjson(connection.put_json_dump_from_files(*args))
+
+  elif cmd == 'export_jsonz_for_date':
+    if len(args) != 2:
+      usage()
+      sys.exit(1)
+    connection.export_jsonz_for_date(*args)
+
+  elif cmd == 'export_jsonz_tarball_for_date':
+    if len(args) != 3:
+      usage()
+      sys.exit(1)
+    connection.export_jsonz_tarball_for_date(*args)
 
   elif cmd == 'describe_table':
     if len(args) != 1:
