@@ -5,7 +5,7 @@ import logging
 import logging.handlers
 
 try:
-  import config.dailcrashconfig as config
+  import config.dailycrashconfig as config
 except ImportError:
   import dailycrashconfig as config
 
