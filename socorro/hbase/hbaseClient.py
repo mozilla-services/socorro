@@ -479,6 +479,37 @@ class HBaseConnectionForCrashReports(HBaseConnection):
     finally:
       tf.close()
         
+  def export_jsonz_tarball_for_ooids(self,path,tarball_name):
+    """
+    Creates jsonz files for each ooid passed in on stdin and puts them all in a tarball
+    """
+    tf = tarfile.open(tarball_name, 'w:gz')
+    try:
+      for line in sys.stdin.readlines():
+        ooid = line.strip()
+        self.logger.debug('Ooid: "%s"', ooid)
+        if len(ooid) == 36:
+          try:
+            json = self.get_processed_json_as_string(ooid)
+          except OoidNotFoundException, e:
+            self.logger.debug('OoidNotFound (No processed_data:json?): %s', ooid)
+            continue
+          file_name = os.path.join(path, ooid+'.jsonz')
+          try:
+            file_handle = gzip.open(file_name,'w',9)
+          except IOError,x:
+            raise
+          try:
+            file_handle.write(json)
+          finally:
+            file_handle.close()
+          tf.add(file_name, os.path.join(ooid[:2], ooid[2:4], ooid +'.jsonz'))
+          os.unlink(file_name)
+        else:
+          self.logger.debug('Skipping...')
+    finally:
+      tf.close()
+        
   def union_scan_with_prefix(self,table,prefix,columns):
     #TODO: Need assertion for columns contains at least 1 element
     """
@@ -744,6 +775,7 @@ if __name__=="__main__":
       put_json_dump_from_files ooid json_path dump_path
       export_jsonz_for_date YYMMDD export_path
       export_jsonz_tarball_for_date YYMMDD temp_path tarball_name
+      export_jsonz_tarball_for_ooids temp_path tarball_name <stdin list of ooids>
     HBase generic:
       describe_table table_name
       get_full_row table_name row_id
@@ -849,6 +881,12 @@ if __name__=="__main__":
       usage()
       sys.exit(1)
     connection.export_jsonz_tarball_for_date(*args)
+
+  elif cmd == 'export_jsonz_tarball_for_ooids':
+    if len(args) != 2:
+      usage()
+      sys.exit(1)
+    connection.export_jsonz_tarball_for_ooids(*args)
 
   elif cmd == 'describe_table':
     if len(args) != 1:
