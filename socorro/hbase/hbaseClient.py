@@ -483,7 +483,7 @@ class HBaseConnectionForCrashReports(HBaseConnection):
     """
     Creates jsonz files for each ooid passed in on stdin and puts them all in a tarball
     """
-    tf = tarfile.open(tarball_name, 'w:gz')
+    tf = tarfile.open(tarball_name, 'w')
     try:
       for line in sys.stdin.readlines():
         ooid = line.strip()
