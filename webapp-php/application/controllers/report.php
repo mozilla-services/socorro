@@ -156,6 +156,7 @@ class Report_Controller extends Controller {
 		'correlation_version' => $correlation_version,
 		'correlation_os' => $this->_correlations($builds),
 		'logged_in' => $logged_in,
+        'url_base' => url::site('products/'.$product),
 		'url_nav' => url::site('products/'.$product),        
 	    ));
 	}
@@ -372,7 +373,7 @@ class Report_Controller extends Controller {
             $ooppDetails = $this->_makeOoppDetails($report);
 
             $product = (isset($report->product) && !empty($report->product)) ? $report->product : Kohana::config('products.default_product');
-		$this->setViewData(array(
+            $this->setViewData(array(
         	    'branch' => $this->branch_model->getByProductVersion($report->product, $report->version),
         	    'comments' => $comments,
         	    'extensions' => $extensions,
@@ -381,10 +382,12 @@ class Report_Controller extends Controller {
         	    'reportJsonZUri' => $reportJsonZUri,
         	    'report' => $report,
         	    'sig2bugs' => $signature_to_bugzilla,
-                    'url_nav' => url::site('products/'.$product),
-                    'oopp_details' => $ooppDetails,
-        	));
-	}
+                'url_nav' => url::site('products/'.$product),
+                'oopp_details' => $ooppDetails,
+                'url_base' => url::site('products/'.$product),
+                'url_nav' => url::site('products/'.$product),
+            ));
+        }
     }
 
     /**
@@ -484,6 +487,7 @@ class Report_Controller extends Controller {
             'job'  => $job,
 			'status' => $status,
 			'url_ajax' => url::site() . 'report/pending_ajax/' . $uuid,
+            'url_base' => url::site('products/'.$product),			
             'url_nav' => url::site('products/'.$product),			
         ));
     }

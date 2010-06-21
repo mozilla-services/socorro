@@ -62,9 +62,10 @@ $(document).ready(function () {
     $('#reportsList').tablesorter({ 
         textExtraction: "complex",
         headers: { 
-            7: { sorter: "hexToInt" }
+            7: { sorter: "hexToInt" },  // Address
+            9: { sorter: "digit" }      // Uptime
         }, 
-        sortList : [[9,1]]
+        sortList : [[10,1]]
     });
     
     $('#report-list-nav').tabs({selected: 2}).show();
