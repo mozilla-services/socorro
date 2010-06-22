@@ -7,6 +7,7 @@ import datetime as datetime
 
 import socorro.database.database as db
 import socorro.lib.util as util
+from socorro.services import aduByDay
 
 #-----------------------------------------------------------------------------------------------------------------
 def most_recent_day(databaseCursor, logger):
@@ -49,7 +50,7 @@ def fail_most_recent_day(logger):
 
 insert_crashes_sql = """
   INSERT INTO daily_crashes (count, report_type, productdims_id, os_short_name, adu_day)
-    SELECT COUNT(r.uuid) as count, 'C', p.id, substring(r.os_name, 1, 3) AS os_short_name,
+    SELECT COUNT(r.uuid) as count, %s, p.id, substring(r.os_name, 1, 3) AS os_short_name,
            timestamp without time zone %s
     FROM product_visibility cfg
     JOIN productdims p on cfg.productdims_id = p.id
@@ -61,17 +62,58 @@ insert_crashes_sql = """
           hangid IS NULL AND process_type IS NULL
     GROUP BY p.id, os_short_name
     UNION
-      SELECT COUNT(r.uuid) as count, 'H', p.id, substring(r.os_name, 1, 3) AS os_short_name,
+      SELECT count(uuid) as count, %s, p.id AS prod_id, substring(r.os_name, 1, 3) AS os_short_name,
              timestamp without time zone %s
       FROM product_visibility cfg
       JOIN productdims p on cfg.productdims_id = p.id
       JOIN reports r on p.product = r.product AND p.version = r.version
       WHERE NOT cfg.ignore AND
-            timestamp without time zone %s - interval %s <= r.date_processed AND
-            r.date_processed < timestamp without time zone %s + (interval '24 hours' - interval %s) AND
-            cfg.start_date <= r.date_processed AND r.date_processed <= cfg.end_date AND
-            hangid IS NOT NULL
-      GROUP BY p.id, os_short_name """
+          timestamp without time zone %s - interval %s <= r.date_processed AND
+          r.date_processed < timestamp without time zone %s + (interval '24 hours' - interval %s) AND
+          cfg.start_date <= r.date_processed AND r.date_processed <= cfg.end_date AND
+          hangid IS NULL AND process_type = 'plugin'
+      GROUP BY prod_id, os_short_name    
+    UNION
+      SELECT count(subr.hangid) as count, %s, subr.prod_id, subr.os_short_name,
+             timestamp without time zone %s
+      FROM (
+                   SELECT distinct hangid, p.id AS prod_id, substring(r.os_name, 1, 3) AS os_short_name
+                   FROM product_visibility cfg
+                   JOIN productdims p on cfg.productdims_id = p.id
+                   JOIN reports r on p.product = r.product AND p.version = r.version
+                   WHERE NOT cfg.ignore AND
+                         timestamp without time zone %s - interval %s <= r.date_processed AND
+                         r.date_processed < timestamp without time zone %s + (interval '24 hours' - interval %s) AND
+                         cfg.start_date <= r.date_processed AND r.date_processed <= cfg.end_date AND
+                         hangid IS NOT NULL
+                 ) AS subr
+             GROUP BY subr.prod_id, subr.os_short_name    
+    UNION
+      SELECT count(uuid) as count, %s, p.id AS prod_id, substring(r.os_name, 1, 3) AS os_short_name,
+             timestamp without time zone %s
+      FROM product_visibility cfg
+      JOIN productdims p on cfg.productdims_id = p.id
+      JOIN reports r on p.product = r.product AND p.version = r.version
+      WHERE NOT cfg.ignore AND
+          timestamp without time zone %s - interval %s <= r.date_processed AND
+          r.date_processed < timestamp without time zone %s + (interval '24 hours' - interval %s) AND
+          cfg.start_date <= r.date_processed AND r.date_processed <= cfg.end_date AND
+          hangid IS NOT NULL AND process_type = 'plugin'
+      GROUP BY prod_id, os_short_name
+    UNION
+      SELECT count(uuid) as count, %s, p.id AS prod_id, substring(r.os_name, 1, 3) AS os_short_name,
+             timestamp without time zone %s
+      FROM product_visibility cfg
+      JOIN productdims p on cfg.productdims_id = p.id
+      JOIN reports r on p.product = r.product AND p.version = r.version
+      WHERE NOT cfg.ignore AND
+          timestamp without time zone %s - interval %s <= r.date_processed AND
+          r.date_processed < timestamp without time zone %s + (interval '24 hours' - interval %s) AND
+          cfg.start_date <= r.date_processed AND r.date_processed <= cfg.end_date AND
+          hangid IS NOT NULL AND process_type IS NULL
+      GROUP BY prod_id, os_short_name
+      """
+
 
 def continue_aggregating(previousDay, today):
   return previousDay.date() < today.date()
@@ -92,11 +134,14 @@ def record_crash_stats(config, logger):
       # This should be zero hour if pulled from daily_crashes or product_visibility, but make sure
       previousZeroHour = datetime.datetime(previousDay.year, previousDay.month, previousDay.day)
       socorroTimeToUTCInterval = config.socorroTimeToUTCInterval
-      parameters = (previousDay.date(), previousZeroHour, socorroTimeToUTCInterval, previousZeroHour, socorroTimeToUTCInterval,
-                    previousDay.date(), previousZeroHour, socorroTimeToUTCInterval, previousZeroHour, socorroTimeToUTCInterval)
+      parameters = (aduByDay.CRASH_BROWSER,     previousDay.date(), previousZeroHour, socorroTimeToUTCInterval, previousZeroHour, socorroTimeToUTCInterval,
+                    aduByDay.OOP_PLUGIN,        previousDay.date(), previousZeroHour, socorroTimeToUTCInterval, previousZeroHour, socorroTimeToUTCInterval,
+                    aduByDay.HANGS_NORMALIZED,  previousDay.date(), previousZeroHour, socorroTimeToUTCInterval, previousZeroHour, socorroTimeToUTCInterval,
+                    aduByDay.HANG_PLUGIN,       previousDay.date(), previousZeroHour, socorroTimeToUTCInterval, previousZeroHour, socorroTimeToUTCInterval,
+                    aduByDay.HANG_BROWSER,      previousDay.date(), previousZeroHour, socorroTimeToUTCInterval, previousZeroHour, socorroTimeToUTCInterval)
       try:
         logger.debug("Processing %s crashes for use with ADU data" % previousDay)
-        logger.debug(databaseCursor.mogrify(insert_crashes_sql.encode(databaseCursor.connection.encoding), parameters))        
+        #logger.debug(databaseCursor.mogrify(insert_crashes_sql.encode(databaseCursor.connection.encoding), parameters))        
         databaseCursor.execute(insert_crashes_sql, parameters)
         logger.info("Inserted %d rows" % databaseCursor.rowcount)
         databaseCursor.connection.commit()

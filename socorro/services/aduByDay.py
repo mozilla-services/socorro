@@ -6,10 +6,15 @@ import socorro.webapi.webapiService as webapi
 import socorro.database.database as db
 import socorro.lib.datetimeutil as dtutil
 
+CRASH_BROWSER    = "C"
+OOP_PLUGIN       = "P"
+HANGS_NORMALIZED = "H" # unique hangid
+HANG_BROWSER     = "c"
+HANG_PLUGIN      = "p"
+
 #-----------------------------------------------------------------------------------------------------------------
 def semicolonStringToListSanitized(aString):
   return [x.strip() for x in aString.replace("'","").split(';') if x.strip() != '']
-
   
 #=================================================================================================================
 class AduByDay(webapi.JsonServiceBase):
@@ -69,11 +74,14 @@ class AduByDay(webapi.JsonServiceBase):
       parameters.os_phrase = "os_short_name in (%s)" % osNameListPhrase
     else:
       parameters.os_phrase = '1=1'
-    parameters.report_type_phrase = '1=1'  
+        
     if parameters.report_type == 'crash':
-      parameters.report_type_phrase = "report_type = 'C'"
+      parameters.report_type_phrase = "report_type = '%s'" % CRASH_BROWSER
     elif parameters.report_type == 'hang':
-      parameters.report_type_phrase = "report_type = 'H'"
+      parameters.report_type_phrase = "report_type IN ('%s', '%s')" % (HANG_BROWSER, HANG_PLUGIN)
+    else:
+      # Any report
+      parameters.report_type_phrase = "report_type IN ('%s', '%s', '%s')" % (CRASH_BROWSER, HANGS_NORMALIZED, OOP_PLUGIN)
     sql = """
       SELECT adu_day, os_short_name, SUM(count)
       FROM daily_crashes
@@ -85,6 +93,7 @@ class AduByDay(webapi.JsonServiceBase):
       GROUP BY adu_day, os_short_name
       order by
           1, 2""" % parameters
+    logger.info("hey waszzup")
     #logger.debug('%s', self.connection.cursor().mogrify(sql.encode(self.connection.encoding), parameters))
     return dict((((bucket, os_name), count) for bucket, os_name, count in db.execute(self.connection.cursor(), sql, parameters)))
 
