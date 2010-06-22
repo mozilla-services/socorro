@@ -5,9 +5,10 @@ Code behind startDailyCrash.py
 
 import datetime as datetime
 
+import socorro.database.adu_codes as adu_codes
 import socorro.database.database as db
 import socorro.lib.util as util
-from socorro.services import aduByDay
+
 
 #-----------------------------------------------------------------------------------------------------------------
 def most_recent_day(databaseCursor, logger):
@@ -134,11 +135,11 @@ def record_crash_stats(config, logger):
       # This should be zero hour if pulled from daily_crashes or product_visibility, but make sure
       previousZeroHour = datetime.datetime(previousDay.year, previousDay.month, previousDay.day)
       socorroTimeToUTCInterval = config.socorroTimeToUTCInterval
-      parameters = (aduByDay.CRASH_BROWSER,     previousDay.date(), previousZeroHour, socorroTimeToUTCInterval, previousZeroHour, socorroTimeToUTCInterval,
-                    aduByDay.OOP_PLUGIN,        previousDay.date(), previousZeroHour, socorroTimeToUTCInterval, previousZeroHour, socorroTimeToUTCInterval,
-                    aduByDay.HANGS_NORMALIZED,  previousDay.date(), previousZeroHour, socorroTimeToUTCInterval, previousZeroHour, socorroTimeToUTCInterval,
-                    aduByDay.HANG_PLUGIN,       previousDay.date(), previousZeroHour, socorroTimeToUTCInterval, previousZeroHour, socorroTimeToUTCInterval,
-                    aduByDay.HANG_BROWSER,      previousDay.date(), previousZeroHour, socorroTimeToUTCInterval, previousZeroHour, socorroTimeToUTCInterval)
+      parameters = (adu_codes.CRASH_BROWSER,     previousDay.date(), previousZeroHour, socorroTimeToUTCInterval, previousZeroHour, socorroTimeToUTCInterval,
+                    adu_codes.OOP_PLUGIN,        previousDay.date(), previousZeroHour, socorroTimeToUTCInterval, previousZeroHour, socorroTimeToUTCInterval,
+                    adu_codes.HANGS_NORMALIZED,  previousDay.date(), previousZeroHour, socorroTimeToUTCInterval, previousZeroHour, socorroTimeToUTCInterval,
+                    adu_codes.HANG_PLUGIN,       previousDay.date(), previousZeroHour, socorroTimeToUTCInterval, previousZeroHour, socorroTimeToUTCInterval,
+                    adu_codes.HANG_BROWSER,      previousDay.date(), previousZeroHour, socorroTimeToUTCInterval, previousZeroHour, socorroTimeToUTCInterval)
       try:
         logger.debug("Processing %s crashes for use with ADU data" % previousDay)
         #logger.debug(databaseCursor.mogrify(insert_crashes_sql.encode(databaseCursor.connection.encoding), parameters))        
