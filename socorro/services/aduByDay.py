@@ -76,7 +76,7 @@ class AduByDay(webapi.JsonServiceBase):
       parameters.report_type_phrase = "report_type IN ('%s', '%s')" % (adu_codes.HANG_BROWSER, adu_codes.HANG_PLUGIN)
     else:
       # Any report
-      parameters.report_type_phrase = "report_type IN ('%s', '%s', '%s')" % (adu_codes.CRASH_BROWSER, adu_codes.HANGS_NORMALIZED, adu_codes.OOP_PLUGIN)
+      parameters.report_type_phrase = "report_type IN ('%s', '%s')" % (adu_codes.CRASH_BROWSER, adu_codes.HANGS_NORMALIZED)
     sql = """
       SELECT adu_day, os_short_name, SUM(count)
       FROM daily_crashes
