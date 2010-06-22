@@ -6,19 +6,21 @@
     ), 'screen')?>
 
     <?php echo html::script(array(
-	'js/jquery/plugins/ui/jquery.ui.all.js',       /* ui.accordion.js */
+        'js/jquery/plugins/ui/jquery.ui.all.js',       /* ui.accordion.js */
         'js/jquery/date.js',
         'js/jquery/plugins/ui/jquery.datePicker.js',     /* old school not ui.datepicker.js */
-	'js/jquery/plugins/ui/jquery.tablesorter.min.js',       /* old school not ui.sortable.js */
+        'js/jquery/plugins/ui/jquery.tablesorter.min.js',       /* old school not ui.sortable.js */
         'js/socorro/query.js',
-       'js/socorro/bugzilla.js'
+        'js/socorro/bugzilla.js'
     ))?>
 
     <script type="text/javascript">
     var socSearchFormModel = <?php echo json_encode($params) ?>;
     </script>
-<?php slot::end(); 
+<?php slot::end(); ?>
 
+
+<?php
      View::factory('common/query_form', array(
         'searchFormModel'    => $params,
         'versions_by_product' => $versions_by_product
@@ -30,18 +32,31 @@
     	<h2>Query Results</h2>
     </div>
 
+	<div class="panel">
+	    <div class="body notitle">
+
     <?php 
         View::factory('common/prose_params', array(
             'params'    => $params,
             'platforms' => $all_platforms
         ))->render(TRUE);
 
+        View::factory('moz_pagination/nav')->render(TRUE); 
+
         View::factory('common/list_by_signature', array(
+            'items_per_page' => $items_per_page,
+            'page'      => $page,
             'params'    => $params,
             'platforms' => $all_platforms,
             'reports'   => $reports,
-	    'sig2bugs'   => $sig2bugs
-	))->render(TRUE); 
+	        'sig2bugs'  => $sig2bugs
+        ))->render(TRUE); 
+
+        View::factory('moz_pagination/nav')->render(TRUE); 
 
 
     endif ?>
+
+			<br />
+		</div>
+	</div>
