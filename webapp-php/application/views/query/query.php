@@ -1,15 +1,15 @@
 <?php slot::start('head') ?>
     <title>Query Results - Mozilla Crash Reports</title>
     <?php echo html::stylesheet(array(
-        'css/datePicker.css',
+        'css/jquery.tooltip.css',
         'css/flora/flora.tablesorter.css',
     ), 'screen')?>
 
     <?php echo html::script(array(
         'js/jquery/plugins/ui/jquery.ui.all.js',       /* ui.accordion.js */
-        'js/jquery/date.js',
-        'js/jquery/plugins/ui/jquery.datePicker.js',     /* old school not ui.datepicker.js */
         'js/jquery/plugins/ui/jquery.tablesorter.min.js',       /* old school not ui.sortable.js */
+        'js/jquery/plugins/jquery.dimensions.min.js',
+        'js/jquery/plugins/jquery.tooltip.min.js',
         'js/socorro/query.js',
         'js/socorro/bugzilla.js'
     ))?>

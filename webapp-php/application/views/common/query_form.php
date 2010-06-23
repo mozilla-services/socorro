@@ -60,13 +60,11 @@
 	                  ),
 	                  $params['range_unit']
 	              )?>
-	
-            	<label for="date"> before </label>
-            	<?php echo form::input(
-            		       array('size' => '20', 'name'=>'date', 'id'=>'date'), 
-            	    $params['date']
-            	)?>
 
+				<span id="dateHelp">
+            		<label for="date"> before </label>
+					<input type="text" name="date" id="date" size="20" title="This field must be formatted as MM/DD/YYYY HH:MM:SS" value="<?php out::H($params['date']); ?>" />
+				</span>
             </p>
             
             <p class="advanced">
