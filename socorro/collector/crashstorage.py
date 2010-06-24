@@ -155,22 +155,36 @@ class LegacyThrottler(object):
     # nothing matched, reject
     return True
 
+  ##-----------------------------------------------------------------------------------------------------------------
+  #def throttle (self, jsonData):
+    #if "Throttleable" not in jsonData or int(jsonData.Throttleable):
+      #if self.applyThrottleConditions(jsonData):
+        ##logger.debug('yes, throttle this one')
+        #if self.understandsRefusal(jsonData) and not self.config.neverDiscard:
+          #logger.debug("discarding %s %s", jsonData.ProductName, jsonData.Version)
+          #return LegacyThrottler.DISCARD
+        #else:
+          #logger.debug("deferring %s %s", jsonData.ProductName, jsonData.Version)
+          #return LegacyThrottler.DEFER
+      #else:
+        #logger.debug("not throttled %s %s", jsonData.ProductName, jsonData.Version)
+        #return LegacyThrottler.ACCEPT
+    #else:
+      #logger.debug("cannot be throttled %s %s", jsonData.ProductName, jsonData.Version)
+      #return LegacyThrottler.ACCEPT  
+  
   #-----------------------------------------------------------------------------------------------------------------
   def throttle (self, jsonData):
-    if "Throttleable" not in jsonData or int(jsonData.Throttleable):
-      if self.applyThrottleConditions(jsonData):
-        #logger.debug('yes, throttle this one')
-        if self.understandsRefusal(jsonData) and not self.config.neverDiscard:
-          logger.debug("discarding %s %s", jsonData.ProductName, jsonData.Version)
-          return LegacyThrottler.DISCARD
-        else:
-          logger.debug("deferring %s %s", jsonData.ProductName, jsonData.Version)
-          return LegacyThrottler.DEFER
+    if self.applyThrottleConditions(jsonData):
+      #logger.debug('yes, throttle this one')
+      if self.understandsRefusal(jsonData) and not self.config.neverDiscard:
+        logger.debug("discarding %s %s", jsonData.ProductName, jsonData.Version)
+        return LegacyThrottler.DISCARD
       else:
-        logger.debug("not throttled %s %s", jsonData.ProductName, jsonData.Version)
-        return LegacyThrottler.ACCEPT
+        logger.debug("deferring %s %s", jsonData.ProductName, jsonData.Version)
+        return LegacyThrottler.DEFER
     else:
-      logger.debug("cannot be throttled %s %s", jsonData.ProductName, jsonData.Version)
+      logger.debug("not throttled %s %s", jsonData.ProductName, jsonData.Version)
       return LegacyThrottler.ACCEPT
 
 #=================================================================================================================
