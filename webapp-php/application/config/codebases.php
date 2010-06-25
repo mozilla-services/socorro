@@ -14,6 +14,8 @@ $config['vcsMappings'] = array(
 	    'http://hg.mozilla.org/releases/mozilla-1.9.1/annotate/%(revision)s/%(file)s#l%(line)s',
 	'hg.mozilla.org/releases/mozilla-1.9.2' => 
 	    'http://hg.mozilla.org/releases/mozilla-1.9.2/annotate/%(revision)s/%(file)s#l%(line)s',
+	'hg.mozilla.org/releases/mozilla-1.9.3' => 
+	    'http://hg.mozilla.org/releases/mozilla-1.9.3/annotate/%(revision)s/%(file)s#l%(line)s',
         'hg.mozilla.org/projects/electrolysis' => 
 	    'http://hg.mozilla.org/projects/electrolysis/annotate/%(revision)s/%(file)s#l%(line)s',
         'hg.mozilla.org/projects/firefox-lorentz' =>
