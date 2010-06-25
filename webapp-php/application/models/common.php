@@ -112,7 +112,7 @@ class Common_Model extends Model {
         if ($return_type == 'results') {
             $sql .= " SELECT " . join(', ', $columns); 
         } elseif ($return_type == 'count') {
-            $sql .= " SELECT COUNT(DISTINCT reports.signature) as count ";
+            $sql .= " SELECT COUNT(reports.signature) as count ";
         } 
 
         $sql .= " FROM   " . join(', ', $from_tables);
