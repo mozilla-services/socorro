@@ -76,7 +76,7 @@ class Common_Model extends Model {
      * @param  int  The offset for this query
      * @return array|int Return an array of results of return_type = 'results', integer if 'counts'
      */
-    public function queryTopSignatures($params, $return_type='results', $items_per_page='100', $offset) {
+    public function queryTopSignatures($params, $return_type='results', $items_per_page=100, $offset=0) {
         $return_type = ($return_type == 'results') ? 'results' : 'count';
 
         $columns = array(
@@ -112,7 +112,7 @@ class Common_Model extends Model {
         if ($return_type == 'results') {
             $sql .= " SELECT " . join(', ', $columns); 
         } elseif ($return_type == 'count') {
-            $sql .= " SELECT COUNT(reports.signature) as count ";
+            $sql .= " SELECT COUNT(DISTINCT reports.signature) as count ";
         } 
 
         $sql .= " FROM   " . join(', ', $from_tables);
