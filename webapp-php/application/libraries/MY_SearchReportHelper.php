@@ -111,10 +111,13 @@ class SearchReportHelper{
             $params['range_value'] = $range_default_value;
             $params['range_unit'] = $range_default_unit;
         }
-        elseif ($valueInDays > $range_limit_value_in_days && !$params['admin']) {
+        elseif (
+            $valueInDays > $range_limit_value_in_days && 
+            (!isset($params['admin']) || $params['admin'] === false)
+        ) {
 			$error_message = 'The maximum query date range you can perform is ' . $range_limit_value_in_days . ' days. Admins may log in to increase query date range limits.';
         } 
-        elseif ($valueInDays > $range_limit_value_in_days && $params['admin']) {
+        elseif ($valueInDays > $range_limit_value_in_days && (isset($params['admin']) && $params['admin'] === true)) {
 			$error_message = 'The maximum query date range you can perform is ' . $range_limit_value_in_days . ' days.';  
         }
 		elseif (

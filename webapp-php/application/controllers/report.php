@@ -71,6 +71,7 @@ class Report_Controller extends Controller {
 	$d['missing_sig'] = '';
 
         $params = $this->getRequestParameters($d);
+        $params['admin'] = ($this->auth_is_active && Auth::instance()->logged_in()) ? true : false;
 
         $helper->normalizeParams( $params );
         $this->_setupDisplaySignature($params);
