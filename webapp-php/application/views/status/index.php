@@ -28,36 +28,28 @@
                 <td><span class="server-status <?php echo $status ?>"><?php echo ucwords($status); ?></span></td>
             </tr>
             <tr>
-                <td>Server Time</td>
-                <td><?= date('Y-m-d H:i:s', time()) ?></td>
+                <td>Server Time</td><td><?= date('Y-m-d H:i:s', time()) ?></td>
             </tr>
             <tr>
-                <td>Stats Created At</td>
-                <td><?php echo $stat->date_created ?></td>                
+                <td>Stats Created At</td><td><?php echo $stat->date_created ?></td>                
             </tr>
             <tr>
-                <td>Waiting Jobs</td>
-                <td><?php echo $stat->waiting_job_count ?></td>
+                <td>Waiting Jobs</td><td><?php echo $stat->waiting_job_count ?></td>
             </tr>
             <tr>
-                <td>Processors Running</td>
-                <td><?php echo $stat->processors_count ?></td>
+                <td>Processors Running</td><td><?php echo $stat->processors_count ?></td>
             </tr>
             <tr>
-                <td>Average Seconds to Process</td>
-                <td><?php echo $stat->avg_process_sec ?></td>
+                <td>Average Seconds to Process</td><td><?php echo $stat->avg_process_sec ?></td>
             </tr>
             <tr>
-                <td>Average Wait in Seconds</td>
-                <td><?php echo $stat->avg_wait_sec ?></td>
+                <td>Average Wait in Seconds</td><td><?php echo $stat->avg_wait_sec ?></td>
             </tr>
             <tr>
-                <td>Recently Completed</td>
-                <td><?php echo $stat->date_recently_completed ?></td>
+                <td>Recently Completed</td><td><?php echo $stat->date_recently_completed ?></td>
             </tr>
             <tr>
-                <td>Oldest Job In Queue</td>
-                <td><?php echo $stat->date_oldest_job_queued ?></td>
+                <td>Oldest Job In Queue</td><td><?php echo $stat->date_oldest_job_queued ?></td>
             </tr>
         </table>
         
