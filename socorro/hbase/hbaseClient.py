@@ -133,7 +133,7 @@ def optional_retry_wrapper(fn):
   def f(self, *args, **kwargs):
     number_of_retries = kwargs.setdefault('number_of_retries', 1)
     del kwargs['number_of_retries']
-    wait_between_retries = kwargs.setdefault('wait_between_retries', 1)
+    wait_between_retries = kwargs.setdefault('wait_between_retries', 6)
     del kwargs['wait_between_retries']
     countdown = number_of_retries + 1
     while countdown:

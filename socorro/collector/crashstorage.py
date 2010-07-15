@@ -268,7 +268,7 @@ class CrashStorageSystemForHBase(CrashStorageSystem):
   def save_raw (self, uuid, jsonData, dump, currentTimestamp):
     try:
       jsonDataAsString = json.dumps(jsonData)
-      self.hbaseConnection.put_json_dump(uuid, jsonData, dump.read(), number_of_retries=1)
+      self.hbaseConnection.put_json_dump(uuid, jsonData, dump.read(), number_of_retries=2)
       return CrashStorageSystem.OK
     except Exception, x:
       sutil.reportExceptionAndContinue(self.logger)
@@ -276,35 +276,35 @@ class CrashStorageSystemForHBase(CrashStorageSystem):
 
   #-----------------------------------------------------------------------------------------------------------------
   def save_processed (self, uuid, jsonData):
-    self.hbaseConnection.put_processed_json(uuid, jsonData, number_of_retries=1)
+    self.hbaseConnection.put_processed_json(uuid, jsonData, number_of_retries=2)
 
   #-----------------------------------------------------------------------------------------------------------------
   def get_meta (self, uuid):
-    return self.hbaseConnection.get_json(uuid, number_of_retries=1)
+    return self.hbaseConnection.get_json(uuid, number_of_retries=2)
 
   #-----------------------------------------------------------------------------------------------------------------
   def get_raw_dump (self, uuid):
-    return self.hbaseConnection.get_dump(uuid, number_of_retries=1)
+    return self.hbaseConnection.get_dump(uuid, number_of_retries=2)
 
   #-----------------------------------------------------------------------------------------------------------------
   def get_raw_dump_base64 (self, uuid):
-    dump = self.get_raw_dump(uuid, number_of_retries=1)
+    dump = self.get_raw_dump(uuid, number_of_retries=2)
     return base64.b64encode(dump)
 
   #-----------------------------------------------------------------------------------------------------------------
   def get_processed (self, uuid):
-    return self.hbaseConnection.get_processed_json(uuid, number_of_retries=1)
+    return self.hbaseConnection.get_processed_json(uuid, number_of_retries=2)
 
   #-----------------------------------------------------------------------------------------------------------------
   def uuidInStorage (self, uuid):
-    return self.hbaseConnection.acknowledge_ooid_as_legacy_priority_job(uuid, number_of_retries=1)
+    return self.hbaseConnection.acknowledge_ooid_as_legacy_priority_job(uuid, number_of_retries=2)
 
   #-----------------------------------------------------------------------------------------------------------------
   def dumpPathForUuid(self, uuid, basePath):
     dumpPath = ("%s/%s.dump" % (basePath, uuid)).replace('//', '/')
     f = open(dumpPath, "w")
     try:
-      dump = self.hbaseConnection.get_dump(uuid, number_of_retries=1)
+      dump = self.hbaseConnection.get_dump(uuid, number_of_retries=2)
       f.write(dump)
     finally:
       f.close()
@@ -346,7 +346,7 @@ class CollectorCrashStorageSystemForHBase(CrashStorageSystemForHBase):
   def save_raw (self, uuid, jsonData, dump, currentTimestamp):
     try:
       jsonDataAsString = json.dumps(jsonData)
-      self.hbaseConnection.put_json_dump(uuid, jsonData, dump.read(), number_of_retries=1)
+      self.hbaseConnection.put_json_dump(uuid, jsonData, dump.read(), number_of_retries=2)
       return CrashStorageSystem.OK
     except Exception, x:
       sutil.reportExceptionAndContinue(self.logger)
