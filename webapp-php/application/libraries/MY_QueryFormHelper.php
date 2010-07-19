@@ -61,7 +61,7 @@ class QueryFormHelper
 
         $versions_by_product = array();
         foreach($branch_data['products'] as $product){
-	        $versions_by_product[$product->product] = array();      
+	        $versions_by_product[$product] = array();      
 	    }
 	    $versions_by_product_reversed = $versions_by_product;
 
@@ -95,7 +95,7 @@ class QueryFormHelper
 	    $versionCompare = new VersioncompareComponent();
         $versions_by_product = array();
         foreach($branch_data['products'] as $product){
-	        $versions_by_product[$product->product] = array();      
+	        $versions_by_product[$product] = array();      
 	    }
 	    foreach($branch_data['versions'] as $version){
             array_push($versions_by_product[$version->product], $version->version);
@@ -139,43 +139,4 @@ class QueryFormHelper
 	    return $current;
     }
 
-    /**
-     * Given an array with the format product to version list,
-     * this function will return an array of the current released 
-     * versions of each products.
-     * 
-     * @param array - Input Example: {'Firefox': ['3.5', '3.0.10'], ...}
-     * @return array - 
-     * Output Example: {'Firefox': {'major': '3.5', 
-     *                              'milestone': '3.5b99',
-     *                              'development': '3.6pre'} ...}
-     */
-    public function olderProducts($current, $products2versions)
-    {
-        $older = array();
-	    $release = new Release;
-        foreach ($products2versions as $product => $versions) {
-	        if (count($versions) > 0) {
-    	        foreach (array_reverse($versions) as $v) {
-	      	        $release_type = $release->typeOfRelease($v);
-    	    	    if (
-                        ! array_key_exists($product, $current) ||
-    			        ! array_key_exists($release_type, $current[$product]) ||
-        			    $v != $current[$product][$release_type] 
-                    ) {
-            		    if (! array_key_exists($product, $older)) {
-    	    		        $older[$product] = array();
-    		    	    }
-    		            if (! array_key_exists($release_type, $older[$product])) {
-    			            $older[$product][$release_type] = array();
-        		        }
-    	    	        array_push($older[$product][$release_type], $v);
-        		    } 
-	            }
-	        }
-        }
-	    uksort($older, 'strcasecmp');
-	    return $older;
-    }
 }
-?>

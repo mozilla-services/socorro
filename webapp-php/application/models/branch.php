@@ -1,4 +1,45 @@
 <?php defined('SYSPATH') or die('No direct script access.');
+
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is Socorro Crash Reporter
+ *
+ * The Initial Developer of the Original Code is
+ * The Mozilla Foundation.
+ * Portions created by the Initial Developer are Copyright (C) 2006
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *   Ryan Snyder <rsnyder@mozilla.com>
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either the GNU General Public License Version 2 or later (the "GPL"), or
+ * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
+
+require_once(Kohana::find_file('libraries', 'release', TRUE, 'php'));
+require_once(Kohana::find_file('libraries', 'versioncompare', TRUE, 'php'));
+
 /**
  * Common model class managing the branches table.
  *
@@ -6,6 +47,27 @@
  * @subpackage 	Models
  */
 class Branch_Model extends Model {
+
+    /**
+     * Take an array of version objects, and return an array of sorted version numbers.  Return
+     * array in reverse order.
+     *
+     * @param array An array of version objects
+     * @param array An array of version numbers
+     */
+    private function _sortVersions($versions)
+    {
+        $versions_array = array();
+        foreach ($versions as $version) {
+            $versions_array[] = $version->version;
+        }
+
+        $vc = new VersioncompareComponent();
+        $vc->sortAppversionArray($versions_array);
+        rsort($versions_array);
+
+        return $versions_array;
+    }
 
     /**
      * Add a new record to the branches view, via the productdims and product_visibility tables.
@@ -16,11 +78,12 @@ class Branch_Model extends Model {
 	 * @param 	string 	The Gecko branch number (e.g. '1.9', '1.9.1', '1.9.2', '1.9.3', '1.9.4')
 	 * @param 	string	The start date for this product YYYY-MM-DD
 	 * @param 	string	The end date for this product YYYY-MM-DD (usually +90 days)
+	 * @param   bool    True if version should be featured on the dashboard; false if not.
 	 * @return 	object	The database query object
      */
-    public function add($product, $version, $branch, $start_date, $end_date) {
+    public function add($product, $version, $branch, $start_date, $end_date, $featured=false) {
 		if ($product_version = $this->getByProductVersion($product, $version)) {
-			return $this->update($product, $version, $branch, $start_date, $end_date);
+			return $this->update($product, $version, $branch, $start_date, $end_date, $featured);
 		} else {
 			$release = $this->determine_release($version);
 			try {
@@ -32,7 +95,7 @@ class Branch_Model extends Model {
 			} catch (Exception $e) {
 				Kohana::log('error', "Could not add \"$product\" \"$version\" in soc.web branch.add \r\n " . $e->getMessage());
 			}
-			$this->addProductVisibility($product, $version, $start_date, $end_date);
+			$this->addProductVisibility($product, $version, $start_date, $end_date, $featured);
 			if (isset($rv)) {
 				return $rv;
 			}
@@ -47,15 +110,16 @@ class Branch_Model extends Model {
 	 * @param 	string 	The version number (e.g. '3.5', '3.5.1', '3.5.1pre', '3.5.2', '3.5.2pre')
 	 * @param 	string	The release date for this product YYYY-MM-DD
 	 * @param 	string	The end date for this product YYYY-MM-DD (usually +90 days)
+	 * @param   bool    True if version should be featured on the dashboard; false if not.	 
 	 * @return 	void
      */
-	private function addProductVisibility($product, $version, $start_date, $end_date) {
+	private function addProductVisibility($product, $version, $start_date, $end_date, $featured=false) {
 		$this->db->query("/* soc.web branch.addProductVisibility */
-				INSERT INTO product_visibility (productdims_id, start_date, end_date) 
-                SELECT id, ? as start_date, ? as end_date 
+				INSERT INTO product_visibility (productdims_id, start_date, end_date, featured) 
+                SELECT id, ? as start_date, ? as end_date, ? as featured 
 	            FROM productdims 
 	            WHERE product = ? AND version = ?
-		        ", $start_date, $end_date, $product, $version
+		        ", $start_date, $end_date, $featured, $product, $version
 		);
 	}
 
@@ -199,15 +263,24 @@ class Branch_Model extends Model {
     /**
      * Fetch the names of all unique products.
  	 *
-	 * @return array 	An array of product objects
+	 * @return array 	An array of products
      */
     public function getProducts() {
-        return $this->fetchRows(
+        $results = $this->fetchRows(
 			'/* soc.web branch.products */ 
 				SELECT DISTINCT product 
 				FROM branches 
 				ORDER BY product
 			');
+
+		if (isset($results[0])) {
+		    $products = array();
+		    foreach ($results as $result) {
+		        array_push($products, $result->product);
+		    }
+		    return $products;
+		}
+		return false;
     }
 
     /**
@@ -234,7 +307,7 @@ class Branch_Model extends Model {
     public function getProductVersions() {
         return $this->fetchRows(
 			'/* soc.web branch.prodversions */ 
-				SELECT DISTINCT pd.id, pd.product, pd.version, pd.branch, pd.release, pv.start_date, pv.end_date
+				SELECT DISTINCT pd.id, pd.product, pd.version, pd.branch, pd.release, pv.start_date, pv.end_date, pv.featured
 				FROM productdims pd
 				INNER JOIN product_visibility pv ON pv.productdims_id = pd.id
 				ORDER BY pd.product, pd.version
@@ -251,13 +324,34 @@ class Branch_Model extends Model {
         $date = date("Y-m-d");
         return $this->fetchRows(
 			'/* soc.web branch.prodversions */ 
-				SELECT DISTINCT pd.id, pd.product, pd.version, pd.branch, pd.release, pv.start_date, pv.end_date
+				SELECT DISTINCT pd.id, pd.product, pd.version, pd.branch, pd.release, pv.start_date, pv.end_date, pv.featured
 				FROM productdims pd
 				INNER JOIN product_visibility pv ON pv.productdims_id = pd.id
 				WHERE pv.start_date <= ?
 				AND pv.end_date >= ?
 				ORDER BY pd.product, pd.version
 			', true, array($date, $date));
+    }
+    
+    /**
+     * Fetch all versions of a product that have a start date that is prior to today's
+     * date and an end date that is after today's date.
+     *
+     * @param string    A product name
+     * @return array    An array of version objects
+     */
+    public function getCurrentProductVersionsByProduct($product) {
+        $date = date("Y-m-d");
+        return $this->fetchRows(
+			'/* soc.web branch.prodversions */ 
+				SELECT DISTINCT pd.id, pd.product, pd.version, pd.branch, pd.release, pv.start_date, pv.end_date, pv.featured
+				FROM productdims pd
+				INNER JOIN product_visibility pv ON pv.productdims_id = pd.id
+				WHERE pd.product = ?
+				AND pv.start_date <= ?
+				AND pv.end_date >= ?
+				ORDER BY pd.product, pd.version
+			', true, array($product, $date, $date));
     }
 
     /**
@@ -273,7 +367,7 @@ class Branch_Model extends Model {
     public function getProductVersionsByDate($product, $start_date, $end_date) {
         return $this->fetchRows(
 			'/* soc.web branch.prodversions */ 
-				SELECT DISTINCT pd.id, pd.product, pd.version, pd.branch, pd.release, pv.start_date, pv.end_date
+				SELECT DISTINCT pd.id, pd.product, pd.version, pd.branch, pd.release, pv.start_date, pv.end_date, pv.featured
 				FROM productdims pd
 				INNER JOIN product_visibility pv ON pv.productdims_id = pd.id
 				WHERE pd.product = ? 
@@ -293,7 +387,7 @@ class Branch_Model extends Model {
     public function getProductVersionsByProduct($product) {
         return $this->fetchRows(
 			'/* soc.web branch.prodversions */ 
-				SELECT DISTINCT pd.id, pd.product, pd.version, pd.branch, pd.release, pv.start_date, pv.end_date
+				SELECT DISTINCT pd.id, pd.product, pd.version, pd.branch, pd.release, pv.start_date, pv.end_date, pv.featured
 				FROM productdims pd
 				INNER JOIN product_visibility pv ON pv.productdims_id = pd.id
 				WHERE pd.product = ? 
@@ -309,7 +403,7 @@ class Branch_Model extends Model {
 	 */
 	public function getProductVersionsWithoutVisibility () {
         return $this->fetchRows('/* soc.web branch.getProductVersionsWithoutVisibility */
-			SELECT DISTINCT pd.id, pd.product, pd.version, pd.branch, pd.release, pv.start_date, pv.end_date
+			SELECT DISTINCT pd.id, pd.product, pd.version, pd.branch, pd.release, pv.start_date, pv.end_date, pv.featured
 			FROM productdims pd
 			LEFT OUTER JOIN product_visibility pv ON pv.productdims_id = pd.id
 			WHERE pv.start_date IS NULL and pv.end_date IS NULL
@@ -388,6 +482,134 @@ class Branch_Model extends Model {
 		}
 		return false;
     }
+    
+    /**
+     * Fetch the featured versions for a particular product.
+     *
+     * @param string    The product name
+     * @return array    An array of featured versions
+     */
+    public function getFeaturedVersions($product)
+    {
+        $date = date("Y-m-d");
+        $versions = $this->fetchRows(
+			'/* soc.web branch.getFeaturedVersions */ 
+				SELECT DISTINCT pd.id, pd.product, pd.version, pd.branch, pd.release, pv.start_date, pv.end_date, pv.featured
+				FROM productdims pd
+				INNER JOIN product_visibility pv ON pv.productdims_id = pd.id
+				WHERE pd.product = ?
+				AND pv.start_date <= ?
+				AND pv.end_date >= ?
+				AND pv.featured = true
+				ORDER BY pd.product, pd.version
+			', true, array($product, $date, $date));
+
+        if (isset($versions[0])) {
+            rsort($versions);
+            return $versions;
+        } else {
+            return $this->getFeaturedVersionsDefault($product);
+        }
+        return 0;
+    } 
+
+    /**
+     * Determine the featured versions for a particular product if there are no 
+     * versions that have been declared featured versions.
+     *
+     * @param string    The product name
+     * @return array    An array of featured versions
+     */
+    private function getFeaturedVersionsDefault($product)
+    {
+        if ($versions = $this->getCurrentProductVersionsByProduct($product)) {
+            $versions_array = $this->_sortVersions($versions);
+            $featured_versions = array();
+            foreach (array(Release::MAJOR, Release::MILESTONE, Release::DEVELOPMENT) as $release) {
+                foreach ($versions_array as $va) {
+                    foreach ($versions as $version) {
+                        if (
+                            !isset($featured_versions[$release]) &&
+                            $version->version == $va &&
+                            $version->release == $release
+                        ) {
+                            $featured_versions[$release] = $version;
+                        }
+                    }
+                }
+            }
+            rsort($featured_versions);
+            return $featured_versions;
+        }
+        return false;
+    }
+    
+    /**
+     * Fetch the total number of featured versions for this product, excluding a specific version.
+     *
+     * @param  string product 
+     * @param  string version
+     * @return int  Number of versions featured
+     */
+    public function getFeaturedVersionsExcludingVersionCount($product, $version)
+    {
+        $date = date('Y-m-d');
+        $result = $this->db->query(
+            '/* soc.web branch.getFeaturedVersionsExcludingVersionCount() */ 
+               SELECT COUNT(*) as versions_count
+               FROM product_visibility pv
+               JOIN productdims pd ON pd.id = pv.productdims_id
+               WHERE pd.product = ?
+               AND pd.version != ?
+               AND pv.featured = true
+               AND pv.start_date <= ?
+			   AND pv.end_date >= ?			
+            '
+            , trim($product), trim($version), $date, $date
+        );
+        if (isset($result[0]->versions_count)) {
+            return $result[0]->versions_count;
+        }
+        return 0;
+    }
+    
+    /**
+     * Fetch all of the versions for a particular product that are not featured.
+     *
+     * @param string    The product name
+     * @param array     An array of featured versions
+     * @return array    An array of unfeatured versions
+     */
+    public function getUnfeaturedVersions($product, $featured_versions)
+    {
+        $date = date('Y-m-d');
+        $versions = $this->fetchRows(
+			'/* soc.web branch.getFeaturedVersions */ 
+				SELECT DISTINCT pd.id, pd.product, pd.version, pd.branch, pd.release, pv.start_date, pv.end_date, pv.featured
+				FROM productdims pd
+				INNER JOIN product_visibility pv ON pv.productdims_id = pd.id
+				WHERE pd.product = ?
+				AND pv.start_date <= ?
+				AND pv.end_date >= ?
+				AND pv.featured = false
+				ORDER BY pd.product, pd.version
+			', true, array($product, $date, $date));
+
+        if (isset($versions[0])) {
+            if (isset($featured_versions) && !empty($featured_versions)) {
+                foreach($featured_versions as $featured_version) {
+                    foreach ($versions as $key => $version) {
+                        if ($featured_version->version == $version->version) {
+                            unset($versions[$key]);
+                        }
+                    }
+                }
+            }
+            rsort($versions);
+            return $versions;
+        }
+        return false;
+    }
 
     /**
      * Update the branch and release fields of an existing record in the branches view, 
@@ -399,9 +621,10 @@ class Branch_Model extends Model {
 	 * @param 	string 	The Gecko branch number (e.g. '1.9', '1.9.1', '1.9.2', '1.9.3', '1.9.4')
 	 * @param 	string	The start date for this product YYYY-MM-DD
 	 * @param 	string	The end date for this product YYYY-MM-DD (usually +90 days)
+     * @param   bool    True if version should be featured on the dashboard; false if not. 
 	 * @return 	object	The database query object
      */
-    public function update($product, $version, $branch, $start_date, $end_date) {
+    public function update($product, $version, $branch, $start_date, $end_date, $featured=false) {
 		if ($product_version = $this->getByProductVersion($product, $version)) {
  			$release = $this->determine_release($version);
 			$rv = $this->db->query("/* soc.web branch.update */
@@ -411,10 +634,10 @@ class Branch_Model extends Model {
 				AND version = ?
 			 	", $branch, $release, $product, $version
 			);
-			$this->updateProductVisibility($product, $version, $start_date, $end_date);
+			$this->updateProductVisibility($product, $version, $start_date, $end_date, $featured);
 			return $rv;
 		} else {
-			return $this->add($product, $version, $branch, $start_date, $end_date);
+			return $this->add($product, $version, $branch, $start_date, $end_date, $featured);
 		}
 	}
 
@@ -427,19 +650,20 @@ class Branch_Model extends Model {
 	 * @param 	string 	The version number (e.g. '3.5', '3.5.1', '3.5.1pre', '3.5.2', '3.5.2pre')
 	 * @param 	string	The start date for this product YYYY-MM-DD
 	 * @param 	string	The end date for this product YYYY-MM-DD (usually +90 days)
+	 * @param   bool    True if version should be featured on the dashboard; false if not.	 
 	 * @return 	void
      */
-	private function updateProductVisibility($product, $version, $start_date, $end_date) {
+	private function updateProductVisibility($product, $version, $start_date, $end_date, $featured=false) {
 		if ($product_version = $this->getByProductVersion($product, $version)) {
 			if ($product_visibility = $this->getProductVisibility($product_version->id)) {
 				$sql = "/* soc.web branch.updateProductVisibility */ 
 					UPDATE product_visibility
-					SET start_date = ?, end_date = ?
+					SET start_date = ?, end_date = ?, featured = ?
 					WHERE productdims_id = ?
 				"; 		
-				$this->db->query($sql, trim($start_date), trim($end_date), $product_version->id);
+				$this->db->query($sql, trim($start_date), trim($end_date), $featured, $product_version->id);
 			} else {
-				$this->addProductVisibility($product, $version, $start_date, $end_date);
+				$this->addProductVisibility($product, $version, $start_date, $end_date, $featured);
 			}
 		}
 	}

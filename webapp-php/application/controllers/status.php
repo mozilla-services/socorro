@@ -49,7 +49,6 @@ class Status_Controller extends Controller {
     public function __construct()
     {
         parent::__construct();
-        $this->ensureChosenVersion($this->currentProducts(), FALSE);
     }
 
     /**

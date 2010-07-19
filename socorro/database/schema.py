@@ -968,7 +968,8 @@ class ProductVisibilityTable(Table):
                                    productdims_id integer NOT NULL PRIMARY KEY,
                                    start_date timestamp, -- set this manually for all mat views
                                    end_date timestamp,   -- set this manually: Used by mat views that care
-                                   ignore boolean default False -- force aggregation off for this product id
+                                   ignore boolean default False, -- force aggregation off for this product id
+                                   featured boolean default false
                                    );
                                    CREATE INDEX product_visibility_end_date ON product_visibility (end_date);
                                    CREATE INDEX product_visibility_start_date on product_visibility (start_date);

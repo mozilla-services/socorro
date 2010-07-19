@@ -58,7 +58,6 @@ class Query_Controller extends Controller {
     {
         parent::__construct();
         $this->bug_model = new Bug_Model;
-        $this->ensureChosenVersion($this->currentProducts(), FALSE); // Force product selection (Not always working on this page)
     }
 
     /**

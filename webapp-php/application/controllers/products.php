@@ -57,16 +57,9 @@ class Products_Controller extends Controller {
     public function __construct()
     {
         parent::__construct();
-	    $this->branch_model = new Branch_Model;
 	    $this->daily_model = new Daily_Model;
         $this->topcrashers_model = new Topcrashers_Model;
 
-	    $products = $this->branch_model->getProducts();
-	    $this->products = array();
-	    foreach ($products as $product) {
-	        $this->products[] = $product->product;
-	    }
-	    
 	    cachecontrol::set(array(
             'expires' => time() + Kohana::config('products.cache_expires')
         ));
@@ -210,6 +203,68 @@ class Products_Controller extends Controller {
         }
         return false;
     }
+    
+    /**
+     * Verify that this product on this page is stored in $this->chosen_version;  If so, proceed.
+     * If not, ensure that this product is stored in session and redirect the user so that My_Controller
+     * will refresh with the proper selected versions.
+     *
+     * @param   string  The name of a product
+     * @return  void
+     */
+    private function _productSelected($product)
+    {
+        if ($product != $this->chosen_version['product']) {
+            $this->chooseVersion(
+                array(
+                    'product' => trim($product),
+                    'version' => null,
+                    'release' => null,
+                )
+            );
+            $this->prepareVersions(); // Update the featured and unfeatured versions
+        }
+    }
+
+    /**
+     * Verify that the selected version is a valid version for this product.
+     *
+     * @param   string  The name of a version
+     * @return  void
+     */
+    private function _versionExists($version)
+    {
+        $product_versions = array_merge($this->featured_versions, $this->unfeatured_versions);
+        foreach ($product_versions as $product_version) {
+            if ($product_version->version == $version) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Verify that this product on this page is stored in $this->chosen_version;  If so, proceed.
+     * If not, ensure that this product is stored in session and redirect the user so that My_Controller
+     * will refresh with the proper selected versions.
+     *
+     * @param   string  The name of a product
+     * @param   string  The name of a version
+     * @return  void
+     */
+    private function _versionSelected($product, $version)
+    {
+        if ($this->chosen_version['product'] != $product || $this->chosen_version['version'] != $version) {
+            $this->chooseVersion(
+                array(
+                    'product' => trim($product),
+                    'version' => trim($version),
+                    'release' => null
+                )
+            );
+            $this->prepareVersions(); // Update the featured and unfeatured versions
+        }
+    }
 
     /**
      * Display the dashboard for a product or a product/version combination.
@@ -226,39 +281,22 @@ class Products_Controller extends Controller {
     {
         if (empty($product)) {
             $this->products();
-        } elseif (in_array($product, $this->products)) {
+        } elseif (in_array($product, $this->current_products)) {
+            $this->_productSelected($product);
+            
             if (!empty($version)) {
-                $productVersions = $this->branch_model->getProductVersionsByProduct($product);
-                $version_found = false;
-                foreach ($productVersions as $productVersion) {
-                    if ($productVersion->version == $version) {
-                        $version_found = true;
-                        $this->chooseVersion(
-                            array(
-                                'product' => $product,
-                                'version' => $version,
-                                'release' => null
-                            )
-                        );                        
-                        if ($builds == 'builds') {
-                            $this->productVersionBuilds($product, $version, $rss);                            
-                        } else {
-                            $this->productVersion($product, $version);
-                        }
+                $this->_versionSelected($product, $version);
+                if ($this->_versionExists($version)) {
+                    if ($builds == 'builds') {
+                        $this->productVersionBuilds($product, $version, $rss);                            
+                    } else {
+                        $this->productVersion($product, $version);
                     }
-                }
-                
-                if (!$version_found) {
+                } else {
                     Kohana::show_404();
                 }
             } else {
-                $this->chooseVersion(
-                    array(
-                        'product' => $product,
-                        'version' => null,
-                        'release' => null
-                    )
-                );
+                $this->_productSelected($product);
                 if ($builds == 'builds') {
                     $this->productBuilds($product, $rss);                            
                 } else {
@@ -292,28 +330,23 @@ class Products_Controller extends Controller {
             $versions[] = $productVersion->version;
         }
 
-        $current_products = $this->currentProducts();
         $top_changers = null;
         $top_crashers = array();
         $daily_versions = array();
         $num_signatures = Kohana::config("products.topcrashers_count");
         $i = 0;
-        foreach (array(Release::MAJOR, Release::MILESTONE, Release::DEVELOPMENT) as $release) {
-            if (isset($current_products[$product][$release]) && !empty($current_products[$product][$release])) {
-                $top_crashers[$i] = $this->topcrashers_model->getTopCrashersViaWebService(
-                    $product, 
-                    $current_products[$product][$release], 
-                    $duration                    
-                );
-                $top_crashers[$i]->product = $product;
-                $top_crashers[$i]->version = $current_products[$product][$release];
-
-                $daily_versions[] = $current_products[$product][$release];
-
-                $i++;
-            }
+        foreach($this->featured_versions as $featured_version) {
+            $top_crashers[$i] = $this->topcrashers_model->getTopCrashersViaWebService(
+                $product, 
+                $featured_version->version, 
+                $duration                    
+            );
+            $top_crashers[$i]->product = $product;
+            $top_crashers[$i]->version = $featured_version->version;
+            
+            $daily_versions[] = $featured_version->version;
+            $i++;
         }
-        
         $top_changers = $this->_determineTopchangersProduct($top_crashers);
         
         $results = $this->daily_model->get($product, $daily_versions, $operating_systems, $date_start, $date_end, 'any');
@@ -509,7 +542,7 @@ class Products_Controller extends Controller {
         $this->setViewData(
             array(
                'base_url' => url::site('products'),
-               'products'  => $this->products,
+               'products'  => $this->current_products,
                'nav_selection' => null,
    	        )
    	    );

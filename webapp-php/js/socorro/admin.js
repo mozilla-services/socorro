@@ -13,7 +13,7 @@ function branchAddProductVersionFill(product, version) {
 }
 
 // Open the update product version form and fill the fields in with given input
-function branchUpdateProductVersionFill(product, version, branch, start_date, end_date) {
+function branchUpdateProductVersionFill(product, version, branch, start_date, end_date, featured) {
 	$('#update_product_version').show('fast'); 
 	$('#update_product').val(product);
 	$('#update_product_display').html(product);
@@ -22,6 +22,11 @@ function branchUpdateProductVersionFill(product, version, branch, start_date, en
 	$('#update_branch').val(branch);
 	$('#update_start_date').val(start_date);
 	$('#update_end_date').val(end_date);
+	if (featured == 't') {
+	    $('#update_featured').attr('checked','checked');
+	} else {
+	    $('#update_featured').removeAttr('checked');        
+	}
 	$('#update_branch').focus();
 }
 

@@ -108,8 +108,7 @@ class Topcrasher_Controller extends Controller {
         }
 
         // generate list of all versions
-        $branches = new Branch_Model();
-        $prod_versions = $branches->getProductVersions();
+        $prod_versions = $this->branch_model->getProductVersions();
         $all_versions = array();
         foreach ($prod_versions as $ver) {
             $all_versions[$ver->product][] = $ver->version;

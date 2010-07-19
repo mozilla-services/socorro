@@ -21,7 +21,6 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- *   Ryan Snyder <rsnyder@mozilla.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -37,44 +36,49 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-/**
- * Custom controller subclass used throughout application
- */
 set_include_path(APPPATH . 'vendor' . PATH_SEPARATOR . get_include_path());
-
 require_once(Kohana::find_file('libraries', 'MY_QueryFormHelper', TRUE, 'php'));
 require_once(Kohana::find_file('libraries', 'release', TRUE, 'php'));
 require_once(Kohana::find_file('libraries', 'socorro_cookies', TRUE, 'php'));
 
+/**
+ * Custom controller subclass used throughout application
+ */
 class Controller extends Controller_Core {
 
-    // Wrapper layout for current view
-    protected $layout = 'layout';
-
-    // Wrapped view for current method
-    protected $view = FALSE;
+    // Available in all controllers and views.  TRUE for Mozilla's deployment of Socorro UI, which
+    // is backed by LDAP authentication. FALSE if auth.driver is set to NoAuth.
+    protected $auth_is_active = TRUE;
 
     // Automatically render the layout?
     protected $auto_render = TRUE;
 
-    // Variables for templates
-    protected $view_data;
-
-    // Track the global "Chosen" version
-    // This changes as user navigates Socorro UI
-    protected $chosen_version;
-
-    // Available in all controllers and views
-    // TRUE for Mozilla's deployment of Socorro UI
-    // which is backed by LDAP authentication
-    // but can be FALSE if auth.driver is set to NoAuth
-    protected $auth_is_active = TRUE;
-
 	// CSS inclusion
 	protected $css = '';
 
+    // Track the global "Chosen" product and version.  This changes as user navigates Socorro UI.
+    protected $chosen_version;
+
+    // Set an array of current products
+    protected $current_products;
+    
+    // Set an array of featured versions for the chosen product.
+    public $featured_versions;
+
 	// Javascript inclusion
 	protected $js = '';
+
+    // Wrapper layout for current view
+    protected $layout = 'layout';
+
+    // Set an array of versions that are not featured for the chosen product.
+    public $unfeatured_versions;
+
+    // Wrapped view for current method
+    protected $view = FALSE;
+
+    // Variables for templates
+    protected $view_data;
 
     /**
      * Constructor.
@@ -84,8 +88,8 @@ class Controller extends Controller_Core {
         parent::__construct();
 
         // Create instances of the commonly used models.
-        $this->common_model   = new Common_Model();
         $this->branch_model   = new Branch_Model();
+        $this->common_model   = new Common_Model();
         $this->report_model   = new Report_Model();
         $this->platform_model = new Platform_Model();
 
@@ -93,9 +97,16 @@ class Controller extends Controller_Core {
         $this->view_data = array(
             'controller' => $this
         );
-	$this->auth_is_active = Kohana::config('auth.driver', 'NoAuth') != "NoAuth";
+        
+        $this->auth_is_active = Kohana::config('auth.driver', 'NoAuth') != "NoAuth";
 
+        // Grab an array of current products, ensure that 1 is chosen, and grab the featured versions for that product.
+        $this->current_products = $this->branch_model->getProducts();
+        $this->ensureChosenVersion($this->current_products);
+        $this->prepareVersions();
+        
         Event::add('system.post_controller_constructor', array($this, '_auth_prep'));
+
         // Display the template immediately after the controller method
         Event::add('system.post_controller', array($this, '_display'));
     }
@@ -208,18 +219,20 @@ class Controller extends Controller_Core {
         return $this;
     }
 
+    /**
+     * Prepare and set the data that will be used by the template navigation.
+     *
+     * @return void
+     */
     protected function setNavigationData()
     {
-        $curProds = $this->currentProducts();
+        $this->setViewData('chosen_version', $this->chosen_version);
+        $this->setViewData('current_products', $this->current_products);
         $this->setViewData('current_product_versions', $this->branch_model->getCurrentProductVersions());
-        $this->setViewData('common_products', $curProds);
-	    $this->setViewData('older_products', $this->olderProducts());
-
-	    $this->ensureChosenVersion($curProds);
-	    $this->setViewData('chosen_version', $this->chosen_version);
-        
+        $this->setViewData('featured_versions', $this->featured_versions);
         $this->setViewData('num_other_products', 
             count($this->branch_model->getProducts()) - count(Kohana::config('dashboard.feat_nav_products')));
+        $this->setViewData('unfeatured_versions', $this->unfeatured_versions);        
     }
 
     private $_current_products;
@@ -248,17 +261,6 @@ class Controller extends Controller_Core {
         }
 
         return $products;
-    }
-
-    private $_older_products;
-    protected function olderProducts()
-    {
-        if (is_null($this->_older_products)) {
-            $queryFormHelper = new QueryFormHelper;
-	    $p2vs = $queryFormHelper->prepareAllProducts($this->branch_model);
- 	    $this->_older_products = $queryFormHelper->olderProducts($this->currentProducts(), $p2vs);
-	}
-	return $this->_older_products;
     }
 
     /**
@@ -468,4 +470,16 @@ class Controller extends Controller_Core {
 	    }
         }
     }
+
+    /**
+     * Prepare the featured and unfeatured versions for the navigation and the controllers.
+     * 
+     * @return void
+     */
+    public function prepareVersions()
+    {
+        $this->featured_versions = $this->branch_model->getFeaturedVersions($this->chosen_version['product']);
+        $this->unfeatured_versions = $this->branch_model->getUnfeaturedVersions($this->chosen_version['product'], $this->featured_versions);
+    }
+
 }

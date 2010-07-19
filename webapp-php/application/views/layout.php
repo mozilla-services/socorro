@@ -46,7 +46,7 @@
     		<li>
 			Product:
 			<select id="products_select">
-			<?php foreach ($common_products as $product => $versions) { ?>
+			<?php foreach ($current_products as $product) { ?>
 				<option <?php if ($product == $chosen_version['product']) echo 'SELECTED'; ?> value="<?php out::H($product); ?>"><?php out::H($product); ?></option>
 			<?php } ?>
 			</select>
@@ -56,39 +56,24 @@
 				<optgroup>
 					<option value="Current Versions">Current Versions</option>
 				</optgroup>
-				<optgroup>
-					<?php 
-						foreach ($common_products as $product => $versions) {
-							if ($chosen_version['product'] == $product) { 
-	                        	$releases = array('Dev', 'Major', 'Release'); 
-	                        	foreach ($versions as $version) { 
-                    ?>
-							<option value="<?php out::H($version); ?>"
-								<?php if ($version == $chosen_version['version']) echo 'SELECTED'; ?>
-							><?php out::H($version); ?></option>
-                    <?php 
-								}
-							} 
-						}
-					?>
-				</optgroup>
-				<optgroup>
-					<?php
-						krsort($current_product_versions);					
-						foreach ($current_product_versions as $version) { 
-                        	if (
-								$version->product == $chosen_version['product'] &&
-								!in_array($version->version, $common_products[$version->product])
-							) {
-					?>
-                            	<option value="<?php out::H($version->version); ?>"
-                            	    <?php if ($version->version == $chosen_version['version']) echo ' SELECTED'; ?>
-                            	><?php out::H($version->version); ?></option>
-					<?php 
-							}
- 						}
-					?>
-				</optgroup>
+                <?php if (isset($featured_versions) && !empty($featured_versions)) { ?>
+				    <optgroup>
+				    	<?php foreach ($featured_versions as $featured_version) { ?>
+                            <option value="<?php out::H($featured_version->version); ?>"
+                            	<?php if ($featured_version->version == $chosen_version['version']) echo 'SELECTED'; ?>
+                            ><?php out::H($featured_version->version); ?></option>
+                        <?php } ?>
+				    </optgroup>
+			    <?php } ?>
+			    <?php if (isset($unfeatured_versions) && !empty($unfeatured_versions)) { ?>
+				    <optgroup>
+				    	<?php foreach ($unfeatured_versions as $unfeatured_version) { ?>
+                            <option value="<?php out::H($unfeatured_version->version); ?>"
+                            	<?php if ($unfeatured_version->version == $chosen_version['version']) echo 'SELECTED'; ?>
+                            ><?php out::H($unfeatured_version->version); ?></option>
+                        <?php } ?>
+				    </optgroup>
+				<?php } ?>
 			</select>
 		
             <li>

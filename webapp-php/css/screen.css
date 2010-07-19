@@ -714,6 +714,10 @@ div.admin input.text {
 div.admin td.action {
 	width: 50px;
 }
+div.admin td.featured {
+    text-align: center;
+	width: 50px;
+}
 div.admin td.date {
 	width: 75px;
 }

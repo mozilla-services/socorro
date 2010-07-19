@@ -10,9 +10,9 @@
     <ul>
     <li><label class="basic" for="product">Product</label>
             <select id="product" name="product" size="5" multiple="multiple" class="primary">
-                <?php foreach ($all_products as $row): ?>
-                    <option value="<?php out::H($row->product) ?>" <?php echo in_array($row->product, $params['product']) ? 'selected="selected"' : '' ?>>
-                        <?php out::H($row->product) ?>
+                <?php foreach ($all_products as $product): ?>
+                    <option value="<?php out::H($product) ?>" <?php echo in_array($product, $params['product']) ? 'selected="selected"' : '' ?>>
+                        <?php out::H($product) ?>
                     </option>
                 <?php endforeach ?>
             </select>
