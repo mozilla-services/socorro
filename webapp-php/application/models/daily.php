@@ -271,6 +271,184 @@ class Daily_Model extends Model {
 		return false;
 	}
 
+    /**
+     * Determine which stats are present in the given results
+     *
+     * @param $results array The results of the aduByDayDetails call
+     * 
+     * @return array An array of report_types
+     */
+    private function _statKeysForResults($results)
+    {
+        $keys = array();
+        foreach ($results->versions as $version) {
+            if (property_exists($version, 'statistics')) {
+                foreach ($version->statistics as $day_stats) {
+                    if (property_exists($day_stats, 'crash')) {
+                        array_push($keys, 'crash');
+                    }
+                    if (property_exists($day_stats, 'oopp')) {
+                        array_push($keys, 'oopp');
+                    }
+                    if (property_exists($day_stats, 'hang_browser')) {
+                        array_push($keys, 'hang_browser');
+                    }
+                    if (property_exists($day_stats, 'hang_plugin')) {
+                        array_push($keys, 'hang_plugin');
+                    }
+                    return $keys;
+                }
+            }
+        }
+        return $keys;
+    }
+       
+    /**
+     * Prepare the statistics for Crashes per ADU by Version.
+     * 
+     * Throttling is inputted into the UI.  It is an effective throttling of client throttling * server throttling. Reported
+     * Active Daily Users are updated according to throttling percentages.
+     *
+     * Atleast one of the following will have data [crash, oop, hang_browser, hang_plugin]. 
+     * We'll only show columns and crash events per 100 users for those datum present.
+     *
+     * @access      public
+     *
+     * @param       object  The response object from the API call
+     * @param       array   An array of effective throttle rates for each version
+     *
+     * @return      array   An array of statistics
+     */
+    public function calculateStatisticsByReportType($results, $throttle)
+    {
+        $stat_keys = $this->_statKeysForResults($results);
+        if (!empty($results)) {
+            $statistics = array('versions' => array());
+            foreach ($results->versions as $version) {
+                $key = $version->version;
+
+                if (!empty($throttle)) {
+                    $t = array_shift($throttle);
+                    $throttle_1 = ($t > 0) ? ($t / 100) : 1;
+                    $throttle_2 = 1 - $throttle_1;
+                    $throttle_ratio = $throttle_2 / $throttle_1;
+                } else {
+                    $throttle_1 = 1;
+                    $throttle_2 = 0;
+                    $throttle_ratio = 0;
+                }
+
+                $statistics['versions'][$key] = array(
+                    'throttle' => $throttle_1,
+                    'users' => 0,
+                    'version' => $key,
+                    );
+
+                foreach ($stat_keys as $stat_key) {
+                    $statistics['versions'][$key][$stat_key] = 0;
+                    $statistics['versions'][$key]["${stat_key}_ratio"] = 0.0;
+                }
+
+                foreach ($version->statistics as $v) {
+                    $date = $v->date;
+                    if (strtotime($date) < $this->today) {
+                        if (!isset($statistics['versions'][$key][$date])) {
+                            $statistics['versions'][$key][$date] = array('users' => 0);
+                        }                           
+                        foreach ($stat_keys as $stat_key) {
+                            $statistics['versions'][$key][$date][$stat_key] = 0;
+                            $statistics['versions'][$key][$date]["${stat_key}_ratio"] = 0.0;
+                        }
+                        // += because we're summing up Win, Mac, Lin...
+                        if (property_exists($v, 'crash')) { $throttled_crashes = $v->crash; }
+                        if (property_exists($v, 'oopp')) { $throttled_oopp = $v->oopp; }
+                        if (property_exists($v, 'hang_browser')) { $throttled_hang_browser = $v->hang_browser; }
+                        if (property_exists($v, 'hang_plugin')) { $throttled_hang_plugin = $v->hang_plugin; }
+                        if ($throttle_ratio > 0) {
+                            if (property_exists($v, 'crash')) { $throttled_crashes += $v->crash * $throttle_ratio; }
+                            if (property_exists($v, 'oopp')) { $throttled_oopp += $v->oopp * $throttle_ratio; }
+                            if (property_exists($v, 'hang_browser')) { $throttled_hang_browser += $v->hang_browser * $throttle_ratio; }
+                            if (property_exists($v, 'hang_plugin')) { $throttled_hang_plugin += $v->hang_browser * $throttle_ratio; }
+                        }
+
+                        if (property_exists($v, 'crash')) { 
+                            $statistics['versions'][$key][$date]['crash'] += $throttled_crashes;
+                        }
+                        if (property_exists($v, 'oopp')) { 
+                            $statistics['versions'][$key][$date]['oopp'] += $throttled_oopp; 
+                        }
+                        if (property_exists($v, 'hang_browser')) { 
+                            $statistics['versions'][$key][$date]['hang_browser'] += $throttled_hang_browser;
+                        }
+                        if (property_exists($v, 'hang_plugin')) { 
+                            $statistics['versions'][$key][$date]['hang_plugin'] += $throttled_hang_plugin;
+                        }
+                        $statistics['versions'][$key][$date]['throttle'] = $throttle_1;
+                        $statistics['versions'][$key][$date]['users'] += $v->users;
+
+                        if (property_exists($v, 'crash')) { 
+                            if ($statistics['versions'][$key][$date]['crash'] > 0 && $statistics['versions'][$key][$date]['users'] > 0) {
+                                $statistics['versions'][$key][$date]['crash_ratio'] = $statistics['versions'][$key][$date]['crash'] / $statistics['versions'][$key][$date]['users'];
+                            }
+                        }
+                        if (property_exists($v, 'oopp')) {
+                            if ($statistics['versions'][$key][$date]['oopp'] > 0 && $statistics['versions'][$key][$date]['users'] > 0) {
+                                $statistics['versions'][$key][$date]['oopp_ratio'] = $statistics['versions'][$key][$date]['oopp'] / $statistics['versions'][$key][$date]['users'];
+                            }
+                        }
+                        if (property_exists($v, 'hang_browser')) {
+                            if ($statistics['versions'][$key][$date]['hang_browser'] > 0 && $statistics['versions'][$key][$date]['users'] > 0) {
+                                $statistics['versions'][$key][$date]['hang_browser_ratio'] = $statistics['versions'][$key][$date]['hang_browser'] / $statistics['versions'][$key][$date]['users'];
+                            }
+                        }
+                        if (property_exists($v, 'hang_plugin')) {
+                            if ($statistics['versions'][$key][$date]['hang_plugin'] > 0 && $statistics['versions'][$key][$date]['users'] > 0) {
+                                $statistics['versions'][$key][$date]['hang_plugin_ratio'] = $statistics['versions'][$key][$date]['hang_plugin'] / $statistics['versions'][$key][$date]['users'];
+                            }
+                        }
+                        
+                        if (property_exists($v, 'crash')) { $statistics['versions'][$key]['crash'] += $throttled_crashes; }
+                        if (property_exists($v, 'oopp')) { $statistics['versions'][$key]['oopp'] += $throttled_oopp; }
+                        if (property_exists($v, 'hang_browser')) { $statistics['versions'][$key]['hang_browser'] += $throttled_hang_browser; }
+                        if (property_exists($v, 'hang_plugin')) { $statistics['versions'][$key]['hang_plugin'] += $throttled_hang_plugin; }
+                        $statistics['versions'][$key]['users'] += $v->users;
+                    }
+                }// foreach statistics
+
+                if (array_key_exists('crash', $statistics['versions'][$key])) {
+                    if ($statistics['versions'][$key]['crash'] > 0 && $statistics['versions'][$key]['users'] > 0) { 
+                        $statistics['versions'][$key]['crash_ratio'] = $statistics['versions'][$key]['crash'] / $statistics['versions'][$key]['users'];
+                    } else {
+                        $statistics['versions'][$key]['crash_ratio'] = 0.00;
+                    }
+                }
+                if (array_key_exists('oopp', $statistics['versions'][$key])) {
+                    if ($statistics['versions'][$key]['oopp'] > 0 && $statistics['versions'][$key]['users'] > 0) { 
+                        $statistics['versions'][$key]['oopp_ratio'] = $statistics['versions'][$key]['oopp'] / $statistics['versions'][$key]['users'];
+                    } else {
+                        $statistics['versions'][$key]['oopp_ratio'] = 0.00;
+                    }
+                }
+                if (array_key_exists('hang_browser', $statistics['versions'][$key])) {
+                    if ($statistics['versions'][$key]['hang_browser'] > 0 && $statistics['versions'][$key]['users'] > 0) { 
+                        $statistics['versions'][$key]['hang_browser_ratio'] = $statistics['versions'][$key]['hang_browser'] / $statistics['versions'][$key]['users'];
+                    } else {
+                        $statistics['versions'][$key]['hang_browser_ratio'] = 0.00;
+                    }
+                }
+                if (array_key_exists('hang_plugin', $statistics['versions'][$key])) {
+                    if ($statistics['versions'][$key]['hang_plugin'] > 0 && $statistics['versions'][$key]['users'] > 0) { 
+                        $statistics['versions'][$key]['hang_plugin_ratio'] = $statistics['versions'][$key]['hang_plugin'] / $statistics['versions'][$key]['users'];
+                    } else {
+                        $statistics['versions'][$key]['hang_plugin_ratio'] = 0.00;
+                    }
+                }
+            } // foreach versions
+            return $statistics;
+        }// if empty $results
+        return false;
+    }
+
 	/**
      * Prepare an array of parameters for the url.
 	 * 
@@ -294,29 +472,63 @@ class Daily_Model extends Model {
 		return $uri;
 	}
 
-	/**
+    /**
      * Format the URL for the ADU web service call.
-	 * 
-	 * @access 	private
-	 * @param 	string 	The product name (e.g. 'Camino', 'Firefox', 'Seamonkey, 'Thunderbird')
-	 * @param 	string 	The version number (e.g. '3.5', '3.5.1', '3.5.1pre', '3.5.2', '3.5.2pre')
-	 * @param       string  The Report Type [any|crash|hang]
-	 * @param 	string	The start date for this product YYYY-MM-DD
-	 * @param 	string	The end date for this product YYYY-MM-DD (usually +90 days)
-	 * @return 	string 	The URL.
+     * 
+     * @access      private
+     *
+     * @param       string  The product name (e.g. 'Camino', 'Firefox', 'Seamonkey, 'Thunderbird')
+     * @param       array   The version numbers (e.g. '3.5', '3.5.1', '3.5.1pre', '3.5.2', '3.5.2pre')
+     * @param       array   The operationg systems
+     * @param       string  The Report Type pre-encoded if needed
+     * @param       string  The start date for this product YYYY-MM-DD
+     * @param       string  The end date for this product YYYY-MM-DD (usually +90 days)
+     *
+     * @return      string  The URL.
      */
-	private function formatURL ($product, $versions, $hang_type, $operating_systems, $start_date, $end_date) {
-		$host = Kohana::config('webserviceclient.socorro_hostname');
-		
-		$p = urlencode($product);
-		$v = $this->encodeArray($versions);
-		$os = $this->encodeArray($operating_systems);
-		$start = urlencode($start_date);
-		$end = urlencode($end_date);
-		
-		$url = $host . "/201005/adu/byday/p/".$p."/v/".$v."/rt/".$hang_type."/os/".$os."/start/".$start."/end/".$end;
-		return $url;
-	}
+    private function formatURL ($api, $product, $versions, $hang_type, $operating_systems, $start_date, $end_date) {
+	$host = Kohana::config('webserviceclient.socorro_hostname');
+                
+	$p = urlencode($product);
+	$v = $this->encodeArray($versions);
+	$os = $this->encodeArray($operating_systems);
+	$start = urlencode($start_date);
+	$end = urlencode($end_date);
+                
+	$url = $host . $api . $p . "/v/" . $v . "/rt/" . $hang_type . "/os/" . $os . "/start/" . $start . "/end/" . $end;
+	return $url;
+    }
+
+    /**
+     * Format the URL for the ADU web service call.
+     * 
+     * @access      private
+     * @param       string  The product name (e.g. 'Camino', 'Firefox', 'Seamonkey, 'Thunderbird')
+     * @param       string  The version number (e.g. '3.5', '3.5.1', '3.5.1pre', '3.5.2', '3.5.2pre')
+     * @param       string  The Report Type [any|crash|hang]
+     * @param       string  The start date for this product YYYY-MM-DD
+     * @param       string  The end date for this product YYYY-MM-DD (usually +90 days)
+     * @return      string  The URL.
+     */
+    private function formatADUOverviewURL ($product, $versions, $hang_type, $operating_systems, $start_date, $end_date) {
+	return $this->formatURL("/201005/adu/byday/p/", $product, $versions, $hang_type, $operating_systems, $start_date, $end_date);
+    }
+
+    /**
+     * Format the URL for the aduByDayDetails web service call.
+     * 
+     * @access      private
+     * @param       string  The product name (e.g. 'Camino', 'Firefox', 'Seamonkey, 'Thunderbird')
+     * @param       string  The version number (e.g. '3.5', '3.5.1', '3.5.1pre', '3.5.2', '3.5.2pre')
+     * @param       array   The Report Types
+     * @param       string  The start date for this product YYYY-MM-DD
+     * @param       string  The end date for this product YYYY-MM-DD (usually +90 days)
+     * @return      string  The URL.
+     */
+    private function formatADUDetailsByReportTypeURL ($product, $versions, $report_types, $operating_systems, $start_date, $end_date) {
+	$rt = $this->encodeArray($report_types);
+	return $this->formatURL("/201006/adu/byday/details/p/", $product, $versions, $rt, $operating_systems, $start_date, $end_date);
+    }
 	
 	/**
      * Fetch records for active daily users / installs. 
@@ -331,7 +543,7 @@ class Daily_Model extends Model {
 	 * @param       string  The Report Type [any|crash|hang] - defaults to 'any'
      */
 	public function get($product, $versions, $operating_systems, $start_date, $end_date, $hang_type='any') {
-	    $url = $this->formatURL($product, $versions, $hang_type, $operating_systems, $start_date, $end_date);
+	    $url = $this->formatADUOverviewURL($product, $versions, $hang_type, $operating_systems, $start_date, $end_date);
 		$lifetime = Kohana::config('webserviceclient.topcrash_vers_rank_cache_minutes', 60) * 60; // number of seconds
 		$response = $this->service->get($url, 'json', $lifetime);
 
@@ -342,6 +554,31 @@ class Daily_Model extends Model {
 		}
 		return false;
 	}
+
+    /**
+     * Fetch records for active daily users / installs by crash report type
+     * 
+     * @access      public
+     * @param       string  The product name (e.g. 'Camino', 'Firefox', 'Seamonkey, 'Thunderbird')
+     * @param       array   An array of versions of this product
+     * @param       array   An array of operating systems to query
+     * @param       array   The Report Type [crash|oopp|hang_browser|hang_plugin]
+     * @param       string  The start date for this product YYYY-MM-DD
+     * @param       string  The end date for this product YYYY-MM-DD (usually +90 days)
+     * @return      object  The database query object
+     */
+    public function getDetailsByReportType($product, $versions, $operating_systems, $report_types, $start_date, $end_date) {
+	$url = $this->formatADUDetailsByReportTypeURL($product, $versions, $report_types, $operating_systems, $start_date, $end_date);
+	$lifetime = Kohana::config('webserviceclient.topcrash_vers_rank_cache_minutes', 60) * 60; // number of seconds
+	$response = $this->service->get($url, 'json', $lifetime);
+	
+	if (isset($response) && !empty($response)) {
+	    return $response;
+	} else {
+	    Kohana::log('error', "No ADU data was avialable at \"$url\" via soc.web daily.getDetailsByReportType()");
+	}
+	return false;
+    }
 	
 	/**
      * Prepare the data for the crash graph for ADU by Operating System.
@@ -382,6 +619,131 @@ class Daily_Model extends Model {
 		} 
 		return false;
 	}
+
+
+    /**
+     * Prepare the data for the crash graph for ADU by Operating System.
+     *
+     * What we want to create is 
+        [
+            { 'label': '3.6.4 Crash Ratio',
+              'data': [[123456777, 2.2], [1234545645, 2.3]...]},
+            ...
+        ]
+     * 
+     * @access      public
+     * @param       string  The start date for this product YYYY-MM-DD
+     * @param       string  The end date for this product YYYY-MM-DD (usually +90 days)
+     * @param       array   An array of dates
+     * @param       array   An array of operating_systems
+     * @param       array   An array of statistics
+     * @return      array   The array prepared for the crash data graph
+     */
+    public function prepareCrashGraphDataByReportType($date_start, $date_end, $dates, $versions, $statistics) {
+	if (!empty($statistics)) {
+	    $data = array();
+	    $keys = $this->statistic_keys($statistics, $dates);
+	    foreach($versions as $version) {
+		$label = "$version Crash %";
+		$ratio_data = array();
+		$oopp_ratio_data = array();
+		$hang_browser_ratio_data = array();
+		$hang_plugin_ratio_data = array();
+		foreach ($dates as $date) {
+		    if (strtotime($date) < $this->today) {
+			if (in_array('crash', $keys)) {
+			    if (isset($statistics['versions'][$version][$date])) {
+			        array_push($ratio_data, array(strtotime($date)*1000, $statistics['versions'][$version][$date]['crash_ratio'] * 100));
+			    } else {
+				array_push($ratio_data, array(strtotime($date)*1000, null));
+			    }
+			}
+			if (in_array('oopp', $keys)) {
+			    if (isset($statistics['versions'][$version][$date])) {
+			        array_push($oopp_ratio_data, array(strtotime($date)*1000, $statistics['versions'][$version][$date]['oopp_ratio'] * 100));
+			    } else {
+				array_push($oopp_ratio_data, array(strtotime($date)*1000, null));
+			    }
+			}
+			if (in_array('hang_browser', $keys)) {
+			    if (isset($statistics['versions'][$version][$date])) {
+			        array_push($hang_browser_ratio_data, array(strtotime($date)*1000, $statistics['versions'][$version][$date]['hang_browser_ratio'] * 100));
+			    } else {
+				array_push($hang_browser_ratio_data, array(strtotime($date)*1000, null));
+			    }
+			}
+			if (in_array('hang_plugin', $keys)) {
+			    if (isset($statistics['versions'][$version][$date])) {
+			        array_push($hang_plugin_ratio_data, array(strtotime($date)*1000, $statistics['versions'][$version][$date]['hang_plugin_ratio'] * 100));
+			    } else {
+				array_push($hang_plugin_ratio_data, array(strtotime($date)*1000, null));
+			    }
+			}
+		    }
+		}
+		if (in_array('crash', $keys)) {
+		    array_push($data, array('label' => "$version Crash %",
+					    'data'  => $ratio_data));
+		}
+		if (in_array('oopp', $keys)) {
+		    array_push($data, array('label' => "$version OOPP %",
+					    'data'  => $oopp_ratio_data));
+		}
+		if (in_array('hang_browser', $keys)) {
+		    array_push($data, array('label' => "$version Hang B %",
+					    'data'  => $hang_browser_ratio_data));
+		}
+		if (in_array('hang_plugin', $keys)) {
+		    array_push($data, array('label' => "$version Hang P%",
+					    'data'  => $hang_plugin_ratio_data));
+		}
+	    }
+	    return $data;
+	} 
+	return false;
+    }
+
+    /**
+     * Given a set of statistics and dates determine which report_types are present.
+     *
+     * @param $statistics array
+     * @param $dates      array
+     * 
+     * @return array of report types
+     */
+    public function statistic_keys($statistics, $dates)
+    {
+	$keys = array();
+        if (is_null($statistics)) {
+	    return $keys;
+	}
+	foreach ($dates as $date) {            
+	    foreach ($statistics['versions'] as $version) {
+		if (isset($version[$date]) &&
+		    ( isset($version[$date]['crash_ratio']) || 
+		      isset($version[$date]['oopp_ratio']) ||
+		      isset($version[$date]['hang_browser_ratio']) ||
+		      isset($version[$date]['hang_plugin_ratio']))) {
+		    $stats = $version[$date];
+
+		    if (array_key_exists('crash_ratio', $stats)) {
+			array_push($keys, 'crash');
+		    }
+		    if (array_key_exists('oopp_ratio', $stats)) {
+			array_push($keys, 'oopp');
+		    }
+		    if (array_key_exists('hang_browser_ratio', $stats)) {
+			array_push($keys, 'hang_browser');
+		    }
+		    if (array_key_exists('hang_plugin_ratio', $stats)) {
+			array_push($keys, 'hang_plugin');
+		    }
+		    return $keys;
+		} 
+	    }
+	}
+	return $keys;
+    }
 	
 	/**
      * Prepare the data for the crash graph for ADU by Version.
@@ -461,7 +823,9 @@ class Daily_Model extends Model {
         	$graph_data = $this->prepareCrashGraphDataByVersion($date_start, $date_end, $dates, $versions, $statistics);
         } elseif ($form_selection == 'by_os') {
         	$graph_data = $this->prepareCrashGraphDataByOS($date_start, $date_end, $dates, $operating_systems, $statistics);
-        }
+        } elseif ($form_selection == 'by_report_type') {
+        	$graph_data = $this->prepareCrashGraphDataByReportType($date_start, $date_end, $dates, $versions, $statistics);
+	}
         return $graph_data;
     }
 
@@ -475,7 +839,8 @@ class Daily_Model extends Model {
      * @param   array   An array of operating systems
      * @param   string  The start date
      * @param   string  The end date
-     * @param   array   An array of effective throttling rates for each version
+     * @param   array   An array of effective throttlin
+g rates for each version
      * @return  array   The array of crash stats data statistics
      */
     public function prepareStatistics($results, $form_selection='by_version', $product, $versions, $operating_system, $date_start, $date_end, $throttle) {
@@ -484,6 +849,8 @@ class Daily_Model extends Model {
         	$statistics = (!empty($results)) ? $this->calculateStatisticsByVersion($results, $throttle) : null;
         } elseif ($form_selection == 'by_os') {
         	$statistics = (!empty($results)) ? $this->calculateStatisticsByOS($results, $throttle) : null;
+        } elseif ($form_selection == 'by_report_type') {
+        	$statistics = (!empty($results)) ? $this->calculateStatisticsByReportType($results, $throttle) : null;
         }
         return $statistics;
     }

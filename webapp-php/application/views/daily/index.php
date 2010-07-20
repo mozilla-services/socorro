@@ -10,7 +10,14 @@ echo html::stylesheet(array(
 <?php slot::end() ?>
 
 <?php
-echo '<script>var data = ' . json_encode($graph_data) . '</script>';
+echo '<script>var data = ' . json_encode($graph_data) . ";\n";
+if ($form_selection == 'by_report_type') {?>
+    window.socGraphByReportType = true;
+<?php } else { ?>
+    window.socGraphByReportType = false;
+<?php } ?>
+</script>
+<?php
 echo html::script(array(
 		'js/flot-0.5/jquery.flot.pack.js',
 		'js/socorro/daily.js',
@@ -50,11 +57,32 @@ echo html::script(array(
         <?php } else { ?>
             <p>No Active Daily User crash data is available for this report.</p>
         <?php } ?>
+
+        <?php if (!empty($graph_data) && $form_selection == 'by_report_type') { ?>
+                  <form id="adu-chart-controls"><div class='graph-ratio-checkbox'>
+	              <table><tr><th></th><?php
+                      foreach ($chosen_report_types as $rt) { ?><th><?= $rt ?></th> <?php } ?></tr><?php
+	                  for ($i = 0; $i < count($graph_data); $i++){
+			      $item = $graph_data[$i];
+			      if ($i % count($statistic_keys) == 0) {
+				  $version_index = $i / count($statistic_keys);
+				  if ($i != 0) {
+				      echo "</tr>\n";
+				  } ?><tr><th><?= $versions[$version_index]?></th><?php
+			      }
+		      ?><td><input type='checkbox' name='graph_data_<?= $i ?>' id='graph_data_<?= $i ?>' checked="checked" title="<?= $item['label'] ?>" /></td>
+		    <?php } ?>
+                        </tr></table>
+                  </div>
+                  <div><button>Update Graph</button></div>
+                  </form>
+          <?php } ?>
+
 	</div>
+
 </div>
 
 <br class="clear" />
-
 <?php
     if (!empty($graph_data)) { 
         View::factory($file_crash_data, array(
