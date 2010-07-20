@@ -9,7 +9,12 @@ import socorro.lib.ConfigurationManager as configurationManager
 import socorro.lib.datetimeutil as dtutil
 import socorro.lib.productVersionCache as pvc
 import socorro.webapi.webapiService as webapi
-#import socorro.webapi.hello as hello
+
+import socorro.services.topCrashBySignatureTrends as tcbst
+import socorro.services.signatureHistory as sighist
+import socorro.services.aduByDay as adubd
+import socorro.services.aduByDayDetails as adudetails
+
 
 import logging
 import logging.handlers
@@ -43,7 +48,9 @@ def proxyClassWithContext (aClass):
 
 web.webapi.internalerror = web.debugerror
 
-urls = tuple(y for aTuple in ((x.uri, proxyClassWithContext(x)) for x in configContext.servicesList) for y in aTuple)
+servicesList = [tcbst.TopCrashBySignatureTrends, sighist.SignatureHistory, adubd.AduByDay, adubd.AduByDay200912, adudetails.AduByDayDetails]
+
+urls = tuple(y for aTuple in ((x.uri, proxyClassWithContext(x)) for x in servicesList) for y in aTuple)
 logger.info(str(urls))
 
 if configContext.wsgiInstallation:
