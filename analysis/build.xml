@@ -1,0 +1,75 @@
+<?xml version="1.0"?>
+<project name="Mozilla Crash-Reports" default="compile" basedir=".">
+	
+	<!-- Load all properties    -->
+	<property file="${basedir}/default.properties"/>
+	
+	<path id="classpath">
+		<pathelement location="${build.classes}"/>
+		<pathelement location="."/>
+		<fileset dir="${lib.dir}">
+			<include name="*.jar"/>
+		</fileset>
+	</path>
+	
+	<target name="clean">
+		<delete includeEmptyDirs="true" failonerror="false">
+			<fileset dir="build"/>
+		</delete>
+	</target>
+	
+	<target name="init" depends="clean">
+		<mkdir dir="${build.dir}"/>
+		<mkdir dir="${build.classes}"/>
+		<mkdir dir="${build.javadoc}"/>
+		<mkdir dir="${build.lib}"/>
+	</target>
+	
+	<target name="compile-java" depends="init">
+		<javac encoding="${build.encoding}" srcdir="${java.src.dir}" includes="**/*.java" destdir="${build.classes}" debug="${debug}" source="${java.src.version}" optimize="${optimize}" deprecation="${deprecation}">
+			<classpath refid="classpath"/>
+			<compilerarg line="-Xlint:unchecked"/>
+		</javac>
+	</target>
+	<target name="compile" depends="compile-java"/>
+	<target name="ensure-class-name" unless="class">
+		<fail message="You must run this target with -Dclass=ClassName"/>
+	</target>
+	
+	<target name="hadoop-jar" depends="compile">
+		<delete file="${build.lib}/${project.name}-job.jar"/>
+		<jar destfile="${build.lib}/${project.name}-job.jar">
+			<fileset dir="${build.classes}"/>
+			<fileset dir=".">
+				<include name="lib/*.jar"/>
+			</fileset>
+		</jar>
+	</target>
+	
+	<target name="jar" depends="compile">
+		<jar destfile="${build.lib}/${project.name}.jar">
+			<fileset dir="${build.classes}"/>
+		</jar>
+	</target>
+	
+	<target name="war" depends="compile" description="--> Create the WAR file">
+    	<mkdir dir="${dist.dir}"/>
+    	<!-- Copy Log4j config to build so it gets included in classes dir -->
+    	<copy todir="${build.dir}/classes">
+    		<fileset dir="${webapp.webinf.dir}/config" includes="log4j.*"/>
+    	</copy>
+        <war destfile="${dist.dir}/${project.name}.war" webxml="${webapp.webinf.dir}/web.xml">
+            <webinf dir="${webapp.webinf.dir}">
+                <exclude name="web.xml"/>
+            </webinf>
+            <metainf dir="${webapp.metainf.dir}"/>
+            <lib dir="${lib.dir}"/>
+            <classes dir="${build.dir}/classes"/>
+        </war>        
+    </target>
+	    
+    <target name="deploy" depends="war" description="--> Deploy the WAR file">
+        <copy file="${dist.dir}/${project.name}.war" todir="${tomcat.dir}/webapps" overwrite="true"/>
+    </target>
+
+</project>
