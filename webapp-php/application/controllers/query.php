@@ -102,7 +102,10 @@ class Query_Controller extends Controller {
 	$showPluginFilename = false;
 
         if ($params['do_query'] !== FALSE) {
-			$reports = $this->common_model->queryTopSignatures($params, 'results', $items_per_page, ($page*$items_per_page));
+            $totalCount = $this->common_model->queryTopSignatures($params, 'count');
+            $pager = new MozPager($items_per_page, $totalCount, $page);
+
+            $reports = $this->common_model->queryTopSignatures($params, 'results', $items_per_page, $pager->offset);
             $signatures = array();
 
             foreach ($reports as $report) {
@@ -137,8 +140,7 @@ class Query_Controller extends Controller {
             $signature_to_bugzilla = $bugzilla->signature2bugzilla($rows, Kohana::config('codebases.bugTrackingUrl'));
 
 
-            $totalCount = $this->common_model->queryTopSignatures($params, 'count');
-            $pager = new MozPager($items_per_page, $totalCount, $page);
+
         } else {
             $reports = array();
             $pager = null;
