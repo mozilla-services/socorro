@@ -16,7 +16,7 @@
         if ($pager->showPrevious || $pager->showNext) {
 
 			if ($pager->showPrevious) { ?>
-                <a href="<?= $navPathPrefix ?><?= $pager->previousPage ?>">← Prev </a>
+                <a href="<?= $navPathPrefix ?><?= $pager->previousPage ?>">← Prev </a>&nbsp;
         	<?php } ?>
 
 

@@ -90,6 +90,8 @@
 							value="<?= url::base() ?>products/<?= $chosen_version['product'] ?><?php if (isset($chosen_version['version']) && !empty($chosen_version['version'])) echo '/versions/'.html::specialchars($chosen_version['version']); ?>/builds">Nightly Builds</option>
                     </optgroup>
                     <optgroup>	
+                        <option <?php if (isset($nav_selection) && $nav_selection == 'top_changers') echo 'selected'; ?>
+                            value="<?= url::base() ?>products/<?= $chosen_version['product'] ?><?php if (isset($chosen_version['version']) && !empty($chosen_version['version'])) echo '/versions/'.html::specialchars($chosen_version['version']); ?>/topchangers">Top Changers</option>
                         <option <?php if (isset($nav_selection) && $nav_selection == 'top_crashes') echo 'selected'; ?>
                             value="<?= url::base() ?>topcrasher/byversion/<?= $chosen_version['product'] ?>/<?= $chosen_version['version'] ?>">Top Crashers</option>
                         <option <?php if (isset($nav_selection) && $nav_selection == 'top_url') echo 'selected'; ?> 
