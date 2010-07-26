@@ -430,44 +430,47 @@ class Controller extends Controller_Core {
     {
         // if it's null, use Cookie
         if (is_null($this->chosen_version)) {
-	    $cv = cookie::get(Socorro_Cookies::CHOSEN_VERSION);
-	    if (is_null($cv)) {
-	        $defaultProduct = Kohana::config('dashboard.default_product');
-		Kohana::log('info', $defaultProduct);
-	        if ($defaultProduct && array_key_exists($defaultProduct, $curProds)) {
-		    $product = $defaultProduct;
-		    $releases = $curProds[$defaultProduct];
-		    if (array_key_exists(Release::MAJOR, $releases)) {
-		        $version = $releases[Release::MAJOR];
-		    } elseif (array_key_exists(Release::MILESTONE, $releases)) {
-		        $version = $releases[Release::MILESTONE];
-		    } else {
-		        $version = $releases[Release::DEVELOPMENT];
-		    }
-		    $r = new Release;
-		    $release = $r->typeOfRelease($version);
-		    $this->chooseVersion(array('product' => $product,
-		   			        'version' => $version,
-					        'release' => $release), $set_cookie);
-	        } else {
-		    Kohana::log('debug', "config/dashboard.php no default_product set, using first project / version");
-	            foreach ($curProds as $product => $releases) {
-		        foreach (array_reverse($releases) as $release => $version) {
-		            $this->chooseVersion(array('product' => $product,
-			    			        'version' => $version,
-						        'release' => $release), $set_cookie);
-			    break;
-		        }
-		        break;
-		    }
-	        }
-	    } else {
-	        $version_info = array();
-		parse_str($cv, $version_info);
-		$this->chooseVersion(array('product' => $version_info['p'],
-					    'version' => $version_info['v'],
-					    'release' => $version_info['r']), FALSE);
-	    }
+            $cv = cookie::get(Socorro_Cookies::CHOSEN_VERSION);
+            if (is_null($cv)) {
+                $defaultProduct = Kohana::config('dashboard.default_product');
+                Kohana::log('info', $defaultProduct);
+	            if ($defaultProduct && in_array($defaultProduct, $curProds)) {
+                    $this->chooseVersion(
+                        array(
+                            'product' => $defaultProduct,
+                            'version' => null,
+                            'release' => null
+                        ), 
+                        $set_cookie
+                    );
+                } else {
+                    foreach ($curProds as $product => $releases) {
+                        foreach (array_reverse($releases) as $release => $version) {
+                            $this->chooseVersion(
+                                array(
+                                    'product' => $product,
+                                    'version' => $version,
+                                    'release' => $release
+                                ), 
+                                $set_cookie
+                            );
+                            break;
+                        } 
+                        break;
+                    }
+                }
+            } else {
+                $version_info = array();
+                parse_str($cv, $version_info);
+                $this->chooseVersion(
+                    array(
+                        'product' => $version_info['p'],
+                        'version' => $version_info['v'],
+                        'release' => $version_info['r']
+                    ), 
+                    FALSE
+                );
+            }
         }
     }
 
