@@ -27,7 +27,7 @@
 <?php
     // Bug# 470525 - no link to domain
 ?>
-<table class="tablesorter">
+<table id="tc_by_domain" class="tablesorter">
   <thead>
   	<tr>
 		<th>Domain</th>
@@ -42,7 +42,7 @@
       <tr class="<?php echo ( ($row) % 2) == 0 ? 'even' : 'odd' ?>">
             <td>
             <?php if (!strstr($crash->domain, '_BLOCKED')) { ?>
-        	<div id="domain-to-url<?php echo $row; ?>" class="tcburl-toggler tcburl-domainToggler">+</div><a id="tcburl-url<?php echo $row ?>" class="tcburl-domainToggler" href="#">Expand <span class="url"><?php out::H($crash->domain) ?></span></a>
+        	<div id="domain-to-url<?php echo $row; ?>" class="tcburl-toggler tcburl-domainToggler">+</div><a id="tcburl-url<?php echo $row ?>" class="tcburl-domainToggler" href="#"><span class="label tcburl-domainToggler">Expand</span> <span class="url tcburl-domainToggler"><?php out::H($crash->domain) ?></span></a>
             <?php } else { ?>
             <?php out::H($crash->domain); ?>
             <?php } ?>
