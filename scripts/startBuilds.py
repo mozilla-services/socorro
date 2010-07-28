@@ -23,8 +23,8 @@ assert "databaseName" in config, "databaseName is missing from the configuration
 assert "databaseUserName" in config, "databaseUserName is missing from the configuration"
 assert "databasePassword" in config, "databasePassword is missing from the configuration"
 assert "base_url" in config, "base_url is missing from the configuration"
+assert "product_uris" in config, "product_uris is missing from the configuration"
 assert "platforms" in config, "platforms is missing from the configuration"
-assert "versions" in config, "versions is missing from the configuration"
 
 logger = logging.getLogger("builds")
 logger.setLevel(logging.DEBUG)
