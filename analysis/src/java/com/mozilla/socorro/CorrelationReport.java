@@ -1,6 +1,7 @@
 package com.mozilla.socorro;
 
 import gnu.trove.TObjectIntHashMap;
+import gnu.trove.TObjectIntIterator;
 
 public class CorrelationReport {
 	
@@ -10,14 +11,12 @@ public class CorrelationReport {
 	private String signature;
 
 	private TObjectIntHashMap<String> archCoreCounts = new TObjectIntHashMap<String>();
+	private TObjectIntHashMap<String> moduleCounts = new TObjectIntHashMap<String>();
 	private TObjectIntHashMap<String> moduleVersionCounts = new TObjectIntHashMap<String>();
+	private TObjectIntHashMap<String> addonCounts = new TObjectIntHashMap<String>();
 	private TObjectIntHashMap<String> addonVersionCounts = new TObjectIntHashMap<String>();
 	
-	public CorrelationReport() {	
-	}
-	
 	public CorrelationReport(String product, String version, String os, String signature) {
-		super();
 		this.product = product;
 		this.version = version;
 		this.os = os;
@@ -56,15 +55,44 @@ public class CorrelationReport {
 		this.signature = signature;
 	}
 	
+	public TObjectIntIterator<String> getCoreCountsIterator() {
+		return archCoreCounts.iterator();
+	}
+	
 	public void coreCountAdjustOrPut(String archCores, int count) {
 		archCoreCounts.adjustOrPutValue(archCores, count, count);
+	}
+	
+	public TObjectIntIterator<String> getModuleCountsIterator() {
+		return moduleCounts.iterator();
+	}
+	
+	public void moduleAdjustOrPut(String module, int count) {
+		moduleCounts.adjustOrPutValue(module, count, count);
+	}
+	
+	public TObjectIntIterator<String> getModuleVersionCountsIterator() {
+		return moduleVersionCounts.iterator();
 	}
 	
 	public void moduleVersionAdjustOrPut(String moduleVersion, int count) {
 		moduleVersionCounts.adjustOrPutValue(moduleVersion, count, count);
 	}
 	
-	public void addonVersionAdjustOrPut(String moduleVersion, int count) {
-		addonVersionCounts.adjustOrPutValue(moduleVersion, count, count);
+	public TObjectIntIterator<String> getAddonCountsIterator() {
+		return addonCounts.iterator();
 	}
+	
+	public void addonAdjustOrPut(String addon, int count) {
+		addonCounts.adjustOrPutValue(addon, count, count);
+	}
+	
+	public TObjectIntIterator<String> getAddonVersionCountsIterator() {
+		return addonVersionCounts.iterator();
+	}
+	
+	public void addonVersionAdjustOrPut(String addonVersion, int count) {
+		addonVersionCounts.adjustOrPutValue(addonVersion, count, count);
+	}
+	
 }
