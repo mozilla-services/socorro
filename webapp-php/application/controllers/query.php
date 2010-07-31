@@ -160,7 +160,6 @@ class Query_Controller extends Controller {
                 $params['range_unit'] = 'weeks';
             }
         }
-        $params['range_value'] = 2;
         return $params;
     }
 
