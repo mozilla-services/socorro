@@ -145,15 +145,15 @@ class SearchReportHelper{
         $productEmpty = $this->empty_param($params['product']);
         $versionEmpty = $this->empty_param($params['version']);
         $buildIdEmpty = $this->empty_param($params['build_id']);
-        
+
         if ($productEmpty && $versionEmpty && $buildIdEmpty) {
             $params['product'] = array();
         }
-        if (!$versionEmpty && $params['version'][0] == 'ALL:ALL') {
+        if ($versionEmpty || (!$versionEmpty && $params['version'][0] == 'ALL:ALL')) {
             $params['version'] = array();
         }
     }
-
+    
     /**
      * Handle empty parameters.
      * 

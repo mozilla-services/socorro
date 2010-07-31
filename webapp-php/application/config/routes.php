@@ -42,6 +42,9 @@ $config['products/([0-9a-zA-Z.]+)/versions/([0-9a-zA-Z.]+)/topchangers.([a-z]+)'
 $config['query'] =
     'query/query';
 
+$config['simple'] =
+    'query/query'; // Used as a redirect for bookmarked queries pointed to /query/simple . TODO remove in future.
+
 $config['status'] = 
     'status/index';
 
