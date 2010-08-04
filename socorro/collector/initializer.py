@@ -6,7 +6,7 @@ import socorro.lib.ConfigurationManager
 import socorro.lib.util as sutil
 import socorro.lib.JsonDumpStorage as jds
 
-import socorro.collector.crashstorage as cstore
+import socorro.storage.crashstorage as cstore
 
 #-----------------------------------------------------------------------------------------------------------------
 def createPersistentInitialization(configModule):

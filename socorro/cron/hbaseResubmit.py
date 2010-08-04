@@ -4,7 +4,7 @@ except ImportError:
   import simplejson as json
 
 import socorro.lib.JsonDumpStorage as jds
-import socorro.hbase.hbaseClient as hbc
+import socorro.storage.hbaseClient as hbc
 import socorro.lib.util as sutil
 import socorro.lib.datetimeutil as dtutil
 
@@ -56,7 +56,7 @@ def resubmit (conf, jds=jds, hbc=hbc, open=open):
 # specifically in response to Bug 552539
 
 
-import socorro.collector.crashstorage as cstore
+import socorro.storage.crashstorage as cstore
 import socorro.lib.JsonDumpStorage as jds
 import socorro.lib.datetimeutil as dtu
 

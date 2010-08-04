@@ -28,10 +28,6 @@ databasePassword.default = ''
 #---------------------------------------------------------------------------
 # Crash storage system
 
-crashStorageClass = cm.Option()
-crashStorageClass.doc = 'the name of the class used to store crashes (CrashStorageSystemForHBase or CrashStorageSystemForNFS)'
-crashStorageClass.default = 'CrashStorageSystemForHBase'
-
 jsonFileSuffix = cm.Option()
 jsonFileSuffix.doc = 'the suffix used to identify a json file'
 jsonFileSuffix.default = '.json'
@@ -42,53 +38,27 @@ dumpFileSuffix.default = '.dump'
 
 #---------------------------------------------------------------------------
 # HBase storage system
-if crashStorageClass.default == 'CrashStorageSystemForHBase':
-  hbaseHost = cm.Option()
-  hbaseHost.doc = 'Hostname for hbase hadoop cluster. May be a VIP or load balancer'
-  hbaseHost.default = 'localhost'
+hbaseHost = cm.Option()
+hbaseHost.doc = 'Hostname for hbase hadoop cluster. May be a VIP or load balancer'
+hbaseHost.default = 'localhost'
 
-  hbasePort = cm.Option()
-  hbasePort.doc = 'hbase port number'
-  hbasePort.default = 9090
+hbasePort = cm.Option()
+hbasePort.doc = 'hbase port number'
+hbasePort.default = 9090
 
-  hbaseTimeout = cm.Option()
-  hbaseTimeout.doc = 'timeout in milliseconds for an HBase connection'
-  hbaseTimeout.default = 5000
+hbaseTimeout = cm.Option()
+hbaseTimeout.doc = 'timeout in milliseconds for an HBase connection'
+hbaseTimeout.default = 5000
 
-#---------------------------------------------------------------------------
-# NFS storage system
-if crashStorageClass.default == 'CrashStorageSystemForNFS':
-  storageRoot = cm.Option()
-  storageRoot.doc = 'the root of the file system where dumps are found'
-  storageRoot.default = '/tmp/socorro/toBeProcessed/'
+hbaseRetry = cm.Option()
+hbaseRetry.doc = 'number of times to retry a failed HBase connection'
+hbaseRetry.default = 2
+# a note of explanation is in order.  The value is literally for retries.
+# A value of of 2 means 3 total tries: 1 initial try and 2 retries.
 
-  deferredStorageRoot = cm.Option()
-  deferredStorageRoot.doc = 'the root of the file system where dumps are found'
-  deferredStorageRoot.default = '/tmp/socorro/toBeDeferred/'
-
-  processedDumpStoragePath = cm.Option()
-  processedDumpStoragePath.doc = 'the path of the file system where processed dumps are stored'
-  processedDumpStoragePath.default = '/tmp/socorro/processedDumpStorage/'
-
-  dumpDirPrefix = cm.Option()
-  dumpDirPrefix.doc = 'dump directory names begin with this prefix'
-  dumpDirPrefix.default = 'bp_'
-
-  dumpDirCount = cm.Option()
-  dumpDirCount.doc = 'the number of dumps to be stored in a single directory'
-  dumpDirCount.default = 1024
-
-  dumpGID = cm.Option()
-  dumpGID.doc="the group ID on minidumps so that they can be deleted by other users (optional)"
-  dumpGID.default = None
-
-  dumpPermissions = cm.Option()
-  dumpPermissions.doc = 'when saving dumps, the pemission flags to be used'
-  dumpPermissions.default = '%d'%(stat.S_IRGRP | stat.S_IWGRP | stat.S_IRUSR | stat.S_IWUSR)
-
-  dirPermissions = cm.Option()
-  dirPermissions.doc = 'when saving dumps, the permission flags to be used on directories'
-  dirPermissions.default = '%d'%(stat.S_IRGRP | stat.S_IXGRP | stat.S_IWGRP | stat.S_IRUSR | stat.S_IXUSR | stat.S_IWUSR)
+hbaseRetryDelay = cm.Option()
+hbaseRetryDelay.doc = 'time in seconds to wait before retrying a failed HBase connection'
+hbaseRetryDelay.default = 6
 
 #---------------------------------------------------------------------------
 # misc
@@ -97,6 +67,9 @@ processorCheckInTime = cm.Option()
 processorCheckInTime.doc = 'the time after which a processor is considered dead (hh:mm:ss)'
 processorCheckInTime.default = "00:05:00"
 processorCheckInTime.fromStringConverter = lambda x: str(cm.timeDeltaConverter(x))
+
+#---------------------------------------------------------------------------
+# common cron things
 
 startWindow = cm.Option()
 startWindow.doc = 'The start of the single aggregation window (YYYY-MM-DD [hh:mm:ss])'

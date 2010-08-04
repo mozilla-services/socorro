@@ -1,41 +1,35 @@
 import socorro.lib.ConfigurationManager as cm
 import datetime
+import re
+import stat
+
+#---------------------------------------------------------------------------
+# imported config
 
 from config.commonconfig import databaseHost
 from config.commonconfig import databaseName
 from config.commonconfig import databaseUserName
 from config.commonconfig import databasePassword
+from config.commonconfig import processorCheckInTime
 
-from config.commonconfig import startWindow
-from config.commonconfig import endWindow
-from config.commonconfig import deltaWindow
-from config.commonconfig import defaultDeltaWindow
-defaultDeltaWindow.default = '24:00:00'
+#---------------------------------------------------------------------------
+# HBase storage system
+from config.commonconfig import hbaseHost
+from config.commonconfig import hbasePort
+from config.commonconfig import hbaseTimeout
+from config.commonconfig import hbaseRetry
+from config.commonconfig import hbaseRetryDelay
 
-from config.commonconfig import startDate
-from config.commonconfig import endDate
-from config.commonconfig import deltaDate
-from config.commonconfig import initialDeltaDate
-initialDeltaDate.default = '96:00:00'
+#---------------------------------------------------------------------------
+# local feeder config
 
-truncateUrlLength = cm.Option()
-truncateUrlLength.doc = 'The maximum stored length of a URL (leave None for no truncation)'
-truncateUrlLength.default = None
+numberOfThreads = cm.Option()
+numberOfThreads.doc = 'the number of threads to use'
+numberOfThreads.default = 4
 
-product = cm.Option()
-product.doc = 'the name of the product to restrict to (leave blank for all)'
-product.default = 'Firefox'
-
-version = cm.Option()
-version.doc = 'the name of the version to restrict to (leave blank for all)'
-version.default = ''
-
-from config.commonconfig import debug
-
-processingDay = cm.Option()
-processingDay.doc = 'One day to process in (YYYY-MM-DD) format'
-processingDay.singleCharacter = 'd'
-processingDay.fromStringConverter = cm.dateTimeConverter
+insertChunkSize = cm.Option()
+insertChunkSize.doc = 'the number records to insert at once'
+insertChunkSize.default = 100
 
 #---------------------------------------------------------------------------
 # Logging
@@ -54,7 +48,7 @@ syslogFacilityString.default = 'user'
 
 syslogLineFormatString = cm.Option()
 syslogLineFormatString.doc = 'python logging system format for syslog entries'
-syslogLineFormatString.default = 'Socorro TopCrashesByUrl (pid %(process)d): %(asctime)s %(levelname)s - %(threadName)s - %(message)s'
+syslogLineFormatString.default = 'Socorro DBFeeder (pid %(process)d): %(asctime)s %(levelname)s - %(threadName)s - %(message)s'
 
 syslogErrorLoggingLevel = cm.Option()
 syslogErrorLoggingLevel.doc = 'logging level for the log file (10 - DEBUG, 20 - INFO, 30 - WARNING, 40 - ERROR, 50 - CRITICAL)'
@@ -62,8 +56,9 @@ syslogErrorLoggingLevel.default = 10
 
 stderrLineFormatString = cm.Option()
 stderrLineFormatString.doc = 'python logging system format for logging to stderr'
-stderrLineFormatString.default = '%(asctime)s %(levelname)s - %(message)s'
+stderrLineFormatString.default = '%(asctime)s %(levelname)s - %(threadName)s - %(message)s'
 
 stderrErrorLoggingLevel = cm.Option()
 stderrErrorLoggingLevel.doc = 'logging level for the logging to stderr (10 - DEBUG, 20 - INFO, 30 - WARNING, 40 - ERROR, 50 - CRITICAL)'
 stderrErrorLoggingLevel.default = 10
+

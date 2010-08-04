@@ -4,17 +4,14 @@ import sys
 import logging
 import logging.handlers
 
-try:
-  import config.processorconfig as config
-except ImportError:
-  import processorconfig as config
+import config.processorconfig as configModule
 
-import socorro.processor.externalProcessor as processor
+import socorro.processor.streamProcessor as processor
 import socorro.lib.ConfigurationManager as configurationManager
 import socorro.lib.util as util
 
 try:
-  configurationContext = configurationManager.newConfiguration(configurationModule=config, applicationName="Socorro Processor 2.0")
+  configurationContext = configurationManager.newConfiguration(configurationModule=configModule, applicationName="Socorro Processor 4.0")
 except configurationManager.NotAnOptionError, x:
   print >>sys.stderr, x
   print >>sys.stderr, "for usage, try --help"
@@ -29,26 +26,31 @@ stderrLogFormatter = logging.Formatter(configurationContext.stderrLineFormatStri
 stderrLog.setFormatter(stderrLogFormatter)
 logger.addHandler(stderrLog)
 
-rotatingFileLog = logging.handlers.RotatingFileHandler(configurationContext.logFilePathname, "a", configurationContext.logFileMaximumSize, configurationContext.logFileMaximumBackupHistory)
-rotatingFileLog.setLevel(configurationContext.logFileErrorLoggingLevel)
-rotatingFileLogFormatter = logging.Formatter(configurationContext.logFileLineFormatString)
-rotatingFileLog.setFormatter(rotatingFileLogFormatter)
-logger.addHandler(rotatingFileLog)
+syslog = logging.handlers.SysLogHandler(
+  address=(configurationContext.syslogHost, configurationContext.syslogPort),
+  facility=configurationContext.syslogFacilityString,
+)
+syslog.setLevel(configurationContext.syslogErrorLoggingLevel)
+syslogFormatter = logging.Formatter(configurationContext.syslogLineFormatString)
+syslog.setFormatter(syslogFormatter)
+logger.addHandler(syslog)
 
-logger.info("current configuration\n%s", str(configurationContext))
+logger.info("current configuration:")
+for value in str(configurationContext).split('\n'):
+  logger.info('%s', value)
 
-configurationContext['logger'] = logger
+configurationContext["logger"] = logger
 
 try:
   try:
-    p = processor.ProcessorWithExternalBreakpad(configurationContext)
+    p = processor.StreamBreakpadProcessor(configurationContext)
     p.start()
-  except:
+  except Exception:
     util.reportExceptionAndContinue(logger)
 finally:
   logger.info("done.")
-  rotatingFileLog.flush()
-  rotatingFileLog.close()
+  syslog.flush()
+  syslog.close()
 
 
 

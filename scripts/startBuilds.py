@@ -35,13 +35,16 @@ stderrLogFormatter = logging.Formatter(config.stderrLineFormatString)
 stderrLog.setFormatter(stderrLogFormatter)
 logger.addHandler(stderrLog)
 
-rotatingFileLog = logging.handlers.RotatingFileHandler(config.logFilePathname, "a", config.logFileMaximumSize, config.logFileMaximumBackupHistory)
-rotatingFileLog.setLevel(config.logFileErrorLoggingLevel)
-rotatingFileLogFormatter = logging.Formatter(config.logFileLineFormatString)
-rotatingFileLog.setFormatter(rotatingFileLogFormatter)
-logger.addHandler(rotatingFileLog)
+syslog = logging.handlers.SysLogHandler(
+  address=(configurationContext.syslogHost, configurationContext.syslogPort),
+  facility=configurationContext.syslogFacilityString,
+)
+syslog.setLevel(configurationContext.syslogErrorLoggingLevel)
+syslogFormatter = logging.Formatter(configurationContext.syslogLineFormatString)
+syslog.setFormatter(syslogFormatter)
+logger.addHandler(syslog)
 
-config.logger = logger 
+config.logger = logger
 logger.info("current configuration\n%s", str(config))
 
 try:

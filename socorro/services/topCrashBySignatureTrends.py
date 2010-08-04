@@ -6,9 +6,9 @@ import socorro.webapi.webapiService as webapi
 import socorro.lib.util as util
 import socorro.lib.datetimeutil as dtutil
 
-import psycopg2.extras as psyext
+#import psycopg2.extras as psyext
 
-import simplejson
+#import json
 
 
 # theoretical sample output

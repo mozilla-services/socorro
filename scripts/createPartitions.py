@@ -29,17 +29,20 @@ stderrLogFormatter = logging.Formatter(configurationContext.stderrLineFormatStri
 stderrLog.setFormatter(stderrLogFormatter)
 logger.addHandler(stderrLog)
 
-rotatingFileLog = logging.handlers.RotatingFileHandler(configurationContext.logFilePathname, "a", configurationContext.logFileMaximumSize, configurationContext.logFileMaximumBackupHistory)
-rotatingFileLog.setLevel(logging.DEBUG)
-rotatingFileLogFormatter = logging.Formatter(configurationContext.logFileLineFormatString)
-rotatingFileLog.setFormatter(rotatingFileLogFormatter)
-logger.addHandler(rotatingFileLog)
+syslog = logging.handlers.SysLogHandler(
+  address=(configurationContext.syslogHost, configurationContext.syslogPort),
+  facility=configurationContext.syslogFacilityString,
+)
+syslog.setLevel(configurationContext.syslogErrorLoggingLevel)
+syslogFormatter = logging.Formatter(configurationContext.syslogLineFormatString)
+syslog.setFormatter(syslogFormatter)
+logger.addHandler(syslog)
 
 logger.info("current configuration\n%s", str(configurationContext))
 
 try:
   configurationContext["endDate"] = configurationContext.startDate + dt.timedelta(configurationContext.weeksIntoFuture * 7)
-  print 
+  print
   schema.createPartitions(configurationContext, logger)
 finally:
   logger.info("done.")

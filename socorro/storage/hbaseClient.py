@@ -22,6 +22,23 @@ from hbase.hbase import Client, ColumnDescriptor, Mutation #get classes from mod
 
 import socorro.lib.util as utl
 
+#=================================================================================================================
+class IterableJsonEncoder(json.JSONEncoder):
+  """
+  """
+  #-----------------------------------------------------------------------------------------------------------------
+  def __init__(self, *args, **kwargs):
+    super(IterableJsonEncoder, self).__init__(*args, **kwargs)
+  #-----------------------------------------------------------------------------------------------------------------
+  def default(self, o):
+    try:
+      iterable = iter(o)
+    except TypeError:
+      pass
+    else:
+      return list(iterable)
+    return JSONEncoder.default(self, o)
+
 class HBaseClientException(Exception):
   pass
 
@@ -99,31 +116,31 @@ def retry_wrapper_for_generators(fn):
   """a decorator to add retry symantics to any generator that uses hbase.  Don't wrap iterators
   that themselves wrap iterators.  In other words, don't nest these."""
   def f(self, *args, **kwargs):
-    self.logger.debug('%s - retry_wrapper_for_generators: trying first time, %s', threading.currentThread().getName(), fn.__name__)
+    #self.logger.debug('retry_wrapper_for_generators: trying first time, %s', fn.__name__)
     fail_counter = 0
     while True:  #we have to loop forever, we don't know the length of the wrapped iterator
       try:
         for x in fn(self, *args, **kwargs):
           fail_counter = 0
           yield x
-        self.logger.debug('%s - retry_wrapper_for_generators: completed without trouble, %s', threading.currentThread().getName(), fn.__name__)
+        #self.logger.debug('retry_wrapper_for_generators: completed without trouble, %s', fn.__name__)
         break # this is the sucessful exit from this function
       except self.hbaseThriftExceptions, x:
-        self.logger.debug('%s - retry_wrapper_for_generators: handled exception, threading.currentThread().getName(), %s', threading.currentThread().getName(), str(x))
+        self.logger.debug('retry_wrapper_for_generators: handled exception, %s', str(x))
         fail_counter += 1
         if fail_counter > 1:
-          self.logger.error('%s - retry_wrapper_for_generators: failed too many times on this one operation, %s', threading.currentThread().getName(), fn.__name__)
+          self.logger.error('retry_wrapper_for_generators: failed too many times on this one operation, %s', fn.__name__)
           txClass, tx, txtb = sys.exc_info()
           raise FatalException, FatalException(tx), txtb
         try:
           self.close()
         except self.hbaseThriftExceptions:
           pass
-        self.logger.debug('%s - retry_wrapper_for_generators: about to retry connection', threading.currentThread().getName())
+        self.logger.debug('retry_wrapper_for_generators: about to retry connection')
         self.make_connection(timeout=self.timeout)
-        self.logger.debug('%s - retry_wrapper_for_generators: about to retry function, %s', threading.currentThread().getName(), fn.__name__)
-      except Exception, x:  #lars
-        self.logger.debug('%s - retry_wrapper_for_generators: unhandled exception, %s', threading.currentThread().getName(), str(x)) #lars
+        self.logger.debug('retry_wrapper_for_generators: about to retry function, %s', fn.__name__)
+      except Exception, x:
+        self.logger.debug('retry_wrapper_for_generators: unhandled exception, %s', str(x))
         raise
   f.__name__ = fn.__name__
   return f
@@ -133,19 +150,19 @@ def optional_retry_wrapper(fn):
   def f(self, *args, **kwargs):
     number_of_retries = kwargs.setdefault('number_of_retries', 1)
     del kwargs['number_of_retries']
-    wait_between_retries = kwargs.setdefault('wait_between_retries', 6)
+    wait_between_retries = kwargs.setdefault('wait_between_retries', 1)
     del kwargs['wait_between_retries']
     countdown = number_of_retries + 1
     while countdown:
       countdown -= 1
       try:
-        self.logger.debug('%s - retry_wrapper: %s, try number %s', threading.currentThread().getName(), fn.__name__, number_of_retries + 1 - countdown)
+        #self.logger.debug('retry_wrapper: %s, try number %s', fn.__name__, number_of_retries + 1 - countdown)
         result = fn(self, *args, **kwargs)
-        self.logger.debug('%s - retry_wrapper: completed without trouble, %s', threading.currentThread().getName(), fn.__name__)
+        #self.logger.debug('retry_wrapper: completed without trouble, %s', fn.__name__)
         return result
       # drop and remake connection
       except self.hbaseThriftExceptions, x:
-        self.logger.debug('%s - retry_wrapper: handled exception, %s', threading.currentThread().getName(), str(x))
+        self.logger.debug('retry_wrapper: handled exception, %s', str(x))
         if not countdown:
           # we've gone through all the retries that we're allowed
           txClass, tx, txtb = sys.exc_info()
@@ -154,11 +171,11 @@ def optional_retry_wrapper(fn):
           self.close()
         except self.hbaseThriftExceptions:
           pass
-        self.logger.debug('%s - retry_wrapper: about to retry connection', threading.currentThread().getName())
+        self.logger.debug('retry_wrapper: about to retry connection')
         self.make_connection(timeout=self.timeout)
       # unknown error - abort
       except Exception, x:  #lars
-        self.logger.debug('%s - retry_wrapper: unhandled exception, %s', threading.currentThread().getName(), str(x)) #lars
+        self.logger.debug('retry_wrapper: unhandled exception, %s', str(x))
         raise
       if wait_between_retries:
         time.sleep(wait_between_retries)
@@ -348,14 +365,14 @@ class HBaseConnectionForCrashReports(HBaseConnection):
       else:
         raise OoidNotFoundException("%s - %s" % (ooid, row_id))
     except KeyError, k:
-      self.logger.debug('%s - key error trying to get "meta_data:json" from %s', threading.currentThread().getName(), str(listOfRawRows))
+      self.logger.debug('key error trying to get "meta_data:json" from %s', str(listOfRawRows))
       raise
 
   @optional_retry_wrapper
   def get_json(self,ooid,old_format=False):
     """Return the json metadata for a given ooid as an json data object"""
     jsonColumnOfRow = self.get_json_meta_as_string(ooid,old_format)
-    self.logger.debug('%s - jsonColumnOfRow: %s', threading.currentThread().getName(), jsonColumnOfRow)
+    #self.logger.debug('jsonColumnOfRow: %s', jsonColumnOfRow)
     json_data = json.loads(jsonColumnOfRow)
     return json_data
 
@@ -374,7 +391,7 @@ class HBaseConnectionForCrashReports(HBaseConnection):
       else:
         raise OoidNotFoundException(ooid)
     except KeyError, k:
-      self.logger.debug('%s - key error trying to get "raw_data:dump" from %s', threading.currentThread().getName(), str(listOfRawRows))
+      self.logger.debug('key error trying to get "raw_data:dump" from %s', str(listOfRawRows))
       raise
 
   @optional_retry_wrapper
@@ -424,7 +441,7 @@ class HBaseConnectionForCrashReports(HBaseConnection):
     """
     row_id = ooid_to_row_id(ooid)
     listOfRawRows = self.client.getRowWithColumns('crash_reports',row_id,
-        ['flags:processed', 'flags:legacy_processing', 'timestamps:submitted', 'timestamps:processed'])
+        ['flags:processed', 'flags:priority_processing', 'flags:legacy_processing', 'timestamps:submitted', 'timestamps:processed'])
     #return self._make_row_nice(listOfRawRows[0]) if listOfRawRows else []
     if listOfRawRows:
       return self._make_row_nice(listOfRawRows[0])
@@ -451,7 +468,7 @@ class HBaseConnectionForCrashReports(HBaseConnection):
           json.dump(row['processed_data:json'],file_handle)
         finally:
           file_handle.close()
-          
+
   def export_jsonz_tarball_for_date(self,date,path,tarball_name):
     """
     Iterates through all rows for a given date and dumps the processed_data:json out as a jsonz file.
@@ -478,7 +495,7 @@ class HBaseConnectionForCrashReports(HBaseConnection):
           os.unlink(file_name)
     finally:
       tf.close()
-        
+
   def export_jsonz_tarball_for_ooids(self,path,tarball_name):
     """
     Creates jsonz files for each ooid passed in on stdin and puts them all in a tarball
@@ -509,7 +526,7 @@ class HBaseConnectionForCrashReports(HBaseConnection):
           self.logger.debug('Skipping...')
     finally:
       tf.close()
-        
+
   def union_scan_with_prefix(self,table,prefix,columns):
     #TODO: Need assertion for columns contains at least 1 element
     """
@@ -561,12 +578,12 @@ class HBaseConnectionForCrashReports(HBaseConnection):
         return
 
   def limited_iteration(self,iterable,limit=10**6):
-    self.logger.debug('limit = %d' % limit)
+    #self.logger.debug('limit = %d' % limit)
     return itertools.islice(iterable,limit)
 
   @retry_wrapper_for_generators
   def iterator_for_all_legacy_to_be_processed(self):
-    self.logger.debug('iterator_for_all_legacy_to_be_processed')
+    #self.logger.debug('iterator_for_all_legacy_to_be_processed')
     for row in self.limited_iteration(self.merge_scan_with_prefix('crash_reports_index_legacy_unprocessed_flag',
                                                                   '',
                                                                   ['ids:ooid'])):
@@ -574,7 +591,7 @@ class HBaseConnectionForCrashReports(HBaseConnection):
       yield row['ids:ooid']
 
   @retry_wrapper_for_generators
-  def acknowledge_ooid_as_legacy_priority_job (self, ooid):
+  def acknowledge_ooid_as_legacy_priority_job(self, ooid):
     try:
       state = self.get_report_processing_state(ooid)
       if state:
@@ -588,6 +605,54 @@ class HBaseConnectionForCrashReports(HBaseConnection):
   def delete_from_legacy_processing_index(self, index_row_key):
     self.client.deleteAllRow('crash_reports_index_legacy_unprocessed_flag', index_row_key)
     self.client.atomicIncrement('metrics','crash_report_queue','counters:current_legacy_unprocessed_size',-1)
+
+  @retry_wrapper_for_generators
+  def iterator_for_legacy_db_feeder_queue(self):
+    #self.logger.debug('iterator_for_all_legacy_processed')
+    for row in self.limited_iteration(self.merge_scan_with_prefix('crash_reports_index_legacy_processed',
+                                                                  '',
+                                                                  ['ids:ooid', 'processed_data:json'])):
+
+      #TODO If you want to ensure it is stored before deleting, do this somewhere else.
+      self.delete_from_legacy_db_feeder_queue(row['_rowkey'])
+
+      #TODO Yield the OOID too if needed
+      yield row['processed_data:json']
+
+  @optional_retry_wrapper
+  def delete_from_legacy_db_feeder_queue(self, index_row_key):
+    self.client.deleteAllRow('crash_reports_index_legacy_processed', index_row_key)
+
+  @optional_retry_wrapper
+  def insert_to_legacy_db_feeder_queue(self,ooid,timestamp,processed_json):
+    row_id = guid_to_timestamped_row_id(ooid,timestamp)
+    self.client.mutateRow('crash_reports_index_legacy_processed',row_id,[
+      self.mutationClass(column="ids:ooid",value=ooid),
+      self.mutationClass(column="processed_data:json",value=processed_json)])
+
+  @retry_wrapper_for_generators
+  def iterator_for_priority_db_feeder_queue(self):
+    #self.logger.debug('iterator_for_all_priority_processed')
+    for row in self.limited_iteration(self.merge_scan_with_prefix('crash_reports_index_priority_processed',
+                                                                  '',
+                                                                  ['ids:ooid', 'processed_data:json'])):
+
+      #TODO If you want to ensure it is stored before deleting, do this somewhere else.
+      self.delete_from_priority_db_feeder_queue(row['_rowkey'])
+
+      #TODO Yield the OOID too if needed
+      yield row['processed_data:json']
+
+  @optional_retry_wrapper
+  def delete_from_priority_db_feeder_queue(self, index_row_key):
+    self.client.deleteAllRow('crash_reports_index_priority_processed', index_row_key)
+
+  @optional_retry_wrapper
+  def insert_to_priority_db_feeder_queue(self,ooid,timestamp,processed_json):
+    row_id = guid_to_timestamped_row_id(ooid,timestamp)
+    self.client.mutateRow('crash_reports_index_priority_processed',row_id,[
+      self.mutationClass(column="ids:ooid",value=ooid),
+      self.mutationClass(column="processed_data:json",value=processed_json)])
 
   @optional_retry_wrapper
   def put_crash_report_indices(self,ooid,timestamp,indices):
@@ -604,6 +669,26 @@ class HBaseConnectionForCrashReports(HBaseConnection):
     self.client.mutateRow('crash_reports_index_hang_id',
                           hang_id,
                           [self.mutationClass(column=ooid_column_name,value=ooid)])
+
+  @optional_retry_wrapper
+  def update_metrics_counters_for_process(self, processed_timestamp):
+    """
+    Increments a series of counters in the 'metrics' table related to CR processing
+    """
+    timeLevels = [ processed_timestamp[:16], # minute yyyy-mm-ddTHH:MM
+                   processed_timestamp[:13], # hour   yyyy-mm-ddTHH
+                   processed_timestamp[:10], # day    yyyy-mm-dd
+                   processed_timestamp[: 7], # month  yyyy-mm
+                   processed_timestamp[: 4]  # year   yyyy
+                 ]
+    counterIncrementList = [ 'counters:processed_crash_reports' ]
+
+    #TODO: Add some logic to count priority, legacy, and non-legacy processing separately
+    #counterIncrementList.append("counters:processed_crash_reports_legacy_throttle_%d" % legacy_processing)
+
+    for rowkey in timeLevels:
+      for column in counterIncrementList:
+        self.client.atomicIncrement('metrics',rowkey,column,1)
 
   @optional_retry_wrapper
   def update_metrics_counters_for_submit(self, submitted_timestamp,
@@ -699,6 +784,15 @@ class HBaseConnectionForCrashReports(HBaseConnection):
     self.put_json_dump(ooid,json,dump)
 
   @optional_retry_wrapper
+  def put_priority_flag(self,ooid):
+    """
+    Add the priority processing flag to a crash report
+    This flag will cause a processed report to be added to the priority dbfeeder queue
+    """
+    self.client.mutateRow('crash_reports', ooid_to_row_id(ooid),
+        [self.mutationClass(column="flags:priority_processing",value='Y')])
+
+  @optional_retry_wrapper
   def put_processed_json(self,ooid,processed_json):
     """
     Create a crash report from the cooked json output of the processor
@@ -707,13 +801,15 @@ class HBaseConnectionForCrashReports(HBaseConnection):
 
     processing_state = self.get_report_processing_state(ooid)
     submitted_timestamp = processing_state.get('timestamps:submitted', processed_json.get('date_processed','unknown'))
+    legacy_processing = processing_state.get('flags:legacy_processing', 'Y')
+    priority_processing = processing_state.get('flags:priority_processing', 'N')
 
     if 'N' == processing_state.get('flags:processed', '?'):
       index_row_key = guid_to_timestamped_row_id(ooid, submitted_timestamp)
       self.client.atomicIncrement('metrics','crash_report_queue','counters:current_unprocessed_size',-1)
       self.client.deleteAllRow('crash_reports_index_unprocessed_flag', index_row_key)
 
-    processed_timestamp = processed_json['completeddatetime']
+    processed_timestamp = processed_json['completed_datetime']
 
     if 'signature' in processed_json:
       if len(processed_json['signature']) > 0:
@@ -723,31 +819,41 @@ class HBaseConnectionForCrashReports(HBaseConnection):
     else:
       signature = '##null##'
 
+    processed_json = json.dumps(processed_json, cls=IterableJsonEncoder)
+
     mutationList = []
     mutationList.append(self.mutationClass(column="timestamps:processed",value=processed_timestamp))
     mutationList.append(self.mutationClass(column="processed_data:signature",value=signature))
-    mutationList.append(self.mutationClass(column="processed_data:json",value=json.dumps(processed_json)))
+    mutationList.append(self.mutationClass(column="processed_data:json",value=processed_json))
     mutationList.append(self.mutationClass(column="flags:processed",value="Y"))
 
     self.client.mutateRow('crash_reports',row_id,mutationList)
 
+    # Supply Socorro 1.8 DB Feeder with data it needs
+    if priority_processing == 'Y':
+      self.insert_to_priority_db_feeder_queue(ooid,submitted_timestamp,processed_json)
+    elif legacy_processing == 'Y':
+      self.insert_to_legacy_db_feeder_queue(ooid,submitted_timestamp,processed_json)
+
     sig_ooid_idx_row_key = signature + ooid
     self.client.mutateRow('crash_reports_index_signature_ooid', sig_ooid_idx_row_key,
                           [self.mutationClass(column="ids:ooid",value=ooid)])
+
+    self.update_metrics_counters_for_process(processed_timestamp)
 
 def salted_scanner_iterable(logger,client,make_row_nice,salted_prefix,scanner):
   """
   Generator based iterable that runs over an HBase scanner
   yields a tuple of the un-salted rowkey and the nice format of the row.
   """
-  logger.debug('Scanner %s generated', salted_prefix)
+  #logger.debug('Scanner %s generated', salted_prefix)
   raw_rows = client.scannerGet(scanner)
   while raw_rows:
     nice_row = make_row_nice(raw_rows[0])
     #logger.debug('Scanner %s returning nice_row (%s) for raw_rows (%s)' % (self.salted_prefix,nice_row,raw_rows))
     yield (nice_row['_rowkey'][1:], nice_row)
     raw_rows = client.scannerGet(scanner)
-  logger.debug('Scanner %s exhausted' % salted_prefix)
+  #logger.debug('Scanner %s exhausted' % salted_prefix)
   client.scannerClose(scanner)
 
 # TODO: Warning, the command line methods haven't been tested for bitrot
@@ -802,7 +908,7 @@ if __name__=="__main__":
   args = sys.argv[argi+1:]
 
   connection = HBaseConnectionForCrashReports(host, port, 5000, logger=utl.FakeLogger())
-  
+
   if cmd == 'get_report':
     if len(args) != 1:
       usage()

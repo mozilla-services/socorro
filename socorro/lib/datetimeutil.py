@@ -16,7 +16,10 @@ def datetimeFromISOdateString(s):
       minute = int(s[14:16])
       second = int(s[17:19])
       if len(s) > 19:
-        millisecond = int(s[20:])
+        if s[-6] in '+-':
+          millisecond = int(s[20:-6])
+        else:
+          millisecond = int(s[20:])
   except Exception, e:
     raise ValueError('Invalid timestamp - "%s": %s' % (s, str(e)))
   return dt.datetime(year, month, day, hour, minute, second, millisecond)

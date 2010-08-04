@@ -12,7 +12,7 @@ except ImportError:
 ## You can fix it by checking out https://socorro.googlecode.com/svn/trunk/thirdparty
 ## and adding .../thirdparty to your PYTHONPATH (or equivalent)
 try:
-  import socorro.collector.crashstorage as cstore
+  import socorro.storage.crashstorage as cstore
 except ImportError,x:
   print>> sys.stderr,"""
 ## If you see "Failure: ImportError (No module named thrift) ... ERROR"
@@ -168,6 +168,9 @@ def testCrashStorageSystemForHBase___init__():
   j = util.DotDict()
   d.hbaseHost = 'fred'
   d.hbasePort = 'ethel'
+  d.hbaseTimeout = 9
+  d.hbaseRetry = 1
+  d.hbaseRetryDelay = 10
   j.root = d.hbaseFallbackFS = '.'
   d.throttleConditions = []
   j.maxDirectoryEntries = d.hbaseFallbackDumpDirCount = 1000000
@@ -178,7 +181,7 @@ def testCrashStorageSystemForHBase___init__():
   j.dirPermissions = d.hbaseFallbackDirPermissions = 770
   j.logger = d.logger = util.SilentFakeLogger()
   fakeHbaseModule = exp.DummyObjectWithExpectations('fakeHbaseModule')
-  fakeHbaseModule.expect('HBaseConnectionForCrashReports', ('fred', 'ethel'), {"logger":d.logger}, 'a fake connection', None)
+  fakeHbaseModule.expect('HBaseConnectionForCrashReports', ('fred', 'ethel', 9), {"logger":d.logger}, 'a fake connection', None)
   fakeJsonDumpStore = exp.DummyObjectWithExpectations('fakeJsonDumpStore')
   fakeJsonDumpModule = exp.DummyObjectWithExpectations('fakeJsonDumpModule')
   fakeJsonDumpModule.expect('JsonDumpStorage', (), j, fakeJsonDumpStore, None)
@@ -191,7 +194,7 @@ def testCrashStorageSystemForHBase_save_1():
   expectedDumpResult = '1234567890/n'
   fakeDumpStream = exp.DummyObjectWithExpectations('fakeDumpStream')
   fakeDumpStream.expect('read', (), {}, expectedDumpResult, None)
-  rsr = cstore.RepeatableStreamReader(fakeDumpStream)
+  rsr = expectedDumpResult
 
   jdict = util.DotDict({'ProductName':'FireFloozy', 'Version':'3.6', 'legacy_processing':1})
 
@@ -199,6 +202,9 @@ def testCrashStorageSystemForHBase_save_1():
   j = util.DotDict()
   d.hbaseHost = 'fred'
   d.hbasePort = 'ethel'
+  d.hbaseTimeout = 9
+  d.hbaseRetry = 1
+  d.hbaseRetryDelay = 10
   j.root = d.hbaseFallbackFS = '.'
   d.throttleConditions = []
   j.maxDirectoryEntries = d.hbaseFallbackDumpDirCount = 1000000
@@ -210,10 +216,10 @@ def testCrashStorageSystemForHBase_save_1():
   d.logger = util.SilentFakeLogger()
 
   fakeHbaseConnection = exp.DummyObjectWithExpectations('fakeHbaseConnection')
-  fakeHbaseConnection.expect('put_json_dump', ('uuid', jdict, expectedDumpResult), {"number_of_retries":1}, None, None)
+  fakeHbaseConnection.expect('put_json_dump', ('uuid', jdict, expectedDumpResult), {"number_of_retries":1, "wait_between_retries":10}, None, None)
 
   fakeHbaseModule = exp.DummyObjectWithExpectations('fakeHbaseModule')
-  fakeHbaseModule.expect('HBaseConnectionForCrashReports', ('fred', 'ethel'), {"logger":d.logger}, fakeHbaseConnection, None)
+  fakeHbaseModule.expect('HBaseConnectionForCrashReports', ('fred', 'ethel', 9), {"logger":d.logger}, fakeHbaseConnection, None)
 
   fakeJsonDumpStore = exp.DummyObjectWithExpectations('fakeJsonDumpStore')
   fakeJsonDumpModule = exp.DummyObjectWithExpectations('fakeJsonDumpModule')
@@ -238,6 +244,9 @@ def testCrashStorageSystemForHBase_save_2():
   j = util.DotDict()
   d.hbaseHost = 'fred'
   d.hbasePort = 'ethel'
+  d.hbaseTimeout = 9
+  d.hbaseRetry = 1
+  d.hbaseRetryDelay = 10
   j.root = d.hbaseFallbackFS = '.'
   d.throttleConditions = []
   j.maxDirectoryEntries = d.hbaseFallbackDumpDirCount = 1000000
@@ -253,7 +262,7 @@ def testCrashStorageSystemForHBase_save_2():
   fakeHbaseConnection.expect('put_json_dump', ('uuid', jdict, expectedDumpResult), {"number_of_retries":1}, None, Exception())
 
   fakeHbaseModule = exp.DummyObjectWithExpectations('fakeHbaseModule')
-  fakeHbaseModule.expect('HBaseConnectionForCrashReports', ('fred', 'ethel'), {"logger":d.logger}, fakeHbaseConnection, None)
+  fakeHbaseModule.expect('HBaseConnectionForCrashReports', ('fred', 'ethel', 9), {"logger":d.logger}, fakeHbaseConnection, None)
 
   class FakeFile(object):
     def write(self, x): pass
@@ -288,6 +297,9 @@ def testCrashStorageSystemForHBase_save_3():
   d = util.DotDict()
   d.hbaseHost = 'fred'
   d.hbasePort = 'ethel'
+  d.hbaseTimeout = 9
+  d.hbaseRetry = 1
+  d.hbaseRetryDelay = 10
   d.hbaseFallbackFS = ''
   d.throttleConditions = []
   d.hbaseFallbackDumpDirCount = 1000000
@@ -303,7 +315,7 @@ def testCrashStorageSystemForHBase_save_3():
   fakeHbaseConnection.expect('put_json_dump', ('uuid', jdict, expectedDumpResult), {"number_of_retries":1}, None, Exception())
 
   fakeHbaseModule = exp.DummyObjectWithExpectations('fakeHbaseModule')
-  fakeHbaseModule.expect('HBaseConnectionForCrashReports', ('fred', 'ethel'), {"logger":d.logger}, fakeHbaseConnection, None)
+  fakeHbaseModule.expect('HBaseConnectionForCrashReports', ('fred', 'ethel', 9), {"logger":d.logger}, fakeHbaseConnection, None)
 
   fakeJsonDumpModule = exp.DummyObjectWithExpectations('fakeJsonDumpModule')
 

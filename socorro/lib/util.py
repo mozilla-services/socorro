@@ -124,6 +124,21 @@ def lookupStringOrEmptyString(aDict, aKey):
   except KeyError:
     return ''
 
+#-----------------------------------------------------------------------------------------------------------------
+def get_req(j_doc, key, err_list, default=None, max_len=10000):
+  try:
+    return j_doc[key][:max_len];
+  except KeyError:
+    err_list.append("WARNING: missing key: %s" % key)
+    return default
+
+#-----------------------------------------------------------------------------------------------------------------
+def get_int_or_none(j_doc, key, max_len=10000):
+  try:
+    return int(j_doc[key][:max_len]);
+  except (KeyError, TypeError, ValueError):
+    return None
+
 #=================================================================================================================
 class DotDict(dict):
   __getattr__= dict.__getitem__

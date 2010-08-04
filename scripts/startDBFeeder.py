@@ -4,22 +4,20 @@ import sys
 import logging
 import logging.handlers
 
-try:
-  import config.dailyurlconfig as config
-except ImportError:
-  import dailyurlconfig as config
+import config.dbfeederconfig as config
 
+import socorro.processor.dbfeeder as feeder
 import socorro.lib.ConfigurationManager as configurationManager
-import socorro.cron.dailyUrl as url
+import socorro.lib.util as util
 
 try:
-  configurationContext = configurationManager.newConfiguration(configurationModule=config, applicationName="Daily URL Dump 0.1")
+  configurationContext = configurationManager.newConfiguration(configurationModule=config, applicationName="Socorro Database Feeder 1.0")
 except configurationManager.NotAnOptionError, x:
   print >>sys.stderr, x
   print >>sys.stderr, "for usage, try --help"
   sys.exit()
 
-logger = logging.getLogger("dailyUrlDump")
+logger = logging.getLogger("dbfeeder")
 logger.setLevel(logging.DEBUG)
 
 stderrLog = logging.StreamHandler()
@@ -39,12 +37,13 @@ logger.addHandler(syslog)
 
 logger.info("current configuration\n%s", str(configurationContext))
 
+configurationContext.logger = logger
+
 try:
-  url.dailyUrlDump(configurationContext)
+  try:
+    f = feeder.DbFeeder(configurationContext)
+    f.start()
+  except Exception:
+    util.reportExceptionAndContinue(logger)
 finally:
   logger.info("done.")
-  rotatingFileLog.flush()
-  rotatingFileLog.close()
-
-
-

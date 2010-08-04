@@ -1,12 +1,12 @@
-import simplejson as json
+import json
 import logging
 import web
 
 import socorro.lib.util as util
-import socorro.database.database as db
-import socorro.collector.crashstorage as cs
 
 logger = logging.getLogger("webapi")
+
+
 
 #-----------------------------------------------------------------------------------------------------------------
 def typeConversion (listOfTypeConverters, listOfValuesToConvert):
@@ -19,11 +19,10 @@ class Unimplemented(Exception):
 #=================================================================================================================
 class JsonServiceBase (object):
   #-----------------------------------------------------------------------------------------------------------------
-  def __init__(self, config):
+  def __init__(self, context):
     try:
-      self.context = config
-      self.database = db.Database(config)
-      self.crashStoragePool = cs.CrashStoragePool(config)
+      self.context = context
+      self.logger = context.logger
     except (AttributeError, KeyError):
       util.reportExceptionAndContinue(logger)
 
@@ -47,3 +46,5 @@ class JsonServiceBase (object):
   #-----------------------------------------------------------------------------------------------------------------
   def get(self, *args):
     raise Unimplemented("the GET function has not been implemented for %s" % args)
+
+

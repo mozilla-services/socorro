@@ -3,11 +3,6 @@
 #
 
 try:
-  import socorro.lib.uuid as uuid
-except ImportError:
-  import uuid
-
-try:
   import json
 except ImportError:
   import simplejson as json
@@ -16,8 +11,10 @@ import socorro.lib.ooid as ooid
 import socorro.lib.util as sutil
 import socorro.lib.JsonDumpStorage as jds
 import socorro.lib.ver_tools as vtl
+import socorro.lib.jsonUtil as jsut
 
-import socorro.hbase.hbaseClient as hbc
+import socorro.storage.hbaseClient as hbc
+from socorro.storage.hbaseClient import OoidNotFoundException
 
 import os
 import datetime as dt
@@ -26,7 +23,7 @@ import re
 import random
 import logging
 import threading
-import base64
+#import base64
 logger = logging.getLogger("collector")
 
 compiledRegularExpressionType = type(re.compile(''))
@@ -47,7 +44,7 @@ def benchmark(fn):
   return t
 
 #=================================================================================================================
-class UuidNotFoundException(Exception):
+class OoidNotFoundException(Exception):
   pass
 
 #=================================================================================================================
@@ -210,11 +207,12 @@ class CrashStorageSystem(object):
     names = [name for name in form.keys() if name != self.config.dumpField]
     jsonDict = sutil.DotDict()
     for name in names:
-      if type(form[name]) == str:
+      t = type(form[name])
+      if t in (str, unicode):
         jsonDict[name] = form[name]
       else:
         jsonDict[name] = form[name].value
-    jsonDict.timestamp = tm.time()
+    #jsonDict.timestamp = tm.time()
     return jsonDict
   #-----------------------------------------------------------------------------------------------------------------
   NO_ACTION = 0
@@ -225,25 +223,25 @@ class CrashStorageSystem(object):
   def terminated (self, jsonData):
     return False
   #-----------------------------------------------------------------------------------------------------------------
-  def save_raw (self, uuid, jsonData, dump):
+  def save_raw (self, ooid, jsonData, dump):
     return CrashStorageSystem.NO_ACTION
   #-----------------------------------------------------------------------------------------------------------------
-  def save_processed (self, uuid, jsonData):
+  def save_processed (self, ooid, jsonData):
     return CrashStorageSystem.NO_ACTION
   #-----------------------------------------------------------------------------------------------------------------
-  def get_meta (self, uuid):
+  def get_meta (self, ooid):
     raise NotImplementedException("get_meta is not implemented")
   #-----------------------------------------------------------------------------------------------------------------
-  def get_raw_dump (self, uuid):
+  def get_raw_dump (self, ooid):
     raise NotImplementedException("get_raw_crash is not implemented")
   #-----------------------------------------------------------------------------------------------------------------
-  def get_raw_dump_base64(self,uuid):
+  def get_raw_dump_base64(self,ooid):
     raise NotImplementedException("get_raw_dump_base64 is not implemented")
   #-----------------------------------------------------------------------------------------------------------------
-  def get_processed (self, uuid):
+  def get_processed (self, ooid):
     raise NotImplementedException("get_processed is not implemented")
   #-----------------------------------------------------------------------------------------------------------------
-  def uuidInStorage (self, uuid):
+  def uuidInStorage (self, ooid):
     return False
   #-----------------------------------------------------------------------------------------------------------------
   def newUuids(self):
@@ -257,7 +255,12 @@ class CrashStorageSystemForHBase(CrashStorageSystem):
     assert "hbaseHost" in config, "hbaseHost is missing from the configuration"
     assert "hbasePort" in config, "hbasePort is missing from the configuration"
     assert "hbaseTimeout" in config, "hbaseTimeout is missing from the configuration"
+    assert "hbaseRetry" in config, "hbaseRetry is missing from the configuration"
+    assert "hbaseRetryDelay" in config, "hbaseRetryDelay is missing from the configuration"
     self.logger.info('connecting to hbase')
+    self.hbaseRetry = config.hbaseRetry
+    self.hbaseRetryDelay = config.hbaseRetryDelay
+    self.logger.debug('hbase conf: %s:%s', config.hbaseHost, config.hbasePort)
     self.hbaseConnection = hbaseClient.HBaseConnectionForCrashReports(config.hbaseHost, config.hbasePort, config.hbaseTimeout, logger=self.logger)
 
   #-----------------------------------------------------------------------------------------------------------------
@@ -265,59 +268,114 @@ class CrashStorageSystemForHBase(CrashStorageSystem):
     self.hbaseConnection.close()
 
   #-----------------------------------------------------------------------------------------------------------------
-  def save_raw (self, uuid, jsonData, dump, currentTimestamp):
+  def save_raw (self, ooid, jsonData, dump, currentTimestamp):
     try:
       jsonDataAsString = json.dumps(jsonData)
-      self.hbaseConnection.put_json_dump(uuid, jsonData, dump.read(), number_of_retries=2)
+      self.hbaseConnection.put_json_dump(ooid,
+                                         jsonData,
+                                         #dump.read(),
+                                         dump,
+                                         number_of_retries=self.hbaseRetry,
+                                         wait_between_retries=self.hbaseRetryDelay)
       return CrashStorageSystem.OK
     except Exception, x:
       sutil.reportExceptionAndContinue(self.logger)
       return CrashStorageSystem.ERROR
 
   #-----------------------------------------------------------------------------------------------------------------
-  def save_processed (self, uuid, jsonData):
-    self.hbaseConnection.put_processed_json(uuid, jsonData, number_of_retries=2)
+  def save_processed (self, ooid, jsonData):
+    try:
+      self.hbaseConnection.put_processed_json(ooid,
+                                              jsonData,
+                                              number_of_retries=self.hbaseRetry,
+                                              wait_between_retries=self.hbaseRetryDelay)
+    except UnicodeDecodeError:
+      jsonData = jsut.sanitizeForJson(jsonData)
+      self.hbaseConnection.put_processed_json(ooid,
+                                              jsonData,
+                                              number_of_retries=self.hbaseRetry,
+                                              wait_between_retries=self.hbaseRetryDelay)
 
   #-----------------------------------------------------------------------------------------------------------------
-  def get_meta (self, uuid):
-    return self.hbaseConnection.get_json(uuid, number_of_retries=2)
+  def get_meta (self, ooid):
+    return self.hbaseConnection.get_json(ooid,
+                                         number_of_retries=self.hbaseRetry,
+                                         wait_between_retries=self.hbaseRetryDelay)
 
   #-----------------------------------------------------------------------------------------------------------------
-  def get_raw_dump (self, uuid):
-    return self.hbaseConnection.get_dump(uuid, number_of_retries=2)
+  def get_raw_dump (self, ooid):
+    return self.hbaseConnection.get_dump(ooid,
+                                         number_of_retries=self.hbaseRetry,
+                                         wait_between_retries=self.hbaseRetryDelay)
 
   #-----------------------------------------------------------------------------------------------------------------
-  def get_raw_dump_base64 (self, uuid):
-    dump = self.get_raw_dump(uuid, number_of_retries=2)
-    return base64.b64encode(dump)
+  #def get_raw_dump_base64 (self, ooid):
+    #dump = self.get_raw_dump(ooid,
+                             #number_of_retries=self.hbaseRetry,
+                             #wait_between_retries=self.hbaseRetryDelay)
+    #return base64.b64encode(dump)
 
   #-----------------------------------------------------------------------------------------------------------------
-  def get_processed (self, uuid):
-    return self.hbaseConnection.get_processed_json(uuid, number_of_retries=2)
+  def get_processed (self, ooid):
+    try:
+      return self.hbaseConnection.get_processed_json(ooid,
+                                                     number_of_retries=self.hbaseRetry,
+                                                     wait_between_retries=self.hbaseRetryDelay)
+    except hbc.OoidNotFoundException, x:
+      raise OoidNotFoundException(ooid)
 
   #-----------------------------------------------------------------------------------------------------------------
-  def uuidInStorage (self, uuid):
-    return self.hbaseConnection.acknowledge_ooid_as_legacy_priority_job(uuid, number_of_retries=2)
+  def uuidInStorage (self, ooid):
+    return self.hbaseConnection.acknowledge_ooid_as_legacy_priority_job(ooid,
+                                                                        number_of_retries=self.hbaseRetry,
+                                                                        wait_between_retries=self.hbaseRetryDelay)
 
   #-----------------------------------------------------------------------------------------------------------------
-  def dumpPathForUuid(self, uuid, basePath):
-    dumpPath = ("%s/%s.dump" % (basePath, uuid)).replace('//', '/')
+  def dumpPathForUuid(self, ooid, basePath):
+    dumpPath = ("%s/%s.dump" % (basePath, ooid)).replace('//', '/')
     f = open(dumpPath, "w")
     try:
-      dump = self.hbaseConnection.get_dump(uuid, number_of_retries=2)
+      dump = self.hbaseConnection.get_dump(ooid,
+                                           number_of_retries=self.hbaseRetry,
+                                           wait_between_retries=self.hbaseRetryDelay)
       f.write(dump)
     finally:
       f.close()
     return dumpPath
 
   #-----------------------------------------------------------------------------------------------------------------
-  def cleanUpTempDumpStorage(self, uuid, basePath):
-    dumpPath = ("%s/%s.dump" % (basePath, uuid)).replace('//', '/')
+  def cleanUpTempDumpStorage(self, ooid, basePath):
+    dumpPath = ("%s/%s.dump" % (basePath, ooid)).replace('//', '/')
     os.unlink(dumpPath)
 
   #-----------------------------------------------------------------------------------------------------------------
   def newUuids(self):
     return self.hbaseConnection.iterator_for_all_legacy_to_be_processed()
+
+  #-----------------------------------------------------------------------------------------------------------------
+  def dbFeederStandardJobIter(self, sleepFunction=tm.sleep):
+    while True:
+      #self.logger.debug('invoking hbaseConnection.iterator_for_legacy_db_feeder_queue')
+      for x in self.hbaseConnection.iterator_for_legacy_db_feeder_queue():
+        #self.logger.debug('about to yield')
+        #self.logger.debug(x)
+        yield json.loads(x)
+      self.logger.debug('no jobs to do.  napping for 30 seconds')
+      sleepFunction(30)
+
+  #-----------------------------------------------------------------------------------------------------------------
+  def tagAsPriority(self, ooid):
+    self.hbaseConnection.put_priority_flag(ooid)
+
+  #-----------------------------------------------------------------------------------------------------------------
+  def dbFeederPriorityJobIter(self, sleepFunction=tm.sleep):
+    while True:
+      #self.logger.debug('invoking hbaseConnection.iterator_for_legacy_db_feeder_queue')
+      for x in self.hbaseConnection.iterator_for_priority_db_feeder_queue():
+        #self.logger.debug('about to yield')
+        yield json.loads(x)
+      self.logger.debug('no jobs to do.  napping for 5 seconds')
+      sleepFunction(5)
 
 #=================================================================================================================
 class CollectorCrashStorageSystemForHBase(CrashStorageSystemForHBase):
@@ -343,17 +401,22 @@ class CollectorCrashStorageSystemForHBase(CrashStorageSystemForHBase):
       self.fallbackCrashStorage = None
 
   #-----------------------------------------------------------------------------------------------------------------
-  def save_raw (self, uuid, jsonData, dump, currentTimestamp):
+  def save_raw (self, ooid, jsonData, dump, currentTimestamp):
     try:
       jsonDataAsString = json.dumps(jsonData)
-      self.hbaseConnection.put_json_dump(uuid, jsonData, dump.read(), number_of_retries=2)
+      self.hbaseConnection.put_json_dump(ooid,
+                                         jsonData,
+                                         #dump.read(),
+                                         dump,
+                                         number_of_retries=self.hbaseRetry,
+                                         wait_between_retries=self.hbaseRetryDelay)
       return CrashStorageSystem.OK
     except Exception, x:
       sutil.reportExceptionAndContinue(self.logger)
       if self.fallbackCrashStorage:
-        self.logger.warning('cannot save %s in hbase, falling back to filesystem', uuid)
+        self.logger.warning('cannot save %s in hbase, falling back to filesystem', ooid)
         try:
-          jsonFileHandle, dumpFileHandle = self.fallbackCrashStorage.newEntry(uuid, self.hostname, currentTimestamp)
+          jsonFileHandle, dumpFileHandle = self.fallbackCrashStorage.newEntry(ooid, self.hostname, currentTimestamp)
           try:
             dumpFileHandle.write(dump.read())
             json.dump(jsonData, jsonFileHandle)
@@ -364,12 +427,12 @@ class CollectorCrashStorageSystemForHBase(CrashStorageSystemForHBase):
         except Exception, x:
           sutil.reportExceptionAndContinue(self.logger)
       else:
-        self.logger.warning('there is no fallback storage for hbase: dropping %s on the floor', uuid)
+        self.logger.warning('there is no fallback storage for hbase: dropping %s on the floor', ooid)
       return CrashStorageSystem.ERROR
 
 
 #=================================================================================================================
-class CrashStorageSystemForNFS(CrashStorageSystem):
+class CrashStorageSystemForNFS(CrashStorageSystem):   # DEPRECATED
   #-----------------------------------------------------------------------------------------------------------------
   def __init__ (self, config):
     super(CrashStorageSystemForNFS, self).__init__(config)
@@ -401,7 +464,7 @@ class CrashStorageSystemForNFS(CrashStorageSystem):
 
 
   #-----------------------------------------------------------------------------------------------------------------
-  def save_raw (self, uuid, jsonData, dump, currentTimestamp):
+  def save_raw (self, ooid, jsonData, dump, currentTimestamp):
     try:
       #throttleAction = self.throttler.throttle(jsonData)
       throttleAction = jsonData.legacy_processing
@@ -415,7 +478,7 @@ class CrashStorageSystemForNFS(CrashStorageSystem):
         self.logger.debug("not throttled %s %s", jsonData.ProductName, jsonData.Version)
         fileSystemStorage = self.standardFileSystemStorage
 
-      jsonFileHandle, dumpFileHandle = fileSystemStorage.newEntry(uuid, self.hostname, currentTimestamp)
+      jsonFileHandle, dumpFileHandle = fileSystemStorage.newEntry(ooid, self.hostname, currentTimestamp)
       try:
         try:
           dumpFileHandle.write(dump.read())
@@ -432,8 +495,8 @@ class CrashStorageSystemForNFS(CrashStorageSystem):
       return CrashStorageSystem.ERROR
 
   #-----------------------------------------------------------------------------------------------------------------
-  def get_raw (self, uuid):
-    jobPathname = self.jsonPathForUuidInJsonDumpStorage(uuid)
+  def get_raw (self, ooid):
+    jobPathname = self.jsonPathForUuidInJsonDumpStorage(ooid)
     jsonFile = open(jobPathname)
     try:
       jsonDocument = simplejson.load(jsonFile)
@@ -442,40 +505,40 @@ class CrashStorageSystemForNFS(CrashStorageSystem):
     return jsonDocument
 
   #-----------------------------------------------------------------------------------------------------------------
-  def jsonPathForUuidInJsonDumpStorage(self, uuid):
+  def jsonPathForUuidInJsonDumpStorage(self, ooid):
     try:
-      jsonPath = self.standardJobStorage.getJson(uuid)
+      jsonPath = self.standardJobStorage.getJson(ooid)
     except (OSError, IOError):
       try:
-        jsonPath = self.deferredJobStorage.getJson(uuid)
+        jsonPath = self.deferredJobStorage.getJson(ooid)
       except (OSError, IOError):
-        raise UuidNotFoundException("%s cannot be found in standard or deferred storage" % uuid)
+        raise OoidNotFoundException("%s cannot be found in standard or deferred storage" % ooid)
     return jsonPath
 
   #-----------------------------------------------------------------------------------------------------------------
-  def dumpPathForUuid(self, uuid, ignoredBasePath):
+  def dumpPathForUuid(self, ooid, ignoredBasePath):
     try:
-      dumpPath = self.standardJobStorage.getDump(uuid)
+      dumpPath = self.standardJobStorage.getDump(ooid)
     except (OSError, IOError):
       try:
-        dumpPath = self.deferredJobStorage.getDump(uuid)
+        dumpPath = self.deferredJobStorage.getDump(ooid)
       except (OSError, IOError):
-        raise UuidNotFoundException("%s cannot be found in standard or deferred storage" % uuid)
+        raise OoidNotFoundException("%s cannot be found in standard or deferred storage" % ooid)
     return dumpPath
 
   #-----------------------------------------------------------------------------------------------------------------
-  def cleanUpTempDumpStorage(self, uuid, ignoredBasePath):
+  def cleanUpTempDumpStorage(self, ooid, ignoredBasePath):
     pass
 
   #-----------------------------------------------------------------------------------------------------------------
-  def uuidInStorage(self, uuid):
+  def uuidInStorage(self, ooid):
     try:
-      uuidPath = self.standardJobStorage.getJson(uuid)
-      self.standardJobStorage.markAsSeen(uuid)
+      uuidPath = self.standardJobStorage.getJson(ooid)
+      self.standardJobStorage.markAsSeen(ooid)
     except (OSError, IOError):
       try:
-        uuidPath = self.deferredJobStorage.getJson(uuid)
-        self.deferredJobStorage.markAsSeen(uuid)
+        uuidPath = self.deferredJobStorage.getJson(ooid)
+        self.deferredJobStorage.markAsSeen(ooid)
       except (OSError, IOError):
         return False
     return True
@@ -488,24 +551,20 @@ class CrashStorageSystemForNFS(CrashStorageSystem):
 #=================================================================================================================
 class CrashStoragePool(dict):
   #-----------------------------------------------------------------------------------------------------------------
-  def __init__(self, config):
+  def __init__(self, config, storageClass=CrashStorageSystemForHBase):
     super(CrashStoragePool, self).__init__()
     self.config = config
     self.logger = config.logger
-    if config.crashStorageClass == 'CrashStorageSystemForHBase':
-      self.crashStorageClass = CrashStorageSystemForHBase
-    else:
-      self.crashStorageClass = CrashStorageSystemForNFS
-    self.logger.debug("%s - creating crashStorePool", threading.currentThread().getName())
+    self.storageClass = storageClass
+    self.logger.debug("creating crashStorePool")
 
   #-----------------------------------------------------------------------------------------------------------------
   def crashStorage(self, name=None):
-    """Like connecionCursorPairNoTest, but test that the specified connection actually works"""
     if name is None:
       name = threading.currentThread().getName()
     if name not in self:
-      self.logger.debug("%s - creating crashStore for %s", threading.currentThread().getName(), name)
-      self[name] = c = self.crashStorageClass(self.config)
+      self.logger.debug("creating crashStore for %s", name)
+      self[name] = c = self.storageClass(self.config)
       return c
     return self[name]
 
@@ -514,7 +573,7 @@ class CrashStoragePool(dict):
     for name, crashStore in self.iteritems():
       try:
         crashStore.close()
-        self.logger.debug("%s - crashStore %s closed", threading.currentThread().getName(), name)
+        self.logger.debug("crashStore %s closed", name)
       except:
         sutil.reportExceptionAndContinue(self.logger)
 

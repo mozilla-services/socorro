@@ -3,97 +3,93 @@ import re
 
 import socorro.lib.ConfigurationManager as cm
 
+#-------------------------------------------------------------------------------
 # Storage constants
-
-from config.commonconfig import crashStorageClass
 
 from config.commonconfig import jsonFileSuffix
 from config.commonconfig import dumpFileSuffix
 
-#---------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 # HBase storage system
-if crashStorageClass.default == 'CrashStorageSystemForHBase':
-  from config.commonconfig import hbaseHost
-  from config.commonconfig import hbasePort
-  from config.commonconfig import hbaseTimeout
+from config.commonconfig import hbaseHost
+from config.commonconfig import hbasePort
+from config.commonconfig import hbaseTimeout
+from config.commonconfig import hbaseRetry
+from config.commonconfig import hbaseRetryDelay
 
-  hbaseFallbackFS = cm.Option()
-  hbaseFallbackFS.doc = 'a path to a local file system to use if hbase fails'
-  hbaseFallbackFS.default = './'
+hbaseFallbackFS = cm.Option()
+hbaseFallbackFS.doc = 'a path to a local file system to use if hbase fails'
+hbaseFallbackFS.default = './'
 
-  hbaseFallbackDumpDirCount = cm.Option()
-  hbaseFallbackDumpDirCount.doc = 'the number of dumps to be stored in a single directory in the hbaseFallback File System'
-  hbaseFallbackDumpDirCount.default = 1024
+hbaseFallbackDumpDirCount = cm.Option()
+hbaseFallbackDumpDirCount.doc = 'the number of dumps to be stored in a single directory in the hbaseFallback File System'
+hbaseFallbackDumpDirCount.default = 1024
 
-  hbaseFallbackDumpGID = cm.Option()
-  hbaseFallbackDumpGID.doc="the group ID for saved crashes in hbaseFallback File System (optional)"
-  hbaseFallbackDumpGID.default = None
+hbaseFallbackDumpGID = cm.Option()
+hbaseFallbackDumpGID.doc="the group ID for saved crashes in hbaseFallback File System (optional)"
+hbaseFallbackDumpGID.default = None
 
-  hbaseFallbackDumpPermissions = cm.Option()
-  hbaseFallbackDumpPermissions.doc = "a number used for permissions crash dump files in the hbaseFallback File System"
-  hbaseFallbackDumpPermissions.default = stat.S_IRGRP | stat.S_IWGRP | stat.S_IRUSR | stat.S_IWUSR
+hbaseFallbackDumpPermissions = cm.Option()
+hbaseFallbackDumpPermissions.doc = "a number used for permissions crash dump files in the hbaseFallback File System"
+hbaseFallbackDumpPermissions.default = stat.S_IRGRP | stat.S_IWGRP | stat.S_IRUSR | stat.S_IWUSR
 
-  hbaseFallbackDirPermissions = cm.Option()
-  hbaseFallbackDirPermissions.doc = "a number used for permissions for directories in the hbaseFallback File System"
-  hbaseFallbackDirPermissions = stat.S_IRGRP | stat.S_IXGRP | stat.S_IWGRP | stat.S_IRUSR | stat.S_IXUSR | stat.S_IWUSR
+hbaseFallbackDirPermissions = cm.Option()
+hbaseFallbackDirPermissions.doc = "a number used for permissions for directories in the hbaseFallback File System"
+hbaseFallbackDirPermissions = stat.S_IRGRP | stat.S_IXGRP | stat.S_IWGRP | stat.S_IRUSR | stat.S_IXUSR | stat.S_IWUSR
 
-  # the percentage of submissions should be passed on to hbase
-  hbaseSubmissionRate = cm.Option()
-  hbaseSubmissionRate.default = 100
+#-------------------------------------------------------------------------------
+# alternative backup crash storage
+#useBackupNFSStorage = cm.Option()
+#useBackupNFSStorage.default = True
+#
+#if useBackupNFSStorage.default == True:
+#  storageRoot = cm.Option()
+#  storageRoot.doc = 'the root of the file system where dumps are found'
+#  storageRoot.default = '/tmp/socorro/toBeProcessed/'
+#
+#  deferredStorageRoot = cm.Option()
+#  deferredStorageRoot.doc = 'the root of the file system where dumps are found'
+#  deferredStorageRoot.default = '/tmp/socorro/toBeDeferred/'
+#
+#  dumpDirPrefix = cm.Option()
+#  dumpDirPrefix.doc = 'dump directory names begin with this prefix'
+#  dumpDirPrefix.default = 'bp_'
+#
+#  dumpDirCount = cm.Option()
+#  dumpDirCount.doc = 'the number of dumps to be stored in a single directory'
+#  dumpDirCount.default = 1024
+#
+#  dumpGID = cm.Option()
+#  dumpGID.doc="the group ID on minidumps so that they can be deleted by other users (optional)"
+#  dumpGID.default = None
+#
+#  dumpPermissions = cm.Option()
+#  dumpPermissions.doc = 'when saving dumps, the pemission flags to be used'
+#  dumpPermissions.default = '%d'%(stat.S_IRGRP | stat.S_IWGRP | stat.S_IRUSR | stat.S_IWUSR)
+#
+#  dirPermissions = cm.Option()
+#  dirPermissions.doc = 'when saving dumps, the permission flags to be used on directories'
+#  dirPermissions.default = '%d'%(stat.S_IRGRP | stat.S_IXGRP | stat.S_IWGRP | stat.S_IRUSR | stat.S_IXUSR | stat.S_IWUSR)
 
-  #alternative backup crash storage
-  useBackupNFSStorage = cm.Option()
-  useBackupNFSStorage.default = True
+modwsgiInstallation = cm.Option()
+modwsgiInstallation.doc = 'True or False, this app is installed under mod_wsgi'
+modwsgiInstallation.default = False
 
-  if useBackupNFSStorage.default == True:
-    storageRoot = cm.Option()
-    storageRoot.doc = 'the root of the file system where dumps are found'
-    storageRoot.default = '/tmp/socorro/toBeProcessed/'
+serverIPAddress = cm.Option()
+serverIPAddress.doc = 'the IP address from which to accept submissions if not installed under mod_wsgi'
+serverIPAddress.default = '127.0.0.1'
 
-    deferredStorageRoot = cm.Option()
-    deferredStorageRoot.doc = 'the root of the file system where dumps are found'
-    deferredStorageRoot.default = '/tmp/socorro/toBeDeferred/'
-
-    dumpDirPrefix = cm.Option()
-    dumpDirPrefix.doc = 'dump directory names begin with this prefix'
-    dumpDirPrefix.default = 'bp_'
-
-    dumpDirCount = cm.Option()
-    dumpDirCount.doc = 'the number of dumps to be stored in a single directory'
-    dumpDirCount.default = 1024
-
-    dumpGID = cm.Option()
-    dumpGID.doc="the group ID on minidumps so that they can be deleted by other users (optional)"
-    dumpGID.default = None
-
-    dumpPermissions = cm.Option()
-    dumpPermissions.doc = 'when saving dumps, the pemission flags to be used'
-    dumpPermissions.default = '%d'%(stat.S_IRGRP | stat.S_IWGRP | stat.S_IRUSR | stat.S_IWUSR)
-
-    dirPermissions = cm.Option()
-    dirPermissions.doc = 'when saving dumps, the permission flags to be used on directories'
-    dirPermissions.default = '%d'%(stat.S_IRGRP | stat.S_IXGRP | stat.S_IWGRP | stat.S_IRUSR | stat.S_IXUSR | stat.S_IWUSR)
-
-#---------------------------------------------------------------------------
-# NFS storage system
-if crashStorageClass.default == 'CrashStorageSystemForNFS':
-  from config.commonconfig import storageRoot
-  from config.commonconfig import deferredStorageRoot
-  from config.commonconfig import processedDumpStoragePath
-  from config.commonconfig import dumpDirPrefix
-  from config.commonconfig import dumpDirCount
-  from config.commonconfig import dumpGID
-  from config.commonconfig import dumpPermissions
-  from config.commonconfig import dirPermissions
-
+serverPort = cm.Option()
+serverPort.doc = 'the port to listen to for submissions if not installed under mod_wsgi'
+serverPort.default = 8882
 
 # The form field the client sends the dump in
 dumpField = cm.Option()
 dumpField.default = "upload_file_minidump"
 
 # when storing in the file system, how deep should the radix directory depth be
-storageDepth = cm.Option()
-storageDepth.default = 2
+#storageDepth = cm.Option()
+#storageDepth.default = 2
 
 # Returned to the client with a uuid following
 dumpIDPrefix = cm.Option()
@@ -120,24 +116,27 @@ benchmark = cm.Option()
 benchmark.default = False
 benchmark.fromStringConverter = cm.booleanConverter
 
-logFilePathname = cm.Option()
-logFilePathname.doc = 'full pathname for the log file'
-logFilePathname.default = './collector.log'
+#---------------------------------------------------------------------------
+# Logging
 
-logFileMaximumSize = cm.Option()
-logFileMaximumSize.doc = 'maximum size in bytes of the log file'
-logFileMaximumSize.default = 1000000
+syslogHost = cm.Option()
+syslogHost.doc = 'syslog hostname'
+syslogHost.default = 'localhost'
 
-logFileMaximumBackupHistory = cm.Option()
-logFileMaximumBackupHistory.doc = 'maximum number of log files to keep'
-logFileMaximumBackupHistory.default = 50
+syslogPort = cm.Option()
+syslogPort.doc = 'syslog port'
+syslogPort.default = 514
 
-logFileLineFormatString = cm.Option()
-logFileLineFormatString.doc = 'python logging system format for log file entries'
-logFileLineFormatString.default = '%(asctime)s %(levelname)s - %(message)s'
+syslogFacilityString = cm.Option()
+syslogFacilityString.doc = 'syslog facility string ("user", "local0", etc)'
+syslogFacilityString.default = 'user'
 
-logFileErrorLoggingLevel = cm.Option()
-logFileErrorLoggingLevel.doc = 'logging level for the log file (10 - DEBUG, 20 - INFO, 30 - WARNING, 40 - ERROR, 50 - CRITICAL)'
-logFileErrorLoggingLevel.default = 10
+syslogLineFormatString = cm.Option()
+syslogLineFormatString.doc = 'python logging system format for syslog entries'
+syslogLineFormatString.default = 'Socorro Collector (pid %(process)d): %(asctime)s %(levelname)s - %(threadName)s - %(message)s'
+
+syslogErrorLoggingLevel = cm.Option()
+syslogErrorLoggingLevel.doc = 'logging level for the log file (10 - DEBUG, 20 - INFO, 30 - WARNING, 40 - ERROR, 50 - CRITICAL)'
+syslogErrorLoggingLevel.default = 10
 
 
