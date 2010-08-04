@@ -37,6 +37,7 @@
 
 package com.mozilla.socorro.web;
 
+import gnu.trove.TObjectIntHashMap;
 import gnu.trove.TObjectIntIterator;
 
 import java.io.BufferedReader;
@@ -53,8 +54,10 @@ import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 
 import org.codehaus.jackson.JsonFactory;
 import org.codehaus.jackson.JsonGenerator;
@@ -81,6 +84,39 @@ public class CorrelationReportService {
 		this.ccDao = ccDao;
 	}
 	
+	private void generateJSONArray(JsonGenerator g, String arrayName, String fieldName, TObjectIntIterator<String> iter, int totalSigCount, TObjectIntHashMap<String> osCountsMap, int totalOsCount, boolean withVersions) throws IOException {
+		g.writeArrayFieldStart(arrayName);
+		while (iter.hasNext()) {
+			iter.advance();
+			g.writeStartObject();
+			if (!withVersions) {
+				g.writeStringField(fieldName, iter.key());
+			} else {
+				String[] splits = VERSION_DELIMITER.split(iter.key());
+				g.writeStringField(fieldName, splits[0]);
+				if (splits.length == 2) {
+					g.writeStringField("version", splits[1]);
+				} else {
+					g.writeStringField("version", "unknown");
+				}
+			}
+
+			float sigRatio = totalSigCount > 0 ? (float)iter.value() / (float)totalSigCount : 0.0f;
+			int osCount = osCountsMap.get(iter.key());
+			float osRatio = totalOsCount > 0 ? (float)osCount / (float)totalOsCount : 0.0f;
+			
+			g.writeNumberField("sigCount", iter.value());
+			g.writeNumberField("totalSigCount", totalSigCount);
+			g.writeNumberField("sigPercent", sigRatio * 100.0f);
+			
+			g.writeNumberField("osCount", osCount);
+			g.writeNumberField("totalOsCount", totalOsCount);
+			g.writeNumberField("osPercent", osRatio * 100.0f);
+			
+			g.writeEndObject();
+		}
+		g.writeEndArray();
+	}
 	private String getReportJSON(CorrelationReport report) throws IOException {
 		StringWriter sw = new StringWriter();
 		JsonFactory f = new JsonFactory();
@@ -92,146 +128,16 @@ public class CorrelationReportService {
 		g.writeStringField("os", report.getOs());
 		g.writeStringField("signature", report.getSignature());
 		
-		g.writeArrayFieldStart("core-counts");
-		TObjectIntIterator<String> iter = report.getCoreCountsIterator();
-		while (iter.hasNext()) {
-			iter.advance();
-			g.writeStartObject();
-			g.writeStringField("arch", iter.key());
-			
-			int totalSigCoreCount = report.getTotalSigCoreCount();
-			float sigRatio = totalSigCoreCount > 0 ? (float)iter.value() / (float)totalSigCoreCount : 0.0f;
-			
-			int osArchCoreCount = report.getOsCoreCounts().get(iter.key());
-			int totalOsCoreCount = report.getTotalOsCoreCount();
-			float osRatio = totalOsCoreCount > 0 ? (float)osArchCoreCount / (float)totalOsCoreCount : 0.0f;
-
-			g.writeNumberField("sigCount", iter.value());
-			g.writeNumberField("totalSigCount", totalSigCoreCount);
-			g.writeNumberField("sigPercent", sigRatio * 100.0f);
-			
-			g.writeNumberField("osCount", osArchCoreCount);
-			g.writeNumberField("totalOsCount", totalOsCoreCount);
-			g.writeNumberField("osPercent", osRatio * 100.0f);
-
-			g.writeEndObject();
-		}
-		g.writeEndArray();
-		
-		g.writeArrayFieldStart("interesting-modules");
-		iter = report.getModuleCountsIterator();
-		while (iter.hasNext()) {
-			iter.advance();
-			g.writeStartObject();
-			g.writeStringField("module", iter.key());
-			
-			int totalSigModuleCount = report.getTotalSigModuleCount();
-			float sigRatio = totalSigModuleCount > 0 ? (float)iter.value() / (float)totalSigModuleCount : 0.0f;
-			
-			int osModuleCount = report.getOsModuleCounts().get(iter.key());
-			int totalOsModuleCount = report.getTotalOsModuleCount();
-			float osRatio = totalOsModuleCount > 0 ? (float)osModuleCount / (float)totalOsModuleCount : 0.0f;
-			
-			g.writeNumberField("sigCount", iter.value());
-			g.writeNumberField("totalSigCount", totalSigModuleCount);
-			g.writeNumberField("sigPercent", sigRatio * 100.0f);
-			
-			g.writeNumberField("osCount", osModuleCount);
-			g.writeNumberField("totalOsCount", totalOsModuleCount);
-			g.writeNumberField("osPercent", osRatio * 100.0f);
-			
-			g.writeEndObject();
-		}
-		g.writeEndArray();
-		
-		g.writeArrayFieldStart("interesting-modules-with-versions");
-		iter = report.getModuleVersionCountsIterator();
-		while (iter.hasNext()) {
-			iter.advance();
-			g.writeStartObject();
-			String[] splits = VERSION_DELIMITER.split(iter.key());
-			g.writeStringField("module", splits[0]);
-			if (splits.length == 2) {
-				g.writeStringField("version", splits[1]);
-			} else {
-				g.writeStringField("version", "unknown");
-			}
-			int totalSigModuleVersionCount = report.getTotalSigModuleVersionCount();
-			float sigRatio = totalSigModuleVersionCount > 0 ? (float)iter.value() / (float)totalSigModuleVersionCount : 0.0f;
-			
-			int osModuleVersionCount = report.getOsModuleVersionCounts().get(iter.key());
-			int totalOsModuleVersionCount = report.getTotalOsModuleVersionCount();
-			float osRatio = totalOsModuleVersionCount > 0 ? (float)osModuleVersionCount / (float)totalOsModuleVersionCount : 0.0f;
-			
-			g.writeNumberField("sigCount", iter.value());
-			g.writeNumberField("totalSigCount", totalSigModuleVersionCount);
-			g.writeNumberField("sigPercent", sigRatio * 100.0f);
-			
-			g.writeNumberField("osCount", osModuleVersionCount);
-			g.writeNumberField("totalOsCount", totalOsModuleVersionCount);
-			g.writeNumberField("osPercent", osRatio * 100.0f);
-			
-			g.writeEndObject();
-		}
-		g.writeEndArray();
-		
-		g.writeArrayFieldStart("interesting-addons");
-		iter = report.getAddonCountsIterator();
-		while (iter.hasNext()) {
-			iter.advance();
-			g.writeStartObject();
-			g.writeStringField("addon", iter.key());
-			
-			int totalSigAddonCount = report.getTotalSigAddonCount();
-			float sigRatio = totalSigAddonCount > 0 ? (float)iter.value() / (float)totalSigAddonCount : 0.0f;
-			
-			int osAddonCount = report.getOsAddonCounts().get(iter.key());
-			int totalOsAddonCount = report.getTotalOsAddonCount();
-			float osRatio = totalOsAddonCount > 0 ? (float)osAddonCount / (float)totalOsAddonCount : 0.0f;
-			
-			g.writeNumberField("sigCount", iter.value());
-			g.writeNumberField("totalSigCount", totalSigAddonCount);
-			g.writeNumberField("sigPercent", sigRatio * 100.0f);
-			
-			g.writeNumberField("osCount", osAddonCount);
-			g.writeNumberField("totalOsCount", totalOsAddonCount);
-			g.writeNumberField("osPercent", osRatio * 100.0f);
-			
-			g.writeEndObject();
-		}
-		g.writeEndArray();
-		
-		g.writeArrayFieldStart("interesting-addons-with-versions");
-		iter = report.getAddonVersionCountsIterator();
-		while (iter.hasNext()) {
-			iter.advance();
-			g.writeStartObject();
-			String[] splits = VERSION_DELIMITER.split(iter.key());
-			g.writeStringField("addon", splits[0]);
-			if (splits.length == 2) {
-				g.writeStringField("version", splits[1]);
-			} else {
-				g.writeStringField("version", "unknown");
-			}
-			
-			int totalSigAddonVersionCount = report.getTotalSigAddonVersionCount();
-			float sigRatio = totalSigAddonVersionCount > 0 ? (float)iter.value() / (float)totalSigAddonVersionCount : 0.0f;
-			
-			int osAddonVersionCount = report.getOsAddonVersionCounts().get(iter.key());
-			int totalOsAddonVersionCount = report.getTotalOsAddonVersionCount();
-			float osRatio = totalOsAddonVersionCount > 0 ? (float)osAddonVersionCount / (float)totalOsAddonVersionCount : 0.0f;
-			
-			g.writeNumberField("sigCount", iter.value());
-			g.writeNumberField("totalSigCount", totalSigAddonVersionCount);
-			g.writeNumberField("sigPercent", sigRatio * 100.0f);
-			
-			g.writeNumberField("osCount", osAddonVersionCount);
-			g.writeNumberField("totalOsCount", totalOsAddonVersionCount);
-			g.writeNumberField("osPercent", osRatio * 100.0f);
-			
-			g.writeEndObject();
-		}
-		g.writeEndArray();
+		generateJSONArray(g, "core-counts", "arch", report.getCoreCountsIterator(), report.getTotalSigCoreCount(), 
+						  report.getOsCoreCounts(), report.getTotalOsCoreCount(), false);
+		generateJSONArray(g, "interesting-modules", "module", report.getModuleCountsIterator(), 
+						  report.getTotalSigModuleCount(), report.getOsModuleCounts(), report.getTotalOsModuleCount(), false);
+		generateJSONArray(g, "interesting-modules-with-versions", "module", report.getModuleVersionCountsIterator(), 
+						  report.getTotalSigModuleVersionCount(), report.getOsModuleVersionCounts(), report.getTotalOsModuleVersionCount(), true);
+		generateJSONArray(g, "interesting-addons", "addon", report.getAddonCountsIterator(), report.getTotalSigAddonCount(), 
+						  report.getOsAddonCounts(), report.getTotalOsAddonCount(), false);
+		generateJSONArray(g, "interesting-addons-with-versions", "addon", report.getAddonVersionCountsIterator(), 
+				  report.getTotalSigAddonVersionCount(), report.getOsAddonVersionCounts(), report.getTotalOsAddonVersionCount(), true);
 
 		g.writeEndObject();
 		g.close();
@@ -249,8 +155,10 @@ public class CorrelationReportService {
 			sb.append(getReportJSON(report));
 		} catch (IOException e) {
 			LOG.error("Problem getting or serializing report", e);
+			throw new WebApplicationException(e, Response.Status.INTERNAL_SERVER_ERROR);
 		} catch (ParseException e) {
 			LOG.error("Problem parsing date", e);
+			throw new WebApplicationException(e, Response.Status.INTERNAL_SERVER_ERROR);
 		}
 		
 		return sb.toString();
@@ -273,8 +181,10 @@ public class CorrelationReportService {
 			ccDao.incrementCounts(SDF.parse(date), product, version, os, signature, arch, moduleVersions, addonVersions);
 		} catch (IOException e) {
 			LOG.error("Problem getting or serializing report", e);
+			throw new WebApplicationException(e, Response.Status.INTERNAL_SERVER_ERROR);
 		} catch (ParseException e) {
 			LOG.error("Problem parsing date", e);
+			throw new WebApplicationException(e, Response.Status.INTERNAL_SERVER_ERROR);
 		} finally {
 			if (reader != null) {
 				try {
