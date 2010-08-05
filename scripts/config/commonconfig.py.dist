@@ -1,8 +1,40 @@
+# This is the common configuration file for all Socorro applications.  This file
+# contains parameters that any Socorro app may access.  Common parameters are
+# put here so they don't have to be repeated in each app's own configuration file.
+#
+# Parameters are consist of three or four lines of Python code.  The first line
+# defines the parameter:
+
+# someParameter = cm.Option()
+
+# The second line provides one line of documentation about the parameter.
+# This line is also used to as the text in the '--help' option invoked from the
+# command line.
+
+# someParameter.doc = 'this is what this parameter is about'
+
+# The third line is the default value for the parameter.  Adjust this line as
+# necessary.  This value will be overridden if the user specifies a different
+# value on the command line.
+
+# someParameter.default = '00:00:30'
+
+# The option fourth line specifies a Python function (or callable) that will
+# serve to take a text version of the parameter value and turn it into the
+# proper type.  This is useful for things like taking a textual datetime value
+# and turning them into a real datetime value.  The ConfigurationManager module
+# offers a number of converters:  dateTimeConverter, timeDeltaConverter,
+# booleanConverter.  If the value of 'default' is a fundamental type like int
+# or float, it is not necessary to provide a fromStringConverter.
+
+# someParameter.fromStringConverter = ConfigurationManager.dateTimeConverter
+#-------------------------------------------------------------------------------
+
 import socorro.lib.ConfigurationManager as cm
 import datetime
 import stat
 
-#---------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 # Relational Database Section
 
 databaseHost = cm.Option()
@@ -27,9 +59,11 @@ databasePassword.default = ''
 
 #---------------------------------------------------------------------------
 # Crash storage system
+# sometimes crashes need to be stored in a file system.  These values control
+# the suffixes used
 
 jsonFileSuffix = cm.Option()
-jsonFileSuffix.doc = 'the suffix used to identify a json file'
+jsonFileSuffix.doc = 'the suffix used to identify a metadata file'
 jsonFileSuffix.default = '.json'
 
 dumpFileSuffix = cm.Option()
@@ -38,6 +72,8 @@ dumpFileSuffix.default = '.dump'
 
 #---------------------------------------------------------------------------
 # HBase storage system
+# These are the parameters for Socorro's primary data storage
+
 hbaseHost = cm.Option()
 hbaseHost.doc = 'Hostname for hbase hadoop cluster. May be a VIP or load balancer'
 hbaseHost.default = 'localhost'
@@ -62,6 +98,7 @@ hbaseRetryDelay.default = 6
 
 #---------------------------------------------------------------------------
 # misc
+# some parameters used by more than one app
 
 processorCheckInTime = cm.Option()
 processorCheckInTime.doc = 'the time after which a processor is considered dead (hh:mm:ss)'
@@ -70,7 +107,50 @@ processorCheckInTime.fromStringConverter = lambda x: str(cm.timeDeltaConverter(x
 
 #---------------------------------------------------------------------------
 # common cron things
+#
+# These are parameters used by several of the Socorro cron jobs for
+# data aggregation in the database's materialized view tables.
+#
+# TODO: these parameters are defined here, but don't take on actual values until
+# the app specific config files are loaded.  This is confusing.  Move these
+# values out of the common config and into the specific config files for the
+# appropriate cron jobs
+#
+# Materialized views create 'fact' tables holding an aggregation of data per
+# row. Each row holds data collected from one window of time. Because we don't
+# trust cron and the database server to be always available, or because we don't
+# want to run cron jobs for each window, we have the idea of a date span holding
+# one or more windows. Scripts can be run once every day, or week, or whatever,
+# and multiple windows will be scanned.
+#
+# You may supply zero, one, two or three of the parameters startWindow,
+# deltaWindow, and defaultDeltaWindow. If three, they must be self-consistent
+# (startDate + deltaDate == endDate). If two, they are used (except: If start
+# date is earlier than the most recent window_end in the materialized view
+# table, it and deltaDate if any are adjusted). If one: startDate is taken from
+# the table if possible, else from now() initialDeltaDate. endDate is taken from
+# now() (adjusted to coordinate with deltaWindow below and processingDelay
+# below)
 
+startDate = cm.Option()
+startDate.doc = 'The start of the overall/outer aggregation window (YYYY-MM-DD [hh:mm])'
+startDate.fromStringConverter = cm.dateTimeConverter
+
+endDate = cm.Option()
+endDate.doc = 'The end of the overall/outer aggregation window (YYYY-MM-DD [hh:mm:ss])'
+endDate.fromStringConverter = cm.dateTimeConverter
+
+deltaDate = cm.Option()
+deltaDate.doc = 'The length of the overall/outer aggregation window  ([dd:]hh:mm:ss)'
+deltaDate.fromStringConverter = cm.timeDeltaConverter
+
+# A window is the time over which a single aggregation is run. Accepts full date
+# and time. You must supply zero, one, two or three of these options. If three,
+# they must be self consistent. You will normally provide none of these, as the
+# default behavior is to read the values from the last row of the 'fact' table.
+# The provided/calculated delta must divide evenly into 24 hours, and the
+# provided startWindow or endWindow must be an integral number of deltas past
+# midnight (midnight is fine).
 startWindow = cm.Option()
 startWindow.doc = 'The start of the single aggregation window (YYYY-MM-DD [hh:mm:ss])'
 startWindow.fromStringConverter = cm.dateTimeConverter
@@ -83,35 +163,33 @@ defaultDeltaWindow = cm.Option()
 defaultDeltaWindow.doc = 'The length of the single aggregation window  ([dd:]hh:mm:ss)'
 defaultDeltaWindow.fromStringConverter = cm.timeDeltaConverter
 
-# override this default for your particular cron task
+# If deltaWindow is not available from the table and is not supplied, this value
+# is used. If this value is not supplied, a manifest constant in code is used.
 defaultDeltaWindow.default = '00:12:00'
 
 endWindow = cm.Option()
 endWindow.doc = 'The end of the single aggregation window (YYYY-MM-DD [hh:mm:ss])'
 endWindow.fromStringConverter = cm.dateTimeConverter
 
-startDate = cm.Option()
-startDate.doc = 'The start of the overall/outer aggregation window (YYYY-MM-DD [hh:mm])'
-startDate.fromStringConverter = cm.dateTimeConverter
 
-deltaDate = cm.Option()
-deltaDate.doc = 'The length of the overall/outer aggregation window  ([dd:]hh:mm:ss)'
-deltaDate.fromStringConverter = cm.timeDeltaConverter
-
+# If there is no data in the 'facts' table, use initialDeltaDate to decide how
+# far back in time from now() to begin collecting data. If this is needed and
+# not provided, a manifest constant in code is used.
 initialDeltaDate = cm.Option()
-initialDeltaDate.doc = 'The length of the overall/outer aggregation window  ([dd:]hh:mm:ss)'
+initialDeltaDate.doc = 'The length of the overall/outer aggregation window ([dd:]hh:mm:ss)'
+initialDeltaDate.default = '4:00:00:00'
 initialDeltaDate.fromStringConverter = cm.timeDeltaConverter
 
-# override this default for your particular cron task
-initialDeltaDate.default = '4:00:00:00'
-
-minutesPerSlot = cm.Option()
-minutesPerSlot.doc = 'how many minutes per leaf directory in the date storage branch'
-minutesPerSlot.default = 1
-
-endDate = cm.Option()
-endDate.doc = 'The end of the overall/outer aggregation window (YYYY-MM-DD [hh:mm:ss])'
-endDate.fromStringConverter = cm.dateTimeConverter
+# If you need to assure that crash data is not processed until sufficient time
+# has elapesed to allow for slow delivery, you may use processingDelay. If
+# processingDelay is provided, it should be in a format understood by
+# timeDeltaConverter. The value of endDate is adjusted to be no later than
+# now()-processingDelay.
+# At the time of this writing, processingDelay was not being used, but it is
+# still supported in code.
+#processingDelay = cm.Option()
+#processingDelay.doc = 'Wait this long before you process any crashes'
+#processingDelay.fromStringConverter = cm.timeDeltaConverter
 
 debug = cm.Option()
 debug.doc = 'do debug output and routines'
