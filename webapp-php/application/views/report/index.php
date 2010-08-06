@@ -34,7 +34,7 @@
 if (is_null($report->signature) || empty($report->signature)) { ?>
 <a href="http://support.mozilla.com">Visit Mozilla Support for Help</a>
 <?php } else { ?>
-<a href="http://support.mozilla.com/search/q=<?=urlencode($report->sumo_signature) ?>" title="Find more answers at support.mozilla.com!">Search Mozilla Support for Help</a>
+<a href="http://support.mozilla.com/search?q=<?=urlencode($report->sumo_signature) ?>" title="Find more answers at support.mozilla.com!">Search Mozilla Support for Help</a>
 <?php } ?></div>
 
 <?php if (array_key_exists('hangtype', $oopp_details)) { ?>
