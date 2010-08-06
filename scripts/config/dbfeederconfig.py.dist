@@ -1,3 +1,33 @@
+# This is the common configuration file for the Socorro DBFeeder.
+#
+# Parameters are consist of three or four lines of Python code.  The first line
+# defines the parameter:
+
+# someParameter = cm.Option()
+
+# The second line provides one line of documentation about the parameter.
+# This line is also used to as the text in the '--help' option invoked from the
+# command line.
+
+# someParameter.doc = 'this is what this parameter is about'
+
+# The third line is the default value for the parameter.  Adjust this line as
+# necessary.  This value will be overridden if the user specifies a different
+# value on the command line.
+
+# someParameter.default = '00:00:30'
+
+# The option fourth line specifies a Python function (or callable) that will
+# serve to take a text version of the parameter value and turn it into the
+# proper type.  This is useful for things like taking a textual datetime value
+# and turning them into a real datetime value.  The ConfigurationManager module
+# offers a number of converters:  dateTimeConverter, timeDeltaConverter,
+# booleanConverter.  If the value of 'default' is a fundamental type like int
+# or float, it is not necessary to provide a fromStringConverter.
+
+# someParameter.fromStringConverter = ConfigurationManager.dateTimeConverter
+#-------------------------------------------------------------------------------
+
 import socorro.lib.ConfigurationManager as cm
 import datetime
 import re
@@ -10,7 +40,6 @@ from config.commonconfig import databaseHost
 from config.commonconfig import databaseName
 from config.commonconfig import databaseUserName
 from config.commonconfig import databasePassword
-from config.commonconfig import processorCheckInTime
 
 #---------------------------------------------------------------------------
 # HBase storage system
@@ -26,10 +55,6 @@ from config.commonconfig import hbaseRetryDelay
 numberOfThreads = cm.Option()
 numberOfThreads.doc = 'the number of threads to use'
 numberOfThreads.default = 4
-
-insertChunkSize = cm.Option()
-insertChunkSize.doc = 'the number records to insert at once'
-insertChunkSize.default = 100
 
 #---------------------------------------------------------------------------
 # Logging

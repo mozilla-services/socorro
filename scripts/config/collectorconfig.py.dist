@@ -1,3 +1,33 @@
+# This is the common configuration file for the Socorro mod-wsgi Collector.
+#
+# Parameters are consist of three or four lines of Python code.  The first line
+# defines the parameter:
+
+# someParameter = cm.Option()
+
+# The second line provides one line of documentation about the parameter.
+# This line is also used to as the text in the '--help' option invoked from the
+# command line.
+
+# someParameter.doc = 'this is what this parameter is about'
+
+# The third line is the default value for the parameter.  Adjust this line as
+# necessary.  This value will be overridden if the user specifies a different
+# value on the command line.
+
+# someParameter.default = '00:00:30'
+
+# The option fourth line specifies a Python function (or callable) that will
+# serve to take a text version of the parameter value and turn it into the
+# proper type.  This is useful for things like taking a textual datetime value
+# and turning them into a real datetime value.  The ConfigurationManager module
+# offers a number of converters:  dateTimeConverter, timeDeltaConverter,
+# booleanConverter.  If the value of 'default' is a fundamental type like int
+# or float, it is not necessary to provide a fromStringConverter.
+
+# someParameter.fromStringConverter = ConfigurationManager.dateTimeConverter
+#-------------------------------------------------------------------------------
+
 import stat
 import re
 
@@ -38,38 +68,7 @@ hbaseFallbackDirPermissions.doc = "a number used for permissions for directories
 hbaseFallbackDirPermissions = stat.S_IRGRP | stat.S_IXGRP | stat.S_IWGRP | stat.S_IRUSR | stat.S_IXUSR | stat.S_IWUSR
 
 #-------------------------------------------------------------------------------
-# alternative backup crash storage
-#useBackupNFSStorage = cm.Option()
-#useBackupNFSStorage.default = True
-#
-#if useBackupNFSStorage.default == True:
-#  storageRoot = cm.Option()
-#  storageRoot.doc = 'the root of the file system where dumps are found'
-#  storageRoot.default = '/tmp/socorro/toBeProcessed/'
-#
-#  deferredStorageRoot = cm.Option()
-#  deferredStorageRoot.doc = 'the root of the file system where dumps are found'
-#  deferredStorageRoot.default = '/tmp/socorro/toBeDeferred/'
-#
-#  dumpDirPrefix = cm.Option()
-#  dumpDirPrefix.doc = 'dump directory names begin with this prefix'
-#  dumpDirPrefix.default = 'bp_'
-#
-#  dumpDirCount = cm.Option()
-#  dumpDirCount.doc = 'the number of dumps to be stored in a single directory'
-#  dumpDirCount.default = 1024
-#
-#  dumpGID = cm.Option()
-#  dumpGID.doc="the group ID on minidumps so that they can be deleted by other users (optional)"
-#  dumpGID.default = None
-#
-#  dumpPermissions = cm.Option()
-#  dumpPermissions.doc = 'when saving dumps, the pemission flags to be used'
-#  dumpPermissions.default = '%d'%(stat.S_IRGRP | stat.S_IWGRP | stat.S_IRUSR | stat.S_IWUSR)
-#
-#  dirPermissions = cm.Option()
-#  dirPermissions.doc = 'when saving dumps, the permission flags to be used on directories'
-#  dirPermissions.default = '%d'%(stat.S_IRGRP | stat.S_IXGRP | stat.S_IWGRP | stat.S_IRUSR | stat.S_IXUSR | stat.S_IWUSR)
+# application server parameters
 
 modwsgiInstallation = cm.Option()
 modwsgiInstallation.doc = 'True or False, this app is installed under mod_wsgi'
@@ -87,11 +86,7 @@ serverPort.default = 8882
 dumpField = cm.Option()
 dumpField.default = "upload_file_minidump"
 
-# when storing in the file system, how deep should the radix directory depth be
-#storageDepth = cm.Option()
-#storageDepth.default = 2
-
-# Returned to the client with a uuid following
+# Returned to the client with a ooid following
 dumpIDPrefix = cm.Option()
 dumpIDPrefix.default = "bp-"
 
