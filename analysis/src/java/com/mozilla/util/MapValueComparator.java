@@ -35,47 +35,16 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-package com.mozilla.socorro;
+package com.mozilla.util;
 
-public class CorrelationReport {
+import java.util.Comparator;
+import java.util.Map;
+import java.util.Map.Entry;
 
-	private String product = null;
-	private String productVersion = null;
-	private OperatingSystem os = null;
-	
-	public CorrelationReport(String product, String productVersion, String os) {
-		this.product = product;
-		this.productVersion = productVersion;
-		this.os = new OperatingSystem(os);
-	}
-	
-	public CorrelationReport(String product, String productVersion, String os, String signature) {
-		this(product, productVersion, os);
-		this.os.addSignature(signature, new Signature(signature));
-	}
-	
-	public String getProduct() {
-		return product;
-	}
+public class MapValueComparator implements Comparator<Map.Entry<String, Integer>> {
 
-	public void setProduct(String product) {
-		this.product = product;
-	}
-
-	public String getProductVersion() {
-		return productVersion;
-	}
-
-	public void setProductVersion(String productVersion) {
-		this.productVersion = productVersion;
-	}
-
-	public OperatingSystem getOs() {
-		return os;
-	}
-
-	public void setOs(OperatingSystem os) {
-		this.os = os;
+	public int compare(Entry<String, Integer> o1, Entry<String, Integer> o2) {
+		return o1.getValue() < o2.getValue() ? -1 : o1.getValue() > o2.getValue() ? 1 : 0;
 	}
 	
 }

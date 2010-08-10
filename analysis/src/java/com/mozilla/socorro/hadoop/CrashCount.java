@@ -114,17 +114,13 @@ public class CrashCount implements Tool {
 	public static class CrashCountMapper extends TableMapper<Text, LongWritable> {
 
 		public enum ReportStats { JSON_PARSE_EXCEPTION, JSON_MAPPING_EXCEPTION, JSON_BYTES_NULL, DATE_PARSE_EXCEPTION, PROCESSED }
-		
-		private Text outputKey;
-		private LongWritable one;
-		private CrashCountDao ccDao;
-		
-		private ObjectMapper jsonMapper;
 
+		private CrashCountDao ccDao;	
+		private ObjectMapper jsonMapper;
 		private Pattern newlinePattern;
 		private Pattern pipePattern;
-		
 		private SimpleDateFormat sdf;
+		private SimpleDateFormat rowSdf;
 		private long startTime;
 		private long endTime;
 		
@@ -132,8 +128,6 @@ public class CrashCount implements Tool {
 		 * @see org.apache.hadoop.mapreduce.Mapper#setup(org.apache.hadoop.mapreduce.Mapper.Context)
 		 */
 		public void setup(Context context) {
-			outputKey = new Text();
-			one = new LongWritable(1L);
 			
 			try {
 				ccDao = new HbaseCrashCountDao();
@@ -149,6 +143,8 @@ public class CrashCount implements Tool {
 			pipePattern = Pattern.compile("\\|");
 			
 			sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+			rowSdf = new SimpleDateFormat("yyyyMMdd");
+			
 			startTime = DateUtil.getTimeAtResolution(conf.getLong(START_TIME, 0), Calendar.DATE);
 			endTime = DateUtil.getEndTimeAtResolution(conf.getLong(END_TIME, System.currentTimeMillis()), Calendar.DATE);
 		}
@@ -238,7 +234,7 @@ public class CrashCount implements Tool {
 					!StringUtils.isBlank(osName) && !StringUtils.isBlank(signame)) {
 					Calendar cal = Calendar.getInstance();
 					cal.setTimeInMillis(DateUtil.getTimeAtResolution(crashTime, Calendar.DATE));
-					ccDao.incrementCounts(cal.getTime(), product, productVersion, osName, signame, arch, moduleVersions, addonVersions);
+					ccDao.incrementCounts(rowSdf.format(cal.getTime()), product, productVersion, osName, signame, arch, moduleVersions, addonVersions);
 				}
 				context.getCounter(ReportStats.PROCESSED).increment(1L);
 			} catch (JsonParseException e) {

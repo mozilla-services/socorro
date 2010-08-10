@@ -38,15 +38,18 @@
 package com.mozilla.socorro.dao;
 
 import java.io.IOException;
-import java.util.Date;
+import java.util.List;
 import java.util.Map;
 
 import com.mozilla.socorro.CorrelationReport;
+import com.mozilla.socorro.Signature;
 
 public interface CrashCountDao {
 
-	public void incrementCounts(Date date, String product, String version, String os, String signature, String arch, Map<String,String> moduleVersions, Map<String,String> addonVersions) throws IOException;
+	public void incrementCounts(String date, String product, String version, String os, String signature, String arch, Map<String,String> moduleVersions, Map<String,String> addonVersions) throws IOException;
 	
-	public CorrelationReport getReport(Date date, String product, String version, String os, String signature) throws IOException;
+	public CorrelationReport getReport(String date, String product, String version, String os, String signature) throws IOException;
+	
+	public List<Signature> getTopCrashers(String date, String product, String version, String os) throws IOException;
 	
 }

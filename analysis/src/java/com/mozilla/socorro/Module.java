@@ -37,45 +37,65 @@
 
 package com.mozilla.socorro;
 
-public class CorrelationReport {
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
-	private String product = null;
-	private String productVersion = null;
-	private OperatingSystem os = null;
+import com.mozilla.util.MapValueComparator;
+
+public class Module {
 	
-	public CorrelationReport(String product, String productVersion, String os) {
-		this.product = product;
-		this.productVersion = productVersion;
-		this.os = new OperatingSystem(os);
+	private String name;
+	private int count;
+	private Map<String, Integer> versionCounts = new HashMap<String, Integer>();
+	
+	public Module(String name) {
+		this.name = name;
 	}
 	
-	public CorrelationReport(String product, String productVersion, String os, String signature) {
-		this(product, productVersion, os);
-		this.os.addSignature(signature, new Signature(signature));
+	public String getName() {
+		return name;
 	}
 	
-	public String getProduct() {
-		return product;
+	public int getCount() {
+		return count;
 	}
-
-	public void setProduct(String product) {
-		this.product = product;
+	
+	public void setCount(int count) {
+		this.count = count;
 	}
-
-	public String getProductVersion() {
-		return productVersion;
+	
+	public Map<String, Integer> getVersionCounts() {
+		return versionCounts;
 	}
-
-	public void setProductVersion(String productVersion) {
-		this.productVersion = productVersion;
+	
+	public List<Map.Entry<String, Integer>> getSortedVersionCounts() {
+		List<Map.Entry<String, Integer>> versionPairs = new ArrayList<Map.Entry<String, Integer>>(versionCounts.entrySet());
+		Collections.sort(versionPairs, Collections.reverseOrder(new MapValueComparator())); 
+		return versionPairs;
 	}
-
-	public OperatingSystem getOs() {
-		return os;
+	
+	public void incrementVersionCount(String moduleVersion, int count) {
+		int existingCount = 0;
+		if (versionCounts.containsKey(moduleVersion)) {
+			existingCount = versionCounts.get(moduleVersion);
+		}
+		versionCounts.put(moduleVersion, existingCount + count);
 	}
-
-	public void setOs(OperatingSystem os) {
-		this.os = os;
+	
+	public void setVersionCounts(Map<String, Integer> versionCounts) {
+		this.versionCounts = versionCounts;
+	}
+	
+	public static class ModuleCountComparator implements Comparator<Module> {
+		
+		public int compare(Module o1, Module o2) {
+			return o1.getCount() < o2.getCount() ? -1 : o1.getCount() > o2.getCount() ? 1 : 0;
+		}
+		
 	}
 	
 }
