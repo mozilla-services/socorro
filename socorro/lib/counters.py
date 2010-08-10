@@ -1,4 +1,6 @@
 import collections
+import functools
+import math
 import threading
 import time
 
@@ -20,15 +22,15 @@ class Counter(object):
 #===============================================================================
 class CounterOverTime(Counter):
     #---------------------------------------------------------------------------
-    def __init__(self, historyLengthInMinutes):
+    def __init__(self, historyLengthInMinutes, timeFunction=time.time):
         self.historyLengthInMinutes = historyLengthInMinutes
         self.history = collections.deque(maxlen=historyLengthInMinutes)
         self.currentMinute = 0
         self.currentCounter = 0
+        self.timeFunction = timeFunction
     #---------------------------------------------------------------------------
-    @staticmethod
-    def nowMinute():
-        return int(time.time()) / 60
+    def nowMinute(self):
+        return int(self.timeFunction()) / 60
     #---------------------------------------------------------------------------
     def pushOldCounter(self, minute):
         self.history.append((self.currentMinute, self.currentCounter))
@@ -37,14 +39,15 @@ class CounterOverTime(Counter):
     #---------------------------------------------------------------------------
     def increment(self,now=None):
         if now is None:
-            now = CounterOverTime.nowMinute()
+            now = self.nowMinute()
+        #print now
         if self.currentMinute != now:
             self.pushOldCounter(now)
         self.currentCounter += 1
     #---------------------------------------------------------------------------
     def read(self, now=None):
         if now is None:
-            now = CounterOverTime.nowMinute()
+            now = self.nowMinute()
         if self.currentMinute != now:
             self.pushOldCounter(now)
         sum = 0
@@ -92,4 +95,24 @@ class CounterPool(dict):
 
     #---------------------------------------------------------------------------
     def read (self):
-        return sum((x.read() for x in self.values()))
+        return functools.reduce(lambda x, y: x+y.read(), self.values(), 0)
+
+    #---------------------------------------------------------------------------
+    def average (self):
+        sum = functools.reduce(lambda x, y: x+y.read(), self.values(), 0)
+        return float(sum) / len(self)
+
+    #---------------------------------------------------------------------------
+    def meanAndStandardDeviation (self):
+        mean = self.average()
+        sum_squares = functools.reduce(lambda x, y: x + (y.read() - mean)**2,
+                                       self.values(),
+                                       0)
+        standard_deviation = math.sqrt(sum_squares / len(self))
+        return (mean, standard_deviation)
+
+    #---------------------------------------------------------------------------
+    def underPerforming (self):
+        mean, stddev = self.meanAndStandardDeviation()
+        threshold = mean - stddev
+        return [x for x,y in self.iteritems() if y.read() < threshold]
