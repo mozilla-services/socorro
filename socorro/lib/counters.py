@@ -100,7 +100,10 @@ class CounterPool(dict):
     #---------------------------------------------------------------------------
     def average (self):
         sum = functools.reduce(lambda x, y: x+y.read(), self.values(), 0)
-        return float(sum) / len(self)
+        try:
+            return float(sum) / len(self)
+        except ZeroDivisionError:
+            return 0.0
 
     #---------------------------------------------------------------------------
     def meanAndStandardDeviation (self):
@@ -108,8 +111,11 @@ class CounterPool(dict):
         sum_squares = functools.reduce(lambda x, y: x + (y.read() - mean)**2,
                                        self.values(),
                                        0)
-        standard_deviation = math.sqrt(sum_squares / len(self))
-        return (mean, standard_deviation)
+        try:
+            standard_deviation = math.sqrt(sum_squares / len(self))
+            return (mean, standard_deviation)
+        except ZeroDivisionError:
+            return (0.0, 0.0)
 
     #---------------------------------------------------------------------------
     def underPerforming (self):

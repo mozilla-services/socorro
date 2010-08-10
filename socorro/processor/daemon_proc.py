@@ -211,22 +211,42 @@ class Processor(object):
   buildDatePattern = re.compile('^(\\d{4})(\\d{2})(\\d{2})(\\d{2})')
   utctz = sdt.UTC()
 
-  _config_requirements = (
+  _config_requirements = ("hbaseHost",
+                          "hbasePort",
+                          "hbaseTimeout",
+                          "hbaseRetry",
+                          "hbaseRetryDelay",
+                          "serverIPAddress",
+                          "serverPort",
                           "processorCheckInTime",
                           "processorCheckInFrequency",
-                          "numberOfThreads",
                           "registrationHostPort",
                           "registrationTimeout",
+                          "generatePipeDump",
+                          "generateJDump",
+                          "processedToFailedRatio",
+                          "numberOfThreads",
+                          "stackwalkCommandLine",
+                          "processorSymbolsPathnameList",
+                          "stackwalk_serverPathname",
+                          "threadFrameThreshold",
+                          "threadTailFrameThreshold",
+                          "processorLoopTime",
                           "irrelevantSignatureRegEx",
                           "prefixSignatureRegEx",
                           "collectAddon",
                           "collectCrashProcess",
                           "signatureSentinels",
                           "signaturesWithLineNumbersRegEx",
+                          "knownFlashIdentifiers",
+                          "syslogHost",
+                          "syslogPort",
+                          "syslogFacilityString",
+                          "syslogLineFormatString",
+                          "syslogErrorLoggingLevel",
+                          "stderrLineFormatString",
+                          "stderrErrorLoggingLevel",
                          )
-  _hbase_config_requirements = ("hbaseHost",
-                                "hbasePort",
-                               )
 
   #-----------------------------------------------------------------------------------------------------------------
   def __init__ (self, config):
@@ -239,8 +259,6 @@ class Processor(object):
     for x in Processor._config_requirements:
       assert x in config, '%s missing from configuration' % x
 
-    for x in Processor._hbase_config_requirements:
-      assert x in config, '%s missing from configuration' % x
     self.crashStorePool = cstore.CrashStoragePool(config)
 
     self.processorLoopTime = config.processorLoopTime.seconds
@@ -290,6 +308,7 @@ class Processor(object):
     # 'status' is the health of the processor.  This is the value that is sent
     # to the registrar.  The possible values are:
     #    'ok' - initial state
+    #    'warning' - something is suspicious
     #    'shutdown' - the processor is no longer functioning
     self.status = 'ok'
     self.warnings = []
@@ -355,13 +374,49 @@ class Processor(object):
     self.crashStorePool.cleanup()
 
   #-----------------------------------------------------------------------------------------------------------------
+  def calculateProcessedToFailedRatio(self):
+    processedCounters = self.statsPools.processed
+    failedCounters = self.statsPools.failures
+    try:
+      processedToFailedRatio = float(processedCounters.read()) / float(failedCounters.read())
+      if processedToFailedRatio < self.config.processedToFailedRatioThreshold:
+        self.logger.warning('failed ProcessedToFailedRatio %s', processedToFailedRatio)
+        self.warnings.append(('ProcessedToFailedRatio', processedToFailedRatio))
+    except ZeroDivisionError:
+      pass
+
+  #-----------------------------------------------------------------------------------------------------------------
+  def calculateUnderPerformingWorker(self):
+    processedCounters = self.statsPools.processed
+    underPerforming = processedCounters.underPerforming()
+    if underPerforming:
+      self.logger.warning('underperforming workers: %s', str(underPerforming))
+      self.warnings.append(('UnderPerformingWorker', underPerforming))
+
+  #-----------------------------------------------------------------------------------------------------------------
+  def deadWorkers(self):
+    deadWorkers = self.threadManager.deadWorkers()
+    if deadWorkers:
+      self.logger.warning('dead workers: %s', str(deadWorkers))
+      self.warnings.append(('DeadWorkers', deadWorkers))
+
+  #-----------------------------------------------------------------------------------------------------------------
   def assessHealth(self):
-    pass
+    self.warnings = []
+    numberOfThreads = self.config.numberOfThreads
+    self.calculateProcessedToFailedRatio()
+    self.calculateUnderPerformingWorker()
+    self.deadWorkers()
+    if self.warnings:
+      self.status = 'warnings'
+    else:
+      self.status = 'ok'
 
   #-----------------------------------------------------------------------------------------------------------------
   def registrationLoop(self):
     try:
       while True:
+        self.assessHealth()
         self.quitCheck()
         try:
           urllib2.urlopen(self.registrationURL,
@@ -546,8 +601,12 @@ class Processor(object):
         new_jdoc.completed_datetime = datetime.datetime.now()
 
       self.saveProcessedDumpJson(new_jdoc, threadLocalCrashStorage)
-      logger.info("succeeded and committed: %s", jobOoid)
-      self.statsPools.processed.counter().increment()
+      if new_jdoc.success:
+        logger.info("succeeded and committed: %s", jobOoid)
+        self.statsPools.processed.counter().increment()
+      else:
+        logger.info("failed but committed: %s", jobOoid)
+        self.statsPools.failures.counter().increment()
       self.quitCheck()
     except (KeyboardInterrupt, SystemExit):
       logger.info("quit request detected")

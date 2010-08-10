@@ -72,6 +72,15 @@ class StackWalkerPool(dict):
     return self[name]
 
   #-----------------------------------------------------------------------------------------------------------------
+  def removeStackWalker (self, name=None):
+    """to be done if a stackwalker misbehaves"""
+    if name is None:
+      name = threading.currentThread().getName()
+    if name in self:
+      self[name].close()
+      del self[name]
+
+  #-----------------------------------------------------------------------------------------------------------------
   def cleanup (self):
     for name, stackwalker in self.iteritems():
       try:

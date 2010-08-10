@@ -62,7 +62,6 @@ def testCounterPool1():
     print r
     assert  r == (25.0, 0.0)
 
-
 def testCounterPool2():
     """Test a pool of 6 counters 5 in lock step and 1 doing nothing"""
     config = sutil.DotDict({'logger':sutil.SilentFakeLogger()})

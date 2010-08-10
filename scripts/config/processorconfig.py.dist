@@ -6,10 +6,6 @@ import stat
 #---------------------------------------------------------------------------
 # imported config
 
-from config.commonconfig import databaseHost
-from config.commonconfig import databaseName
-from config.commonconfig import databaseUserName
-from config.commonconfig import databasePassword
 from config.commonconfig import processorCheckInTime
 
 #---------------------------------------------------------------------------
@@ -53,6 +49,10 @@ generateJDump = cm.Option()
 generateJDump.doc = 'include json stackwalk output in processed output'
 generateJDump.default = True
 generateJDump.fromStringConverter = cm.booleanConverter
+
+processedToFailedRatio = cm.Option()
+processedToFailedRatio.doc = 'the minimum ratio of successful to failed jobs that we are willing to tolerate'
+processedToFailedRatio.default = 1000.0
 
 stackwalkCommandLine = cm.Option()
 stackwalkCommandLine.doc = 'the template for the command to invoke stackwalk_server'

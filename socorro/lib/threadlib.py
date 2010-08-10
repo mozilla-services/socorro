@@ -1,9 +1,9 @@
 #!/usr/bin/python
 # Copyright (c) 2004-2005 Oregon State University - Open Source Lab
 # All rights reserved.
- 
+
 # $Id$
-# $HeadURL$ 
+# $HeadURL$
 
 # This is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free
@@ -17,7 +17,7 @@
 
 # You should have received a copy of the GNU General Public License
 # along with this software; if not, write to the Free Software Foundation, Inc.,
-# 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
+# 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #
 # Copyright 2005 by Oregon State Univeristy Open Source Lab
 #
@@ -49,7 +49,7 @@ import sys
 #======================
 class TaskManager(object):
   """This class serves as a manager for a set of threads.
-  
+
   Based very loosely on: http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/203871
   """
   #----------------
@@ -68,25 +68,53 @@ class TaskManager(object):
   #--------------
   # n e w T a s k
   #--------------
-
   def newTask (self, task, args=None):
     """Add a task to be executed by a thread
-    
+
     The input is a tuple with these components:
         task - a function to be run by a thread
         args - a tuple of arguments to be passed to the function
     """
     self.taskQueue.put((task, args))
 
+  #----------------------
+  # d e a d W o r k e r s
+  #----------------------
+  def deadWorkers (self):
+    """return a list of the names of dead worker threads"""
+    deathList = []
+    for aThread in self.threadList:
+      if not aThread.is_alive():
+        deathList.append(aThread.name)
+    return deathList
+
+  #----------------------------
+  # f u l l E m p l o y m e n t
+  #----------------------------
+  def fullEmployment (self):
+    """we need to keep a full compliment of threads running at all times.
+    Sometimes a thread may unexpectedly die.  This function looks for
+    dead threads and replaces them.  This should only be called before
+    'waitForCompletion'."""
+    newThreadList = []
+    for aThread in self.threadList():
+      if aThread.is_alive():
+        newThreadList.append(aThread)
+      else:
+        newThread = TaskManagerThread(self)
+        newThreadList.append(newThread)
+        newThread.start()
+    self.threadList = newThreadList
+
   #----------------------------------
   # w a i t F o r C o m p l e t i o n
   #----------------------------------
   def waitForCompletion (self):
     """Wait for all threads to complete their work
-    
+
     The worker threads are told to quit when they receive a task
     that is a tuple of (None, None).  This routine puts as many of
-    those tuples in the task queue as there are threads.  As soon as 
+    those tuples in the task queue as there are threads.  As soon as
     a thread receives one of these tuples, it dies.
     """
     for x in range(self.numberOfThreads):
@@ -94,14 +122,14 @@ class TaskManager(object):
     for t in self.threadList:
       # print "attempting to join %s" % t.getName()
       t.join()
-      
+
 
 #==================================
 # T a s k M a n a g e r T h r e a d
 #==================================
 class TaskManagerThread(threading.Thread):
   """This class represents a worker thread for the TaskManager class"""
-  
+
   #----------------
   # _ _ i n i t _ _
   #----------------
@@ -110,13 +138,13 @@ class TaskManagerThread(threading.Thread):
     """
     super(TaskManagerThread, self).__init__()
     self.manager = manager
-  
+
   #------
   # r u n
   #------
   def run(self):
     """The main routine for a thread's work.
-    
+
     The thread pulls tasks from the manager's task queue and executes
     them until it encounters a task with a function that is None.
     """

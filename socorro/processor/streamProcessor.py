@@ -146,7 +146,18 @@ class StreamBreakpadProcessor (daemon_proc.Processor):
     try:
       self.breakpadAnalyzer(stackIterator, j_doc, new_jdoc)
       new_jdoc.success = True
-    except Exception:
+    except IOError, x:
+      self.logger.warning('the stackwalk_server is misbehaving - killing and restarting it')
+      self.stackWalkerPool.removeStackWalker()
+      localStackWalker = self.stackWalkerPool.stackWalker()
+      stackIterator = localStackWalker.stackWalk(binaryDump)
+      try:
+        self.breakpadAnalyzer(stackIterator, j_doc, new_jdoc)
+        new_jdoc.success = True
+      except Exception:
+        sutil.reportExceptionAndContinue(self.logger)
+        new_jdoc.success = False
+    except Exception, x:
       sutil.reportExceptionAndContinue(self.logger)
       new_jdoc.success = False
     #self.logger.debug('done with %s', new_jdoc.uuid)
