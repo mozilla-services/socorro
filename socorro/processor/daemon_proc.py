@@ -271,7 +271,7 @@ class Processor(object):
     self.prefixSignatureRegEx = re.compile(self.config.prefixSignatureRegEx)
     self.signaturesWithLineNumbersRegEx = re.compile(self.config.signaturesWithLineNumbersRegEx)
 
-    self.hostname = socket.gethostname()
+    self.hostname = '%s:%s' % (socket.gethostname(), config.serverPort)
 
     # start the thread manager with the number of threads specified in the configuration.  The second parameter controls the size
     # of the internal task queue within the thread manager.  It is constrained so that the queue remains starved.  This means that tasks
