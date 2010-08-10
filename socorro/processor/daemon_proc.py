@@ -12,6 +12,7 @@ import collections
 import Queue as queue
 import urllib
 import urllib2
+import socket
 
 import web
 
@@ -270,6 +271,8 @@ class Processor(object):
     self.prefixSignatureRegEx = re.compile(self.config.prefixSignatureRegEx)
     self.signaturesWithLineNumbersRegEx = re.compile(self.config.signaturesWithLineNumbersRegEx)
 
+    self.hostname = socket.gethostname()
+
     # start the thread manager with the number of threads specified in the configuration.  The second parameter controls the size
     # of the internal task queue within the thread manager.  It is constrained so that the queue remains starved.  This means that tasks
     # remain queued in the database until the last minute.  This allows some external process to change the priority of a job by changing
@@ -420,7 +423,7 @@ class Processor(object):
         self.quitCheck()
         try:
           urllib2.urlopen(self.registrationURL,
-                          urllib.urlencode((('name', self.name),
+                          urllib.urlencode((('name', self.hostname),
                                             ('status', self.status))),
                           float(self.config.registrationTimeout.seconds))
           self.responsiveSleep(self.config.processorCheckInFrequency.seconds)
@@ -433,7 +436,7 @@ class Processor(object):
       try:
         self.status = "shutdown"
         urllib2.urlopen(self.deregistrationURL,
-                        urllib.urlencode((('name', self.name),)),
+                        urllib.urlencode((('name', self.hostname),)),
                         float(self.config.registrationTimeout.seconds))
       except urllib2.URLError:
         sutil.reportExceptionAndContinue(self.logger,
