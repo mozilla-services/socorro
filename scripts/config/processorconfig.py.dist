@@ -50,9 +50,9 @@ generateJDump.doc = 'include json stackwalk output in processed output'
 generateJDump.default = True
 generateJDump.fromStringConverter = cm.booleanConverter
 
-processedToFailedRatio = cm.Option()
-processedToFailedRatio.doc = 'the minimum ratio of successful to failed jobs that we are willing to tolerate'
-processedToFailedRatio.default = 1000.0
+processedToFailedRatioThreshold = cm.Option()
+processedToFailedRatioThreshold.doc = 'the minimum ratio of successful to failed jobs that we are willing to tolerate'
+processedToFailedRatioThreshold.default = 1000.0
 
 stackwalkCommandLine = cm.Option()
 stackwalkCommandLine.doc = 'the template for the command to invoke stackwalk_server'
