@@ -158,6 +158,7 @@ class Registrar(object):
   def __init__(self, config):
     super(Registrar, self).__init__()
     self.config = config
+    self.logger = config.logger
     self.checkinDeadline = config.processorCheckInFrequency + \
                            config.checkInFrequencyForgiveness
     self.processors = {}
