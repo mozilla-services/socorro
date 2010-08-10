@@ -224,7 +224,7 @@ class Processor(object):
                           "registrationTimeout",
                           "generatePipeDump",
                           "generateJDump",
-                          "processedToFailedRatio",
+                          "processedToFailedRatioThreshold",
                           "numberOfThreads",
                           "stackwalkCommandLine",
                           "processorSymbolsPathnameList",
