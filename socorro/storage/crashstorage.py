@@ -168,8 +168,8 @@ class LegacyThrottler(object):
         #return LegacyThrottler.ACCEPT
     #else:
       #logger.debug("cannot be throttled %s %s", jsonData.ProductName, jsonData.Version)
-      #return LegacyThrottler.ACCEPT  
-  
+      #return LegacyThrottler.ACCEPT
+
   #-----------------------------------------------------------------------------------------------------------------
   def throttle (self, jsonData):
     if self.applyThrottleConditions(jsonData):
@@ -298,15 +298,22 @@ class CrashStorageSystemForHBase(CrashStorageSystem):
 
   #-----------------------------------------------------------------------------------------------------------------
   def get_meta (self, ooid):
-    return self.hbaseConnection.get_json(ooid,
-                                         number_of_retries=self.hbaseRetry,
-                                         wait_between_retries=self.hbaseRetryDelay)
+    try:
+      return self.hbaseConnection.get_json(ooid,
+                                           number_of_retries=self.hbaseRetry,
+                                           wait_between_retries=self.hbaseRetryDelay)
+    except hbc.OoidNotFoundException, x:
+      raise OoidNotFoundException(ooid)
+
 
   #-----------------------------------------------------------------------------------------------------------------
   def get_raw_dump (self, ooid):
-    return self.hbaseConnection.get_dump(ooid,
-                                         number_of_retries=self.hbaseRetry,
-                                         wait_between_retries=self.hbaseRetryDelay)
+    try:
+      return self.hbaseConnection.get_dump(ooid,
+                                           number_of_retries=self.hbaseRetry,
+                                           wait_between_retries=self.hbaseRetryDelay)
+    except hbc.OoidNotFoundException, x:
+      raise OoidNotFoundException(ooid)
 
   #-----------------------------------------------------------------------------------------------------------------
   #def get_raw_dump_base64 (self, ooid):

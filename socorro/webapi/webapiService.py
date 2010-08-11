@@ -34,6 +34,8 @@ class JsonServiceBase (object):
         web.header('Content-Type', result[1])
         return result[0]
       return json.dumps(result)
+    except web.HTTPError:
+      raise
     except Exception, x:
       stringLogger = util.StringLogger()
       util.reportExceptionAndContinue(stringLogger)

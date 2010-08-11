@@ -1,6 +1,9 @@
 # OOID is "Our opaque ID"
 import datetime as dt
 import socorro.lib.uuid as uu
+import re
+
+ooidRegExp = re.compile(r'[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{5}(?P<depth>[0-9])(?P<year>[0-9]{2})(?P<month>(0|1)[0-9])(?P<day>[0-3][0-9])')
 
 defaultDepth = 2
 oldHardDepth = 4
@@ -70,4 +73,19 @@ def dateFromOoid(ooid):
   """
   return dateAndDepthFromOoid(ooid)[0]
 
-  
+def isValid(ooid):
+  """return true if the ooid is of a valid format"""
+  match = ooidRegExp.match(ooid)
+  if match:
+    month = int(match.group('month'))
+    if month > 12:
+      return False
+    day = int(match.group('day'))
+    if day > 31:
+      return False
+    if month in (9,4,6,11) and day > 30:
+      return False
+    if month == 2 and day > 29:
+      return False
+    return True
+  return False
