@@ -11,6 +11,8 @@ from config.collectorconfig import hbaseFallbackFS
 from config.commonconfig import hbaseHost
 from config.commonconfig import hbasePort
 from config.commonconfig import hbaseTimeout
+from config.commonconfig import hbaseRetry
+from config.commonconfig import hbaseRetryDelay
 
 #---------------------------------------------------------------------------
 # Logging
