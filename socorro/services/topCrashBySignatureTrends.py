@@ -191,6 +191,7 @@ class TopCrashBySignatureTrends(webapi.JsonServiceBase):
   def __init__(self, configContext):
     super(TopCrashBySignatureTrends, self).__init__(configContext)
     logger.debug('TopCrashBySignatureTrends __init__')
+    self.database = db.Database(configContext)
   #-----------------------------------------------------------------------------------------------------------------
   uri = '/200911/topcrash/sig/trend/rank/p/(.*)/v/(.*)/end/(.*)/duration/(.*)/listsize/(.*)'
   #-----------------------------------------------------------------------------------------------------------------
@@ -198,7 +199,7 @@ class TopCrashBySignatureTrends(webapi.JsonServiceBase):
     logger.debug('TopCrashBySignatureTrends get')
     convertedArgs = webapi.typeConversion([str, str, dtutil.datetimeFromISOdateString, dtutil.strHoursToTimeDelta, int], args)
     parameters = util.DotDict(zip(['product','version', 'endDate','duration', 'listSize'], convertedArgs))
-    parameters.productdims_id = self.context['productVersionCache'].getId(parameters.product, parameters.version)
+    parameters.productdims_id = self.context.productVersionCache.getId(parameters.product, parameters.version)
     logger.debug("TopCrashBySignatureTrends get %s", parameters)
     parameters.logger = logger
     connection = self.database.connection()

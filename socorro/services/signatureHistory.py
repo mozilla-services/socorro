@@ -14,13 +14,14 @@ class SignatureHistory(webapi.JsonServiceBase):
   def __init__(self, configContext):
     super(SignatureHistory, self).__init__(configContext)
     logger.debug('SignatureHistory __init__')
+    self.database = db.Database(configContext)
   #-----------------------------------------------------------------------------------------------------------------
   uri = '/200911/topcrash/sig/trend/history/p/(.*)/v/(.*)/sig/(.*)/end/(.*)/duration/(.*)/steps/(.*)'
   #-----------------------------------------------------------------------------------------------------------------
   def get(self, *args):
     convertedArgs = webapi.typeConversion([str, str, u2.unquote, dtutil.datetimeFromISOdateString, dtutil.strHoursToTimeDelta, int], args)
     parameters = util.DotDict(zip(['product','version', 'signature', 'endDate','duration', 'steps'], convertedArgs))
-    parameters.productdims_id = self.context['productVersionCache'].getId(parameters.product, parameters.version)
+    parameters.productdims_id = self.context.productVersionCache.getId(parameters.product, parameters.version)
     logger.debug("SignatureHistory get %s", parameters)
     self.connection = self.database.connection()
     #logger.debug('connection: %s', self.connection)
