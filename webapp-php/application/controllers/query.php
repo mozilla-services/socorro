@@ -59,88 +59,13 @@ class Query_Controller extends Controller {
         parent::__construct();
 
         $this->bug_model = new Bug_Model;
+        $this->crash = new Crash;
         $this->queryFormHelper = new QueryFormHelper;
         $this->searchReportHelper = new SearchReportHelper;
     }
 
     /**
-     * Prepare the reports for display.
-     *
-     * @param   array An array of report objects
-     * @return  array An updated array of report objects
-     */
-    private function _prepareReports($reports)
-    {
-        foreach ($reports as $report) {
-            if (is_null($report->signature)) {
-                $report->{'display_signature'} = Crash::$null_sig;
-                $report->{'display_null_sig_help'} = TRUE;
-                $report->{'missing_sig_param'} = Crash::$null_sig_code;
-            } else if(empty($report->signature)) {
-                $report->{'display_signature'} = Crash::$empty_sig;
-                $report->{'display_null_sig_help'} = TRUE;
-                $report->{'missing_sig_param'} = Crash::$empty_sig_code;
-            } else {
-                $report->{'display_signature'} = $report->signature;
-                $report->{'display_null_sig_help'} = FALSE;
-            }           
-
-            $hang_details = array();
-            $hang_details['is_hang'] = $report->numhang > 0;
-            $hang_details['is_plugin'] = $report->numplugin > 0;
-            $report->{'hang_details'} = $hang_details;
-        }
-        return $reports;
-    }
-
-    /**
-     * Prepare the array used for report meta data.
-     *
-     * @return  array An array that is ready to accept report meta data.
-     */
-
-    private function _prepareReportsMetaArray()
-    {
-        return array(
-            'showPluginFilename' => false,
-            'showPluginName' => false,
-            'signatures' => array()
-        );
-    }
-
-    /**
-     * Prepare the meta data surrounding the report, including signatures 
-     * and plugin names.
-     *
-     * @param   array An array of report objects
-     * @return  array An array of report meta data.
-     */
-    private function _prepareReportsMeta($reports) 
-    {
-        $meta = $this->_prepareReportsMetaArray();
-        foreach ($reports as $report) {
-            if (
-                property_exists($report, 'pluginname') && ! empty($report->pluginname) ||
-                property_exists($report, 'pluginversion') && ! empty($report->pluginversion)
-            ) {
-                $meta['showPluginName'] = true;
-            }
-
-            if (property_exists($report, 'pluginfilename') && ! empty($report->pluginfilename)) {
-                $meta['showPluginFilename'] = true;
-            }
-
-            if (isset($report->signature) && !empty($report->signature)) {
-                array_push($meta['signatures'], $report->signature);
-            }
-        }
-
-        array_unique($meta['signatures']);
-        return $meta;
-    }
-
-    /**
-     * Handle a quick search query for either a UUID or stack signature.
+     * Handle a quick search query for either a OOID or stack signature.
      *
      * @param  array    An array of _GET parameters
      * @return array    An array of updated _GET parameters
@@ -149,10 +74,10 @@ class Query_Controller extends Controller {
     {
         if (!empty($params['query'])) {
             $crash = new Crash();
-            $uuid = $crash->parseUUID($params['query']);
+            $ooid = $crash->parseOOID($params['query']);
             
-            if ($uuid !== FALSE) {
-                return url::redirect('report/index/' . $uuid);
+            if ($ooid !== FALSE) {
+                return url::redirect('report/index/' . $ooid);
             } else {
                 $params['query_search'] = 'signature';
                 $params['query_type'] = 'exact';
@@ -234,7 +159,7 @@ class Query_Controller extends Controller {
         ));
         
         $items_per_page = Kohana::config('search.number_results_advanced_search');
-        $meta = $this->_prepareReportsMetaArray();
+        $meta = $this->crash->prepareCrashReportsMetaArray();
         $page = Input::instance()->get('page');
         $page = (!empty($page)) ? $page : 1;
         $pager = null;
@@ -248,8 +173,8 @@ class Query_Controller extends Controller {
             $pager = new MozPager($items_per_page, $totalCount, $page);
             
             if ($reports = $this->common_model->queryTopSignatures($params, 'results', $items_per_page, $pager->offset)) {
-                $reports = $this->_prepareReports($reports);
-                $meta = $this->_prepareReportsMeta($reports);
+                $reports = $this->crash->prepareCrashReports($reports);
+                $meta = $this->crash->prepareCrashReportsMeta($reports);
             } 
             
             $rows = $this->bug_model->bugsForSignatures($meta['signatures']);

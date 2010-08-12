@@ -3,8 +3,6 @@
                       our Bugzilla integration. No really. */ ?>
 <title><?php if (! empty($report->signature)) { echo '[@ '; out::H($report->signature); echo '] - ';} ?> <?php out::H($report->product) ?> <?php out::H($report->version) ?> Crash Report - Report ID: <?php out::H($report->uuid) ?></title>
 
-    <link rel='alternate' type='application/json' href='<?php echo $reportJsonZUri ?>' />
-
     <?php echo html::stylesheet(array(
         'css/flora/flora.all.css'
     ), 'screen')?>
@@ -162,7 +160,13 @@ if (is_null($report->signature) || empty($report->signature)) { ?>
 <?php if (isset($report->processor_notes)) { ?>
             <tr>
 	    <th title="Notes added by Socorro when accepting the crash report">Processor Notes</th>
-            <td><?php echo nl2br( out::H($report->processor_notes, FALSE))  ?></td>
+            <td><?php 
+                if (is_array($report->processor_notes)) {
+                    echo nl2br(out::H(implode("/r/n", $report->processor_notes)));
+                } else {
+                    echo nl2br( out::H($report->processor_notes, FALSE));
+                }
+            ?></td>
             </tr>
 <?php } ?>
 <?php if (isset($report->distributor)) { ?>
@@ -244,13 +248,21 @@ if (is_null($report->signature) || empty($report->signature)) { ?>
                     <?php stack_trace($report->threads[$i]) ?>
                 <?php endfor ?>
             </div>
+            
+            <div id="data_urls">
+            	<?php if ($logged_in && !empty($data_urls)) { ?>
+        			<h3>Download the Data</h3>
+        			<?php foreach ($data_urls as $key => $value) { ?>
+        				<p><a href="<?php out::H($value['url']); ?>"><?php out::H($key); ?></a></p>
+        			<?php } ?>
+        		<?php } ?>
+            </div>
 
             <script type="text/javascript">document.getElementById("allthreads").style.display="none";</script>
 
         <?php endif ?>
       </div><!-- /frames -->
     </div><!-- /details -->
-
 
     <div id="modules">
         <?php if (count($report->modules)): ?>
@@ -275,18 +287,18 @@ if (is_null($report->signature) || empty($report->signature)) { ?>
     <?php endif ?>
     </div><!-- /modules -->
 
-
     <div id="rawdump">
         <div class="code"><?php out::H($report->dump) ?></div>
 
-		<?php if ($logged_in && !empty($raw_dump_urls)) { ?>
+		<?php if ($logged_in && !empty($data_urls)) { ?>
 			<h3>Download the Raw Dump</h3>
-			<?php foreach ($raw_dump_urls as $url) { ?>
-				<p><a href="<?php out::H($url); ?>"><?php out::H($url); ?></a></p>
+			<?php foreach ($data_urls as $key => $value) { ?>
+			    <?php if ($key == 'raw_crash') { ?>
+				    <p><a href="<?php out::H($value['url']); ?>"><?php out::H($key); ?></a></p>
+			    <?php } ?>
 			<?php } ?>
 		<?php } ?>
     </div><!-- /rawdump -->
-
 
     <div id="extensions">
         <?php if (!empty($extensions)) { ?>
@@ -342,3 +354,4 @@ if (is_null($report->signature) || empty($report->signature)) { ?>
 	    'js/socorro/correlation.js'
 	    ));
     ?>
+

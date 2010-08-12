@@ -1,12 +1,57 @@
 <?php defined('SYSPATH') or die('No direct script access.');
+
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is Socorro Crash Reporter
+ *
+ * The Initial Developer of the Original Code is
+ * The Mozilla Foundation.
+ * Portions created by the Initial Developer are Copyright (C) 2006
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *   Ryan Snyder <rsnyder@mozilla.com>
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * either the GNU General Public License Version 2 or later (the "GPL"), or
+ * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+ * in which case the provisions of the GPL or the LGPL are applicable instead
+ * of those above. If you wish to allow use of your version of this file only
+ * under the terms of either the GPL or the LGPL, and not to allow others to
+ * use your version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the notice
+ * and other provisions required by the GPL or the LGPL. If you do not delete
+ * the provisions above, a recipient may use your version of this file under
+ * the terms of any one of the MPL, the GPL or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
+
 /**
- * Provide data access to web services. Analygous to Kohana's Database class.
+ * Provide data access to web services. Analogous to Kohana's Database class.
  *
  * @author ozten
  */
 class Web_Service {
+    
     // config params for use with CURL
     protected $config;
+    
+    /**
+     * The HTTP Status code from the cURL request.
+     */
+    public $status_code = 0;
+    
     /**
      * Creates an instance of this class and allows overriding default config
      * @see config/webserviceclient.php for supported options
@@ -75,12 +120,12 @@ class Web_Service {
 	    Kohana::log('alert', "Web_Service " . $t . " seconds to access $url");
 	}
 	$headers  = curl_getinfo($curl);
-	$http_status_code = $headers['http_code'];
+	$this->status_code = $headers['http_code'];
 	$code = curl_errno($curl);
 	$message = curl_error($curl);
 	curl_close($curl);
-	Kohana::log('info', "$http_status_code $code $message");
-	if ($http_status_code == 200) {
+	Kohana::log('info', "$this->status_code $code $message");
+	if ($this->status_code == 200) {
 	    if ($response_type == 'json') {
 		$data = json_decode($curl_response);
 	    } else {
@@ -89,7 +134,7 @@ class Web_Service {
 	    return $data;
 	} else {
 	    // See http://curl.haxx.se/libcurl/c/libcurl-errors.html
-	    Kohana::log('error', "Web_Service $code $message while retrieving $url which was HTTP status $http_status_code");
+	    Kohana::log('error', "Web_Service $code $message while retrieving $url which was HTTP status $this->status_code");
 	    return FALSE;
 	}
     }

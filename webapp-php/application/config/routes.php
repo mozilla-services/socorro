@@ -63,9 +63,6 @@ $config['topcrasher'] =
 $config['error/(.*)/(.*)'] =
     'error/$1/$2';
 
-$config['dumps/(.*)'] =
-    'dumps/file/$1';
-
 $config['report/list'] =
     'report/do_list'; // 'list' is a PHP reserved word
 
@@ -78,4 +75,5 @@ $config['report/index/([0-9a-zA-Z.-]+)'] =
 $config['report/([0-9a-zA-Z.-]+)'] =
     'report/index/$1';
 
-
+$config['report/([0-9a-zA-Z.-]+)/([0-9a-zA-Z_]+)'] =
+    'report/$2/$1';

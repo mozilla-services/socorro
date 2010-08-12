@@ -17,37 +17,21 @@ $config['amo_api'] = 'https://services.addons.mozilla.org/';
 $config['amo_url'] = 'http://addons.mozilla.org/';
 
 /**
+ * The number of years for which a crash report is valid.
+ */
+$config['crash_report_ttl'] = 3;
+
+/**
  * The amount of time in seconds in which the Alexa topsites file will be valid. Originally set 
  * to 604,800 seconds (7 days).
  */
 $config['topsites_validity'] = 604800;
 
 /**
- * The PHP app access the processed crash dump files (jsonz)
- * via an HTTP request. The php_access config variable is a
- * single quoted string which includes the following variables:
- * %1$s - UUID of the crash
- */
-$config['crash_dump_local_url']  = 'http://aking.khan.mozilla.org/reporter/dumps/%1$s.jsonz';
-
-/**
- * Exactly like local_url but is used for public links
- * to the processed dumps files
- * %1$s - UUID of the crash
- */
-$config['crash_dump_public_url'] = 'http://aking.khan.mozilla.org/reporter/dumps/%1$s.jsonz';
-
-/**
  * The amount of time in seconds which the raw dump will be accessible. Originally set 
  * to 604,800 seconds (7 days).
  */
 $config['raw_dump_availability'] = 604800;
-
-/**
- * The PHP app will provide links to the raw crash dump files (.jsonz and 
- * .dump) to logged in users.  In production this link must be prefixed with https://.
- */
-$config['raw_dump_url']  = 'https://rsnyder.khan.mozilla.org/reporter/rawdumps/';
 
 $config['dumpIDPrefix'] = 'bp-';
 
@@ -85,3 +69,15 @@ $config['query_range_defaults'] = array(
  * Base URL to which bugs will be submitted.
  */
 $config['report_bug_url'] = 'https://bugzilla.mozilla.org/enter_bug.cgi?';
+
+/**
+ * The URLs for the API calls that return crash report information
+ * 
+ * URIs include:
+ * /201008/crash/meta/by/ooid/{ooid}
+ * /201008/crash/processed/by/ooid/{ooid}
+ * /201008/crash/raw_crash/by/ooid/{ooid} 
+ */
+$config['crash_api_uri_meta'] = '/201008/crash/meta/by/ooid/';
+$config['crash_api_uri_processed'] = '/201008/crash/processed/by/ooid/';
+$config['crash_api_uri_raw_crash'] = '/201008/crash/raw_crash/by/ooid/';
