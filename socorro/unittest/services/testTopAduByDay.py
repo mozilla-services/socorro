@@ -122,7 +122,7 @@ combineAduCrashHistoryResult = [
                                    'users': 600,
                                    'crashes': 18}),
                    ]
-#-----------------------------------------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 def getDummyContext():
   context = util.DotDict()
   context.databaseHost = 'fred'
@@ -133,19 +133,19 @@ def getDummyContext():
   context.logger = util.SilentFakeLogger()
   return context
 
-#-----------------------------------------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 def testAduByDay_semicolonStringToListSanitized():
   assert abd.semicolonStringToListSanitized("aa;bb;cc") == ['aa', 'bb', 'cc']
   assert abd.semicolonStringToListSanitized(" aa  ;bb;cc  ") == ['aa', 'bb', 'cc']
   assert abd.semicolonStringToListSanitized("aa;'; delete * from reports; --bb;  cc") == ['aa', 'delete * from reports', '--bb', 'cc']
 
-#-----------------------------------------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 def testAduByDay__init__():
   context = getDummyContext()
   adu = abd.AduByDay(context)
   assert adu.context == context
 
-#-----------------------------------------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 def testAduByDay_get1():
   context = getDummyContext()
   context.productVersionCache = expect.DummyObjectWithExpectations('dummyProductVersionCache')
@@ -175,7 +175,7 @@ def testAduByDay_get1():
 
   assert result == expectedResult, "expected %s, but got %s" % (expectedResult, result)
 
-#-----------------------------------------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 def testAduByDay_get2():
   context = getDummyContext()
   context.productVersionCache = expect.DummyObjectWithExpectations('dummyProductVersionCache')
@@ -206,7 +206,7 @@ def testAduByDay_get2():
 
   assert result == expectedResult, "expected %s, but got %s" % (expectedResult, result)
 
-#-----------------------------------------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 def testAduByDay_get3():
   context = getDummyContext()
   context.productVersionCache = expect.DummyObjectWithExpectations('dummyProductVersionCache')
@@ -237,7 +237,7 @@ def testAduByDay_get3():
 
   assert result == expectedResult, "expected %s, but got %s" % (expectedResult, result)
 
-#-----------------------------------------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 def testAduByDay_fetchAduHistory1():
   parameters = util.DotDict({ 'start_date': dt.datetime(2009, 12, 1),
                               'end_date': dt.datetime(2009, 12, 15),
@@ -280,9 +280,10 @@ def testAduByDay_fetchAduHistory1():
   result = adu.fetchAduHistory(parameters)
 
   expectedResult = expectedHistory1
-  assert result == expectedResult, "expected %s, but got %s" % (expectedResult, result)
+  assert result == expectedResult, "expected %s, but got %s" % \
+         (expectedResult, result)
 
-#-----------------------------------------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 def testAduByDay_fetchAduHistory2():
   parameters = util.DotDict({ 'start_date': dt.datetime(2009, 12, 1),
                               'end_date': dt.datetime(2009, 12, 15),
@@ -294,7 +295,7 @@ def testAduByDay_fetchAduHistory2():
   # abhors trailing whitespace.  Without it, the blank line between the last
   # predicate in the where clause and the group by clause would have no spaces
   # in it.  That causes a mismatch in the machinery checking for errors.
-  sql = """
+  sql = expect.SpaceAgnosticString("""
       select
           date,
           substring(product_os_platform, 1, 3) as product_os_platform,
@@ -306,11 +307,11 @@ def testAduByDay_fetchAduHistory2():
           and date <= %(end_date)s
           and product_name = %(product)s
           and product_version = %(version)s
-          \n      group by
+          group by
           date,
           product_os_platform
       order by
-          1"""
+          1""")
   sqlReturn = singleQueryReturn3
   dummyCursor = expect.DummyObjectWithExpectations('dummyCursor')
   #dummyCursor.expect('tobecalled', args, kwargs, retvalue)
@@ -329,7 +330,7 @@ def testAduByDay_fetchAduHistory2():
   expectedResult = expectedHistory3
   assert result == expectedResult, "expected %s, but got %s" % (expectedResult, result)
 
-#-----------------------------------------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 def testAduByDay_fetchCrashHistory():
   parameters = util.DotDict({ 'start_date': dt.datetime(2009, 12, 1),
                               'end_date': dt.datetime(2009, 12, 15),
@@ -340,7 +341,7 @@ def testAduByDay_fetchCrashHistory():
                               'socorroTimeToUTCInterval':'8 hours',
                               'productdims_id':171,
                            })
-  sql = """
+  sql =  expect.SpaceAgnosticString("""
       SELECT adu_day, os_short_name, SUM(count)
       FROM daily_crashes
       WHERE timestamp without time zone %(start_date)s < adu_day AND
@@ -350,7 +351,7 @@ def testAduByDay_fetchCrashHistory():
              report_type IN ('C', 'H')
       GROUP BY adu_day, os_short_name
       order by
-          1, 2"""
+          1, 2""")
 
   sqlReturn = singleQueryReturn1
   dummyCursor = expect.DummyObjectWithExpectations('dummyCursor')
@@ -370,7 +371,7 @@ def testAduByDay_fetchCrashHistory():
   expectedResult = expectedHistory1
   assert result == expectedResult, "expected %s, but got %s" % (expectedResult, result)
 
-#-----------------------------------------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 def testAduByDay_combineAduCrashHistory():
   context = getDummyContext()
   adu = abd.AduByDay(context)
@@ -380,7 +381,7 @@ def testAduByDay_combineAduCrashHistory():
   assert result == expectedResult, "expected %s, but got %s" % (expectedResult, result)
 
 
-#-----------------------------------------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 def testAduByDay_aduByDay1():
   context = getDummyContext()
   class AduByDay3(abd.AduByDay):
@@ -413,7 +414,7 @@ def testAduByDay_aduByDay1():
                    }
   assert result == expectedResult, "expected %s, but got %s" % (expectedResult, result)
 
-  #-----------------------------------------------------------------------------------------------------------------
+  #-------------------------------------------------------------------------------
 def testAduByDay_aduByDay2():
   context = getDummyContext()
   class AduByDay3(abd.AduByDay):
