@@ -43,8 +43,6 @@ try:
   url.dailyUrlDump(configurationContext)
 finally:
   logger.info("done.")
-  rotatingFileLog.flush()
-  rotatingFileLog.close()
 
 
 

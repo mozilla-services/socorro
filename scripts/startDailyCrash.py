@@ -43,8 +43,6 @@ try:
   daily_crash.record_crash_stats(configurationContext, logger)
 finally:
   logger.info("done.")
-  rotatingFileLog.flush()
-  rotatingFileLog.close()
 
 
 

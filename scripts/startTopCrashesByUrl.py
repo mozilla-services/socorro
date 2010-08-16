@@ -43,5 +43,3 @@ try:
   logger.info("Successfully ran in %d seconds" % (time.time() - before))
 finally:
   logger.info("done.")
-  rotatingFileLog.flush()
-  rotatingFileLog.close()

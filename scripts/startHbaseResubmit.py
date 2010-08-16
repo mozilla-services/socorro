@@ -42,8 +42,6 @@ try:
   hbr.resubmit(conf)
 finally:
   logger.info("done.")
-  rotatingFileLog.flush()
-  rotatingFileLog.close()
 
 
 

@@ -51,5 +51,3 @@ try:
   builds.recordNightlyBuilds(config)
 finally:
   logger.info("Done.")
-  rotatingFileLog.flush()
-  rotatingFileLog.close()

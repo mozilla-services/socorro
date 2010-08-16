@@ -40,5 +40,3 @@ try:
   serverstatus.update(configContext, logger)
 finally:
   logger.info("done.")
-  rotatingFileLog.flush()
-  rotatingFileLog.close()
