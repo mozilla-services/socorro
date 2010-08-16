@@ -784,16 +784,16 @@ class HBaseConnectionForCrashReports(HBaseConnection):
 
     processed_timestamp = processed_json['completed_datetime']
 
-    is_oob_signature = false
+    is_oob_signature = False
     if 'signature' in processed_json:
       if len(processed_json['signature']) > 0:
         signature = processed_json['signature']
       else:
         signature = '##empty##'
-        is_oob_signature = true
+        is_oob_signature = True
     else:
       signature = '##null##'
-      is_oob_signature = true
+      is_oob_signature = True
 
     processed_json = json.dumps(processed_json, cls=IterableJsonEncoder)
 
