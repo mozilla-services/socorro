@@ -295,6 +295,7 @@ class StreamBreakpadProcessor (daemon_proc.Processor):
 
       #self.logger.debug("new signature: %s", new_jdoc.signature)
     except KeyError, x:
+      new_jdoc.signature = ''
       if j_dump.crash_info.crashing_thread:
         new_jdoc.processor_notes.append('No signature could be generated because frame information is missing for thread %d - %s' % (j_dump.crash_info.crashing_thread, str(x)))
       else:
