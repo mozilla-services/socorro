@@ -20,9 +20,8 @@ except configurationManager.NotAnOptionError, x:
   print >>sys.stderr, "for usage, try --help"
   sys.exit(1)
 
-loggerLevel = configurationContext.logFileErrorLoggingLevel
-logger = topcrasher.logger
-logger.setLevel(loggerLevel)
+logger = logging.getLogger("topCrashBySignature")
+logger.setLevel(logging.DEBUG)
 
 stderrLog = logging.StreamHandler()
 stderrLog.setLevel(configurationContext.stderrErrorLoggingLevel)

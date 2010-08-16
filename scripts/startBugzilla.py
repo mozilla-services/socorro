@@ -43,8 +43,6 @@ try:
   bug.record_associations(configurationContext)
 finally:
   logger.info("done.")
-  rotatingFileLog.flush()
-  rotatingFileLog.close()
 
 
 

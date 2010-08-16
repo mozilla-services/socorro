@@ -15,9 +15,8 @@ import socorro.cron.topCrashesByUrl as tcbyurl
 
 configurationContext = configurationManager.newConfiguration(configurationModule=config, applicationName="Top Crash By URL Summary")
 
-logger = tcbyurl.logger
-loggerLevel = configurationContext.logFileErrorLoggingLevel
-logger.setLevel(loggerLevel)
+logger = logging.getLogger("topCrashesByUrl")
+logger.setLevel(logging.DEBUG)
 
 stderrLog = logging.StreamHandler()
 stderrLog.setLevel(configurationContext.stderrErrorLoggingLevel)
