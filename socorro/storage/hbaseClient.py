@@ -582,31 +582,6 @@ class HBaseConnectionForCrashReports(HBaseConnection):
     return itertools.islice(iterable,limit)
 
   @retry_wrapper_for_generators
-  def iterator_for_all_legacy_to_be_processed(self):
-    #self.logger.debug('iterator_for_all_legacy_to_be_processed')
-    for row in self.limited_iteration(self.merge_scan_with_prefix('crash_reports_index_legacy_unprocessed_flag',
-                                                                  '',
-                                                                  ['ids:ooid'])):
-      self.delete_from_legacy_processing_index(row['_rowkey'])
-      yield row['ids:ooid']
-
-  @retry_wrapper_for_generators
-  def acknowledge_ooid_as_legacy_priority_job(self, ooid):
-    try:
-      state = self.get_report_processing_state(ooid)
-      if state:
-        row_key = guid_to_timestamped_row_id(ooid, state['timestamps:submitted'])
-        self.delete_from_legacy_processing_index(row_key)
-      return bool(state)
-    except OoidNotFoundException:
-      return False
-
-  @optional_retry_wrapper
-  def delete_from_legacy_processing_index(self, index_row_key):
-    self.client.deleteAllRow('crash_reports_index_legacy_unprocessed_flag', index_row_key)
-    self.client.atomicIncrement('metrics','crash_report_queue','counters:current_legacy_unprocessed_size',-1)
-
-  @retry_wrapper_for_generators
   def iterator_for_legacy_db_feeder_queue(self):
     #self.logger.debug('iterator_for_all_legacy_processed')
     for row in self.limited_iteration(self.merge_scan_with_prefix('crash_reports_index_legacy_processed',
@@ -671,7 +646,7 @@ class HBaseConnectionForCrashReports(HBaseConnection):
                           [self.mutationClass(column=ooid_column_name,value=ooid)])
 
   @optional_retry_wrapper
-  def update_metrics_counters_for_process(self, processed_timestamp):
+  def update_metrics_counters_for_process(self, processed_timestamp, priority_processing, legacy_processing, is_oob_signature, signature):
     """
     Increments a series of counters in the 'metrics' table related to CR processing
     """
@@ -683,8 +658,13 @@ class HBaseConnectionForCrashReports(HBaseConnection):
                  ]
     counterIncrementList = [ 'counters:processed_crash_reports' ]
 
-    #TODO: Add some logic to count priority, legacy, and non-legacy processing separately
-    #counterIncrementList.append("counters:processed_crash_reports_legacy_throttle_%d" % legacy_processing)
+    if priority_processing == 'Y':
+      counterIncrementList.append("counters:processed_crash_reports_priority")
+    elif legacy_processing == 'Y':
+      counterIncrementList.append("counters:processed_crash_reports_legacy")
+
+    if is_oob_signature:
+      counterIncrementList.append("counters:processed_crash_reports_oob_signature_%s" % signature)
 
     for rowkey in timeLevels:
       for column in counterIncrementList:
@@ -692,8 +672,7 @@ class HBaseConnectionForCrashReports(HBaseConnection):
 
   @optional_retry_wrapper
   def update_metrics_counters_for_submit(self, submitted_timestamp,
-                                         legacy_processing, process_type,is_hang,
-                                         add_to_unprocessed_queue):
+                                         legacy_processing, process_type,is_hang):
     """
     Increments a series of counters in the 'metrics' table related to CR submission
     """
@@ -711,17 +690,12 @@ class HBaseConnectionForCrashReports(HBaseConnection):
       else:
         counterIncrementList.append("counters:submitted_oop_%s_crash_reports" % process_type)
 
-    if add_to_unprocessed_queue:
-      self.client.atomicIncrement('metrics','crash_report_queue','counters:current_unprocessed_size',1)
-      if legacy_processing == 0:
-        self.client.atomicIncrement('metrics','crash_report_queue','counters:current_legacy_unprocessed_size',1)
-
     for rowkey in timeLevels:
       for column in counterIncrementList:
         self.client.atomicIncrement('metrics',rowkey,column,1)
 
   @optional_retry_wrapper
-  def put_json_dump(self, ooid, json_data, dump, add_to_unprocessed_queue = True):
+  def put_json_dump(self, ooid, json_data, dump):
     """
     Create a crash report record in hbase from serialized json and
     bytes of the minidump
@@ -763,7 +737,7 @@ class HBaseConnectionForCrashReports(HBaseConnection):
     if is_hang:
       self.put_crash_report_hang_indices(ooid,hang_id,process_type,submitted_timestamp)
 
-    self.update_metrics_counters_for_submit(submitted_timestamp,legacy_processing,process_type,is_hang,add_to_unprocessed_queue)
+    self.update_metrics_counters_for_submit(submitted_timestamp,legacy_processing,process_type,is_hang)
 
 
   def put_json_dump_from_files(self,ooid,json_path,dump_path,openFn=open):
@@ -804,20 +778,22 @@ class HBaseConnectionForCrashReports(HBaseConnection):
     legacy_processing = processing_state.get('flags:legacy_processing', 'Y')
     priority_processing = processing_state.get('flags:priority_processing', 'N')
 
-    if 'N' == processing_state.get('flags:processed', '?'):
-      index_row_key = guid_to_timestamped_row_id(ooid, submitted_timestamp)
-      self.client.atomicIncrement('metrics','crash_report_queue','counters:current_unprocessed_size',-1)
-      self.client.deleteAllRow('crash_reports_index_unprocessed_flag', index_row_key)
+    index_row_key = guid_to_timestamped_row_id(ooid, submitted_timestamp)
+    self.client.deleteAllRow('crash_reports_index_unprocessed_flag', index_row_key)
+    self.client.deleteAllRow('crash_reports_index_legacy_unprocessed_flag', index_row_key)
 
     processed_timestamp = processed_json['completed_datetime']
 
+    is_oob_signature = false
     if 'signature' in processed_json:
       if len(processed_json['signature']) > 0:
         signature = processed_json['signature']
       else:
         signature = '##empty##'
+        is_oob_signature = true
     else:
       signature = '##null##'
+      is_oob_signature = true
 
     processed_json = json.dumps(processed_json, cls=IterableJsonEncoder)
 
@@ -839,7 +815,7 @@ class HBaseConnectionForCrashReports(HBaseConnection):
     self.client.mutateRow('crash_reports_index_signature_ooid', sig_ooid_idx_row_key,
                           [self.mutationClass(column="ids:ooid",value=ooid)])
 
-    self.update_metrics_counters_for_process(processed_timestamp)
+    self.update_metrics_counters_for_process(processed_timestamp, priority_processing, legacy_processing, is_oob_signature, signature)
 
 def salted_scanner_iterable(logger,client,make_row_nice,salted_prefix,scanner):
   """
