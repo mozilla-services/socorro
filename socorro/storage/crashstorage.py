@@ -240,12 +240,6 @@ class CrashStorageSystem(object):
   #-----------------------------------------------------------------------------------------------------------------
   def get_processed (self, ooid):
     raise NotImplementedException("get_processed is not implemented")
-  #-----------------------------------------------------------------------------------------------------------------
-  def uuidInStorage (self, ooid):
-    return False
-  #-----------------------------------------------------------------------------------------------------------------
-  def newUuids(self):
-    raise StopIteration
 
 
 #=================================================================================================================
@@ -332,12 +326,6 @@ class CrashStorageSystemForHBase(CrashStorageSystem):
       raise OoidNotFoundException(ooid)
 
   #-----------------------------------------------------------------------------------------------------------------
-  def uuidInStorage (self, ooid):
-    return self.hbaseConnection.acknowledge_ooid_as_legacy_priority_job(ooid,
-                                                                        number_of_retries=self.hbaseRetry,
-                                                                        wait_between_retries=self.hbaseRetryDelay)
-
-  #-----------------------------------------------------------------------------------------------------------------
   def dumpPathForUuid(self, ooid, basePath):
     dumpPath = ("%s/%s.dump" % (basePath, ooid)).replace('//', '/')
     f = open(dumpPath, "w")
@@ -354,10 +342,6 @@ class CrashStorageSystemForHBase(CrashStorageSystem):
   def cleanUpTempDumpStorage(self, ooid, basePath):
     dumpPath = ("%s/%s.dump" % (basePath, ooid)).replace('//', '/')
     os.unlink(dumpPath)
-
-  #-----------------------------------------------------------------------------------------------------------------
-  def newUuids(self):
-    return self.hbaseConnection.iterator_for_all_legacy_to_be_processed()
 
   #-----------------------------------------------------------------------------------------------------------------
   def dbFeederStandardJobIter(self, sleepFunction=tm.sleep):
@@ -536,24 +520,6 @@ class CrashStorageSystemForNFS(CrashStorageSystem):   # DEPRECATED
   #-----------------------------------------------------------------------------------------------------------------
   def cleanUpTempDumpStorage(self, ooid, ignoredBasePath):
     pass
-
-  #-----------------------------------------------------------------------------------------------------------------
-  def uuidInStorage(self, ooid):
-    try:
-      uuidPath = self.standardJobStorage.getJson(ooid)
-      self.standardJobStorage.markAsSeen(ooid)
-    except (OSError, IOError):
-      try:
-        uuidPath = self.deferredJobStorage.getJson(ooid)
-        self.deferredJobStorage.markAsSeen(ooid)
-      except (OSError, IOError):
-        return False
-    return True
-
-  #-----------------------------------------------------------------------------------------------------------------
-  def newUuids(self):
-    return self.standardJobStorage.destructiveDateWalk()
-
 
 #=================================================================================================================
 class CrashStoragePool(dict):
