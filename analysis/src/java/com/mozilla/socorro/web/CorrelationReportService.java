@@ -40,6 +40,8 @@ package com.mozilla.socorro.web;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringWriter;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -73,8 +75,28 @@ public class CorrelationReportService {
 	private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(CorrelationReportService.class);
 	
 	private static final ObjectMapper JSON_MAPPER = new ObjectMapper();
+	
+	private static final int MAX_REPORTS = 300;
 	private static final int MIN_SIG_COUNT = 10;
 	private static final float MIN_BASELINE_DIFF = 0.05f;
+	
+	// JSON Fields
+	private static final String PRODUCT = "product";
+	private static final String PRODUCT_VERSION = "product-version";
+	private static final String OS = "os";
+	private static final String SIGNATURE = "signature";
+	private static final String CRASH_REASON = "crash-reason";
+	private static final String ARCH = "arch";
+	private static final String MODULE = "module";
+	private static final String ADDON = "addon";
+	private static final String VERSION = "v";
+	private static final String SIG_COUNT = "sc";
+	private static final String TOTAL_SIG_COUNT = "tsc";
+	private static final String SIG_PERCENT = "sp";
+	private static final String OS_COUNT = "oc";
+	private static final String TOTAL_OS_COUNT = "toc";
+	private static final String OS_PERCENT = "op";
+	private static final String NAME = "name";
 	
 	private final CrashCountDao ccDao;
 	
@@ -88,11 +110,11 @@ public class CorrelationReportService {
 		List<Module> modules = null;
 		Map<String, Module> osModuleMap = null;
 		if (addons) {
-			modules = sig.getSortedModuleCounts();
-			osModuleMap = os.getModuleCounts();
-		} else {
 			modules = sig.getSortedAddonCounts();
 			osModuleMap = os.getAddonCounts();
+		} else {
+			modules = sig.getSortedModuleCounts();
+			osModuleMap = os.getModuleCounts();
 		}
 		
 		for (Module m : modules) {
@@ -103,12 +125,12 @@ public class CorrelationReportService {
 			if ((sigRatio - osRatio) >= MIN_BASELINE_DIFF) {
 				g.writeStartObject();
 				g.writeStringField(fieldName, m.getName());
-				g.writeNumberField("sc", m.getCount());
-				g.writeNumberField("tsc", sig.getCount());
-				g.writeNumberField("sp", (int)(sigRatio * 100.0f));
-				g.writeNumberField("oc", osCount);
-				g.writeNumberField("toc", os.getCount());
-				g.writeNumberField("op", (int)(osRatio * 100.0f));
+				g.writeNumberField(SIG_COUNT, m.getCount());
+				g.writeNumberField(TOTAL_SIG_COUNT, sig.getCount());
+				g.writeNumberField(SIG_PERCENT, (int)(sigRatio * 100.0f));
+				g.writeNumberField(OS_COUNT, osCount);
+				g.writeNumberField(TOTAL_OS_COUNT, os.getCount());
+				g.writeNumberField(OS_PERCENT, (int)(osRatio * 100.0f));
 				
 				g.writeArrayFieldStart("versions");
 				for (Map.Entry<String, Integer> versionEntry : m.getSortedVersionCounts()) {
@@ -117,19 +139,21 @@ public class CorrelationReportService {
 					float versionOsRatio = os.getCount() > 0 ? (float)osCount / (float)os.getCount() : 0.0f;
 					
 					g.writeStartObject();
-					g.writeStringField("v", versionEntry.getKey());
-					g.writeNumberField("sc", versionEntry.getValue());
-					g.writeNumberField("tsc", sig.getCount());
-					g.writeNumberField("sp", (int)(versionSigRatio * 100.0f));
-					g.writeNumberField("oc", versionOsCount);
-					g.writeNumberField("toc", os.getCount());
-					g.writeNumberField("op", (int)(versionOsRatio * 100.0f));
+					g.writeStringField(VERSION, versionEntry.getKey());
+					g.writeNumberField(SIG_COUNT, versionEntry.getValue());
+					g.writeNumberField(TOTAL_SIG_COUNT, sig.getCount());
+					g.writeNumberField(SIG_PERCENT, (int)(versionSigRatio * 100.0f));
+					g.writeNumberField(OS_COUNT, versionOsCount);
+					g.writeNumberField(TOTAL_OS_COUNT, os.getCount());
+					g.writeNumberField(OS_PERCENT, (int)(versionOsRatio * 100.0f));
 					g.writeEndObject();
 				}
 				g.writeEndArray();
 				
 				g.writeEndObject();
 			}
+			
+			
 		}
 		g.writeEndArray();
 	}
@@ -140,15 +164,15 @@ public class CorrelationReportService {
 		JsonGenerator g = f.createJsonGenerator(sw);
 
 		g.writeStartObject();
-		g.writeStringField("product", report.getProduct());
-		g.writeStringField("version", report.getProductVersion());
-		g.writeStringField("os", report.getOs().getName());
+		g.writeStringField(PRODUCT, report.getProduct());
+		g.writeStringField(PRODUCT_VERSION, report.getProductVersion());
+		g.writeStringField(OS, report.getOs().getName());
 		OperatingSystem os = report.getOs();
 		
 		for (Map.Entry<String, Signature> entry : os.getSignatures().entrySet()) {
 			Signature sig = entry.getValue();
-			g.writeStringField("signature", sig.getName());
-			g.writeStringField("crash-reason", sig.getReason());
+			g.writeStringField(SIGNATURE, sig.getName());
+			g.writeStringField(CRASH_REASON, sig.getReason());
 			
 			g.writeArrayFieldStart("core-counts");
 			for (Map.Entry<String, Integer> sigCoreEntry : sig.getSortedCoreCounts()) {
@@ -158,19 +182,19 @@ public class CorrelationReportService {
 				float osRatio = os.getCount() > 0 ? (float)osCount / (float)os.getCount() : 0.0f;
 				
 				g.writeStartObject();
-				g.writeStringField("arch", sigCoreEntry.getKey());
-				g.writeNumberField("sc", sigCoreEntry.getValue());
-				g.writeNumberField("tsc", sig.getCount());
-				g.writeNumberField("sp", (int)(sigRatio * 100.0f));
-				g.writeNumberField("oc", osCount);
-				g.writeNumberField("toc", os.getCount());
-				g.writeNumberField("op", (int)(osRatio * 100.0f));
+				g.writeStringField(ARCH, sigCoreEntry.getKey());
+				g.writeNumberField(SIG_COUNT, sigCoreEntry.getValue());
+				g.writeNumberField(TOTAL_SIG_COUNT, sig.getCount());
+				g.writeNumberField(SIG_PERCENT, (int)(sigRatio * 100.0f));
+				g.writeNumberField(OS_COUNT, osCount);
+				g.writeNumberField(TOTAL_OS_COUNT, os.getCount());
+				g.writeNumberField(OS_PERCENT, (int)(osRatio * 100.0f));
 				g.writeEndObject();
 			}
 			g.writeEndArray();
 			
-			generateJSONArray(g, "interesting-modules", "module", os, sig, false, true);
-			generateJSONArray(g, "interesting-addons", "addon", os, sig, true, true);
+			generateJSONArray(g, "interesting-modules", MODULE, os, sig, false, true);
+			generateJSONArray(g, "interesting-addons", ADDON, os, sig, true, true);
 
 		}
 
@@ -180,9 +204,104 @@ public class CorrelationReportService {
 		return sw.toString();
 	}
 	
+	private String getReportTopCrasherJSON(CorrelationReport report) throws IOException {
+		StringWriter sw = new StringWriter();
+		JsonFactory f = new JsonFactory();
+		JsonGenerator g = f.createJsonGenerator(sw);
+
+		g.writeStartObject();
+		g.writeStringField(PRODUCT, report.getProduct());
+		g.writeStringField(PRODUCT_VERSION, report.getProductVersion());
+		g.writeStringField(OS, report.getOs().getName());
+		OperatingSystem os = report.getOs();
+		
+		g.writeArrayFieldStart("signatures");
+		List<Signature> signatures = new ArrayList<Signature>(report.getOs().getSignatures().values());
+		Collections.sort(signatures, Collections.reverseOrder(new Signature.SignatureCountComparator()));
+		if (signatures.size() > MAX_REPORTS) {
+			signatures = signatures.subList(0, MAX_REPORTS);
+		}
+
+		for (Signature sig : signatures) {
+			if (sig.getCount() > MIN_SIG_COUNT) {
+				g.writeStartObject();
+				g.writeStringField(SIGNATURE, sig.getName());
+				g.writeStringField(CRASH_REASON, sig.getReason());
+				
+				List<Map.Entry<String, Integer>> sigCores = sig.getSortedCoreCounts();
+				if (sigCores.size() > 0) {
+					Map.Entry<String, Integer> sigCoreEntry = sigCores.get(0);
+					float sigRatio = sig.getCount() > 0 ? (float)sigCoreEntry.getValue() / (float)sig.getCount() : 0.0f;
+					int osCount = os.getCoreCounts().get(sigCoreEntry.getKey());
+					float osRatio = os.getCount() > 0 ? (float)osCount / (float)os.getCount() : 0.0f;
+				
+					g.writeObjectFieldStart("core-count");
+					g.writeStringField(ARCH, sigCoreEntry.getKey());
+					g.writeNumberField(SIG_COUNT, sigCoreEntry.getValue());
+					g.writeNumberField(TOTAL_SIG_COUNT, sig.getCount());
+					g.writeNumberField(SIG_PERCENT, (int)(sigRatio * 100.0f));
+					g.writeNumberField(OS_COUNT, osCount);
+					g.writeNumberField(TOTAL_OS_COUNT, os.getCount());
+					g.writeNumberField(OS_PERCENT, (int)(osRatio * 100.0f));
+					g.writeEndObject();
+				}
+	
+				List<Module> modules = sig.getSortedModuleCounts();
+				if (modules.size() > 0) {
+					Map<String, Module> osModuleMap = os.getModuleCounts();
+					Module m = modules.get(0);
+					
+					float sigRatio = sig.getCount() > 0 ? (float)m.getCount() / (float)sig.getCount() : 0.0f;
+					int osCount = osModuleMap.get(m.getName()).getCount();
+					float osRatio = os.getCount() > 0 ? (float)osCount / (float)os.getCount() : 0.0f;
+					if ((sigRatio - osRatio) >= MIN_BASELINE_DIFF) {
+						g.writeObjectFieldStart(MODULE);
+						g.writeStringField(NAME, m.getName());
+						g.writeNumberField(SIG_COUNT, m.getCount());
+						g.writeNumberField(TOTAL_SIG_COUNT, sig.getCount());
+						g.writeNumberField(SIG_PERCENT, (int)(sigRatio * 100.0f));
+						g.writeNumberField(OS_COUNT, osCount);
+						g.writeNumberField(TOTAL_OS_COUNT, os.getCount());
+						g.writeNumberField(OS_PERCENT, (int)(osRatio * 100.0f));					
+						g.writeEndObject();
+					}
+				}
+	
+				modules = sig.getSortedAddonCounts();
+				if (modules.size() > 0) {
+					Map<String, Module> osModuleMap = os.getAddonCounts();
+					Module m = modules.get(0);
+					
+					float sigRatio = sig.getCount() > 0 ? (float)m.getCount() / (float)sig.getCount() : 0.0f;
+					int osCount = osModuleMap.get(m.getName()).getCount();
+					float osRatio = os.getCount() > 0 ? (float)osCount / (float)os.getCount() : 0.0f;
+					if ((sigRatio - osRatio) >= MIN_BASELINE_DIFF) {
+						g.writeObjectFieldStart(ADDON);
+						g.writeStringField(NAME, m.getName());
+						g.writeNumberField(SIG_COUNT, m.getCount());
+						g.writeNumberField(TOTAL_SIG_COUNT, sig.getCount());
+						g.writeNumberField(SIG_PERCENT, (int)(sigRatio * 100.0f));
+						g.writeNumberField(OS_COUNT, osCount);
+						g.writeNumberField(TOTAL_OS_COUNT, os.getCount());
+						g.writeNumberField(OS_PERCENT, (int)(osRatio * 100.0f));					
+						g.writeEndObject();
+					}
+				}
+	
+				g.writeEndObject();
+			}
+		}
+		g.writeEndArray();
+		
+		g.writeEndObject();
+		g.close();
+		
+		return sw.toString();
+	}
+	
 	@GET
 	@Path("report/{date}/{product}/{version}/{os}/{signature}")
-	@Produces("application/json")
+	@Produces(MediaType.APPLICATION_JSON)
 	public String getReport(@PathParam("date") String date, @PathParam("product") String product, @PathParam("version") String version, 
 							@PathParam("os") String os, @PathParam("signature") String signature) {
 		String json = "";
@@ -199,22 +318,13 @@ public class CorrelationReportService {
 	
 	@GET
 	@Path("top-crashers/{date}/{product}/{version}/{os}")
-	@Produces("text/html")
+	@Produces(MediaType.APPLICATION_JSON)
 	public String getTopCrashers(@PathParam("date") String date, @PathParam("product") String product, @PathParam("version") String version, 
 								 @PathParam("os") String os) {
 		StringBuilder sb = new StringBuilder();
 		try {
-			List<Signature> signatures = ccDao.getTopCrashers(date, product, version, os);
-			sb.append("<html><body>");
-			for (Signature sig : signatures) {
-				if (sig.getCount() > MIN_SIG_COUNT) {
-					// TODO: Producing HTML for now but probably will do JSON in the future
-					String linkUrl = "/correlation-report/report/" + date + "/" + product + "/" + version + "/" + os + "/" + java.net.URLEncoder.encode(sig.getName(), "UTF-8");
-					sb.append("<span><a href=\"").append(linkUrl).append("\">");
-					sb.append(sig.getName()).append("</a> (").append(sig.getCount()).append(") ").append("</span><br/>\n");
-				}
-			}
-			sb.append("</body></html>");
+			CorrelationReport report = ccDao.getTopCrashers(date, product, version, os);
+			sb.append(getReportTopCrasherJSON(report));
 		} catch (IOException e) {
 			LOG.error("Problem getting or serializing report", e);
 			throw new WebApplicationException(e, Response.Status.INTERNAL_SERVER_ERROR);
@@ -233,9 +343,9 @@ public class CorrelationReportService {
 		try {
 			// This is an untyped parse so the caller is expected to know the types
 			Map<String,Object> archModuleMap = JSON_MAPPER.readValue(request.getInputStream(), new TypeReference<Map<String,Object>>() { });
-			String arch = (String)archModuleMap.get("arch");
-			Map<String,String> moduleVersions = (Map<String,String>)archModuleMap.get("module-version");
-			Map<String,String> addonVersions = (Map<String,String>)archModuleMap.get("addon-version");
+			String arch = (String)archModuleMap.get(ARCH);
+			Map<String,String> moduleVersions = (Map<String,String>)archModuleMap.get("modules");
+			Map<String,String> addonVersions = (Map<String,String>)archModuleMap.get("addons");
 
 			ccDao.incrementCounts(date, product, version, os, signature, arch, moduleVersions, addonVersions);
 		} catch (IOException e) {

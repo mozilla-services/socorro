@@ -110,7 +110,7 @@ public class OperatingSystem {
 	
 	public List<Module> getSortedModuleCounts() {
 		List<Module> modules = new ArrayList<Module>(moduleCounts.values());
-		Collections.sort(modules, Collections.reverseOrder(new Module.ModuleCountComparator()));
+		Collections.sort(modules, Collections.reverseOrder(new Module.ModuleComparator()));
 		return modules;
 	}
 	
@@ -136,7 +136,7 @@ public class OperatingSystem {
 	
 	public List<Module> getSortedAddonCounts() {
 		List<Module> addons = new ArrayList<Module>(addonCounts.values());
-		Collections.sort(addons, Collections.reverseOrder(new Module.ModuleCountComparator()));
+		Collections.sort(addons, Collections.reverseOrder(new Module.ModuleComparator()));
 		return addons;
 	}
 	

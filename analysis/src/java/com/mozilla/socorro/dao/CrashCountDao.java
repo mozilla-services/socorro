@@ -38,11 +38,9 @@
 package com.mozilla.socorro.dao;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.Map;
 
 import com.mozilla.socorro.CorrelationReport;
-import com.mozilla.socorro.Signature;
 
 public interface CrashCountDao {
 
@@ -50,6 +48,6 @@ public interface CrashCountDao {
 	
 	public CorrelationReport getReport(String date, String product, String version, String os, String signature) throws IOException;
 	
-	public List<Signature> getTopCrashers(String date, String product, String version, String os) throws IOException;
+	public CorrelationReport getTopCrashers(String date, String product, String version, String os) throws IOException;
 	
 }

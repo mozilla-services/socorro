@@ -50,6 +50,8 @@ public class Module {
 	
 	private String name;
 	private int count;
+	private float sigRatio = 0.0f;
+	private float osRatio = 0.0f;
 	private Map<String, Integer> versionCounts = new HashMap<String, Integer>();
 	
 	public Module(String name) {
@@ -89,11 +91,30 @@ public class Module {
 	public void setVersionCounts(Map<String, Integer> versionCounts) {
 		this.versionCounts = versionCounts;
 	}
+
+	public float getSigRatio() {
+		return sigRatio;
+	}
+
+	public void setSigRatio(float sigRatio) {
+		this.sigRatio = sigRatio;
+	}
+
+	public float getOsRatio() {
+		return osRatio;
+	}
+
+	public void setOsRatio(float osRatio) {
+		this.osRatio = osRatio;
+	}
 	
-	public static class ModuleCountComparator implements Comparator<Module> {
+	public static class ModuleComparator implements Comparator<Module> {
 		
 		public int compare(Module o1, Module o2) {
-			return o1.getCount() < o2.getCount() ? -1 : o1.getCount() > o2.getCount() ? 1 : 0;
+			float diffRatio1 = o1.getSigRatio() - o1.getOsRatio();
+			float diffRatio2 = o2.getSigRatio() - o2.getOsRatio();
+			
+			return diffRatio1 < diffRatio2 ? -1 : diffRatio1 > diffRatio2 ? 1 : 0;
 		}
 		
 	}

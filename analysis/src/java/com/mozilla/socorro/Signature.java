@@ -39,6 +39,7 @@ package com.mozilla.socorro;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -47,6 +48,7 @@ import com.mozilla.util.MapValueComparator;
 
 public class Signature {
 	
+	private String raw = null;
 	private String name = null;
 	private String reason = null;
 	
@@ -55,13 +57,24 @@ public class Signature {
 	private Map<String, Module> moduleCounts = new HashMap<String, Module>();
 	private Map<String, Module> addonCounts = new HashMap<String, Module>();
 	
-	public Signature(String name) {
-		this(name, "");
+	public Signature(String raw) {
+		this.raw = raw;
+		int lastIdx = raw.lastIndexOf("|");
+		if (lastIdx != -1) {
+			name = raw.substring(0, lastIdx);
+			if ((lastIdx+1) <= (raw.length()-1)) {
+				reason = raw.substring(lastIdx+1);
+			} else {
+				reason = "";
+			}
+		} else {
+			name = raw;
+			reason = "";
+		}
 	}
 	
-	public Signature(String name, String reason) {
-		this.name = name;
-		this.reason = reason;
+	public String getRaw() {
+		return raw;
 	}
 	
 	public String getName() {
@@ -108,7 +121,7 @@ public class Signature {
 	
 	public List<Module> getSortedModuleCounts() {
 		List<Module> modules = new ArrayList<Module>(moduleCounts.values());
-		Collections.sort(modules, Collections.reverseOrder(new Module.ModuleCountComparator()));
+		Collections.sort(modules, Collections.reverseOrder(new Module.ModuleComparator()));
 		return modules;
 	}
 	
@@ -134,7 +147,7 @@ public class Signature {
 	
 	public List<Module> getSortedAddonCounts() {
 		List<Module> addons = new ArrayList<Module>(addonCounts.values());
-		Collections.sort(addons, Collections.reverseOrder(new Module.ModuleCountComparator()));
+		Collections.sort(addons, Collections.reverseOrder(new Module.ModuleComparator()));
 		return addons;
 	}
 	
@@ -152,6 +165,12 @@ public class Signature {
 	
 	public void setAddonCounts(Map<String, Module> addonCounts) {
 		this.addonCounts = addonCounts;
+	}
+	
+	public static class SignatureCountComparator implements Comparator<Signature> {
+		public int compare(Signature o1, Signature o2) {
+			return o1.getCount() < o2.getCount() ? -1 : o1.getCount() > o2.getCount() ? 1 : 0;
+		}
 	}
 	
 }

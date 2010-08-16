@@ -61,6 +61,9 @@ import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+import org.apache.hadoop.mapreduce.lib.output.MultipleOutputs;
+import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
+import org.apache.hadoop.mapreduce.lib.reduce.LongSumReducer;
 import org.apache.hadoop.util.GenericOptionsParser;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
@@ -69,22 +72,14 @@ import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.type.TypeReference;
 
-import com.mozilla.socorro.dao.CrashCountDao;
 import com.mozilla.socorro.dao.hbase.HbaseCrashCountDao;
 import com.mozilla.util.DateUtil;
 
+public class CrashCount2 implements Tool {
 
-/**
- * CrashCount will read crash report data in from HBase and count
- * the number of crashes at different levels (product, version, OS, signature, module, 
- * module_version, addon, addon_version).
- * 
- */
-public class CrashCount implements Tool {
-
-	private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(CrashCount.class);
+	private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(CrashCount2.class);
 	
-	private static final String NAME = "CrashCount";
+	private static final String NAME = "CrashCount2";
 	private Configuration conf;
 
 	// HBase table and column names
@@ -110,11 +105,31 @@ public class CrashCount implements Tool {
 	private static final String MODULE_PATTERN = "Module|";
 	private static final String ADDONS = "addons";
 	
-	public static class CrashCountMapper extends TableMapper<Text, LongWritable> {
+	// Table Column Families
+	//private static final String PRODUCT = "product";
+	private static final String PRODUCT_VERSION = "product_version";
+	private static final String OS = "os";
+	//private static final String SIGNATURE = "signature";
+	private static final String QUALIFIER_NAME = "name";
+	private static final String ARCH = "arch";
+	private static final String MODULE_WITH_VERSION = "module_with_version";
+	private static final String ADDON_WITH_VERSION = "addon_with_version";
+	
+	// Table Column Qualifiers
+	private static final String COUNT = "count";
+	
+	private static final String KEY_DELIMITER = "\u0001";
+	private static final String MODULE_INFO_DELIMITER = "\u0002";
+	private static final String COLUMN_DELIMITER = "\u0003";
+	
+	public static class CrashCount2Mapper extends TableMapper<Text, LongWritable> {
 
-		public enum ReportStats { JSON_PARSE_EXCEPTION, JSON_MAPPING_EXCEPTION, JSON_BYTES_NULL, DATE_PARSE_EXCEPTION, PROCESSED }
+		public enum ReportStats { JSON_PARSE_EXCEPTION, JSON_MAPPING_EXCEPTION, JSON_BYTES_NULL, DATE_PARSE_EXCEPTION, REQUIRED_FIELD_BLANK, PROCESSED }
 
-		private CrashCountDao ccDao;	
+		private Text outputKey;
+		private LongWritable one;
+		
+		private HbaseCrashCountDao ccDao;	
 		private ObjectMapper jsonMapper;
 		private Pattern newlinePattern;
 		private Pattern pipePattern;
@@ -122,12 +137,17 @@ public class CrashCount implements Tool {
 		private SimpleDateFormat rowSdf;
 		private long startTime;
 		private long endTime;
+		private MultipleOutputs mos;
 		
 		/* (non-Javadoc)
 		 * @see org.apache.hadoop.mapreduce.Mapper#setup(org.apache.hadoop.mapreduce.Mapper.Context)
 		 */
+		@SuppressWarnings("unchecked")
 		public void setup(Context context) {
+			outputKey = new Text();
+			one = new LongWritable(1);
 			
+			mos = new MultipleOutputs(context);
 			try {
 				ccDao = new HbaseCrashCountDao();
 			} catch (IOException e) {
@@ -146,6 +166,24 @@ public class CrashCount implements Tool {
 			
 			startTime = DateUtil.getTimeAtResolution(conf.getLong(START_TIME, 0), Calendar.DATE);
 			endTime = DateUtil.getEndTimeAtResolution(conf.getLong(END_TIME, System.currentTimeMillis()), Calendar.DATE);
+		}
+		
+		/* (non-Javadoc)
+		 * @see org.apache.hadoop.mapreduce.Mapper#cleanup(org.apache.hadoop.mapreduce.Mapper.Context)
+		 */
+		public void cleanup(Context context) throws InterruptedException, IOException {
+			if (mos != null) {
+				mos.close();
+			}
+		}
+		
+		private String normalize(String s) {
+			s = StringUtils.deleteWhitespace(s);
+			s = StringUtils.remove(s, KEY_DELIMITER);
+			s = StringUtils.remove(s, MODULE_INFO_DELIMITER);
+			s = StringUtils.remove(s, COLUMN_DELIMITER);
+			
+			return s;
 		}
 		
 		/* (non-Javadoc)
@@ -213,7 +251,7 @@ public class CrashCount implements Tool {
 							version = dumplineSplits[4];
 						}
 						
-						moduleVersions.put(moduleName, version);
+						moduleVersions.put(normalize(moduleName), normalize(version));
 					}
 				}
 
@@ -225,17 +263,94 @@ public class CrashCount implements Tool {
 						String addonName = addonList.get(0);
 						String version = addonList.get(1);
 						
-						addonVersions.put(addonName, version);
+						addonVersions.put(normalize(addonName), normalize(version));
 					}
 				}
 				
 				if (!StringUtils.isBlank(product) && !StringUtils.isBlank(productVersion) &&
 					!StringUtils.isBlank(osName) && !StringUtils.isBlank(signame)) {
+					
 					Calendar cal = Calendar.getInstance();
 					cal.setTimeInMillis(DateUtil.getTimeAtResolution(crashTime, Calendar.DATE));
-					ccDao.incrementCounts(rowSdf.format(cal.getTime()), product, productVersion, osName, signame, arch, moduleVersions, addonVersions);
+					String dateStr = rowSdf.format(cal.getTime());
+
+					String sigRowKey = new String(ccDao.makeRowKey(dateStr, product, productVersion, osName, signame, true));
+					String osRowKey = new String(ccDao.makeRowKey(dateStr, product, productVersion, osName, null, true));
+					
+					// os name/product/product_version
+					outputKey.set(String.format("%s" + KEY_DELIMITER + "%s" + COLUMN_DELIMITER + "%s", new Object[] { osRowKey, OS, QUALIFIER_NAME }));
+					mos.write("strings", outputKey, new Text(osName));
+					outputKey.set(String.format("%s" + KEY_DELIMITER + "%s" + COLUMN_DELIMITER + "%s", new Object[] { osRowKey, PRODUCT, product }));
+					mos.write("strings", outputKey, new Text(osName));
+					outputKey.set(String.format("%s" + KEY_DELIMITER + "%s" + COLUMN_DELIMITER + "%s", new Object[] { osRowKey, PRODUCT_VERSION, productVersion }));
+					mos.write("strings", outputKey, new Text(osName));
+					
+					// signature name/product/product_version
+					outputKey.set(String.format("%s" + KEY_DELIMITER + "%s" + COLUMN_DELIMITER + "%s", new Object[] { sigRowKey, SIGNATURE, QUALIFIER_NAME }));
+					mos.write("strings", outputKey, new Text(signame));
+					outputKey.set(String.format("%s" + KEY_DELIMITER + "%s" + COLUMN_DELIMITER + "%s", new Object[] { sigRowKey, PRODUCT, product }));
+					mos.write("strings", outputKey, new Text(osName));
+					outputKey.set(String.format("%s" + KEY_DELIMITER + "%s" + COLUMN_DELIMITER + "%s", new Object[] { sigRowKey, PRODUCT_VERSION, productVersion }));
+					mos.write("strings", outputKey, new Text(osName));	
+					
+					// os count
+					outputKey.set(String.format("%s" + KEY_DELIMITER + "%s" + COLUMN_DELIMITER + "%s", new Object[] { osRowKey, OS, COUNT }));
+					context.write(outputKey, one);
+					
+					// os -> cpu info
+					outputKey.set(String.format("%s" + KEY_DELIMITER + "%s" + COLUMN_DELIMITER + "%s", new Object[] { osRowKey, ARCH, arch }));
+					context.write(outputKey, one);
+					
+					// os -> signature count
+					outputKey.set(String.format("%s" + KEY_DELIMITER + "%s" + COLUMN_DELIMITER + "%s", new Object[] { sigRowKey, SIGNATURE, COUNT }));
+					context.write(outputKey, one);
+					
+					// os -> sig -> cpu info
+					outputKey.set(String.format("%s" + KEY_DELIMITER + "%s" + COLUMN_DELIMITER + "%s", new Object[] { sigRowKey, ARCH, arch }));
+					context.write(outputKey, one);
+					
+					for (Map.Entry<String, String> entry : moduleVersions.entrySet()) {
+						String module = entry.getKey();
+						String moduleVersion = entry.getValue();
+						String moduleQualifier = null;
+						if (StringUtils.isBlank(moduleVersion)) {
+							moduleQualifier = module;
+						} else {
+							moduleQualifier = module + MODULE_INFO_DELIMITER + moduleVersion;
+						}
+
+						// os -> module -> version
+						outputKey.set(String.format("%s" + KEY_DELIMITER + "%s" + COLUMN_DELIMITER + "%s", new Object[] { osRowKey, MODULE_WITH_VERSION, moduleQualifier }));
+						context.write(outputKey, one);
+						
+						// os -> sig -> module -> version
+						outputKey.set(String.format("%s" + KEY_DELIMITER + "%s" + COLUMN_DELIMITER + "%s", new Object[] { sigRowKey, MODULE_WITH_VERSION, moduleQualifier }));
+						context.write(outputKey, one);
+					}
+					
+					for (Map.Entry<String, String> entry : addonVersions.entrySet()) {
+						String addon = entry.getKey();
+						String addonVersion = entry.getValue();
+						String addonQualifier = null;
+						if (StringUtils.isBlank(addonVersion)) {
+							addonQualifier = addon;
+						} else {
+							addonQualifier = addon + MODULE_INFO_DELIMITER + addonVersion;
+						}
+
+						// os -> addon -> version
+						outputKey.set(String.format("%s" + KEY_DELIMITER + "%s" + COLUMN_DELIMITER + "%s", new Object[] { osRowKey, ADDON_WITH_VERSION, addonQualifier }));
+						context.write(outputKey, one);
+
+						// os -> sig -> addon -> version
+						outputKey.set(String.format("%s" + KEY_DELIMITER + "%s" + COLUMN_DELIMITER + "%s", new Object[] { sigRowKey, ADDON_WITH_VERSION, addonQualifier }));
+						context.write(outputKey, one);
+					}
+					
+					context.getCounter(ReportStats.PROCESSED).increment(1L);
+				} else {
+					context.getCounter(ReportStats.REQUIRED_FIELD_BLANK).increment(1L);
 				}
-				context.getCounter(ReportStats.PROCESSED).increment(1L);
 			} catch (JsonParseException e) {
 				context.getCounter(ReportStats.JSON_PARSE_EXCEPTION).increment(1L);
 			} catch (JsonMappingException e) {
@@ -312,15 +427,18 @@ public class CrashCount implements Tool {
 		
 		Job job = new Job(getConf());
 		job.setJobName(NAME);
-		job.setJarByClass(CrashCount.class);
+		job.setJarByClass(CrashCount2.class);
 		
 		// input table configuration
 		Scan[] scans = generateScans(startDateAsInt, endDateAsInt);
-		MultiScanTableMapReduceUtil.initMultiScanTableMapperJob(TABLE_NAME_CRASH_REPORTS, scans, CrashCountMapper.class, Text.class, LongWritable.class, job);
+		MultiScanTableMapReduceUtil.initMultiScanTableMapperJob(TABLE_NAME_CRASH_REPORTS, scans, CrashCount2Mapper.class, Text.class, LongWritable.class, job);
 		
+		MultipleOutputs.addNamedOutput(job, "strings", TextOutputFormat.class, Text.class, Text.class);
+		
+		job.setCombinerClass(LongSumReducer.class);
+		job.setReducerClass(LongSumReducer.class);
 		job.setOutputKeyClass(Text.class);
 		job.setOutputValueClass(LongWritable.class);
-		job.setNumReduceTasks(0);
 		
 		FileOutputFormat.setOutputPath(job, new Path(args[0]));
 		
@@ -379,7 +497,7 @@ public class CrashCount implements Tool {
 	 * @throws Exception
 	 */
 	public static void main(String[] args) throws Exception {
-		int res = ToolRunner.run(new Configuration(), new CrashCount(), args);
+		int res = ToolRunner.run(new Configuration(), new CrashCount2(), args);
 		System.exit(res);
 	}
 	
