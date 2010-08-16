@@ -195,32 +195,63 @@ class DbFeeder(object):
     cursor = threadLocalDbConnection.cursor()
     date_processed = crash_json['date_processed']
     for i, x in enumerate(crash_json['addons']):
+      addonName = x[0][:100] # limit length
+      try:
+        addonVersion = x[1]
+      except IndexError:
+        addonVersion = ''
+      if not addonName and not addonVersion:
+        continue
       self.extensionsTable.insert(cursor,
                                   (reportId,
                                    date_processed,
                                    i,
-                                   x[0][:100], # limit length
-                                   x[1]),
+                                   addonName,
+                                   addonVersion),
                                   self.databasePool.connectionCursorPair,
                                   date_processed=date_processed)
 
   #-----------------------------------------------------------------------------------------------------------------
   def insertReport(self, crash_json):
     threadLocalDbConnection = self.databasePool.connection()
-    cursor = threadLocalDbConnection.cursor()
     rowTuple = tuple((crash_json[x] for x in self.reportsTable.columns))
+    ooid = crash_json['uuid']
     # TODO: debug - remove this
     #items = dict(zip(self.reportsTable.columns, rowTuple))
     #for key, value in items.iteritems():
       #if not value:
         #logger.debug('missing value: %s, %s', key, value)
-    logger.debug('insert for %s', crash_json['uuid'])
-    #logger.debug('insert for %s: %s', crash_json['uuid'], str(rowTuple))
+    logger.debug('insert for %s', ooid)
+    #logger.debug('insert for %s: %s', ooid, str(rowTuple))
     date_processed = crash_json['date_processed']
-    self.reportsTable.insert(cursor,
-                             rowTuple,
-                             self.databasePool.connectionCursorPair,
-                             date_processed=date_processed)
+    try:
+      cursor = threadLocalDbConnection.cursor()
+      self.reportsTable.insert(cursor,
+                               rowTuple,
+                               self.databasePool.connectionCursorPair,
+                               date_processed=date_processed)
+    except sdb.databaseModule.IntegrityError:
+      logger.info('%s - already in the database, replacing', ooid)
+      threadLocalDbConnection.rollback()
+      r = sdb.execute(threadLocalDbConnection.cursor(),
+                  """delete from reports where uuid = %s and date_processed = %s""",
+                  (ooid, date_processed))
+      try:   # not quite sure why I've got to try fetching data from the delete
+             # but without this, the delete doesn't seem to actually happen
+        for x in r:
+          pass
+      except Exception:
+        pass
+      threadLocalDbConnection.commit()
+      note = 'This record was reprocessed on %s' % str(crash_json['completed_datetime'])
+      crash_json['processor_notes'] = "%s; %s" % (crash_json['processor_notes'],
+                                                 note)
+      rowTuple = tuple((crash_json[x] for x in self.reportsTable.columns))
+      cursor = threadLocalDbConnection.cursor()
+      self.reportsTable.insert(cursor,
+                               rowTuple,
+                               self.databasePool.connectionCursorPair,
+                               date_processed=date_processed)
     result = cursor.fetchall()
     try:
       return result[0][0]
@@ -266,8 +297,6 @@ class DbFeeder(object):
         logger.warning("Suspicious behavior: insert of %s didn't return id",
                        ooid)
       threadLocalDbConnection.commit()
-    except sdb.databaseModule.IntegrityError:
-      logger.info('skipping %s - already in the database', ooid)
     except Exception:
       threadLocalDbConnection.rollback()
       sutil.reportExceptionAndContinue(logger)
