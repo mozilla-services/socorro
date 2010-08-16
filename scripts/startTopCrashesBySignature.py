@@ -48,5 +48,3 @@ try:
   logger.info("Successfully processed %s items in %3.2f seconds",count, time.time()-before)
 finally:
   logger.info("done.")
-  rotatingFileLog.flush()
-  rotatingFileLog.close()
