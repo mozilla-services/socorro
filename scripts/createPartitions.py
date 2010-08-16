@@ -46,5 +46,3 @@ try:
   schema.createPartitions(configurationContext, logger)
 finally:
   logger.info("done.")
-  rotatingFileLog.flush()
-  rotatingFileLog.close()
