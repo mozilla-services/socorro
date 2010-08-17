@@ -333,7 +333,7 @@ class Crash
             }
         }
 
-        $meta = array_unique($meta['signatures']);
+        $meta['signatures'] = array_unique($meta['signatures']);
         return $meta;
     }
     
