@@ -129,6 +129,7 @@ class Web_Service {
 	$message = curl_error($curl);
 	curl_close($curl);
 	Kohana::log('info', "$this->status_code $code $message");
+var_dump($this->status_code);
 	if ($this->status_code == 200 || $this->status_code == 202) {
 	    if ($response_type == 'json') {
 		$data = json_decode($curl_response);

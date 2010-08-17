@@ -75,9 +75,11 @@ $config['report_bug_url'] = 'https://bugzilla.mozilla.org/enter_bug.cgi?';
  * 
  * URIs include:
  * /201008/crash/meta/by/ooid/{ooid}
+ * /201008/crash/priority_processed/by/ooid/{ooid}
  * /201008/crash/processed/by/ooid/{ooid}
  * /201008/crash/raw_crash/by/ooid/{ooid} 
  */
 $config['crash_api_uri_meta'] = '/201008/crash/meta/by/ooid/';
 $config['crash_api_uri_processed'] = '/201008/crash/processed/by/ooid/';
+$config['crash_api_uri_priority_processed'] = '/201008/crash/priority_processed/by/ooid/';
 $config['crash_api_uri_raw_crash'] = '/201008/crash/raw_crash/by/ooid/';

@@ -510,7 +510,7 @@ class Report_Controller extends Controller {
      */
     public function index($ooid) {
         if ($ooid = $this->_validateOOID($ooid)) {
-            $report = $this->crash->getCrashProcessed($ooid);
+            $report = $this->crash->getCrashProcessedAndSubmitPriorityJob($ooid);
             if (isset($report->status_code) && $report->status_code == 200) {
                 $logged_in = $this->auth_is_active && Auth::instance()->logged_in();
                 if ($logged_in) {

@@ -37,8 +37,8 @@
  * ***** END LICENSE BLOCK ***** */
 
 /**
- * Responsible for knowing about how to manipulate an individual crash
- * from the reports table.
+ * Responsible for handling web service calls to retrieve crash reports from
+ * the Crash Reports API.
  */
 class Crash
 {
@@ -170,6 +170,25 @@ class Crash
     {
         $this->_instantiateWebService();
         $url =  $this->hostname . Kohana::config('application.crash_api_uri_processed') . $ooid;
+		$response = $this->service->get($url, 'json', 0);
+        if (!empty($response)) {
+            $response->status_code = $this->service->status_code;
+            return $response;
+        } else {
+            return false;
+        }
+    }
+    
+    /**
+     * Fetch a processed crash from Hadoop and submit a priority job at the same time.
+     *
+     * @param string The $ooid for a crash
+     * @return object A crash report object
+     */
+    public function getCrashProcessedAndSubmitPriorityJob($ooid)
+    {
+        $this->_instantiateWebService();
+        $url =  $this->hostname . Kohana::config('application.crash_api_uri_priority_processed') . $ooid;
 		$response = $this->service->get($url, 'json', 0);
         if (!empty($response)) {
             $response->status_code = $this->service->status_code;
