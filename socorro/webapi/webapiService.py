@@ -36,14 +36,9 @@ class JsonServiceBase (object):
       return json.dumps(result)
     except web.HTTPError:
       raise
-    except Exception, x:
-      stringLogger = util.StringLogger()
-      util.reportExceptionAndContinue(stringLogger)
-      try:
-        util.reportExceptionAndContinue(self.context.logger)
-      except (AttributeError, KeyError):
-        pass
-      raise Exception(stringLogger.getMessages())
+    except Exception:
+      util.reportExceptionAndContinue(self.context.logger)
+      raise
 
   #-----------------------------------------------------------------------------------------------------------------
   def get(self, *args):

@@ -15,19 +15,27 @@ import socorro.lib.datetimeutil as dtutil
 import socorro.storage.crashstorage as cs
 import socorro.lib.ooid as sooid
 
-datatype_options = ('meta', 'raw_crash', 'processed', 'jsonz', 'compressed_processed')
-crashStorageFunctions = ('get_meta', 'get_raw_dump', 'get_processed', 'get_processed_compressed', 'get_processed_compressed')
-datatype_function_associations = dict(zip(datatype_options, crashStorageFunctions))
+#datatype_options = ('meta', 'raw_crash', 'processed', 'jsonz', 'compressed_processed')
+#crashStorageFunctions = ('get_meta', 'get_raw_dump', 'get_processed', 'get_processed_compressed', 'get_processed_compressed')
+#datatype_function_associations = dict(zip(datatype_options, crashStorageFunctions))
+
+datatype_function_associations = { 'meta': 'get_meta',
+                                   'raw_crash': 'get_raw_dump',
+                                   'processed': 'get_processed',
+                                   'priority_processed': 'get_priority_processed',
+                                   'jsonz': 'get_processed_compressed',
+                                   'compressed_processed': 'get_processed_compressed',
+                                   'priority_jsonz': 'get_compressed_priority_processed',
+                                   'compressed_priority_processed': 'get_compressed_priority_processed',
+                                 }
 
 class NotADataTypeOption(Exception):
-  def __init__(self, reason):
-    #super(NotADataTypeOption, self).__init__("%s must be one of %s" % (reason, ','.join(datatype_options))
-    Exception.__init__("%s must be one of %s" % (reason, ','.join(datatype_options)))
+  pass
 
 def dataTypeOptions(x):
-  if x in datatype_options:
+  if x in datatype_function_associations.keys():
     return x
-  raise NotADataTypeOption(x)
+  raise NotADataTypeOption()
 
 #=================================================================================================================
 class GetCrash(webapi.JsonServiceBase):
@@ -69,6 +77,14 @@ class GetCrash(webapi.JsonServiceBase):
     try:
       return crashStorage.get_processed(ooid)
     except cs.OoidNotFoundException:
+      raise web.webapi.NotFound(message="ooid '%s' is not found" % ooid)
+  #-----------------------------------------------------------------------------------------------------------------
+  def get_priority_processed(self, ooid, crashStorage):
+    if not sooid.isValid(ooid):
+      raise web.webapi.BadRequest()
+    try:
+      return crashStorage.get_processed(ooid)
+    except cs.OoidNotFoundException:
       try:
         crashStorage.get_meta(ooid)
       except cs.OoidNotFoundException:
@@ -84,8 +100,7 @@ class GetCrash(webapi.JsonServiceBase):
       logger.debug('about to raise Accepted')
       raise web.webapi.Accepted()
   #-----------------------------------------------------------------------------------------------------------------
-  def get_processed_compressed(self, ooid, crashStorage):
-    processed = self.get_processed(ooid, crashStorage)
+  def compress(self, processed):
     json_processed = json.dumps(processed)
     buffer = cStringIO.StringIO()
     f = gzip.GzipFile(mode='w', fileobj=buffer)
@@ -94,6 +109,14 @@ class GetCrash(webapi.JsonServiceBase):
     jsonz = buffer.getvalue()
     buffer.close()
     return (jsonz, "application/octet-stream")
+  #-----------------------------------------------------------------------------------------------------------------
+  def get_processed_compressed(self, ooid, crashStorage):
+    processed = self.get_processed(ooid, crashStorage)
+    return self.compress(processed)
+  #-----------------------------------------------------------------------------------------------------------------
+  def get_compressed_priority_processed(self, ooid, crashStorage):
+    processed = self.get_priority_processed(ooid, crashStorage)
+    return self.compress(processed)
 
 #=================================================================================================================
 class GetCrash201005(webapi.JsonServiceBase):
