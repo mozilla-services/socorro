@@ -87,6 +87,7 @@ class Web_Service {
 	    $cache_key = 'webservice_' . md5($url . $response_type);
 	    $data = $cache->get($cache_key);
 	    if ($data) {
+            $this->status_code = 200; // Hack in place to make cached responses resolve.
 		return $data;
 	    } else {
 		$data = $this->_get($url, $response_type);
@@ -129,7 +130,7 @@ class Web_Service {
 	$message = curl_error($curl);
 	curl_close($curl);
 	Kohana::log('info', "$this->status_code $code $message");
-var_dump($this->status_code);
+
 	if ($this->status_code == 200 || $this->status_code == 202) {
 	    if ($response_type == 'json') {
 		$data = json_decode($curl_response);
