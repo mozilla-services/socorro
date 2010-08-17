@@ -152,8 +152,8 @@ class Crash
         $this->_instantiateWebService();
         $url = $this->hostname . Kohana::config('application.crash_api_uri_meta') . $ooid;
 		$response = $this->service->get($url, 'json', 0);
+        $response->status_code = $this->service->status_code;
         if (!empty($response)) {
-            $response->status_code = $this->service->status_code;
             return $response;
         } else {
             return false;
@@ -171,8 +171,8 @@ class Crash
         $this->_instantiateWebService();
         $url =  $this->hostname . Kohana::config('application.crash_api_uri_processed') . $ooid;
 		$response = $this->service->get($url, 'json', 0);
+        $response->status_code = $this->service->status_code;
         if (!empty($response)) {
-            $response->status_code = $this->service->status_code;
             return $response;
         } else {
             return false;
@@ -190,8 +190,8 @@ class Crash
         $this->_instantiateWebService();
         $url =  $this->hostname . Kohana::config('application.crash_api_uri_priority_processed') . $ooid;
 		$response = $this->service->get($url, 'json', 0);
+        $response->status_code = $this->service->status_code;
         if (!empty($response)) {
-            $response->status_code = $this->service->status_code;
             return $response;
         } else {
             return false;
@@ -209,6 +209,7 @@ class Crash
         $this->_instantiateWebService();
         $url = $this->hostname . Kohana::config('application.crash_api_uri_raw_crash') . $ooid;
 		$response = $this->service->get($url, null, 0);
+        $response->status_code = $this->service->status_code;
         if (!empty($response)) {
             return $response;
         } else {
