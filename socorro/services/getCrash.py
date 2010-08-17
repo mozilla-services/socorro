@@ -78,7 +78,7 @@ class GetCrash(webapi.JsonServiceBase):
       try:
         f = url2.urlopen(self.context.prioritySubmissionUrl, params)
         f.close()
-      except urllib2.HTTPError:
+      except url2.HTTPError:
         # TODO: replace with something more appropriate?
         raise
       logger.debug('about to raise Accepted')
