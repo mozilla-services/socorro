@@ -114,7 +114,7 @@ class Report_Model extends Model {
      */
     public function getPairedUUID($hangid, $currentUuid)
     {
-        $uuidDate = date('Y-m-d', $crash->parseOOIDTimestamp($currentUuid));
+        $crash = new Crash;
         $rs = $this->db->query(
                 "/* soc.web report uuid from hangid */
                     SELECT uuid
