@@ -552,7 +552,7 @@ class Report_Controller extends Controller {
                     'url_nav' => url::site('products/'.$product),
                 ));
             } else {
-                if (isset($report->status_code) && $report->status_code == 200) {
+                if (isset($report->status_code) && $report->status_code == 202) {
                     return url::redirect('report/pending/'.$ooid);
                 } else {
                     $this->_OOID_404($ooid);

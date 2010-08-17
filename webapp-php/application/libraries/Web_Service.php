@@ -105,6 +105,10 @@ class Web_Service {
     /**
      * Makes a GET request for the resource and parses the response based
      * on the expected type
+     *
+     * @todo This needs to be rewritten to return http status codes to the calling libraries.  Please rewrite in Socorro 1.9. 
+     * @see https://bugzilla.mozilla.org/show_bug.cgi?id=588083
+     *
      * @param string - the url for the web service including any paramters
      * @param string - the expected response type - xml, json, etc
      * @return object - the response or FALSE if there was an error
@@ -125,7 +129,7 @@ class Web_Service {
 	$message = curl_error($curl);
 	curl_close($curl);
 	Kohana::log('info', "$this->status_code $code $message");
-	if ($this->status_code == 200) {
+	if ($this->status_code == 200 || $this->status_code == 202) {
 	    if ($response_type == 'json') {
 		$data = json_decode($curl_response);
 	    } else {
