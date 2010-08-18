@@ -527,6 +527,19 @@ class HBaseConnectionForCrashReports(HBaseConnection):
     finally:
       tf.close()
 
+  def submit_to_processor(self,from_queue_table,limit):
+    import httplib
+    headers = {"Content-type": "application/x-www-form-urlencoded","Accept":"text/plain"}
+    conn = httplib.HTTPConnection("%s:8881" % self.host)
+    for row in self.limited_iteration(self.merge_scan_with_prefix(from_queue_table,
+                                                                  '',
+                                                                  ['ids:ooid']),limit):
+      ooid = row['ids:ooid']
+      conn.request("POST", "/201006/process/ooid", ("ooid=%s" % ooid), headers)
+      resp = conn.getresponse()
+      print ooid, resp.status, resp.reason, resp.read()
+    conn.close()
+
   def union_scan_with_prefix(self,table,prefix,columns):
     #TODO: Need assertion for columns contains at least 1 element
     """
@@ -858,6 +871,7 @@ if __name__=="__main__":
       export_jsonz_for_date YYMMDD export_path
       export_jsonz_tarball_for_date YYMMDD temp_path tarball_name
       export_jsonz_tarball_for_ooids temp_path tarball_name <stdin list of ooids>
+      submit_to_processor from_queue_table limit
     HBase generic:
       describe_table table_name
       get_full_row table_name row_id
@@ -969,6 +983,13 @@ if __name__=="__main__":
       usage()
       sys.exit(1)
     connection.export_jsonz_tarball_for_ooids(*args)
+
+  elif cmd == 'submit_to_processor':
+    if len(args) != 2:
+      usage()
+      sys.exit(1)
+    limit = int(args[1])
+    connection.submit_to_processor(args[0],limit)
 
   elif cmd == 'describe_table':
     if len(args) != 1:
