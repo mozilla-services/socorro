@@ -217,10 +217,9 @@ class DbFeeder(object):
     rowTuple = tuple((crash_json[x] for x in self.reportsTable.columns))
     ooid = crash_json['uuid']
     # TODO: debug - remove this
-    #items = dict(zip(self.reportsTable.columns, rowTuple))
-    #for key, value in items.iteritems():
-      #if not value:
-        #logger.debug('missing value: %s, %s', key, value)
+    items = dict(zip(self.reportsTable.columns, rowTuple))
+    for key, value in items.iteritems():
+      logger.debug('%s: "%s", %s', key, value, str(type(value)))
     logger.debug('insert for %s', ooid)
     #logger.debug('insert for %s: %s', ooid, str(rowTuple))
     date_processed = crash_json['date_processed']
