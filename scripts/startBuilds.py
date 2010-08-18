@@ -36,11 +36,11 @@ stderrLog.setFormatter(stderrLogFormatter)
 logger.addHandler(stderrLog)
 
 syslog = logging.handlers.SysLogHandler(
-  address=(configurationContext.syslogHost, configurationContext.syslogPort),
-  facility=configurationContext.syslogFacilityString,
+  address=(config.syslogHost, config.syslogPort),
+  facility=config.syslogFacilityString,
 )
-syslog.setLevel(configurationContext.syslogErrorLoggingLevel)
-syslogFormatter = logging.Formatter(configurationContext.syslogLineFormatString)
+syslog.setLevel(config.syslogErrorLoggingLevel)
+syslogFormatter = logging.Formatter(config.syslogLineFormatString)
 syslog.setFormatter(syslogFormatter)
 logger.addHandler(syslog)
 
