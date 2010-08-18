@@ -70,7 +70,6 @@
             <p class="advanced">
                 <label for="query_type">Stack signature</label>
                 <input type="hidden" name="query_search" value="signature" />
-                <!-- input type="hidden" name="query_search" value="signature" stack  -->
                 <?php
     	    //used by query and plugin_query
     	    $query_type_options = array(

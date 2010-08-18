@@ -24,7 +24,6 @@
 
             $queries = (array( 
                 'signature' => 'the crash signature',
-                'stack'     => 'one of the top 10 stack frames'
             ));
             $query = $queries[ $params['query_search'] ];
         
