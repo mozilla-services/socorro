@@ -126,6 +126,7 @@ class Web_Service {
 	}
 	$headers  = curl_getinfo($curl);
 	$this->status_code = $headers['http_code'];
+var_dump($this->status_code);
 	$code = curl_errno($curl);
 	$message = curl_error($curl);
 	curl_close($curl);
