@@ -53,8 +53,8 @@ import com.google.inject.servlet.GuiceFilter;
 public class CorrelationReportServer {
 
 	public static void main(String[] args) throws Exception {
-		
-		Server server = new Server(8080);
+		int port = Integer.parseInt(System.getProperty("server.port", "8080"));
+		Server server = new Server(port);
 		ServletContextHandler root = new ServletContextHandler(server, "/", ServletContextHandler.SESSIONS);
 		
 		root.addFilter(GuiceFilter.class, "/*", 0);
@@ -72,6 +72,6 @@ public class CorrelationReportServer {
 		
 		server.start();
 		server.join();
-		
 	}
+	
 }
