@@ -13,7 +13,7 @@ import socorro.storage.hbaseClient as hbc
 
 #===============================================================================
 commandLineOptions = [
-  ('h', 'host', True, 'localhost', "the host"),
+  ('h', 'host', True, '0.0.0.0', "Interface to listen on"),
   ('p', 'port', True, 9091, 'the port to listen to'),
   (None, 'thriftHost', True, 'localhost', "the thrift host"),
   (None, 'thriftPort', True, 9090, "the thrift port"),
