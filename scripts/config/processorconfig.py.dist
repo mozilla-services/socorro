@@ -56,16 +56,7 @@ processedToFailedRatioThreshold.default = 1000.0
 
 stackwalkCommandLine = cm.Option()
 stackwalkCommandLine.doc = 'the template for the command to invoke stackwalk_server'
-stackwalkCommandLine.default = '$stackwalk_serverPathname $processorSymbolsPathnameList 2>/dev/null'
-
-stackwalk_serverPathname = cm.Option()
-stackwalk_serverPathname.doc = 'the full pathname of the extern program stackwalk_server (quote path with embedded spaces)'
-stackwalk_serverPathname.default = '/usr/local/bin/stackwalk_server'
-
-processorSymbolsPathnameList = cm.Option()
-processorSymbolsPathnameList.doc = 'comma or space separated list of symbol files for minidump_stackwalk (quote paths with embedded spaces)'
-processorSymbolsPathnameList.default = "/mnt/socorro/symbols/symbols_ffx,/mnt/socorro/symbols/symbols_sea,/mnt/socorro/symbols/symbols_tbrd,/mnt/socorro/symbols/symbols_sbrd,/mnt/socorro/symbols/symbols_os"
-processorSymbolsPathnameList.fromStringConverter = lambda x: x.replace(',', ' ')
+stackwalkCommandLine.default = '/usr/local/bin/stackwalk_server -s symbolServerHost:symbolServerPort'
 
 threadFrameThreshold = cm.Option()
 threadFrameThreshold.doc = "the number of frames to keep in the processed dump for the crashing thread"

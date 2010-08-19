@@ -57,9 +57,7 @@ class StackWalkerPool(dict):
     self.config = config
     self.logger = config.logger
     self.logger.debug("creating stackWalkerPool")
-    if type(self.config.processorSymbolsPathnameList) is not list:
-      self.config.symbol_path = [x for x in self.config.processorSymbolsPathnameList.split()]
-    self.config.commandLine = [config.stackwalk_serverPathname] + self.config.symbol_path
+    self.config.commandLine = [x for x in self.config.stackwalkCommandLine.split()]
 
   #-----------------------------------------------------------------------------------------------------------------
   def stackWalker(self, name=None):
