@@ -258,7 +258,8 @@ class HBaseConnection(object):
                                   #self.ttypesModule.AlreadyExists,
                                   self.thriftModule.TException,
                                   #HBaseClientException,
-                                  socket.timeout
+                                  socket.timeout,
+                                  socket.error
                                  )
 
     self.make_connection(timeout=self.timeout)
