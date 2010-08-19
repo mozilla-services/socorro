@@ -113,6 +113,7 @@ class DbFeeder(object):
     except Exception:
       sutil.reportExceptionAndContinue(logger)
     finally:
+      self.quit = True
       logger.debug("we're quitting standardProcessingThread")
       logger.debug("waiting for standard worker threads to stop")
       self.standardThreadManager.waitForCompletion()
@@ -131,6 +132,7 @@ class DbFeeder(object):
     except Exception:
       sutil.reportExceptionAndContinue(logger)
     finally:
+      self.quit = True
       logger.info("we're quitting priorityProcessingThread")
       logger.info("waiting for priority worker threads to stop")
       self.priorityThreadManager.waitForCompletion()
