@@ -228,8 +228,6 @@ class Processor(object):
                           "processedToFailedRatioThreshold",
                           "numberOfThreads",
                           "stackwalkCommandLine",
-                          "processorSymbolsPathnameList",
-                          "stackwalk_serverPathname",
                           "threadFrameThreshold",
                           "threadTailFrameThreshold",
                           "processorLoopTime",
