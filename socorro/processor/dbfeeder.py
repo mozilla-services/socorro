@@ -212,9 +212,38 @@ class DbFeeder(object):
                                   date_processed=date_processed)
 
   #-----------------------------------------------------------------------------------------------------------------
+  maxLengths = { 'uuid': 50,
+                 'product': 30,
+                 'version': 16,
+                 'build': 30,
+                 'signature': 255,
+                 'url': 255,
+                 'cpu_name': 100,
+                 'cpu_info': 100,
+                 'reason': 255,
+                 'address': 20,
+                 'os_name': 100,
+                 'os_version': 100,
+                 'email': 100,
+                 'user_id': 50,
+                 'user_comments': 1024,
+                 'app_notes': 1024,
+                 'distributor': 20,
+                 'distributor_version': 20,
+               }
+  @staticmethod
+  def enforceMaxLength(d, key):
+    if key in DbFeeder.maxLengths:
+      try:
+        return d.setdefault(key, '')[:DbFeeder.maxLengths[key]]
+      except TypeError:
+        return None
+    else:
+      return d.setdefault(key)
+  #-----------------------------------------------------------------------------------------------------------------
   def insertReport(self, crash_json):
     threadLocalDbConnection = self.databasePool.connection()
-    rowTuple = tuple((crash_json[x] for x in self.reportsTable.columns))
+    rowTuple = tuple((DbFeeder.enforceMaxLength(crash_json, x) for x in self.reportsTable.columns))
     ooid = crash_json['uuid']
     # TODO: debug - remove this
     #items = dict(zip(self.reportsTable.columns, rowTuple))
@@ -261,45 +290,49 @@ class DbFeeder(object):
 
   #-----------------------------------------------------------------------------------------------------------------
   def databaseInsert (self, crash_json_tuple):
-    threadLocalDbConnection = self.databasePool.connection()
-    crash_json = crash_json_tuple[0]
-    ooid = crash_json['uuid']
-    crashStorage = self.crashStoragePool.crashStorage()
-    raw_crash = crashStorage.get_meta(ooid)
-    crash_json['url'] = raw_crash.setdefault('URL', '')
-    crash_json['email'] = raw_crash.setdefault('Email', '')
-    crash_json['user_id'] = ''
-    crash_json['process_type'] = raw_crash.setdefault('ProcessType', '')
-    crash_json['date_processed'] = \
-              sdt.datetimeFromISOdateString(crash_json['date_processed'])
-    crash_json['started_datetime'] = \
-              sdt.datetimeFromISOdateString(crash_json['started_datetime'])
-    crash_json['completed_datetime'] = \
-              sdt.datetimeFromISOdateString(crash_json['completed_datetime'])
-    crash_json['processor_notes'] = \
-              '; '.join(crash_json['processor_notes'])
     try:
-      # Reports table insert
-      reportId = self.insertReport(crash_json)
-      if reportId:
-        # Frames table insert - must reparse pipeDump
-        # self.insertFrames(crash_json, reportId)
-        # Extentions table (Addons) insert
-        self.insertAddons(crash_json, reportId)
-        # Plugins table insert
-        try:
-          if crash_json['processType'] == 'plugin':
-            self.insertPlugin(crash_json, reportId)
-        except KeyError:
-          pass
-      else:
-        logger.warning("Suspicious behavior: insert of %s didn't return id",
-                       ooid)
-      threadLocalDbConnection.commit()
+      threadLocalDbConnection = self.databasePool.connection()
+      crash_json = crash_json_tuple[0]
+      ooid = crash_json['uuid']
+      crashStorage = self.crashStoragePool.crashStorage()
+      raw_crash = crashStorage.get_meta(ooid)
+      crash_json['url'] = raw_crash.setdefault('URL', '')
+      crash_json['email'] = raw_crash.setdefault('Email', '')
+      crash_json['user_id'] = ''
+      crash_json['process_type'] = raw_crash.setdefault('ProcessType', '')
+      crash_json['date_processed'] = \
+                sdt.datetimeFromISOdateString(crash_json['date_processed'])
+      crash_json['started_datetime'] = \
+                sdt.datetimeFromISOdateString(crash_json['started_datetime'])
+      crash_json['completed_datetime'] = \
+                sdt.datetimeFromISOdateString(crash_json['completed_datetime'])
+      crash_json['processor_notes'] = \
+                '; '.join(crash_json['processor_notes'])
+      # enforce max lengths
+      crash_json
+      try:
+        # Reports table insert
+        reportId = self.insertReport(crash_json)
+        if reportId:
+          # Frames table insert - must reparse pipeDump
+          # self.insertFrames(crash_json, reportId)
+          # Extentions table (Addons) insert
+          self.insertAddons(crash_json, reportId)
+          # Plugins table insert
+          try:
+            if crash_json['processType'] == 'plugin':
+              self.insertPlugin(crash_json, reportId)
+          except KeyError:
+            pass
+        else:
+          logger.warning("Suspicious behavior: insert of %s didn't return id",
+                         ooid)
+        threadLocalDbConnection.commit()
+      except Exception:
+        threadLocalDbConnection.rollback()
+        sutil.reportExceptionAndContinue(logger)
     except Exception:
-      threadLocalDbConnection.rollback()
       sutil.reportExceptionAndContinue(logger)
-
 
 
 
