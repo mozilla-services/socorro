@@ -595,52 +595,26 @@ class HBaseConnectionForCrashReports(HBaseConnection):
     return itertools.islice(iterable,limit)
 
   @retry_wrapper_for_generators
-  def iterator_for_legacy_db_feeder_queue(self):
-    #self.logger.debug('iterator_for_all_legacy_processed')
-    for row in self.limited_iteration(self.merge_scan_with_prefix('crash_reports_index_legacy_processed',
+  def deleting_iterator_for_table(self, table_name,limit=10**6):
+    #self.logger.debug('deleting_iterator_for_table %s' % table_name)
+    for row in self.limited_iteration(self.merge_scan_with_prefix(table_name,
                                                                   '',
-                                                                  ['ids:ooid', 'processed_data:json'])):
+                                                                  ['ids:ooid']), limit):
+      yield row['ids:ooid']
+      # Delete the row after the feeder has returned from processing it.
+      self.client.deleteAllRow(table_name, row['_rowkey'])
 
-      #TODO If you want to ensure it is stored before deleting, do this somewhere else.
-      self.delete_from_legacy_db_feeder_queue(row['_rowkey'])
+  def iterator_for_legacy_db_feeder_queue(self,limit=10**6):
+    return self.deleting_iterator_for_table('crash_reports_index_legacy_processed',limit)
 
-      #TODO Yield the OOID too if needed
-      yield row['processed_data:json']
+  def insert_to_legacy_db_feeder_queue(self,ooid,timestamp):
+    self.put_crash_report_indices(ooid,timestamp,['crash_reports_index_legacy_processed'])
 
-  @optional_retry_wrapper
-  def delete_from_legacy_db_feeder_queue(self, index_row_key):
-    self.client.deleteAllRow('crash_reports_index_legacy_processed', index_row_key)
+  def iterator_for_priority_db_feeder_queue(self,limit=10**6):
+    return self.deleting_iterator_for_table('crash_reports_index_priority_processed',limit)
 
-  @optional_retry_wrapper
-  def insert_to_legacy_db_feeder_queue(self,ooid,timestamp,processed_json):
-    row_id = guid_to_timestamped_row_id(ooid,timestamp)
-    self.client.mutateRow('crash_reports_index_legacy_processed',row_id,[
-      self.mutationClass(column="ids:ooid",value=ooid),
-      self.mutationClass(column="processed_data:json",value=processed_json)])
-
-  @retry_wrapper_for_generators
-  def iterator_for_priority_db_feeder_queue(self):
-    #self.logger.debug('iterator_for_all_priority_processed')
-    for row in self.limited_iteration(self.merge_scan_with_prefix('crash_reports_index_priority_processed',
-                                                                  '',
-                                                                  ['ids:ooid', 'processed_data:json'])):
-
-      #TODO If you want to ensure it is stored before deleting, do this somewhere else.
-      self.delete_from_priority_db_feeder_queue(row['_rowkey'])
-
-      #TODO Yield the OOID too if needed
-      yield row['processed_data:json']
-
-  @optional_retry_wrapper
-  def delete_from_priority_db_feeder_queue(self, index_row_key):
-    self.client.deleteAllRow('crash_reports_index_priority_processed', index_row_key)
-
-  @optional_retry_wrapper
-  def insert_to_priority_db_feeder_queue(self,ooid,timestamp,processed_json):
-    row_id = guid_to_timestamped_row_id(ooid,timestamp)
-    self.client.mutateRow('crash_reports_index_priority_processed',row_id,[
-      self.mutationClass(column="ids:ooid",value=ooid),
-      self.mutationClass(column="processed_data:json",value=processed_json)])
+  def insert_to_priority_db_feeder_queue(self,ooid,timestamp):
+    self.put_crash_report_indices(ooid,timestamp,['crash_reports_index_priority_processed'])
 
   @optional_retry_wrapper
   def put_crash_report_indices(self,ooid,timestamp,indices):
@@ -820,9 +794,9 @@ class HBaseConnectionForCrashReports(HBaseConnection):
 
     # Supply Socorro 1.8 DB Feeder with data it needs
     if priority_processing == 'Y':
-      self.insert_to_priority_db_feeder_queue(ooid,submitted_timestamp,processed_json)
+      self.insert_to_priority_db_feeder_queue(ooid,submitted_timestamp)
     elif legacy_processing == 'Y':
-      self.insert_to_legacy_db_feeder_queue(ooid,submitted_timestamp,processed_json)
+      self.insert_to_legacy_db_feeder_queue(ooid,submitted_timestamp)
 
     sig_ooid_idx_row_key = signature + ooid
     self.client.mutateRow('crash_reports_index_signature_ooid', sig_ooid_idx_row_key,
