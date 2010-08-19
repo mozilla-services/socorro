@@ -347,10 +347,9 @@ class CrashStorageSystemForHBase(CrashStorageSystem):
   def dbFeederStandardJobIter(self, sleepFunction=tm.sleep):
     while True:
       #self.logger.debug('invoking hbaseConnection.iterator_for_legacy_db_feeder_queue')
-      for x in self.hbaseConnection.iterator_for_legacy_db_feeder_queue():
+      for ooid in self.hbaseConnection.iterator_for_legacy_db_feeder_queue():
         #self.logger.debug('about to yield')
-        #self.logger.debug(x)
-        yield json.loads(x)
+        yield ooid
       self.logger.debug('no jobs to do.  napping for 30 seconds')
       sleepFunction(30)
 
@@ -362,9 +361,9 @@ class CrashStorageSystemForHBase(CrashStorageSystem):
   def dbFeederPriorityJobIter(self, sleepFunction=tm.sleep):
     while True:
       #self.logger.debug('invoking hbaseConnection.iterator_for_legacy_db_feeder_queue')
-      for x in self.hbaseConnection.iterator_for_priority_db_feeder_queue():
+      for ooid in self.hbaseConnection.iterator_for_priority_db_feeder_queue():
         #self.logger.debug('about to yield')
-        yield json.loads(x)
+        yield ooid
       self.logger.debug('no jobs to do.  napping for 5 seconds')
       sleepFunction(5)
 

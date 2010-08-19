@@ -106,9 +106,10 @@ class DbFeeder(object):
     threadLocalCrashStorage = self.crashStoragePool.crashStorage()
     try:
       #logger.debug('start - about to threadLocalCrashStorage.dbFeederStandardJobIter()')
-      for crash_json in threadLocalCrashStorage.dbFeederStandardJobIter(self.responsiveSleep): # infinite iterator - never StopIteration
+      for ooid in threadLocalCrashStorage.dbFeederStandardJobIter(self.responsiveSleep): # infinite iterator - never StopIteration
         self.quitCheck()
-        logger.info("queuing standard job %s", crash_json['uuid'])
+        crash_json = threadLocalCrashStorage.get_processed(ooid)
+        logger.info("queuing standard job %s", ooid)
         self.standardThreadManager.newTask(self.databaseInsert, (crash_json,))
     except Exception:
       sutil.reportExceptionAndContinue(logger)
@@ -125,9 +126,10 @@ class DbFeeder(object):
     threadLocalCrashStorage = self.crashStoragePool.crashStorage()
     try:
       #logger.debug('start - about to threadLocalCrashStorage.dbFeederPriorityJobIter()')
-      for crash_json in threadLocalCrashStorage.dbFeederPriorityJobIter(self.responsiveSleep): # infinite iterator - never StopIteration
+      for ooid in threadLocalCrashStorage.dbFeederPriorityJobIter(self.responsiveSleep): # infinite iterator - never StopIteration
         self.quitCheck()
-        logger.info("queuing priority job %s", crash_json['uuid'])
+        crash_json = threadLocalCrashStorage.get_processed(ooid)
+        logger.info("queuing priority job %s", ooid)
         self.priorityThreadManager.newTask(self.databaseInsert, (crash_json,))
     except Exception:
       sutil.reportExceptionAndContinue(logger)
