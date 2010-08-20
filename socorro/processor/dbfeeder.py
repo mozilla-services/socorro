@@ -108,9 +108,12 @@ class DbFeeder(object):
       #logger.debug('start - about to threadLocalCrashStorage.dbFeederStandardJobIter()')
       for ooid in threadLocalCrashStorage.dbFeederStandardJobIter(self.responsiveSleep): # infinite iterator - never StopIteration
         self.quitCheck()
-        crash_json = threadLocalCrashStorage.get_processed(ooid)
-        logger.info("queuing standard job %s", ooid)
-        self.standardThreadManager.newTask(self.databaseInsert, (crash_json,))
+        try:
+          crash_json = threadLocalCrashStorage.get_processed(ooid)
+          logger.info("queuing standard job %s", ooid)
+          self.standardThreadManager.newTask(self.databaseInsert, (crash_json,))
+        except cstore.OoidNotFoundException:
+          logger.warning('cannot commit %s as it is not processed', ooid)
     except Exception:
       sutil.reportExceptionAndContinue(logger)
     finally:

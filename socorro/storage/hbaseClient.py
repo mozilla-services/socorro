@@ -175,7 +175,7 @@ def optional_retry_wrapper(fn):
         self.make_connection(timeout=self.timeout)
       # unknown error - abort
       except Exception, x:  #lars
-        self.logger.debug('retry_wrapper: unhandled exception, %s', str(x))
+        self.logger.debug('retry_wrapper(%s): unhandled exception, %s', fn.__name__, str(x))
         raise
       if wait_between_retries:
         time.sleep(wait_between_retries)
