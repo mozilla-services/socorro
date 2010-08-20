@@ -396,7 +396,6 @@ class CollectorCrashStorageSystemForHBase(CrashStorageSystemForHBase):
       jsonDataAsString = json.dumps(jsonData)
       self.hbaseConnection.put_json_dump(ooid,
                                          jsonData,
-                                         #dump.read(),
                                          dump,
                                          number_of_retries=self.hbaseRetry,
                                          wait_between_retries=self.hbaseRetryDelay)
@@ -408,7 +407,7 @@ class CollectorCrashStorageSystemForHBase(CrashStorageSystemForHBase):
         try:
           jsonFileHandle, dumpFileHandle = self.fallbackCrashStorage.newEntry(ooid, self.hostname, currentTimestamp)
           try:
-            dumpFileHandle.write(dump.read())
+            dumpFileHandle.write(dump)
             json.dump(jsonData, jsonFileHandle)
           finally:
             dumpFileHandle.close()

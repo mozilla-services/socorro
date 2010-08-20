@@ -261,8 +261,11 @@ class HBaseConnection(object):
                                   socket.timeout,
                                   socket.error
                                  )
-
-    self.make_connection(timeout=self.timeout)
+    try:
+      self.make_connection(timeout=self.timeout)
+    except NoConnectionException, x:
+      self.logger.error('cannot establish initial connection to hbase: %s',
+                        str(x))
 
   def make_connection(self, retry=2, timeout=9000):
     """Establishes the underlying connection to hbase"""
