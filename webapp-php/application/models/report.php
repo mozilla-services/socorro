@@ -41,68 +41,6 @@ require_once(Kohana::find_file('libraries', 'crash', TRUE, 'php'));
  */
 class Report_Model extends Model {
 
-     /**
-      * Checks to see if this crash report has been processed and if so
-      * what was the date/time. If crash has not been processed yet
-      * NULL is returned.
-      *
-      * @param  string UUID by which to look up report
-      * @param  string uri for retrieving the crash dump
-      * @return object Report data and dump data OR NULL
-      */
-    public function getByUUID($uuid, $crash_uri)
-    {
-	/* Note: 99% of our data comes from the processed crash dump
-	         jsonz file. Only select columns that aren't in the json file
-	         such as email which is SENSATIVE and should never appear in
-                 the publically accessable jsonz file. Anything here will be 
-                 merged into the model object + jsonz data */
-        $report = $this->db->query(
-            "/* soc.web report.dateProcessed */
-                SELECT reports.email, reports.url
-                FROM reports 
-                WHERE reports.uuid=? 
-                AND reports.success 
-                IS NOT NULL
-            ", $uuid)->current();
-        if (!$report) {
-            Kohana::log('info', "$uuid hasn't been processed");
-            return NULL;
-    	} else {
-	    $crashReportDump = new CrashReportDump;
-	    $crash_report_json = $crashReportDump->getJsonZ($crash_uri);
-    	    if( $crash_report_json !== FALSE ){
-      	        $crashReportDump->populate($report, $crash_report_json);
-		return $report;          
-            } else {
-		Kohana::log('info', "$uuid was processed, but $crash_uri doesn't exist (404)");
-                return NULL;            
-            }
-    	}
-    }
-
-    /**
-     * Determine whether or not this signature exists within the `reports` table.
-     *
-     * @param   ?       The signature for the report
-     * @return  bool    Return TRUE if exists; return FALSE if does not exist
-     */
-    public function sig_exists($signature)
-    {
-        $rs = $this->db->query(
-                "/* soc.web report sig exists */
-                    SELECT signature 
-                    FROM reports 
-                    WHERE signature = ?
-                    LIMIT 1
-                ", $signature)->current();
-        if ($rs) {
-	    return TRUE;
-        } else {
-	    return FALSE;
-	}
-    }
-
     /**
      * Lorentz crashes come in pairs which are matched up via a
      * hangid.
