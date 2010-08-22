@@ -44,6 +44,8 @@ import Queue
 import traceback
 import sys
 
+import socorro.lib.util as sutil
+
 #======================
 # T a s k M a n a g e r
 #======================
@@ -55,11 +57,15 @@ class TaskManager(object):
   #----------------
   # _ _ i n i t _ _
   #----------------
-  def __init__ (self, numberOfThreads, maxQueueSize=0):
+  def __init__ (self, numberOfThreads, maxQueueSize=0, logger=None):
     """Initialize and start all threads"""
     self.threadList = []
     self.numberOfThreads = numberOfThreads
     self.taskQueue = Queue.Queue(maxQueueSize)
+    if logger:
+      self.logger = logger
+    else:
+      self.logger = sutil.SilentFakeLogger()
     for x in range(numberOfThreads):
       newThread = TaskManagerThread(self)
       self.threadList.append(newThread)
@@ -97,7 +103,7 @@ class TaskManager(object):
     dead threads and replaces them.  This should only be called before
     'waitForCompletion'."""
     newThreadList = []
-    for aThread in self.threadList():
+    for aThread in self.threadList:
       if aThread.is_alive():
         newThreadList.append(aThread)
       else:
@@ -153,7 +159,10 @@ class TaskManagerThread(threading.Thread):
         aFunction, arguments = self.manager.taskQueue.get()
         if aFunction is None:
           break
-        aFunction(arguments)
+        try:
+          aFunction(arguments)
+        except Exception:
+          sutil.reportExceptionAndContinue(logger=self.manager.logger)
     except KeyboardInterrupt:
       import thread
       print >>sys.stderr, "%s caught KeyboardInterrupt" % threading.currentThread().getName()

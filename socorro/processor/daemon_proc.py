@@ -277,7 +277,9 @@ class Processor(object):
     # the 'priority' column of the 'jobs' table for the particular record in the database.  If the threadManager were allowed to suck all
     # the pending jobs from the database, then the job priority could not be changed by an external process.
     logger.info("starting worker threads")
-    self.threadManager = thr.TaskManager(self.config.numberOfThreads, self.config.numberOfThreads * 2)
+    self.threadManager = thr.TaskManager(self.config.numberOfThreads,
+                                         self.config.numberOfThreads * 2,
+                                         logger=config.logger)
 
     self.webServicesClassList = [ ProcessorIntrospectionService,
                                   Hello,
@@ -364,6 +366,12 @@ class Processor(object):
       for aJobTuple in self.incomingJobStream(): # infinite iterator - never StopIteration
         self.quitCheck()
         logger.info("queuing job %s", str(aJobTuple))
+        #deadWorkers = self.threadManager.deadWorkers()
+        #if deadWorkers:
+          #for thread_name in deadWorkers:
+            #logger.info('%s has died, replacing it', thread_name)
+            #self.crashStorePool.remove(thread_name)
+          #self.threadManager.fullEmployment()
         self.threadManager.newTask(self.processJob, aJobTuple)
     except KeyboardInterrupt:
       logger.info("mainProcessorLoop gets quit request")
@@ -430,6 +438,8 @@ class Processor(object):
                                            loggingLevel=logging.CRITICAL,
                                            showTraceback=False)
           self.responsiveSleep(30) #try to register again in 30 seconds
+    except KeyboardInterrupt:
+      self.logger.debug('registrationThread gets quit request')
     finally:
       try:
         self.status = "shutdown"

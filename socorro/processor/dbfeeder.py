@@ -116,6 +116,8 @@ class DbFeeder(object):
           logger.warning('cannot commit %s as it is not processed', ooid)
     except Exception:
       sutil.reportExceptionAndContinue(logger)
+    except KeyboardInterrupt:
+      self.logger.debug('standardProcessingThread gets quit request')
     finally:
       self.quit = True
       logger.debug("we're quitting standardProcessingThread")
@@ -136,6 +138,8 @@ class DbFeeder(object):
         self.priorityThreadManager.newTask(self.databaseInsert, (crash_json,))
     except Exception:
       sutil.reportExceptionAndContinue(logger)
+    except KeyboardInterrupt:
+      self.logger.debug('priorityProcessingThread gets quit request')
     finally:
       self.quit = True
       logger.info("we're quitting priorityProcessingThread")

@@ -548,3 +548,10 @@ class CrashStoragePool(dict):
       except:
         sutil.reportExceptionAndContinue(self.logger)
 
+  #-----------------------------------------------------------------------------------------------------------------
+  def remove (self, name):
+    crashStorage = self[name]
+    crashStorage.close()
+    del self[name]
+
+
