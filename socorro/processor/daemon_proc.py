@@ -27,7 +27,7 @@ import socorro.storage.hbaseClient as hbc
 import socorro.webapi.webapiService as webapi
 import socorro.webapi.classPartial as cpart
 import socorro.registrar.registrar as sreg
-import socorro.lib.counters as scnt
+import socorro.lib.stats as stats
 import socorro.webapi.webapp as sweb
 
 
@@ -131,13 +131,14 @@ class ProcessorStats(ProcessorBaseService):
   #-----------------------------------------------------------------------------------------------------------------
   def get(self, *args):
     if args[0] == 'all':
-      return dict((name, counterPool.read()) for name, counterPool in
+      returnValue = dict((name, counterPool.read()) for name, counterPool in
                   self.processor.statsPools.iteritems())
     else:
       try:
-        return self.processor.statsPools[args[0]].read()
+        returnValue = self.processor.statsPools[args[0]].read()
       except KeyError:
         raise web.notfound()
+    return webapi.sanitizeForJson(returnValue)
 
 #=================================================================================================================
 class ProcessorIntrospectionService(ProcessorBaseService):
@@ -153,18 +154,18 @@ class ProcessorIntrospectionService(ProcessorBaseService):
     parameters = sutil.DotDict(zip(['attributeName'], convertedArgs))
     processorAttribute = self.processor.__getattribute__(parameters.attributeName)
     if isinstance(processorAttribute, collections.Callable):
-      return ProcessorIntrospectionService.sanitizeForJson(processorAttribute())
-    return ProcessorIntrospectionService.sanitizeForJson(processorAttribute)
+      return webapi.sanitizeForJson(processorAttribute())
+    return webapi.sanitizeForJson(processorAttribute)
   #-----------------------------------------------------------------------------------------------------------------
-  @staticmethod
-  def sanitizeForJson(something):
-    if type(something) in [int, str, float]:
-      return something
-    if isinstance(something, collections.Mapping):
-      return dict((k, ProcessorIntrospectionService.sanitizeForJson(v)) for k, v in something.iteritems())
-    if isinstance(something, collections.Iterable):
-      return [ProcessorIntrospectionService.sanitizeForJson(x) for x in something]
-    return str(something)
+  #@staticmethod
+  #def sanitizeForJson(something):
+    #if type(something) in [int, str, float]:
+      #return something
+    #if isinstance(something, collections.Mapping):
+      #return dict((k, ProcessorIntrospectionService.sanitizeForJson(v)) for k, v in something.iteritems())
+    #if isinstance(something, collections.Iterable):
+      #return [ProcessorIntrospectionService.sanitizeForJson(x) for x in something]
+    #return str(something)
 
 #=================================================================================================================
 class DuplicateEntryException(Exception):
@@ -298,10 +299,12 @@ class Processor(object):
     self.deregistrationURL = "http://%s%s" % (config.registrationHostPort,
                                               sreg.DeregistrationService.uri)
 
-    self.statsPools = sutil.DotDict({ 'processed': scnt.CounterPool(config),
-                                      'missing': scnt.CounterPool(config),
-                                      'failures': scnt.CounterPool(config),
-                                      'breakpadErrors': scnt.CounterPool(config),
+    self.statsPools = sutil.DotDict({ 'processed': stats.CounterPool(config),
+                                      'missing': stats.CounterPool(config),
+                                      'failures': stats.CounterPool(config),
+                                      'breakpadErrors': stats.CounterPool(config),
+                                      'processTime': stats.DurationAccumulatorPool(config),
+                                      'mostRecent': stats.MostRecentPool(config),
                                     })
     self.name = '%s:%s' % (config.serverIPAddress, config.serverPort)
     # an instance of this class can only go through one instantiation/shutdown
@@ -590,6 +593,8 @@ class Processor(object):
       sutil.reportExceptionAndContinue(logger, loggingLevel=logging.CRITICAL)
     try:
       self.quitCheck()
+      processTimeStatistic = self.statsPools.processTime.getStat()
+      processTimeStatistic.start()
       new_jdoc = sutil.DotDict()
       new_jdoc.uuid = jobOoid = jobTuple[0]
       logger.info("starting job: %s", jobOoid)
@@ -609,15 +614,16 @@ class Processor(object):
       try:
         self.doBreakpadStackDumpAnalysis(j_doc, new_jdoc, threadLocalCrashStorage)
       finally:
-        new_jdoc.completed_datetime = datetime.datetime.now()
+        new_jdoc.completed_datetime = c = datetime.datetime.now()
+        mostRecentStatistic = self.statsPools.mostRecent.getStat().put(c)
 
       self.saveProcessedDumpJson(new_jdoc, threadLocalCrashStorage)
       if new_jdoc.success:
         logger.info("succeeded and committed: %s", jobOoid)
-        self.statsPools.processed.counter().increment()
+        self.statsPools.processed.getStat().increment()
       else:
         logger.info("failed but committed: %s", jobOoid)
-        self.statsPools.failures.counter().increment()
+        self.statsPools.failures.getStat().increment()
       self.quitCheck()
     except (KeyboardInterrupt, SystemExit):
       logger.info("quit request detected")
@@ -628,15 +634,17 @@ class Processor(object):
       sutil.reportExceptionAndContinue(logger, loggingLevel=logging.CRITICAL)
     except cstore.OoidNotFoundException, x:
       logger.warning("the ooid %s, was not found", jobOoid)
-      self.statsPools.missing.counter().increment()
+      self.statsPools.missing.getStat().increment()
       sutil.reportExceptionAndContinue(logger, logging.DEBUG, showTraceback=False)
     except Exception, x:
-      self.statsPools.failures.counter().increment()
+      self.statsPools.failures.getStat().increment()
       if x.__class__ != ErrorInBreakpadStackwalkException:
         sutil.reportExceptionAndContinue(logger)
       else:
-        self.statsPools.breakpadErrors.counter().increment()
+        self.statsPools.breakpadErrors.getStat().increment()
         sutil.reportExceptionAndContinue(logger, logging.WARNING, showTraceback=False)
+    finally:
+      processTimeStatistic.end()
 
   #-----------------------------------------------------------------------------------------------------------------
   def preprocessCrashMetadata(self, j_doc, new_jdoc):
