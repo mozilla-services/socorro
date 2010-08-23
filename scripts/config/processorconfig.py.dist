@@ -58,6 +58,10 @@ stackwalkCommandLine = cm.Option()
 stackwalkCommandLine.doc = 'the template for the command to invoke stackwalk_server'
 stackwalkCommandLine.default = '/usr/local/bin/stackwalk_server -s symbolServerHost:symbolServerPort'
 
+maximumStackwalkerUses = cm.Option()
+maximumStackwalkerUses.doc = 'the number of time a stackwalk_server can be use before it is retired and replaced'
+maximumStackwalkerUses.default = 100
+
 threadFrameThreshold = cm.Option()
 threadFrameThreshold.doc = "the number of frames to keep in the processed dump for the crashing thread"
 threadFrameThreshold.default = 100

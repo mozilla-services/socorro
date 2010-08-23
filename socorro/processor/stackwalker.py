@@ -16,20 +16,24 @@ class StackWalker(object):
     self.server = 'localhost'
     self.logger = config.logger
     self.logger.debug('stackwalker command line: %s', config.commandLine)
-    self.fdevnull = open('/dev/null', 'w')
+    self.create()
+
+  #-----------------------------------------------------------------------------------------------------------------
+  def create(self):
     try:
-      self.subprocessHandle = sp.Popen(config.commandLine,
+      self.fdevnull = open('/dev/null', 'w')
+      self.subprocessHandle = sp.Popen(self.config.commandLine,
                                        shell=False,
                                        stdout=sp.PIPE,
                                        stderr=self.fdevnull,
                                        stdin=sp.PIPE)
       self.logger.debug('stackwalker started with PID:%d',
                         self.subprocessHandle.pid)
+      self.useCounter = self.config.maximumStackwalkerUses
     except Exception, x:
       sutil.reportExceptionAndContinue(self.config.logger,
                                        loggingLevel=logging.CRITICAL)
       raise
-
   #-----------------------------------------------------------------------------------------------------------------
   def close(self):
     self.fdevnull.close()
@@ -37,6 +41,10 @@ class StackWalker(object):
 
   #-----------------------------------------------------------------------------------------------------------------
   def stackWalk(self, binaryDump):
+    if not self.useCounter:
+      self.logger.debug('retiring old stackwalk_server')
+      self.close()
+      self.create()
     header = struct.pack("I", len(binaryDump))
     self.subprocessHandle.stdin.write(header)
     self.subprocessHandle.stdin.write(binaryDump)
@@ -48,6 +56,7 @@ class StackWalker(object):
         #self.logger.debug('yielding: %s', aLine)
         yield aLine
     #self.logger.debug('end of stackWalk');
+    self.useCounter -= 1
 
 #=================================================================================================================
 class StackWalkerPool(dict):
