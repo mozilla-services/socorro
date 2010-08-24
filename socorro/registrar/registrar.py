@@ -2,9 +2,11 @@ import datetime as dt
 import web
 import urllib
 import urllib2
+import functools
 import json
 
 import socorro.webapi.webapiService as webapi
+import socorro.lib.datetimeutil as dtutil
 
 web.webapi.internalerror = web.debugerror
 
@@ -140,6 +142,91 @@ class ProcessorForwardingService(RegistrarBaseService):
       if x.code == 404:
         raise web.notfound()
       raise
+
+#===============================================================================
+class ProcessorStatsService(RegistrarBaseService):
+  """This class is a web service class that implements forwarding a uri to
+  a known processor.
+  """
+  #-----------------------------------------------------------------------------
+  def __init__(self, context, aRegistrar):
+    super(ProcessorStatsService, self).__init__(context, aRegistrar)
+  #-----------------------------------------------------------------------------
+  uri = '/201008/stats/(.*)'
+  #uriArgNames = ['statName']
+  #uriArgTypes = [str]
+  #uriDoc = 'the name of the statistic to aggregate from the processors'
+  knownProcessorStats = { 'processed': 'singleValueForSummation',
+                          'missing': 'singleValueForSummation',
+                          'failures': 'singleValueForSummation',
+                          'breakpadErrors': 'singleValueForSummation',
+                          'processTime': 'processTimeAverage',
+                          'mostRecent': 'singleValueForMax',
+                          'all': 'all',
+                        }
+  #-----------------------------------------------------------------------------
+  def statsFromProcessors(self, statName):
+    listOfStats = []
+    for aProcessor in self.registrar.processors.keys():
+      f = urllib2.urlopen('http://%s/201007/stats/%s' % (aProcessor, statName))
+      linesFromProcessor = f.readlines()
+      listOfStats.append(json.loads(linesFromProcessor[0]))
+    return listOfStats
+  #-----------------------------------------------------------------------------
+  def singleValueForSummation (self, statName):
+    listOfStats = self.statsFromProcessors(statName)
+    try:
+      return sum(x for x in listOfStats if x is not None)
+    except ValueError:
+      return 0
+  #-----------------------------------------------------------------------------
+  def singleValueForMax (self, statName):
+    listOfStats = self.statsFromProcessors(statName)
+    try:
+      return max(x for x in listOfStats if x is not None)
+    except ValueError:
+      return 0
+  #---------------------------------------------------------------------------
+  @staticmethod
+  def addTuples(x, y):
+      return tuple(i + j for i, j in zip(x, y))
+  #-----------------------------------------------------------------------------
+  def processTimeAverage(self, statName):
+    listOfStats = []
+    for aProcessor in self.registrar.processors.keys():
+      f = urllib2.urlopen('http://%s/201008/process/time/accumulation' %
+                              (aProcessor,))
+      count, timeDeltaAsString = json.loads(f.readline())
+      newTuple = (count, dtutil.stringToTimeDelta(timeDeltaAsString))
+      listOfStats.append(newTuple)
+    count, durationSum = functools.reduce(lambda x,y: self.addTuples(x, y),
+                                          listOfStats,
+                                          (0, dt.timedelta(0)))
+    try:
+      return durationSum / count
+    except ZeroDivisionError:
+      return 0.0
+  #-----------------------------------------------------------------------------
+  def fetchStat(self, statName):
+    dispatchedFunction = \
+        self.__getattribute__( \
+             ProcessorStatsService.knownProcessorStats[statName])
+    return dispatchedFunction(statName)
+  #-----------------------------------------------------------------------------
+  def get(self, *args):
+    statName = args[0]
+    if statName not in ProcessorStatsService.knownProcessorStats.keys():
+      raise web.notfound()
+    if statName != 'all':
+      result = self.fetchStat(statName)
+      self.registrar.logger.debug('stat result: %s', str(result))
+      return webapi.sanitizeForJson(result)
+    else:
+      result = {}
+      for aStatName in ProcessorStatsService.knownProcessorStats.keys():
+        if aStatName != 'all':
+          result[aStatName] = self.fetchStat(aStatName)
+      return webapi.sanitizeForJson(result)
 
 #===============================================================================
 class RegistrarServicesQuery(RegistrarBaseService):

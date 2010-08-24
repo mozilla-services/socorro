@@ -9,11 +9,12 @@ logger = logging.getLogger("webapi")
 
 #-----------------------------------------------------------------------------------------------------------------
 def sanitizeForJson(something):
-  if type(something) in [int, str, float]:
+  if type(something) in [int, str, float, unicode]:
     return something
   if isinstance(something, collections.Mapping):
     return dict((k, sanitizeForJson(v)) for k, v in something.iteritems())
   if isinstance(something, collections.Iterable):
+    print something, type(something)
     return [sanitizeForJson(x) for x in something]
   return str(something)
 

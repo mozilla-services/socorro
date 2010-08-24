@@ -141,6 +141,24 @@ class ProcessorStats(ProcessorBaseService):
     return webapi.sanitizeForJson(returnValue)
 
 #=================================================================================================================
+class ProcessorTimeAccumulation(ProcessorBaseService):
+  #-----------------------------------------------------------------------------------------------------------------
+  def __init__(self, context, aProcessor):
+    super(ProcessorTimeAccumulation, self).__init__(context, aProcessor)
+  #-----------------------------------------------------------------------------------------------------------------
+  uri = '/201008/process/time/accumulation'
+  #uriArgNames = []
+  #uriArgTypes = []
+  #uriDoc = "a tuple of (count, durationsum) for jobs"
+  #-----------------------------------------------------------------------------------------------------------------
+  def get(self, *args):
+    try:
+      returnValue = self.processor.statsPools['processTime'].sumDurations()
+    except KeyError:
+      raise web.notfound()
+    return webapi.sanitizeForJson(returnValue)
+
+#=================================================================================================================
 class ProcessorIntrospectionService(ProcessorBaseService):
   #-----------------------------------------------------------------------------------------------------------------
   def __init__(self, context, aProcessor):
@@ -289,6 +307,7 @@ class Processor(object):
                                   ProcessorServicesQuery,
                                   ProcessorPriorityOoidService,
                                   ProcessorStats,
+                                  ProcessorTimeAccumulation,
                                 ]
 
     self.standardQueue = queue.Queue()

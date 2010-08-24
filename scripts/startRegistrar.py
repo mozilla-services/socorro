@@ -59,6 +59,7 @@ servicesList = (sreg.RegistrationService,
                 sreg.GetProcessorService,
                 sreg.ProcessorForwardingService,
                 sreg.RegistrarServicesQuery,
+                sreg.ProcessorStatsService,
                )
 
 registrar.services = servicesList
