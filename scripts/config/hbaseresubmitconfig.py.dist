@@ -8,6 +8,7 @@ from config.collectorconfig import hbaseFallbackDirPermissions
 from config.collectorconfig import hbaseFallbackDumpGID
 from config.collectorconfig import hbaseFallbackDumpDirCount
 from config.collectorconfig import hbaseFallbackFS
+from config.collectorconfig import processorHostname
 from config.commonconfig import hbaseHost
 from config.commonconfig import hbasePort
 from config.commonconfig import hbaseTimeout

@@ -3,18 +3,19 @@ try:
 except ImportError:
   import simplejson as json
 
+import datetime as dt
+
 import socorro.lib.JsonDumpStorage as jds
 import socorro.storage.hbaseClient as hbc
 import socorro.lib.util as sutil
 import socorro.lib.datetimeutil as dtutil
+import socorro.storage.crashstorage as cstore
 
 
 def resubmit (conf, jds=jds, hbc=hbc, open=open):
   logger = conf.logger
   logger.info('creating hbase connection: host: %s, port: %s', conf.hbaseHost, conf.hbasePort)
-  hbaseConnection = hbc.HBaseConnectionForCrashReports(conf.hbaseHost, 
-                                                       conf.hbasePort, 
-                                                       conf.hbaseTimeout)
+  storage = cstore.CollectorCrashStorageSystemForHBase(conf)
   logger.info('creating json/dump store object: root: %s', conf.hbaseFallbackFS)
   fallbackStorage = jds.JsonDumpStorage(root=conf.hbaseFallbackFS,
                                         maxDirectoryEntries = conf.hbaseFallbackDumpDirCount,
@@ -39,8 +40,12 @@ def resubmit (conf, jds=jds, hbc=hbc, open=open):
       finally:
         dumpFile.close()
       logger.debug('pushing %s to hbase', uuid)
-      hbaseConnection.put_json_dump(uuid, jsonContents, dumpContents)
-      processedCrashList.append(uuid)
+      timestamp = dt.datetime.now()
+      result = storage.save_raw(uuid, jsonContents, dumpContents, timestamp)
+      if result == cstore.CrashStorageSystem.ERROR:
+        logger.info('could not save %s', uuid)
+      else:
+        processedCrashList.append(uuid)
     except Exception, x:
       sutil.reportExceptionAndContinue(logger)
 

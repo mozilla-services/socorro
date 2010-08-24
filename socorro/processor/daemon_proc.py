@@ -30,8 +30,6 @@ import socorro.registrar.registrar as sreg
 import socorro.lib.stats as stats
 import socorro.webapi.webapp as sweb
 
-
-
 #===============================================================================
 class ProcessorBaseService(webapi.JsonServiceBase):
   #-----------------------------------------------------------------------------
@@ -50,6 +48,17 @@ class Hello(ProcessorBaseService):
   #-----------------------------------------------------------------------------
   def get(self, *args):
     return "hello"
+
+#===============================================================================
+class NameService(ProcessorBaseService):
+  #-----------------------------------------------------------------------------
+  def __init__(self, context, aProcessor):
+    super(NameService, self).__init__(context, aProcessor)
+  #-----------------------------------------------------------------------------
+  uri = '/name'
+  #-----------------------------------------------------------------------------
+  def get(self, *args):
+    return self.processor.hostname
 
 #=================================================================================================================
 class Test(ProcessorBaseService):
@@ -74,11 +83,13 @@ class ProcessorOoidService(ProcessorBaseService):
   #-----------------------------------------------------------------------------------------------------------------
   uri = '/201006/process/ooid'
   #-----------------------------------------------------------------------------------------------------------------
-  def POST(self):
+  def post(self):
     data = web.input()
     ooid = data['ooid']
     self.context.logger.debug('ProcessorOoidService request for %s', ooid)
     self.processor.queueOoid(ooid)
+    return self.processor.hostname
+
 
 #=================================================================================================================
 class ProcessorPriorityOoidService(ProcessorBaseService):
@@ -88,11 +99,12 @@ class ProcessorPriorityOoidService(ProcessorBaseService):
   #-----------------------------------------------------------------------------------------------------------------
   uri = '/201006/priority/process/ooid'
   #-----------------------------------------------------------------------------------------------------------------
-  def POST(self):
+  def post(self):
     data = web.input()
     ooid = data['ooid']
     self.context.logger.debug('ProcessorPriorityOoidService request for %s', ooid)
     self.processor.queuePriorityOoid(ooid)
+    return self.processor.hostname
 
 #=================================================================================================================
 class ProcessorOoidBenchmarkedService(ProcessorOoidService):
@@ -303,6 +315,7 @@ class Processor(object):
     self.webServicesClassList = [ ProcessorIntrospectionService,
                                   Hello,
                                   Test,
+                                  NameService,
                                   ProcessorOoidService,
                                   ProcessorServicesQuery,
                                   ProcessorPriorityOoidService,

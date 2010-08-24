@@ -730,6 +730,19 @@ class HBaseConnectionForCrashReports(HBaseConnection):
 
     self.update_metrics_counters_for_submit(submitted_timestamp,legacy_processing,process_type,is_hang)
 
+    return (guid_to_timestamped_row_id(ooid,submitted_timestamp), legacy_processing)
+
+  def update_unprocessed_queue_with_processor_state(self, queue_row_id, processor_post_timestamp, processor_name, legacy_processing):
+    mutationList = [
+        self.mutationClass(column="processor_state:name",value=processor_name),
+        self.mutationClass(column="processor_state:post_timestamp",value=processor_post_timestamp)]
+
+    indices = ['crash_reports_index_unprocessed_flag']
+    if legacy_processing == 0:
+      indices.append('crash_reports_index_legacy_unprocessed_flag')
+
+    for index_name in indices:
+      self.client.mutateRow(index_name,queue_row_id,mutationList)
 
   def put_json_dump_from_files(self,ooid,json_path,dump_path,openFn=open):
     """

@@ -82,6 +82,10 @@ serverPort = cm.Option()
 serverPort.doc = 'the port to listen to for submissions if not installed under mod_wsgi'
 serverPort.default = 8882
 
+processorHostname = cm.Option()
+processorHostname.doc = 'hostname and port for a processor to submit jobs to'
+processorHostname.default = 'localhost:8881'
+
 # The form field the client sends the dump in
 dumpField = cm.Option()
 dumpField.default = "upload_file_minidump"

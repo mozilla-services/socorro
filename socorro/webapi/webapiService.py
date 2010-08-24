@@ -58,6 +58,24 @@ class JsonServiceBase (object):
   def get(self, *args):
     raise Unimplemented("the GET function has not been implemented for %s" % args)
 
+  #-----------------------------------------------------------------------------------------------------------------
+  def POST(self):
+    try:
+      result = self.post()
+      if type(result) is tuple:
+        web.header('Content-Type', result[1])
+        return result[0]
+      return json.dumps(self.transformReturn(result))
+    except web.HTTPError:
+      raise
+    except Exception:
+      util.reportExceptionAndContinue(self.context.logger)
+      raise
+
+  #-----------------------------------------------------------------------------------------------------------------
+  def post(self):
+    raise Unimplemented("the POST function has not been implemented.")
+
 #=================================================================================================================
 class SanitizedJsonServiceBase (JsonServiceBase):
   #-----------------------------------------------------------------------------------------------------------------

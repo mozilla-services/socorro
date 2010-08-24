@@ -6,12 +6,13 @@ import logging.handlers
 
 import config.hbaseresubmitconfig as hbrconf
 
-import socorro.lib.ConfigurationManager as configurationManager
+import socorro.lib.ConfigurationManager as cm
 import socorro.cron.hbaseResubmit as hbr
 
 try:
-  conf = configurationManager.newConfiguration(configurationModule=hbrconf, applicationName="HBase Resubmit")
-except configurationManager.NotAnOptionError, x:
+  configurationContext = cm.newConfiguration(configurationModule=hbrconf,
+                                             applicationName="HBase Resubmit")
+except cm.NotAnOptionError, x:
   print >>sys.stderr, x
   print >>sys.stderr, "for usage, try --help"
   sys.exit()
@@ -20,8 +21,8 @@ logger = logging.getLogger("hbaseresubmit")
 logger.setLevel(logging.DEBUG)
 
 stderrLog = logging.StreamHandler()
-stderrLog.setLevel(conf.stderrErrorLoggingLevel)
-stderrLogFormatter = logging.Formatter(conf.stderrLineFormatString)
+stderrLog.setLevel(configurationContext.stderrErrorLoggingLevel)
+stderrLogFormatter = logging.Formatter(configurationContext.stderrLineFormatString)
 stderrLog.setFormatter(stderrLogFormatter)
 logger.addHandler(stderrLog)
 
@@ -34,12 +35,12 @@ syslogFormatter = logging.Formatter(configurationContext.syslogLineFormatString)
 syslog.setFormatter(syslogFormatter)
 logger.addHandler(syslog)
 
-logger.info("current configuration\n%s", str(conf))
+logger.info("current configuration\n%s", str(configurationContext))
 
-conf.logger = logger
+configurationContext['logger'] = logger
 
 try:
-  hbr.resubmit(conf)
+  hbr.resubmit(configurationContext)
 finally:
   logger.info("done.")
 

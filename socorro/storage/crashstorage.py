@@ -23,7 +23,9 @@ import re
 import random
 import logging
 import threading
-#import base64
+import urllib
+import urllib2
+
 logger = logging.getLogger("collector")
 
 compiledRegularExpressionType = type(re.compile(''))
@@ -264,13 +266,27 @@ class CrashStorageSystemForHBase(CrashStorageSystem):
   #-----------------------------------------------------------------------------------------------------------------
   def save_raw (self, ooid, jsonData, dump, currentTimestamp):
     try:
-      jsonDataAsString = json.dumps(jsonData)
-      self.hbaseConnection.put_json_dump(ooid,
-                                         jsonData,
-                                         #dump.read(),
-                                         dump,
-                                         number_of_retries=self.hbaseRetry,
-                                         wait_between_retries=self.hbaseRetryDelay)
+      row_id, legacy_flag = self.hbaseConnection.put_json_dump(ooid,
+                                    jsonData,
+                                    dump,
+                                    number_of_retries=self.hbaseRetry,
+                                    wait_between_retries=self.hbaseRetryDelay)
+      try:
+        params = urllib.urlencode({'ooid':ooid})
+        post_result = urllib2.urlopen(self.processRequestSubmissionUrl,
+                                      params)
+        processor_name = post_result.read()
+        self.hbaseConnection.update_unprocessed_queue_with_processor_state(
+                row_id,
+                currentTimestamp.isoformat(),
+                processor_name,
+                legacy_flag)
+      except urllib2.URLError:
+        self.logger.warning('could not submit %s for processing ', ooid)
+        sutil.reportExceptionAndContinue(logger=self.logger)
+      except Exception:
+        self.logger.warning('something has gone wrong in the second half of submission for %s', ooid)
+        sutil.reportExceptionAndContinue(logger=self.logger)
       return CrashStorageSystem.OK
     except Exception, x:
       sutil.reportExceptionAndContinue(self.logger)
@@ -377,6 +393,13 @@ class CollectorCrashStorageSystemForHBase(CrashStorageSystemForHBase):
     assert "hbaseFallbackDumpGID" in config, "hbaseFallbackDumpGID is missing from the configuration"
     assert "hbaseFallbackDumpPermissions" in config, "hbaseFallbackDumpPermissions is missing from the configuration"
     assert "hbaseFallbackDirPermissions" in config, "hbaseFallbackDirPermissions is missing from the configuration"
+    assert "processorHostname" in config, "processorHostname is missing from the configuration"
+    self.processorHostname = config.processorHostname
+    self.processorSubmissionHeaders = {
+      "Content-type": "application/x-www-form-urlencoded",
+      "Accept": "text/plain"
+    }
+
     if config.hbaseFallbackFS:
       self.fallbackCrashStorage = jsonDumpStorage.JsonDumpStorage(root=config.hbaseFallbackFS,
                                                                   maxDirectoryEntries = config.hbaseFallbackDumpDirCount,
@@ -389,35 +412,35 @@ class CollectorCrashStorageSystemForHBase(CrashStorageSystemForHBase):
                                                                  )
     else:
       self.fallbackCrashStorage = None
+    self.processRequestSubmissionUrl = 'http://%s/201006/process/ooid' % \
+                                       config.processorHostname
 
   #-----------------------------------------------------------------------------------------------------------------
   def save_raw (self, ooid, jsonData, dump, currentTimestamp):
-    try:
-      jsonDataAsString = json.dumps(jsonData)
-      self.hbaseConnection.put_json_dump(ooid,
-                                         jsonData,
-                                         dump,
-                                         number_of_retries=self.hbaseRetry,
-                                         wait_between_retries=self.hbaseRetryDelay)
-      return CrashStorageSystem.OK
-    except Exception, x:
-      sutil.reportExceptionAndContinue(self.logger)
-      if self.fallbackCrashStorage:
-        self.logger.warning('cannot save %s in hbase, falling back to filesystem', ooid)
+    superClass = super(CollectorCrashStorageSystemForHBase, self)
+    result = superClass.save_raw(ooid,
+                                 jsonData,
+                                 dump,
+                                 currentTimestamp)
+    if result == CrashStorageSystem.OK:
+      return result
+    if self.fallbackCrashStorage:
+      self.logger.warning('cannot save %s in hbase, falling back to filesystem', ooid)
+      jsonData['processorName'] = None
+      try:
+        jsonFileHandle, dumpFileHandle = self.fallbackCrashStorage.newEntry(ooid, self.hostname, currentTimestamp)
         try:
-          jsonFileHandle, dumpFileHandle = self.fallbackCrashStorage.newEntry(ooid, self.hostname, currentTimestamp)
-          try:
-            dumpFileHandle.write(dump)
-            json.dump(jsonData, jsonFileHandle)
-          finally:
-            dumpFileHandle.close()
-            jsonFileHandle.close()
-          return CrashStorageSystem.OK
-        except Exception, x:
-          sutil.reportExceptionAndContinue(self.logger)
-      else:
-        self.logger.warning('there is no fallback storage for hbase: dropping %s on the floor', ooid)
-      return CrashStorageSystem.ERROR
+          dumpFileHandle.write(dump)
+          json.dump(jsonData, jsonFileHandle)
+        finally:
+          dumpFileHandle.close()
+          jsonFileHandle.close()
+        return CrashStorageSystem.OK
+      except Exception, x:
+        sutil.reportExceptionAndContinue(self.logger)
+    else:
+      self.logger.warning('there is no fallback storage for hbase: dropping %s on the floor', ooid)
+    return CrashStorageSystem.ERROR
 
 
 #=================================================================================================================
