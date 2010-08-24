@@ -83,6 +83,7 @@ class StreamBreakpadProcessor (daemon_proc.Processor):
 
     assert "generatePipeDump" in config, "generatePipeDump is missing from the configuration"
     assert "generateJDump" in config, "generateJDump is missing from the configuration"
+    assert "maximumStackwalkerUses" in config, "maximumStackwalkerUses is missing from the configuration"
 
     self.logger.debug('Instantiating StreamBreakpadProcessor')
 
