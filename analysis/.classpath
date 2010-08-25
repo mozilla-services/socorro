@@ -24,5 +24,7 @@
 	<classpathentry kind="lib" path="lib/jackson-mapper-asl-1.5.5.jar"/>
 	<classpathentry kind="lib" path="lib/aopalliance.jar"/>
 	<classpathentry kind="lib" path="lib/jetty-servlet-7.1.6.v20100715.jar"/>
+	<classpathentry kind="lib" path="lib/log4j-1.2.16.jar"/>
+	<classpathentry kind="lib" path="lib/mowgli-0.1.jar"/>
 	<classpathentry kind="output" path="build/classes"/>
 </classpath>
