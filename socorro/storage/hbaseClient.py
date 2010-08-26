@@ -359,47 +359,60 @@ class HBaseConnectionForCrashReports(HBaseConnection):
     Get a set of statistics from the HBase metrics table regarding processing queues
     """
     aggStats = {}
-    rawQueueStats = self._make_row_nice(self.client.getRow('metrics', 'crash_report_queues')[0])
-    if rawQueueStats.get('counters:inserts_unprocessed_legacy'):
-      inserts_unprocessed_legacy = long(struct.unpack('>q', rawQueueStats['counters:inserts_unprocessed_legacy'])[0])
-    else:
+    try:
+      rawQueueStats = self._make_row_nice(self.client.getRow('metrics', 'crash_report_queues')[0])
+      if rawQueueStats.get('counters:inserts_unprocessed_legacy'):
+        inserts_unprocessed_legacy = long(struct.unpack('>q', rawQueueStats['counters:inserts_unprocessed_legacy'])[0])
+      else:
+        inserts_unprocessed_legacy = 0
+      if rawQueueStats.get('counters:deletes_unprocessed_legacy'):
+        deletes_unprocessed_legacy = long(struct.unpack('>q', rawQueueStats['counters:deletes_unprocessed_legacy'])[0])
+      else:
+        deletes_unprocessed_legacy = 0
+      if rawQueueStats.get('counters:inserts_unprocessed_priority'):
+        inserts_unprocessed_priority = long(struct.unpack('>q', rawQueueStats['counters:inserts_unprocessed_priority'])[0])
+      else:
+        inserts_unprocessed_priority = 0
+      if rawQueueStats.get('counters:deletes_unprocessed_priority'):
+        deletes_unprocessed_priority = long(struct.unpack('>q', rawQueueStats['counters:deletes_unprocessed_priority'])[0])
+      else:
+        deletes_unprocessed_priority = 0
+      if rawQueueStats.get('counters:inserts_unprocessed'):
+        inserts_unprocessed = long(struct.unpack('>q', rawQueueStats['counters:inserts_unprocessed'])[0])
+      else:
+        inserts_unprocessed = 0
+      if rawQueueStats.get('counters:deletes_unprocessed'):
+        deletes_unprocessed = long(struct.unpack('>q', rawQueueStats['counters:deletes_unprocessed'])[0])
+      else:
+        deletes_unprocessed = 0
+      if rawQueueStats.get('counters:inserts_processed_legacy'):
+        inserts_processed_legacy = long(struct.unpack('>q', rawQueueStats['counters:inserts_processed_legacy'])[0])
+      else:
+        inserts_processed_legacy = 0
+      if rawQueueStats.get('counters:deletes_processed_legacy'):
+        deletes_processed_legacy = long(struct.unpack('>q', rawQueueStats['counters:deletes_processed_legacy'])[0])
+      else:
+        deletes_processed_legacy = 0
+      if rawQueueStats.get('counters:inserts_processed_priority'):
+        inserts_processed_priority = long(struct.unpack('>q', rawQueueStats['counters:inserts_processed_priority'])[0])
+      else:
+        inserts_processed_priority = 0
+      if rawQueueStats.get('counters:deletes_processed_priority'):
+        deletes_processed_priority = long(struct.unpack('>q', rawQueueStats['counters:deletes_processed_priority'])[0])
+      else:
+        deletes_processed_priority = 0
+    except IndexError:
       inserts_unprocessed_legacy = 0
-    if rawQueueStats.get('counters:deletes_unprocessed_legacy'):
-      deletes_unprocessed_legacy = long(struct.unpack('>q', rawQueueStats['counters:deletes_unprocessed_legacy'])[0])
-    else:
       deletes_unprocessed_legacy = 0
-    if rawQueueStats.get('counters:inserts_unprocessed_priority'):
-      inserts_unprocessed_priority = long(struct.unpack('>q', rawQueueStats['counters:inserts_unprocessed_priority'])[0])
-    else:
       inserts_unprocessed_priority = 0
-    if rawQueueStats.get('counters:deletes_unprocessed_priority'):
-      deletes_unprocessed_priority = long(struct.unpack('>q', rawQueueStats['counters:deletes_unprocessed_priority'])[0])
-    else:
       deletes_unprocessed_priority = 0
-    if rawQueueStats.get('counters:inserts_unprocessed'):
-      inserts_unprocessed = long(struct.unpack('>q', rawQueueStats['counters:inserts_unprocessed'])[0])
-    else:
       inserts_unprocessed = 0
-    if rawQueueStats.get('counters:deletes_unprocessed'):
-      deletes_unprocessed = long(struct.unpack('>q', rawQueueStats['counters:deletes_unprocessed'])[0])
-    else:
       deletes_unprocessed = 0
-    if rawQueueStats.get('counters:inserts_processed_legacy'):
-      inserts_processed_legacy = long(struct.unpack('>q', rawQueueStats['counters:inserts_processed_legacy'])[0])
-    else:
       inserts_processed_legacy = 0
-    if rawQueueStats.get('counters:deletes_processed_legacy'):
-      deletes_processed_legacy = long(struct.unpack('>q', rawQueueStats['counters:deletes_processed_legacy'])[0])
-    else:
       deletes_processed_legacy = 0
-    if rawQueueStats.get('counters:inserts_processed_priority'):
-      inserts_processed_priority = long(struct.unpack('>q', rawQueueStats['counters:inserts_processed_priority'])[0])
-    else:
       inserts_processed_priority = 0
-    if rawQueueStats.get('counters:deletes_processed_priority'):
-      deletes_processed_priority = long(struct.unpack('>q', rawQueueStats['counters:deletes_processed_priority'])[0])
-    else:
       deletes_processed_priority = 0
+
 
     aggStats['active_raw_reports_in_queue'] = inserts_unprocessed_legacy - deletes_unprocessed_legacy
     aggStats['priority_raw_reports_in_queue'] = inserts_unprocessed_priority - deletes_unprocessed_priority
@@ -766,7 +779,7 @@ class HBaseConnectionForCrashReports(HBaseConnection):
 
     if legacy_processing == 0:
       queueTypes.append('inserts_unprocessed_legacy')
-    
+
     if process_type != 'default':
       if is_hang:
         counterIncrementList.append("counters:submitted_crash_report_hang_pairs")
