@@ -129,11 +129,13 @@ class Controller extends Controller_Core {
         foreach ($pairs as $i) {
             if (!$i) continue;
             list($name, $value) = explode('=', $i, 2);
-            $value = urldecode($value);
+            $value_clean = trim(
+                               $this->input->xss_clean(
+                                   urldecode($value)));
             if (isset($params[$name])) {
-                $params[$name][] = trim($value);
+                $params[$name][] = $value_clean;
             } else {
-                $params[$name] = array(trim($value));
+                $params[$name] = array($value_clean);
             }
         }
         return $params;
