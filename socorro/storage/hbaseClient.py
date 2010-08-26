@@ -599,7 +599,7 @@ class HBaseConnectionForCrashReports(HBaseConnection):
     return itertools.islice(iterable,limit)
 
   @retry_wrapper_for_generators
-  def deleting_iterator_for_table(self, table_name,limit=10**6):
+  def deleting_iterator_for_table(self, table_name, queue_type, limit=10**6):
     #self.logger.debug('deleting_iterator_for_table %s' % table_name)
     for row in self.limited_iteration(self.merge_scan_with_prefix(table_name,
                                                                   '',
@@ -607,15 +607,16 @@ class HBaseConnectionForCrashReports(HBaseConnection):
       yield row['ids:ooid']
       # Delete the row after the feeder has returned from processing it.
       self.client.deleteAllRow(table_name, row['_rowkey'])
+      self.update_metrics_counters_current_queue_size([queue_type])
 
   def iterator_for_legacy_db_feeder_queue(self,limit=10**6):
-    return self.deleting_iterator_for_table('crash_reports_index_legacy_processed',limit)
+    return self.deleting_iterator_for_table('crash_reports_index_legacy_processed', 'deletes_processed_legacy', limit)
 
   def insert_to_legacy_db_feeder_queue(self,ooid,timestamp):
     self.put_crash_report_indices(ooid,timestamp,['crash_reports_index_legacy_processed'])
 
   def iterator_for_priority_db_feeder_queue(self,limit=10**6):
-    return self.deleting_iterator_for_table('crash_reports_index_priority_processed',limit)
+    return self.deleting_iterator_for_table('crash_reports_index_priority_processed', 'deletes_processed_priority', limit)
 
   def insert_to_priority_db_feeder_queue(self,ooid,timestamp):
     self.put_crash_report_indices(ooid,timestamp,['crash_reports_index_priority_processed'])
@@ -636,11 +637,16 @@ class HBaseConnectionForCrashReports(HBaseConnection):
                           hang_id,
                           [self.mutationClass(column=ooid_column_name,value=ooid)])
 
+  def update_metrics_counters_current_queue_size(self, queue_types):
+    for queueType in queue_types:
+      self.client.atomicIncrement('metrics','crash_report_queues',("counters:%s"%queueType),1)
+
   @optional_retry_wrapper
   def update_metrics_counters_for_process(self, processed_timestamp, priority_processing, legacy_processing, is_oob_signature, signature):
     """
     Increments a series of counters in the 'metrics' table related to CR processing
     """
+
     timeLevels = [ processed_timestamp[:16], # minute yyyy-mm-ddTHH:MM
                    processed_timestamp[:13], # hour   yyyy-mm-ddTHH
                    processed_timestamp[:10], # day    yyyy-mm-dd
@@ -648,15 +654,23 @@ class HBaseConnectionForCrashReports(HBaseConnection):
                    processed_timestamp[: 4]  # year   yyyy
                  ]
     counterIncrementList = [ 'counters:processed_crash_reports' ]
+    queueTypes = ['deletes_unprocessed','inserts_processed']
 
     if priority_processing == 'Y':
       counterIncrementList.append("counters:processed_crash_reports_priority")
+      queueTypes.append('deletes_unprocessed_priority')
+      queueTypes.append('inserts_processed_priority')
+      if legacy_processing == 'Y':
+        queueTypes.append('deletes_unprocessed_legacy')
     elif legacy_processing == 'Y':
       counterIncrementList.append("counters:processed_crash_reports_legacy")
+      queueTypes.append('deletes_unprocessed_legacy')
+      queueTypes.append('inserts_processed_legacy')
 
     if is_oob_signature:
       counterIncrementList.append("counters:processed_crash_reports_oob_signature_%s" % signature)
 
+    self.update_metrics_counters_current_queue_size(queueTypes)
     for rowkey in timeLevels:
       for column in counterIncrementList:
         self.client.atomicIncrement('metrics',rowkey,column,1)
@@ -667,20 +681,28 @@ class HBaseConnectionForCrashReports(HBaseConnection):
     """
     Increments a series of counters in the 'metrics' table related to CR submission
     """
+
     timeLevels = [ submitted_timestamp[:16], # minute yyyy-mm-ddTHH:MM
                    submitted_timestamp[:13], # hour   yyyy-mm-ddTHH
                    submitted_timestamp[:10], # day    yyyy-mm-dd
                    submitted_timestamp[: 7], # month  yyyy-mm
                    submitted_timestamp[: 4]  # year   yyyy
                  ]
-    counterIncrementList = [ 'counters:submitted_crash_reports' ]
-    counterIncrementList.append("counters:submitted_crash_reports_legacy_throttle_%d" % legacy_processing)
+    counterIncrementList = [ 'counters:submitted_crash_reports',
+                             ("counters:submitted_crash_reports_legacy_throttle_%d" % legacy_processing)
+                           ]
+    queueTypes = ['inserts_unprocessed']
+
+    if legacy_processing == 0:
+      queueTypes.append('inserts_unprocessed_legacy')
+    
     if process_type != 'default':
       if is_hang:
         counterIncrementList.append("counters:submitted_crash_report_hang_pairs")
       else:
         counterIncrementList.append("counters:submitted_oop_%s_crash_reports" % process_type)
 
+    self.update_metrics_counters_current_queue_size(queueTypes)
     for rowkey in timeLevels:
       for column in counterIncrementList:
         self.client.atomicIncrement('metrics',rowkey,column,1)
@@ -769,6 +791,7 @@ class HBaseConnectionForCrashReports(HBaseConnection):
     """
     self.client.mutateRow('crash_reports', ooid_to_row_id(ooid),
         [self.mutationClass(column="flags:priority_processing",value='Y')])
+    self.update_metrics_counters_current_queue_size(['inserts_unprocessed_priority'])
 
   @optional_retry_wrapper
   def put_processed_json(self,ooid,processed_json):
