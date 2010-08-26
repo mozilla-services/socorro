@@ -353,6 +353,77 @@ class HBaseConnectionForCrashReports(HBaseConnection):
     columns['_rowkey'] = client_row_object.row
     return columns
 
+  @optional_retry_wrapper
+  def get_queue_statistics(self):
+    """
+    Get a set of statistics from the HBase metrics table regarding processing queues
+    """
+    aggStats = {}
+    rawQueueStats = self._make_row_nice(self.client.getRow('metrics', 'crash_report_queues')[0])
+    if rawQueueStats.get('counters:inserts_unprocessed_legacy'):
+      inserts_unprocessed_legacy = long(struct.unpack('>q', rawQueueStats['counters:inserts_unprocessed_legacy'])[0])
+    else:
+      inserts_unprocessed_legacy = 0
+    if rawQueueStats.get('counters:deletes_unprocessed_legacy'):
+      deletes_unprocessed_legacy = long(struct.unpack('>q', rawQueueStats['counters:deletes_unprocessed_legacy'])[0])
+    else:
+      deletes_unprocessed_legacy = 0
+    if rawQueueStats.get('counters:inserts_unprocessed_priority'):
+      inserts_unprocessed_priority = long(struct.unpack('>q', rawQueueStats['counters:inserts_unprocessed_priority'])[0])
+    else:
+      inserts_unprocessed_priority = 0
+    if rawQueueStats.get('counters:deletes_unprocessed_priority'):
+      deletes_unprocessed_priority = long(struct.unpack('>q', rawQueueStats['counters:deletes_unprocessed_priority'])[0])
+    else:
+      deletes_unprocessed_priority = 0
+    if rawQueueStats.get('counters:inserts_unprocessed'):
+      inserts_unprocessed = long(struct.unpack('>q', rawQueueStats['counters:inserts_unprocessed'])[0])
+    else:
+      inserts_unprocessed = 0
+    if rawQueueStats.get('counters:deletes_unprocessed'):
+      deletes_unprocessed = long(struct.unpack('>q', rawQueueStats['counters:deletes_unprocessed'])[0])
+    else:
+      deletes_unprocessed = 0
+    if rawQueueStats.get('counters:inserts_processed_legacy'):
+      inserts_processed_legacy = long(struct.unpack('>q', rawQueueStats['counters:inserts_processed_legacy'])[0])
+    else:
+      inserts_processed_legacy = 0
+    if rawQueueStats.get('counters:deletes_processed_legacy'):
+      deletes_processed_legacy = long(struct.unpack('>q', rawQueueStats['counters:deletes_processed_legacy'])[0])
+    else:
+      deletes_processed_legacy = 0
+    if rawQueueStats.get('counters:inserts_processed_priority'):
+      inserts_processed_priority = long(struct.unpack('>q', rawQueueStats['counters:inserts_processed_priority'])[0])
+    else:
+      inserts_processed_priority = 0
+    if rawQueueStats.get('counters:deletes_processed_priority'):
+      deletes_processed_priority = long(struct.unpack('>q', rawQueueStats['counters:deletes_processed_priority'])[0])
+    else:
+      deletes_processed_priority = 0
+
+    aggStats['active_raw_reports_in_queue'] = inserts_unprocessed_legacy - deletes_unprocessed_legacy
+    aggStats['priority_raw_reports_in_queue'] = inserts_unprocessed_priority - deletes_unprocessed_priority
+    aggStats['throttled_raw_reports_in_queue'] = inserts_unprocessed - deletes_unprocessed
+    aggStats['processed_reports_in_dbfeeder_queue'] = inserts_processed_legacy - deletes_processed_legacy
+    aggStats['priority_processed_reports_in_dbfeeder_queue'] = inserts_processed_priority - deletes_processed_priority
+
+    for row in self.limited_iteration(self.merge_scan_with_prefix('crash_reports_index_legacy_unprocessed_flag',
+                                                                  '', ['ids:ooid']), 1):
+      aggStats['oldest_active_report'] = row['_rowkey'][1:20]
+      break
+    for row in self.limited_iteration(self.merge_scan_with_prefix('crash_reports_index_unprocessed_flag',
+                                                                  '', ['ids:ooid']), 1):
+      aggStats['oldest_throttled_report'] = row['_rowkey'][1:20]
+      break
+    for row in self.limited_iteration(self.merge_scan_with_prefix('crash_reports_index_legacy_processed',
+                                                                  '', ['ids:ooid']), 1):
+      aggStats['oldest_processed_report'] = row['_rowkey'][1:20]
+      break
+    for row in self.limited_iteration(self.merge_scan_with_prefix('crash_reports_index_priority_processed',
+                                                                  '', ['ids:ooid']), 1):
+      aggStats['oldest_priority_processed_report'] = row['_rowkey'][1:20]
+      break
+    return aggStats
 
   @optional_retry_wrapper
   def get_json_meta_as_string(self,ooid,old_format=False):
@@ -1016,6 +1087,12 @@ if __name__=="__main__":
       usage()
       sys.exit(1)
     pp.pprint(connection.get_full_row(*args))
+
+  elif cmd == 'get_queue_statistics':
+    if len(args) != 0:
+      usage()
+      sys.exit(1)
+    pp.pprint(connection.get_queue_statistics())
 
   else:
     usage()
