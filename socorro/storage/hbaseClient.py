@@ -438,7 +438,6 @@ class HBaseConnectionForCrashReports(HBaseConnection):
       break
     return aggStats
 
-  @optional_retry_wrapper
   def get_json_meta_as_string(self,ooid,old_format=False):
     """
     Return the json metadata for a given ooid as an unexpanded string.
@@ -456,8 +455,7 @@ class HBaseConnectionForCrashReports(HBaseConnection):
       self.logger.debug('key error trying to get "meta_data:json" from %s', str(listOfRawRows))
       raise
 
-  #@optional_retry_wrapper  # no need for the wrapper if the function just calls
-                            # another function that uses the wrapper
+  @optional_retry_wrapper
   def get_json(self,ooid,old_format=False):
     """Return the json metadata for a given ooid as an json data object"""
     jsonColumnOfRow = self.get_json_meta_as_string(ooid,old_format)
@@ -497,7 +495,6 @@ class HBaseConnectionForCrashReports(HBaseConnection):
     else:
       raise OoidNotFoundException(ooid)
 
-  @optional_retry_wrapper
   def get_processed_json_as_string (self,ooid):
     """
     Return the cooked json (jsonz) for a given ooid as a string
@@ -511,8 +508,7 @@ class HBaseConnectionForCrashReports(HBaseConnection):
     else:
       raise OoidNotFoundException(ooid)
 
-  #@optional_retry_wrapper  # no need for the wrapper if the function just calls
-                            # another function that uses the wrapper
+  @optional_retry_wrapper
   def get_processed_json(self,ooid):
     """
     Return the cooked json (jsonz) for a given ooid as a json object
