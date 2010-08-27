@@ -11,6 +11,7 @@ import heapq
 import threading
 import time
 import tarfile
+import struct
 
 import socket
 
@@ -957,6 +958,7 @@ if __name__=="__main__":
 
   Commands:
     Crash Report specific:
+      get_queue_statistics
       get_report ooid
       get_json ooid
       get_dump ooid
@@ -997,7 +999,13 @@ if __name__=="__main__":
 
   connection = HBaseConnectionForCrashReports(host, port, 5000, logger=utl.FakeLogger())
 
-  if cmd == 'get_report':
+
+  if cmd == 'get_queue_statistics':
+    if len(args) != 0:
+      usage()
+      sys.exit(1)
+    pp.pprint(connection.get_queue_statistics())
+  elif cmd == 'get_report':
     if len(args) != 1:
       usage()
       sys.exit(1)
@@ -1100,12 +1108,6 @@ if __name__=="__main__":
       usage()
       sys.exit(1)
     pp.pprint(connection.get_full_row(*args))
-
-  elif cmd == 'get_queue_statistics':
-    if len(args) != 0:
-      usage()
-      sys.exit(1)
-    pp.pprint(connection.get_queue_statistics())
 
   else:
     usage()
