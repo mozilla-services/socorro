@@ -81,7 +81,7 @@ class TaskManager(object):
         task - a function to be run by a thread
         args - a tuple of arguments to be passed to the function
     """
-    self.taskQueue.put((task, args))
+    self.taskQueue.put((task, args), False)
 
   #----------------------
   # d e a d W o r k e r s
@@ -163,12 +163,13 @@ class TaskManagerThread(threading.Thread):
           aFunction(arguments)
         except Exception:
           sutil.reportExceptionAndContinue(logger=self.manager.logger)
+        #self.manager.logger.debug('ending job normally')
     except KeyboardInterrupt:
       import thread
-      print >>sys.stderr, "%s caught KeyboardInterrupt" % threading.currentThread().getName()
+      self.manager.logger.critical('caught KeyboardInterrupt in a worker thread - app will not likely shut down smoothly.  Resort to SIGKILL')
       thread.interrupt_main()
     except Exception, x:
-      print >>sys.stderr, "Something BAD happened in %s:" % threading.currentThread().getName()
-      traceback.print_exc(file=sys.stderr)
-      print >>sys.stderr, x
-
+      import logging
+      self.manager.logger.critical('something really BAD happended in a worker thread - app will not likely shut down smoothly.  Resort to SIGKILL')
+      sutil.reportExceptionAndContinue(logger=self.manager.logger,
+                                       loggingLevel=logging.CRITICAL)

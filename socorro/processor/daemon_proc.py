@@ -6,6 +6,7 @@ import os.path
 import re
 import signal
 import threading
+import thread
 import time
 import itertools
 import collections
@@ -159,6 +160,24 @@ class ProcessorTimeAccumulation(ProcessorBaseService):
     super(ProcessorTimeAccumulation, self).__init__(context, aProcessor)
   #-----------------------------------------------------------------------------------------------------------------
   uri = '/201008/process/time/accumulation'
+  #uriArgNames = []
+  #uriArgTypes = []
+  #uriDoc = "a tuple of (count, durationsum) for jobs"
+  #-----------------------------------------------------------------------------------------------------------------
+  def get(self, *args):
+    try:
+      returnValue = self.processor.statsPools['processTime'].sumDurations()
+    except KeyError:
+      raise web.notfound()
+    return webapi.sanitizeForJson(returnValue)
+
+#=================================================================================================================
+class ProcessorQueueSizes(ProcessorBaseService):
+  #-----------------------------------------------------------------------------------------------------------------
+  def __init__(self, context, aProcessor):
+    super(ProcessorTimeAccumulation, self).__init__(context, aProcessor)
+  #-----------------------------------------------------------------------------------------------------------------
+  uri = '/201008/queue/size'
   #uriArgNames = []
   #uriArgTypes = []
   #uriDoc = "a tuple of (count, durationsum) for jobs"
@@ -356,11 +375,12 @@ class Processor(object):
   def responsiveJoin(self, thread):
     while True:
       try:
+        #logger.debug('responsiveJoin')
         thread.join(1.0)
         if not thread.isAlive():
           break
       except KeyboardInterrupt:
-        logger.info ('quit detected')
+        logger.info ('quit detected while waiting for thread %s', thread.name)
         self.quit = True
 
   #-----------------------------------------------------------------------------------------------------------------
@@ -369,6 +389,7 @@ class Processor(object):
     """
     if 'ready' not in self.state:
       raise ProcessorCannotBeReUsedException('this Processor is used.  Processors cannot be reused')
+    self.webAppThreadHasQuit = False
 
     self.mainProcessorThread = threading.Thread(name="mainProcessorThread", target=self.mainProcessorLoop)
     self.registrationThread = threading.Thread(name="registrationThread", target=self.registrationLoop)
@@ -379,9 +400,10 @@ class Processor(object):
     except Exception:
       sutil.reportExceptionAndContinue(logger)
     finally:
+      self.webAppThreadHasQuit = True
       logger.debug('the webAppThread has quit')
       self.quit = True
-      logger.info('waiting for mainProcessorThread')
+      logger.debug('waiting for mainProcessorThread')
       self.responsiveJoin(self.mainProcessorThread)
       self.responsiveJoin(self.registrationThread)
       logger.debug('shutting down stackwalkers')
@@ -397,25 +419,37 @@ class Processor(object):
   #-----------------------------------------------------------------------------------------------------------------
   def mainProcessorLoop(self):
     try:
-      #get a job
-      for aJobTuple in self.incomingJobStream(): # infinite iterator - never StopIteration
-        self.quitCheck()
-        logger.info("queuing job %s", str(aJobTuple))
-        #deadWorkers = self.threadManager.deadWorkers()
-        #if deadWorkers:
-          #for thread_name in deadWorkers:
-            #logger.info('%s has died, replacing it', thread_name)
-            #self.crashStorePool.remove(thread_name)
-          #self.threadManager.fullEmployment()
-        self.threadManager.newTask(self.processJob, aJobTuple)
-    except KeyboardInterrupt:
-      logger.info("mainProcessorLoop gets quit request")
-      self.quit = True
-    logger.info("waiting for worker threads to stop")
-    self.threadManager.waitForCompletion()
-    logger.info("all worker threads stopped")
-    # TODO - unregister because we're going away
-    self.crashStorePool.cleanup()
+      try:
+        #get a job
+        for aJobTuple in self.incomingJobStream(): # infinite iterator - never StopIteration
+          self.quitCheck()
+          logger.info("queuing job %s", str(aJobTuple))
+          #deadWorkers = self.threadManager.deadWorkers()
+          #if deadWorkers:
+            #for thread_name in deadWorkers:
+              #logger.info('%s has died, replacing it', thread_name)
+              #self.crashStorePool.remove(thread_name)
+            #self.threadManager.fullEmployment()
+          #self.threadManager.newTask(self.processJob, aJobTuple)
+          while True:
+            try:
+              self.threadManager.newTask(self.processJobWithRetry, aJobTuple)
+              break
+            except queue.Full:
+              self.responsiveSleep(1)
+      except KeyboardInterrupt:
+        logger.info("mainProcessorLoop gets quit request")
+        self.quit = True
+      logger.debug("waiting for worker threads to stop")
+      self.threadManager.waitForCompletion()
+      logger.debug("all worker threads stopped")
+      # TODO - unregister because we're going away
+      self.crashStorePool.cleanup()
+      if not self.webAppThreadHasQuit:
+        thread.interrupt_main()
+        #os.kill(os.getpid(), signal.SIGTERM)
+    except Exception:
+      sutil.reportExceptionAndContinue(logger=self.logger)
 
   #-----------------------------------------------------------------------------------------------------------------
   def calculateProcessedToFailedRatio(self):
@@ -520,6 +554,7 @@ class Processor(object):
   #-----------------------------------------------------------------------------------------------------------------
   def responsiveSleep (self, seconds):
     for x in xrange(int(seconds)):
+      #logger.debug('responsiveSleep')
       self.quitCheck()
       time.sleep(1.0)
 
@@ -606,6 +641,33 @@ class Processor(object):
     ooid = aReportRecordAsDict["uuid"]
     threadLocalCrashStorage.save_processed(ooid, aReportRecordAsDict)
 
+  ok = 0
+  criticalError = 1
+  quit = 2
+
+  #-----------------------------------------------------------------------------------------------------------------
+  @staticmethod
+  def backoffSecondsGenerator():
+    seconds = [10, 30, 60, 120, 300]
+    for x in seconds:
+      yield x
+    while True:
+      yield seconds[-1]
+
+  #-----------------------------------------------------------------------------------------------------------------
+  def processJobWithRetry(self, jobTuple):
+    backoffGenerator = self.backoffSecondsGenerator()
+    try:
+      while True:
+        result = self.processJob(jobTuple)
+        if result in (Processor.ok, Processor.quit):
+          return
+        waitInSeconds = backoffGenerator.next()
+        self.logger.critical('major failure in crash storage - retry in %s seconds', waitInSeconds)
+        self.responsiveSleep(waitInSeconds)
+    except KeyboardInterrupt:
+      return
+
   #-----------------------------------------------------------------------------------------------------------------
   def processJob (self, jobTuple):
     """ This function is run only by a worker thread.
@@ -616,13 +678,14 @@ class Processor(object):
           jobTuple: a tuple containing up to three items: the jobId (the primary key from the jobs table), the
               jobOoid (a unique string with the json file basename minus the extension) and the priority (an integer)
     """
-    if self.quit: return
+    if self.quit: return Processor.quit
     try:
       threadLocalCrashStorage = self.crashStorePool.crashStorage()
     except Exception:
-      logger.critical("something's gone horribly wrong with the HBase connection")
+      logger.critical("something's gone horribly wrong with CrashStorage")
       self.quit = True
       sutil.reportExceptionAndContinue(logger, loggingLevel=logging.CRITICAL)
+      return Processor.criticalError
     try:
       self.quitCheck()
       processTimeStatistic = self.statsPools.processTime.getStat()
@@ -657,17 +720,21 @@ class Processor(object):
         logger.info("failed but committed: %s", jobOoid)
         self.statsPools.failures.getStat().increment()
       self.quitCheck()
+      return Processor.ok
     except (KeyboardInterrupt, SystemExit):
       logger.info("quit request detected")
       self.quit = True
+      return Processor.quit
     except hbc.FatalException:
       logger.critical("something's gone horribly wrong with the HBase connection")
-      self.quit = True
+      #self.quit = True
       sutil.reportExceptionAndContinue(logger, loggingLevel=logging.CRITICAL)
+      return Processor.criticalError
     except cstore.OoidNotFoundException, x:
       logger.warning("the ooid %s, was not found", jobOoid)
       self.statsPools.missing.getStat().increment()
       sutil.reportExceptionAndContinue(logger, logging.DEBUG, showTraceback=False)
+      return Processor.ok
     except Exception, x:
       self.statsPools.failures.getStat().increment()
       if x.__class__ != ErrorInBreakpadStackwalkException:
@@ -675,6 +742,7 @@ class Processor(object):
       else:
         self.statsPools.breakpadErrors.getStat().increment()
         sutil.reportExceptionAndContinue(logger, logging.WARNING, showTraceback=False)
+      return Processor.ok
     finally:
       processTimeStatistic.end()
 
