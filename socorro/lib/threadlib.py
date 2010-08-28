@@ -46,10 +46,6 @@ import sys
 
 import socorro.lib.util as sutil
 
-class MyQueue(Queue.Queue):
-  def __repr__(self):
-    return str(self.__dict__)
-
 #======================
 # T a s k M a n a g e r
 #======================
@@ -65,8 +61,7 @@ class TaskManager(object):
     """Initialize and start all threads"""
     self.threadList = []
     self.numberOfThreads = numberOfThreads
-    #self.taskQueue = Queue.Queue(maxQueueSize)
-    self.taskQueue = MyQueue(maxQueueSize)
+    self.taskQueue = Queue.Queue(maxQueueSize)
     if logger:
       self.logger = logger
     else:
@@ -76,6 +71,9 @@ class TaskManager(object):
       self.threadList.append(newThread)
       newThread.start()
 
+  #----------------
+  # _ _ r e p r _ _
+  #----------------
   def __repr__(self):
     return str(self.__dict__)
 

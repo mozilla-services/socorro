@@ -175,18 +175,17 @@ class ProcessorTimeAccumulation(ProcessorBaseService):
 class ProcessorQueueSizes(ProcessorBaseService):
   #-----------------------------------------------------------------------------------------------------------------
   def __init__(self, context, aProcessor):
-    super(ProcessorTimeAccumulation, self).__init__(context, aProcessor)
+    super(ProcessorQueueSizes, self).__init__(context, aProcessor)
   #-----------------------------------------------------------------------------------------------------------------
   uri = '/201008/queue/size'
   #uriArgNames = []
   #uriArgTypes = []
-  #uriDoc = "a tuple of (count, durationsum) for jobs"
+  #uriDoc = "the size of the queues"
   #-----------------------------------------------------------------------------------------------------------------
   def get(self, *args):
-    try:
-      returnValue = self.processor.statsPools['processTime'].sumDurations()
-    except KeyError:
-      raise web.notfound()
+    returnValue = { 'standard': self.processor.standardQueue.qsize(),
+                    'priority': self.processor.priorityQueue.qsize()
+                  }
     return webapi.sanitizeForJson(returnValue)
 
 #=================================================================================================================
@@ -340,6 +339,7 @@ class Processor(object):
                                   ProcessorPriorityOoidService,
                                   ProcessorStats,
                                   ProcessorTimeAccumulation,
+                                  ProcessorQueueSizes,
                                 ]
 
     self.standardQueue = queue.Queue()
@@ -450,7 +450,9 @@ class Processor(object):
         # a SIGTERM caught by the main thread.  This can happen if the
         # worker threads are programmed to suicide if their storage system
         # dies.  If they were to do so, they would set quit to True somewhere
-        # within their code.
+        # within their code.  Since the main thread is running the web app,
+        # it never gets the chance to test the quit flag.  It's attention
+        # has to gotten this way:
         thread.interrupt_main()
         #os.kill(os.getpid(), signal.SIGTERM)
     except Exception:

@@ -30,6 +30,7 @@ class StackWalker(object):
       self.logger.debug('stackwalker started with PID:%d',
                         self.subprocessHandle.pid)
       self.useCounter = self.config.maximumStackwalkerUses
+      self.misbehaving = False
     except Exception, x:
       sutil.reportExceptionAndContinue(self.config.logger,
                                        loggingLevel=logging.CRITICAL)
@@ -41,7 +42,7 @@ class StackWalker(object):
 
   #-----------------------------------------------------------------------------------------------------------------
   def stackWalk(self, binaryDump):
-    if not self.useCounter:
+    if not self.useCounter or self.misbehaving:
       self.logger.debug('retiring old stackwalk_server')
       self.close()
       self.create()
@@ -49,9 +50,10 @@ class StackWalker(object):
     self.subprocessHandle.stdin.write(header)
     self.subprocessHandle.stdin.write(binaryDump)
     self.subprocessHandle.stdin.flush()
-    emptyCounter = 10
+    emptyCounter = 5
     while True:
       if emptyCounter == 0:
+        self.misbehaving = True
         break
       #self.logger.debug('read')
       aLine = self.subprocessHandle.stdout.readline().strip()
