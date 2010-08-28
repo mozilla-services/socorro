@@ -85,7 +85,7 @@ class StreamBreakpadProcessor (daemon_proc.Processor):
     assert "generateJDump" in config, "generateJDump is missing from the configuration"
     assert "maximumStackwalkerUses" in config, "maximumStackwalkerUses is missing from the configuration"
 
-    self.logger.debug('Instantiating StreamBreakpadProcessor')
+    #self.logger.debug('Instantiating StreamBreakpadProcessor')
 
     self.stackWalkerPool = stwk.StackWalkerPool(config)
 
@@ -311,7 +311,10 @@ class StreamBreakpadProcessor (daemon_proc.Processor):
     j_dump.modules = []
     j_dump.threads = collections.defaultdict(self.ThreadFramesContainerClass)
     new_jdoc.flash_version = None
-    j_dump.status = dumpAnalysisLineIterator.next()
+    try:
+      j_dump.status = dumpAnalysisLineIterator.next()
+    except StopIteration:
+      j_dump.status = 'failed'
     j_dump.bad_breakpad_output = []
     for line in dumpAnalysisLineIterator:
       lineparts = [x.strip() for x in line.split('|')]
@@ -366,4 +369,5 @@ class StreamBreakpadProcessor (daemon_proc.Processor):
       new_jdoc.dump = self.generatePipeDump(j_dump)
     if self.config.generateJDump:
       new_jdoc.jdump = j_dump
+    #self.logger.debug ('done breakpadAnalyzer');
 

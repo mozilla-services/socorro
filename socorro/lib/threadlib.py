@@ -46,6 +46,10 @@ import sys
 
 import socorro.lib.util as sutil
 
+class MyQueue(Queue.Queue):
+  def __repr__(self):
+    return str(self.__dict__)
+
 #======================
 # T a s k M a n a g e r
 #======================
@@ -61,7 +65,8 @@ class TaskManager(object):
     """Initialize and start all threads"""
     self.threadList = []
     self.numberOfThreads = numberOfThreads
-    self.taskQueue = Queue.Queue(maxQueueSize)
+    #self.taskQueue = Queue.Queue(maxQueueSize)
+    self.taskQueue = MyQueue(maxQueueSize)
     if logger:
       self.logger = logger
     else:
@@ -70,6 +75,9 @@ class TaskManager(object):
       newThread = TaskManagerThread(self)
       self.threadList.append(newThread)
       newThread.start()
+
+  def __repr__(self):
+    return str(self.__dict__)
 
   #--------------
   # n e w T a s k
@@ -156,6 +164,7 @@ class TaskManagerThread(threading.Thread):
     """
     try:
       while True:
+        #self.manager.logger.debug('about to get next task')
         aFunction, arguments = self.manager.taskQueue.get()
         if aFunction is None:
           break
@@ -168,8 +177,12 @@ class TaskManagerThread(threading.Thread):
       import thread
       self.manager.logger.critical('caught KeyboardInterrupt in a worker thread - app will not likely shut down smoothly.  Resort to SIGKILL')
       thread.interrupt_main()
+      print >>sys.stderr, "caught KeyboardInterrupt in a worker thread - app will not likely shut down smoothly."
     except Exception, x:
       import logging
       self.manager.logger.critical('something really BAD happended in a worker thread - app will not likely shut down smoothly.  Resort to SIGKILL')
       sutil.reportExceptionAndContinue(logger=self.manager.logger,
                                        loggingLevel=logging.CRITICAL)
+      print >>sys.stderr, "caught %s in a worker thread - app will not likely shut down smoothly." % str(x)
+    else:
+      self.manager.logger.debug('and the thread ends its life peacefully with neither pain nor suffering')

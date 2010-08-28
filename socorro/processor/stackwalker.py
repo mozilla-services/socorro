@@ -49,12 +49,19 @@ class StackWalker(object):
     self.subprocessHandle.stdin.write(header)
     self.subprocessHandle.stdin.write(binaryDump)
     self.subprocessHandle.stdin.flush()
+    emptyCounter = 10
     while True:
+      if emptyCounter == 0:
+        break
+      #self.logger.debug('read')
       aLine = self.subprocessHandle.stdout.readline().strip()
+      #self.logger.debug('done reading:(%s)', aLine)
       if aLine == 'END': break
       if aLine:  #don't serve blank lines
         #self.logger.debug('yielding: %s', aLine)
         yield aLine
+      else:
+        emptyCounter -= 1
     #self.logger.debug('end of stackWalk');
     self.useCounter -= 1
 
@@ -92,6 +99,6 @@ class StackWalkerPool(dict):
     for name, stackwalker in self.iteritems():
       try:
         stackwalker.close()
-        self.logger.debug("stackwalker %s is closed", name)
+        self.logger.debug("stackwalker for %s is closed", name)
       except:
         sutil.reportExceptionAndContinue(self.logger)

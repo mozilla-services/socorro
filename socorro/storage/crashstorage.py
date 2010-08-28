@@ -567,7 +567,7 @@ class CrashStoragePool(dict):
     for name, crashStore in self.iteritems():
       try:
         crashStore.close()
-        self.logger.debug("crashStore %s closed", name)
+        self.logger.debug("crashStore for %s closed", name)
       except:
         sutil.reportExceptionAndContinue(self.logger)
 

@@ -409,12 +409,12 @@ class Processor(object):
       logger.debug('shutting down stackwalkers')
       self.orderlyShutdown()
       self.state = 'dead'
-      logger.debug("done with work")
+      #logger.debug("done with work")
 
   #-----------------------------------------------------------------------------------------------------------------
   def orderlyShutdown(self):
     """this must be a cooperative function with all derived classes."""
-    pass
+    self.crashStorePool.cleanup()
 
   #-----------------------------------------------------------------------------------------------------------------
   def mainProcessorLoop(self):
@@ -423,7 +423,7 @@ class Processor(object):
         #get a job
         for aJobTuple in self.incomingJobStream(): # infinite iterator - never StopIteration
           self.quitCheck()
-          logger.info("queuing job %s", str(aJobTuple))
+          #logger.info("queuing job %s", str(aJobTuple))
           #deadWorkers = self.threadManager.deadWorkers()
           #if deadWorkers:
             #for thread_name in deadWorkers:
@@ -434,18 +434,23 @@ class Processor(object):
           while True:
             try:
               self.threadManager.newTask(self.processJobWithRetry, aJobTuple)
+              #logger.debug('done queing %s', str(aJobTuple))
               break
             except queue.Full:
+              #logger.debug('queue full - waiting')
               self.responsiveSleep(1)
       except KeyboardInterrupt:
-        logger.info("mainProcessorLoop gets quit request")
+        logger.debug("mainProcessorLoop gets quit request")
         self.quit = True
       logger.debug("waiting for worker threads to stop")
       self.threadManager.waitForCompletion()
       logger.debug("all worker threads stopped")
-      # TODO - unregister because we're going away
-      self.crashStorePool.cleanup()
       if not self.webAppThreadHasQuit:
+        # this means the order to quit came from somewhere other than
+        # a SIGTERM caught by the main thread.  This can happen if the
+        # worker threads are programmed to suicide if their storage system
+        # dies.  If they were to do so, they would set quit to True somewhere
+        # within their code.
         thread.interrupt_main()
         #os.kill(os.getpid(), signal.SIGTERM)
     except Exception:
@@ -608,12 +613,12 @@ class Processor(object):
         # mark as priority
         threadLocalCrashStorage = self.crashStorePool.crashStorage()
         threadLocalCrashStorage.tagAsPriority(aJobTuple[0])
-        self.logger.debug('yielding  priority job: %s', aJobTuple[0])
+        self.logger.debug('priority job: %s', aJobTuple[0])
         yield aJobTuple
         continue
       aJobTuple = normalJobIter.next()
       if aJobTuple:
-        self.logger.debug('yielding  normal job: %s', aJobTuple[0])
+        self.logger.debug('standard job: %s', aJobTuple[0])
         yield aJobTuple
       else:
         logger.info("no jobs to do - sleeping %d seconds", self.processorLoopTime)
@@ -660,6 +665,7 @@ class Processor(object):
     try:
       while True:
         result = self.processJob(jobTuple)
+        #self.logger.debug('task complete: %d', result)
         if result in (Processor.ok, Processor.quit):
           return
         waitInSeconds = backoffGenerator.next()
@@ -707,11 +713,14 @@ class Processor(object):
       new_jdoc.dump = ''
 
       try:
+        #logger.debug('submitting to stackwalker') #TODO remove
         self.doBreakpadStackDumpAnalysis(j_doc, new_jdoc, threadLocalCrashStorage)
+        #logger.debug('completed stackwalker') #TODO remove
       finally:
         new_jdoc.completed_datetime = c = datetime.datetime.now()
         mostRecentStatistic = self.statsPools.mostRecent.getStat().put(c)
 
+      #logger.debug('saving to HBase') #TODO remove
       self.saveProcessedDumpJson(new_jdoc, threadLocalCrashStorage)
       if new_jdoc.success:
         logger.info("succeeded and committed: %s", jobOoid)
