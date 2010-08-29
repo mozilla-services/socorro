@@ -154,6 +154,28 @@ class ProcessorStats(ProcessorBaseService):
     return webapi.sanitizeForJson(returnValue)
 
 #=================================================================================================================
+class ProcessorStatsByThread(ProcessorBaseService):
+  #-----------------------------------------------------------------------------------------------------------------
+  def __init__(self, context, aProcessor):
+    super(ProcessorStatsByThread, self).__init__(context, aProcessor)
+  #-----------------------------------------------------------------------------------------------------------------
+  uri = '/201008/stats/by/thread'
+  #uriArgNames = ['statName']
+  #uriArgTypes = [str]
+  #uriDoc = "provides data for the given stat name or all if argument is 'all'"
+  #-----------------------------------------------------------------------------------------------------------------
+  def get(self, *args):
+    returnValue = {}
+    returnValue['threadIsAlive'] = d = {}
+    for aThread in self.processor.threadManager.threadList:
+      d[aThread.name] = aThread.is_alive()
+    for aStatName, aStatPool in self.processor.statsPools.iteritems():
+      returnValue[aStatName] = d = {}
+      for aThreadName, aStatistic in aStatPool.iteritems():
+        d[aThreadName] = aStatistic.read()
+    return webapi.sanitizeForJson(returnValue)
+
+#=================================================================================================================
 class ProcessorTimeAccumulation(ProcessorBaseService):
   #-----------------------------------------------------------------------------------------------------------------
   def __init__(self, context, aProcessor):
@@ -340,6 +362,7 @@ class Processor(object):
                                   ProcessorStats,
                                   ProcessorTimeAccumulation,
                                   ProcessorQueueSizes,
+                                  ProcessorStatsByThread,
                                 ]
 
     self.standardQueue = queue.Queue()
@@ -356,6 +379,7 @@ class Processor(object):
                                       'breakpadErrors': stats.CounterPool(config),
                                       'processTime': stats.DurationAccumulatorPool(config),
                                       'mostRecent': stats.MostRecentPool(config),
+                                      'mostRecentAct': stats.MostRecentPool(config),
                                     })
     self.name = '%s:%s' % (config.serverIPAddress, config.serverPort)
     # an instance of this class can only go through one instantiation/shutdown
@@ -698,8 +722,10 @@ class Processor(object):
       self.quitCheck()
       processTimeStatistic = self.statsPools.processTime.getStat()
       processTimeStatistic.start()
+      mostRecentAct = self.statsPools.mostRecentAct.getStat()
       new_jdoc = sutil.DotDict()
       new_jdoc.uuid = jobOoid = jobTuple[0]
+      mostRecentAct.put('started processing %s' % jobOoid)
       logger.info("starting job: %s", jobOoid)
       j_doc = threadLocalCrashStorage.get_meta(jobOoid) # raises OoidNotFoundException
       new_jdoc.processor_notes = err_list = []
@@ -716,6 +742,7 @@ class Processor(object):
 
       try:
         #logger.debug('submitting to stackwalker') #TODO remove
+        mostRecentAct.put("started stackdump processing: %s" % jobOoid)
         self.doBreakpadStackDumpAnalysis(j_doc, new_jdoc, threadLocalCrashStorage)
         #logger.debug('completed stackwalker') #TODO remove
       finally:
@@ -725,28 +752,34 @@ class Processor(object):
       #logger.debug('saving to HBase') #TODO remove
       self.saveProcessedDumpJson(new_jdoc, threadLocalCrashStorage)
       if new_jdoc.success:
+        mostRecentAct.put("succeeded and committed: %s" % jobOoid)
         logger.info("succeeded and committed: %s", jobOoid)
         self.statsPools.processed.getStat().increment()
       else:
+        mostRecentAct.put("failed but committed: %s" % jobOoid)
         logger.info("failed but committed: %s", jobOoid)
         self.statsPools.failures.getStat().increment()
       self.quitCheck()
       return Processor.ok
     except (KeyboardInterrupt, SystemExit):
+      mostRecentAct.put("quit request detected while processing: %s" % jobOoid)
       logger.info("quit request detected")
       self.quit = True
       return Processor.quit
     except hbc.FatalException:
+      mostRecentAct.put("HBase problem detected while processing: %s" % jobOoid)
       logger.critical("something's gone horribly wrong with the HBase connection")
       #self.quit = True
       sutil.reportExceptionAndContinue(logger, loggingLevel=logging.CRITICAL)
       return Processor.criticalError
     except cstore.OoidNotFoundException, x:
+      mostRecentAct.put("couldn't find: %s" % jobOoid)
       logger.warning("the ooid %s, was not found", jobOoid)
       self.statsPools.missing.getStat().increment()
       sutil.reportExceptionAndContinue(logger, logging.DEBUG, showTraceback=False)
       return Processor.ok
     except Exception, x:
+      mostRecentAct.put("got an Exception while processing: %s" % jobOoid)
       self.statsPools.failures.getStat().increment()
       if x.__class__ != ErrorInBreakpadStackwalkException:
         sutil.reportExceptionAndContinue(logger)
