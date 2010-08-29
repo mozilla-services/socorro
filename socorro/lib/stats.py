@@ -155,6 +155,7 @@ class DurationAccumulatorOverTime(CounterOverTime):
                              self.currentCounter,
                              self.timeDeltaAccumulator))
         self.currentMinute = minute
+        self.timeDeltaAccumulator = dt.timedelta(0)
         self.currentCounter = 0
     #---------------------------------------------------------------------------
     def start(self):
