@@ -33,7 +33,8 @@ class Collector(object):
     theform = web.input()
 
     dump = theform[self.context.dumpField]
-    currentTimestamp = dt.datetime.now(utctz)
+    #currentTimestamp = dt.datetime.now(utctz)
+    currentTimestamp = dt.datetime.now()
     jsonDataDictionary = crashStorage.makeJsonDictFromForm(theform)
     jsonDataDictionary.submitted_timestamp = currentTimestamp.isoformat()
     #for future use when we start sunsetting products

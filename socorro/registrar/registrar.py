@@ -161,6 +161,7 @@ class ProcessorStatsService(RegistrarBaseService):
                           'failures': 'singleValueForSummation',
                           'breakpadErrors': 'singleValueForSummation',
                           'processTime': 'processTimeAverage',
+                          'totalTimeForProcessing': 'totalProcessTimeAverage',
                           'mostRecent': 'singleValueForMax',
                           'all': 'all',
                         }
@@ -195,6 +196,22 @@ class ProcessorStatsService(RegistrarBaseService):
     listOfStats = []
     for aProcessor in self.registrar.processors.keys():
       f = urllib2.urlopen('http://%s/201008/process/time/accumulation' %
+                              (aProcessor,))
+      count, timeDeltaAsString = json.loads(f.readline())
+      newTuple = (count, dtutil.stringToTimeDelta(timeDeltaAsString))
+      listOfStats.append(newTuple)
+    count, durationSum = functools.reduce(lambda x,y: self.addTuples(x, y),
+                                          listOfStats,
+                                          (0, dt.timedelta(0)))
+    try:
+      return durationSum / count
+    except ZeroDivisionError:
+      return 0.0
+  #-----------------------------------------------------------------------------
+  def totalProcessTimeAverage(self, statName):
+    listOfStats = []
+    for aProcessor in self.registrar.processors.keys():
+      f = urllib2.urlopen('http://%s/201008/total/process/time' %
                               (aProcessor,))
       count, timeDeltaAsString = json.loads(f.readline())
       newTuple = (count, dtutil.stringToTimeDelta(timeDeltaAsString))

@@ -147,7 +147,7 @@ class DurationAccumulatorOverTime(CounterOverTime):
               self).__init__(historyLengthInMinutes,
                              timeFunction)
         self.timeDeltaAccumulator = dt.timedelta(0)
-        self.started = dt.timedelta(0)
+        self.started = None
         self.datetimeNowFunction = datetimeNowFunction
     #---------------------------------------------------------------------------
     def pushOldCounter(self, minute):
@@ -158,17 +158,26 @@ class DurationAccumulatorOverTime(CounterOverTime):
         self.timeDeltaAccumulator = dt.timedelta(0)
         self.currentCounter = 0
     #---------------------------------------------------------------------------
-    def start(self):
-        self.started = self.datetimeNowFunction()
+    def start(self, starttime=None):
+        if starttime:
+            self.started = starttime
+        else:
+            self.started = self.datetimeNowFunction()
     #---------------------------------------------------------------------------
-    def end(self,now=None):
-        if now is None:
-            now = self.nowMinute()
-        duration = self.datetimeNowFunction() - self.started
-        if self.currentMinute != now:
-            self.pushOldCounter(now)
-        self.timeDeltaAccumulator += duration
-        self.currentCounter += 1
+    def end(self, endtime=None, now=None):
+        if not endtime:
+            endtime = self.datetimeNowFunction()
+        try:
+            duration = endtime - self.started
+            if now is None:
+                now = self.nowMinute()
+            if self.currentMinute != now:
+                self.pushOldCounter(now)
+            self.timeDeltaAccumulator += duration
+            self.currentCounter += 1
+            self.started = None
+        except TypeError:
+            pass
     #---------------------------------------------------------------------------
     def increment(self,now=None):
         raise UndefinedCounterActionException()

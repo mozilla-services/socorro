@@ -194,6 +194,24 @@ class ProcessorTimeAccumulation(ProcessorBaseService):
     return webapi.sanitizeForJson(returnValue)
 
 #=================================================================================================================
+class TotalProcessTimeAccumulation(ProcessorBaseService):
+  #-----------------------------------------------------------------------------------------------------------------
+  def __init__(self, context, aProcessor):
+    super(TotalProcessTimeAccumulation, self).__init__(context, aProcessor)
+  #-----------------------------------------------------------------------------------------------------------------
+  uri = '/201008/total/process/time'
+  #uriArgNames = []
+  #uriArgTypes = []
+  #uriDoc = "a tuple of (count, durationsum) for jobs"
+  #-----------------------------------------------------------------------------------------------------------------
+  def get(self, *args):
+    try:
+      returnValue = self.processor.statsPools['totalTimeForProcessing'].sumDurations()
+    except KeyError:
+      raise web.notfound()
+    return webapi.sanitizeForJson(returnValue)
+
+#=================================================================================================================
 class ProcessorQueueSizes(ProcessorBaseService):
   #-----------------------------------------------------------------------------------------------------------------
   def __init__(self, context, aProcessor):
@@ -361,6 +379,7 @@ class Processor(object):
                                   ProcessorPriorityOoidService,
                                   ProcessorStats,
                                   ProcessorTimeAccumulation,
+                                  TotalProcessTimeAccumulation,
                                   ProcessorQueueSizes,
                                   ProcessorStatsByThread,
                                 ]
@@ -378,6 +397,7 @@ class Processor(object):
                                       'failures': stats.CounterPool(config),
                                       'breakpadErrors': stats.CounterPool(config),
                                       'processTime': stats.DurationAccumulatorPool(config),
+                                      'totalTimeForProcessing': stats.DurationAccumulatorPool(config),
                                       'mostRecent': stats.MostRecentPool(config),
                                       'mostRecentAct': stats.MostRecentPool(config),
                                     })
@@ -723,6 +743,8 @@ class Processor(object):
       processTimeStatistic = self.statsPools.processTime.getStat()
       processTimeStatistic.start()
       mostRecentAct = self.statsPools.mostRecentAct.getStat()
+      totalTimeForProcessingStatistic = self.statsPools.totalTimeForProcessing.getStat()
+
       new_jdoc = sutil.DotDict()
       new_jdoc.uuid = jobOoid = jobTuple[0]
       mostRecentAct.put('started processing %s' % jobOoid)
@@ -732,7 +754,8 @@ class Processor(object):
       new_jdoc.started_datetime = datetime.datetime.now()
 
       try:
-        new_jdoc.date_processed = sdt.datetimeFromISOdateString(j_doc["submitted_timestamp"])
+        new_jdoc.date_processed = d = sdt.datetimeFromISOdateString(j_doc["submitted_timestamp"])
+        totalTimeForProcessingStatistic.start(d)
       except KeyError:
         err_list.append("field 'submitted_timestamp' is missing, estimating submission time from last 6 digits of OOID")
         new_jdoc.date_processed = ooidm.dateFromOoid(jobOoid)
@@ -789,6 +812,7 @@ class Processor(object):
       return Processor.ok
     finally:
       processTimeStatistic.end()
+      totalTimeForProcessingStatistic.end()
 
   #-----------------------------------------------------------------------------------------------------------------
   def preprocessCrashMetadata(self, j_doc, new_jdoc):
