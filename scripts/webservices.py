@@ -20,6 +20,7 @@ import socorro.services.aduByDay as adubd
 import socorro.services.aduByDayDetails as adudetails
 import socorro.services.getCrash as getcr
 import socorro.services.hello as hello
+import socorro.services.status as status 
 
 #-------------------------------------------------------------------------------
 configurationContext = \
@@ -62,6 +63,7 @@ servicesList = (tcbst.TopCrashBySignatureTrends,
                 getcr.GetCrash,
                 getcr.GetCrash201005,
                 hello.Hello,
+                status.Status,
                )
 configurationContext.servicesList = servicesList
 servicesUriTuples = ((x.uri,
