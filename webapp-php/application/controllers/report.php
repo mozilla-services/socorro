@@ -280,7 +280,7 @@ class Report_Controller extends Controller {
 		$report_bug_url = Kohana::config('application.report_bug_url');		
 		if (empty($report_bug_url)) $report_bug_url = $this->report_bug_url_default;
 
-		$report_bug_url .= 'advanced=1&';
+		$report_bug_url .= 'advanced=1&bug_severity=critical&keywords=crash&';
 
 		if (isset($report->product) && !empty($report->product)) {
 			$report_bug_url .= 'product='.rawurlencode($report->product) . '&';
