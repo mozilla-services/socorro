@@ -105,6 +105,10 @@ processorCheckInTime.doc = 'the time after which a processor is considered dead 
 processorCheckInTime.default = "00:05:00"
 processorCheckInTime.fromStringConverter = lambda x: str(cm.timeDeltaConverter(x))
 
+registrationHostPort = cm.Option()
+registrationHostPort.doc = 'a host:port for a processor registrar'
+registrationHostPort.default = ''
+
 #---------------------------------------------------------------------------
 # common cron things
 #

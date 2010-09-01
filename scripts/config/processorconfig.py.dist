@@ -31,10 +31,6 @@ numberOfThreads = cm.Option()
 numberOfThreads.doc = 'the number of threads to use'
 numberOfThreads.default = 4
 
-registrationHostPort = cm.Option()
-registrationHostPort.doc = 'a host:port for a processor registrar'
-registrationHostPort.default = ''
-
 registrationTimeout = cm.Option()
 registrationTimeout.doc = 'how long to wait for registration'
 registrationTimeout.default = '0:01:00'

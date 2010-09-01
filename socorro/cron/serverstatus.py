@@ -19,50 +19,39 @@ The following fields are updated in server_status table:
 """
 import time
 import datetime
+import json
+import urllib2
 
 import psycopg2
 import psycopg2.extras
 
 import socorro.lib.util
+import socorro.webapi.webapiService as webapi
 
 
 def update(configContext, logger):
-  serverStatsSql = """INSERT INTO server_status 
-  (date_recently_completed, date_oldest_job_queued, avg_process_sec, 
-   avg_wait_sec, waiting_job_count, processors_count, date_created) 
- SELECT 
-
-  (SELECT MAX(jobs.completeddatetime) 
-   FROM jobs WHERE jobs.completeddatetime IS NOT NULL) AS date_recently_completed, 
-
-  (SELECT jobs.queueddatetime 
-   FROM jobs WHERE jobs.completeddatetime IS NULL 
-   ORDER BY jobs.queueddatetime LIMIT 1) AS date_oldest_job_queued, 
-
-  (SELECT COALESCE ( 
-     EXTRACT (EPOCH FROM avg(jobs.completeddatetime - jobs.starteddatetime)), 
-     0) FROM jobs  
-   WHERE jobs.completeddatetime > %s) AS avg_process_sec , 
-
-  (SELECT COALESCE (  
-     EXTRACT (EPOCH FROM avg(jobs.completeddatetime - jobs.queueddatetime)), 
-     0) FROM jobs  
-   WHERE jobs.completeddatetime > %s) AS avg_wait_sec, 
-
-  (SELECT COUNT(jobs.id) 
-   FROM jobs WHERE jobs.completeddatetime IS NULL) AS waiting_job_count, 
-
-  (SELECT count(processors.id) 
-   FROM processors ) AS processors_count, 
-
-  CURRENT_TIMESTAMP AS date_created;"""
-
+  serverStatsSql = """
+    INSERT INTO server_status 
+    (date_recently_completed, date_oldest_job_queued, avg_process_sec,  
+     avg_wait_sec, waiting_job_count, processors_count, date_created) 
+     VALUES
+     (%s, %s, %s,
+     %s, %s, %s, CURRENT_TIMESTAMP);"""
 
   serverStatsLastUpdSql = """ /* serverstatus.lastUpd */
-SELECT id, date_recently_completed, date_oldest_job_queued, avg_process_sec, 
-        avg_wait_sec, waiting_job_count, processors_count, date_created 
-FROM server_status ORDER BY date_created DESC LIMIT 1;
-"""
+    SELECT id, date_recently_completed, date_oldest_job_queued, avg_process_sec, 
+            avg_wait_sec, waiting_job_count, processors_count, date_created 
+    FROM server_status ORDER BY date_created DESC LIMIT 1;
+    """
+
+  # get the data from the API status call
+  statusURL = "http://%s%s" %  (configContext.webservicesHostPort, '/status')
+
+  try:
+    statusResponse = urllib2.urlopen(statusURL)
+    status = json.loads(statusResponse.read())
+  except Exception, e:
+    socorro.lib.util.reportExceptionAndAbort(logger)
 
   try:
     databaseDSN = "host=%(databaseHost)s dbname=%(databaseName)s user=%(databaseUserName)s password=%(databasePassword)s" % configContext
@@ -78,7 +67,12 @@ FROM server_status ORDER BY date_created DESC LIMIT 1;
     logger.debug("Creating stats from now back until %s" % startTime)
   try:
     before = time.time()
-    cur.execute(serverStatsSql, (startTime, startTime))
+    cur.execute(serverStatsSql, (status['recently_completed'], 
+                                 status['oldest_active_report'], 
+                                 status['average_time_to_process'],
+                                 status['total_time_for_processing'], 
+                                 status['active_raw_reports_in_queue'], 
+                                 status['processors_running']))
     timeInserting = time.time() - before;
     cur.execute(serverStatsLastUpdSql)
     row = cur.fetchone()

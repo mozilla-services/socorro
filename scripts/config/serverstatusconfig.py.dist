@@ -51,4 +51,7 @@ stderrErrorLoggingLevel = cm.Option()
 stderrErrorLoggingLevel.doc = 'logging level for the logging to stderr (10 - DEBUG, 20 - INFO, 30 - WARNING, 40 - ERROR, 50 - CRITICAL)'
 stderrErrorLoggingLevel.default = 40
 
+webservicesHostPort = cm.Option()
+webservicesHostPort.doc = 'location of the webservices server'
+webservicesHostPort.default = 'khan.mozilla.org:8890'
 
