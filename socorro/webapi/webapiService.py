@@ -9,6 +9,8 @@ logger = logging.getLogger("webapi")
 
 #-----------------------------------------------------------------------------------------------------------------
 def sanitizeForJson(something):
+  if something is None:
+    return None
   if type(something) in [int, str, float, unicode]:
     return something
   if isinstance(something, collections.Mapping):
