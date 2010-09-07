@@ -31,6 +31,8 @@ numberOfThreads = cm.Option()
 numberOfThreads.doc = 'the number of threads to use'
 numberOfThreads.default = 4
 
+from config.commonconfig import registrationHostPort
+
 registrationTimeout = cm.Option()
 registrationTimeout.doc = 'how long to wait for registration'
 registrationTimeout.default = '0:01:00'
