@@ -86,6 +86,10 @@ processorHostname = cm.Option()
 processorHostname.doc = 'hostname and port for a processor to submit jobs to'
 processorHostname.default = 'localhost:8881'
 
+processorSubmissionTimeout = cm.Option()
+processorSubmissionTimeout.doc = 'timeout in seconds to wait for a processor to respond'
+processorSubmissionTimeout.default = 2
+
 # The form field the client sends the dump in
 dumpField = cm.Option()
 dumpField.default = "upload_file_minidump"

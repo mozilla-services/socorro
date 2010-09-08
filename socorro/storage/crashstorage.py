@@ -258,6 +258,7 @@ class CrashStorageSystemForHBase(CrashStorageSystem):
     self.hbaseRetryDelay = config.hbaseRetryDelay
     self.logger.debug('hbase conf: %s:%s', config.hbaseHost, config.hbasePort)
     self.hbaseConnection = hbaseClient.HBaseConnectionForCrashReports(config.hbaseHost, config.hbasePort, config.hbaseTimeout, logger=self.logger)
+    self.processorSubmissionTimeout = config.setdefault('processorSubmissionTimeout', 2)
 
   #-----------------------------------------------------------------------------------------------------------------
   def close (self):
@@ -274,7 +275,8 @@ class CrashStorageSystemForHBase(CrashStorageSystem):
       try:
         params = urllib.urlencode({'ooid':ooid})
         post_result = urllib2.urlopen(self.processRequestSubmissionUrl,
-                                      params)
+                                      params,
+                                      self.processorSubmissionTimeout)
         processor_name = post_result.read()
         self.hbaseConnection.update_unprocessed_queue_with_processor_state(
                 row_id,
