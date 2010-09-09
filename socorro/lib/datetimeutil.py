@@ -40,6 +40,9 @@ def stringToTimeDelta(inputString):
   if type(inputString) in (str, unicode):
     days,hours,minutes,seconds = 0,0,0,0.0
     details = inputString.split(':')
+    if "days" in inputString:
+      daysPhrase = details[0].split(' ')
+      details = [daysPhrase[0], daysPhrase[2]] + details[1:]
     if len(details) >= 4:
       days = int(details[-4])
     if len(details) >= 3:
