@@ -421,12 +421,14 @@ class HBaseConnectionForCrashReports(HBaseConnection):
     aggStats['priority_processed_reports_in_dbfeeder_queue'] = inserts_processed_priority - deletes_processed_priority
 
     for row in self.limited_iteration(self.merge_scan_with_prefix('crash_reports_index_legacy_unprocessed_flag',
-                                                                  '', ['ids:ooid']), 1):
+                                                                  '', ['ids:ooid', 'processor_state:name', 'processor_state:post_timestamp']), 1):
       aggStats['oldest_active_report'] = row['_rowkey'][1:20]
+      aggStats['oldest_active_report_details'] = "%s: processor_state: %s - %s" % (row['ids:ooid'], row.get('processor_state:name', ''), row.get('processor_state:post_timestamp', ''))
       break
     for row in self.limited_iteration(self.merge_scan_with_prefix('crash_reports_index_unprocessed_flag',
-                                                                  '', ['ids:ooid']), 1):
+                                                                  '', ['ids:ooid', 'processor_state:name', 'processor_state:post_timestamp']), 1):
       aggStats['oldest_throttled_report'] = row['_rowkey'][1:20]
+      aggStats['oldest_throttled_report_details'] = "%s: processor_state: %s - %s" % (row['ids:ooid'], row.get('processor_state:name', ''), row.get('processor_state:post_timestamp', ''))
       break
     for row in self.limited_iteration(self.merge_scan_with_prefix('crash_reports_index_legacy_processed',
                                                                   '', ['ids:ooid']), 1):
@@ -613,19 +615,80 @@ class HBaseConnectionForCrashReports(HBaseConnection):
     finally:
       tf.close()
 
-  def submit_to_processor(self,from_queue_table,limit):
-    import httplib
-    headers = {"Content-type": "application/x-www-form-urlencoded","Accept":"text/plain"}
-    conn = httplib.HTTPConnection("%s:8881" % self.host)
-    for row in self.limited_iteration(self.merge_scan_with_prefix(from_queue_table,
-                                                                  '',
-                                                                  ['ids:ooid']),limit):
-      ooid = row['ids:ooid']
-      conn.request("POST", "/201006/process/ooid", ("ooid=%s" % ooid), headers)
-      resp = conn.getresponse()
-      print ooid, resp.status, resp.reason, resp.read()
-    conn.close()
+  def submit_to_processor(self,
+                          processorHostNames,
+                          limit='1000',
+                          bad_queue_entry_handling='delete', # delete|skip|resubmit
+                          legacy_flag='0',
+                          from_queue_table='crash_reports_index_legacy_unprocessed_flag'):
+    legacy_flag = int(legacy_flag)
+    limit = int(limit)
 
+    import urllib
+    import urllib2
+    import datetime as dt
+    import socorro.lib.datetimeutil as sdt
+    utctz = sdt.UTC()
+    def circular_sequence(seq):
+      i = 0
+      while True:
+        yield seq[i]
+        i = (i + 1)%len(seq)
+    urls = circular_sequence(["http://%s:8881/201006/process/ooid"%processorHostName for processorHostName in processorHostNames.split(',')])
+
+    for row in self.limited_iteration(self.merge_scan_with_prefix(from_queue_table, '',
+                                                                  ['ids:ooid','processor_state:']),limit):
+      ooid = row['ids:ooid']
+      rowkey = row['_rowkey']
+
+      report_row_id = ooid_to_row_id(ooid)
+      listOfRawRows = self.client.getRowWithColumns('crash_reports',report_row_id,['meta_data:json', 'raw_data:dump', 'flags:processed'])
+      if listOfRawRows:
+        report = self._make_row_nice(listOfRawRows[0])
+      else:
+        if bad_queue_entry_handling == 'delete':
+          self.client.deleteAllRow(from_queue_table, rowkey)
+        self.logger.debug('OoidNotFound %s - %s', ooid, bad_queue_entry_handling)
+        continue
+
+      if report.get('flags:processed', 'N') == 'Y':
+        self.logger.debug('OoidPreviouslyProcessed %s - %s', ooid, bad_queue_entry_handling)
+        if bad_queue_entry_handling == 'delete':
+          self.client.deleteAllRow(from_queue_table, rowkey)
+          continue
+        elif bad_queue_entry_handling == 'skip':
+          continue
+
+      if report.get('meta_data:json', '') == '':
+        self.logger.debug('OoidMissingJSON %s - %s', ooid, bad_queue_entry_handling)
+        if bad_queue_entry_handling == 'delete':
+          self.client.deleteAllRow(from_queue_table, rowkey)
+          continue
+        elif bad_queue_entry_handling == 'skip':
+          continue
+
+      if report.get('raw_data:dump', '') == '':
+        self.logger.debug('OoidMissingDump %s - %s', ooid, bad_queue_entry_handling)
+        if bad_queue_entry_handling == 'delete':
+          self.client.deleteAllRow(from_queue_table, rowkey)
+          continue
+        elif bad_queue_entry_handling == 'skip':
+          continue
+      
+      try:
+        params = urllib.urlencode({'ooid':ooid})
+        post_result = urllib2.urlopen(urls.next(), params)
+        processor_name = post_result.read()
+        self.update_unprocessed_queue_with_processor_state(
+                rowkey,
+                dt.datetime.now(utctz).isoformat(),
+                processor_name,
+                legacy_flag)
+      except urllib2.URLError, e:
+        self.logger.warning('could not submit %s for processing - %s', ooid, e)
+      except Exception, e:
+        self.logger.warning('something has gone wrong in the submission for %s - %s', ooid, e)
+ 
   def union_scan_with_prefix(self,table,prefix,columns):
     #TODO: Need assertion for columns contains at least 1 element
     """
@@ -968,7 +1031,7 @@ if __name__=="__main__":
       export_jsonz_for_date YYMMDD export_path
       export_jsonz_tarball_for_date YYMMDD temp_path tarball_name
       export_jsonz_tarball_for_ooids temp_path tarball_name <stdin list of ooids>
-      submit_to_processor from_queue_table limit
+      submit_to_processor processor_host_name [limit=1000 [bad_queue_entry_handling=delete(delete|skip|resubmit) [legacy_flag=0(0|1) [from_queue_table=crash_reports_index_legacy_unprocessed_flag]]]]
     HBase generic:
       describe_table table_name
       get_full_row table_name row_id
@@ -1088,11 +1151,10 @@ if __name__=="__main__":
     connection.export_jsonz_tarball_for_ooids(*args)
 
   elif cmd == 'submit_to_processor':
-    if len(args) != 2:
+    if len(args) == 0 or len(args) > 5:
       usage()
       sys.exit(1)
-    limit = int(args[1])
-    connection.submit_to_processor(args[0],limit)
+    connection.submit_to_processor(*args)
 
   elif cmd == 'describe_table':
     if len(args) != 1:
