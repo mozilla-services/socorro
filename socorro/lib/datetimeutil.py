@@ -34,6 +34,10 @@ def timeDeltaToSeconds(td):
   return td.days * 24 * 60 * 60 + td.seconds
 
 #-------------------------------------------------------------------------------
+def timeDeltaToSecondsReal(td):
+  return td.days * 24 * 60 * 60 + td.seconds + td.microseconds
+
+#-------------------------------------------------------------------------------
 def stringToTimeDelta(inputString):
   """ a conversion function for time deltas
   """

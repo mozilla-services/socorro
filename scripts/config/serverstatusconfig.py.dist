@@ -51,6 +51,26 @@ stderrErrorLoggingLevel = cm.Option()
 stderrErrorLoggingLevel.doc = 'logging level for the logging to stderr (10 - DEBUG, 20 - INFO, 30 - WARNING, 40 - ERROR, 50 - CRITICAL)'
 stderrErrorLoggingLevel.default = 40
 
+webservicesProtocol = cm.Option()
+webservicesProtocol.doc = 'http or https'
+webservicesProtocol.default = 'https'
+
 webservicesHostPort = cm.Option()
 webservicesHostPort.doc = 'location of the webservices server'
-webservicesHostPort.default = 'khan.mozilla.org:8890'
+webservicesHostPort.default = 'dm-breakpad-stage01.mozilla.org:443'
+
+webservicesPrefix = cm.Option()
+webservicesPrefix.doc = 'URL prefix between the host/port and the actual call'
+webservicesPrefix.default = '/bpapi'
+
+webservicesRealm = cm.Option()
+webservicesRealm.doc = 'Realm for HTTP Basic Auth'
+webservicesRealm.default = ''
+
+webservicesBasicAuthUsername = cm.Option()
+webservicesBasicAuthUsername.doc = 'Username for HTTP Basic Auth'
+webservicesBasicAuthUsername.default = ''
+
+webservicesBasicAuthPassword = cm.Option()
+webservicesBasicAuthPassword.doc = 'Password for HTTP Basic Auth'
+webservicesBasicAuthPassword.default = ''
