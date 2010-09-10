@@ -35,7 +35,8 @@ def timeDeltaToSeconds(td):
 
 #-------------------------------------------------------------------------------
 def timeDeltaToSecondsReal(td):
-  return td.days * 24 * 60 * 60 + td.seconds + td.microseconds
+  return td.days * 24 * 60 * 60 + td.seconds \
+                                + (float(td.microseconds) / 1000000.0)
 
 #-------------------------------------------------------------------------------
 def stringToTimeDelta(inputString):
