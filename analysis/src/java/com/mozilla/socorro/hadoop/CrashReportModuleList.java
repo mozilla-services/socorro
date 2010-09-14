@@ -100,7 +100,7 @@ public class CrashReportModuleList implements Tool {
 	
 	public static class CrashReportModuleListMapper extends TableMapper<Text, NullWritable> {
 
-		public enum ReportStats { JSON_PARSE_EXCEPTION, JSON_MAPPING_EXCEPTION, JSON_BYTES_NULL, DATE_PARSE_EXCEPTION }
+		public enum ReportStats { JSON_PARSE_EXCEPTION, JSON_MAPPING_EXCEPTION, JSON_BYTES_NULL, DATE_PARSE_EXCEPTION, BLANK_REQUIRED_FIELD }
 		
 		private Text outputKey;
 		
@@ -185,8 +185,12 @@ public class CrashReportModuleList implements Tool {
 					if (dumpline.startsWith(MODULE_PATTERN)) {
 						// module_str, libname, version, pdb, checksum, addrstart, addrend, unknown
 						String[] dumplineSplits = pipePattern.split(dumpline);
-						outputKey.set(String.format("%s\t%s\t%s", dumplineSplits[1], dumplineSplits[3], dumplineSplits[4]));
-						context.write(outputKey, NullWritable.get());
+						if (!StringUtils.isBlank(dumplineSplits[3]) && !StringUtils.isBlank(dumplineSplits[4])) {
+							outputKey.set(String.format("%s,%s,%s", dumplineSplits[1], dumplineSplits[3], dumplineSplits[4]));
+							context.write(outputKey, NullWritable.get());
+						} else {
+							context.getCounter(ReportStats.BLANK_REQUIRED_FIELD).increment(1L);
+						}
 					}
 				}
 			} catch (JsonParseException e) {
