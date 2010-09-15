@@ -273,10 +273,11 @@ class CrashStorageSystemForHBase(CrashStorageSystem):
                                     number_of_retries=self.hbaseRetry,
                                     wait_between_retries=self.hbaseRetryDelay)
       try:
-        params = urllib.urlencode({'ooid':ooid})
-        post_result = urllib2.urlopen(self.processRequestSubmissionUrl,
-                                      params,
-                                      self.processorSubmissionTimeout)
+        if legacy_flag == LegacyThrottler.ACCEPT:
+          params = urllib.urlencode({'ooid':ooid})
+          post_result = urllib2.urlopen(self.processRequestSubmissionUrl,
+                                        params,
+                                        self.processorSubmissionTimeout)
         processor_name = post_result.read()
         self.hbaseConnection.update_unprocessed_queue_with_processor_state(
                 row_id,
