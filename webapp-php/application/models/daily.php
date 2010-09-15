@@ -717,7 +717,8 @@ class Daily_Model extends Model {
         if (is_null($statistics)) {
 	    return $keys;
 	}
-	foreach ($dates as $date) {            
+	foreach ($dates as $date) {           
+        if (isset($statistics['versions'])) { 
 	    foreach ($statistics['versions'] as $version) {
 		if (isset($version[$date]) &&
 		    ( isset($version[$date]['crash_ratio']) || 
@@ -741,6 +742,7 @@ class Daily_Model extends Model {
 		    return $keys;
 		} 
 	    }
+        }
 	}
 	return $keys;
     }
