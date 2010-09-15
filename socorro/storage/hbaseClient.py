@@ -617,6 +617,37 @@ class HBaseConnectionForCrashReports(HBaseConnection):
     finally:
       tf.close()
 
+  def resubmit_to_processor(self,
+                          processorHostNames,
+                          limit='1000',
+                          from_queue_table='crash_reports_index_legacy_submitted_time',
+			                    timestamp_prefix=''):
+    limit = int(limit)
+
+    import urllib
+    import urllib2
+    #TODO move this up to not be a nested method
+    def circular_sequence(seq):
+      i = 0
+      while True:
+        yield seq[i]
+        i = (i + 1)%len(seq)
+    urls = circular_sequence(["http://%s:8881/201006/priority/process/ooid"%processorHostName for processorHostName in processorHostNames.split(',')])
+
+    for row in self.limited_iteration(self.merge_scan_with_prefix(from_queue_table, timestamp_prefix,
+                                                                  ['ids:ooid']),limit):
+      ooid = row['ids:ooid']
+
+      try:
+        params = urllib.urlencode({'ooid':ooid})
+        post_result = urllib2.urlopen(urls.next(), params)
+        processor_name = post_result.read()
+        self.logger.debug('Submitted %s for reprocessing to %s', ooid, processor_name)
+      except urllib2.URLError, e:
+        self.logger.warning('could not submit %s for processing - %s', ooid, str(e))
+      except Exception, e:
+        self.logger.warning('something has gone wrong in the submission for %s - %s', ooid, str(e))
+ 
   def submit_to_processor(self,
                           processorHostNames,
                           limit='1000',
@@ -629,9 +660,8 @@ class HBaseConnectionForCrashReports(HBaseConnection):
 
     import urllib
     import urllib2
-    import datetime as dt
-    import socorro.lib.datetimeutil as sdt
     utctz = sdt.UTC()
+    #TODO move this up to not be a nested method
     def circular_sequence(seq):
       i = 0
       while True:
@@ -697,9 +727,9 @@ class HBaseConnectionForCrashReports(HBaseConnection):
                 processor_name,
                 legacy_flag)
       except urllib2.URLError, e:
-        self.logger.warning('could not submit %s for processing - %s', ooid, e)
+        self.logger.warning('could not submit %s for processing - %s', ooid, str(e))
       except Exception, e:
-        self.logger.warning('something has gone wrong in the submission for %s - %s', ooid, e)
+        self.logger.warning('something has gone wrong in the submission for %s - %s', ooid, str(e))
 
   def union_scan_with_prefix(self,table,prefix,columns):
     #TODO: Need assertion for columns contains at least 1 element
@@ -1045,6 +1075,7 @@ if __name__=="__main__":
       export_jsonz_tarball_for_date YYMMDD temp_path tarball_name
       export_jsonz_tarball_for_ooids temp_path tarball_name <stdin list of ooids>
       submit_to_processor processor_host_name [limit=1000 [bad_queue_entry_handling=delete(delete|skip|resubmit) [legacy_flag=0(0|1) [from_queue_table=crash_reports_index_legacy_unprocessed_flag]]]]
+      resubmit_to_processor processor_host_name [limit=1000 [from_queue_table=crash_reports_index_legacy_unprocessed_flag]]
     HBase generic:
       describe_table table_name
       get_full_row table_name row_id
@@ -1162,6 +1193,12 @@ if __name__=="__main__":
       usage()
       sys.exit(1)
     connection.export_jsonz_tarball_for_ooids(*args)
+
+  elif cmd == 'resubmit_to_processor':
+    if len(args) == 0 or len(args) > 4:
+      usage()
+      sys.exit(1)
+    connection.resubmit_to_processor(*args)
 
   elif cmd == 'submit_to_processor':
     if len(args) == 0 or len(args) > 5:
