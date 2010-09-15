@@ -272,24 +272,24 @@ class CrashStorageSystemForHBase(CrashStorageSystem):
                                     dump,
                                     number_of_retries=self.hbaseRetry,
                                     wait_between_retries=self.hbaseRetryDelay)
-      try:
-        if legacy_flag == LegacyThrottler.ACCEPT:
-          params = urllib.urlencode({'ooid':ooid})
-          post_result = urllib2.urlopen(self.processRequestSubmissionUrl,
-                                        params,
-                                        self.processorSubmissionTimeout)
-          processor_name = post_result.read()
-          self.hbaseConnection.update_unprocessed_queue_with_processor_state(
-                  row_id,
-                  currentTimestamp.isoformat(),
-                  processor_name,
-                  legacy_flag)
-      except urllib2.URLError:
-        self.logger.warning('could not submit %s for processing ', ooid)
-        sutil.reportExceptionAndContinue(logger=self.logger)
-      except Exception:
-        self.logger.warning('something has gone wrong in the second half of submission for %s', ooid)
-        sutil.reportExceptionAndContinue(logger=self.logger)
+      #try:
+        #if legacy_flag == LegacyThrottler.ACCEPT:
+          #params = urllib.urlencode({'ooid':ooid})
+          #post_result = urllib2.urlopen(self.processRequestSubmissionUrl,
+                                        #params,
+                                        #self.processorSubmissionTimeout)
+          #processor_name = post_result.read()
+          #self.hbaseConnection.update_unprocessed_queue_with_processor_state(
+                  #row_id,
+                  #currentTimestamp.isoformat(),
+                  #processor_name,
+                  #legacy_flag)
+      #except urllib2.URLError:
+        #self.logger.warning('could not submit %s for processing ', ooid)
+        #sutil.reportExceptionAndContinue(logger=self.logger)
+      #except Exception:
+        #self.logger.warning('something has gone wrong in the second half of submission for %s', ooid)
+        #sutil.reportExceptionAndContinue(logger=self.logger)
       return CrashStorageSystem.OK
     except Exception, x:
       sutil.reportExceptionAndContinue(self.logger)

@@ -12,6 +12,8 @@ import threading
 import time
 import tarfile
 import struct
+import datetime as dt
+import socorro.lib.datetimeutil as sdt
 
 import socket
 
@@ -620,7 +622,8 @@ class HBaseConnectionForCrashReports(HBaseConnection):
                           limit='1000',
                           bad_queue_entry_handling='delete', # delete|skip|resubmit
                           legacy_flag='0',
-                          from_queue_table='crash_reports_index_legacy_unprocessed_flag'):
+                          from_queue_table='crash_reports_index_legacy_unprocessed_flag',
+                          resubmitTimeDeltaThreshold=dt.timedelta(seconds=300)):
     legacy_flag = int(legacy_flag)
     limit = int(limit)
 
@@ -639,6 +642,15 @@ class HBaseConnectionForCrashReports(HBaseConnection):
     for row in self.limited_iteration(self.merge_scan_with_prefix(from_queue_table, '',
                                                                   ['ids:ooid','processor_state:']),limit):
       ooid = row['ids:ooid']
+      try:
+        post_timestamp = sdt.datetimeFromISOdateString(row['processor_state:post_timestamp'])
+        dontSubmit = post_timestamp < dt.datetime.now() - resubmitTimeDeltaThreshold
+      except (KeyError, ValueError):
+        dontSubmit = False
+      if dontSubmit:
+        self.logger.debug('avoiding potential resubmit on %s', ooid)
+        continue
+
       rowkey = row['_rowkey']
 
       report_row_id = ooid_to_row_id(ooid)
