@@ -674,7 +674,7 @@ class HBaseConnectionForCrashReports(HBaseConnection):
           continue
         elif bad_queue_entry_handling == 'skip':
           continue
-      
+
       try:
         params = urllib.urlencode({'ooid':ooid})
         post_result = urllib2.urlopen(urls.next(), params)
@@ -688,7 +688,7 @@ class HBaseConnectionForCrashReports(HBaseConnection):
         self.logger.warning('could not submit %s for processing - %s', ooid, e)
       except Exception, e:
         self.logger.warning('something has gone wrong in the submission for %s - %s', ooid, e)
- 
+
   def union_scan_with_prefix(self,table,prefix,columns):
     #TODO: Need assertion for columns contains at least 1 element
     """
@@ -703,7 +703,7 @@ class HBaseConnectionForCrashReports(HBaseConnection):
       for rowkey,row in salted_scanner_iterable(self.logger,self.client,self._make_row_nice,salted_prefix,scanner):
         yield row
 
-  def merge_scan_with_prefix(self,table,prefix,columns):
+  def merge_scan_with_prefix(self,table,prefix,columns,salts='0123456789abcdef'):
     #TODO: Need assertion that columns is array containing at least one string
     """
     A generator based iterator that yields totally ordered rows starting with a given prefix.
@@ -713,7 +713,7 @@ class HBaseConnectionForCrashReports(HBaseConnection):
 
     iterators = []
     next_items_queue = []
-    for salt in '0123456789abcdef':
+    for salt in salts:
       salted_prefix = "%s%s" % (salt,prefix)
       scanner = self.client.scannerOpenWithPrefix(table, salted_prefix, columns)
       iterators.append(salted_scanner_iterable(self.logger,self.client,self._make_row_nice,salted_prefix,scanner))
@@ -744,24 +744,25 @@ class HBaseConnectionForCrashReports(HBaseConnection):
     return itertools.islice(iterable,limit)
 
   @retry_wrapper_for_generators
-  def deleting_iterator_for_table(self, table_name, queue_type, limit=10**6):
+  def deleting_iterator_for_table(self, table_name, queue_type, limit=10**6, salts='0123456789abcdef'):
     #self.logger.debug('deleting_iterator_for_table %s' % table_name)
     for row in self.limited_iteration(self.merge_scan_with_prefix(table_name,
                                                                   '',
-                                                                  ['ids:ooid']), limit):
+                                                                  ['ids:ooid'],
+                                                                  salts), limit):
       yield row['ids:ooid']
       # Delete the row after the feeder has returned from processing it.
       self.client.deleteAllRow(table_name, row['_rowkey'])
       self.update_metrics_counters_current_queue_size([queue_type])
 
-  def iterator_for_legacy_db_feeder_queue(self,limit=10**6):
-    return self.deleting_iterator_for_table('crash_reports_index_legacy_processed', 'deletes_processed_legacy', limit)
+  def iterator_for_legacy_db_feeder_queue(self,limit=10**6, salts='0123456789abcdef'):
+    return self.deleting_iterator_for_table('crash_reports_index_legacy_processed', 'deletes_processed_legacy', limit, salts)
 
   def insert_to_legacy_db_feeder_queue(self,ooid,timestamp):
     self.put_crash_report_indices(ooid,timestamp,['crash_reports_index_legacy_processed'])
 
-  def iterator_for_priority_db_feeder_queue(self,limit=10**6):
-    return self.deleting_iterator_for_table('crash_reports_index_priority_processed', 'deletes_processed_priority', limit)
+  def iterator_for_priority_db_feeder_queue(self,limit=10**6, salts='0123456789abcdef'):
+    return self.deleting_iterator_for_table('crash_reports_index_priority_processed', 'deletes_processed_priority', limit, salts)
 
   def insert_to_priority_db_feeder_queue(self,ooid,timestamp):
     self.put_crash_report_indices(ooid,timestamp,['crash_reports_index_priority_processed'])

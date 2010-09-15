@@ -106,7 +106,8 @@ class DbFeeder(object):
     threadLocalCrashStorage = self.crashStoragePool.crashStorage()
     try:
       #logger.debug('start - about to threadLocalCrashStorage.dbFeederStandardJobIter()')
-      for ooid in threadLocalCrashStorage.dbFeederStandardJobIter(self.responsiveSleep): # infinite iterator - never StopIteration
+      for ooid in threadLocalCrashStorage.dbFeederStandardJobIter(self.responsiveSleep,
+                                                                  self.config.ooidSalts): # infinite iterator - never StopIteration
         self.quitCheck()
         try:
           crash_json = threadLocalCrashStorage.get_processed(ooid)
@@ -131,7 +132,8 @@ class DbFeeder(object):
     threadLocalCrashStorage = self.crashStoragePool.crashStorage()
     try:
       #logger.debug('start - about to threadLocalCrashStorage.dbFeederPriorityJobIter()')
-      for ooid in threadLocalCrashStorage.dbFeederPriorityJobIter(self.responsiveSleep): # infinite iterator - never StopIteration
+      for ooid in threadLocalCrashStorage.dbFeederPriorityJobIter(self.responsiveSleep,
+                                                                  self.config.ooidSalts): # infinite iterator - never StopIteration
         self.quitCheck()
         crash_json = threadLocalCrashStorage.get_processed(ooid)
         logger.info("queuing priority job %s", ooid)

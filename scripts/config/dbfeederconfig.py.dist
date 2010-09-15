@@ -56,6 +56,10 @@ numberOfThreads = cm.Option()
 numberOfThreads.doc = 'the number of threads to use'
 numberOfThreads.default = 4
 
+ooidSalts = cm.Option()
+ooidSalts.doc = 'a list of prefixes for ooids that should be processed by this instance'
+ooidSalts.default = '0123456789abcdef'
+
 #---------------------------------------------------------------------------
 # Logging
 

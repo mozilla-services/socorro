@@ -278,12 +278,12 @@ class CrashStorageSystemForHBase(CrashStorageSystem):
           post_result = urllib2.urlopen(self.processRequestSubmissionUrl,
                                         params,
                                         self.processorSubmissionTimeout)
-        processor_name = post_result.read()
-        self.hbaseConnection.update_unprocessed_queue_with_processor_state(
-                row_id,
-                currentTimestamp.isoformat(),
-                processor_name,
-                legacy_flag)
+          processor_name = post_result.read()
+          self.hbaseConnection.update_unprocessed_queue_with_processor_state(
+                  row_id,
+                  currentTimestamp.isoformat(),
+                  processor_name,
+                  legacy_flag)
       except urllib2.URLError:
         self.logger.warning('could not submit %s for processing ', ooid)
         sutil.reportExceptionAndContinue(logger=self.logger)
@@ -363,10 +363,10 @@ class CrashStorageSystemForHBase(CrashStorageSystem):
     os.unlink(dumpPath)
 
   #-----------------------------------------------------------------------------------------------------------------
-  def dbFeederStandardJobIter(self, sleepFunction=tm.sleep):
+  def dbFeederStandardJobIter(self, sleepFunction=tm.sleep, salts='0123456789abcdef'):
     while True:
       #self.logger.debug('invoking hbaseConnection.iterator_for_legacy_db_feeder_queue')
-      for ooid in self.hbaseConnection.iterator_for_legacy_db_feeder_queue():
+      for ooid in self.hbaseConnection.iterator_for_legacy_db_feeder_queue(salts=salts):
         #self.logger.debug('about to yield')
         yield ooid
       self.logger.debug('no jobs to do.  napping for 30 seconds')
@@ -377,10 +377,10 @@ class CrashStorageSystemForHBase(CrashStorageSystem):
     self.hbaseConnection.put_priority_flag(ooid)
 
   #-----------------------------------------------------------------------------------------------------------------
-  def dbFeederPriorityJobIter(self, sleepFunction=tm.sleep):
+  def dbFeederPriorityJobIter(self, sleepFunction=tm.sleep, salts='0123456789abcdef'):
     while True:
       #self.logger.debug('invoking hbaseConnection.iterator_for_legacy_db_feeder_queue')
-      for ooid in self.hbaseConnection.iterator_for_priority_db_feeder_queue():
+      for ooid in self.hbaseConnection.iterator_for_priority_db_feeder_queue(salts=salts):
         #self.logger.debug('about to yield')
         yield ooid
       self.logger.debug('no jobs to do.  napping for 5 seconds')
