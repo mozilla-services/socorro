@@ -621,7 +621,7 @@ class HBaseConnectionForCrashReports(HBaseConnection):
                           processorHostNames,
                           limit='1000',
                           from_queue_table='crash_reports_index_legacy_submitted_time',
-			                    timestamp_prefix=''):
+                          timestamp_prefix=''):
     limit = int(limit)
 
     import urllib
@@ -1224,4 +1224,4 @@ if __name__=="__main__":
 
   connection.close()
 
-# vi: sw=2 ts=2
+# vi: expandtab sw=2 ts=2
