@@ -135,7 +135,8 @@ class Crash
             ),
             'raw_crash' => array(
                 'auth_required' => false,
-                'url' => url::site('report/'.$ooid.'/raw_crash', 'https'),   
+                'url' => url::site('rawdumps/'.$ooid.'.dump', 'https'),
+                // 'url' => url::site('report/'.$ooid.'/raw_crash', 'https'),   
             ),
         );
         return $urls;
