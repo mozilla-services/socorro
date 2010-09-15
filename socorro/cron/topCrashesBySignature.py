@@ -90,7 +90,9 @@ class TopCrashesBySignature(object):
       key = (row.signature, row.productdims_id, idCache.getOsId(row.os_name, row.os_version))
       value = summaryCrashes.setdefault(key, lib_util.DotDict({'count':0,'uptime':0}))
       value.count += 1
-      value.uptime += row.uptime
+      
+      if row.uptime:
+          value.uptime += row.uptime
 
   def extractDataForPeriod(self, startTime, endTime, summaryCrashes):
     """
