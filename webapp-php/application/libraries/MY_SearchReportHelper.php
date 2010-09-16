@@ -74,6 +74,7 @@ class SearchReportHelper{
         $params['query'] = urldecode($params['query']);
         $this->normalizeProduct($params);
         $this->normalizeDateUnitAndValue($params);
+        $this->validate_date($params);
     }
 
     /**
@@ -169,6 +170,22 @@ class SearchReportHelper{
             }
         }
         return $arrayEmpty;
+    }
+    
+    /**
+     * Validate a timestamp.  Unset the value if it is not a valid date/time.
+     *
+     * $params['date'] should be in "%m/%d/%Y %H:%M:%S" format.
+     * 
+     * @param array An array of $_GET parameters
+     */
+    private function validate_date(&$params)
+    {
+        if (isset($params['date']) && !empty($params['date'])) {
+            if (!strptime($params['date'], "%m/%d/%Y %H:%M:%S")) {
+                $params['date'] = '';
+            }
+        }       
     }
 
     /**

@@ -1,5 +1,5 @@
 $(document).ready(function() {
-      var dateFormat = 'mm/dd/yyyy';
+      var dateFormat = 'mm/dd/yyyy hh:mm:ss';
       var showAdvFilter = $.cookies.get('advfilter');
       var showAdvFilterCookieOpts = {};
 
