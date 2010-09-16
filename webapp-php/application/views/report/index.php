@@ -115,10 +115,10 @@ if (is_null($report->signature) || empty($report->signature)) { ?>
             </tr>
             <?php endif; ?>
             <tr>
-                <th>OS</th><td><?php out::H($report->os_name) ?></td>
+                <th>OS</th><td><?php out::H($report_os_name) ?></td>
             </tr>
             <tr>
-                <th>OS Version</th><td><?php out::H($report->os_version) ?></td>
+                <th>OS Version</th><td><?php out::H($report_os_version) ?></td>
             </tr>
             <tr>
                 <th>CPU</th><td><?php out::H($report->cpu_name) ?></td>
@@ -339,7 +339,7 @@ if (is_null($report->signature) || empty($report->signature)) { ?>
 			    'current_signature' => $report->signature,
 			    'current_product'   => $report->product,
 			    'current_version'   => $report->version,
-			    'current_os'        => $report->os_name))->render(TRUE); ?>
+			    'current_os'        => $report_os_name))->render(TRUE); ?>
 
 </div> <!-- /report-index -->
 

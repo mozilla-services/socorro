@@ -536,7 +536,17 @@ class Report_Controller extends Controller {
                 $ooppDetails = $this->_makeOoppDetails($report);        
                 $product = (isset($report->product) && !empty($report->product)) ? $report->product : Kohana::config('products.default_product');
                 $signature_to_bugzilla = $bugzilla->signature2bugzilla($rows, Kohana::config('codebases.bugTrackingUrl'));
-                
+       
+                // Hack for Bug #596541
+                $report_os_name = '';
+                if (property_exists($report, 'os_name')) {
+                    $report_os_name = $report->os_name;
+                }
+                $report_os_version = '';
+                if ($property_exists($report, 'os_version')) {
+                    $report_os_version = $report->os_version;
+                }
+
                 $this->setViewData(array(
                     'branch' => $this->branch_model->getByProductVersion($report->product, $report->version),
                     'comments' => $comments,
@@ -544,7 +554,9 @@ class Report_Controller extends Controller {
                     'logged_in' => $logged_in,
 		        	'data_urls' => $data_urls,
                     'report' => $report,
-                    'report_bug_url' => $this->_prepReportBugURL($report), 
+                    'report_bug_url' => $this->_prepReportBugURL($report),
+                    'report_os_name' => $report_os_name,
+                    'report_os_version' => $report_os_version, 
                     'sig2bugs' => $signature_to_bugzilla,
                     'url_nav' => url::site('products/'.$product),
                     'oopp_details' => $ooppDetails,
