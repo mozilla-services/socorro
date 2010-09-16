@@ -543,7 +543,7 @@ class Report_Controller extends Controller {
                     $report_os_name = $report->os_name;
                 }
                 $report_os_version = '';
-                if ($property_exists($report, 'os_version')) {
+                if (property_exists($report, 'os_version')) {
                     $report_os_version = $report->os_version;
                 }
 
