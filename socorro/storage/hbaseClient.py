@@ -681,7 +681,10 @@ class HBaseConnectionForCrashReports(HBaseConnection):
 
       try:
         post_timestamp = sdt.datetimeFromISOdateString(row['processor_state:post_timestamp'])
-        doSubmit = post_timestamp < dt.datetime.now() - resubmitTimeDeltaThreshold
+        delta = dt.datetime.now() - post_timestamp
+        self.logger.debug('delta: %s; resubmitTimeDeltaThreshold: %s', str(delta), str(resubmitTimeDeltaThreshold))
+        self.logger.debug('delta > resubmitTimeDeltaThreshold: %s', delta > resubmitTimeDeltaThreshold)
+        doSubmit = delta > resubmitTimeDeltaThreshold
       except (KeyError, ValueError):
         doSubmit = True
       if not doSubmit:
