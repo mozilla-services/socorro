@@ -206,7 +206,7 @@ class ProcessorStatsService(RegistrarBaseService):
     try:
       return durationSum / count
     except ZeroDivisionError:
-      return 0.0
+      return dt.timedelta(0)
   #-----------------------------------------------------------------------------
   def totalProcessTimeAverage(self, statName):
     listOfStats = []
@@ -222,7 +222,7 @@ class ProcessorStatsService(RegistrarBaseService):
     try:
       return durationSum / count
     except ZeroDivisionError:
-      return 0.0
+      return dt.timedelta(0)
   #-----------------------------------------------------------------------------
   def fetchStat(self, statName):
     dispatchedFunction = \
