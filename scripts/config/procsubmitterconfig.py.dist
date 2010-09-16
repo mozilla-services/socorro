@@ -23,6 +23,10 @@ resubmitTimeDeltaThreshold.doc = 'comma delimited list of the processor hostname
 resubmitTimeDeltaThreshold.default = '0:15:00'
 resubmitTimeDeltaThreshold.fromStringConverter = cm.timeDeltaConverter
 
+submissionsPerRun = cm.Option()
+submissionsPerRun.doc = 'how many to submit in each run'
+submissionsPerRun.default = 10000
+
 #---------------------------------------------------------------------------
 # Logging
 

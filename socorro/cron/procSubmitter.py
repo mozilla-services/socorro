@@ -9,6 +9,7 @@ def start(config):
     crashStorage = crashStoragePool.crashStorage()
     hbaseConnection = crashStorage.hbaseConnection
     hbaseConnection.submit_to_processor(config.processorHostNames,
+                                        limit=config.submissionsPerRun,
                                         resubmitTimeDeltaThreshold=config.resubmitTimeDeltaThreshold)
   finally:
     crashStorage.close()
