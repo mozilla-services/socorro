@@ -40,6 +40,7 @@ package com.mozilla.socorro.hadoop;
 import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Map;
@@ -52,6 +53,7 @@ import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 import org.apache.hadoop.hbase.mapreduce.TableMapper;
+import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
@@ -185,7 +187,7 @@ public class CrashReportModuleList implements Tool {
 					if (dumpline.startsWith(MODULE_PATTERN)) {
 						// module_str, libname, version, pdb, checksum, addrstart, addrend, unknown
 						String[] dumplineSplits = pipePattern.split(dumpline);
-						if (!StringUtils.isBlank(dumplineSplits[3]) && !StringUtils.isBlank(dumplineSplits[4])) {
+						if (dumplineSplits.length >= 5 && !StringUtils.isBlank(dumplineSplits[3]) && !StringUtils.isBlank(dumplineSplits[4])) {
 							outputKey.set(String.format("%s,%s,%s", dumplineSplits[1], dumplineSplits[3], dumplineSplits[4]));
 							context.write(outputKey, NullWritable.get());
 						} else {
@@ -204,6 +206,35 @@ public class CrashReportModuleList implements Tool {
 		
 	}	
 
+	/**
+	 * Generates an array of scans for different salted ranges for the given dates
+	 * @param startDateAsInt 
+	 * @param endDateAsInt
+	 * @return
+	 */
+	public static Scan[] generateScans(int startDateAsInt, int endDateAsInt) {
+		ArrayList<Scan> scans = new ArrayList<Scan>();		
+		String[] salts = new String[] { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e", "f" };
+		for (int d = startDateAsInt; d <= endDateAsInt; d++) {
+			for (int i=0; i < salts.length; i++) {
+				Scan s = new Scan();
+				// this caching number is selected by 32MB / Mean JSON Size
+				s.setCaching(894);
+				// disable block caching
+				s.setCacheBlocks(false);
+				// only looking for processed data
+				s.addFamily(PROCESSED_DATA_BYTES);
+				
+				s.setStartRow(Bytes.toBytes(salts[i] + String.format("%06d", d)));
+				s.setStopRow(Bytes.toBytes(salts[i] + String.format("%06d", d + 1)));
+				
+				scans.add(s);
+			}
+		}
+		
+		return scans.toArray(new Scan[scans.size()]);
+	}
+	
 	/**
 	 * @param args
 	 * @return
@@ -238,12 +269,14 @@ public class CrashReportModuleList implements Tool {
 			endDateAsInt = Integer.parseInt(rowsdf.format(cal.getTime()));
 		}
 		
+		conf.setBoolean("mapred.map.tasks.speculative.execution", false);
+		
 		Job job = new Job(getConf());
 		job.setJobName(NAME);
 		job.setJarByClass(CrashReportModuleList.class);
 		
 		// input table configuration
-		Scan[] scans = PerCrashCoreCount.generateScans(startDateAsInt, endDateAsInt);
+		Scan[] scans = CrashReportModuleList.generateScans(startDateAsInt, endDateAsInt);
 		MultiScanTableMapReduceUtil.initMultiScanTableMapperJob(TABLE_NAME_CRASH_REPORTS, scans, CrashReportModuleListMapper.class, Text.class, NullWritable.class, job);
 
 		job.setReducerClass(UniqueIdentityReducer.class);
