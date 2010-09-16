@@ -14,7 +14,6 @@
         $msg = "Results within {$params['range_value']} {$params['range_unit']} of {$end_date}";
 
         if ($params['query']) {
-
             $types = (array(
                 'exact'      => 'is exactly',
                 'contains'   => 'contains',
@@ -25,10 +24,11 @@
             $queries = (array( 
                 'signature' => 'the crash signature',
             ));
-            $query = $queries[ $params['query_search'] ];
-        
-            $msg .= ", where {$query} {$type} '{$params['query']}'";
-
+            
+            if (isset($queries[$params['query_search']]) && !empty($queries[$params['query_search']])) { 
+                $query = $queries[ $params['query_search'] ];
+                $msg .= ", where {$query} {$type} '{$params['query']}'";
+            }
         }
 
         foreach (array('product', 'branch', 'version', 'platform') as $field) {
