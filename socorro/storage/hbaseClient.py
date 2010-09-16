@@ -647,7 +647,7 @@ class HBaseConnectionForCrashReports(HBaseConnection):
         self.logger.warning('could not submit %s for processing - %s', ooid, str(e))
       except Exception, e:
         self.logger.warning('something has gone wrong in the submission for %s - %s', ooid, str(e))
- 
+
   def submit_to_processor(self,
                           processorHostNames,
                           limit='1000',
@@ -671,7 +671,14 @@ class HBaseConnectionForCrashReports(HBaseConnection):
 
     for row in self.limited_iteration(self.merge_scan_with_prefix(from_queue_table, '',
                                                                   ['ids:ooid','processor_state:']),limit):
-      ooid = row['ids:ooid']
+      rowkey = row['_rowkey']
+      try:
+        ooid = row['ids:ooid']
+      except KeyError:
+        self.logger.debug('Half deleted row - removing - %s', rowkey)
+        self.client.deleteAllRow(from_queue_table, rowkey)
+        continue
+
       try:
         post_timestamp = sdt.datetimeFromISOdateString(row['processor_state:post_timestamp'])
         dontSubmit = post_timestamp < dt.datetime.now() - resubmitTimeDeltaThreshold
@@ -681,7 +688,6 @@ class HBaseConnectionForCrashReports(HBaseConnection):
         self.logger.debug('avoiding potential resubmit on %s', ooid)
         continue
 
-      rowkey = row['_rowkey']
 
       report_row_id = ooid_to_row_id(ooid)
       listOfRawRows = self.client.getRowWithColumns('crash_reports',report_row_id,['meta_data:json', 'raw_data:dump', 'flags:processed'])
