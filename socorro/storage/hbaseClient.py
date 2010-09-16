@@ -660,7 +660,6 @@ class HBaseConnectionForCrashReports(HBaseConnection):
 
     import urllib
     import urllib2
-    utctz = sdt.UTC()
     #TODO move this up to not be a nested method
     def circular_sequence(seq):
       i = 0
@@ -732,7 +731,7 @@ class HBaseConnectionForCrashReports(HBaseConnection):
         processor_name = post_result.read()
         self.update_unprocessed_queue_with_processor_state(
                 rowkey,
-                dt.datetime.now(utctz).isoformat(),
+                dt.datetime.now().isoformat(),
                 processor_name,
                 legacy_flag)
       except urllib2.URLError, e:
