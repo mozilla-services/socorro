@@ -28,31 +28,24 @@ def makeBogusReports (connection, cursor, logger):
   # make some bogus data in the reports table
   reportsTable = sch.ReportsTable(logger)
   reportsTable.createPartitions(me.cur, sch.mondayPairsIteratorFactory(dt.datetime(2009,05,04),dt.datetime(2009,05,04)))
-                    # ( uuid,    client_crash_date,   date_processed,             product,   version,   build,   signature,   url,              install_age,   last_crash,   uptime,   email,   build_date,   user_id,   user_comments,   app_notes,   distributor,   distributor_version, topmost_filenames, addons_checked, flash_version, hangid, process_type, started_datetime,  completed_datetime, truncated, success, processor_notes) values
-  fakeReportData = [ (( "uuid1", None,                dt.datetime(2009, 05, 04),  "bogus",   "1.0",     "xxx",   '',          "http://cnn.com", 100,           14,           10,       None,    None,         None,      "bogus",         "",          "",            ",",                 None,              None,           None,          None,   None,         dt.datetime.now(), dt.datetime.now(),  False,     True,    ''), "BogusClass::bogus_signature (const char**, void *)"),
-                     (( "uuid2", None,                dt.datetime(2009, 05, 04),  "bogus",   "1.0",     "xxx",   '',          "http://cnn.com", 100,           14,           10,       None,    None,         None,      "bogus",         "",          "",            ",",                 None,              None,           None,          None,   None,         dt.datetime.now(), dt.datetime.now(),  False,     True,    ''), "js3250.dll@0x6cb96"),
-                     (( "uuid3", None,                dt.datetime(2009, 05, 04),  "bogus",   "1.0",     "xxx",   '',          "http://cnn.com", 100,           14,           10,       None,    None,         None,      "bogus",         "",          "",            ",",                 None,              None,           None,          None,   None,         dt.datetime.now(), dt.datetime.now(),  False,     True,    ''), "libobjc.A.dylib@0x1568c"),
-                     (( "uuid4", None,                dt.datetime(2009, 05, 04),  "bogus",   "1.0",     "xxx",   '',          "http://cnn.com", 100,           14,           10,       None,    None,         None,      "bogus",         "",          "",            ",",                 None,              None,           None,          None,   None,         dt.datetime.now(), dt.datetime.now(),  False,     True,    ''), "nanojit::LIns::isTramp()"),
-                     (( "uuid5", None,                dt.datetime(2009, 05, 04),  "bogus",   "1.0",     "xxx",   '',          "http://cnn.com", 100,           14,           10,       None,    None,         None,      "bogus",         "",          "",            ",",                 None,              None,           None,          None,   None,         dt.datetime.now(), dt.datetime.now(),  False,     True,    ''), "libobjc.A.dylib@0x1568c"),
+                    # ( uuid,    client_crash_date,   date_processed,             product,   version,   build,   signature,   url,              install_age,   last_crash,   uptime,   cpu_name, cpu_info, reason, address, os_name, os_version, email,   build_date,   user_id,   user_comments,   app_notes,   distributor,   distributor_version, topmost_filenames, addons_checked, flash_version, hangid, process_type, started_datetime,  completed_datetime, truncated, success, processor_notes) values
+  fakeReportData = [ (( "uuid1", None,                dt.datetime(2009, 05, 04),  "bogus",   "1.0",     "xxx",   '',          "http://cnn.com", 100,           14,           10,       None,     None,     None,   None,    None,    None,       None,    None,         None,      "bogus",         "",          "",            ",",                 None,              None,           None,          None,   None,         dt.datetime.now(), dt.datetime.now(),  False,     True,    ''), "BogusClass::bogus_signature (const char**, void *)"),
+                     (( "uuid2", None,                dt.datetime(2009, 05, 04),  "bogus",   "1.0",     "xxx",   '',          "http://cnn.com", 100,           14,           10,       None,     None,     None,   None,    None,    None,       None,    None,         None,      "bogus",         "",          "",            ",",                 None,              None,           None,          None,   None,         dt.datetime.now(), dt.datetime.now(),  False,     True,    ''), "js3250.dll@0x6cb96"),
+                     (( "uuid3", None,                dt.datetime(2009, 05, 04),  "bogus",   "1.0",     "xxx",   '',          "http://cnn.com", 100,           14,           10,       None,     None,     None,   None,    None,    None,       None,    None,         None,      "bogus",         "",          "",            ",",                 None,              None,           None,          None,   None,         dt.datetime.now(), dt.datetime.now(),  False,     True,    ''), "libobjc.A.dylib@0x1568c"),
+                     (( "uuid4", None,                dt.datetime(2009, 05, 04),  "bogus",   "1.0",     "xxx",   '',          "http://cnn.com", 100,           14,           10,       None,     None,     None,   None,    None,    None,       None,    None,         None,      "bogus",         "",          "",            ",",                 None,              None,           None,          None,   None,         dt.datetime.now(), dt.datetime.now(),  False,     True,    ''), "nanojit::LIns::isTramp()"),
+                     (( "uuid5", None,                dt.datetime(2009, 05, 04),  "bogus",   "1.0",     "xxx",   '',          "http://cnn.com", 100,           14,           10,       None,     None,     None,   None,    None,    None,       None,    None,         None,      "bogus",         "",          "",            ",",                 None,              None,           None,          None,   None,         dt.datetime.now(), dt.datetime.now(),  False,     True,    ''), "libobjc.A.dylib@0x1568c"),
                    ]
-  try:
-    #altconn = psycopg2.connect(me.dsn)
-    altconn = me.database.connection()
-    altcur = altconn.cursor()
-  except Exception, x:
-    print "Exception at line 40:",type(x),x
-    raise
+  #altconn = psycopg2.connect(me.dsn)
+  altconn = me.database.connection()
+  altcur = altconn.cursor()
+
   def cursorFunction():
     return altconn, altcur
   for rep, sig in fakeReportData:
-    try:
-      reportsTable.insert(cursor, rep, cursorFunction, date_processed=rep[2])
-      connection.commit()
-      cursor.execute("update reports set signature=%s where date_processed = %s and uuid = %s", (sig, rep[2], rep[0]))
-      connection.commit()
-    except Exception, x:
-      print "Exception at line 51", type(x),x
-      connection.rollback()
+    reportsTable.insert(cursor, rep, cursorFunction, date_processed=rep[2])
+    connection.commit()
+    cursor.execute("update reports set signature=%s where date_processed = %s and uuid = %s", (sig, rep[2], rep[0]))
+    connection.commit()
   altconn.close()
 
 class Me: # not quite "self"
@@ -105,14 +98,10 @@ def setup_module():
   me.testDB = TestDB()
   me.testDB.removeDB(me.config,me.fileLogger)
   me.testDB.createDB(me.config,me.fileLogger)
-  try:
-    me.conn = me.database.connection()
-    #me.conn = psycopg2.connect(me.dsn)
-    #me.cur = me.conn.cursor(cursor_factory=psy.LoggingCursor)
-    me.cur = me.conn.cursor()
-  except Exception, x:
-    print "Exception at line 107",type(x),x
-    socorro.lib.util.reportExceptionAndAbort(me.fileLogger)
+  me.conn = me.database.connection()
+  #me.conn = psycopg2.connect(me.dsn)
+  #me.cur = me.conn.cursor(cursor_factory=psy.LoggingCursor)
+  me.cur = me.conn.cursor()
   makeBogusReports(me.conn, me.cur, me.fileLogger)
 
 def teardown_module():
