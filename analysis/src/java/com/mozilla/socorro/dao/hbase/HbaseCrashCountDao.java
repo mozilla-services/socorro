@@ -47,7 +47,7 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.hbase.client.Get;
-import org.apache.hadoop.hbase.client.HTable;
+import org.apache.hadoop.hbase.client.HTableInterface;
 import org.apache.hadoop.hbase.client.HTablePool;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Result;
@@ -139,7 +139,7 @@ public class HbaseCrashCountDao implements CrashCountDao {
 	}
 	
 	public void checkSignatureExists(byte[] sigRowKey, String product, String version, String os, String signature) throws IOException {
-		HTable table = null;
+		HTableInterface table = null;
 		try {
 			table = pool.getTable(TABLE_NAME);
 			if (!table.exists(new Get(sigRowKey))) {
@@ -160,7 +160,7 @@ public class HbaseCrashCountDao implements CrashCountDao {
 	}
 
 	public void checkOsExists(byte[] osRowKey, String product, String version, String os) throws IOException {
-		HTable table = null;
+		HTableInterface table = null;
 		try {
 			table = pool.getTable(TABLE_NAME);
 			if (!table.exists(new Get(osRowKey))) {
@@ -180,7 +180,7 @@ public class HbaseCrashCountDao implements CrashCountDao {
 	}
 	
 	public void incrementCounts(String date, String product, String version, String os, String signature, String arch, Map<String,String> moduleVersions, Map<String,String> addonVersions) throws IOException {
-		HTable table = null;
+		HTableInterface table = null;
 		try {
 			table = pool.getTable(TABLE_NAME);
 			
@@ -266,7 +266,7 @@ public class HbaseCrashCountDao implements CrashCountDao {
 		
 		CorrelationReport report = new CorrelationReport(date, product, version, os);
 
-		HTable table = null;
+		HTableInterface table = null;
 		ResultScanner scanner = null;
 		try {
 			table = pool.getTable(TABLE_NAME);
@@ -403,7 +403,7 @@ public class HbaseCrashCountDao implements CrashCountDao {
 		CorrelationReport report = new CorrelationReport(product, version, os);
 		OperatingSystem osys = report.getOs();
 		
-		HTable table = null;
+		HTableInterface table = null;
 		try {
 			byte[] osRowKey = makeRowKey(date, product, version, os, null, true);
 			byte[] sigRowKey = makeRowKey(date, product, version, os, signature, true);
