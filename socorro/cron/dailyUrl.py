@@ -63,7 +63,7 @@ def dailyUrlDump(config):
         pd.branch,    -- 9
         r.os_name,    --10
         r.os_version, --11
-        r.cpu_name,   --12
+        r.cpu_name || ' | ' || r.cpu_info,   --12
         r.address,    --13
         array(select ba.bug_id from bug_associations ba where ba.signature = r.signature) as bug_list, --14
         r.user_comments, --15
@@ -79,7 +79,8 @@ def dailyUrlDump(config):
         r.flash_version, --21
         r.hangid, --22
         r.reason, --23
-        r.process_type --24
+        r.process_type, --24
+        r.app_notes --25
       from
         reports r left join productdims pd on r.product = pd.product and r.version = pd.version
       where

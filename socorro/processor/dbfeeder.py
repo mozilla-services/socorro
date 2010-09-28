@@ -309,6 +309,11 @@ class DbFeeder(object):
       ooid = crash_json['uuid']
       crashStorage = self.crashStoragePool.crashStorage()
       raw_crash = crashStorage.get_meta(ooid)
+      try: # append the cpu_count to the cpu_info
+        crash_json['cpu_info'] = '%s | %s' % (crash_json['cpu_info'],
+                                              crash_json['cpu_count'])
+      except KeyError:
+        pass # if the cpu_count didn't exist, never mind
       crash_json['url'] = raw_crash.setdefault('URL', '')
       crash_json['email'] = raw_crash.setdefault('Email', '')
       crash_json['user_id'] = ''
