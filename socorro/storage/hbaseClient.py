@@ -684,7 +684,6 @@ class HBaseConnectionForCrashReports(HBaseConnection):
         continue
 
       report_row_id = ooid_to_row_id(ooid)
-      self.logger.debug(report_row_id)
       listOfRawRows = self.client.getRowWithColumns('crash_reports',report_row_id,['meta_data:json', 'raw_data:dump', 'flags:processed'])
       if listOfRawRows:
         report = self._make_row_nice(listOfRawRows[0])

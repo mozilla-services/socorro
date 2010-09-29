@@ -711,3 +711,162 @@ def test_submit_to_processor_2():
                            resubmitTimeDeltaThreshold=dt.timedelta(seconds=60),
                            urllib2Module=urllib2Module,
                            nowFunction=nowFunction)
+
+def test_submit_to_processor_3():
+  """test_submit_to_processor_3 - one do submit, but ooid not found, should delete"""
+  hbcfcr = HBaseConnectionWithPresetExpectationsFactory(SubmitToProcessorTestingHBaseConnection)
+  dummy_clientObject = hbcfcr.dummy_clientObject
+  conn = hbcfcr.conn
+  conn.merge_scan_with_prefix_return_sequence = [{'_rowkey':'eee',
+                                                  'ids:ooid':'59f56181-6fff-4f27-a263-548242101001',
+                                                  'processor_state:post_timestamp': '2010-09-30 23:59:59',
+                                                 },
+                                                ]
+  nowFunction = exp.DummyObjectWithExpectations('nowFunction')
+  nowFunction.expect('__call__', (), {}, dt.datetime(2010,10,1,0,1,0), None)
+  dummy_clientObject.expect('getRowWithColumns',
+                            ('crash_reports',
+                             '510100159f56181-6fff-4f27-a263-548242101001',
+                             ['meta_data:json', 'raw_data:dump', 'flags:processed']),
+                            {},
+                            [],
+                            None
+                           )
+  dummy_clientObject.expect('deleteAllRow',
+                            ('crash_reports_index_legacy_unprocessed_flag',
+                             'eee'),
+                            {},
+                            None,
+                            None
+                           )
+  urllib2Module = exp.DummyObjectWithExpectations('urllib2Module')
+  urllib2Module.expect('URLError', None, None, FakeUrllib2Exception)
+  conn.submit_to_processor('fred,ethel,wilma',
+                           resubmitTimeDeltaThreshold=dt.timedelta(seconds=60),
+                           urllib2Module=urllib2Module,
+                           nowFunction=nowFunction)
+
+def test_submit_to_processor_4():
+  """test_submit_to_processor_4 - one do submit, but previously processed, should delete"""
+  hbcfcr = HBaseConnectionWithPresetExpectationsFactory(SubmitToProcessorTestingHBaseConnection)
+  dummy_clientObject = hbcfcr.dummy_clientObject
+  conn = hbcfcr.conn
+  conn.merge_scan_with_prefix_return_sequence = [{'_rowkey':'eee',
+                                                  'ids:ooid':'59f56181-6fff-4f27-a263-548242101001',
+                                                  'processor_state:post_timestamp': '2010-09-30 23:59:59',
+                                                 },
+                                                ]
+  nowFunction = exp.DummyObjectWithExpectations('nowFunction')
+  nowFunction.expect('__call__', (), {}, dt.datetime(2010,10,1,0,1,0), None)
+  dummy_client_row_object = exp.DummyObjectWithExpectations('dummy_client_row_object')
+  d = { 'flags:processed': ValueObject('Y'),
+        'meta_data:json': ValueObject('"json stuff"'),
+        'raw_data:dump': ValueObject('binary dump'),
+      }
+  dummy_client_row_object.expect('columns', None, None, d)
+  dummy_client_row_object.expect('row', None, None, 'eee')
+  dummy_clientObject.expect('getRowWithColumns',
+                            ('crash_reports',
+                             '510100159f56181-6fff-4f27-a263-548242101001',
+                             ['meta_data:json', 'raw_data:dump', 'flags:processed']),
+                            {},
+                            [dummy_client_row_object],
+                            None
+                           )
+  dummy_clientObject.expect('deleteAllRow',
+                            ('crash_reports_index_legacy_unprocessed_flag',
+                             'eee'),
+                            {},
+                            None,
+                            None
+                           )
+  urllib2Module = exp.DummyObjectWithExpectations('urllib2Module')
+  urllib2Module.expect('URLError', None, None, FakeUrllib2Exception)
+  conn.submit_to_processor('fred,ethel,wilma',
+                           resubmitTimeDeltaThreshold=dt.timedelta(seconds=60),
+                           urllib2Module=urllib2Module,
+                           nowFunction=nowFunction)
+
+def test_submit_to_processor_5():
+  """test_submit_to_processor_5 - one do submit, but json metadata empty, should delete"""
+  hbcfcr = HBaseConnectionWithPresetExpectationsFactory(SubmitToProcessorTestingHBaseConnection)
+  dummy_clientObject = hbcfcr.dummy_clientObject
+  conn = hbcfcr.conn
+  conn.merge_scan_with_prefix_return_sequence = [{'_rowkey':'eee',
+                                                  'ids:ooid':'59f56181-6fff-4f27-a263-548242101001',
+                                                  'processor_state:post_timestamp': '2010-09-30 23:59:59',
+                                                 },
+                                                ]
+  nowFunction = exp.DummyObjectWithExpectations('nowFunction')
+  nowFunction.expect('__call__', (), {}, dt.datetime(2010,10,1,0,1,0), None)
+  dummy_client_row_object = exp.DummyObjectWithExpectations('dummy_client_row_object')
+  d = { 'flags:processed': ValueObject('Y'),
+        'meta_data:json': ValueObject(''),
+        'raw_data:dump': ValueObject('binary dump'),
+      }
+  dummy_client_row_object.expect('columns', None, None, d)
+  dummy_client_row_object.expect('row', None, None, 'eee')
+  dummy_clientObject.expect('getRowWithColumns',
+                            ('crash_reports',
+                             '510100159f56181-6fff-4f27-a263-548242101001',
+                             ['meta_data:json', 'raw_data:dump', 'flags:processed']),
+                            {},
+                            [dummy_client_row_object],
+                            None
+                           )
+  dummy_clientObject.expect('deleteAllRow',
+                            ('crash_reports_index_legacy_unprocessed_flag',
+                             'eee'),
+                            {},
+                            None,
+                            None
+                           )
+  urllib2Module = exp.DummyObjectWithExpectations('urllib2Module')
+  urllib2Module.expect('URLError', None, None, FakeUrllib2Exception)
+  conn.submit_to_processor('fred,ethel,wilma',
+                           resubmitTimeDeltaThreshold=dt.timedelta(seconds=60),
+                           urllib2Module=urllib2Module,
+                           nowFunction=nowFunction)
+
+
+def test_submit_to_processor_6():
+  """test_submit_to_processor_6 - one do submit, but dump empty, should delete"""
+  hbcfcr = HBaseConnectionWithPresetExpectationsFactory(SubmitToProcessorTestingHBaseConnection)
+  dummy_clientObject = hbcfcr.dummy_clientObject
+  conn = hbcfcr.conn
+  conn.merge_scan_with_prefix_return_sequence = [{'_rowkey':'eee',
+                                                  'ids:ooid':'59f56181-6fff-4f27-a263-548242101001',
+                                                  'processor_state:post_timestamp': '2010-09-30 23:59:59',
+                                                 },
+                                                ]
+  nowFunction = exp.DummyObjectWithExpectations('nowFunction')
+  nowFunction.expect('__call__', (), {}, dt.datetime(2010,10,1,0,1,0), None)
+  dummy_client_row_object = exp.DummyObjectWithExpectations('dummy_client_row_object')
+  d = { 'flags:processed': ValueObject('Y'),
+        'meta_data:json': ValueObject('"json stuff"'),
+        'raw_data:dump': ValueObject(''),
+      }
+  dummy_client_row_object.expect('columns', None, None, d)
+  dummy_client_row_object.expect('row', None, None, 'eee')
+  dummy_clientObject.expect('getRowWithColumns',
+                            ('crash_reports',
+                             '510100159f56181-6fff-4f27-a263-548242101001',
+                             ['meta_data:json', 'raw_data:dump', 'flags:processed']),
+                            {},
+                            [dummy_client_row_object],
+                            None
+                           )
+  dummy_clientObject.expect('deleteAllRow',
+                            ('crash_reports_index_legacy_unprocessed_flag',
+                             'eee'),
+                            {},
+                            None,
+                            None
+                           )
+  urllib2Module = exp.DummyObjectWithExpectations('urllib2Module')
+  urllib2Module.expect('URLError', None, None, FakeUrllib2Exception)
+  conn.submit_to_processor('fred,ethel,wilma',
+                           resubmitTimeDeltaThreshold=dt.timedelta(seconds=60),
+                           urllib2Module=urllib2Module,
+                           nowFunction=nowFunction)
+
