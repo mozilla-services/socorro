@@ -1,5 +1,8 @@
 import socorro.storage.hbaseClient as hbc
+import socorro.lib.util as utl
 import socorro.unittest.testlib.expectations as exp
+
+import datetime as dt
 
 try:
   import json as js
@@ -9,6 +12,9 @@ except ImportError:
 class ValueObject(object):
   def __init__(self, value):
     self.value = value
+
+class FakeUrllib2Exception(Exception):
+  pass
 
 def testHBaseConnection_constructor_1():
   dummy_thriftModule = exp.DummyObjectWithExpectations('dummy_thriftModule')
@@ -175,10 +181,10 @@ def testHBaseConnection_constructor_3():
   except Exception, x:
     assert str(x) == theExpectedExceptionAsString, "expected %s, but got %s" % (theExpectedExceptionAsString, str(x))
   else:
-    assert False, "expected the exception %s, but no exception was raised" % str(theExpectedException)
+    assert False, "expected the exception %s, but no exception was raised" % theExpectedExceptionAsString
 
-class HBaseConnectionWithPresetExpectations(object):
-  def __init__(self):
+class HBaseConnectionWithPresetExpectationsFactory(object):
+  def __init__(self, hbaseConnectionClass=hbc.HBaseConnection):
     self.dummy_thriftModule = exp.DummyObjectWithExpectations('dummy_thriftModule')
     self.dummy_tsocketModule = exp.DummyObjectWithExpectations('dummy_tsocketModule')
     self.dummy_transportModule = exp.DummyObjectWithExpectations('dummy_transportModule')
@@ -217,7 +223,7 @@ class HBaseConnectionWithPresetExpectations(object):
     self.dummy_transportObject.expect('setTimeout', (9000,), {})
     self.dummy_transportObject.expect('open', (), {})
 
-    self.conn = hbc.HBaseConnection('somehostname', 666, 9000,
+    self.conn = hbaseConnectionClass('somehostname', 666, 9000,
                                     thrift=self.dummy_thriftModule,
                                     tsocket=self.dummy_tsocketModule,
                                     ttrans=self.dummy_transportModule,
@@ -225,7 +231,8 @@ class HBaseConnectionWithPresetExpectations(object):
                                     ttp=self.dummy_ttypesModule,
                                     client=self.dummy_clientClass,
                                     column=self.dummy_columnClass,
-                                    mutation=self.dummy_mutationClass)
+                                    mutation=self.dummy_mutationClass,
+                                    logger=utl.StdoutLogger())
   def retry(self):
     self.dummy_transportObject.expect('close', (), {})
     self.dummy_tsocketModule.expect('TSocket', ('somehostname', 666), {}, self.dummy_transportObject)
@@ -262,7 +269,7 @@ class HBaseConnectionWithPresetExpectations(object):
 
 
 def test_make_row_nice_1():
-  conn = HBaseConnectionWithPresetExpectations().conn
+  conn = HBaseConnectionWithPresetExpectationsFactory().conn
   dummy_client_row_object = exp.DummyObjectWithExpectations('dummy_client_row_object')
   d = {'a':ValueObject(1), 'b':ValueObject(2.1), 'c':ValueObject('C')}
   dummy_client_row_object.expect('columns', None, None, d)
@@ -271,7 +278,7 @@ def test_make_row_nice_1():
   assert result == expectedDict, "expected %s but got %s" % (str(expectedDict), str(result))
 
 def test_make_row_nice_2():
-  conn = HBaseConnectionWithPresetExpectations().conn
+  conn = HBaseConnectionWithPresetExpectationsFactory().conn
   dummy_client_row_object = exp.DummyObjectWithExpectations('dummy_client_row_object')
   d = {'a':ValueObject(1), 'b':ValueObject(2.1), 'c':'C'}
   dummy_client_row_object.expect('columns', None, None, d)
@@ -293,13 +300,13 @@ def test_make_rows_nice_1():
     expectedDict = {'a':x, 'b':x * 10.0, 'c':'C'*x}
     listOfRows.append(dummy_client_row_object)
     expectedListOfRows.append(expectedDict)
-  conn = HBaseConnectionWithPresetExpectations().conn
+  conn = HBaseConnectionWithPresetExpectationsFactory().conn
   result = conn._make_rows_nice(listOfRows)
   for a, b in zip(result, expectedListOfRows):
     assert a == b, 'expected %s, but got %s' % (str(a), str(b))
 
 def test_describe_table_1():
-  testHBaseConn = HBaseConnectionWithPresetExpectations()
+  testHBaseConn = HBaseConnectionWithPresetExpectationsFactory()
   conn = testHBaseConn.conn
   dummy_clientObject = testHBaseConn.dummy_clientObject
   dummy_clientObject.expect('getColumnDescriptors', ('fred',), {}, 'fred')
@@ -308,7 +315,7 @@ def test_describe_table_1():
 
 def test_describe_table_2():
   """this test also exercises the retry"""
-  testHBaseConn = HBaseConnectionWithPresetExpectations()
+  testHBaseConn = HBaseConnectionWithPresetExpectationsFactory()
   testHBaseConn.retry()
   conn = testHBaseConn.conn
   dummy_clientObject = testHBaseConn.dummy_clientObject
@@ -320,7 +327,7 @@ def test_describe_table_2():
 
 def test_describe_table_2b():
   """this test also exercises the retry but with a different internal exception"""
-  testHBaseConn = HBaseConnectionWithPresetExpectations()
+  testHBaseConn = HBaseConnectionWithPresetExpectationsFactory()
   testHBaseConn.retry()
   conn = testHBaseConn.conn
   dummy_clientObject = testHBaseConn.dummy_clientObject
@@ -336,7 +343,7 @@ def test_describe_table_2b():
 
 def test_describe_table_3():
   """this test exercises a connection failure within the retry"""
-  testHBaseConn = HBaseConnectionWithPresetExpectations()
+  testHBaseConn = HBaseConnectionWithPresetExpectationsFactory()
   testHBaseConn.retry3()
   conn = testHBaseConn.conn
   dummy_clientObject = testHBaseConn.dummy_clientObject
@@ -361,7 +368,7 @@ def test_get_full_row():
     expectedDict = {'a':x, 'b':x * 10.0, 'c':'C'*x}
     listOfRows.append(dummy_client_row_object)
     expectedListOfRows.append(expectedDict)
-  uhbc = HBaseConnectionWithPresetExpectations()
+  uhbc = HBaseConnectionWithPresetExpectationsFactory()
   conn = uhbc.conn
   dummy_clientObject = uhbc.dummy_clientObject
   dummy_clientObject.expect('getRow', ('fred', '22'), {}, listOfRows)
@@ -369,68 +376,8 @@ def test_get_full_row():
   for a, b in zip(result, expectedListOfRows):
     assert a == b, 'expected %s, but got %s' % (str(a), str(b))
 
-class HBaseConnectionForCrashReportsWithPresetExpectations(object):
-  def __init__(self):
-    self.dummy_thriftModule = exp.DummyObjectWithExpectations('dummy_thriftModule')
-    self.dummy_tsocketModule = exp.DummyObjectWithExpectations('dummy_tsocketModule')
-    self.dummy_transportModule = exp.DummyObjectWithExpectations('dummy_transportModule')
-    self.dummy_protocolModule = exp.DummyObjectWithExpectations('dummy_protocolModule')
-    self.dummy_ttypesModule = exp.DummyObjectWithExpectations('dummy_ttypesModule')
-    self.dummy_clientClass = exp.DummyObjectWithExpectations('dummy_clientClass')
-    self.dummy_columnClass = exp.DummyObjectWithExpectations('dummy_columnClass')
-    self.dummy_mutationClass = exp.DummyObjectWithExpectations('dummy_mutationClass')
-
-    class FakeIOError(Exception):
-      pass
-    self.FakeIOError = FakeIOError
-    class FakeIllegalArgument(Exception):
-      pass
-    self.FakeIllegalArgument = FakeIllegalArgument
-    class FakeAlreadyExists(Exception):
-      pass
-    self.FakeAlreadyExists = FakeAlreadyExists
-    class FakeTException(Exception):
-      pass
-    self.FakeTException = FakeTException
-
-    self.dummy_ttypesModule.expect('IOError', None, None, self.FakeIOError, None)
-    self.dummy_ttypesModule.expect('IllegalArgument', None, None, self.FakeIllegalArgument, None)
-    self.dummy_ttypesModule.expect('AlreadyExists', None, None, self.FakeAlreadyExists, None)
-    self.dummy_thriftModule.expect('TException', None, None, self.FakeTException, None)
-
-    self.dummy_transportObject = exp.DummyObjectWithExpectations('dummy_transportObject')
-    self.dummy_protocolObject = exp.DummyObjectWithExpectations('dummy_protocolObject')
-    self.dummy_clientObject = exp.DummyObjectWithExpectations('dummy_clientObject')
-
-    self.dummy_tsocketModule.expect('TSocket', ('somehostname', 666), {}, self.dummy_transportObject)
-    self.dummy_transportModule.expect('TBufferedTransport', (self.dummy_transportObject,), {}, self.dummy_transportObject)
-    self.dummy_protocolModule.expect('TBinaryProtocol', (self.dummy_transportObject,), {}, self.dummy_protocolObject)
-    self.dummy_clientClass.expect('__call__', (self.dummy_protocolObject,), {}, self.dummy_clientObject)
-
-    self.dummy_transportObject.expect('setTimeout', (9000,), {})
-    self.dummy_transportObject.expect('open', (), {})
-
-    self.conn = hbc.HBaseConnectionForCrashReports('somehostname', 666, 9000,
-                                                   thrift=self.dummy_thriftModule,
-                                                   tsocket=self.dummy_tsocketModule,
-                                                   ttrans=self.dummy_transportModule,
-                                                   protocol=self.dummy_protocolModule,
-                                                   ttp=self.dummy_ttypesModule,
-                                                   client=self.dummy_clientClass,
-                                                   column=self.dummy_columnClass,
-                                                   mutation=self.dummy_mutationClass)
-
-  def retry(self):
-    self.dummy_transportObject.expect('close', (), {})
-    self.dummy_tsocketModule.expect('TSocket', ('somehostname', 666), {}, self.dummy_transportObject)
-    self.dummy_transportModule.expect('TBufferedTransport', (self.dummy_transportObject,), {}, self.dummy_transportObject)
-    self.dummy_protocolModule.expect('TBinaryProtocol', (self.dummy_transportObject,), {}, self.dummy_protocolObject)
-    self.dummy_clientClass.expect('__call__', (self.dummy_protocolObject,), {}, self.dummy_clientObject)
-    self.dummy_transportObject.expect('setTimeout', (9000,), {})
-    self.dummy_transportObject.expect('open', (), {})
-
 def test_HBaseConnectionForCrashReports():
-  hbcfcr = HBaseConnectionForCrashReportsWithPresetExpectations()
+  hbcfcr = HBaseConnectionWithPresetExpectationsFactory(hbc.HBaseConnectionForCrashReports)
 
 def test_ooid_to_row_id():
   ooid = 'abcdefghijklmnopqrstuvwxy20100102'
@@ -452,7 +399,7 @@ def test_make_row_nice_3():
     expectedDict = {'a':x, 'b':x * 10.0, 'c':'C'*x, '_rowkey':expectedOoid}
     listOfRows.append(dummy_client_row_object)
     expectedListOfRows.append(expectedDict)
-  hbcfcr = HBaseConnectionForCrashReportsWithPresetExpectations()
+  hbcfcr = HBaseConnectionWithPresetExpectationsFactory(hbc.HBaseConnectionForCrashReports)
   conn = hbcfcr.conn
   result = conn._make_rows_nice(listOfRows)
   for a, b in zip(expectedListOfRows, result):
@@ -466,7 +413,7 @@ def test_get_json_meta_as_string():
   dummyClientRowObject.expect('columns', None, None, {'meta_data:json':dummyColumn})
   dummyClientRowObject.expect('row', None, None, 'a100102abcdefghijklmnopqrstuvwxyz100102')
   getRowWithColumnsReturnValue = [dummyClientRowObject]
-  hbcfcr = HBaseConnectionForCrashReportsWithPresetExpectations()
+  hbcfcr = HBaseConnectionWithPresetExpectationsFactory(hbc.HBaseConnectionForCrashReports)
   conn = hbcfcr.conn
   dummy_clientObject = hbcfcr.dummy_clientObject
   dummy_clientObject.expect('getRowWithColumns',
@@ -484,7 +431,7 @@ def test_get_json_1():
   dummyClientRowObject.expect('columns', None, None, {'meta_data:json':dummyColumn})
   dummyClientRowObject.expect('row', None, None, 'a100102abcdefghijklmnopqrstuvwxyz100102')
   getRowWithColumnsReturnValue = [dummyClientRowObject]
-  hbcfcr = HBaseConnectionForCrashReportsWithPresetExpectations()
+  hbcfcr = HBaseConnectionWithPresetExpectationsFactory(hbc.HBaseConnectionForCrashReports)
   conn = hbcfcr.conn
   dummy_clientObject = hbcfcr.dummy_clientObject
   dummy_clientObject.expect('getRowWithColumns',
@@ -502,7 +449,7 @@ def test_get_json_2():
   dummyClientRowObject = exp.DummyObjectWithExpectations()
   dummyClientRowObject.expect('columns', None, None, {'meta_data:json':dummyColumn})
   dummyClientRowObject.expect('row', None, None, 'a100102abcdefghijklmnopqrstuvwxyz100102')
-  hbcfcr = HBaseConnectionForCrashReportsWithPresetExpectations()
+  hbcfcr = HBaseConnectionWithPresetExpectationsFactory(hbc.HBaseConnectionForCrashReports)
   conn = hbcfcr.conn
   dummy_clientObject = hbcfcr.dummy_clientObject
   dummy_clientObject.expect('getRowWithColumns',
@@ -522,7 +469,7 @@ def test_get_dump():
   dummyClientRowObject = exp.DummyObjectWithExpectations()
   dummyClientRowObject.expect('columns', None, None, {'raw_data:dump':dummyColumn})
   getRowWithColumnsReturnValue = [dummyClientRowObject]
-  hbcfcr = HBaseConnectionForCrashReportsWithPresetExpectations()
+  hbcfcr = HBaseConnectionWithPresetExpectationsFactory(hbc.HBaseConnectionForCrashReports)
   conn = hbcfcr.conn
   dummy_clientObject = hbcfcr.dummy_clientObject
   dummy_clientObject.expect('getRowWithColumns',
@@ -540,7 +487,7 @@ def test_get_dump():
   #dummyClientRowObject.expect('columns', None, None, {'processed_data:json':dummyColumn})
   #dummyClientRowObject.expect('row', None, None, '100102abcdefghijklmnopqrstuvwxyz100102')
   #getRowWithColumnsReturnValue = [dummyClientRowObject]
-  #hbcfcr = HBaseConnectionForCrashReportsWithPresetExpectations()
+  #hbcfcr = HBaseConnectionWithPresetExpectationsFactory(hbc.HBaseConnectionForCrashReports)
   #conn = hbcfcr.conn
   #dummy_clientObject = hbcfcr.dummy_clientObject
   #dummy_clientObject.expect('getRowWithColumns',
@@ -562,7 +509,7 @@ def test_get_dump():
     #expectedDict = {'a':x, 'b':x * 10.0, 'c':'C'*x, 'ooid':expectedOoid}
     #listOfRows.append(dummy_client_row_object)
     #expectedListOfRows.append(expectedDict)
-  #hbcfcr = HBaseConnectionForCrashReportsWithPresetExpectations()
+  #hbcfcr = HBaseConnectionWithPresetExpectationsFactory(hbc.HBaseConnectionForCrashReports)
   #conn = hbcfcr.conn
   #dummy_clientObject = hbcfcr.dummy_clientObject
   #dummy_clientObject.expect('scannerOpenWithPrefix', ('crash_reports', '******', ['meta_data:json']), {}, 0)
@@ -589,7 +536,7 @@ def test_get_dump():
     #expectedDict = {'a':x, 'b':x * 10.0, 'c':'C'*x, 'ooid':expectedOoid}
     #listOfRows.append(dummy_client_row_object)
     #expectedListOfRows.append(expectedDict)
-  #hbcfcr = HBaseConnectionForCrashReportsWithPresetExpectations()
+  #hbcfcr = HBaseConnectionWithPresetExpectationsFactory(hbc.HBaseConnectionForCrashReports)
   #conn = hbcfcr.conn
   #dummy_clientObject = hbcfcr.dummy_clientObject
   #dummy_clientObject.expect('scannerOpenWithPrefix', ('crash_reports', '******', ['meta_data:json']), {}, 0)
@@ -603,7 +550,7 @@ def test_put_json_dump_1():
   jsonData = {"a": 1, "b": "hello", "submitted_timestamp":'2010-05-04T03:10:00'}
   jsonDataAsString = js.dumps(jsonData)
   dumpBlob = 'abcdefghijklmnopqrstuvwxyz01234567890!@#$%^&*()_-=+'
-  hbcfcr = HBaseConnectionForCrashReportsWithPresetExpectations()
+  hbcfcr = HBaseConnectionWithPresetExpectationsFactory(hbc.HBaseConnectionForCrashReports)
   conn = hbcfcr.conn
   dummyMutationClass = hbcfcr.dummy_mutationClass
   dummyMutationClass.expect('__call__', (), {'column': "flags:processed", 'value':"N"}, 0)
@@ -625,8 +572,8 @@ def test_put_json_dump_1():
   dummyMutationClass.expect('__call__', (), {'column': "ids:ooid", 'value':'abcdefghijklmnopqrstuvwxyz100102'}, 0)
   dummy_clientObject.expect('mutateRow', ('crash_reports_index_legacy_submitted_time', 'a2010-05-04T03:10:00abcdefghijklmnopqrstuvwxyz100102', [0]), {})
   # setup for atomic increments
-  dummy_clientObject.expect('atomicIncrement', ('metrics','crash_report_queue','counters:current_unprocessed_size',1), {})
-  dummy_clientObject.expect('atomicIncrement', ('metrics','crash_report_queue','counters:current_legacy_unprocessed_size',1), {})
+  dummy_clientObject.expect('atomicIncrement', ('metrics','crash_report_queues','counters:inserts_unprocessed',1), {})
+  dummy_clientObject.expect('atomicIncrement', ('metrics','crash_report_queues','counters:inserts_unprocessed_legacy',1), {})
   dummy_clientObject.expect('atomicIncrement', ('metrics','2010-05-04T03:10','counters:submitted_crash_reports',1), {})
   dummy_clientObject.expect('atomicIncrement', ('metrics','2010-05-04T03:10','counters:submitted_crash_reports_legacy_throttle_0',1), {})
   dummy_clientObject.expect('atomicIncrement', ('metrics','2010-05-04T03','counters:submitted_crash_reports',1), {})
@@ -640,4 +587,127 @@ def test_put_json_dump_1():
 
   conn.put_json_dump('abcdefghijklmnopqrstuvwxyz100102', jsonData, dumpBlob)
 
+class SubmitToProcessorTestingHBaseConnection(hbc.HBaseConnectionForCrashReports):
+  def __init__(self,
+               host,
+               port,
+               timeout,
+               thrift,
+               tsocket,
+               ttrans,
+               protocol,
+               ttp,
+               client,
+               column,
+               mutation,
+               logger=utl.SilentFakeLogger()):
+    super(SubmitToProcessorTestingHBaseConnection,self).__init__(host,port,timeout,thrift,tsocket,ttrans,
+                                                        protocol,ttp,client,column,
+                                                        mutation,logger)
+    self.merge_scan_with_prefix_return_sequence = []
+    self.update_unprocessed_queue_with_processor_state_expectations = \
+           exp.DummyObjectWithExpectations('update_unprocessed_queue_with_processor_state_expectations')
+  def merge_scan_with_prefix(self, dummy1, dummy2, dummy3):
+    for x in self.merge_scan_with_prefix_return_sequence:
+      yield x
+  def update_unprocessed_queue_with_processor_state(self,
+                                                    rowkey,
+                                                    now,
+                                                    processor_name,
+                                                    legacy_flag):
+    self.update_unprocessed_queue_with_processor_state_expectations(rowkey,
+                                                    now,
+                                                    processor_name,
+                                                    legacy_flag)
 
+
+def test_submit_to_processor_0():
+  """test_submit_to_processor_0 - nothing to do"""
+  hbcfcr = HBaseConnectionWithPresetExpectationsFactory(SubmitToProcessorTestingHBaseConnection)
+  conn = hbcfcr.conn
+  conn.submit_to_processor('fred,ethel,wilma')
+
+def test_submit_to_processor_1():
+  """test_submit_to_processor_1 - one half deleted entry"""
+  hbcfcr = HBaseConnectionWithPresetExpectationsFactory(SubmitToProcessorTestingHBaseConnection)
+  conn = hbcfcr.conn
+  conn.merge_scan_with_prefix_return_sequence = [{'_rowkey':'aaa'}]
+  dummy_clientObject = hbcfcr.dummy_clientObject
+  dummy_clientObject.expect('deleteAllRow',
+                            ('crash_reports_index_legacy_unprocessed_flag',
+                             'aaa'),
+                            {},
+                            None,
+                            None)
+  conn.submit_to_processor('fred,ethel,wilma')
+
+def test_submit_to_processor_2():
+  """test_submit_to_processor_2 - four don't submit, one do submit"""
+  hbcfcr = HBaseConnectionWithPresetExpectationsFactory(SubmitToProcessorTestingHBaseConnection)
+  dummy_clientObject = hbcfcr.dummy_clientObject
+  conn = hbcfcr.conn
+  conn.merge_scan_with_prefix_return_sequence = [{'_rowkey':'aaa',
+                                                  'ids:ooid':'19f56181-6fff-4f27-a263-548242101001',
+                                                  'processor_state:post_timestamp': '2010-10-01 00:01:00',
+                                                 },
+                                                 {'_rowkey':'bbb',
+                                                  'ids:ooid':'29f56181-6fff-4f27-a263-548242101001',
+                                                  'processor_state:post_timestamp': '2010-10-01 00:00:59',
+                                                 },
+                                                 {'_rowkey':'ccc',
+                                                  'ids:ooid':'39f56181-6fff-4f27-a263-548242101001',
+                                                  'processor_state:post_timestamp': '2010-10-01 00:00:01',
+                                                 },
+                                                 {'_rowkey':'ddd',
+                                                  'ids:ooid':'49f56181-6fff-4f27-a263-548242101001',
+                                                  'processor_state:post_timestamp': '2010-10-01 00:00:00',
+                                                 },
+                                                 {'_rowkey':'eee',
+                                                  'ids:ooid':'59f56181-6fff-4f27-a263-548242101001',
+                                                  'processor_state:post_timestamp': '2010-09-30 23:59:59',
+                                                 },
+                                                ]
+  nowFunction = exp.DummyObjectWithExpectations('nowFunction')
+  nowFunction.expect('__call__', (), {}, dt.datetime(2010,10,1,0,1,0), None)
+  nowFunction.expect('__call__', (), {}, dt.datetime(2010,10,1,0,1,0), None)
+  nowFunction.expect('__call__', (), {}, dt.datetime(2010,10,1,0,1,0), None)
+  nowFunction.expect('__call__', (), {}, dt.datetime(2010,10,1,0,1,0), None)
+  nowFunction.expect('__call__', (), {}, dt.datetime(2010,10,1,0,1,0), None)
+  nowFunction.expect('__call__', (), {}, dt.datetime(2010,10,1,0,1,0), None)
+  dummy_client_row_object = exp.DummyObjectWithExpectations('dummy_client_row_object')
+  d = { 'flags:processed': ValueObject('N'),
+        'meta_data:json': ValueObject('"json stuff"'),
+        'raw_data:dump': ValueObject('binary dump'),
+      }
+  dummy_client_row_object.expect('columns', None, None, d)
+  dummy_client_row_object.expect('row', None, None, 'eee')
+  dummy_clientObject.expect('getRowWithColumns',
+                            ('crash_reports',
+                             '510100159f56181-6fff-4f27-a263-548242101001',
+                             ['meta_data:json', 'raw_data:dump', 'flags:processed']),
+                            {},
+                            [dummy_client_row_object],
+                            None
+                           )
+  post_result = exp.DummyObjectWithExpectations('post_result')
+  post_result.expect('read', (), {}, 'fred', None)
+  urllib2Module = exp.DummyObjectWithExpectations('urllib2Module')
+  urllib2Module.expect('urlopen',
+                       ("http://fred:8881/201006/process/ooid",
+                        'ooid=59f56181-6fff-4f27-a263-548242101001'),
+                       {},
+                       post_result,
+                       None)
+  conn.update_unprocessed_queue_with_processor_state_expectations.expect('__call__',
+                                                                         ('eee',
+                                                                          '2010-10-01T00:01:00',
+                                                                          'fred',
+                                                                          0),
+                                                                         {},
+                                                                         None
+                                                                        )
+  urllib2Module.expect('URLError', None, None, FakeUrllib2Exception)
+  conn.submit_to_processor('fred,ethel,wilma',
+                           resubmitTimeDeltaThreshold=dt.timedelta(seconds=60),
+                           urllib2Module=urllib2Module,
+                           nowFunction=nowFunction)

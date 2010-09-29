@@ -13,9 +13,12 @@ import time
 import tarfile
 import struct
 import datetime as dt
-import socorro.lib.datetimeutil as sdt
-
+import urllib
+import urllib2
 import socket
+
+import socorro.lib.datetimeutil as sdt
+import socorro.lib.util as utl
 
 from thrift import Thrift  #get Thrift modue
 from thrift.transport import TSocket, TTransport #get modules
@@ -23,7 +26,6 @@ from thrift.protocol import TBinaryProtocol #get module
 from hbase import ttypes #get module
 from hbase.hbase import Client, ColumnDescriptor, Mutation #get classes from module
 
-import socorro.lib.util as utl
 
 #=================================================================================================================
 class IterableJsonEncoder(json.JSONEncoder):
@@ -269,6 +271,7 @@ class HBaseConnection(object):
     except NoConnectionException, x:
       self.logger.error('cannot establish initial connection to hbase: %s',
                         str(x))
+      raise
 
   def make_connection(self, retry=2, timeout=9000):
     """Establishes the underlying connection to hbase"""
@@ -624,15 +627,8 @@ class HBaseConnectionForCrashReports(HBaseConnection):
                           timestamp_prefix=''):
     limit = int(limit)
 
-    import urllib
-    import urllib2
-    #TODO move this up to not be a nested method
-    def circular_sequence(seq):
-      i = 0
-      while True:
-        yield seq[i]
-        i = (i + 1)%len(seq)
-    urls = circular_sequence(["http://%s:8881/201006/priority/process/ooid"%processorHostName for processorHostName in processorHostNames.split(',')])
+    #TODO: fix hardcoded port and url
+    urls = itertools.cycle(("http://%s:8881/201006/priority/process/ooid" % processorHostName for processorHostName in processorHostNames.split(',')))
 
     for row in self.limited_iteration(self.merge_scan_with_prefix(from_queue_table, timestamp_prefix,
                                                                   ['ids:ooid']),limit):
@@ -654,19 +650,14 @@ class HBaseConnectionForCrashReports(HBaseConnection):
                           bad_queue_entry_handling='delete', # delete|skip|resubmit
                           legacy_flag='0',
                           from_queue_table='crash_reports_index_legacy_unprocessed_flag',
-                          resubmitTimeDeltaThreshold=dt.timedelta(seconds=300)):
+                          resubmitTimeDeltaThreshold=dt.timedelta(seconds=300),
+                          urllib2Module=urllib2,
+                          nowFunction=dt.datetime.now):
     legacy_flag = int(legacy_flag)
     limit = int(limit)
 
-    import urllib
-    import urllib2
-    #TODO move this up to not be a nested method
-    def circular_sequence(seq):
-      i = 0
-      while True:
-        yield seq[i]
-        i = (i + 1)%len(seq)
-    urls = circular_sequence(["http://%s:8881/201006/process/ooid"%processorHostName for processorHostName in processorHostNames.split(',')])
+    #TODO: fix hardcoded port and url
+    urls = itertools.cycle(("http://%s:8881/201006/process/ooid" % processorHostName for processorHostName in processorHostNames.split(',')))
 
     for row in self.limited_iteration(self.merge_scan_with_prefix(from_queue_table, '',
                                                                   ['ids:ooid','processor_state:']),limit):
@@ -680,9 +671,11 @@ class HBaseConnectionForCrashReports(HBaseConnection):
 
       try:
         post_timestamp = sdt.datetimeFromISOdateString(row['processor_state:post_timestamp'])
-        delta = dt.datetime.now() - post_timestamp
-        self.logger.debug('delta: %s; resubmitTimeDeltaThreshold: %s', str(delta), str(resubmitTimeDeltaThreshold))
-        self.logger.debug('delta > resubmitTimeDeltaThreshold: %s', delta > resubmitTimeDeltaThreshold)
+        now = nowFunction()
+        delta = now - post_timestamp
+        #self.logger.debug('now: %s; post_timestamp: %s', str(now), str(post_timestamp))
+        #self.logger.debug('delta: %s; resubmitTimeDeltaThreshold: %s', str(delta), str(resubmitTimeDeltaThreshold))
+        #self.logger.debug('delta > resubmitTimeDeltaThreshold: %s', delta > resubmitTimeDeltaThreshold)
         doSubmit = delta > resubmitTimeDeltaThreshold
       except (KeyError, ValueError):
         doSubmit = True
@@ -690,8 +683,8 @@ class HBaseConnectionForCrashReports(HBaseConnection):
         self.logger.debug('avoiding potential resubmit on %s', ooid)
         continue
 
-
       report_row_id = ooid_to_row_id(ooid)
+      self.logger.debug(report_row_id)
       listOfRawRows = self.client.getRowWithColumns('crash_reports',report_row_id,['meta_data:json', 'raw_data:dump', 'flags:processed'])
       if listOfRawRows:
         report = self._make_row_nice(listOfRawRows[0])
@@ -727,14 +720,14 @@ class HBaseConnectionForCrashReports(HBaseConnection):
 
       try:
         params = urllib.urlencode({'ooid':ooid})
-        post_result = urllib2.urlopen(urls.next(), params)
+        post_result = urllib2Module.urlopen(urls.next(), params)
         processor_name = post_result.read()
         self.update_unprocessed_queue_with_processor_state(
                 rowkey,
-                dt.datetime.now().isoformat(),
+                now.isoformat(),
                 processor_name,
                 legacy_flag)
-      except urllib2.URLError, e:
+      except urllib2Module.URLError, e:
         self.logger.warning('could not submit %s for processing - %s', ooid, str(e))
       except Exception, e:
         self.logger.warning('something has gone wrong in the submission for %s - %s', ooid, str(e))

@@ -34,6 +34,10 @@ class FakeLogger(object):
   def critical(self,*x): self.log(logging.CRITICAL, *x)
   fatal = critical
 
+#=================================================================================================================
+class StdoutLogger(FakeLogger):
+  def log(self,*x):
+    print self.createLogMessage(*x)
 
 #=================================================================================================================
 class SilentFakeLogger(object):

@@ -166,6 +166,7 @@ def testCrashStorageSystem_save():
 def testCrashStorageSystemForHBase___init__():
   d = util.DotDict()
   j = util.DotDict()
+  d.processorHostname = 'wilma'
   d.hbaseHost = 'fred'
   d.hbasePort = 'ethel'
   d.hbaseTimeout = 9
@@ -200,6 +201,7 @@ def testCrashStorageSystemForHBase_save_1():
 
   d = util.DotDict()
   j = util.DotDict()
+  d.processorHostname = 'wilma'
   d.hbaseHost = 'fred'
   d.hbasePort = 'ethel'
   d.hbaseTimeout = 9
@@ -213,10 +215,11 @@ def testCrashStorageSystemForHBase_save_1():
   j.dumpGID = d.hbaseFallbackdumpGID = 666
   j.dumpPermissions = d.hbaseFallbackDumpPermissions = 660
   j.dirPermissions = d.hbaseFallbackDirPermissions = 770
-  d.logger = util.SilentFakeLogger()
+  #d.logger = util.SilentFakeLogger()
+  d.logger = util.StdoutLogger()
 
   fakeHbaseConnection = exp.DummyObjectWithExpectations('fakeHbaseConnection')
-  fakeHbaseConnection.expect('put_json_dump', ('uuid', jdict, expectedDumpResult), {"number_of_retries":1, "wait_between_retries":10}, None, None)
+  fakeHbaseConnection.expect('put_json_dump', ('uuid', jdict, expectedDumpResult), {"number_of_retries":1, "wait_between_retries":10}, (1, 1), None)
 
   fakeHbaseModule = exp.DummyObjectWithExpectations('fakeHbaseModule')
   fakeHbaseModule.expect('HBaseConnectionForCrashReports', ('fred', 'ethel', 9), {"logger":d.logger}, fakeHbaseConnection, None)
@@ -234,14 +237,16 @@ def testCrashStorageSystemForHBase_save_2():
   """hbase fails, must save to fallback"""
   currentTimestamp = 'now'
   expectedDumpResult = '1234567890/n'
-  fakeDumpStream = exp.DummyObjectWithExpectations('fakeDumpStream')
-  fakeDumpStream.expect('read', (), {}, expectedDumpResult, None)
+  #fakeDumpStream = exp.DummyObjectWithExpectations('fakeDumpStream')
   #fakeDumpStream.expect('read', (), {}, expectedDumpResult, None)
-  rsr = cstore.RepeatableStreamReader(fakeDumpStream)
+  #fakeDumpStream.expect('read', (), {}, expectedDumpResult, None)
+  #rsr = cstore.RepeatableStreamReader(fakeDumpStream)
+  rsr = expectedDumpResult
   jdict = util.DotDict({'ProductName':'FireFloozy', 'Version':'3.6', 'legacy_processing':1})
 
   d = util.DotDict()
   j = util.DotDict()
+  d.processorHostname = 'wilma'
   d.hbaseHost = 'fred'
   d.hbasePort = 'ethel'
   d.hbaseTimeout = 9
@@ -289,12 +294,14 @@ def testCrashStorageSystemForHBase_save_3():
   """hbase fails but there is no filesystem fallback - expecting fail return"""
   currentTimestamp = 'now'
   expectedDumpResult = '1234567890/n'
-  fakeDumpStream = exp.DummyObjectWithExpectations('fakeDumpStream')
-  fakeDumpStream.expect('read', (), {}, expectedDumpResult, None)
-  rsr = cstore.RepeatableStreamReader(fakeDumpStream)
+  #fakeDumpStream = exp.DummyObjectWithExpectations('fakeDumpStream')
+  #fakeDumpStream.expect('read', (), {}, expectedDumpResult, None)
+  #rsr = cstore.RepeatableStreamReader(fakeDumpStream)
+  rsr = expectedDumpResult
   jdict = {'a':2, 'b':'hello'}
 
   d = util.DotDict()
+  d.processorHostname = 'wilma'
   d.hbaseHost = 'fred'
   d.hbasePort = 'ethel'
   d.hbaseTimeout = 9
