@@ -178,6 +178,7 @@ class StreamBreakpadProcessor (daemon_proc.Processor):
     j_dump.cpu_info.cpu_info = getPart(lineparts, 2)
     new_jdoc.cpu_info = j_dump.cpu_info.cpu_info
     j_dump.cpu_info.cpu_count = getPart(lineparts, 3, int)
+    new_jdoc.cpu_count = j_dump.cpu_info.cpu_count
     j_dump.cpu_info.original_line = line
 
   #-----------------------------------------------------------------------------------------------------------------
