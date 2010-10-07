@@ -17,6 +17,13 @@ from config.commonconfig import hbaseRetryDelay
 
 from config.commonconfig import registrationHostPort
 
+from config.smtpconfig import smtpHostname
+from config.smtpconfig import smtpPort
+from config.smtpconfig import smtpUsername
+from config.smtpconfig import smtpPassword
+from config.smtpconfig import fromEmailAddress
+from config.smtpconfig import unsubscribeBaseUrl
+
 modwsgiInstallation = cm.Option()
 modwsgiInstallation.doc = 'True or False, this app is installed under mod_wsgi'
 modwsgiInstallation.default = False

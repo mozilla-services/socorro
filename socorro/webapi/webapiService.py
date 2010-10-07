@@ -61,7 +61,7 @@ class JsonServiceBase (object):
     raise Unimplemented("the GET function has not been implemented for %s" % args)
 
   #-----------------------------------------------------------------------------------------------------------------
-  def POST(self):
+  def POST(self, *args):
     try:
       result = self.post()
       if type(result) is tuple:
@@ -75,7 +75,7 @@ class JsonServiceBase (object):
       raise
 
   #-----------------------------------------------------------------------------------------------------------------
-  def post(self):
+  def post(self, *args):
     raise Unimplemented("the POST function has not been implemented.")
 
 #=================================================================================================================

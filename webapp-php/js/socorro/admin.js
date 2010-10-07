@@ -45,3 +45,9 @@ function hideShow(hideId, showId) {
 	$('#'+hideId).hide(); 
 	$('#'+showId).show('fast'); 
 }
+
+$(document).ready(function(){
+    $('input[name=email_start_date][type=text], input[name=email_end_date][type=text]').datePicker({
+        startDate: '01/01/2008',
+    });
+});

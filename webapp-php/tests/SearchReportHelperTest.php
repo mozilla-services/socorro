@@ -1,6 +1,48 @@
 <?php
 require_once 'PHPUnit/Framework.php';
 define('SYSPATH', '');
+
+class Kohana
+{
+    public static function find_file($dir, $filename, $errorNotFound, $file_ext)
+    {
+	return dirname(__FILE__) . "/../application/${dir}/${filename}.${file_ext}";
+    }
+
+    public static function log($level, $msg)
+    {
+	echo $level . ":" . $msg;
+    }
+
+    public static function debug($thing)
+    {
+	echo $thing;
+    }
+
+    public static function config($name)
+    {
+        return array(
+    'admin' => array(
+	    'range_default_value' => 14,
+	    'range_default_unit' => 'days',
+        'range_limit_value_in_days' => 120
+    ),    
+    'user' => array(
+	    'range_default_value' => 14,
+	    'range_default_unit' => 'days',
+        'range_limit_value_in_days' => 30
+	)
+);
+    }
+}
+
+class client {
+    public static function messageSend($msg, $code)
+    {
+
+    }
+}
+
 require_once dirname(__FILE__).'/../application/libraries/MY_SearchReportHelper.php';
 
   class SearchReportHelperTest extends PHPUnit_Framework_TestCase
@@ -17,6 +59,7 @@ require_once dirname(__FILE__).'/../application/libraries/MY_SearchReportHelper.
  
       $badSearch = array('product' => array(),
 			 'branch' => array(),
+                         'build_id' => '',
 			 'version' => array(),
 			 'platform' => array(),
 			 'query_search' => 'signature',
@@ -28,9 +71,9 @@ require_once dirname(__FILE__).'/../application/libraries/MY_SearchReportHelper.
 			 'do_query' => 1,
 			 );
       $helper->normalizeParams( $badSearch );
-      $this->assertEquals( 2, $badSearch['range_value'], "We limit the # of weeks");
-      $this->assertEquals( 'weeks', $badSearch['range_unit'], "Unit unchanged from weeks");
-      $this->assertEquals( array('Firefox'), $badSearch['product'], "A product of version must be selected");
+      $this->assertEquals( 14, $badSearch['range_value'], "We limit the # of days");
+      $this->assertEquals( 'days', $badSearch['range_unit'], "Unit unchanged from days");
+      $this->assertEquals( array(), $badSearch['product'], "A product of version must be selected");
     }
 
     /* Internal API */
@@ -43,8 +86,8 @@ require_once dirname(__FILE__).'/../application/libraries/MY_SearchReportHelper.
       $badSearch['range_value'] = 3;
       $badSearch['range_unit'] = 'months';
       $helper->normalizeDateUnitAndValue( $badSearch );
-      $this->assertEquals( 'weeks', $badSearch['range_unit'], "Unit changed from months to weeks");
-      $this->assertEquals( 2, $badSearch['range_value'], "We limit the # of weeks");
+      $this->assertEquals( 'days', $badSearch['range_unit'], "Unit changed from months to weeks");
+      $this->assertEquals( 14, $badSearch['range_value'], "We limit the # of weeks");
 
       $badSearch['range_value'] = 40;
       $badSearch['range_unit'] = 'days';
@@ -62,8 +105,8 @@ require_once dirname(__FILE__).'/../application/libraries/MY_SearchReportHelper.
       $badSearch['range_value'] = 33 * 24;
       $badSearch['range_unit'] = 'hours';
       $helper->normalizeDateUnitAndValue( $badSearch );
-      $this->assertEquals( 'hours', $badSearch['range_unit'], "Unit unchanged from hours");
-      $this->assertEquals( 336, $badSearch['range_value'], "Reduced to 14 days (in hours)");
+      $this->assertEquals( 'days', $badSearch['range_unit'], "Unit unchanged from hours");
+      $this->assertEquals( 14, $badSearch['range_value'], "Reduced to 14 days (in hours)");
     }
 
     public function testDateBug466233(){
@@ -112,7 +155,7 @@ require_once dirname(__FILE__).'/../application/libraries/MY_SearchReportHelper.
       $badSearch['version'] = array('');
 
       $helper->normalizeProduct( $badSearch );
-      $this->assertEquals(array('Firefox'), $badSearch['product'], "product no normalization");
+      $this->assertEquals(array(), $badSearch['product'], "product no normalization");
     }
 
 

@@ -1,7 +1,6 @@
 import psycopg2 as pg
 import datetime as dt
 import threading
-import sets
 
 import socorro.lib.prioritize as socorro_pri
 import socorro.lib.psycopghelper as socorro_psy
@@ -9,10 +8,7 @@ import socorro.database.postgresql as socorro_pg
 
 import socorro.lib.util as socorro_util
 """
-Schema.py contains several utility functions and the code which describes all the database tables used by socorro. It has
-a test file: ../unittest/database/testSchema.py which MUST BE CHANGED IN PARALLEL to changes in schema.py. In particular,
-if you add, remove or rename any of the XxxTable classes in this file, you must make a parallel change to the list
-hardCodedSchemaClasses in the test file.
+Schema.py contains several utility functions and the code which describes all the database tables used by socorro. 
 """
 
 #-----------------------------------------------------------------------------------------------------------------
@@ -1007,6 +1003,97 @@ class DailyCrashesTable(Table):
 
 databaseDependenciesForSetup[DailyCrashesTable] = []
 
+
+#=================================================================================================================
+class EmailCampaignsTable(Table):
+  """Define the table 'email_campaigns'
+     Notes: * email_count is populated after the record is inserted (TBD)
+            * product/versions is denormalized to record versions used, but isn't searchable
+  """
+  #-----------------------------------------------------------------------------------------------------------------
+  def __init__ (self, logger, **kwargs):
+    super(EmailCampaignsTable, self).__init__(name = "email_campaigns", logger=logger,
+                                        creationSql = """
+                                            CREATE TABLE email_campaigns (
+                                                id serial NOT NULL PRIMARY KEY,
+                                                product TEXT NOT NULL,
+                                                versions TEXT NOT NULL,                                                
+                                                signature TEXT NOT NULL,
+                                                subject TEXT NOT NULL,
+                                                body TEXT NOT NULL,
+                                                start_date timestamp without time zone NOT NULL,
+                                                end_date timestamp without time zone NOT NULL,
+                                                email_count INTEGER DEFAULT 0,
+                                                author TEXT NOT NULL,
+                                                date_created timestamp without time zone NOT NULL DEFAULT now());
+                                            CREATE INDEX email_campaigns_product_signature_key ON email_campaigns (product, signature);
+                                        """)
+    aok
+    self.insertSql = """INSERT INTO email_campaigns (product, versions, signature, subject, body, start_date, end_date, email_count, author)
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id"""
+
+  #-----------------------------------------------------------------------------------------------------------------
+  def updateDefinition(self, databaseCursor):
+    if socorro_pg.tablesMatchingPattern(self.name) == []:
+      #this table doesn't exist yet, create it
+      self.create(databaseCursor)
+
+databaseDependenciesForSetup[EmailCampaignsTable] = []
+
+#=================================================================================================================
+class EmailContactsTable(Table):
+  """Define the table 'email_contacts'
+     Notes: subscribe_token - UUID which is used in urls for a user to manage their subscription.
+            subscribe_status - Captures user's opt-out status. True - we can email, False - no email
+  """
+  #-----------------------------------------------------------------------------------------------------------------
+  def __init__ (self, logger, **kwargs):
+    super(EmailContactsTable, self).__init__(name = "email_contacts", logger=logger,
+                                        creationSql = """
+                                            CREATE TABLE email_contacts (
+                                                id serial NOT NULL PRIMARY KEY,
+                                                email              TEXT NOT NULL,
+                                                subscribe_token    TEXT NOT NULL,
+                                                subscribe_status   BOOLEAN DEFAULT TRUE,
+                                                CONSTRAINT email_contacts_email_unique UNIQUE (email),
+                                                CONSTRAINT email_contacts_token_unique UNIQUE (subscribe_token)
+                                                );
+                                        """)
+    self.insertSql = """INSERT INTO email_contacts (email, subscribe_token) VALUES (%s, %s) RETURNING id"""
+  #-----------------------------------------------------------------------------------------------------------------
+  def updateDefinition(self, databaseCursor):
+    if socorro_pg.tablesMatchingPattern(self.name) == []:
+      #this table doesn't exist yet, create it
+      self.create(databaseCursor)
+
+databaseDependenciesForSetup[EmailContactsTable] = []
+
+#=================================================================================================================
+class EmailCampaignsContactsTable(Table):
+  """Define the table 'email_campaigns_contacts'
+     Notes: Mapping table many to many
+  """
+  #-----------------------------------------------------------------------------------------------------------------
+  def __init__ (self, logger, **kwargs):
+    super(EmailCampaignsContactsTable, self).__init__(name = "email_campaigns_contacts", logger=logger,
+                                        creationSql = """
+                                            CREATE TABLE email_campaigns_contacts (
+                                                email_campaigns_id INTEGER REFERENCES email_campaigns (id),
+                                                email_contacts_id  INTEGER REFERENCES email_contacts (id),
+                                            CONSTRAINT email_campaigns_contacts_mapping_unique UNIQUE (email_campaigns_id, email_contacts_id)
+                                            );
+                                        """)
+    self.insertSql = """INSERT INTO TABLENAME (email_campaigns_id, email_contacts) VALUES (%s, %s) RETURNING id"""
+  
+  #-----------------------------------------------------------------------------------------------------------------
+  def updateDefinition(self, databaseCursor):
+    if socorro_pg.tablesMatchingPattern(self.name) == []:
+      #this table doesn't exist yet, create it
+      self.create(databaseCursor)
+
+
+
+databaseDependenciesForSetup[EmailCampaignsContactsTable] = [EmailCampaignsTable, EmailContactsTable]
 #-----------------------------------------------------------------------------------------------------------------
 def connectToDatabase(config, logger):
   databaseDSN = "host=%(databaseHost)s dbname=%(databaseName)s user=%(databaseUserName)s password=%(databasePassword)s" % config

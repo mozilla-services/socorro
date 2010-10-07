@@ -1,0 +1,29 @@
+import socorro.lib.ConfigurationManager as cm
+
+""" Note: This config file is used by Hoopsnake Email Campaign APIs
+    and these config options *must* be updated here, there is no
+    command line access """
+
+smtpHostname = cm.Option()
+smtpHostname.doc = 'The hostname of the SMTP provider'
+smtpHostname.default = 'localhost'
+
+smtpPort = cm.Option()
+smtpPort.doc = 'The port of the SMTP provider'
+smtpPort.default = 25
+
+smtpUsername = cm.Option()
+smtpUsername.doc = 'The username for SMTP providers that require authentication otherwise set to None'
+smtpUsername.default = None
+
+smtpPassword = cm.Option()
+smtpPassword.doc = 'The password for SMTP providers that require authentication otherwise set to None'
+smtpPassword.default = None
+
+fromEmailAddress = cm.Option()
+fromEmailAddress.doc = 'Email Address which is used in the From feild of all emails'
+fromEmailAddress.default = 'no-reply@crash-stats.mozilla.com'
+
+unsubscribeBaseUrl = cm.Option()
+unsubscribeBaseUrl.doc = 'The base url for handeling un-subscribe requests. This will be used in email templates'
+unsubscribeBaseUrl.default = "http://crash-stats.mozilla.com/email/subscription/%s"
