@@ -33,6 +33,7 @@ def buildExists(databaseCursor, product, version, platform, buildid):
     build = psy.singleRowSql(databaseCursor, sql, values)
     return True 
   except Exception:
+    databaseCursor.connection.rollback()
     logger.info("Did not find build entries in builds table for %s %s %s %s" % (product, version, platform, buildid))
     return None
 
@@ -70,6 +71,7 @@ def insertBuild(databaseCursor, product, version, platform, buildid, platform_ch
       databaseCursor.connection.commit()
       logger.info("Inserted the following build: %s %s %s %s %s %s %s %s" % (product, version, platform, buildid, platform_changeset, app_changeset_1, app_changeset_2, filename))
     except Exception:
+      databaseCursor.connection.rollback()
       util.reportExceptionAndAbort(logger)
 
 
