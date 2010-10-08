@@ -18,7 +18,7 @@ product_uris.fromStringConverter = lambda x: tuple(x.split(','))
 
 platforms = cm.Option()
 platforms.doc = 'a comma-delimited list of platforms'
-platforms.default = 'linux-i686,linux-x86_64,mac,win32'
+platforms.default = 'linux-i686,linux-x86_64,mac,mac64,win32'
 platforms.fromStringConverter = lambda x: tuple(x.split(','))
 
 #---------------------------------------------------------------------------
