@@ -69,13 +69,15 @@ public class HbaseCrashReportDao {
 		Calendar cal = Calendar.getInstance();
 		cal.setTimeInMillis(millis);
 		
-		StringBuilder sb = new StringBuilder();
 		String uuid = UUID.randomUUID().toString();
+		String dateStr = String.format("%d%d%d", new Object[] { cal.get(Calendar.YEAR) % 100, cal.get(Calendar.MONTH) + 1, cal.get(Calendar.DATE) });
+		
+		StringBuilder sb = new StringBuilder();
+		sb.append(uuid.substring(0, 1));
+		sb.append(dateStr);
 		sb.append(uuid.substring(0, uuid.length() - 7));
 		sb.append(depth);
-		sb.append(cal.get(Calendar.YEAR) % 100);
-		sb.append(cal.get(Calendar.MONTH) + 1);
-		sb.append(cal.get(Calendar.DATE));
+		sb.append(dateStr);
 		
 		return sb.toString();
 	}
