@@ -32,9 +32,13 @@ $lang = array(
         'valid_date' => 'An Start Date must be in the format dd/mm/yyyy',
     ),
     'email_end_date' => array(
+        'end_before_start_date' => 'Start Date must be before End Date',
         'required' => 'An End Date is required',
         'length' => 'An End Date must be exactly 10 characters',
         'valid_date' => 'An End Date must be in the format dd/mm/yyyy',
+    ),
+    'email_versions' => array(
+        'required' => 'One or more versions are required',
     ),
 );
 

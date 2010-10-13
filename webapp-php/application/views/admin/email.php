@@ -7,7 +7,7 @@
   <div class="body notitle">
     <div class="admin">
       <h3>Email</h3>
-      <p>During a product release, use this form to contact user's that a crash has been fixed.</p>
+      <p>During a product release, use this form to contact users that a crash has been fixed.</p>
       <p>The email is sent immediately. Setting a date range into the future will have no effect.</p>
       <p>There are two variables you can use in the email body:
         <ul>
@@ -22,7 +22,7 @@
             <option value="<?= $product ?>" <?php if ($product == $email_product) echo 'SELECTED' ?> ><?= $product ?></option>
         <?php } ?>
         </select>
-        <label for="email_versions" title="Versions is a comma seperated list of version numbers. 4.06b, 4.0b7pre, 3.6.10">Versions <span class="help">(Comma sepearted)</span></label>
+        <label for="email_versions" title="Versions is a comma seperated list of version numbers. 4.06b, 4.0b7pre, 3.6.10" class="<?php if (isset($errors) && array_key_exists('email_versions', $errors)) { echo 'form_error'; }; ?>">Versions <span class="help">(Comma sepearted)</span></label>
         <input name="email_versions" type="text" value="<?= $email_versions ?>" size="80" />
         <label for="email_signature" class="<?php if (isset($errors) && array_key_exists('email_signature', $errors)) { echo 'form_error'; }; ?>">Exact Signature</label><input name="email_signature" type="text" value="<?= $email_signature ?>" size="80" />
 

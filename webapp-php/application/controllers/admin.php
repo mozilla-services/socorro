@@ -477,9 +477,10 @@ class Admin_Controller extends Controller
      */
     public function validDate($validation, $field)
     {
+        $date_regex = '/^[0-9]{2}\/[0-9]{2}\/[0-9]{4}$/';
         $date_invalid = true;
         $val = $validation[$field];
-        if (preg_match('/^[0-9]{2}\/[0-9]{2}\/[0-9]{4}$/', $val)) {
+        if (preg_match($date_regex, $val)) {
             list($year, $month, $day) = $this->_splitDate($val);
             if (checkdate($month, $day, $year)) {
                 $date_invalid = false;
@@ -487,6 +488,16 @@ class Admin_Controller extends Controller
         }
         if ($date_invalid) {
             $validation->add_error($field, 'valid_date');
+        } else {
+            $raw_start = trim($validation['email_start_date']);
+            $raw_end   = trim($validation['email_end_date']);                
+            if ('email_end_date' == $field && preg_match($date_regex, $raw_start)) {
+                $start = strtotime($this->_convertDateForBackend($raw_start));
+                $end   = strtotime($this->_convertDateForBackend($raw_end));
+                if ($start > $end) {
+                    $validation->add_error($field, 'end_before_start_date');
+                }
+            }
         }
     }
 
