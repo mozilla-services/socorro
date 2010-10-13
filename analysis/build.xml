@@ -42,6 +42,10 @@
 			<fileset dir="${build.classes}"/>
 			<fileset dir=".">
 				<include name="lib/*.jar"/>
+        <exclude name="lib/hadoop*.jar"/>
+        <exclude name="lib/hbase*.jar"/>
+        <exclude name="lib/zookeeper*.jar"/>
+        <exclude name="lib/pig*.jar"/>
 			</fileset>
 		</jar>
 	</target>
