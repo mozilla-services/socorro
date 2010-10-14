@@ -10,7 +10,6 @@
           </tr>
         <?php } ?>
       </table>
-      <p><a href="email_campaigns">See All Campaigns</a></p>
     <?php } else { ?>
       <p>No campaigns yet.</p>
     <?php } ?>    

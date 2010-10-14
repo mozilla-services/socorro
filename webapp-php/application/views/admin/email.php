@@ -22,7 +22,7 @@
             <option value="<?= $product ?>" <?php if ($product == $email_product) echo 'SELECTED' ?> ><?= $product ?></option>
         <?php } ?>
         </select>
-        <label for="email_versions" title="Versions is a comma seperated list of version numbers. 4.06b, 4.0b7pre, 3.6.10" class="<?php if (isset($errors) && array_key_exists('email_versions', $errors)) { echo 'form_error'; }; ?>">Versions <span class="help">(Comma sepearted)</span></label>
+        <label for="email_versions" title="Versions is a comma seperated list of version numbers. 4.06b, 4.0b7pre, 3.6.10" class="<?php if (isset($errors) && array_key_exists('email_versions', $errors)) { echo 'form_error'; }; ?>">Versions <span class="help">(Comma separated)</span></label>
         <input name="email_versions" type="text" value="<?= $email_versions ?>" size="80" />
         <label for="email_signature" class="<?php if (isset($errors) && array_key_exists('email_signature', $errors)) { echo 'form_error'; }; ?>">Exact Signature</label><input name="email_signature" type="text" value="<?= $email_signature ?>" size="80" />
 
