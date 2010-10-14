@@ -669,9 +669,10 @@ class HBaseConnectionForCrashReports(HBaseConnection):
         self.client.deleteAllRow(from_queue_table, rowkey)
         continue
 
+      now = nowFunction()
       try:
+        # expected KeyError if this timestamp has not been processed
         post_timestamp = sdt.datetimeFromISOdateString(row['processor_state:post_timestamp'])
-        now = nowFunction()
         delta = now - post_timestamp
         #self.logger.debug('now: %s; post_timestamp: %s', str(now), str(post_timestamp))
         #self.logger.debug('delta: %s; resubmitTimeDeltaThreshold: %s', str(delta), str(resubmitTimeDeltaThreshold))
