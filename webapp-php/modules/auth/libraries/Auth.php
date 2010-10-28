@@ -61,12 +61,6 @@ class Auth_Core {
 		$driver = 'Auth_'.$config['driver'].'_Driver';
 
 		Kohana::log('info', "loading driver " . $driver);
-		
-		if ( ! strcmp($config['driver'], "NoAuth") ) {
-		   Kohana::log('info', "authentication disabled");
-		   $this->driver = NULL;
-		   return;
-		}		  
 
 		if ( ! Kohana::auto_load($driver))
 			throw new Kohana_Exception('core.driver_not_found', $config['driver'], get_class($this));
@@ -94,8 +88,6 @@ class Auth_Core {
 	 */
 	public function logged_in($role = NULL)
 	{
-	    if ( $this->driver == NULL )
-	       return TRUE;
 	    return $this->driver->logged_in($role);
 	}
 

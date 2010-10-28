@@ -9,18 +9,17 @@ def testResubmit ():
   #conf.logger = util.FakeLogger()
   conf.hbaseHost = 'fred'
   conf.hbasePort = 666
-  conf.hbaseTimeout = 5000
   jds_kwargs.root = conf.hbaseFallbackFS = '.'
-  jds_kwargs.maxDirectoryEntries = conf.hbaseFallbackDumpDirCount = 100000
+  jds_kwargs.maxDirectoryEntries = conf.dumpDirCount = 100000
   jds_kwargs.jsonSuffix = conf.jsonFileSuffix = 'json'
   jds_kwargs.dumpSuffix = conf.dumpFileSuffix = 'dump'
-  jds_kwargs.dumpGID = conf.hbaseFallbackDumpGID = 'lucy'
-  jds_kwargs.dumpPermissions = conf.hbaseFallbackDumpPermissions = 660
-  jds_kwargs.dirPermissions = conf.hbaseFallbackDirPermissions = 770
+  jds_kwargs.dumpGID = conf.dumpGID = 'lucy'
+  jds_kwargs.dumpPermissions = conf.dumpPermissions = 660
+  jds_kwargs.dirPermissions = conf.dirPermissions = 770
 
   fakeHbaseConnection  = exp.DummyObjectWithExpectations()
   fakeHbaseModule = exp.DummyObjectWithExpectations()
-  fakeHbaseModule.expect('HBaseConnectionForCrashReports', (conf.hbaseHost, conf.hbasePort, conf.hbaseTimeout), {}, fakeHbaseConnection)
+  fakeHbaseModule.expect('HBaseConnectionForCrashReports', (conf.hbaseHost, conf.hbasePort), {}, fakeHbaseConnection)
 
   fakeJsonDumpStorage = exp.DummyObjectWithExpectations()
   fakeJDSModule = exp.DummyObjectWithExpectations()

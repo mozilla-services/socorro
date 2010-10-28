@@ -23,8 +23,8 @@ assert "databaseName" in config, "databaseName is missing from the configuration
 assert "databaseUserName" in config, "databaseUserName is missing from the configuration"
 assert "databasePassword" in config, "databasePassword is missing from the configuration"
 assert "base_url" in config, "base_url is missing from the configuration"
-assert "product_uris" in config, "product_uris is missing from the configuration"
 assert "platforms" in config, "platforms is missing from the configuration"
+assert "versions" in config, "versions is missing from the configuration"
 
 logger = logging.getLogger("builds")
 logger.setLevel(logging.DEBUG)
@@ -35,19 +35,18 @@ stderrLogFormatter = logging.Formatter(config.stderrLineFormatString)
 stderrLog.setFormatter(stderrLogFormatter)
 logger.addHandler(stderrLog)
 
-syslog = logging.handlers.SysLogHandler(
-  address=(config.syslogHost, config.syslogPort),
-  facility=config.syslogFacilityString,
-)
-syslog.setLevel(config.syslogErrorLoggingLevel)
-syslogFormatter = logging.Formatter(config.syslogLineFormatString)
-syslog.setFormatter(syslogFormatter)
-logger.addHandler(syslog)
+rotatingFileLog = logging.handlers.RotatingFileHandler(config.logFilePathname, "a", config.logFileMaximumSize, config.logFileMaximumBackupHistory)
+rotatingFileLog.setLevel(config.logFileErrorLoggingLevel)
+rotatingFileLogFormatter = logging.Formatter(config.logFileLineFormatString)
+rotatingFileLog.setFormatter(rotatingFileLogFormatter)
+logger.addHandler(rotatingFileLog)
 
-config.logger = logger
+config.logger = logger 
 logger.info("current configuration\n%s", str(config))
 
 try:
   builds.recordNightlyBuilds(config)
 finally:
   logger.info("Done.")
+  rotatingFileLog.flush()
+  rotatingFileLog.close()

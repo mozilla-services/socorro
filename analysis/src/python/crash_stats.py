@@ -42,9 +42,7 @@ import sys
 import getopt
 
 def read_data(srcfile):
-    submissions = {}
-    processed = {}
-    oopps = {}
+    data_dict = {}
     
     fin = open(srcfile, "r")
     for line in fin:
@@ -54,19 +52,19 @@ def read_data(srcfile):
         label = splits[3]
         count = int(splits[4])
         
-        if label == 'submission':
-            product_submissions = submissions.setdefault(product_version, []).append((date_str, count))
-        elif label == 'processed':
-            product_processed = processed.setdefault(product_version, []).append((date_str, count))
-        elif label == 'oopp':
-            product_oopps = oopps.setdefault(product_version, []).append((date_str, count))
+        label_dict = data_dict.setdefault(label, {})
         
+        for k in [ product_version, "total" ]:
+            product_dict = label_dict.setdefault(k, {})
+            prev_count = product_dict.get(date_str, 0)
+            product_dict[date_str] = prev_count + count
+                        
     fin.close()
     
-    return (submissions, processed, oopps)
+    return data_dict
      
-def plot_product_version(product_version, submissions, processed, oopps):
-    date_counts = sorted(submissions[product_version])
+def plot_product_version(product_version, data_dict):
+    date_counts = sorted(data_dict['submission'][product_version].items())
     dates, counts = [[z[i] for z in date_counts] for i in (0, 1)]
     plt.clf()
     plt.plot(counts, 'b-o', label='submissions')
@@ -75,13 +73,13 @@ def plot_product_version(product_version, submissions, processed, oopps):
     plt.ylabel("Count")
     plt.title("Socorro Crash Stats for %s" % (product_version))
     
-    if (processed.has_key(product_version)):
-        date_counts = sorted(processed[product_version])
+    if (data_dict['processed'].has_key(product_version)):
+        date_counts = sorted(data_dict['processed'][product_version].items())
         dates, counts = [[z[i] for z in date_counts] for i in (0, 1)]
         plt.plot(counts, 'g-s', label='processed', linewidth=2)
     
-    if (oopps.has_key(product_version)):
-        date_counts = sorted(oopps[product_version])
+    if (data_dict['oopp'].has_key(product_version)):
+        date_counts = sorted(data_dict['oopp'][product_version].items())
         dates, counts = [[z[i] for z in date_counts] for i in (0, 1)]
         plt.plot(counts, 'r-^', label='oopp')
         
@@ -111,8 +109,8 @@ if __name__ == "__main__":
         print >>sys.stderr, err.msg
         print >>sys.stderr, "for help use --help"
     
-    submissions, processed, oopps = read_data(src_file)
-    for product_version in submissions.keys():
-        plot_product_version(product_version, submissions, processed, oopps)
+    data_dict = read_data(src_file)
+    for product_version in data_dict['submission'].keys():
+        plot_product_version(product_version, data_dict)
     
     

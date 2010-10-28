@@ -7,7 +7,6 @@
         Crash Data</h2>
         
     <ul class="options">
-        <li><a href="<?php out::H($url_base); ?>?duration=3" <?php if ($duration == 3) echo ' class="selected"'; ?>>3 days</a></li>
         <li><a href="<?php out::H($url_base); ?>?duration=7" <?php if ($duration == 7) echo ' class="selected"'; ?>>7 days</a></li>
         <li><a href="<?php out::H($url_base); ?>?duration=14" <?php if ($duration == 14) echo ' class="selected"'; ?>>14 days</a></li>
         <li><a href="<?php out::H($url_base); ?>?duration=28" <?php if ($duration == 28) echo ' class="selected"'; ?>>28 days</a></li>
@@ -97,14 +96,59 @@
     </div>
 
     <div id="top_changers" class="hidden">
-        <?php
-        View::factory('common/product_topchangers', array(
-            'dates' => $dates,
-            'duration' => $duration,
-            'product' => $product,
-            'top_changers' => $top_changers
-        ))->render(TRUE);
-        ?>
+
+    <?php if (isset($top_changers) && !empty($top_changers)) { ?>
+        <?php foreach ($top_changers as $key => $changers) { ?>
+            <div class="product_topchanger<?php if ($key == 'up') echo ' border_right'; ?>">            
+                <table id="top_changers_<?= $key; ?>" class="top_changers">
+                    <tr>
+                        <th>Change</th>
+                        <th>&nbsp; Signature</th>
+                    </tr>
+                    <?php 
+                        foreach ($changers as $changer) { 
+                            $range_value = 1;
+                            if ($duration == 14) {
+                                $range_value = 2;
+                            } elseif ($duration == 28) {
+                                $range_value = 4;
+                            }
+                
+                            $sigParams = array(
+                                'range_value' => $range_value,
+                                'range_unit'  => 'weeks',
+                                'signature' => $changer['signature'],
+                                'version' => $product
+                	        );
+                        
+                            if (!empty($version)) {
+                                $sigParams['version'] .= ":" . $version;
+                            }
+                
+                	        if (is_null($changer['signature'])) {
+                			    $display_signature = Crash::$null_sig;
+                		    } else if(empty($changer['signature'])) {
+                			    $display_signature = Crash::$empty_sig;
+                		    } else {
+                			    $display_signature = $changer['signature'];
+                		    }
+                		    
+                            $link_url =  url::base() . 'report/list?' . html::query_string($sigParams);
+                        ?>
+                
+                        <tr>
+                            <td><div class="trend <?= $changer['trendClass'] ?>"><?= $changer['changeInRank']; ?></div></td>        
+                            <td><a class="signature" href="<?php out::H($link_url) ?>" 
+                               title="View reports with this crasher."><?php out::H($display_signature); ?></a>
+                            </td> 
+                        </tr>
+                    <?php } ?>
+                </table>
+            </div>
+        <?php } ?>
+    <?php } else { ?>
+        <p>Top changers currently unavailable.</p>
+    <?php } ?>
     </div>
 
 

@@ -1,24 +1,12 @@
-import json
+import simplejson as json
 import logging
 import web
-import collections
 
 import socorro.lib.util as util
+import socorro.database.database as db
+import socorro.collector.crashstorage as cs
 
 logger = logging.getLogger("webapi")
-
-#-----------------------------------------------------------------------------------------------------------------
-def sanitizeForJson(something):
-  if something is None:
-    return None
-  if type(something) in [int, str, float, unicode]:
-    return something
-  if isinstance(something, collections.Mapping):
-    return dict((k, sanitizeForJson(v)) for k, v in something.iteritems())
-  if isinstance(something, collections.Iterable):
-    print something, type(something)
-    return [sanitizeForJson(x) for x in something]
-  return str(something)
 
 #-----------------------------------------------------------------------------------------------------------------
 def typeConversion (listOfTypeConverters, listOfValuesToConvert):
@@ -31,16 +19,13 @@ class Unimplemented(Exception):
 #=================================================================================================================
 class JsonServiceBase (object):
   #-----------------------------------------------------------------------------------------------------------------
-  def __init__(self, context):
+  def __init__(self, config):
     try:
-      self.context = context
-      self.logger = context.logger
+      self.context = config
+      self.database = db.Database(config)
+      self.crashStoragePool = cs.CrashStoragePool(config)
     except (AttributeError, KeyError):
       util.reportExceptionAndContinue(logger)
-
-  #-----------------------------------------------------------------------------------------------------------------
-  def transformReturn(self, returnValue):
-    return returnValue
 
   #-----------------------------------------------------------------------------------------------------------------
   def GET(self, *args):
@@ -49,12 +34,15 @@ class JsonServiceBase (object):
       if type(result) is tuple:
         web.header('Content-Type', result[1])
         return result[0]
-      return json.dumps(self.transformReturn(result))
-    except web.HTTPError:
-      raise
-    except Exception:
-      util.reportExceptionAndContinue(self.context.logger)
-      raise
+      return json.dumps(result)
+    except Exception, x:
+      stringLogger = util.StringLogger()
+      util.reportExceptionAndContinue(stringLogger)
+      try:
+        util.reportExceptionAndContinue(self.context.logger)
+      except (AttributeError, KeyError):
+        pass
+      raise Exception(stringLogger.getMessages())
 
   #-----------------------------------------------------------------------------------------------------------------
   def get(self, *args):
@@ -67,7 +55,7 @@ class JsonServiceBase (object):
       if type(result) is tuple:
         web.header('Content-Type', result[1])
         return result[0]
-      return json.dumps(self.transformReturn(result))
+      return json.dumps(result)
     except web.HTTPError:
       raise
     except Exception:
@@ -77,15 +65,4 @@ class JsonServiceBase (object):
   #-----------------------------------------------------------------------------------------------------------------
   def post(self, *args):
     raise Unimplemented("the POST function has not been implemented.")
-
-#=================================================================================================================
-class SanitizedJsonServiceBase (JsonServiceBase):
-  #-----------------------------------------------------------------------------------------------------------------
-  def __init__(self, context):
-    super(SanitizedJsonServiceBase, self).__init__(context)
-
-  #-----------------------------------------------------------------------------------------------------------------
-  def transformReturn(self, returnValue):
-    return sanitizeForJson(returnValue)
-
 

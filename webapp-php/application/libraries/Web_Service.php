@@ -44,19 +44,18 @@
  * @package  WebServices
  * @author   Austin King <ozten@mozilla.com>
  */
-class Web_Service
+class Web_Service 
 {
-    
     /**
      * Config params for use with CURL
      */
     protected $config;
-    
+
     /**
      * The HTTP Status code from the cURL request.
      */
     public $status_code = 0;
-    
+
     /**
      * Creates an instance of this class and allows overriding default config
      *
@@ -91,13 +90,13 @@ class Web_Service
     public function get($url, $response_type='json', $cache_lifetime=null)
     {
         if (is_null($cache_lifetime)) {
+            $this->status_code = 200;
             return $this->_get($url, $response_type);
         } else {
             $cache = new Cache();
             $cache_key = 'webservice_' . md5($url . $response_type);
             $data = $cache->get($cache_key);
             if ($data) {
-                $this->status_code = 200; // Hack in place to make cached responses resolve.
                 return $data;
             } else {
                 $data = $this->_get($url, $response_type);
@@ -112,7 +111,6 @@ class Web_Service
             }
         }
     }
-
     /**
      * Makes a POST request for the resource and parses the response based
      * on the expected type.
@@ -155,7 +153,7 @@ class Web_Service
             return false;
         }
     }
-
+ 
     /**
      * Makes a GET request for the resource and parses the response based
      * on the expected type

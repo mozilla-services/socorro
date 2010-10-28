@@ -7,7 +7,6 @@ This script is expected to be run once per day, and will be called from scripts/
 """
 
 import logging
-import os 
 import urllib2
 from sgmllib import SGMLParser
 
@@ -45,7 +44,7 @@ def fetchBuild(build_url, urllib2=urllib2):
     data = response.read()
     response.close()
     try: 
-      return data.strip().split(" ")
+      return data.strip().split(" ", 1)
     except Exception:
       util.reportExceptionAndAbort(logger)
       return None
@@ -54,22 +53,22 @@ def fetchBuild(build_url, urllib2=urllib2):
     return None
 
 
-def insertBuild(databaseCursor, product, version, platform, buildid, platform_changeset, app_changeset_1, app_changeset_2, filename):
+def insertBuild(databaseCursor, product, version, platform, buildid, changeset, filename):
   """ Insert a particular build into the database """
   build = buildExists(databaseCursor, product, version, platform, buildid)        
   if not build:
     sql = """
       INSERT INTO builds 
-      (product, version, platform, buildid, platform_changeset, app_changeset_1, app_changeset_2, filename)
+      (product, version, platform, buildid, changeset, filename)
       VALUES 
-      (%s, %s, %s, %s, %s, %s, %s, %s)
+      (%s, %s, %s, %s, %s, %s)
     """ 
 
     try:
-      values = (product, version, platform, buildid, platform_changeset, app_changeset_1, app_changeset_2, filename)
+      values = (product, version, platform, buildid, changeset, filename)
       databaseCursor.execute(sql, values) 
       databaseCursor.connection.commit()
-      logger.info("Inserted the following build: %s %s %s %s %s %s %s %s" % (product, version, platform, buildid, platform_changeset, app_changeset_1, app_changeset_2, filename))
+      logger.info("Inserted the following build: %s %s %s %s %s %s" % (product, version, platform, buildid, changeset, filename))
     except Exception:
       databaseCursor.connection.rollback()
       util.reportExceptionAndAbort(logger)
@@ -93,9 +92,9 @@ class buildParser(SGMLParser):
             self.builds.append(({'platform':platform, 'product':product, 'version':version, 'filename':filename}))
 
 
-def fetchTextFiles(config, product_uri, urllib2=urllib2):
+def fetchTextFiles(config, version, urllib2=urllib2):
   """ Parse the FTP site to find the build information for the latest nightly builds """
-  url = "%s%s" % (config.base_url, product_uri)
+  url = "%s%s" % (config.base_url, version)
   try: 
     response = urllib2.urlopen(url)
     if response.code == 200:
@@ -114,35 +113,14 @@ def fetchTextFiles(config, product_uri, urllib2=urllib2):
 
 
 def fetchAndRecordNightlyBuilds(config, databaseCursor, urllib2=urllib2):
-  for product_uri in config.product_uris:
-    builds = fetchTextFiles(config, product_uri, urllib2)
+  for version in config.versions:
+    builds = fetchTextFiles(config, version, urllib2)
     if builds['builds']:
       for build in builds['builds']:
-        build_url = "%s%s" % (builds['url'], build['filename'])
+        build_url = "%s/%s" % (builds['url'], build['filename'])
         build_file = fetchBuild(build_url, urllib2)
         if build_file:
-          buildid = build_file[0]
-          platform_changeset = '' 
-          app_changeset_1 = ''
-          app_changeset_2 = ''
-
-          try:
-            if build_file[1]:
-              platform_changeset = os.path.basename(build_file[1])
-          except Exception:
-            util.reportExceptionAndContinue(logger, 30)
-          try:
-            if build_file[2]:
-              app_changeset_1 = os.path.basename(build_file[2])
-          except Exception:
-            util.reportExceptionAndContinue(logger, 30)
-          try:
-            if build_file[3]:
-              app_changeset_2 = os.path.basename(build_file[3])
-          except Exception:
-            util.reportExceptionAndContinue(logger, 30)
- 
-          insertBuild(databaseCursor, build['product'], build['version'], build['platform'], buildid, platform_changeset, app_changeset_1, app_changeset_2, build['filename']) 
+          insertBuild(databaseCursor, build['product'], build['version'], build['platform'], build_file[0], build_file[1], build['filename']) 
 
 
 def recordNightlyBuilds(config):

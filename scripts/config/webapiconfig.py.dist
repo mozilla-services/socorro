@@ -6,16 +6,24 @@ from config.commonconfig import databasePort
 from config.commonconfig import databaseName
 from config.commonconfig import databaseUserName
 from config.commonconfig import databasePassword
+from config.commonconfig import crashStorageClass
 
 #---------------------------------------------------------------------------
 # HBase storage system
-from config.commonconfig import hbaseHost
-from config.commonconfig import hbasePort
-from config.commonconfig import hbaseTimeout
-from config.commonconfig import hbaseRetry
-from config.commonconfig import hbaseRetryDelay
+if crashStorageClass.default == 'CrashStorageSystemForHBase':
+  from config.commonconfig import hbaseHost
+  from config.commonconfig import hbasePort
+  from config.commonconfig import hbaseTimeout
 
-from config.commonconfig import registrationHostPort
+#---------------------------------------------------------------------------
+# NFS storage system
+if crashStorageClass.default == 'CrashStorageSystemForNFS':
+  from config.commonconfig import storageRoot
+  from config.commonconfig import deferredStorageRoot
+  from config.commonconfig import dumpDirPrefix
+  from config.commonconfig import dumpPermissions
+  from config.commonconfig import dirPermissions
+  from config.commonconfig import dumpGID
 
 from config.smtpconfig import smtpHostname
 from config.smtpconfig import smtpPort
@@ -24,14 +32,23 @@ from config.smtpconfig import smtpPassword
 from config.smtpconfig import fromEmailAddress
 from config.smtpconfig import unsubscribeBaseUrl
 
-modwsgiInstallation = cm.Option()
-modwsgiInstallation.doc = 'True or False, this app is installed under mod_wsgi'
-modwsgiInstallation.default = False
+wsgiInstallation = cm.Option()
+wsgiInstallation.doc = 'True or False, this app is installed under WSGI'
+wsgiInstallation.default = False
 
-prioritySubmissionUrl = cm.Option()
-prioritySubmissionUrl.doc = 'a url for a processor (or proxy) for priority processing'
-prioritySubmissionUrl.default = 'http://localhost:8881/201006/priority/process/ooid'
+import socorro.services.topCrashBySignatureTrends as tcbst
+import socorro.services.signatureHistory as sighist
+import socorro.services.aduByDay as adubd
+import socorro.services.getCrash as crash
+import socorro.services.emailCampaign as emailcampaign
+import socorro.services.emailCampaignCreate as emailcreate
+import socorro.services.emailCampaigns as emaillist
+import socorro.services.emailCampaignVolume as emailvolume
+import socorro.services.emailSubscription as emailsub
 
+servicesList = cm.Option()
+servicesList.doc = 'a python list of classes to offer as services'
+servicesList.default = [tcbst.TopCrashBySignatureTrends, sighist.SignatureHistory, adubd.AduByDay, adubd.AduByDay200912, crash.GetCrash, emailcampaign.EmailCampaign, emailcreate.EmailCampaignCreate, emaillist.EmailCampaigns, emailvolume.EmailCampaignVolume, emailsub.EmailSubscription]
 
 #---------------------------------------------------------------------------
 # Logging
@@ -54,6 +71,3 @@ syslogLineFormatString.default = 'Socorro Web Services (pid %(process)d): %(asct
 syslogErrorLoggingLevel = cm.Option()
 syslogErrorLoggingLevel.doc = 'logging level for the log file (10 - DEBUG, 20 - INFO, 30 - WARNING, 40 - ERROR, 50 - CRITICAL)'
 syslogErrorLoggingLevel.default = 10
-
-
-

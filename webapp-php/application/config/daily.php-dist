@@ -16,32 +16,6 @@ $config['products'] = array('Camino', 'Firefox', 'SeaMonkey', 'Thunderbird');
 $config['operating_systems'] = array('Windows', 'Mac', 'Linux');
 
 /**
- * Throttle rates
- *
- * The following array contains throttling rates that are used to modify the 
- * the number of crashes for each version.  The throttle rate is the effective 
- * throttle, being the combined throttle rate for client-side throttling and 
- * server-side throttling.  These rates are merely default rates, and may be 
- * updated by the user within the UI.
- *
- * Only include versions that do not have a throttle rate of 100%.  It will 
- * assume 100% by default.
- *
- * array('Firefox' => array('3.5.6' => 15)) == 15% Effective Throttle Rate for Firefox 3.5.6
+ * The default throttle rate for versions.
  */
-$config['throttle_rates'] = array(
-    'Firefox' => array(
-        '3.0.15' => 15,
-        '3.0.16' => 15,
-        '3.0.17' => 15,
-        '3.0.18' => 15,
-        '3.0.19' => 15,                        
-        '3.0.20' => 15,        
-        '3.0.21' => 15,        
-        '3.5.5' => 15,
-        '3.5.6' => 15,
-        '3.5.7' => 15,
-        '3.5.8' => 15,            
-        '3.5.9' => 15
-    )
-);
+$config['throttle_default'] = 10.00;

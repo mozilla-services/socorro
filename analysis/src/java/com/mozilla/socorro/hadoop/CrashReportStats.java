@@ -252,7 +252,7 @@ public class CrashReportStats implements Tool {
 			for (int i=0; i < salts.length; i++) {
 				Scan s = new Scan();
 				// this caching number is selected by 64MB / Mean JSON Size
-				s.setCaching(1788);
+				s.setCaching(223);
 				// disable block caching
 				s.setCacheBlocks(false);
 				// only looking for meta and processed json data

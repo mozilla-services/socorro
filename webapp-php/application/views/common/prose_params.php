@@ -14,26 +14,28 @@
         $msg = "Results within {$params['range_value']} {$params['range_unit']} of {$end_date}";
 
         if ($params['query']) {
+
             $types = (array(
                 'exact'      => 'is exactly',
                 'contains'   => 'contains',
-                'startswith' => 'starts with'
+                'startswith' => 'starts with',
+                'simple'     => 'contains'
             ));
             $type = $types[ $params['query_type'] ];
 
             $queries = (array( 
                 'signature' => 'the crash signature',
+                'stack'     => 'one of the top 10 stack frames'
             ));
-            
-            if (isset($queries[$params['query_search']]) && !empty($queries[$params['query_search']])) { 
-                $query = $queries[ $params['query_search'] ];
-                $msg .= ", where {$query} {$type} '{$params['query']}'";
-            }
+            $query = $queries[ $params['query_search'] ];
+        
+            $msg .= ", where {$query} {$type} '{$params['query']}'";
+
         }
 
         foreach (array('product', 'branch', 'version', 'platform') as $field) {
             if (count( $params[$field] )) {
-                $msg .= ", and the $field is one of " . ucwords(join(', ', $params[$field]));
+                $msg .= ", and the $field is one of " . join(', ', $params[$field]);
             }
         }
 
@@ -44,7 +46,7 @@
 
         if (array_key_exists('process_type', $params) &&
             'all' != $params['process_type']) {
-	    $msg .= " and the crashing process was " . $params['process_type'];
+	    $msg .= " and the crashing process was a " . $params['process_type'];
 	    if ('plugin' == $params['process_type'] && trim($params['plugin_query']) != '') {
 		$plugin_copy = array('exact'  => ' that is exactly ',
 				     'contains' => ' that contains ',

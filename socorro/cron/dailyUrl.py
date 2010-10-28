@@ -5,6 +5,7 @@ import copy
 import datetime as dt
 import gzip
 import csv
+import simplejson
 import time
 import os.path
 
@@ -62,7 +63,7 @@ def dailyUrlDump(config):
         pd.branch,    -- 9
         r.os_name,    --10
         r.os_version, --11
-        r.cpu_name || ' | ' || r.cpu_info,   --12
+        r.cpu_name || ' | ' || r.cpu_info as cpu_info,   --12
         r.address,    --13
         array(select ba.bug_id from bug_associations ba where ba.signature = r.signature) as bug_list, --14
         r.user_comments, --15

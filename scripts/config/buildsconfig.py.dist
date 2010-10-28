@@ -9,40 +9,37 @@ from config.commonconfig import databasePassword
 
 base_url = cm.Option()
 base_url.doc = 'The base url to use for fetching builds'
-base_url.default = 'http://ftp.mozilla.org/pub/mozilla.org/'
-
-product_uris = cm.Option()
-product_uris.doc = 'a comma-delimited list of uris for each product'
-product_uris.default = 'firefox/nightly/latest-mozilla-1.9.1/,firefox/nightly/latest-mozilla-1.9.2/,firefox/nightly/latest-mozilla-central/,seamonkey/nightly/latest-comm-1.9.1/,seamonkey/nightly/latest-comm-central-trunk/,thunderbird/nightly/latest-comm-1.9.1/,thunderbird/nightly/latest-comm-1.9.2/,thunderbird/nightly/latest-comm-central-trunk/,mobile/nightly/latest-mobile-1.9.2/,mobile/nightly/latest-mobile-trunk/,camino/nightly/latest-2.1-M1.9.2/'
-product_uris.fromStringConverter = lambda x: tuple(x.split(','))
+base_url.default = 'http://ftp.mozilla.org/pub/mozilla.org/firefox/nightly/latest-'
 
 platforms = cm.Option()
 platforms.doc = 'a comma-delimited list of platforms'
 platforms.default = 'linux-i686,linux-x86_64,mac,mac64,win32'
 platforms.fromStringConverter = lambda x: tuple(x.split(','))
 
-#---------------------------------------------------------------------------
-# Logging
+versions = cm.Option()
+versions.doc = 'a comma-delimited list of versions'
+versions.default = 'mozilla-1.9.1,mozilla-1.9.2,mozilla-central' 
+versions.fromStringConverter = lambda x: tuple(x.split(','))
 
-syslogHost = cm.Option()
-syslogHost.doc = 'syslog hostname'
-syslogHost.default = 'localhost'
+logFilePathname = cm.Option()
+logFilePathname.doc = 'full pathname for the log file'
+logFilePathname.default = './builds.log'
 
-syslogPort = cm.Option()
-syslogPort.doc = 'syslog port'
-syslogPort.default = 514
+logFileMaximumSize = cm.Option()
+logFileMaximumSize.doc = 'maximum size in bytes of the log file'
+logFileMaximumSize.default = 1000000
 
-syslogFacilityString = cm.Option()
-syslogFacilityString.doc = 'syslog facility string ("user", "local0", etc)'
-syslogFacilityString.default = 'user'
+logFileMaximumBackupHistory = cm.Option()
+logFileMaximumBackupHistory.doc = 'maximum number of log files to keep'
+logFileMaximumBackupHistory.default = 50
 
-syslogLineFormatString = cm.Option()
-syslogLineFormatString.doc = 'python logging system format for syslog entries'
-syslogLineFormatString.default = 'Socorro Builds Config (pid %(process)d): %(asctime)s %(levelname)s - %(threadName)s - %(message)s'
+logFileLineFormatString = cm.Option()
+logFileLineFormatString.doc = 'python logging system format for log file entries'
+logFileLineFormatString.default = '%(asctime)s %(levelname)s - %(message)s'
 
-syslogErrorLoggingLevel = cm.Option()
-syslogErrorLoggingLevel.doc = 'logging level for the log file (10 - DEBUG, 20 - INFO, 30 - WARNING, 40 - ERROR, 50 - CRITICAL)'
-syslogErrorLoggingLevel.default = 10
+logFileErrorLoggingLevel = cm.Option()
+logFileErrorLoggingLevel.doc = 'logging level for the log file (10 - DEBUG, 20 - INFO, 30 - WARNING, 40 - ERROR, 50 - CRITICAL)'
+logFileErrorLoggingLevel.default = 20
 
 stderrLineFormatString = cm.Option()
 stderrLineFormatString.doc = 'python logging system format for logging to stderr'

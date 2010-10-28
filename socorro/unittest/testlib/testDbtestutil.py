@@ -69,18 +69,15 @@ def teardown_module():
   me.testDB.removeDB(me.config,logger)
   me.connection.close()
 
-# this is a bad test - all it ends up doing is pointing out
-# inconsistency between the database host's clock and the one
-# running the tests
-#def testDatetimeNow():
-  #global me
-  #cursor = me.connection.cursor()
-  #before = dt.datetime.now()
-  #time.sleep(.01)
-  #got = dbtu.datetimeNow(cursor)
-  #time.sleep(.01)
-  #after = dt.datetime.now()
-  #assert before < got and got < after, "but\nbefore:%s\ngot:   %s\nafter: %s"%(before,got,after)
+def testDatetimeNow():
+  global me
+  cursor = me.connection.cursor()
+  before = dt.datetime.now()
+  time.sleep(.01)
+  got = dbtu.datetimeNow(cursor)
+  time.sleep(.01)
+  after = dt.datetime.now()
+  assert before < got and got < after, "but\nbefore:%s\ngot:   %s\nafter: %s"%(before,got,after)
 
 def testFillProcessorTable_NoMap():
   """ testDbtestutil:testFillProcessorTable_NoMap():

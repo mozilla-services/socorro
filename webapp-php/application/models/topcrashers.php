@@ -265,7 +265,9 @@ class Topcrashers_Model extends Model {
      * a map from signature to hang_details.
      *
      * This query is temporary until the top crashers webservice is enhanced
-     *
+     * 
+     * Slated for deprecation in Socorro 1.8.  See Bug #604740
+     * 
      * @param string $product    Current product for report
      * @param string $version    Current version for report
      * @param date   $endtime    The end of the window. 
@@ -304,7 +306,7 @@ class Topcrashers_Model extends Model {
         foreach ($rows as $row) {
             $sig2oopp[$row->signature] = array();
             $sig2oopp[$row->signature]['hang'] = $row->numhang > 0 ? true : false;
-            $sig2oopp[$row->signature]['process'] = $row->numplugin > 0 ? 'Plugin' : 'Browser';
+            $sig2oopp[$row->signature]['process'] = ($row->numplugin > 0 || $row->numhang > 0) ? 'Plugin' : 'Browser';
         }
         return $sig2oopp;
     }
@@ -334,7 +336,7 @@ class Topcrashers_Model extends Model {
     	$p = urlencode($product);
     	$v = urlencode($version);
         
-        $resp = $service->get("${host}/200911/topcrash/sig/trend/rank/p/${p}/v/${v}/end/${end_date}/duration/${dur}/listsize/${limit}",'json', $lifetime);
+        $resp = $service->get("${host}/201010/topcrash/sig/trend/rank/p/${p}/v/${v}/type/browser/end/${end_date}/duration/${dur}/listsize/${limit}",'json', $lifetime);
     	if($resp) {
     	    $this->ensureProperties(
     	        $resp, 
@@ -355,6 +357,8 @@ class Topcrashers_Model extends Model {
             	'win_count' => 0, 
             	'mac_count' => 0, 
             	'linux_count' => 0,
+                'versions' => '', 
+                'versions_count' => 0,
             	'currentRank' => 0, 
             	'previousRank' => 0, 
             	'changeInRank' => 0, 
@@ -374,5 +378,76 @@ class Topcrashers_Model extends Model {
         return false;
     }
 
+    /**
+     * Fetch all of the versions related to a signature.
+     *
+     * @param string An array of top crashers results
+     * @return string An updated array of top crashers results
+     */
+    function fetchTopcrasherVersions($results)
+    {
+        if (!empty($results)) {
+			$signatures = array();
+            foreach($results as $result) {
+				if (!empty($result->signature)) {
+					array_push($signatures, $this->db->escape($result->signature));
+				}
+            }
+        
+            if (!empty($signatures)) { 
+			    $sql = "
+			    	SELECT DISTINCT sd.signature, pd.version 
+			    	FROM signature_productdims sd
+			        INNER JOIN productdims pd ON sd.productdims_id = pd.id
+                    WHERE sd.signature IN (" . implode(", ", $signatures) . ")
+                    ORDER BY pd.version DESC";
+	            if ($rows = $this->fetchRows($sql, TRUE)) {
+		            foreach ($results as $result) {
+			    		$versions = array();
+		            	foreach($rows as $row) {
+                            if ($row->signature == $result->signature) {
+			    				$versions[] = $row->version;
+			    			}
+			            }
+			            if (!empty($versions)) {
+			    			$result->versions = implode(", ", $versions);
+			    		} else {
+				            $result->versions = '';
+			            }
+			            unset($versions);
+		            }
+		        }
+            }
+		}
+		return $results;
+    }
 
+    /**
+     * Format the versions string associated with each top crashing signature.
+     *
+     * @param string An array of top crashers results
+     * @return string An updated array of top crashers results
+     */
+    function formatTopcrasherVersions($results)
+    {
+        if (!empty($results)) {
+            $VC = new VersioncompareComponent;
+            foreach ($results as $result) {
+	            $versions = null;
+                $result->versions_count = 0;
+	            if (isset($result->versions) && !empty($result->versions)) {
+                    $versions = explode(", ", $result->versions);
+                    $VC->sortAppversionArray($versions);
+                    rsort($versions);
+                    $result->versions_count = count($versions);
+                    $versions = implode(", ", $versions);
+                }
+                $result->versions = $versions;
+                unset($versions);
+            }
+        }
+        return $results;
+    }
+
+    /* */
 }

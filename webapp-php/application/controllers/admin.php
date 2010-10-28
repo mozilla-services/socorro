@@ -72,7 +72,7 @@ class Admin_Controller extends Controller
                                                ));
                 $this->css = '<link href="' . url::base() . 'css/datePicker.css" rel="stylesheet" type="text/css" media="screen" />';
     }
-    
+
     /**
      * Validate the 'featured' field for a product / version.   
      *
@@ -90,13 +90,13 @@ class Admin_Controller extends Controller
         ) {
             $featured = 't';
             if ($this->branch_model->getFeaturedVersionsExcludingVersionCount($product, $version) >= 3) {
-                        client::messageSend("There are already 3 featured versions of this product. Set 1 of the featured products to not be featured, then try again.", E_USER_WARNING);
+                client::messageSend("There are already 3 featured versions of this product. Set 1 of the featured products to not be featured, then try again.", E_USER_WARNING);
                 $featured = 'f';
             }
         }
-            return $featured;
+        return $featured;
     }
-
+    
     /**
      * Display the branch data sources admin page.
      *
@@ -105,22 +105,26 @@ class Admin_Controller extends Controller
      */
     public function branch_data_sources()
     {
+	
                 if (isset($_POST['action_add_version'])) {
                         if (
                                 !empty($_POST['product']) && 
                                 !empty($_POST['version']) && 
                                 !empty($_POST['branch']) && 
                                 !empty($_POST['start_date']) &&
-                                !empty($_POST['end_date'])
+                                !empty($_POST['end_date']) &&
+                                !empty($_POST['throttle'])
                         ) {
-                $featured = $this->_branch_data_sources_featured($_POST['product'], $_POST['version']);
+                            $featured = $this->_branch_data_sources_featured($_POST['product'], $_POST['version']);
+                            $throttle = (!is_numeric($_POST['throttle']) || $_POST['throttle'] > 100) ? 100 : $_POST['throttle'];
                                 if ($rv = $this->branch_model->add(
                         trim($_POST['product']), 
                         trim($_POST['version']), 
                         trim($_POST['branch']), 
                         trim($_POST['start_date']), 
                         trim($_POST['end_date']),
-                        $featured
+                        $featured,
+                        $throttle
                 )) {
                                         client::messageSend("This new product/version has been added to the database.", E_USER_NOTICE);
                                         url::redirect('admin/branch_data_sources'); 
@@ -137,16 +141,19 @@ class Admin_Controller extends Controller
                                 !empty($_POST['update_version']) && 
                                 !empty($_POST['update_branch']) && 
                                 !empty($_POST['update_start_date']) && 
-                                !empty($_POST['update_end_date'])
+                                !empty($_POST['update_end_date']) &&
+                                !empty($_POST['update_throttle'])
                         ) {
-                $featured = $this->_branch_data_sources_featured($_POST['update_product'], $_POST['update_version']);
+                            $featured = $this->_branch_data_sources_featured($_POST['update_product'], $_POST['update_version']);
+                            $throttle = (!is_numeric($_POST['update_throttle']) || $_POST['update_throttle'] > 100) ? 100 : $_POST['update_throttle'];
                                 if ($rv = $this->branch_model->update(
                     trim($_POST['update_product']), 
                     trim($_POST['update_version']), 
                     trim($_POST['update_branch']),
                     trim($_POST['update_start_date']), 
                     trim($_POST['update_end_date']),
-                    $featured
+                    $featured,
+                    $throttle
                 )) {
                                         client::messageSend("This product/version has been updated in the database.", E_USER_NOTICE);
                                         url::redirect('admin/branch_data_sources');                                     
@@ -171,7 +178,8 @@ class Admin_Controller extends Controller
                 }
 
                 $branch_data = $this->branch_model->getBranchData(false, false);
-        $product = $this->chosen_version['product'];
+                
+                $product = $this->chosen_version['product'];
                 
                 $this->setView('admin/branch_data_sources');    
                 $this->setViewData(
@@ -183,8 +191,9 @@ class Admin_Controller extends Controller
                                 'missing_visibility_entries' => $this->branch_model->getProductVersionsWithoutVisibility(),
                                 'default_start_date' => date('Y-m-d'),
                                 'default_end_date' => date('Y-m-d', (time()+7776000)), // time() + 90 days
-                'url_base' => url::site('products/'.$product),
-                'url_nav' => url::site('products/'.$product)                            
+                                'throttle_default' => Kohana::config('daily.throttle_default'),
+  								'url_base' => url::site('products/'.$product),
+								'url_nav' => url::site('products/'.$product)
                         )                       
                 );
     }
@@ -197,15 +206,7 @@ class Admin_Controller extends Controller
      */
     public function index ()
     {
-        $product = $this->chosen_version['product'];
-
                 $this->setView('admin/index');  
-                $this->setViewData(
-                        array(
-                'url_base'                => url::site('products/'.$product),
-                'url_nav'                 => url::site('products/'.$product)                            
-                        )                       
-                );              
     }
 
     /**
@@ -239,7 +240,7 @@ class Admin_Controller extends Controller
      * @access public
      * @return void
      */
-    public function email ()
+    public function email()
     {
         $campaigns = array();
         $resp = $this->_recentCampaigns();

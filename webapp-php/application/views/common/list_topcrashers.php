@@ -4,13 +4,26 @@
     <span class="start-date"><?= $start ?></span> through
     <span class="end-date"><?= $last_updated ?></span>.
 	  The  report covers <span class="percentage" title="<?=$percentTotal?>"><?= number_format($percentTotal * 100, 2)?>%</span> of all <?= $percentTotal > 0 ? round($total_crashes / $percentTotal) : $total_crashes ?> crashes during this period. Graphs below are dual-axis, having <strong>Count</strong> (Number of Crashes) on the left X axis and <strong>Percent</strong> of total of Crashes on the right X axis. 
+
 	<div id="duration-nav">
-  	  <h3>Other Periods:</h3>
+  	  <h3>Days:</h3>
   	  <ul>
-	<?php foreach ($other_durations as $d) { ?>
-	    <li><a href="<?= $duration_url . '/' . $d ?>"><?= $d ?> Days</a></li>
+	<?php foreach ($durations as $d) { ?>
+	    <li><a href="<?= $duration_url . '/' . $d . '/' . $crash_type; ?>"
+		  <?php if ($d == $duration) echo 'class="bold"'; ?>
+		><?= $d ?></a></li>
 	<?php }?>
 	</ul></div>
+	<div id="duration-nav">
+  	  <h3>Type:</h3>
+  	  <ul>
+	<?php foreach ($crash_types as $ct) { ?>
+	    <li><a href="<?= $crash_type_url . '/' . $ct ?>"
+		  <?php if ($ct == $crash_type) echo 'class="bold"'; ?>
+		><?php echo ucfirst($ct); ?></a></li>
+	<?php }?>
+	</ul></div>
+
         <table id="signatureList" class="tablesorter">
             <thead>
                 <tr>
@@ -23,6 +36,7 @@
                     <th>Win</th>
                     <th>Mac</th>
                     <th>Lin</th>
+                    <th>Ver</th>
            <?php if (isset($sig2bugs)) {?>
                <th class="bugzilla_numbers">Bugzilla Ids</th>
            <?php } ?>
@@ -63,9 +77,22 @@
 			     echo " <a href='http://code.google.com/p/socorro/wiki/NullOrEmptySignatures' class='inline-help'>Learn More</a> ";
 			 } ?>
                          <div class="signature-icons">
-                         <?php View::factory('common/hang_details', array(
-			     'crash' => $crasher->{'hang_details'}
-                         ))->render(TRUE) ?>
+                         <?php // Clean the logic for hang, browser and plugin icons in Bug #604740. 
+							$linked = false;
+							if (isset($crasher->{'link'}) && !empty($crasher->{'link'})) {
+							    $linked = true;
+							}
+							if ($crasher->{'hang_count'} > 0 || $crasher->{'hang_details'}['is_hang'] == true) { ?>
+							    <?php if ($linked) { ?><a href="<?= $crasher->{'link'} ?>" class="hang-pair-btn" title="Hanged Crash"><?php } ?><img src="<?= url::site('/img/3rdparty/fatcow/stop16x16.png')?>" width="16" height="16" alt="Hanged Crash" title="Hanged Crash" class="hang" /><?php if ($linked) { echo '</a>'; } ?>
+							<?php } ?>
+						    <?php if ($crasher->{'plugin_count'} > 0 || $crasher->{'hang_details'}['is_plugin'] == true) {?>
+						              <?php if ($linked) { ?><a href="<?= $crasher->{'link'} ?>" class="plugin-btn" title="Plugin Crash"><?php } ?><img src="<?= url::site('/img/3rdparty/fatcow/brick16x16.png')?>" width="16" height="16" alt="Plugin Crash" title="Plugin Crash" class="plugin" class="plugin" /><?php if ($linked) { echo '</a>'; } ?>
+						    <?php } ?>
+						    <?php if ($crasher->{'count'} > $crasher->{'plugin_count'}) { ?>
+						      <?php if ($linked) { ?><a href="<?= $crasher->{'link'} ?>" class="hang-pair-btn" title="Browser Crash"><?php } ?><img src="<?= url::site('/img/3rdparty/fatcow/application16x16.png')?>" width="16" height="16" alt="Browser Crash" title="Browser Crash" class="browser" /><?php if ($linked) { echo '</a>'; } ?>
+                            <?php } ?>
+
+
                          <a href="#"><img src="<?= url::site('/img/3rdparty/silk/chart_curve.png')?>" width="16" height="16" alt="Graph this" class="graph-icon" /></a>
                          </div>
 <div class="sig-history-graph"></div><div class="sig-history-legend"></div><input type="hidden" class='ajax-signature' name="ajax-signature-<?= $row ?>" value="<?= $crasher->{'display_signature'}?>" /></td>
@@ -73,7 +100,13 @@
                         <td><?php out::H($crasher->win_count) ?></td>
                         <td><?php out::H($crasher->mac_count) ?></td>
                         <td><?php out::H($crasher->linux_count) ?></td>
-
+                        <td><span title="<?php if (isset($crasher->versions)) out::H($crasher->versions); ?>"><?php 
+                            if (isset($crasher->versions_count) && !empty($crasher->versions_count)) {
+                                out::H($crasher->versions_count); 
+                            } else {
+                                echo "-";
+                            }
+                        ?></span></td>
 
                <?php if (isset($sig2bugs)) {?>
                     <td>

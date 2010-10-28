@@ -115,7 +115,7 @@ class Email_Controller extends Controller
                 if ($validation->validate()) {
                     $data = $validation->as_array();
                     $token = $data['token'];
-    
+
                     if ('true' == $data['subscribe_status']) {
                         $status = 'true';
                     } else {
@@ -132,7 +132,7 @@ class Email_Controller extends Controller
                         $success = 'true';
                     } else {
                         client::messageSend("Unable to save your update", E_USER_ERROR);
-                    }                                            
+                    }
                 }
             } else {
                 /* will be error code name, mapped in _recaptchaError to error messages */
@@ -151,6 +151,7 @@ class Email_Controller extends Controller
         }
         url::redirect("email/subscription/" . urlencode($token) . "?" . implode('&', $params)); 
     }
+
 
     /**
      * Helper method for preparing a web service library

@@ -6,13 +6,12 @@ import logging.handlers
 
 import config.hbaseresubmitconfig as hbrconf
 
-import socorro.lib.ConfigurationManager as cm
+import socorro.lib.ConfigurationManager as configurationManager
 import socorro.cron.hbaseResubmit as hbr
 
 try:
-  configurationContext = cm.newConfiguration(configurationModule=hbrconf,
-                                             applicationName="HBase Resubmit")
-except cm.NotAnOptionError, x:
+  conf = configurationManager.newConfiguration(configurationModule=hbrconf, applicationName="HBase Resubmit")
+except configurationManager.NotAnOptionError, x:
   print >>sys.stderr, x
   print >>sys.stderr, "for usage, try --help"
   sys.exit()
@@ -21,28 +20,27 @@ logger = logging.getLogger("hbaseresubmit")
 logger.setLevel(logging.DEBUG)
 
 stderrLog = logging.StreamHandler()
-stderrLog.setLevel(configurationContext.stderrErrorLoggingLevel)
-stderrLogFormatter = logging.Formatter(configurationContext.stderrLineFormatString)
+stderrLog.setLevel(conf.stderrErrorLoggingLevel)
+stderrLogFormatter = logging.Formatter(conf.stderrLineFormatString)
 stderrLog.setFormatter(stderrLogFormatter)
 logger.addHandler(stderrLog)
 
-syslog = logging.handlers.SysLogHandler(
-  address=(configurationContext.syslogHost, configurationContext.syslogPort),
-  facility=configurationContext.syslogFacilityString,
-)
-syslog.setLevel(configurationContext.syslogErrorLoggingLevel)
-syslogFormatter = logging.Formatter(configurationContext.syslogLineFormatString)
-syslog.setFormatter(syslogFormatter)
-logger.addHandler(syslog)
+rotatingFileLog = logging.handlers.RotatingFileHandler(conf.logFilePathname, "a", conf.logFileMaximumSize, conf.logFileMaximumBackupHistory)
+rotatingFileLog.setLevel(conf.logFileErrorLoggingLevel)
+rotatingFileLogFormatter = logging.Formatter(conf.logFileLineFormatString)
+rotatingFileLog.setFormatter(rotatingFileLogFormatter)
+logger.addHandler(rotatingFileLog)
 
-logger.info("current configuration\n%s", str(configurationContext))
+logger.info("current configuration\n%s", str(conf))
 
-configurationContext['logger'] = logger
+conf.logger = logger
 
 try:
-  hbr.resubmit(configurationContext)
+  hbr.resubmit(conf)
 finally:
   logger.info("done.")
+  rotatingFileLog.flush()
+  rotatingFileLog.close()
 
 
 

@@ -13,7 +13,7 @@ function branchAddProductVersionFill(product, version) {
 }
 
 // Open the update product version form and fill the fields in with given input
-function branchUpdateProductVersionFill(product, version, branch, start_date, end_date, featured) {
+function branchUpdateProductVersionFill(product, version, branch, start_date, end_date, featured, throttle) {
 	$('#update_product_version').show('fast'); 
 	$('#update_product').val(product);
 	$('#update_product_display').html(product);
@@ -27,6 +27,7 @@ function branchUpdateProductVersionFill(product, version, branch, start_date, en
 	} else {
 	    $('#update_featured').removeAttr('checked');        
 	}
+	$('#update_throttle').val(throttle);
 	$('#update_branch').focus();
 }
 

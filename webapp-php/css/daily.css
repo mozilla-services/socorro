@@ -28,10 +28,7 @@ div.daily_search {
 div.daily_graph {
     margin-left: 1em;
 }
-#adu-chart-controls {
-    display: table;
-    margin: auto;
-}
+
 #daily_search_version {
     border-bottom: 1px solid #999;
 }
@@ -67,9 +64,7 @@ table.by_version td {
 	border: 0;
 	padding: 4px 0;
 }
-.by_report_type {
-    width: 100%;
-}
+
 input.submit {
 	font-weight: bold;
 	margin-top: 3px;
@@ -124,8 +119,10 @@ table.graph {
 #sig-history-legend { 
 	float: left;
 }
-
-.graph-ratio-checkbox input { margin-left: 10px; }
+p.adu-chart-help {
+    font-size: 0.85em;
+    margin-top: 15px;    
+}
 
 /**
  * Crash Data
@@ -202,6 +199,4 @@ table.crash_data td.stat {
 br.clear {
     clear:both;
 }
-
-
 

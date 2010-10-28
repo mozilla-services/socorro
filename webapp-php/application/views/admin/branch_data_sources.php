@@ -8,7 +8,7 @@
     <div class="body notitle">
 
 <div class="admin">
-	<p>Manage thy branch data sources here.</p>
+	<p>Manage thy branch data sources here.  Information about maintaining this data can be found in the <a href="http://code.google.com/p/socorro/wiki/SocorroUIAdmin">Socorro</a> wiki.</p>
 	
 	<h3>Missing Entries</h3>
 	<?php if (isset($missing_entries) && !empty($missing_entries)) { ?>
@@ -87,7 +87,8 @@
 			</td></tr>
 			<tr><td>Start Date: </td><td><input class="text" type="text" id="start_date" name="start_date" value="<?php echo html::specialchars($default_start_date); ?>" /></td></tr>
 			<tr><td>End Date:</td><td><input class="text" type="text" id="end_date" name="end_date" value="<?php echo html::specialchars($default_end_date); ?>" /></td></tr>
-            <tr><td>Featured:   </td><td><input type="checkbox" id="featured" name="featured" value="t" /></td></tr>			
+            <tr><td>Featured:   </td><td><input type="checkbox" id="featured" name="featured" value="t" /></td></tr>
+            <tr><td>Throttle:   </td><td><input class="text" type="text" id="throttle" name="throttle" value="<?php echo $throttle_default; ?>" />% [<a href="http://code.google.com/p/socorro/wiki/SocorroUIAdmin#Throttle" target="_NEW">?</a>]</td></tr>
 			</table>
 			<p id="add_submit"><input type="submit" name="submit" value="Add Product Version" onclick="hideShow('add_submit', 'add_submit_progress');" /></p>
 			<p id="add_submit_progress" style="display:none;"><img src="<?php echo url::site(); ?>img/loading.png" /> <em>please wait...</em></p>
@@ -116,6 +117,7 @@
 			<tr><td>Start Date: </td><td><input class="text" type="text" id="update_start_date" name="update_start_date" value="" /></td></tr>
 			<tr><td>End Date: 	</td><td><input class="text" type="text" id="update_end_date" name="update_end_date" value="" /></td></tr>
             <tr><td>Featured:   </td><td><input type="checkbox" id="update_featured" name="update_featured" value="t" /></td></tr>
+            <tr><td>Throttle:   </td><td><input class="text" type="text" id="update_throttle" name="update_throttle" value="<?php echo $throttle_default; ?>" />% [<a href="http://code.google.com/p/socorro/wiki/SocorroUIAdmin#Throttle" target="_NEW">?</a>]</td></tr>
 			</table>
 
 			<p id="update_submit"><input type="submit" name="submit" value="Update Product Version" onclick="hideShow('update_submit', 'update_submit_progress');" /></p>
@@ -158,6 +160,7 @@
 				<th>Start Date</th>
 				<th>End Date</th>
 				<th>Featured</th>
+				<th>Throttle</th>
 				<th>Update?</th>
 				<th>Delete?</th>
 				</tr>
@@ -184,13 +187,21 @@
 							        echo '&#10004;';
 							    }
 							?></td>
+							<td class="throttle"><?php 
+							    if (isset($version->throttle) && $version->throttle > 0) {
+							        out::H($version->throttle);
+							    } else {
+							        echo '-.--';
+							    }
+							?>%</td>
 							<td class="action"><a href="#update_product_version" onclick="branchUpdateProductVersionFill(
 								'<?php echo trim(html::specialchars($version->product)); ?>',
 								'<?php echo trim(html::specialchars($version->version)); ?>',
 								'<?php echo trim(html::specialchars($version->branch)); ?>',
 								'<?php if (isset($version->start_date)) echo html::specialchars(str_replace('00:00:00', '', $version->start_date)); else echo ''; ?>',
 								'<?php if (isset($version->end_date)) echo html::specialchars(str_replace('00:00:00', '', $version->end_date)); else echo ''; ?>',
-								'<?php if (isset($version->featured) && $version->featured == 't') echo 't'; else echo 'f'; ?>'	    
+								'<?php if (isset($version->featured) && $version->featured == 't') echo 't'; else echo 'f'; ?>',
+    							'<?php if (isset($version->throttle) && $version->throttle > 0) out::H($version->throttle); else echo $throttle_default; ?>'
 							);">update</a></td>
 							<td class="action"><a href="#delete_product_version" onclick="branchDeleteProductVersionFill(
 								'<?php echo trim(html::specialchars($version->product)); ?>',

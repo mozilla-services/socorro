@@ -13,32 +13,32 @@ except ImportError:
 import socorro.lib.ConfigurationManager as configurationManager
 import socorro.cron.topCrashesByUrl as tcbyurl
 
-configurationContext = configurationManager.newConfiguration(configurationModule=config, applicationName="Top Crash By URL Summary")
+configContext = configurationManager.newConfiguration(configurationModule=config, applicationName="Top Crash By URL Summary")
 
-logger = logging.getLogger("topCrashesByUrl")
-logger.setLevel(logging.DEBUG)
+logger = tcbyurl.logger
+loggerLevel = configContext.logFileErrorLoggingLevel
+logger.setLevel(loggerLevel)
 
 stderrLog = logging.StreamHandler()
-stderrLog.setLevel(configurationContext.stderrErrorLoggingLevel)
-stderrLogFormatter = logging.Formatter(configurationContext.stderrLineFormatString)
+stderrLog.setLevel(configContext.stderrErrorLoggingLevel)
+stderrLogFormatter = logging.Formatter(configContext.stderrLineFormatString)
 stderrLog.setFormatter(stderrLogFormatter)
 logger.addHandler(stderrLog)
 
-syslog = logging.handlers.SysLogHandler(
-  address=(configurationContext.syslogHost, configurationContext.syslogPort),
-  facility=configurationContext.syslogFacilityString,
-)
-syslog.setLevel(configurationContext.syslogErrorLoggingLevel)
-syslogFormatter = logging.Formatter(configurationContext.syslogLineFormatString)
-syslog.setFormatter(syslogFormatter)
-logger.addHandler(syslog)
+rotatingFileLog = logging.handlers.RotatingFileHandler(configContext.logFilePathname, "a", configContext.logFileMaximumSize, configContext.logFileMaximumBackupHistory)
+rotatingFileLog.setLevel(loggerLevel)
+rotatingFileLogFormatter = logging.Formatter(configContext.logFileLineFormatString)
+rotatingFileLog.setFormatter(rotatingFileLogFormatter)
+logger.addHandler(rotatingFileLog)
 
-logger.info("current configuration\n%s", str(configurationContext))
+logger.info("current configuration\n%s", str(configContext))
 
 try:
   before = time.time()
-  tu = tcbyurl.TopCrashesByUrl(configurationContext)
+  tu = tcbyurl.TopCrashesByUrl(configContext)
   tu.processDateInterval()
   logger.info("Successfully ran in %d seconds" % (time.time() - before))
 finally:
   logger.info("done.")
+  rotatingFileLog.flush()
+  rotatingFileLog.close()

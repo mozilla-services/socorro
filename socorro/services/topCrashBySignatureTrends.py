@@ -6,9 +6,9 @@ import socorro.webapi.webapiService as webapi
 import socorro.lib.util as util
 import socorro.lib.datetimeutil as dtutil
 
-#import psycopg2.extras as psyext
+import psycopg2.extras as psyext
 
-#import json
+import simplejson
 
 
 # theoretical sample output
@@ -34,16 +34,24 @@ import socorro.lib.datetimeutil as dtutil
 def totalNumberOfCrashesForPeriod (aCursor, databaseParameters):
   """
   """
+  where = ""
+  if databaseParameters["crashType"] == 'browser':
+    where = "AND tcbs.plugin_count = 0 AND tcbs.hang_count = 0"
+  if databaseParameters["crashType"] == 'plugin':
+    where = "AND tcbs.plugin_count > 0 OR tcbs.hang_count > 0"
+
   sql = """
     select
         sum(tcbs.count)
     from
         top_crashes_by_signature tcbs
     where
-        %(startDate)s < tcbs.window_end
-        and tcbs.window_end <= %(endDate)s
-        and tcbs.productdims_id = %(productdims_id)s
-    """
+        '%s' < tcbs.window_end
+        and tcbs.window_end <= '%s'
+        and tcbs.productdims_id = %d
+        %s
+    """ % (databaseParameters["startDate"], databaseParameters["endDate"], \
+            databaseParameters["productdims_id"], where)
   #logger.debug(aCursor.mogrify(sql, databaseParameters))
   return db.singleValueSql(aCursor, sql, databaseParameters)
 
@@ -52,27 +60,39 @@ def getListOfTopCrashersBySignature(aCursor, databaseParameters, totalNumberOfCr
   """
   """
   databaseParameters["totalNumberOfCrashes"] = totalNumberOfCrashesForPeriodFunc(aCursor, databaseParameters)
+  where = ""
+  if databaseParameters["crashType"] == 'browser':
+    where = "WHERE tcbs.plugin_count = 0 AND tcbs.hang_count = 0"
+  if databaseParameters["crashType"] == 'plugin':
+    where = "WHERE tcbs.plugin_count > 0 OR tcbs.hang_count > 0"
+    
   sql = """
   select
       tcbs.signature,
       sum(tcbs.count) as count,
-      cast(sum(tcbs.count) as float) / %(totalNumberOfCrashes)s as percentOfTotal,
+      cast(sum(tcbs.count) as float) / %d as percentOfTotal,
       sum(case when os.os_name LIKE 'Windows%%' then tcbs.count else 0 end) as win_count,
       sum(case when os.os_name = 'Mac OS X' then tcbs.count else 0 end) as mac_count,
-      sum(case when os.os_name = 'Linux' then tcbs.count else 0 end) as linux_count
+      sum(case when os.os_name = 'Linux' then tcbs.count else 0 end) as linux_count,
+      sum(tcbs.hang_count) as hang_count,
+      sum(tcbs.plugin_count) as plugin_count
   from
       top_crashes_by_signature tcbs
           join osdims os on tcbs.osdims_id = os.id
-                            and %(startDate)s < tcbs.window_end
-                            and tcbs.window_end <= %(endDate)s
-                            and tcbs.productdims_id = %(productdims_id)s
+                            and '%s' < tcbs.window_end
+                            and tcbs.window_end <= '%s'
+                            and tcbs.productdims_id = %d
+  %s
   group by
       tcbs.signature
   order by
     2 desc
-  limit %(listSize)s"""
+  limit %d""" % (databaseParameters["totalNumberOfCrashes"], databaseParameters["startDate"], \
+                    databaseParameters["endDate"], databaseParameters["productdims_id"], where, \
+                    databaseParameters["listSize"])
+
   #logger.debug(aCursor.mogrify(sql, databaseParameters))
-  return db.execute(aCursor, sql, databaseParameters)
+  return db.execute(aCursor, sql)
 
 #-----------------------------------------------------------------------------------------------------------------
 def rangeOfQueriesGenerator(aCursor, databaseParameters, queryExecutionFunction):
@@ -119,7 +139,7 @@ def listOfListsWithChangeInRank (listOfQueryResultsIterable):
       previousList = DictList([]) # this was the 1st processed - it has no previous history
     currentListOfTopCrashers = []
     for rank, aRow in enumerate(aListOfTopCrashers):
-      aRowAsDict = dict(zip(['signature', 'count', 'percentOfTotal', 'win_count', 'mac_count', 'linux_count'], aRow))
+      aRowAsDict = dict(zip(['signature', 'count', 'percentOfTotal', 'win_count', 'mac_count', 'linux_count', 'hang_count', 'plugin_count'], aRow))
       aRowAsDict['currentRank'] = rank
       try:
         aRowAsDict['previousRank'], aRowAsDict['previousPercentOfTotal'] = previousList.find(aRowAsDict['signature'])
@@ -191,15 +211,15 @@ class TopCrashBySignatureTrends(webapi.JsonServiceBase):
   def __init__(self, configContext):
     super(TopCrashBySignatureTrends, self).__init__(configContext)
     logger.debug('TopCrashBySignatureTrends __init__')
-    self.database = db.Database(configContext)
   #-----------------------------------------------------------------------------------------------------------------
-  uri = '/200911/topcrash/sig/trend/rank/p/(.*)/v/(.*)/end/(.*)/duration/(.*)/listsize/(.*)'
+  # uri = '/200911/topcrash/sig/trend/rank/p/(.*)/v/(.*)/end/(.*)/duration/(.*)/listsize/(.*)'
+  uri = '/201010/topcrash/sig/trend/rank/p/(.*)/v/(.*)/type/(.*)/end/(.*)/duration/(.*)/listsize/(.*)'
   #-----------------------------------------------------------------------------------------------------------------
   def get(self, *args):
     logger.debug('TopCrashBySignatureTrends get')
-    convertedArgs = webapi.typeConversion([str, str, dtutil.datetimeFromISOdateString, dtutil.strHoursToTimeDelta, int], args)
-    parameters = util.DotDict(zip(['product','version', 'endDate','duration', 'listSize'], convertedArgs))
-    parameters.productdims_id = self.context.productVersionCache.getId(parameters.product, parameters.version)
+    convertedArgs = webapi.typeConversion([str, str, str, dtutil.datetimeFromISOdateString, dtutil.strHoursToTimeDelta, int], args)
+    parameters = util.DotDict(zip(['product','version','crashType','endDate','duration', 'listSize'], convertedArgs))
+    parameters.productdims_id = self.context['productVersionCache'].getId(parameters.product, parameters.version)
     logger.debug("TopCrashBySignatureTrends get %s", parameters)
     parameters.logger = logger
     connection = self.database.connection()

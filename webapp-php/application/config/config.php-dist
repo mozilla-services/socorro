@@ -99,5 +99,6 @@ $config['modules'] = array
 (
     MODPATH . 'ezcomponents',
     MODPATH . 'auth',
-     MODPATH . 'moz_pagination',
+    MODPATH . 'moz_pagination',
+    MODPATH . 'recaptcha',
 );

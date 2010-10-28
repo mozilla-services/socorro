@@ -1,100 +1,101 @@
-# This is the common configuration file for the Socorro mod-wsgi Collector.
-#
-# Parameters are consist of three or four lines of Python code.  The first line
-# defines the parameter:
-
-# someParameter = cm.Option()
-
-# The second line provides one line of documentation about the parameter.
-# This line is also used to as the text in the '--help' option invoked from the
-# command line.
-
-# someParameter.doc = 'this is what this parameter is about'
-
-# The third line is the default value for the parameter.  Adjust this line as
-# necessary.  This value will be overridden if the user specifies a different
-# value on the command line.
-
-# someParameter.default = '00:00:30'
-
-# The option fourth line specifies a Python function (or callable) that will
-# serve to take a text version of the parameter value and turn it into the
-# proper type.  This is useful for things like taking a textual datetime value
-# and turning them into a real datetime value.  The ConfigurationManager module
-# offers a number of converters:  dateTimeConverter, timeDeltaConverter,
-# booleanConverter.  If the value of 'default' is a fundamental type like int
-# or float, it is not necessary to provide a fromStringConverter.
-
-# someParameter.fromStringConverter = ConfigurationManager.dateTimeConverter
-#-------------------------------------------------------------------------------
-
 import stat
 import re
 
 import socorro.lib.ConfigurationManager as cm
 
-#-------------------------------------------------------------------------------
 # Storage constants
+
+from config.commonconfig import crashStorageClass
 
 from config.commonconfig import jsonFileSuffix
 from config.commonconfig import dumpFileSuffix
 
-#-------------------------------------------------------------------------------
+#---------------------------------------------------------------------------
 # HBase storage system
-from config.commonconfig import hbaseHost
-from config.commonconfig import hbasePort
-from config.commonconfig import hbaseTimeout
-from config.commonconfig import hbaseRetry
-from config.commonconfig import hbaseRetryDelay
+if crashStorageClass.default == 'CrashStorageSystemForHBase':
+  from config.commonconfig import hbaseHost
+  from config.commonconfig import hbasePort
+  from config.commonconfig import hbaseTimeout
 
-hbaseFallbackFS = cm.Option()
-hbaseFallbackFS.doc = 'a path to a local file system to use if hbase fails'
-hbaseFallbackFS.default = './'
+  hbaseFallbackFS = cm.Option()
+  hbaseFallbackFS.doc = 'a path to a local file system to use if hbase fails'
+  hbaseFallbackFS.default = './'
 
-hbaseFallbackDumpDirCount = cm.Option()
-hbaseFallbackDumpDirCount.doc = 'the number of dumps to be stored in a single directory in the hbaseFallback File System'
-hbaseFallbackDumpDirCount.default = 1024
+  hbaseFallbackDumpDirCount = cm.Option()
+  hbaseFallbackDumpDirCount.doc = 'the number of dumps to be stored in a single directory in the hbaseFallback File System'
+  hbaseFallbackDumpDirCount.default = 1024
 
-hbaseFallbackDumpGID = cm.Option()
-hbaseFallbackDumpGID.doc="the group ID for saved crashes in hbaseFallback File System (optional)"
-hbaseFallbackDumpGID.default = None
+  hbaseFallbackDumpGID = cm.Option()
+  hbaseFallbackDumpGID.doc="the group ID for saved crashes in hbaseFallback File System (optional)"
+  hbaseFallbackDumpGID.default = None
 
-hbaseFallbackDumpPermissions = cm.Option()
-hbaseFallbackDumpPermissions.doc = "a number used for permissions crash dump files in the hbaseFallback File System"
-hbaseFallbackDumpPermissions.default = stat.S_IRGRP | stat.S_IWGRP | stat.S_IRUSR | stat.S_IWUSR
+  hbaseFallbackDumpPermissions = cm.Option()
+  hbaseFallbackDumpPermissions.doc = "a number used for permissions crash dump files in the hbaseFallback File System"
+  hbaseFallbackDumpPermissions.default = stat.S_IRGRP | stat.S_IWGRP | stat.S_IRUSR | stat.S_IWUSR
 
-hbaseFallbackDirPermissions = cm.Option()
-hbaseFallbackDirPermissions.doc = "a number used for permissions for directories in the hbaseFallback File System"
-hbaseFallbackDirPermissions = stat.S_IRGRP | stat.S_IXGRP | stat.S_IWGRP | stat.S_IRUSR | stat.S_IXUSR | stat.S_IWUSR
+  hbaseFallbackDirPermissions = cm.Option()
+  hbaseFallbackDirPermissions.doc = "a number used for permissions for directories in the hbaseFallback File System"
+  hbaseFallbackDirPermissions = stat.S_IRGRP | stat.S_IXGRP | stat.S_IWGRP | stat.S_IRUSR | stat.S_IXUSR | stat.S_IWUSR
 
-#-------------------------------------------------------------------------------
-# application server parameters
+  # the percentage of submissions should be passed on to hbase
+  hbaseSubmissionRate = cm.Option()
+  hbaseSubmissionRate.default = 100
 
-modwsgiInstallation = cm.Option()
-modwsgiInstallation.doc = 'True or False, this app is installed under mod_wsgi'
-modwsgiInstallation.default = False
+  #alternative backup crash storage
+  useBackupNFSStorage = cm.Option()
+  useBackupNFSStorage.default = True
 
-serverIPAddress = cm.Option()
-serverIPAddress.doc = 'the IP address from which to accept submissions if not installed under mod_wsgi'
-serverIPAddress.default = '127.0.0.1'
+  if useBackupNFSStorage.default == True:
+    storageRoot = cm.Option()
+    storageRoot.doc = 'the root of the file system where dumps are found'
+    storageRoot.default = '/tmp/socorro/toBeProcessed/'
 
-serverPort = cm.Option()
-serverPort.doc = 'the port to listen to for submissions if not installed under mod_wsgi'
-serverPort.default = 8882
+    deferredStorageRoot = cm.Option()
+    deferredStorageRoot.doc = 'the root of the file system where dumps are found'
+    deferredStorageRoot.default = '/tmp/socorro/toBeDeferred/'
 
-processorHostname = cm.Option()
-processorHostname.doc = 'hostname and port for a processor to submit jobs to'
-processorHostname.default = 'localhost:8881'
+    dumpDirPrefix = cm.Option()
+    dumpDirPrefix.doc = 'dump directory names begin with this prefix'
+    dumpDirPrefix.default = 'bp_'
 
-processorSubmissionTimeout = cm.Option()
-processorSubmissionTimeout.doc = 'timeout in seconds to wait for a processor to respond'
-processorSubmissionTimeout.default = 2
+    dumpDirCount = cm.Option()
+    dumpDirCount.doc = 'the number of dumps to be stored in a single directory'
+    dumpDirCount.default = 1024
+
+    dumpGID = cm.Option()
+    dumpGID.doc="the group ID on minidumps so that they can be deleted by other users (optional)"
+    dumpGID.default = None
+
+    dumpPermissions = cm.Option()
+    dumpPermissions.doc = 'when saving dumps, the pemission flags to be used'
+    dumpPermissions.default = '%d'%(stat.S_IRGRP | stat.S_IWGRP | stat.S_IRUSR | stat.S_IWUSR)
+
+    dirPermissions = cm.Option()
+    dirPermissions.doc = 'when saving dumps, the permission flags to be used on directories'
+    dirPermissions.default = '%d'%(stat.S_IRGRP | stat.S_IXGRP | stat.S_IWGRP | stat.S_IRUSR | stat.S_IXUSR | stat.S_IWUSR)
+
+#---------------------------------------------------------------------------
+# NFS storage system
+if crashStorageClass.default == 'CrashStorageSystemForNFS':
+  from config.commonconfig import storageRoot
+  from config.commonconfig import deferredStorageRoot
+  from config.commonconfig import processedDumpStoragePath
+  from config.commonconfig import dumpDirPrefix
+  from config.commonconfig import dumpDirCount
+  from config.commonconfig import dumpGID
+  from config.commonconfig import dumpPermissions
+  from config.commonconfig import dirPermissions
+
 
 # The form field the client sends the dump in
 dumpField = cm.Option()
 dumpField.default = "upload_file_minidump"
 
-# Returned to the client with a ooid following
+# when storing in the file system, how deep should the radix directory depth be
+storageDepth = cm.Option()
+storageDepth.default = 2
+
+# Returned to the client with a uuid following
 dumpIDPrefix = cm.Option()
 dumpIDPrefix.default = "bp-"
 

@@ -122,7 +122,7 @@ combineAduCrashHistoryResult = [
                                    'users': 600,
                                    'crashes': 18}),
                    ]
-#-------------------------------------------------------------------------------
+#-----------------------------------------------------------------------------------------------------------------
 def getDummyContext():
   context = util.DotDict()
   context.databaseHost = 'fred'
@@ -130,22 +130,21 @@ def getDummyContext():
   context.databaseUserName = 'ricky'
   context.databasePassword = 'lucy'
   context.databasePort = 127
-  context.logger = util.SilentFakeLogger()
   return context
 
-#-------------------------------------------------------------------------------
+#-----------------------------------------------------------------------------------------------------------------
 def testAduByDay_semicolonStringToListSanitized():
   assert abd.semicolonStringToListSanitized("aa;bb;cc") == ['aa', 'bb', 'cc']
   assert abd.semicolonStringToListSanitized(" aa  ;bb;cc  ") == ['aa', 'bb', 'cc']
   assert abd.semicolonStringToListSanitized("aa;'; delete * from reports; --bb;  cc") == ['aa', 'delete * from reports', '--bb', 'cc']
 
-#-------------------------------------------------------------------------------
+#-----------------------------------------------------------------------------------------------------------------
 def testAduByDay__init__():
   context = getDummyContext()
   adu = abd.AduByDay(context)
   assert adu.context == context
 
-#-------------------------------------------------------------------------------
+#-----------------------------------------------------------------------------------------------------------------
 def testAduByDay_get1():
   context = getDummyContext()
   context.productVersionCache = expect.DummyObjectWithExpectations('dummyProductVersionCache')
@@ -162,11 +161,10 @@ def testAduByDay_get1():
   adu = AduByDay2(context)
   adu.database = dummyDatabase
 
-  result = adu.get('Firefox', '3.5.5', '', 'Windows', '2009-12-15', '2009-12-31')
+  result = adu.get('Firefox', '3.5.5', 'Windows', '2009-12-15', '2009-12-31')
 
   expectedResult = { 'product': 'Firefox',
                      'listOfVersions': [ '3.5.5' ],
-                     'report_type': '',
                      'listOfOs_names': [ 'Windows'],
                      'start_date': dt.datetime(2009, 12, 15),
                      'end_date': dt.datetime(2009, 12, 31),
@@ -175,7 +173,7 @@ def testAduByDay_get1():
 
   assert result == expectedResult, "expected %s, but got %s" % (expectedResult, result)
 
-#-------------------------------------------------------------------------------
+#-----------------------------------------------------------------------------------------------------------------
 def testAduByDay_get2():
   context = getDummyContext()
   context.productVersionCache = expect.DummyObjectWithExpectations('dummyProductVersionCache')
@@ -193,11 +191,10 @@ def testAduByDay_get2():
   adu = AduByDay2(context)
   adu.database = dummyDatabase
 
-  result = adu.get('Firefox', '3.5.5;3.5.4', '', 'Windows;Linux', '2009-12-15', '2009-12-31')
+  result = adu.get('Firefox', '3.5.5;3.5.4', 'Windows;Linux', '2009-12-15', '2009-12-31')
 
   expectedResult = { 'product': 'Firefox',
                      'listOfVersions': [ '3.5.5', '3.5.4' ],
-                     'report_type': '',
                      'listOfOs_names': [ 'Windows', 'Linux'],
                      'start_date': dt.datetime(2009, 12, 15),
                      'end_date': dt.datetime(2009, 12, 31),
@@ -206,7 +203,7 @@ def testAduByDay_get2():
 
   assert result == expectedResult, "expected %s, but got %s" % (expectedResult, result)
 
-#-------------------------------------------------------------------------------
+#-----------------------------------------------------------------------------------------------------------------
 def testAduByDay_get3():
   context = getDummyContext()
   context.productVersionCache = expect.DummyObjectWithExpectations('dummyProductVersionCache')
@@ -224,11 +221,10 @@ def testAduByDay_get3():
   adu = AduByDay2(context)
   adu.database = dummyDatabase
 
-  result = adu.get('Firefox', '3.5.5;   3.5.4', '', '    Windows;   Linux', '2009-12-15', '2009-12-31')
+  result = adu.get('Firefox', '3.5.5;   3.5.4', '    Windows;   Linux', '2009-12-15', '2009-12-31')
 
   expectedResult = { 'product': 'Firefox',
                      'listOfVersions': [ '3.5.5', '3.5.4' ],
-                     'report_type': '',
                      'listOfOs_names': [ 'Windows', 'Linux'],
                      'start_date': dt.datetime(2009, 12, 15),
                      'end_date': dt.datetime(2009, 12, 31),
@@ -237,7 +233,7 @@ def testAduByDay_get3():
 
   assert result == expectedResult, "expected %s, but got %s" % (expectedResult, result)
 
-#-------------------------------------------------------------------------------
+#-----------------------------------------------------------------------------------------------------------------
 def testAduByDay_fetchAduHistory1():
   parameters = util.DotDict({ 'start_date': dt.datetime(2009, 12, 1),
                               'end_date': dt.datetime(2009, 12, 15),
@@ -248,7 +244,11 @@ def testAduByDay_fetchAduHistory1():
   sql = """
       select
           date,
-          substring(product_os_platform, 1, 3) as product_os_platform,
+          case when product_os_platform = 'Mac OS/X' then
+            'Mac'
+          else
+            product_os_platform
+          end as product_os_platform,
           sum(adu_count)
       from
           raw_adu ra
@@ -263,7 +263,6 @@ def testAduByDay_fetchAduHistory1():
           product_os_platform
       order by
           1"""
-
   sqlReturn = singleQueryReturn1
   dummyCursor = expect.DummyObjectWithExpectations('dummyCursor')
   #dummyCursor.expect('tobecalled', args, kwargs, retvalue)
@@ -280,10 +279,9 @@ def testAduByDay_fetchAduHistory1():
   result = adu.fetchAduHistory(parameters)
 
   expectedResult = expectedHistory1
-  assert result == expectedResult, "expected %s, but got %s" % \
-         (expectedResult, result)
+  assert result == expectedResult, "expected %s, but got %s" % (expectedResult, result)
 
-#-------------------------------------------------------------------------------
+#-----------------------------------------------------------------------------------------------------------------
 def testAduByDay_fetchAduHistory2():
   parameters = util.DotDict({ 'start_date': dt.datetime(2009, 12, 1),
                               'end_date': dt.datetime(2009, 12, 15),
@@ -291,14 +289,16 @@ def testAduByDay_fetchAduHistory2():
                               'version': '3.5.5',
                               'listOfOs_names': [''],
                            })
-  # the odd literal \n in the string below is because the Wing Python IDE
-  # abhors trailing whitespace.  Without it, the blank line between the last
-  # predicate in the where clause and the group by clause would have no spaces
-  # in it.  That causes a mismatch in the machinery checking for errors.
-  sql = expect.SpaceAgnosticString("""
+  # the odd literal \n in the string below is to prevent the Wing Python IDE from eliminating
+  # trailing whitespace at the end of the line before the "group by" clause.
+  sql = """
       select
           date,
-          substring(product_os_platform, 1, 3) as product_os_platform,
+          case when product_os_platform = 'Mac OS/X' then
+            'Mac'
+          else
+            product_os_platform
+          end as product_os_platform,
           sum(adu_count)
       from
           raw_adu ra
@@ -307,11 +307,11 @@ def testAduByDay_fetchAduHistory2():
           and date <= %(end_date)s
           and product_name = %(product)s
           and product_version = %(version)s
-          group by
+          \n      group by
           date,
           product_os_platform
       order by
-          1""")
+          1"""
   sqlReturn = singleQueryReturn3
   dummyCursor = expect.DummyObjectWithExpectations('dummyCursor')
   #dummyCursor.expect('tobecalled', args, kwargs, retvalue)
@@ -330,29 +330,39 @@ def testAduByDay_fetchAduHistory2():
   expectedResult = expectedHistory3
   assert result == expectedResult, "expected %s, but got %s" % (expectedResult, result)
 
-#-------------------------------------------------------------------------------
+#-----------------------------------------------------------------------------------------------------------------
 def testAduByDay_fetchCrashHistory():
   parameters = util.DotDict({ 'start_date': dt.datetime(2009, 12, 1),
                               'end_date': dt.datetime(2009, 12, 15),
                               'product': 'Firefox',
                               'version': '3.5.5',
-                              'report_type': '',
                               'listOfOs_names': ['Windows', 'Mac'],
                               'socorroTimeToUTCInterval':'8 hours',
                               'productdims_id':171,
                            })
-  sql =  expect.SpaceAgnosticString("""
-      SELECT adu_day, os_short_name, SUM(count)
-      FROM daily_crashes
-      WHERE timestamp without time zone %(start_date)s < adu_day AND
-            adu_day <= timestamp without time zone %(end_date)s AND
-            productdims_id = %(productdims_id)s AND
-             os_short_name in ('Win','Mac') AND
-             report_type IN ('C', 'H')
-      GROUP BY adu_day, os_short_name
+  sql = """
+      select
+          CAST(ceil(EXTRACT(EPOCH FROM (window_end - timestamp without time zone %(start_date)s - interval %(socorroTimeToUTCInterval)s)) / 86400) AS INT) * interval '24 hours' + timestamp without time zone %(start_date)s as day,
+          case when os.os_name = 'Windows NT' then
+            'Windows'
+          when os.os_name = 'Mac OS X' then
+            'Mac'
+          else
+            os.os_name
+          end as os_name,
+          sum(count)
+      from
+          top_crashes_by_signature tcbs
+              join osdims os on tcbs.osdims_id = os.id
+                  and os.os_name in ('Windows','Mac OS X','Windows NT')
+      where
+          (timestamp without time zone %(start_date)s - interval %(socorroTimeToUTCInterval)s) < window_end
+          and window_end <= (timestamp without time zone %(end_date)s - interval %(socorroTimeToUTCInterval)s)
+          and productdims_id = %(productdims_id)s
+      group by
+          1, 2
       order by
-          1, 2""")
-
+          1, 2"""
   sqlReturn = singleQueryReturn1
   dummyCursor = expect.DummyObjectWithExpectations('dummyCursor')
   #dummyCursor.expect('tobecalled', args, kwargs, retvalue)
@@ -371,7 +381,7 @@ def testAduByDay_fetchCrashHistory():
   expectedResult = expectedHistory1
   assert result == expectedResult, "expected %s, but got %s" % (expectedResult, result)
 
-#-------------------------------------------------------------------------------
+#-----------------------------------------------------------------------------------------------------------------
 def testAduByDay_combineAduCrashHistory():
   context = getDummyContext()
   adu = abd.AduByDay(context)
@@ -381,7 +391,7 @@ def testAduByDay_combineAduCrashHistory():
   assert result == expectedResult, "expected %s, but got %s" % (expectedResult, result)
 
 
-#-------------------------------------------------------------------------------
+#-----------------------------------------------------------------------------------------------------------------
 def testAduByDay_aduByDay1():
   context = getDummyContext()
   class AduByDay3(abd.AduByDay):
@@ -414,7 +424,7 @@ def testAduByDay_aduByDay1():
                    }
   assert result == expectedResult, "expected %s, but got %s" % (expectedResult, result)
 
-  #-------------------------------------------------------------------------------
+  #-----------------------------------------------------------------------------------------------------------------
 def testAduByDay_aduByDay2():
   context = getDummyContext()
   class AduByDay3(abd.AduByDay):

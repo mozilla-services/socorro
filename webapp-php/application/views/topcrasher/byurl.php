@@ -24,7 +24,7 @@
     <div class="body notitle">
         <p>Below are the top crash signatures by URL from <?php echo $beginning ?> to <?php echo $ending_on ?></p>
         
-        <table id="tc_by_url" class="tablesorter">
+        <table class="tablesorter">
         	<thead>
         		<tr>
         	  		<th>URL</th>
@@ -39,7 +39,7 @@
               <tr class="<?php echo ( ($row) % 2) == 0 ? 'even' : 'odd' ?>">
                 <td>
                 <?php if (!strstr($crash->url, '_detected_BLOCKED')) { ?>
-                    <div id="url-to-sig<?php echo $row; ?>" class="tcburl-toggler tcburl-urlToggler">+</div> <a id="tcburl-url<?php echo $row ?>" class="tcburl-urlToggler" href="#"><span class="label tcburl-urlToggler">Expand</span> <span class="url tcburl-urlToggler"><?php out::H($crash->url) ?></span></a> 
+                    <div id="url-to-sig<?php echo $row; ?>" class="tcburl-toggler tcburl-urlToggler">+</div> <a id="tcburl-url<?php echo $row ?>" class="tcburl-urlToggler" href="#">Expand <span class="url"><?php out::H($crash->url) ?></span></a> 
                     <a  href="<?php out::H($crash->url) ?>">Open This URL</a>
                 <?php } else { ?>
                     <?php out::h($crash->url); ?>

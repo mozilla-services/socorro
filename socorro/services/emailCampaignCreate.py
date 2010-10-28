@@ -1,4 +1,5 @@
-from email.mime.text import MIMEText
+#TODO(1.8) python2.6 from email.mime.text import MIMEText
+from email import MIMEText
 import datetime
 import logging
 from smtplib import SMTP
@@ -36,7 +37,7 @@ class EmailCampaignCreate(webapi.JsonServiceBase):
     super(EmailCampaignCreate, self).__init__(configContext)
     self.database = db.Database(configContext)
     self.config = configContext
-    
+
     self.email_form = form.Form(
       form.Textbox('product',    form.notnull),
       form.Textbox('versions',  form.notnull),
@@ -144,8 +145,8 @@ class EmailCampaignCreate(webapi.JsonServiceBase):
                   FROM email_campaigns AS prev_campaigns
                   JOIN email_campaigns_contacts ON email_campaigns_contacts.email_campaigns_id = prev_campaigns.id
                   JOIN email_contacts AS contacted ON email_campaigns_contacts.email_contacts_id = contacted.id
-                  WHERE prev_campaigns.product = 'Firefox'
-                  AND prev_campaigns.signature = E'UserCallWinProcCheckWow'
+                  WHERE prev_campaigns.product = %%(product)s
+                  AND prev_campaigns.signature = %%(signature)s
              )
     """ % (start_date, end_date, version_clause)
     cursor = connection.cursor()
@@ -196,12 +197,15 @@ class EmailCampaignCreate(webapi.JsonServiceBase):
       try:
         personalized_body = self.personalize(body, contact['email'], contact['token'])
 
-        msg = MIMEText(personalized_body)
+        # TODO(1.8) python2.6 msg = MIMEText(personalized_body)
+        msg = MIMEText.MIMEText(personalized_body)
         msg['From'] = self.config['fromEmailAddress']
         msg['Subject'] = subject
+
         # Swap the comment for the next two lines for a safer dev env
         #logger.info("calling sendmail %s with %s" % (contact['email'], personalized_body))
         self.send_email(smtp, msg, contact['email'])
+
         contacted_emails.append(contact['email'])
       except Exception:
         logger.error("Error while sending email to %s" % contact['email'])
@@ -236,6 +240,7 @@ class EmailCampaignCreate(webapi.JsonServiceBase):
     parameters = [product, versions, signature, subject, body, start_date, end_date, email_count, author]
 
     table = EmailCampaignsTable(logger)
+    #logger.info(cursor.mogrify(table.insertSql, parameters))
     cursor.execute(table.insertSql, parameters)
     last_id = cursor.fetchone()[0]
 
@@ -243,17 +248,20 @@ class EmailCampaignCreate(webapi.JsonServiceBase):
 
   #-----------------------------------------------------------------------------------------------------------------
   def save_campaign_contacts(self, connection, campaign_id, contacted_emails):
-    cursor = connection.cursor()
-    sql = """
-      INSERT INTO email_campaigns_contacts (email_campaigns_id, email_contacts_id)
-        SELECT %(campaign_id)s, email_contacts.id
-        FROM email_contacts
-        WHERE email IN %(emails)s
-    """
-    parameters = {'campaign_id': campaign_id, 'emails': tuple(contacted_emails)}
+    if len(contacted_emails) > 0:
+      cursor = connection.cursor()
+      sql = """
+        INSERT INTO email_campaigns_contacts (email_campaigns_id, email_contacts_id)
+          SELECT %(campaign_id)s, email_contacts.id
+          FROM email_contacts
+          WHERE email IN %(emails)s
+      """
+      parameters = {'campaign_id': campaign_id, 'emails': tuple(contacted_emails)}
 
-    #logger.info(cursor.mogrify(sql, parameters))
-    cursor.execute(sql, parameters)
+      #logger.info(cursor.mogrify(sql, parameters))
+      cursor.execute(sql, parameters)
+    else:
+      logger.warn("No contacts given in call to associate campaign to contacts")
 
   #-----------------------------------------------------------------------------------------------------------------
   def update_campaign(self, connection, campaign_id, email_count):

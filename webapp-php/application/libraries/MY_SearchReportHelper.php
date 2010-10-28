@@ -74,7 +74,6 @@ class SearchReportHelper{
         $params['query'] = urldecode($params['query']);
         $this->normalizeProduct($params);
         $this->normalizeDateUnitAndValue($params);
-        $this->validate_date($params);
     }
 
     /**
@@ -112,13 +111,10 @@ class SearchReportHelper{
             $params['range_value'] = $range_default_value;
             $params['range_unit'] = $range_default_unit;
         }
-        elseif (
-            $valueInDays > $range_limit_value_in_days && 
-            (!isset($params['admin']) || $params['admin'] === false)
-        ) {
+        elseif ($valueInDays > $range_limit_value_in_days && !$params['admin']) {
 			$error_message = 'The maximum query date range you can perform is ' . $range_limit_value_in_days . ' days. Admins may log in to increase query date range limits.';
         } 
-        elseif ($valueInDays > $range_limit_value_in_days && (isset($params['admin']) && $params['admin'] === true)) {
+        elseif ($valueInDays > $range_limit_value_in_days && $params['admin']) {
 			$error_message = 'The maximum query date range you can perform is ' . $range_limit_value_in_days . ' days.';  
         }
 		elseif (
@@ -146,15 +142,15 @@ class SearchReportHelper{
         $productEmpty = $this->empty_param($params['product']);
         $versionEmpty = $this->empty_param($params['version']);
         $buildIdEmpty = $this->empty_param($params['build_id']);
-
+        
         if ($productEmpty && $versionEmpty && $buildIdEmpty) {
             $params['product'] = array();
         }
-        if ($versionEmpty || (!$versionEmpty && $params['version'][0] == 'ALL:ALL')) {
+        if (!$versionEmpty && $params['version'][0] == 'ALL:ALL') {
             $params['version'] = array();
         }
     }
-    
+
     /**
      * Handle empty parameters.
      * 
@@ -170,22 +166,6 @@ class SearchReportHelper{
             }
         }
         return $arrayEmpty;
-    }
-    
-    /**
-     * Validate a timestamp.  Unset the value if it is not a valid date/time.
-     *
-     * $params['date'] should be in "%m/%d/%Y %H:%M:%S" format.
-     * 
-     * @param array An array of $_GET parameters
-     */
-    private function validate_date(&$params)
-    {
-        if (isset($params['date']) && !empty($params['date'])) {
-            if (!strptime($params['date'], "%m/%d/%Y %H:%M:%S")) {
-                $params['date'] = '';
-            }
-        }       
     }
 
     /**

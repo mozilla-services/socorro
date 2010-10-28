@@ -76,9 +76,11 @@ class Daily_Controller extends Controller {
      */
     private function csv($product, $versions, $operating_systems, $dates, $results, $statistics, $form_selection, $throttle) {
         $title = "ADU_" . $product . "_" . implode("_", $versions) . "_" . $form_selection;
+        
         $this->auto_render = FALSE;
         header('Content-type: text/csv; charset=utf-8');
         header("Content-disposition: attachment; filename=${title}.csv");
+        
         $view = new View('daily/daily_csv_' . $form_selection);
         $view->dates = $dates;
         $view->form_selection = $form_selection;
@@ -88,45 +90,9 @@ class Daily_Controller extends Controller {
         $view->statistics = $statistics;
         $view->throttle = $throttle;
         $view->versions = $versions;
+        
         echo $view->render();
         exit;
-    }
-
-    /**
-     * Helper funciton produces a CSV friendly array
-     * @param $product      string The product name
-     * @param $report_types array  An array of crash report types
-     * @param $dates        array  An array of dates
-     * @param $stats        array  Stats results from aduByDayDetails webservice call
-     *
-     * @return array
-     */
-    private function _convertCSV($product, $report_types, $dates, $stats)
-    {
-        $heading = array("$product Version", 'Date', 'ADU', 'Throttle');
-        foreach ($report_types as $rt) {
-	    array_push($heading, $rt);
-	    array_push($heading, "$rt ratio");
-	}
-        $csvData = array($heading);
-        foreach ($stats['versions'] as $version => $version_stats) {
-            foreach ($dates as $date) {
-		if (array_key_exists($date, $version_stats)) {
-		    $date_stat = $version_stats[$date];
-                    $line = array($version, $date, $date_stat['users'], $date_stat['throttle']);
-		    foreach ($report_types as $rt) {
-		        
-		        if (array_key_exists("${rt}_ratio", $date_stat)){
-			    array_push($line, $date_stat[$rt]);
-			    array_push($line, $date_stat["${rt}_ratio"]);
-		        }
-		    }
-		    array_push($csvData, $line);
-		}
-
-	    }
-	}
-        return $csvData;
     }
 	
     /**
@@ -141,45 +107,7 @@ class Daily_Controller extends Controller {
      * @param 	string 	The type of results display - "by_version" or "by_os"	
      * @return 	string 	The url to download this CSV
      */
-    private function csvURL($product, $versions, $operating_systems, $date_start, $date_end, $hang_type, $form_selection, $throttle) {
-        $url = $this->_commonCsvURL($product, $versions, $operating_systems, $date_start, $date_end, $form_selection, $throttle);
-        $url .= "&hang_type=" . html::specialchars($hang_type);
-        return $url;
-    }
-
-    /**
-     * Format the URL for a CSV file.
-     *
-     * @param 	string 	The product name
-     * @param 	array 	An array of versions
-     * @param 	array 	An array of dates
-     * @param 	array  	An array of operating systems
-     * @param 	string 	The start date for the query
-     * @param 	string 	The end date for the query
-     * @param 	string 	The type of results display - "by_version" or "by_os"	
-     * @return 	string 	The url to download this CSV
-     */
-    private function csvReportTypeURL($product, $versions, $operating_systems, $date_start, $date_end, $report_types, $form_selection, $throttle) {
-        $url = $this->_commonCsvURL($product, $versions, $operating_systems, $date_start, $date_end, $form_selection, $throttle);
-        foreach ($report_types as $rt) {
-            $url .= "&report_type[]=" . html::specialchars($rt);
-        }        
-	return $url;
-    }
-    /**
-     * Common path for Formatting the URL for a CSV file.
-     *
-     * @param 	string 	The product name
-     * @param 	array 	An array of versions
-     * @param 	array 	An array of dates
-     * @param 	array  	An array of operating systems
-     * @param 	string 	The start date for the query
-     * @param 	string 	The end date for the query
-     * @param 	string 	The type of results display - "by_version" or "by_os"	
-     * @return 	string 	The url to download this CSV
-     */
-    private function _commonCsvURL($product, $versions, $operating_systems, $date_start, $date_end, $form_selection, $throttle) 
-    {
+    private function csvURL ($product, $versions, $operating_systems, $date_start, $date_end, $hang_type, $form_selection, $throttle) {
         $url 	= 'daily?p=' . html::specialchars($product);
         
         foreach ($versions as $version) {
@@ -196,11 +124,12 @@ class Daily_Controller extends Controller {
         
         $url .= "&date_start=" . html::specialchars($date_start);
         $url .= "&date_end=" . html::specialchars($date_end);
+        $url .= "&hang_type=" . html::specialchars($hang_type);
         $url .= "&form_selection=" . html::specialchars($form_selection);
         $url .= "&csv=1";
         
         return $url;
-    }
+	}
 	
     /**
      * Request for ADU - Active Daily Users aka Active Daily Installs
@@ -208,102 +137,54 @@ class Daily_Controller extends Controller {
      * @return void
      */
     public function index() {
+        $Branch_Model = new Branch_Model;
         
         // Prepare variables
         $products = Kohana::config('daily.products');
         $operating_systems = Kohana::config('daily.operating_systems');
-        $report_types = array('crash', 'oopp', 'hang_browser', 'hang_plugin');
-
+        
         // Fetch $_GET variables.
         $parameters = $this->input->get();		
-        $product = (isset($parameters['p']) && in_array($parameters['p'], $products)) ? $parameters['p'] : 'Firefox';
+        $product = (isset($parameters['p']) && in_array($parameters['p'], $products)) ? $parameters['p'] : $this->chosen_version['product'];
+        $product_versions = $Branch_Model->getCurrentProductVersionsByProduct($product);
         $operating_system = (isset($parameters['os'])) ? $parameters['os'] : $operating_systems;
-        // used with by_report_type
-        $chosen_report_types = (isset($parameters['report_type'])) ? $parameters['report_type'] : $report_types;
         $date_start = (isset($parameters['date_start'])) ? $parameters['date_start'] : date('Y-m-d', mktime(0, 0, 0, date("m"), date("d")-15, date("Y")));
         $date_end = (isset($parameters['date_end'])) ? $parameters['date_end'] : date('Y-m-d', mktime(0, 0, 0, date("m"), date("d")-1, date("Y")));
         $duration = TimeUtil::determineDayDifferential($date_start, $date_end);
         $dates = $this->model->prepareDates($date_end, $duration);
-
-        $form_selection = 'by_version';
-	if (isset($parameters['form_selection']) && 
-	    in_array($parameters['form_selection'], array('by_os', 'by_version', 'by_report_type'))) {
-		$form_selection = $parameters['form_selection'];
-	}
-
+        $form_selection = (isset($parameters['form_selection']) && $parameters['form_selection'] == 'by_os') ? $parameters['form_selection'] : 'by_version';
+        $throttle = (isset($parameters['throttle']) && !empty($parameters['throttle'])) ? $parameters['throttle'] : array();
+        $hang_type = (isset($parameters['hang_type'])) ? $parameters['hang_type'] : 'any'; // RS :: Is this being used?
+        
         // If no version is available, include the most recent version of this product
         if (isset($parameters['v']) && !empty($parameters['v'])){
-	    $versions = $this->_filterInvalidVersions($product, $parameters['v']);
+            $versions = $this->_filterInvalidVersions($product, $parameters['v']);
         } 
         if (!isset($versions) || count($versions) == 0 || empty($versions[0])) {
-            $current_products = $this->currentProducts();
             $versions = array();
-            foreach (array(Release::MAJOR, Release::MILESTONE, Release::DEVELOPMENT) as $release) {
-                if (isset($current_products[$product][$release])) {
-                    $versions[] = $current_products[$product][$release];
-                }
-            }
-        }
-        // Used with by_version and by_os
-        if ( isset($parameters['hang_type'])) {
-	    $hang_type = $parameters['hang_type'];
-	} else {
-            $hang_type = 'any';
-	}
-        
-        // Determine throttling rates
-        $throttle = null;
-        if (isset($parameters['throttle']) && !empty($parameters['throttle'])) {
-            $throttle = $parameters['throttle'];
-        }         
-        if (count($throttle) == 0 || empty($throttle[0])) {
             $throttle = array();
-            $throttle_key = 0;
-            $throttle_rates = Kohana::config('daily.throttle_rates');            
-            $product_versions = $this->branch_model->getProductVersionsByProduct($product);
-            foreach ($versions as $version) {
-                if (isset($throttle_rates[$product][$version])) {
-                    $throttle[$throttle_key] = $throttle_rates[$product][$version];
-                }
-
-                if (!isset($throttle[$throttle_key])) {
-                    $throttle[$throttle_key] = 100;
-                }
-                $throttle_key++;
+            $featured_versions = $Branch_Model->getFeaturedVersions($product);
+            foreach ($featured_versions as $featured_version) {
+                $versions[] = $featured_version->version;
+                $throttle[] = $featured_version->throttle;
             }
         }
+        
+		// Prepare URL for CSV
+	$url_csv = $this->csvURL($product, $versions, $operating_systems, $date_start, $date_end, $hang_type, $form_selection, $throttle);
 
-        if (isset($parameters['form_selection']) && $parameters['form_selection'] == 'by_report_type') {
-	    $url_csv = $this->csvReportTypeURL($product, $versions, $operating_systems, $date_start, $date_end, $chosen_report_types, $form_selection, $throttle);
+        // Statistics on crashes for time period
+	$results = $this->model->get($product, $versions, $operating_system, $date_start, $date_end, $hang_type);
+        $statistics = $this->model->prepareStatistics($results, $form_selection, $product, $versions, $operating_system, $date_start, $date_end, $throttle);
+        $graph_data = $this->model->prepareGraphData($statistics, $form_selection, $date_start, $date_end, $dates, $operating_systems, $versions);
 
-	    // Statistics on crashes for time period
-	    $results = $this->model->getDetailsByReportType($product, $versions, $operating_system, 
-							    $chosen_report_types, $date_start, $date_end);
-	    $statistics = $this->model->prepareStatistics($results, $parameters['form_selection'], $product, $versions, $operating_system, $date_start, $date_end, $throttle);
-	    $graph_data = $this->model->prepareGraphData($statistics, $parameters['form_selection'], $date_start, $date_end, $dates, $operating_systems, $versions);
-	    // Download the CSV, if applicable
-	    if (isset($parameters['csv'])) {
-        	//return $this->csv($product, $versions, $operating_systems, $dates, $results, $statistics, $form_selection, $throttle);
-                $view = new View('common/csv');
-	        $this->setViewData(array('top_crashers' => $this->_convertCSV($product, $chosen_report_types, $dates, $statistics)));
-                $this->renderCSV("ADU_" . $product . "_" . implode("_", $versions) . "_" . implode("_", $chosen_report_types) . '_' . $form_selection);
-	    }
-	    
-	} else { // by_version or by_os
-	    $url_csv = $this->csvURL($product, $versions, $operating_systems, $date_start, $date_end, $hang_type, $form_selection, $throttle);
-	    // Statistics on crashes for time period
-	    $results = $this->model->get($product, $versions, $operating_system, $date_start, $date_end, $hang_type);
-	    $statistics = $this->model->prepareStatistics($results, $form_selection, $product, $versions, $operating_system, $date_start, $date_end, $throttle);
-	    $graph_data = $this->model->prepareGraphData($statistics, $form_selection, $date_start, $date_end, $dates, $operating_systems, $versions);
-
-	    // Download the CSV, if applicable
-	    if (isset($parameters['csv'])) {
+        // Download the CSV, if applicable
+        if (isset($parameters['csv'])) {
         	return $this->csv($product, $versions, $operating_systems, $dates, $results, $statistics, $form_selection, $throttle);
-	    }
-	} // if form_selection by_report_type
+        }
+        
         // Set the View
         $this->setViewData(array(
-                'chosen_report_types' => $chosen_report_types,
                 'date_start' => $date_start,
                 'date_end' => $date_end,
                 'dates' => $dates,
@@ -314,14 +195,14 @@ class Daily_Controller extends Controller {
                 'nav_selection' => 'crashes_user',
                 'operating_system' => $operating_system,
                 'operating_systems' => $operating_systems,              
-                'product' => $product,                          
+                'product' => $product,
+                'product_versions' => $product_versions,
                 'products' => $products,
-                'report_types' => $report_types,
                 'hang_type' => $hang_type,
                 'results' => $results,
                 'statistics' => $statistics,
-		'statistic_keys' => $this->model->statistic_keys($statistics, $dates),
                 'throttle' => $throttle,
+                'throttle_default' => Kohana::config('daily.throttle_default'),
                 'url_csv' => $url_csv,
                 'url_form' => url::site("daily", 'http'),                               
                 'url_nav' => url::site('products/'.$product),

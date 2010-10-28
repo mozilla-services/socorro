@@ -23,6 +23,8 @@ class TopCrashesBySignature(object):
    - Data are, for each triple of product dimension, os dimension and signature (os may be null if unknown)
       = count: The number of times this signature was seen associated with this product dimension and os dimension
       = uptime: the average uptime prior to the crash associated with this product dimension and os dimension
+      = hang_count: The number of crashes associated with this signature in this time period that are hangs
+      = plugin_count: The number of crashes associated with this signature in the time periood that are plugin-related
       = window_end: for book-keeping, restart
       = window_size: for book-keeping, restart
   Constructor parameters are:
@@ -88,11 +90,11 @@ class TopCrashesBySignature(object):
           logger.debug('skipping: %s != %s and %s != %s', buildDateAsCompactString, startDateAsCompactString, buildDateAsCompactString, previousDateAsCompactString)
           continue
       key = (row.signature, row.productdims_id, idCache.getOsId(row.os_name, row.os_version))
-      value = summaryCrashes.setdefault(key, lib_util.DotDict({'count':0,'uptime':0}))
+      value = summaryCrashes.setdefault(key, lib_util.DotDict({'count':0,'uptime':0,'hang_count':0,'plugin_count':0}))
       value.count += 1
-      
-      if row.uptime:
-          value.uptime += row.uptime
+      value.uptime += row.uptime
+      value.hang_count += row.hang_count
+      value.plugin_count += row.plugin_count
 
   def extractDataForPeriod(self, startTime, endTime, summaryCrashes):
     """
@@ -111,9 +113,11 @@ class TopCrashesBySignature(object):
     resultColumnlist = 'r.uptime, r.signature, r.build, r.version, cfg.productdims_id, r.os_name, r.os_version'
     inputColumns = [x.split('.')[1] for x in resultColumnlist.split(',')]
     sql = """SELECT
-                 %(resultColumnlist)s
+                 %(resultColumnlist)s,
+                 CASE WHEN r.hangid IS NULL THEN 0 ELSE 1 END AS hang_count,
+                 CASE WHEN r.process_type = 'plugin' THEN 1 ELSE 0 END AS plugin_count
              FROM product_visibility cfg JOIN productdims p on cfg.productdims_id = p.id
-                 JOIN %(inTable)s r on p.product = r.product AND p.version = r.version
+             JOIN %(inTable)s r on p.product = r.product AND p.version = r.version
              WHERE
                  NOT cfg.ignore
                  AND %%(startTime)s <= r.%(dcolumn)s AND r.%(dcolumn)s < %%(endTime)s
@@ -134,6 +138,8 @@ class TopCrashesBySignature(object):
         logger.debug(cursor.mogrify(sql,startEndData))
       cursor.execute(sql,startEndData)
       chunk = cursor.fetchall()
+      inputColumns.append('hang_count')
+      inputColumns.append('plugin_count')
       self.connection.commit()
       self.tallyPVpairs(chunk, inputColumns, startDateAsCompactString, previousDateAsCompactString, summaryCrashes, idCache)
       logger.debug("Returning %s items for window [%s,%s)",len(summaryCrashes),startTime,endTime)
@@ -147,7 +153,7 @@ class TopCrashesBySignature(object):
     """
     Creates and returns an unsorted list based on data in crashMap (No need to sort: DB will hold data)
     crashMap is {(sig,prod,os):{count:c,uptime:u}}
-    result is list of maps where aach map has keys 'signature','productdims_id','osdims_id', 'count' and 'uptime'
+    result is list of maps where aach map has keys 'signature','productdims_id','osdims_id', 'count', 'uptime', 'hang_count' and 'plugin_count'
     """
     crashList = []
     always = {'windowEnd':windowEnd,'windowSize':windowSize}
@@ -162,7 +168,7 @@ class TopCrashesBySignature(object):
   def storeFacts(self, crashData, intervalString):
     """
     Store crash data in the top_crashes_by_signature table
-      crashData: List of {productdims_id:id,osdims_id:id,signature:signatureString,'count':c,'uptime',u} as produced by self.fixupCrashData()
+      crashData: List of {productdims_id:id,osdims_id:id,signature:signatureString,'count':c,'uptime':u,'hang_count':hc,'plugin_count':pc} as produced by self.fixupCrashData()
     """
     if not crashData or 0 == len(crashData):
       logger.warn("%s - No data for interval %s",threading.currentThread().getName(),intervalString)
@@ -171,8 +177,8 @@ class TopCrashesBySignature(object):
     if self.debugging:
       logger.debug('Storing %s rows into table %s at %s',len(crashData),resultTable,intervalString)
     sql = """INSERT INTO %s
-          (count, uptime, signature, productdims_id, osdims_id, window_end, window_size)
-          VALUES (%%(count)s,%%(uptime)s,%%(signature)s,%%(productdims_id)s,%%(osdims_id)s,%%(windowEnd)s,%%(windowSize)s)
+          (count, uptime, signature, productdims_id, osdims_id, window_end, window_size, hang_count, plugin_count)
+          VALUES (%%(count)s,%%(uptime)s,%%(signature)s,%%(productdims_id)s,%%(osdims_id)s,%%(windowEnd)s,%%(windowSize)s,%%(hang_count)s,%%(plugin_count)s)
           """%(resultTable)
     cursor = self.connection.cursor()
     try:

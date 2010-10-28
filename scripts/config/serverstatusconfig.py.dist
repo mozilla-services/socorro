@@ -23,25 +23,25 @@ processingInterval.doc = 'how often to process reports (HHH:MM:SS)'
 processingInterval.default = '00:05:00'
 processingInterval.fromStringConverter = cm.timeDeltaConverter
 
-syslogHost = cm.Option()
-syslogHost.doc = 'syslog hostname'
-syslogHost.default = 'localhost'
+logFilePathname = cm.Option()
+logFilePathname.doc = 'full pathname for the log file'
+logFilePathname.default = './serverstatus.log'
 
-syslogPort = cm.Option()
-syslogPort.doc = 'syslog port'
-syslogPort.default = 514
+logFileMaximumSize = cm.Option()
+logFileMaximumSize.doc = 'maximum size in bytes of the log file'
+logFileMaximumSize.default = 1000000
 
-syslogFacilityString = cm.Option()
-syslogFacilityString.doc = 'syslog facility string ("user", "local0", etc)'
-syslogFacilityString.default = 'user'
+logFileMaximumBackupHistory = cm.Option()
+logFileMaximumBackupHistory.doc = 'maximum number of log files to keep'
+logFileMaximumBackupHistory.default = 50
 
-syslogLineFormatString = cm.Option()
-syslogLineFormatString.doc = 'python logging system format for syslog entries'
-syslogLineFormatString.default = 'Socorro Server Status (pid %(process)d): %(asctime)s %(levelname)s - %(threadName)s - %(message)s'
+logFileLineFormatString = cm.Option()
+logFileLineFormatString.doc = 'python logging system format for log file entries'
+logFileLineFormatString.default = '%(asctime)s %(levelname)s - %(message)s'
 
-syslogErrorLoggingLevel = cm.Option()
-syslogErrorLoggingLevel.doc = 'logging level for the log file (10 - DEBUG, 20 - INFO, 30 - WARNING, 40 - ERROR, 50 - CRITICAL)'
-syslogErrorLoggingLevel.default = 10
+logFileErrorLoggingLevel = cm.Option()
+logFileErrorLoggingLevel.doc = 'logging level for the log file (10 - DEBUG, 20 - INFO, 30 - WARNING, 40 - ERROR, 50 - CRITICAL)'
+logFileErrorLoggingLevel.default = 10
 
 stderrLineFormatString = cm.Option()
 stderrLineFormatString.doc = 'python logging system format for logging to stderr'
@@ -51,26 +51,4 @@ stderrErrorLoggingLevel = cm.Option()
 stderrErrorLoggingLevel.doc = 'logging level for the logging to stderr (10 - DEBUG, 20 - INFO, 30 - WARNING, 40 - ERROR, 50 - CRITICAL)'
 stderrErrorLoggingLevel.default = 40
 
-webservicesProtocol = cm.Option()
-webservicesProtocol.doc = 'http or https'
-webservicesProtocol.default = 'https'
 
-webservicesHostPort = cm.Option()
-webservicesHostPort.doc = 'location of the webservices server'
-webservicesHostPort.default = 'dm-breakpad-stage01.mozilla.org:443'
-
-webservicesPrefix = cm.Option()
-webservicesPrefix.doc = 'URL prefix between the host/port and the actual call'
-webservicesPrefix.default = '/bpapi'
-
-webservicesRealm = cm.Option()
-webservicesRealm.doc = 'Realm for HTTP Basic Auth'
-webservicesRealm.default = ''
-
-webservicesBasicAuthUsername = cm.Option()
-webservicesBasicAuthUsername.doc = 'Username for HTTP Basic Auth'
-webservicesBasicAuthUsername.default = ''
-
-webservicesBasicAuthPassword = cm.Option()
-webservicesBasicAuthPassword.doc = 'Password for HTTP Basic Auth'
-webservicesBasicAuthPassword.default = ''

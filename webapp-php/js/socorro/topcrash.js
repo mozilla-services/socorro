@@ -13,7 +13,15 @@ $(document).ready(function () {
         i;
 
     $("#signatureList").tablesorter({
-        headers: { 0: { sorter: false }, 1: { sorter: false }, 5: { sorter: 'digit' }, 6: { sorter: 'digit' }, 7: { sorter: 'digit' }, 8: { sorter: 'digit' } }
+        headers: { 
+            0: { sorter: false }, 
+            1: { sorter: false }, 
+            5: { sorter: 'digit' }, 
+            6: { sorter: 'digit' }, 
+            7: { sorter: 'digit' }, 
+            8: { sorter: 'digit' }, 
+            9: { sorter: 'digit' }
+        }
     });
     $("#signatureList tr").each(function() {
 	$.data(this, 'graphable', true);

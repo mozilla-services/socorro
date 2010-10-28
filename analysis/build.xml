@@ -2,7 +2,7 @@
 <project name="Mozilla Crash-Reports" default="compile" basedir=".">
 	
 	<!-- Load all properties    -->
-	<property file="${basedir}/default.properties"/>
+	<property file="${basedir}/build.properties"/>
 	
 	<path id="classpath">
 		<pathelement location="${build.classes}"/>

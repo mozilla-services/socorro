@@ -60,14 +60,14 @@ class EmailCampaigns(webapi.JsonServiceBase):
       for row in rows:
         campaign = lib_util.DotDict((key, value) for key, value in zip(email_campaign_columns, row))
         campaign.start_date = campaign.start_date.isoformat()
-        campaign.end_date   = campaign.end_date.isoformat()
+        campaign.end_date =   campaign.end_date.isoformat()
         campaigns.append(campaign)
         campaign_ids.append(campaign.id)
       
         pages_sql = "SELECT COUNT(id) / %d FROM email_campaigns" % item_per_page
         cursor.execute(pages_sql)
         total_pages = int(cursor.fetchone()[0])
-  
+
       next = previous = None
       if page_number < total_pages:
         next = EmailCampaigns.uri.replace('(.*)', str(page_number + 1))

@@ -48,7 +48,7 @@ require_once(Kohana::find_file('libraries', 'MY_QueryFormHelper', TRUE, 'php'));
  * The controller for simple and advanced search queries.
  */
 class Query_Controller extends Controller {
-    
+
     /**
      * Class constructor.
      *
@@ -57,82 +57,8 @@ class Query_Controller extends Controller {
     public function __construct()
     {
         parent::__construct();
-
         $this->bug_model = new Bug_Model;
-        $this->crash = new Crash;
-        $this->queryFormHelper = new QueryFormHelper;
-        $this->searchReportHelper = new SearchReportHelper;
-    }
-
-    /**
-     * Handle a quick search query for either a OOID or stack signature.
-     *
-     * @param  array    An array of _GET parameters
-     * @return array    An array of updated _GET parameters
-     */
-    public function _simple($params)
-    {
-        if (!empty($params['query'])) {
-            $crash = new Crash();
-            $ooid = $crash->parseOOID($params['query']);
-            
-            if ($ooid !== FALSE) {
-                return url::redirect('report/index/' . $ooid);
-            } else {
-                $params['query_search'] = 'signature';
-                $params['query_type'] = 'exact';
-                $params['range_value'] = 1;
-                $params['range_unit'] = 'weeks';
-            }
-        }
-        return $params;
-    }
-
-    /**
-     * Update search parameters as needed.
-     *
-     * @param  array    An array of _GET parameters
-     * @return array    An array of updated _GET parameters
-     */
-    public function _updateRequestParameters($params)
-    {
-        // If no product is specified, add the user's last selected product
-        if (!isset($_GET['product']) || !isset($params['product']) || empty($params['product'])) {
-            $params['product'] = array( 0 => $this->chosen_version['product'] );
-        }
-
-        // If no version is specified, add the user's last selected product
-        if (
-            empty($params['version']) &&
-            $params['product'][0] == $this->chosen_version['product'] &&
-            !empty($this->chosen_version['version']) 
-        ) {
-            $product_version = $this->chosen_version['product'].":".$this->chosen_version['version'];
-            $params['version'] = array( 0 => $product_version);
-        } 
-
-        // If no date is specified, add today's date.
-        if (empty($params['date'])) {
-            $params['date'] = date('m/d/Y H:i:s');
-        }
-        
-        // Hang type 
-        if (!isset($params['hang_type'])) {
-            $params['hang_type'] = 'any';
-        }
-        
-        // Process type
-        if (!isset($params['process_type'])) {
-            $params['process_type'] = 'any';
-        }
-        
-        // Admin
-        $params['admin'] = ($this->auth_is_active && Auth::instance()->logged_in()) ? true : false;
-        
-        // Normalize parameters
-        $this->searchReportHelper->normalizeParams($params);
-        
-        return $params;
+        $this->ensureChosenVersion($this->currentProducts(), FALSE); // Force product selection (Not always working on this page)
     }
 
     /**
@@ -142,61 +68,143 @@ class Query_Controller extends Controller {
      */
     public function query() {
 
-        $params = $this->getRequestParameters($this->searchReportHelper->defaultParams());
-        $params = $this->_updateRequestParameters($params);
+        //Query Form Stuff
+        $searchHelper = new SearchReportHelper;
+        $queryFormHelper = new QueryFormHelper;
 
-        // Handle simple queries.  Determine if searching for UUID or Signature.
-        if (isset($_GET['query_type']) && $_GET['query_type'] == 'simple') {
-            $params = $this->_simple($params);
-        }
-        
-        $queryFormData = $this->queryFormHelper->prepareCommonViewData($this->branch_model, $this->platform_model);
+        $queryFormData = $queryFormHelper->prepareCommonViewData($this->branch_model, $this->platform_model);
         $this->setViewData($queryFormData);
-        
+
+        //Current Query Stuff
+        $params = $this->getRequestParameters($searchHelper->defaultParams());
+
+        // If no product is specified, add the user's last selected product
+        if (!isset($_GET['product']) || !isset($params['product']) || empty($params['product'])) {
+            $params['product'] = array( 0 => $this->chosen_version['product'] );
+        }
+
+        $params['admin'] = ($this->auth_is_active && Auth::instance()->logged_in()) ? true : false;
+        $searchHelper->normalizeParams( $params );
+
+        $this->_updateNavigation($params);
+
+        $signature_to_bugzilla = array();
+
         cachecontrol::set(array(
             'etag'     => $params,
             'expires'  => time() + ( 60 * 60 )
-        ));
-        
-        $items_per_page = Kohana::config('search.number_results_advanced_search');
-        $meta = $this->crash->prepareCrashReportsMetaArray();
-        $page = Input::instance()->get('page');
-        $page = (!empty($page)) ? $page : 1;
-        $pager = null;
-        $reports = array();
-        $signature_to_bugzilla = array();
+	    ));
+
+	$showPluginName = false;
+	$showPluginFilename = false;
 
         if ($params['do_query'] !== FALSE) {
-            $Bugzilla = new Bugzilla;
+			$reports = $this->common_model->queryTopSignatures($params);
+            $signatures = array();
 
-            $totalCount = $this->common_model->queryTopSignatures($params, 'count');
-            $pager = new MozPager($items_per_page, $totalCount, $page);
-            
-            if ($reports = $this->common_model->queryTopSignatures($params, 'results', $items_per_page, $pager->offset)) {
-                $reports = $this->crash->prepareCrashReports($reports);
-                $meta = $this->crash->prepareCrashReportsMeta($reports);
-            } 
-            
-            $rows = $this->bug_model->bugsForSignatures($meta['signatures']);
-            $signature_to_bugzilla = $Bugzilla->signature2bugzilla($rows, Kohana::config('codebases.bugTrackingUrl'));
+            foreach ($reports as $report) {
+		if (is_null($report->signature)) {
+		    $report->{'display_signature'} = Crash::$null_sig;
+		    $report->{'display_null_sig_help'} = TRUE;
+		    $report->{'missing_sig_param'} = Crash::$null_sig_code;
+		} else if(empty($report->signature)) {
+		    $report->{'display_signature'} = Crash::$empty_sig;
+		    $report->{'display_null_sig_help'} = TRUE;
+		    $report->{'missing_sig_param'} = Crash::$empty_sig_code;
+		} else {
+		    $report->{'display_signature'} = $report->signature;
+		    $report->{'display_null_sig_help'} = FALSE;
+		}           
+		if (property_exists($report, 'pluginname') && ! empty($report->pluginname) ||
+                    property_exists($report, 'pluginversion') && ! empty($report->pluginversion)) {
+                    $showPluginName = true;
+                }
+		if (property_exists($report, 'pluginfilename') && ! empty($report->pluginfilename)) {
+                    $showPluginFilename = true;
+                }
+		array_push($signatures, $report->signature);
+		
+                $hang_details = array();
+                $hang_details['is_hang'] = $report->numhang > 0;
+                $hang_details['is_plugin'] = $report->numplugin > 0;
+                $report->{'hang_details'} = $hang_details;
+	    }
+            $rows = $this->bug_model->bugsForSignatures(array_unique($signatures));
+            $bugzilla = new Bugzilla;
+            $signature_to_bugzilla = $bugzilla->signature2bugzilla($rows, Kohana::config('codebases.bugTrackingUrl'));
+
+        } else {
+            $reports = array();
+
         }
-        
+
+        // If no date is specified, add today's date.
+        if (empty($params['date'])) {
+            $params['date'] = date('m/d/Y H:i:s');
+        }
+
         $this->setViewData(array(
-            'items_per_page' => $items_per_page,
             'nav_selection' => 'query',
-            'navPathPrefix' => url::site('query') . '?' . html::query_string($params) . "&page=",
-            'nextLinkText' => 'next >>',
-            'page' => $page,
-            'pager' => $pager, 
             'params'  => $params,
-            'previousLinkText' => '<< prev',
             'reports' => $reports,
-            'showPluginName' => $meta['showPluginName'],
-            'showPluginFilename' => $meta['showPluginFilename'],
+            'showPluginName' => $showPluginName,
+            'showPluginFilename' => $showPluginFilename,
             'sig2bugs' => $signature_to_bugzilla,
-            'totalItemText' => " Results",
             'url_nav' => url::site('products/'.$this->chosen_version['product']),
         ));
     }
 
+    /**
+     * Update the site navigation with the request parameters.
+     *
+     * @return void
+     */
+    private function _updateNavigation($params)
+    {
+        if (array_key_exists('version', $params) &&
+  	    is_array($params['version']) && 
+	    count($params['version']) > 0 &&
+	    substr_count($params['version'][0], ':') == 1) {
+	        $parts = explode(':', $params['version'][0]);
+		$this->navigationChooseVersion(trim($parts[0]), trim($parts[1]));
+	} else {
+	    Kohana::log('debug', "updateNavigation No version in params...skipping");
+	}
+    }
+
+    /**
+     * Perform a simple query.
+     *
+     * @return void
+     */
+    public function simple()
+    {
+        $searchHelper = new SearchReportHelper;
+        $params = $this->getRequestParameters(array('q' => ''));
+	$q = trim($params['q']);
+	if (empty($q)) {
+	    //TODO error
+	  } else {
+	      $crash = new Crash();
+              $uuid = $crash->parseUUID($q);
+	      if ($uuid !== FALSE) {
+                  return url::redirect('report/index/' . $uuid);
+	      } else {
+		  $reportDb = new Report_Model;
+		  $query_type = 'startswith';
+		  if ($reportDb->sig_exists($q) === TRUE) {
+  		      $query_type = 'exact';
+		  }
+
+		  $this->ensureChosenVersion(array());
+
+		  $product = urlencode($this->chosen_version['product']);
+		  $version = urlencode($this->chosen_version['product'] . ':' . $this->chosen_version['version']);
+		  $encq    = urlencode($q);
+		  $query = "query/query?do_query=1&product=${product}&version=${version}&query_search=signature&query_type=${query_type}&query=${encq}";
+
+                  return url::redirect($query);
+	      }
+	  }
+    }
 }

@@ -261,26 +261,23 @@ class PartitionedTable(Table):
     partitionName = self.partitionCreationParameters(dateRangeTuple)["partitionName"]
     insertSql = self.insertSql.replace('TABLENAME', partitionName)
     try:
-      # this partition creation logic almost always deadlocks.  There is no
-      # use even trying.  DEPRECATED
-      #databaseCursor.execute("savepoint %s" % partitionName)
+      databaseCursor.execute("savepoint %s" % partitionName)
       #self.logger.debug("%s - Trying to insert into %s", threading.currentThread().getName(), self.name)
       databaseCursor.execute(insertSql, row)
-      #databaseCursor.execute("release savepoint %s" % partitionName)
+      databaseCursor.execute("release savepoint %s" % partitionName)
     except pg.ProgrammingError, x:
-      self.logger.debug("needed partition is missing: '%s'; cannot insert %s", partitionName, str(x).strip())
-      #self.logger.debug('%s - Rolling back and releasing savepoint: failed: %s', threading.currentThread().getName(), str(x).strip())
-      #databaseCursor.execute("rollback to %s; release savepoint %s;" % (partitionName, partitionName))
-      #databaseCursor.connection.commit() # This line added after of hours of blood, sweat, tears. Remove only per deathwish.
+      self.logger.debug('%s - Rolling back and releasing savepoint: failed: %s', threading.currentThread().getName(), str(x).strip())
+      databaseCursor.execute("rollback to %s; release savepoint %s;" % (partitionName, partitionName))
+      databaseCursor.connection.commit() # This line added after of hours of blood, sweat, tears. Remove only per deathwish.
 
-      #altConnection, altCursor = alternateCursorFunction()
-      #dateIterator = mondayPairsIteratorFactory(uniqueIdentifier, uniqueIdentifier)
-      #try:
-        #self.createPartitions(altCursor,dateIterator)
-      #except pg.DatabaseError,x:
-        #self.logger.debug("%s - Failed to create partition(s) %s: %s:%s", threading.currentThread().getName(), partitionName, type(x), x)
-      #self.logger.debug("%s - trying to insert into %s for the second time", threading.currentThread().getName(), self.name)
-      #databaseCursor.execute(insertSql, row)
+      altConnection, altCursor = alternateCursorFunction()
+      dateIterator = mondayPairsIteratorFactory(uniqueIdentifier, uniqueIdentifier)
+      try:
+        self.createPartitions(altCursor,dateIterator)
+      except pg.DatabaseError,x:
+        self.logger.debug("%s - Failed to create partition(s) %s: %s:%s", threading.currentThread().getName(), partitionName, type(x), x)
+      self.logger.debug("%s - trying to insert into %s for the second time", threading.currentThread().getName(), self.name)
+      databaseCursor.execute(insertSql, row)
 
 #=================================================================================================================
 class ReportsTable(PartitionedTable):
@@ -345,11 +342,10 @@ class ReportsTable(PartitionedTable):
                                           CREATE INDEX %(partitionName)s_hangid_idx ON %(partitionName)s (hangid);
                                           """
                                       )
-    self.columns = ("uuid", "client_crash_date", "date_processed", "product", "version", "build", "signature", "url", "install_age", "last_crash", "uptime", "cpu_name", "cpu_info", "reason", "address", "os_name", "os_version", "email", "build_date", "user_id", "user_comments", "app_notes", "distributor", "distributor_version", "topmost_filenames", "addons_checked", "flash_version", "hangid", "process_type", "started_datetime", "completed_datetime", "truncated", "success", "processor_notes")
+    self.columns = ("uuid", "client_crash_date", "date_processed", "product", "version", "build", "url", "install_age", "last_crash", "uptime", "email", "build_date", "user_id", "user_comments", "app_notes", "distributor", "distributor_version", "topmost_filenames", "addons_checked", "flash_version", "hangid", "process_type")
     self.insertSql = """insert into TABLENAME
-                            (uuid, client_crash_date, date_processed, product, version, build, signature, url, install_age, last_crash, uptime, cpu_name, cpu_info, reason, address, os_name, os_version, email, build_date, user_id, user_comments, app_notes, distributor, distributor_version, topmost_filenames, addons_checked, flash_version, hangid, process_type, started_datetime, completed_datetime, truncated, success, processor_notes ) values
-                            (%s,   %s,                %s,             %s,      %s,      %s,    %s,        %s,  %s,          %s,         %s,     %s,       %s,       %s,     %s,      %s,      %s,         %s,    %s,         %s,      %s,            %s,        %s,          %s,                  %s,                %s,             %s,            %s,     %s,           %s,               %s,                 %s,        %s,      %s)
-                            returning id"""
+                            (uuid, client_crash_date, date_processed, product, version, build, url, install_age, last_crash, uptime, email, build_date, user_id, user_comments, app_notes, distributor, distributor_version, topmost_filenames, addons_checked, flash_version, hangid, process_type) values
+                            (%s,   %s,                %s,             %s,      %s,      %s,    %s,  %s,          %s,         %s,     %s,    %s,         %s,      %s,            %s,        %s,          %s,                  %s,                %s,             %s,            %s,     %s)"""
   #-----------------------------------------------------------------------------------------------------------------
   def additionalCreationProcedures(self, databaseCursor):
     pass
@@ -566,6 +562,22 @@ class ServerStatusTable(Table):
                                           """)
 databaseDependenciesForSetup[ServerStatusTable] = []
 
+# #=================================================================================================================
+# class SignatureDimsTable(Table):
+#   """Define the table 'signaturedims'"""
+#   #-----------------------------------------------------------------------------------------------------------------
+#   def __init__ (self, logger, **kwargs):
+#     super(SignatureDimsTable, self).__init__(name='signaturedims', logger=logger,
+#                                        creationSql="""
+#                                           CREATE TABLE signaturedims (
+#                                               id serial NOT NULL,
+#                                               signature character varying(255) NOT NULL);
+#                                           ALTER TABLE ONLY signaturedims
+#                                               ADD CONSTRAINT signaturedims_pkey PRIMARY KEY (id);
+#                                           CREATE UNIQUE INDEX signaturedims_signature_key ON signaturedims USING btree (signature);
+#                                           """)
+# databaseDependenciesForSetup[SignatureDimsTable] = []
+
 #=================================================================================================================
 class ReleaseEnum(DatabaseObject):
   def __init__(self,logger, **kwargs):
@@ -636,6 +648,82 @@ class OsDimsTable(Table):
                                         """)
 databaseDependenciesForSetup[OsDimsTable] = []
 
+# #=================================================================================================================
+# class CrashReportsTable(PartitionedTable):
+#   """Define the table 'crash_reports'"""
+#   #-----------------------------------------------------------------------------------------------------------------
+#   def __init__ (self, logger, **kwargs):
+#     super(CrashReportsTable, self).__init__(name='crash_reports', logger=logger,
+#                                         creationSql="""
+#                                           CREATE TABLE crash_reports (
+#                                               id serial NOT NULL,
+#                                               uuid TEXT NOT NULL,
+#                                               client_crash_date TIMESTAMP with time zone,
+#                                               install_age INTEGER,
+#                                               last_crash INTEGER,
+#                                               uptime INTEGER,
+#                                               cpu_name TEXT, -- varchar(100)
+#                                               cpu_info TEXT, -- varchar(100)
+#                                               reason TEXT,   -- varchar(255)
+#                                               address TEXT,  -- varchar(20)
+#                                               build_date TIMESTAMP without time zone,
+#                                               started_datetime TIMESTAMP without time zone,
+#                                               completed_datetime TIMESTAMP without time zone,
+#                                               date_processed TIMESTAMP without time zone,
+#                                               success BOOLEAN,
+#                                               truncated BOOLEAN,
+#                                               processor_notes TEXT,
+#                                               user_comments TEXT,  -- varchar(1024)
+#                                               app_notes TEXT,  -- varchar(1024)
+#                                               distributor TEXT, -- varchar(20)
+#                                               distributor_version TEXT, -- varchar(20)
+#                                               signaturedims_id INTEGER,
+#                                               productdims_id INTEGER,
+#                                               osdims_id INTEGER,
+#                                               urldims_id INTEGER,
+#                                               FOREIGN KEY (signaturedims_id) REFERENCES signaturedims(id) ON DELETE CASCADE,
+#                                               FOREIGN KEY (productdims_id) REFERENCES productdims(id) ON DELETE CASCADE,
+#                                               FOREIGN KEY (osdims_id) REFERENCES osdims(id) ON DELETE CASCADE,
+#                                               FOREIGN KEY (urldims_id) REFERENCES urldims(id) ON DELETE CASCADE
+#                                           );
+#                                           --CREATE TRIGGER reports_insert_trigger
+#                                           --    BEFORE INSERT ON reports
+#                                           --    FOR EACH ROW EXECUTE PROCEDURE partition_insert_trigger();""",
+#                                        partitionCreationSqlTemplate="""
+#                                           CREATE TABLE %(partitionName)s (
+#                                               CONSTRAINT %(partitionName)s_date_check CHECK (TIMESTAMP without time zone '%(startDate)s' <= date_processed and date_processed < TIMESTAMP without time zone '%(endDate)s'),
+#                                               CONSTRAINT %(partitionName)s_unique_uuid unique (uuid),
+#                                               PRIMARY KEY(id)
+#                                           )
+#                                           INHERITS (crash_reports);
+#                                           CREATE INDEX %(partitionName)s_date_processed_key ON %(partitionName)s (date_processed);
+#                                           CREATE INDEX %(partitionName)s_client_crash_date_key ON %(partitionName)s (client_crash_date);
+#                                           CREATE INDEX %(partitionName)s_uuid_key ON %(partitionName)s (uuid);
+#                                           CREATE INDEX %(partitionName)s_signature_key ON %(partitionName)s (signaturedims_id);
+#                                           CREATE INDEX %(partitionName)s_url_key ON %(partitionName)s (urldims_id);
+#                                           CREATE INDEX %(partitionName)s_product_version_key ON %(partitionName)s (productdims_id);
+#                                           --CREATE INDEX %(partitionName)s_uuid_date_processed_key ON %(partitionName)s (uuid, date_processed);
+#                                           CREATE INDEX %(partitionName)s_signature_date_processed_key ON %(partitionName)s (signaturedims_id, date_processed);
+#                                           """
+#                                       )
+#     self.columns =  ("uuid", "client_crash_date", "date_processed", "install_age", "last_crash", "uptime", "user_comments", "app_notes", "distributor", "distributor_version", "productdims_id", "urldims_id")
+#     columnNames = ','.join(self.columns)
+#     placeholders = ','.join(('%s' for x in self.columns))
+#     self.insertSql = """insert into TABLENAME (%s) values (%s)"""%(columnNames,placeholders)
+
+#   def partitionCreationParameters(self,uniqueIdentifier):
+#     startDate, endDate = uniqueIdentifier
+#     startDateAsString = "%4d-%02d-%02d" % startDate.timetuple()[:3]
+#     compressedStartDateAsString = startDateAsString.replace("-", "")
+#     endDateAsString = "%4d-%02d-%02d" % endDate.timetuple()[:3]
+#     return { "partitionName": "crash_reports_%s" % compressedStartDateAsString,
+#              "startDate": startDateAsString,
+#              "endDate": endDateAsString,
+#              "compressedStartDate": compressedStartDateAsString,
+#            }
+
+# databaseDependenciesForSetup[CrashReportsTable] = [SignatureDimsTable,ProductDimsTable,OsDimsTable,UrlDimsTable]
+
 #=================================================================================================================
 class ExtensionsTable(PartitionedTable):
   """Define the table 'extensions'"""
@@ -699,6 +787,125 @@ databaseDependenciesForPartition[ExtensionsTable] = [ReportsTable]
 databaseDependenciesForSetup[ExtensionsTable] = []
 
 #=================================================================================================================
+class FramesTable(PartitionedTable):
+  """Define the table 'frames'"""
+  #-----------------------------------------------------------------------------------------------------------------
+  def __init__ (self, logger, **kwargs):
+    super(FramesTable, self).__init__(name='frames', logger=logger,
+                                      creationSql="""
+                                          CREATE TABLE frames (
+                                              report_id integer NOT NULL,
+                                              date_processed timestamp without time zone,
+                                              frame_num integer NOT NULL,
+                                              signature varchar(255)
+                                          );
+                                          --CREATE TRIGGER frames_insert_trigger
+                                          --    BEFORE INSERT ON frames
+                                          --    FOR EACH ROW EXECUTE PROCEDURE partition_insert_trigger();""",
+                                      partitionCreationSqlTemplate="""
+                                          CREATE TABLE %(partitionName)s (
+                                              CONSTRAINT %(partitionName)s_date_check CHECK (TIMESTAMP without time zone '%(startDate)s' <= date_processed and date_processed < TIMESTAMP without time zone '%(endDate)s'),
+                                              PRIMARY KEY (report_id, frame_num)
+                                          )
+                                          INHERITS (frames);
+                                          CREATE INDEX %(partitionName)s_report_id_date_key ON %(partitionName)s (report_id, date_processed);
+                                          ALTER TABLE %(partitionName)s
+                                              ADD CONSTRAINT %(partitionName)s_report_id_fkey FOREIGN KEY (report_id) REFERENCES reports_%(compressedStartDate)s(id) ON DELETE CASCADE;
+                                          """
+                                     )
+    self.insertSql = """insert into TABLENAME (report_id, frame_num, date_processed, signature) values (%s, %s, %s, %s)"""
+  #-----------------------------------------------------------------------------------------------------------------
+  def alterColumnDefinitions(self, databaseCursor, tableName):
+    columnNameTypeDictionary = socorro_pg.columnNameTypeDictionaryForTable(tableName, databaseCursor)
+    #if 'date_processed' not in columnNameTypeDictionary:
+      #databaseCursor.execute("""ALTER TABLE %s
+                                    #ADD COLUMN date_processed TIMESTAMP without time zone;""" % tableName)
+  #-----------------------------------------------------------------------------------------------------------------
+  def updateDefinition(self, databaseCursor):
+    self.updateColumnDefinitions(databaseCursor)
+    indexesList = socorro_pg.indexesForTable(self.name, databaseCursor)
+    #if 'frames_pkey' in indexesList:
+      #databaseCursor.execute("""ALTER TABLE frames
+                                    #DROP CONSTRAINT frames_pkey;""")
+    #databaseCursor.execute("""DROP RULE IF EXISTS rule_frames_partition ON frames;""")
+    #triggersList = socorro_pg.triggersForTable(self.name, databaseCursor)
+    #if 'frames_insert_trigger' not in triggersList:
+      #databaseCursor.execute("""CREATE TRIGGER frames_insert_trigger
+                                    #BEFORE INSERT ON frames
+                                    #FOR EACH ROW EXECUTE PROCEDURE partition_insert_trigger();""")
+  #-----------------------------------------------------------------------------------------------------------------
+  def partitionCreationParameters(self, uniqueIdentifier):
+    startDate, endDate = uniqueIdentifier
+    startDateAsString = "%4d-%02d-%02d" % startDate.timetuple()[:3]
+    compressedStartDateAsString = startDateAsString.replace("-", "")
+    endDateAsString = "%4d-%02d-%02d" % endDate.timetuple()[:3]
+    return { "partitionName": "frames_%s" % compressedStartDateAsString,
+             "startDate": startDateAsString,
+             "endDate": endDateAsString,
+             "compressedStartDate": compressedStartDateAsString
+           }
+databaseDependenciesForPartition[FramesTable] = [ReportsTable]
+databaseDependenciesForSetup[FramesTable] = []
+
+#=================================================================================================================
+# class DumpsTable(PartitionedTable):
+#   """Define the table 'dumps'"""
+#   #-----------------------------------------------------------------------------------------------------------------
+#   def __init__ (self, logger, **kwargs):
+#     super(DumpsTable, self).__init__(name='dumps', logger=logger,
+#                                      creationSql="""
+#                                          CREATE TABLE dumps (
+#                                              report_id integer NOT NULL PRIMARY KEY,
+#                                              date_processed timestamp without time zone,
+#                                              data text
+#                                          );
+#                                          --CREATE TRIGGER dumps_insert_trigger
+#                                          --   BEFORE INSERT ON dumps
+#                                          --   FOR EACH ROW EXECUTE PROCEDURE partition_insert_trigger();""",
+#                                      partitionCreationSqlTemplate="""
+#                                          CREATE TABLE %(partitionName)s (
+#                                              CONSTRAINT %(partitionName)s_date_check CHECK (TIMESTAMP without time zone '%(startDate)s' <= date_processed and date_processed < TIMESTAMP without time zone '%(endDate)s')
+#                                          )
+#                                          INHERITS (dumps);
+#                                          CREATE INDEX %(partitionName)s_report_id_date_key ON %(partitionName)s (report_id, date_processed);
+#                                          ALTER TABLE %(partitionName)s
+#                                              ADD CONSTRAINT %(partitionName)s_report_id_fkey FOREIGN KEY (report_id) REFERENCES crash_reports_%(compressedStartDate)s(id) ON DELETE CASCADE;
+#                                          """)
+#     self.insertSql = """insert into TABLENAME (report_id, date_processed, data) values (%s, %s, %s)"""
+#   #-----------------------------------------------------------------------------------------------------------------
+#   def alterColumnDefinitions(self, databaseCursor, tableName):
+#     columnNameTypeDictionary = socorro_pg.columnNameTypeDictionaryForTable(tableName, databaseCursor)
+#     #if 'date_processed' not in columnNameTypeDictionary:
+#       #databaseCursor.execute("""ALTER TABLE %s
+#                                     #ADD COLUMN date_processed TIMESTAMP without time zone;""" % tableName)
+#   #-----------------------------------------------------------------------------------------------------------------
+#   def updateDefinition(self, databaseCursor):
+#     self.updateColumnDefinitions(databaseCursor)
+#     indexesList = socorro_pg.indexesForTable(self.name, databaseCursor)
+#     #if 'dumps_pkey' in indexesList:
+#       #databaseCursor.execute("""ALTER TABLE dumps
+#                                     #DROP CONSTRAINT dumps_pkey;""")
+#     #databaseCursor.execute("""DROP RULE IF EXISTS rule_dumps_partition ON dumps;""")
+#     #triggersList = socorro_pg.triggersForTable(self.name, databaseCursor)
+#     #if 'dumps_insert_trigger' not in triggersList:
+#       #databaseCursor.execute("""CREATE TRIGGER dumps_insert_trigger
+#                                     #BEFORE INSERT ON dumps
+#                                     #FOR EACH ROW EXECUTE PROCEDURE partition_insert_trigger();""")
+#   #-----------------------------------------------------------------------------------------------------------------
+#   def partitionCreationParameters(self, uniqueIdentifier):
+#     startDate, endDate = uniqueIdentifier
+#     startDateAsString = "%4d-%02d-%02d" % startDate.timetuple()[:3]
+#     compressedStartDateAsString = startDateAsString.replace("-", "")
+#     endDateAsString = "%4d-%02d-%02d" % endDate.timetuple()[:3]
+#     return { "partitionName": "dumps_%s" % compressedStartDateAsString,
+#              "startDate": startDateAsString,
+#              "endDate": endDateAsString,
+#              "compressedStartDate": compressedStartDateAsString
+#            }
+# databaseDependenciesForSetup[DumpsTable] = []
+# databaseDependenciesForPartition[DumpsTable] = [CrashReportsTable]
+
+#=================================================================================================================
 class TimeBeforeFailureTable(Table):
   """Define the table 'time_before_failure'"""
   def __init__ (self, logger, **kwargs):
@@ -723,6 +930,30 @@ class TimeBeforeFailureTable(Table):
                                               """)
 databaseDependenciesForSetup[TimeBeforeFailureTable] = [ProductDimsTable, OsDimsTable]
 
+# #=================================================================================================================
+# class MTBFFactsTable(Table):
+#   """Define the table 'mtbffacts'"""
+#   #-----------------------------------------------------------------------------------------------------------------
+#   def __init__ (self, logger, **kwargs):
+#     super(MTBFFactsTable, self).__init__(name='mtbffacts', logger=logger,
+#                                        creationSql="""
+#                                           CREATE TABLE mtbffacts (
+#                                               id serial NOT NULL,
+#                                               avg_seconds integer NOT NULL,
+#                                               report_count integer NOT NULL,
+#                                               unique_users integer NOT NULL,
+#                                               day date,
+#                                               productdims_id integer,
+#                                               );
+#                                           CREATE INDEX mtbffacts_day_key ON mtbffacts USING btree (day);
+#                                           CREATE INDEX mtbffacts_product_id_key ON mtbffacts USING btree (productdims_id);
+#                                           ALTER TABLE ONLY mtbffacts
+#                                               ADD CONSTRAINT mtbffacts_pkey PRIMARY KEY (id);
+#                                           ALTER TABLE ONLY mtbffacts
+#                                               ADD CONSTRAINT mtbffacts_productdims_id_fkey FOREIGN KEY (productdims_id) REFERENCES productdims(id);
+#                                           """)
+# databaseDependenciesForSetup[MTBFFactsTable] = [ProductDimsTable]
+
 #=================================================================================================================
 class ProductVisibilityTable(Table):
   """Define the table product_visibiilty: Used to decide what products are to be aggregated"""
@@ -734,7 +965,8 @@ class ProductVisibilityTable(Table):
                                    start_date timestamp, -- set this manually for all mat views
                                    end_date timestamp,   -- set this manually: Used by mat views that care
                                    ignore boolean default False, -- force aggregation off for this product id
-                                   featured boolean default false
+                                   featured boolean default false, -- if true, feature version on product dashboard
+                                   throttle numeric(5,2) default 0.00 -- set this manually; used by active daily user reports
                                    );
                                    CREATE INDEX product_visibility_end_date ON product_visibility (end_date);
                                    CREATE INDEX product_visibility_start_date on product_visibility (start_date);
@@ -743,6 +975,71 @@ class ProductVisibilityTable(Table):
                                  """
                                            )
 databaseDependenciesForSetup[ProductVisibilityTable] = [ProductDimsTable]
+# #=================================================================================================================
+# class MTBFConfigTable(Table):
+#   """Define the table 'mtbfconfig'"""
+#   #-----------------------------------------------------------------------------------------------------------------
+#   def __init__ (self, logger, **kwargs):
+#     super(Table, self).__init__(name='mtbfconfig', logger=logger,
+#                                        creationSql="""
+#                                           CREATE TABLE mtbfconfig (
+#                                               id serial NOT NULL,
+#                                               productdims_id integer,
+#                                               osdims_id integer,
+#                                               start_dt date,
+#                                               end_dt date);
+#                                           ALTER TABLE ONLY mtbfconfig
+#                                               ADD CONSTRAINT mtbfconfig_pkey PRIMARY KEY (id);
+#                                           CREATE INDEX mtbfconfig_end_dt_key ON mtbfconfig USING btree (end_dt);
+#                                           CREATE INDEX mtbfconfig_start_dt_key ON mtbfconfig USING btree (start_dt);
+#                                           ALTER TABLE ONLY mtbfconfig
+#                                               ADD CONSTRAINT mtbfconfig_productdims_id_fkey FOREIGN KEY (productdims_id) REFERENCES productdims(id);
+#                                           ALTER TABLE ONLY mtbfconfig
+#                                               ADD CONSTRAINT mtbfconfig_osdims_id_fkey FOREIGN KEY (osdims_id) REFERENCES osdims(id);
+#                                           """)
+# databaseDependenciesForSetup[MTBFConfigTable] = [ProductDimsTable, OsDimsTable]
+
+#=================================================================================================================
+# class TCByUrlConfigTable(Table):
+#   """Define the table 'tcbyurlconfig'"""
+#   #-----------------------------------------------------------------------------------------------------------------
+#   def __init__ (self, logger, **kwargs):
+#     super(Table, self).__init__(name='tcbyurlconfig', logger=logger,
+#                                        creationSql="""
+#                                           CREATE TABLE tcbyurlconfig (
+#                                               id serial NOT NULL,
+#                                               productdims_id integer,
+#                                               osdims_id integer,
+#                                               enabled boolean);
+#                                           ALTER TABLE ONLY tcbyurlconfig
+#                                               ADD CONSTRAINT tcbyurlconfig_pkey PRIMARY KEY (id);
+#                                           ALTER TABLE ONLY tcbyurlconfig
+#                                               ADD CONSTRAINT tcbyurlconfig_productdims_id_fkey FOREIGN KEY (productdims_id) REFERENCES productdims(id);
+#                                           ALTER TABLE ONLY tcbyurlconfig
+#                                               ADD CONSTRAINT tcbyurlconfig_osdims_id_fkey FOREIGN KEY (osdims_id) REFERENCES osdims(id);
+#                                           """)
+# databaseDependenciesForSetup[TCByUrlConfigTable] = [ProductDimsTable, OsDimsTable]
+
+# #=================================================================================================================
+# class TCBySignatureConfigTable(Table):
+#   """Define the table tcbysignatureconfig"""
+#   #-----------------------------------------------------------------------------------------------------------------
+#   def __init__ (self, logger, **kwargs):
+#     super(Table, self).__init__(name='tcbysignatureconfig', logger = logger,
+#                                 creationSql="""
+#                                   CREATE TABLE tcbysignatureconfig (
+#                                       id serial NOT NULL PRIMARY KEY,
+#                                       productdims_id integer,
+#                                       osdims_id integer,
+#                                       start_dt date,
+#                                       end_dt date);
+#                                   ALTER TABLE tcbysignatureconfig
+#                                       ADD CONSTRAINT tcbysignatureconfig_productdims_id_fkey FOREIGN KEY (productdims_id) REFERENCES productdims(id);
+#                                   ALTER TABLE tcbysignatureconfig
+#                                       ADD CONSTRAINT tcbysignatureconfig_osdims_id_fkey FOREIGN KEY (osdims_id) REFERENCES osdims(id);
+#                                   CREATE INDEX tcbysignatureconfig_dates ON tcbysignatureconfig (start_dt,end_dt)
+#                                   """)
+# databaseDependenciesForSetup[TCBySignatureConfigTable] = [ProductDimsTable, OsDimsTable]
 
 #=================================================================================================================
 class TopCrashesByUrlTable(Table):
@@ -825,6 +1122,8 @@ class TopCrashesBySignatureTable(Table):
                                                signature TEXT,
                                                productdims_id integer,
                                                osdims_id integer,
+                                               hang_count integer DEFAULT 0,
+                                               plugin_count integer DEFAULT 0,
                                                window_end TIMESTAMP WITHOUT TIME ZONE NOT NULL,
                                                window_size INTERVAL NOT NULL
                                              );
@@ -854,7 +1153,7 @@ class PluginsTable(Table):
                                                 );""" % name)
 
   def insert(self, databaseCursor, rowTuple=None):
-    databaseCursor.execute("insert into plugins (filename, name) values (%s, %s) returning id", rowTuple)
+    databaseCursor.execute("insert into plugins (filename, name) values (%s, %s)", rowTuple)
 
 databaseDependenciesForSetup[PluginsTable] = []
 
@@ -885,7 +1184,8 @@ class PluginsReportsTable(PartitionedTable):
                                                   ADD CONSTRAINT %(partitionName)s_plugin_id_fkey FOREIGN KEY (plugin_id) REFERENCES plugins(id) ON DELETE CASCADE;
                                               """)
     self.insertSql = """insert into TABLENAME (report_id, plugin_id, date_processed, version) values
-                                              (%s, %s, %s, %s)"""
+                                              (%s, (select id from plugins where filename = %s and name = %s),
+                                              %s, %s)"""
   #-----------------------------------------------------------------------------------------------------------------
   def partitionCreationParameters(self, uniqueIdentifier):
     startDate, endDate = uniqueIdentifier
@@ -900,10 +1200,8 @@ class PluginsReportsTable(PartitionedTable):
 databaseDependenciesForPartition[PluginsReportsTable] = [ReportsTable]
 databaseDependenciesForSetup[PluginsReportsTable] = [PluginsTable]
 
-#=================================================================================================================
 class AlexaTopsitesTable(Table):
   """Define the table 'alexa_topsites'"""
-  #-----------------------------------------------------------------------------------------------------------------
   def __init__(self, logger, **kwargs):
     super(AlexaTopsitesTable,self).__init__(name='alexa_topsites',logger=logger,
                                             creationSql = """
@@ -916,10 +1214,8 @@ class AlexaTopsitesTable(Table):
                                             )
 databaseDependenciesForSetup[AlexaTopsitesTable] = []
 
-#=================================================================================================================
 class RawAduTable(Table):
   """Define the table raw_adu"""
-  #-----------------------------------------------------------------------------------------------------------------
   def __init__(self, logger, **kwargs):
     super(RawAduTable,self).__init__(name='raw_adu', logger=logger,
                                      creationSql = """
@@ -953,14 +1249,12 @@ class BuildsTable(Table):
                                                 version text,
                                                 platform text,
                                                 buildid BIGINT,
-                                                platform_changeset text,
+                                                changeset text,
                                                 filename text,
                                                 date timestamp without time zone default now(),
-                                                app_changeset_1 text,
-                                                app_changeset_2 text,
                                             CONSTRAINT builds_key UNIQUE (product, version, platform, buildid));
                                         """)
-    self.insertSql = """INSERT INTO TABLENAME (product, version, platform, buildid, changeset, filename, date, app_changeset_1, app_changeset_2) values (%s, %s, %s, %s, %s, %s, %s, %s, %s)"""
+    self.insertSql = """INSERT INTO TABLENAME (product, version, platform, buildid, changeset, filename, date) values (%s, %s, %s, %s, %s, %s, %s)"""
 
   #-----------------------------------------------------------------------------------------------------------------
   def updateDefinition(self, databaseCursor):
@@ -1004,6 +1298,109 @@ class DailyCrashesTable(Table):
 databaseDependenciesForSetup[DailyCrashesTable] = []
 
 
+
+# #=================================================================================================================
+# class TopCrashersTable(Table):
+#   """Define the table 'topcrashers'"""
+#   #-----------------------------------------------------------------------------------------------------------------
+#   def __init__ (self, logger, **kwargs):
+#     super(TopCrashersTable, self).__init__(name='topcrashers', logger=logger,
+#                                        creationSql="""
+#                                           CREATE TABLE topcrashers (
+#                                               id serial NOT NULL,
+#                                               signature character varying(255) NOT NULL,
+#                                               version character varying(30) NOT NULL,
+#                                               product character varying(30) NOT NULL,
+#                                               build character varying(30) NOT NULL,
+#                                               total integer,
+#                                               win integer,
+#                                               mac integer,
+#                                               linux integer,
+#                                               rank integer,
+#                                               last_rank integer,
+#                                               trend character varying(30),
+#                                               uptime real,
+#                                               users integer,
+#                                               last_updated timestamp without time zone
+#                                           );
+#                                           ALTER TABLE ONLY topcrashers
+#                                               ADD CONSTRAINT topcrashers_pkey PRIMARY KEY (id);
+#                                           """)
+# databaseDependenciesForSetup[TopCrashersTable] = []
+
+#=================================================================================================================
+#class ParititioningTriggerScript(DatabaseObject):
+  ##-----------------------------------------------------------------------------------------------------------------
+  #def __init__ (self, logger):
+    #super(ParititioningTriggerScript, self).__init__(name = "partition_insert_trigger", logger=logger,
+                                                     #creationSql = """
+#CREATE OR REPLACE FUNCTION partition_insert_trigger()
+#RETURNS TRIGGER AS $$
+#import socorro.database.server as ds
+#try:
+  #targetTableName = ds.targetTableName(TD["table_name"], TD['new']['date_processed'])
+  ##plpy.info(targetTableName)
+  #planName = ds.targetTableInsertPlanName (targetTableName)
+  ##plpy.info("using plan: %s" % planName)
+  #values = ds.getValuesList(TD, SD, plpy)
+  ##plpy.info(str(values))
+  ##plpy.info('about to execute plan')
+  #result = plpy.execute(SD[planName], values)
+  #return None
+#except KeyError:  #no plan
+  ##plpy.info("oops no plan for: %s" % planName)
+  #SD[planName] = ds.createNewInsertQueryPlan(TD, SD, targetTableName, planName, plpy)
+  ##plpy.info('about to execute plan for second time')
+  #result = plpy.execute(SD[planName], values)
+  #return None
+#$$
+#LANGUAGE plpythonu;""")
+  #def updateDefinition(self, databaseCursor):
+    #databaseCursor.execute(self.creationSql)
+
+#=================================================================================================================
+#class ChattyParititioningTriggerScript(DatabaseObject):
+  #-----------------------------------------------------------------------------------------------------------------
+  #def __init__ (self, logger):
+    #super(ChattyParititioningTriggerScript, self).__init__(name = "partition_insert_trigger", logger=logger,
+                                                     #creationSql = """
+#CREATE OR REPLACE FUNCTION partition_insert_trigger()
+#RETURNS TRIGGER AS $$
+#import socorro.database.server as ds
+#import logging
+#import logging.handlers
+#try:
+  #targetTableName = ds.targetTableName(TD["table_name"], TD['new']['date_processed'])
+  #planName = ds.targetTableInsertPlanName (targetTableName)
+  #try:
+    #logger = SD["logger"]
+  #except KeyError:
+    #SD["logger"] = logger = logging.getLogger(targetTableName)
+    #logger.setLevel(logging.DEBUG)
+    #rotatingFileLog = logging.handlers.RotatingFileHandler("/tmp/partitionTrigger.log", "a", 100000000, 10)
+    #rotatingFileLog.setLevel(logging.DEBUG)
+    #rotatingFileLogFormatter = logging.Formatter('%(asctime)s %(levelname)s - %(message)s')
+    #rotatingFileLog.setFormatter(rotatingFileLogFormatter)
+    #logger.addHandler(rotatingFileLog)
+    #logger.debug("---------- beginning new session ----------")
+    #SD["counter"] = 0
+  #values = ds.getValuesList(TD, SD, plpy)
+  #logger.debug("%08d plan: %s", SD["counter"], planName)
+  #SD["counter"] += 1
+  #result = plpy.execute(SD[planName], values)
+  #return 'SKIP'
+#except KeyError:  #no plan
+  #logger.debug('creating new plan for: %s', planName)
+  #SD[planName] = ds.createNewInsertQueryPlan(TD, SD, targetTableName, planName, plpy)
+  #result = plpy.execute(SD[planName], values)
+  #return 'SKIP'
+#$$
+#LANGUAGE plpythonu;""")
+  ##-----------------------------------------------------------------------------------------------------------------
+  #def updateDefinition(self, databaseCursor):
+    #databaseCursor.execute(self.creationSql)
+
+
 #=================================================================================================================
 class EmailCampaignsTable(Table):
   """Define the table 'email_campaigns'
@@ -1028,7 +1425,6 @@ class EmailCampaignsTable(Table):
                                                 date_created timestamp without time zone NOT NULL DEFAULT now());
                                             CREATE INDEX email_campaigns_product_signature_key ON email_campaigns (product, signature);
                                         """)
-    aok
     self.insertSql = """INSERT INTO email_campaigns (product, versions, signature, subject, body, start_date, end_date, email_count, author)
                         VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id"""
 
@@ -1091,9 +1487,31 @@ class EmailCampaignsContactsTable(Table):
       #this table doesn't exist yet, create it
       self.create(databaseCursor)
 
-
-
 databaseDependenciesForSetup[EmailCampaignsContactsTable] = [EmailCampaignsTable, EmailContactsTable]
+
+#=================================================================================================================
+class SignatureProductdimsTable(Table):
+  """Define the table 'signature_productdims'"""
+  #-----------------------------------------------------------------------------------------------------------------
+  def __init__ (self, logger, **kwargs):
+    super(SignatureProductdimsTable, self).__init__(name = "signature_productdims", logger=logger,
+                                        creationSql = """
+                                            CREATE TABLE signature_productdims (
+                                              signature text not null,
+                                              productdims_id integer not null,
+                                            UNIQUE (signature, productdims_id));
+                                        """)
+    self.insertSql = """INSERT INTO TABLENAME (signature, productdims_id) values (%s, %d)"""
+
+  #-----------------------------------------------------------------------------------------------------------------
+  def updateDefinition(self, databaseCursor):
+    if socorro_pg.tablesMatchingPattern(self.name) == []:
+      #this table doesn't exist yet, create it
+      self.create(databaseCursor)
+
+databaseDependenciesForSetup[SignatureProductdimsTable] = [TopCrashesBySignatureTable,ProductDimsTable]
+
+
 #-----------------------------------------------------------------------------------------------------------------
 def connectToDatabase(config, logger):
   databaseDSN = "host=%(databaseHost)s dbname=%(databaseName)s user=%(databaseUserName)s password=%(databasePassword)s" % config
@@ -1133,7 +1551,7 @@ def teardownDatabase(config,logger):
 databaseObjectClassListForUpdate = [#ReportsTable,
                                     #DumpsTable,
                                     ExtensionsTable,
-                                    #FramesTable,
+                                    FramesTable,
                                     ProcessorsTable,
                                     JobsTable,
                                     ]
@@ -1158,7 +1576,7 @@ def updateDatabase(config, logger):
 # since it may be that some PartitionedTables should not be pre-created.
 databaseObjectClassListForWeeklyPartitions = [ReportsTable,
                                               #DumpsTable,
-                                              #FramesTable,
+                                              FramesTable,
                                               ExtensionsTable,
                                               PluginsReportsTable,
                                              ]

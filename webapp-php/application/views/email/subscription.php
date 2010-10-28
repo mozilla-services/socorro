@@ -2,7 +2,7 @@
 <?php if ($backend_error) { ?>
      <p>Error: <strong>Our email system is down</strong>. Please try in a few minutes.</p>
 <?php } elseif ($unknown_token) { ?>
-     <p>Error: Unable to load <?= $token ?>. Are you sure we sent you this code?</p>
+     <p>Error: Unable to find your email address. Are you sure we sent you this code?</p>
 <?php } else { ?>
   <form action="../update_status" method="post">
     <label for="subscribe_status">You are currently 
@@ -10,6 +10,7 @@
        <input type="radio" name="subscribe_status" value="false" <?php if (! $status) echo 'CHECKED' ?> >Not Subscribed</input>
     to crash report emails.</label>
     <input type="hidden" name="token" value="<?= out::H($token) ?>" />
+      <!-- TODO $mf->haveErrors('recaptcha')) { echo "error";} -->
       <h3>Word Verification</h3>
       <p>This question is for testing whether you are a human being!</p>
       <?php if ($recaptchaError) { ?>

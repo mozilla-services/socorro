@@ -6,8 +6,6 @@ import threading
 
 import socorro.lib.util as util
 
-databaseModule = psycopg2
-
 #-----------------------------------------------------------------------------------------------------------------
 def singleValueSql (aCursor, sql, parameters=None):
   aCursor.execute(sql, parameters)
@@ -131,7 +129,7 @@ class DatabaseConnectionPool(dict):
       return connection
     except psycopg2.Error:
       # did the connection time out?
-      self.logger.info("trying to re-establish a database connection")
+      self.logger.info("%s - trying to re-establish a database connection", threading.currentThread().getName())
       try:
         del self[name]
         connection = self.connectionWithoutTest(name)
@@ -139,7 +137,7 @@ class DatabaseConnectionPool(dict):
         cursor.fetchall()
         return connection
       except Exception, x:
-        self.logger.critical("something's gone horribly wrong with the database connection")
+        self.logger.critical("%s - something's gone horribly wrong with the database connection", threading.currentThread().getName())
         raise CannotConnectToDatabase(x)
 
   #-----------------------------------------------------------------------------------------------------------------
@@ -150,13 +148,13 @@ class DatabaseConnectionPool(dict):
 
   #-----------------------------------------------------------------------------------------------------------------
   def cleanup (self):
-    self.logger.debug("killing database connections")
+    self.logger.debug("%s - killing database connections", threading.currentThread().getName())
     for name, aConnection in self.iteritems():
       try:
         aConnection.close()
-        self.logger.debug("connection %s closed", name)
+        self.logger.debug("%s - connection %s closed", threading.currentThread().getName(), name)
       except psycopg2.InterfaceError:
-        self.logger.debug("connection %s already closed", name)
+        self.logger.debug("%s - connection %s already closed", threading.currentThread().getName(), name)
       except:
         util.reportExceptionAndContinue(self.logger)
 

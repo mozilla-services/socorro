@@ -430,7 +430,13 @@ class Products_Controller extends Controller {
      */
     private function _versionExists($version)
     {
-        $product_versions = array_merge($this->featured_versions, $this->unfeatured_versions);
+        if (!empty($this->featured_versions) && !empty($this->unfeatured_versions)) {
+            $product_versions = array_merge($this->featured_versions, $this->unfeatured_versions);
+        } elseif (!empty($this->featured_versions)) {
+            $product_versions = $this->featured_versions;
+        } elseif (!empty($this->unfeatured_versions)) {
+            $product_versions = $this->unfeatured_versions;
+        }
         foreach ($product_versions as $product_version) {
             if ($product_version->version == $version) {
                 return true;
@@ -541,12 +547,13 @@ class Products_Controller extends Controller {
             $top_crashers[$i]->version = $featured_version->version;
             
             $daily_versions[] = $featured_version->version;
+            $throttle[] = $featured_version->throttle;
             $i++;
         }
         $top_changers = $this->_determineTopchangersProduct($product, $top_crashers, count($this->featured_versions), true, $this->_determineTopchangersCountDashboard());
         
         $results = $this->daily_model->get($product, $daily_versions, $operating_systems, $date_start, $date_end, 'any');
-        $statistics = $this->daily_model->prepareStatistics($results, 'by_version', $product, $daily_versions, $operating_systems, $date_start, $date_end, array());
+        $statistics = $this->daily_model->prepareStatistics($results, 'by_version', $product, $daily_versions, $operating_systems, $date_start, $date_end, $throttle);
         $graph_data = $this->daily_model->prepareGraphData($statistics, 'by_version', $date_start, $date_end, $dates, $operating_systems, $daily_versions);
         
         $this->setView('products/product');

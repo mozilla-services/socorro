@@ -79,11 +79,12 @@ class Branch_Model extends Model {
 	 * @param 	string	The start date for this product YYYY-MM-DD
 	 * @param 	string	The end date for this product YYYY-MM-DD (usually +90 days)
 	 * @param   bool    True if version should be featured on the dashboard; false if not.
+	 * @param   float   The throttle value for this version.
 	 * @return 	object	The database query object
      */
-    public function add($product, $version, $branch, $start_date, $end_date, $featured=false) {
+    public function add($product, $version, $branch, $start_date, $end_date, $featured=false, $throttle) {
 		if ($product_version = $this->getByProductVersion($product, $version)) {
-			return $this->update($product, $version, $branch, $start_date, $end_date, $featured);
+			return $this->update($product, $version, $branch, $start_date, $end_date, $featured, $throttle);
 		} else {
 			$release = $this->determine_release($version);
 			try {
@@ -95,7 +96,7 @@ class Branch_Model extends Model {
 			} catch (Exception $e) {
 				Kohana::log('error', "Could not add \"$product\" \"$version\" in soc.web branch.add \r\n " . $e->getMessage());
 			}
-			$this->addProductVisibility($product, $version, $start_date, $end_date, $featured);
+			$this->addProductVisibility($product, $version, $start_date, $end_date, $featured, $throttle);
 			if (isset($rv)) {
 				return $rv;
 			}
@@ -110,16 +111,17 @@ class Branch_Model extends Model {
 	 * @param 	string 	The version number (e.g. '3.5', '3.5.1', '3.5.1pre', '3.5.2', '3.5.2pre')
 	 * @param 	string	The release date for this product YYYY-MM-DD
 	 * @param 	string	The end date for this product YYYY-MM-DD (usually +90 days)
-	 * @param   bool    True if version should be featured on the dashboard; false if not.	 
+	 * @param   bool    True if version should be featured on the dashboard; false if not.
+	 * @param   float   The throttle value for this version.
 	 * @return 	void
      */
-	private function addProductVisibility($product, $version, $start_date, $end_date, $featured=false) {
+	private function addProductVisibility($product, $version, $start_date, $end_date, $featured=false, $throttle) {
 		$this->db->query("/* soc.web branch.addProductVisibility */
-				INSERT INTO product_visibility (productdims_id, start_date, end_date, featured) 
-                SELECT id, ? as start_date, ? as end_date, ? as featured 
+				INSERT INTO product_visibility (productdims_id, start_date, end_date, featured, throttle) 
+                SELECT id, ? as start_date, ? as end_date, ? as featured, ? as throttle
 	            FROM productdims 
 	            WHERE product = ? AND version = ?
-		        ", $start_date, $end_date, $featured, $product, $version
+		        ", $start_date, $end_date, $featured, $throttle, $product, $version
 		);
 	}
 
@@ -307,7 +309,7 @@ class Branch_Model extends Model {
     public function getProductVersions() {
         return $this->fetchRows(
 			'/* soc.web branch.prodversions */ 
-				SELECT DISTINCT pd.id, pd.product, pd.version, pd.branch, pd.release, pv.start_date, pv.end_date, pv.featured
+				SELECT DISTINCT pd.id, pd.product, pd.version, pd.branch, pd.release, pv.start_date, pv.end_date, pv.featured, pv.throttle
 				FROM productdims pd
 				INNER JOIN product_visibility pv ON pv.productdims_id = pd.id
 				ORDER BY pd.product, pd.version
@@ -324,7 +326,7 @@ class Branch_Model extends Model {
         $date = date("Y-m-d");
         return $this->fetchRows(
 			'/* soc.web branch.prodversions */ 
-				SELECT DISTINCT pd.id, pd.product, pd.version, pd.branch, pd.release, pv.start_date, pv.end_date, pv.featured
+				SELECT DISTINCT pd.id, pd.product, pd.version, pd.branch, pd.release, pv.start_date, pv.end_date, pv.featured, pv.throttle
 				FROM productdims pd
 				INNER JOIN product_visibility pv ON pv.productdims_id = pd.id
 				WHERE pv.start_date <= ?
@@ -344,7 +346,7 @@ class Branch_Model extends Model {
         $date = date("Y-m-d");
         return $this->fetchRows(
 			'/* soc.web branch.prodversions */ 
-				SELECT DISTINCT pd.id, pd.product, pd.version, pd.branch, pd.release, pv.start_date, pv.end_date, pv.featured
+				SELECT DISTINCT pd.id, pd.product, pd.version, pd.branch, pd.release, pv.start_date, pv.end_date, pv.featured, pv.throttle
 				FROM productdims pd
 				INNER JOIN product_visibility pv ON pv.productdims_id = pd.id
 				WHERE pd.product = ?
@@ -367,7 +369,7 @@ class Branch_Model extends Model {
     public function getProductVersionsByDate($product, $start_date, $end_date) {
         return $this->fetchRows(
 			'/* soc.web branch.prodversions */ 
-				SELECT DISTINCT pd.id, pd.product, pd.version, pd.branch, pd.release, pv.start_date, pv.end_date, pv.featured
+				SELECT DISTINCT pd.id, pd.product, pd.version, pd.branch, pd.release, pv.start_date, pv.end_date, pv.featured, pv.throttle
 				FROM productdims pd
 				INNER JOIN product_visibility pv ON pv.productdims_id = pd.id
 				WHERE pd.product = ? 
@@ -387,7 +389,7 @@ class Branch_Model extends Model {
     public function getProductVersionsByProduct($product) {
         return $this->fetchRows(
 			'/* soc.web branch.prodversions */ 
-				SELECT DISTINCT pd.id, pd.product, pd.version, pd.branch, pd.release, pv.start_date, pv.end_date, pv.featured
+				SELECT DISTINCT pd.id, pd.product, pd.version, pd.branch, pd.release, pv.start_date, pv.end_date, pv.featured, pv.throttle
 				FROM productdims pd
 				INNER JOIN product_visibility pv ON pv.productdims_id = pd.id
 				WHERE pd.product = ? 
@@ -403,7 +405,7 @@ class Branch_Model extends Model {
 	 */
 	public function getProductVersionsWithoutVisibility () {
         return $this->fetchRows('/* soc.web branch.getProductVersionsWithoutVisibility */
-			SELECT DISTINCT pd.id, pd.product, pd.version, pd.branch, pd.release, pv.start_date, pv.end_date, pv.featured
+			SELECT DISTINCT pd.id, pd.product, pd.version, pd.branch, pd.release, pv.start_date, pv.end_date, pv.featured, pv.throttle
 			FROM productdims pd
 			LEFT OUTER JOIN product_visibility pv ON pv.productdims_id = pd.id
 			WHERE pv.start_date IS NULL and pv.end_date IS NULL
@@ -494,7 +496,7 @@ class Branch_Model extends Model {
         $date = date("Y-m-d");
         $versions = $this->fetchRows(
 			'/* soc.web branch.getFeaturedVersions */ 
-				SELECT DISTINCT pd.id, pd.product, pd.version, pd.branch, pd.release, pv.start_date, pv.end_date, pv.featured
+				SELECT DISTINCT pd.id, pd.product, pd.version, pd.branch, pd.release, pv.start_date, pv.end_date, pv.featured, pv.throttle
 				FROM productdims pd
 				INNER JOIN product_visibility pv ON pv.productdims_id = pd.id
 				WHERE pd.product = ?
@@ -585,7 +587,7 @@ class Branch_Model extends Model {
         $date = date('Y-m-d');
         $versions = $this->fetchRows(
 			'/* soc.web branch.getFeaturedVersions */ 
-				SELECT DISTINCT pd.id, pd.product, pd.version, pd.branch, pd.release, pv.start_date, pv.end_date, pv.featured
+				SELECT DISTINCT pd.id, pd.product, pd.version, pd.branch, pd.release, pv.start_date, pv.end_date, pv.featured, pv.throttle
 				FROM productdims pd
 				INNER JOIN product_visibility pv ON pv.productdims_id = pd.id
 				WHERE pd.product = ?
@@ -622,9 +624,10 @@ class Branch_Model extends Model {
 	 * @param 	string	The start date for this product YYYY-MM-DD
 	 * @param 	string	The end date for this product YYYY-MM-DD (usually +90 days)
      * @param   bool    True if version should be featured on the dashboard; false if not. 
+     * @param   float   The throttle value for this version
 	 * @return 	object	The database query object
      */
-    public function update($product, $version, $branch, $start_date, $end_date, $featured=false) {
+    public function update($product, $version, $branch, $start_date, $end_date, $featured=false, $throttle) {
 		if ($product_version = $this->getByProductVersion($product, $version)) {
  			$release = $this->determine_release($version);
 			$rv = $this->db->query("/* soc.web branch.update */
@@ -634,10 +637,10 @@ class Branch_Model extends Model {
 				AND version = ?
 			 	", $branch, $release, $product, $version
 			);
-			$this->updateProductVisibility($product, $version, $start_date, $end_date, $featured);
+			$this->updateProductVisibility($product, $version, $start_date, $end_date, $featured, $throttle);
 			return $rv;
 		} else {
-			return $this->add($product, $version, $branch, $start_date, $end_date, $featured);
+			return $this->add($product, $version, $branch, $start_date, $end_date, $featured, $throttle);
 		}
 	}
 
@@ -650,20 +653,21 @@ class Branch_Model extends Model {
 	 * @param 	string 	The version number (e.g. '3.5', '3.5.1', '3.5.1pre', '3.5.2', '3.5.2pre')
 	 * @param 	string	The start date for this product YYYY-MM-DD
 	 * @param 	string	The end date for this product YYYY-MM-DD (usually +90 days)
-	 * @param   bool    True if version should be featured on the dashboard; false if not.	 
+	 * @param   bool    True if version should be featured on the dashboard; false if not.
+	 * @param   float   The throttle value for this version
 	 * @return 	void
      */
-	private function updateProductVisibility($product, $version, $start_date, $end_date, $featured=false) {
+	private function updateProductVisibility($product, $version, $start_date, $end_date, $featured=false, $throttle) {
 		if ($product_version = $this->getByProductVersion($product, $version)) {
 			if ($product_visibility = $this->getProductVisibility($product_version->id)) {
 				$sql = "/* soc.web branch.updateProductVisibility */ 
 					UPDATE product_visibility
-					SET start_date = ?, end_date = ?, featured = ?
+					SET start_date = ?, end_date = ?, featured = ?, throttle = ?
 					WHERE productdims_id = ?
 				"; 		
-				$this->db->query($sql, trim($start_date), trim($end_date), $featured, $product_version->id);
+				$this->db->query($sql, trim($start_date), trim($end_date), $featured, $throttle, $product_version->id);
 			} else {
-				$this->addProductVisibility($product, $version, $start_date, $end_date, $featured);
+				$this->addProductVisibility($product, $version, $start_date, $end_date, $featured, $throttle);
 			}
 		}
 	}

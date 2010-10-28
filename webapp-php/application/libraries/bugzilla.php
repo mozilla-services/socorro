@@ -42,11 +42,6 @@
 class Bugzilla{
     public $resolutionOrder = array('', 'WORKSFORME', 'WONTFIX', 'DUPLICATE', 'INVALID', 'FIXED', 'INCOMPLETE');
 
-    /**
-     * An array of all of the statuses that define an open bug.
-     */
-    public $open_statuses = array('UNCONFIRMED', 'NEW', 'ASSIGNED', 'REOPENED');
-
    /**
     * Given a list of arrays which contain Bug Infos
     * this method will sort into display order based
@@ -85,8 +80,7 @@ class Bugzilla{
 	    if ( ! array_key_exists($row['signature'], $signature_to_bugzilla)) {
 	        $signature_to_bugzilla[$row['signature']] = array();
 	    }
-
-        $row['open'] = (in_array($row['status'], $this->open_statuses)) ? true : false;
+	    $row['open'] = empty($row['resolution']);
 	    $row['url'] = $bugzillaUrl . $row['id'];
 	    $row['summary'] = $row['short_desc'];
 

@@ -40,6 +40,7 @@ set_include_path(APPPATH . 'vendor' . PATH_SEPARATOR . get_include_path());
 require_once(Kohana::find_file('libraries', 'MY_QueryFormHelper', TRUE, 'php'));
 require_once(Kohana::find_file('libraries', 'release', TRUE, 'php'));
 require_once(Kohana::find_file('libraries', 'socorro_cookies', TRUE, 'php'));
+require_once(Kohana::find_file('libraries', 'versioncompare', TRUE, 'php'));
 
 /**
  * Custom controller subclass used throughout application
@@ -101,7 +102,7 @@ class Controller extends Controller_Core {
         $this->auth_is_active = Kohana::config('auth.driver', 'NoAuth') != "NoAuth";
 
         // Grab an array of current products, ensure that 1 is chosen, and grab the featured versions for that product.
-        $this->current_products = $this->branch_model->getProducts();
+        $this->current_products = $this->prepareCurrentProducts();
         $this->ensureChosenVersion($this->current_products);
         $this->prepareVersions();
         
@@ -264,6 +265,36 @@ class Controller extends Controller_Core {
 
         return $products;
     }
+    
+    /**
+     * Prepare an array of products for the site navbar.
+     *
+     * @return array
+     */
+    private function prepareCurrentProducts()
+    {
+        $current_products = $this->branch_model->getProducts();
+        $product_weights = Kohana::config('products.product_weights');
+        if (!empty($product_weights)) {
+            asort($product_weights);
+            $products = array();
+            foreach($product_weights as $product => $weight) {
+                foreach ($current_products as $current_product) {
+                    if ($product == $current_product) {
+                        $products[] = $current_product;
+                    }
+                }
+            }
+            foreach ($current_products as $current_product) {
+                if (!in_array($current_product, $products)) {
+                    $products[] = $current_product;
+                }
+            }
+            return $products;
+        } else {
+            return $current_products;
+        }
+    }                           
 
     /**
      * Get one or all view variables.
@@ -483,8 +514,39 @@ class Controller extends Controller_Core {
      */
     public function prepareVersions()
     {
-        $this->featured_versions = $this->branch_model->getFeaturedVersions($this->chosen_version['product']);
-        $this->unfeatured_versions = $this->branch_model->getUnfeaturedVersions($this->chosen_version['product'], $this->featured_versions);
+        $this->featured_versions = $this->_prepareVersionsSort(
+            $this->branch_model->getFeaturedVersions($this->chosen_version['product']));
+        $this->unfeatured_versions = $this->_prepareVersionsSort(
+            $this->branch_model->getUnfeaturedVersions($this->chosen_version['product'], $this->featured_versions));
+    }
+    
+    /**
+     * Sort the featured and unfeatured versions.
+     * 
+     * @param  array    An array of product/version objects
+     * @return array    A sorted array of product/version objects
+     */
+    private function _prepareVersionsSort($versions=null)
+    {
+        if (isset($versions) && !empty($versions)) {
+            $vc = new VersioncompareComponent();
+            $v = array();
+            foreach ($versions as $version) {
+                $v[] = $version->version;
+            }
+            $vc->sortAppversionArray($v);
+            rsort($v);
+            $new_versions = array();
+            foreach ($v as $new_version) {
+                foreach ($versions as $version) {
+                    if ($new_version == $version->version) {
+                        $new_versions[] = $version;
+                    }
+                }
+            }
+            return $new_versions;
+        }
+        return null;
     }
 
 }

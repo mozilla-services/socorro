@@ -64,17 +64,20 @@ class CrashReportDump {
 	foreach ($data as $key => $val) {
 	    $report->{$key} = $val;
 	}
-	$this->parseDump($report); 
+	$this->_parseDump($report); 
 	//Bulletproofing against bad JSON files
 	$basicKeys = array('signature', 'product', 'version', 'uuid', 
 			   'date_processed', 'uptime', 'build', 'os_name', 
 			   'os_version', 'cpu_name', 'cpu_info', 'reason', 
-			   'address', 'user_comments', 'dump');
+			   'address', 'user_comments', 'dump', 'processor_notes');
 	foreach ($basicKeys as $key) {
 	    if (! isset($report->{$key})) {
 		$report->{$key} = '';
 	    }
 	}
+        if (is_array($report->processor_notes)) {
+            $report->processor_notes = "\n".join($report->processor_notes);
+        }
     }
 
    /**
@@ -113,7 +116,7 @@ class CrashReportDump {
      * @param stdClass report object with a property 'dump' which is a 
      *        Text blob from the report dump.
      */
-    public function parseDump($report) {
+    public function _parseDump($report) {
         
         $dump_lines = explode("\n", $report->dump);
         $report->modules = array();

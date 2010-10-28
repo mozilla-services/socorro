@@ -20,30 +20,15 @@ $config['products/([0-9a-zA-Z.]+)/builds'] =
 
 $config['products/([0-9a-zA-Z.]+)/builds.rss'] =
     'products/index/$1//builds/rss';
-
-$config['products/([0-9a-zA-Z.]+)/topchangers'] =
-    'products/index/$1//topchangers';
-
-$config['products/([0-9a-zA-Z.]+)/topchangers.([a-z]+)'] =
-    'products/index/$1//topchangers/$2';
-
+    
 $config['products/([0-9a-zA-Z.]+)/versions/([0-9a-zA-Z.]+)/builds'] =
     'products/index/$1/$2/builds';
 
 $config['products/([0-9a-zA-Z.]+)/versions/([0-9a-zA-Z.]+)/builds.rss'] =
     'products/index/$1/$2/builds/rss';
 
-$config['products/([0-9a-zA-Z.]+)/versions/([0-9a-zA-Z.]+)/topchangers'] =
-    'products/index/$1/$2/topchangers';
-
-$config['products/([0-9a-zA-Z.]+)/versions/([0-9a-zA-Z.]+)/topchangers.([a-z]+)'] =
-    'products/index/$1/$2/topchangers/$3';
-
 $config['query'] =
     'query/query';
-
-$config['simple'] =
-    'query/query'; // Used as a redirect for bookmarked queries pointed to /query/simple . TODO remove in future.
 
 $config['status'] = 
     'status/index';
@@ -63,6 +48,9 @@ $config['topcrasher'] =
 $config['error/(.*)/(.*)'] =
     'error/$1/$2';
 
+$config['dumps/(.*)'] =
+    'dumps/file/$1';
+
 $config['report/list'] =
     'report/do_list'; // 'list' is a PHP reserved word
 
@@ -75,5 +63,4 @@ $config['report/index/([0-9a-zA-Z.-]+)'] =
 $config['report/([0-9a-zA-Z.-]+)'] =
     'report/index/$1';
 
-$config['report/([0-9a-zA-Z.-]+)/([0-9a-zA-Z_]+)'] =
-    'report/$2/$1';
+

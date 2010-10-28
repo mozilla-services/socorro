@@ -24,17 +24,13 @@ $config['product_weights'] = array(
    'Thunderbird' => 2,
    'Camino' => 3,
    'SeaMonkey' => 4,
+   'Fennec' => 5,
 );
 
 /**
- * The number of top changing top crashers to feature on the product dashboard.
+ * The number of topchangers to feature on the product dashboard.
  */
-$config['topchangers_count_dashboard'] = 15;
-
-/**
- * The number of top changing top crashers to feature on the product page.
- */
-$config['topchangers_count_page'] = 50;
+$config['topchangers_count'] = 10;
 
 /**
  * The number of topcrashers to feature on the product dashboard.

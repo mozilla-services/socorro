@@ -3,6 +3,8 @@
                       our Bugzilla integration. No really. */ ?>
 <title><?php if (! empty($report->signature)) { echo '[@ '; out::H($report->signature); echo '] - ';} ?> <?php out::H($report->product) ?> <?php out::H($report->version) ?> Crash Report - Report ID: <?php out::H($report->uuid) ?></title>
 
+    <link rel='alternate' type='application/json' href='<?php echo $reportJsonZUri ?>' />
+
     <?php echo html::stylesheet(array(
         'css/flora/flora.all.css'
     ), 'screen')?>
@@ -32,7 +34,7 @@
 if (is_null($report->signature) || empty($report->signature)) { ?>
 <a href="http://support.mozilla.com">Visit Mozilla Support for Help</a>
 <?php } else { ?>
-<a href="http://support.mozilla.com/search?q=<?=urlencode($report->sumo_signature) ?>" title="Find more answers at support.mozilla.com!">Search Mozilla Support for Help</a>
+<a href="http://support.mozilla.com/search/q=<?=urlencode($report->sumo_signature) ?>" title="Find more answers at support.mozilla.com!">Search Mozilla Support for Help</a>
 <?php } ?></div>
 
 <?php if (array_key_exists('hangtype', $oopp_details)) { ?>
@@ -115,10 +117,10 @@ if (is_null($report->signature) || empty($report->signature)) { ?>
             </tr>
             <?php endif; ?>
             <tr>
-                <th>OS</th><td><?php out::H($report_os_name) ?></td>
+                <th>OS</th><td><?php out::H($report->os_name) ?></td>
             </tr>
             <tr>
-                <th>OS Version</th><td><?php out::H($report_os_version) ?></td>
+                <th>OS Version</th><td><?php out::H($report->os_version) ?></td>
             </tr>
             <tr>
                 <th>CPU</th><td><?php out::H($report->cpu_name) ?></td>
@@ -160,13 +162,7 @@ if (is_null($report->signature) || empty($report->signature)) { ?>
 <?php if (isset($report->processor_notes)) { ?>
             <tr>
 	    <th title="Notes added by Socorro when accepting the crash report">Processor Notes</th>
-            <td><?php 
-                if (is_array($report->processor_notes)) {
-                    echo nl2br(out::H(implode("/r/n", $report->processor_notes)));
-                } else {
-                    echo nl2br( out::H($report->processor_notes, FALSE));
-                }
-            ?></td>
+                             <td><?php echo nl2br( out::H($report->processor_notes, FALSE))  ?></td>
             </tr>
 <?php } ?>
 <?php if (isset($report->distributor)) { ?>
@@ -185,15 +181,8 @@ if (is_null($report->signature) || empty($report->signature)) { ?>
             </tr>
 <?php } ?>
         </table>
-
+<?php if (array_key_exists($report->signature, $sig2bugs)) { ?>    
       <div id="bugzilla">      
-          <h2>Bugzilla
-	      <?php if (isset($report_bug_url)) { ?>
-		       - <a href="<?php out::H($report_bug_url); ?>" target="_NEW">Report this Crash</a>
-	      <?php } ?>
-		  </h2>
-
-		<?php if (array_key_exists($report->signature, $sig2bugs)) { ?>    
         <h2>Related Bugs</h2>
         <?php View::factory('common/list_bugs', array(
 		     'signature' => $report->signature,
@@ -201,8 +190,8 @@ if (is_null($report->signature) || empty($report->signature)) { ?>
                      'mode' => 'full',
                      'suppressHeader' => TRUE
 	      ))->render(TRUE); ?>
-	    <?php }  ?>
       </div><!-- /bugzilla -->
+    <?php }  ?>
 
       <div id="frames">
     <?php if (isset($report->threads) && count($report->threads)): ?>
@@ -248,21 +237,13 @@ if (is_null($report->signature) || empty($report->signature)) { ?>
                     <?php stack_trace($report->threads[$i]) ?>
                 <?php endfor ?>
             </div>
-            
-            <div id="data_urls">
-            	<?php if ($logged_in && !empty($data_urls)) { ?>
-        			<h3>Download the Data</h3>
-        			<?php foreach ($data_urls as $key => $value) { ?>
-        				<p><a href="<?php out::H($value['url']); ?>"><?php out::H($key); ?></a></p>
-        			<?php } ?>
-        		<?php } ?>
-            </div>
 
             <script type="text/javascript">document.getElementById("allthreads").style.display="none";</script>
 
         <?php endif ?>
       </div><!-- /frames -->
     </div><!-- /details -->
+
 
     <div id="modules">
         <?php if (count($report->modules)): ?>
@@ -287,18 +268,18 @@ if (is_null($report->signature) || empty($report->signature)) { ?>
     <?php endif ?>
     </div><!-- /modules -->
 
+
     <div id="rawdump">
         <div class="code"><?php out::H($report->dump) ?></div>
 
-		<?php if ($logged_in && !empty($data_urls)) { ?>
+		<?php if ($logged_in && !empty($raw_dump_urls)) { ?>
 			<h3>Download the Raw Dump</h3>
-			<?php foreach ($data_urls as $key => $value) { ?>
-			    <?php if ($key == 'raw_crash') { ?>
-				    <p><a href="<?php out::H($value['url']); ?>"><?php out::H($key); ?></a></p>
-			    <?php } ?>
+			<?php foreach ($raw_dump_urls as $url) { ?>
+				<p><a href="<?php out::H($url); ?>"><?php out::H($url); ?></a></p>
 			<?php } ?>
 		<?php } ?>
     </div><!-- /rawdump -->
+
 
     <div id="extensions">
         <?php if (!empty($extensions)) { ?>
@@ -339,7 +320,7 @@ if (is_null($report->signature) || empty($report->signature)) { ?>
 			    'current_signature' => $report->signature,
 			    'current_product'   => $report->product,
 			    'current_version'   => $report->version,
-			    'current_os'        => $report_os_name))->render(TRUE); ?>
+			    'current_os'        => $report->os_name))->render(TRUE); ?>
 
 </div> <!-- /report-index -->
 
@@ -354,4 +335,3 @@ if (is_null($report->signature) || empty($report->signature)) { ?>
 	    'js/socorro/correlation.js'
 	    ));
     ?>
-

@@ -181,7 +181,7 @@ class Correlation_Controller extends Controller
             Kohana::log('debug', "CACHE HIT " . $cache_key);
             return array(true, $data);
         } else if ($cache->get($this->_getGeneralCacheKey($day, $product, $version, $report_name)) === true) {
-            $err = "Loaded Correlation Data, but non available for this signature <code>$signature</code>";
+            $err = "Loaded Correlation Data, but none available for this signature <code>$signature</code>";
             return array(false, $err);
         } else {
             $report = Kohana::config('correlation.path') . "${day}/${day}_${product}_${version}-${report_name}";

@@ -32,23 +32,23 @@ def setup_module():
 
 def addReportData(cursor,dataToAdd):
   sql = """INSERT INTO reports
-     (uuid, client_crash_date, date_processed, product, version, url, install_age, last_crash, uptime, os_name, os_version, user_comments, signature) VALUES
-     ( %(uuid)s, %(client_crash_date)s, %(date_processed)s, %(product)s, %(version)s, %(url)s, %(install_age)s, %(last_crash)s, %(uptime)s, %(os_name)s, %(os_version)s, %(user_comments)s, %(signature)s)
+     (uuid, client_crash_date, date_processed, product, version, url, install_age, last_crash, uptime, os_name, os_version, user_comments, signature, hangid, process_type) VALUES
+     ( %(uuid)s, %(client_crash_date)s, %(date_processed)s, %(product)s, %(version)s, %(url)s, %(install_age)s, %(last_crash)s, %(uptime)s, %(os_name)s, %(os_version)s, %(user_comments)s, %(signature)s, %(hangid)s, %(process_type)s)
     """
   cursor.executemany(sql,dataToAdd)
 
 def addCrashData(cursor,dataToAdd):
   # dataToAdd is [{},...] for dictionaries of values as shown in sql below
   sql = """INSERT INTO top_crash_by_signature
-    (  count,    uptime,    last_updated,    signature,    productdims_id,    osdims_id) VALUES
-    (%(count)s,%(uptime)s,%(last_updated)s,%(signature)s,%(productdims_id)s,%(osdims_id)s) """
+    (  count,    uptime,    last_updated,    signature,    productdims_id,    osdims_id,    hang_count,    plugin_count) VALUES
+    (%(count)s,%(uptime)s,%(last_updated)s,%(signature)s,%(productdims_id)s,%(osdims_id)s,%(hang_count)s,%(plugin_count)s) """
   cursor.executemany(sql,dataToAdd)
   cursor.connection.commit()
 
 dataForStartDateTest = [
-  {'count':18,'uptime':64.5,'last_updated':dt.datetime(2009,3,3,3,3,3), 'productdims_id':1,'osdims_id':1,'signature':'_PR_MD_SEND'},
-  {'count':10,'uptime':56.4,'last_updated':dt.datetime(2009,3,3,3,3,5), 'productdims_id':2,'osdims_id':1,'signature':'nsAutoCompleteController::ClosePopup'},
-  {'count':1, 'uptime':45.6,'last_updated':dt.datetime(2009,3,3,3,3,7), 'productdims_id':3,'osdims_id':2,'signature':'nsFormFillController::SetPopupOpen'},
+  {'count':18,'uptime':64.5,'last_updated':dt.datetime(2009,3,3,3,3,3), 'productdims_id':1,'osdims_id':1,'signature':'_PR_MD_SEND','hang_count':0,'plugin_count':0},
+  {'count':10,'uptime':56.4,'last_updated':dt.datetime(2009,3,3,3,3,5), 'productdims_id':2,'osdims_id':1,'signature':'nsAutoCompleteController::ClosePopup','hang_count':10,'plugin_count':10},
+  {'count':1, 'uptime':45.6,'last_updated':dt.datetime(2009,3,3,3,3,7), 'productdims_id':3,'osdims_id':2,'signature':'nsFormFillController::SetPopupOpen','hang_count':0,'plugin_count':0},
   ]
 
 def genOs():
@@ -177,6 +177,8 @@ def makeReportData(sizePerDay,numDays):
         'os_name':os_name,
         'os_version':os_version,
         'url':urlGen.next()[1],
+        'hangid':'test123',
+        'process_type':'plugin',
         }
       insData.append(data)
       currentDate += bumpGen.next()
@@ -473,14 +475,24 @@ class TestTopCrashesBySignature(unittest.TestCase):
       # Keys are always signature,product,os
       key =   (d['signature'],idCache.getProductId(d['product'],d['version']),idCache.getOsId(d['os_name'],d['os_version']))
       if d['version'][-3:] == 'pre': continue    # Lars buildid
+      hang_count = 0
+      plugin_count = 0
+      if d['hangid'] != '':
+        hang_count = 1
+      if d['process_type'] == 'plugin':
+        plugin_count = 1;
       try:
         expect[key]['count'] += 1
         expect[key]['uptime'] += d['uptime']
+        expect[key]['hang_count'] += hang_count
+        expect[key]['plugin_count'] += plugin_count
         oldCount += 1
       except:
         expect[key] = {}
         expect[key]['count'] = 1
         expect[key]['uptime'] = d['uptime']
+        expect[key]['hang_count'] = hang_count
+        expect[key]['plugin_count'] = plugin_count
         newCount += 1
     addReportData(cursor,data)
     self.connection.commit()
@@ -493,38 +505,40 @@ class TestTopCrashesBySignature(unittest.TestCase):
 
     summaryCrashes = {}
     tc.extractDataForPeriod(start,end,summaryCrashes)
-    assert expect == summaryCrashes, 'Oops. You will need to debug on this. Sorry. Try commenting this line and un-commenting the next bunch'
-#     # the next few lines amount to "assert expect == summaryCrashes" but with more useful error detail
-#     # check that we have a chance of equality
-#     assert len(expect) == len(summaryCrashes), 'Expected equal lengths but expected:%s versus got:%s'%(len(expect),len(summaryCrashes))
-#     getter = itemgetter('count','uptime')
-#     # check that everything in what we got is expected
-#     for k,v in summaryCrashes.items():
-#       assert getter(expect[k]) == getter(v), 'for key %s: Expected %s but got %s'%(k,getter(expect[k]),getter(v))
-#     # check that everything we expect is in what we got
-#     for k,v in expect.items():
-#       assert getter(v) == getter(summaryCrashes[k]),  'for key %s: Expected %s but got %s'%(k,getter(v), getter(summaryCrashes[k]))
+    # assert expect == summaryCrashes, 'Oops. You will need to debug on this. Sorry. Try commenting this line and un-commenting the next bunch'
+    # the next few lines amount to "assert expect == summaryCrashes" but with more useful error detail
+    # check that we have a chance of equality
+    assert len(expect) == len(summaryCrashes), 'Expected equal lengths but expected:%s versus got:%s'%(len(expect),len(summaryCrashes))
+    getter = itemgetter('count') # ,'uptime') #,'hang_count','plugin_count')
+    # check that everything in what we got is expected
+    for k,v in summaryCrashes.items():
+      assert getter(expect[k]) == getter(v), 'for key %s: Expected %s but got %s'%(k,getter(expect[k]),getter(v))
+    # check that everything we expect is in what we got
+    for k,v in expect.items():
+      assert getter(v) == getter(summaryCrashes[k]),  'for key %s: Expected %s but got %s'%(k,getter(v), getter(summaryCrashes[k]))
 
     result = tc.fixupCrashData(summaryCrashes,baseDate,dt.timedelta(minutes=19))
     result.sort(key=itemgetter('count'),reverse=True)
     resultx = tc.fixupCrashData(expect,baseDate,dt.timedelta(minutes=19))
     resultx.sort(key=itemgetter('count'),reverse=True)
     assert result == resultx
-#    ## The next few lines show more detail if there's a problem. Comment above, uncomment below
-#    misscount = fullcount = 0
-#     if result != resultx:
-#       assert len(result) == len(resultx), 'expected len: %s, got %s'%(len(result), len(resultx))
-#       for i in range(len(result)):
-#         r = result[i]
-#         rx = resultx[i]
-#         assert len(r) == len(rx), 'at loop %s: expected len: %s got %s'(i,len(r),len(rx))
-#         for j in range(len(r)):
-#           fullcount += 1
-#           if r[j] != rx[j]:
-#             print "unequal at loop %s, item %s:\n  %s\n  %s"%(i,j,r[j],rx[j])
-#             misscount += 1
-#       print "Unequal for %s of %s (%3.1f%%) rows"%(misscount,fullcount,100.0*(1.0*misscount/fullcount))
-#     assert 0 == misscount, "They weren't equal. Look nearby for details"
+    ## The next few lines show more detail if there's a problem. Comment above, uncomment below
+    # misscount = fullcount = 0
+    # if result != resultx:
+    #   assert len(result) == len(resultx), 'expected len: %s, got %s'%(len(result), len(resultx))
+    #   for i in range(len(result)):
+    #     r = result[i]
+    #     rx = resultx[i]
+    #     print "%s" % (r)
+    #     print "%s" % (rx)
+    #     assert len(r) == len(rx), 'at loop %s: expected len: %s got %s'(i,len(r),len(rx))
+    #     for j in range(len(r)):
+    #       fullcount += 1
+    #       if r[j] != rx[j]:
+    #         print "unequal at loop %s, item %s:\n  %s\n  %s"%(i,j,r[j],rx[j])
+    #         misscount += 1
+    #   print "Unequal for %s of %s (%3.1f%%) rows"%(misscount,fullcount,100.0*(1.0*misscount/fullcount))
+    # assert 0 == misscount, "They weren't equal. Look nearby for details"
     expectedAll = set(['xpcom_core.dll@0x31b7a', 'js_Interpret', '_PR_MD_SEND', 'nsFormFillController::SetPopupOpen', 'nsAutoCompleteController::ClosePopup','morkRowObject::CloseRowObject(morkEnv*)', 'nsContainerFrame::ReflowChild(nsIFrame*, nsPresContext*, nsHTMLReflowMetrics&, nsHTMLReflowState const&, int, int, unsigned int, unsigned int&, nsOverflowContinuationTracker*)'])
 
     gotAll = set([ x['signature'] for x in result])

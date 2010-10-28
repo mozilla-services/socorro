@@ -68,6 +68,14 @@ class Topcrasher_Controller extends Controller {
      */
     private function _handleEmptyVersion($product, $method) {
         $product_version = $this->branch_model->getRecentProductVersion($product);
+        if (empty($product_version)) {
+	        // If no current major versions are found, grab any available version
+            $product_versions = $this->branch_model->getCurrentProductVersions($product);
+            if (isset($product_versions[0])) {
+                $product_version = array_shift($product_versions);
+            }
+        }
+
         $version = $product_version->version;
         $this->chooseVersion(
             array(
@@ -108,7 +116,8 @@ class Topcrasher_Controller extends Controller {
         }
 
         // generate list of all versions
-        $prod_versions = $this->branch_model->getProductVersions();
+        $branches = new Branch_Model();
+        $prod_versions = $branches->getProductVersions();
         $all_versions = array();
         foreach ($prod_versions as $ver) {
             $all_versions[$ver->product][] = $ver->version;
@@ -148,17 +157,17 @@ class Topcrasher_Controller extends Controller {
      * @param   string  The name of the product
      * @param   version The version  number for this product
      * @param   int     The number of days for which to display results
+     * @param   string  The crash type to query by
      * @return  void
      */
-    public function byversion($product, $version=null, $duration=14)
+    public function byversion($product, $version=null, $duration=14, $crash_type=null)
     {
         if (empty($version)) {
             $this->_handleEmptyVersion($product, 'byversion');
         }
         
 	$duration_url_path = array(Router::$controller, Router::$method, $product, $version);
-	$other_durations = array_diff(Kohana::config('topcrashbysig.durations'),
-				      array($duration));
+	$durations = Kohana::config('topcrashbysig.durations');
 
 	$config = array();
 	$credentials = Kohana::config('webserviceclient.basic_auth');
@@ -176,10 +185,15 @@ class Topcrasher_Controller extends Controller {
 	$limit = Kohana::config('topcrashbysig.byversion_limit', 300);
 	// lifetime in seconds
 	$lifetime = $cache_in_minutes * 60;
-
+	
+	$crash_types = Kohana::config('topcrashbysig.crash_types');
+	if (empty($crash_type) || !in_array($crash_type, $crash_types)) {
+		$crash_type = Kohana::config('topcrashbysig.crash_types_default');
+	}
+	
 	$p = urlencode($product);
 	$v = urlencode($version);
-        $resp = $service->get("${host}/200911/topcrash/sig/trend/rank/p/${p}/v/${v}/end/${end_date}/duration/${dur}/listsize/${limit}",
+        $resp = $service->get("${host}/201010/topcrash/sig/trend/rank/p/${p}/v/${v}/type/${crash_type}/end/${end_date}/duration/${dur}/listsize/${limit}",
 			      'json', $lifetime);
 	if($resp) {
 	    $this->topcrashers_model->ensureProperties($resp, array(
@@ -190,7 +204,8 @@ class Topcrasher_Controller extends Controller {
 				     'totalNumberOfCrashes' => 0), 'top crash sig overall');
 	    $signatures = array();
 	    $req_props = array( 'signature' => '', 'count' => 0, 
-				'win_count' => 0, 'mac_count' => 0, 'linux_count' => 0,
+	            'win_count' => 0, 'mac_count' => 0, 'linux_count' => 0, 
+                'versions' => '', 'versions_count' => 0,
 				'currentRank' => 0, 'previousRank' => 0, 'changeInRank' => 0, 
 				'percentOfTotal' => 0, 'previousPercentOfTotal' => 0, 'changeInPercentOfTotal' => 0);
 
@@ -227,15 +242,21 @@ class Topcrasher_Controller extends Controller {
 	    $bugzilla = new Bugzilla;
 	    $signature_to_bugzilla = $bugzilla->signature2bugzilla($rows, Kohana::config('codebases.bugTrackingUrl'));
  
+        // Fetch versions associated with top crashers
+        $resp->crashes = $this->topcrashers_model->fetchTopcrasherVersions($resp->crashes);
+        $resp->crashes = $this->topcrashers_model->formatTopcrasherVersions($resp->crashes);
 
-	    $signature_to_oopp = $this->topcrashers_model->ooppForSignatures($product, $version, $resp->end_date, $duration, $unique_signatures);
-	    foreach($resp->crashes as $top_crasher) {
-		$hang_details = array();
-                $known = array_key_exists($top_crasher->signature, $signature_to_oopp);
-		$hang_details['is_hang'] = $known && $signature_to_oopp[$top_crasher->signature]['hang'] == true;
-		$hang_details['is_plugin'] = $known && $signature_to_oopp[$top_crasher->signature]['process'] == 'Plugin';
-		$top_crasher->{'hang_details'} = $hang_details;
-	    }
+        // This may be removed in Socorro 1.8.  See Bug #604740.
+        $signature_to_oopp = $this->topcrashers_model->ooppForSignatures($product, $version, $resp->end_date, $duration, $unique_signatures);
+        foreach($resp->crashes as $top_crasher) {
+            $hang_details = array();
+            $known = array_key_exists($top_crasher->signature, $signature_to_oopp);
+            $hang_details['is_hang'] = $known && $signature_to_oopp[$top_crasher->signature]['hang'] == true;
+            $hang_details['is_plugin'] = $known && $signature_to_oopp[$top_crasher->signature]['process'] == 'Plugin';
+            $top_crasher->{'hang_details'} = $hang_details;
+        }
+        /* #604740 */
+
 	    $this->navigationChooseVersion($product, $version);
 
 	    if ($this->input->get('format') == "csv") {
@@ -246,14 +267,18 @@ class Topcrasher_Controller extends Controller {
 				       'resp'         => $resp,
 				       'duration_url' => url::site(implode($duration_url_path, '/') . '/'),
 				       'last_updated' => $resp->end_date,
-				       'other_durations' => $other_durations,
+                       'duration'     => $duration,
+				       'durations'    => $durations,
 				       'percentTotal' => $resp->totalPercentage,
 				       'product'      => $product,
 				       'version'      => $version,
                	       'nav_selection' => 'top_crashes',
 				       'sig2bugs'     => $signature_to_bugzilla,
 				       'start'        => $resp->start_date,
-				       'end_date'          => $resp->end_date,
+				       'end_date'     => $resp->end_date,
+                       'crash_types'  => $crash_types,
+                       'crash_type'   => $crash_type,
+                       'crash_type_url' => url::site(implode($duration_url_path, '/') . '/' . $duration . '/'),
 				       'top_crashers' => $resp->crashes,
 				       'total_crashes' => $resp->totalNumberOfCrashes,
 				       'url_nav'     => url::site('products/'.$product),
@@ -354,7 +379,8 @@ class Topcrasher_Controller extends Controller {
     {
         $csvData = array(array('Rank', 'Change In Rank', 'Percentage of All Crashes', 
 			       'Previous Percentage', 'Signature', 
-			       'Total', 'Win', 'Mac', 'Linux'));
+			       'Total', 'Win', 'Mac', 'Linux',
+                   'Version Count', 'Versions'));
 	$i = 0;
         foreach ($topcrashers as $crash) {
 	    $line = array();
@@ -372,6 +398,8 @@ class Topcrasher_Controller extends Controller {
 	    array_push($line, $crash->win_count);
 	    array_push($line, $crash->mac_count);
 	    array_push($line, $crash->linux_count);
+	    array_push($line, $crash->versions_count);
+        array_push($line, str_replace(",",";",$crash->versions));
 	    array_push($csvData, $line);
 	    $i++;
 	}

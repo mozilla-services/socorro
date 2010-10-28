@@ -60,7 +60,7 @@ insert_crashes_sql = """
           timestamp without time zone %s - interval %s <= r.date_processed AND
           r.date_processed < timestamp without time zone %s + (interval '24 hours' - interval %s) AND
           cfg.start_date <= r.date_processed AND r.date_processed <= cfg.end_date AND
-          hangid IS NULL AND process_type IS NULL
+          hangid IS NULL and process_type IS NULL
     GROUP BY p.id, os_short_name
     UNION
       SELECT count(uuid) as count, %s, p.id AS prod_id, substring(r.os_name, 1, 3) AS os_short_name,

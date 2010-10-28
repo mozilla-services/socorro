@@ -5,7 +5,11 @@ import copy
 import cStringIO
 import datetime
 
-import socorro.lib.ConfigurationManager as CM
+### DynamicConfig and its module should be a drop-in replacement for Config and its module
+### The line below works, but it seemed overkill to duplicate the whole test so
+### Just left this here as a reminder to play with it from time to time.
+#import socorro.lib.ConfigurationManager as CM
+import socorro.lib.dynamicConfigurationManager as CM
 
 import socorro.unittest.testlib.util as tutil
 
@@ -17,7 +21,7 @@ def setup_module():
 class HelpHandler:
   def __init__(self):
     self.data = ''
-  def handleHelp(self, config):
+  def handleHelp(self, config):  
     self.stringIO = cStringIO.StringIO()
     config.outputCommandSummary(self.stringIO,False)
     self.data = self.stringIO.getvalue()
@@ -44,7 +48,7 @@ class TestConfigurationManager(unittest.TestCase):
     # In order to avoid trouble, blow away all the params that nosetests should 'use up'
     if 'nosetests' in sys.argv[0]:
       sys.argv = sys.argv[:1] # yes: Throw away all the params but the executable name
-
+    
   def tearDown(self):
     sys.argv = copy.copy(self.keepargv)
     os.environ = self.keepenviron.copy()

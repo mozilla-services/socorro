@@ -5,19 +5,19 @@ a top crasher, then we should be able to load it from <a href="<?= Kohana::confi
             <li id="mod"><h3>Modules <a href="#modver" title="Skip Down to Module Versions">Next</a></h3>
 	<div id="module_correlation">Loading <?= html::image( array('src' => 'img/loading.png', 'width' => '16', 'height' => '17' )) ?></div></li>
 
-            <li id="modver"><h3>Modules by versions <a href="#add" title="Skip Down to Addons">Next</a>
+            <li id="modver"><h3>Modules by versions <a href="#add" title="Skip Down to Add-ons">Next</a>
                 <a href="#mod" title="Skip Up to Modules">Previous</a></h3>
                 <div id="moduleversion-panel"><button name="moduleversion" class="load-version-data">Load</button></div></li>
 
-            <li id="add"><h3>Addons <a href="#addver" title="Skip Down to Addon Versions">Next</a>
+            <li id="add"><h3>Add-ons <a href="#addver" title="Skip Down to Add-on Versions">Next</a>
                            <a href="#modver" title="Skip Up to Module Versions">Previous</a></h3>
 	<div id="addon_correlation">Loading <?= html::image( array('src' => 'img/loading.png', 'width' => '16', 'height' => '17' )) ?></div></li>
 
-            <li id="addver"><h3>Addons by versions <a href="#cpu" title="Skip Down to CPU Cores">Next</a>
-                                       <a href="#add" title="Skip Up to Addons">Previous</a></h3>
+            <li id="addver"><h3>Add-ons by versions <a href="#cpu" title="Skip Down to CPU Cores">Next</a>
+                                       <a href="#add" title="Skip Up to Add-ons">Previous</a></h3>
                 <div id="addonversion-panel"><button name="addonversion" class="load-version-data">Load</button></div></li>
 
-            <li id="cpu"><h3>CPU Cores <a href="#addver" title="Skip Up to Addon Versions">Previous</a></h3>
+            <li id="cpu"><h3>CPU Cores <a href="#addver" title="Skip Up to Add-on Versions">Previous</a></h3>
 	<div id="cpu_correlation">Loading <?= html::image( array('src' => 'img/loading.png', 'width' => '16', 'height' => '17' )) ?></div></li>
         </ul>
         </div><!-- /correlation -->
