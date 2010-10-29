@@ -469,15 +469,19 @@ class Branch_Model extends Model {
      * @return object Branch data
      */
     public function getRecentProductVersion($product) {
+        $date = date("Y-m-d");
         $result = $this->db->query(
 				'/* soc.web branch.prodbyvers */ 
-				SELECT * 
-				FROM productdims 
-				WHERE product = ? 
-				AND release = ?
-				ORDER BY version DESC
+				SELECT pd.* 
+				FROM productdims pd
+				INNER JOIN product_visibility pv ON pv.productdims_id = pd.id
+				WHERE pd.product = ? 
+				AND pd.release = ?
+				AND pv.start_date <= ?
+				AND pv.end_date >= ?
+				ORDER BY pd.version DESC
 				LIMIT 1'
-				, trim($product), "major"
+				, trim($product), "major", $date, $date
 			);
 		if (isset($result[0]->id)) {
 			return $result[0];
