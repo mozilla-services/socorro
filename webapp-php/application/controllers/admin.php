@@ -345,6 +345,9 @@ class Admin_Controller extends Controller
                 $est_emails = 0;
             }
             $data['estimated_count'] = number_format($est_emails);
+            $data['csrf_token'] = text::random('alnum', 32);
+            $session = Session::instance();
+            $session->set('csrf_token', $data['csrf_token']);
         } else {
             $data['has_errors'] = true;
             $data['products'] = $this->branch_model->getProducts();
@@ -400,20 +403,28 @@ class Admin_Controller extends Controller
                 }
                 $data['campaigns'] = $campaigns;
             } else {
-                // retrieve # of emails
-                $resp = $this->_sendEmail(
-                    $params['email_product'], $params['email_versions'],
-                    $params['email_signature'],
-                    $params['email_subject'], $params['email_body'],
-                    $params['email_start_date'], $params['email_end_date'],
-                    $author
-                );
-                if ($resp) {
-                    client::messageSend("Email Sent " . $resp->emails->actual_count, E_USER_NOTICE);
-                    return url::redirect('admin/email'); 
+                $session = Session::instance();
+                $token = $session->get('csrf_token');
+                if (strlen($token) > 0 && $token == $params['token']) {
+                    // retrieve # of emails
+                    $resp = $this->_sendEmail(
+                        $params['email_product'], $params['email_versions'],
+                        $params['email_signature'],
+                        $params['email_subject'], $params['email_body'],
+                        $params['email_start_date'], $params['email_end_date'],
+                        $author
+                    );
+                    if ($resp) {
+                        client::messageSend("Email Sent " . $resp->emails->actual_count, E_USER_NOTICE);
+                        return url::redirect('admin/email'); 
+                    } else {
+                        Kohana::log('error', "No Response");
+                        client::messageSend("Unknown systems error. Investigate before trying again.", E_USER_ERROR);
+                        return url::redirect('admin/email'); 
+                    }
                 } else {
-                    Kohana::log('error', "No Response");
-                    client::messageSend("Unknown systems error. Investigate before trying again.", E_USER_ERROR);
+                    Kohana::log('alert', "CSRF token didn't match session[" . $token . 
+                                         "] params[" . $params['token'] . "]");
                     return url::redirect('admin/email'); 
                 }
             }

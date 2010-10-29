@@ -30,7 +30,8 @@
           <input type="hidden" name="email_body"       value="<?= out::H($email_body) ?>" />
           <input type="hidden" name="email_start_date" value="<?= $email_start_date ?>" />
           <input type="hidden" name="email_end_date"   value="<?= $email_end_date ?>" />
-
+           
+          <input name="token"  type="hidden" value="<?= $csrf_token ?>" />
           <input name="submit" type="submit" value="OK, Send Emails" />   
           <input name="submit" type="submit" value="Cancel" />
         </form>
