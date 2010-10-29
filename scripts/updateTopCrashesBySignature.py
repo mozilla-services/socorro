@@ -56,7 +56,7 @@ try:
   sql1 = """SELECT COUNT(tcbs.id) as count
              FROM top_crashes_by_signature tcbs
              INNER JOIN productdims p ON tcbs.productdims_id = p.id
-             WHERE tcbs.window_end >= (NOW() - CAST('2 weeks' as INTERVAL))
+             WHERE tcbs.window_end >= (NOW() - CAST('4 weeks' as INTERVAL))
         """
   tcbs_count = db.singleValueSql(cursor, sql1)
   logger.info("Number of rows found in sql1: %d" % (tcbs_count))
@@ -69,13 +69,13 @@ try:
     sql2 = """SELECT tcbs.id, tcbs.signature, tcbs.window_end, tcbs.productdims_id, tcbs.osdims_id
              FROM top_crashes_by_signature tcbs 
              INNER JOIN productdims p ON tcbs.productdims_id = p.id
-             WHERE tcbs.window_end >= (NOW() - CAST('2 weeks' as INTERVAL))
+             WHERE tcbs.window_end >= (NOW() - CAST('4 weeks' as INTERVAL))
              ORDER BY tcbs.id DESC
              LIMIT %d OFFSET %d
     """ % (limit, (i*limit))
 
     i += 1
-    logger.info("RESULT SET %d" % (i))
+    logger.info("UPDATING TOP CRASHERS... RESULT SET %d" % (i))
     try:
       cursor.execute(sql2)
       results = cursor.fetchall()
@@ -93,7 +93,7 @@ try:
                   JOIN reports r 
                       ON r.product = p.product
                       AND r.version = p.version
-                      AND r.date_processed BETWEEN TIMESTAMP '%s' - CAST('1 hour' AS INTERVAL) AND TIMESTAMP '%s' 
+                      AND r.date_processed BETWEEN TIMESTAMP WITHOUT TIME ZONE '%s' - CAST('1 hour' AS INTERVAL) AND TIMESTAMP WITHOUT TIME ZONE '%s' 
                   JOIN osdims o ON r.os_name = o.os_name 
                       AND r.os_version = o.os_version
                   WHERE r.signature = '%s'
@@ -106,24 +106,13 @@ try:
           hang_count = tcbs_result[4]
           plugin_count = tcbs_result[5]
 
-          update = 0
-          if plugin_count > 0:
-            update = 1
-          if hang_count > 0:
-            update = 1 
-
-          if update == 1:
-            try:
-              sql4 = """UPDATE top_crashes_by_signature
-                      SET hang_count = %d, plugin_count = %d
-                      WHERE id = %d
-              """ % (hang_count, plugin_count, tcbs_id)
-              cursor.execute(sql4)
-              cursor.connection.commit()
-              logger.info("SUCCESS sql4 updated #%d with hang_count %d and plugin_count %d" % (tcbs_id, hang_count, plugin_count))
-            except Exception, x:
-              logger.info("FAIL sql4; unable to update record associated with tcbs.id %d. %s" % (x))
-              cursor.connection.rollback()
+          sql4 = """UPDATE top_crashes_by_signature
+                    SET hang_count = %d, plugin_count = %d
+                    WHERE id = %d
+          """ % (hang_count, plugin_count, tcbs_id)
+          cursor.execute(sql4)
+          cursor.connection.commit()
+          logger.debug("SUCCESS sql4 updated #%d with hang_count %d and plugin_count %d" % (tcbs_id, hang_count, plugin_count))
           
         except Exception, x:
           logger.debug("Exception %s." % x)
