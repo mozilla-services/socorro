@@ -442,14 +442,21 @@ class Controller extends Controller_Core {
     public function chooseVersion($version_info, $set_cookie=TRUE)
     {
         $this->chosen_version = $version_info;
-	    $product = $version_info['product'];
-	    $version = $version_info['version'];
-	    $release = $version_info['release'];
-	    if ($set_cookie) {
-	        cookie::set(Socorro_Cookies::CHOSEN_VERSION, 
-	    		"p=${product}&v=${version}&r=${release}", 
-	    		Socorro_Cookies::EXPIRES_IN_A_YEAR);
-	    }
+        $product = $version_info['product'];
+        $version = $version_info['version'];
+        $release = $version_info['release'];
+        if ($set_cookie) {
+            $cookie_params = array(
+                'name'   => Socorro_Cookies::CHOSEN_VERSION,
+                'value'  => "p=${product}&v=${version}&r=${release}",
+                'expire' => Socorro_Cookies::EXPIRES_IN_A_YEAR,
+                'domain' => '',
+                'path'   => '/',
+                'secure' => FALSE,
+                'httponly' => FALSE
+            );
+            cookie::set($cookie_params);
+        }
     }
 
     /**

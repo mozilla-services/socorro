@@ -28,6 +28,8 @@ class Auth_Controller extends Controller {
       */
      public function login()
      {
+         url::site('auth/login', Kohana::config('auth.proto'));
+         
          $this->sensitivePageHTTPSorRedirectAndDie('/auth/login');
 	 $this->_setReferrerButIgnore('auth/login');
 	 if (Auth::instance()->logged_in()) {
@@ -65,7 +67,11 @@ class Auth_Controller extends Controller {
      */
      private function _getReferrerOrUse($default)
      {
-	 return Session::instance()->get("requested_url", $default);
+        $requested_url = Session::instance()->get("requested_url", $default);
+        if (Kohana::config('auth.proto') == 'https') {
+            $requested_url = url::site($requested_url, 'https');
+        }
+        return $requested_url;
      }
 
      /**
