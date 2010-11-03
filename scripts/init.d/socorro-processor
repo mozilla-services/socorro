@@ -10,7 +10,7 @@
 
 # Source socorro overrides
 commonconfig=/etc/socorro/common.conf
-config=/etc/socorro/monitor.conf
+config=/etc/socorro/processor.conf
 if [ -f "$commonconfig" ]; then . $commonconfig; fi
 if [ -f "$config" ]; then . $config; fi
 
