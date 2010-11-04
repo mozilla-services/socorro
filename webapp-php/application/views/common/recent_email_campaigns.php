@@ -3,7 +3,7 @@
     <?php if (count($campaigns) > 0) { ?>
       <table class="recent-campaigns">
         <?php foreach($campaigns as $campaign) { ?>
-          <tr class="signature"><td colspan="7"><?= $campaign->signature ?></td></tr>
+          <tr class="signature"><td colspan="7"><?= out::H($campaign->signature) ?></td></tr>
           <tr class="details"><th>ID</th><td><a href="<?= url::site("/admin/email_campaign/" . $campaign->id) ?>"
                                                  ><?= out::H($campaign->id) ?></a></td><th>Date</th><td><?= out::H($campaign->start_date) ?></td>
                               <th>Author</th><td><?= $campaign->author ?></td>
