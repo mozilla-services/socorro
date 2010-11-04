@@ -5,7 +5,7 @@
         <?php foreach($campaigns as $campaign) { ?>
           <tr class="signature"><td colspan="7"><?= $campaign->signature ?></td></tr>
           <tr class="details"><th>ID</th><td><a href="<?= url::site("/admin/email_campaign/" . $campaign->id) ?>"
-                                                 ><?= $campaign->id ?></a></td><th>Date</th><td><?= $campaign->start_date ?></td>
+                                                 ><?= out::H($campaign->id) ?></a></td><th>Date</th><td><?= out::H($campaign->start_date) ?></td>
                               <th>Author</th><td><?= $campaign->author ?></td>
           </tr>
         <?php } ?>

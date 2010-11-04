@@ -23,7 +23,7 @@
         <?php } ?>
         </select>
         <label for="email_versions" title="Versions is a comma seperated list of version numbers. 4.06b, 4.0b7pre, 3.6.10" class="<?php if (isset($errors) && array_key_exists('email_versions', $errors)) { echo 'form_error'; }; ?>">Versions <span class="help">(Comma separated)</span></label>
-        <input name="email_versions" type="text" value="<?= $email_versions ?>" size="80" />
+        <input name="email_versions" type="text" value="<?= out::H($email_versions) ?>" size="80" />
         <label for="email_signature" class="<?php if (isset($errors) && array_key_exists('email_signature', $errors)) { echo 'form_error'; }; ?>">Exact Signature</label><input name="email_signature" type="text" value="<?= out::H($email_signature) ?>" size="80" />
 
         <label for="email_subject" class="<?php if (isset($errors) && array_key_exists('email_subject', $errors)) { echo 'form_error'; }; ?>">Subject</label>
@@ -32,9 +32,9 @@
      <label for="email_body" class="<?php if (isset($errors) && array_key_exists('email_body', $errors)) { echo 'form_error'; }; ?>">Email Body</label><textarea name="email_body" row="10" cols="80"><?= out::H($email_body) ?></textarea>
 
         <label for="email_start_date" class="<?php if (isset($errors) && array_key_exists('email_start_date', $errors)) { echo 'form_error'; }; ?>">Start Date</label> 
-        <div class="input"><input name="email_start_date" type="text" value="<?= $email_start_date ?>" size="8" /></div>
+        <div class="input"><input name="email_start_date" type="text" value="<?= out::H($email_start_date) ?>" size="8" /></div>
 
-        <label for="email_end_date" class="<?php if (isset($errors) && array_key_exists('email_end_date', $errors)) { echo 'form_error'; }; ?>">End Date</label> <div class="input"><input name="email_end_date" type="text" value="<?= $email_end_date ?>" size="8" /></div>
+        <label for="email_end_date" class="<?php if (isset($errors) && array_key_exists('email_end_date', $errors)) { echo 'form_error'; }; ?>">End Date</label> <div class="input"><input name="email_end_date" type="text" value="<?= out::H($email_end_date) ?>" size="8" /></div>
         <input name="submit" type="submit" value="Next Step" />
       </form>
       <br class="clear" />
