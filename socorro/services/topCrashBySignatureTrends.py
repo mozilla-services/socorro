@@ -8,6 +8,7 @@ import socorro.lib.datetimeutil as dtutil
 
 import psycopg2.extras as psyext
 
+import datetime
 import simplejson
 
 
@@ -60,6 +61,16 @@ def getListOfTopCrashersBySignature(aCursor, databaseParameters, totalNumberOfCr
   """
   """
   databaseParameters["totalNumberOfCrashes"] = totalNumberOfCrashesForPeriodFunc(aCursor, databaseParameters)
+
+  if databaseParameters["totalNumberOfCrashes"] == None:
+    return []
+
+  assert type(databaseParameters["totalNumberOfCrashes"]) is int
+  assert type(databaseParameters["startDate"]) is datetime.datetime
+  assert type(databaseParameters["endDate"]) is datetime.datetime
+  assert type(databaseParameters["productdims_id"]) is int
+  assert type(databaseParameters["listSize"]) is int
+
   where = ""
   if databaseParameters["crashType"] == 'browser':
     where = "WHERE tcbs.plugin_count = 0 AND tcbs.hang_count = 0"
