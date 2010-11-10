@@ -145,9 +145,10 @@ class Topcrasher_Controller extends Controller {
     private function _getTopCrashers($product, $version) {
         $sigSize = Kohana::config("topcrashers.numberofsignatures");
         $maxSigSize = max($sigSize);
+        $duration = Kohana::config('products.duration');
 
         $end = $this->topcrashers_model->lastUpdatedByVersion($product, $version);
-        $start = $this->topcrashers_model->timeBeforeOffset(14, $end);
+        $start = $this->topcrashers_model->timeBeforeOffset($duration, $end);
 
         return $this->topcrashers_model->getTopCrashersByVersion($product, $version, $maxSigSize, $start, $end);
     }
@@ -161,10 +162,13 @@ class Topcrasher_Controller extends Controller {
      * @param   string  The crash type to query by
      * @return  void
      */
-    public function byversion($product, $version=null, $duration=14, $crash_type=null)
+    public function byversion($product, $version=null, $duration=null, $crash_type=null)
     {
         if (empty($version)) {
             $this->_handleEmptyVersion($product, 'byversion');
+        }
+        if (empty($duration)) {
+            $duration = Kohana::config('products.duration');
         }
         
 	$duration_url_path = array(Router::$controller, Router::$method, $product, $version);
@@ -444,7 +448,7 @@ class Topcrasher_Controller extends Controller {
      * @param string branch
      * @param int duration in days that this report should cover
      */
-    public function bybranch($branch, $duration = 14) {
+    public function bybranch($branch, $duration = 7) {
 	$other_durations = array_diff(Kohana::config('topcrashbysig.durations'),
 				      array($duration));
 	$limit = Kohana::config('topcrashbysig.bybranch_limit', 100);
