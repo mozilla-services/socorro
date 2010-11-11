@@ -74,7 +74,7 @@ def getListOfTopCrashersBySignature(aCursor, databaseParameters, totalNumberOfCr
   }
   for param in assertPairs.keys():
     assert type(databaseParameters[param]) is assertPairs[param], \
-    "Expected long for %s, actual type is %s" % (param, type(databaseParameters[param]))
+    "Expected %s for %s, actual type is %s" % (assertPairs[param], param, type(databaseParameters[param]))
 
   where = ""
   if databaseParameters["crashType"] == 'browser':
