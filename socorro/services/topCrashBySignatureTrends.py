@@ -66,11 +66,11 @@ def getListOfTopCrashersBySignature(aCursor, databaseParameters, totalNumberOfCr
     return []
 
   assert type(databaseParameters["totalNumberOfCrashes"]) is long, \
-    "Expected int for totalNumberOfCrashes, actual type is %s" % type(databaseParameters["totalNumberOfCrashes"])
+    "Expected long for totalNumberOfCrashes, actual type is %s" % type(databaseParameters["totalNumberOfCrashes"])
   assert type(databaseParameters["startDate"]) is datetime.datetime, \
-    "Expected int for startDate, actual type is %s" % type(databaseParameters["startDate"])
+    "Expected datetime.datetime for startDate, actual type is %s" % type(databaseParameters["startDate"])
   assert type(databaseParameters["endDate"]) is datetime.datetime, \
-    "Expected int for endDate, actual type is %s" % type(databaseParameters["endDate"])
+    "Expected datetime.datetime for endDate, actual type is %s" % type(databaseParameters["endDate"])
   assert type(databaseParameters["productdims_id"]) is int, \
     "Expected int for productdims_id, actual type is %s" % type(databaseParameters["productdims_id"])
   assert type(databaseParameters["listSize"]) is int, \
