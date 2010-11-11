@@ -65,16 +65,16 @@ def getListOfTopCrashersBySignature(aCursor, databaseParameters, totalNumberOfCr
   if databaseParameters["totalNumberOfCrashes"] == None:
     return []
 
-  assert type(databaseParameters["totalNumberOfCrashes"]) is long, \
-    "Expected long for totalNumberOfCrashes, actual type is %s" % type(databaseParameters["totalNumberOfCrashes"])
-  assert type(databaseParameters["startDate"]) is datetime.datetime, \
-    "Expected datetime.datetime for startDate, actual type is %s" % type(databaseParameters["startDate"])
-  assert type(databaseParameters["endDate"]) is datetime.datetime, \
-    "Expected datetime.datetime for endDate, actual type is %s" % type(databaseParameters["endDate"])
-  assert type(databaseParameters["productdims_id"]) is int, \
-    "Expected int for productdims_id, actual type is %s" % type(databaseParameters["productdims_id"])
-  assert type(databaseParameters["listSize"]) is int, \
-    "Expected int for listSize, actual type is %s" % type(databaseParameters["listSize"])
+  assertPairs = {
+   'totalNumberOfCrashes': long,
+   'startDate': datetime.datetime,
+   'endDate': datetime.datetime,
+   'productdims_id': int,
+   'listSize': int
+  }
+  for param in assertPairs.keys():
+    assert type(databaseParameters[param]) is assertPairs[param], \
+    "Expected long for %s, actual type is %s" % (param, type(databaseParameters[param]))
 
   where = ""
   if databaseParameters["crashType"] == 'browser':
