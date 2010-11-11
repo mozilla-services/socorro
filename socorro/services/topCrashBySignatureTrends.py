@@ -65,11 +65,11 @@ def getListOfTopCrashersBySignature(aCursor, databaseParameters, totalNumberOfCr
   if databaseParameters["totalNumberOfCrashes"] == None:
     return []
 
-  assert type(databaseParameters["totalNumberOfCrashes"]) is int
-  assert type(databaseParameters["startDate"]) is datetime.datetime
-  assert type(databaseParameters["endDate"]) is datetime.datetime
-  assert type(databaseParameters["productdims_id"]) is int
-  assert type(databaseParameters["listSize"]) is int
+  assert type(databaseParameters["totalNumberOfCrashes"]) is long, type(databaseParameters["totalNumberOfCrashes"])
+  assert type(databaseParameters["startDate"]) is datetime.datetime, type(databaseParameters["startDate"])
+  assert type(databaseParameters["endDate"]) is datetime.datetime, type(databaseParameters["endDate"])
+  assert type(databaseParameters["productdims_id"]) is int, type(databaseParameters["productdims_id"])
+  assert type(databaseParameters["listSize"]) is int, type(databaseParameters["listSize"])
 
   where = ""
   if databaseParameters["crashType"] == 'browser':
