@@ -537,6 +537,15 @@ class Products_Controller extends Controller {
         $daily_versions = array();
         $num_signatures = Kohana::config("products.topcrashers_count");
         $i = 0;
+        if (! $this->featured_versions) {
+          $this->setView('products/error');
+          $this->setViewData(
+             array(
+               'product' => $product
+             )
+          );
+          return;
+        }
         foreach($this->featured_versions as $featured_version) {
             $top_crashers[$i] = $this->topcrashers_model->getTopCrashersViaWebService(
                 $product, 
