@@ -541,7 +541,8 @@ class Products_Controller extends Controller {
           $this->setView('products/error');
           $this->setViewData(
              array(
-               'product' => $product
+               'product' => $product,
+               'error' => 1
              )
           );
           return;

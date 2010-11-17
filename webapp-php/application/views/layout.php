@@ -52,7 +52,7 @@
 			</select>
 			</li>
 		
-			<select id="product_version_select">
+			<select id="product_version_select" <?php if (isset($error) && $error == 1) echo 'disabled'?>>
 				<optgroup>
 					<option value="Current Versions">Current Versions</option>
 				</optgroup>
@@ -78,7 +78,7 @@
 		
             <li>
                 <label>Report:</label>
-                <select id="report_select">
+                <select id="report_select" <?php if (isset($error) && $error == 1) echo 'disabled'?>>
                     <optgroup>
                         <option <?php if (isset($nav_selection) && $nav_selection == 'overview') echo 'selected'; ?> 
 							value="<?= url::base() ?>products/<?= $chosen_version['product'] ?><?php if (isset($chosen_version['version']) && !empty($chosen_version['version'])) echo '/versions/'.html::specialchars($chosen_version['version']); ?>">Overview</option>
