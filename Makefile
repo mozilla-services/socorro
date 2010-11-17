@@ -1,20 +1,21 @@
 PREFIX=/data/socorro
 VIRTUALENV=$(CURDIR)/socorro-virtualenv
-NOSE = $(VIRTUALENV)/bin/nosetests socorro -s --with-xunit
+PYTHONPATH = ".:thirdparty"
+NOSE = PYTHONPATH=$(PYTHONPATH) $(VIRTUALENV)/bin/nosetests socorro -s --with-xunit
 COVEROPTS = --cover-html --cover-html-dir=html --with-coverage --cover-package=socorro
 COVERAGE = $(VIRTUALENV)/bin/coverage
 PYLINT = $(VIRTUALENV)/bin/pylint
-PYTHONPATH = ".:thirdparty"
 DEPS = nose psycopg2 simplejson coverage web.py pylint
 
 .PHONY: all build install stage coverage hudson-coverage lint test
 
 all:	test
 
-test: virtualenv
-	cd webapp-php/tests; phpunit *.php
-	cd socorro/unittest/config; for file in *.py.dist; do cp $$file `basename $$file .dist`; done
+test: virtualenv phpunit
 	$(NOSE)
+
+phpunit:
+	cd webapp-php/tests; phpunit *.php
 
 install:
 	mkdir -p $(PREFIX)/htdocs
@@ -34,12 +35,13 @@ virtualenv:
 	virtualenv $(VIRTUALENV)
 	$(VIRTUALENV)/bin/easy_install $(DEPS)
 
-coverage: virtualenv
+coverage: virtualenv phpunit
 	rm -rf html
 	$(NOSE) $(COVEROPTS)
 
-hudson-coverage: virtualenv
+hudson-coverage: virtualenv phpunit
 	rm -f coverage.xml
+	cd socorro/unittest/config; for file in *.py.dist; do cp $$file `basename $$file .dist`; done
 	$(COVERAGE) run $(NOSE); $(COVERAGE) xml
 
 lint:
