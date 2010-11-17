@@ -378,12 +378,6 @@ class Common_Model extends Model {
 
             if ($params['query_search'] == 'signature') {
                 $where[] = 'reports.signature ' . $term;
-            } else if ($params['query_search'] == 'stack') {
-                $where[] = "(EXISTS (" .
-                    "SELECT 1 FROM frames " . 
-                    "WHERE frames.signature $term " .
-                    "AND frames.report_id = reports.id" .
-                    "))";
             }
 
         }
