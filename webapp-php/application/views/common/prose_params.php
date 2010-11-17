@@ -34,7 +34,7 @@
 
         foreach (array('product', 'branch', 'version', 'platform') as $field) {
             if (count( $params[$field] )) {
-                $msg .= ", and the $field is one of " . join(', ', $params[$field]);
+                $msg .= ", and the $field is one of " . ucwords(join(', ', $params[$field]));
             }
         }
 
