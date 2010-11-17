@@ -69,16 +69,21 @@ class Common_Model extends Model {
 
     /**
      * Find top report signatures for the given search parameters.
+     *
+     * @param  array  An array of parameters
+     * @param  string The type of query to perform. Options: 'results', 'count'
+     * @param  int  The number of results to pull for this query
+     * @param  int  The offset for this query
+     * @return array|int Return an array of results of return_type = 'results', integer if 'counts'
      */
-    public function queryTopSignatures($params) {
+    public function queryTopSignatures($params, $return_type='results', $items_per_page=100, $offset=0) {
+        $return_type = ($return_type == 'results') ? 'results' : 'count';
 
         $columns = array(
             'reports.signature', 'count(reports.id)'
         );
-        $tables = array(
-        );
-        $where = array(
-        );
+        $tables = array();
+        $where = array();
 
         $platforms = $this->platform_model->getAll();
         foreach ($platforms as $platform) {
@@ -86,36 +91,50 @@ class Common_Model extends Model {
                 "count(CASE WHEN (reports.os_name = '{$platform->os_name}') THEN 1 END) ".
                 "AS is_{$platform->id}";
         }
+
         $extra_group_by = "";
-        if (array_key_exists('process_type', $params) && 
-	    'plugin' == $params['process_type'] ) {
+        if (
+            array_key_exists('process_type', $params) && 
+	        'plugin' == $params['process_type'] 
+        ) {
             array_push($columns, 'plugins.name AS pluginName, plugins_reports.version AS pluginVersion');
             array_push($columns, 'plugins.filename AS pluginFilename');
-           $extra_group_by  = "\n, pluginName, pluginVersion, pluginFilename\n";
-	}
+            $extra_group_by  = "\n, pluginName, pluginVersion, pluginFilename\n";
+        }
         array_push($columns, 'SUM (CASE WHEN hangid IS NULL THEN 0  ELSE 1 END) AS numhang');
         array_push($columns, 'SUM (CASE WHEN process_type IS NULL THEN 0  ELSE 1 END) AS numplugin');
-
 
         list($from_tables, $join_tables, $where) = 
             $this->_buildCriteriaFromSearchParams($params);
 
-        $sql =
-	    "/* soc.web common.queryTopSig. */ " .
-            " SELECT " . join(', ', $columns) .
-            " FROM   " . join(', ', $from_tables);
-        if(count($join_tables) > 0) {
-	    $sql .= " JOIN  " . join("\nJOIN ", $join_tables);
+        $sql = "/* soc.web common.queryTopSig. */ ";
+
+        if ($return_type == 'results') {
+            $sql .= " SELECT " . join(', ', $columns); 
+        } elseif ($return_type == 'count') {
+            $sql .= " SELECT COUNT(DISTINCT reports.signature) as count ";
+        } 
+
+        $sql .= " FROM   " . join(', ', $from_tables);
+
+        if (count($join_tables) > 0) {
+            $sql .= " JOIN  " . join("\nJOIN ", $join_tables);
         }
 
-	$sql .=
-            " WHERE  " . join(' AND ', $where) .
-            " GROUP BY reports.signature " .
-	    $extra_group_by .
-            " ORDER BY count(reports.id) DESC " .
-            " LIMIT 100";
+        $sql .= " WHERE  " . join(' AND ', $where);
 
-        return $this->fetchRows($sql);
+        if ($return_type == 'results') {
+            $sql .= 
+                " GROUP BY reports.signature " .
+       	        $extra_group_by .  
+                " ORDER BY count(reports.id) DESC " .
+                " LIMIT ? " .
+                " OFFSET ? "; 
+            return $this->fetchRows($sql, TRUE, array($items_per_page, $offset));
+        } else {
+            $results = $this->fetchRows($sql);
+            return (isset($results[0]->count)) ? $results[0]->count : 0;
+        }
     }
 
     /**

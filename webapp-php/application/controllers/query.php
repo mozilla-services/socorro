@@ -77,6 +77,10 @@ class Query_Controller extends Controller {
 
         //Current Query Stuff
         $params = $this->getRequestParameters($searchHelper->defaultParams());
+        $page = Input::instance()->get('page');
+        $page = (!empty($page)) ? $page : 1;
+        $items_per_page = Kohana::config('search.number_results_advanced_search');
+        $items_per_page = (!empty($items_per_page)) ? $items_per_page : 100;
 
         // If no product is specified, add the user's last selected product
         if (!isset($_GET['product']) || !isset($params['product']) || empty($params['product'])) {
@@ -99,7 +103,7 @@ class Query_Controller extends Controller {
 	$showPluginFilename = false;
 
         if ($params['do_query'] !== FALSE) {
-			$reports = $this->common_model->queryTopSignatures($params);
+            $reports = $this->common_model->queryTopSignatures($params, 'results', $items_per_page, $page);
             $signatures = array();
 
             foreach ($reports as $report) {
@@ -133,6 +137,8 @@ class Query_Controller extends Controller {
             $bugzilla = new Bugzilla;
             $signature_to_bugzilla = $bugzilla->signature2bugzilla($rows, Kohana::config('codebases.bugTrackingUrl'));
 
+            $totalCount = $this->common_model->queryTopSignatures($params, 'count', $items_per_page, $page);
+            $pager = new MozPager($items_per_page, $totalCount, $page);
         } else {
             $reports = array();
 
@@ -144,12 +150,19 @@ class Query_Controller extends Controller {
         }
 
         $this->setViewData(array(
+            'items_per_page' => $items_per_page,
             'nav_selection' => 'query',
+            'navPathPrefix' => url::site('query') . '?' . html::query_string($params) . '&page=',
+            'nextLinkText' => 'next >>',
+            'page' => $page,
+            'pager' => $pager, 
             'params'  => $params,
+            'previousLinkText' => '<< prev',
             'reports' => $reports,
             'showPluginName' => $showPluginName,
             'showPluginFilename' => $showPluginFilename,
             'sig2bugs' => $signature_to_bugzilla,
+            'totalItemText' => " Results",
             'url_nav' => url::site('products/'.$this->chosen_version['product']),
         ));
     }
