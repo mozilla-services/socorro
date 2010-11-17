@@ -2,6 +2,10 @@
 ## Copy this file to commonconfig.py 
 ##  - then fix the values to match your test environment
 ##
+
+#---------------------------------------------------------------------------
+# Relational Database Section
+
 import socorro.lib.ConfigurationManager as cm
 databaseHost = cm.Option()
 databaseHost.doc = 'the hostname of the database servers'
@@ -18,4 +22,20 @@ databaseUserName.default = 'test'
 databasePassword = cm.Option()
 databasePassword.doc = 'the password for the database user'
 databasePassword.default = 'aPassword'
+
+#---------------------------------------------------------------------------
+# HBase storage system
+
+hbaseHost = cm.Option()
+hbaseHost.doc = 'Hostname for hbase hadoop cluster. May be a VIP or load balancer'
+hbaseHost.default = 'localhost'
+
+hbasePort = cm.Option()
+hbasePort.doc = 'hbase port number'
+hbasePort.default = 9090
+
+hbaseTimeout = cm.Option()
+hbaseTimeout.doc = 'timeout in milliseconds for an HBase connection'
+hbaseTimeout.default = 5000
+
 
