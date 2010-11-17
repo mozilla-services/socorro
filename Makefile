@@ -1,8 +1,8 @@
 PREFIX=/data/socorro
 VIRTUALENV=$(CURDIR)/socorro-virtualenv
 PYTHONPATH = ".:thirdparty"
-NOSE = PYTHONPATH=$(PYTHONPATH) $(VIRTUALENV)/bin/nosetests socorro -s --with-xunit
-COVEROPTS = --cover-html --cover-html-dir=html --with-coverage --cover-package=socorro
+NOSE = $(VIRTUALENV)/bin/nosetests socorro -s --with-xunit
+COVEROPTS = --with-coverage --cover-package=socorro
 COVERAGE = $(VIRTUALENV)/bin/coverage
 PYLINT = $(VIRTUALENV)/bin/pylint
 DEPS = nose psycopg2 simplejson coverage web.py pylint
@@ -12,7 +12,7 @@ DEPS = nose psycopg2 simplejson coverage web.py pylint
 all:	test
 
 test: virtualenv phpunit
-	$(NOSE)
+	PYTHONPATH=$(PYTHONPATH) $(NOSE)
 
 phpunit:
 	cd webapp-php/tests; phpunit *.php
@@ -36,13 +36,9 @@ virtualenv:
 	$(VIRTUALENV)/bin/easy_install $(DEPS)
 
 coverage: virtualenv phpunit
-	rm -rf html
-	$(NOSE) $(COVEROPTS)
-
-hudson-coverage: virtualenv phpunit
 	rm -f coverage.xml
 	cd socorro/unittest/config; for file in *.py.dist; do cp $$file `basename $$file .dist`; done
-	$(COVERAGE) run $(NOSE); $(COVERAGE) xml
+	PYTHONPATH=$(PYTHONPATH) $(COVERAGE) run $(NOSE); $(COVERAGE) xml
 
 lint:
 	rm -f pylint.txt
