@@ -2,7 +2,7 @@
 <html class="production">
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <link href="<?php echo url::base() ?>css/screen.css?v=1.8" rel="stylesheet" type="text/css" media="screen" />
+    <link href="<?php echo url::base() ?>css/screen.css?v=1.7.6" rel="stylesheet" type="text/css" media="screen" />
     <link href="<?php echo url::base() ?>favicon.ico" rel="icon" type="image/png" />
     <?php 
     	echo html::script(
@@ -10,7 +10,7 @@
     	        'js/__utm.js',
                 'js/jquery/jquery-1.3.2.min.js',
                 'js/jquery/plugins/jquery.cookies.2.2.0.js',
-                'js/socorro/nav.js?v=1.8'
+                'js/socorro/nav.js?v=1.7.6'
             )
         ); // Global Javascript includes
     	if (isset($js)) echo $js; // Javascript includes from Controller 

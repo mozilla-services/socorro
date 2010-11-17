@@ -1,5 +1,5 @@
 $(document).ready(function() {
-      var dateFormat = 'mm/dd/yyyy';
+      var dateFormat = 'mm/dd/yyyy hh:mm:ss';
       var showAdvFilter = $.cookies.get('advfilter');
       var showAdvFilterCookieOpts = {};
 
@@ -40,21 +40,19 @@ $(document).ready(function() {
           }
       }).trigger('change');
 
-      $(function() {
-          Date.format='yyyy-mm-dd';
-          $('.date-pick').datePicker();
-          $('.date-pick').dpSetStartDate('2007-01-01');
-          $('#signatureList').tablesorter({
-              headers: { 
-                  0: { sorter: 'digit' }, 
-                  2: { sorter: 'digit' }, 
-                  3: { sorter: 'digit' }, 
-                  4: { sorter: 'digit' }, 
-                  5: { sorter: 'digit' }, 
-                  6: { sorter: 'digit' } 
-              }
-          }); 
-      });
+    $(function() {
+        $('#dateHelp *').tooltip();
+        $('#signatureList').tablesorter({
+            headers: { 
+                0: { sorter: 'digit' }, 
+                2: { sorter: 'digit' }, 
+                3: { sorter: 'digit' }, 
+                4: { sorter: 'digit' }, 
+                5: { sorter: 'digit' }, 
+                6: { sorter: 'digit' } 
+            }
+        }); 
+    });
 
     // Upon submitting the form, hide the submit button and disable refresh options.
     $('#searchform').bind('submit', function () {
