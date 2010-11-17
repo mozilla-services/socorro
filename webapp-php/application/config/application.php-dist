@@ -80,3 +80,8 @@ $config['query_range_defaults'] = array(
         'range_limit_value_in_days' => 30
 	)
 );
+
+/**
+ * Base URL to which bugs will be submitted.
+ */
+$config['report_bug_url'] = 'https://bugzilla.mozilla.org/enter_bug.cgi?';

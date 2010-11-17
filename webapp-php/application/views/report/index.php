@@ -181,17 +181,25 @@ if (is_null($report->signature) || empty($report->signature)) { ?>
             </tr>
 <?php } ?>
         </table>
-<?php if (array_key_exists($report->signature, $sig2bugs)) { ?>    
-      <div id="bugzilla">      
-        <h2>Related Bugs</h2>
-        <?php View::factory('common/list_bugs', array(
-		     'signature' => $report->signature,
-                     'bugs' => $sig2bugs[$report->signature],
-                     'mode' => 'full',
-                     'suppressHeader' => TRUE
-	      ))->render(TRUE); ?>
-      </div><!-- /bugzilla -->
-    <?php }  ?>
+
+
+        <div id="bugzilla">
+            <h2>Bugzilla
+            <?php if (isset($report_bug_url)) { ?>
+                 - <a href="<?php out::H($report_bug_url); ?>" target="_NEW">Report this Crash</a>
+            <?php } ?>
+            </h2>
+        
+          <?php if (array_key_exists($report->signature, $sig2bugs)) { ?>
+          <h2>Related Bugs</h2>
+          <?php View::factory('common/list_bugs', array(
+               'signature' => $report->signature,
+                       'bugs' => $sig2bugs[$report->signature],
+                       'mode' => 'full',
+                       'suppressHeader' => TRUE
+            ))->render(TRUE); ?>
+          <?php } ?>
+        </div><!-- /bugzilla -->
 
       <div id="frames">
     <?php if (isset($report->threads) && count($report->threads)): ?>

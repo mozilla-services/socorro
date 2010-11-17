@@ -47,6 +47,12 @@ require_once(Kohana::find_file('libraries', 'timeutil', TRUE, 'php'));
 class Report_Controller extends Controller {
 
     /**
+     * The default url for bug reporting; added here in case unavailable
+     * in web-app/application/config/application.php
+     */
+    private $report_bug_url_default = 'https://bugzilla.mozilla.org/enter_bug.cgi?';
+
+    /**
      * List reports for the given search query parameters.
 	 * 
 	 * @access	public
@@ -221,6 +227,47 @@ class Report_Controller extends Controller {
         return Correlation::correlationOsName($windows, $mac, $linux);
     }
 
+    /**
+     * Prepare the link by which the bug will be submitted.
+     * 
+     * @param   object     The $report object.
+     * @return  void
+     */
+    private function _prepReportBugURL($report)
+    {
+        $report_bug_url = Kohana::config('application.report_bug_url');
+        if (empty($report_bug_url)) $report_bug_url = $this->report_bug_url_default;
+        
+        $report_bug_url .= 'advanced=1&bug_severity=critical&keywords=crash&';
+        
+        if (isset($report->product) && !empty($report->product)) {
+            $report_bug_url .= 'product='.rawurlencode($report->product) . '&';
+        }
+        
+        if (isset($report->os_name) && !empty($report->os_name)) {
+            $report_bug_url .= 'op_sys='.rawurlencode($report->os_name) . '&';
+        }
+        
+        if (isset($report->cpu_name) && !empty($report->cpu_name)) {
+            $report_bug_url .= 'rep_platform='.rawurlencode($report->cpu_name) . '&';
+        }
+        
+        $report_bug_url .= 'short_desc=' . rawurlencode('crash ');
+        if (isset($report->signature) && !empty($report->signature)) {
+            $report_bug_url .= rawurlencode('[@ ' . $report->signature . ']');
+        }
+        $report_bug_url .= '&';
+        
+        $report_bug_url .= 'comment='.
+            rawurlencode(
+                "This bug was filed from the Socorro interface and is \r\n".
+                "report bp-" . $report->uuid . " .\r\n".
+                "============================================================= \r\n"
+            );
+        
+        return $report_bug_url;
+    }
+
     private function _setupDisplaySignature($params)
     {
 	if (array_key_exists('missing_sig', $params) &&
@@ -384,6 +431,7 @@ class Report_Controller extends Controller {
 				'raw_dump_urls' => $raw_dump_urls,
         	    'reportJsonZUri' => $reportJsonZUri,
         	    'report' => $report,
+        	    'report_bug_url' => $this->_prepReportBugURL($report),
         	    'sig2bugs' => $signature_to_bugzilla,
                     'url_nav' => url::site('products/'.$product),
                     'oopp_details' => $ooppDetails,
