@@ -187,7 +187,8 @@ class Config (dict):
     try:
       options, ignoreArgs = getopt.getopt(sys.argv[1:], self.internal.singleLetterCommandLineOptionsForGetopt, self.internal.expandedCommandLineOptionsForGetopt)
     except getopt.GetoptError, e:
-      raise NotAnOptionError, e
+      pass  #TODO - temporary measure
+      #raise NotAnOptionError, e
     commandLineEnvironment = {} # save these options for merging later
     for x in options:
       if len(x[0]) == 2: #single letter option
@@ -466,6 +467,18 @@ def booleanConverter(inputString):
   if type(inputString) is str:
     return inputString.lower() in ("true", "t", "1")
   return inputString
+
+#------------------------------------------------------------------------------------------
+def classConverter(inputString):
+  """ a conversion that will import a module and class name
+  """
+  parts = inputString.split('.')
+  packageName = parts[:-1]
+  package = __import__(packageName, globals(), locals(), [])
+  object = package
+  for name in parts[1:]:
+    object = getattr(object, name)
+  return object
 
 
 if __name__ == "__main__":

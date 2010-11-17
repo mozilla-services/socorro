@@ -43,7 +43,7 @@ class JsonDumpStorage(socorro_dumpStorage.DumpStorage):
   reasonable (5, perhaps) N. Files are placed into these buckets in rotation.
   """
   #-----------------------------------------------------------------------------------------------------------------
-  def __init__(self, root=".", **kwargs):
+  def __init__(self, root=".", osModule=os, **kwargs):
     """
     Take note of our root directory and other necessities.
     Yes, it is perfectly legal to call super(...).__init__() after doing some other code.
@@ -51,7 +51,7 @@ class JsonDumpStorage(socorro_dumpStorage.DumpStorage):
     """
     kwargs.setdefault('minutesPerSlot',1)
     kwargs.setdefault('subSlotCount',1) # that is: use xxx_0 every time by default
-    super(JsonDumpStorage, self).__init__(root=root,**kwargs)
+    super(JsonDumpStorage, self).__init__(root=root,osModule=osModule,**kwargs)
     tmp = kwargs.get('cleanIndexDirectories','false')
     self.cleanIndexDirectories = 'true' == tmp.lower()
     self.jsonSuffix = kwargs.get('jsonSuffix','.json')
@@ -87,10 +87,10 @@ class JsonDumpStorage(socorro_dumpStorage.DumpStorage):
         raise x
     try:
       # Do all this in a try/finally block to unroll in case of error
-      os.chmod(jname,self.dumpPermissions)
+      self.osModule.chmod(jname,self.dumpPermissions)
       dname = os.path.join(nameDir,ooid+self.dumpSuffix)
       df = open(dname,'w')
-      os.chmod(dname,self.dumpPermissions)
+      self.osModule.chmod(dname,self.dumpPermissions)
       nameDepth = socorro_ooid.depthFromOoid(ooid)
       if not nameDepth: nameDepth = 4
       rparts = [os.path.pardir,]*(1+nameDepth)
@@ -100,23 +100,23 @@ class JsonDumpStorage(socorro_dumpStorage.DumpStorage):
         dateDepth = 3 # .../webHeadName_slot
       dateParts = dateDir.split(os.path.sep)[-dateDepth:]
       rparts.extend(dateParts)
-      os.symlink(os.path.sep.join(rparts),os.path.join(nameDir,ooid))
+      self.osModule.symlink(os.path.sep.join(rparts),os.path.join(nameDir,ooid))
       if self.dumpGID:
         def chown1(path):
-          os.chown(path,-1,self.dumpGID)
-        socorro_fs.visitPath(self.root,os.path.join(nameDir,ooid+self.jsonSuffix),chown1)
-        os.chown(os.path.join(nameDir,ooid+self.dumpSuffix),-1,self.dumpGID)
+          self.osModule.chown(path,-1,self.dumpGID)
+        socorro_fs.visitPath(self.root,os.path.join(nameDir,ooid+self.jsonSuffix),chown1,self.osModule)
+        self.osModule.chown(os.path.join(nameDir,ooid+self.dumpSuffix),-1,self.dumpGID)
         #socorro_fs.visitPath(self.root,os.path.join(dateDir,ooid),chown1)
     finally:
       if not jf or not df:
         if jf: jf.close()
         if df: df.close()
         try:
-          os.unlink(os.path.join(dateDir,ooid))
+          self.osModule.unlink(os.path.join(dateDir,ooid))
         except:
           pass # ok if not there
         try:
-          os.unlink(os.path.join(nameDir,ooid))
+          self.osModule.unlink(os.path.join(nameDir,ooid))
         except:
           pass # ok if not there
         df,jf = None,None
@@ -145,17 +145,17 @@ class JsonDumpStorage(socorro_dumpStorage.DumpStorage):
         shutil.copy2(jsonpath,jsonNewPath)
       else:
         raise x
-    os.chmod(jsonNewPath,self.dumpPermissions)
+    self.osModule.chmod(jsonNewPath,self.dumpPermissions)
     try:
       self.logger.debug('%s - about to copy dump %s to %s', threading.currentThread().getName(), dumppath,dumpNewPath)
       shutil.copy2(dumppath,dumpNewPath)
-      os.chmod(dumpNewPath,self.dumpPermissions)
+      self.osModule.chmod(dumpNewPath,self.dumpPermissions)
       if self.dumpGID:
-        os.chown(dumpNewPath,-1,self.dumpGID)
-        os.chown(jsonNewPath,-1,self.dumpGID)
+        self.osModule.chown(dumpNewPath,-1,self.dumpGID)
+        self.osModule.chown(jsonNewPath,-1,self.dumpGID)
     except OSError, e:
       try:
-        os.unlink(jsonNewPath)
+        self.osModule.unlink(jsonNewPath)
       finally:
         raise e
     if createLinks:
@@ -165,25 +165,25 @@ class JsonDumpStorage(socorro_dumpStorage.DumpStorage):
       if not nameDepth: nameDepth = 4
       nameToDateParts = [os.pardir,]*(1+nameDepth)
       nameToDateParts.extend(dparts[2:])
-      os.symlink(os.sep.join(nameToDateParts),os.path.join(nameDir,ooid))
+      self.osModule.symlink(os.sep.join(nameToDateParts),os.path.join(nameDir,ooid))
       try:
         dateToNameParts = [os.pardir,]*(len(dparts)-2)
         dateToNameParts.extend(nparts[2:])
-        os.symlink(os.sep.join(dateToNameParts),os.path.join(dateDir,ooid))
+        self.osModule.symlink(os.sep.join(dateToNameParts),os.path.join(dateDir,ooid))
       except OSError, e:
-        os.unlink(os.path.join(nameDir,ooid))
+        self.osModule.unlink(os.path.join(nameDir,ooid))
         raise e
     if removeOld:
       self.logger.debug('%s - removing old %s, %s', threading.currentThread().getName(), jsonpath, dumppath)
       try:
-        os.unlink(jsonpath)
+        self.osModule.unlink(jsonpath)
       except OSError:
-        self.logger.warning("%s - cannot unlink Json", threading.currentThread().getName(), jsonpath, os.listdir(os.path.split(jsonpath)[0]))
+        self.logger.warning("%s - cannot unlink Json", threading.currentThread().getName(), jsonpath, self.osModule.listdir(os.path.split(jsonpath)[0]))
         return False
       try:
-        os.unlink(dumppath)
+        self.osModule.unlink(dumppath)
       except OSError:
-        self.logger.warning("%s - cannot unlink Dump", threading.currentThread().getName(), dumppath, os.listdir(os.path.split(dumppath)[0]))
+        self.logger.warning("%s - cannot unlink Dump", threading.currentThread().getName(), dumppath, self.osModule.listdir(os.path.split(dumppath)[0]))
         return False
     return True
 
@@ -228,7 +228,7 @@ class JsonDumpStorage(socorro_dumpStorage.DumpStorage):
     path,parts = self.lookupNamePath(ooid)
     if path:
       fullPath = os.path.join(path,fname)
-      # os.stat is moderately faster than trying to open for reading
+      # self.osModule.stat is moderately faster than trying to open for reading
       self.readableOrThrow(fullPath)
       return fullPath
     raise OSError(errno.ENOENT,'No such file: %s%s'%(ooid,fname))
@@ -245,7 +245,7 @@ class JsonDumpStorage(socorro_dumpStorage.DumpStorage):
     if path:
       fullPath = os.path.join(path,fname)
       msg = "No such file:  %s"%(os.path.join(path,fname))
-      # os.stat is moderately faster than trying to open for reading
+      # self.osModule.stat is moderately faster than trying to open for reading
       self.readableOrThrow(fullPath)
       return fullPath
     raise OSError(errno.ENOENT,msg)
@@ -260,16 +260,16 @@ class JsonDumpStorage(socorro_dumpStorage.DumpStorage):
     dpath = None
     state = 'find'
     try:
-      dpath = os.path.join(namePath,os.readlink(os.path.join(namePath,ooid)))
+      dpath = os.path.join(namePath,self.osModule.readlink(os.path.join(namePath,ooid)))
       state = 'unlink'
-      os.unlink(os.path.join(dpath,ooid))
+      self.osModule.unlink(os.path.join(dpath,ooid))
     except OSError, e:
       if 2 == e.errno: # no such file or directory
         pass
       else:
         raise e
     try:
-      os.unlink(os.path.join(namePath,ooid))
+      self.osModule.unlink(os.path.join(namePath,ooid))
     except OSError, e:
       if 2 == e.errno: # no such file or directory
         pass
@@ -287,32 +287,42 @@ class JsonDumpStorage(socorro_dumpStorage.DumpStorage):
     """
     def handleLink(dir,name):
       nameDir = self.namePath(name)[0]
-      if not os.path.isfile(os.path.join(nameDir,name+self.jsonSuffix)):
+      if not self.osModule.path.isfile(os.path.join(nameDir,name+self.jsonSuffix)):
+        print '        handleLink 1'
         return None
-      if not os.path.isfile(os.path.join(nameDir,name+self.dumpSuffix)):
+      if not self.osModule.path.isfile(os.path.join(nameDir,name+self.dumpSuffix)):
+        print '        handleLink 2'
         return None
-      if os.path.islink(os.path.join(nameDir,name)):
-        os.unlink(os.path.join(nameDir,name))
-        os.unlink(os.path.join(dir,name))
+      if self.osModule.path.islink(os.path.join(nameDir,name)):
+        self.osModule.unlink(os.path.join(nameDir,name))
+        self.osModule.unlink(os.path.join(dir,name))
+        print '        handleLink 3'
         return name
+      print '        handleLink off end'
     dailyParts = []
     try:
-      dailyParts = os.listdir(self.root)
+      dailyParts = self.osModule.listdir(self.root)
     except OSError:
       # If root doesn't exist, quietly do nothing, eh?
       return
     for daily in dailyParts:
-      for dir,dirs,files in os.walk(os.sep.join((self.root,daily,self.dateName))):
+      print 'daily: %s' % daily
+      for dir,dirs,files in self.osModule.walk(os.sep.join((self.root,daily,self.dateName))):
+        print dir,dirs,files
         if os.path.split(dir)[0] == os.path.split(self.datePath(datetime.datetime.now())[0]):
-         continue
+          print 'skipping dir %s' % dir
+          print 'because: %s == %s' % (os.path.split(dir)[0],os.path.split(self.datePath(datetime.datetime.now())[0]))
+          continue
         # the links are all to (relative) directories, so we need not look at files
         for d in dirs:
-          if os.path.islink(os.path.join(dir,d)):
+          print 'dir  ', d
+          if self.osModule.path.islink(os.path.join(dir,d)):
             r = handleLink(dir,d)
+            print '       r ', r
             if r:
               yield r
         # after finishing a given directory...
-        socorro_fs.cleanEmptySubdirectories(os.path.join(self.root,daily),dir)
+        socorro_fs.cleanEmptySubdirectories(os.path.join(self.root,daily),dir,self.osModule)
 
   #-----------------------------------------------------------------------------------------------------------------
   def remove (self,ooid, timestamp=None):
@@ -327,8 +337,8 @@ class JsonDumpStorage(socorro_dumpStorage.DumpStorage):
     something = 0
     if namePath:
       try:
-        datePath = os.path.join(namePath,os.readlink(os.path.join(namePath,ooid)))
-        if os.path.exists(datePath) and os.path.isdir(datePath):
+        datePath = os.path.join(namePath,self.osModule.readlink(os.path.join(namePath,ooid)))
+        if self.osModule.path.exists(datePath) and self.osModule.path.isdir(datePath):
           # We have a date and name path
           self._remove(ooid,namePath,nameParts,os.path.abspath(datePath),[])
           something += 1
@@ -346,7 +356,7 @@ class JsonDumpStorage(socorro_dumpStorage.DumpStorage):
       datePath,dateParts = self.lookupOoidInDatePath(timestamp,ooid)
       if datePath:
         try:
-          namePath = os.path.normpath(os.readlink(os.path.join(datePath,ooid)))
+          namePath = os.path.normpath(self.osModule.readlink(os.path.join(datePath,ooid)))
         except OSError:
           pass
       if namePath or datePath:
@@ -374,34 +384,34 @@ class JsonDumpStorage(socorro_dumpStorage.DumpStorage):
     # unlink on the name side first, thereby erasing any hope of removing relative paths from here...
     if namePath:
       try:
-        os.unlink(os.path.join(namePath,ooid))
+        self.osModule.unlink(os.path.join(namePath,ooid))
         seenCount += 1
       except:
         pass
       try:
-        os.unlink(os.path.join(namePath,ooid+self.jsonSuffix))
+        self.osModule.unlink(os.path.join(namePath,ooid+self.jsonSuffix))
         seenCount += 1
       except:
         pass
       try:
-        os.unlink(os.path.join(namePath,ooid+self.dumpSuffix))
+        self.osModule.unlink(os.path.join(namePath,ooid+self.dumpSuffix))
         seenCount += 1
       except:
         pass
       if self.cleanIndexDirectories:
         try:
-          socorro_fs.cleanEmptySubdirectories(stopper,namePath) #clean out name side if possible
+          socorro_fs.cleanEmptySubdirectories(stopper,namePath,self.osModule) #clean out name side if possible
         except OSError, x:
           pass
     # and the date directory
     if datePath:
       try:
-        os.unlink(os.path.join(datePath,ooid))
+        self.osModule.unlink(os.path.join(datePath,ooid))
         seenCount += 1
       except:
         pass
       try:
-        socorro_fs.cleanEmptySubdirectories(self.root,datePath)
+        socorro_fs.cleanEmptySubdirectories(self.root,datePath,self.osModule)
       except:
         pass
     if not seenCount:
@@ -431,10 +441,10 @@ class JsonDumpStorage(socorro_dumpStorage.DumpStorage):
 #     Walks the date branch removing all entries strictly older than the timestamp.
 #     Removes the corresponding entries in the name branch as well as cleans up empty date directories
 #     """
-#     dailyparts = os.listdir(self.root)
+#     dailyparts = self.osModule.listdir(self.root)
 #     for day in dailyparts:
 #       dir = os.path.join(self.root,day)
-#       if not os.isdir(dir):
+#       if not self.osModule.isdir(dir):
 #         continue
 #       stamp = datetime.datetime(int(day[:4]),int(day[4:6]),int(day[6:8]))
 #       if stamp < timestamp:
@@ -444,7 +454,7 @@ class JsonDumpStorage(socorro_dumpStorage.DumpStorage):
 #     """Given ooid, get the relative path to the top of the date directory from the name location"""
 #     depth = socorro_ooid.depthFromOoid(ooid)
 #     if not depth: depth = 4 # prior, when hardcoded depth=4, ooid[-8:] was yyyymmdd, year was always (20xx)
-#     ups = [os.pardir for x in range(depth+1)]
+#     ups = [self.osModule.pardir for x in range(depth+1)]
 #     ups.append(self.dateName)
 #     return os.sep.join(ups)
 

@@ -33,7 +33,7 @@ class DumpStorage(object):
   - One or more files may be stored at that location.
   Example: For the ooid '4dd21cc0-49d9-46ae-a42b-fadb42090928', the name path is
    root/20090928/name/4d/d2 (depth of 2 is encoded at ooid[-7])
-                
+
   The 'date' path is as follows:
   - Below the storage root and daily branch is the 'date' directory (name can be configured)
   - Below that are 2 subdirectories corresponding to hour and minute-window
@@ -41,7 +41,7 @@ class DumpStorage(object):
     The name of the link is the ooid, the value is a relative path to the 'name' directory of the ooid
   """
 
-  def __init__(self, root='.', **kwargs):
+  def __init__(self, root='.', osModule=os, **kwargs):
     """
     Take note of our root directory, and override defaults if any in kwargs:
      - dateName overrides 'date'
@@ -52,6 +52,7 @@ class DumpStorage(object):
      - dumpGID sets the group ID for all directoies in name and date paths. Default None.
     """
     super(DumpStorage, self).__init__()
+    self.osModule = osModule
     self.root = root.rstrip(os.sep)
     self.dateName = kwargs.get('dateName','date')
     self.indexName = kwargs.get('indexName','name')
@@ -82,13 +83,15 @@ class DumpStorage(object):
     returns (nameDir,dateDir)
     """
     if not timestamp:
-      timestamp = datetime.datetime.now()
-    if not os.path.isdir(self.root):
-      um = os.umask(0)
+      timestamp = socorro_ooid.dateFromOoid(ooid)
+      if not timestamp:
+        timestamp = datetime.datetime.now()
+    if not self.osModule.path.isdir(self.root):
+      um = self.osModule.umask(0)
       try:
-        os.mkdir(self.root,self.dirPermissions)
+        self.osModule.mkdir(self.root,self.dirPermissions)
       finally:
-        os.umask(um)
+        self.osModule.umask(um)
     nameDir,nparts = self.makeNameDir(ooid,timestamp)
     dateDir,dparts = self.makeDateDir(timestamp,webheadName)
     # adjust the current subslot only when inserting a new entry
@@ -101,25 +104,25 @@ class DumpStorage(object):
     parts.extend(self.relativeNameParts(ooid))
     relNameDir = os.sep.join(parts)
     try:
-      os.symlink(relNameDir,os.path.join(dateDir,ooid))
+      self.osModule.symlink(relNameDir,os.path.join(dateDir,ooid))
     except OSError,x:
       if errno.ENOENT == x.errno:
       # maybe a different thread cleaned this out from under us. Try again
         nameDir = self.makeNameDir(ooid) # might be overkill, but reasonably cheap insurance
-        dateDir = self.makeDateDir(timestamp) 
-        os.symlink(relNameDir,os.path.join(dateDir,ooid))
+        dateDir = self.makeDateDir(timestamp)
+        self.osModule.symlink(relNameDir,os.path.join(dateDir,ooid))
       elif errno.EEXIST == x.errno:
-        os.unlink(os.path.join(dateDir,ooid))
-        os.symlink(relNameDir,os.path.join(dateDir,ooid))
+        self.osModule.unlink(os.path.join(dateDir,ooid))
+        self.osModule.symlink(relNameDir,os.path.join(dateDir,ooid))
       else:
         raise
     if self.dumpGID:
-      os.chown(os.path.join(dateDir,ooid),-1,self.dumpGID)
+      self.osModule.chown(os.path.join(dateDir,ooid),-1,self.dumpGID)
     return (nameDir,dateDir)
 
   def chownGidVisitor(self,path):
     """a convenience function"""
-    os.chown(path,-1,self.dumpGID)
+    self.osModule.chown(path,-1,self.dumpGID)
 
   def relativeNameParts(self, ooid):
     depth = socorro_ooid.depthFromOoid(ooid)
@@ -169,14 +172,14 @@ class DumpStorage(object):
     on failure, return (None,[])
     """
     nPath,nParts = self.namePath(ooid,timestamp)
-    if os.path.exists(nPath):
+    if self.osModule.path.exists(nPath):
       return nPath,nParts
     else:
-      dailyDirs = os.listdir(self.root)
+      dailyDirs = self.osModule.listdir(self.root)
       for d in dailyDirs:
         nParts[1] = d
         path = os.sep.join(nParts)
-        if os.path.exists(path):
+        if self.osModule.path.exists(path):
           return path,nParts
     return (None,[])
 
@@ -199,16 +202,16 @@ class DumpStorage(object):
     """
     npath,nparts = self.namePath(ooid,timestamp)
     #self.logger.debug("%s - trying makedirs %s",threading.currentThread().getName(),npath)
-    um = os.umask(0)
+    um = self.osModule.umask(0)
     try:
       try:
-        socorro_fs.makedirs(npath,self.dirPermissions)
+        socorro_fs.makedirs(npath,self.dirPermissions,self.osModule)
       except OSError,e:
-        if not os.path.isdir(npath):
+        if not self.osModule.path.isdir(npath):
           #self.logger.debug("%s - in makeNameDir, got not isdir(%s): %s",threading.currentThread().getName(),npath,e)
           raise
     finally:
-      os.umask(um)
+      self.osModule.umask(um)
     if self.dumpGID:
       socorro_fs.visitPath(os.path.join(*nparts[:2]),npath,self.chownGidVisitor)
     return npath,nparts
@@ -222,9 +225,9 @@ class DumpStorage(object):
       date = socorro_ooid.dateFromOoid(ooid)
     if date:
       datePath,dateParts = self.datePath(date,webheadName)
-      if os.path.exists(os.path.join(datePath,ooid)):
+      if self.osModule.path.exists(os.path.join(datePath,ooid)):
         return datePath,dateParts
-    for d in os.listdir(self.root):
+    for d in self.osModule.listdir(self.root):
       # We don't know webhead if any, so avoid confusion by looking everywhere
       for dir,dirs,files in os.walk(os.sep.join((self.root,d,self.dateName))):
         if ooid in dirs or ooid in files: # probably dirs
@@ -251,16 +254,16 @@ class DumpStorage(object):
   def makeDateDir(self,date, webheadName = None):
     """Assure existence of date directory for the given date, return path, and list of components"""
     dpath,dparts = self.datePath(date,webheadName)
-    um = os.umask(0)
+    um = self.osModule.umask(0)
     try:
       try:
-        socorro_fs.makedirs(dpath,self.dirPermissions)
+        socorro_fs.makedirs(dpath,self.dirPermissions,self.osModule)
       except OSError,e:
-        if not os.path.isdir(dpath):
+        if not self.osModule.path.isdir(dpath):
           #self.logger.debug("%s - in makeDateDir, got not isdir(%s): %s",threading.currentThread().getName(),dpath,e)
           raise
     finally:
-      os.umask(um)
+      self.osModule.umask(um)
     if self.dumpGID:
       socorro_fs.visitPath(os.path.join(*dparts[:2]),dpath,self.chownGidVisitor)
     return dpath,dparts
@@ -272,4 +275,4 @@ class DumpStorage(object):
     (Convenience function for derived classes which will all need it)
     """
     if not os.stat(path).st_mode & (S_IRUSR|S_IRGRP|S_IROTH):
-      raise OSError(errno.ENOENT,'Cannot read')
+      raise OSError(errno.ENOENT,'Cannot read %s' % path)

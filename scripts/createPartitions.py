@@ -6,15 +6,16 @@ import sys
 import datetime as dt
 
 try:
-  import config.createpartitionsconfig as config
+  import config.createpartitionsconfig as configModule
 except ImportError:
-    import createpartitionsconfig as config
+    import createpartitionsconfig as configModule
 
 import socorro.lib.ConfigurationManager as configurationManager
 import socorro.database.schema as schema
+import socorro.lib.util as sutil
 
 try:
-  configurationContext = configurationManager.newConfiguration(configurationModule=config, applicationName="startNextPartition")
+  config = configurationManager.newConfiguration(configurationModule=configModule, applicationName="startNextPartition")
 except configurationManager.NotAnOptionError, x:
   print >>sys.stderr, x
   print >>sys.stderr, "for usage, try --help"
@@ -23,25 +24,12 @@ except configurationManager.NotAnOptionError, x:
 logger = logging.getLogger("nextPartition")
 logger.setLevel(logging.DEBUG)
 
-stderrLog = logging.StreamHandler()
-stderrLog.setLevel(configurationContext.stderrErrorLoggingLevel)
-stderrLogFormatter = logging.Formatter(configurationContext.stderrLineFormatString)
-stderrLog.setFormatter(stderrLogFormatter)
-logger.addHandler(stderrLog)
-
-rotatingFileLog = logging.handlers.RotatingFileHandler(configurationContext.logFilePathname, "a", configurationContext.logFileMaximumSize, configurationContext.logFileMaximumBackupHistory)
-rotatingFileLog.setLevel(logging.DEBUG)
-rotatingFileLogFormatter = logging.Formatter(configurationContext.logFileLineFormatString)
-rotatingFileLog.setFormatter(rotatingFileLogFormatter)
-logger.addHandler(rotatingFileLog)
-
-logger.info("current configuration\n%s", str(configurationContext))
-
+sutil.setupLoggingHandlers(logger, config)
+sutil.echoConfig(logger, config)
+  
 try:
-  configurationContext["endDate"] = configurationContext.startDate + dt.timedelta(configurationContext.weeksIntoFuture * 7)
+  config["endDate"] = config.startDate + dt.timedelta(config.weeksIntoFuture * 7)
   print 
-  schema.createPartitions(configurationContext, logger)
+  schema.createPartitions(config, logger)
 finally:
   logger.info("done.")
-  rotatingFileLog.flush()
-  rotatingFileLog.close()

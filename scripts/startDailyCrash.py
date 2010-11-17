@@ -5,15 +5,15 @@ import logging
 import logging.handlers
 
 try:
-  import config.dailycrashconfig as config
+  import config.dailycrashconfig as configModule
 except ImportError:
-  import dailycrashconfig as config
+  import dailycrashconfig as configModule
 
 import socorro.lib.ConfigurationManager as configurationManager
 import socorro.cron.daily_crash as daily_crash
 
 try:
-  configurationContext = configurationManager.newConfiguration(configurationModule=config, applicationName="Daily Crash")
+  config = configurationManager.newConfiguration(configurationModule=configModule, applicationName="Daily Crash")
 except configurationManager.NotAnOptionError, x:
   print >> sys.stderr, x
   print >> sys.stderr, "for usage, try --help"
@@ -22,26 +22,13 @@ except configurationManager.NotAnOptionError, x:
 logger = logging.getLogger("daily_cron")
 logger.setLevel(logging.DEBUG)
 
-stderrLog = logging.StreamHandler()
-stderrLog.setLevel(configurationContext.stderrErrorLoggingLevel)
-stderrLogFormatter = logging.Formatter(configurationContext.stderrLineFormatString)
-stderrLog.setFormatter(stderrLogFormatter)
-logger.addHandler(stderrLog)
-
-rotatingFileLog = logging.handlers.RotatingFileHandler(configurationContext.logFilePathname, "a", configurationContext.logFileMaximumSize, configurationContext.logFileMaximumBackupHistory)
-rotatingFileLog.setLevel(configurationContext.logFileErrorLoggingLevel)
-rotatingFileLogFormatter = logging.Formatter(configurationContext.logFileLineFormatString)
-rotatingFileLog.setFormatter(rotatingFileLogFormatter)
-logger.addHandler(rotatingFileLog)
-
-logger.info("current configuration\n%s", str(configurationContext))
+sutil.setupLoggingHandlers(logger, config)
+sutil.echoConfig(logger, config)
 
 try:
-  daily_crash.record_crash_stats(configurationContext, logger)
+  daily_crash.record_crash_stats(config, logger)
 finally:
   logger.info("done.")
-  rotatingFileLog.flush()
-  rotatingFileLog.close()
 
 
 

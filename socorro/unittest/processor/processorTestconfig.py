@@ -11,21 +11,29 @@ from socorro.unittest.config.commonconfig import databaseName
 from socorro.unittest.config.commonconfig import databaseUserName
 from socorro.unittest.config.commonconfig import databasePassword
 
-storageRoot = cm.Option()
-storageRoot.doc = 'the root of the file system where dumps are found'
-storageRoot.default = '%(testDir)s/dumpTest/toBeProcessed/'
+from socorro.unittest.config.commonconfig import hbaseHost
+from socorro.unittest.config.commonconfig import hbasePort
+from socorro.unittest.config.commonconfig import hbaseTimeout
 
-deferredStorageRoot = cm.Option()
-deferredStorageRoot.doc = 'the root of the file system where dumps are found'
-deferredStorageRoot.default = '%(testDir)s/dumpTest/toBeDeferred/'
+#storageRoot = cm.Option()
+#storageRoot.doc = 'the root of the file system where dumps are found'
+#storageRoot.default = '%(testDir)s/dumpTest/toBeProcessed/'
 
-processedDumpStoragePath = cm.Option()
-processedDumpStoragePath.doc = 'the path of the file system where processed dumps are stored'
-processedDumpStoragePath.default = '%(testDir)s/dumpTest/processedDumps'
+#deferredStorageRoot = cm.Option()
+#deferredStorageRoot.doc = 'the root of the file system where dumps are found'
+#deferredStorageRoot.default = '%(testDir)s/dumpTest/toBeDeferred/'
 
-dumpDirPrefix = cm.Option()
-dumpDirPrefix.doc = 'dump directory names begin with this prefix'
-dumpDirPrefix.default = 'tst_'
+#processedDumpStoragePath = cm.Option()
+#processedDumpStoragePath.doc = 'the path of the file system where processed dumps are stored'
+#processedDumpStoragePath.default = '%(testDir)s/dumpTest/processedDumps'
+
+#dumpDirPrefix = cm.Option()
+#dumpDirPrefix.doc = 'dump directory names begin with this prefix'
+#dumpDirPrefix.default = 'tst_'
+
+temporaryFileSystemStoragePath = cm.Option()
+temporaryFileSystemStoragePath.doc = 'a local filesystem path where processor can write dumps temporarily for processing'
+temporaryFileSystemStoragePath.default = './'
 
 jsonFileSuffix = cm.Option()
 jsonFileSuffix.doc = 'the suffix used to identify a json file'

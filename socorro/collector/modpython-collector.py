@@ -6,7 +6,7 @@
 import datetime as dt
 import config.collectorconfig as configModule
 import socorro.collector.initializer as init
-import socorro.collector.crashstorage as cstore
+import socorro.storage.crashstorage as cstore
 import socorro.lib.util as sutil
 import socorro.lib.ooid as ooid
 
@@ -41,7 +41,8 @@ def handler(req):
       dump = theform[config.dumpField]
       if not dump.file:
         return apache.HTTP_BAD_REQUEST
-      dump = cstore.RepeatableStreamReader(dump.file)
+      dump = dump.file.read()
+      #dump = cstore.RepeatableStreamReader(dump.file)
 
       currentTimestamp = dt.datetime.now()
 
@@ -59,10 +60,6 @@ def handler(req):
       jsonDataDictionary.legacy_processing = persistentStorage.legacyThrottler.throttle(jsonDataDictionary)
 
       result = crashStorage.save_raw(uuid, jsonDataDictionary, dump, currentTimestamp)
-      if config.useBackupNFSStorage:
-        ignoredResult = persistentStorage.altCrashStorage.save_raw(uuid, jsonDataDictionary, dump, currentTimestamp)
-
-      #logger.debug('crashStorage returned: %d', result)
 
       if result == cstore.CrashStorageSystem.DISCARDED:
         req.write("Discarded=1\n")

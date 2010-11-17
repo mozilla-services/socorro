@@ -8,7 +8,7 @@ import socorro.database.postgresql as socorro_pg
 
 import socorro.lib.util as socorro_util
 """
-Schema.py contains several utility functions and the code which describes all the database tables used by socorro. 
+Schema.py contains several utility functions and the code which describes all the database tables used by socorro.
 """
 
 #-----------------------------------------------------------------------------------------------------------------
@@ -1295,7 +1295,7 @@ class DailyCrashesTable(Table):
       #this table doesn't exist yet, create it
       self.create(databaseCursor)
 
-databaseDependenciesForSetup[DailyCrashesTable] = []
+databaseDependenciesForSetup[DailyCrashesTable] = [ProductDimsTable]
 
 
 
@@ -1414,7 +1414,7 @@ class EmailCampaignsTable(Table):
                                             CREATE TABLE email_campaigns (
                                                 id serial NOT NULL PRIMARY KEY,
                                                 product TEXT NOT NULL,
-                                                versions TEXT NOT NULL,                                                
+                                                versions TEXT NOT NULL,
                                                 signature TEXT NOT NULL,
                                                 subject TEXT NOT NULL,
                                                 body TEXT NOT NULL,
@@ -1480,7 +1480,7 @@ class EmailCampaignsContactsTable(Table):
                                             );
                                         """)
     self.insertSql = """INSERT INTO TABLENAME (email_campaigns_id, email_contacts) VALUES (%s, %s) RETURNING id"""
-  
+
   #-----------------------------------------------------------------------------------------------------------------
   def updateDefinition(self, databaseCursor):
     if socorro_pg.tablesMatchingPattern(self.name) == []:

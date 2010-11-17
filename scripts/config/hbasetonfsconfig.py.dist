@@ -22,25 +22,28 @@ resubmissionDateList = cm.Option()
 resubmissionDateList.doc = 'a comma delimited list of dates (YYYY-DD-MM,...)'
 resubmissionDateList.default = None
 
-logFilePathname = cm.Option()
-logFilePathname.doc = 'full pathname for the log file'
-logFilePathname.default = './hbasetonfs.log'
+#-------------------------------------------------------------------------------
+# Logging
 
-logFileMaximumSize = cm.Option()
-logFileMaximumSize.doc = 'maximum size in bytes of the log file'
-logFileMaximumSize.default = 1000000
+syslogHost = cm.Option()
+syslogHost.doc = 'syslog hostname'
+syslogHost.default = 'localhost'
 
-logFileMaximumBackupHistory = cm.Option()
-logFileMaximumBackupHistory.doc = 'maximum number of log files to keep'
-logFileMaximumBackupHistory.default = 50
+syslogPort = cm.Option()
+syslogPort.doc = 'syslog port'
+syslogPort.default = 514
 
-logFileLineFormatString = cm.Option()
-logFileLineFormatString.doc = 'python logging system format for log file entries'
-logFileLineFormatString.default = '%(asctime)s %(levelname)s - %(message)s'
+syslogFacilityString = cm.Option()
+syslogFacilityString.doc = 'syslog facility string ("user", "local0", etc)'
+syslogFacilityString.default = 'user'
 
-logFileErrorLoggingLevel = cm.Option()
-logFileErrorLoggingLevel.doc = 'logging level for the log file (10 - DEBUG, 20 - INFO, 30 - WARNING, 40 - ERROR, 50 - CRITICAL)'
-logFileErrorLoggingLevel.default = 20
+syslogLineFormatString = cm.Option()
+syslogLineFormatString.doc = 'python logging system format for syslog entries'
+syslogLineFormatString.default = 'Socorro Collector (pid %(process)d): %(asctime)s %(levelname)s - %(threadName)s - %(message)s'
+
+syslogErrorLoggingLevel = cm.Option()
+syslogErrorLoggingLevel.doc = 'logging level for the log file (10 - DEBUG, 20 - INFO, 30 - WARNING, 40 - ERROR, 50 - CRITICAL)'
+syslogErrorLoggingLevel.default = 10
 
 stderrLineFormatString = cm.Option()
 stderrLineFormatString.doc = 'python logging system format for logging to stderr'
@@ -48,5 +51,5 @@ stderrLineFormatString.default = '%(asctime)s %(levelname)s - %(message)s'
 
 stderrErrorLoggingLevel = cm.Option()
 stderrErrorLoggingLevel.doc = 'logging level for the logging to stderr (10 - DEBUG, 20 - INFO, 30 - WARNING, 40 - ERROR, 50 - CRITICAL)'
-stderrErrorLoggingLevel.default = 40
+stderrErrorLoggingLevel.default = 10
 

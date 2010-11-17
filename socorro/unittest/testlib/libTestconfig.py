@@ -30,6 +30,27 @@ logFileErrorLoggingLevel = cm.Option()
 logFileErrorLoggingLevel.doc = 'logging level for the log file (10 - DEBUG, 20 - INFO, 30 - WARNING, 40 - ERROR, 50 - CRITICAL)'
 logFileErrorLoggingLevel.default = 10
 
+#syslogHost = cm.Option()
+#syslogHost.doc = 'syslog hostname'
+#syslogHost.default = 'localhost'
+
+#syslogPort = cm.Option()
+#syslogPort.doc = 'syslog port'
+#syslogPort.default = 514
+
+#syslogFacilityString = cm.Option()
+#syslogFacilityString.doc = 'syslog facility string ("user", "local0", etc)'
+#syslogFacilityString.default = 'user'
+
+#syslogLineFormatString = cm.Option()
+#syslogLineFormatString.doc = 'python logging system format for syslog entries'
+#syslogLineFormatString.default = 'Socorro (pid %(process)d): %(asctime)s %(levelname)s - %(threadName)s - %(message)s'
+
+#syslogErrorLoggingLevel = cm.Option()
+#syslogErrorLoggingLevel.doc = 'logging level for the log file (10 - DEBUG, 20 - INFO, 30 - WARNING, 40 - ERROR, 50 - CRITICAL)'
+#syslogErrorLoggingLevel.default = 10
+
+
 stderrLineFormatString = cm.Option()
 stderrLineFormatString.doc = 'python logging system format for logging to stderr'
 stderrLineFormatString.default = '%(asctime)s %(levelname)s - %(message)s'

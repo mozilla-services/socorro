@@ -23,9 +23,8 @@ import socorro.lib.psycopghelper as psy
 import socorro.database.database as sdb
 import socorro.lib.ooid as ooid
 import socorro.lib.datetimeutil as sdt
-import socorro.lib.processedDumpStorage as pds
-import socorro.collector.crashstorage as cstore
-import socorro.hbase.hbaseClient as hbc
+import socorro.storage.crashstorage as cstore
+import socorro.storage.hbaseClient as hbc
 
 import simplejson
 
@@ -82,7 +81,6 @@ class Processor(object):
                           "databasePassword",
                           "processorCheckInTime",
                           "processorCheckInFrequency",
-                          "crashStorageClass",
                           "jsonFileSuffix",
                           "dumpFileSuffix",
                           "processorId",
@@ -94,21 +92,10 @@ class Processor(object):
                           "collectCrashProcess",
                           "signatureSentinels",
                           "signaturesWithLineNumbersRegEx",
+                          "hbaseHost",
+                          "hbasePort",
+                          "temporaryFileSystemStoragePath",
                          )
-  _hbase_config_requirements = ("hbaseHost",
-                                "hbasePort",
-                                "temporaryFileSystemStoragePath",
-                               )
-  _nfs_config_requirements = ("storageRoot",
-                              "deferredStorageRoot",
-                              "processedDumpStoragePath"
-                              "dumpDirPrefix",
-                              "dumpPermissions",
-                              "dirPermissions",
-                              "dumpGID",
-                              "saveSuccessfulMinidumpsTo",
-                              "saveFailedMinidumpsTo",
-                             )
 
   #-----------------------------------------------------------------------------------------------------------------
   def __init__ (self, config, sdb=sdb):
@@ -121,17 +108,6 @@ class Processor(object):
     for x in Processor._config_requirements:
       assert x in config, '%s missing from configuration' % x
 
-    if config.crashStorageClass == 'CrashStorageSystemForNFS':
-      for x in Processor._nfs_config_requirements:
-        assert x in config, '%s missing from configuration' % x
-      self.processedDumpStorage = pds.ProcessedDumpStorage(root=config.processedDumpStoragePath,
-                                                           dumpPermissions=config.dumpPermissions,
-                                                           dirPermissions=config.dirPermissions,
-                                                           dumpGID=config.dumpGID,
-                                                           logger=logger)
-    else:
-      for x in Processor._hbase_config_requirements:
-        assert x in config, '%s missing from configuration' % x
     self.crashStorePool = cstore.CrashStoragePool(config)
 
     self.sdb = sdb
@@ -151,17 +127,17 @@ class Processor(object):
     self.pluginsTable = sch.PluginsTable(logger=logger)
     self.pluginsReportsTable = sch.PluginsReportsTable(logger=logger)
 
-    logger.info("%s - connecting to database", threading.currentThread().getName())
+    logger.info("connecting to database")
     try:
       databaseConnection, databaseCursor = self.databaseConnectionPool.connectionCursorPair()
     except:
       self.quit = True
-      logger.critical("%s - cannot connect to the database", threading.currentThread().getName())
+      logger.critical("cannot connect to the database")
       socorro.lib.util.reportExceptionAndAbort(logger) # can't continue without a database connection
 
     # register self with the processors table in the database
     # Must request 'auto' id, or an id number that is in the processors table AND not alive
-    logger.info("%s - registering with 'processors' table", threading.currentThread().getName())
+    logger.info("registering with 'processors' table")
     priorityCreateRuberic = "Since we took over, it probably exists."
     self.processorId = None
     legalOption = False
@@ -177,19 +153,19 @@ class Processor(object):
       self.processorName = "%s_%d" % (os.uname()[1], os.getpid())
       threshold = self.sdb.singleValueSql(databaseCursor, "select now() - interval '%s'" % self.config.processorCheckInTime)
       if requestedId == 'auto':  # take over for an existing processor
-        logger.debug("%s - looking for a dead processor", threading.currentThread().getName())
+        logger.debug("looking for a dead processor")
         try:
           self.processorId = self.sdb.singleValueSql(databaseCursor, "select id from processors where lastseendatetime < '%s' limit 1" % threshold)
-          logger.info("%s - will step in for processor %d", threading.currentThread().getName(), self.processorId)
+          logger.info("will step in for processor %d", self.processorId)
         except self.sdb.SQLDidNotReturnSingleValue:
-          logger.debug("%s - no dead processor found", threading.currentThread().getName())
+          logger.debug("no dead processor found")
           requestedId = 0 # signal that we found no dead processors
       else: # requestedId is an integer: We already raised OptionError if not
         try:
           # singleValueSql should actually accept sql with placeholders and an array of values instead of just a string. Enhancement needed...
           checkSql = "select id from processors where lastSeenDateTime < '%s' and id = %s" % (threshold,requestedId)
           self.processorId = self.sdb.singleValueSql(databaseCursor, checkSql)
-          logger.info("%s - stepping in for processor %d", threading.currentThread().getName(), self.processorId)
+          logger.info("stepping in for processor %d", self.processorId)
         except self.sdb.SQLDidNotReturnSingleValue,x:
           raise socorro.lib.ConfigurationManager.OptionError("ProcessorId %s is not in processors table or is still live."%requestedId)
       if requestedId == 0:
@@ -199,7 +175,7 @@ class Processor(object):
         except:
           databaseConnection.rollback()
           raise
-        logger.info("%s - initializing as processor %d", threading.currentThread().getName(), self.processorId)
+        logger.info("initializing as processor %d", self.processorId)
         priorityCreateRuberic = "Does it already exist?"
         # We have a good processorId and a name. Register self with database
       try:
@@ -215,7 +191,7 @@ class Processor(object):
         databaseConnection.rollback()
         raise
     except:
-      logger.critical("%s - cannot register with the database", threading.currentThread().getName())
+      logger.critical("cannot register with the database")
       databaseConnection.rollback()
       self.quit = True
       socorro.lib.util.reportExceptionAndAbort(logger) # can't continue without a registration
@@ -225,7 +201,7 @@ class Processor(object):
       databaseCursor.execute("create table %s (uuid varchar(50) not null primary key)" % self.priorityJobsTableName)
       databaseConnection.commit()
     except:
-      logger.warning("%s - failed to create table %s. %s This is probably OK",  threading.currentThread().getName(),self.priorityJobsTableName,priorityCreateRuberic)
+      logger.warning("failed to create table %s. %s This is probably OK", self.priorityJobsTableName, priorityCreateRuberic)
       databaseConnection.rollback()
     # force checkin to run immediately after start(). I don't understand the need, since the database already reflects nearly-real reality. Oh well.
     self.lastCheckInTimestamp = datetime.datetime(1950, 1, 1)
@@ -236,10 +212,10 @@ class Processor(object):
     # remain queued in the database until the last minute.  This allows some external process to change the priority of a job by changing
     # the 'priority' column of the 'jobs' table for the particular record in the database.  If the threadManager were allowed to suck all
     # the pending jobs from the database, then the job priority could not be changed by an external process.
-    logger.info("%s - starting worker threads", threading.currentThread().getName())
+    logger.info("starting worker threads")
     self.threadManager = socorro.lib.threadlib.TaskManager(self.config.numberOfThreads, self.config.numberOfThreads * 2)
-    logger.info("%s - I am processor #%d", threading.currentThread().getName(), self.processorId)
-    logger.info("%s - my priority jobs table is called: '%s'", threading.currentThread().getName(), self.priorityJobsTableName)
+    logger.info("I am processor #%d", self.processorId)
+    logger.info("my priority jobs table is called: '%s'", self.priorityJobsTableName)
 
   #-----------------------------------------------------------------------------------------------------------------
   def quitCheck(self):
@@ -251,7 +227,7 @@ class Processor(object):
     for x in xrange(int(seconds)):
       self.quitCheck()
       if waitLogInterval and not x % waitLogInterval:
-        logger.info('%s - %s: %dsec of %dsec', threading.currentThread().getName(),
+        logger.info('%s - %s: %dsec of %dsec',
                                                      waitReason,
                                                      x,
                                                      seconds)
@@ -265,7 +241,7 @@ class Processor(object):
         its unfinished jobs to other processors.
     """
     if self.lastCheckInTimestamp + self.config.processorCheckInFrequency < datetime.datetime.now():
-      logger.debug("%s - updating 'processor' table registration", threading.currentThread().getName())
+      logger.debug("updating 'processor' table registration")
       tstamp = datetime.datetime.now()
       databaseConnection, databaseCursor = self.databaseConnectionPool.connectionCursorPair()
       databaseCursor.execute("update processors set lastseendatetime = %s where id = %s", (tstamp, self.processorId))
@@ -276,26 +252,26 @@ class Processor(object):
   def cleanup(self):
     """ clean up before shutdown
     """
-    logger.info("%s - waiting for threads to stop", threading.currentThread().getName())
+    logger.info("waiting for threads to stop")
     self.threadManager.waitForCompletion()
-    logger.info("%s - all threads stopped", threading.currentThread().getName())
+    logger.info("all threads stopped")
     databaseConnection, databaseCursor = self.databaseConnectionPool.connectionCursorPair()
 
     try:
       # force the processor to record a lastSeenDateTime in the distant past so that the monitor will
       # mark it as dead.  The monitor will process its completed jobs and reallocate it unfinished ones.
-      logger.debug("%s - unregistering processor", threading.currentThread().getName())
+      logger.debug("unregistering processor")
       databaseCursor.execute("update processors set lastseendatetime = '1999-01-01' where id = %s", (self.processorId,))
       databaseConnection.commit()
     except Exception, x:
-      logger.critical("%s - could not unregister %d from the database", threading.currentThread().getName(), self.processorId)
+      logger.critical("could not unregister %d from the database", self.processorId)
       databaseConnection.rollback()
       socorro.lib.util.reportExceptionAndContinue(logger)
     try:
       databaseCursor.execute("drop table %s" % self.priorityJobsTableName)
       databaseConnection.commit()
     except psycopg2.Error:
-      logger.error("%s - Cannot complete cleanup.  %s may need manual deletion", threading.currentThread().getName(), self.priorityJobsTableName)
+      logger.error("Cannot complete cleanup.  %s may need manual deletion", self.priorityJobsTableName)
       databaseConnection.rollback()
       socorro.lib.util.reportExceptionAndContinue(logger)
 
@@ -303,7 +279,7 @@ class Processor(object):
     self.databaseConnectionPool.cleanup()
     self.crashStorePool.cleanup()
 
-    logger.debug("%s - done with work", threading.currentThread().getName())
+    logger.debug("done with work")
 
 
   #-----------------------------------------------------------------------------------------------------------------
@@ -315,7 +291,7 @@ class Processor(object):
     """
     signame = 'SIGTERM'
     if signalNumber != signal.SIGTERM: signame = 'SIGHUP'
-    logger.info("%s - %s detected", threading.currentThread().getName(),signame)
+    logger.info("%s detected",signame)
     raise KeyboardInterrupt
 
   #--- put these near where they are needed to avoid scrolling during maintenance ----------------------------------
@@ -393,7 +369,7 @@ class Processor(object):
   def submitJobToThreads(self, databaseCursor, aJobTuple):
     databaseCursor.execute("update jobs set starteddatetime = %s where id = %s", (datetime.datetime.now(), aJobTuple[0]))
     databaseCursor.connection.commit()
-    logger.info("%s - queuing job %d, %s, %s", threading.currentThread().getName(), aJobTuple[0], aJobTuple[2], aJobTuple[1])
+    logger.info("queuing job %d, %s, %s", aJobTuple[0], aJobTuple[2], aJobTuple[1])
     self.threadManager.newTask(self.processJobWithRetry, aJobTuple)
     #self.threadManager.newTask(self.processJob, aJobTuple)
 
@@ -428,7 +404,7 @@ class Processor(object):
             else:
               yield (aFullJobTuple[0],aFullJobTuple[1],aFullJobTuple[2],)
           else:
-            logger.debug("%s - the priority job %s was never found", threading.currentThread().getName(), aFullJobTuple[1])
+            logger.debug("the priority job %s was never found", aFullJobTuple[1])
       else:
         yield None
 
@@ -486,12 +462,12 @@ class Processor(object):
       if aJobTuple:
         if not aJobTuple[1] in seenUuids:
           seenUuids.add(aJobTuple[1])
-          logger.debug("%s - incomingJobStream yielding %s job %s",threading.currentThread().getName(), aJobType, aJobTuple)
+          logger.debug("incomingJobStream yielding %s job %s", aJobType, aJobTuple)
           yield aJobTuple
         else:
           logger.debug("Skipping already seen job %s",aJobTuple)
       else:
-        logger.info("%s - no jobs to do - sleeping %d seconds", threading.currentThread().getName(), self.processorLoopTime)
+        logger.info("no jobs to do - sleeping %d seconds", self.processorLoopTime)
         seenUuids = set()
         self.responsiveSleep(self.processorLoopTime)
 
@@ -513,10 +489,10 @@ class Processor(object):
         #get a job
         for aJobTuple in self.incomingJobStream(databaseCursor):
           self.quitCheck()
-          logger.debug("%s - start got: %s", threading.currentThread().getName(), aJobTuple[1])
+          logger.debug("start got: %s", aJobTuple[1])
           self.submitJobToThreads(databaseCursor, aJobTuple)
       except KeyboardInterrupt:
-        logger.info("%s - quit request detected", threading.currentThread().getName())
+        logger.info("quit request detected")
         databaseConnection.rollback()
         self.quit = True
         break
@@ -542,17 +518,7 @@ class Processor(object):
     Processor.sanitizeDict(aReportRecordAsDict)
     Processor.convertDatesInDictToString(aReportRecordAsDict)
     uuid = aReportRecordAsDict["uuid"]
-    if self.config.crashStorageClass == 'CrashStorageSystemForNFS':
-      try:
-        self.processedDumpStorage.putDumpToFile(uuid, aReportRecordAsDict, date_processed)
-      except OSError, x:
-        if x.errno == 17:
-          self.processedDumpStorage.removeDumpFile(uuid)
-          self.processedDumpStorage.putDumpToFile(uuid, aReportRecordAsDict, date_processed)
-        else:
-          raise
-    else:  #hbase storage
-      threadLocalCrashStorage.save_processed(uuid, aReportRecordAsDict)
+    threadLocalCrashStorage.save_processed(uuid, aReportRecordAsDict)
 
   #-----------------------------------------------------------------------------------------------------------------
   ok = 0
@@ -578,7 +544,7 @@ class Processor(object):
         if result in (Processor.ok, Processor.quit):
           return
         waitInSeconds = backoffGenerator.next()
-        logger.critical('%s - major failure in crash storage - retry in %s seconds', threading.currentThread().getName(), waitInSeconds)
+        logger.critical('%s - major failure in crash storage - retry in %s seconds', waitInSeconds)
         self.responsiveSleep(waitInSeconds, 10, "waiting for retry after failure in crash storage")
     except KeyboardInterrupt:
       return
@@ -594,12 +560,12 @@ class Processor(object):
               jobUuid (a unique string with the json file basename minus the extension) and the priority (an integer)
     """
     if self.quit: return
-    threadName = threading.currentThread().getName()
+    threadName = threading.currentTread().getName()
     try:
       threadLocalDatabaseConnection, threadLocalCursor = self.databaseConnectionPool.connectionCursorPair()
       threadLocalCrashStorage = self.crashStorePool.crashStorage(threadName)
     except hbc.FatalException:
-      logger.critical("%s - something's gone horribly wrong with the HBase connection", threadName)
+      logger.critical("something's gone horribly wrong with the HBase connection")
       #self.quit = True
       socorro.lib.util.reportExceptionAndContinue(logger, loggingLevel=logging.CRITICAL)
       return Processor.criticalError
@@ -616,7 +582,7 @@ class Processor(object):
       newReportRecordAsDict = {}
       processorErrorMessages = []
       jobId, jobUuid, jobPriority = jobTuple
-      logger.info("%s - starting job: %s, %s", threadName, jobId, jobUuid)
+      logger.info("starting job: %s, %s", jobId, jobUuid)
       startedDateTime = datetime.datetime.now()
       threadLocalCursor.execute("update jobs set starteddatetime = %s where id = %s", (startedDateTime, jobId))
       threadLocalDatabaseConnection.commit()
@@ -634,12 +600,12 @@ class Processor(object):
       newReportRecordAsDict["startedDateTime"] = startedDateTime
 
       if self.config.collectAddon:
-        logger.info("%s - collecting Addons", threadName)
+        logger.info("collecting Addons")
         addonsAsAListOfTuples = self.insertAdddonsIntoDatabase(threadLocalCursor, reportId, jsonDocument, date_processed, processorErrorMessages)
         newReportRecordAsDict["addons"] = addonsAsAListOfTuples
 
       if self.config.collectCrashProcess:
-        logger.info("%s - collecting Crash Process", threadName)
+        logger.info("collecting Crash Process")
         crashProcessAsDict = self.insertCrashProcess(threadLocalCursor, reportId, jsonDocument, date_processed, processorErrorMessages)
         newReportRecordAsDict.update( crashProcessAsDict )
 
@@ -675,7 +641,7 @@ class Processor(object):
         flash_version = %%s
       where id = %s and date_processed = timestamp without time zone '%s'
       """ % (reportId,date_processed)
-      #logger.debug("%s - newReportRecordAsDict %s, %s",threadName, newReportRecordAsDict['topmost_filenames'], newReportRecordAsDict['flash_version'])
+      #logger.debug("newReportRecordAsDict %s, %s", newReportRecordAsDict['topmost_filenames'], newReportRecordAsDict['flash_version'])
       #topmost_filenames = "|".join(jsonDocument.get('topmost_filenames',[]))
       topmost_filenames = "|".join(newReportRecordAsDict.get('topmost_filenames',[]))
       addons_checked = None
@@ -692,15 +658,15 @@ class Processor(object):
       processor_notes = '; '.join(processorErrorMessages)
       newReportRecordAsDict['processor_notes'] = processor_notes
       infoTuple = (newReportRecordAsDict['signature'], processor_notes, startedDateTime, completedDateTime, newReportRecordAsDict["truncated"], topmost_filenames, addons_checked, flash_version)
-      logger.debug("%s - Updated report %s (%s): %s",threadName,reportId,jobUuid,str(infoTuple))
+      logger.debug("Updated report %s (%s): %s", reportId, jobUuid, str(infoTuple))
       threadLocalCursor.execute(reportsSql, infoTuple)
       threadLocalDatabaseConnection.commit()
       self.saveProcessedDumpJson(newReportRecordAsDict, threadLocalCrashStorage)
-      logger.info("%s - succeeded and committed: %s, %s", threadName, jobId, jobUuid)
+      logger.info("succeeded and committed: %s, %s", jobId, jobUuid)
       self.quitCheck()
       return Processor.quit
     except (KeyboardInterrupt, SystemExit):
-      logger.info("%s - quit request detected", threadName)
+      logger.info("quit request detected")
       self.quit = True
       try:
         threadLocalDatabaseConnection.close()
@@ -708,17 +674,17 @@ class Processor(object):
         pass
       return Processor.quit
     except DuplicateEntryException, x:
-      logger.warning("%s - duplicate entry: %s", threadName, jobUuid)
+      logger.warning("duplicate entry: %s", jobUuid)
       threadLocalCursor.execute('delete from jobs where id = %s', (jobId,))
       threadLocalDatabaseConnection.commit()
       return Processor.ok
     except psycopg2.OperationalError:
-      logger.critical("%s - something's gone horribly wrong with the database connection", threadName)
+      logger.critical("something's gone horribly wrong with the database connection")
       self.quit = True
       socorro.lib.util.reportExceptionAndContinue(logger, loggingLevel=logging.CRITICAL)
       return Processor.quit
     except hbc.FatalException:
-      logger.critical("%s - something's gone horribly wrong with the HBase connection", threadName)
+      logger.critical("something's gone horribly wrong with the HBase connection")
       #self.quit = True
       socorro.lib.util.reportExceptionAndContinue(logger, loggingLevel=logging.CRITICAL)
       return Processor.criticalError
@@ -762,7 +728,7 @@ class Processor(object):
       ret = default
     except Exception,x:
       errorMessageList.append("ERROR: jsonDoc[%s]: %s"%(repr(key),x))
-      logger.error("%s - While extracting '%s' from jsonDoc %s, exception (%s): %s",threading.currentThread().getName(),key,jsonDoc,type(x),x)
+      logger.error("While extracting '%s' from jsonDoc %s, exception (%s): %s",key,jsonDoc,type(x),x)
     return ret
 
   #-----------------------------------------------------------------------------------------------------------------
@@ -793,7 +759,7 @@ class Processor(object):
         Distributor_version: Length <= 20                            : in column distributor_version
         HangId: uuid-like                                            : in column hangid
     """
-    logger.debug("%s - starting insertReportIntoDatabase", threading.currentThread().getName())
+    logger.debug("starting insertReportIntoDatabase")
     product = Processor.getJsonOrWarn(jsonDocument,'ProductName',processorErrorMessages,None, 30)
     version = Processor.getJsonOrWarn(jsonDocument,'Version', processorErrorMessages,None,16)
     buildID =   Processor.getJsonOrWarn(jsonDocument,'BuildID', processorErrorMessages,None,16)
@@ -818,7 +784,7 @@ class Processor(object):
     user_id = ""
     uptime = max(0, crash_time - startupTime)
     if crash_time == defaultCrashTime:
-      logger.warning("%s - no 'crash_time' calculated in %s: Using date_processed", threading.currentThread().getName(), uuid)
+      logger.warning("no 'crash_time' calculated in %s: Using date_processed", uuid)
       #socorro.lib.util.reportExceptionAndContinue(logger, logging.WARNING)
       processorErrorMessages.append("WARNING: No 'client_crash_date' could be determined from the Json file")
     build_date = None
@@ -826,7 +792,7 @@ class Processor(object):
       try:
         build_date = datetime.datetime(*[int(x) for x in Processor.buildDatePattern.match(str(buildID)).groups()])
       except (AttributeError, ValueError, KeyError):
-        logger.warning("%s - no 'build_date' calculated in %s", threading.currentThread().getName(), uuid)
+        logger.warning("no 'build_date' calculated in %s", uuid)
         processorErrorMessages.append("WARNING: No 'build_date' could be determined from the Json file")
         socorro.lib.util.reportExceptionAndContinue(logger, logging.WARNING)
     try:
@@ -838,14 +804,14 @@ class Processor(object):
     newReportRecordAsDict = dict(x for x in zip(self.reportsTable.columns, newReportRecordAsTuple))
     if not product or not version:
       msgTemplate = "%%s - Skipping report: Missing product&version: ["+", ".join(["%s:%%s"%x for x in self.reportsTable.columns])+"]"
-      logger.error(msgTemplate % newReportRecordAsTuple,threading.currentThread().getName())
+      logger.error(msgTemplate % newReportRecordAsTuple)
       return {}
     try:
-      logger.debug("%s - inserting for %s, %s", threading.currentThread().getName(), uuid, str(date_processed))
+      logger.debug("inserting for %s, %s", uuid, str(date_processed))
       self.reportsTable.insert(threadLocalCursor, newReportRecordAsTuple, self.databaseConnectionPool.connectionCursorPair, date_processed=date_processed)
     except psycopg2.IntegrityError, x:
-      logger.debug("%s - psycopg2.IntegrityError %s", threading.currentThread().getName(), str(x))
-      logger.debug("%s - %s: this report already exists for date: %s",  threading.currentThread().getName(), uuid, str(date_processed))
+      logger.debug("psycopg2.IntegrityError %s", str(x))
+      logger.debug("%s: this report already exists for date: %s", uuid, str(date_processed))
       threadLocalCursor.connection.rollback()
       # the following code fragment can prevent a crash from being processed a second time
       #previousTrialWasSuccessful = self.sdb.singleValueSql(threadLocalCursor, "select success from reports where uuid = '%s' and date_processed = timestamp without time zone '%s'" % (uuid, date_processed))
@@ -894,15 +860,15 @@ class Processor(object):
         self.pluginsTable.insert(threadLocalCursor, (pluginFilename, pluginName))
       except psycopg2.IntegrityError, x:
         threadLocalCursor.connection.rollback()
-        logger.info("%s - No Big Deal - this plugin already exists for pluginFilename: %s pluginName: %s",  threading.currentThread().getName(), pluginFilename, pluginName)
+        logger.info("No Big Deal - this plugin already exists for pluginFilename: %s pluginName: %s", pluginFilename, pluginName)
 
       try:
         self.pluginsReportsTable.insert(threadLocalCursor,
                                           (reportId, pluginFilename, pluginName, date_processed, pluginVersion),
                                           self.databaseConnectionPool.connectionCursorPair, date_processed=date_processed)
       except psycopg2.IntegrityError, x:
-        logger.error("%s - psycopg2.IntegrityError %s", threading.currentThread().getName(), str(x))
-        logger.error("%s - %s: Unable to save record for plugin report. pluginId: %s reportId: %s version: %s",  threading.currentThread().getName(), reportId, pluginId, pluginVersion)
+        logger.error("psycopg2.IntegrityError %s", str(x))
+        logger.error("%s: Unable to save record for plugin report. pluginId: %s reportId: %s version: %s", reportId, pluginId, pluginVersion)
         processorErrorMessages.append("Detected out of process plugin crash, but unable to record %s %s %s" % (pluginFilename, pluginName, pluginVersion))
       return listOfCrashProcessOutput
 

@@ -57,23 +57,23 @@ productData = {
   }
 
 expectedPrivate = [
-  'signature	url	uuid_url	client_crash_date	date_processed	last_crash	product	version	build	branch	os_name	os_version	cpu_name	address	bug_list	user_comments	uptime_seconds	email	adu_count	topmost_filenames	addons_checked	flash_version	hangid	reason	process_type',
-  'signature1	jkl	http://crash-stats.mozilla.com/report/index/abcd289c-a4e0-496a-a124-beb6d2101225	201012251200	201012251200	\N	bird	1.0.0	\N	b0	\N	\N	\N	\N	12347	\N	124	yes	\N	file1	checked	FV10.1.1	bogus crash id	\N	\N',
-  'signature0	def	http://crash-stats.mozilla.com/report/index/abcd289c-a4e0-496a-a121-beb6d2101225	201012251201	201012251201	\N	fire	1.2.4	\N	b4	\N	\N	\N	\N	12345,12346	\N	121	yes	\N	file0	[unknown]	FV10.0.1	\N	\N	\N',
-  'signature0	ghi	http://crash-stats.mozilla.com/report/index/abcd289c-a4e0-496a-a122-beb6d2101225	201012251202	201012251202	\N	fire	1.2.3	\N	b3	\N	\N	\N	\N	12345,12346	\N	122	yes	\N	file0	not	FV10.0.1	\N	\N	\N',
-  'signature1	\N	http://crash-stats.mozilla.com/report/index/abcd289c-a4e0-496a-a123-beb6d2101225	201012251203	201012251203	\N	bird	1.0.0	\N	b0	\N	\N	\N	\N	12347	\N	123		\N	file1	checked	FV10.1.1	\N	\N	\N',
-  'signature0	abc	http://crash-stats.mozilla.com/report/index/abcd289c-a4e0-496a-a120-beb6d2101225	201012251204	201012251204	\N	fire	1.2.3	\N	b3	\N	\N	\N	\N	12345,12346	\N	120		\N	file0	checked	FV10.0.1	\N	I said so	\N',
-  'signature2	mmm	http://crash-stats.mozilla.com/report/index/abcd289c-a4e0-496a-a125-beb6d2101225	201012251205	201012251205	\N	fire	1.2.3	\N	b3	\N	\N	\N	\N		\N	125	yes	\N	file1	checked	FV10.1.1	bogus crash id	\N	\N',
+  'signature	url	uuid_url	client_crash_date	date_processed	last_crash	product	version	build	branch	os_name	os_version	cpu_info	address	bug_list	user_comments	uptime_seconds	email	adu_count	topmost_filenames	addons_checked	flash_version	hangid	reason	process_type	app_notes',
+  'signature1	jkl	http://crash-stats.mozilla.com/report/index/abcd289c-a4e0-496a-a124-beb6d2101225	201012251200	201012251200	\N	bird	1.0.0	\N	b0	\N	\N	\N	\N	12347	\N	124	yes	\N	file1	checked	FV10.1.1	bogus crash id	\N	\N	\N',
+  'signature0	def	http://crash-stats.mozilla.com/report/index/abcd289c-a4e0-496a-a121-beb6d2101225	201012251201	201012251201	\N	fire	1.2.4	\N	b4	\N	\N	\N	\N	12345,12346	\N	121	yes	\N	file0	[unknown]	FV10.0.1	\N	\N	\N	\N',
+  'signature0	ghi	http://crash-stats.mozilla.com/report/index/abcd289c-a4e0-496a-a122-beb6d2101225	201012251202	201012251202	\N	fire	1.2.3	\N	b3	\N	\N	\N	\N	12345,12346	\N	122	yes	\N	file0	not	FV10.0.1	\N	\N	\N	\N',
+  'signature1	\N	http://crash-stats.mozilla.com/report/index/abcd289c-a4e0-496a-a123-beb6d2101225	201012251203	201012251203	\N	bird	1.0.0	\N	b0	\N	\N	\N	\N	12347	\N	123		\N	file1	checked	FV10.1.1	\N	\N	\N	\N',
+  'signature0	abc	http://crash-stats.mozilla.com/report/index/abcd289c-a4e0-496a-a120-beb6d2101225	201012251204	201012251204	\N	fire	1.2.3	\N	b3	\N	\N	\N	\N	12345,12346	\N	120		\N	file0	checked	FV10.0.1	\N	I said so	\N	\N',
+  'signature2	mmm	http://crash-stats.mozilla.com/report/index/abcd289c-a4e0-496a-a125-beb6d2101225	201012251205	201012251205	\N	fire	1.2.3	\N	b3	\N	\N	\N	\N		\N	125	yes	\N	file1	checked	FV10.1.1	bogus crash id	\N	\N	\N',
   ]
 
 expectedPublic = [
-  "signature	URL (removed)	uuid_url	client_crash_date	date_processed	last_crash	product	version	build	branch	os_name	os_version	cpu_name	address	bug_list	user_comments	uptime_seconds		adu_count	topmost_filenames	addons_checked	flash_version	hangid	reason	process_type",
-  "signature1	URL (removed)	http://crash-stats.mozilla.com/report/index/abcd289c-a4e0-496a-a124-beb6d2101225	201012251200	201012251200	\N	bird	1.0.0	\N	b0	\N	\N	\N	\N	12347	\N	124		\N	file1	checked	FV10.1.1	bogus crash id	\N	\N",
-  "signature0	URL (removed)	http://crash-stats.mozilla.com/report/index/abcd289c-a4e0-496a-a121-beb6d2101225	201012251201	201012251201	\N	fire	1.2.4	\N	b4	\N	\N	\N	\N	12345,12346	\N	121		\N	file0	[unknown]	FV10.0.1	\N	\N	\N",
-  "signature0	URL (removed)	http://crash-stats.mozilla.com/report/index/abcd289c-a4e0-496a-a122-beb6d2101225	201012251202	201012251202	\N	fire	1.2.3	\N	b3	\N	\N	\N	\N	12345,12346	\N	122		\N	file0	not	FV10.0.1	\N	\N	\N",
-  "signature1	URL (removed)	http://crash-stats.mozilla.com/report/index/abcd289c-a4e0-496a-a123-beb6d2101225	201012251203	201012251203	\N	bird	1.0.0	\N	b0	\N	\N	\N	\N	12347	\N	123		\N	file1	checked	FV10.1.1	\N	\N	\N",
-  "signature0	URL (removed)	http://crash-stats.mozilla.com/report/index/abcd289c-a4e0-496a-a120-beb6d2101225	201012251204	201012251204	\N	fire	1.2.3	\N	b3	\N	\N	\N	\N	12345,12346	\N	120		\N	file0	checked	FV10.0.1	\N	I said so	\N",
-  "signature2	URL (removed)	http://crash-stats.mozilla.com/report/index/abcd289c-a4e0-496a-a125-beb6d2101225	201012251205	201012251205	\N	fire	1.2.3	\N	b3	\N	\N	\N	\N		\N	125		\N	file1	checked	FV10.1.1	bogus crash id	\N	\N",
+  "signature	URL (removed)	uuid_url	client_crash_date	date_processed	last_crash	product	version	build	branch	os_name	os_version	cpu_info	address	bug_list	user_comments	uptime_seconds		adu_count	topmost_filenames	addons_checked	flash_version	hangid	reason	process_type	app_notes",
+  "signature1	URL (removed)	http://crash-stats.mozilla.com/report/index/abcd289c-a4e0-496a-a124-beb6d2101225	201012251200	201012251200	\N	bird	1.0.0	\N	b0	\N	\N	\N	\N	12347	\N	124		\N	file1	checked	FV10.1.1	bogus crash id	\N	\N	\N",
+  "signature0	URL (removed)	http://crash-stats.mozilla.com/report/index/abcd289c-a4e0-496a-a121-beb6d2101225	201012251201	201012251201	\N	fire	1.2.4	\N	b4	\N	\N	\N	\N	12345,12346	\N	121		\N	file0	[unknown]	FV10.0.1	\N	\N	\N	\N",
+  "signature0	URL (removed)	http://crash-stats.mozilla.com/report/index/abcd289c-a4e0-496a-a122-beb6d2101225	201012251202	201012251202	\N	fire	1.2.3	\N	b3	\N	\N	\N	\N	12345,12346	\N	122		\N	file0	not	FV10.0.1	\N	\N	\N	\N",
+  "signature1	URL (removed)	http://crash-stats.mozilla.com/report/index/abcd289c-a4e0-496a-a123-beb6d2101225	201012251203	201012251203	\N	bird	1.0.0	\N	b0	\N	\N	\N	\N	12347	\N	123		\N	file1	checked	FV10.1.1	\N	\N	\N	\N",
+  "signature0	URL (removed)	http://crash-stats.mozilla.com/report/index/abcd289c-a4e0-496a-a120-beb6d2101225	201012251204	201012251204	\N	fire	1.2.3	\N	b3	\N	\N	\N	\N	12345,12346	\N	120		\N	file0	checked	FV10.0.1	\N	I said so	\N	\N",
+  "signature2	URL (removed)	http://crash-stats.mozilla.com/report/index/abcd289c-a4e0-496a-a125-beb6d2101225	201012251205	201012251205	\N	fire	1.2.3	\N	b3	\N	\N	\N	\N		\N	125		\N	file1	checked	FV10.1.1	bogus crash id	\N	\N	\N",
 ]
 
 def setup_module():

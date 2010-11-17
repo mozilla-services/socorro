@@ -6,39 +6,26 @@ import sys
 import time
 
 try:
-  import config.topCrashesByUrlConfig as config
+  import config.topCrashesByUrlConfig as configModule
 except ImportError:
-  import topCrashesByUrlConfig as config
+  import topCrashesByUrlConfig as configModule
 
 import socorro.lib.ConfigurationManager as configurationManager
 import socorro.cron.topCrashesByUrl as tcbyurl
 
-configContext = configurationManager.newConfiguration(configurationModule=config, applicationName="Top Crash By URL Summary")
+config = configurationManager.newConfiguration(configurationModule=configModule, applicationName="Top Crash By URL Summary")
 
 logger = tcbyurl.logger
-loggerLevel = configContext.logFileErrorLoggingLevel
+loggerLevel = config.logFileErrorLoggingLevel
 logger.setLevel(loggerLevel)
 
-stderrLog = logging.StreamHandler()
-stderrLog.setLevel(configContext.stderrErrorLoggingLevel)
-stderrLogFormatter = logging.Formatter(configContext.stderrLineFormatString)
-stderrLog.setFormatter(stderrLogFormatter)
-logger.addHandler(stderrLog)
-
-rotatingFileLog = logging.handlers.RotatingFileHandler(configContext.logFilePathname, "a", configContext.logFileMaximumSize, configContext.logFileMaximumBackupHistory)
-rotatingFileLog.setLevel(loggerLevel)
-rotatingFileLogFormatter = logging.Formatter(configContext.logFileLineFormatString)
-rotatingFileLog.setFormatter(rotatingFileLogFormatter)
-logger.addHandler(rotatingFileLog)
-
-logger.info("current configuration\n%s", str(configContext))
+sutil.setupLoggingHandlers(logger, config)
+sutil.echoConfig(logger, config)
 
 try:
   before = time.time()
-  tu = tcbyurl.TopCrashesByUrl(configContext)
+  tu = tcbyurl.TopCrashesByUrl(config)
   tu.processDateInterval()
   logger.info("Successfully ran in %d seconds" % (time.time() - before))
 finally:
   logger.info("done.")
-  rotatingFileLog.flush()
-  rotatingFileLog.close()

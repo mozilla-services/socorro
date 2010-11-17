@@ -89,11 +89,14 @@ def setup_module():
     schema.TopCrashByUrlSignatureTable:[False, set(['top_crashes_by_url','top_crashes_by_url_signature','urldims', 'top_crashes_by_url', 'productdims', 'osdims','release_enum'])],
     # deprecated schema.TopCrashersTable:[False,set(['topcrashers'])],
     schema.UrlDimsTable:[False,set(['urldims'])],
-    schema.SignatureProductdimsTable:[False,set(['signature_productdims'])],
+    schema.SignatureProductdimsTable:[False,set(['signature_productdims', 'osdims', 'productdims', 'top_crashes_by_signature', 'release_enum',])],
     schema.AlexaTopsitesTable:[False,set(['alexa_topsites'])],
     schema.RawAduTable:[False,set(['raw_adu'])],
     schema.BuildsTable:[False,set(['builds'])],
-    schema.DailyCrashesTable:[False,set(['daily_crashes'])],    
+    schema.DailyCrashesTable:[False,set(['daily_crashes', 'productdims','release_enum'])],
+    schema.EmailCampaignsTable:[False,set(['email_campaigns'])],
+    schema.EmailContactsTable:[False,set(['email_contacts'])],
+    schema.EmailCampaignsContactsTable:[False,set(['email_campaigns_contacts','email_contacts','email_campaigns'])],
     }
   me.expectedTableNames = set()
   for tableStuff in me.hardCodedSchemaClasses.values():
@@ -459,6 +462,7 @@ def checkOneClass(aClass,aType):
     assert [] == matchingTables ,'For class %s saw %s'%(table.name,matchingTables)
     # call create
     before = set(socorro_psg.tablesMatchingPattern('%',cursor))
+    print 'creating: ', table.name
     table.create(cursor)
     connection.commit()
     after = set(socorro_psg.tablesMatchingPattern('%',cursor))

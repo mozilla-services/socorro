@@ -1,49 +1,20 @@
 import stat
-import re
-
 import socorro.lib.ConfigurationManager as cm
 
-# Storage constants
+#-------------------------------------------------------------------------------
+# general
 
-# The form field the client sends the dump in
-dumpField = cm.Option()
-dumpField.default = "upload_file_minidump"
-
-# when storing in the file system, how deep should the radix directory depth be
-storageDepth = cm.Option()
-storageDepth.default = 2
-
-# Returned to the client with a uuid following
-dumpIDPrefix = cm.Option()
-dumpIDPrefix.default = "bp-"
-
-# Bugzilla 495700 - need to be able to ignore new Thottleable protocol
-neverDiscard = cm.Option()
-neverDiscard.default = True
-neverDiscard.fromStringConverter = cm.booleanConverter
-
-throttleConditions = cm.Option()
-throttleConditions.default = [
-  ("Version", lambda x: x[-3:] == "pre" or x[3] in 'ab', 100.0), # queue 100% of crashes with version ending in "pre" or having 'a' or 'b'
-  #("Add-ons", re.compile('inspector\@mozilla\.org\:1\..*'), 75.0), # queue 75% of crashes where the inspector addon is at 1.x
-  #("UserID", "d6d2b6b0-c9e0-4646-8627-0b1bdd4a92bb", 100.0), # queue all of this user's crashes
-  #("SecondsSinceLastCrash", lambda x: 300 >= int(x) >= 0, 100.0), # queue all crashes that happened within 5 minutes of another crash
-  (None, True, 10.0) # queue 10% of what's left
-]
-
-minimalVersionForUnderstandingRefusal = cm.Option()
-minimalVersionForUnderstandingRefusal.default = { 'Firefox': '3.5.4' }
-
-benchmark = cm.Option()
-benchmark.default = False
-benchmark.fromStringConverter = cm.booleanConverter
-
+numberOfThreads = cm.Option()
+numberOfThreads.doc = 'the number of threads to use'
+numberOfThreads.default = 4
 
 #-------------------------------------------------------------------------------
-# storage
+# source storage
 
-from config.commonconfig import jsonFileSuffix
-from config.commonconfig import dumpFileSuffix
+sourceStorageClass = cm.Option()
+sourceStorageClass.doc = 'the fully qualified name of the source storage class'
+sourceStorageClass.default = 'socorro.storage.crashstorage.CrashStorageSystemForLocalFS'
+sourceStorageClass.fromStringConverter = cm.classConverter
 
 localFS = cm.Option()
 localFS.doc = 'a path to a local file system'
@@ -65,8 +36,23 @@ localFSDirPermissions = cm.Option()
 localFSDirPermissions.doc = "a number used for permissions for directories in the local file system"
 localFSDirPermissions = stat.S_IRGRP | stat.S_IXGRP | stat.S_IWGRP | stat.S_IRUSR | stat.S_IXUSR | stat.S_IWUSR
 
+from config.commonconfig import jsonFileSuffix
+from config.commonconfig import dumpFileSuffix
+
 #-------------------------------------------------------------------------------
-# Logging
+# destination storage
+
+destinationStorageClass = cm.Option()
+destinationStorageClass.doc = 'the fully qualified name of the source storage class'
+destinationStorageClass.default = 'socorro.storage.crashstorage.CrashStorageSystemForHBase'
+destinationStorageClass.fromStringConverter = cm.classConverter
+
+from config.commonconfig import hbaseHost
+from config.commonconfig import hbasePort
+from config.commonconfig import hbaseTimeout
+
+#-------------------------------------------------------------------------------
+# logging
 
 syslogHost = cm.Option()
 syslogHost.doc = 'syslog hostname'
@@ -82,10 +68,17 @@ syslogFacilityString.default = 'user'
 
 syslogLineFormatString = cm.Option()
 syslogLineFormatString.doc = 'python logging system format for syslog entries'
-syslogLineFormatString.default = 'Socorro Collector (pid %(process)d): %(asctime)s %(levelname)s - %(threadName)s - %(message)s'
+syslogLineFormatString.default = 'Socorro Storage Mover (pid %(process)d): %(asctime)s %(levelname)s - %(threadName)s - %(message)s'
 
 syslogErrorLoggingLevel = cm.Option()
 syslogErrorLoggingLevel.doc = 'logging level for the log file (10 - DEBUG, 20 - INFO, 30 - WARNING, 40 - ERROR, 50 - CRITICAL)'
 syslogErrorLoggingLevel.default = 10
 
+stderrLineFormatString = cm.Option()
+stderrLineFormatString.doc = 'python logging system format for logging to stderr'
+stderrLineFormatString.default = '%(asctime)s %(levelname)s - %(threadName)s - %(message)s'
+
+stderrErrorLoggingLevel = cm.Option()
+stderrErrorLoggingLevel.doc = 'logging level for the logging to stderr (10 - DEBUG, 20 - INFO, 30 - WARNING, 40 - ERROR, 50 - CRITICAL)'
+stderrErrorLoggingLevel.default = 10
 

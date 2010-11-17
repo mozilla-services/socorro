@@ -6,7 +6,7 @@ import socorro.lib.ConfigurationManager
 import socorro.lib.util as sutil
 import socorro.lib.JsonDumpStorage as jds
 
-import socorro.collector.crashstorage as cstore
+import socorro.storage.crashstorage as cstore
 
 #-----------------------------------------------------------------------------------------------------------------
 def createPersistentInitialization(configModule):
@@ -32,12 +32,7 @@ def createPersistentInitialization(configModule):
 
   storage.config['logger'] = logger
 
-  if config.crashStorageClass == 'CrashStorageSystemForHBase':
-    storage.crashStorage = cstore.CollectorCrashStorageSystemForHBase(config)
-    if config.useBackupNFSStorage:
-      storage.altCrashStorage = cstore.CrashStorageSystemForNFS(config)
-  else:
-    storage.crashStorage = cstore.CrashStorageSystemForNFS(config)
+  storage.crashStorage = cstore.CrashStorageSystemForLocalFS(config)
 
   storage.legacyThrottler = cstore.LegacyThrottler(config)
 

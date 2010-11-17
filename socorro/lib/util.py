@@ -61,8 +61,28 @@ class StringLogger(FakeLogger):
 
 #=================================================================================================================
 # logging routines
-#-----------------------------------------------------------------------------------------------------------------
 
+#-----------------------------------------------------------------------------------------------------------------
+def setupLoggingHandlers(logger, config):
+  stderrLog = logging.StreamHandler()
+  stderrLog.setLevel(config.stderrErrorLoggingLevel)
+  stderrLogFormatter = logging.Formatter(config.stderrLineFormatString)
+  stderrLog.setFormatter(stderrLogFormatter)
+  logger.addHandler(stderrLog)
+
+  syslog = logging.handlers.SysLogHandler(facility=config.syslogFacilityString)
+  syslog.setLevel(config.syslogErrorLoggingLevel)
+  syslogFormatter = logging.Formatter(config.syslogLineFormatString)
+  syslog.setFormatter(syslogFormatter)
+  logger.addHandler(syslog)
+
+#-----------------------------------------------------------------------------------------------------------------
+def echoConfig(logger, config):
+  logger.info("current configuration:")
+  for value in str(config).split('\n'):
+    logger.info('%s', value)
+
+#-----------------------------------------------------------------------------------------------------------------
 loggingReportLock = threading.RLock()
 
 #-----------------------------------------------------------------------------------------------------------------
@@ -75,17 +95,12 @@ def reportExceptionAndContinue(logger=FakeLogger(), loggingLevel=logging.ERROR, 
       raise  exception
     loggingReportLock.acquire()   #make sure these multiple log entries stay together
     try:
-      logger.log(loggingLevel, "%s Caught Error: %s", threading.currentThread().getName(), exceptionType)
+      logger.log(loggingLevel, "Caught Error: %s", exceptionType)
       logger.log(loggingLevel, str(exception))
       if showTraceback:
-        stringStream = cStringIO.StringIO()
-        try:
-          print >>stringStream,  "trace back follows:"
-          traceback.print_tb(tracebackInfo, None, stringStream)
-          tracebackString = stringStream.getvalue()
-          logger.log(loggingLevel, tracebackString)
-        finally:
-          stringStream.close()
+        logger.log(loggingLevel, "trace back follows:")
+        for aLine in traceback.format_exception(exceptionType, exception, tracebackInfo):
+          logger.log(loggingLevel, aLine)
     finally:
       loggingReportLock.release()
   except Exception, x:

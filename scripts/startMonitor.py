@@ -5,15 +5,15 @@ import logging
 import logging.handlers
 
 try:
-  import config.monitorconfig as config
+  import config.monitorconfig as configModule
 except ImportError:
-  import monitorconfig as config
+  import monitorconfig as configModule
 
 import socorro.monitor.monitor as monitor
 import socorro.lib.ConfigurationManager as configurationManager
 
 try:
-  configurationContext = configurationManager.newConfiguration(configurationModule=config, applicationName="Socorro Monitor 2.0")
+  config = configurationManager.newConfiguration(configurationModule=configModule, applicationName="Socorro Monitor 2.0")
 except configurationManager.NotAnOptionError, x:
   print >>sys.stderr, x
   print >>sys.stderr, "for usage, try --help"
@@ -22,23 +22,12 @@ except configurationManager.NotAnOptionError, x:
 logger = logging.getLogger("monitor")
 logger.setLevel(logging.DEBUG)
 
-stderrLog = logging.StreamHandler()
-stderrLog.setLevel(configurationContext.stderrErrorLoggingLevel)
-stderrLogFormatter = logging.Formatter(configurationContext.stderrLineFormatString)
-stderrLog.setFormatter(stderrLogFormatter)
-logger.addHandler(stderrLog)
-
-rotatingFileLog = logging.handlers.RotatingFileHandler(configurationContext.logFilePathname, "a", configurationContext.logFileMaximumSize, configurationContext.logFileMaximumBackupHistory)
-rotatingFileLog.setLevel(configurationContext.logFileErrorLoggingLevel)
-rotatingFileLogFormatter = logging.Formatter(configurationContext.logFileLineFormatString)
-rotatingFileLog.setFormatter(rotatingFileLogFormatter)
-logger.addHandler(rotatingFileLog)
-
-logger.info("current configuration\n%s", str(configurationContext))
+sutil.setupLoggingHandlers(logger, config)
+sutil.echoConfig(logger, config)
 
 try:
   while True:
-    m = monitor.Monitor(configurationContext)
+    m = monitor.Monitor(config)
     m.start()
 finally:
   logger.info("done.")

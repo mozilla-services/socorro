@@ -11,29 +11,33 @@ from socorro.unittest.config.commonconfig import databaseName
 from socorro.unittest.config.commonconfig import databaseUserName
 from socorro.unittest.config.commonconfig import databasePassword
 
-storageRoot = cm.Option()
-storageRoot.doc = 'the root of the file system where dumps are found'
-storageRoot.default = '%(testDir)s/dumpTest/toBeProcessed/'
+from socorro.unittest.config.commonconfig import hbaseHost
+from socorro.unittest.config.commonconfig import hbasePort
+from socorro.unittest.config.commonconfig import hbaseTimeout
 
-deferredStorageRoot = cm.Option()
-deferredStorageRoot.doc = 'the root of the file system where dumps are found'
-deferredStorageRoot.default = '%(testDir)s/dumpTest/toBeDeferred/'
+#storageRoot = cm.Option()
+#storageRoot.doc = 'the root of the file system where dumps are found'
+#storageRoot.default = '%(testDir)s/dumpTest/toBeProcessed/'
 
-bigStorageRoot = cm.Option()
-bigStorageRoot.doc = 'the root of the file system where big test set is found'
-bigStorageRoot.default = '%(testDir)s/testdata'
+#deferredStorageRoot = cm.Option()
+#deferredStorageRoot.doc = 'the root of the file system where dumps are found'
+#deferredStorageRoot.default = '%(testDir)s/dumpTest/toBeDeferred/'
 
-dumpDirPrefix = cm.Option()
-dumpDirPrefix.doc = 'dump directory names begin with this prefix'
-dumpDirPrefix.default = 'tst_'
+#bigStorageRoot = cm.Option()
+#bigStorageRoot.doc = 'the root of the file system where big test set is found'
+#bigStorageRoot.default = '%(testDir)s/testdata'
 
-jsonFileSuffix = cm.Option()
-jsonFileSuffix.doc = 'the suffix used to identify a json file'
-jsonFileSuffix.default = '.json'
+#dumpDirPrefix = cm.Option()
+#dumpDirPrefix.doc = 'dump directory names begin with this prefix'
+#dumpDirPrefix.default = 'tst_'
 
-dumpFileSuffix = cm.Option()
-dumpFileSuffix.doc = 'the suffix used to identify a dump file'
-dumpFileSuffix.default = '.dump'
+#jsonFileSuffix = cm.Option()
+#jsonFileSuffix.doc = 'the suffix used to identify a json file'
+#jsonFileSuffix.default = '.json'
+
+#dumpFileSuffix = cm.Option()
+#dumpFileSuffix.doc = 'the suffix used to identify a dump file'
+#dumpFileSuffix.default = '.dump'
 
 processorCheckInTime = cm.Option()
 processorCheckInTime.doc = 'the time after which a processor is considered dead (HH:MM:SS)'
@@ -55,25 +59,25 @@ priorityLoopDelay.doc = 'the time between checks for priority jobs (HHH:MM:SS)'
 priorityLoopDelay.default = '00:01:00'
 priorityLoopDelay.fromStringConverter = cm.timeDeltaConverter
 
-saveSuccessfulMinidumpsTo = cm.Option()
-saveSuccessfulMinidumpsTo.doc = 'the location for saving successfully processed dumps (leave blank to delete them instead)'
-saveSuccessfulMinidumpsTo.default = '%(testDir)s/dumpTest/socorro-sucessful'
+#saveSuccessfulMinidumpsTo = cm.Option()
+#saveSuccessfulMinidumpsTo.doc = 'the location for saving successfully processed dumps (leave blank to delete them instead)'
+#saveSuccessfulMinidumpsTo.default = '%(testDir)s/dumpTest/socorro-sucessful'
 
-saveFailedMinidumpsTo = cm.Option()
-saveFailedMinidumpsTo.doc = 'the location for saving dumps that failed processing (leave blank to delete them instead)'
-saveFailedMinidumpsTo.default = '%(testDir)s/dumpTest/socorro-failed'
+#saveFailedMinidumpsTo = cm.Option()
+#saveFailedMinidumpsTo.doc = 'the location for saving dumps that failed processing (leave blank to delete them instead)'
+#saveFailedMinidumpsTo.default = '%(testDir)s/dumpTest/socorro-failed'
 
-dumpPermissions = cm.Option()
-dumpPermissions.doc = 'when saving dumps, the pemission flags to be used'
-dumpPermissions.default = '%d'%(stat.S_IRGRP | stat.S_IWGRP | stat.S_IRUSR | stat.S_IWUSR)
+#dumpPermissions = cm.Option()
+#dumpPermissions.doc = 'when saving dumps, the pemission flags to be used'
+#dumpPermissions.default = '%d'%(stat.S_IRGRP | stat.S_IWGRP | stat.S_IRUSR | stat.S_IWUSR)
 
-dirPermissions = cm.Option()
-dirPermissions.doc = 'when saving dumps, the pemission flags to be used on directories'
-dirPermissions.default = '%d'%(stat.S_IRGRP | stat.S_IXGRP | stat.S_IWGRP | stat.S_IRUSR | stat.S_IXUSR | stat.S_IWUSR)
+#dirPermissions = cm.Option()
+#dirPermissions.doc = 'when saving dumps, the pemission flags to be used on directories'
+#dirPermissions.default = '%d'%(stat.S_IRGRP | stat.S_IXGRP | stat.S_IWGRP | stat.S_IRUSR | stat.S_IXUSR | stat.S_IWUSR)
 
-dumpGID = cm.Option()
-dumpGID.doc = 'when saving dumps, the group to save the files under (leave blank for file system default)'
-dumpGID.default = ''
+#dumpGID = cm.Option()
+#dumpGID.doc = 'when saving dumps, the group to save the files under (leave blank for file system default)'
+#dumpGID.default = ''
 
 logFilePathname = cm.Option()
 logFilePathname.doc = 'full pathname for the log file'

@@ -71,11 +71,11 @@ class TestProcessedDumpStorage(unittest.TestCase):
 
   def dailyFromNow(self):
     return ''.join(datetime.date.today().isoformat().split('-'))
-  
+
   def dailyFromDate(self,dateString):
     """given "YYYY-mm-dd-hh-mm" return YYYYmmdd string"""
     return ''.join(dateString.split('-')[:3])
-  
+
   def relativeDateParts(self,dateString,minutesPerSlot):
     """ given "YYYY-mm-dd-hh-mm", return [hh,slot]"""
     hh,mm = dateString.split('-')[-2:]
@@ -156,7 +156,7 @@ class TestProcessedDumpStorage(unittest.TestCase):
     if now.second > 57:
       time.sleep(60-now.second)
     now = datetime.datetime.now()
-    storage.putDumpToFile(ooid,data) # default timestamp
+    storage.putDumpToFile(ooid,data,now) # default timestamp
     datePath = None
     seenDirs = set()
     seenFiles = set()
@@ -218,7 +218,7 @@ class TestProcessedDumpStorage(unittest.TestCase):
 
     # should fail quitely
     storage.removeDumpFile(createJDS.jsonBadUuid)
-    
+
     ooids = createJDS.jsonFileData.keys()
     for dir,dirs,files in os.walk(storage.root):
       dumpFiles.update(files)
@@ -232,7 +232,7 @@ class TestProcessedDumpStorage(unittest.TestCase):
       for dir,dirs,files in os.walk(storage.root):
         dumpFiles.update(files)
       assert expectedCount == len(dumpFiles),'\n   %s: expected %d, but %d\n - %s'%(ooid,expectedCount,len(dumpFiles), '\n - '.join(dumpFiles))
-      
+
   def testGetDumpFromFile(self):
     storage = dumpStorage.ProcessedDumpStorage(self.testDir,**self.initKwargs[0])
     self.createDumpSet(storage)

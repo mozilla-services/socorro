@@ -12,7 +12,7 @@ except ImportError:
 ## You can fix it by checking out https://socorro.googlecode.com/svn/trunk/thirdparty
 ## and adding .../thirdparty to your PYTHONPATH (or equivalent)
 try:
-  import socorro.collector.crashstorage as cstore
+  import socorro.storage.crashstorage as cstore
 except ImportError,x:
   print>> sys.stderr,"""
 ## If you see "Failure: ImportError (No module named thrift) ... ERROR"
@@ -26,17 +26,17 @@ import socorro.lib.util as util
 
 import socorro.unittest.testlib.loggerForTest as loggerForTest
 
-def testRepeatableStreamReader():
-  expectedReadResult = '1234567890/n'
-  fakeStream = exp.DummyObjectWithExpectations('fakeStream')
-  fakeStream.expect('read', (), {}, expectedReadResult, None)
-  rsr = cstore.RepeatableStreamReader(fakeStream)
-  result = rsr.read()
-  assert result == expectedReadResult, '1st expected %s but got %s' % (expectedReadResult, result)
-  result = rsr.read()
-  assert result == expectedReadResult, '2nd expected %s but got %s' % (expectedReadResult, result)
-  result = rsr.read()
-  assert result == expectedReadResult, '3rd expected %s but got %s' % (expectedReadResult, result)
+#def testRepeatableStreamReader():
+  #expectedReadResult = '1234567890/n'
+  #fakeStream = exp.DummyObjectWithExpectations('fakeStream')
+  #fakeStream.expect('read', (), {}, expectedReadResult, None)
+  #rsr = cstore.RepeatableStreamReader(fakeStream)
+  #result = rsr.read()
+  #assert result == expectedReadResult, '1st expected %s but got %s' % (expectedReadResult, result)
+  #result = rsr.read()
+  #assert result == expectedReadResult, '2nd expected %s but got %s' % (expectedReadResult, result)
+  #result = rsr.read()
+  #assert result == expectedReadResult, '3rd expected %s but got %s' % (expectedReadResult, result)
 
 def testLegacyThrottler():
   config = util.DotDict()
@@ -159,7 +159,7 @@ def testCrashStorageSystem_makeJsonDictFromForm():
   assert resultJson.e == '5'
 
 def testCrashStorageSystem_save():
-  css = cstore.CrashStorageSystem({})
+  css = cstore.CrashStorageSystem(util.DotDict({'logger': util.SilentFakeLogger()}))
   result = css.save_raw('fred', 'ethel', 'lucy')
   assert result == cstore.CrashStorageSystem.NO_ACTION
 
@@ -168,6 +168,7 @@ def testCrashStorageSystemForHBase___init__():
   j = util.DotDict()
   d.hbaseHost = 'fred'
   d.hbasePort = 'ethel'
+  d.hbaseTimeout = 9000
   j.root = d.hbaseFallbackFS = '.'
   d.throttleConditions = []
   j.maxDirectoryEntries = d.hbaseFallbackDumpDirCount = 1000000
@@ -178,7 +179,7 @@ def testCrashStorageSystemForHBase___init__():
   j.dirPermissions = d.hbaseFallbackDirPermissions = 770
   j.logger = d.logger = util.SilentFakeLogger()
   fakeHbaseModule = exp.DummyObjectWithExpectations('fakeHbaseModule')
-  fakeHbaseModule.expect('HBaseConnectionForCrashReports', ('fred', 'ethel'), {"logger":d.logger}, 'a fake connection', None)
+  fakeHbaseModule.expect('HBaseConnectionForCrashReports', (d.hbaseHost, d.hbasePort, d.hbaseTimeout), {"logger":d.logger}, 'a fake connection', None)
   fakeJsonDumpStore = exp.DummyObjectWithExpectations('fakeJsonDumpStore')
   fakeJsonDumpModule = exp.DummyObjectWithExpectations('fakeJsonDumpModule')
   fakeJsonDumpModule.expect('JsonDumpStorage', (), j, fakeJsonDumpStore, None)
@@ -189,9 +190,6 @@ def testCrashStorageSystemForHBase_save_1():
   """straight save into hbase with no trouble"""
   currentTimestamp = 'now'
   expectedDumpResult = '1234567890/n'
-  fakeDumpStream = exp.DummyObjectWithExpectations('fakeDumpStream')
-  fakeDumpStream.expect('read', (), {}, expectedDumpResult, None)
-  rsr = cstore.RepeatableStreamReader(fakeDumpStream)
 
   jdict = util.DotDict({'ProductName':'FireFloozy', 'Version':'3.6', 'legacy_processing':1})
 
@@ -199,6 +197,7 @@ def testCrashStorageSystemForHBase_save_1():
   j = util.DotDict()
   d.hbaseHost = 'fred'
   d.hbasePort = 'ethel'
+  d.hbaseTimeout = 9000
   j.root = d.hbaseFallbackFS = '.'
   d.throttleConditions = []
   j.maxDirectoryEntries = d.hbaseFallbackDumpDirCount = 1000000
@@ -210,10 +209,10 @@ def testCrashStorageSystemForHBase_save_1():
   d.logger = util.SilentFakeLogger()
 
   fakeHbaseConnection = exp.DummyObjectWithExpectations('fakeHbaseConnection')
-  fakeHbaseConnection.expect('put_json_dump', ('uuid', jdict, expectedDumpResult), {"number_of_retries":1}, None, None)
+  fakeHbaseConnection.expect('put_json_dump', ('uuid', jdict, expectedDumpResult), {"number_of_retries":2}, None, None)
 
   fakeHbaseModule = exp.DummyObjectWithExpectations('fakeHbaseModule')
-  fakeHbaseModule.expect('HBaseConnectionForCrashReports', ('fred', 'ethel'), {"logger":d.logger}, fakeHbaseConnection, None)
+  fakeHbaseModule.expect('HBaseConnectionForCrashReports', (d.hbaseHost, d.hbasePort, d.hbaseTimeout), {"logger":d.logger}, fakeHbaseConnection, None)
 
   fakeJsonDumpStore = exp.DummyObjectWithExpectations('fakeJsonDumpStore')
   fakeJsonDumpModule = exp.DummyObjectWithExpectations('fakeJsonDumpModule')
@@ -221,23 +220,20 @@ def testCrashStorageSystemForHBase_save_1():
 
   css = cstore.CrashStorageSystemForHBase(d, fakeHbaseModule, fakeJsonDumpModule)
   expectedResult = cstore.CrashStorageSystem.OK
-  result = css.save_raw('uuid', jdict, rsr, currentTimestamp)
+  result = css.save_raw('uuid', jdict, expectedDumpResult, currentTimestamp)
   assert result == expectedResult, 'expected %s but got %s' % (expectedResult, result)
 
 def testCrashStorageSystemForHBase_save_2():
   """hbase fails, must save to fallback"""
   currentTimestamp = 'now'
   expectedDumpResult = '1234567890/n'
-  fakeDumpStream = exp.DummyObjectWithExpectations('fakeDumpStream')
-  fakeDumpStream.expect('read', (), {}, expectedDumpResult, None)
-  #fakeDumpStream.expect('read', (), {}, expectedDumpResult, None)
-  rsr = cstore.RepeatableStreamReader(fakeDumpStream)
   jdict = util.DotDict({'ProductName':'FireFloozy', 'Version':'3.6', 'legacy_processing':1})
 
   d = util.DotDict()
   j = util.DotDict()
   d.hbaseHost = 'fred'
   d.hbasePort = 'ethel'
+  d.hbaseTimeout = 9000
   j.root = d.hbaseFallbackFS = '.'
   d.throttleConditions = []
   j.maxDirectoryEntries = d.hbaseFallbackDumpDirCount = 1000000
@@ -253,7 +249,7 @@ def testCrashStorageSystemForHBase_save_2():
   fakeHbaseConnection.expect('put_json_dump', ('uuid', jdict, expectedDumpResult), {"number_of_retries":1}, None, Exception())
 
   fakeHbaseModule = exp.DummyObjectWithExpectations('fakeHbaseModule')
-  fakeHbaseModule.expect('HBaseConnectionForCrashReports', ('fred', 'ethel'), {"logger":d.logger}, fakeHbaseConnection, None)
+  fakeHbaseModule.expect('HBaseConnectionForCrashReports', (d.hbaseHost, d.hbasePort, d.hbaseTimeout), {"logger":d.logger}, fakeHbaseConnection, None)
 
   class FakeFile(object):
     def write(self, x): pass
@@ -272,7 +268,7 @@ def testCrashStorageSystemForHBase_save_2():
   cstore.logger = loggerForTest.TestingLogger()
   css = cstore.CollectorCrashStorageSystemForHBase(d, fakeHbaseModule, fakeJsonDumpModule)
   expectedResult = cstore.CrashStorageSystem.OK
-  result = css.save_raw('uuid', jdict, rsr, currentTimestamp)
+  result = css.save_raw('uuid', jdict, expectedDumpResult, currentTimestamp)
 
   assert result == expectedResult, 'expected %s but got %s' % (expectedResult, result)
 
@@ -280,14 +276,12 @@ def testCrashStorageSystemForHBase_save_3():
   """hbase fails but there is no filesystem fallback - expecting fail return"""
   currentTimestamp = 'now'
   expectedDumpResult = '1234567890/n'
-  fakeDumpStream = exp.DummyObjectWithExpectations('fakeDumpStream')
-  fakeDumpStream.expect('read', (), {}, expectedDumpResult, None)
-  rsr = cstore.RepeatableStreamReader(fakeDumpStream)
   jdict = {'a':2, 'b':'hello'}
 
   d = util.DotDict()
   d.hbaseHost = 'fred'
   d.hbasePort = 'ethel'
+  d.hbaseTimeout = 9000
   d.hbaseFallbackFS = ''
   d.throttleConditions = []
   d.hbaseFallbackDumpDirCount = 1000000
@@ -303,14 +297,14 @@ def testCrashStorageSystemForHBase_save_3():
   fakeHbaseConnection.expect('put_json_dump', ('uuid', jdict, expectedDumpResult), {"number_of_retries":1}, None, Exception())
 
   fakeHbaseModule = exp.DummyObjectWithExpectations('fakeHbaseModule')
-  fakeHbaseModule.expect('HBaseConnectionForCrashReports', ('fred', 'ethel'), {"logger":d.logger}, fakeHbaseConnection, None)
+  fakeHbaseModule.expect('HBaseConnectionForCrashReports', (d.hbaseHost, d.hbasePort, d.hbaseTimeout), {"logger":d.logger}, fakeHbaseConnection, None)
 
   fakeJsonDumpModule = exp.DummyObjectWithExpectations('fakeJsonDumpModule')
 
   cstore.logger = loggerForTest.TestingLogger()
   css = cstore.CollectorCrashStorageSystemForHBase(d, fakeHbaseModule, fakeJsonDumpModule)
   expectedResult = cstore.CrashStorageSystem.ERROR
-  result = css.save_raw('uuid', jdict, rsr, currentTimestamp)
+  result = css.save_raw('uuid', jdict, expectedDumpResult, currentTimestamp)
 
   assert result == expectedResult, 'expected %s but got %s' % (expectedResult, result)
 

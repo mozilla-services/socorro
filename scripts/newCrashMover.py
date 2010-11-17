@@ -4,29 +4,28 @@ import sys
 import logging
 import logging.handlers
 
-try:
-  import config.dailyurlconfig as configModule
-except ImportError:
-  import dailyurlconfig as configModule
+import config.storagemoveconfig as smconf
 
 import socorro.lib.ConfigurationManager as configurationManager
-import socorro.cron.dailyUrl as url
+import socorro.storage.storageMover as smover
 
 try:
-  config = configurationManager.newConfiguration(configurationModule=configModule, applicationName="Daily URL Dump 0.1")
+  config = configurationManager.newConfiguration(configurationModule=smconf, applicationName="New Crash Mover")
 except configurationManager.NotAnOptionError, x:
   print >>sys.stderr, x
   print >>sys.stderr, "for usage, try --help"
   sys.exit()
 
-logger = logging.getLogger("dailyUrlDump")
+logger = logging.getLogger("newCrashMover")
 logger.setLevel(logging.DEBUG)
 
 sutil.setupLoggingHandlers(logger, config)
 sutil.echoConfig(logger, config)
-    
+
+config.logger = logger
+
 try:
-  url.dailyUrlDump(config)
+  smover.move(config)
 finally:
   logger.info("done.")
 

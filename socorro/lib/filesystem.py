@@ -3,7 +3,7 @@ from os.path import curdir
 import errno
 
 #-----------------------------------------------------------------------------------------------------------------
-def cleanEmptySubdirectories(topLimit,leafPath):
+def cleanEmptySubdirectories(topLimit,leafPath,osModule=os):
   """cleanEmptySubdirectories(topLimit,leafPath)
 
   walks backward up the directory tree from leafPath, calling os.rmdir(branch-below-me) until:
@@ -19,7 +19,7 @@ def cleanEmptySubdirectories(topLimit,leafPath):
     if topLimit == tail:
       break
     try:
-      os.rmdir(opath)
+      osModule.rmdir(opath)
     except OSError,e:
       if errno.ENOTEMPTY == e.errno:
         break
@@ -28,7 +28,7 @@ def cleanEmptySubdirectories(topLimit,leafPath):
     opath = path
 
 #-----------------------------------------------------------------------------------------------------------------
-def visitPath(rootDir,fullPath,visit):
+def visitPath(rootDir,fullPath,visit,osModule=os):
   """
   Visit for each directory:
   for each directory along the path rootDir/.../fullPath,
@@ -46,16 +46,16 @@ def visitPath(rootDir,fullPath,visit):
   visit(root)
   for p in pathParts:
     root = os.path.join(root,p)
-    if os.path.isdir(root) and not os.path.islink(root):
+    if osModule.path.isdir(root) and not osModule.path.islink(root):
       visit(root)
-    elif os.path.exists(root):
+    elif osModule.path.exists(root):
       pass
     else:
       raise OSError(errno.ENOENT,'%s does not exist'%(root))
-    
-  
+
+
 #-----------------------------------------------------------------------------------------------------------------
-def makedirs(name, mode=0777):
+def makedirs(name, mode=0777,osModule=os):
   """makedirs(path [, mode=0777])
 
   Super-mkdir; create a leaf directory and all intermediate ones.
@@ -74,13 +74,13 @@ def makedirs(name, mode=0777):
     if tail == curdir:           # xxx/newdir/. exists if xxx/newdir exists
       return
   try:
-    os.mkdir(name, mode)
+    osModule.mkdir(name, mode)
   except OSError, e:
     #be happy if someone already created the path
     if e.errno != errno.EEXIST:
       raise
     else: # it might be an existing non-directory
-      if not os.path.isdir(name):
+      if not osModule.path.isdir(name):
         raise OSError(errno.ENOTDIR,"Not a directory: '%s'"%name)
 
 #-----------------------------------------------------------------------------------------------------------------

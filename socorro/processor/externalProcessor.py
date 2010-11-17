@@ -48,7 +48,7 @@ class ProcessorWithExternalBreakpad (processor.Processor):
           input parameters:
             dumpfilePathname: the complete pathname of the dumpfile to be analyzed
     """
-    logger.debug("%s - analyzing %s", threading.currentThread().getName(), dumpfilePathname)
+    logger.debug("analyzing %s", dumpfilePathname)
     if type(self.config.processorSymbolsPathnameList) is list:
       symbol_path = ' '.join(['"%s"' % x for x in self.config.processorSymbolsPathnameList])
     else:
@@ -56,7 +56,7 @@ class ProcessorWithExternalBreakpad (processor.Processor):
     #commandline = '"%s" %s "%s" %s 2>/dev/null' % (self.config.minidump_stackwalkPathname, "-m", dumpfilePathname, symbol_path)
     newCommandLine = self.commandLine.replace("DUMPFILEPATHNAME", dumpfilePathname)
     newCommandLine = newCommandLine.replace("SYMBOL_PATHS", symbol_path)
-    logger.info("%s - invoking: %s", threading.currentThread().getName(), newCommandLine)
+    logger.info("invoking: %s", newCommandLine)
     subprocessHandle = subprocess.Popen(newCommandLine, shell=True, stdout=subprocess.PIPE)
     return (socorro.lib.util.StrCachingIterator(subprocessHandle.stdout), subprocessHandle)
 
@@ -112,7 +112,7 @@ class ProcessorWithExternalBreakpad (processor.Processor):
         - date_processed
         - processorErrorMessages
     """
-    logger.info("%s - analyzeHeader", threading.currentThread().getName())
+    logger.info("analyzeHeader")
     crashedThread = None
     moduleCounter = 0
     reportUpdateValues = {"id": reportId}
@@ -126,7 +126,7 @@ class ProcessorWithExternalBreakpad (processor.Processor):
       if line == '':
         break
       analyzeReturnedLines = True
-      #logger.debug("%s - [%s]", threading.currentThread().getName(), line)
+      #logger.debug("[%s]", line)
       values = map(lambda x: x.strip(), line.split('|'))
       if len(values) < 3:
         processorErrorMessages.append('Cannot parse header line "%s"'%line)
@@ -179,7 +179,7 @@ class ProcessorWithExternalBreakpad (processor.Processor):
     if not analyzeReturnedLines:
       message = "%s returned no header lines for reportid: %s" % (self.config.minidump_stackwalkPathname, reportId)
       processorErrorMessages.append(message)
-      logger.warning("%s - %s", threading.currentThread().getName(), message)
+      logger.warning("%s", message)
 
     if len(reportUpdateValues) > 1:
       reportUpdateSQL = """update reports set %s where id=%%(id)s AND date_processed = timestamp without time zone '%s'"""%(",".join(reportUpdateSqlParts),date_processed)
@@ -188,23 +188,23 @@ class ProcessorWithExternalBreakpad (processor.Processor):
     if crashedThread is None:
       message = "No thread was identified as the cause of the crash"
       processorErrorMessages.append(message)
-      logger.warning("%s - %s", threading.currentThread().getName(), message)
+      logger.warning("%s", message)
     reportUpdateValues["crashedThread"] = crashedThread
     if not flash_version:
       flash_version = '[blank]'
     reportUpdateValues['flash_version'] = flash_version
-    logger.debug("%s -  updated values  %s", threading.currentThread().getName(), reportUpdateValues)
+    logger.debug(" updated values  %s", reportUpdateValues)
     return reportUpdateValues
 
 #-----------------------------------------------------------------------------------------------------------------
   flashRE = re.compile(r'NPSWF32\.dll|libflashplayer(.*)\.(.*)|Flash ?Player-?(.*)')
   def getVersionIfFlashModule(self,moduleData):
     """If (we recognize this module as Flash and figure out a version): Returns version; else (None or '')"""
-    #logger.debug("%s -  flash?  %s", threading.currentThread().getName(), moduleData)
+    #logger.debug(" flash?  %s", moduleData)
     try:
       module,filename,version,debugFilename,debugId = moduleData[:5]
     except ValueError:
-      logger.debug("%s - bad module line  %s", threading.currentThread().getName(), moduleData)
+      logger.debug("bad module line  %s", moduleData)
       return None
     m = ProcessorWithExternalBreakpad.flashRE.match(filename)
     if m:
@@ -238,7 +238,7 @@ class ProcessorWithExternalBreakpad (processor.Processor):
              date_processed
              crashedThread - the number of the thread that crashed - we want frames only from the crashed thread
     """
-    logger.info("%s - analyzeFrames", threading.currentThread().getName())
+    logger.info("analyzeFrames")
     frameCounter = 0
     truncated = False
     analyzeReturnedLines = False
@@ -247,7 +247,7 @@ class ProcessorWithExternalBreakpad (processor.Processor):
     max_topmost_sourcefiles = 1 # Bug 519703 calls for just one. Lets build in some flex
     for line in dumpAnalysisLineIterator:
       analyzeReturnedLines = True
-      #logger.debug("%s -   %s", threading.currentThread().getName(), line)
+      #logger.debug("  %s", line)
       line = line.strip()
       if line == '':
         processorErrorMessages.append("An unexpected blank line in this dump was ignored")
@@ -263,7 +263,7 @@ class ProcessorWithExternalBreakpad (processor.Processor):
             self.framesTable.insert(databaseCursor, (reportId, frame_num, date_processed, thisFramesSignature[:255]), self.databaseConnectionPool.connectionCursorPair, date_processed=date_processed)
         if frameCounter == self.config.crashingThreadFrameThreshold:
           processorErrorMessages.append("This dump is too long and has triggered the automatic truncation routine")
-          #logger.debug("%s - starting secondary cache with framecount = %d", threading.currentThread().getName(), frameCounter)
+          #logger.debug("starting secondary cache with framecount = %d", frameCounter)
           dumpAnalysisLineIterator.useSecondaryCache()
           truncated = True
         frameCounter += 1
@@ -281,15 +281,15 @@ class ProcessorWithExternalBreakpad (processor.Processor):
         except IndexError:
           pass
       processorErrorMessages.append(message)
-      logger.warning("%s - %s", threading.currentThread().getName(), message)
-    #logger.debug("%s -   %s", threading.currentThread().getName(), (signature, '; '.join(processorErrorMessages), reportId, date_processed))
+      logger.warning("%s", message)
+    #logger.debug("  %s", (signature, '; '.join(processorErrorMessages), reportId, date_processed))
     if not analyzeReturnedLines:
       message = "%s returned no frame lines for reportid: %s" % (self.config.minidump_stackwalkPathname, reportId)
       processorErrorMessages.append(message)
-      logger.warning("%s - %s", threading.currentThread().getName(), message)
+      logger.warning("%s", message)
     #processor_notes = '; '.join(processorErrorMessages)
     #databaseCursor.execute("update reports set signature = %%s, processor_notes = %%s where id = %%s and date_processed = timestamp without time zone '%s'" % (date_processed),(signature, processor_notes,reportId))
-    logger.debug ("%s -  topmost_sourcefiles  %s", threading.currentThread().getName(), topmost_sourcefiles)
+    logger.debug ("%s -  topmost_sourcefiles  %s", topmost_sourcefiles)
     return { "signature": signature,
              "truncated": truncated,
              "topmost_filenames":topmost_sourcefiles,

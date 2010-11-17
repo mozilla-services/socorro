@@ -1,5 +1,7 @@
-import socorro.hbase.hbaseClient as hbc
+import socorro.storage.hbaseClient as hbc
 import socorro.unittest.testlib.expectations as exp
+
+import re
 
 try:
   import json as js
@@ -157,7 +159,7 @@ def testHBaseConnection_constructor_3():
   dummy_clientClass.expect('__call__', (dummy_protocolObject,), {}, dummy_clientObject)
 
   theCauseException = FakeTException('bad news')
-  theExpectedExceptionAsString = "the connection is not viable.  retries fail: No connection was made to HBase (2 tries): <class 'socorro.unittest.hbase.testHbaseClient.FakeTException'>-bad news"
+  theExpectedExceptionAsString = "the connection is not viable.  retries fail: No connection was made to HBase (2 tries): <class info deleted>-bad news"
   dummy_transportObject.expect('setTimeout', (9000,), {})
   dummy_transportObject.expect('open', (), {}, None, theCauseException)  #transport fails 2nd time
   dummy_transportObject.expect('close', (), {})
@@ -173,9 +175,10 @@ def testHBaseConnection_constructor_3():
                                column=dummy_columnClass,
                                mutation=dummy_mutationClass)
   except Exception, x:
-    assert str(x) == theExpectedExceptionAsString, "expected %s, but got %s" % (str(theExpectedException), str(x))
+    exceptionStringWithoutClassInfo = re.sub(r'<.*>', '<class info deleted>', str(x))
+    assert exceptionStringWithoutClassInfo == theExpectedExceptionAsString, "expected %s, but got %s" % (theExpectedExceptionAsString, exceptionStringWithoutClassInfo)
   else:
-    assert False, "expected the exception %s, but no exception was raised" % str(theExpectedException)
+    assert False, "expected the exception %s, but no exception was raised" % theExpectedExceptionAsString
 
 class HBaseConnectionWithPresetExpectations(object):
   def __init__(self):
@@ -347,8 +350,8 @@ def test_describe_table_3():
     result = conn.describe_table('fred')
     assert False, 'an exception should have been raised, but was not'
   except Exception, x:
-    expected_exception_string = "the connection is not viable.  retries fail: No connection was made to HBase (2 tries): <class 'socorro.unittest.hbase.testHbaseClient.FakeTException'>-I still won't connect!"
-    actual_exception_string = str(x)
+    actual_exception_string = re.sub(r'<.*>', '<class info deleted>', str(x))
+    expected_exception_string = "the connection is not viable.  retries fail: No connection was made to HBase (2 tries): <class info deleted>-I still won't connect!"
     assert expected_exception_string == actual_exception_string, 'expected %s, but got %s' % (expected_exception_string, actual_exception_string)
 
 def test_get_full_row():
@@ -626,13 +629,18 @@ def test_put_json_dump_1():
   dummy_clientObject.expect('mutateRow', ('crash_reports_index_legacy_submitted_time', 'a2010-05-04T03:10:00abcdefghijklmnopqrstuvwxyz100102', [0]), {})
   # setup for atomic increments
   dummy_clientObject.expect('atomicIncrement', ('metrics','crash_report_queue','counters:current_unprocessed_size',1), {})
-  #dummy_clientObject.expect('atomicIncrement', ('metrics','crash_report_queue','counters:current_legacy_unprocessed_size',1), {})
+  dummy_clientObject.expect('atomicIncrement', ('metrics','crash_report_queue','counters:current_legacy_unprocessed_size',1), {})
   dummy_clientObject.expect('atomicIncrement', ('metrics','2010-05-04T03:10','counters:submitted_crash_reports',1), {})
+  dummy_clientObject.expect('atomicIncrement', ('metrics','2010-05-04T03:10','counters:submitted_crash_reports_legacy_throttle_0',1), {})
   dummy_clientObject.expect('atomicIncrement', ('metrics','2010-05-04T03','counters:submitted_crash_reports',1), {})
+  dummy_clientObject.expect('atomicIncrement', ('metrics','2010-05-04T03','counters:submitted_crash_reports_legacy_throttle_0',1), {})
   dummy_clientObject.expect('atomicIncrement', ('metrics','2010-05-04','counters:submitted_crash_reports',1), {})
+  dummy_clientObject.expect('atomicIncrement', ('metrics','2010-05-04','counters:submitted_crash_reports_legacy_throttle_0',1), {})
   dummy_clientObject.expect('atomicIncrement', ('metrics','2010-05','counters:submitted_crash_reports',1), {})
+  dummy_clientObject.expect('atomicIncrement', ('metrics','2010-05','counters:submitted_crash_reports_legacy_throttle_0',1), {})
   dummy_clientObject.expect('atomicIncrement', ('metrics','2010','counters:submitted_crash_reports',1), {})
-  
+  dummy_clientObject.expect('atomicIncrement', ('metrics','2010','counters:submitted_crash_reports_legacy_throttle_0',1), {})
+
   conn.put_json_dump('abcdefghijklmnopqrstuvwxyz100102', jsonData, dumpBlob)
 
 

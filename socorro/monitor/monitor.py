@@ -25,8 +25,8 @@ import socorro.database.database as sdb
 import socorro.lib.JsonDumpStorage as jds
 import socorro.lib.threadlib as thr
 import socorro.lib.ooid as ooid
-import socorro.collector.crashstorage as cstore
-import socorro.hbase.hbaseClient as hbc
+import socorro.storage.crashstorage as cstore
+import socorro.storage.hbaseClient as hbc
 
 #=================================================================================================================
 class UuidNotFoundException(Exception):
@@ -42,22 +42,9 @@ class Monitor (object):
                           "standardLoopDelay",
                           "cleanupJobsLoopDelay",
                           "priorityLoopDelay",
-                          "crashStorageClass",
+                          "hbaseHost",
+                          "hbasePort",
                          )
-  _hbase_config_requirements = ("hbaseHost",
-                                "hbasePort",
-                               )
-  _nfs_config_requirements = ("storageRoot",
-                              "deferredStorageRoot",
-                              "dumpDirPrefix",
-                              "dumpPermissions",
-                              "dirPermissions",
-                              "dumpGID",
-                              "saveSuccessfulMinidumpsTo",
-                              "saveFailedMinidumpsTo",
-                              "jsonFileSuffix",
-                              "dumpFileSuffix",
-                             )
 
   #-----------------------------------------------------------------------------------------------------------------
   def __init__(self, config, logger=logger, sdb=sdb, cstore=cstore, signal=signal):
@@ -67,12 +54,6 @@ class Monitor (object):
     for x in Monitor._config_requirements:
       assert x in config, '%s missing from configuration' % x
 
-    if config.crashStorageClass == 'CrashStorageSystemForNFS':
-      for x in Monitor._nfs_config_requirements:
-        assert x in config, '%s missing from configuration' % x
-    else:
-      for x in Monitor._hbase_config_requirements:
-        assert x in config, '%s missing from configuration' % x
     self.crashStorePool = cstore.CrashStoragePool(config)
 
     self.sdb = sdb
@@ -102,7 +83,7 @@ class Monitor (object):
     """
     signame = 'SIGTERM'
     if signalNumber != signal.SIGTERM: signame = 'SIGHUP'
-    logger.info("%s - %s detected", threading.currentThread().getName(),signame)
+    logger.info("%s detected", signame)
     raise KeyboardInterrupt
 
   #-----------------------------------------------------------------------------------------------------------------
@@ -129,11 +110,11 @@ class Monitor (object):
 
   #-----------------------------------------------------------------------------------------------------------------
   def cleanUpCompletedAndFailedJobs (self):
-    logger.debug("%s - dealing with completed and failed jobs", threading.currentThread().getName())
+    logger.debug("dealing with completed and failed jobs")
     # check the jobs table to and deal with the completed and failed jobs
     databaseConnection, databaseCursor = self.getDatabaseConnectionPair()
     try:
-      logger.debug("%s - starting deletion", threading.currentThread().getName())
+      logger.debug("starting deletion")
       databaseCursor.execute("""delete from jobs
                                 where
                                     uuid in (select
@@ -144,9 +125,9 @@ class Monitor (object):
                                                  j.success is not null)
                              """)
       databaseConnection.commit()
-      logger.debug("%s - end of this cleanup iteration", threading.currentThread().getName())
+      logger.debug("end of this cleanup iteration")
     except Exception, x:
-      logger.debug("%s - it died: %s", threading.currentThread().getName(), x)
+      logger.debug("it died: %s", x)
       databaseConnection.rollback()
       socorro.lib.util.reportExceptionAndContinue(logger)
 
@@ -155,28 +136,28 @@ class Monitor (object):
     """ look for dead processors - find all the jobs of dead processors and assign them to live processors
         then delete the dead processors
     """
-    logger.info("%s - looking for dead processors", threading.currentThread().getName())
+    logger.info("looking for dead processors")
     try:
-      logger.info("%s - threshold %s", threading.currentThread().getName(), self.config.processorCheckInTime)
+      logger.info("threshold %s", self.config.processorCheckInTime)
       threshold = psy.singleValueSql(aCursor, "select now() - interval '%s' * 2" % self.config.processorCheckInTime)
       #sql = "select id from processors where lastSeenDateTime < '%s'" % (threshold,)
-      #logger.info("%s - dead processors sql: %s", threading.currentThread().getName(), sql)
+      #logger.info("dead processors sql: %s", sql)
       aCursor.execute("select id from processors where lastSeenDateTime < '%s'" % (threshold,))
       deadProcessors = aCursor.fetchall()
       aCursor.connection.commit()
-      logger.info("%s - dead processors: %s", threading.currentThread().getName(), str(deadProcessors))
+      logger.info("dead processors: %s", str(deadProcessors))
       if deadProcessors:
-        logger.info("%s - found dead processor(s):", threading.currentThread().getName())
+        logger.info("found dead processor(s):")
         for aDeadProcessorTuple in deadProcessors:
-          logger.info("%s -   %d is dead", threading.currentThread().getName(), aDeadProcessorTuple[0])
+          logger.info("%d is dead", aDeadProcessorTuple[0])
         stringOfDeadProcessorIds = ", ".join([str(x[0]) for x in deadProcessors])
-        logger.info("%s - getting list of live processor(s):", threading.currentThread().getName())
+        logger.info("getting list of live processor(s):")
         aCursor.execute("select id from processors where lastSeenDateTime >= '%s'" % threshold)
         liveProcessors = aCursor.fetchall()
         if not liveProcessors:
           raise Monitor.NoProcessorsRegisteredException("There are no processors registered")
         numberOfLiveProcessors = len(liveProcessors)
-        logger.info("%s - getting range of queued date for jobs associated with dead processor(s):", threading.currentThread().getName())
+        logger.info("getting range of queued date for jobs associated with dead processor(s):")
         aCursor.execute("select min(queueddatetime), max(queueddatetime) from jobs where owner in (%s)" % stringOfDeadProcessorIds)
         earliestDeadJob, latestDeadJob = aCursor.fetchall()[0]
         if earliestDeadJob is not None and latestDeadJob is not None:
@@ -184,7 +165,7 @@ class Monitor (object):
           for x, liveProcessorId in enumerate(liveProcessors):
             lowQueuedTime = x * timeIncrement + earliestDeadJob
             highQueuedTime = (x + 1) * timeIncrement + earliestDeadJob
-            logger.info("%s - assigning jobs from %s to %s to processor %s:", threading.currentThread().getName(), str(lowQueuedTime), str(highQueuedTime), liveProcessorId)
+            logger.info("assigning jobs from %s to %s to processor %s:", str(lowQueuedTime), str(highQueuedTime), liveProcessorId)
             # why is the range >= at both ends? the range must be inclusive, the risk of moving a job twice is low and consequences low, too.
             # 1st step: take any jobs of a dead processor that were in progress and reset them to unprocessed
             aCursor.execute("""update jobs
@@ -204,13 +185,13 @@ class Monitor (object):
             aCursor.connection.commit()
         #3rd step - transfer stalled priority jobs to new processor
         for deadProcessorTuple in deadProcessors:
-          logger.info("%s - re-assigning priority jobs from processor %d:", threading.currentThread().getName(), deadProcessorTuple[0])
+          logger.info("re-assigning priority jobs from processor %d:", deadProcessorTuple[0])
           try:
             aCursor.execute("""insert into priorityjobs (uuid) select uuid from priority_jobs_%d""" % deadProcessorTuple)
             aCursor.connection.commit()
           except:
             aCursor.connection.rollback()
-        logger.info("%s - removing all dead processors", threading.currentThread().getName())
+        logger.info("removing all dead processors")
         aCursor.execute("delete from processors where lastSeenDateTime < '%s'" % threshold)
         aCursor.connection.commit()
         # remove dead processors' priority tables
@@ -219,7 +200,7 @@ class Monitor (object):
             aCursor.execute("drop table priority_jobs_%d" % aDeadProcessorTuple[0])
             aCursor.connection.commit()
           except:
-            logger.warning("%s - cannot clean up dead processor in database: the table 'priority_jobs_%d' may need manual deletion", threading.currentThread().getName(), aDeadProcessorTuple[0])
+            logger.warning("cannot clean up dead processor in database: the table 'priority_jobs_%d' may need manual deletion", aDeadProcessorTuple[0])
             aCursor.connection.rollback()
     except Monitor.NoProcessorsRegisteredException:
       self.quit = True
@@ -243,7 +224,7 @@ class Monitor (object):
         then acts as an iterator that returns a sequence of processor ids.  Order of ids returned will assure that
         jobs are assigned in a balanced manner
     """
-    logger.debug("%s - balanced jobSchedulerIter: compiling list of active processors", threading.currentThread().getName())
+    logger.debug("balanced jobSchedulerIter: compiling list of active processors")
     try:
       sql = """select
                   p.id,
@@ -255,28 +236,28 @@ class Monitor (object):
               group by p.id"""
       try:
         aCursor.execute(sql, (self.config.processorCheckInTime,) )
-        logger.debug("%s - sql succeeded", threading.currentThread().getName())
+        logger.debug("sql succeeded")
         aCursor.connection.commit()
       except psycopg2.ProgrammingError:
-        logger.debug("%s - some other database transaction failed and didn't close properly.  Roll it back and try to continue.", threading.currentThread().getName())
+        logger.debug("some other database transaction failed and didn't close properly.  Roll it back and try to continue.")
         try:
           aCursor.connection.rollback()
           aCursor.execute(sql)
         except:
-          logger.debug("%s - sql failed for the 2nd time - quit", threading.currentThread().getName())
+          logger.debug("sql failed for the 2nd time - quit")
           self.quit = True
           aCursor.connection.rollback()
           socorro.lib.util.reportExceptionAndAbort(logger)
       listOfProcessorIds = [[aRow[0], aRow[1]] for aRow in aCursor.fetchall()]  #processorId, numberOfAssignedJobs
-      logger.debug("%s - listOfProcessorIds: %s", threading.currentThread().getName(), str(listOfProcessorIds))
+      logger.debug("listOfProcessorIds: %s", str(listOfProcessorIds))
       if not listOfProcessorIds:
         raise Monitor.NoProcessorsRegisteredException("There are no processors registered")
       while True:
-        logger.debug("%s - sort the list of (processorId, numberOfAssignedJobs) pairs", threading.currentThread().getName())
+        logger.debug("sort the list of (processorId, numberOfAssignedJobs) pairs")
         listOfProcessorIds.sort(Monitor.compareSecondOfSequence)
         # the processor with the fewest jobs is about to be assigned a new job, so increment its count
         listOfProcessorIds[0][1] += 1
-        logger.debug("%s - yield the processorId which had the fewest jobs: %d", threading.currentThread().getName(), listOfProcessorIds[0][0])
+        logger.debug("yield the processorId which had the fewest jobs: %d", listOfProcessorIds[0][0])
         yield listOfProcessorIds[0][0]
     except Monitor.NoProcessorsRegisteredException:
       self.quit = True
@@ -286,7 +267,7 @@ class Monitor (object):
   def unbalancedJobSchedulerIter(self, aCursor):
     """ This generator returns a sequence of active processorId without regard to job balance
     """
-    logger.debug("%s - unbalancedJobSchedulerIter: compiling list of active processors", threading.currentThread().getName())
+    logger.debug("unbalancedJobSchedulerIter: compiling list of active processors")
     try:
       threshold = psy.singleValueSql( aCursor, "select now() - interval '%s'" % self.config.processorCheckInTime)
       aCursor.execute("select id from processors where lastSeenDateTime > '%s'" % threshold)
@@ -302,17 +283,17 @@ class Monitor (object):
 
   #-----------------------------------------------------------------------------------------------------------------
   def queueJob (self, databaseCursor, uuid, processorIdSequenceGenerator, priority=0):
-    logger.debug("%s - trying to insert %s", threading.currentThread().getName(), uuid)
+    logger.debug("trying to insert %s", uuid)
     processorIdAssignedToThisJob = processorIdSequenceGenerator.next()
     try:
       databaseCursor.execute("insert into jobs (pathname, uuid, owner, priority, queuedDateTime) values (%s, %s, %s, %s, %s)",
                              ('', uuid, processorIdAssignedToThisJob, priority, datetime.datetime.now()))
-      logger.debug("%s - executed insert for %s",threading.currentThread().getName(), uuid)
+      logger.debug("executed insert for %s", uuid)
       databaseCursor.connection.commit()
     except:
       databaseCursor.connection.rollback()
       raise
-    logger.debug("%s - %s assigned to processor %d", threading.currentThread().getName(), uuid, processorIdAssignedToThisJob)
+    logger.debug("%s assigned to processor %d", uuid, processorIdAssignedToThisJob)
     return processorIdAssignedToThisJob
 
   #-----------------------------------------------------------------------------------------------------------------
@@ -332,7 +313,7 @@ class Monitor (object):
       crashStorage = self.crashStorePool.crashStorage()
     except hbc.NoConnectionException:
       self.quit = True
-      logger.critical("%s - hbase is gone! hbase is gone!", threading.currentThread().getName())
+      logger.critical("hbase is gone! hbase is gone!")
       socorro.lib.util.reportExceptionAndAbort(logger)
     except Exception:
       self.quit = True
@@ -345,43 +326,43 @@ class Monitor (object):
           self.cleanUpDeadProcessors(databaseCursor)
           self.quitCheck()
           # walk the dump indexes and assign jobs
-          logger.debug("%s - getting jobSchedulerIter", threading.currentThread().getName())
+          logger.debug("getting jobSchedulerIter")
           processorIdSequenceGenerator = self.jobSchedulerIter(databaseCursor)
-          logger.debug("%s - beginning index scan", threading.currentThread().getName())
+          logger.debug("beginning index scan")
           try:
-            logger.debug("%s - starting destructiveDateWalk", threading.currentThread().getName())
+            logger.debug("starting destructiveDateWalk")
             for uuid in crashStorage.newUuids():
               try:
-                logger.debug("%s - looping: %s", threading.currentThread().getName(), uuid)
+                logger.debug("looping: %s", uuid)
                 self.quitCheck()
                 self.queueJob(databaseCursor, uuid, processorIdSequenceGenerator)
               except KeyboardInterrupt:
-                logger.debug("%s - inner detects quit", threading.currentThread().getName())
+                logger.debug("inner detects quit")
                 self.quit = True
                 raise
               except:
                 socorro.lib.util.reportExceptionAndContinue(logger)
-            logger.debug("%s - ended destructiveDateWalk", threading.currentThread().getName())
+            logger.debug("ended destructiveDateWalk")
           except hbc.FatalException:
             raise
           except:
             socorro.lib.util.reportExceptionAndContinue(logger, loggingLevel=logging.CRITICAL)
-          logger.debug("%s - end of loop - about to sleep", threading.currentThread().getName())
+          logger.debug("end of loop - about to sleep")
           self.quitCheck()
           self.responsiveSleep(self.standardLoopDelay)
       except hbc.FatalException, x:
-        logger.debug("%s - somethings gone horribly wrong with HBase", threading.currentThread().getName())
+        logger.debug("somethings gone horribly wrong with HBase")
         socorro.lib.util.reportExceptionAndContinue(logger, loggingLevel=logging.CRITICAL)
         databaseConnection.rollback()
         self.quit = True
       except (KeyboardInterrupt, SystemExit):
-        logger.debug("%s - outer detects quit", threading.currentThread().getName())
+        logger.debug("outer detects quit")
         databaseConnection.rollback()
         self.quit = True
         raise
     finally:
       databaseConnection.close()
-      logger.debug("%s - standardLoop done.", threading.currentThread().getName())
+      logger.debug("standardLoop done.")
 
   #-----------------------------------------------------------------------------------------------------------------
   def getPriorityUuids(self, aCursor):
@@ -398,11 +379,11 @@ class Monitor (object):
       self.quitCheck()
       try:
         prexistingJobOwner = psy.singleValueSql(databaseCursor, "select owner from jobs where uuid = '%s'" % uuid)
-        logger.info("%s - priority job %s was already in the queue, assigned to %d", threading.currentThread().getName(), uuid, prexistingJobOwner)
+        logger.info("priority job %s was already in the queue, assigned to %d", uuid, prexistingJobOwner)
         try:
           databaseCursor.execute("insert into priority_jobs_%d (uuid) values ('%s')" % (prexistingJobOwner, uuid))
         except psycopg2.ProgrammingError:
-          logger.debug("%s - %s assigned to dead processor %d - wait for reassignment", threading.currentThread().getName(), uuid, prexistingJobOwner)
+          logger.debug("%s assigned to dead processor %d - wait for reassignment", uuid, prexistingJobOwner)
           # likely that the job is assigned to a dead processor
           # skip processing it this time around - by next time hopefully it will have been
           # re assigned to a live processor
@@ -413,24 +394,24 @@ class Monitor (object):
         databaseCursor.connection.commit()
         setOfPriorityUuids.remove(uuid)
       except psy.SQLDidNotReturnSingleValue:
-        #logger.debug("%s - priority job %s was not already in the queue", threading.currentThread().getName(), uuid)
+        #logger.debug("priority job %s was not already in the queue", uuid)
         pass
 
   #-----------------------------------------------------------------------------------------------------------------
   def lookForPriorityJobsInDumpStorage(self, databaseCursor, setOfPriorityUuids):
     # check for jobs in symlink directories
-    logger.debug("%s - starting lookForPriorityJobsInDumpStorage", threading.currentThread().getName())
+    logger.debug("starting lookForPriorityJobsInDumpStorage")
     processorIdSequenceGenerator = None
     for uuid in list(setOfPriorityUuids):
-      logger.debug("%s - looking for %s", threading.currentThread().getName(), uuid)
+      logger.debug("looking for %s", uuid)
       if self.crashStorePool.crashStorage().uuidInStorage(uuid):
-        logger.info("%s - priority queuing %s", threading.currentThread().getName(), uuid)
+        logger.info("priority queuing %s", uuid)
         if not processorIdSequenceGenerator:
-          logger.debug("%s - about to get unbalancedJobScheduler", threading.currentThread().getName())
+          logger.debug("about to get unbalancedJobScheduler")
           processorIdSequenceGenerator = self.unbalancedJobSchedulerIter(databaseCursor)
-          logger.debug("%s - unbalancedJobScheduler successfully fetched", threading.currentThread().getName())
+          logger.debug("unbalancedJobScheduler successfully fetched")
         processorIdAssignedToThisJob = self.queuePriorityJob(databaseCursor, uuid, processorIdSequenceGenerator)
-        logger.info("%s - %s assigned to %d", threading.currentThread().getName(), uuid, processorIdAssignedToThisJob)
+        logger.info("%s assigned to %d", uuid, processorIdAssignedToThisJob)
         setOfPriorityUuids.remove(uuid)
         databaseCursor.execute("delete from priorityjobs where uuid = %s", (uuid,))
         databaseCursor.connection.commit()
@@ -440,13 +421,13 @@ class Monitor (object):
     # we've failed to find the uuids anywhere
     for uuid in setOfPriorityUuids:
       self.quitCheck()
-      logger.error("%s - priority uuid %s was never found",  threading.currentThread().getName(), uuid)
+      logger.error("priority uuid %s was never found", uuid)
       databaseCursor.execute("delete from %s where uuid = %s" % (priorityTableName, "%s"), (uuid,))
       databaseCursor.connection.commit()
 
   #-----------------------------------------------------------------------------------------------------------------
   def priorityJobAllocationLoop(self):
-    logger.info("%s - priorityJobAllocationLoop starting.", threading.currentThread().getName())
+    logger.info("priorityJobAllocationLoop starting.")
     #symLinkIndexPath = os.path.join(self.config.storageRoot, "index")
     #deferredSymLinkIndexPath = os.path.join(self.config.deferredStorageRoot, "index")
     try:
@@ -457,12 +438,12 @@ class Monitor (object):
             self.quitCheck()
             setOfPriorityUuids = self.getPriorityUuids(databaseCursor)
             if setOfPriorityUuids:
-              logger.debug("%s - beginning search for priority jobs", threading.currentThread().getName())
+              logger.debug("beginning search for priority jobs")
               self.lookForPriorityJobsAlreadyInQueue(databaseCursor, setOfPriorityUuids)
               self.lookForPriorityJobsInDumpStorage(databaseCursor, setOfPriorityUuids)
               self.priorityJobsNotFound(databaseCursor, setOfPriorityUuids)
           except KeyboardInterrupt:
-            logger.debug("%s - inner detects quit", threading.currentThread().getName())
+            logger.debug("inner detects quit")
             raise
           except hbc.FatalException:
             raise
@@ -470,38 +451,38 @@ class Monitor (object):
             databaseConnection.rollback()
             socorro.lib.util.reportExceptionAndContinue(logger)
           self.quitCheck()
-          logger.debug("%s - sleeping", threading.currentThread().getName())
+          logger.debug("sleeping")
           self.responsiveSleep(self.priorityLoopDelay)
       except hbc.FatalException, x:
-        logger.debug("%s - somethings gone horribly wrong with HBase", threading.currentThread().getName())
+        logger.debug("somethings gone horribly wrong with HBase")
         socorro.lib.util.reportExceptionAndContinue(logger, loggingLevel=logging.CRITICAL)
         databaseConnection.rollback()
         self.quit = True
       except (KeyboardInterrupt, SystemExit):
-        logger.debug("%s - outer detects quit", threading.currentThread().getName())
+        logger.debug("outer detects quit")
         databaseConnection.rollback()
         self.quit = True
     finally:
-      logger.info("%s - priorityLoop done.", threading.currentThread().getName())
+      logger.info("priorityLoop done.")
 
   #-----------------------------------------------------------------------------------------------------------------
   def jobCleanupLoop (self):
-    logger.info("%s - jobCleanupLoop starting.", threading.currentThread().getName())
+    logger.info("jobCleanupLoop starting.")
     try:
       try:
-        #logger.info("%s - sleeping first.", threading.currentThread().getName())
+        #logger.info("sleeping first.")
         #self.responsiveSleep(self.cleanupJobsLoopDelay)
         while True:
-          logger.info("%s - beginning jobCleanupLoop cycle.", threading.currentThread().getName())
+          logger.info("beginning jobCleanupLoop cycle.")
           self.cleanUpCompletedAndFailedJobs()
           self.responsiveSleep(self.cleanupJobsLoopDelay)
       except (KeyboardInterrupt, SystemExit):
-        logger.debug("%s - got quit message", threading.currentThread().getName())
+        logger.debug("got quit message")
         self.quit = True
       except:
         socorro.lib.util.reportExceptionAndContinue(logger)
     finally:
-      logger.info("%s - jobCleanupLoop done.", threading.currentThread().getName())
+      logger.info("jobCleanupLoop done.")
 
   #-----------------------------------------------------------------------------------------------------------------
   def start (self):
@@ -513,15 +494,15 @@ class Monitor (object):
       try:
         self.standardJobAllocationLoop()
       finally:
-        logger.debug("%s - waiting to join.", threading.currentThread().getName())
+        logger.debug("waiting to join.")
         priorityJobThread.join()
         jobCleanupThread.join()
         # we're done - kill all the database connections
-        logger.debug("%s - calling databaseConnectionPool.cleanup().", threading.currentThread().getName())
+        logger.debug("calling databaseConnectionPool.cleanup().")
         self.databaseConnectionPool.cleanup()
         self.crashStorePool.cleanup()
     except KeyboardInterrupt:
-      logger.debug("%s - KeyboardInterrupt.", threading.currentThread().getName())
+      logger.debug("KeyboardInterrupt.")
       raise SystemExit
 
 

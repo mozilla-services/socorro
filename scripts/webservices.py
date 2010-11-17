@@ -3,7 +3,7 @@
 import web
 import datetime as dt
 
-import config.webapiconfig as config
+import config.webapiconfig as configModule
 
 import socorro.lib.ConfigurationManager as configurationManager
 import socorro.lib.datetimeutil as dtutil
@@ -13,38 +13,36 @@ import socorro.webapi.webapiService as webapi
 import logging
 import logging.handlers
 
-configContext = configurationManager.newConfiguration(configurationModule=config, applicationName="Socorro Webapi")
+config = configurationManager.newConfiguration(configurationModule=configModule, applicationName="Socorro Webapi")
 
 logger = logging.getLogger("webapi")
 logger.setLevel(logging.DEBUG)
 
-syslog = logging.handlers.SysLogHandler(facility=configContext.syslogFacilityString)
-syslog.setLevel(configContext.syslogErrorLoggingLevel)
-syslogFormatter = logging.Formatter(configContext.syslogLineFormatString)
+syslog = logging.handlers.SysLogHandler(facility=config.syslogFacilityString)
+syslog.setLevel(config.syslogErrorLoggingLevel)
+syslogFormatter = logging.Formatter(config.syslogLineFormatString)
 syslog.setFormatter(syslogFormatter)
 logger.addHandler(syslog)
 
-logger.info("current configuration:")
-for value in str(configContext).split('\n'):
-  logger.info('%s', value)
+sutil.echoConfig(logger, config)
 
-configContext['logger'] = logger
-configContext['productVersionCache'] = pvc.ProductVersionCache(configContext)
+config['logger'] = logger
+config['productVersionCache'] = pvc.ProductVersionCache(config)
 
 #=================================================================================================================
 def proxyClassWithContext (aClass):
   class proxyClass(aClass):
     def __init__(self):
-      super(proxyClass,self).__init__(configContext)
-  #logger.debug ('in proxy: %s', configContext)
+      super(proxyClass,self).__init__(config)
+  #logger.debug ('in proxy: %s', config)
   return proxyClass
 
 web.webapi.internalerror = web.debugerror
 
-urls = tuple(y for aTuple in ((x.uri, proxyClassWithContext(x)) for x in configContext.servicesList) for y in aTuple)
+urls = tuple(y for aTuple in ((x.uri, proxyClassWithContext(x)) for x in config.servicesList) for y in aTuple)
 logger.info(str(urls))
 
-if configContext.wsgiInstallation:
+if config.wsgiInstallation:
   logger.info('This is a wsgi installation')
   application = web.application(urls, globals()).wsgifunc()
 else:

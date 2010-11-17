@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 
 import sys
-import socorro.collector.hbaseClient as hbase
+import socorro.storage.hbaseClient as hbase
 import gzip
 
 class JsonzLoader(object):
@@ -35,4 +35,4 @@ if __name__=="__main__":
   loader.close()
   input_file.close()
   print "%s jsonz file(s) loaded" % i
-    
+

@@ -31,16 +31,17 @@ class TestUtil(unittest.TestCase):
   def testReportExceptionAndContinue(self):
     logger = TestingLogger()
     util.reportExceptionAndContinue(logger)
-    assert(3 == len(logger.levels))
-    assert([logging.ERROR, logging.ERROR, logging.INFO] == logger.levels)
-    assert("MainThread Caught Error: None" == logger.buffer[0])
+    assert(4 == len(logger.levels))
+    assert([logging.ERROR, logging.ERROR, logging.ERROR, logging.ERROR] == logger.levels)
+    print logger.buffer
+    assert("Caught Error: None" == logger.buffer[0])
     assert('None' == logger.buffer[1]), "expected 'None' but got %s" % logger.buffer[1]
     assert("trace back follows:" in logger.buffer[2])
     logger.clear()
     util.reportExceptionAndContinue(logger, loggingLevel=-39)
-    assert(3 == len(logger.levels))
-    assert([-39, -39, logging.INFO] == logger.levels)
-    assert("MainThread Caught Error: None" == logger.buffer[0])
+    assert(4 == len(logger.levels))
+    assert([-39, -39, -39, -39] == logger.levels)
+    assert("Caught Error: None" == logger.buffer[0])
     assert('None' == logger.buffer[1])
     assert("trace back follows:" in logger.buffer[2])
     logger.clear()
@@ -50,12 +51,14 @@ class TestUtil(unittest.TestCase):
       raise TestingException("test message")
     except TestingException, e:
       util.reportExceptionAndContinue(logger, loggingLevel=-12)
-    assert(3 == len(logger.levels))
-    assert([-12,-12,logging.INFO] == logger.levels)
+    print logger.levels
+    print logger.buffer
+    assert(6 == len(logger.levels))
+    assert([-12,-12,-12,-12,-12,-12,] == logger.levels)
     assert("TestingException" in logger.buffer[0])
     assert("test message" == str(logger.buffer[1]))
-    assert("raise TestingException" in logger.buffer[2])
-    assert("test message" in logger.buffer[2])
+    assert("raise TestingException" in logger.buffer[4])
+    assert("test message" in logger.buffer[5])
     logger.clear()
     try:
       raise TestingException("test message")
@@ -67,11 +70,11 @@ class TestUtil(unittest.TestCase):
       raise TestingException("test message")
     except TestingException, e:
       util.reportExceptionAndContinue(logger, loggingLevel=-23, ignoreFunction=ignoreNever)
-    assert([-23,-23,logging.INFO] == logger.levels)
+    assert([-23,-23,-23,-23,-23,-23,] == logger.levels)
     assert("TestingException" in logger.buffer[0])
     assert("test message" == str(logger.buffer[1]))
-    assert("raise TestingException" in logger.buffer[2])
-    assert("test message" in logger.buffer[2])
+    assert("raise TestingException" in logger.buffer[4])
+    assert("test message" in logger.buffer[5])
     logger.clear()
 
   def testReportExceptionAndAbort(self):
@@ -81,9 +84,9 @@ class TestUtil(unittest.TestCase):
       assert(False)
     except SystemExit,e:
       assert(True)
-      assert(4 == len(logger.levels))
-      assert([logging.CRITICAL,logging.CRITICAL,logging.INFO,logging.CRITICAL] == logger.levels)
-      assert("cannot continue - quitting" == logger.buffer[3])
+      assert(5 == len(logger.levels))
+      assert([logging.CRITICAL,logging.CRITICAL,logging.CRITICAL,logging.CRITICAL,logging.CRITICAL] == logger.levels)
+      assert("cannot continue - quitting" == logger.buffer[4])
 
   def testLimitedStringOrNone(self):
     assert("key" == util.limitStringOrNone("key",8))

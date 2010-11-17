@@ -7,7 +7,7 @@ import socorro.lib.util as util
 import socorro.webapi.webapiService as webapi
 import socorro.database.database as db
 import socorro.lib.datetimeutil as dtutil
-import socorro.collector.crashstorage as cs
+import socorro.storage.crashstorage as cs
 
 datatype_options = ('meta', 'raw_crash', 'processed')
 crashStorageFunctions = ('get_meta', 'get_raw_dump', 'get_processed')

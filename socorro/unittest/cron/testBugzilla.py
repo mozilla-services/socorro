@@ -91,11 +91,12 @@ def setup_module():
   fileLog.setLevel(logging.DEBUG)
   fileLogFormatter = logging.Formatter('%(asctime)s %(levelname)s - %(message)s')
   fileLog.setFormatter(fileLogFormatter)
-  stderrLog = logging.StreamHandler()
-  stderrLog.setLevel(10)
   me.fileLogger = logging.getLogger("bugzilla")
   me.fileLogger.addHandler(fileLog)
-  me.fileLogger.addHandler(stderrLog)
+  # Got trouble?  See what's happening by uncommenting the next three lines
+  #stderrLog = logging.StreamHandler()
+  #stderrLog.setLevel(10)
+  #me.fileLogger.addHandler(stderrLog)
 
   me.database = sdatabase.Database(me.config)
   #me.dsn = "host=%s dbname=%s user=%s password=%s" % (me.config.databaseHost,me.config.databaseName,

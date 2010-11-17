@@ -69,15 +69,17 @@ def teardown_module():
   me.testDB.removeDB(me.config,logger)
   me.connection.close()
 
-def testDatetimeNow():
-  global me
-  cursor = me.connection.cursor()
-  before = dt.datetime.now()
-  time.sleep(.01)
-  got = dbtu.datetimeNow(cursor)
-  time.sleep(.01)
-  after = dt.datetime.now()
-  assert before < got and got < after, "but\nbefore:%s\ngot:   %s\nafter: %s"%(before,got,after)
+# this was a bad test in that it relies on the datetime in the database to be
+# in sync with the datetime on the test machine
+#def testDatetimeNow():
+  #global me
+  #cursor = me.connection.cursor()
+  #before = dt.datetime.now()
+  #time.sleep(.01)
+  #got = dbtu.datetimeNow(cursor)
+  #time.sleep(.01)
+  #after = dt.datetime.now()
+  #assert before < got and got < after, "but\nbefore:%s\ngot:   %s\nafter: %s"%(before,got,after)
 
 def testFillProcessorTable_NoMap():
   """ testDbtestutil:testFillProcessorTable_NoMap():

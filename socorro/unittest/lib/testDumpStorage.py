@@ -175,7 +175,7 @@ class TestDumpStorage:
     for depth in range(4):
       tooid = ooid%(depth)
       assert expected[depth] == d.relativeNameParts(tooid)
-      
+
   def testDailyPart(self):
     d = dumpStorage.DumpStorage(self.testDir)
     testData = [
@@ -265,7 +265,7 @@ class TestDumpStorage:
       e = os.sep.join((d.root,d.dailyPart(k,v[1]),d.dateName,v[2],"%s_%d"%('boot',curcount)))
       #curcount = (curcount + 1) % d.subSlotCount
       assert e == g, 'Expected "%s", got "%s"'%(e,g)
-    
+
   def testMakeDateDir(self):
     d = dumpStorage.DumpStorage(self.testDir)
     d3 = dumpStorage.DumpStorage(self.testDir,subSlotCount=3)
@@ -375,6 +375,7 @@ class TestDumpStorage:
   def testReadableOrThrow(self):
     d = dumpStorage.DumpStorage
     assert_raises(OSError,d.readableOrThrow,self.testDir)
+    print "lars", self.testDir
     os.mkdir(self.testDir)
     tname = 'someUselessFile_'
     d.readableOrThrow(self.testDir)

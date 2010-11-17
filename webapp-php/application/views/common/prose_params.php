@@ -23,11 +23,11 @@
             ));
             $type = $types[ $params['query_type'] ];
 
-            $queries = (array( 
+            $queries = (array(
                 'signature' => 'the crash signature',
             ));
             $query = $queries[ $params['query_search'] ];
-        
+
             $msg .= ", where {$query} {$type} '{$params['query']}'";
 
         }
@@ -45,19 +45,23 @@
 
         if (array_key_exists('process_type', $params) &&
             'all' != $params['process_type']) {
-	    $msg .= " and the crashing process was a " . $params['process_type'];
-	    if ('plugin' == $params['process_type'] && trim($params['plugin_query']) != '') {
-		$plugin_copy = array('exact'  => ' that is exactly ',
-				     'contains' => ' that contains ',
-				     'startswith' => ' that starts with ',
-		);
-		$msg .= " " . $params['plugin_field'] . $plugin_copy[$params['plugin_query_type']] . $params['plugin_query'];
-	    }
-	}
+            if ('any' == $params['process_type']) {
+                $msg .= " and the crashing process was of any type";
+            } else {
+                $msg .= " and the crashing process was a " . $params['process_type'];
+                if ('plugin' == $params['process_type'] && trim($params['plugin_query']) != '') {
+                    $plugin_copy = array('exact'  => ' that is exactly ',
+                                         'contains' => ' that contains ',
+                                         'startswith' => ' that starts with ',
+                                        );
+                    $msg .= " " . $params['plugin_field'] . $plugin_copy[$params['plugin_query_type']] . $params['plugin_query'];
+                }
+            }
+        }
 
 
         $msg .= '.';
-        
+
         out::H($msg);
     ?>
 </p>
