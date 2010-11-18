@@ -41,14 +41,6 @@ $(document).ready(function() {
 
   }
 
-  $("#click_top_crashers").bind("click", function(){
-	showHideTop("top_crashers");
-  });
-
-  $("#click_top_changers").bind("click", function(){
-	showHideTop("top_changers");
-  });
-  
   $("#click_by_version").bind("click", function(){
     showHideDaily("daily_search_version_form");
   });
@@ -80,12 +72,6 @@ $(document).ready(function() {
   }
   
 });
-
-function showHideTop(id) {
-	$("#top_crashers").hide();
-	$("#top_changers").hide();
-	$("#"+id).show("fast");	
-}
 
 function showHideDaily(id) {
 	$("#daily_search_version_form").hide();

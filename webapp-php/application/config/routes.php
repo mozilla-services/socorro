@@ -20,12 +20,24 @@ $config['products/([0-9a-zA-Z.]+)/builds'] =
 
 $config['products/([0-9a-zA-Z.]+)/builds.rss'] =
     'products/index/$1//builds/rss';
+
+$config['products/([0-9a-zA-Z.]+)/topchangers'] =
+    'products/index/$1//topchangers';
+
+$config['products/([0-9a-zA-Z.]+)/topchangers.([a-z]+)'] =
+    'products/index/$1//topchangers/$2';
     
 $config['products/([0-9a-zA-Z.]+)/versions/([0-9a-zA-Z.]+)/builds'] =
     'products/index/$1/$2/builds';
 
 $config['products/([0-9a-zA-Z.]+)/versions/([0-9a-zA-Z.]+)/builds.rss'] =
     'products/index/$1/$2/builds/rss';
+
+$config['products/([0-9a-zA-Z.]+)/versions/([0-9a-zA-Z.]+)/topchangers'] =
+    'products/index/$1/$2/topchangers';
+
+$config['products/([0-9a-zA-Z.]+)/versions/([0-9a-zA-Z.]+)/topchangers.([a-z]+)'] =
+    'products/index/$1/$2/topchangers/$3';
 
 $config['query'] =
     'query/query';
