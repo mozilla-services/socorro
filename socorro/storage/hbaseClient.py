@@ -139,9 +139,9 @@ def optional_retry_wrapper(fn):
     while countdown:
       countdown -= 1
       try:
-        self.logger.debug('%s - retry_wrapper: %s, try number %s', threading.currentThread().getName(), fn.__name__, number_of_retries + 1 - countdown)
+        #self.logger.debug('%s - retry_wrapper: %s, try number %s', threading.currentThread().getName(), fn.__name__, number_of_retries + 1 - countdown)
         result = fn(self, *args, **kwargs)
-        self.logger.debug('%s - retry_wrapper: completed without trouble, %s', threading.currentThread().getName(), fn.__name__)
+        #self.logger.debug('%s - retry_wrapper: completed without trouble, %s', threading.currentThread().getName(), fn.__name__)
         return result
       # drop and remake connection
       except self.hbaseThriftExceptions, x:
@@ -274,12 +274,12 @@ class HBaseConnection(object):
     raise NoConnectionException, NoConnectionException(exceptionType, exception, retry), tracebackInfo
 
   def close(self):
-    """
-    Close the hbase connection
-    """
-    self.transport.close()
+    #"""
+    #Close the hbase connection
+    #"""
+    #self.transport.close()
 
-  def _make_rows_nice(self,client_result_object):
+  #def _make_rows_nice(self,client_result_object):
     """
     Apply _make_row_nice to multiple rows
     """
