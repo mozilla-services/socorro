@@ -288,17 +288,17 @@ class JsonDumpStorage(socorro_dumpStorage.DumpStorage):
     def handleLink(dir,name):
       nameDir = self.namePath(name)[0]
       if not self.osModule.path.isfile(os.path.join(nameDir,name+self.jsonSuffix)):
-        print '        handleLink 1'
+        #print '        handleLink 1'
         return None
       if not self.osModule.path.isfile(os.path.join(nameDir,name+self.dumpSuffix)):
-        print '        handleLink 2'
+        #print '        handleLink 2'
         return None
       if self.osModule.path.islink(os.path.join(nameDir,name)):
         self.osModule.unlink(os.path.join(nameDir,name))
         self.osModule.unlink(os.path.join(dir,name))
-        print '        handleLink 3'
+        #print '        handleLink 3'
         return name
-      print '        handleLink off end'
+      #print '        handleLink off end'
     dailyParts = []
     try:
       dailyParts = self.osModule.listdir(self.root)
@@ -306,19 +306,19 @@ class JsonDumpStorage(socorro_dumpStorage.DumpStorage):
       # If root doesn't exist, quietly do nothing, eh?
       return
     for daily in dailyParts:
-      print 'daily: %s' % daily
+      #print 'daily: %s' % daily
       for dir,dirs,files in self.osModule.walk(os.sep.join((self.root,daily,self.dateName))):
-        print dir,dirs,files
+        #print dir,dirs,files
         if os.path.split(dir)[0] == os.path.split(self.datePath(datetime.datetime.now())[0]):
-          print 'skipping dir %s' % dir
-          print 'because: %s == %s' % (os.path.split(dir)[0],os.path.split(self.datePath(datetime.datetime.now())[0]))
+          #print 'skipping dir %s' % dir
+          #print 'because: %s == %s' % (os.path.split(dir)[0],os.path.split(self.datePath(datetime.datetime.now())[0]))
           continue
         # the links are all to (relative) directories, so we need not look at files
         for d in dirs:
-          print 'dir  ', d
+          #print 'dir  ', d
           if self.osModule.path.islink(os.path.join(dir,d)):
             r = handleLink(dir,d)
-            print '       r ', r
+            #print '       r ', r
             if r:
               yield r
         # after finishing a given directory...
