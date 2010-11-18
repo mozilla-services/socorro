@@ -9,6 +9,7 @@ import socorro.lib.ConfigurationManager as configurationManager
 import socorro.lib.datetimeutil as dtutil
 import socorro.lib.productVersionCache as pvc
 import socorro.webapi.webapiService as webapi
+import socorro.lib.util as sutil
 
 import logging
 import logging.handlers

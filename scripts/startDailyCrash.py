@@ -11,6 +11,7 @@ except ImportError:
 
 import socorro.lib.ConfigurationManager as configurationManager
 import socorro.cron.daily_crash as daily_crash
+import socorro.lib.util as sutil
 
 try:
   config = configurationManager.newConfiguration(configurationModule=configModule, applicationName="Daily Crash")

@@ -11,6 +11,7 @@ except ImportError:
 
 import socorro.lib.ConfigurationManager as configurationManager
 import socorro.cron.serverstatus as serverstatus
+import socorro.lib.util as sutil
 
 try:
   config = configurationManager.newConfiguration(configurationModule=configModule, applicationName="Server Status Summary")

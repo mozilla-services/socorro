@@ -11,6 +11,7 @@ except ImportError:
 
 import socorro.database.schema as socorro_schema
 import socorro.lib.ConfigurationManager as configurationManager
+import socorro.lib.util as sutil
 
 try:
   config = configurationManager.newConfiguration(configurationModule=configModule, applicationName="Socorro Database Setup 1.0")
@@ -24,7 +25,7 @@ logger.setLevel(logging.DEBUG)
 
 sutil.setupLoggingHandlers(logger, config)
 sutil.echoConfig(logger, config)
-  
+
 try:
   socorro_schema.setupDatabase(config, logger)
 finally:

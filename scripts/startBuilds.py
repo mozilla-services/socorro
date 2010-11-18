@@ -16,6 +16,7 @@ except ImportError:
 
 import socorro.cron.builds as builds
 import socorro.lib.ConfigurationManager as configurationManager
+import socorro.lib.util as sutil
 
 config = configurationManager.newConfiguration(configurationModule = configModule, applicationName='startBuilds.py')
 assert "databaseHost" in config, "databaseHost is missing from the configuration"
@@ -31,7 +32,7 @@ logger.setLevel(logging.DEBUG)
 
 sutil.setupLoggingHandlers(logger, config)
 sutil.echoConfig(logger, config)
-  
+
 config.logger = logger
 
 try:

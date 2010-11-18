@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 """
-startSignatureProductdims.py is used to document each of the versions 
-in which a crash signature is found.  These will be stored in the 
+startSignatureProductdims.py is used to document each of the versions
+in which a crash signature is found.  These will be stored in the
 signature_productsdims table.
 
 This script is expected to be run once per day.
@@ -17,6 +17,7 @@ except ImportError:
 
 import socorro.cron.signatureProductdims as signatureProductdims
 import socorro.lib.ConfigurationManager as configurationManager
+import socorro.lib.util as sutil
 
 config = configurationManager.newConfiguration(configurationModule = configModule, applicationName='startSignatureProductdims.py')
 assert "databaseHost" in config, "databaseHost is missing from the configuration"
@@ -30,7 +31,7 @@ logger.setLevel(logging.DEBUG)
 sutil.setupLoggingHandlers(logger, config)
 sutil.echoConfig(logger, config)
 
-config.logger = logger 
+config.logger = logger
 
 try:
   signatureProductdims.populateSignatureProductdims(config)

@@ -12,6 +12,7 @@ except ImportError:
 
 import socorro.lib.ConfigurationManager as configurationManager
 import socorro.cron.topCrashesBySignature as topcrasher
+import socorro.lib.util as sutil
 
 try:
   config = configurationManager.newConfiguration(configurationModule=configModule, applicationName="Top Crashes Summary")

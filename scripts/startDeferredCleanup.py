@@ -11,7 +11,7 @@ except ImportError:
   import deferredcleanupconfig as configModule
 
 import socorro.lib.ConfigurationManager as configurationManager
-import socorro.lib.util as util
+import socorro.lib.util as sutil
 import socorro.lib.JsonDumpStorage as jds
 
 try:
@@ -39,6 +39,6 @@ try:
   except (KeyboardInterrupt, SystemExit):
     logger.debug("got quit message")
   except:
-    util.reportExceptionAndContinue(logger)
+    sutil.reportExceptionAndContinue(logger)
 finally:
   logger.info("done.")

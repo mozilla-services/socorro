@@ -11,6 +11,7 @@ except ImportError:
 
 import socorro.monitor.monitor as monitor
 import socorro.lib.ConfigurationManager as configurationManager
+import socorro.lib.util as sutil
 
 try:
   config = configurationManager.newConfiguration(configurationModule=configModule, applicationName="Socorro Monitor 2.0")
