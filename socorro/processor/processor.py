@@ -560,7 +560,7 @@ class Processor(object):
               jobUuid (a unique string with the json file basename minus the extension) and the priority (an integer)
     """
     if self.quit: return
-    threadName = threading.currentTread().getName()
+    threadName = threading.currentThread().getName()
     try:
       threadLocalDatabaseConnection, threadLocalCursor = self.databaseConnectionPool.connectionCursorPair()
       threadLocalCrashStorage = self.crashStorePool.crashStorage(threadName)

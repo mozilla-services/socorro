@@ -274,12 +274,12 @@ class HBaseConnection(object):
     raise NoConnectionException, NoConnectionException(exceptionType, exception, retry), tracebackInfo
 
   def close(self):
-    #"""
-    #Close the hbase connection
-    #"""
-    #self.transport.close()
+    """
+    Close the hbase connection
+    """
+    self.transport.close()
 
-  #def _make_rows_nice(self,client_result_object):
+  def _make_rows_nice(self,client_result_object):
     """
     Apply _make_row_nice to multiple rows
     """
