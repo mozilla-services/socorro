@@ -100,7 +100,7 @@ def reportExceptionAndContinue(logger=FakeLogger(), loggingLevel=logging.ERROR, 
       if showTraceback:
         logger.log(loggingLevel, "trace back follows:")
         for aLine in traceback.format_exception(exceptionType, exception, tracebackInfo):
-          logger.log(loggingLevel, aLine)
+          logger.log(loggingLevel, aLine.strip())
     finally:
       loggingReportLock.release()
   except Exception, x:

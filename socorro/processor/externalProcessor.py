@@ -289,7 +289,7 @@ class ProcessorWithExternalBreakpad (processor.Processor):
       logger.warning("%s", message)
     #processor_notes = '; '.join(processorErrorMessages)
     #databaseCursor.execute("update reports set signature = %%s, processor_notes = %%s where id = %%s and date_processed = timestamp without time zone '%s'" % (date_processed),(signature, processor_notes,reportId))
-    logger.debug ("%s -  topmost_sourcefiles  %s", topmost_sourcefiles)
+    logger.debug ("topmost_sourcefiles  %s", topmost_sourcefiles)
     return { "signature": signature,
              "truncated": truncated,
              "topmost_filenames":topmost_sourcefiles,

@@ -227,7 +227,7 @@ class Processor(object):
     for x in xrange(int(seconds)):
       self.quitCheck()
       if waitLogInterval and not x % waitLogInterval:
-        logger.info('%s - %s: %dsec of %dsec',
+        logger.info('%s: %dsec of %dsec',
                                                      waitReason,
                                                      x,
                                                      seconds)
@@ -544,7 +544,7 @@ class Processor(object):
         if result in (Processor.ok, Processor.quit):
           return
         waitInSeconds = backoffGenerator.next()
-        logger.critical('%s - major failure in crash storage - retry in %s seconds', waitInSeconds)
+        logger.critical('major failure in crash storage - retry in %s seconds', waitInSeconds)
         self.responsiveSleep(waitInSeconds, 10, "waiting for retry after failure in crash storage")
     except KeyboardInterrupt:
       return
@@ -803,7 +803,7 @@ class Processor(object):
     newReportRecordAsTuple = (uuid, crash_date, date_processed, product, version, buildID, url, install_age, last_crash, uptime, email, build_date, user_id, user_comments, app_notes, distributor, distributor_version,None,None,None,hangid,process_type)
     newReportRecordAsDict = dict(x for x in zip(self.reportsTable.columns, newReportRecordAsTuple))
     if not product or not version:
-      msgTemplate = "%%s - Skipping report: Missing product&version: ["+", ".join(["%s:%%s"%x for x in self.reportsTable.columns])+"]"
+      msgTemplate = "Skipping report: Missing product&version: ["+", ".join(["%s:%%s"%x for x in self.reportsTable.columns])+"]"
       logger.error(msgTemplate % newReportRecordAsTuple)
       return {}
     try:
