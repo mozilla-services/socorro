@@ -386,6 +386,11 @@ class CrashStorageSystemForLocalFS(CrashStorageSystem):
     assert "localFSDumpGID" in config, "dumpGID is missing from the configuration"
     assert "jsonFileSuffix" in config, "jsonFileSuffix is missing from the configuration"
     assert "dumpFileSuffix" in config, "dumpFileSuffix is missing from the configuration"
+    assert "fallbackFS" in config, "fallbackFS is missing from the configuration"
+    assert "fallbackDumpDirCount" in config, "fallbackDumpDirCount is missing from the configuration"
+    assert "fallbackDumpGID" in config, "fallbackDumpGID is missing from the configuration"
+    assert "fallbackDumpPermissions" in config, "fallbackDumpPermissions is missing from the configuration"
+    assert "fallbackDirPermissions" in config, "fallbackDirPermissions is missing from the configuration"
 
     self.localFS = jds.JsonDumpStorage(root = config.localFS,
                                        maxDirectoryEntries = config.localFSDumpDirCount,
@@ -397,16 +402,25 @@ class CrashStorageSystemForLocalFS(CrashStorageSystem):
                                        logger = config.logger
                                       )
 
+    self.fallbackFS = jds.JsonDumpStorage(root = config.fallbackFS,
+                                       maxDirectoryEntries = config.fallbackDumpDirCount,
+                                       jsonSuffix = config.jsonFileSuffix,
+                                       dumpSuffix = config.dumpFileSuffix,
+                                       dumpGID = config.fallbackDumpGID,
+                                       dumpPermissions = config.fallbackDumpPermissions,
+                                       dirPermissions = config.fallbackDirPermissions,
+                                       logger = config.logger
+                                      )
   #-----------------------------------------------------------------------------------------------------------------
-  def save_raw (self, uuid, jsonData, dump, currentTimestamp):
+  def save_raw (self, ooid, jsonData, dump, currentTimestamp):
     try:
       if jsonData.legacy_processing == LegacyThrottler.DISCARD:
         return CrashStorageSystem.DISCARDED
     except KeyError:
       pass
     try:
-      jsonDataAsString = json.dumps(jsonData)
-      jsonFileHandle, dumpFileHandle = self.localFS.newEntry(uuid, self.hostname, currentTimestamp)
+      #jsonDataAsString = json.dumps(jsonData)
+      jsonFileHandle, dumpFileHandle = self.localFS.newEntry(ooid, self.hostname, currentTimestamp)
       try:
         dumpFileHandle.write(dump)
         json.dump(jsonData, jsonFileHandle)
@@ -416,7 +430,22 @@ class CrashStorageSystemForLocalFS(CrashStorageSystem):
       return CrashStorageSystem.OK
     except Exception, x:
       sutil.reportExceptionAndContinue(self.logger)
-      self.logger.warning('local storage has failed: dropping %s on the floor', uuid)
+      self.logger.warning('local storage has failed: trying fallback storage for: %s', ooid)
+      try:
+        #jsonDataAsString = json.dumps(jsonData)
+        jsonFileHandle, dumpFileHandle = self.fallbackFS.newEntry(ooid, self.hostname, currentTimestamp)
+        try:
+          dumpFileHandle.write(dump)
+          json.dump(jsonData, jsonFileHandle)
+        finally:
+          dumpFileHandle.close()
+          jsonFileHandle.close()
+        return CrashStorageSystem.OK
+      except Exception, x:
+        sutil.reportExceptionAndContinue(self.logger)
+        self.logger.critical('fallback storage has failed: dropping %s on the floor', ooid)
+
+
     return CrashStorageSystem.ERROR
 
   #-----------------------------------------------------------------------------------------------------------------

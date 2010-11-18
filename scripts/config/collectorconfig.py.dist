@@ -65,6 +65,26 @@ localFSDirPermissions = cm.Option()
 localFSDirPermissions.doc = "a number used for permissions for directories in the local file system"
 localFSDirPermissions = stat.S_IRGRP | stat.S_IXGRP | stat.S_IWGRP | stat.S_IRUSR | stat.S_IXUSR | stat.S_IWUSR
 
+fallbackFS = cm.Option()
+fallbackFS.doc = 'a path to a local file system to use if local store fails'
+fallbackFS.default = './fallback'
+
+fallbackDumpDirCount = cm.Option()
+fallbackDumpDirCount.doc = 'the number of dumps to be stored in a single directory in the fallback File System'
+fallbackDumpDirCount.default = 1024
+
+fallbackDumpGID = cm.Option()
+fallbackDumpGID.doc="the group ID for saved crashes in fallback File System (optional)"
+fallbackDumpGID.default = None
+
+fallbackDumpPermissions = cm.Option()
+fallbackDumpPermissions.doc = "a number used for permissions crash dump files in the fallback File System"
+fallbackDumpPermissions.default = stat.S_IRGRP | stat.S_IWGRP | stat.S_IRUSR | stat.S_IWUSR
+
+fallbackDirPermissions = cm.Option()
+fallbackDirPermissions.doc = "a number used for permissions for directories in the fallback File System"
+fallbackDirPermissions = stat.S_IRGRP | stat.S_IXGRP | stat.S_IWGRP | stat.S_IRUSR | stat.S_IXUSR | stat.S_IWUSR
+
 #-------------------------------------------------------------------------------
 # Logging
 
