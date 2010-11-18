@@ -1249,12 +1249,14 @@ class BuildsTable(Table):
                                                 version text,
                                                 platform text,
                                                 buildid BIGINT,
-                                                changeset text,
+                                                platform_changeset text,
                                                 filename text,
                                                 date timestamp without time zone default now(),
+                                                app_changeset_1 text,
+                                                app_changeset_2 text,
                                             CONSTRAINT builds_key UNIQUE (product, version, platform, buildid));
                                         """)
-    self.insertSql = """INSERT INTO TABLENAME (product, version, platform, buildid, changeset, filename, date) values (%s, %s, %s, %s, %s, %s, %s)"""
+    self.insertSql = """INSERT INTO TABLENAME (product, version, platform, buildid, changeset, filename, date, app_changeset_1, app_changeset_2) values (%s, %s, %s, %s, %s, %s, %s, %s, %s)"""
 
   #-----------------------------------------------------------------------------------------------------------------
   def updateDefinition(self, databaseCursor):

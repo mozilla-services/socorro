@@ -24,15 +24,15 @@ import cronTestconfig as testConfig
 
 def makeBogusBuilds(connection, cursor):
   # (product, version, platform, buildid, changeset, filename, date)
-  fakeBuildsData = [ ("PRODUCTNAME1", "VERSIONAME1", "PLATFORMNAME1", "1", "CHANGESET1", "FILENAME1", "2010-03-09 14:57:04.046627"),
-                     ("PRODUCTNAME2", "VERSIONAME2", "PLATFORMNAME2", "2", "CHANGESET2", "FILENAME2", "2010-03-09 14:57:04.046627"),
-                     ("PRODUCTNAME3", "VERSIONAME3", "PLATFORMNAME3", "3", "CHANGESET3", "FILENAME3", "2010-03-09 14:57:04.046627"),
-                     ("PRODUCTNAME4", "VERSIONAME4", "PLATFORMNAME4", "4", "CHANGESET4", "FILENAME4", "2010-03-09 14:57:04.046627"),
+  fakeBuildsData = [ ("PRODUCTNAME1", "VERSIONAME1", "PLATFORMNAME1", "1", "CHANGESET1", "FILENAME1", "2010-03-09 14:57:04.046627", "APP_CHANGESET_1_1", "APP_CHANGESET_1_2"),
+                     ("PRODUCTNAME2", "VERSIONAME2", "PLATFORMNAME2", "2", "CHANGESET2", "FILENAME2", "2010-03-09 14:57:04.046627", "APP_CHANGESET_2_1", "APP_CHANGESET_2_2"),
+                     ("PRODUCTNAME3", "VERSIONAME3", "PLATFORMNAME3", "3", "CHANGESET3", "FILENAME3", "2010-03-09 14:57:04.046627", "APP_CHANGESET_3_1", "APP_CHANGESET_3_2"),
+                     ("PRODUCTNAME4", "VERSIONAME4", "PLATFORMNAME4", "4", "CHANGESET4", "FILENAME4", "2010-03-09 14:57:04.046627", "APP_CHANGESET_4_1", "APP_CHANGESET_4_2"),
                    ]
 
   for b in fakeBuildsData:
     try:
-      cursor.execute("INSERT INTO builds (product, version, platform, buildid, changeset, filename, date) values (%s, %s, %s, %s, %s, %s, %s)", b)
+      cursor.execute("INSERT INTO builds (product, version, platform, buildid, platform_changeset, filename, date, app_changeset_1, app_changeset_2) values (%s, %s, %s, %s, %s, %s, %s, %s, %s)", b)
       connection.commit()
     except Exception, x:
       print "Exception at makeBogusBuilds() buildsTable.insert", type(x),x
@@ -177,7 +177,7 @@ class TestBuilds(unittest.TestCase):
     me.cur.connection.commit()
 
     try:
-      builds.insertBuild(me.cur, 'PRODUCTNAME5', 'VERSIONAME5', 'PLATFORMNAME5', '5', 'CHANGESET5', 'FILENAME5')
+      builds.insertBuild(me.cur, 'PRODUCTNAME5', 'VERSIONAME5', 'PLATFORMNAME5', '5', 'CHANGESET5', 'APP_CHANGESET_2_5', 'APP_CHANGESET_2_5', 'FILENAME5')
       actual = builds.buildExists(me.cur, 'PRODUCTNAME5', 'VERSIONAME5', 'PLATFORMNAME5', '5')
       assert actual == 1, "expected 1, got %s" % (actual)
     except Exception, x:
@@ -190,9 +190,9 @@ class TestBuilds(unittest.TestCase):
   def test_fetchTextFiles(self):
     self.config.base_url = 'http://www.example.com/'
     self.config.platforms = ('platform1', 'platform2')
-    fake_version = 'version1'
+    fake_product_uri = 'firefox/nightly/latest-mozilla-1.9.1/'
 
-    fake_response_url = "%s%s" % (self.config.base_url, fake_version)
+    fake_response_url = "%s%s" % (self.config.base_url, fake_product_uri)
     fake_response_contents = """
        blahblahblahblahblah
        <a href="product1-version1.en-US.platform1.txt">product1-version1.en-US.platform1.txt</a>
@@ -200,7 +200,7 @@ class TestBuilds(unittest.TestCase):
        <a href="product2-version2.en-US.platform2.txt">product2-version2.en-US.platform2.txt</a>
        <a href="product2-version2.en-US.platform2.zip">product2-version2.en-US.platform2.zip</a>
        blahblahblahblahblah
-    """
+    """ 
     fake_response_success_1 = {'platform':'platform1', 'product':'product1', 'version':'version1', 'filename':'product1-version1.en-US.platform1.txt'}
     fake_response_success_2 = {'platform':'platform2', 'product':'product2', 'version':'version2', 'filename':'product2-version2.en-US.platform2.txt'}
     fake_response_successes = (fake_response_success_1, fake_response_success_2)
@@ -212,9 +212,9 @@ class TestBuilds(unittest.TestCase):
 
     fakeUrllib2 = exp.DummyObjectWithExpectations()
     fakeUrllib2.expect('urlopen', (fake_response_url,), {}, fakeResponse)
-
+    
     try:
-      actual = builds.fetchTextFiles(self.config, fake_version, fakeUrllib2)
+      actual = builds.fetchTextFiles(self.config, fake_product_uri, fakeUrllib2) 
       assert actual['url'] == fake_response_url, "expected %s, got %s " % (fake_response_url, actual['url'])
       assert actual['builds'][0] == fake_response_success_1, "expected %s, got %s " % (fake_response_success_1, actual['builds'][0])
       assert actual['builds'][1] == fake_response_success_2, "expected %s, got %s " % (fake_response_success_2, actual['builds'][1])
