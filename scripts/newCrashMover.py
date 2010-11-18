@@ -8,6 +8,7 @@ import config.crashmoverconfig as cmconf
 
 import socorro.lib.ConfigurationManager as configurationManager
 import socorro.storage.storageMover as smover
+import socorro.lib.util as sutil
 
 try:
   config = configurationManager.newConfiguration(configurationModule=cmconf, applicationName="New Crash Mover")

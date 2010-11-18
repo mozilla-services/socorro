@@ -16,25 +16,17 @@ sourceStorageClass.doc = 'the fully qualified name of the source storage class'
 sourceStorageClass.default = 'socorro.storage.crashstorage.CrashStorageSystemForLocalFS'
 sourceStorageClass.fromStringConverter = cm.classConverter
 
-localFS = cm.Option()
-localFS.doc = 'a path to a local file system'
-localFS.default = './'
+from config.collectorconfig import localFS
+from config.collectorconfig import localFSDumpDirCount
+from config.collectorconfig import localFSDumpGID
+from config.collectorconfig import localFSDumpPermissions
+from config.collectorconfig import localFSDirPermissions
+from config.collectorconfig import fallbackFS
+from config.collectorconfig import fallbackDumpDirCount
+from config.collectorconfig import fallbackDumpGID
+from config.collectorconfig import fallbackDumpPermissions
+from config.collectorconfig import fallbackDirPermissions
 
-localFSDumpDirCount = cm.Option()
-localFSDumpDirCount.doc = 'the number of dumps to be stored in a single directory in the local file system'
-localFSDumpDirCount.default = 1024
-
-localFSDumpGID = cm.Option()
-localFSDumpGID.doc="the group ID for saved crashes in local file system (optional)"
-localFSDumpGID.default = None
-
-localFSDumpPermissions = cm.Option()
-localFSDumpPermissions.doc = "a number used for permissions crash dump files in the local file system"
-localFSDumpPermissions.default = stat.S_IRGRP | stat.S_IWGRP | stat.S_IRUSR | stat.S_IWUSR
-
-localFSDirPermissions = cm.Option()
-localFSDirPermissions.doc = "a number used for permissions for directories in the local file system"
-localFSDirPermissions = stat.S_IRGRP | stat.S_IXGRP | stat.S_IWGRP | stat.S_IRUSR | stat.S_IXUSR | stat.S_IWUSR
 
 from config.commonconfig import jsonFileSuffix
 from config.commonconfig import dumpFileSuffix
