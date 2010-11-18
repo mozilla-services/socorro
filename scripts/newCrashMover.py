@@ -4,13 +4,13 @@ import sys
 import logging
 import logging.handlers
 
-import config.storagemoveconfig as smconf
+import config.crashmoverconfig as cmconf
 
 import socorro.lib.ConfigurationManager as configurationManager
 import socorro.storage.storageMover as smover
 
 try:
-  config = configurationManager.newConfiguration(configurationModule=smconf, applicationName="New Crash Mover")
+  config = configurationManager.newConfiguration(configurationModule=cmconf, applicationName="New Crash Mover")
 except configurationManager.NotAnOptionError, x:
   print >>sys.stderr, x
   print >>sys.stderr, "for usage, try --help"
