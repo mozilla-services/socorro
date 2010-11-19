@@ -28,8 +28,10 @@
     		</a>
     	</h1>
 
-        <form method="get" action="<?= url::base() ?>query/simple">
-            <input type="text" id="q" name="q" value="Find Crash ID or Signature" />
+        <form method="get" action="<?= url::base() ?>query/query">
+            <input type="hidden" name="query_type" value="simple" />
+            <input type="hidden" name="do_query" value="1">
+            <input type="text" id="q" name="query" value="Find Crash ID or Signature" />
             <input type="submit" class="hidden" />
         </form>
     </div>

@@ -298,7 +298,7 @@ class Report_Controller extends Controller {
     public function find() {
         $crash = new Crash();
         $id = isset($_GET['id']) ? $_GET['id'] : '';
-        $uuid = $crash->parseUUID($id);
+        $uuid = $crash->parseOOID($id);
 
         if ($uuid) {
             return url::redirect('report/index/'.$uuid);
@@ -369,7 +369,7 @@ class Report_Controller extends Controller {
      */
     public function index($id) {
         $crash = new Crash();
-        $uuid = $crash->parseUUID($id);
+        $uuid = $crash->parseOOID($id);
         if ($uuid == FALSE ) {
             return Event::run('system.404');
         }
@@ -505,7 +505,7 @@ class Report_Controller extends Controller {
     public function pending($id) {
         $crash = new Crash();
 	$status = null;
-        $uuid = $crash->parseUUID($id);
+        $uuid = $crash->parseOOID($id);
         if ($uuid == FALSE) {
             Kohana::log('alert', "Improper UUID format for $uuid doing 404");
             return Event::run('system.404');

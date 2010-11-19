@@ -130,6 +130,7 @@ class Common_Model extends Model {
                 " ORDER BY count(reports.id) DESC " .
                 " LIMIT ? " .
                 " OFFSET ? "; 
+            
             return $this->fetchRows($sql, TRUE, array($items_per_page, $offset));
         } else {
             $results = $this->fetchRows($sql);
