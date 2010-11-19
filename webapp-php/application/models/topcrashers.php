@@ -122,27 +122,6 @@ class Topcrashers_Model extends Model {
     }
 
     /**
-     * Retrieves the total number of crashes for given perio
-     * @param string product name 
-     * @param string version Example: 3.7a1pre
-     * @param int the earliest time to start looking for crashes
-     * @param int the latest time to look at for crashes
-     * @return int total crashes
-     * @see time function for generating $start and $end
-     */
-    public function getTotalCrashesByVersion($product, $version, $start, $end)
-    {
-	$sql = "/* soc.web topcrash.totcrashvers */ 
-            SELECT SUM(tcs.count) as total
-            FROM top_crashes_by_signature tcs
-            JOIN productdims pd on tcs.productdims_id = pd.id AND 
-                 pd.product = ? AND 
-                 pd.version = ? 
-            WHERE window_end >= ? AND
-                  window_end < ? ";
-	return $this->_getTotalCrashes($sql, array($product, $version, $this->t($start), $this->t($end)));
-    }
-    /**
      * Common way to process total crashes db results
      * @param string SQL to run
      * @param array Parameters bound by SQL

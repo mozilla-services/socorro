@@ -13,8 +13,3 @@ $config['topcrashbyurl_featured'] = array(
     array('product' => 'Camino',      'version' => '2.0b4'),
     array('product' => 'SeaMonkey',   'version' => '2.1a1pre')
 );
-$config['mtbf_featured'] = array(
-    array('product' => 'Firefox',     'release' => 'development'),
-    array('product' => 'Thunderbird', 'release' => 'development'));
-
-?>

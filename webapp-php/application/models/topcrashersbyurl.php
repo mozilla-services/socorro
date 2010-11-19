@@ -270,24 +270,5 @@ class TopcrashersByUrl_Model extends Model {
 		return $this->fetchRows($sql);
 	}
 
-	/**
-   	 * Returns a list of existing reports based on the product visibility table.
-	 *
-	 * @access 	public
-	 * @param	string	The date YYYY-MM-DD
-	 * @return 	array 	An array of reports
-   	 */
-	public function listReports($aDate = NULL)
-	{
-	  if(! $aDate) {
-	    $aDate = date("Y-m-d",time());
-	  }
-	  $sql = "SELECT p.product, p.version, (NOT ignore and start_date <= ? and ? <= end_date) as enabled
-	 			FROM product_visibility pv
-	            JOIN productdims p ON pv.productdims_id = p.id
-	           	ORDER BY p.id DESC";
-	  return $this->db->query($sql,$aDate,$aDate);
-	}
-	
 	/* */
 }
