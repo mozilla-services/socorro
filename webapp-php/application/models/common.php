@@ -281,6 +281,10 @@ class Common_Model extends Model {
         if (isset($params['signature'])) {
             $where[] = 'reports.signature = ' . $this->db->escape($params['signature']);
         }
+        
+        if (empty($params['date']) || !strtotime($params['date'])) {
+            $params['date'] = NULL;
+        }
 
         if (isset($params['version']) && !empty($params['version'])) {
             $or = array();
