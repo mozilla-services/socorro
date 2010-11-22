@@ -1,13 +1,5 @@
 <?php defined('SYSPATH') OR die('No direct access allowed.');
 /**
- * Authentication protocol, typically https. Useful for development
- * or other test environments which don't support https. 
- *
- * Setting to gopher will kill a kitten.
- */
-$config['proto'] = 'https';
-
-/**
  * Auth library configuration. By default, Auth will use the controller
  * database connection. If Database is not loaded, it will use use the default
  * database group.
@@ -67,5 +59,15 @@ $config['email'] = 'noreply@mozilla.com';
  * The site name that will be used to throughout the auth process and in 
  * particular to be sent out with each email.
  */
-$config['site_name'] = 'Mozilla Creative Collective';
+$config['site_name'] = 'Mozilla Crash Reports';
 
+/**
+ * Authentication protocol, typically https. Useful for development
+ * or other test environments which don't support https. 
+ */
+$config['proto'] = 'https';
+
+/**
+ * Setting to true will force every page on the site to use https; else set to false.
+ */
+$config['force_https'] = true;

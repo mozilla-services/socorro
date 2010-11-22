@@ -88,8 +88,7 @@ class Controller extends Controller_Core {
     {
         parent::__construct();
 
-        // Force HTTPS if user has authenticated
-        $this->auth_is_active = Kohana::config('auth.driver', 'NoAuth') != "NoAuth";
+        // Force HTTPS if set in config file
         $this->_forceHTTPS();
 
         // Create instances of the commonly used models.
@@ -102,6 +101,9 @@ class Controller extends Controller_Core {
         $this->view_data = array(
             'controller' => $this
         );
+
+        // Determine whether auth is enabled for this site.
+        $this->auth_is_active = Kohana::config('auth.driver', 'NoAuth') != "NoAuth";
         
         // Grab an array of current products, ensure that 1 is chosen, and grab the featured versions for that product.
         $this->current_products = $this->prepareCurrentProducts();
@@ -122,11 +124,12 @@ class Controller extends Controller_Core {
     private function _forceHTTPS() {
         if (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS']) {
             // Set to HTTPS already, skip.
-        } elseif ($this->auth_is_active && Auth::instance()->logged_in()) {
-            // Require https as an auth protocol
-            if (Kohana::config('auth.proto') == 'https') {
-                url::redirect( url::site(url::current(TRUE), 'https'));
-            }
+        } elseif (
+            Kohana::config('auth.proto') == 'https' &&
+            Kohana::config('auth.force_https')
+        ) {
+            // If the auth protocol is set to https and force_https is true, redirect to https
+            url::redirect(url::site(url::current(TRUE), 'https'));
         }
     }
 
