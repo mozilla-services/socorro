@@ -1,0 +1,67 @@
+# Include file for Socorro cron scripts.
+
+APPDIR=/data/socorro/application
+PATH=$PATH:$HOME/bin:~/python_extras/bin
+PYTHONPATH=~/python_extras/lib:${APPDIR}:${APPDIR}/thirdparty:/usr/lib/python2.4/site-packages
+SOCORRO_CONFIG=/etc/socorro/common.conf
+MAILTO=nobody@example.com
+export APPDIR PYTHONPATH PATH PYTHONPATH SOCORRO_CONFIG MAILTO
+
+if [ -f $SOCORRO_CONFIG ]
+then
+  . $SOCORRO_CONFIG
+fi
+
+function lock {
+  if [ "$#" != "1" ]
+  then
+    echo "syntax: lock <job>"
+    return 1
+  fi
+  JOB=$1
+  if [ -f "/tmp/${JOB}.lock" ]
+  then
+    echo "error (lock): lock already exists for ${JOB}"
+    exit 1
+  fi
+  echo $$ > /tmp/${JOB}.lock
+}
+
+function unlock {
+  if [ "$#" != "1" ]
+  then
+    echo "syntax: unlock <job>"
+    return 1
+  fi
+  JOB=$1
+  if [ ! -f "/tmp/${JOB}.lock" ]
+  then
+    echo "warning (unlock): no lock exists for ${JOB}"
+    return 1
+  fi
+  rm -f "/tmp/${JOB}.lock"
+}
+
+# Most Socorro cron jobs are implemented in Python.
+# Provide a wrapper to make calling these more convenient.
+function pyjob {
+  if [ "$#" != "2" ]
+  then
+    echo "syntax: pyjob <name> <script>"
+    return 1
+  fi
+  NAME=$1
+  SCRIPT=$2
+  
+  if [ ! -e "${APPDIR}/scripts/${SCRIPT}.py" ]
+  then
+    echo "error: job ${APPDIR}/scripts/${SCRIPT}.py does not exist"
+    return 1
+  fi
+
+  python ${APPDIR}/scripts/${SCRIPT}.py >> /var/log/socorro/${NAME}.log 2>&1
+  EXIT_CODE=$?
+  return $EXIT_CODE
+}
+
+
