@@ -13,6 +13,10 @@ import socorro.lib.util as sutil
 import socorro.lib.threadlib as thr
 
 #-------------------------------------------------------------------------------
+ok = 1
+failure = 0
+
+#-------------------------------------------------------------------------------
 def defaultTaskFunc(jobTuple):
   pass
 
@@ -20,6 +24,8 @@ def defaultTaskFunc(jobTuple):
 def defaultIterator():
   for x in range(10):
     yield x
+  while True:
+    yield None
 
 #-------------------------------------------------------------------------------
 def respondToSIGTERM(signalNumber, frame):
@@ -49,7 +55,14 @@ class IteratorWorkerFramework(object):
     self.name = name
     self.jobSourceIterator = jobSourceIterator
     self.taskFunc = taskFunc
-    self.workerPool = thr.TaskManager(self.config.numberOfThreads)
+    # setup the task manager to a queue size twice the size of the number
+    # of threads in use.  Because some mechanisms that feed the queue are
+    # are destructive (JsonDumpStorage.destructiveDateWalk), we want to limit
+    # the damage in case of error or quit.
+    #self.workerPool = thr.TaskManager(self.config.numberOfThreads,
+                                      #self.config.numberOfThreads * 2)
+    self.workerPool = thr.TaskManager(self.config.numberOfThreads,
+                                      10)
     self.quit = False
     self.logger.debug('finished init')
 
@@ -59,9 +72,14 @@ class IteratorWorkerFramework(object):
       raise KeyboardInterrupt
 
   #-----------------------------------------------------------------------------
-  def responsiveSleep (self, seconds):
+  def responsiveSleep (self, seconds, waitLogInterval=0, waitReason=''):
     for x in xrange(int(seconds)):
       self.quitCheck()
+      if waitLogInterval and not x % waitLogInterval:
+        self.logger.info('%s: %dsec of %dsec',
+                         waitReason,
+                         x,
+                         seconds)
       time.sleep(1.0)
 
   #-----------------------------------------------------------------------------
@@ -75,6 +93,34 @@ class IteratorWorkerFramework(object):
       except KeyboardInterrupt:
         self.logger.debug ('quit detected by responsiveJoin')
         self.quit = True
+
+  #-----------------------------------------------------------------------------
+  @staticmethod
+  def backoffSecondsGenerator():
+    seconds = [10, 30, 60, 120, 300]
+    for x in seconds:
+      yield x
+    while True:
+      yield seconds[-1]
+
+  #-----------------------------------------------------------------------------
+  def retryTaskFuncWrapper(self, *args):
+    backoffGenerator = self.backoffSecondsGenerator()
+    try:
+      while True:
+        if self.quit:
+          break
+        result = self.taskFunc(*args)
+        if result == ok:
+          return
+        waitInSeconds = backoffGenerator.next()
+        self.logger.critical('major failure in crash storage - retry in %s seconds',
+                        waitInSeconds)
+        self.responsiveSleep(waitInSeconds,
+                             10,
+                             "waiting for retry after failure in crash storage")
+    except KeyboardInterrupt:
+      return
 
   #-----------------------------------------------------------------------------
   def start (self):
@@ -106,7 +152,7 @@ class IteratorWorkerFramework(object):
           self.quitCheck()
           try:
             self.logger.debug("queuing standard job %s", aJob)
-            self.workerPool.newTask(self.taskFunc, (aJob,))
+            self.workerPool.newTask(self.retryTaskFuncWrapper, (aJob,))
           except Exception:
             self.logger.warning('%s has failed', aJob)
             sutil.reportExceptionAndContinue(self.logger)

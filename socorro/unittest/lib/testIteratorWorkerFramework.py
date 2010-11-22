@@ -49,6 +49,7 @@ def testDoingWorkWithOneWorker():
     myList = []
     def insertIntoList(anItem):
         myList.append(anItem[0])
+        return siwf.ok
     iwf = siwf.IteratorWorkerFramework(config,
                                        name='Wilma',
                                        taskFunc=insertIntoList
@@ -73,6 +74,7 @@ def testDoingWorkWithTwoWorkers():
     myList = []
     def insertIntoList(anItem):
         myList.append(anItem[0])
+        return siwf.ok
     iwf = siwf.IteratorWorkerFramework(config,
                                        name='Wilma',
                                        taskFunc=insertIntoList

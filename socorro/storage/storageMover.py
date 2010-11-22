@@ -38,31 +38,25 @@ def move (conf,
   #-----------------------------------------------------------------------------
   def doSubmission(ooidTuple):
     logger.debug('received: %s', str(ooidTuple))
-    sourceStorage = crashStoragePoolForSource.crashStorage()
-    destStorage = crashStoragePoolForDest.crashStorage()
-    ooid = ooidTuple[0]
     try:
+      sourceStorage = crashStoragePoolForSource.crashStorage()
+      destStorage = crashStoragePoolForDest.crashStorage()
+      ooid = ooidTuple[0]
       jsonContents = sourceStorage.get_meta(ooid)
       dumpContents = sourceStorage.get_raw_dump(ooid)
       logger.debug('pushing %s to dest', ooid)
       destStorage.save_raw(ooid, jsonContents, dumpContents)
-      submissionMill.workerPool.newTask(doCleanup, ooidTuple)
+      sourceStorage.remove(ooid)
+      return iwf.ok
     except Exception, x:
       sutil.reportExceptionAndContinue(logger)
+      return iwf.failure
   #-----------------------------------------------------------------------------
 
   submissionMill = iwf.IteratorWorkerFramework(conf,
                                                jobSourceIterator=theIterator,
                                                taskFunc=doSubmission,
                                                name='submissionMill')
-
-  #-----------------------------------------------------------------------------
-  def doCleanup(ooidTuple):
-    ooid = ooidTuple[0]
-    sourceStorage = crashStoragePoolForSource.crashStorage()
-    logger.debug('removing %s from source', ooid)
-    sourceStorage.remove(ooid)
-  #-----------------------------------------------------------------------------
 
   try:
     submissionMill.start()

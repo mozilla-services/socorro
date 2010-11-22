@@ -27,7 +27,6 @@ from config.collectorconfig import fallbackDumpGID
 from config.collectorconfig import fallbackDumpPermissions
 from config.collectorconfig import fallbackDirPermissions
 
-
 from config.commonconfig import jsonFileSuffix
 from config.commonconfig import dumpFileSuffix
 
