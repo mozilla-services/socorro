@@ -8,20 +8,21 @@
 # Source function library.
 . /etc/rc.d/init.d/functions
 
+progname=`basename $0`
+
 # Source socorro overrides
 commonconfig=/etc/socorro/common.conf
-config=/etc/socorro/monitor.conf
+config=/etc/socorro/${progname}.conf
 if [ -f "$commonconfig" ]; then . $commonconfig; fi
 if [ -f "$config" ]; then . $config; fi
 
-progname=socorro-monitor
 script=scripts/startMonitor.py
 prefix=/data/socorro
 appdir=${prefix}/application
 python=/usr/bin/python
 pidfile=/var/run/${progname}.pid
 lockfile=/var/lock/${progname}.lock
-logfile=/var/log/${progname}.log
+logfile=/var/log/socorro/${progname}.log
 user=socorro
 RETVAL=0
 
