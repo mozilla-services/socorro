@@ -59,10 +59,10 @@ class IteratorWorkerFramework(object):
     # of threads in use.  Because some mechanisms that feed the queue are
     # are destructive (JsonDumpStorage.destructiveDateWalk), we want to limit
     # the damage in case of error or quit.
-    #self.workerPool = thr.TaskManager(self.config.numberOfThreads,
-                                      #self.config.numberOfThreads * 2)
     self.workerPool = thr.TaskManager(self.config.numberOfThreads,
-                                      10)
+                                      self.config.numberOfThreads * 2)
+    #self.workerPool = thr.TaskManager(self.config.numberOfThreads,
+                                      #10)
     self.quit = False
     self.logger.debug('finished init')
 
