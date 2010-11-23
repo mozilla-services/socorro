@@ -30,6 +30,7 @@ install:
 	cd $(PREFIX)/htdocs/modules/auth/config/; for file in *.php-dist; do cp $$file `basename $$file -dist`; done
 	cd $(PREFIX)/htdocs/modules/recaptcha/config; for file in *.php-dist; do cp $$file `basename $$file -dist`; done
 	cd $(PREFIX)/htdocs/application/config; for file in *.php-dist; do cp $$file `basename $$file -dist`; done
+	cd $(PREFIX)/htdocs; cp htaccess-dist .htaccess
 
 virtualenv:
 	virtualenv $(VIRTUALENV)
