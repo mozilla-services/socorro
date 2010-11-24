@@ -60,7 +60,7 @@ if __name__ == '__main__':
 
   commandLineOptions = [
     ('c',  'config', True, './config', "the config file"),
-    ('u',  'url', True, 'http://crash-reports.stage.mozilla.com/submit', "The url of the server to load test"),
+    ('u',  'url', True, 'https://crash-reports.stage.mozilla.com/submit', "The url of the server to load test"),
     ('j',  'jsonfile', True, None, 'the pathname of a json file for POST'),
     ('d',  'dumpfile', True, None, 'the pathname of a dumpfile to upload with the POST'),
     ('s',  'searchRoot', True, None, 'a filesystem location to begin a search for json/dump combos'),
