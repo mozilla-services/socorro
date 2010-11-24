@@ -38,7 +38,6 @@
 
 set_include_path(APPPATH . 'vendor' . PATH_SEPARATOR . get_include_path());
 require_once(Kohana::find_file('libraries', 'MY_QueryFormHelper', TRUE, 'php'));
-require_once(Kohana::find_file('libraries', 'release', TRUE, 'php'));
 require_once(Kohana::find_file('libraries', 'socorro_cookies', TRUE, 'php'));
 require_once(Kohana::find_file('libraries', 'versioncompare', TRUE, 'php'));
 
@@ -430,33 +429,26 @@ class Controller extends Controller_Core {
     * interested in for global navigation. This is a specific
     * product / version pair. All pages that detect a single 
     * product version should update this value.
+    *
     * @param string product
     * @param string version
-    * @param string optional release
-    * @void
+    * @return void
     */
-    protected function navigationChooseVersion($product, $version, $release=NULL)
+    protected function navigationChooseVersion($product, $version)
     {
-        if (is_null($release)) {
-  	    $determine = new Release;
-	    $release = $determine->typeOfRelease($version);
+        $this->ensureChosenVersion($this->currentProducts(), FALSE);
+        if ($this->chosen_version['version'] != $version || $this->chosen_version['product'] != $product) {
+            $this->chooseVersion(array('product' => $product, 'version' => $version));
+        } else {
+            //no op, it's already chosen
+            Kohana::log('debug', "Same $product $version skipping " . Kohana::debug($this->chosen_version));
         }
-	$this->ensureChosenVersion($this->currentProducts(), FALSE);
-	if ($this->chosen_version['version'] != $version ||
-	    $this->chosen_version['product'] != $product) {
-	        $this->chooseVersion(array('product' => $product,
-					    'version' => $version,
-					    'release' => $release));
-	} else {
-	  //no op, it's already chosen
-	  Kohana::log('debug', "Same $product $version skipping " . Kohana::debug($this->chosen_version));
-	}
     }
 
     /**
      * Manually specify the selected product / version and save to cookie.
      *
-     * @param   array  An Array containing the select product, version, release.
+     * @param   array  An Array containing the selected product and version.
      * @param   bool   True to save selection to a cookie; False if not
      * @return  void
      */
@@ -465,11 +457,10 @@ class Controller extends Controller_Core {
         $this->chosen_version = $version_info;
         $product = $version_info['product'];
         $version = $version_info['version'];
-        $release = $version_info['release'];
         if ($set_cookie) {
             $cookie_params = array(
                 'name'   => Socorro_Cookies::CHOSEN_VERSION,
-                'value'  => "p=${product}&v=${version}&r=${release}",
+                'value'  => "p=${product}&v=${version}",
                 'expire' => Socorro_Cookies::EXPIRES_IN_A_YEAR,
                 'domain' => '',
                 'path'   => '/',
@@ -491,48 +482,68 @@ class Controller extends Controller_Core {
     {
         // if it's null, use Cookie
         if (is_null($this->chosen_version)) {
-            $cv = cookie::get(Socorro_Cookies::CHOSEN_VERSION);
-            if (is_null($cv)) {
+            $chosen_version = $this->validateChosenVersion($curProds);
+            if (is_null($chosen_version)) {
                 $defaultProduct = Kohana::config('dashboard.default_product');
                 Kohana::log('info', $defaultProduct);
 	            if ($defaultProduct && in_array($defaultProduct, $curProds)) {
                     $this->chooseVersion(
                         array(
                             'product' => $defaultProduct,
-                            'version' => null,
-                            'release' => null
+                            'version' => null
                         ), 
                         $set_cookie
                     );
                 } else {
-                    foreach ($curProds as $product => $releases) {
-                        foreach (array_reverse($releases) as $release => $version) {
-                            $this->chooseVersion(
-                                array(
-                                    'product' => $product,
-                                    'version' => $version,
-                                    'release' => $release
-                                ), 
-                                $set_cookie
-                            );
-                            break;
-                        } 
+                    foreach ($curProds as $product) {
+                        $this->chooseVersion(
+                            array(
+                                'product' => $product,
+                                'version' => ''
+                            ), 
+                            $set_cookie
+                        );
                         break;
                     }
                 }
             } else {
-                $version_info = array();
-                parse_str($cv, $version_info);
                 $this->chooseVersion(
                     array(
-                        'product' => $version_info['p'],
-                        'version' => $version_info['v'],
-                        'release' => $version_info['r']
+                        'product' => $chosen_version['p'],
+                        'version' => $chosen_version['v']
                     ), 
                     FALSE
                 );
             }
         }
+    }
+    
+    /**
+     * Validate the chosen version if it is found in the soc-cv cookie.
+     *
+     * @param array     An array of current products and versions
+     * @param array     An array containing the user's selected product and version
+     */
+    private function validateChosenVersion ($curProds) {
+        if ($cv = cookie::get(Socorro_Cookies::CHOSEN_VERSION)) {
+            $version_info = array();
+            parse_str($cv, $version_info);
+            if (isset($version_info['p']) && !empty($version_info['p']) && in_array($version_info['p'], $curProds)) {
+                if (isset($version_info['v']) && !empty($version_info['v'])) {
+                    $Branch_Model = new Branch_Model;
+                    $versions = $Branch_Model->getCurrentProductVersionsByProduct($version_info['p']);
+                    foreach ($versions as $version) {
+                        if ($version_info['p'] == $version->product && $version_info['v'] == $version->version) {
+                            return $version_info;
+                        }
+                    }
+                } else {
+                    $version_info['v'] = '';
+                    return $version_info;
+                }
+            }
+        }
+        return null;
     }
 
     /**
