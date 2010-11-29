@@ -16,9 +16,8 @@ import socorro.lib.util as sutil
 
 config = configurationManager.newConfiguration(configurationModule=configModule, applicationName="Top Crash By URL Summary")
 
-logger = tcbyurl.logger
-loggerLevel = config.logFileErrorLoggingLevel
-logger.setLevel(loggerLevel)
+logger = logging.getLogger("topCrashesByUrl")
+logger.setLevel(logging.DEBUG)
 
 sutil.setupLoggingHandlers(logger, config)
 sutil.echoConfig(logger, config)

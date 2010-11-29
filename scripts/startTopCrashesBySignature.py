@@ -8,7 +8,7 @@ import time
 try:
   import config.topCrashesBySignatureConfig as configModule
 except ImportError:
-    import topCrashesBySignatureConfig as configModule
+  import topCrashesBySignatureConfig as configModule
 
 import socorro.lib.ConfigurationManager as configurationManager
 import socorro.cron.topCrashesBySignature as topcrasher
@@ -21,9 +21,8 @@ except configurationManager.NotAnOptionError, x:
   print >>sys.stderr, "for usage, try --help"
   sys.exit(1)
 
-loggerLevel = config.logFileErrorLoggingLevel
-logger = topcrasher.logger
-logger.setLevel(loggerLevel)
+logger = logging.getLogger("topCrashBySignature")
+logger.setLevel(logging.DEBUG)
 
 sutil.setupLoggingHandlers(logger, config)
 sutil.echoConfig(logger, config)
