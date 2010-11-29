@@ -871,6 +871,7 @@ class Processor(object):
         logger.error("%s: Unable to save record for plugin report. pluginId: %s reportId: %s version: %s", reportId, pluginId, pluginVersion)
         processorErrorMessages.append("Detected out of process plugin crash, but unable to record %s %s %s" % (pluginFilename, pluginName, pluginVersion))
       return listOfCrashProcessOutput
+    return {}
 
   #-----------------------------------------------------------------------------------------------------------------
   def doBreakpadStackDumpAnalysis (self, reportId, uuid, dumpfilePathname, databaseCursor, date_processed, processorErrorMessages):
