@@ -214,7 +214,7 @@ class CrashStorageSystem(object):
     names = [name for name in form.keys() if name != self.config.dumpField]
     jsonDict = sutil.DotDict()
     for name in names:
-      if type(form[name]) == str:
+      if type(form[name]) in (str, unicode):
         jsonDict[name] = form[name]
       else:
         jsonDict[name] = form[name].value
