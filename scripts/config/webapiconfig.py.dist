@@ -6,7 +6,6 @@ from config.commonconfig import databasePort
 from config.commonconfig import databaseName
 from config.commonconfig import databaseUserName
 from config.commonconfig import databasePassword
-from config.commonconfig import crashStorageClass
 
 #---------------------------------------------------------------------------
 # HBase storage system
