@@ -198,7 +198,7 @@ class EmailCampaignCreate(webapi.JsonServiceBase):
         personalized_body = self.personalize(body, contact['email'], contact['token'])
 
         # TODO(1.8) python2.6 msg = MIMEText(personalized_body)
-        msg = MIMEText.MIMEText(personalized_body)
+        msg = MIMEText.MIMEText(personalized_body.encode('utf-7'), _charset='utf-7')
         msg['From'] = self.config['fromEmailAddress']
         msg['Subject'] = subject
 
