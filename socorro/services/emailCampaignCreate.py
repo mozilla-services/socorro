@@ -1,5 +1,8 @@
-#TODO(1.8) python2.6 from email.mime.text import MIMEText
-from email import MIMEText
+try:
+  from email.mime.text import MIMEText as MIMETextClass
+except ImportError:
+  from email import MIMEText as MIMETextClass
+
 import datetime
 import logging
 from smtplib import SMTP
@@ -47,7 +50,7 @@ class EmailCampaignCreate(webapi.JsonServiceBase):
       form.Textbox('start_date', form.notnull),
       form.Textbox('end_date',   form.notnull),
       form.Textbox('author',     form.notnull))
-    
+
   #-----------------------------------------------------------------------------------------------------------------
   # Intentionally not using /201009/emailcampaigns (and emailCampaigns.py) to avoid any accidental email campaign creations, since
   # this is such a dangerous web service call... </REST pedantic note>
@@ -67,14 +70,14 @@ class EmailCampaignCreate(webapi.JsonServiceBase):
       product    = email_form['product'].value
       versions   = tuple([x.strip() for x in email_form['versions'].value.split(',')])
       signature  = email_form['signature'].value
-      subject    = email_form['subject'].value        
+      subject    = email_form['subject'].value
       body       = email_form['body'].value
       start_date = dtutil.datetimeFromISOdateString(email_form['start_date'].value)
       end_date   = dtutil.datetimeFromISOdateString(email_form['end_date'].value)
       author     = email_form['author'].value
       logger.info("%s is creating an email campaign for %s %s crashes in [%s] Between %s and %s" %(author, product, versions, signature, start_date, end_date))
-        
-      connection = self.database.connection()        
+
+      connection = self.database.connection()
       try:
         return {"emails": self.create_email_campaign(connection, product, versions, signature, subject, body, start_date, end_date, author)}
       finally:
@@ -92,28 +95,28 @@ class EmailCampaignCreate(webapi.JsonServiceBase):
   def create_email_campaign(self, connection, product, versions, signature, subject, body, start_date, end_date, author):
     """ We want to do as much DB work as possible before doing
         email work, as databases are transactional, but email is not.
-        
+
         Grab all the email addresses
           Filter out bad addresses
           Filter out already contacted
           Filter out opt-out emails
-        create new contacts    
+        create new contacts
         create campaign
         Loop over contacts and send email
         Remove failed emails from the contacts
-        
+
         create entries for addresses with campaign
         update campaigns entry with email_count
-        
+
         Error Conditions: SMTP DOWN, DB DOWN
-    
+
     """
     end_date = datetime.datetime(end_date.year, end_date.month, end_date.day, 23, 59, 59)
 
     email_rows = self.determine_emails(connection, product, versions, signature, start_date, end_date)
     full_email_rows = self.ensure_contacts(connection, email_rows)
     campaign_id = self.save_campaign(connection, product, versions, signature, subject, body, start_date, end_date, author, 0)
-    
+
     contacted_emails = self.send_all_emails(full_email_rows, subject, body)
 
     logger.info("Sent %d emails to users" % len(contacted_emails))
@@ -187,18 +190,17 @@ class EmailCampaignCreate(webapi.JsonServiceBase):
     # this can raise SMTPHeloError, SMTPAuthenticationError, SMTPException
     # Error handeling... This Service Call will either work or fail. Failure comes from
     # SMTP, Database, ... ?
-    
+
     smtp = self.smtp_connection()
     # It would be nice to allocate MIMEText out here, but we personalize every email
-    
+
     for contact in contacts:
       if '@' not in contact['email']:
         continue
       try:
         personalized_body = self.personalize(body, contact['email'], contact['token'])
 
-        # TODO(1.8) python2.6 msg = MIMEText(personalized_body)
-        msg = MIMEText.MIMEText(personalized_body.encode('utf-7'), _charset='utf-7')
+        msg = MIMETextClass(personalized_body.encode('utf-7'), _charset='utf-7')
         msg['From'] = self.config['fromEmailAddress']
         msg['Subject'] = subject
 
