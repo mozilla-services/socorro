@@ -8,6 +8,7 @@ NAME=`basename $0 .sh`
 if [[ ! "$databaseHost" && "$databaseUserName" && "$databaseName" ]]
 then
   echo "error: need databaseHost, databaseUserName, databaseName set in $SOCORRO_CONFIG"
+  exit 1
 fi
 
 lock $NAME
