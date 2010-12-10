@@ -26,8 +26,6 @@ import socorro.lib.datetimeutil as sdt
 import socorro.storage.crashstorage as cstore
 import socorro.storage.hbaseClient as hbc
 
-import simplejson
-
 #=================================================================================================================
 class DuplicateEntryException(Exception):
   pass
