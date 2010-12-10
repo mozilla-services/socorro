@@ -5,7 +5,6 @@ import copy
 import datetime as dt
 import gzip
 import csv
-import simplejson
 import time
 import os.path
 

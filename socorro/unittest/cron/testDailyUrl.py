@@ -6,7 +6,6 @@ import gzip
 import os
 import psycopg2 as pg
 import shutil
-import simplejson
 import sys
 import time
 

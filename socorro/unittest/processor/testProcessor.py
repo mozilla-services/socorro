@@ -38,7 +38,11 @@ import threading
 import time
 import traceback
 
-import simplejson
+try:
+  import json
+except ImportError:
+  import simplejson as json
+
 import psycopg2
 from nose.tools import *
 
@@ -1067,7 +1071,7 @@ class TestProcessor:
 
     def insertReportIntoDatabase(self,threadLocalCursor,jobUuid,jsonDocument,jobPathname,date_processed,processorErrorMessages):
       me.logger.info("#jobUuid#%s#",jobUuid)
-      me.logger.info("#jsonDocument#%s#", simplejson.dumps(jsonDocument))
+      me.logger.info("#jsonDocument#%s#", json.dumps(jsonDocument))
       me.logger.info("#jobPathname#%s#",jobPathname)
       me.logger.info("#date_processed#%s#", date_processed)
       me.logger.info("#processorErrorMessages#%s#",processorErrorMessages)

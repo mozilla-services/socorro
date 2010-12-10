@@ -1,7 +1,10 @@
 import gzip
 import logging
 import os
-import simplejson
+try:
+  import json
+except ImportError:
+  import simplejson as json
 import socorro.lib.dumpStorage as socorro_dumpStorage
 import socorro.lib.util as socorro_util
 
@@ -83,7 +86,7 @@ class ProcessedDumpStorage(socorro_dumpStorage.DumpStorage):
     """
     fh = self.newEntry(ooid, timestamp)
     try:
-      simplejson.dump(dumpObject, fh)
+      json.dump(dumpObject, fh)
     finally:
       fh.close()
 
@@ -95,7 +98,7 @@ class ProcessedDumpStorage(socorro_dumpStorage.DumpStorage):
     df = None
     try:
       df = gzip.open(self.getDumpPath(ooid))
-      return simplejson.load(df)
+      return json.load(df)
     finally:
       if df:
         df.close()

@@ -9,7 +9,6 @@ import socorro.lib.datetimeutil as dtutil
 import psycopg2.extras as psyext
 
 import datetime
-import simplejson
 
 
 # theoretical sample output

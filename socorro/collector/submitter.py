@@ -1,6 +1,9 @@
 #!/usr/bin/python
 
-import simplejson
+try:
+  import json
+except ImportError:
+  import simplejson as json
 import sys
 import pycurl
 import socorro.lib.filesystem
@@ -11,7 +14,7 @@ existingHangIdCache = {}
 def submitCrashReport (jsonFilePathName, binaryFilePathName, serverURL, uniqueHang):
   jsonFile = open(jsonFilePathName)
   try:
-    data = simplejson.load(jsonFile)
+    data = json.load(jsonFile)
   finally:
     jsonFile.close()
 

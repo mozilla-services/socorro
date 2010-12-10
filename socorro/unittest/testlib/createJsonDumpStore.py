@@ -3,7 +3,10 @@ import errno
 import os
 import time
 
-import simplejson
+try:
+  import json
+except ImportError:
+  import simplejson as json
 
 import socorro.lib.JsonDumpStorage as JDS
 
@@ -60,7 +63,7 @@ def minimalJsonFileContents(dataMap = None):
     retMap = {}
     for k,v in dataMap.items():
       retMap[k] = v%cookie
-    yield simplejson.dumps(retMap)
+    yield json.dumps(retMap)
     cookie += 1
 
 def createTestSet(testData,jsonKwargs,rootDir):
