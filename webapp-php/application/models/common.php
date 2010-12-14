@@ -291,7 +291,7 @@ class Common_Model extends Model {
             $or = array();
             foreach ($params['version'] as $spec) {
                 if (strstr($spec, ":")) {
-                    list($product, $version) = split(':', $spec);
+                    list($product, $version) = explode(":", $spec);
                     $or[] = 
                         "(reports.product = " . $this->db->escape($product) . " AND " .
                         "reports.version = " . $this->db->escape($version) . ")";
