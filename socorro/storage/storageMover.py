@@ -42,7 +42,12 @@ def move (conf,
       sourceStorage = crashStoragePoolForSource.crashStorage()
       destStorage = crashStoragePoolForDest.crashStorage()
       ooid = ooidTuple[0]
-      jsonContents = sourceStorage.get_meta(ooid)
+      try:
+        jsonContents = sourceStorage.get_meta(ooid)
+      except ValueError:
+        logger.warning('the json for %s is degenerate and cannot be loaded'  \
+                       ' - saving empty json', ooid)
+        jsonContents = {}
       dumpContents = sourceStorage.get_raw_dump(ooid)
       logger.debug('pushing %s to dest', ooid)
       destStorage.save_raw(ooid, jsonContents, dumpContents)
