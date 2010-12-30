@@ -17,7 +17,7 @@ test: virtualenv phpunit
 phpunit:
 	cd webapp-php/tests; phpunit *.php
 
-install:
+install: minidump_stackwalk
 	mkdir -p $(PREFIX)/htdocs
 	mkdir -p $(PREFIX)/application
 	rsync -a --exclude=".svn" thirdparty $(PREFIX)
@@ -26,6 +26,8 @@ install:
 	rsync -a --exclude=".svn" tools $(PREFIX)/application
 	rsync -a --exclude=".svn" sql $(PREFIX)/application
 	rsync -a --exclude=".svn" --exclude="tests" webapp-php/ $(PREFIX)/htdocs
+	rsync -a --exclude=".svn" stackwalk $(PREFIX)/
+	rsync -a --exclude=".svn" scripts/stackwalk.sh $(PREFIX)/stackwalk/bin/
 	cd $(PREFIX)/application/scripts/config; for file in *.py.dist; do cp $$file `basename $$file .dist`; done
 	cd $(PREFIX)/htdocs/modules/auth/config/; for file in *.php-dist; do cp $$file `basename $$file -dist`; done
 	cd $(PREFIX)/htdocs/modules/recaptcha/config; for file in *.php-dist; do cp $$file `basename $$file -dist`; done
@@ -47,3 +49,11 @@ lint:
 
 clean:
 	find ./socorro/ -type f -name "*.pyc" -exec rm {} \;
+	find ./thirdparty/ -type f -name "*.pyc" -exec rm {} \;
+	rm -rf ./google-breakpad/
+
+minidump_stackwalk:
+	svn co http://google-breakpad.googlecode.com/svn/trunk google-breakpad
+	cd google-breakpad && ./configure --prefix=`pwd`/../stackwalk/
+	cd google-breakpad && make install
+
