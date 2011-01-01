@@ -83,13 +83,15 @@ class IteratorWorkerFramework(object):
       time.sleep(1.0)
 
   #-----------------------------------------------------------------------------
-  def responsiveJoin(self, thread):
+  def responsiveJoin(self, thread, waitingFunc=None):
     while True:
       try:
         thread.join(1.0)
         if not thread.isAlive():
           #self.logger.debug('%s is dead', str(thread))
           break
+        if waitingFunc:
+          waitingFunc()
       except KeyboardInterrupt:
         self.logger.debug ('quit detected by responsiveJoin')
         self.quit = True
@@ -108,9 +110,9 @@ class IteratorWorkerFramework(object):
     backoffGenerator = self.backoffSecondsGenerator()
     try:
       while True:
+        result = self.taskFunc(*args)
         if self.quit:
           break
-        result = self.taskFunc(*args)
         if result == ok:
           return
         waitInSeconds = backoffGenerator.next()
@@ -130,9 +132,9 @@ class IteratorWorkerFramework(object):
     self.queuingThread.start()
 
   #-----------------------------------------------------------------------------
-  def waitForCompletion (self):
+  def waitForCompletion (self, waitingFunc=None):
     self.logger.debug("waiting to join queuingThread")
-    self.responsiveJoin(self.queuingThread)
+    self.responsiveJoin(self.queuingThread, waitingFunc)
 
   #-----------------------------------------------------------------------------
   def stop (self):
@@ -144,7 +146,7 @@ class IteratorWorkerFramework(object):
     self.logger.debug('queuingThreadFunc start')
     try:
       try:
-        for aJob in self.jobSourceIterator(): # never returns StopIteration
+        for aJob in self.jobSourceIterator(): # may never raise StopIteration
           if aJob is None:
             self.logger.info("there is nothing to do.  Sleeping for 7 seconds")
             self.responsiveSleep(7)
