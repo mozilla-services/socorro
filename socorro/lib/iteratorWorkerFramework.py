@@ -48,6 +48,10 @@ class IteratorWorkerFramework(object):
   def __init__ (self, config, name='mill', jobSourceIterator=defaultIterator,
                 taskFunc=defaultTaskFunc):
     """
+    Note about 'jobSourceIterator': this is perhaps a design flaw.  It isn't
+    really an iterator.  It is a function that returns an iterator.  Just
+    passing in an iterator that's already activated or a generator expression
+    will fail.
     """
     super(IteratorWorkerFramework, self).__init__()
     self.config = config

@@ -1,0 +1,79 @@
+import stat
+import socorro.lib.ConfigurationManager as cm
+
+#-------------------------------------------------------------------------------
+# general
+
+url = cm.Option()
+url.doc = "The url of the server to load test"
+url.default = 'https://crash-reports.stage.mozilla.com/submit'
+url.singleCharacter = 'u'
+
+delay = cm.Option()
+delay.doc = "pause between submission queing in milliseconds"
+delay.default = 0
+
+dryrun = cm.Option()
+dryrun.doc = "don't actually submit, just print product/version"
+dryrun.default = False
+dryrun.singleCharacter = 'D'
+
+numberOfThreads = cm.Option()
+numberOfThreads.doc = 'the number of threads to use'
+numberOfThreads.default = 4
+
+numberOfSubmissions = cm.Option()
+numberOfSubmissions.doc = 'the number of crashes to submit (all, forever, 1...)'
+numberOfSubmissions.default = 'all'
+numberOfSubmissions.singleCharacter = 'n'
+
+jsonfile = cm.Option()
+jsonfile.doc = 'the pathname of a json file to submit'
+jsonfile.default = None
+jsonfile.singleCharacter = 'j'
+
+dumpfile = cm.Option()
+dumpfile.doc = 'the pathname of a dumpfile to submit'
+dumpfile.default = None
+dumpfile.singleCharacter = 'd'
+
+searchRoot = cm.Option()
+searchRoot.doc = 'a filesystem location to begin a search for json/dump pairs'
+searchRoot.default = None
+searchRoot.singleCharacter = 's'
+
+uniqueHangId = cm.Option()
+uniqueHangId.doc = 'cache and uniquify hangids'
+uniqueHangId.default = True
+
+#-------------------------------------------------------------------------------
+# logging
+
+syslogHost = cm.Option()
+syslogHost.doc = 'syslog hostname'
+syslogHost.default = 'localhost'
+
+syslogPort = cm.Option()
+syslogPort.doc = 'syslog port'
+syslogPort.default = 514
+
+syslogFacilityString = cm.Option()
+syslogFacilityString.doc = 'syslog facility string ("user", "local0", etc)'
+syslogFacilityString.default = 'user'
+
+syslogLineFormatString = cm.Option()
+syslogLineFormatString.doc = 'python logging system format for syslog entries'
+syslogLineFormatString.default = 'Socorro Submitter (pid %(process)d): %(asctime)s %(levelname)s - %(threadName)s - %(message)s'
+
+syslogErrorLoggingLevel = cm.Option()
+syslogErrorLoggingLevel.doc = 'logging level for the log file (10 - DEBUG, 20 - INFO, 30 - WARNING, 40 - ERROR, 50 - CRITICAL)'
+syslogErrorLoggingLevel.default = 10
+
+stderrLineFormatString = cm.Option()
+stderrLineFormatString.doc = 'python logging system format for logging to stderr'
+stderrLineFormatString.default = '%(asctime)s %(levelname)s - %(threadName)s - %(message)s'
+
+stderrErrorLoggingLevel = cm.Option()
+stderrErrorLoggingLevel.doc = 'logging level for the logging to stderr (10 - DEBUG, 20 - INFO, 30 - WARNING, 40 - ERROR, 50 - CRITICAL)'
+stderrErrorLoggingLevel.default = 10
+
