@@ -52,6 +52,7 @@ else:
             formData = json.load(jsonFile)
         config.submissionFunc(formData,
                               config.dumpfile,
-                              config.url)
+                              config.url,
+                              config.logger)
     except Exception, x:
         sutil.reportExceptionAndContinue(config.logger)

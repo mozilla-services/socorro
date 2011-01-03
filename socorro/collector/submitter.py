@@ -15,7 +15,8 @@ import socorro.lib.stats as stats
 existingHangIdCache = {}
 
 #-------------------------------------------------------------------------------
-def doSubmission (formData, binaryFilePathName, url, pycurlModule=pycurl):
+def doSubmission (formData, binaryFilePathName, url, logger=sutil.FakeLogger(),
+                  pycurlModule=pycurl):
     c = pycurlModule.Curl()
     fields = [(str(t[0]), str(t[1])) for t in formData.items()]
     fields.append (("upload_file_minidump",
@@ -55,7 +56,8 @@ def createSubmitterFunction (config):
         submittedCountStatistic = statsPools.submittedCount.getStat()
         try:
             processTimeStatistic.start()
-            config.submissionFunc(formData, binaryFilePathName, config.url)
+            config.submissionFunc(formData, binaryFilePathName, config.url,
+                                  config.logger)
             submittedCountStatistic.increment()
         except Exception:
             sutil.reportExceptionAndContinue(sutil.FakeLogger())
