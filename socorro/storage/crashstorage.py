@@ -428,7 +428,7 @@ class CrashStorageSystemForLocalFS(CrashStorageSystem):
       finally:
         dumpFileHandle.close()
         jsonFileHandle.close()
-      self.logger.info('saved - %s', uuid)
+      self.logger.info('saved - %s', ooid)
       return CrashStorageSystem.OK
     except Exception, x:
       sutil.reportExceptionAndContinue(self.logger)
