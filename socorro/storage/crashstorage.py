@@ -276,6 +276,7 @@ class CrashStorageSystemForHBase(CrashStorageSystem):
     try:
       jsonDataAsString = json.dumps(jsonData)
       self.hbaseConnection.put_json_dump(uuid, jsonData, dump, number_of_retries=2)
+      self.logger.info('saved - %s', uuid)
       return CrashStorageSystem.OK
     except Exception, x:
       sutil.reportExceptionAndContinue(self.logger)
@@ -427,6 +428,7 @@ class CrashStorageSystemForLocalFS(CrashStorageSystem):
       finally:
         dumpFileHandle.close()
         jsonFileHandle.close()
+      self.logger.info('saved - %s', uuid)
       return CrashStorageSystem.OK
     except Exception, x:
       sutil.reportExceptionAndContinue(self.logger)

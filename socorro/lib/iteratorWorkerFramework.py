@@ -37,7 +37,7 @@ def respondToSIGTERM(signalNumber, frame):
   signame = 'SIGTERM'
   if signalNumber != signal.SIGTERM:
     signame = 'SIGHUP'
-  self.logger.info("%s detected", signame)
+  #self.logger.info("%s detected", signame)
   raise KeyboardInterrupt
 
 #===============================================================================
