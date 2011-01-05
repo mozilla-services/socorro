@@ -35,7 +35,7 @@ config.logger = logger
 #-------------------------------------------------------------------------------
 import socorro.storage.crashstorage as cstore
 crashStoragePool = cstore.CrashStoragePool(config,
-                                    cstore.CrashStorageSystemForLocalFS)
+                                    config.primaryStorageClass)
 config.crashStoragePool = crashStoragePool
 
 legacyThrottler = cstore.LegacyThrottler(config)

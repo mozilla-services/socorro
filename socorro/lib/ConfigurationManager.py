@@ -473,7 +473,7 @@ def classConverter(inputString):
   """ a conversion that will import a module and class name
   """
   parts = inputString.split('.')
-  packageName = parts[:-1]
+  packageName = parts[0]
   package = __import__(packageName, globals(), locals(), [])
   object = package
   for name in parts[1:]:

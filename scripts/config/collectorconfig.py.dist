@@ -40,7 +40,14 @@ from config.commonconfig import jsonFileSuffix
 from config.commonconfig import dumpFileSuffix
 
 #-------------------------------------------------------------------------------
-# File system storage constants
+# Storage constants
+
+primaryStorageClass = cm.Option()
+primaryStorageClass.doc = 'the name of the class for primary storage ' \
+                          '(socorro.storage.crashstorage.CrashStorageSystemForLocalFS or' \
+                          ' socorro.storage.crashstorage.CollectorCrashStorageSystemForHBase)'
+primaryStorageClass.default = 'socorro.storage.CrashStorageSystemForLocalFS'
+primaryStorageClass.fromStringConverter = cm.classConverter
 
 localFS = cm.Option()
 localFS.doc = 'a path to a local file system'
@@ -81,6 +88,15 @@ fallbackDumpPermissions.default = stat.S_IRGRP | stat.S_IWGRP | stat.S_IRUSR | s
 fallbackDirPermissions = cm.Option()
 fallbackDirPermissions.doc = "a number used for permissions for directories in the fallback File System"
 fallbackDirPermissions = stat.S_IRGRP | stat.S_IXGRP | stat.S_IWGRP | stat.S_IRUSR | stat.S_IXUSR | stat.S_IWUSR
+
+from config.commonconfig import hbaseHost
+from config.commonconfig import hbasePort
+from config.commonconfig import hbaseTimeout
+hbaseFallbackFS = fallbackFS
+hbaseFallbackDumpDirCount = fallbackDumpDirCount
+hbaseFallbackDumpGID = fallbackDumpGID
+hbaseFallbackDumpPermissions = fallbackDumpPermissions
+hbaseFallbackDirPermissions = fallbackDirPermissions
 
 #-------------------------------------------------------------------------------
 # application server parameters

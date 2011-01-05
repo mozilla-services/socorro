@@ -21,11 +21,6 @@ from config.collectorconfig import localFSDumpDirCount
 from config.collectorconfig import localFSDumpGID
 from config.collectorconfig import localFSDumpPermissions
 from config.collectorconfig import localFSDirPermissions
-from config.collectorconfig import fallbackFS
-from config.collectorconfig import fallbackDumpDirCount
-from config.collectorconfig import fallbackDumpGID
-from config.collectorconfig import fallbackDumpPermissions
-from config.collectorconfig import fallbackDirPermissions
 
 from config.commonconfig import jsonFileSuffix
 from config.commonconfig import dumpFileSuffix

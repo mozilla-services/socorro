@@ -32,7 +32,7 @@ def createPersistentInitialization(configModule):
 
   storage.config['logger'] = logger
 
-  storage.crashStorage = cstore.CrashStorageSystemForLocalFS(config)
+  storage.crashStorage = config.primaryStorageClass(config)
 
   storage.legacyThrottler = cstore.LegacyThrottler(config)
 
