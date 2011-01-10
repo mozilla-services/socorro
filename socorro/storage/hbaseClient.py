@@ -11,6 +11,7 @@ import heapq
 import threading
 import time
 import tarfile
+import random
 
 import socket
 
@@ -736,6 +737,47 @@ class HBaseConnectionForCrashReports(HBaseConnection):
     self.client.mutateRow('crash_reports_index_signature_ooid', sig_ooid_idx_row_key,
                           [self.mutationClass(column="ids:ooid",value=ooid)])
 
+  def export_sampled_crashes_tarball_for_dates(self,sample_size,dates,path,tarball_name):
+    """
+    Iterates through all rows for given dates and dumps json and dump for N random crashes.
+    The implementation opens up 16 scanners (one for each leading hex character of the salt)
+    one at a time and returns all of the rows randomly selected using a resovoir sampling algorithm
+    """
+    sample_size = int(sample_size)
+    dates = str.split(dates, ',')
+    def gen():
+      """generate all rows for given dates"""
+      for date in dates:
+        for id_row in self.union_scan_with_prefix('crash_reports', date, ['ids:ooid']):
+          yield id_row['ids:ooid']
+    row_gen = gen() #start the generator
+    # get inital sample
+    ooids_to_export = [x for i, x in itertools.izip(xrange(sample_size), row_gen)]
+    # cycle through remaining rows
+    for i, ooid in enumerate(row_gen):
+      # Randomly replace elements with decreasing probability
+      rand = random.randrange(i+sample_size)
+      if rand < sample_size:
+        ooids_to_export[rand] = ooid
+
+    # open output tar file
+    tf = tarfile.open(tarball_name, 'w:gz')
+    try:
+      for ooid in ooids_to_export:
+        json_file_name = os.path.join(path, ooid+'.json')
+        dump_file_name = os.path.join(path, ooid+'.dump')
+        with open(json_file_name,'w') as json_file_handle:
+          with open(dump_file_name,'w') as dump_file_handle:
+            row = self.get_raw_report(ooid)
+            json_file_handle.write(row['meta_data:json'])
+            dump_file_handle.write(row['raw_data:dump'])
+        tf.add(json_file_name, os.path.join(ooid[:2], ooid[2:4], ooid +'.json'))
+        tf.add(dump_file_name, os.path.join(ooid[:2], ooid[2:4], ooid +'.dump'))
+        os.unlink(json_file_name)
+        os.unlink(dump_file_name)
+    finally:
+      tf.close()
+
 def salted_scanner_iterable(logger,client,make_row_nice,salted_prefix,scanner):
   """
   Generator based iterable that runs over an HBase scanner
@@ -777,6 +819,7 @@ if __name__=="__main__":
       export_jsonz_for_date YYMMDD export_path
       export_jsonz_tarball_for_date YYMMDD temp_path tarball_name
       export_jsonz_tarball_for_ooids temp_path tarball_name <stdin list of ooids>
+      export_sampled_crashes_tarball_for_dates sample_size YYMMDD,YYMMDD,... path tarball_name
     HBase generic:
       describe_table table_name
       get_full_row table_name row_id
@@ -888,6 +931,12 @@ if __name__=="__main__":
       usage()
       sys.exit(1)
     connection.export_jsonz_tarball_for_ooids(*args)
+
+  elif cmd == 'export_sampled_crashes_tarball_for_dates':
+    if len(args) != 4:
+      usage()
+      sys.exit(1)
+    connection.export_sampled_crashes_tarball_for_dates(*args)
 
   elif cmd == 'describe_table':
     if len(args) != 1:
