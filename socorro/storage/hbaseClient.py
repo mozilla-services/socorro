@@ -766,11 +766,17 @@ class HBaseConnectionForCrashReports(HBaseConnection):
       for ooid in ooids_to_export:
         json_file_name = os.path.join(path, ooid+'.json')
         dump_file_name = os.path.join(path, ooid+'.dump')
-        with open(json_file_name,'w') as json_file_handle:
-          with open(dump_file_name,'w') as dump_file_handle:
-            row = self.get_raw_report(ooid)
-            json_file_handle.write(row['meta_data:json'])
-            dump_file_handle.write(row['raw_data:dump'])
+        row = self.get_raw_report(ooid)
+        json_file_handle = open(json_file_name,'w')
+        try:
+          json_file_handle.write(row['meta_data:json'])
+        finally:
+          json_file_handle.close()
+        dump_file_handle = open(dump_file_name,'w')
+        try:
+          dump_file_handle.write(row['raw_data:dump'])
+        finally:
+          dump_file_handle.close()
         tf.add(json_file_name, os.path.join(ooid[:2], ooid[2:4], ooid +'.json'))
         tf.add(dump_file_name, os.path.join(ooid[:2], ooid[2:4], ooid +'.dump'))
         os.unlink(json_file_name)
