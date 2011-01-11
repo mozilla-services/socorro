@@ -51,7 +51,7 @@ def move (conf,
       dumpContents = sourceStorage.get_raw_dump(ooid)
       logger.debug('pushing %s to dest', ooid)
       destStorage.save_raw(ooid, jsonContents, dumpContents)
-      sourceStorage.remove(ooid)
+      sourceStorage.quickDelete(ooid)
       return iwf.ok
     except Exception, x:
       sutil.reportExceptionAndContinue(logger)

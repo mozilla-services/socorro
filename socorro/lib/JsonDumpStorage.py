@@ -418,6 +418,22 @@ class JsonDumpStorage(socorro_dumpStorage.DumpStorage):
       self.logger.warning("%s - %s was totally unknown" % (threading.currentThread().getName(), ooid))
       raise NoSuchUuidFound, "no trace of %s was found" % ooid
 
+  #-----------------------------------------------------------------------------------------------------------------
+  def quickDelete (self, ooid):
+    """
+    deletes just the json and dump files without testing for the links.  This is
+    only to be used after destructiveDateWalk that will have already removed the
+    symbolic links. """
+    namePath, nameParts = self.lookupNamePath(ooid)
+    try:
+      self.osModule.unlink(os.path.join(namePath,ooid+self.jsonSuffix))
+    except Exception:
+      pass
+    try:
+      self.osModule.unlink(os.path.join(namePath,ooid+self.dumpSuffix))
+    except Exception:
+      pass
+
 #   #-----------------------------------------------------------------------------------------------------------------
 #   def move (self, ooid, newAbsolutePath):
 #     """

@@ -249,6 +249,9 @@ class CrashStorageSystem(object):
   #-----------------------------------------------------------------------------------------------------------------
   def remove (self, uuid):
     raise NotImplementedException("remove is not implemented")
+   #-----------------------------------------------------------------------------------------------------------------
+  def quickDelete (self, uuid):
+    raise self.remove(uuid)
   #-----------------------------------------------------------------------------------------------------------------
   def uuidInStorage (self, uuid):
     return False
@@ -477,6 +480,10 @@ class CrashStorageSystemForLocalFS(CrashStorageSystem):
   #-----------------------------------------------------------------------------------------------------------------
   def remove (self, uuid):
     self.localFS.remove(uuid)
+
+  #-----------------------------------------------------------------------------------------------------------------
+  def quickDelete (self, uuid):
+    self.localFS.quickDelete(uuid)
 
 #=================================================================================================================
 class CrashStorageSystemForNFS(CrashStorageSystem):
