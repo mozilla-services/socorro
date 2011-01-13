@@ -4,7 +4,7 @@ except ImportError:
   import simplejson as json
 
 import socorro.lib.JsonDumpStorage as jds
-import socorro.hbase.hbaseClient as hbc
+import socorro.storage.hbaseClient as hbc
 import socorro.lib.util as sutil
 import socorro.lib.datetimeutil as dtutil
 
@@ -12,8 +12,8 @@ import socorro.lib.datetimeutil as dtutil
 def resubmit (conf, jds=jds, hbc=hbc, open=open):
   logger = conf.logger
   logger.info('creating hbase connection: host: %s, port: %s', conf.hbaseHost, conf.hbasePort)
-  hbaseConnection = hbc.HBaseConnectionForCrashReports(conf.hbaseHost, 
-                                                       conf.hbasePort, 
+  hbaseConnection = hbc.HBaseConnectionForCrashReports(conf.hbaseHost,
+                                                       conf.hbasePort,
                                                        conf.hbaseTimeout)
   logger.info('creating json/dump store object: root: %s', conf.hbaseFallbackFS)
   fallbackStorage = jds.JsonDumpStorage(root=conf.hbaseFallbackFS,
