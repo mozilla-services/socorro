@@ -132,6 +132,9 @@ class DatabaseConnectionPool(dict):
       self.logger.info("%s - trying to re-establish a database connection", threading.currentThread().getName())
       try:
         del self[name]
+      except KeyError:
+        pass
+      try:
         connection = self.connectionWithoutTest(name)
         cursor.execute("select 1")
         cursor.fetchall()
