@@ -162,6 +162,14 @@ syslogPort = cm.Option()
 syslogPort.doc = 'syslog port'
 syslogPort.default = 514
 
+syslogSocket = cm.Option()
+syslogSocket.doc = 'syslog local socket'
+syslogSocket.default = '/dev/log'
+
+syslogTranport = cm.Option()
+syslogTranspot.doc = 'syslog transport method ("socket", "udp")'
+syslogTranspot.default = 'socket'
+
 syslogFacilityString = cm.Option()
 syslogFacilityString.doc = 'syslog facility string ("user", "local0", etc)'
 syslogFacilityString.default = 'user'

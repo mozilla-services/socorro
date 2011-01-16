@@ -8,6 +8,7 @@ import socorro.lib.JsonDumpStorage as jds
 
 import socorro.storage.crashstorage as cstore
 
+
 #-----------------------------------------------------------------------------------------------------------------
 def createPersistentInitialization(configModule):
   storage = sutil.DotDict()
@@ -17,8 +18,17 @@ def createPersistentInitialization(configModule):
 
   logger.setLevel(logging.DEBUG)
 
+  address = None
+  if config.syslogTransport == 'socket':
+    address = config.syslogSocket
+  elif config.syslogTransport == 'udp':
+    address = (config.syslogHost, config.syslogPort)
+  else:
+    from socorro.lib.ConfigurationManager import OptionError
+    raise OptionError('Unknown syslog transport %s') % config.syslogTransport
+
   syslog = logging.handlers.SysLogHandler(
-    address=(config.syslogHost, config.syslogPort),
+    address=address,
     facility=config.syslogFacilityString,
   )
   syslog.setLevel(config.syslogErrorLoggingLevel)
