@@ -175,10 +175,12 @@ def testHBaseConnection_constructor_3():
                                column=dummy_columnClass,
                                mutation=dummy_mutationClass)
   except Exception, x:
-    exceptionStringWithoutClassInfo = re.sub(r'<.*>', '<class info deleted>', str(x))
-    assert exceptionStringWithoutClassInfo == theExpectedExceptionAsString, "expected %s, but got %s" % (theExpectedExceptionAsString, exceptionStringWithoutClassInfo)
+    assert False, 'expecited no exception, but got %s' % str(x)
+    #exceptionStringWithoutClassInfo = re.sub(r'<.*>', '<class info deleted>', str(x))
+    #assert exceptionStringWithoutClassInfo == theExpectedExceptionAsString, "expected %s, but got %s" % (theExpectedExceptionAsString, exceptionStringWithoutClassInfo)
   else:
-    assert False, "expected the exception %s, but no exception was raised" % theExpectedExceptionAsString
+    assert conn.badConnection, 'expected conn.badConnection to be True, but it was False'
+    #assert False, "expected the exception %s, but no exception was raised" % theExpectedExceptionAsString
 
 class HBaseConnectionWithPresetExpectations(object):
   def __init__(self):

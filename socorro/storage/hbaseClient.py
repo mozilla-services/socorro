@@ -246,15 +246,21 @@ class HBaseConnection(object):
                                   socket.error
                                  )
 
-    self.make_connection(timeout=self.timeout)
+    try:
+      self.make_connection(timeout=self.timeout)
+    except NoConnectionException:
+      utl.reportExceptionAndContinue(logger=self.logger)
 
   def make_connection(self, retry=2, timeout=9000):
     """Establishes the underlying connection to hbase"""
-    self.logger.debug('make_connection, timeout = %d', timeout)
+    try:
+      self.logger.debug('make_connection, timeout = %d', timeout)
+    except Exception:
+      pass
     count = retry
     while count:
-      count -= 1
       try:
+        count -= 1
         # Make socket
         transport = self.tsocketModule.TSocket(self.host, self.port)
         transport.setTimeout(timeout) #in ms
@@ -266,10 +272,12 @@ class HBaseConnection(object):
         self.client = self.clientClass(self.protocol)
         # Connect!
         self.transport.open()
+        self.badConnection = False
         self.logger.debug('connection successful')
         return
       except self.hbaseThriftExceptions, x:
         self.logger.debug('connection fails: %s', str(x))
+        self.badConnection = True
         pass
     exceptionType, exception, tracebackInfo = sys.exc_info()
     raise NoConnectionException, NoConnectionException(exceptionType, exception, retry), tracebackInfo
