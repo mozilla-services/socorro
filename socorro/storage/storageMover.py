@@ -50,7 +50,9 @@ def move (conf,
         jsonContents = {}
       dumpContents = sourceStorage.get_raw_dump(ooid)
       logger.debug('pushing %s to dest', ooid)
-      destStorage.save_raw(ooid, jsonContents, dumpContents)
+      result = destStorage.save_raw(ooid, jsonContents, dumpContents)
+      if result == cstore.CrashStorageSystem.ERROR:
+        return iwf.failure
       sourceStorage.quickDelete(ooid)
       return iwf.ok
     except Exception, x:
