@@ -17,7 +17,7 @@ import socket
 
 from thrift import Thrift  #get Thrift modue
 from thrift.transport import TSocket, TTransport #get modules
-from thrift.protocol import TBinaryProtocol #get module
+from thrift.protocol.TBinaryProtocol import TBinaryProtocolAccelerated
 from hbase import ttypes #get module
 from hbase.hbase import Client, ColumnDescriptor, Mutation #get classes from module
 
@@ -219,7 +219,7 @@ class HBaseConnection(object):
                thrift=Thrift,
                tsocket=TSocket,
                ttrans=TTransport,
-               protocol=TBinaryProtocol,
+               protocol=TBinaryProtocolAccelerated,
                ttp=ttypes,
                client=Client,
                column=ColumnDescriptor,
@@ -267,7 +267,7 @@ class HBaseConnection(object):
         # Buffering is critical. Raw sockets are very slow
         self.transport = self.transportModule.TBufferedTransport(transport)
         # Wrap in a protocol
-        self.protocol = self.protocolModule.TBinaryProtocol(self.transport)
+        self.protocol = self.protocolModule.TBinaryProtocolAccelerated(self.transport)
         # Create a client to use the protocol encoder
         self.client = self.clientClass(self.protocol)
         # Connect!
@@ -323,7 +323,7 @@ class HBaseConnectionForCrashReports(HBaseConnection):
                thrift=Thrift,
                tsocket=TSocket,
                ttrans=TTransport,
-               protocol=TBinaryProtocol,
+               protocol=TBinaryProtocolAccelerated,
                ttp=ttypes,
                client=Client,
                column=ColumnDescriptor,
