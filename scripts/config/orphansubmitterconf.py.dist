@@ -8,6 +8,10 @@ numberOfThreads = cm.Option()
 numberOfThreads.doc = 'the number of threads to use'
 numberOfThreads.default = 4
 
+dryrun = cm.Option()
+dryrun.doc = "if True, don't actually move things into destination"
+dryrun.default = False
+
 #-------------------------------------------------------------------------------
 # source storage
 

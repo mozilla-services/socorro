@@ -4,7 +4,7 @@ import sys
 import logging
 import logging.handlers
 
-import config.crashmoverconfig as cmconf
+import config.orphansubmitterconf as cmconf
 
 import socorro.lib.ConfigurationManager as configurationManager
 import socorro.storage.orphans as smover

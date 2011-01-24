@@ -55,11 +55,14 @@ def move (conf,
                        ' - saving empty json', ooid)
         jsonContents = {}
       dumpContents = sourceStorage.get_raw_dump(ooid)
-      logger.debug('pushing %s to dest', ooid)
-      result = destStorage.save_raw(ooid, jsonContents, dumpContents)
-      if result == cstore.CrashStorageSystem.ERROR:
-        return iwf.failure
-      sourceStorage.quickDelete(ooid)
+      if conf.dryrun:
+        logger.info("dry run - pushing %s to dest", ooid)
+      else:
+        logger.debug('pushing %s to dest', ooid)
+        result = destStorage.save_raw(ooid, jsonContents, dumpContents)
+        if result == cstore.CrashStorageSystem.ERROR:
+          return iwf.failure
+        sourceStorage.quickDelete(ooid)
       return iwf.ok
     except Exception, x:
       sutil.reportExceptionAndContinue(logger)
