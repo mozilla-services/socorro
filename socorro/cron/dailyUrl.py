@@ -79,7 +79,8 @@ def dailyUrlDump(config):
         r.hangid, --22
         r.reason, --23
         r.process_type, --24
-        r.app_notes --25
+        r.app_notes, --25
+        r.install_age --26
       from
         reports r left join productdims pd on r.product = pd.product and r.version = pd.version
       where
