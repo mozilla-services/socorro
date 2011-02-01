@@ -42,6 +42,24 @@ function unlock {
   rm -f "/tmp/${JOB}.lock"
 }
 
+function fatal {
+  if [ "$#" != "1" ]
+  then
+    echo "syntax: fatal <exit_code> <message>"
+    return 1
+  fi
+
+  exit_code=$?
+  message=$?
+
+  if [ "$exit_code" != 0 ]
+  then
+    echo "Fatal exit code: $exit_code"
+    echo $message
+    exit $exit_code
+  fi
+}
+
 # Most Socorro cron jobs are implemented in Python.
 # Provide a wrapper to make calling these more convenient.
 function pyjob {
