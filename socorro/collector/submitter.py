@@ -63,10 +63,10 @@ def createSubmitterFunction (config):
             sutil.reportExceptionAndContinue(sutil.FakeLogger())
             failureCountStatistic = statsPools.failureCount.getStat()
             failureCountStatistic.increment()
-            return iwf.ok
+            return iwf.OK
         finally:
             processTimeStatistic.end()
-        return iwf.ok
+        return iwf.OK
     return func
 
 #-------------------------------------------------------------------------------

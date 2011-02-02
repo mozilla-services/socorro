@@ -61,12 +61,17 @@ def move (conf,
         logger.debug('pushing %s to dest', ooid)
         result = destStorage.save_raw(ooid, jsonContents, dumpContents)
         if result == cstore.CrashStorageSystem.ERROR:
-          return iwf.failure
-        sourceStorage.quickDelete(ooid)
-      return iwf.ok
+          return iwf.FAILURE
+        elif result == cstore.CrashStorageSystem.RETRY:
+          return iwf.RETRY
+        try:
+          sourceStorage.quickDelete(ooid)
+        except Exception:
+          sutil.reportExceptionAndContinue(self.logger)
+      return iwf.OK
     except Exception, x:
       sutil.reportExceptionAndContinue(logger)
-      return iwf.failure
+      return iwf.FAILURE
   #-----------------------------------------------------------------------------
 
   submissionMill = iwf.IteratorWorkerFramework(conf,

@@ -13,8 +13,9 @@ import socorro.lib.util as sutil
 import socorro.lib.threadlib as thr
 
 #-------------------------------------------------------------------------------
-ok = 1
-failure = 0
+OK = 1
+FAILURE = 0
+RETRY = 2
 
 #-------------------------------------------------------------------------------
 def defaultTaskFunc(jobTuple):
@@ -61,12 +62,10 @@ class IteratorWorkerFramework(object):
     self.taskFunc = taskFunc
     # setup the task manager to a queue size twice the size of the number
     # of threads in use.  Because some mechanisms that feed the queue are
-    # are destructive (JsonDumpStorage.destructiveDateWalk), we want to limit
+    # can be destructive (JsonDumpStorage.destructiveDateWalk), we want to limit
     # the damage in case of error or quit.
     self.workerPool = thr.TaskManager(self.config.numberOfThreads,
                                       self.config.numberOfThreads * 2)
-    #self.workerPool = thr.TaskManager(self.config.numberOfThreads,
-                                      #10)
     self.quit = False
     self.logger.debug('finished init')
 
@@ -117,14 +116,14 @@ class IteratorWorkerFramework(object):
         result = self.taskFunc(*args)
         if self.quit:
           break
-        if result == ok:
+        if result in (OK, FAILURE):
           return
         waitInSeconds = backoffGenerator.next()
-        self.logger.critical('major failure in crash storage - retry in %s seconds',
+        self.logger.critical('failure in task - retry in %s seconds',
                         waitInSeconds)
         self.responsiveSleep(waitInSeconds,
                              10,
-                             "waiting for retry after failure in crash storage")
+                             "waiting for retry after failure in task")
     except KeyboardInterrupt:
       return
 

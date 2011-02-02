@@ -206,6 +206,7 @@ class CrashStorageSystem(object):
         self.save = benchmark(self.save)
     except:
       pass
+    self.exceptionsEligibleForRetry = []
   #-----------------------------------------------------------------------------------------------------------------
   def close (self):
     pass
@@ -225,6 +226,7 @@ class CrashStorageSystem(object):
   OK = 1
   DISCARDED = 2
   ERROR = 3
+  RETRY = 4
   #-----------------------------------------------------------------------------------------------------------------
   def terminated (self, jsonData):
     return False
@@ -269,6 +271,7 @@ class CrashStorageSystemForHBase(CrashStorageSystem):
     assert "hbaseTimeout" in config, "hbaseTimeout is missing from the configuration"
     self.logger.info('connecting to hbase')
     self.hbaseConnection = hbaseClient.HBaseConnectionForCrashReports(config.hbaseHost, config.hbasePort, config.hbaseTimeout, logger=self.logger)
+    self.exceptionsEligibleForRetry = self.hbaseConnection.hbaseThriftExceptions
 
   #-----------------------------------------------------------------------------------------------------------------
   def close (self):
@@ -281,6 +284,9 @@ class CrashStorageSystemForHBase(CrashStorageSystem):
       self.hbaseConnection.put_json_dump(uuid, jsonData, dump, number_of_retries=2)
       self.logger.info('saved - %s', uuid)
       return CrashStorageSystem.OK
+    except self.exceptionsEligibleForRetry:
+      sutil.reportExceptionAndContinue(self.logger)
+      return CrashStorageSystem.RETRY
     except Exception, x:
       sutil.reportExceptionAndContinue(self.logger)
       return CrashStorageSystem.ERROR
