@@ -77,15 +77,15 @@
 			     echo " <a href='http://code.google.com/p/socorro/wiki/NullOrEmptySignatures' class='inline-help'>Learn More</a> ";
 			 } ?>
                          <div class="signature-icons">
-                         <?php // Clean the logic for hang, browser and plugin icons in Bug #604740. 
+                         <?php 
 							$linked = false;
 							if (isset($crasher->{'link'}) && !empty($crasher->{'link'})) {
 							    $linked = true;
 							}
-							if ($crasher->{'hang_count'} > 0 || $crasher->{'hang_details'}['is_hang'] == true) { ?>
+							if ($crasher->{'hang_count'} > 0) { ?>
 							    <?php if ($linked) { ?><a href="<?= $crasher->{'link'} ?>" class="hang-pair-btn" title="Hanged Crash"><?php } ?><img src="<?= url::site('/img/3rdparty/fatcow/stop16x16.png')?>" width="16" height="16" alt="Hanged Crash" title="Hanged Crash" class="hang" /><?php if ($linked) { echo '</a>'; } ?>
 							<?php } ?>
-						    <?php if ($crasher->{'plugin_count'} > 0 || $crasher->{'hang_details'}['is_plugin'] == true) {?>
+						    <?php if ($crasher->{'plugin_count'} > 0) {?>
 						              <?php if ($linked) { ?><a href="<?= $crasher->{'link'} ?>" class="plugin-btn" title="Plugin Crash"><?php } ?><img src="<?= url::site('/img/3rdparty/fatcow/brick16x16.png')?>" width="16" height="16" alt="Plugin Crash" title="Plugin Crash" class="plugin" class="plugin" /><?php if ($linked) { echo '</a>'; } ?>
 						    <?php } ?>
 						    <?php if ($crasher->{'count'} > $crasher->{'plugin_count'}) { ?>

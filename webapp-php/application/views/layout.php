@@ -142,7 +142,7 @@
                 <li><a href="<?php echo url::site(); ?>admin">Admin</a></li>
                 <li><a href="<?= url::site('auth/logout', Kohana::config('auth.proto')) ?>">Log Out</a></li>
             <?php } elseif ($auth_is_active == FALSE) { ?>
-                <li><a>Auth Disabled</a></li>
+                <li><a href="<?php echo url::site(); ?>admin">Admin</a></li>
             <?php } else { ?>
                 <li><a href="<?= url::site('auth/login', Kohana::config('auth.proto')) ?>">Log In</a></li>
             <?php } ?>

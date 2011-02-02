@@ -127,7 +127,7 @@ class Query_Controller extends Controller {
         }
         
         // Admin
-        $params['admin'] = ($this->auth_is_active && Auth::instance()->logged_in()) ? true : false;
+        $params['admin'] = $this->logged_in;
         
         // Normalize parameters
         $this->searchReportHelper->normalizeParams($params);

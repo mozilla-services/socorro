@@ -71,7 +71,7 @@ class Report_Controller extends Controller {
 	$d['missing_sig'] = '';
 
         $params = $this->getRequestParameters($d);
-        $params['admin'] = ($this->auth_is_active && Auth::instance()->logged_in()) ? true : false;
+        $params['admin'] = $this->logged_in;
 
         $helper->normalizeParams( $params );
         $this->_setupDisplaySignature($params);
@@ -102,8 +102,7 @@ class Report_Controller extends Controller {
 	    // Code for $secureUrl should stay in sync with code for $currentPath above
 	    $currentPath = url::site('report/list') . '?' . html::query_string($params) . '&page=';
 	    
-            $logged_in = $this->auth_is_active && Auth::instance()->logged_in();
-	    if ($logged_in) {
+	    if ($this->logged_in) {
 		$this->sensitivePageHTTPSorRedirectAndDie($currentPath . $page);
 	    }
 
@@ -165,7 +164,7 @@ class Report_Controller extends Controller {
 		'correlation_product' => $correlation_product,
 		'correlation_version' => $correlation_version,
 		'correlation_os' => $this->_correlations($builds),
-		'logged_in' => $logged_in,
+		'logged_in' => $this->logged_in,
 		'url_nav' => url::site('products/'.$product),        
 	    ));
 	}
@@ -387,8 +386,7 @@ class Report_Controller extends Controller {
             }
 	    return url::redirect('report/pending/'.$uuid);
         } else {
-            $logged_in = $this->auth_is_active && Auth::instance()->logged_in();
-	    if ($logged_in) {
+	    if ($this->logged_in) {
 		$this->sensitivePageHTTPSorRedirectAndDie('/report/index/' . $id);
 	    }
 
@@ -427,7 +425,7 @@ class Report_Controller extends Controller {
         	    'branch' => $this->branch_model->getByProductVersion($report->product, $report->version),
         	    'comments' => $comments,
         	    'extensions' => $extensions,
-        	    'logged_in' => $logged_in,
+        	    'logged_in' => $this->logged_in,
 				'raw_dump_urls' => $raw_dump_urls,
         	    'reportJsonZUri' => $reportJsonZUri,
         	    'report' => $report,

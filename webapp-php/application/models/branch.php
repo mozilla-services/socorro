@@ -237,15 +237,21 @@ class Branch_Model extends Model {
     /**
      * Fetch the names of all unique branches
 	 *
+ 	 * @param  bool     True if we should remove the cached query results, used in admin panel
 	 * @return 	array 	An array of branch objects
      */
-    public function getBranches() { 
-        return $this->fetchRows(
-			'/* soc.web branch.branches */ 
-				SELECT DISTINCT branch 
-				FROM branches 
-				ORDER BY branch
-			');
+    public function getBranches($delete_cache=false) { 
+        $sql = '/* soc.web branch.branches */ 
+			SELECT DISTINCT branch 
+			FROM branches 
+			ORDER BY branch
+		';
+
+        if ($delete_cache) {
+            $this->cache->delete($this->queryHashKey($sql));
+        }
+
+        return $this->fetchRows($sql);		
     }
 
     /**
@@ -265,16 +271,21 @@ class Branch_Model extends Model {
     /**
      * Fetch the names of all unique products.
  	 *
+ 	 * @param  bool     True if we should remove the cached query results, used in admin panel
 	 * @return array 	An array of products
      */
-    public function getProducts() {
-        $results = $this->fetchRows(
-			'/* soc.web branch.products */ 
-				SELECT DISTINCT product 
-				FROM branches 
-				ORDER BY product
-			');
+    public function getProducts($delete_cache=false) {
+        $sql = '/* soc.web branch.products */ 
+			SELECT DISTINCT product 
+			FROM branches 
+			ORDER BY product
+		';
+        
+        if ($delete_cache) {
+            $this->cache->delete($this->queryHashKey($sql));
+        }
 
+        $results = $this->fetchRows($sql);
 		if (isset($results[0])) {
 		    $products = array();
 		    foreach ($results as $result) {
@@ -304,35 +315,47 @@ class Branch_Model extends Model {
     /**
      * Fetch all distinct product / version combinations.
 	 *
+	 * @return bool     True if you want to delete the previously cached data first; used by admin panel
 	 * @return array 	An array of version objects
      */
-    public function getProductVersions() {
-        return $this->fetchRows(
-			'/* soc.web branch.prodversions */ 
-				SELECT DISTINCT pd.id, pd.product, pd.version, pd.branch, pd.release, pv.start_date, pv.end_date, pv.featured, pv.throttle
-				FROM productdims pd
-				INNER JOIN product_visibility pv ON pv.productdims_id = pd.id
-				ORDER BY pd.product, pd.version
-			');
+    public function getProductVersions($delete_cache=false) {
+        $sql = '/* soc.web branch.prodversions */ 
+			SELECT DISTINCT pd.id, pd.product, pd.version, pd.branch, pd.release, pv.start_date, pv.end_date, pv.featured, pv.throttle
+			FROM productdims pd
+			INNER JOIN product_visibility pv ON pv.productdims_id = pd.id
+			ORDER BY pd.product, pd.version
+		';
+        
+        if ($delete_cache) {
+            $this->cache->delete($this->queryHashKey($sql));
+        }
+
+        return $this->fetchRows($sql);
     }
     
     /**
      * Fetch all distinct product / version combinations that have a start date that is prior to today's
      * date and an end date that is after today's date.
      *
+     * @param  bool     True if we should delete the cached query results first; used by the admin panel
      * @return array    An array of version objects
      */
-    public function getCurrentProductVersions() {
+    public function getCurrentProductVersions($delete_cache=false) {
         $date = date("Y-m-d");
-        return $this->fetchRows(
-			'/* soc.web branch.prodversions */ 
-				SELECT DISTINCT pd.id, pd.product, pd.version, pd.branch, pd.release, pv.start_date, pv.end_date, pv.featured, pv.throttle
-				FROM productdims pd
-				INNER JOIN product_visibility pv ON pv.productdims_id = pd.id
-				WHERE pv.start_date <= ?
-				AND pv.end_date >= ?
-				ORDER BY pd.product, pd.version
-			', true, array($date, $date));
+        $sql = "/* soc.web branch.getCurrentProductVersions */ 
+			SELECT DISTINCT pd.id, pd.product, pd.version, pd.branch, pd.release, pv.start_date, pv.end_date, pv.featured, pv.throttle
+			FROM productdims pd
+			INNER JOIN product_visibility pv ON pv.productdims_id = pd.id
+			WHERE pv.start_date <= timestamp without time zone '".$date."'
+			AND pv.end_date >= timestamp without time zone '".$date."'
+			ORDER BY pd.product, pd.version
+		";
+        
+        if ($delete_cache) {
+            $this->cache->delete($this->queryHashKey($sql));
+        }
+        
+        return $this->fetchRows($sql);
     }
     
     /**
@@ -419,9 +442,10 @@ class Branch_Model extends Model {
 	 * 
 	 * @param 	bool	True if you want cached results; false if you don't.
 	 * @param   bool    True if you want only current versions; false if you want all versions.
+	 * @param   bool    True if you want to delete the previously cached queries; used by admin panel.
 	 * @return 	array 	An array of products, branches and versions results.
      */
-    public function getBranchData($cache=true, $current_versions=true) { 
+    public function getBranchData($cache=true, $current_versions=true, $delete_cache=false) { 
         $cache_key = 'query_branch_data';
         if ($current_versions) {
             $cache_key = '_current';
@@ -430,9 +454,9 @@ class Branch_Model extends Model {
         
         if (!$data || !$cache) {
             $data = array(
-                'products' => $this->getProducts(),
-                'branches' => $this->getBranches(),
-                'versions' => ($current_versions) ? $this->getCurrentProductVersions() : $this->getProductVersions()
+                'products' => $this->getProducts($delete_cache),
+                'branches' => $this->getBranches($delete_cache),
+                'versions' => ($current_versions) ? $this->getCurrentProductVersions($delete_cache) : $this->getProductVersions($delete_cache)
             ); 
             $this->cache->set($cache_key, $data);
         }
@@ -493,23 +517,28 @@ class Branch_Model extends Model {
      * Fetch the featured versions for a particular product.
      *
      * @param string    The product name
+	 * @param   bool    True if you want to delete the previously cached queries; used by admin panel.
      * @return array    An array of featured versions
      */
-    public function getFeaturedVersions($product)
+    public function getFeaturedVersions($product, $delete_cache=false)
     {
         $date = date("Y-m-d");
-        $versions = $this->fetchRows(
-			'/* soc.web branch.getFeaturedVersions */ 
-				SELECT DISTINCT pd.id, pd.product, pd.version, pd.branch, pd.release, pv.start_date, pv.end_date, pv.featured, pv.throttle
-				FROM productdims pd
-				INNER JOIN product_visibility pv ON pv.productdims_id = pd.id
-				WHERE pd.product = ?
-				AND pv.start_date <= ?
-				AND pv.end_date >= ?
-				AND pv.featured = true
-				ORDER BY pd.product, pd.version
-			', true, array($product, $date, $date));
+        $sql = '/* soc.web branch.getFeaturedVersions */ 
+			SELECT DISTINCT pd.id, pd.product, pd.version, pd.branch, pd.release, pv.start_date, pv.end_date, pv.featured, pv.throttle
+			FROM productdims pd
+			INNER JOIN product_visibility pv ON pv.productdims_id = pd.id
+			WHERE pd.product = ' . $this->db->escape($product) . '
+			AND pv.start_date <= ' . $this->db->escape($date) . '
+			AND pv.end_date >= ' . $this->db->escape($date) . '
+			AND pv.featured = true
+			ORDER BY pd.product, pd.version
+		'; 
 
+        if ($delete_cache) {
+            $this->cache->delete($this->queryHashKey($sql));
+        }
+
+        $versions = $this->fetchRows($sql);
         if (isset($versions[0])) {
             rsort($versions);
             return $versions;
@@ -584,23 +613,28 @@ class Branch_Model extends Model {
      *
      * @param string    The product name
      * @param array     An array of featured versions
+	 * @param bool      True if you want to delete the previously cached queries; used by admin panel.
      * @return array    An array of unfeatured versions
      */
-    public function getUnfeaturedVersions($product, $featured_versions)
+    public function getUnfeaturedVersions($product, $featured_versions, $delete_cache=false)
     {
         $date = date('Y-m-d');
-        $versions = $this->fetchRows(
-			'/* soc.web branch.getFeaturedVersions */ 
+        $sql = '/* soc.web branch.getFeaturedVersions */ 
 				SELECT DISTINCT pd.id, pd.product, pd.version, pd.branch, pd.release, pv.start_date, pv.end_date, pv.featured, pv.throttle
 				FROM productdims pd
 				INNER JOIN product_visibility pv ON pv.productdims_id = pd.id
-				WHERE pd.product = ?
-				AND pv.start_date <= ?
-				AND pv.end_date >= ?
+				WHERE pd.product = ' . $this->db->escape($product) . '
+				AND pv.start_date <= ' . $this->db->escape($date) . '
+				AND pv.end_date >= ' . $this->db->escape($date) . '
 				AND pv.featured = false
 				ORDER BY pd.product, pd.version
-			', true, array($product, $date, $date));
+		';
 
+        if ($delete_cache) {
+            $this->cache->delete($this->queryHashKey($sql));
+        }
+
+        $versions = $this->fetchRows($sql);
         if (isset($versions[0])) {
             if (isset($featured_versions) && !empty($featured_versions)) {
                 foreach($featured_versions as $featured_version) {

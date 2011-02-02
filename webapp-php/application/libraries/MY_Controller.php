@@ -71,6 +71,9 @@ class Controller extends Controller_Core {
     // Wrapper layout for current view
     protected $layout = 'layout';
 
+    // User authentication status
+    protected $logged_in = FALSE;
+
     // Set an array of versions that are not featured for the chosen product.
     public $unfeatured_versions;
 
@@ -101,8 +104,9 @@ class Controller extends Controller_Core {
             'controller' => $this
         );
 
-        // Determine whether auth is enabled for this site.
+        // Determine whether auth is enabled for this site, and if so whether the user is authenticated.
         $this->auth_is_active = Kohana::config('auth.driver', 'NoAuth') != "NoAuth";
+        $this->_loggedIn();
         
         // Grab an array of current products, ensure that 1 is chosen, and grab the featured versions for that product.
         $this->current_products = $this->prepareCurrentProducts();
@@ -130,6 +134,20 @@ class Controller extends Controller_Core {
             // If the auth protocol is set to https and force_https is true, redirect to https
             url::redirect(url::site(url::current(TRUE), 'https'));
         }
+    }
+
+    /**
+     * Determines whether or not the user is logged in.  Sets $this->logged_in to TRUE
+     * if so.  Leaves as FALSE if not.
+     *
+     * @return void
+     */
+    private function _loggedIn() 
+    {
+        if (!$this->auth_is_active || Auth::instance()->logged_in()) {
+            $this->logged_in = TRUE;
+        }
+        $this->setViewData('logged_in', $this->logged_in);
     }
 
     /**
@@ -336,6 +354,7 @@ class Controller extends Controller_Core {
     {
 	$this->setViewData('auth_is_active', $this->auth_is_active);
     }
+    
    /**
     * Ensure that if a user is authorized for sensitive information
     * that this page is being served over HTTPS. If not, then the
@@ -549,14 +568,15 @@ class Controller extends Controller_Core {
     /**
      * Prepare the featured and unfeatured versions for the navigation and the controllers.
      * 
+	 * @param bool      True if you want to delete the previously cached queries; used by admin panel.
      * @return void
      */
-    public function prepareVersions()
+    public function prepareVersions($delete_cache=false)
     {
         $this->featured_versions = $this->_prepareVersionsSort(
-            $this->branch_model->getFeaturedVersions($this->chosen_version['product']));
+            $this->branch_model->getFeaturedVersions($this->chosen_version['product'], $delete_cache));
         $this->unfeatured_versions = $this->_prepareVersionsSort(
-            $this->branch_model->getUnfeaturedVersions($this->chosen_version['product'], $this->featured_versions));
+            $this->branch_model->getUnfeaturedVersions($this->chosen_version['product'], $this->featured_versions, $delete_cache));
     }
     
     /**
@@ -586,6 +606,29 @@ class Controller extends Controller_Core {
             return $new_versions;
         }
         return null;
+    }
+
+    /**
+     * Verify that the selected version is a valid version for this product.
+     *
+     * @param   string  The name of a version
+     * @return  void
+     */
+    public function versionExists($version)
+    {
+        if (!empty($this->featured_versions) && !empty($this->unfeatured_versions)) {
+            $product_versions = array_merge($this->featured_versions, $this->unfeatured_versions);
+        } elseif (!empty($this->featured_versions)) {
+            $product_versions = $this->featured_versions;
+        } elseif (!empty($this->unfeatured_versions)) {
+            $product_versions = $this->unfeatured_versions;
+        }
+        foreach ($product_versions as $product_version) {
+            if ($product_version->version == $version) {
+                return true;
+            }
+        }
+        return false;
     }
 
 }

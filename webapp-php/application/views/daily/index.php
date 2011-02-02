@@ -48,7 +48,7 @@ echo html::script(array(
 	<div class="body">
         <?php if (!empty($graph_data)) { ?>
 		    <div id="adu-chart"></div>
-		    <p class="adu-chart-help">This graph uses an approximate <a href="http://code.google.com/p/socorro/wiki/SocorroUIAdmin#Throttle">throttle value</a> for each version, which may not be completely accurate for the entire time period.</p>
+		    <p class="adu-chart-help">This graph uses an approximate <a href="https://wiki.mozilla.org/Socorro/SocorroUI/Branches_Admin#Throttle">throttle value</a> for each version, which may not be completely accurate for the entire time period.</p>
         <?php } else { ?>
             <p>No Active Daily User crash data is available for this report.</p>
         <?php } ?>

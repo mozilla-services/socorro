@@ -20,13 +20,7 @@ class Model extends Model_Core {
 	public function fetchRows($sql, $do_cache=TRUE, $binds=NULL) {
 
         if ($do_cache) {
-            // Kind of dirty, but hashing the whole query seems to work.
-	    if (is_array($binds)) {
-		$cache_key = 'query_hash_' . md5($sql . implode('_', $binds));
-	    } else {
-		$cache_key = 'query_hash_' . md5($sql);
-	    }
-
+            $cache_key = $this->queryHashKey($sql, $binds);
             $data = $this->cache->get($cache_key);
             if ($data) {
                 return $data;
@@ -68,6 +62,22 @@ class Model extends Model_Core {
             $data[] = $row->{$col_name};
         }
         return $data;
+    }
+
+    /**
+     * Create the hash key that will be used to store the query in cache.
+     *
+     * @param string The $sql statement
+     * @param  array Parameters to be escaped and bound in the SQL using Kohana Database query method. 
+     * @return string A query hash string
+     */
+    public function queryHashKey($sql, $binds=NULL) {
+	    if (is_array($binds)) {
+            $cache_key = 'query_hash_' . md5($sql . implode('_', $binds));
+	    } else {
+            $cache_key = 'query_hash_' . md5($sql);
+	    }
+	    return $cache_key;
     }
 
 }

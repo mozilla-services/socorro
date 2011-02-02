@@ -143,6 +143,33 @@ class Products_Controller extends Controller {
     }
 
     /**
+      * Grab the throttle from an existing prod / version without needing to hit the db.
+      *
+      * @param   string  Product name
+      * @param   string  Verison name
+      * @return  int     The throttle value
+      */    
+     private function _determineThrottle($product, $version)
+     {
+         $throttle = 100;
+         if (isset($this->featured_versions) && !empty($this->featured_versions)) {
+             foreach ($this->featured_versions as $featured_version) {
+                 if ($product == $featured_version->product && $version == $featured_version->version) {
+                     $throttle = $featured_version->throttle;
+                 }
+             }
+         }
+         if (isset($this->unfeatured_versions) && !empty($this->featured_versions)) {
+             foreach ($this->unfeatured_versions as $unfeatured_version) {
+                 if ($product == $unfeatured_version->product && $version == $unfeatured_version->version) {
+                     $throttle = $unfeatured_version->throttle;
+                 }
+             }
+         }
+         return $throttle;
+     }
+
+    /**
      * Determine the number of top changing top crashes that should be 
      * displayed on the dashboard.
      *
@@ -423,29 +450,6 @@ class Products_Controller extends Controller {
     }
 
     /**
-     * Verify that the selected version is a valid version for this product.
-     *
-     * @param   string  The name of a version
-     * @return  void
-     */
-    private function _versionExists($version)
-    {
-        if (!empty($this->featured_versions) && !empty($this->unfeatured_versions)) {
-            $product_versions = array_merge($this->featured_versions, $this->unfeatured_versions);
-        } elseif (!empty($this->featured_versions)) {
-            $product_versions = $this->featured_versions;
-        } elseif (!empty($this->unfeatured_versions)) {
-            $product_versions = $this->unfeatured_versions;
-        }
-        foreach ($product_versions as $product_version) {
-            if ($product_version->version == $version) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /**
      * Verify that this product on this page is stored in $this->chosen_version;  If so, proceed.
      * If not, ensure that this product is stored in session and redirect the user so that My_Controller
      * will refresh with the proper selected versions.
@@ -488,7 +492,7 @@ class Products_Controller extends Controller {
             
             if (!empty($version)) {
                 $this->_versionSelected($product, $version);
-                if ($this->_versionExists($version)) {
+                if ($this->versionExists($version)) {
                     if ($call == 'builds') {
                         $this->productVersionBuilds($product, $version, $rss);                            
                     } elseif ($call == 'topchangers') {
@@ -692,6 +696,7 @@ class Products_Controller extends Controller {
         $date_end = $this->_determineDateEnd();
         $dates = $this->daily_model->prepareDates($date_end, $this->duration);
         $operating_systems = Kohana::config('daily.operating_systems');
+        $throttle = $this->_determineThrottle($product, $version);
         $url_csv = '';
 
         $productVersions = $this->branch_model->getProductVersionsByProduct($product);
@@ -699,9 +704,9 @@ class Products_Controller extends Controller {
         foreach ($productVersions as $productVersion) {
             $versions[] = $productVersion->version;
         }
-
+        
         $results = $this->daily_model->get($product, array($version), $operating_systems, $date_start, $date_end, 'any');
-        $statistics = $this->daily_model->prepareStatistics($results, 'by_version', $product, array($version), $operating_systems, $date_start, $date_end, array(100));
+        $statistics = $this->daily_model->prepareStatistics($results, 'by_version', $product, array($version), $operating_systems, $date_start, $date_end, array($throttle));
         $graph_data = $this->daily_model->prepareGraphData($statistics, 'by_version', $date_start, $date_end, $dates, $operating_systems, array($version));
         
         $num_signatures = Kohana::config("products.topcrashers_count");

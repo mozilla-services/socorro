@@ -8,7 +8,7 @@
     <div class="body notitle">
 
 <div class="admin">
-	<p>Manage thy branch data sources here.  Information about maintaining this data can be found in the <a href="http://code.google.com/p/socorro/wiki/SocorroUIAdmin">Socorro</a> wiki.</p>
+	<p>Manage thy branch data sources here.  Information about maintaining this data can be found in the <a href="https://wiki.mozilla.org/Socorro/SocorroUI/Branches_Admin">Socorro</a> wiki.</p>
 	
 	<h3>Missing Entries</h3>
 	<?php if (isset($missing_entries) && !empty($missing_entries)) { ?>
@@ -117,7 +117,7 @@
 			<tr><td>Start Date: </td><td><input class="text" type="text" id="update_start_date" name="update_start_date" value="" /></td></tr>
 			<tr><td>End Date: 	</td><td><input class="text" type="text" id="update_end_date" name="update_end_date" value="" /></td></tr>
             <tr><td>Featured:   </td><td><input type="checkbox" id="update_featured" name="update_featured" value="t" /></td></tr>
-            <tr><td>Throttle:   </td><td><input class="text" type="text" id="update_throttle" name="update_throttle" value="<?php echo $throttle_default; ?>" />% [<a href="http://code.google.com/p/socorro/wiki/SocorroUIAdmin#Throttle" target="_NEW">?</a>]</td></tr>
+            <tr><td>Throttle:   </td><td><input class="text" type="text" id="update_throttle" name="update_throttle" value="<?php echo $throttle_default; ?>" />% [<a href="https://wiki.mozilla.org/Socorro/SocorroUI/Branches_Admin#Throttle" target="_NEW">?</a>]</td></tr>
 			</table>
 
 			<p id="update_submit"><input type="submit" name="submit" value="Update Product Version" onclick="hideShow('update_submit', 'update_submit_progress');" /></p>

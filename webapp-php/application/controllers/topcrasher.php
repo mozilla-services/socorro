@@ -89,6 +89,18 @@ class Topcrasher_Controller extends Controller {
     }
 
     /**
+     * Verify that the chosen version is valid given the current product.  If
+     * not, throw a 404 error.
+     *
+     * @return void
+     */
+    private function _versionExists($version) {
+        if (!$this->versionExists($version)) {
+            Kohana::show_404();
+        }
+    }
+
+    /**
      * Generates the index page.
      */
     public function index() {
@@ -166,7 +178,10 @@ class Topcrasher_Controller extends Controller {
     {
         if (empty($version)) {
             $this->_handleEmptyVersion($product, 'byversion');
+        } else {
+            $this->_versionExists($version);            
         }
+        
         if (empty($duration)) {
             $duration = Kohana::config('products.duration');
         }
@@ -248,19 +263,8 @@ class Topcrasher_Controller extends Controller {
 	    $signature_to_bugzilla = $bugzilla->signature2bugzilla($rows, Kohana::config('codebases.bugTrackingUrl'));
  
         // Fetch versions associated with top crashers
-        $resp->crashes = $this->topcrashers_model->fetchTopcrasherVersions($resp->crashes);
+        $resp->crashes = $this->topcrashers_model->fetchTopcrasherVersions($product, $resp->crashes);
         $resp->crashes = $this->topcrashers_model->formatTopcrasherVersions($resp->crashes);
-
-        // This may be removed in Socorro 1.8.  See Bug #604740.
-        $signature_to_oopp = $this->topcrashers_model->ooppForSignatures($product, $version, $resp->end_date, $duration, $unique_signatures);
-        foreach($resp->crashes as $top_crasher) {
-            $hang_details = array();
-            $known = array_key_exists($top_crasher->signature, $signature_to_oopp);
-            $hang_details['is_hang'] = $known && $signature_to_oopp[$top_crasher->signature]['hang'] == true;
-            $hang_details['is_plugin'] = $known && $signature_to_oopp[$top_crasher->signature]['process'] == 'Plugin';
-            $top_crasher->{'hang_details'} = $hang_details;
-        }
-        /* #604740 */
 
 	    $this->navigationChooseVersion($product, $version);
 
@@ -511,8 +515,10 @@ class Topcrasher_Controller extends Controller {
      * @return  null
      */
     public function byurl($product, $version=null) {
-        if (empty($version)) {
+        if (empty($version)) {            
             $this->_handleEmptyVersion($product, 'byurl');
+        } else {
+            $this->_versionExists($version);
         }
         
 	$this->navigationChooseVersion($product, $version);
@@ -544,6 +550,8 @@ class Topcrasher_Controller extends Controller {
     public function bydomain($product, $version=null) {
         if (empty($version)) {
             $this->_handleEmptyVersion($product, 'bydomain');
+        } else {
+            $this->_versionExists($version);
         }
 
 	$this->navigationChooseVersion($product, $version);
@@ -578,6 +586,8 @@ class Topcrasher_Controller extends Controller {
     public function bytopsite($product, $version=null) {
         if (empty($version)) {
             $this->_handleEmptyVersion($product, 'bytopsite');
+        } else {
+            $this->_versionExists($version);
         }
 
 		$by_url_model = new TopcrashersByUrl_Model();

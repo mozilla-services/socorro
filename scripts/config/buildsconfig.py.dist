@@ -13,7 +13,7 @@ base_url.default = 'http://ftp.mozilla.org/pub/mozilla.org/'
 
 product_uris = cm.Option()
 product_uris.doc = 'a comma-delimited list of uris for each product'
-product_uris.default = 'firefox/nightly/latest-mozilla-1.9.1/,firefox/nightly/latest-mozilla-1.9.2/,firefox/nightly/latest-mozilla-central/,seamonkey/nightly/latest-comm-1.9.1/,seamonkey/nightly/latest-comm-central-trunk/,thunderbird/nightly/latest-comm-1.9.1/,thunderbird/nightly/latest-comm-1.9.2/,thunderbird/nightly/latest-comm-central/,mobile/nightly/latest-mobile-1.9.2/,mobile/nightly/latest-mobile-trunk/,camino/nightly/latest-2.1-M1.9.2/'
+product_uris.default = 'firefox/nightly/latest-mozilla-1.9.1/,firefox/nightly/latest-mozilla-1.9.2/,firefox/nightly/latest-mozilla-central/,seamonkey/nightly/latest-comm-1.9.1/,seamonkey/nightly/latest-comm-central-trunk/,thunderbird/nightly/latest-comm-1.9.2/,thunderbird/nightly/latest-comm-central/,mobile/nightly/latest-mobile-1.9.2/,mobile/nightly/latest-mobile-trunk/,camino/nightly/latest-2.1-M1.9.2/'
 product_uris.fromStringConverter = lambda x: tuple(x.split(','))
 
 platforms = cm.Option()

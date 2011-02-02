@@ -240,57 +240,6 @@ class Topcrashers_Model extends Model {
     }
 
     /**
-     * Given top crashing signatures and related context, returns 
-     * a map from signature to hang_details.
-     *
-     * This query is temporary until the top crashers webservice is enhanced
-     * 
-     * Slated for deprecation in Socorro 1.8.  See Bug #604740
-     * 
-     * @param string $product    Current product for report
-     * @param string $version    Current version for report
-     * @param date   $endtime    The end of the window. 
-     *                           Example: '2010-04-23 09:07:29'
-     * @param int    $duration   Number of days the report covers
-     * @param array  $signatures List of signatures in the top crashers report
-     *
-     * @return array Where the keys are signatures and the values 
-     *               are arrays which contain hang_details such as 
-     *               'hang':TRUE and 'process':'Plugin'
-     */
-    public function ooppForSignatures($product, $version, $endtime, $duration, $signatures)
-    {
-        $sigs = array();
-        foreach ($signatures as $sig) {
-            if (trim($sig) != '') {
-                array_push($sigs, $this->db->escape($sig));
-            }
-        }
-        if (count($sigs) == 0) {
-            return array();
-        }
-        $duration = $duration . ' days'; // Play nice with query params
-        $sql = "/* soc.web topcrash.oop */
-                SELECT signature, COUNT(signature), 
-                       SUM (CASE WHEN hangid IS NULL THEN 0  ELSE 1 END) AS numhang,
-                       SUM (CASE WHEN process_type IS NULL THEN 0  ELSE 1 END) AS numplugin
-                FROM reports
-                WHERE ((reports.product = ?) AND (reports.version = ?)) AND
-                     reports.date_processed BETWEEN TIMESTAMP ? - CAST(? AS INTERVAL) AND TIMESTAMP ?  AND
-                     signature IN (" . implode(", ", $sigs) . ")
-                GROUP BY signature";
-        $rows = $this->fetchRows($sql, TRUE, array($product, $version, $endtime, $duration, $endtime,
-                                                                        $endtime, $duration, $endtime));
-        $sig2oopp = array();
-        foreach ($rows as $row) {
-            $sig2oopp[$row->signature] = array();
-            $sig2oopp[$row->signature]['hang'] = $row->numhang > 0 ? true : false;
-            $sig2oopp[$row->signature]['process'] = ($row->numplugin > 0 || $row->numhang > 0) ? 'Plugin' : 'Browser';
-        }
-        return $sig2oopp;
-    }
-
-    /**
      * Fetch the top crashers data via a web service call.
      *
      * @param   string      The product name
@@ -358,12 +307,12 @@ class Topcrashers_Model extends Model {
     }
 
     /**
-     * Fetch all of the versions related to a signature.
+     * Fetch all of the versions related to a crash signature for a specific product.
      *
      * @param string An array of top crashers results
      * @return string An updated array of top crashers results
      */
-    function fetchTopcrasherVersions($results)
+    function fetchTopcrasherVersions($product, $results)
     {
         if (!empty($results)) {
 			$signatures = array();
@@ -379,8 +328,9 @@ class Topcrashers_Model extends Model {
 			    	FROM signature_productdims sd
 			        INNER JOIN productdims pd ON sd.productdims_id = pd.id
                     WHERE sd.signature IN (" . implode(", ", $signatures) . ")
+                    AND pd.product = ?
                     ORDER BY pd.version DESC";
-	            if ($rows = $this->fetchRows($sql, TRUE)) {
+	            if ($rows = $this->fetchRows($sql, TRUE, array($product))) {
 		            foreach ($results as $result) {
 			    		$versions = array();
 		            	foreach($rows as $row) {

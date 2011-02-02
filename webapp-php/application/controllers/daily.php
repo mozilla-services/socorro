@@ -155,7 +155,7 @@ class Daily_Controller extends Controller {
         $form_selection = (isset($parameters['form_selection']) && $parameters['form_selection'] == 'by_os') ? $parameters['form_selection'] : 'by_version';
         $throttle = (isset($parameters['throttle']) && !empty($parameters['throttle'])) ? $parameters['throttle'] : array();
         $hang_type = (isset($parameters['hang_type'])) ? $parameters['hang_type'] : 'any'; // RS :: Is this being used?
-        
+
         // If no version is available, include the most recent version of this product
         if (isset($parameters['v']) && !empty($parameters['v'])){
             $versions = $this->_filterInvalidVersions($product, $parameters['v']);
@@ -169,12 +169,12 @@ class Daily_Controller extends Controller {
                 $throttle[] = $featured_version->throttle;
             }
         }
-        
-		// Prepare URL for CSV
-	$url_csv = $this->csvURL($product, $versions, $operating_systems, $date_start, $date_end, $hang_type, $form_selection, $throttle);
+
+        // Prepare URL for CSV
+        $url_csv = $this->csvURL($product, $versions, $operating_systems, $date_start, $date_end, $hang_type, $form_selection, $throttle);
 
         // Statistics on crashes for time period
-	$results = $this->model->get($product, $versions, $operating_system, $date_start, $date_end, $hang_type);
+        $results = $this->model->get($product, $versions, $operating_system, $date_start, $date_end, $hang_type);
         $statistics = $this->model->prepareStatistics($results, $form_selection, $product, $versions, $operating_system, $date_start, $date_end, $throttle);
         $graph_data = $this->model->prepareGraphData($statistics, $form_selection, $date_start, $date_end, $dates, $operating_systems, $versions);
 
@@ -185,29 +185,29 @@ class Daily_Controller extends Controller {
         
         // Set the View
         $this->setViewData(array(
-                'date_start' => $date_start,
-                'date_end' => $date_end,
-                'dates' => $dates,
-                'duration' => $duration,
-                'file_crash_data' => 'daily/daily_crash_data_' . $form_selection,
-                'form_selection' => $form_selection,
-                'graph_data' => $graph_data,
-                'nav_selection' => 'crashes_user',
-                'operating_system' => $operating_system,
-                'operating_systems' => $operating_systems,              
-                'product' => $product,
-                'product_versions' => $product_versions,
-                'products' => $products,
-                'hang_type' => $hang_type,
-                'results' => $results,
-                'statistics' => $statistics,
-                'throttle' => $throttle,
-                'throttle_default' => Kohana::config('daily.throttle_default'),
-                'url_csv' => $url_csv,
-                'url_form' => url::site("daily", 'http'),                               
-                'url_nav' => url::site('products/'.$product),
-                'versions' => $versions,
-                    ));
+            'date_start' => $date_start,
+            'date_end' => $date_end,
+            'dates' => $dates,
+            'duration' => $duration,
+            'file_crash_data' => 'daily/daily_crash_data_' . $form_selection,
+            'form_selection' => $form_selection,
+            'graph_data' => $graph_data,
+            'nav_selection' => 'crashes_user',
+            'operating_system' => $operating_system,
+            'operating_systems' => $operating_systems,              
+            'product' => $product,
+            'product_versions' => $product_versions,
+            'products' => $products,
+            'hang_type' => $hang_type,
+            'results' => $results,
+            'statistics' => $statistics,
+            'throttle' => $throttle,
+            'throttle_default' => Kohana::config('daily.throttle_default'),
+            'url_csv' => $url_csv,
+            'url_form' => url::site("daily", 'http'),                               
+            'url_nav' => url::site('products/'.$product),
+            'versions' => $versions,
+        ));
     }
     
 
@@ -217,10 +217,21 @@ class Daily_Controller extends Controller {
      * @param string $product        - Name of a product
      * @param array  $version_inputs - List of version numbers (string)
      * 
-     * @return array of strings
+     * @return array An array of version strings
      */
     private function _filterInvalidVersions($product, $version_inputs)
     {
-        return $this->branch_model->verifyVersions($product, $version_inputs);
+        if ($valid_versions = $this->branch_model->verifyVersions($product, $version_inputs)) {
+            $versions = array();
+            foreach ($version_inputs as $v) {
+                foreach ($valid_versions as $vv) {
+                    if ($v == $vv) {
+                        $versions[] = $v;
+                    }
+                }
+            }
+            return $versions;
+        }
+        return false;
     }
 }

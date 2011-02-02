@@ -65,12 +65,15 @@ class Admin_Controller extends Controller
 
         // Authentication with a role of 'admin' is required for every single page within this controller.
         // Auth::instance()->login_required('admin'); // Once more than admins are on the system, can probably switch to this
-                Auth::instance()->login_required(); // Login required will be enough for now
-                $this->js = html::script(array('js/jquery/date.js',
-                                               'js/jquery/plugins/ui/jquery.datePicker.js',
-                                               'js/socorro/admin.js',
-                                               ));
-                $this->css = '<link href="' . url::base() . 'css/datePicker.css" rel="stylesheet" type="text/css" media="screen" />';
+        if ($this->auth_is_active) {
+            Auth::instance()->login_required(); // Login required will be enough for now
+        }
+        
+        $this->js = html::script(array('js/jquery/date.js',
+                                       'js/jquery/plugins/ui/jquery.datePicker.js',
+                                       'js/socorro/admin.js',
+                                       ));
+        $this->css = '<link href="' . url::base() . 'css/datePicker.css" rel="stylesheet" type="text/css" media="screen" />';
     }
 
     /**
@@ -105,7 +108,6 @@ class Admin_Controller extends Controller
      */
     public function branch_data_sources()
     {
-	
                 if (isset($_POST['action_add_version'])) {
                         if (
                                 !empty($_POST['product']) && 
@@ -177,9 +179,12 @@ class Admin_Controller extends Controller
                         }
                 }
 
-                $branch_data = $this->branch_model->getBranchData(false, false);
-                
                 $product = $this->chosen_version['product'];
+
+                // Flush cache for featured and unfeatured versions.
+                $this->prepareVersions(true);
+
+                $branch_data = $this->branch_model->getBranchData(false, false, true);
                 
                 $this->setView('admin/branch_data_sources');    
                 $this->setViewData(

@@ -116,34 +116,37 @@ def fetchTextFiles(config, product_uri, urllib2=urllib2):
 def fetchAndRecordNightlyBuilds(config, databaseCursor, urllib2=urllib2):
   for product_uri in config.product_uris:
     builds = fetchTextFiles(config, product_uri, urllib2)
-    if builds['builds']:
-      for build in builds['builds']:
-        build_url = "%s%s" % (builds['url'], build['filename'])
-        build_file = fetchBuild(build_url, urllib2)
-        if build_file:
-          buildid = build_file[0]
-          platform_changeset = ''
-          app_changeset_1 = ''
-          app_changeset_2 = ''
+    try:
+      if builds['builds']:
+        for build in builds['builds']:
+          build_url = "%s%s" % (builds['url'], build['filename'])
+          build_file = fetchBuild(build_url, urllib2)
+          if build_file:
+            buildid = build_file[0]
+            platform_changeset = ''
+            app_changeset_1 = ''
+            app_changeset_2 = ''
 
-          try:
-            if build_file[1]:
-              platform_changeset = os.path.basename(build_file[1])
-          except Exception:
-            util.reportExceptionAndContinue(logger, 30)
-          try:
-            if build_file[2]:
-              app_changeset_1 = os.path.basename(build_file[2])
-          except Exception:
-            util.reportExceptionAndContinue(logger, 30)
-          try:
-            if build_file[3]:
-              app_changeset_2 = os.path.basename(build_file[3])
-          except Exception:
-            util.reportExceptionAndContinue(logger, 30)
+            try:
+              if build_file[1]:
+                platform_changeset = os.path.basename(build_file[1])
+            except Exception:
+              util.reportExceptionAndContinue(logger, 30)
+            try:
+              if build_file[2]:
+                app_changeset_1 = os.path.basename(build_file[2])
+            except Exception:
+              util.reportExceptionAndContinue(logger, 30)
+            try:
+              if build_file[3]:
+                app_changeset_2 = os.path.basename(build_file[3])
+            except Exception:
+              util.reportExceptionAndContinue(logger, 30)
 
-          insertBuild(databaseCursor, build['product'], build['version'], build['platform'], buildid, platform_changeset, app_changeset_1, app_changeset_2, build['filename'])
-
+            insertBuild(databaseCursor, build['product'], build['version'], build['platform'], buildid, platform_changeset, app_changeset_1, app_changeset_2, build['filename'])
+    except Exception:
+      util.reportExceptionAndContinue(logger, 30)
+      
 
 def recordNightlyBuilds(config):
   databaseConnectionPool = psy.DatabaseConnectionPool(config.databaseHost, config.databaseName, config.databaseUserName, config.databasePassword, logger)
