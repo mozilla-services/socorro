@@ -182,7 +182,9 @@ class Daily_Controller extends Controller {
         if (isset($parameters['csv'])) {
         	return $this->csv($product, $versions, $operating_systems, $dates, $results, $statistics, $form_selection, $throttle);
         }
-        
+       
+        $protocol = (Kohana::config('auth.force_https')) ? 'https' : 'http';
+ 
         // Set the View
         $this->setViewData(array(
             'date_start' => $date_start,
@@ -204,7 +206,7 @@ class Daily_Controller extends Controller {
             'throttle' => $throttle,
             'throttle_default' => Kohana::config('daily.throttle_default'),
             'url_csv' => $url_csv,
-            'url_form' => url::site("daily", 'http'),                               
+            'url_form' => url::site("daily", $protocol),                               
             'url_nav' => url::site('products/'.$product),
             'versions' => $versions,
         ));
