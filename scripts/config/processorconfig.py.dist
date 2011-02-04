@@ -104,7 +104,7 @@ irrelevantSignatureRegEx.default = '|'.join([
   '@0x[1-9a-fA-F]',
   'RaiseException',
   '_CxxThrowException',
-  'mozilla::ipc::RPCChannel::Call\(IPC::Message\*, IPC::Message\*\)'
+  'mozilla::ipc::RPCChannel::Call\(IPC::Message\*, IPC::Message\*\)',
   'KiFastSystemCallRet',
   '(Nt|Zw)WaitForSingleObject(Ex)?',
   '(Nt|Zw)WaitForMultipleObjects(Ex)?',
