@@ -105,6 +105,11 @@ irrelevantSignatureRegEx.default = '|'.join([
   'RaiseException',
   '_CxxThrowException',
   'mozilla::ipc::RPCChannel::Call\(IPC::Message\*, IPC::Message\*\)'
+  'KiFastSystemCallRet',
+  '(Nt|Zw)WaitForSingleObject(Ex)?',
+  '(Nt|Zw)WaitForMultipleObjects(Ex)?',
+  'WaitForSingleObjectExImplementation',
+  'WaitForMultipleObjectsExImplementation',
   ])
 
 prefixSignatureRegEx = cm.Option()
@@ -149,9 +154,8 @@ prefixSignatureRegEx = '|'.join([
   'mozalloc_handle_oom',
   'nsTArray_base<.*',
   'nsTArray<.*',
-  'KiFastSystemCallRet',
-  '(Nt|Zw)?WaitForSingleObject(Ex)?',
-  '(Nt|Zw)?WaitForMultipleObjects(Ex)?',
+  'WaitForSingleObject(Ex)?',
+  'WaitForMultipleObjects(Ex)?',
   'NtUserWaitMessage',
   'NtUserMessageCall',
   ])
