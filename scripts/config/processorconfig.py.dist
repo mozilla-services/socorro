@@ -110,6 +110,8 @@ irrelevantSignatureRegEx.default = '|'.join([
   '(Nt|Zw)WaitForMultipleObjects(Ex)?',
   'WaitForSingleObjectExImplementation',
   'WaitForMultipleObjectsExImplementation',
+  '___TERMINATING_DUE_TO_UNCAUGHT_EXCEPTION___',
+  '_NSRaiseError',
   ])
 
 prefixSignatureRegEx = cm.Option()
