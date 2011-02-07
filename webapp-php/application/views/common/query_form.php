@@ -72,14 +72,9 @@
                 <input type="hidden" name="query_search" value="signature" />
                 <?php
     	    //used by query and plugin_query
-    	    $query_type_options = array(
-                        'exact'      => 'is exactly',
-                        'contains'   => 'contains',
-                        'startswith' => 'starts with'
-                    );
     	    echo form::dropdown(
                     'query_type',
-                    $query_type_options,
+                    $option_types,
                     $params['query_type']
                 ) ?>	      
                 <?php echo form::input(
@@ -87,7 +82,21 @@
                     trim($params['query'])
                 )?>
             </p>
-            
+
+            <p class="advanced">
+                <label for="reason">Crash Reason</label>
+                <?php
+    	    echo form::dropdown(
+                    'reason_type',
+                    $option_types,
+                    $params['reason_type']
+                ) ?>	      
+                <?php echo form::input(
+                    array('size' => '25', 'name'=>'reason', 'id'=>'reason'), 
+                    trim($params['reason'])
+                )?>
+            </p>
+
             <p class="advanced">
             <label for="build_id">Build Id</label>
             <?php echo form::input(
@@ -129,7 +138,7 @@
     	    <?= form::dropdown(
     		    array('id'         => 'plugin_query_type',
     			  'name'       => 'plugin_query_type'),
-    		    $query_type_options,
+    		    $option_types,
     		    $params['plugin_query_type']) ?>
     
                 <?= form::input(array('id'   => 'plugin_query',

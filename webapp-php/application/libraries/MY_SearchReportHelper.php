@@ -47,8 +47,10 @@ class SearchReportHelper{
             'build_id'     => '',
             
             'query_search' => 'signature',
-            'query_type'   => 'exact',
+            'query_type'   => 'contains',
             'query'        => '',
+            'reason_type'  => 'contains',
+            'reason'       => '',
             'date'         => '',
             'range_value'  => '1',
             'range_unit'   => 'weeks',

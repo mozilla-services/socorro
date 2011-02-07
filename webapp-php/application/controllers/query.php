@@ -65,6 +65,20 @@ class Query_Controller extends Controller {
     }
     
     /**
+     * Format and return an array of option types for queries.
+     *
+     * @return  array   An array of option types.
+     */
+    private function _option_types()
+    {
+        return array(
+            'exact'      => 'is exactly',
+            'contains'   => 'contains',
+            'startswith' => 'starts with'
+        );
+    }
+    
+    /**
      * Handle a quick search query for either a OOID or stack signature.
      *
      * @param  array    An array of _GET parameters
@@ -125,7 +139,7 @@ class Query_Controller extends Controller {
         if (!isset($params['process_type'])) {
             $params['process_type'] = 'any';
         }
-        
+
         // Admin
         $params['admin'] = $this->logged_in;
         
@@ -190,6 +204,7 @@ class Query_Controller extends Controller {
             'nav_selection' => 'query',
             'navPathPrefix' => url::site('query') . '?' . html::query_string($params) . '&page=',
             'nextLinkText' => 'next >>',
+            'option_types' => $this->_option_types(),
             'page' => $page,
             'pager' => $pager, 
             'params'  => $params,

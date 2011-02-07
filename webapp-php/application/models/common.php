@@ -320,19 +320,34 @@ class Common_Model extends Model {
         }
 
         if ($params['platform']) {
-	    $or = array();
+            $or = array();
             foreach ($params['platform'] as $platform_id) {
                 $platform = $this->platform_model->get($platform_id);
                 if ($platform) {
-		    $or[] = 'reports.os_name = ' . $this->db->escape($platform->os_name);
+                    $or[] = 'reports.os_name = ' . $this->db->escape($platform->os_name);
                 }
             }
-	    $where[] = '(' . join(" OR ", $or) . ')';
+            $where[] = '(' . join(" OR ", $or) . ')';
+        }
+
+        if (trim($params['reason']) != '') {
+            switch ($params['reason_type']) {
+                case 'exact':
+                    $where[] = ' reports.reason = ' . $this->db->escape($params['reason']); 
+                    break;
+                case 'startswith':
+                    $where[] = ' reports.reason LIKE ' . $this->db->escape($params['reason'].'%'); 
+                    break;
+                case 'contains':
+                default:
+                    $where[] = ' reports.reason LIKE ' . $this->db->escape('%'.$params['reason'].'%'); 
+                    break;
+            }
         }
 
         if (array_key_exists('build_id', $params) && $params['build_id']) {
-	    $where[] = 'reports.build = ' . $this->db->escape($params['build_id']);
-	}
+	        $where[] = 'reports.build = ' . $this->db->escape($params['build_id']);
+        }
 
         /* Bug#562375 - Add search support for Hang and OOPP
 
@@ -362,25 +377,25 @@ class Common_Model extends Model {
 	    array_push($join_tables, 'plugins_reports ON plugins_reports.report_id = reports.id');
 	    array_push($join_tables, 'plugins ON plugins_reports.plugin_id = plugins.id');
 
-            if (trim($params['plugin_query']) != '') {
-                switch ($params['plugin_query_type']) {
-                    case 'exact':
-                        $plugin_query_term = ' = ' . $this->db->escape($params['plugin_query']); 
-                        break;
-                    case 'startswith':
-                        $plugin_query_term = ' LIKE ' . $this->db->escape($params['plugin_query'].'%'); 
-                        break;
-                    case 'contains':
-                    default:
-                        $plugin_query_term = ' LIKE ' . $this->db->escape('%'.$params['plugin_query'].'%'); 
-                        break;
-                }
-                if ('filename' == $params['plugin_field']) {
-                    $where[] = 'plugins.filename ' . $plugin_query_term;
-                } else {
-                    $where[] = 'plugins.name ' . $plugin_query_term;
-                }
+        if (trim($params['plugin_query']) != '') {
+            switch ($params['plugin_query_type']) {
+                case 'exact':
+                    $plugin_query_term = ' = ' . $this->db->escape($params['plugin_query']); 
+                    break;
+                case 'startswith':
+                    $plugin_query_term = ' LIKE ' . $this->db->escape($params['plugin_query'].'%'); 
+                    break;
+                case 'contains':
+                default:
+                    $plugin_query_term = ' LIKE ' . $this->db->escape('%'.$params['plugin_query'].'%'); 
+                    break;
             }
+            if ('filename' == $params['plugin_field']) {
+                $where[] = 'plugins.filename ' . $plugin_query_term;
+            } else {
+                $where[] = 'plugins.name ' . $plugin_query_term;
+            }
+        }
 	} elseif (array_key_exists('process_type', $params) && 
 	          'browser' == $params['process_type']) {
                       $where[] = 'reports.process_type IS NULL';

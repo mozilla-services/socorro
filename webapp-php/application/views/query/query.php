@@ -45,6 +45,7 @@
         
         View::factory('common/list_by_signature', array(
             'items_per_page' => $items_per_page,
+            'option_types' => $option_types,            
             'page'      => $page,
             'params'    => $params,
             'platforms' => $all_platforms,
