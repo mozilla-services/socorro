@@ -112,6 +112,7 @@ irrelevantSignatureRegEx.default = '|'.join([
   'WaitForMultipleObjectsExImplementation',
   '___TERMINATING_DUE_TO_UNCAUGHT_EXCEPTION___',
   '_NSRaiseError',
+  'mozcrt19.dll@0x.*',
   ])
 
 prefixSignatureRegEx = cm.Option()
@@ -160,6 +161,7 @@ prefixSignatureRegEx = '|'.join([
   'WaitForMultipleObjects(Ex)?',
   'NtUserWaitMessage',
   'NtUserMessageCall',
+  'mozalloc_abort.*',
   ])
 
 signaturesWithLineNumbersRegEx = cm.Option()
