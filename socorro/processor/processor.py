@@ -858,10 +858,14 @@ class Processor(object):
 
       pluginId = None
       try:
+        result = sdb.singleRowSql(threadLocalCursor, 'select id from plugins '
+                                                     'where filename = %s '
+                                                     'and name = %s',
+                                                     (pluginFilename, pluginName))
+        logger.debug('%s/%s already exists in the database', pluginFilename, pluginName)
+      except (sdb.SQLDidNotReturnSingleRow, psycopg2.IntegrityError), x:
         self.pluginsTable.insert(threadLocalCursor, (pluginFilename, pluginName))
-      except psycopg2.IntegrityError, x:
-        threadLocalCursor.connection.rollback()
-        logger.info("No Big Deal - this plugin already exists for pluginFilename: %s pluginName: %s", pluginFilename, pluginName)
+        logger.debug('%s/%s inserted into the database', pluginFilename, pluginName)
 
       try:
         self.pluginsReportsTable.insert(threadLocalCursor,
