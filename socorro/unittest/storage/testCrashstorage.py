@@ -178,13 +178,15 @@ def testCrashStorageSystemForHBase___init__():
   j.dumpPermissions = d.hbaseFallbackDumpPermissions = 660
   j.dirPermissions = d.hbaseFallbackDirPermissions = 770
   j.logger = d.logger = util.SilentFakeLogger()
+  fakeHbaseConnection = exp.DummyObjectWithExpectations('fakeHbaseConnection')
+  fakeHbaseConnection.expect('hbaseThriftExceptions', (), {}, [], None)
   fakeHbaseModule = exp.DummyObjectWithExpectations('fakeHbaseModule')
-  fakeHbaseModule.expect('HBaseConnectionForCrashReports', (d.hbaseHost, d.hbasePort, d.hbaseTimeout), {"logger":d.logger}, 'a fake connection', None)
+  fakeHbaseModule.expect('HBaseConnectionForCrashReports', (d.hbaseHost, d.hbasePort, d.hbaseTimeout), {"logger":d.logger}, fakeHbaseConnection, None)
   fakeJsonDumpStore = exp.DummyObjectWithExpectations('fakeJsonDumpStore')
   fakeJsonDumpModule = exp.DummyObjectWithExpectations('fakeJsonDumpModule')
   fakeJsonDumpModule.expect('JsonDumpStorage', (), j, fakeJsonDumpStore, None)
   css = cstore.CrashStorageSystemForHBase(d, fakeHbaseModule, fakeJsonDumpModule)
-  assert css.hbaseConnection == 'a fake connection'
+  assert css.hbaseConnection == fakeHbaseConnection
 
 def testCrashStorageSystemForHBase_save_1():
   """straight save into hbase with no trouble"""
@@ -209,6 +211,7 @@ def testCrashStorageSystemForHBase_save_1():
   d.logger = util.SilentFakeLogger()
 
   fakeHbaseConnection = exp.DummyObjectWithExpectations('fakeHbaseConnection')
+  fakeHbaseConnection.expect('hbaseThriftExceptions', (), {}, [], None)
   fakeHbaseConnection.expect('put_json_dump', ('uuid', jdict, expectedDumpResult), {"number_of_retries":2}, None, None)
 
   fakeHbaseModule = exp.DummyObjectWithExpectations('fakeHbaseModule')
@@ -245,6 +248,7 @@ def testCrashStorageSystemForHBase_save_2():
   j.logger = d.logger = util.SilentFakeLogger()
 
   fakeHbaseConnection = exp.DummyObjectWithExpectations('fakeHbaseConnection')
+  fakeHbaseConnection.expect('hbaseThriftExceptions', (), {}, [], None)
   #fakeHbaseConnection.expect('create_ooid', ('uuid', jdict, expectedDumpResult), {}, None, Exception())
   fakeHbaseConnection.expect('put_json_dump', ('uuid', jdict, expectedDumpResult), {"number_of_retries":1}, None, Exception())
 
@@ -293,6 +297,7 @@ def testCrashStorageSystemForHBase_save_3():
   d.logger = util.SilentFakeLogger()
 
   fakeHbaseConnection = exp.DummyObjectWithExpectations('fakeHbaseConnection')
+  fakeHbaseConnection.expect('hbaseThriftExceptions', (), {}, [], None)
   #fakeHbaseConnection.expect('create_ooid', ('uuid', jdict, expectedDumpResult), {}, None, Exception())
   fakeHbaseConnection.expect('put_json_dump', ('uuid', jdict, expectedDumpResult), {"number_of_retries":1}, None, Exception())
 
