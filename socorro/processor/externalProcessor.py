@@ -94,7 +94,9 @@ class ProcessorWithExternalBreakpad (processor.Processor):
     # is the return code from the invocation important?  Uncomment, if it is...
     returncode = subprocessHandle.wait()
     if returncode is not None and returncode != 0:
-      raise processor.ErrorInBreakpadStackwalkException("%s failed with return code %s when processing dump %s" %(self.config.minidump_stackwalkPathname, subprocessHandle.returncode, uuid))
+      processorErrorMessages.append("%s failed with return code %s when processing dump %s" %(self.config.minidump_stackwalkPathname, subprocessHandle.returncode, uuid))
+      additionalReportValuesAsDict['success'] = False
+      #raise processor.ErrorInBreakpadStackwalkException("%s failed with return code %s when processing dump %s" %(self.config.minidump_stackwalkPathname, subprocessHandle.returncode, uuid))
     return additionalReportValuesAsDict
 
 
@@ -115,7 +117,7 @@ class ProcessorWithExternalBreakpad (processor.Processor):
     logger.info("analyzeHeader")
     crashedThread = None
     moduleCounter = 0
-    reportUpdateValues = {"id": reportId}
+    reportUpdateValues = {"id": reportId, "success": True}
 
     analyzeReturnedLines = False
     reportUpdateSqlParts = []
@@ -181,7 +183,9 @@ class ProcessorWithExternalBreakpad (processor.Processor):
       processorErrorMessages.append(message)
       logger.warning("%s", message)
 
-    if len(reportUpdateValues) > 1:
+    logger.info('reportUpdateValues: %s', str(reportUpdateValues))
+    logger.info('reportUpdateSqlParts: %s', str(reportUpdateSqlParts))
+    if len(reportUpdateSqlParts) > 1:
       reportUpdateSQL = """update reports set %s where id=%%(id)s AND date_processed = timestamp without time zone '%s'"""%(",".join(reportUpdateSqlParts),date_processed)
       databaseCursor.execute(reportUpdateSQL, reportUpdateValues)
 

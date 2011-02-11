@@ -624,7 +624,7 @@ class Processor(object):
         threadLocalCrashStorage.cleanUpTempDumpStorage(jobUuid, self.config.temporaryFileSystemStoragePath)
 
       #finished a job - cleanup
-      threadLocalCursor.execute("update jobs set completeddatetime = %s, success = True where id = %s", (completedDateTime, jobId))
+      threadLocalCursor.execute("update jobs set completeddatetime = %s, success = %s where id = %s", (completedDateTime, newReportRecordAsDict['success'], jobId))
       # Bug 519703: Collect setting for topmost source filename(s), addon compatibility check override, flash version
       reportsSql = """
       update reports set
@@ -632,7 +632,7 @@ class Processor(object):
         processor_notes = %%s,
         started_datetime = timestamp without time zone %%s,
         completed_datetime = timestamp without time zone %%s,
-        success = True,
+        success = %%s,
         truncated = %%s,
         topmost_filenames = %%s,
         addons_checked = %%s,
@@ -655,12 +655,15 @@ class Processor(object):
       flash_version = newReportRecordAsDict.get('flash_version')
       processor_notes = '; '.join(processorErrorMessages)
       newReportRecordAsDict['processor_notes'] = processor_notes
-      infoTuple = (newReportRecordAsDict['signature'], processor_notes, startedDateTime, completedDateTime, newReportRecordAsDict["truncated"], topmost_filenames, addons_checked, flash_version)
+      infoTuple = (newReportRecordAsDict['signature'], processor_notes, startedDateTime, completedDateTime, newReportRecordAsDict["success"], newReportRecordAsDict["truncated"], topmost_filenames, addons_checked, flash_version)
       logger.debug("Updated report %s (%s): %s", reportId, jobUuid, str(infoTuple))
       threadLocalCursor.execute(reportsSql, infoTuple)
       threadLocalDatabaseConnection.commit()
       self.saveProcessedDumpJson(newReportRecordAsDict, threadLocalCrashStorage)
-      logger.info("succeeded and committed: %s, %s", jobId, jobUuid)
+      if newReportRecordAsDict["success"]:
+        logger.info("succeeded and committed: %s, %s", jobId, jobUuid)
+      else:
+        logger.info("failed but committed: %s, %s", jobId, jobUuid)
       self.quitCheck()
       return Processor.quit
     except (KeyboardInterrupt, SystemExit):
