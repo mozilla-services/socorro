@@ -49,8 +49,8 @@
                 <?php foreach ($top_crashers as $crasher): ?>
                     <?php
                         $sigParams = array(
-                            'range_value' => '2',
-                            'range_unit'  => 'weeks',
+                            'range_value' => $range_value,
+                            'range_unit'  => $range_unit,
 			    'date'        => $end_date,
                             'signature'   => $crasher->signature
 			    );

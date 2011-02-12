@@ -272,26 +272,28 @@ class Topcrasher_Controller extends Controller {
 		$this->setViewData(array('top_crashers' => $this->_csvFormatArray($resp->crashes)));
 		$this->renderCSV("${product}_${version}_" . date("Y-m-d"));
 	    } else {
-		$this->setViewData(array(
-				       'resp'         => $resp,
-				       'duration_url' => url::site(implode($duration_url_path, '/') . '/'),
-				       'last_updated' => $resp->end_date,
-                       'duration'     => $duration,
-				       'durations'    => $durations,
-				       'percentTotal' => $resp->totalPercentage,
-				       'product'      => $product,
-				       'version'      => $version,
-               	       'nav_selection' => 'top_crashes',
-				       'sig2bugs'     => $signature_to_bugzilla,
-				       'start'        => $resp->start_date,
-				       'end_date'     => $resp->end_date,
-                       'crash_types'  => $crash_types,
-                       'crash_type'   => $crash_type,
-                       'crash_type_url' => url::site(implode($duration_url_path, '/') . '/' . $duration . '/'),
-				       'top_crashers' => $resp->crashes,
-				       'total_crashes' => $resp->totalNumberOfCrashes,
-				       'url_nav'     => url::site('products/'.$product),
-				       ));
+            $this->setViewData(array(
+                'resp'           => $resp,
+                'duration_url'   => url::site(implode($duration_url_path, '/') . '/'),
+                'last_updated'   => $resp->end_date,
+                'duration'       => $duration,
+                'durations'      => $durations,
+                'percentTotal'   => $resp->totalPercentage,
+                'product'        => $product,
+                'version'        => $version,
+                'nav_selection'  => 'top_crashes',
+                'sig2bugs'       => $signature_to_bugzilla,
+                'start'          => $resp->start_date,
+                'end_date'       => $resp->end_date,
+                'crash_types'    => $crash_types,
+                'crash_type'     => $crash_type,
+                'crash_type_url' => url::site(implode($duration_url_path, '/') . '/' . $duration . '/'),
+                'range_unit'     => 'days',
+                'range_value'    => $duration,
+                'top_crashers'   => $resp->crashes,
+                'total_crashes'  => $resp->totalNumberOfCrashes,
+                'url_nav'        => url::site('products/'.$product),
+            ));
 	    }
 	} else {
 	    header("Data access error", TRUE, 500);
@@ -447,66 +449,6 @@ class Topcrasher_Controller extends Controller {
     }
 
     /**
-     * Generates the report based on branch info
-     * 
-     * @param string branch
-     * @param int duration in days that this report should cover
-     */
-    public function bybranch($branch, $duration = 7) {
-	$other_durations = array_diff(Kohana::config('topcrashbysig.durations'),
-				      array($duration));
-	$limit = Kohana::config('topcrashbysig.bybranch_limit', 100);
-	$top_crashers = array();
-	$start = "";
-        $last_updated = $this->topcrashers_model->lastUpdatedByBranch($branch);
-
-	$percentTotal = 0;
-	$totalCrashes = 0;
-
-        $signature_to_bugzilla = array();
-	$signatures = array();
-
-	if ($last_updated !== FALSE) {
-	    $start = $this->topcrashers_model->timeBeforeOffset($duration, $last_updated);
-	    $totalCrashes = $this->topcrashers_model->getTotalCrashesByBranch($branch, $start, $last_updated);
-	    if ($totalCrashes > 0) {
-		$top_crashers = $this->topcrashers_model->getTopCrashersByBranch($branch, $limit, $start, $last_updated, $totalCrashes);
-		for($i=0; $i < count($top_crashers); $i++) {
-		    $percentTotal += $top_crashers[$i]->percent;
-                    if ($this->input->get('format') != "csv") {
-		        $top_crashers[$i]->percent = number_format($top_crashers[$i]->percent * 100, 2) . "%";
-			array_push($signatures, $top_crashers[$i]->signature);
-		    }
-		}
-		$rows = $this->bug_model->bugsForSignatures(array_unique($signatures));
-		$bugzilla = new Bugzilla;
-		$signature_to_bugzilla = $bugzilla->signature2bugzilla($rows, Kohana::config('codebases.bugTrackingUrl'));
-	    }
-	}
-        cachecontrol::set(array(
-            'expires' => time() + (60 * 60)
-        ));
-        if ($this->input->get('format') == "csv") {
-  	    $this->setViewData(array('top_crashers' => $this->_csvFormatOldArray($top_crashers)));
-  	    $this->renderCSV("${branch}_" . date("Y-m-d"));
-	} else {
-	    $duration_url_path = array(Router::$controller, Router::$method, $branch, "");
-	    $this->setViewData(array(
-                'branch'       => $branch,
-		'last_updated' => $last_updated, 
-		'percentTotal' => $percentTotal,
-	    'nav_selection' => 'top_crashes',
-		'other_durations' => $other_durations,
-        'duration_url' => url::site(implode($duration_url_path, '/')),
-		'sig2bugs' => $signature_to_bugzilla,
-		'start'        => $start,
-		'top_crashers' => $top_crashers,
-		'total_crashes' => $totalCrashes,
-				       ));
-	}
-    }
-
-    /**
      * Generates the report from a URI perspective.
      * URLs are truncated after the query string
      * 
@@ -520,24 +462,24 @@ class Topcrasher_Controller extends Controller {
         } else {
             $this->_versionExists($version);
         }
-        
-	$this->navigationChooseVersion($product, $version);
+            
+        $this->navigationChooseVersion($product, $version);
         $by_url_model = new TopcrashersByUrl_Model();
         list($start_date, $end_date, $top_crashers) = 
-	  $by_url_model->getTopCrashersByUrl($product, $version);
-
+        $by_url_model->getTopCrashersByUrl($product, $version);
+        
         cachecontrol::set(array(
             'expires' => time() + (60 * 60)
         ));
-
+        
         $this->setViewData(array(
-	    'beginning' => $start_date,
-            'ending_on' => $end_date,
-    	    'nav_selection' => 'top_url',
+            'beginning'     => $start_date,
+            'ending_on'     => $end_date,
+            'nav_selection' => 'top_url',
             'product'       => $product,
-            'version'       => $version,
             'top_crashers'  => $top_crashers,
-            'url_nav' => url::site('products/'.$product),
+            'url_nav'       => url::site('products/'.$product),
+            'version'       => $version,
         ));
     }
 
@@ -554,23 +496,23 @@ class Topcrasher_Controller extends Controller {
             $this->_versionExists($version);
         }
 
-	$this->navigationChooseVersion($product, $version);
+	    $this->navigationChooseVersion($product, $version);
         $by_url_model = new TopcrashersByUrl_Model();
         list($start_date, $end_date, $top_crashers) = 
-	  $by_url_model->getTopCrashersByDomain($product, $version);
+	    $by_url_model->getTopCrashersByDomain($product, $version);
 
         cachecontrol::set(array(
             'expires' => time() + (60 * 60)
         ));
 
         $this->setViewData(array(
-	    'beginning' => $start_date,
-            'ending_on' => $end_date,
+            'beginning'     => $start_date,
+            'ending_on'     => $end_date,
     	    'nav_selection' => 'top_domain',            
             'product'       => $product,
-            'version'       => $version,
             'top_crashers'  => $top_crashers,
-            'url_nav' => url::site('products/'.$product),
+            'url_nav'       => url::site('products/'.$product),
+            'version'       => $version,
         ));
     }
 
@@ -584,28 +526,28 @@ class Topcrasher_Controller extends Controller {
  	 * @return 	void
      */
     public function bytopsite($product, $version=null) {
-        if (empty($version)) {
-            $this->_handleEmptyVersion($product, 'bytopsite');
-        } else {
-            $this->_versionExists($version);
-        }
-
-		$by_url_model = new TopcrashersByUrl_Model();
-        list($start_date, $end_date, $top_crashers) = $by_url_model->getTopCrashersByTopsiteRank($product, $version);
-
-        cachecontrol::set(array(
-            'expires' => time() + (60 * 60)
-        ));
-
-        $this->setViewData(array(
-	    	'beginning' 	=> $start_date,
-            'ending_on' 	=> $end_date,
-    	    'nav_selection' => 'top_topsite',            
-            'product'       => $product,
-            'version'       => $version,
-            'top_crashers'  => $top_crashers,
-            'url_nav' => url::site('products/'.$product),
-        ));
+         if (empty($version)) {
+             $this->_handleEmptyVersion($product, 'bytopsite');
+         } else {
+             $this->_versionExists($version);
+         }
+         
+         $by_url_model = new TopcrashersByUrl_Model();
+         list($start_date, $end_date, $top_crashers) = $by_url_model->getTopCrashersByTopsiteRank($product, $version);
+         
+         cachecontrol::set(array(
+             'expires' => time() + (60 * 60)
+         ));
+         
+         $this->setViewData(array(
+         	'beginning' 	=> $start_date,
+             'ending_on' 	=> $end_date,
+             'nav_selection' => 'top_topsite',            
+             'product'       => $product,
+             'top_crashers'  => $top_crashers,
+             'url_nav' => url::site('products/'.$product),
+             'version'       => $version,
+         ));
     }
 
     /**

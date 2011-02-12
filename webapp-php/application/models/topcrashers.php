@@ -6,22 +6,6 @@ class Topcrashers_Model extends Model {
 
     /**
      * Finds the time when the table was last updated for the given criteria
-     * @param string A branch Example: 1.9.3
-     * @return unix time or FALSE for no entries
-     */
-    public function lastUpdatedByBranch($branch)
-    {
-        $sql = "/* soc.web topcrash.lastupdatebybranch */ 
-            SELECT window_end AS last_updated
-            FROM top_crashes_by_signature tcs 
-            JOIN productdims p ON tcs.productdims_id = p.id AND 
-                             p.branch = ?
-            ORDER BY window_end DESC LIMIT 1";
-	return $this->_lastUpdated($sql, array($branch));
-    }
-
-    /**
-     * Finds the time when the table was last updated for the given criteria
      * @param string A product
      * @param string A version Example 3.6a1pre
      * @return unix time or FALSE for no entries
@@ -100,27 +84,6 @@ class Topcrashers_Model extends Model {
  	    }
      }
     
-    /**
-     * Retrieves the total number of crashes for given perio
-     * @param string The branch id Example: 1.9.1
-     * @param int the earliest time to start looking for crashes
-     * @param int the latest time to look at for crashes
-     * @return int total crashes
-     * @see time function for generating $start and $end
-     */
-    public function getTotalCrashesByBranch($branch, $start, $end)
-    {
-	$sql = "/* soc.web topcrash.totcrashbranch */ 
-            SELECT SUM(tcs.count) as total
-            FROM top_crashes_by_signature tcs
-            JOIN productdims pd on tcs.productdims_id = pd.id 
-            JOIN branches USING (product, version)
-            WHERE branches.branch = ? AND 
-                  window_end >= ? AND 
-                  window_end < ? ";
-	return $this->_getTotalCrashes($sql, array($branch, $this->t($start), $this->t($end)));
-    }
-
     /**
      * Common way to process total crashes db results
      * @param string SQL to run
@@ -205,38 +168,6 @@ class Topcrashers_Model extends Model {
             LIMIT ?";
         return $this->fetchRows($sql, TRUE,
 				array($total_crashes, $product, $version, $this->t($start), $this->t($end), $limit));
-    }
-
-    /**
-     * Find top crashes from the aggregate topcrashers table.
-     * @param string The branch id Example: 1.9.1
-     * @param int LIMIT for size of search results
-     * @param int the earliest time to start looking for crashes
-     * @param int the latest time to look at for crashes
-     * @param in the total number of crashes for this period
-     * @return array of topCrashersBySignature object (see comment above)
-     */
-    public function getTopCrashersByBranch($branch, $limit=100, $start=NULL, $end=NULL, $total_crashes=1) {
-        $sql = "/* soc.web topcrash.bybranch */ 
-            SELECT p.branch,
-                   tcs.signature,
-                   cast(sum(tcs.count) as float) / ? as percent,
-                   sum(tcs.count) as total,
-                   sum(case when o.os_name LIKE 'Windows%' then tcs.count else 0 end) as win,
-                   sum(case when o.os_name = 'Mac OS X' then tcs.count else 0 end) as mac,
-                   sum(case when o.os_name = 'Linux' then tcs.count else 0 end) as linux 
-            FROM top_crashes_by_signature tcs
-            JOIN productdims p ON tcs.productdims_id = p.id AND 
-                 p.branch = ?
-            JOIN osdims o ON tcs.osdims_id = o.id 
-            WHERE window_end >= ? AND 
-                  window_end < ?
-            GROUP BY p.branch, tcs.signature
-            HAVING sum(tcs.count) > 0
-            ORDER BY total desc
-            LIMIT ?";
-        return $this->fetchRows($sql, TRUE,
-				array($total_crashes, $branch, $this->t($start), $this->t($end), $limit));
     }
 
     /**
