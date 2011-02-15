@@ -45,7 +45,7 @@ def fetchBuild(build_url, urllib2=urllib2):
     data = response.read()
     response.close()
     try: 
-      return data.strip().split(" ")
+      return data.strip().split()
     except Exception:
       util.reportExceptionAndAbort(logger)
       return None
