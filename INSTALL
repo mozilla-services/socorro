@@ -1,15 +1,97 @@
-Requirements:
-* Python 2.6 plus:
-**  psycopg2 simplejson web.py
-* HBase 0.89 (http://hbase.apache.org/)
-* PostgreSQL 8.4
-* Apache httpd 2.2 plus:
-** mod_python mod_wsgi
+## RHEL6 or Fedora 14
+yum install python-psycopg2 simplejson httpd mod_ssl mod_wsgi postgresql-server
+# for building minidump_stackwalk
+yum install subversion gcc-c++
+# for unit/functional tests
+yum install python-virtualenv php-phpunit-PHPUnit
 
-# set up directory, user and permissions
+## disable SELinux
+# edit /etc/sysconfig/selinux
+# SELINUX=disabled
+# reboot
+shutdown -r now
+
+## postgresql config
+service postgresql initdb
+# edit /var/lib/pgsql/data/pg_hba.conf
+# change IPv4/IPv6 connection from "ident" to "md5"
+# edit /var/lib/pgsql/data/postgresql.conf
+# uncomment:
+# listen_addresses = 'localhost'
+service postgresql start
+chkconfig postgresql on
+
+## for dev/production
+su - postgres
+psql
+postgres=# CREATE DATABASE breakpad;
+CREATE DATABASE
+# note - set this to something random!
+postgres=# CREATE USER breakpad_rw WITH PASSWORD 'secret';
+CREATE ROLE
+postgres=# GRANT ALL ON DATABASE breakpad TO breakpad_rw;
+GRANT
+
+## for unit/functional tests
+su - postgres
+psql
+postgres=# CREATE DATABASE test;
+CREATE DATABASE
+postgres=# CREATE USER test WITH PASSWORD 'aPassword';
+CREATE ROLE
+postgres=# GRANT ALL ON DATABASE test TO test;
+GRANT
+
+## postgresql schema setup
+cp scripts/config/commonconfig.py.dist scripts/config/commonconfig.py
+# edit scripts/config/commonconfig.py
+# databaseName.default = 'breakpad'
+# databaseUserName.default = 'breakpad_rw'
+# databasePassword.default = 'secret'
+cp scripts/config/setupdatabaseconfig.py.dist scripts/config/setupdatabaseconfig.py
+python scripts/setupDatabase.py
+python scripts/createPartitions.py
+
+## Hadoop+HBase install
+# install Sun Java JDK 
+# JDK 6u16
+# download appropriate package from http://www.oracle.com/technetwork/java/javase/downloads/index.html
+bash jdk-6u23-linux-x64-rpm.bin
+# install Hadoop 0.20 + HBase 0.89
+# refer to https://wiki.cloudera.com/display/DOC/HBase+Installation
+# NOTE - this is just a standalone setup, read the above for info on a real, distributed setup!
+wget http://archive.cloudera.com/redhat/cdh/cloudera-cdh3.repo
+mv cloudera-cdh3.repo /etc/yum.repos.d/
+yum update yum
+yum install hadoop-hbase hadoop-hbase-master hadoop-hbase-thrift
+service hadoop-hbase-master start
+chkconfig hadoop-hbase-master on
+service hadoop-hbase-thrift start
+chkconfig hadoop-hbase-thrift on
+
+# TODO HBase config/schema setup
+"""
+    create 'crash_report_signatures', {NAME => 'counters', COMPRESSION => 'LZO', VERSIONS => '1', TTL => '2147483647', BLOCKSIZE => '65536', IN_MEMORY => 'false', BLOCKCACHE => 'true'}, {NAME => 'json', COMPRESSION => 'LZO', VERSIONS => '3', TTL => '2147483647', BLOCKSIZE => '65536', IN_MEMORY => 'false', BLOCKCACHE => 'true'}
+    create 'crash_reports', {NAME => 'flags', VERSIONS => '1', COMPRESSION => 'LZO', TTL => '2147483647', BLOCKSIZE => '65536', IN_MEMORY => 'false', BLOCKCACHE => 'true'}, {NAME => 'ids', COMPRESSION => 'LZO', VERSIONS => '1', TTL => '2147483647', BLOCKSIZE => '65536', IN_MEMORY => 'false', BLOCKCACHE => 'true'}, {NAME => 'meta_data', COMPRESSION => 'LZO', VERSIONS => '3', TTL => '2147483647', BLOCKSIZE => '65536', IN_MEMORY => 'false', BLOCKCACHE => 'true'}, {NAME => 'processed_data', VERSIONS => '3', COMPRESSION => 'LZO', TTL => '2147483647', BLOCKSIZE => '65536', IN_MEMORY => 'false', BLOCKCACHE => 'true'}, {NAME => 'raw_data', COMPRESSION => 'LZO', VERSIONS => '3', TTL => '2147483647', BLOCKSIZE => '65536', IN_MEMORY => 'false', BLOCKCACHE => 'true'}, {NAME => 'timestamps', COMPRESSION => 'LZO', VERSIONS => '1', TTL => '2147483647', BLOCKSIZE => '65536', IN_MEMORY => 'false', BLOCKCACHE => 'true'}
+    create 'crash_reports_index_hang_id', {NAME => 'ids', COMPRESSION => 'LZO', VERSIONS => '1', TTL => '2147483647', BLOCKSIZE => '65536', IN_MEMORY => 'false', BLOCKCACHE => 'true'}
+    create 'crash_reports_index_hang_id_submitted_time', {NAME => 'ids', COMPRESSION => 'LZO', VERSIONS => '1', TTL => '2147483647', BLOCKSIZE => '65536', IN_MEMORY => 'false', BLOCKCACHE => 'true'}
+    create 'crash_reports_index_legacy_processed', {NAME => 'ids', COMPRESSION => 'NONE', VERSIONS => '1', TTL => '2147483647', BLOCKSIZE => '65536', IN_MEMORY => 'false', BLOCKCACHE => 'true'}
+    create 'crash_reports_index_legacy_submitted_time', {NAME => 'ids', COMPRESSION => 'LZO', VERSIONS => '1', TTL => '2147483647', BLOCKSIZE => '65536', IN_MEMORY => 'false', BLOCKCACHE => 'true'}
+    create 'crash_reports_index_legacy_unprocessed_flag', {NAME => 'ids', COMPRESSION => 'NONE', VERSIONS => '1', TTL => '2147483647', BLOCKSIZE => '65536', IN_MEMORY => 'false', BLOCKCACHE => 'true'}, {NAME => 'processor_state', VERSIONS => '5', COMPRESSION => 'NONE', TTL => '2147483647', BLOCKSIZE => '65536', IN_MEMORY => 'false', BLOCKCACHE => 'true'}
+    create 'crash_reports_index_priority_processed', {NAME => 'ids', COMPRESSION => 'NONE', VERSIONS => '1', TTL => '2147483647', BLOCKSIZE => '65536', IN_MEMORY => 'false', BLOCKCACHE => 'true'}
+    create 'crash_reports_index_signature_ooid', {NAME => 'ids', COMPRESSION => 'LZO', VERSIONS => '1', TTL => '2147483647', BLOCKSIZE => '65536', IN_MEMORY => 'false', BLOCKCACHE => 'true'}
+    create 'crash_reports_index_submitted_time', {NAME => 'ids', COMPRESSION => 'LZO', VERSIONS => '1', TTL => '2147483647', BLOCKSIZE => '65536', IN_MEMORY => 'false', BLOCKCACHE => 'true'}
+    create 'crash_reports_index_unprocessed_flag', {NAME => 'ids', VERSIONS => '1', COMPRESSION => 'NONE', TTL => '2147483647', BLOCKSIZE => '65536', IN_MEMORY => 'false', BLOCKCACHE => 'true'}, {NAME => 'processor_state', COMPRESSION => 'NONE', VERSIONS => '5', TTL => '2147483647', BLOCKSIZE => '65536', IN_MEMORY => 'false', BLOCKCACHE => 'true'}
+    create 'metrics', {NAME => 'counters', COMPRESSION => 'LZO', VERSIONS => '1', TTL => '2147483647', BLOCKSIZE => '65536', IN_MEMORY => 'false', BLOCKCACHE => 'true'} 
+"""
+
+# run unit/functional tests + coverage report
+make coverage
+
+# set up directories, user and permissions
 mkdir /etc/socorro
 mkdir /var/log/socorro
-mkdir /data/socorro
+mkdir -p /data/socorro
 useradd socorro
 chown socorro:socorro /var/log/socorro
 
@@ -20,46 +102,134 @@ make install
 ln -s /data/socorro/application/scripts/init.d/socorro-{monitor,processor} /etc/init.d/
 chkconfig socorro-monitor on
 chkconfig socorro-processor on
+chkconfig socorro-crashmover on
 
-# symlink cron jobs
+# set up cron jobs
 ln -s /data/socorro/application/scripts/crons/socorrorc /etc/socorro/
 crontab /data/socorro/application/scripts/crons/example.crontab 
+# customize crontab
+crontab -e
 
+# Configure Apache
+# edit /etc/httpd/conf.d/socorro.conf
+#
+NameVirtualHost *:80
+WSGIPythonPath /data/socorro/application:/data/socorro/thirdparty:/data/socorro/application/scripts
 # configure apache for crash-reports (crash submissions only)
-edit /etc/httpd/conf.d/socorro.conf
 """
-<VirtualHost *:80>
+<VirtualHost  *:80>
   ServerName crash-reports.example.com
-  DocumentRoot /data/socorro/application
+  DocumentRoot /data/socorro
 
   Options FollowSymLinks
   TimeOut 300
-  Alias /submit /data/socorro/application/socorro/collector/modpython-collector.py
+  WSGIScriptAlias / /data/socorro/application/scripts/collector.py
 
-  # Reject excessively large POSTs
+  # Sanity check - limit crash submissions to 20MB
   <Location /submit>
       LimitRequestBody 20971520
   </Location>
 
-  <Directory /data/socorro/>
-      AddHandler mod_python .py
-      PythonPath "sys.path+['/data/socorro/application']+['/data/socorro/thirdparty']+['/data/socorro/application/scripts']"
-      PythonHandler socorro.collector.modpython-collector
-      AllowOverride All
-      PythonDebug On
-  </Directory>
-
-  # Anything other than /submit probably wants the user site
   ReWriteEngine on
   RewriteCond %{REQUEST_METHOD} GET
   RewriteRule .* http://crash-stats.example.com
-  
+
   SetEnvIf X-Forwarded-For "^.*\..*\..*\..*" is-forwarded
   LogFormat "%h %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\"" combined
-  ErrorLog "|/usr/sbin/rotatelogs /var/log/httpd/crash-reports/error_log_%Y-%m-%d-%H 3600 -0"
-  CustomLog "|/usr/sbin/rotatelogs /var/log/httpd/crash-reports/access_%Y-%m-%d-%H 3600 -0" combined env=!image
-  CustomLog "|/usr/sbin/rotatelogs /var/log/httpd/crash-reports/access_%Y-%m-%d-%H 3600 -0" combined env=!is-forwarded
-  CustomLog "|/usr/sbin/rotatelogs /var/log/httpd/crash-reports/access_%Y-%m-%d-%H 3600 -0" x-forwarded-for env=is-forwarded
+  ErrorLog "|/usr/sbin/rotatelogs /var/log/httpd/crash-reports.example.com/error_log_%Y-%m-%d-%H 3600 -0"
+  CustomLog "|/usr/sbin/rotatelogs /var/log/httpd/crash-reports.example.com/access_%Y-%m-%d-%H 3600 -0" combined env=!image
+  CustomLog "|/usr/sbin/rotatelogs /var/log/httpd/crash-reports.example.com/access_%Y-%m-%d-%H 3600 -0" combined env=!is-forwarded
+  CustomLog "|/usr/sbin/rotatelogs /var/log/httpd/crash-reports.example.com/access_%Y-%m-%d-%H 3600 -0" x-forwarded-for env=is-forwarded
   AddDefaultCharset UTF-8
 </VirtualHost>
 """
+# configure apache for crash-stats (web UI only)
+# TODO PHP configuration
+"""
+<VirtualHost  *:80>
+  ServerName crash-stats.example.com
+  DocumentRoot /data/socorro/htdocs
+
+  ReWriteEngine On
+
+  RewriteCond %{REQUEST_URI} /dumps/(\w\w)(\w\w)((?:\w|-)+?)(\d{6}).jsonz
+  ReWriteRule /dumps/(\w\w)(\w\w)((?:\w|-)+?)(\d{6}).jsonz http://socorro-api.example.com/crashes/201005/crash/processed/by/uuid/$1$2$3$4 [P]
+
+  RewriteCond %{REQUEST_URI} /rawdumps/(\w\w)(\w\w)((?:\w|-)+?)(\d{6}).dump
+  ReWriteRule /rawdumps/(\w\w)(\w\w)((?:\w|-)+?)(\d{6}).dump http://socorro-api.example.com/crashes/201005/crash/raw_crash/by/uuid/$1$2$3$4 [P]
+
+  RewriteCond %{REQUEST_URI} /rawdumps/(\w\w)(\w\w)((?:\w|-)+?)(\d{6}).json
+  ReWriteRule /rawdumps/(\w\w)(\w\w)((?:\w|-)+?)(\d{6}).json http://socorro-api.example.com/crashes/201005/crash/meta/by/uuid/$1$2$3$4 [P]
+
+  ReWriteRule /rawdumps/(.*).(json|dump) /missing_dump [L]
+
+  <LocationMatch /rawdumps/.*>
+        Header append Cache-Control private
+        AuthType Basic
+        AuthName "Socorro restricted access"
+        AuthUserFile /data/socorro/application/.htpasswd
+  </LocationMatch>
+
+  <Directory /data/socorro/htdocs>
+    ReWriteEngine On
+    AllowOverride All
+  </Directory>
+
+ SetEnvIf X-Forwarded-For "^.*\..*\..*\..*" is-forwarded
+ LogFormat "%h %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\"" combined
+ ErrorLog "|/usr/sbin/rotatelogs /var/log/httpd/crash-stats.example.com/ssl_error_log_%Y-%m-%d-%H 3600 -0"
+ CustomLog "|/usr/sbin/rotatelogs /var/log/httpd/crash-stats.example.com/ssl_access_%Y-%m-%d-%H 3600 -0" combined env=!image
+ CustomLog "|/usr/sbin/rotatelogs /var/log/httpd/crash-stats.example.com/ssl_access_%Y-%m-%d-%H 3600 -0" combined env=!is-forwarded
+ CustomLog "|/usr/sbin/rotatelogs /var/log/httpd/crash-stats.example.com/ssl_access_%Y-%m-%d-%H 3600 -0" x-forwarded-for env=is-forwarded
+ AddDefaultCharset UTF-8
+</VirtualHost>
+"""
+# configure apache for middleware only
+# TODO generate password for mware, give to PHP app
+"""
+WSGISocketPrefix /var/run/wsgi/bpapi_s
+WSGISocketPrefix /var/run/wsgi/bpapi_nossl
+WSGIPythonPath /data/socorro/application:/data/socorro/thirdparty:/data/socorro/application/scripts
+<VirtualHost *:80>
+        ServerName socorro-api.example.com
+        Redirect /bpapi https://socorro-api.example.com/bpapi
+
+        RewriteEngine On
+        RequestHeader set Accept application/octet-stream
+        ProxyTimeout 2
+        # Note - set your thrift server here
+        ProxyPass /crash_reports http://thrift-hbase-server.example.com:9090/crash_reports
+
+        WSGIDaemonProcess bpapi_nossl user=socorro threads=10 python-path=/data/socorro/application:/data/socorro/thirdparty:/data/socorro/application/scripts
+        WSGIScriptAlias /crashes /data/socorro/application/scripts/webservices.py
+        WSGIProcessGroup bpapi_nossl
+        WSGIApplicationGroup %{GLOBAL}
+        LogLevel info
+
+</VirtualHost>
+
+<VirtualHost *:443>
+        ServerName socorro-api.example.com
+        SSLEngine On
+        DocumentRoot /data/socorro/application
+        WSGIDaemonProcess bpapi_s user=socorro threads=10 python-path=/data/socorro/application:/data/socorro/thirdparty:/data/socorro/application/scripts
+        WSGIScriptAlias /bpapi /data/socorro/application/scripts/webservices.py
+        WSGIApplicationGroup %{GLOBAL}
+        LogLevel info
+
+        <Location /bpapi>
+                Order deny,allow
+                Deny from all
+                SSLRequireSSL
+                AuthType Basic
+                AuthName "Magic Words Please"
+                AuthUserFile /data/socorro/application/.htpasswd
+                Allow from 1.2.3.4
+                Require valid-user
+                Satisfy Any
+        </Location>
+</VirtualHost>
+"""
+mkdir /var/log/httpd/{crash-stats,crash-reports,socorro-api}.example.com
+service httpd restart
+chkconfig httpd on
