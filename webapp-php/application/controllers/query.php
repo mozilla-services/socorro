@@ -94,7 +94,7 @@ class Query_Controller extends Controller {
                 return url::redirect('report/index/' . $ooid);
             } else {
                 $params['query_search'] = 'signature';
-                $params['query_type'] = 'contains';
+                $params['query_type'] = 'exact';
                 $params['range_value'] = 1;
                 $params['range_unit'] = 'weeks';
             }
