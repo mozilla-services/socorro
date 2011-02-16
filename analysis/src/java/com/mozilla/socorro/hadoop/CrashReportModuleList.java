@@ -74,9 +74,6 @@ public class CrashReportModuleList implements Tool {
 	private Configuration conf;
 
 	// Configuration fields
-	private static final String PRODUCT_FILTER = "product.filter";
-	private static final String RELEASE_FILTER = "release.filter";
-	private static final String OS_FILTER = "os.filter";
 	private static final String SHOW_VERSIONS = "show.versions";
 	
 	public static class CrashReportModuleListMapper extends TableMapper<Text, NullWritable> {
