@@ -72,9 +72,6 @@ public class CrashReportModuleList implements Tool {
 	
 	private static final String NAME = "CrashReportModuleList";
 	private Configuration conf;
-
-	// Configuration fields
-	private static final String SHOW_VERSIONS = "show.versions";
 	
 	public static class CrashReportModuleListMapper extends TableMapper<Text, NullWritable> {
 
@@ -206,7 +203,6 @@ public class CrashReportModuleList implements Tool {
 		System.out.println(PRODUCT_FILTER + "=<product-name>");
 		System.out.println(RELEASE_FILTER + "=<release-version>");
 		System.out.println(OS_FILTER + "=<os-name>");
-		System.out.println(SHOW_VERSIONS + "=<true|false>");
 		System.out.println(START_DATE + "=<yyyyMMdd>");
 		System.out.println(END_DATE + "=<yyyyMMdd>");
 		System.out.println();
