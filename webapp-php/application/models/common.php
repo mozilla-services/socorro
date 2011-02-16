@@ -331,18 +331,7 @@ class Common_Model extends Model {
         }
 
         if (trim($params['reason']) != '') {
-            switch ($params['reason_type']) {
-                case 'exact':
-                    $where[] = ' reports.reason = ' . $this->db->escape($params['reason']); 
-                    break;
-                case 'startswith':
-                    $where[] = ' reports.reason LIKE ' . $this->db->escape($params['reason'].'%'); 
-                    break;
-                case 'contains':
-                default:
-                    $where[] = ' reports.reason LIKE ' . $this->db->escape('%'.$params['reason'].'%'); 
-                    break;
-            }
+            $where[] = ' reports.reason = ' . $this->db->escape($params['reason']); 
         }
 
         if (array_key_exists('build_id', $params) && $params['build_id']) {

@@ -85,12 +85,6 @@
 
             <p class="advanced">
                 <label for="reason">Crash Reason</label>
-                <?php
-    	    echo form::dropdown(
-                    'reason_type',
-                    $option_types,
-                    $params['reason_type']
-                ) ?>	      
                 <?php echo form::input(
                     array('size' => '25', 'name'=>'reason', 'id'=>'reason'), 
                     trim($params['reason'])
