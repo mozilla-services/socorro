@@ -3,7 +3,6 @@
 import time as tm
 import datetime as dt
 import json
-import pycurl
 import os
 import signal
 
@@ -12,21 +11,18 @@ import socorro.lib.iteratorWorkerFramework as iwf
 import socorro.lib.filesystem as sfs
 import socorro.lib.stats as stats
 
+import poster
+import urllib2
+
 existingHangIdCache = {}
 
 #-------------------------------------------------------------------------------
-def doSubmission (formData, binaryFilePathName, url, logger=sutil.FakeLogger(),
-                  pycurlModule=pycurl):
-    c = pycurlModule.Curl()
-    fields = [(str(t[0]), str(t[1])) for t in formData.items()]
-    fields.append (("upload_file_minidump",
-                    (c.FORM_FILE, binaryFilePathName)))
-    c.setopt(c.TIMEOUT, 60)
-    c.setopt(c.POST, 1)
-    c.setopt(c.URL, url)
-    c.setopt(c.HTTPPOST, fields)
-    c.perform()
-    c.close()
+def doSubmission (formData, binaryFilePathName, url, logger=sutil.FakeLogger(), posterModule=poster):
+    fields = dict([(t[0],t[1]) for t in formData.items()])
+    fields['upload_file_minidump'] = open(binaryFilePathName, 'rb')
+    datagen, headers = posterModule.encode.multipart_encode(fields);
+    request = urllib2.Request(url, datagen, headers)
+    print urllib2.urlopen(request).read(),
     try:
         logger.debug('submitted %s', formData['uuid'])
     except KeyError:
@@ -182,11 +178,11 @@ if __name__ == '__main__':
   except ImportError:
     import simplejson as json
   import sys
-  import pycurl
   import socorro.lib.filesystem
   import socorro.lib.uuid as uuid
 
   existingHangIdCache = {}
+  poster.streaminghttp.register_openers()
 
   def submitCrashReport (jsonFilePathName, binaryFilePathName, serverURL, uniqueHang):
     jsonFile = open(jsonFilePathName)
@@ -204,15 +200,11 @@ if __name__ == '__main__':
       except:
         pass
 
-    c = pycurl.Curl()
-    fields = [(str(t[0]), str(t[1])) for t in data.items()]
-    fields.append (("upload_file_minidump", (c.FORM_FILE, binaryFilePathName)))
-    c.setopt(c.TIMEOUT, 10)
-    c.setopt(c.POST, 1)
-    c.setopt(c.URL, serverURL)
-    c.setopt(c.HTTPPOST, fields)
-    c.perform()
-    c.close()
+    fields = dict([(t[0],t[1]) for t in data.items()])
+    fields['upload_file_minidump'] = open(binaryFilePathName, 'rb')
+    datagen, headers = poster.encode.multipart_encode(fields);
+    request = urllib2.Request(serverURL, datagen, headers)
+    print urllib2.urlopen(request).read(),
 
   def reportErrorToStderr (x):
     print >>sys.stderr, x

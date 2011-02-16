@@ -10,6 +10,10 @@ import socorro.lib.ConfigurationManager as configurationManager
 import socorro.collector.submitter as sub
 import socorro.lib.util as sutil
 
+import poster
+
+poster.streaminghttp.register_openers()
+
 try:
   config = configurationManager.newConfiguration(configurationModule=subconf,
                                                  applicationName="submitter 2.0")
