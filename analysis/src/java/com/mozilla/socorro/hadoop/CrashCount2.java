@@ -42,7 +42,6 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -59,7 +58,6 @@ import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
-import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.MultipleOutputs;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 import org.apache.hadoop.mapreduce.lib.reduce.LongSumReducer;
@@ -71,9 +69,9 @@ import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.type.TypeReference;
 
-import com.mozilla.hadoop.hbase.mapreduce.MultiScanTableMapReduceUtil;
 import com.mozilla.socorro.dao.hbase.HbaseCrashCountDao;
 import com.mozilla.util.DateUtil;
+import static com.mozilla.socorro.hadoop.CrashReportJob.*;
 
 public class CrashCount2 implements Tool {
 
@@ -81,29 +79,6 @@ public class CrashCount2 implements Tool {
 	
 	private static final String NAME = "CrashCount2";
 	private Configuration conf;
-
-	// HBase table and column names
-	private static final String TABLE_NAME_CRASH_REPORTS = "crash_reports";
-	private static final byte[] PROCESSED_DATA_BYTES = "processed_data".getBytes();
-	private static final byte[] JSON_BYTES = "json".getBytes();
-	
-	// Configuration fields
-	private static final String START_DATE = "start.date";
-	private static final String END_DATE = "end.date";
-	private static final String START_TIME = "start.time";
-	private static final String END_TIME = "end.time";
-	
-	// Crash JSON fields
-	private static final String PRODUCT = "product";
-	private static final String VERSION = "version";
-	private static final String OS_NAME = "os_name";
-	private static final String SIGNATURE = "signature";
-	private static final String REASON = "reason";
-	private static final String DUMP = "dump";
-	private static final String DATE_PROCESSED = "date_processed";
-	private static final String CPU_PATTERN = "CPU|";
-	private static final String MODULE_PATTERN = "Module|";
-	private static final String ADDONS = "addons";
 	
 	// Table Column Families
 	//private static final String PRODUCT = "product";
@@ -203,40 +178,40 @@ public class CrashCount2 implements Tool {
 				
 				String product = null;
 				String productVersion = null;
-				if (crash.containsKey(PRODUCT)) {
-					product = (String)crash.get(PRODUCT);
+				if (crash.containsKey(PROCESSED_JSON_PRODUCT)) {
+					product = (String)crash.get(PROCESSED_JSON_PRODUCT);
 				}
-				if (crash.containsKey(VERSION)) {
-					productVersion = (String)crash.get(VERSION);
+				if (crash.containsKey(PROCESSED_JSON_VERSION)) {
+					productVersion = (String)crash.get(PROCESSED_JSON_VERSION);
 				}
 				
 				// Set the value to the date
-				String dateProcessed = (String)crash.get(DATE_PROCESSED);
+				String dateProcessed = (String)crash.get(PROCESSED_JSON_DATE_PROCESSED);
 				long crashTime = sdf.parse(dateProcessed).getTime();
 				// Filter if the processed date is not within our window
 				if (crashTime < startTime || crashTime > endTime) {
 					return;
 				}
 				
-				String osName = (String)crash.get(OS_NAME);
+				String osName = (String)crash.get(PROCESSED_JSON_OS_NAME);
 				if (osName == null) {
 					return;
 				}
 				
-				String signame = (String)crash.get(SIGNATURE);
+				String signame = (String)crash.get(PROCESSED_JSON_SIGNATURE);
 				if (signame != null) {				
-					signame = signame + "|" + crash.get(REASON);
+					signame = signame + "|" + crash.get(PROCESSED_JSON_REASON);
 				} else {
 					signame = "(no signature)";
 				}
 				
 				String arch = null;
 				Map<String, String> moduleVersions = new HashMap<String,String>();
-				for (String dumpline : newlinePattern.split((String)crash.get(DUMP))) {
-					if (dumpline.startsWith(CPU_PATTERN)) {
+				for (String dumpline : newlinePattern.split((String)crash.get(PROCESSED_JSON_DUMP))) {
+					if (dumpline.startsWith(PROCESSED_JSON_CPU_PATTERN)) {
 						String[] dumplineSplits = pipePattern.split(dumpline);
 						arch = String.format("%s with %s cores", new Object[] { dumplineSplits[1], dumplineSplits[3] });
-					} else if (dumpline.startsWith(MODULE_PATTERN)) {
+					} else if (dumpline.startsWith(PROCESSED_JSON_MODULE_PATTERN)) {
 						// module_str, libname, version, pdb, checksum, addrstart, addrend, unknown
 						String[] dumplineSplits = pipePattern.split(dumpline);
 						
@@ -256,7 +231,7 @@ public class CrashCount2 implements Tool {
 				}
 
 				Map<String, String> addonVersions = new HashMap<String,String>();
-				List<Object> addons = (ArrayList<Object>)crash.get(ADDONS);
+				List<Object> addons = (ArrayList<Object>)crash.get(PROCESSED_JSON_ADDONS);
 				if (addons != null) {
 					for (Object addon : addons) {
 						List<String> addonList = (ArrayList<String>)addon;
@@ -280,15 +255,15 @@ public class CrashCount2 implements Tool {
 					// os name/product/product_version
 					outputKey.set(String.format("%s" + KEY_DELIMITER + "%s" + COLUMN_DELIMITER + "%s", new Object[] { osRowKey, OS, QUALIFIER_NAME }));
 					mos.write("strings", outputKey, new Text(osName));
-					outputKey.set(String.format("%s" + KEY_DELIMITER + "%s" + COLUMN_DELIMITER + "%s", new Object[] { osRowKey, PRODUCT, product }));
+					outputKey.set(String.format("%s" + KEY_DELIMITER + "%s" + COLUMN_DELIMITER + "%s", new Object[] { osRowKey, PROCESSED_JSON_PRODUCT, product }));
 					mos.write("strings", outputKey, new Text(osName));
 					outputKey.set(String.format("%s" + KEY_DELIMITER + "%s" + COLUMN_DELIMITER + "%s", new Object[] { osRowKey, PRODUCT_VERSION, productVersion }));
 					mos.write("strings", outputKey, new Text(osName));
 					
 					// signature name/product/product_version
-					outputKey.set(String.format("%s" + KEY_DELIMITER + "%s" + COLUMN_DELIMITER + "%s", new Object[] { sigRowKey, SIGNATURE, QUALIFIER_NAME }));
+					outputKey.set(String.format("%s" + KEY_DELIMITER + "%s" + COLUMN_DELIMITER + "%s", new Object[] { sigRowKey, PROCESSED_JSON_SIGNATURE, QUALIFIER_NAME }));
 					mos.write("strings", outputKey, new Text(signame));
-					outputKey.set(String.format("%s" + KEY_DELIMITER + "%s" + COLUMN_DELIMITER + "%s", new Object[] { sigRowKey, PRODUCT, product }));
+					outputKey.set(String.format("%s" + KEY_DELIMITER + "%s" + COLUMN_DELIMITER + "%s", new Object[] { sigRowKey, PROCESSED_JSON_PRODUCT, product }));
 					mos.write("strings", outputKey, new Text(osName));
 					outputKey.set(String.format("%s" + KEY_DELIMITER + "%s" + COLUMN_DELIMITER + "%s", new Object[] { sigRowKey, PRODUCT_VERSION, productVersion }));
 					mos.write("strings", outputKey, new Text(osName));	
@@ -302,7 +277,7 @@ public class CrashCount2 implements Tool {
 					context.write(outputKey, one);
 					
 					// os -> signature count
-					outputKey.set(String.format("%s" + KEY_DELIMITER + "%s" + COLUMN_DELIMITER + "%s", new Object[] { sigRowKey, SIGNATURE, COUNT }));
+					outputKey.set(String.format("%s" + KEY_DELIMITER + "%s" + COLUMN_DELIMITER + "%s", new Object[] { sigRowKey, PROCESSED_JSON_SIGNATURE, COUNT }));
 					context.write(outputKey, one);
 					
 					// os -> sig -> cpu info
@@ -397,50 +372,12 @@ public class CrashCount2 implements Tool {
 	 * @throws IOException
 	 * @throws ParseException 
 	 */
-	public Job initJob(String[] args) throws IOException, ParseException {
-		// Set both start/end time and start/stop row
-		Calendar cal = Calendar.getInstance();
-		
-		SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
-		SimpleDateFormat rowsdf = new SimpleDateFormat("yyMMdd");
-		
-		String startDate = conf.get(START_DATE);
-		String endDate = conf.get(END_DATE);
-		int startDateAsInt = 0;
-		int endDateAsInt = 0;
-		if (!StringUtils.isBlank(startDate)) {
-			Date d = sdf.parse(startDate);
-			conf.setLong(START_TIME, d.getTime());
-			startDateAsInt = Integer.parseInt(rowsdf.format(d));
-		} else {
-			conf.setLong(START_TIME, cal.getTimeInMillis());
-			startDateAsInt = Integer.parseInt(rowsdf.format(cal.getTime()));
-		}
-		if (!StringUtils.isBlank(endDate)) {
-			Date d = sdf.parse(endDate);
-			conf.setLong(END_TIME, d.getTime());
-			endDateAsInt = Integer.parseInt(rowsdf.format(d));
-		} else {
-			conf.setLong(END_TIME, cal.getTimeInMillis());
-			endDateAsInt = Integer.parseInt(rowsdf.format(cal.getTime()));
-		}
-		
-		Job job = new Job(getConf());
-		job.setJobName(NAME);
-		job.setJarByClass(CrashCount2.class);
-		
-		// input table configuration
-		Scan[] scans = generateScans(startDateAsInt, endDateAsInt);
-		MultiScanTableMapReduceUtil.initMultiScanTableMapperJob(TABLE_NAME_CRASH_REPORTS, scans, CrashCount2Mapper.class, Text.class, LongWritable.class, job);
+	public Job initJob(String[] args) throws IOException, ParseException {	
+		Map<byte[], byte[]> columns = new HashMap<byte[], byte[]>();
+		columns.put(PROCESSED_DATA_BYTES, JSON_BYTES);
+		Job job = CrashReportJob.initJob(NAME, getConf(), CrashCount2.class, CrashCount2Mapper.class, LongSumReducer.class, LongSumReducer.class, columns, Text.class, LongWritable.class, new Path(args[0]));
 		
 		MultipleOutputs.addNamedOutput(job, "strings", TextOutputFormat.class, Text.class, Text.class);
-		
-		job.setCombinerClass(LongSumReducer.class);
-		job.setReducerClass(LongSumReducer.class);
-		job.setOutputKeyClass(Text.class);
-		job.setOutputValueClass(LongWritable.class);
-		
-		FileOutputFormat.setOutputPath(job, new Path(args[0]));
 		
 		return job;
 	}

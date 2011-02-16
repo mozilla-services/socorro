@@ -1,5 +1,6 @@
 package com.mozilla.socorro.hadoop;
 
+import static com.mozilla.socorro.hadoop.CrashReportJob.*;
 import gnu.trove.TIntArrayList;
 import gnu.trove.TObjectIntHashMap;
 
@@ -10,7 +11,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -21,12 +22,10 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hbase.client.Result;
-import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 import org.apache.hadoop.hbase.mapreduce.TableMapper;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
-import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.util.GenericOptionsParser;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
@@ -35,7 +34,6 @@ import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.type.TypeReference;
 
-import com.mozilla.hadoop.hbase.mapreduce.MultiScanTableMapReduceUtil;
 import com.mozilla.util.DateUtil;
 
 public class CrashReportDataMatrix implements Tool {
@@ -44,11 +42,6 @@ public class CrashReportDataMatrix implements Tool {
 	
 	private static final String NAME = "CrashReportDataMatrix";
 	private Configuration conf;
-
-	// HBase table and column names
-	private static final String TABLE_NAME_CRASH_REPORTS = "crash_reports";
-	private static final byte[] PROCESSED_DATA_BYTES = "processed_data".getBytes();
-	private static final byte[] JSON_BYTES = "json".getBytes();
 	
 	// Configuration fields
 	private static final String PRODUCT_FILTER = "product.filter";
@@ -56,24 +49,9 @@ public class CrashReportDataMatrix implements Tool {
 	private static final String OS_FILTER = "os.filter";
 	private static final String CONDENSE = "condense";
 	private static final String GROUP_BY_OS_VERSION = "group.by.os.version";
-	private static final String START_DATE = "start.date";
-	private static final String END_DATE = "end.date";
-	private static final String START_TIME = "start.time";
-	private static final String END_TIME = "end.time";
 	private static final String ADDONS = "addons";
 	private static final String USE_CORES = "use.cores";
 	private static final String USE_VERSIONS = "use.versions";
-	
-	// Crash JSON fields
-	private static final String PRODUCT = "product";
-	private static final String VERSION = "version";
-	private static final String OS_NAME = "os_name";
-	private static final String SIGNATURE = "signature";
-	private static final String REASON = "reason";
-	private static final String DUMP = "dump";
-	private static final String DATE_PROCESSED = "date_processed";
-	private static final String MODULE_PATTERN = "Module|";
-	private static final String CPU_PATTERN = "CPU|";
 	
 	private static final String MODULE_INFO_DELIMITER = "\u0002";
 	
@@ -165,17 +143,17 @@ public class CrashReportDataMatrix implements Tool {
 				
 				// Filter row if filter(s) are set and it doesn't match
 				if (!StringUtils.isBlank(productFilter)) {
-					if (crash.containsKey(PRODUCT) && !crash.get(PRODUCT).equals(productFilter)) {
+					if (crash.containsKey(PROCESSED_JSON_PRODUCT) && !crash.get(PROCESSED_JSON_PRODUCT).equals(productFilter)) {
 						return;
 					}
 				} 
 				if (!StringUtils.isBlank(releaseFilter)) {
-					if (crash.containsKey(releaseFilter) && !crash.get(VERSION).equals(releaseFilter)) {
+					if (crash.containsKey(releaseFilter) && !crash.get(PROCESSED_JSON_VERSION).equals(releaseFilter)) {
 						return;
 					}
 				}
 				
-				String osName = (String)crash.get(OS_NAME);
+				String osName = (String)crash.get(PROCESSED_JSON_OS_NAME);
 				if (!StringUtils.isBlank(osFilter)) {
 					if (osName == null || !osName.equals(osFilter)) {
 						return;
@@ -183,14 +161,14 @@ public class CrashReportDataMatrix implements Tool {
 				}
 				
 				// Set the value to the date
-				String dateProcessed = (String)crash.get(DATE_PROCESSED);
+				String dateProcessed = (String)crash.get(PROCESSED_JSON_DATE_PROCESSED);
 				long crashTime = sdf.parse(dateProcessed).getTime();
 				// Filter if the processed date is not within our window
 				if (crashTime < startTime || crashTime > endTime) {
 					return;
 				}
 				
-				String signame = (String)crash.get(SIGNATURE);
+				String signame = (String)crash.get(PROCESSED_JSON_SIGNATURE);
 				if (!StringUtils.isBlank(signame)) {
 					if (condense) {
 						Matcher sigMatcher = dllPattern.matcher(signame);
@@ -226,8 +204,8 @@ public class CrashReportDataMatrix implements Tool {
 					}
 				}
 				
-				for (String dumpline : newlinePattern.split((String)crash.get(DUMP))) {
-					if (dumpline.startsWith(CPU_PATTERN)) {
+				for (String dumpline : newlinePattern.split((String)crash.get(PROCESSED_JSON_DUMP))) {
+					if (dumpline.startsWith(PROCESSED_JSON_CPU_PATTERN)) {
 						if (useCores) {
 							String[] dumplineSplits = pipePattern.split(dumpline);
 							String arch = String.format("%s with %s cores", new Object[] { dumplineSplits[1], dumplineSplits[3] });
@@ -236,7 +214,7 @@ public class CrashReportDataMatrix implements Tool {
 								featureIndices.add(idx);
 							}
 						}
-					} else if (dumpline.startsWith(MODULE_PATTERN)) {
+					} else if (dumpline.startsWith(PROCESSED_JSON_MODULE_PATTERN)) {
 						// module_str, libname, version, pdb, checksum, addrstart, addrend, unknown
 						String[] dumplineSplits = pipePattern.split(dumpline);
 						
@@ -293,47 +271,10 @@ public class CrashReportDataMatrix implements Tool {
 	 * @throws IOException
 	 * @throws ParseException 
 	 */
-	public Job initJob(String[] args) throws IOException, ParseException {
-		// Set both start/end time and start/stop row
-		Calendar cal = Calendar.getInstance();
-		
-		SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
-		SimpleDateFormat rowsdf = new SimpleDateFormat("yyMMdd");
-		
-		String startDate = conf.get(START_DATE);
-		String endDate = conf.get(END_DATE);
-		int startDateAsInt = 0;
-		int endDateAsInt = 0;
-		if (!StringUtils.isBlank(startDate)) {
-			Date d = sdf.parse(startDate);
-			conf.setLong(START_TIME, d.getTime());
-			startDateAsInt = Integer.parseInt(rowsdf.format(d));
-		} else {
-			conf.setLong(START_TIME, cal.getTimeInMillis());
-			startDateAsInt = Integer.parseInt(rowsdf.format(cal.getTime()));
-		}
-		if (!StringUtils.isBlank(endDate)) {
-			Date d = sdf.parse(endDate);
-			conf.setLong(END_TIME, d.getTime());
-			endDateAsInt = Integer.parseInt(rowsdf.format(d));
-		} else {
-			conf.setLong(END_TIME, cal.getTimeInMillis());
-			endDateAsInt = Integer.parseInt(rowsdf.format(cal.getTime()));
-		}
-		
-		Job job = new Job(getConf());
-		job.setJobName(NAME);
-		job.setJarByClass(CrashReportDataMatrix.class);
-		
-		// input table configuration
-		Scan[] scans = PerCrashCoreCount.generateScans(startDateAsInt, endDateAsInt);
-		MultiScanTableMapReduceUtil.initMultiScanTableMapperJob(TABLE_NAME_CRASH_REPORTS, scans, CrashReportDataMatrixMapper.class, Text.class, Text.class, job);
-
-		job.setOutputKeyClass(Text.class);
-		job.setOutputValueClass(Text.class);
-		job.setNumReduceTasks(0);
-		
-		FileOutputFormat.setOutputPath(job, new Path(args[0]));
+	public Job initJob(String[] args) throws IOException, ParseException {		
+		Map<byte[], byte[]> columns = new HashMap<byte[], byte[]>();
+		columns.put(PROCESSED_DATA_BYTES, JSON_BYTES);
+		Job job = CrashReportJob.initJob(NAME, getConf(), CrashReportDataMatrix.class, CrashReportDataMatrixMapper.class, null, null, columns, Text.class, Text.class, new Path(args[0]));
 		
 		return job;
 	}

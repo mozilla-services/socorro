@@ -40,30 +40,39 @@ import matplotlib.pyplot as plt
 import pylab
 import sys
 import getopt
+import string
 
+products = [ "Firefox", "Firefox-4.0", "Fennec", "Thunderbird", "SeaMonkey" ]
+
+def printable(input):
+    return ''.join(filter(lambda x:x in string.printable, input))
+    
 def read_data(srcfile):
     data_dict = {}
     
     fin = open(srcfile, "r")
     for line in fin:
         splits = line.split('\t')
-        date_str = splits[0]
-        product_version = splits[1] + " " + splits[2]
-        label = splits[3]
-        count = int(splits[4])
-        
-        label_dict = data_dict.setdefault(label, {})
-        
-        for k in [ product_version, "total" ]:
-            product_dict = label_dict.setdefault(k, {})
-            prev_count = product_dict.get(date_str, 0)
-            product_dict[date_str] = prev_count + count
+        if len(splits) == 5:
+            date_str = splits[0]
+            product_version = printable(splits[1] + " " + splits[2])
+            label = splits[3]
+            count = int(splits[4])
+            
+            if printable(splits[1].strip()) in products:
+                label_dict = data_dict.setdefault(label, {})
+    
+                for k in [ product_version, "total" ]:
+                    product_dict = label_dict.setdefault(k, {})
+                    prev_count = product_dict.get(date_str, 0)
+                    product_dict[date_str] = prev_count + count
                         
     fin.close()
     
     return data_dict
      
 def plot_product_version(product_version, data_dict):
+    print "Product version: \"%s\"" % (product_version)
     date_counts = sorted(data_dict['submission'][product_version].items())
     dates, counts = [[z[i] for z in date_counts] for i in (0, 1)]
     plt.clf()
@@ -73,17 +82,22 @@ def plot_product_version(product_version, data_dict):
     plt.ylabel("Count")
     plt.title("Socorro Crash Stats for %s" % (product_version))
     
-    if (data_dict['processed'].has_key(product_version)):
+    if data_dict['processed'].has_key(product_version):
         date_counts = sorted(data_dict['processed'][product_version].items())
         dates, counts = [[z[i] for z in date_counts] for i in (0, 1)]
         plt.plot(counts, 'g-s', label='processed', linewidth=2)
     
-    if (data_dict['oopp'].has_key(product_version)):
+    if data_dict['oopp'].has_key(product_version):
         date_counts = sorted(data_dict['oopp'][product_version].items())
         dates, counts = [[z[i] for z in date_counts] for i in (0, 1)]
         plt.plot(counts, 'r-^', label='oopp')
         
-    plt.legend()
+    if data_dict['hang'].has_key(product_version):
+        date_counts = sorted(data_dict['hang'][product_version].items())
+        dates, counts = [[z[i] for z in date_counts] for i in (0, 1)]
+        plt.plot(counts, 'm-x', label='hang')
+        
+    plt.legend(loc='best')
     plt.savefig("%s.png" % (product_version))
     
 class Usage(Exception):

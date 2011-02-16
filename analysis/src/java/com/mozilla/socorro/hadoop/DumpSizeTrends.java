@@ -1,10 +1,12 @@
 package com.mozilla.socorro.hadoop;
 
+import static com.mozilla.socorro.hadoop.CrashReportJob.*;
+
 import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -15,15 +17,12 @@ import org.apache.commons.math.stat.descriptive.DescriptiveStatistics;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hbase.client.Result;
-import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 import org.apache.hadoop.hbase.mapreduce.TableMapper;
-import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Reducer;
-import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.util.GenericOptionsParser;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
@@ -32,7 +31,6 @@ import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.type.TypeReference;
 
-import com.mozilla.hadoop.hbase.mapreduce.MultiScanTableMapReduceUtil;
 import com.mozilla.util.DateUtil;
 
 public class DumpSizeTrends implements Tool {
@@ -41,27 +39,6 @@ public class DumpSizeTrends implements Tool {
 	
 	private static final String NAME = "DumpSizeTrends";
 	private Configuration conf;
-
-	// HBase table and column names
-	private static final String TABLE_NAME_CRASH_REPORTS = "crash_reports";
-	private static final byte[] RAW_DATA_BYTES = "raw_data".getBytes();
-	private static final byte[] DUMP_BYTES = "dump".getBytes();
-	private static final byte[] META_DATA_BYTES = Bytes.toBytes("meta_data");
-	private static final byte[] PROCESSED_DATA_BYTES = Bytes.toBytes("processed_data");
-	private static final byte[] JSON_BYTES = Bytes.toBytes("json");
-	
-	// Meta JSON fields
-	private static final String CRASH_TIME = "CrashTime";
-	private static final String PRODUCT_NAME = "ProductName";
-	private static final String PRODUCT_VERSION = "Version";
-	
-	// Configuration fields
-	private static final String PRODUCT_FILTER = "product.filter";
-	private static final String RELEASE_FILTER = "release.filter";
-	private static final String START_DATE = "start.date";
-	private static final String END_DATE = "end.date";
-	private static final String START_TIME = "start.time";
-	private static final String END_TIME = "end.time";
 	
 	private static final String KEY_DELIMITER = "\u0001";
 	private static final String TAB_DELIMITER = "\t";
@@ -118,11 +95,11 @@ public class DumpSizeTrends implements Tool {
 				
 				String product = null;
 				String productVersion = null;
-				if (meta.containsKey(PRODUCT_NAME)) {
-					product = (String)meta.get(PRODUCT_NAME);
+				if (meta.containsKey(META_JSON_PRODUCT_NAME)) {
+					product = (String)meta.get(META_JSON_PRODUCT_NAME);
 				}
-				if (meta.containsKey(PRODUCT_VERSION)) {
-					productVersion = (String)meta.get(PRODUCT_VERSION);
+				if (meta.containsKey(META_JSON_PRODUCT_VERSION)) {
+					productVersion = (String)meta.get(META_JSON_PRODUCT_VERSION);
 				}
 				
 				// Filter row if filter(s) are set and it doesn't match
@@ -139,8 +116,8 @@ public class DumpSizeTrends implements Tool {
 					}
 				}
 				
-				String crashTimeStr = (String)meta.get(CRASH_TIME);
-				if (!meta.containsKey(CRASH_TIME)) {
+				String crashTimeStr = (String)meta.get(META_JSON_CRASH_TIME);
+				if (!meta.containsKey(META_JSON_CRASH_TIME)) {
 					context.getCounter(ReportStats.CRASH_TIME_NULL).increment(1L);
 				}
 				
@@ -245,46 +222,6 @@ public class DumpSizeTrends implements Tool {
 		}
 		
 	}
-
-	/**
-	 * Generates an array of scans for different salted ranges for the given dates
-	 * @param startDate
-	 * @param endDate
-	 * @return
-	 */
-	public static Scan[] generateScans(Calendar startCal, Calendar endCal) {
-		SimpleDateFormat rowsdf = new SimpleDateFormat("yyMMdd");
-		
-		ArrayList<Scan> scans = new ArrayList<Scan>();		
-		String[] salts = new String[] { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e", "f" };
-		
-		long endTime = DateUtil.getEndTimeAtResolution(endCal.getTimeInMillis(), Calendar.DATE);
-		
-		while (startCal.getTimeInMillis() < endTime) {
-			int d = Integer.parseInt(rowsdf.format(startCal.getTime()));
-			
-			for (int i=0; i < salts.length; i++) {
-				Scan s = new Scan();
-				s.setCaching(4);
-				// disable block caching
-				s.setCacheBlocks(false);
-				// only looking for meta and processed json data
-				s.addColumn(META_DATA_BYTES, JSON_BYTES);
-				s.addColumn(RAW_DATA_BYTES, DUMP_BYTES);
-				s.addColumn(PROCESSED_DATA_BYTES, JSON_BYTES);
-				
-				s.setStartRow(Bytes.toBytes(salts[i] + String.format("%06d", d)));
-				s.setStopRow(Bytes.toBytes(salts[i] + String.format("%06d", d + 1)));
-				System.out.println("Adding start-stop range: " + salts[i] + String.format("%06d", d) + " - " + salts[i] + String.format("%06d", d + 1));
-				
-				scans.add(s);
-			}
-			
-			startCal.add(Calendar.DATE, 1);
-		}
-		
-		return scans.toArray(new Scan[scans.size()]);
-	}
 	
 	/**
 	 * @param args
@@ -293,43 +230,16 @@ public class DumpSizeTrends implements Tool {
 	 * @throws ParseException 
 	 */
 	public Job initJob(String[] args) throws IOException, ParseException {
-		// Set both start/end time and start/stop row
-		Calendar startCal = Calendar.getInstance();
-		Calendar endCal = Calendar.getInstance();
-		
-		SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
-		
-		String startDateStr = conf.get(START_DATE);
-		String endDateStr = conf.get(END_DATE);
-		if (!StringUtils.isBlank(startDateStr)) {
-			startCal.setTime(sdf.parse(startDateStr));	
-		}
-		if (!StringUtils.isBlank(endDateStr)) {
-			endCal.setTime(sdf.parse(endDateStr));
-		}
-		
-		conf.setLong(START_TIME, startCal.getTimeInMillis());
-		conf.setLong(END_TIME, endCal.getTimeInMillis());
-		
 		conf.set("mapred.child.java.opts", "-Xmx1024m");
 		conf.setBoolean("mapred.map.tasks.speculative.execution", false);
 		
-		Job job = new Job(getConf());
-		job.setJobName(NAME);
-		job.setJarByClass(DumpSizeTrends.class);
-		
-		// input table configuration
-		Scan[] scans = generateScans(startCal, endCal);
-		MultiScanTableMapReduceUtil.initMultiScanTableMapperJob(TABLE_NAME_CRASH_REPORTS, scans, DumpSizeTrendsMapper.class, Text.class, IntWritable.class, job);
-
+		Map<byte[], byte[]> columns = new HashMap<byte[], byte[]>();
+		columns.put(RAW_DATA_BYTES, DUMP_BYTES);
+		columns.put(META_DATA_BYTES, JSON_BYTES);
+		columns.put(PROCESSED_DATA_BYTES, JSON_BYTES);
+		Job job = CrashReportJob.initJob(NAME, getConf(), DumpSizeTrends.class, DumpSizeTrendsMapper.class, null, DumpSizeTrendsReducer.class, columns, Text.class, Text.class, new Path(args[0]));
 		job.setMapOutputKeyClass(Text.class);
 		job.setMapOutputValueClass(IntWritable.class);
-		job.setOutputKeyClass(Text.class);
-		job.setOutputValueClass(Text.class);
-		
-		job.setReducerClass(DumpSizeTrendsReducer.class);
-		
-		FileOutputFormat.setOutputPath(job, new Path(args[0]));
 		
 		return job;
 	}

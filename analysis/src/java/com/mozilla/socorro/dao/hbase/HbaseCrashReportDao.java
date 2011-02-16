@@ -86,7 +86,7 @@ public class HbaseCrashReportDao {
 		String ooid = null;
 		HTableInterface table = null;
 		try {
-			table = pool.getTable("crash_reports");
+			table = pool.getTable("crash_reports_test");
 			ooid = generateOOID(System.currentTimeMillis());
 			Put p = new Put(Bytes.toBytes(ooid));
 			for (Map.Entry<String, String> field : fields.entrySet()) {

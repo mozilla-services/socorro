@@ -26,7 +26,7 @@
 	</target>
 	
 	<target name="compile-java" depends="init">
-		<javac encoding="${build.encoding}" srcdir="${java.src.dir}" includes="**/*.java" destdir="${build.classes}" debug="${debug}" source="${java.src.version}" optimize="${optimize}" deprecation="${deprecation}">
+		<javac encoding="${build.encoding}" srcdir="${java.src.dir}" includes="**/*.java" destdir="${build.classes}" debug="${debug}" source="${java.src.version}" optimize="${optimize}" deprecation="${deprecation}" includeAntRuntime="false">
 			<classpath refid="classpath"/>
 			<compilerarg line="-Xlint:unchecked"/>
 		</javac>

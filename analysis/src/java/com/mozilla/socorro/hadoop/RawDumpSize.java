@@ -1,25 +1,28 @@
 package com.mozilla.socorro.hadoop;
 
+import static com.mozilla.socorro.hadoop.CrashReportJob.DUMP_BYTES;
+import static com.mozilla.socorro.hadoop.CrashReportJob.END_DATE;
+import static com.mozilla.socorro.hadoop.CrashReportJob.JSON_BYTES;
+import static com.mozilla.socorro.hadoop.CrashReportJob.PROCESSED_DATA_BYTES;
+import static com.mozilla.socorro.hadoop.CrashReportJob.RAW_DATA_BYTES;
+import static com.mozilla.socorro.hadoop.CrashReportJob.START_DATE;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Calendar;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.regex.Pattern;
 
-import org.apache.commons.lang.StringUtils;
 import org.apache.commons.math.stat.descriptive.DescriptiveStatistics;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hbase.client.Result;
-import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 import org.apache.hadoop.hbase.mapreduce.TableMapper;
-import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
@@ -28,28 +31,12 @@ import org.apache.hadoop.util.GenericOptionsParser;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 
-import com.mozilla.hadoop.hbase.mapreduce.MultiScanTableMapReduceUtil;
-import com.mozilla.util.DateUtil;
-
 public class RawDumpSize implements Tool {
 
 	private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(RawDumpSize.class);
 	
 	private static final String NAME = "RawDumpSize";
 	private Configuration conf;
-
-	// HBase table and column names
-	private static final String TABLE_NAME_CRASH_REPORTS = "crash_reports";
-	private static final byte[] RAW_DATA_BYTES = "raw_data".getBytes();
-	private static final byte[] DUMP_BYTES = "dump".getBytes();
-	private static final byte[] PROCESSED_DATA_BYTES = Bytes.toBytes("processed_data");
-	private static final byte[] JSON_BYTES = Bytes.toBytes("json");
-	
-	// Configuration fields
-	private static final String START_DATE = "start.date";
-	private static final String END_DATE = "end.date";
-	private static final String START_TIME = "start.time";
-	private static final String END_TIME = "end.time";
 	
 	private static final String KEY_DELIMITER = "\t";
 	
@@ -72,74 +59,29 @@ public class RawDumpSize implements Tool {
 		 * @see org.apache.hadoop.mapreduce.Mapper#map(KEYIN, VALUEIN, org.apache.hadoop.mapreduce.Mapper.Context)
 		 */
 		public void map(ImmutableBytesWritable key, Result result, Context context) throws InterruptedException, IOException {
-			try {
-				String rowKey = new String(result.getRow());
-				StringBuilder keyPrefix = new StringBuilder("20");
-				keyPrefix.append(rowKey.substring(1, 7)).append(KEY_DELIMITER);
-				
-				byte[] valueBytes = result.getValue(RAW_DATA_BYTES, DUMP_BYTES);
-				if (valueBytes == null) {
-					context.getCounter(ReportStats.RAW_BYTES_NULL).increment(1L);
-				} else {
-					outputKey.set(keyPrefix.toString() + "raw");
-					outputValue.set(valueBytes.length);
-					context.write(outputKey, outputValue);
-				}
-				
-				valueBytes = result.getValue(PROCESSED_DATA_BYTES, JSON_BYTES);
-				if (valueBytes == null) {
-					context.getCounter(ReportStats.PROCESSED_BYTES_NULL).increment(1L);
-				} else {
-					outputKey.set(keyPrefix.toString() + "processed");
-					outputValue.set(valueBytes.length);
-					context.write(outputKey, outputValue);
-				}
-			} catch (OutOfMemoryError e) {
-				LOG.error("Out of memory encountered", e);
-				context.getCounter(ReportStats.OOM_ERROR).increment(1L);
+			String rowKey = new String(result.getRow());
+			StringBuilder keyPrefix = new StringBuilder("20");
+			keyPrefix.append(rowKey.substring(1, 7)).append(KEY_DELIMITER);
+			
+			byte[] valueBytes = result.getValue(RAW_DATA_BYTES, DUMP_BYTES);
+			if (valueBytes == null) {
+				context.getCounter(ReportStats.RAW_BYTES_NULL).increment(1L);
+			} else {
+				outputKey.set(keyPrefix.toString() + "raw");
+				outputValue.set(valueBytes.length);
+				context.write(outputKey, outputValue);
+			}
+			
+			valueBytes = result.getValue(PROCESSED_DATA_BYTES, JSON_BYTES);
+			if (valueBytes == null) {
+				context.getCounter(ReportStats.PROCESSED_BYTES_NULL).increment(1L);
+			} else {
+				outputKey.set(keyPrefix.toString() + "processed");
+				outputValue.set(valueBytes.length);
+				context.write(outputKey, outputValue);
 			}
 		}
 		
-	}	
-
-	/**
-	 * Generates an array of scans for different salted ranges for the given dates
-	 * @param startDate
-	 * @param endDate
-	 * @return
-	 */
-	public static Scan[] generateScans(Calendar startCal, Calendar endCal) {
-		SimpleDateFormat rowsdf = new SimpleDateFormat("yyMMdd");
-		
-		ArrayList<Scan> scans = new ArrayList<Scan>();		
-		String[] salts = new String[] { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e", "f" };
-		
-		long endTime = DateUtil.getEndTimeAtResolution(endCal.getTimeInMillis(), Calendar.DATE);
-		
-		while (startCal.getTimeInMillis() < endTime) {
-			int d = Integer.parseInt(rowsdf.format(startCal.getTime()));
-			
-			for (int i=0; i < salts.length; i++) {
-				Scan s = new Scan();
-				// this caching number is selected by 64MB / Mean JSON Size
-				s.setCaching(100);
-				// disable block caching
-				s.setCacheBlocks(false);
-				// only looking for meta and processed json data
-				s.addColumn(RAW_DATA_BYTES, DUMP_BYTES);
-				s.addColumn(PROCESSED_DATA_BYTES, JSON_BYTES);
-				
-				s.setStartRow(Bytes.toBytes(salts[i] + String.format("%06d", d)));
-				s.setStopRow(Bytes.toBytes(salts[i] + String.format("%06d", d + 1)));
-				System.out.println("Adding start-stop range: " + salts[i] + String.format("%06d", d) + " - " + salts[i] + String.format("%06d", d + 1));
-				
-				scans.add(s);
-			}
-			
-			startCal.add(Calendar.DATE, 1);
-		}
-		
-		return scans.toArray(new Scan[scans.size()]);
 	}
 	
 	/**
@@ -149,38 +91,10 @@ public class RawDumpSize implements Tool {
 	 * @throws ParseException 
 	 */
 	public Job initJob(String[] args) throws IOException, ParseException {
-		// Set both start/end time and start/stop row
-		Calendar startCal = Calendar.getInstance();
-		Calendar endCal = Calendar.getInstance();
-		
-		SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
-		
-		String startDateStr = conf.get(START_DATE);
-		String endDateStr = conf.get(END_DATE);
-		if (!StringUtils.isBlank(startDateStr)) {
-			startCal.setTime(sdf.parse(startDateStr));	
-		}
-		if (!StringUtils.isBlank(endDateStr)) {
-			endCal.setTime(sdf.parse(endDateStr));
-		}
-		
-		conf.setLong(START_TIME, startCal.getTimeInMillis());
-		conf.setLong(END_TIME, endCal.getTimeInMillis());
-		
-		//conf.set("mapred.child.java.opts", "-Xmx2048m");
-		Job job = new Job(getConf());
-		job.setJobName(NAME);
-		job.setJarByClass(RawDumpSize.class);
-		
-		// input table configuration
-		Scan[] scans = generateScans(startCal, endCal);
-		MultiScanTableMapReduceUtil.initMultiScanTableMapperJob(TABLE_NAME_CRASH_REPORTS, scans, RawDumpSizeMapper.class, Text.class, IntWritable.class, job);
-
-		job.setOutputKeyClass(Text.class);
-		job.setOutputValueClass(IntWritable.class);
-		job.setNumReduceTasks(0);
-		
-		FileOutputFormat.setOutputPath(job, new Path(args[0]));
+		Map<byte[], byte[]> columns = new HashMap<byte[], byte[]>();
+		columns.put(RAW_DATA_BYTES, DUMP_BYTES);
+		columns.put(PROCESSED_DATA_BYTES, JSON_BYTES);
+		Job job = CrashReportJob.initJob(NAME, getConf(), RawDumpSize.class, RawDumpSizeMapper.class, null, null, columns, Text.class, IntWritable.class, new Path(args[0]));
 		
 		return job;
 	}
