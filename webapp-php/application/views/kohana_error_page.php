@@ -58,6 +58,11 @@
     <?php 
         $error_404 = (isset($trace) && strstr($trace, "show_404")) ? true : false; 
         $title = ($error_404) ? "Page not Found" : "Error";
+        $error_log = ($error_404) ? '[404 Page Not Found]' : '[5xx Error]';
+        if (!empty($line) && !empty($file)) {
+            $error_log .= ' File: ' . $file . '; Line: ' . $line . '; Message: ' . $message;
+        }
+        Kohana::log('error', $error_log); 
     ?>
     
     <div id="mainbody">
