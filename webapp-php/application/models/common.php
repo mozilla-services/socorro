@@ -330,7 +330,7 @@ class Common_Model extends Model {
             $where[] = '(' . join(" OR ", $or) . ')';
         }
 
-        if (trim($params['reason']) != '') {
+        if (isset($params['reason']) && trim($params['reason']) != '') {
             $where[] = ' reports.reason = ' . $this->db->escape($params['reason']); 
         }
 
