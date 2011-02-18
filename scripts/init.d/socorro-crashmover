@@ -19,7 +19,7 @@ if [ -f "$config" ]; then . $config; fi
 script=scripts/newCrashMover.py
 prefix=/data/socorro
 appdir=${prefix}/application
-python=/usr/bin/python
+python=/usr/bin/python2.6
 pidfile=/var/run/${progname}.pid
 lockfile=/var/lock/${progname}.lock
 logfile=/var/log/socorro/${progname}.log

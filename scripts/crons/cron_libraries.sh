@@ -11,11 +11,11 @@ do
   VERSIONS=`psql -t -U $databaseUserName -h $databaseHost $databaseName -c "select version, count(*) as counts from reports_${WEEK}  where completed_datetime < NOW() and completed_datetime > (NOW() - interval '24 hours') and product = '${I}' group by version order by counts desc limit 3" | awk '{print $1}'`
   for J in $VERSIONS
   do
-    python /data/crash-data-tools/per-crash-core-count.py -p ${I} -r ${J} -f /tmp/${I}_${J}.tar > /tmp/${DATE}_${I}_${J}-core-counts.txt
-    python /data/crash-data-tools/per-crash-interesting-modules.py -p ${I} -r ${J} -f /tmp/${I}_${J}.tar > /tmp/${DATE}_${I}_${J}-interesting-modules.txt
-    python /data/crash-data-tools/per-crash-interesting-modules.py -v -p ${I} -r ${J} -f /tmp/${I}_${J}.tar > /tmp/${DATE}_${I}_${J}-interesting-modules-with-versions.txt
-    python /data/crash-data-tools/per-crash-interesting-modules.py -a -p ${I} -r ${J} -f /tmp/${I}_${J}.tar > /tmp/${DATE}_${I}_${J}-interesting-addons.txt
-    python /data/crash-data-tools/per-crash-interesting-modules.py -v -a -p ${I} -r ${J} -f /tmp/${I}_${J}.tar > /tmp/${DATE}_${I}_${J}-interesting-addons-with-versions.txt
+    $PYTHON /data/crash-data-tools/per-crash-core-count.py -p ${I} -r ${J} -f /tmp/${I}_${J}.tar > /tmp/${DATE}_${I}_${J}-core-counts.txt
+    $PYTHON /data/crash-data-tools/per-crash-interesting-modules.py -p ${I} -r ${J} -f /tmp/${I}_${J}.tar > /tmp/${DATE}_${I}_${J}-interesting-modules.txt
+    $PYTHON /data/crash-data-tools/per-crash-interesting-modules.py -v -p ${I} -r ${J} -f /tmp/${I}_${J}.tar > /tmp/${DATE}_${I}_${J}-interesting-modules-with-versions.txt
+    $PYTHON /data/crash-data-tools/per-crash-interesting-modules.py -a -p ${I} -r ${J} -f /tmp/${I}_${J}.tar > /tmp/${DATE}_${I}_${J}-interesting-addons.txt
+    $PYTHON /data/crash-data-tools/per-crash-interesting-modules.py -v -a -p ${I} -r ${J} -f /tmp/${I}_${J}.tar > /tmp/${DATE}_${I}_${J}-interesting-addons-with-versions.txt
   done
 done
 
@@ -25,12 +25,12 @@ do
   VERSIONS=`psql -t -U $databaseUserName -h $databaseHost $databaseName -c "select version, count(*) as counts from reports_${WEEK}  where completed_datetime < NOW() and completed_datetime > (NOW() - interval '24 hours') and product = '${I}' and version like '%b%' group by version order by counts desc limit 2" | awk '{print $1}'`
   for J in $VERSIONS $MANUAL_VERSION_OVERRIDE
   do
-    psql -t psql -t -U $databaseUserName -h $databaseHost $databaseName -c "select uuid from reports_${WEEK} where completed_datetime < NOW() and completed_datetime > (NOW() - interval '24 hours') and product = '${I}' and version = '${J}'" | python ${APPDIR}/socorro/storage/hbaseClient.py -h $hbaseHost export_jsonz_tarball_for_ooids /tmp /tmp/${I}_${J}.tar > /tmp/${I}_${J}.log 2>&1
-    python /data/crash-data-tools/per-crash-core-count.py -p ${I} -r ${J} -f /tmp/${I}_${J}.tar > /tmp/${DATE}_${I}_${J}-core-counts.txt
-    python /data/crash-data-tools/per-crash-interesting-modules.py -p ${I} -r ${J} -f /tmp/${I}_${J}.tar > /tmp/${DATE}_${I}_${J}-interesting-modules.txt
-    python /data/crash-data-tools/per-crash-interesting-modules.py -v -p ${I} -r ${J} -f /tmp/${I}_${J}.tar > /tmp/${DATE}_${I}_${J}-interesting-modules-with-versions.txt
-    python /data/crash-data-tools/per-crash-interesting-modules.py -a -p ${I} -r ${J} -f /tmp/${I}_${J}.tar > /tmp/${DATE}_${I}_${J}-interesting-addons.txt
-    python /data/crash-data-tools/per-crash-interesting-modules.py -v -a -p ${I} -r ${J} -f /tmp/${I}_${J}.tar > /tmp/${DATE}_${I}_${J}-interesting-addons-with-versions.txt
+    psql -t psql -t -U $databaseUserName -h $databaseHost $databaseName -c "select uuid from reports_${WEEK} where completed_datetime < NOW() and completed_datetime > (NOW() - interval '24 hours') and product = '${I}' and version = '${J}'" | $PYTHON ${APPDIR}/socorro/storage/hbaseClient.py -h $hbaseHost export_jsonz_tarball_for_ooids /tmp /tmp/${I}_${J}.tar > /tmp/${I}_${J}.log 2>&1
+    $PYTHON /data/crash-data-tools/per-crash-core-count.py -p ${I} -r ${J} -f /tmp/${I}_${J}.tar > /tmp/${DATE}_${I}_${J}-core-counts.txt
+    $PYTHON /data/crash-data-tools/per-crash-interesting-modules.py -p ${I} -r ${J} -f /tmp/${I}_${J}.tar > /tmp/${DATE}_${I}_${J}-interesting-modules.txt
+    $PYTHON /data/crash-data-tools/per-crash-interesting-modules.py -v -p ${I} -r ${J} -f /tmp/${I}_${J}.tar > /tmp/${DATE}_${I}_${J}-interesting-modules-with-versions.txt
+    $PYTHON /data/crash-data-tools/per-crash-interesting-modules.py -a -p ${I} -r ${J} -f /tmp/${I}_${J}.tar > /tmp/${DATE}_${I}_${J}-interesting-addons.txt
+    $PYTHON /data/crash-data-tools/per-crash-interesting-modules.py -v -a -p ${I} -r ${J} -f /tmp/${I}_${J}.tar > /tmp/${DATE}_${I}_${J}-interesting-addons-with-versions.txt
   done
 done
 
