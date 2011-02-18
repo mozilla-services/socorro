@@ -48,7 +48,7 @@ class ProcessorWithExternalBreakpad (processor.Processor):
           input parameters:
             dumpfilePathname: the complete pathname of the dumpfile to be analyzed
     """
-    logger.debug("analyzing %s", dumpfilePathname)
+    #logger.debug("analyzing %s", dumpfilePathname)
     if type(self.config.processorSymbolsPathnameList) is list:
       symbol_path = ' '.join(['"%s"' % x for x in self.config.processorSymbolsPathnameList])
     else:
@@ -56,7 +56,7 @@ class ProcessorWithExternalBreakpad (processor.Processor):
     #commandline = '"%s" %s "%s" %s 2>/dev/null' % (self.config.minidump_stackwalkPathname, "-m", dumpfilePathname, symbol_path)
     newCommandLine = self.commandLine.replace("DUMPFILEPATHNAME", dumpfilePathname)
     newCommandLine = newCommandLine.replace("SYMBOL_PATHS", symbol_path)
-    logger.info("invoking: %s", newCommandLine)
+    #logger.info("invoking: %s", newCommandLine)
     subprocessHandle = subprocess.Popen(newCommandLine, shell=True, stdout=subprocess.PIPE)
     return (socorro.lib.util.StrCachingIterator(subprocessHandle.stdout), subprocessHandle)
 
@@ -77,7 +77,7 @@ class ProcessorWithExternalBreakpad (processor.Processor):
             date_processed
             processorErrorMessages
     """
-    logger.debug('doBreakpadStackDumpAnalysis')
+    #logger.debug('doBreakpadStackDumpAnalysis')
     dumpAnalysisLineIterator, subprocessHandle = self.invokeBreakpadStackdump(dumpfilePathname)
     dumpAnalysisLineIterator.secondaryCacheMaximumSize = self.config.crashingThreadTailFrameThreshold + 1
     try:
@@ -114,7 +114,7 @@ class ProcessorWithExternalBreakpad (processor.Processor):
         - date_processed
         - processorErrorMessages
     """
-    logger.info("analyzeHeader")
+    #logger.info("analyzeHeader")
     crashedThread = None
     moduleCounter = 0
     reportUpdateValues = {"id": reportId, "success": True}
@@ -183,8 +183,8 @@ class ProcessorWithExternalBreakpad (processor.Processor):
       processorErrorMessages.append(message)
       logger.warning("%s", message)
 
-    logger.info('reportUpdateValues: %s', str(reportUpdateValues))
-    logger.info('reportUpdateSqlParts: %s', str(reportUpdateSqlParts))
+    #logger.info('reportUpdateValues: %s', str(reportUpdateValues))
+    #logger.info('reportUpdateSqlParts: %s', str(reportUpdateSqlParts))
     if len(reportUpdateSqlParts) > 1:
       reportUpdateSQL = """update reports set %s where id=%%(id)s AND date_processed = timestamp without time zone '%s'"""%(",".join(reportUpdateSqlParts),date_processed)
       databaseCursor.execute(reportUpdateSQL, reportUpdateValues)
@@ -197,7 +197,7 @@ class ProcessorWithExternalBreakpad (processor.Processor):
     if not flash_version:
       flash_version = '[blank]'
     reportUpdateValues['flash_version'] = flash_version
-    logger.debug(" updated values  %s", reportUpdateValues)
+    #logger.debug(" updated values  %s", reportUpdateValues)
     return reportUpdateValues
 
 #-----------------------------------------------------------------------------------------------------------------
@@ -242,7 +242,7 @@ class ProcessorWithExternalBreakpad (processor.Processor):
              date_processed
              crashedThread - the number of the thread that crashed - we want frames only from the crashed thread
     """
-    logger.info("analyzeFrames")
+    #logger.info("analyzeFrames")
     frameCounter = 0
     truncated = False
     analyzeReturnedLines = False
@@ -293,7 +293,7 @@ class ProcessorWithExternalBreakpad (processor.Processor):
       logger.warning("%s", message)
     #processor_notes = '; '.join(processorErrorMessages)
     #databaseCursor.execute("update reports set signature = %%s, processor_notes = %%s where id = %%s and date_processed = timestamp without time zone '%s'" % (date_processed),(signature, processor_notes,reportId))
-    logger.debug ("topmost_sourcefiles  %s", topmost_sourcefiles)
+    #logger.debug ("topmost_sourcefiles  %s", topmost_sourcefiles)
     return { "signature": signature,
              "truncated": truncated,
              "topmost_filenames":topmost_sourcefiles,

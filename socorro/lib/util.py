@@ -139,6 +139,14 @@ def lookupStringOrEmptyString(aDict, aKey):
   except KeyError:
     return ''
 
+#-----------------------------------------------------------------------------------------------------------------
+def backoffSecondsGenerator():
+  seconds = [10, 30, 60, 120, 300]
+  for x in seconds:
+    yield x
+  while True:
+    yield seconds[-1]
+
 #=================================================================================================================
 class DotDict(dict):
   __getattr__= dict.__getitem__

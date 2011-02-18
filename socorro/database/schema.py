@@ -1184,8 +1184,7 @@ class PluginsReportsTable(PartitionedTable):
                                                   ADD CONSTRAINT %(partitionName)s_plugin_id_fkey FOREIGN KEY (plugin_id) REFERENCES plugins(id) ON DELETE CASCADE;
                                               """)
     self.insertSql = """insert into TABLENAME (report_id, plugin_id, date_processed, version) values
-                                              (%s, (select id from plugins where filename = %s and name = %s),
-                                              %s, %s)"""
+                                              (%s, %s, %s, %s)"""
   #-----------------------------------------------------------------------------------------------------------------
   def partitionCreationParameters(self, uniqueIdentifier):
     startDate, endDate = uniqueIdentifier

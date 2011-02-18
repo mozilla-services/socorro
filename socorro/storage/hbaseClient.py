@@ -365,7 +365,7 @@ class HBaseConnectionForCrashReports(HBaseConnection):
   def get_json(self,ooid,old_format=False, number_of_retries=2):
     """Return the json metadata for a given ooid as an json data object"""
     jsonColumnOfRow = self.get_json_meta_as_string(ooid,old_format, number_of_retries=number_of_retries)
-    self.logger.debug('%s - jsonColumnOfRow: %s', threading.currentThread().getName(), jsonColumnOfRow)
+    #self.logger.debug('jsonColumnOfRow: %s', jsonColumnOfRow)
     json_data = json.loads(jsonColumnOfRow)
     return json_data
 

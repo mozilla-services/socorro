@@ -17,8 +17,8 @@ class DummyObjectWithExpectations(object):
     if argsExpected is not None and kwargsExpected is not None:
       def f(*args, **kwargs):
         assert attributeExpected == attribute, "%s expected attribute '%s', but got '%s'" % (self.name, attributeExpected, attribute)
-        assert argsExpected == args, "%s expected '%s' arguments %s, but got %s" % (self.name, attribute, argsExpected, args)
-        assert kwargsExpected == kwargs, "%s expected '%s' keyword arguments %s, but got %s" % (self.name, attribute, kwargsExpected, kwargs)
+        assert argsExpected == args, "%s expected '%s' arguments\n%s\nbut got\n%s" % (self.name, attribute, argsExpected, args)
+        assert kwargsExpected == kwargs, "%s expected '%s' keyword arguments\n%s\nbut got\n%s" % (self.name, attribute, kwargsExpected, kwargs)
         if exceptionToRaise:
           raise exceptionToRaise
         return returnValue
@@ -31,11 +31,11 @@ class DummyObjectWithExpectations(object):
     try:
       attributeExpected, argsExpected, kwargsExpected, returnValue, exceptionToRaise = self._expected[self.counter]
     except IndexError:
-      assert False, "%s expected no further references, but got '%s'" % (self.name, attribute)
+      assert False, "%s expected no further references, but got '%s' with %s" % (self.name, attribute, str(args))
     self.counter += 1
     assert attributeExpected == '__call__', "%s expected attribute '%s', but got '%s'" % (self.name, attributeExpected, attribute)
-    assert argsExpected == args, "%s expected '%s' arguments %s, but got %s" % (self.name, attribute, argsExpected, args)
-    assert kwargsExpected == kwargs, "%s expected '%s' keyword arguments %s, but got %s" % (self.name, attribute, kwargsExpected, kwargs)
+    assert argsExpected == args, "%s expected '%s' arguments\n%s\nbut got\n%s" % (self.name, attribute, argsExpected, args)
+    assert kwargsExpected == kwargs, "%s expected '%s' keyword arguments\n%s\nbut got\n%s" % (self.name, attribute, kwargsExpected, kwargs)
     if exceptionToRaise:
       raise exceptionToRaise
     return returnValue
