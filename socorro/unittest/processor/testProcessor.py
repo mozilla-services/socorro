@@ -706,13 +706,14 @@ def testProcessJob06():
                               dump_pathname)
     fakeDoBreakpadStackDumpAnalysisFn = exp.DummyObjectWithExpectations()
     p.doBreakpadStackDumpAnalysis = fakeDoBreakpadStackDumpAnalysisFn
-    additional_report_values = { 'hangid': 'hang00001',
+    additional_report_values = { #'hangid': 'hang00001',
                                  'signature': 's'*255,
                                }
     fakeDoBreakpadStackDumpAnalysisFn.expect('__call__',
                                              (reportId,
                                               ooid1,
                                               dump_pathname,
+                                              False,
                                               c.fakeCursor,
                                               date_processed,
                                               proc_err_msg_list),
@@ -802,18 +803,19 @@ def testProcessJob07():
     fakeDoBreakpadStackDumpAnalysisFn = exp.DummyObjectWithExpectations()
     p.doBreakpadStackDumpAnalysis = fakeDoBreakpadStackDumpAnalysisFn
     expected_signature = 'hang | %s...' % ('s' * 245)
-    additional_report_values = {'signature': 's'*256,
-                                 'success': True,
-                                 'flash_version': "all.bad",
-                                 'truncated': False,
-                                 'topmost_filenames': [ 'myfile.cpp' ],
-                                 'expected_topmost': 'myfile.cpp',
-                                 'expected_addons_checked': True,
+    additional_report_values = {'signature': 'hang | %s...' % ('s' * 245),
+                                'success': True,
+                                'flash_version': "all.bad",
+                                'truncated': False,
+                                'topmost_filenames': [ 'myfile.cpp' ],
+                                'expected_topmost': 'myfile.cpp',
+                                'expected_addons_checked': True,
                                }
     fakeDoBreakpadStackDumpAnalysisFn.expect('__call__',
                                              (reportId,
                                               ooid1,
                                               dump_pathname,
+                                              True,
                                               c.fakeCursor,
                                               date_processed,
                                               proc_err_msg_list),

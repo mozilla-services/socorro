@@ -21,6 +21,7 @@ import socorro.lib.ooid as ooid
 import socorro.lib.datetimeutil as sdt
 import socorro.storage.crashstorage as cstore
 import socorro.storage.hbaseClient as hbc
+import socorro.processor.signatureUtilities as sig
 
 #=================================================================================================================
 class DuplicateEntryException(Exception):
@@ -125,6 +126,8 @@ class Processor(object):
     self.framesTable = sch.FramesTable(logger=config.logger)
     self.pluginsTable = sch.PluginsTable(logger=config.logger)
     self.pluginsReportsTable = sch.PluginsReportsTable(logger=config.logger)
+
+    self.signatureUtilities = sig.SignatureUtilities(config)
 
     self.registration()
 
@@ -331,7 +334,6 @@ class Processor(object):
 
     logger.debug("done with work")
 
-
   #-----------------------------------------------------------------------------
   @staticmethod
   def respondToSIGTERM(signalNumber, frame):
@@ -343,77 +345,6 @@ class Processor(object):
     if signalNumber != signal.SIGTERM: signame = 'SIGHUP'
     logger.info("%s detected",signame)
     raise KeyboardInterrupt
-
-  #--- put these near where they are needed to avoid scrolling during maintenance ----------------------------------
-  fixupSpace = re.compile(r' (?=[\*&,])')
-  fixupComma = re.compile(r',(?! )')
-  fixupInteger = re.compile(r'(<|, )(\d+)([uUlL]?)([^\w])')
-  #-----------------------------------------------------------------------------
-  def make_signature(self, module_name, function, source, source_line, instruction):
-    """ returns a structured conglomeration of the input parameters to serve as a signature
-    """
-    if function is not None:
-      if self.signaturesWithLineNumbersRegEx.match(function):
-        function = "%s:%s" % (function, source_line)
-
-      # Remove spaces before all stars, ampersands, and commas
-      function = Processor.fixupSpace.sub('',function)
-
-      # Ensure a space after commas
-      function = Processor.fixupComma.sub(', ', function)
-
-      # normalize template signatures with manifest const integers to 'int': Bug 481445
-      function = Processor.fixupInteger.sub(r'\1int\4', function)
-
-      return function
-
-    if source is not None and source_line is not None:
-      filename = source.rstrip('/\\')
-      if '\\' in filename:
-        source = filename.rsplit('\\')[-1]
-      else:
-        source = filename.rsplit('/')[-1]
-      return '%s#%s' % (source, source_line)
-
-    if not module_name: module_name = '' # might have been None
-    return '%s@%s' % (module_name, instruction)
-
-  #-----------------------------------------------------------------------------
-  def generateSignatureFromList(self, signatureList):
-    """
-    each element of signatureList names a frame in the crash stack; and is:
-      - a prefix of a relevant frame: Append this element to the signature
-      - a relevant frame: Append this element and stop looking
-      - irrelevant: Append this element only after we have seen a prefix frame
-    The signature is a ' | ' separated string of frame names
-    Although the database holds only 255 characters, we don't truncate here
-    """
-    # shorten signatureList to the first signatureSentinel
-    sentinelLocations = []
-    for aSentinel in self.config.signatureSentinels:
-      if type(aSentinel) == tuple:
-        aSentinel, conditionFn = aSentinel
-        if not conditionFn(signatureList):
-          continue
-      try:
-        sentinelLocations.append(signatureList.index(aSentinel))
-      except ValueError:
-        pass
-    if sentinelLocations:
-      signatureList = signatureList[min(sentinelLocations):]
-
-    newSignatureList = []
-    prefixFound = False
-    for aSignature in signatureList:
-      if self.irrelevantSignatureRegEx.match(aSignature):
-        if prefixFound:
-          newSignatureList.append(aSignature)
-        continue
-      newSignatureList.append(aSignature)
-      if not self.prefixSignatureRegEx.match(aSignature):
-        break
-      prefixFound = True
-    return ' | '.join(newSignatureList)
 
   #-----------------------------------------------------------------------------
   def submitJobToThreads(self, aJobTuple):
@@ -672,16 +603,17 @@ class Processor(object):
         dumpfilePathname = threadLocalCrashStorage.dumpPathForUuid(jobUuid,
                                                              self.config.temporaryFileSystemStoragePath)
         #logger.debug('about to doBreakpadStackDumpAnalysis')
-        additionalReportValuesAsDict = self.doBreakpadStackDumpAnalysis(reportId, jobUuid, dumpfilePathname, threadLocalCursor, date_processed, processorErrorMessages)
+        isHang = 'hangid' in newReportRecordAsDict and bool(newReportRecordAsDict['hangid'])
+        additionalReportValuesAsDict = self.doBreakpadStackDumpAnalysis(reportId, jobUuid, dumpfilePathname, isHang, threadLocalCursor, date_processed, processorErrorMessages)
         #logger.debug("this is it: %s", str(additionalReportValuesAsDict))
         #logger.debug('done with doBreakpadStackDumpAnalysis')
-        try:
-          if newReportRecordAsDict['hangid']:
-            additionalReportValuesAsDict['signature'] = "hang | %s" % additionalReportValuesAsDict['signature']
-        except KeyError:
-          pass
-        if len(additionalReportValuesAsDict['signature']) > 255:
-          additionalReportValuesAsDict['signature'] = '%s...' % additionalReportValuesAsDict['signature'][:252]
+        #try:
+          #if newReportRecordAsDict['hangid']:
+            #additionalReportValuesAsDict['signature'] = "hang | %s" % additionalReportValuesAsDict['signature']
+        #except KeyError:
+          #pass
+        #if len(additionalReportValuesAsDict['signature']) > 255:
+          #additionalReportValuesAsDict['signature'] = '%s...' % additionalReportValuesAsDict['signature'][:252]
         newReportRecordAsDict.update(additionalReportValuesAsDict)
       finally:
         newReportRecordAsDict["completeddatetime"] = completedDateTime = self.nowFunc()
@@ -967,7 +899,7 @@ class Processor(object):
     return crashProcesOutputDict
 
   #-----------------------------------------------------------------------------------------------------------------
-  def doBreakpadStackDumpAnalysis (self, reportId, uuid, dumpfilePathname, databaseCursor, date_processed, processorErrorMessages):
+  def doBreakpadStackDumpAnalysis (self, reportId, uuid, dumpfilePathname, isHang, databaseCursor, date_processed, processorErrorMessages):
     """ This function is run only by a worker thread.
         This function must be overriden in a subclass - this method will invoke the breakpad_stackwalk process
         (if necessary) and then do the anaylsis of the output

@@ -61,7 +61,7 @@ class ProcessorWithExternalBreakpad (processor.Processor):
     return (socorro.lib.util.StrCachingIterator(subprocessHandle.stdout), subprocessHandle)
 
 #-----------------------------------------------------------------------------------------------------------------
-  def doBreakpadStackDumpAnalysis (self, reportId, uuid, dumpfilePathname, databaseCursor, date_processed, processorErrorMessages):
+  def doBreakpadStackDumpAnalysis (self, reportId, uuid, dumpfilePathname, isHang, databaseCursor, date_processed, processorErrorMessages):
     """ This function overrides the base class version of this function.  This function coordinates the six
           steps of running the breakpad_stackdump process and analyzing the textual output for insertion
           into the database.
@@ -73,6 +73,7 @@ class ProcessorWithExternalBreakpad (processor.Processor):
             reportId - the primary key from the 'reports' table for this crash report
             uuid - the unique string identifier for the crash report
             dumpfilePathname - the complete pathname for the =crash dump file
+            isHang - boolean, is this a hang crash?
             databaseCursor - the cursor to use for insertion into the database
             date_processed
             processorErrorMessages
@@ -83,7 +84,7 @@ class ProcessorWithExternalBreakpad (processor.Processor):
     try:
       additionalReportValuesAsDict = self.analyzeHeader(reportId, dumpAnalysisLineIterator, databaseCursor, date_processed, processorErrorMessages)
       crashedThread = additionalReportValuesAsDict["crashedThread"]
-      evenMoreReportValuesAsDict = self.analyzeFrames(reportId, dumpAnalysisLineIterator, databaseCursor, date_processed, crashedThread, processorErrorMessages)
+      evenMoreReportValuesAsDict = self.analyzeFrames(reportId, isHang, dumpAnalysisLineIterator, databaseCursor, date_processed, crashedThread, processorErrorMessages)
       additionalReportValuesAsDict.update(evenMoreReportValuesAsDict)
       for x in dumpAnalysisLineIterator:
         pass  #need to spool out the rest of the stream so the cache doesn't get truncated
@@ -223,7 +224,7 @@ class ProcessorWithExternalBreakpad (processor.Processor):
     return version
 
 #-----------------------------------------------------------------------------------------------------------------
-  def analyzeFrames(self, reportId, dumpAnalysisLineIterator, databaseCursor, date_processed, crashedThread, processorErrorMessages):
+  def analyzeFrames(self, reportId, isHang, dumpAnalysisLineIterator, databaseCursor, date_processed, crashedThread, processorErrorMessages):
     """ After the header information, the dump file consists of just frame information.  This function
           cycles through the frame information looking for frames associated with the crashed thread
           (determined in analyzeHeader).  Each frame from that thread is written to the database until
@@ -237,6 +238,7 @@ class ProcessorWithExternalBreakpad (processor.Processor):
 
            input parameters:
              reportId - the primary key from the 'reports' table for this crash report
+             isHang - boolean, is this a hang crash?
              dumpAnalysisLineIterator - an iterator that cycles through lines from the crash dump
              databaseCursor - for database insertions
              date_processed
@@ -261,7 +263,7 @@ class ProcessorWithExternalBreakpad (processor.Processor):
         topmost_sourcefiles.append(source)
       if crashedThread == int(thread_num):
         if frameCounter < 30:
-          thisFramesSignature = self.make_signature(module_name, function, source, source_line, instruction)
+          thisFramesSignature = self.signatureUtilities.normalize_signature(module_name, function, source, source_line, instruction)
           signatureList.append(thisFramesSignature)
           if frameCounter < 10:
             self.framesTable.insert(databaseCursor, (reportId, frame_num, date_processed, thisFramesSignature[:255]), self.databaseConnectionPool.connectionCursorPair, date_processed=date_processed)
@@ -274,7 +276,7 @@ class ProcessorWithExternalBreakpad (processor.Processor):
       elif frameCounter:
         break
     dumpAnalysisLineIterator.stopUsingSecondaryCache()
-    signature = self.generateSignatureFromList(signatureList).replace("'", "''")
+    signature = self.signatureUtilities.generate_signature_from_list(signatureList).replace("'", "''")
     if signature == '' or signature is None:
       if crashedThread is None:
         message = "No signature could be created because we do not know which thread crashed"
