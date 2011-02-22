@@ -176,6 +176,7 @@ class Topcrasher_Controller extends Controller {
      */
     public function byversion($product, $version=null, $duration=null, $crash_type=null)
     {
+        $this->navigationChooseVersion($product, $version);        
         if (empty($version)) {
             $this->_handleEmptyVersion($product, 'byversion');
         } else {
@@ -265,8 +266,6 @@ class Topcrasher_Controller extends Controller {
         // Fetch versions associated with top crashers
         $resp->crashes = $this->topcrashers_model->fetchTopcrasherVersions($product, $resp->crashes);
         $resp->crashes = $this->topcrashers_model->formatTopcrasherVersions($resp->crashes);
-
-	    $this->navigationChooseVersion($product, $version);
 
 	    if ($this->input->get('format') == "csv") {
 		$this->setViewData(array('top_crashers' => $this->_csvFormatArray($resp->crashes)));
@@ -457,13 +456,13 @@ class Topcrasher_Controller extends Controller {
      * @return  null
      */
     public function byurl($product, $version=null) {
+        $this->navigationChooseVersion($product, $version);
         if (empty($version)) {            
             $this->_handleEmptyVersion($product, 'byurl');
         } else {
             $this->_versionExists($version);
         }
             
-        $this->navigationChooseVersion($product, $version);
         $by_url_model = new TopcrashersByUrl_Model();
         list($start_date, $end_date, $top_crashers) = 
         $by_url_model->getTopCrashersByUrl($product, $version);
@@ -490,13 +489,13 @@ class Topcrasher_Controller extends Controller {
      * @param string version Example: 3.7a1pre
      */
     public function bydomain($product, $version=null) {
+        $this->navigationChooseVersion($product, $version);
         if (empty($version)) {
             $this->_handleEmptyVersion($product, 'bydomain');
         } else {
             $this->_versionExists($version);
         }
 
-	    $this->navigationChooseVersion($product, $version);
         $by_url_model = new TopcrashersByUrl_Model();
         list($start_date, $end_date, $top_crashers) = 
 	    $by_url_model->getTopCrashersByDomain($product, $version);
@@ -526,6 +525,7 @@ class Topcrasher_Controller extends Controller {
  	 * @return 	void
      */
     public function bytopsite($product, $version=null) {
+        $this->navigationChooseVersion($product, $version);
          if (empty($version)) {
              $this->_handleEmptyVersion($product, 'bytopsite');
          } else {
