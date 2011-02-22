@@ -458,6 +458,7 @@ class Controller extends Controller_Core {
         $this->ensureChosenVersion($this->currentProducts(), FALSE);
         if ($this->chosen_version['version'] != $version || $this->chosen_version['product'] != $product) {
             $this->chooseVersion(array('product' => $product, 'version' => $version));
+            $this->prepareVersions();
         } else {
             //no op, it's already chosen
             Kohana::log('debug', "Same $product $version skipping " . Kohana::debug($this->chosen_version));
@@ -628,6 +629,9 @@ class Controller extends Controller_Core {
                 return true;
             }
         }
+        var_dump($product_versions);
+var_dump($version);
+exit;
         return false;
     }
 
