@@ -46,7 +46,7 @@ primaryStorageClass = cm.Option()
 primaryStorageClass.doc = 'the name of the class for primary storage ' \
                           '(socorro.storage.crashstorage.CrashStorageSystemForLocalFS or' \
                           ' socorro.storage.crashstorage.CollectorCrashStorageSystemForHBase)'
-primaryStorageClass.default = 'socorro.storage.CrashStorageSystemForLocalFS'
+primaryStorageClass.default = 'socorro.storage.crashstorage.CrashStorageSystemForLocalFS'
 primaryStorageClass.fromStringConverter = cm.classConverter
 
 localFS = cm.Option()
