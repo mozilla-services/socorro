@@ -629,9 +629,6 @@ class Controller extends Controller_Core {
                 return true;
             }
         }
-        var_dump($product_versions);
-var_dump($version);
-exit;
         return false;
     }
 
