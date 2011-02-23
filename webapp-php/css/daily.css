@@ -29,7 +29,13 @@ div.daily_graph {
     margin-left: 1em;
 }
 
-#daily_search_version {
+#adu-chart-controls {
+    display: table;
+    margin: auto;
+}
+
+#daily_search_version,
+#daily_search_os {
     border-bottom: 1px solid #999;
 }
 
@@ -65,6 +71,10 @@ table.by_version td {
 	padding: 4px 0;
 }
 
+.by_report_type {
+    width: 100%;
+}
+
 input.submit {
 	font-weight: bold;
 	margin-top: 3px;
@@ -88,6 +98,9 @@ span.option {
 }
 span.os {
 	margin-right: 10px;
+}
+.graph-ratio-checkbox input { 
+    margin-left: 10px; 
 }
 
 /**
