@@ -27,6 +27,7 @@ wsgiInstallation.default = False
 import socorro.services.topCrashBySignatureTrends as tcbst
 import socorro.services.signatureHistory as sighist
 import socorro.services.aduByDay as adubd
+import socorro.services.aduByDayDetails as adudetails
 import socorro.services.getCrash as crash
 import socorro.services.emailCampaign as emailcampaign
 import socorro.services.emailCampaignCreate as emailcreate
@@ -36,7 +37,7 @@ import socorro.services.emailSubscription as emailsub
 
 servicesList = cm.Option()
 servicesList.doc = 'a python list of classes to offer as services'
-servicesList.default = [tcbst.TopCrashBySignatureTrends, sighist.SignatureHistory, adubd.AduByDay, adubd.AduByDay200912, crash.GetCrash, emailcampaign.EmailCampaign, emailcreate.EmailCampaignCreate, emaillist.EmailCampaigns, emailvolume.EmailCampaignVolume, emailsub.EmailSubscription]
+servicesList.default = [tcbst.TopCrashBySignatureTrends, sighist.SignatureHistory, adubd.AduByDay, adubd.AduByDay200912, adudetails.AduByDayDetails, crash.GetCrash, emailcampaign.EmailCampaign, emailcreate.EmailCampaignCreate, emaillist.EmailCampaigns, emailvolume.EmailCampaignVolume, emailsub.EmailSubscription]
 
 #---------------------------------------------------------------------------
 # Logging
