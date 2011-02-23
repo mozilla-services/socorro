@@ -56,6 +56,7 @@ import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 
 import com.mozilla.hadoop.hbase.mapreduce.MultiScanTableMapReduceUtil;
+import com.mozilla.util.DateUtil;
 
 public class CrashReportJob {
 
@@ -123,7 +124,7 @@ public class CrashReportJob {
 		}
 		
 		conf.setLong(START_TIME, startCal.getTimeInMillis());
-		conf.setLong(END_TIME, endCal.getTimeInMillis());
+		conf.setLong(END_TIME, DateUtil.getEndTimeAtResolution(endCal.getTimeInMillis(), Calendar.DATE));
 		
 		Job job = new Job(conf);
 		job.setJobName(jobName);

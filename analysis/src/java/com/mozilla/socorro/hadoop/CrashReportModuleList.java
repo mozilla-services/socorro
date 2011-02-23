@@ -188,7 +188,9 @@ public class CrashReportModuleList implements Tool {
 	public Job initJob(String[] args) throws IOException, ParseException {		
 		Map<byte[], byte[]> columns = new HashMap<byte[], byte[]>();
 		columns.put(PROCESSED_DATA_BYTES, JSON_BYTES);
-		Job job = CrashReportJob.initJob(NAME, getConf(), CrashReportModuleList.class, CrashReportModuleListMapper.class, UniqueIdentityReducer.class, UniqueIdentityReducer.class, columns, Text.class, NullWritable.class, new Path(args[0]));
+		Job job = CrashReportJob.initJob(NAME, getConf(), CrashReportModuleList.class, CrashReportModuleListMapper.class, 
+										 UniqueIdentityReducer.class, UniqueIdentityReducer.class, columns, Text.class, 
+										 NullWritable.class, new Path(args[0]));
 		
 		return job;
 	}
