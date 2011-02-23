@@ -2,6 +2,8 @@
 yum install python-psycopg2 simplejson httpd mod_ssl mod_wsgi postgresql-server
 # for building minidump_stackwalk
 yum install subversion gcc-c++
+# for building java analysis tools
+yum install ant
 # for unit/functional tests
 yum install python-virtualenv php-phpunit-PHPUnit
 
