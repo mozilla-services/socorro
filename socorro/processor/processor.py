@@ -605,15 +605,6 @@ class Processor(object):
         #logger.debug('about to doBreakpadStackDumpAnalysis')
         isHang = 'hangid' in newReportRecordAsDict and bool(newReportRecordAsDict['hangid'])
         additionalReportValuesAsDict = self.doBreakpadStackDumpAnalysis(reportId, jobUuid, dumpfilePathname, isHang, threadLocalCursor, date_processed, processorErrorMessages)
-        #logger.debug("this is it: %s", str(additionalReportValuesAsDict))
-        #logger.debug('done with doBreakpadStackDumpAnalysis')
-        #try:
-          #if newReportRecordAsDict['hangid']:
-            #additionalReportValuesAsDict['signature'] = "hang | %s" % additionalReportValuesAsDict['signature']
-        #except KeyError:
-          #pass
-        #if len(additionalReportValuesAsDict['signature']) > 255:
-          #additionalReportValuesAsDict['signature'] = '%s...' % additionalReportValuesAsDict['signature'][:252]
         newReportRecordAsDict.update(additionalReportValuesAsDict)
       finally:
         newReportRecordAsDict["completeddatetime"] = completedDateTime = self.nowFunc()
@@ -645,8 +636,12 @@ class Processor(object):
         addons_checked = False
         if addons_checked_txt == 'true':
           addons_checked = True
-      except:
+      except KeyError:
         pass # leaving it as None if not in the document
+      try:
+        newReportRecordAsDict['Winsock_LSP'] = jsonDocument['Winsock_LSP']
+      except KeyError:
+        pass # if it's not in the original json, it does get into the jsonz
       #flash_version = jsonDocument.get('flash_version')
       flash_version = newReportRecordAsDict.get('flash_version')
       processor_notes = '; '.join(processorErrorMessages)

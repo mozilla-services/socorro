@@ -24,6 +24,7 @@ sample_meta_json = {"submitted_timestamp": "2011-02-15T00:45:00.000000",
                     "SecondsSinceLastCrash": "439",
                     "CrashTime": "1297831492",
                     "EMCheckCompatibility": 'True',
+                    "Winsock_LSP": "exciting winsock info",
                     "ReleaseChannel": "release"}
 
 def nothing():
@@ -808,8 +809,8 @@ def testProcessJob07():
                                 'flash_version': "all.bad",
                                 'truncated': False,
                                 'topmost_filenames': [ 'myfile.cpp' ],
-                                'expected_topmost': 'myfile.cpp',
-                                'expected_addons_checked': True,
+                                #'expected_topmost': 'myfile.cpp',
+                                #'expected_addons_checked': True,
                                }
     fakeDoBreakpadStackDumpAnalysisFn.expect('__call__',
                                              (reportId,
@@ -855,15 +856,36 @@ def testProcessJob07():
                           completedDateTime,
                           additional_report_values['success'],
                           additional_report_values['truncated'],
-                          additional_report_values['expected_topmost'],
-                          additional_report_values['expected_addons_checked'],
+                          #additional_report_values['expected_topmost'],
+                          'myfile.cpp',
+                          #additional_report_values['expected_addons_checked'],
+                          True,
                           additional_report_values['flash_version'],
                           )),
                         {})
     c.fakeConnection.expect('commit', (), {}, None)
     fakeSaveProcessedDumpJson = exp.DummyObjectWithExpectations()
+    nrr = {'Winsock_LSP': 'exciting winsock info',
+           'flash_version': 'all.bad',
+           'success': True,
+           'dump': '',
+           'startedDateTime': dt.datetime(2011, 2, 15, 1, 0),
+           'truncated': False,
+           'signature': 'hang | ssssssssssssssssssssssssssssssssssssssssssssss'
+                        'sssssssssssssssssssssssssssssssssssssssssssssssssssss'
+                        'sssssssssssssssssssssssssssssssssssssssssssssssssssss'
+                        'sssssssssssssssssssssssssssssssssssssssssssssssssssss'
+                        'ssssssssssssssssssssssssssssssssssssssss...',
+            'hangid': 'hang00001',
+            'processor_notes': '',
+            'topmost_filenames': ['myfile.cpp'],
+            'id': 345,
+            'completeddatetime': dt.datetime(2011, 2, 15, 1, 1),
+           }
     fakeSaveProcessedDumpJson.expect('__call__',
-                                     (new_report_record, c.fakeCrashStorage),
+                                     (nrr, c.fakeCrashStorage),
+                                     #(new_report_record, c.fakeCrashStorage),
+                                     #({}, c.fakeCrashStorage),
                                      {})
     p.saveProcessedDumpJson = fakeSaveProcessedDumpJson
     r = p.processJob(fakeJobTuple)
