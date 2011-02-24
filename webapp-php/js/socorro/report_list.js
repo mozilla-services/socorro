@@ -69,7 +69,7 @@ $(document).ready(function () {
             7: { sorter: "hexToInt" },  // Address
             9: { sorter: "digit" }      // Uptime
         }, 
-        sortList : [[10,1]]
+        sortList : [[11,1]]
     });
     
     $('#report-list-nav').tabs({selected: 2}).show();

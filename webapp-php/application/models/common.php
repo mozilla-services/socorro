@@ -174,12 +174,12 @@ class Common_Model extends Model {
      * @return array of objects
      */
     public function queryReports($params, $pager=NULL) {
-	if ($pager === NULL) {
-	    $pager = new stdClass;
-	    $pager->offset = 0;
-	    $pager->itemsPerPage = Kohana::config('search.number_report_list');
-	    $pager->currentPage = 1;
-	}
+        if ($pager === NULL) {
+            $pager = new stdClass;
+            $pager->offset = 0;
+            $pager->itemsPerPage = Kohana::config('search.number_report_list');
+            $pager->currentPage = 1;
+        }
 
         $columns = array(
             'reports.date_processed',
@@ -204,17 +204,18 @@ class Common_Model extends Model {
         );
 
         list($from_tables, $join_tables, $where) = 
-            $this->_buildCriteriaFromSearchParams($params);
+        $this->_buildCriteriaFromSearchParams($params);
 
-        $sql = "/* soc.web common.queryReports */ 
-            SELECT " . join(', ', $columns) .
-	    " FROM   " . join(', ', $from_tables);
-        if(count($join_tables) > 0) {
-	    $sql .= " JOIN  " . join("\nJOIN ", $join_tables);
+        $sql = "/* soc.web common.queryReports */ " .
+               " SELECT " . join(', ', $columns) . ", " . 
+               " ( reports.client_crash_date - ( reports.install_age * INTERVAL '1 second' ) ) as install_time " . 
+               " FROM   " . join(', ', $from_tables);
+        if (count($join_tables) > 0) {
+            $sql .= " JOIN  " . join("\nJOIN ", $join_tables);
         }
-	$sql .= " WHERE  " . join(' AND ', $where) .
-    	        " ORDER BY reports.date_processed DESC 
-	          LIMIT ? OFFSET ? ";
+        $sql .= " WHERE  " . join(' AND ', $where) .
+    	        " ORDER BY reports.date_processed DESC " . 
+                " LIMIT ? OFFSET ? ";
 
         return $this->fetchRows($sql, TRUE, array($pager->itemsPerPage, $pager->offset));
     }

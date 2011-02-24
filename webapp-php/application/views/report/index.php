@@ -1,4 +1,5 @@
 <?php slot::start('head') ?>
+<?php var_dump($report); exit; ?>
 <?php /* Bug#530306 - don't reformat the [@ signature ] part below, it affects
                       our Bugzilla integration. No really. */ ?>
 <title><?php if (! empty($report->signature)) { echo '[@ '; out::H($report->signature); echo '] - ';} ?> <?php out::H($report->product) ?> <?php out::H($report->version) ?> Crash Report - Report ID: <?php out::H($report->uuid) ?></title>
@@ -81,13 +82,11 @@ if (is_null($report->signature) || empty($report->signature)) { ?>
     <?php } ?>
                 </td></tr>
 <?php } ?>
+
             <tr>
-                <th>Time
-</th><td><?php out::H($report->date_processed) ?></td>
+                <th>Uptime</th><td><?php out::H(TimeUtil::ghetto_time_ago_in_words($report->uptime)); ?></td>
             </tr>
-            <tr>
-                <th>Uptime</th><td><?php out::H($report->uptime) ?></td>
-            </tr>
+
             <?php if ($report->last_crash): ?>
             <tr>
                 <th>Last Crash</th><td><?php out::H($report->last_crash) ?> seconds <?php 
@@ -97,11 +96,15 @@ if (is_null($report->signature) || empty($report->signature)) { ?>
             <?php endif; ?>
             <?php if (property_exists($report, 'install_age')): ?>
             <tr>
-		 <th>Install Age</th><td><?php out::H($report->install_age) ?> seconds <?php 
-		     $seconds_in_words = TimeUtil::ghetto_time_ago_in_words($report->install_age);
-                     if (! empty($seconds_in_words)) { ?>(<?= $seconds_in_words ?>) <?php } ?> since version was first installed.</td>
+                <th>Install Age</th><td><?php out::H($report->install_age) ?> seconds <?php 
+                    $seconds_in_words = TimeUtil::ghetto_time_ago_in_words($report->install_age);
+                    if (! empty($seconds_in_words)) { ?>(<?= $seconds_in_words ?>) <?php } ?>
+                    since version was first installed.</td>
             </tr>
             <?php endif; ?>
+            <tr>
+                <th>Install Time</th><td><?php if (isset($report->install_time)) out::H(date(DATE_RFC822, $install_time)); ?></td>
+            </tr>
             <tr>
                 <th>Product</th><td><?php out::H($report->product) ?></td>
             </tr>
@@ -180,7 +183,7 @@ if (is_null($report->signature) || empty($report->signature)) { ?>
 	    <th>EMCheckCompatibility</th><td><?php if ($report->addons_checked) { echo 'True'; } else { echo 'False'; } ?></td>
             </tr>
 <?php } ?>
-        <tr><th>Winsock LSP</th><td><?php if (isset($report->Winsock_LSP)) out::H($report->Winsock_LSP) ?></td></tr>
+        <tr><th>Winsock LSP</th><td><?php if (isset($report->Winsock_LSP)) out::H(nl2br($report->Winsock_LSP)) ?></td></tr>
         <tr><th>Adapter Vendor ID</th><td><?php if (isset($report->AdapterVendorID)) out::H($report->AdapterVendorID) ?></td></tr>
         <tr><th>Adapter Device ID</th><td><?php if (isset($report->AdapterDeviceID)) out::H($report->AdapterDeviceID) ?></td></tr>
         </table>

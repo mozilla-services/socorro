@@ -59,30 +59,40 @@ class CrashReportDump {
      * @return void report will be altered
      */
     public function populate($report, $json) {
-	$data = json_decode($json);
+        $data = json_decode($json);
+        
+        foreach ($data as $key => $val) {
+            $report->{$key} = $val;
+        }
+        $this->_parseDump($report); 
+        
+        //Bulletproofing against bad JSON files
+        $basicKeys = array(
+            'signature', 'product', 'version', 'uuid', 
+            'date_processed', 'uptime', 'build', 'os_name', 
+            'os_version', 'cpu_name', 'cpu_info', 'reason', 
+            'address', 'user_comments', 'dump', 'processor_notes',
+            'install_time'
+        );
 
-	foreach ($data as $key => $val) {
-	    $report->{$key} = $val;
-	}
-	$this->_parseDump($report); 
-	//Bulletproofing against bad JSON files
-	$basicKeys = array('signature', 'product', 'version', 'uuid', 
-			   'date_processed', 'uptime', 'build', 'os_name', 
-			   'os_version', 'cpu_name', 'cpu_info', 'reason', 
-			   'address', 'user_comments', 'dump', 'processor_notes');
-	foreach ($basicKeys as $key) {
-	    if (! isset($report->{$key})) {
-		$report->{$key} = '';
-	    }
-	}
+        foreach ($basicKeys as $key) {
+            if (! isset($report->{$key})) {
+                $report->{$key} = '';
+            }
+        }
+
         if (is_array($report->processor_notes)) {
             $report->processor_notes = "\n".join($report->processor_notes);
+        }
+        
+        if (isset($report->client_crash_date) && isset($report->install_age) && empty($report->install_time)) {
+            $report->install_time = strtotime($report->client_crash_date) - $report->install_age; 
         }
     }
 
    /**
     * The processed crash dump metadata is stored in
-    * a gzipped JSON encoded file. This method retreieves
+    * a gzipped JSON encoded file. This method retrieves
     * it and de-compresses it
     *
     * @param string A valid uri to the crash dump
@@ -95,6 +105,7 @@ class CrashReportDump {
 
 	$eh = set_error_handler(array($err, 'handleError'));
 	    $file = gzopen($uri, "r");
+
 	    while($err->error_reading_file === FALSE &&
 		  !feof($file)) {
 		$output = $output . fgets($file, 4096);

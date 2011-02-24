@@ -11,6 +11,7 @@
             <th>Address</th>
             <th>Hang</th>
             <th>Uptime</th>
+            <th>Install Time</th>
             <th>Comments</th>
         </tr>
     </thead>
@@ -42,6 +43,7 @@
         <input type="hidden" name="url<?= $i ?>" value="<?= url::site('/report/hang_pairs/' . $report->uuid) ?>" class="ajax_endpoint" />
         </div></td>
                 <td><?php out::H($report->uptime) ?></td>
+                <td><?php out::H(date("Y-m-d H:i:s", strtotime($report->install_time))); ?></td>
                 <td class="comments"><?php out::H($report->user_comments) ?></td>
             </tr>
         <?php 
