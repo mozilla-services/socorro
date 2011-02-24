@@ -33,6 +33,7 @@ postgres=# CREATE USER breakpad_rw WITH PASSWORD 'secret';
 CREATE ROLE
 postgres=# GRANT ALL ON DATABASE breakpad TO breakpad_rw;
 GRANT
+psql -d breakpad -f /usr/share/pgsql/contrib/citext.sql
 
 ## for unit/functional tests
 su - postgres
@@ -43,6 +44,7 @@ postgres=# CREATE USER test WITH PASSWORD 'aPassword';
 CREATE ROLE
 postgres=# GRANT ALL ON DATABASE test TO test;
 GRANT
+psql -d test -f /usr/share/pgsql/contrib/citext.sql
 
 ## postgresql schema setup
 cp scripts/config/commonconfig.py.dist scripts/config/commonconfig.py
