@@ -340,6 +340,7 @@ class ReportsTable(PartitionedTable):
                                           CREATE INDEX %(partitionName)s_product_version_key ON %(partitionName)s (product, version);
                                           CREATE INDEX %(partitionName)s_signature_date_processed_build_key ON %(partitionName)s (signature, date_processed, build);
                                           CREATE INDEX %(partitionName)s_hangid_idx ON %(partitionName)s (hangid);
+                                          CREATE INDEX %(partitionName)s_reason ON %(partitionName)s (reason);
                                           """
                                       )
     self.columns = ("uuid", "client_crash_date", "date_processed", "product", "version", "build", "url", "install_age", "last_crash", "uptime", "email", "build_date", "user_id", "user_comments", "app_notes", "distributor", "distributor_version", "topmost_filenames", "addons_checked", "flash_version", "hangid", "process_type")
