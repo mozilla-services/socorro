@@ -469,7 +469,7 @@ class TestCachedIdAccess:
     for i in cursor.fetchall():
       assert 13 >= len(i[0]), 'Expected maxiumum length of 12, got %s: %s'%(len(i[0]),i[0])
       
-  @unittest.skip("bug nnn")
+  @unittest.skip("bug 636608 - test hanging")
   def testGetProductId(self):
     countSql = 'select count(id) from productdims'
     cursor = self.connection.cursor()
