@@ -265,7 +265,6 @@ class Topcrasher_Controller extends Controller {
  
         // Fetch versions associated with top crashers
         $resp->crashes = $this->topcrashers_model->fetchTopcrasherVersions($product, $resp->crashes);
-        $resp->crashes = $this->topcrashers_model->formatTopcrasherVersions($resp->crashes);
 
 	    if ($this->input->get('format') == "csv") {
 		$this->setViewData(array('top_crashers' => $this->_csvFormatArray($resp->crashes)));

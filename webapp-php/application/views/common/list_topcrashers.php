@@ -37,6 +37,7 @@
                     <th>Mac</th>
                     <th>Lin</th>
                     <th>Ver</th>
+                    <th>First Appearance</th>
            <?php if (isset($sig2bugs)) {?>
                <th class="bugzilla_numbers">Bugzilla Ids</th>
            <?php } ?>
@@ -107,6 +108,8 @@
                                 echo "-";
                             }
                         ?></span></td>
+                        <td><span title="This crash signature first appeared at <?php if (isset($crasher->first_report_exact)) out::H($crasher->first_report_exact); ?>"><?php 
+                            if (isset($crasher->first_report)) out::H($crasher->first_report); ?></span></td>
 
                <?php if (isset($sig2bugs)) {?>
                     <td>

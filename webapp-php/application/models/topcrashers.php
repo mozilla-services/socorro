@@ -252,27 +252,39 @@ class Topcrashers_Model extends Model {
 					array_push($signatures, $this->db->escape($result->signature));
 				}
             }
-        
+
             if (!empty($signatures)) { 
 			    $sql = "
-			    	SELECT DISTINCT sd.signature, pd.version 
-			    	FROM signature_productdims sd
-			        INNER JOIN productdims pd ON sd.productdims_id = pd.id
-                    WHERE sd.signature IN (" . implode(", ", $signatures) . ")
-                    AND pd.product = ?
-                    ORDER BY pd.version DESC";
+			    	SELECT DISTINCT 
+			    	  sd.signature,
+			    	  array_to_string(array_agg(pd.version ORDER BY pd.sort_key DESC),', ') as versions,
+			    	  min(sd.first_report) as first_report 
+                    FROM signature_productdims sd 
+                    INNER JOIN productdims pd ON sd.productdims_id = pd.id 
+                    WHERE sd.signature IN (" . implode(", ", $signatures) . ") 
+                    AND pd.product = ? 
+                    GROUP BY sd.signature
+                ";
 	            if ($rows = $this->fetchRows($sql, TRUE, array($product))) {
 		            foreach ($results as $result) {
+		                $result->first_report = null;
+		                $result->versions = null;
+		                $result->versions_array = array();
+		                $result->versions_count = 0;
+		                
 			    		$versions = array();
 		            	foreach($rows as $row) {
                             if ($row->signature == $result->signature) {
-			    				$versions[] = $row->version;
+        			            if (!empty($row->first_report)) {
+        			                $result->first_report = date("Y-m-d", strtotime($row->first_report));
+                                    $result->first_report_exact = $row->first_report;
+        			            }			            
+        			            if (!empty($row->versions)) {
+        			                $result->versions = $row->versions;
+        			    			$result->versions_array = explode(",", $row->versions);
+                                    $result->versions_count = count($result->versions_array);
+        			    		}
 			    			}
-			            }
-			            if (!empty($versions)) {
-			    			$result->versions = implode(", ", $versions);
-			    		} else {
-				            $result->versions = '';
 			            }
 			            unset($versions);
 		            }
@@ -280,33 +292,6 @@ class Topcrashers_Model extends Model {
             }
 		}
 		return $results;
-    }
-
-    /**
-     * Format the versions string associated with each top crashing signature.
-     *
-     * @param string An array of top crashers results
-     * @return string An updated array of top crashers results
-     */
-    function formatTopcrasherVersions($results)
-    {
-        if (!empty($results)) {
-            $VC = new VersioncompareComponent;
-            foreach ($results as $result) {
-	            $versions = null;
-                $result->versions_count = 0;
-	            if (isset($result->versions) && !empty($result->versions)) {
-                    $versions = explode(", ", $result->versions);
-                    $VC->sortAppversionArray($versions);
-                    rsort($versions);
-                    $result->versions_count = count($versions);
-                    $versions = implode(", ", $versions);
-                }
-                $result->versions = $versions;
-                unset($versions);
-            }
-        }
-        return $results;
     }
 
     /* */
