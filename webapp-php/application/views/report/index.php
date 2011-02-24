@@ -1,5 +1,4 @@
 <?php slot::start('head') ?>
-<?php var_dump($report); exit; ?>
 <?php /* Bug#530306 - don't reformat the [@ signature ] part below, it affects
                       our Bugzilla integration. No really. */ ?>
 <title><?php if (! empty($report->signature)) { echo '[@ '; out::H($report->signature); echo '] - ';} ?> <?php out::H($report->product) ?> <?php out::H($report->version) ?> Crash Report - Report ID: <?php out::H($report->uuid) ?></title>
@@ -103,7 +102,7 @@ if (is_null($report->signature) || empty($report->signature)) { ?>
             </tr>
             <?php endif; ?>
             <tr>
-                <th>Install Time</th><td><?php if (isset($report->install_time)) out::H(date(DATE_RFC822, $install_time)); ?></td>
+                <th>Install Time</th><td><?php if (isset($report->install_time)) out::H(date("Y-m-d H:i:s", $report->install_time)); ?></td>
             </tr>
             <tr>
                 <th>Product</th><td><?php out::H($report->product) ?></td>
