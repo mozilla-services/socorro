@@ -597,14 +597,199 @@ class ProductDimsTable(Table):
     super(ProductDimsTable, self).__init__(name='productdims', logger=logger,
                                        creationSql="""
                                           CREATE TABLE productdims (
-                                              id serial NOT NULL PRIMARY KEY,
+                                              id serial NOT NULL,
                                               product TEXT NOT NULL, -- varchar(30)
                                               version TEXT NOT NULL, -- varchar(16)
                                               branch TEXT NOT NULL, -- from branches table: 'gecko version'
-                                              release release_enum -- 'major':x.y.z..., 'milestone':x.ypre, 'development':x.y[ab]z
+                                              release release_enum, -- 'major':x.y.z..., 'milestone':x.ypre, 'development':x.y[ab]z
+                                              sort_key integer
                                           );
-                                          CREATE UNIQUE INDEX productdims_product_version_key ON productdims (product, version);
+                                          ALTER TABLE productdims ADD CONSTRAINT productdims_pkey1 PRIMARY KEY (id);
+                                          CREATE UNIQUE INDEX productdims_product_version_key ON productdims USING btree (product, version);
+                                          CREATE INDEX productdims_sort_key ON productdims USING btree (product, sort_key);
                                           CREATE INDEX productdims_release_key ON productdims (release);
+
+                                          CREATE TABLE productdims_version_sort (
+                                              id INT NOT NULL UNIQUE,
+                                              product CITEXT NOT NULL,
+                                              version CITEXT NOT null,
+                                              sec1_num1 INT,
+                                              sec1_string1 TEXT,
+                                              sec1_num2 INT,
+                                              sec1_string2 TEXT,
+                                              sec2_num1 INT,
+                                              sec2_string1 TEXT,
+                                              sec2_num2 INT,
+                                              sec2_string2 TEXT,
+                                              sec3_num1 INT,
+                                              sec3_string1 TEXT,
+                                              sec3_num2 INT,
+                                              sec3_string2 TEXT,
+                                              extra TEXT,
+                                              CONSTRAINT productdims_version_sort_key PRIMARY KEY (product, version),
+                                              CONSTRAINT productdims_product_version_fkey FOREIGN KEY (product, version) 
+                                                   references productdims(product, version) ON DELETE CASCADE ON UPDATE CASCADE
+                                           );
+
+                                           CREATE OR REPLACE FUNCTION tokenize_version(
+                                               version TEXT,
+                                               OUT s1n1 INT,
+                                               OUT s1s1 TEXT,
+                                               OUT s1n2 INT,
+                                               OUT s1s2 TEXT,
+                                               OUT s2n1 INT,
+                                               OUT s2s1 TEXT,
+                                               OUT s2n2 INT,
+                                               OUT s2s2 TEXT,
+                                               OUT s3n1 INT,
+                                               OUT s3s1 TEXT,
+                                               OUT s3n2 INT,
+                                               OUT s3s2 TEXT,
+                                               OUT ext TEXT
+                                           ) LANGUAGE plperl AS $$
+                                               my $version = shift;
+                                               my @parts = split /[.]/ => $version;
+                                               my $extra;
+                                               if (@parts > 3) {
+                                                   $extra = join '.', @parts[3..$#parts];
+                                                   @parts = @parts[0..2];
+                                               }
+                                           
+                                               my @tokens;
+                                               for my $part (@parts) {
+                                                   die "$version is not a valid toolkit version" unless $part =~ qr{\A
+                                                       ([-]?\d+)                    # number-a
+                                                       (?:
+                                                           ([-_a-zA-Z]+(?=-|\d|\z)) # string-b
+                                                           (?:
+                                                               (-?\d+)              # number-c
+                                                               (?:
+                                                                   ([^-*+\s]+)      # string-d
+                                                               |\z)
+                                                           |\z)
+                                                       |\z)
+                                                   \z}x;
+                                                   push @tokens, $1, $2, $3, $4;
+                                               }
+                                           
+                                               die "$version is not a valid toolkit version" unless @tokens;
+                                               my @cols = qw(s1n1 s1s1 s1n2 s1s2 s2n1 s2s1 s2n2 s2s2 s3n1 s3s1 s3n2 s3s2
+                                           ext);
+                                               return { ext => $extra, map { $cols[$_] => $tokens[$_] } 0..11 }
+                                           $$;
+
+                                            CREATE OR REPLACE FUNCTION product_version_sort_number (
+                                                sproduct text )
+                                            RETURNS BOOLEAN
+                                            LANGUAGE plpgsql AS $f$
+                                            BEGIN
+                                            -- reorders the product-version list for a specific
+                                            -- product after an update
+                                            -- we just reorder the whole group rather than doing
+                                            -- something more fine-tuned because it's actually less
+                                            -- work for the database and more foolproof.
+                                            
+                                            UPDATE productdims SET sort_key = new_sort
+                                            FROM  ( SELECT product, version, 
+                                                    row_number() over ( partition by product
+                                                        order by sec1_num1 ASC NULLS FIRST,
+                                                                sec1_string1 ASC NULLS LAST,
+                                                                sec1_num2 ASC NULLS FIRST,
+                                                                sec1_string2 ASC NULLS LAST,
+                                                                sec1_num1 ASC NULLS FIRST,
+                                                                sec1_string1 ASC NULLS LAST,
+                                                                sec1_num2 ASC NULLS FIRST,
+                                                                sec1_string2 ASC NULLS LAST,
+                                                                sec1_num1 ASC NULLS FIRST,
+                                                                sec1_string1 ASC NULLS LAST,
+                                                                sec1_num2 ASC NULLS FIRST,
+                                                                sec1_string2 ASC NULLS LAST,
+                                                                extra ASC NULLS FIRST)
+                                                                as new_sort
+                                                 FROM productdims_version_sort
+                                                 WHERE product = sproduct )
+                                            AS product_resort
+                                            WHERE productdims.product = product_resort.product
+                                                AND productdims.version = product_resort.version
+                                                AND ( sort_key <> new_sort OR sort_key IS NULL );
+                                            
+                                            RETURN TRUE;
+                                            END;$f$;
+                                            
+                                            CREATE OR REPLACE FUNCTION version_sort_insert_trigger ()
+                                            RETURNS TRIGGER
+                                            LANGUAGE plpgsql AS $f$
+                                            BEGIN
+                                            -- updates productdims_version_sort and adds a sort_key
+                                            -- for sorting, renumbering all products-versions if
+                                            -- required
+                                            
+                                            -- add new sort record
+                                            INSERT INTO productdims_version_sort (
+                                                id,
+                                                product,
+                                                version,
+                                                sec1_num1,    sec1_string1,    sec1_num2,    sec1_string2,
+                                                sec2_num1,    sec2_string1,    sec2_num2,    sec2_string2,
+                                                sec3_num1,    sec3_string1,    sec3_num2,    sec3_string2,
+                                                extra )
+                                            SELECT 
+                                                NEW.id,
+                                                NEW.product,
+                                                NEW.version,
+                                                s1n1,    s1s1,    s1n2,    s1s2,
+                                                s2n1,    s2s1,    s2n2,    s2s2,
+                                                s3n1,    s3s1,    s3n2,    s3s2,
+                                                ext 
+                                            FROM tokenize_version(NEW.version);
+                                            
+                                            -- update sort key
+                                            PERFORM product_version_sort_number(NEW.product);
+                                            
+                                            RETURN NEW;
+                                            END; $f$;
+                                            
+                                            CREATE TRIGGER version_sort_insert_trigger AFTER INSERT
+                                            ON productdims FOR EACH ROW EXECUTE PROCEDURE version_sort_insert_trigger();
+                                            
+                                            CREATE OR REPLACE FUNCTION version_sort_update_trigger_before ()
+                                            RETURNS TRIGGER 
+                                            LANGUAGE plpgsql AS $f$
+                                            BEGIN
+                                            -- updates productdims_version_sort
+                                            -- should be called only by a cascading update from productdims
+                                            
+                                            -- update sort record
+                                            SELECT     s1n1,    s1s1,    s1n2,    s1s2,
+                                                s2n1,    s2s1,    s2n2,    s2s2,
+                                                s3n1,    s3s1,    s3n2,    s3s2,
+                                                ext
+                                            INTO 
+                                                NEW.sec1_num1,    NEW.sec1_string1,    NEW.sec1_num2,    NEW.sec1_string2,
+                                                NEW.sec2_num1,    NEW.sec2_string1,    NEW.sec2_num2,    NEW.sec2_string2,
+                                                NEW.sec3_num1,    NEW.sec3_string1,    NEW.sec3_num2,    NEW.sec3_string2,
+                                                NEW.extra
+                                            FROM tokenize_version(NEW.version);
+                                            
+                                            RETURN NEW;
+                                            END; $f$;
+                                            
+                                            CREATE OR REPLACE FUNCTION version_sort_update_trigger_after ()
+                                            RETURNS TRIGGER 
+                                            LANGUAGE plpgsql AS $f$
+                                            BEGIN
+                                            -- update sort keys
+                                            PERFORM product_version_sort_number(NEW.product);
+                                            RETURN NEW;
+                                            END; $f$;
+                                            
+                                            CREATE TRIGGER version_sort_update_trigger_before BEFORE UPDATE
+                                            ON productdims_version_sort FOR EACH ROW 
+                                            EXECUTE PROCEDURE version_sort_update_trigger_before();
+                                            
+                                            CREATE TRIGGER version_sort_update_trigger_after AFTER UPDATE
+                                            ON productdims_version_sort FOR EACH ROW 
+                                            EXECUTE PROCEDURE version_sort_update_trigger_after();
                                           """)
 databaseDependenciesForSetup[ProductDimsTable] = [ReleaseEnum]
 
@@ -1251,10 +1436,11 @@ class BuildsTable(Table):
                                                 buildid BIGINT,
                                                 platform_changeset text,
                                                 filename text,
-                                                date timestamp without time zone default now(),
+                                                date timestamp without time zone DEFAULT now(),
                                                 app_changeset_1 text,
-                                                app_changeset_2 text,
-                                            CONSTRAINT builds_key UNIQUE (product, version, platform, buildid));
+                                                app_changeset_2 text
+                                            );
+                                            CREATE UNIQUE INDEX builds_key ON builds USING btree (product, version, platform, buildid);
                                         """)
     self.insertSql = """INSERT INTO TABLENAME (product, version, platform, buildid, changeset, filename, date, app_changeset_1, app_changeset_2) values (%s, %s, %s, %s, %s, %s, %s, %s, %s)"""
 
@@ -1526,6 +1712,10 @@ def connectToDatabase(config, logger):
 #-----------------------------------------------------------------------------------------------------------------
 def setupDatabase(config, logger):
   databaseConnection, databaseCursor = connectToDatabase(config, logger)
+
+  databaseCursor.execute("CREATE LANGUAGE plperl")
+  databaseCursor.execute("CREATE LANGUAGE plpgsql")
+
   try:
     for aDatabaseObjectClass in getOrderedSetupList():
       aDatabaseObject = aDatabaseObjectClass(logger=logger)
