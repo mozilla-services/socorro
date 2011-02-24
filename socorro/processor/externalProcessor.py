@@ -84,7 +84,8 @@ class ProcessorWithExternalBreakpad (processor.Processor):
     try:
       additionalReportValuesAsDict = self.analyzeHeader(reportId, dumpAnalysisLineIterator, databaseCursor, date_processed, processorErrorMessages)
       crashedThread = additionalReportValuesAsDict["crashedThread"]
-      evenMoreReportValuesAsDict = self.analyzeFrames(reportId, isHang, dumpAnalysisLineIterator, databaseCursor, date_processed, crashedThread, processorErrorMessages)
+      lowercaseModules = additionalReportValuesAsDict['os_name'] in ('Windows NT')
+      evenMoreReportValuesAsDict = self.analyzeFrames(reportId, isHang, lowercaseModules, dumpAnalysisLineIterator, databaseCursor, date_processed, crashedThread, processorErrorMessages)
       additionalReportValuesAsDict.update(evenMoreReportValuesAsDict)
       for x in dumpAnalysisLineIterator:
         pass  #need to spool out the rest of the stream so the cache doesn't get truncated
@@ -224,7 +225,7 @@ class ProcessorWithExternalBreakpad (processor.Processor):
     return version
 
 #-----------------------------------------------------------------------------------------------------------------
-  def analyzeFrames(self, reportId, isHang, dumpAnalysisLineIterator, databaseCursor, date_processed, crashedThread, processorErrorMessages):
+  def analyzeFrames(self, reportId, isHang, lowercaseModules, dumpAnalysisLineIterator, databaseCursor, date_processed, crashedThread, processorErrorMessages):
     """ After the header information, the dump file consists of just frame information.  This function
           cycles through the frame information looking for frames associated with the crashed thread
           (determined in analyzeHeader).  Each frame from that thread is written to the database until
@@ -239,6 +240,7 @@ class ProcessorWithExternalBreakpad (processor.Processor):
            input parameters:
              reportId - the primary key from the 'reports' table for this crash report
              isHang - boolean, is this a hang crash?
+             lowerCaseModules - boolean, should modules be forced to lower case for signature generation?
              dumpAnalysisLineIterator - an iterator that cycles through lines from the crash dump
              databaseCursor - for database insertions
              date_processed
@@ -263,6 +265,8 @@ class ProcessorWithExternalBreakpad (processor.Processor):
         topmost_sourcefiles.append(source)
       if crashedThread == int(thread_num):
         if frameCounter < 30:
+          if lowercaseModules:
+            module_name = module_name.lower()
           thisFramesSignature = self.signatureUtilities.normalize_signature(module_name, function, source, source_line, instruction)
           signatureList.append(thisFramesSignature)
           if frameCounter < 10:
