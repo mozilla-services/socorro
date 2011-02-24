@@ -1,5 +1,5 @@
 ## RHEL6 or Fedora 14
-yum install python-psycopg2 simplejson httpd mod_ssl mod_wsgi postgresql-server
+yum install python-psycopg2 simplejson httpd mod_ssl mod_wsgi postgresql-server postgresql-plperl perl-pgsql_perl5
 # for building minidump_stackwalk
 yum install subversion gcc-c++
 # for building java analysis tools
