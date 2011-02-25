@@ -2,6 +2,7 @@
     <thead>
         <tr>
             <th>Date</th>
+            <th>Dup</th>
             <th>Product</th>
             <th>Version</th>
             <th>Build</th>
@@ -29,7 +30,13 @@
                         <?php echo date('M d, Y H:i', $date) ?>
                     </a>        
         <div class="hang-pair"></div>
-                </td> <td><?php out::H($report->product) ?></td>
+                </td> 
+                <td><?php if (isset($report->duplicate_of) && !empty($report->duplicate_of)) { 
+                    echo '<a href="'.url::site("report/".html::specialchars($report->duplicate_of)).'"
+                          title="This has been flagged as a possible duplicate crash report of '.html::specialchars($report->duplicate_of).'."
+                          >dup</a>';
+                } ?></td>
+                <td><?php out::H($report->product) ?></td>
                 <td><?php out::H($report->version) ?></td>
                 <td><?php out::H($report->build) ?></td>
                 <td><?php out::H($report->os_name) ?> <?php out::H($report->os_version) ?></td>

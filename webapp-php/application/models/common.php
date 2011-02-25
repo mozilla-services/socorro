@@ -180,42 +180,42 @@ class Common_Model extends Model {
             $pager->itemsPerPage = Kohana::config('search.number_report_list');
             $pager->currentPage = 1;
         }
-
-        $columns = array(
-            'reports.date_processed',
-            'reports.uptime',
-            'reports.user_comments',
-            'reports.uuid',
-            'reports.product',
-            'reports.version',
-            'reports.build',
-            'reports.signature',
-            'reports.url',
-            'reports.os_name',
-            'reports.os_version',
-            'reports.cpu_name',
-            'reports.cpu_info',
-            'reports.address',
-            'reports.reason',
-            'reports.last_crash',
-            'reports.install_age',
-            'reports.hangid',
-            'reports.process_type'
-        );
-
-        list($from_tables, $join_tables, $where) = 
-        $this->_buildCriteriaFromSearchParams($params);
+        
+        list($from_tables, $join_tables, $where) = $this->_buildCriteriaFromSearchParams($params);
 
         $sql = "/* soc.web common.queryReports */ " .
-               " SELECT " . join(', ', $columns) . ", " . 
-               " ( reports.client_crash_date - ( reports.install_age * INTERVAL '1 second' ) ) as install_time " . 
-               " FROM   " . join(', ', $from_tables);
+               " SELECT reports.*,
+                 ( SELECT reports_duplicates.duplicate_of FROM reports_duplicates
+                 	WHERE reports_duplicates.uuid = reports.uuid ) as duplicate_of
+               FROM (
+                   SELECT 
+                       reports.date_processed,
+                       reports.uptime,
+                       reports.user_comments,
+                       reports.uuid,
+                       reports.product,
+                       reports.version,
+                       reports.build,
+                       reports.signature,
+                       reports.url,
+                       reports.os_name,
+                       reports.os_version,
+                       reports.cpu_name,
+                       reports.cpu_info,
+                       reports.address,
+                       reports.reason,
+                       reports.last_crash,
+                       reports.install_age,
+                       reports.hangid,
+                       reports.process_type,
+                       ( reports.client_crash_date - ( reports.install_age * INTERVAL '1 second' ) ) as install_time
+                   FROM   " . join(', ', $from_tables);
         if (count($join_tables) > 0) {
             $sql .= " JOIN  " . join("\nJOIN ", $join_tables);
         }
         $sql .= " WHERE  " . join(' AND ', $where) .
     	        " ORDER BY reports.date_processed DESC " . 
-                " LIMIT ? OFFSET ? ";
+                " LIMIT ? OFFSET ?  ) as reports";
 
         return $this->fetchRows($sql, TRUE, array($pager->itemsPerPage, $pager->offset));
     }

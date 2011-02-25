@@ -66,10 +66,10 @@ $(document).ready(function () {
     $('#reportsList').tablesorter({ 
         textExtraction: "complex",
         headers: { 
-            7: { sorter: "hexToInt" },  // Address
-            9: { sorter: "digit" }      // Uptime
+            8: { sorter: "hexToInt" },  // Address
+            10: { sorter: "digit" }      // Uptime
         }, 
-        sortList : [[11,1]]
+        sortList : [[12,1]]
     });
     
     $('#report-list-nav').tabs({selected: 2}).show();
