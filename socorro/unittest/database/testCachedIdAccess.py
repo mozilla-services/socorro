@@ -6,7 +6,7 @@ import os
 import time
 
 from nose.tools import *
-import unittest
+from nose.plugins.skip import SkipTest
 
 import psycopg2
 
@@ -469,8 +469,8 @@ class TestCachedIdAccess:
     for i in cursor.fetchall():
       assert 13 >= len(i[0]), 'Expected maxiumum length of 12, got %s: %s'%(len(i[0]),i[0])
       
-  @unittest.skip("bug 636608 - test hanging")
   def testGetProductId(self):
+    raise SkipTest("bug 636608 - test hanging")
     countSql = 'select count(id) from productdims'
     cursor = self.connection.cursor()
     cursor.execute(countSql)
