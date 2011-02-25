@@ -97,9 +97,7 @@ def setup_module():
     schema.EmailCampaignsTable:[False,set(['email_campaigns'])],
     schema.EmailContactsTable:[False,set(['email_contacts'])],
     schema.EmailCampaignsContactsTable:[False,set(['email_campaigns_contacts','email_contacts','email_campaigns'])],
-    schema.SignatureBuildTable:[False, set(['signature_build'])],
     schema.ProductDimsVersionSortTable:[False, set(['productdims_version_sort', 'release_enum', 'productdims'])],
-    schema.SignatureFirstTable:[False, set(['signature_first'])],
     }
   me.expectedTableNames = set()
   for tableStuff in me.hardCodedSchemaClasses.values():
