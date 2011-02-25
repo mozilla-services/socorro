@@ -89,7 +89,6 @@ $(document).ready(function() {
       var key = $(this).find(":selected").attr('key');
       var throttle_default = $(this).find(":selected").attr('throttle');
       $("#throttle"+key).val(throttle_default);
-      alert('throt ' + key + ' ' + throttle_default);
     });
   }
   
