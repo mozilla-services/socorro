@@ -163,6 +163,8 @@ prefixSignatureRegEx = '|'.join([
   'NtUserMessageCall',
   'mozalloc_abort.*',
   'NS_DebugBreak_P.*',
+  'PR_AtomicIncrement',
+  'PR_AtomicDecrement',
   ])
 
 signaturesWithLineNumbersRegEx = cm.Option()
