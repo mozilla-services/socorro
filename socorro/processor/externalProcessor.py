@@ -280,7 +280,7 @@ class ProcessorWithExternalBreakpad (processor.Processor):
       elif frameCounter:
         break
     dumpAnalysisLineIterator.stopUsingSecondaryCache()
-    signature = self.signatureUtilities.generate_signature_from_list(signatureList).replace("'", "''")
+    signature = self.signatureUtilities.generate_signature_from_list(signatureList, isHang=isHang)
     if signature == '' or signature is None:
       if crashedThread is None:
         message = "No signature could be created because we do not know which thread crashed"
