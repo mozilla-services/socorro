@@ -1729,8 +1729,6 @@ class ReportsDuplicatesTable(Table):
                                            
                                            create index reports_duplicates_leader on reports_duplicates(duplicate_of);
                                            
-                                           alter table reports_duplicates owner to breakpad_rw;
-                                           
                                            -- SQL function to make comparing timestamp deltas a bit
                                            -- less verbose
                                            
