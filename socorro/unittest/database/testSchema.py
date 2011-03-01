@@ -98,6 +98,7 @@ def setup_module():
     schema.EmailContactsTable:[False,set(['email_contacts'])],
     schema.EmailCampaignsContactsTable:[False,set(['email_campaigns_contacts','email_contacts','email_campaigns'])],
     schema.ProductDimsVersionSortTable:[False, set(['productdims_version_sort', 'release_enum', 'productdims'])],
+    schema.ReportsDuplicatesTable:[False, set(['reports_duplicates'])],
     }
   me.expectedTableNames = set()
   for tableStuff in me.hardCodedSchemaClasses.values():
