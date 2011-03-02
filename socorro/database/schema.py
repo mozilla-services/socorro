@@ -1689,6 +1689,50 @@ class EmailCampaignsContactsTable(Table):
 databaseDependenciesForSetup[EmailCampaignsContactsTable] = [EmailCampaignsTable, EmailContactsTable]
 
 #=================================================================================================================
+class SignatureBuildTable(Table):
+  """Define the table 'signature_build'
+  """
+  #-----------------------------------------------------------------------------------------------------------------
+  def __init__ (self, logger, **kwargs):
+    super(SignatureBuildTable, self).__init__(name = "signature_build", logger=logger,
+                                        creationSql = """
+                                            create table signature_build (
+                                            	signature text,
+                                            	productdims_id int,
+                                            	product citext,
+                                            	version citext,
+                                            	os_name citext,
+                                            	build text,
+                                            	first_report timestamp
+                                            );
+                                            create unique index signature_build_key on signature_build ( signature, product, version, os_name, build );
+                                            create index signature_build_signature on signature_build ( signature );
+                                            create index signature_build_product on signature_build ( product, version );
+                                            create index signature_build_productdims on signature_build(productdims_id);
+                                        """)
+databaseDependenciesForSetup[SignatureBuildTable] = []
+
+#=================================================================================================================
+class SignatureFirstTable(Table):
+  """Define the table 'signature_first'
+  """
+  #-----------------------------------------------------------------------------------------------------------------
+  def __init__ (self, logger, **kwargs):
+    super(SignatureFirstTable, self).__init__(name = "signature_first", logger=logger,
+                                        creationSql = """
+                                            create table signature_first (
+                                            	signature text,
+                                            	productdims_id int,
+                                            	osdims_id int,
+                                            	first_report timestamp,
+                                            	first_build text,
+                                            	constraint signature_first_key primary key (signature, productdims_id, osdims_id)
+                                            );
+                                        """)
+databaseDependenciesForSetup[SignatureFirstTable] = []
+
+
+#=================================================================================================================
 class SignatureProductdimsTable(Table):
   """Define the table 'signature_productdims'"""
   #-----------------------------------------------------------------------------------------------------------------
@@ -1698,7 +1742,100 @@ class SignatureProductdimsTable(Table):
                                             CREATE TABLE signature_productdims (
                                               signature text not null,
                                               productdims_id integer not null,
-                                            UNIQUE (signature, productdims_id));
+	                                      first_report timestamp,
+	                                      constraint signature_productdims_key primary key (signature, productdims_id)
+                                            );
+                                            create index signature_productdims_product on signature_productdims(productdims_id);
+
+                                            CREATE OR REPLACE FUNCTION update_signature_matviews (
+                                            	currenttime TIMESTAMP, hours_back INTEGER, hours_window INTEGER )
+                                            RETURNS BOOLEAN
+                                            LANGUAGE plpgsql AS $f$
+                                            BEGIN
+                                            
+                                            -- this omnibus function is designed to be called by cron once per hour.  
+                                            -- it updates all of the signature matviews: signature_productdims, signature_build,
+                                            -- and signature_first
+                                            
+                                            -- create a temporary table of recent new reports
+                                            
+                                            create temporary table signature_build_updates
+                                            on commit drop
+                                            as select signature, null::int as productdims_id, product::citext as product, version::citext as version, os_name::citext as os_name, build, min(date_processed) as first_report
+                                            from reports
+                                            where date_processed <= ( currenttime - ( interval '1 hour' * hours_back ) )
+                                            	and date_processed > ( currenttime - ( interval '1 hour' * hours_back ) - (interval '1 hour' * hours_window ) )
+                                            	and signature is not null
+                                            	and product is not null
+                                            	and version is not null
+                                            group by signature, product, version, os_name, build
+                                            order by signature, product, version, os_name, build;
+                                            
+                                            -- update productdims column in signature_build
+                                            	
+                                            update signature_build_updates set productdims_id = productdims.id
+                                            from productdims
+                                            where productdims.product = signature_build_updates.product
+                                            	and productdims.version = signature_build_updates.version;
+                                            
+                                            -- remove any garbage rows
+                                            
+                                            DELETE FROM signature_build_updates 
+                                            WHERE productdims_id IS NULL
+                                            	OR os_name IS NULL
+                                            	OR build IS NULL;
+                                            
+                                            -- insert new rows into signature_build
+                                            
+                                            insert into signature_build (
+                                            	signature, product, version, productdims_id, os_name, build, first_report )
+                                            select sbup.signature, sbup.product, sbup.version, sbup.productdims_id,
+                                            	sbup.os_name, sbup.build, sbup.first_report
+                                            from signature_build_updates sbup
+                                            left outer join signature_build
+                                            	using ( signature, product, version, os_name, build )
+                                            where signature_build.signature IS NULL;
+                                            	
+                                            -- add new rows to signature_productdims
+                                            
+                                            insert into signature_productdims ( signature, productdims_id, first_report )
+                                            select newsigs.signature, newsigs.productdims_id, newsigs.first_report
+                                            from (
+                                            	select signature, productdims_id, min(first_report) as first_report
+                                            	from signature_build_updates
+                                            		join productdims USING (product, version)
+                                            	group by signature, productdims_id
+                                            	order by signature, productdims_id
+                                            ) as newsigs
+                                            left outer join signature_productdims oldsigs
+                                            using ( signature, productdims_id )
+                                            where oldsigs.signature IS NULL;
+                                            
+                                            -- add new rows to signature_first
+                                            
+                                            insert into signature_first (signature, productdims_id, osdims_id,
+                                            	first_report, first_build )
+                                            select sbup.signature, sbup.productdims_id, osdims.id, min(sbup.first_report),
+                                            	min(sbup.build)
+                                            from signature_build_updates sbup
+                                            	join top_crashes_by_signature tcbs on
+                                            		sbup.signature = tcbs.signature
+                                            		and sbup.productdims_id = tcbs.productdims_id
+                                            	join osdims ON tcbs.osdims_id = osdims.id
+                                            	left outer join signature_first sfirst
+                                            		on sbup.signature = sfirst.signature
+                                            		and sbup.productdims_id = sfirst.productdims_id
+                                            		and tcbs.osdims_id = sfirst.osdims_id
+                                            where sbup.os_name = osdims.os_name
+                                            	and tcbs.window_end BETWEEN  
+                                            		( currenttime - ( interval '1 hour' * hours_back ) - (interval '1 hour' * hours_window ) )
+                                            		AND ( currenttime - ( interval '1 hour' * hours_back ) )
+                                            group by sbup.signature, sbup.productdims_id, osdims.id;
+                                            
+                                            
+                                            RETURN TRUE;
+                                            END;
+                                            $f$;
                                         """)
     self.insertSql = """INSERT INTO TABLENAME (signature, productdims_id) values (%s, %d)"""
 
