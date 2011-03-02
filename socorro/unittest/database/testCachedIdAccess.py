@@ -470,7 +470,6 @@ class TestCachedIdAccess:
       assert 13 >= len(i[0]), 'Expected maxiumum length of 12, got %s: %s'%(len(i[0]),i[0])
       
   def testGetProductId(self):
-    raise SkipTest("bug 636608 - test hanging")
     countSql = 'select count(id) from productdims'
     cursor = self.connection.cursor()
     cursor.execute(countSql)
@@ -495,13 +494,13 @@ class TestCachedIdAccess:
     for p in testProducts:
       key = p[0]
       id = idc.getProductId(*p[0])
-      assert p[1] == id
       if id and not id in idSet:
         rowCount += 1
       idSet.add(id)
       cursor.execute(countSql)
       data = cursor.fetchone()
       self.connection.commit()
+      assert p[1] == id
       assert rowCount == data[0]
 
   def testGetOsId(self):
