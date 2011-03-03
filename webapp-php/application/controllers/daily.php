@@ -217,7 +217,6 @@ class Daily_Controller extends Controller {
         // Prepare variables
         $products = Kohana::config('daily.products');
         $operating_systems = Kohana::config('daily.operating_systems');
-
         $report_types = array('crash', 'oopp', 'hang_browser', 'hang_plugin');
         
         // Fetch $_GET variables.
@@ -232,7 +231,7 @@ class Daily_Controller extends Controller {
         $dates = $this->model->prepareDates($date_end, $duration);
         $form_selection = (isset($parameters['form_selection']) && $parameters['form_selection'] == 'by_os') ? $parameters['form_selection'] : 'by_version';
         $throttle = (isset($parameters['throttle']) && !empty($parameters['throttle'])) ? $parameters['throttle'] : array();
-        $hang_type = (isset($parameters['hang_type'])) ? $parameters['hang_type'] : 'any'; // RS :: Is this being used?
+        $hang_type = (isset($parameters['hang_type'])) ? $parameters['hang_type'] : 'any';
         
         $form_selection = 'by_version';
         if (isset($parameters['form_selection']) && 
@@ -311,7 +310,7 @@ class Daily_Controller extends Controller {
             'throttle_default' => Kohana::config('daily.throttle_default'),
             'url_csv' => $url_csv,
             'url_form' => url::site("daily", $protocol),                               
-            'url_nav' => url::site('products/'.$product),
+            'url_nav' => url::site('products/'.$this->chosen_version['product']),
             'versions' => $versions,
         ));
     }
