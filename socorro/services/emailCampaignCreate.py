@@ -113,21 +113,24 @@ class EmailCampaignCreate(webapi.JsonServiceBase):
     """
     end_date = datetime.datetime(end_date.year, end_date.month, end_date.day, 23, 59, 59)
 
-    email_rows = self.determine_emails(connection, product, versions, signature, start_date, end_date)
-    full_email_rows = self.ensure_contacts(connection, email_rows)
-    campaign_id = self.save_campaign(connection, product, versions, signature, subject, body, start_date, end_date, author, 0)
+    cursor = connection.cursor()
+    email_rows = self.determine_emails(cursor, product, versions, signature, start_date, end_date)
+    full_email_rows = self.ensure_contacts(cursor, email_rows)
+    campaign_id = self.save_campaign(cursor, product, versions, signature, subject, body, start_date, end_date, author)
 
-    contacted_emails = self.send_all_emails(full_email_rows, subject, body)
+    smtp = self.smtp_connection()
+    contacted_emails = self.send_all_emails(full_email_rows, subject, body, smtp)
+    smtp.quit()
 
     logger.info("Sent %d emails to users" % len(contacted_emails))
 
-    self.save_campaign_contacts(connection, campaign_id, contacted_emails)
-    self.update_campaign(connection, campaign_id, len(contacted_emails))
+    self.save_campaign_contacts(cursor, campaign_id, contacted_emails)
+    self.update_campaign(cursor, campaign_id, len(contacted_emails))
     connection.commit()
     return {"campaign_id": campaign_id, "estimated_count": len(email_rows), "actual_count": len(contacted_emails)}
 
   #-----------------------------------------------------------------------------------------------------------------
-  def determine_emails(self, connection, product, versions, signature, start_date, end_date):
+  def determine_emails(self, cursor, product, versions, signature, start_date, end_date):
     """ Retrieves a list of email addresses based on the criteria """
     version_clause = ''
     if len(versions) > 0:
@@ -150,15 +153,13 @@ class EmailCampaignCreate(webapi.JsonServiceBase):
                   JOIN email_contacts AS contacted ON email_campaigns_contacts.email_contacts_id = contacted.id
                   WHERE prev_campaigns.product = %%(product)s
                   AND prev_campaigns.signature = %%(signature)s
-             )
-    """ % (start_date, end_date, version_clause)
-    cursor = connection.cursor()
+             ) """ % (start_date, end_date, version_clause)
     #logger.info(cursor.mogrify(sql, {'product': product, 'versions': versions, 'signature': signature}))
     cursor.execute(sql, {'product': product, 'versions': versions, 'signature': signature})
     return cursor.fetchall()
 
   #-----------------------------------------------------------------------------------------------------------------
-  def ensure_contacts(self, connection, email_rows):
+  def ensure_contacts(self, cursor, email_rows, new_token=None):
     """ Returns a three element tuple, which captures if
         we need to save this entry into the database once
         we are done sending the email
@@ -172,26 +173,22 @@ class EmailCampaignCreate(webapi.JsonServiceBase):
     for row in email_rows:
       dbid, email, token = row
       if not dbid:
-        new_token = str(uuid.uuid4())
+        if new_token == None:
+          new_token = str(uuid.uuid4())
         new_emails.append((email, new_token))
         contacts.append({'id': None, 'email': email, 'token': new_token})
       else:
         contacts.append({'id': dbid, 'email': email, 'token': token})
     if new_emails:
-      cursor = connection.cursor()
       table = EmailContactsTable(logger)
       cursor.executemany(table.insertSql, new_emails)
     return contacts
 
   #-----------------------------------------------------------------------------------------------------------------
-  def send_all_emails(self, contacts, subject, body):
+  def send_all_emails(self, contacts, subject, body, smtp):
     """ returns a list of email addresses which were successfully contacted """
     contacted_emails = []
-    # this can raise SMTPHeloError, SMTPAuthenticationError, SMTPException
-    # Error handeling... This Service Call will either work or fail. Failure comes from
-    # SMTP, Database, ... ?
 
-    smtp = self.smtp_connection()
     # It would be nice to allocate MIMEText out here, but we personalize every email
 
     for contact in contacts:
@@ -212,7 +209,6 @@ class EmailCampaignCreate(webapi.JsonServiceBase):
       except Exception:
         logger.error("Error while sending email to %s" % contact['email'])
         sutil.reportExceptionAndContinue(logger=logger)
-    smtp.quit()
     return contacted_emails
 
   #-----------------------------------------------------------------------------------------------------------------
@@ -234,11 +230,7 @@ class EmailCampaignCreate(webapi.JsonServiceBase):
     smtp.sendmail(self.config['fromEmailAddress'], [email], msg.as_string())
 
   #-----------------------------------------------------------------------------------------------------------------
-  def save_campaign(self, connection, product, versions, signature, subject, body, start_date, end_date, author, email_count):
-    """ TODO(aok): Actually we'll create the campaign first and then update it at a later set
-        so email_count is 0 """
-    cursor = connection.cursor()
-
+  def save_campaign(self, cursor, product, versions, signature, subject, body, start_date, end_date, author, email_count=0):
     parameters = [product, versions, signature, subject, body, start_date, end_date, email_count, author]
 
     table = EmailCampaignsTable(logger)
@@ -249,9 +241,8 @@ class EmailCampaignCreate(webapi.JsonServiceBase):
     return last_id
 
   #-----------------------------------------------------------------------------------------------------------------
-  def save_campaign_contacts(self, connection, campaign_id, contacted_emails):
+  def save_campaign_contacts(self, cursor, campaign_id, contacted_emails):
     if len(contacted_emails) > 0:
-      cursor = connection.cursor()
       sql = """
         INSERT INTO email_campaigns_contacts (email_campaigns_id, email_contacts_id)
           SELECT %(campaign_id)s, email_contacts.id
@@ -266,8 +257,7 @@ class EmailCampaignCreate(webapi.JsonServiceBase):
       logger.warn("No contacts given in call to associate campaign to contacts")
 
   #-----------------------------------------------------------------------------------------------------------------
-  def update_campaign(self, connection, campaign_id, email_count):
-    cursor = connection.cursor()
+  def update_campaign(self, cursor, campaign_id, email_count):
     cursor.execute("UPDATE email_campaigns SET email_count = %s WHERE id = %s",
                    (email_count, campaign_id))
     return
