@@ -15,6 +15,7 @@ brokenFirefoxLinuxQuery = """
       AND (version = '4.0b11' OR version = '4.0b12')
       AND os_name = 'Linux'
       AND date_processed > '%s'
+      AND date_processed < (now() - INTERVAL '30 minutes')
 """
 brokenFirefoxLinuxFixer = './minidump_hack-firefox_linux'
 
@@ -22,6 +23,7 @@ brokenFennecQuery = """
     SELECT uuid,date_processed FROM reports WHERE product = 'Fennec'
       AND version = '4.0b5'
       AND date_processed > '%s'
+      AND date_processed < (now() - INTERVAL '30 minutes')
 """
 brokenFennecFixer = './minidump_hack-fennec'
 
