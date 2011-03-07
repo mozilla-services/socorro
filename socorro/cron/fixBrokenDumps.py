@@ -4,6 +4,7 @@ import time
 import sys
 import subprocess
 import os
+import cPickle
 
 import psycopg2
 import psycopg2.extras
@@ -11,7 +12,7 @@ import psycopg2.extras
 import socorro.lib.util
 import socorro.storage.hbaseClient as hbaseClient
 
-from datetime import datetime
+from datetime import datetime, timedelta
 
 def fetchOoids(configContext, logger, query):
   try:
@@ -21,24 +22,25 @@ def fetchOoids(configContext, logger, query):
   except:
     socorro.lib.util.reportExceptionAndAbort(logger)
 
+  last_date_processed = get_last_run_date(configContext)
 
   rows = []
   try:
     before = time.time()
-    cur.execute(query)
+    cur.execute(query % last_date_processed)
     rows = cur.fetchall()
     conn.commit()
   except:
     socorro.lib.util.reportExceptionAndAbort(logger)
 
-  return rows
+  return rows, last_date_processed
 
 def fix(configContext, logger, query, fixer):
-  rows = fetchOoids(configContext, logger, query)
+  rows, last_date_processed = fetchOoids(configContext, logger, query)
   hbc = hbaseClient.HBaseConnectionForCrashReports(configContext.hbaseHost, configContext.hbasePort, configContext.hbaseTimeout, logger=logger)
   for row in rows:
     try:
-      ooid = row[0]
+      ooid, last_date_processed = row
       logger.info('fixing ooid: %s' % ooid)
       dump = hbc.get_dump(ooid)
       fname = '/dev/shm/%s.dump' % ooid
@@ -56,4 +58,17 @@ def fix(configContext, logger, query, fixer):
       logger.debug('removed dump file: %s' % fname)
     except:
       socorro.lib.util.reportExceptionAndContinue(logger)
+
+  save_last_run_date(configContext, last_date_processed)
+
+def get_last_run_date(config):
+  try:
+    with open(config.persistentBrokenDumpPathname) as f:
+      return cPickle.load(f)
+  except IOError:
+    return datetime.now() - timedelta(days=config.daysIntoPast)
+
+def save_last_run_date(config, date):
+  with open(config.persistentBrokenDumpPathname) as f:
+    return cPickle.dump(date, f)
 

@@ -11,19 +11,27 @@ from config.commonconfig import hbasePort
 from config.commonconfig import hbaseTimeout
 
 brokenFirefoxLinuxQuery = """
-    SELECT uuid FROM reports WHERE product = 'Firefox'
+    SELECT uuid,date_processed FROM reports WHERE product = 'Firefox'
       AND (version = '4.0b11' OR version = '4.0b12')
       AND os_name = 'Linux'
-      AND date_processed > '2011-01-01'
+      AND date_processed > '%s'
 """
 brokenFirefoxLinuxFixer = './minidump_hack-firefox_linux'
 
 brokenFennecQuery = """
-    SELECT uuid FROM reports WHERE product = 'Fennec'
+    SELECT uuid,date_processed FROM reports WHERE product = 'Fennec'
       AND version = '4.0b5'
-      AND date_processed > '2011-01-01'
+      AND date_processed > '%s'
 """
 brokenFennecFixer = './minidump_hack-fennec'
+
+persistentBrokenDumpPathname = cm.Option()
+persistentBrokenDumpPathname.doc = 'a pathname to a file system location where this script can store persistent data'
+persistentBrokenDumpPathname.default = './fixbrokendumps.pickle'
+
+daysIntoPast = cm.Option()
+daysIntoPast.doc = 'number of days to look into the past for broken crashes (0 - use last run time)'
+daysIntoPast.default = 30
 
 #-------------------------------------------------------------------------------
 # Logging

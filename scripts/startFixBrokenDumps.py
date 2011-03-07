@@ -27,7 +27,7 @@ sutil.setupLoggingHandlers(logger, config)
 sutil.echoConfig(logger, config)
 
 try:
-  #fixBrokenDumps.fix(config, logger, config.brokenFirefoxLinuxQuery, config.brokenFirefoxLinuxFixer)
+  fixBrokenDumps.fix(config, logger, config.brokenFirefoxLinuxQuery, config.brokenFirefoxLinuxFixer)
   fixBrokenDumps.fix(config, logger, config.brokenFennecQuery, config.brokenFennecFixer)
 finally:
   logger.info("done.")
