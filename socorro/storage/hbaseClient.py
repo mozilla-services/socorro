@@ -709,6 +709,28 @@ class HBaseConnectionForCrashReports(HBaseConnection):
     self.put_json_dump(ooid,json,dump)
 
   @optional_retry_wrapper
+  def put_fixed_dump(self, ooid, dump, submitted_timestamp, add_to_unprocessed_queue = True):
+    """
+    Update a crash report with a new dump file optionally queuing for processing
+    """
+    row_id = ooid_to_row_id(ooid) 
+
+    columns =  [
+                 ("raw_data:dump", dump)
+               ]
+    mutationList = [ self.mutationClass(column=c, value=v)
+                         for c, v in columns if v is not None]
+
+    indices = []
+
+    if add_to_unprocessed_queue:
+      indices.append('crash_reports_index_legacy_unprocessed_flag')
+
+    self.client.mutateRow('crash_reports', row_id, mutationList) 
+
+    self.put_crash_report_indices(ooid,submitted_timestamp,indices)
+
+  @optional_retry_wrapper
   def put_processed_json(self,ooid,processed_json):
     """
     Create a crash report from the cooked json output of the processor
