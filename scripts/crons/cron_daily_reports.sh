@@ -5,7 +5,7 @@
 NAME=`basename $0 .sh`
 lock $NAME
 SCRIPT_RUN_DATE=`date -d "1 days ago" '+%Y-%m-%d'`
-$PYTHON ${APPDIR}/scripts/startDailyUrl --day=${SCRIPT_RUN_DATE}
+$PYTHON ${APPDIR}/scripts/startDailyUrl.py --day=${SCRIPT_RUN_DATE}
 fatal $? "Could not run startDailyUrl"
 
 PUB_DATA_FILE=`date -d "1 days ago" '+%Y%m%d-pub-crashdata.csv.gz'`
