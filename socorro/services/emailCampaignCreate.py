@@ -166,12 +166,16 @@ class EmailCampaignCreate(webapi.JsonServiceBase):
         * email
         * token
         * dirty
+
+        Also inserts into email_contacts table.
     """
     # tupple tied to determine_emails SQL (id, email, token) id and token NULL for new entries
     new_emails = []
     contacts = []
     for row in email_rows:
       dbid, email, token = row
+      if '@' not in email:
+        continue
       if not dbid:
         if new_token == None:
           new_token = str(uuid.uuid4())
@@ -192,8 +196,6 @@ class EmailCampaignCreate(webapi.JsonServiceBase):
     # It would be nice to allocate MIMEText out here, but we personalize every email
 
     for contact in contacts:
-      if '@' not in contact['email']:
-        continue
       try:
         personalized_body = self.personalize(body, contact['email'], contact['token'])
 
