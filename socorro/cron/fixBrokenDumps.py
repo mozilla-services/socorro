@@ -63,12 +63,12 @@ def fix(configContext, logger, query, fixer):
 
 def get_last_run_date(config):
   try:
-    with open(config.persistentBrokenDumpPathname) as f:
+    with open(config.persistentBrokenDumpPathname, 'r') as f:
       return cPickle.load(f)
   except IOError:
     return datetime.now() - timedelta(days=config.daysIntoPast)
 
 def save_last_run_date(config, date):
-  with open(config.persistentBrokenDumpPathname) as f:
+  with open(config.persistentBrokenDumpPathname, 'w') as f:
     return cPickle.dump(date, f)
 
