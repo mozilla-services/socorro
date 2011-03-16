@@ -358,6 +358,11 @@ class TestTopCrashesByUrl:
     count = cursor.fetchone()[0]
     assert 38 ==  count, 'This is (just) a regression test. Did you change the data somehow? (%s)'%(count)
 
+    cursor.execute("delete from top_crashes_by_url; delete from top_crashes_by_url_signature")
+    self.connection.commit()
+    t = tcbu.TopCrashesByUrl(copy.copy(me.config))
+    t.processDateInterval(startDate = datetime.datetime(2008,1,4), endDate=datetime.datetime(2008,1,8))
+
     cursor.execute("SELECT COUNT(id) from top_crashes_by_url")
     self.connection.rollback()
     count = cursor.fetchone()[0]
@@ -368,6 +373,7 @@ class TestTopCrashesByUrl:
     count = cursor.fetchone()[0]
     assert 32 == count, 'This is (just) a regression test. Did you change the data somehow? (%s)'%(count)
 
+    cursor.execute("delete from top_crashes_by_url; delete from top_crashes_by_url_signature")
     self.connection.commit()
 
     t = tcbu.TopCrashesByUrl(copy.copy(me.config))
