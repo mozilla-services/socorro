@@ -27,7 +27,6 @@ logger = logging.getLogger('topCrashesByUrl')
 reportsTable = 'reports'
 resultTable = 'top_crashes_by_url'
 resultSignatureTable = 'top_crashes_by_url_signature'
-resultReportsTable =  'topcrashurlfactsreports'
 
 # a few other top-level 'constant' values
 dateColumn = 'date_processed' # in the reportsTable
@@ -46,15 +45,12 @@ class TopCrashesByUrl(object):
      = book-keeping columns: window_end (timestamp) and window_size (interval) which is 'nearly constant'
    - update correlation table holding facts table id and signatures
      = columns are top_crashes_by_url_id and signature
-   - update correlation table holding facts table id and uuid with user_comment
-     = columns are topcrashurlfacts_id (a historical name), uuid and comments
 
   Constructor takes a configContext, optional kwargs that override the context
   Required details for constructor are database dsn values
   Optional details for constructor are:
    - resultTable to change the name of the facts table
    - resultSignatureTable for the signature correlation table
-   - resultReportsTable for the reports correlation table
    - minimumHitsPerUrl: Do not record data for urls with count of hits < than this. Default 1
    - maximumUrls: Do not record data for more urls than this. Default 500
    - dateColumn: default 'date_processed' (in reports table)
@@ -84,7 +80,6 @@ class TopCrashesByUrl(object):
     configContext.setdefault('reportsTable',reportsTable)
     configContext.setdefault('resultTable',resultTable)
     configContext.setdefault('resultSignatureTable',resultSignatureTable)
-    configContext.setdefault('resultReportsTable',resultReportsTable)
     configContext.setdefault('minimumHitsPerUrl',defaultMinimumHitsPerUrl)
     configContext.setdefault('maximumUrls',defaultMaximumUrls)
     configContext.setdefault('truncateUrlLength',None)
@@ -181,8 +176,6 @@ class TopCrashesByUrl(object):
                       VALUES (%%(count)s,%%(urldimsId)s,%%(productdimsId)s,%%(osdimsId)s,%%(windowEnd)s,%%(windowSize)s)""" % (self.configContext)
     insertSigSql = """INSERT INTO %(resultSignatureTable)s (top_crashes_by_url_id,signature,count)
                       VALUES(%%s,%%s,%%s)""" % (self.configContext)
-    insertUuidSql = """INSERT INTO %(resultReportsTable)s (uuid,comments,topcrashurlfacts_id)
-                       VALUES (%%s,%%s,%%s)""" % (self.configContext)
     windowData= {
       'windowStart': windowStart,
       'windowEnd': windowStart + self.configContext.deltaWindow,
@@ -248,8 +241,6 @@ class TopCrashesByUrl(object):
       # update the two correlation tables
       stage = "inserting signature correlations for %s"%(str(aKey))
       cursor.executemany(insertSigSql,signatureCorrelationData)
-      stage = "inserting uuid correlations for %s"%(str(aKey))
-      cursor.executemany(insertUuidSql,uuidCommentCorrelationData)
       stage = "commiting updates for %s"%(str(aKey))
       self.connection.commit()
       logger.info("Committed data for %s crashes for period %s up to %s",insertCount,windowStart,windowData['windowEnd'])

@@ -1285,26 +1285,6 @@ class TopCrashByUrlSignatureTable(Table):
                                 );
                                 """)
 databaseDependenciesForSetup[TopCrashByUrlSignatureTable] = [TopCrashesByUrlTable]
-#=================================================================================================================
-class TopCrashUrlFactsReportsTable(Table):
-  """Define the table 'topcrashurlfactsreports'"""
-  #-----------------------------------------------------------------------------------------------------------------
-  def __init__ (self, logger, **kwargs):
-    super(TopCrashUrlFactsReportsTable, self).__init__(name='topcrashurlfactsreports', logger=logger,
-                                       creationSql="""
-                                          CREATE TABLE topcrashurlfactsreports (
-                                              id serial NOT NULL,
-                                              uuid character varying(50) NOT NULL,
-                                              comments TEXT,
-                                              topcrashurlfacts_id integer);
-                                          ALTER TABLE ONLY topcrashurlfactsreports
-                                              ADD CONSTRAINT topcrashurlfactsreports_pkey PRIMARY KEY (id);
-                                          CREATE INDEX topcrashurlfactsreports_topcrashurlfacts_id_key ON topcrashurlfactsreports USING btree (topcrashurlfacts_id);
-                                          ALTER TABLE ONLY topcrashurlfactsreports
-                                              ADD CONSTRAINT topcrashurlfactsreports_topcrashurlfacts_id_fkey FOREIGN KEY (topcrashurlfacts_id) REFERENCES top_crashes_by_url(id) ON DELETE CASCADE;
-
-                                          """)
-databaseDependenciesForSetup[TopCrashUrlFactsReportsTable] = [TopCrashesByUrlTable]
 
 #=================================================================================================================
 class TopCrashesBySignatureTable(Table):

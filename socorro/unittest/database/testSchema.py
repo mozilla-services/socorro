@@ -84,7 +84,6 @@ def setup_module():
     #schema.TCBySignatureConfigTable:[False, set(['tcbysignatureconfig', 'productdims', 'osdims','release_enum'])],
     #schema.TCByUrlConfigTable:[False,set(['tcbyurlconfig', 'productdims', 'osdims','release_enum'])],
     schema.TopCrashesBySignatureTable:[False,set(['top_crashes_by_signature','osdims','productdims', 'release_enum'])],
-    schema.TopCrashUrlFactsReportsTable:[False,set(['topcrashurlfactsreports', 'urldims','top_crashes_by_url', 'productdims', 'osdims','release_enum'])],
     schema.TopCrashesByUrlTable:[False,set(['urldims', 'top_crashes_by_url', 'productdims', 'osdims','release_enum'])],
     schema.TopCrashByUrlSignatureTable:[False, set(['top_crashes_by_url','top_crashes_by_url_signature','urldims', 'top_crashes_by_url', 'productdims', 'osdims','release_enum'])],
     # deprecated schema.TopCrashersTable:[False,set(['topcrashers'])],
