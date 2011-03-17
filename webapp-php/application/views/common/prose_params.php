@@ -21,7 +21,11 @@
                 'startswith' => 'starts with',
                 'simple'     => 'contains'
             ));
-            $type = $types[ $params['query_type'] ];
+            // default to simple
+            $type = 'simple';
+            if (in_array($params['query_type'], $types)) {
+                $type = $types[ $params['query_type'] ];
+            }
 
             $queries = (array(
                 'signature' => 'the crash signature',
