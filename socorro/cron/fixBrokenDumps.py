@@ -60,8 +60,7 @@ def fix(configContext, logger, query, fixer):
     except:
       socorro.lib.util.reportExceptionAndContinue(logger)
 
-  save_last_run_date(configContext, last_date_processed)
-  logger.debug('stored last_date_processed: %s' % last_date_processed)
+  return last_date_processed
 
 def get_last_run_date(config):
   try:
