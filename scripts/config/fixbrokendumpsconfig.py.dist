@@ -16,6 +16,7 @@ brokenFirefoxLinuxQuery = """
       AND os_name = 'Linux'
       AND date_processed > '%s'
       AND date_processed < (now() - INTERVAL '30 minutes')
+      ORDER BY date_processed
 """
 brokenFirefoxLinuxFixer = './minidump_hack-firefox_linux'
 
@@ -24,6 +25,7 @@ brokenFennecQuery = """
       AND version = '4.0b5'
       AND date_processed > '%s'
       AND date_processed < (now() - INTERVAL '30 minutes')
+      ORDER BY date_processed
 """
 brokenFennecFixer = './minidump_hack-fennec'
 
