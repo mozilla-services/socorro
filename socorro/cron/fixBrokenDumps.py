@@ -27,6 +27,7 @@ def fetchOoids(configContext, logger, query):
   rows = []
   try:
     before = time.time()
+    logger.debug('last_date_processed used for query: %s' % last_date_processed)
     cur.execute(query % last_date_processed)
     rows = cur.fetchall()
     conn.commit()
@@ -60,6 +61,7 @@ def fix(configContext, logger, query, fixer):
       socorro.lib.util.reportExceptionAndContinue(logger)
 
   save_last_run_date(configContext, last_date_processed)
+  logger.debug('stored last_date_processed: %s' % last_date_processed)
 
 def get_last_run_date(config):
   try:
