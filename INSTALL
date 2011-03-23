@@ -237,3 +237,8 @@ WSGIPythonPath /data/socorro/application:/data/socorro/thirdparty:/data/socorro/
 mkdir /var/log/httpd/{crash-stats,crash-reports,socorro-api}.example.com
 service httpd restart
 chkconfig httpd on
+
+# TODO set up htpasswd file /data/socorro/application/.htpasswd
+
+# refer to https://wiki.mozilla.org/Socorro/SocorroUI/Installation
+
