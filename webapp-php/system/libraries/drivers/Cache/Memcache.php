@@ -65,7 +65,7 @@ class Cache_Memcache_Driver implements Cache_Driver {
 			return $this->backend->flush();
 
 		if ($tag == FALSE)
-			return $this->backend->delete($id);
+			return $this->backend->delete($id, 0);
 
 		return TRUE;
 	}
