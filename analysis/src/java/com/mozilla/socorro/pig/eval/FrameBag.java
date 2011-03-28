@@ -14,7 +14,7 @@
  * The Original Code is Mozilla Socorro.
  *
  * The Initial Developer of the Original Code is the Mozilla Foundation.
- * Portions created by the Initial Developer are Copyright (C) 2010
+ * Portions created by the Initial Developer are Copyright (C) 2011
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
@@ -38,6 +38,7 @@
 package com.mozilla.socorro.pig.eval;
 
 import java.io.IOException;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.pig.EvalFunc;
@@ -46,10 +47,9 @@ import org.apache.pig.data.DataBag;
 import org.apache.pig.data.Tuple;
 import org.apache.pig.data.TupleFactory;
 
-public class ModuleBag extends EvalFunc<DataBag> {
+public class FrameBag extends EvalFunc<DataBag> {
 	
-	private static final String MODULE_PATTERN = "Module|";
-	
+	private static final Pattern framePattern = Pattern.compile("^([0-9]+)\\|([0-9]+)");
 	private static final Pattern newlinePattern = Pattern.compile("\n");
 	private static final Pattern pipePattern = Pattern.compile("\\|");
 	private static final BagFactory bagFactory = BagFactory.getInstance();
@@ -63,12 +63,13 @@ public class ModuleBag extends EvalFunc<DataBag> {
 		reporter.progress();
 		DataBag db = bagFactory.newDefaultBag();
 		for (String dumpline : newlinePattern.split((String)input.get(0))) {
-			if (dumpline.startsWith(MODULE_PATTERN)) {
+			Matcher m = framePattern.matcher(dumpline);
+			if (m.find()) {
 				// TODO: validate??
-				// module_str, libname, version, pdb, checksum, addrstart, addrend, unknown
+				// frame_group, frame_idx, module, method, src_file, number, hex
 				Tuple t = tupleFactory.newTuple();
 				String[] splits = pipePattern.split(dumpline, -1);
-				for (int i=1; i < splits.length; i++) {
+				for (int i=0; i < splits.length; i++) {
 					t.append(splits[i]);
 				}
 				if (t.size() > 0) {
@@ -79,4 +80,5 @@ public class ModuleBag extends EvalFunc<DataBag> {
 
 		return db;
 	}
+
 }
