@@ -328,7 +328,9 @@ class Common_Model extends Model {
                     $or[] = 'reports.os_name = ' . $this->db->escape($platform->os_name);
                 }
             }
-            $where[] = '(' . join(" OR ", $or) . ')';
+            if ($or) {
+                $where[] = '(' . join(" OR ", $or) . ')';
+            }
         }
 
         if (isset($params['reason']) && trim($params['reason']) != '') {

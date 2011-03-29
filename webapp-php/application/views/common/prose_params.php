@@ -22,7 +22,7 @@
                 'simple'     => 'contains'
             ));
             // default to simple
-            $type = 'simple';
+            $type = 'contains';
             if (in_array($params['query_type'], $types)) {
                 $type = $types[ $params['query_type'] ];
             }
@@ -30,7 +30,11 @@
             $queries = (array(
                 'signature' => 'the crash signature',
             ));
-            $query = $queries[ $params['query_search'] ];
+            // default to signature
+            $query = 'the crash signature';
+            if (in_array($params['query_search'], $queries)) {
+                $query = $queries[ $params['query_search'] ];
+            }
 
             $msg .= ", where {$query} {$type} '{$params['query']}'";
 
@@ -58,7 +62,12 @@
                                          'contains' => ' that contains ',
                                          'startswith' => ' that starts with ',
                                         );
-                    $msg .= " " . $params['plugin_field'] . $plugin_copy[$params['plugin_query_type']] . $params['plugin_query'];
+                    // default to contains
+                    $plugin_query_type = 'that contains';
+                    if (in_array($params['plugin_query_type'], $plugin_copy)) {
+                        $plugin_query_type = $plugin_copy[ $params['plugin_query_type'] ];
+                    }
+                    $msg .= " " . $params['plugin_field'] . $plugin_query_type . $params['plugin_query'];
                 }
             }
         }
