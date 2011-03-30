@@ -10,4 +10,4 @@ module_bag = FOREACH product_filtered GENERATE com.mozilla.socorro.pig.eval.Modu
 filtered_modules = FILTER module_bag BY modules is not null AND modules.f1 is not null AND modules.f3 is not null AND modules.f4 is not null;
 flat_modules = FOREACH filtered_modules GENERATE FLATTEN(modules);
 modules_list = FOREACH flat_modules GENERATE f1, f3, f4;
-STORE modules_list INTO '/user/xstevens/$start_date-$end_date-module-list' USING PigStorage(',');
+STORE modules_list INTO '$start_date-$end_date-module-list' USING PigStorage(',');
