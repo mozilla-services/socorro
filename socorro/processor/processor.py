@@ -106,7 +106,8 @@ class Processor(object):
     for x in Processor._config_requirements:
       assert x in config, '%s missing from configuration' % x
 
-    self.crashStorePool = cstore.CrashStoragePool(config)
+    self.crashStorePool = cstore.CrashStoragePool(config,
+                                                  storageClass=config.hbaseStorageClass)
 
     self.sdb = sdb
     self.os = os

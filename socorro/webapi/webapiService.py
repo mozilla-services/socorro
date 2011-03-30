@@ -26,7 +26,8 @@ class JsonServiceBase (object):
     try:
       self.context = config
       self.database = db.Database(config)
-      self.crashStoragePool = cs.CrashStoragePool(config)
+      self.crashStoragePool = cs.CrashStoragePool(config,
+                                                  storageClass=config.hbaseStorageClass)
     except (AttributeError, KeyError):
       util.reportExceptionAndContinue(logger)
 

@@ -264,13 +264,30 @@ class CrashStorageSystem(object):
 
 #=================================================================================================================
 class CrashStorageSystemForHBase(CrashStorageSystem):
-  def __init__ (self, config, hbaseClient=hbc, jsonDumpStorage=jds):
+  def __init__ (self, config, configPrefix='', hbaseClient=hbc, jsonDumpStorage=jds):
     super(CrashStorageSystemForHBase, self).__init__(config)
-    assert "hbaseHost" in config, "hbaseHost is missing from the configuration"
-    assert "hbasePort" in config, "hbasePort is missing from the configuration"
-    assert "hbaseTimeout" in config, "hbaseTimeout is missing from the configuration"
     self.logger.info('connecting to hbase')
-    self.hbaseConnection = hbaseClient.HBaseConnectionForCrashReports(config.hbaseHost, config.hbasePort, config.hbaseTimeout, logger=self.logger)
+    if not configPrefix:
+      assert "hbaseHost" in config, "hbaseHost is missing from the configuration"
+      assert "hbasePort" in config, "hbasePort is missing from the configuration"
+      assert "hbaseTimeout" in config, "hbaseTimeout is missing from the configuration"
+      self.hbaseConnection = hbaseClient.HBaseConnectionForCrashReports(  \
+                config.hbaseHost,
+                config.hbasePort,
+                config.hbaseTimeout,
+                logger=self.logger)
+    else:
+      hbaseHost = '%s%s' % (configPrefix, 'HbaseHost')
+      assert hbaseHost in config, "%s is missing from the configuration" % hbaseHost
+      hbasePort = '%s%s' % (configPrefix, 'HbasePort')
+      assert hbasePort in config, "%s is missing from the configuration" % hbasePort
+      hbaseTimeout = '%s%s' % (configPrefix, 'HbaseTimeout')
+      assert hbaseTimeout in config, "%s is missing from the configuration" % hbaseTimeout
+      self.hbaseConnection = hbaseClient.HBaseConnectionForCrashReports(  \
+                config[hbaseHost],
+                config[hbasePort],
+                config[hbaseTimeout],
+                logger=self.logger)
     self.exceptionsEligibleForRetry = self.hbaseConnection.hbaseThriftExceptions
 
   #-----------------------------------------------------------------------------------------------------------------
@@ -335,6 +352,39 @@ class CrashStorageSystemForHBase(CrashStorageSystem):
   #-----------------------------------------------------------------------------------------------------------------
   def newUuids(self):
     return self.hbaseConnection.iterator_for_all_legacy_to_be_processed()
+
+#=================================================================================================================
+class DualHbaseCrashStorageSystem(CrashStorageSystemForHBase):
+  def __init__ (self, config, hbaseClient=hbc, jsonDumpStorage=jds):
+    super(DualHbaseCrashStorageSystem, self).__init__(config,
+                                                      hbaseClient=hbaseClient,
+                                                      jsonDumpStorage=jsonDumpStorage)
+    self.fallbackHBase = CrashStorageSystemForHBase(config,
+                                                    configPrefix='secondary',
+                                                    hbaseClient=hbaseClient,
+                                                    jsonDumpStorage=jsonDumpStorage)
+
+  #-----------------------------------------------------------------------------------------------------------------
+  def get_meta (self, uuid):
+    try:
+      return self.hbaseConnection.get_json(uuid, number_of_retries=2)
+    except hbc.OoidNotFoundException:
+      return self.fallbackHBase.get_meta(uuid)
+
+  #-----------------------------------------------------------------------------------------------------------------
+  def get_raw_dump (self, uuid):
+    try:
+      return self.hbaseConnection.get_dump(uuid, number_of_retries=2)
+    except hbc.OoidNotFoundException:
+      return self.fallbackHBase.get_raw_dump(uuid)
+
+  #-----------------------------------------------------------------------------------------------------------------
+  def get_processed (self, uuid):
+    try:
+      return self.hbaseConnection.get_processed_json(uuid, number_of_retries=2)
+    except hbc.OoidNotFoundException:
+      return self.fallbackHBase.get_processed(uuid)
+
 
 #=================================================================================================================
 class CollectorCrashStorageSystemForHBase(CrashStorageSystemForHBase):

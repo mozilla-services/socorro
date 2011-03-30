@@ -468,17 +468,24 @@ def booleanConverter(inputString):
     return inputString.lower() in ("true", "t", "1")
   return inputString
 
-#------------------------------------------------------------------------------------------
-def classConverter(inputString):
-  """ a conversion that will import a module and class name
-  """
-  parts = inputString.split('.')
-  packageName = parts[0]
-  package = __import__(packageName, globals(), locals(), [])
-  object = package
-  for name in parts[1:]:
-    object = getattr(object, name)
-  return object
+#-------------------------------------------------------------------------------
+def classConverter(input_str):
+    """ a conversion that will import a module and class name
+    """
+    parts = input_str.split('.')
+    try:
+        # first try as a complete module
+        package = __import__(input_str)
+    except ImportError, x:
+        if len(parts) == 1:
+            # maybe this is a builtin
+            return eval(input_str)
+        # it must be a class from a module
+        package = __import__('.'.join(parts[:-1]), globals(), locals(), [])
+    obj = package
+    for name in parts[1:]:
+        obj = getattr(obj, name)
+    return obj
 
 
 if __name__ == "__main__":

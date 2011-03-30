@@ -3,6 +3,7 @@ import socorro.lib.util as sutil
 import socorro.processor.processor as proc
 import socorro.database.database as sdb
 import socorro.storage.hbaseClient as hbc
+import socorro.storage.crashstorage as cstore
 import socorro.lib.datetimeutil as sdt
 import socorro.database.schema as sch
 
@@ -53,6 +54,7 @@ def createExecutionContext ():
                             "signaturesWithLineNumbersRegEx": ".*",
                             "hbaseHost": "hbhost",
                             "hbasePort": "hbport",
+                            "hbaseStorageClass": cstore.CrashStorageSystemForHBase,
                             "temporaryFileSystemStoragePath": "/tmp",})
     c.config = config
 
@@ -61,7 +63,8 @@ def createExecutionContext ():
 
     c.fakeCrashStoragePool = exp.DummyObjectWithExpectations()
     c.fakeCrashStorageModule = exp.DummyObjectWithExpectations()
-    c.fakeCrashStorageModule.expect('CrashStoragePool', (config,), {},
+    c.fakeCrashStorageModule.expect('CrashStoragePool', (config,),
+                                    {'storageClass': cstore.CrashStorageSystemForHBase},
                                     c.fakeCrashStoragePool)
 
     c.fakeConnection = exp.DummyObjectWithExpectations()

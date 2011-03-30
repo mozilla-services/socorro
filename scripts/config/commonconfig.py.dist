@@ -39,6 +39,12 @@ dumpFileSuffix.default = '.dump'
 #---------------------------------------------------------------------------
 # HBase storage system
 
+hbaseStorageClass = cm.Option()
+hbaseStorageClass.doc = 'the Socorro classname for HBase storage'
+hbaseStorageClass.default = 'socorro.storage.crashStorage.CrashStorageSystemForHBase'
+#hbaseStorageClass.default = 'socorro.storage.crashStorage.DualHbaseCrashStorageSystem'
+hbaseStorageClass.fromStringConverter = cm.classConverter
+
 hbaseHost = cm.Option()
 hbaseHost.doc = 'Hostname for hbase hadoop cluster. May be a VIP or load balancer'
 hbaseHost.default = 'localhost'
@@ -50,6 +56,18 @@ hbasePort.default = 9090
 hbaseTimeout = cm.Option()
 hbaseTimeout.doc = 'timeout in milliseconds for an HBase connection'
 hbaseTimeout.default = 5000
+
+secondaryHbaseHost = cm.Option()
+secondaryHbaseHost.doc = 'Hostname for hbase hadoop cluster. May be a VIP or load balancer'
+secondaryHbaseHost.default = 'localhost'
+
+secondaryHbasePort = cm.Option()
+secondaryHbasePort.doc = 'hbase port number'
+secondaryHbasePort.default = 9090
+
+secondaryHbaseTimeout = cm.Option()
+secondaryHbaseTimeout.doc = 'timeout in milliseconds for an HBase connection'
+secondaryHbaseTimeout.default = 5000
 
 #---------------------------------------------------------------------------
 # misc

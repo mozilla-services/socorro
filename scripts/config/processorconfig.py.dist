@@ -16,9 +16,15 @@ from config.commonconfig import dumpFileSuffix
 
 #---------------------------------------------------------------------------
 # HBase storage system
+from config.commonconfig import hbaseStorageClass
+
 from config.commonconfig import hbaseHost
 from config.commonconfig import hbasePort
 from config.commonconfig import hbaseTimeout
+
+from config.commonconfig import secondaryHbaseHost
+from config.commonconfig import secondaryHbasePort
+from config.commonconfig import secondaryHbaseTimeout
 
 temporaryFileSystemStoragePath = cm.Option()
 temporaryFileSystemStoragePath.doc = 'a local filesystem path where processor can write dumps temporarily for processing'
@@ -94,7 +100,7 @@ batchJobLimit.default = 10000
 signatureSentinels = cm.Option()
 signatureSentinels.doc = 'a list of frame signatures that should always be considered top of the stack if present in the stack'
 signatureSentinels.default = ['_purecall',
-                              ('mozilla::ipc::RPCChannel::Call',
+                              ('mozilla::ipc::RPCChannel::Call(IPC::Message*, IPC::Message*),
                                   lambda x: 'CrashReporter::CreatePairedMinidumps(void*, unsigned long, nsAString_internal*, nsILocalFile**, nsILocalFile**)' in x)]
 
 irrelevantSignatureRegEx = cm.Option()

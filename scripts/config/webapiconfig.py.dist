@@ -9,9 +9,15 @@ from config.commonconfig import databasePassword
 
 #---------------------------------------------------------------------------
 # HBase storage system
+from config.commonconfig import hbaseStorageClass
+
 from config.commonconfig import hbaseHost
 from config.commonconfig import hbasePort
 from config.commonconfig import hbaseTimeout
+
+from config.commonconfig import secondaryHbaseHost
+from config.commonconfig import secondaryHbasePort
+from config.commonconfig import secondaryHbaseTimeout
 
 from config.smtpconfig import smtpHostname
 from config.smtpconfig import smtpPort

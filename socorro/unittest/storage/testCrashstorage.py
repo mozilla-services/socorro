@@ -185,7 +185,9 @@ def testCrashStorageSystemForHBase___init__():
   fakeJsonDumpStore = exp.DummyObjectWithExpectations('fakeJsonDumpStore')
   fakeJsonDumpModule = exp.DummyObjectWithExpectations('fakeJsonDumpModule')
   fakeJsonDumpModule.expect('JsonDumpStorage', (), j, fakeJsonDumpStore, None)
-  css = cstore.CrashStorageSystemForHBase(d, fakeHbaseModule, fakeJsonDumpModule)
+  css = cstore.CrashStorageSystemForHBase(d, configPrefix='',
+                                          hbaseClient=fakeHbaseModule,
+                                          jsonDumpStorage=fakeJsonDumpModule)
   assert css.hbaseConnection == fakeHbaseConnection
 
 def testCrashStorageSystemForHBase_save_1():
@@ -221,7 +223,9 @@ def testCrashStorageSystemForHBase_save_1():
   fakeJsonDumpModule = exp.DummyObjectWithExpectations('fakeJsonDumpModule')
   fakeJsonDumpModule.expect('JsonDumpStorage', (), j, fakeJsonDumpStore, None)
 
-  css = cstore.CrashStorageSystemForHBase(d, fakeHbaseModule, fakeJsonDumpModule)
+  css = cstore.CrashStorageSystemForHBase(d, configPrefix='',
+                                          hbaseClient=fakeHbaseModule,
+                                          jsonDumpStorage=fakeJsonDumpModule)
   expectedResult = cstore.CrashStorageSystem.OK
   result = css.save_raw('uuid', jdict, expectedDumpResult, currentTimestamp)
   assert result == expectedResult, 'expected %s but got %s' % (expectedResult, result)
@@ -335,4 +339,48 @@ def testCrashStorageSystemForNFS__init__():
   assert css.standardFileSystemStorage.root == d.storageRoot
   assert css.deferredFileSystemStorage.root == d.deferredStorageRoot
   assert css.hostname == os.uname()[1]
+
+def testCrashStorageForDualHbaseCrashStorageSystem01():
+  d = util.DotDict()
+  j = util.DotDict()
+  d.hbaseHost = 'fred'
+  d.secondaryHbaseHost = 'barney'
+  d.hbasePort = 'ethel'
+  d.secondaryHbasePort = 'betty'
+  d.hbaseTimeout = 3000
+  d.secondaryHbaseTimeout = 10000
+  j.root = d.hbaseFallbackFS = '.'
+  d.throttleConditions = []
+  j.maxDirectoryEntries = d.hbaseFallbackDumpDirCount = 1000000
+  j.jsonSuffix = d.jsonFileSuffix = '.json'
+  j.dumpSuffix = d.dumpFileSuffix = '.dump'
+  j.dumpGID = d.hbaseFallbackdumpGID = 666
+  j.dumpPermissions = d.hbaseFallbackDumpPermissions = 660
+  j.dirPermissions = d.hbaseFallbackDirPermissions = 770
+  j.logger = d.logger = util.SilentFakeLogger()
+  fakeHbaseConnection1 = exp.DummyObjectWithExpectations('fakeHbaseConnection1')
+  fakeHbaseConnection2 = exp.DummyObjectWithExpectations('fakeHbaseConnection2')
+  fakeHbaseConnection1.expect('hbaseThriftExceptions', (), {}, [], None)
+  fakeHbaseConnection2.expect('hbaseThriftExceptions', (), {}, [], None)
+  fakeHbaseConnection1.expect('get_json', ('fakeOoid1',), {'number_of_retries':2}, 'fake_json1')
+  import socorro.storage.hbaseClient as hbc
+  fakeHbaseConnection1.expect('get_json', ('fakeOoid2',), {'number_of_retries':2}, None, hbc.OoidNotFoundException())
+  fakeHbaseConnection2.expect('get_json', ('fakeOoid2',), {'number_of_retries':2}, 'fake_json2')
+  fakeHbaseModule = exp.DummyObjectWithExpectations('fakeHbaseModule')
+  fakeHbaseModule.expect('HBaseConnectionForCrashReports', (d.hbaseHost, d.hbasePort, d.hbaseTimeout), {"logger":d.logger}, fakeHbaseConnection1, None)
+  fakeHbaseModule.expect('HBaseConnectionForCrashReports', (d.secondaryHbaseHost, d.secondaryHbasePort, d.secondaryHbaseTimeout), {"logger":d.logger}, fakeHbaseConnection2, None)
+  #fakeHbaseModule.expect('OoidNotFoundException', (), {}, hbc.OoidNotFoundException)
+  fakeJsonDumpStore = exp.DummyObjectWithExpectations('fakeJsonDumpStore')
+  fakeJsonDumpModule = exp.DummyObjectWithExpectations('fakeJsonDumpModule')
+  fakeJsonDumpModule.expect('JsonDumpStorage', (), j, fakeJsonDumpStore, None)
+  fakeJsonDumpModule.expect('JsonDumpStorage', (), j, fakeJsonDumpStore, None)
+  css = cstore.DualHbaseCrashStorageSystem(d,
+                                           hbaseClient=fakeHbaseModule,
+                                           jsonDumpStorage=fakeJsonDumpModule)
+  assert css.hbaseConnection == fakeHbaseConnection1
+  assert css.fallbackHBase.hbaseConnection == fakeHbaseConnection2
+  result = css.get_meta('fakeOoid1')
+  assert result == 'fake_json1'
+  result = css.get_meta('fakeOoid2')
+  assert result == 'fake_json2'
 
