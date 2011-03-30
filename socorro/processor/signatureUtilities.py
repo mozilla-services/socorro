@@ -70,11 +70,17 @@ class SignatureUtilities (object):
         for aSentinel in self.config.signatureSentinels:
             if type(aSentinel) == tuple:
                 aSentinel, conditionFn = aSentinel
+                #self.config.logger.debug('trying %s in %s', aSentinel, signatureList)
+                #self.config.logger.debug('sholud return %s', 'CrashReporter::CreatePairedMinidumps(void*, unsigned long, nsAString_internal*, nsILocalFile**, nsILocalFile**)' in signatureList)
+                #self.config.logger.debug('does return: %s', conditionFn(signatureList))
                 if not conditionFn(signatureList):
+                    #self.config.logger.debug("it wasn't in there")
                     continue
             try:
+                #self.config.logger.debug('sentinel %s at %d in %s', aSentinel, signatureList.index(aSentinel), signatureList)
                 sentinelLocations.append(signatureList.index(aSentinel))
             except ValueError:
+                #self.config.logger.debug('Value error in trying %s in %s', aSentinel, signatureList)
                 pass
         if sentinelLocations:
             signatureList = signatureList[min(sentinelLocations):]
