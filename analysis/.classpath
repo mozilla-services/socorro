@@ -29,11 +29,10 @@
 	<classpathentry kind="lib" path="lib/jetty-io-7.1.6.v20100715.jar"/>
 	<classpathentry kind="lib" path="lib/jetty-security-7.1.6.v20100715.jar"/>
 	<classpathentry kind="lib" path="lib/mimepull-1.3.jar"/>
-	<classpathentry kind="lib" path="lib/pig-0.7.0-core.jar"/>
 	<classpathentry kind="lib" path="lib/akela-0.1.jar"/>
 	<classpathentry kind="lib" path="lib/hadoop-lzo-0.4.8.jar"/>
-	<classpathentry kind="lib" path="lib/hadoop-0.20.2+737-core.jar"/>
-	<classpathentry kind="lib" path="lib/hbase-0.89.20100924+28-1485-3064.jar"/>
-	<classpathentry kind="lib" path="lib/zookeeper-3.3.1+10.jar"/>
+	<classpathentry kind="lib" path="lib/hadoop-core-0.20.2-CDH3B4.jar"/>
+	<classpathentry kind="lib" path="lib/hbase-0.90.1-CDH3B4.jar"/>
+	<classpathentry kind="lib" path="lib/pig-0.8.0-CDH3B4-core.jar"/>
 	<classpathentry kind="output" path="build/classes"/>
 </classpath>

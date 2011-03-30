@@ -66,7 +66,7 @@ public class FrameBag extends EvalFunc<DataBag> {
 			Matcher m = framePattern.matcher(dumpline);
 			if (m.find()) {
 				// TODO: validate??
-				// frame_group, frame_idx, module, method, src_file, number, hex
+				// frame_group, frame_idx, module, method, src_file, number??, hex??
 				Tuple t = tupleFactory.newTuple();
 				String[] splits = pipePattern.split(dumpline, -1);
 				for (int i=0; i < splits.length; i++) {
