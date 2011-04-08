@@ -41,7 +41,7 @@
 
 	<div class="version-nav">
 
-		<input type="hidden" id="url_base" name="url_base" value="<?php if (isset($url_nav)) out::H($url_nav); else out::H(url::site()); ?>" />
+		<input type="hidden" id="url_base" name="url_base" value="<?php if (isset($url_nav)) out::H($url_nav); else if ($chosen_version['product']) out::H('/products/' . $chosen_version['product']); else out::H(url::site()); ?>" />
 		<input type="hidden" id="url_site" name="url_site" value="<?php out::H(url::site()); ?>" />
 
 		<ul class="filter">
