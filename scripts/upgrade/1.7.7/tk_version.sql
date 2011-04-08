@@ -1,4 +1,4 @@
-CREATE LANGUAGE plperl;
+CREATE OR REPLACE LANGUAGE plperl;
 
 BEGIN;
 
@@ -48,12 +48,4 @@ CREATE OR REPLACE FUNCTION tokenize_version(
     return { ext => $extra, map { $cols[$_] => $tokens[$_] } 0..11 }
 $$;
 
-SELECT * FROM tokenize_version('3');
-SELECT * FROM tokenize_version('3.6');
-SELECT * FROM tokenize_version('3.6.10pre');
-SELECT * FROM tokenize_version('3.6.10plugin1');
-SELECT * FROM tokenize_version('4pre.14a');
-SELECT * FROM tokenize_version('1.3b.4a4bscone.4.23.34.bbq.wtf');
-SELECT * FROM tokenize_version('0.0.0');
-
-ROLLBACK;
+COMMIT;

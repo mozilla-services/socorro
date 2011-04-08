@@ -1,5 +1,10 @@
 
--- install citext in the database
+-- install citext in the database first!
+
+\set ON_ERROR_STOP true
+SET work_mem = '128MB';
+SET maintenance_work_mem = '256MB';
+SET temp_buffers = '128MB';
 
 begin;
 lock table productdims;
@@ -20,9 +25,12 @@ create view performance_check_1 as
   GROUP BY productdims.product, top_crashes_by_signature.signature
   ORDER BY count(*)
  LIMIT 50;
+alter view performance_check_1 owner to monitoring;
 create view branches as
  SELECT productdims.product, productdims.version, productdims.branch
    FROM productdims;
+alter view branches owner to breakpad_rw;
+grant select on branches to breakpad;
 commit;
 
 begin;
@@ -33,6 +41,8 @@ alter table builds alter column version type citext;
 alter table builds alter column platform type citext;
 create unique index builds_key on builds (product, version, platform, buildid);
 commit;
+
+BEGIN;
 
 create table productdims_version_sort (
 	id int not null unique,
@@ -199,3 +209,5 @@ EXECUTE PROCEDURE version_sort_update_trigger_before();
 CREATE TRIGGER version_sort_update_trigger_after AFTER UPDATE
 ON productdims_version_sort FOR EACH ROW 
 EXECUTE PROCEDURE version_sort_update_trigger_after();
+
+COMMIT;

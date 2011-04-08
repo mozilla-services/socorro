@@ -1,7 +1,7 @@
 
-\set ON_ERROR_STOP true
-set work_mem = '1GB';
-set maintenance_work_mem = '1GB';
+\set ON_ERROR_STOP
+set work_mem = '256MB';
+set maintenance_work_mem = '256MB';
 
 begin;
 
@@ -9,7 +9,7 @@ create table signature_build
 as select signature, null::int as productdims_id, product::citext as product, version::citext as version, os_name::citext as os_name, build, min(date_processed) as first_report
 from reports
 where signature IS NOT NULL
-	and date_processed BETWEEN '2011-01-01' AND '2011-04-01'
+	and date_processed BETWEEN '2011-03-01' AND '2011-04-01'
 group by signature, product::citext, version::citext, os_name::citext, build
 order by signature, product, version, os_name, build;
 
@@ -48,7 +48,7 @@ from signature_build sbup
 		and sbup.productdims_id = tcbs.productdims_id
 	join osdims ON tcbs.osdims_id = osdims.id
 where sbup.os_name = osdims.os_name
-	and tcbs.window_end BETWEEN '2011-01-01' AND '2011-04-01'
+	and tcbs.window_end BETWEEN '2011-03-01' AND '2011-04-01'
 group by sbup.signature, sbup.productdims_id, osdims.id;
 
 commit;

@@ -1,6 +1,13 @@
 -- create table for possible duplicates
 -- not partitioned, for now
 
+\set ON_ERROR_STOP true
+SET work_mem = '128MB';
+SET maintenance_work_mem = '256MB';
+SET temp_buffers = '128MB';
+
+BEGIN;
+
 create table reports_duplicates (
 	uuid text not null primary key,
 	duplicate_of text not null,
@@ -127,3 +134,5 @@ where reports_duplicates.uuid IS NULL;
 -- done return number of dups found and exit
 RETURN new_dups;
 end;$f$;
+
+COMMIT;

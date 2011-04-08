@@ -1,5 +1,9 @@
 -- one-time function to backfill possible dups for all history
 
+\set ON_ERROR_STOP true
+
+begin;
+
 create or replace function backfill_all_dups (
 	start_date timestamp, end_date timestamp )
 returns boolean
@@ -126,6 +130,6 @@ RETURN new_dups;
 end;$f$;
 
 
-
+commit;
 	
 
