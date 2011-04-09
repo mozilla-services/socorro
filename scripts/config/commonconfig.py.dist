@@ -41,8 +41,8 @@ dumpFileSuffix.default = '.dump'
 
 hbaseStorageClass = cm.Option()
 hbaseStorageClass.doc = 'the Socorro classname for HBase storage'
-hbaseStorageClass.default = 'socorro.storage.crashStorage.CrashStorageSystemForHBase'
-#hbaseStorageClass.default = 'socorro.storage.crashStorage.DualHbaseCrashStorageSystem'
+hbaseStorageClass.default = 'socorro.storage.crashstorage.CrashStorageSystemForHBase'
+#hbaseStorageClass.default = 'socorro.storage.crashstorage.DualHbaseCrashStorageSystem'
 hbaseStorageClass.fromStringConverter = cm.classConverter
 
 hbaseHost = cm.Option()
