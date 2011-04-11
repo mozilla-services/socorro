@@ -24,9 +24,9 @@ class EmailCampaignVolume(webapi.JsonServiceBase):
     self.database = db.Database(configContext)
 
   #-----------------------------------------------------------------------------------------------------------------
-  # curl http://localhost:8085/201009/email/volume/p/Firefox/v/4.0b6/sig/js_FinishSharingTitle/start/2010-06-05/end/2010-06-13
-  "/201009/email/volume/p/{product}/v/{versions}/sig/{signature}/start/{start_date}/end/{end_date}"
-  uri = '/201009/email/volume/p/(.*)/v/(.*)/sig/(.*)/start/(.*)/end/(.*)'
+  # curl http://localhost:8085/201103/emailcampaigns/volume/p/Firefox/v/4.0b6/sig/js_FinishSharingTitle/start/2010-06-05/end/2010-06-13
+  "/201103/emailcampaigns/volume/p/{product}/v/{versions}/sig/{signature}/start/{start_date}/end/{end_date}"
+  uri = '/201103/emailcampaigns/volume/p/(.*)/v/(.*)/sig/(.*)/start/(.*)/end/(.*)'
 
   #-----------------------------------------------------------------------------------------------------------------
   def get(self, *args):

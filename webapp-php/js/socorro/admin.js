@@ -51,4 +51,16 @@ $(document).ready(function(){
     $('input[name=email_start_date][type=text], input[name=email_end_date][type=text]').datePicker({
         startDate: '01/01/2008',
     });
+    $('input[name=submit][type=submit][value="OK, Send Emails"]').click(function(){
+      postData = {token: $('input[name=token]').val(), 
+                  campaign_id: $('input[name=campaign_id]').val(), 
+                  submit: 'start'}
+      $.post('/admin/send_email', postData);
+    });
+    $('input[name=submit][type=submit][value="STOP Sending Emails"]').click(function(){
+      postData = {token: $('input[name=token]').val(), 
+                  campaign_id: $('input[name=campaign_id]').val(), 
+                  submit: 'stop'}
+      $.post('/admin/send_email', postData);
+    });
 });

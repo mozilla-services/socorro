@@ -20,9 +20,9 @@ class EmailCampaign(webapi.JsonServiceBase):
     self.database = db.Database(configContext)
 
   #-----------------------------------------------------------------------------------------------------------------
-  # curl http://localhost:8085/201009/email/campaign/1
-  "/201009/email/campaign/{id}"
-  uri = '/201009/email/campaign/(.*)'
+  # curl http://localhost:8085/201103/emailcampaigns/campaign/1
+  "/201103/emailcampaigns/campaign/{id}"
+  uri = '/201103/emailcampaigns/campaign/(.*)'
 
   #-----------------------------------------------------------------------------------------------------------------
   def get(self, *args):
@@ -33,17 +33,25 @@ class EmailCampaign(webapi.JsonServiceBase):
     try:
       cursor = connection.cursor()
       campaign = None
+      counts = None
       cursor.execute("""SELECT id, product, versions, signature,
                                subject, body, start_date, end_date,
-                               email_count, author, date_created   
+                               email_count, author, date_created, status
                         FROM email_campaigns WHERE id = %s """, [id])
       rs = cursor.fetchone()
       if rs:
-        id, product, versions, signature, subject, body, start_date, end_date, email_count, author, date_created = rs
+        id, product, versions, signature, subject, body, start_date, end_date, email_count, author, date_created, status = rs
         campaign = {'id': id, 'product': product, 'versions': versions,
                     'signature': signature, 'subject': subject, 'body': body,
                     'start_date': start_date.isoformat(), 'end_date': end_date.isoformat(),
-                    'email_count': email_count, 'author': author, 'date_created': date_created.isoformat()}
-      return {'campaign': campaign}
+                    'email_count': email_count, 'author': author, 'date_created': date_created.isoformat(), 'status': status, 'send': True}
+      
+      cursor.execute("""SELECT count(status), status FROM email_campaigns_contacts 
+                        WHERE email_campaigns_id = %s
+                        GROUP BY status""", [id])
+      counts = cursor.fetchall()
+
+      return {'campaign': campaign, 'counts': counts}
     finally:
       connection.close()
+

@@ -40,10 +40,11 @@ import socorro.services.emailCampaignCreate as emailcreate
 import socorro.services.emailCampaigns as emaillist
 import socorro.services.emailCampaignVolume as emailvolume
 import socorro.services.emailSubscription as emailsub
+import socorro.services.emailSender as emailsend
 
 servicesList = cm.Option()
 servicesList.doc = 'a python list of classes to offer as services'
-servicesList.default = [tcbst.TopCrashBySignatureTrends, sighist.SignatureHistory, adubd.AduByDay, adubd.AduByDay200912, adudetails.AduByDayDetails, crash.GetCrash, emailcampaign.EmailCampaign, emailcreate.EmailCampaignCreate, emaillist.EmailCampaigns, emailvolume.EmailCampaignVolume, emailsub.EmailSubscription]
+servicesList.default = [tcbst.TopCrashBySignatureTrends, sighist.SignatureHistory, adubd.AduByDay, adubd.AduByDay200912, adudetails.AduByDayDetails, crash.GetCrash, emailcampaign.EmailCampaign, emailcreate.EmailCampaignCreate, emaillist.EmailCampaigns, emailvolume.EmailCampaignVolume, emailsub.EmailSubscription, emailsend.EmailSender]
 
 #---------------------------------------------------------------------------
 # Logging

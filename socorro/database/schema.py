@@ -1601,6 +1601,7 @@ class EmailCampaignsTable(Table):
                                                 end_date timestamp without time zone NOT NULL,
                                                 email_count INTEGER DEFAULT 0,
                                                 author TEXT NOT NULL,
+                                                status TEXT NOT NULL DEFAULT 'stopped',
                                                 date_created timestamp without time zone NOT NULL DEFAULT now());
                                             CREATE INDEX email_campaigns_product_signature_key ON email_campaigns (product, signature);
                                         """)
@@ -1647,6 +1648,7 @@ databaseDependenciesForSetup[EmailContactsTable] = []
 class EmailCampaignsContactsTable(Table):
   """Define the table 'email_campaigns_contacts'
      Notes: Mapping table many to many
+            Tracks status of emails to-be-sent
   """
   #-----------------------------------------------------------------------------------------------------------------
   def __init__ (self, logger, **kwargs):
@@ -1655,10 +1657,12 @@ class EmailCampaignsContactsTable(Table):
                                             CREATE TABLE email_campaigns_contacts (
                                                 email_campaigns_id INTEGER REFERENCES email_campaigns (id),
                                                 email_contacts_id  INTEGER REFERENCES email_contacts (id),
+                                                -- status will be ready, allocated to mailer _mailerid, sent, or failed (return code)
+                                                status TEXT NOT NULL DEFAULT 'ready',
                                             CONSTRAINT email_campaigns_contacts_mapping_unique UNIQUE (email_campaigns_id, email_contacts_id)
                                             );
                                         """)
-    self.insertSql = """INSERT INTO TABLENAME (email_campaigns_id, email_contacts) VALUES (%s, %s) RETURNING id"""
+    self.insertSql = """INSERT INTO email_campaigns_contacts (email_campaigns_id, email_contacts) VALUES (%s, %s) RETURNING id"""
 
   #-----------------------------------------------------------------------------------------------------------------
   def updateDefinition(self, databaseCursor):

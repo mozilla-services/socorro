@@ -230,12 +230,12 @@ class Admin_Controller extends Controller
         $service = new Web_Service($config);
         $host = Kohana::config('webserviceclient.socorro_hostname');
         $campaign_id = intval($id);
-        $one_hour_cache = 60 * 60;
-        $resp = $service->get("${host}/201009/email/campaign/${campaign_id}", 'json', $one_hour_cache);
+        $resp = $service->get("${host}/201103/emailcampaigns/campaign/${campaign_id}", 'json');
         if (! $resp) {
             client::messageSend("Error loading recent email campaigns", E_USER_ERROR);
         } else {
             $this->setViewData(array('campaign' => $resp->campaign));
+            $this->setViewData(array('counts' => $resp->counts));
         }        
     }
 
@@ -281,7 +281,7 @@ class Admin_Controller extends Controller
         $service = new Web_Service($config);
         $host = Kohana::config('webserviceclient.socorro_hostname');
         
-        $resp = $service->get("${host}/201009/email/campaigns/page/1", 'json');
+        $resp = $service->get("${host}/201103/emailcampaigns/campaigns/page/1", 'json');
         if (! $resp) {
             client::messageSend("Error loading recent email campaigns", E_USER_ERROR);
         }
@@ -314,7 +314,7 @@ class Admin_Controller extends Controller
         $s_date = urlencode($this->_convertDateForBackend($start_date));
         $e_date = urlencode($this->_convertDateForBackend($end_date));
 
-        return  $service->get("${host}/201009/email/volume/p/${p}/v/${v}/sig/${sig}/start/${s_date}/end/${e_date}", 'json');
+        return  $service->get("${host}/201103/emailcampaigns/volume/p/${p}/v/${v}/sig/${sig}/start/${s_date}/end/${e_date}", 'json');
     }
 
     /**
@@ -385,14 +385,13 @@ class Admin_Controller extends Controller
         return $validation;
     }
 
-
     /**
-     * Sends email
+     * Saves campaign
      *
      * @access public
      * @return void
      */
-    public function send_email()
+    public function save_campaign()
     {
         $author = Auth::instance()->get_user();
         $params = $this->_validateEmailCampaign();
@@ -400,7 +399,7 @@ class Admin_Controller extends Controller
 
         if ($params->validate()) {
             if ('Cancel' == $data['submit']) {
-                // We'll re-display admin/email populatd with $data
+                // We'll re-display admin/email populated with $data
                 $campaigns = array();
                 $resp = $this->_recentCampaigns();
                 if ($resp) {
@@ -412,16 +411,17 @@ class Admin_Controller extends Controller
                 $token = $session->get('csrf_token');
                 if (strlen($token) > 0 && $token == $params['token']) {
                     // retrieve # of emails
-                    $resp = $this->_sendEmail(
+                     $resp = $this->_saveCampaign(
                         $params['email_product'], $params['email_versions'],
                         $params['email_signature'],
                         $params['email_subject'], $params['email_body'],
                         $params['email_start_date'], $params['email_end_date'],
                         $author
-                    );
+                     );
+
                     if ($resp) {
-                        client::messageSend("Email Sent " . $resp->emails->actual_count, E_USER_NOTICE);
-                        return url::redirect('admin/email'); 
+                        client::messageSend("Campaign saved" . $resp->campaign_id, E_USER_NOTICE);
+                        return url::redirect('/admin/email_campaign/' . $resp->campaign_id);
                     } else {
                         Kohana::log('error', "No Response");
                         client::messageSend("Unknown systems error. Investigate before trying again.", E_USER_ERROR);
@@ -434,6 +434,7 @@ class Admin_Controller extends Controller
                 }
             }
         } else {
+            Kohana::log('error', 'Form did not validate');
             $data['has_errors'] = true;
             $data['errors'] = $params->errors('email_form_errors');
         }
@@ -441,9 +442,10 @@ class Admin_Controller extends Controller
         $this->setView('admin/email'); // Back that thing up
         $this->setViewData($data);
     }
+
     /**
      * Helper method uses Hoopsnake API to create
-     * an email campaign and send the emails.
+     * an email campaign.
      *
      * @param string $product    A product
      * @param string $signature  A Crash Signature
@@ -455,7 +457,7 @@ class Admin_Controller extends Controller
      *
      * @return JSON response or FALSE if there is an error
      */
-    private function _sendEmail($product, $versions, $signature, $subject, $body, $start_date, $end_date, $author)
+    private function _saveCampaign($product, $versions, $signature, $subject, $body, $start_date, $end_date, $author)
     {
         $config = array();
         $credentials = Kohana::config('webserviceclient.basic_auth');
@@ -464,8 +466,6 @@ class Admin_Controller extends Controller
         }
         $service = new Web_Service($config);
         $host = Kohana::config('webserviceclient.socorro_hostname');
-        $cache_in_minutes = Kohana::config('webserviceclient.topcrash_vers_rank_cache_minutes', 60);
-        $lifetime = $cache_in_minutes * 60; // Lifetime in seconds
 
         $data = array(
             'product' => $product,
@@ -478,8 +478,80 @@ class Admin_Controller extends Controller
             'author' => $author
             );
 
-        return $service->post("${host}/201009/email", $data, 'json');
+        return $service->post("${host}/201103/emailcampaigns/create", $data, 'json');
 
+    }
+
+    /**
+     * Sends email
+     *
+     * @access public
+     * @return void
+     */
+    public function send_email()
+    {
+        $author = Auth::instance()->get_user();
+        $params = new Validation($this->input->post(array(), null, true));
+        $data = $params->as_array();
+
+        if ($params->validate()) {
+            $session = Session::instance();
+            $token = $session->get('csrf_token');
+            if (strlen($token) > 0 && $token == $params['token']) {
+                // retrieve # of emails
+                $status = $data['submit']
+                if ($status == 'start' || $status == 'stop') {
+                    $resp = $this->_sendEmail(
+                        $params['campaign_id'],
+                        $author,
+                        $status
+                    );
+                    if ($resp) {
+                        client::messageSend(json_encode($resp), E_USER_NOTICE);
+                    }
+                }
+            } else {
+                Kohana::log('alert', "CSRF token didn't match session[" . $token . 
+                                     "] params[" . $params['token'] . "]");
+                return url::redirect('admin/email'); 
+            }
+        } else {
+            Kohana::log('error', 'Form did not validate');
+            $data['has_errors'] = true;
+            $data['errors'] = $params->errors('email_form_errors');
+        }
+        $data['products'] = $this->branch_model->getProducts();
+        $this->setView('admin/email'); // Back that thing up
+        $this->setViewData($data);
+    }
+
+    /**
+     * Helper method uses Hoopsnake API to create
+     * an email campaign and send the emails.
+     *
+     * @param string $campaign_id   Campaign ID to send
+     * @param string $author        Username of the currently logged in admin
+     * @param string $status        Change status of campaign (start|stop)
+     *
+     * @return JSON response or FALSE if there is an error
+     */
+    private function _sendEmail($campaign_id, $author, $status)
+    {
+        $config = array();
+        $credentials = Kohana::config('webserviceclient.basic_auth');
+        if ($credentials) {
+            $config['basic_auth'] = $credentials;
+        }
+        $service = new Web_Service($config);
+        $host = Kohana::config('webserviceclient.socorro_hostname');
+
+        $data = array(
+            'campaign_id' => $campaign_id,
+            'status' => $status,
+            'author' => $author
+            );
+
+        return $service->post("${host}/201103/email", $data, 'json');
     }
 
     /* Custom Validation */

@@ -21,7 +21,7 @@
            <?= out::H($email_signature) ?> crash. Malformed email addresses may also inflate the estimate.
            The estimate is higher or the same as
            the actual number of email addresses that will be contacted, if you choose to continue.</p>
-        <form class="" name="postcrashemail" action="send_email" method="post">
+        <form class="" name="postcrashemail" action="save_campaign" method="post">
 
           <input type="hidden" name="email_product"    value="<?= out::H($email_product) ?>" />
           <input type="hidden" name="email_versions"   value="<?= out::H($email_versions) ?>" />
@@ -32,7 +32,7 @@
           <input type="hidden" name="email_end_date"   value="<?= out::H($email_end_date) ?>" />
            
           <input name="token"  type="hidden" value="<?= $csrf_token ?>" />
-          <input name="submit" type="submit" value="OK, Send Emails" />   
+          <input name="submit" type="submit" value="Save Campaign" />   
           <input name="submit" type="submit" value="Cancel" />
         </form>
       <?php } ?>
