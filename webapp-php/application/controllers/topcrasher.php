@@ -104,7 +104,7 @@ class Topcrasher_Controller extends Controller {
      * Generates the index page.
      */
     public function index() {
-        cachecontrol::set(array(
+	cachecontrol::set(array(
             'expires' => time() + (60 * 60)
         ));
 
@@ -127,7 +127,7 @@ class Topcrasher_Controller extends Controller {
                     );
             }
         }
-
+	
         // generate list of all versions
         $branches = new Branch_Model();
         $prod_versions = $branches->getProductVersions();
@@ -142,12 +142,14 @@ class Topcrasher_Controller extends Controller {
             $all_versions[$prod] = array_reverse($all_versions[$prod]);
         }
 
+	$product = Kohana::config('products.default_product');
+	
         $this->setViewData(array(
             'crasher_data' => $crasher_data,
             'all_versions'  => $all_versions,
     	    'nav_selection' => 'top_crashes',
             'sig_sizes'  => Kohana::config('topcrashers.numberofsignatures'),            
-            'url_nav' => url::site('products/'.$product),
+            'url_nav' => url::site('products/' . $product),
         ));
     }
 

@@ -366,7 +366,7 @@ class Report_Controller extends Controller {
      * @param 	string 	The uuid
      * @return 	void
      */
-    public function index($id) {
+    public function index($id = null) {
         $crash = new Crash();
         $uuid = $crash->parseOOID($id);
         if ($uuid == FALSE ) {

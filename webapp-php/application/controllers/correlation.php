@@ -108,7 +108,7 @@ class Correlation_Controller extends Controller
      * @param string $product A Product name
      * @param string $version A Product Version
      */
-    public function bulk_ajax($type, $product, $version)
+    public function bulk_ajax($type = null, $product = null, $version = null)
     {
         $osnames = $this->input->post('osnames');
         $signatures = $this->input->post('signatures');
