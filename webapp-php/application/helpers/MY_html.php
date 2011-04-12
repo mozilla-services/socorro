@@ -23,7 +23,9 @@ class html extends html_Core {
                 $val = array($val);
             }
             foreach ($val as $subval) {
-                $parts[] = rawurlencode($name) . '=' . rawurlencode($subval);
+		if(!empty($subval)) {
+                    $parts[] = rawurlencode($name) . '=' . rawurlencode($subval);
+		}
             }
         }
 
