@@ -80,7 +80,7 @@ class Correlation_Controller extends Controller
                                 Windows NT, Linux
      * @param string $signature A top crashing signature
      */
-    public function ajax($type, $product, $version, $platform, $signature)
+    public function ajax($type = null, $product = null, $version = null, $platform = null, $signature = null)
     {
 	set_time_limit(Kohana::config('correlation.file_processing_timeout'));
         $report_name = $this->_reportType($type);
