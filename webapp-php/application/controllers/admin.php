@@ -234,6 +234,10 @@ class Admin_Controller extends Controller
         if (! $resp) {
             client::messageSend("Error loading recent email campaigns", E_USER_ERROR);
         } else {
+            $csrf_token = text::random('alnum', 32);
+            $session = Session::instance();
+            $session->set('csrf_token', $csrf_token);
+            $this->setViewData(array('csrf_token' => $csrf_token));
             $this->setViewData(array('campaign' => $resp->campaign));
             $this->setViewData(array('counts' => $resp->counts));
         }        
