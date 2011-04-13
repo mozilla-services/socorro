@@ -1,5 +1,8 @@
 ## RHEL6 or Fedora 14
-yum install python-psycopg2 simplejson httpd mod_ssl mod_wsgi postgresql-server postgresql-plperl perl-pgsql_perl5
+## Do not use "easy install", suggest "text install"
+## Choose "minimal" as install option.
+## FIXME network must be started on each reboot
+yum install python-psycopg2 simplejson httpd mod_ssl mod_wsgi postgresql-server postgresql-plperl perl-pgsql_perl5 postgresql-contrib subversion make rsync php-pecl-memcache memcached php-pgsql
 # for building minidump_stackwalk
 yum install subversion gcc-c++ curl-devel
 # for building java analysis tools
@@ -46,6 +49,10 @@ postgres=# GRANT ALL ON DATABASE test TO test;
 GRANT
 psql -d test -f /usr/share/pgsql/contrib/citext.sql
 
+# check out socorro
+svn checkout http://socorro.googlecode.com/svn/trunk/ socorro
+cd socorro
+
 ## postgresql schema setup
 cp scripts/config/commonconfig.py.dist scripts/config/commonconfig.py
 # edit scripts/config/commonconfig.py
@@ -54,6 +61,7 @@ cp scripts/config/commonconfig.py.dist scripts/config/commonconfig.py
 # databasePassword.default = 'secret'
 cp scripts/config/setupdatabaseconfig.py.dist scripts/config/setupdatabaseconfig.py
 python scripts/setupDatabase.py
+cp scripts/config/createpartitionsconfig.py.dist scripts/config/createpartitionsconfig.py
 python scripts/createPartitions.py
 
 ## Hadoop+HBase install
@@ -74,6 +82,7 @@ service hadoop-hbase-thrift start
 chkconfig hadoop-hbase-thrift on
 
 # TODO HBase config/schema setup
+# move this to separate file
 """
     create 'crash_report_signatures', {NAME => 'counters', COMPRESSION => 'LZO', VERSIONS => '1', TTL => '2147483647', BLOCKSIZE => '65536', IN_MEMORY => 'false', BLOCKCACHE => 'true'}, {NAME => 'json', COMPRESSION => 'LZO', VERSIONS => '3', TTL => '2147483647', BLOCKSIZE => '65536', IN_MEMORY => 'false', BLOCKCACHE => 'true'}
     create 'crash_reports', {NAME => 'flags', VERSIONS => '1', COMPRESSION => 'LZO', TTL => '2147483647', BLOCKSIZE => '65536', IN_MEMORY => 'false', BLOCKCACHE => 'true'}, {NAME => 'ids', COMPRESSION => 'LZO', VERSIONS => '1', TTL => '2147483647', BLOCKSIZE => '65536', IN_MEMORY => 'false', BLOCKCACHE => 'true'}, {NAME => 'meta_data', COMPRESSION => 'LZO', VERSIONS => '3', TTL => '2147483647', BLOCKSIZE => '65536', IN_MEMORY => 'false', BLOCKCACHE => 'true'}, {NAME => 'processed_data', VERSIONS => '3', COMPRESSION => 'LZO', TTL => '2147483647', BLOCKSIZE => '65536', IN_MEMORY => 'false', BLOCKCACHE => 'true'}, {NAME => 'raw_data', COMPRESSION => 'LZO', VERSIONS => '3', TTL => '2147483647', BLOCKSIZE => '65536', IN_MEMORY => 'false', BLOCKCACHE => 'true'}, {NAME => 'timestamps', COMPRESSION => 'LZO', VERSIONS => '1', TTL => '2147483647', BLOCKSIZE => '65536', IN_MEMORY => 'false', BLOCKCACHE => 'true'}
@@ -238,7 +247,25 @@ mkdir /var/log/httpd/{crash-stats,crash-reports,socorro-api}.example.com
 service httpd restart
 chkconfig httpd on
 
-# TODO set up htpasswd file /data/socorro/application/.htpasswd
+service memcached restart
+chkconfig memcached on
+
+# make kohana logdir writable
+chown apache /data/socorro/htdocs/application/logs/
+
+# enable PHP short_open_tag
+edit /etc/php.ini
+# short_open_tag = Off
+
+# set up htpasswd file /data/socorro/application/.htpasswd
+# this is used by the PHP UI to make protected calls to the middleware
+htpasswd -c /data/socorro/application/.htpasswd breakpad_rw
 
 # refer to https://wiki.mozilla.org/Socorro/SocorroUI/Installation
+# FIXME In the notes, after creating sessions table for Kohanna, we need to grant ownership to breakpad_rw.
 
+# configure Kohana
+edit /data/socorro/htdocs/application/config/*.php
+
+# TODO overall system test
+# use submitter.py to insert crash, confirm that it is processed and available in UI via middleware call
