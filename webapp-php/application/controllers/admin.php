@@ -499,7 +499,7 @@ class Admin_Controller extends Controller
             $token = $session->get('csrf_token');
             if (strlen($token) > 0 && $token == $params['token']) {
                 // retrieve # of emails
-                $status = $data['submit']
+                $status = $data['submit'];
                 if ($status == 'start' || $status == 'stop') {
                     $resp = $this->_sendEmail(
                         $params['campaign_id'],
