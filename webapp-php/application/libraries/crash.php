@@ -144,7 +144,7 @@ class Crash
      */
     public function prepareCrashReport($report, $parse_dump=true)
     {
-        if ((isset($report->signature) && is_null($report->signature)) ||
+        if (property_exists($report, 'signature') && (is_null($report->signature)) ||
             (isset($report->dump) && strlen($report->dump) <= 1)) {
             $report->{'display_signature'} = Crash::$null_sig;
             $report->{'display_null_sig_help'} = TRUE;
