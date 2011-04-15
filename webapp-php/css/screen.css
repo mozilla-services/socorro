@@ -894,8 +894,6 @@ div.pendingStatus p.pendingProcessing {
     font-weight: bold;
 }
 #topcrashers .crasher_list {
-    float: left;
-    width: 18em;
     margin: 1em 0;
 }
 #topcrashers table {
