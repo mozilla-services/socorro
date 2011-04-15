@@ -24,10 +24,10 @@ $(document).ready(function(){
 		      }
                       for(var i=0; i < data.length; i++){
                         var signatureLink = "../../../report/list?product=" + product + "&version=" + product + "%3A" + version +
-	                                    "&date=&range_value=1&range_unit=weeks&query_search=signature&query=" + 
+	                                    "&date=&range_value=2&range_unit=weeks&query_search=signature&query=" + 
 				            data[i].signature + "&query_type=exact&do_query=1&signature=" + data[i].signature;
 
-  		        upd += "<tr class='tcburl-signatures" + urlId + outterClass + "'><td class='in" + indent + "'><a href='" + signatureLink+ "'>" + data[i].signature + "</a></td><td>" + data[i].count + "</td><td></td></tr>";
+  		        upd += "<tr class='tcburl-signatures" + urlId + outterClass + "'><td class='in" + indent + "'><a href='" + signatureLink+ "'>" + data[i].label + "</a></td><td>" + data[i].count + "</td><td></td></tr>";
                         if(data[i]['comments']){
                           upd += "<tr class='tcburl-signatures" + urlId + outterClass + "'><td class='in" + indent + "' colspan='2'><ul>";
                           for( var j=0; j < data[i]['comments'].length; j++){

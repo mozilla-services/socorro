@@ -575,7 +575,14 @@ class Topcrasher_Controller extends Controller {
             'expires' => time() + (60 * 60)
         ));
       
-      echo json_encode($by_url_model->getSignaturesByUrl($product, $version, $url, $page));
+      $signatures = $by_url_model->getSignaturesByUrl($product, $version, $url, $page);
+      foreach($signatures as $signature) {
+        $sig = $signature->signature;
+        $signature->signature = urlencode($sig);
+        $signature->label = htmlentities($sig);
+      }
+      
+      echo json_encode($signatures);
     }
 
     /**
