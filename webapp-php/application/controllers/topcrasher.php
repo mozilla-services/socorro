@@ -456,7 +456,11 @@ class Topcrasher_Controller extends Controller {
      * @param   string version Example: 3.7a1pre
      * @return  null
      */
-    public function byurl($product, $version=null) {
+    public function byurl($product=null, $version=null) {
+	if(is_null($product) && is_null($version)) {
+	    Kohana::show_404();
+	}
+
         $this->navigationChooseVersion($product, $version);
         if (empty($version)) {            
             $this->_handleEmptyVersion($product, 'byurl');
@@ -489,7 +493,10 @@ class Topcrasher_Controller extends Controller {
      * @param string product name 
      * @param string version Example: 3.7a1pre
      */
-    public function bydomain($product, $version=null) {
+    public function bydomain($product=null, $version=null) {
+	if(is_null($product) && is_null($version)) {
+            Kohana::show_404();
+        }  
         $this->navigationChooseVersion($product, $version);
         if (empty($version)) {
             $this->_handleEmptyVersion($product, 'bydomain');
@@ -525,7 +532,11 @@ class Topcrasher_Controller extends Controller {
      * @param 	string 	The version (e.g. '3.7a1pre')
  	 * @return 	void
      */
-    public function bytopsite($product, $version=null) {
+    public function bytopsite($product=null, $version=null) {
+	if(is_null($product) && is_null($version)) {
+            Kohana::show_404();
+        }
+
         $this->navigationChooseVersion($product, $version);
          if (empty($version)) {
              $this->_handleEmptyVersion($product, 'bytopsite');
