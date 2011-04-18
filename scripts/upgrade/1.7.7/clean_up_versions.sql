@@ -2,12 +2,12 @@
 -- install citext in the database first!
 
 \set ON_ERROR_STOP true
-SET work_mem = '128MB';
-SET maintenance_work_mem = '256MB';
-SET temp_buffers = '128MB';
+SET work_mem = '512MB';
+SET maintenance_work_mem = '512MB';
+SET temp_buffers = '512MB';
 
 begin;
-lock table productdims;
+lock table productdims NOWAIT;
 drop view performance_check_1;
 drop view branches;
 alter table productdims add column sort_key int;
@@ -34,7 +34,7 @@ grant select on branches to breakpad;
 commit;
 
 begin;
-lock table builds;
+lock table builds NOWAIT;
 alter table builds drop constraint builds_key;
 alter table builds alter column product type citext;
 alter table builds alter column version type citext;

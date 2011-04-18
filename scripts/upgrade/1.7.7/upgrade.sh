@@ -35,6 +35,9 @@ psql -f clean_up_versions.sql breakpad
 echo 'fill in first reports'
 psql -f first_report_migration.sql breakpad
 
+echo 'add postcrash email fixes'
+psql -f postcrash_email.sql breakpad
+
 date
 
 exit 0
