@@ -172,8 +172,8 @@ class Query_Controller extends Controller {
             'expires'  => time() + ( 60 * 60 )
 	    ));
 
-        $page = Input::instance()->get('page');
-        $page = (!empty($page)) ? $page : 1;
+        $page = (int)Input::instance()->get('page');
+        $page = (!empty($page) && $page > 0) ? $page : 1;
         $pager = null;
         $items_per_page = Kohana::config('search.number_results_advanced_search');
         $items_per_page = (!empty($items_per_page)) ? $items_per_page : 100;
