@@ -28,7 +28,7 @@
     		</a>
     	</h1>
 
-        <form method="get" action="<?= url::base() ?>query/query">
+        <form id="simple_search" method="get" action="<?= url::base() ?>query/query">
             <input type="hidden" name="query_type" value="simple" />
             <input type="hidden" name="do_query" value="1">
             <input type="text" id="q" name="query" value="Find Crash ID or Signature" />
