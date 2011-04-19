@@ -1,5 +1,4 @@
 
-\set ON_ERROR_STOP true
 set work_mem = '1GB';
 set maintenance_work_mem = '1GB';
 
@@ -10,7 +9,7 @@ as select signature, null::int as productdims_id, product::citext as product, ve
 from reports
 where signature IS NOT NULL
 	and date_processed BETWEEN '2011-01-01' AND '2011-04-01'
-group by signature, product::citext, version::citext, os_name::citext, build
+group by signature, product, version, os_name, build
 order by signature, product, version, os_name, build;
 
 alter table signature_build owner to breakpad_rw;
@@ -158,6 +157,7 @@ where sbup.os_name = osdims.os_name
 	and tcbs.window_end BETWEEN  
 		( currenttime - ( interval '1 hour' * hours_back ) - (interval '1 hour' * hours_window ) )
 		AND ( currenttime - ( interval '1 hour' * hours_back ) )
+	and sfirst.signature IS NULL
 group by sbup.signature, sbup.productdims_id, osdims.id;
 
 
