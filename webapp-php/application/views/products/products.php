@@ -9,7 +9,7 @@
     <p>
         <ul>
         <?php foreach ($products as $product) { ?>
-            <li><a href="<?php url::site('products/'.$product); ?>"><?php out::H($product); ?></a></li>
+            <li><a href="<?php echo url::site('products/'.$product); ?>"><?php out::H($product); ?></a></li>
         <?php } ?>
         </ul>
     </p>
