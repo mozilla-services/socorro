@@ -18,12 +18,13 @@ class Report_Model extends Model {
     {
 	/* Note: 99% of our data comes from the processed crash dump
 	         jsonz file. Only select columns that aren't in the json file
-	         such as email which is SENSATIVE and should never appear in
+	         such as email which is SENSITIVE and should never appear in
                  the publically accessable jsonz file. Anything here will be 
                  merged into the model object + jsonz data */
+        // Added addons_checked since that's not in the jsonz - bug 590245
         $report = $this->db->query(
             "/* soc.web report.dateProcessed */
-                SELECT reports.email, reports.url
+                SELECT reports.email, reports.url, reports.addons_checked
                 FROM reports 
                 WHERE reports.uuid=? 
                 AND reports.success 

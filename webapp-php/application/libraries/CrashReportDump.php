@@ -62,6 +62,16 @@ class CrashReportDump {
         $data = json_decode($json);
         
         foreach ($data as $key => $val) {
+            if ($key=='addons_checked') {
+                // This value doesn't get propagated to the processed json, but it was already
+                // loaded from the database
+                if ($report->addons_checked =='t') {  // t for true, apparently.
+                    $report->addons_checked = true;
+                } else {
+                    $report->addons_checked = false;
+                }  
+                continue;
+            }
             $report->{$key} = $val;
         }
         $this->_parseDump($report); 
