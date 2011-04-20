@@ -55,11 +55,12 @@ cd socorro
 
 ## postgresql schema setup
 cp scripts/config/commonconfig.py.dist scripts/config/commonconfig.py
-# edit scripts/config/commonconfig.py
+edit scripts/config/commonconfig.py
 # databaseName.default = 'breakpad'
 # databaseUserName.default = 'breakpad_rw'
 # databasePassword.default = 'secret'
 cp scripts/config/setupdatabaseconfig.py.dist scripts/config/setupdatabaseconfig.py
+export PYTHONPATH=.:thirdparty
 python scripts/setupDatabase.py
 cp scripts/config/createpartitionsconfig.py.dist scripts/config/createpartitionsconfig.py
 python scripts/createPartitions.py
