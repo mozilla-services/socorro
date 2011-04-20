@@ -70,6 +70,7 @@ cp scripts/config/createpartitionsconfig.py.dist scripts/config/createpartitions
 python scripts/createPartitions.py
 
 # run unit/functional tests + coverage report
+# FIXME one known failure https://bugzilla.mozilla.org/show_bug.cgi?id=651661
 make coverage
 
 # set up directories, user and permissions
