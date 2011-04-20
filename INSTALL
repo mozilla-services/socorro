@@ -40,6 +40,13 @@ postgres=# CREATE USER breakpad_rw WITH PASSWORD 'secret';
 CREATE ROLE
 postgres=# GRANT ALL ON DATABASE breakpad TO breakpad_rw;
 GRANT
+postgres=# \c breakpad
+You are now connected to database "breakpad".
+breakpad=# CREATE LANGUAGE plpgsql
+CREATE LANGUAGE
+breakpad=# CREATE LANGUAGE plperl
+CREATE LANGUAGE
+breakpad=# \q
 psql -d breakpad -f /usr/share/pgsql/contrib/citext.sql
 
 ## for unit/functional tests
@@ -51,6 +58,13 @@ postgres=# CREATE USER test WITH PASSWORD 'aPassword';
 CREATE ROLE
 postgres=# GRANT ALL ON DATABASE test TO test;
 GRANT
+postgres=# \c test
+You are now connected to database "test".
+test=# CREATE LANGUAGE plpgsql
+CREATE LANGUAGE
+test=# CREATE LANGUAGE plperl
+CREATE LANGUAGE
+test=# \q
 psql -d test -f /usr/share/pgsql/contrib/citext.sql
 
 # check out socorro
