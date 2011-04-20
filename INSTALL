@@ -10,17 +10,21 @@ yum install ant
 # for unit/functional tests
 yum install python-virtualenv php-phpunit-PHPUnit
 
+## FIXME Fedora 14 ships python 2.7, we hardcode 2.6 in a few places
+ln -s /usr/bin/python2.7 /usr/bin/python2.6
+
 ## disable SELinux
-# edit /etc/sysconfig/selinux
+edit /etc/sysconfig/selinux
 # SELINUX=disabled
+
 # reboot
 shutdown -r now
 
 ## postgresql config
 service postgresql initdb
-# edit /var/lib/pgsql/data/pg_hba.conf
+edit /var/lib/pgsql/data/pg_hba.conf
 # change IPv4/IPv6 connection from "ident" to "md5"
-# edit /var/lib/pgsql/data/postgresql.conf
+edit /var/lib/pgsql/data/postgresql.conf
 # uncomment:
 # listen_addresses = 'localhost'
 service postgresql start
@@ -53,7 +57,7 @@ psql -d test -f /usr/share/pgsql/contrib/citext.sql
 svn checkout http://socorro.googlecode.com/svn/trunk/ socorro
 cd socorro
 
-## postgresql schema setup
+## PostgreSQL/Socorro setup
 cp scripts/config/commonconfig.py.dist scripts/config/commonconfig.py
 edit scripts/config/commonconfig.py
 # databaseName.default = 'breakpad'
@@ -87,8 +91,6 @@ chkconfig socorro-crashmover on
 # set up cron jobs
 ln -s /data/socorro/application/scripts/crons/socorrorc /etc/socorro/
 crontab /data/socorro/application/scripts/crons/example.crontab 
-# customize crontab
-crontab -e
 
 # Configure Apache
 # edit /etc/httpd/conf.d/socorro.conf
@@ -124,7 +126,6 @@ WSGIPythonPath /data/socorro/application:/data/socorro/thirdparty:/data/socorro/
 </VirtualHost>
 """
 # configure apache for crash-stats (web UI only)
-# TODO PHP configuration
 """
 <VirtualHost  *:80>
   ServerName crash-stats.example.com
@@ -165,7 +166,6 @@ WSGIPythonPath /data/socorro/application:/data/socorro/thirdparty:/data/socorro/
 </VirtualHost>
 """
 # configure apache for middleware only
-# TODO generate password for mware, give to PHP app
 """
 WSGISocketPrefix /var/run/wsgi/bpapi_s
 WSGISocketPrefix /var/run/wsgi/bpapi_nossl
