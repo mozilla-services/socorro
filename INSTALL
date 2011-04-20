@@ -65,40 +65,6 @@ python scripts/setupDatabase.py
 cp scripts/config/createpartitionsconfig.py.dist scripts/config/createpartitionsconfig.py
 python scripts/createPartitions.py
 
-## Hadoop+HBase install
-# install Sun Java JDK 
-# JDK 6u16
-# download appropriate package from http://www.oracle.com/technetwork/java/javase/downloads/index.html
-bash jdk-6u23-linux-x64-rpm.bin
-# install Hadoop 0.20 + HBase 0.89
-# refer to https://wiki.cloudera.com/display/DOC/HBase+Installation
-# NOTE - this is just a standalone setup, read the above for info on a real, distributed setup!
-wget http://archive.cloudera.com/redhat/cdh/cloudera-cdh3.repo
-mv cloudera-cdh3.repo /etc/yum.repos.d/
-yum update yum
-yum install hadoop-hbase hadoop-hbase-master hadoop-hbase-thrift
-service hadoop-hbase-master start
-chkconfig hadoop-hbase-master on
-service hadoop-hbase-thrift start
-chkconfig hadoop-hbase-thrift on
-
-# TODO HBase config/schema setup
-# move this to separate file
-"""
-    create 'crash_report_signatures', {NAME => 'counters', COMPRESSION => 'LZO', VERSIONS => '1', TTL => '2147483647', BLOCKSIZE => '65536', IN_MEMORY => 'false', BLOCKCACHE => 'true'}, {NAME => 'json', COMPRESSION => 'LZO', VERSIONS => '3', TTL => '2147483647', BLOCKSIZE => '65536', IN_MEMORY => 'false', BLOCKCACHE => 'true'}
-    create 'crash_reports', {NAME => 'flags', VERSIONS => '1', COMPRESSION => 'LZO', TTL => '2147483647', BLOCKSIZE => '65536', IN_MEMORY => 'false', BLOCKCACHE => 'true'}, {NAME => 'ids', COMPRESSION => 'LZO', VERSIONS => '1', TTL => '2147483647', BLOCKSIZE => '65536', IN_MEMORY => 'false', BLOCKCACHE => 'true'}, {NAME => 'meta_data', COMPRESSION => 'LZO', VERSIONS => '3', TTL => '2147483647', BLOCKSIZE => '65536', IN_MEMORY => 'false', BLOCKCACHE => 'true'}, {NAME => 'processed_data', VERSIONS => '3', COMPRESSION => 'LZO', TTL => '2147483647', BLOCKSIZE => '65536', IN_MEMORY => 'false', BLOCKCACHE => 'true'}, {NAME => 'raw_data', COMPRESSION => 'LZO', VERSIONS => '3', TTL => '2147483647', BLOCKSIZE => '65536', IN_MEMORY => 'false', BLOCKCACHE => 'true'}, {NAME => 'timestamps', COMPRESSION => 'LZO', VERSIONS => '1', TTL => '2147483647', BLOCKSIZE => '65536', IN_MEMORY => 'false', BLOCKCACHE => 'true'}
-    create 'crash_reports_index_hang_id', {NAME => 'ids', COMPRESSION => 'LZO', VERSIONS => '1', TTL => '2147483647', BLOCKSIZE => '65536', IN_MEMORY => 'false', BLOCKCACHE => 'true'}
-    create 'crash_reports_index_hang_id_submitted_time', {NAME => 'ids', COMPRESSION => 'LZO', VERSIONS => '1', TTL => '2147483647', BLOCKSIZE => '65536', IN_MEMORY => 'false', BLOCKCACHE => 'true'}
-    create 'crash_reports_index_legacy_processed', {NAME => 'ids', COMPRESSION => 'NONE', VERSIONS => '1', TTL => '2147483647', BLOCKSIZE => '65536', IN_MEMORY => 'false', BLOCKCACHE => 'true'}
-    create 'crash_reports_index_legacy_submitted_time', {NAME => 'ids', COMPRESSION => 'LZO', VERSIONS => '1', TTL => '2147483647', BLOCKSIZE => '65536', IN_MEMORY => 'false', BLOCKCACHE => 'true'}
-    create 'crash_reports_index_legacy_unprocessed_flag', {NAME => 'ids', COMPRESSION => 'NONE', VERSIONS => '1', TTL => '2147483647', BLOCKSIZE => '65536', IN_MEMORY => 'false', BLOCKCACHE => 'true'}, {NAME => 'processor_state', VERSIONS => '5', COMPRESSION => 'NONE', TTL => '2147483647', BLOCKSIZE => '65536', IN_MEMORY => 'false', BLOCKCACHE => 'true'}
-    create 'crash_reports_index_priority_processed', {NAME => 'ids', COMPRESSION => 'NONE', VERSIONS => '1', TTL => '2147483647', BLOCKSIZE => '65536', IN_MEMORY => 'false', BLOCKCACHE => 'true'}
-    create 'crash_reports_index_signature_ooid', {NAME => 'ids', COMPRESSION => 'LZO', VERSIONS => '1', TTL => '2147483647', BLOCKSIZE => '65536', IN_MEMORY => 'false', BLOCKCACHE => 'true'}
-    create 'crash_reports_index_submitted_time', {NAME => 'ids', COMPRESSION => 'LZO', VERSIONS => '1', TTL => '2147483647', BLOCKSIZE => '65536', IN_MEMORY => 'false', BLOCKCACHE => 'true'}
-    create 'crash_reports_index_unprocessed_flag', {NAME => 'ids', VERSIONS => '1', COMPRESSION => 'NONE', TTL => '2147483647', BLOCKSIZE => '65536', IN_MEMORY => 'false', BLOCKCACHE => 'true'}, {NAME => 'processor_state', COMPRESSION => 'NONE', VERSIONS => '5', TTL => '2147483647', BLOCKSIZE => '65536', IN_MEMORY => 'false', BLOCKCACHE => 'true'}
-    create 'metrics', {NAME => 'counters', COMPRESSION => 'LZO', VERSIONS => '1', TTL => '2147483647', BLOCKSIZE => '65536', IN_MEMORY => 'false', BLOCKCACHE => 'true'} 
-"""
-
 # run unit/functional tests + coverage report
 make coverage
 
@@ -267,6 +233,26 @@ htpasswd -c /data/socorro/application/.htpasswd breakpad_rw
 
 # configure Kohana
 edit /data/socorro/htdocs/application/config/*.php
+
+## Hadoop+HBase install
+# install Sun Java JDK 
+# JDK 6u16
+# download appropriate package from http://www.oracle.com/technetwork/java/javase/downloads/index.html
+bash jdk-6u23-linux-x64-rpm.bin
+# install Hadoop 0.20 + HBase 0.89
+# refer to https://wiki.cloudera.com/display/DOC/HBase+Installation
+# NOTE - this is just a standalone setup, read the above for info on a real, distributed setup!
+wget http://archive.cloudera.com/redhat/cdh/cloudera-cdh3.repo
+mv cloudera-cdh3.repo /etc/yum.repos.d/
+yum update yum
+yum install hadoop-hbase hadoop-hbase-master hadoop-hbase-thrift
+service hadoop-hbase-master start
+chkconfig hadoop-hbase-master on
+service hadoop-hbase-thrift start
+chkconfig hadoop-hbase-thrift on
+
+# load Hbase schema
+cat analysis/hbase_schema | hbase shell
 
 # TODO overall system test
 # use submitter.py to insert crash, confirm that it is processed and available in UI via middleware call
