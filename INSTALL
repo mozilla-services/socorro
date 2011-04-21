@@ -98,7 +98,7 @@ chown socorro:socorro /var/log/socorro
 make install
 
 # symlink init scripts
-ln -s /data/socorro/application/scripts/init.d/socorro-{monitor,processor} /etc/init.d/
+ln -s /data/socorro/application/scripts/init.d/socorro-{monitor,processor,crashmover} /etc/init.d/
 chkconfig socorro-monitor on
 chkconfig socorro-processor on
 chkconfig socorro-crashmover on
