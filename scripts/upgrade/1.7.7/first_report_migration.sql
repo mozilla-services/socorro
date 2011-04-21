@@ -18,6 +18,7 @@ create unique index signature_build_key on signature_build
 	( signature, product, version, os_name, build );
 create index signature_build_signature on signature_build ( signature );
 create index signature_build_product on signature_build ( product, version );
+create index signature_build_first_report ON signature_build( first_report );
 
 update signature_build set productdims_id = productdims.id
 from productdims
