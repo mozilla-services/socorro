@@ -108,12 +108,12 @@ ln -s /data/socorro/application/scripts/crons/socorrorc /etc/socorro/
 crontab /data/socorro/application/scripts/crons/example.crontab 
 
 # Configure Apache
-# edit /etc/httpd/conf.d/socorro.conf
-#
+edit /etc/httpd/conf.d/socorro.conf
+
+## Begin /etc/httpd/conf.d/socorro.conf
 NameVirtualHost *:80
 WSGIPythonPath /data/socorro/application:/data/socorro/thirdparty:/data/socorro/application/scripts
 # configure apache for crash-reports (crash submissions only)
-"""
 <VirtualHost  *:80>
   ServerName crash-reports.example.com
   DocumentRoot /data/socorro
@@ -139,9 +139,9 @@ WSGIPythonPath /data/socorro/application:/data/socorro/thirdparty:/data/socorro/
   CustomLog "|/usr/sbin/rotatelogs /var/log/httpd/crash-reports.example.com/access_%Y-%m-%d-%H 3600 -0" x-forwarded-for env=is-forwarded
   AddDefaultCharset UTF-8
 </VirtualHost>
-"""
+
 # configure apache for crash-stats (web UI only)
-"""
+
 <VirtualHost  *:80>
   ServerName crash-stats.example.com
   DocumentRoot /data/socorro/htdocs
@@ -179,9 +179,9 @@ WSGIPythonPath /data/socorro/application:/data/socorro/thirdparty:/data/socorro/
  CustomLog "|/usr/sbin/rotatelogs /var/log/httpd/crash-stats.example.com/ssl_access_%Y-%m-%d-%H 3600 -0" x-forwarded-for env=is-forwarded
  AddDefaultCharset UTF-8
 </VirtualHost>
-"""
+
 # configure apache for middleware only
-"""
+
 WSGISocketPrefix /var/run/wsgi/bpapi_s
 WSGISocketPrefix /var/run/wsgi/bpapi_nossl
 WSGIPythonPath /data/socorro/application:/data/socorro/thirdparty:/data/socorro/application/scripts
@@ -224,7 +224,8 @@ WSGIPythonPath /data/socorro/application:/data/socorro/thirdparty:/data/socorro/
                 Satisfy Any
         </Location>
 </VirtualHost>
-"""
+## End /etc/httpd/conf.d/socorro.conf
+
 mkdir /var/log/httpd/{crash-stats,crash-reports,socorro-api}.example.com
 service httpd restart
 chkconfig httpd on
