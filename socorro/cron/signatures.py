@@ -16,6 +16,8 @@ logger = logging.getLogger("signatures")
 import socorro.lib.psycopghelper as psy
 import socorro.lib.util as util
 
+hours_back = 3
+
 def update_signatures(config):
   databaseConnectionPool = psy.DatabaseConnectionPool(config.databaseHost, config.databaseName, config.databaseUserName, config.databasePassword, logger)
   try:
@@ -27,15 +29,15 @@ def update_signatures(config):
     now = datetime.now()
     delta = now - last_run
     total_seconds = delta.days * 86400 + delta.seconds
-    total_hours = total_seconds / 3600
+    total_hours = total_seconds / 3600 - hours_back
     logger.info("total_hours: %s" % total_hours)
     for hour in xrange(total_hours):
       hour = int(hour) + 1
       timestamp = now - timedelta(hours=hour)
       databaseCursor.execute("""
         --- time, hours_back, hours_window
-        SELECT update_signature_matviews('%s', 3, 2)
-      """ % (timestamp))
+        SELECT update_signature_matviews('%s', '%s', 2)
+      """ % (timestamp, hours_back))
       databaseConnection.commit()
   finally:
     databaseConnectionPool.cleanup()
