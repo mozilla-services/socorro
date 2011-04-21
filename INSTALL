@@ -182,6 +182,7 @@ WSGIPythonPath /data/socorro/application:/data/socorro/thirdparty:/data/socorro/
 
 # configure apache for middleware only
 
+NameVirtualHost *:443
 WSGISocketPrefix /var/run/wsgi/bpapi_s
 WSGISocketPrefix /var/run/wsgi/bpapi_nossl
 WSGIPythonPath /data/socorro/application:/data/socorro/thirdparty:/data/socorro/application/scripts
