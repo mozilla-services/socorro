@@ -84,7 +84,10 @@ class ProcessorWithExternalBreakpad (processor.Processor):
     try:
       additionalReportValuesAsDict = self.analyzeHeader(reportId, dumpAnalysisLineIterator, databaseCursor, date_processed, processorErrorMessages)
       crashedThread = additionalReportValuesAsDict["crashedThread"]
-      lowercaseModules = additionalReportValuesAsDict['os_name'] in ('Windows NT')
+      try:
+        lowercaseModules = additionalReportValuesAsDict['os_name'] in ('Windows NT')
+      except KeyError:
+        lowercaseModules = True
       evenMoreReportValuesAsDict = self.analyzeFrames(reportId, isHang, lowercaseModules, dumpAnalysisLineIterator, databaseCursor, date_processed, crashedThread, processorErrorMessages)
       additionalReportValuesAsDict.update(evenMoreReportValuesAsDict)
       for x in dumpAnalysisLineIterator:
@@ -266,7 +269,10 @@ class ProcessorWithExternalBreakpad (processor.Processor):
       if crashedThread == int(thread_num):
         if frameCounter < 30:
           if lowercaseModules:
-            module_name = module_name.lower()
+            try:
+              module_name = module_name.lower()
+            except AttributeError:
+              pass
           thisFramesSignature = self.signatureUtilities.normalize_signature(module_name, function, source, source_line, instruction)
           signatureList.append(thisFramesSignature)
           if frameCounter < 10:
