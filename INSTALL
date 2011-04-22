@@ -247,10 +247,8 @@ date.timezone = 'America/Los_Angeles'
 # this is used by the PHP UI to make protected calls to the middleware
 htpasswd -c /data/socorro/application/.htpasswd breakpad_rw
 
-# refer to https://wiki.mozilla.org/Socorro/SocorroUI/Installation
-# FIXME In the notes, after creating sessions table for Kohanna, we need to grant ownership to breakpad_rw.
-
 # configure Kohana
+# refer to https://wiki.mozilla.org/Socorro/SocorroUI/Installation
 edit /data/socorro/htdocs/application/config/*.php
 
 ## Hadoop+HBase install
