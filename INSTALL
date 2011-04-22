@@ -239,7 +239,7 @@ chown apache /data/socorro/htdocs/application/logs/
 
 # enable PHP short_open_tag
 edit /etc/php.ini
-# short_open_tag = Off
+# short_open_tag = On
 
 # set up htpasswd file /data/socorro/application/.htpasswd
 # this is used by the PHP UI to make protected calls to the middleware
