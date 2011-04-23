@@ -42,9 +42,9 @@ postgres=# GRANT ALL ON DATABASE breakpad TO breakpad_rw;
 GRANT
 postgres=# \c breakpad
 You are now connected to database "breakpad".
-breakpad=# CREATE LANGUAGE plpgsql
+breakpad=# CREATE LANGUAGE plpgsql;
 CREATE LANGUAGE
-breakpad=# CREATE LANGUAGE plperl
+breakpad=# CREATE LANGUAGE plperl;
 CREATE LANGUAGE
 breakpad=# \q
 psql -d breakpad -f /usr/share/pgsql/contrib/citext.sql
@@ -60,9 +60,9 @@ postgres=# GRANT ALL ON DATABASE test TO test;
 GRANT
 postgres=# \c test
 You are now connected to database "test".
-test=# CREATE LANGUAGE plpgsql
+test=# CREATE LANGUAGE plpgsql;
 CREATE LANGUAGE
-test=# CREATE LANGUAGE plperl
+test=# CREATE LANGUAGE plperl;
 CREATE LANGUAGE
 test=# \q
 psql -d test -f /usr/share/pgsql/contrib/citext.sql
@@ -109,128 +109,13 @@ crontab /data/socorro/application/scripts/crons/example.crontab
 
 # Configure Apache
 edit /etc/httpd/conf.d/socorro.conf
-
-## Begin /etc/httpd/conf.d/socorro.conf
-NameVirtualHost *:80
-WSGIPythonPath /data/socorro/application:/data/socorro/thirdparty:/data/socorro/application/scripts
-# configure apache for crash-reports (crash submissions only)
-<VirtualHost  *:80>
-  ServerName crash-reports.example.com
-  DocumentRoot /data/socorro
-
-  Options FollowSymLinks
-  TimeOut 300
-  WSGIScriptAlias / /data/socorro/application/scripts/collector.py
-
-  # Sanity check - limit crash submissions to 20MB
-  <Location /submit>
-      LimitRequestBody 20971520
-  </Location>
-
-  ReWriteEngine on
-  RewriteCond %{REQUEST_METHOD} GET
-  RewriteRule .* http://crash-stats.example.com
-
-  SetEnvIf X-Forwarded-For "^.*\..*\..*\..*" is-forwarded
-  LogFormat "%h %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\"" combined
-  ErrorLog "|/usr/sbin/rotatelogs /var/log/httpd/crash-reports.example.com/error_log_%Y-%m-%d-%H 3600 -0"
-  CustomLog "|/usr/sbin/rotatelogs /var/log/httpd/crash-reports.example.com/access_%Y-%m-%d-%H 3600 -0" combined env=!image
-  CustomLog "|/usr/sbin/rotatelogs /var/log/httpd/crash-reports.example.com/access_%Y-%m-%d-%H 3600 -0" combined env=!is-forwarded
-  CustomLog "|/usr/sbin/rotatelogs /var/log/httpd/crash-reports.example.com/access_%Y-%m-%d-%H 3600 -0" x-forwarded-for env=is-forwarded
-  AddDefaultCharset UTF-8
-</VirtualHost>
-
-# configure apache for crash-stats (web UI only)
-
-<VirtualHost  *:80>
-  ServerName crash-stats.example.com
-  DocumentRoot /data/socorro/htdocs
-
-  ReWriteEngine On
-
-  RewriteCond %{REQUEST_URI} /dumps/(\w\w)(\w\w)((?:\w|-)+?)(\d{6}).jsonz
-  ReWriteRule /dumps/(\w\w)(\w\w)((?:\w|-)+?)(\d{6}).jsonz http://socorro-api.example.com/crashes/201005/crash/processed/by/uuid/$1$2$3$4 [P]
-
-  RewriteCond %{REQUEST_URI} /rawdumps/(\w\w)(\w\w)((?:\w|-)+?)(\d{6}).dump
-  ReWriteRule /rawdumps/(\w\w)(\w\w)((?:\w|-)+?)(\d{6}).dump http://socorro-api.example.com/crashes/201005/crash/raw_crash/by/uuid/$1$2$3$4 [P]
-
-  RewriteCond %{REQUEST_URI} /rawdumps/(\w\w)(\w\w)((?:\w|-)+?)(\d{6}).json
-  ReWriteRule /rawdumps/(\w\w)(\w\w)((?:\w|-)+?)(\d{6}).json http://socorro-api.example.com/crashes/201005/crash/meta/by/uuid/$1$2$3$4 [P]
-
-  ReWriteRule /rawdumps/(.*).(json|dump) /missing_dump [L]
-
-  <LocationMatch /rawdumps/.*>
-        Header append Cache-Control private
-        AuthType Basic
-        AuthName "Socorro restricted access"
-        AuthUserFile /data/socorro/application/.htpasswd
-  </LocationMatch>
-
-  <Directory /data/socorro/htdocs>
-    ReWriteEngine On
-    AllowOverride All
-  </Directory>
-
- SetEnvIf X-Forwarded-For "^.*\..*\..*\..*" is-forwarded
- LogFormat "%h %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\"" combined
- ErrorLog "|/usr/sbin/rotatelogs /var/log/httpd/crash-stats.example.com/ssl_error_log_%Y-%m-%d-%H 3600 -0"
- CustomLog "|/usr/sbin/rotatelogs /var/log/httpd/crash-stats.example.com/ssl_access_%Y-%m-%d-%H 3600 -0" combined env=!image
- CustomLog "|/usr/sbin/rotatelogs /var/log/httpd/crash-stats.example.com/ssl_access_%Y-%m-%d-%H 3600 -0" combined env=!is-forwarded
- CustomLog "|/usr/sbin/rotatelogs /var/log/httpd/crash-stats.example.com/ssl_access_%Y-%m-%d-%H 3600 -0" x-forwarded-for env=is-forwarded
- AddDefaultCharset UTF-8
-</VirtualHost>
-
-# configure apache for middleware only
-
-NameVirtualHost *:443
-WSGISocketPrefix /var/run/wsgi/bpapi_s
-WSGISocketPrefix /var/run/wsgi/bpapi_nossl
-WSGIPythonPath /data/socorro/application:/data/socorro/thirdparty:/data/socorro/application/scripts
-<VirtualHost *:80>
-        ServerName socorro-api.example.com
-        Redirect /bpapi https://socorro-api.example.com/bpapi
-
-        RewriteEngine On
-        RequestHeader set Accept application/octet-stream
-        ProxyTimeout 2
-        # Note - set your thrift server here
-        ProxyPass /crash_reports http://thrift-hbase-server.example.com:9090/crash_reports
-
-        WSGIDaemonProcess bpapi_nossl user=socorro threads=10 python-path=/data/socorro/application:/data/socorro/thirdparty:/data/socorro/application/scripts
-        WSGIScriptAlias /crashes /data/socorro/application/scripts/webservices.py
-        WSGIProcessGroup bpapi_nossl
-        WSGIApplicationGroup %{GLOBAL}
-        LogLevel info
-
-</VirtualHost>
-
-<VirtualHost *:443>
-        ServerName socorro-api.example.com
-        SSLEngine On
-        DocumentRoot /data/socorro/application
-        WSGIDaemonProcess bpapi_s user=socorro threads=10 python-path=/data/socorro/application:/data/socorro/thirdparty:/data/socorro/application/scripts
-        WSGIScriptAlias /bpapi /data/socorro/application/scripts/webservices.py
-        WSGIApplicationGroup %{GLOBAL}
-        LogLevel info
-
-        <Location /bpapi>
-                Order deny,allow
-                Deny from all
-                SSLRequireSSL
-                AuthType Basic
-                AuthName "Magic Words Please"
-                AuthUserFile /data/socorro/application/.htpasswd
-                Allow from 1.2.3.4
-                Require valid-user
-                Satisfy Any
-        </Location>
-</VirtualHost>
-## End /etc/httpd/conf.d/socorro.conf
+cp config/socorro.conf /etc/httpd/conf.d/socorro.conf
 
 mkdir /var/log/httpd/{crash-stats,crash-reports,socorro-api}.example.com
 service httpd restart
 chkconfig httpd on
 
+# enable memcached
 service memcached restart
 chkconfig memcached on
 
