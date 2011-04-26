@@ -92,8 +92,8 @@ class Admin_Controller extends Controller
             (isset($_POST['update_featured']) && $_POST['update_featured'] == 't')
         ) {
             $featured = 't';
-            if ($this->branch_model->getFeaturedVersionsExcludingVersionCount($product, $version) >= 3) {
-                client::messageSend("There are already 3 featured versions of this product. Set 1 of the featured products to not be featured, then try again.", E_USER_WARNING);
+            if ($this->branch_model->getFeaturedVersionsExcludingVersionCount($product, $version) >= 4) {
+                client::messageSend("There are already 4 featured versions of this product. Set 1 of the featured products to not be featured, then try again.", E_USER_WARNING);
                 $featured = 'f';
             }
         }

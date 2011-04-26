@@ -1,5 +1,6 @@
+var chartOpts;
 $(document).ready(function() { 
-  var chartOpts = {
+  chartOpts = {
   	xaxis: {
   		mode: 'time',
   		timeformat: "%b %d",
@@ -43,10 +44,10 @@ $(document).ready(function() {
     chartOpts['legend'] = {};
     try {
       var chartData = [
-   	    { label: data.item1, data: data.ratio1 },
-   	    { label: data.item2, data: data.ratio2 },
-   	    { label: data.item3, data: data.ratio3 },
-     	{ label: data.item4, data: data.ratio4 }
+        { data: data.ratio1 },
+        { data: data.ratio2 },
+        { data: data.ratio3 },
+     	{ data: data.ratio4 }
       ];
           
       $(document).ready(function() {
@@ -100,3 +101,4 @@ function showHideDaily(id) {
 	$("#daily_search_report_type_form").hide();
 	$("#"+id).show("fast");	
 }
+
