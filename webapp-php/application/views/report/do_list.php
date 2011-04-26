@@ -32,11 +32,38 @@
             - Crash Reports for <?php out::H($display_signature) ?>
         <?php } ?>	    
 	</h2>
+	<div>
+	    <ul class="options">
+<?php
+
+$options = array(
+	'hours' => array('6' => '6 hours', '12' => '12 hours', '24' => '24 hours', '48' => '48 hours'),
+	'days' => array('3' => '3 days', '7' => '7 days', '14' => '14 days', '28' => '28 days'),
+	'weeks' => array('1' => '1 week', '2' => '2 weeks', '3' => '3 weeks', '4' => '4 weeks'),
+);
+
+$type = $params['range_unit'];
+$current = $params['range_value'];
+$urlParams = $params;
+
+foreach($options[$type] as $k => $readable) {
+	$urlParams['range_value'] = $k;
+	echo '<li><a href="' . url::site('report/list') . '?' . html::query_string($urlParams) . '"';
+	if ($k == $params['range_value']) {
+	    echo ' class="selected"';
+	}
+	echo ">" . $readable . '</a></li>';
+}
+
+?>
+            </ul>
+	</div>
+
 </div>
 
 <div class="panel">
     <div class="body notitle">
-        
+
 <p>
 <?php 
     View::factory('common/prose_params', array(
@@ -45,7 +72,7 @@
     ))->render(TRUE) 
 ?>
 </p>
-
+<?php if(count($reports) > 0): ?> 
 <div id="report-list">
     <ul id="report-list-nav">
         <li><a href="#graph"><span>Graph</span></a></li>
@@ -140,6 +167,9 @@
 
 
         </div>
+	<?php else: ?>
+	<p>There were no reports in the time period specified. Please choose a different time period or use advanced search to select a custom time period.</p>
+	<?php endif; ?>
     </div>
 </div>
 

@@ -92,82 +92,74 @@ class Report_Controller extends Controller {
 
         $reports = $this->common_model->queryReports($params, $pager);
 
-        if (count($reports) == 0) {
-            header("No data for this query", TRUE, 404);
-	    $this->setView('common/nodata');
-	    $this->setViewData(array(
+        // Code for $secureUrl should stay in sync with code for $currentPath above
+        $currentPath = url::site('report/list') . '?' . html::query_string($params) . '&page=';
+
+        if ($this->logged_in) {
+            $this->sensitivePageHTTPSorRedirectAndDie($currentPath . $page);
+        }
+
+        $builds  = $this->common_model->queryFrequency($params);
+
+        if (count($builds) > 1){
+            $crashGraphLabel = "Crashes By Build";
+            $platLabels = $this->generateCrashesByBuild($platforms, $builds);
+        } else {
+            $crashGraphLabel = "Crashes By OS";
+            $platLabels = $this->generateCrashesByOS($platforms, $builds);
+        }
+
+        $buildTicks = array();
+        $index = 0;
+        for($i = count($builds) - 1; $i  >= 0 ; $i = $i - 1) {
+            $buildTicks[] = array($index, date('m/d', strtotime($builds[$i]->build_date)));
+            $index += 1;
+        }
+        $bug_model = new Bug_Model;
+        $rows = $bug_model->bugsForSignatures(array($params['signature']));
+        $bugzilla = new Bugzilla;
+        $signature_to_bugzilla = $bugzilla->signature2bugzilla($rows, Kohana::config('codebases.bugTrackingUrl'));
+
+        list($correlation_product, $correlation_version) = $this->_correlationProdVers($reports);
+
+        foreach ($reports as $report) {
+            $hang_details = array();
+            $hang_details['is_hang'] = ! empty($report->hangid);
+            $hang_details['is_plugin'] = ! empty($report->plugin_id);
+            $hang_details['link'] = '#';//Crash level view, linkify widgets
+            $hang_details['uuid'] = $report->uuid;
+            $hang_details['hangid'] = $report->hangid;
+            $report->{'hang_details'} = $hang_details;
+        }
+
+        $this->setViewData(array(
+            'navPathPrefix' => $currentPath,
+            'nextLinkText' => 'Older Crashes',
+            'pager' => $pager,
+            'params'  => $params,
+            'previousLinkText' => 'Newer Crashes',
+            'reports' => $reports,
+            'totalItemText' => " Crash Reports",
+
+
+            'all_products'  => $branch_data['products'],
+            'all_branches'  => $branch_data['branches'],
+            'all_versions'  => $branch_data['versions'],
+            'all_platforms' => $platforms,
+
+            'builds'  => $builds,
+            'buildTicks'      => $buildTicks,
+            'crashGraphLabel' => $crashGraphLabel,
+            'platformLabels'  => $platLabels,
+
+            'sig2bugs' => $signature_to_bugzilla,
+            'comments' => $this->common_model->getCommentsByParams($params),
+            'correlation_product' => $correlation_product,
+            'correlation_version' => $correlation_version,
+            'correlation_os' => $this->_correlations($builds),
+            'logged_in' => $this->logged_in,
             'url_nav' => url::site('products/'.$product),
-	    ));
-	} else {
-	    // Code for $secureUrl should stay in sync with code for $currentPath above
-	    $currentPath = url::site('report/list') . '?' . html::query_string($params) . '&page=';
-	    
-	    if ($this->logged_in) {
-		$this->sensitivePageHTTPSorRedirectAndDie($currentPath . $page);
-	    }
-
-	    $builds  = $this->common_model->queryFrequency($params);
-
-	    if (count($builds) > 1){
-		$crashGraphLabel = "Crashes By Build";
-		$platLabels = $this->generateCrashesByBuild($platforms, $builds); 
-	    } else {
-		$crashGraphLabel = "Crashes By OS";
-		$platLabels = $this->generateCrashesByOS($platforms, $builds);
-	    }
-
-	    $buildTicks = array();
-	    $index = 0;
-	    for($i = count($builds) - 1; $i  >= 0 ; $i = $i - 1) {
-		$buildTicks[] = array($index, date('m/d', strtotime($builds[$i]->build_date)));
-		$index += 1;
-	    }
-	    $bug_model = new Bug_Model;
-	    $rows = $bug_model->bugsForSignatures(array($params['signature']));
-	    $bugzilla = new Bugzilla;
-	    $signature_to_bugzilla = $bugzilla->signature2bugzilla($rows, Kohana::config('codebases.bugTrackingUrl'));
-
-	    list($correlation_product, $correlation_version) = $this->_correlationProdVers($reports);
-
-            foreach ($reports as $report) {
-                $hang_details = array();
-                $hang_details['is_hang'] = ! empty($report->hangid);
-                $hang_details['is_plugin'] = ! empty($report->plugin_id);
-                $hang_details['link'] = '#';//Crash level view, linkify widgets
-                $hang_details['uuid'] = $report->uuid;
-                $hang_details['hangid'] = $report->hangid;
-                $report->{'hang_details'} = $hang_details;
-            }
-
-	    $this->setViewData(array(
-		'navPathPrefix' => $currentPath,
-		'nextLinkText' => 'Older Crashes',
-		'pager' => $pager,
-		'params'  => $params,
-		'previousLinkText' => 'Newer Crashes',
-		'reports' => $reports,
-		'totalItemText' => " Crash Reports",
-
-        	
-		'all_products'  => $branch_data['products'],
-		'all_branches'  => $branch_data['branches'],
-		'all_versions'  => $branch_data['versions'],
-		'all_platforms' => $platforms,
-
-		'builds'  => $builds,        	
-		'buildTicks'      => $buildTicks,
-		'crashGraphLabel' => $crashGraphLabel,
-		'platformLabels'  => $platLabels,
-        	
-		'sig2bugs' => $signature_to_bugzilla,
-		'comments' => $this->common_model->getCommentsByParams($params),
-		'correlation_product' => $correlation_product,
-		'correlation_version' => $correlation_version,
-		'correlation_os' => $this->_correlations($builds),
-		'logged_in' => $this->logged_in,
-		'url_nav' => url::site('products/'.$product),        
-	    ));
-	}
+        ));
     }
 
     /**
