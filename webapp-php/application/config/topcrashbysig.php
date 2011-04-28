@@ -16,7 +16,7 @@ $config['bybranch_limit'] = 300;
  * The list of days provided as options by which to limit 
  * the top crasher query.
  */
-$config['durations'] = array(3, 7, 14, 28);
+$config['durations'] = array(1, 3, 7, 14, 28);
 
 /**
  * The list of crash types that appear on the top crasher 
