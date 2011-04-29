@@ -4,12 +4,12 @@
     <?php echo html::stylesheet(array(
         'css/flora/flora.all.css'
     ), 'screen')?>
-    <!--[if IE]><?php echo html::script('js/flot-0.5/excanvas.pack.js') ?><![endif]-->
+    <!--[if IE]><?php echo html::script('js/flot-0.7/excanvas.pack.js') ?><![endif]-->
 
     <?php echo html::script(array(
         'js/jquery/plugins/ui/jquery.ui.all.js',
         'js/jquery/plugins/ui/jquery.tablesorter.min.js',
-        'js/flot-0.5/jquery.flot.pack.js',
+        'js/flot-0.7/jquery.flot.pack.js',
         'js/socorro/correlation.js',
         'js/socorro/report_list.js'
     ))?>

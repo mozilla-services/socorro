@@ -3,10 +3,10 @@
     <?php echo html::stylesheet(array(
        'css/flora/flora.all.css'
     ), 'screen')?>
-    <!--[if IE]><?php echo html::script('js/flot-0.5/excanvas.pack.js') ?><![endif]-->
+    <!--[if IE]><?php echo html::script('js/flot-0.7/excanvas.pack.js') ?><![endif]-->
     <?php echo html::script(array(
         'js/jquery/plugins/ui/jquery.tablesorter.min.js',
-        'js/flot-0.5/jquery.flot.pack.js'
+        'js/flot-0.7/jquery.flot.pack.js'
     ))?>
 <?php slot::end() ?>
 
@@ -145,47 +145,60 @@ $(function(){
 
   $.plot($("#server-status-graph-comb"),
    [
-          {label:"Jobs Waiting", data: waiting_job_count },
-          {label:"Proc Running", data: processors_count},
-          {label:"Avg Process", yaxis: 2, data: avg_process_sec},
-          {label:"Avg Wait", yaxis: 2, data: avg_wait_sec}
-         ],
-         { // options 
-   xaxis: {
-     ticks: <?php echo json_encode( $plotData['xaxis_ticks'] ); ?>
-     }, yaxis: { labelWidth: 55 }
-  });
+     {label:"Jobs Waiting", data: waiting_job_count },
+     {label:"Proc Running", data: processors_count},
+     {label:"Avg Process", yaxis: 2, data: avg_process_sec},
+     {label:"Avg Wait", yaxis: 2, data: avg_wait_sec}
+   ],
+   { // options 
+     xaxis: { ticks: <?php echo json_encode( $plotData['xaxis_ticks'] ); ?> },
+     yaxis: { labelWidth: 55 },
+     shadowSize: 0
+
+   });
   $.plot($("#server-status-graph-jobs-wait"),
-   [ {label:"Jobs Waiting", data: waiting_job_count }],
-         { // options 
-   xaxis: {
-     ticks: <?php echo json_encode( $plotData['xaxis_ticks'] ); ?>
-       }, yaxis: { labelWidth: 55 }
-  });
+   [{
+      label:"Jobs Waiting",
+      data: waiting_job_count
+   }],
+   { // options 
+     xaxis: { ticks: <?php echo json_encode( $plotData['xaxis_ticks'] ); ?> },
+     yaxis: { labelWidth: 55 },
+     shadowSize: 0
+   });
 
   $.plot($("#server-status-graph-proc-count"),
-   [ {label:"Proc Running", data: processors_count} ],
-         { // options 
-   xaxis: {
-     ticks: <?php echo json_encode( $plotData['xaxis_ticks'] ); ?>
-     }, yaxis: { labelWidth: 55 }
-  });
+   [{
+     label:"Proc Running",
+     data: processors_count
+   }], 
+   { // options 
+     xaxis: { ticks: <?php echo json_encode( $plotData['xaxis_ticks'] ); ?> },
+     yaxis: { labelWidth: 55 },
+     shadowSize: 0
+   });
 
   $.plot($("#server-status-graph-avg-proc"),
-   [ {label:"Avg Process", data: avg_process_sec} ],
-         { // options 
-   xaxis: {
-     ticks: <?php echo json_encode( $plotData['xaxis_ticks'] ); ?>
-     }, yaxis: { labelWidth: 55 }
-  });
+   [{
+     label:"Avg Process", 
+     data: avg_process_sec
+   }],
+   { // options 
+     xaxis: { ticks: <?php echo json_encode( $plotData['xaxis_ticks'] ); ?> },
+     yaxis: { labelWidth: 55 },
+     shadowSize: 0
+   });
 
   $.plot($("#server-status-graph-avg-wait"),
-   [ {label:"Avg Wait", data: avg_wait_sec} ],
-         { 
-   xaxis: {
-     ticks: <?php echo json_encode( $plotData['xaxis_ticks'] ); ?>
-     }, yaxis: { labelWidth: 55 }
-  });
+   [{
+     label:"Avg Wait",
+     data: avg_wait_sec
+   }],
+   { 
+     xaxis: { ticks: <?php echo json_encode( $plotData['xaxis_ticks'] ); ?> },
+     yaxis: { labelWidth: 55 },
+     shadowSize: 0
+   });
 });
 
 $(document).ready(function() { 

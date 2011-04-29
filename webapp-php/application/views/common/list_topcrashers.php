@@ -158,9 +158,9 @@
             </tbody>
         </table>
     </div>
-    <!--[if IE]><?php echo html::script('js/flot-0.5/excanvas.pack.js') ?><![endif]-->
+    <!--[if IE]><?php echo html::script('js/flot-0.7/excanvas.pack.js') ?><![endif]-->
     <?php echo html::script(array(
-        'js/flot-0.5/jquery.flot.pack.js'
+        'js/flot-0.7/jquery.flot.pack.js'
 				));
     $partial_url_path = '/' . join('/', array_map('rawurlencode', array($product, $version))) . '/';
 ?>

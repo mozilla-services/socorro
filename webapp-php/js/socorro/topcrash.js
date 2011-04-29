@@ -51,7 +51,8 @@ $(document).ready(function () {
                 legend: {container: legend, margin: 0, labelBoxBorderColor: '#FFF'},
                 series: {
                     lines: { show: true },
-                    points: { show: true }
+                    points: { show: false },
+                    shadowSize: 0
                 }
             });
         });

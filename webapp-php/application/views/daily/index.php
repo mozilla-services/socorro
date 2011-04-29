@@ -19,7 +19,7 @@ if ($form_selection == 'by_report_type') {?>
 </script>
 <?php
 echo html::script(array(
-		'js/flot-0.5/jquery.flot.pack.js',
+		'js/flot-0.7/jquery.flot.pack.js',
 		'js/socorro/daily.js',
 	));
 ?>
