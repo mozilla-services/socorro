@@ -590,6 +590,11 @@ class Processor(object):
       newReportRecordAsDict['dump'] = ''
       newReportRecordAsDict["startedDateTime"] = startedDateTime
 
+      try:
+        newReportRecordAsDict["ReleaseChannel"] = jsonDocument["ReleaseChannel"]
+      except KeyError:
+        newReportRecordAsDict["ReleaseChannel"] = 'unknown'
+
       if self.config.collectAddon:
         #logger.debug("collecting Addons")
         addonsAsAListOfTuples = self.insertAdddonsIntoDatabase(threadLocalCursor, reportId, jsonDocument, date_processed, processorErrorMessages)
