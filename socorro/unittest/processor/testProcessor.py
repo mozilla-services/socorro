@@ -884,6 +884,7 @@ def testProcessJob07():
             'topmost_filenames': ['myfile.cpp'],
             'id': 345,
             'completeddatetime': dt.datetime(2011, 2, 15, 1, 1),
+            'ReleaseChannel': 'release',
            }
     fakeSaveProcessedDumpJson.expect('__call__',
                                      (nrr, c.fakeCrashStorage),
