@@ -8,6 +8,7 @@
         <div id="daily_search">
         <div id="daily_search_version">
             <h3><a href="#" id="click_by_version">Crashes per ADU by Version</a></h3>
+            <p>All ADU ratios are generated per 100 ADUs, not per single ADU. "3.5 crashes/ADU" means that there are 3.5 crashes per 100 users, not per user. This ratio also does not distinguish between users who crash multiple times and multiple crashing users.</p>
             <form id="daily_search_version_form" name="daily_search_version_form" action="<?php out::H($url_form); ?>" method="get" <?php if ($form_selection != 'by_version') echo 'style="display: none"'; ?>>
         
 	    		<input type="hidden" name="form_selection" value="by_version">
