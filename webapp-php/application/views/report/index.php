@@ -68,6 +68,9 @@ if (is_null($report->signature) || empty($report->signature)) { ?>
             <tr>
                 <th>UUID</th><td><?php out::H($report->uuid) ?></td>
             </tr>
+            <tr>
+              <th>Date Processed</th><td><?php out::H($report->date_processed); ?></td>
+            </tr>
 <?php if (property_exists($report, 'processType')) { ?>
             <tr><th>Process Type</th><td><?= out::H($report->processType) ?>
     <?php if (property_exists($report, 'pluginName')) { ?>
