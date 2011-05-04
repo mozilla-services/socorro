@@ -116,6 +116,9 @@ if (is_null($report->signature) || empty($report->signature)) { ?>
             <tr>
                 <th>Build ID</th><td><?php out::H($report->build) ?></td>
             </tr>
+            <tr>
+                <th>Release Channel</th><td><?php out::H($report->ReleaseChannel) ?></td>
+            </tr>
             <?php if ($branch && !empty($branch->branch)): ?>
             <tr>
                 <th>Branch</th><td><?php out::H($branch->branch) ?></td>

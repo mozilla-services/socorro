@@ -82,7 +82,7 @@ class CrashReportDump {
             'date_processed', 'uptime', 'build', 'os_name', 
             'os_version', 'cpu_name', 'cpu_info', 'reason', 
             'address', 'user_comments', 'dump', 'processor_notes',
-            'install_time'
+            'install_time', 'ReleaseChannel', 
         );
 
         foreach ($basicKeys as $key) {
