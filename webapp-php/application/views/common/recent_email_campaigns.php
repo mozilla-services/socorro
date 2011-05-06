@@ -1,4 +1,4 @@
-  <div class="sidebar body">
+  <div class="sidebar">
     <h3>Recent Campaigns</h3>
     <?php if (count($campaigns) > 0) { ?>
       <table class="recent-campaigns">

@@ -1434,21 +1434,26 @@ a.builds {
 /* BEGIN  Post Crash Email */
 .postcrash.panel {
     min-width: 1150px;
+    background-color: #fff;
 }
+
 .postcrash strong {
     font-weight: bold;
 }
-.postcrash .body {
-    width: 750px;    
+.postcrash div {
+    padding: 8px;
 }
 .postcrash .sidebar {
     float: right;
     width: auto;    
 }
-div.admin h3, div.admin p, div.admin ul {
+.postcrash .mainbar {
+    width: 750px;
+}
+.postcrash.admin h3, .postcrash.admin p, .postcrash.admin ul {
     margin-left: 120px;
 }
-div.admin pre {
+.postcrash pre {
     background-color: #DDD;
     color: #000;
     margin-left: 150px;
@@ -1497,4 +1502,8 @@ table.recent-campaigns .signature:first-child td{
     padding-top: 0px;
 }
 .form_error { color: red; font-weight: 900; }
+
+.email {
+    white-space: pre-wrap;
+}
 /* END Post Crash Email */

@@ -4,7 +4,7 @@
 </div>
 <div class="panel postcrash">
   <?php View::factory('common/recent_email_campaigns')->render(TRUE); ?>
-  <div class="body notitle">
+  <div class="mainbar">
     <div class="admin">
       <h3>Email</h3>
       <p>During a product release, use this form to contact users that a crash has been fixed.</p>
