@@ -113,7 +113,7 @@ def get_last_run_date(config, now_function=dt.datetime.now):
       finally:
         f.close()
     except IOError:
-      return now_function() - dt.timedelta(days=100)
+      return now_function() - dt.timedelta(days=30)
   else:
     return now_function() - dt.timedelta(days=config.daysIntoPast)
 

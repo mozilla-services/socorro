@@ -323,7 +323,7 @@ class TestBugzilla(unittest.TestCase):
       pass
     def a_fixed_date():
       return dt.datetime(2009,05,04,15,10)
-    assert bug.get_last_run_date(self.testConfig, a_fixed_date) == dt.datetime(2009, 1, 24, 15, 10)
+    assert bug.get_last_run_date(self.testConfig, a_fixed_date) == dt.datetime(2009, 4, 4, 15, 10)
     def another_fixed_date():
       return dt.datetime(2009,06,14,15,10)
     bug.save_last_run_date(self.testConfig, another_fixed_date)
