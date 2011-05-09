@@ -45,7 +45,7 @@ $(document).ready(function() {
         $('#signatureList').tablesorter({
             headers: { 
                 0: { sorter: 'digit' }, 
-                2: { sorter: 'digit' }, 
+
                 3: { sorter: 'digit' }, 
                 4: { sorter: 'digit' }, 
                 5: { sorter: 'digit' }, 
