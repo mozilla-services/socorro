@@ -27,12 +27,15 @@ def move (conf,
     yielding the ooids of every new entry in the filelsystem.  If there
     are no new entries, it yields None"""
     sourceStorage = crashStoragePoolForSource.crashStorage() # thread local
-    while True:
-      i = 0
-      for i, ooid in enumerate(sourceStorage.newUuids()):
-        yield ooid
-      if i == 0:
-        yield None
+    try:
+      while True:
+        i = 0
+        for i, ooid in enumerate(sourceStorage.newUuids()):
+          yield ooid
+        if i == 0:
+          yield None
+    except KeyboardInterrupt:
+      pass
   #-----------------------------------------------------------------------------
 
   #-----------------------------------------------------------------------------
