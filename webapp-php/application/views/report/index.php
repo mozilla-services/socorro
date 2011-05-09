@@ -12,6 +12,7 @@
     <?php echo html::script(array(
         'js/jquery/plugins/ui/jquery.ui.all.js',
         'js/jquery/plugins/ui/jquery.tablesorter.min.js',
+	'js/socorro/report.js',
     ))?>
 
 
@@ -267,12 +268,15 @@ if (is_null($report->signature) || empty($report->signature)) { ?>
     <div id="modules">
         <?php if (count($report->modules)): ?>
         <table class="list" id="modules-list">
+	<thead>
             <tr>
                 <th>Filename</th>
                 <th>Version</th>
                 <th>Debug Identifier</th>
                 <th>Debug Filename</th>
             </tr>
+	</thead>
+	<tbody>
             <?php $row = 1 ?>
             <?php foreach ($report->modules as $module): ?>
                 <tr>
@@ -283,6 +287,7 @@ if (is_null($report->signature) || empty($report->signature)) { ?>
                 </tr>
                 <?php $row += 1 ?>
             <?php endforeach ?>
+	</tbody>
         </table>
     <?php endif ?>
     </div><!-- /modules -->
@@ -350,7 +355,7 @@ if (is_null($report->signature) || empty($report->signature)) { ?>
 
     <?php echo html::script(
 	array(
-	    'js/socorro/report.js',
+	   // 'js/socorro/report.js',
 	    'js/socorro/correlation.js'
 	    ));
     ?>

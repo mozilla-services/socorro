@@ -39,5 +39,5 @@ $(document).ready(function () {
         $(this).remove();
         return false;
     });
-    $('#modules-list').tablesorter({sortList: [[1, 2]]});
+    $('#modules-list').tablesorter({sortList: [[1, 0]], headers: {1: {sorter : 'digit'}}});
 });
