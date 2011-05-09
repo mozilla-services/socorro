@@ -145,6 +145,7 @@ class Processor(object):
     self.threadManager = sthr.TaskManager(self.config.numberOfThreads, self.config.numberOfThreads * 2)
     logger.info("I am processor #%d", self.processorId)
     logger.info("my priority jobs table is called: '%s'", self.priorityJobsTableName)
+    self.priority_job_set = set()
 
   #-----------------------------------------------------------------------------
   @sdb.db_transaction_retry_wrapper
@@ -390,8 +391,9 @@ class Processor(object):
                                                   (aFullJobTuple[1],))
           if aFullJobTuple[0] is not None:
             if aFullJobTuple[3]:
-              continue
+              continue # the job already started via normal channels
             else:
+              self.priority_job_set.add(aFullJobTuple[1])
               yield (aFullJobTuple[0],aFullJobTuple[1],aFullJobTuple[2],)
           else:
             logger.debug("the priority job %s was never found", aFullJobTuple[1])
@@ -584,6 +586,10 @@ class Processor(object):
         date_processed = ooid.dateFromOoid(jobUuid)
 
       newReportRecordAsDict = self.insertReportIntoDatabase(threadLocalCursor, jobUuid, jsonDocument, date_processed, processorErrorMessages)
+
+      if jobUuid in self.priority_job_set:
+        processorErrorMessages.append('Priority Job')
+        self.priority_job_set.remove(jobUUid)
 
       threadLocalDatabaseConnection.commit()
       reportId = newReportRecordAsDict["id"]

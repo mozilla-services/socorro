@@ -370,6 +370,10 @@ def testNewPriorityJobsIter2():
     r = i.next()
     e = None
     assert r == e, 'expected\n%s\nbut got\n%s' % (e, r)
+    assert 'ooid1' in p.priority_job_set, "expected 'ooid1' to be in " \
+                                          "priority_job_set, but it wasn't"
+    assert 'ooid2' not in p.priority_job_set, "expected 'ooid2' to NOT be in " \
+                                          "priority_job_set, but it was"
 
 def normalQuery(c, returnValues):
     c.fakeDatabaseModule.expect('transaction_execute_with_retry',
