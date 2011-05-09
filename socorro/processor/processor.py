@@ -589,7 +589,7 @@ class Processor(object):
 
       if jobUuid in self.priority_job_set:
         processorErrorMessages.append('Priority Job')
-        self.priority_job_set.remove(jobUUid)
+        self.priority_job_set.remove(jobUuid)
 
       threadLocalDatabaseConnection.commit()
       reportId = newReportRecordAsDict["id"]
