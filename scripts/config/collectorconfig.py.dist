@@ -131,14 +131,14 @@ neverDiscard.default = True
 neverDiscard.fromStringConverter = cm.booleanConverter
 
 throttleConditions = cm.Option()
-throttleConditions.default = [ 
-    ("Version", re.compile(r'\..*?[a-zA-Z]+'), 100), # 100% of all alpha, beta or special
+throttleConditions.default = throttleConditions.default = [
     ("Comments", lambda x: x, 100), # 100% of crashes with comments
-    ("ProductName", lambda x: x[0] == 'F' and x[-1] == 'x', 10), # 10% of Firefox - excluding someone's bogus "Firefox3" product
+    ("ReleaseChannel", lambda x: x in ("nightly", "aurora", "beta"), 100),
+    ("ProductName", 'Firefox', 10), # 10% of Firefox
+    ("Version", re.compile(r'\..*?[a-zA-Z]+'), 100), # 100% of all alpha, beta or special
     ("ProductName", lambda x: x[0] in 'TSC', 100), # 100% of Thunderbird, SeaMonkey & Camino
-    (None, True, 0) # reject everything else                                    
+    (None, True, 0) # reject everything else
 ]
-
 
 minimalVersionForUnderstandingRefusal = cm.Option()
 minimalVersionForUnderstandingRefusal.default = { 'Firefox': '3.5.4' }
