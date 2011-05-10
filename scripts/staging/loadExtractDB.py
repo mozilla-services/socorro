@@ -29,7 +29,7 @@ def runload(load_command, db_name):
 runload('tar -xzf %s', tar_file)
 
 #connect to postgresql
-conn = psycopg2.connect("dbname=breakpad user=postgres")
+conn = psycopg2.connect("dbname=postgres user=postgres")
 
 conn.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
 
@@ -46,10 +46,8 @@ except psycopg2.Error as exc:
     if code == '3D000':
         pass
     else:
-        print code
-        #sys.exit('unable to drop database %s probably because connections to it are still open.' % database_name)
-
-# if this failed, check why.
+        # if this failed, check why.
+        sys.exit('unable to drop database %s probably because connections to it are still open: %s' % database_name,code)
 
 cur.execute("""CREATE DATABASE %s;
    """ % database_name )
