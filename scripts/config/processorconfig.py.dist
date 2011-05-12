@@ -7,6 +7,7 @@ import stat
 # imported config
 
 from config.commonconfig import databaseHost
+from config.commonconfig import databasePort
 from config.commonconfig import databaseName
 from config.commonconfig import databaseUserName
 from config.commonconfig import databasePassword
