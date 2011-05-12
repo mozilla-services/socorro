@@ -21,9 +21,9 @@ smtpPassword.doc = 'The password for SMTP providers that require authentication 
 smtpPassword.default = None
 
 fromEmailAddress = cm.Option()
-fromEmailAddress.doc = 'Email Address which is used in the From feild of all emails'
+fromEmailAddress.doc = 'Email Address which is used in the From field of all emails'
 fromEmailAddress.default = 'no-reply@crash-stats.mozilla.com'
 
 unsubscribeBaseUrl = cm.Option()
-unsubscribeBaseUrl.doc = 'The base url for handeling un-subscribe requests. This will be used in email templates'
+unsubscribeBaseUrl.doc = 'The base url for handling un-subscribe requests. This will be used in email templates'
 unsubscribeBaseUrl.default = "http://crash-stats.mozilla.com/email/subscription/%s"

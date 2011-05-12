@@ -1631,11 +1631,13 @@ class EmailContactsTable(Table):
                                                 email              TEXT NOT NULL,
                                                 subscribe_token    TEXT NOT NULL,
                                                 subscribe_status   BOOLEAN DEFAULT TRUE,
+                                                ooid               TEXT NOT NULL,
+                                                crash_date         TIMESTAMP with time zone,
                                                 CONSTRAINT email_contacts_email_unique UNIQUE (email),
                                                 CONSTRAINT email_contacts_token_unique UNIQUE (subscribe_token)
                                                 );
                                         """)
-    self.insertSql = """INSERT INTO email_contacts (email, subscribe_token) VALUES (%s, %s) RETURNING id"""
+    self.insertSql = """INSERT INTO email_contacts (email, subscribe_token, ooid, crash_date) VALUES (%s, %s, %s, %s) RETURNING id"""
   #-----------------------------------------------------------------------------------------------------------------
   def updateDefinition(self, databaseCursor):
     if socorro_pg.tablesMatchingPattern(self.name) == []:

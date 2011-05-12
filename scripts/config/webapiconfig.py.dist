@@ -46,6 +46,10 @@ servicesList = cm.Option()
 servicesList.doc = 'a python list of classes to offer as services'
 servicesList.default = [tcbst.TopCrashBySignatureTrends, sighist.SignatureHistory, adubd.AduByDay, adubd.AduByDay200912, adudetails.AduByDayDetails, crash.GetCrash, emailcampaign.EmailCampaign, emailcreate.EmailCampaignCreate, emaillist.EmailCampaigns, emailvolume.EmailCampaignVolume, emailsub.EmailSubscription, emailsend.EmailSender]
 
+crashBaseUrl = cm.Option()
+crashBaseUrl.doc = 'The base url for linking to crash-stats. This will be used in email templates'
+crashBaseUrl.default = "http://crash-stats.mozilla.com/report/index/%s"
+
 #---------------------------------------------------------------------------
 # Logging
 syslogHost = cm.Option()

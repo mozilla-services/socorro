@@ -616,7 +616,7 @@ class Admin_Controller extends Controller
         $variables = array();
 
         //First element must be the unsubscribe url, as it's required and we check for it below
-        $valid_variables = array('*|UNSUBSCRIBE_URL|*', '*|EMAIL_ADDRESS|*');
+        $valid_variables = array('*|UNSUBSCRIBE_URL|*', '*|EMAIL_ADDRESS|*', '*|CRASH_DATE|*', '*|CRASH_URL|*');
 
         $count = preg_match_all('/\*\|[a-zA-Z_ ]*\|\*/', $body, $variables);
 

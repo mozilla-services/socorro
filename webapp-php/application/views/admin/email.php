@@ -13,6 +13,8 @@
         <ul>
           <li><code class="email-var">*|EMAIL_ADDRESS|*</code> - Will be replaced with user's email. Example jane@doe.name</li>
           <li><code class="email-var">*|UNSUBSCRIBE_URL|*</code> - Will be replaced with user's unique un-subscribe URL</li>
+          <li><code class="email-var">*|CRASH_DATE|*</code> - Will be replaced with user's most recent crash date for this signature</li>
+          <li><code class="email-var">*|CRASH_URL|*</code> - Will be replaced with a link to crash-stats for the user's most recent crash</li>
         </ul></p>
       <?php View::factory('common/form_errors')->render(TRUE); ?>
       <form class="" name="postcrashemail" action="confirm_email" method="post">

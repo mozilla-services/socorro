@@ -114,7 +114,20 @@ class EmailCampaignCreate(webapi.JsonServiceBase):
     """
     end_date = datetime.datetime(end_date.year, end_date.month, end_date.day, 23, 59, 59)
 
-    email_rows = self.determine_emails(cursor, product, versions, signature, start_date, end_date)
+    # choose only unique email addresses. 
+    # in the case of duplicates, pick the latest crash_date.
+    dedupe_emails = {}
+    for row in self.determine_emails(cursor, product, versions, signature, start_date, end_date):
+      email = row[1]
+      crash_date = row[2]
+      if email in dedupe_emails.keys():
+        if crash_date > dedupe_emails[email][2]:
+            dedupe_emails[email] = row
+      else:
+        dedupe_emails[email] = row
+
+    email_rows = dedupe_emails.values()
+
     full_email_rows = self.ensure_contacts(cursor, email_rows)
     logger.info('full_email_rows: %s' % full_email_rows)
     campaign_id = self.save_campaign(cursor, product, versions, signature, subject, body, start_date, end_date, author)
@@ -128,7 +141,7 @@ class EmailCampaignCreate(webapi.JsonServiceBase):
     if len(versions) > 0:
       version_clause = " version IN %(versions)s AND "
     sql = """
-        SELECT DISTINCT contacts.id, reports.email, contacts.subscribe_token
+        SELECT DISTINCT contacts.id, reports.email, reports.client_crash_date AS crash_date, reports.uuid AS ooid, contacts.subscribe_token
         FROM reports
         LEFT JOIN email_contacts AS contacts ON reports.email = contacts.email
         WHERE TIMESTAMP WITHOUT TIME ZONE '%s' <= reports.date_processed AND
@@ -152,9 +165,11 @@ class EmailCampaignCreate(webapi.JsonServiceBase):
 
   #-----------------------------------------------------------------------------------------------------------------
   def ensure_contacts(self, cursor, email_rows):
-    """ Returns a list of three-element dicts
+    """ Returns a list of five-element dicts
         * id
         * email
+        * crash_date
+        * ooid
         * token
 
         Also inserts into email_contacts table.
@@ -163,18 +178,18 @@ class EmailCampaignCreate(webapi.JsonServiceBase):
     new_emails = []
     contacts = []
     for row in email_rows:
-      dbid, email, token = row
-      logger.info('dbid: %s, email: %s, token: %s' % row)
+      logger.info('dbid: %s, email: %s, crash_date: %s, ooid: %s, token: %s' % row)
+      dbid, email, crash_date, ooid, token = row
       if '@' not in email:
         continue
       if not dbid:
         logger.info('new email address found')
         new_token = str(uuid.uuid4())
-        new_emails.append((email, new_token))
+        new_emails.append((email, new_token, ooid, crash_date))
         logger.info('using token %s for email %s' % (new_token, email))
-        contacts.append({'id': None, 'email': email, 'token': new_token})
+        contacts.append({'id': None, 'email': email, 'crash_date': crash_date, 'ooid': ooid, 'token': new_token})
       else:
-        contacts.append({'id': dbid, 'email': email, 'token': token})
+        contacts.append({'id': dbid, 'email': email, 'crash_date': crash_date, 'ooid': ooid, 'token': token})
     if new_emails:
       logger.info('inserting new email addresses into emailcontacts')
       table = EmailContactsTable(logger)

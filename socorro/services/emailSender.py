@@ -22,6 +22,8 @@ logger = logging.getLogger("webapi")
 
 EMAIL_ADDRESS_VARIABLE   = '*|EMAIL_ADDRESS|*'
 UNSUBSCRIBE_URL_VARIABLE = '*|UNSUBSCRIBE_URL|*'
+CRASH_DATE_VARIABLE      = '*|CRASH_DATE|*'
+CRASH_URL_VARIABLE       = '*|CRASH_URL|*'
 
 #=================================================================================================================
 class EmailSender(webapi.JsonServiceBase):
@@ -117,14 +119,14 @@ class EmailSender(webapi.JsonServiceBase):
 
     for contact in contacts:
       try:
-        contact_id, email, token = contact
-        personalized_body = self.personalize(body, email, token)
+        contact_id, email, token, ooid, crash_date = contact
+        personalized_body = self.personalize(body, email, token, ooid, crash_date)
 
         msg = MIMETextClass(personalized_body.encode('utf-8'), _charset='utf-8')
         msg['From'] = self.config['fromEmailAddress']
         msg['Subject'] = subject
 
-        # logger.info("calling sendmail %s with %s" % (email, personalized_body))
+        logger.info("calling sendmail %s with %s" % (email, personalized_body))
         # comment the next line for a safer dev env
         self.send_email(smtp, msg, email)
 
@@ -136,9 +138,12 @@ class EmailSender(webapi.JsonServiceBase):
     return contacted_emails
 
   #-----------------------------------------------------------------------------------------------------------------
-  def personalize(self, body, email, token):
+  def personalize(self, body, email, token, ooid, crash_date):
     t = body.replace(EMAIL_ADDRESS_VARIABLE, email)
-    return t.replace(UNSUBSCRIBE_URL_VARIABLE, self.config['unsubscribeBaseUrl'] % token)
+    t = t.replace(UNSUBSCRIBE_URL_VARIABLE, self.config['unsubscribeBaseUrl'] % token)
+    t = t.replace(CRASH_DATE_VARIABLE, crash_date.isoformat())
+    t = t.replace(CRASH_URL_VARIABLE, self.config['crashBaseUrl'] % ooid)
+    return t
 
   #-----------------------------------------------------------------------------------------------------------------
   def smtp_connection(self):
@@ -212,7 +217,7 @@ class EmailSender(webapi.JsonServiceBase):
     logger.info('email contacts ids: %s' % email_contacts_ids)
 
     cursor.execute("""
-      SELECT id, email, subscribe_token FROM email_contacts
+      SELECT id, email, subscribe_token, ooid, crash_date FROM email_contacts
         WHERE id IN %(email_contacts_ids)s
         AND subscribe_status = 't' """, {'email_contacts_ids': tuple(email_contacts_ids)})
 
