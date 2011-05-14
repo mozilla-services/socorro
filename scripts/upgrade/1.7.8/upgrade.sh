@@ -4,6 +4,9 @@
 # suitable for both dev instances and prod 
 
 set -e
+set -u
+
+NEWPW=$1
 
 date
 
@@ -14,7 +17,7 @@ echo 'drop the duplicate uuid index'
 ./drop_reports_uuid_index.py
 
 echo 'add the new pgbouncer config.  this will interrupt service'
-./pgbouncer_processor_pool.sh
+./pgbouncer_processor_pool.py $NEWPW
 
 date
 
