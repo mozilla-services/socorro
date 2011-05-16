@@ -36,10 +36,10 @@ class Report_Model extends Model {
     	} else {
 	    $crashReportDump = new CrashReportDump;
 	    $crash_report_json = $crashReportDump->getJsonZ($crash_uri);
-            if($crash_report_json == false){
+	    if($crash_report_json === false){
                 Kohana::log('info', "$uuid does not exist, and no raw crash report could be found (404)");
                 return false;
-            } else if ($crash_report_json == true) {
+            } else if ($crash_report_json === true) {
                 Kohana::log('info', "$uuid was reported but not processed; a priority job has been scheduled.");
                 return true;
             } else if( !is_bool($crash_report_json) ){
