@@ -36,11 +36,17 @@ class Report_Model extends Model {
     	} else {
 	    $crashReportDump = new CrashReportDump;
 	    $crash_report_json = $crashReportDump->getJsonZ($crash_uri);
-    	    if( $crash_report_json !== FALSE ){
+            if($crash_report_json == false){
+                Kohana::log('info', "$uuid does not exist, and no raw crash report could be found (404)");
+                return false;
+            } else if ($crash_report_json == true) {
+                Kohana::log('info', "$uuid was reported but not processed; a priority job has been scheduled.");
+                return true;
+            } else if( !is_bool($crash_report_json) ){
       	        $crashReportDump->populate($report, $crash_report_json);
 		return $report;          
             } else {
-		Kohana::log('info', "$uuid was processed, but $crash_uri doesn't exist (404)");
+		Kohana::log('info', "$uuid doesn't exist (404)");
                 return NULL;            
             }
     	}

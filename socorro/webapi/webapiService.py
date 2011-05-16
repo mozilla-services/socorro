@@ -19,6 +19,15 @@ def typeConversion (listOfTypeConverters, listOfValuesToConvert):
 class Unimplemented(Exception):
   pass
 
+class Timeout(web.webapi.HTTPError):
+    """'408 Request Timeout' Error"""
+    message = "item currently unavailable"
+    def __init__ (self):
+        status = "408 Request Timeout"
+        headers = {'Content-Type': 'text/html'}
+        web.webapi.HTTPError.__init__(self, status, headers, self.message)
+        
+
 #=================================================================================================================
 class JsonServiceBase (object):
   #-----------------------------------------------------------------------------------------------------------------
@@ -39,6 +48,8 @@ class JsonServiceBase (object):
         web.header('Content-Type', result[1])
         return result[0]
       return json.dumps(result)
+    except web.webapi.HTTPError:
+      raise
     except Exception, x:
       stringLogger = util.StringLogger()
       util.reportExceptionAndContinue(stringLogger)
@@ -55,7 +66,7 @@ class JsonServiceBase (object):
   #-----------------------------------------------------------------------------------------------------------------
   def POST(self, *args):
     try:
-      result = self.post()
+      result = self.post(*args)
       if type(result) is tuple:
         web.header('Content-Type', result[1])
         return result[0]

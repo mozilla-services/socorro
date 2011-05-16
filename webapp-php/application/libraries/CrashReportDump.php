@@ -110,25 +110,41 @@ class CrashReportDump {
     */
     public function getJsonZ($uri)
     {
-        $output="";
-	$err = new ErrorHandler;
+        $regex = "/HTTP\/1\.[0|1](.*)/";
 
-	$eh = set_error_handler(array($err, 'handleError'));
-	    $file = gzopen($uri, "r");
+        $cparams = array(
+            'http' => array(
+            'method' => 'GET',
+            'ignore_errors' => true
+            )
+        ); 
 
-	    while($err->error_reading_file === FALSE &&
-		  !feof($file)) {
-		$output = $output . fgets($file, 4096);
-	    }
-	    gzclose ($file);
-        set_error_handler($eh);
-	if ($err->error_reading_file === TRUE) {
-	    Kohana::log('alert', "Could not load $uri");
-	    return FALSE;
-	} else {
-	    return $output; 
-	}
-    }
+        $context = stream_context_create($cparams);
+        $fp = fopen($uri, 'rb', false, $context);
+
+        if(!$fp) {
+            return false;
+        }
+
+        $meta = stream_get_meta_data($fp);
+        $output = stream_get_contents($fp);
+        $status = null;
+        foreach($meta['wrapper_data'] as $header) {
+            if(preg_match($regex, $header)) {
+                $status = $header;
+                break;
+            }
+        }
+        
+        //check for 200, 408, and return false on anything else.
+        if(strpos($status, '200') !== false) {
+            return $output;
+        } else if (strpos($status, '408') !== false) {
+            return true;
+        } else {
+            return false;
+        }
+    } 
 
     /**
      * Parses the 'dump' property which is a string

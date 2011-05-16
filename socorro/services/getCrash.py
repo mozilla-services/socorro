@@ -8,9 +8,12 @@ import socorro.webapi.webapiService as webapi
 import socorro.database.database as db
 import socorro.lib.datetimeutil as dtutil
 import socorro.storage.crashstorage as cs
+import web
+
+import socorro.services.schedulePriorityJob as job
 
 datatype_options = ('meta', 'raw_crash', 'processed')
-crashStorageFunctions = ('get_meta', 'get_raw_dump', 'get_processed')
+crashStorageFunctions = ('fetchMeta', 'fetchRaw', 'fetchProcessed')
 datatype_function_associations = dict(zip(datatype_options, crashStorageFunctions))
 
 class NotADataTypeOption(Exception):
@@ -36,10 +39,25 @@ class GetCrash(webapi.JsonServiceBase):
     convertedArgs = webapi.typeConversion([dataTypeOptions,str], args)
     parameters = util.DotDict(zip(['datatype','uuid'], convertedArgs))
     logger.debug("GetCrash get %s", parameters)
-    crashStorage = self.crashStoragePool.crashStorage()
+    self.crashStorage = self.crashStoragePool.crashStorage()
     function_name = datatype_function_associations[parameters.datatype]
-    function = crashStorage.__getattribute__(function_name)
-    if function_name == 'get_raw_dump':
-      return(function(parameters.uuid), "application/octet-stream")
-    return function(parameters.uuid)
+    function = self.__getattribute__(function_name)
+    return function(parameters.uuid)    
 
+  def fetchProcessed(self, uuid):
+    try:
+        return self.crashStorage.get_processed(uuid)
+    except Exception:
+        try:
+            raw = self.fetchRaw(uuid)
+            j = job.schedulePriorityJob(self.context)
+            j.post(uuid)
+            raise webapi.Timeout()
+        except Exception:
+            raise web.webapi.NotFound()
+
+  def fetchMeta(self, uuid):
+    return self.crashStorage.get_meta(uuid)
+
+  def fetchRaw(self, uuid):
+    return (self.crashStorage.get_raw_dump(uuid), "application/octet-stream")

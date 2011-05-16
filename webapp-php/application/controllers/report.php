@@ -370,13 +370,11 @@ class Report_Controller extends Controller {
 	$raw_dump_urls = $this->report_model->formatRawDumpURLs($uuid);
 
 	$report = $this->report_model->getByUUID($uuid, $crash_uri);
-
-        if ( is_null($report)) {
-            if (!isset($_GET['p'])) {
-                $this->priorityjob_model = new Priorityjobs_Model();
-                $this->priorityjob_model->add($uuid);
-            }
+	
+        if ( is_bool($report) && $report == true) {
 	    return url::redirect('report/pending/'.$uuid);
+        } else if ( (is_bool($report) && $report == false) || is_null($report) ) {
+            Event::run('system.404');
         } else {
 	    if ($this->logged_in) {
 		$this->sensitivePageHTTPSorRedirectAndDie('/report/index/' . $id);
