@@ -1,4 +1,18 @@
-## RHEL6 or Fedora 14
+## Ubuntu
+# general
+apt-get install supervisor rsyslog 
+# development 
+apt-get install libcurl4-openssl-dev build-essential sun-java6-jdk ant python-software-properties subversion libpq-dev python-virtualenv python-dev libcrypt-ssleay-perl phpunit php5-tidy
+# python apps
+apt-get install python-psycopg2 python-simplejson apache2 libapache2-mod-wsgi 
+# PHP web app
+apt-get install memcached php5-pgsql php5-curl php5-dev php-pear php5-common php5-cli php5-memcache php5 php5-gd php5-mysql php5-ldap
+# hbase
+apt-get install hadoop-hbase hadoop-hbase-master hadoop-hbase-thrift curl liblzo2-dev
+# postgresql
+apt-get install postgresql-8.4 postgresql-plperl-8.4 postgresql-contrib
+
+## RHEL6
 ## Do not use "easy install", suggest "text install"
 ## Choose "minimal" as install option.
 ## FIXME network must be started on each reboot
@@ -9,9 +23,6 @@ yum install subversion gcc-c++ curl-devel
 yum install ant
 # for unit/functional tests
 yum install python-virtualenv php-phpunit-PHPUnit
-
-## FIXME Fedora 14 ships python 2.7, we hardcode 2.6 in a few places
-ln -s /usr/bin/python2.7 /usr/bin/python2.6
 
 ## disable SELinux
 edit /etc/sysconfig/selinux
@@ -84,7 +95,6 @@ cp scripts/config/createpartitionsconfig.py.dist scripts/config/createpartitions
 python scripts/createPartitions.py
 
 # run unit/functional tests + coverage report
-# FIXME one known failure https://bugzilla.mozilla.org/show_bug.cgi?id=651661
 make coverage
 
 # set up directories, user and permissions
