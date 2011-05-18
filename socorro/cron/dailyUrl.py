@@ -80,9 +80,11 @@ def dailyUrlDump(config):
         r.reason, --23
         r.process_type, --24
         r.app_notes, --25
-        r.install_age --26
+        r.install_age, --26
+        rd.duplicate_of --27
       from
         reports r left join productdims pd on r.product = pd.product and r.version = pd.version
+            left join reports_duplicates rd on r.uuid = rd.uuid
       where
         '%(yesterdayAsString)s' <= r.date_processed and r.date_processed < '%(nowAsString)s'
         %(productPhrase)s %(versionPhrase)s
