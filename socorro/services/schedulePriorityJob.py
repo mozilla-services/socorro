@@ -17,7 +17,7 @@ class SchedulePriorityJob(webapi.JsonServiceBase):
     connection = self.database.connection()
     sql = """INSERT INTO priorityjobs (uuid) VALUES (%s)"""
     try:
-      db.execute(connection.cursor(), sql, (parameters['uuid'],))
+      connection.cursor().execute(sql, (parameters['uuid'],))
     except Exception:
       connection.rollback()
       util.reportExceptionAndContinue(logger)
