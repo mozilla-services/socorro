@@ -49,7 +49,7 @@ echo html::script(array(
 
 <div class="panel daily_graph">
 	<div class="title">
-		<h2>Crashes per ADU</h2>
+		<h2>Crashes per 100 ADUs</h2>
     </div>
 
 	<div class="body">
