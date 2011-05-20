@@ -50,7 +50,13 @@ if (is_null($report->signature) || empty($report->signature)) { ?>
       </div><!-- /oopp-hang -->
 <?php } ?>
 
-<div id="report-header-details">ID: <span><?php out::H($report->uuid) ?></span><br/> Signature: <span><?php out::H($report->{'display_signature'}) ?></span></div>
+<div id="report-header-details">ID: <span><?php out::H($report->uuid) ?></span><br/> Signature: <span><?php out::H($report->{'display_signature'}) ?></span>
+<?php if(isset($report->duplicate_of)): ?>
+
+<br />Duplicate Of: <span><a href="/report/index/<?php out::H($report->duplicate_of) ?>"><?php out::H($report->duplicate_of); ?></a></span>
+
+<?php endif; ?>
+</div>
 <div id="report-index" class="flora">
 
     <ul>

@@ -24,7 +24,8 @@ class Report_Model extends Model {
         // Added addons_checked since that's not in the jsonz - bug 590245
         $report = $this->db->query(
             "/* soc.web report.dateProcessed */
-                SELECT reports.email, reports.url, reports.addons_checked
+                SELECT reports.email, reports.url, reports.addons_checked,
+	( SELECT reports_duplicates.duplicate_of FROM reports_duplicates WHERE reports_duplicates.uuid = reports.uuid) as duplicate_of
                 FROM reports 
                 WHERE reports.uuid=? 
                 AND reports.success 
