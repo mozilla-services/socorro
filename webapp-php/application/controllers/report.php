@@ -82,7 +82,6 @@ class Report_Controller extends Controller {
         ));
 	$input = new Input;
         $page = $input->get('page');
-        $product = (isset($product) && !empty($product)) ? $product : Kohana::config('products.default_product');
 
 	if ($page === NULL) {
 	    $page = 1;
@@ -158,7 +157,6 @@ class Report_Controller extends Controller {
             'correlation_version' => $correlation_version,
             'correlation_os' => $this->_correlations($builds),
             'logged_in' => $this->logged_in,
-            'url_nav' => url::site('products/'.$product),
         ));
     }
 
