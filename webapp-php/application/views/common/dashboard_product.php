@@ -15,7 +15,7 @@
 
 <div class="panel">
     <div class="title">
-        <h2>Crashes per Active Daily User</h2>
+        <h2>Crashes per 100  Active Daily Users</h2>
     </div>
 
     <div class="body">
