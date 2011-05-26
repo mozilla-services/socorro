@@ -1,4 +1,11 @@
 #!/usr/bin/env python
+
+# warning!  this script does not work as written unless 
+# root can log in as the postgres user into the database
+# which is different from our production setup
+# since the changes have already been deployed
+# the script below will not be fixed
+
 import sys, os
 import psycopg2, psycopg2.extensions
 
