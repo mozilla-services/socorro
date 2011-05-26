@@ -20,6 +20,10 @@ echo 'drop the duplicate uuid index'
 #echo 'add the new pgbouncer config.  this will interrupt service'
 #./pgbouncer_processor_pool.py $NEWPW
 
+echo 'update the crash email tables'
+psql -f postcrash_email.sql breakpad
+
+
 date
 
 exit 0
