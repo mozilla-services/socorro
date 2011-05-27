@@ -96,7 +96,9 @@ class EmailSender(webapi.JsonServiceBase):
           return {"emails": {"campaign_id": campaign_id, "actual_count": len(contacted_emails)}}
         elif status == 'stop':
           logger.info("Setting campaign to stopped for campaign ID %s" % campaign_id)
-          self.stop_campaign(campaign_id)
+          cursor = connection.cursor()
+          self.stop_campaign(cursor, campaign_id)
+          connection.commit()
         else:
           raise Exception ('unknown status: %s' % s)
       finally:
