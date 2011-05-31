@@ -94,6 +94,11 @@ $(document).ready(function () {
         $('.correlation-cell .top span').html(SocReport.loading);
         $('.correlation-cell .correlation-toggler').toggle(expandCorrelation, contractCorrelation);
         
+        $.ajaxSetup({
+            error: function() {
+                $('.correlation-cell .top span').html('Error loading correlation report');
+            }
+        });
         $.post(SocReport.base + type + SocReport.path,
            {'osnames[]': osnames, 'signatures[]': signatures, 'ranks[]': ranks},
            function (json) {
