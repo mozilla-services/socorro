@@ -93,7 +93,7 @@ if (is_null($report->signature) || empty($report->signature)) { ?>
 <?php } ?>
 
             <tr>
-                <th>Uptime</th><td><?php out::H(TimeUtil::ghetto_time_ago_in_words($report->uptime)); ?></td>
+                <th>Uptime</th><td><?php out::H($report->uptime); ?></td>
             </tr>
 
             <?php if ($report->last_crash): ?>
