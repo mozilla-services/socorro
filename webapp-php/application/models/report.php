@@ -16,41 +16,43 @@ class Report_Model extends Model {
       */
     public function getByUUID($uuid, $crash_uri)
     {
-	/* Note: 99% of our data comes from the processed crash dump
-	         jsonz file. Only select columns that aren't in the json file
-	         such as email which is SENSITIVE and should never appear in
-                 the publically accessable jsonz file. Anything here will be 
-                 merged into the model object + jsonz data */
-        // Added addons_checked since that's not in the jsonz - bug 590245
-        $report = $this->db->query(
-            "/* soc.web report.dateProcessed */
-                SELECT reports.email, reports.url, reports.addons_checked,
-	( SELECT reports_duplicates.duplicate_of FROM reports_duplicates WHERE reports_duplicates.uuid = reports.uuid) as duplicate_of
-                FROM reports 
-                WHERE reports.uuid=? 
-                AND reports.success 
-                IS NOT NULL
-            ", $uuid)->current();
-        if (!$report) {
-            Kohana::log('info', "$uuid hasn't been processed");
-            return NULL;
-    	} else {
+
+
 	    $crashReportDump = new CrashReportDump;
 	    $crash_report_json = $crashReportDump->getJsonZ($crash_uri);
 	    if($crash_report_json === false){
                 Kohana::log('info', "$uuid does not exist, and no raw crash report could be found (404)");
                 return false;
-            } else if ($crash_report_json === true) {
+        } else if ($crash_report_json === true) {
                 Kohana::log('info', "$uuid was reported but not processed; a priority job has been scheduled.");
                 return true;
-            } else if( !is_bool($crash_report_json) ){
+        } else if( !is_bool($crash_report_json) ){
+			/* Note: 99% of our data comes from the processed crash dump
+			         jsonz file. Only select columns that aren't in the json file
+			         such as email which is SENSITIVE and should never appear in
+		                 the publically accessable jsonz file. Anything here will be 
+		                 merged into the model object + jsonz data */
+		        // Added addons_checked since that's not in the jsonz - bug 590245
+		        $report = $this->db->query(
+		            "/* soc.web report.dateProcessed */
+		                SELECT reports.email, reports.url, reports.addons_checked,
+			            ( SELECT reports_duplicates.duplicate_of FROM reports_duplicates WHERE reports_duplicates.uuid = reports.uuid) as duplicate_of
+		                FROM reports 
+		                WHERE reports.uuid=? 
+		                AND reports.success 
+		                IS NOT NULL
+		            ", $uuid)->current();
+	            if(!$report) {
+	                throw new Exception("The report was processed but does not exist in the reports table");	
+	            }
+	
       	        $crashReportDump->populate($report, $crash_report_json);
-		return $report;          
-            } else {
+		        return $report;          
+        } else {
 		Kohana::log('info', "$uuid doesn't exist (404)");
                 return NULL;            
-            }
-    	}
+        }
+    	
     }
 
 	/**
