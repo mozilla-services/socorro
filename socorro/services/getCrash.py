@@ -52,9 +52,9 @@ class GetCrash(webapi.JsonServiceBase):
             raw = self.fetchRaw(uuid)
             j = job.schedulePriorityJob(self.context)
             j.post(uuid)
-            raise webapi.Timeout()
         except Exception:
             raise web.webapi.NotFound()
+        raise webapi.Timeout()
 
   def fetchMeta(self, uuid):
     return self.crashStorage.get_meta(uuid)
