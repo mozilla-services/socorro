@@ -508,7 +508,7 @@ class Report_Controller extends Controller {
 	$crash_uri = sprintf(Kohana::config('application.crash_dump_local_url'), $uuid);
 	$report = $this->report_model->getByUUID($uuid, $crash_uri);
 
-        if (! is_null($report)) {
+        if (! is_null($report) && ! is_bool($report)) {
 	    return url::redirect('report/index/'.$uuid);
 	}
 

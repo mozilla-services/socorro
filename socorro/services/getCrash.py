@@ -50,7 +50,7 @@ class GetCrash(webapi.JsonServiceBase):
     except Exception:
         try:
             raw = self.fetchRaw(uuid)
-            j = job.schedulePriorityJob(self.context)
+            j = job.SchedulePriorityJob(self.context)
             j.post(uuid)
         except Exception:
             raise web.webapi.NotFound()
