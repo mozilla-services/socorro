@@ -13,6 +13,7 @@
         'js/jquery/plugins/ui/jquery.ui.all.js',
         'js/jquery/plugins/ui/jquery.tablesorter.min.js',
 	'js/socorro/report.js',
+        'js/socorro/bugzilla.js'
     ))?>
 
 

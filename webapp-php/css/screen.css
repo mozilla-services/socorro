@@ -1024,7 +1024,6 @@ tr{ z-index: 50; }
     display: block;
     overflow: hidden;
     white-space: nowrap;
-    width: 200px;
 }
 .correlation-popup {
     position: absolute;
@@ -1040,10 +1039,6 @@ tr{ z-index: 50; }
     background-color: #FFF;
     border: solid 1px #AAA;
     margin: 1em;
-}
-.correlation-module-preview {
-    width: 320px;
-    overflow: hidden;
 }
 .correlation-module-popup {
     background-color: #CCC;
@@ -1235,9 +1230,9 @@ th.bugzilla_numbers {
 .sorted_bug_ids.full dd { 
     margin-left: 0px; 
 }
-/* Bug548746 */
-.strike a { 
-    text-decoration: line-through; 
+
+.strike { 
+    text-decoration: line-through !important; 
 }
 .full_bug_ids li { 
     list-style-type: none;  

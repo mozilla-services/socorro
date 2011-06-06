@@ -1,4 +1,4 @@
-<?php defined('SYSPATH') or die('No direct script access.');
+<?php defined('SYSPATH') OR die('No direct access allowed.');
 /* **** BEGIN LICENSE BLOCK *****
  * Version: MPL 1.1/GPL 2.0/LGPL 2.1
  *
@@ -37,41 +37,32 @@
  *
  */
 
-
 /**
- * Bug Model responsible for the bug and bug_associations tables
+ * Provides access to the cached Bugzilla API model.
+ * Intended as a means to make cached ajax calls.
  */
-class Bug_Model extends Model {
+class Buginfo_Controller extends Controller {
 
-   /**
-    * Given a list of signatures, retrieves bug information
-    * associated with these signatures. Example output
-    * ( 'arena_dalloc_small' => ('bug_id' => 23423323, 'status' => 'RESOLVED', 'resolution' => 'FIXED') )
-    * @param array - A list of strings, each one being a crash signature
-    * @return array - an associative array of bug infos keyed by signature
-    */
-    public function bugsForSignatures($signatures)
-    {
-        $sigs = array();
-        foreach ($signatures as $sig) {
-	    if (trim($sig) != '') {
-	        array_push($sigs, $this->db->escape($sig));
-	    }
-        }
-	if (count($sigs) == 0) {
-	    return array();
-	}
-            
-        return $report = $this->db->query(
-"/* soc.web bugsForSigs */
-SELECT ba.signature, bugs.id FROM bugs
-JOIN bug_associations AS ba ON bugs.id = ba.bug_id
-WHERE EXISTS( 
-    SELECT 1 FROM bug_associations
-    WHERE bug_associations.bug_id = bugs.id AND 
-          signature IN (" . implode(", ", $sigs) . "))", 
-             TRUE)->result_array(FALSE);
+    /**
+     * Disables rendering because this is a non-visual controller
+     */
+    public function __construct() {
+        parent::__construct();
+        $this->auto_render = FALSE;
+    }
+
+    /**
+     * Any call to this controller proxies to whatever bugzilla rest
+     * api has been configured. Empty results are returned when there
+     * is a bad url, or a bad configuration.
+     */
+    public function __call($method, $arguments) {
+        $bzapi = new Bugzilla_Model;
+        $options = array(
+                       'id' => "",
+                       'include_fields' => ""
+                   );
+        echo json_encode($bzapi->query_api($method .  Router::$query_string));
+        exit;
     }
 }
-?>
-

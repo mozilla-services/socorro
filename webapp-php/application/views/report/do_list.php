@@ -11,7 +11,8 @@
         'js/jquery/plugins/ui/jquery.tablesorter.min.js',
         'js/flot-0.7/jquery.flot.pack.js',
         'js/socorro/correlation.js',
-        'js/socorro/report_list.js'
+        'js/socorro/report_list.js',
+        'js/socorro/bugzilla.js'
     ))?>
 
   <style type="text/css">
@@ -79,7 +80,7 @@ foreach($options[$type] as $k => $readable) {
         <li><a href="#table"><span>Table</span></a></li>
         <li><a href="#reports"><span>Reports</span></a></li>
 <?php if (array_key_exists($params['signature'], $sig2bugs)) { ?>    
-							       <li><a href="#bugzilla"><span>Bugzilla (<?= count($sig2bugs[$params['signature']])?>)</span></a></li>
+	<li><a href="#bugzilla"><span>Bugzilla (<?= count($sig2bugs[$params['signature']])?>)</span></a></li>
 <?php } ?>
 	<li><a href="#comments"><span>Comments (<?= count($comments) ?>)</span></a></li>
         <li><a href="#correlation"><span>Correlations</span></a></li>
@@ -149,7 +150,7 @@ foreach($options[$type] as $k => $readable) {
 		            'signature' => $sig,
                             'bugs' => $bugs,
                             'mode' => 'full'
-	      ))->render(TRUE);
+	                ))->render(TRUE);
 	            }
 	        }
 	     } ?>

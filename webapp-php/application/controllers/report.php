@@ -116,6 +116,7 @@ class Report_Controller extends Controller {
         }
         $bug_model = new Bug_Model;
         $rows = $bug_model->bugsForSignatures(array($params['signature']));
+         
         $bugzilla = new Bugzilla;
         $signature_to_bugzilla = $bugzilla->signature2bugzilla($rows, Kohana::config('codebases.bugTrackingUrl'));
 

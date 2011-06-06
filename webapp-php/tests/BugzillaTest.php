@@ -4,7 +4,7 @@ define('SYSPATH', '');
 require_once dirname(__FILE__).'/../application/libraries/bugzilla.php';
 
   class BugzillaTest extends PHPUnit_Framework_TestCase
-{
+  {
     public function testAllSorting() {
         $bugzilla = new Bugzilla();
 	$bugInfos = array(

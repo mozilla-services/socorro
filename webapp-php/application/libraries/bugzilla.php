@@ -43,9 +43,16 @@ class Bugzilla{
     public $resolutionOrder = array('', 'WORKSFORME', 'WONTFIX', 'DUPLICATE', 'INVALID', 'FIXED', 'INCOMPLETE');
 
     /**
-     * An array of all of the statuses that define an open bug.
+     * An array of all of the statuses that define an open bug,
+     * hashed to provide a quick lookup.
      */
-    public $open_statuses = array('UNCONFIRMED', 'NEW', 'ASSIGNED', 'REOPENED');
+    public $open_statuses = array(
+                                'UNCONFIRMED' => true,
+                                'NEW' => true,
+                                'ASSIGNED' => true,
+                                'REOPENED' => true,
+                                ' ' => true // default status
+                            );
 
    /**
     * Given a list of arrays which contain Bug Infos
@@ -57,10 +64,11 @@ class Bugzilla{
     {
       usort($bugInfos, array($this, '_sortByResolution'));
     }
+
     public function _sortByResolution($thisBug, $thatBug)
     {
-      $thisPos = array_search(trim($thisBug['resolution']), $this->resolutionOrder);
-      $thatPos = array_search(trim($thatBug['resolution']), $this->resolutionOrder);
+      $thisPos = (is_array($thisBug['resolution'])) ? false : array_search(trim($thisBug['resolution']), $this->resolutionOrder);
+      $thatPos = (is_array($thatBug['resolution'])) ? false : array_search(trim($thatBug['resolution']), $this->resolutionOrder);
         if ($thisPos !== FALSE && $thatPos !== FALSE) {
 	    return $thisPos > $thatPos;
 	} elseif ($thisPos === FALSE and $thatPos == FALSE) {
@@ -71,30 +79,50 @@ class Bugzilla{
   	    return 1;
 	}
     }
+
     /**
      * Creates a signature to bugilla bug associative array suitable for display.
+     * Supplemental fields are filled in from a Bugzilla API call.
      * Sorts the bugs by resolution.
-     * @param array rows - array in the form that Bug_Model bugsForSignatures returns
+     * @param array rows - array populated in the form Bug_Model returns
      * @return array - array with keys that are crash signatures and the value is a list of 
      *    bug infos
      */
     public function signature2bugzilla($rows, $bugzillaUrl)
-    {	    
-        $signature_to_bugzilla = array();
+    {
+        $defaultBug = array(
+                          'signature' => "",
+                          'id' => "",
+                          'status' => " ",
+                          'resolution' => "",
+                          'summary' => "",
+                          'open' => true,
+                          'url' => "#"
+                      ); 
+        
+        $bug_hash = array(); // bug objects indexed by id
         foreach ($rows as $row) {
-	    if ( ! array_key_exists($row['signature'], $signature_to_bugzilla)) {
+            $bug_hash[$row['id']] = array_merge($defaultBug, $row); 
+        }
+        
+        $signature_to_bugzilla = array();        
+        foreach ($bug_hash as $row) {
+            if ( ! array_key_exists($row['signature'], $signature_to_bugzilla)) {
 	        $signature_to_bugzilla[$row['signature']] = array();
-	    }
-        $row['open'] = (in_array($row['status'], $this->open_statuses)) ? true : false;
+	    }  
+            
+            $row['open'] = (array_key_exists($row['status'], $this->open_statuses)) ? true : false;
 	    $row['url'] = $bugzillaUrl . $row['id'];
-	    $row['summary'] = $row['short_desc'];
-
+	    $row['summary'] = $row['summary'];
+        
 	    array_push($signature_to_bugzilla[$row['signature']], $row);
 	}
-	foreach ($signature_to_bugzilla as $k => $v) {
+	
+        foreach ($signature_to_bugzilla as $k => $v) {
 	    $this->sortByResolution($signature_to_bugzilla[$k]);	        
 	}
-	return $signature_to_bugzilla;
+        
+        return $signature_to_bugzilla;
     }
 }
 ?>
