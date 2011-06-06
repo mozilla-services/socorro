@@ -18,17 +18,19 @@ html {
 	font-size: 12px;
     margin: 0;
     padding: 0;
-	}
-	a {
-		text-decoration: none;
-		}
-	a:hover {
-		text-decoration: underline;
-		}
+}
+
+a {
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
 
 body > h1 {
 	font-size: 200%;
-	}
+}
 	
 	
     
@@ -721,6 +723,14 @@ div.admin div.add_item {
 div.admin form.span {
 	margin-right: 10px;
 }
+div.admin th {
+    background-color: #ddd;
+    padding:3px;
+    font-size: 105%;
+}
+div.admin td {
+    padding: 3px;
+}
 div.admin td.text,
 div.admin input.text {
 	width: 125px;
@@ -741,8 +751,7 @@ div.admin td.date {
 }
 span.push_right {
 	margin-right: 10px;
-} 
-
+}
 
 /**
  * Crash Report page

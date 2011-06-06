@@ -63,4 +63,6 @@ $(document).ready(function(){
                   submit: 'stop'}
       $.post('/admin/send_email', postData);
     });
+    
+    $('.admin tbody tr:odd').css('background-color', '#efefef');
 });
