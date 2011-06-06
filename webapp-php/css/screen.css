@@ -35,8 +35,8 @@ body > h1 {
 	
     
 /** 
-* Global
-*/
+ * Global
+ */
 
 h3 {
     font-size: 123.1%; /* 16px */
@@ -693,10 +693,10 @@ div.error h2, div.success h2 {
      margin: 1em 2em;
 }
 
-
 /**
  * Admin
  */
+
 div.admin h3, div.admin h4 {
 	margin-top: 20px;
 }
