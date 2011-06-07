@@ -55,7 +55,8 @@ def createExecutionContext ():
                             "hbaseHost": "hbhost",
                             "hbasePort": "hbport",
                             "hbaseStorageClass": cstore.CrashStorageSystemForHBase,
-                            "temporaryFileSystemStoragePath": "/tmp",})
+                            "temporaryFileSystemStoragePath": "/tmp",
+                            "elasticSearchOoidSubmissionUrl": "%s",})
     c.config = config
 
     c.logger = sutil.StringLogger()
@@ -768,6 +769,7 @@ def testProcessJob07():
     """testProcessJob07: success"""
     threadName = thr.currentThread().getName()
     p, c = getMockedProcessorAndContext()
+    p.submitOoidToElasticSearch = lambda x: None   # eliminate this call
     ooid1 = 'ooid1'
     jobId = 123
     fakeJobTuple = (jobId, ooid1, 1)
@@ -922,8 +924,10 @@ def testGetJsonOrWarn():
     d = { 'key': 23 }
     r = proc.Processor.getJsonOrWarn(d, 'key', message_list)
     assert r == None
-    assert "ERROR: jsonDoc['key']: 'int' object is unsubscriptable" in \
-                                                               message_list
+    assert len(message_list) == 1
+    print message_list
+    assert "'int'" in message_list[0]
+    assert "subscriptable" in message_list[0]
 
 expected_report_tuple = ('ooid1',
                          dt.datetime(2011, 2, 16, 4, 44, 52,
@@ -1307,3 +1311,19 @@ def testInsertCrashProcess4():
          'pluginVersion': jd['PluginVersion']
         }
     assert r == e, 'expected\n%s\nbut got\n%s' % (e, r)
+
+def testSubmitOoidToElasticSearch():
+    """testSubmitOoidToElasticSearch: submit to ES"""
+    p, c = getMockedProcessorAndContext()
+    print c
+    uuid = 'ef38fe89-43b6-4cd4-b154-392022110607'
+    salted_ooid = 'e110607ef38fe89-43b6-4cd4-b154-392022110607'
+    fakeUrllib2 = exp.DummyObjectWithExpectations()
+    fakeRequestObject = 17
+    fakeUrllib2.expect('Request', (salted_ooid, {}), {}, fakeRequestObject)
+    fakeFileLikeObject = exp.DummyObjectWithExpectations()
+    fakeFileLikeObject.expect('read', (), {}, None)
+    fakeUrllib2.expect('urlopen', (17,), {}, fakeFileLikeObject)
+    p.submitOoidToElasticSearch(uuid, fakeUrllib2)
+
+

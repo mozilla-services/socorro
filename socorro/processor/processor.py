@@ -7,6 +7,7 @@ import re
 import signal
 import threading
 import time
+import urllib2
 
 logger = logging.getLogger("processor")
 
@@ -663,6 +664,7 @@ class Processor(object):
       threadLocalCursor.execute(reportsSql, infoTuple)
       threadLocalDatabaseConnection.commit()
       self.saveProcessedDumpJson(newReportRecordAsDict, threadLocalCrashStorage)
+      self.submitOoidToElasticSearch(jobUuid)
       if newReportRecordAsDict["success"]:
         logger.info("succeeded and committed: %s", jobUuid)
       else:
@@ -913,4 +915,18 @@ class Processor(object):
     """
     raise Exception("No breakpad_stackwalk invocation method specified")
 
+
+  #-----------------------------------------------------------------------------------------------------------------
+  def submitOoidToElasticSearch (self, ooid, urllib2=urllib2):
+    try:
+      if self.config.elasticSearchOoidSubmissionUrl:
+        #import poster
+        import socorro.storage.hbaseClient as hbc
+        dummy_form_data = {}
+        row_id = hbc.ooid_to_row_id(ooid)
+        url = self.config.elasticSearchOoidSubmissionUrl % row_id
+        request = urllib2.Request(url, dummy_form_data)
+        urllib2.urlopen(request).read()
+    except KeyError:
+      self.config.logger.info('no Elastic Search URL has been configured')
 

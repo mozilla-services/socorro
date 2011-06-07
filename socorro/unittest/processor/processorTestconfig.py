@@ -31,6 +31,10 @@ from socorro.unittest.config.commonconfig import hbaseTimeout
 #dumpDirPrefix.doc = 'dump directory names begin with this prefix'
 #dumpDirPrefix.default = 'tst_'
 
+elasticSearchOoidSubmissionUrl = cm.Option()
+elasticSearchOoidSubmissionUrl.doc = 'a url to submit ooids for Elastic Search (use %s in place of the ooid) (leave blank for no Elastic Search)'
+elasticSearchOoidSubmissionUrl.default = '%s'
+
 temporaryFileSystemStoragePath = cm.Option()
 temporaryFileSystemStoragePath.doc = 'a local filesystem path where processor can write dumps temporarily for processing'
 temporaryFileSystemStoragePath.default = './'
