@@ -16,8 +16,9 @@ HADOOP="/usr/lib/hadoop/bin/hadoop"
 ${HADOOP} jar $HOME_DIRECTORY/socorro-analysis-job.jar com.mozilla.socorro.hadoop.CrashReportModuleList -Dproduct.filter="${PRODUCT}" -Dos.filter="${OS}" -Dstart.date=${DATE} -Dend.date=${DATE} ${DATE}-modulelist-out
 ${HADOOP} fs -getmerge ${DATE}-modulelist-out /tmp/${DATE}-modulelist.txt
 /bin/sort /tmp/${DATE}-modulelist.txt -o /tmp/${DATE}-modulelist.sorted.txt
-ssh bacula@people.mozilla.org mkdir public_html/modulelist
-scp /tmp/${DATE}-modulelist.sorted.txt bacula@people.mozilla.org:./public_html/modulelist/${DATE}-modulelist.txt
+
+mkdir /mnt/crashanalysis/crash_analysis/modulelist
+cp /tmp/${DATE}-modulelist.sorted.txt /mnt/crashanalysis/crash_analysis/modulelist/${DATE}-modulelist.txt
 
 # cleanup
 ${HADOOP} fs -rmr ${DATE}-modulelist-out
