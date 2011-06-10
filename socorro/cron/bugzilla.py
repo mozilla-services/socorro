@@ -13,38 +13,32 @@ import socorro.lib.psycopghelper as psy
 import socorro.lib.util as util
 
 #-----------------------------------------------------------------------------------------------------------------
-def find_signatures(bugReportDict):
+
+def signature_set_from_string(signatureString): 
+  signatureSet = set()
   try:
-    candidateString = bugReportDict['short_desc']
-    bracketNestingCounter = 0 #limit 1
-    firstLevelBracketPositions = []
-    for i, ch in enumerate(candidateString):
-      if ch == '[':
-        if bracketNestingCounter == 0:
-          firstLevelBracketPositions.append(i+2) #choose position 2 beyond
-        bracketNestingCounter += 1
-      elif ch == ']':
-        if bracketNestingCounter == 1:
-          firstLevelBracketPositions.append(i)
-        if bracketNestingCounter: bracketNestingCounter -= 1
-    listOfSignatures = []
-    try:
-      for beginSignaturePosition, endSignaturePosition in ((firstLevelBracketPositions[x],firstLevelBracketPositions[x+1]) for x in range(0,len(firstLevelBracketPositions),2)):
-        if candidateString[beginSignaturePosition-1] == '@':
-          listOfSignatures.append(candidateString[beginSignaturePosition:endSignaturePosition].strip())
-    except IndexError:
-      pass
-    setOfSignatures = set(listOfSignatures)
-    return (int(bugReportDict["bug_id"]), bugReportDict["bug_status"], bugReportDict["resolution"], bugReportDict["short_desc"], setOfSignatures)
-  except (KeyError, TypeError, ValueError):
-    return None
+    sigStart = 0
+    sigEnd = 0
+    while True:
+      sigStart = signatureString.index("[@", sigEnd) + 2
+      sigEnd = signatureString.index("]", sigEnd + 1)
+      signatureSet.add(signatureString[sigStart:sigEnd].strip())
+  except ValueError:
+    # throw when index cannot match another sig, ignore
+    pass
+  return signatureSet
 
 #-----------------------------------------------------------------------------------------------------------------
-def bug_id_to_signature_association_iterator(query, querySourceFunction=urllib2.urlopen):
+
+def bugzilla_iterator(query, querySourceFunction=urllib2.urlopen):
   logger.debug("query: %s", query)
-  for x in csv.DictReader(querySourceFunction(query)):
-    logger.debug("reading csv: %s", str(x))
-    yield find_signatures(x)
+  for bugReport in csv.DictReader(querySourceFunction(query)):
+    logger.debug("reading csv: %s", str(bugReport))
+    yield (int(bugReport["bug_id"]),
+           bugReport["bug_status"],
+           bugReport["resolution"], 
+           bugReport["short_desc"], 
+           signature_set_from_string(bugReport["cf_crash_signature"]))
 
 #-----------------------------------------------------------------------------------------------------------------
 def signature_is_found(signature, databaseCursor):
@@ -137,10 +131,9 @@ def record_associations(config):
     lastRunDateAsString = lastRunDate.strftime('%Y-%m-%d')
     logger.info("beginning search from this date (YYYY-MM-DD): %s", lastRunDateAsString)
     query = config.bugzillaQuery % lastRunDateAsString
-    logger.info("searching using: %s", query)
-    for bug, status, resolution, short_desc, signatureSet in bug_id_to_signature_association_iterator(query):
-      logger.debug("bug %s (%s, %s) %s: %s", bug, status, resolution, short_desc, str(signatureSet))
-      insert_or_update_bug_in_database (bug, status, resolution, short_desc, signatureSet, databaseCursor)
+    for bug, status, resolution, short_desc, signatureSet in bugzilla_iterator(query): 
+      logger.debug("bug %s (%s, %s) %s: %s", bug, status, resolution, short_desc, signatureSet)
+      insert_or_update_bug_in_database (bug, status, resolution, short_desc, signatureSet, databaseCursor) 
     save_last_run_date(config)
   finally:
     databaseConnectionPool.cleanup()

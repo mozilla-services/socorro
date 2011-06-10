@@ -226,8 +226,11 @@ class Report_Controller extends Controller {
     private function _prepReportBugURL($report)
     {
         $report_bug_url = Kohana::config('application.report_bug_url');
-        if (empty($report_bug_url)) $report_bug_url = $this->report_bug_url_default;
-        
+    
+        if (empty($report_bug_url)) {
+          $report_bug_url = $this->report_bug_url_default;
+        }        
+
         $report_bug_url .= 'advanced=1&bug_severity=critical&keywords=crash&';
         
         if (isset($report->product) && !empty($report->product)) {
@@ -240,20 +243,21 @@ class Report_Controller extends Controller {
         
         if (isset($report->cpu_name) && !empty($report->cpu_name)) {
             $report_bug_url .= 'rep_platform='.rawurlencode($report->cpu_name) . '&';
-        }
+        } 
         
-        $report_bug_url .= 'short_desc=' . rawurlencode('crash ');
         if (isset($report->signature) && !empty($report->signature)) {
-            $report_bug_url .= rawurlencode('[@ ' . $report->signature . ']');
+            $report_bug_url .= '&cf_crash_signature='; 
+            $report_bug_url .= rawurlencode('[@ ' . $report->signature . ']') . '&';
+             
+            preg_match('/[A-Za-z0-9_:@]+/' , $report->signature, $matches, PREG_OFFSET_CAPTURE);
+            $report_bug_url .= 'short_desc=' . rawurlencode('crash ' . $matches[0][0]) . '&';
         }
-        $report_bug_url .= '&';
-        
-        $report_bug_url .= 'comment='.
-            rawurlencode(
-                "This bug was filed from the Socorro interface and is \r\n".
-                "report bp-" . $report->uuid . " .\r\n".
-                "============================================================= \r\n"
-            );
+
+        $report_bug_url .= '&comment=' . rawurlencode(
+            "This bug was filed from the Socorro interface and is \r\n".
+            "report bp-" . $report->uuid . " .\r\n".
+            "============================================================= \r\n"
+        );
         
         return $report_bug_url;
     }

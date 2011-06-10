@@ -148,81 +148,28 @@ class TestBugzilla(unittest.TestCase):
   def tearDown(self):
     self.logger.clear()
 
-  def do_find_signatures(self, testId, testInput, correct):
-    actual = bug.find_signatures(testInput)
-    assert actual == correct, "test: %s - expected %s, got %s" % (testId, correct, actual)
-
-  def test_find_signatures(self):
-    d = {  }
-    self.do_find_signatures("01", d, None)
-    
-    d = { "short_description": "short", "bug_id": "22", "bug_status": "CLOSED", "resolution": "WONTFIX" }
-    self.do_find_signatures("02", d, None)
-    
-    d = { "short_desc": "short", "bugger_id": "22", "bug_status": "CLOSED", "resolution": "WONTFIX" }
-    self.do_find_signatures("03", d, None)
-    
-    d = { "short_desc": "short", "bug_id": "22", "bug_status": "CLOSED", "revolution": "WONTFIX" }
-    self.do_find_signatures("04", d, None)
-    
-    d = { "short_desc": "short", "bug_id": "22", "bug_statusizer": "CLOSED", "resolution": "WONTFIX" }
-    self.do_find_signatures("05", d, None)
-    
-    d = { "short_desc": "short", "bug_id": dt.datetime.now(), "bug_status": "CLOSED", "resolution": "WONTFIX" }
-    self.do_find_signatures("06", d, None)
-    
-    d = { "short_desc": "short", "bug_id": 'Amtrak', "bug_status": "CLOSED", "resolution": "WONTFIX" }
-    self.do_find_signatures("07", d, None)
-    
-    d = { "short_desc": "short", "bug_id": "22", "bug_status": "CLOSED", "resolution": "WONTFIX" }
-    self.do_find_signatures("08", d, (22, "CLOSED", "WONTFIX", "short", set([])))
-    
-    d = { "short_desc": " Crash at [@ RtlpWaitOnCriticalSection]", "bug_id": "22", "bug_status": "CLOSED", "resolution": "WONTFIX" }
-    self.do_find_signatures("09", d, (22, "CLOSED", "WONTFIX", " Crash at [@ RtlpWaitOnCriticalSection]", set(["RtlpWaitOnCriticalSection"])))
-    
-    d = { "short_desc": "short [@ bogus_incomplete_signature", "bug_id": "22", "bug_status": "NEW", "resolution": "" }
-    self.do_find_signatures("10", d, (22, "NEW", "", "short [@ bogus_incomplete_signature", set([])))
-    
-    d = { "short_desc": "short [@ complete_signature]", "bug_id": "22", "bug_status": "CLOSED", "resolution": "RESOLVED" }
-    self.do_find_signatures("11", d, (22, "CLOSED", "RESOLVED", "short [@ complete_signature]", set(["complete_signature"])))
-    
-    d = { "short_desc": "short [@ complete_signature]othertext[@  second_signature !@#$%^&*()_   ]  [ not_a_signature @ hey ]", "bug_id": "22", "bug_status": "OPEN", "resolution": "ASSIGNED" }
-    self.do_find_signatures("12", d, (22, "OPEN", "ASSIGNED", "short [@ complete_signature]othertext[@  second_signature !@#$%^&*()_   ]  [ not_a_signature @ hey ]", set(["complete_signature", "second_signature !@#$%^&*()_"])))
-    
-    d = { "short_desc": "short [@ libobjc.A.dylib@0x1568c]othertext[   @]  INVALIDthird_signature !@#$%^&*()_   ]  [ not_a_signature @ hey ]", "bug_id": "22", "bug_status": "CLOSED", "resolution": "WONTFIX" }
-    self.do_find_signatures("13", d, (22, "CLOSED", "WONTFIX", "short [@ libobjc.A.dylib@0x1568c]othertext[   @]  INVALIDthird_signature !@#$%^&*()_   ]  [ not_a_signature @ hey ]", set(["libobjc.A.dylib@0x1568c"])))
-    
-    d = { "short_desc": "short [[@ not_one]][ @ not_two] [@ this_is bad too", "bug_id": "22", "bug_status": "CLOSED", "resolution": "WONTFIX" }
-    self.do_find_signatures("14", d, (22, "CLOSED", "WONTFIX", "short [[@ not_one]][ @ not_two] [@ this_is bad too", set([])))
-    
-    d = { "short_desc": "short [@ x.dll@0x123456 | free | not_free][ @ not_two] [@ goobers] [@[[[[[[[[[[[[[[[]]]]]]]]]]]]", "bug_id": "22", "bug_status": "CLOSED", "resolution": "WONTFIX" }
-    self.do_find_signatures("15", d, (22, "CLOSED", "WONTFIX", "short [@ x.dll@0x123456 | free | not_free][ @ not_two] [@ goobers] [@[[[[[[[[[[[[[[[]]]]]]]]]]]]", set(['x.dll@0x123456 | free | not_free', 'goobers'])))
-    
-    d = { "short_desc": "short []]]]]]]]]]]][@one]", "bug_id": "22", "bug_status": "CLOSED", "resolution": "WONTFIX" }
-    self.do_find_signatures("16", d, (22, "CLOSED", "WONTFIX", "short []]]]]]]]]]]][@one]", set(['one'])))
-    
-    d = { "short_desc": "short [@ lots of nesting [ 1 [ 2 [ 3 [ 4]]]]][@one]", "bug_id": "22", "bug_status": "CLOSED", "resolution": "WONTFIX" }
-    self.do_find_signatures("17", d, (22, "CLOSED", "WONTFIX", "short [@ lots of nesting [ 1 [ 2 [ 3 [ 4]]]]][@one]", set(['lots of nesting [ 1 [ 2 [ 3 [ 4]]]]', 'one'])))
-    
-    d = { "short_desc": "short crazy real signature:[@ CDiaPropertyStorage<CDiaLineNumber>::Functor<IDiaSymbol*, {[thunk]:`vcall'{12, {flat}}' }', 0}>::~Functor<IDiaSymbol*, {[thunk]:`vcall'{12, {flat}}' }', 0}>()]", "bug_id": "22", "bug_status": "CLOSED", "resolution": "WONTFIX" }
-    self.do_find_signatures("18", d, (22, "CLOSED", "WONTFIX", "short crazy real signature:[@ CDiaPropertyStorage<CDiaLineNumber>::Functor<IDiaSymbol*, {[thunk]:`vcall'{12, {flat}}' }', 0}>::~Functor<IDiaSymbol*, {[thunk]:`vcall'{12, {flat}}' }', 0}>()]", set(["""CDiaPropertyStorage<CDiaLineNumber>::Functor<IDiaSymbol*, {[thunk]:`vcall'{12, {flat}}' }', 0}>::~Functor<IDiaSymbol*, {[thunk]:`vcall'{12, {flat}}' }', 0}>()"""])))
-    
-    d = {"short_desc": "short with duplicates [@  hello][@ sally][@ hello]", "bug_id": "22", "bug_status": "CLOSED", "resolution": "WONTFIX" }
-    self.do_find_signatures("19", d, (22, "CLOSED", "WONTFIX", "short with duplicates [@  hello][@ sally][@ hello]", set(['hello', 'sally'])))
-
-  def test_bug_id_to_signature_association_iterator(self):
-    csv = ['bug_id,"bug_severity","priority","op_sys","assigned_to","bug_status","resolution","short_desc"\n',
-           '1,"critical","top","all","nobody","NEW",,"this comment, while bogus, has commas and no signature.  It should be ignored."',
-           '2,"critical","top","all","nobody","CLOSED","WONTFIX","this comment has one signature [@ BogusClass::bogus_signature (const char**, void *)]"',
-           '343324,"critical","top","all","nobody","ASSIGNED",,"[@ js3250.dll@0x6cb96] this comment has two signatures [@ libobjc.A.dylib@0x1568c]"',
-           '343325,"critical","top","all","nobody","CLOSED","RESOLVED","[@ nanojit::LIns::isTramp()] this comment has one valid and one broken signature [@ libobjc.A.dylib@0x1568c"',
+  def test_bugzilla_iterator(self):
+    csv = ['bug_id,"bug_status","resolution","short_desc","cf_crash_signature"\n',
+           '1,"RESOLVED",,"this is a comment","This sig, while bogus, has a ] bracket"',
+           '2,"CLOSED","WONTFIX","comments are not too important","single [@ BogusClass::bogus_sig (const char**) ] signature"',
+           '3,"ASSIGNED",,"this is a comment. [@ nanojit::LIns::isTramp()]","[@ js3250.dll@0x6cb96] [@ valid.sig@0x333333]"',
+           '4,"CLOSED","RESOLVED","two sigs enter, one sig leaves","[@ layers::Push@0x123456] [@ layers::Push@0x123456]"',
+           '5,"ASSIGNED","INCOMPLETE",,"[@ MWSBAR.DLL@0x2589f] and a broken one [@ sadTrombone.DLL@0xb4s455"',
+           '6,"ASSIGNED",,"empty crash sigs should not throw errors",""'
+           '7,"CLOSED",,"gt 525355 gt","[@gfx::font(nsTArray<nsRefPtr<FontEntry> > const&)]"',
+           '8,"CLOSED","RESOLVED","newlines in sigs","[@ legitimate(sig)] \n junk \n [@ another::legitimate(sig) ]"'
           ]
-    correct = [ (1,     "NEW",     "",         "this comment, while bogus, has commas and no signature.  It should be ignored.", set([])),
-                (2,     "CLOSED",  "WONTFIX",  "this comment has one signature [@ BogusClass::bogus_signature (const char**, void *)]", set(["BogusClass::bogus_signature (const char**, void *)"])),
-                (343324,"ASSIGNED","",         "[@ js3250.dll@0x6cb96] this comment has two signatures [@ libobjc.A.dylib@0x1568c]", set(["js3250.dll@0x6cb96","libobjc.A.dylib@0x1568c"])),
-                (343325,"CLOSED",  "RESOLVED", "[@ nanojit::LIns::isTramp()] this comment has one valid and one broken signature [@ libobjc.A.dylib@0x1568c", set(["nanojit::LIns::isTramp()"])),
+    correct = [ (1, "RESOLVED", "", "this is a comment", set([])),
+                (2, "CLOSED", "WONTFIX", "comments are not too important", set(["BogusClass::bogus_sig (const char**)"])),
+                (3, "ASSIGNED", "", "this is a comment. [@ nanojit::LIns::isTramp()]", 
+                 set(["js3250.dll@0x6cb96", "valid.sig@0x333333"])),
+                (4, "CLOSED", "RESOLVED", "two sigs enter, one sig leaves", set(["layers::Push@0x123456"])),
+                (5, "ASSIGNED", "INCOMPLETE", "", set(["MWSBAR.DLL@0x2589f"])),
+                (6, "ASSIGNED", "", "empty crash sigs should not throw errors", set([])),
+                (7, "CLOSED", "", "gt 525355 gt", set(["gfx::font(nsTArray<nsRefPtr<FontEntry> > const&)"])),
+                (8, "CLOSED", "RESOLVED", "newlines in sigs", set(['another::legitimate(sig)', 'legitimate(sig)']))
               ]
-    for expected, actual in zip(bug.bug_id_to_signature_association_iterator(csv,iter), correct):
+    for expected, actual in zip(bug.bugzilla_iterator(csv, iter), correct):
       assert expected == actual, "expected %s, got %s" % (str(expected), str(actual))
 
   def test_signature_is_found(self):
