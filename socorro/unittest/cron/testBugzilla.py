@@ -155,7 +155,7 @@ class TestBugzilla(unittest.TestCase):
            '3,"ASSIGNED",,"this is a comment. [@ nanojit::LIns::isTramp()]","[@ js3250.dll@0x6cb96] [@ valid.sig@0x333333]"',
            '4,"CLOSED","RESOLVED","two sigs enter, one sig leaves","[@ layers::Push@0x123456] [@ layers::Push@0x123456]"',
            '5,"ASSIGNED","INCOMPLETE",,"[@ MWSBAR.DLL@0x2589f] and a broken one [@ sadTrombone.DLL@0xb4s455"',
-           '6,"ASSIGNED",,"empty crash sigs should not throw errors",""'
+           '6,"ASSIGNED",,"empty crash sigs should not throw errors",""',
            '7,"CLOSED",,"gt 525355 gt","[@gfx::font(nsTArray<nsRefPtr<FontEntry> > const&)]"',
            '8,"CLOSED","RESOLVED","newlines in sigs","[@ legitimate(sig)] \n junk \n [@ another::legitimate(sig) ]"'
           ]
