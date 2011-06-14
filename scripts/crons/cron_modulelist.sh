@@ -4,7 +4,8 @@
 
 NAME=`basename $0 .sh`
 lock $NAME
-${SOCORRO_DIR}/analysis/modulelist.sh Firefox "Windows NT" `date +%Y%m%d`
+DATE=`date -d 'yesterday' +%Y%m%d`
+${SOCORRO_DIR}/analysis/modulelist.sh Firefox "Windows NT" $DATE
 EXIT_CODE=$?
 unlock $NAME
 
