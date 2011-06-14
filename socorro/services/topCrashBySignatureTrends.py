@@ -241,6 +241,8 @@ class TopCrashBySignatureTrends(webapi.JsonServiceBase):
     try:
       cursor = connection.cursor()
       return twoPeriodTopCrasherComparison(cursor, parameters)
+    except TypeError:
+      raise webapi.BadRequest()
     finally:
       connection.close()
 
