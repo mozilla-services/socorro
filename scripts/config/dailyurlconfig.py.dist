@@ -27,11 +27,11 @@ publicOutputPath.doc = "file system location to put the 'external/public' output
 publicOutputPath.default = '.'
 
 product = cm.Option()
-product.doc = 'the name of the product to track (leave blank for all)'
+product.doc = 'a comma delimited list of the products to track (leave blank for all)'
 product.default = 'Firefox'
 
 version = cm.Option()
-version.doc = 'the name of the version to track (leave blank for all)'
+version.doc = 'a comma delimited list of the versions to track (leave blank for all)'
 version.default = ''
 
 #-------------------------------------------------------------------------------

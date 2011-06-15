@@ -1,5 +1,6 @@
 ###!/usr/bin/python
 
+
 import logging
 import copy
 import datetime as dt
@@ -8,47 +9,15 @@ import csv
 import time
 import os.path
 
+import contextlib
+
 logger = logging.getLogger("dailyUrlDump")
 
-import socorro.lib.psycopghelper as psy
+import socorro.database.database as sdb
 import socorro.lib.util as util
 from socorro.database.cachedIdAccess import IdCache
 
-#-----------------------------------------------------------------------------------------------------------------
-def dailyUrlDump(config):
-  databaseConnectionPool = psy.DatabaseConnectionPool(config.databaseHost, config.databaseName, config.databaseUserName, config.databasePassword, logger)
-  try: # outer try/except: level 0
-    try: # mid try/finally: level 1
-      databaseConnection, databaseCursor = databaseConnectionPool.connectionCursorPair()
-
-      now = config.day + dt.timedelta(1)
-      nowAsString = "%4d-%02d-%02d" % now.timetuple()[:3]
-      yesterday = config.day
-      yesterdayAsString = "%4d-%02d-%02d" % yesterday.timetuple()[:3]
-      outputFileName = "%4d%02d%02d-crashdata.csv.gz" % config.day.timetuple()[:3]
-      publicOutputFileName = "%4d%02d%02d-pub-crashdata.csv.gz" % config.day.timetuple()[:3]
-      outputPathName = os.path.join(config.outputPath, outputFileName)
-      publicOutputPathName = None
-      publicOutputDirectory = config.get('publicOutputPath')
-      if publicOutputDirectory:
-        publicOutputPathName = os.path.join(publicOutputDirectory,publicOutputFileName)
-      logger.debug("config.day = %s; now = %s; yesterday = %s", config.day, now, yesterday)
-      productPhrase = ''
-      try:
-        if config.product != '':
-          productPhrase = "and r.product = '%s'" % config.product
-      except:
-        pass
-
-      versionPhrase = ''
-      try:
-        if config.version != '':
-          versionPhrase = "and r.version = '%s'" % config.version
-      except:
-        pass
-
-      # -- N : array index. SQL's idea of the index is one greater
-      sql = """
+sql = """
       select
         r.signature,  -- 0
         r.url,        -- 1
@@ -69,7 +38,7 @@ def dailyUrlDump(config):
         r.uptime as uptime_seconds, --16
         case when (r.email is NULL OR r.email='') then '' else r.email end as email, --17
         (select sum(adu_count) from raw_adu adu
-           where adu.date = '%(nowAsString)s'
+           where adu.date = '%(now_str)s'
              and pd.product = adu.product_name and pd.version = adu.product_version
              and substring(r.os_name from 1 for 3) = substring(adu.product_os_platform from 1 for 3)
              and r.os_version LIKE '%%'||adu.product_os_version||'%%') as adu_count, --18
@@ -86,89 +55,160 @@ def dailyUrlDump(config):
         reports r left join productdims pd on r.product = pd.product and r.version = pd.version
             left join reports_duplicates rd on r.uuid = rd.uuid
       where
-        '%(yesterdayAsString)s' <= r.date_processed and r.date_processed < '%(nowAsString)s'
-        %(productPhrase)s %(versionPhrase)s
+        '%(yesterday_str)s' <= r.date_processed and r.date_processed < '%(now_str)s'
+        %(prod_phrase)s %(ver_phrase)s
       order by 5 -- r.date_processed, munged
-      """ % {'nowAsString':nowAsString, 'yesterdayAsString':yesterdayAsString, 'productPhrase':productPhrase, 'versionPhrase':versionPhrase}
-      logger.debug("SQL is%s",sql)
-      gzippedOutputFile = None
-      gzippedPublicOutputFile = None
-      try: # inner try/finally level 2: write gzipped files
-        gzippedOutputFile = gzip.open(outputPathName, "w")
-        csvFormatter = csv.writer(gzippedOutputFile, delimiter='\t', lineterminator='\n')
-        csvPublicFormatter = None
-        if publicOutputPathName:
-          gzippedPublicOutputFile = gzip.open(publicOutputPathName, "w")
-          csvPublicFormatter = csv.writer(gzippedPublicOutputFile, delimiter='\t', lineterminator='\n')
-        else:
-          logger.info("Will not create External (bowdlerized) gzip file")
+      """
 
-        columnHeadersAreNotYetWritten = True
-        idCache = IdCache(databaseCursor)
-        for aCrash in psy.execute(databaseCursor, sql):
-          if columnHeadersAreNotYetWritten:
-            writeRowToInternalAndExternalFiles(csvFormatter,csvPublicFormatter,[x[0] for x in databaseCursor.description])
-            columnHeadersAreNotYetWritten = False
-          #logger.debug("iterating through crash %s (%s)",aCrash,len(aCrash))
-          aCrashAsAList = []
-          currentName = ''
-          currentUuid = ''
-          for i, x in enumerate(aCrash):
-            if x is None:
-              aCrashAsAList.append(r'\N')
-              continue
-            if i == 2:
-              currentUuid = x.rsplit('/',1)[-1]
-            if i == 10: #r.os_name
-              currentName = x.strip()
-            if i == 11: #r.os_version
-              # per bug 519703
-              aCrashAsAList.append(idCache.getAppropriateOsVersion(currentName, x))
-              currentName=''
-              continue
-            if i == 14: #bug_associations.bug_id
-              aCrashAsAList.append(','.join(str(bugid) for bugid in x))
-              continue
-            if i == 15: #r.user_comments
-              x=x.replace('\t',' '); # per bug 519703
-            if i == 17: #r.email -- show 'email' if the email is likely useful
-              # per bugs 529431/519703
-              if '@' in x:
+#-------------------------------------------------------------------------------
+def setup_query_parameters(config):
+    now = config.day + dt.timedelta(1)
+    now_str = "%4d-%02d-%02d" % now.timetuple()[:3]
+    yesterday = config.day
+    yesterday_str = "%4d-%02d-%02d" % yesterday.timetuple()[:3]
+    logger.debug("config.day = %s; now = %s; yesterday = %s",
+                 config.day,
+                 now,
+                 yesterday)
+    prod_phrase = ''
+    try:
+        if config.product != '':
+            if ',' in config.product:
+                prod_list = [x.strip() for x in config.product.split(',')]
+                prod_phrase = ("and r.product in ('%s')" %
+                                 "','".join(prod_list))
+            else:
+                prod_phrase = "and r.product = '%s'" % config.product
+    except Exception:
+        util.reportExceptionAndContinue(logger)
+    ver_phrase = ''
+    try:
+        if config.version != '':
+            if ',' in config.product:
+                ver_list = [x.strip() for x in config.version.split(',')]
+                ver_phrase = ("and r.version in ('%s')" %
+                                 "','".join(ver_list))
+            else:
+                ver_phrase = "and r.version = '%s'" % config.version
+    except Exception:
+        util.reportExceptionAndContinue(logger)
+
+    return util.DotDict({ 'now_str' : now_str,
+                          'yesterday_str' : yesterday_str,
+                          'prod_phrase' : prod_phrase,
+                          'ver_phrase' : ver_phrase})
+
+#-------------------------------------------------------------------------------
+@contextlib.contextmanager
+def gzipped_csv_files(config, gzip=gzip, csv=csv):
+    private_out_filename = ("%4d%02d%02d-crashdata.csv.gz"
+                            % config.day.timetuple()[:3])
+    private_out_pathname = os.path.join(config.outputPath,
+                                        private_out_filename)
+    private_gzip_file_handle = gzip.open(private_out_pathname, "w")
+    private_csv_file_handle = csv.writer(private_gzip_file_handle,
+                                         delimiter='\t',
+                                         lineterminator='\n')
+
+    pubic_out_filename = ("%4d%02d%02d-pub-crashdata.csv.gz"
+                          % config.day.timetuple()[:3])
+    public_out_pathname = None
+    public_out_directory = config.get('publicOutputPath')
+    public_gzip_file_handle = None
+    public_csv_file_handle = None
+    if public_out_directory:
+        public_out_pathname = os.path.join(public_out_directory,
+                                           pubic_out_filename)
+        public_gzip_file_handle = gzip.open(public_out_pathname, "w")
+        public_csv_file_handle = csv.writer(public_gzip_file_handle,
+                                            delimiter='\t',
+                                            lineterminator='\n')
+    else:
+        logger.info("Will not create public (bowdlerized) gzip file")
+    yield (private_csv_file_handle, public_csv_file_handle)
+    private_gzip_file_handle.close()
+    if public_gzip_file_handle:
+        public_gzip_file_handle.close()
+
+#-------------------------------------------------------------------------------
+def process_crash(a_crash_row, id_cache):
+    column_value_list = []
+    os_name = None
+    ooid = ''
+    for i, x in enumerate(a_crash_row):
+        if x is None:
+            x = r'\N'
+        if i == 2:
+            ooid = x.rsplit('/',1)[-1]
+        if i == 10: #r.os_name
+            x = os_name = x.strip()
+        if i == 11: #r.os_version
+            # per bug 519703
+            x = id_cache.getAppropriateOsVersion(os_name, x)
+            os_name=None
+        if i == 14: #bug_associations.bug_id
+            x = ','.join(str(bugid) for bugid in x)
+        if i == 15: #r.user_comments
+            x = x.replace('\t',' '); # per bug 519703
+        if i == 17: #r.email -- show 'email' if the email is likely useful
+            # per bugs 529431/519703
+            if '@' in x:
                 x='yes'
-              else:
+            else:
                 x = ''
-            if type(x) == str:
-              x = x.strip().replace('\r','').replace('\n',' | ')
-            aCrashAsAList.append(x)
-          writeRowToInternalAndExternalFiles(csvFormatter,csvPublicFormatter,aCrashAsAList)
-          # end for loop over each aCrash
-      finally: # level 2
-        if gzippedOutputFile:
-          gzippedOutputFile.close()
-        if gzippedPublicOutputFile:
-          gzippedPublicOutputFile.close()
-    finally: # level 1
-      #print psy.connectionStatus(databaseConnection)
-      databaseConnectionPool.cleanup()
-      #print psy.connectionStatus(databaseConnection)
+        if type(x) == str:
+            x = x.strip().replace('\r','').replace('\n',' | ')
+        column_value_list.append(x)
+    return column_value_list
 
-  except: # level 0
-    util.reportExceptionAndContinue(logger)
+#-------------------------------------------------------------------------------
+def write_row(file_handles_tuple,
+              crash_list):
+    """
+    Write a row to each file: Seen by internal users (full details), and
+    external users (bowdlerized)
+    """
+    private_file_handle, public_file_handle = file_handles_tuple
+    # logger.debug("Writing crash %s (%s)",crash_list,len(crash_list))
+    private_file_handle.writerow(crash_list)
+    crash_list[1] = 'URL (removed)' # remove url
+    crash_list[17] = '' # remove email
+    if public_file_handle:
+        public_file_handle.writerow(crash_list)
 
-def writeRowToInternalAndExternalFiles(internalFormatter,externalFormatter,aCrashAsAList):
-  """
-  Write a row to each file: Seen by internal users (full details), and external users (bowdlerized)
-  """
-  # logger.debug("Writing crash %s (%s)",aCrashAsAList,len(aCrashAsAList))
-  if internalFormatter:
-    internalFormatter.writerow(aCrashAsAList)
-  else:
-    logger.error("Failed to write to Interal (full) gzip file: %s",aCrashAsAList)
-  # per bug 529431
-  bowdlerList = copy.copy(aCrashAsAList)
-  if bowdlerList[1]:
-    bowdlerList[1] = 'URL (removed)'
-  if len(bowdlerList) > 17: # This *should* always be true
-    bowdlerList[17] = ''
-  if externalFormatter:
-    externalFormatter.writerow(bowdlerList)
+#-------------------------------------------------------------------------------
+def dailyUrlDump(config, sdb=sdb,
+                 gzipped_csv_files=gzipped_csv_files,
+                 IdCache=IdCache,
+                 write_row=write_row,
+                 process_crash=process_crash,
+                 logger=logger):
+    dbConnectionPool = sdb.DatabaseConnectionPool(config, logger)
+    try:
+        try:
+            db_conn, db_cursor = dbConnectionPool.connectionCursorPair()
+
+            with gzipped_csv_files(config) as csv_file_handles_tuple:
+                headers_not_yet_written = True
+                id_cache = IdCache(db_cursor)
+                sql_parameters = setup_query_parameters(config)
+                logger.debug("config.day = %s; now = %s; yesterday = %s",
+                             config.day,
+                             sql_parameters.now_str,
+                             sql_parameters.yesterday_str)
+                sql_query = sql % sql_parameters
+                logger.debug("SQL is: %s", sql_query)
+                for crash_row in sdb.execute(db_cursor, sql_query):
+                    if headers_not_yet_written:
+                        write_row(csv_file_handles_tuple,
+                                  [x[0] for x in db_cursor.description])
+                        headers_not_yet_written = False
+                    column_value_list = process_crash(crash_row, id_cache)
+                    write_row(csv_file_handles_tuple,
+                              column_value_list)
+                    # end for loop over each crash_row
+        finally:
+            dbConnectionPool.cleanup()
+    except:
+        util.reportExceptionAndContinue(logger)
+
