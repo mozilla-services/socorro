@@ -6,7 +6,9 @@ class DummyObjectWithExpectations(object):
     self._expected = []
     self.counter = 0
     self.name = name
-  def expect (self, attribute, args, kwargs, returnValue=None, exceptionToRaise=None):
+  def expect (self, attribute=None, args=None, kwargs=None, returnValue=None, exceptionToRaise=None):
+    if attribute is None:
+      attribute = '__call__'
     self._expected.append((attribute, args, kwargs, returnValue, exceptionToRaise))
   def __getattr__(self, attribute):
     try:
@@ -23,6 +25,10 @@ class DummyObjectWithExpectations(object):
           raise exceptionToRaise
         return returnValue
       return f
+    elif argsExpected is None and kwargsExpected is None:
+      if exceptionToRaise:
+        raise exceptionToRaise
+      return returnValue
     else:
       assert attributeExpected == attribute, "%s expected attribute '%s', but got '%s'" % (self.name, attributeExpected, attribute)
       return returnValue
@@ -39,3 +45,8 @@ class DummyObjectWithExpectations(object):
     if exceptionToRaise:
       raise exceptionToRaise
     return returnValue
+
+
+def assert_expected (result, expected):
+  assert result == expected, "expected:\n%s\nbut got:\n%s" % (str(expected),
+                                                              str(result))

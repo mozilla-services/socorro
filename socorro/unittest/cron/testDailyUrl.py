@@ -1,189 +1,243 @@
 import unittest
 
-import csv
 import datetime as dt
-import gzip
-import os
-import psycopg2 as pg
-import shutil
-import sys
-import time
 
-import socorro.lib.filesystem as soc_filesys
-import socorro.database.schema as soc_schema
-import socorro.database.postgresql as soc_pg
-import socorro.lib.dynamicConfigurationManager as configManager
-import socorro.database.database as sdatabase
-
-import socorro.unittest.testlib.util as tutil
-import socorro.unittest.testlib.loggerForTest as tLogger
-
-import socorro.unittest.config.commonconfig as commonconfig
-
+import socorro.lib.util as sutil
 import socorro.cron.dailyUrl as dailyUrl
+import socorro.unittest.testlib.expectations as exp
 
-logger = tLogger.TestingLogger()
-dailyUrl.logger = logger
+#-------------------------------------------------------------------------------
+def test_write_row_1():
+    """test_write_row_1 - write private only"""
+    row = [x for x in xrange(27)]
+    private_file_handle = exp.DummyObjectWithExpectations()
+    private_file_handle.expect('writerow', (row,), {})
+    public_file_handle = None
+    dailyUrl.write_row((private_file_handle, public_file_handle), row)
 
-productData = {
-  # 'reports': [[id,signature,url,client_crash_date,date_processed,product,version,email,topmost_filenames,addons_checked,flash_version], ...]
-  # 'bug_associations':[[bug_id,signature], ...]
-  # 'productdims': [[id,product,version,branch], ...],
-  'order':['bugs','reports','productdims','bug_associations'],
-  'reports': {
-  'cols': 'id,signature,url,uuid,client_crash_date,date_processed,product,version,uptime,email,topmost_filenames,addons_checked,flash_version,hangid,reason,process_type',
-  'data': [
-    [1,'signature0','abc','abcd289c-a4e0-496a-a120-beb6d2101225','2010-12-25T12:04:00','2010-12-25T12:04:05','fire','1.2.3',120,'0b.c','file0',True,'FV10.0.1',None,'I said so',None],
-    [2,'signature0','def','abcd289c-a4e0-496a-a121-beb6d2101225','2010-12-25T12:01:00','2010-12-25T12:01:02','fire','1.2.4',121,'1@b.c','file0',None,'FV10.0.1',None,None,None],
-    [3,'signature0','ghi','abcd289c-a4e0-496a-a122-beb6d2101225','2010-12-25T12:02:00','2010-12-25T12:02:03','fire','1.2.3',122,'2@b.c','file0',False,'FV10.0.1',None,None,None],
-    [4,'signature1',None, 'abcd289c-a4e0-496a-a123-beb6d2101225','2010-12-25T12:03:00','2010-12-25T12:03:04','bird','1.0.0',123,'f**kU','file1',True,'FV10.1.1',None,None,None],
-    [5,'signature1','jkl','abcd289c-a4e0-496a-a124-beb6d2101225','2010-12-25T12:00:00','2010-12-25T12:00:01','bird','1.0.0',124,'4@b.c','file1',True,'FV10.1.1','bogus crash id',None,None],
-    [6,'signature2','mmm','abcd289c-a4e0-496a-a125-beb6d2101225','2010-12-25T12:05:00','2010-12-25T12:05:06','fire','1.2.3',125,'5@b.c','file1',True,'FV10.1.1','bogus crash id',None,None],
-  ],
-    },
-  'bugs': {
-  'data': [[12345,'open','testbug 12345'],[12346,'closed','testbug 12346'],[12347,'open','testbug 12347']],
-  'cols': 'id,status,short_desc'
-  },
-  'bug_associations':{
-  'data': [[12345,'signature0'],[12346,'signature0'],[12347,'signature1']],
-  'cols': 'bug_id,signature',
-  },
-  'productdims': {
-  'data': [[1,'fire','1.2.3','b3'],[2,'fire','1.2.4','b4'],[3,'bird','1.0.0','b0']],
-  'cols': 'id,product,version,branch',
-  },
-  }
+#-------------------------------------------------------------------------------
+def test_write_row_2():
+    """test_write_row_2 - write both public and private"""
+    row = [x for x in xrange(28)]
+    private_file_handle = exp.DummyObjectWithExpectations()
+    private_file_handle.expect('writerow', (row,), {})
+    public_row = [x for x in xrange(28)]
+    public_row[1] = 'URL (removed)'
+    public_row[17] = ''
+    public_file_handle = exp.DummyObjectWithExpectations()
+    public_file_handle.expect('writerow', (public_row,), {})
+    dailyUrl.write_row((private_file_handle, public_file_handle), row)
 
-expectedPrivate = [
-  'signature	url	uuid_url	client_crash_date	date_processed	last_crash	product	version	build	branch	os_name	os_version	cpu_info	address	bug_list	user_comments	uptime_seconds	email	adu_count	topmost_filenames	addons_checked	flash_version	hangid	reason	process_type	app_notes	install_age	duplicate_of',
-  'signature1	jkl	http://crash-stats.mozilla.com/report/index/abcd289c-a4e0-496a-a124-beb6d2101225	201012251200	201012251200	\N	bird	1.0.0	\N	b0	\N	\N	\N	\N	12347	\N	124	yes	\N	file1	checked	FV10.1.1	bogus crash id	\N	\N	\N	\N	\N',
-  'signature0	def	http://crash-stats.mozilla.com/report/index/abcd289c-a4e0-496a-a121-beb6d2101225	201012251201	201012251201	\N	fire	1.2.4	\N	b4	\N	\N	\N	\N	12345,12346	\N	121	yes	\N	file0	[unknown]	FV10.0.1	\N	\N	\N	\N	\N	\N',
-  'signature0	ghi	http://crash-stats.mozilla.com/report/index/abcd289c-a4e0-496a-a122-beb6d2101225	201012251202	201012251202	\N	fire	1.2.3	\N	b3	\N	\N	\N	\N	12345,12346	\N	122	yes	\N	file0	not	FV10.0.1	\N	\N	\N	\N	\N	\N',
-  'signature1	\N	http://crash-stats.mozilla.com/report/index/abcd289c-a4e0-496a-a123-beb6d2101225	201012251203	201012251203	\N	bird	1.0.0	\N	b0	\N	\N	\N	\N	12347	\N	123		\N	file1	checked	FV10.1.1	\N	\N	\N	\N	\N	\N',
-  'signature0	abc	http://crash-stats.mozilla.com/report/index/abcd289c-a4e0-496a-a120-beb6d2101225	201012251204	201012251204	\N	fire	1.2.3	\N	b3	\N	\N	\N	\N	12345,12346	\N	120		\N	file0	checked	FV10.0.1	\N	I said so	\N	\N	\N	\N',
-  'signature2	mmm	http://crash-stats.mozilla.com/report/index/abcd289c-a4e0-496a-a125-beb6d2101225	201012251205	201012251205	\N	fire	1.2.3	\N	b3	\N	\N	\N	\N		\N	125	yes	\N	file1	checked	FV10.1.1	bogus crash id	\N	\N	\N	\N	\N',
-  ]
+#-------------------------------------------------------------------------------
+raw_row = range(28)
+raw_row[0] = 'xyz'
+raw_row[1] = 'http://xyz.com'
+raw_row[2] = 'http://crash-stats.mozilla.com/report/index/abcd289c-a4e0-496a-a120-beb6d2101225\r\n'
+raw_row[3] = '201012250610'
+raw_row[4] = '201012250620'
+raw_row[5] = '2010-10-10'
+raw_row[6] = 'Firefloozy'
+raw_row[7] = '5.0'
+raw_row[8] = '20101210'
+raw_row[9] = '1.9.1'
+raw_row[10] = '  Windows NT  '
+raw_row[11] = '4.0'
+raw_row[12] = 'FredCPU | 13bit'
+raw_row[13] = '0x0001'
+raw_row[14] = ['1234','5678']
+raw_row[15] = 'this sucks\tbut I love you anyway'
+raw_row[16] = 10
+raw_row[17] = 'fred@mozilla.com'
+raw_row[18] = 1222
+raw_row[19] = 'fred.c'
+raw_row[20] = 'not'
+raw_row[21] = None
+raw_row[22] = '12345'
+raw_row[23] = 'I said so'
+raw_row[24] = 'plugin'
+raw_row[25] = 'app_notes'
+raw_row[26] = 233333
+raw_row[27] = '123123123'
 
-expectedPublic = [
-  "signature	URL (removed)	uuid_url	client_crash_date	date_processed	last_crash	product	version	build	branch	os_name	os_version	cpu_info	address	bug_list	user_comments	uptime_seconds		adu_count	topmost_filenames	addons_checked	flash_version	hangid	reason	process_type	app_notes	install_age	duplicate_of",
-  "signature1	URL (removed)	http://crash-stats.mozilla.com/report/index/abcd289c-a4e0-496a-a124-beb6d2101225	201012251200	201012251200	\N	bird	1.0.0	\N	b0	\N	\N	\N	\N	12347	\N	124		\N	file1	checked	FV10.1.1	bogus crash id	\N	\N	\N	\N	\N",
-  "signature0	URL (removed)	http://crash-stats.mozilla.com/report/index/abcd289c-a4e0-496a-a121-beb6d2101225	201012251201	201012251201	\N	fire	1.2.4	\N	b4	\N	\N	\N	\N	12345,12346	\N	121		\N	file0	[unknown]	FV10.0.1	\N	\N	\N	\N	\N	\N",
-  "signature0	URL (removed)	http://crash-stats.mozilla.com/report/index/abcd289c-a4e0-496a-a122-beb6d2101225	201012251202	201012251202	\N	fire	1.2.3	\N	b3	\N	\N	\N	\N	12345,12346	\N	122		\N	file0	not	FV10.0.1	\N	\N	\N	\N	\N	\N",
-  "signature1	URL (removed)	http://crash-stats.mozilla.com/report/index/abcd289c-a4e0-496a-a123-beb6d2101225	201012251203	201012251203	\N	bird	1.0.0	\N	b0	\N	\N	\N	\N	12347	\N	123		\N	file1	checked	FV10.1.1	\N	\N	\N	\N	\N	\N",
-  "signature0	URL (removed)	http://crash-stats.mozilla.com/report/index/abcd289c-a4e0-496a-a120-beb6d2101225	201012251204	201012251204	\N	fire	1.2.3	\N	b3	\N	\N	\N	\N	12345,12346	\N	120		\N	file0	checked	FV10.0.1	\N	I said so	\N	\N	\N	\N",
-  "signature2	URL (removed)	http://crash-stats.mozilla.com/report/index/abcd289c-a4e0-496a-a125-beb6d2101225	201012251205	201012251205	\N	fire	1.2.3	\N	b3	\N	\N	\N	\N		\N	125		\N	file1	checked	FV10.1.1	bogus crash id	\N	\N	\N	\N	\N",
-]
+exp_row = range(28)
+exp_row[0] = 'xyz'
+exp_row[1] = 'http://xyz.com'
+exp_row[2] = 'http://crash-stats.mozilla.com/report/index/abcd289c-a4e0-496a-a120-beb6d2101225'
+exp_row[3] = '201012250610'
+exp_row[4] = '201012250620'
+exp_row[5] = '2010-10-10'
+exp_row[6] = 'Firefloozy'
+exp_row[7] = '5.0'
+exp_row[8] = '20101210'
+exp_row[9] = '1.9.1'
+exp_row[10] = 'Windows NT'
+exp_row[11] = 'XXX'
+exp_row[12] = 'FredCPU | 13bit'
+exp_row[13] = '0x0001'
+exp_row[14] = '1234,5678'
+exp_row[15] = 'this sucks but I love you anyway'
+exp_row[16] = 10
+exp_row[17] = 'yes'
+exp_row[18] = 1222
+exp_row[19] = 'fred.c'
+exp_row[20] = 'not'
+exp_row[21] = '\\N'
+exp_row[22] = '12345'
+exp_row[23] = 'I said so'
+exp_row[24] = 'plugin'
+exp_row[25] = 'app_notes'
+exp_row[26] = 233333
+exp_row[27] = '123123123'
+#-------------------------------------------------------------------------------
+def test_process_crash():
+    """test_process_crash - test record fixups"""
+    id_cache = exp.DummyObjectWithExpectations()
+    id_cache.expect('getAppropriateOsVersion', ('Windows NT', '4.0'), {}, 'XXX')
+    result = dailyUrl.process_crash(raw_row, id_cache)
+    exp.assert_expected(result, exp_row)
 
-def setup_module():
-  tutil.nosePrintModule(__file__)
+#-------------------------------------------------------------------------------
+def test_gzipped_csv_files_1():
+    """test_gzipped_csv_files_1 - test the gzip/csv context manager"""
+    conf = sutil.DotDict()
+    conf.day = dt.date(2011, 1, 25)
+    conf.outputPath = './'
+    conf.publicOutputPath = './pub'
+    fake_csv_module = exp.DummyObjectWithExpectations()
+    fake_gzip_module = exp.DummyObjectWithExpectations()
 
-class TestFormatter:
-  def __init__(self,initialData = []):
-    self.data = initialData
+    fake_private_gzip_file_handle = exp.DummyObjectWithExpectations()
+    fake_gzip_module.expect('open', ('./20110125-crashdata.csv.gz', 'w'), {},
+                            fake_private_gzip_file_handle)
+    fake_private_csv_file_handle = exp.DummyObjectWithExpectations()
+    fake_csv_module.expect('writer',
+                           (fake_private_gzip_file_handle,),
+                           {'delimiter' : '\t', 'lineterminator' : '\n'},
+                           fake_private_csv_file_handle)
 
-  def writerow(self,aList):
-    self.data.append(aList)
+    fake_public_gzip_file_handle = exp.DummyObjectWithExpectations()
+    fake_gzip_module.expect('open', ('./pub/20110125-pub-crashdata.csv.gz', 'w'),
+                            {},
+                            fake_public_gzip_file_handle)
+    fake_public_csv_file_handle = exp.DummyObjectWithExpectations()
+    fake_csv_module.expect('writer',
+                           (fake_public_gzip_file_handle,),
+                           {'delimiter' : '\t', 'lineterminator' : '\n'},
+                           fake_public_csv_file_handle)
 
-class TestDailyUrl(unittest.TestCase):
-  def setUp(self):
-    self.outDir = os.path.join(os.path.split(__file__)[0],'Outdir')
-    self.config = configManager.newConfiguration(configurationModule=commonconfig, applicationName='Test DailyUrl')
-    self.connection = sdatabase.Database(self.config).connection()
-    #dsn = "host=%(databaseHost)s dbname=%(databaseName)s user=%(databaseUserName)s password=%(databasePassword)s" % self.config
-    #self.connection = pg.connect(dsn)
-    cursor = self.connection.cursor()
-    # First clean, just in case
-    try:
-      soc_schema.teardownDatabase(self.config,logger)
-    except:
-      pass
-    try:
-      shutil.rmtree(self.outDir)
-    except:
-      pass
-    # Now create
-    soc_filesys.makedirs(self.outDir)
-    soc_schema.setupDatabase(self.config,logger)
-    for k in productData['order']:
-      placeholders = ', '.join(['%s' for x in productData[k]['data'][0]])
-      sql = 'INSERT INTO %s (%s) VALUES (%s)'%(k,productData[k]['cols'],placeholders)
-      cursor.executemany(sql,productData[k]['data'])
-      self.connection.commit()
+    fake_private_gzip_file_handle.expect('close', (), {})
+    fake_public_gzip_file_handle.expect('close', (), {})
 
-  def tearDown(self):
-    #print logger
-    try:
-      soc_schema.teardownDatabase(self.config,logger)
-    except:
-      pass
-    try:
-      shutil.rmtree(self.outDir)
-    except Exception,x:
-      assert 0,"Failure to tearDown: %s"%(x)
+    with dailyUrl.gzipped_csv_files(conf, fake_gzip_module, fake_csv_module) as t:
+        assert t[0] is fake_private_csv_file_handle
+        assert t[1] is fake_public_csv_file_handle
 
-  def testDailyUrlDump_noPublic(self):
-    logger.clear()
-    #self.config['publicOutputPath'] = self.outDir
-    self.config['outputPath'] = self.outDir
-    self.config['day'] = dt.date(2010,12,25)
-    dailyUrl.dailyUrlDump(self.config)
-    outFiles = os.listdir(self.outDir)
-    assert 1 == len(outFiles), 'but got: "%s"'%(os.listdir(self.outDir))
-    assert '20101225-crashdata.csv.gz' in outFiles, 'but got: "%s"'%(os.listdir(self.outDir))
-    zipFile = gzip.open(os.path.join(self.outDir,'20101225-crashdata.csv.gz'),'r')
-    lines = []
-    line = zipFile.readline().strip()
-    while line:
-      lines.append(line)
-      line = zipFile.readline().strip()
-    assert len(expectedPrivate) == len(lines), 'expected: %s\ngot:     %s'%(expectedPrivate,lines)
-    for i in range(len(lines)):
-      assert expectedPrivate[i] == lines[i], '%d:\nExpected: [%s]\ngot:     [%s]'%(i,expectedPrivate[i],lines[i])
+#-------------------------------------------------------------------------------
+def test_gzipped_csv_files_2():
+    """test_gzipped_csv_files_2 - test the gzip/csv context manager no public"""
+    conf = sutil.DotDict()
+    conf.day = dt.date(2011, 1, 25)
+    conf.outputPath = './'
+    fake_csv_module = exp.DummyObjectWithExpectations()
+    fake_gzip_module = exp.DummyObjectWithExpectations()
 
-  def testDailyUrlDump_withPublic(self):
-    logger.clear()
-    self.config['publicOutputPath'] = self.outDir
-    self.config['outputPath'] = self.outDir
-    self.config['day'] = dt.date(2010,12,25)
-    dailyUrl.dailyUrlDump(self.config)
-    outFiles = os.listdir(self.outDir)
-    assert 2 == len(outFiles), 'but got: "%s"'%(os.listdir(self.outDir))
-    assert '20101225-pub-crashdata.csv.gz' in outFiles, 'but got: "%s"'%(os.listdir(self.outDir))
-    zipFile = gzip.open(os.path.join(self.outDir,'20101225-pub-crashdata.csv.gz'),'r')
-    lines = []
-    line = zipFile.readline().strip()
-    while line:
-      lines.append(line)
-      line = zipFile.readline().strip()
-    assert len(expectedPublic) == len(lines), 'expected: %s\ngot:     %s'%(expectedPublic,lines)
-    for i in range(len(lines)):
-      assert expectedPublic[i] == lines[i], '%d:\nExpected: %s\ngot:     %s'%(i,expectedPublic[i],lines[i])
+    fake_private_gzip_file_handle = exp.DummyObjectWithExpectations()
+    fake_gzip_module.expect('open', ('./20110125-crashdata.csv.gz', 'w'), {},
+                            fake_private_gzip_file_handle)
+    fake_private_csv_file_handle = exp.DummyObjectWithExpectations()
+    fake_csv_module.expect('writer',
+                           (fake_private_gzip_file_handle,),
+                           {'delimiter' : '\t', 'lineterminator' : '\n'},
+                           fake_private_csv_file_handle)
+
+    fake_private_gzip_file_handle.expect('close', (), {})
+
+    with dailyUrl.gzipped_csv_files(conf, fake_gzip_module, fake_csv_module) as t:
+        assert t[0] is fake_private_csv_file_handle
+        assert t[1] is None
+
+#-------------------------------------------------------------------------------
+def test_setup_query_parameters_1():
+    """setup_query_parameters_1 - does it make the right query for single product"""
+    conf = sutil.DotDict()
+    conf.day = dt.date(2011, 1, 25)
+    conf.product = 'Firefloozy'
+    conf.version = ''
+    result = dailyUrl.setup_query_parameters(conf)
+    exp.assert_expected(result.now_str, "2011-01-26")
+    exp.assert_expected(result.yesterday_str, "2011-01-25")
+    exp.assert_expected(result.prod_phrase, "and r.product = 'Firefloozy'")
+    exp.assert_expected(result.ver_phrase, "")
+
+#-------------------------------------------------------------------------------
+def test_setup_query_parameters_2():
+    """setup_query_parameters_2 - does it make the right query for multiple products"""
+    conf = sutil.DotDict()
+    conf.day = dt.date(2011, 1, 25)
+    conf.product = 'Firefloozy,Thunderthigh'
+    conf.version = ''
+    result = dailyUrl.setup_query_parameters(conf)
+    exp.assert_expected(result.now_str, "2011-01-26")
+    exp.assert_expected(result.yesterday_str, "2011-01-25")
+    exp.assert_expected(result.prod_phrase, "and r.product in ('Firefloozy',"
+                                            "'Thunderthigh')")
+    exp.assert_expected(result.ver_phrase, "")
 
 
-  def testWriteRowToInternalAndExternalFiles(self):
-    iF = TestFormatter([])
-    pF = TestFormatter([])
-    data = [
-      ['0','http://url',2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,'email@a.b',18],
-      ['0','', 2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,'', 18],
-      ['0','', 2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,'email@a.b',18],
-      ]
-    iExpected = [
-      ['0','http://url',2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,'email@a.b',18],
-      ['0','', 2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,'', 18],
-      ['0','', 2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,'email@a.b',18],
-      ]
-    pExpected = [
-      ['0','URL (removed)',2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,'',18],
-      ['0','', 2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,'', 18],
-      ['0','', 2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,'',18],
-      ]
-    for d in data:
-      dailyUrl.writeRowToInternalAndExternalFiles(iF,pF,d)
+#-------------------------------------------------------------------------------
+def test_dailyUrlDump():
+    """test_dailyUrlDump - test the thing that ropes them all together"""
+    conf = sutil.DotDict()
+    conf.day = dt.date(2011, 1, 25)
+    conf.product = 'Firefloozy,Thunderthigh'
+    conf.version = ''
+    sql_param = sutil.DotDict()
+    sql_param.now_str = "2011-01-26"
+    sql_param.yesterday_str = "2011-01-25"
+    sql_param.prod_phrase = "and r.product in ('Firefloozy','Thunderthigh')"
+    sql_param.ver_phrase = ""
+    expected_sql = dailyUrl.sql % sql_param
 
-    for i in range(len(iF.data)):
-      assert iExpected[i] == iF.data[i]
-    for i in range(len(pF.data)):
-      assert pExpected[i] == pF.data[i]
+    fake_logger = exp.DummyObjectWithExpectations()
+    fake_logger.expect('debug', ("config.day = %s; now = %s; yesterday = %s",
+                                 conf.day, "2011-01-26", "2011-01-25"), {})
+    fake_logger.expect('debug', ("SQL is: %s", expected_sql), {})
+
+    fake_database_module = exp.DummyObjectWithExpectations()
+    fake_database_pool = exp.DummyObjectWithExpectations()
+    fake_database_module.expect('DatabaseConnectionPool',
+                                (conf, fake_logger), {}, fake_database_pool)
+    fake_database_connection = exp.DummyObjectWithExpectations()
+    fake_database_cursor = exp.DummyObjectWithExpectations()
+    fake_database_pool.expect('connectionCursorPair', (), {},
+                              (fake_database_connection, fake_database_cursor))
+    def fake_gzipped_file_context_manager(config):
+        yield (1, 2)
+    fake_IdCache = exp.DummyObjectWithExpectations()
+    fake_IdCache.expect('__call__', (fake_database_cursor,), {}, 'id_cache')
+    fake_database_module.expect('execute', (fake_database_cursor, expected_sql),
+                                {}, [1,2,3])
+    fake_write_row = exp.DummyObjectWithExpectations()
+    fake_database_cursor.expect('description', returnValue=['col','col2'])
+    fake_write_row.expect('__call__', ((1,2), ['col','col2']), {})
+
+    fake_process_crash = exp.DummyObjectWithExpectations()
+    fake_process_crash.expect('__call__', (1, fake_IdCache), {}, [1, 1, 1])
+    fake_write_row.expect('__call__', ((1,2), [1, 1, 1]), {})
+    fake_process_crash.expect('__call__', (2, fake_IdCache), {}, [2, 2, 2])
+    fake_write_row.expect('__call__', ((1,2), [2, 2, 2]), {})
+    fake_process_crash.expect('__call__', (3, fake_IdCache), {}, [3, 3, 3])
+    fake_write_row.expect('__call__', ((1,2), [3, 3, 3]), {})
+
+    fake_database_pool.expect('cleanup', (), {})
+
+    dailyUrl.dailyUrlDump(conf,
+                          sdb=fake_database_module,
+                          gzipped_csv_files=fake_gzipped_file_context_manager,
+                          IdCache=fake_IdCache,
+                          write_row=fake_write_row,
+                          process_crash=fake_process_crash,
+                          logger=fake_logger)
+
+
 
