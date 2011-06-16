@@ -8,8 +8,8 @@ set -u
 
 date
 
-echo 'create the cronjobs table'
-psql -f cronjobs.sql breakpad
+echo 'create objects for correlation reports'
+psql -f correlation_reports.sql
 
 date
 
