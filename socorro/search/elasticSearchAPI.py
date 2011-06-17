@@ -215,7 +215,7 @@ class ElasticSearchAPI(searchAPI.SearchAPI):
             try:
                 esData = json.loads(esResult[0])
             except Exception:
-                logger.debug("ElasticSearch returned something wrong: %s" % esResult)
+                logger.debug("ElasticSearch returned something wrong: %s" % esResult[0])
                 raise
 
             signatureCount = len(esData["facets"]["signatures"]["terms"])
@@ -233,7 +233,7 @@ class ElasticSearchAPI(searchAPI.SearchAPI):
                 try:
                     countData = json.loads(countResult[0])
                 except Exception:
-                    logger.debug("ElasticSearch returned something wrong: %s" % countResult)
+                    logger.debug("ElasticSearch returned something wrong: %s" % countResult[0])
                     raise
 
                 countSign = countData["facets"]
