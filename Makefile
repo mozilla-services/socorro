@@ -17,7 +17,7 @@ test: virtualenv phpunit
 phpunit:
 	cd webapp-php/tests; phpunit *.php
 
-install: minidump_stackwalk java_analysis
+install: java_analysis
 	mkdir -p $(PREFIX)/htdocs
 	mkdir -p $(PREFIX)/application
 	rsync -a --exclude=".svn" thirdparty $(PREFIX)
