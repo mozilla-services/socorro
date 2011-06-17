@@ -215,7 +215,8 @@ class ElasticSearchAPI(searchAPI.SearchAPI):
             try:
                 esData = json.loads(esResult[0])
             except Exception:
-                logger.debug("ElasticSearch returned something wrong: %s" % json_query)
+                logger.debug("ElasticSearch returned something wrong: %s" % esResult)
+                raise
 
             signatureCount = len(esData["facets"]["signatures"]["terms"])
             maxSize = min(signatureCount, result_number + result_offset)
@@ -232,7 +233,8 @@ class ElasticSearchAPI(searchAPI.SearchAPI):
                 try:
                     countData = json.loads(countResult[0])
                 except Exception:
-                    logger.debug("ElasticSearch returned something wrong: %s" % json_query)
+                    logger.debug("ElasticSearch returned something wrong: %s" % esResult)
+                    raise
 
                 countSign = countData["facets"]
 
