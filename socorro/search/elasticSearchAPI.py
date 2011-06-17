@@ -205,12 +205,17 @@ class ElasticSearchAPI(searchAPI.SearchAPI):
 
         json_query = json.dumps(query)
 
+        logger.debug("Query the crashes or signatures: %s" % json_query)
+
         # Executing the query and returning the result
         if types != "signatures":
             return self.query("_all", json_query)
         else:
             esResult = self.query("_all", json_query)
-            esData = json.loads(esResult[0])
+            try:
+                esData = json.loads(esResult[0])
+            except Exception:
+                logger.debug("ElasticSearch returned something wrong: %s" % json_query)
 
             signatureCount = len(esData["facets"]["signatures"]["terms"])
             maxSize = min(signatureCount, result_number + result_offset)
@@ -221,9 +226,14 @@ class ElasticSearchAPI(searchAPI.SearchAPI):
             if maxSize > result_offset:
                 countByOSQuery = self._generateCountByOSQuery(query, signatures, result_offset, maxSize)
                 countByOSQueryJSON = json.dumps(countByOSQuery)
+                logger.debug("Query the OS by signature: %s" % countByOSQueryJSON)
 
                 countResult = self.query("_all", countByOSQueryJSON)
-                countData = json.loads(countResult[0])
+                try:
+                    countData = json.loads(countResult[0])
+                except Exception:
+                    logger.debug("ElasticSearch returned something wrong: %s" % json_query)
+
                 countSign = countData["facets"]
 
                 for i in xrange(result_offset, maxSize):
