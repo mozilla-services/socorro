@@ -30,6 +30,22 @@ wsgiInstallation = cm.Option()
 wsgiInstallation.doc = 'True or False, this app is installed under WSGI'
 wsgiInstallation.default = False
 
+# Implementation class for the Search API
+# Can be socorro.search.elasticSearchAPI.ElasticSearchAPI or socorro.search.postgresAPI.PostgresAPI
+searchImplClass = cm.Option()
+searchImplClass.doc = 'String, the name of the class that implement the Search API.'
+searchImplClass.default = 'socorro.search.elasticSearchAPI.ElasticSearchAPI'
+searchImplClass.fromStringConverter = cm.classConverter
+
+# Elastic Search configuration
+elasticSearchHostname = cm.Option()
+elasticSearchHostname.doc = 'String containing the URI of the Elastic Search instance.'
+elasticSearchHostname.default = 'localhost'
+
+elasticSearchPort = cm.Option()
+elasticSearchPort.doc = 'String containing the port on which calling the Elastic Search instance.'
+elasticSearchPort.default = '9200'
+
 import socorro.services.topCrashBySignatureTrends as tcbst
 import socorro.services.signatureHistory as sighist
 import socorro.services.aduByDay as adubd
@@ -41,11 +57,12 @@ import socorro.services.emailCampaigns as emaillist
 import socorro.services.emailCampaignVolume as emailvolume
 import socorro.services.emailSubscription as emailsub
 import socorro.services.emailSender as emailsend
-import socorro.services.schedulePriorityJob as schedule 
+import socorro.services.schedulePriorityJob as schedule
+import socorro.services.search as search
 
 servicesList = cm.Option()
 servicesList.doc = 'a python list of classes to offer as services'
-servicesList.default = [tcbst.TopCrashBySignatureTrends, sighist.SignatureHistory, adubd.AduByDay, adubd.AduByDay200912, adudetails.AduByDayDetails, crash.GetCrash, emailcampaign.EmailCampaign, emailcreate.EmailCampaignCreate, emaillist.EmailCampaigns, emailvolume.EmailCampaignVolume, emailsub.EmailSubscription, emailsend.EmailSender, schedule.SchedulePriorityJob]
+servicesList.default = [search.Search, tcbst.TopCrashBySignatureTrends, sighist.SignatureHistory, adubd.AduByDay, adubd.AduByDay200912, adudetails.AduByDayDetails, crash.GetCrash, emailcampaign.EmailCampaign, emailcreate.EmailCampaignCreate, emaillist.EmailCampaigns, emailvolume.EmailCampaignVolume, emailsub.EmailSubscription, emailsend.EmailSender, schedule.SchedulePriorityJob]
 
 crashBaseUrl = cm.Option()
 crashBaseUrl.doc = 'The base url for linking to crash-stats. This will be used in email templates'
@@ -72,3 +89,26 @@ syslogLineFormatString.default = 'Socorro Web Services (pid %(process)d): %(asct
 syslogErrorLoggingLevel = cm.Option()
 syslogErrorLoggingLevel.doc = 'logging level for the log file (10 - DEBUG, 20 - INFO, 30 - WARNING, 40 - ERROR, 50 - CRITICAL)'
 syslogErrorLoggingLevel.default = 10
+
+#---------------------------------------------------------------------------
+# Platforms
+platforms = cm.Option()
+platforms.doc = 'Array associating OS ids to full names.'
+platforms.default = (
+    {
+        "id" : "windows",
+        "name" : "Windows"
+    },
+    {
+        "id" : "mac",
+        "name" : "Mac OS X"
+    },
+    {
+        "id" : "linux",
+        "name" : "Linux"
+    },
+    {
+        "id" : "solaris",
+        "name" : "Solaris"
+    }
+)

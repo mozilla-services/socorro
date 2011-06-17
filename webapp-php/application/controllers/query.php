@@ -59,11 +59,12 @@ class Query_Controller extends Controller {
         parent::__construct();
 
         $this->bug_model = new Bug_Model;
+        $this->search_model = new Search_Model;
         $this->crash = new Crash;
         $this->queryFormHelper = new QueryFormHelper;
         $this->searchReportHelper = new SearchReportHelper;
     }
-    
+
     /**
      * Format and return an array of option types for queries.
      *
@@ -72,12 +73,13 @@ class Query_Controller extends Controller {
     private function _option_types()
     {
         return array(
+            'default'    => 'has terms',
             'exact'      => 'is exactly',
             'contains'   => 'contains',
             'startswith' => 'starts with'
         );
     }
-    
+
     /**
      * Handle a quick search query for either a OOID or stack signature.
      *
@@ -119,22 +121,22 @@ class Query_Controller extends Controller {
         if (
             empty($params['version']) &&
             $params['product'][0] == $this->chosen_version['product'] &&
-            !empty($this->chosen_version['version']) 
+            !empty($this->chosen_version['version'])
         ) {
             $product_version = $this->chosen_version['product'].":".$this->chosen_version['version'];
             $params['version'] = array( 0 => $product_version);
-        } 
+        }
 
         // If no date is specified, add today's date.
         if (empty($params['date'])) {
             $params['date'] = date('m/d/Y H:i:s');
         }
-        
-        // Hang type 
+
+        // Hang type
         if (!isset($params['hang_type'])) {
             $params['hang_type'] = 'any';
         }
-        
+
         // Process type
         if (!isset($params['process_type'])) {
             $params['process_type'] = 'any';
@@ -142,10 +144,10 @@ class Query_Controller extends Controller {
 
         // Admin
         $params['admin'] = $this->logged_in;
-        
+
         // Normalize parameters
         $this->searchReportHelper->normalizeParams($params);
-        
+
         return $params;
     }
 
@@ -170,7 +172,7 @@ class Query_Controller extends Controller {
         cachecontrol::set(array(
             'etag'     => $params,
             'expires'  => time() + ( 60 * 60 )
-	    ));
+        ));
 
         $page = (int)Input::instance()->get('page');
         $page = (!empty($page) && $page > 0) ? $page : 1;
@@ -182,20 +184,22 @@ class Query_Controller extends Controller {
         $signature_to_bugzilla = array();
 
         if ($params['do_query'] !== FALSE) {
-            $totalCount = $this->common_model->queryTopSignatures($params, 'count');
-            $pager = new MozPager($items_per_page, $totalCount, $page);
-            
-            if ($totalCount > 0) {
-                if ($reports = $this->common_model->queryTopSignatures($params, 'results', $items_per_page, $pager->offset)) {
-                    $reports = $this->crash->prepareCrashReports($reports);
-                    $meta = $this->crash->prepareCrashReportsMeta($reports);
-                }
+            $reportsData = $this->search_model->search($params, $items_per_page, ( $page - 1 ) * $items_per_page);
 
-                $bugzilla = new Bugzilla;
-                $signature_to_bugzilla = $bugzilla->signature2bugzilla(
-                    $this->bug_model->bugsForSignatures($meta['signatures']), 
-                    Kohana::config('codebases.bugTrackingUrl')
-                );
+            if ($reportsData) {
+                $totalCount = $reportsData->total;
+                $pager = new MozPager($items_per_page, $totalCount, $page);
+
+                if ($totalCount > 0) {
+                    $reports = $this->crash->prepareCrashReports($reportsData->hits);
+                    $meta = $this->crash->prepareCrashReportsMeta($reports);
+
+                    $bugzilla = new Bugzilla;
+                    $signature_to_bugzilla = $bugzilla->signature2bugzilla(
+                        $this->bug_model->bugsForSignatures($meta['signatures']),
+                        Kohana::config('codebases.bugTrackingUrl')
+                    );
+                }
             }
         }
 
@@ -206,7 +210,7 @@ class Query_Controller extends Controller {
             'nextLinkText' => 'next >>',
             'option_types' => $this->_option_types(),
             'page' => $page,
-            'pager' => $pager, 
+            'pager' => $pager,
             'params'  => $params,
             'previousLinkText' => '<< prev',
             'reports' => $reports,
