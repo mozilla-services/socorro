@@ -293,12 +293,15 @@ class ElasticSearchAPI(searchAPI.SearchAPI):
         Generate the facets for the search query.
 
         """
+        # There is no way to get all the results with ES
+        MAXINT = 2**31-1
+
         # Get distinct signatures and count
         facets = {
             "signatures" : {
                 "terms" : {
                     "field" : "signature.full",
-                    "size" : sys.maxint
+                    "size" : MAXINT
                 }
             }
         }
