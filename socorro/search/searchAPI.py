@@ -1,3 +1,4 @@
+import urllib
 import socorro.lib.datetimeutil as dtutil
 from datetime import timedelta, datetime
 
@@ -25,7 +26,7 @@ class SearchAPI(object):
         if ( type(param) is str or type(param) is unicode ) and param != "_all":
             param = [param]
         if param != "_all":
-            param = "(" + self._arrayToString(param, " OR ", paramName+":") + ")"
+            param = "(" + self._arrayToString(self._encodeArray(param), " OR ", paramName+":") + ")"
         return param
 
     def _dateToString(self, date):
@@ -44,3 +45,8 @@ class SearchAPI(object):
                 date = " ".join(date)
             date = dtutil.datetimeFromISOdateString(date)
         return date
+
+    def _encodeArray(self, array):
+        for i in xrange(len(array)):
+            array[i] = urllib.quote(array[i])
+        return array

@@ -76,8 +76,8 @@ class ElasticSearchAPI(searchAPI.SearchAPI):
         os          = kwargs.get("os", "_all")
         version     = kwargs.get("version", "_all")
         #branches   = kwargs.get("branches", "_all")    # Not implemented
-        build_id    = kwargs.get("build", None)
-        reason      = kwargs.get("crash_reason", None)
+        build_id    = kwargs.get("build", "_all")
+        reason      = kwargs.get("crash_reason", "_all")
         report_type = kwargs.get("report_type", None)
 
         search_mode = kwargs.get("search_mode", "default")
@@ -97,7 +97,9 @@ class ElasticSearchAPI(searchAPI.SearchAPI):
 
         os = self._formatParam(os, "os_name")
         version = self._formatVersions(version)
+        build_id = self._formatParam(build_id, "build")
         products = self._formatParam(products, "product")
+        reason = self._formatParam(reason, "reason")
 
         query = {
             "bool" : {
@@ -162,10 +164,10 @@ class ElasticSearchAPI(searchAPI.SearchAPI):
             query_string["query"] += " AND " + os
         if version != "_all":
             query_string["query"] += " AND " + version
-        if build_id:
-            query_string["query"] += " AND build:" + build_id
-        if reason:
-            query_string["query"] += " AND reason:" + reason
+        if build_id != "_all":
+            query_string["query"] += " AND " + build_id
+        if reason != "_all":
+            query_string["query"] += " AND " + reason
         if report_type == "crash":
             query_string["query"] += " AND _missing_:hangid"
         if report_type == "hang":
@@ -272,9 +274,9 @@ class ElasticSearchAPI(searchAPI.SearchAPI):
                     productVersion = v.split(":")
                     product = productVersion[0]
                     version = productVersion[1]
-                    versionsList.append( "".join( ("( product: ", product, " AND version: ", version, " )") ) )
+                    versionsList.append( "".join( ("( product: ", urllib.quote(product), " AND version: ", urllib.quote(version), " )") ) )
                 else:
-                    versionsList.append( "".join( ( "product: ", v ) ) )
+                    versionsList.append( "".join( ( "product: ", urllib.quote(v) ) ) )
 
             formattedVersions = "".join( ( "(", self._arrayToString(versionsList, " OR "), ")" ) )
         else:
@@ -282,9 +284,9 @@ class ElasticSearchAPI(searchAPI.SearchAPI):
                 productVersion = versions.split(":")
                 product = productVersion[0]
                 version = productVersion[1]
-                formattedVersions = "".join( ("( product: ", product, " AND version: ", version, " )") )
+                formattedVersions = "".join( ("( product: ", urllib.quote(product), " AND version: ", urllib.quote(version), " )") )
             else:
-                formattedVersions = "".join( ( "product: ", v ) )
+                formattedVersions = "".join( ( "product: ", urllib.quote(versions) ) )
 
         return formattedVersions
 
