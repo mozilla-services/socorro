@@ -15,7 +15,7 @@ test: virtualenv phpunit
 	PYTHONPATH=$(PYTHONPATH) $(NOSE)
 
 phpunit:
-	cd webapp-php/tests; phpunit *.php
+	phpunit webapp-php/tests/
 
 install: java_analysis
 	mkdir -p $(PREFIX)/htdocs

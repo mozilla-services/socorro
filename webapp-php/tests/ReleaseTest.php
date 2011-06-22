@@ -1,7 +1,7 @@
 <?php
 require_once 'PHPUnit/Framework.php';
 
-define('SYSPATH', '');
+defined('SYSPATH') or define('SYSPATH', '');
 require_once dirname(__FILE__).'/../system/core/Kohana.php';
 require_once dirname(__FILE__).'/../application/libraries/release.php';
 
