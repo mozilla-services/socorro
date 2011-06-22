@@ -1312,10 +1312,27 @@ def testInsertCrashProcess4():
         }
     assert r == e, 'expected\n%s\nbut got\n%s' % (e, r)
 
-def testSubmitOoidToElasticSearch():
-    """testSubmitOoidToElasticSearch: submit to ES"""
+def testSubmitOoidToElasticSearch_1():
+    """testSubmitOoidToElasticSearch_1: submit to ES with timeout"""
+    import socket as s
     p, c = getMockedProcessorAndContext()
-    print c
+    uuid = 'ef38fe89-43b6-4cd4-b154-392022110607'
+    salted_ooid = 'e110607ef38fe89-43b6-4cd4-b154-392022110607'
+    fakeUrllib2 = exp.DummyObjectWithExpectations()
+    fakeRequestObject = 17
+    fakeUrllib2.expect('Request', (salted_ooid, {}), {}, fakeRequestObject)
+    fakeFileLikeObject = exp.DummyObjectWithExpectations()
+    fakeFileLikeObject.expect('read', (), {}, None, s.timeout)
+    #fakeSocketModule = exp.DummyObjectWithExpectations()
+    #fakeSocketModule.expect('timeout', returnValue=socket.timeout)
+    fakeUrllib2.expect('urlopen', (17, 2), {}, fakeFileLikeObject)
+    fakeUrllib2.expect('socket', returnValue=s)
+    p.submitOoidToElasticSearch(uuid, fakeUrllib2)
+
+def testSubmitOoidToElasticSearch_2():
+    """testSubmitOoidToElasticSearch_2: submit to ES - success"""
+    import socket as s
+    p, c = getMockedProcessorAndContext()
     uuid = 'ef38fe89-43b6-4cd4-b154-392022110607'
     salted_ooid = 'e110607ef38fe89-43b6-4cd4-b154-392022110607'
     fakeUrllib2 = exp.DummyObjectWithExpectations()
@@ -1323,7 +1340,24 @@ def testSubmitOoidToElasticSearch():
     fakeUrllib2.expect('Request', (salted_ooid, {}), {}, fakeRequestObject)
     fakeFileLikeObject = exp.DummyObjectWithExpectations()
     fakeFileLikeObject.expect('read', (), {}, None)
-    fakeUrllib2.expect('urlopen', (17,), {}, fakeFileLikeObject)
+    fakeUrllib2.expect('urlopen', (17, 2), {}, fakeFileLikeObject)
+    p.submitOoidToElasticSearch(uuid, fakeUrllib2)
+
+def testSubmitOoidToElasticSearch_3():
+    """testSubmitOoidToElasticSearch_3: submit to ES with utter failure"""
+    import socket as s
+    p, c = getMockedProcessorAndContext()
+    uuid = 'ef38fe89-43b6-4cd4-b154-392022110607'
+    salted_ooid = 'e110607ef38fe89-43b6-4cd4-b154-392022110607'
+    fakeUrllib2 = exp.DummyObjectWithExpectations()
+    fakeRequestObject = 17
+    fakeUrllib2.expect('Request', (salted_ooid, {}), {}, fakeRequestObject)
+    fakeFileLikeObject = exp.DummyObjectWithExpectations()
+    fakeFileLikeObject.expect('read', (), {}, None, Exception)
+    #fakeSocketModule = exp.DummyObjectWithExpectations()
+    #fakeSocketModule.expect('timeout', returnValue=socket.timeout)
+    fakeUrllib2.expect('urlopen', (17, 2), {}, fakeFileLikeObject)
+    fakeUrllib2.expect('socket', returnValue=s)
     p.submitOoidToElasticSearch(uuid, fakeUrllib2)
 
 

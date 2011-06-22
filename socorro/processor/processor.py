@@ -926,7 +926,18 @@ class Processor(object):
         row_id = hbc.ooid_to_row_id(ooid)
         url = self.config.elasticSearchOoidSubmissionUrl % row_id
         request = urllib2.Request(url, dummy_form_data)
-        urllib2.urlopen(request).read()
+        try:
+          urllib2.urlopen(request, 2).read()
+        except urllib2.socket.timeout:
+          logger.critical('%s may not have been submitted to Elastic Search',
+                          ooid)
+          sutil.reportExceptionAndContinue(logger, logging.CRITICAL,
+                                           showTraceback=False)
+        except Exception:
+          logger.critical('Submition to Elastic Search failed for %s',
+                          ooid)
+          sutil.reportExceptionAndContinue(logger, logging.CRITICAL,
+                                           showTraceback=False)
     except KeyError:
       self.config.logger.info('no Elastic Search URL has been configured')
 
