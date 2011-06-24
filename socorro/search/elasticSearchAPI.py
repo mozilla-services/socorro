@@ -80,6 +80,8 @@ class ElasticSearchAPI(searchAPI.SearchAPI):
         reason      = kwargs.get("crash_reason", "_all")
         report_type = kwargs.get("report_type", None)
 
+        report_process = kwargs.get("report_process", None)
+
         search_mode = kwargs.get("search_mode", "default")
         result_number = int( kwargs.get("result_number", 100) )
         result_offset = int( kwargs.get("result_offset", 0) )
@@ -172,6 +174,10 @@ class ElasticSearchAPI(searchAPI.SearchAPI):
             query_string["query"] += " AND _missing_:hangid"
         if report_type == "hang":
             query_string["query"] += " AND _exists_:hangid"
+        if report_process == "browser":
+            query_string["query"] += " AND _missing_:process_type"
+        if report_process == "plugin":
+            query_string["query"] += " AND process_type:plugin"
 
         query["bool"]["must"].append( { "query_string" : query_string } )
 

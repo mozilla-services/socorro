@@ -219,6 +219,7 @@ class Query_Controller extends Controller {
             'sig2bugs' => $signature_to_bugzilla,
             'totalItemText' => " Results",
             'url_nav' => url::site('products/'.$this->chosen_version['product']),
+            'middlewareImplementation' => Kohana::config('webserviceclient.middleware_implementation'),
         ));
     }
 
