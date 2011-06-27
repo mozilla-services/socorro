@@ -88,7 +88,6 @@ class AduByDay(webapi.JsonServiceBase):
       GROUP BY adu_day, os_short_name
       order by
           1, 2""" % parameters
-    logger.info("hey waszzup")
     #logger.debug('%s', self.connection.cursor().mogrify(sql.encode(self.connection.encoding), parameters))
     return dict((((bucket, os_name), count) for bucket, os_name, count in db.execute(self.connection.cursor(), sql, parameters)))
 

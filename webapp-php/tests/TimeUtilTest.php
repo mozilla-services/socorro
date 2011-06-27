@@ -1,6 +1,6 @@
 <?php
 require_once 'PHPUnit/Framework.php';
-define('SYSPATH', '');
+defined('SYSPATH') or define('SYSPATH', '');
 require_once dirname(__FILE__).'/../application/libraries/timeutil.php';
 
 /**

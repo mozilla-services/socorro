@@ -104,6 +104,9 @@ mkdir -p /data/socorro
 useradd socorro
 chown socorro:socorro /var/log/socorro
 
+# compile minidump_stackwalk
+make minidump_stackwalk
+
 # install socorro
 make install
 

@@ -17,7 +17,7 @@ ${HADOOP} jar $HOME_DIRECTORY/socorro-analysis-job.jar com.mozilla.socorro.hadoo
 ${HADOOP} fs -getmerge ${DATE}-modulelist-out /tmp/${DATE}-modulelist.txt
 /bin/sort /tmp/${DATE}-modulelist.txt -o /tmp/${DATE}-modulelist.sorted.txt
 
-mkdir /mnt/crashanalysis/crash_analysis/modulelist
+mkdir -p /mnt/crashanalysis/crash_analysis/modulelist
 cp /tmp/${DATE}-modulelist.sorted.txt /mnt/crashanalysis/crash_analysis/modulelist/${DATE}-modulelist.txt
 
 # cleanup

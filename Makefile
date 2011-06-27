@@ -15,9 +15,9 @@ test: virtualenv phpunit
 	PYTHONPATH=$(PYTHONPATH) $(NOSE)
 
 phpunit:
-	cd webapp-php/tests; phpunit *.php
+	phpunit webapp-php/tests/
 
-install: minidump_stackwalk java_analysis
+install: java_analysis
 	mkdir -p $(PREFIX)/htdocs
 	mkdir -p $(PREFIX)/application
 	rsync -a --exclude=".svn" thirdparty $(PREFIX)

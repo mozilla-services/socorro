@@ -10,11 +10,24 @@ db_module = psycopg2
 
 import socorro.lib.util as util
 
+#=================================================================================================================
+class SQLDidNotReturnSingleValue (Exception):
+  pass
+
+#=================================================================================================================
+class SQLDidNotReturnSingleRow (Exception):
+  pass
+
+#=================================================================================================================
+class CannotConnectToDatabase(Exception):
+  pass
+
 #-----------------------------------------------------------------------------------------------------------------
 
 # this are the exceptions that can be raised during database transactions
 # that mean trouble in the database server or that the server is offline.
-exceptions_eligible_for_retry = (psycopg2.OperationalError)
+exceptions_eligible_for_retry = (psycopg2.OperationalError,
+                                 CannotConnectToDatabase)
 
 #-----------------------------------------------------------------------------------------------------------------
 def db_transaction_retry_wrapper(fn):
@@ -130,18 +143,6 @@ class LoggingCursor(psycopg2.extensions.cursor):
       pass
     super(LoggingCursor,self).executemany(sql,args)
 
-
-#=================================================================================================================
-class SQLDidNotReturnSingleValue (Exception):
-  pass
-
-#=================================================================================================================
-class SQLDidNotReturnSingleRow (Exception):
-  pass
-
-#=================================================================================================================
-class CannotConnectToDatabase(Exception):
-  pass
 
 #=================================================================================================================
 class Database(object):
