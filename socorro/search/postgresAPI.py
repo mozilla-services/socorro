@@ -91,17 +91,33 @@ class PostgresAPI(searchAPI.SearchAPI):
         from_date = self._formatDate(from_date)
         to_date = self._formatDate(to_date)
 
+        # For Postgres, we never search for a list of terms
+        if type(terms) is list:
+            terms = " ".join(terms)
+
         # Searching for terms in signature
         isTermsAList = type(terms) is list
 
-        terms = self._prepareTerms(terms, isTermsAList, search_mode)
+        if terms:
+            terms = self._prepareTerms(terms, isTermsAList, search_mode)
 
         # Searching for terms in plugins
-        if report_process == "plugin":
+        if report_process == "plugin" and plugin_term:
             plugin_term = self._prepareTerms(plugin_term, (type(plugin_term) is list), plugin_search_mode)
 
         # Parsing the versions
         (versions, products) = self._parseVersions(versionsList, products)
+
+        # Changing the OS ids to OS names
+        if type(os) is list:
+            for i in xrange(len(os)):
+                for platform in self.context.platforms:
+                    if platform["id"] == os[i]:
+                        os[i] = platform["name"]
+        else:
+            for platform in self.context.platforms:
+                if platform["id"] == os:
+                    os = platform["name"]
 
         # Creating the parameters for the sql query
         params = {
@@ -109,8 +125,8 @@ class PostgresAPI(searchAPI.SearchAPI):
             "to_date" : to_date,
             "build_id" : build_id,
             "reason" : reason,
-            "limit" : result_number,
-            "offset" : result_offset
+            "limit" : int(result_number),
+            "offset" : int(result_offset)
         }
         params = self._dispatchParams(params, "term", terms)
         params = self._dispatchParams(params, "product", products)
@@ -142,22 +158,22 @@ class PostgresAPI(searchAPI.SearchAPI):
         #---------------------------------------------------------------
 
         sqlWhere = ["""
-            WHERE r.client_crash_date >= %(from_date)s
-            AND r.client_crash_date <= %(to_date)s
+            WHERE r.date_processed BETWEEN %(from_date)s AND %(to_date)s
         """]
 
         ## Adding terms to where clause
-        if not isTermsAList and search_mode == "is_exactly":
-            sqlWhere.append("r.signature=%(term)s")
-        elif not isTermsAList:
-            sqlWhere.append("r.signature LIKE %(term)s")
-        else:
-            if search_mode == "is_exactly":
-                comp = "="
+        if terms:
+            if not isTermsAList and search_mode == "is_exactly":
+                sqlWhere.append("r.signature=%(term)s")
+            elif not isTermsAList:
+                sqlWhere.append("r.signature LIKE %(term)s")
             else:
-                comp = "LIKE"
+                if search_mode == "is_exactly":
+                    comp = "="
+                else:
+                    comp = "LIKE"
 
-            sqlWhere.append( "".join( ( "(", self._arrayToString(xrange(len(terms)), " OR ", "r.signature"+comp+"%(term", ")s"), ")" ) ) )
+                sqlWhere.append( "".join( ( "(", self._arrayToString(xrange(len(terms)), " OR ", "r.signature"+comp+"%(term", ")s"), ")" ) ) )
 
         ## Adding products to where clause
         if type(products) is list:
@@ -202,23 +218,25 @@ class PostgresAPI(searchAPI.SearchAPI):
         ## Searching through plugins
         if report_process == "plugin":
             sqlWhere.append("r.process_type = 'plugin'")
+            sqlWhere.append("plugins_reports.date_processed BETWEEN %(from_date)s AND %(to_date)s")
 
-            comp = " LIKE "
-            if plugin_search_mode == "contains":
-                plugin_term = "".join( ( "%", plugin_term, "%") )
-            elif plugin_search_mode == "starts_with":
-                plugin_term = plugin_term + "%"
-            else:
-                comp = "="
+            if plugin_term:
+                comp = " LIKE "
+                if plugin_search_mode == "contains":
+                    plugin_term = "".join( ( "%", plugin_term, "%") )
+                elif plugin_search_mode == "starts_with":
+                    plugin_term = plugin_term + "%"
+                else:
+                    comp = "="
 
-            field = "plugins.name"
-            if plugin_in == "filename":
-                field = "plugins.filename"
+                field = "plugins.name"
+                if plugin_in == "filename":
+                    field = "plugins.filename"
 
-            if type(plugin_term) is list:
-                sqlWhere.append( "".join( ( self._arrayToString(xrange(len(plugin_term)), " OR ", field + comp +"%(plugin_term", ")s"), ")" ) ) )
-            else:
-                sqlWhere.append( "".join( ( field, comp, "%(plugin_term)s" ) ) )
+                if type(plugin_term) is list:
+                    sqlWhere.append( "".join( ( self._arrayToString(xrange(len(plugin_term)), " OR ", field + comp +"%(plugin_term", ")s"), ")" ) ) )
+                else:
+                    sqlWhere.append( "".join( ( field, comp, "%(plugin_term)s" ) ) )
 
         elif report_process == "browser":
             sqlWhere.append("r.process_type IS NULL")
@@ -260,16 +278,20 @@ class PostgresAPI(searchAPI.SearchAPI):
 
         # Querying the DB
         try:
-            results = db.execute(cur, sqlQuery, params)
-        except Exception:
-            results = []
-            util.reportExceptionAndContinue(logger)
-
-        try:
             total = db.singleValueSql(cur, sqlCountQuery, params)
         except Exception:
             total = 0
             util.reportExceptionAndContinue(logger)
+
+        # No need to call Postgres if we know there will be no results
+        if total != 0:
+            try:
+                results = db.execute(cur, sqlQuery, params)
+            except Exception:
+                results = []
+                util.reportExceptionAndContinue(logger)
+        else:
+            results = []
 
         jsonRes = {
             "total" : total,
@@ -308,8 +330,8 @@ class PostgresAPI(searchAPI.SearchAPI):
             array.append(value)
         elif array == "_all" or array == None:
             array = value
-        else:
-            array = (array, value)
+        elif array != value:
+            array = [array, value]
         return array
 
     def _parseVersions(self, versionsList, products):
@@ -399,6 +421,6 @@ class PostgresAPI(searchAPI.SearchAPI):
 
         # Searching through plugins
         if report_process == "plugin":
-            sqlGroup.append(", pluginName, pluginVersion, pluginFilename ")
+            sqlGroup.append("pluginName, pluginVersion, pluginFilename ")
 
-        return " AND ".join(sqlGroup)
+        return ", ".join(sqlGroup)
