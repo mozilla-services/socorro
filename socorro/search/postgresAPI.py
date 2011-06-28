@@ -123,8 +123,6 @@ class PostgresAPI(searchAPI.SearchAPI):
         params = {
             "from_date" : from_date,
             "to_date" : to_date,
-            "build_id" : build_id,
-            "reason" : reason,
             "limit" : int(result_number),
             "offset" : int(result_offset)
         }
@@ -132,6 +130,8 @@ class PostgresAPI(searchAPI.SearchAPI):
         params = self._dispatchParams(params, "product", products)
         params = self._dispatchParams(params, "os", os)
         params = self._dispatchParams(params, "version", versions)
+        params = self._dispatchParams(params, "build", build_id)
+        params = self._dispatchParams(params, "reason", reason)
         params = self._dispatchParams(params, "plugin_term", plugin_term)
         params = self._dispatchParams(params, "branch", branches)
 
@@ -203,12 +203,18 @@ class PostgresAPI(searchAPI.SearchAPI):
                 sqlWhere.append("r.version=%(version)s")
 
         ## Adding build id to where clause
-        if build_id is not None:
-            sqlWhere.append("r.build=%(build_id)s")
+        if build_id:
+            if type(build_id) is list:
+                sqlWhere.append( "".join( ( "(", self._arrayToString(xrange(len(build_id)), " OR ", "r.build=%(build", ")s"), ")" ) ) )
+            else:
+                sqlWhere.append("r.build=%(build)s")
 
         ## Adding reason to where clause
-        if reason is not None:
-            sqlWhere.append("r.reason=%(reason)s")
+        if reason:
+            if type(reason) is list:
+                sqlWhere.append( "".join( ( "(", self._arrayToString(xrange(len(reason)), " OR ", "r.reason=%(reason", ")s"), ")" ) ) )
+            else:
+                sqlWhere.append("r.reason=%(reason)s")
 
         if report_type == "crash":
             sqlWhere.append("r.hangid IS NULL")
