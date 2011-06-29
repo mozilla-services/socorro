@@ -95,6 +95,16 @@ $(document).ready(function() {
   
 });
 
+$("#adu-chart").ready(function(){
+  var colors = chartOpts['colors'] || [ '#058DC7', '#ED561B', '#50B432', '#990099'];
+  $('h4').each(function(){
+    $(this).css('color',colors.shift())
+  })
+  $('th.version').each(function(){
+    $(this).css('color',colors.shift())
+  })
+});
+
 function showHideDaily(id) {
 	$("#daily_search_version_form").hide();
 	$("#daily_search_os_form").hide();

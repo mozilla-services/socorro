@@ -17,7 +17,7 @@
 				<th class="date" rowspan="2">Date</th>
 				<?php foreach ($versions as $key => $version) { ?>
 					<?php if (!empty($version)) { ?>
-						<th class="version<?php echo $key; ?>" colspan="<?= 2 + (count($statistic_keys) * 2) ?>"><?php out::H($version); ?></th>
+						<th class="version" colspan="<?= 2 + (count($statistic_keys) * 2) ?>"><?php out::H($version); ?></th>
 					<?php } ?>
 				<?php } ?>
 				</tr>

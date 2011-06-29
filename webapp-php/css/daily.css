@@ -165,29 +165,12 @@ table.crash_data th {
 	padding: 4px;
 	text-align: center;
 }
-table.crash_data th.version0, table.crash_data th.os0,
-table.crash_data th.version1, table.crash_data th.os1,
-table.crash_data th.version2, table.crash_data th.os2,
-table.crash_data th.version3, table.crash_data th.os3 {
+
+table.crash_data th.version, table.crash_data th.os {
 	font-weight: strong;
 	width: 206px;
 }
-table.crash_data th.version0,
-table.crash_data th.os0 {
-	color: #EDC240;
-}
-table.crash_data th.version1,
-table.crash_data th.os1 {
-	color: #AFD8F8;
-}
-table.crash_data th.version2,
-table.crash_data th.os2 {
-	color: #CB4B4B;
-}
-table.crash_data th.version3,
-table.crash_data th.os3 {
-	color: #4DA74D;
-}
+
 table.crash_data th.date {
 	text-align: left;
 	width: 55px;
