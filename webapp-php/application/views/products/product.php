@@ -16,7 +16,6 @@ echo '<script>var data = ' . json_encode($graph_data) . '</script>';
 echo html::script(array(
 		'js/flot-0.7/jquery.flot.pack.js',
 		'js/socorro/daily.js',
-		'js/socorro/dashboard.js',		
 		'js/socorro/topcrashers.js'
 	));
 
