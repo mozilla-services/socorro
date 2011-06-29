@@ -8,8 +8,11 @@ set -u
 
 date
 
-echo 'create the cronjobs table'
-psql -f cronjobs.sql breakpad
+echo 'create cronjobs table'
+psql -f cronjobs.sql
+
+echo 'fix permissions for processor user'
+psql -f permissions.sql
 
 date
 
