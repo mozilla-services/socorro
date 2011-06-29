@@ -97,7 +97,7 @@ platforms.doc = 'Array associating OS ids to full names.'
 platforms.default = (
     {
         "id" : "windows",
-        "name" : "Windows"
+        "name" : "Windows NT"
     },
     {
         "id" : "mac",

@@ -306,7 +306,7 @@ class PostgresAPI(searchAPI.SearchAPI):
 
         # Transforming the results into what we want
         for crash in results:
-            row = dict( zip( ("signature", "count", "is_windows", "is_mac", "is_linux", "is_solaris"), crash ) )
+            row = dict( zip( ("signature", "count", "is_windows", "is_mac", "is_linux", "is_solaris", "numhang", "numplugin"), crash ) )
             jsonRes["hits"].append(row)
 
         self.connection.close()
@@ -397,6 +397,9 @@ class PostgresAPI(searchAPI.SearchAPI):
         ## Searching through plugins
         if report_process == "plugin":
             sqlSelect.append("plugins.name AS pluginName, plugins_reports.version AS pluginVersion, plugins.filename AS pluginFilename")
+
+        sqlSelect.append("SUM (CASE WHEN r.hangid IS NULL THEN 0  ELSE 1 END) AS numhang")
+        sqlSelect.append("SUM (CASE WHEN r.process_type IS NULL THEN 0  ELSE 1 END) AS numplugin")
 
         return ", ".join(sqlSelect)
 

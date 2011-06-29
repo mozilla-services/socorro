@@ -50,42 +50,40 @@ class Search_Model extends Model {
         {
             if (!empty($value))
             {
+                // Be sure to add the value only if we know the param and we added a key for it
+                $unknownParam = false;
+
                 switch ($key)
                 {
                     case 'query':
                         $apiData[] = 'for';
-                        $apiData[] = urlencode($value);
                         break;
                     case 'query_search':
                         $apiData[] = 'in';
-                        $apiData[] = urlencode($value);
                         break;
                     case 'product':
                         $apiData[] = 'product';
-                        $apiData[] = urlencode(implode('+', $value));
+                        $value = implode('+', $value);
                         break;
                     case 'version':
                         $apiData[] = 'version';
-                        $apiData[] = urlencode(implode('+', $value));
+                        $value = implode('+', $value);
                         break;
                     case 'query_type':
                         $apiData[] = 'search_mode';
                         switch ($value)
                         {
                             case 'startswith':
-                                $apiData[] = 'starts_with';
+                                $value = 'starts_with';
                                 break;
                             case 'exact':
-                                $apiData[] = 'is_exactly';
+                                $value = 'is_exactly';
                                 break;
-                            default:
-                                $apiData[] = urlencode($value);
                         }
                         break;
                     case 'date':
                         $apiData[] = 'to';
-                        $formattedDate = date( 'Y-m-d H:i:s', strtotime($value) );
-                        $apiData[] = urlencode( $formattedDate );
+                        $value = date( 'Y-m-d H:i:s', strtotime($value) );
                         break;
                     case 'range_value':
                         if (!empty($params['range_unit']))
@@ -107,54 +105,53 @@ class Search_Model extends Model {
                                     $diff = strtotime( '-'.$value.' weeks', $fromDate );
                                     break;
                             }
-
-                            $apiData[] = urlencode( date('Y-m-d H:i:s', $diff) );
+                            $value = date('Y-m-d H:i:s', $diff);
                         }
                         break;
                     case 'platform':
                         $apiData[] = 'os';
-                        $apiData[] = urlencode(implode('+', $value));
+                        $value = implode('+', $value);
                         break;
                     case 'reason':
                         $apiData[] = 'reason';
-                        $apiData[] = urlencode($value);
                         break;
                     case 'branch':
                         $apiData[] = 'branches';
-                        $apiData[] = urlencode(implode('+', $value));
+                        $value = implode('+', $value);
                         break;
                     case 'build_id':
                         $apiData[] = 'build';
-                        $apiData[] = urlencode($value);
                         break;
                     case 'hang_type':
                         $apiData[] = 'report_type';
-                        $apiData[] = urlencode($value);
                         break;
                     case 'process_type':
                         $apiData[] = 'report_process';
-                        $apiData[] = urlencode($value);
                         break;
                     case 'plugin_field':
                         $apiData[] = 'plugin_in';
-                        $apiData[] = urlencode($value);
                         break;
                     case 'plugin_query_type':
                         $apiData[] = 'plugin_search_mode';
-                        $apiData[] = urlencode($value);
                         break;
                     case 'plugin_query':
                         $apiData[] = 'plugin_term';
-                        $apiData[] = urlencode($value);
                         break;
                     case 'result_offset':
                         $apiData[] = 'result_offset';
-                        $apiData[] = urlencode($value);
                         break;
                     case 'result_number':
                         $apiData[] = 'result_number';
-                        $apiData[] = urlencode($value);
                         break;
+                    default:
+                        $unknownParam = true;
+                }
+
+                if (!$unknownParam)
+                {
+                    // Securing encoded "/" because of Apache refusing them in URIs
+                    $value = str_replace('/', '%2F', $value);
+                    $apiData[] = urlencode($value);
                 }
             }
         }
