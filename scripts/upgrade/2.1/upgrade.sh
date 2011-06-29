@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# update script for 1.7.8 --> 2.0
+# update script for 2.0 --> 2.1
 # suitable for both dev instances and prod 
 
 set -e
