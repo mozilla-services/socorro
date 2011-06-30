@@ -86,6 +86,8 @@ class PostgresAPI(searchAPI.SearchAPI):
         # Default mode falls back to starts_with for postgres
         if search_mode == "default":
             search_mode = "starts_with"
+        if plugin_search_mode == "default":
+            plugin_search_mode = "starts_with"
 
         # Handling dates
         from_date = self._formatDate(from_date)
@@ -227,20 +229,17 @@ class PostgresAPI(searchAPI.SearchAPI):
             sqlWhere.append("plugins_reports.date_processed BETWEEN %(from_date)s AND %(to_date)s")
 
             if plugin_term:
-                comp = " LIKE "
-                if plugin_search_mode == "contains":
-                    plugin_term = "".join( ( "%", plugin_term, "%") )
-                elif plugin_search_mode == "starts_with":
-                    plugin_term = plugin_term + "%"
-                else:
-                    comp = "="
+                comp = "="
+
+                if plugin_search_mode == "contains" or plugin_search_mode == "starts_with":
+                    comp = " LIKE "
 
                 field = "plugins.name"
                 if plugin_in == "filename":
                     field = "plugins.filename"
 
                 if type(plugin_term) is list:
-                    sqlWhere.append( "".join( ( self._arrayToString(xrange(len(plugin_term)), " OR ", field + comp +"%(plugin_term", ")s"), ")" ) ) )
+                    sqlWhere.append( "".join( ( "(", self._arrayToString(xrange(len(plugin_term)), " OR ", field + comp +"%(plugin_term", ")s"), ")" ) ) )
                 else:
                     sqlWhere.append( "".join( ( field, comp, "%(plugin_term)s" ) ) )
 
