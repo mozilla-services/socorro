@@ -133,6 +133,15 @@ class Search_Model extends Model {
                         break;
                     case 'plugin_query_type':
                         $apiData[] = 'plugin_search_mode';
+                        switch ($value)
+                        {
+                            case 'startswith':
+                                $value = 'starts_with';
+                                break;
+                            case 'exact':
+                                $value = 'is_exactly';
+                                break;
+                        }
                         break;
                     case 'plugin_query':
                         $apiData[] = 'plugin_term';
