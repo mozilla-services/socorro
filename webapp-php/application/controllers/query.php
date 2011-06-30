@@ -72,8 +72,16 @@ class Query_Controller extends Controller {
      */
     private function _option_types()
     {
+        if (Kohana::config('webserviceclient.middleware_implementation') == 'ES')
+        {
+            return array(
+                'default'    => 'has terms',
+                'exact'      => 'is exactly',
+                'contains'   => 'contains',
+                'startswith' => 'starts with'
+            );
+        }
         return array(
-            'default'    => 'has terms',
             'exact'      => 'is exactly',
             'contains'   => 'contains',
             'startswith' => 'starts with'
