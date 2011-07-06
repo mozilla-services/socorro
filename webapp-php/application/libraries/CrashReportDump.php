@@ -221,6 +221,7 @@ class CrashReportDump {
                         $vcsinfo = explode(':', $source);
                         if (count($vcsinfo) == 4) {
                             list($type, $root, $source_file, $revision) = $vcsinfo;
+                            list($server, $repo) = explode('/', $root, 2);
 
                             $frame['source_filename'] = $source_file;
                             
@@ -228,9 +229,10 @@ class CrashReportDump {
                             // settings and a ghetto simulation of Python 
                             // string templates.
                             $vcs_mappings = Kohana::config('codebases.vcsMappings');
-                            if (isset($vcs_mappings[$type][$root])) {
-                                $link = $vcs_mappings[$type][$root];
+                            if (isset($vcs_mappings[$type][$server])) {
+                                $link = $vcs_mappings[$type][$server];
                                 $ns = array(
+                                    'repo'     => $repo,
                                     'file'     => $source_file,
                                     'revision' => $revision,
                                     'line'     => $frame['source_line']
