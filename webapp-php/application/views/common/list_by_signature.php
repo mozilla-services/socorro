@@ -45,7 +45,7 @@
                     $url = url::base() . 'report/list?' 
                         . html::query_string($url_params);
                     ?>
-                    <a href="<?= $url ?>" 
+                    <a href="<?php echo $url ?>" 
                        title="View reports with this signature.">
                         <?php out::H($report->{'display_signature'}) ?>
                     </a>
@@ -56,21 +56,21 @@
                             . "Learn More</a> ";
                     } ?>
                     <div class="signature-icons">
-                    <?php
+                        <?php
                         View::factory('common/hang_details', array(
                             'crash' => $report->{'hang_details'}
                             ))->render(TRUE);
-                    ?>
+                        ?>
                     </div>
                 </td>
                 <?php if ($showPluginName) { ?>
                     <td>
-                        <?= out::H($report->pluginname . ' ' 
+                        <?php out::H($report->pluginname . ' ' 
                             . $report->pluginversion) ?>
                     </td>
                 <?php } ?>
                 <?php if ($showPluginFilename) { ?>
-                  <td><?= out::H($report->pluginfilename) ?></td>
+                  <td><?php out::H($report->pluginfilename) ?></td>
                 <?php } ?>
                 <?php if (count($platforms) > 1) { ?>
                     <td><?php out::H($report->count) ?></td>
@@ -88,7 +88,7 @@
                             View::factory('common/bug_number')->set('bug',
                                 $bug)->render(TRUE);
                         echo ", ";
-                    } ?>
+                        } ?>
                         <div class="bug_ids_extra">
                             <?php 
                             for ($i = 3; $i < count($bugs); $i++) { 
