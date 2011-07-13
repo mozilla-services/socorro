@@ -1,5 +1,6 @@
 import datetime
 import logging
+import urllib
 
 import socorro.lib.util as util
 import socorro.webapi.webapiService as webapi
@@ -50,6 +51,9 @@ class EmailCampaignVolume(webapi.JsonServiceBase):
     end_date = parameters['end_date']
     parameters['end_date'] = datetime.datetime(end_date.year, end_date.month, end_date.day, 23, 59, 59)
 
+    encoded_signature = parameters['signature']
+    parameters['signature'] = urllib.unquote_plus(encoded_signature)
+
     parameters['version_clause'] = ''
     if len(parameters['versions']) > 0:
       parameters['version_clause'] = " version IN %(versions)s AND "
@@ -65,7 +69,7 @@ class EmailCampaignVolume(webapi.JsonServiceBase):
               email ~ '.*@.*\.[a-zA-Z]{2,4}';
     """ % parameters
     cursor = connection.cursor()
-    #logger.info(cursor.mogrify(sql, parameters))
+    logger.info(cursor.mogrify(sql, parameters))
     cursor.execute(sql, parameters)
     return cursor.fetchone()[0]
 
