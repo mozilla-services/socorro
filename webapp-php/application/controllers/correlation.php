@@ -45,6 +45,13 @@ require_once Kohana::find_file('libraries', 'Correlation', true, 'php');
  */
 class Correlation_Controller extends Controller
 {
+   
+    public function __construct()
+    {
+        parent::__construct();
+        $this->cache = new Cache(Kohana::config('correlation.caching'));
+    }
+
     /**
      * Gets the full report name given the type code in ajax path. 
      * 
@@ -173,14 +180,13 @@ class Correlation_Controller extends Controller
         $day = //'20100224';
                date('Ymd'); //
         $correlation = new Correlation;
-
-        $cache = new Cache(Kohana::config('correlation.caching'));
+ 
         $cache_key = $this->_getCacheKey($day, $product, $version, $report_name, $signature);
-        $data = $cache->get($cache_key);
+        $data = $this->cache->get($cache_key);
         if ($data) {
             Kohana::log('debug', "CACHE HIT " . $cache_key);
             return array(true, $data);
-        } else if ($cache->get($this->_getGeneralCacheKey($day, $product, $version, $report_name)) === true) {
+        } else if ($this->cache->get($this->_getGeneralCacheKey($day, $product, $version, $report_name)) === true) {
             $err = "Loaded Correlation Data, but none available for this signature <code>$signature</code>";
             return array(false, $err);
         } else {
@@ -203,11 +209,11 @@ class Correlation_Controller extends Controller
 
                 foreach ($data as $cur_sig => $sig_data) {
                     $cache_key = $this->_getCacheKey($day, $product, $version, $report_name, $cur_sig);
-                    $cache->set($cache_key, $sig_data);
+                    $this->cache->set($cache_key, $sig_data);
                 }
 
                 //Record general access
-                $cache->set($this->_getGeneralCacheKey($day, $product, $version, $report_name), true);
+                $this->cache->set($this->_getGeneralCacheKey($day, $product, $version, $report_name), true);
                 return $results;
             }
             $err = "ERROR: No reports generated on $day for $product ${version}. Looked at ${report}.txt and ${report}.txt.gz";

@@ -85,6 +85,16 @@ class Bugzilla_Model extends Model {
         } 
          
         $decoded_bug_info = json_decode($bug_info, $assoc=True);
-        return ($decoded_bug_info === null) ? array() : $decoded_bug_info; // bad json will return an array 
+        $decoded_bug_info = ($decoded_bug_info === null) ? array() : $decoded_bug_info;
+        
+        array_walk_recursive(
+            $decoded_bug_info,
+            create_function(
+                '&$value',
+                '$value = htmlEntities($value, ENT_QUOTES);'
+            )
+        );
+        
+        return $decoded_bug_info; 
     } 
 }
