@@ -62,7 +62,8 @@ class Buginfo_Controller extends Controller {
                        'id' => "",
                        'include_fields' => ""
                    );
-        echo json_encode($bzapi->query_api($method .  Router::$query_string));
+        $result = $bzapi->query_api($method .  Router::$query_string);
+        echo json_encode($result);
         exit;
     }
 }
