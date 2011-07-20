@@ -78,7 +78,7 @@ class QueryFormHelper
             'all_products'  => $branch_data['products'],
             'all_branches'  => $branch_data['branches'],
             'all_versions'  => $branch_data['versions'],
-            'versions_by_product'  => $versions_by_product_reversed,
+            'versions_by_product'  => $versions_by_product,
             'all_platforms' => $platforms
         );
     }

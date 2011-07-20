@@ -264,7 +264,7 @@ class Branch_Model extends Model {
 			'/* soc.web branch.prodbranches */ 
 				SELECT DISTINCT product, branch 
 				FROM branches 
-				ORDER BY product, branch
+				ORDER BY product, branch 
 			');
     }
 
@@ -332,7 +332,32 @@ class Branch_Model extends Model {
 
         return $this->fetchRows($sql);
     }
-    
+
+    /**
+     * Fetch all distinct product / version combinations that have a start date that is after today's
+     * date or an end date that is before today's date.
+     *
+     * @param bool    True if we should delete the cached query results first
+     * @return array  An array of version objects
+     */
+    public function getNonCurrentProductVersions($delete_cache=false) {
+        $date = date("Y-m-d");
+        $sql = "/* soc.web branch.getCurrentProductVersions */ 
+			SELECT DISTINCT pd.id, pd.product, pd.version, pd.branch, pd.release, pv.start_date, pv.end_date, pv.featured, pv.throttle
+			FROM productdims pd
+			INNER JOIN product_visibility pv ON pv.productdims_id = pd.id
+			WHERE pv.start_date > timestamp without time zone '".$date."'
+			OR pv.end_date < timestamp without time zone '".$date."'
+			ORDER BY pd.product ASC, pd.version DESC
+		";
+        
+        if ($delete_cache) {
+            $this->cache->delete($this->queryHashKey($sql));
+        }
+ 
+        return $this->fetchRows($sql);
+    }
+ 
     /**
      * Fetch all distinct product / version combinations that have a start date that is prior to today's
      * date and an end date that is after today's date.
@@ -348,7 +373,7 @@ class Branch_Model extends Model {
 			INNER JOIN product_visibility pv ON pv.productdims_id = pd.id
 			WHERE pv.start_date <= timestamp without time zone '".$date."'
 			AND pv.end_date >= timestamp without time zone '".$date."'
-			ORDER BY pd.product, pd.version
+			ORDER BY pd.product ASC, pd.version DESC
 		";
         
         if ($delete_cache) {
@@ -457,7 +482,7 @@ class Branch_Model extends Model {
                 'products' => $this->getProducts($delete_cache),
                 'branches' => $this->getBranches($delete_cache),
                 'versions' => ($current_versions) ? $this->getCurrentProductVersions($delete_cache) : $this->getProductVersions($delete_cache)
-            ); 
+            );
             $this->cache->set($cache_key, $data);
         }
         return $data;        
@@ -702,7 +727,7 @@ class Branch_Model extends Model {
 					UPDATE product_visibility
 					SET start_date = ?, end_date = ?, featured = ?, throttle = ?
 					WHERE productdims_id = ?
-				"; 		
+				";	
 				$this->db->query($sql, trim($start_date), trim($end_date), $featured, $throttle, $product_version->id);
 			} else {
 				$this->addProductVisibility($product, $version, $start_date, $end_date, $featured, $throttle);
