@@ -42,9 +42,20 @@ class Cache_Memcache_Driver implements Cache_Driver {
 		return FALSE;
 	}
 
+	public function errorHandler($errno, $errstr)
+        {
+            Kohana::log('error', $errstr);
+        }
+
 	public function get($id)
 	{
-		return (($return = $this->backend->get($this->prefix.$id)) === FALSE) ? NULL : $return;
+                set_error_handler(array($this, 'errorHandler'));
+                $return = $this->backend->get($this->prefix.$id);
+                if($return === FALSE) {
+                    $return = NULL;
+                }
+                restore_error_handler();
+                return $return;
 	}
 
 	public function set($id, $data, $tags, $lifetime)
@@ -57,7 +68,10 @@ class Cache_Memcache_Driver implements Cache_Driver {
 			$lifetime += time();
 		}
 
-		return $this->backend->set($this->prefix.$id, $data, $this->flags, $lifetime);
+                set_error_handler(array($this, 'errorHandler'));
+		$result = $this->backend->set($this->prefix.$id, $data, $this->flags, $lifetime);
+                restore_error_handler();
+                return $result;
 	}
 
 	public function delete($id, $tag = FALSE)
