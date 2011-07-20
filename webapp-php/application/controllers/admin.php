@@ -79,12 +79,11 @@ class Admin_Controller extends Controller
     /**
      * Validate the 'featured' field for a product / version.   
      *
-     * @bizrule A product may not have more than 3 featured versions.
      * @param string The product name
      * @param string The version name
      * @return void
      */
-    private function _branch_data_sources_featured($product, $version)
+    private function _branch_data_sources_featured($product, $version, $start_date, $end_date)
     {
         $featured = 'f';
         if (
@@ -92,8 +91,17 @@ class Admin_Controller extends Controller
             (isset($_POST['update_featured']) && $_POST['update_featured'] == 't')
         ) {
             $featured = 't';
-            if ($this->branch_model->getFeaturedVersionsExcludingVersionCount($product, $version) >= 4) {
-                client::messageSend("There are already 4 featured versions of this product. Set 1 of the featured products to not be featured, then try again.", E_USER_WARNING);
+            $featuredCount = $this->branch_model->getFeaturedVersionsExcludingVersionCount($product, $version);
+            if ($featuredCount >= 4) {
+                client::messageSend("There are already 4 featured versions of this product. "
+                                    ."Set 1 of the featured products to not be featured, then try again.", 
+                                    E_USER_WARNING);
+                $featured = 'f';
+            }
+            $today = date("Y-m-d");
+            if ((strtotime($start_date) > $today) || (strtotime($end_date) < $today)) {
+                client::messageSend("That product and version are out of date and cannot be featured.",
+                                     E_USER_WARNING);
                 $featured = 'f';
             }
         }
@@ -117,7 +125,12 @@ class Admin_Controller extends Controller
                                 !empty($_POST['end_date']) &&
                                 !empty($_POST['throttle'])
                         ) {
-                            $featured = $this->_branch_data_sources_featured($_POST['product'], $_POST['version']);
+                            $featured = $this->_branch_data_sources_featured(
+                                $_POST['update_product'], 
+                                $_POST['update_version'],
+                                $_POST['update_start_date'],
+                                $_POST['update_end_date']
+                            );
                             $throttle = (!is_numeric($_POST['throttle']) || $_POST['throttle'] > 100) ? 100 : $_POST['throttle'];
                                 if ($rv = $this->branch_model->add(
                         trim($_POST['product']), 
@@ -146,7 +159,12 @@ class Admin_Controller extends Controller
                                 !empty($_POST['update_end_date']) &&
                                 !empty($_POST['update_throttle'])
                         ) {
-                            $featured = $this->_branch_data_sources_featured($_POST['update_product'], $_POST['update_version']);
+                            $featured = $this->_branch_data_sources_featured(
+                                $_POST['update_product'], 
+                                $_POST['update_version'],
+                                $_POST['update_start_date'],
+                                $_POST['update_end_date']
+                            );
                             $throttle = (!is_numeric($_POST['update_throttle']) || $_POST['update_throttle'] > 100) ? 100 : $_POST['update_throttle'];
                                 if ($rv = $this->branch_model->update(
                     trim($_POST['update_product']), 
@@ -184,7 +202,7 @@ class Admin_Controller extends Controller
                 // Flush cache for featured and unfeatured versions.
                 $this->prepareVersions(true);
 
-                $branch_data = $this->branch_model->getBranchData(false, false, true);
+                $branch_data = $this->branch_model->getBranchData(false, true, true);
                 
                 $this->setView('admin/branch_data_sources');    
                 $this->setViewData(
@@ -194,6 +212,7 @@ class Admin_Controller extends Controller
                                 'versions' => $branch_data['versions'],
                                 'missing_entries' => $this->branch_model->findMissingEntries(),
                                 'missing_visibility_entries' => $this->branch_model->getProductVersionsWithoutVisibility(),
+                                'non_current_versions' => $this->branch_model->getNonCurrentProductVersions(true), 
                                 'default_start_date' => date('Y-m-d'),
                                 'default_end_date' => date('Y-m-d', (time()+7776000)), // time() + 90 days
                                 'throttle_default' => Kohana::config('daily.throttle_default'),
