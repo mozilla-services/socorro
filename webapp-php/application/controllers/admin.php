@@ -98,7 +98,7 @@ class Admin_Controller extends Controller
                                     E_USER_WARNING);
                 $featured = 'f';
             }
-            $today = date("Y-m-d");
+            $today = strtotime(date("Y-m-d"));
             if ((strtotime($start_date) > $today) || (strtotime($end_date) < $today)) {
                 client::messageSend("That product and version are out of date and cannot be featured.",
                                      E_USER_WARNING);
