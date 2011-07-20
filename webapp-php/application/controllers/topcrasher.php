@@ -104,7 +104,7 @@ class Topcrasher_Controller extends Controller {
      * Generates the index page.
      */
     public function index() {
-	cachecontrol::set(array(
+	    cachecontrol::set(array(
             'expires' => time() + (60 * 60)
         ));
 
@@ -148,7 +148,6 @@ class Topcrasher_Controller extends Controller {
             'crasher_data' => $crasher_data,
             'all_versions'  => $all_versions,
     	    'nav_selection' => 'top_crashes',
-            'sig_sizes'  => Kohana::config('topcrashers.numberofsignatures'),            
             'url_nav' => url::site('products/' . $product),
         ));
     }
@@ -158,13 +157,12 @@ class Topcrasher_Controller extends Controller {
      */
     private function _getTopCrashers($product, $version) {
         $sigSize = Kohana::config("topcrashers.numberofsignatures");
-        $maxSigSize = max($sigSize);
         $duration = Kohana::config('products.duration');
 
         $end = $this->topcrashers_model->lastUpdatedByVersion($product, $version);
         $start = $this->topcrashers_model->timeBeforeOffset($duration, $end);
 
-        return $this->topcrashers_model->getTopCrashersByVersion($product, $version, $maxSigSize, $start, $end);
+        return $this->topcrashers_model->getTopCrashersByVersion($product, $version, $sigSize, $start, $end);
     }
 
     /**

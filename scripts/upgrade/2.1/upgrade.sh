@@ -8,8 +8,12 @@ set -u
 
 date
 
-echo 'create objects for correlation reports'
-psql -f correlation_reports.sql
+#correlation reports not included for now; maybe in 2.2
+#echo 'create objects for correlation reports'
+#psql -f correlation_reports.sql
+
+echo 'fix permissions for breakpad_ro'
+psql -f breakpad_ro_perms.sql breakpad
 
 date
 
