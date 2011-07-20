@@ -13,7 +13,6 @@ echo html::script(
   array(
     'js/flot-0.7/jquery.flot.pack.js',
     'js/socorro/daily.js',
-    'js/socorro/topcrashers.js'
   )
 );
 echo "<h1>Error - no data found for $product</h1>"

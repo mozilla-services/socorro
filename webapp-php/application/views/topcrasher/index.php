@@ -1,27 +1,26 @@
 <?php slot::start('head') ?>
   <title>Top Crashers</title>
-  <?php echo html::script(array(
-    'js/socorro/topcrashers.js',
-  ))?>
+  <?php echo html::stylesheet(array(
+    'css/flora/flora.tablesorter.css'
+  ), 'screen')?>
 <?php slot::end() ?>
-<div id="topcrashers">
-    <h1>
-      Top Crashers
-      <span id="show">
-        Show
-        <?php foreach ($sig_sizes as $sig_size): ?>
-        <a href="#"><?php out::H($sig_size)?></a>
-        <?php endforeach; ?>
-      </span>
-    </h1>
-    <?php foreach ($crasher_data as $prodversion): ?>
-      <div class="crasher_list">
+<div class="page-heading">
+  <h2>Top Crashers</h2>
+</div>
+
+<?php foreach ($crasher_data as $prodversion): ?>
+  <div class="panel">
+    <div class="title">
       <h2><?=$prodversion['product']?> <?=$prodversion['version']?></h2>
-      <table summary="List of top crashes for <?php out::H($prodversion['product'].' '.$prodversion['version'])?>">
+    </div>
+    <div class="body">
+      <table
+        class="tablesorter" 
+        summary="List of top crashes for <?php out::H($prodversion['product'].' '.$prodversion['version'])?>">
         <thead>
         <tr>
-          <th>Signature</th>
-          <th title="Crash Count">&nbsp;</th>
+          <th class="header">Signature</th>
+          <th class="header">Crash Count</th>
         </tr>
         </thead>
         <tbody>
@@ -53,41 +52,9 @@
         <?php endforeach; ?>
         </tbody>
       </table>
-
+    
       <?php $url = url::base() . "topcrasher/byversion/{$prodversion['product']}/{$prodversion['version']}" ?>
       <p><a href="<?php out::H($url)?>">View all current crashers</a></p>
-      </div>
-    <?php endforeach; ?>
-
-    <h1>Other Versions</h1>
-    <div class="other_vers">
-      <?php
-      foreach ($all_versions as $product => $versions):
-        $ver_count = count($all_versions[$product]);
-        $first = $all_versions[$product][$ver_count-1];
-        $last = $all_versions[$product][0];
-        ?>
-        <div class="other_ver">
-	  <ol class="no_script_other_ver">
-              <?php foreach ($versions as $version): ?>
-	        <li><a href="<?= url::base() . 'topcrasher/byversion/' . $product . '/' . $version . '/7' ?>"><?= $product ?> <?= $version ?></a></li>
-              <?php endforeach; ?>
-          </ol>
-          <form method="get" action="<?php echo url::base().'topcrasher/byversion'?>" style="display: none;">
-            <h2><?php out::H($product)?></h2>
-            <input type="hidden" name="product" value="<?php out::H($product)?>"/>
-            <select name="version">
-              <option value=""><?php out::H($first)?>&ndash;<?php out::H($last)?></option>
-              <option value="">---</option>
-              <?php foreach ($versions as $version): ?>
-              <option value="<?php out::H($version)?>"><?php out::H($version)?></option>
-              <?php endforeach; ?>
-            </select>
-            <noscript><button type="submit">Go</button></noscript>
-          </form>
-        </div>
-      <?php endforeach; ?>
-      <div class="clear"></div>
     </div>
-</div>
-
+  </div>
+<?php endforeach; ?>
