@@ -912,7 +912,7 @@ def testGetJsonOrWarn():
 
     r = proc.Processor.getJsonOrWarn(d, 'non-key', message_list)
     assert r == None
-    assert 'WARNING: Json file missing non-key' in message_list
+    assert 'WARNING: JSON file missing non-key' in message_list
 
     message_list = []
     d = { 'key': 'v'*100 }

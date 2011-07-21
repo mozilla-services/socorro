@@ -725,7 +725,7 @@ class Processor(object):
     try:
       ret = jsonDoc[key][:maxLength];
     except KeyError:
-      errorMessageList.append("WARNING: Json file missing %s"%key)
+      errorMessageList.append("WARNING: JSON file missing %s"%key)
       ret = default
     except Exception,x:
       errorMessageList.append("ERROR: jsonDoc[%s]: %s"%(repr(key),x))
