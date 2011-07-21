@@ -66,7 +66,7 @@ class TimeUtil {
     }
 
     /**
-     * Givens a useful hint as to how long a certiain amount
+     * Gives a useful hint as to how long a certain amount
      * of seconds were in a human readable format.
      *
      * WARNING: Dead simple, not L10n ready or general purpose.
@@ -76,7 +76,7 @@ class TimeUtil {
      * @return string Empty string for seconds, "$x minutes", etc 
      *                based on timescale
      */
-    public static function ghetto_time_ago_in_words($seconds)
+    public static function time_ago_in_words($seconds)
     {
 	$seconds = intval($seconds);
         $three_minutes = 3 * 60;
@@ -85,8 +85,8 @@ class TimeUtil {
 	$one_week = $one_day * 7;
 	$one_month = $one_day * 29;
 
-        if ($seconds < $three_minutes) {
-	    return '';
+        if ($seconds < 60) {
+	    return "$seconds seconds";
 	} else if ($seconds < $one_hour) {
 	    return sprintf("%.1f minutes", $seconds / 60);
 	} else if ($seconds < $one_day) {

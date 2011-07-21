@@ -99,16 +99,16 @@ if (is_null($report->signature) || empty($report->signature)) { ?>
 
             <?php if ($report->last_crash): ?>
             <tr>
-                <th>Last Crash</th><td><?php out::H($report->last_crash) ?> seconds <?php 
-		     $seconds_in_words = TimeUtil::ghetto_time_ago_in_words($report->last_crash);
-                     if (! empty($seconds_in_words)) { ?>(<?= $seconds_in_words ?>) <?php } ?> before submission</td>
+                <th>Last Crash</th><td><?php 
+		     $seconds_in_words = TimeUtil::time_ago_in_words($report->last_crash);
+                     ?><?= $seconds_in_words ?> before submission</td>
             </tr>
-            <?php endif; ?>
+            <?php endif; ?> 
             <?php if (property_exists($report, 'install_age')): ?>
             <tr>
-                <th>Install Age</th><td><?php out::H($report->install_age) ?> seconds <?php 
-                    $seconds_in_words = TimeUtil::ghetto_time_ago_in_words($report->install_age);
-                    if (! empty($seconds_in_words)) { ?>(<?= $seconds_in_words ?>) <?php } ?>
+                <th>Install Age</th><td><?php 
+                    $seconds_in_words = TimeUtil::time_ago_in_words($report->install_age); ?>
+                    <?= $seconds_in_words ?>
                     since version was first installed.</td>
             </tr>
             <?php endif; ?>
