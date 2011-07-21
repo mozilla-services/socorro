@@ -73,10 +73,18 @@ class AduByDay(webapi.JsonServiceBase):
     if parameters.report_type == 'crash':
       parameters.report_type_phrase = "report_type = '%s'" % adu_codes.CRASH_BROWSER
     elif parameters.report_type == 'hang':
-      parameters.report_type_phrase = "report_type IN ('%s', '%s')" % (adu_codes.HANG_BROWSER, adu_codes.HANG_PLUGIN)
+      parameters.report_type_phrase = "report_type IN ('%s', '%s')" % (adu_codes.HANG_BROWSER, adu_codes.HANG_PLUGIN) 
     else:
-      # Any report
-      parameters.report_type_phrase = "report_type IN ('%s', '%s')" % (adu_codes.CRASH_BROWSER, adu_codes.HANGS_NORMALIZED)
+      # anything other than 'crash' or 'hang' will return all crashes
+      # hang normalized are avoided so as not to count some hang ids multiple times
+      parameters.report_type_phrase = "report_type IN ('%s', '%s', '%s', '%s', '%s')" % (
+        adu_codes.CRASH_BROWSER,
+        adu_codes.HANG_PLUGIN,
+        adu_codes.CONTENT,
+        adu_codes.JETPACK,
+        adu_codes.OOP_PLUGIN,
+      )
+    
     sql = """
       SELECT adu_day, os_short_name, SUM(count)
       FROM daily_crashes
