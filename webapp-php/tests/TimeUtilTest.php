@@ -34,7 +34,7 @@ class  TimeUtilTest extends PHPUnit_Framework_TestCase
 
     public function testTime_ago_in_words()
     {
-        $this->assertEquals('59 seconds', TimeUtil::time_ago_in_words(59))
+        $this->assertEquals('59 seconds', TimeUtil::time_ago_in_words(59));
         $this->assertEquals('20.0 minutes', TimeUtil::time_ago_in_words(1200));
         $this->assertEquals('9.5 hours', TimeUtil::time_ago_in_words('34235'));
         $this->assertEquals('1.4 days', TimeUtil::time_ago_in_words(123456));
