@@ -126,10 +126,10 @@ class Admin_Controller extends Controller
                                 !empty($_POST['throttle'])
                         ) {
                             $featured = $this->_branch_data_sources_featured(
-                                $_POST['update_product'], 
-                                $_POST['update_version'],
-                                $_POST['update_start_date'],
-                                $_POST['update_end_date']
+                                $_POST['product'], 
+                                $_POST['version'],
+                                $_POST['start_date'],
+                                $_POST['end_date']
                             );
                             $throttle = (!is_numeric($_POST['throttle']) || $_POST['throttle'] > 100) ? 100 : $_POST['throttle'];
                                 if ($rv = $this->branch_model->add(
