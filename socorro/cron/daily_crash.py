@@ -51,18 +51,20 @@ def fail_most_recent_day(logger):
 
 insert_crashes_sql = """
   INSERT INTO daily_crashes (count, report_type, productdims_id, os_short_name, adu_day)
-    SELECT COUNT(r.uuid) as count, %s, p.id, substring(r.os_name, 1, 3) AS os_short_name,
-           timestamp without time zone %s
-    FROM product_visibility cfg
-    JOIN productdims p on cfg.productdims_id = p.id
-    JOIN reports r on p.product = r.product AND p.version = r.version
-    WHERE NOT cfg.ignore AND
-          timestamp without time zone %s - interval %s <= r.date_processed AND
-          r.date_processed < timestamp without time zone %s + (interval '24 hours' - interval %s) AND
-          cfg.start_date <= r.date_processed AND r.date_processed <= cfg.end_date AND
-          hangid IS NULL and process_type IS NULL
-    GROUP BY p.id, os_short_name
+    -- for CRASH_BROWSER
+      SELECT COUNT(r.uuid) as count, %s, p.id, substring(r.os_name, 1, 3) AS os_short_name,
+             timestamp without time zone %s
+      FROM product_visibility cfg
+      JOIN productdims p on cfg.productdims_id = p.id
+      JOIN reports r on p.product = r.product AND p.version = r.version
+      WHERE NOT cfg.ignore AND
+            timestamp without time zone %s - interval %s <= r.date_processed AND
+            r.date_processed < timestamp without time zone %s + (interval '24 hours' - interval %s) AND
+            cfg.start_date <= r.date_processed AND r.date_processed <= cfg.end_date AND
+            hangid IS NULL and process_type IS NULL
+      GROUP BY p.id, os_short_name
     UNION
+    -- for OOP_PLUGIN
       SELECT count(uuid) as count, %s, p.id AS prod_id, substring(r.os_name, 1, 3) AS os_short_name,
              timestamp without time zone %s
       FROM product_visibility cfg
@@ -73,8 +75,9 @@ insert_crashes_sql = """
           r.date_processed < timestamp without time zone %s + (interval '24 hours' - interval %s) AND
           cfg.start_date <= r.date_processed AND r.date_processed <= cfg.end_date AND
           hangid IS NULL AND process_type = 'plugin'
-      GROUP BY prod_id, os_short_name    
+      GROUP BY prod_id, os_short_name
     UNION
+    -- for HANGS_NORMALIZED
       SELECT count(subr.hangid) as count, %s, subr.prod_id, subr.os_short_name,
              timestamp without time zone %s
       FROM (
@@ -88,8 +91,9 @@ insert_crashes_sql = """
                          cfg.start_date <= r.date_processed AND r.date_processed <= cfg.end_date AND
                          hangid IS NOT NULL
                  ) AS subr
-             GROUP BY subr.prod_id, subr.os_short_name    
+             GROUP BY subr.prod_id, subr.os_short_name
     UNION
+    -- for HANG_PLUGIN
       SELECT count(uuid) as count, %s, p.id AS prod_id, substring(r.os_name, 1, 3) AS os_short_name,
              timestamp without time zone %s
       FROM product_visibility cfg
@@ -102,6 +106,7 @@ insert_crashes_sql = """
           hangid IS NOT NULL AND process_type = 'plugin'
       GROUP BY prod_id, os_short_name
     UNION
+    -- for HANG_BROWSER
       SELECT count(uuid) as count, %s, p.id AS prod_id, substring(r.os_name, 1, 3) AS os_short_name,
              timestamp without time zone %s
       FROM product_visibility cfg
@@ -112,6 +117,32 @@ insert_crashes_sql = """
           r.date_processed < timestamp without time zone %s + (interval '24 hours' - interval %s) AND
           cfg.start_date <= r.date_processed AND r.date_processed <= cfg.end_date AND
           hangid IS NOT NULL AND process_type IS NULL
+      GROUP BY prod_id, os_short_name
+    UNION
+    -- for CONTENT
+      SELECT count(uuid) as count, %s, p.id AS prod_id, substring(r.os_name, 1, 3) AS os_short_name,
+             timestamp without time zone %s
+      FROM product_visibility cfg
+      JOIN productdims p on cfg.productdims_id = p.id
+      JOIN reports r on p.product = r.product AND p.version = r.version
+      WHERE NOT cfg.ignore AND
+          timestamp without time zone %s - interval %s <= r.date_processed AND
+          r.date_processed < timestamp without time zone %s + (interval '24 hours' - interval %s) AND
+          cfg.start_date <= r.date_processed AND r.date_processed <= cfg.end_date AND
+          process_type = 'content'
+      GROUP BY prod_id, os_short_name
+    UNION
+    -- for JETPACK
+      SELECT count(uuid) as count, %s, p.id AS prod_id, substring(r.os_name, 1, 3) AS os_short_name,
+             timestamp without time zone %s
+      FROM product_visibility cfg
+      JOIN productdims p on cfg.productdims_id = p.id
+      JOIN reports r on p.product = r.product AND p.version = r.version
+      WHERE NOT cfg.ignore AND
+          timestamp without time zone %s - interval %s <= r.date_processed AND
+          r.date_processed < timestamp without time zone %s + (interval '24 hours' - interval %s) AND
+          cfg.start_date <= r.date_processed AND r.date_processed <= cfg.end_date AND
+          process_type = 'jetpack'
       GROUP BY prod_id, os_short_name
       """
 
@@ -127,7 +158,7 @@ def record_crash_stats(config, logger):
     databaseCursor = databaseConnection.cursor()
     today = datetime.datetime.today()
     one_day = datetime.timedelta(days=1)
-    
+
     previousDay = most_recent_day(databaseCursor, logger) # + one_day
 
     logger.info("Beginning search from this date (YYYY-MM-DD): %s", previousDay)
@@ -139,10 +170,13 @@ def record_crash_stats(config, logger):
                     adu_codes.OOP_PLUGIN,        previousDay.date(), previousZeroHour, socorroTimeToUTCInterval, previousZeroHour, socorroTimeToUTCInterval,
                     adu_codes.HANGS_NORMALIZED,  previousDay.date(), previousZeroHour, socorroTimeToUTCInterval, previousZeroHour, socorroTimeToUTCInterval,
                     adu_codes.HANG_PLUGIN,       previousDay.date(), previousZeroHour, socorroTimeToUTCInterval, previousZeroHour, socorroTimeToUTCInterval,
-                    adu_codes.HANG_BROWSER,      previousDay.date(), previousZeroHour, socorroTimeToUTCInterval, previousZeroHour, socorroTimeToUTCInterval)
+                    adu_codes.HANG_BROWSER,      previousDay.date(), previousZeroHour, socorroTimeToUTCInterval, previousZeroHour, socorroTimeToUTCInterval,
+                    adu_codes.CONTENT,           previousDay.date(), previousZeroHour, socorroTimeToUTCInterval, previousZeroHour, socorroTimeToUTCInterval,
+                    adu_codes.JETPACK,           previousDay.date(), previousZeroHour, socorroTimeToUTCInterval, previousZeroHour, socorroTimeToUTCInterval,
+                   )
       try:
         logger.debug("Processing %s crashes for use with ADU data" % previousDay)
-        #logger.debug(databaseCursor.mogrify(insert_crashes_sql.encode(databaseCursor.connection.encoding), parameters))        
+        #logger.debug(databaseCursor.mogrify(insert_crashes_sql.encode(databaseCursor.connection.encoding), parameters))
         databaseCursor.execute(insert_crashes_sql, parameters)
         logger.info("Inserted %d rows" % databaseCursor.rowcount)
         databaseCursor.connection.commit()
@@ -153,4 +187,4 @@ def record_crash_stats(config, logger):
       previousDay = previousDay + one_day
   finally:
     databaseConnection.close()
-    
+
