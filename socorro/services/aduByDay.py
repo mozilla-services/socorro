@@ -81,7 +81,6 @@ class AduByDay(webapi.JsonServiceBase):
         adu_codes.CRASH_BROWSER,
         adu_codes.HANG_PLUGIN,
         adu_codes.CONTENT,
-        adu_codes.JETPACK,
         adu_codes.OOP_PLUGIN,
       )
     

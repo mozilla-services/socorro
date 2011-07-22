@@ -131,19 +131,6 @@ insert_crashes_sql = """
           cfg.start_date <= r.date_processed AND r.date_processed <= cfg.end_date AND
           process_type = 'content'
       GROUP BY prod_id, os_short_name
-    UNION
-    -- for JETPACK
-      SELECT count(uuid) as count, %s, p.id AS prod_id, substring(r.os_name, 1, 3) AS os_short_name,
-             timestamp without time zone %s
-      FROM product_visibility cfg
-      JOIN productdims p on cfg.productdims_id = p.id
-      JOIN reports r on p.product = r.product AND p.version = r.version
-      WHERE NOT cfg.ignore AND
-          timestamp without time zone %s - interval %s <= r.date_processed AND
-          r.date_processed < timestamp without time zone %s + (interval '24 hours' - interval %s) AND
-          cfg.start_date <= r.date_processed AND r.date_processed <= cfg.end_date AND
-          process_type = 'jetpack'
-      GROUP BY prod_id, os_short_name
       """
 
 
@@ -172,7 +159,6 @@ def record_crash_stats(config, logger):
                     adu_codes.HANG_PLUGIN,       previousDay.date(), previousZeroHour, socorroTimeToUTCInterval, previousZeroHour, socorroTimeToUTCInterval,
                     adu_codes.HANG_BROWSER,      previousDay.date(), previousZeroHour, socorroTimeToUTCInterval, previousZeroHour, socorroTimeToUTCInterval,
                     adu_codes.CONTENT,           previousDay.date(), previousZeroHour, socorroTimeToUTCInterval, previousZeroHour, socorroTimeToUTCInterval,
-                    adu_codes.JETPACK,           previousDay.date(), previousZeroHour, socorroTimeToUTCInterval, previousZeroHour, socorroTimeToUTCInterval,
                    )
       try:
         logger.debug("Processing %s crashes for use with ADU data" % previousDay)
