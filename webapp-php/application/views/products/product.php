@@ -1,6 +1,6 @@
 
 <?php slot::start('head') ?>
-    <title>Crash Data for Mozilla <?php out::H($product) ?>
+    <title>Crash Data for <?php out::H($product) ?>
         <?php if (isset($version) && !empty($version)) { ?>
             <?php out::H($version); ?>
         <?php } ?>
