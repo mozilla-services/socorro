@@ -951,7 +951,8 @@ expected_report_tuple = ('ooid1',
                          None,
                          None,
                          None,
-                         None)
+                         None,
+                         'release')
 
 expected_report_dict =  {'client_crash_date':
                                        dt.datetime(2011, 2, 16, 4, 44, 52,
@@ -977,7 +978,8 @@ expected_report_dict =  {'client_crash_date':
                          'app_notes': None,
                          'last_crash': 439,
                          'date_processed': dt.datetime(2011, 2, 15, 1, 0),
-                         'url': 'http://mozilla.com'}
+                         'url': 'http://mozilla.com',
+                         'releasechannel': 'release'}
 
 def testInsertReportIntoDatabase01():
     """testInsertReportIntoDatabase01: success"""
