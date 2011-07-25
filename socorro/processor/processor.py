@@ -927,7 +927,7 @@ class Processor(object):
         url = self.config.elasticSearchOoidSubmissionUrl % row_id
         request = urllib2.Request(url, dummy_form_data)
         try:
-          urllib2.urlopen(request, 2).read()
+          urllib2.urlopen(request, timeout=2).read()
         except urllib2.socket.timeout:
           logger.critical('%s may not have been submitted to Elastic Search',
                           ooid)

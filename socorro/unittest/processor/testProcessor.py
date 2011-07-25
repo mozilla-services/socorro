@@ -1325,7 +1325,7 @@ def testSubmitOoidToElasticSearch_1():
     fakeFileLikeObject.expect('read', (), {}, None, s.timeout)
     #fakeSocketModule = exp.DummyObjectWithExpectations()
     #fakeSocketModule.expect('timeout', returnValue=socket.timeout)
-    fakeUrllib2.expect('urlopen', (17, 2), {}, fakeFileLikeObject)
+    fakeUrllib2.expect('urlopen', (17,), {'timeout':2}, fakeFileLikeObject)
     fakeUrllib2.expect('socket', returnValue=s)
     p.submitOoidToElasticSearch(uuid, fakeUrllib2)
 
@@ -1340,7 +1340,7 @@ def testSubmitOoidToElasticSearch_2():
     fakeUrllib2.expect('Request', (salted_ooid, {}), {}, fakeRequestObject)
     fakeFileLikeObject = exp.DummyObjectWithExpectations()
     fakeFileLikeObject.expect('read', (), {}, None)
-    fakeUrllib2.expect('urlopen', (17, 2), {}, fakeFileLikeObject)
+    fakeUrllib2.expect('urlopen', (17,), {'timeout':2}, fakeFileLikeObject)
     p.submitOoidToElasticSearch(uuid, fakeUrllib2)
 
 def testSubmitOoidToElasticSearch_3():
@@ -1356,7 +1356,7 @@ def testSubmitOoidToElasticSearch_3():
     fakeFileLikeObject.expect('read', (), {}, None, Exception)
     #fakeSocketModule = exp.DummyObjectWithExpectations()
     #fakeSocketModule.expect('timeout', returnValue=socket.timeout)
-    fakeUrllib2.expect('urlopen', (17, 2), {}, fakeFileLikeObject)
+    fakeUrllib2.expect('urlopen', (17,), {'timeout':2}, fakeFileLikeObject)
     fakeUrllib2.expect('socket', returnValue=s)
     p.submitOoidToElasticSearch(uuid, fakeUrllib2)
 
