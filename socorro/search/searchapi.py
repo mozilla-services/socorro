@@ -93,12 +93,22 @@ class SearchAPI(object):
         args["plugin_term"]         = kwargs.get("plugin_term", None)
 
         args["search_mode"]         = kwargs.get("search_mode", "default")
+        # To be moved into a config file?
+        authorized_modes = [
+            "default",
+            "starts_with",
+            "contains",
+            "is_exactly"
+        ]
+        if args["search_mode"] not in authorized_modes:
+            args["search_mode"] = "default"
+
         args["result_number"]  = int( kwargs.get("result_number", 100) )
         args["result_offset"]  = int( kwargs.get("result_offset", 0) )
 
         # Handling dates
-        args["from_date"] = SearchAPI.format_date(args["from_date"])
-        args["to_date"] = SearchAPI.format_date(args["to_date"])
+        args["from_date"] = SearchAPI.format_date(args["from_date"]) or lastweek
+        args["to_date"] = SearchAPI.format_date(args["to_date"]) or now
 
         # Securing fields
         args["fields"] = SearchAPI.secure_fields(args["fields"])
@@ -108,6 +118,7 @@ class SearchAPI(object):
     @staticmethod
     def secure_fields(fields):
         secured_fields = []
+        # To be moved into a config file?
         authorized_fields = [
             "signature",
             "dump"
@@ -150,10 +161,16 @@ class SearchAPI(object):
         Take a string and return a datetime object.
 
         """
+        if not date:
+            return None
+
         if type(date) is not datetime:
             if type(date) is list:
                 date = " ".join(date)
-            date = dtutil.datetimeFromISOdateString(date)
+            try:
+                date = dtutil.datetimeFromISOdateString(date)
+            except Exception:
+                date = None
         return date
 
     @staticmethod
