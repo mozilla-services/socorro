@@ -26,7 +26,7 @@
                         $date = strtotime($report->date_processed);
                         // TODO: Find out why this is not $date = strtotime($report->date);
                         $url = url::base().'report/index/'.out::H($report->uuid, FALSE);
-                    ?><a href="<?php out::H($url) ?>" title="View reports with this signature.">
+                    ?><a href="<?php out::H($url) ?>">
                         <?php echo date('M d, Y H:i', $date) ?>
                     </a>        
         <div class="hang-pair"></div>

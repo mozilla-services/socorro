@@ -45,8 +45,7 @@
                     $url = url::base() . 'report/list?' 
                         . html::query_string($url_params);
                     ?>
-                    <a href="<?php echo $url ?>" 
-                       title="View reports with this signature.">
+                    <a href="<?php echo $url ?>">
                         <?php out::H($report->{'display_signature'}) ?>
                     </a>
                     <?php
