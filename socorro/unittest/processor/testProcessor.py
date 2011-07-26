@@ -951,7 +951,8 @@ expected_report_tuple = ('ooid1',
                          None,
                          None,
                          None,
-                         None)
+                         None,
+                         'release')
 
 expected_report_dict =  {'client_crash_date':
                                        dt.datetime(2011, 2, 16, 4, 44, 52,
@@ -977,7 +978,8 @@ expected_report_dict =  {'client_crash_date':
                          'app_notes': None,
                          'last_crash': 439,
                          'date_processed': dt.datetime(2011, 2, 15, 1, 0),
-                         'url': 'http://mozilla.com'}
+                         'url': 'http://mozilla.com',
+                         'releasechannel': 'release'}
 
 def testInsertReportIntoDatabase01():
     """testInsertReportIntoDatabase01: success"""
@@ -1325,7 +1327,7 @@ def testSubmitOoidToElasticSearch_1():
     fakeFileLikeObject.expect('read', (), {}, None, s.timeout)
     #fakeSocketModule = exp.DummyObjectWithExpectations()
     #fakeSocketModule.expect('timeout', returnValue=socket.timeout)
-    fakeUrllib2.expect('urlopen', (17, 2), {}, fakeFileLikeObject)
+    fakeUrllib2.expect('urlopen', (17,), {'timeout':2}, fakeFileLikeObject)
     fakeUrllib2.expect('socket', returnValue=s)
     p.submitOoidToElasticSearch(uuid, fakeUrllib2)
 
@@ -1340,7 +1342,7 @@ def testSubmitOoidToElasticSearch_2():
     fakeUrllib2.expect('Request', (salted_ooid, {}), {}, fakeRequestObject)
     fakeFileLikeObject = exp.DummyObjectWithExpectations()
     fakeFileLikeObject.expect('read', (), {}, None)
-    fakeUrllib2.expect('urlopen', (17, 2), {}, fakeFileLikeObject)
+    fakeUrllib2.expect('urlopen', (17,), {'timeout':2}, fakeFileLikeObject)
     p.submitOoidToElasticSearch(uuid, fakeUrllib2)
 
 def testSubmitOoidToElasticSearch_3():
@@ -1356,7 +1358,7 @@ def testSubmitOoidToElasticSearch_3():
     fakeFileLikeObject.expect('read', (), {}, None, Exception)
     #fakeSocketModule = exp.DummyObjectWithExpectations()
     #fakeSocketModule.expect('timeout', returnValue=socket.timeout)
-    fakeUrllib2.expect('urlopen', (17, 2), {}, fakeFileLikeObject)
+    fakeUrllib2.expect('urlopen', (17,), {'timeout':2}, fakeFileLikeObject)
     fakeUrllib2.expect('socket', returnValue=s)
     p.submitOoidToElasticSearch(uuid, fakeUrllib2)
 

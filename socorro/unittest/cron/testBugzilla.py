@@ -28,11 +28,11 @@ def makeBogusReports (connection, cursor, logger):
   # make some bogus data in the reports table
   reportsTable = sch.ReportsTable(logger)
                     # ( uuid,    client_crash_date,   date_processed,             product,   version,   build,   url,              install_age,   last_crash,   uptime,   email,   build_date,   user_id,   user_comments,   app_notes,   distributor,   distributor_version, topmost_filenames, addons_checked, flash_version, hangid, process_type) values
-  fakeReportData = [ (( "uuid1", None,                dt.datetime(2009, 05, 04),  "bogus",   "1.0",     "xxx",   "http://cnn.com", 100,           14,           10,       None,    None,         None,      "bogus",         "",          "",            ",",                 None,              None,           None,          None,   None), "BogusClass::bogus_signature (const char**, void *)"),
-                     (( "uuid2", None,                dt.datetime(2009, 05, 04),  "bogus",   "1.0",     "xxx",   "http://cnn.com", 100,           14,           10,       None,    None,         None,      "bogus",         "",          "",            ",",                 None,              None,           None,          None,   None), "js3250.dll@0x6cb96"),
-                     (( "uuid3", None,                dt.datetime(2009, 05, 04),  "bogus",   "1.0",     "xxx",   "http://cnn.com", 100,           14,           10,       None,    None,         None,      "bogus",         "",          "",            ",",                 None,              None,           None,          None,   None), "libobjc.A.dylib@0x1568c"),
-                     (( "uuid4", None,                dt.datetime(2009, 05, 04),  "bogus",   "1.0",     "xxx",   "http://cnn.com", 100,           14,           10,       None,    None,         None,      "bogus",         "",          "",            ",",                 None,              None,           None,          None,   None), "nanojit::LIns::isTramp()"),
-                     (( "uuid5", None,                dt.datetime(2009, 05, 04),  "bogus",   "1.0",     "xxx",   "http://cnn.com", 100,           14,           10,       None,    None,         None,      "bogus",         "",          "",            ",",                 None,              None,           None,          None,   None), "libobjc.A.dylib@0x1568c"),
+  fakeReportData = [ (( "uuid1", None,                dt.datetime(2009, 05, 04),  "bogus",   "1.0",     "xxx",   "http://cnn.com", 100,           14,           10,       None,    None,         None,      "bogus",         "",          "",            ",",                 None,              None,           None,          None,   None,         'release'), "BogusClass::bogus_signature (const char**, void *)"),
+                     (( "uuid2", None,                dt.datetime(2009, 05, 04),  "bogus",   "1.0",     "xxx",   "http://cnn.com", 100,           14,           10,       None,    None,         None,      "bogus",         "",          "",            ",",                 None,              None,           None,          None,   None,         'release'), "js3250.dll@0x6cb96"),
+                     (( "uuid3", None,                dt.datetime(2009, 05, 04),  "bogus",   "1.0",     "xxx",   "http://cnn.com", 100,           14,           10,       None,    None,         None,      "bogus",         "",          "",            ",",                 None,              None,           None,          None,   None,         'release'), "libobjc.A.dylib@0x1568c"),
+                     (( "uuid4", None,                dt.datetime(2009, 05, 04),  "bogus",   "1.0",     "xxx",   "http://cnn.com", 100,           14,           10,       None,    None,         None,      "bogus",         "",          "",            ",",                 None,              None,           None,          None,   None,         'release'), "nanojit::LIns::isTramp()"),
+                     (( "uuid5", None,                dt.datetime(2009, 05, 04),  "bogus",   "1.0",     "xxx",   "http://cnn.com", 100,           14,           10,       None,    None,         None,      "bogus",         "",          "",            ",",                 None,              None,           None,          None,   None,         'release'), "libobjc.A.dylib@0x1568c"),
                    ]
   try:
     #altconn = psycopg2.connect(me.dsn)
@@ -161,7 +161,7 @@ class TestBugzilla(unittest.TestCase):
           ]
     correct = [ (1, "RESOLVED", "", "this is a comment", set([])),
                 (2, "CLOSED", "WONTFIX", "comments are not too important", set(["BogusClass::bogus_sig (const char**)"])),
-                (3, "ASSIGNED", "", "this is a comment. [@ nanojit::LIns::isTramp()]", 
+                (3, "ASSIGNED", "", "this is a comment. [@ nanojit::LIns::isTramp()]",
                  set(["js3250.dll@0x6cb96", "valid.sig@0x333333"])),
                 (4, "CLOSED", "RESOLVED", "two sigs enter, one sig leaves", set(["layers::Push@0x123456"])),
                 (5, "ASSIGNED", "INCOMPLETE", "", set(["MWSBAR.DLL@0x2589f"])),

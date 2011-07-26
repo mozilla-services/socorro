@@ -801,7 +801,9 @@ class Processor(object):
     except:
       last_crash = None
 
-    newReportRecordAsTuple = (uuid, crash_date, date_processed, product, version, buildID, url, install_age, last_crash, uptime, email, build_date, user_id, user_comments, app_notes, distributor, distributor_version,None,None,None,hangid,process_type)
+    releasechannel = jsonDocument.get('ReleaseChannel','unknown')
+
+    newReportRecordAsTuple = (uuid, crash_date, date_processed, product, version, buildID, url, install_age, last_crash, uptime, email, build_date, user_id, user_comments, app_notes, distributor, distributor_version,None,None,None,hangid,process_type,releasechannel)
     newReportRecordAsDict = dict(x for x in zip(self.reportsTable.columns, newReportRecordAsTuple))
     if not product or not version:
       msgTemplate = "Skipping report: Missing product&version: ["+", ".join(["%s:%%s"%x for x in self.reportsTable.columns])+"]"
@@ -927,7 +929,7 @@ class Processor(object):
         url = self.config.elasticSearchOoidSubmissionUrl % row_id
         request = urllib2.Request(url, dummy_form_data)
         try:
-          urllib2.urlopen(request, 2).read()
+          urllib2.urlopen(request, timeout=2).read()
         except urllib2.socket.timeout:
           logger.critical('%s may not have been submitted to Elastic Search',
                           ooid)

@@ -321,7 +321,8 @@ class ReportsTable(PartitionedTable):
                                               addons_checked boolean,
                                               flash_version TEXT,
                                               hangid TEXT,
-                                              process_type TEXT
+                                              process_type TEXT,
+                                              releasechannel TEXT
                                           );
                                           --CREATE TRIGGER reports_insert_trigger
                                           --    BEFORE INSERT ON reports
@@ -343,10 +344,10 @@ class ReportsTable(PartitionedTable):
                                           CREATE INDEX %(partitionName)s_reason ON %(partitionName)s (reason);
                                           """
                                       )
-    self.columns = ("uuid", "client_crash_date", "date_processed", "product", "version", "build", "url", "install_age", "last_crash", "uptime", "email", "build_date", "user_id", "user_comments", "app_notes", "distributor", "distributor_version", "topmost_filenames", "addons_checked", "flash_version", "hangid", "process_type")
+    self.columns = ("uuid", "client_crash_date", "date_processed", "product", "version", "build", "url", "install_age", "last_crash", "uptime", "email", "build_date", "user_id", "user_comments", "app_notes", "distributor", "distributor_version", "topmost_filenames", "addons_checked", "flash_version", "hangid", "process_type", "releasechannel")
     self.insertSql = """insert into TABLENAME
-                            (uuid, client_crash_date, date_processed, product, version, build, url, install_age, last_crash, uptime, email, build_date, user_id, user_comments, app_notes, distributor, distributor_version, topmost_filenames, addons_checked, flash_version, hangid, process_type) values
-                            (%s,   %s,                %s,             %s,      %s,      %s,    %s,  %s,          %s,         %s,     %s,    %s,         %s,      %s,            %s,        %s,          %s,                  %s,                %s,             %s,            %s,     %s)"""
+                            (uuid, client_crash_date, date_processed, product, version, build, url, install_age, last_crash, uptime, email, build_date, user_id, user_comments, app_notes, distributor, distributor_version, topmost_filenames, addons_checked, flash_version, hangid, process_type, releasechannel) values
+                            (%s,   %s,                %s,             %s,      %s,      %s,    %s,  %s,          %s,         %s,     %s,    %s,         %s,      %s,            %s,        %s,          %s,                  %s,                %s,             %s,            %s,     %s,           %s)"""
   #-----------------------------------------------------------------------------------------------------------------
   def additionalCreationProcedures(self, databaseCursor):
     pass
@@ -637,7 +638,7 @@ class ProductDimsVersionSortTable(Table):
                                              sec3_string2 TEXT,
                                              extra TEXT,
                                              CONSTRAINT productdims_version_sort_key PRIMARY KEY (product, version),
-                                             CONSTRAINT productdims_product_version_fkey FOREIGN KEY (product, version) 
+                                             CONSTRAINT productdims_product_version_fkey FOREIGN KEY (product, version)
                                                   references productdims(product, version) ON DELETE CASCADE ON UPDATE CASCADE
                                           );
                                           CREATE OR REPLACE FUNCTION tokenize_version(
@@ -663,7 +664,7 @@ class ProductDimsVersionSortTable(Table):
                                                   $extra = join '.', @parts[3..$#parts];
                                                   @parts = @parts[0..2];
                                               }
-                                          
+
                                               my @tokens;
                                               for my $part (@parts) {
                                                   die "$version is not a valid toolkit version" unless $part =~ qr{\A
@@ -680,7 +681,7 @@ class ProductDimsVersionSortTable(Table):
                                                   \z}x;
                                                   push @tokens, $1, $2, $3, $4;
                                               }
-                                          
+
                                               die "$version is not a valid toolkit version" unless @tokens;
                                               my @cols = qw(s1n1 s1s1 s1n2 s1s2 s2n1 s2s1 s2n2 s2s2 s3n1 s3s1 s3n2 s3s2
                                           ext);
@@ -697,9 +698,9 @@ class ProductDimsVersionSortTable(Table):
                                            -- we just reorder the whole group rather than doing
                                            -- something more fine-tuned because it's actually less
                                            -- work for the database and more foolproof.
-                                           
+
                                            UPDATE productdims SET sort_key = new_sort
-                                           FROM  ( SELECT product, version, 
+                                           FROM  ( SELECT product, version,
                                                    row_number() over ( partition by product
                                                        order by sec1_num1 ASC NULLS FIRST,
                                                                sec1_string1 ASC NULLS LAST,
@@ -721,10 +722,10 @@ class ProductDimsVersionSortTable(Table):
                                            WHERE productdims.product = product_resort.product
                                                AND productdims.version = product_resort.version
                                                AND ( sort_key <> new_sort OR sort_key IS NULL );
-                                           
+
                                            RETURN TRUE;
                                            END;$f$;
-                                           
+
                                            CREATE OR REPLACE FUNCTION version_sort_insert_trigger ()
                                            RETURNS TRIGGER
                                            LANGUAGE plpgsql AS $f$
@@ -732,7 +733,7 @@ class ProductDimsVersionSortTable(Table):
                                            -- updates productdims_version_sort and adds a sort_key
                                            -- for sorting, renumbering all products-versions if
                                            -- required
-                                           
+
                                            -- add new sort record
                                            INSERT INTO productdims_version_sort (
                                                id,
@@ -742,62 +743,62 @@ class ProductDimsVersionSortTable(Table):
                                                sec2_num1,    sec2_string1,    sec2_num2,    sec2_string2,
                                                sec3_num1,    sec3_string1,    sec3_num2,    sec3_string2,
                                                extra )
-                                           SELECT 
+                                           SELECT
                                                NEW.id,
                                                NEW.product,
                                                NEW.version,
                                                s1n1,    s1s1,    s1n2,    s1s2,
                                                s2n1,    s2s1,    s2n2,    s2s2,
                                                s3n1,    s3s1,    s3n2,    s3s2,
-                                               ext 
+                                               ext
                                            FROM tokenize_version(NEW.version);
-                                           
+
                                            -- update sort key
                                            PERFORM product_version_sort_number(NEW.product);
-                                           
+
                                            RETURN NEW;
                                            END; $f$;
-                                           
+
                                            CREATE TRIGGER version_sort_insert_trigger AFTER INSERT
                                            ON productdims FOR EACH ROW EXECUTE PROCEDURE version_sort_insert_trigger();
-                                           
+
                                            CREATE OR REPLACE FUNCTION version_sort_update_trigger_before ()
-                                           RETURNS TRIGGER 
+                                           RETURNS TRIGGER
                                            LANGUAGE plpgsql AS $f$
                                            BEGIN
                                            -- updates productdims_version_sort
                                            -- should be called only by a cascading update from productdims
-                                           
+
                                            -- update sort record
                                            SELECT     s1n1,    s1s1,    s1n2,    s1s2,
                                                s2n1,    s2s1,    s2n2,    s2s2,
                                                s3n1,    s3s1,    s3n2,    s3s2,
                                                ext
-                                           INTO 
+                                           INTO
                                                NEW.sec1_num1,    NEW.sec1_string1,    NEW.sec1_num2,    NEW.sec1_string2,
                                                NEW.sec2_num1,    NEW.sec2_string1,    NEW.sec2_num2,    NEW.sec2_string2,
                                                NEW.sec3_num1,    NEW.sec3_string1,    NEW.sec3_num2,    NEW.sec3_string2,
                                                NEW.extra
                                            FROM tokenize_version(NEW.version);
-                                           
+
                                            RETURN NEW;
                                            END; $f$;
-                                           
+
                                            CREATE OR REPLACE FUNCTION version_sort_update_trigger_after ()
-                                           RETURNS TRIGGER 
+                                           RETURNS TRIGGER
                                            LANGUAGE plpgsql AS $f$
                                            BEGIN
                                            -- update sort keys
                                            PERFORM product_version_sort_number(NEW.product);
                                            RETURN NEW;
                                            END; $f$;
-                                           
+
                                            CREATE TRIGGER version_sort_update_trigger_before BEFORE UPDATE
-                                           ON productdims_version_sort FOR EACH ROW 
+                                           ON productdims_version_sort FOR EACH ROW
                                            EXECUTE PROCEDURE version_sort_update_trigger_before();
-                                           
+
                                            CREATE TRIGGER version_sort_update_trigger_after AFTER UPDATE
-                                           ON productdims_version_sort FOR EACH ROW 
+                                           ON productdims_version_sort FOR EACH ROW
                                            EXECUTE PROCEDURE version_sort_update_trigger_after();
                                        """)
 databaseDependenciesForSetup[ProductDimsVersionSortTable] = [ProductDimsTable]
@@ -1738,13 +1739,13 @@ class SignatureProductdimsTable(Table):
                                             RETURNS BOOLEAN
                                             LANGUAGE plpgsql AS $f$
                                             BEGIN
-                                            
-                                            -- this omnibus function is designed to be called by cron once per hour.  
+
+                                            -- this omnibus function is designed to be called by cron once per hour.
                                             -- it updates all of the signature matviews: signature_productdims, signature_build,
                                             -- and signature_first
-                                            
+
                                             -- create a temporary table of recent new reports
-                                            
+
                                             create temporary table signature_build_updates
                                             on commit drop
                                             as select signature, null::int as productdims_id, product::citext as product, version::citext as version, os_name::citext as os_name, build, min(date_processed) as first_report
@@ -1756,23 +1757,23 @@ class SignatureProductdimsTable(Table):
                                             	and version is not null
                                             group by signature, product, version, os_name, build
                                             order by signature, product, version, os_name, build;
-                                            
+
                                             -- update productdims column in signature_build
-                                            	
+
                                             update signature_build_updates set productdims_id = productdims.id
                                             from productdims
                                             where productdims.product = signature_build_updates.product
                                             	and productdims.version = signature_build_updates.version;
-                                            
+
                                             -- remove any garbage rows
-                                            
-                                            DELETE FROM signature_build_updates 
+
+                                            DELETE FROM signature_build_updates
                                             WHERE productdims_id IS NULL
                                             	OR os_name IS NULL
                                             	OR build IS NULL;
-                                            
+
                                             -- insert new rows into signature_build
-                                            
+
                                             insert into signature_build (
                                             	signature, product, version, productdims_id, os_name, build, first_report )
                                             select sbup.signature, sbup.product, sbup.version, sbup.productdims_id,
@@ -1781,9 +1782,9 @@ class SignatureProductdimsTable(Table):
                                             left outer join signature_build
                                             	using ( signature, product, version, os_name, build )
                                             where signature_build.signature IS NULL;
-                                            	
+
                                             -- add new rows to signature_productdims
-                                            
+
                                             insert into signature_productdims ( signature, productdims_id, first_report )
                                             select newsigs.signature, newsigs.productdims_id, newsigs.first_report
                                             from (
@@ -1796,9 +1797,9 @@ class SignatureProductdimsTable(Table):
                                             left outer join signature_productdims oldsigs
                                             using ( signature, productdims_id )
                                             where oldsigs.signature IS NULL;
-                                            
+
                                             -- add new rows to signature_first
-                                            
+
                                             insert into signature_first (signature, productdims_id, osdims_id,
                                             	first_report, first_build )
                                             select sbup.signature, sbup.productdims_id, osdims.id, min(sbup.first_report),
@@ -1813,12 +1814,12 @@ class SignatureProductdimsTable(Table):
                                             		and sbup.productdims_id = sfirst.productdims_id
                                             		and tcbs.osdims_id = sfirst.osdims_id
                                             where sbup.os_name = osdims.os_name
-                                            	and tcbs.window_end BETWEEN  
+                                            	and tcbs.window_end BETWEEN
                                             		( currenttime - ( interval '1 hour' * hours_back ) - (interval '1 hour' * hours_window ) )
                                             		AND ( currenttime - ( interval '1 hour' * hours_back ) )
                                             group by sbup.signature, sbup.productdims_id, osdims.id;
-                                            
-                                            
+
+
                                             RETURN TRUE;
                                             END;
                                             $f$;
@@ -1843,18 +1844,18 @@ class ReportsDuplicatesTable(Table):
                                         creationSql = """
                                            -- create table for possible duplicates
                                            -- not partitioned, for now
-                                           
+
                                            create table reports_duplicates (
                                            	uuid text not null primary key,
                                            	duplicate_of text not null,
                                            	date_processed timestamp not null
                                            );
-                                           
+
                                            create index reports_duplicates_leader on reports_duplicates(duplicate_of);
-                                           
+
                                            -- SQL function to make comparing timestamp deltas a bit
                                            -- less verbose
-                                           
+
                                            create or replace function same_time_fuzzy(
                                            	date1 timestamptz, date2 timestamptz,
                                            	interval_secs1 int, interval_secs2 int
@@ -1873,14 +1874,14 @@ class ReportsDuplicatesTable(Table):
                                            ELSE
                                            	(
                                            		extract ('epoch' from ( $2 - $1 ) ) -
-                                           		( $4 - $3 ) 
+                                           		( $4 - $3 )
                                            	) BETWEEN -60 AND 60
                                            END;
                                            $f$;
-                                           
+
                                            -- function to be called hourly to update
                                            -- possible duplicates table
-                                           
+
                                            create or replace function update_reports_duplicates (
                                            	start_time timestamp, end_time timestamp )
                                            returns int
@@ -1889,12 +1890,12 @@ class ReportsDuplicatesTable(Table):
                                            language plpgsql as $f$
                                            declare new_dups INT;
                                            begin
-                                           
+
                                            -- create a temporary table with the new duplicates
                                            -- for the hour
                                            -- this query contains the duplicate-finding algorithm
                                            -- so it will probably change frequently
-                                           
+
                                            create temporary table new_reports_duplicates
                                            on commit drop
                                            as
@@ -1902,7 +1903,7 @@ class ReportsDuplicatesTable(Table):
                                            	leader.uuid as duplicate_of,
                                            	follower.date_processed
                                            from
-                                           (  
+                                           (
                                            select uuid,
                                                install_age,
                                                uptime,
@@ -1930,41 +1931,41 @@ class ReportsDuplicatesTable(Table):
                                               from reports
                                               where date_processed BETWEEN start_time AND end_time
                                             ) as follower
-                                           JOIN 
+                                           JOIN
                                              ( select uuid, install_age, uptime, client_crash_date
                                                FROM reports
                                                where date_processed BETWEEN start_time AND end_time ) as leader
                                              ON follower.leader_uuid = leader.uuid
-                                           WHERE ( same_time_fuzzy(leader.client_crash_date, follower.client_crash_date, 
-                                                             leader.uptime, follower.uptime) 
-                                           		  OR follower.uptime < 60 
+                                           WHERE ( same_time_fuzzy(leader.client_crash_date, follower.client_crash_date,
+                                                             leader.uptime, follower.uptime)
+                                           		  OR follower.uptime < 60
                                              	  )
                                              AND
-                                           	same_time_fuzzy(leader.client_crash_date, follower.client_crash_date, 
+                                           	same_time_fuzzy(leader.client_crash_date, follower.client_crash_date,
                                                              leader.install_age, follower.install_age)
                                              AND follower.uuid <> leader.uuid;
-                                             
+
                                            -- insert a copy of the leaders
-                                             
+
                                            insert into new_reports_duplicates
                                            select uuid, uuid, date_processed
                                            from reports
-                                           where uuid IN ( select duplicate_of 
+                                           where uuid IN ( select duplicate_of
                                            	from new_reports_duplicates )
                                            	and date_processed BETWEEN start_time AND end_time;
-                                             
+
                                            analyze new_reports_duplicates;
-                                           
+
                                            select count(*) into new_dups from new_reports_duplicates;
-                                           
+
                                            -- insert new duplicates into permanent table
-                                           
+
                                            insert into reports_duplicates (uuid, duplicate_of, date_processed )
-                                           select new_reports_duplicates.* 
+                                           select new_reports_duplicates.*
                                            from new_reports_duplicates
                                            	left outer join reports_duplicates USING (uuid)
                                            where reports_duplicates.uuid IS NULL;
-                                           
+
                                            -- done return number of dups found and exit
                                            RETURN new_dups;
                                            end;$f$;

@@ -53,13 +53,13 @@
 			<?php } ?>
 			</select>
 			</li>
-		
+			<li class="version_select">
 			<select id="product_version_select" <?php if (isset($error) && $error == 1) echo 'disabled'?>>
-				<optgroup>
+				<optgroup label=" ">
 					<option value="Current Versions">Current Versions</option>
 				</optgroup>
                 <?php if (isset($featured_versions) && !empty($featured_versions)) { ?>
-				    <optgroup>
+				    <optgroup label=" ">
 				    	<?php foreach ($featured_versions as $featured_version) { ?>
                             <option value="<?php out::H($featured_version->version); ?>"
                             	<?php if ($featured_version->version == $chosen_version['version']) echo 'SELECTED'; ?>
@@ -68,7 +68,7 @@
 				    </optgroup>
 			    <?php } ?>
 			    <?php if (isset($unfeatured_versions) && !empty($unfeatured_versions)) { ?>
-				    <optgroup>
+				    <optgroup label=" ">
 				    	<?php foreach ($unfeatured_versions as $unfeatured_version) { ?>
                             <option value="<?php out::H($unfeatured_version->version); ?>"
                             	<?php if ($unfeatured_version->version == $chosen_version['version']) echo 'SELECTED'; ?>
@@ -77,21 +77,21 @@
 				    </optgroup>
 				<?php } ?>
 			</select>
-		
+			</li>
             <li>
                 <label>Report:</label>
                 <select id="report_select" <?php if (isset($error) && $error == 1) echo 'disabled'?>>
-                    <optgroup>
+                    <optgroup label=" ">
                         <option <?php if (isset($nav_selection) && $nav_selection == 'overview') echo 'selected'; ?> 
 							value="<?= url::base() ?>products/<?= $chosen_version['product'] ?><?php if (isset($chosen_version['version']) && !empty($chosen_version['version'])) echo '/versions/'.html::specialchars($chosen_version['version']); ?>">Overview</option>
                     </optgroup>
-                    <optgroup>
+                    <optgroup label=" ">
                         <option <?php if (isset($nav_selection) && $nav_selection == 'crashes_user') echo 'selected'; ?>
-							value="<?= url::base() ?>daily?p=<?= $chosen_version['product'] ?>&v[]=<?= $chosen_version['version'] ?>">Crashes per User</option>
+							value="<?= url::base() ?>daily?p=<?= $chosen_version['product'] ?>&amp;v[]=<?= $chosen_version['version'] ?>">Crashes per User</option>
                         <option <?php if (isset($nav_selection) && $nav_selection == 'nightlies') echo 'selected'; ?>
 							value="<?= url::base() ?>products/<?= $chosen_version['product'] ?><?php if (isset($chosen_version['version']) && !empty($chosen_version['version'])) echo '/versions/'.html::specialchars($chosen_version['version']); ?>/builds">Nightly Builds</option>
                     </optgroup>
-                    <optgroup>
+                    <optgroup label=" ">
                         <option <?php if (isset($nav_selection) && $nav_selection == 'top_changers') echo 'selected'; ?>
                             value="<?= url::base() ?>products/<?= $chosen_version['product'] ?><?php if (isset($chosen_version['version']) && !empty($chosen_version['version'])) echo '/versions/'.html::specialchars($chosen_version['version']); ?>/topchangers">Top Changers</option>	
                         <option <?php if (isset($nav_selection) && $nav_selection == 'top_crashes') echo 'selected'; ?>
@@ -137,6 +137,7 @@
 
 
     	<div class="login">
+		<ul>
             <?php if( $auth_is_active && Auth::instance()->logged_in() ) {?>
                 <li><a><?php echo html::specialchars(Auth::instance()->get_user()); ?></a></li>
                 <li><a href="<?php echo url::site(); ?>admin">Admin</a></li>
@@ -146,6 +147,7 @@
             <?php } else { ?>
                 <li><a href="<?= url::site('auth/login', Kohana::config('auth.proto')) ?>">Log In</a></li>
             <?php } ?>
+		</ul>
     	</div>
     </div>
 
