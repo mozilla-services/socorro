@@ -5,13 +5,13 @@
             <?php out::H($version); ?>
         <?php } ?>
     </title>
+<?php echo html::stylesheet(array(
+		'css/daily.css',				
+	), array('screen', 'screen')); ?>
 <?php slot::end() ?>
 
 
 <?php
-echo html::stylesheet(array(
-		'css/daily.css',				
-	), array('screen', 'screen'));
 echo '<script>var data = ' . json_encode($graph_data) . '</script>';
 echo html::script(array(
 		'js/flot-0.7/jquery.flot.pack.js',

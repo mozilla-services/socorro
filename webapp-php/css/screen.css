@@ -382,6 +382,10 @@ html.production .page-footer { margin-top: 80px; }
 			padding-left: 0;
 			border-left: 0;
 			}
+		.version-nav .filter li.version_select {
+			padding-left:0;
+			border-left: 0;
+		}
 		.version-nav .filter optgroup {
 			border-top: 1px solid #ccc;
 			padding: .5em 0;
