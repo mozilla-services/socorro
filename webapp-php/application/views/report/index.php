@@ -274,7 +274,7 @@ if (is_null($report->signature) || empty($report->signature)) { ?>
 
     <div id="modules">
         <?php if (count($report->modules)): ?>
-        <table class="list" id="modules-list">
+        <table class="list tablesorter" id="modules-list">
 	<thead>
             <tr>
                 <th>Filename</th>

@@ -167,7 +167,13 @@ class Controller extends Controller_Core {
         
         foreach ($pairs as $i) {
             if (!$i) continue;
-            list($name, $value) = explode('=', $i, 2);
+            $pair = explode('=', $i, 2);
+            if (count($pair) == 2){
+                list($name, $value) = $pair;
+            } else {
+                $name = $i;
+                $value = "";
+            }
             $value_clean = trim(
                                $this->input->xss_clean(
                                    urldecode($value)));
