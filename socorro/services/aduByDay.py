@@ -77,7 +77,7 @@ class AduByDay(webapi.JsonServiceBase):
     else:
       # anything other than 'crash' or 'hang' will return all crashes
       # hang normalized are avoided so as not to count some hang ids multiple times
-      parameters.report_type_phrase = "report_type IN ('%s', '%s', '%s', '%s', '%s')" % (
+      parameters.report_type_phrase = "report_type IN ('%s', '%s', '%s', '%s')" % (
         adu_codes.CRASH_BROWSER,
         adu_codes.HANG_PLUGIN,
         adu_codes.CONTENT,
