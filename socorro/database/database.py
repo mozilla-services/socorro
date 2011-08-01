@@ -27,6 +27,7 @@ class CannotConnectToDatabase(Exception):
 # this are the exceptions that can be raised during database transactions
 # that mean trouble in the database server or that the server is offline.
 exceptions_eligible_for_retry = (psycopg2.OperationalError,
+                                 psycopg2.InterfaceError,
                                  CannotConnectToDatabase)
 
 #-----------------------------------------------------------------------------------------------------------------
