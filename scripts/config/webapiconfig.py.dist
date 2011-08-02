@@ -31,7 +31,7 @@ wsgiInstallation.doc = 'True or False, this app is installed under WSGI'
 wsgiInstallation.default = False
 
 # Implementation class for the Search API
-# Can be socorro.search.elasticsearch.ElasticSearchAPI or socorro.search.postgres.PostgresAPI
+# Can be socorro.search.elasticsearch.ElasticSearchAPI or socorro.search.postgresql.PostgresAPI
 searchImplClass = cm.Option()
 searchImplClass.doc = 'String, the name of the class that implement the Search API.'
 searchImplClass.default = 'socorro.search.elasticsearch.ElasticSearchAPI'
