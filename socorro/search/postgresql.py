@@ -3,11 +3,11 @@ import logging
 from datetime import timedelta, datetime
 
 import socorro.lib.util as util
-import socorro.lib.datetimeutil as dtutil
 import socorro.database.database as db
 import searchapi as sapi
 
 logger = logging.getLogger("webapi")
+
 
 class PostgresAPI(sapi.SearchAPI):
     """
@@ -35,7 +35,8 @@ class PostgresAPI(sapi.SearchAPI):
         See https://wiki.mozilla.org/Socorro/ElasticSearch_API#Query
 
         """
-        raise NotImplementedError("Method query() is not implemented for PostgreSQL. ")
+        raise NotImplementedError("Method query() is not implemented "
+                                  "for PostgreSQL. ")
 
     def search(self, types, **kwargs):
         """
