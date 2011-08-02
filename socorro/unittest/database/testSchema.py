@@ -92,6 +92,7 @@ def setup_module():
     schema.AlexaTopsitesTable:[False,set(['alexa_topsites'])],
     schema.RawAduTable:[False,set(['raw_adu'])],
     schema.BuildsTable:[False,set(['builds'])],
+    schema.ReleasesRawTable:[False,set(['releases_raw'])],
     schema.DailyCrashesTable:[False,set(['daily_crashes', 'productdims','release_enum'])],
     schema.EmailCampaignsTable:[False,set(['email_campaigns'])],
     schema.EmailContactsTable:[False,set(['email_contacts'])],
