@@ -58,13 +58,3 @@
     </div>
 </div>
     
-  <script type="text/javascript">//<![CDATA[
-  var SocTCByURL = {};
-  SocTCByURL.urls = <?php echo json_encode( $top_crashers ); ?>;
-  SocTCByURL.domains = [
-		      {domain: 'www.myspace.com', count: 1200,
-		       urls: [SocTCByURL.urls[1], SocTCByURL.urls[2]]},
-		      {domain: 'www.youtube.com', count: 300, urls:
-		      [SocTCByURL.urls[0]]}
-			];
-//]]></script>
