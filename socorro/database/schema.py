@@ -1445,6 +1445,32 @@ class BuildsTable(Table):
 databaseDependenciesForSetup[BuildsTable] = []
 
 #=================================================================================================================
+class ReleasesRawTable(Table):
+  """Define the table 'releases_raw'"""
+  #-----------------------------------------------------------------------------------------------------------------
+  def __init__ (self, logger, **kwargs):
+    super(ReleasesRawTable, self).__init__(name = "releases_raw", logger=logger,
+                                        creationSql = """
+                                            CREATE TABLE releases_raw (
+                                                product_name citext not null,
+                                                version text,
+                                                build_id numeric,
+                                                build_type text,
+                                                beta_number int,
+                                                platform text
+                                            );
+                                        """)
+    self.insertSql = """INSERT INTO TABLENAME (product, version, buildid, buildtype, beta_number, platform) values (%s, %s, %s, %s, %s, %s )"""
+
+  #-----------------------------------------------------------------------------------------------------------------
+  def updateDefinition(self, databaseCursor):
+    if socorro_pg.tablesMatchingPattern(self.name) == []:
+      #this table doesn't exist yet, create it
+      self.create(databaseCursor)
+
+databaseDependenciesForSetup[ReleasesRawTable] = []
+
+#=================================================================================================================
 class DailyCrashesTable(Table):
   """Define the table 'daily_crashes'
      Notes:

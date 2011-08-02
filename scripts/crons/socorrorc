@@ -44,14 +44,14 @@ function unlock {
 }
 
 function fatal {
-  if [ "$#" != "1" ]
+  if [ "$#" != "2" ]
   then
     echo "syntax: fatal <exit_code> <message>"
     return 1
   fi
 
-  exit_code=$?
-  message=$?
+  exit_code=$1
+  message=$2
 
   if [ "$exit_code" != 0 ]
   then

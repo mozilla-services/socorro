@@ -110,6 +110,10 @@ class SearchAPI(object):
         args["from_date"] = SearchAPI.format_date(args["from_date"]) or lastweek
         args["to_date"] = SearchAPI.format_date(args["to_date"]) or now
 
+        # Do not search in the future
+        if args["to_date"] > now:
+            args["to_date"] = now
+
         # Securing fields
         args["fields"] = SearchAPI.secure_fields(args["fields"])
 

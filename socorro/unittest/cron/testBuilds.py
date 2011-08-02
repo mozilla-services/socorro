@@ -38,6 +38,21 @@ def makeBogusBuilds(connection, cursor):
       print "Exception at makeBogusBuilds() buildsTable.insert", type(x),x
       connection.rollback()
 
+  # (product, version, platform, buildid, build_type, beta_number)
+  fakeReleaseBuildsData = [ ("PRODUCTNAME1", "VERSIONAME1", "PLATFORMNAME1", "1", "BUILDTYPE1", "1"),
+                            ("PRODUCTNAME2", "VERSIONAME2", "PLATFORMNAME2", "2", "BUILDTYPE2", "2"),
+                            ("PRODUCTNAME3", "VERSIONAME3", "PLATFORMNAME3", "3", "BUILDTYPE3", "3"),
+                            ("PRODUCTNAME4", "VERSIONAME4", "PLATFORMNAME4", "4", "BUILDTYPE4", "4"),
+                          ]
+
+  for b in fakeReleaseBuildsData:
+    try:
+      cursor.execute("INSERT INTO releases_raw (product_name, version, platform, build_id, build_type, beta_number) values (%s, %s, %s, %s, %s, %s)", b)
+      connection.commit()
+    except Exception, x:
+      print "Exception at makeBogusBuilds() releases_rawTable.insert", type(x),x
+      connection.rollback()
+
 
 class Me:
   """
@@ -131,19 +146,30 @@ class TestBuilds(unittest.TestCase):
     self.logger.clear()
 
 
-  def do_buildExists(self, d, correct):
+  def do_nightlyBuildExists(self, d, correct):
     me.cur = me.conn.cursor(cursor_factory=psy.LoggingCursor)
     me.cur.setLogger(me.fileLogger)
 
-    actual = builds.buildExists(me.cur, d[0], d[1], d[2], d[3])
+    actual = builds.nightlyBuildExists(me.cur, d[0], d[1], d[2], d[3])
     assert actual == correct, "expected %s, got %s " % (correct, actual)
 
+  def do_releaseBuildExists(self, d, correct):
+    me.cur = me.conn.cursor(cursor_factory=psy.LoggingCursor)
+    me.cur.setLogger(me.fileLogger)
+
+    actual = builds.releaseBuildExists(me.cur, d[0], d[1], d[2], d[3], d[4], d[5])
+    assert actual == correct, "expected %s, got %s " % (correct, actual)
 
   def test_buildExists(self):
     d = ( "failfailfail", "VERSIONAME1", "PLATFORMNAME1", "1" )
-    self.do_buildExists(d, None)
+    self.do_nightlyBuildExists(d, False)
     d = ( "PRODUCTNAME1", "VERSIONAME1", "PLATFORMNAME1", "1" )
-    self.do_buildExists(d, True)
+    self.do_nightlyBuildExists(d, True)
+
+    d = ( "failfailfail", "VERSIONAME1", "1", "BUILDTYPE1", "PLATFORMNAME1", "1" )
+    self.do_releaseBuildExists(d, False)
+    r = ( "PRODUCTNAME1", "VERSIONAME1", "1", "BUILDTYPE1", "PLATFORMNAME1", "1" )
+    self.do_releaseBuildExists(r, True)
 
 
   def test_fetchBuild(self):
@@ -151,6 +177,7 @@ class TestBuilds(unittest.TestCase):
     fake_response_contents_2 = '22222'
     fake_response_contents = '%s %s' % (fake_response_contents_1, fake_response_contents_2)
     fake_urllib2_url = 'http://www.example.com/'
+    self.config.base_url = fake_urllib2_url
 
     fakeResponse = exp.DummyObjectWithExpectations()
     fakeResponse.code = 200
@@ -164,6 +191,7 @@ class TestBuilds(unittest.TestCase):
       actual = builds.fetchBuild(fake_urllib2_url, fakeUrllib2)
       assert actual[0] == fake_response_contents_1, "expected %s, got %s " % (fake_response_contents_1, actual)
       assert actual[1] == fake_response_contents_2, "expected %s, got %s " % (fake_response_contents_2, actual)
+
     except Exception, x:
       print "Exception in test_fetchBuild() ... Error: ",type(x),x
       socorro.lib.util.reportExceptionAndAbort(me.fileLogger)
@@ -178,7 +206,7 @@ class TestBuilds(unittest.TestCase):
 
     try:
       builds.insertBuild(me.cur, 'PRODUCTNAME5', 'VERSIONAME5', 'PLATFORMNAME5', '5', 'CHANGESET5', 'APP_CHANGESET_2_5', 'APP_CHANGESET_2_5', 'FILENAME5')
-      actual = builds.buildExists(me.cur, 'PRODUCTNAME5', 'VERSIONAME5', 'PLATFORMNAME5', '5')
+      actual = builds.nightlyBuildExists(me.cur, 'PRODUCTNAME5', 'VERSIONAME5', 'PLATFORMNAME5', '5')
       assert actual == 1, "expected 1, got %s" % (actual)
     except Exception, x:
       print "Exception in do_insertBuild() ... Error: ",type(x),x
@@ -186,6 +214,22 @@ class TestBuilds(unittest.TestCase):
 
     me.cur.connection.rollback()
 
+  def test_insertReleaseBuild(self):
+    me.cur = me.conn.cursor(cursor_factory=psy.LoggingCursor)
+    me.cur.setLogger(me.fileLogger)
+
+    me.cur.execute("DELETE FROM releases_raw WHERE product_name = 'PRODUCTNAME5'")
+    me.cur.connection.commit()
+
+    try:
+      builds.insertReleaseBuild(me.cur, 'PRODUCTNAME5', 'VERSIONAME5', '5', 'BUILDTYPE5', '5', 'PLATFORMNAME5')
+      actual = builds.releaseBuildExists(me.cur, 'PRODUCTNAME5', 'VERSIONAME5', '5', 'BUILDTYPE5', 'PLATFORMNAME5', '5')
+      assert actual == 1, "expected 1, got %s" % (actual)
+    except Exception, x:
+      print "Exception in do_insertBuild() ... Error: ",type(x),x
+      socorro.lib.util.reportExceptionAndAbort(me.fileLogger)
+
+    me.cur.connection.rollback()
 
   def test_fetchTextFiles(self):
     self.config.base_url = 'http://www.example.com/'
@@ -212,9 +256,9 @@ class TestBuilds(unittest.TestCase):
 
     fakeUrllib2 = exp.DummyObjectWithExpectations()
     fakeUrllib2.expect('urlopen', (fake_response_url,), {}, fakeResponse)
-    
+
     try:
-      actual = builds.fetchTextFiles(self.config, fake_product_uri, fakeUrllib2) 
+      actual = builds.fetchTextFiles(self.config, fake_product_uri, self.config.platforms, builds.buildParser(), fakeUrllib2) 
       assert actual['url'] == fake_response_url, "expected %s, got %s " % (fake_response_url, actual['url'])
       assert actual['builds'][0] == fake_response_success_1, "expected %s, got %s " % (fake_response_success_1, actual['builds'][0])
       assert actual['builds'][1] == fake_response_success_2, "expected %s, got %s " % (fake_response_success_2, actual['builds'][1])

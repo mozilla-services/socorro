@@ -27,18 +27,73 @@ class ElasticSearchAPI(sapi.SearchAPI):
         super(ElasticSearchAPI, self).__init__(config)
         self.http = httpc.HttpClient(config.elasticSearchHostname, config.elasticSearchPort)
 
-    def query(self, types, jsonQuery):
+        # A simulation of cache, good enough for the current needs,
+        # but wouldn't mind to be replaced.
+        self.cache = {}
+
+    def query(self, from_date, to_date, json_query):
         """
         Send a query directly to ElasticSearch and return the result.
         See https://wiki.mozilla.org/Socorro/ElasticSearch_API#Query
 
         """
-        uri = "/socorro/_search"
+        # Default dates
+        now = datetime.today()
+        lastweek = now - timedelta(7)
 
-        with self.http:
-            httpResponse = self.http.post(uri, jsonQuery)
+        from_date = ElasticSearchAPI.format_date(from_date) or lastweek
+        to_date = ElasticSearchAPI.format_date(to_date) or now
 
-        return ( httpResponse, "text/json" )
+        # Create the indexes to use for querying.
+        daterange = []
+        delta_day = to_date - from_date
+        for delta in xrange(0, delta_day.days + 1):
+            day = from_date + timedelta(delta)
+            index = "socorro_%s" % day.strftime("%y%m%d")
+            # Cache protection for limitating the number of HTTP calls
+            if index not in self.cache or not self.cache[index]:
+                daterange.append(index)
+
+        can_return = False
+
+        # -
+        # This code is here to avoid failing queries caused by missing
+        # indexes. It should not happen on prod, but doing this makes
+        # sure users will never see a 500 Error because of this
+        # eventuality.
+        # -
+
+        # Iterate until we can return an actual result and not an error
+        while not can_return:
+            if not daterange:
+                http_response = "{}"
+                break
+
+            datestring = ",".join(daterange)
+            uri = "/%s/_search" % datestring
+
+            with self.http:
+                http_response = self.http.post(uri, json_query)
+
+            # If there has been an error, then we get a dict instead of some json.
+            if type(http_response) is dict:
+                data = http_response["error"]["data"]
+
+                # If an index is missing, try to remove it from the list of indexes and retry.
+                if http_response["error"]["code"] == 404 and data.find("IndexMissingException") >= 0:
+                    index = data[data.find("[[")+2:data.find("]")]
+
+                    # Cache protection for limitating the number of HTTP calls
+                    self.cache[index] = True
+
+                    try:
+                        daterange.remove(index)
+                    except Exception:
+                        raise
+            else:
+                can_return = True
+
+        return ( http_response, "text/json" )
 
     def search(self, types, **kwargs):
         """
@@ -58,38 +113,41 @@ class ElasticSearchAPI(sapi.SearchAPI):
             # No need to get crashes, we only want signatures
             query["size"] = 0
             query["from"] = 0
-            query["facets"] = self.generate_signatures_facet(params["result_offset"] + params["result_number"])
+            query["facets"] = ElasticSearchAPI.generate_signatures_facet(params["result_offset"] + params["result_number"])
 
         json_query = json.dumps(query)
-
         print json_query
-
         logger.debug("Query the crashes or signatures: %s" % json_query)
+
+        es_result = self.query(params["from_date"], params["to_date"], json_query)
 
         # Executing the query and returning the result
         if types != "signatures":
-            return self.query("_all", json_query)
+            return es_result
         else:
-            es_result = self.query("_all", json_query)
             try:
                 es_data = json.loads(es_result[0])
             except Exception:
                 logger.debug("ElasticSearch returned something wrong: %s" % es_result[0])
                 raise
 
-            signature_count = len(es_data["facets"]["signatures"]["terms"])
+            # Making sure we have a real result before using it
+            if not es_data:
+                signature_count = 0
+            else:
+                signature_count = len(es_data["facets"]["signatures"]["terms"])
+
             maxsize = min(signature_count, params["result_number"] + params["result_offset"])
 
-            signatures = self.generate_signatures_from_facet_results(es_data["facets"], maxsize)
-
-            # If there are results for this page
             if maxsize > params["result_offset"]:
+                signatures = ElasticSearchAPI.generate_signatures_from_facet_results(es_data["facets"], maxsize, self.context.platforms)
+
                 count_by_os_query = query
-                count_by_os_query["facets"] = self.generate_count_by_signatures_os_facets(signatures, params["result_offset"], maxsize)
+                count_by_os_query["facets"] = ElasticSearchAPI.generate_count_by_signatures_os_facets(signatures, params["result_offset"], maxsize)
                 count_by_os_query_json = json.dumps(count_by_os_query)
                 logger.debug("Query the OS by signature: %s" % count_by_os_query_json)
 
-                count_result = self.query("_all", count_by_os_query_json)
+                count_result = self.query(params["from_date"], params["to_date"], count_by_os_query_json)
                 try:
                     count_data = json.loads(count_result[0])
                 except Exception:
@@ -97,20 +155,7 @@ class ElasticSearchAPI(sapi.SearchAPI):
                     raise
 
                 count_sign = count_data["facets"]
-
-                # Transform the results into something we can return
-                for i in xrange(params["result_offset"], maxsize):
-                    # OS count
-                    for term in count_sign[signatures[i]["signature"]]["terms"]:
-                        for os in self.context.platforms:
-                            if term["term"] == os["id"]:
-                                signatures[i]["is_"+os["id"]] = term["count"]
-                    # Hang count
-                    sign_hang = "_".join((signatures[i]["signature"], "hang"))
-                    signatures[i]["numhang"] = count_sign[sign_hang]["count"]
-                    # Plugin count
-                    sign_plugin = "_".join((signatures[i]["signature"], "plugin"))
-                    signatures[i]["numplugin"] = count_sign[sign_plugin]["count"]
+                signatures = ElasticSearchAPI.generate_signatures_os_counts_from_count_results(signatures, count_sign, params, maxsize, self.context.platforms)
 
             results = {
                 "total" : signature_count,
@@ -137,7 +182,8 @@ class ElasticSearchAPI(sapi.SearchAPI):
         """
         return None
 
-    def generate_signatures_facet(self, size):
+    @staticmethod
+    def generate_signatures_facet(size):
         """
         Generate the facets for the search query.
 
@@ -158,7 +204,8 @@ class ElasticSearchAPI(sapi.SearchAPI):
 
         return facets
 
-    def generate_signatures_from_facet_results(self, facets, maxsize):
+    @staticmethod
+    def generate_signatures_from_facet_results(facets, maxsize, platforms):
         """
         Generate the result of search by signature from the facets ES returns.
 
@@ -173,14 +220,15 @@ class ElasticSearchAPI(sapi.SearchAPI):
                 "signature" : signatures[i]["term"],
                 "count" : signatures[i]["count"]
             })
-            for platform in self.context.platforms:
+            for platform in platforms:
                 results[i][ "_".join(("is", platform["id"])) ] = 0
 
             sign_list[ signatures[i]["term"] ] = results[i]
 
         return results
 
-    def generate_count_by_signatures_os_facets(self, signatures, result_offset, maxsize):
+    @staticmethod
+    def generate_count_by_signatures_os_facets(signatures, result_offset, maxsize):
         """
         Generate the facets to count the appearance in each OS for each signature.
 
@@ -222,6 +270,28 @@ class ElasticSearchAPI(sapi.SearchAPI):
             }
 
         return facets
+
+    @staticmethod
+    def generate_signatures_os_counts_from_count_results(signatures, count_sign, params, maxsize, platforms):
+        """
+        Generate the complementary information about signatures
+        (count by OS, number of plugins and of hang).
+
+        """
+        # Transform the results into something we can return
+        for i in xrange(params["result_offset"], maxsize):
+            # OS count
+            for term in count_sign[signatures[i]["signature"]]["terms"]:
+                for os in platforms:
+                    if term["term"] == os["id"]:
+                        signatures[i]["is_"+os["id"]] = term["count"]
+            # Hang count
+            sign_hang = "_".join((signatures[i]["signature"], "hang"))
+            signatures[i]["numhang"] = count_sign[sign_hang]["count"]
+            # Plugin count
+            sign_plugin = "_".join((signatures[i]["signature"], "plugin"))
+            signatures[i]["numplugin"] = count_sign[sign_plugin]["count"]
+        return signatures
 
     @staticmethod
     def build_query_from_params(params):
@@ -269,7 +339,7 @@ class ElasticSearchAPI(sapi.SearchAPI):
 
         filters["and"].append({
                 "range" : {
-                    "client_crash_date" : {
+                    "date_processed" : {
                         "from" : params["from_date"],
                         "to" : params["to_date"]
                     }
