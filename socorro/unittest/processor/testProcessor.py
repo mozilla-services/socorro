@@ -979,7 +979,7 @@ expected_report_dict =  {'client_crash_date':
                          'last_crash': 439,
                          'date_processed': dt.datetime(2011, 2, 15, 1, 0),
                          'url': 'http://mozilla.com',
-                         'releasechannel': 'release'}
+                         'release_channel': 'release'}
 
 def testInsertReportIntoDatabase01():
     """testInsertReportIntoDatabase01: success"""

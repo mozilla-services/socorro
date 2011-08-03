@@ -801,9 +801,9 @@ class Processor(object):
     except:
       last_crash = None
 
-    releasechannel = jsonDocument.get('ReleaseChannel','unknown')
+    release_channel = jsonDocument.get('ReleaseChannel','unknown')
 
-    newReportRecordAsTuple = (uuid, crash_date, date_processed, product, version, buildID, url, install_age, last_crash, uptime, email, build_date, user_id, user_comments, app_notes, distributor, distributor_version,None,None,None,hangid,process_type,releasechannel)
+    newReportRecordAsTuple = (uuid, crash_date, date_processed, product, version, buildID, url, install_age, last_crash, uptime, email, build_date, user_id, user_comments, app_notes, distributor, distributor_version,None,None,None,hangid,process_type,release_channel)
     newReportRecordAsDict = dict(x for x in zip(self.reportsTable.columns, newReportRecordAsTuple))
     if not product or not version:
       msgTemplate = "Skipping report: Missing product&version: ["+", ".join(["%s:%%s"%x for x in self.reportsTable.columns])+"]"
