@@ -1,6 +1,12 @@
 import httplib
 
+
 class HttpClient(object):
+    """
+    Class for doing HTTP request to any server.
+    Mainly used for ElasticSearch. Encapsulate python's httplib.
+
+    """
 
     def __init__(self, host, port):
         """
@@ -33,6 +39,7 @@ class HttpClient(object):
     def get(self, url):
         """
         Send a HTTP GET request to a URL and return the result.
+
         """
         self.conn.request("GET", url)
         return self._process_response()
@@ -40,6 +47,7 @@ class HttpClient(object):
     def post(self, url, data):
         """
         Send a HTTP POST request to a URL and return the result.
+
         """
         headers = {
             "Content-type": "application/x-www-form-urlencoded",

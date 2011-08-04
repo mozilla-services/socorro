@@ -4,9 +4,7 @@ import urllib
 
 from datetime import timedelta, datetime
 
-import socorro.lib.datetimeutil as dtutil
 import socorro.lib.httpclient as httpc
-import socorro.lib.util as util
 import searchapi as sapi
 
 logger = logging.getLogger("webapi")
@@ -25,7 +23,8 @@ class ElasticSearchAPI(sapi.SearchAPI):
 
         """
         super(ElasticSearchAPI, self).__init__(config)
-        self.http = httpc.HttpClient(config.elasticSearchHostname, config.elasticSearchPort)
+        self.http = httpc.HttpClient(config.elasticSearchHostname,
+                                     config.elasticSearchPort)
 
         # A simulation of cache, good enough for the current needs,
         # but wouldn't mind to be replaced.
@@ -75,13 +74,16 @@ class ElasticSearchAPI(sapi.SearchAPI):
             with self.http:
                 http_response = self.http.post(uri, json_query)
 
-            # If there has been an error, then we get a dict instead of some json.
+            # If there has been an error,
+            # then we get a dict instead of some json.
             if type(http_response) is dict:
                 data = http_response["error"]["data"]
 
-                # If an index is missing, try to remove it from the list of indexes and retry.
-                if http_response["error"]["code"] == 404 and data.find("IndexMissingException") >= 0:
-                    index = data[data.find("[[")+2:data.find("]")]
+                # If an index is missing,
+                # try to remove it from the list of indexes and retry.
+                if (http_response["error"]["code"] == 404 and
+                    data.find("IndexMissingException") >= 0):
+                    index = data[data.find("[[") + 2:data.find("]")]
 
                     # Cache protection for limitating the number of HTTP calls
                     self.cache[index] = True
@@ -93,7 +95,7 @@ class ElasticSearchAPI(sapi.SearchAPI):
             else:
                 can_return = True
 
-        return ( http_response, "text/json" )
+        return (http_response, "text/json")
 
     def search(self, types, **kwargs):
         """
@@ -113,13 +115,15 @@ class ElasticSearchAPI(sapi.SearchAPI):
             # No need to get crashes, we only want signatures
             query["size"] = 0
             query["from"] = 0
-            query["facets"] = ElasticSearchAPI.generate_signatures_facet(params["result_offset"] + params["result_number"])
+            query["facets"] = ElasticSearchAPI.get_signatures_facet(
+                            params["result_offset"] + params["result_number"])
 
         json_query = json.dumps(query)
-        print json_query
-        logger.debug("Query the crashes or signatures: %s" % json_query)
+        logger.debug("Query the crashes or signatures: %s", json_query)
 
-        es_result = self.query(params["from_date"], params["to_date"], json_query)
+        es_result = self.query(params["from_date"],
+                               params["to_date"],
+                               json_query)
 
         # Executing the query and returning the result
         if types != "signatures":
@@ -128,7 +132,8 @@ class ElasticSearchAPI(sapi.SearchAPI):
             try:
                 es_data = json.loads(es_result[0])
             except Exception:
-                logger.debug("ElasticSearch returned something wrong: %s" % es_result[0])
+                logger.debug("ElasticSearch returned something wrong: %s",
+                             es_result[0])
                 raise
 
             # Making sure we have a real result before using it
@@ -137,29 +142,46 @@ class ElasticSearchAPI(sapi.SearchAPI):
             else:
                 signature_count = len(es_data["facets"]["signatures"]["terms"])
 
-            maxsize = min(signature_count, params["result_number"] + params["result_offset"])
+            maxsize = min(signature_count,
+                          params["result_number"] + params["result_offset"])
 
             if maxsize > params["result_offset"]:
-                signatures = ElasticSearchAPI.generate_signatures_from_facet_results(es_data["facets"], maxsize, self.context.platforms)
+                signatures = ElasticSearchAPI.get_signatures(
+                                                es_data["facets"],
+                                                maxsize,
+                                                self.context.platforms)
 
                 count_by_os_query = query
-                count_by_os_query["facets"] = ElasticSearchAPI.generate_count_by_signatures_os_facets(signatures, params["result_offset"], maxsize)
+                facets = ElasticSearchAPI.get_count_facets(
+                                            signatures,
+                                            params["result_offset"],
+                                            maxsize)
+                count_by_os_query["facets"] = facets
                 count_by_os_query_json = json.dumps(count_by_os_query)
-                logger.debug("Query the OS by signature: %s" % count_by_os_query_json)
+                logger.debug("Query the OS by signature: %s",
+                             count_by_os_query_json)
 
-                count_result = self.query(params["from_date"], params["to_date"], count_by_os_query_json)
+                count_result = self.query(params["from_date"],
+                                          params["to_date"],
+                                          count_by_os_query_json)
                 try:
                     count_data = json.loads(count_result[0])
                 except Exception:
-                    logger.debug("ElasticSearch returned something wrong: %s" % count_result[0])
+                    logger.debug("ElasticSearch returned something wrong: %s",
+                                 count_result[0])
                     raise
 
                 count_sign = count_data["facets"]
-                signatures = ElasticSearchAPI.generate_signatures_os_counts_from_count_results(signatures, count_sign, params, maxsize, self.context.platforms)
+                signatures = ElasticSearchAPI.get_counts(
+                                                signatures,
+                                                count_sign,
+                                                params,
+                                                maxsize,
+                                                self.context.platforms)
 
             results = {
-                "total" : signature_count,
-                "hits" : []
+                "total": signature_count,
+                "hits": []
             }
 
             for i in xrange(params["result_offset"], maxsize):
@@ -183,21 +205,21 @@ class ElasticSearchAPI(sapi.SearchAPI):
         return None
 
     @staticmethod
-    def generate_signatures_facet(size):
+    def get_signatures_facet(size):
         """
         Generate the facets for the search query.
 
         """
         # There is no way to get all the results with ES,
         # and we need them to count the total.
-        MAXINT = 2**31-1
+        MAXINT = 2 ** 31 - 1
 
         # Get distinct signatures and count
         facets = {
-            "signatures" : {
-                "terms" : {
-                    "field" : "signature.full",
-                    "size" : MAXINT
+            "signatures": {
+                "terms": {
+                    "field": "signature.full",
+                    "size": MAXINT
                 }
             }
         }
@@ -205,7 +227,7 @@ class ElasticSearchAPI(sapi.SearchAPI):
         return facets
 
     @staticmethod
-    def generate_signatures_from_facet_results(facets, maxsize, platforms):
+    def get_signatures(facets, maxsize, platforms):
         """
         Generate the result of search by signature from the facets ES returns.
 
@@ -217,20 +239,20 @@ class ElasticSearchAPI(sapi.SearchAPI):
 
         for i in xrange(maxsize):
             results.append({
-                "signature" : signatures[i]["term"],
-                "count" : signatures[i]["count"]
+                "signature": signatures[i]["term"],
+                "count": signatures[i]["count"]
             })
             for platform in platforms:
-                results[i][ "_".join(("is", platform["id"])) ] = 0
+                results[i]["_".join(("is", platform["id"]))] = 0
 
-            sign_list[ signatures[i]["term"] ] = results[i]
+            sign_list[signatures[i]["term"]] = results[i]
 
         return results
 
     @staticmethod
-    def generate_count_by_signatures_os_facets(signatures, result_offset, maxsize):
+    def get_count_facets(signatures, result_offset, maxsize):
         """
-        Generate the facets to count the appearance in each OS for each signature.
+        Generate the facets to count the number of each OS for each signature.
 
         """
         facets = {}
@@ -241,38 +263,38 @@ class ElasticSearchAPI(sapi.SearchAPI):
             sign_plugin = "_".join((sign, "plugin"))
 
             facet_filter = {
-                "term" : {
-                    "signature.full" : sign
+                "term": {
+                    "signature.full": sign
                 }
             }
 
             facets[sign] = {
-                "terms" : {
-                    "field" : "os_name"
+                "terms": {
+                    "field": "os_name"
                 },
-                "facet_filter" : facet_filter
+                "facet_filter": facet_filter
             }
             facets[sign_hang] = {
-                "query" : {
-                    "query_string" : {
-                        "query" : "_exists_:hangid"
+                "query": {
+                    "query_string": {
+                        "query": "_exists_:hangid"
                     }
                 },
-                "facet_filter" : facet_filter
+                "facet_filter": facet_filter
             }
             facets[sign_plugin] = {
-                "query" : {
-                    "query_string" : {
-                        "query" : "_exists_:process_type"
+                "query": {
+                    "query_string": {
+                        "query": "_exists_:process_type"
                     }
                 },
-                "facet_filter" : facet_filter
+                "facet_filter": facet_filter
             }
 
         return facets
 
     @staticmethod
-    def generate_signatures_os_counts_from_count_results(signatures, count_sign, params, maxsize, platforms):
+    def get_counts(signatures, count_sign, params, maxsize, platforms):
         """
         Generate the complementary information about signatures
         (count by OS, number of plugins and of hang).
@@ -284,7 +306,8 @@ class ElasticSearchAPI(sapi.SearchAPI):
             for term in count_sign[signatures[i]["signature"]]["terms"]:
                 for os in platforms:
                     if term["term"] == os["id"]:
-                        signatures[i]["is_"+os["id"]] = term["count"]
+                        osid = "is_%s" % os["id"]
+                        signatures[i][osid] = term["count"]
             # Hang count
             sign_hang = "_".join((signatures[i]["signature"], "hang"))
             signatures[i]["numhang"] = count_sign[sign_hang]["count"]
@@ -301,61 +324,87 @@ class ElasticSearchAPI(sapi.SearchAPI):
 
         """
         # Dates need to be strings for ES
-        params["from_date"] = ElasticSearchAPI.date_to_string(params["from_date"])
+        params["from_date"] = ElasticSearchAPI.date_to_string(
+                                                    params["from_date"])
         params["to_date"] = ElasticSearchAPI.date_to_string(params["to_date"])
 
         # Preparing the different elements of the json query
         query = {
-            "match_all" : {}
+            "match_all": {}
         }
         queries = []
 
         filters = {
-            "and" : []
+            "and": []
         }
 
         query_string = {
-            "query" : None,
-            "allow_leading_wildcard" : False
+            "query": None,
+            "allow_leading_wildcard": False
         }
 
         # Creating the terms depending on the way we should search
-        if params["search_mode"] == "default" and params["terms"] and params["fields"]:
-            filters["and"].append(ElasticSearchAPI.build_terms_query(params["fields"], ElasticSearchAPI.lower(params["terms"])))
+        if (params["search_mode"] == "default" and
+            params["terms"] and params["fields"]):
+            filters["and"].append(
+                            ElasticSearchAPI.build_terms_query(
+                                params["fields"],
+                                ElasticSearchAPI.lower(params["terms"])))
 
         elif params["terms"]:
-            params["terms"] = ElasticSearchAPI.prepare_terms(params["terms"], params["search_mode"])
-            queries.append(ElasticSearchAPI.build_wildcard_query(params["fields"], params["terms"]))
+            params["terms"] = ElasticSearchAPI.prepare_terms(
+                                                    params["terms"],
+                                                    params["search_mode"])
+            queries.append(ElasticSearchAPI.build_wildcard_query(
+                                                params["fields"],
+                                                params["terms"]))
 
         # Generating the filters
         if params["products"]:
-            filters["and"].append(ElasticSearchAPI.build_terms_query("product", ElasticSearchAPI.lower(params["products"])))
+            filters["and"].append(
+                            ElasticSearchAPI.build_terms_query(
+                                "product",
+                                ElasticSearchAPI.lower(params["products"])))
         if params["os"]:
-            filters["and"].append(ElasticSearchAPI.build_terms_query("os_name", ElasticSearchAPI.lower(params["os"])))
+            filters["and"].append(
+                            ElasticSearchAPI.build_terms_query(
+                                "os_name",
+                                ElasticSearchAPI.lower(params["os"])))
         if params["build_id"]:
-            filters["and"].append(ElasticSearchAPI.build_terms_query("build", ElasticSearchAPI.lower(params["build_id"])))
+            filters["and"].append(
+                            ElasticSearchAPI.build_terms_query(
+                                "build",
+                                ElasticSearchAPI.lower(params["build_id"])))
         if params["reason"]:
-            filters["and"].append(ElasticSearchAPI.build_terms_query("reason", ElasticSearchAPI.lower(params["reason"])))
+            filters["and"].append(
+                            ElasticSearchAPI.build_terms_query(
+                                "reason",
+                                ElasticSearchAPI.lower(params["reason"])))
 
         filters["and"].append({
-                "range" : {
-                    "date_processed" : {
-                        "from" : params["from_date"],
-                        "to" : params["to_date"]
+                "range": {
+                    "date_processed": {
+                        "from": params["from_date"],
+                        "to": params["to_date"]
                     }
                 }
             })
 
         if params["report_process"] == "plugin":
-            filters["and"].append(ElasticSearchAPI.build_terms_query("process_type", "plugin"))
+            filters["and"].append(ElasticSearchAPI.build_terms_query(
+                                                        "process_type",
+                                                        "plugin"))
 
-        # Generating the query_string using special functions like _missing_ and _exists_
+        # Generating the query_string
+        # using special functions like _missing_ and _exists_
         query_string_list = []
         if params["version"]:
-            #-----
-            # TODO: This should be written using filters instead of being in the query_string
-            #-----
-            query_string_list.append(ElasticSearchAPI.format_versions(params["version"]))
+            # -
+            # TODO: This should be written using filters
+            # instead of being in the query_string
+            # -
+            query_string_list.append(ElasticSearchAPI.format_versions(
+                                                        params["version"]))
         if params["report_type"] == "crash":
             query_string_list.append("_missing_:hangid")
         if params["report_type"] == "hang":
@@ -366,12 +415,12 @@ class ElasticSearchAPI(sapi.SearchAPI):
         query_string["query"] = " AND ".join(query_string_list)
 
         if query_string["query"]:
-            queries.append({ "query_string" : query_string })
+            queries.append({"query_string": query_string})
 
         if len(queries) > 1:
             query = {
-                "bool" : {
-                    "must" : queries
+                "bool": {
+                    "must": queries
                 }
             }
         elif len(queries) == 1:
@@ -379,12 +428,12 @@ class ElasticSearchAPI(sapi.SearchAPI):
 
         # Generating the full query from the parts
         return {
-            "size" : params["result_number"],
-            "from" : params["result_offset"],
-            "query" : {
-                "filtered" : {
-                    "query" : query,
-                    "filter" : filters
+            "size": params["result_number"],
+            "from": params["result_offset"],
+            "query": {
+                "filtered": {
+                    "query": query,
+                    "filter": filters
                 }
             }
         }
@@ -392,7 +441,8 @@ class ElasticSearchAPI(sapi.SearchAPI):
     @staticmethod
     def build_terms_query(fields, terms):
         """
-        Build and return an object containing a term or terms query for ElasticSearch.
+        Build and return an object containing a term or terms query
+        for ElasticSearch.
 
         """
         if not terms or not fields:
@@ -404,7 +454,7 @@ class ElasticSearchAPI(sapi.SearchAPI):
             query_type = "term"
 
         query = {
-            query_type : {}
+            query_type: {}
         }
 
         if type(fields) is list:
@@ -418,14 +468,15 @@ class ElasticSearchAPI(sapi.SearchAPI):
     @staticmethod
     def build_wildcard_query(fields, terms):
         """
-        Build and return an object containing a wildcard query for ElasticSearch.
+        Build and return an object containing a wildcard query
+        for ElasticSearch.
 
         """
         if not terms or not fields:
             return None
 
         wildcard_query = {
-            "wildcard" : {}
+            "wildcard": {}
         }
 
         if type(fields) is list:
@@ -459,19 +510,33 @@ class ElasticSearchAPI(sapi.SearchAPI):
                     product_version = v.split(":")
                     product = product_version[0]
                     version = product_version[1]
-                    versions_list.append( "".join( ("( product: ", urllib.quote(product), " AND version: ", urllib.quote(version), " )") ) )
+                    versions_list.append("".join(("( product: ",
+                                                  urllib.quote(product),
+                                                  " AND version: ",
+                                                  urllib.quote(version),
+                                                  " )")))
                 else:
-                    versions_list.append( "".join( ( "product: ", urllib.quote(v) ) ) )
+                    versions_list.append("".join(("product: ",
+                                                  urllib.quote(v))))
 
-            formatted_versions = "".join( ( "(", ElasticSearchAPI.array_to_string(versions_list, " OR "), ")" ) )
+            formatted_versions = "".join(("(",
+                                          ElasticSearchAPI.array_to_string(
+                                                                versions_list,
+                                                                " OR "),
+                                          ")"))
         else:
             if versions.find(":") != -1:
                 product_version = versions.split(":")
                 product = product_version[0]
                 version = product_version[1]
-                formatted_versions = "".join( ("( product: ", urllib.quote(product), " AND version: ", urllib.quote(version), " )") )
+                formatted_versions = "".join(("( product: ",
+                                              urllib.quote(product),
+                                              " AND version: ",
+                                              urllib.quote(version),
+                                              " )"))
             else:
-                formatted_versions = "".join( ( "product: ", urllib.quote(versions) ) )
+                formatted_versions = "".join(("product: ",
+                                              urllib.quote(versions)))
 
         return formatted_versions
 
@@ -484,14 +549,14 @@ class ElasticSearchAPI(sapi.SearchAPI):
         """
         if type(terms) is list:
             if search_mode == "contains":
-                terms = "".join( ( "*", " ".join(terms), "*" ) )
+                terms = "".join(("*", " ".join(terms), "*"))
             elif search_mode == "starts_with":
-                terms = "".join( ( " ".join(terms), "*" ) )
+                terms = "".join((" ".join(terms), "*"))
             elif search_mode == "is_exactly":
                 terms = " ".join(terms)
         elif search_mode == "contains":
-            terms = "".join( ( "*", terms, "*" ) )
+            terms = "".join(("*", terms, "*"))
         elif search_mode == "starts_with":
-            terms = "".join( ( terms, "*" ) )
+            terms = "".join((terms, "*"))
 
         return terms

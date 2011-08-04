@@ -30,7 +30,7 @@ else:
          
          
 cur.execute("""                                                                                                                                                                    
-   ALTER TABLE reports ADD COLUMN releasechannel TEXT;                                                                                                                                              
+   ALTER TABLE reports ADD COLUMN release_channel TEXT;                                                                                                                                              
    """)
 
 conn.commit()
