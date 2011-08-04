@@ -104,65 +104,24 @@ class Topcrasher_Controller extends Controller {
      * Generates the index page.
      */
     public function index() {
-	    cachecontrol::set(array(
-            'expires' => time() + (60 * 60)
-        ));
+        $products = $this->featured_versions;
+        $product = null;
 
-        $featured = Kohana::config('dashboard.feat_nav_products');
-        $all_products = $this->currentProducts();
+        if(empty($products)) {
+            Kohana::show_404();
+        }
 
-        $i = 0;
-        $crasher_data = array();
-        foreach ($featured as $prod_name) {
-            foreach (array(Release::MAJOR, Release::DEVELOPMENT,
-                Release::MILESTONE) as $release) {
-                if (empty($all_products[$prod_name][$release])) continue;
-                if (++$i > 4) break 2;
-
-                $version = $all_products[$prod_name][$release];
-                $crasher_data[] = array(
-                    'product' => $prod_name,
-                    'version' => $version,
-                    'crashers' => $this->_getTopCrashers($prod_name, $version)
-                    );
+        foreach($products as $individual) {
+            if($individual->release == 'major') {
+                $product = $individual;
             }
         }
-	
-        // generate list of all versions
-        $branches = new Branch_Model();
-        $prod_versions = $branches->getProductVersions();
-        $all_versions = array();
-        foreach ($prod_versions as $ver) {
-            $all_versions[$ver->product][] = $ver->version;
-        }
-        // sort
-        $vc = new VersioncompareComponent();
-        foreach (array_keys($all_versions) as $prod) {
-            $vc->sortAppversionArray($all_versions[$prod]);
-            $all_versions[$prod] = array_reverse($all_versions[$prod]);
+
+        if(empty($product)) {
+            $product = array_shift($products);
         }
 
-	$product = Kohana::config('products.default_product');
-	
-        $this->setViewData(array(
-            'crasher_data' => $crasher_data,
-            'all_versions'  => $all_versions,
-    	    'nav_selection' => 'top_crashes',
-            'url_nav' => url::site('products/' . $product),
-        ));
-    }
-
-    /**
-     * get top crashers for a given product and version
-     */
-    private function _getTopCrashers($product, $version) {
-        $sigSize = Kohana::config("topcrashers.numberofsignatures");
-        $duration = Kohana::config('products.duration');
-
-        $end = $this->topcrashers_model->lastUpdatedByVersion($product, $version);
-        $start = $this->topcrashers_model->timeBeforeOffset($duration, $end);
-
-        return $this->topcrashers_model->getTopCrashersByVersion($product, $version, $sigSize, $start, $end);
+        return url::redirect('/topcrasher/byversion/' . $product->product . '/' . $product->version);
     }
 
     /**
