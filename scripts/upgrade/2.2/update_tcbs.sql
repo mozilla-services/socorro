@@ -29,7 +29,8 @@ SELECT signature, product, version, build,
 	process_type, count(*) as report_count,
 	0::int as product_version_id,
 	0::int as signature_id,
-	null::citext as real_release_channel
+	null::citext as real_release_channel,
+    SUM(case when hangid is not null then 1 else 0 end) as hang_count
 FROM reports
 WHERE date_processed >= utc_day_begins_pacific(updateday)
 	and date_processed <= utc_day_begins_pacific((updateday + 1))
@@ -106,14 +107,15 @@ WHERE new_tcbs.os_name ILIKE match_string;
 INSERT INTO tcbs (
 	signature_id, report_date, product_version_id,
 	process_type, release_channel,
-	report_count, win_count, mac_count, lin_count
+	report_count, win_count, mac_count, lin_count, hang_count
 )
 SELECT signature_id, updateday, product_version_id,
 	process_type, real_release_channel,
 	sum(report_count),
 	sum(case when os_name = 'Windows' THEN 1 else 0 END),
 	sum(case when os_name = 'Mac OS X' THEN 1 else 0 END),
-	sum(case when os_name = 'Linux' THEN 1 else 0 END)
+	sum(case when os_name = 'Linux' THEN 1 else 0 END),
+    sum(hang_count)
 FROM new_tcbs
 WHERE signature_id <> 0
 GROUP BY signature_id, updateday, product_version_id,

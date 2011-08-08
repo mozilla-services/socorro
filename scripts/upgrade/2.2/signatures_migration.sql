@@ -30,15 +30,24 @@ group by product_versions.product_version_id,
 analyze signatures;
 analyze signature_products;
 	
-insert into signature_products_rollup ( signature_id, ver_count, version_list )
+insert into signature_products_rollup ( signature_id, product_name, ver_count, version_list )
 select
-	signature_id, count(*) as ver_count,
+	signature_id, product_name,
+    count(*) as ver_count,
 		array_accum(version_string ORDER BY product_versions.version_sort)
 from signature_products JOIN product_versions
 	USING (product_version_id)
-group by signature_id;
+group by signature_id, product_name;
 
 analyze signature_products_rollup;
+
+INSERT INTO signature_bugs_rollup
+SELECT signature_id, count(*), array_accum(bug_id)
+FROM signatures JOIN bug_associations USING (signature)
+GROUP BY signature_id;
+
+analyze signature_bugs_rollup;
+    
 
 commit;
 
@@ -133,15 +142,26 @@ group by signatures.signature_id,
 
 DELETE FROM signature_products_rollup;
 
-insert into signature_products_rollup ( signature_id, ver_count, version_list )
+insert into signature_products_rollup ( signature_id, product_name, ver_count, version_list )
 select
-	signature_id, count(*) as ver_count,
+	signature_id, product_name, count(*) as ver_count,
 		array_accum(version_string ORDER BY product_versions.version_sort)
 from signature_products JOIN product_versions
 	USING (product_version_id)
-group by signature_id;
+group by signature_id, product_name;
 
 analyze signature_products_rollup;
+
+-- recreate signature_bugs from scratch
+
+DELETE FROM signature_bugs_rollup;
+
+INSERT INTO signature_bugs_rollup (signature_id, bug_count, bug_list)
+SELECT signature_id, count(*), array_accum(bug_id)
+FROM signatures JOIN bug_associations USING (signature)
+GROUP BY signature_id;
+
+analyze signature_bugs_rollup;
 		
 return true;
 end;

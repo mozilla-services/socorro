@@ -82,10 +82,19 @@ from releases_raw
 		
 analyze products;
 analyze release_channels;
-analyce product_versions;
+analyze product_versions;
 analyze product_version_builds;
 analyze product_release_channels;
 analyze release_channel_matches;
+
+-- copy featured versions
+
+update product_versions set featured_version = true
+from productdims join product_visibility
+  on productdims.id = product_visibility.productdims_id
+where product_versions.product_name = productdims.product
+  and product_versions.version_string = productdims.version
+  and product_visibility.featured;
 		
 COMMIT;
 		

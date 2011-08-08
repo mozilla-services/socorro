@@ -162,6 +162,7 @@ create table tcbs (
     win_count int not null default 0,
     mac_count int not null default 0,
     lin_count int not null default 0,
+    hang_count int not null default 0,
     constraint tcbs_key primary key (signature_id, report_date, product_version_id, process_type, release_channel) 
 );
 
@@ -190,12 +191,22 @@ alter table signature_products owner to breakpad_rw;
 -- updated by daily batch
 
 create table signature_products_rollup (
-	signature_id INT NOT NULL references signatures(signature_id) primary key,
+	signature_id INT NOT NULL references signatures(signature_id),
+    product_name citext NOT NULL references products(product_name),
 	ver_count INT NOT NULL default 0,
-	version_list TEXT[] not null default '{}'
+	version_list TEXT[] not null default '{}',
+    constraint signature_products_rollup_key primary key (signature_id, product_name)
 );
 
 alter table signature_products_rollup owner to breakpad_rw;
+
+create table signature_bugs_rollup (
+  signature_id INT NOT NULL references signatures(signature_id) primary key,
+  bug_count INT not null default 0,
+  bug_list INT[] NOT NULL default '{}'
+);
+
+alter table signature_bugs_rollup owner to breakpad_rw;
 
 -- intersection of products and release channels
 -- used mainly to track throttling information

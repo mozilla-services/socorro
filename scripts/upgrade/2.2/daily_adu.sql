@@ -35,6 +35,8 @@ IF FOUND THEN
 	RAISE EXCEPTION 'update_adu has already been run for %', updateday;
 END IF;
 
+-- insert releases and aurora
+
 INSERT INTO product_adu ( product_version_id,
 		adu_date, adu_count )
 SELECT product_version_id,
@@ -46,7 +48,26 @@ FROM product_versions
 		AND product_versions.version_string = raw_adu.product_version
 		AND raw_adu.date = updateday
 WHERE updateday BETWEEN build_date AND ( sunset_date + 1 )
+        AND product_versions.build_type <> 'Beta'
 GROUP BY product_version_id;
+
+-- insert betas
+
+INSERT INTO product_adu ( product_version_id,
+        adu_date, adu_count )
+SELECT product_version_id,
+    updateday,
+    coalesce(sum(raw_adu.adu_count), 0)
+FROM product_versions
+    JOIN product_version_builds USING (product_version_id)
+    LEFT OUTER JOIN raw_adu
+        ON product_versions.product_name = raw_adu.product_name
+        AND product_versions.release_version = raw_adu.product_version
+        AND build_numeric(raw_adu.build) = product_version_builds.build_id 
+        AND raw_adu.date = updateday
+WHERE updateday BETWEEN build_date AND ( sunset_date + 1 )
+        AND product_versions.build_type = 'Beta'
+GROUP BY product_version_id; 
 
 RETURN TRUE;
 END; $f$;
@@ -57,7 +78,7 @@ DO $f$
 DECLARE aduday DATE;
 BEGIN
 FOR aduday IN SELECT i 
-	FROM generate_series(timestamp '2011-07-24', timestamp '2011-07-26', '1 day') as gs(i)
+	FROM generate_series(timestamp '2011-07-24', timestamp '2011-07-27', '1 day') as gs(i)
 	LOOP
 	
 	PERFORM update_adu(aduday);

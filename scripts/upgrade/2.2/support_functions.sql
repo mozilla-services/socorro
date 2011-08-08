@@ -156,5 +156,21 @@ SELECT CASE WHEN $1 ~ $x$^\d+$$x$ THEN
 ELSE
 	NULL::numeric
 END;
-$f$;
-	
+
+create or replace function plugin_count_state ( running_count int, process_type citext, crash_count int )
+returns int 
+language sql
+immutable as $f$
+-- allows us to do a plugn count horizontally
+-- as well as vertically on tcbs
+SELECT CASE WHEN $2 = 'plugin' THEN
+  coalesce($3,0) + $1
+ELSE
+  $1
+END; $f$;
+
+CREATE AGGREGATE plugin_count(citext, int)(
+    SFUNC=plugin_count_state,
+    STYPE=int,
+    INITCOND=0
+);
