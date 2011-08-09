@@ -28,7 +28,7 @@ release_product_uris.fromStringConverter = lambda x: tuple(x.split(','))
 
 release_platforms = cm.Option()
 release_platforms.doc = 'a comma-delimited list of platforms'
-release_platforms.default = 'linux,linux64,macosx64,macosx,win32'
+release_platforms.default = 'linux,linux64,macosx64,macosx,win32,android,android-r7,linux-i686,macosx-i686,maemo5-gtk,win32-i686'
 
 release_platforms.fromStringConverter = lambda x: tuple(x.split(','))
 
