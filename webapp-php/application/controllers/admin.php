@@ -154,7 +154,6 @@ class Admin_Controller extends Controller
                         if (
                                 !empty($_POST['update_product']) && 
                                 !empty($_POST['update_version']) && 
-                                !empty($_POST['update_branch']) && 
                                 !empty($_POST['update_start_date']) && 
                                 !empty($_POST['update_end_date']) &&
                                 !empty($_POST['update_throttle'])
@@ -169,7 +168,6 @@ class Admin_Controller extends Controller
                                 if ($rv = $this->branch_model->update(
                     trim($_POST['update_product']), 
                     trim($_POST['update_version']), 
-                    trim($_POST['update_branch']),
                     trim($_POST['update_start_date']), 
                     trim($_POST['update_end_date']),
                     $featured,
