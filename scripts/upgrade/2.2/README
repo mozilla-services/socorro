@@ -33,7 +33,7 @@ Since Metrics can only backfill Prod and StageDB, the way to populate a dev inst
 
 3. releases_raw.sql
 -------------------
-Creates a new table to hold FTP-scraping information.  After it is installed, Robert Helmer needs to backfill the data for this table.
+Creates a new table to hold FTP-scraping information.  After it is installed, Robert Helmer needs to backfill the data for this table before proceeding past step 5.
 
 4. support_functions.sql
 ------------------------
@@ -46,6 +46,47 @@ Creates a large number of new tables and views to support the new release data. 
 6. product_migration.sql
 -------------------------
 Populates all of the new product tables and creates the cronjob function which updates them daily.  Backfilling on this is light and should not take very long.
+
+NOTE: releases_raw needs to be populated first.
+
+7. os_migration.sql
+--------------------
+Fills in OS and OS version information.  Creates function for maintaining os-version data.  Backfill should be fast.
+
+8. signature_migration.sql
+--------------------------
+Fills in all signature-product information, and creates the function for maintaining signature information and rollups.  Backfill will take a while.
+
+9. daily_adu.sql
+----------------
+Fills in product_adu with backfill data, which includes both old and new products.  Creates function for maintaining this data.
+
+NOTE: requires new columns on raw_adu to be populated first.
+NOTE: you should time-limit the backfill code for Dev/Stage or it won't complete.
+
+10. update_tcbs.sql
+-------------------
+Creates function for backfilling/maintaining the new "tcbs" table.  Backfills the table.
+
+NOTE: you need to time-limit the backfill on Stage/Dev or it will take way too long.
+
+11. daily_crashes.sql 
+---------------------
+Creates function for maintaining daily_crashes table using a mixture of old and new data crashes.  Executes procudure in a loop to backfill.
+
+NOTE: backfill should be time-limited on stage and dev.
+NOTE: backfill can cause locking; watch the backfill process and
+	abort if it's blocking.
+	
+12. edit_product_info.sql
+-------------------------
+Creates function for editing productdims and product_version, for the admin interface.  No backfill.
+
+
+
+
+
+
 
 
 

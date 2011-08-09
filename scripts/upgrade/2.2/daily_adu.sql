@@ -101,7 +101,9 @@ DO $f$
 DECLARE aduday DATE;
 BEGIN
 FOR aduday IN SELECT i 
-	FROM generate_series(timestamp '2011-07-24', timestamp '2011-07-27', '1 day') as gs(i)
+	-- time-limited version for stage/dev
+	-- FROM generate_series(timestamp '2011-07-20', timestamp '2011-07-27', '1 day') as gs(i)
+	FROM generate_series(timestamp '2011-07-20', now(), '1 day') as gs(i)
 	LOOP
 	
 	PERFORM update_adu(aduday);

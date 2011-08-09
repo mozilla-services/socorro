@@ -321,5 +321,6 @@ order by product_name, version_string;
 
 alter view product_info owner to breakpad_rw;
 
+COMMIT;
 
 

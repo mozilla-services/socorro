@@ -17,7 +17,8 @@ def update(config, targetDate):
       ('update_os_versions', [targetDate], []),
       ('update_tcbs', [targetDate],
        ['update_product_versions', 'update_signatures']),
-      ('update_adu', [targetDate], [])
+      ('update_adu', [targetDate], []),
+      ('update_daily_crashes', [targetDate], [])
     )
 
     failed = set()
