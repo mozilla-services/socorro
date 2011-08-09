@@ -1,0 +1,50 @@
+import socorro.lib.ConfigurationManager as cm
+
+try:
+  from config.commonconfig import *
+except ImportError:
+  from commonconfig import *
+  
+bugzillaQuery = cm.Option()
+bugzillaQuery.doc = 'the URL to fetch a csv file from a query'
+bugzillaQuery.default = 'https://bugzilla.mozilla.org/buglist.cgi?query_format=advanced&short_desc_type=allwordssubstr&short_desc=&long_desc_type=allwordssubstr&long_desc=&bug_file_loc_type=allwordssubstr&bug_file_loc=&status_whiteboard_type=allwordssubstr&status_whiteboard=&keywords_type=allwords&keywords=&deadlinefrom=&deadlineto=&emailassigned_to1=1&emailtype1=substring&email1=&emailassigned_to2=1&emailreporter2=1&emailqa_contact2=1&emailcc2=1&emailtype2=substring&email2=&bugidtype=include&bug_id=&votes=&chfieldfrom=%s&chfieldto=Now&chfield=[Bug+creation]&chfield=resolution&chfield=bug_status&chfield=short_desc&chfield=cf_crash_signature&chfieldvalue=&cmdtype=doit&order=Importance&field0-0-0=noop&type0-0-0=noop&value0-0-0=&columnlist=bug_id,bug_status,resolution,short_desc,cf_crash_signature&ctype=csv'
+
+persistentDataPathname = cm.Option()
+persistentDataPathname.doc = 'a pathname to a file system location where this script can store persistent data'
+persistentDataPathname.default = './bugzilla.pickle'
+
+daysIntoPast = cm.Option()
+daysIntoPast.doc = 'number of days to look into the past for bugs (0 - use last run time)'
+daysIntoPast.default = 0
+
+#-------------------------------------------------------------------------------
+# Logging
+
+syslogHost = cm.Option()
+syslogHost.doc = 'syslog hostname'
+syslogHost.default = 'localhost'
+
+syslogPort = cm.Option()
+syslogPort.doc = 'syslog port'
+syslogPort.default = 514
+
+syslogFacilityString = cm.Option()
+syslogFacilityString.doc = 'syslog facility string ("user", "local0", etc)'
+syslogFacilityString.default = 'user'
+
+syslogLineFormatString = cm.Option()
+syslogLineFormatString.doc = 'python logging system format for syslog entries'
+syslogLineFormatString.default = 'Socorro Bugzilla (pid %(process)d): %(asctime)s %(levelname)s - %(threadName)s - %(message)s'
+
+syslogErrorLoggingLevel = cm.Option()
+syslogErrorLoggingLevel.doc = 'logging level for the log file (10 - DEBUG, 20 - INFO, 30 - WARNING, 40 - ERROR, 50 - CRITICAL)'
+syslogErrorLoggingLevel.default = 10
+
+stderrLineFormatString = cm.Option()
+stderrLineFormatString.doc = 'python logging system format for logging to stderr'
+stderrLineFormatString.default = '%(asctime)s %(levelname)s - %(message)s'
+
+stderrErrorLoggingLevel = cm.Option()
+stderrErrorLoggingLevel.doc = 'logging level for the logging to stderr (10 - DEBUG, 20 - INFO, 30 - WARNING, 40 - ERROR, 50 - CRITICAL)'
+stderrErrorLoggingLevel.default = 10
+

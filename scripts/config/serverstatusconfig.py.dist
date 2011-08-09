@@ -1,0 +1,57 @@
+import socorro.lib.ConfigurationManager as cm
+import datetime
+
+from config.commonconfig import databaseHost
+from config.commonconfig import databaseName
+from config.commonconfig import databaseUserName
+from config.commonconfig import databasePassword
+
+debug = cm.Option()
+debug.doc = 'do debug output and routines'
+debug.default = False
+debug.singleCharacter = 'D'
+debug.fromStringConverter = cm.booleanConverter
+
+initMode = cm.Option()
+initMode.doc = 'Use this the first time you run the script.'
+initMode.default = False
+initMode.singleCharacter = 'I'
+initMode.fromStringConverter = cm.booleanConverter
+
+processingInterval = cm.Option()
+processingInterval.doc = 'how often to process reports (HHH:MM:SS)'
+processingInterval.default = '00:05:00'
+processingInterval.fromStringConverter = cm.timeDeltaConverter
+
+#-------------------------------------------------------------------------------
+# Logging
+
+syslogHost = cm.Option()
+syslogHost.doc = 'syslog hostname'
+syslogHost.default = 'localhost'
+
+syslogPort = cm.Option()
+syslogPort.doc = 'syslog port'
+syslogPort.default = 514
+
+syslogFacilityString = cm.Option()
+syslogFacilityString.doc = 'syslog facility string ("user", "local0", etc)'
+syslogFacilityString.default = 'user'
+
+syslogLineFormatString = cm.Option()
+syslogLineFormatString.doc = 'python logging system format for syslog entries'
+syslogLineFormatString.default = 'Socorro Server Status (pid %(process)d): %(asctime)s %(levelname)s - %(threadName)s - %(message)s'
+
+syslogErrorLoggingLevel = cm.Option()
+syslogErrorLoggingLevel.doc = 'logging level for the log file (10 - DEBUG, 20 - INFO, 30 - WARNING, 40 - ERROR, 50 - CRITICAL)'
+syslogErrorLoggingLevel.default = 10
+
+stderrLineFormatString = cm.Option()
+stderrLineFormatString.doc = 'python logging system format for logging to stderr'
+stderrLineFormatString.default = '%(asctime)s %(levelname)s - %(message)s'
+
+stderrErrorLoggingLevel = cm.Option()
+stderrErrorLoggingLevel.doc = 'logging level for the logging to stderr (10 - DEBUG, 20 - INFO, 30 - WARNING, 40 - ERROR, 50 - CRITICAL)'
+stderrErrorLoggingLevel.default = 40
+
+

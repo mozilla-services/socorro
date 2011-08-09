@@ -1,0 +1,87 @@
+<?php
+/**
+ * Application-specific settings separate from installation concerns.
+ */
+
+
+/**
+ * URL prefix for the AMO API call
+ * e.g. 'https://services.addons.mozilla.org/'
+ */
+$config['amo_api'] = 'https://services.addons.mozilla.org/';
+
+/**
+ * URL prefix for the Extension page on AMO.
+ * e.g. 'https://addons.mozilla.org/'
+ */
+$config['amo_url'] = 'http://addons.mozilla.org/';
+
+/**
+ * The amount of time in seconds in which the Alexa topsites file will be valid. Originally set 
+ * to 604,800 seconds (7 days).
+ */
+$config['topsites_validity'] = 604800;
+
+/**
+ * The PHP app access the processed crash dump files (jsonz)
+ * via an HTTP request. The php_access config variable is a
+ * single quoted string which includes the following variables:
+ * %1$s - UUID of the crash
+ */
+$config['crash_dump_local_url']  = 'http://aking.khan.mozilla.org/reporter/dumps/%1$s.jsonz';
+
+/**
+ * Exactly like local_url but is used for public links
+ * to the processed dumps files
+ * %1$s - UUID of the crash
+ */
+$config['crash_dump_public_url'] = 'http://aking.khan.mozilla.org/reporter/dumps/%1$s.jsonz';
+
+/**
+ * The amount of time in seconds which the raw dump will be accessible. Originally set 
+ * to 604,800 seconds (7 days).
+ */
+$config['raw_dump_availability'] = 604800;
+
+/**
+ * The PHP app will provide links to the raw crash dump files (.jsonz and 
+ * .dump) to logged in users.  In production this link must be prefixed with https://.
+ */
+$config['raw_dump_url']  = 'https://rsnyder.khan.mozilla.org/reporter/rawdumps/';
+
+$config['dumpIDPrefix'] = 'bp-';
+
+// Mappings of source code types to web links
+$config['vcsMappings'] = array(
+    'cvs' => array( 
+        'cvs.mozilla.org/cvsroot' => 
+          'http://bonsai.mozilla.org/cvsblame.cgi?file=%(file)s&rev=%(revision)s&mark=%(line)s#%(line)s' 
+    ),
+    'hg' => array( 
+        'hg.mozilla.org/mozilla-central' => 
+            'http://hg.mozilla.org/mozilla-central/annotate/%(revision)s/%(file)s#l%(line)s' 
+    )
+);
+
+/**
+ * The query range limit for users who have the role of user and admin.
+ *
+ * @see My_SearchReportHelper->normalizeDateUnitAndValue()
+ */
+$config['query_range_defaults'] = array(
+    'admin' => array(
+	    'range_default_value' => 14,
+	    'range_default_unit' => 'days',
+        'range_limit_value_in_days' => 120
+    ),    
+    'user' => array(
+	    'range_default_value' => 14,
+	    'range_default_unit' => 'days',
+        'range_limit_value_in_days' => 30
+	)
+);
+
+/**
+ * Base URL to which bugs will be submitted.
+ */
+$config['report_bug_url'] = 'https://bugzilla.mozilla.org/enter_bug.cgi?';

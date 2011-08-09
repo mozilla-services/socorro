@@ -1,0 +1,51 @@
+Documents the versions and relationships between the various external components.
+
+= PHP =
+Kohana 2.2
+eZ Components 2009.1
+
+= JavaScript =
+./jquery/date.js
+ No Dependencies
+
+./jquery/plugins/ui/jquery.datePicker.js 3739 circa 2007-10-25
+  http://www.kelvinluck.com/assets/jquery/datePicker/
+ No Dependencies ???
+
+./__utm.js Urchin Metrics
+ No Dependencies
+
+jquery/jquery-1.3.2.js
+ No Dependencies
+
+./jquery/plugins/ui/jquery.ui.all.js jQuery UI 1.5.3
+ Provides:
+  ui.core.js (bundled)
+ Dependencies:
+  jquery 1.3.2 +
+
+./jquery/plugins/superfish-1.4.8.js
+ Dependencies:
+  jquery 1.2+
+
+./flot-0.5/excanvas.pack.js
+./flot-0.5/jquery.flot.pack.js
+ Dependencies:
+  excanvas IE only
+  jquery 1.2.3 +
+
+./jquery/plugins/sparklines/jquery.sparkline-1.3.js 
+  http://omnipotent.net/jquery.sparkline/
+ Dependencies:
+  jquery 1.2 +
+
+Known Unknowns:
+Why do we have date.js? does datePicker depend on it?
+./jquery/plugins/ui/i18n
+./jquery/plugins/ui/jquery.tablesorter.min.js
+  depends on css/flora/flora.tablesorter.css
+
+TODO:
+Replace jquery.datePicker.js with jquery.ui.all?
+Replace jquery.tablesorter  with jquery.ui.all?
+Move jquery/date.js to top level?

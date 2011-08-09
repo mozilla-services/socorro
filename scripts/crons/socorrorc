@@ -1,0 +1,90 @@
+# Include file for Socorro cron scripts.
+
+SOCORRO_DIR=/data/socorro
+APPDIR=${SOCORRO_DIR}/application
+PATH=$PATH:$HOME/bin:~/python_extras/bin
+PYTHONPATH=~/python_extras/lib:${APPDIR}:${SOCORRO_DIR}/thirdparty
+PYTHON=/usr/bin/python2.6
+SOCORRO_CONFIG=/etc/socorro/common.conf
+export APPDIR PATH PYTHONPATH SOCORRO_CONFIG
+
+if [ -f $SOCORRO_CONFIG ]
+then
+  . $SOCORRO_CONFIG
+fi
+
+function lock {
+  if [ "$#" != "1" ]
+  then
+    echo "syntax: lock <job>"
+    return 1
+  fi
+  JOB=$1
+  if [ -f "/tmp/${JOB}.lock" ]
+  then
+    echo "error (lock): lock already exists for ${JOB}"
+    exit 1
+  fi
+  echo $$ > /tmp/${JOB}.lock
+}
+
+function unlock {
+  if [ "$#" != "1" ]
+  then
+    echo "syntax: unlock <job>"
+    return 1
+  fi
+  JOB=$1
+  if [ ! -f "/tmp/${JOB}.lock" ]
+  then
+    echo "warning (unlock): no lock exists for ${JOB}"
+    return 1
+  fi
+  rm -f "/tmp/${JOB}.lock"
+}
+
+function fatal {
+  if [ "$#" != "2" ]
+  then
+    echo "syntax: fatal <exit_code> <message>"
+    return 1
+  fi
+
+  exit_code=$1
+  message=$2
+
+  if [ "$exit_code" != 0 ]
+  then
+    echo "Fatal exit code: $exit_code"
+    echo $message
+    exit $exit_code
+  fi
+}
+
+# Most Socorro cron jobs are implemented in Python.
+# Provide a wrapper to make calling these more convenient.
+function pyjob {
+  if [ "$#" != "2" ]
+  then
+    echo "syntax: pyjob <name> <script>"
+    return 1
+  fi
+  NAME=$1
+  SCRIPT=$2
+  
+  if [ ! -e "${APPDIR}/scripts/${SCRIPT}.py" ]
+  then
+    echo "error: job ${APPDIR}/scripts/${SCRIPT}.py does not exist"
+    return 1
+  fi
+
+  $PYTHON ${APPDIR}/scripts/${SCRIPT}.py >> /var/log/socorro/${NAME}.log 2>&1
+  EXIT_CODE=$?
+  if [ "$EXIT_CODE" != 0 ]
+  then
+    echo "Cron job ${SCRIPT} exited non-zero: ${EXIT_CODE}"
+  fi
+  return $EXIT_CODE
+}
+
+

@@ -1,0 +1,14 @@
+
+Linux
+
+
+Mac OS X
+
+
+Windows NT
+  __delayLoadHelper2|EXCEPTION_ACCESS_VIOLATION (14 crashes)
+      0% (0/14) vs.  22% (11/50) x86 with 1 cores
+      0% (0/14) vs.  48% (24/50) x86 with 2 cores
+    100% (14/14) vs.  30% (15/50) x86 with 8 cores
+
+

@@ -1,0 +1,22 @@
+CREATE INDEX idx_jobs_completed_queue_datetime ON jobs USING btree (completeddatetime, queueddatetime);
+
+CREATE TABLE server_status ( 
+        id serial NOT NULL,
+        date_recently_completed timestamp without time zone,
+        date_oldest_job_queued timestamp without time zone,
+        avg_process_sec real,
+        avg_wait_sec real,
+        waiting_job_count integer NOT NULL,
+        processors_count integer NOT NULL,
+        date_created timestamp without time zone NOT NULL
+    );
+
+ALTER TABLE ONLY server_status
+    ADD CONSTRAINT server_status_pkey PRIMARY KEY (id);
+
+CREATE INDEX idx_server_status_date ON server_status USING btree (date_created, id);
+
+-- Rollback SQL
+-- DROP INDEX idx_server_status_date;
+-- DROP TABLE server_status;
+-- DROP INDEX idx_jobs_completed_queue_datetime;

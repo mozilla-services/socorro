@@ -1,0 +1,187 @@
+# This is the common configuration file for the Socorro mod-wsgi Collector.
+#
+# Parameters are consist of three or four lines of Python code.  The first line
+# defines the parameter:
+
+# someParameter = cm.Option()
+
+# The second line provides one line of documentation about the parameter.
+# This line is also used to as the text in the '--help' option invoked from the
+# command line.
+
+# someParameter.doc = 'this is what this parameter is about'
+
+# The third line is the default value for the parameter.  Adjust this line as
+# necessary.  This value will be overridden if the user specifies a different
+# value on the command line.
+
+# someParameter.default = '00:00:30'
+
+# The option fourth line specifies a Python function (or callable) that will
+# serve to take a text version of the parameter value and turn it into the
+# proper type.  This is useful for things like taking a textual datetime value
+# and turning them into a real datetime value.  The ConfigurationManager module
+# offers a number of converters:  dateTimeConverter, timeDeltaConverter,
+# booleanConverter.  If the value of 'default' is a fundamental type like int
+# or float, it is not necessary to provide a fromStringConverter.
+
+# someParameter.fromStringConverter = ConfigurationManager.dateTimeConverter
+#-------------------------------------------------------------------------------
+
+import stat
+import re
+
+import socorro.lib.ConfigurationManager as cm
+
+#-------------------------------------------------------------------------------
+# Storage constants
+
+from config.commonconfig import jsonFileSuffix
+from config.commonconfig import dumpFileSuffix
+
+#-------------------------------------------------------------------------------
+# Storage constants
+
+primaryStorageClass = cm.Option()
+primaryStorageClass.doc = 'the name of the class for primary storage ' \
+                          '(socorro.storage.crashstorage.CrashStorageSystemForLocalFS or' \
+                          ' socorro.storage.crashstorage.CollectorCrashStorageSystemForHBase)'
+primaryStorageClass.default = 'socorro.storage.crashstorage.CrashStorageSystemForLocalFS'
+primaryStorageClass.fromStringConverter = cm.classConverter
+
+localFS = cm.Option()
+localFS.doc = 'a path to a local file system'
+localFS.default = './'
+
+localFSDumpDirCount = cm.Option()
+localFSDumpDirCount.doc = 'the number of dumps to be stored in a single directory in the local file system'
+localFSDumpDirCount.default = 1024
+
+localFSDumpGID = cm.Option()
+localFSDumpGID.doc="the group ID for saved crashes in local file system (optional)"
+localFSDumpGID.default = None
+
+localFSDumpPermissions = cm.Option()
+localFSDumpPermissions.doc = "a number used for permissions crash dump files in the local file system"
+localFSDumpPermissions.default = stat.S_IRGRP | stat.S_IWGRP | stat.S_IRUSR | stat.S_IWUSR
+
+localFSDirPermissions = cm.Option()
+localFSDirPermissions.doc = "a number used for permissions for directories in the local file system"
+localFSDirPermissions = stat.S_IRGRP | stat.S_IXGRP | stat.S_IWGRP | stat.S_IRUSR | stat.S_IXUSR | stat.S_IWUSR
+
+fallbackFS = cm.Option()
+fallbackFS.doc = 'a path to a local file system to use if local store fails'
+fallbackFS.default = './fallback'
+
+fallbackDumpDirCount = cm.Option()
+fallbackDumpDirCount.doc = 'the number of dumps to be stored in a single directory in the fallback File System'
+fallbackDumpDirCount.default = 1024
+
+fallbackDumpGID = cm.Option()
+fallbackDumpGID.doc="the group ID for saved crashes in fallback File System (optional)"
+fallbackDumpGID.default = None
+
+fallbackDumpPermissions = cm.Option()
+fallbackDumpPermissions.doc = "a number used for permissions crash dump files in the fallback File System"
+fallbackDumpPermissions.default = stat.S_IRGRP | stat.S_IWGRP | stat.S_IRUSR | stat.S_IWUSR
+
+fallbackDirPermissions = cm.Option()
+fallbackDirPermissions.doc = "a number used for permissions for directories in the fallback File System"
+fallbackDirPermissions = stat.S_IRGRP | stat.S_IXGRP | stat.S_IWGRP | stat.S_IRUSR | stat.S_IXUSR | stat.S_IWUSR
+
+from config.commonconfig import hbaseHost
+from config.commonconfig import hbasePort
+from config.commonconfig import hbaseTimeout
+hbaseFallbackFS = fallbackFS
+hbaseFallbackDumpDirCount = fallbackDumpDirCount
+hbaseFallbackDumpGID = fallbackDumpGID
+hbaseFallbackDumpPermissions = fallbackDumpPermissions
+hbaseFallbackDirPermissions = fallbackDirPermissions
+
+#-------------------------------------------------------------------------------
+# application server parameters
+
+modwsgiInstallation = cm.Option()
+modwsgiInstallation.doc = 'True or False, this app is installed under mod_wsgi'
+modwsgiInstallation.default = False
+
+serverIPAddress = cm.Option()
+serverIPAddress.doc = 'the IP address from which to accept submissions if not installed under mod_wsgi'
+serverIPAddress.default = '127.0.0.1'
+
+serverPort = cm.Option()
+serverPort.doc = 'the port to listen to for submissions if not installed under mod_wsgi'
+serverPort.default = 8882
+
+# The form field the client sends the dump in
+dumpField = cm.Option()
+dumpField.default = "upload_file_minidump"
+
+# when storing in the file system, how deep should the radix directory depth be
+storageDepth = cm.Option()
+storageDepth.default = 2
+
+# Returned to the client with a uuid following
+dumpIDPrefix = cm.Option()
+dumpIDPrefix.default = "bp-"
+
+# Bugzilla 495700 - need to be able to ignore new Thottleable protocol
+neverDiscard = cm.Option()
+neverDiscard.default = True
+neverDiscard.fromStringConverter = cm.booleanConverter
+
+throttleConditions = cm.Option()
+throttleConditions.default = throttleConditions.default = [
+    ("Comments", lambda x: x, 100), # 100% of crashes with comments
+    ("ReleaseChannel", lambda x: x in ("nightly", "aurora", "beta"), 100),
+    ("ProductName", 'Firefox', 10), # 10% of Firefox
+    ("ProductName", 'Fennec', 100), # 100% of Fennec
+    ("Version", re.compile(r'\..*?[a-zA-Z]+'), 100), # 100% of all alpha, beta or special
+    ("ProductName", lambda x: x[0] in 'TSC', 100), # 100% of Thunderbird, SeaMonkey & Camino
+    (None, True, 0) # reject everything else
+]
+
+minimalVersionForUnderstandingRefusal = cm.Option()
+minimalVersionForUnderstandingRefusal.default = { 'Firefox': '3.5.4' }
+
+benchmark = cm.Option()
+benchmark.default = False
+benchmark.fromStringConverter = cm.booleanConverter
+
+
+#-------------------------------------------------------------------------------
+# storage
+
+
+#-------------------------------------------------------------------------------
+# Logging
+
+syslogHost = cm.Option()
+syslogHost.doc = 'syslog hostname'
+syslogHost.default = 'localhost'
+
+syslogPort = cm.Option()
+syslogPort.doc = 'syslog port'
+syslogPort.default = 514
+
+syslogSocket = cm.Option()
+syslogSocket.doc = 'syslog local socket'
+syslogSocket.default = '/dev/log'
+
+syslogTransport = cm.Option()
+syslogTransport.doc = 'syslog transport method ("socket", "udp")'
+syslogTransport.default = 'socket'
+
+syslogFacilityString = cm.Option()
+syslogFacilityString.doc = 'syslog facility string ("user", "local0", etc)'
+syslogFacilityString.default = 'user'
+
+syslogLineFormatString = cm.Option()
+syslogLineFormatString.doc = 'python logging system format for syslog entries'
+syslogLineFormatString.default = 'Socorro Collector (pid %(process)d): %(asctime)s %(levelname)s - %(threadName)s - %(message)s'
+
+syslogErrorLoggingLevel = cm.Option()
+syslogErrorLoggingLevel.doc = 'logging level for the log file (10 - DEBUG, 20 - INFO, 30 - WARNING, 40 - ERROR, 50 - CRITICAL)'
+syslogErrorLoggingLevel.default = 10
+
+

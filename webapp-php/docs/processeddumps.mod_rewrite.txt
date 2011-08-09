@@ -1,0 +1,7 @@
+RewriteBase /reporter/dumps/
+
+RewriteCond %{REQUEST_URI} (\w\w)(\w\w)((?:\w|-)+?)(\d{6}).(jsonz)
+RewriteCond /opt/socorro/dumps/processedDumpStorage/20$4/name/$1/$2/$1$2$3$4.$5
+-f
+ReWriteRule (\w\w)(\w\w)((?:\w|-)+?)(\d{6}).(jsonz)
+/processeddumps/20$4/name/$1/$2/$1$2$3$4.$5 [L]

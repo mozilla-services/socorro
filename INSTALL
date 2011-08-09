@@ -1,0 +1,173 @@
+## Ubuntu
+# general
+apt-get install supervisor rsyslog 
+# development 
+apt-get install libcurl4-openssl-dev build-essential sun-java6-jdk ant python-software-properties subversion libpq-dev python-virtualenv python-dev libcrypt-ssleay-perl phpunit php5-tidy
+# python apps
+apt-get install python-psycopg2 python-simplejson apache2 libapache2-mod-wsgi 
+# PHP web app
+apt-get install memcached php5-pgsql php5-curl php5-dev php-pear php5-common php5-cli php5-memcache php5 php5-gd php5-mysql php5-ldap
+# hbase
+apt-get install hadoop-hbase hadoop-hbase-master hadoop-hbase-thrift curl liblzo2-dev
+# postgresql
+apt-get install postgresql-8.4 postgresql-plperl-8.4 postgresql-contrib
+
+## RHEL6
+## Do not use "easy install", suggest "text install"
+## Choose "minimal" as install option.
+## FIXME network must be started on each reboot
+yum install python-psycopg2 simplejson httpd mod_ssl mod_wsgi postgresql-server postgresql-plperl perl-pgsql_perl5 postgresql-contrib subversion make rsync php-pecl-memcache memcached php-pgsql
+# for building minidump_stackwalk
+yum install subversion gcc-c++ curl-devel
+# for building java analysis tools
+yum install ant
+# for unit/functional tests
+yum install python-virtualenv php-phpunit-PHPUnit
+
+## disable SELinux
+edit /etc/sysconfig/selinux
+# SELINUX=disabled
+
+# reboot
+shutdown -r now
+
+## postgresql config
+service postgresql initdb
+edit /var/lib/pgsql/data/pg_hba.conf
+# change IPv4/IPv6 connection from "ident" to "md5"
+edit /var/lib/pgsql/data/postgresql.conf
+# uncomment:
+# listen_addresses = 'localhost'
+service postgresql start
+chkconfig postgresql on
+
+## for dev/production
+su - postgres
+psql
+postgres=# CREATE DATABASE breakpad;
+CREATE DATABASE
+# note - set this to something random!
+postgres=# CREATE USER breakpad_rw WITH PASSWORD 'secret';
+CREATE ROLE
+postgres=# GRANT ALL ON DATABASE breakpad TO breakpad_rw;
+GRANT
+postgres=# \c breakpad
+You are now connected to database "breakpad".
+breakpad=# CREATE LANGUAGE plpgsql;
+CREATE LANGUAGE
+breakpad=# CREATE LANGUAGE plperl;
+CREATE LANGUAGE
+breakpad=# \q
+psql -d breakpad -f /usr/share/pgsql/contrib/citext.sql
+
+## for unit/functional tests
+su - postgres
+psql
+postgres=# CREATE DATABASE test;
+CREATE DATABASE
+postgres=# CREATE USER test WITH PASSWORD 'aPassword';
+CREATE ROLE
+postgres=# GRANT ALL ON DATABASE test TO test;
+GRANT
+postgres=# \c test
+You are now connected to database "test".
+test=# CREATE LANGUAGE plpgsql;
+CREATE LANGUAGE
+test=# CREATE LANGUAGE plperl;
+CREATE LANGUAGE
+test=# \q
+psql -d test -f /usr/share/pgsql/contrib/citext.sql
+
+# check out socorro
+svn checkout http://socorro.googlecode.com/svn/trunk/ socorro
+cd socorro
+
+## PostgreSQL/Socorro setup
+cp scripts/config/commonconfig.py.dist scripts/config/commonconfig.py
+edit scripts/config/commonconfig.py
+# databaseName.default = 'breakpad'
+# databaseUserName.default = 'breakpad_rw'
+# databasePassword.default = 'secret'
+cp scripts/config/setupdatabaseconfig.py.dist scripts/config/setupdatabaseconfig.py
+export PYTHONPATH=.:thirdparty
+python scripts/setupDatabase.py
+cp scripts/config/createpartitionsconfig.py.dist scripts/config/createpartitionsconfig.py
+python scripts/createPartitions.py
+
+# run unit/functional tests + coverage report
+make coverage
+
+# set up directories, user and permissions
+mkdir /etc/socorro
+mkdir /var/log/socorro
+mkdir -p /data/socorro
+useradd socorro
+chown socorro:socorro /var/log/socorro
+
+# compile minidump_stackwalk
+make minidump_stackwalk
+
+# install socorro
+make install
+
+# symlink init scripts
+ln -s /data/socorro/application/scripts/init.d/socorro-{monitor,processor,crashmover} /etc/init.d/
+chkconfig socorro-monitor on
+chkconfig socorro-processor on
+chkconfig socorro-crashmover on
+
+# set up cron jobs
+ln -s /data/socorro/application/scripts/crons/socorrorc /etc/socorro/
+crontab /data/socorro/application/scripts/crons/example.crontab 
+
+# Configure Apache
+edit /etc/httpd/conf.d/socorro.conf
+cp config/socorro.conf /etc/httpd/conf.d/socorro.conf
+
+mkdir /var/log/httpd/{crash-stats,crash-reports,socorro-api}.example.com
+service httpd restart
+chkconfig httpd on
+
+# enable memcached
+service memcached restart
+chkconfig memcached on
+
+# make kohana logdir writable
+chown apache /data/socorro/htdocs/application/logs/
+
+# enable PHP short_open_tag
+edit /etc/php.ini
+# make the following changes:
+short_open_tag = On
+date.timezone = 'America/Los_Angeles'
+
+# set up htpasswd file /data/socorro/application/.htpasswd
+# this is used by the PHP UI to make protected calls to the middleware
+htpasswd -c /data/socorro/application/.htpasswd breakpad_rw
+
+# configure Kohana
+# refer to https://wiki.mozilla.org/Socorro/SocorroUI/Installation
+edit /data/socorro/htdocs/application/config/*.php
+
+## Hadoop+HBase install
+# install Sun Java JDK 
+# JDK 6u16
+# download appropriate package from http://www.oracle.com/technetwork/java/javase/downloads/index.html
+bash jdk-6u23-linux-x64-rpm.bin
+# install Hadoop 0.20 + HBase 0.89
+# refer to https://wiki.cloudera.com/display/DOC/HBase+Installation
+# NOTE - this is just a standalone setup, read the above for info on a real, distributed setup!
+wget http://archive.cloudera.com/redhat/cdh/cloudera-cdh3.repo
+mv cloudera-cdh3.repo /etc/yum.repos.d/
+yum update yum
+yum install hadoop-hbase hadoop-hbase-master hadoop-hbase-thrift
+service hadoop-hbase-master start
+chkconfig hadoop-hbase-master on
+service hadoop-hbase-thrift start
+chkconfig hadoop-hbase-thrift on
+
+# load Hbase schema
+cat analysis/hbase_schema | hbase shell
+
+# TODO overall system test
+# use submitter.py to insert crash, confirm that it is processed and available in UI via middleware call

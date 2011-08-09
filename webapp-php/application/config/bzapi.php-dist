@@ -1,0 +1,17 @@
+<?php defined('SYSPATH') or die('No direct script access.');
+/**
+ * Configuration settings for the Bugzilla REST API. Socorro uses this url to
+ * load more information about bug IDs stored in the back end. These calls are
+ * cached in whatever Kohana cache module is running. You can specify a timeout
+ * specifically for caching bugzilla calls if you want something different than
+ * the global cache timeout.
+ */
+
+// Root url for the bugzilla REST api you're interested in querying
+$config['url'] = 'https://api-dev.bugzilla.mozilla.org/0.9/';
+
+// How long to cache REST calls, in seconds, if different from global cache.
+// Setting the time out to 0 disables it.
+$config['timeout'] = 900; // default 15 minutes 
+
+

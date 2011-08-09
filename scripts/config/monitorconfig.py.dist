@@ -1,0 +1,69 @@
+import socorro.lib.ConfigurationManager as cm
+import datetime
+import stat
+
+#---------------------------------------------------------------------------
+# imported config
+
+from config.commonconfig import databaseHost
+from config.commonconfig import databaseName
+from config.commonconfig import databaseUserName
+from config.commonconfig import databasePassword
+from config.commonconfig import processorCheckInTime
+
+#---------------------------------------------------------------------------
+# HBase storage system
+from config.commonconfig import hbaseHost
+from config.commonconfig import hbasePort
+from config.commonconfig import hbaseTimeout
+
+#---------------------------------------------------------------------------
+# monitor local config
+
+standardLoopDelay = cm.Option()
+standardLoopDelay.doc = 'the time between scans for jobs (HHH:MM:SS)'
+standardLoopDelay.default = '00:05:00'
+standardLoopDelay.fromStringConverter = cm.timeDeltaConverter
+
+cleanupJobsLoopDelay = cm.Option()
+cleanupJobsLoopDelay.doc = 'the time between runs of the job clean up routines (HHH:MM:SS)'
+cleanupJobsLoopDelay.default = '00:05:00'
+cleanupJobsLoopDelay.fromStringConverter = cm.timeDeltaConverter
+
+priorityLoopDelay = cm.Option()
+priorityLoopDelay.doc = 'the time between checks for priority jobs (HHH:MM:SS)'
+priorityLoopDelay.default = '00:01:00'
+priorityLoopDelay.fromStringConverter = cm.timeDeltaConverter
+
+#-------------------------------------------------------------------------------
+# Logging
+
+syslogHost = cm.Option()
+syslogHost.doc = 'syslog hostname'
+syslogHost.default = 'localhost'
+
+syslogPort = cm.Option()
+syslogPort.doc = 'syslog port'
+syslogPort.default = 514
+
+syslogFacilityString = cm.Option()
+syslogFacilityString.doc = 'syslog facility string ("user", "local0", etc)'
+syslogFacilityString.default = 'user'
+
+syslogLineFormatString = cm.Option()
+syslogLineFormatString.doc = 'python logging system format for syslog entries'
+syslogLineFormatString.default = 'Socorro Monitor (pid %(process)d): %(asctime)s %(levelname)s - %(threadName)s - %(message)s'
+
+syslogErrorLoggingLevel = cm.Option()
+syslogErrorLoggingLevel.doc = 'logging level for the log file (10 - DEBUG, 20 - INFO, 30 - WARNING, 40 - ERROR, 50 - CRITICAL)'
+syslogErrorLoggingLevel.default = 10
+
+stderrLineFormatString = cm.Option()
+stderrLineFormatString.doc = 'python logging system format for logging to stderr'
+stderrLineFormatString.default = '%(asctime)s %(levelname)s - %(threadName)s - %(message)s'
+
+stderrErrorLoggingLevel = cm.Option()
+stderrErrorLoggingLevel.doc = 'logging level for the logging to stderr (10 - DEBUG, 20 - INFO, 30 - WARNING, 40 - ERROR, 50 - CRITICAL)'
+stderrErrorLoggingLevel.default = 10
+
+

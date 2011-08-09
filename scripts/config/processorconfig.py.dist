@@ -1,0 +1,263 @@
+import socorro.lib.ConfigurationManager as cm
+import datetime
+import re
+import stat
+
+#---------------------------------------------------------------------------
+# imported config
+
+from config.commonconfig import databaseHost
+from config.commonconfig import databasePort
+from config.commonconfig import databaseName
+from config.commonconfig import databaseUserName
+from config.commonconfig import databasePassword
+from config.commonconfig import processorCheckInTime
+from config.commonconfig import jsonFileSuffix
+from config.commonconfig import dumpFileSuffix
+
+#---------------------------------------------------------------------------
+# HBase storage system
+from config.commonconfig import hbaseStorageClass
+
+from config.commonconfig import hbaseHost
+from config.commonconfig import hbasePort
+from config.commonconfig import hbaseTimeout
+
+from config.commonconfig import secondaryHbaseHost
+from config.commonconfig import secondaryHbasePort
+from config.commonconfig import secondaryHbaseTimeout
+
+temporaryFileSystemStoragePath = cm.Option()
+temporaryFileSystemStoragePath.doc = 'a local filesystem path where processor can write dumps temporarily for processing'
+temporaryFileSystemStoragePath.default = './'
+
+#---------------------------------------------------------------------------
+# local processor config
+
+elasticSearchOoidSubmissionUrl = cm.Option()
+elasticSearchOoidSubmissionUrl.doc = 'a url to submit ooids for Elastic Search (use %s in place of the ooid) (leave blank for no Elastic Search)'
+#elasticSearchOoidSubmissionUrl.default = 'http://node14.generic.metrics.sjc1.mozilla.com:9999/queue/tasks/%s'
+elasticSearchOoidSubmissionUrl.default = ''
+
+numberOfThreads = cm.Option()
+numberOfThreads.doc = 'the number of threads to use'
+numberOfThreads.default = 4
+
+processorId = cm.Option()
+processorId.doc = 'the id number for the processor (must already exist in database) (0 for create new Id, "auto" for autodetection)'
+processorId.default = "auto"
+
+stackwalkCommandLine = cm.Option()
+stackwalkCommandLine.doc = 'the template for the command to invoke minidump_stackwalk'
+#for standard minidump_stackwalk uncomment this line:
+stackwalkCommandLine.default = '$minidump_stackwalkPathname -m $dumpfilePathname $processorSymbolsPathnameList 2>/dev/null'
+#for caching minidump_stackwalk uncomment this line:
+#stackwalkCommandLine.default = '$minidump_stackwalkPathname -c $symbolCachePath  -m $dumpfilePathname $processorSymbolsPathnameList 2>/dev/null'
+
+minidump_stackwalkPathname = cm.Option()
+minidump_stackwalkPathname.doc = 'the full pathname of the extern program minidump_stackwalk (quote path with embedded spaces)'
+minidump_stackwalkPathname.default = '/usr/local/bin/minidump_stackwalk'
+
+symbolCachePath = cm.Option()
+symbolCachePath.doc = 'the path where the symbol cache is found (quote path with embedded spaces)'
+symbolCachePath.default = '/mnt/socorro/symbols'
+
+processorSymbolsPathnameList = cm.Option()
+processorSymbolsPathnameList.doc = 'comma or space separated list of symbol files for minidump_stackwalk (quote paths with embedded spaces)'
+processorSymbolsPathnameList.default = "/mnt/socorro/symbols/symbols_ffx,/mnt/socorro/symbols/symbols_sea,/mnt/socorro/symbols/symbols_tbrd,/mnt/socorro/symbols/symbols_sbrd,/mnt/socorro/symbols/symbols_os"
+processorSymbolsPathnameList.fromStringConverter = lambda x: x.replace(',', ' ')
+
+crashingThreadFrameThreshold = cm.Option()
+crashingThreadFrameThreshold.doc = "the number of frames to keep in the raw dump for the crashing thread"
+crashingThreadFrameThreshold.default = 100
+
+crashingThreadTailFrameThreshold = cm.Option()
+crashingThreadTailFrameThreshold.doc="the number of frames to keep in the raw dump at the tail of the frame list"
+crashingThreadTailFrameThreshold.default = 10
+
+processorLoopTime = cm.Option()
+processorLoopTime.doc = 'the time to wait between attempts to get jobs (HHH:MM:SS)'
+processorLoopTime.default = '0:00:06'
+processorLoopTime.fromStringConverter = cm.timeDeltaConverter
+
+checkForPriorityFrequency = cm.Option()
+checkForPriorityFrequency.doc = 'the time bewteen checks for priority jobs (HHH:MM:SS)'
+checkForPriorityFrequency.default = '0:01:00'
+checkForPriorityFrequency.fromStringConverter = cm.timeDeltaConverter
+
+processorCheckInFrequency = cm.Option()
+processorCheckInFrequency.doc = 'the frequency in seconds for the processor to check in with the monitor'
+processorCheckInFrequency.default = '0:05:00'
+processorCheckInFrequency.fromStringConverter = cm.timeDeltaConverter
+
+batchJobLimit = cm.Option()
+batchJobLimit.doc = 'the number of jobs to pull in a time'
+batchJobLimit.default = 10000
+
+#updateInterval = cm.Option()
+#updateInterval.doc = 'How often to check for updates in this config file. Format 'dd:hh:mm:ss'. If 0, never update'
+#updateInteval.default = '0:0:0:0'
+
+#signalNumber = cmOption()
+#signalNumber.doc 'kill -signal_number the_process' causes configuration to be dynamically updated.
+#signalNumber.default = signal.SIGALRM
+
+signatureSentinels = cm.Option()
+signatureSentinels.doc = 'a list of frame signatures that should always be considered top of the stack if present in the stack'
+signatureSentinels.default = ['_purecall',
+                              ('mozilla::ipc::RPCChannel::Call(IPC::Message*, IPC::Message*)',
+                                  lambda x: 'CrashReporter::CreatePairedMinidumps(void*, unsigned long, nsAString_internal*, nsILocalFile**, nsILocalFile**)' in x)]
+
+irrelevantSignatureRegEx = cm.Option()
+irrelevantSignatureRegEx.doc = 'a regular expression matching frame signatures that should be ignored when generating an overall signature'
+irrelevantSignatureRegEx.default = '|'.join([
+  '@0x[0-9a-fA-F]{2,}',
+  '@0x[1-9a-fA-F]',
+  'RaiseException',
+  '_CxxThrowException',
+  'mozilla::ipc::RPCChannel::Call\(IPC::Message\*, IPC::Message\*\)',
+  'KiFastSystemCallRet',
+  '(Nt|Zw)WaitForSingleObject(Ex)?',
+  '(Nt|Zw)WaitForMultipleObjects(Ex)?',
+  'WaitForSingleObjectExImplementation',
+  'WaitForMultipleObjectsExImplementation',
+  '___TERMINATING_DUE_TO_UNCAUGHT_EXCEPTION___',
+  '_NSRaiseError',
+  'mozcrt19.dll@0x.*',
+  ])
+
+prefixSignatureRegEx = cm.Option()
+prefixSignatureRegEx.doc = 'a regular expression matching frame signatures that should always be coupled with the following frame signature when generating an overall signature'
+prefixSignatureRegEx = '|'.join([
+  '@0x0',
+  'strchr',
+  'strstr',
+  'strlen',
+  'PL_strlen',
+  'strcmp',
+  'wcslen',
+  'memcpy',
+  'memmove',
+  'memcmp',
+  'malloc',
+  'realloc',
+  '.*free',
+  'arena_dalloc_small',
+  'arena_alloc',
+  'arena_dalloc',
+  'nsObjCExceptionLogAbort(\(.*?\)){0,1}',
+  'libobjc.A.dylib@0x1568.',
+  'objc_msgSend',
+  '_purecall',
+  'PL_DHashTableOperate',
+  'EtwEventEnabled',
+  'RtlpFreeHandleForAtom',
+  'RtlpDeCommitFreeBlock',
+  'RtlpAllocateAffinityIndex',
+  'RtlAddAccessAllowedAce',
+  'RtlQueryPerformanceFrequency',
+  'RtlpWaitOnCriticalSection',
+  'RtlpWaitForCriticalSection',
+  '_PR_MD_ATOMIC_(INC|DEC)REMENT',
+  'nsCOMPtr.*',
+  'nsRefPtr.*',
+  'operator new\([^,\)]+\)',
+  'CFRelease',
+  'objc_exception_throw',
+  '[-+]\[NSException raise(:format:(arguments:)?)?\]',
+  'mozalloc_handle_oom',
+  'nsTArray_base<.*',
+  'nsTArray<.*',
+  'WaitForSingleObject(Ex)?',
+  'WaitForMultipleObjects(Ex)?',
+  'NtUserWaitMessage',
+  'NtUserMessageCall',
+  'mozalloc_abort.*',
+  'NS_DebugBreak_P.*',
+  'PR_AtomicIncrement',
+  'PR_AtomicDecrement',
+  ])
+
+signaturesWithLineNumbersRegEx = cm.Option()
+signaturesWithLineNumbersRegEx.doc = 'any signatures that match this list should be combined with their associated source code line numbers'
+signaturesWithLineNumbersRegEx.default = 'js_Interpret'
+
+collectAddon = cm.Option()
+collectAddon.doc = "if true, parse and collect information about addons from the json file; if false, don't"
+collectAddon.default = True
+collectAddon.fromStringConverter = cm.booleanConverter
+
+collectCrashProcess = cm.Option()
+collectCrashProcess.doc = "if true, parse and collect information about out of process crashes; if false, don't"
+collectCrashProcess.default = True
+collectCrashProcess.fromStringConverter = cm.booleanConverter
+
+#-------------------------------------------------------------------------------
+# Logging
+
+syslogHost = cm.Option()
+syslogHost.doc = 'syslog hostname'
+syslogHost.default = 'localhost'
+
+syslogPort = cm.Option()
+syslogPort.doc = 'syslog port'
+syslogPort.default = 514
+
+syslogFacilityString = cm.Option()
+syslogFacilityString.doc = 'syslog facility string ("user", "local0", etc)'
+syslogFacilityString.default = 'user'
+
+syslogLineFormatString = cm.Option()
+syslogLineFormatString.doc = 'python logging system format for syslog entries'
+syslogLineFormatString.default = 'Socorro Processor (pid %(process)d): %(asctime)s %(levelname)s - %(threadName)s - %(message)s'
+
+syslogErrorLoggingLevel = cm.Option()
+syslogErrorLoggingLevel.doc = 'logging level for the log file (10 - DEBUG, 20 - INFO, 30 - WARNING, 40 - ERROR, 50 - CRITICAL)'
+syslogErrorLoggingLevel.default = 10
+
+stderrLineFormatString = cm.Option()
+stderrLineFormatString.doc = 'python logging system format for logging to stderr'
+stderrLineFormatString.default = '%(asctime)s %(levelname)s - %(threadName)s - %(message)s'
+
+stderrErrorLoggingLevel = cm.Option()
+stderrErrorLoggingLevel.doc = 'logging level for the logging to stderr (10 - DEBUG, 20 - INFO, 30 - WARNING, 40 - ERROR, 50 - CRITICAL)'
+stderrErrorLoggingLevel.default = 40
+
+# This Option is kind of a hack in that it should better be done with dynamic lookup, but this is what we have
+knownFlashIdentifiers = cm.Option()
+knownFlashIdentifiers.doc = 'A subset of the known "debug identifiers" for flash versions, associated to the version'
+knownFlashIdentifiers.default = {
+                              '7224164B5918E29AF52365AF3EAF7A500':'10.1.51.66',
+                              'C6CDEFCDB58EFE5C6ECEF0C463C979F80':'10.1.51.66',
+                              '4EDBBD7016E8871A461CCABB7F1B16120':'10.1',
+                              'D1AAAB5D417861E6A5B835B01D3039550':'10.0.45.2',
+                              'EBD27FDBA9D9B3880550B2446902EC4A0':'10.0.45.2',
+                              '266780DB53C4AAC830AFF69306C5C0300':'10.0.42.34',
+                              'C4D637F2C8494896FBD4B3EF0319EBAC0':'10.0.42.34',
+                              'B19EE2363941C9582E040B99BB5E237A0':'10.0.32.18',
+                              '025105C956638D665850591768FB743D0':'10.0.32.18',
+                              '986682965B43DFA62E0A0DFFD7B7417F0':'10.0.23',
+                              '937DDCC422411E58EF6AD13710B0EF190':'10.0.23',
+                              '860692A215F054B7B9474B410ABEB5300':'10.0.22.87',
+                              '77CB5AC61C456B965D0B41361B3F6CEA0':'10.0.22.87',
+                              '38AEB67F6A0B43C6A341D7936603E84A0':'10.0.12.36',
+                              '776944FD51654CA2B59AB26A33D8F9B30':'10.0.12.36',
+                              '974873A0A6AD482F8F17A7C55F0A33390':'9.0.262.0',
+                              'B482D3DFD57C23B5754966F42D4CBCB60':'9.0.262.0',
+                              '0B03252A5C303973E320CAA6127441F80':'9.0.260.0',
+                              'AE71D92D2812430FA05238C52F7E20310':'9.0.246.0',
+                              '6761F4FA49B5F55833D66CAC0BBF8CB80':'9.0.246.0',
+                              '27CC04C9588E482A948FB5A87E22687B0':'9.0.159.0',
+                              '1C8715E734B31A2EACE3B0CFC1CF21EB0':'9.0.159.0',
+                              'F43004FFC4944F26AF228334F2CDA80B0':'9.0.151.0',
+                              '890664D4EF567481ACFD2A21E9D2A2420':'9.0.151.0',
+                              '8355DCF076564B6784C517FD0ECCB2F20':'9.0.124.0',
+                              '51C00B72112812428EFA8F4A37F683A80':'9.0.124.0',
+                              '9FA57B6DC7FF4CFE9A518442325E91CB0':'9.0.115.0',
+                              '03D99C42D7475B46D77E64D4D5386D6D0':'9.0.115.0',
+                              '0CFAF1611A3C4AA382D26424D609F00B0':'9.0.47.0',
+                              '0F3262B5501A34B963E5DF3F0386C9910':'9.0.47.0',
+                              'C5B5651B46B7612E118339D19A6E66360':'9.0.45.0',
+                              'BF6B3B51ACB255B38FCD8AA5AEB9F1030':'9.0.28.0',
+                              '83CF4DC03621B778E931FC713889E8F10':'9.0.16.0',
+                              }

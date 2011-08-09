@@ -1,0 +1,101 @@
+gnames() {
+  configName=$(echo *Testconfig.py)
+  testBase=$(echo $configName|sed -e 's/Testconfig//')
+  uc=$(echo $testBase|cut -b1|tr '[a-z]' '[A-Z]')
+  testName=test$(echo $testBase|sed "s/^./$uc/")
+  echo "$testName%$configName"
+}
+ 
+glog() {
+  names=$(gnames)
+  config=$(echo $names|cut -d '%' -f 2)
+  v=$(cat $config|grep logFilePathname.default|cut -f 2 -d =)
+  echo $v|tr -d '"' | tr -d "'" | sed 's/%(testDir)s/./'
+}
+
+clears() {
+  echo -e "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n"
+  clear
+}
+
+red_help() {
+  testName=$(gnames|cut -d '%' -f 1)
+  testLog=$(glog)
+  cat<<EOF
+
+Usage: red ... eventually followed by Ctrl-C
+Named because 'red' is shorter than 'redo' or 'doitagain'
+Effect: Clear screen; remove, touch and tail -F the logfile.
+  For $testName, that logfile is $testLog
+
+EOF
+}
+
+red() {
+  while [ $# -gt 0 ] ; do
+  case $1 in
+  -h|--h*) red_help; return 0 ;;
+  *) echo "I did not understand argument $1. Quitting" 1>&2
+     red_help 1>&2
+     return 1 ;;
+  esac
+  done
+  logf=$(glog)
+  rm -f $logf
+  touch $logf
+  clears
+  tail -F $logf
+}
+
+alias taillog=red
+
+noseErrors_help() {
+  cat <<EOF
+Usage: noseErrors [--verbose] outputFile
+  Shows output lines that aren't 'ok'.
+  if --verbose: Also shows test filenames and some formatting 
+EOF
+}
+
+noseErrors() {
+  verbose=''
+  logfile=''
+  if [ $# -lt 1 ]  ; then
+    echo "Must supply name of outputfile"
+    noseErrors_help
+    return
+  fi
+  while [ $# -gt 0 ] ; do
+  case $1 in
+  -h|--h*)
+    noseErrors_help
+    return ;;
+  -v|--v*)
+    verbose='t'
+    shift ;;
+  -*) 
+    echo "Don't understand flag $1. Quitting"
+    noseErrors_help
+    return ;;
+  *) 
+    if [ -f $1 ] ; then
+      logfile="$logfile $1"
+    else
+      echo "$1 is not a file. Skipping"
+    fi
+    shift ;;
+  esac
+  done
+  if [ "$logfile" ] ; then
+    for i in $logfile ; do
+      echo "$i"
+      echo "$i" | sed 's/./=/g'
+      if [ "$verbose" ] ; then
+        cat $i | egrep -v 'ok$'
+      else
+        cat $i | egrep -v '^====|^$|ok$'
+      fi
+      echo " ======== ======== ======== ======== ======== ========"
+    done
+  fi
+}

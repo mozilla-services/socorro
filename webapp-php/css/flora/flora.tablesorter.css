@@ -1,0 +1,46 @@
+/* This file skins tableSorter */
+
+table.tablesorter {
+	font-family:arial;
+	background-color: #CDCDCD;
+	margin:10px 0pt 15px;
+	font-size: 8pt;
+	width: 100%;
+	text-align: left;
+}
+table.tablesorter thead tr th, table.tablesorter tfoot tr th {
+	background-color: #CCC;
+	border: 1px solid #FFF;
+	font-size: 8pt;
+	padding: 4px;
+  padding-right: 17px;
+}
+table.tablesorter thead tr .header {
+	background-image: url(i/bg.gif);
+	background-repeat: no-repeat;
+	background-position: center right;
+	cursor: pointer;
+}
+table.tablesorter tbody tr {
+  background-color: #fff;
+}
+table.tablesorter tbody tr:hover {
+  background-color: #eee;
+}
+table.tablesorter tbody td {
+	color: #3D3D3D;
+	padding: 4px;
+	vertical-align: top;
+}
+table.tablesorter thead tr .headerSortUp {
+	background-image: url(i/asc.gif);
+}
+table.tablesorter thead tr .headerSortDown {
+	background-image: url(i/desc.gif);
+}
+table.tablesorter thead tr .headerSortDown, table.tablesorter thead tr .headerSortUp {
+  background-color: #AAA;
+}
+table.tablesorter td.report-date {
+  width: 12em;
+}
