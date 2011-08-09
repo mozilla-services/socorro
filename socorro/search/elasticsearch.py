@@ -175,7 +175,7 @@ class ElasticSearchAPI(sapi.SearchAPI):
                 signatures = ElasticSearchAPI.get_counts(
                                                 signatures,
                                                 count_sign,
-                                                params,
+                                                params["result_offset"],
                                                 maxsize,
                                                 self.context.platforms)
 
@@ -294,14 +294,14 @@ class ElasticSearchAPI(sapi.SearchAPI):
         return facets
 
     @staticmethod
-    def get_counts(signatures, count_sign, params, maxsize, platforms):
+    def get_counts(signatures, count_sign, result_offset, maxsize, platforms):
         """
         Generate the complementary information about signatures
         (count by OS, number of plugins and of hang).
 
         """
         # Transform the results into something we can return
-        for i in xrange(params["result_offset"], maxsize):
+        for i in xrange(result_offset, maxsize):
             # OS count
             for term in count_sign[signatures[i]["signature"]]["terms"]:
                 for os in platforms:
