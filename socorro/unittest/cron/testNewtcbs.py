@@ -138,25 +138,25 @@ BEGIN
         RETURN true;
 END;
 $$ LANGUAGE plpgsql;
- CREATE OR REPLACE FUNCTION update_signatures(anything character)
+ CREATE OR REPLACE FUNCTION update_signatures(timestamp without time zone)
 RETURNS boolean AS $$
 BEGIN
         RETURN true;
 END;
 $$ LANGUAGE plpgsql;
- CREATE OR REPLACE FUNCTION update_os_versions(anything character)
+ CREATE OR REPLACE FUNCTION update_os_versions(timestamp without time zone)
 RETURNS boolean AS $$
 BEGIN
         RETURN true;
 END;
 $$ LANGUAGE plpgsql;
- CREATE OR REPLACE FUNCTION update_tcbs(anything character)
+ CREATE OR REPLACE FUNCTION update_tcbs(timestamp without time zone)
 RETURNS boolean AS $$
 BEGIN
         RETURN true;
 END;
 $$ LANGUAGE plpgsql;
- CREATE OR REPLACE FUNCTION update_adu(anything character)
+ CREATE OR REPLACE FUNCTION update_adu(timestamp without time zone)
 RETURNS boolean AS $$
 BEGIN
         RETURN true;
@@ -171,16 +171,16 @@ $$ LANGUAGE plpgsql;
         cursor = self.connection.cursor()
         cursor.execute("""DROP TABLE cronjobs;
         DROP FUNCTION update_product_versions () ;
-        DROP FUNCTION update_os_versions (character) ;
-        DROP FUNCTION update_signatures (character) ;
-        DROP FUNCTION update_tcbs (character) ;
-        DROP FUNCTION update_adu (character) ;
+        DROP FUNCTION update_os_versions (timestamp without time zone) ;
+        DROP FUNCTION update_signatures (timestamp without time zone) ;
+        DROP FUNCTION update_tcbs (timestamp without time zone) ;
+        DROP FUNCTION update_adu (timestamp without time zone) ;
         """)
         self.connection.commit()
 
     def test_all_works_without_errors(self):
         with patch('socorro.cron.newtcbs.logger'):
-            newtcbs.update(self.config, str(datetime.datetime.today()))
+            newtcbs.update(self.config, datetime.datetime.today())
             cursor = self.connection.cursor()
             for each in ('newtcbs:update_product_versions',
                          'newtcbs:update_os_versions',
