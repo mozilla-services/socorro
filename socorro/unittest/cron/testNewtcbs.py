@@ -71,9 +71,9 @@ class TestCase(unittest.TestCase):
             newtcbs.update(self.config, 'some date')
             self.assertEqual(cursor.called, [
               'update_product_versions', 'update_signatures',
-              'update_os_versions', 'update_adu'
+              'update_os_versions', 'update_adu', 'update_daily_crashes'
             ])
-            self.assertEqual(mock_logger.info.call_count, 4)
+            self.assertEqual(mock_logger.info.call_count, 5)
             self.assertEqual(mock_logger.warn.call_count, 2)
             self.assertEqual(mock_logger.error.call_count, 0)
 
@@ -82,7 +82,7 @@ class TestCase(unittest.TestCase):
         newtcbs.psycopg2 = mock_psycopg2(cursor)
         with patch('socorro.cron.newtcbs.logger') as mock_logger:
             newtcbs.update(self.config, 'some date')
-            self.assertEqual(mock_logger.info.call_count, 5)
+            self.assertEqual(mock_logger.info.call_count, 6)
             self.assertEqual(mock_logger.warn.call_count, 0)
             self.assertEqual(mock_logger.error.call_count, 0)
 
@@ -93,7 +93,7 @@ class TestCase(unittest.TestCase):
         newtcbs.psycopg2 = mock_psycopg2(cursor)
         with patch('socorro.cron.newtcbs.logger') as mock_logger:
             newtcbs.update(self.config, 'some date')
-            self.assertEqual(mock_logger.info.call_count, 4)
+            self.assertEqual(mock_logger.info.call_count, 5)
             self.assertEqual(mock_logger.warn.call_count, 1)
             self.assertEqual(mock_logger.error.call_count, 1)
 
@@ -132,6 +132,7 @@ INSERT INTO cronjobs (cronjob) VALUES ('newtcbs:update_os_versions');
 INSERT INTO cronjobs (cronjob) VALUES ('newtcbs:update_tcbs');
 INSERT INTO cronjobs (cronjob) VALUES ('newtcbs:update_signatures');
 INSERT INTO cronjobs (cronjob) VALUES ('newtcbs:update_adu');
+INSERT INTO cronjobs (cronjob) VALUES ('newtcbs:update_daily_crashes');
  CREATE OR REPLACE FUNCTION update_product_versions()
 RETURNS boolean AS $$
 BEGIN
@@ -157,6 +158,12 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
  CREATE OR REPLACE FUNCTION update_adu(timestamp without time zone)
+RETURNS boolean AS $$
+BEGIN
+        RETURN true;
+END;
+$$ LANGUAGE plpgsql;
+ CREATE OR REPLACE FUNCTION update_daily_crashes(timestamp without time zone)
 RETURNS boolean AS $$
 BEGIN
         RETURN true;
