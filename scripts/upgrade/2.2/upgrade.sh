@@ -42,6 +42,8 @@ psql -f daily_adu.sql breakpad
 echo 'new TCBS building functions and backfilling tcbs (takes a while)'
 psql -f update_tcbs.sql breakpad
 
+echo 'new daily_crashes cron job'
+psql -f daily_crashes.sql breakpad
 
 date
 

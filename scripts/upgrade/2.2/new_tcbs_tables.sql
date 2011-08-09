@@ -44,7 +44,8 @@ alter table release_channels owner to breakpad_rw;
 -- the product_visibility table
 
 create table product_versions (
-    product_version_id SERIAL not null primary key,
+    product_version_id INT not null default
+    	nextval('productdims_id_seq1'::regclass) primary key,
     product_name citext not null references products(product_name),
     major_version major_version not null,
     release_version citext not null,
@@ -59,6 +60,8 @@ create table product_versions (
 );
 
 alter table product_versions owner to breakpad_rw;
+
+alter sequence productdims_id_seq1 owned by product_versions.product_version_id;
 
 create unique index product_version_unique_beta 
 	on product_versions(product_name, major_version,beta_number) 
@@ -79,26 +82,6 @@ create table product_version_builds (
 
 alter table product_version_builds owner to breakpad_rw;
 
--- view for choosing whether to use the old TCBS or the new one
--- lists all "current" products
-
-create or replace view product_selector as
-select product_name, version_string, 'new'::text as which_table
-from product_versions
-where now() <= sunset_date
-	and build_type IN ('Release','Beta')
-union all
-select product, version, 'old'::text as which_ui
-from productdims join product_visibility
-	on productdims.id = product_visibility.productdims_id
-	left join product_versions on productdims.product = product_versions.product_name
-		and productdims.version = product_versions.release_version
-where product_versions.product_name is null 
-	and now() between product_visibility.start_date and ( product_visibility.end_date + interval '1 day')
-order by product_name, version_string;
-
-alter view product_selector owner to breakpad_rw;
-
 -- mapping table to map old release types to new build types
 
 create table release_build_type_map (
@@ -108,27 +91,6 @@ create table release_build_type_map (
 
 alter table release_build_type_map owner to breakpad_rw;
 
--- product_info view
--- used to power several different views of the application
-
-create or replace view product_info as
-select product_name, version_string, 'new'::text as which_table,
-	build_date as start_date, sunset_date as end_date, 
-	featured_version as is_featured, build_type
-from product_versions
-where build_type IN ('Release','Beta')
-union all
-select product, version, 'old'::text,
-	product_visibility.start_date, product_visibility.end_date,
-	featured, release_build_type_map.build_type
-from productdims join product_visibility
-	on productdims.id = product_visibility.productdims_id
-	join release_build_type_map ON 
-		productdims.release = release_build_type_map.release
-	left join product_versions on productdims.product = product_versions.product_name
-		and productdims.version = product_versions.release_version
-where product_versions.product_name is null
-order by product_name, version_string;
 
 -- need to alter signatures update procedure to update signatures instead of signature_first
 
@@ -237,7 +199,8 @@ alter table release_channel_matches owner to breakpad_rw;
 -- updated manually
 
 create table os_names (
-	os_name citext not null primary key
+	os_name citext not null primary key,
+	os_short_name citext not null
 );
 
 alter table os_names owner to breakpad_rw;
@@ -275,13 +238,88 @@ alter table os_name_matches owner to breakpad_rw;
 -- updated once per day by batch job
 
 create table product_adu (
-	product_version_id int not null references product_versions(product_version_id),
+	product_version_id int not null,
+	os_name citext not null,
 	adu_date date not null,
-	adu_count int not null default 0,
-	constraint product_adu_key primary key (product_version_id, adu_date)
+	adu_count bigint not null default 0,
+	constraint product_adu_key primary key (product_version_id, adu_date, os_name)
 );
 
 alter table product_adu owner to breakpad_rw;
 
+-- rollup table which stores rankings for tcbs
+-- used for trending and top changers
 
-commit;
+create table tcbs_ranking (
+	product_version_id int not null,
+	signature_id int not null,
+	process_type citext,
+	release_channel citext,
+	aggregation_level citext,
+	total_reports bigint,
+	rank_report_count int,
+	percent_of_total numeric
+);
+
+alter table tcbs_ranking owner to breakpad_rw;
+
+-- mapping to fix daily_crashes
+
+CREATE TABLE daily_crash_codes (
+	crash_code char(1) primary key,
+	crash_type citext
+);
+
+alter table daily_crash_codes owner to breakpad_rw;
+
+-- view for choosing whether to use the old TCBS or the new one
+-- lists all "current" products
+
+create or replace view product_selector as
+select product_name, version_string, 'new'::text as which_table
+from product_versions
+where now() <= sunset_date
+	and build_type IN ('Release','Beta')
+union all
+select product, version, 'old'::text as which_ui
+from productdims join product_visibility
+	on productdims.id = product_visibility.productdims_id
+	left join product_versions on productdims.product = product_versions.product_name
+		and productdims.version = product_versions.release_version
+where product_versions.product_name is null 
+	and now() between product_visibility.start_date and ( product_visibility.end_date + interval '1 day')
+order by product_name, version_string;
+
+alter view product_selector owner to breakpad_rw;
+
+-- product_info view
+-- used to power several different views of the application
+
+create or replace view product_info as
+select product_versions.product_version_id, product_versions.product_name, version_string, 'new'::text as which_table,
+	build_date as start_date, sunset_date as end_date, 
+	featured_version as is_featured, build_type,
+	(throttle * 100)::numeric(5,2) as throttle
+from product_versions
+	JOIN product_release_channels 
+		ON product_versions.product_name = product_release_channels.product_name
+		AND product_versions.build_type = product_release_channels.release_channel
+where build_type IN ('Release','Beta')
+union all
+select productdims.id, product, version, 'old'::text,
+	product_visibility.start_date, product_visibility.end_date,
+	featured, release_build_type_map.build_type,
+	throttle
+from productdims join product_visibility
+	on productdims.id = product_visibility.productdims_id
+	join release_build_type_map ON 
+		productdims.release = release_build_type_map.release
+	left join product_versions on productdims.product = product_versions.product_name
+		and productdims.version = product_versions.release_version
+where product_versions.product_name is null
+order by product_name, version_string;
+
+alter view product_info owner to breakpad_rw;
+
+
+

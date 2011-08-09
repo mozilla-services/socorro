@@ -122,6 +122,92 @@ GROUP BY signature_id, updateday, product_version_id,
 	process_type, real_release_channel;
 
 ANALYZE tcbs;
+
+-- update tcbs_ranking based on tcbs
+-- this fills in per day for four aggregation levels
+
+-- all crashes
+
+INSERT INTO tcbs_ranking (
+	product_version_id, signature_id, 
+	process_type, release_channel, 
+	aggregation_level,
+	total_reports, rank_report_count )
+SELECT product_version_id, signature_id,
+	NULL, NULL,
+	'All',
+	sum(report_count) over () as total_count,
+	dense_rank() over (order by report_count desc) as tcbs_rank
+FROM (
+	SELECT product_version_id, signature_id,
+	sum(report_count) as report_count
+	FROM tcbs
+	WHERE report_date = updateday
+	GROUP BY product_version_id, signature_id
+) as tcbs_r;
+
+-- group by process_type
+
+INSERT INTO tcbs_ranking (
+	product_version_id, signature_id, 
+	process_type, release_channel, 
+	aggregation_level,
+	total_reports, rank_report_count )
+SELECT product_version_id, signature_id,
+	process_type, NULL,
+	'process_type',
+	sum(report_count) over () as total_count,
+	dense_rank() over (order by report_count desc) as tcbs_rank
+FROM (
+	SELECT product_version_id, signature_id,
+	process_type,
+	sum(report_count) as report_count
+	FROM tcbs
+	WHERE report_date = updateday
+	GROUP BY product_version_id, signature_id, process_type
+) as tcbs_r;
+
+-- group by release_channel
+
+INSERT INTO tcbs_ranking (
+	product_version_id, signature_id, 
+	process_type, release_channel, 
+	aggregation_level,
+	total_reports, rank_report_count )
+SELECT product_version_id, signature_id,
+	NULL, release_channel,
+	'All',
+	sum(report_count) over () as total_count,
+	dense_rank() over (order by report_count desc) as tcbs_rank
+FROM (
+	SELECT product_version_id, signature_id, release_channel,
+	sum(report_count) as report_count
+	FROM tcbs
+	WHERE report_date = updateday
+	GROUP BY product_version_id, signature_id, release_channel
+) as tcbs_r;
+
+-- group by process_type and release_channel
+
+INSERT INTO tcbs_ranking (
+	product_version_id, signature_id, 
+	process_type, release_channel, 
+	aggregation_level,
+	total_reports, rank_report_count )
+SELECT product_version_id, signature_id,
+	NULL, NULL,
+	'All',
+	sum(report_count) over () as total_count,
+	dense_rank() over (order by report_count desc) as tcbs_rank
+FROM (
+	SELECT product_version_id, signature_id,
+		process_type, release_channel,
+	sum(report_count) as report_count
+	FROM tcbs
+	WHERE report_date = updateday
+	GROUP BY product_version_id, signature_id,
+		process_type, release_channel
+) as tcbs_r;
 	
 -- done
 RETURN TRUE;

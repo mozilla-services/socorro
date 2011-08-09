@@ -37,25 +37,28 @@ END IF;
 
 -- insert releases and aurora
 
-INSERT INTO product_adu ( product_version_id,
+INSERT INTO product_adu ( product_version_id, os_name,
 		adu_date, adu_count )
-SELECT product_version_id,
+SELECT product_version_id, coalesce(os_name,'Windows') as os,
 	updateday,
 	coalesce(sum(raw_adu.adu_count), 0)
 FROM product_versions
 	LEFT OUTER JOIN raw_adu
 		ON product_versions.product_name = raw_adu.product_name
 		AND product_versions.version_string = raw_adu.product_version
+		AND product_versions.build_type = raw_adu.build_channel
 		AND raw_adu.date = updateday
+	LEFT OUTER JOIN os_name_matches
+    	ON raw_adu.product_os_platform ILIKE os_name_matches.match_string
 WHERE updateday BETWEEN build_date AND ( sunset_date + 1 )
         AND product_versions.build_type <> 'Beta'
-GROUP BY product_version_id;
+GROUP BY product_version_id, os;
 
 -- insert betas
 
-INSERT INTO product_adu ( product_version_id,
+INSERT INTO product_adu ( product_version_id, os_name,
         adu_date, adu_count )
-SELECT product_version_id,
+SELECT product_version_id, coalesce(os_name,'Windows') as os,
     updateday,
     coalesce(sum(raw_adu.adu_count), 0)
 FROM product_versions
@@ -65,9 +68,29 @@ FROM product_versions
         AND product_versions.release_version = raw_adu.product_version
         AND build_numeric(raw_adu.build) = product_version_builds.build_id 
         AND raw_adu.date = updateday
+    LEFT OUTER JOIN os_name_matches
+    	ON raw_adu.product_os_platform ILIKE os_name_matches.match_string
 WHERE updateday BETWEEN build_date AND ( sunset_date + 1 )
         AND product_versions.build_type = 'Beta'
-GROUP BY product_version_id; 
+GROUP BY product_version_id, os; 
+
+-- insert old products
+
+INSERT INTO product_adu ( product_version_id, os_name,
+        adu_date, adu_count )
+SELECT productdims_id, coalesce(os_name,'Windows') as os,
+	updateday, coalesce(sum(raw_adu.adu_count),0)
+FROM productdims
+	JOIN product_visibility ON productdims.id = product_visibility.productdims_id
+	LEFT OUTER JOIN raw_adu 
+		ON productdims.product = raw_adu.product_name
+		AND productdims.version = raw_adu.product_version
+		AND raw_adu.date = updateday
+    LEFT OUTER JOIN os_name_matches
+    	ON raw_adu.product_os_platform ILIKE os_name_matches.match_string	
+WHERE updateday BETWEEN ( start_date - interval '1 day' ) 
+	AND ( end_date + interval '1 day' )
+GROUP BY productdims_id, os;
 
 RETURN TRUE;
 END; $f$;
