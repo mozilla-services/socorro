@@ -217,10 +217,17 @@ $f$;
 -- now backfill TCBS
 
 DO $f$
-DECLARE tcdate DATE := '2011-04-27';
+DECLARE tcdate DATE;
+	enddate DATE;
 BEGIN
 
-WHILE tcdate < now() LOOP
+tcdate := '2011-04-17';
+enddate := current_date;
+-- timelimited version for stage/dev
+--tcdate := '2011-07-20';
+--enddate := '2011-07-27;
+
+WHILE tcdate < enddate LOOP
 
 	PERFORM update_tcbs(tcdate);
 	tcdate := tcdate + 1;

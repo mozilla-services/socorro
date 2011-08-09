@@ -8,7 +8,8 @@ create or replace function edit_product_info (
 	prod_channel text,
 	begin_visibility date,
 	end_visibility date,
-	is_featured boolean 
+	is_featured boolean,
+	crash_throttle numeric
 )
 RETURNS INT
 LANGUAGE plpgsql
@@ -50,6 +51,9 @@ IF prod_id IS NULL THEN
 				ELSE 'major' END )
 		RETURNING id
 		INTO new_id;
+		
+		INSERT INTO product_visibility ( productdims_id, start_date, end_date, featured, throttle )
+		VALUES ( new_id, begin_visibility, end_visibility, is_featured, crash_throttle );
 	
 	END IF;
 
@@ -72,6 +76,11 @@ ELSE
 			sunset_date = end_visibility
 		WHERE product_version_id = prod_id;
 		
+		UPDATE product_release_channel
+		SET throttle = crash_throttle / 100
+		WHERE product_name = prod_name
+			AND release_channel = prod_channel;
+		
 		new_id := prod_id;
 	ELSE
 		UPDATE productdims SET
@@ -86,7 +95,8 @@ ELSE
 		UPDATE product_visibility SET
 			featured = is_featured,
 			start_date = begin_visibility,
-			end_date = end_visibility
+			end_date = end_visibility,
+			throttle = crash_throttle
 		WHERE productdims_id = prod_id;
 		
 		new_id := prod_id;
