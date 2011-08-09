@@ -11,7 +11,7 @@ create table releases_raw (
 	build_id numeric not null,
 	build_type citext not null,
 	beta_number int,
-	constraint release_raw_key primary key ( product_name, version, build_id, platform )
+	constraint release_raw_key primary key ( product_name, version, build_id, build_type, platform )
 );
 
 alter table releases_raw owner to breakpad_rw;

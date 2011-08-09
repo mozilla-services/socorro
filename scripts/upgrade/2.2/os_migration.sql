@@ -4,8 +4,8 @@ BEGIN;
 
 -- populate basic OS information
 
-insert into os_names ( os_name )
-values ( 'Windows' ),( 'Mac OS X' ), ( 'Linux' );
+insert into os_names ( os_name, os_short_name )
+values ( 'Windows', 'win' ),( 'Mac OS X', 'mac' ), ( 'Linux', 'lin' );
 
 insert into os_name_matches ( os_name, match_string )
 values ( 'Windows', 'Windows%' ),
