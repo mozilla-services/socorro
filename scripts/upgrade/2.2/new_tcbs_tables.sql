@@ -1,14 +1,6 @@
-\SET ON_ERROR_STOP 1
+\set ON_ERROR_STOP 1
 
 BEGIN;
-
--- new domain major_version just checks that we don't have
--- garbage in this field
-
-create domain major_version AS text
-	CHECK ( VALUE ~ $x$^\d+\.\d+$x$ );
-	
-alter domain major_version owner to breakpad_rw;
 
 -- new products table.  just lists each top-level product
 -- release_name matches the FTP server

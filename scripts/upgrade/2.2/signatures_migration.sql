@@ -1,3 +1,4 @@
+\set ON_ERROR_STOP 1
 
 set work_mem = '1GB';
 set maintenance_work_mem = '1GB';
