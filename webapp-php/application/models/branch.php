@@ -734,7 +734,7 @@ class Branch_Model extends Model {
         foreach ($versions as $version) {
             array_push($prep, '?');
         }
-        $sql = "SELECT version_string FROM product_info WHERE product_name = ? AND version_string IN (" . join(', ', $prep) . ")";
+        $sql = "SELECT version_string as version FROM product_info WHERE product_name = ? AND version_string IN (" . join(', ', $prep) . ")";
         $bind_params = array_merge(array($product), $versions);
         return $this->fetchSingleColumn($sql, 'version', $bind_params);
     }
