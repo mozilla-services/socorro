@@ -1,0 +1,9 @@
+CREATE ROLE breakpad WITH PASSWORD 'aPassword';
+CREATE ROLE breakpad_metrics WITH PASSWORD 'aPassword';
+CREATE ROLE breakpad_ro WITH PASSWORD 'aPassword';
+CREATE ROLE breakpad_rw WITH PASSWORD 'aPassword';
+CREATE ROLE monitor WITH PASSWORD 'aPassword';
+CREATE ROLE monitoring WITH PASSWORD 'aPassword';
+CREATE ROLE nagiosdaemon WITH PASSWORD 'aPassword';
+CREATE ROLE postgres WITH PASSWORD 'aPassword';
+CREATE ROLE processor WITH PASSWORD 'aPassword';
