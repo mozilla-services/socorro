@@ -1,7 +1,5 @@
 \set ON_ERROR_STOP 1
 
-BEGIN;
-
 -- function
 
 CREATE OR REPLACE FUNCTION update_adu (
@@ -103,7 +101,7 @@ BEGIN
 FOR aduday IN SELECT i 
 	-- time-limited version for stage/dev
 	-- FROM generate_series(timestamp '2011-07-20', timestamp '2011-07-27', '1 day') as gs(i)
-	FROM generate_series(timestamp '2011-07-20', now(), '1 day') as gs(i)
+	FROM generate_series(timestamp '2011-04-17', now(), '1 day') as gs(i)
 	LOOP
 	
 	PERFORM update_adu(aduday);

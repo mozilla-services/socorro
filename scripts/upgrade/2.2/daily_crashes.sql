@@ -108,7 +108,7 @@ SELECT COUNT(*) as count, daily_crash_code(process_type, hangid) as crash_code,
 FROM product_versions
 JOIN product_version_builds USING (product_version_id)
 JOIN reports on product_versions.product_name = reports.product 
-	AND product_versions.version_string = reports.version
+	AND product_versions.release_version = reports.version
 	AND product_version_builds.build_id = build_numeric(reports.build)
 WHERE date_processed >= utc_day_begins_pacific(updateday)
 		AND date_processed < utc_day_ends_pacific(updateday)
@@ -143,7 +143,7 @@ FROM (
 			FROM product_versions
 			JOIN product_version_builds USING (product_version_id)
 			JOIN reports on product_versions.product_name = reports.product 
-				AND product_versions.version_string = reports.version
+				AND product_versions.release_version = reports.version
 				AND product_version_builds.build_id = build_numeric(reports.build)
 			WHERE date_processed >= utc_day_begins_pacific(updateday)
 					AND date_processed < utc_day_ends_pacific(updateday)
@@ -174,9 +174,10 @@ WHILE tcdate < enddate LOOP
 
 	DELETE FROM daily_crashes WHERE adu_day = tcdate;
 	PERFORM update_daily_crashes(tcdate);
+	RAISE INFO 'daily crashes updated for %',tcdate;
 	tcdate := tcdate + 1;
 	
 END LOOP;
-END; $f$
+END; $f$;
 
 
