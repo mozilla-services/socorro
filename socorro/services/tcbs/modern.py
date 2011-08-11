@@ -44,7 +44,7 @@ def getListOfTopCrashersBySignature(aCursor, dbParams):
 
   for param in assertPairs:
     if not isinstance(dbParams[param], assertPairs[param]):
-      raise ValueError(type(dbParams[param])
+      raise ValueError(type(dbParams[param]))
   
   where = ""
   if dbParams['crashType'] != 'any':
