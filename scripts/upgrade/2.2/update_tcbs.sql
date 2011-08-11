@@ -93,6 +93,8 @@ WHERE product_versions.build_type <> 'Beta'
 
 -- if there's no product and version still, discard
 -- since we can't report on it
+-- discard crashes with no OS reported.  we will
+-- probably change this policy in the future
 
 DELETE FROM new_tcbs WHERE product_version_id = 0;
 
@@ -101,6 +103,13 @@ DELETE FROM new_tcbs WHERE product_version_id = 0;
 UPDATE new_tcbs SET os_name = os_name_matches.os_name
 FROM os_name_matches
 WHERE new_tcbs.os_name ILIKE match_string;
+
+-- exclude crashes which are not windows/linux/mac_count
+-- NOTE: we may revisit this decision in the future
+
+DELETE FROM new_tcbs
+  WHERE os_name NOT IN ( 'Windows', 'Linux', 'Mac OS X' )
+    OR os_name IS NULL;
 
 -- populate the matview
 
@@ -112,9 +121,9 @@ INSERT INTO tcbs (
 SELECT signature_id, updateday, product_version_id,
 	process_type, real_release_channel,
 	sum(report_count),
-	sum(case when os_name = 'Windows' THEN 1 else 0 END),
-	sum(case when os_name = 'Mac OS X' THEN 1 else 0 END),
-	sum(case when os_name = 'Linux' THEN 1 else 0 END),
+	sum(case when os_name = 'Windows' THEN report_count else 0 END),
+	sum(case when os_name = 'Mac OS X' THEN report_count else 0 END),
+	sum(case when os_name = 'Linux' THEN report_count else 0 END),
     sum(hang_count)
 FROM new_tcbs
 WHERE signature_id <> 0
@@ -222,18 +231,21 @@ DECLARE tcdate DATE;
 BEGIN
 
 tcdate := '2011-04-17';
-enddate := current_date;
+enddate := '2011-08-09';
 -- timelimited version for stage/dev
 --tcdate := '2011-07-20';
---enddate := '2011-07-27;
+--enddate := '2011-07-27';
 
 WHILE tcdate < enddate LOOP
 
 	PERFORM update_tcbs(tcdate);
 	tcdate := tcdate + 1;
+    RAISE INFO 'updated %',tcdate;
+    DROP TABLE new_tcbs;
 	
 END LOOP;
-END; $f$
+END; $f$;
+
 
 
 
