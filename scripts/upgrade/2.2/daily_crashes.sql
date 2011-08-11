@@ -12,7 +12,7 @@ VALUES ( 'C', 'CRASH_BROWSER' ),
 	( 'T', 'CONTENT' );
 	
 -- change the table so that it can hold both old and new crashes
-ALTER TABLE daily_crashes ALTER COLUMN adu_day TYPE date;
+--ALTER TABLE daily_crashes ALTER COLUMN adu_day TYPE date;
 ALTER TABLE daily_crashes DROP CONSTRAINT daily_crashes_productdims_id_fkey;
 
 -- code-mapping function
@@ -49,6 +49,8 @@ BEGIN
 
 -- apologies for badly written SQL, didn't want to rewrite it all from scratch
 
+-- note: we are currently excluding crashes which are missing an OS_Name from the count
+
 -- insert old browser crashes
 -- for most crashes
 INSERT INTO daily_crashes (count, report_type, productdims_id, os_short_name, adu_day)
@@ -62,6 +64,7 @@ WHERE NOT cfg.ignore AND
 	date_processed >= utc_day_begins_pacific(updateday)
 		AND date_processed < utc_day_ends_pacific(updateday)
 	AND updateday BETWEEN cfg.start_date and cfg.end_date
+    AND lower(substring(os_name, 1, 3)) IN ('win','lin','mac') 
 GROUP BY p.id, crash_code, os_short_name;
 
  -- insert HANGS_NORMALIZED from old data
@@ -78,6 +81,7 @@ FROM (
 					AND date_processed < utc_day_ends_pacific(updateday)
 				AND updateday BETWEEN cfg.start_date and cfg.end_date
 				AND hangid IS NOT NULL
+                AND lower(substring(os_name, 1, 3)) IN ('win','lin','mac') 
 		 ) AS subr
 GROUP BY subr.prod_id, subr.os_short_name;
 
@@ -95,6 +99,7 @@ WHERE
 	date_processed >= utc_day_begins_pacific(updateday)
 		AND date_processed < utc_day_ends_pacific(updateday)
 	AND updateday BETWEEN product_versions.build_date and sunset_date
+    AND lower(substring(os_name, 1, 3)) IN ('win','lin','mac') 
 AND product_versions.build_type <> 'beta'
 GROUP BY product_version_id, crash_code, os_short_name;
 
@@ -113,6 +118,7 @@ JOIN reports on product_versions.product_name = reports.product
 WHERE date_processed >= utc_day_begins_pacific(updateday)
 		AND date_processed < utc_day_ends_pacific(updateday)
 	AND updateday BETWEEN product_versions.build_date and sunset_date
+    AND lower(substring(os_name, 1, 3)) IN ('win','lin','mac') 
 AND product_versions.build_type = 'beta'
 GROUP BY product_version_id, crash_code, os_short_name;
 
@@ -130,6 +136,7 @@ FROM (
 					AND date_processed < utc_day_ends_pacific(updateday)
 				AND updateday BETWEEN product_versions.build_date and sunset_date
 			AND product_versions.build_type <> 'beta'
+            AND lower(substring(os_name, 1, 3)) IN ('win','lin','mac') 
 		 ) AS subr
 GROUP BY subr.prod_id, subr.os_short_name;
 
@@ -149,6 +156,7 @@ FROM (
 					AND date_processed < utc_day_ends_pacific(updateday)
 				AND updateday BETWEEN product_versions.build_date and sunset_date
 			AND product_versions.build_type = 'beta'
+            AND lower(substring(os_name, 1, 3)) IN ('win','lin','mac') 
 		 ) AS subr
 GROUP BY subr.prod_id, subr.os_short_name;
 
@@ -165,7 +173,7 @@ DECLARE tcdate DATE;
 BEGIN
 
 tcdate := '2011-04-17';
-enddate := current_date;
+enddate := '2011-08-09';
 -- timelimited version for stage/dev
 --tcdate := '2011-07-20';
 --enddate := '2011-07-27';
