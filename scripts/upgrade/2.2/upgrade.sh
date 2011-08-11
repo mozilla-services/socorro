@@ -26,7 +26,7 @@ psql -f support_functions.sql breakpad
 
 echo 'load new tables'
 psql -f new_tcbs_tables.sql breakpad
-
+ADU 
 echo 'load product information'
 psql -f product_migration.sql breakpad
 
@@ -44,6 +44,9 @@ psql -f update_tcbs.sql breakpad
 
 echo 'new daily_crashes cron job'
 psql -f daily_crashes.sql breakpad
+
+echo 'new edit_product_info admin function'
+psql -f edit_product_info.sql
 
 date
 

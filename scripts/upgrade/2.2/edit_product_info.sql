@@ -76,7 +76,7 @@ ELSE
 			sunset_date = end_visibility
 		WHERE product_version_id = prod_id;
 		
-		UPDATE product_release_channel
+		UPDATE product_release_channels
 		SET throttle = crash_throttle / 100
 		WHERE product_name = prod_name
 			AND release_channel = prod_channel;

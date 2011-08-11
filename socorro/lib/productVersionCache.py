@@ -10,11 +10,11 @@ class ProductVersionCache(object):
     self.cache = {}
     sql = """
       select
-          product,
-          version,
-          id
+          product_name as product,
+          version_string as version,
+          product_version_id as id
       from
-          productdims
+          product_info
       """
     self.database = db.Database(self.config)
     connection = self.database.connection()
@@ -32,12 +32,12 @@ class ProductVersionCache(object):
       cursor = connection.cursor()
       sql = """
           select
-              id
+              product_version_id as id
           from
-              productdims
+              product_info
           where
-            product = %s
-            and version = %s
+            product_name = %s
+            and version_string = %s
           """
       try:
         self.cache[(product, version)] = id = db.singleValueSql(cursor, sql, (product, version))

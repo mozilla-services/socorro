@@ -1,4 +1,3 @@
-
 <div class="page-heading">
 	<h2>Branch Data Sources</h2>
 </div>
@@ -76,33 +75,7 @@
     <?php } ?>
 
 	<h3>Products</h3>
-	
-	<span><a href="#" onclick="branchAddProductVersion(); return false;">add new product version</a></span>
-	<div id="add_version" name="add_version" class="add_item" style="display: none;">
-		<p>Fill out this form to add a new product version.</p>
-		<form action="" id="form_add_version" name="form_add_version" method="post">
-			<input type="hidden" name="action_add_version" value="1">
-
-			<table>
-			<tr><td>Product: </td><td><input type="text" id="product" name="product" value="" /></p>
-			<tr><td>Version: </td><td><input type="text" id="version" name="version" value="" /></p>
-			<tr><td>Branch: </td><td> 
-			<select name="branch">
-			<?php foreach ($branches as $branch) { ?>
-				<option value="<?php echo html::specialchars($branch->branch); ?>"><?php echo html::specialchars($branch->branch); ?></option>
-			<?php } ?>
-			</select>
-			</td></tr>
-			<tr><td>Start Date: </td><td><input class="text" type="text" id="start_date" name="start_date" value="<?php echo html::specialchars($default_start_date); ?>" /></td></tr>
-			<tr><td>End Date:</td><td><input class="text" type="text" id="end_date" name="end_date" value="<?php echo html::specialchars($default_end_date); ?>" /></td></tr>
-            <tr><td>Featured:   </td><td><input type="checkbox" id="featured" name="featured" value="t" /></td></tr>
-            <tr><td>Throttle:   </td><td><input class="text" type="text" id="throttle" name="throttle" value="<?php echo $throttle_default; ?>" />% [<a href="http://code.google.com/p/socorro/wiki/SocorroUIAdmin#Throttle" target="_NEW">?</a>]</td></tr>
-			</table>
-			<p id="add_submit"><input type="submit" name="submit" value="Add Product Version" onclick="hideShow('add_submit', 'add_submit_progress');" /></p>
-			<p id="add_submit_progress" style="display:none;"><img src="<?php echo url::site(); ?>img/loading.png" /> <em>please wait...</em></p>
-		</form>
-	</div>
-	
+		
 	<div id="update_product_version" name="update_product_version" class="add_item" style="display: none;">
 		<p>Fill out this form to update an existing product version.</p>
 		<form action="" id="form_update_version" name="form_update_version" method="post">
@@ -121,7 +94,6 @@
 					<span id="update_version_display" name="update_version_display"></span>
 				</td>
 			</tr>
-			<tr><td>Branch:  	</td><td><input class="text" type="text" id="update_branch" name="update_branch" value="" /></td></tr>
 			<tr><td>Start Date: </td><td><input class="text" type="text" id="update_start_date" name="update_start_date" value="" /></td></tr>
 			<tr><td>End Date: 	</td><td><input class="text" type="text" id="update_end_date" name="update_end_date" value="" /></td></tr>
             <tr><td>Featured:   </td><td><input type="checkbox" id="update_featured" name="update_featured" value="t" /></td></tr>
@@ -164,14 +136,12 @@
 		    		<tr>
 			    	<th>Product</th>
 			    	<th>Version</th>
-			    	<th>Branch</th>
 				    <th>Release</th>
 				    <th>Start Date</th>
 				    <th>End Date</th>
 				    <th>Featured</th>
 				    <th>Throttle</th>
 			    	<th>Update?</th>
-				    <th>Delete?</th>
 				    </tr>
                 </thead>
                 <tbody>
@@ -180,7 +150,6 @@
 						<tr>
 							<td class="text"><?php echo html::specialchars(html::specialchars($version->product)); ?></td>
 							<td class="text"><?php echo html::specialchars(html::specialchars($version->version)); ?></td>
-							<td class="date"><?php echo html::specialchars(html::specialchars($version->branch)); ?></td>
 							<td class="text"><?php echo html::specialchars(html::specialchars($version->release)); ?></td>
 							<td class="date"><?php 
 								if (isset($version->start_date)) {
@@ -207,16 +176,12 @@
 							<td class="action"><a href="#update_product_version" onclick="branchUpdateProductVersionFill(
 								'<?php echo trim(html::specialchars($version->product)); ?>',
 								'<?php echo trim(html::specialchars($version->version)); ?>',
-								'<?php echo trim(html::specialchars($version->branch)); ?>',
+								'',
 								'<?php if (isset($version->start_date)) echo html::specialchars(str_replace('00:00:00', '', $version->start_date)); else echo ''; ?>',
 								'<?php if (isset($version->end_date)) echo html::specialchars(str_replace('00:00:00', '', $version->end_date)); else echo ''; ?>',
 								'<?php if (isset($version->featured) && $version->featured == 't') echo 't'; else echo 'f'; ?>',
     							'<?php if (isset($version->throttle) && $version->throttle > 0) out::H($version->throttle); else echo $throttle_default; ?>'
-							);">update</a></td>
-							<td class="action"><a href="#delete_product_version" onclick="branchDeleteProductVersionFill(
-								'<?php echo trim(html::specialchars($version->product)); ?>',
-								'<?php echo trim(html::specialchars($version->version)); ?>'
-							);">delete</a></td>							
+							);">update</a></td>						
 						</tr>
 					<?php } ?>
 				<?php } ?>
@@ -235,13 +200,11 @@
 		    		    <tr>
 			    	        <th>Product</th>
 			    	        <th>Version</th>
-			    	        <th>Branch</th>
 				            <th>Release</th>
 				            <th>Start Date</th>
 				            <th>End Date</th>
 				            <th>Throttle</th>
 			    	        <th>Update?</th>
-				            <th>Delete?</th>
 				        </tr>
                     </thead>
                     <tbody>
@@ -250,7 +213,6 @@
 						<tr>
 							<td class="text"><?php echo html::specialchars(html::specialchars($version->product)); ?></td>
 							<td class="text"><?php echo html::specialchars(html::specialchars($version->version)); ?></td>
-							<td class="date"><?php echo html::specialchars(html::specialchars($version->branch)); ?></td>
 							<td class="text"><?php echo html::specialchars(html::specialchars($version->release)); ?></td>
 							<td class="date"><?php 
 								if (isset($version->start_date)) {
@@ -272,16 +234,12 @@
 							<td class="action"><a href="#update_product_version" onclick="branchUpdateProductVersionFill(
 								'<?php echo trim(html::specialchars($version->product)); ?>',
 								'<?php echo trim(html::specialchars($version->version)); ?>',
-								'<?php echo trim(html::specialchars($version->branch)); ?>',
+								'',
 								'<?php if (isset($version->start_date)) echo html::specialchars(str_replace('00:00:00', '', $version->start_date)); else echo ''; ?>',
 								'<?php if (isset($version->end_date)) echo html::specialchars(str_replace('00:00:00', '', $version->end_date)); else echo ''; ?>',
 								'<?php if (isset($version->featured) && $version->featured == 't') echo 't'; else echo 'f'; ?>',
     							'<?php if (isset($version->throttle) && $version->throttle > 0) out::H($version->throttle); else echo $throttle_default; ?>'
-							);">update</a></td>
-							<td class="action"><a href="#delete_product_version" onclick="branchDeleteProductVersionFill(
-								'<?php echo trim(html::specialchars($version->product)); ?>',
-								'<?php echo trim(html::specialchars($version->version)); ?>'
-							);">delete</a></td>							
+							);">update</a></td>					
 						</tr>
 					    <?php } ?>
 				    <?php } ?>

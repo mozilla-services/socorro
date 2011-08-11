@@ -35,17 +35,16 @@ def getListOfTopCrashersBySignature(aCursor, dbParams):
   Answers a generator of tcbs rows 
   """
   assertPairs = {
-    'startDate': datetime.date,
-    'endDate': datetime.date,
-    'product': str,
-    'version': str,
+    'startDate': (datetime.date, datetime.datetime),
+    'endDate': (datetime.date, datetime.datetime),
+    'product': basestring,
+    'version': basestring,
     'listSize': int
   }
 
-  for param in assertPairs.keys():
-    assert type(dbParams[param]) is assertPairs[param], (
-      "Expected %s for %s, actual type is %s" % (assertPairs[param], param,
-        type(dbParams[param])))
+  for param in assertPairs:
+    if not isinstance(dbParams[param], assertPairs[param]):
+      raise ValueError(type(dbParams[param])
   
   where = ""
   if dbParams['crashType'] != 'any':

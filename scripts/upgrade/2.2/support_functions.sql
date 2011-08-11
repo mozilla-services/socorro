@@ -1,7 +1,15 @@
-\SET ON_ERROR_STOP = 1
+\set ON_ERROR_STOP = 1
 
 -- a large set of small functions which help with date calculations
 -- version string conversion, and similar tasks.
+
+-- new domain major_version just checks that we don't have
+-- garbage in this field
+
+create domain major_version AS text
+	CHECK ( VALUE ~ $x$^\d+\.\d+$x$ );
+	
+alter domain major_version owner to breakpad_rw;
 
 create or replace function build_date (
 	build_id numeric )

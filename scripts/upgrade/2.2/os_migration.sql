@@ -1,4 +1,4 @@
-\SET ON_ERROR_STOP 1
+\set ON_ERROR_STOP 1
 
 BEGIN;
 
@@ -118,3 +118,5 @@ where  os_versions.os_name is null;
 
 RETURN true;
 END; $f$;
+
+COMMIT;

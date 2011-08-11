@@ -37,5 +37,6 @@ config.logger = logger
 
 try:
   builds.recordNightlyBuilds(config)
+  builds.recordReleaseBuilds(config)
 finally:
   logger.info("Done.")

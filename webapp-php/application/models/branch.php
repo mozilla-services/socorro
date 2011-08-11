@@ -491,8 +491,8 @@ class Branch_Model extends Model {
     public function getByProductVersion($product, $version) {
         $result = $this->db->query(
 				'/* soc.web branch.prodbyvers */ 
-				SELECT pd.product_name as product, pd.version_string as version, is_featured as featured, build_type as release, start_date, end_date, throttle
-				FROM product_info
+				SELECT pd.product_version_id as id, pd.product_name as product, pd.version_string as version, is_featured as featured, build_type as release, start_date, end_date, throttle
+				FROM product_info pd
 				WHERE product_name = ? 
 				AND version_string = ?
 				LIMIT 1'
@@ -679,21 +679,16 @@ class Branch_Model extends Model {
      * @param   float   The throttle value for this version
 	 * @return 	object	The database query object
      */
-    public function update($product, $version, $branch, $start_date, $end_date, $featured=false, $throttle) {
-		if ($product_version = $this->getByProductVersion($product, $version)) {
+    public function update($product, $version,  $start_date, $end_date, $featured=false, $throttle) {
+		$product_version = $this->getByProductVersion($product, $version);
+                $prod_id = $product_version->id; 
+                $channel = $product_version->release;
  			$release = $this->determine_release($version);
 			$rv = $this->db->query("/* soc.web branch.update */
-				UPDATE productdims 
-				SET branch = ?, release = ? 
-				WHERE product = ?
-				AND version = ?
-			 	", $branch, $release, $product, $version
-			);
-			$this->updateProductVisibility($product, $version, $start_date, $end_date, $featured, $throttle);
+				SELECT * FROM edit_product_info(?, ?, ?, ?, ?, ?, ?, ?)", $prod_id, $product,  $version, $channel, $start_date, $end_date, $featured, $throttle);
+
+
 			return $rv;
-		} else {
-			return $this->add($product, $version, $branch, $start_date, $end_date, $featured, $throttle);
-		}
 	}
 
     /**
@@ -739,7 +734,7 @@ class Branch_Model extends Model {
         foreach ($versions as $version) {
             array_push($prep, '?');
         }
-        $sql = "SELECT version_string FROM product_info WHERE product_name = ? AND version_string IN (" . join(', ', $prep) . ")";
+        $sql = "SELECT version_string as version FROM product_info WHERE product_name = ? AND version_string IN (" . join(', ', $prep) . ")";
         $bind_params = array_merge(array($product), $versions);
         return $this->fetchSingleColumn($sql, 'version', $bind_params);
     }

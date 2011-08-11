@@ -37,21 +37,22 @@ class AduByDay(webapi.JsonServiceBase):
   def fetchAduHistory (self, parameters):
     if parameters.listOfOs_names and parameters.listOfOs_names != ['']:
       osNameListPhrase = (','.join("'%s'" % x for x in parameters.listOfOs_names)).replace('Mac', 'Mac OS/X')
-      parameters.os_phrase = "and product_os_platform in (%s)" % osNameListPhrase
+      parameters.os_phrase = "and os_name in (%s)" % osNameListPhrase
     else:
       parameters.os_phrase = ''
     sql = """
       select
-          date,
-          substring(product_os_platform, 1, 3) as product_os_platform,
-          sum(adu_count)
+          adu_date as date,
+          substring(os_name, 1, 3) as product_os_platform,
+          sum(adu_count)::BIGINT
       from
-          raw_adu ra
+          product_adu pa
+      join product_info pi using (product_version_id)
       where
-          %%(start_date)s <= date
-          and date <= %%(end_date)s
-          and product_name = %%(product)s
-          and product_version = %%(version)s
+          %%(start_date)s <= adu_date
+          and adu_date <= %%(end_date)s
+          and pi.product_name = %%(product)s
+          and pi.version_string = %%(version)s
           %(os_phrase)s
       group by
           date,
