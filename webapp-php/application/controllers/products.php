@@ -395,7 +395,7 @@ class Products_Controller extends Controller {
         $product_version = $product;
         $product_version .= (!empty($version)) ? $version : '';
 
-        $heading = array('Change in Rank', 'Current Rank', 'Signature');
+        $heading = array('Current Rank', 'Change in Rank', 'Signature');
         $csvData = array($heading);
         if (!empty($top_changers)) {
             foreach ($top_changers as $tc) {
