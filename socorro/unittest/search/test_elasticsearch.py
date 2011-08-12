@@ -295,33 +295,54 @@ def test_format_versions():
     """
     # Empty versions
     versions = None
-    versionstr = es.ElasticSearchAPI.format_versions(versions)
-    assert not versionstr, (
-                "The versions string is %s, null expected." % versionstr)
+    version_res = es.ElasticSearchAPI.format_versions(versions)
+    assert not version_res, (
+                "The versions string is %s, null expected." % version_res)
 
     # Only one product, no version
     versions = "firefox"
-    versionstr = es.ElasticSearchAPI.format_versions(versions)
-    assert versionstr == "product: firefox", (
+    version_res = es.ElasticSearchAPI.format_versions(versions)
+    assert type(version_res) is str, (
+                "Results should be a string, %s received" % type(version_res))
+    assert version_res == "firefox", (
                 "Wrong formatting of versions for one product, no version: "
-                "%s" % versionstr)
+                "%s" % version_res)
 
     # One product, one version
     versions = "firefox:5.0.1b"
-    versionstr = es.ElasticSearchAPI.format_versions(versions)
-    assert versionstr == "( product: firefox AND version: 5.0.1b )", (
-                "Wrong formatting of versions for one product, one version: "
-                "%s" % versionstr)
+    version_res = es.ElasticSearchAPI.format_versions(versions)
+    assert type(version_res) is dict, (
+                "Results should be a dict, %s received" % type(version_res))
+    assert "product" in version_res, "Result should have a product"
+    assert "version" in version_res, "Result should have a version"
+    assert version_res["product"] == "firefox", (
+                "Result's product is wrong, expected 'firefox', received %s" %
+                version_res["product"])
+    assert version_res["version"] == "5.0.1b", (
+                "Result's version is wrong, expected '5.0.1b', received %s" %
+                version_res["version"])
 
     # Multiple products, multiple versions
-    versions = ["firefox:5.0.1b", "fennec:1", "test:abc"]
-    versionstr = es.ElasticSearchAPI.format_versions(versions)
-    expected = ("(( product: firefox AND version: 5.0.1b ) OR "
-                "( product: fennec AND version: 1 ) OR "
-                "( product: test AND version: abc ))")
-    assert versionstr == expected, (
-                "Wrong formatting of versions for multiple products, "
-                "multiple versions: %s" % versionstr)
+    versions = ["firefox:5.0.1b", "fennec:1"]
+    version_res = es.ElasticSearchAPI.format_versions(versions)
+    assert type(version_res) is list, (
+                "Results should be a list, %s received" % type(version_res))
+    for v in version_res:
+        assert "product" in v, "Result should have a product"
+        assert "version" in v, "Result should have a version"
+
+    assert version_res[0]["product"] == "firefox", (
+                "Result's product is wrong, expected 'firefox', received %s" %
+                version_res[0]["product"])
+    assert version_res[0]["version"] == "5.0.1b", (
+                "Result's version is wrong, expected '5.0.1b', received %s" %
+                version_res[0]["version"])
+    assert version_res[1]["product"] == "fennec", (
+                "Result's product is wrong, expected 'fennec', received %s" %
+                version_res[1]["product"])
+    assert version_res[1]["version"] == "1", (
+                "Result's version is wrong, expected '1', received %s" %
+                version_res[1]["version"])
 
 
 def test_prepare_terms():
