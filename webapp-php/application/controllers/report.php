@@ -566,8 +566,11 @@ class Report_Controller extends Controller {
      *
      * @return string JSON formatted list of crash reports
      */
-    public function hang_pairs($uuid)
+    public function hang_pairs($uuid=null)
     {
+        if(is_null($uuid)) {
+            Kohana::show_404();
+        } 
         $this->auto_render = false;
 
         $rs = $this->report_model->getAllPairedUUIDByUUid($uuid);
@@ -579,7 +582,7 @@ class Report_Controller extends Controller {
                 $d = strtotime($report->{'date_processed'});
                 $report->{'display_date_processed'} = date('M d, Y H:i', $d);
                 array_push($crashes, $report);
-	    }
+	        }
         }
         echo json_encode($crashes);
         exit;
