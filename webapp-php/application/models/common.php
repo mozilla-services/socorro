@@ -214,6 +214,12 @@ class Common_Model extends Model {
             $sql .= " JOIN  " . join("\nJOIN ", $join_tables);
         }
         $sql .= " WHERE  " . join(' AND ', $where) .
+                " AND build IN 
+                    (SELECT build_id::varchar FROM product_version_builds AS pvb
+                     JOIN product_versions AS pv
+                     ON (pvb.product_version_id = pv.product_version_id)
+                     WHERE product_name = $product
+                     AND version_string = $version)" .
     	        " ORDER BY reports.date_processed DESC " . 
                 " LIMIT ? OFFSET ?  ) as reports";
 
@@ -293,9 +299,40 @@ class Common_Model extends Model {
             foreach ($params['version'] as $spec) {
                 if (strstr($spec, ":")) {
                     list($product, $version) = explode(":", $spec);
+                
+                    $sql = "/* soc.web report._buildCriteriaFromSearchParams */" .
+                           "SELECT pi.version_string, which_table, major_version FROM product_info pi" .
+                           " JOIN product_versions pv ON (pv.product_version_id = pi.product_version_id)" .
+                           " WHERE pi.product_name = " . $this->db->escape($product) .
+                           " AND pi.version_string = " . $this->db->escape($version) ."";
+                    $result = $this->fetchRows($sql);
+                    $which_table = 'old';
+                    $major_version = $version;
+                    $channel = '';
+                    if (! empty($result)) {
+                        $version_string = $result[0]->version_string;
+                        $which_table = $result[0]->which_table;
+                        $major_version = $result[0]->major_version;
+                        if ($version_string == $major_version) {
+                            $channel = 'release';
+                        } else if (strpos($version_string, 'b')) {
+                            $channel = 'beta';
+                        }
+                    }
                     $or[] = 
                         "(reports.product = " . $this->db->escape($product) . " AND " .
-                        "reports.version = " . $this->db->escape($version) . ")";
+                        "reports.version = " . $this->db->escape($major_version) . ")";
+                    if ($which_table == 'new') {
+                        $where[] = 
+                            "build IN (SELECT build_id::varchar FROM product_version_builds AS pvb" .
+                            " JOIN product_versions AS pv ON (pvb.product_version_id = pv.product_version_id)" .
+                            " WHERE product_name = " . $this->db->escape($product) . " AND version_string = " . $this->db->escape($version) . ")";
+                        if (isset($channel)) {
+                            $where[] = 
+                               "reports.release_channel = " . $this->db->escape($channel);
+                        }
+                    }
+
                 } else {
                     $or[] = "(reports.product = " . $this->db->escape($spec) . ")";
                 }
