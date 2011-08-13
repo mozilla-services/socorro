@@ -54,7 +54,6 @@ def getListOfTopCrashersBySignature(aCursor, dbParams):
     WITH tcbs_r as ( 
     SELECT signature_id,
         signature,
-        report_date,
         product_name,
         version_string,
         sum(report_count) as report_count,
@@ -69,7 +68,7 @@ def getListOfTopCrashersBySignature(aCursor, dbParams):
       AND version_string = '%s'
       AND report_date BETWEEN '%s' AND '%s'
       %s
-    GROUP BY signature_id, signature, report_date, product_name, version_string
+    GROUP BY signature_id, signature, product_name, version_string
     ),
     tcbs_window AS (
       SELECT tcbs_r.*,
@@ -85,7 +84,7 @@ def getListOfTopCrashersBySignature(aCursor, dbParams):
            mac_count,
            hang_count,
            plugin_count,
-      100::float * report_count / total_crashes 
+        report_count / total_crashes::float 
         as percent_of_total
     FROM tcbs_window
     ORDER BY report_count DESC
