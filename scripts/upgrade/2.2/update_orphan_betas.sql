@@ -81,7 +81,7 @@ INSERT INTO product_versions (
 SELECT product, 
   major_version(version),
   version,
-  version || ' (beta)',
+  version || '(beta)',
   999,
   version_sort(version, 999),
   build_date(min(orphan_betas.build_id)),
@@ -118,8 +118,8 @@ BEGIN
 tcdate := '2011-04-17';
 enddate := '2011-08-09';
 -- timelimited version for stage/dev
-tcdate := '2011-07-20';
-enddate := '2011-07-27';
+--tcdate := '2011-07-20';
+--enddate := '2011-07-27';
 
 WHILE tcdate < enddate LOOP
 
