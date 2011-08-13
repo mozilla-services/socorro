@@ -316,15 +316,9 @@ class Common_Model extends Model {
                     $or[] = 
                         "(reports.product = " . $this->db->escape($product) . " AND " .
                         "reports.version = " . $this->db->escape($major_version) . ")";
-                    if ($which_table == 'new') {
+                    if ($which_table == 'new' && isset($channel)) {
                         $where[] = 
-                            "build IN (SELECT build_id::varchar FROM product_version_builds AS pvb" .
-                            " JOIN product_versions AS pv ON (pvb.product_version_id = pv.product_version_id)" .
-                            " WHERE product_name = " . $this->db->escape($product) . " AND version_string = " . $this->db->escape($version) . ")";
-                        if (isset($channel)) {
-                            $where[] = 
-                               "reports.release_channel = " . $this->db->escape($channel);
-                        }
+                           "reports.release_channel = " . $this->db->escape($channel);
                     }
 
                 } else {
