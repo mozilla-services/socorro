@@ -43,7 +43,8 @@ USING product_versions JOIN product_version_builds
   USING (product_version_id)
 WHERE orphan_betas.product = product_versions.product_name
   AND orphan_betas.version = product_versions.release_version
-  AND orphan_betas.build_id = product_version_builds.build_id;
+  AND orphan_betas.build_id = product_version_builds.build_id
+  AND product_versions.build_type <> 'release';
 
 -- purge builds which are lower than an existing beta
 
@@ -126,15 +127,15 @@ BEGIN
 tcdate := '2011-04-17';
 enddate := '2011-08-09';
 -- timelimited version for stage/dev
-tcdate := '2011-07-25';
-enddate := '2011-08-09';
+--tcdate := '2011-07-25';
+--enddate := '2011-08-09';
 
 WHILE tcdate < enddate LOOP
 
     PERFORM update_final_betas(tcdate);
     RAISE INFO 'orphan betas updated for %',tcdate;
     DROP TABLE orphan_betas;
-    tcdate := tcdate + 1;
+    tcdate := tcdate + 5;
     
 END LOOP;
 END; $f$;
