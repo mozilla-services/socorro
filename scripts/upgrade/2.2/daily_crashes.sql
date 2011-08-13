@@ -98,6 +98,8 @@ JOIN reports on product_versions.product_name = reports.product
 WHERE 
 	date_processed >= utc_day_begins_pacific(updateday)
 		AND date_processed < utc_day_ends_pacific(updateday)
+    AND ( lower(release_channel) NOT IN ( 'nightly', 'beta', 'aurora' )
+        OR release_channel IS NULL )
 	AND updateday BETWEEN product_versions.build_date and sunset_date
     AND lower(substring(os_name, 1, 3)) IN ('win','lin','mac') 
 AND product_versions.build_type <> 'beta'
@@ -117,6 +119,7 @@ JOIN reports on product_versions.product_name = reports.product
 	AND product_version_builds.build_id = build_numeric(reports.build)
 WHERE date_processed >= utc_day_begins_pacific(updateday)
 		AND date_processed < utc_day_ends_pacific(updateday)
+    AND release_channel ILIKE 'beta'
 	AND updateday BETWEEN product_versions.build_date and sunset_date
     AND lower(substring(os_name, 1, 3)) IN ('win','lin','mac') 
 AND product_versions.build_type = 'beta'
@@ -134,6 +137,8 @@ FROM (
 				AND product_versions.version_string = reports.version
 			WHERE date_processed >= utc_day_begins_pacific(updateday)
 					AND date_processed < utc_day_ends_pacific(updateday)
+                AND ( lower(release_channel) NOT IN ( 'nightly', 'beta', 'aurora' )
+                      or release_channel is null )
 				AND updateday BETWEEN product_versions.build_date and sunset_date
 			AND product_versions.build_type <> 'beta'
             AND lower(substring(os_name, 1, 3)) IN ('win','lin','mac') 
@@ -154,6 +159,7 @@ FROM (
 				AND product_version_builds.build_id = build_numeric(reports.build)
 			WHERE date_processed >= utc_day_begins_pacific(updateday)
 					AND date_processed < utc_day_ends_pacific(updateday)
+                AND release_channel ILIKE 'beta'
 				AND updateday BETWEEN product_versions.build_date and sunset_date
 			AND product_versions.build_type = 'beta'
             AND lower(substring(os_name, 1, 3)) IN ('win','lin','mac') 
@@ -175,8 +181,8 @@ BEGIN
 tcdate := '2011-04-17';
 enddate := '2011-08-09';
 -- timelimited version for stage/dev
---tcdate := '2011-07-20';
---enddate := '2011-07-27';
+--tcdate := '2011-07-25';
+--enddate := '2011-08-09';
 
 WHILE tcdate < enddate LOOP
 

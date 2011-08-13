@@ -33,7 +33,7 @@ IF FOUND THEN
 	RAISE EXCEPTION 'update_adu has already been run for %', updateday;
 END IF;
 
--- insert releases and aurora
+-- insert releases
 
 INSERT INTO product_adu ( product_version_id, os_name,
 		adu_date, adu_count )
@@ -49,7 +49,8 @@ FROM product_versions
 	LEFT OUTER JOIN os_name_matches
     	ON raw_adu.product_os_platform ILIKE os_name_matches.match_string
 WHERE updateday BETWEEN build_date AND ( sunset_date + 1 )
-        AND product_versions.build_type <> 'Beta'
+        AND product_versions.build_type = 'release'
+        AND raw_adu.build_channel = 'release'
 GROUP BY product_version_id, os;
 
 -- insert betas
@@ -70,6 +71,7 @@ FROM product_versions
     	ON raw_adu.product_os_platform ILIKE os_name_matches.match_string
 WHERE updateday BETWEEN build_date AND ( sunset_date + 1 )
         AND product_versions.build_type = 'Beta'
+        AND raw_adu.build_channel = 'beta'
 GROUP BY product_version_id, os; 
 
 -- insert old products
