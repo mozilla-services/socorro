@@ -275,17 +275,17 @@ class ElasticSearchAPI(sapi.SearchAPI):
                 "facet_filter": facet_filter
             }
             facets[sign_hang] = {
-                "query": {
-                    "query_string": {
-                        "query": "_exists_:hangid"
+                "filter": {
+                    "exists": {
+                        "field": "hangid"
                     }
                 },
                 "facet_filter": facet_filter
             }
             facets[sign_plugin] = {
-                "query": {
-                    "query_string": {
-                        "query": "_exists_:process_type"
+                "filter": {
+                    "exists": {
+                        "field": "process_type"
                     }
                 },
                 "facet_filter": facet_filter
@@ -336,11 +336,6 @@ class ElasticSearchAPI(sapi.SearchAPI):
 
         filters = {
             "and": []
-        }
-
-        query_string = {
-            "query": None,
-            "allow_leading_wildcard": False
         }
 
         # Creating the terms depending on the way we should search
@@ -394,28 +389,52 @@ class ElasticSearchAPI(sapi.SearchAPI):
             filters["and"].append(ElasticSearchAPI.build_terms_query(
                                                         "process_type",
                                                         "plugin"))
-
-        # Generating the query_string
-        # using special functions like _missing_ and _exists_
-        query_string_list = []
-        if params["version"]:
-            # -
-            # TODO: This should be written using filters
-            # instead of being in the query_string
-            # -
-            query_string_list.append(ElasticSearchAPI.format_versions(
-                                                        params["version"]))
         if params["report_type"] == "crash":
-            query_string_list.append("_missing_:hangid")
+            filters["and"].append({"missing": {"field": "hangid"}})
         if params["report_type"] == "hang":
-            query_string_list.append("_exists_:hangid")
+            filters["and"].append({"exists": {"field": "hangid"}})
         if params["report_process"] == "browser":
-            query_string_list.append("_missing_:process_type")
+            filters["and"].append({"missing": {"field": "process_type"}})
 
-        query_string["query"] = " AND ".join(query_string_list)
-
-        if query_string["query"]:
-            queries.append({"query_string": query_string})
+        # Generating the filters for versions
+        if params["version"]:
+            versions = ElasticSearchAPI.format_versions(params["version"])
+            versions_type = type(versions)
+            if versions_type is str:
+                # If there is already a product,don't do anything
+                # Otherwise consider this as a product
+                if not params["products"]:
+                    filters["and"].append(
+                                    ElasticSearchAPI.build_terms_query(
+                                        "product",
+                                        ElasticSearchAPI.lower(versions)))
+            elif versions_type is dict:
+                # There is only one pair product:version
+                filters["and"].append(
+                                ElasticSearchAPI.build_terms_query(
+                                        "product",
+                                        ElasticSearchAPI.lower(
+                                                    versions["product"])))
+                filters["and"].append(
+                                ElasticSearchAPI.build_terms_query(
+                                        "version",
+                                        ElasticSearchAPI.lower(
+                                                    versions["version"])))
+            elif versions_type is list:
+                # There are several pairs product:version
+                or_filter = []
+                for v in versions:
+                    and_filter = []
+                    and_filter.append(ElasticSearchAPI.build_terms_query(
+                                            "product",
+                                            ElasticSearchAPI.lower(
+                                                        v["product"])))
+                    and_filter.append(ElasticSearchAPI.build_terms_query(
+                                            "version",
+                                            ElasticSearchAPI.lower(
+                                                        v["version"])))
+                    or_filter.append({"and": and_filter})
+                filters["and"].append({"or": or_filter})
 
         if len(queries) > 1:
             query = {
@@ -494,51 +513,45 @@ class ElasticSearchAPI(sapi.SearchAPI):
     @staticmethod
     def format_versions(versions):
         """
-        Format the versions, separating by ":" and returning the query_string.
+        Format the versions, separating by ":".
+        Return a string if there was only one product,
+                a dict if there was only one product:versionm
+                a list of dicts if there was several product:version.
 
         """
         if not versions:
             return None
 
-        formatted_versions = ""
+        versions_list = []
 
         if type(versions) is list:
-            versions_list = []
-
             for v in versions:
-                if v.find(":") != -1:
-                    product_version = v.split(":")
-                    product = product_version[0]
-                    version = product_version[1]
-                    versions_list.append("".join(("( product: ",
-                                                  urllib.quote(product),
-                                                  " AND version: ",
-                                                  urllib.quote(version),
-                                                  " )")))
-                else:
-                    versions_list.append("".join(("product: ",
-                                                  urllib.quote(v))))
+                try:
+                    (product, version) = v.split(":")
+                except ValueError:
+                    product = v
+                    version = None
 
-            formatted_versions = "".join(("(",
-                                          ElasticSearchAPI.array_to_string(
-                                                                versions_list,
-                                                                " OR "),
-                                          ")"))
+                versions_list.append({
+                    "product": product,
+                    "version": version
+                })
         else:
-            if versions.find(":") != -1:
-                product_version = versions.split(":")
-                product = product_version[0]
-                version = product_version[1]
-                formatted_versions = "".join(("( product: ",
-                                              urllib.quote(product),
-                                              " AND version: ",
-                                              urllib.quote(version),
-                                              " )"))
-            else:
-                formatted_versions = "".join(("product: ",
-                                              urllib.quote(versions)))
+            try:
+                (product, version) = versions.split(":")
+            except ValueError:
+                product = versions
+                version = None
 
-        return formatted_versions
+            if version:
+                versions_list = {
+                    "product": product,
+                    "version": version
+                }
+            else:
+                versions_list = product
+
+        return versions_list
 
     @staticmethod
     def prepare_terms(terms, search_mode):

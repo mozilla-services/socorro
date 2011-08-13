@@ -77,6 +77,7 @@ SET product_version_id = product_versions.product_version_id
 FROM product_versions
 	JOIN product_version_builds ON product_versions.product_version_id = product_version_builds.product_version_id
 WHERE product_versions.build_type = 'Beta'
+    AND new_tcbs.release_channel = 'Beta'
 	AND new_tcbs.product = product_versions.product_name
 	AND new_tcbs.version = product_versions.release_version
 	AND build_numeric(new_tcbs.build) = product_version_builds.build_id;
@@ -87,6 +88,7 @@ UPDATE new_tcbs
 SET product_version_id = product_versions.product_version_id
 FROM product_versions
 WHERE product_versions.build_type <> 'Beta'
+    AND new_tcbs.release_channel <> 'Beta'
 	AND new_tcbs.product = product_versions.product_name
 	AND new_tcbs.version = product_versions.release_version
 	AND new_tcbs.product_version_id = 0;
