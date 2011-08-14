@@ -13,7 +13,7 @@ def update(config, targetDate):
     functions = (
       # function name, parmeters, dependencies
       ('update_product_versions', [], []),
-      ('update_final_betas', [], []),
+      ('update_final_betas', [targetDate], []),
       ('update_signatures', [targetDate], []),
       ('update_os_versions', [targetDate], []),
       ('update_tcbs', [targetDate],
