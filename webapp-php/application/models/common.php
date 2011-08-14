@@ -223,6 +223,7 @@ class Common_Model extends Model {
     	        " ORDER BY reports.date_processed DESC " . 
                 " LIMIT ? OFFSET ?  ) as reports";
 
+        Kohana::log('debug',$sql);
         return $this->fetchRows($sql, TRUE, array($pager->itemsPerPage, $pager->offset));
     }
 

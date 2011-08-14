@@ -91,6 +91,7 @@ def getListOfTopCrashersBySignature(aCursor, dbParams):
     LIMIT %s
     """ % (dbParams["product"], dbParams["version"], dbParams["startDate"],
            dbParams["endDate"],  where, dbParams["listSize"]) 
+  print aCursor.mogrify(sql, dbParams)
   #logger.debug(aCursor.mogrify(sql, dbParams))
   return db.execute(aCursor, sql)
 
