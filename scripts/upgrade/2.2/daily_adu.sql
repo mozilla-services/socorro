@@ -53,6 +53,7 @@ WHERE updateday BETWEEN build_date AND ( sunset_date + 1 )
 GROUP BY product_version_id, os;
 
 -- insert betas
+-- does not include any missing beta counts; should resolve that later
 
 INSERT INTO product_adu ( product_version_id, os_name,
         adu_date, adu_count )
@@ -60,17 +61,20 @@ SELECT product_version_id, coalesce(os_name,'Windows') as os,
     updateday,
     coalesce(sum(raw_adu.adu_count), 0)
 FROM product_versions
-    JOIN product_version_builds USING (product_version_id)
-    LEFT OUTER JOIN raw_adu
+    JOIN raw_adu
         ON product_versions.product_name = raw_adu.product_name
         AND product_versions.release_version = raw_adu.product_version
-        AND build_numeric(raw_adu.build) = product_version_builds.build_id 
         AND raw_adu.date = updateday
-    LEFT OUTER JOIN os_name_matches
+    JOIN os_name_matches
     	ON raw_adu.product_os_platform ILIKE os_name_matches.match_string
 WHERE updateday BETWEEN build_date AND ( sunset_date + 1 )
         AND product_versions.build_type = 'Beta'
         AND raw_adu.build_channel = 'beta'
+        AND EXISTS ( SELECT 1
+            FROM product_version_builds
+            WHERE product_versions.product_version_id = product_version_builds.product_version_id   
+              AND product_version_builds.build_id = build_numeric(raw_adu.build)
+            )
 GROUP BY product_version_id, os; 
 
 -- insert old products

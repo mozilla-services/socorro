@@ -113,15 +113,17 @@ SELECT COUNT(*) as count, daily_crash_code(process_type, hangid) as crash_code,
 	substring(os_name, 1, 3) AS os_short_name,
 	updateday
 FROM product_versions
-JOIN product_version_builds USING (product_version_id)
 JOIN reports on product_versions.product_name = reports.product 
 	AND product_versions.release_version = reports.version
-	AND product_version_builds.build_id = build_numeric(reports.build)
 WHERE date_processed >= utc_day_begins_pacific(updateday)
 		AND date_processed < utc_day_ends_pacific(updateday)
     AND release_channel ILIKE 'beta'
 	AND updateday BETWEEN product_versions.build_date and sunset_date
-    AND lower(substring(os_name, 1, 3)) IN ('win','lin','mac') 
+    AND lower(substring(os_name, 1, 3)) IN ('win','lin','mac')
+    AND EXISTS (SELECT 1 
+        FROM product_version_builds 
+        WHERE product_versions.product_version_id = product_version_builds.product_version_id
+          AND product_version_builds.build_id = build_numeric(reports.build) )
 AND product_versions.build_type = 'beta'
 GROUP BY product_version_id, crash_code, os_short_name;
 
@@ -153,14 +155,16 @@ SELECT count(subr.hangid) as count, 'H', subr.prod_id, subr.os_short_name,
 FROM (
 		   SELECT distinct hangid, product_version_id AS prod_id, substring(os_name, 1, 3) AS os_short_name
 			FROM product_versions
-			JOIN product_version_builds USING (product_version_id)
 			JOIN reports on product_versions.product_name = reports.product 
 				AND product_versions.release_version = reports.version
-				AND product_version_builds.build_id = build_numeric(reports.build)
 			WHERE date_processed >= utc_day_begins_pacific(updateday)
 					AND date_processed < utc_day_ends_pacific(updateday)
                 AND release_channel ILIKE 'beta'
 				AND updateday BETWEEN product_versions.build_date and sunset_date
+                AND EXISTS (SELECT 1 
+                    FROM product_version_builds 
+                    WHERE product_versions.product_version_id = product_version_builds.product_version_id
+                      AND product_version_builds.build_id = build_numeric(reports.build) )
 			AND product_versions.build_type = 'beta'
             AND lower(substring(os_name, 1, 3)) IN ('win','lin','mac') 
 		 ) AS subr
@@ -182,7 +186,7 @@ tcdate := '2011-04-17';
 enddate := '2011-08-09';
 -- timelimited version for stage/dev
 --tcdate := '2011-07-25';
---enddate := '2011-08-09';
+enddate := '2011-08-13';
 
 WHILE tcdate < enddate LOOP
 
