@@ -291,6 +291,7 @@ class Common_Model extends Model {
             $params['date'] = NULL;
         }
 
+        array_push($outer_join_tables, 'reports_duplicates ON reports.uuid = reports_duplicates.uuid');
         if (isset($params['version']) && !empty($params['version'])) {
             $or = array();
             foreach ($params['version'] as $spec) {
@@ -318,7 +319,6 @@ class Common_Model extends Model {
                             $channel = 'release';
                         }
                     }
-                    array_push($outer_join_tables, 'reports_duplicates ON reports.uuid = reports_duplicates.uuid');
                     if ($which_table == 'new') {
                         if ($channel == 'beta') {
                             array_push($join_tables, 'product_versions ON reports.version = product_versions.release_version AND reports.product = product_versions.product_name');
