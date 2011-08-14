@@ -214,12 +214,6 @@ class Common_Model extends Model {
             $sql .= " JOIN  " . join("\nJOIN ", $join_tables);
         }
         $sql .= " WHERE  " . join(' AND ', $where) .
-                " AND build IN 
-                    (SELECT build_id::varchar FROM product_version_builds AS pvb
-                     JOIN product_versions AS pv
-                     ON (pvb.product_version_id = pv.product_version_id)
-                     WHERE product_name = $product
-                     AND version_string = $version)" .
     	        " ORDER BY reports.date_processed DESC " . 
                 " LIMIT ? OFFSET ?  ) as reports";
 
