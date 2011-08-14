@@ -39,19 +39,19 @@ END IF;
 
 INSERT INTO product_adu ( product_version_id, os_name,
 		adu_date, adu_count )
-SELECT product_version_id, coalesce(os_name,'Windows') as os,
+SELECT product_version_id, coalesce(os_name,'Unknown') as os,
 	updateday,
 	coalesce(sum(raw_adu.adu_count), 0)
 FROM product_versions
 	LEFT OUTER JOIN raw_adu
 		ON product_versions.product_name = raw_adu.product_name
 		AND product_versions.version_string = raw_adu.product_version
-		AND product_versions.build_type = raw_adu.build_channel
+		AND product_versions.build_type ILIKE raw_adu.build_channel
 		AND raw_adu.date = updateday
 	LEFT OUTER JOIN os_name_matches
     	ON raw_adu.product_os_platform ILIKE os_name_matches.match_string
 WHERE updateday BETWEEN build_date AND ( sunset_date + 1 )
-        AND product_versions.build_type <> 'Beta'
+        AND product_versions.build_type = 'release'
 GROUP BY product_version_id, os;
 
 -- insert betas
@@ -103,7 +103,7 @@ BEGIN
 FOR aduday IN SELECT i 
 	-- time-limited version for stage/dev
 	-- FROM generate_series(timestamp '2011-07-20', timestamp '2011-07-27', '1 day') as gs(i)
-	FROM generate_series(timestamp '2011-07-20', now(), '1 day') as gs(i)
+	FROM generate_series(timestamp '2011-04-17', '2011-08-13', '1 day') as gs(i)
 	LOOP
 	
 	PERFORM update_adu(aduday);
