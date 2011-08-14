@@ -13,12 +13,15 @@ def update(config, targetDate):
     functions = (
       # function name, parmeters, dependencies
       ('update_product_versions', [], []),
+      ('update_final_betas', [], []),
       ('update_signatures', [targetDate], []),
       ('update_os_versions', [targetDate], []),
       ('update_tcbs', [targetDate],
-       ['update_product_versions', 'update_signatures']),
-      ('update_adu', [targetDate], []),
-      ('update_daily_crashes', [targetDate], [])
+       ['update_product_versions', 'update_signatures', 'update_os_versions',
+        'update_final_betas']),
+      ('update_adu', [targetDate], ['update_final_betas']),
+      ('update_daily_crashes', [targetDate],
+       ['update_product_versions', 'update_final_betas', 'update_signatures'])
     )
 
     failed = set()
