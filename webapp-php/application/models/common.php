@@ -214,12 +214,6 @@ class Common_Model extends Model {
             $sql .= " JOIN  " . join("\nJOIN ", $join_tables);
         }
         $sql .= " WHERE  " . join(' AND ', $where) .
-                " AND build IN 
-                    (SELECT build_id::varchar FROM product_version_builds AS pvb
-                     JOIN product_versions AS pv
-                     ON (pvb.product_version_id = pv.product_version_id)
-                     WHERE product_name = $product
-                     AND version_string = $version)" .
     	        " ORDER BY reports.date_processed DESC " . 
                 " LIMIT ? OFFSET ?  ) as reports";
 
@@ -307,25 +301,39 @@ class Common_Model extends Model {
                            " AND pi.version_string = " . $this->db->escape($version) ."";
                     $result = $this->fetchRows($sql);
                     $which_table = 'old';
-                    $major_version = $version;
                     $channel = '';
+                    $reports_version = $version;
+
                     if (! empty($result)) {
                         $version_string = $result[0]->version_string;
                         $which_table = $result[0]->which_table;
                         $major_version = $result[0]->major_version;
-                        if ($version_string == $major_version) {
-                            $channel = 'release';
-                        } else if (strpos($version_string, 'b')) {
+                        if (strpos($version_string, 'b')) {
                             $channel = 'beta';
+                            $reports_version = $major_version;
+                        } else {
+                            $channel = 'release';
                         }
                     }
+                    if ($which_table == 'new') {
+                        if ($channel == 'beta') {
+                            array_push($join_tables, 'product_versions ON reports.version = product_versions.release_version AND reports.product = product_versions.product_name');
+                            array_push($join_tables, 'product_version_builds ON product_versions.product_version_id = product_version_builds.product_version_id AND build_numeric(build) = product_version_builds.build_id');
+                            $where[] = 
+                               "reports.product = " . $this->db->escape($product) . 
+                               " AND product_versions.version_string = " . $this->db->escape($version) .
+                               " AND reports.version = product_versions.release_version" .
+                               " AND reports.release_channel ILIKE 'beta'" .
+                               " AND product_versions.build_type = 'beta'";
+                        } else {
+                            $where[] = 
+                               "reports.release_channel = 'release'";
+                        }
+                    }
+
                     $or[] = 
                         "(reports.product = " . $this->db->escape($product) . " AND " .
-                        "reports.version = " . $this->db->escape($major_version) . ")";
-                    if ($which_table == 'new' && isset($channel)) {
-                        $where[] = 
-                           "reports.release_channel = " . $this->db->escape($channel);
-                    }
+                        "reports.version = " . $this->db->escape($reports_version) . ")";
 
                 } else {
                     $or[] = "(reports.product = " . $this->db->escape($spec) . ")";
