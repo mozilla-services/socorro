@@ -36,7 +36,7 @@ class AduByDay(webapi.JsonServiceBase):
   #-----------------------------------------------------------------------------------------------------------------
   def fetchAduHistory (self, parameters):
     if parameters.listOfOs_names and parameters.listOfOs_names != ['']:
-      osNameListPhrase = (','.join("'%s'" % x for x in parameters.listOfOs_names)).replace('Mac', 'Mac OS/X')
+      osNameListPhrase = (','.join("'%s'" % x for x in parameters.listOfOs_names)).replace('Mac', 'Mac OS X')
       parameters.os_phrase = "and os_name in (%s)" % osNameListPhrase
     else:
       parameters.os_phrase = ''
