@@ -47,7 +47,7 @@ def getListOfTopCrashersBySignature(aCursor, dbParams):
       raise ValueError(type(dbParams[param]))
   
   where = ""
-  if dbParams['crashType'] != 'any':
+  if dbParams['crashType'] != 'all':
     where = "AND process_type = '%s'" % (dbParams['crashType'],)
   
   sql = """
