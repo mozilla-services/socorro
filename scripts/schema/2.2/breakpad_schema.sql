@@ -164,6 +164,108 @@ end; $$;
 ALTER FUNCTION public.backfill_all_dups(start_date timestamp without time zone, end_date timestamp without time zone) OWNER TO postgres;
 
 --
+-- Name: backfill_one_day(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION backfill_one_day() RETURNS text
+    LANGUAGE plpgsql
+    SET work_mem TO '512MB'
+    SET maintenance_work_mem TO '512MB'
+    SET temp_buffers TO '512MB'
+    AS $$
+declare datematch text;
+  reppartition text;
+  bkdate date;
+begin
+
+  SELECT last_date + 1 INTO bkdate
+  FROM last_backfill_temp;
+
+  IF bkdate > '2011-08-04' THEN
+    RETURN 'done';
+  END IF;
+
+  datematch := to_char(bkdate, 'YYMMDD');
+
+  create temporary table back_one_day
+  on commit drop as
+  select * from releasechannel_backfill
+  where uuid LIKE ( '%' || datematch );
+
+  create index back_one_day_idx ON back_one_day(uuid);
+
+  raise info 'temp table created';
+
+  select relname into reppartition
+  from pg_stat_user_tables
+  where relname like 'reports_2011%'
+    and relname <= ( 'reports_20' || datematch )
+  order by relname desc limit 1;
+
+  raise info 'updating %',reppartition;
+  
+  EXECUTE 'UPDATE ' || reppartition || ' SET release_channel = back_one_day.release_channel
+    FROM back_one_day WHERE back_one_day.uuid = ' || reppartition || '.uuid;';
+
+  UPDATE last_backfill_temp SET last_date = bkdate;
+
+  RETURN reppartition;
+
+END; $$;
+
+
+ALTER FUNCTION public.backfill_one_day() OWNER TO postgres;
+
+--
+-- Name: backfill_one_day(date); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION backfill_one_day(bkdate date) RETURNS text
+    LANGUAGE plpgsql
+    SET work_mem TO '512MB'
+    SET maintenance_work_mem TO '512MB'
+    SET temp_buffers TO '512MB'
+    AS $$
+declare datematch text;
+  reppartition text;
+begin
+
+  IF bkdate > '2011-08-04' THEN
+    RETURN 'done';
+  END IF;
+
+  datematch := to_char(bkdate, 'YYMMDD');
+
+  create temporary table back_one_day
+  on commit drop as
+  select * from releasechannel_backfill
+  where uuid LIKE ( '%' || datematch );
+
+  create index back_one_day_idx ON back_one_day(uuid);
+
+  raise info 'temp table created';
+
+  select relname into reppartition
+  from pg_stat_user_tables
+  where relname like 'reports_2011%'
+    and relname <= ( 'reports_20' || datematch )
+  order by relname desc limit 1;
+
+  raise info 'updating %',reppartition;
+  
+  EXECUTE 'UPDATE ' || reppartition || ' SET release_channel = back_one_day.release_channel
+    FROM back_one_day WHERE back_one_day.uuid = ' || reppartition || '.uuid;';
+
+  UPDATE last_backfill_temp SET last_date = bkdate;
+
+  RETURN reppartition;
+
+END; $$;
+
+
+ALTER FUNCTION public.backfill_one_day(bkdate date) OWNER TO postgres;
+
+--
 -- Name: backfill_reports_duplicates(timestamp without time zone, timestamp without time zone); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -599,7 +701,7 @@ ELSE
 			sunset_date = end_visibility
 		WHERE product_version_id = prod_id;
 		
-		UPDATE product_release_channel
+		UPDATE product_release_channels
 		SET throttle = crash_throttle / 100
 		WHERE product_name = prod_name
 			AND release_channel = prod_channel;
@@ -1179,26 +1281,27 @@ IF FOUND THEN
 	RAISE EXCEPTION 'update_adu has already been run for %', updateday;
 END IF;
 
--- insert releases and aurora
+-- insert releases
 
 INSERT INTO product_adu ( product_version_id, os_name,
 		adu_date, adu_count )
-SELECT product_version_id, coalesce(os_name,'Windows') as os,
+SELECT product_version_id, coalesce(os_name,'Unknown') as os,
 	updateday,
 	coalesce(sum(raw_adu.adu_count), 0)
 FROM product_versions
 	LEFT OUTER JOIN raw_adu
 		ON product_versions.product_name = raw_adu.product_name
 		AND product_versions.version_string = raw_adu.product_version
-		AND product_versions.build_type = raw_adu.build_channel
+		AND product_versions.build_type ILIKE raw_adu.build_channel
 		AND raw_adu.date = updateday
 	LEFT OUTER JOIN os_name_matches
     	ON raw_adu.product_os_platform ILIKE os_name_matches.match_string
 WHERE updateday BETWEEN build_date AND ( sunset_date + 1 )
-        AND product_versions.build_type <> 'Beta'
+        AND product_versions.build_type = 'release'
 GROUP BY product_version_id, os;
 
 -- insert betas
+-- does not include any missing beta counts; should resolve that later
 
 INSERT INTO product_adu ( product_version_id, os_name,
         adu_date, adu_count )
@@ -1206,16 +1309,20 @@ SELECT product_version_id, coalesce(os_name,'Windows') as os,
     updateday,
     coalesce(sum(raw_adu.adu_count), 0)
 FROM product_versions
-    JOIN product_version_builds USING (product_version_id)
-    LEFT OUTER JOIN raw_adu
+    JOIN raw_adu
         ON product_versions.product_name = raw_adu.product_name
         AND product_versions.release_version = raw_adu.product_version
-        AND build_numeric(raw_adu.build) = product_version_builds.build_id 
         AND raw_adu.date = updateday
-    LEFT OUTER JOIN os_name_matches
+    JOIN os_name_matches
     	ON raw_adu.product_os_platform ILIKE os_name_matches.match_string
 WHERE updateday BETWEEN build_date AND ( sunset_date + 1 )
         AND product_versions.build_type = 'Beta'
+        AND raw_adu.build_channel = 'beta'
+        AND EXISTS ( SELECT 1
+            FROM product_version_builds
+            WHERE product_versions.product_version_id = product_version_builds.product_version_id   
+              AND product_version_builds.build_id = build_numeric(raw_adu.build)
+            )
 GROUP BY product_version_id, os; 
 
 -- insert old products
@@ -1258,52 +1365,59 @@ BEGIN
 
 -- apologies for badly written SQL, didn't want to rewrite it all from scratch
 
+-- note: we are currently excluding crashes which are missing an OS_Name from the count
+
 -- insert old browser crashes
 -- for most crashes
 INSERT INTO daily_crashes (count, report_type, productdims_id, os_short_name, adu_day)
 SELECT COUNT(*) as count, daily_crash_code(process_type, hangid) as crash_code, p.id, 
-substring(r.os_name, 1, 3) AS os_short_name,
-updateday
+	substring(r.os_name, 1, 3) AS os_short_name,
+	updateday
 FROM product_visibility cfg
 JOIN productdims p on cfg.productdims_id = p.id
 JOIN reports r on p.product = r.product AND p.version = r.version
 WHERE NOT cfg.ignore AND
-date_processed >= utc_day_begins_pacific(updateday)
-AND date_processed < utc_day_ends_pacific(updateday)
-AND updateday BETWEEN cfg.start_date and cfg.end_date
+	date_processed >= utc_day_begins_pacific(updateday)
+		AND date_processed < utc_day_ends_pacific(updateday)
+	AND updateday BETWEEN cfg.start_date and cfg.end_date
+    AND lower(substring(os_name, 1, 3)) IN ('win','lin','mac') 
 GROUP BY p.id, crash_code, os_short_name;
 
  -- insert HANGS_NORMALIZED from old data
 INSERT INTO daily_crashes (count, report_type, productdims_id, os_short_name, adu_day)
 SELECT count(subr.hangid) as count, 'H', subr.prod_id, subr.os_short_name,
- updateday
+	 updateday
 FROM (
-   SELECT distinct hangid, p.id AS prod_id, substring(r.os_name, 1, 3) AS os_short_name
-   FROM product_visibility cfg
-   JOIN productdims p on cfg.productdims_id = p.id
-   JOIN reports r on p.product = r.product AND p.version = r.version
-   WHERE NOT cfg.ignore AND
-date_processed >= utc_day_begins_pacific(updateday)
-AND date_processed < utc_day_ends_pacific(updateday)
-AND updateday BETWEEN cfg.start_date and cfg.end_date
-AND hangid IS NOT NULL
- ) AS subr
+		   SELECT distinct hangid, p.id AS prod_id, substring(r.os_name, 1, 3) AS os_short_name
+		   FROM product_visibility cfg
+		   JOIN productdims p on cfg.productdims_id = p.id
+		   JOIN reports r on p.product = r.product AND p.version = r.version
+		   WHERE NOT cfg.ignore AND
+				date_processed >= utc_day_begins_pacific(updateday)
+					AND date_processed < utc_day_ends_pacific(updateday)
+				AND updateday BETWEEN cfg.start_date and cfg.end_date
+				AND hangid IS NOT NULL
+                AND lower(substring(os_name, 1, 3)) IN ('win','lin','mac') 
+		 ) AS subr
 GROUP BY subr.prod_id, subr.os_short_name;
 
 -- insert crash counts for new products
 -- non-beta
 INSERT INTO daily_crashes (count, report_type, productdims_id, os_short_name, adu_day)
 SELECT COUNT(*) as count, daily_crash_code(process_type, hangid) as crash_code, 
-product_versions.product_version_id,
-substring(os_name, 1, 3) AS os_short_name,
-updateday
+	product_versions.product_version_id,
+	substring(os_name, 1, 3) AS os_short_name,
+	updateday
 FROM product_versions
 JOIN reports on product_versions.product_name = reports.product 
-AND product_versions.version_string = reports.version
+	AND product_versions.version_string = reports.version
 WHERE 
-date_processed >= utc_day_begins_pacific(updateday)
-AND date_processed < utc_day_ends_pacific(updateday)
-AND updateday BETWEEN product_versions.build_date and sunset_date
+	date_processed >= utc_day_begins_pacific(updateday)
+		AND date_processed < utc_day_ends_pacific(updateday)
+    AND ( lower(release_channel) NOT IN ( 'nightly', 'beta', 'aurora' )
+        OR release_channel IS NULL )
+	AND updateday BETWEEN product_versions.build_date and sunset_date
+    AND lower(substring(os_name, 1, 3)) IN ('win','lin','mac') 
 AND product_versions.build_type <> 'beta'
 GROUP BY product_version_id, crash_code, os_short_name;
 
@@ -1311,17 +1425,21 @@ GROUP BY product_version_id, crash_code, os_short_name;
 -- betas
 INSERT INTO daily_crashes (count, report_type, productdims_id, os_short_name, adu_day)
 SELECT COUNT(*) as count, daily_crash_code(process_type, hangid) as crash_code, 
-product_versions.product_version_id,
-substring(os_name, 1, 3) AS os_short_name,
-updateday
+	product_versions.product_version_id,
+	substring(os_name, 1, 3) AS os_short_name,
+	updateday
 FROM product_versions
-JOIN product_version_builds USING (product_version_id)
 JOIN reports on product_versions.product_name = reports.product 
-AND product_versions.release_version = reports.version
-AND product_version_builds.build_id = build_numeric(reports.build)
+	AND product_versions.release_version = reports.version
 WHERE date_processed >= utc_day_begins_pacific(updateday)
-AND date_processed < utc_day_ends_pacific(updateday)
-AND updateday BETWEEN product_versions.build_date and sunset_date
+		AND date_processed < utc_day_ends_pacific(updateday)
+    AND release_channel ILIKE 'beta'
+	AND updateday BETWEEN product_versions.build_date and sunset_date
+    AND lower(substring(os_name, 1, 3)) IN ('win','lin','mac')
+    AND EXISTS (SELECT 1 
+        FROM product_version_builds 
+        WHERE product_versions.product_version_id = product_version_builds.product_version_id
+          AND product_version_builds.build_id = build_numeric(reports.build) )
 AND product_versions.build_type = 'beta'
 GROUP BY product_version_id, crash_code, os_short_name;
 
@@ -1329,36 +1447,43 @@ GROUP BY product_version_id, crash_code, os_short_name;
 -- non-beta
 INSERT INTO daily_crashes (count, report_type, productdims_id, os_short_name, adu_day)
 SELECT count(subr.hangid) as count, 'H', subr.prod_id, subr.os_short_name,
- updateday
+	 updateday
 FROM (
-   SELECT distinct hangid, product_version_id AS prod_id, substring(os_name, 1, 3) AS os_short_name
-FROM product_versions
-JOIN reports on product_versions.product_name = reports.product 
-AND product_versions.version_string = reports.version
-WHERE date_processed >= utc_day_begins_pacific(updateday)
-AND date_processed < utc_day_ends_pacific(updateday)
-AND updateday BETWEEN product_versions.build_date and sunset_date
-AND product_versions.build_type <> 'beta'
- ) AS subr
+		   SELECT distinct hangid, product_version_id AS prod_id, substring(os_name, 1, 3) AS os_short_name
+			FROM product_versions
+			JOIN reports on product_versions.product_name = reports.product 
+				AND product_versions.version_string = reports.version
+			WHERE date_processed >= utc_day_begins_pacific(updateday)
+					AND date_processed < utc_day_ends_pacific(updateday)
+                AND ( lower(release_channel) NOT IN ( 'nightly', 'beta', 'aurora' )
+                      or release_channel is null )
+				AND updateday BETWEEN product_versions.build_date and sunset_date
+			AND product_versions.build_type <> 'beta'
+            AND lower(substring(os_name, 1, 3)) IN ('win','lin','mac') 
+		 ) AS subr
 GROUP BY subr.prod_id, subr.os_short_name;
 
 -- insert normalized hangs for new products
 -- beta
 INSERT INTO daily_crashes (count, report_type, productdims_id, os_short_name, adu_day)
 SELECT count(subr.hangid) as count, 'H', subr.prod_id, subr.os_short_name,
- updateday
+	 updateday
 FROM (
-   SELECT distinct hangid, product_version_id AS prod_id, substring(os_name, 1, 3) AS os_short_name
-FROM product_versions
-JOIN product_version_builds USING (product_version_id)
-JOIN reports on product_versions.product_name = reports.product 
-AND product_versions.release_version = reports.version
-AND product_version_builds.build_id = build_numeric(reports.build)
-WHERE date_processed >= utc_day_begins_pacific(updateday)
-AND date_processed < utc_day_ends_pacific(updateday)
-AND updateday BETWEEN product_versions.build_date and sunset_date
-AND product_versions.build_type = 'beta'
- ) AS subr
+		   SELECT distinct hangid, product_version_id AS prod_id, substring(os_name, 1, 3) AS os_short_name
+			FROM product_versions
+			JOIN reports on product_versions.product_name = reports.product 
+				AND product_versions.release_version = reports.version
+			WHERE date_processed >= utc_day_begins_pacific(updateday)
+					AND date_processed < utc_day_ends_pacific(updateday)
+                AND release_channel ILIKE 'beta'
+				AND updateday BETWEEN product_versions.build_date and sunset_date
+                AND EXISTS (SELECT 1 
+                    FROM product_version_builds 
+                    WHERE product_versions.product_version_id = product_version_builds.product_version_id
+                      AND product_version_builds.build_id = build_numeric(reports.build) )
+			AND product_versions.build_type = 'beta'
+            AND lower(substring(os_name, 1, 3)) IN ('win','lin','mac') 
+		 ) AS subr
 GROUP BY subr.prod_id, subr.os_short_name;
 
 ANALYZE daily_crashes;
@@ -1369,6 +1494,129 @@ END;$$;
 
 
 ALTER FUNCTION public.update_daily_crashes(updateday date) OWNER TO postgres;
+
+--
+-- Name: update_final_betas(date); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION update_final_betas(updateday date) RETURNS boolean
+    LANGUAGE plpgsql
+    SET work_mem TO '512MB'
+    SET temp_buffers TO '512MB'
+    AS $_$
+BEGIN
+-- this function adds "final" beta releases to the list of
+-- products from the reports table
+-- since the first time we see them would be in the 
+-- reports table
+
+-- create a temporary table including all builds found
+
+create temporary table orphan_betas 
+on commit drop as
+select build_numeric(build) as build_id, 
+  version, product, os_name,
+  count(*) as report_count
+from reports
+where date_processed BETWEEN utc_day_begins_pacific(updateday)
+  AND utc_day_ends_pacific(updateday)
+  AND release_channel = 'beta'
+  and os_name <> ''
+  and build ~ $x$^20\d{12}$$x$
+  and version !~ $x$[a-zA-Z]$x$
+group by build, version, product, os_name;
+
+-- insert release versions into the betas
+
+INSERT INTO orphan_betas
+SELECT build_id, release_version, product_name, platform
+FROM product_versions JOIN product_version_builds
+  USING (product_version_id)
+WHERE build_type = 'release';
+
+-- purge all builds we've already seen
+
+DELETE FROM orphan_betas
+USING product_versions JOIN product_version_builds
+  USING (product_version_id)
+WHERE orphan_betas.product = product_versions.product_name
+  AND orphan_betas.version = product_versions.release_version
+  AND orphan_betas.build_id = product_version_builds.build_id
+  AND product_versions.build_type <> 'release';
+
+-- purge builds which are lower than an existing beta
+
+DELETE FROM orphan_betas
+USING product_versions JOIN product_version_builds
+  USING (product_version_id)
+WHERE orphan_betas.product = product_versions.product_name
+  AND orphan_betas.version = product_versions.release_version
+  AND orphan_betas.build_id < ( product_version_builds.build_id)
+  AND product_versions.beta_number between 1 and 998
+  AND product_versions.build_type = 'beta';
+
+-- purge builds which are higher than a release
+
+DELETE FROM orphan_betas
+USING product_versions JOIN product_version_builds
+  USING (product_version_id)
+WHERE orphan_betas.product = product_versions.product_name
+  AND orphan_betas.version = product_versions.release_version
+  AND orphan_betas.build_id > ( product_version_builds.build_id + 2000000 )
+  AND product_versions.build_type = 'release';
+
+-- purge unused versions
+
+DELETE FROM orphan_betas
+WHERE product NOT IN (SELECT product_name 
+    FROM products
+    WHERE major_version_sort(orphan_betas.version) 
+      >= major_version_sort(products.rapid_release_version) );
+
+-- if no bfinal exists in product_versions, then create one
+
+INSERT INTO product_versions (
+    product_name,
+    major_version,
+    release_version,
+    version_string,
+    beta_number,
+    version_sort,
+    build_date,
+    sunset_date,
+    build_type)
+SELECT product, 
+  major_version(version),
+  version,
+  version || '(beta)',
+  999,
+  version_sort(version, 999),
+  build_date(min(orphan_betas.build_id)),
+  sunset_date(min(orphan_betas.build_id), 'beta'),
+  'Beta'
+FROM orphan_betas
+  JOIN products ON orphan_betas.product = products.product_name
+  LEFT OUTER JOIN product_versions
+    ON orphan_betas.product = product_versions.product_name
+    AND orphan_betas.version = product_versions.release_version
+    AND product_versions.beta_number = 999
+WHERE product_versions.product_name IS NULL
+GROUP BY product, version;
+  
+-- add the buildids to product_version_builds
+INSERT INTO product_version_builds (product_version_id, build_id, platform)
+SELECT product_version_id, orphan_betas.build_id, os_name
+FROM product_versions JOIN orphan_betas
+  ON product_name = product
+  AND product_versions.release_version = orphan_betas.version
+WHERE beta_number = 999;
+
+RETURN TRUE;
+
+END; $_$;
+
+
+ALTER FUNCTION public.update_final_betas(updateday date) OWNER TO postgres;
 
 --
 -- Name: update_os_versions(date); Type: FUNCTION; Schema: public; Owner: postgres
@@ -1473,37 +1721,39 @@ insert into product_versions (
     sunset_date,
     build_type)
 select products.product_name, 
-	major_version(version),
-	version,
-	version_string(version, releases_raw.beta_number),
-	releases_raw.beta_number,
-	version_sort(version, releases_raw.beta_number),
-	build_date(min(build_id)),
-	sunset_date(min(build_id), releases_raw.build_type ), 
-	releases_raw.build_type
+major_version(version),
+version,
+version_string(version, releases_raw.beta_number),
+releases_raw.beta_number,
+version_sort(version, releases_raw.beta_number),
+build_date(min(build_id)),
+sunset_date(min(build_id), releases_raw.build_type ), 
+releases_raw.build_type
 from releases_raw
-	join products ON releases_raw.product_name = products.release_name
-	left outer join product_versions ON 
-		( releases_raw.product_name = products.release_name
-			AND releases_raw.version = product_versions.release_version
-			AND releases_raw.beta_number IS NOT DISTINCT FROM product_versions.beta_number )
+join products ON releases_raw.product_name = products.release_name
+left outer join product_versions ON 
+( releases_raw.product_name = products.release_name
+AND releases_raw.version = product_versions.release_version
+AND releases_raw.beta_number IS NOT DISTINCT FROM product_versions.beta_number )
 where major_version_sort(version) >= major_version_sort(rapid_release_version)
-	AND product_versions.product_name IS NULL
-	AND releases_raw.build_type IN ('release','beta')
+AND product_versions.product_name IS NULL
+AND releases_raw.build_type IN ('release','beta')
 group by products.product_name, version, releases_raw.beta_number, releases_raw.build_type;
 
 insert into product_version_builds
-	select product_versions.product_version_id,
-		releases_raw.build_id,
-		releases_raw.platform
+select product_versions.product_version_id,
+releases_raw.build_id,
+releases_raw.platform
 from releases_raw
-	join product_versions
-		ON releases_raw.product_name = product_versions.product_name
-		AND releases_raw.version = product_versions.release_version
-		AND releases_raw.beta_number IS NOT DISTINCT FROM product_versions.beta_number
-	left outer join product_version_builds ON
-		product_versions.product_version_id = product_version_builds.product_version_id
-		AND releases_raw.build_id = product_version_builds.build_id
+    join products
+        ON products.release_name = releases_raw.product_name
+join product_versions
+ON products.product_name = product_versions.product_name
+AND releases_raw.version = product_versions.release_version
+AND releases_raw.beta_number IS NOT DISTINCT FROM product_versions.beta_number
+left outer join product_version_builds ON
+product_versions.product_version_id = product_version_builds.product_version_id
+AND releases_raw.build_id = product_version_builds.build_id
 where product_version_builds.product_version_id is null;
 
 return true;
@@ -1899,6 +2149,7 @@ SET product_version_id = product_versions.product_version_id
 FROM product_versions
 	JOIN product_version_builds ON product_versions.product_version_id = product_version_builds.product_version_id
 WHERE product_versions.build_type = 'Beta'
+    AND new_tcbs.real_release_channel = 'Beta'
 	AND new_tcbs.product = product_versions.product_name
 	AND new_tcbs.version = product_versions.release_version
 	AND build_numeric(new_tcbs.build) = product_version_builds.build_id;
@@ -1909,14 +2160,17 @@ UPDATE new_tcbs
 SET product_version_id = product_versions.product_version_id
 FROM product_versions
 WHERE product_versions.build_type <> 'Beta'
+    AND new_tcbs.real_release_channel <> 'Beta'
 	AND new_tcbs.product = product_versions.product_name
 	AND new_tcbs.version = product_versions.release_version
 	AND new_tcbs.product_version_id = 0;
 
--- if there's no product and version still, discard
+-- if there's no product and version still, or no
+-- signature, discard
 -- since we can't report on it
 
-DELETE FROM new_tcbs WHERE product_version_id = 0;
+DELETE FROM new_tcbs WHERE product_version_id = 0
+  OR signature_id = 0;
 
 -- fix os_name
 
@@ -1934,12 +2188,11 @@ INSERT INTO tcbs (
 SELECT signature_id, updateday, product_version_id,
 	process_type, real_release_channel,
 	sum(report_count),
-	sum(case when os_name = 'Windows' THEN 1 else 0 END),
-	sum(case when os_name = 'Mac OS X' THEN 1 else 0 END),
-	sum(case when os_name = 'Linux' THEN 1 else 0 END),
+	sum(case when os_name = 'Windows' THEN report_count else 0 END),
+	sum(case when os_name = 'Mac OS X' THEN report_count else 0 END),
+	sum(case when os_name = 'Linux' THEN report_count else 0 END),
     sum(hang_count)
 FROM new_tcbs
-WHERE signature_id <> 0
 GROUP BY signature_id, updateday, product_version_id,
 	process_type, real_release_channel;
 
@@ -2850,6 +3103,18 @@ CREATE TABLE alexa_topsites (
 ALTER TABLE public.alexa_topsites OWNER TO breakpad_rw;
 
 --
+-- Name: backfill_temp; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
+--
+
+CREATE TABLE backfill_temp (
+    uuid text,
+    release_channel citext
+);
+
+
+ALTER TABLE public.backfill_temp OWNER TO postgres;
+
+--
 -- Name: bloat; Type: VIEW; Schema: public; Owner: postgres
 --
 
@@ -3013,7 +3278,7 @@ CREATE TABLE daily_crashes (
     report_type character(1) DEFAULT 'C'::bpchar NOT NULL,
     productdims_id integer,
     os_short_name character(3),
-    adu_day date NOT NULL
+    adu_day timestamp without time zone NOT NULL
 );
 
 
@@ -4813,6 +5078,17 @@ CREATE VIEW jobs_in_queue AS
 ALTER TABLE public.jobs_in_queue OWNER TO monitoring;
 
 --
+-- Name: last_backfill_temp; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
+--
+
+CREATE TABLE last_backfill_temp (
+    last_date date
+);
+
+
+ALTER TABLE public.last_backfill_temp OWNER TO postgres;
+
+--
 -- Name: last_tcbsig; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -5824,27 +6100,114 @@ INHERITS (plugins_reports);
 ALTER TABLE public.plugins_reports_20110829 OWNER TO breakpad_rw;
 
 --
--- Name: plugins_reports_20110905; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: priority_jobs_1445; Type: TABLE; Schema: public; Owner: processor; Tablespace: 
 --
 
-CREATE TABLE plugins_reports_20110905 (
-    CONSTRAINT plugins_reports_20110905_date_check CHECK ((('2011-09-05 00:00:00'::timestamp without time zone <= date_processed) AND (date_processed < '2011-09-12 00:00:00'::timestamp without time zone)))
-)
-INHERITS (plugins_reports);
-
-
-ALTER TABLE public.plugins_reports_20110905 OWNER TO breakpad_rw;
-
---
--- Name: priority_jobs_1402; Type: TABLE; Schema: public; Owner: processor; Tablespace: 
---
-
-CREATE TABLE priority_jobs_1402 (
+CREATE TABLE priority_jobs_1445 (
     uuid character varying(50) NOT NULL
 );
 
 
-ALTER TABLE public.priority_jobs_1402 OWNER TO processor;
+ALTER TABLE public.priority_jobs_1445 OWNER TO processor;
+
+--
+-- Name: priority_jobs_1447; Type: TABLE; Schema: public; Owner: processor; Tablespace: 
+--
+
+CREATE TABLE priority_jobs_1447 (
+    uuid character varying(50) NOT NULL
+);
+
+
+ALTER TABLE public.priority_jobs_1447 OWNER TO processor;
+
+--
+-- Name: priority_jobs_1449; Type: TABLE; Schema: public; Owner: processor; Tablespace: 
+--
+
+CREATE TABLE priority_jobs_1449 (
+    uuid character varying(50) NOT NULL
+);
+
+
+ALTER TABLE public.priority_jobs_1449 OWNER TO processor;
+
+--
+-- Name: priority_jobs_1450; Type: TABLE; Schema: public; Owner: processor; Tablespace: 
+--
+
+CREATE TABLE priority_jobs_1450 (
+    uuid character varying(50) NOT NULL
+);
+
+
+ALTER TABLE public.priority_jobs_1450 OWNER TO processor;
+
+--
+-- Name: priority_jobs_1451; Type: TABLE; Schema: public; Owner: processor; Tablespace: 
+--
+
+CREATE TABLE priority_jobs_1451 (
+    uuid character varying(50) NOT NULL
+);
+
+
+ALTER TABLE public.priority_jobs_1451 OWNER TO processor;
+
+--
+-- Name: priority_jobs_1452; Type: TABLE; Schema: public; Owner: processor; Tablespace: 
+--
+
+CREATE TABLE priority_jobs_1452 (
+    uuid character varying(50) NOT NULL
+);
+
+
+ALTER TABLE public.priority_jobs_1452 OWNER TO processor;
+
+--
+-- Name: priority_jobs_1453; Type: TABLE; Schema: public; Owner: processor; Tablespace: 
+--
+
+CREATE TABLE priority_jobs_1453 (
+    uuid character varying(50) NOT NULL
+);
+
+
+ALTER TABLE public.priority_jobs_1453 OWNER TO processor;
+
+--
+-- Name: priority_jobs_1454; Type: TABLE; Schema: public; Owner: processor; Tablespace: 
+--
+
+CREATE TABLE priority_jobs_1454 (
+    uuid character varying(50) NOT NULL
+);
+
+
+ALTER TABLE public.priority_jobs_1454 OWNER TO processor;
+
+--
+-- Name: priority_jobs_1455; Type: TABLE; Schema: public; Owner: processor; Tablespace: 
+--
+
+CREATE TABLE priority_jobs_1455 (
+    uuid character varying(50) NOT NULL
+);
+
+
+ALTER TABLE public.priority_jobs_1455 OWNER TO processor;
+
+--
+-- Name: priority_jobs_1456; Type: TABLE; Schema: public; Owner: processor; Tablespace: 
+--
+
+CREATE TABLE priority_jobs_1456 (
+    uuid character varying(50) NOT NULL
+);
+
+
+ALTER TABLE public.priority_jobs_1456 OWNER TO processor;
 
 --
 -- Name: priorityjobs; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
@@ -6096,6 +6459,18 @@ CREATE TABLE release_channels (
 ALTER TABLE public.release_channels OWNER TO breakpad_rw;
 
 --
+-- Name: releasechannel_backfill; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
+--
+
+CREATE TABLE releasechannel_backfill (
+    uuid text,
+    release_channel citext
+);
+
+
+ALTER TABLE public.releasechannel_backfill OWNER TO postgres;
+
+--
 -- Name: releases_raw; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -6163,7 +6538,7 @@ CREATE TABLE reports (
     flash_version text,
     hangid text,
     process_type text,
-    release_channel citext
+    release_channel text
 );
 
 
@@ -9230,19 +9605,83 @@ ALTER TABLE ONLY plugins_reports_20110829
 
 
 --
--- Name: plugins_reports_20110905_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: priority_jobs_1445_pkey; Type: CONSTRAINT; Schema: public; Owner: processor; Tablespace: 
 --
 
-ALTER TABLE ONLY plugins_reports_20110905
-    ADD CONSTRAINT plugins_reports_20110905_pkey PRIMARY KEY (report_id, plugin_id);
+ALTER TABLE ONLY priority_jobs_1445
+    ADD CONSTRAINT priority_jobs_1445_pkey PRIMARY KEY (uuid);
 
 
 --
--- Name: priority_jobs_1402_pkey; Type: CONSTRAINT; Schema: public; Owner: processor; Tablespace: 
+-- Name: priority_jobs_1447_pkey; Type: CONSTRAINT; Schema: public; Owner: processor; Tablespace: 
 --
 
-ALTER TABLE ONLY priority_jobs_1402
-    ADD CONSTRAINT priority_jobs_1402_pkey PRIMARY KEY (uuid);
+ALTER TABLE ONLY priority_jobs_1447
+    ADD CONSTRAINT priority_jobs_1447_pkey PRIMARY KEY (uuid);
+
+
+--
+-- Name: priority_jobs_1449_pkey; Type: CONSTRAINT; Schema: public; Owner: processor; Tablespace: 
+--
+
+ALTER TABLE ONLY priority_jobs_1449
+    ADD CONSTRAINT priority_jobs_1449_pkey PRIMARY KEY (uuid);
+
+
+--
+-- Name: priority_jobs_1450_pkey; Type: CONSTRAINT; Schema: public; Owner: processor; Tablespace: 
+--
+
+ALTER TABLE ONLY priority_jobs_1450
+    ADD CONSTRAINT priority_jobs_1450_pkey PRIMARY KEY (uuid);
+
+
+--
+-- Name: priority_jobs_1451_pkey; Type: CONSTRAINT; Schema: public; Owner: processor; Tablespace: 
+--
+
+ALTER TABLE ONLY priority_jobs_1451
+    ADD CONSTRAINT priority_jobs_1451_pkey PRIMARY KEY (uuid);
+
+
+--
+-- Name: priority_jobs_1452_pkey; Type: CONSTRAINT; Schema: public; Owner: processor; Tablespace: 
+--
+
+ALTER TABLE ONLY priority_jobs_1452
+    ADD CONSTRAINT priority_jobs_1452_pkey PRIMARY KEY (uuid);
+
+
+--
+-- Name: priority_jobs_1453_pkey; Type: CONSTRAINT; Schema: public; Owner: processor; Tablespace: 
+--
+
+ALTER TABLE ONLY priority_jobs_1453
+    ADD CONSTRAINT priority_jobs_1453_pkey PRIMARY KEY (uuid);
+
+
+--
+-- Name: priority_jobs_1454_pkey; Type: CONSTRAINT; Schema: public; Owner: processor; Tablespace: 
+--
+
+ALTER TABLE ONLY priority_jobs_1454
+    ADD CONSTRAINT priority_jobs_1454_pkey PRIMARY KEY (uuid);
+
+
+--
+-- Name: priority_jobs_1455_pkey; Type: CONSTRAINT; Schema: public; Owner: processor; Tablespace: 
+--
+
+ALTER TABLE ONLY priority_jobs_1455
+    ADD CONSTRAINT priority_jobs_1455_pkey PRIMARY KEY (uuid);
+
+
+--
+-- Name: priority_jobs_1456_pkey; Type: CONSTRAINT; Schema: public; Owner: processor; Tablespace: 
+--
+
+ALTER TABLE ONLY priority_jobs_1456
+    ADD CONSTRAINT priority_jobs_1456_pkey PRIMARY KEY (uuid);
 
 
 --
@@ -10507,6 +10946,8 @@ ALTER TABLE ONLY signature_products_rollup
 
 ALTER TABLE ONLY signatures
     ADD CONSTRAINT signatures_pkey PRIMARY KEY (signature_id);
+
+ALTER TABLE signatures CLUSTER ON signatures_pkey;
 
 
 --
@@ -12066,13 +12507,6 @@ CREATE INDEX plugins_reports_20110829_report_id_date_key ON plugins_reports_2011
 
 
 --
--- Name: plugins_reports_20110905_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
---
-
-CREATE INDEX plugins_reports_20110905_report_id_date_key ON plugins_reports_20110905 USING btree (report_id, date_processed, plugin_id);
-
-
---
 -- Name: product_version_unique_beta; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -12126,6 +12560,13 @@ CREATE UNIQUE INDEX productdims_product_version_key ON productdims USING btree (
 --
 
 CREATE INDEX productdims_sort_key ON productdims USING btree (product, sort_key);
+
+
+--
+-- Name: r_b_i; Type: INDEX; Schema: public; Owner: postgres; Tablespace: 
+--
+
+CREATE INDEX r_b_i ON releasechannel_backfill USING btree (uuid);
 
 
 --
@@ -17278,22 +17719,6 @@ ALTER TABLE ONLY plugins_reports_20110829
 
 
 --
--- Name: plugins_reports_20110905_plugin_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: breakpad_rw
---
-
-ALTER TABLE ONLY plugins_reports_20110905
-    ADD CONSTRAINT plugins_reports_20110905_plugin_id_fkey FOREIGN KEY (plugin_id) REFERENCES plugins(id) ON DELETE CASCADE;
-
-
---
--- Name: plugins_reports_20110905_report_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: breakpad_rw
---
-
-ALTER TABLE ONLY plugins_reports_20110905
-    ADD CONSTRAINT plugins_reports_20110905_report_id_fkey FOREIGN KEY (report_id) REFERENCES reports_20110905(id) ON DELETE CASCADE;
-
-
---
 -- Name: product_release_channels_product_name_fkey; Type: FK CONSTRAINT; Schema: public; Owner: breakpad_rw
 --
 
@@ -17477,6 +17902,18 @@ GRANT ALL ON TABLE alexa_topsites TO breakpad_rw;
 GRANT SELECT ON TABLE alexa_topsites TO monitoring;
 GRANT SELECT ON TABLE alexa_topsites TO breakpad_ro;
 GRANT SELECT ON TABLE alexa_topsites TO breakpad;
+
+
+--
+-- Name: backfill_temp; Type: ACL; Schema: public; Owner: postgres
+--
+
+REVOKE ALL ON TABLE backfill_temp FROM PUBLIC;
+REVOKE ALL ON TABLE backfill_temp FROM postgres;
+GRANT ALL ON TABLE backfill_temp TO postgres;
+GRANT SELECT ON TABLE backfill_temp TO breakpad_ro;
+GRANT SELECT ON TABLE backfill_temp TO breakpad;
+GRANT ALL ON TABLE backfill_temp TO monitor;
 
 
 --
@@ -19147,6 +19584,18 @@ GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE jobs_in_queue TO breakpad_rw;
 
 
 --
+-- Name: last_backfill_temp; Type: ACL; Schema: public; Owner: postgres
+--
+
+REVOKE ALL ON TABLE last_backfill_temp FROM PUBLIC;
+REVOKE ALL ON TABLE last_backfill_temp FROM postgres;
+GRANT ALL ON TABLE last_backfill_temp TO postgres;
+GRANT SELECT ON TABLE last_backfill_temp TO breakpad_ro;
+GRANT SELECT ON TABLE last_backfill_temp TO breakpad;
+GRANT ALL ON TABLE last_backfill_temp TO monitor;
+
+
+--
 -- Name: last_tcbsig; Type: ACL; Schema: public; Owner: postgres
 --
 
@@ -20001,13 +20450,103 @@ GRANT SELECT ON TABLE plugins_reports_20110801 TO breakpad;
 
 
 --
--- Name: priority_jobs_1402; Type: ACL; Schema: public; Owner: processor
+-- Name: priority_jobs_1445; Type: ACL; Schema: public; Owner: processor
 --
 
-REVOKE ALL ON TABLE priority_jobs_1402 FROM PUBLIC;
-REVOKE ALL ON TABLE priority_jobs_1402 FROM processor;
-GRANT ALL ON TABLE priority_jobs_1402 TO processor;
-GRANT ALL ON TABLE priority_jobs_1402 TO breakpad_rw;
+REVOKE ALL ON TABLE priority_jobs_1445 FROM PUBLIC;
+REVOKE ALL ON TABLE priority_jobs_1445 FROM processor;
+GRANT ALL ON TABLE priority_jobs_1445 TO processor;
+GRANT ALL ON TABLE priority_jobs_1445 TO breakpad_rw;
+
+
+--
+-- Name: priority_jobs_1447; Type: ACL; Schema: public; Owner: processor
+--
+
+REVOKE ALL ON TABLE priority_jobs_1447 FROM PUBLIC;
+REVOKE ALL ON TABLE priority_jobs_1447 FROM processor;
+GRANT ALL ON TABLE priority_jobs_1447 TO processor;
+GRANT ALL ON TABLE priority_jobs_1447 TO breakpad_rw;
+
+
+--
+-- Name: priority_jobs_1449; Type: ACL; Schema: public; Owner: processor
+--
+
+REVOKE ALL ON TABLE priority_jobs_1449 FROM PUBLIC;
+REVOKE ALL ON TABLE priority_jobs_1449 FROM processor;
+GRANT ALL ON TABLE priority_jobs_1449 TO processor;
+GRANT ALL ON TABLE priority_jobs_1449 TO breakpad_rw;
+
+
+--
+-- Name: priority_jobs_1450; Type: ACL; Schema: public; Owner: processor
+--
+
+REVOKE ALL ON TABLE priority_jobs_1450 FROM PUBLIC;
+REVOKE ALL ON TABLE priority_jobs_1450 FROM processor;
+GRANT ALL ON TABLE priority_jobs_1450 TO processor;
+GRANT ALL ON TABLE priority_jobs_1450 TO breakpad_rw;
+
+
+--
+-- Name: priority_jobs_1451; Type: ACL; Schema: public; Owner: processor
+--
+
+REVOKE ALL ON TABLE priority_jobs_1451 FROM PUBLIC;
+REVOKE ALL ON TABLE priority_jobs_1451 FROM processor;
+GRANT ALL ON TABLE priority_jobs_1451 TO processor;
+GRANT ALL ON TABLE priority_jobs_1451 TO breakpad_rw;
+
+
+--
+-- Name: priority_jobs_1452; Type: ACL; Schema: public; Owner: processor
+--
+
+REVOKE ALL ON TABLE priority_jobs_1452 FROM PUBLIC;
+REVOKE ALL ON TABLE priority_jobs_1452 FROM processor;
+GRANT ALL ON TABLE priority_jobs_1452 TO processor;
+GRANT ALL ON TABLE priority_jobs_1452 TO breakpad_rw;
+
+
+--
+-- Name: priority_jobs_1453; Type: ACL; Schema: public; Owner: processor
+--
+
+REVOKE ALL ON TABLE priority_jobs_1453 FROM PUBLIC;
+REVOKE ALL ON TABLE priority_jobs_1453 FROM processor;
+GRANT ALL ON TABLE priority_jobs_1453 TO processor;
+GRANT ALL ON TABLE priority_jobs_1453 TO breakpad_rw;
+
+
+--
+-- Name: priority_jobs_1454; Type: ACL; Schema: public; Owner: processor
+--
+
+REVOKE ALL ON TABLE priority_jobs_1454 FROM PUBLIC;
+REVOKE ALL ON TABLE priority_jobs_1454 FROM processor;
+GRANT ALL ON TABLE priority_jobs_1454 TO processor;
+GRANT ALL ON TABLE priority_jobs_1454 TO breakpad_rw;
+
+
+--
+-- Name: priority_jobs_1455; Type: ACL; Schema: public; Owner: processor
+--
+
+REVOKE ALL ON TABLE priority_jobs_1455 FROM PUBLIC;
+REVOKE ALL ON TABLE priority_jobs_1455 FROM processor;
+GRANT ALL ON TABLE priority_jobs_1455 TO processor;
+GRANT ALL ON TABLE priority_jobs_1455 TO breakpad_rw;
+
+
+--
+-- Name: priority_jobs_1456; Type: ACL; Schema: public; Owner: processor
+--
+
+REVOKE ALL ON TABLE priority_jobs_1456 FROM PUBLIC;
+REVOKE ALL ON TABLE priority_jobs_1456 FROM processor;
+GRANT ALL ON TABLE priority_jobs_1456 TO processor;
+GRANT ALL ON TABLE priority_jobs_1456 TO breakpad_rw;
 
 
 --
@@ -20224,6 +20763,18 @@ GRANT ALL ON TABLE release_channels TO breakpad_rw;
 GRANT SELECT ON TABLE release_channels TO breakpad_ro;
 GRANT SELECT ON TABLE release_channels TO breakpad;
 GRANT ALL ON TABLE release_channels TO monitor;
+
+
+--
+-- Name: releasechannel_backfill; Type: ACL; Schema: public; Owner: postgres
+--
+
+REVOKE ALL ON TABLE releasechannel_backfill FROM PUBLIC;
+REVOKE ALL ON TABLE releasechannel_backfill FROM postgres;
+GRANT ALL ON TABLE releasechannel_backfill TO postgres;
+GRANT SELECT ON TABLE releasechannel_backfill TO breakpad_ro;
+GRANT SELECT ON TABLE releasechannel_backfill TO breakpad;
+GRANT ALL ON TABLE releasechannel_backfill TO monitor;
 
 
 --
