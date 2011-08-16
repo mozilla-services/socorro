@@ -320,9 +320,12 @@ class Common_Model extends Model {
                         }
                     }
                     if ($which_table == 'new') {
+                        $join = 'product_versions ON reports.version = product_versions.release_version AND reports.product = product_versions.product_name';
+                        if (! in_array($join, $join_tables)) {
+                            array_push($join_tables, $join);
+                        }
                         if ($channel == 'beta') {
-                            array_push($join_tables, 'product_versions ON reports.version = product_versions.release_version AND reports.product = product_versions.product_name');
-                            $where[] = 
+                            $or[] = 
                                "reports.product = " . $this->db->escape($product) . 
                                " AND product_versions.version_string = " . $this->db->escape($version) .
                                " AND reports.version = product_versions.release_version" .
@@ -330,7 +333,7 @@ class Common_Model extends Model {
                                " AND product_versions.build_type = 'beta'" .
                                " AND EXISTS ( SELECT 1 FROM product_version_builds WHERE product_versions.product_version_id = product_version_builds.product_version_id AND build_numeric(reports.build) = product_version_builds.build_id )";
                         } else if ($channel = 'release') {
-                            $where[] = 
+                            $or[] = 
                                "reports.release_channel NOT IN ('nightly', 'aurora', 'beta')";
                         }
                     }
