@@ -40,7 +40,6 @@ class SignatureHistory(webapi.JsonServiceBase):
       impl = {
         "old": classic.SignatureHistoryClassic(self.configContext),
         "new": modern.SignatureHistoryModern(self.configContext),
-        None: classic.SignatureHistoryClassic(self.configContext),
       }
       return impl[table_type].signatureHistory(parameters, self.connection)
     finally:

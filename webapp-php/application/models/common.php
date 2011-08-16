@@ -149,7 +149,7 @@ class Common_Model extends Model {
             $this->_buildCriteriaFromSearchParams($params);
 
         $sql = "/* soc.web common.totalQueryReports */ 
-            SELECT COUNT(uuid) as total
+            SELECT COUNT(DISTINCT uuid) as total
             FROM   " . join(', ', $from_tables);
         if(count($join_tables) > 0) {
 	    $sql .= " JOIN  " . join("\nJOIN ", $join_tables);
@@ -181,14 +181,10 @@ class Common_Model extends Model {
             $pager->currentPage = 1;
         }
         
-        list($from_tables, $join_tables, $where) = $this->_buildCriteriaFromSearchParams($params);
+        list($from_tables, $join_tables, $where, $outer_join_tables) = $this->_buildCriteriaFromSearchParams($params);
 
         $sql = "/* soc.web common.queryReports */ " .
-               " SELECT reports.*,
-                 ( SELECT reports_duplicates.duplicate_of FROM reports_duplicates
-                 	WHERE reports_duplicates.uuid = reports.uuid ) as duplicate_of
-               FROM (
-                   SELECT 
+               "SELECT 
                        reports.date_processed,
                        reports.uptime,
                        reports.user_comments,
@@ -208,14 +204,20 @@ class Common_Model extends Model {
                        reports.install_age,
                        reports.hangid,
                        reports.process_type,
-                       ( reports.client_crash_date - ( reports.install_age * INTERVAL '1 second' ) ) as install_time
+                       ( reports.client_crash_date - ( reports.install_age * INTERVAL '1 second' ) ) as install_time,
+                       reports_duplicates.duplicate_of
                    FROM   " . join(', ', $from_tables);
         if (count($join_tables) > 0) {
             $sql .= " JOIN  " . join("\nJOIN ", $join_tables);
         }
+        if (count($outer_join_tables) > 0) {
+            $sql .= " LEFT OUTER JOIN  " . join("\nJOIN ", $outer_join_tables);
+        }
         $sql .= " WHERE  " . join(' AND ', $where) .
     	        " ORDER BY reports.date_processed DESC " . 
-                " LIMIT ? OFFSET ?  ) as reports";
+                " LIMIT ? OFFSET ?";
+
+        Kohana::log('debug', $sql);
 
         return $this->fetchRows($sql, TRUE, array($pager->itemsPerPage, $pager->offset));
     }
@@ -267,6 +269,7 @@ class Common_Model extends Model {
      */
     public function _buildCriteriaFromSearchParams($params) {
 	$join_tables = array();
+	$outer_join_tables = array();
 
         $from_tables = array('reports');
 	$where  = array();
@@ -288,6 +291,7 @@ class Common_Model extends Model {
             $params['date'] = NULL;
         }
 
+        array_push($outer_join_tables, 'reports_duplicates ON reports.uuid = reports_duplicates.uuid');
         if (isset($params['version']) && !empty($params['version'])) {
             $or = array();
             foreach ($params['version'] as $spec) {
@@ -318,13 +322,13 @@ class Common_Model extends Model {
                     if ($which_table == 'new') {
                         if ($channel == 'beta') {
                             array_push($join_tables, 'product_versions ON reports.version = product_versions.release_version AND reports.product = product_versions.product_name');
-                            array_push($join_tables, 'product_version_builds ON product_versions.product_version_id = product_version_builds.product_version_id AND build_numeric(build) = product_version_builds.build_id');
                             $where[] = 
                                "reports.product = " . $this->db->escape($product) . 
                                " AND product_versions.version_string = " . $this->db->escape($version) .
                                " AND reports.version = product_versions.release_version" .
                                " AND reports.release_channel ILIKE 'beta'" .
-                               " AND product_versions.build_type = 'beta'";
+                               " AND product_versions.build_type = 'beta'" .
+                               " AND EXISTS ( SELECT 1 FROM product_version_builds WHERE product_versions.product_version_id = product_version_builds.product_version_id AND build_numeric(reports.build) = product_version_builds.build_id )";
                         } else {
                             $where[] = 
                                "reports.release_channel = 'release'";
@@ -472,7 +476,7 @@ class Common_Model extends Model {
             }
         }
 
-        return array($from_tables, $join_tables, $where);
+        return array($from_tables, $join_tables, $where, $outer_join_tables);
     }
 
 }

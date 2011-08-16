@@ -48,10 +48,10 @@ def whichTCBS(aCursor, dbParams, product, version):
               version_string = '%s'""" % (product, version)
   try:
     return db.singleValueSql(aCursor, sql, dbParams)
-  except:
+  except db.SQLDidNotReturnSingleValue:
     logger.info("No record in product_selector for %s %s."
       % (product, version))
-    return None 
+    raise ValueError, "No record of %s %s" % (product, version) 
 
 class TopCrashBySignatureTrends(webapi.JsonServiceBase):
   def __init__(self, configContext):
@@ -81,7 +81,6 @@ class TopCrashBySignatureTrends(webapi.JsonServiceBase):
       impl = {
         "old": classic,
         "new": modern,
-        None: classic 
       }
       return impl[table_type].twoPeriodTopCrasherComparison(cursor, parameters)
     finally:
