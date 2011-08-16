@@ -193,6 +193,8 @@ class PostgresAPI(sapi.SearchAPI):
 
         ## Adding versions to where clause
         if versions != "_all" and len(versions):
+            contains_beta = False
+
             if type(versions) is list:
                 versions_where = []
                 versions_info = self.get_versions_info(cur, versions)
@@ -200,9 +202,6 @@ class PostgresAPI(sapi.SearchAPI):
                 for x in xrange(0, len(versions), 2):
                     version_where = []
                     version_where.append(str(x).join(("r.product=%(version",
-                                                      ")s")))
-                    version_where.append(str(x + 1).join((
-                                                      "r.version=%(version",
                                                       ")s")))
 
                     # Original product:value
@@ -212,31 +211,36 @@ class PostgresAPI(sapi.SearchAPI):
                     else:
                         version_info = None
 
-                    if not version_info or version_info["which_table"] == "old":
-                        # old style, don't do anything
-                        pass
-                    elif (version_info["which_table"] == "new" and
-                          "b" in version_info["version_string"]):
-                        # it's a beta
-                        version_where.append("""reports.release_channel ILIKE 'beta'
-                            AND product_versions.build_type = 'beta'
-                            AND EXISTS ( SELECT 1 FROM product_version_builds
-                                    WHERE product_versions.product_version_id = product_version_builds.product_version_id
-                                    AND build_numeric(reports.build) = product_version_builds.build_id )
-                        """)
+                    if version_info and version_info["which_table"] == "new":
+                        if "b" in version_info["version_string"]:
+                            # it's a beta
+                            version_where.append(str(x + 1).join((
+                                  "product_versions.version_string=%(version",
+                                  ")s")))
+                            version_where.append("""r.version = product_versions.release_version
+                                AND r.release_channel ILIKE 'beta'
+                                AND product_versions.build_type = 'beta'
+                                AND EXISTS ( SELECT 1 FROM product_version_builds
+                                        WHERE product_versions.product_version_id = product_version_builds.product_version_id
+                                        AND build_numeric(r.build) = product_version_builds.build_id )
+                            """)
+                            contains_beta = True
+                        else:
+                            # it's a release
+                            version_where.append(str(x + 1).join((
+                                                "r.version=%(version", ")s")))
+                            version_where.append("r.release_channel NOT IN ('nightly', 'aurora', 'beta')")
                     else:
-                        # it's a release
-                        version_where.append("r.release_channel not in ('nightly', 'aurora', 'beta')")
+                        version_where.append(str(x + 1).join((
+                                                "r.version=%(version", ")s")))
 
-                    versions_where.append(" AND ".join(version_where))
+                    versions_where.append("(%s)" % " AND ".join(version_where))
 
                 sql_where.append("".join(("(",
                                           " OR ".join(versions_where),
                                           ")")))
 
             else:
-                sql_where.append("r.version=%(version)s")
-
                 versions_info = self.get_versions_info(cur, (products, versions))
                 # Original product:value
                 key = ":".join((products, versions))
@@ -245,21 +249,27 @@ class PostgresAPI(sapi.SearchAPI):
                 else:
                     version_info = None
 
-                if not version_info or version_info["which_table"] == "old":
-                    # old style, don't do anything
-                    pass
-                elif (version_info["which_table"] == "new" and
-                      "b" in version_info["version_string"]):
-                    # it's a beta
-                    sql_where.append("""reports.release_channel ILIKE 'beta'
-                        AND product_versions.build_type = 'beta'
-                        AND EXISTS ( SELECT 1 FROM product_version_builds
-                                WHERE product_versions.product_version_id = product_version_builds.product_version_id
-                                AND build_numeric(reports.build) = product_version_builds.build_id )
-                    """)
+                if version_info and version_info["which_table"] == "new":
+                    if "b" in version_info["version_string"]:
+                        # it's a beta
+                        sql_where.append("product_versions.version_string=%(version)s")
+                        sql_where.append("""r.version = product_versions.release_version
+                            AND r.release_channel ILIKE 'beta'
+                            AND product_versions.build_type = 'beta'
+                            AND EXISTS ( SELECT 1 FROM product_version_builds
+                                    WHERE product_versions.product_version_id = product_version_builds.product_version_id
+                                    AND build_numeric(r.build) = product_version_builds.build_id )
+                        """)
+                        contains_beta = True
+                    else:
+                        # it's a release
+                        sql_where.append("r.version=%(version)s")
+                        sql_where.append("r.release_channel NOT IN ('nightly', 'aurora', 'beta')")
                 else:
-                    # it's a release
-                    sql_where.append("r.release_channel not in ('nightly', 'aurora', 'beta')")
+                    sql_where.append("r.version=%(version)s")
+
+            if contains_beta:
+                sql_from.append("product_versions ON r.version = product_versions.release_version AND r.product = product_versions.product_name")
 
         ## Adding build id to where clause
         if build_id:
@@ -329,6 +339,7 @@ class PostgresAPI(sapi.SearchAPI):
         """
 
         # Assembling the query
+        sql_from = " JOIN ".join(sql_from)
         sql_query = " ".join( ( "/* socorro.search.postgresAPI search */", sql_select, sql_from, sql_where, sql_group, sql_order, sql_limit ) )
 
         # Query for counting the results
@@ -411,7 +422,7 @@ class PostgresAPI(sapi.SearchAPI):
         if branches:
             sql_from.append("branches ON (branches.product = r.product AND branches.version = r.version)")
 
-        return " JOIN ".join(sql_from)
+        return sql_from
 
     def generate_sql_group(self, report_process):
         """
