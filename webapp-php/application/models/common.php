@@ -329,9 +329,9 @@ class Common_Model extends Model {
                                " AND reports.release_channel ILIKE 'beta'" .
                                " AND product_versions.build_type = 'beta'" .
                                " AND EXISTS ( SELECT 1 FROM product_version_builds WHERE product_versions.product_version_id = product_version_builds.product_version_id AND build_numeric(reports.build) = product_version_builds.build_id )";
-                        } else {
+                        } else if ($channel = 'release') {
                             $where[] = 
-                               "reports.release_channel = 'release'";
+                               "reports.release_channel NOT IN ('nightly', 'aurora', 'beta')";
                         }
                     }
 

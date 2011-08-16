@@ -48,6 +48,9 @@ class PostgresAPI(sapi.SearchAPI):
 
         Optional arguments: see SearchAPI.get_parameters
         """
+        # Creating the connection to the DB
+        self.connection = self.database.connection()
+        cur = self.connection.cursor()
 
         # Default dates
         now = datetime.today()
@@ -88,10 +91,6 @@ class PostgresAPI(sapi.SearchAPI):
         if type(terms) is list:
             terms = " ".join(terms)
 
-        # For Postgres, we never search for a list of terms
-        if type(terms) is list:
-            terms = " ".join(terms)
-
         # Searching for terms in signature
         is_terms_a_list = type(terms) is list
 
@@ -104,17 +103,6 @@ class PostgresAPI(sapi.SearchAPI):
 
         # Parsing the versions
         (versions, products) = PostgresAPI.parse_versions(versions_list, products)
-
-        # Changing the OS ids to OS names
-        if type(os) is list:
-            for i in xrange(len(os)):
-                for platform in self.context.platforms:
-                    if platform["id"] == os[i]:
-                        os[i] = platform["name"]
-        else:
-            for platform in self.context.platforms:
-                if platform["id"] == os:
-                    os = platform["name"]
 
         # Changing the OS ids to OS names
         if type(os) is list:
@@ -206,9 +194,72 @@ class PostgresAPI(sapi.SearchAPI):
         ## Adding versions to where clause
         if versions != "_all" and len(versions):
             if type(versions) is list:
-                sql_where.append( "".join( ( "(", " OR ".join("%s%s%s%s%s" % ("( r.product=%(version", x, ")s AND r.version=%(version", x+1, ")s )") for x in xrange(0, len(versions), 2) ), ")" ) ) )
+                versions_where = []
+                versions_info = self.get_versions_info(cur, versions)
+
+                for x in xrange(0, len(versions), 2):
+                    version_where = []
+                    version_where.append(str(x).join(("r.product=%(version",
+                                                      ")s")))
+                    version_where.append(str(x + 1).join((
+                                                      "r.version=%(version",
+                                                      ")s")))
+
+                    # Original product:value
+                    key = ":".join((versions[x], versions[x + 1]))
+                    if key in versions_info:
+                        version_info = versions_info[key]
+                    else:
+                        version_info = None
+
+                    if not version_info or version_info["which_table"] == "old":
+                        # old style, don't do anything
+                        pass
+                    elif (version_info["which_table"] == "new" and
+                          "b" in version_info["version_string"]):
+                        # it's a beta
+                        version_where.append("""reports.release_channel ILIKE 'beta'
+                            AND product_versions.build_type = 'beta'
+                            AND EXISTS ( SELECT 1 FROM product_version_builds
+                                    WHERE product_versions.product_version_id = product_version_builds.product_version_id
+                                    AND build_numeric(reports.build) = product_version_builds.build_id )
+                        """)
+                    else:
+                        # it's a release
+                        version_where.append("r.release_channel not in ('nightly', 'aurora', 'beta')")
+
+                    versions_where.append(" AND ".join(version_where))
+
+                sql_where.append("".join(("(",
+                                          " OR ".join(versions_where),
+                                          ")")))
+
             else:
                 sql_where.append("r.version=%(version)s")
+
+                versions_info = self.get_versions_info(cur, (products, versions))
+                # Original product:value
+                key = ":".join((products, versions))
+                if key in versions_info:
+                    version_info = versions_info[key]
+                else:
+                    version_info = None
+
+                if not version_info or version_info["which_table"] == "old":
+                    # old style, don't do anything
+                    pass
+                elif (version_info["which_table"] == "new" and
+                      "b" in version_info["version_string"]):
+                    # it's a beta
+                    sql_where.append("""reports.release_channel ILIKE 'beta'
+                        AND product_versions.build_type = 'beta'
+                        AND EXISTS ( SELECT 1 FROM product_version_builds
+                                WHERE product_versions.product_version_id = product_version_builds.product_version_id
+                                AND build_numeric(reports.build) = product_version_builds.build_id )
+                    """)
+                else:
+                    # it's a release
+                    sql_where.append("r.release_channel not in ('nightly', 'aurora', 'beta')")
 
         ## Adding build id to where clause
         if build_id:
@@ -282,10 +333,6 @@ class PostgresAPI(sapi.SearchAPI):
 
         # Query for counting the results
         sql_count_query = " ".join( ( "/* socorro.search.postgresAPI search.count */ SELECT count(DISTINCT r.signature) ", sql_from, sql_where ) )
-
-        # Creating the connection to the DB
-        self.connection = self.database.connection()
-        cur = self.connection.cursor()
 
         # Querying the DB
         try:
@@ -378,6 +425,52 @@ class PostgresAPI(sapi.SearchAPI):
             sql_group.append("pluginName, pluginVersion, pluginFilename ")
 
         return ", ".join(sql_group)
+
+    def get_versions_info(self, cur, product_version_list):
+        """
+
+        """
+        if not product_version_list:
+            return None
+
+        versions = []
+        products = []
+        for x in xrange(0, len(product_version_list), 2):
+            products.append(product_version_list[x])
+            versions.append(product_version_list[x + 1])
+
+        params = {}
+        params = PostgresAPI.dispatch_params(params, "product", products)
+        params = PostgresAPI.dispatch_params(params, "version", versions)
+
+        where = []
+        for i in xrange(len(products)):
+            index = str(i)
+            where.append(index.join(("(pi.product_name = %(product",
+                                     ")s AND pi.version_string = %(version",
+                                     ")s)")))
+
+        sql = """/* socorro.search.postgresql.PostgresAPI.get_product_info */
+        SELECT pi.version_string, which_table, major_version, pi.product_name
+        FROM product_info pi
+            JOIN product_versions pv ON
+                (pv.product_version_id = pi.product_version_id)
+        WHERE %s
+        """ % " OR ".join(where)
+
+        try:
+            results = db.execute(cur, sql, params)
+        except Exception:
+            results = []
+            util.reportExceptionAndContinue(logger)
+
+        res = {}
+        for line in results:
+            row = dict(zip(("version_string", "which_table",
+                            "major_version", "product_name"), line))
+            res[":".join((row["product_name"], row["version_string"]))] = row
+
+        return res
 
     @staticmethod
     def dispatch_params(params, key, value):
