@@ -42,7 +42,7 @@ fatal $? "sort failed"
 mkdir -p /mnt/crashanalysis/crash_analysis/modulelist
 fatal $? "could not create output dir"
 cp /tmp/${DATE}-modulelist.sorted.txt /mnt/crashanalysis/crash_analysis/modulelist/${DATE}-modulelist.txt
-fatal $? "could not copy output file to output dir
+fatal $? "could not copy output file to output dir"
 
 # cleanup
 ${HADOOP} fs -rmr ${DATE}-modulelist-out
