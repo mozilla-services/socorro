@@ -326,21 +326,24 @@ class Common_Model extends Model {
                         }
                         if ($channel == 'beta') {
                             $or[] = 
-                               "reports.product = " . $this->db->escape($product) . 
+                               "(reports.product = " . $this->db->escape($product) . 
                                " AND product_versions.version_string = " . $this->db->escape($version) .
                                " AND reports.version = product_versions.release_version" .
                                " AND reports.release_channel ILIKE 'beta'" .
                                " AND product_versions.build_type = 'beta'" .
-                               " AND EXISTS ( SELECT 1 FROM product_version_builds WHERE product_versions.product_version_id = product_version_builds.product_version_id AND build_numeric(reports.build) = product_version_builds.build_id )";
+                               " AND EXISTS ( SELECT 1 FROM product_version_builds WHERE product_versions.product_version_id = product_version_builds.product_version_id AND build_numeric(reports.build) = product_version_builds.build_id ))";
                         } else if ($channel = 'release') {
-                            $or[] = 
-                               "reports.release_channel NOT IN ('nightly', 'aurora', 'beta')";
+                            $or[] =      
+                                "(reports.product = " . $this->db->escape($product) .
+                                "AND reports.version = " . $this->db->escape($reports_version) . 
+                                "AND reports.release_channel NOT IN ('nightly', 'aurora', 'beta'))";
                         }
-                    }
+                    } else {
 
-                    $or[] = 
-                        "(reports.product = " . $this->db->escape($product) . " AND " .
-                        "reports.version = " . $this->db->escape($reports_version) . ")";
+                        $or[] =      
+                            "(reports.product = " . $this->db->escape($product) . " AND " .
+                            "reports.version = " . $this->db->escape($reports_version) . ")";
+                    }
 
                 } else {
                     $or[] = "(reports.product = " . $this->db->escape($spec) . ")";
