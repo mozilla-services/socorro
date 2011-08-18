@@ -270,14 +270,5 @@ if (gPlatform == 1) {
 	</div>
 	</div>
 	<!-- end #footer -->
-	<script type="text/javascript">// <![CDATA[
-		var s_code=s.t();if(s_code)document.write(s_code);
-	// ]]></script>
-	<!-- end SiteCatalyst code version: H.14 -->
-	<script type="text/javascript" src="http://status.mozilla.com/js/__utm.js"></script>
-	<script type="text/javascript" src="http://status.mozilla.com/js/track.js"></script>
-
-	
-
 </body>
 </html>

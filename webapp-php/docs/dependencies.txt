@@ -12,9 +12,6 @@ eZ Components 2009.1
   http://www.kelvinluck.com/assets/jquery/datePicker/
  No Dependencies ???
 
-./__utm.js Urchin Metrics
- No Dependencies
-
 jquery/jquery-1.3.2.js
  No Dependencies
 
