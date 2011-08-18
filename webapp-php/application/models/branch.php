@@ -194,7 +194,7 @@ class Branch_Model extends Model {
      */
     public function findMissingEntries() {
 		$start_date = date('Y-m-d', (time()-604800)); // 1 week ago
-        $end_date = date('Y-m-d');
+        $end_date = date('Y-m-d', time() + 86400); // Make sure we get ALL of today
 
         $missing = $this->db->query("/* soc.web branch.findMissingEntries */
             SELECT 
