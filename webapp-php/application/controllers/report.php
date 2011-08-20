@@ -377,8 +377,16 @@ class Report_Controller extends Controller {
         if ( is_bool($report) && $report == true) {
 	    return url::redirect('report/pending/'.$uuid);
         } else if ( (is_bool($report) && $report == false) || is_null($report) ) {
-            Event::run('system.404');
-        } else {
+            $this->setView('report/notfound'); 
+            $this->setViewData(
+                array(
+                    'base_url' => url::site('products'),
+                    'products'  => $this->current_products,
+                    'nav_selection' => null,
+                )
+            );
+            return;
+	} else {
 	    if ($this->logged_in) {
 		$this->sensitivePageHTTPSorRedirectAndDie('/report/index/' . $id);
 	    }
@@ -391,7 +399,7 @@ class Report_Controller extends Controller {
 	    $comments = array();
 	    $signature_to_bugzilla = array();
 
-            // If the signature is NULL in the DB, we will have an empty raw dump
+        // If the signature is NULL in the DB, we will have an empty raw dump
 	    // We can't trust signature, it is empty string for both NULL and Empty String
 	    // To make it easy for pages that don't handel missing or NULL signatures
 	    if (strlen($report->dump) <= 1) {
