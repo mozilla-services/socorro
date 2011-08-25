@@ -75,7 +75,25 @@
     <?php } ?>
 
 	<h3>Products</h3>
-		
+
+    <div id="add_version" name="add_version" class="add_item" style="display: none;">
+        <p>Fill out this form to add a new product version.</p>
+        <form action="" id="form_add_version" name="form_add_version" method="post">
+        <input type="hidden" name="action_add_version" value="1">
+
+        <table>
+            <tr><td>Product: </td><td><input type="text" id="product" name="product" value="" /></p>
+            <tr><td>Version: </td><td><input type="text" id="version" name="version" value="" /></p>
+            <tr><td>Start Date: </td><td><input class="text" type="text" id="start_date" name="start_date" value="<?php echo html::specialchars($default_start_date); ?>" /></td></tr>
+            <tr><td>End Date:</td><td><input class="text" type="text" id="end_date" name="end_date" value="<?php echo html::specialchars($default_end_date); ?>" /></td></tr>
+            <tr><td>Featured:   </td><td><input type="checkbox" id="featured" name="featured" value="t" /></td></tr>
+            <tr><td>Throttle:   </td><td><input class="text" type="text" id="throttle" name="throttle" value="<?php echo $throttle_default; ?>" />% [<a href="http://code.google.com/p/socorro/wiki/SocorroUIAdmin#Throttle" target="_NEW">?</a>]</td></tr>
+        </table>
+        <p id="add_submit"><input type="submit" name="submit" value="Add Product Version" onclick="hideShow('add_submit', 'add_submit_progress');" /></p>
+        <p id="add_submit_progress" style="display:none;"><img src="<?php echo url::site(); ?>img/loading.png" /> <em>please wait...</em></p>
+        </form>
+    </div>
+	
 	<div id="update_product_version" name="update_product_version" class="add_item" style="display: none;">
 		<p>Fill out this form to update an existing product version.</p>
 		<form action="" id="form_update_version" name="form_update_version" method="post">

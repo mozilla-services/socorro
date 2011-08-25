@@ -82,47 +82,19 @@ class Branch_Model extends Model {
 	 * @param   float   The throttle value for this version.
 	 * @return 	object	The database query object
      */
-    public function add($product, $version, $branch, $start_date, $end_date, $featured=false, $throttle) {
+    public function add($product, $version,  $start_date, $end_date, $featured=false, $throttle) {
 		if ($product_version = $this->getByProductVersion($product, $version)) {
-			return $this->update($product, $version, $branch, $start_date, $end_date, $featured, $throttle);
+			return $this->update($product, $version, $start_date, $end_date, $featured, $throttle);
 		} else {
 			$release = $this->determine_release($version);
 			try {
-				$rv = $this->db->query("/* soc.web branch.add */
-					INSERT INTO productdims (product, version, branch, release) 
-					VALUES (?, ?, ?, ?)",
-					$product, $version, $branch, $release
-				);
+                $rv = $this->db->query("/* soc.web branch.add */
+                    SELECT * FROM edit_product_info(null, ?, ?, ?, ?, ?, ?, ?)", $product, $version, $release, $start_date, $end_date, $featured, $throttle);		
 			} catch (Exception $e) {
 				Kohana::log('error', "Could not add \"$product\" \"$version\" in soc.web branch.add \r\n " . $e->getMessage());
 			}
-			$this->addProductVisibility($product, $version, $start_date, $end_date, $featured, $throttle);
-			if (isset($rv)) {
-				return $rv;
-			}
+			return $rv;
 		}
-    }
-
-    /**
-     * Fetch a product from the productdims table, and add a new record to the product_visibility table.
-	 * 
-	 * @access 	private
-	 * @param 	string 	The product name (e.g. 'Camino', 'Firefox', 'Seamonkey, 'Thunderbird')
-	 * @param 	string 	The version number (e.g. '3.5', '3.5.1', '3.5.1pre', '3.5.2', '3.5.2pre')
-	 * @param 	string	The release date for this product YYYY-MM-DD
-	 * @param 	string	The end date for this product YYYY-MM-DD (usually +90 days)
-	 * @param   bool    True if version should be featured on the dashboard; false if not.
-	 * @param   float   The throttle value for this version.
-	 * @return 	void
-     */
-	private function addProductVisibility($product, $version, $start_date, $end_date, $featured=false, $throttle) {
-		$this->db->query("/* soc.web branch.addProductVisibility */
-				INSERT INTO product_visibility (productdims_id, start_date, end_date, featured, throttle) 
-                SELECT id, ? as start_date, ? as end_date, ? as featured, ? as throttle
-	            FROM productdims 
-	            WHERE product = ? AND version = ?
-		        ", $start_date, $end_date, $featured, $throttle, $product, $version
-		);
 	}
 
     /**
@@ -689,34 +661,6 @@ class Branch_Model extends Model {
 
 
 			return $rv;
-	}
-
-    /**
-     * Update the start_date and end_date fields of an existing record in the branches view, 
- 	 * via the productdims tables.
-	 * 
-	 * @access 	private
-	 * @param 	string 	The product name (e.g. 'Camino', 'Firefox', 'Seamonkey, 'Thunderbird')
-	 * @param 	string 	The version number (e.g. '3.5', '3.5.1', '3.5.1pre', '3.5.2', '3.5.2pre')
-	 * @param 	string	The start date for this product YYYY-MM-DD
-	 * @param 	string	The end date for this product YYYY-MM-DD (usually +90 days)
-	 * @param   bool    True if version should be featured on the dashboard; false if not.
-	 * @param   float   The throttle value for this version
-	 * @return 	void
-     */
-	private function updateProductVisibility($product, $version, $start_date, $end_date, $featured=false, $throttle) {
-		if ($product_version = $this->getByProductVersion($product, $version)) {
-			if ($product_visibility = $this->getProductVisibility($product_version->id)) {
-				$sql = "/* soc.web branch.updateProductVisibility */ 
-					UPDATE product_visibility
-					SET start_date = ?, end_date = ?, featured = ?, throttle = ?
-					WHERE productdims_id = ?
-				";	
-				$this->db->query($sql, trim($start_date), trim($end_date), $featured, $throttle, $product_version->id);
-			} else {
-				$this->addProductVisibility($product, $version, $start_date, $end_date, $featured, $throttle);
-			}
-		}
 	}
 
     /**

@@ -120,7 +120,6 @@ class Admin_Controller extends Controller
                         if (
                                 !empty($_POST['product']) && 
                                 !empty($_POST['version']) && 
-                                !empty($_POST['branch']) && 
                                 !empty($_POST['start_date']) &&
                                 !empty($_POST['end_date']) &&
                                 !empty($_POST['throttle'])
@@ -135,7 +134,6 @@ class Admin_Controller extends Controller
                                 if ($rv = $this->branch_model->add(
                         trim($_POST['product']), 
                         trim($_POST['version']), 
-                        trim($_POST['branch']), 
                         trim($_POST['start_date']), 
                         trim($_POST['end_date']),
                         $featured,
