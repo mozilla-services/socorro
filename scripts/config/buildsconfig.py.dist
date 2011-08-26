@@ -23,7 +23,7 @@ platforms.fromStringConverter = lambda x: tuple(x.split(','))
 
 release_product_uris = cm.Option()
 release_product_uris.doc = 'a comma-delimited list of uris for each product'
-release_product_uris.default = 'firefox/nightly/,seamonkey/nightly/,thunderbird/nightly/'
+release_product_uris.default = 'firefox/nightly/,seamonkey/nightly/,thunderbird/nightly/,mobile/candidates/'
 release_product_uris.fromStringConverter = lambda x: tuple(x.split(','))
 
 release_platforms = cm.Option()
