@@ -444,7 +444,7 @@ class Processor(object):
     try:
       threadLocalDatabaseConnection, threadLocalCursor = self.databaseConnectionPool.connectionCursorPair()
       threadLocalCrashStorage = self.crashStorePool.crashStorage(threadName)
-    except sdb.db_module.OperationalError:
+    except sdb.exceptions_eligible_for_retry:
       logger.critical("something's gone horribly wrong with the database connection")
       sutil.reportExceptionAndContinue(logger, loggingLevel=logging.CRITICAL)
       return Processor.criticalError
@@ -567,7 +567,7 @@ class Processor(object):
       threadLocalCursor.execute('delete from jobs where id = %s', (jobId,))
       threadLocalDatabaseConnection.commit()
       return Processor.ok
-    except sdb.db_module.OperationalError:
+    except sdb.exceptions_eligible_for_retry:
       logger.critical("something's gone horribly wrong with the database connection")
       sutil.reportExceptionAndContinue(logger, loggingLevel=logging.CRITICAL)
       return Processor.criticalError
