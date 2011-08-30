@@ -46,6 +46,13 @@ elasticSearchPort = cm.Option()
 elasticSearchPort.doc = 'String containing the port on which calling the Elastic Search instance.'
 elasticSearchPort.default = '9200'
 
+searchMaxNumberOfDistinctSignatures = cm.Option()
+searchMaxNumberOfDistinctSignatures.doc = (
+        "Integer containing the maximum allowed number of distinct signatures "
+        "the system should retrieve. "
+        "Used mainly for performances in ElasticSearch")
+searchMaxNumberOfDistinctSignatures.default = 1000
+
 import socorro.services.topCrashBySignatureTrends as tcbst
 import socorro.services.signatureHistory as sighist
 import socorro.services.aduByDay as adubd

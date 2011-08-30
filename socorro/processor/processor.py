@@ -23,6 +23,7 @@ import socorro.lib.datetimeutil as sdt
 import socorro.storage.crashstorage as cstore
 import socorro.storage.hbaseClient as hbc
 import socorro.processor.signatureUtilities as sig
+import socorro.processor.registration as reg
 
 #=================================================================================================================
 class DuplicateEntryException(Exception):
@@ -31,7 +32,6 @@ class DuplicateEntryException(Exception):
 #=================================================================================================================
 class ErrorInBreakpadStackwalkException(Exception):
   pass
-
 
 
 #=================================================================================================================
@@ -92,7 +92,7 @@ class Processor(object):
                           "hbaseHost",
                           "hbasePort",
                           "temporaryFileSystemStoragePath",
-                         )
+                          )
 
   #-----------------------------------------------------------------------------------------------------------------
   def __init__ (self, config, sdb=sdb, cstore=cstore, signal=signal,
@@ -130,12 +130,11 @@ class Processor(object):
     self.pluginsReportsTable = sch.PluginsReportsTable(logger=config.logger)
 
     self.signatureUtilities = sig.SignatureUtilities(config)
+    self.processorId = None
 
     self.registration()
 
-    # force checkin to run immediately after start(). I don't understand the need, since the database already reflects nearly-real reality. Oh well.
-    self.lastCheckInTimestamp = datetime.datetime(1950, 1, 1)
-    #self.getNextJobSQL = "select j.id, j.pathname, j.uuid from jobs j where j.owner = %d and startedDateTime is null order by priority desc, queuedDateTime asc limit 1" % self.processorId
+    self.create_priority_jobs_table()
 
     # start the thread manager with the number of threads specified in the configuration.  The second parameter controls the size
     # of the internal task queue within the thread manager.  It is constrained so that the queue remains starved.  This means that tasks
@@ -148,125 +147,32 @@ class Processor(object):
     logger.info("my priority jobs table is called: '%s'", self.priorityJobsTableName)
     self.priority_job_set = set()
 
-  #-----------------------------------------------------------------------------
-  @sdb.db_transaction_retry_wrapper
+  #--------------------------------------------------------------------------
   def registration(self):
-    logger.info("connecting to database")
-    try:
-      databaseConnection, databaseCursor =  \
-                        self.databaseConnectionPool.connectionCursorPair()
-    except sdb.exceptions_eligible_for_retry:
-      raise
-    except Exception:
-      self.quit = True
-      logger.critical("cannot connect to the database")
-      sutil.reportExceptionAndAbort(logger)
+    self.registration_agent = reg.ProcessorRegistrationAgent(self.config,
+                                                self.databaseConnectionPool)
+    self.processorName = self.registration_agent.processor_name
+    self.processorId = self.registration_agent.processor_id
 
-    # register self with the processors table in the database
-    # Must request 'auto' id, or an id number that is in the processors table
-    # AND not alive
-    logger.info("registering with 'processors' table")
-    priorityCreateRuberic = "Since we took over, it probably exists."
-    self.processorId = None
-    legalOption = False
-    try:
-      requestedId = 0
-      try:
-        requestedId = int(self.config.processorId)
-      except ValueError:
-        if 'auto' == self.config.processorId:
-          requestedId = 'auto'
-        else:
-          raise scm.OptionError("%s is not a valid option for processorId" %
-                                self.config.processorId)
-      self.processorName = "%s_%d" % (self.os.uname()[1], self.os.getpid())
-      threshold = self.sdb.singleValueSql(databaseCursor,
-                                          "select now() - interval '%s'" %
-                                            self.config.processorCheckInTime)
-      if requestedId == 'auto':  # take over for an existing processor
-        logger.debug("looking for a dead processor")
-        try:
-          self.processorId = self.sdb.singleValueSql(databaseCursor,
-                                                     "select id from processors"
-                                                     " where lastseendatetime <"
-                                                     " '%s' limit 1" %
-                                                     threshold)
-          logger.info("will step in for processor %d", self.processorId)
-        except sdb.SQLDidNotReturnSingleValue:
-          logger.debug("no dead processor found")
-          requestedId = 0 # signal that we found no dead processors
-      else: # requestedId is an integer: We already raised OptionError if not
-        try:
-          # singleValueSql should actually accept sql with placeholders and an
-          # array of values instead of just a string. Enhancement needed...
-          checkSql = "select id from processors where lastSeenDateTime < '%s' " \
-                     "and id = %s" % (threshold,requestedId)
-          self.processorId = self.sdb.singleValueSql(databaseCursor, checkSql)
-          logger.info("stepping in for processor %d", self.processorId)
-        except sdb.SQLDidNotReturnSingleValue,x:
-          raise scm.OptionError("ProcessorId %s is not in processors table or "
-                                "is still live." % requestedId)
-      if requestedId == 0:
-        try:
-          databaseCursor.execute("insert into processors (name, startdatetime, "
-                                 "lastseendatetime) values (%s, now(), now())",
-                                 (self.processorName,))
-          self.processorId = self.sdb.singleValueSql(databaseCursor,
-                                                     "select id from processors"
-                                                     " where name = '%s'" %
-                                                     (self.processorName,))
-        except sdb.exceptions_eligible_for_retry:
-          raise
-        except Exception, x:
-          databaseConnection.rollback()
-          raise
-        logger.info("initializing as processor %d", self.processorId)
-        priorityCreateRuberic = "Does it already exist?"
-        # We have a good processorId and a name. Register self with database
-      try:
-        databaseCursor.execute("update processors set name = %s, "
-                               "startdatetime = now(), lastseendatetime = now()"
-                               " where id = %s",
-                               (self.processorName, self.processorId))
-        databaseCursor.execute("update jobs set"
-                               "    starteddatetime = NULL,"
-                               "    completeddatetime = NULL,"
-                               "    success = NULL "
-                               "where"
-                               "    owner = %s", (self.processorId, ))
-      except sdb.exceptions_eligible_for_retry:
-        raise
-      except Exception, x:
-        logger.critical("Constructor: Unable to update processors or jobs "
-                        "table: %s: %s", type(x), x)
-        databaseConnection.rollback()
-        raise
-    except sdb.exceptions_eligible_for_retry:
-      raise
-    except Exception, x:
-      logger.critical("cannot register with the database %s %s", str(type(x)), str(x))
-      databaseConnection.rollback()
-      self.quit = True
-      # can't continue without a registration
-      sutil.reportExceptionAndAbort(logger)
-    # We're registered, make sure we have our own priority_jobs table
+  #--------------------------------------------------------------------------
+  def checkin(self):
+    self.registration_agent.checkin()
+
+  #--------------------------------------------------------------------------
+  @sdb.db_transaction_retry_wrapper
+  def create_priority_jobs_table(self):
+    db_conn, db_cur = self.databaseConnectionPool.connectionCursorPair()
     self.priorityJobsTableName = "priority_jobs_%d" % self.processorId
     try:
-      databaseCursor.execute("create table %s (uuid varchar(50) not null "
-                             "primary key)" % self.priorityJobsTableName)
-      databaseConnection.commit()
+      db_cur.execute("create table %s (uuid varchar(50) not null "
+                     "primary key)" % self.priorityJobsTableName)
+      db_conn.commit()
     except sdb.exceptions_eligible_for_retry:
       raise
-    #except sdb.db_module.Error:
-      #sutil.reportExceptionAndContinue()
-      #logger.debug('aoeuaoeu')
-      #databaseConnection.rollback()
-      #raise
     except sdb.db_module.ProgrammingError, x:
-      logger.warning('failed to create table %s because "%s". %s This is '
-                     'probably OK', self.priorityJobsTableName, str(x),
-                     priorityCreateRuberic)
-      databaseConnection.rollback()
+      logger.info('the priority jobs table (%s) already exists',
+                  self.priorityJobsTableName)
+      db_conn.rollback()
 
   #-----------------------------------------------------------------------------
   def quitCheck(self):
@@ -279,30 +185,11 @@ class Processor(object):
       self.quitCheck()
       if waitLogInterval and not x % waitLogInterval:
         logger.info('%s: %dsec of %dsec',
-                                                     waitReason,
-                                                     x,
-                                                     seconds)
+                    waitReason,
+                    x,
+                    seconds)
       time.sleep(1.0)
 
-  #-----------------------------------------------------------------------------
-  @sdb.db_transaction_retry_wrapper
-  def checkin (self):
-    """ a processor must keep its database registration current.  If a processor
-        has not updated its record in the database in the interval specified in
-        as self.config.processorCheckInTime, the monitor will consider it to be
-        expired.  The monitor will stop assigning jobs to it and reallocate
-        its unfinished jobs to other processors.
-    """
-    if self.lastCheckInTimestamp + self.config.processorCheckInFrequency < \
-          self.nowFunc():
-      logger.debug("updating 'processor' table registration")
-      tstamp = self.nowFunc()
-      databaseConnection, databaseCursor =  \
-                        self.databaseConnectionPool.connectionCursorPair()
-      databaseCursor.execute("update processors set lastseendatetime = %s "
-                             "where id = %s", (tstamp, self.processorId))
-      databaseConnection.commit()
-      self.lastCheckInTimestamp = self.nowFunc()
 
   #-----------------------------------------------------------------------------
   def cleanup(self):
@@ -352,9 +239,9 @@ class Processor(object):
   #-----------------------------------------------------------------------------
   def submitJobToThreads(self, aJobTuple):
     self.sdb.transaction_execute_with_retry(
-                        self.databaseConnectionPool,
-                        "update jobs set starteddatetime = %s where id = %s",
-                        (self.nowFunc(), aJobTuple[0]))
+      self.databaseConnectionPool,
+      "update jobs set starteddatetime = %s where id = %s",
+      (self.nowFunc(), aJobTuple[0]))
     #logger.info("queuing job %d, %s, %s",
                 #aJobTuple[0], aJobTuple[2],  aJobTuple[1])
     self.threadManager.newTask(self.processJobWithRetry, aJobTuple)
@@ -369,21 +256,21 @@ class Processor(object):
     This iterator is perpetual - it never raises the StopIteration exception
     """
     getPriorityJobsSql =  "select" \
-                          "    j.id," \
-                          "    pj.uuid," \
-                          "    1," \
-                          "    j.starteddatetime " \
-                          "from" \
-                          "    jobs j right join %s pj on j.uuid = pj.uuid" \
-                          % self.priorityJobsTableName
+                       "    j.id," \
+                       "    pj.uuid," \
+                       "    1," \
+                       "    j.starteddatetime " \
+                       "from" \
+                       "    jobs j right join %s pj on j.uuid = pj.uuid" \
+                       % self.priorityJobsTableName
     deleteOnePriorityJobSql = "delete from %s where uuid = %%s" %  \
-                              self.priorityJobsTableName
+                            self.priorityJobsTableName
     fullJobsList = []
     while True:
       if not fullJobsList:
         fullJobsList = self.sdb.transaction_execute_with_retry(
-                                  self.databaseConnectionPool,
-                                  getPriorityJobsSql)
+          self.databaseConnectionPool,
+          getPriorityJobsSql)
       if fullJobsList:
         while fullJobsList:
           aFullJobTuple = fullJobsList.pop(-1)
@@ -409,24 +296,24 @@ class Processor(object):
     This iterator is perpetual - it never raises the StopIteration exception
     """
     getNormalJobSql = "select"  \
-                      "    j.id,"  \
-                      "    j.uuid,"  \
-                      "    priority "  \
-                      "from"  \
-                      "    jobs j "  \
-                      "where"  \
-                      "    j.owner = %d"  \
-                      "    and j.starteddatetime is null "  \
-                      "order by queueddatetime"  \
-                      "  limit %d" % (self.processorId,
-                                        self.config.batchJobLimit)
+                    "    j.id,"  \
+                    "    j.uuid,"  \
+                    "    priority "  \
+                    "from"  \
+                    "    jobs j "  \
+                    "where"  \
+                    "    j.owner = %d"  \
+                    "    and j.starteddatetime is null "  \
+                    "order by queueddatetime"  \
+                    "  limit %d" % (self.processorId,
+                                    self.config.batchJobLimit)
     normalJobsList = []
     while True:
       if not normalJobsList:
         normalJobsList = self.sdb.transaction_execute_with_retry( \
-                              self.databaseConnectionPool,
-                              getNormalJobSql
-                              )
+          self.databaseConnectionPool,
+          getNormalJobSql
+        )
       if normalJobsList:
         while normalJobsList:
           yield normalJobsList.pop(-1)
@@ -557,7 +444,7 @@ class Processor(object):
     try:
       threadLocalDatabaseConnection, threadLocalCursor = self.databaseConnectionPool.connectionCursorPair()
       threadLocalCrashStorage = self.crashStorePool.crashStorage(threadName)
-    except sdb.db_module.OperationalError:
+    except sdb.exceptions_eligible_for_retry:
       logger.critical("something's gone horribly wrong with the database connection")
       sutil.reportExceptionAndContinue(logger, loggingLevel=logging.CRITICAL)
       return Processor.criticalError
@@ -614,7 +501,7 @@ class Processor(object):
 
       try:
         dumpfilePathname = threadLocalCrashStorage.dumpPathForUuid(jobUuid,
-                                                             self.config.temporaryFileSystemStoragePath)
+                                                                   self.config.temporaryFileSystemStoragePath)
         #logger.debug('about to doBreakpadStackDumpAnalysis')
         isHang = 'hangid' in newReportRecordAsDict and bool(newReportRecordAsDict['hangid'])
         additionalReportValuesAsDict = self.doBreakpadStackDumpAnalysis(reportId, jobUuid, dumpfilePathname, isHang, threadLocalCursor, date_processed, processorErrorMessages)
@@ -680,7 +567,7 @@ class Processor(object):
       threadLocalCursor.execute('delete from jobs where id = %s', (jobId,))
       threadLocalDatabaseConnection.commit()
       return Processor.ok
-    except sdb.db_module.OperationalError:
+    except sdb.exceptions_eligible_for_retry:
       logger.critical("something's gone horribly wrong with the database connection")
       sutil.reportExceptionAndContinue(logger, loggingLevel=logging.CRITICAL)
       return Processor.criticalError
@@ -878,7 +765,7 @@ class Processor(object):
                                          'and name = %s',
                                          (pluginFilename, pluginName))
         #logger.debug('%s/%s already exists in the database',
-                     #pluginFilename, pluginName)
+                      #pluginFilename, pluginName)
       except sdb.SQLDidNotReturnSingleRow, x:
         self.pluginsTable.insert(threadLocalCursor,
                                  (pluginFilename, pluginName))
@@ -888,14 +775,14 @@ class Processor(object):
                                          'and name = %s',
                                          (pluginFilename, pluginName))
         #logger.debug('%s/%s inserted into the database',
-                     #pluginFilename, pluginName)
+                      #pluginFilename, pluginName)
 
       try:
         self.pluginsReportsTable.insert(threadLocalCursor,
-                                          (reportId,
-                                           pluginId,
-                                           date_processed,
-                                           pluginVersion),
+                                        (reportId,
+                                         pluginId,
+                                         date_processed,
+                                         pluginVersion),
                                         self.databaseConnectionPool.connectionCursorPair,
                                         date_processed=date_processed)
       except sdb.db_module.IntegrityError, x:
@@ -942,4 +829,3 @@ class Processor(object):
                                            showTraceback=False)
     except KeyError:
       self.config.logger.info('no Elastic Search URL has been configured')
-

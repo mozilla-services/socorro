@@ -115,8 +115,12 @@ class ElasticSearchAPI(sapi.SearchAPI):
             # No need to get crashes, we only want signatures
             query["size"] = 0
             query["from"] = 0
+
+            # Using a fixed number instead of the needed number.
+            # This hack limits the number of distinct signatures to process,
+            # and hugely improves performances with long queries.
             query["facets"] = ElasticSearchAPI.get_signatures_facet(
-                            params["result_offset"] + params["result_number"])
+                            self.context.searchMaxNumberOfDistinctSignatures)
 
         json_query = json.dumps(query)
         logger.debug("Query the crashes or signatures: %s", json_query)
@@ -210,16 +214,12 @@ class ElasticSearchAPI(sapi.SearchAPI):
         Generate the facets for the search query.
 
         """
-        # There is no way to get all the results with ES,
-        # and we need them to count the total.
-        MAXINT = 2 ** 31 - 1
-
         # Get distinct signatures and count
         facets = {
             "signatures": {
                 "terms": {
                     "field": "signature.full",
-                    "size": MAXINT
+                    "size": size
                 }
             }
         }
