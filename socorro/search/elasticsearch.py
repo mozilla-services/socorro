@@ -5,6 +5,7 @@ import urllib
 from datetime import timedelta, datetime
 
 import socorro.lib.httpclient as httpc
+import socorro.services.versions_info as vi
 import searchapi as sapi
 
 logger = logging.getLogger("webapi")
@@ -108,6 +109,11 @@ class ElasticSearchAPI(sapi.SearchAPI):
         Optional arguments: see SearchAPI.get_parameters
         """
         params = ElasticSearchAPI.get_parameters(kwargs)
+
+        # Get information about the versions
+        versions_service = vi.VersionsInfo(self.context)
+        params["versions_info"] = versions_service.versions_info(params)
+
         query = ElasticSearchAPI.build_query_from_params(params)
 
         # For signatures mode, we need to collect more data with facets
@@ -400,6 +406,8 @@ class ElasticSearchAPI(sapi.SearchAPI):
         if params["version"]:
             versions = ElasticSearchAPI.format_versions(params["version"])
             versions_type = type(versions)
+            versions_info = params["versions_info"]
+
             if versions_type is str:
                 # If there is already a product,don't do anything
                 # Otherwise consider this as a product
@@ -408,8 +416,34 @@ class ElasticSearchAPI(sapi.SearchAPI):
                                     ElasticSearchAPI.build_terms_query(
                                         "product",
                                         ElasticSearchAPI.lower(versions)))
+
             elif versions_type is dict:
                 # There is only one pair product:version
+                key = ":".join((versions["product"], versions["version"]))
+
+                if (key in versions_info and
+                        versions_info[key]["release_channel"] == "Beta"):
+                    # this version is a beta
+                    # first use the major version instead
+                    versions["version"] = versions_info[key]["major_version"]
+                    # then make sure it's a beta
+                    filters["and"].append(
+                            ElasticSearchAPI.build_terms_query(
+                                                    "ReleaseChannel", "beta"))
+                    # last use the right build id
+                    filters["and"].append(
+                            ElasticSearchAPI.build_terms_query(
+                                    "build", versions_info[key]["build_id"]))
+                elif (key in versions_info and
+                        versions_info[key]["release_channel"]):
+                    # this version is a release
+                    filters["and"].append({
+                        "not":
+                            ElasticSearchAPI.build_terms_query(
+                                    "ReleaseChannel",
+                                    ["nightly", "aurora", "beta"])
+                    })
+
                 filters["and"].append(
                                 ElasticSearchAPI.build_terms_query(
                                         "product",
@@ -420,11 +454,38 @@ class ElasticSearchAPI(sapi.SearchAPI):
                                         "version",
                                         ElasticSearchAPI.lower(
                                                     versions["version"])))
+
             elif versions_type is list:
                 # There are several pairs product:version
                 or_filter = []
                 for v in versions:
                     and_filter = []
+                    key = ":".join((v["product"], v["version"]))
+
+                    if (key in versions_info and
+                            versions_info[key]["release_channel"] == "Beta"):
+                        # this version is a beta
+                        # first use the major version instead
+                        v["version"] = versions_info[key]["major_version"]
+                        # then make sure it's a beta
+                        and_filter.append(
+                                ElasticSearchAPI.build_terms_query(
+                                                    "ReleaseChannel", "beta"))
+                        # last use the right build id
+                        and_filter.append(
+                                ElasticSearchAPI.build_terms_query(
+                                    "build", versions_info[key]["build_id"]))
+
+                    elif (key in versions_info and
+                            versions_info[key]["release_channel"]):
+                        # this version is a release
+                        and_filter.append({
+                            "not":
+                                ElasticSearchAPI.build_terms_query(
+                                        "ReleaseChannel",
+                                        ["nightly", "aurora", "beta"])
+                        })
+
                     and_filter.append(ElasticSearchAPI.build_terms_query(
                                             "product",
                                             ElasticSearchAPI.lower(
