@@ -364,8 +364,8 @@ class ElasticSearchAPI(sapi.SearchAPI):
         if params["products"]:
             filters["and"].append(
                             ElasticSearchAPI.build_terms_query(
-                                "product",
-                                ElasticSearchAPI.lower(params["products"])))
+                                "product.full",
+                                params["products"]))
         if params["os"]:
             filters["and"].append(
                             ElasticSearchAPI.build_terms_query(
