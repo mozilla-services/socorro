@@ -30,7 +30,7 @@ DECLARE which_t text;
 
 BEGIN
 
-IF prod_id IS NULL THEN
+IF prod_id IS NULL AND prod_version THEN
 -- new entry
 -- adding rows is only allowed to the old table since the new
 -- table is populated automatically
@@ -39,7 +39,7 @@ IF prod_id IS NULL THEN
 	FROM products
 	WHERE product_name = prod_name
 		AND major_version_sort(prod_version) >= major_version_sort(rapid_release_version);
-	IF FOUND THEN
+	IF FOUND AND prod_version NOT LIKE '%a%' THEN
 		RAISE EXCEPTION 'Product % version % will be automatically updated by the new system.  As such, you may not add this product & version manually.',prod_name,prod_version;
 	ELSE
 		
