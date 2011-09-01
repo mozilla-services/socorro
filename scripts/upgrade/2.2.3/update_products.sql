@@ -15,7 +15,7 @@ BEGIN
 -- is cumulative and can be run repeatedly without issues
 -- currently we are only adding releases and betas
 
--- insert releases and betas
+-- insert regular releases, betas, auroras, and nightlies
 
 insert into product_versions (
     product_name,
@@ -30,12 +30,12 @@ insert into product_versions (
 select products.product_name, 
 	major_version(version),
 	version,
-	version_string(version, releases_raw.beta_number),
+	version_string(version, releases_raw.beta_number, releases_raw.build_type),
 	releases_raw.beta_number,
-	version_sort(version, releases_raw.beta_number),
+	version_sort(version, releases_raw.beta_number, releases_raw.build_type),
 	build_date(min(build_id)),
 	sunset_date(min(build_id), releases_raw.build_type ), 
-	releases_raw.build_type
+	releases_raw.build_type::citext
 from releases_raw
 	join products ON releases_raw.product_name = products.release_name
 	left outer join product_versions ON 
@@ -44,8 +44,7 @@ from releases_raw
 			AND releases_raw.beta_number IS NOT DISTINCT FROM product_versions.beta_number )
 where major_version_sort(version) >= major_version_sort(rapid_release_version)
 	AND product_versions.product_name IS NULL
-	AND releases_raw.build_type IN ('release','beta')
-group by products.product_name, version, releases_raw.beta_number, releases_raw.build_type;
+group by products.product_name, version, releases_raw.beta_number, releases_raw.build_type::citext;
 
 -- insert final betas as a copy of the release version
 
@@ -76,7 +75,7 @@ from releases_raw
             AND product_versions.beta_number = 999 )
 where major_version_sort(version) >= major_version_sort(rapid_release_version)
     AND product_versions.product_name IS NULL
-    AND releases_raw.build_type = 'release'
+    AND releases_raw.build_type ILIKE 'release'
 group by products.product_name, version, releases_raw.build_type;
 
 -- add build ids
@@ -89,8 +88,25 @@ from releases_raw
 	join product_versions
 		ON releases_raw.product_name = product_versions.product_name
 		AND releases_raw.version = product_versions.release_version
-		AND ( releases_raw.beta_number IS NOT DISTINCT FROM product_versions.beta_number
-              OR releases_raw.beta_number IS NULL and product_versions.beta_number = 999 )
+		AND releases_raw.build_type = product_versions.build_type
+		AND ( releases_raw.beta_number IS NOT DISTINCT FROM product_versions.beta_number )
+	left outer join product_version_builds ON
+		product_versions.product_version_id = product_version_builds.product_version_id
+		AND releases_raw.build_id = product_version_builds.build_id
+where product_version_builds.product_version_id is null;
+
+-- add build ids for final beta
+
+insert into product_version_builds
+	select product_versions.product_version_id,
+		releases_raw.build_id,
+		releases_raw.platform
+from releases_raw
+	join product_versions
+		ON releases_raw.product_name = product_versions.product_name
+		AND releases_raw.version = product_versions.release_version
+		AND releases_raw.build_type ILIKE 'release'
+		AND product_versions.beta_number = 999
 	left outer join product_version_builds ON
 		product_versions.product_version_id = product_version_builds.product_version_id
 		AND releases_raw.build_id = product_version_builds.build_id

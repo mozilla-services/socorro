@@ -1,4 +1,4 @@
-create or replace function update_tcbs (
+create or replace function backfill_tcbs (
 	updateday date, forproduct text default '' )
 RETURNS BOOLEAN
 LANGUAGE plpgsql 
