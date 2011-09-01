@@ -80,7 +80,7 @@ test=# \q
 psql -d test -f /usr/share/pgsql/contrib/citext.sql
 
 # check out socorro
-svn checkout http://socorro.googlecode.com/svn/trunk/ socorro
+git clone https://github.com/mozilla/socorro
 cd socorro
 
 ## PostgreSQL/Socorro setup
