@@ -91,9 +91,9 @@ edit scripts/config/commonconfig.py
 # databasePassword.default = 'secret'
 cp scripts/config/setupdatabaseconfig.py.dist scripts/config/setupdatabaseconfig.py
 export PYTHONPATH=.:thirdparty
-export PGPASSWORD="secret"
+export PGPASSWORD="aPassword"
 psql -h localhost -U postgres -f scripts/schema/2.2/breakpad_roles.sql
-psql -h localhost -U breakpad_rw breakpad -f scripts/schema/2.2/breakpad_schema.sql 
+psql -h localhost -U postgres breakpad -f scripts/schema/2.2/breakpad_schema.sql 
 cp scripts/config/createpartitionsconfig.py.dist scripts/config/createpartitionsconfig.py
 python scripts/createPartitions.py
 
