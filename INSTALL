@@ -171,7 +171,7 @@ chkconfig hadoop-hbase-thrift on
 
 # load Hbase schema
 # FIXME this skips LZO suport, remove the "sed" command if you have it installed
-cat analysis/hbase_schema | | sed 's/LZO/NONE/g' | hbase shell
+cat analysis/hbase_schema | sed 's/LZO/NONE/g' | hbase shell
 
 # TODO overall system test
 # use submitter.py to insert crash, confirm that it is processed and available in UI via middleware call
