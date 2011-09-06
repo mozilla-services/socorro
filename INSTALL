@@ -158,7 +158,7 @@ edit /data/socorro/htdocs/application/config/*.php
 # download appropriate package from http://www.oracle.com/technetwork/java/javase/downloads/index.html
 bash jdk-6u23-linux-x64-rpm.bin
 # install Hadoop 0.20 + HBase 0.89
-# refer to https://wiki.cloudera.com/display/DOC/HBase+Installation
+# refer to https://ccp.cloudera.com/display/CDHDOC/HBase+Installation
 # NOTE - this is just a standalone setup, read the above for info on a real, distributed setup!
 wget http://archive.cloudera.com/redhat/cdh/cloudera-cdh3.repo
 mv cloudera-cdh3.repo /etc/yum.repos.d/
@@ -170,7 +170,8 @@ service hadoop-hbase-thrift start
 chkconfig hadoop-hbase-thrift on
 
 # load Hbase schema
-cat analysis/hbase_schema | hbase shell
+# FIXME this skips LZO suport, remove the "sed" command if you have it installed
+cat analysis/hbase_schema | | sed 's/LZO/NONE/g' | hbase shell
 
 # TODO overall system test
 # use submitter.py to insert crash, confirm that it is processed and available in UI via middleware call
