@@ -12,20 +12,17 @@ import socorro.lib.util as util
 #-----------------------------------------------------------------------------------------------------------------
 def find_duplicates(config):
   databaseConnectionPool = psy.DatabaseConnectionPool(config.databaseHost, config.databaseName, config.databaseUserName, config.databasePassword, logger)
-  sql = """
-    SELECT update_reports_duplicates('%s', '%s')
-  """
   try:
     connection, cursor= databaseConnectionPool.connectionCursorPair()
 
     startTime = datetime.now() - timedelta(hours=3)
     endTime = startTime + timedelta(hours=1)
-    cursor.execute(sql % (startTime, endTime))
+    cursor.callproc('update_reports_duplicates', (startTime, endTime))
     connection.commit()
 
     startTime += timedelta(minutes=30)
     endTime = startTime + timedelta(hours=1)
-    cursor.execute(sql % (startTime, endTime))
+    cursor.callproc('update_reports_duplicates', (startTime, endTime))
     connection.commit()
   finally:
     databaseConnectionPool.cleanup()
