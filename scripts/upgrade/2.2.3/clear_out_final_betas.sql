@@ -15,7 +15,14 @@ update products set rapid_release_version = '2.3' where product_name = 'Seamonke
 -- clean up some database definitions
 drop index product_version_unique_beta;
 create unique index product_version_unique_beta on product_versions(product_name, release_version, beta_number) WHERE beta_number IS NOT NULL;
-DROP FUNCTION update_final_betas(date);
+
+-- make function update_final_betas a no-op
+CREATE OR REPLACE FUNCTION update_final_betas(date)
+RETURNS BOOLEAN
+LANGUAGE plpgsql AS $f$
+BEGIN
+	RETURN TRUE;
+END; $f$;
 
 -- repopulate products
 SELECT update_product_versions();
