@@ -106,6 +106,10 @@ mkdir /var/log/socorro
 mkdir -p /data/socorro
 useradd socorro
 chown socorro:socorro /var/log/socorro
+mkdir /home/socorro/primaryCrashStore /home/socorro/fallback
+# make this www-data instead of apache for debian/ubuntu
+chown apache /home/socorro/primaryCrashStore /home/socorro/fallback
+chmod 2775 /home/socorro/primaryCrashStore /home/socorro/fallback
 
 # compile minidump_stackwalk
 make minidump_stackwalk
