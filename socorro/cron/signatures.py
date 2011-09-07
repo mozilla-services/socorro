@@ -34,7 +34,7 @@ def update_signatures(config):
     for hour in xrange(total_hours):
       hour = int(hour) + 1
       timestamp = now - timedelta(hours=hour)
-      # time, hourse_back, hours_window
+      # time, hours_back, hours_window
       cursor.callproc('update_signature_matviews', (timestamp, hours_back, 2))
       databaseConnection.commit()
   finally:
