@@ -35,7 +35,7 @@ def update_signatures(config):
       hour = int(hour) + 1
       timestamp = now - timedelta(hours=hour)
       # time, hours_back, hours_window
-      cursor.callproc('update_signature_matviews', (timestamp, hours_back, 2))
+      databaseCursor.callproc('update_signature_matviews', (timestamp, hours_back, 2))
       databaseConnection.commit()
   finally:
     databaseConnectionPool.cleanup()
