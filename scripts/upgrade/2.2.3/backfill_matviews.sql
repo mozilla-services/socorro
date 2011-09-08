@@ -2,10 +2,10 @@
 
 -- function
 
-CREATE OR REPLACE FUNCTION backfill_adu (
+CREATE OR REPLACE FUNCTION backfill_matviews (
 	firstday date, 
 	forproduct text default '',
-	lastday date default NULL, )
+	lastday date default NULL )
 RETURNS BOOLEAN
 LANGUAGE plpgsql
 AS $f$
@@ -19,7 +19,7 @@ BEGIN
 -- a product name and an end date
 
 -- set optional end date
-lastday := coalesce(last_day, current_date );
+lastday := coalesce(lastday, current_date );
 
 -- check parameters
 IF firstday > current_date OR lastday > current_date or firstday > lastday THEN
@@ -35,11 +35,12 @@ END IF;
 -- loop through the days, backfilling one at a time
 WHILE thisday <= lastday LOOP
 	RAISE INFO 'backfilling for %',thisday;
-	
+	RAISE INFO 'adu';
 	PERFORM backfill_adu(thisday, forproduct);
-	
+	RAISE INFO 'tcbs';
 	PERFORM backfill_tcbs(thisday, forproduct);
-	
+	DROP TABLE IF EXISTS new_tcbs;
+	RAISE INFO 'daily crashes';
 	PERFORM backfill_daily_crashes(thisday, forproduct);
 	
 	thisday := thisday + 1;

@@ -14,13 +14,13 @@ BEGIN
 -- product_adu, optionally only for a specific product
 -- intended to be called by backfill_matviews
 
--- check if raw_adu has been updated.  otherwise, abort.
+-- check if raw_adu has been updated.  otherwise, warn
 PERFORM 1 FROM raw_adu 
 WHERE "date" = updateday
 LIMIT 1;
 
 IF NOT FOUND THEN
-	RAISE EXCEPTION 'raw_adu not updated for %',updateday;
+	RAISE INFO 'raw_adu not updated for %',updateday;
 END IF;
 
 -- delete rows to be replaced
@@ -54,7 +54,7 @@ FROM product_versions
     	ON raw_adu.product_os_platform ILIKE os_name_matches.match_string
 WHERE updateday BETWEEN build_date AND ( sunset_date + 1 )
         AND product_versions.build_type = 'release'
-        AND ( product_name = forproduct OR forproduct = '' ) 
+        AND ( product_versions.product_name = forproduct OR forproduct = '' ) 
 GROUP BY product_version_id, os;
 
 -- insert betas
@@ -80,7 +80,7 @@ WHERE updateday BETWEEN build_date AND ( sunset_date + 1 )
             WHERE product_versions.product_version_id = product_version_builds.product_version_id   
               AND product_version_builds.build_id = build_numeric(raw_adu.build)
             )
-        AND ( product_name = forproduct OR forproduct = '' )
+        AND ( product_versions.product_name = forproduct OR forproduct = '' )
 GROUP BY product_version_id, os; 
 
 -- insert old products
