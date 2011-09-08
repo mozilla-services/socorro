@@ -181,6 +181,8 @@ prefixSignatureRegEx = '|'.join([
   'NS_DebugBreak_P.*',
   'PR_AtomicIncrement',
   'PR_AtomicDecrement',
+  'RtlDeleteCriticalSection',
+  'PR_DestroyLock',
   ])
 
 signaturesWithLineNumbersRegEx = cm.Option()
