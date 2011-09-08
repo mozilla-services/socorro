@@ -92,14 +92,14 @@ class QueryFormHelper
     public function prepareAllProducts($branch_model)
     {
         $branch_data = $branch_model->getBranchData();
-	    $versionCompare = new VersioncompareComponent();
+	$versionCompare = new VersioncompareComponent();
         $versions_by_product = array();
         foreach($branch_data['products'] as $product){
 	        $versions_by_product[$product] = array();      
-	    }
-	    foreach($branch_data['versions'] as $version){
+	}
+	foreach($branch_data['versions'] as $version){
             array_push($versions_by_product[$version->product], $version->version);
-	    }
+	}
         foreach ($versions_by_product as $versions) {
             $versionCompare->sortAppversionArray($versions);
         }
