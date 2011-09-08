@@ -24,7 +24,7 @@ WHERE adu_day = updateday
 DELETE FROM daily_crashes
 USING productdims
 WHERE adu_day = updateday
-  AND daily_crashes.productdims_id = productdims.productdims_id
+  AND daily_crashes.productdims_id = productdims.id
   AND ( product = forproduct or forproduct = '' );
 
 -- insert old browser crashes
@@ -41,7 +41,7 @@ WHERE NOT cfg.ignore AND
 		AND date_processed < utc_day_ends_pacific(updateday)
 	AND updateday BETWEEN cfg.start_date and cfg.end_date
     AND lower(substring(os_name, 1, 3)) IN ('win','lin','mac')
-    AND ( productdims.product = forproduct or forproduct = '' ) 
+    AND ( p.product = forproduct or forproduct = '' ) 
 GROUP BY p.id, crash_code, os_short_name;
 
  -- insert HANGS_NORMALIZED from old data
@@ -59,7 +59,7 @@ FROM (
 				AND updateday BETWEEN cfg.start_date and cfg.end_date
 				AND hangid IS NOT NULL
                 AND lower(substring(os_name, 1, 3)) IN ('win','lin','mac') 
-                AND ( productdims.product = forproduct or forproduct = '' )
+                AND ( p.product = forproduct or forproduct = '' )
 		 ) AS subr
 GROUP BY subr.prod_id, subr.os_short_name;
 

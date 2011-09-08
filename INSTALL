@@ -80,7 +80,7 @@ test=# \q
 psql -d test -f /usr/share/pgsql/contrib/citext.sql
 
 # check out socorro
-svn checkout http://socorro.googlecode.com/svn/trunk/ socorro
+git clone https://github.com/mozilla/socorro
 cd socorro
 
 ## PostgreSQL/Socorro setup
@@ -91,9 +91,9 @@ edit scripts/config/commonconfig.py
 # databasePassword.default = 'secret'
 cp scripts/config/setupdatabaseconfig.py.dist scripts/config/setupdatabaseconfig.py
 export PYTHONPATH=.:thirdparty
-export PGPASSWORD="secret"
-psql -h localhost -U breakpad -f scripts/schema/2.2/breakpad_schema.sql
-psql -h localhost -U breakpad -f scripts/schema/2.2/breakpad_roles.sql
+export PGPASSWORD="aPassword"
+psql -h localhost -U postgres -f scripts/schema/2.2/breakpad_roles.sql
+psql -h localhost -U postgres breakpad -f scripts/schema/2.2/breakpad_schema.sql 
 cp scripts/config/createpartitionsconfig.py.dist scripts/config/createpartitionsconfig.py
 python scripts/createPartitions.py
 
@@ -106,6 +106,10 @@ mkdir /var/log/socorro
 mkdir -p /data/socorro
 useradd socorro
 chown socorro:socorro /var/log/socorro
+mkdir /home/socorro/primaryCrashStore /home/socorro/fallback
+# make this www-data instead of apache for debian/ubuntu
+chown apache /home/socorro/primaryCrashStore /home/socorro/fallback
+chmod 2775 /home/socorro/primaryCrashStore /home/socorro/fallback
 
 # compile minidump_stackwalk
 make minidump_stackwalk
@@ -158,7 +162,7 @@ edit /data/socorro/htdocs/application/config/*.php
 # download appropriate package from http://www.oracle.com/technetwork/java/javase/downloads/index.html
 bash jdk-6u23-linux-x64-rpm.bin
 # install Hadoop 0.20 + HBase 0.89
-# refer to https://wiki.cloudera.com/display/DOC/HBase+Installation
+# refer to https://ccp.cloudera.com/display/CDHDOC/HBase+Installation
 # NOTE - this is just a standalone setup, read the above for info on a real, distributed setup!
 wget http://archive.cloudera.com/redhat/cdh/cloudera-cdh3.repo
 mv cloudera-cdh3.repo /etc/yum.repos.d/
@@ -170,7 +174,8 @@ service hadoop-hbase-thrift start
 chkconfig hadoop-hbase-thrift on
 
 # load Hbase schema
-cat analysis/hbase_schema | hbase shell
+# FIXME this skips LZO suport, remove the "sed" command if you have it installed
+cat analysis/hbase_schema | sed 's/LZO/NONE/g' | hbase shell
 
 # TODO overall system test
 # use submitter.py to insert crash, confirm that it is processed and available in UI via middleware call
