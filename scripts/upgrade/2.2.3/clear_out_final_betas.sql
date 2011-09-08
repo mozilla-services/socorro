@@ -17,7 +17,7 @@ drop index product_version_unique_beta;
 create unique index product_version_unique_beta on product_versions(product_name, release_version, beta_number) WHERE beta_number IS NOT NULL;
 
 -- make function update_final_betas a no-op
-CREATE OR REPLACE FUNCTION update_final_betas(date)
+CREATE OR REPLACE FUNCTION update_final_betas(updateday date)
 RETURNS BOOLEAN
 LANGUAGE plpgsql AS $f$
 BEGIN

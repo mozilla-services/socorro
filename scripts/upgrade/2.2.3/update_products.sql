@@ -41,6 +41,7 @@ from releases_raw
 	join products ON releases_raw.product_name = products.release_name
 	left outer join product_versions ON 
 		( releases_raw.product_name = products.release_name
+		    AND products.product_name = product_versions.product_name
 			AND releases_raw.version = product_versions.release_version
 			AND releases_raw.beta_number IS NOT DISTINCT FROM product_versions.beta_number )
 where major_version_sort(version) >= major_version_sort(rapid_release_version)
@@ -73,6 +74,7 @@ from releases_raw
     join products ON releases_raw.product_name = products.release_name
     left outer join product_versions ON 
         ( releases_raw.product_name = products.release_name
+        	AND products.product_name = product_versions.product_name
             AND releases_raw.version = product_versions.release_version
             AND product_versions.beta_number = 999 )
 where major_version_sort(version) >= major_version_sort(rapid_release_version)
