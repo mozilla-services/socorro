@@ -11,8 +11,8 @@
       <p>The email is sent immediately. Setting a date range into the future will have no effect.</p>
       <p>There are two variables you can use in the email body:
         <ul>
-          <li><code class="email-var">*|EMAIL_ADDRESS|*</code> - Will be replaced with user's email. Example jane@doe.name</li>
-          <li><code class="email-var">*|UNSUBSCRIBE_URL|*</code> - Will be replaced with user's unique un-subscribe URL</li>
+          <li><code class="email-var">*|EMAIL_ADDRESS|*</code> - Will be replaced with user's email. Example: jane@doe.name</li>
+          <li><code class="email-var">*|UNSUBSCRIBE_URL|*</code> - Will be replaced with user's unique unsubscribe URL</li>
           <li><code class="email-var">*|CRASH_DATE|*</code> - Will be replaced with user's most recent crash date for this signature</li>
           <li><code class="email-var">*|CRASH_URL|*</code> - Will be replaced with a link to crash-stats for the user's most recent crash</li>
         </ul></p>
@@ -24,7 +24,7 @@
             <option value="<?= $product ?>" <?php if ($product == $email_product) echo 'SELECTED' ?> ><?= $product ?></option>
         <?php } ?>
         </select>
-        <label for="email_versions" title="Versions is a comma seperated list of version numbers. 4.06b, 4.0b7pre, 3.6.10" class="<?php if (isset($errors) && array_key_exists('email_versions', $errors)) { echo 'form_error'; }; ?>">Versions <span class="help">(Comma separated)</span></label>
+        <label for="email_versions" title="Versions is a comma-seperated list of version numbers. 4.06b, 4.0b7pre, 3.6.10" class="<?php if (isset($errors) && array_key_exists('email_versions', $errors)) { echo 'form_error'; }; ?>">Versions <span class="help">(Comma separated)</span></label>
         <input name="email_versions" type="text" value="<?= out::H($email_versions) ?>" size="80" />
         <label for="email_signature" class="<?php if (isset($errors) && array_key_exists('email_signature', $errors)) { echo 'form_error'; }; ?>">Exact Signature</label><input name="email_signature" type="text" value="<?= out::H($email_signature) ?>" size="80" />
 
