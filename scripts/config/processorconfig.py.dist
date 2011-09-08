@@ -181,6 +181,7 @@ prefixSignatureRegEx = '|'.join([
   'NS_DebugBreak_P.*',
   'PR_AtomicIncrement',
   'PR_AtomicDecrement',
+  'moz_xmalloc',
   ])
 
 signaturesWithLineNumbersRegEx = cm.Option()
