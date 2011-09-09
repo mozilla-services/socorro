@@ -185,11 +185,19 @@ class Topcrasher_Controller extends Controller {
 				     'crashes' => array(),
 				     'totalNumberOfCrashes' => 0), 'top crash sig overall');
 	    $signatures = array();
-	    $req_props = array( 'signature' => '', 'count' => 0, 
-	            'win_count' => 0, 'mac_count' => 0, 'linux_count' => 0, 
-                'versions' => '', 'versions_count' => 0,
-				'currentRank' => 0, 'previousRank' => 0, 'changeInRank' => 0, 
-				'percentOfTotal' => 0, 'previousPercentOfTotal' => 0, 'changeInPercentOfTotal' => 0);
+	    $req_props = array( 
+            'signature' => '',
+            'count' => 0, 
+            'win_count' => 0, 
+            'mac_count' => 0, 
+            'linux_count' => 0, 
+            'currentRank' => 0, 
+            'previousRank' => 0, 
+            'changeInRank' => 0, 
+            'percentOfTotal' => 0, 
+            'previousPercentOfTotal' => 0, 
+            'changeInPercentOfTotal' => 0
+        );
 
 	    foreach($resp->crashes as $top_crasher) {
 		$this->topcrashers_model->ensureProperties($top_crasher, $req_props, 'top crash sig trend crashes');
@@ -350,28 +358,28 @@ class Topcrasher_Controller extends Controller {
 			       'Previous Percentage', 'Signature', 
 			       'Total', 'Win', 'Mac', 'Linux',
                    'Version Count', 'Versions'));
-	$i = 0;
+        $i = 0;
         foreach ($topcrashers as $crash) {
-	    $line = array();
-	    $sig = strtr($crash->signature, array(
-                    ',' => ' ',
-                    '\n' => ' ',
-		    '"' => '&quot;'
-            ));
-	    array_push($line, $i);
-	    array_push($line, $crash->changeInRank);
-	    array_push($line, $crash->percentOfTotal);
-	    array_push($line, $crash->previousPercentOfTotal);
-	    array_push($line, $sig);
-	    array_push($line, $crash->count);
-	    array_push($line, $crash->win_count);
-	    array_push($line, $crash->mac_count);
-	    array_push($line, $crash->linux_count);
-	    array_push($line, $crash->versions_count);
-        array_push($line, str_replace(",",";",$crash->versions));
-	    array_push($csvData, $line);
-	    $i++;
-	}
+            $line = array();
+            $sig = strtr($crash->signature, array(
+                        ',' => ' ',
+                        '\n' => ' ',
+                '"' => '&quot;'
+                ));
+            array_push($line, $i);
+            array_push($line, $crash->changeInRank);
+            array_push($line, $crash->percentOfTotal);
+            array_push($line, $crash->previousPercentOfTotal);
+            array_push($line, $sig);
+            array_push($line, $crash->count);
+            array_push($line, $crash->win_count);
+            array_push($line, $crash->mac_count);
+            array_push($line, $crash->linux_count);
+            array_push($line, $crash->versions_count);
+            array_push($line, str_replace(",",";",$crash->versions));
+            array_push($csvData, $line);
+            $i++;
+        }
       return $csvData;
     }
 
