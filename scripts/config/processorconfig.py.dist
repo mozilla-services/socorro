@@ -183,6 +183,12 @@ prefixSignatureRegEx = '|'.join([
   'PR_AtomicDecrement',
   'moz_xmalloc',
   '__libc_android_abort',
+  'mozilla::ipc::RPCChannel::EnteredCxxStack',
+  'mozilla::ipc::RPCChannel::CxxStackFrame::CxxStackFrame',
+  'mozilla::ipc::RPCChannel::Send',
+  'mozilla::ipc::RPCChannel::Call',
+  'RtlDeleteCriticalSection',
+  'PR_DestroyLock',
   ])
 
 signaturesWithLineNumbersRegEx = cm.Option()
