@@ -37,10 +37,10 @@ class Search(webapi.JsonServiceBase):
 
         # If one wants to choose the api to use, then force it
         forced_api_impl = None
-        if "force_search_impl" in params:
-            if params["force_search_impl"] == "es":
+        if "force_api_impl" in params:
+            if params["force_api_impl"] == "es":
                 forced_api_impl = es.ElasticSearchAPI(self.context)
-            elif params["force_search_impl"] == "pg":
+            elif params["force_api_impl"] == "pg":
                 forced_api_impl = pg.PostgresAPI(self.context)
 
         # API to actually call
