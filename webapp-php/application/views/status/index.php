@@ -51,6 +51,9 @@
             <tr>
                 <td>Oldest Job In Queue</td><td><?php echo $stat->date_oldest_job_queued ?></td>
             </tr>
+            <tr>
+                <td>Socorro revision</td><td><a href="https://github.com/mozilla/socorro/commit/<?php echo Kohana::config('revision.socorro_revision')?>"><?php echo Kohana::config('revision.socorro_revision')?></a></td>
+            </tr>
         </table>
         
     </div>
