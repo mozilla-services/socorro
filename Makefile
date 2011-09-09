@@ -20,7 +20,7 @@ phpunit:
 install: java_analysis
 	mkdir -p $(PREFIX)/htdocs
 	mkdir -p $(PREFIX)/application
-	git rev-parse HEAD
+	git rev-parse HEAD  > $(PREFIX)/revision.txt
 	rsync -a --exclude=".svn" thirdparty $(PREFIX)
 	rsync -a --exclude=".svn" socorro $(PREFIX)/application
 	rsync -a --exclude=".svn" scripts $(PREFIX)/application
@@ -35,9 +35,7 @@ install: java_analysis
 	cd $(PREFIX)/htdocs/modules/auth/config/; for file in *.php-dist; do cp $$file `basename $$file -dist`; done
 	cd $(PREFIX)/htdocs/modules/recaptcha/config; for file in *.php-dist; do cp $$file `basename $$file -dist`; done
 	cd $(PREFIX)/htdocs/application/config; for file in *.php-dist; do cp $$file `basename $$file -dist`; done
-	REV=`cat $(PREFIX)/revision.txt` && sed -ibak \ 
-		"s/CURRENT_SOCORRO_REVISION/$$REV/" \
-		$(PREFIX)/htdocs/application/config/revision.php
+	REV=`cat $(PREFIX)/revision.txt` && sed -ibak "s/CURRENT_SOCORRO_REVISION/$$REV/" $(PREFIX)/htdocs/application/config/revision.php
 	cd $(PREFIX)/htdocs; cp htaccess-dist .htaccess
 
 virtualenv:
