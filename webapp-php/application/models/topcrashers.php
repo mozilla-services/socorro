@@ -97,8 +97,6 @@ class Topcrashers_Model extends Model {
                 'win_count' => 0,
                 'mac_count' => 0,
                 'linux_count' => 0,
-                'versions' => '',
-                'versions_count' => 0,
                 'currentRank' => 0,
                 'previousRank' => 0,
                 'changeInRank' => 0,
