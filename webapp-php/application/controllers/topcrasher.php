@@ -362,10 +362,10 @@ class Topcrasher_Controller extends Controller {
         foreach ($topcrashers as $crash) {
             $line = array();
             $sig = strtr($crash->signature, array(
-                        ',' => ' ',
-                        '\n' => ' ',
+                ',' => ' ',
+                '\n' => ' ',
                 '"' => '&quot;'
-                ));
+            ));
             array_push($line, $i);
             array_push($line, $crash->changeInRank);
             array_push($line, $crash->percentOfTotal);
