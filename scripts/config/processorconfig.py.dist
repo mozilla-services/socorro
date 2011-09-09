@@ -182,6 +182,7 @@ prefixSignatureRegEx = '|'.join([
   'PR_AtomicIncrement',
   'PR_AtomicDecrement',
   'moz_xmalloc',
+  '__libc_android_abort',
   ])
 
 signaturesWithLineNumbersRegEx = cm.Option()
