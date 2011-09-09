@@ -60,14 +60,13 @@ class QueryFormHelper
         $platforms   = $platform_model->getAll();
 
         $versions_by_product = array();
-        foreach($branch_data['products'] as $product){
-	        $versions_by_product[$product] = array();      
-	    }
-	    $versions_by_product_reversed = $versions_by_product;
 
-	    foreach($branch_data['versions'] as $version){
+	foreach($branch_data['versions'] as $version){
+            if (!array_key_exists($version->product, $versions_by_product)) {
+	        $versions_by_product[$version->product] = array();
+            }
             array_push($versions_by_product[$version->product], $version);
-	    }
+	}
 
         $versions_by_product_reversed = array();
         foreach ($versions_by_product as $product => $versions) {
