@@ -20,7 +20,7 @@ phpunit:
 install: java_analysis
 	mkdir -p $(PREFIX)/htdocs
 	mkdir -p $(PREFIX)/application
-	git rev-parse HEAD
+	git rev-parse HEAD > $(PREFIX)/revision.txt
 	rsync -a --exclude=".svn" thirdparty $(PREFIX)
 	rsync -a --exclude=".svn" socorro $(PREFIX)/application
 	rsync -a --exclude=".svn" scripts $(PREFIX)/application
