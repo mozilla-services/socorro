@@ -24,7 +24,7 @@ class TestingLogger:
      self.buffer.append(str(message))
    if self.logger:
      self.logger.log(loggingLevel, str(message), *args)
-      
+
   def debug(self, message, *args):
     self.log(logging.DEBUG,message, *args)
   def info(self, message, *args):

@@ -5,17 +5,17 @@
 CREATE OR REPLACE FUNCTION backfill_adu (
 	updateday date, forproduct text default '' )
 RETURNS BOOLEAN
-LANGUAGE plpgsql 
+LANGUAGE plpgsql
 SET work_mem = '512MB'
 SET temp_buffers = '512MB'
 AS $f$
 BEGIN
--- stored procudure to delete and replace one day of 
+-- stored procudure to delete and replace one day of
 -- product_adu, optionally only for a specific product
 -- intended to be called by backfill_matviews
 
 -- check if raw_adu has been updated.  otherwise, warn
-PERFORM 1 FROM raw_adu 
+PERFORM 1 FROM raw_adu
 WHERE "date" = updateday
 LIMIT 1;
 
@@ -29,13 +29,13 @@ DELETE FROM product_adu
 USING product_versions
 WHERE adu_date = updateday
 AND product_adu.product_version_id = product_versions.product_version_id
-AND ( product_name = forproduct OR forproduct = '' ); 
+AND ( product_name = forproduct OR forproduct = '' );
 
 DELETE FROM product_adu
 USING productdims
 WHERE adu_date = updateday
 AND product_adu.product_version_id = productdims.id
-AND ( product = forproduct OR forproduct = '' ); 
+AND ( product = forproduct OR forproduct = '' );
 
 -- insert releases
 
@@ -54,7 +54,7 @@ FROM product_versions
     	ON raw_adu.product_os_platform ILIKE os_name_matches.match_string
 WHERE updateday BETWEEN build_date AND ( sunset_date + 1 )
         AND product_versions.build_type = 'release'
-        AND ( product_versions.product_name = forproduct OR forproduct = '' ) 
+        AND ( product_versions.product_name = forproduct OR forproduct = '' )
 GROUP BY product_version_id, os;
 
 -- insert betas
@@ -77,11 +77,11 @@ WHERE updateday BETWEEN build_date AND ( sunset_date + 1 )
         AND raw_adu.build_channel = 'beta'
         AND EXISTS ( SELECT 1
             FROM product_version_builds
-            WHERE product_versions.product_version_id = product_version_builds.product_version_id   
+            WHERE product_versions.product_version_id = product_version_builds.product_version_id
               AND product_version_builds.build_id = build_numeric(raw_adu.build)
             )
         AND ( product_versions.product_name = forproduct OR forproduct = '' )
-GROUP BY product_version_id, os; 
+GROUP BY product_version_id, os;
 
 -- insert old products
 
@@ -91,13 +91,13 @@ SELECT productdims_id, coalesce(os_name,'Unknown') as os,
 	updateday, coalesce(sum(raw_adu.adu_count),0)
 FROM productdims
 	JOIN product_visibility ON productdims.id = product_visibility.productdims_id
-	LEFT OUTER JOIN raw_adu 
+	LEFT OUTER JOIN raw_adu
 		ON productdims.product = raw_adu.product_name
 		AND productdims.version = raw_adu.product_version
 		AND raw_adu.date = updateday
     LEFT OUTER JOIN os_name_matches
-    	ON raw_adu.product_os_platform ILIKE os_name_matches.match_string	
-WHERE updateday BETWEEN ( start_date - interval '1 day' ) 
+    	ON raw_adu.product_os_platform ILIKE os_name_matches.match_string
+WHERE updateday BETWEEN ( start_date - interval '1 day' )
 	AND ( end_date + interval '1 day' )
     AND ( product = forproduct OR forproduct = '' )
 GROUP BY productdims_id, os;
@@ -105,4 +105,4 @@ GROUP BY productdims_id, os;
 RETURN TRUE;
 END; $f$;
 
-	
+

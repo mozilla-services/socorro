@@ -20,7 +20,7 @@ export PATH=$PATH
 #./reason_index.py reports_20110207 reports_20110328
 
 #echo 'create the duplicates tables and functions'
-#psql -f find_dups.sql breakpad 
+#psql -f find_dups.sql breakpad
 #psql -f backfill_dups.sql breakpad
 
 #echo 'backfill some duplicates'

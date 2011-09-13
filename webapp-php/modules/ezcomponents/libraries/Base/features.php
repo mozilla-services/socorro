@@ -349,8 +349,8 @@ class ezcBaseFeatures
     }
 
     /**
-     * Reset the cached information. 
-     * 
+     * Reset the cached information.
+     *
      * @return void
      * @access private
      * @ignore

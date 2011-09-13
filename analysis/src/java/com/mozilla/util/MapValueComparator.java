@@ -18,7 +18,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  *   Xavier Stevens <xstevens@mozilla.com>, Mozilla Corporation (original author)
  *
  * Alternatively, the contents of this file may be used under the terms of
@@ -46,5 +46,5 @@ public class MapValueComparator implements Comparator<Map.Entry<String, Integer>
 	public int compare(Entry<String, Integer> o1, Entry<String, Integer> o2) {
 		return o1.getValue() < o2.getValue() ? -1 : o1.getValue() > o2.getValue() ? 1 : 0;
 	}
-	
+
 }

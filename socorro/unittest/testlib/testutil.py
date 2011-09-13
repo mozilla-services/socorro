@@ -15,7 +15,7 @@ def testGetModuleFromFile():
      'expect': 'Unknown Module' },
     {'kwargs':{'filename':None, 'decorate':'Nothing Useful'},
      'expect': 'Nothing Useful' },
-    
+
     {'kwargs':{'filename':'toot'},
      'expect': '\n==== toot ====\n=============='},
     {'kwargs':{'filename':'toot', 'depth':4},
@@ -24,7 +24,7 @@ def testGetModuleFromFile():
      'expect': 'toot' },
     {'kwargs':{'filename':'toot', 'decorate':'Nothing Useful'},
      'expect': 'Nothing Useful' },
-    
+
     {'kwargs':{'filename':'/toot'},
      'expect': '\n==== toot ====\n=============='},
     {'kwargs':{'filename':'/toot', 'depth':4},
@@ -33,7 +33,7 @@ def testGetModuleFromFile():
      'expect': 'toot' },
     {'kwargs':{'filename':'/toot', 'decorate':'Nothing Useful'},
      'expect': 'Nothing Useful' },
-    
+
     {'kwargs':{'filename':'toot/suite'},
      'expect': '\n==== toot.suite ====\n===================='},
     {'kwargs':{'filename':'toot/suite', 'depth':4},
@@ -44,7 +44,7 @@ def testGetModuleFromFile():
      'expect': 'toot.suite' },
     {'kwargs':{'filename':'toot', 'decorate':'Nothing Useful'},
      'expect': 'Nothing Useful' },
-    
+
     {'kwargs':{'filename':'toot/suite/pronto'},
      'expect': '\n==== toot.suite.pronto ====\n==========================='},
     {'kwargs':{'filename':'toot/suite/pronto', 'depth':4},
@@ -55,7 +55,7 @@ def testGetModuleFromFile():
      'expect': 'toot.suite.pronto' },
     {'kwargs':{'filename':'toot/suite/pronto', 'decorate':'Nothing Useful'},
      'expect': 'Nothing Useful' },
-    
+
     {'kwargs':{'filename':'toot/suite/pronto/now/really/baby'},
      'expect': '\n==== pronto.now.really.baby ====\n================================' },
     {'kwargs':{'filename':'toot/suite/pronto/now/really/baby', 'depth':4},

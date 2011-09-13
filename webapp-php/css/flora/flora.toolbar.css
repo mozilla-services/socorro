@@ -53,7 +53,7 @@
     background:no-repeat;
     background-position:50% 50%;
   }
-  
+
 /************************************************
  * Factory Elements:
  *  - These are different kinds of items that
@@ -149,15 +149,15 @@
         .flora .ui-toolbar ul.ui-toobar-iconOnly li.ui-toolbar-btn button span {
           display:none;
         }
-  
+
   .flora .ui-toolbar ul li.ui-toolbar-btn-over .ui-toolbar-btn-center button,
   .flora .ui-toolbar ul li.ui-toolbar-btn-active .ui-toolbar-btn-center button {
     background: url("i/accordion-middle-over.png") repeat-x left bottom;
   }
   .flora .ui-toolbar ul li.ui-toolbar-btn-active {
-    
+
   }
-  
+
   .flora .ui-toolbar ul li.ui-toolbar-btn-disabled {
     opacity:0.2;
   }
@@ -213,7 +213,7 @@
  *        </li>
  *      </ul>
  *    </li>
- *      
+ *
  *
  ************************************************/
 

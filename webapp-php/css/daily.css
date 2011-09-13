@@ -45,7 +45,7 @@ div.daily_graph {
 	padding-bottom: 5px;
 }
 #daily_search h3 {
-	margin-bottom: 5px;	
+	margin-bottom: 5px;
 }
 #daily_search h3 a {
 	color: #488AC7;
@@ -99,8 +99,8 @@ span.option {
 span.os {
 	margin-right: 10px;
 }
-.graph-ratio-checkbox input { 
-    margin-left: 10px; 
+.graph-ratio-checkbox input {
+    margin-left: 10px;
 }
 
 /**
@@ -108,14 +108,14 @@ span.os {
  */
 #daily_crash_graph {
 	background-color: #eee;
-	border: 1px solid #999;	
+	border: 1px solid #999;
 	float: left;
 	margin: 0 0 20px 20px;
 	width: 550px;
 }
 
 table.graph {
-	border: 1px solid #999;	
+	border: 1px solid #999;
 	padding: 3px;
 }
 
@@ -124,17 +124,17 @@ table.graph {
 	margin: 0;
 	padding: 3px;
 }
-#sig-history-graph { 
-	width: 550px; 
+#sig-history-graph {
+	width: 550px;
 	height: 300px; /* position: absolute; top: 100px; left: 100px; */
 	float: left;
 }
-#sig-history-legend { 
+#sig-history-legend {
 	float: left;
 }
 p.adu-chart-help {
     font-size: 0.85em;
-    margin-top: 15px;    
+    margin-top: 15px;
 }
 
 /**
@@ -186,7 +186,7 @@ table.crash_data td {
 }
 table.crash_data td.date {
 	background-color: #eee;
-	text-align: left;	
+	text-align: left;
 }
 table.crash_data td.stat {
 	background-color: #eee;

@@ -18,7 +18,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  *   Xavier Stevens <xstevens@mozilla.com>, Mozilla Corporation (original author)
  *
  * Alternatively, the contents of this file may be used under the terms of
@@ -47,39 +47,39 @@ import java.util.Map;
 import com.mozilla.util.MapValueComparator;
 
 public class Module {
-	
+
 	private String name;
 	private int count;
 	private float sigRatio = 0.0f;
 	private float osRatio = 0.0f;
 	private Map<String, Integer> versionCounts = new HashMap<String, Integer>();
-	
+
 	public Module(String name) {
 		this.name = name;
 	}
-	
+
 	public String getName() {
 		return name;
 	}
-	
+
 	public int getCount() {
 		return count;
 	}
-	
+
 	public void setCount(int count) {
 		this.count = count;
 	}
-	
+
 	public Map<String, Integer> getVersionCounts() {
 		return versionCounts;
 	}
-	
+
 	public List<Map.Entry<String, Integer>> getSortedVersionCounts() {
 		List<Map.Entry<String, Integer>> versionPairs = new ArrayList<Map.Entry<String, Integer>>(versionCounts.entrySet());
-		Collections.sort(versionPairs, Collections.reverseOrder(new MapValueComparator())); 
+		Collections.sort(versionPairs, Collections.reverseOrder(new MapValueComparator()));
 		return versionPairs;
 	}
-	
+
 	public void incrementVersionCount(String moduleVersion, int count) {
 		int existingCount = 0;
 		if (versionCounts.containsKey(moduleVersion)) {
@@ -87,7 +87,7 @@ public class Module {
 		}
 		versionCounts.put(moduleVersion, existingCount + count);
 	}
-	
+
 	public void setVersionCounts(Map<String, Integer> versionCounts) {
 		this.versionCounts = versionCounts;
 	}
@@ -107,16 +107,16 @@ public class Module {
 	public void setOsRatio(float osRatio) {
 		this.osRatio = osRatio;
 	}
-	
+
 	public static class ModuleComparator implements Comparator<Module> {
-		
+
 		public int compare(Module o1, Module o2) {
 			float diffRatio1 = o1.getSigRatio() - o1.getOsRatio();
 			float diffRatio2 = o2.getSigRatio() - o2.getOsRatio();
-			
+
 			return diffRatio1 < diffRatio2 ? -1 : diffRatio1 > diffRatio2 ? 1 : 0;
 		}
-		
+
 	}
-	
+
 }

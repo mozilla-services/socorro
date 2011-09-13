@@ -32,7 +32,7 @@ class TestNode:
     assert d == n
     assert 2 == len(p.children)
     assert 1 == len(d.parents)
-    
+
   def testAddParent(self):
     c = prioritize.Node('c')
     n = c.addParent('p')
@@ -48,7 +48,7 @@ class TestNode:
     n = c.addParent(d)
     assert d == n
     assert 2 == len(c.parents)
-    
+
   def testFindChild(self):
     a = prioritize.Node('a')
     b = prioritize.Node('b')
@@ -74,7 +74,7 @@ class TestNode:
     assert None == top.findChild(1)
     assert None == f.findChild('a')
     assert None == b.findChild('a')
-    
+
   def testStr(self):
     n = prioritize.Node()
     assert "<node: set([])<- None ->[]>" == str(n)
@@ -117,7 +117,7 @@ def testFindChild():
   e.addChild(a)
   assert a == c.findChild('a')
   assert None == b.findChild('a')
-  
+
 # [ aMap for test,
 #   expected result map,
 #   map of nodeName:expected dependencyOrder result for that node (aka BottomUpVisitor)
@@ -125,7 +125,7 @@ def testFindChild():
 # ]
 # There is an issue here in that some of the expected orders are non-deterministic,
 # such as when a depends on b and c, should we see a,b,c or a,c,b in top down (c,b,a or b,c,a in bottom up)
-# The orders encoded here work on the original testing machine. If they fail on your machine, we'll need to 
+# The orders encoded here work on the original testing machine. If they fail on your machine, we'll need to
 # think about how to do some kind of regular expression test, maybe.
 dependencyTestCases = [
   [{},
@@ -145,13 +145,13 @@ dependencyTestCases = [
    {'a':['a'],'b':['b']},
    {'a':['a'],'b':['b']},
    ],
-  
+
   [{'a':('b',)},
    {'a':['b'],'b':[]},
    {'a':['b','a'], 'b':['b']},
    {'a':['a','b'], 'b':['b']},
    ],
-  
+
   [{'a':('b','c',)},
    {'a':['b','c'],'b':[], 'c':[]},
    {'a':['b','c','a'],'b':['b'],'c':['c']},
@@ -162,19 +162,19 @@ dependencyTestCases = [
    {'a':['c','b','a'],'b':['c','b'],'c':['c']},
    {'a':['a','b','c'],'b':['b','c',],'c':['c']},
    ],
-  
+
   [{'a':('b',),'b':('a',)},
    {'a':['b'],'b':['a']},
    {'a':['b','a'],'b':['a','b']},
    {'a':['a','b'],'b':['b','a']},
    ],
-  
+
   [{'a':('b','c','d'),'b':('c',),'c':('d',),},
    {'a':['b','c','d'],'b':['c',],'c':['d'],'d':[]},
    {'a':['d','c','b','a'],'b':['d','c','b'],'c':['d','c'],'d':['d']},
    {'a':['a','b','c','d'],'b':['b','c','d'],'c':['c','d'],'d':['d']},
    ],
-  
+
   [{'a':['d'],'b':['d'],'c':['b'],'d':['e','f','g']},
    {'a':['d'],'b':['d'],'c':['b'],'d':['e','f','g'],'e':[],'f':[],'g':[]},
    {'a':['e','f','g','d','a'],'b':['e','f','g','d','b'],'c':['e','f','g','d','b','c'],'d':['e','f','g','d'],'e':['e'],'f':['f'],'g':['g'],},
@@ -187,7 +187,7 @@ dependencyTestCases = [
    {'a':['a','d','e','f','g'],'b':['b','d','e','f','g'],'c':['c','b','d','e','f','g'],'d':['d','e','f','g'],'e':['e'],'f':['f'],'g':['g'],},
    ],
   ]
-   
+
 def testTopDownVisitor():
   global dependencyTestCases
   for aMap,ignore,ignore,expected in dependencyTestCases:
@@ -222,7 +222,7 @@ def testMakeDependencyMap():
 def testDependencyOrder():
   for aMap,ignore,ordered,ignore in dependencyTestCases:
     if {} == aMap:
-      assert {} == ordered 
+      assert {} == ordered
     for k in ordered.keys():
       result = prioritize.dependencyOrder(aMap,[k])
       assert ordered[k] == result, "expected:%s, got:%s"%(ordered[k],result)

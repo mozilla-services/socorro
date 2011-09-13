@@ -18,7 +18,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  *   Xavier Stevens <xstevens@mozilla.com>, Mozilla Corporation (original author)
  *
  * Alternatively, the contents of this file may be used under the terms of
@@ -70,49 +70,49 @@ import com.mozilla.util.DateUtil;
 public class HardwareAccel implements Tool {
 
 	private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(HardwareAccel.class);
-	
+
 	private static final String NAME = "HardwareAccel";
 	private Configuration conf;
-	
+
 	public static class HardwareAccelMapper extends TableMapper<Text, IntWritable> {
 
 		public enum ReportStats { JSON_PARSE_EXCEPTION, JSON_MAPPING_EXCEPTION, JSON_BYTES_NULL, DATE_PARSE_EXCEPTION, PRODUCT_FILTERED, RELEASE_FILTERED, OS_FILTERED, OS_VERSION_FILTERED, TIME_FILTERED }
-		
+
 		private Text outputKey;
 		private IntWritable one;
-		
+
 		private ObjectMapper jsonMapper;
-		
+
 		private String productFilter;
 		private String releaseFilter;
 		private String osFilter;
 		private String osVersionFilter;
-		
+
 		private Pattern newlinePattern;
 		private Pattern pipePattern;
 
 		private SimpleDateFormat sdf;
 		private long startTime;
 		private long endTime;
-		
+
 		/* (non-Javadoc)
 		 * @see org.apache.hadoop.mapreduce.Mapper#setup(org.apache.hadoop.mapreduce.Mapper.Context)
 		 */
 		public void setup(Context context) {
 			outputKey = new Text();
 			one = new IntWritable(1);
-			
+
 			jsonMapper = new ObjectMapper();
-			
+
 			Configuration conf = context.getConfiguration();
-			
+
 			productFilter = conf.get(PRODUCT_FILTER);
 			releaseFilter = conf.get(RELEASE_FILTER);
 			osFilter = conf.get(OS_FILTER, "Windows NT");
 			osVersionFilter = conf.get(OS_VERSION_FILTER, "6.1.7600");
 			newlinePattern = Pattern.compile("\n");
 			pipePattern = Pattern.compile("\\|");
-			
+
 			sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 			startTime = DateUtil.getTimeAtResolution(conf.getLong(START_TIME, 0), Calendar.DATE);
 			endTime = DateUtil.getEndTimeAtResolution(conf.getLong(END_TIME, System.currentTimeMillis()), Calendar.DATE);
@@ -131,21 +131,21 @@ public class HardwareAccel implements Tool {
 				String value = new String(valueBytes);
 				// This is an untyped parse so the caller is expected to know the types
 				Map<String,Object> crash = jsonMapper.readValue(value, new TypeReference<Map<String,Object>>() { });
-				
+
 				// Filter row if filter(s) are set and it doesn't match
 				if (!StringUtils.isBlank(productFilter)) {
 					if (crash.containsKey(PROCESSED_JSON_PRODUCT) && !crash.get(PROCESSED_JSON_PRODUCT).equals(productFilter)) {
 						context.getCounter(ReportStats.PRODUCT_FILTERED).increment(1L);
 						return;
 					}
-				} 
+				}
 				if (!StringUtils.isBlank(releaseFilter)) {
 					if (crash.containsKey(PROCESSED_JSON_VERSION) && !crash.get(PROCESSED_JSON_VERSION).equals(releaseFilter)) {
 						context.getCounter(ReportStats.RELEASE_FILTERED).increment(1L);
 						return;
 					}
 				}
-				
+
 				String osName = (String)crash.get(PROCESSED_JSON_OS_NAME);
 				if (!StringUtils.isBlank(osFilter)) {
 					if (osName == null || !osName.equals(osFilter)) {
@@ -153,7 +153,7 @@ public class HardwareAccel implements Tool {
 						return;
 					}
 				}
-				
+
 				String osVersion = (String)crash.get(PROCESSED_JSON_OS_VERSION);
 				if (!StringUtils.isBlank(osVersionFilter)) {
 					if (osVersion == null || !osVersion.startsWith(osVersionFilter)) {
@@ -161,7 +161,7 @@ public class HardwareAccel implements Tool {
 						return;
 					}
 				}
-				
+
 				// Set the value to the date
 				String dateProcessed = (String)crash.get(PROCESSED_JSON_DATE_PROCESSED);
 				long crashTime = sdf.parse(dateProcessed).getTime();
@@ -170,7 +170,7 @@ public class HardwareAccel implements Tool {
 					context.getCounter(ReportStats.TIME_FILTERED).increment(1L);
 					return;
 				}
-				
+
 				boolean hadModuleLoaded = false;
 				for (String dumpline : newlinePattern.split((String)crash.get(PROCESSED_JSON_DUMP))) {
 					if (dumpline.startsWith(PROCESSED_JSON_MODULE_PATTERN)) {
@@ -183,7 +183,7 @@ public class HardwareAccel implements Tool {
 						}
 					}
 				}
-				
+
 				if (!hadModuleLoaded) {
 					outputKey.set("no_module");
 				}
@@ -196,21 +196,21 @@ public class HardwareAccel implements Tool {
 				context.getCounter(ReportStats.DATE_PARSE_EXCEPTION).increment(1L);
 			}
 		}
-		
+
 	}
-	
+
 	/**
 	 * @param args
 	 * @return
 	 * @throws IOException
-	 * @throws ParseException 
+	 * @throws ParseException
 	 */
 	public Job initJob(String[] args) throws IOException, ParseException {
 		Map<byte[], byte[]> columns = new HashMap<byte[], byte[]>();
 		columns.put(PROCESSED_DATA_BYTES, JSON_BYTES);
 		Job job = CrashReportJob.initJob(NAME, getConf(), HardwareAccel.class, HardwareAccelMapper.class, IntSumReducer.class, IntSumReducer.class, columns, Text.class, IntWritable.class, new Path(args[0]));
 		job.setNumReduceTasks(1);
-		
+
 		return job;
 	}
 
@@ -231,7 +231,7 @@ public class HardwareAccel implements Tool {
 		GenericOptionsParser.printGenericCommandUsage(System.out);
 		return -1;
 	}
-	
+
 	/* (non-Javadoc)
 	 * @see org.apache.hadoop.util.Tool#run(java.lang.String[])
 	 */
@@ -239,14 +239,14 @@ public class HardwareAccel implements Tool {
 		if (args.length != 1) {
 			return printUsage();
 		}
-		
+
 		int rc = -1;
 		Job job = initJob(args);
 		job.waitForCompletion(true);
 		if (job.isSuccessful()) {
 			rc = 0;
 		}
-		
+
 		return rc;
 	}
 
@@ -263,7 +263,7 @@ public class HardwareAccel implements Tool {
 	public void setConf(Configuration conf) {
 		this.conf = conf;
 	}
-	
+
 	/**
 	 * @param args
 	 * @throws Exception

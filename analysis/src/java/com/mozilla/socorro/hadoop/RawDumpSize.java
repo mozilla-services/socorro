@@ -18,7 +18,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  *   Xavier Stevens <xstevens@mozilla.com>, Mozilla Corporation (original author)
  *
  * Alternatively, the contents of this file may be used under the terms of
@@ -71,19 +71,19 @@ import org.apache.hadoop.util.ToolRunner;
 public class RawDumpSize implements Tool {
 
 	private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(RawDumpSize.class);
-	
+
 	private static final String NAME = "RawDumpSize";
 	private Configuration conf;
-	
+
 	private static final String KEY_DELIMITER = "\t";
-	
+
 	public static class RawDumpSizeMapper extends TableMapper<Text, IntWritable> {
 
 		public enum ReportStats { RAW_BYTES_NULL, PROCESSED_BYTES_NULL, OOM_ERROR }
-		
+
 		private Text outputKey;
 		private IntWritable outputValue;
-		
+
 		/* (non-Javadoc)
 		 * @see org.apache.hadoop.mapreduce.Mapper#setup(org.apache.hadoop.mapreduce.Mapper.Context)
 		 */
@@ -99,7 +99,7 @@ public class RawDumpSize implements Tool {
 			String rowKey = new String(result.getRow());
 			StringBuilder keyPrefix = new StringBuilder("20");
 			keyPrefix.append(rowKey.substring(1, 7)).append(KEY_DELIMITER);
-			
+
 			byte[] valueBytes = result.getValue(RAW_DATA_BYTES, DUMP_BYTES);
 			if (valueBytes == null) {
 				context.getCounter(ReportStats.RAW_BYTES_NULL).increment(1L);
@@ -108,7 +108,7 @@ public class RawDumpSize implements Tool {
 				outputValue.set(valueBytes.length);
 				context.write(outputKey, outputValue);
 			}
-			
+
 			valueBytes = result.getValue(PROCESSED_DATA_BYTES, JSON_BYTES);
 			if (valueBytes == null) {
 				context.getCounter(ReportStats.PROCESSED_BYTES_NULL).increment(1L);
@@ -118,21 +118,21 @@ public class RawDumpSize implements Tool {
 				context.write(outputKey, outputValue);
 			}
 		}
-		
+
 	}
-	
+
 	/**
 	 * @param args
 	 * @return
 	 * @throws IOException
-	 * @throws ParseException 
+	 * @throws ParseException
 	 */
 	public Job initJob(String[] args) throws IOException, ParseException {
 		Map<byte[], byte[]> columns = new HashMap<byte[], byte[]>();
 		columns.put(RAW_DATA_BYTES, DUMP_BYTES);
 		columns.put(PROCESSED_DATA_BYTES, JSON_BYTES);
 		Job job = CrashReportJob.initJob(NAME, getConf(), RawDumpSize.class, RawDumpSizeMapper.class, null, null, columns, Text.class, IntWritable.class, new Path(args[0]));
-		
+
 		return job;
 	}
 
@@ -149,7 +149,7 @@ public class RawDumpSize implements Tool {
 		GenericOptionsParser.printGenericCommandUsage(System.out);
 		return -1;
 	}
-	
+
 	/* (non-Javadoc)
 	 * @see org.apache.hadoop.util.Tool#run(java.lang.String[])
 	 */
@@ -157,7 +157,7 @@ public class RawDumpSize implements Tool {
 		if (args.length != 1) {
 			return printUsage();
 		}
-		
+
 		int rc = -1;
 		Job job = initJob(args);
 		job.waitForCompletion(true);
@@ -200,7 +200,7 @@ public class RawDumpSize implements Tool {
 					hdfs.close();
 				}
 			}
-			
+
 			System.out.println("===== " + job.getConfiguration().get(START_DATE) + " raw_data:dump =====");
 			System.out.println(String.format("Min: %.02f Max: %.02f Mean: %.02f", rawStats.getMin(), rawStats.getMax(), rawStats.getMean()));
 			System.out.println(String.format("1st Quartile: %.02f 2nd Quartile: %.02f 3rd Quartile: %.02f", rawStats.getPercentile(25.0d), rawStats.getPercentile(50.0d), rawStats.getPercentile(75.0d)));
@@ -210,7 +210,7 @@ public class RawDumpSize implements Tool {
 			System.out.println(String.format("1st Quartile: %.02f 2nd Quartile: %.02f 3rd Quartile: %.02f", processedStats.getPercentile(25.0d), processedStats.getPercentile(50.0d), processedStats.getPercentile(75.0d)));
 			System.out.println("Total Bytes: " + processedTotal);
 		}
-		
+
 		return rc;
 	}
 
@@ -227,7 +227,7 @@ public class RawDumpSize implements Tool {
 	public void setConf(Configuration conf) {
 		this.conf = conf;
 	}
-	
+
 	/**
 	 * @param args
 	 * @throws Exception

@@ -36,7 +36,7 @@
  *
  * ***** END LICENSE BLOCK ***** */
 /**
- * Responsible for knowlege about how Bugzilla information relates to 
+ * Responsible for knowlege about how Bugzilla information relates to
  * the Crash Reporting system.
  */
 class Bugzilla{
@@ -85,7 +85,7 @@ class Bugzilla{
      * Supplemental fields are filled in from a Bugzilla API call.
      * Sorts the bugs by resolution.
      * @param array rows - array populated in the form Bug_Model returns
-     * @return array - array with keys that are crash signatures and the value is a list of 
+     * @return array - array with keys that are crash signatures and the value is a list of
      *    bug infos
      */
     public function signature2bugzilla($rows, $bugzillaUrl)
@@ -98,30 +98,30 @@ class Bugzilla{
                           'summary' => "",
                           'open' => true,
                           'url' => "#"
-                      ); 
-        
+                      );
+
         $bug_hash = array(); // bug objects indexed by id
         foreach ($rows as $row) {
-            $bug_hash[$row['id']] = array_merge($defaultBug, $row); 
+            $bug_hash[$row['id']] = array_merge($defaultBug, $row);
         }
-        
-        $signature_to_bugzilla = array();        
+
+        $signature_to_bugzilla = array();
         foreach ($bug_hash as $row) {
             if ( ! array_key_exists($row['signature'], $signature_to_bugzilla)) {
 	        $signature_to_bugzilla[$row['signature']] = array();
-	    }  
-            
+	    }
+
             $row['open'] = (array_key_exists($row['status'], $this->open_statuses)) ? true : false;
 	    $row['url'] = $bugzillaUrl . $row['id'];
 	    $row['summary'] = $row['summary'];
-        
+
 	    array_push($signature_to_bugzilla[$row['signature']], $row);
 	}
-	
+
         foreach ($signature_to_bugzilla as $k => $v) {
-	    $this->sortByResolution($signature_to_bugzilla[$k]);	        
+	    $this->sortByResolution($signature_to_bugzilla[$k]);
 	}
-        
+
         return $signature_to_bugzilla;
     }
 }

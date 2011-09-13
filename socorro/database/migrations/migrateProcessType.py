@@ -64,7 +64,7 @@ def main():
             cursor.execute(migrate_process_type_sql % params)
             logger.info("%d rows updated" % cursor.rowcount)
             conn.commit()
-          except psycopg2.ProgrammingError, x:              
+          except psycopg2.ProgrammingError, x:
             logging.warn("Skipping %s as %s doesn't exist" % (reports[0], plugins_reports))
             conn.rollback()
         conn.close()
@@ -91,7 +91,7 @@ def setupConfig():
     print >>sys.stderr, x
     print >>sys.stderr, "for usage, try --help"
     sys.exit(1)
-    
+
 def testConfig(configContext):
   assert "databaseHost" in configContext, "databaseHost is missing from the configuration"
   assert "databaseName" in configContext, "databaseName is missing from the configuration"

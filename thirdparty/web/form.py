@@ -15,7 +15,7 @@ def attrget(obj, attr, value=None):
 class Form:
     r"""
     HTML form.
-    
+
         >>> f = Form(Textbox("x"))
         >>> f.render()
         '<table>\n    <tr><th><label for="x">x</label></th><td><input type="text" id="x" name="x"/></td></tr>\n</table>'
@@ -30,12 +30,12 @@ class Form:
         o = copy.deepcopy(self)
         if x: o.validates(x)
         return o
-    
+
     def render(self):
         out = ''
         out += self.rendernote(self.note)
         out += '<table>\n'
-        
+
         for i in self.inputs:
             html = i.pre + i.render() + self.rendernote(i.note) + i.post
             if i.is_hidden():
@@ -44,24 +44,24 @@ class Form:
                 out += '    <tr><th><label for="%s">%s</label></th><td>%s</td></tr>\n' % (i.id, net.websafe(i.description), html)
         out += "</table>"
         return out
-        
-    def render_css(self): 
-        out = [] 
-        out.append(self.rendernote(self.note)) 
+
+    def render_css(self):
+        out = []
+        out.append(self.rendernote(self.note))
         for i in self.inputs:
             if not i.is_hidden():
-                out.append('<label for="%s">%s</label>' % (i.id, net.websafe(i.description))) 
+                out.append('<label for="%s">%s</label>' % (i.id, net.websafe(i.description)))
             out.append(i.pre)
-            out.append(i.render()) 
+            out.append(i.render())
             out.append(self.rendernote(i.note))
-            out.append(i.post) 
+            out.append(i.post)
             out.append('\n')
-        return ''.join(out) 
-        
+        return ''.join(out)
+
     def rendernote(self, note):
         if note: return '<strong class="wrong">%s</strong>' % net.websafe(note)
         else: return ""
-    
+
     def validates(self, source=None, _validate=True, **kw):
         source = source or kw or web.input()
         out = True
@@ -86,7 +86,7 @@ class Form:
 
     def fill(self, source=None, **kw):
         return self.validates(source, _validate=False, **kw)
-    
+
     def __getitem__(self, i):
         for x in self.inputs:
             if x.name == i: return x
@@ -98,13 +98,13 @@ class Form:
         for x in inputs:
             if x.name == name: return x
         raise AttributeError, name
-    
+
     def get(self, i, default=None):
         try:
             return self[i]
         except KeyError:
             return default
-            
+
     def _get_d(self): #@@ should really be form.attr, no?
         return utils.storage([(i.name, i.get_value()) for i in self.inputs])
     d = property(_get_d)
@@ -114,25 +114,25 @@ class Input(object):
         self.name = name
         self.validators = validators
         self.attrs = attrs = AttributeList(attrs)
-        
+
         self.description = attrs.pop('description', name)
         self.value = attrs.pop('value', None)
         self.pre = attrs.pop('pre', "")
         self.post = attrs.pop('post', "")
         self.note = None
-        
+
         self.id = attrs.setdefault('id', self.get_default_id())
-        
+
         if 'class_' in attrs:
             attrs['class'] = attrs['class_']
             del attrs['class_']
-        
+
     def is_hidden(self):
         return False
-        
+
     def get_type(self):
         raise NotImplementedError
-        
+
     def get_default_id(self):
         return self.name
 
@@ -162,35 +162,35 @@ class Input(object):
     def rendernote(self, note):
         if note: return '<strong class="wrong">%s</strong>' % net.websafe(note)
         else: return ""
-        
+
     def addatts(self):
         # add leading space for backward-compatibility
         return " " + str(self.attrs)
 
 class AttributeList(dict):
     """List of atributes of input.
-    
+
     >>> a = AttributeList(type='text', name='x', value=20)
     >>> a
     <attrs: 'type="text" name="x" value="20"'>
     """
     def copy(self):
         return AttributeList(self)
-        
+
     def __str__(self):
         return " ".join(['%s="%s"' % (k, net.websafe(v)) for k, v in self.items()])
-        
+
     def __repr__(self):
         return '<attrs: %s>' % repr(str(self))
 
 class Textbox(Input):
     """Textbox input.
-    
+
         >>> Textbox(name='foo', value='bar').render()
         '<input type="text" id="foo" value="bar" name="foo"/>'
         >>> Textbox(name='foo', value=0).render()
         '<input type="text" id="foo" value="0" name="foo"/>'
-    """        
+    """
     def get_type(self):
         return 'text'
 
@@ -200,13 +200,13 @@ class Password(Input):
         >>> Password(name='password', value='secret').render()
         '<input type="password" id="password" value="secret" name="password"/>'
     """
-    
+
     def get_type(self):
         return 'password'
 
 class Textarea(Input):
     """Textarea input.
-    
+
         >>> Textarea(name='foo', value='bar').render()
         '<textarea id="foo" name="foo">bar</textarea>'
     """
@@ -218,7 +218,7 @@ class Textarea(Input):
 
 class Dropdown(Input):
     r"""Dropdown/select input.
-    
+
         >>> Dropdown(name='foo', args=['a', 'b', 'c'], value='b').render()
         '<select id="foo" name="foo">\n  <option value="a">a</option>\n  <option selected="selected" value="b">b</option>\n  <option value="c">c</option>\n</select>\n'
         >>> Dropdown(name='foo', args=[('a', 'aa'), ('b', 'bb'), ('c', 'cc')], value='b').render()
@@ -231,19 +231,19 @@ class Dropdown(Input):
     def render(self):
         attrs = self.attrs.copy()
         attrs['name'] = self.name
-        
+
         x = '<select %s>\n' % attrs
-        
+
         for arg in self.args:
             if isinstance(arg, (tuple, list)):
                 value, desc= arg
             else:
-                value, desc = arg, arg 
+                value, desc = arg, arg
 
             if self.value == value: select_p = ' selected="selected"'
             else: select_p = ''
             x += '  <option%s value="%s">%s</option>\n' % (select_p, net.websafe(value), net.websafe(desc))
-            
+
         x += '</select>\n'
         return x
 
@@ -258,7 +258,7 @@ class Radio(Input):
             if isinstance(arg, (tuple, list)):
                 value, desc= arg
             else:
-                value, desc = arg, arg 
+                value, desc = arg, arg
             attrs = self.attrs.copy()
             attrs['name'] = self.name
             attrs['type'] = 'radio'
@@ -285,7 +285,7 @@ class Checkbox(Input):
     def __init__(self, name, *validators, **attrs):
         self.checked = attrs.pop('checked', False)
         Input.__init__(self, name, *validators, **attrs)
-        
+
     def get_default_id(self):
         value = utils.safestr(self.value or "")
         return self.name + '_' + value.replace(' ', '_')
@@ -297,7 +297,7 @@ class Checkbox(Input):
         attrs['value'] = self.value
 
         if self.checked:
-            attrs['checked'] = 'checked'            
+            attrs['checked'] = 'checked'
         return '<input %s/>' % attrs
 
     def set_value(self, value):
@@ -308,7 +308,7 @@ class Checkbox(Input):
 
 class Button(Input):
     """HTML Button.
-    
+
     >>> Button("save").render()
     '<button id="save" name="save">save</button>'
     >>> Button("action", value="save", html="<b>Save Changes</b>").render()
@@ -328,29 +328,29 @@ class Button(Input):
 
 class Hidden(Input):
     """Hidden Input.
-    
+
         >>> Hidden(name='foo', value='bar').render()
         '<input type="hidden" id="foo" value="bar" name="foo"/>'
     """
     def is_hidden(self):
         return True
-        
+
     def get_type(self):
         return 'hidden'
 
 class File(Input):
     """File input.
-    
+
         >>> File(name='f').render()
         '<input type="file" id="f" name="f"/>'
     """
     def get_type(self):
         return 'file'
-    
+
 class Validator:
     def __deepcopy__(self, memo): return copy.copy(self)
     def __init__(self, msg, test, jstest=None): utils.autoassign(self, locals())
-    def valid(self, value): 
+    def valid(self, value):
         try: return self.test(value)
         except: return False
 
@@ -360,7 +360,7 @@ class regexp(Validator):
     def __init__(self, rexp, msg):
         self.rexp = re.compile(rexp)
         self.msg = msg
-    
+
     def valid(self, value):
         return bool(self.rexp.match(value))
 

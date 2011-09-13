@@ -1,7 +1,7 @@
 <?php
 /**
  * This controller is for debugging stage or production ONLY
- * ***NOTE*** should be empty most of the time. Don't leave any 
+ * ***NOTE*** should be empty most of the time. Don't leave any
  * wacky code in the tree, which could become an exploit.
  */
 class Debugging_Controller extends Controller {

@@ -35,7 +35,7 @@ do
   done
 done
 
-find /tmp -name ${DATE}\* -type f -size +500k | xargs gzip -9 
+find /tmp -name ${DATE}\* -type f -size +500k | xargs gzip -9
 ssh ${PUB_USER}@${PUB_SERVER} mkdir ${PUB_LOCATION}/${DATE}
 scp /tmp/${DATE}* ${PUB_USER}@${PUB_SERVER} mkdir ${PUB_LOCATION}/${DATE}
 rm -f /tmp/${DATE}*

@@ -2,9 +2,9 @@
 /**
  * Handles LDAP based Authentication. Based on the default Kohana Auth module
  * as well Ryan Snyder's AuthZilla Controller
- * 
+ *
  * To Disable Authentication, use the NoAuth driver in conf/auth.php
- * 
+ *
  * To use File or ORM for Authentication, remove this controller or copy files from
  * modules/auth/controller as well as modules/auth/view and customize them to your
  * application's needs.
@@ -29,7 +29,7 @@ class Auth_Controller extends Controller {
      public function login()
      {
          url::site('auth/login', Kohana::config('auth.proto'));
-         
+
          $this->sensitivePageHTTPSorRedirectAndDie('/auth/login');
 	 $this->_setReferrerButIgnore('auth/login');
 	 if (Auth::instance()->logged_in()) {
@@ -40,7 +40,7 @@ class Auth_Controller extends Controller {
 	     if (Auth::instance()->login('not_used','not_used')) {
 		 client::messageSend(Kohana::lang('auth.auth_login_success'), E_USER_NOTICE);
 		 url::redirect($this->_getReferrerOrUse('home/dashboard'));
-	     } 
+	     }
 	 }
      }
 
@@ -52,7 +52,7 @@ class Auth_Controller extends Controller {
       */
      private function _setReferrerButIgnore($cur_path)
      {
-	 if (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER']) && !strstr($_SERVER['HTTP_REFERER'], $cur_path)) {	
+	 if (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER']) && !strstr($_SERVER['HTTP_REFERER'], $cur_path)) {
 	     Session::instance()->set("requested_url", $_SERVER['HTTP_REFERER']);
 	 } else {
 	     Session::instance()->set("requested_url", url::site());
@@ -61,7 +61,7 @@ class Auth_Controller extends Controller {
 
     /**
      * Gets the user's last page for redirecting purposes.
-     * 
+     *
      * @param string $default path or url if no referrer is in the session
      * @return string a path or url suitable for url::redirect
      */

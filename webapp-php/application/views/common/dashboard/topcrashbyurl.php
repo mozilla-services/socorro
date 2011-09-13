@@ -18,7 +18,7 @@
 
 
 <?php
-    } //if ( count($widgetData[$j]['crashes']) > 0) { 
+    } //if ( count($widgetData[$j]['crashes']) > 0) {
 
     $product = $widgetData[$j]['name'];
 ?>

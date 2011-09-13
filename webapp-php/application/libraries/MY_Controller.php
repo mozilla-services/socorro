@@ -61,7 +61,7 @@ class Controller extends Controller_Core {
 
     // Set an array of current products
     protected $current_products;
-    
+
     // Set an array of featured versions for the chosen product.
     public $featured_versions;
 
@@ -107,12 +107,12 @@ class Controller extends Controller_Core {
         // Determine whether auth is enabled for this site, and if so whether the user is authenticated.
         $this->auth_is_active = Kohana::config('auth.driver', 'NoAuth') != "NoAuth";
         $this->_loggedIn();
-        
+
         // Grab an array of current products, ensure that 1 is chosen, and grab the featured versions for that product.
         $this->current_products = $this->prepareCurrentProducts();
         $this->ensureChosenVersion($this->current_products);
         $this->prepareVersions();
-        
+
         Event::add('system.post_controller_constructor', array($this, '_auth_prep'));
 
         // Display the template immediately after the controller method
@@ -142,7 +142,7 @@ class Controller extends Controller_Core {
      *
      * @return void
      */
-    private function _loggedIn() 
+    private function _loggedIn()
     {
         if (!$this->auth_is_active || Auth::instance()->logged_in()) {
             $this->logged_in = TRUE;
@@ -151,8 +151,8 @@ class Controller extends Controller_Core {
     }
 
     /**
-     * The built-in query string parsing in PHP imposes a naming convention for 
-     * variables that appear multiple times in a URL. (ie. var[]=1&var[]=2&var[]=3)  
+     * The built-in query string parsing in PHP imposes a naming convention for
+     * variables that appear multiple times in a URL. (ie. var[]=1&var[]=2&var[]=3)
      * This custom parser handles things more naturally.
      *
      * @param string A query string to parse, or if NULL, the request query string is used.
@@ -164,7 +164,7 @@ class Controller extends Controller_Core {
 
         $params = array();
         $pairs  = explode('&', $str);
-        
+
         foreach ($pairs as $i) {
             if (!$i) continue;
             $pair = explode('=', $i, 2);
@@ -277,9 +277,9 @@ class Controller extends Controller_Core {
         $this->setViewData('current_products', $this->current_products);
         $this->setViewData('current_product_versions', $this->branch_model->getCurrentProductVersions());
         $this->setViewData('featured_versions', $this->featured_versions);
-        $this->setViewData('num_other_products', 
+        $this->setViewData('num_other_products',
             count($this->branch_model->getProducts()) - count(Kohana::config('dashboard.feat_nav_products')));
-        $this->setViewData('unfeatured_versions', $this->unfeatured_versions);        
+        $this->setViewData('unfeatured_versions', $this->unfeatured_versions);
     }
 
     private $_current_products;
@@ -294,7 +294,7 @@ class Controller extends Controller_Core {
         // Resort the products array according to product order importance.
         $product_weights = Kohana::config('products.product_weights');
         asort($product_weights);
-        
+
         $products = array();
         foreach($product_weights as $product => $weight) {
             if (isset($this->_current_products[$product])) {
@@ -309,7 +309,7 @@ class Controller extends Controller_Core {
 
         return $products;
     }
-    
+
     /**
      * Prepare an array of products for the site navbar.
      *
@@ -338,7 +338,7 @@ class Controller extends Controller_Core {
         } else {
             return $current_products;
         }
-    }                           
+    }
 
     /**
      * Get one or all view variables.
@@ -360,7 +360,7 @@ class Controller extends Controller_Core {
     {
 	$this->setViewData('auth_is_active', $this->auth_is_active);
     }
-    
+
    /**
     * Ensure that if a user is authorized for sensitive information
     * that this page is being served over HTTPS. If not, then the
@@ -397,7 +397,7 @@ class Controller extends Controller_Core {
 
 	    $this->setNavigationData();
 
-            // If no view set by this point, default to controller/method 
+            // If no view set by this point, default to controller/method
             // naming convention.
             if (!$this->view) {
                 $this->setView(Router::$controller . '/' . Router::$method);
@@ -452,7 +452,7 @@ class Controller extends Controller_Core {
    /**
     * The app has a notion of a "Current release" that you are
     * interested in for global navigation. This is a specific
-    * product / version pair. All pages that detect a single 
+    * product / version pair. All pages that detect a single
     * product version should update this value.
     *
     * @param string product
@@ -517,7 +517,7 @@ class Controller extends Controller_Core {
                         array(
                             'product' => $defaultProduct,
                             'version' => null
-                        ), 
+                        ),
                         $set_cookie
                     );
                 } else {
@@ -526,7 +526,7 @@ class Controller extends Controller_Core {
                             array(
                                 'product' => $product,
                                 'version' => ''
-                            ), 
+                            ),
                             $set_cookie
                         );
                         break;
@@ -537,13 +537,13 @@ class Controller extends Controller_Core {
                     array(
                         'product' => $chosen_version['p'],
                         'version' => $chosen_version['v']
-                    ), 
+                    ),
                     FALSE
                 );
             }
         }
     }
-    
+
     /**
      * Validate the chosen version if it is found in the soc-cv cookie.
      *
@@ -574,7 +574,7 @@ class Controller extends Controller_Core {
 
     /**
      * Prepare the featured and unfeatured versions for the navigation and the controllers.
-     * 
+     *
 	 * @param bool      True if you want to delete the previously cached queries; used by admin panel.
      * @return void
      */
@@ -585,10 +585,10 @@ class Controller extends Controller_Core {
         $this->unfeatured_versions = $this->_prepareVersionsSort(
             $this->branch_model->getUnfeaturedVersions($this->chosen_version['product'], $this->featured_versions, $delete_cache));
     }
-    
+
     /**
      * Sort the featured and unfeatured versions.
-     * 
+     *
      * @param  array    An array of product/version objects
      * @return array    A sorted array of product/version objects
      */

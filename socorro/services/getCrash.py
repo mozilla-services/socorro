@@ -42,7 +42,7 @@ class GetCrash(webapi.JsonServiceBase):
     self.crashStorage = self.crashStoragePool.crashStorage()
     function_name = datatype_function_associations[parameters.datatype]
     function = self.__getattribute__(function_name)
-    return function(parameters.uuid)    
+    return function(parameters.uuid)
 
   def fetchProcessed(self, uuid):
     try:

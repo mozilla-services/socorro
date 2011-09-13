@@ -2,21 +2,21 @@
 CREATE OR REPLACE FUNCTION update_final_betas (
     updateday date )
 RETURNS BOOLEAN
-LANGUAGE plpgsql 
+LANGUAGE plpgsql
 SET work_mem = '512MB'
 SET temp_buffers = '512MB'
 AS $f$
 BEGIN
 -- this function adds "final" beta releases to the list of
 -- products from the reports table
--- since the first time we see them would be in the 
+-- since the first time we see them would be in the
 -- reports table
 
 -- create a temporary table including all builds found
 
-create temporary table orphan_betas 
+create temporary table orphan_betas
 on commit drop as
-select build_numeric(build) as build_id, 
+select build_numeric(build) as build_id,
   version, product, os_name,
   count(*) as report_count
 from reports
@@ -70,9 +70,9 @@ WHERE orphan_betas.product = product_versions.product_name
 -- purge unused versions
 
 DELETE FROM orphan_betas
-WHERE product NOT IN (SELECT product_name 
+WHERE product NOT IN (SELECT product_name
     FROM products
-    WHERE major_version_sort(orphan_betas.version) 
+    WHERE major_version_sort(orphan_betas.version)
       >= major_version_sort(products.rapid_release_version) );
 
 -- if no bfinal exists in product_versions, then create one
@@ -87,7 +87,7 @@ INSERT INTO product_versions (
     build_date,
     sunset_date,
     build_type)
-SELECT product, 
+SELECT product,
   major_version(version),
   version,
   version || '(beta)',
@@ -104,7 +104,7 @@ FROM orphan_betas
     AND product_versions.beta_number = 999
 WHERE product_versions.product_name IS NULL
 GROUP BY product, version;
-  
+
 -- add the buildids to product_version_builds
 INSERT INTO product_version_builds (product_version_id, build_id, platform)
 SELECT product_version_id, orphan_betas.build_id, os_name
@@ -136,7 +136,7 @@ WHILE tcdate < enddate LOOP
     RAISE INFO 'orphan betas updated for %',tcdate;
     DROP TABLE orphan_betas;
     tcdate := tcdate + 5;
-    
+
 END LOOP;
 END; $f$;
 

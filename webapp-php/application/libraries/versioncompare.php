@@ -16,7 +16,7 @@
 //
 // Contributor(s):
 //        Benjamin Smedberg
-//        Mike Morgan 
+//        Mike Morgan
 //        Justin Scott
 //        Mike Shaver
 //
@@ -53,7 +53,7 @@ define('COMPAT_OTHER', 'other');
 
 class VersioncompareComponent /* extends Object */ {
     /**
-     * Parse a version part. 
+     * Parse a version part.
      * @return array $r parsed version part.
      */
     function parseVersionPart($p) {
@@ -123,19 +123,19 @@ class VersioncompareComponent /* extends Object */ {
     function compareVersionParts($ap, $bp) {
         $avp = $this->parseVersionPart($ap);
         $bvp = $this->parseVersionPart($bp);
-    
+
         $r = $this->cmp($avp['numA'], $bvp['numA']);
         if ($r)
             return $r;
-    
+
         $r = $this->strcmp($avp['strB'], $bvp['strB']);
         if ($r)
             return $r;
-    
+
         $r = $this->cmp($avp['numC'], $bvp['numC']);
         if ($r)
             return $r;
-    
+
         return $this->strcmp($avp['extraD'], $bvp['extraD']);
     }
 
@@ -148,16 +148,16 @@ class VersioncompareComponent /* extends Object */ {
     function compareVersions($a, $b) {
         $al = explode('.', $a);
         $bl = explode('.', $b);
-    
+
         while (count($al) || count($bl)) {
             $ap = array_shift($al);
             $bp = array_shift($bl);
-    
+
             $r = $this->compareVersionParts($ap, $bp);
             if ($r != 0)
                 return $r;
         }
-    
+
         return 0;
     }
 
@@ -171,11 +171,11 @@ class VersioncompareComponent /* extends Object */ {
         if ($this->compareVersions($test, $lower) == -1) {
             return false;
         }
-        
+
         if ($this->compareVersions($test, $upper) == 1) {
             return false;
         }
-        
+
         return true;
     }
 
@@ -199,7 +199,7 @@ class VersioncompareComponent /* extends Object */ {
     function _compareCakeResultVersions($a,$b) {
         return $this->CompareVersions($a['Appversion']['version'], $b['Appversion']['version']);
     }
-    
+
     /**
      * Grades an array of appversions relative to their compatibility with a
      * major version.
@@ -210,10 +210,10 @@ class VersioncompareComponent /* extends Object */ {
     function getCompatibilityGrades($compatibility_version, $versions) {
         $this->sortAppversionArray($versions);
         $versions = array_reverse($versions, true);
-        
+
         $appversions = array();
         $highestFound = false;
-        
+
         foreach ($versions as $version) {
             // If highest version hasn't been found but this is pre, count it anyway
             if (!$highestFound && strpos($version, 'pre') !== false) {
@@ -239,13 +239,13 @@ class VersioncompareComponent /* extends Object */ {
                 $appversions[$version] = COMPAT_BETA;
                 continue;
             }
-            
+
             $appversions[$version] = COMPAT_OTHER;
         }
-        
+
         return $appversions;
     }
-    
+
     /**
      * Grades an appversion relative to a major version.
      * @param string $version the version to grade

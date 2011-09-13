@@ -117,7 +117,7 @@ INSERT INTO mtbfconfig (productdims_id, start_dt, end_dt)
 
 CREATE TABLE topcrashurlfacts(
     id SERIAL NOT NULL PRIMARY KEY,
-    
+
     count INTEGER NOT NULL,
     rank INTEGER,
 
@@ -135,7 +135,7 @@ CREATE INDEX topcrashurlfacts_signaturedims_key ON topcrashurlfacts USING btree 
 
 CREATE TABLE topcrashurlfactsreports(
   id SERIAL NOT NULL PRIMARY KEY,
-  uuid CHARACTER VARYING(50) NOT NULL,  
+  uuid CHARACTER VARYING(50) NOT NULL,
   comments CHARACTER VARYING(500),
   topcrashurlfacts_id INTEGER REFERENCES topcrashurlfacts (id) ON DELETE CASCADE
 );
@@ -148,11 +148,11 @@ CREATE TABLE tcbyurlconfig(
   enabled BOOLEAN
 );
 
-INSERT INTO tcbyurlconfig (productdims_id, enabled) 
+INSERT INTO tcbyurlconfig (productdims_id, enabled)
   SELECT id, 'Y' FROM productdims WHERE product = 'Firefox' AND version = '3.0.5' AND os_name = 'ALL';
-INSERT INTO tcbyurlconfig (productdims_id, enabled) 
+INSERT INTO tcbyurlconfig (productdims_id, enabled)
   SELECT id, 'Y' FROM productdims WHERE product = 'Firefox' AND version = '3.1b2' AND os_name = 'ALL';
-INSERT INTO tcbyurlconfig (productdims_id, enabled) 
+INSERT INTO tcbyurlconfig (productdims_id, enabled)
   SELECT id, 'Y' FROM productdims WHERE product = 'Firefox' AND version = '3.0.6pre' AND os_name = 'ALL';
-INSERT INTO tcbyurlconfig (productdims_id, enabled) 
+INSERT INTO tcbyurlconfig (productdims_id, enabled)
   SELECT id, 'Y' FROM productdims WHERE product = 'Firefox' AND version = '3.1b3pre' AND os_name = 'ALL';

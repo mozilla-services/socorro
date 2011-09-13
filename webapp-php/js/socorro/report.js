@@ -1,4 +1,4 @@
-/*jslint browser:true, regexp:false */ 
+/*jslint browser:true, regexp:false */
 /*global window, $, socSortCorrelation, SocReport */
 $(document).ready(function () {
     $('#report-index > ul').tabs({ selected: 0 });

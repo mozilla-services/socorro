@@ -70,4 +70,4 @@ def dateFromOoid(ooid):
   """
   return dateAndDepthFromOoid(ooid)[0]
 
-  
+

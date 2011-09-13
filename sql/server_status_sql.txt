@@ -1,6 +1,6 @@
 CREATE INDEX idx_jobs_completed_queue_datetime ON jobs USING btree (completeddatetime, queueddatetime);
 
-CREATE TABLE server_status ( 
+CREATE TABLE server_status (
         id serial NOT NULL,
         date_recently_completed timestamp without time zone,
         date_oldest_job_queued timestamp without time zone,

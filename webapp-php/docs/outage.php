@@ -1,4 +1,4 @@
-<?php 
+<?php
 $outage_message = "We are migrating our backend storage from NFS to Hbase. This impacts this application, so it will be unavailable from 10am to 2pm PDT. Thanks for your patience.";
 ?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
@@ -18,7 +18,7 @@ $outage_message = "We are migrating our backend storage from NFS to Hbase. This 
 	<script type="text/javascript" src="http://status.mozilla.com/includes/yui/2.5.1/container/container_core-min.js"></script>
 	<script type="text/javascript" src="http://status.mozilla.com/includes/yui/2.5.1/menu/menu-min.js"></script>
 	<script type="text/javascript" src="http://status.mozilla.com/js/mozilla-menu.js"></script>
-    
+
     <link rel="stylesheet" type="text/css" href="http://status.mozilla.com/style/tignish/outages-page.css" media="screen" />
 
 </head>
@@ -47,7 +47,7 @@ if (gPlatform == 1) {
 // ]]></script>
 
 <div id="breadcrumbs">
-    
+
 </div>
 
 <noscript><div id="no-js-feature"></div></noscript>
@@ -64,7 +64,7 @@ if (gPlatform == 1) {
 	<div id="header">
 		<div>
 		<h1><a href="http://www.mozilla.com/en-US/" title="Back to home page"><img src="http://status.mozilla.com/img/tignish/template/mozilla-logo.png" height="56" width="145" alt="Mozilla" /></a></h1>
-		
+
 <!-- start #nav-main -->
 <div id="nav-main" class="yuimenubar yuimenubarnav">
   <div class="bd">
@@ -137,7 +137,7 @@ if (gPlatform == 1) {
 </div>
 
 
-		
+
 
 <div id="footer-divider"><hr /></div>
 
@@ -150,7 +150,7 @@ if (gPlatform == 1) {
 
 		<form id="lang_form" dir="ltr" method="get" action="outages.html"><div>
 			<label for="flang">Other languages:</label>
-			
+
 <select id="flang" name="flang" dir="ltr" onchange="this.form.submit()">    <option value="ca" >Catal&#224;</option>
     <option value="cs" >&#268;e&#353;tina</option>
     <option value="da" >Dansk</option>
@@ -263,7 +263,7 @@ if (gPlatform == 1) {
 		<div id="copyright">
 
 			<p><strong>Copyright &#169; 2005&#8211;2008 Mozilla.</strong> All rights reserved.</p>
-			<p id="footer-links"><a href="http://www.mozilla.com/en-US/privacy-policy.html">Privacy Policy</a> &nbsp;|&nbsp; 
+			<p id="footer-links"><a href="http://www.mozilla.com/en-US/privacy-policy.html">Privacy Policy</a> &nbsp;|&nbsp;
 			<a href="http://www.mozilla.com/en-US/about/legal.html">Legal Notices</a></p>
 		</div>
 

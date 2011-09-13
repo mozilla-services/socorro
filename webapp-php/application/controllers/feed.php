@@ -7,7 +7,7 @@ require_once(Kohana::find_file('libraries', 'moz_feed', TRUE, 'php'));
 class Feed_Controller extends Controller {
 
   /**
-   * 
+   *
    * Bug#492017 - provide RSS feed of latest crashes
    */
     public function crashes_by_product($product, $version, $platform='ALL')
@@ -27,16 +27,16 @@ class Feed_Controller extends Controller {
 
 	$this->auto_render = FALSE;
 
-	$feed = moz_feed(url::base(), 
+	$feed = moz_feed(url::base(),
 			 url::current(TRUE),
-			 "Mozilla $product $version $platform Recent Crashes", 
+			 "Mozilla $product $version $platform Recent Crashes",
 			 $reports);
-	header( 'Content-Type: ' . $feed['contentType'] . '; charset=utf-8' ); 
+	header( 'Content-Type: ' . $feed['contentType'] . '; charset=utf-8' );
 	echo $feed['xml'];
     }
 
   /**
-   * 
+   *
    * Bug#492017 - provide RSS feed of latest crashes
    */
     public function crashes_by_platform($platform='ALL')
@@ -55,11 +55,11 @@ class Feed_Controller extends Controller {
 
 	$this->auto_render = FALSE;
 
-	$feed = moz_feed(url::site(), 
+	$feed = moz_feed(url::site(),
 			 url::current(TRUE),
-			 "Mozilla $platform Recent Crashes", 
+			 "Mozilla $platform Recent Crashes",
 			 $reports);
-	header( 'Content-Type: ' . $feed['contentType'] . '; charset=utf-8' ); 
+	header( 'Content-Type: ' . $feed['contentType'] . '; charset=utf-8' );
 	echo $feed['xml'];
     }
 }

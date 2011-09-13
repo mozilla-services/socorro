@@ -27,40 +27,40 @@ import socorro.lib.util
 
 
 def update(configContext, logger):
-  serverStatsSql = """INSERT INTO server_status 
-  (date_recently_completed, date_oldest_job_queued, avg_process_sec, 
-   avg_wait_sec, waiting_job_count, processors_count, date_created) 
- SELECT 
+  serverStatsSql = """INSERT INTO server_status
+  (date_recently_completed, date_oldest_job_queued, avg_process_sec,
+   avg_wait_sec, waiting_job_count, processors_count, date_created)
+ SELECT
 
-  (SELECT MAX(jobs.completeddatetime) 
-   FROM jobs WHERE jobs.completeddatetime IS NOT NULL) AS date_recently_completed, 
+  (SELECT MAX(jobs.completeddatetime)
+   FROM jobs WHERE jobs.completeddatetime IS NOT NULL) AS date_recently_completed,
 
-  (SELECT jobs.queueddatetime 
-   FROM jobs WHERE jobs.completeddatetime IS NULL 
-   ORDER BY jobs.queueddatetime LIMIT 1) AS date_oldest_job_queued, 
+  (SELECT jobs.queueddatetime
+   FROM jobs WHERE jobs.completeddatetime IS NULL
+   ORDER BY jobs.queueddatetime LIMIT 1) AS date_oldest_job_queued,
 
-  (SELECT COALESCE ( 
-     EXTRACT (EPOCH FROM avg(jobs.completeddatetime - jobs.starteddatetime)), 
-     0) FROM jobs  
-   WHERE jobs.completeddatetime > %s) AS avg_process_sec , 
+  (SELECT COALESCE (
+     EXTRACT (EPOCH FROM avg(jobs.completeddatetime - jobs.starteddatetime)),
+     0) FROM jobs
+   WHERE jobs.completeddatetime > %s) AS avg_process_sec ,
 
-  (SELECT COALESCE (  
-     EXTRACT (EPOCH FROM avg(jobs.completeddatetime - jobs.queueddatetime)), 
-     0) FROM jobs  
-   WHERE jobs.completeddatetime > %s) AS avg_wait_sec, 
+  (SELECT COALESCE (
+     EXTRACT (EPOCH FROM avg(jobs.completeddatetime - jobs.queueddatetime)),
+     0) FROM jobs
+   WHERE jobs.completeddatetime > %s) AS avg_wait_sec,
 
-  (SELECT COUNT(jobs.id) 
-   FROM jobs WHERE jobs.completeddatetime IS NULL) AS waiting_job_count, 
+  (SELECT COUNT(jobs.id)
+   FROM jobs WHERE jobs.completeddatetime IS NULL) AS waiting_job_count,
 
-  (SELECT count(processors.id) 
-   FROM processors ) AS processors_count, 
+  (SELECT count(processors.id)
+   FROM processors ) AS processors_count,
 
   CURRENT_TIMESTAMP AS date_created;"""
 
 
   serverStatsLastUpdSql = """ /* serverstatus.lastUpd */
-SELECT id, date_recently_completed, date_oldest_job_queued, avg_process_sec, 
-        avg_wait_sec, waiting_job_count, processors_count, date_created 
+SELECT id, date_recently_completed, date_oldest_job_queued, avg_process_sec,
+        avg_wait_sec, waiting_job_count, processors_count, date_created
 FROM server_status ORDER BY date_created DESC LIMIT 1;
 """
 
@@ -71,7 +71,7 @@ FROM server_status ORDER BY date_created DESC LIMIT 1;
   except:
     socorro.lib.util.reportExceptionAndAbort(logger)
 
-  startTime = datetime.datetime.now() 
+  startTime = datetime.datetime.now()
   startTime -= configContext.processingInterval
   timeInserting = 0
   if configContext.debug:

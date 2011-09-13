@@ -5,14 +5,14 @@
  * $Id: media.php 3242 2008-07-31 16:06:07Z Geert $
  *
  * The media controller is a way of serving up various content (CSS, javascript, images, etc).
- * 
+ *
  * The idea is that you have a subdirectory in your application/views directory called "media",
  * which contains all the files needed. For example: http://yoursite.com/media/css/style1.css
  * gets mapped to views/media/css/style1.css.
- * 
+ *
  * Additionally, CSS and javascript files can be packed (compressed) and cached.
  */
- 
+
 /**
  * Separator character for multiple files.
  */

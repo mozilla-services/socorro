@@ -14,7 +14,7 @@ class Priorityjobs_Model extends Model {
         // Check for an existing UUID, and only insert if none found.
         $rv = $this->db->query('/* soc.web priojobs.seladd */ SELECT uuid FROM priorityjobs WHERE uuid=?', $uuid);
         if (!$rv->count()) {
-            $rv = $this->db->query('/* soc.web priojobs.add */ INSERT INTO priorityjobs ( uuid ) VALUES (?)', $uuid); 
+            $rv = $this->db->query('/* soc.web priojobs.add */ INSERT INTO priorityjobs ( uuid ) VALUES (?)', $uuid);
         }
         return true;
     }

@@ -20,7 +20,7 @@ class Me: # Class 'Me' is just a way to say 'global' once per method
 me = None
 # Note: without setup_module and teardown_module we get weird double, treble and more multiple (logging of) calls
 # to testDB.removeDB() and testDB.createDB using nosetests as the driver. I have no idea, but this is a pragmatic
-# work around: do setup and teardown at the (spelled) module level. 
+# work around: do setup and teardown at the (spelled) module level.
 
 def setup_module():
   global me
@@ -47,7 +47,7 @@ def setup_module():
     if errno.EEXIST != x.errno: raise
     f = open(me.config.logFilePathname,'w')
     f.close()
-      
+
   fileLog = logging.FileHandler(me.logFilePathname, 'a')
   fileLog.setLevel(logging.DEBUG)
   fileLogFormatter = logging.Formatter('%(asctime)s %(levelname)s - %(message)s')
@@ -75,12 +75,12 @@ class TestCachedIdAccess:
     global me
     sql = 'DELETE from %s'
     cursor = self.connection.cursor()
-    cia.maxOsIdCacheLength = me.saveMaxOsIdCacheLength 
+    cia.maxOsIdCacheLength = me.saveMaxOsIdCacheLength
     cia.maxProductIdCacheLength = me.saveMaxProductIdCacheLength
     cia.maxUriIdCacheLength = me.saveMaxUriIdCacheLength
     cia.clearCache()
     me.testDB.removeDB(me.config,me.logger)
-    
+
   def testCreateProductRelease(self):
     """
     TestCachedIdAccess:testCreateProductRelease(self):
@@ -356,7 +356,7 @@ class TestCachedIdAccess:
         count = cursor.fetchone()
         assert rowCount == count[0]
       assert testIdCount == idCount
-      
+
     finally:
       # teardown
       cursor.execute(dropSql)
@@ -415,7 +415,7 @@ class TestCachedIdAccess:
     cursor.connection.rollback()
     for i in cursor.fetchall():
       assert 12 >= len(i[0]), 'Expected maxiumum length of 12, got %s: %s'%(len(i[0]),i[0])
-      
+
   def testGetUrlId_Cached(self):
     countSql = 'select count(id) from urldims'
     cursor = self.connection.cursor()
@@ -468,7 +468,7 @@ class TestCachedIdAccess:
     cursor.connection.rollback()
     for i in cursor.fetchall():
       assert 13 >= len(i[0]), 'Expected maxiumum length of 12, got %s: %s'%(len(i[0]),i[0])
-      
+
   def testGetProductId(self):
     countSql = 'select count(id) from productdims'
     cursor = self.connection.cursor()
@@ -570,4 +570,4 @@ class TestCachedIdAccess:
     for testCase in testList:
       got = idc.getAppropriateOsVersion(*testCase[0])
       assert testCase[1] == got,'From "%s": Expected "%s", got "%s"'%(testCase[0][1],testCase[1],got)
-    
+

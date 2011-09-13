@@ -18,7 +18,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  *   Xavier Stevens <xstevens@mozilla.com>, Mozilla Corporation (original author)
  *
  * Alternatively, the contents of this file may be used under the terms of
@@ -62,7 +62,7 @@ public class RawDumpSizeScan {
 	private static final String TABLE_NAME_CRASH_REPORTS = "crash_reports";
 	private static final byte[] RAW_DATA_BYTES = "raw_data".getBytes();
 	private static final byte[] DUMP_BYTES = "dump".getBytes();
-	
+
 	/**
 	 * Generates an array of scans for different salted ranges for the given dates
 	 * @param startDate
@@ -71,52 +71,52 @@ public class RawDumpSizeScan {
 	 */
 	public static Scan[] generateScans(Calendar startCal, Calendar endCal) {
 		SimpleDateFormat rowsdf = new SimpleDateFormat("yyMMdd");
-		
-		ArrayList<Scan> scans = new ArrayList<Scan>();		
+
+		ArrayList<Scan> scans = new ArrayList<Scan>();
 		String[] salts = new String[] { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e", "f" };
-		
+
 		long endTime = DateUtil.getEndTimeAtResolution(endCal.getTimeInMillis(), Calendar.DATE);
-		
+
 		while (startCal.getTimeInMillis() < endTime) {
 			int d = Integer.parseInt(rowsdf.format(startCal.getTime()));
-			
+
 			for (int i=0; i < salts.length; i++) {
 				Scan s = new Scan();
 				s.setCaching(4);
 				// disable block caching
 				s.setCacheBlocks(false);
 				s.addColumn(RAW_DATA_BYTES, DUMP_BYTES);
-				
+
 				s.setStartRow(Bytes.toBytes(salts[i] + String.format("%06d", d)));
 				s.setStopRow(Bytes.toBytes(salts[i] + String.format("%06d", d + 1)));
 				System.out.println("Adding start-stop range: " + salts[i] + String.format("%06d", d) + " - " + salts[i] + String.format("%06d", d + 1));
-				
+
 				scans.add(s);
 			}
-			
+
 			startCal.add(Calendar.DATE, 1);
 		}
-		
+
 		return scans.toArray(new Scan[scans.size()]);
 	}
-	
+
 	public static void main(String[] args) throws ParseException {
 		String startDateStr = args[0];
 		String endDateStr = args[1];
-		
+
 		// Set both start/end time and start/stop row
 		Calendar startCal = Calendar.getInstance();
 		Calendar endCal = Calendar.getInstance();
-		
+
 		SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
 
 		if (!StringUtils.isBlank(startDateStr)) {
-			startCal.setTime(sdf.parse(startDateStr));	
+			startCal.setTime(sdf.parse(startDateStr));
 		}
 		if (!StringUtils.isBlank(endDateStr)) {
 			endCal.setTime(sdf.parse(endDateStr));
 		}
-		
+
 		DescriptiveStatistics stats = new DescriptiveStatistics();
 		long numNullRawBytes = 0L;
 		HTable table = null;
@@ -140,7 +140,7 @@ public class RawDumpSizeScan {
 					} else {
 						numNullRawBytes++;
 					}
-					
+
 					if (stats.getN() % 10000 == 0) {
 						System.out.println("Processed " + stats.getN());
 						System.out.println(String.format("Min: %.02f Max: %.02f Mean: %.02f", stats.getMin(), stats.getMax(), stats.getMean()));
@@ -150,11 +150,11 @@ public class RawDumpSizeScan {
 				}
 				rs.close();
 			}
-			
+
 			System.out.println("Finished Processing!");
 			System.out.println(String.format("Min: %.02f Max: %.02f Mean: %.02f", stats.getMin(), stats.getMax(), stats.getMean()));
 			System.out.println(String.format("1st Quartile: %.02f 2nd Quartile: %.02f 3rd Quartile: %.02f", stats.getPercentile(25.0d), stats.getPercentile(50.0d), stats.getPercentile(75.0d)));
-			
+
 			for (Map.Entry<String, Integer> entry : rowValueSizeMap.entrySet()) {
 				System.out.println(String.format("RowId: %s => Length: %d", entry.getKey(), entry.getValue()));
 			}
@@ -172,5 +172,5 @@ public class RawDumpSizeScan {
 			}
 		}
 	}
-	
+
 }

@@ -28,18 +28,18 @@ insert into product_versions (
     build_date,
     sunset_date,
     build_type)
-select products.product_name, 
+select products.product_name,
 	major_version(version),
 	version,
 	version_string(version, releases_raw.beta_number),
 	releases_raw.beta_number,
 	version_sort(version, releases_raw.beta_number),
 	build_date(min(build_id)),
-	sunset_date(min(build_id), releases_raw.build_type ), 
+	sunset_date(min(build_id), releases_raw.build_type ),
 	releases_raw.build_type::citext
 from releases_raw
 	join products ON releases_raw.product_name = products.release_name
-	left outer join product_versions ON 
+	left outer join product_versions ON
 		( releases_raw.product_name = products.release_name
 		    AND products.product_name = product_versions.product_name
 			AND releases_raw.version = product_versions.release_version
@@ -61,18 +61,18 @@ insert into product_versions (
     build_date,
     sunset_date,
     build_type)
-select products.product_name, 
+select products.product_name,
     major_version(version),
     version,
     version || '(beta)',
     999,
     version_sort(version, 999),
     build_date(min(build_id)),
-    sunset_date(min(build_id), 'beta' ), 
+    sunset_date(min(build_id), 'beta' ),
     'beta'
 from releases_raw
     join products ON releases_raw.product_name = products.release_name
-    left outer join product_versions ON 
+    left outer join product_versions ON
         ( releases_raw.product_name = products.release_name
         	AND products.product_name = product_versions.product_name
             AND releases_raw.version = product_versions.release_version

@@ -18,7 +18,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  *   Xavier Stevens <xstevens@mozilla.com>, Mozilla Corporation (original author)
  *
  * Alternatively, the contents of this file may be used under the terms of
@@ -45,9 +45,9 @@ import com.mozilla.socorro.CorrelationReport;
 public interface CrashCountDao {
 
 	public void incrementCounts(String date, String product, String version, String os, String signature, String arch, Map<String,String> moduleVersions, Map<String,String> addonVersions) throws IOException;
-	
+
 	public CorrelationReport getReport(String date, String product, String version, String os, String signature) throws IOException;
-	
+
 	public CorrelationReport getTopCrashers(String date, String product, String version, String os) throws IOException;
-	
+
 }

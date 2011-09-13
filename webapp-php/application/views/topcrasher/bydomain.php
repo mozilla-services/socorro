@@ -16,7 +16,7 @@
         <li><a href="<?php echo url::base(); ?>topcrasher/byurl/<?php echo $product ?>/<?php echo $version ?>">By URL</a></li>
         <li><a href="<?php echo url::base(); ?>topcrasher/bydomain/<?php echo $product ?>/<?php echo $version ?>" class="selected">By Domain</a></li>
         <li><a href="<?php echo url::base(); ?>topcrasher/bytopsite/<?php echo $product ?>/<?php echo $version ?>">By Topsite</a></li>
-    </ul> 
+    </ul>
 </div>
 
 
@@ -38,7 +38,7 @@
   <tbody>
     <?php $row = 0 ?>
     <?php foreach($top_crashers as $crash){ ?>
-      
+
       <tr class="<?php echo ( ($row) % 2) == 0 ? 'even' : 'odd' ?>">
             <td>
             <?php if (!strstr($crash->domain, '_BLOCKED')) { ?>
@@ -51,8 +51,8 @@
         	<td class="domain-crash-count"><?php out::H($crash->count)?></td>
         	<td><?php if (isset($crash->rank)) out::H($crash->rank); ?></td>
       </tr>
-      <tr id="tcburl-domainToggle-row<?php echo $row; ?>" style="display: none"><td colspan="2"><?php 
-					    echo html::image( array('src' => 'img/loading.png', 'width' => '16', 'height' => '17', 
+      <tr id="tcburl-domainToggle-row<?php echo $row; ?>" style="display: none"><td colspan="2"><?php
+					    echo html::image( array('src' => 'img/loading.png', 'width' => '16', 'height' => '17',
 								    'alt' => 'More Content Loading')); ?></td></tr>
     <?php $row += 1;
           } ?>

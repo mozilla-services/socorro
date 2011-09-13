@@ -16,14 +16,14 @@
         <li><a href="<?php echo url::base(); ?>topcrasher/byurl/<?php echo $product ?>/<?php echo $version ?>" class="selected">By URL</a></li>
         <li><a href="<?php echo url::base(); ?>topcrasher/bydomain/<?php echo $product ?>/<?php echo $version ?>">By Domain</a></li>
         <li><a href="<?php echo url::base(); ?>topcrasher/bytopsite/<?php echo $product ?>/<?php echo $version ?>">By Topsite</a></li>
-    </ul> 
+    </ul>
 </div>
 
 
 <div class="panel">
     <div class="body notitle">
         <p>Below are the top crash signatures by URL from <?php echo $beginning ?> to <?php echo $ending_on ?></p>
-        
+
         <table id="tc_by_url" class="tablesorter">
         	<thead>
         		<tr>
@@ -35,11 +35,11 @@
           <tbody>
             <?php $row = 0 ?>
             <?php foreach($top_crashers as $crash){ ?>
-              
+
               <tr class="<?php echo ( ($row) % 2) == 0 ? 'even' : 'odd' ?>">
                 <td>
                 <?php if (!strstr($crash->url, '_detected_BLOCKED')) { ?>
-                    <div id="url-to-sig<?php echo $row; ?>" class="tcburl-toggler tcburl-urlToggler">+</div> <a id="tcburl-url<?php echo $row ?>" class="tcburl-urlToggler" href="#"><span class="label tcburl-urlToggler">Expand</span> <span class="url tcburl-urlToggler"><?php out::H($crash->url) ?></span></a> 
+                    <div id="url-to-sig<?php echo $row; ?>" class="tcburl-toggler tcburl-urlToggler">+</div> <a id="tcburl-url<?php echo $row ?>" class="tcburl-urlToggler" href="#"><span class="label tcburl-urlToggler">Expand</span> <span class="url tcburl-urlToggler"><?php out::H($crash->url) ?></span></a>
                     <a  href="<?php out::H($crash->url) ?>">Open This URL</a>
                 <?php } else { ?>
                     <?php out::h($crash->url); ?>
@@ -48,8 +48,8 @@
                 <td class="url-crash-count"><?php out::H($crash->count)?></td>
                 <td><?php if(isset($crash->rank)) out::H($crash->rank); ?></td>
               </tr>
-              <tr id="tcburl-urlToggle-row<?php echo $row; ?>" style="display: none"><td colspan="2"><?php 
-        					    echo html::image( array('src' => 'img/loading.png', 'width' => '16', 'height' => '17', 
+              <tr id="tcburl-urlToggle-row<?php echo $row; ?>" style="display: none"><td colspan="2"><?php
+        					    echo html::image( array('src' => 'img/loading.png', 'width' => '16', 'height' => '17',
         								    'alt' => 'More Content Loading')); ?></td></tr>
             <?php $row += 1;
                   } ?>
@@ -57,4 +57,4 @@
         </table>
     </div>
 </div>
-    
+

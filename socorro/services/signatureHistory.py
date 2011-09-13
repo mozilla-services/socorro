@@ -23,19 +23,19 @@ class SignatureHistory(webapi.JsonServiceBase):
          'duration/(.*)/steps/(.*)')
 
   def get(self, *args):
-    convertedArgs = webapi.typeConversion([str, str, u2.unquote, 
-                                           dtutil.datetimeFromISOdateString, 
+    convertedArgs = webapi.typeConversion([str, str, u2.unquote,
+                                           dtutil.datetimeFromISOdateString,
                                            dtutil.strHoursToTimeDelta, int],
                                           args)
     parameters = util.DotDict(zip(['product', 'version', 'signature',
-                                   'endDate', 'duration', 'steps'], 
+                                   'endDate', 'duration', 'steps'],
                                  convertedArgs))
     parameters['productVersionCache'] = self.context['productVersionCache']
     logger.debug("SignatureHistory get %s", parameters)
     self.connection = self.database.connection()
     #logger.debug('connection: %s', self.connection)
     try:
-      table_type = whichTCBS(self.connection.cursor(), {}, 
+      table_type = whichTCBS(self.connection.cursor(), {},
                              parameters['product'], parameters['version'])
       impl = {
         "old": classic.SignatureHistoryClassic(self.configContext),

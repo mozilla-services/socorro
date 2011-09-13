@@ -18,7 +18,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  *   Xavier Stevens <xstevens@mozilla.com>, Mozilla Corporation (original author)
  *
  * Alternatively, the contents of this file may be used under the terms of
@@ -47,16 +47,16 @@ import java.util.Map;
 import com.mozilla.util.MapValueComparator;
 
 public class Signature {
-	
+
 	private String raw = null;
 	private String name = null;
 	private String reason = null;
-	
+
 	private int count = 0;
 	private Map<String, Integer> coreCounts = new HashMap<String, Integer>();
 	private Map<String, Module> moduleCounts = new HashMap<String, Module>();
 	private Map<String, Module> addonCounts = new HashMap<String, Module>();
-	
+
 	public Signature(String raw) {
 		this.raw = raw;
 		int lastIdx = raw.lastIndexOf("|");
@@ -72,37 +72,37 @@ public class Signature {
 			reason = "";
 		}
 	}
-	
+
 	public String getRaw() {
 		return raw;
 	}
-	
+
 	public String getName() {
 		return name;
 	}
-	
+
 	public String getReason() {
 		return reason;
 	}
-	
+
 	public int getCount() {
 		return count;
 	}
-	
+
 	public void setCount(int count) {
 		this.count = count;
 	}
-	
+
 	public Map<String, Integer> getCoreCounts() {
 		return coreCounts;
 	}
-	
+
 	public List<Map.Entry<String, Integer>> getSortedCoreCounts() {
 		List<Map.Entry<String, Integer>> coreCountPairs = new ArrayList<Map.Entry<String,Integer>>(coreCounts.entrySet());
 		Collections.sort(coreCountPairs, Collections.reverseOrder(new MapValueComparator()));
 		return coreCountPairs;
 	}
-	
+
 	public void incrementCoreCount(String arch, int count) {
 		int existingCount = 0;
 		if (coreCounts.containsKey(arch)) {
@@ -110,21 +110,21 @@ public class Signature {
 		}
 		coreCounts.put(arch, existingCount + count);
 	}
-	
+
 	public void setCoreCounts(Map<String, Integer> coreCounts) {
 		this.coreCounts = coreCounts;
 	}
-	
+
 	public Map<String, Module> getModuleCounts() {
 		return moduleCounts;
 	}
-	
+
 	public List<Module> getSortedModuleCounts() {
 		List<Module> modules = new ArrayList<Module>(moduleCounts.values());
 		Collections.sort(modules, Collections.reverseOrder(new Module.ModuleComparator()));
 		return modules;
 	}
-	
+
 	public void incrementModuleCount(String moduleName, String moduleVersion, int count) {
 		Module module = null;
 		if (moduleCounts.containsKey(moduleName)) {
@@ -136,21 +136,21 @@ public class Signature {
 		module.incrementVersionCount(moduleVersion, count);
 		moduleCounts.put(moduleName, module);
 	}
-	
+
 	public void setModuleCounts(Map<String, Module> moduleCounts) {
 		this.moduleCounts = moduleCounts;
 	}
-	
+
 	public Map<String, Module> getAddonCounts() {
 		return addonCounts;
 	}
-	
+
 	public List<Module> getSortedAddonCounts() {
 		List<Module> addons = new ArrayList<Module>(addonCounts.values());
 		Collections.sort(addons, Collections.reverseOrder(new Module.ModuleComparator()));
 		return addons;
 	}
-	
+
 	public void incrementAddonCount(String addonName, String addonVersion, int count) {
 		Module module = null;
 		if (addonCounts.containsKey(addonName)) {
@@ -162,15 +162,15 @@ public class Signature {
 		module.incrementVersionCount(addonVersion, count);
 		addonCounts.put(addonName, module);
 	}
-	
+
 	public void setAddonCounts(Map<String, Module> addonCounts) {
 		this.addonCounts = addonCounts;
 	}
-	
+
 	public static class SignatureCountComparator implements Comparator<Signature> {
 		public int compare(Signature o1, Signature o2) {
 			return o1.getCount() < o2.getCount() ? -1 : o1.getCount() > o2.getCount() ? 1 : 0;
 		}
 	}
-	
+
 }

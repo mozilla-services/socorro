@@ -60,7 +60,7 @@ class CrashReportDump {
      */
     public function populate($report, $json) {
         $data = json_decode($json);
-        
+
         foreach ($data as $key => $val) {
             if ($key=='addons_checked') {
                 // This value doesn't get propagated to the processed json, but it was already
@@ -69,20 +69,20 @@ class CrashReportDump {
                     $report->addons_checked = true;
                 } else {
                     $report->addons_checked = false;
-                }  
+                }
                 continue;
             }
             $report->{$key} = $val;
         }
-        $this->_parseDump($report); 
-        
+        $this->_parseDump($report);
+
         //Bulletproofing against bad JSON files
         $basicKeys = array(
-            'signature', 'product', 'version', 'uuid', 
-            'date_processed', 'uptime', 'build', 'os_name', 
-            'os_version', 'cpu_name', 'cpu_info', 'reason', 
+            'signature', 'product', 'version', 'uuid',
+            'date_processed', 'uptime', 'build', 'os_name',
+            'os_version', 'cpu_name', 'cpu_info', 'reason',
             'address', 'user_comments', 'dump', 'processor_notes',
-            'install_time', 'ReleaseChannel', 
+            'install_time', 'ReleaseChannel',
         );
 
         foreach ($basicKeys as $key) {
@@ -94,9 +94,9 @@ class CrashReportDump {
         if (is_array($report->processor_notes)) {
             $report->processor_notes = "\n".join($report->processor_notes);
         }
-        
+
         if (isset($report->client_crash_date) && isset($report->install_age) && empty($report->install_time)) {
-            $report->install_time = strtotime($report->client_crash_date) - $report->install_age; 
+            $report->install_time = strtotime($report->client_crash_date) - $report->install_age;
         }
     }
 
@@ -117,7 +117,7 @@ class CrashReportDump {
             'method' => 'GET',
             'ignore_errors' => true
             )
-        ); 
+        );
 
         $context = stream_context_create($cparams);
         $fp = fopen($uri, 'rb', false, $context);
@@ -135,7 +135,7 @@ class CrashReportDump {
                 break;
             }
         }
-        
+
         //check for 200, 408, and return false on anything else.
         if(strpos($status, '200') !== false) {
             return $output;
@@ -144,23 +144,23 @@ class CrashReportDump {
         } else {
             return false;
         }
-    } 
+    }
 
     /**
      * Parses the 'dump' property which is a string
      * into the module, and frame stacks, etc.
      *
-     * @param stdClass report object with a property 'dump' which is a 
+     * @param stdClass report object with a property 'dump' which is a
      *        Text blob from the report dump.
      */
     public function _parseDump($report) {
-        
+
         $dump_lines = explode("\n", $report->dump);
         $report->modules = array();
         $report->threads = array();
 
         foreach ($dump_lines as $line) {
-            
+
             if ($line == '') continue;
             $values = explode('|', $line);
 
@@ -192,13 +192,13 @@ class CrashReportDump {
                     break;
 
                 default:
-                    list($thread_num, $frame_num, $module_name, $function, 
+                    list($thread_num, $frame_num, $module_name, $function,
                         $source, $source_line, $instruction) = $values;
 
                     if (!isset($report->threads[$thread_num])) {
                         $report->threads[$thread_num] = array();
                     }
-                    
+
                     $signature = $this->_makeSignature(
                         $module_name, $function, $source, $source_line, $instruction
                     );
@@ -224,9 +224,9 @@ class CrashReportDump {
                             list($server, $repo) = explode('/', $root, 2);
 
                             $frame['source_filename'] = $source_file;
-                            
-                            // Attempt to build a VCS web link from app config 
-                            // settings and a ghetto simulation of Python 
+
+                            // Attempt to build a VCS web link from app config
+                            // settings and a ghetto simulation of Python
                             // string templates.
                             $vcs_mappings = Kohana::config('codebases.vcsMappings');
                             if (isset($vcs_mappings[$type][$server])) {
@@ -276,10 +276,10 @@ class CrashReportDump {
             //filename = filename_re.search(source)
             //if filename is not None:
             //  source = filename.group(1)
-            
+
             return "$source#$source_line";
         }
-    
+
         if ($module_name) {
             return "$module_name@$instruction";
         }

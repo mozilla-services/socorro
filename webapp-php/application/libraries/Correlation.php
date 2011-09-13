@@ -44,9 +44,9 @@ require_once Kohana::find_file('libraries', 'ErrorHandler', true, 'php');
  * by platform, and cache the results by signature.
  *
  * This data is used via AJAX requests from /report/index/{UUID}
- * 
- * For our major release, there is *a lot* of correlatin data. To 
- * keep things speedy and not overwhelm the caching service, we 
+ *
+ * For our major release, there is *a lot* of correlatin data. To
+ * keep things speedy and not overwhelm the caching service, we
  * only load correlation.max_file_size worth of data from
  * each section of a text file.
  *
@@ -96,10 +96,10 @@ class Correlation
      *
      * @return array The Correlation report organized by signature and platforms
      *
-     * Example: {'nsAppShell::ProcessNextNativeEvent(int)' => 
+     * Example: {'nsAppShell::ProcessNextNativeEvent(int)' =>
      *                    {'Mac OS X' => ['99% (6026/6058) vs.   6% (6245/102490) overlapp32.dll',
      *                                    '66% (4010/6058) vs.  20% (20236/102490) MSCTFIME.IME'] }}
-     * 
+     *
      */
     function _get($uri, $open_fn, $close_fn)
     {
@@ -127,7 +127,7 @@ class Correlation
             if ($platform_line) {
                 $this->parsePlatform($line);
             } else {
-                $this->parseText($line);                   
+                $this->parseText($line);
             }
         }
         if ($file !== false) {
@@ -139,7 +139,7 @@ class Correlation
         foreach ($this->sig2modules as $sig => $oses) {
             $results[$sig] = array();
             foreach ($oses as $os => $reasons) {
-                
+
                 $results[$sig][$os] = array();
                 $crashiest = null;
                 foreach ($reasons as $reason => $details) {
@@ -150,7 +150,7 @@ class Correlation
                         if ($crashiest['count'] < $reason['count']) {
                             $crashiest = $details;
                         }
-                    }               
+                    }
                 }
                 // replace the list of reasons with the single most popular crash reason
                 // Example: EXCEPTION_ACCESS_VIOLATION (2724 crashes)
@@ -170,7 +170,7 @@ class Correlation
      * only read 2MB or whatever passed this line.
      *
      * @param string $line A String such as 'Mac OS X'
-     * 
+     *
      * @return void
      */
     public function parsePlatform($line)
@@ -182,7 +182,7 @@ class Correlation
     /**
      * Handle a line of text from the correlation report
      *
-     * @param string $line A String that is either blank, 
+     * @param string $line A String that is either blank,
      *                     a signature line, or the body of a report
      *
      * @return void
@@ -217,12 +217,12 @@ class Correlation
      * Handle a line of text which contains a Signature, Crash Reason, and other data.
      * Updates parser state.
      *
-     * @param string $line A Line from the report which contains 
+     * @param string $line A Line from the report which contains
      *                     a crash signature.
      *
      * @return void
      */
-    public function parseSignatureLine($line) 
+    public function parseSignatureLine($line)
     {
         list($this->current_signature, $this->current_reason) = $this->parseSignature($line);
     }
@@ -230,7 +230,7 @@ class Correlation
     /**
      * Parses the Crashing Signature of a "signature line" of a report
      * Updates parser state. It will skip to the last signature present.
-     * 
+     *
      * @param string $line A signature line from a report
      *
      * @return - array with 2 elements: The Signature and The Crash Reason
@@ -264,11 +264,11 @@ class Correlation
     /**
      * Helper method to make an array that contains the
      * reason the crash happened and the total count of crashes
-     * 
+     *
      * @param string  $crash_reason A reason Example:
      *                              EXCEPTION_ACCESS_VIOLATION
      * @param integer $count        The total count
-     * 
+     *
      * @return array with keys for 'reason' and 'count'
      */
     private function _makeReason($crash_reason, $count)
@@ -282,7 +282,7 @@ class Correlation
      * and updates the parsers state.
      *
      * @param string $line A line from the body of a report
-     * 
+     *
      * @return void
      */
     public function parseCorrelation($line)

@@ -1,10 +1,10 @@
 ## Ubuntu
 # general
-apt-get install supervisor rsyslog 
-# development 
+apt-get install supervisor rsyslog
+# development
 apt-get install libcurl4-openssl-dev build-essential sun-java6-jdk ant python-software-properties subversion libpq-dev python-virtualenv python-dev libcrypt-ssleay-perl phpunit php5-tidy
 # python apps
-apt-get install python-psycopg2 python-simplejson apache2 libapache2-mod-wsgi 
+apt-get install python-psycopg2 python-simplejson apache2 libapache2-mod-wsgi
 # PHP web app
 apt-get install memcached php5-pgsql php5-curl php5-dev php-pear php5-common php5-cli php5-memcache php5 php5-gd php5-mysql php5-ldap
 # hbase
@@ -93,7 +93,7 @@ cp scripts/config/setupdatabaseconfig.py.dist scripts/config/setupdatabaseconfig
 export PYTHONPATH=.:thirdparty
 export PGPASSWORD="aPassword"
 psql -h localhost -U postgres -f scripts/schema/2.2/breakpad_roles.sql
-psql -h localhost -U postgres breakpad -f scripts/schema/2.2/breakpad_schema.sql 
+psql -h localhost -U postgres breakpad -f scripts/schema/2.2/breakpad_schema.sql
 cp scripts/config/createpartitionsconfig.py.dist scripts/config/createpartitionsconfig.py
 python scripts/createPartitions.py
 
@@ -125,7 +125,7 @@ chkconfig socorro-crashmover on
 
 # set up cron jobs
 ln -s /data/socorro/application/scripts/crons/socorrorc /etc/socorro/
-crontab /data/socorro/application/scripts/crons/example.crontab 
+crontab /data/socorro/application/scripts/crons/example.crontab
 
 # Configure Apache
 edit /etc/httpd/conf.d/socorro.conf
@@ -157,7 +157,7 @@ htpasswd -c /data/socorro/application/.htpasswd breakpad_rw
 edit /data/socorro/htdocs/application/config/*.php
 
 ## Hadoop+HBase install
-# install Sun Java JDK 
+# install Sun Java JDK
 # JDK 6u16
 # download appropriate package from http://www.oracle.com/technetwork/java/javase/downloads/index.html
 bash jdk-6u23-linux-x64-rpm.bin
