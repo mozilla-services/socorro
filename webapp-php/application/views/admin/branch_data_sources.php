@@ -8,7 +8,7 @@
 
 <div class="admin">
 	<p>Manage thy branch data sources here.  Information about maintaining this data can be found in the <a href="https://wiki.mozilla.org/Socorro/SocorroUI/Branches_Admin">Socorro</a> wiki.</p>
-	
+
 	<h3>Missing Entries</h3>
 	<?php if (isset($missing_entries) && !empty($missing_entries)) { ?>
 		<p>The following are entries that appear in the reports but are not present in the `branches` table.</p>
@@ -28,7 +28,7 @@
 			    	<td class="text"><?php echo html::specialchars($missing_entry->version); ?></td>
 				    <td class="text"><?php if (isset($missing_entry->total)) echo html::specialchars($missing_entry->total); ?></td>
 				    <td class="action"><a href="#form_add_version" onclick="branchAddProductVersionFill(
-					    '<?php echo trim(html::specialchars($missing_entry->product)); ?>', 
+					    '<?php echo trim(html::specialchars($missing_entry->product)); ?>',
 					    '<?php echo trim(html::specialchars($missing_entry->version)); ?>'
 				    );">add</a></td>
 			     </tr>
@@ -38,7 +38,7 @@
 	<?php } else { ?>
 		<p>All entries in the reports are accounted for in the `branches` table.</p>
 	<?php } ?>
-	
+
 	<h3>Incomplete Entries</h3>
 	<?php if (isset($missing_entries) && !empty($missing_entries)) { ?>
 		<p>The following entries appear in the productdims table but do not have corresponding entries in the product_visibility table.</p>
@@ -59,7 +59,7 @@
 				    <td class="text"><?php echo html::specialchars($missing_entry->version); ?></td>
 				    <td class="text"><?php if (isset($missing_entry->total)) echo html::specialchars($missing_entry->total); ?></td>
 				    <td class="action"><a href="#form_add_version" onclick="branchAddProductVersionFill(
-					    '<?php echo trim(html::specialchars($missing_entry->product)); ?>', 
+					    '<?php echo trim(html::specialchars($missing_entry->product)); ?>',
 					    '<?php echo trim(html::specialchars($missing_entry->version)); ?>'
 				    );">add</a></td>
 				    <td class="action"><a href="#delete_product_version" onclick="branchDeleteProductVersionFill(
@@ -75,7 +75,7 @@
     <?php } ?>
 
 	<h3>Products</h3>
-		
+
 	<div id="update_product_version" name="update_product_version" class="add_item" style="display: none;">
 		<p>Fill out this form to update an existing product version.</p>
 		<form action="" id="form_update_version" name="form_update_version" method="post">
@@ -104,15 +104,15 @@
 			<p id="update_submit_progress" style="display:none;"><img src="<?php echo url::site(); ?>img/loading.png" /> <em>please wait...</em></p>
 		</form>
 	</div>
-	
-	
+
+
 	<div id="delete_product_version" name="delete_product_version" class="add_item" style="display: none;">
 		<p>Do you really want to delete this product version?</p>
 		<form action="" id="form_delete_version" name="form_delete_version" method="post">
 			<input type="hidden" name="action_delete_version" value="1">
 
 			<span class="push_right">
-			Product: 
+			Product:
 				<input type="hidden" id="delete_product" name="delete_product" value="" />
 				<span id="delete_product_display" name="delete_product_display"></span>
 			</span>
@@ -127,7 +127,7 @@
 			<p id="delete_submit_progress" style="display:none;"><img src="<?php echo url::site(); ?>img/loading.png" /> <em>please wait...</em></p>
 		</form>
 	</div>
-	
+
 	<?php if (isset($products) && !empty($products)) { ?>
 		<?php foreach ($products as $product) { ?>
 			<h4><?php echo html::specialchars($product); ?></h4>
@@ -151,22 +151,22 @@
 							<td class="text"><?php echo html::specialchars(html::specialchars($version->product)); ?></td>
 							<td class="text"><?php echo html::specialchars(html::specialchars($version->version)); ?></td>
 							<td class="text"><?php echo html::specialchars(html::specialchars($version->release)); ?></td>
-							<td class="date"><?php 
+							<td class="date"><?php
 								if (isset($version->start_date)) {
 									echo html::specialchars(str_replace('00:00:00', '', $version->start_date));
 								}
 							?></td>
-							<td class="date"><?php 
+							<td class="date"><?php
 								if (isset($version->end_date)) {
-									echo html::specialchars(str_replace('00:00:00', '', $version->end_date)); 
-								}	
+									echo html::specialchars(str_replace('00:00:00', '', $version->end_date));
+								}
 							?></td>
-							<td class="featured"><?php 
+							<td class="featured"><?php
 							    if (isset($version->featured) && $version->featured == 't') {
 							        echo '&#10004;';
 							    }
 							?></td>
-							<td class="throttle"><?php 
+							<td class="throttle"><?php
 							    if (isset($version->throttle) && $version->throttle > 0) {
 							        out::H($version->throttle);
 							    } else {
@@ -181,7 +181,7 @@
 								'<?php if (isset($version->end_date)) echo html::specialchars(str_replace('00:00:00', '', $version->end_date)); else echo ''; ?>',
 								'<?php if (isset($version->featured) && $version->featured == 't') echo 't'; else echo 'f'; ?>',
     							'<?php if (isset($version->throttle) && $version->throttle > 0) out::H($version->throttle); else echo $throttle_default; ?>'
-							);">update</a></td>						
+							);">update</a></td>
 						</tr>
 					<?php } ?>
 				<?php } ?>
@@ -214,17 +214,17 @@
 							<td class="text"><?php echo html::specialchars(html::specialchars($version->product)); ?></td>
 							<td class="text"><?php echo html::specialchars(html::specialchars($version->version)); ?></td>
 							<td class="text"><?php echo html::specialchars(html::specialchars($version->release)); ?></td>
-							<td class="date"><?php 
+							<td class="date"><?php
 								if (isset($version->start_date)) {
 									echo html::specialchars(str_replace('00:00:00', '', $version->start_date));
 								}
 							?></td>
-							<td class="date"><?php 
+							<td class="date"><?php
 								if (isset($version->end_date)) {
-									echo html::specialchars(str_replace('00:00:00', '', $version->end_date)); 
-								}	
+									echo html::specialchars(str_replace('00:00:00', '', $version->end_date));
+								}
 							?></td>
-							<td class="throttle"><?php 
+							<td class="throttle"><?php
 							    if (isset($version->throttle) && $version->throttle > 0) {
 							        out::H($version->throttle);
 							    } else {
@@ -239,7 +239,7 @@
 								'<?php if (isset($version->end_date)) echo html::specialchars(str_replace('00:00:00', '', $version->end_date)); else echo ''; ?>',
 								'<?php if (isset($version->featured) && $version->featured == 't') echo 't'; else echo 'f'; ?>',
     							'<?php if (isset($version->throttle) && $version->throttle > 0) out::H($version->throttle); else echo $throttle_default; ?>'
-							);">update</a></td>					
+							);">update</a></td>
 						</tr>
 					    <?php } ?>
 				    <?php } ?>

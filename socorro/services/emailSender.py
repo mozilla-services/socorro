@@ -49,7 +49,7 @@ class EmailSender(webapi.JsonServiceBase):
   def get(self, *args):
     """ return list of campaigns and their status (started/stopped) """
     # TODO implement
-    
+
 
   #-----------------------------------------------------------------------------------------------------------------
   #  curl -v -F campaign_id=1 -F status=start http://localhost:8085/201009/email
@@ -83,15 +83,15 @@ class EmailSender(webapi.JsonServiceBase):
               break
 
             logger.info("Retrieved campaign info for campaign ID %s" % campaign_id)
-    
+
             contacted_emails = self.send_all_emails(contacts, subject, body, smtp)
             logger.info("Sent %d emails to users" % len(contacted_emails))
-    
+
             cursor = connection.cursor()
             self.update_campaign(cursor, campaign_id, contacted_emails)
             logger.info("Updated campaign ID %s" % campaign_id)
             connection.commit()
-    
+
           smtp.quit()
           return {"emails": {"campaign_id": campaign_id, "actual_count": len(contacted_emails)}}
         elif status == 'stop':
@@ -194,7 +194,7 @@ class EmailSender(webapi.JsonServiceBase):
 
     logger.info('status: %s, subject: %s, body: %s' % (status, subject, body))
 
-    cursor.execute(""" 
+    cursor.execute("""
       SELECT email_contacts_id FROM email_campaigns_contacts
         WHERE email_campaigns_id = %(campaign_id)s
         FOR UPDATE
@@ -207,7 +207,7 @@ class EmailSender(webapi.JsonServiceBase):
       UPDATE email_campaigns_contacts
         SET status = %(mailer_id)s
         WHERE email_campaigns_id = %(campaign_id)s
-        AND status = 'ready' 
+        AND status = 'ready'
         RETURNING email_contacts_id""",  params)
 
     email_contacts_ids = cursor.fetchall()

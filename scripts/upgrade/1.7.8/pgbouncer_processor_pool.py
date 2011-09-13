@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# warning!  this script does not work as written unless 
+# warning!  this script does not work as written unless
 # root can log in as the postgres user into the database
 # which is different from our production setup
 # since the changes have already been deployed
@@ -38,7 +38,7 @@ cur.execute("""
 cur.execute("""
         SELECT passwd FROM pg_shadow WHERE usename = 'processor'
     """)
-    
+
 md5pw = str(cur.fetchone()[0])
 
 #write it to the new auth file

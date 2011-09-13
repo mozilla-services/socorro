@@ -162,7 +162,7 @@ class DynamicConfig(socorro_config.Config):
           self.internal.nextUpdate = now + self.internal.updateDelta
     except AttributeError: # We are probably looking something up during __init__
       pass
-          
+
   def doUpdate(self):
     self.internal.updateFunction(self)
     self.internal.reEvaluateFunction(self)

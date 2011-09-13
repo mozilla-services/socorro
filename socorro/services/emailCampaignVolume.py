@@ -57,7 +57,7 @@ class EmailCampaignVolume(webapi.JsonServiceBase):
     parameters['version_clause'] = ''
     if len(parameters['versions']) > 0:
       parameters['version_clause'] = " version IN %(versions)s AND "
-    
+
     sql = """
         SELECT count(distinct email) as total FROM reports
         WHERE TIMESTAMP WITHOUT TIME ZONE '%(start_date)s' <= reports.date_processed AND

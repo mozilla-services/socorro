@@ -60,14 +60,14 @@ class Auth_User_Model extends ORM {
 		// Validate the user, then make sure the password matches.
 		if ($array->validate()) {
 			$this->find($array['username']);
-			
+
 			// User must have verified their email address and must have a status == 1 in order to login.
-			if ($this->status == 1 && $this->verified == 1) {			
+			if ($this->status == 1 && $this->verified == 1) {
 				$remember = (isset($array['remember']) && !empty($remember)) ? true : false;
 				if ($this->loaded AND Auth::instance()->login($this, $array['password'], $remember)) {
 					if (is_string($redirect)) {
 						url::redirect($redirect);
-					} 
+					}
 					$status = TRUE;
 				} else {
 					$array->add_error('username', 'invalid');
@@ -90,7 +90,7 @@ class Auth_User_Model extends ORM {
 		$array = Validation::factory($array)
 			->pre_filter('trim')
 			->add_rules('email', 'required', 'length[4,127]', 'valid::email', array($this, 'email_available'))
-			->add_rules('email_confirm', 'matches[email]')			
+			->add_rules('email_confirm', 'matches[email]')
 		;
 
 		if ($status = $array->validate()) {
@@ -105,7 +105,7 @@ class Auth_User_Model extends ORM {
 	 * Send the change email email to the user.
 	 *
 	 * @param  string 	The user's new email address
-	 * @param  token	The validation token  
+	 * @param  token	The validation token
 	 * @return boolean
 	 */
 	public function change_email_email($email, $token)
@@ -123,7 +123,7 @@ class Auth_User_Model extends ORM {
 
 		mail ($to, $subject, $message, 'From: ' . $from, '-f' . $from_email);
 	}
-	
+
 	/**
 	 * Validates an array for a matching password and password_confirm field.
 	 *
@@ -144,7 +144,7 @@ class Auth_User_Model extends ORM {
 			// Change the user's password
 			$this->password = $array['password'];
 			$this->save();
-			
+
 			// Now force the user to logout and log back in, just in case.
 			Auth::instance()->logout();
 			Auth::instance()->force_login($this->username);
@@ -152,17 +152,17 @@ class Auth_User_Model extends ORM {
 
 		return $status;
 	}
-	
+
 	/**
 	 * Validate an email address for the forgot password form.  Create a record in the
 	 * verifications table.  Send out an email with the token and link to reset
-	 * the password. 
+	 * the password.
 	 *
 	 * @param  string    User's email address
 	 * @return boolean
 	 */
 	public function forgot_password($email)
-	{	
+	{
 		if ($this->find(array('email' => $email))) {
 			if ($this->email == $email) {
 				$token = Verification_Model::instance()->verification_create($this->id, 'forgot');
@@ -172,12 +172,12 @@ class Auth_User_Model extends ORM {
 		}
 		return false;
 	}
-	
+
 	/**
 	 * Send the forgot password email to the user.
 	 *
 	 * @param  string   User's email address
-	 * @param  token	The validation token  
+	 * @param  token	The validation token
 	 * @return boolean
 	 */
 	public function forgot_password_email($email, $token)
@@ -197,7 +197,7 @@ class Auth_User_Model extends ORM {
 	}
 
 	/**
-	 * User has been validated.  Completed the registration process by adding the new user 
+	 * User has been validated.  Completed the registration process by adding the new user
 	 * into the users table, and mail the user an email verification token.
 	 *
 	 * @param  string    User's email address
@@ -210,10 +210,10 @@ class Auth_User_Model extends ORM {
 
 		$token = Verification_Model::instance()->verification_create($this->id, 'registration');
 		$this->register_email($token);
-		
+
 		return true;
 	}
-	
+
 	/**
 	 * Send out the email verification link at the end of the registration process.
 	 *
@@ -233,11 +233,11 @@ class Auth_User_Model extends ORM {
 		$message->username = $this->username;
 		$message = $message->render();
 
-		mail ($to, $subject, $message, 'From: ' . $from, '-f' . $from_email);	
+		mail ($to, $subject, $message, 'From: ' . $from, '-f' . $from_email);
 	}
-	
+
 	/**
-	 * Send out the welcome email once the registration process is complete and the 
+	 * Send out the welcome email once the registration process is complete and the
 	 * user has verified their email address.
 	 *
 	 * @return boolean
@@ -257,7 +257,7 @@ class Auth_User_Model extends ORM {
 
 		mail ($to, $subject, $message, 'From: ' . $from, '-f' . $from_email);
 	}
-	
+
 	/**
 	 * Validates an array for a matching password and password_confirm field.  If passes,
 	 * save as the user's new password.
@@ -277,7 +277,7 @@ class Auth_User_Model extends ORM {
 			// Change the password
 			$this->password = $array['password'];
 			$this->save();
-			
+
 			// Now auto-login this user.
 			Auth::instance()->force_login($this->username);
 		}
@@ -291,7 +291,7 @@ class Auth_User_Model extends ORM {
 	 *
 	 * @param   mixed    id to check
 	 * @return  boolean
-	 * 
+	 *
 	 */
 	public function username_exists($id)
 	{
@@ -302,7 +302,7 @@ class Auth_User_Model extends ORM {
 	 * Does the reverse of unique_key_exists() by returning TRUE if user id is available
 	 * Validation rule.
 	 *
-	 * @param    mixed    id to check 
+	 * @param    mixed    id to check
 	 * @return   boolean
 	 */
 	public function username_available($username)
@@ -314,7 +314,7 @@ class Auth_User_Model extends ORM {
 	 * Does the reverse of unique_key_exists() by returning TRUE if email is available
 	 * Validation Rule
 	 *
-	 * @param string $email 
+	 * @param string $email
 	 * @return void
 	 */
 	public function email_available($email)

@@ -5,7 +5,7 @@ gnames() {
   testName=test$(echo $testBase|sed "s/^./$uc/")
   echo "$testName%$configName"
 }
- 
+
 glog() {
   names=$(gnames)
   config=$(echo $names|cut -d '%' -f 2)
@@ -53,7 +53,7 @@ noseErrors_help() {
   cat <<EOF
 Usage: noseErrors [--verbose] outputFile
   Shows output lines that aren't 'ok'.
-  if --verbose: Also shows test filenames and some formatting 
+  if --verbose: Also shows test filenames and some formatting
 EOF
 }
 
@@ -73,11 +73,11 @@ noseErrors() {
   -v|--v*)
     verbose='t'
     shift ;;
-  -*) 
+  -*)
     echo "Don't understand flag $1. Quitting"
     noseErrors_help
     return ;;
-  *) 
+  *)
     if [ -f $1 ] ; then
       logfile="$logfile $1"
     else

@@ -27,7 +27,7 @@ def testGetSlot():
     got = createJDS.getSlot(size,minutes)
     assert expected == got, 'expected %s from getSlot(%s,%s), got %s'%(expected,minute,size,got)
   assert_raises(ZeroDivisionError, createJDS.getSlot, 0, 12)
-  
+
 def testMinimalJsonFileContents():
   testMap = {'first':'a%d'}
   gen = createJDS.minimalJsonFileContents(testMap)

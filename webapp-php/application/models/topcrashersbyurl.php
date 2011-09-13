@@ -8,7 +8,7 @@
 class TopcrashersByUrl_Model extends Model {
 
 	/**
-	 * Given a database result containing 
+	 * Given a database result containing
 	 * urls and/or domains, modifies the results
 	 * by applying privacy policies such as
 	 * replacing file urls with a hardcoded
@@ -31,7 +31,7 @@ class TopcrashersByUrl_Model extends Model {
 
 	/**
 	 * Given a url, will return the url or
-	 * a version of it with privacy policies 
+	 * a version of it with privacy policies
 	 * applied.
 	 *
 	 * @param url - an url
@@ -45,17 +45,17 @@ class TopcrashersByUrl_Model extends Model {
             return 'username_detected_BLOCKED';
         } else if (
             preg_match('/^https?:\/\/.*$/', $url) ||
-            preg_match('/^http?:\/\/.*$/', $url) 
-        ) {     
+            preg_match('/^http?:\/\/.*$/', $url)
+        ) {
             return $url;
         } else {
-            return 'non_http_url_detected_BLOCKED';            
+            return 'non_http_url_detected_BLOCKED';
         }
 	}
 
 	/**
 	 * Given a domain, will return the domain or
-	 * a version of it with privacy policies 
+	 * a version of it with privacy policies
 	 * applied.
 	 *
 	 * @param domain - an domain
@@ -94,12 +94,12 @@ class TopcrashersByUrl_Model extends Model {
 
     	$sql = "/* soc.web tcbyrul geturls */
             SELECT SUM(tcu.count) as count,	ud.url, at.rank
-            FROM top_crashes_by_url tcu 
-			JOIN urldims ud 
+            FROM top_crashes_by_url tcu
+			JOIN urldims ud
 			 	ON tcu.urldims_id = ud.id
                 AND '$start_date' <= (tcu.window_end - tcu.window_size)
                 AND tcu.window_end < '$end_date'
-            JOIN productdims pd 
+            JOIN productdims pd
  				ON pd.id = tcu.productdims_id
                 AND pd.product = $product
                 AND pd.version = $version
@@ -134,12 +134,12 @@ class TopcrashersByUrl_Model extends Model {
 
 		$sql = "/* soc.web tcbyrul getdmns */
 		        SELECT sum(tcu.count) as count, ud.domain, at.rank
-		        FROM top_crashes_by_url tcu 
-		 		JOIN urldims ud 
+		        FROM top_crashes_by_url tcu
+		 		JOIN urldims ud
 					ON tcu.urldims_id = ud.id
 					AND '$start_date' <= (tcu.window_end - tcu.window_size)
 		            AND tcu.window_end < '$end_date'
-				JOIN productdims pd 
+				JOIN productdims pd
 					ON pd.id = tcu.productdims_id
 		            AND pd.product = $product
 		            AND pd.version = $version
@@ -147,7 +147,7 @@ class TopcrashersByUrl_Model extends Model {
 		        GROUP BY ud.domain, at.rank
 		        ORDER BY count DESC
 		        LIMIT 100 OFFSET $offset";
-		
+
 		$results = $this->fetchRows($sql);
 		$this->cleanseUrlsAndDomains($results);
       	return array($start_date, $end_date, $results);
@@ -169,17 +169,17 @@ class TopcrashersByUrl_Model extends Model {
 		$aTime = time();
 		$end_date = date("Y-m-d", $aTime);
 		$start_date = date("Y-m-d", $aTime - (60 * 60 * 24 * 14) + 1);
-	
+
 		$sql = "/* soc.web topcrashersbyurl.getTopCrashersByTopsiteRank */
-			SELECT 
-				sum(tcu.count) as count, 
+			SELECT
+				sum(tcu.count) as count,
 				at.domain, at.rank
-	        FROM top_crashes_by_url tcu 
-	 		JOIN urldims ud 
+	        FROM top_crashes_by_url tcu
+	 		JOIN urldims ud
 				ON tcu.urldims_id = ud.id
 				AND '$start_date' <= (tcu.window_end - tcu.window_size)
 	            AND tcu.window_end < '$end_date'
-			JOIN productdims pd 
+			JOIN productdims pd
 				ON pd.id = tcu.productdims_id
 	            AND pd.product = $product
 	            AND pd.version = $version
@@ -188,7 +188,7 @@ class TopcrashersByUrl_Model extends Model {
 	        ORDER BY count DESC
 	        LIMIT 100 OFFSET $offset";
 
-		$results = $this->fetchRows($sql);		
+		$results = $this->fetchRows($sql);
 		$this->cleanseUrlsAndDomains($results);
 	  	return array($start_date, $end_date, $results);
 	}
@@ -213,13 +213,13 @@ class TopcrashersByUrl_Model extends Model {
  		$start_date = date("Y-m-d", $aTime - (60 * 60 * 24 * 14) + 1);
  		$sql =  "/* soc.web tcburl urlsbydomain */
  		        SELECT sum(tcu.count) as count, ud.url
-				FROM top_crashes_by_url tcu 
-				JOIN urldims ud 
+				FROM top_crashes_by_url tcu
+				JOIN urldims ud
 					ON tcu.urldims_id = ud.id
 					AND ud.domain = $domain
  		        	AND '$start_date' <= (tcu.window_end - tcu.window_size)
  		        	AND tcu.window_end < '$end_date'
- 		        JOIN productdims pd 
+ 		        JOIN productdims pd
 					ON tcu.productdims_id = pd.id
  		            AND pd.product = $product
  		            AND pd.version = $version
@@ -246,19 +246,19 @@ class TopcrashersByUrl_Model extends Model {
 		$url = $this->db->escape($tUrl);
 		$offset = ($page -1) * 50;
 		$aTime = time();
-		
+
 		$end_date = date("Y-m-d", $aTime);
 		$start_date = date("Y-m-d", $aTime - (60 * 60 * 24 * 14) + 1);
-		
+
 		$sql = "/* soc.web tcburl sigbyurl */
 		  		SELECT sum(tucs.count) as count, tucs.signature
-		  		FROM top_crashes_by_url tcu 
-		  		JOIN urldims ud 
+		  		FROM top_crashes_by_url tcu
+		  		JOIN urldims ud
 					ON tcu.urldims_id = ud.id
 		  			AND '$start_date' <= (tcu.window_end - tcu.window_size)
 					AND tcu.window_end < '$end_date'
 					AND ud.url = $url
-		  		JOIN productdims pd 
+		  		JOIN productdims pd
 					ON pd.id = tcu.productdims_id
 		  			AND pd.product = $product
 					AND pd.version = $version
@@ -266,7 +266,7 @@ class TopcrashersByUrl_Model extends Model {
 		  		GROUP BY tucs.signature
 		  		ORDER BY 1 DESC
 		  		LIMIT 50";
-		
+
 		return $this->fetchRows($sql);
 	}
 

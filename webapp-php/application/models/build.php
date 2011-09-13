@@ -57,10 +57,10 @@ class Build_Model extends Model {
     {
         parent::__construct();
     }
-    
+
     /**
      * Get all of the nightly builds for a product for a specific time period.
-	 * 
+	 *
 	 * @access 	public
 	 * @param 	string	The product name
      * @param   int     The number of days to pull builds from; default 7 days
@@ -69,12 +69,12 @@ class Build_Model extends Model {
 	public function getBuildsByProduct ($product, $days=7)
 	{
 		$start_date = date('Y-m-d', (time()-($days*86400)));
-        
+
 	    $sql = "/* soc.web builds.getBuilds */
-            SELECT * 
-            FROM builds 
-            WHERE product = ? 
-            AND date >= timestamp without time zone ? 
+            SELECT *
+            FROM builds
+            WHERE product = ?
+            AND date >= timestamp without time zone ?
             ORDER BY date DESC, product ASC, version ASC, platform ASC
         ";
         $builds = $this->fetchRows($sql, true, array(strtolower($product), $start_date));
@@ -86,7 +86,7 @@ class Build_Model extends Model {
 
 	/**
      * Get all of the nightly builds for a product / version for a specific time period.
-	 * 
+	 *
 	 * @access 	public
 	 * @param 	string	The product name
 	 * @param   string  The version name
@@ -96,13 +96,13 @@ class Build_Model extends Model {
 	public function getBuildsByProductAndVersion ($product, $version, $days=7)
 	{
 		$start_date = date('Y-m-d', (time()-($days*86400)));
-        
+
 	    $sql = "/* soc.web builds.getBuilds */
-            SELECT * 
-            FROM builds 
-            WHERE product = ? 
-            AND version = ? 
-            AND date >= timestamp without time zone ? 
+            SELECT *
+            FROM builds
+            WHERE product = ?
+            AND version = ?
+            AND date >= timestamp without time zone ?
             ORDER BY date DESC, product ASC, version ASC, platform ASC
         ";
         $builds = $this->fetchRows($sql, true, array(strtolower($product), strtolower($version), $start_date));
@@ -111,13 +111,13 @@ class Build_Model extends Model {
         }
         return false;
 	}
-	
+
 	/**
      * Prepare the dates that will be used for build display.
      *
      * @param   string  The end date
      * @param   int     The number of dates to query
-     * @return  array   
+     * @return  array
      */
     public function prepareDates($date_end, $duration) {
         $dates = array();
@@ -125,7 +125,7 @@ class Build_Model extends Model {
         $timestamp = time();
         for($i = 0; $i <= $duration; $i++) {
             $date = date('Y-m-d', mktime(0, 0, 0, date("m"), date("d")-($i+$date_diff), date("Y")));
-            if (strtotime($date) <= $timestamp) { 
+            if (strtotime($date) <= $timestamp) {
         	    $dates[] = $date;
         	}
         }

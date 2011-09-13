@@ -26,7 +26,7 @@ class Kohana2
 	    'range_default_value' => 14,
 	    'range_default_unit' => 'days',
         'range_limit_value_in_days' => 120
-    ),    
+    ),
     'user' => array(
 	    'range_default_value' => 14,
 	    'range_default_unit' => 'days',
@@ -53,11 +53,11 @@ require_once dirname(__FILE__).'/../application/libraries/MY_SearchReportHelper.
 
         $this->assertEquals('signature', $default['query_search']);
     }
- 
+
 /*
     public function testNormalization() {
       $helper = new SearchReportHelper();
- 
+
       $badSearch = array('product' => array(),
 			 'branch' => array(),
                          'build_id' => '',
@@ -83,7 +83,7 @@ require_once dirname(__FILE__).'/../application/libraries/MY_SearchReportHelper.
 /*
     public function testDateUnitAndValue(){
       $helper = new SearchReportHelper();
- 
+
       $badSearch = $helper->defaultParams();
       $badSearch['range_value'] = 3;
       $badSearch['range_unit'] = 'months';
@@ -117,13 +117,13 @@ require_once dirname(__FILE__).'/../application/libraries/MY_SearchReportHelper.
       $helper = new SearchReportHelper();
       $helper->setCurrentDateForTest('2008-10-31');
 
-      $badSearch = $helper->defaultParams(); 
+      $badSearch = $helper->defaultParams();
       $badSearch['date'] = '2008-08-25';
       $badSearch['range_value'] = '2';
       $badSearch['range_unit'] = 'weeks';
 
       $helper->normalizeParams( $badSearch );
-      $this->assertEquals('2008-08-25', $badSearch['date'], 
+      $this->assertEquals('2008-08-25', $badSearch['date'],
 			  "Even though over a month ago, this date is fine. The date field specifieis the beginning of date range");
     }
 */
@@ -132,12 +132,12 @@ require_once dirname(__FILE__).'/../application/libraries/MY_SearchReportHelper.
       $helper = new SearchReportHelper();
       $helper->setCurrentDateForTest('2008-10-31');
 
-      $spacesSearch = $helper->defaultParams(); 
+      $spacesSearch = $helper->defaultParams();
       //$spacesSearch['product'] = 'Firefox';
       $spacesSearch['query'] = 'foo+bar';
 
       $helper->normalizeParams( $spacesSearch );
-      $this->assertEquals('foo bar', $spacesSearch['query'], 
+      $this->assertEquals('foo bar', $spacesSearch['query'],
 			  "form GET encodes spaces as '+', should be decoded");
     }
 */
@@ -145,7 +145,7 @@ require_once dirname(__FILE__).'/../application/libraries/MY_SearchReportHelper.
     public function testMinimalProductInfoNoChange(){
       $helper = new SearchReportHelper();
 
-      $badSearch = $helper->defaultParams(); 
+      $badSearch = $helper->defaultParams();
       $badSearch['version'] = array('Firefox:3.0.4');
 
       $helper->normalizeProduct( $badSearch );
@@ -156,7 +156,7 @@ require_once dirname(__FILE__).'/../application/libraries/MY_SearchReportHelper.
     public function testNoProductInfo(){
       $helper = new SearchReportHelper();
 
-      $badSearch = $helper->defaultParams(); 
+      $badSearch = $helper->defaultParams();
       $badSearch['product'] = array('');
       $badSearch['version'] = array('');
 

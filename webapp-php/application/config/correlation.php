@@ -14,7 +14,7 @@ $config['max_file_size'] = 2;
 
 /**
  * Cache config, much like webapp-php/application/config/cache.php
- * but only affects the caching mechanism for loading correlatin 
+ * but only affects the caching mechanism for loading correlatin
  * reports off of people.mozilla.com.
  *
  * Any cache parameters not set will be inheritied from cache.php

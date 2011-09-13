@@ -1,4 +1,4 @@
-/*jslint browser:true, regexp:false */ 
+/*jslint browser:true, regexp:false */
 /*global window, $*/
 
 $(document).ready(function () {
@@ -9,7 +9,7 @@ $(document).ready(function () {
         correlationItem,
         sortByCorrelation,
         firstLineOrEmptyString;
-        
+
     percentageDifference = function (correlationLine) {
         var parts;
         if (lineCache[correlationLine]) {
@@ -84,7 +84,7 @@ $(document).ready(function () {
             cpu = percentageDifference(cpuLine),
             addon = percentageDifference(addonLine),
             module = percentageDifference(moduleLine);
-        
+
         if (cpu === 0 && addon === 0 && module === 0) {
             return 'UNKNOWN: No Data';
         } else if (cpu >= addon &&

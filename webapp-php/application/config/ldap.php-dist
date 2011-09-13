@@ -5,7 +5,7 @@
 $config['host'] = "ldap.example.com";
 
 /**
- * The DN used for LDAP searches. This could be a 
+ * The DN used for LDAP searches. This could be a
  * shared account based on username, email address, or other DN info
  */
 $config['bind_dn'] = "mail=shared,o=com,dc=example";
@@ -21,12 +21,12 @@ $config['bind_password'] = "pass";
 $config['realm'] = 'Example - LDAP Login';
 
 /**
- * dc used by ldap during search to find the user's account. 
+ * dc used by ldap during search to find the user's account.
  */
 $config['search_dn'] = "dc=example";
 
 /**
- * The group dn used with group level authorization such as admin_group option below. 
+ * The group dn used with group level authorization such as admin_group option below.
  * Unused if not using group authorization.
  */
 $config['group_dn'] = "ou=groups,dc=example";

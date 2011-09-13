@@ -347,7 +347,7 @@ CREATE OPERATOR !~~* (
 );
 
 --
--- Matching citext to text. 
+-- Matching citext to text.
 --
 
 CREATE OR REPLACE FUNCTION texticlike(citext, text)

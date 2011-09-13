@@ -41,13 +41,13 @@ class SignatureHistoryModern(webapi.JsonServiceBase):
           report_date, report_count
       order by 1),
       scaling_window AS (
-          select 
+          select
               hist.*,
               sum(report_count) over () as total_crashes
-          from 
+          from
               hist
       )
-      SELECT 
+      SELECT
           report_date,
           report_count,
           report_count / total_crashes::float as percent_of_total

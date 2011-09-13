@@ -39,7 +39,7 @@ WHEN $4 IS NULL THEN
 ELSE
 	(
 		extract ('epoch' from ( $2 - $1 ) ) -
-		( $4 - $3 ) 
+		( $4 - $3 )
 	) BETWEEN -60 AND 60
 END;
 $f$;
@@ -68,7 +68,7 @@ select follower.uuid as uuid,
 	leader.uuid as duplicate_of,
 	follower.date_processed
 from
-(  
+(
 select uuid,
     install_age,
     uptime,
@@ -96,29 +96,29 @@ select uuid,
    from reports
    where date_processed BETWEEN start_time AND end_time
  ) as follower
-JOIN 
+JOIN
   ( select uuid, install_age, uptime, client_crash_date
     FROM reports
     where date_processed BETWEEN start_time AND end_time ) as leader
   ON follower.leader_uuid = leader.uuid
-WHERE ( same_time_fuzzy(leader.client_crash_date, follower.client_crash_date, 
-                  leader.uptime, follower.uptime) 
-		  OR follower.uptime < 60 
+WHERE ( same_time_fuzzy(leader.client_crash_date, follower.client_crash_date,
+                  leader.uptime, follower.uptime)
+		  OR follower.uptime < 60
   	  )
   AND
-	same_time_fuzzy(leader.client_crash_date, follower.client_crash_date, 
+	same_time_fuzzy(leader.client_crash_date, follower.client_crash_date,
                   leader.install_age, follower.install_age)
   AND follower.uuid <> leader.uuid;
-  
+
 -- insert a copy of the leaders
-  
+
 insert into new_reports_duplicates
 select uuid, uuid, date_processed
 from reports
-where uuid IN ( select duplicate_of 
+where uuid IN ( select duplicate_of
 	from new_reports_duplicates )
 	and date_processed BETWEEN start_time AND end_time;
-  
+
 analyze new_reports_duplicates;
 
 select count(*) into new_dups from new_reports_duplicates;
@@ -126,7 +126,7 @@ select count(*) into new_dups from new_reports_duplicates;
 -- insert new duplicates into permanent table
 
 insert into reports_duplicates (uuid, duplicate_of, date_processed )
-select new_reports_duplicates.* 
+select new_reports_duplicates.*
 from new_reports_duplicates
 	left outer join reports_duplicates USING (uuid)
 where reports_duplicates.uuid IS NULL;

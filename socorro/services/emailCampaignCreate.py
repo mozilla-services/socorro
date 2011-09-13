@@ -83,7 +83,7 @@ class EmailCampaignCreate(webapi.JsonServiceBase):
         logger.info('email_contact_ids: %s' % email_contact_ids)
 
         connection.commit()
-        
+
         return {'campaign_id': campaign_id}
       finally:
         connection.close()
@@ -114,7 +114,7 @@ class EmailCampaignCreate(webapi.JsonServiceBase):
     """
     end_date = datetime.datetime(end_date.year, end_date.month, end_date.day, 23, 59, 59)
 
-    # choose only unique email addresses. 
+    # choose only unique email addresses.
     # in the case of duplicates, pick the latest crash_date.
     dedupe_emails = {}
     for row in self.determine_emails(cursor, product, versions, signature, start_date, end_date):

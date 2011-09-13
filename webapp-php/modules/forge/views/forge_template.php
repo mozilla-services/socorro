@@ -27,7 +27,7 @@ if ($input->type == 'group'):
 	endif;
 
 else:
-	$sub_inputs = array($input);	
+	$sub_inputs = array($input);
 endif;
 
 foreach ($sub_inputs as $input):

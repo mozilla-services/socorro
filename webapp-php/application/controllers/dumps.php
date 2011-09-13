@@ -51,21 +51,21 @@ class Dumps_Controller extends Controller
 	* @param 	string 	The $filename being requested
 	* @return 	string 	The json filedump
 	*/
-	public function file($filename=null) 
+	public function file($filename=null)
 	{
         header("Content-Type: text/plain; charset=UTF-8");
 
 		if (!empty($filename)) {
 			$filename = 'dumps/' . $filename;
 			if (file_exists($filename)) {
-				$handle = fopen($filename, "r");	
+				$handle = fopen($filename, "r");
 				echo fread($handle, filesize($filename));
 				fclose($handle);
 				exit;
-			} 
+			}
 		}
-	
-        // If the file was not found, return a json 404 statement.	
+
+        // If the file was not found, return a json 404 statement.
         header("HTTP/1.0 404 Not Found");
 		echo json_encode(
             array(

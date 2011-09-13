@@ -33,7 +33,7 @@ web.config.session_parameters = utils.storage({
     'expired_message': 'Session expired',
 })
 
-class SessionExpired(web.HTTPError): 
+class SessionExpired(web.HTTPError):
     def __init__(self, message):
         web.HTTPError.__init__(self, '200 OK', {}, data=message)
 
@@ -75,7 +75,7 @@ class Session(utils.ThreadedDict):
             d = self.store[self.session_id]
             self.update(d)
             self._validate_ip()
-        
+
         if not self.session_id:
             self.session_id = self._generate_session_id()
 
@@ -84,7 +84,7 @@ class Session(utils.ThreadedDict):
                     self.update(self._initializer)
                 elif hasattr(self._initializer, '__call__'):
                     self._initializer()
- 
+
         self.ip = web.ctx.ip
 
     def _check_expiry(self):
@@ -99,8 +99,8 @@ class Session(utils.ThreadedDict):
         # check for change of IP
         if self.session_id and self.get('ip', None) != web.ctx.ip:
             if not self._config.ignore_change_ip:
-               return self.expired() 
-    
+               return self.expired()
+
     def _save(self):
         cookie_name = self._config.cookie_name
         cookie_domain = self._config.cookie_domain
@@ -109,7 +109,7 @@ class Session(utils.ThreadedDict):
             self.store[self.session_id] = dict(self)
         else:
             web.setcookie(cookie_name, self.session_id, expires=-1, domain=cookie_domain)
-    
+
     def _generate_session_id(self):
         """Generate a random id for session"""
 
@@ -126,7 +126,7 @@ class Session(utils.ThreadedDict):
     def _valid_session_id(self, session_id):
         rx = utils.re_compile('^[0-9a-fA-F]+$')
         return rx.match(session_id)
-        
+
     def _cleanup(self):
         """Cleanup the stored sessions"""
         current_time = time.time()
@@ -140,7 +140,7 @@ class Session(utils.ThreadedDict):
         self._killed = True
         self._save()
         raise SessionExpired(self._config.expired_message)
- 
+
     def kill(self):
         """Kill the session, make it no longer available"""
         del self.store[self.session_id]
@@ -196,17 +196,17 @@ class DiskStore(Store):
         self.root = root
 
     def _get_path(self, key):
-        if os.path.sep in key: 
+        if os.path.sep in key:
             raise ValueError, "Bad key: %s" % repr(key)
         return os.path.join(self.root, key)
-    
+
     def __contains__(self, key):
         path = self._get_path(key)
         return os.path.exists(path)
 
     def __getitem__(self, key):
         path = self._get_path(key)
-        if os.path.exists(path): 
+        if os.path.exists(path):
             pickled = open(path).read()
             return self.decode(pickled)
         else:
@@ -214,12 +214,12 @@ class DiskStore(Store):
 
     def __setitem__(self, key, value):
         path = self._get_path(key)
-        pickled = self.encode(value)    
+        pickled = self.encode(value)
         try:
             f = open(path, 'w')
             try:
                 f.write(pickled)
-            finally: 
+            finally:
                 f.close()
         except IOError:
             pass
@@ -228,7 +228,7 @@ class DiskStore(Store):
         path = self._get_path(key)
         if os.path.exists(path):
             os.remove(path)
-    
+
     def cleanup(self, timeout):
         now = time.time()
         for f in os.listdir(self.root):
@@ -248,10 +248,10 @@ class DBStore(Store):
     def __init__(self, db, table_name):
         self.db = db
         self.table = table_name
-    
+
     def __contains__(self, key):
         data = self.db.select(self.table, where="session_id=$key", vars=locals())
-        return bool(list(data)) 
+        return bool(list(data))
 
     def __getitem__(self, key):
         now = datetime.datetime.now()
@@ -270,7 +270,7 @@ class DBStore(Store):
             self.db.update(self.table, where="session_id=$key", data=pickled, vars=locals())
         else:
             self.db.insert(self.table, False, session_id=key, data=pickled )
-                
+
     def __delitem__(self, key):
         self.db.delete(self.table, where="session_id=$key", vars=locals())
 
@@ -300,7 +300,7 @@ class ShelfStore:
 
     def __setitem__(self, key, value):
         self.shelf[key] = time.time(), value
-        
+
     def __delitem__(self, key):
         try:
             del self.shelf[key]

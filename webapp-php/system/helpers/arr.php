@@ -84,7 +84,7 @@ class arr_Core {
 		return $val;
 	}
 
-	
+
 	/**
 	 * Extract one or more keys from an array. Each key given after the first
 	 * argument (the array) will be extracted. Keys that do not exist in the

@@ -6,7 +6,7 @@ import socorro.webapi.webapiService as webapi
 import socorro.lib.util as util
 import socorro.lib.datetimeutil as dtutil
 
-import psycopg2.extensions as psyext2 
+import psycopg2.extensions as psyext2
 import datetime
 
 # theoretical sample output
@@ -32,7 +32,7 @@ import datetime
 
 def getListOfTopCrashersBySignature(aCursor, dbParams):
   """
-  Answers a generator of tcbs rows 
+  Answers a generator of tcbs rows
   """
   assertPairs = {
     'startDate': (datetime.date, datetime.datetime),
@@ -45,20 +45,20 @@ def getListOfTopCrashersBySignature(aCursor, dbParams):
   for param in assertPairs:
     if not isinstance(dbParams[param], assertPairs[param]):
       raise ValueError(type(dbParams[param]))
-  
+
   where = ""
   if dbParams['crashType'] != 'all':
     where = "AND process_type = '%s'" % (dbParams['crashType'],)
-  
+
   sql = """
-    WITH tcbs_r as ( 
+    WITH tcbs_r as (
     SELECT signature_id,
         signature,
         product_name,
         version_string,
         sum(report_count) as report_count,
-        sum(win_count) as win_count, 
-        sum(lin_count) as lin_count, 
+        sum(win_count) as win_count,
+        sum(lin_count) as lin_count,
         sum(mac_count) as mac_count,
         sum(hang_count) as hang_count,
         plugin_count(process_type,report_count) as plugin_count
@@ -84,13 +84,13 @@ def getListOfTopCrashersBySignature(aCursor, dbParams):
            mac_count,
            hang_count,
            plugin_count,
-        report_count / total_crashes::float 
+        report_count / total_crashes::float
         as percent_of_total
     FROM tcbs_window
     ORDER BY report_count DESC
     LIMIT %s
     """ % (dbParams["product"], dbParams["version"], dbParams["startDate"],
-           dbParams["endDate"],  where, dbParams["listSize"]) 
+           dbParams["endDate"],  where, dbParams["listSize"])
   #logger.debug(aCursor.mogrify(sql, dbParams))
   return db.execute(aCursor, sql)
 
@@ -129,8 +129,8 @@ class DictList(object):
     return iter(self.rows)
 
 def listOfListsWithChangeInRank(listOfQueryResultsIterable):
-  """ 
-  Step through a list of query results, altering them by adding prior 
+  """
+  Step through a list of query results, altering them by adding prior
   ranking. Answers all but the very first item of the input.
   """
   listOfTopCrasherLists = []
@@ -151,8 +151,8 @@ def listOfListsWithChangeInRank(listOfQueryResultsIterable):
         (aRowAsDict['previousRank'],
          aRowAsDict['previousPercentOfTotal']) = previousList.find(
                                                    aRowAsDict['signature'])
-        aRowAsDict['changeInRank'] = aRowAsDict['previousRank'] - rank  
-        aRowAsDict['changeInPercentOfTotal'] = ( 
+        aRowAsDict['changeInRank'] = aRowAsDict['previousRank'] - rank
+        aRowAsDict['changeInPercentOfTotal'] = (
           aRowAsDict['percentOfTotal'] - aRowAsDict['previousPercentOfTotal'])
       except KeyError:
         aRowAsDict['previousRank'] = "null"
@@ -162,11 +162,11 @@ def listOfListsWithChangeInRank(listOfQueryResultsIterable):
       currentListOfTopCrashers.append(aRowAsDict)
     listOfTopCrasherLists.append(currentListOfTopCrashers)
   return listOfTopCrasherLists[1:]
- 
+
 def latestEntryBeforeOrEqualTo(aCursor, aDate, product, version):
   """
   Retrieve the closest report date containing the provided product and
-  version that does not exceed the provided date. 
+  version that does not exceed the provided date.
   """
   sql = """
         SELECT
@@ -177,12 +177,12 @@ def latestEntryBeforeOrEqualTo(aCursor, aDate, product, version):
           tcbs.report_date <= %s
           AND product_name = %s
           AND version_string = %s
-        """ 
+        """
   try:
     result = db.singleValueSql(aCursor, sql, (aDate, product, version))
   except:
     result = None
-  return result or aDate 
+  return result or aDate
 
 def twoPeriodTopCrasherComparison(
       databaseCursor, context,
@@ -192,8 +192,8 @@ def twoPeriodTopCrasherComparison(
     context['logger'].debug('entered twoPeriodTopCrasherComparison')
   except KeyError:
     context['logger'] = util.SilentFakeLogger()
-  
-  assertions = ['endDate', 'duration', 'product', 'version'] 
+
+  assertions = ['endDate', 'duration', 'product', 'version']
 
   for param in assertions:
     assert param in context, (
@@ -209,7 +209,7 @@ def twoPeriodTopCrasherComparison(
                                             context['product'],
                                             context['version'])
   context['logger'].debug('New endDate: %s' % context['endDate'])
-  context['startDate'] = context.endDate - (context.duration * 
+  context['startDate'] = context.endDate - (context.duration *
                                             context.numberOfComparisonPoints)
   #context['logger'].debug('after %s' % context)
   listOfTopCrashers = listOfListsWithChangeInRank(
@@ -230,5 +230,5 @@ def twoPeriodTopCrasherComparison(
              'totalPercentage': totalPercentOfTotal,
            }
   #logger.debug("about to return %s", result)
-  return result 
+  return result
 
