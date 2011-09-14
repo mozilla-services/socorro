@@ -1,0 +1,3 @@
+[submodule "vagrant"]
+	path = vagrant
+	url = git://github.com/rhelmer/socorro-vagrant.git
