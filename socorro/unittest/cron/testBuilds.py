@@ -244,7 +244,7 @@ class TestBuilds(unittest.TestCase):
        <a href="product2-version2.en-US.platform2.txt">product2-version2.en-US.platform2.txt</a>
        <a href="product2-version2.en-US.platform2.zip">product2-version2.en-US.platform2.zip</a>
        blahblahblahblahblah
-    """ 
+    """
     fake_response_success_1 = {'platform':'platform1', 'product':'product1', 'version':'version1', 'filename':'product1-version1.en-US.platform1.txt'}
     fake_response_success_2 = {'platform':'platform2', 'product':'product2', 'version':'version2', 'filename':'product2-version2.en-US.platform2.txt'}
     fake_response_successes = (fake_response_success_1, fake_response_success_2)
@@ -258,7 +258,7 @@ class TestBuilds(unittest.TestCase):
     fakeUrllib2.expect('urlopen', (fake_response_url,), {}, fakeResponse)
 
     try:
-      actual = builds.fetchTextFiles(self.config, fake_product_uri, self.config.platforms, builds.buildParser(), fakeUrllib2) 
+      actual = builds.fetchTextFiles(self.config, fake_product_uri, self.config.platforms, builds.buildParser(), fakeUrllib2)
       assert actual['url'] == fake_response_url, "expected %s, got %s " % (fake_response_url, actual['url'])
       assert actual['builds'][0] == fake_response_success_1, "expected %s, got %s " % (fake_response_success_1, actual['builds'][0])
       assert actual['builds'][1] == fake_response_success_2, "expected %s, got %s " % (fake_response_success_2, actual['builds'][1])

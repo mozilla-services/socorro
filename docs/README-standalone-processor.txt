@@ -5,7 +5,7 @@ The Standalone Breakpad Dump Processor
 1.) Before starting the processor, you MUST set the storageRoot variable:
 
  - socorro/lib/config.py
-   ----------------------- 
+   -----------------------
    This file contains a number of string constants used by the
    processor script. They are each documented in the file, but the most
    important string is 'storageRoot'. This is the path to the top level
@@ -37,7 +37,7 @@ Sample Usage
 
 First, see step 1.
 
-   %prompt> python start-processor.py 
+   %prompt> python start-processor.py
    starting Socorro dump file monitor
 
    ...

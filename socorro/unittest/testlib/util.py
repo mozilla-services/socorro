@@ -28,7 +28,7 @@ def getModuleFromFile(filename, depth=4, decorate=True):
 
 def nosePrintModule(filename,depth=4, decorate=True):
   print >> sys.stderr, getModuleFromFile(filename,depth,decorate)
-  
+
 def stopImmediately():
   return True;
 
@@ -41,7 +41,7 @@ def runInOtherProcess(executable, *args, **kwargs):
   logger = kwargs.get('logger',None) # Yes: Fail badly and obviously
   sygnal = kwargs.get('signal',signal.SIGHUP)
   if 0 == maxWait: # set maxWait = 0 to wait only on stopCondition
-   addWait = 0.0 
+   addWait = 0.0
   pid = os.fork()
   if(pid): # I am the parent. Wait a bit then kill -HUP the child
     # logger.debug("PARENT: P and C PIDs: (%s/%s)"%(os.getpid(),pid))

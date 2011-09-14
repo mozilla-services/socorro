@@ -11,10 +11,10 @@ insert into os_name_matches ( os_name, match_string )
 values ( 'Windows', 'Windows%' ),
 	( 'Mac OS X', 'Mac%' ),
 	( 'Linux', 'Linux%' );
-	
+
 -- backfill os_versions
 
-create temporary table os_versions_temp 
+create temporary table os_versions_temp
 as
 select os_name_matches.os_name,
 	substring(os_version from $x$^(\d+)$x$)::int as major_version,
@@ -35,7 +35,7 @@ where os_version ~ $x$^\d+$x$
 	and substring(os_version from $x$^(\d+)$x$)::numeric < 1000
 	and ( substring(os_version from $x$^\d+\.(\d+)$x$)::numeric >= 1000
 		or os_version !~ $x$^\d+\.(\d+)$x$ );
-		
+
 insert into os_versions_temp
 select os_name_matches.os_name,
 	0,
@@ -45,15 +45,15 @@ from osdims join os_name_matches
 where os_version !~ $x$^\d+$x$
 	or substring(os_version from $x$^(\d+)$x$)::numeric >= 1000
 	or os_version is null;
-	
+
 insert into os_versions ( os_name, major_version, minor_version )
-select distinct os_name, major_version, minor_version 
+select distinct os_name, major_version, minor_version
 from os_versions_temp;
 
 create or replace function update_os_versions (
 	updateday date )
 RETURNS BOOLEAN
-LANGUAGE plpgsql 
+LANGUAGE plpgsql
 SET work_mem = '512MB'
 SET temp_buffers = '512MB'
 AS $f$
@@ -75,7 +75,7 @@ IF NOT FOUND THEN
 	RAISE EXCEPTION 'No OS data found for date %',updateday;
 END IF;
 
-create temporary table os_versions_temp 
+create temporary table os_versions_temp
 on commit drop as
 select os_name_matches.os_name,
 	substring(os_version from $x$^(\d+)$x$)::int as major_version,
@@ -96,7 +96,7 @@ where os_version ~ $x$^\d+$x$
 	and substring(os_version from $x$^(\d+)$x$)::numeric < 1000
 	and ( substring(os_version from $x$^\d+\.(\d+)$x$)::numeric >= 1000
 		or os_version !~ $x$^\d+\.(\d+)$x$ );
-		
+
 insert into os_versions_temp
 select os_name_matches.os_name,
 	0,
@@ -106,11 +106,11 @@ from new_os join os_name_matches
 where os_version !~ $x$^\d+$x$
 	or substring(os_version from $x$^(\d+)$x$)::numeric >= 1000
 	or os_version is null;
-	
+
 insert into os_versions ( os_name, major_version, minor_version )
 select os_name, major_version, minor_version
 from (
-select distinct os_name, major_version, minor_version 
+select distinct os_name, major_version, minor_version
 from os_versions_temp ) as os_rollup
 left outer join os_versions
 	USING ( os_name, major_version, minor_version )

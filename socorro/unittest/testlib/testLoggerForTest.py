@@ -18,7 +18,7 @@ def testConstructor():
   bl = BogusLogger()
   assert None == tl.logger
   assert 6 == len(tl.levelcode)
-  expected = {0:'NOTSET',10:'DEBUG',20:'INFO',30:'WARNING',40:'ERROR',50:'FATAL'} 
+  expected = {0:'NOTSET',10:'DEBUG',20:'INFO',30:'WARNING',40:'ERROR',50:'FATAL'}
   for c in expected.keys():
     assert expected[c] == tl.levelcode[c], 'But at %s expected %s got %s'%(c,expected[c],lc.levelcode[c])
 

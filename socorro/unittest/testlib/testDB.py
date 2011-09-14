@@ -11,12 +11,12 @@ def setup_module():
 class TestDB:
   def __init__(self):
     self.madeConnection = False
-    
+
   def maybeCloseConnection(self,connection):
     if self.madeConnection:
       self.madeConnection = False
       connection.close()
-    
+
   def getCursor(self,**kwargs):
     cursor = None
     connection = None
@@ -31,7 +31,7 @@ class TestDB:
       cursor = connection.cursor()
     return cursor
 
-  
+
   def createDB(self, config, logger):
     """Convenience: Forward to schema to get actual work done each thing in exactly one place"""
     db_schema.setupDatabase(config,logger)
@@ -50,10 +50,10 @@ class TestDB:
       dbCon.commit()
     else:
       logger.info("There were no priority_job tables to close")
-    
+
   def populateDB(self,**kwargs):
     cursor = self.getCursor(**kwargs)
     print >> sys.stderr, "PopulateDB() Not yet implemented"
     self.maybeCloseConnection(cursor.connection)
 
-  
+

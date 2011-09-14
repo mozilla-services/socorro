@@ -105,11 +105,11 @@ class Auth_Core {
 		} else {
 			if ($this->logged_in()) {
 				client::messageSend(Kohana::lang('auth.auth_login_required_insufficient_rights'), E_USER_WARNING);
-				url::redirect(url::site('', 'http'));				
+				url::redirect(url::site('', 'http'));
 			} else {
 				client::messageSend(Kohana::lang('auth.auth_login_required_not_logged_in'), E_USER_WARNING);
 				session::instance()->set("requested_url", "/" . url::current());
-				url::redirect(url::site('login', $this->config['proto']));				
+				url::redirect(url::site('login', $this->config['proto']));
 			}
 		}
 	}
@@ -148,7 +148,7 @@ class Auth_Core {
 
 		return $this->driver->login($username, $password, $remember);
 	}
-	
+
 	/**
 	 * Attempt to automatically log a user in.
 	 *

@@ -9,7 +9,7 @@
 
 <?php if ($pager->totalPages > 1) { ?>
     <div class="pagination">
-        <span class="totalItems"><?php echo number_format($pager->totalItemCount); ?></span> <?= $totalItemText ?></span> &hellip; 
+        <span class="totalItems"><?php echo number_format($pager->totalItemCount); ?></span> <?= $totalItemText ?></span> &hellip;
 
 <?php
         // Only display pagination when there is > 1 page.
@@ -39,9 +39,9 @@
                     <a href="<?= $navPathPrefix ?><?= $i ?>"><?= $i ?></a>
                 <?php endif ?>
             <?php endfor ?>
-            
+
             &hellip;
-            
+
             <a href="<?= $navPathPrefix ?><?php echo $pager->totalPages - 1; ?>"> <?php echo $pager->totalPages - 1 ?></a>
             <a href="<?= $navPathPrefix ?><?php echo $pager->totalPages; ?>"> <?php echo $pager->totalPages ?></a>
 
@@ -49,9 +49,9 @@
 
            <a href="<?= $navPathPrefix ?>1"> 1</a>
            <a href="<?= $navPathPrefix ?>2"> 2</a>
-           
+
            &hellip;
-           
+
            <?php for ($i = $pager->totalPages - 5; $i <= $pager->totalPages; $i++): ?>
                <?php if ($i == $pager->currentPage): ?>
                    <strong><?php echo $i ?></strong>
@@ -59,14 +59,14 @@
                    <a href="<?= $navPathPrefix ?><?= $i ?>"><?php echo $i ?></a>
                <?php endif ?>
            <?php endfor ?>
-           
+
            <?php else: /* « Previous  1 2 … 5 6 7 8 9 10 11 12 13 14 … 25 26  Next » */ ?>
-           
+
                <a href="<?= $navPathPrefix ?>1"> 1</a>
                <a href="<?= $navPathPrefix ?>2"> 2</a>
-               
+
                &hellip;
-               
+
                <?php for ($i = $pager->currentPage - 2; $i <= $pager->currentPage + 2; $i++): ?>
                    <?php if ($i == $pager->currentPage): ?>
                        <strong><?php echo $i ?></strong>
@@ -74,15 +74,15 @@
                        <a href="<?= $navPathPrefix ?><?= $i ?>"><?php echo $i ?></a>
                    <?php endif ?>
                <?php endfor ?>
-               
+
                &hellip;
-               
+
                <a href="<?= $navPathPrefix ?><?php echo $pager->totalPages - 1 ?>"> <?php echo $pager->totalPages - 1 ?></a>
                <a href="<?= $navPathPrefix ?><?php echo $pager->totalPages ?>"> <?php echo $pager->totalPages ?></a>
-        
+
         <?php endif ?>
-        
-        
+
+
         <?php if ($pager->showNext) { ?>
                 <a href="<?= $navPathPrefix ?><?= $pager->nextPage ?>">Next →</a>
         <?php } ?>

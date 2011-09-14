@@ -7,10 +7,10 @@ class TimeUtil {
 
     /**
      * Round a timestamp to X minutes.
-     * 
+     *
      * @param   int     The desired number of minutes to round to.
      * @param   int     The timestamp to round
-     * @return  int     The     
+     * @return  int     The
      */
     public static function roundOffByMinutes($minutes, $time=NULL)
     {
@@ -28,7 +28,7 @@ class TimeUtil {
      * @access public
      * @param   string  The $start_date
      * @param   string  The $end_date
-     * @param   int     The number of days 
+     * @param   int     The number of days
      */
     public static function determineDayDifferential ($start_date, $end_date)
     {
@@ -42,7 +42,7 @@ class TimeUtil {
         }
         return false;
     }
-        
+
     /**
      * Determine the hour differential between 2 date strings.  Using strtotime()
      * which allows a variety of date strings to be used.
@@ -50,7 +50,7 @@ class TimeUtil {
      * @access public
      * @param   string  The $start_date
      * @param   string  The $end_date
-     * @param   int     The number of hours 
+     * @param   int     The number of hours
      */
     public static function determineHourDifferential ($start_date, $end_date)
     {
@@ -73,7 +73,7 @@ class TimeUtil {
      * Doesn't handle plurals, etc.
      *
      * @param $seconds integer Number of seconds
-     * @return string Empty string for seconds, "$x minutes", etc 
+     * @return string Empty string for seconds, "$x minutes", etc
      *                based on timescale
      */
     public static function time_ago_in_words($seconds)

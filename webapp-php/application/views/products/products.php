@@ -4,7 +4,7 @@
 	<div class="title">
 		<h2>Mozilla Products in Crash Reporter</h2>
     </div>
-    
+
     <div class="body">
     <p>
         <ul>

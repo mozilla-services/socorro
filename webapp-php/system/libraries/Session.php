@@ -219,7 +219,7 @@ class Session_Core {
 
 	/**
 	 * Regenerates the global session id.
-	 * 
+	 *
 	 * @return  void
 	 */
 	public function regenerate()

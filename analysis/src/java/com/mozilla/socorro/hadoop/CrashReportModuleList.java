@@ -18,7 +18,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  *   Xavier Stevens <xstevens@mozilla.com>, Mozilla Corporation (original author)
  *
  * Alternatively, the contents of this file may be used under the terms of
@@ -69,46 +69,46 @@ import static com.mozilla.socorro.hadoop.CrashReportJob.*;
 public class CrashReportModuleList implements Tool {
 
 	private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(CrashReportModuleList.class);
-	
+
 	private static final String NAME = "CrashReportModuleList";
 	private Configuration conf;
-	
+
 	public static class CrashReportModuleListMapper extends TableMapper<Text, NullWritable> {
 
 		public enum ReportStats { JSON_PARSE_EXCEPTION, JSON_MAPPING_EXCEPTION, JSON_BYTES_NULL, DATE_PARSE_EXCEPTION, BLANK_REQUIRED_FIELD }
-		
+
 		private Text outputKey;
-		
+
 		private ObjectMapper jsonMapper;
-		
+
 		private String productFilter;
 		private String releaseFilter;
 		private String osFilter;
-		
+
 		private Pattern newlinePattern;
 		private Pattern pipePattern;
 
 		private SimpleDateFormat sdf;
 		private long startTime;
 		private long endTime;
-		
+
 		/* (non-Javadoc)
 		 * @see org.apache.hadoop.mapreduce.Mapper#setup(org.apache.hadoop.mapreduce.Mapper.Context)
 		 */
 		public void setup(Context context) {
 			outputKey = new Text();
-			
+
 			jsonMapper = new ObjectMapper();
-			
+
 			Configuration conf = context.getConfiguration();
-			
+
 			productFilter = conf.get(PRODUCT_FILTER);
 			releaseFilter = conf.get(RELEASE_FILTER);
 			osFilter = conf.get(OS_FILTER, "Windows NT");
-			
+
 			newlinePattern = Pattern.compile("\n");
 			pipePattern = Pattern.compile("\\|");
-			
+
 			sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 			startTime = DateUtil.getTimeAtResolution(conf.getLong(START_TIME, 0), Calendar.DATE);
 			endTime = DateUtil.getEndTimeAtResolution(conf.getLong(END_TIME, System.currentTimeMillis()), Calendar.DATE);
@@ -127,26 +127,26 @@ public class CrashReportModuleList implements Tool {
 				String value = new String(valueBytes);
 				// This is an untyped parse so the caller is expected to know the types
 				Map<String,Object> crash = jsonMapper.readValue(value, new TypeReference<Map<String,Object>>() { });
-				
+
 				// Filter row if filter(s) are set and it doesn't match
 				if (!StringUtils.isBlank(productFilter)) {
 					if (crash.containsKey(PROCESSED_JSON_PRODUCT) && !crash.get(PROCESSED_JSON_PRODUCT).equals(productFilter)) {
 						return;
 					}
-				} 
+				}
 				if (!StringUtils.isBlank(releaseFilter)) {
 					if (crash.containsKey(PROCESSED_JSON_VERSION) && !crash.get(PROCESSED_JSON_VERSION).equals(releaseFilter)) {
 						return;
 					}
 				}
-				
+
 				String osName = (String)crash.get(PROCESSED_JSON_OS_NAME);
 				if (!StringUtils.isBlank(osFilter)) {
 					if (osName == null || !osName.equals(osFilter)) {
 						return;
 					}
 				}
-				
+
 				// Set the value to the date
 				String dateProcessed = (String)crash.get(PROCESSED_JSON_DATE_PROCESSED);
 				long crashTime = sdf.parse(dateProcessed).getTime();
@@ -154,7 +154,7 @@ public class CrashReportModuleList implements Tool {
 				if (crashTime < startTime || crashTime > endTime) {
 					return;
 				}
-				
+
 
 				for (String dumpline : newlinePattern.split((String)crash.get(PROCESSED_JSON_DUMP))) {
 					if (dumpline.startsWith(PROCESSED_JSON_MODULE_PATTERN)) {
@@ -176,22 +176,22 @@ public class CrashReportModuleList implements Tool {
 				context.getCounter(ReportStats.DATE_PARSE_EXCEPTION).increment(1L);
 			}
 		}
-		
+
 	}
-	
+
 	/**
 	 * @param args
 	 * @return
 	 * @throws IOException
-	 * @throws ParseException 
+	 * @throws ParseException
 	 */
-	public Job initJob(String[] args) throws IOException, ParseException {		
+	public Job initJob(String[] args) throws IOException, ParseException {
 		Map<byte[], byte[]> columns = new HashMap<byte[], byte[]>();
 		columns.put(PROCESSED_DATA_BYTES, JSON_BYTES);
-		Job job = CrashReportJob.initJob(NAME, getConf(), CrashReportModuleList.class, CrashReportModuleListMapper.class, 
-										 UniqueIdentityReducer.class, UniqueIdentityReducer.class, columns, Text.class, 
+		Job job = CrashReportJob.initJob(NAME, getConf(), CrashReportModuleList.class, CrashReportModuleListMapper.class,
+										 UniqueIdentityReducer.class, UniqueIdentityReducer.class, columns, Text.class,
 										 NullWritable.class, new Path(args[0]));
-		
+
 		return job;
 	}
 
@@ -211,7 +211,7 @@ public class CrashReportModuleList implements Tool {
 		GenericOptionsParser.printGenericCommandUsage(System.out);
 		return -1;
 	}
-	
+
 	/* (non-Javadoc)
 	 * @see org.apache.hadoop.util.Tool#run(java.lang.String[])
 	 */
@@ -219,14 +219,14 @@ public class CrashReportModuleList implements Tool {
 		if (args.length != 1) {
 			return printUsage();
 		}
-		
+
 		int rc = -1;
 		Job job = initJob(args);
 		job.waitForCompletion(true);
 		if (job.isSuccessful()) {
 			rc = 0;
 		}
-		
+
 		return rc;
 	}
 
@@ -243,7 +243,7 @@ public class CrashReportModuleList implements Tool {
 	public void setConf(Configuration conf) {
 		this.conf = conf;
 	}
-	
+
 	/**
 	 * @param args
 	 * @throws Exception

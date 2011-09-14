@@ -7,11 +7,11 @@ $(document).ready(function() {
 	  showAdvFilter = false;
           $.cookies.set('advfilter', showAdvFilter, showAdvFilterCookieOpts);
       }
-      
+
       if (showAdvFilter) {
           $('#advfilter').show();
       } else {
-	  $('#advfilter').hide();      
+	  $('#advfilter').hide();
       }
 
       $('#advfiltertoggle').click(function() {
@@ -21,7 +21,7 @@ $(document).ready(function() {
           if (showAdvFilter){
               $('#advfilter').show();
           } else {
-	       $('#advfilter').hide();      
+	       $('#advfilter').hide();
           }
       });
 
@@ -43,15 +43,15 @@ $(document).ready(function() {
     $(function() {
         $('#dateHelp *').tooltip();
         $('#signatureList').tablesorter({
-            headers: { 
-                0: { sorter: 'digit' }, 
+            headers: {
+                0: { sorter: 'digit' },
 
-                3: { sorter: 'digit' }, 
-                4: { sorter: 'digit' }, 
-                5: { sorter: 'digit' }, 
-                6: { sorter: 'digit' } 
+                3: { sorter: 'digit' },
+                4: { sorter: 'digit' },
+                5: { sorter: 'digit' },
+                6: { sorter: 'digit' }
             }
-        }); 
+        });
     });
 
     // Upon submitting the form, hide the submit button and disable refresh options.
@@ -59,18 +59,18 @@ $(document).ready(function() {
         if ($('input[name=date]').val() == dateFormat) {
             $('input[name=date]').val('');
         }
-        
+
         $('input[type=submit]', this).attr('disabled', 'disabled');
         $('#query_submit').hide();
         $('#query_waiting').show();
-    
+
         $(document).bind("keypress", function(e) {
             if (e.keyCode == 13 || e.keyCode == 116) {
                 return false;
-            }            
+            }
         });
     });
-    
+
     if($.trim($('input[name=date]').val()) == ""){
       $('input[name=date]').val(dateFormat);
     }
@@ -109,5 +109,5 @@ $(document).ready(function() {
    $('#gofilter').bind('click', function(){
       $('#searchform').submit();
     });
-    window.updateVersion = updateVersion;  
+    window.updateVersion = updateVersion;
 });

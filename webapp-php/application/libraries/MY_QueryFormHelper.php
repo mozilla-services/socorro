@@ -41,12 +41,12 @@ require_once(Kohana::find_file('libraries', 'release', TRUE, 'php'));
 
 /**
  * Common code between query and home controllers. Prepares data for query form.
- * NOTE: This is not a 'helper' in the sense of Kohana's helper classes (static 
+ * NOTE: This is not a 'helper' in the sense of Kohana's helper classes (static
  * methods to be used from the view)
  */
 class QueryFormHelper
 {
-    
+
     /**
      * Prepare the branch and platform data for the view.
      *
@@ -94,11 +94,11 @@ class QueryFormHelper
 	$versionCompare = new VersioncompareComponent();
         $versions_by_product = array();
         foreach($branch_data['products'] as $product){
-	        $versions_by_product[$product] = array();      
+	        $versions_by_product[$product] = array();
 	}
 	foreach($branch_data['versions'] as $version){
             if (!array_key_exists($version->product, $versions_by_product)) {
-	        $versions_by_product[$version->product] = array();      
+	        $versions_by_product[$version->product] = array();
             }
             array_push($versions_by_product[$version->product], $version->version);
 	}
@@ -111,12 +111,12 @@ class QueryFormHelper
 
     /**
      * Given an array with the format product to version list,
-     * this function will return an array of the current released 
+     * this function will return an array of the current released
      * versions of each products.
-     * 
+     *
      * @param array - Input Example: {'Firefox': ['3.5', '3.0.10'], ...}
-     * @return array - 
-     * Output Example: {'Firefox': {'major': '3.5', 
+     * @return array -
+     * Output Example: {'Firefox': {'major': '3.5',
      *                              'milestone': '3.5b99',
      *                              'development': '3.6pre'} ...}
      */

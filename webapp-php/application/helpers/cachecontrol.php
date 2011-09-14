@@ -1,6 +1,6 @@
 <?php
 /**
- * Helper for setting cache control headers - currently etag, last-modified, 
+ * Helper for setting cache control headers - currently etag, last-modified,
  * and expires
  */
 class cachecontrol_Core

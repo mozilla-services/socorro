@@ -104,7 +104,7 @@ class Form_Dateselect_Core extends Form_Input {
 	{
 		$time = array_combine
 		(
-			array('month', 'day', 'year', 'hour', 'minute', 'am_pm'), 
+			array('month', 'day', 'year', 'hour', 'minute', 'am_pm'),
 			explode('--', date('n--j--Y--g--i--A', $timestamp))
 		);
 

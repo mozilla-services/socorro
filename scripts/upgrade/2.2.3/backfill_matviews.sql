@@ -3,7 +3,7 @@
 -- function
 
 CREATE OR REPLACE FUNCTION backfill_matviews (
-	firstday date, 
+	firstday date,
 	forproduct text default '',
 	lastday date default NULL )
 RETURNS BOOLEAN
@@ -42,9 +42,9 @@ WHILE thisday <= lastday LOOP
 	DROP TABLE IF EXISTS new_tcbs;
 	RAISE INFO 'daily crashes';
 	PERFORM backfill_daily_crashes(thisday, forproduct);
-	
+
 	thisday := thisday + 1;
-	
+
 END LOOP;
 
 RETURN true;

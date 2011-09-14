@@ -44,7 +44,7 @@
     background-position: 100% 0;
     text-decoration: none;
     white-space: nowrap; /* @ IE 6 */
-    outline: 0; /* @ Firefox, prevent dotted border after click */    
+    outline: 0; /* @ Firefox, prevent dotted border after click */
 }
 .ui-tabs-nav a:link, .ui-tabs-nav a:visited {
     color: #666;

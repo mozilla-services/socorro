@@ -16,19 +16,19 @@ $(document).ready(function () {
             window.location = url_site + 'products/' + product;
         });
     }
-    
+
     // Used to handle the selection of a specific version of a specific product.
     if ($("#product_version_select")) {
         $("#product_version_select").change(function () {
             product_version = $("#product_version_select").val();
             if (product_version == 'Current Versions') {
                 window.location = url_base;
-            } else { 
+            } else {
                 window.location = url_base + '/versions/' + product_version;
             }
         });
     }
-    
+
     // Used to handle the selection of a specific report.
     if ($("#report_select")) {
         $("#report_select").change(function () {

@@ -4,7 +4,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
     <link href="<?php echo url::base() ?>css/screen.css?v=1.7.7" rel="stylesheet" type="text/css" media="screen" />
     <link href="<?php echo url::base() ?>favicon.ico" rel="icon" type="image/png" />
-    <?php 
+    <?php
     	echo html::script(
     	    array(
                 'js/jquery/jquery-1.3.2.min.js',
@@ -32,7 +32,7 @@
     </div>
 
 
-	<h1>Product Navigation</h1>	
+	<h1>Product Navigation</h1>
 	<div class="version-nav">
 	    <input type="hidden" id="url_base" name="url_base" value="<?php echo url::base() ?>/products/Firefox" />
 		<input type="hidden" id="url_site" name="url_site" value="<?php echo url::base() ?>" />
@@ -54,16 +54,16 @@
 	</div>
 
 
-    <?php 
-        $error_404 = (isset($trace) && strstr($trace, "show_404")) ? true : false; 
+    <?php
+        $error_404 = (isset($trace) && strstr($trace, "show_404")) ? true : false;
         $title = ($error_404) ? "Page not Found" : "Error";
         $error_log = ($error_404) ? '[404 Page Not Found]' : '[5xx Error]';
         if (!empty($line) && !empty($file)) {
             $error_log .= ' File: ' . $file . '; Line: ' . $line . '; Message: ' . $message;
         }
-        Kohana::log('error', $error_log); 
+        Kohana::log('error', $error_log);
     ?>
-    
+
     <div id="mainbody">
 	    <div class="page-heading">
 	        <h2><?php echo html::specialchars($title); ?></h2>
@@ -81,7 +81,7 @@
 	        </div>
 	    </div>
     </div>
-    
+
     <div class="page-footer">
     	<div class="nav">
     		<div class="about">

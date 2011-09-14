@@ -334,30 +334,30 @@ class Image_Core {
 
 		return $status;
 	}
-	
- 	/** 
- 	 * Output the image to the browser. 
- 	 * 
- 	 * @return	object 
- 	 */ 
- 	public function render() 
- 	{ 
- 		$new_image = $this->image['file']; 
-  
- 		// Separate the directory and filename 
- 		$dir  = pathinfo($new_image, PATHINFO_DIRNAME); 
- 		$file = pathinfo($new_image, PATHINFO_BASENAME); 
-  
- 		// Normalize the path 
- 		$dir = str_replace('\\', '/', realpath($dir)).'/'; 
-  
- 		// Process the image with the driver 
- 		$status = $this->driver->process($this->image, $this->actions, $dir, $file, $render = TRUE); 
-  
- 		// Reset the actions 
- 		$this->actions = array(); 
-  
- 		return $status; 
+
+ 	/**
+ 	 * Output the image to the browser.
+ 	 *
+ 	 * @return	object
+ 	 */
+ 	public function render()
+ 	{
+ 		$new_image = $this->image['file'];
+
+ 		// Separate the directory and filename
+ 		$dir  = pathinfo($new_image, PATHINFO_DIRNAME);
+ 		$file = pathinfo($new_image, PATHINFO_BASENAME);
+
+ 		// Normalize the path
+ 		$dir = str_replace('\\', '/', realpath($dir)).'/';
+
+ 		// Process the image with the driver
+ 		$status = $this->driver->process($this->image, $this->actions, $dir, $file, $render = TRUE);
+
+ 		// Reset the actions
+ 		$this->actions = array();
+
+ 		return $status;
  	}
 
 	/**

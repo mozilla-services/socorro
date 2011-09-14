@@ -1,7 +1,7 @@
 
 // Open the add product version form
 function branchAddProductVersion() {
-	$('#add_version').show('fast'); 
+	$('#add_version').show('fast');
 	$('#product').focus();
 }
 
@@ -14,7 +14,7 @@ function branchAddProductVersionFill(product, version) {
 
 // Open the update product version form and fill the fields in with given input
 function branchUpdateProductVersionFill(product, version, branch, start_date, end_date, featured, throttle) {
-	$('#update_product_version').show('fast'); 
+	$('#update_product_version').show('fast');
 	$('#update_product').val(product);
 	$('#update_product_display').html(product);
 	$('#update_version').val(version);
@@ -25,7 +25,7 @@ function branchUpdateProductVersionFill(product, version, branch, start_date, en
 	if (featured == 't') {
 	    $('#update_featured').attr('checked','checked');
 	} else {
-	    $('#update_featured').removeAttr('checked');        
+	    $('#update_featured').removeAttr('checked');
 	}
 	$('#update_throttle').val(throttle);
 	$('#update_branch').focus();
@@ -33,7 +33,7 @@ function branchUpdateProductVersionFill(product, version, branch, start_date, en
 
 // Open the delete product version form and fill the fields in with given input
 function branchDeleteProductVersionFill(product, version) {
-	$('#delete_product_version').show('fast'); 
+	$('#delete_product_version').show('fast');
 	$('#delete_product').val(product);
 	$('#delete_product_display').html(product);
 	$('#delete_version').val(version);
@@ -41,10 +41,10 @@ function branchDeleteProductVersionFill(product, version) {
 	$('#delete_product').focus();
 }
 
-// Replace the submit button with a progress icon 
+// Replace the submit button with a progress icon
 function hideShow(hideId, showId) {
-	$('#'+hideId).hide(); 
-	$('#'+showId).show('fast'); 
+	$('#'+hideId).hide();
+	$('#'+showId).show('fast');
 }
 
 $(document).ready(function(){
@@ -52,17 +52,17 @@ $(document).ready(function(){
         startDate: '01/01/2008',
     });
     $('input[name=submit][type=submit][value="OK, Send Emails"]').click(function(){
-      postData = {token: $('input[name=token]').val(), 
-                  campaign_id: $('input[name=campaign_id]').val(), 
+      postData = {token: $('input[name=token]').val(),
+                  campaign_id: $('input[name=campaign_id]').val(),
                   submit: 'start'}
       $.post('/admin/send_email', postData);
     });
     $('input[name=submit][type=submit][value="STOP Sending Emails"]').click(function(){
-      postData = {token: $('input[name=token]').val(), 
-                  campaign_id: $('input[name=campaign_id]').val(), 
+      postData = {token: $('input[name=token]').val(),
+                  campaign_id: $('input[name=campaign_id]').val(),
                   submit: 'stop'}
       $.post('/admin/send_email', postData);
     });
-    
+
     $('.admin tbody tr:odd').css('background-color', '#efefef');
 });

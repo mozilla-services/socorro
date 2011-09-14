@@ -1,7 +1,7 @@
 create or replace function backfill_tcbs (
 	updateday date, forproduct text default '' )
 RETURNS BOOLEAN
-LANGUAGE plpgsql 
+LANGUAGE plpgsql
 SET work_mem = '512MB'
 SET temp_buffers = '512MB'
 AS $f$
@@ -44,13 +44,13 @@ UPDATE new_tcbs
 SET process_type = 'Browser'
 WHERE process_type IS NULL
 	OR process_type = '';
-	
+
 -- clean release_channel
 
-UPDATE new_tcbs 
+UPDATE new_tcbs
 SET real_release_channel = release_channels.release_channel
 FROM release_channels
-	JOIN release_channel_matches ON 
+	JOIN release_channel_matches ON
 		release_channels.release_channel = release_channel_matches.release_channel
 WHERE new_tcbs.release_channel ILIKE match_string;
 
@@ -65,7 +65,7 @@ WHERE COALESCE(new_tcbs.signature,'') = signatures.signature;
 
 -- populate product_version_id for betas
 
-UPDATE new_tcbs 
+UPDATE new_tcbs
 SET product_version_id = product_versions.product_version_id
 FROM product_versions
 	JOIN product_version_builds ON product_versions.product_version_id = product_version_builds.product_version_id
@@ -77,7 +77,7 @@ WHERE product_versions.build_type = 'Beta'
 
 -- populate product_version_id for other builds
 
-UPDATE new_tcbs 
+UPDATE new_tcbs
 SET product_version_id = product_versions.product_version_id
 FROM product_versions
 WHERE product_versions.build_type <> 'Beta'

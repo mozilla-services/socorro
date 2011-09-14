@@ -36,7 +36,7 @@
  * the terms of any one of the MPL, the GPL or the LGPL.
  *
  * ***** END LICENSE BLOCK ***** */
- 
+
 require_once(Kohana::find_file('libraries', 'bugzilla', TRUE, 'php'));
 require_once(Kohana::find_file('libraries', 'Correlation', TRUE, 'php'));
 require_once(Kohana::find_file('libraries', 'crash', TRUE, 'php'));
@@ -58,7 +58,7 @@ class Topcrasher_Controller extends Controller {
         $this->topcrashers_model = new Topcrashers_Model();
         $this->bug_model = new Bug_Model;
     }
-    
+
     /**
      * Handle empty version values in the methods below, and redirect accordingly.
      *
@@ -84,7 +84,7 @@ class Topcrasher_Controller extends Controller {
                 'release' => null
             )
         );
-                
+
         url::redirect('topcrasher/'.$method.'/'.$product.'/'.$version);
     }
 
@@ -138,17 +138,17 @@ class Topcrasher_Controller extends Controller {
         if(is_null($product)) {
           Kohana::show_404();
         }
-        $this->navigationChooseVersion($product, $version);        
+        $this->navigationChooseVersion($product, $version);
         if (empty($version)) {
             $this->_handleEmptyVersion($product, 'byversion');
         } else {
-            $this->_versionExists($version);            
+            $this->_versionExists($version);
         }
-        
+
         if (empty($duration)) {
             $duration = Kohana::config('products.duration');
         }
-        
+
 	$duration_url_path = array(Router::$controller, Router::$method, $product, $version);
 	$durations = Kohana::config('topcrashbysig.durations');
 
@@ -163,17 +163,17 @@ class Topcrasher_Controller extends Controller {
 
 	$cache_in_minutes = Kohana::config('webserviceclient.topcrash_vers_rank_cache_minutes', 60);
 	$end_date = urlencode(date('Y-m-d\TH:i:s\T+0000', TimeUtil::roundOffByMinutes($cache_in_minutes)));
-	// $dur is number of hours 
+	// $dur is number of hours
 	$dur = $duration * 24;
 	$limit = Kohana::config('topcrashbysig.byversion_limit', 300);
 	// lifetime in seconds
 	$lifetime = $cache_in_minutes * 60;
-	
+
 	$crash_types = Kohana::config('topcrashbysig.crash_types');
 	if (empty($crash_type) || !in_array($crash_type, $crash_types)) {
 		$crash_type = Kohana::config('topcrashbysig.crash_types_default');
 	}
-	
+
 	$p = urlencode($product);
 	$v = urlencode($version);
         $resp = $service->get("${host}/201010/topcrash/sig/trend/rank/p/${p}/v/${v}/type/${crash_type}/end/${end_date}/duration/${dur}/listsize/${limit}", 'json', $lifetime);
@@ -185,17 +185,17 @@ class Topcrasher_Controller extends Controller {
 				     'crashes' => array(),
 				     'totalNumberOfCrashes' => 0), 'top crash sig overall');
 	    $signatures = array();
-	    $req_props = array( 
+	    $req_props = array(
                 'signature' => '',
-                'count' => 0, 
-                'win_count' => 0, 
-                'mac_count' => 0, 
-                'linux_count' => 0, 
-                'currentRank' => 0, 
-                'previousRank' => 0, 
-                'changeInRank' => 0, 
-                'percentOfTotal' => 0, 
-                'previousPercentOfTotal' => 0, 
+                'count' => 0,
+                'win_count' => 0,
+                'mac_count' => 0,
+                'linux_count' => 0,
+                'currentRank' => 0,
+                'previousRank' => 0,
+                'changeInRank' => 0,
+                'percentOfTotal' => 0,
+                'previousPercentOfTotal' => 0,
                 'changeInPercentOfTotal' => 0
             );
 
@@ -231,7 +231,7 @@ class Topcrasher_Controller extends Controller {
 	    $rows = $this->bug_model->bugsForSignatures($unique_signatures);
 	    $bugzilla = new Bugzilla;
 	    $signature_to_bugzilla = $bugzilla->signature2bugzilla($rows, Kohana::config('codebases.bugTrackingUrl'));
- 
+
         // Fetch versions associated with top crashers
         $resp->crashes = $this->topcrashers_model->fetchTopcrasherVersions($product, $resp->crashes);
 
@@ -315,7 +315,7 @@ class Topcrasher_Controller extends Controller {
 
 	$p = urlencode($product);
 	$v = urlencode($version);
-	
+
 	//Bug#534063
 	if ($signature == Crash::$null_sig) {
 	    $signature = Crash::$null_sig_api_value;
@@ -338,7 +338,7 @@ class Topcrasher_Controller extends Controller {
 		$item = $resp->signatureHistory[$i];
 		array_push($data['counts'], array(strtotime($item->date) * 1000, $item->count));
 		array_push($data['percents'], array(strtotime($item->date) * 1000, $item->percentOfTotal * 100));
-	    } 
+	    }
 	    echo json_encode($data);
 	} else {
 	    echo json_encode(array('error' => 'There was an error loading the data'));
@@ -346,7 +346,7 @@ class Topcrasher_Controller extends Controller {
     }
 
     /**
-     * Helper method for formatting a topcrashers list of objects into data 
+     * Helper method for formatting a topcrashers list of objects into data
      * suitable for CSV output
      * @param array of topCrashersBySignature object
      * @return array of strings
@@ -354,8 +354,8 @@ class Topcrasher_Controller extends Controller {
      */
     private function _csvFormatArray($topcrashers)
     {
-        $csvData = array(array('Rank', 'Change In Rank', 'Percentage of All Crashes', 
-			       'Previous Percentage', 'Signature', 
+        $csvData = array(array('Rank', 'Change In Rank', 'Percentage of All Crashes',
+			       'Previous Percentage', 'Signature',
 			       'Total', 'Win', 'Mac', 'Linux',
                    'Version Count', 'Versions'));
         $i = 0;
@@ -384,7 +384,7 @@ class Topcrasher_Controller extends Controller {
     }
 
     /**
-     * Helper method for formatting a topcrashers list of objects into data 
+     * Helper method for formatting a topcrashers list of objects into data
      * suitable for CSV output
      * @param array of topCrashersBySignature object
      * @return array of strings
@@ -417,8 +417,8 @@ class Topcrasher_Controller extends Controller {
     /**
      * Generates the report from a URI perspective.
      * URLs are truncated after the query string
-     * 
-     * @param   string product name 
+     *
+     * @param   string product name
      * @param   string version Example: 3.7a1pre
      * @return  null
      */
@@ -427,20 +427,20 @@ class Topcrasher_Controller extends Controller {
 	        Kohana::show_404();
         }
         $this->navigationChooseVersion($product, $version);
-        if (empty($version)) {            
+        if (empty($version)) {
             $this->_handleEmptyVersion($product, 'byurl');
         } else {
             $this->_versionExists($version);
         }
-            
+
         $by_url_model = new TopcrashersByUrl_Model();
-        list($start_date, $end_date, $top_crashers) = 
+        list($start_date, $end_date, $top_crashers) =
         $by_url_model->getTopCrashersByUrl($product, $version);
-        
+
         cachecontrol::set(array(
             'expires' => time() + (60 * 60)
         ));
-        
+
         $this->setViewData(array(
             'beginning'     => $start_date,
             'ending_on'     => $end_date,
@@ -454,14 +454,14 @@ class Topcrasher_Controller extends Controller {
 
     /**
      * Generates the report from a domain name perspective
-     * 
-     * @param string product name 
+     *
+     * @param string product name
      * @param string version Example: 3.7a1pre
      */
     public function bydomain($product=null, $version=null) {
         if(is_null($product)) {
             Kohana::show_404();
-        }  
+        }
         $this->navigationChooseVersion($product, $version);
         if (empty($version)) {
             $this->_handleEmptyVersion($product, 'bydomain');
@@ -470,7 +470,7 @@ class Topcrasher_Controller extends Controller {
         }
 
         $by_url_model = new TopcrashersByUrl_Model();
-        list($start_date, $end_date, $top_crashers) = 
+        list($start_date, $end_date, $top_crashers) =
 	    $by_url_model->getTopCrashersByDomain($product, $version);
 
         cachecontrol::set(array(
@@ -480,7 +480,7 @@ class Topcrasher_Controller extends Controller {
         $this->setViewData(array(
             'beginning'     => $start_date,
             'ending_on'     => $end_date,
-    	    'nav_selection' => 'top_domain',            
+    	    'nav_selection' => 'top_domain',
             'product'       => $product,
             'top_crashers'  => $top_crashers,
             'url_nav'       => url::site('products/'.$product),
@@ -489,9 +489,9 @@ class Topcrasher_Controller extends Controller {
     }
 
     /**
-     * List the top 100 (x) Alexa top site domains, ordered by site ranking, and 
+     * List the top 100 (x) Alexa top site domains, ordered by site ranking, and
  	 * show the bugs that affect them.
-     * 
+     *
 	 * @access 	public
      * @param 	string 	The product name (e.g. 'Firefox')
      * @param 	string 	The version (e.g. '3.7a1pre')
@@ -508,18 +508,18 @@ class Topcrasher_Controller extends Controller {
          } else {
              $this->_versionExists($version);
          }
-         
+
          $by_url_model = new TopcrashersByUrl_Model();
          list($start_date, $end_date, $top_crashers) = $by_url_model->getTopCrashersByTopsiteRank($product, $version);
-         
+
          cachecontrol::set(array(
              'expires' => time() + (60 * 60)
          ));
-         
+
          $this->setViewData(array(
          	'beginning' 	=> $start_date,
              'ending_on' 	=> $end_date,
-             'nav_selection' => 'top_topsite',            
+             'nav_selection' => 'top_topsite',
              'product'       => $product,
              'top_crashers'  => $top_crashers,
              'url_nav' => url::site('products/'.$product),
@@ -528,7 +528,7 @@ class Topcrasher_Controller extends Controller {
     }
 
     /**
-     * AJAX GET method which returns last 2 weeks of 
+     * AJAX GET method which returns last 2 weeks of
      * Aggregated crash signatures based on
      * signaturesforurl/{product}/{version}?url={url_encoded_url}&page={page}
      * product - Firefox
@@ -550,14 +550,14 @@ class Topcrasher_Controller extends Controller {
         cachecontrol::set(array(
             'expires' => time() + (60 * 60)
         ));
-      
+
       $signatures = $by_url_model->getSignaturesByUrl($product, $version, $url, $page);
       foreach($signatures as $signature) {
         $sig = $signature->signature;
         $signature->signature = urlencode($sig);
         $signature->label = htmlentities($sig);
       }
-      
+
       echo json_encode($signatures);
     }
 
@@ -583,7 +583,7 @@ class Topcrasher_Controller extends Controller {
       cachecontrol::set(array(
           'expires' => time() + (60 * 60)
       ));
-      
+
       echo json_encode($by_url_model->getUrlsByDomain($product, $version, $domain, $page));
     }
 }

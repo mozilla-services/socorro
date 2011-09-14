@@ -27,17 +27,17 @@ class Common_Model extends Model {
      * @see getCommentsBySignature
      */
     public function getCommentsBySignature($signature) {
-        $params = array('signature' => $signature, 
+        $params = array('signature' => $signature,
 			'range_value' => 2, 'range_unit' => 'weeks',
-			'product' => NULL,  'version' => NULL, 
+			'product' => NULL,  'version' => NULL,
 			'branch' => NULL,   'platform' => NULL,
 			'query' => NULL, 'date' => NULL);
 	return $this->getCommentsByParams($params);
     }
-    
+
     /**
      * Fetch all of the comments associated with a particular Crash Signature.
-     * 
+     *
      * @access 	public
      * @param	array 	An array of parameters
      * @return  array 	An array of comments
@@ -47,11 +47,11 @@ class Common_Model extends Model {
 
         $sql =
 	    "/* soc.web report.getCommentsBySignature */ " .
-            " SELECT 
-				reports.client_crash_date, 
-				reports.user_comments, 
-                                reports.uuid, 
-				CASE 
+            " SELECT
+				reports.client_crash_date,
+				reports.user_comments,
+                                reports.uuid,
+				CASE
 					WHEN reports.email = '' THEN null
 					WHEN reports.email IS NULL THEN null
 					ELSE reports.email
@@ -61,7 +61,7 @@ class Common_Model extends Model {
 	    $sql .= " JOIN  " . join("\nJOIN ", $join_tables);
         }
 
-        $sql .= " WHERE reports.user_comments IS NOT NULL " . 
+        $sql .= " WHERE reports.user_comments IS NOT NULL " .
 	        " AND " . join(' AND ', $where) .
 	        " ORDER BY email ASC, reports.client_crash_date ASC ";
 	return $this->fetchRows($sql);
@@ -87,15 +87,15 @@ class Common_Model extends Model {
 
         $platforms = $this->platform_model->getAll();
         foreach ($platforms as $platform) {
-            $columns[] = 
+            $columns[] =
                 "count(CASE WHEN (reports.os_name = '{$platform->os_name}') THEN 1 END) ".
                 "AS is_{$platform->id}";
         }
 
         $extra_group_by = "";
         if (
-            array_key_exists('process_type', $params) && 
-	        'plugin' == $params['process_type'] 
+            array_key_exists('process_type', $params) &&
+	        'plugin' == $params['process_type']
         ) {
             array_push($columns, 'plugins.name AS pluginName, plugins_reports.version AS pluginVersion');
             array_push($columns, 'plugins.filename AS pluginFilename');
@@ -104,16 +104,16 @@ class Common_Model extends Model {
         array_push($columns, 'SUM (CASE WHEN hangid IS NULL THEN 0  ELSE 1 END) AS numhang');
         array_push($columns, 'SUM (CASE WHEN process_type IS NULL THEN 0  ELSE 1 END) AS numplugin');
 
-        list($from_tables, $join_tables, $where) = 
+        list($from_tables, $join_tables, $where) =
             $this->_buildCriteriaFromSearchParams($params);
 
         $sql = "/* soc.web common.queryTopSig. */ ";
 
         if ($return_type == 'results') {
-            $sql .= " SELECT " . join(', ', $columns); 
+            $sql .= " SELECT " . join(', ', $columns);
         } elseif ($return_type == 'count') {
             $sql .= " SELECT COUNT(DISTINCT reports.signature) as count ";
-        } 
+        }
 
         $sql .= " FROM   " . join(', ', $from_tables);
 
@@ -124,13 +124,13 @@ class Common_Model extends Model {
         $sql .= " WHERE  " . join(' AND ', $where);
 
         if ($return_type == 'results') {
-            $sql .= 
+            $sql .=
                 " GROUP BY reports.signature " .
-       	        $extra_group_by .  
+       	        $extra_group_by .
                 " ORDER BY count(reports.id) DESC " .
                 " LIMIT ? " .
-                " OFFSET ? "; 
-            
+                " OFFSET ? ";
+
             return $this->fetchRows($sql, TRUE, array($items_per_page, $offset));
         } else {
             $results = $this->fetchRows($sql);
@@ -145,10 +145,10 @@ class Common_Model extends Model {
      * @return int total number of crashes
      */
     public function totalNumberReports($params) {
-        list($from_tables, $join_tables, $where) = 
+        list($from_tables, $join_tables, $where) =
             $this->_buildCriteriaFromSearchParams($params);
 
-        $sql = "/* soc.web common.totalQueryReports */ 
+        $sql = "/* soc.web common.totalQueryReports */
             SELECT COUNT(DISTINCT uuid) as total
             FROM   " . join(', ', $from_tables);
         if(count($join_tables) > 0) {
@@ -168,7 +168,7 @@ class Common_Model extends Model {
     /**
      * Find all crash reports for the given search parameters and
      * paginate the results.
-     * 
+     *
      * @param array Parameters that vary
      * @pager object optional MozPager instance
      * @return array of objects
@@ -180,11 +180,11 @@ class Common_Model extends Model {
             $pager->itemsPerPage = Kohana::config('search.number_report_list');
             $pager->currentPage = 1;
         }
-        
+
         list($from_tables, $join_tables, $where, $outer_join_tables) = $this->_buildCriteriaFromSearchParams($params);
 
         $sql = "/* soc.web common.queryReports */ " .
-               "SELECT 
+               "SELECT
                        reports.date_processed,
                        reports.uptime,
                        reports.user_comments,
@@ -214,7 +214,7 @@ class Common_Model extends Model {
             $sql .= " LEFT OUTER JOIN  " . join("\nJOIN ", $outer_join_tables);
         }
         $sql .= " WHERE  " . join(' AND ', $where) .
-    	        " ORDER BY reports.date_processed DESC " . 
+    	        " ORDER BY reports.date_processed DESC " .
                 " LIMIT ? OFFSET ?";
 
         Kohana::log('debug', $sql);
@@ -232,19 +232,19 @@ class Common_Model extends Model {
         $columns = array(
             "date_trunc('day', reports.build_date) AS build_date",
             "count(CASE WHEN (reports.signature = $signature) THEN 1 END) AS count",
-            "CAST(count(CASE WHEN (reports.signature = $signature) THEN 1 END) AS FLOAT(10)) / count(reports.id) AS frequency", 
+            "CAST(count(CASE WHEN (reports.signature = $signature) THEN 1 END) AS FLOAT(10)) / count(reports.id) AS frequency",
             "count(reports.id) AS total"
         );
 
         $platforms = $this->platform_model->getAll();
         foreach ($platforms as $platform) {
-            $columns[] = 
+            $columns[] =
                 "count(CASE WHEN (reports.signature = $signature AND reports.os_name = '{$platform->os_name}') THEN 1 END) AS count_{$platform->id}";
-            $columns[] = 
+            $columns[] =
                 "CASE WHEN (count(CASE WHEN (reports.os_name = '{$platform->os_name}') THEN 1 END) > 0) THEN (CAST(count(CASE WHEN (reports.signature = $signature AND reports.os_name = '{$platform->os_name}') THEN 1 END) AS FLOAT(10)) / count(CASE WHEN (reports.os_name = '{$platform->os_name}') THEN 1 END)) ELSE 0.0 END AS frequency_{$platform->id}";
         }
 
-        list($from_tables, $join_tables, $where) = 
+        list($from_tables, $join_tables, $where) =
             $this->_buildCriteriaFromSearchParams($params);
 
         $sql =
@@ -286,7 +286,7 @@ class Common_Model extends Model {
         if (isset($params['signature'])) {
             $where[] = 'reports.signature = ' . $this->db->escape($params['signature']);
         }
-        
+
         if (empty($params['date']) || !strtotime($params['date'])) {
             $params['date'] = NULL;
         }
@@ -297,7 +297,7 @@ class Common_Model extends Model {
             foreach ($params['version'] as $spec) {
                 if (strstr($spec, ":")) {
                     list($product, $version) = explode(":", $spec);
-                
+
                     $sql = "/* soc.web report._buildCriteriaFromSearchParams */" .
                            "SELECT pi.version_string, which_table, major_version FROM product_info pi" .
                            " JOIN product_versions pv ON (pv.product_version_id = pi.product_version_id)" .
@@ -325,23 +325,23 @@ class Common_Model extends Model {
                             array_push($join_tables, $join);
                         }
                         if ($channel == 'beta') {
-                            $or[] = 
-                               "(reports.product = " . $this->db->escape($product) . 
+                            $or[] =
+                               "(reports.product = " . $this->db->escape($product) .
                                " AND product_versions.version_string = " . $this->db->escape($version) .
                                " AND reports.version = product_versions.release_version" .
                                " AND reports.release_channel ILIKE 'beta'" .
                                " AND product_versions.build_type = 'Beta'" .
                                " AND EXISTS ( SELECT 1 FROM product_version_builds WHERE product_versions.product_version_id = product_version_builds.product_version_id AND build_numeric(reports.build) = product_version_builds.build_id ))";
                         } else if ($channel = 'release') {
-                            $or[] =      
+                            $or[] =
                                 "(reports.product = " . $this->db->escape($product) .
-                                "AND reports.version = " . $this->db->escape($reports_version) . 
+                                "AND reports.version = " . $this->db->escape($reports_version) .
                                 "AND product_versions.build_type = 'Release'" .
                                 "AND reports.release_channel NOT IN ('nightly', 'aurora', 'beta'))";
                         }
                     } else {
 
-                        $or[] =      
+                        $or[] =
                             "(reports.product = " . $this->db->escape($product) . " AND " .
                             "reports.version = " . $this->db->escape($reports_version) . ")";
                     }
@@ -384,7 +384,7 @@ class Common_Model extends Model {
         }
 
         if (isset($params['reason']) && trim($params['reason']) != '') {
-            $where[] = ' reports.reason = ' . $this->db->escape($params['reason']); 
+            $where[] = ' reports.reason = ' . $this->db->escape($params['reason']);
         }
 
         if (array_key_exists('build_id', $params) && $params['build_id']) {
@@ -403,16 +403,16 @@ class Common_Model extends Model {
 	*/
 
         // Report Type hang_type - [any|crash|hang]
-        if (array_key_exists('hang_type', $params) && 
+        if (array_key_exists('hang_type', $params) &&
             'crash' == $params['hang_type']) {
                 $where[] = 'reports.hangid IS NULL';
-	} elseif (array_key_exists('hang_type', $params) && 
+	} elseif (array_key_exists('hang_type', $params) &&
 		  'hang' == $params['hang_type']) {
                       $where[] = 'reports.hangid IS NOT NULL';
 	} // else hang_type is ANY
 
         // Report Process process_type - [any|browser|plugin|
-        if (array_key_exists('process_type', $params) && 
+        if (array_key_exists('process_type', $params) &&
 	    'plugin' == $params['process_type'] ) {
             $where[] = "reports.process_type = 'plugin'";
 
@@ -422,14 +422,14 @@ class Common_Model extends Model {
         if (trim($params['plugin_query']) != '') {
             switch ($params['plugin_query_type']) {
                 case 'exact':
-                    $plugin_query_term = ' = ' . $this->db->escape($params['plugin_query']); 
+                    $plugin_query_term = ' = ' . $this->db->escape($params['plugin_query']);
                     break;
                 case 'startswith':
-                    $plugin_query_term = ' LIKE ' . $this->db->escape($params['plugin_query'].'%'); 
+                    $plugin_query_term = ' LIKE ' . $this->db->escape($params['plugin_query'].'%');
                     break;
                 case 'contains':
                 default:
-                    $plugin_query_term = ' LIKE ' . $this->db->escape('%'.$params['plugin_query'].'%'); 
+                    $plugin_query_term = ' LIKE ' . $this->db->escape('%'.$params['plugin_query'].'%');
                     break;
             }
             if ('filename' == $params['plugin_field']) {
@@ -438,7 +438,7 @@ class Common_Model extends Model {
                 $where[] = 'plugins.name ' . $plugin_query_term;
             }
         }
-	} elseif (array_key_exists('process_type', $params) && 
+	} elseif (array_key_exists('process_type', $params) &&
 	          'browser' == $params['process_type']) {
                       $where[] = 'reports.process_type IS NULL';
 	} // else process_type is ANY
@@ -468,7 +468,7 @@ class Common_Model extends Model {
                 $interval = $this->db->escape($params['range_value'] . ' ' . $params['range_unit']);
                 $now = date('Y-m-d H:i:s');
                 $where[] = "reports.date_processed BETWEEN TIMESTAMP '$now' - CAST($interval AS INTERVAL) AND TIMESTAMP '$now'";
-                if (array_key_exists('process_type', $params) && 
+                if (array_key_exists('process_type', $params) &&
                     'plugin' == $params['process_type'] ) {
                         $where[] = "plugins_reports.date_processed BETWEEN TIMESTAMP '$now' - CAST($interval AS INTERVAL) AND TIMESTAMP '$now'";
                 }
@@ -476,7 +476,7 @@ class Common_Model extends Model {
                 $date = $this->db->escape($params['date']);
                 $interval = $this->db->escape($params['range_value'] . ' ' . $params['range_unit']);
                 $where[] = "reports.date_processed BETWEEN CAST($date AS TIMESTAMP WITHOUT TIME ZONE) - CAST($interval AS INTERVAL) AND CAST($date AS TIMESTAMP WITHOUT TIME ZONE)";
-                if (array_key_exists('process_type', $params) && 
+                if (array_key_exists('process_type', $params) &&
                     'plugin' == $params['process_type'] ) {
                         $where[] = "plugins_reports.date_processed BETWEEN CAST($date AS TIMESTAMP WITHOUT TIME ZONE) - CAST($interval AS INTERVAL) AND CAST($date AS TIMESTAMP WITHOUT TIME ZONE)";
                 }

@@ -4,7 +4,7 @@
 
 <?php
 echo html::stylesheet(array(
-		'css/daily.css',				
+		'css/daily.css',
 	), array('screen', 'screen'));
 ?>
 <?php slot::end() ?>
@@ -37,8 +37,8 @@ echo html::script(array(
         'form_selection' => $form_selection,
 		'graph_data' => $graph_data,
         'operating_system' => $operating_system,
-        'operating_systems' => $operating_systems,    		
-        'product' => $product,                       	
+        'operating_systems' => $operating_systems,
+        'product' => $product,
         'products' => $products,
         'hang_type' => $hang_type,
         'throttle_default' => $throttle_default,
@@ -87,7 +87,7 @@ echo html::script(array(
 <br class="clear" />
 
 <?php
-    if (!empty($graph_data)) { 
+    if (!empty($graph_data)) {
         View::factory($file_crash_data, array(
             'dates' => $dates,
             'operating_systems' => $operating_systems,
