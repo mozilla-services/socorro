@@ -14,7 +14,7 @@ order by signature, product, version, os_name, build;
 
 alter table signature_build owner to breakpad_rw;
 
-create unique index signature_build_key on signature_build 
+create unique index signature_build_key on signature_build
 	( signature, product, version, os_name, build );
 create index signature_build_signature on signature_build ( signature );
 create index signature_build_product on signature_build ( product, version );
@@ -24,7 +24,7 @@ update signature_build set productdims_id = productdims.id
 from productdims
 where productdims.product = signature_build.product
 	and productdims.version = signature_build.version;
-	
+
 create index signature_build_productdims on signature_build(productdims_id);
 
 create table signature_first (
@@ -81,7 +81,7 @@ RETURNS BOOLEAN
 LANGUAGE plpgsql AS $f$
 BEGIN
 
--- this omnibus function is designed to be called by cron once per hour.  
+-- this omnibus function is designed to be called by cron once per hour.
 -- it updates all of the signature matviews: signature_productdims, signature_build,
 -- and signature_first
 
@@ -100,7 +100,7 @@ group by signature, product, version, os_name, build
 order by signature, product, version, os_name, build;
 
 -- update productdims column in signature_build
-	
+
 update signature_build_updates set productdims_id = productdims.id
 from productdims
 where productdims.product = signature_build_updates.product
@@ -108,7 +108,7 @@ where productdims.product = signature_build_updates.product
 
 -- remove any garbage rows
 
-DELETE FROM signature_build_updates 
+DELETE FROM signature_build_updates
 WHERE productdims_id IS NULL
 	OR os_name IS NULL
 	OR build IS NULL;
@@ -123,7 +123,7 @@ from signature_build_updates sbup
 left outer join signature_build
 	using ( signature, product, version, os_name, build )
 where signature_build.signature IS NULL;
-	
+
 -- add new rows to signature_productdims
 
 insert into signature_productdims ( signature, productdims_id, first_report )
@@ -155,7 +155,7 @@ from signature_build_updates sbup
 		and sbup.productdims_id = sfirst.productdims_id
 		and tcbs.osdims_id = sfirst.osdims_id
 where sbup.os_name = osdims.os_name
-	and tcbs.window_end BETWEEN  
+	and tcbs.window_end BETWEEN
 		( currenttime - ( interval '1 hour' * hours_back ) - (interval '1 hour' * hours_window ) )
 		AND ( currenttime - ( interval '1 hour' * hours_back ) )
 	and sfirst.signature IS NULL

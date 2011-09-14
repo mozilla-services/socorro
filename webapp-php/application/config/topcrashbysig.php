@@ -13,13 +13,13 @@ $config['byversion_limit'] = 300;
 $config['bybranch_limit'] = 300;
 
 /**
- * The list of days provided as options by which to limit 
+ * The list of days provided as options by which to limit
  * the top crasher query.
  */
 $config['durations'] = array(1, 3, 7, 14, 28);
 
 /**
- * The list of crash types that appear on the top crasher 
+ * The list of crash types that appear on the top crasher
  * by version page.
  */
 $config['crash_types'] = array('all', 'browser', 'plugin');

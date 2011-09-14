@@ -18,7 +18,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  *   Xavier Stevens <xstevens@mozilla.com>, Mozilla Corporation (original author)
  *
  * Alternatively, the contents of this file may be used under the terms of
@@ -57,7 +57,7 @@ public class GuiceConfig extends GuiceServletContextListener {
 			protected void configureServlets() {
 				bind(CrashCountDao.class).to(HbaseCrashCountDao.class);
 				bind(CorrelationReportService.class);
-				
+
 				serve("*").with(GuiceContainer.class);
 			}
 		});

@@ -42,7 +42,7 @@ require_once dirname(__FILE__).'/../application/libraries/bugzilla.php';
 	$bugzilla->sortByResolution($bugInfos);
 
 	$this->assertEquals('',           $bugInfos[0]['resolution']); //was #2
-	$this->assertEquals('495177',           $bugInfos[0]['id']); 
+	$this->assertEquals('495177',           $bugInfos[0]['id']);
 	$this->assertEquals('FIXED',      $bugInfos[1]['resolution']); //was #1
 	$this->assertEquals('FIXED',      $bugInfos[2]['resolution']); //was #2
     }

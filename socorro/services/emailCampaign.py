@@ -45,8 +45,8 @@ class EmailCampaign(webapi.JsonServiceBase):
                     'signature': signature, 'subject': subject, 'body': body,
                     'start_date': start_date.isoformat(), 'end_date': end_date.isoformat(),
                     'email_count': email_count, 'author': author, 'date_created': date_created.isoformat(), 'status': status, 'send': True}
-      
-      cursor.execute("""SELECT count(status), status FROM email_campaigns_contacts 
+
+      cursor.execute("""SELECT count(status), status FROM email_campaigns_contacts
                         WHERE email_campaigns_id = %s
                         GROUP BY status""", [id])
       counts = cursor.fetchall()

@@ -33,7 +33,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the MPL, the GPL or the LGPL.
  *
- * ***** END LICENSE BLOCK ***** 
+ * ***** END LICENSE BLOCK *****
  *
  */
 
@@ -61,15 +61,15 @@ class Bug_Model extends Model {
 	if (count($sigs) == 0) {
 	    return array();
 	}
-            
+
         return $report = $this->db->query(
 "/* soc.web bugsForSigs */
 SELECT ba.signature, bugs.id FROM bugs
 JOIN bug_associations AS ba ON bugs.id = ba.bug_id
-WHERE EXISTS( 
+WHERE EXISTS(
     SELECT 1 FROM bug_associations
-    WHERE bug_associations.bug_id = bugs.id AND 
-          signature IN (" . implode(", ", $sigs) . "))", 
+    WHERE bug_associations.bug_id = bugs.id AND
+          signature IN (" . implode(", ", $sigs) . "))",
              TRUE)->result_array(FALSE);
     }
 }

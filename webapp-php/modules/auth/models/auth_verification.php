@@ -16,7 +16,7 @@ class Auth_Verification_Model extends Model {
 	 * Set the timestamp at which the token is considered expired.
 	 */
 	protected $expired;
-	
+
 	/**
 	* @see 		Database
 	* @access	protected
@@ -72,13 +72,13 @@ class Auth_Verification_Model extends Model {
 			$token = text::random('alnum', 32);
 			if ($this->db->select('token')->where('token', $token)->get('verifications')->count() === 0)
 			{
-				$this->db->insert('verifications', 
+				$this->db->insert('verifications',
 					array(
 						'token' => $token,
 						'users_id' => $users_id,
 						'action' => $action,
 						'email' => $email,
-						'created' => $this->now			
+						'created' => $this->now
 					)
 				);
 				return $token;
@@ -103,7 +103,7 @@ class Auth_Verification_Model extends Model {
 	 * Fetch a specific token.
 	 *
 	 * @access	public
-	 * @param 	string 	
+	 * @param 	string
 	 * @return  void
 	 */
 	public function verification_get($token)
@@ -123,17 +123,17 @@ class Auth_Verification_Model extends Model {
 	 */
 	private function verifications_delete_expired()
 	{
-		$this->db->where('created <', ($this->expired))->delete('verifications'); 
+		$this->db->where('created <', ($this->expired))->delete('verifications');
 		$this->db->where(array('created <' => $this->expired, 'verified' => '0'))->delete('users'); // @todo Move this to a more appropriate place
 	}
-	
+
 	/**
 	 * Verify that a token has been set and has not expired.
 	 *
 	 * @access	public
-	 * @param 	string 	
+	 * @param 	string
 	 * @param 	string	options 'email', 'registration'
-	 * @return  array 
+	 * @return  array
 	 */
 	public function verify($token)
 	{
@@ -159,37 +159,37 @@ class Auth_Verification_Model extends Model {
 		}
 		return false;
 	}
-	
+
 	/**
 	 * The user has verified their email address, update use record to reflect this update.
 	 *
 	 * @access	private
-	 * @return  bool	
+	 * @return  bool
 	 */
 	private function verify_email ($id, $email) {
 		$user = new User_Model($id);
 		$user->email = $email;
 		$user->save();
-		
+
 		return 'email';
 	}
-	
+
 	/**
 	 * The user has verified their email address, now allow the user to reset their password.
 	 *
 	 * @access	private
-	 * @return  bool	
+	 * @return  bool
 	 */
 	private function verify_forgot () {
 		return 'forgot';
 	}
-	
+
 	/**
 	 * Mark the user as verified, set the user's role to 'login' and auto-login this user.  Then
 	 * send out a welcome email.
 	 *
 	 * @access	private
-	 * @return  bool	
+	 * @return  bool
 	 */
 	private function verify_registration ($id) {
 		$user = new User_Model($id);
@@ -200,8 +200,8 @@ class Auth_Verification_Model extends Model {
 		Auth::instance()->force_login($user->username);
 		$user->register_welcome_email();
 
-		return 'registration';		
+		return 'registration';
 	}
 
 	/* */
-} 
+}

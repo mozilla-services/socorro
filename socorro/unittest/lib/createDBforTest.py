@@ -17,7 +17,7 @@ def dropDB(connection):
   cursor.execute('DROP TABLE IF EXISTS gringo')
   cursor.execute('DROP TABLE IF EXISTS chartable')
   connection.commit()
-  
+
 def createDB(connection):
   cursor = connection.cursor()
   cursor.execute('DROP TABLE IF EXISTS gringo;')

@@ -6,7 +6,7 @@
         <?php } ?>
     </title>
 <?php echo html::stylesheet(array(
-		'css/daily.css',				
+		'css/daily.css',
 	), array('screen', 'screen')); ?>
 <?php slot::end() ?>
 

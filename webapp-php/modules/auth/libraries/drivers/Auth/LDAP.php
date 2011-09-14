@@ -39,34 +39,34 @@
 
 /**
  * LDAP Kohana Auth driver.
- * 
+ *
  * LDAP doesn't quite match the interface specified by the Auth library.
  * Instead of recieving username and password from an HTML form and then
- * hashing the password, this driver relies on the built-in browser 
+ * hashing the password, this driver relies on the built-in browser
  * Basic Authentication. Because of this the following methods are affected:
- * 
+ *
  * - login ignores the username and password parameters
  * - login doesn't support the $remember option
  * - password serves no purpose
  *
  * force_login acts as expected
- * 
+ *
  * ldap_logout is a new method called during the logout process to
  * clear LDAP credentials.
- * 
- * The Controller's job is very simple, to use the Auth library and 
+ *
+ * The Controller's job is very simple, to use the Auth library and
  * redirect the user to resources. No forms, forgot your password, or
  * other features are needed.
  *
  * Design Decision: We could unpack PHP_AUTH_USER and PHP_AUTH_PW
  * at the controller level and pass them into Auth, but these values
  * would need to be passed through untouched as the real Auth work
- * is done by the backend Auth server. To keep things simple, and 
+ * is done by the backend Auth server. To keep things simple, and
  * all LDAP related code in the same file, the Auth login is called
  * with dummy values for username, password, and remember.
- * 
+ *
  * We could also have forgone using Auth all together. Hopefully
- * using Auth will make it easy for other Socorro UI users to 
+ * using Auth will make it easy for other Socorro UI users to
  * use NoAuth or Database backed authentication with little effort.
  *
  * @package    Auth
@@ -166,8 +166,8 @@ class Auth_LDAP_Driver extends Auth_Driver {
     }
 
     /**
-     * Searches for user in LDAP by email address and then attempts to 
-     * authenticate them based on their password. Optionally if 
+     * Searches for user in LDAP by email address and then attempts to
+     * authenticate them based on their password. Optionally if
      * an authorization group is setup (ldap.admin_group) then it will
      * make sure the are authorized.
      * @param string $bind_dn - shared LDAP user
@@ -188,14 +188,14 @@ class Auth_LDAP_Driver extends Auth_Driver {
 		if ($entry) {
 		    $user_dn = ldap_get_dn($ldapconn, $entry);
 		    $auth_bind = ldap_bind($ldapconn, $user_dn, $_SERVER['PHP_AUTH_PW']);
-		    if ($auth_bind) {			    
+		    if ($auth_bind) {
 			$cn = Kohana::config('ldap.admin_group', FALSE);
 			if ($cn) {
 			    if ($this->_authorize($ldapconn, $user_dn, $cn)) {
 				ldap_close($ldapconn);
 				restore_error_handler();
 				return TRUE;
-			    }			    		
+			    }
 			    Kohana::log('debug', "Authorization Failed for " . $user_dn . " in group " . $cn);
 			} else {
 			    // No group level authorization...
@@ -221,7 +221,7 @@ class Auth_LDAP_Driver extends Auth_Driver {
     }
 
     /**
-     * Checks an authenticated user against a group for 
+     * Checks an authenticated user against a group for
      * authorization credentials.
      * @param link_identifier $ldapconn The LDAP connection. Caller is responsible for closing and error handeling
      * @param string $user_dn
@@ -249,9 +249,9 @@ class Auth_LDAP_Driver extends Auth_Driver {
 
     /**
      * logs LDAP errors to Kohana logs. Callback suitable
-     * 
+     *
      * @see set_error_handler
-     * 
+     *
      * @param int $errno
      * @param string $errstr
      * @param string $errfile

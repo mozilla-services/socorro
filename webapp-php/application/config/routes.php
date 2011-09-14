@@ -6,7 +6,7 @@
  */
 # $config['_default'] = 'welcome';
 
-$config['_default'] = 
+$config['_default'] =
     'home/dashboard';
 
 $config['products/([0-9a-zA-Z.]+)'] =
@@ -26,7 +26,7 @@ $config['products/([0-9a-zA-Z.]+)/topchangers'] =
 
 $config['products/([0-9a-zA-Z.]+)/topchangers.([a-z]+)'] =
     'products/index/$1//topchangers/$2';
-    
+
 $config['products/([0-9a-zA-Z.]+)/versions/([0-9a-zA-Z.]+)/builds'] =
     'products/index/$1/$2/builds';
 
@@ -42,7 +42,7 @@ $config['products/([0-9a-zA-Z.]+)/versions/([0-9a-zA-Z.]+)/topchangers.([a-z]+)'
 $config['query'] =
     'query/query';
 
-$config['status'] = 
+$config['status'] =
     'status/index';
 
 $config['topcrasher/byversion/([a-zA-Z.]+)/([0-9a-zA-Z.]+)/([0-9]+)'] =

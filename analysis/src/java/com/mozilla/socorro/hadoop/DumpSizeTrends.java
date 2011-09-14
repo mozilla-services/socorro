@@ -18,7 +18,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  *   Xavier Stevens <xstevens@mozilla.com>, Mozilla Corporation (original author)
  *
  * Alternatively, the contents of this file may be used under the terms of
@@ -73,45 +73,45 @@ import com.mozilla.util.DateUtil;
 public class DumpSizeTrends implements Tool {
 
 	private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(DumpSizeTrends.class);
-	
+
 	private static final String NAME = "DumpSizeTrends";
 	private Configuration conf;
-	
+
 	private static final String KEY_DELIMITER = "\u0001";
 	private static final String TAB_DELIMITER = "\t";
-	
+
 	public static class DumpSizeTrendsMapper extends TableMapper<Text, IntWritable> {
 
-		public enum ReportStats { RAW_BYTES_NULL, PROCESSED_BYTES_NULL, JSON_PARSE_EXCEPTION, JSON_MAPPING_EXCEPTION, 
-								  META_JSON_BYTES_NULL, PROCESSED_JSON_BYTES_NULL, PROCESSED, PRODUCT_FILTERED, 
+		public enum ReportStats { RAW_BYTES_NULL, PROCESSED_BYTES_NULL, JSON_PARSE_EXCEPTION, JSON_MAPPING_EXCEPTION,
+								  META_JSON_BYTES_NULL, PROCESSED_JSON_BYTES_NULL, PROCESSED, PRODUCT_FILTERED,
 								  RELEASE_FILTERED, TIME_FILTERED, CRASH_TIME_NULL, CRASH_TIME_PARSE_FAILED, OOM_ERROR }
-		
+
 		private Text outputKey;
 		private IntWritable outputValue;
-		
+
 		private ObjectMapper jsonMapper;
 		private SimpleDateFormat outputSdf;
-		
+
 		private String productFilter;
 		private String releaseFilter;
 		private long startTime;
 		private long endTime;
-		
+
 		/* (non-Javadoc)
 		 * @see org.apache.hadoop.mapreduce.Mapper#setup(org.apache.hadoop.mapreduce.Mapper.Context)
 		 */
 		public void setup(Context context) {
 			outputKey = new Text();
 			outputValue = new IntWritable();
-			
+
 			jsonMapper = new ObjectMapper();
-			
+
 			outputSdf = new SimpleDateFormat("yyyyMMdd");
-			
+
 			Configuration conf = context.getConfiguration();
 			productFilter = conf.get(PRODUCT_FILTER);
 			releaseFilter = conf.get(RELEASE_FILTER);
-			
+
 			startTime = DateUtil.getTimeAtResolution(conf.getLong(START_TIME, 0), Calendar.DATE);
 			endTime = DateUtil.getEndTimeAtResolution(conf.getLong(END_TIME, System.currentTimeMillis()), Calendar.DATE);
 		}
@@ -126,10 +126,10 @@ public class DumpSizeTrends implements Tool {
 					context.getCounter(ReportStats.META_JSON_BYTES_NULL).increment(1L);
 					return;
 				}
-				
+
 				// This is an untyped parse so the caller is expected to know the types
 				Map<String,Object> meta = jsonMapper.readValue(new String(valueBytes), new TypeReference<Map<String,Object>>() { });
-				
+
 				String product = null;
 				String productVersion = null;
 				if (meta.containsKey(META_JSON_PRODUCT_NAME)) {
@@ -138,26 +138,26 @@ public class DumpSizeTrends implements Tool {
 				if (meta.containsKey(META_JSON_PRODUCT_VERSION)) {
 					productVersion = (String)meta.get(META_JSON_PRODUCT_VERSION);
 				}
-				
+
 				// Filter row if filter(s) are set and it doesn't match
 				if (!StringUtils.isBlank(productFilter)) {
 					if (product == null || !product.equals(productFilter)) {
 						context.getCounter(ReportStats.PRODUCT_FILTERED).increment(1L);
 						return;
 					}
-				} 
+				}
 				if (!StringUtils.isBlank(releaseFilter)) {
 					if (productVersion == null || !productVersion.equals(releaseFilter)) {
 						context.getCounter(ReportStats.RELEASE_FILTERED).increment(1L);
 						return;
 					}
 				}
-				
+
 				String crashTimeStr = (String)meta.get(META_JSON_CRASH_TIME);
 				if (!meta.containsKey(META_JSON_CRASH_TIME)) {
 					context.getCounter(ReportStats.CRASH_TIME_NULL).increment(1L);
 				}
-				
+
 				long crashTime = 0L;
 				try {
 					crashTime = Long.parseLong(crashTimeStr) * 1000L;
@@ -170,14 +170,14 @@ public class DumpSizeTrends implements Tool {
 					context.getCounter(ReportStats.TIME_FILTERED).increment(1L);
 					return;
 				}
-								
+
 				Calendar cal = Calendar.getInstance();
 				cal.setTimeInMillis(crashTime);
 				StringBuilder keyPrefix = new StringBuilder();
 				keyPrefix.append(outputSdf.format(cal.getTime())).append(KEY_DELIMITER);
 				keyPrefix.append(product).append(KEY_DELIMITER);
 				keyPrefix.append(productVersion).append(KEY_DELIMITER);
-				
+
 				valueBytes = result.getValue(RAW_DATA_BYTES, DUMP_BYTES);
 				if (valueBytes == null) {
 					context.getCounter(ReportStats.RAW_BYTES_NULL).increment(1L);
@@ -186,7 +186,7 @@ public class DumpSizeTrends implements Tool {
 					outputValue.set(valueBytes.length);
 					context.write(outputKey, outputValue);
 				}
-				
+
 				valueBytes = result.getValue(PROCESSED_DATA_BYTES, JSON_BYTES);
 				if (valueBytes != null) {
 					outputKey.set(keyPrefix.toString() + "processed");
@@ -195,7 +195,7 @@ public class DumpSizeTrends implements Tool {
 				} else {
 					context.getCounter(ReportStats.PROCESSED_JSON_BYTES_NULL).increment(1L);
 				}
-				
+
 			} catch (JsonParseException e) {
 				context.getCounter(ReportStats.JSON_PARSE_EXCEPTION).increment(1L);
 			} catch (JsonMappingException e) {
@@ -205,15 +205,15 @@ public class DumpSizeTrends implements Tool {
 				context.getCounter(ReportStats.OOM_ERROR).increment(1L);
 			}
 		}
-		
-	}	
+
+	}
 
 	public static class DumpSizeTrendsReducer extends Reducer<Text, IntWritable, Text, Text> {
-				
+
 		private Text outputKey = null;
 		private Text outputValue = null;
 		private Pattern keyPattern = null;
-		
+
 		/* (non-Javadoc)
 		 * @see org.apache.hadoop.mapreduce.Reducer#setup(org.apache.hadoop.mapreduce.Reducer.Context)
 		 */
@@ -222,13 +222,13 @@ public class DumpSizeTrends implements Tool {
 			outputKey = new Text();
 			outputValue = new Text();
 		}
-		
+
 		/* (non-Javadoc)
 		 * @see org.apache.hadoop.mapreduce.Reducer#cleanup(org.apache.hadoop.mapreduce.Reducer.Context)
 		 */
 		public void cleanup(Context context) {
 		}
-		
+
 		/* (non-Javadoc)
 		 * @see org.apache.hadoop.mapreduce.Reducer#reduce(KEYIN, java.lang.Iterable, org.apache.hadoop.mapreduce.Reducer.Context)
 		 */
@@ -241,14 +241,14 @@ public class DumpSizeTrends implements Tool {
 				stats.addValue(curValue);
 				sum += curValue;
 			}
-			
+
 			Matcher m = keyPattern.matcher(key.toString());
 			if (m.find()) {
 				outputKey.set(m.replaceAll(TAB_DELIMITER));
 			} else {
 				outputKey.set(key.toString());
 			}
-			
+
 			// Output the median along with total size
 			StringBuilder sb = new StringBuilder();
 			sb.append(stats.getN()).append(TAB_DELIMITER);
@@ -257,19 +257,19 @@ public class DumpSizeTrends implements Tool {
 			outputValue.set(sb.toString());
 			context.write(outputKey, outputValue);
 		}
-		
+
 	}
-	
+
 	/**
 	 * @param args
 	 * @return
 	 * @throws IOException
-	 * @throws ParseException 
+	 * @throws ParseException
 	 */
 	public Job initJob(String[] args) throws IOException, ParseException {
 		conf.set("mapred.child.java.opts", "-Xmx1024m");
 		conf.setBoolean("mapred.map.tasks.speculative.execution", false);
-		
+
 		Map<byte[], byte[]> columns = new HashMap<byte[], byte[]>();
 		columns.put(RAW_DATA_BYTES, DUMP_BYTES);
 		columns.put(META_DATA_BYTES, JSON_BYTES);
@@ -277,7 +277,7 @@ public class DumpSizeTrends implements Tool {
 		Job job = CrashReportJob.initJob(NAME, getConf(), DumpSizeTrends.class, DumpSizeTrendsMapper.class, null, DumpSizeTrendsReducer.class, columns, Text.class, Text.class, new Path(args[0]));
 		job.setMapOutputKeyClass(Text.class);
 		job.setMapOutputValueClass(IntWritable.class);
-		
+
 		return job;
 	}
 
@@ -296,7 +296,7 @@ public class DumpSizeTrends implements Tool {
 		GenericOptionsParser.printGenericCommandUsage(System.out);
 		return -1;
 	}
-	
+
 	/* (non-Javadoc)
 	 * @see org.apache.hadoop.util.Tool#run(java.lang.String[])
 	 */
@@ -304,14 +304,14 @@ public class DumpSizeTrends implements Tool {
 		if (args.length != 1) {
 			return printUsage();
 		}
-		
+
 		int rc = -1;
 		Job job = initJob(args);
 		job.waitForCompletion(true);
 		if (job.isSuccessful()) {
 			rc = 0;
 		}
-		
+
 		return rc;
 	}
 
@@ -328,7 +328,7 @@ public class DumpSizeTrends implements Tool {
 	public void setConf(Configuration conf) {
 		this.conf = conf;
 	}
-	
+
 	/**
 	 * @param args
 	 * @throws Exception

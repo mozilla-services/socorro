@@ -18,7 +18,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  *   Xavier Stevens <xstevens@mozilla.com>, Mozilla Corporation (original author)
  *
  * Alternatively, the contents of this file may be used under the terms of
@@ -46,7 +46,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.servlet.*;
-import org.eclipse.jetty.servlet.ServletContextHandler; 
+import org.eclipse.jetty.servlet.ServletContextHandler;
 
 import com.google.inject.servlet.GuiceFilter;
 
@@ -56,10 +56,10 @@ public class CorrelationReportServer {
 		int port = Integer.parseInt(System.getProperty("server.port", "8080"));
 		Server server = new Server(port);
 		ServletContextHandler root = new ServletContextHandler(server, "/", ServletContextHandler.SESSIONS);
-		
+
 		root.addFilter(GuiceFilter.class, "/*", 0);
 		root.addEventListener(new GuiceConfig());
-		
+
 		// This is really dumb but you have to have a servlet in order for the filter to kick in
 		root.addServlet(new ServletHolder(new HttpServlet() {
 			private static final long serialVersionUID = 1L;
@@ -67,11 +67,11 @@ public class CorrelationReportServer {
 			protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 				throw new IllegalStateException("unable to service request");
 			}
-			
+
 		}), "/*");
-		
+
 		server.start();
 		server.join();
 	}
-	
+
 }

@@ -114,7 +114,7 @@ class Router_Core {
 					$found = TRUE;
 
 					// The controller must be a file that exists with the search path
-					if ($c = str_replace('\\', '/', realpath($dir.$controller_path.EXT)) 
+					if ($c = str_replace('\\', '/', realpath($dir.$controller_path.EXT))
 					    AND is_file($c) AND strpos($c, $dir) === 0)
 					{
 						// Set controller name

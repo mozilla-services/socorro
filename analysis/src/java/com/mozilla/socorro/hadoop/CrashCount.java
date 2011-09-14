@@ -18,7 +18,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  *   Xavier Stevens <xstevens@mozilla.com>, Mozilla Corporation (original author)
  *
  * Alternatively, the contents of this file may be used under the terms of
@@ -71,22 +71,22 @@ import static com.mozilla.socorro.hadoop.CrashReportJob.*;
 
 /**
  * CrashCount will read crash report data in from HBase and count
- * the number of crashes at different levels (product, version, OS, signature, module, 
+ * the number of crashes at different levels (product, version, OS, signature, module,
  * module_version, addon, addon_version).
- * 
+ *
  */
 public class CrashCount implements Tool {
 
 	private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(CrashCount.class);
-	
+
 	private static final String NAME = "CrashCount";
 	private Configuration conf;
-	
+
 	public static class CrashCountMapper extends TableMapper<Text, LongWritable> {
 
 		public enum ReportStats { JSON_PARSE_EXCEPTION, JSON_MAPPING_EXCEPTION, JSON_BYTES_NULL, DATE_PARSE_EXCEPTION, PROCESSED }
 
-		private CrashCountDao ccDao;	
+		private CrashCountDao ccDao;
 		private ObjectMapper jsonMapper;
 		private Pattern newlinePattern;
 		private Pattern pipePattern;
@@ -94,32 +94,32 @@ public class CrashCount implements Tool {
 		private SimpleDateFormat rowSdf;
 		private long startTime;
 		private long endTime;
-		
+
 		/* (non-Javadoc)
 		 * @see org.apache.hadoop.mapreduce.Mapper#setup(org.apache.hadoop.mapreduce.Mapper.Context)
 		 */
 		public void setup(Context context) {
-			
+
 			try {
 				ccDao = new HbaseCrashCountDao();
 			} catch (IOException e) {
 				throw new RuntimeException("Error creating Crash Count DAO", e);
 			}
-			
+
 			jsonMapper = new ObjectMapper();
-			
+
 			Configuration conf = context.getConfiguration();
 
 			newlinePattern = Pattern.compile("\n");
 			pipePattern = Pattern.compile("\\|");
-			
+
 			sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 			rowSdf = new SimpleDateFormat("yyyyMMdd");
-			
+
 			startTime = DateUtil.getTimeAtResolution(conf.getLong(START_TIME, 0), Calendar.DATE);
 			endTime = DateUtil.getEndTimeAtResolution(conf.getLong(END_TIME, System.currentTimeMillis()), Calendar.DATE);
 		}
-		
+
 		/* (non-Javadoc)
 		 * @see org.apache.hadoop.mapreduce.Mapper#map(KEYIN, VALUEIN, org.apache.hadoop.mapreduce.Mapper.Context)
 		 */
@@ -134,7 +134,7 @@ public class CrashCount implements Tool {
 				String value = new String(valueBytes);
 				// This is an untyped parse so the caller is expected to know the types
 				Map<String,Object> crash = jsonMapper.readValue(value, new TypeReference<Map<String,Object>>() { });
-				
+
 				String product = null;
 				String productVersion = null;
 				if (crash.containsKey(PROCESSED_JSON_PRODUCT)) {
@@ -143,7 +143,7 @@ public class CrashCount implements Tool {
 				if (crash.containsKey(PROCESSED_JSON_VERSION)) {
 					productVersion = (String)crash.get(PROCESSED_JSON_VERSION);
 				}
-				
+
 				// Set the value to the date
 				String dateProcessed = (String)crash.get(PROCESSED_JSON_DATE_PROCESSED);
 				long crashTime = sdf.parse(dateProcessed).getTime();
@@ -151,19 +151,19 @@ public class CrashCount implements Tool {
 				if (crashTime < startTime || crashTime > endTime) {
 					return;
 				}
-				
+
 				String osName = (String)crash.get(PROCESSED_JSON_OS_NAME);
 				if (osName == null) {
 					return;
 				}
-				
+
 				String signame = (String)crash.get(PROCESSED_JSON_SIGNATURE);
-				if (signame != null) {				
+				if (signame != null) {
 					signame = signame + "|" + crash.get(PROCESSED_JSON_REASON);
 				} else {
 					signame = "(no signature)";
 				}
-				
+
 				String arch = null;
 				Map<String, String> moduleVersions = new HashMap<String,String>();
 				for (String dumpline : newlinePattern.split((String)crash.get(PROCESSED_JSON_DUMP))) {
@@ -173,7 +173,7 @@ public class CrashCount implements Tool {
 					} else if (dumpline.startsWith(PROCESSED_JSON_MODULE_PATTERN)) {
 						// module_str, libname, version, pdb, checksum, addrstart, addrend, unknown
 						String[] dumplineSplits = pipePattern.split(dumpline);
-						
+
 						String moduleName;
 						String version;
 						if (osName.startsWith("Win")) {
@@ -184,7 +184,7 @@ public class CrashCount implements Tool {
 							moduleName = dumplineSplits[1];
 							version = dumplineSplits[4];
 						}
-						
+
 						moduleVersions.put(moduleName, version);
 					}
 				}
@@ -196,11 +196,11 @@ public class CrashCount implements Tool {
 						List<String> addonList = (ArrayList<String>)addon;
 						String addonName = addonList.get(0);
 						String version = addonList.get(1);
-						
+
 						addonVersions.put(addonName, version);
 					}
 				}
-				
+
 				if (!StringUtils.isBlank(product) && !StringUtils.isBlank(productVersion) &&
 					!StringUtils.isBlank(osName) && !StringUtils.isBlank(signame)) {
 					Calendar cal = Calendar.getInstance();
@@ -216,20 +216,20 @@ public class CrashCount implements Tool {
 				context.getCounter(ReportStats.DATE_PARSE_EXCEPTION).increment(1L);
 			}
 		}
-		
+
 	}
-	
+
 	/**
 	 * @param args
 	 * @return
 	 * @throws IOException
-	 * @throws ParseException 
+	 * @throws ParseException
 	 */
 	public Job initJob(String[] args) throws IOException, ParseException {
 		Map<byte[], byte[]> columns = new HashMap<byte[], byte[]>();
 		columns.put(PROCESSED_DATA_BYTES, JSON_BYTES);
 		Job job = CrashReportJob.initJob(NAME, getConf(), CrashCount.class, CrashCountMapper.class, null, null, columns, Text.class, LongWritable.class, new Path(args[0]));
-		
+
 		return job;
 	}
 
@@ -244,10 +244,10 @@ public class CrashCount implements Tool {
 		System.out.println(END_DATE + "=<yyyyMMdd>");
 		System.out.println();
 		GenericOptionsParser.printGenericCommandUsage(System.out);
-		
+
 		return -1;
 	}
-	
+
 	/* (non-Javadoc)
 	 * @see org.apache.hadoop.util.Tool#run(java.lang.String[])
 	 */
@@ -255,7 +255,7 @@ public class CrashCount implements Tool {
 		if (args.length != 1) {
 			return printUsage();
 		}
-		
+
 		int rc = -1;
 		Job job = initJob(args);
 		job.waitForCompletion(true);
@@ -279,7 +279,7 @@ public class CrashCount implements Tool {
 	public void setConf(Configuration conf) {
 		this.conf = conf;
 	}
-	
+
 	/**
 	 * @param args
 	 * @throws Exception
@@ -288,5 +288,5 @@ public class CrashCount implements Tool {
 		int res = ToolRunner.run(new Configuration(), new CrashCount(), args);
 		System.exit(res);
 	}
-	
+
 }

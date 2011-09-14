@@ -7,7 +7,7 @@
  * @version		v.0.1
  */
 class Auth_Controller extends Template_Controller {
-	
+
 	/**
 	* Used to store the authenticated user.
 	*
@@ -16,14 +16,14 @@ class Auth_Controller extends Template_Controller {
 	* @var		object	User
 	*/
 	public $authenticated_user;
-	
+
 	/**
 	* @see 		Template
 	* @access	public
 	* @var		object	Template
 	*/
 	public $template;
-	
+
 	/**
 	* Class constructor.  Instantiate the Template and Database classes.
 	*
@@ -34,12 +34,12 @@ class Auth_Controller extends Template_Controller {
 	{
 		$this->template = Kohana::config('config.template');
 		parent::__construct();
-		
+
 		$this->authenticated_user = Auth::instance()->get_user();
-		$this->template->authenticated_user = (isset($this->authenticated_user->username) && !empty($this->authenticated_user->username)) ? $this->authenticated_user->username : null;			
-		$this->template->body_class = 'ltr '; 
+		$this->template->authenticated_user = (isset($this->authenticated_user->username) && !empty($this->authenticated_user->username)) ? $this->authenticated_user->username : null;
+		$this->template->body_class = 'ltr ';
 	}
-	
+
 	/**
 	* Display the change email address page.
 	*
@@ -58,13 +58,13 @@ class Auth_Controller extends Template_Controller {
 				client::messageSendKohana($_POST->errors());
 			}
 		}
-	
+
 		$this->template->title = 'Change your Email Address';
 		$this->template->content = new View('email');
-		$this->template->content->current_email = $user->email; 
+		$this->template->content->current_email = $user->email;
 		$this->template->content->form_url = url::site('email', 'http');
 	}
-	
+
 	/**
 	* Display the forgot password page.
 	*
@@ -75,8 +75,8 @@ class Auth_Controller extends Template_Controller {
 	{
 		if (Auth::instance()->logged_in()) {
 			url::redirect(url::site('password', 'http'));
-		}		
-		
+		}
+
 		if (isset($_POST['action_send_link']) && $this->validate_token()) {
 			$user = new User_Model;
 			if ($user->forgot_password($_POST['email'])) {
@@ -90,7 +90,7 @@ class Auth_Controller extends Template_Controller {
 		$this->template->content = new View('forgot');
 		$this->template->content->form_url = url::site('forgot', 'http');
 	}
-	
+
 	/**
 	* Display the login page.
 	*
@@ -115,18 +115,18 @@ class Auth_Controller extends Template_Controller {
 				client::messageSend(Kohana::lang('auth.auth_login_fail'), E_USER_WARNING);
 			}
 		}
-		
+
 		// Record the users' last page for redirecting purposes, if applicable.
 		if (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER']) && !strstr($_SERVER['HTTP_REFERER'], 'login')) {
 			session::instance()->set("requested_url", $_SERVER['HTTP_REFERER']);
 		}
-		
+
 		$this->template->title = 'Log In';
 		$this->template->content = new View('login');
 		$this->template->content->form_url = url::site('login', 'https');
 		$this->template->content->username = (isset($_POST['username']) && !empty($_POST['username'])) ? $_POST['username'] : null;
-		$this->template->content->password = (isset($_POST['password']) && !empty($_POST['password'])) ? $_POST['password'] : null;		
-		$this->template->content->remember = (isset($_POST['remember']) && !empty($_POST['remember'])) ? $_POST['remember'] : null;		
+		$this->template->content->password = (isset($_POST['password']) && !empty($_POST['password'])) ? $_POST['password'] : null;
+		$this->template->content->remember = (isset($_POST['remember']) && !empty($_POST['remember'])) ? $_POST['remember'] : null;
 	}
 
 	/**
@@ -141,7 +141,7 @@ class Auth_Controller extends Template_Controller {
 		client::messageSend(Kohana::lang('auth.auth_logout_success'), E_USER_NOTICE);
 		url::redirect("login");
 	}
-	
+
 	/**
 	* Display the change password page.
 	*
@@ -162,12 +162,12 @@ class Auth_Controller extends Template_Controller {
 				client::messageSendKohana($_POST->errors());
 			}
 		}
-		
+
 		$this->template->title = 'Change your Password';
 		$this->template->content = new View('password');
 		$this->template->content->form_url = url::site('password', 'https');
 	}
-	
+
 	/**
 	* Display the account registration page.
 	*
@@ -179,16 +179,16 @@ class Auth_Controller extends Template_Controller {
 		// If already logged in, redirect to home page.
 		if (Auth::instance()->logged_in()) {
 			url::redirect(url::site('', 'http'));
-		}		
-		
+		}
+
 		// Handle the $_POST
 		if (isset($_POST['action_create']) && $this->validate_token()) {
 			if (!Captcha::instance()->valid($this->input->post('captcha_response'))) {
 				client::messageSend(Kohana::lang('auth.auth_registration_captcha_invalid'), E_USER_WARNING);
-			} 
+			}
 			elseif($this->input->post('terms_agree') != 1) {
 				client::messageSend(Kohana::lang('auth.auth_registration_terms_agree_required'), E_USER_WARNING);
-			} 
+			}
 			else {
 				$user = new User_Model();
 				if ($user->validate($_POST)) {
@@ -199,19 +199,19 @@ class Auth_Controller extends Template_Controller {
 				}
 			}
 		}
-		
+
 		$this->template->title = 'Join ' . Kohana::config('config.site_name');
 		$this->template->content = new View('register');
-		$this->template->content->form_url = url::site('register', 'https');		
+		$this->template->content->form_url = url::site('register', 'https');
 		$this->template->content->username = (isset($_POST['username']) && !empty($_POST['username'])) ? $_POST['username'] : null;
 		$this->template->content->email = (isset($_POST['email']) && !empty($_POST['email'])) ? $_POST['email'] : null;
 		$this->template->content->email_confirm = (isset($_POST['email_confirm']) && !empty($_POST['email_confirm'])) ? $_POST['email_confirm'] : null;
-		$this->template->content->password = (isset($_POST['password']) && !empty($_POST['password'])) ? $_POST['password'] : null;				
+		$this->template->content->password = (isset($_POST['password']) && !empty($_POST['password'])) ? $_POST['password'] : null;
 		$this->template->content->password_confirm = (isset($_POST['password_confirm']) && !empty($_POST['password_confirm'])) ? $_POST['password_confirm'] : null;
-		$this->template->content->terms_agree = (isset($_POST['terms_agree']) && !empty($_POST['terms_agree'])) ? true : false;		
+		$this->template->content->terms_agree = (isset($_POST['terms_agree']) && !empty($_POST['terms_agree'])) ? true : false;
 	}
-	
-	
+
+
 	/**
 	* Validate a token from a submitted form.  If invalid, throw a 503 error.
 	*
@@ -241,10 +241,10 @@ class Auth_Controller extends Template_Controller {
 		// User is attempting to reset password.  Handle in separate method.
 		if (isset($_POST['action_reset_password'])) {
 			 $this->verify_reset_password();
-		} 
+		}
 
 		// Attempt to verify the token sent in the URI.  If invalid, show fail screen.
-		elseif (isset($_GET['token'])) { 	
+		elseif (isset($_GET['token'])) {
 			if ($action = Verification_Model::instance()->verify($_GET['token'])) {
 				switch($action) {
 					case 'email':
@@ -260,16 +260,16 @@ class Auth_Controller extends Template_Controller {
 						break;
 				}
 			} else {
-				$this->verify_fail(); 
+				$this->verify_fail();
 			}
-		} 
-		
+		}
+
 		// If no token, assume that action is required.
 		else {
 			$this->verify_action_required();
 		}
 	}
-	
+
 	/**
 	* Display the action required page to notify the user of the action they need to take.
 	*
@@ -277,15 +277,15 @@ class Auth_Controller extends Template_Controller {
 	* @param 	string
 	* @return	void
 	*/
-	public function verify_action_required($action='registration') 
+	public function verify_action_required($action='registration')
 	{
 		if (isset($_GET['from']) && !empty($_GET['from'])) {
 			$action = $_GET['from'];
 		}
-		
+
 		switch($action) {
 			case 'email':
-				$this->template->content = new View('verify_action_required_email');		
+				$this->template->content = new View('verify_action_required_email');
 				break;
 			case 'forgot':
 				$this->template->content = new View('verify_action_required_forgot');
@@ -296,7 +296,7 @@ class Auth_Controller extends Template_Controller {
 				break;
 		}
 	}
-	
+
 	/**
 	* Display the reset password page once the token verification has passed.
 	*
@@ -314,35 +314,35 @@ class Auth_Controller extends Template_Controller {
 					if ($user->reset_password($_POST)) {
 						client::messageSend(Kohana::lang('auth.auth_reset_password_success'), E_USER_NOTICE);
 						url::redirect(url::site('', 'http'));
-					} 
-					
+					}
+
 					// Password did not match, show reset password page.
 					else {
 						$this->template->title = 'Reset your Password';
 						$this->template->content = new View('verify_reset_password');
-						$this->template->content->form_url = url::site('verify', 'https');		
+						$this->template->content->form_url = url::site('verify', 'https');
 						$this->template->content->token = (isset($_POST['token']) && !empty($_POST['token'])) ? $_POST['token'] : null;
 						client::messageSendKohana($_POST->errors());
 					}
-				} 
-				
+				}
+
 				// Token failed.  Show failed verification page.
 				else {
 					$this->verify_fail();
 				}
-			} 	
-			
+			}
+
 			// No $_POST['token]. Fail.
 			else {
 				$this->verify_fail();
 			}
-		} 
+		}
 
 		// Show reset password page.
 		else {
 			$this->template->title = 'Reset your Password';
 			$this->template->content = new View('verify_reset_password');
-			$this->template->content->form_url = url::site('verify', 'https');		
+			$this->template->content->form_url = url::site('verify', 'https');
 			$this->template->content->token = (isset($_GET['token']) && !empty($_GET['token'])) ? $_GET['token'] : null;
 		}
 	}
@@ -356,9 +356,9 @@ class Auth_Controller extends Template_Controller {
 	public function verify_fail()
 	{
 		$this->template->title = 'Verification Failed';
-		$this->template->content = new View('verify_fail');		
+		$this->template->content = new View('verify_fail');
 	}
 
 	/* */
-	
+
 }

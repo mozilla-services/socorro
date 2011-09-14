@@ -21,7 +21,7 @@ require_once(Kohana::find_file('libraries/Feed/exceptions', 'meta_data_missing',
  */
 function moz_feed($base_url, $feed_link, $title, $reports)
 {
-        $feed = new ezcFeed(); 
+        $feed = new ezcFeed();
 	$feed->id = $base_url . $feed_link;
 	$feed->updated = date(DateTime::ATOM);
         $feed->title = $title;
@@ -29,26 +29,26 @@ function moz_feed($base_url, $feed_link, $title, $reports)
 
 	$author = $feed->add( 'author' );
 	$author->name = 'Socorro UI';
-	#$author->email = 'nospam@ez.no'; 
+	#$author->email = 'nospam@ez.no';
 
 	$link = $feed->add( 'link' );
-	$link->href = $base_url . $feed_link; 
+	$link->href = $base_url . $feed_link;
 
 	foreach ($reports as $report) {
 	  $report->url = '';
-	  $item = $feed->add( 'item' ); 
+	  $item = $feed->add( 'item' );
 	  $item->id = htmlentities($report->uuid);
 	  $item->title = htmlentities($report->signature);
 	  $item->description = htmlentities(
-			           substr( 
+			           substr(
 				       // chops of 'stdClass Object (' and ') '
-				       print_r($report, TRUE), 
-				       17, -2)); 
+				       print_r($report, TRUE),
+				       17, -2));
 	  $item->published = $item->updated = htmlentities($report->date_processed);
 
 	  $link = $item->add( 'link' );
 	  $link->title = 'Crash Report Details';
-	  $link->href = $base_url . 'report/index/' . $report->uuid; 
+	  $link->href = $base_url . 'report/index/' . $report->uuid;
 
 	  $link = $item->add( 'link' );
 	  $link->rel = 'alternate';
@@ -57,7 +57,7 @@ function moz_feed($base_url, $feed_link, $title, $reports)
           if (isset($config['crash_dump_public_url'])) {
               $link->href = sprintf($config['crash_dump_public_url'], htmlentities($report->uuid));
           } else {
-	      $link->href = $base_url . 'dumps/' . htmlentities($report->uuid) . '.jsonz'; 
+	      $link->href = $base_url . 'dumps/' . htmlentities($report->uuid) . '.jsonz';
           }
 	}
 

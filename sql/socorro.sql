@@ -15,7 +15,7 @@ SET default_tablespace = '';
 SET default_with_oids = false;
 
 --
--- Name: branches; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: branches; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE branches (
@@ -28,7 +28,7 @@ CREATE TABLE branches (
 ALTER TABLE public.branches OWNER TO breakpad_rw;
 
 --
--- Name: dumps; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: dumps; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE dumps (
@@ -41,7 +41,7 @@ CREATE TABLE dumps (
 ALTER TABLE public.dumps OWNER TO breakpad_rw;
 
 --
--- Name: extensions; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE extensions (
@@ -56,7 +56,7 @@ CREATE TABLE extensions (
 ALTER TABLE public.extensions OWNER TO breakpad_rw;
 
 --
--- Name: frames; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE frames (
@@ -70,7 +70,7 @@ CREATE TABLE frames (
 ALTER TABLE public.frames OWNER TO breakpad_rw;
 
 --
--- Name: jobs; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: jobs; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE jobs (
@@ -90,7 +90,7 @@ CREATE TABLE jobs (
 ALTER TABLE public.jobs OWNER TO breakpad_rw;
 
 --
--- Name: mtbfconfig; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: mtbfconfig; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE mtbfconfig (
@@ -104,7 +104,7 @@ CREATE TABLE mtbfconfig (
 ALTER TABLE public.mtbfconfig OWNER TO breakpad_rw;
 
 --
--- Name: mtbffacts; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: mtbffacts; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE mtbffacts (
@@ -120,7 +120,7 @@ CREATE TABLE mtbffacts (
 ALTER TABLE public.mtbffacts OWNER TO breakpad_rw;
 
 --
--- Name: priorityjobs; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: priorityjobs; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE priorityjobs (
@@ -131,7 +131,7 @@ CREATE TABLE priorityjobs (
 ALTER TABLE public.priorityjobs OWNER TO breakpad_rw;
 
 --
--- Name: processors; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: processors; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE processors (
@@ -145,7 +145,7 @@ CREATE TABLE processors (
 ALTER TABLE public.processors OWNER TO breakpad_rw;
 
 --
--- Name: productdims; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: productdims; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE productdims (
@@ -160,7 +160,7 @@ CREATE TABLE productdims (
 ALTER TABLE public.productdims OWNER TO breakpad_rw;
 
 --
--- Name: reports; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE reports (
@@ -226,7 +226,7 @@ ALTER SEQUENCE reports_id_seq OWNED BY reports.id;
 SELECT pg_catalog.setval('reports_id_seq', 2027, true);
 
 --
--- Name: server_status; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: server_status; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE server_status (
@@ -244,7 +244,7 @@ CREATE TABLE server_status (
 ALTER TABLE public.server_status OWNER TO breakpad_rw;
 
 --
--- Name: signaturedims; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: signaturedims; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE signaturedims (
@@ -256,7 +256,7 @@ CREATE TABLE signaturedims (
 ALTER TABLE public.signaturedims OWNER TO breakpad_rw;
 
 --
--- Name: tcbyurlconfig; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: tcbyurlconfig; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE tcbyurlconfig (
@@ -269,7 +269,7 @@ CREATE TABLE tcbyurlconfig (
 ALTER TABLE public.tcbyurlconfig OWNER TO breakpad_rw;
 
 --
--- Name: topcrashers; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: topcrashers; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE topcrashers (
@@ -296,7 +296,7 @@ ALTER TABLE public.topcrashers OWNER TO breakpad_rw;
 SET default_with_oids = true;
 
 --
--- Name: topcrashurlfacts; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: topcrashurlfacts; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE topcrashurlfacts (
@@ -315,7 +315,7 @@ ALTER TABLE public.topcrashurlfacts OWNER TO breakpad_rw;
 SET default_with_oids = false;
 
 --
--- Name: topcrashurlfactsreports; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: topcrashurlfactsreports; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE topcrashurlfactsreports (
@@ -329,7 +329,7 @@ CREATE TABLE topcrashurlfactsreports (
 ALTER TABLE public.topcrashurlfactsreports OWNER TO breakpad_rw;
 
 --
--- Name: urldims; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: urldims; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE urldims (
@@ -778,7 +778,7 @@ ALTER TABLE urldims ALTER COLUMN id SET DEFAULT nextval('urldims_id_seq'::regcla
 
 
 --
--- Name: branches_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: branches_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY branches
@@ -786,7 +786,7 @@ ALTER TABLE ONLY branches
 
 
 --
--- Name: jobs_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: jobs_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY jobs
@@ -794,7 +794,7 @@ ALTER TABLE ONLY jobs
 
 
 --
--- Name: jobs_uuid_key; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: jobs_uuid_key; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY jobs
@@ -802,7 +802,7 @@ ALTER TABLE ONLY jobs
 
 
 --
--- Name: mtbfconfig_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: mtbfconfig_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY mtbfconfig
@@ -810,7 +810,7 @@ ALTER TABLE ONLY mtbfconfig
 
 
 --
--- Name: mtbffacts_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: mtbffacts_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY mtbffacts
@@ -819,7 +819,7 @@ ALTER TABLE ONLY mtbffacts
 
 
 --
--- Name: priorityjobs_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: priorityjobs_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY priorityjobs
@@ -827,7 +827,7 @@ ALTER TABLE ONLY priorityjobs
 
 
 --
--- Name: processors_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: processors_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY processors
@@ -835,14 +835,14 @@ ALTER TABLE ONLY processors
 
 
 --
--- Name: productdims_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: productdims_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY productdims
     ADD CONSTRAINT productdims_pkey PRIMARY KEY (id);
 
 --
--- Name: server_status_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: server_status_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY server_status
@@ -850,7 +850,7 @@ ALTER TABLE ONLY server_status
 
 
 --
--- Name: signaturedims_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: signaturedims_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY signaturedims
@@ -858,7 +858,7 @@ ALTER TABLE ONLY signaturedims
 
 
 --
--- Name: tcbyurlconfig_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: tcbyurlconfig_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY tcbyurlconfig
@@ -866,7 +866,7 @@ ALTER TABLE ONLY tcbyurlconfig
 
 
 --
--- Name: topcrashers_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: topcrashers_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY topcrashers
@@ -874,7 +874,7 @@ ALTER TABLE ONLY topcrashers
 
 
 --
--- Name: topcrashurlfacts_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: topcrashurlfacts_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY topcrashurlfacts
@@ -882,7 +882,7 @@ ALTER TABLE ONLY topcrashurlfacts
 
 
 --
--- Name: topcrashurlfactsreports_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: topcrashurlfactsreports_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY topcrashurlfactsreports
@@ -890,160 +890,160 @@ ALTER TABLE ONLY topcrashurlfactsreports
 
 
 --
--- Name: urldims_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: urldims_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY urldims
     ADD CONSTRAINT urldims_pkey PRIMARY KEY (id);
 
 --
--- Name: idx_jobs_completed_queue_datetime; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: idx_jobs_completed_queue_datetime; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX idx_jobs_completed_queue_datetime ON jobs USING btree (completeddatetime, queueddatetime);
 
 
 --
--- Name: idx_processor_name; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: idx_processor_name; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX idx_processor_name ON processors USING btree (name);
 
 
 --
--- Name: idx_server_status_date; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: idx_server_status_date; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX idx_server_status_date ON server_status USING btree (date_created, id);
 
 
 --
--- Name: jobs_completeddatetime_queueddatetime_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: jobs_completeddatetime_queueddatetime_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX jobs_completeddatetime_queueddatetime_key ON jobs USING btree (completeddatetime, queueddatetime);
 
 
 --
--- Name: jobs_owner_started; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: jobs_owner_started; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX jobs_owner_started ON jobs USING btree (owner, starteddatetime);
 
 
 --
--- Name: jobs_owner_starteddatetime_priority_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: jobs_owner_starteddatetime_priority_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX jobs_owner_starteddatetime_priority_key ON jobs USING btree (owner, starteddatetime, priority DESC);
 
 
 --
--- Name: jobs_success_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: jobs_success_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX jobs_success_key ON jobs USING btree (success);
 
 
 --
--- Name: mtbfconfig_end_dt_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: mtbfconfig_end_dt_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX mtbfconfig_end_dt_key ON mtbfconfig USING btree (end_dt);
 
 
 --
--- Name: mtbfconfig_start_dt_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: mtbfconfig_start_dt_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX mtbfconfig_start_dt_key ON mtbfconfig USING btree (start_dt);
 
 
 --
--- Name: mtbffacts_day_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: mtbffacts_day_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX mtbffacts_day_key ON mtbffacts USING btree (day);
 
 
 --
--- Name: mtbffacts_product_id_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: mtbffacts_product_id_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX mtbffacts_product_id_key ON mtbffacts USING btree (productdims_id);
 
 
 --
--- Name: os_name; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: os_name; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX os_name ON reports USING btree (os_name);
 
 
 --
--- Name: productdims_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: productdims_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX productdims_product_version_key ON productdims USING btree (product, version);
 
 
 --
--- Name: productdims_product_version_os_name_release_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: productdims_product_version_os_name_release_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE UNIQUE INDEX productdims_product_version_os_name_release_key ON productdims USING btree (product, version, release, os_name);
 
 --
--- Name: signaturedims_signature_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: signaturedims_signature_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE UNIQUE INDEX signaturedims_signature_key ON signaturedims USING btree (signature);
 
 
 --
--- Name: topcrashurlfacts_count_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: topcrashurlfacts_count_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX topcrashurlfacts_count_key ON topcrashurlfacts USING btree (count);
 
 
 --
--- Name: topcrashurlfacts_day_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: topcrashurlfacts_day_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX topcrashurlfacts_day_key ON topcrashurlfacts USING btree (day);
 
 
 --
--- Name: topcrashurlfacts_productdims_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: topcrashurlfacts_productdims_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX topcrashurlfacts_productdims_key ON topcrashurlfacts USING btree (productdims_id);
 
 
 --
--- Name: topcrashurlfacts_signaturedims_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: topcrashurlfacts_signaturedims_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX topcrashurlfacts_signaturedims_key ON topcrashurlfacts USING btree (signaturedims_id);
 
 
 --
--- Name: topcrashurlfacts_urldims_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: topcrashurlfacts_urldims_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX topcrashurlfacts_urldims_key ON topcrashurlfacts USING btree (urldims_id);
 
 
 --
--- Name: topcrashurlfactsreports_topcrashurlfacts_id_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: topcrashurlfactsreports_topcrashurlfacts_id_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX topcrashurlfactsreports_topcrashurlfacts_id_key ON topcrashurlfactsreports USING btree (topcrashurlfacts_id);
 
 
 --
--- Name: urldims_url_domain_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: urldims_url_domain_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE UNIQUE INDEX urldims_url_domain_key ON urldims USING btree (url, domain);

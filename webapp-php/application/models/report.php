@@ -30,38 +30,38 @@ class Report_Model extends Model {
 			/* Note: 99% of our data comes from the processed crash dump
 			         jsonz file. Only select columns that aren't in the json file
 			         such as email which is SENSITIVE and should never appear in
-		                 the publically accessable jsonz file. Anything here will be 
+		                 the publically accessable jsonz file. Anything here will be
 		                 merged into the model object + jsonz data */
 		        // Added addons_checked since that's not in the jsonz - bug 590245
 		        $report = $this->db->query(
 		            "/* soc.web report.dateProcessed */
 		                SELECT reports.email, reports.url, reports.addons_checked,
 			            ( SELECT reports_duplicates.duplicate_of FROM reports_duplicates WHERE reports_duplicates.uuid = reports.uuid) as duplicate_of
-		                FROM reports 
-		                WHERE reports.uuid=? 
-		                AND reports.success 
+		                FROM reports
+		                WHERE reports.uuid=?
+		                AND reports.success
 		                IS NOT NULL
 		            ", $uuid)->current();
 	            if(!$report) {
-	                throw new Exception("The report was processed but does not exist in the reports table");	
+	                throw new Exception("The report was processed but does not exist in the reports table");
 	            }
-	
+
       	        $crashReportDump->populate($report, $crash_report_json);
-		        return $report;          
+		        return $report;
         } else {
 		Kohana::log('info', "$uuid doesn't exist (404)");
-                return NULL;            
+                return NULL;
         }
-    	
+
     }
 
 	/**
 	 * Determine whether or not the raw dumps are still on the system and return the URLs
-	 * by which they may be downloaded.  UUID must contain a timestamp that is within the given 
+	 * by which they may be downloaded.  UUID must contain a timestamp that is within the given
 	 * acceptable timeframe found in Kohana::config('application.raw_dump_availability').
 	 *
 	 * @param 	string	The $uuid for the dump
-	 * @return  array|bool 	Return an array containing the dump and json urls for download; else 
+	 * @return  array|bool 	Return an array containing the dump and json urls for download; else
 	 *					return false if unavailable
 	 */
 	public function formatRawDumpURLs ($uuid) {
@@ -79,7 +79,7 @@ class Report_Model extends Model {
     /**
      * Check the UUID to determine if this report is still valid.
      *
-     * @access  public 
+     * @access  public
      * @param   string  The $uuid for this report
      * @return  bool    Return TRUE if valid; return FALSE if invalid
      */
@@ -92,7 +92,7 @@ class Report_Model extends Model {
                 return true;
             }
 		}
-	
+
         // Can't determine just by looking at the UUID. Return TRUE.
         return true;
     }
@@ -107,8 +107,8 @@ class Report_Model extends Model {
     {
         $rs = $this->db->query(
                 "/* soc.web report sig exists */
-                    SELECT signature 
-                    FROM reports 
+                    SELECT signature
+                    FROM reports
                     WHERE signature = ?
                     LIMIT 1
                 ", $signature)->current();
@@ -122,7 +122,7 @@ class Report_Model extends Model {
     /**
      * Determine the timestamp for this report by the given UUID.
      *
-     * @access  public 
+     * @access  public
      * @param   string  The $uuid for this report
      * @return  int    	The timestamp for this report.
      */
@@ -153,7 +153,7 @@ class Report_Model extends Model {
         $rs = $this->db->query(
                 "/* soc.web report uuid from hangid */
                     SELECT uuid
-                    FROM reports 
+                    FROM reports
                     WHERE date_processed BETWEEN TIMESTAMP ? - CAST('1 day' AS INTERVAL) AND TIMESTAMP ? + CAST('1 day' AS INTERVAL) AND
                           hangid = ? AND uuid != ?
                     LIMIT 1
@@ -171,10 +171,10 @@ class Report_Model extends Model {
      * crash reports per hangid. This variation on
      * getPairedUUID is used via AJAX to populate
      * the UI and also to aid in debugging.
-     * 
+     *
      * Call retrieves all crashes related to this uuid. Does
      * not return this uuid.
-     * 
+     *
      * @param string $uuid of a hang crash
      *
      * @return object Database results with 'uuid'
@@ -186,7 +186,7 @@ class Report_Model extends Model {
                 "/* soc.web report hangpairs from uuid */
                  SELECT uuid
                  FROM reports
-                 WHERE 
+                 WHERE
                      date_processed BETWEEN TIMESTAMP ? - CAST('1 day' AS INTERVAL) AND TIMESTAMP ? + CAST('1 day' AS INTERVAL) AND
                      hangid IN (
                        SELECT hangid

@@ -39,14 +39,14 @@ class EmailCampaigns(webapi.JsonServiceBase):
 
     return self.load(page_number)
 
-  #-----------------------------------------------------------------------------------------------------------------  
+  #-----------------------------------------------------------------------------------------------------------------
   def load(self, page_number):
     item_per_page = 50
     offset = (page_number -1) * item_per_page
     campaigns = []
     total_pages = 0
     campaign_ids = []
-    
+
     connection = self.database.connection()
     try:
       cursor = connection.cursor()
@@ -54,7 +54,7 @@ class EmailCampaigns(webapi.JsonServiceBase):
       email_campaign_columns = ['id', 'product', 'signature', 'subject', 'body', 'start_date', 'end_date', 'email_count', 'author']
       sql = "SELECT %s FROM email_campaigns ORDER BY id DESC OFFSET %%s LIMIT %%s" \
             % ', '.join(email_campaign_columns)
-      
+
       cursor.execute(sql, (offset, item_per_page))
       rows = cursor.fetchall()
       for row in rows:
@@ -63,7 +63,7 @@ class EmailCampaigns(webapi.JsonServiceBase):
         campaign.end_date =   campaign.end_date.isoformat()
         campaigns.append(campaign)
         campaign_ids.append(campaign.id)
-      
+
         pages_sql = "SELECT COUNT(id) / %d FROM email_campaigns" % item_per_page
         cursor.execute(pages_sql)
         total_pages = int(cursor.fetchone()[0])
@@ -73,7 +73,7 @@ class EmailCampaigns(webapi.JsonServiceBase):
         next = EmailCampaigns.uri.replace('(.*)', str(page_number + 1))
       if page_number > 1:
         previous = EmailCampaigns.uri.replace('(.*)', str(page_number - 1))
-      
+
       return {'campaigns': campaigns, 'next': next, 'previous':previous, 'total_pages': total_pages}
     finally:
       connection.close()

@@ -18,7 +18,7 @@ class EmailSubscription(webapi.JsonServiceBase):
     self.email_form = form.Form(
       form.Textbox('token',   form.notnull),
       form.Textbox('status',  form.notnull))
-    
+
   #-----------------------------------------------------------------------------------------------------------------
   # GET
   # curl http://localhost:8085/201103/emailcampaigns/subscription/e8aaa82c-c762-11df-a2ce-001cc4d80ee4

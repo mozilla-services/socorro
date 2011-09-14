@@ -5,18 +5,18 @@
 CREATE OR REPLACE FUNCTION update_adu (
 	updateday date )
 RETURNS BOOLEAN
-LANGUAGE plpgsql 
+LANGUAGE plpgsql
 SET work_mem = '512MB'
 SET temp_buffers = '512MB'
 AS $f$
 BEGIN
--- daily batch update procedure to update the 
+-- daily batch update procedure to update the
 -- adu-product matview, used to power graphs
 -- gets its data from raw_adu, which is populated
 -- daily by metrics
 
 -- check if raw_adu has been updated.  otherwise, abort.
-PERFORM 1 FROM raw_adu 
+PERFORM 1 FROM raw_adu
 WHERE "date" = updateday
 LIMIT 1;
 
@@ -72,10 +72,10 @@ WHERE updateday BETWEEN build_date AND ( sunset_date + 1 )
         AND raw_adu.build_channel = 'beta'
         AND EXISTS ( SELECT 1
             FROM product_version_builds
-            WHERE product_versions.product_version_id = product_version_builds.product_version_id   
+            WHERE product_versions.product_version_id = product_version_builds.product_version_id
               AND product_version_builds.build_id = build_numeric(raw_adu.build)
             )
-GROUP BY product_version_id, os; 
+GROUP BY product_version_id, os;
 
 -- insert old products
 
@@ -85,13 +85,13 @@ SELECT productdims_id, coalesce(os_name,'Unknown') as os,
 	updateday, coalesce(sum(raw_adu.adu_count),0)
 FROM productdims
 	JOIN product_visibility ON productdims.id = product_visibility.productdims_id
-	LEFT OUTER JOIN raw_adu 
+	LEFT OUTER JOIN raw_adu
 		ON productdims.product = raw_adu.product_name
 		AND productdims.version = raw_adu.product_version
 		AND raw_adu.date = updateday
     LEFT OUTER JOIN os_name_matches
-    	ON raw_adu.product_os_platform ILIKE os_name_matches.match_string	
-WHERE updateday BETWEEN ( start_date - interval '1 day' ) 
+    	ON raw_adu.product_os_platform ILIKE os_name_matches.match_string
+WHERE updateday BETWEEN ( start_date - interval '1 day' )
 	AND ( end_date + interval '1 day' )
 GROUP BY productdims_id, os;
 
@@ -103,21 +103,21 @@ END; $f$;
 DO $f$
 DECLARE aduday DATE;
 BEGIN
-FOR aduday IN SELECT i 
+FOR aduday IN SELECT i
 	-- time-limited version for stage/dev
 	-- FROM generate_series(timestamp '2011-07-20', timestamp '2011-07-27', '1 day') as gs(i)
 	FROM generate_series(timestamp '2011-04-17', '2011-08-13', '1 day') as gs(i)
 	LOOP
-	
+
     DELETE FROM product_adu WHERE adu_date = aduday;
 	PERFORM update_adu(aduday);
-	
+
 END LOOP;
 END;$f$;
-	
 
 
 
 
 
-	
+
+

@@ -36,7 +36,7 @@ def simpleRE(counting=False):
   stop = time.time()
   if counting: return stop-start
   else: display(stop-start, 'empty',ret)
-  
+
 def fancy(counting=False):
   start = time.time()
   for i in range(loops):

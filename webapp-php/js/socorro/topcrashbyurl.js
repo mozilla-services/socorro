@@ -12,9 +12,9 @@ $(document).ready(function(){
         $.getJSON("../../signaturesforurl/" + product + "/" + version + "?url=" + url + "&page=" + page,
   	  	    function(data){
                       var upd = "";
-                      /* urlToggler on byurl page simply toggles signatures under this url. 
+                      /* urlToggler on byurl page simply toggles signatures under this url.
                          urlToggler on bydomain page is adding rows in the context of an "outter"
-                         domain row, which when toggled should also hide these signatures. so we 
+                         domain row, which when toggled should also hide these signatures. so we
                          add a tcburl-urls0 to have all these signature hide when domain row 0 is hidden.
                       */
                       var outterClass = " nomatch";
@@ -24,7 +24,7 @@ $(document).ready(function(){
 		      }
                       for(var i=0; i < data.length; i++){
                         var signatureLink = "../../../report/list?product=" + product + "&version=" + product + "%3A" + version +
-	                                    "&date=&range_value=2&range_unit=weeks&query_search=signature&query=" + 
+	                                    "&date=&range_value=2&range_unit=weeks&query_search=signature&query=" +
 				            data[i].signature + "&query_type=exact&do_query=1&signature=" + data[i].signature;
 
   		        upd += "<tr class='tcburl-signatures" + urlId + outterClass + "'><td class='in" + indent + "'><a href='" + signatureLink+ "'>" + data[i].label + "</a></td><td>" + data[i].count + "</td><td></td></tr>";
@@ -39,9 +39,9 @@ $(document).ready(function(){
 		        }
 			caches[index] = true;
 		      }//end for
-	              
+
                       if( data.length >= 50){
-		        $('#tcburl-urlToggle-row' + urlId + ' td:first').append("<a id='tcburl-moresig" + 
+		        $('#tcburl-urlToggle-row' + urlId + ' td:first').append("<a id='tcburl-moresig" +
 									   urlId + "' class='page" + (page + 1)+ "' href='#'>Load 50 more (page " + (page + 1) + ")</a>");
                         $('#tcburl-moresig' + urlId).click(function(){
                             $('#tcburl-moresig' + urlId).remove();
@@ -92,10 +92,10 @@ $(document).ready(function(){
         $('#url-to-sig' + id).text("+");
         $('#tcburl-url' + id + ' span.label').text("Expand");
       }
-          
+
       $('#tcburl-urlToggle-row' + id).toggle();
       $('.tcburl-signatures' + id).toggle();
-        
+
       return false;
     };
 
@@ -124,7 +124,7 @@ $(document).ready(function(){
 
                       if( data.length >= 50){
 
-		        $('#tcburl-domainToggle-row' + domainId + ' td:first').append("<a id='tcburl-moreurls" + 
+		        $('#tcburl-domainToggle-row' + domainId + ' td:first').append("<a id='tcburl-moreurls" +
 									   domainId + "' class='page" + (page + 1)+ "' href='#'>Load 50 more (page " + (page + 1) + ")</a>");
                         $('#tcburl-moreurls' + domainId).click(function(){
                             $('#tcburl-moreurls' + domainId).remove();
@@ -171,7 +171,7 @@ $(document).ready(function(){
         $('#tcburl-url' + id + ' span.label').text("Expand");
       }
 
-      $('#tcburl-urlToggle-row' + id).toggle();          
+      $('#tcburl-urlToggle-row' + id).toggle();
       var el = $('#domain-to-url' + id);
 
       if(el.hasClass('viz')){
@@ -181,7 +181,7 @@ $(document).ready(function(){
         $('.tcburl-urls' + id + ':hidden').show();
         el.addClass('viz')
       }
-          
+
       return false;
     };
     $('table#tc_by_url').click(urlToggler);

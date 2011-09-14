@@ -46,16 +46,16 @@ class MozPager
         $this->totalItemCount = $totalItemCount;
         $this->itemsPerPage = $itemsPerPage;
         $this->currentPage = $currentPage;
-                
+
         $this->totalPages = ceil($totalItemCount / $itemsPerPage);
-        
+
         $this->nextPage = $this->currentPage + 1;
         $this->showNext = ($currentPage < $this->totalPages);
-        
+
         $this->previousPage = $this->currentPage - 1;
         $this->showPrevious = ($this->currentPage > 1);
-        
+
         $this->offset = ($this->currentPage - 1) * $this->itemsPerPage;
-    }        
+    }
 }
 ?>

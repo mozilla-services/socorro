@@ -3,16 +3,16 @@
 
 // Begin the timer and Ajax calls for reports
 var original_seconds = 30;
-var seconds = original_seconds; 
+var seconds = original_seconds;
 var number_calls = 1;
 
 // Maintain the time in seconds, and make an ajax call every 30 seconds
-function pendingReportTimer(url){ 
-    if (seconds == 0){ 
+function pendingReportTimer(url){
+    if (seconds == 0){
         $('#next_attempt').hide();
         $('#processing').show();
 
-        // Upon the third attempt, state that this failed 
+        // Upon the third attempt, state that this failed
         if (number_calls == 10) {
             $('#checking').hide();
             $('#fail').show();
@@ -23,12 +23,12 @@ function pendingReportTimer(url){
             $('#counter').html(original_seconds);
             setTimeout("pendingReportTimer(\""+url+"\")",1000);
         }
-    } 
+    }
     // Decrement the seconds count
-    else { 
+    else {
         $('#processing').hide();
         $('#next_attempt').show();
-        seconds -= 1; 
+        seconds -= 1;
         $('#counter').html(seconds);
         setTimeout("pendingReportTimer(\""+url+"\")",1000);
     }
@@ -38,7 +38,7 @@ function pendingReportTimer(url){
 function pendingReportCheck (url)
 {
     $.get(url, {},
-        function(responseJSON){  
+        function(responseJSON){
             if (responseJSON.status == 'ready') {
                 top.location = responseJSON.url_redirect;
             }

@@ -18,7 +18,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  *   Xavier Stevens <xstevens@mozilla.com>, Mozilla Corporation (original author)
  *
  * Alternatively, the contents of this file may be used under the terms of
@@ -45,16 +45,16 @@ import javax.xml.bind.annotation.*;
 public class QueueStringModel implements Serializable {
 
 	private static final long serialVersionUID = -3786103919288807294L;
-	
+
 	private String value;
 
 	public QueueStringModel() {
 	}
-	
+
 	public QueueStringModel(String value) {
 		this.value = value;
 	}
-	
+
 	@XmlAttribute
 	public String getValue() {
 		return value;
@@ -63,7 +63,7 @@ public class QueueStringModel implements Serializable {
 	public void setValue(String value) {
 		this.value = value;
 	}
-	
+
 	/* (non-Javadoc)
 	 * @see java.lang.Object#toString()
 	 */
@@ -71,5 +71,5 @@ public class QueueStringModel implements Serializable {
 	public String toString() {
 		return value;
 	}
-	
+
 }

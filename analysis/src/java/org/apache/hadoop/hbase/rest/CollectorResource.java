@@ -18,7 +18,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  *   Xavier Stevens <xstevens@mozilla.com>, Mozilla Corporation (original author)
  *
  * Alternatively, the contents of this file may be used under the terms of
@@ -81,13 +81,13 @@ public class CollectorResource extends ResourceBase {
 
 	private HbaseCrashReportDao crDao;
 	private final BlockingQueue<String> unprocessedQueue;
-	
+
 	public CollectorResource() throws IOException {
 		super();
 		crDao = new HbaseCrashReportDao(servlet.getTablePool());
 		unprocessedQueue = Hazelcast.getQueue("crash_reports_unprocessed_queue");
 	}
-	
+
 	@POST
 	@Consumes(MediaType.MULTIPART_FORM_DATA)
 	@Produces(MediaType.TEXT_PLAIN)
@@ -112,7 +112,7 @@ public class CollectorResource extends ResourceBase {
 				LOG.error("Error parsing headers", e);
 				throw new WebApplicationException(e, Response.Status.INTERNAL_SERVER_ERROR);
 			}
-			
+
 			if (bp.getMediaType().isCompatible(MediaType.TEXT_PLAIN_TYPE)) {
 				String fieldValue = bp.getEntityAs(String.class);
 				if (fieldName != null) {
@@ -129,7 +129,7 @@ public class CollectorResource extends ResourceBase {
 					while ((read = is.read(buffer)) != -1) {
 						baos.write(buffer, 0, read);
 					}
-					
+
 					dump = baos.toByteArray();
 				} catch (IOException e) {
 					LOG.error("Error while reading binary dump", e);
@@ -144,7 +144,7 @@ public class CollectorResource extends ResourceBase {
 				}
 			}
 		}
-		
+
 		String ooid = null;
 		if (fields.size() > 0 && dump != null) {
 			try {
@@ -158,7 +158,7 @@ public class CollectorResource extends ResourceBase {
 				throw new WebApplicationException(e, Response.Status.INTERNAL_SERVER_ERROR);
 			}
 		}
-		
+
 		ResponseBuilder response = null;
 		if (ooid != null) {
 			response = Response.ok(ooid);

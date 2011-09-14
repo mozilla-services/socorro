@@ -2,17 +2,17 @@
 
 Notes:
 
- - This will create a file called .openid_secret_key in the 
-   current directory with your secret key in it. If someone 
-   has access to this file they can log in as any user. And 
-   if the app can't find this file for any reason (e.g. you 
-   moved the app somewhere else) then each currently logged 
+ - This will create a file called .openid_secret_key in the
+   current directory with your secret key in it. If someone
+   has access to this file they can log in as any user. And
+   if the app can't find this file for any reason (e.g. you
+   moved the app somewhere else) then each currently logged
    in user will get logged out.
 
- - State must be maintained through the entire auth process 
-   -- this means that if you have multiple web.py processes 
-   serving one set of URLs or if you restart your app often 
-   then log ins will fail. You have to replace sessions and 
+ - State must be maintained through the entire auth process
+   -- this means that if you have multiple web.py processes
+   serving one set of URLs or if you restart your app often
+   then log ins will fail. You have to replace sessions and
    store for things to work.
 
  - We set cookies starting with "openid_".
@@ -70,7 +70,7 @@ def form(openid_loc):
     else:
         return '''
         <form method="post" action="%s">
-          <input type="text" name="openid" value="" 
+          <input type="text" name="openid" value=""
             style="background: url(http://openid.net/login-bg.gif) no-repeat; padding-left: 18px; background-position: 0 50%%;" />
           <input type="hidden" name="return_to" value="%s" />
           <button type="submit">log in</button>
@@ -92,7 +92,7 @@ class host:
 
         n = _random_session()
         sessions[n] = {'webpy_return_to': i.return_to}
-        
+
         c = openid.consumer.consumer.Consumer(sessions[n], store)
         a = c.begin(i.openid)
         f = a.redirectURL(web.ctx.home, web.ctx.home + web.ctx.fullpath)

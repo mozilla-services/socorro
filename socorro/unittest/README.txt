@@ -1,4 +1,4 @@
-This is the directory that holds unit tests. 
+This is the directory that holds unit tests.
 See the unittesting wiki page: http://code.google.com/p/socorro/wiki/SocorroUnitTests
 
 The layout of this directory is:
@@ -26,7 +26,7 @@ Two useful ones:
    0: Very quiet
    1: one '.' per test as with unittest behavior
    2: per test: Prints a very brief summary and then a status (ok/FAIL/ERROR)
-  NOSE_NOCAPTURE=1 
+  NOSE_NOCAPTURE=1
    print statements are not captured but passed to the console.
 You can also create $HOME/.noserc or $HOME/nose.cfg, standard .ini format.
 for example:

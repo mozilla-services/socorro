@@ -4,7 +4,7 @@
  * Model for server_status db table.
  */
 class Server_Status_Model extends Model {
-  
+
   public function loadStats(){
     return new Server_Stats( $this->fetchRows("/* soc.web servstat.loadStat */ SELECT * FROM server_status ORDER BY date_created DESC LIMIT 12") );
   }
@@ -22,7 +22,7 @@ class Server_Stats {
   public $data;
 
   /**
-   * data - An array where each element is an associative arrays 
+   * data - An array where each element is an associative arrays
    * which has server statistics including:
    * avg_process_sec, avg_wait_sec, waiting_job_count, etc
    */
@@ -32,12 +32,12 @@ class Server_Stats {
 
   public function getPlotData(){
     $plotData = array();
-    foreach( array('avg_process_sec', 'avg_wait_sec', 'waiting_job_count', 'processors_count', 
+    foreach( array('avg_process_sec', 'avg_wait_sec', 'waiting_job_count', 'processors_count',
                        'xaxis_ticks') as $field){
       $plotData[$field] = array();
     }
     $k = count($this->data) - 1;
-    for($i = 0; $i < count($this->data); $i += 1){      
+    for($i = 0; $i < count($this->data); $i += 1){
       $stat = $this->data[$i];
       $plotData['avg_process_sec'][] = array($k, $stat->avg_process_sec);
       $plotData['avg_wait_sec'][] = array($k, $stat->avg_wait_sec);

@@ -6,9 +6,9 @@
  */
 
 
-/** 
+/**
  * Set up the root routes.
- */  
+ */
 $config['email'] 	= 'auth/email';
 $config['forgot'] 	= 'auth/forgot';
 $config['login'] 	= 'auth/login';

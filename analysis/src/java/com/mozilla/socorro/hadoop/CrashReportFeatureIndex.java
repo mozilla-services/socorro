@@ -18,7 +18,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  *   Xavier Stevens <xstevens@mozilla.com>, Mozilla Corporation (original author)
  *
  * Alternatively, the contents of this file may be used under the terms of
@@ -73,27 +73,27 @@ import com.mozilla.util.DateUtil;
 public class CrashReportFeatureIndex implements Tool {
 
 	private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(CrashReportFeatureIndex.class);
-	
+
 	private static final String NAME = "CrashReportFeatureIndex";
 	private Configuration conf;
-	
+
 	// Configuration fields
 	private static final String CONDENSE = "condense";
 	private static final String ADDONS = "addons";
 	private static final String USE_CORES = "use.cores";
 	private static final String USE_VERSIONS = "use.versions";
-	
+
 	private static final String MODULE_INFO_DELIMITER = "\u0002";
-	
+
 	public static class CrashReportFeatureIndexMapper extends TableMapper<Text, LongWritable> {
 
 		public enum ReportStats { JSON_PARSE_EXCEPTION, JSON_MAPPING_EXCEPTION, JSON_BYTES_NULL, DATE_PARSE_EXCEPTION }
-		
+
 		private Text outputKey;
 		private LongWritable one;
-		
+
 		private ObjectMapper jsonMapper;
-		
+
 		private String productFilter;
 		private String releaseFilter;
 		private String osFilter;
@@ -101,7 +101,7 @@ public class CrashReportFeatureIndex implements Tool {
 		private boolean addons;
 		private boolean useCores;
 		private boolean useVersions;
-		
+
 		private Pattern dllPattern;
 		private Pattern newlinePattern;
 		private Pattern pipePattern;
@@ -109,16 +109,16 @@ public class CrashReportFeatureIndex implements Tool {
 		private SimpleDateFormat sdf;
 		private long startTime;
 		private long endTime;
-		
+
 		/* (non-Javadoc)
 		 * @see org.apache.hadoop.mapreduce.Mapper#setup(org.apache.hadoop.mapreduce.Mapper.Context)
 		 */
 		public void setup(Context context) {
 			outputKey = new Text();
 			one = new LongWritable(1L);
-			
+
 			jsonMapper = new ObjectMapper();
-			
+
 			Configuration conf = context.getConfiguration();
 			productFilter = conf.get(PRODUCT_FILTER);
 			releaseFilter = conf.get(RELEASE_FILTER);
@@ -127,11 +127,11 @@ public class CrashReportFeatureIndex implements Tool {
 			addons = conf.getBoolean(ADDONS, false);
 			useCores = conf.getBoolean(USE_CORES, false);
 			useVersions = conf.getBoolean(USE_VERSIONS, false);
-			
+
 			dllPattern = Pattern.compile("(\\S+)@0x[0-9a-fA-F]+$");
 			newlinePattern = Pattern.compile("\n");
 			pipePattern = Pattern.compile("\\|");
-			
+
 			sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 			startTime = DateUtil.getTimeAtResolution(conf.getLong(START_TIME, 0), Calendar.DATE);
 			endTime = DateUtil.getEndTimeAtResolution(conf.getLong(END_TIME, System.currentTimeMillis()), Calendar.DATE);
@@ -151,26 +151,26 @@ public class CrashReportFeatureIndex implements Tool {
 				String value = new String(valueBytes);
 				// This is an untyped parse so the caller is expected to know the types
 				Map<String,Object> crash = jsonMapper.readValue(value, new TypeReference<Map<String,Object>>() { });
-				
+
 				// Filter row if filter(s) are set and it doesn't match
 				if (!StringUtils.isBlank(productFilter)) {
 					if (crash.containsKey(PROCESSED_JSON_PRODUCT) && !crash.get(PROCESSED_JSON_PRODUCT).equals(productFilter)) {
 						return;
 					}
-				} 
+				}
 				if (!StringUtils.isBlank(releaseFilter)) {
 					if (crash.containsKey(PROCESSED_JSON_VERSION) && !crash.get(PROCESSED_JSON_VERSION).equals(releaseFilter)) {
 						return;
 					}
 				}
-				
+
 				String osName = (String)crash.get(PROCESSED_JSON_OS_NAME);
 				if (!StringUtils.isBlank(osFilter)) {
 					if (osName == null || !osName.equals(osFilter)) {
 						return;
 					}
 				}
-				
+
 				// Set the value to the date
 				String dateProcessed = (String)crash.get(PROCESSED_JSON_DATE_PROCESSED);
 				long crashTime = sdf.parse(dateProcessed).getTime();
@@ -178,7 +178,7 @@ public class CrashReportFeatureIndex implements Tool {
 				if (crashTime < startTime || crashTime > endTime) {
 					return;
 				}
-				
+
 				String signame = (String)crash.get(PROCESSED_JSON_SIGNATURE);
 				if (!StringUtils.isBlank(signame)) {
 					if (condense) {
@@ -187,12 +187,12 @@ public class CrashReportFeatureIndex implements Tool {
 							signame = sigMatcher.group(1);
 						}
 					}
-					
+
 					signame = signame + "|" + crash.get(PROCESSED_JSON_REASON);
 				} else {
 					signame = "(no signature)";
 				}
-				
+
 				if (addons) {
 					List<Object> addons = (ArrayList<Object>)crash.get(ADDONS);
 					if (addons != null) {
@@ -210,7 +210,7 @@ public class CrashReportFeatureIndex implements Tool {
 						}
 					}
 				}
-				
+
 				for (String dumpline : newlinePattern.split((String)crash.get(PROCESSED_JSON_DUMP))) {
 					if (dumpline.startsWith(PROCESSED_JSON_CPU_PATTERN)) {
 						if (useCores) {
@@ -222,7 +222,7 @@ public class CrashReportFeatureIndex implements Tool {
 					} else if (dumpline.startsWith(PROCESSED_JSON_MODULE_PATTERN)) {
 						// module_str, libname, version, pdb, checksum, addrstart, addrend, unknown
 						String[] dumplineSplits = pipePattern.split(dumpline);
-						
+
 						String moduleName;
 						String version;
 						if (osName.startsWith("Win")) {
@@ -239,7 +239,7 @@ public class CrashReportFeatureIndex implements Tool {
 						} else {
 							outputKey.set(moduleName);
 						}
-						
+
 						context.write(outputKey, one);
 					}
 				}
@@ -251,20 +251,20 @@ public class CrashReportFeatureIndex implements Tool {
 				context.getCounter(ReportStats.DATE_PARSE_EXCEPTION).increment(1L);
 			}
 		}
-		
-	}	
+
+	}
 
 	/**
 	 * @param args
 	 * @return
 	 * @throws IOException
-	 * @throws ParseException 
+	 * @throws ParseException
 	 */
 	public Job initJob(String[] args) throws IOException, ParseException {
 		Map<byte[], byte[]> columns = new HashMap<byte[], byte[]>();
 		columns.put(PROCESSED_DATA_BYTES, JSON_BYTES);
 		Job job = CrashReportJob.initJob(NAME, getConf(), CrashReportFeatureIndex.class, CrashReportFeatureIndexMapper.class, LongSumReducer.class, LongSumReducer.class, columns, Text.class, LongWritable.class, new Path(args[0]));
-		
+
 		return job;
 	}
 
@@ -287,7 +287,7 @@ public class CrashReportFeatureIndex implements Tool {
 		GenericOptionsParser.printGenericCommandUsage(System.out);
 		return -1;
 	}
-	
+
 	/* (non-Javadoc)
 	 * @see org.apache.hadoop.util.Tool#run(java.lang.String[])
 	 */
@@ -295,14 +295,14 @@ public class CrashReportFeatureIndex implements Tool {
 		if (args.length != 1) {
 			return printUsage();
 		}
-		
+
 		int rc = -1;
 		Job job = initJob(args);
 		job.waitForCompletion(true);
 		if (job.isSuccessful()) {
 			rc = 0;
 		}
-		
+
 		return rc;
 	}
 
@@ -319,7 +319,7 @@ public class CrashReportFeatureIndex implements Tool {
 	public void setConf(Configuration conf) {
 		this.conf = conf;
 	}
-	
+
 	/**
 	 * @param args
 	 * @throws Exception
@@ -328,5 +328,5 @@ public class CrashReportFeatureIndex implements Tool {
 		int res = ToolRunner.run(new Configuration(), new CrashReportFeatureIndex(), args);
 		System.exit(res);
 	}
-	
+
 }

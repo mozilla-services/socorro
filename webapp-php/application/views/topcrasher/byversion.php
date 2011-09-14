@@ -1,6 +1,6 @@
 <?php slot::start('head') ?>
     <title>Top Crashers for  <?php out::H($product) ?> <?php out::H($version) ?></title>
-    <link title="CSV formatted Top Crashers for  <?php out::H($product) ?> <?php out::H($version) ?>" 
+    <link title="CSV formatted Top Crashers for  <?php out::H($product) ?> <?php out::H($version) ?>"
           type="text/csv" rel="alternate" href="?format=csv" />
     <?php echo html::script(array(
        'js/jquery/plugins/ui/jquery.tablesorter.min.js',
@@ -29,7 +29,7 @@
 
 <div class="panel">
     <div class="body notitle">
-<?php 
+<?php
 if ($resp) {
     View::factory('common/list_topcrashers', array(
 		      'last_updated' => $last_updated,

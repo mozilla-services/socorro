@@ -25,7 +25,7 @@ Default: use current unittest config for host, database, user and password.
 def main():
   logger = logging.getLogger("topcrashes_summary")
   logger.setLevel(logging.WARNING)
-  
+
   stderrLog = logging.StreamHandler()
   stderrLog.setLevel(logging.WARNING)
   stderrLogFormatter = logging.Formatter('%(asctime)s %(levelname)s - %(message)s')

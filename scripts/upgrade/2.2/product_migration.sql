@@ -10,14 +10,14 @@ values ( 'Firefox', 1, '5.0', 'firefox' ),
 	( 'Fennec', 3, '5.0', 'mobile' ),
 	( 'Camino', 4, NULL, 'camino' ),
 	( 'Seamonkey', 5, NULL, 'seamonkey' );
-	
+
 insert into release_channels ( release_channel, sort )
 values ( 'Nightly', 1 ),
 	( 'Aurora', 2 ),
 	( 'Beta', 3 ),
 	( 'Release', 4 );
-	
--- add product_release_channels as a cartesian join	
+
+-- add product_release_channels as a cartesian join
 
 insert into product_release_channels ( product_name, release_channel )
 select product_name, release_channel
@@ -29,7 +29,7 @@ update product_release_channels
 set throttle = 0.1
 where product_name = 'Firefox'
 	and release_channel = 'Release';
-	
+
 -- match strings for fuzzy matching of channel names
 
 insert into release_channel_matches ( release_channel, match_string )
@@ -38,7 +38,7 @@ values ( 'Release', 'release' ),
 	( 'Beta', 'beta' ),
 	( 'Aurora', 'aurora' ),
 	( 'Nightly', 'nightly%' );
-	
+
 insert into release_build_type_map ( release, build_type )
 values ( 'major', 'Release' ),
 	( 'development', 'Beta' ),
@@ -56,7 +56,7 @@ insert into product_versions (
     build_date,
     sunset_date,
     build_type )
-select products.product_name, 
+select products.product_name,
 	major_version(version),
 	version,
 	version_string(version, beta_number),
@@ -79,7 +79,7 @@ from releases_raw
 		ON releases_raw.product_name = product_versions.product_name
 		AND releases_raw.version = product_versions.release_version
 		AND releases_raw.beta_number IS NOT DISTINCT FROM product_versions.beta_number;
-		
+
 analyze products;
 analyze release_channels;
 analyze product_versions;
@@ -95,9 +95,9 @@ from productdims join product_visibility
 where product_versions.product_name = productdims.product
   and product_versions.version_string = productdims.version
   and product_visibility.featured;
-		
+
 COMMIT;
-		
+
 create or replace function update_product_versions()
 returns boolean
 language plpgsql
@@ -123,18 +123,18 @@ insert into product_versions (
     build_date,
     sunset_date,
     build_type)
-select products.product_name, 
+select products.product_name,
 	major_version(version),
 	version,
 	version_string(version, releases_raw.beta_number),
 	releases_raw.beta_number,
 	version_sort(version, releases_raw.beta_number),
 	build_date(min(build_id)),
-	sunset_date(min(build_id), releases_raw.build_type ), 
+	sunset_date(min(build_id), releases_raw.build_type ),
 	releases_raw.build_type
 from releases_raw
 	join products ON releases_raw.product_name = products.release_name
-	left outer join product_versions ON 
+	left outer join product_versions ON
 		( releases_raw.product_name = products.release_name
 			AND releases_raw.version = product_versions.release_version
 			AND releases_raw.beta_number IS NOT DISTINCT FROM product_versions.beta_number )

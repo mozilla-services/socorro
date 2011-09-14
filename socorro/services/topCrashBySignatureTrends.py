@@ -51,7 +51,7 @@ def whichTCBS(aCursor, dbParams, product, version):
   except db.SQLDidNotReturnSingleValue:
     logger.info("No record in product_selector for %s %s."
       % (product, version))
-    raise ValueError, "No record of %s %s" % (product, version) 
+    raise ValueError, "No record of %s %s" % (product, version)
 
 class TopCrashBySignatureTrends(webapi.JsonServiceBase):
   def __init__(self, configContext):

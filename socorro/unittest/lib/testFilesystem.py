@@ -65,7 +65,7 @@ class TestFilesystem(unittest.TestCase):
   def createTestbed(self):
     self.deleteTestbed() # just in case
     self.createTestDir('.',testDir)
-    
+
   def createTestDir(self,root,dict):
     for k in dict.keys():
       v = dict[k]
@@ -99,7 +99,7 @@ class TestFilesystem(unittest.TestCase):
       items = [x for x in tst]
       assert not items, 'Expect nothing for 0 or negative. For %d, got %s' %(depth,items)
 
-    
+
   def testLevel1(self):
     # Look for all top level items regardless of type.
     for depth in [1] :
@@ -131,7 +131,7 @@ class TestFilesystem(unittest.TestCase):
         assert o in expected, 'depth=%d,expect a top level directory' % depth
       for x in expected:
         assert x in items, 'depth=%d,expect all top level directories' % depth
-     
+
   def testLevels(self):
     tst = f.findFileGenerator(self.tdir,maxDepth = 2)
     items = []
@@ -236,7 +236,7 @@ class TestFilesystem(unittest.TestCase):
     assert not os.path.exists('TestDir/A/B/C')
     assert os.path.isdir('TestDir/A/B')
 
-    #Test stopping on a file in a subdir 
+    #Test stopping on a file in a subdir
     f.cleanEmptySubdirectories('TestDir','TestDir/A/B')
     assert not os.path.exists('TestDir/A/B')
     assert os.path.isdir('TestDir/A')
@@ -287,4 +287,4 @@ class TestFilesystem(unittest.TestCase):
 
 if __name__ == "__main__":
   unittest.main()
-  
+

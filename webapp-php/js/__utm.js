@@ -481,8 +481,8 @@ function __utmVisitorCode() {
  var r=0,t=0,i=0,i2=0,m=31;
  var a=_uGC(_ubd.cookie,"__utma="+_udh,";");
  if ((i=a.indexOf(".",0))<0) return;
- if ((i2=a.indexOf(".",i+1))>0) r=a.substring(i+1,i2); else return "";  
- if ((i=a.indexOf(".",i2+1))>0) t=a.substring(i2+1,i); else return "";  
+ if ((i2=a.indexOf(".",i+1))>0) r=a.substring(i+1,i2); else return "";
+ if ((i=a.indexOf(".",i2+1))>0) t=a.substring(i2+1,i); else return "";
  var c=new Array('A','B','C','D','E','F','G','H','J','K','L','M','N','P','R','S','T','U','V','W','X','Y','Z','1','2','3','4','5','6','7','8','9');
  return c[r>>28&m]+c[r>>23&m]+c[r>>18&m]+c[r>>13&m]+"-"+c[r>>8&m]+c[r>>3&m]+c[((r&7)<<2)+(t>>30&3)]+c[t>>25&m]+c[t>>20&m]+"-"+c[t>>15&m]+c[t>>10&m]+c[t>>5&m]+c[t&m];
 }

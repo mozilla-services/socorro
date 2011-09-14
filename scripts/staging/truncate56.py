@@ -49,27 +49,27 @@ cur.execute("""
 	WHERE top_crashes_by_url_id = top_crashes_by_url.id
 	AND window_end < ( now() - interval '60 days')
 	""")
-	
+
 cur.execute("""
 	VACUUM FULL top_crashes_by_url_signature
 	""")
-	
+
 cur.execute("""
 	DELETE FROM top_crashes_by_url
 	WHERE window_end < ( now() - interval '60 days')
 	""")
-	
+
 cur.execute("""
 	VACUUM FULL top_crashes_by_url
 	""")
-	
+
 print "top crashes by url truncated"
-	
+
 cur.execute("""
 	DELETE FROM top_crashes_by_signature
 	WHERE window_end < ( now() - interval '60 days')
 	""")
-	
+
 cur.execute("""
 	VACUUM FULL top_crashes_by_signature
 	""")
@@ -82,11 +82,11 @@ cur.execute("""
 	DELETE FROM raw_adu
 	WHERE "date" < ( now() - interval '60 days')
 	""")
-	
+
 cur.execute("""
 	VACUUM FULL raw_adu
 	""")
-	
+
 print "raw_adu truncated"
 
 # analyze
@@ -94,5 +94,5 @@ print "raw_adu truncated"
 cur.execute("""
 	ANALYZE
 	""")
-	
+
 print "done truncating"

@@ -15,7 +15,7 @@ class AduByDayDetails(AduByDayBase):
   def __init__(self, configContext):
     super(AduByDayDetails, self).__init__(configContext)
     self.connection = None
-    
+
   #-----------------------------------------------------------------------------------------------------------------
   "/201006/adu/byday/details/p/{product}/v/{versions}/rt/{report_types}/os/{os_names}/start/{start_date}/end/{end_date} "
   uri = '/201006/adu/byday/details/p/(.*)/v/(.*)/rt/(.*)/os/(.*)/start/(.*)/end/(.*)'
@@ -34,7 +34,7 @@ class AduByDayDetails(AduByDayBase):
   def fetchCrashHistoryDetails (self, parameters):
     if parameters.listOfOs_names and parameters.listOfOs_names != ['']:
       localOsList = [x[0:3] for x in parameters.listOfOs_names]
-      osNameListPhrase = (','.join("'%s'" % x for x in localOsList)) 
+      osNameListPhrase = (','.join("'%s'" % x for x in localOsList))
       parameters.os_phrase = "os_short_name in (%s)" % osNameListPhrase
     else:
       parameters.os_phrase = '1=1'
@@ -46,7 +46,7 @@ class AduByDayDetails(AduByDayBase):
                 'hang_browser': adu_codes.HANG_BROWSER,
                 'hang_plugin':  adu_codes.HANG_PLUGIN,
                 }
-      reportTypeListPhrase = (','.join("'%s'" % lookup[x] for x in parameters.listOfReport_types)) 
+      reportTypeListPhrase = (','.join("'%s'" % lookup[x] for x in parameters.listOfReport_types))
       parameters.report_types_phrase = "report_type in (%s)" % reportTypeListPhrase
     else:
       parameters.report_types_phrase = '1=1'
@@ -94,7 +94,7 @@ class AduByDayDetails(AduByDayBase):
     result = []
     for aKey in sorted(crashHistory.keys()):
       # aKey is a (date, os_name)
-      
+
       #row = util.DotDict()
       #row.date = str(aKey[0])[:10]
       crashHistory[aKey]['date'] = str(aKey[0])[:10]

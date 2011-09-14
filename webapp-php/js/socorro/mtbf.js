@@ -28,7 +28,7 @@
           if(data['error']){
             alert('Error loading your request. Sorry: ' + data['error']);
 	  }else{
-            byOS = data;  
+            byOS = data;
             display();
             shouldExpand = false;
 	  }
@@ -47,22 +47,22 @@
     for(var i=0; i < byOS.length; i++){
       SocMtbfSeries.pop();
     }
-    
+
     replot();
     $('#mtbf-os-drilldown').text(origionalText);
-  }  
- 
+  }
+
   function replot() {
       $('#mtbf-data-details').html("");
       $.each(SocMtbfSeries, function(i, item){
-	  li = "<li>" + item['label'] + "- MTBF " + 
-                item['mtbf-avg'] + " seconds based on " + 
+	  li = "<li>" + item['label'] + "- MTBF " +
+                item['mtbf-avg'] + " seconds based on " +
                 item['mtbf-report_count'] + "  crash reports of " +
 	        item['mtbf-unique_users'] + " users (blackboxen) from period ";
 	  if( item['mtbf-end-dt']){
-	    li += "between " + item['mtbf-start-dt'] + " and " + 
+	    li += "between " + item['mtbf-start-dt'] + " and " +
 	      item['mtbf-end-dt'] + "</li>";
-          }else{ 
+          }else{
 	    li += "starting at " + item['mtbf-start-dt'] + " </li>";
 	  }
 
@@ -71,7 +71,7 @@
     $.plot($("#mtbf-graph"),
           //series
   	SocMtbfSeries,
-        { //options	 
+        { //options
   	  lines: { show: true},
           points: {show:true},
           //legend: { position: 'ne', show: true }
@@ -81,9 +81,9 @@
         }
     );
   }
-  $(document).ready(function(){      
+  $(document).ready(function(){
       replot();
       $('#mtbf-os-drilldown').click(handleOS);
 
-    });  
+    });
 })();

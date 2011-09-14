@@ -183,10 +183,10 @@ class Auth_ORM_Driver extends Auth_Driver {
 		{
 			// Delete the autologin cookie to prevent re-login
 			cookie::delete('authautologin');
-			
+
 			// Clear the autologin token from the database
 			$token = ORM::factory('user_token', $token);
-			
+
 			if ($token->loaded)
 			{
 				$token->delete();

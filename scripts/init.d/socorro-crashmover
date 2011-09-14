@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# socorro-crashmover    Startup script for the Socorro Crash Mover 
+# socorro-crashmover    Startup script for the Socorro Crash Mover
 #
 # chkconfig: 2345 99 01
 # description: Socorro Crash Mover service.

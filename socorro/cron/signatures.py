@@ -1,9 +1,9 @@
 #! /usr/bin/env python
 """
 signatures.py calls a stored procedure used for updating the first appearance
-of signature information, as well as updating signature_productdims.  
+of signature information, as well as updating signature_productdims.
 
-This script is expected to be run once per hour, and will be called 
+This script is expected to be run once per hour, and will be called
 from scripts/startSignatures.py.
 """
 

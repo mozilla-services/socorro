@@ -66,12 +66,12 @@ for line in results:
     if len(kv) != 2:
         print "Bad line: %s" % (line)
         continue
-    
+
     key_splits = key_pattern.split(kv[0])
     count = long(kv[1])
     if len(key_splits) == 1:
         osname = key_splits[0]
-        osys = osyses.setdefault(osname, 
+        osys = osyses.setdefault(osname,
                                 { "count": 0,
                                   "signatures": {},
                                   "core_counts": {} })
@@ -79,12 +79,12 @@ for line in results:
     elif len(key_splits) == 2:
         osname = key_splits[0]
         sigreason = key_splits[1]
-        osys = osyses.setdefault(osname, 
+        osys = osyses.setdefault(osname,
                                 { "count": 0,
                                   "signatures": {},
                                   "core_counts": {} })
-        signature = osys["signatures"].setdefault(sigreason, 
-                                                  { "count": 0, 
+        signature = osys["signatures"].setdefault(sigreason,
+                                                  { "count": 0,
                                                     "core_counts": {} })
         signature["count"] = count
     elif len(key_splits) == 3:
@@ -92,17 +92,17 @@ for line in results:
         sigreason = key_splits[1]
         family, cores = info_pattern.split(key_splits[2])
         core_info = "%s with %s cores" % (family, cores)
-        
-        osys = osyses.setdefault(osname, 
+
+        osys = osyses.setdefault(osname,
                                 { "count": 0,
                                   "signatures": {},
                                   "core_counts": {} })
-                                  
+
         if sigreason == '':
             osys["core_counts"][core_info] = count
         else:
-            signature = osys["signatures"].setdefault(sigreason, 
-                                                      { "count": 0, 
+            signature = osys["signatures"].setdefault(sigreason,
+                                                      { "count": 0,
                                                         "core_counts": {} })
             signature["core_counts"][core_info] = count
 

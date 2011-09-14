@@ -27,7 +27,7 @@ def doctest_suite(module_names):
     for mod in load_modules(module_names):
         suite.addTest(doctest.DocTestSuite(mod))
     return suite
-    
+
 def suite(module_names):
     """Creates a suite from multiple modules."""
     suite = TestSuite()

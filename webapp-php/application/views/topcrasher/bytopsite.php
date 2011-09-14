@@ -8,9 +8,9 @@
         'css/flora/flora.tablesorter.css'
     ), 'screen')?>
     <script type="text/javascript">
-        $(document).ready(function() { 
-              $('#topsitelist').tablesorter(); 
-        } ); 
+        $(document).ready(function() {
+              $('#topsitelist').tablesorter();
+        } );
     </script>
 <?php slot::end() ?>
 
@@ -22,7 +22,7 @@
         <li><a href="<?php echo url::base(); ?>topcrasher/byurl/<?php echo $product ?>/<?php echo $version ?>">By URL</a></li>
         <li><a href="<?php echo url::base(); ?>topcrasher/bydomain/<?php echo $product ?>/<?php echo $version ?>">By Domain</a></li>
         <li><a href="<?php echo url::base(); ?>topcrasher/bytopsite/<?php echo $product ?>/<?php echo $version ?>" class="selected">By Topsite</a></li>
-    </ul> 
+    </ul>
 </div>
 
 <div class="panel">

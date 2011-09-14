@@ -4,14 +4,14 @@
 
 <div class="page-heading">
 	<h2>Memcache Status</h2>
-</div>	
+</div>
 
 <div class="panel">
     <div class="body notitle">
-<?php 
+<?php
 if (is_array($cache_stats)) {
     foreach ($cache_stats  as $server=>$stats) {
-        echo "<h3>{$server}</h3>";    
+        echo "<h3>{$server}</h3>";
         if (!empty($stats) && is_array($stats)) {
             echo '<ul>';
             echo '<li>Gets: '.$stats['get_hits'].'</li>';
