@@ -8,7 +8,7 @@
  * and assign any other role to your users.
  */
 
-/**                                                                                                                                                                  
+/**
  * Driver to use for authentication. LDAP, NoAuth, File and ORM are available.
  * To disable authentication, use the NoAuth driver. To use File or ORM see
  * comments in controller/auth.php
@@ -50,20 +50,20 @@ $config['users'] = array
 	// 'admin' => 'b3154acf3a344170077d11bdb5fff31532f679a1919e716a02',
 );
 
-/** 
+/**
  * The email address to be used for sending out authentication-related emails.
  */
 $config['email'] = 'noreply@mozilla.com';
 
-/** 
- * The site name that will be used to throughout the auth process and in 
+/**
+ * The site name that will be used to throughout the auth process and in
  * particular to be sent out with each email.
  */
 $config['site_name'] = 'Mozilla Crash Reports';
 
 /**
  * Authentication protocol, typically https. Useful for development
- * or other test environments which don't support https. 
+ * or other test environments which don't support https.
  */
 $config['proto'] = 'https';
 

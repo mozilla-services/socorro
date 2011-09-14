@@ -10,7 +10,7 @@ import socorro.lib.datetimeutil as dtutil
 #-----------------------------------------------------------------------------------------------------------------
 def semicolonStringToListSanitized(aString):
   return [x.strip() for x in aString.replace("'","").split(';') if x.strip() != '']
-  
+
 #=================================================================================================================
 class AduByDay(webapi.JsonServiceBase):
   #-----------------------------------------------------------------------------------------------------------------
@@ -18,7 +18,7 @@ class AduByDay(webapi.JsonServiceBase):
     super(AduByDay, self).__init__(configContext)
     self.connection = None
 
-    
+
   #-----------------------------------------------------------------------------------------------------------------
   "/201005/adu/byday/p/{product}/v/{versions}/report_type/{report_type}/os/{os_names}/start/{start_date}/end/{end_date} "
   uri = '/201005/adu/byday/p/(.*)/v/(.*)/rt/(.*)/os/(.*)/start/(.*)/end/(.*)'
@@ -66,15 +66,15 @@ class AduByDay(webapi.JsonServiceBase):
   def fetchCrashHistory (self, parameters):
     if parameters.listOfOs_names and parameters.listOfOs_names != ['']:
       localOsList = [x[0:3] for x in parameters.listOfOs_names]
-      osNameListPhrase = (','.join("'%s'" % x for x in localOsList)) 
+      osNameListPhrase = (','.join("'%s'" % x for x in localOsList))
       parameters.os_phrase = "os_short_name in (%s)" % osNameListPhrase
     else:
       parameters.os_phrase = '1=1'
-        
+
     if parameters.report_type == 'crash':
       parameters.report_type_phrase = "report_type = '%s'" % adu_codes.CRASH_BROWSER
     elif parameters.report_type == 'hang':
-      parameters.report_type_phrase = "report_type IN ('%s', '%s')" % (adu_codes.HANG_BROWSER, adu_codes.HANG_PLUGIN) 
+      parameters.report_type_phrase = "report_type IN ('%s', '%s')" % (adu_codes.HANG_BROWSER, adu_codes.HANG_PLUGIN)
     else:
       # anything other than 'crash' or 'hang' will return all crashes
       # hang normalized are avoided so as not to count some hang ids multiple times
@@ -84,7 +84,7 @@ class AduByDay(webapi.JsonServiceBase):
         adu_codes.CONTENT,
         adu_codes.OOP_PLUGIN,
       )
-    
+
     sql = """
       SELECT adu_day::DATE, os_short_name, SUM(count)
       FROM daily_crashes
@@ -104,7 +104,7 @@ class AduByDay(webapi.JsonServiceBase):
     #print "adu ->", aduHistory
     #print "crash ->", crashHistory
     #print crashHistory.keys()
-    
+
     result = []
     for aKey in sorted(crashHistory.keys()):
       row = util.DotDict()

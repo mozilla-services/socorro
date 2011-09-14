@@ -7,7 +7,7 @@ require_once dirname(__FILE__).'/../application/libraries/release.php';
 
 class ReleaseTest extends PHPUnit_Framework_TestCase
 {
-    public function testConvertProductToReleaseMap() 
+    public function testConvertProductToReleaseMap()
     {
         $release = new Release;
         $this->assertEquals($release->typeOfRelease('3.5'), Release::MAJOR);

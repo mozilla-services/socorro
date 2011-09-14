@@ -3,45 +3,45 @@
 * jquery.sparkline.js
 *
 * v1.3
-* (c) Splunk, Inc 
+* (c) Splunk, Inc
 * Contact: Gareth Watts (gareth@splunk.com)
 * http://omnipotent.net/jquery.sparkline/
 *
 * Generates inline sparkline charts from data supplied either to the method
 * or inline in HTML
-* 
+*
 * Compatible with Internet Explorer 6.0+ and modern browsers equipped with the canvas tag
 * (Firefox 2.0+, Safari, Opera, etc)
 *
 * License: New BSD License
-* 
+*
 * Copyright (c) 2009, Splunk Inc.
 * All rights reserved.
-* 
-* Redistribution and use in source and binary forms, with or without modification, 
-* are permitted provided that the following conditions are met:
-* 
-*     * Redistributions of source code must retain the above copyright notice, 
-*       this list of conditions and the following disclaimer.
-*     * Redistributions in binary form must reproduce the above copyright notice, 
-*       this list of conditions and the following disclaimer in the documentation 
-*       and/or other materials provided with the distribution.
-*     * Neither the name of Splunk Inc nor the names of its contributors may 
-*       be used to endorse or promote products derived from this software without 
-*       specific prior written permission.
-* 
-* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY 
-* EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES 
-* OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT 
-* SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, 
-* SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT 
-* OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) 
-* HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, 
-* OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
-* SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-* 
 *
-* Usage: 
+* Redistribution and use in source and binary forms, with or without modification,
+* are permitted provided that the following conditions are met:
+*
+*     * Redistributions of source code must retain the above copyright notice,
+*       this list of conditions and the following disclaimer.
+*     * Redistributions in binary form must reproduce the above copyright notice,
+*       this list of conditions and the following disclaimer in the documentation
+*       and/or other materials provided with the distribution.
+*     * Neither the name of Splunk Inc nor the names of its contributors may
+*       be used to endorse or promote products derived from this software without
+*       specific prior written permission.
+*
+* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY
+* EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+* OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT
+* SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+* SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT
+* OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+* HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+* OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+* SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*
+*
+* Usage:
 *  $(selector).sparkline(values, options)
 *
 * If values is undefined or set to 'html' then the data values are read from the specified tag:
@@ -75,7 +75,7 @@
 *       minSpotColor - If set, color of spot at minimum value
 *       maxSpotColor - If set, color of spot at maximum value
 *       spotRadius - Radius in pixels
-*       normalRangeMin 
+*       normalRangeMin
 *       normalRangeMax - If set draws a filled horizontal bar between these two values marking the "normal"
 *                      or expected range of values
 *       normalRangeColor - Color to use for the above bar
@@ -111,8 +111,8 @@
 *   pie - Pie chart. Options:
 *       sliceColors - An array of colors to use for pie slices
 *       offset - Angle in degrees to offset the first slice - Try -90 or +90
-*   
-*       
+*
+*
 *   Examples:
 *   $('#sparkline1').sparkline(myvalues, { lineColor: '#f00', fillColor: false });
 *   $('.barsparks').sparkline('html', { type:'bar', height:'40px', barWidth:5 });
@@ -147,11 +147,11 @@
             lineColor : '#00f',
             fillColor : '#cdf',
             defaultPixelsPerValue : 3,
-            width : 'auto', 
+            width : 'auto',
             height : 'auto',
             composite : false
         }, options ? options : {});
-        
+
         return this.each(function() {
             var render = function() {
                 var values = (uservalues=='html' || uservalues==undefined) ? $(this).text().split(',') : uservalues;
@@ -267,7 +267,7 @@
             }
             if (options.spotRadius) {
                 // adjust the canvas size as required so that spots will fit
-                if (options.minSpotColor || (options.spotColor && yvalues[vl]==miny)) 
+                if (options.minSpotColor || (options.spotColor && yvalues[vl]==miny))
                     canvas_height -= Math.ceil(options.spotRadius);
                 if (options.maxSpotColor || (options.spotColor && yvalues[vl]==maxy)) {
                     canvas_height -= Math.ceil(options.spotRadius);
@@ -464,7 +464,7 @@
             // Remove the tag contents if sparklines aren't supported
             this.innerHTML = '';
         }
-                
+
     };
 
     $.fn.sparkline.bullet = function(values, options, width, height) {
@@ -478,7 +478,7 @@
             base : undefined // set this to a number to change the base start number
         }, options);
 
-        
+
         width = options.width=='auto' ? '4.0em' : width;
 
         var target = $(this).simpledraw(width, height);
@@ -540,7 +540,7 @@
         if (target && values.length>1) {
             var canvas_width = target.pixel_width;
             var canvas_height = target.pixel_height;
-                
+
             var radius = Math.floor(Math.min(canvas_width, canvas_height)/2);
             var total = 0;
             for(var i=0; i<values.length; i++)
@@ -683,7 +683,7 @@
             if (fillColor != undefined) {
                 context.fill();
             }
-        }, 
+        },
 
         drawPieSlice : function(x, y, radius, startAngle, endAngle, lineColor, fillColor) {
             var context = this._getContext(lineColor, fillColor);
@@ -702,12 +702,12 @@
 
         drawRect : function(x, y, width, height, lineColor, fillColor) {
             var context = this._getContext(lineColor, fillColor);
-            if (fillColor != undefined) 
-                context.fillRect(x, y, width, height); 
+            if (fillColor != undefined)
+                context.fillRect(x, y, width, height);
             if (lineColor != undefined)
-                context.strokeRect(x, y, width, height); 
+                context.strokeRect(x, y, width, height);
         }
-        
+
     });
 
     var vcanvas_vml = function(width, height, target) {
@@ -762,9 +762,9 @@
                 + fill
                 +' style="position:absolute;top:'+y+'; left:'+x+'; width:'+(radius*2)+'; height:'+(radius*2)+'"></v:oval>';
             this.group.insertAdjacentHTML('beforeEnd', vel);
-            
+
         },
-        
+
         drawPieSlice : function(x, y, radius, startAngle, endAngle, lineColor, fillColor) {
             if (startAngle == endAngle) {
                 return;  // VML seems to have problem when start angle equals end angle.
@@ -779,7 +779,7 @@
             var endx = x + Math.round(Math.cos(endAngle) * radius);
             var endy = y + Math.round(Math.sin(endAngle) * radius);
 
-            var vpath = [  x-radius, y-radius, x+radius, y+radius, startx, starty, endx, endy ]; 
+            var vpath = [  x-radius, y-radius, x+radius, y+radius, startx, starty, endx, endy ];
             var stroke = lineColor == undefined ? ' stroked="false" ' : ' strokeWeight="1" strokeColor="'+lineColor+'" ';
             var fill = fillColor == undefined ? ' filled="false"' : ' fillColor="'+fillColor+'" filled="true" ';
             var vel = '<v:shape coordorigin="0 0" coordsize="'+this.pixel_width+' '+this.pixel_height+'" '

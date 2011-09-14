@@ -16,7 +16,7 @@ class client {
 	 *
 	 * @see		self::clientMessageSend
 	 * @access	public
-	 * @static	
+	 * @static
 	 * @return	string	HTML output of user messages
 	 */
 	public static function messageFetchHtml()
@@ -38,7 +38,7 @@ class client {
 					default:
 						$notices .= '<div id="message" class="success"><h2>' . $message[0] . '</h2></div>'."\n";
 						break;
-				}				
+				}
 			}
 
 			$message_html = '';
@@ -51,18 +51,18 @@ class client {
 						</ul>
 					</div>
 				';
-			} 
-			
+			}
+
 			if (!empty($notices)) {
 				$message_html .= $notices;
-			} 
-			
+			}
+
 			if (!empty($message_html)) {
 				return $message_html;
 			}
 		}
 	}
-	
+
 	/**
 	 * Stores a message intended for the user/client from a lower level function.
 	 * This is part of a message passing system which provides standard methods
@@ -73,11 +73,11 @@ class client {
 	 * @access	public
 	 * @static
 	 * @param	string	Message to pass to the client
-	 * @param	int		Classification of message type - E_USER_WARNING, E_USER_ERROR, E_USER_NOTICE 
+	 * @param	int		Classification of message type - E_USER_WARNING, E_USER_ERROR, E_USER_NOTICE
 	 * @return	void
 	 */
 	public static function messageSend($feedback, $type)
-	{		
+	{
 		$_SESSION['client_messages'][] = array($feedback, $type);
 	}
 
@@ -88,20 +88,20 @@ class client {
 	 * @access	public
 	 * @static
 	 * @param 	array 	An array of Kohana errors that are returned from Kohana Validation
-	 * @param 	string 	The file and string prefix for the error.  For 'auth', requires i18n/auth.php, 
+	 * @param 	string 	The file and string prefix for the error.  For 'auth', requires i18n/auth.php,
 	 *					which contains - 'auth_email_required' => 'An email address is required'.
 	 * @return	void
 	 */
 	public static function messageSendKohana(array $errors, $type='auth')
 	{
 		if (is_array($errors) && !empty($errors)) {
-			foreach ($errors as $key => $value) { 
+			foreach ($errors as $key => $value) {
 				$message = Kohana::lang($type . '.'  . $type ."_" . $key . '_' . $value);
 				self::messageSend($message, E_USER_WARNING);
 			}
 		}
 	}
 
-	
+
 	/* */
 }

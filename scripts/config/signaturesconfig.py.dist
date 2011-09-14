@@ -8,7 +8,7 @@ from config.commonconfig import databasePassword
 
 start_day= cm.Option()
 start_day.doc = 'The number of days before today that should serve as the start date for the query window.'
-start_day.default = 1 
+start_day.default = 1
 
 #-------------------------------------------------------------------------------
 # Logging

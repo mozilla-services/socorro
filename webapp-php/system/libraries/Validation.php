@@ -672,7 +672,7 @@ class Validation_Core extends ArrayObject {
 					$errors[$input] = Kohana::lang("$file.$input.default");
 				}
 			}
-			
+
 			return $errors;
 		}
 	}

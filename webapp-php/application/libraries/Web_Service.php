@@ -44,7 +44,7 @@
  * @package  WebServices
  * @author   Austin King <ozten@mozilla.com>
  */
-class Web_Service 
+class Web_Service
 {
     /**
      * Config params for use with CURL
@@ -82,7 +82,7 @@ class Web_Service
      *
      * @param string  $url             the url for the web service including any paramters
      * @param string  $response_type    the expected response type - xml, json, etc
-     * @param integer $cache_lifetime the lifetime (in seconds) of a cache item or 'default' 
+     * @param integer $cache_lifetime the lifetime (in seconds) of a cache item or 'default'
      *     to use app wide cache default, or lastly NULL to disable caching
      *
      * @return object - the response or FALSE if there was an error
@@ -153,12 +153,12 @@ class Web_Service
             return false;
         }
     }
- 
+
     /**
      * Makes a GET request for the resource and parses the response based
      * on the expected type
      *
-     * @todo This needs to be rewritten to return http status codes to the calling libraries.  Please rewrite in Socorro 1.9. 
+     * @todo This needs to be rewritten to return http status codes to the calling libraries.  Please rewrite in Socorro 1.9.
      * @see https://bugzilla.mozilla.org/show_bug.cgi?id=588083
      *
      * @param string - the url for the web service including any paramters
@@ -186,7 +186,7 @@ class Web_Service
                 $data = json_decode($curl_response);
             } else {
                 $data = $curl_response;
-            }       
+            }
             return $data;
         } else {
             // See http://curl.haxx.se/libcurl/c/libcurl-errors.html

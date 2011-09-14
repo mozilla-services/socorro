@@ -8,8 +8,8 @@ class html extends html_Core {
     /**
      * Build a query string from a simple associative array.
      *
-     * Implemented here because http_build_query() doesn't do the right thing 
-     * with multiple parameters and Kohana's html::query_string() is 
+     * Implemented here because http_build_query() doesn't do the right thing
+     * with multiple parameters and Kohana's html::query_string() is
      * deprecated.
      *
      * @param  array  Associative array to be converted into a query string.

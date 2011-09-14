@@ -40,7 +40,7 @@ if (Kohana::config('config.enable_hooks') == FALSE) {
 
 /**
  * Allows users control over their email preferences
- * 
+ *
  * Authentication is via a Token and thus very weak.
  *
  * @category Controller
@@ -54,7 +54,7 @@ class Email_Controller extends Controller
      * Kohana request handler
      *
      * @param string $subscribeToken Each email address has an associated token
-     * 
+     *
      * @return HTML Response
      */
     public function subscription($subscribeToken)
@@ -63,7 +63,7 @@ class Email_Controller extends Controller
         $token = urlencode($subscribeToken);
         $backendError = false;
         $success = $this->input->get('success', false);
-        list($recaptchaErrorCode, $recaptchaError) = 
+        list($recaptchaErrorCode, $recaptchaError) =
             $this->_recaptchaError($this->input->get('recaptcha_error', 'false'));
         $unknownToken = false;
         // update_status can redirect here with token set to unknown
@@ -76,7 +76,7 @@ class Email_Controller extends Controller
             );
             if ($resp) {
                 if ('true' == $resp->found) {
-                    $subscriptionStatus = $resp->status;                
+                    $subscriptionStatus = $resp->status;
                 } else {
                     $unknownToken = true;
                 }
@@ -123,7 +123,7 @@ class Email_Controller extends Controller
                     }
 
                     $backend_data = array(
-                        'token'  => $token, 
+                        'token'  => $token,
                         'status' => $status,
                         );
                     list($host, $service) = $this->_webService();
@@ -136,20 +136,20 @@ class Email_Controller extends Controller
                 }
             } else {
                 /* will be error code name, mapped in _recaptchaError to error messages */
-                $recaptchaError = recaptcha::error(); 
+                $recaptchaError = recaptcha::error();
             }
         } else {
             // Hacking form isn't user editable...
-            url::redirect("email/subscription/" . urlencode($token)); 
+            url::redirect("email/subscription/" . urlencode($token));
         }
         $params = array();
         if ($recaptchaError) {
             array_push($params, "recaptcha_error=" . urlencode($recaptchaError));
-        }            
+        }
         if ($success) {
             array_push($params, "success=true");
         }
-        url::redirect("email/subscription/" . urlencode($token) . "?" . implode('&', $params)); 
+        url::redirect("email/subscription/" . urlencode($token) . "?" . implode('&', $params));
     }
 
 
@@ -167,14 +167,14 @@ class Email_Controller extends Controller
         }
         $service = new Web_Service($config);
         $host = Kohana::config('webserviceclient.socorro_hostname');
-        return array($host, $service);        
+        return array($host, $service);
     }
 
     /**
      * Maps ReCAPTCHA error codes to copy
      *
      * @param string $errorCode ReCaptcha error code
-     * 
+     *
      * @return array Two item array list($errorCode, $message)
      *         errorCode is either null or the ReCaptcha error code
      *         message is user friendly copy
@@ -185,7 +185,7 @@ class Email_Controller extends Controller
             case 'incorrect-captcha-sol':
                 return array($errorCode, "Words didn't match the image, please try again.");
             default:
-                return array(null, null); 
+                return array(null, null);
         }
     }
 }

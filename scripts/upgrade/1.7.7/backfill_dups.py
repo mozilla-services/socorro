@@ -16,15 +16,15 @@ conn.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
 
 cur = conn.cursor()
 
-cur.execute("""                                                                                                                                                                     
+cur.execute("""
    SET work_mem = '128 MB'                                                                                                                                                             """)
 
-cur.execute("""                                                                                                                                                                    
-   SET maintenance_work_mem = '256 MB'                                                                                                                                              
+cur.execute("""
+   SET maintenance_work_mem = '256 MB'
    """)
 
-cur.execute("""                                                                                                                                                                     
-   SET temp_buffers = '128 MB'                                                                                                                                                      
+cur.execute("""
+   SET temp_buffers = '128 MB'
    """)
 
 

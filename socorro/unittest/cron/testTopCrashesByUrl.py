@@ -378,7 +378,7 @@ class TestTopCrashesByUrl:
 
     t = tcbu.TopCrashesByUrl(copy.copy(me.config))
     t.processDateInterval(startDate = datetime.datetime(2008,1,1), endDate=datetime.datetime(2008,3,3))
-    
+
     cursor.execute("SELECT COUNT(id) from top_crashes_by_url")
     self.connection.rollback()
     count = cursor.fetchone()[0]

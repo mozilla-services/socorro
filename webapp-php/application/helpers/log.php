@@ -23,7 +23,7 @@ class log_Core
     }
 
     /**
-     * Emit a log message to both FirePHP and Kohana, following FirePHP 
+     * Emit a log message to both FirePHP and Kohana, following FirePHP
      * variable parameters style:
      *
      * log::log( mixed $Object [, string $Label ] [, string $Type ] )
@@ -51,7 +51,7 @@ class log_Core
             Kohana::log('info', $Object);
 
         } else if(count($args) == 2) {
-            
+
             if (array_key_exists($args[1], $fb_to_kohana_types)) {
                 $level = $fb_to_kohana_types[$args[1]];
                 $msg = $Object;

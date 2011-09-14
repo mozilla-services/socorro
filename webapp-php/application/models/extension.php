@@ -18,7 +18,7 @@ class Extension_Model extends Model {
 	private function cacheResults($url, $results) {
 		if (!empty($results)) {
 			$cache = new Cache();
-			$cache->set($this->getCacheKey($url), $results);	
+			$cache->set($this->getCacheKey($url), $results);
 		}
 	}
 
@@ -74,7 +74,7 @@ class Extension_Model extends Model {
 		}
 		return false;
 	}
-	
+
 	/**
 	* Return the cache key for the AMO API call.
 	*
@@ -85,7 +85,7 @@ class Extension_Model extends Model {
 	private function getCacheKey($url) {
 		return 'amo_api_' . md5($url);
 	}
-	
+
 	/**
 	* Fetch the cached results for an AMO API call, if available.
 	*
@@ -100,9 +100,9 @@ class Extension_Model extends Model {
         }
 		return false;
 	}
-	
+
 	/**
-	* Query the AMO API for more information about the Extensions installed in the 
+	* Query the AMO API for more information about the Extensions installed in the
 	* browser upon crash.
 	*
 	* Sample URL to reference once the API call is available.
@@ -131,7 +131,7 @@ class Extension_Model extends Model {
 	 		$header  = curl_getinfo($curl);
 			$http_status_code = $header['http_code'];
 			curl_close($curl);
-        	
+
 			if ($http_status_code == 200) {
 				$results = json_decode($curl_response);
 				if (count($guids) != count($results)) {
@@ -145,7 +145,7 @@ class Extension_Model extends Model {
 			return false;
 		}
 	}
-	
+
 	/**
      * Fetch all of the extensions that are installed in a browser at the time of crash.
      *
@@ -160,13 +160,13 @@ class Extension_Model extends Model {
             SELECT extensions.*
 			FROM extensions
 			INNER JOIN reports ON extensions.report_id = reports.id
-            WHERE reports.uuid = ? 
+            WHERE reports.uuid = ?
 			AND reports.date_processed = ?
 			AND extensions.date_processed = ?
         ";
 		$extensions = $this->fetchRows($sql, true, array($uuid, $date, $date));
 
-		if (!empty($extensions)) { 
+		if (!empty($extensions)) {
 			return $this->combineExtensionData($extensions, $product);
 		}
 		return false;

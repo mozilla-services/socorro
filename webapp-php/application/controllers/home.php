@@ -43,7 +43,7 @@
  */
 class Home_Controller extends Controller
 {
-    
+
     /**
      * Class constructor.
      *
@@ -68,6 +68,6 @@ class Home_Controller extends Controller
         }
         url::redirect($url);
     }
-     
-    /* */   
+
+    /* */
 }

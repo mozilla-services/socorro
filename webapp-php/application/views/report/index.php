@@ -31,7 +31,7 @@
 
 <div class="panel">
     <div class="body notitle">
-        
+
 <div id="sumo-link"><?php
 if (is_null($report->signature) || empty($report->signature)) { ?>
 <a href="http://support.mozilla.com">Visit Mozilla Support for Help</a>
@@ -99,14 +99,14 @@ if (is_null($report->signature) || empty($report->signature)) { ?>
 
             <?php if ($report->last_crash): ?>
             <tr>
-                <th>Last Crash</th><td><?php 
+                <th>Last Crash</th><td><?php
 		     $seconds_in_words = TimeUtil::time_ago_in_words($report->last_crash);
                      ?><?= $seconds_in_words ?> before submission</td>
             </tr>
-            <?php endif; ?> 
+            <?php endif; ?>
             <?php if (property_exists($report, 'install_age')): ?>
             <tr>
-                <th>Install Age</th><td><?php 
+                <th>Install Age</th><td><?php
                     $seconds_in_words = TimeUtil::time_ago_in_words($report->install_age); ?>
                     <?= $seconds_in_words ?>
                     since version was first installed.</td>
@@ -208,7 +208,7 @@ if (is_null($report->signature) || empty($report->signature)) { ?>
                  - <a href="<?php out::H($report_bug_url); ?>" target="_NEW">Report this Crash</a>
             <?php } ?>
             </h2>
-        
+
           <?php if (array_key_exists($report->signature, $sig2bugs)) { ?>
           <h2>Related Bugs</h2>
           <?php View::factory('common/list_bugs', array(
@@ -222,7 +222,7 @@ if (is_null($report->signature) || empty($report->signature)) { ?>
 
       <div id="frames">
     <?php if (isset($report->threads) && count($report->threads)): ?>
-           
+
             <?php function stack_trace($frames) { ?>
                 <table class="list">
                     <tr>
@@ -253,8 +253,8 @@ if (is_null($report->signature) || empty($report->signature)) { ?>
             <h2>Crashing Thread</h2>
             <?php if (isset($report->threads) && count($report->threads) > $report->crashed_thread ){
                     stack_trace( $report->threads[$report->crashed_thread] );
-                  } ?>    
-               
+                  } ?>
+
 
             <p id="showallthreads" class="hidden"><a href="#allthreads">Show/hide other threads</a></p>
             <div id="allthreads">
@@ -327,7 +327,7 @@ if (is_null($report->signature) || empty($report->signature)) { ?>
 	                    <td><a href="<?php out::H($extension['link']) ?>"><?php out::H($extension['name']) ?></a></td>
 	                    <td><?php if (isset($extension['extension_id'])) out::H($extension['extension_id']) ?></td>
 	                    <td><?php if (isset($extension['extension_version']))  out::H($extension['extension_version']) ?></td>
-						<td><?php 
+						<td><?php
 								if (isset($extension['extension_version']) && isset($extension['latest_version'])) {
 									if ($extension['extension_version'] !== $extension['latest_version']) {
 							?>
@@ -340,7 +340,7 @@ if (is_null($report->signature) || empty($report->signature)) { ?>
 					<?php $row += 1; ?>
 					</tr>
 	            <?php } ?>
-	        </table>    	
+	        </table>
 		<?php } else { ?>
 			<p><em>No extensions were installed.</em></p>
 		<?php } ?>
@@ -355,7 +355,7 @@ if (is_null($report->signature) || empty($report->signature)) { ?>
 
 </div> <!-- /report-index -->
 
-    
+
     </div>
 </div>
 

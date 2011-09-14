@@ -143,16 +143,16 @@ this_time := start_date + interval '1 hour';
 while this_time <= end_date loop
 
 	dups_found := backfill_reports_duplicates( this_time - INTERVAL '1 hour', this_time);
-	
+
 	RAISE INFO '% duplicates found for %',dups_found,this_time;
 
 	this_time := this_time + interval '30 minutes';
-	
+
 	-- analyze once per day, just to avoid bad query plans
 	IF extract('hour' FROM this_time) = 2 THEN
 		analyze reports_duplicates;
 	END IF;
-	
+
 	truncate new_reports_duplicates;
 
 end loop;
@@ -203,7 +203,7 @@ begin
   order by relname desc limit 1;
 
   raise info 'updating %',reppartition;
-  
+
   EXECUTE 'UPDATE ' || reppartition || ' SET release_channel = back_one_day.release_channel
     FROM back_one_day WHERE back_one_day.uuid = ' || reppartition || '.uuid;';
 
@@ -252,7 +252,7 @@ begin
   order by relname desc limit 1;
 
   raise info 'updating %',reppartition;
-  
+
   EXECUTE 'UPDATE ' || reppartition || ' SET release_channel = back_one_day.release_channel
     FROM back_one_day WHERE back_one_day.uuid = ' || reppartition || '.uuid;';
 
@@ -287,7 +287,7 @@ select follower.uuid as uuid,
 	leader.uuid as duplicate_of,
 	follower.date_processed
 from
-(  
+(
 select uuid,
     install_age,
     uptime,
@@ -315,29 +315,29 @@ select uuid,
    from reports
    where date_processed BETWEEN start_time AND end_time
  ) as follower
-JOIN 
+JOIN
   ( select uuid, install_age, uptime, client_crash_date
     FROM reports
     where date_processed BETWEEN start_time AND end_time ) as leader
   ON follower.leader_uuid = leader.uuid
-WHERE ( same_time_fuzzy(leader.client_crash_date, follower.client_crash_date, 
-                  leader.uptime, follower.uptime) 
-		  OR follower.uptime < 60 
+WHERE ( same_time_fuzzy(leader.client_crash_date, follower.client_crash_date,
+                  leader.uptime, follower.uptime)
+		  OR follower.uptime < 60
   	  )
   AND
-	same_time_fuzzy(leader.client_crash_date, follower.client_crash_date, 
+	same_time_fuzzy(leader.client_crash_date, follower.client_crash_date,
                   leader.install_age, follower.install_age)
   AND follower.uuid <> leader.uuid;
-  
+
 -- insert a copy of the leaders
-  
+
 insert into new_reports_duplicates
 select uuid, uuid, date_processed
 from reports
-where uuid IN ( select duplicate_of 
+where uuid IN ( select duplicate_of
 	from new_reports_duplicates )
 	and date_processed BETWEEN start_time AND end_time;
-  
+
 analyze new_reports_duplicates;
 
 select count(*) into new_dups from new_reports_duplicates;
@@ -345,7 +345,7 @@ select count(*) into new_dups from new_reports_duplicates;
 -- insert new duplicates into permanent table
 
 insert into reports_duplicates (uuid, duplicate_of, date_processed )
-select new_reports_duplicates.* 
+select new_reports_duplicates.*
 from new_reports_duplicates
 	left outer join reports_duplicates USING (uuid)
 where reports_duplicates.uuid IS NULL;
@@ -411,12 +411,12 @@ FOR thistable IN SELECT * FROM unnest(tables) LOOP
 
 SELECT count(*) INTO partcount
 FROM pg_stat_user_tables
-WHERE relname LIKE ( thistable || '_%' )  
+WHERE relname LIKE ( thistable || '_%' )
 AND relname > ( thistable || '_' || cur_partition );
 
 --RAISE INFO '% : %',thistable,partcount;
 
-IF partcount < numpartitions OR partcount IS NULL THEN 
+IF partcount < numpartitions OR partcount IS NULL THEN
 result := result + 1;
 msg := msg || ' ' || thistable;
 END IF;
@@ -644,7 +644,7 @@ DECLARE which_t text;
 
 -- this function allows the admin UI to edit product and version
 -- information regardless of which table it appears in
--- currently editing the new products is limited to 
+-- currently editing the new products is limited to
 -- visibility dates and featured because of the need to supply
 -- build numbers, and that we're not sure it will ever
 -- be required.
@@ -667,7 +667,7 @@ IF prod_id IS NULL THEN
 	IF FOUND THEN
 		RAISE EXCEPTION 'Product % version % will be automatically updated by the new system.  As such, you may not add this product & version manually.',prod_name,prod_version;
 	ELSE
-		
+
 		INSERT INTO productdims ( product, version, branch, release )
 		VALUES ( prod_name, prod_version, '2.2',
 			CASE WHEN prod_channel ILIKE 'beta' THEN 'milestone'::release_enum
@@ -676,10 +676,10 @@ IF prod_id IS NULL THEN
 				ELSE 'major' END )
 		RETURNING id
 		INTO new_id;
-		
+
 		INSERT INTO product_visibility ( productdims_id, start_date, end_date, featured, throttle )
 		VALUES ( new_id, begin_visibility, end_visibility, is_featured, crash_throttle );
-	
+
 	END IF;
 
 ELSE
@@ -687,11 +687,11 @@ ELSE
 -- first, find out whether we're dealing with the old or new table
 	SELECT which_table INTO which_t
 	FROM product_info WHERE product_version_id = prod_id;
-	
+
 	IF NOT FOUND THEN
 		RAISE EXCEPTION 'No product with that ID was found.  Database Error.';
 	END IF;
-	
+
 	IF which_t = 'new' THEN
 		-- note that changes to the product name or version will be ignored
 		-- only changes to featured and visibility dates will be taken
@@ -700,12 +700,12 @@ ELSE
 			build_date = begin_visibility,
 			sunset_date = end_visibility
 		WHERE product_version_id = prod_id;
-		
+
 		UPDATE product_release_channels
 		SET throttle = crash_throttle / 100
 		WHERE product_name = prod_name
 			AND release_channel = prod_channel;
-		
+
 		new_id := prod_id;
 	ELSE
 		UPDATE productdims SET
@@ -716,14 +716,14 @@ ELSE
 				WHEN prod_channel ILIKE 'nightly' THEN 'development'::release_enum
 				ELSE 'major' END )
 		WHERE id = prod_id;
-			
+
 		UPDATE product_visibility SET
 			featured = is_featured,
 			start_date = begin_visibility,
 			end_date = end_visibility,
 			throttle = crash_throttle
 		WHERE productdims_id = prod_id;
-		
+
 		new_id := prod_id;
 	END IF;
 END IF;
@@ -750,8 +750,8 @@ CASE WHEN tablename = 'reports' THEN
   curdate:= now() - INTERVAL '3 days';
   EXECUTE 'SELECT max(date_processed)
   FROM reports
-  WHERE date_processed > ' || 
-        quote_literal(to_char(curdate, 'YYYY-MM-DD')) 
+  WHERE date_processed > ' ||
+        quote_literal(to_char(curdate, 'YYYY-MM-DD'))
         || ' and date_processed < ' ||
         quote_literal(to_char(curdate + INTERVAL '4 days','YYYY-MM-DD'))
     INTO resdate;
@@ -790,7 +790,7 @@ declare arewelogging boolean;
 begin
 SELECT log_jobs INTO arewelogging
 FROM priorityjobs_logging_switch;
-IF arewelogging THEN 
+IF arewelogging THEN
 INSERT INTO priorityjobs_log VALUES ( NEW.uuid );
 END IF;
 RETURN NEW;
@@ -821,7 +821,7 @@ ALTER FUNCTION public.major_version(version text) OWNER TO postgres;
 CREATE FUNCTION major_version_sort(version text) RETURNS text
     LANGUAGE sql IMMUTABLE STRICT
     AS $_$
--- converts a major_version string into a padded, 
+-- converts a major_version string into a padded,
 -- sortable string
 select version_sort_digit( substring($1 from $x$^(\d+)$x$) )
 	|| version_sort_digit( substring($1 from $x$^\d+\.(\d+)$x$) );
@@ -885,7 +885,7 @@ BEGIN
 -- work for the database and more foolproof.
 
 UPDATE productdims SET sort_key = new_sort
-FROM  ( SELECT product, version, 
+FROM  ( SELECT product, version,
 row_number() over ( partition by product
 order by sec1_num1 ASC NULLS FIRST,
 sec1_string1 ASC NULLS LAST,
@@ -1051,7 +1051,7 @@ WHEN $4 IS NULL THEN
 ELSE
 	(
 		extract ('epoch' from ( $2 - $1 ) ) -
-		( $4 - $3 ) 
+		( $4 - $3 )
 	) BETWEEN -60 AND 60
 END;
 $_$;
@@ -1258,13 +1258,13 @@ CREATE FUNCTION update_adu(updateday date) RETURNS boolean
     SET temp_buffers TO '512MB'
     AS $$
 BEGIN
--- daily batch update procedure to update the 
+-- daily batch update procedure to update the
 -- adu-product matview, used to power graphs
 -- gets its data from raw_adu, which is populated
 -- daily by metrics
 
 -- check if raw_adu has been updated.  otherwise, abort.
-PERFORM 1 FROM raw_adu 
+PERFORM 1 FROM raw_adu
 WHERE "date" = updateday
 LIMIT 1;
 
@@ -1320,10 +1320,10 @@ WHERE updateday BETWEEN build_date AND ( sunset_date + 1 )
         AND raw_adu.build_channel = 'beta'
         AND EXISTS ( SELECT 1
             FROM product_version_builds
-            WHERE product_versions.product_version_id = product_version_builds.product_version_id   
+            WHERE product_versions.product_version_id = product_version_builds.product_version_id
               AND product_version_builds.build_id = build_numeric(raw_adu.build)
             )
-GROUP BY product_version_id, os; 
+GROUP BY product_version_id, os;
 
 -- insert old products
 
@@ -1333,13 +1333,13 @@ SELECT productdims_id, coalesce(os_name,'Windows') as os,
 	updateday, coalesce(sum(raw_adu.adu_count),0)
 FROM productdims
 	JOIN product_visibility ON productdims.id = product_visibility.productdims_id
-	LEFT OUTER JOIN raw_adu 
+	LEFT OUTER JOIN raw_adu
 		ON productdims.product = raw_adu.product_name
 		AND productdims.version = raw_adu.product_version
 		AND raw_adu.date = updateday
     LEFT OUTER JOIN os_name_matches
-    	ON raw_adu.product_os_platform ILIKE os_name_matches.match_string	
-WHERE updateday BETWEEN ( start_date - interval '1 day' ) 
+    	ON raw_adu.product_os_platform ILIKE os_name_matches.match_string
+WHERE updateday BETWEEN ( start_date - interval '1 day' )
 	AND ( end_date + interval '1 day' )
 GROUP BY productdims_id, os;
 
@@ -1370,7 +1370,7 @@ BEGIN
 -- insert old browser crashes
 -- for most crashes
 INSERT INTO daily_crashes (count, report_type, productdims_id, os_short_name, adu_day)
-SELECT COUNT(*) as count, daily_crash_code(process_type, hangid) as crash_code, p.id, 
+SELECT COUNT(*) as count, daily_crash_code(process_type, hangid) as crash_code, p.id,
 	substring(r.os_name, 1, 3) AS os_short_name,
 	updateday
 FROM product_visibility cfg
@@ -1380,7 +1380,7 @@ WHERE NOT cfg.ignore AND
 	date_processed >= utc_day_begins_pacific(updateday)
 		AND date_processed < utc_day_ends_pacific(updateday)
 	AND updateday BETWEEN cfg.start_date and cfg.end_date
-    AND lower(substring(os_name, 1, 3)) IN ('win','lin','mac') 
+    AND lower(substring(os_name, 1, 3)) IN ('win','lin','mac')
 GROUP BY p.id, crash_code, os_short_name;
 
  -- insert HANGS_NORMALIZED from old data
@@ -1397,47 +1397,47 @@ FROM (
 					AND date_processed < utc_day_ends_pacific(updateday)
 				AND updateday BETWEEN cfg.start_date and cfg.end_date
 				AND hangid IS NOT NULL
-                AND lower(substring(os_name, 1, 3)) IN ('win','lin','mac') 
+                AND lower(substring(os_name, 1, 3)) IN ('win','lin','mac')
 		 ) AS subr
 GROUP BY subr.prod_id, subr.os_short_name;
 
 -- insert crash counts for new products
 -- non-beta
 INSERT INTO daily_crashes (count, report_type, productdims_id, os_short_name, adu_day)
-SELECT COUNT(*) as count, daily_crash_code(process_type, hangid) as crash_code, 
+SELECT COUNT(*) as count, daily_crash_code(process_type, hangid) as crash_code,
 	product_versions.product_version_id,
 	substring(os_name, 1, 3) AS os_short_name,
 	updateday
 FROM product_versions
-JOIN reports on product_versions.product_name = reports.product 
+JOIN reports on product_versions.product_name = reports.product
 	AND product_versions.version_string = reports.version
-WHERE 
+WHERE
 	date_processed >= utc_day_begins_pacific(updateday)
 		AND date_processed < utc_day_ends_pacific(updateday)
     AND ( lower(release_channel) NOT IN ( 'nightly', 'beta', 'aurora' )
         OR release_channel IS NULL )
 	AND updateday BETWEEN product_versions.build_date and sunset_date
-    AND lower(substring(os_name, 1, 3)) IN ('win','lin','mac') 
+    AND lower(substring(os_name, 1, 3)) IN ('win','lin','mac')
 AND product_versions.build_type <> 'beta'
 GROUP BY product_version_id, crash_code, os_short_name;
 
 -- insert crash counts for new products
 -- betas
 INSERT INTO daily_crashes (count, report_type, productdims_id, os_short_name, adu_day)
-SELECT COUNT(*) as count, daily_crash_code(process_type, hangid) as crash_code, 
+SELECT COUNT(*) as count, daily_crash_code(process_type, hangid) as crash_code,
 	product_versions.product_version_id,
 	substring(os_name, 1, 3) AS os_short_name,
 	updateday
 FROM product_versions
-JOIN reports on product_versions.product_name = reports.product 
+JOIN reports on product_versions.product_name = reports.product
 	AND product_versions.release_version = reports.version
 WHERE date_processed >= utc_day_begins_pacific(updateday)
 		AND date_processed < utc_day_ends_pacific(updateday)
     AND release_channel ILIKE 'beta'
 	AND updateday BETWEEN product_versions.build_date and sunset_date
     AND lower(substring(os_name, 1, 3)) IN ('win','lin','mac')
-    AND EXISTS (SELECT 1 
-        FROM product_version_builds 
+    AND EXISTS (SELECT 1
+        FROM product_version_builds
         WHERE product_versions.product_version_id = product_version_builds.product_version_id
           AND product_version_builds.build_id = build_numeric(reports.build) )
 AND product_versions.build_type = 'beta'
@@ -1451,7 +1451,7 @@ SELECT count(subr.hangid) as count, 'H', subr.prod_id, subr.os_short_name,
 FROM (
 		   SELECT distinct hangid, product_version_id AS prod_id, substring(os_name, 1, 3) AS os_short_name
 			FROM product_versions
-			JOIN reports on product_versions.product_name = reports.product 
+			JOIN reports on product_versions.product_name = reports.product
 				AND product_versions.version_string = reports.version
 			WHERE date_processed >= utc_day_begins_pacific(updateday)
 					AND date_processed < utc_day_ends_pacific(updateday)
@@ -1459,7 +1459,7 @@ FROM (
                       or release_channel is null )
 				AND updateday BETWEEN product_versions.build_date and sunset_date
 			AND product_versions.build_type <> 'beta'
-            AND lower(substring(os_name, 1, 3)) IN ('win','lin','mac') 
+            AND lower(substring(os_name, 1, 3)) IN ('win','lin','mac')
 		 ) AS subr
 GROUP BY subr.prod_id, subr.os_short_name;
 
@@ -1471,18 +1471,18 @@ SELECT count(subr.hangid) as count, 'H', subr.prod_id, subr.os_short_name,
 FROM (
 		   SELECT distinct hangid, product_version_id AS prod_id, substring(os_name, 1, 3) AS os_short_name
 			FROM product_versions
-			JOIN reports on product_versions.product_name = reports.product 
+			JOIN reports on product_versions.product_name = reports.product
 				AND product_versions.release_version = reports.version
 			WHERE date_processed >= utc_day_begins_pacific(updateday)
 					AND date_processed < utc_day_ends_pacific(updateday)
                 AND release_channel ILIKE 'beta'
 				AND updateday BETWEEN product_versions.build_date and sunset_date
-                AND EXISTS (SELECT 1 
-                    FROM product_version_builds 
+                AND EXISTS (SELECT 1
+                    FROM product_version_builds
                     WHERE product_versions.product_version_id = product_version_builds.product_version_id
                       AND product_version_builds.build_id = build_numeric(reports.build) )
 			AND product_versions.build_type = 'beta'
-            AND lower(substring(os_name, 1, 3)) IN ('win','lin','mac') 
+            AND lower(substring(os_name, 1, 3)) IN ('win','lin','mac')
 		 ) AS subr
 GROUP BY subr.prod_id, subr.os_short_name;
 
@@ -1507,14 +1507,14 @@ CREATE FUNCTION update_final_betas(updateday date) RETURNS boolean
 BEGIN
 -- this function adds "final" beta releases to the list of
 -- products from the reports table
--- since the first time we see them would be in the 
+-- since the first time we see them would be in the
 -- reports table
 
 -- create a temporary table including all builds found
 
-create temporary table orphan_betas 
+create temporary table orphan_betas
 on commit drop as
-select build_numeric(build) as build_id, 
+select build_numeric(build) as build_id,
   version, product, os_name,
   count(*) as report_count
 from reports
@@ -1568,9 +1568,9 @@ WHERE orphan_betas.product = product_versions.product_name
 -- purge unused versions
 
 DELETE FROM orphan_betas
-WHERE product NOT IN (SELECT product_name 
+WHERE product NOT IN (SELECT product_name
     FROM products
-    WHERE major_version_sort(orphan_betas.version) 
+    WHERE major_version_sort(orphan_betas.version)
       >= major_version_sort(products.rapid_release_version) );
 
 -- if no bfinal exists in product_versions, then create one
@@ -1585,7 +1585,7 @@ INSERT INTO product_versions (
     build_date,
     sunset_date,
     build_type)
-SELECT product, 
+SELECT product,
   major_version(version),
   version,
   version || '(beta)',
@@ -1602,7 +1602,7 @@ FROM orphan_betas
     AND product_versions.beta_number = 999
 WHERE product_versions.product_name IS NULL
 GROUP BY product, version;
-  
+
 -- add the buildids to product_version_builds
 INSERT INTO product_version_builds (product_version_id, build_id, platform)
 SELECT product_version_id, orphan_betas.build_id, os_name
@@ -1645,7 +1645,7 @@ IF NOT FOUND THEN
 	RAISE EXCEPTION 'No OS data found for date %',updateday;
 END IF;
 
-create temporary table os_versions_temp 
+create temporary table os_versions_temp
 on commit drop as
 select os_name_matches.os_name,
 	substring(os_version from $x$^(\d+)$x$)::int as major_version,
@@ -1666,7 +1666,7 @@ where os_version ~ $x$^\d+$x$
 	and substring(os_version from $x$^(\d+)$x$)::numeric < 1000
 	and ( substring(os_version from $x$^\d+\.(\d+)$x$)::numeric >= 1000
 		or os_version !~ $x$^\d+\.(\d+)$x$ );
-		
+
 insert into os_versions_temp
 select os_name_matches.os_name,
 	0,
@@ -1676,11 +1676,11 @@ from new_os join os_name_matches
 where os_version !~ $x$^\d+$x$
 	or substring(os_version from $x$^(\d+)$x$)::numeric >= 1000
 	or os_version is null;
-	
+
 insert into os_versions ( os_name, major_version, minor_version )
 select os_name, major_version, minor_version
 from (
-select distinct os_name, major_version, minor_version 
+select distinct os_name, major_version, minor_version
 from os_versions_temp ) as os_rollup
 left outer join os_versions
 	USING ( os_name, major_version, minor_version )
@@ -1720,18 +1720,18 @@ insert into product_versions (
     build_date,
     sunset_date,
     build_type)
-select products.product_name, 
+select products.product_name,
 major_version(version),
 version,
 version_string(version, releases_raw.beta_number),
 releases_raw.beta_number,
 version_sort(version, releases_raw.beta_number),
 build_date(min(build_id)),
-sunset_date(min(build_id), releases_raw.build_type ), 
+sunset_date(min(build_id), releases_raw.build_type ),
 releases_raw.build_type
 from releases_raw
 join products ON releases_raw.product_name = products.release_name
-left outer join product_versions ON 
+left outer join product_versions ON
 ( releases_raw.product_name = products.release_name
 AND releases_raw.version = product_versions.release_version
 AND releases_raw.beta_number IS NOT DISTINCT FROM product_versions.beta_number )
@@ -1786,7 +1786,7 @@ select follower.uuid as uuid,
 	leader.uuid as duplicate_of,
 	follower.date_processed
 from
-(  
+(
 select uuid,
     install_age,
     uptime,
@@ -1814,29 +1814,29 @@ select uuid,
    from reports
    where date_processed BETWEEN start_time AND end_time
  ) as follower
-JOIN 
+JOIN
   ( select uuid, install_age, uptime, client_crash_date
     FROM reports
     where date_processed BETWEEN start_time AND end_time ) as leader
   ON follower.leader_uuid = leader.uuid
-WHERE ( same_time_fuzzy(leader.client_crash_date, follower.client_crash_date, 
-                  leader.uptime, follower.uptime) 
-		  OR follower.uptime < 60 
+WHERE ( same_time_fuzzy(leader.client_crash_date, follower.client_crash_date,
+                  leader.uptime, follower.uptime)
+		  OR follower.uptime < 60
   	  )
   AND
-	same_time_fuzzy(leader.client_crash_date, follower.client_crash_date, 
+	same_time_fuzzy(leader.client_crash_date, follower.client_crash_date,
                   leader.install_age, follower.install_age)
   AND follower.uuid <> leader.uuid;
-  
+
 -- insert a copy of the leaders
-  
+
 insert into new_reports_duplicates
 select uuid, uuid, date_processed
 from reports
-where uuid IN ( select duplicate_of 
+where uuid IN ( select duplicate_of
 	from new_reports_duplicates )
 	and date_processed BETWEEN start_time AND end_time;
-  
+
 analyze new_reports_duplicates;
 
 select count(*) into new_dups from new_reports_duplicates;
@@ -1844,7 +1844,7 @@ select count(*) into new_dups from new_reports_duplicates;
 -- insert new duplicates into permanent table
 
 insert into reports_duplicates (uuid, duplicate_of, date_processed )
-select new_reports_duplicates.* 
+select new_reports_duplicates.*
 from new_reports_duplicates
 	left outer join reports_duplicates USING (uuid)
 where reports_duplicates.uuid IS NULL;
@@ -1865,7 +1865,7 @@ CREATE FUNCTION update_signature_matviews(currenttime timestamp without time zon
     AS $$
 BEGIN
 
--- this omnibus function is designed to be called by cron once per hour.  
+-- this omnibus function is designed to be called by cron once per hour.
 -- it updates all of the signature matviews: signature_productdims, signature_build,
 -- and signature_first
 
@@ -1892,7 +1892,7 @@ and productdims.version = signature_build_updates.version;
 
 -- remove any garbage rows
 
-DELETE FROM signature_build_updates 
+DELETE FROM signature_build_updates
 WHERE productdims_id IS NULL
 OR os_name IS NULL
 OR build IS NULL;
@@ -1939,7 +1939,7 @@ on sbup.signature = sfirst.signature
 and sbup.productdims_id = sfirst.productdims_id
 and tcbs.osdims_id = sfirst.osdims_id
 where sbup.os_name = osdims.os_name
-and tcbs.window_end BETWEEN  
+and tcbs.window_end BETWEEN
 ( currenttime - ( interval '1 hour' * hours_back ) - (interval '1 hour' * hours_window ) )
 AND ( currenttime - ( interval '1 hour' * hours_back ) )
 and sfirst.signature IS NULL
@@ -1972,7 +1972,7 @@ BEGIN
 -- create temporary table
 
 create temporary table new_signatures
-on commit drop as 
+on commit drop as
 select coalesce(signature,'') as signature, product, version, build, NULL::INT as product_version_id,
 	min(date_processed) as first_report
 from reports
@@ -1988,16 +1988,16 @@ END IF;
 analyze new_signatures;
 
 -- add product IDs
-update new_signatures 
+update new_signatures
 set product_version_id = product_versions.product_version_id
 from product_versions JOIN product_version_builds
 	ON product_versions.product_version_id = product_version_builds.product_version_id
 where product_versions.release_version = new_signatures.version
 	and product_versions.product_name = new_signatures.product
 	and product_version_builds.build_id::text = new_signatures.build;
-	
+
 -- add product IDs for builds that don't match
-update new_signatures 
+update new_signatures
 set product_version_id = product_versions.product_version_id
 from product_versions JOIN product_version_builds
 	ON product_versions.product_version_id = product_version_builds.product_version_id
@@ -2005,13 +2005,13 @@ where product_versions.release_version = new_signatures.version
 	and product_versions.product_name = new_signatures.product
 	and product_versions.build_type = 'release'
 	and new_signatures.product_version_id IS NULL;
-	
+
 analyze new_signatures;
-	
+
 -- update signatures table
 
 insert into signatures ( signature, first_report, first_build )
-select new_signatures.signature, min(new_signatures.first_report), 
+select new_signatures.signature, min(new_signatures.first_report),
 	min(build_numeric(new_signatures.build))
 from new_signatures
 left outer join signatures
@@ -2035,7 +2035,7 @@ where new_signatures.product_version_id is not null
 	and signature_products.signature_id is null
 group by signatures.signature_id,
 		new_signatures.product_version_id;
-		
+
 -- recreate the rollup from scratch
 
 DELETE FROM signature_products_rollup;
@@ -2060,7 +2060,7 @@ FROM signatures JOIN bug_associations USING (signature)
 GROUP BY signature_id;
 
 analyze signature_bugs_rollup;
-		
+
 return true;
 end;
 $$;
@@ -2110,11 +2110,11 @@ GROUP BY signature, product, version, build,
 	release_channel, os_name, os_version,
 	process_type;
 
-PERFORM 1 FROM new_tcbs LIMIT 1;	
+PERFORM 1 FROM new_tcbs LIMIT 1;
 IF NOT FOUND THEN
 	RAISE EXCEPTION 'no report data found for TCBS for date %', updateday;
 END IF;
-	
+
 ANALYZE new_tcbs;
 
 -- clean process_type
@@ -2123,13 +2123,13 @@ UPDATE new_tcbs
 SET process_type = 'Browser'
 WHERE process_type IS NULL
 	OR process_type = '';
-	
+
 -- clean release_channel
 
-UPDATE new_tcbs 
+UPDATE new_tcbs
 SET real_release_channel = release_channels.release_channel
 FROM release_channels
-	JOIN release_channel_matches ON 
+	JOIN release_channel_matches ON
 		release_channels.release_channel = release_channel_matches.release_channel
 WHERE new_tcbs.release_channel ILIKE match_string;
 
@@ -2144,7 +2144,7 @@ WHERE COALESCE(new_tcbs.signature,'') = signatures.signature;
 
 -- populate product_version_id for betas
 
-UPDATE new_tcbs 
+UPDATE new_tcbs
 SET product_version_id = product_versions.product_version_id
 FROM product_versions
 	JOIN product_version_builds ON product_versions.product_version_id = product_version_builds.product_version_id
@@ -2156,7 +2156,7 @@ WHERE product_versions.build_type = 'Beta'
 
 -- populate product_version_id for other builds
 
-UPDATE new_tcbs 
+UPDATE new_tcbs
 SET product_version_id = product_versions.product_version_id
 FROM product_versions
 WHERE product_versions.build_type <> 'Beta'
@@ -2204,8 +2204,8 @@ ANALYZE tcbs;
 -- all crashes
 
 INSERT INTO tcbs_ranking (
-	product_version_id, signature_id, 
-	process_type, release_channel, 
+	product_version_id, signature_id,
+	process_type, release_channel,
 	aggregation_level,
 	total_reports, rank_report_count )
 SELECT product_version_id, signature_id,
@@ -2224,8 +2224,8 @@ FROM (
 -- group by process_type
 
 INSERT INTO tcbs_ranking (
-	product_version_id, signature_id, 
-	process_type, release_channel, 
+	product_version_id, signature_id,
+	process_type, release_channel,
 	aggregation_level,
 	total_reports, rank_report_count )
 SELECT product_version_id, signature_id,
@@ -2245,8 +2245,8 @@ FROM (
 -- group by release_channel
 
 INSERT INTO tcbs_ranking (
-	product_version_id, signature_id, 
-	process_type, release_channel, 
+	product_version_id, signature_id,
+	process_type, release_channel,
 	aggregation_level,
 	total_reports, rank_report_count )
 SELECT product_version_id, signature_id,
@@ -2265,8 +2265,8 @@ FROM (
 -- group by process_type and release_channel
 
 INSERT INTO tcbs_ranking (
-	product_version_id, signature_id, 
-	process_type, release_channel, 
+	product_version_id, signature_id,
+	process_type, release_channel,
 	aggregation_level,
 	total_reports, rank_report_count )
 SELECT product_version_id, signature_id,
@@ -2283,7 +2283,7 @@ FROM (
 	GROUP BY product_version_id, signature_id,
 		process_type, release_channel
 ) as tcbs_r;
-	
+
 -- done
 RETURN TRUE;
 END;
@@ -2331,7 +2331,7 @@ ALTER FUNCTION public.utc_day_ends_pacific(date) OWNER TO postgres;
 CREATE FUNCTION version_number_elements(version_string text) RETURNS text[]
     LANGUAGE sql IMMUTABLE
     AS $_$
--- breaks up the parts of a version string 
+-- breaks up the parts of a version string
 -- into an array of elements
 select regexp_matches($1,$x$^(\d+)\.(\d+)([a-zA-Z]?)(\d*)\.?(\d*)$x$);
 $_$;
@@ -2346,10 +2346,10 @@ ALTER FUNCTION public.version_number_elements(version_string text) OWNER TO post
 CREATE FUNCTION version_number_elements(version text, beta_number integer) RETURNS text[]
     LANGUAGE sql
     AS $_$
--- breaks up the parts of a version string into an 
+-- breaks up the parts of a version string into an
 -- array of elements.  if a beta number is present
 -- includes that
-select case when $2 <> 0 then 
+select case when $2 <> 0 then
 	   regexp_matches($1,$x$^(\d+)\.(\d+)$x$) || ARRAY [ 'b', $2::text, '' ]
     else
        regexp_matches($1,$x$^(\d+)\.(\d+)([a-zA-Z]?)(\d*)\.?(\d*)$x$)
@@ -2366,7 +2366,7 @@ ALTER FUNCTION public.version_number_elements(version text, beta_number integer)
 CREATE FUNCTION version_sort(version_string text) RETURNS text
     LANGUAGE sql IMMUTABLE
     AS $_$
--- converts a version string into a padded 
+-- converts a version string into a padded
 -- sortable string
 select version_sort_digit(vne[1])
 	|| version_sort_digit(vne[2])
@@ -2387,7 +2387,7 @@ CREATE FUNCTION version_sort(version text, beta_number integer) RETURNS text
     LANGUAGE sql IMMUTABLE
     AS $_$
 -- converts a version string with a beta number
--- into a padded 
+-- into a padded
 -- sortable string
 select version_sort_digit(vne[1])
 	|| version_sort_digit(vne[2])
@@ -2409,7 +2409,7 @@ CREATE FUNCTION version_sort_digit(digit text) RETURNS text
     AS $_$
 -- converts an individual part of a version number
 -- into a three-digit sortable string
-SELECT CASE WHEN $1 <> '' THEN 
+SELECT CASE WHEN $1 <> '' THEN
 	to_char($1::INT,'FM000')
 	ELSE '000' END;
 $_$;
@@ -2438,14 +2438,14 @@ sec1_num1,sec1_string1,sec1_num2,sec1_string2,
 sec2_num1,sec2_string1,sec2_num2,sec2_string2,
 sec3_num1,sec3_string1,sec3_num2,sec3_string2,
 extra )
-SELECT 
+SELECT
 NEW.id,
 NEW.product,
 NEW.version,
 s1n1,s1s1,s1n2,s1s2,
 s2n1,s2s1,s2n2,s2s2,
 s3n1,s3s1,s3n2,s3s2,
-ext 
+ext
 FROM tokenize_version(NEW.version);
 
 -- update sort key
@@ -2489,7 +2489,7 @@ SELECT s1n1,s1s1,s1n2,s1s2,
 s2n1,s2s1,s2n2,s2s2,
 s3n1,s3s1,s3n2,s3s2,
 ext
-INTO 
+INTO
 NEW.sec1_num1,NEW.sec1_string1,NEW.sec1_num2,NEW.sec1_string2,
 NEW.sec2_num1,NEW.sec2_string1,NEW.sec2_num2,NEW.sec2_string2,
 NEW.sec3_num1,NEW.sec3_string1,NEW.sec3_num2,NEW.sec3_string2,
@@ -3028,56 +3028,56 @@ ALTER OPERATOR CLASS public.citext_ops USING hash OWNER TO postgres;
 SET search_path = pg_catalog;
 
 --
--- Name: CAST (boolean AS public.citext); Type: CAST; Schema: pg_catalog; Owner: 
+-- Name: CAST (boolean AS public.citext); Type: CAST; Schema: pg_catalog; Owner:
 --
 
 CREATE CAST (boolean AS public.citext) WITH FUNCTION public.citext(boolean) AS ASSIGNMENT;
 
 
 --
--- Name: CAST (character AS public.citext); Type: CAST; Schema: pg_catalog; Owner: 
+-- Name: CAST (character AS public.citext); Type: CAST; Schema: pg_catalog; Owner:
 --
 
 CREATE CAST (character AS public.citext) WITH FUNCTION public.citext(character) AS ASSIGNMENT;
 
 
 --
--- Name: CAST (public.citext AS character); Type: CAST; Schema: pg_catalog; Owner: 
+-- Name: CAST (public.citext AS character); Type: CAST; Schema: pg_catalog; Owner:
 --
 
 CREATE CAST (public.citext AS character) WITHOUT FUNCTION AS ASSIGNMENT;
 
 
 --
--- Name: CAST (public.citext AS text); Type: CAST; Schema: pg_catalog; Owner: 
+-- Name: CAST (public.citext AS text); Type: CAST; Schema: pg_catalog; Owner:
 --
 
 CREATE CAST (public.citext AS text) WITHOUT FUNCTION AS IMPLICIT;
 
 
 --
--- Name: CAST (public.citext AS character varying); Type: CAST; Schema: pg_catalog; Owner: 
+-- Name: CAST (public.citext AS character varying); Type: CAST; Schema: pg_catalog; Owner:
 --
 
 CREATE CAST (public.citext AS character varying) WITHOUT FUNCTION AS IMPLICIT;
 
 
 --
--- Name: CAST (inet AS public.citext); Type: CAST; Schema: pg_catalog; Owner: 
+-- Name: CAST (inet AS public.citext); Type: CAST; Schema: pg_catalog; Owner:
 --
 
 CREATE CAST (inet AS public.citext) WITH FUNCTION public.citext(inet) AS ASSIGNMENT;
 
 
 --
--- Name: CAST (text AS public.citext); Type: CAST; Schema: pg_catalog; Owner: 
+-- Name: CAST (text AS public.citext); Type: CAST; Schema: pg_catalog; Owner:
 --
 
 CREATE CAST (text AS public.citext) WITHOUT FUNCTION AS ASSIGNMENT;
 
 
 --
--- Name: CAST (character varying AS public.citext); Type: CAST; Schema: pg_catalog; Owner: 
+-- Name: CAST (character varying AS public.citext); Type: CAST; Schema: pg_catalog; Owner:
 --
 
 CREATE CAST (character varying AS public.citext) WITHOUT FUNCTION AS ASSIGNMENT;
@@ -3090,7 +3090,7 @@ SET default_tablespace = '';
 SET default_with_oids = false;
 
 --
--- Name: alexa_topsites; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: alexa_topsites; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE alexa_topsites (
@@ -3103,7 +3103,7 @@ CREATE TABLE alexa_topsites (
 ALTER TABLE public.alexa_topsites OWNER TO breakpad_rw;
 
 --
--- Name: backfill_temp; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
+-- Name: backfill_temp; Type: TABLE; Schema: public; Owner: postgres; Tablespace:
 --
 
 CREATE TABLE backfill_temp (
@@ -3125,7 +3125,7 @@ CREATE VIEW bloat AS
 ALTER TABLE public.bloat OWNER TO postgres;
 
 --
--- Name: product_versions; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: product_versions; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE product_versions (
@@ -3167,7 +3167,7 @@ ALTER SEQUENCE productdims_id_seq1 OWNED BY product_versions.product_version_id;
 
 
 --
--- Name: productdims; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: productdims; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE productdims (
@@ -3193,7 +3193,7 @@ CREATE VIEW branches AS
 ALTER TABLE public.branches OWNER TO breakpad_rw;
 
 --
--- Name: bug_associations; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: bug_associations; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE bug_associations (
@@ -3205,7 +3205,7 @@ CREATE TABLE bug_associations (
 ALTER TABLE public.bug_associations OWNER TO breakpad_rw;
 
 --
--- Name: bugs; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: bugs; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE bugs (
@@ -3219,7 +3219,7 @@ CREATE TABLE bugs (
 ALTER TABLE public.bugs OWNER TO breakpad_rw;
 
 --
--- Name: builds; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: builds; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE builds (
@@ -3238,7 +3238,7 @@ CREATE TABLE builds (
 ALTER TABLE public.builds OWNER TO breakpad_rw;
 
 --
--- Name: cronjobs; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: cronjobs; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE cronjobs (
@@ -3257,7 +3257,7 @@ CREATE TABLE cronjobs (
 ALTER TABLE public.cronjobs OWNER TO breakpad_rw;
 
 --
--- Name: daily_crash_codes; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: daily_crash_codes; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE daily_crash_codes (
@@ -3269,7 +3269,7 @@ CREATE TABLE daily_crash_codes (
 ALTER TABLE public.daily_crash_codes OWNER TO breakpad_rw;
 
 --
--- Name: daily_crashes; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: daily_crashes; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE daily_crashes (
@@ -3306,7 +3306,7 @@ ALTER SEQUENCE daily_crashes_id_seq OWNED BY daily_crashes.id;
 
 
 --
--- Name: drop_fks; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
+-- Name: drop_fks; Type: TABLE; Schema: public; Owner: postgres; Tablespace:
 --
 
 CREATE TABLE drop_fks (
@@ -3320,7 +3320,7 @@ CREATE TABLE drop_fks (
 ALTER TABLE public.drop_fks OWNER TO postgres;
 
 --
--- Name: email_campaigns; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: email_campaigns; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE email_campaigns (
@@ -3342,7 +3342,7 @@ CREATE TABLE email_campaigns (
 ALTER TABLE public.email_campaigns OWNER TO breakpad_rw;
 
 --
--- Name: email_campaigns_contacts; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: email_campaigns_contacts; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE email_campaigns_contacts (
@@ -3376,7 +3376,7 @@ ALTER SEQUENCE email_campaigns_id_seq OWNED BY email_campaigns.id;
 
 
 --
--- Name: email_contacts; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: email_contacts; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE email_contacts (
@@ -3413,7 +3413,7 @@ ALTER SEQUENCE email_contacts_id_seq OWNED BY email_contacts.id;
 
 
 --
--- Name: extensions; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE extensions (
@@ -3428,7 +3428,7 @@ CREATE TABLE extensions (
 ALTER TABLE public.extensions OWNER TO breakpad_rw;
 
 --
--- Name: extensions_20100607; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20100607; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE extensions_20100607 (
@@ -3440,7 +3440,7 @@ INHERITS (extensions);
 ALTER TABLE public.extensions_20100607 OWNER TO breakpad_rw;
 
 --
--- Name: extensions_20100614; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20100614; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE extensions_20100614 (
@@ -3452,7 +3452,7 @@ INHERITS (extensions);
 ALTER TABLE public.extensions_20100614 OWNER TO breakpad_rw;
 
 --
--- Name: extensions_20100621; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20100621; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE extensions_20100621 (
@@ -3464,7 +3464,7 @@ INHERITS (extensions);
 ALTER TABLE public.extensions_20100621 OWNER TO breakpad_rw;
 
 --
--- Name: extensions_20100628; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20100628; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE extensions_20100628 (
@@ -3476,7 +3476,7 @@ INHERITS (extensions);
 ALTER TABLE public.extensions_20100628 OWNER TO breakpad_rw;
 
 --
--- Name: extensions_20100705; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20100705; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE extensions_20100705 (
@@ -3488,7 +3488,7 @@ INHERITS (extensions);
 ALTER TABLE public.extensions_20100705 OWNER TO breakpad_rw;
 
 --
--- Name: extensions_20100712; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20100712; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE extensions_20100712 (
@@ -3500,7 +3500,7 @@ INHERITS (extensions);
 ALTER TABLE public.extensions_20100712 OWNER TO breakpad_rw;
 
 --
--- Name: extensions_20100719; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20100719; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE extensions_20100719 (
@@ -3512,7 +3512,7 @@ INHERITS (extensions);
 ALTER TABLE public.extensions_20100719 OWNER TO breakpad_rw;
 
 --
--- Name: extensions_20100726; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20100726; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE extensions_20100726 (
@@ -3524,7 +3524,7 @@ INHERITS (extensions);
 ALTER TABLE public.extensions_20100726 OWNER TO breakpad_rw;
 
 --
--- Name: extensions_20100802; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20100802; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE extensions_20100802 (
@@ -3536,7 +3536,7 @@ INHERITS (extensions);
 ALTER TABLE public.extensions_20100802 OWNER TO breakpad_rw;
 
 --
--- Name: extensions_20100809; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20100809; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE extensions_20100809 (
@@ -3548,7 +3548,7 @@ INHERITS (extensions);
 ALTER TABLE public.extensions_20100809 OWNER TO breakpad_rw;
 
 --
--- Name: extensions_20100816; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20100816; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE extensions_20100816 (
@@ -3560,7 +3560,7 @@ INHERITS (extensions);
 ALTER TABLE public.extensions_20100816 OWNER TO breakpad_rw;
 
 --
--- Name: extensions_20100823; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20100823; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE extensions_20100823 (
@@ -3572,7 +3572,7 @@ INHERITS (extensions);
 ALTER TABLE public.extensions_20100823 OWNER TO breakpad_rw;
 
 --
--- Name: extensions_20100830; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20100830; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE extensions_20100830 (
@@ -3584,7 +3584,7 @@ INHERITS (extensions);
 ALTER TABLE public.extensions_20100830 OWNER TO breakpad_rw;
 
 --
--- Name: extensions_20100906; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20100906; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE extensions_20100906 (
@@ -3596,7 +3596,7 @@ INHERITS (extensions);
 ALTER TABLE public.extensions_20100906 OWNER TO breakpad_rw;
 
 --
--- Name: extensions_20100913; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20100913; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE extensions_20100913 (
@@ -3608,7 +3608,7 @@ INHERITS (extensions);
 ALTER TABLE public.extensions_20100913 OWNER TO breakpad_rw;
 
 --
--- Name: extensions_20100920; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20100920; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE extensions_20100920 (
@@ -3620,7 +3620,7 @@ INHERITS (extensions);
 ALTER TABLE public.extensions_20100920 OWNER TO breakpad_rw;
 
 --
--- Name: extensions_20100927; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20100927; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE extensions_20100927 (
@@ -3632,7 +3632,7 @@ INHERITS (extensions);
 ALTER TABLE public.extensions_20100927 OWNER TO breakpad_rw;
 
 --
--- Name: extensions_20101004; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20101004; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE extensions_20101004 (
@@ -3644,7 +3644,7 @@ INHERITS (extensions);
 ALTER TABLE public.extensions_20101004 OWNER TO breakpad_rw;
 
 --
--- Name: extensions_20101011; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20101011; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE extensions_20101011 (
@@ -3656,7 +3656,7 @@ INHERITS (extensions);
 ALTER TABLE public.extensions_20101011 OWNER TO breakpad_rw;
 
 --
--- Name: extensions_20101018; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20101018; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE extensions_20101018 (
@@ -3668,7 +3668,7 @@ INHERITS (extensions);
 ALTER TABLE public.extensions_20101018 OWNER TO breakpad_rw;
 
 --
--- Name: extensions_20101025; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20101025; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE extensions_20101025 (
@@ -3680,7 +3680,7 @@ INHERITS (extensions);
 ALTER TABLE public.extensions_20101025 OWNER TO breakpad_rw;
 
 --
--- Name: extensions_20101101; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20101101; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE extensions_20101101 (
@@ -3692,7 +3692,7 @@ INHERITS (extensions);
 ALTER TABLE public.extensions_20101101 OWNER TO breakpad_rw;
 
 --
--- Name: extensions_20101108; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20101108; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE extensions_20101108 (
@@ -3704,7 +3704,7 @@ INHERITS (extensions);
 ALTER TABLE public.extensions_20101108 OWNER TO breakpad_rw;
 
 --
--- Name: extensions_20101115; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20101115; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE extensions_20101115 (
@@ -3716,7 +3716,7 @@ INHERITS (extensions);
 ALTER TABLE public.extensions_20101115 OWNER TO breakpad_rw;
 
 --
--- Name: extensions_20101122; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20101122; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE extensions_20101122 (
@@ -3728,7 +3728,7 @@ INHERITS (extensions);
 ALTER TABLE public.extensions_20101122 OWNER TO breakpad_rw;
 
 --
--- Name: extensions_20101129; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20101129; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE extensions_20101129 (
@@ -3740,7 +3740,7 @@ INHERITS (extensions);
 ALTER TABLE public.extensions_20101129 OWNER TO breakpad_rw;
 
 --
--- Name: extensions_20101206; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20101206; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE extensions_20101206 (
@@ -3752,7 +3752,7 @@ INHERITS (extensions);
 ALTER TABLE public.extensions_20101206 OWNER TO breakpad_rw;
 
 --
--- Name: extensions_20101213; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20101213; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE extensions_20101213 (
@@ -3764,7 +3764,7 @@ INHERITS (extensions);
 ALTER TABLE public.extensions_20101213 OWNER TO breakpad_rw;
 
 --
--- Name: extensions_20101220; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20101220; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE extensions_20101220 (
@@ -3776,7 +3776,7 @@ INHERITS (extensions);
 ALTER TABLE public.extensions_20101220 OWNER TO breakpad_rw;
 
 --
--- Name: extensions_20101227; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20101227; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE extensions_20101227 (
@@ -3788,7 +3788,7 @@ INHERITS (extensions);
 ALTER TABLE public.extensions_20101227 OWNER TO breakpad_rw;
 
 --
--- Name: extensions_20110103; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110103; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE extensions_20110103 (
@@ -3800,7 +3800,7 @@ INHERITS (extensions);
 ALTER TABLE public.extensions_20110103 OWNER TO breakpad_rw;
 
 --
--- Name: extensions_20110110; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110110; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE extensions_20110110 (
@@ -3812,7 +3812,7 @@ INHERITS (extensions);
 ALTER TABLE public.extensions_20110110 OWNER TO breakpad_rw;
 
 --
--- Name: extensions_20110117; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110117; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE extensions_20110117 (
@@ -3824,7 +3824,7 @@ INHERITS (extensions);
 ALTER TABLE public.extensions_20110117 OWNER TO breakpad_rw;
 
 --
--- Name: extensions_20110124; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110124; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE extensions_20110124 (
@@ -3836,7 +3836,7 @@ INHERITS (extensions);
 ALTER TABLE public.extensions_20110124 OWNER TO breakpad_rw;
 
 --
--- Name: extensions_20110131; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110131; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE extensions_20110131 (
@@ -3848,7 +3848,7 @@ INHERITS (extensions);
 ALTER TABLE public.extensions_20110131 OWNER TO breakpad_rw;
 
 --
--- Name: extensions_20110207; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110207; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE extensions_20110207 (
@@ -3860,7 +3860,7 @@ INHERITS (extensions);
 ALTER TABLE public.extensions_20110207 OWNER TO breakpad_rw;
 
 --
--- Name: extensions_20110214; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110214; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE extensions_20110214 (
@@ -3872,7 +3872,7 @@ INHERITS (extensions);
 ALTER TABLE public.extensions_20110214 OWNER TO breakpad_rw;
 
 --
--- Name: extensions_20110221; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110221; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE extensions_20110221 (
@@ -3884,7 +3884,7 @@ INHERITS (extensions);
 ALTER TABLE public.extensions_20110221 OWNER TO breakpad_rw;
 
 --
--- Name: extensions_20110228; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110228; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE extensions_20110228 (
@@ -3896,7 +3896,7 @@ INHERITS (extensions);
 ALTER TABLE public.extensions_20110228 OWNER TO breakpad_rw;
 
 --
--- Name: extensions_20110307; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110307; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE extensions_20110307 (
@@ -3908,7 +3908,7 @@ INHERITS (extensions);
 ALTER TABLE public.extensions_20110307 OWNER TO breakpad_rw;
 
 --
--- Name: extensions_20110314; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110314; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE extensions_20110314 (
@@ -3920,7 +3920,7 @@ INHERITS (extensions);
 ALTER TABLE public.extensions_20110314 OWNER TO breakpad_rw;
 
 --
--- Name: extensions_20110321; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110321; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE extensions_20110321 (
@@ -3932,7 +3932,7 @@ INHERITS (extensions);
 ALTER TABLE public.extensions_20110321 OWNER TO breakpad_rw;
 
 --
--- Name: extensions_20110328; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110328; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE extensions_20110328 (
@@ -3944,7 +3944,7 @@ INHERITS (extensions);
 ALTER TABLE public.extensions_20110328 OWNER TO breakpad_rw;
 
 --
--- Name: extensions_20110404; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110404; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE extensions_20110404 (
@@ -3956,7 +3956,7 @@ INHERITS (extensions);
 ALTER TABLE public.extensions_20110404 OWNER TO breakpad_rw;
 
 --
--- Name: extensions_20110411; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110411; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE extensions_20110411 (
@@ -3968,7 +3968,7 @@ INHERITS (extensions);
 ALTER TABLE public.extensions_20110411 OWNER TO breakpad_rw;
 
 --
--- Name: extensions_20110418; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110418; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE extensions_20110418 (
@@ -3980,7 +3980,7 @@ INHERITS (extensions);
 ALTER TABLE public.extensions_20110418 OWNER TO breakpad_rw;
 
 --
--- Name: extensions_20110425; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110425; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE extensions_20110425 (
@@ -3992,7 +3992,7 @@ INHERITS (extensions);
 ALTER TABLE public.extensions_20110425 OWNER TO breakpad_rw;
 
 --
--- Name: extensions_20110502; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110502; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE extensions_20110502 (
@@ -4004,7 +4004,7 @@ INHERITS (extensions);
 ALTER TABLE public.extensions_20110502 OWNER TO breakpad_rw;
 
 --
--- Name: extensions_20110509; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110509; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE extensions_20110509 (
@@ -4016,7 +4016,7 @@ INHERITS (extensions);
 ALTER TABLE public.extensions_20110509 OWNER TO breakpad_rw;
 
 --
--- Name: extensions_20110516; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110516; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE extensions_20110516 (
@@ -4028,7 +4028,7 @@ INHERITS (extensions);
 ALTER TABLE public.extensions_20110516 OWNER TO breakpad_rw;
 
 --
--- Name: extensions_20110523; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110523; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE extensions_20110523 (
@@ -4040,7 +4040,7 @@ INHERITS (extensions);
 ALTER TABLE public.extensions_20110523 OWNER TO breakpad_rw;
 
 --
--- Name: extensions_20110530; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110530; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE extensions_20110530 (
@@ -4052,7 +4052,7 @@ INHERITS (extensions);
 ALTER TABLE public.extensions_20110530 OWNER TO breakpad_rw;
 
 --
--- Name: extensions_20110606; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110606; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE extensions_20110606 (
@@ -4064,7 +4064,7 @@ INHERITS (extensions);
 ALTER TABLE public.extensions_20110606 OWNER TO breakpad_rw;
 
 --
--- Name: extensions_20110613; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110613; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE extensions_20110613 (
@@ -4076,7 +4076,7 @@ INHERITS (extensions);
 ALTER TABLE public.extensions_20110613 OWNER TO breakpad_rw;
 
 --
--- Name: extensions_20110620; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110620; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE extensions_20110620 (
@@ -4088,7 +4088,7 @@ INHERITS (extensions);
 ALTER TABLE public.extensions_20110620 OWNER TO breakpad_rw;
 
 --
--- Name: extensions_20110627; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110627; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE extensions_20110627 (
@@ -4100,7 +4100,7 @@ INHERITS (extensions);
 ALTER TABLE public.extensions_20110627 OWNER TO breakpad_rw;
 
 --
--- Name: extensions_20110704; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110704; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE extensions_20110704 (
@@ -4112,7 +4112,7 @@ INHERITS (extensions);
 ALTER TABLE public.extensions_20110704 OWNER TO breakpad_rw;
 
 --
--- Name: extensions_20110711; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110711; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE extensions_20110711 (
@@ -4124,7 +4124,7 @@ INHERITS (extensions);
 ALTER TABLE public.extensions_20110711 OWNER TO breakpad_rw;
 
 --
--- Name: extensions_20110718; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110718; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE extensions_20110718 (
@@ -4136,7 +4136,7 @@ INHERITS (extensions);
 ALTER TABLE public.extensions_20110718 OWNER TO breakpad_rw;
 
 --
--- Name: extensions_20110725; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110725; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE extensions_20110725 (
@@ -4148,7 +4148,7 @@ INHERITS (extensions);
 ALTER TABLE public.extensions_20110725 OWNER TO breakpad_rw;
 
 --
--- Name: extensions_20110801; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110801; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE extensions_20110801 (
@@ -4160,7 +4160,7 @@ INHERITS (extensions);
 ALTER TABLE public.extensions_20110801 OWNER TO breakpad_rw;
 
 --
--- Name: extensions_20110808; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110808; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE extensions_20110808 (
@@ -4172,7 +4172,7 @@ INHERITS (extensions);
 ALTER TABLE public.extensions_20110808 OWNER TO breakpad_rw;
 
 --
--- Name: extensions_20110815; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110815; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE extensions_20110815 (
@@ -4184,7 +4184,7 @@ INHERITS (extensions);
 ALTER TABLE public.extensions_20110815 OWNER TO breakpad_rw;
 
 --
--- Name: extensions_20110822; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110822; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE extensions_20110822 (
@@ -4196,7 +4196,7 @@ INHERITS (extensions);
 ALTER TABLE public.extensions_20110822 OWNER TO breakpad_rw;
 
 --
--- Name: extensions_20110829; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110829; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE extensions_20110829 (
@@ -4208,7 +4208,7 @@ INHERITS (extensions);
 ALTER TABLE public.extensions_20110829 OWNER TO breakpad_rw;
 
 --
--- Name: extensions_20110905; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110905; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE extensions_20110905 (
@@ -4220,7 +4220,7 @@ INHERITS (extensions);
 ALTER TABLE public.extensions_20110905 OWNER TO breakpad_rw;
 
 --
--- Name: frames; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE frames (
@@ -4234,7 +4234,7 @@ CREATE TABLE frames (
 ALTER TABLE public.frames OWNER TO breakpad_rw;
 
 --
--- Name: frames_20100607; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20100607; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE frames_20100607 (
@@ -4246,7 +4246,7 @@ INHERITS (frames);
 ALTER TABLE public.frames_20100607 OWNER TO breakpad_rw;
 
 --
--- Name: frames_20100614; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20100614; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE frames_20100614 (
@@ -4258,7 +4258,7 @@ INHERITS (frames);
 ALTER TABLE public.frames_20100614 OWNER TO breakpad_rw;
 
 --
--- Name: frames_20100621; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20100621; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE frames_20100621 (
@@ -4270,7 +4270,7 @@ INHERITS (frames);
 ALTER TABLE public.frames_20100621 OWNER TO breakpad_rw;
 
 --
--- Name: frames_20100628; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20100628; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE frames_20100628 (
@@ -4282,7 +4282,7 @@ INHERITS (frames);
 ALTER TABLE public.frames_20100628 OWNER TO breakpad_rw;
 
 --
--- Name: frames_20100705; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20100705; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE frames_20100705 (
@@ -4294,7 +4294,7 @@ INHERITS (frames);
 ALTER TABLE public.frames_20100705 OWNER TO breakpad_rw;
 
 --
--- Name: frames_20100712; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20100712; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE frames_20100712 (
@@ -4306,7 +4306,7 @@ INHERITS (frames);
 ALTER TABLE public.frames_20100712 OWNER TO breakpad_rw;
 
 --
--- Name: frames_20100719; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20100719; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE frames_20100719 (
@@ -4318,7 +4318,7 @@ INHERITS (frames);
 ALTER TABLE public.frames_20100719 OWNER TO breakpad_rw;
 
 --
--- Name: frames_20100726; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20100726; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE frames_20100726 (
@@ -4330,7 +4330,7 @@ INHERITS (frames);
 ALTER TABLE public.frames_20100726 OWNER TO breakpad_rw;
 
 --
--- Name: frames_20100802; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20100802; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE frames_20100802 (
@@ -4342,7 +4342,7 @@ INHERITS (frames);
 ALTER TABLE public.frames_20100802 OWNER TO breakpad_rw;
 
 --
--- Name: frames_20100809; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20100809; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE frames_20100809 (
@@ -4354,7 +4354,7 @@ INHERITS (frames);
 ALTER TABLE public.frames_20100809 OWNER TO breakpad_rw;
 
 --
--- Name: frames_20100816; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20100816; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE frames_20100816 (
@@ -4366,7 +4366,7 @@ INHERITS (frames);
 ALTER TABLE public.frames_20100816 OWNER TO breakpad_rw;
 
 --
--- Name: frames_20100823; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20100823; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE frames_20100823 (
@@ -4378,7 +4378,7 @@ INHERITS (frames);
 ALTER TABLE public.frames_20100823 OWNER TO breakpad_rw;
 
 --
--- Name: frames_20100830; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20100830; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE frames_20100830 (
@@ -4390,7 +4390,7 @@ INHERITS (frames);
 ALTER TABLE public.frames_20100830 OWNER TO breakpad_rw;
 
 --
--- Name: frames_20100906; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20100906; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE frames_20100906 (
@@ -4402,7 +4402,7 @@ INHERITS (frames);
 ALTER TABLE public.frames_20100906 OWNER TO breakpad_rw;
 
 --
--- Name: frames_20100913; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20100913; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE frames_20100913 (
@@ -4414,7 +4414,7 @@ INHERITS (frames);
 ALTER TABLE public.frames_20100913 OWNER TO breakpad_rw;
 
 --
--- Name: frames_20100920; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20100920; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE frames_20100920 (
@@ -4426,7 +4426,7 @@ INHERITS (frames);
 ALTER TABLE public.frames_20100920 OWNER TO breakpad_rw;
 
 --
--- Name: frames_20100927; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20100927; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE frames_20100927 (
@@ -4438,7 +4438,7 @@ INHERITS (frames);
 ALTER TABLE public.frames_20100927 OWNER TO breakpad_rw;
 
 --
--- Name: frames_20101004; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20101004; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE frames_20101004 (
@@ -4450,7 +4450,7 @@ INHERITS (frames);
 ALTER TABLE public.frames_20101004 OWNER TO breakpad_rw;
 
 --
--- Name: frames_20101011; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20101011; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE frames_20101011 (
@@ -4462,7 +4462,7 @@ INHERITS (frames);
 ALTER TABLE public.frames_20101011 OWNER TO breakpad_rw;
 
 --
--- Name: frames_20101018; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20101018; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE frames_20101018 (
@@ -4474,7 +4474,7 @@ INHERITS (frames);
 ALTER TABLE public.frames_20101018 OWNER TO breakpad_rw;
 
 --
--- Name: frames_20101025; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20101025; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE frames_20101025 (
@@ -4486,7 +4486,7 @@ INHERITS (frames);
 ALTER TABLE public.frames_20101025 OWNER TO breakpad_rw;
 
 --
--- Name: frames_20101101; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20101101; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE frames_20101101 (
@@ -4498,7 +4498,7 @@ INHERITS (frames);
 ALTER TABLE public.frames_20101101 OWNER TO breakpad_rw;
 
 --
--- Name: frames_20101108; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20101108; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE frames_20101108 (
@@ -4510,7 +4510,7 @@ INHERITS (frames);
 ALTER TABLE public.frames_20101108 OWNER TO breakpad_rw;
 
 --
--- Name: frames_20101115; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20101115; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE frames_20101115 (
@@ -4522,7 +4522,7 @@ INHERITS (frames);
 ALTER TABLE public.frames_20101115 OWNER TO breakpad_rw;
 
 --
--- Name: frames_20101122; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20101122; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE frames_20101122 (
@@ -4534,7 +4534,7 @@ INHERITS (frames);
 ALTER TABLE public.frames_20101122 OWNER TO breakpad_rw;
 
 --
--- Name: frames_20101129; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20101129; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE frames_20101129 (
@@ -4546,7 +4546,7 @@ INHERITS (frames);
 ALTER TABLE public.frames_20101129 OWNER TO breakpad_rw;
 
 --
--- Name: frames_20101206; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20101206; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE frames_20101206 (
@@ -4558,7 +4558,7 @@ INHERITS (frames);
 ALTER TABLE public.frames_20101206 OWNER TO breakpad_rw;
 
 --
--- Name: frames_20101213; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20101213; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE frames_20101213 (
@@ -4570,7 +4570,7 @@ INHERITS (frames);
 ALTER TABLE public.frames_20101213 OWNER TO breakpad_rw;
 
 --
--- Name: frames_20101220; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20101220; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE frames_20101220 (
@@ -4582,7 +4582,7 @@ INHERITS (frames);
 ALTER TABLE public.frames_20101220 OWNER TO breakpad_rw;
 
 --
--- Name: frames_20101227; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20101227; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE frames_20101227 (
@@ -4594,7 +4594,7 @@ INHERITS (frames);
 ALTER TABLE public.frames_20101227 OWNER TO breakpad_rw;
 
 --
--- Name: frames_20110103; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110103; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE frames_20110103 (
@@ -4606,7 +4606,7 @@ INHERITS (frames);
 ALTER TABLE public.frames_20110103 OWNER TO breakpad_rw;
 
 --
--- Name: frames_20110110; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110110; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE frames_20110110 (
@@ -4618,7 +4618,7 @@ INHERITS (frames);
 ALTER TABLE public.frames_20110110 OWNER TO breakpad_rw;
 
 --
--- Name: frames_20110117; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110117; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE frames_20110117 (
@@ -4630,7 +4630,7 @@ INHERITS (frames);
 ALTER TABLE public.frames_20110117 OWNER TO breakpad_rw;
 
 --
--- Name: frames_20110124; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110124; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE frames_20110124 (
@@ -4642,7 +4642,7 @@ INHERITS (frames);
 ALTER TABLE public.frames_20110124 OWNER TO breakpad_rw;
 
 --
--- Name: frames_20110131; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110131; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE frames_20110131 (
@@ -4654,7 +4654,7 @@ INHERITS (frames);
 ALTER TABLE public.frames_20110131 OWNER TO breakpad_rw;
 
 --
--- Name: frames_20110207; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110207; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE frames_20110207 (
@@ -4666,7 +4666,7 @@ INHERITS (frames);
 ALTER TABLE public.frames_20110207 OWNER TO breakpad_rw;
 
 --
--- Name: frames_20110214; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110214; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE frames_20110214 (
@@ -4678,7 +4678,7 @@ INHERITS (frames);
 ALTER TABLE public.frames_20110214 OWNER TO breakpad_rw;
 
 --
--- Name: frames_20110221; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110221; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE frames_20110221 (
@@ -4690,7 +4690,7 @@ INHERITS (frames);
 ALTER TABLE public.frames_20110221 OWNER TO breakpad_rw;
 
 --
--- Name: frames_20110228; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110228; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE frames_20110228 (
@@ -4702,7 +4702,7 @@ INHERITS (frames);
 ALTER TABLE public.frames_20110228 OWNER TO breakpad_rw;
 
 --
--- Name: frames_20110307; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110307; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE frames_20110307 (
@@ -4714,7 +4714,7 @@ INHERITS (frames);
 ALTER TABLE public.frames_20110307 OWNER TO breakpad_rw;
 
 --
--- Name: frames_20110314; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110314; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE frames_20110314 (
@@ -4726,7 +4726,7 @@ INHERITS (frames);
 ALTER TABLE public.frames_20110314 OWNER TO breakpad_rw;
 
 --
--- Name: frames_20110321; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110321; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE frames_20110321 (
@@ -4738,7 +4738,7 @@ INHERITS (frames);
 ALTER TABLE public.frames_20110321 OWNER TO breakpad_rw;
 
 --
--- Name: frames_20110328; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110328; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE frames_20110328 (
@@ -4750,7 +4750,7 @@ INHERITS (frames);
 ALTER TABLE public.frames_20110328 OWNER TO breakpad_rw;
 
 --
--- Name: frames_20110404; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110404; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE frames_20110404 (
@@ -4762,7 +4762,7 @@ INHERITS (frames);
 ALTER TABLE public.frames_20110404 OWNER TO breakpad_rw;
 
 --
--- Name: frames_20110411; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110411; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE frames_20110411 (
@@ -4774,7 +4774,7 @@ INHERITS (frames);
 ALTER TABLE public.frames_20110411 OWNER TO breakpad_rw;
 
 --
--- Name: frames_20110418; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110418; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE frames_20110418 (
@@ -4786,7 +4786,7 @@ INHERITS (frames);
 ALTER TABLE public.frames_20110418 OWNER TO breakpad_rw;
 
 --
--- Name: frames_20110425; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110425; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE frames_20110425 (
@@ -4798,7 +4798,7 @@ INHERITS (frames);
 ALTER TABLE public.frames_20110425 OWNER TO breakpad_rw;
 
 --
--- Name: frames_20110502; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110502; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE frames_20110502 (
@@ -4810,7 +4810,7 @@ INHERITS (frames);
 ALTER TABLE public.frames_20110502 OWNER TO breakpad_rw;
 
 --
--- Name: frames_20110509; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110509; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE frames_20110509 (
@@ -4822,7 +4822,7 @@ INHERITS (frames);
 ALTER TABLE public.frames_20110509 OWNER TO breakpad_rw;
 
 --
--- Name: frames_20110516; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110516; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE frames_20110516 (
@@ -4834,7 +4834,7 @@ INHERITS (frames);
 ALTER TABLE public.frames_20110516 OWNER TO breakpad_rw;
 
 --
--- Name: frames_20110523; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110523; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE frames_20110523 (
@@ -4846,7 +4846,7 @@ INHERITS (frames);
 ALTER TABLE public.frames_20110523 OWNER TO breakpad_rw;
 
 --
--- Name: frames_20110530; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110530; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE frames_20110530 (
@@ -4858,7 +4858,7 @@ INHERITS (frames);
 ALTER TABLE public.frames_20110530 OWNER TO breakpad_rw;
 
 --
--- Name: frames_20110606; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110606; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE frames_20110606 (
@@ -4870,7 +4870,7 @@ INHERITS (frames);
 ALTER TABLE public.frames_20110606 OWNER TO breakpad_rw;
 
 --
--- Name: frames_20110613; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110613; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE frames_20110613 (
@@ -4882,7 +4882,7 @@ INHERITS (frames);
 ALTER TABLE public.frames_20110613 OWNER TO breakpad_rw;
 
 --
--- Name: frames_20110620; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110620; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE frames_20110620 (
@@ -4894,7 +4894,7 @@ INHERITS (frames);
 ALTER TABLE public.frames_20110620 OWNER TO breakpad_rw;
 
 --
--- Name: frames_20110627; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110627; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE frames_20110627 (
@@ -4906,7 +4906,7 @@ INHERITS (frames);
 ALTER TABLE public.frames_20110627 OWNER TO breakpad_rw;
 
 --
--- Name: frames_20110704; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110704; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE frames_20110704 (
@@ -4918,7 +4918,7 @@ INHERITS (frames);
 ALTER TABLE public.frames_20110704 OWNER TO breakpad_rw;
 
 --
--- Name: frames_20110711; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110711; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE frames_20110711 (
@@ -4930,7 +4930,7 @@ INHERITS (frames);
 ALTER TABLE public.frames_20110711 OWNER TO breakpad_rw;
 
 --
--- Name: frames_20110718; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110718; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE frames_20110718 (
@@ -4942,7 +4942,7 @@ INHERITS (frames);
 ALTER TABLE public.frames_20110718 OWNER TO breakpad_rw;
 
 --
--- Name: frames_20110725; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110725; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE frames_20110725 (
@@ -4954,7 +4954,7 @@ INHERITS (frames);
 ALTER TABLE public.frames_20110725 OWNER TO breakpad_rw;
 
 --
--- Name: frames_20110801; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110801; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE frames_20110801 (
@@ -4966,7 +4966,7 @@ INHERITS (frames);
 ALTER TABLE public.frames_20110801 OWNER TO breakpad_rw;
 
 --
--- Name: frames_20110808; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110808; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE frames_20110808 (
@@ -4978,7 +4978,7 @@ INHERITS (frames);
 ALTER TABLE public.frames_20110808 OWNER TO breakpad_rw;
 
 --
--- Name: frames_20110815; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110815; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE frames_20110815 (
@@ -4990,7 +4990,7 @@ INHERITS (frames);
 ALTER TABLE public.frames_20110815 OWNER TO breakpad_rw;
 
 --
--- Name: frames_20110822; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110822; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE frames_20110822 (
@@ -5002,7 +5002,7 @@ INHERITS (frames);
 ALTER TABLE public.frames_20110822 OWNER TO breakpad_rw;
 
 --
--- Name: frames_20110829; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110829; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE frames_20110829 (
@@ -5014,7 +5014,7 @@ INHERITS (frames);
 ALTER TABLE public.frames_20110829 OWNER TO breakpad_rw;
 
 --
--- Name: frames_20110905; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110905; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE frames_20110905 (
@@ -5026,7 +5026,7 @@ INHERITS (frames);
 ALTER TABLE public.frames_20110905 OWNER TO breakpad_rw;
 
 --
--- Name: jobs; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: jobs; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE jobs (
@@ -5078,7 +5078,7 @@ CREATE VIEW jobs_in_queue AS
 ALTER TABLE public.jobs_in_queue OWNER TO monitoring;
 
 --
--- Name: last_backfill_temp; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
+-- Name: last_backfill_temp; Type: TABLE; Schema: public; Owner: postgres; Tablespace:
 --
 
 CREATE TABLE last_backfill_temp (
@@ -5089,7 +5089,7 @@ CREATE TABLE last_backfill_temp (
 ALTER TABLE public.last_backfill_temp OWNER TO postgres;
 
 --
--- Name: last_tcbsig; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
+-- Name: last_tcbsig; Type: TABLE; Schema: public; Owner: postgres; Tablespace:
 --
 
 CREATE TABLE last_tcbsig (
@@ -5109,7 +5109,7 @@ CREATE TABLE last_tcbsig (
 ALTER TABLE public.last_tcbsig OWNER TO postgres;
 
 --
--- Name: last_tcburl; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
+-- Name: last_tcburl; Type: TABLE; Schema: public; Owner: postgres; Tablespace:
 --
 
 CREATE TABLE last_tcburl (
@@ -5126,7 +5126,7 @@ CREATE TABLE last_tcburl (
 ALTER TABLE public.last_tcburl OWNER TO postgres;
 
 --
--- Name: last_urlsig; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
+-- Name: last_urlsig; Type: TABLE; Schema: public; Owner: postgres; Tablespace:
 --
 
 CREATE TABLE last_urlsig (
@@ -5139,7 +5139,7 @@ CREATE TABLE last_urlsig (
 ALTER TABLE public.last_urlsig OWNER TO postgres;
 
 --
--- Name: os_name_matches; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: os_name_matches; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE os_name_matches (
@@ -5151,7 +5151,7 @@ CREATE TABLE os_name_matches (
 ALTER TABLE public.os_name_matches OWNER TO breakpad_rw;
 
 --
--- Name: os_names; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: os_names; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE os_names (
@@ -5163,7 +5163,7 @@ CREATE TABLE os_names (
 ALTER TABLE public.os_names OWNER TO breakpad_rw;
 
 --
--- Name: os_versions; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: os_versions; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE os_versions (
@@ -5198,7 +5198,7 @@ ALTER SEQUENCE os_versions_os_version_id_seq OWNED BY os_versions.os_version_id;
 
 
 --
--- Name: osdims; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: osdims; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE osdims (
@@ -5232,7 +5232,7 @@ ALTER SEQUENCE osdims_id_seq OWNED BY osdims.id;
 
 
 --
--- Name: top_crashes_by_signature; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: top_crashes_by_signature; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE top_crashes_by_signature (
@@ -5272,7 +5272,7 @@ CREATE VIEW pg_stat_statements AS
 ALTER TABLE public.pg_stat_statements OWNER TO postgres;
 
 --
--- Name: plugins; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE plugins (
@@ -5306,7 +5306,7 @@ ALTER SEQUENCE plugins_id_seq OWNED BY plugins.id;
 
 
 --
--- Name: plugins_reports; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE plugins_reports (
@@ -5320,7 +5320,7 @@ CREATE TABLE plugins_reports (
 ALTER TABLE public.plugins_reports OWNER TO breakpad_rw;
 
 --
--- Name: plugins_reports_20100607; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20100607; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE plugins_reports_20100607 (
@@ -5332,7 +5332,7 @@ INHERITS (plugins_reports);
 ALTER TABLE public.plugins_reports_20100607 OWNER TO breakpad_rw;
 
 --
--- Name: plugins_reports_20100614; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20100614; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE plugins_reports_20100614 (
@@ -5344,7 +5344,7 @@ INHERITS (plugins_reports);
 ALTER TABLE public.plugins_reports_20100614 OWNER TO breakpad_rw;
 
 --
--- Name: plugins_reports_20100621; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20100621; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE plugins_reports_20100621 (
@@ -5356,7 +5356,7 @@ INHERITS (plugins_reports);
 ALTER TABLE public.plugins_reports_20100621 OWNER TO breakpad_rw;
 
 --
--- Name: plugins_reports_20100628; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20100628; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE plugins_reports_20100628 (
@@ -5368,7 +5368,7 @@ INHERITS (plugins_reports);
 ALTER TABLE public.plugins_reports_20100628 OWNER TO breakpad_rw;
 
 --
--- Name: plugins_reports_20100705; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20100705; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE plugins_reports_20100705 (
@@ -5380,7 +5380,7 @@ INHERITS (plugins_reports);
 ALTER TABLE public.plugins_reports_20100705 OWNER TO breakpad_rw;
 
 --
--- Name: plugins_reports_20100712; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20100712; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE plugins_reports_20100712 (
@@ -5392,7 +5392,7 @@ INHERITS (plugins_reports);
 ALTER TABLE public.plugins_reports_20100712 OWNER TO breakpad_rw;
 
 --
--- Name: plugins_reports_20100719; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20100719; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE plugins_reports_20100719 (
@@ -5404,7 +5404,7 @@ INHERITS (plugins_reports);
 ALTER TABLE public.plugins_reports_20100719 OWNER TO breakpad_rw;
 
 --
--- Name: plugins_reports_20100726; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20100726; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE plugins_reports_20100726 (
@@ -5416,7 +5416,7 @@ INHERITS (plugins_reports);
 ALTER TABLE public.plugins_reports_20100726 OWNER TO breakpad_rw;
 
 --
--- Name: plugins_reports_20100802; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20100802; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE plugins_reports_20100802 (
@@ -5428,7 +5428,7 @@ INHERITS (plugins_reports);
 ALTER TABLE public.plugins_reports_20100802 OWNER TO breakpad_rw;
 
 --
--- Name: plugins_reports_20100809; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20100809; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE plugins_reports_20100809 (
@@ -5440,7 +5440,7 @@ INHERITS (plugins_reports);
 ALTER TABLE public.plugins_reports_20100809 OWNER TO breakpad_rw;
 
 --
--- Name: plugins_reports_20100816; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20100816; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE plugins_reports_20100816 (
@@ -5452,7 +5452,7 @@ INHERITS (plugins_reports);
 ALTER TABLE public.plugins_reports_20100816 OWNER TO breakpad_rw;
 
 --
--- Name: plugins_reports_20100823; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20100823; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE plugins_reports_20100823 (
@@ -5464,7 +5464,7 @@ INHERITS (plugins_reports);
 ALTER TABLE public.plugins_reports_20100823 OWNER TO breakpad_rw;
 
 --
--- Name: plugins_reports_20100830; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20100830; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE plugins_reports_20100830 (
@@ -5476,7 +5476,7 @@ INHERITS (plugins_reports);
 ALTER TABLE public.plugins_reports_20100830 OWNER TO breakpad_rw;
 
 --
--- Name: plugins_reports_20100906; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20100906; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE plugins_reports_20100906 (
@@ -5488,7 +5488,7 @@ INHERITS (plugins_reports);
 ALTER TABLE public.plugins_reports_20100906 OWNER TO breakpad_rw;
 
 --
--- Name: plugins_reports_20100913; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20100913; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE plugins_reports_20100913 (
@@ -5500,7 +5500,7 @@ INHERITS (plugins_reports);
 ALTER TABLE public.plugins_reports_20100913 OWNER TO breakpad_rw;
 
 --
--- Name: plugins_reports_20100920; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20100920; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE plugins_reports_20100920 (
@@ -5512,7 +5512,7 @@ INHERITS (plugins_reports);
 ALTER TABLE public.plugins_reports_20100920 OWNER TO breakpad_rw;
 
 --
--- Name: plugins_reports_20100927; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20100927; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE plugins_reports_20100927 (
@@ -5524,7 +5524,7 @@ INHERITS (plugins_reports);
 ALTER TABLE public.plugins_reports_20100927 OWNER TO breakpad_rw;
 
 --
--- Name: plugins_reports_20101004; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20101004; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE plugins_reports_20101004 (
@@ -5536,7 +5536,7 @@ INHERITS (plugins_reports);
 ALTER TABLE public.plugins_reports_20101004 OWNER TO breakpad_rw;
 
 --
--- Name: plugins_reports_20101011; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20101011; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE plugins_reports_20101011 (
@@ -5548,7 +5548,7 @@ INHERITS (plugins_reports);
 ALTER TABLE public.plugins_reports_20101011 OWNER TO breakpad_rw;
 
 --
--- Name: plugins_reports_20101018; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20101018; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE plugins_reports_20101018 (
@@ -5560,7 +5560,7 @@ INHERITS (plugins_reports);
 ALTER TABLE public.plugins_reports_20101018 OWNER TO breakpad_rw;
 
 --
--- Name: plugins_reports_20101025; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20101025; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE plugins_reports_20101025 (
@@ -5572,7 +5572,7 @@ INHERITS (plugins_reports);
 ALTER TABLE public.plugins_reports_20101025 OWNER TO breakpad_rw;
 
 --
--- Name: plugins_reports_20101101; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20101101; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE plugins_reports_20101101 (
@@ -5584,7 +5584,7 @@ INHERITS (plugins_reports);
 ALTER TABLE public.plugins_reports_20101101 OWNER TO breakpad_rw;
 
 --
--- Name: plugins_reports_20101108; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20101108; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE plugins_reports_20101108 (
@@ -5596,7 +5596,7 @@ INHERITS (plugins_reports);
 ALTER TABLE public.plugins_reports_20101108 OWNER TO breakpad_rw;
 
 --
--- Name: plugins_reports_20101115; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20101115; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE plugins_reports_20101115 (
@@ -5608,7 +5608,7 @@ INHERITS (plugins_reports);
 ALTER TABLE public.plugins_reports_20101115 OWNER TO breakpad_rw;
 
 --
--- Name: plugins_reports_20101122; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20101122; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE plugins_reports_20101122 (
@@ -5620,7 +5620,7 @@ INHERITS (plugins_reports);
 ALTER TABLE public.plugins_reports_20101122 OWNER TO breakpad_rw;
 
 --
--- Name: plugins_reports_20101129; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20101129; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE plugins_reports_20101129 (
@@ -5632,7 +5632,7 @@ INHERITS (plugins_reports);
 ALTER TABLE public.plugins_reports_20101129 OWNER TO breakpad_rw;
 
 --
--- Name: plugins_reports_20101206; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20101206; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE plugins_reports_20101206 (
@@ -5644,7 +5644,7 @@ INHERITS (plugins_reports);
 ALTER TABLE public.plugins_reports_20101206 OWNER TO breakpad_rw;
 
 --
--- Name: plugins_reports_20101213; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20101213; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE plugins_reports_20101213 (
@@ -5656,7 +5656,7 @@ INHERITS (plugins_reports);
 ALTER TABLE public.plugins_reports_20101213 OWNER TO breakpad_rw;
 
 --
--- Name: plugins_reports_20101220; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20101220; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE plugins_reports_20101220 (
@@ -5668,7 +5668,7 @@ INHERITS (plugins_reports);
 ALTER TABLE public.plugins_reports_20101220 OWNER TO breakpad_rw;
 
 --
--- Name: plugins_reports_20101227; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20101227; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE plugins_reports_20101227 (
@@ -5680,7 +5680,7 @@ INHERITS (plugins_reports);
 ALTER TABLE public.plugins_reports_20101227 OWNER TO breakpad_rw;
 
 --
--- Name: plugins_reports_20110103; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110103; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE plugins_reports_20110103 (
@@ -5692,7 +5692,7 @@ INHERITS (plugins_reports);
 ALTER TABLE public.plugins_reports_20110103 OWNER TO breakpad_rw;
 
 --
--- Name: plugins_reports_20110110; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110110; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE plugins_reports_20110110 (
@@ -5704,7 +5704,7 @@ INHERITS (plugins_reports);
 ALTER TABLE public.plugins_reports_20110110 OWNER TO breakpad_rw;
 
 --
--- Name: plugins_reports_20110117; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110117; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE plugins_reports_20110117 (
@@ -5716,7 +5716,7 @@ INHERITS (plugins_reports);
 ALTER TABLE public.plugins_reports_20110117 OWNER TO breakpad_rw;
 
 --
--- Name: plugins_reports_20110124; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110124; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE plugins_reports_20110124 (
@@ -5728,7 +5728,7 @@ INHERITS (plugins_reports);
 ALTER TABLE public.plugins_reports_20110124 OWNER TO breakpad_rw;
 
 --
--- Name: plugins_reports_20110131; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110131; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE plugins_reports_20110131 (
@@ -5740,7 +5740,7 @@ INHERITS (plugins_reports);
 ALTER TABLE public.plugins_reports_20110131 OWNER TO breakpad_rw;
 
 --
--- Name: plugins_reports_20110207; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110207; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE plugins_reports_20110207 (
@@ -5752,7 +5752,7 @@ INHERITS (plugins_reports);
 ALTER TABLE public.plugins_reports_20110207 OWNER TO breakpad_rw;
 
 --
--- Name: plugins_reports_20110214; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110214; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE plugins_reports_20110214 (
@@ -5764,7 +5764,7 @@ INHERITS (plugins_reports);
 ALTER TABLE public.plugins_reports_20110214 OWNER TO breakpad_rw;
 
 --
--- Name: plugins_reports_20110221; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110221; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE plugins_reports_20110221 (
@@ -5776,7 +5776,7 @@ INHERITS (plugins_reports);
 ALTER TABLE public.plugins_reports_20110221 OWNER TO breakpad_rw;
 
 --
--- Name: plugins_reports_20110228; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110228; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE plugins_reports_20110228 (
@@ -5788,7 +5788,7 @@ INHERITS (plugins_reports);
 ALTER TABLE public.plugins_reports_20110228 OWNER TO breakpad_rw;
 
 --
--- Name: plugins_reports_20110307; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110307; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE plugins_reports_20110307 (
@@ -5800,7 +5800,7 @@ INHERITS (plugins_reports);
 ALTER TABLE public.plugins_reports_20110307 OWNER TO breakpad_rw;
 
 --
--- Name: plugins_reports_20110314; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110314; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE plugins_reports_20110314 (
@@ -5812,7 +5812,7 @@ INHERITS (plugins_reports);
 ALTER TABLE public.plugins_reports_20110314 OWNER TO breakpad_rw;
 
 --
--- Name: plugins_reports_20110321; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110321; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE plugins_reports_20110321 (
@@ -5824,7 +5824,7 @@ INHERITS (plugins_reports);
 ALTER TABLE public.plugins_reports_20110321 OWNER TO breakpad_rw;
 
 --
--- Name: plugins_reports_20110328; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110328; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE plugins_reports_20110328 (
@@ -5836,7 +5836,7 @@ INHERITS (plugins_reports);
 ALTER TABLE public.plugins_reports_20110328 OWNER TO breakpad_rw;
 
 --
--- Name: plugins_reports_20110404; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110404; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE plugins_reports_20110404 (
@@ -5848,7 +5848,7 @@ INHERITS (plugins_reports);
 ALTER TABLE public.plugins_reports_20110404 OWNER TO breakpad_rw;
 
 --
--- Name: plugins_reports_20110411; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110411; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE plugins_reports_20110411 (
@@ -5860,7 +5860,7 @@ INHERITS (plugins_reports);
 ALTER TABLE public.plugins_reports_20110411 OWNER TO breakpad_rw;
 
 --
--- Name: plugins_reports_20110418; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110418; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE plugins_reports_20110418 (
@@ -5872,7 +5872,7 @@ INHERITS (plugins_reports);
 ALTER TABLE public.plugins_reports_20110418 OWNER TO breakpad_rw;
 
 --
--- Name: plugins_reports_20110425; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110425; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE plugins_reports_20110425 (
@@ -5884,7 +5884,7 @@ INHERITS (plugins_reports);
 ALTER TABLE public.plugins_reports_20110425 OWNER TO breakpad_rw;
 
 --
--- Name: plugins_reports_20110502; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110502; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE plugins_reports_20110502 (
@@ -5896,7 +5896,7 @@ INHERITS (plugins_reports);
 ALTER TABLE public.plugins_reports_20110502 OWNER TO breakpad_rw;
 
 --
--- Name: plugins_reports_20110509; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110509; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE plugins_reports_20110509 (
@@ -5908,7 +5908,7 @@ INHERITS (plugins_reports);
 ALTER TABLE public.plugins_reports_20110509 OWNER TO breakpad_rw;
 
 --
--- Name: plugins_reports_20110516; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110516; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE plugins_reports_20110516 (
@@ -5920,7 +5920,7 @@ INHERITS (plugins_reports);
 ALTER TABLE public.plugins_reports_20110516 OWNER TO breakpad_rw;
 
 --
--- Name: plugins_reports_20110523; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110523; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE plugins_reports_20110523 (
@@ -5932,7 +5932,7 @@ INHERITS (plugins_reports);
 ALTER TABLE public.plugins_reports_20110523 OWNER TO breakpad_rw;
 
 --
--- Name: plugins_reports_20110530; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110530; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE plugins_reports_20110530 (
@@ -5944,7 +5944,7 @@ INHERITS (plugins_reports);
 ALTER TABLE public.plugins_reports_20110530 OWNER TO breakpad_rw;
 
 --
--- Name: plugins_reports_20110606; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110606; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE plugins_reports_20110606 (
@@ -5956,7 +5956,7 @@ INHERITS (plugins_reports);
 ALTER TABLE public.plugins_reports_20110606 OWNER TO breakpad_rw;
 
 --
--- Name: plugins_reports_20110613; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110613; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE plugins_reports_20110613 (
@@ -5968,7 +5968,7 @@ INHERITS (plugins_reports);
 ALTER TABLE public.plugins_reports_20110613 OWNER TO breakpad_rw;
 
 --
--- Name: plugins_reports_20110620; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110620; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE plugins_reports_20110620 (
@@ -5980,7 +5980,7 @@ INHERITS (plugins_reports);
 ALTER TABLE public.plugins_reports_20110620 OWNER TO breakpad_rw;
 
 --
--- Name: plugins_reports_20110627; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110627; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE plugins_reports_20110627 (
@@ -5992,7 +5992,7 @@ INHERITS (plugins_reports);
 ALTER TABLE public.plugins_reports_20110627 OWNER TO breakpad_rw;
 
 --
--- Name: plugins_reports_20110704; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110704; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE plugins_reports_20110704 (
@@ -6004,7 +6004,7 @@ INHERITS (plugins_reports);
 ALTER TABLE public.plugins_reports_20110704 OWNER TO breakpad_rw;
 
 --
--- Name: plugins_reports_20110711; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110711; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE plugins_reports_20110711 (
@@ -6016,7 +6016,7 @@ INHERITS (plugins_reports);
 ALTER TABLE public.plugins_reports_20110711 OWNER TO breakpad_rw;
 
 --
--- Name: plugins_reports_20110718; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110718; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE plugins_reports_20110718 (
@@ -6028,7 +6028,7 @@ INHERITS (plugins_reports);
 ALTER TABLE public.plugins_reports_20110718 OWNER TO breakpad_rw;
 
 --
--- Name: plugins_reports_20110725; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110725; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE plugins_reports_20110725 (
@@ -6040,7 +6040,7 @@ INHERITS (plugins_reports);
 ALTER TABLE public.plugins_reports_20110725 OWNER TO breakpad_rw;
 
 --
--- Name: plugins_reports_20110801; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110801; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE plugins_reports_20110801 (
@@ -6052,7 +6052,7 @@ INHERITS (plugins_reports);
 ALTER TABLE public.plugins_reports_20110801 OWNER TO breakpad_rw;
 
 --
--- Name: plugins_reports_20110808; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110808; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE plugins_reports_20110808 (
@@ -6064,7 +6064,7 @@ INHERITS (plugins_reports);
 ALTER TABLE public.plugins_reports_20110808 OWNER TO breakpad_rw;
 
 --
--- Name: plugins_reports_20110815; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110815; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE plugins_reports_20110815 (
@@ -6076,7 +6076,7 @@ INHERITS (plugins_reports);
 ALTER TABLE public.plugins_reports_20110815 OWNER TO breakpad_rw;
 
 --
--- Name: plugins_reports_20110822; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110822; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE plugins_reports_20110822 (
@@ -6088,7 +6088,7 @@ INHERITS (plugins_reports);
 ALTER TABLE public.plugins_reports_20110822 OWNER TO breakpad_rw;
 
 --
--- Name: plugins_reports_20110829; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110829; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE plugins_reports_20110829 (
@@ -6100,7 +6100,7 @@ INHERITS (plugins_reports);
 ALTER TABLE public.plugins_reports_20110829 OWNER TO breakpad_rw;
 
 --
--- Name: priority_jobs_1445; Type: TABLE; Schema: public; Owner: processor; Tablespace: 
+-- Name: priority_jobs_1445; Type: TABLE; Schema: public; Owner: processor; Tablespace:
 --
 
 CREATE TABLE priority_jobs_1445 (
@@ -6111,7 +6111,7 @@ CREATE TABLE priority_jobs_1445 (
 ALTER TABLE public.priority_jobs_1445 OWNER TO processor;
 
 --
--- Name: priority_jobs_1447; Type: TABLE; Schema: public; Owner: processor; Tablespace: 
+-- Name: priority_jobs_1447; Type: TABLE; Schema: public; Owner: processor; Tablespace:
 --
 
 CREATE TABLE priority_jobs_1447 (
@@ -6122,7 +6122,7 @@ CREATE TABLE priority_jobs_1447 (
 ALTER TABLE public.priority_jobs_1447 OWNER TO processor;
 
 --
--- Name: priority_jobs_1449; Type: TABLE; Schema: public; Owner: processor; Tablespace: 
+-- Name: priority_jobs_1449; Type: TABLE; Schema: public; Owner: processor; Tablespace:
 --
 
 CREATE TABLE priority_jobs_1449 (
@@ -6133,7 +6133,7 @@ CREATE TABLE priority_jobs_1449 (
 ALTER TABLE public.priority_jobs_1449 OWNER TO processor;
 
 --
--- Name: priority_jobs_1450; Type: TABLE; Schema: public; Owner: processor; Tablespace: 
+-- Name: priority_jobs_1450; Type: TABLE; Schema: public; Owner: processor; Tablespace:
 --
 
 CREATE TABLE priority_jobs_1450 (
@@ -6144,7 +6144,7 @@ CREATE TABLE priority_jobs_1450 (
 ALTER TABLE public.priority_jobs_1450 OWNER TO processor;
 
 --
--- Name: priority_jobs_1451; Type: TABLE; Schema: public; Owner: processor; Tablespace: 
+-- Name: priority_jobs_1451; Type: TABLE; Schema: public; Owner: processor; Tablespace:
 --
 
 CREATE TABLE priority_jobs_1451 (
@@ -6155,7 +6155,7 @@ CREATE TABLE priority_jobs_1451 (
 ALTER TABLE public.priority_jobs_1451 OWNER TO processor;
 
 --
--- Name: priority_jobs_1452; Type: TABLE; Schema: public; Owner: processor; Tablespace: 
+-- Name: priority_jobs_1452; Type: TABLE; Schema: public; Owner: processor; Tablespace:
 --
 
 CREATE TABLE priority_jobs_1452 (
@@ -6166,7 +6166,7 @@ CREATE TABLE priority_jobs_1452 (
 ALTER TABLE public.priority_jobs_1452 OWNER TO processor;
 
 --
--- Name: priority_jobs_1453; Type: TABLE; Schema: public; Owner: processor; Tablespace: 
+-- Name: priority_jobs_1453; Type: TABLE; Schema: public; Owner: processor; Tablespace:
 --
 
 CREATE TABLE priority_jobs_1453 (
@@ -6177,7 +6177,7 @@ CREATE TABLE priority_jobs_1453 (
 ALTER TABLE public.priority_jobs_1453 OWNER TO processor;
 
 --
--- Name: priority_jobs_1454; Type: TABLE; Schema: public; Owner: processor; Tablespace: 
+-- Name: priority_jobs_1454; Type: TABLE; Schema: public; Owner: processor; Tablespace:
 --
 
 CREATE TABLE priority_jobs_1454 (
@@ -6188,7 +6188,7 @@ CREATE TABLE priority_jobs_1454 (
 ALTER TABLE public.priority_jobs_1454 OWNER TO processor;
 
 --
--- Name: priority_jobs_1455; Type: TABLE; Schema: public; Owner: processor; Tablespace: 
+-- Name: priority_jobs_1455; Type: TABLE; Schema: public; Owner: processor; Tablespace:
 --
 
 CREATE TABLE priority_jobs_1455 (
@@ -6199,7 +6199,7 @@ CREATE TABLE priority_jobs_1455 (
 ALTER TABLE public.priority_jobs_1455 OWNER TO processor;
 
 --
--- Name: priority_jobs_1456; Type: TABLE; Schema: public; Owner: processor; Tablespace: 
+-- Name: priority_jobs_1456; Type: TABLE; Schema: public; Owner: processor; Tablespace:
 --
 
 CREATE TABLE priority_jobs_1456 (
@@ -6210,7 +6210,7 @@ CREATE TABLE priority_jobs_1456 (
 ALTER TABLE public.priority_jobs_1456 OWNER TO processor;
 
 --
--- Name: priorityjobs; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: priorityjobs; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE priorityjobs (
@@ -6221,7 +6221,7 @@ CREATE TABLE priorityjobs (
 ALTER TABLE public.priorityjobs OWNER TO breakpad_rw;
 
 --
--- Name: priorityjobs_log; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
+-- Name: priorityjobs_log; Type: TABLE; Schema: public; Owner: postgres; Tablespace:
 --
 
 CREATE TABLE priorityjobs_log (
@@ -6232,7 +6232,7 @@ CREATE TABLE priorityjobs_log (
 ALTER TABLE public.priorityjobs_log OWNER TO postgres;
 
 --
--- Name: priorityjobs_log_sjc_backup; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
+-- Name: priorityjobs_log_sjc_backup; Type: TABLE; Schema: public; Owner: postgres; Tablespace:
 --
 
 CREATE TABLE priorityjobs_log_sjc_backup (
@@ -6243,7 +6243,7 @@ CREATE TABLE priorityjobs_log_sjc_backup (
 ALTER TABLE public.priorityjobs_log_sjc_backup OWNER TO postgres;
 
 --
--- Name: priorityjobs_logging_switch; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
+-- Name: priorityjobs_logging_switch; Type: TABLE; Schema: public; Owner: postgres; Tablespace:
 --
 
 CREATE TABLE priorityjobs_logging_switch (
@@ -6254,7 +6254,7 @@ CREATE TABLE priorityjobs_logging_switch (
 ALTER TABLE public.priorityjobs_logging_switch OWNER TO postgres;
 
 --
--- Name: processors; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: processors; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE processors (
@@ -6289,7 +6289,7 @@ ALTER SEQUENCE processors_id_seq OWNED BY processors.id;
 
 
 --
--- Name: product_adu; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: product_adu; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE product_adu (
@@ -6303,7 +6303,7 @@ CREATE TABLE product_adu (
 ALTER TABLE public.product_adu OWNER TO breakpad_rw;
 
 --
--- Name: product_release_channels; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: product_release_channels; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE product_release_channels (
@@ -6316,7 +6316,7 @@ CREATE TABLE product_release_channels (
 ALTER TABLE public.product_release_channels OWNER TO breakpad_rw;
 
 --
--- Name: product_visibility; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: product_visibility; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE product_visibility (
@@ -6332,7 +6332,7 @@ CREATE TABLE product_visibility (
 ALTER TABLE public.product_visibility OWNER TO breakpad_rw;
 
 --
--- Name: release_build_type_map; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: release_build_type_map; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE release_build_type_map (
@@ -6364,7 +6364,7 @@ CREATE VIEW product_selector AS
 ALTER TABLE public.product_selector OWNER TO breakpad_rw;
 
 --
--- Name: product_version_builds; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: product_version_builds; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE product_version_builds (
@@ -6377,7 +6377,7 @@ CREATE TABLE product_version_builds (
 ALTER TABLE public.product_version_builds OWNER TO breakpad_rw;
 
 --
--- Name: productdims_version_sort; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: productdims_version_sort; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE productdims_version_sort (
@@ -6403,7 +6403,7 @@ CREATE TABLE productdims_version_sort (
 ALTER TABLE public.productdims_version_sort OWNER TO breakpad_rw;
 
 --
--- Name: products; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: products; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE products (
@@ -6417,7 +6417,7 @@ CREATE TABLE products (
 ALTER TABLE public.products OWNER TO breakpad_rw;
 
 --
--- Name: raw_adu; Type: TABLE; Schema: public; Owner: breakpad_metrics; Tablespace: 
+-- Name: raw_adu; Type: TABLE; Schema: public; Owner: breakpad_metrics; Tablespace:
 --
 
 CREATE TABLE raw_adu (
@@ -6435,7 +6435,7 @@ CREATE TABLE raw_adu (
 ALTER TABLE public.raw_adu OWNER TO breakpad_metrics;
 
 --
--- Name: release_channel_matches; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: release_channel_matches; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE release_channel_matches (
@@ -6447,7 +6447,7 @@ CREATE TABLE release_channel_matches (
 ALTER TABLE public.release_channel_matches OWNER TO breakpad_rw;
 
 --
--- Name: release_channels; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: release_channels; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE release_channels (
@@ -6459,7 +6459,7 @@ CREATE TABLE release_channels (
 ALTER TABLE public.release_channels OWNER TO breakpad_rw;
 
 --
--- Name: releasechannel_backfill; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
+-- Name: releasechannel_backfill; Type: TABLE; Schema: public; Owner: postgres; Tablespace:
 --
 
 CREATE TABLE releasechannel_backfill (
@@ -6471,7 +6471,7 @@ CREATE TABLE releasechannel_backfill (
 ALTER TABLE public.releasechannel_backfill OWNER TO postgres;
 
 --
--- Name: releases_raw; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: releases_raw; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE releases_raw (
@@ -6487,7 +6487,7 @@ CREATE TABLE releases_raw (
 ALTER TABLE public.releases_raw OWNER TO breakpad_rw;
 
 --
--- Name: replication_test; Type: TABLE; Schema: public; Owner: monitoring; Tablespace: 
+-- Name: replication_test; Type: TABLE; Schema: public; Owner: monitoring; Tablespace:
 --
 
 CREATE TABLE replication_test (
@@ -6499,7 +6499,7 @@ CREATE TABLE replication_test (
 ALTER TABLE public.replication_test OWNER TO monitoring;
 
 --
--- Name: reports; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE reports (
@@ -6566,7 +6566,7 @@ ALTER SEQUENCE reports_id_seq OWNED BY reports.id;
 
 
 --
--- Name: reports_20100607; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100607; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE reports_20100607 (
@@ -6578,7 +6578,7 @@ INHERITS (reports);
 ALTER TABLE public.reports_20100607 OWNER TO breakpad_rw;
 
 --
--- Name: reports_20100614; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100614; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE reports_20100614 (
@@ -6590,7 +6590,7 @@ INHERITS (reports);
 ALTER TABLE public.reports_20100614 OWNER TO breakpad_rw;
 
 --
--- Name: reports_20100621; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100621; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE reports_20100621 (
@@ -6602,7 +6602,7 @@ INHERITS (reports);
 ALTER TABLE public.reports_20100621 OWNER TO breakpad_rw;
 
 --
--- Name: reports_20100628; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100628; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE reports_20100628 (
@@ -6614,7 +6614,7 @@ INHERITS (reports);
 ALTER TABLE public.reports_20100628 OWNER TO breakpad_rw;
 
 --
--- Name: reports_20100705; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100705; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE reports_20100705 (
@@ -6626,7 +6626,7 @@ INHERITS (reports);
 ALTER TABLE public.reports_20100705 OWNER TO breakpad_rw;
 
 --
--- Name: reports_20100712; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100712; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE reports_20100712 (
@@ -6638,7 +6638,7 @@ INHERITS (reports);
 ALTER TABLE public.reports_20100712 OWNER TO breakpad_rw;
 
 --
--- Name: reports_20100719; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100719; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE reports_20100719 (
@@ -6650,7 +6650,7 @@ INHERITS (reports);
 ALTER TABLE public.reports_20100719 OWNER TO breakpad_rw;
 
 --
--- Name: reports_20100726; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100726; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE reports_20100726 (
@@ -6662,7 +6662,7 @@ INHERITS (reports);
 ALTER TABLE public.reports_20100726 OWNER TO breakpad_rw;
 
 --
--- Name: reports_20100802; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100802; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE reports_20100802 (
@@ -6674,7 +6674,7 @@ INHERITS (reports);
 ALTER TABLE public.reports_20100802 OWNER TO breakpad_rw;
 
 --
--- Name: reports_20100809; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100809; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE reports_20100809 (
@@ -6686,7 +6686,7 @@ INHERITS (reports);
 ALTER TABLE public.reports_20100809 OWNER TO breakpad_rw;
 
 --
--- Name: reports_20100816; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100816; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE reports_20100816 (
@@ -6698,7 +6698,7 @@ INHERITS (reports);
 ALTER TABLE public.reports_20100816 OWNER TO breakpad_rw;
 
 --
--- Name: reports_20100823; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100823; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE reports_20100823 (
@@ -6710,7 +6710,7 @@ INHERITS (reports);
 ALTER TABLE public.reports_20100823 OWNER TO breakpad_rw;
 
 --
--- Name: reports_20100830; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100830; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE reports_20100830 (
@@ -6722,7 +6722,7 @@ INHERITS (reports);
 ALTER TABLE public.reports_20100830 OWNER TO breakpad_rw;
 
 --
--- Name: reports_20100906; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100906; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE reports_20100906 (
@@ -6734,7 +6734,7 @@ INHERITS (reports);
 ALTER TABLE public.reports_20100906 OWNER TO breakpad_rw;
 
 --
--- Name: reports_20100913; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100913; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE reports_20100913 (
@@ -6746,7 +6746,7 @@ INHERITS (reports);
 ALTER TABLE public.reports_20100913 OWNER TO breakpad_rw;
 
 --
--- Name: reports_20100920; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100920; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE reports_20100920 (
@@ -6758,7 +6758,7 @@ INHERITS (reports);
 ALTER TABLE public.reports_20100920 OWNER TO breakpad_rw;
 
 --
--- Name: reports_20100927; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100927; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE reports_20100927 (
@@ -6770,7 +6770,7 @@ INHERITS (reports);
 ALTER TABLE public.reports_20100927 OWNER TO breakpad_rw;
 
 --
--- Name: reports_20101004; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101004; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE reports_20101004 (
@@ -6782,7 +6782,7 @@ INHERITS (reports);
 ALTER TABLE public.reports_20101004 OWNER TO breakpad_rw;
 
 --
--- Name: reports_20101011; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101011; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE reports_20101011 (
@@ -6794,7 +6794,7 @@ INHERITS (reports);
 ALTER TABLE public.reports_20101011 OWNER TO breakpad_rw;
 
 --
--- Name: reports_20101018; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101018; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE reports_20101018 (
@@ -6806,7 +6806,7 @@ INHERITS (reports);
 ALTER TABLE public.reports_20101018 OWNER TO breakpad_rw;
 
 --
--- Name: reports_20101025; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101025; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE reports_20101025 (
@@ -6818,7 +6818,7 @@ INHERITS (reports);
 ALTER TABLE public.reports_20101025 OWNER TO breakpad_rw;
 
 --
--- Name: reports_20101101; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101101; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE reports_20101101 (
@@ -6830,7 +6830,7 @@ INHERITS (reports);
 ALTER TABLE public.reports_20101101 OWNER TO breakpad_rw;
 
 --
--- Name: reports_20101108; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101108; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE reports_20101108 (
@@ -6842,7 +6842,7 @@ INHERITS (reports);
 ALTER TABLE public.reports_20101108 OWNER TO breakpad_rw;
 
 --
--- Name: reports_20101115; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101115; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE reports_20101115 (
@@ -6854,7 +6854,7 @@ INHERITS (reports);
 ALTER TABLE public.reports_20101115 OWNER TO breakpad_rw;
 
 --
--- Name: reports_20101122; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101122; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE reports_20101122 (
@@ -6866,7 +6866,7 @@ INHERITS (reports);
 ALTER TABLE public.reports_20101122 OWNER TO breakpad_rw;
 
 --
--- Name: reports_20101129; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101129; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE reports_20101129 (
@@ -6878,7 +6878,7 @@ INHERITS (reports);
 ALTER TABLE public.reports_20101129 OWNER TO breakpad_rw;
 
 --
--- Name: reports_20101206; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101206; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE reports_20101206 (
@@ -6890,7 +6890,7 @@ INHERITS (reports);
 ALTER TABLE public.reports_20101206 OWNER TO breakpad_rw;
 
 --
--- Name: reports_20101213; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101213; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE reports_20101213 (
@@ -6902,7 +6902,7 @@ INHERITS (reports);
 ALTER TABLE public.reports_20101213 OWNER TO breakpad_rw;
 
 --
--- Name: reports_20101220; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101220; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE reports_20101220 (
@@ -6914,7 +6914,7 @@ INHERITS (reports);
 ALTER TABLE public.reports_20101220 OWNER TO breakpad_rw;
 
 --
--- Name: reports_20101227; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101227; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE reports_20101227 (
@@ -6926,7 +6926,7 @@ INHERITS (reports);
 ALTER TABLE public.reports_20101227 OWNER TO breakpad_rw;
 
 --
--- Name: reports_20110103; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110103; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE reports_20110103 (
@@ -6938,7 +6938,7 @@ INHERITS (reports);
 ALTER TABLE public.reports_20110103 OWNER TO breakpad_rw;
 
 --
--- Name: reports_20110110; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110110; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE reports_20110110 (
@@ -6950,7 +6950,7 @@ INHERITS (reports);
 ALTER TABLE public.reports_20110110 OWNER TO breakpad_rw;
 
 --
--- Name: reports_20110117; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110117; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE reports_20110117 (
@@ -6962,7 +6962,7 @@ INHERITS (reports);
 ALTER TABLE public.reports_20110117 OWNER TO breakpad_rw;
 
 --
--- Name: reports_20110124; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110124; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE reports_20110124 (
@@ -6974,7 +6974,7 @@ INHERITS (reports);
 ALTER TABLE public.reports_20110124 OWNER TO breakpad_rw;
 
 --
--- Name: reports_20110131; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110131; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE reports_20110131 (
@@ -6986,7 +6986,7 @@ INHERITS (reports);
 ALTER TABLE public.reports_20110131 OWNER TO breakpad_rw;
 
 --
--- Name: reports_20110207; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110207; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE reports_20110207 (
@@ -6998,7 +6998,7 @@ INHERITS (reports);
 ALTER TABLE public.reports_20110207 OWNER TO breakpad_rw;
 
 --
--- Name: reports_20110214; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110214; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE reports_20110214 (
@@ -7010,7 +7010,7 @@ INHERITS (reports);
 ALTER TABLE public.reports_20110214 OWNER TO breakpad_rw;
 
 --
--- Name: reports_20110221; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110221; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE reports_20110221 (
@@ -7022,7 +7022,7 @@ INHERITS (reports);
 ALTER TABLE public.reports_20110221 OWNER TO breakpad_rw;
 
 --
--- Name: reports_20110228; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110228; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE reports_20110228 (
@@ -7034,7 +7034,7 @@ INHERITS (reports);
 ALTER TABLE public.reports_20110228 OWNER TO breakpad_rw;
 
 --
--- Name: reports_20110307; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110307; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE reports_20110307 (
@@ -7046,7 +7046,7 @@ INHERITS (reports);
 ALTER TABLE public.reports_20110307 OWNER TO breakpad_rw;
 
 --
--- Name: reports_20110314; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110314; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE reports_20110314 (
@@ -7058,7 +7058,7 @@ INHERITS (reports);
 ALTER TABLE public.reports_20110314 OWNER TO breakpad_rw;
 
 --
--- Name: reports_20110321; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110321; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE reports_20110321 (
@@ -7070,7 +7070,7 @@ INHERITS (reports);
 ALTER TABLE public.reports_20110321 OWNER TO breakpad_rw;
 
 --
--- Name: reports_20110328; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110328; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE reports_20110328 (
@@ -7082,7 +7082,7 @@ INHERITS (reports);
 ALTER TABLE public.reports_20110328 OWNER TO breakpad_rw;
 
 --
--- Name: reports_20110404; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110404; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE reports_20110404 (
@@ -7094,7 +7094,7 @@ INHERITS (reports);
 ALTER TABLE public.reports_20110404 OWNER TO breakpad_rw;
 
 --
--- Name: reports_20110411; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110411; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE reports_20110411 (
@@ -7106,7 +7106,7 @@ INHERITS (reports);
 ALTER TABLE public.reports_20110411 OWNER TO breakpad_rw;
 
 --
--- Name: reports_20110418; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110418; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE reports_20110418 (
@@ -7118,7 +7118,7 @@ INHERITS (reports);
 ALTER TABLE public.reports_20110418 OWNER TO breakpad_rw;
 
 --
--- Name: reports_20110425; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110425; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE reports_20110425 (
@@ -7130,7 +7130,7 @@ INHERITS (reports);
 ALTER TABLE public.reports_20110425 OWNER TO breakpad_rw;
 
 --
--- Name: reports_20110502; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110502; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE reports_20110502 (
@@ -7142,7 +7142,7 @@ INHERITS (reports);
 ALTER TABLE public.reports_20110502 OWNER TO breakpad_rw;
 
 --
--- Name: reports_20110509; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110509; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE reports_20110509 (
@@ -7154,7 +7154,7 @@ INHERITS (reports);
 ALTER TABLE public.reports_20110509 OWNER TO breakpad_rw;
 
 --
--- Name: reports_20110516; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110516; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE reports_20110516 (
@@ -7166,7 +7166,7 @@ INHERITS (reports);
 ALTER TABLE public.reports_20110516 OWNER TO breakpad_rw;
 
 --
--- Name: reports_20110523; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110523; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE reports_20110523 (
@@ -7178,7 +7178,7 @@ INHERITS (reports);
 ALTER TABLE public.reports_20110523 OWNER TO breakpad_rw;
 
 --
--- Name: reports_20110530; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110530; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE reports_20110530 (
@@ -7190,7 +7190,7 @@ INHERITS (reports);
 ALTER TABLE public.reports_20110530 OWNER TO breakpad_rw;
 
 --
--- Name: reports_20110606; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110606; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE reports_20110606 (
@@ -7202,7 +7202,7 @@ INHERITS (reports);
 ALTER TABLE public.reports_20110606 OWNER TO breakpad_rw;
 
 --
--- Name: reports_20110613; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110613; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE reports_20110613 (
@@ -7214,7 +7214,7 @@ INHERITS (reports);
 ALTER TABLE public.reports_20110613 OWNER TO breakpad_rw;
 
 --
--- Name: reports_20110620; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110620; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE reports_20110620 (
@@ -7226,7 +7226,7 @@ INHERITS (reports);
 ALTER TABLE public.reports_20110620 OWNER TO breakpad_rw;
 
 --
--- Name: reports_20110627; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110627; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE reports_20110627 (
@@ -7238,7 +7238,7 @@ INHERITS (reports);
 ALTER TABLE public.reports_20110627 OWNER TO breakpad_rw;
 
 --
--- Name: reports_20110704; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110704; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE reports_20110704 (
@@ -7250,7 +7250,7 @@ INHERITS (reports);
 ALTER TABLE public.reports_20110704 OWNER TO breakpad_rw;
 
 --
--- Name: reports_20110711; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110711; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE reports_20110711 (
@@ -7262,7 +7262,7 @@ INHERITS (reports);
 ALTER TABLE public.reports_20110711 OWNER TO breakpad_rw;
 
 --
--- Name: reports_20110718; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110718; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE reports_20110718 (
@@ -7274,7 +7274,7 @@ INHERITS (reports);
 ALTER TABLE public.reports_20110718 OWNER TO breakpad_rw;
 
 --
--- Name: reports_20110725; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110725; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE reports_20110725 (
@@ -7286,7 +7286,7 @@ INHERITS (reports);
 ALTER TABLE public.reports_20110725 OWNER TO breakpad_rw;
 
 --
--- Name: reports_20110801; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110801; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE reports_20110801 (
@@ -7298,7 +7298,7 @@ INHERITS (reports);
 ALTER TABLE public.reports_20110801 OWNER TO breakpad_rw;
 
 --
--- Name: reports_20110808; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110808; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE reports_20110808 (
@@ -7310,7 +7310,7 @@ INHERITS (reports);
 ALTER TABLE public.reports_20110808 OWNER TO breakpad_rw;
 
 --
--- Name: reports_20110815; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110815; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE reports_20110815 (
@@ -7322,7 +7322,7 @@ INHERITS (reports);
 ALTER TABLE public.reports_20110815 OWNER TO breakpad_rw;
 
 --
--- Name: reports_20110822; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110822; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE reports_20110822 (
@@ -7334,7 +7334,7 @@ INHERITS (reports);
 ALTER TABLE public.reports_20110822 OWNER TO breakpad_rw;
 
 --
--- Name: reports_20110829; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110829; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE reports_20110829 (
@@ -7346,7 +7346,7 @@ INHERITS (reports);
 ALTER TABLE public.reports_20110829 OWNER TO breakpad_rw;
 
 --
--- Name: reports_20110905; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110905; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE reports_20110905 (
@@ -7358,7 +7358,7 @@ INHERITS (reports);
 ALTER TABLE public.reports_20110905 OWNER TO breakpad_rw;
 
 --
--- Name: reports_duplicates; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_duplicates; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE reports_duplicates (
@@ -7385,7 +7385,7 @@ CREATE SEQUENCE seq_reports_id
 ALTER TABLE public.seq_reports_id OWNER TO breakpad_rw;
 
 --
--- Name: sequence_numbers; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
+-- Name: sequence_numbers; Type: TABLE; Schema: public; Owner: postgres; Tablespace:
 --
 
 CREATE TABLE sequence_numbers (
@@ -7397,7 +7397,7 @@ CREATE TABLE sequence_numbers (
 ALTER TABLE public.sequence_numbers OWNER TO postgres;
 
 --
--- Name: server_status; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: server_status; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE server_status (
@@ -7436,7 +7436,7 @@ ALTER SEQUENCE server_status_id_seq OWNED BY server_status.id;
 
 
 --
--- Name: sessions; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: sessions; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE sessions (
@@ -7450,7 +7450,7 @@ CREATE TABLE sessions (
 ALTER TABLE public.sessions OWNER TO breakpad_rw;
 
 --
--- Name: signature_bugs_rollup; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: signature_bugs_rollup; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE signature_bugs_rollup (
@@ -7463,7 +7463,7 @@ CREATE TABLE signature_bugs_rollup (
 ALTER TABLE public.signature_bugs_rollup OWNER TO breakpad_rw;
 
 --
--- Name: signature_build; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: signature_build; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE signature_build (
@@ -7480,7 +7480,7 @@ CREATE TABLE signature_build (
 ALTER TABLE public.signature_build OWNER TO breakpad_rw;
 
 --
--- Name: signature_first; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: signature_first; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE signature_first (
@@ -7495,7 +7495,7 @@ CREATE TABLE signature_first (
 ALTER TABLE public.signature_first OWNER TO breakpad_rw;
 
 --
--- Name: signature_productdims; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: signature_productdims; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE signature_productdims (
@@ -7508,7 +7508,7 @@ CREATE TABLE signature_productdims (
 ALTER TABLE public.signature_productdims OWNER TO breakpad_rw;
 
 --
--- Name: signature_products; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: signature_products; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE signature_products (
@@ -7521,7 +7521,7 @@ CREATE TABLE signature_products (
 ALTER TABLE public.signature_products OWNER TO breakpad_rw;
 
 --
--- Name: signature_products_rollup; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: signature_products_rollup; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE signature_products_rollup (
@@ -7535,7 +7535,7 @@ CREATE TABLE signature_products_rollup (
 ALTER TABLE public.signature_products_rollup OWNER TO breakpad_rw;
 
 --
--- Name: signatures; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: signatures; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE signatures (
@@ -7570,7 +7570,7 @@ ALTER SEQUENCE signatures_signature_id_seq OWNED BY signatures.signature_id;
 
 
 --
--- Name: tcbs; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: tcbs; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE tcbs (
@@ -7590,7 +7590,7 @@ CREATE TABLE tcbs (
 ALTER TABLE public.tcbs OWNER TO breakpad_rw;
 
 --
--- Name: tcbs_ranking; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: tcbs_ranking; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE tcbs_ranking (
@@ -7629,7 +7629,7 @@ ALTER SEQUENCE top_crashes_by_signature_id_seq OWNED BY top_crashes_by_signature
 
 
 --
--- Name: top_crashes_by_url; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: top_crashes_by_url; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE top_crashes_by_url (
@@ -7667,7 +7667,7 @@ ALTER SEQUENCE top_crashes_by_url_id_seq OWNED BY top_crashes_by_url.id;
 
 
 --
--- Name: top_crashes_by_url_signature; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: top_crashes_by_url_signature; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE top_crashes_by_url_signature (
@@ -7680,7 +7680,7 @@ CREATE TABLE top_crashes_by_url_signature (
 ALTER TABLE public.top_crashes_by_url_signature OWNER TO breakpad_rw;
 
 --
--- Name: topcrashurlfactsreports; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: topcrashurlfactsreports; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE topcrashurlfactsreports (
@@ -7715,7 +7715,7 @@ ALTER SEQUENCE topcrashurlfactsreports_id_seq1 OWNED BY topcrashurlfactsreports.
 
 
 --
--- Name: urldims; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: urldims; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE TABLE urldims (
@@ -7861,7 +7861,7 @@ ALTER TABLE urldims ALTER COLUMN id SET DEFAULT nextval('urldims_id_seq1'::regcl
 
 
 --
--- Name: alexa_topsites_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: alexa_topsites_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY alexa_topsites
@@ -7869,7 +7869,7 @@ ALTER TABLE ONLY alexa_topsites
 
 
 --
--- Name: bug_associations_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: bug_associations_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY bug_associations
@@ -7877,7 +7877,7 @@ ALTER TABLE ONLY bug_associations
 
 
 --
--- Name: bugs_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: bugs_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY bugs
@@ -7885,7 +7885,7 @@ ALTER TABLE ONLY bugs
 
 
 --
--- Name: cronjobs_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: cronjobs_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY cronjobs
@@ -7893,7 +7893,7 @@ ALTER TABLE ONLY cronjobs
 
 
 --
--- Name: daily_crash_codes_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: daily_crash_codes_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY daily_crash_codes
@@ -7901,7 +7901,7 @@ ALTER TABLE ONLY daily_crash_codes
 
 
 --
--- Name: daily_crashes_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: daily_crashes_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY daily_crashes
@@ -7909,7 +7909,7 @@ ALTER TABLE ONLY daily_crashes
 
 
 --
--- Name: day_product_os_report_type_unique; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: day_product_os_report_type_unique; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY daily_crashes
@@ -7917,7 +7917,7 @@ ALTER TABLE ONLY daily_crashes
 
 
 --
--- Name: email_campaigns_contacts_mapping_unique; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: email_campaigns_contacts_mapping_unique; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY email_campaigns_contacts
@@ -7925,7 +7925,7 @@ ALTER TABLE ONLY email_campaigns_contacts
 
 
 --
--- Name: email_campaigns_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: email_campaigns_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY email_campaigns
@@ -7933,7 +7933,7 @@ ALTER TABLE ONLY email_campaigns
 
 
 --
--- Name: email_contacts_email_unique; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: email_contacts_email_unique; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY email_contacts
@@ -7941,7 +7941,7 @@ ALTER TABLE ONLY email_contacts
 
 
 --
--- Name: email_contacts_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: email_contacts_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY email_contacts
@@ -7949,7 +7949,7 @@ ALTER TABLE ONLY email_contacts
 
 
 --
--- Name: email_contacts_token_unique; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: email_contacts_token_unique; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY email_contacts
@@ -7957,7 +7957,7 @@ ALTER TABLE ONLY email_contacts
 
 
 --
--- Name: extensions_20100607_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20100607_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY extensions_20100607
@@ -7965,7 +7965,7 @@ ALTER TABLE ONLY extensions_20100607
 
 
 --
--- Name: extensions_20100614_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20100614_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY extensions_20100614
@@ -7973,7 +7973,7 @@ ALTER TABLE ONLY extensions_20100614
 
 
 --
--- Name: extensions_20100621_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20100621_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY extensions_20100621
@@ -7981,7 +7981,7 @@ ALTER TABLE ONLY extensions_20100621
 
 
 --
--- Name: extensions_20100628_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20100628_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY extensions_20100628
@@ -7989,7 +7989,7 @@ ALTER TABLE ONLY extensions_20100628
 
 
 --
--- Name: extensions_20100705_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20100705_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY extensions_20100705
@@ -7997,7 +7997,7 @@ ALTER TABLE ONLY extensions_20100705
 
 
 --
--- Name: extensions_20100712_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20100712_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY extensions_20100712
@@ -8005,7 +8005,7 @@ ALTER TABLE ONLY extensions_20100712
 
 
 --
--- Name: extensions_20100719_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20100719_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY extensions_20100719
@@ -8013,7 +8013,7 @@ ALTER TABLE ONLY extensions_20100719
 
 
 --
--- Name: extensions_20100726_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20100726_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY extensions_20100726
@@ -8021,7 +8021,7 @@ ALTER TABLE ONLY extensions_20100726
 
 
 --
--- Name: extensions_20100802_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20100802_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY extensions_20100802
@@ -8029,7 +8029,7 @@ ALTER TABLE ONLY extensions_20100802
 
 
 --
--- Name: extensions_20100809_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20100809_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY extensions_20100809
@@ -8037,7 +8037,7 @@ ALTER TABLE ONLY extensions_20100809
 
 
 --
--- Name: extensions_20100816_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20100816_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY extensions_20100816
@@ -8045,7 +8045,7 @@ ALTER TABLE ONLY extensions_20100816
 
 
 --
--- Name: extensions_20100823_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20100823_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY extensions_20100823
@@ -8053,7 +8053,7 @@ ALTER TABLE ONLY extensions_20100823
 
 
 --
--- Name: extensions_20100830_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20100830_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY extensions_20100830
@@ -8061,7 +8061,7 @@ ALTER TABLE ONLY extensions_20100830
 
 
 --
--- Name: extensions_20100906_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20100906_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY extensions_20100906
@@ -8069,7 +8069,7 @@ ALTER TABLE ONLY extensions_20100906
 
 
 --
--- Name: extensions_20100913_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20100913_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY extensions_20100913
@@ -8077,7 +8077,7 @@ ALTER TABLE ONLY extensions_20100913
 
 
 --
--- Name: extensions_20100920_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20100920_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY extensions_20100920
@@ -8085,7 +8085,7 @@ ALTER TABLE ONLY extensions_20100920
 
 
 --
--- Name: extensions_20100927_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20100927_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY extensions_20100927
@@ -8093,7 +8093,7 @@ ALTER TABLE ONLY extensions_20100927
 
 
 --
--- Name: extensions_20101004_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20101004_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY extensions_20101004
@@ -8101,7 +8101,7 @@ ALTER TABLE ONLY extensions_20101004
 
 
 --
--- Name: extensions_20101011_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20101011_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY extensions_20101011
@@ -8109,7 +8109,7 @@ ALTER TABLE ONLY extensions_20101011
 
 
 --
--- Name: extensions_20101018_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20101018_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY extensions_20101018
@@ -8117,7 +8117,7 @@ ALTER TABLE ONLY extensions_20101018
 
 
 --
--- Name: extensions_20101025_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20101025_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY extensions_20101025
@@ -8125,7 +8125,7 @@ ALTER TABLE ONLY extensions_20101025
 
 
 --
--- Name: extensions_20101101_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20101101_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY extensions_20101101
@@ -8133,7 +8133,7 @@ ALTER TABLE ONLY extensions_20101101
 
 
 --
--- Name: extensions_20101108_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20101108_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY extensions_20101108
@@ -8141,7 +8141,7 @@ ALTER TABLE ONLY extensions_20101108
 
 
 --
--- Name: extensions_20101115_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20101115_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY extensions_20101115
@@ -8149,7 +8149,7 @@ ALTER TABLE ONLY extensions_20101115
 
 
 --
--- Name: extensions_20101122_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20101122_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY extensions_20101122
@@ -8157,7 +8157,7 @@ ALTER TABLE ONLY extensions_20101122
 
 
 --
--- Name: extensions_20101129_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20101129_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY extensions_20101129
@@ -8165,7 +8165,7 @@ ALTER TABLE ONLY extensions_20101129
 
 
 --
--- Name: extensions_20101206_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20101206_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY extensions_20101206
@@ -8173,7 +8173,7 @@ ALTER TABLE ONLY extensions_20101206
 
 
 --
--- Name: extensions_20101213_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20101213_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY extensions_20101213
@@ -8181,7 +8181,7 @@ ALTER TABLE ONLY extensions_20101213
 
 
 --
--- Name: extensions_20101220_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20101220_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY extensions_20101220
@@ -8189,7 +8189,7 @@ ALTER TABLE ONLY extensions_20101220
 
 
 --
--- Name: extensions_20101227_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20101227_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY extensions_20101227
@@ -8197,7 +8197,7 @@ ALTER TABLE ONLY extensions_20101227
 
 
 --
--- Name: extensions_20110103_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110103_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY extensions_20110103
@@ -8205,7 +8205,7 @@ ALTER TABLE ONLY extensions_20110103
 
 
 --
--- Name: extensions_20110110_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110110_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY extensions_20110110
@@ -8213,7 +8213,7 @@ ALTER TABLE ONLY extensions_20110110
 
 
 --
--- Name: extensions_20110117_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110117_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY extensions_20110117
@@ -8221,7 +8221,7 @@ ALTER TABLE ONLY extensions_20110117
 
 
 --
--- Name: extensions_20110124_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110124_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY extensions_20110124
@@ -8229,7 +8229,7 @@ ALTER TABLE ONLY extensions_20110124
 
 
 --
--- Name: extensions_20110131_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110131_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY extensions_20110131
@@ -8237,7 +8237,7 @@ ALTER TABLE ONLY extensions_20110131
 
 
 --
--- Name: extensions_20110207_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110207_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY extensions_20110207
@@ -8245,7 +8245,7 @@ ALTER TABLE ONLY extensions_20110207
 
 
 --
--- Name: extensions_20110214_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110214_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY extensions_20110214
@@ -8253,7 +8253,7 @@ ALTER TABLE ONLY extensions_20110214
 
 
 --
--- Name: extensions_20110221_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110221_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY extensions_20110221
@@ -8261,7 +8261,7 @@ ALTER TABLE ONLY extensions_20110221
 
 
 --
--- Name: extensions_20110228_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110228_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY extensions_20110228
@@ -8269,7 +8269,7 @@ ALTER TABLE ONLY extensions_20110228
 
 
 --
--- Name: extensions_20110307_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110307_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY extensions_20110307
@@ -8277,7 +8277,7 @@ ALTER TABLE ONLY extensions_20110307
 
 
 --
--- Name: extensions_20110314_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110314_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY extensions_20110314
@@ -8285,7 +8285,7 @@ ALTER TABLE ONLY extensions_20110314
 
 
 --
--- Name: extensions_20110321_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110321_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY extensions_20110321
@@ -8293,7 +8293,7 @@ ALTER TABLE ONLY extensions_20110321
 
 
 --
--- Name: extensions_20110328_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110328_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY extensions_20110328
@@ -8301,7 +8301,7 @@ ALTER TABLE ONLY extensions_20110328
 
 
 --
--- Name: extensions_20110404_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110404_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY extensions_20110404
@@ -8309,7 +8309,7 @@ ALTER TABLE ONLY extensions_20110404
 
 
 --
--- Name: extensions_20110411_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110411_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY extensions_20110411
@@ -8317,7 +8317,7 @@ ALTER TABLE ONLY extensions_20110411
 
 
 --
--- Name: extensions_20110418_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110418_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY extensions_20110418
@@ -8325,7 +8325,7 @@ ALTER TABLE ONLY extensions_20110418
 
 
 --
--- Name: extensions_20110425_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110425_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY extensions_20110425
@@ -8333,7 +8333,7 @@ ALTER TABLE ONLY extensions_20110425
 
 
 --
--- Name: extensions_20110502_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110502_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY extensions_20110502
@@ -8341,7 +8341,7 @@ ALTER TABLE ONLY extensions_20110502
 
 
 --
--- Name: extensions_20110509_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110509_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY extensions_20110509
@@ -8349,7 +8349,7 @@ ALTER TABLE ONLY extensions_20110509
 
 
 --
--- Name: extensions_20110516_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110516_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY extensions_20110516
@@ -8357,7 +8357,7 @@ ALTER TABLE ONLY extensions_20110516
 
 
 --
--- Name: extensions_20110523_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110523_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY extensions_20110523
@@ -8365,7 +8365,7 @@ ALTER TABLE ONLY extensions_20110523
 
 
 --
--- Name: extensions_20110530_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110530_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY extensions_20110530
@@ -8373,7 +8373,7 @@ ALTER TABLE ONLY extensions_20110530
 
 
 --
--- Name: extensions_20110606_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110606_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY extensions_20110606
@@ -8381,7 +8381,7 @@ ALTER TABLE ONLY extensions_20110606
 
 
 --
--- Name: extensions_20110613_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110613_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY extensions_20110613
@@ -8389,7 +8389,7 @@ ALTER TABLE ONLY extensions_20110613
 
 
 --
--- Name: extensions_20110620_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110620_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY extensions_20110620
@@ -8397,7 +8397,7 @@ ALTER TABLE ONLY extensions_20110620
 
 
 --
--- Name: extensions_20110627_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110627_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY extensions_20110627
@@ -8405,7 +8405,7 @@ ALTER TABLE ONLY extensions_20110627
 
 
 --
--- Name: extensions_20110704_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110704_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY extensions_20110704
@@ -8413,7 +8413,7 @@ ALTER TABLE ONLY extensions_20110704
 
 
 --
--- Name: extensions_20110711_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110711_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY extensions_20110711
@@ -8421,7 +8421,7 @@ ALTER TABLE ONLY extensions_20110711
 
 
 --
--- Name: extensions_20110718_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110718_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY extensions_20110718
@@ -8429,7 +8429,7 @@ ALTER TABLE ONLY extensions_20110718
 
 
 --
--- Name: extensions_20110725_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110725_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY extensions_20110725
@@ -8437,7 +8437,7 @@ ALTER TABLE ONLY extensions_20110725
 
 
 --
--- Name: extensions_20110801_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110801_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY extensions_20110801
@@ -8445,7 +8445,7 @@ ALTER TABLE ONLY extensions_20110801
 
 
 --
--- Name: extensions_20110808_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110808_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY extensions_20110808
@@ -8453,7 +8453,7 @@ ALTER TABLE ONLY extensions_20110808
 
 
 --
--- Name: extensions_20110815_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110815_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY extensions_20110815
@@ -8461,7 +8461,7 @@ ALTER TABLE ONLY extensions_20110815
 
 
 --
--- Name: extensions_20110822_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110822_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY extensions_20110822
@@ -8469,7 +8469,7 @@ ALTER TABLE ONLY extensions_20110822
 
 
 --
--- Name: extensions_20110829_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110829_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY extensions_20110829
@@ -8477,7 +8477,7 @@ ALTER TABLE ONLY extensions_20110829
 
 
 --
--- Name: extensions_20110905_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110905_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY extensions_20110905
@@ -8485,7 +8485,7 @@ ALTER TABLE ONLY extensions_20110905
 
 
 --
--- Name: filename_name_key; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: filename_name_key; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY plugins
@@ -8493,7 +8493,7 @@ ALTER TABLE ONLY plugins
 
 
 --
--- Name: frames_20100607_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20100607_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY frames_20100607
@@ -8501,7 +8501,7 @@ ALTER TABLE ONLY frames_20100607
 
 
 --
--- Name: frames_20100614_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20100614_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY frames_20100614
@@ -8509,7 +8509,7 @@ ALTER TABLE ONLY frames_20100614
 
 
 --
--- Name: frames_20100621_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20100621_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY frames_20100621
@@ -8517,7 +8517,7 @@ ALTER TABLE ONLY frames_20100621
 
 
 --
--- Name: frames_20100628_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20100628_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY frames_20100628
@@ -8525,7 +8525,7 @@ ALTER TABLE ONLY frames_20100628
 
 
 --
--- Name: frames_20100705_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20100705_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY frames_20100705
@@ -8533,7 +8533,7 @@ ALTER TABLE ONLY frames_20100705
 
 
 --
--- Name: frames_20100712_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20100712_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY frames_20100712
@@ -8541,7 +8541,7 @@ ALTER TABLE ONLY frames_20100712
 
 
 --
--- Name: frames_20100719_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20100719_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY frames_20100719
@@ -8549,7 +8549,7 @@ ALTER TABLE ONLY frames_20100719
 
 
 --
--- Name: frames_20100726_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20100726_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY frames_20100726
@@ -8557,7 +8557,7 @@ ALTER TABLE ONLY frames_20100726
 
 
 --
--- Name: frames_20100802_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20100802_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY frames_20100802
@@ -8565,7 +8565,7 @@ ALTER TABLE ONLY frames_20100802
 
 
 --
--- Name: frames_20100809_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20100809_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY frames_20100809
@@ -8573,7 +8573,7 @@ ALTER TABLE ONLY frames_20100809
 
 
 --
--- Name: frames_20100816_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20100816_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY frames_20100816
@@ -8581,7 +8581,7 @@ ALTER TABLE ONLY frames_20100816
 
 
 --
--- Name: frames_20100823_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20100823_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY frames_20100823
@@ -8589,7 +8589,7 @@ ALTER TABLE ONLY frames_20100823
 
 
 --
--- Name: frames_20100830_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20100830_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY frames_20100830
@@ -8597,7 +8597,7 @@ ALTER TABLE ONLY frames_20100830
 
 
 --
--- Name: frames_20100906_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20100906_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY frames_20100906
@@ -8605,7 +8605,7 @@ ALTER TABLE ONLY frames_20100906
 
 
 --
--- Name: frames_20100913_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20100913_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY frames_20100913
@@ -8613,7 +8613,7 @@ ALTER TABLE ONLY frames_20100913
 
 
 --
--- Name: frames_20100920_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20100920_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY frames_20100920
@@ -8621,7 +8621,7 @@ ALTER TABLE ONLY frames_20100920
 
 
 --
--- Name: frames_20100927_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20100927_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY frames_20100927
@@ -8629,7 +8629,7 @@ ALTER TABLE ONLY frames_20100927
 
 
 --
--- Name: frames_20101004_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20101004_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY frames_20101004
@@ -8637,7 +8637,7 @@ ALTER TABLE ONLY frames_20101004
 
 
 --
--- Name: frames_20101011_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20101011_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY frames_20101011
@@ -8645,7 +8645,7 @@ ALTER TABLE ONLY frames_20101011
 
 
 --
--- Name: frames_20101018_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20101018_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY frames_20101018
@@ -8653,7 +8653,7 @@ ALTER TABLE ONLY frames_20101018
 
 
 --
--- Name: frames_20101025_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20101025_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY frames_20101025
@@ -8661,7 +8661,7 @@ ALTER TABLE ONLY frames_20101025
 
 
 --
--- Name: frames_20101101_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20101101_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY frames_20101101
@@ -8669,7 +8669,7 @@ ALTER TABLE ONLY frames_20101101
 
 
 --
--- Name: frames_20101108_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20101108_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY frames_20101108
@@ -8677,7 +8677,7 @@ ALTER TABLE ONLY frames_20101108
 
 
 --
--- Name: frames_20101115_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20101115_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY frames_20101115
@@ -8685,7 +8685,7 @@ ALTER TABLE ONLY frames_20101115
 
 
 --
--- Name: frames_20101122_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20101122_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY frames_20101122
@@ -8693,7 +8693,7 @@ ALTER TABLE ONLY frames_20101122
 
 
 --
--- Name: frames_20101129_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20101129_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY frames_20101129
@@ -8701,7 +8701,7 @@ ALTER TABLE ONLY frames_20101129
 
 
 --
--- Name: frames_20101206_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20101206_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY frames_20101206
@@ -8709,7 +8709,7 @@ ALTER TABLE ONLY frames_20101206
 
 
 --
--- Name: frames_20101213_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20101213_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY frames_20101213
@@ -8717,7 +8717,7 @@ ALTER TABLE ONLY frames_20101213
 
 
 --
--- Name: frames_20101220_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20101220_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY frames_20101220
@@ -8725,7 +8725,7 @@ ALTER TABLE ONLY frames_20101220
 
 
 --
--- Name: frames_20101227_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20101227_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY frames_20101227
@@ -8733,7 +8733,7 @@ ALTER TABLE ONLY frames_20101227
 
 
 --
--- Name: frames_20110103_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110103_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY frames_20110103
@@ -8741,7 +8741,7 @@ ALTER TABLE ONLY frames_20110103
 
 
 --
--- Name: frames_20110110_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110110_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY frames_20110110
@@ -8749,7 +8749,7 @@ ALTER TABLE ONLY frames_20110110
 
 
 --
--- Name: frames_20110117_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110117_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY frames_20110117
@@ -8757,7 +8757,7 @@ ALTER TABLE ONLY frames_20110117
 
 
 --
--- Name: frames_20110124_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110124_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY frames_20110124
@@ -8765,7 +8765,7 @@ ALTER TABLE ONLY frames_20110124
 
 
 --
--- Name: frames_20110131_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110131_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY frames_20110131
@@ -8773,7 +8773,7 @@ ALTER TABLE ONLY frames_20110131
 
 
 --
--- Name: frames_20110207_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110207_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY frames_20110207
@@ -8781,7 +8781,7 @@ ALTER TABLE ONLY frames_20110207
 
 
 --
--- Name: frames_20110214_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110214_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY frames_20110214
@@ -8789,7 +8789,7 @@ ALTER TABLE ONLY frames_20110214
 
 
 --
--- Name: frames_20110221_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110221_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY frames_20110221
@@ -8797,7 +8797,7 @@ ALTER TABLE ONLY frames_20110221
 
 
 --
--- Name: frames_20110228_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110228_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY frames_20110228
@@ -8805,7 +8805,7 @@ ALTER TABLE ONLY frames_20110228
 
 
 --
--- Name: frames_20110307_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110307_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY frames_20110307
@@ -8813,7 +8813,7 @@ ALTER TABLE ONLY frames_20110307
 
 
 --
--- Name: frames_20110314_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110314_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY frames_20110314
@@ -8821,7 +8821,7 @@ ALTER TABLE ONLY frames_20110314
 
 
 --
--- Name: frames_20110321_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110321_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY frames_20110321
@@ -8829,7 +8829,7 @@ ALTER TABLE ONLY frames_20110321
 
 
 --
--- Name: frames_20110328_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110328_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY frames_20110328
@@ -8837,7 +8837,7 @@ ALTER TABLE ONLY frames_20110328
 
 
 --
--- Name: frames_20110404_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110404_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY frames_20110404
@@ -8845,7 +8845,7 @@ ALTER TABLE ONLY frames_20110404
 
 
 --
--- Name: frames_20110411_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110411_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY frames_20110411
@@ -8853,7 +8853,7 @@ ALTER TABLE ONLY frames_20110411
 
 
 --
--- Name: frames_20110418_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110418_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY frames_20110418
@@ -8861,7 +8861,7 @@ ALTER TABLE ONLY frames_20110418
 
 
 --
--- Name: frames_20110425_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110425_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY frames_20110425
@@ -8869,7 +8869,7 @@ ALTER TABLE ONLY frames_20110425
 
 
 --
--- Name: frames_20110502_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110502_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY frames_20110502
@@ -8877,7 +8877,7 @@ ALTER TABLE ONLY frames_20110502
 
 
 --
--- Name: frames_20110509_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110509_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY frames_20110509
@@ -8885,7 +8885,7 @@ ALTER TABLE ONLY frames_20110509
 
 
 --
--- Name: frames_20110516_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110516_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY frames_20110516
@@ -8893,7 +8893,7 @@ ALTER TABLE ONLY frames_20110516
 
 
 --
--- Name: frames_20110523_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110523_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY frames_20110523
@@ -8901,7 +8901,7 @@ ALTER TABLE ONLY frames_20110523
 
 
 --
--- Name: frames_20110530_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110530_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY frames_20110530
@@ -8909,7 +8909,7 @@ ALTER TABLE ONLY frames_20110530
 
 
 --
--- Name: frames_20110606_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110606_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY frames_20110606
@@ -8917,7 +8917,7 @@ ALTER TABLE ONLY frames_20110606
 
 
 --
--- Name: frames_20110613_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110613_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY frames_20110613
@@ -8925,7 +8925,7 @@ ALTER TABLE ONLY frames_20110613
 
 
 --
--- Name: frames_20110620_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110620_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY frames_20110620
@@ -8933,7 +8933,7 @@ ALTER TABLE ONLY frames_20110620
 
 
 --
--- Name: frames_20110627_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110627_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY frames_20110627
@@ -8941,7 +8941,7 @@ ALTER TABLE ONLY frames_20110627
 
 
 --
--- Name: frames_20110704_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110704_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY frames_20110704
@@ -8949,7 +8949,7 @@ ALTER TABLE ONLY frames_20110704
 
 
 --
--- Name: frames_20110711_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110711_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY frames_20110711
@@ -8957,7 +8957,7 @@ ALTER TABLE ONLY frames_20110711
 
 
 --
--- Name: frames_20110718_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110718_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY frames_20110718
@@ -8965,7 +8965,7 @@ ALTER TABLE ONLY frames_20110718
 
 
 --
--- Name: frames_20110725_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110725_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY frames_20110725
@@ -8973,7 +8973,7 @@ ALTER TABLE ONLY frames_20110725
 
 
 --
--- Name: frames_20110801_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110801_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY frames_20110801
@@ -8981,7 +8981,7 @@ ALTER TABLE ONLY frames_20110801
 
 
 --
--- Name: frames_20110808_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110808_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY frames_20110808
@@ -8989,7 +8989,7 @@ ALTER TABLE ONLY frames_20110808
 
 
 --
--- Name: frames_20110815_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110815_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY frames_20110815
@@ -8997,7 +8997,7 @@ ALTER TABLE ONLY frames_20110815
 
 
 --
--- Name: frames_20110822_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110822_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY frames_20110822
@@ -9005,7 +9005,7 @@ ALTER TABLE ONLY frames_20110822
 
 
 --
--- Name: frames_20110829_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110829_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY frames_20110829
@@ -9013,7 +9013,7 @@ ALTER TABLE ONLY frames_20110829
 
 
 --
--- Name: frames_20110905_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110905_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY frames_20110905
@@ -9021,7 +9021,7 @@ ALTER TABLE ONLY frames_20110905
 
 
 --
--- Name: jobs_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: jobs_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY jobs
@@ -9029,7 +9029,7 @@ ALTER TABLE ONLY jobs
 
 
 --
--- Name: jobs_uuid_key; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: jobs_uuid_key; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY jobs
@@ -9037,7 +9037,7 @@ ALTER TABLE ONLY jobs
 
 
 --
--- Name: os_name_matches_key; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: os_name_matches_key; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY os_name_matches
@@ -9045,7 +9045,7 @@ ALTER TABLE ONLY os_name_matches
 
 
 --
--- Name: os_names_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: os_names_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY os_names
@@ -9053,7 +9053,7 @@ ALTER TABLE ONLY os_names
 
 
 --
--- Name: os_versions_key; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: os_versions_key; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY os_versions
@@ -9061,7 +9061,7 @@ ALTER TABLE ONLY os_versions
 
 
 --
--- Name: os_versions_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: os_versions_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY os_versions
@@ -9069,7 +9069,7 @@ ALTER TABLE ONLY os_versions
 
 
 --
--- Name: osdims_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: osdims_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY osdims
@@ -9077,7 +9077,7 @@ ALTER TABLE ONLY osdims
 
 
 --
--- Name: plugins_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY plugins
@@ -9085,7 +9085,7 @@ ALTER TABLE ONLY plugins
 
 
 --
--- Name: plugins_reports_20100607_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20100607_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY plugins_reports_20100607
@@ -9093,7 +9093,7 @@ ALTER TABLE ONLY plugins_reports_20100607
 
 
 --
--- Name: plugins_reports_20100614_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20100614_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY plugins_reports_20100614
@@ -9101,7 +9101,7 @@ ALTER TABLE ONLY plugins_reports_20100614
 
 
 --
--- Name: plugins_reports_20100621_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20100621_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY plugins_reports_20100621
@@ -9109,7 +9109,7 @@ ALTER TABLE ONLY plugins_reports_20100621
 
 
 --
--- Name: plugins_reports_20100628_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20100628_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY plugins_reports_20100628
@@ -9117,7 +9117,7 @@ ALTER TABLE ONLY plugins_reports_20100628
 
 
 --
--- Name: plugins_reports_20100705_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20100705_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY plugins_reports_20100705
@@ -9125,7 +9125,7 @@ ALTER TABLE ONLY plugins_reports_20100705
 
 
 --
--- Name: plugins_reports_20100712_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20100712_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY plugins_reports_20100712
@@ -9133,7 +9133,7 @@ ALTER TABLE ONLY plugins_reports_20100712
 
 
 --
--- Name: plugins_reports_20100719_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20100719_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY plugins_reports_20100719
@@ -9141,7 +9141,7 @@ ALTER TABLE ONLY plugins_reports_20100719
 
 
 --
--- Name: plugins_reports_20100726_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20100726_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY plugins_reports_20100726
@@ -9149,7 +9149,7 @@ ALTER TABLE ONLY plugins_reports_20100726
 
 
 --
--- Name: plugins_reports_20100802_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20100802_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY plugins_reports_20100802
@@ -9157,7 +9157,7 @@ ALTER TABLE ONLY plugins_reports_20100802
 
 
 --
--- Name: plugins_reports_20100809_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20100809_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY plugins_reports_20100809
@@ -9165,7 +9165,7 @@ ALTER TABLE ONLY plugins_reports_20100809
 
 
 --
--- Name: plugins_reports_20100816_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20100816_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY plugins_reports_20100816
@@ -9173,7 +9173,7 @@ ALTER TABLE ONLY plugins_reports_20100816
 
 
 --
--- Name: plugins_reports_20100823_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20100823_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY plugins_reports_20100823
@@ -9181,7 +9181,7 @@ ALTER TABLE ONLY plugins_reports_20100823
 
 
 --
--- Name: plugins_reports_20100830_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20100830_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY plugins_reports_20100830
@@ -9189,7 +9189,7 @@ ALTER TABLE ONLY plugins_reports_20100830
 
 
 --
--- Name: plugins_reports_20100906_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20100906_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY plugins_reports_20100906
@@ -9197,7 +9197,7 @@ ALTER TABLE ONLY plugins_reports_20100906
 
 
 --
--- Name: plugins_reports_20100913_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20100913_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY plugins_reports_20100913
@@ -9205,7 +9205,7 @@ ALTER TABLE ONLY plugins_reports_20100913
 
 
 --
--- Name: plugins_reports_20100920_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20100920_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY plugins_reports_20100920
@@ -9213,7 +9213,7 @@ ALTER TABLE ONLY plugins_reports_20100920
 
 
 --
--- Name: plugins_reports_20100927_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20100927_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY plugins_reports_20100927
@@ -9221,7 +9221,7 @@ ALTER TABLE ONLY plugins_reports_20100927
 
 
 --
--- Name: plugins_reports_20101004_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20101004_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY plugins_reports_20101004
@@ -9229,7 +9229,7 @@ ALTER TABLE ONLY plugins_reports_20101004
 
 
 --
--- Name: plugins_reports_20101011_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20101011_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY plugins_reports_20101011
@@ -9237,7 +9237,7 @@ ALTER TABLE ONLY plugins_reports_20101011
 
 
 --
--- Name: plugins_reports_20101018_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20101018_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY plugins_reports_20101018
@@ -9245,7 +9245,7 @@ ALTER TABLE ONLY plugins_reports_20101018
 
 
 --
--- Name: plugins_reports_20101025_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20101025_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY plugins_reports_20101025
@@ -9253,7 +9253,7 @@ ALTER TABLE ONLY plugins_reports_20101025
 
 
 --
--- Name: plugins_reports_20101101_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20101101_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY plugins_reports_20101101
@@ -9261,7 +9261,7 @@ ALTER TABLE ONLY plugins_reports_20101101
 
 
 --
--- Name: plugins_reports_20101108_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20101108_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY plugins_reports_20101108
@@ -9269,7 +9269,7 @@ ALTER TABLE ONLY plugins_reports_20101108
 
 
 --
--- Name: plugins_reports_20101115_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20101115_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY plugins_reports_20101115
@@ -9277,7 +9277,7 @@ ALTER TABLE ONLY plugins_reports_20101115
 
 
 --
--- Name: plugins_reports_20101122_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20101122_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY plugins_reports_20101122
@@ -9285,7 +9285,7 @@ ALTER TABLE ONLY plugins_reports_20101122
 
 
 --
--- Name: plugins_reports_20101129_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20101129_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY plugins_reports_20101129
@@ -9293,7 +9293,7 @@ ALTER TABLE ONLY plugins_reports_20101129
 
 
 --
--- Name: plugins_reports_20101206_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20101206_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY plugins_reports_20101206
@@ -9301,7 +9301,7 @@ ALTER TABLE ONLY plugins_reports_20101206
 
 
 --
--- Name: plugins_reports_20101213_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20101213_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY plugins_reports_20101213
@@ -9309,7 +9309,7 @@ ALTER TABLE ONLY plugins_reports_20101213
 
 
 --
--- Name: plugins_reports_20101220_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20101220_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY plugins_reports_20101220
@@ -9317,7 +9317,7 @@ ALTER TABLE ONLY plugins_reports_20101220
 
 
 --
--- Name: plugins_reports_20101227_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20101227_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY plugins_reports_20101227
@@ -9325,7 +9325,7 @@ ALTER TABLE ONLY plugins_reports_20101227
 
 
 --
--- Name: plugins_reports_20110103_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110103_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY plugins_reports_20110103
@@ -9333,7 +9333,7 @@ ALTER TABLE ONLY plugins_reports_20110103
 
 
 --
--- Name: plugins_reports_20110110_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110110_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY plugins_reports_20110110
@@ -9341,7 +9341,7 @@ ALTER TABLE ONLY plugins_reports_20110110
 
 
 --
--- Name: plugins_reports_20110117_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110117_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY plugins_reports_20110117
@@ -9349,7 +9349,7 @@ ALTER TABLE ONLY plugins_reports_20110117
 
 
 --
--- Name: plugins_reports_20110124_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110124_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY plugins_reports_20110124
@@ -9357,7 +9357,7 @@ ALTER TABLE ONLY plugins_reports_20110124
 
 
 --
--- Name: plugins_reports_20110131_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110131_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY plugins_reports_20110131
@@ -9365,7 +9365,7 @@ ALTER TABLE ONLY plugins_reports_20110131
 
 
 --
--- Name: plugins_reports_20110207_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110207_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY plugins_reports_20110207
@@ -9373,7 +9373,7 @@ ALTER TABLE ONLY plugins_reports_20110207
 
 
 --
--- Name: plugins_reports_20110214_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110214_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY plugins_reports_20110214
@@ -9381,7 +9381,7 @@ ALTER TABLE ONLY plugins_reports_20110214
 
 
 --
--- Name: plugins_reports_20110221_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110221_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY plugins_reports_20110221
@@ -9389,7 +9389,7 @@ ALTER TABLE ONLY plugins_reports_20110221
 
 
 --
--- Name: plugins_reports_20110228_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110228_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY plugins_reports_20110228
@@ -9397,7 +9397,7 @@ ALTER TABLE ONLY plugins_reports_20110228
 
 
 --
--- Name: plugins_reports_20110307_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110307_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY plugins_reports_20110307
@@ -9405,7 +9405,7 @@ ALTER TABLE ONLY plugins_reports_20110307
 
 
 --
--- Name: plugins_reports_20110314_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110314_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY plugins_reports_20110314
@@ -9413,7 +9413,7 @@ ALTER TABLE ONLY plugins_reports_20110314
 
 
 --
--- Name: plugins_reports_20110321_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110321_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY plugins_reports_20110321
@@ -9421,7 +9421,7 @@ ALTER TABLE ONLY plugins_reports_20110321
 
 
 --
--- Name: plugins_reports_20110328_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110328_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY plugins_reports_20110328
@@ -9429,7 +9429,7 @@ ALTER TABLE ONLY plugins_reports_20110328
 
 
 --
--- Name: plugins_reports_20110404_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110404_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY plugins_reports_20110404
@@ -9437,7 +9437,7 @@ ALTER TABLE ONLY plugins_reports_20110404
 
 
 --
--- Name: plugins_reports_20110411_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110411_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY plugins_reports_20110411
@@ -9445,7 +9445,7 @@ ALTER TABLE ONLY plugins_reports_20110411
 
 
 --
--- Name: plugins_reports_20110418_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110418_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY plugins_reports_20110418
@@ -9453,7 +9453,7 @@ ALTER TABLE ONLY plugins_reports_20110418
 
 
 --
--- Name: plugins_reports_20110425_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110425_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY plugins_reports_20110425
@@ -9461,7 +9461,7 @@ ALTER TABLE ONLY plugins_reports_20110425
 
 
 --
--- Name: plugins_reports_20110502_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110502_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY plugins_reports_20110502
@@ -9469,7 +9469,7 @@ ALTER TABLE ONLY plugins_reports_20110502
 
 
 --
--- Name: plugins_reports_20110509_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110509_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY plugins_reports_20110509
@@ -9477,7 +9477,7 @@ ALTER TABLE ONLY plugins_reports_20110509
 
 
 --
--- Name: plugins_reports_20110516_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110516_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY plugins_reports_20110516
@@ -9485,7 +9485,7 @@ ALTER TABLE ONLY plugins_reports_20110516
 
 
 --
--- Name: plugins_reports_20110523_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110523_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY plugins_reports_20110523
@@ -9493,7 +9493,7 @@ ALTER TABLE ONLY plugins_reports_20110523
 
 
 --
--- Name: plugins_reports_20110530_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110530_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY plugins_reports_20110530
@@ -9501,7 +9501,7 @@ ALTER TABLE ONLY plugins_reports_20110530
 
 
 --
--- Name: plugins_reports_20110606_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110606_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY plugins_reports_20110606
@@ -9509,7 +9509,7 @@ ALTER TABLE ONLY plugins_reports_20110606
 
 
 --
--- Name: plugins_reports_20110613_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110613_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY plugins_reports_20110613
@@ -9517,7 +9517,7 @@ ALTER TABLE ONLY plugins_reports_20110613
 
 
 --
--- Name: plugins_reports_20110620_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110620_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY plugins_reports_20110620
@@ -9525,7 +9525,7 @@ ALTER TABLE ONLY plugins_reports_20110620
 
 
 --
--- Name: plugins_reports_20110627_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110627_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY plugins_reports_20110627
@@ -9533,7 +9533,7 @@ ALTER TABLE ONLY plugins_reports_20110627
 
 
 --
--- Name: plugins_reports_20110704_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110704_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY plugins_reports_20110704
@@ -9541,7 +9541,7 @@ ALTER TABLE ONLY plugins_reports_20110704
 
 
 --
--- Name: plugins_reports_20110711_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110711_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY plugins_reports_20110711
@@ -9549,7 +9549,7 @@ ALTER TABLE ONLY plugins_reports_20110711
 
 
 --
--- Name: plugins_reports_20110718_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110718_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY plugins_reports_20110718
@@ -9557,7 +9557,7 @@ ALTER TABLE ONLY plugins_reports_20110718
 
 
 --
--- Name: plugins_reports_20110725_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110725_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY plugins_reports_20110725
@@ -9565,7 +9565,7 @@ ALTER TABLE ONLY plugins_reports_20110725
 
 
 --
--- Name: plugins_reports_20110801_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110801_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY plugins_reports_20110801
@@ -9573,7 +9573,7 @@ ALTER TABLE ONLY plugins_reports_20110801
 
 
 --
--- Name: plugins_reports_20110808_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110808_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY plugins_reports_20110808
@@ -9581,7 +9581,7 @@ ALTER TABLE ONLY plugins_reports_20110808
 
 
 --
--- Name: plugins_reports_20110815_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110815_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY plugins_reports_20110815
@@ -9589,7 +9589,7 @@ ALTER TABLE ONLY plugins_reports_20110815
 
 
 --
--- Name: plugins_reports_20110822_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110822_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY plugins_reports_20110822
@@ -9597,7 +9597,7 @@ ALTER TABLE ONLY plugins_reports_20110822
 
 
 --
--- Name: plugins_reports_20110829_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110829_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY plugins_reports_20110829
@@ -9605,7 +9605,7 @@ ALTER TABLE ONLY plugins_reports_20110829
 
 
 --
--- Name: priority_jobs_1445_pkey; Type: CONSTRAINT; Schema: public; Owner: processor; Tablespace: 
+-- Name: priority_jobs_1445_pkey; Type: CONSTRAINT; Schema: public; Owner: processor; Tablespace:
 --
 
 ALTER TABLE ONLY priority_jobs_1445
@@ -9613,7 +9613,7 @@ ALTER TABLE ONLY priority_jobs_1445
 
 
 --
--- Name: priority_jobs_1447_pkey; Type: CONSTRAINT; Schema: public; Owner: processor; Tablespace: 
+-- Name: priority_jobs_1447_pkey; Type: CONSTRAINT; Schema: public; Owner: processor; Tablespace:
 --
 
 ALTER TABLE ONLY priority_jobs_1447
@@ -9621,7 +9621,7 @@ ALTER TABLE ONLY priority_jobs_1447
 
 
 --
--- Name: priority_jobs_1449_pkey; Type: CONSTRAINT; Schema: public; Owner: processor; Tablespace: 
+-- Name: priority_jobs_1449_pkey; Type: CONSTRAINT; Schema: public; Owner: processor; Tablespace:
 --
 
 ALTER TABLE ONLY priority_jobs_1449
@@ -9629,7 +9629,7 @@ ALTER TABLE ONLY priority_jobs_1449
 
 
 --
--- Name: priority_jobs_1450_pkey; Type: CONSTRAINT; Schema: public; Owner: processor; Tablespace: 
+-- Name: priority_jobs_1450_pkey; Type: CONSTRAINT; Schema: public; Owner: processor; Tablespace:
 --
 
 ALTER TABLE ONLY priority_jobs_1450
@@ -9637,7 +9637,7 @@ ALTER TABLE ONLY priority_jobs_1450
 
 
 --
--- Name: priority_jobs_1451_pkey; Type: CONSTRAINT; Schema: public; Owner: processor; Tablespace: 
+-- Name: priority_jobs_1451_pkey; Type: CONSTRAINT; Schema: public; Owner: processor; Tablespace:
 --
 
 ALTER TABLE ONLY priority_jobs_1451
@@ -9645,7 +9645,7 @@ ALTER TABLE ONLY priority_jobs_1451
 
 
 --
--- Name: priority_jobs_1452_pkey; Type: CONSTRAINT; Schema: public; Owner: processor; Tablespace: 
+-- Name: priority_jobs_1452_pkey; Type: CONSTRAINT; Schema: public; Owner: processor; Tablespace:
 --
 
 ALTER TABLE ONLY priority_jobs_1452
@@ -9653,7 +9653,7 @@ ALTER TABLE ONLY priority_jobs_1452
 
 
 --
--- Name: priority_jobs_1453_pkey; Type: CONSTRAINT; Schema: public; Owner: processor; Tablespace: 
+-- Name: priority_jobs_1453_pkey; Type: CONSTRAINT; Schema: public; Owner: processor; Tablespace:
 --
 
 ALTER TABLE ONLY priority_jobs_1453
@@ -9661,7 +9661,7 @@ ALTER TABLE ONLY priority_jobs_1453
 
 
 --
--- Name: priority_jobs_1454_pkey; Type: CONSTRAINT; Schema: public; Owner: processor; Tablespace: 
+-- Name: priority_jobs_1454_pkey; Type: CONSTRAINT; Schema: public; Owner: processor; Tablespace:
 --
 
 ALTER TABLE ONLY priority_jobs_1454
@@ -9669,7 +9669,7 @@ ALTER TABLE ONLY priority_jobs_1454
 
 
 --
--- Name: priority_jobs_1455_pkey; Type: CONSTRAINT; Schema: public; Owner: processor; Tablespace: 
+-- Name: priority_jobs_1455_pkey; Type: CONSTRAINT; Schema: public; Owner: processor; Tablespace:
 --
 
 ALTER TABLE ONLY priority_jobs_1455
@@ -9677,7 +9677,7 @@ ALTER TABLE ONLY priority_jobs_1455
 
 
 --
--- Name: priority_jobs_1456_pkey; Type: CONSTRAINT; Schema: public; Owner: processor; Tablespace: 
+-- Name: priority_jobs_1456_pkey; Type: CONSTRAINT; Schema: public; Owner: processor; Tablespace:
 --
 
 ALTER TABLE ONLY priority_jobs_1456
@@ -9685,7 +9685,7 @@ ALTER TABLE ONLY priority_jobs_1456
 
 
 --
--- Name: priorityjobs_logging_switch_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
+-- Name: priorityjobs_logging_switch_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace:
 --
 
 ALTER TABLE ONLY priorityjobs_logging_switch
@@ -9693,7 +9693,7 @@ ALTER TABLE ONLY priorityjobs_logging_switch
 
 
 --
--- Name: priorityjobs_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: priorityjobs_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY priorityjobs
@@ -9701,7 +9701,7 @@ ALTER TABLE ONLY priorityjobs
 
 
 --
--- Name: processors_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: processors_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY processors
@@ -9709,7 +9709,7 @@ ALTER TABLE ONLY processors
 
 
 --
--- Name: product_adu_key; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: product_adu_key; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY product_adu
@@ -9717,7 +9717,7 @@ ALTER TABLE ONLY product_adu
 
 
 --
--- Name: product_release_channels_key; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: product_release_channels_key; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY product_release_channels
@@ -9725,7 +9725,7 @@ ALTER TABLE ONLY product_release_channels
 
 
 --
--- Name: product_version_builds_key; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: product_version_builds_key; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY product_version_builds
@@ -9733,7 +9733,7 @@ ALTER TABLE ONLY product_version_builds
 
 
 --
--- Name: product_version_version_key; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: product_version_version_key; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY product_versions
@@ -9741,7 +9741,7 @@ ALTER TABLE ONLY product_versions
 
 
 --
--- Name: product_versions_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: product_versions_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY product_versions
@@ -9749,7 +9749,7 @@ ALTER TABLE ONLY product_versions
 
 
 --
--- Name: product_visibility_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: product_visibility_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY product_visibility
@@ -9757,7 +9757,7 @@ ALTER TABLE ONLY product_visibility
 
 
 --
--- Name: productdims_pkey1; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: productdims_pkey1; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY productdims
@@ -9765,7 +9765,7 @@ ALTER TABLE ONLY productdims
 
 
 --
--- Name: productdims_version_sort_id_key; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: productdims_version_sort_id_key; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY productdims_version_sort
@@ -9773,7 +9773,7 @@ ALTER TABLE ONLY productdims_version_sort
 
 
 --
--- Name: productdims_version_sort_key; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: productdims_version_sort_key; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY productdims_version_sort
@@ -9781,7 +9781,7 @@ ALTER TABLE ONLY productdims_version_sort
 
 
 --
--- Name: products_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: products_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY products
@@ -9789,7 +9789,7 @@ ALTER TABLE ONLY products
 
 
 --
--- Name: release_build_type_map_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: release_build_type_map_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY release_build_type_map
@@ -9797,7 +9797,7 @@ ALTER TABLE ONLY release_build_type_map
 
 
 --
--- Name: release_channel_matches_key; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: release_channel_matches_key; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY release_channel_matches
@@ -9805,7 +9805,7 @@ ALTER TABLE ONLY release_channel_matches
 
 
 --
--- Name: release_channels_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: release_channels_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY release_channels
@@ -9813,7 +9813,7 @@ ALTER TABLE ONLY release_channels
 
 
 --
--- Name: release_raw_key; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: release_raw_key; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY releases_raw
@@ -9821,7 +9821,7 @@ ALTER TABLE ONLY releases_raw
 
 
 --
--- Name: reports_20100607_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100607_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20100607
@@ -9829,7 +9829,7 @@ ALTER TABLE ONLY reports_20100607
 
 
 --
--- Name: reports_20100607_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100607_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20100607
@@ -9837,7 +9837,7 @@ ALTER TABLE ONLY reports_20100607
 
 
 --
--- Name: reports_20100614_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100614_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20100614
@@ -9845,7 +9845,7 @@ ALTER TABLE ONLY reports_20100614
 
 
 --
--- Name: reports_20100614_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100614_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20100614
@@ -9853,7 +9853,7 @@ ALTER TABLE ONLY reports_20100614
 
 
 --
--- Name: reports_20100621_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100621_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20100621
@@ -9861,7 +9861,7 @@ ALTER TABLE ONLY reports_20100621
 
 
 --
--- Name: reports_20100621_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100621_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20100621
@@ -9869,7 +9869,7 @@ ALTER TABLE ONLY reports_20100621
 
 
 --
--- Name: reports_20100628_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100628_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20100628
@@ -9877,7 +9877,7 @@ ALTER TABLE ONLY reports_20100628
 
 
 --
--- Name: reports_20100628_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100628_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20100628
@@ -9885,7 +9885,7 @@ ALTER TABLE ONLY reports_20100628
 
 
 --
--- Name: reports_20100705_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100705_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20100705
@@ -9893,7 +9893,7 @@ ALTER TABLE ONLY reports_20100705
 
 
 --
--- Name: reports_20100705_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100705_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20100705
@@ -9901,7 +9901,7 @@ ALTER TABLE ONLY reports_20100705
 
 
 --
--- Name: reports_20100712_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100712_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20100712
@@ -9909,7 +9909,7 @@ ALTER TABLE ONLY reports_20100712
 
 
 --
--- Name: reports_20100712_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100712_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20100712
@@ -9917,7 +9917,7 @@ ALTER TABLE ONLY reports_20100712
 
 
 --
--- Name: reports_20100719_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100719_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20100719
@@ -9925,7 +9925,7 @@ ALTER TABLE ONLY reports_20100719
 
 
 --
--- Name: reports_20100719_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100719_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20100719
@@ -9933,7 +9933,7 @@ ALTER TABLE ONLY reports_20100719
 
 
 --
--- Name: reports_20100726_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100726_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20100726
@@ -9941,7 +9941,7 @@ ALTER TABLE ONLY reports_20100726
 
 
 --
--- Name: reports_20100726_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100726_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20100726
@@ -9949,7 +9949,7 @@ ALTER TABLE ONLY reports_20100726
 
 
 --
--- Name: reports_20100802_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100802_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20100802
@@ -9957,7 +9957,7 @@ ALTER TABLE ONLY reports_20100802
 
 
 --
--- Name: reports_20100802_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100802_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20100802
@@ -9965,7 +9965,7 @@ ALTER TABLE ONLY reports_20100802
 
 
 --
--- Name: reports_20100809_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100809_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20100809
@@ -9973,7 +9973,7 @@ ALTER TABLE ONLY reports_20100809
 
 
 --
--- Name: reports_20100809_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100809_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20100809
@@ -9981,7 +9981,7 @@ ALTER TABLE ONLY reports_20100809
 
 
 --
--- Name: reports_20100816_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100816_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20100816
@@ -9989,7 +9989,7 @@ ALTER TABLE ONLY reports_20100816
 
 
 --
--- Name: reports_20100816_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100816_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20100816
@@ -9997,7 +9997,7 @@ ALTER TABLE ONLY reports_20100816
 
 
 --
--- Name: reports_20100823_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100823_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20100823
@@ -10005,7 +10005,7 @@ ALTER TABLE ONLY reports_20100823
 
 
 --
--- Name: reports_20100823_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100823_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20100823
@@ -10013,7 +10013,7 @@ ALTER TABLE ONLY reports_20100823
 
 
 --
--- Name: reports_20100830_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100830_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20100830
@@ -10021,7 +10021,7 @@ ALTER TABLE ONLY reports_20100830
 
 
 --
--- Name: reports_20100830_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100830_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20100830
@@ -10029,7 +10029,7 @@ ALTER TABLE ONLY reports_20100830
 
 
 --
--- Name: reports_20100906_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100906_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20100906
@@ -10037,7 +10037,7 @@ ALTER TABLE ONLY reports_20100906
 
 
 --
--- Name: reports_20100906_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100906_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20100906
@@ -10045,7 +10045,7 @@ ALTER TABLE ONLY reports_20100906
 
 
 --
--- Name: reports_20100913_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100913_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20100913
@@ -10053,7 +10053,7 @@ ALTER TABLE ONLY reports_20100913
 
 
 --
--- Name: reports_20100913_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100913_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20100913
@@ -10061,7 +10061,7 @@ ALTER TABLE ONLY reports_20100913
 
 
 --
--- Name: reports_20100920_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100920_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20100920
@@ -10069,7 +10069,7 @@ ALTER TABLE ONLY reports_20100920
 
 
 --
--- Name: reports_20100920_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100920_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20100920
@@ -10077,7 +10077,7 @@ ALTER TABLE ONLY reports_20100920
 
 
 --
--- Name: reports_20100927_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100927_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20100927
@@ -10085,7 +10085,7 @@ ALTER TABLE ONLY reports_20100927
 
 
 --
--- Name: reports_20100927_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100927_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20100927
@@ -10093,7 +10093,7 @@ ALTER TABLE ONLY reports_20100927
 
 
 --
--- Name: reports_20101004_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101004_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20101004
@@ -10101,7 +10101,7 @@ ALTER TABLE ONLY reports_20101004
 
 
 --
--- Name: reports_20101004_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101004_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20101004
@@ -10109,7 +10109,7 @@ ALTER TABLE ONLY reports_20101004
 
 
 --
--- Name: reports_20101011_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101011_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20101011
@@ -10117,7 +10117,7 @@ ALTER TABLE ONLY reports_20101011
 
 
 --
--- Name: reports_20101011_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101011_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20101011
@@ -10125,7 +10125,7 @@ ALTER TABLE ONLY reports_20101011
 
 
 --
--- Name: reports_20101018_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101018_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20101018
@@ -10133,7 +10133,7 @@ ALTER TABLE ONLY reports_20101018
 
 
 --
--- Name: reports_20101018_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101018_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20101018
@@ -10141,7 +10141,7 @@ ALTER TABLE ONLY reports_20101018
 
 
 --
--- Name: reports_20101025_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101025_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20101025
@@ -10149,7 +10149,7 @@ ALTER TABLE ONLY reports_20101025
 
 
 --
--- Name: reports_20101025_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101025_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20101025
@@ -10157,7 +10157,7 @@ ALTER TABLE ONLY reports_20101025
 
 
 --
--- Name: reports_20101101_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101101_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20101101
@@ -10165,7 +10165,7 @@ ALTER TABLE ONLY reports_20101101
 
 
 --
--- Name: reports_20101101_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101101_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20101101
@@ -10173,7 +10173,7 @@ ALTER TABLE ONLY reports_20101101
 
 
 --
--- Name: reports_20101108_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101108_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20101108
@@ -10181,7 +10181,7 @@ ALTER TABLE ONLY reports_20101108
 
 
 --
--- Name: reports_20101108_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101108_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20101108
@@ -10189,7 +10189,7 @@ ALTER TABLE ONLY reports_20101108
 
 
 --
--- Name: reports_20101115_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101115_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20101115
@@ -10197,7 +10197,7 @@ ALTER TABLE ONLY reports_20101115
 
 
 --
--- Name: reports_20101115_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101115_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20101115
@@ -10205,7 +10205,7 @@ ALTER TABLE ONLY reports_20101115
 
 
 --
--- Name: reports_20101122_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101122_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20101122
@@ -10213,7 +10213,7 @@ ALTER TABLE ONLY reports_20101122
 
 
 --
--- Name: reports_20101122_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101122_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20101122
@@ -10221,7 +10221,7 @@ ALTER TABLE ONLY reports_20101122
 
 
 --
--- Name: reports_20101129_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101129_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20101129
@@ -10229,7 +10229,7 @@ ALTER TABLE ONLY reports_20101129
 
 
 --
--- Name: reports_20101129_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101129_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20101129
@@ -10237,7 +10237,7 @@ ALTER TABLE ONLY reports_20101129
 
 
 --
--- Name: reports_20101206_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101206_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20101206
@@ -10245,7 +10245,7 @@ ALTER TABLE ONLY reports_20101206
 
 
 --
--- Name: reports_20101206_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101206_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20101206
@@ -10253,7 +10253,7 @@ ALTER TABLE ONLY reports_20101206
 
 
 --
--- Name: reports_20101213_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101213_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20101213
@@ -10261,7 +10261,7 @@ ALTER TABLE ONLY reports_20101213
 
 
 --
--- Name: reports_20101213_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101213_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20101213
@@ -10269,7 +10269,7 @@ ALTER TABLE ONLY reports_20101213
 
 
 --
--- Name: reports_20101220_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101220_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20101220
@@ -10277,7 +10277,7 @@ ALTER TABLE ONLY reports_20101220
 
 
 --
--- Name: reports_20101220_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101220_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20101220
@@ -10285,7 +10285,7 @@ ALTER TABLE ONLY reports_20101220
 
 
 --
--- Name: reports_20101227_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101227_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20101227
@@ -10293,7 +10293,7 @@ ALTER TABLE ONLY reports_20101227
 
 
 --
--- Name: reports_20101227_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101227_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20101227
@@ -10301,7 +10301,7 @@ ALTER TABLE ONLY reports_20101227
 
 
 --
--- Name: reports_20110103_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110103_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20110103
@@ -10309,7 +10309,7 @@ ALTER TABLE ONLY reports_20110103
 
 
 --
--- Name: reports_20110103_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110103_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20110103
@@ -10317,7 +10317,7 @@ ALTER TABLE ONLY reports_20110103
 
 
 --
--- Name: reports_20110110_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110110_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20110110
@@ -10325,7 +10325,7 @@ ALTER TABLE ONLY reports_20110110
 
 
 --
--- Name: reports_20110110_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110110_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20110110
@@ -10333,7 +10333,7 @@ ALTER TABLE ONLY reports_20110110
 
 
 --
--- Name: reports_20110117_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110117_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20110117
@@ -10341,7 +10341,7 @@ ALTER TABLE ONLY reports_20110117
 
 
 --
--- Name: reports_20110117_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110117_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20110117
@@ -10349,7 +10349,7 @@ ALTER TABLE ONLY reports_20110117
 
 
 --
--- Name: reports_20110124_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110124_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20110124
@@ -10357,7 +10357,7 @@ ALTER TABLE ONLY reports_20110124
 
 
 --
--- Name: reports_20110124_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110124_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20110124
@@ -10365,7 +10365,7 @@ ALTER TABLE ONLY reports_20110124
 
 
 --
--- Name: reports_20110131_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110131_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20110131
@@ -10373,7 +10373,7 @@ ALTER TABLE ONLY reports_20110131
 
 
 --
--- Name: reports_20110131_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110131_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20110131
@@ -10381,7 +10381,7 @@ ALTER TABLE ONLY reports_20110131
 
 
 --
--- Name: reports_20110207_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110207_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20110207
@@ -10389,7 +10389,7 @@ ALTER TABLE ONLY reports_20110207
 
 
 --
--- Name: reports_20110207_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110207_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20110207
@@ -10397,7 +10397,7 @@ ALTER TABLE ONLY reports_20110207
 
 
 --
--- Name: reports_20110214_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110214_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20110214
@@ -10405,7 +10405,7 @@ ALTER TABLE ONLY reports_20110214
 
 
 --
--- Name: reports_20110214_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110214_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20110214
@@ -10413,7 +10413,7 @@ ALTER TABLE ONLY reports_20110214
 
 
 --
--- Name: reports_20110221_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110221_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20110221
@@ -10421,7 +10421,7 @@ ALTER TABLE ONLY reports_20110221
 
 
 --
--- Name: reports_20110221_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110221_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20110221
@@ -10429,7 +10429,7 @@ ALTER TABLE ONLY reports_20110221
 
 
 --
--- Name: reports_20110228_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110228_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20110228
@@ -10437,7 +10437,7 @@ ALTER TABLE ONLY reports_20110228
 
 
 --
--- Name: reports_20110228_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110228_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20110228
@@ -10445,7 +10445,7 @@ ALTER TABLE ONLY reports_20110228
 
 
 --
--- Name: reports_20110307_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110307_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20110307
@@ -10453,7 +10453,7 @@ ALTER TABLE ONLY reports_20110307
 
 
 --
--- Name: reports_20110307_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110307_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20110307
@@ -10461,7 +10461,7 @@ ALTER TABLE ONLY reports_20110307
 
 
 --
--- Name: reports_20110314_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110314_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20110314
@@ -10469,7 +10469,7 @@ ALTER TABLE ONLY reports_20110314
 
 
 --
--- Name: reports_20110314_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110314_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20110314
@@ -10477,7 +10477,7 @@ ALTER TABLE ONLY reports_20110314
 
 
 --
--- Name: reports_20110321_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110321_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20110321
@@ -10485,7 +10485,7 @@ ALTER TABLE ONLY reports_20110321
 
 
 --
--- Name: reports_20110321_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110321_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20110321
@@ -10493,7 +10493,7 @@ ALTER TABLE ONLY reports_20110321
 
 
 --
--- Name: reports_20110328_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110328_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20110328
@@ -10501,7 +10501,7 @@ ALTER TABLE ONLY reports_20110328
 
 
 --
--- Name: reports_20110328_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110328_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20110328
@@ -10509,7 +10509,7 @@ ALTER TABLE ONLY reports_20110328
 
 
 --
--- Name: reports_20110404_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110404_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20110404
@@ -10517,7 +10517,7 @@ ALTER TABLE ONLY reports_20110404
 
 
 --
--- Name: reports_20110404_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110404_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20110404
@@ -10525,7 +10525,7 @@ ALTER TABLE ONLY reports_20110404
 
 
 --
--- Name: reports_20110411_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110411_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20110411
@@ -10533,7 +10533,7 @@ ALTER TABLE ONLY reports_20110411
 
 
 --
--- Name: reports_20110411_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110411_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20110411
@@ -10541,7 +10541,7 @@ ALTER TABLE ONLY reports_20110411
 
 
 --
--- Name: reports_20110418_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110418_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20110418
@@ -10549,7 +10549,7 @@ ALTER TABLE ONLY reports_20110418
 
 
 --
--- Name: reports_20110418_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110418_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20110418
@@ -10557,7 +10557,7 @@ ALTER TABLE ONLY reports_20110418
 
 
 --
--- Name: reports_20110425_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110425_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20110425
@@ -10565,7 +10565,7 @@ ALTER TABLE ONLY reports_20110425
 
 
 --
--- Name: reports_20110425_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110425_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20110425
@@ -10573,7 +10573,7 @@ ALTER TABLE ONLY reports_20110425
 
 
 --
--- Name: reports_20110502_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110502_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20110502
@@ -10581,7 +10581,7 @@ ALTER TABLE ONLY reports_20110502
 
 
 --
--- Name: reports_20110502_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110502_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20110502
@@ -10589,7 +10589,7 @@ ALTER TABLE ONLY reports_20110502
 
 
 --
--- Name: reports_20110509_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110509_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20110509
@@ -10597,7 +10597,7 @@ ALTER TABLE ONLY reports_20110509
 
 
 --
--- Name: reports_20110509_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110509_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20110509
@@ -10605,7 +10605,7 @@ ALTER TABLE ONLY reports_20110509
 
 
 --
--- Name: reports_20110516_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110516_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20110516
@@ -10613,7 +10613,7 @@ ALTER TABLE ONLY reports_20110516
 
 
 --
--- Name: reports_20110516_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110516_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20110516
@@ -10621,7 +10621,7 @@ ALTER TABLE ONLY reports_20110516
 
 
 --
--- Name: reports_20110523_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110523_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20110523
@@ -10629,7 +10629,7 @@ ALTER TABLE ONLY reports_20110523
 
 
 --
--- Name: reports_20110523_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110523_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20110523
@@ -10637,7 +10637,7 @@ ALTER TABLE ONLY reports_20110523
 
 
 --
--- Name: reports_20110530_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110530_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20110530
@@ -10645,7 +10645,7 @@ ALTER TABLE ONLY reports_20110530
 
 
 --
--- Name: reports_20110530_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110530_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20110530
@@ -10653,7 +10653,7 @@ ALTER TABLE ONLY reports_20110530
 
 
 --
--- Name: reports_20110606_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110606_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20110606
@@ -10661,7 +10661,7 @@ ALTER TABLE ONLY reports_20110606
 
 
 --
--- Name: reports_20110606_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110606_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20110606
@@ -10669,7 +10669,7 @@ ALTER TABLE ONLY reports_20110606
 
 
 --
--- Name: reports_20110613_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110613_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20110613
@@ -10677,7 +10677,7 @@ ALTER TABLE ONLY reports_20110613
 
 
 --
--- Name: reports_20110613_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110613_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20110613
@@ -10685,7 +10685,7 @@ ALTER TABLE ONLY reports_20110613
 
 
 --
--- Name: reports_20110620_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110620_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20110620
@@ -10693,7 +10693,7 @@ ALTER TABLE ONLY reports_20110620
 
 
 --
--- Name: reports_20110620_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110620_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20110620
@@ -10701,7 +10701,7 @@ ALTER TABLE ONLY reports_20110620
 
 
 --
--- Name: reports_20110627_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110627_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20110627
@@ -10709,7 +10709,7 @@ ALTER TABLE ONLY reports_20110627
 
 
 --
--- Name: reports_20110627_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110627_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20110627
@@ -10717,7 +10717,7 @@ ALTER TABLE ONLY reports_20110627
 
 
 --
--- Name: reports_20110704_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110704_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20110704
@@ -10725,7 +10725,7 @@ ALTER TABLE ONLY reports_20110704
 
 
 --
--- Name: reports_20110704_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110704_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20110704
@@ -10733,7 +10733,7 @@ ALTER TABLE ONLY reports_20110704
 
 
 --
--- Name: reports_20110711_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110711_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20110711
@@ -10741,7 +10741,7 @@ ALTER TABLE ONLY reports_20110711
 
 
 --
--- Name: reports_20110711_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110711_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20110711
@@ -10749,7 +10749,7 @@ ALTER TABLE ONLY reports_20110711
 
 
 --
--- Name: reports_20110718_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110718_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20110718
@@ -10757,7 +10757,7 @@ ALTER TABLE ONLY reports_20110718
 
 
 --
--- Name: reports_20110718_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110718_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20110718
@@ -10765,7 +10765,7 @@ ALTER TABLE ONLY reports_20110718
 
 
 --
--- Name: reports_20110725_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110725_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20110725
@@ -10773,7 +10773,7 @@ ALTER TABLE ONLY reports_20110725
 
 
 --
--- Name: reports_20110725_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110725_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20110725
@@ -10781,7 +10781,7 @@ ALTER TABLE ONLY reports_20110725
 
 
 --
--- Name: reports_20110801_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110801_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20110801
@@ -10789,7 +10789,7 @@ ALTER TABLE ONLY reports_20110801
 
 
 --
--- Name: reports_20110801_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110801_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20110801
@@ -10797,7 +10797,7 @@ ALTER TABLE ONLY reports_20110801
 
 
 --
--- Name: reports_20110808_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110808_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20110808
@@ -10805,7 +10805,7 @@ ALTER TABLE ONLY reports_20110808
 
 
 --
--- Name: reports_20110808_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110808_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20110808
@@ -10813,7 +10813,7 @@ ALTER TABLE ONLY reports_20110808
 
 
 --
--- Name: reports_20110815_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110815_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20110815
@@ -10821,7 +10821,7 @@ ALTER TABLE ONLY reports_20110815
 
 
 --
--- Name: reports_20110815_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110815_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20110815
@@ -10829,7 +10829,7 @@ ALTER TABLE ONLY reports_20110815
 
 
 --
--- Name: reports_20110822_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110822_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20110822
@@ -10837,7 +10837,7 @@ ALTER TABLE ONLY reports_20110822
 
 
 --
--- Name: reports_20110822_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110822_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20110822
@@ -10845,7 +10845,7 @@ ALTER TABLE ONLY reports_20110822
 
 
 --
--- Name: reports_20110829_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110829_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20110829
@@ -10853,7 +10853,7 @@ ALTER TABLE ONLY reports_20110829
 
 
 --
--- Name: reports_20110829_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110829_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20110829
@@ -10861,7 +10861,7 @@ ALTER TABLE ONLY reports_20110829
 
 
 --
--- Name: reports_20110905_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110905_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20110905
@@ -10869,7 +10869,7 @@ ALTER TABLE ONLY reports_20110905
 
 
 --
--- Name: reports_20110905_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110905_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_20110905
@@ -10877,7 +10877,7 @@ ALTER TABLE ONLY reports_20110905
 
 
 --
--- Name: reports_duplicates_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_duplicates_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY reports_duplicates
@@ -10885,7 +10885,7 @@ ALTER TABLE ONLY reports_duplicates
 
 
 --
--- Name: server_status_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: server_status_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY server_status
@@ -10893,7 +10893,7 @@ ALTER TABLE ONLY server_status
 
 
 --
--- Name: session_id_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: session_id_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY sessions
@@ -10901,7 +10901,7 @@ ALTER TABLE ONLY sessions
 
 
 --
--- Name: signature_bugs_rollup_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: signature_bugs_rollup_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY signature_bugs_rollup
@@ -10909,7 +10909,7 @@ ALTER TABLE ONLY signature_bugs_rollup
 
 
 --
--- Name: signature_first_key; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: signature_first_key; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY signature_first
@@ -10917,7 +10917,7 @@ ALTER TABLE ONLY signature_first
 
 
 --
--- Name: signature_productdims_signature_key; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: signature_productdims_signature_key; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY signature_productdims
@@ -10925,7 +10925,7 @@ ALTER TABLE ONLY signature_productdims
 
 
 --
--- Name: signature_products_key; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: signature_products_key; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY signature_products
@@ -10933,7 +10933,7 @@ ALTER TABLE ONLY signature_products
 
 
 --
--- Name: signature_products_rollup_key; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: signature_products_rollup_key; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY signature_products_rollup
@@ -10941,7 +10941,7 @@ ALTER TABLE ONLY signature_products_rollup
 
 
 --
--- Name: signatures_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: signatures_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY signatures
@@ -10951,7 +10951,7 @@ ALTER TABLE signatures CLUSTER ON signatures_pkey;
 
 
 --
--- Name: signatures_signature_key; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: signatures_signature_key; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY signatures
@@ -10959,7 +10959,7 @@ ALTER TABLE ONLY signatures
 
 
 --
--- Name: tcbs_key; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: tcbs_key; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY tcbs
@@ -10967,7 +10967,7 @@ ALTER TABLE ONLY tcbs
 
 
 --
--- Name: top_crashes_by_signature2_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: top_crashes_by_signature2_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY top_crashes_by_signature
@@ -10975,7 +10975,7 @@ ALTER TABLE ONLY top_crashes_by_signature
 
 
 --
--- Name: top_crashes_by_url2_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: top_crashes_by_url2_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY top_crashes_by_url
@@ -10983,7 +10983,7 @@ ALTER TABLE ONLY top_crashes_by_url
 
 
 --
--- Name: top_crashes_by_url_signature2_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: top_crashes_by_url_signature2_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY top_crashes_by_url_signature
@@ -10991,7 +10991,7 @@ ALTER TABLE ONLY top_crashes_by_url_signature
 
 
 --
--- Name: topcrashurlfactsreports_pkey1; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: topcrashurlfactsreports_pkey1; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY topcrashurlfactsreports
@@ -10999,7 +10999,7 @@ ALTER TABLE ONLY topcrashurlfactsreports
 
 
 --
--- Name: urldims_pkey1; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: urldims_pkey1; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 ALTER TABLE ONLY urldims
@@ -11007,1036 +11007,1036 @@ ALTER TABLE ONLY urldims
 
 
 --
--- Name: builds_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: builds_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE UNIQUE INDEX builds_key ON builds USING btree (product, version, platform, buildid);
 
 
 --
--- Name: email_campaigns_product_signature_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: email_campaigns_product_signature_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX email_campaigns_product_signature_key ON email_campaigns USING btree (product, signature);
 
 
 --
--- Name: extensions_20100607_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20100607_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX extensions_20100607_report_id_date_key ON extensions_20100607 USING btree (report_id, date_processed, extension_key);
 
 
 --
--- Name: extensions_20100614_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20100614_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX extensions_20100614_report_id_date_key ON extensions_20100614 USING btree (report_id, date_processed, extension_key);
 
 
 --
--- Name: extensions_20100621_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20100621_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX extensions_20100621_report_id_date_key ON extensions_20100621 USING btree (report_id, date_processed, extension_key);
 
 
 --
--- Name: extensions_20100628_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20100628_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX extensions_20100628_report_id_date_key ON extensions_20100628 USING btree (report_id, date_processed, extension_key);
 
 
 --
--- Name: extensions_20100705_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20100705_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX extensions_20100705_report_id_date_key ON extensions_20100705 USING btree (report_id, date_processed, extension_key);
 
 
 --
--- Name: extensions_20100712_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20100712_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX extensions_20100712_report_id_date_key ON extensions_20100712 USING btree (report_id, date_processed, extension_key);
 
 
 --
--- Name: extensions_20100719_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20100719_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX extensions_20100719_report_id_date_key ON extensions_20100719 USING btree (report_id, date_processed, extension_key);
 
 
 --
--- Name: extensions_20100726_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20100726_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX extensions_20100726_report_id_date_key ON extensions_20100726 USING btree (report_id, date_processed, extension_key);
 
 
 --
--- Name: extensions_20100802_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20100802_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX extensions_20100802_report_id_date_key ON extensions_20100802 USING btree (report_id, date_processed, extension_key);
 
 
 --
--- Name: extensions_20100809_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20100809_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX extensions_20100809_report_id_date_key ON extensions_20100809 USING btree (report_id, date_processed, extension_key);
 
 
 --
--- Name: extensions_20100816_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20100816_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX extensions_20100816_report_id_date_key ON extensions_20100816 USING btree (report_id, date_processed, extension_key);
 
 
 --
--- Name: extensions_20100823_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20100823_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX extensions_20100823_report_id_date_key ON extensions_20100823 USING btree (report_id, date_processed, extension_key);
 
 
 --
--- Name: extensions_20100830_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20100830_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX extensions_20100830_report_id_date_key ON extensions_20100830 USING btree (report_id, date_processed, extension_key);
 
 
 --
--- Name: extensions_20100906_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20100906_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX extensions_20100906_report_id_date_key ON extensions_20100906 USING btree (report_id, date_processed, extension_key);
 
 
 --
--- Name: extensions_20100913_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20100913_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX extensions_20100913_report_id_date_key ON extensions_20100913 USING btree (report_id, date_processed, extension_key);
 
 
 --
--- Name: extensions_20100920_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20100920_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX extensions_20100920_report_id_date_key ON extensions_20100920 USING btree (report_id, date_processed, extension_key);
 
 
 --
--- Name: extensions_20100927_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20100927_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX extensions_20100927_report_id_date_key ON extensions_20100927 USING btree (report_id, date_processed, extension_key);
 
 
 --
--- Name: extensions_20101004_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20101004_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX extensions_20101004_report_id_date_key ON extensions_20101004 USING btree (report_id, date_processed, extension_key);
 
 
 --
--- Name: extensions_20101011_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20101011_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX extensions_20101011_report_id_date_key ON extensions_20101011 USING btree (report_id, date_processed, extension_key);
 
 
 --
--- Name: extensions_20101018_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20101018_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX extensions_20101018_report_id_date_key ON extensions_20101018 USING btree (report_id, date_processed, extension_key);
 
 
 --
--- Name: extensions_20101025_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20101025_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX extensions_20101025_report_id_date_key ON extensions_20101025 USING btree (report_id, date_processed, extension_key);
 
 
 --
--- Name: extensions_20101101_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20101101_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX extensions_20101101_report_id_date_key ON extensions_20101101 USING btree (report_id, date_processed, extension_key);
 
 
 --
--- Name: extensions_20101108_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20101108_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX extensions_20101108_report_id_date_key ON extensions_20101108 USING btree (report_id, date_processed, extension_key);
 
 
 --
--- Name: extensions_20101115_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20101115_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX extensions_20101115_report_id_date_key ON extensions_20101115 USING btree (report_id, date_processed, extension_key);
 
 
 --
--- Name: extensions_20101122_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20101122_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX extensions_20101122_report_id_date_key ON extensions_20101122 USING btree (report_id, date_processed, extension_key);
 
 
 --
--- Name: extensions_20101129_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20101129_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX extensions_20101129_report_id_date_key ON extensions_20101129 USING btree (report_id, date_processed, extension_key);
 
 
 --
--- Name: extensions_20101206_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20101206_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX extensions_20101206_report_id_date_key ON extensions_20101206 USING btree (report_id, date_processed, extension_key);
 
 
 --
--- Name: extensions_20101213_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20101213_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX extensions_20101213_report_id_date_key ON extensions_20101213 USING btree (report_id, date_processed, extension_key);
 
 
 --
--- Name: extensions_20101220_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20101220_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX extensions_20101220_report_id_date_key ON extensions_20101220 USING btree (report_id, date_processed, extension_key);
 
 
 --
--- Name: extensions_20101227_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20101227_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX extensions_20101227_report_id_date_key ON extensions_20101227 USING btree (report_id, date_processed, extension_key);
 
 
 --
--- Name: extensions_20110103_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110103_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX extensions_20110103_report_id_date_key ON extensions_20110103 USING btree (report_id, date_processed, extension_key);
 
 
 --
--- Name: extensions_20110110_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110110_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX extensions_20110110_report_id_date_key ON extensions_20110110 USING btree (report_id, date_processed, extension_key);
 
 
 --
--- Name: extensions_20110117_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110117_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX extensions_20110117_report_id_date_key ON extensions_20110117 USING btree (report_id, date_processed, extension_key);
 
 
 --
--- Name: extensions_20110124_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110124_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX extensions_20110124_report_id_date_key ON extensions_20110124 USING btree (report_id, date_processed, extension_key);
 
 
 --
--- Name: extensions_20110131_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110131_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX extensions_20110131_report_id_date_key ON extensions_20110131 USING btree (report_id, date_processed, extension_key);
 
 
 --
--- Name: extensions_20110207_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110207_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX extensions_20110207_report_id_date_key ON extensions_20110207 USING btree (report_id, date_processed, extension_key);
 
 
 --
--- Name: extensions_20110214_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110214_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX extensions_20110214_report_id_date_key ON extensions_20110214 USING btree (report_id, date_processed, extension_key);
 
 
 --
--- Name: extensions_20110221_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110221_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX extensions_20110221_report_id_date_key ON extensions_20110221 USING btree (report_id, date_processed, extension_key);
 
 
 --
--- Name: extensions_20110228_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110228_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX extensions_20110228_report_id_date_key ON extensions_20110228 USING btree (report_id, date_processed, extension_key);
 
 
 --
--- Name: extensions_20110307_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110307_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX extensions_20110307_report_id_date_key ON extensions_20110307 USING btree (report_id, date_processed, extension_key);
 
 
 --
--- Name: extensions_20110314_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110314_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX extensions_20110314_report_id_date_key ON extensions_20110314 USING btree (report_id, date_processed, extension_key);
 
 
 --
--- Name: extensions_20110321_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110321_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX extensions_20110321_report_id_date_key ON extensions_20110321 USING btree (report_id, date_processed, extension_key);
 
 
 --
--- Name: extensions_20110328_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110328_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX extensions_20110328_report_id_date_key ON extensions_20110328 USING btree (report_id, date_processed, extension_key);
 
 
 --
--- Name: extensions_20110404_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110404_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX extensions_20110404_report_id_date_key ON extensions_20110404 USING btree (report_id, date_processed, extension_key);
 
 
 --
--- Name: extensions_20110411_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110411_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX extensions_20110411_report_id_date_key ON extensions_20110411 USING btree (report_id, date_processed, extension_key);
 
 
 --
--- Name: extensions_20110418_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110418_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX extensions_20110418_report_id_date_key ON extensions_20110418 USING btree (report_id, date_processed, extension_key);
 
 
 --
--- Name: extensions_20110425_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110425_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX extensions_20110425_report_id_date_key ON extensions_20110425 USING btree (report_id, date_processed, extension_key);
 
 
 --
--- Name: extensions_20110502_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110502_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX extensions_20110502_report_id_date_key ON extensions_20110502 USING btree (report_id, date_processed, extension_key);
 
 
 --
--- Name: extensions_20110509_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110509_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX extensions_20110509_report_id_date_key ON extensions_20110509 USING btree (report_id, date_processed, extension_key);
 
 
 --
--- Name: extensions_20110516_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110516_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX extensions_20110516_report_id_date_key ON extensions_20110516 USING btree (report_id, date_processed, extension_key);
 
 
 --
--- Name: extensions_20110523_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110523_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX extensions_20110523_report_id_date_key ON extensions_20110523 USING btree (report_id, date_processed, extension_key);
 
 
 --
--- Name: extensions_20110530_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110530_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX extensions_20110530_report_id_date_key ON extensions_20110530 USING btree (report_id, date_processed, extension_key);
 
 
 --
--- Name: extensions_20110606_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110606_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX extensions_20110606_report_id_date_key ON extensions_20110606 USING btree (report_id, date_processed, extension_key);
 
 
 --
--- Name: extensions_20110613_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110613_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX extensions_20110613_report_id_date_key ON extensions_20110613 USING btree (report_id, date_processed, extension_key);
 
 
 --
--- Name: extensions_20110620_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110620_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX extensions_20110620_report_id_date_key ON extensions_20110620 USING btree (report_id, date_processed, extension_key);
 
 
 --
--- Name: extensions_20110627_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110627_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX extensions_20110627_report_id_date_key ON extensions_20110627 USING btree (report_id, date_processed, extension_key);
 
 
 --
--- Name: extensions_20110704_extension_id_extension_version_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110704_extension_id_extension_version_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX extensions_20110704_extension_id_extension_version_idx ON extensions_20110704 USING btree (extension_id, extension_version);
 
 
 --
--- Name: extensions_20110704_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110704_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX extensions_20110704_report_id_date_key ON extensions_20110704 USING btree (report_id, date_processed, extension_key);
 
 
 --
--- Name: extensions_20110711_extension_id_extension_version_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110711_extension_id_extension_version_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX extensions_20110711_extension_id_extension_version_idx ON extensions_20110711 USING btree (extension_id, extension_version);
 
 
 --
--- Name: extensions_20110711_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110711_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX extensions_20110711_report_id_date_key ON extensions_20110711 USING btree (report_id, date_processed, extension_key);
 
 
 --
--- Name: extensions_20110718_extension_id_extension_version_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110718_extension_id_extension_version_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX extensions_20110718_extension_id_extension_version_idx ON extensions_20110718 USING btree (extension_id, extension_version);
 
 
 --
--- Name: extensions_20110718_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110718_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX extensions_20110718_report_id_date_key ON extensions_20110718 USING btree (report_id, date_processed, extension_key);
 
 
 --
--- Name: extensions_20110725_extension_id_extension_version_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110725_extension_id_extension_version_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX extensions_20110725_extension_id_extension_version_idx ON extensions_20110725 USING btree (extension_id, extension_version);
 
 
 --
--- Name: extensions_20110725_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110725_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX extensions_20110725_report_id_date_key ON extensions_20110725 USING btree (report_id, date_processed, extension_key);
 
 
 --
--- Name: extensions_20110801_extension_id_extension_version_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110801_extension_id_extension_version_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX extensions_20110801_extension_id_extension_version_idx ON extensions_20110801 USING btree (extension_id, extension_version);
 
 
 --
--- Name: extensions_20110801_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110801_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX extensions_20110801_report_id_date_key ON extensions_20110801 USING btree (report_id, date_processed, extension_key);
 
 
 --
--- Name: extensions_20110808_extension_id_extension_version_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110808_extension_id_extension_version_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX extensions_20110808_extension_id_extension_version_idx ON extensions_20110808 USING btree (extension_id, extension_version);
 
 
 --
--- Name: extensions_20110808_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110808_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX extensions_20110808_report_id_date_key ON extensions_20110808 USING btree (report_id, date_processed, extension_key);
 
 
 --
--- Name: extensions_20110815_extension_id_extension_version_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110815_extension_id_extension_version_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX extensions_20110815_extension_id_extension_version_idx ON extensions_20110815 USING btree (extension_id, extension_version);
 
 
 --
--- Name: extensions_20110815_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110815_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX extensions_20110815_report_id_date_key ON extensions_20110815 USING btree (report_id, date_processed, extension_key);
 
 
 --
--- Name: extensions_20110822_extension_id_extension_version_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110822_extension_id_extension_version_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX extensions_20110822_extension_id_extension_version_idx ON extensions_20110822 USING btree (extension_id, extension_version);
 
 
 --
--- Name: extensions_20110822_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110822_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX extensions_20110822_report_id_date_key ON extensions_20110822 USING btree (report_id, date_processed, extension_key);
 
 
 --
--- Name: extensions_20110829_extension_id_extension_version_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110829_extension_id_extension_version_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX extensions_20110829_extension_id_extension_version_idx ON extensions_20110829 USING btree (extension_id, extension_version);
 
 
 --
--- Name: extensions_20110829_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110829_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX extensions_20110829_report_id_date_key ON extensions_20110829 USING btree (report_id, date_processed, extension_key);
 
 
 --
--- Name: extensions_20110905_extension_id_extension_version_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110905_extension_id_extension_version_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX extensions_20110905_extension_id_extension_version_idx ON extensions_20110905 USING btree (extension_id, extension_version);
 
 
 --
--- Name: extensions_20110905_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: extensions_20110905_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX extensions_20110905_report_id_date_key ON extensions_20110905 USING btree (report_id, date_processed, extension_key);
 
 
 --
--- Name: frames_20100607_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20100607_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX frames_20100607_report_id_date_key ON frames_20100607 USING btree (report_id, date_processed);
 
 
 --
--- Name: frames_20100614_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20100614_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX frames_20100614_report_id_date_key ON frames_20100614 USING btree (report_id, date_processed);
 
 
 --
--- Name: frames_20100621_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20100621_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX frames_20100621_report_id_date_key ON frames_20100621 USING btree (report_id, date_processed);
 
 
 --
--- Name: frames_20100628_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20100628_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX frames_20100628_report_id_date_key ON frames_20100628 USING btree (report_id, date_processed);
 
 
 --
--- Name: frames_20100705_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20100705_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX frames_20100705_report_id_date_key ON frames_20100705 USING btree (report_id, date_processed);
 
 
 --
--- Name: frames_20100712_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20100712_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX frames_20100712_report_id_date_key ON frames_20100712 USING btree (report_id, date_processed);
 
 
 --
--- Name: frames_20100719_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20100719_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX frames_20100719_report_id_date_key ON frames_20100719 USING btree (report_id, date_processed);
 
 
 --
--- Name: frames_20100726_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20100726_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX frames_20100726_report_id_date_key ON frames_20100726 USING btree (report_id, date_processed);
 
 
 --
--- Name: frames_20100802_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20100802_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX frames_20100802_report_id_date_key ON frames_20100802 USING btree (report_id, date_processed);
 
 
 --
--- Name: frames_20100809_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20100809_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX frames_20100809_report_id_date_key ON frames_20100809 USING btree (report_id, date_processed);
 
 
 --
--- Name: frames_20100816_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20100816_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX frames_20100816_report_id_date_key ON frames_20100816 USING btree (report_id, date_processed);
 
 
 --
--- Name: frames_20100823_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20100823_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX frames_20100823_report_id_date_key ON frames_20100823 USING btree (report_id, date_processed);
 
 
 --
--- Name: frames_20100830_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20100830_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX frames_20100830_report_id_date_key ON frames_20100830 USING btree (report_id, date_processed);
 
 
 --
--- Name: frames_20100906_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20100906_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX frames_20100906_report_id_date_key ON frames_20100906 USING btree (report_id, date_processed);
 
 
 --
--- Name: frames_20100913_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20100913_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX frames_20100913_report_id_date_key ON frames_20100913 USING btree (report_id, date_processed);
 
 
 --
--- Name: frames_20100920_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20100920_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX frames_20100920_report_id_date_key ON frames_20100920 USING btree (report_id, date_processed);
 
 
 --
--- Name: frames_20100927_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20100927_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX frames_20100927_report_id_date_key ON frames_20100927 USING btree (report_id, date_processed);
 
 
 --
--- Name: frames_20101004_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20101004_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX frames_20101004_report_id_date_key ON frames_20101004 USING btree (report_id, date_processed);
 
 
 --
--- Name: frames_20101011_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20101011_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX frames_20101011_report_id_date_key ON frames_20101011 USING btree (report_id, date_processed);
 
 
 --
--- Name: frames_20101018_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20101018_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX frames_20101018_report_id_date_key ON frames_20101018 USING btree (report_id, date_processed);
 
 
 --
--- Name: frames_20101025_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20101025_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX frames_20101025_report_id_date_key ON frames_20101025 USING btree (report_id, date_processed);
 
 
 --
--- Name: frames_20101101_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20101101_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX frames_20101101_report_id_date_key ON frames_20101101 USING btree (report_id, date_processed);
 
 
 --
--- Name: frames_20101108_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20101108_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX frames_20101108_report_id_date_key ON frames_20101108 USING btree (report_id, date_processed);
 
 
 --
--- Name: frames_20101115_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20101115_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX frames_20101115_report_id_date_key ON frames_20101115 USING btree (report_id, date_processed);
 
 
 --
--- Name: frames_20101122_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20101122_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX frames_20101122_report_id_date_key ON frames_20101122 USING btree (report_id, date_processed);
 
 
 --
--- Name: frames_20101129_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20101129_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX frames_20101129_report_id_date_key ON frames_20101129 USING btree (report_id, date_processed);
 
 
 --
--- Name: frames_20101206_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20101206_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX frames_20101206_report_id_date_key ON frames_20101206 USING btree (report_id, date_processed);
 
 
 --
--- Name: frames_20101213_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20101213_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX frames_20101213_report_id_date_key ON frames_20101213 USING btree (report_id, date_processed);
 
 
 --
--- Name: frames_20101220_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20101220_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX frames_20101220_report_id_date_key ON frames_20101220 USING btree (report_id, date_processed);
 
 
 --
--- Name: frames_20101227_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20101227_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX frames_20101227_report_id_date_key ON frames_20101227 USING btree (report_id, date_processed);
 
 
 --
--- Name: frames_20110103_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110103_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX frames_20110103_report_id_date_key ON frames_20110103 USING btree (report_id, date_processed);
 
 
 --
--- Name: frames_20110110_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110110_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX frames_20110110_report_id_date_key ON frames_20110110 USING btree (report_id, date_processed);
 
 
 --
--- Name: frames_20110117_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110117_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX frames_20110117_report_id_date_key ON frames_20110117 USING btree (report_id, date_processed);
 
 
 --
--- Name: frames_20110124_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110124_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX frames_20110124_report_id_date_key ON frames_20110124 USING btree (report_id, date_processed);
 
 
 --
--- Name: frames_20110131_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110131_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX frames_20110131_report_id_date_key ON frames_20110131 USING btree (report_id, date_processed);
 
 
 --
--- Name: frames_20110207_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110207_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX frames_20110207_report_id_date_key ON frames_20110207 USING btree (report_id, date_processed);
 
 
 --
--- Name: frames_20110214_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110214_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX frames_20110214_report_id_date_key ON frames_20110214 USING btree (report_id, date_processed);
 
 
 --
--- Name: frames_20110221_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110221_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX frames_20110221_report_id_date_key ON frames_20110221 USING btree (report_id, date_processed);
 
 
 --
--- Name: frames_20110228_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110228_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX frames_20110228_report_id_date_key ON frames_20110228 USING btree (report_id, date_processed);
 
 
 --
--- Name: frames_20110307_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110307_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX frames_20110307_report_id_date_key ON frames_20110307 USING btree (report_id, date_processed);
 
 
 --
--- Name: frames_20110314_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110314_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX frames_20110314_report_id_date_key ON frames_20110314 USING btree (report_id, date_processed);
 
 
 --
--- Name: frames_20110321_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110321_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX frames_20110321_report_id_date_key ON frames_20110321 USING btree (report_id, date_processed);
 
 
 --
--- Name: frames_20110328_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110328_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX frames_20110328_report_id_date_key ON frames_20110328 USING btree (report_id, date_processed);
 
 
 --
--- Name: frames_20110404_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110404_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX frames_20110404_report_id_date_key ON frames_20110404 USING btree (report_id, date_processed);
 
 
 --
--- Name: frames_20110411_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110411_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX frames_20110411_report_id_date_key ON frames_20110411 USING btree (report_id, date_processed);
 
 
 --
--- Name: frames_20110418_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110418_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX frames_20110418_report_id_date_key ON frames_20110418 USING btree (report_id, date_processed);
 
 
 --
--- Name: frames_20110425_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110425_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX frames_20110425_report_id_date_key ON frames_20110425 USING btree (report_id, date_processed);
 
 
 --
--- Name: frames_20110502_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110502_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX frames_20110502_report_id_date_key ON frames_20110502 USING btree (report_id, date_processed);
 
 
 --
--- Name: frames_20110509_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110509_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX frames_20110509_report_id_date_key ON frames_20110509 USING btree (report_id, date_processed);
 
 
 --
--- Name: frames_20110516_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110516_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX frames_20110516_report_id_date_key ON frames_20110516 USING btree (report_id, date_processed);
 
 
 --
--- Name: frames_20110523_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110523_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX frames_20110523_report_id_date_key ON frames_20110523 USING btree (report_id, date_processed);
 
 
 --
--- Name: frames_20110530_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110530_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX frames_20110530_report_id_date_key ON frames_20110530 USING btree (report_id, date_processed);
 
 
 --
--- Name: frames_20110606_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110606_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX frames_20110606_report_id_date_key ON frames_20110606 USING btree (report_id, date_processed);
 
 
 --
--- Name: frames_20110613_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110613_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX frames_20110613_report_id_date_key ON frames_20110613 USING btree (report_id, date_processed);
 
 
 --
--- Name: frames_20110620_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110620_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX frames_20110620_report_id_date_key ON frames_20110620 USING btree (report_id, date_processed);
 
 
 --
--- Name: frames_20110627_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110627_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX frames_20110627_report_id_date_key ON frames_20110627 USING btree (report_id, date_processed);
 
 
 --
--- Name: frames_20110704_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110704_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX frames_20110704_report_id_date_key ON frames_20110704 USING btree (report_id, date_processed);
 
 
 --
--- Name: frames_20110711_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110711_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX frames_20110711_report_id_date_key ON frames_20110711 USING btree (report_id, date_processed);
 
 
 --
--- Name: frames_20110718_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110718_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX frames_20110718_report_id_date_key ON frames_20110718 USING btree (report_id, date_processed);
 
 
 --
--- Name: frames_20110725_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110725_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX frames_20110725_report_id_date_key ON frames_20110725 USING btree (report_id, date_processed);
 
 
 --
--- Name: frames_20110801_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110801_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX frames_20110801_report_id_date_key ON frames_20110801 USING btree (report_id, date_processed);
 
 
 --
--- Name: frames_20110808_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110808_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX frames_20110808_report_id_date_key ON frames_20110808 USING btree (report_id, date_processed);
 
 
 --
--- Name: frames_20110815_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110815_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX frames_20110815_report_id_date_key ON frames_20110815 USING btree (report_id, date_processed);
 
 
 --
--- Name: frames_20110822_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110822_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX frames_20110822_report_id_date_key ON frames_20110822 USING btree (report_id, date_processed);
 
 
 --
--- Name: frames_20110829_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110829_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX frames_20110829_report_id_date_key ON frames_20110829 USING btree (report_id, date_processed);
 
 
 --
--- Name: frames_20110905_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: frames_20110905_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX frames_20110905_report_id_date_key ON frames_20110905 USING btree (report_id, date_processed);
 
 
 --
--- Name: idx_bug_associations_bug_id; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: idx_bug_associations_bug_id; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX idx_bug_associations_bug_id ON bug_associations USING btree (bug_id);
 
 
 --
--- Name: idx_server_status_date; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: idx_server_status_date; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX idx_server_status_date ON server_status USING btree (date_created, id);
 
 
 --
--- Name: jobs_completeddatetime_queueddatetime_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: jobs_completeddatetime_queueddatetime_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX jobs_completeddatetime_queueddatetime_key ON jobs USING btree (completeddatetime, queueddatetime);
 
 
 --
--- Name: jobs_owner_starteddatetime_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: jobs_owner_starteddatetime_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX jobs_owner_starteddatetime_key ON jobs USING btree (owner, starteddatetime);
@@ -12045,3822 +12045,3822 @@ ALTER TABLE jobs CLUSTER ON jobs_owner_starteddatetime_key;
 
 
 --
--- Name: osdims_name_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: osdims_name_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX osdims_name_version_key ON osdims USING btree (os_name, os_version);
 
 
 --
--- Name: plugins_reports_20100607_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20100607_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX plugins_reports_20100607_report_id_date_key ON plugins_reports_20100607 USING btree (report_id, date_processed, plugin_id);
 
 
 --
--- Name: plugins_reports_20100614_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20100614_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX plugins_reports_20100614_report_id_date_key ON plugins_reports_20100614 USING btree (report_id, date_processed, plugin_id);
 
 
 --
--- Name: plugins_reports_20100621_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20100621_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX plugins_reports_20100621_report_id_date_key ON plugins_reports_20100621 USING btree (report_id, date_processed, plugin_id);
 
 
 --
--- Name: plugins_reports_20100628_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20100628_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX plugins_reports_20100628_report_id_date_key ON plugins_reports_20100628 USING btree (report_id, date_processed, plugin_id);
 
 
 --
--- Name: plugins_reports_20100705_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20100705_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX plugins_reports_20100705_report_id_date_key ON plugins_reports_20100705 USING btree (report_id, date_processed, plugin_id);
 
 
 --
--- Name: plugins_reports_20100712_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20100712_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX plugins_reports_20100712_report_id_date_key ON plugins_reports_20100712 USING btree (report_id, date_processed, plugin_id);
 
 
 --
--- Name: plugins_reports_20100719_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20100719_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX plugins_reports_20100719_report_id_date_key ON plugins_reports_20100719 USING btree (report_id, date_processed, plugin_id);
 
 
 --
--- Name: plugins_reports_20100726_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20100726_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX plugins_reports_20100726_report_id_date_key ON plugins_reports_20100726 USING btree (report_id, date_processed, plugin_id);
 
 
 --
--- Name: plugins_reports_20100802_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20100802_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX plugins_reports_20100802_report_id_date_key ON plugins_reports_20100802 USING btree (report_id, date_processed, plugin_id);
 
 
 --
--- Name: plugins_reports_20100809_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20100809_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX plugins_reports_20100809_report_id_date_key ON plugins_reports_20100809 USING btree (report_id, date_processed, plugin_id);
 
 
 --
--- Name: plugins_reports_20100816_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20100816_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX plugins_reports_20100816_report_id_date_key ON plugins_reports_20100816 USING btree (report_id, date_processed, plugin_id);
 
 
 --
--- Name: plugins_reports_20100823_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20100823_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX plugins_reports_20100823_report_id_date_key ON plugins_reports_20100823 USING btree (report_id, date_processed, plugin_id);
 
 
 --
--- Name: plugins_reports_20100830_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20100830_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX plugins_reports_20100830_report_id_date_key ON plugins_reports_20100830 USING btree (report_id, date_processed, plugin_id);
 
 
 --
--- Name: plugins_reports_20100906_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20100906_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX plugins_reports_20100906_report_id_date_key ON plugins_reports_20100906 USING btree (report_id, date_processed, plugin_id);
 
 
 --
--- Name: plugins_reports_20100913_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20100913_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX plugins_reports_20100913_report_id_date_key ON plugins_reports_20100913 USING btree (report_id, date_processed, plugin_id);
 
 
 --
--- Name: plugins_reports_20100920_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20100920_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX plugins_reports_20100920_report_id_date_key ON plugins_reports_20100920 USING btree (report_id, date_processed, plugin_id);
 
 
 --
--- Name: plugins_reports_20100927_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20100927_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX plugins_reports_20100927_report_id_date_key ON plugins_reports_20100927 USING btree (report_id, date_processed, plugin_id);
 
 
 --
--- Name: plugins_reports_20101004_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20101004_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX plugins_reports_20101004_report_id_date_key ON plugins_reports_20101004 USING btree (report_id, date_processed, plugin_id);
 
 
 --
--- Name: plugins_reports_20101011_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20101011_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX plugins_reports_20101011_report_id_date_key ON plugins_reports_20101011 USING btree (report_id, date_processed, plugin_id);
 
 
 --
--- Name: plugins_reports_20101018_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20101018_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX plugins_reports_20101018_report_id_date_key ON plugins_reports_20101018 USING btree (report_id, date_processed, plugin_id);
 
 
 --
--- Name: plugins_reports_20101025_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20101025_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX plugins_reports_20101025_report_id_date_key ON plugins_reports_20101025 USING btree (report_id, date_processed, plugin_id);
 
 
 --
--- Name: plugins_reports_20101101_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20101101_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX plugins_reports_20101101_report_id_date_key ON plugins_reports_20101101 USING btree (report_id, date_processed, plugin_id);
 
 
 --
--- Name: plugins_reports_20101108_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20101108_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX plugins_reports_20101108_report_id_date_key ON plugins_reports_20101108 USING btree (report_id, date_processed, plugin_id);
 
 
 --
--- Name: plugins_reports_20101115_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20101115_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX plugins_reports_20101115_report_id_date_key ON plugins_reports_20101115 USING btree (report_id, date_processed, plugin_id);
 
 
 --
--- Name: plugins_reports_20101122_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20101122_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX plugins_reports_20101122_report_id_date_key ON plugins_reports_20101122 USING btree (report_id, date_processed, plugin_id);
 
 
 --
--- Name: plugins_reports_20101129_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20101129_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX plugins_reports_20101129_report_id_date_key ON plugins_reports_20101129 USING btree (report_id, date_processed, plugin_id);
 
 
 --
--- Name: plugins_reports_20101206_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20101206_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX plugins_reports_20101206_report_id_date_key ON plugins_reports_20101206 USING btree (report_id, date_processed, plugin_id);
 
 
 --
--- Name: plugins_reports_20101213_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20101213_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX plugins_reports_20101213_report_id_date_key ON plugins_reports_20101213 USING btree (report_id, date_processed, plugin_id);
 
 
 --
--- Name: plugins_reports_20101220_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20101220_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX plugins_reports_20101220_report_id_date_key ON plugins_reports_20101220 USING btree (report_id, date_processed, plugin_id);
 
 
 --
--- Name: plugins_reports_20101227_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20101227_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX plugins_reports_20101227_report_id_date_key ON plugins_reports_20101227 USING btree (report_id, date_processed, plugin_id);
 
 
 --
--- Name: plugins_reports_20110103_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110103_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX plugins_reports_20110103_report_id_date_key ON plugins_reports_20110103 USING btree (report_id, date_processed, plugin_id);
 
 
 --
--- Name: plugins_reports_20110110_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110110_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX plugins_reports_20110110_report_id_date_key ON plugins_reports_20110110 USING btree (report_id, date_processed, plugin_id);
 
 
 --
--- Name: plugins_reports_20110117_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110117_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX plugins_reports_20110117_report_id_date_key ON plugins_reports_20110117 USING btree (report_id, date_processed, plugin_id);
 
 
 --
--- Name: plugins_reports_20110124_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110124_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX plugins_reports_20110124_report_id_date_key ON plugins_reports_20110124 USING btree (report_id, date_processed, plugin_id);
 
 
 --
--- Name: plugins_reports_20110131_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110131_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX plugins_reports_20110131_report_id_date_key ON plugins_reports_20110131 USING btree (report_id, date_processed, plugin_id);
 
 
 --
--- Name: plugins_reports_20110207_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110207_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX plugins_reports_20110207_report_id_date_key ON plugins_reports_20110207 USING btree (report_id, date_processed, plugin_id);
 
 
 --
--- Name: plugins_reports_20110214_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110214_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX plugins_reports_20110214_report_id_date_key ON plugins_reports_20110214 USING btree (report_id, date_processed, plugin_id);
 
 
 --
--- Name: plugins_reports_20110221_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110221_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX plugins_reports_20110221_report_id_date_key ON plugins_reports_20110221 USING btree (report_id, date_processed, plugin_id);
 
 
 --
--- Name: plugins_reports_20110228_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110228_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX plugins_reports_20110228_report_id_date_key ON plugins_reports_20110228 USING btree (report_id, date_processed, plugin_id);
 
 
 --
--- Name: plugins_reports_20110307_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110307_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX plugins_reports_20110307_report_id_date_key ON plugins_reports_20110307 USING btree (report_id, date_processed, plugin_id);
 
 
 --
--- Name: plugins_reports_20110314_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110314_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX plugins_reports_20110314_report_id_date_key ON plugins_reports_20110314 USING btree (report_id, date_processed, plugin_id);
 
 
 --
--- Name: plugins_reports_20110321_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110321_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX plugins_reports_20110321_report_id_date_key ON plugins_reports_20110321 USING btree (report_id, date_processed, plugin_id);
 
 
 --
--- Name: plugins_reports_20110328_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110328_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX plugins_reports_20110328_report_id_date_key ON plugins_reports_20110328 USING btree (report_id, date_processed, plugin_id);
 
 
 --
--- Name: plugins_reports_20110404_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110404_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX plugins_reports_20110404_report_id_date_key ON plugins_reports_20110404 USING btree (report_id, date_processed, plugin_id);
 
 
 --
--- Name: plugins_reports_20110411_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110411_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX plugins_reports_20110411_report_id_date_key ON plugins_reports_20110411 USING btree (report_id, date_processed, plugin_id);
 
 
 --
--- Name: plugins_reports_20110418_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110418_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX plugins_reports_20110418_report_id_date_key ON plugins_reports_20110418 USING btree (report_id, date_processed, plugin_id);
 
 
 --
--- Name: plugins_reports_20110425_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110425_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX plugins_reports_20110425_report_id_date_key ON plugins_reports_20110425 USING btree (report_id, date_processed, plugin_id);
 
 
 --
--- Name: plugins_reports_20110502_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110502_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX plugins_reports_20110502_report_id_date_key ON plugins_reports_20110502 USING btree (report_id, date_processed, plugin_id);
 
 
 --
--- Name: plugins_reports_20110509_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110509_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX plugins_reports_20110509_report_id_date_key ON plugins_reports_20110509 USING btree (report_id, date_processed, plugin_id);
 
 
 --
--- Name: plugins_reports_20110516_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110516_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX plugins_reports_20110516_report_id_date_key ON plugins_reports_20110516 USING btree (report_id, date_processed, plugin_id);
 
 
 --
--- Name: plugins_reports_20110523_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110523_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX plugins_reports_20110523_report_id_date_key ON plugins_reports_20110523 USING btree (report_id, date_processed, plugin_id);
 
 
 --
--- Name: plugins_reports_20110530_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110530_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX plugins_reports_20110530_report_id_date_key ON plugins_reports_20110530 USING btree (report_id, date_processed, plugin_id);
 
 
 --
--- Name: plugins_reports_20110606_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110606_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX plugins_reports_20110606_report_id_date_key ON plugins_reports_20110606 USING btree (report_id, date_processed, plugin_id);
 
 
 --
--- Name: plugins_reports_20110613_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110613_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX plugins_reports_20110613_report_id_date_key ON plugins_reports_20110613 USING btree (report_id, date_processed, plugin_id);
 
 
 --
--- Name: plugins_reports_20110620_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110620_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX plugins_reports_20110620_report_id_date_key ON plugins_reports_20110620 USING btree (report_id, date_processed, plugin_id);
 
 
 --
--- Name: plugins_reports_20110627_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110627_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX plugins_reports_20110627_report_id_date_key ON plugins_reports_20110627 USING btree (report_id, date_processed, plugin_id);
 
 
 --
--- Name: plugins_reports_20110704_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110704_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX plugins_reports_20110704_report_id_date_key ON plugins_reports_20110704 USING btree (report_id, date_processed, plugin_id);
 
 
 --
--- Name: plugins_reports_20110711_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110711_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX plugins_reports_20110711_report_id_date_key ON plugins_reports_20110711 USING btree (report_id, date_processed, plugin_id);
 
 
 --
--- Name: plugins_reports_20110718_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110718_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX plugins_reports_20110718_report_id_date_key ON plugins_reports_20110718 USING btree (report_id, date_processed, plugin_id);
 
 
 --
--- Name: plugins_reports_20110725_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110725_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX plugins_reports_20110725_report_id_date_key ON plugins_reports_20110725 USING btree (report_id, date_processed, plugin_id);
 
 
 --
--- Name: plugins_reports_20110801_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110801_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX plugins_reports_20110801_report_id_date_key ON plugins_reports_20110801 USING btree (report_id, date_processed, plugin_id);
 
 
 --
--- Name: plugins_reports_20110808_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110808_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX plugins_reports_20110808_report_id_date_key ON plugins_reports_20110808 USING btree (report_id, date_processed, plugin_id);
 
 
 --
--- Name: plugins_reports_20110815_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110815_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX plugins_reports_20110815_report_id_date_key ON plugins_reports_20110815 USING btree (report_id, date_processed, plugin_id);
 
 
 --
--- Name: plugins_reports_20110822_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110822_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX plugins_reports_20110822_report_id_date_key ON plugins_reports_20110822 USING btree (report_id, date_processed, plugin_id);
 
 
 --
--- Name: plugins_reports_20110829_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20110829_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX plugins_reports_20110829_report_id_date_key ON plugins_reports_20110829 USING btree (report_id, date_processed, plugin_id);
 
 
 --
--- Name: product_version_unique_beta; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: product_version_unique_beta; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE UNIQUE INDEX product_version_unique_beta ON product_versions USING btree (product_name, major_version, beta_number) WHERE (beta_number IS NOT NULL);
 
 
 --
--- Name: product_versions_major_version; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: product_versions_major_version; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX product_versions_major_version ON product_versions USING btree (major_version);
 
 
 --
--- Name: product_versions_product_name; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: product_versions_product_name; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX product_versions_product_name ON product_versions USING btree (product_name);
 
 
 --
--- Name: product_versions_version_sort; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: product_versions_version_sort; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX product_versions_version_sort ON product_versions USING btree (version_sort);
 
 
 --
--- Name: product_visibility_end_date; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: product_visibility_end_date; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX product_visibility_end_date ON product_visibility USING btree (end_date);
 
 
 --
--- Name: product_visibility_start_date; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: product_visibility_start_date; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX product_visibility_start_date ON product_visibility USING btree (start_date);
 
 
 --
--- Name: productdims_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: productdims_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE UNIQUE INDEX productdims_product_version_key ON productdims USING btree (product, version);
 
 
 --
--- Name: productdims_sort_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: productdims_sort_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX productdims_sort_key ON productdims USING btree (product, sort_key);
 
 
 --
--- Name: r_b_i; Type: INDEX; Schema: public; Owner: postgres; Tablespace: 
+-- Name: r_b_i; Type: INDEX; Schema: public; Owner: postgres; Tablespace:
 --
 
 CREATE INDEX r_b_i ON releasechannel_backfill USING btree (uuid);
 
 
 --
--- Name: raw_adu_1_idx; Type: INDEX; Schema: public; Owner: breakpad_metrics; Tablespace: 
+-- Name: raw_adu_1_idx; Type: INDEX; Schema: public; Owner: breakpad_metrics; Tablespace:
 --
 
 CREATE INDEX raw_adu_1_idx ON raw_adu USING btree (date, product_name, product_version, product_os_platform, product_os_version);
 
 
 --
--- Name: reports_20100607_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100607_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100607_build_key ON reports_20100607 USING btree (build);
 
 
 --
--- Name: reports_20100607_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100607_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100607_date_processed_key ON reports_20100607 USING btree (date_processed);
 
 
 --
--- Name: reports_20100607_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100607_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100607_product_version_key ON reports_20100607 USING btree (product, version);
 
 
 --
--- Name: reports_20100607_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100607_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100607_reason ON reports_20100607 USING btree (reason);
 
 
 --
--- Name: reports_20100607_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100607_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100607_signature_date_processed_build_key ON reports_20100607 USING btree (signature, date_processed, build);
 
 
 --
--- Name: reports_20100607_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100607_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100607_url_key ON reports_20100607 USING btree (url);
 
 
 --
--- Name: reports_20100614_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100614_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100614_build_key ON reports_20100614 USING btree (build);
 
 
 --
--- Name: reports_20100614_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100614_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100614_date_processed_key ON reports_20100614 USING btree (date_processed);
 
 
 --
--- Name: reports_20100614_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100614_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100614_product_version_key ON reports_20100614 USING btree (product, version);
 
 
 --
--- Name: reports_20100614_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100614_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100614_reason ON reports_20100614 USING btree (reason);
 
 
 --
--- Name: reports_20100614_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100614_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100614_signature_date_processed_build_key ON reports_20100614 USING btree (signature, date_processed, build);
 
 
 --
--- Name: reports_20100614_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100614_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100614_url_key ON reports_20100614 USING btree (url);
 
 
 --
--- Name: reports_20100621_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100621_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100621_build_key ON reports_20100621 USING btree (build);
 
 
 --
--- Name: reports_20100621_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100621_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100621_date_processed_key ON reports_20100621 USING btree (date_processed);
 
 
 --
--- Name: reports_20100621_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100621_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100621_product_version_key ON reports_20100621 USING btree (product, version);
 
 
 --
--- Name: reports_20100621_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100621_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100621_reason ON reports_20100621 USING btree (reason);
 
 
 --
--- Name: reports_20100621_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100621_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100621_signature_date_processed_build_key ON reports_20100621 USING btree (signature, date_processed, build);
 
 
 --
--- Name: reports_20100621_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100621_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100621_url_key ON reports_20100621 USING btree (url);
 
 
 --
--- Name: reports_20100628_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100628_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100628_build_key ON reports_20100628 USING btree (build);
 
 
 --
--- Name: reports_20100628_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100628_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100628_date_processed_key ON reports_20100628 USING btree (date_processed);
 
 
 --
--- Name: reports_20100628_hangid_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100628_hangid_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100628_hangid_idx ON reports_20100628 USING btree (hangid);
 
 
 --
--- Name: reports_20100628_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100628_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100628_product_version_key ON reports_20100628 USING btree (product, version);
 
 
 --
--- Name: reports_20100628_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100628_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100628_reason ON reports_20100628 USING btree (reason);
 
 
 --
--- Name: reports_20100628_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100628_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100628_signature_date_processed_build_key ON reports_20100628 USING btree (signature, date_processed, build);
 
 
 --
--- Name: reports_20100628_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100628_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100628_url_key ON reports_20100628 USING btree (url);
 
 
 --
--- Name: reports_20100705_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100705_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100705_build_key ON reports_20100705 USING btree (build);
 
 
 --
--- Name: reports_20100705_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100705_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100705_date_processed_key ON reports_20100705 USING btree (date_processed);
 
 
 --
--- Name: reports_20100705_hangid_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100705_hangid_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100705_hangid_idx ON reports_20100705 USING btree (hangid);
 
 
 --
--- Name: reports_20100705_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100705_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100705_product_version_key ON reports_20100705 USING btree (product, version);
 
 
 --
--- Name: reports_20100705_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100705_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100705_reason ON reports_20100705 USING btree (reason);
 
 
 --
--- Name: reports_20100705_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100705_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100705_signature_date_processed_build_key ON reports_20100705 USING btree (signature, date_processed, build);
 
 
 --
--- Name: reports_20100705_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100705_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100705_url_key ON reports_20100705 USING btree (url);
 
 
 --
--- Name: reports_20100712_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100712_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100712_build_key ON reports_20100712 USING btree (build);
 
 
 --
--- Name: reports_20100712_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100712_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100712_date_processed_key ON reports_20100712 USING btree (date_processed);
 
 
 --
--- Name: reports_20100712_hangid_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100712_hangid_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100712_hangid_idx ON reports_20100712 USING btree (hangid);
 
 
 --
--- Name: reports_20100712_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100712_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100712_product_version_key ON reports_20100712 USING btree (product, version);
 
 
 --
--- Name: reports_20100712_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100712_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100712_reason ON reports_20100712 USING btree (reason);
 
 
 --
--- Name: reports_20100712_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100712_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100712_signature_date_processed_build_key ON reports_20100712 USING btree (signature, date_processed, build);
 
 
 --
--- Name: reports_20100712_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100712_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100712_url_key ON reports_20100712 USING btree (url);
 
 
 --
--- Name: reports_20100719_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100719_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100719_build_key ON reports_20100719 USING btree (build);
 
 
 --
--- Name: reports_20100719_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100719_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100719_date_processed_key ON reports_20100719 USING btree (date_processed);
 
 
 --
--- Name: reports_20100719_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100719_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100719_product_version_key ON reports_20100719 USING btree (product, version);
 
 
 --
--- Name: reports_20100719_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100719_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100719_reason ON reports_20100719 USING btree (reason);
 
 
 --
--- Name: reports_20100719_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100719_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100719_signature_date_processed_build_key ON reports_20100719 USING btree (signature, date_processed, build);
 
 
 --
--- Name: reports_20100719_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100719_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100719_url_key ON reports_20100719 USING btree (url);
 
 
 --
--- Name: reports_20100726_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100726_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100726_build_key ON reports_20100726 USING btree (build);
 
 
 --
--- Name: reports_20100726_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100726_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100726_date_processed_key ON reports_20100726 USING btree (date_processed);
 
 
 --
--- Name: reports_20100726_hangid_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100726_hangid_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100726_hangid_idx ON reports_20100726 USING btree (hangid);
 
 
 --
--- Name: reports_20100726_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100726_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100726_product_version_key ON reports_20100726 USING btree (product, version);
 
 
 --
--- Name: reports_20100726_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100726_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100726_reason ON reports_20100726 USING btree (reason);
 
 
 --
--- Name: reports_20100726_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100726_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100726_signature_date_processed_build_key ON reports_20100726 USING btree (signature, date_processed, build);
 
 
 --
--- Name: reports_20100726_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100726_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100726_url_key ON reports_20100726 USING btree (url);
 
 
 --
--- Name: reports_20100802_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100802_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100802_build_key ON reports_20100802 USING btree (build);
 
 
 --
--- Name: reports_20100802_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100802_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100802_date_processed_key ON reports_20100802 USING btree (date_processed);
 
 
 --
--- Name: reports_20100802_hangid_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100802_hangid_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100802_hangid_idx ON reports_20100802 USING btree (hangid);
 
 
 --
--- Name: reports_20100802_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100802_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100802_product_version_key ON reports_20100802 USING btree (product, version);
 
 
 --
--- Name: reports_20100802_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100802_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100802_reason ON reports_20100802 USING btree (reason);
 
 
 --
--- Name: reports_20100802_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100802_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100802_signature_date_processed_build_key ON reports_20100802 USING btree (signature, date_processed, build);
 
 
 --
--- Name: reports_20100802_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100802_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100802_url_key ON reports_20100802 USING btree (url);
 
 
 --
--- Name: reports_20100809_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100809_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100809_build_key ON reports_20100809 USING btree (build);
 
 
 --
--- Name: reports_20100809_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100809_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100809_date_processed_key ON reports_20100809 USING btree (date_processed);
 
 
 --
--- Name: reports_20100809_hangid_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100809_hangid_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100809_hangid_idx ON reports_20100809 USING btree (hangid);
 
 
 --
--- Name: reports_20100809_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100809_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100809_product_version_key ON reports_20100809 USING btree (product, version);
 
 
 --
--- Name: reports_20100809_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100809_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100809_reason ON reports_20100809 USING btree (reason);
 
 
 --
--- Name: reports_20100809_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100809_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100809_signature_date_processed_build_key ON reports_20100809 USING btree (signature, date_processed, build);
 
 
 --
--- Name: reports_20100809_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100809_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100809_url_key ON reports_20100809 USING btree (url);
 
 
 --
--- Name: reports_20100816_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100816_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100816_build_key ON reports_20100816 USING btree (build);
 
 
 --
--- Name: reports_20100816_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100816_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100816_date_processed_key ON reports_20100816 USING btree (date_processed);
 
 
 --
--- Name: reports_20100816_hangid_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100816_hangid_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100816_hangid_idx ON reports_20100816 USING btree (hangid);
 
 
 --
--- Name: reports_20100816_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100816_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100816_product_version_key ON reports_20100816 USING btree (product, version);
 
 
 --
--- Name: reports_20100816_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100816_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100816_reason ON reports_20100816 USING btree (reason);
 
 
 --
--- Name: reports_20100816_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100816_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100816_signature_date_processed_build_key ON reports_20100816 USING btree (signature, date_processed, build);
 
 
 --
--- Name: reports_20100816_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100816_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100816_url_key ON reports_20100816 USING btree (url);
 
 
 --
--- Name: reports_20100823_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100823_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100823_build_key ON reports_20100823 USING btree (build);
 
 
 --
--- Name: reports_20100823_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100823_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100823_date_processed_key ON reports_20100823 USING btree (date_processed);
 
 
 --
--- Name: reports_20100823_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100823_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100823_product_version_key ON reports_20100823 USING btree (product, version);
 
 
 --
--- Name: reports_20100823_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100823_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100823_reason ON reports_20100823 USING btree (reason);
 
 
 --
--- Name: reports_20100823_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100823_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100823_signature_date_processed_build_key ON reports_20100823 USING btree (signature, date_processed, build);
 
 
 --
--- Name: reports_20100823_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100823_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100823_url_key ON reports_20100823 USING btree (url);
 
 
 --
--- Name: reports_20100830_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100830_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100830_build_key ON reports_20100830 USING btree (build);
 
 
 --
--- Name: reports_20100830_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100830_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100830_date_processed_key ON reports_20100830 USING btree (date_processed);
 
 
 --
--- Name: reports_20100830_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100830_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100830_product_version_key ON reports_20100830 USING btree (product, version);
 
 
 --
--- Name: reports_20100830_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100830_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100830_reason ON reports_20100830 USING btree (reason);
 
 
 --
--- Name: reports_20100830_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100830_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100830_signature_date_processed_build_key ON reports_20100830 USING btree (signature, date_processed, build);
 
 
 --
--- Name: reports_20100830_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100830_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100830_url_key ON reports_20100830 USING btree (url);
 
 
 --
--- Name: reports_20100906_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100906_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100906_build_key ON reports_20100906 USING btree (build);
 
 
 --
--- Name: reports_20100906_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100906_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100906_date_processed_key ON reports_20100906 USING btree (date_processed);
 
 
 --
--- Name: reports_20100906_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100906_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100906_product_version_key ON reports_20100906 USING btree (product, version);
 
 
 --
--- Name: reports_20100906_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100906_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100906_reason ON reports_20100906 USING btree (reason);
 
 
 --
--- Name: reports_20100906_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100906_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100906_signature_date_processed_build_key ON reports_20100906 USING btree (signature, date_processed, build);
 
 
 --
--- Name: reports_20100906_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100906_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100906_url_key ON reports_20100906 USING btree (url);
 
 
 --
--- Name: reports_20100913_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100913_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100913_build_key ON reports_20100913 USING btree (build);
 
 
 --
--- Name: reports_20100913_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100913_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100913_date_processed_key ON reports_20100913 USING btree (date_processed);
 
 
 --
--- Name: reports_20100913_hangid_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100913_hangid_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100913_hangid_idx ON reports_20100913 USING btree (hangid);
 
 
 --
--- Name: reports_20100913_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100913_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100913_product_version_key ON reports_20100913 USING btree (product, version);
 
 
 --
--- Name: reports_20100913_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100913_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100913_reason ON reports_20100913 USING btree (reason);
 
 
 --
--- Name: reports_20100913_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100913_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100913_signature_date_processed_build_key ON reports_20100913 USING btree (signature, date_processed, build);
 
 
 --
--- Name: reports_20100913_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100913_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100913_url_key ON reports_20100913 USING btree (url);
 
 
 --
--- Name: reports_20100920_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100920_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100920_build_key ON reports_20100920 USING btree (build);
 
 
 --
--- Name: reports_20100920_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100920_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100920_date_processed_key ON reports_20100920 USING btree (date_processed);
 
 
 --
--- Name: reports_20100920_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100920_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100920_product_version_key ON reports_20100920 USING btree (product, version);
 
 
 --
--- Name: reports_20100920_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100920_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100920_reason ON reports_20100920 USING btree (reason);
 
 
 --
--- Name: reports_20100920_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100920_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100920_signature_date_processed_build_key ON reports_20100920 USING btree (signature, date_processed, build);
 
 
 --
--- Name: reports_20100920_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100920_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100920_url_key ON reports_20100920 USING btree (url);
 
 
 --
--- Name: reports_20100927_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100927_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100927_build_key ON reports_20100927 USING btree (build);
 
 
 --
--- Name: reports_20100927_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100927_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100927_date_processed_key ON reports_20100927 USING btree (date_processed);
 
 
 --
--- Name: reports_20100927_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100927_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100927_product_version_key ON reports_20100927 USING btree (product, version);
 
 
 --
--- Name: reports_20100927_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100927_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100927_reason ON reports_20100927 USING btree (reason);
 
 
 --
--- Name: reports_20100927_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100927_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100927_signature_date_processed_build_key ON reports_20100927 USING btree (signature, date_processed, build);
 
 
 --
--- Name: reports_20100927_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20100927_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20100927_url_key ON reports_20100927 USING btree (url);
 
 
 --
--- Name: reports_20101004_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101004_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20101004_build_key ON reports_20101004 USING btree (build);
 
 
 --
--- Name: reports_20101004_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101004_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20101004_date_processed_key ON reports_20101004 USING btree (date_processed);
 
 
 --
--- Name: reports_20101004_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101004_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20101004_product_version_key ON reports_20101004 USING btree (product, version);
 
 
 --
--- Name: reports_20101004_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101004_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20101004_reason ON reports_20101004 USING btree (reason);
 
 
 --
--- Name: reports_20101004_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101004_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20101004_signature_date_processed_build_key ON reports_20101004 USING btree (signature, date_processed, build);
 
 
 --
--- Name: reports_20101004_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101004_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20101004_url_key ON reports_20101004 USING btree (url);
 
 
 --
--- Name: reports_20101011_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101011_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20101011_build_key ON reports_20101011 USING btree (build);
 
 
 --
--- Name: reports_20101011_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101011_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20101011_date_processed_key ON reports_20101011 USING btree (date_processed);
 
 
 --
--- Name: reports_20101011_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101011_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20101011_product_version_key ON reports_20101011 USING btree (product, version);
 
 
 --
--- Name: reports_20101011_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101011_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20101011_reason ON reports_20101011 USING btree (reason);
 
 
 --
--- Name: reports_20101011_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101011_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20101011_signature_date_processed_build_key ON reports_20101011 USING btree (signature, date_processed, build);
 
 
 --
--- Name: reports_20101011_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101011_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20101011_url_key ON reports_20101011 USING btree (url);
 
 
 --
--- Name: reports_20101018_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101018_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20101018_build_key ON reports_20101018 USING btree (build);
 
 
 --
--- Name: reports_20101018_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101018_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20101018_date_processed_key ON reports_20101018 USING btree (date_processed);
 
 
 --
--- Name: reports_20101018_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101018_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20101018_product_version_key ON reports_20101018 USING btree (product, version);
 
 
 --
--- Name: reports_20101018_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101018_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20101018_reason ON reports_20101018 USING btree (reason);
 
 
 --
--- Name: reports_20101018_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101018_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20101018_signature_date_processed_build_key ON reports_20101018 USING btree (signature, date_processed, build);
 
 
 --
--- Name: reports_20101018_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101018_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20101018_url_key ON reports_20101018 USING btree (url);
 
 
 --
--- Name: reports_20101025_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101025_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20101025_build_key ON reports_20101025 USING btree (build);
 
 
 --
--- Name: reports_20101025_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101025_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20101025_date_processed_key ON reports_20101025 USING btree (date_processed);
 
 
 --
--- Name: reports_20101025_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101025_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20101025_product_version_key ON reports_20101025 USING btree (product, version);
 
 
 --
--- Name: reports_20101025_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101025_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20101025_reason ON reports_20101025 USING btree (reason);
 
 
 --
--- Name: reports_20101025_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101025_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20101025_signature_date_processed_build_key ON reports_20101025 USING btree (signature, date_processed, build);
 
 
 --
--- Name: reports_20101025_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101025_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20101025_url_key ON reports_20101025 USING btree (url);
 
 
 --
--- Name: reports_20101101_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101101_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20101101_build_key ON reports_20101101 USING btree (build);
 
 
 --
--- Name: reports_20101101_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101101_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20101101_date_processed_key ON reports_20101101 USING btree (date_processed);
 
 
 --
--- Name: reports_20101101_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101101_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20101101_product_version_key ON reports_20101101 USING btree (product, version);
 
 
 --
--- Name: reports_20101101_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101101_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20101101_reason ON reports_20101101 USING btree (reason);
 
 
 --
--- Name: reports_20101101_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101101_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20101101_signature_date_processed_build_key ON reports_20101101 USING btree (signature, date_processed, build);
 
 
 --
--- Name: reports_20101101_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101101_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20101101_url_key ON reports_20101101 USING btree (url);
 
 
 --
--- Name: reports_20101108_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101108_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20101108_build_key ON reports_20101108 USING btree (build);
 
 
 --
--- Name: reports_20101108_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101108_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20101108_date_processed_key ON reports_20101108 USING btree (date_processed);
 
 
 --
--- Name: reports_20101108_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101108_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20101108_product_version_key ON reports_20101108 USING btree (product, version);
 
 
 --
--- Name: reports_20101108_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101108_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20101108_reason ON reports_20101108 USING btree (reason);
 
 
 --
--- Name: reports_20101108_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101108_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20101108_signature_date_processed_build_key ON reports_20101108 USING btree (signature, date_processed, build);
 
 
 --
--- Name: reports_20101108_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101108_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20101108_url_key ON reports_20101108 USING btree (url);
 
 
 --
--- Name: reports_20101115_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101115_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20101115_build_key ON reports_20101115 USING btree (build);
 
 
 --
--- Name: reports_20101115_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101115_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20101115_date_processed_key ON reports_20101115 USING btree (date_processed);
 
 
 --
--- Name: reports_20101115_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101115_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20101115_product_version_key ON reports_20101115 USING btree (product, version);
 
 
 --
--- Name: reports_20101115_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101115_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20101115_reason ON reports_20101115 USING btree (reason);
 
 
 --
--- Name: reports_20101115_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101115_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20101115_signature_date_processed_build_key ON reports_20101115 USING btree (signature, date_processed, build);
 
 
 --
--- Name: reports_20101115_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101115_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20101115_url_key ON reports_20101115 USING btree (url);
 
 
 --
--- Name: reports_20101122_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101122_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20101122_build_key ON reports_20101122 USING btree (build);
 
 
 --
--- Name: reports_20101122_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101122_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20101122_date_processed_key ON reports_20101122 USING btree (date_processed);
 
 
 --
--- Name: reports_20101122_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101122_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20101122_product_version_key ON reports_20101122 USING btree (product, version);
 
 
 --
--- Name: reports_20101122_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101122_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20101122_reason ON reports_20101122 USING btree (reason);
 
 
 --
--- Name: reports_20101122_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101122_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20101122_signature_date_processed_build_key ON reports_20101122 USING btree (signature, date_processed, build);
 
 
 --
--- Name: reports_20101122_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101122_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20101122_url_key ON reports_20101122 USING btree (url);
 
 
 --
--- Name: reports_20101129_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101129_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20101129_build_key ON reports_20101129 USING btree (build);
 
 
 --
--- Name: reports_20101129_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101129_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20101129_date_processed_key ON reports_20101129 USING btree (date_processed);
 
 
 --
--- Name: reports_20101129_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101129_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20101129_product_version_key ON reports_20101129 USING btree (product, version);
 
 
 --
--- Name: reports_20101129_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101129_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20101129_reason ON reports_20101129 USING btree (reason);
 
 
 --
--- Name: reports_20101129_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101129_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20101129_signature_date_processed_build_key ON reports_20101129 USING btree (signature, date_processed, build);
 
 
 --
--- Name: reports_20101129_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101129_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20101129_url_key ON reports_20101129 USING btree (url);
 
 
 --
--- Name: reports_20101206_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101206_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20101206_build_key ON reports_20101206 USING btree (build);
 
 
 --
--- Name: reports_20101206_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101206_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20101206_date_processed_key ON reports_20101206 USING btree (date_processed);
 
 
 --
--- Name: reports_20101206_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101206_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20101206_product_version_key ON reports_20101206 USING btree (product, version);
 
 
 --
--- Name: reports_20101206_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101206_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20101206_reason ON reports_20101206 USING btree (reason);
 
 
 --
--- Name: reports_20101206_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101206_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20101206_signature_date_processed_build_key ON reports_20101206 USING btree (signature, date_processed, build);
 
 
 --
--- Name: reports_20101206_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101206_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20101206_url_key ON reports_20101206 USING btree (url);
 
 
 --
--- Name: reports_20101213_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101213_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20101213_build_key ON reports_20101213 USING btree (build);
 
 
 --
--- Name: reports_20101213_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101213_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20101213_date_processed_key ON reports_20101213 USING btree (date_processed);
 
 
 --
--- Name: reports_20101213_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101213_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20101213_product_version_key ON reports_20101213 USING btree (product, version);
 
 
 --
--- Name: reports_20101213_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101213_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20101213_reason ON reports_20101213 USING btree (reason);
 
 
 --
--- Name: reports_20101213_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101213_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20101213_signature_date_processed_build_key ON reports_20101213 USING btree (signature, date_processed, build);
 
 
 --
--- Name: reports_20101213_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101213_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20101213_url_key ON reports_20101213 USING btree (url);
 
 
 --
--- Name: reports_20101220_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101220_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20101220_build_key ON reports_20101220 USING btree (build);
 
 
 --
--- Name: reports_20101220_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101220_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20101220_date_processed_key ON reports_20101220 USING btree (date_processed);
 
 
 --
--- Name: reports_20101220_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101220_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20101220_product_version_key ON reports_20101220 USING btree (product, version);
 
 
 --
--- Name: reports_20101220_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101220_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20101220_reason ON reports_20101220 USING btree (reason);
 
 
 --
--- Name: reports_20101220_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101220_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20101220_signature_date_processed_build_key ON reports_20101220 USING btree (signature, date_processed, build);
 
 
 --
--- Name: reports_20101220_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101220_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20101220_url_key ON reports_20101220 USING btree (url);
 
 
 --
--- Name: reports_20101227_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101227_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20101227_build_key ON reports_20101227 USING btree (build);
 
 
 --
--- Name: reports_20101227_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101227_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20101227_date_processed_key ON reports_20101227 USING btree (date_processed);
 
 
 --
--- Name: reports_20101227_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101227_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20101227_product_version_key ON reports_20101227 USING btree (product, version);
 
 
 --
--- Name: reports_20101227_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101227_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20101227_reason ON reports_20101227 USING btree (reason);
 
 
 --
--- Name: reports_20101227_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101227_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20101227_signature_date_processed_build_key ON reports_20101227 USING btree (signature, date_processed, build);
 
 
 --
--- Name: reports_20101227_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20101227_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20101227_url_key ON reports_20101227 USING btree (url);
 
 
 --
--- Name: reports_20110103_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110103_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110103_build_key ON reports_20110103 USING btree (build);
 
 
 --
--- Name: reports_20110103_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110103_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110103_date_processed_key ON reports_20110103 USING btree (date_processed);
 
 
 --
--- Name: reports_20110103_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110103_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110103_product_version_key ON reports_20110103 USING btree (product, version);
 
 
 --
--- Name: reports_20110103_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110103_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110103_reason ON reports_20110103 USING btree (reason);
 
 
 --
--- Name: reports_20110103_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110103_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110103_signature_date_processed_build_key ON reports_20110103 USING btree (signature, date_processed, build);
 
 
 --
--- Name: reports_20110103_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110103_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110103_url_key ON reports_20110103 USING btree (url);
 
 
 --
--- Name: reports_20110110_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110110_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110110_build_key ON reports_20110110 USING btree (build);
 
 
 --
--- Name: reports_20110110_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110110_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110110_date_processed_key ON reports_20110110 USING btree (date_processed);
 
 
 --
--- Name: reports_20110110_hangid_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110110_hangid_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110110_hangid_idx ON reports_20110110 USING btree (hangid);
 
 
 --
--- Name: reports_20110110_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110110_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110110_product_version_key ON reports_20110110 USING btree (product, version);
 
 
 --
--- Name: reports_20110110_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110110_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110110_reason ON reports_20110110 USING btree (reason);
 
 
 --
--- Name: reports_20110110_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110110_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110110_signature_date_processed_build_key ON reports_20110110 USING btree (signature, date_processed, build);
 
 
 --
--- Name: reports_20110110_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110110_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110110_url_key ON reports_20110110 USING btree (url);
 
 
 --
--- Name: reports_20110117_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110117_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110117_build_key ON reports_20110117 USING btree (build);
 
 
 --
--- Name: reports_20110117_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110117_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110117_date_processed_key ON reports_20110117 USING btree (date_processed);
 
 
 --
--- Name: reports_20110117_hangid_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110117_hangid_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110117_hangid_idx ON reports_20110117 USING btree (hangid);
 
 
 --
--- Name: reports_20110117_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110117_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110117_product_version_key ON reports_20110117 USING btree (product, version);
 
 
 --
--- Name: reports_20110117_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110117_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110117_reason ON reports_20110117 USING btree (reason);
 
 
 --
--- Name: reports_20110117_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110117_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110117_signature_date_processed_build_key ON reports_20110117 USING btree (signature, date_processed, build);
 
 
 --
--- Name: reports_20110117_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110117_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110117_url_key ON reports_20110117 USING btree (url);
 
 
 --
--- Name: reports_20110124_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110124_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110124_build_key ON reports_20110124 USING btree (build);
 
 
 --
--- Name: reports_20110124_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110124_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110124_date_processed_key ON reports_20110124 USING btree (date_processed);
 
 
 --
--- Name: reports_20110124_hangid_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110124_hangid_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110124_hangid_idx ON reports_20110124 USING btree (hangid);
 
 
 --
--- Name: reports_20110124_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110124_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110124_product_version_key ON reports_20110124 USING btree (product, version);
 
 
 --
--- Name: reports_20110124_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110124_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110124_reason ON reports_20110124 USING btree (reason);
 
 
 --
--- Name: reports_20110124_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110124_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110124_signature_date_processed_build_key ON reports_20110124 USING btree (signature, date_processed, build);
 
 
 --
--- Name: reports_20110124_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110124_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110124_url_key ON reports_20110124 USING btree (url);
 
 
 --
--- Name: reports_20110131_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110131_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110131_build_key ON reports_20110131 USING btree (build);
 
 
 --
--- Name: reports_20110131_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110131_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110131_date_processed_key ON reports_20110131 USING btree (date_processed);
 
 
 --
--- Name: reports_20110131_hangid_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110131_hangid_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110131_hangid_idx ON reports_20110131 USING btree (hangid);
 
 
 --
--- Name: reports_20110131_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110131_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110131_product_version_key ON reports_20110131 USING btree (product, version);
 
 
 --
--- Name: reports_20110131_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110131_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110131_reason ON reports_20110131 USING btree (reason);
 
 
 --
--- Name: reports_20110131_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110131_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110131_signature_date_processed_build_key ON reports_20110131 USING btree (signature, date_processed, build);
 
 
 --
--- Name: reports_20110131_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110131_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110131_url_key ON reports_20110131 USING btree (url);
 
 
 --
--- Name: reports_20110207_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110207_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110207_build_key ON reports_20110207 USING btree (build);
 
 
 --
--- Name: reports_20110207_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110207_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110207_date_processed_key ON reports_20110207 USING btree (date_processed);
 
 
 --
--- Name: reports_20110207_hangid_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110207_hangid_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110207_hangid_idx ON reports_20110207 USING btree (hangid);
 
 
 --
--- Name: reports_20110207_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110207_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110207_product_version_key ON reports_20110207 USING btree (product, version);
 
 
 --
--- Name: reports_20110207_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110207_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110207_reason ON reports_20110207 USING btree (reason);
 
 
 --
--- Name: reports_20110207_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110207_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110207_signature_date_processed_build_key ON reports_20110207 USING btree (signature, date_processed, build);
 
 
 --
--- Name: reports_20110207_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110207_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110207_url_key ON reports_20110207 USING btree (url);
 
 
 --
--- Name: reports_20110214_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110214_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110214_build_key ON reports_20110214 USING btree (build);
 
 
 --
--- Name: reports_20110214_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110214_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110214_date_processed_key ON reports_20110214 USING btree (date_processed);
 
 
 --
--- Name: reports_20110214_hangid_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110214_hangid_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110214_hangid_idx ON reports_20110214 USING btree (hangid);
 
 
 --
--- Name: reports_20110214_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110214_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110214_product_version_key ON reports_20110214 USING btree (product, version);
 
 
 --
--- Name: reports_20110214_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110214_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110214_reason ON reports_20110214 USING btree (reason);
 
 
 --
--- Name: reports_20110214_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110214_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110214_signature_date_processed_build_key ON reports_20110214 USING btree (signature, date_processed, build);
 
 
 --
--- Name: reports_20110214_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110214_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110214_url_key ON reports_20110214 USING btree (url);
 
 
 --
--- Name: reports_20110221_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110221_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110221_build_key ON reports_20110221 USING btree (build);
 
 
 --
--- Name: reports_20110221_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110221_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110221_date_processed_key ON reports_20110221 USING btree (date_processed);
 
 
 --
--- Name: reports_20110221_hangid_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110221_hangid_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110221_hangid_idx ON reports_20110221 USING btree (hangid);
 
 
 --
--- Name: reports_20110221_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110221_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110221_product_version_key ON reports_20110221 USING btree (product, version);
 
 
 --
--- Name: reports_20110221_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110221_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110221_reason ON reports_20110221 USING btree (reason);
 
 
 --
--- Name: reports_20110221_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110221_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110221_signature_date_processed_build_key ON reports_20110221 USING btree (signature, date_processed, build);
 
 
 --
--- Name: reports_20110221_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110221_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110221_url_key ON reports_20110221 USING btree (url);
 
 
 --
--- Name: reports_20110228_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110228_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110228_build_key ON reports_20110228 USING btree (build);
 
 
 --
--- Name: reports_20110228_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110228_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110228_date_processed_key ON reports_20110228 USING btree (date_processed);
 
 
 --
--- Name: reports_20110228_hangid_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110228_hangid_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110228_hangid_idx ON reports_20110228 USING btree (hangid);
 
 
 --
--- Name: reports_20110228_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110228_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110228_product_version_key ON reports_20110228 USING btree (product, version);
 
 
 --
--- Name: reports_20110228_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110228_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110228_reason ON reports_20110228 USING btree (reason);
 
 
 --
--- Name: reports_20110228_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110228_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110228_signature_date_processed_build_key ON reports_20110228 USING btree (signature, date_processed, build);
 
 
 --
--- Name: reports_20110228_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110228_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110228_url_key ON reports_20110228 USING btree (url);
 
 
 --
--- Name: reports_20110307_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110307_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110307_build_key ON reports_20110307 USING btree (build);
 
 
 --
--- Name: reports_20110307_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110307_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110307_date_processed_key ON reports_20110307 USING btree (date_processed);
 
 
 --
--- Name: reports_20110307_hangid_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110307_hangid_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110307_hangid_idx ON reports_20110307 USING btree (hangid);
 
 
 --
--- Name: reports_20110307_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110307_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110307_product_version_key ON reports_20110307 USING btree (product, version);
 
 
 --
--- Name: reports_20110307_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110307_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110307_reason ON reports_20110307 USING btree (reason);
 
 
 --
--- Name: reports_20110307_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110307_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110307_signature_date_processed_build_key ON reports_20110307 USING btree (signature, date_processed, build);
 
 
 --
--- Name: reports_20110307_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110307_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110307_url_key ON reports_20110307 USING btree (url);
 
 
 --
--- Name: reports_20110314_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110314_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110314_build_key ON reports_20110314 USING btree (build);
 
 
 --
--- Name: reports_20110314_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110314_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110314_date_processed_key ON reports_20110314 USING btree (date_processed);
 
 
 --
--- Name: reports_20110314_hangid_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110314_hangid_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110314_hangid_idx ON reports_20110314 USING btree (hangid);
 
 
 --
--- Name: reports_20110314_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110314_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110314_product_version_key ON reports_20110314 USING btree (product, version);
 
 
 --
--- Name: reports_20110314_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110314_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110314_reason ON reports_20110314 USING btree (reason);
 
 
 --
--- Name: reports_20110314_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110314_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110314_signature_date_processed_build_key ON reports_20110314 USING btree (signature, date_processed, build);
 
 
 --
--- Name: reports_20110314_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110314_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110314_url_key ON reports_20110314 USING btree (url);
 
 
 --
--- Name: reports_20110321_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110321_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110321_build_key ON reports_20110321 USING btree (build);
 
 
 --
--- Name: reports_20110321_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110321_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110321_date_processed_key ON reports_20110321 USING btree (date_processed);
 
 
 --
--- Name: reports_20110321_hangid_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110321_hangid_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110321_hangid_idx ON reports_20110321 USING btree (hangid);
 
 
 --
--- Name: reports_20110321_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110321_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110321_product_version_key ON reports_20110321 USING btree (product, version);
 
 
 --
--- Name: reports_20110321_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110321_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110321_reason ON reports_20110321 USING btree (reason);
 
 
 --
--- Name: reports_20110321_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110321_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110321_signature_date_processed_build_key ON reports_20110321 USING btree (signature, date_processed, build);
 
 
 --
--- Name: reports_20110321_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110321_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110321_url_key ON reports_20110321 USING btree (url);
 
 
 --
--- Name: reports_20110328_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110328_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110328_build_key ON reports_20110328 USING btree (build);
 
 
 --
--- Name: reports_20110328_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110328_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110328_date_processed_key ON reports_20110328 USING btree (date_processed);
 
 
 --
--- Name: reports_20110328_hangid_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110328_hangid_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110328_hangid_idx ON reports_20110328 USING btree (hangid);
 
 
 --
--- Name: reports_20110328_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110328_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110328_product_version_key ON reports_20110328 USING btree (product, version);
 
 
 --
--- Name: reports_20110328_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110328_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110328_reason ON reports_20110328 USING btree (reason);
 
 
 --
--- Name: reports_20110328_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110328_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110328_signature_date_processed_build_key ON reports_20110328 USING btree (signature, date_processed, build);
 
 
 --
--- Name: reports_20110328_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110328_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110328_url_key ON reports_20110328 USING btree (url);
 
 
 --
--- Name: reports_20110404_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110404_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110404_build_key ON reports_20110404 USING btree (build);
 
 
 --
--- Name: reports_20110404_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110404_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110404_date_processed_key ON reports_20110404 USING btree (date_processed);
 
 
 --
--- Name: reports_20110404_hangid_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110404_hangid_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110404_hangid_idx ON reports_20110404 USING btree (hangid);
 
 
 --
--- Name: reports_20110404_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110404_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110404_product_version_key ON reports_20110404 USING btree (product, version);
 
 
 --
--- Name: reports_20110404_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110404_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110404_reason ON reports_20110404 USING btree (reason);
 
 
 --
--- Name: reports_20110404_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110404_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110404_signature_date_processed_build_key ON reports_20110404 USING btree (signature, date_processed, build);
 
 
 --
--- Name: reports_20110404_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110404_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110404_url_key ON reports_20110404 USING btree (url);
 
 
 --
--- Name: reports_20110411_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110411_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110411_build_key ON reports_20110411 USING btree (build);
 
 
 --
--- Name: reports_20110411_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110411_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110411_date_processed_key ON reports_20110411 USING btree (date_processed);
 
 
 --
--- Name: reports_20110411_hangid_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110411_hangid_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110411_hangid_idx ON reports_20110411 USING btree (hangid);
 
 
 --
--- Name: reports_20110411_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110411_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110411_product_version_key ON reports_20110411 USING btree (product, version);
 
 
 --
--- Name: reports_20110411_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110411_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110411_reason ON reports_20110411 USING btree (reason);
 
 
 --
--- Name: reports_20110411_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110411_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110411_signature_date_processed_build_key ON reports_20110411 USING btree (signature, date_processed, build);
 
 
 --
--- Name: reports_20110411_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110411_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110411_url_key ON reports_20110411 USING btree (url);
 
 
 --
--- Name: reports_20110418_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110418_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110418_build_key ON reports_20110418 USING btree (build);
 
 
 --
--- Name: reports_20110418_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110418_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110418_date_processed_key ON reports_20110418 USING btree (date_processed);
 
 
 --
--- Name: reports_20110418_hangid_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110418_hangid_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110418_hangid_idx ON reports_20110418 USING btree (hangid);
 
 
 --
--- Name: reports_20110418_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110418_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110418_product_version_key ON reports_20110418 USING btree (product, version);
 
 
 --
--- Name: reports_20110418_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110418_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110418_reason ON reports_20110418 USING btree (reason);
 
 
 --
--- Name: reports_20110418_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110418_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110418_signature_date_processed_build_key ON reports_20110418 USING btree (signature, date_processed, build);
 
 
 --
--- Name: reports_20110418_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110418_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110418_url_key ON reports_20110418 USING btree (url);
 
 
 --
--- Name: reports_20110425_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110425_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110425_build_key ON reports_20110425 USING btree (build);
 
 
 --
--- Name: reports_20110425_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110425_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110425_date_processed_key ON reports_20110425 USING btree (date_processed);
 
 
 --
--- Name: reports_20110425_hangid_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110425_hangid_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110425_hangid_idx ON reports_20110425 USING btree (hangid);
 
 
 --
--- Name: reports_20110425_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110425_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110425_product_version_key ON reports_20110425 USING btree (product, version);
 
 
 --
--- Name: reports_20110425_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110425_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110425_reason ON reports_20110425 USING btree (reason);
 
 
 --
--- Name: reports_20110425_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110425_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110425_signature_date_processed_build_key ON reports_20110425 USING btree (signature, date_processed, build);
 
 
 --
--- Name: reports_20110425_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110425_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110425_url_key ON reports_20110425 USING btree (url);
 
 
 --
--- Name: reports_20110502_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110502_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110502_build_key ON reports_20110502 USING btree (build);
 
 
 --
--- Name: reports_20110502_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110502_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110502_date_processed_key ON reports_20110502 USING btree (date_processed);
 
 
 --
--- Name: reports_20110502_hangid_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110502_hangid_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110502_hangid_idx ON reports_20110502 USING btree (hangid);
 
 
 --
--- Name: reports_20110502_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110502_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110502_product_version_key ON reports_20110502 USING btree (product, version);
 
 
 --
--- Name: reports_20110502_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110502_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110502_reason ON reports_20110502 USING btree (reason);
 
 
 --
--- Name: reports_20110502_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110502_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110502_signature_date_processed_build_key ON reports_20110502 USING btree (signature, date_processed, build);
 
 
 --
--- Name: reports_20110502_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110502_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110502_url_key ON reports_20110502 USING btree (url);
 
 
 --
--- Name: reports_20110509_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110509_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110509_build_key ON reports_20110509 USING btree (build);
 
 
 --
--- Name: reports_20110509_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110509_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110509_date_processed_key ON reports_20110509 USING btree (date_processed);
 
 
 --
--- Name: reports_20110509_hangid_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110509_hangid_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110509_hangid_idx ON reports_20110509 USING btree (hangid);
 
 
 --
--- Name: reports_20110509_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110509_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110509_product_version_key ON reports_20110509 USING btree (product, version);
 
 
 --
--- Name: reports_20110509_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110509_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110509_reason ON reports_20110509 USING btree (reason);
 
 
 --
--- Name: reports_20110509_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110509_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110509_signature_date_processed_build_key ON reports_20110509 USING btree (signature, date_processed, build);
 
 
 --
--- Name: reports_20110509_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110509_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110509_url_key ON reports_20110509 USING btree (url);
 
 
 --
--- Name: reports_20110516_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110516_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110516_build_key ON reports_20110516 USING btree (build);
 
 
 --
--- Name: reports_20110516_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110516_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110516_date_processed_key ON reports_20110516 USING btree (date_processed);
 
 
 --
--- Name: reports_20110516_hangid_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110516_hangid_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110516_hangid_idx ON reports_20110516 USING btree (hangid);
 
 
 --
--- Name: reports_20110516_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110516_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110516_product_version_key ON reports_20110516 USING btree (product, version);
 
 
 --
--- Name: reports_20110516_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110516_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110516_reason ON reports_20110516 USING btree (reason);
 
 
 --
--- Name: reports_20110516_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110516_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110516_signature_date_processed_build_key ON reports_20110516 USING btree (signature, date_processed, build);
 
 
 --
--- Name: reports_20110516_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110516_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110516_url_key ON reports_20110516 USING btree (url);
 
 
 --
--- Name: reports_20110523_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110523_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110523_build_key ON reports_20110523 USING btree (build);
 
 
 --
--- Name: reports_20110523_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110523_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110523_date_processed_key ON reports_20110523 USING btree (date_processed);
 
 
 --
--- Name: reports_20110523_hangid_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110523_hangid_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110523_hangid_idx ON reports_20110523 USING btree (hangid);
 
 
 --
--- Name: reports_20110523_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110523_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110523_product_version_key ON reports_20110523 USING btree (product, version);
 
 
 --
--- Name: reports_20110523_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110523_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110523_reason ON reports_20110523 USING btree (reason);
 
 
 --
--- Name: reports_20110523_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110523_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110523_signature_date_processed_build_key ON reports_20110523 USING btree (signature, date_processed, build);
 
 
 --
--- Name: reports_20110523_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110523_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110523_url_key ON reports_20110523 USING btree (url);
 
 
 --
--- Name: reports_20110530_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110530_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110530_build_key ON reports_20110530 USING btree (build);
 
 
 --
--- Name: reports_20110530_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110530_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110530_date_processed_key ON reports_20110530 USING btree (date_processed);
 
 
 --
--- Name: reports_20110530_hangid_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110530_hangid_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110530_hangid_idx ON reports_20110530 USING btree (hangid);
 
 
 --
--- Name: reports_20110530_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110530_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110530_product_version_key ON reports_20110530 USING btree (product, version);
 
 
 --
--- Name: reports_20110530_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110530_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110530_reason ON reports_20110530 USING btree (reason);
 
 
 --
--- Name: reports_20110530_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110530_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110530_signature_date_processed_build_key ON reports_20110530 USING btree (signature, date_processed, build);
 
 
 --
--- Name: reports_20110530_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110530_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110530_url_key ON reports_20110530 USING btree (url);
 
 
 --
--- Name: reports_20110606_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110606_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110606_build_key ON reports_20110606 USING btree (build);
 
 
 --
--- Name: reports_20110606_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110606_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110606_date_processed_key ON reports_20110606 USING btree (date_processed);
 
 
 --
--- Name: reports_20110606_hangid_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110606_hangid_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110606_hangid_idx ON reports_20110606 USING btree (hangid);
 
 
 --
--- Name: reports_20110606_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110606_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110606_product_version_key ON reports_20110606 USING btree (product, version);
 
 
 --
--- Name: reports_20110606_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110606_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110606_reason ON reports_20110606 USING btree (reason);
 
 
 --
--- Name: reports_20110606_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110606_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110606_signature_date_processed_build_key ON reports_20110606 USING btree (signature, date_processed, build);
 
 
 --
--- Name: reports_20110606_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110606_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110606_url_key ON reports_20110606 USING btree (url);
 
 
 --
--- Name: reports_20110613_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110613_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110613_build_key ON reports_20110613 USING btree (build);
 
 
 --
--- Name: reports_20110613_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110613_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110613_date_processed_key ON reports_20110613 USING btree (date_processed);
 
 
 --
--- Name: reports_20110613_hangid_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110613_hangid_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110613_hangid_idx ON reports_20110613 USING btree (hangid);
 
 
 --
--- Name: reports_20110613_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110613_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110613_product_version_key ON reports_20110613 USING btree (product, version);
 
 
 --
--- Name: reports_20110613_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110613_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110613_reason ON reports_20110613 USING btree (reason);
 
 
 --
--- Name: reports_20110613_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110613_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110613_signature_date_processed_build_key ON reports_20110613 USING btree (signature, date_processed, build);
 
 
 --
--- Name: reports_20110613_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110613_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110613_url_key ON reports_20110613 USING btree (url);
 
 
 --
--- Name: reports_20110620_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110620_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110620_build_key ON reports_20110620 USING btree (build);
 
 
 --
--- Name: reports_20110620_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110620_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110620_date_processed_key ON reports_20110620 USING btree (date_processed);
 
 
 --
--- Name: reports_20110620_hangid_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110620_hangid_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110620_hangid_idx ON reports_20110620 USING btree (hangid);
 
 
 --
--- Name: reports_20110620_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110620_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110620_product_version_key ON reports_20110620 USING btree (product, version);
 
 
 --
--- Name: reports_20110620_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110620_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110620_reason ON reports_20110620 USING btree (reason);
 
 
 --
--- Name: reports_20110620_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110620_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110620_signature_date_processed_build_key ON reports_20110620 USING btree (signature, date_processed, build);
 
 
 --
--- Name: reports_20110620_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110620_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110620_url_key ON reports_20110620 USING btree (url);
 
 
 --
--- Name: reports_20110627_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110627_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110627_build_key ON reports_20110627 USING btree (build);
 
 
 --
--- Name: reports_20110627_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110627_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110627_date_processed_key ON reports_20110627 USING btree (date_processed);
 
 
 --
--- Name: reports_20110627_hangid_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110627_hangid_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110627_hangid_idx ON reports_20110627 USING btree (hangid);
 
 
 --
--- Name: reports_20110627_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110627_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110627_product_version_key ON reports_20110627 USING btree (product, version);
 
 
 --
--- Name: reports_20110627_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110627_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110627_reason ON reports_20110627 USING btree (reason);
 
 
 --
--- Name: reports_20110627_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110627_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110627_signature_date_processed_build_key ON reports_20110627 USING btree (signature, date_processed, build);
 
 
 --
--- Name: reports_20110627_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110627_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110627_url_key ON reports_20110627 USING btree (url);
 
 
 --
--- Name: reports_20110704_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110704_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110704_build_key ON reports_20110704 USING btree (build);
 
 
 --
--- Name: reports_20110704_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110704_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110704_date_processed_key ON reports_20110704 USING btree (date_processed);
 
 
 --
--- Name: reports_20110704_hangid_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110704_hangid_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110704_hangid_idx ON reports_20110704 USING btree (hangid);
 
 
 --
--- Name: reports_20110704_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110704_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110704_product_version_key ON reports_20110704 USING btree (product, version);
 
 
 --
--- Name: reports_20110704_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110704_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110704_reason ON reports_20110704 USING btree (reason);
 
 
 --
--- Name: reports_20110704_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110704_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110704_signature_date_processed_build_key ON reports_20110704 USING btree (signature, date_processed, build);
 
 
 --
--- Name: reports_20110704_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110704_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110704_url_key ON reports_20110704 USING btree (url);
 
 
 --
--- Name: reports_20110704_uuid_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110704_uuid_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110704_uuid_key ON reports_20110704 USING btree (uuid);
 
 
 --
--- Name: reports_20110711_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110711_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110711_build_key ON reports_20110711 USING btree (build);
 
 
 --
--- Name: reports_20110711_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110711_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110711_date_processed_key ON reports_20110711 USING btree (date_processed);
 
 
 --
--- Name: reports_20110711_hangid_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110711_hangid_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110711_hangid_idx ON reports_20110711 USING btree (hangid);
 
 
 --
--- Name: reports_20110711_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110711_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110711_product_version_key ON reports_20110711 USING btree (product, version);
 
 
 --
--- Name: reports_20110711_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110711_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110711_reason ON reports_20110711 USING btree (reason);
 
 
 --
--- Name: reports_20110711_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110711_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110711_signature_date_processed_build_key ON reports_20110711 USING btree (signature, date_processed, build);
 
 
 --
--- Name: reports_20110711_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110711_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110711_url_key ON reports_20110711 USING btree (url);
 
 
 --
--- Name: reports_20110711_uuid_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110711_uuid_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110711_uuid_key ON reports_20110711 USING btree (uuid);
 
 
 --
--- Name: reports_20110718_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110718_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110718_build_key ON reports_20110718 USING btree (build);
 
 
 --
--- Name: reports_20110718_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110718_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110718_date_processed_key ON reports_20110718 USING btree (date_processed);
 
 
 --
--- Name: reports_20110718_hangid_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110718_hangid_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110718_hangid_idx ON reports_20110718 USING btree (hangid);
 
 
 --
--- Name: reports_20110718_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110718_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110718_product_version_key ON reports_20110718 USING btree (product, version);
 
 
 --
--- Name: reports_20110718_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110718_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110718_reason ON reports_20110718 USING btree (reason);
 
 
 --
--- Name: reports_20110718_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110718_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110718_signature_date_processed_build_key ON reports_20110718 USING btree (signature, date_processed, build);
 
 
 --
--- Name: reports_20110718_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110718_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110718_url_key ON reports_20110718 USING btree (url);
 
 
 --
--- Name: reports_20110718_uuid_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110718_uuid_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110718_uuid_key ON reports_20110718 USING btree (uuid);
 
 
 --
--- Name: reports_20110725_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110725_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110725_build_key ON reports_20110725 USING btree (build);
 
 
 --
--- Name: reports_20110725_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110725_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110725_date_processed_key ON reports_20110725 USING btree (date_processed);
 
 
 --
--- Name: reports_20110725_hangid_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110725_hangid_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110725_hangid_idx ON reports_20110725 USING btree (hangid);
 
 
 --
--- Name: reports_20110725_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110725_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110725_product_version_key ON reports_20110725 USING btree (product, version);
 
 
 --
--- Name: reports_20110725_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110725_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110725_reason ON reports_20110725 USING btree (reason);
 
 
 --
--- Name: reports_20110725_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110725_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110725_signature_date_processed_build_key ON reports_20110725 USING btree (signature, date_processed, build);
 
 
 --
--- Name: reports_20110725_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110725_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110725_url_key ON reports_20110725 USING btree (url);
 
 
 --
--- Name: reports_20110725_uuid_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110725_uuid_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110725_uuid_key ON reports_20110725 USING btree (uuid);
 
 
 --
--- Name: reports_20110801_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110801_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110801_build_key ON reports_20110801 USING btree (build);
 
 
 --
--- Name: reports_20110801_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110801_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110801_date_processed_key ON reports_20110801 USING btree (date_processed);
 
 
 --
--- Name: reports_20110801_hangid_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110801_hangid_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110801_hangid_idx ON reports_20110801 USING btree (hangid);
 
 
 --
--- Name: reports_20110801_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110801_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110801_product_version_key ON reports_20110801 USING btree (product, version);
 
 
 --
--- Name: reports_20110801_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110801_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110801_reason ON reports_20110801 USING btree (reason);
 
 
 --
--- Name: reports_20110801_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110801_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110801_signature_date_processed_build_key ON reports_20110801 USING btree (signature, date_processed, build);
 
 
 --
--- Name: reports_20110801_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110801_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110801_url_key ON reports_20110801 USING btree (url);
 
 
 --
--- Name: reports_20110801_uuid_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110801_uuid_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110801_uuid_key ON reports_20110801 USING btree (uuid);
 
 
 --
--- Name: reports_20110808_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110808_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110808_build_key ON reports_20110808 USING btree (build);
 
 
 --
--- Name: reports_20110808_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110808_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110808_date_processed_key ON reports_20110808 USING btree (date_processed);
 
 
 --
--- Name: reports_20110808_hangid_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110808_hangid_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110808_hangid_idx ON reports_20110808 USING btree (hangid);
 
 
 --
--- Name: reports_20110808_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110808_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110808_product_version_key ON reports_20110808 USING btree (product, version);
 
 
 --
--- Name: reports_20110808_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110808_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110808_reason ON reports_20110808 USING btree (reason);
 
 
 --
--- Name: reports_20110808_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110808_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110808_signature_date_processed_build_key ON reports_20110808 USING btree (signature, date_processed, build);
 
 
 --
--- Name: reports_20110808_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110808_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110808_url_key ON reports_20110808 USING btree (url);
 
 
 --
--- Name: reports_20110808_uuid_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110808_uuid_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110808_uuid_key ON reports_20110808 USING btree (uuid);
 
 
 --
--- Name: reports_20110815_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110815_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110815_build_key ON reports_20110815 USING btree (build);
 
 
 --
--- Name: reports_20110815_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110815_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110815_date_processed_key ON reports_20110815 USING btree (date_processed);
 
 
 --
--- Name: reports_20110815_hangid_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110815_hangid_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110815_hangid_idx ON reports_20110815 USING btree (hangid);
 
 
 --
--- Name: reports_20110815_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110815_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110815_product_version_key ON reports_20110815 USING btree (product, version);
 
 
 --
--- Name: reports_20110815_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110815_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110815_reason ON reports_20110815 USING btree (reason);
 
 
 --
--- Name: reports_20110815_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110815_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110815_signature_date_processed_build_key ON reports_20110815 USING btree (signature, date_processed, build);
 
 
 --
--- Name: reports_20110815_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110815_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110815_url_key ON reports_20110815 USING btree (url);
 
 
 --
--- Name: reports_20110815_uuid_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110815_uuid_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110815_uuid_key ON reports_20110815 USING btree (uuid);
 
 
 --
--- Name: reports_20110822_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110822_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110822_build_key ON reports_20110822 USING btree (build);
 
 
 --
--- Name: reports_20110822_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110822_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110822_date_processed_key ON reports_20110822 USING btree (date_processed);
 
 
 --
--- Name: reports_20110822_hangid_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110822_hangid_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110822_hangid_idx ON reports_20110822 USING btree (hangid);
 
 
 --
--- Name: reports_20110822_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110822_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110822_product_version_key ON reports_20110822 USING btree (product, version);
 
 
 --
--- Name: reports_20110822_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110822_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110822_reason ON reports_20110822 USING btree (reason);
 
 
 --
--- Name: reports_20110822_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110822_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110822_signature_date_processed_build_key ON reports_20110822 USING btree (signature, date_processed, build);
 
 
 --
--- Name: reports_20110822_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110822_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110822_url_key ON reports_20110822 USING btree (url);
 
 
 --
--- Name: reports_20110822_uuid_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110822_uuid_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110822_uuid_key ON reports_20110822 USING btree (uuid);
 
 
 --
--- Name: reports_20110829_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110829_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110829_build_key ON reports_20110829 USING btree (build);
 
 
 --
--- Name: reports_20110829_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110829_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110829_date_processed_key ON reports_20110829 USING btree (date_processed);
 
 
 --
--- Name: reports_20110829_hangid_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110829_hangid_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110829_hangid_idx ON reports_20110829 USING btree (hangid);
 
 
 --
--- Name: reports_20110829_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110829_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110829_product_version_key ON reports_20110829 USING btree (product, version);
 
 
 --
--- Name: reports_20110829_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110829_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110829_reason ON reports_20110829 USING btree (reason);
 
 
 --
--- Name: reports_20110829_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110829_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110829_signature_date_processed_build_key ON reports_20110829 USING btree (signature, date_processed, build);
 
 
 --
--- Name: reports_20110829_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110829_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110829_url_key ON reports_20110829 USING btree (url);
 
 
 --
--- Name: reports_20110829_uuid_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110829_uuid_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110829_uuid_key ON reports_20110829 USING btree (uuid);
 
 
 --
--- Name: reports_20110905_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110905_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110905_build_key ON reports_20110905 USING btree (build);
 
 
 --
--- Name: reports_20110905_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110905_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110905_date_processed_key ON reports_20110905 USING btree (date_processed);
 
 
 --
--- Name: reports_20110905_hangid_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110905_hangid_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110905_hangid_idx ON reports_20110905 USING btree (hangid);
 
 
 --
--- Name: reports_20110905_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110905_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110905_product_version_key ON reports_20110905 USING btree (product, version);
 
 
 --
--- Name: reports_20110905_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110905_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110905_reason ON reports_20110905 USING btree (reason);
 
 
 --
--- Name: reports_20110905_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110905_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110905_signature_date_processed_build_key ON reports_20110905 USING btree (signature, date_processed, build);
 
 
 --
--- Name: reports_20110905_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110905_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110905_url_key ON reports_20110905 USING btree (url);
 
 
 --
--- Name: reports_20110905_uuid_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_20110905_uuid_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_20110905_uuid_key ON reports_20110905 USING btree (uuid);
 
 
 --
--- Name: reports_duplicates_leader; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: reports_duplicates_leader; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX reports_duplicates_leader ON reports_duplicates USING btree (duplicate_of);
 
 
 --
--- Name: signature_build_first_report; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: signature_build_first_report; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX signature_build_first_report ON signature_build USING btree (first_report);
 
 
 --
--- Name: signature_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: signature_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE UNIQUE INDEX signature_build_key ON signature_build USING btree (signature, product, version, os_name, build);
 
 
 --
--- Name: signature_build_product; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: signature_build_product; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX signature_build_product ON signature_build USING btree (product, version);
 
 
 --
--- Name: signature_build_productdims; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: signature_build_productdims; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX signature_build_productdims ON signature_build USING btree (productdims_id);
 
 
 --
--- Name: signature_build_signature; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: signature_build_signature; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX signature_build_signature ON signature_build USING btree (signature);
 
 
 --
--- Name: signature_products_product_version; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: signature_products_product_version; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX signature_products_product_version ON signature_products USING btree (product_version_id);
 
 
 --
--- Name: tcbs_product_version; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: tcbs_product_version; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX tcbs_product_version ON tcbs USING btree (product_version_id, report_date);
 
 
 --
--- Name: tcbs_report_date; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: tcbs_report_date; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX tcbs_report_date ON tcbs USING btree (report_date);
 
 
 --
--- Name: tcbs_signature; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: tcbs_signature; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX tcbs_signature ON tcbs USING btree (signature_id);
 
 
 --
--- Name: top_crashes_by_signature2_osdims_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: top_crashes_by_signature2_osdims_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX top_crashes_by_signature2_osdims_key ON top_crashes_by_signature USING btree (osdims_id);
 
 
 --
--- Name: top_crashes_by_signature2_productdims_window_end_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: top_crashes_by_signature2_productdims_window_end_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX top_crashes_by_signature2_productdims_window_end_idx ON top_crashes_by_signature USING btree (productdims_id, window_end DESC);
 
 
 --
--- Name: top_crashes_by_signature2_signature_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: top_crashes_by_signature2_signature_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX top_crashes_by_signature2_signature_key ON top_crashes_by_signature USING btree (signature);
 
 
 --
--- Name: top_crashes_by_signature2_window_end_productdims_id_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: top_crashes_by_signature2_window_end_productdims_id_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX top_crashes_by_signature2_window_end_productdims_id_idx ON top_crashes_by_signature USING btree (window_end DESC, productdims_id);
 
 
 --
--- Name: top_crashes_by_url2_count_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: top_crashes_by_url2_count_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX top_crashes_by_url2_count_key ON top_crashes_by_url USING btree (count);
 
 
 --
--- Name: top_crashes_by_url2_osdims_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: top_crashes_by_url2_osdims_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX top_crashes_by_url2_osdims_key ON top_crashes_by_url USING btree (osdims_id);
 
 
 --
--- Name: top_crashes_by_url2_productdims_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: top_crashes_by_url2_productdims_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX top_crashes_by_url2_productdims_key ON top_crashes_by_url USING btree (productdims_id);
 
 
 --
--- Name: top_crashes_by_url2_urldims_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: top_crashes_by_url2_urldims_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX top_crashes_by_url2_urldims_key ON top_crashes_by_url USING btree (urldims_id);
 
 
 --
--- Name: top_crashes_by_url2_window_end_window_size_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: top_crashes_by_url2_window_end_window_size_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX top_crashes_by_url2_window_end_window_size_key ON top_crashes_by_url USING btree (window_end, window_size);
 
 
 --
--- Name: topcrashurlfactsreports_topcrashurlfacts_id_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: topcrashurlfactsreports_topcrashurlfacts_id_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE INDEX topcrashurlfactsreports_topcrashurlfacts_id_key ON topcrashurlfactsreports USING btree (topcrashurlfacts_id);
 
 
 --
--- Name: urldims_url_domain_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: urldims_url_domain_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace:
 --
 
 CREATE UNIQUE INDEX urldims_url_domain_key ON urldims USING btree (url, domain);

@@ -1,7 +1,7 @@
 <?php defined('SYSPATH') or die('No direct script access.');
 /**
  * Credit card validation configuration.
- * 
+ *
  * Options for each credit card:
  *  length - All the allowed card number lengths, in a comma separated string
  *  prefix - The digits the card needs to start with, in regex format

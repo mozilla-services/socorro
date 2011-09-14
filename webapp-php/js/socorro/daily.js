@@ -1,5 +1,5 @@
 var chartOpts;
-$(document).ready(function() { 
+$(document).ready(function() {
   chartOpts = {
   	xaxis: {
   		mode: 'time',
@@ -49,7 +49,7 @@ $(document).ready(function() {
         { data: data.ratio3 },
      	{ data: data.ratio4 }
       ];
-          
+
       $(document).ready(function() {
         $.plot($("#adu-chart"), chartData, chartOpts);
       });
@@ -66,7 +66,7 @@ $(document).ready(function() {
   $("#click_by_os").bind("click", function(){
     showHideDaily("daily_search_os_form");
   });
-  
+
   $("#click_by_report_type").bind("click", function(){
     showHideDaily("daily_search_report_type_form");
   });
@@ -77,7 +77,7 @@ $(document).ready(function() {
     var url = url_form + '?p=' + product;
     window.location = url;
   });
-  
+
   $("#daily_search_os_form_products").change(function(){
     var url_form = $("#daily_search_os_form").attr('action');
     var product = $(this).find(":selected").val();
@@ -92,7 +92,7 @@ $(document).ready(function() {
       $("#throttle"+key).val(throttle_default);
     });
   }
-  
+
 });
 
 $("#adu-chart").ready(function(){
@@ -109,6 +109,6 @@ function showHideDaily(id) {
 	$("#daily_search_version_form").hide();
 	$("#daily_search_os_form").hide();
 	$("#daily_search_report_type_form").hide();
-	$("#"+id).show("fast");	
+	$("#"+id).show("fast");
 }
 

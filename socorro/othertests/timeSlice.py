@@ -20,7 +20,7 @@ def nilSlice(counting = False):
   stop = time.time()
   if counting: return stop-start
   else: display(start,stop,'no slice')
-  
+
 def noSlice(counting=False):
   start = time.time()
   for i in range(loops):
@@ -28,7 +28,7 @@ def noSlice(counting=False):
   stop = time.time()
   if counting: return stop-start
   else: display(start,stop,'[:] slice')
-  
+
 def smallSlice(counting=False):
   start = time.time()
   for i in range(loops):
@@ -36,7 +36,7 @@ def smallSlice(counting=False):
   stop = time.time()
   if counting: return stop-start
   else: display(start,stop,'[:5] slice')
-  
+
 def equalSlice(counting=False):
   start = time.time()
   for i in range(loops):
@@ -44,7 +44,7 @@ def equalSlice(counting=False):
   stop = time.time()
   if counting: return stop-start
   else:display(start,stop,'[:len] slice')
-  
+
 def bigSlice(counting=False):
   start = time.time()
   for i in range(loops):
@@ -52,7 +52,7 @@ def bigSlice(counting=False):
   stop = time.time()
   if counting: return stop-start
   else: display(start,stop,'[:len+] slice')
-  
+
 def hugeSlice(counting=False):
   start = time.time()
   for i in range(loops):

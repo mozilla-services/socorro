@@ -1,4 +1,4 @@
-$(document).ready(function() { 
+$(document).ready(function() {
     /* show / hide NOSCRIPT support */
     $('.bug_ids_extra').hide();
     $('.bug_ids_more').show();
@@ -7,13 +7,13 @@ $(document).ready(function() {
     $('.bug-link').each(function(i, v) {
       query_string += v.innerHTML + ",";
     });
-    
-    if (query_string) { 
+
+    if (query_string) {
       $.ajax({
-        url: "/buginfo/bug?id=" + query_string + "&include_fields=summary,status,id,resolution", 
+        url: "/buginfo/bug?id=" + query_string + "&include_fields=summary,status,id,resolution",
         dataType: 'json',
         success: function(data) {
-          var bugTable = {}; 
+          var bugTable = {};
           $.each(data.bugs, function(i, v) {
             bugTable[v.id] = v;
           });
@@ -21,7 +21,7 @@ $(document).ready(function() {
             var bug = bugTable[v.innerHTML];
             if (bug) {
               $(this).attr("title", bug.status + " " + bug.resolution + " " + bug.summary);
-              if(bug.resolution.length > 0 && 
+              if(bug.resolution.length > 0 &&
                  !(bug.resolution in ['UNCONFIRMED','NEW','ASSIGNED','REOPENED'])) {
                 $(this).addClass("strike");
               }
@@ -35,10 +35,10 @@ $(document).ready(function() {
               $(this).after(" " + bug.status + " " + bug.resolution + " " + bug.summary);
             }
           });
-        } 
+        }
       });
     }
-    
+
     // Bugzilla Integration
     $('.bug_ids_more').hover(function(){
 	var inset = 10,

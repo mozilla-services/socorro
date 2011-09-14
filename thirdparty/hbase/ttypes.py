@@ -20,7 +20,7 @@ class TCell:
   stored with together as a result for get and getRow methods. This promotes
   the timestamp of a cell to a first-class value, making it easy to take
   note of temporal data. Cell is used all the way from HStore up to HTable.
-  
+
   Attributes:
    - value
    - timestamp
@@ -92,7 +92,7 @@ class ColumnDescriptor:
   An HColumnDescriptor contains information about a column family
   such as the number of versions, compression settings, etc. It is
   used as input when creating a table or adding a column.
-  
+
   Attributes:
    - name
    - maxVersions
@@ -246,7 +246,7 @@ class ColumnDescriptor:
 class TRegionInfo:
   """
   A TRegionInfo contains information about an HTable region.
-  
+
   Attributes:
    - startKey
    - endKey
@@ -352,7 +352,7 @@ class TRegionInfo:
 class Mutation:
   """
   A Mutation object is used to either update or delete a column-value.
-  
+
   Attributes:
    - isDelete
    - column
@@ -434,7 +434,7 @@ class Mutation:
 class BatchMutation:
   """
   A BatchMutation object is used to apply a number of Mutations to a single row.
-  
+
   Attributes:
    - row
    - mutations
@@ -513,7 +513,7 @@ class BatchMutation:
 class TRowResult:
   """
   Holds row name and then a map of columns to cells.
-  
+
   Attributes:
    - row
    - columns
@@ -546,7 +546,7 @@ class TRowResult:
       elif fid == 2:
         if ftype == TType.MAP:
           self.columns = {}
-          (_ktype8, _vtype9, _size7 ) = iprot.readMapBegin() 
+          (_ktype8, _vtype9, _size7 ) = iprot.readMapBegin()
           for _i11 in xrange(_size7):
             _key12 = iprot.readString();
             _val13 = TCell()
@@ -596,7 +596,7 @@ class IOError(Exception):
   An IOError exception signals that an error occurred communicating
   to the Hbase master or an Hbase region server.  Also used to return
   more general Hbase error conditions.
-  
+
   Attributes:
    - message
   """
@@ -658,7 +658,7 @@ class IllegalArgument(Exception):
   """
   An IllegalArgument exception indicates an illegal or invalid
   argument was passed into a procedure.
-  
+
   Attributes:
    - message
   """
@@ -720,7 +720,7 @@ class AlreadyExists(Exception):
   """
   An AlreadyExists exceptions signals that a table with the specified
   name already exists
-  
+
   Attributes:
    - message
   """

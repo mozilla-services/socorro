@@ -75,7 +75,7 @@ class slot_Core
     public static function get($name=FALSE, $default='')
     {
         if ($name) {
-            return isset(self::$slots[$name]) ? 
+            return isset(self::$slots[$name]) ?
                 trim(self::$slots[$name]) : $default;
         } else {
             return self::$slots;

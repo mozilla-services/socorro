@@ -4,7 +4,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
     <link href="<?php echo url::base() ?>css/screen.css?v=1.7.6" rel="stylesheet" type="text/css" media="screen" />
     <link href="<?php echo url::base() ?>favicon.ico" rel="icon" type="image/png" />
-    <?php 
+    <?php
     	echo html::script(
     	    array(
                 'js/jquery/jquery-1.3.2.min.js',
@@ -12,7 +12,7 @@
                 'js/socorro/nav.js?v=1.7.6'
             )
         ); // Global Javascript includes
-    	if (isset($js)) echo $js; // Javascript includes from Controller 
+    	if (isset($js)) echo $js; // Javascript includes from Controller
     	if (isset($css)) echo $css; // CSS includes from Controller
         slot::output('head');
     ?>
@@ -36,7 +36,7 @@
     </div>
 
 
-	<h1>Product Navigation</h1>	
+	<h1>Product Navigation</h1>
 
 	<div class="version-nav">
 
@@ -81,7 +81,7 @@
                 <label>Report:</label>
                 <select id="report_select" <?php if (isset($error) && $error == 1) echo 'disabled'?>>
                     <optgroup label=" ">
-                        <option <?php if (isset($nav_selection) && $nav_selection == 'overview') echo 'selected'; ?> 
+                        <option <?php if (isset($nav_selection) && $nav_selection == 'overview') echo 'selected'; ?>
 							value="<?= url::base() ?>products/<?= $chosen_version['product'] ?><?php if (isset($chosen_version['version']) && !empty($chosen_version['version'])) echo '/versions/'.html::specialchars($chosen_version['version']); ?>">Overview</option>
                     </optgroup>
                     <optgroup label=" ">
@@ -92,19 +92,19 @@
                     </optgroup>
                     <optgroup label=" ">
                         <option <?php if (isset($nav_selection) && $nav_selection == 'top_changers') echo 'selected'; ?>
-                            value="<?= url::base() ?>products/<?= $chosen_version['product'] ?><?php if (isset($chosen_version['version']) && !empty($chosen_version['version'])) echo '/versions/'.html::specialchars($chosen_version['version']); ?>/topchangers">Top Changers</option>	
+                            value="<?= url::base() ?>products/<?= $chosen_version['product'] ?><?php if (isset($chosen_version['version']) && !empty($chosen_version['version'])) echo '/versions/'.html::specialchars($chosen_version['version']); ?>/topchangers">Top Changers</option>
                         <option <?php if (isset($nav_selection) && $nav_selection == 'top_crashes') echo 'selected'; ?>
                             value="<?= url::base() ?>topcrasher/byversion/<?= $chosen_version['product'] ?>/<?= $chosen_version['version'] ?>">Top Crashers</option>
-                        <option <?php if (isset($nav_selection) && $nav_selection == 'top_url') echo 'selected'; ?> 
+                        <option <?php if (isset($nav_selection) && $nav_selection == 'top_url') echo 'selected'; ?>
                             value="<?= url::base() ?>topcrasher/byurl/<?= $chosen_version['product'] ?>/<?= $chosen_version['version'] ?>">Top Crashers by URL</option>
-                        <option <?php if (isset($nav_selection) && $nav_selection == 'top_domain') echo 'selected'; ?> 
+                        <option <?php if (isset($nav_selection) && $nav_selection == 'top_domain') echo 'selected'; ?>
                             value="<?= url::base() ?>topcrasher/bydomain/<?= $chosen_version['product'] ?>/<?= $chosen_version['version'] ?>">Top Crashers by Domain</option>
-                        <option <?php if (isset($nav_selection) && $nav_selection == 'top_topsite') echo 'selected'; ?> 
-                            value="<?= url::base() ?>topcrasher/bytopsite/<?= $chosen_version['product'] ?>/<?= $chosen_version['version'] ?>">Top Crashers by Topsite</option>  
+                        <option <?php if (isset($nav_selection) && $nav_selection == 'top_topsite') echo 'selected'; ?>
+                            value="<?= url::base() ?>topcrasher/bytopsite/<?= $chosen_version['product'] ?>/<?= $chosen_version['version'] ?>">Top Crashers by Topsite</option>
                     </optgroup>
 				</select>
             </li>
-		
+
 		</ul>
 
 		<div class="search">
@@ -112,13 +112,13 @@
 		</div>
 	</div>
 
-      
+
     <div id="mainbody">
       	<?php echo client::messageFetchHtml(); // Status and Error messages for user ?>
     	<?php echo $content; ?>
     </div>
-    
-    
+
+
     <div class="page-footer">
     	<div class="nav">
     		<div class="about">

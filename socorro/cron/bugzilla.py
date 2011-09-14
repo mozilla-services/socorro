@@ -14,7 +14,7 @@ import socorro.lib.util as util
 
 #-----------------------------------------------------------------------------------------------------------------
 
-def signature_set_from_string(signatureString): 
+def signature_set_from_string(signatureString):
   signatureSet = set()
   try:
     sigStart = 0
@@ -36,8 +36,8 @@ def bugzilla_iterator(query, querySourceFunction=urllib2.urlopen):
     logger.debug("reading csv: %s", str(bugReport))
     yield (int(bugReport["bug_id"]),
            bugReport["bug_status"],
-           bugReport["resolution"], 
-           bugReport["short_desc"], 
+           bugReport["resolution"],
+           bugReport["short_desc"],
            signature_set_from_string(bugReport["cf_crash_signature"]))
 
 #-----------------------------------------------------------------------------------------------------------------
@@ -131,9 +131,9 @@ def record_associations(config):
     lastRunDateAsString = lastRunDate.strftime('%Y-%m-%d')
     logger.info("beginning search from this date (YYYY-MM-DD): %s", lastRunDateAsString)
     query = config.bugzillaQuery % lastRunDateAsString
-    for bug, status, resolution, short_desc, signatureSet in bugzilla_iterator(query): 
+    for bug, status, resolution, short_desc, signatureSet in bugzilla_iterator(query):
       logger.debug("bug %s (%s, %s) %s: %s", bug, status, resolution, short_desc, signatureSet)
-      insert_or_update_bug_in_database (bug, status, resolution, short_desc, signatureSet, databaseCursor) 
+      insert_or_update_bug_in_database (bug, status, resolution, short_desc, signatureSet, databaseCursor)
     save_last_run_date(config)
   finally:
     databaseConnectionPool.cleanup()

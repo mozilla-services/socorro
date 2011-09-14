@@ -25,7 +25,7 @@ class recaptcha_Core
      */
     public static function check()
     {
-        $input = new Input();            
+        $input = new Input();
         self::$last_response = recaptcha_check_answer(
             Kohana::config('recaptcha.private_key'),
             $input->server('REMOTE_ADDR'),
@@ -42,7 +42,7 @@ class recaptcha_Core
      */
     public static function error()
     {
-        return empty(self::$last_response) ? 
+        return empty(self::$last_response) ?
             null : self::$last_response->error;
     }
 

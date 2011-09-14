@@ -1,7 +1,7 @@
 <?php  defined('SYSPATH') or die('No direct script access.');
 /**
  * MSSQL Database Driver
- * 
+ *
  * @package    Core
  * @author     Kohana Team
  * @copyright  (c) 2007-2008 Kohana Team
@@ -30,7 +30,7 @@ class Database_Mssql_Driver extends Database_Driver
 
 		Kohana::log('debug', 'MSSQL Database Driver Initialized');
 	}
-	
+
 	/**
 	 * Closes the database connection.
 	 */
@@ -38,7 +38,7 @@ class Database_Mssql_Driver extends Database_Driver
 	{
 		is_resource($this->link) and mssql_close($this->link);
 	}
-	
+
 	/**
 	 * Make the connection
 	 *
@@ -64,7 +64,7 @@ class Database_Mssql_Driver extends Database_Driver
 		if (($this->link = $connect($host.$port, $user, $pass, TRUE)) AND mssql_select_db($database, $this->link))
 		{
 			/* This is being removed so I can use it, will need to come up with a more elegant workaround in the future...
-			 * 
+			 *
 			if ($charset = $this->db_config['character_set'])
 			{
 				$this->set_charset($charset);
@@ -79,7 +79,7 @@ class Database_Mssql_Driver extends Database_Driver
 
 		return FALSE;
 	}
-	
+
 	public function query($sql)
 	{
 		// Only cache if it's turned on, and only cache if it's not a write statement
@@ -159,7 +159,7 @@ class Database_Mssql_Driver extends Database_Driver
 		}
 		return $column;
 	}
-	
+
 	/**
 	 * Limit in SQL Server 2000 only uses the keyword
 	 * 'TOP'; 2007 may have an offset keyword, but

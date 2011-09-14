@@ -17,13 +17,13 @@ while curpart != 'done':
   print 'updating one day' % curpart
 
   cur.execute('SELECT backfill_one_day()');
-  
+
   ( curpart, ) = cur.fetchone()
-  
+
   print 'partition %s updated. vacuuming ...', % curpart;
-  
+
   vacstring = 'VACUUM %s' %curpart
-  
+
   cur.execute (vacstring)
 
 print 'done'

@@ -21,10 +21,10 @@ class TestOoid(unittest.TestCase):
     for i in range(10):
       self.rawuuids.append(str(uu.uuid4()))
     assert len(self.depths) == len(self.rawuuids)
-    
+
     for i in self.rawuuids:
       self.yyyyoids.append("%s%4d%02d%02d" % (i[:-8],self.baseDate.year,self.baseDate.month,self.baseDate.day))
-      
+
     for i in range(len(self.rawuuids)):
       self.dyyoids.append("%s%d%02d%02d%02d" %(self.rawuuids[i][:-7],self.depths[i],self.baseDate.year%100,self.baseDate.month,self.baseDate.day))
 
@@ -32,7 +32,7 @@ class TestOoid(unittest.TestCase):
     self.nowstamp = dt.datetime(today.year,today.month,today.day)
     self.xmas05 = dt.datetime(2005,12,25)
 
-      
+
   def testCreateNewOoid(self):
     ooid = oo.createNewOoid()
     ndate = oo.dateFromOoid(ooid)

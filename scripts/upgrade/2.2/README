@@ -14,17 +14,17 @@ Because of the backfilling, upgrade.sh for this release is not really feasible t
 ------------------
 All of the release_channel upgrading below has already been run on DevDB, StageDB, and Master01.  It does not need to be run again.
 
-add_releasechannel.py : 
+add_releasechannel.py :
 	adds the release_channel column to reports
-releasechannel_backfill.py : 
+releasechannel_backfill.py :
 	populates the releasechannel from a CSV file.  updating reports using this script did not work in performance
 releasechannel_backfill-dev.py :
 	same as above, except for dev only, and backfilling ony a few days
 	this does work for backfilling a dev instance
-update_releasechannel.py : 
+update_releasechannel.py :
 	semifinal script for updating releasechannel in production.
 	has already been run.
-	
+
 2. raw_adu.sql
 --------------
 Adds two new columns to the raw_adu table.  Has already been applied in production.  After this is applied, then Metrics needs to actually backfill the new version of the table, which they have already begun doing.
@@ -70,14 +70,14 @@ Creates function for backfilling/maintaining the new "tcbs" table.  Backfills th
 
 NOTE: you need to time-limit the backfill on Stage/Dev or it will take way too long.
 
-11. daily_crashes.sql 
+11. daily_crashes.sql
 ---------------------
 Creates function for maintaining daily_crashes table using a mixture of old and new data crashes.  Executes procudure in a loop to backfill.
 
 NOTE: backfill should be time-limited on stage and dev.
 NOTE: backfill can cause locking; watch the backfill process and
 	abort if it's blocking.
-	
+
 12. edit_product_info.sql
 -------------------------
 Creates function for editing productdims and product_version, for the admin interface.  No backfill.
