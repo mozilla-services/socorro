@@ -31,6 +31,9 @@ Choose "minimal" as install option.
 Add Cloudera yum repo from https://ccp.cloudera.com/display/CDHDOC/CDH3+Installation#CDH3Installation-InstallingCDH3onRedHatSystems
 Add PostgreSQL 9.0 yum repo from http://www.postgresql.org/download/linux#yum
 
+Install Sun Java JDK version JDK 6u16
+  Download appropriate package from http://www.oracle.com/technetwork/java/javase/downloads/index.html
+
 yum install python-psycopg2 simplejson httpd mod_ssl mod_wsgi postgresql-server postgresql-plperl perl-pgsql_perl5 postgresql-contrib subversion make rsync php-pecl-memcache memcached php-pgsql subversion gcc-c++ curl-devel ant python-virtualenv php-phpunit-PHPUnit hadoop-0.20 hadoop-hbase
 
 Disable SELinux:
@@ -161,14 +164,13 @@ Configure Kohana (PHP/web UI)
 
 Hadoop+HBase install
 ---
-  Install Sun Java JDK version JDK 6u16
-    Download appropriate package from http://www.oracle.com/technetwork/java/javase/downloads/index.html
-    bash jdk-6u23-linux-x64-rpm.bin
-  Install Hadoop 0.20 + HBase 0.89
+  Configure Hadoop 0.20 + HBase 0.89
     Refer to https://ccp.cloudera.com/display/CDHDOC/HBase+Installation
-Note - this is just a standalone setup, read the above for info on a real, distributed setup!
-  Install startup scripts
-    RHEL/CentOS only (not needed for Ubuntu
+
+Note - you can start with a standalone setup, but read all of the above for info on a real, distributed setup!
+
+  RHEL/CentOS only (not needed for Ubuntu)
+    Install startup scripts
       service hadoop-hbase-master start
       chkconfig hadoop-hbase-master on
       service hadoop-hbase-thrift start
