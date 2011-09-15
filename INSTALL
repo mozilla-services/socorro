@@ -28,9 +28,10 @@ RHEL/Centos
 Do not use "easy install", suggest "text install"
 Choose "minimal" as install option.
 
-Install postgresql 9.x yum repo from http://www.postgresql.org/download/linux#yum
+Add Cloudera yum repo from https://ccp.cloudera.com/display/CDHDOC/CDH3+Installation#CDH3Installation-InstallingCDH3onRedHatSystems
+Add PostgreSQL 9.0 yum repo from http://www.postgresql.org/download/linux#yum
 
-yum install python-psycopg2 simplejson httpd mod_ssl mod_wsgi postgresql-server postgresql-plperl perl-pgsql_perl5 postgresql-contrib subversion make rsync php-pecl-memcache memcached php-pgsql subversion gcc-c++ curl-devel ant python-virtualenv php-phpunit-PHPUnit
+yum install python-psycopg2 simplejson httpd mod_ssl mod_wsgi postgresql-server postgresql-plperl perl-pgsql_perl5 postgresql-contrib subversion make rsync php-pecl-memcache memcached php-pgsql subversion gcc-c++ curl-devel ant python-virtualenv php-phpunit-PHPUnit hadoop-0.20 hadoop-hbase
 
 Disable SELinux:
   Edit /etc/sysconfig/selinux and set "SELINUX=disabled"
