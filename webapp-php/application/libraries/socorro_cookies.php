@@ -1,6 +1,6 @@
 <?php
 /**
- * Catalog of all applicaiton level cookies. Avoids 
+ * Catalog of all applicaiton level cookies. Avoids
  * naming conflicts, etc.
  */
 class Socorro_Cookies {

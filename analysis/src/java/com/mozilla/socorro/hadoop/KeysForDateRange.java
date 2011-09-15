@@ -27,18 +27,18 @@ public class KeysForDateRange {
         String startDateStr = args[0];
         String endDateStr = args[1];
         String outputPath = args[2];
-        
+
         Calendar startCal = Calendar.getInstance();
         Calendar endCal = Calendar.getInstance();
-        
+
         SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
         if (!StringUtils.isBlank(startDateStr)) {
-            startCal.setTime(sdf.parse(startDateStr));  
+            startCal.setTime(sdf.parse(startDateStr));
         }
         if (!StringUtils.isBlank(endDateStr)) {
             endCal.setTime(sdf.parse(endDateStr));
         }
-        
+
         Configuration hbaseConf = HBaseConfiguration.create();
         HTable table = null;
         Map<byte[], byte[]> columns = new HashMap<byte[],byte[]>();
@@ -52,7 +52,7 @@ public class KeysForDateRange {
             for (Scan s : scans) {
                 // Add key-only filter for speed
                 s.setFilter(new KeyOnlyFilter());
-                
+
                 System.out.println("Processing scan range: " + new String(s.getStartRow()) + " - " + new String(s.getStopRow()));
                 scanner = table.getScanner(s);
                 Result r = null;

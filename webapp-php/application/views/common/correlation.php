@@ -24,8 +24,8 @@ a top crasher, then we should be able to load it from <a href="<?= Kohana::confi
 
 <?php
 // JavaScript uses these values for slurping in Correlation reports
-$url_path = '/' . join('/', 
-		       array_map('rawurlencode', 
+$url_path = '/' . join('/',
+		       array_map('rawurlencode',
 				 array($current_product, $current_version, $current_os, $current_signature))) . '/';
 ?>
   <script type="text/javascript">//<![CDATA[
@@ -34,4 +34,4 @@ $url_path = '/' . join('/',
 	  path: '<?= $url_path ?>',
 	  loading: 'Loading <?= html::image( array('src' => 'img/loading.png', 'width' => '16', 'height' => '17')) ?>'
       };
-//]]></script> 
+//]]></script>

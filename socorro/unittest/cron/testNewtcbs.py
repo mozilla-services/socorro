@@ -110,7 +110,7 @@ class FunctionalTestCase(unittest.TestCase):
           'databaseUserName': databaseUserName.default,
           'databasePassword': databasePassword.default,
         }
-        
+
         if not self.connection:
             dsn = 'host=%(databaseHost)s '\
                   'dbname=%(databaseName)s '\

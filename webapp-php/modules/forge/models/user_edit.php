@@ -33,14 +33,14 @@ class User_Edit_Model extends User_Model {
 		// // Find all roles
 		// $roles = new Role_Model;
 		// $roles = $roles->find(ALL);
-		// 
+		//
 		// $options = array();
 		// foreach ($roles as $role)
 		// {
 		// 	// Add each role to the options
 		// 	$options[$role->name] = isset($this->roles[$role->id]);
 		// }
-		// 
+		//
 		// // Create a checklist of roles
 		// $this->form->checklist('roles')->options($options)->label(TRUE);
 
@@ -101,7 +101,7 @@ class User_Edit_Model extends User_Model {
 				// 		// Remove roles that were deactivated
 				// 		$this->remove_role($role);
 				// 	}
-				// 
+				//
 				// 	foreach (array_diff($roles, $this->roles) as $role)
 				// 	{
 				// 		// Add new roles

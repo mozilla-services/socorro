@@ -31,7 +31,7 @@
                 <td>Server Time</td><td><?= date('Y-m-d H:i:s', time()) ?></td>
             </tr>
             <tr>
-                <td>Stats Created At</td><td><?php echo $stat->date_created ?></td>                
+                <td>Stats Created At</td><td><?php echo $stat->date_created ?></td>
             </tr>
             <tr>
                 <td>Waiting Jobs</td><td><?php echo $stat->waiting_job_count ?></td>
@@ -51,8 +51,11 @@
             <tr>
                 <td>Oldest Job In Queue</td><td><?php echo $stat->date_oldest_job_queued ?></td>
             </tr>
+            <tr>
+                <td>Socorro revision</td><td><a href="https://github.com/mozilla/socorro/commit/<?php echo Kohana::config('revision.socorro_revision')?>"><?php echo Kohana::config('revision.socorro_revision')?></a></td>
+            </tr>
         </table>
-        
+
     </div>
 </div>
 
@@ -70,28 +73,28 @@
         <option value="server-status-avg-wait">Average time a job waits</option>
         </select>
         </div>
-        
+
         <div id="server-status-comb">
           <h3>Combined server status</h3>
           <div id="server-status-graph-comb"></div>
           <div class="caption server-plot-label">Combined server status in 5 minute intervals. Measurements on left are for counts and the measurements on the right are in seconds</div>
         </div>
-        
+
         <div id="server-status-jobs-wait">
           <h3>Total number of jobs waiting</h3>
           <div id="server-status-graph-jobs-wait"></div>
         </div>
-        
+
         <div id="server-status-proc-count">
           <h3>Total number of processors</h3>
           <div id="server-status-graph-proc-count"></div>
         </div>
-        
+
         <div id="server-status-avg-proc">
           <h3>Average time to process a job</h3>
           <div id="server-status-graph-avg-proc"></div>
         </div>
-        
+
         <div id="server-status-avg-wait">
           <h3>Average time a job waits</h3>
           <div id="server-status-graph-avg-wait"></div>
@@ -150,7 +153,7 @@ $(function(){
      {label:"Avg Process", yaxis: 2, data: avg_process_sec},
      {label:"Avg Wait", yaxis: 2, data: avg_wait_sec}
    ],
-   { // options 
+   { // options
      xaxis: { ticks: <?php echo json_encode( $plotData['xaxis_ticks'] ); ?> },
      yaxis: { labelWidth: 55 },
      shadowSize: 0
@@ -161,7 +164,7 @@ $(function(){
       label:"Jobs Waiting",
       data: waiting_job_count
    }],
-   { // options 
+   { // options
      xaxis: { ticks: <?php echo json_encode( $plotData['xaxis_ticks'] ); ?> },
      yaxis: { labelWidth: 55 },
      shadowSize: 0
@@ -171,8 +174,8 @@ $(function(){
    [{
      label:"Proc Running",
      data: processors_count
-   }], 
-   { // options 
+   }],
+   { // options
      xaxis: { ticks: <?php echo json_encode( $plotData['xaxis_ticks'] ); ?> },
      yaxis: { labelWidth: 55 },
      shadowSize: 0
@@ -180,10 +183,10 @@ $(function(){
 
   $.plot($("#server-status-graph-avg-proc"),
    [{
-     label:"Avg Process", 
+     label:"Avg Process",
      data: avg_process_sec
    }],
-   { // options 
+   { // options
      xaxis: { ticks: <?php echo json_encode( $plotData['xaxis_ticks'] ); ?> },
      yaxis: { labelWidth: 55 },
      shadowSize: 0
@@ -194,23 +197,23 @@ $(function(){
      label:"Avg Wait",
      data: avg_wait_sec
    }],
-   { 
+   {
      xaxis: { ticks: <?php echo json_encode( $plotData['xaxis_ticks'] ); ?> },
      yaxis: { labelWidth: 55 },
      shadowSize: 0
    });
 });
 
-$(document).ready(function() { 
-  $('#server-stats-table').tablesorter(); 
+$(document).ready(function() {
+  $('#server-stats-table').tablesorter();
   $('#graph-chooser').change(showGraph);
-  hideAllGraphs();  
+  hideAllGraphs();
   $('#server-status-comb').show();
-}); 
+});
 
 function showGraph() {
   var selected = $('#graph-chooser').val();
-  hideAllGraphs();  
+  hideAllGraphs();
   $('#' + selected).show();
 }
 
@@ -222,7 +225,7 @@ function hideAllGraphs() {
   $('#server-status-avg-wait').hide();
 }
 </script>
-<!-- 
+<!--
 <?php View::factory('common/version')->render(TRUE); ?>
 SERVER is HTTPS PRESENT? <?= isset($_SERVER['HTTPS']) ?>
     <?php if(isset($_SERVER['HTTPS'])) { ?>

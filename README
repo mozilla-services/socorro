@@ -1,5 +1,5 @@
-Socorro 
-A server for collecting, processing, and displaying crash reports from 
+Socorro
+A server for collecting, processing, and displaying crash reports from
 clients using the Breakpad libraries.
 
 https://github.com/mozilla/socorro
@@ -12,4 +12,3 @@ Socorro/Breakpad IRC channel:
 irc://irc.mozilla.org/breakpad
 
 See the INSTALL file for installation instructions.
-

@@ -17,7 +17,7 @@ while lock_tries < 100:
    try:
       cur.execute("LOCK TABLE reports IN ACCESS EXCLUSIVE MODE NOWAIT;")
       break
-   except Exception, e:                                                                                                                                       
+   except Exception, e:
       if e.pgcode == psycopg2.errorcodes.LOCK_NOT_AVAILABLE:
          conn.rollback()
          lock_tries += 1
@@ -27,10 +27,10 @@ while lock_tries < 100:
 else:
    sys.exit("unable to lock table reports")
 
-         
-         
-cur.execute("""                                                                                                                                                                    
-   ALTER TABLE reports ADD COLUMN release_channel TEXT;                                                                                                                                              
+
+
+cur.execute("""
+   ALTER TABLE reports ADD COLUMN release_channel TEXT;
    """)
 
 conn.commit()

@@ -20,9 +20,9 @@ import socorro.lib.util as util
 def nightlyBuildExists(databaseCursor, product, version, platform, buildid):
   """ Determine whether or not a particular build exists already in the database """
   sql = """
-    SELECT * 
+    SELECT *
     FROM builds
-    WHERE product = %s 
+    WHERE product = %s
     AND version = %s
     AND platform = %s
     AND buildid = %s
@@ -38,9 +38,9 @@ def nightlyBuildExists(databaseCursor, product, version, platform, buildid):
 def releaseBuildExists(databaseCursor, product, version, buildid, buildType, platform, betanum):
   """ Determine whether or not a particular release build exists already in the database """
   sql = """
-    SELECT * 
+    SELECT *
     FROM releases_raw
-    WHERE product_name = %s 
+    WHERE product_name = %s
     AND version = %s
     AND platform = %s
     AND build_id = %s
@@ -71,12 +71,12 @@ def fetchBuild(build_url, urllib2=urllib2):
   if response.code == 200:
     data = response.read()
     response.close()
-    try: 
+    try:
       return data.strip().split()
     except Exception:
       util.reportExceptionAndAbort(logger)
       return None
-  else: 
+  else:
     util.reportExceptionAndAbort(logger)
     return None
 
@@ -86,9 +86,9 @@ def insertBuild(databaseCursor, product, version, platform, buildid, platform_ch
   build = nightlyBuildExists(databaseCursor, product, version, platform, buildid)
   if not build:
     sql = """
-      INSERT INTO builds 
+      INSERT INTO builds
       (product, version, platform, buildid, platform_changeset, app_changeset_1, app_changeset_2, filename)
-      VALUES 
+      VALUES
       (%s, %s, %s, %s, %s, %s, %s, %s)
     """
 
@@ -108,7 +108,7 @@ def insertReleaseBuild(databaseCursor, product, version, buildid, buildType, bet
     sql = """
       INSERT INTO releases_raw
       (product_name, version, platform, build_id, build_type, beta_number)
-      VALUES 
+      VALUES
       (%s, %s, %s, %s, %s, %s)
     """
 
@@ -284,7 +284,7 @@ def findLatestBuild(config, candidateUrl, urllib2=urllib2):
   except Exception:
     util.reportExceptionAndContinue(logger)
     return None
-      
+
 def recordNightlyBuilds(config):
   databaseConnectionPool = psy.DatabaseConnectionPool(config.databaseHost, config.databaseName, config.databaseUserName, config.databasePassword, logger)
   try:

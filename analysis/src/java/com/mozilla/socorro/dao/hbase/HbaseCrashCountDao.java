@@ -18,7 +18,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  *   Xavier Stevens <xstevens@mozilla.com>, Mozilla Corporation (original author)
  *
  * Alternatively, the contents of this file may be used under the terms of
@@ -71,9 +71,9 @@ import com.mozilla.socorro.dao.CrashCountDao;
 public class HbaseCrashCountDao implements CrashCountDao {
 
 	private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(HbaseCrashCountDao.class);
-	
+
 	public static final String TABLE_NAME = "crash_counts";
-	
+
 	// Table Column Families
 	private static final byte[] DATE = Bytes.toBytes("date");
 	private static final byte[] PRODUCT = Bytes.toBytes("product");
@@ -83,30 +83,30 @@ public class HbaseCrashCountDao implements CrashCountDao {
 	private static final byte[] ARCH = Bytes.toBytes("arch");
 	private static final byte[] MODULE_WITH_VERSION = Bytes.toBytes("module_with_version");
 	private static final byte[] ADDON_WITH_VERSION = Bytes.toBytes("addon_with_version");
-	
+
 	// Table Column Qualifiers
 	private static final byte[] NAME = Bytes.toBytes("name");
 	private static final byte[] COUNT = Bytes.toBytes("count");
-	
+
 	// Safe delimiter for appending/splitting module names with versions
 	private static final String MODULE_INFO_DELIMITER = "\u0002";
-	
+
 	private final HTablePool pool;
 	private final Pattern shortKeyPattern;
 	private final Map<String,String> productShortNameMap;
-	
-	public HbaseCrashCountDao() throws IOException {		
+
+	public HbaseCrashCountDao() throws IOException {
 		pool = new HTablePool();
-		
+
 		shortKeyPattern = Pattern.compile("\\p{Punct}|\\s");
-		
+
 		productShortNameMap = new HashMap<String,String>();
 		productShortNameMap.put("Firefox", "FF");
 		productShortNameMap.put("Thunderbird", "TB");
 		productShortNameMap.put("SeaMonkey", "SM");
 		productShortNameMap.put("Camino", "CM");
 	}
-	
+
 	public byte[] makeRowKey(String date, String product, String version, String os, String signature, boolean hash) throws IOException {
 		// calculate total length to use as a consistent hash char
 		int totalLength = date.length() + product.length() + version.length() + os.length();
@@ -114,11 +114,11 @@ public class HbaseCrashCountDao implements CrashCountDao {
 			totalLength += signature.length();
 		}
 		int hexMod = totalLength % 16;
-		
+
 		if (productShortNameMap.containsKey(product)) {
 			product = productShortNameMap.get(product);
 		}
-		
+
 		version = shortKeyPattern.matcher(version).replaceAll("");
 		os = shortKeyPattern.matcher(os).replaceAll("");
 
@@ -134,10 +134,10 @@ public class HbaseCrashCountDao implements CrashCountDao {
 			signature = shortKeyPattern.matcher(signature).replaceAll("");
 			baos.write(Bytes.toBytes(signature));
 		}
-		
+
 		return baos.toByteArray();
 	}
-	
+
 	public void checkSignatureExists(byte[] sigRowKey, String product, String version, String os, String signature) throws IOException {
 		HTableInterface table = null;
 		try {
@@ -149,7 +149,7 @@ public class HbaseCrashCountDao implements CrashCountDao {
 				put.add(PRODUCT_VERSION, Bytes.toBytes(version), Bytes.toBytes(true));
 				put.add(OS, Bytes.toBytes(os), Bytes.toBytes(true));
 				put.add(SIGNATURE, NAME, Bytes.toBytes(signature));
-				
+
 				table.put(put);
 			}
 		} finally {
@@ -169,7 +169,7 @@ public class HbaseCrashCountDao implements CrashCountDao {
 				put.add(PRODUCT, Bytes.toBytes(product), Bytes.toBytes(true));
 				put.add(PRODUCT_VERSION, Bytes.toBytes(version), Bytes.toBytes(true));
 				put.add(OS, Bytes.toBytes(os), Bytes.toBytes(true));
-				
+
 				table.put(put);
 			}
 		} finally {
@@ -178,12 +178,12 @@ public class HbaseCrashCountDao implements CrashCountDao {
 			}
 		}
 	}
-	
+
 	public void incrementCounts(String date, String product, String version, String os, String signature, String arch, Map<String,String> moduleVersions, Map<String,String> addonVersions) throws IOException {
 		HTableInterface table = null;
 		try {
 			table = pool.getTable(TABLE_NAME);
-			
+
 			byte[] osRowKey = makeRowKey(date, product, version, os, null, true);
 			byte[] sigRowKey = makeRowKey(date, product, version, os, signature, true);
 
@@ -191,7 +191,7 @@ public class HbaseCrashCountDao implements CrashCountDao {
 			// only need to do this once for efficiency
 			checkOsExists(osRowKey, product, version, os);
 			checkSignatureExists(sigRowKey, product, version, os, signature);
-			
+
 			// increment os count
 			table.incrementColumnValue(osRowKey, OS, COUNT, 1L);
 			// increment os -> cpu info
@@ -200,7 +200,7 @@ public class HbaseCrashCountDao implements CrashCountDao {
 			table.incrementColumnValue(sigRowKey, SIGNATURE, COUNT, 1L);
 			// increment os -> sig -> cpu info
 			table.incrementColumnValue(sigRowKey, ARCH, Bytes.toBytes(arch), 1L);
-			
+
 			for (Map.Entry<String, String> entry : moduleVersions.entrySet()) {
 				String module = entry.getKey();
 				String moduleVersion = entry.getValue();
@@ -213,11 +213,11 @@ public class HbaseCrashCountDao implements CrashCountDao {
 
 				// increment os -> module -> version
 				table.incrementColumnValue(osRowKey, MODULE_WITH_VERSION, moduleQualifier, 1L);
-				
+
 				// increment os -> sig -> module -> version
 				table.incrementColumnValue(sigRowKey, MODULE_WITH_VERSION, moduleQualifier, 1L);
 			}
-			
+
 			for (Map.Entry<String, String> entry : addonVersions.entrySet()) {
 				String addon = entry.getKey();
 				String addonVersion = entry.getValue();
@@ -240,30 +240,30 @@ public class HbaseCrashCountDao implements CrashCountDao {
 			}
 		}
 	}
-	
+
 	public CorrelationReport getTopCrashers(String date, String product, String version, String os) throws IOException {
 		Scan scan = new Scan();
 		FilterList filterList = new FilterList(FilterList.Operator.MUST_PASS_ALL);
-		
+
 		String rowKeyExpr = "^[a-zA-Z0-9]{1}" + new String(makeRowKey(date, product, version, os, null, false)) + ".+";
 		RowFilter rowFilter = new RowFilter(CompareFilter.CompareOp.EQUAL, new RegexStringComparator(rowKeyExpr));
 		filterList.addFilter(rowFilter);
-		
+
 		SingleColumnValueFilter productFilter = new SingleColumnValueFilter(PRODUCT, Bytes.toBytes(product), CompareFilter.CompareOp.EQUAL, Bytes.toBytes(true));
 		SingleColumnValueFilter productVersionFilter = new SingleColumnValueFilter(PRODUCT_VERSION, Bytes.toBytes(version), CompareFilter.CompareOp.EQUAL, Bytes.toBytes(true));
 		SingleColumnValueFilter osFilter = new SingleColumnValueFilter(OS, Bytes.toBytes(os), CompareFilter.CompareOp.EQUAL, Bytes.toBytes(true));
 		filterList.addFilter(productFilter);
 		filterList.addFilter(productVersionFilter);
 		filterList.addFilter(osFilter);
-		
+
 		scan.setFilter(filterList);
-		
+
 		// Want the values of these columns for filtered rows
 		scan.addFamily(SIGNATURE);
 		scan.addFamily(ARCH);
 		scan.addFamily(MODULE_WITH_VERSION);
 		scan.addFamily(ADDON_WITH_VERSION);
-		
+
 		CorrelationReport report = new CorrelationReport(date, product, version, os);
 
 		HTableInterface table = null;
@@ -274,7 +274,7 @@ public class HbaseCrashCountDao implements CrashCountDao {
 			long resultCount = 0;
 			for (Result r : scanner) {
 				OperatingSystem osys = report.getOs();
-				
+
 				resultCount++;
 				if (Log.isDebugEnabled()) {
 					LOG.debug("Returned row: " + new String(r.getRow()));
@@ -292,12 +292,12 @@ public class HbaseCrashCountDao implements CrashCountDao {
 					}
 
 					sig.setCount(sig.getCount() + (int)Bytes.toLong(sigCountBytes));
-					
+
 					NavigableMap<byte[],byte[]> nm = r.getFamilyMap(ARCH);
 					for (Map.Entry<byte[], byte[]> entry : nm.entrySet()) {
 						String archCores = new String(entry.getKey());
 						long count = Bytes.toLong(entry.getValue());
-						
+
 						sig.incrementCoreCount(archCores, (int)count);
 					}
 
@@ -306,20 +306,20 @@ public class HbaseCrashCountDao implements CrashCountDao {
 						String moduleVersion = new String(entry.getKey());
 						String[] splits = moduleVersion.split(MODULE_INFO_DELIMITER);
 						long count = Bytes.toLong(entry.getValue());
-						
+
 						if (splits.length == 2) {
 							sig.incrementModuleCount(splits[0], splits[1], (int)count);
 						} else {
 							sig.incrementModuleCount(moduleVersion, "", (int)count);
 						}
 					}
-					
+
 					nm = r.getFamilyMap(ADDON_WITH_VERSION);
 					for (Map.Entry<byte[], byte[]> entry : nm.entrySet()) {
 						String addonVersion = new String(entry.getKey());
 						String[] splits = addonVersion.split(MODULE_INFO_DELIMITER);
 						long count = Bytes.toLong(entry.getValue());
-						
+
 						if (splits.length == 2) {
 							sig.incrementAddonCount(splits[0], splits[1], (int)count);
 						} else {
@@ -331,83 +331,83 @@ public class HbaseCrashCountDao implements CrashCountDao {
 					report.setOs(osys);
 				}
 			}
-			
+
 			if (Log.isDebugEnabled()) {
 				LOG.debug("Result Count: " + resultCount);
 			}
-			
+
 			byte[] osRowKey = makeRowKey(date, product, version, os, null, true);
 			Get osGet = new Get(osRowKey);
 			Result osResult = table.get(osGet);
 			if (osResult != null && !osResult.isEmpty()) {
 				OperatingSystem osys = report.getOs();
-				
+
 				int osCount = (int)Bytes.toLong(osResult.getValue(OS, COUNT));
 				osys.setCount(osCount);
-				
+
 				NavigableMap<byte[],byte[]> nm = osResult.getFamilyMap(ARCH);
 				for (Map.Entry<byte[], byte[]> entry : nm.entrySet()) {
 					String archCores = new String(entry.getKey());
 					long count = Bytes.toLong(entry.getValue());
-					
+
 					osys.incrementCoreCount(archCores, (int)count);
 				}
-				
+
 				nm = osResult.getFamilyMap(MODULE_WITH_VERSION);
 				for (Map.Entry<byte[], byte[]> entry : nm.entrySet()) {
 					String moduleVersion = new String(entry.getKey());
 					String[] splits = moduleVersion.split(MODULE_INFO_DELIMITER);
 					long count = Bytes.toLong(entry.getValue());
-				
+
 					if (splits.length == 2) {
 						osys.incrementModuleCount(splits[0], splits[1], (int)count);
 					} else {
 						osys.incrementModuleCount(moduleVersion, "", (int)count);
 					}
 				}
-				
+
 				nm = osResult.getFamilyMap(ADDON_WITH_VERSION);
 				for (Map.Entry<byte[], byte[]> entry : nm.entrySet()) {
 					String addonVersion = new String(entry.getKey());
 					String[] splits = addonVersion.split(MODULE_INFO_DELIMITER);
 					long count = Bytes.toLong(entry.getValue());
-					
+
 					if (splits.length == 2) {
 						osys.incrementAddonCount(splits[0], splits[1], (int)count);
 					} else {
 						osys.incrementAddonCount(addonVersion, "", (int)count);
 					}
 				}
-				
+
 				report.setOs(osys);
 			}
 		} finally {
 			if (scanner != null) {
 				scanner.close();
 			}
-			
+
 			if (table != null) {
 				pool.putTable(table);
 			}
 		}
-		
+
 		report.calculateModuleRatios();
-		
+
 		return report;
 	}
-	
+
 	public CorrelationReport getReport(String date, String product, String version, String os, String signature) throws IOException {
 		os = URLDecoder.decode(os, "UTF-8");
 		signature = URLDecoder.decode(signature, "UTF-8");
-		
+
 		CorrelationReport report = new CorrelationReport(product, version, os);
 		OperatingSystem osys = report.getOs();
-		
+
 		HTableInterface table = null;
 		try {
 			byte[] osRowKey = makeRowKey(date, product, version, os, null, true);
 			byte[] sigRowKey = makeRowKey(date, product, version, os, signature, true);
-			
+
 			if (LOG.isInfoEnabled()) {
 				LOG.debug("Date: " + date);
 				LOG.debug("Product: " + product);
@@ -416,96 +416,96 @@ public class HbaseCrashCountDao implements CrashCountDao {
 				LOG.debug("Signature: " + signature);
 				LOG.info("Sig Row Key: " + new String(sigRowKey));
 			}
-			
+
 			table = pool.getTable(TABLE_NAME);
 			Get sigGet = new Get(sigRowKey);
 			Result sigResult = table.get(sigGet);
 			if (sigResult != null && !sigResult.isEmpty()) {
 				Signature sig = new Signature(signature);
-				
+
 				int sigCount = (int)Bytes.toLong(sigResult.getValue(SIGNATURE, COUNT));
 				sig.setCount(sigCount);
-				
+
 				NavigableMap<byte[],byte[]> nm = sigResult.getFamilyMap(ARCH);
 				for (Map.Entry<byte[], byte[]> entry : nm.entrySet()) {
 					String archCores = new String(entry.getKey());
 					long count = Bytes.toLong(entry.getValue());
-					
+
 					sig.incrementCoreCount(archCores, (int)count);
 				}
-				
+
 				nm = sigResult.getFamilyMap(MODULE_WITH_VERSION);
 				for (Map.Entry<byte[], byte[]> entry : nm.entrySet()) {
 					String moduleVersion = new String(entry.getKey());
 					String[] splits = moduleVersion.split(MODULE_INFO_DELIMITER);
 					long count = Bytes.toLong(entry.getValue());
-					
+
 					if (splits.length == 2) {
 						sig.incrementModuleCount(splits[0], splits[1], (int)count);
 					} else {
 						sig.incrementModuleCount(moduleVersion, "", (int)count);
 					}
 				}
-				
+
 				nm = sigResult.getFamilyMap(ADDON_WITH_VERSION);
 				for (Map.Entry<byte[], byte[]> entry : nm.entrySet()) {
 					String addonVersion = new String(entry.getKey());
 					String[] splits = addonVersion.split(MODULE_INFO_DELIMITER);
 					long count = Bytes.toLong(entry.getValue());
-					
+
 					if (splits.length == 2) {
 						sig.incrementAddonCount(splits[0], splits[1], (int)count);
 					} else {
 						sig.incrementAddonCount(addonVersion, "", (int)count);
 					}
 				}
-				
+
 				osys.addSignature(signature, sig);
 			} else {
 				LOG.warn("Signature result was empty for params: " + String.format("%s, %s, %s, %s, %s", date, product, version, os, signature));
 			}
-		
+
 			Get osGet = new Get(osRowKey);
 			Result osResult = table.get(osGet);
 			if (osResult != null && !osResult.isEmpty()) {
-				
+
 				int osCount = (int)Bytes.toLong(osResult.getValue(OS, COUNT));
 				osys.setCount(osCount);
-				
+
 				NavigableMap<byte[],byte[]> nm = osResult.getFamilyMap(ARCH);
 				for (Map.Entry<byte[], byte[]> entry : nm.entrySet()) {
 					String archCores = new String(entry.getKey());
 					long count = Bytes.toLong(entry.getValue());
-					
+
 					osys.incrementCoreCount(archCores, (int)count);
 				}
-				
+
 				nm = osResult.getFamilyMap(MODULE_WITH_VERSION);
 				for (Map.Entry<byte[], byte[]> entry : nm.entrySet()) {
 					String moduleVersion = new String(entry.getKey());
 					String[] splits = moduleVersion.split(MODULE_INFO_DELIMITER);
 					long count = Bytes.toLong(entry.getValue());
-				
+
 					if (splits.length == 2) {
 						osys.incrementModuleCount(splits[0], splits[1], (int)count);
 					} else {
 						osys.incrementModuleCount(moduleVersion, "", (int)count);
 					}
 				}
-				
+
 				nm = osResult.getFamilyMap(ADDON_WITH_VERSION);
 				for (Map.Entry<byte[], byte[]> entry : nm.entrySet()) {
 					String addonVersion = new String(entry.getKey());
 					String[] splits = addonVersion.split(MODULE_INFO_DELIMITER);
 					long count = Bytes.toLong(entry.getValue());
-					
+
 					if (splits.length == 2) {
 						osys.incrementAddonCount(splits[0], splits[1], (int)count);
 					} else {
 						osys.incrementAddonCount(addonVersion, "", (int)count);
 					}
 				}
-				
+
 				report.setOs(osys);
 			} else {
 				LOG.warn("OS result was empty for params: " + String.format("%s, %s, %s, %s", date, product, version, os));
@@ -515,10 +515,10 @@ public class HbaseCrashCountDao implements CrashCountDao {
 				pool.putTable(table);
 			}
 		}
-		
+
 		// calculate module ratios for proper sorting
 		report.calculateModuleRatios();
-		
+
 		return report;
 	}
 

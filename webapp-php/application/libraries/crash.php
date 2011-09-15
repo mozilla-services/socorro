@@ -44,7 +44,7 @@ class Crash
 {
 
     /**
-     * Constant used internally to track 
+     * Constant used internally to track
      * "empty" signatures
      */
     public static $empty_sig_code = 'EMPTY_STRING';
@@ -61,7 +61,7 @@ class Crash
     public static $empty_sig_api_value = '##empty##';
 
     /**
-     * Constant used internally to track 
+     * Constant used internally to track
      * "null" signatures
      */
     public static $null_sig_code = 'NULL';
@@ -134,7 +134,7 @@ class Crash
         }
         return $ooid;
     }
-    
+
     /**
      * Prepare a crash report for display.
      *
@@ -185,9 +185,9 @@ class Crash
         }
         return $reports;
     }
-    
+
     /**
-     * Prepare the meta data surrounding the report, including signatures 
+     * Prepare the meta data surrounding the report, including signatures
      * and plugin names.
      *
      * @param   array An array of report objects
@@ -230,5 +230,5 @@ class Crash
             'signatures' => array()
         );
     }
-    
+
 }

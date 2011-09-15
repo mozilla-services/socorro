@@ -1,28 +1,28 @@
 <?php
 
 /* ***** BEGIN LICENSE BLOCK *****
- *  
+ *
  * This file is part of FirePHP (http://www.firephp.org/).
- * 
+ *
  * Software License Agreement (New BSD License)
- * 
+ *
  * Copyright (c) 2006-2008, Christoph Dorn
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without modification,
  * are permitted provided that the following conditions are met:
- * 
+ *
  *     * Redistributions of source code must retain the above copyright notice,
  *       this list of conditions and the following disclaimer.
- * 
+ *
  *     * Redistributions in binary form must reproduce the above copyright notice,
  *       this list of conditions and the following disclaimer in the documentation
  *       and/or other materials provided with the distribution.
- * 
+ *
  *     * Neither the name of Christoph Dorn nor the names of its
  *       contributors may be used to endorse or promote products derived from this
  *       software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -33,25 +33,25 @@
  * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- * 
+ *
  * ***** END LICENSE BLOCK ***** */
- 
- 
- 
+
+
+
 /**
  * Sends the given data to the FirePHP Firefox Extension.
  * The data can be displayed in the Firebug Console or in the
  * "Server" request tab.
- * 
+ *
  * For more informtion see: http://www.firephp.org/
- * 
+ *
  * @copyright   Copyright (C) 2007-2008 Christoph Dorn
  * @author      Christoph Dorn <christoph@christophdorn.com>
  * @license     http://www.opensource.org/licenses/bsd-license.php
  */
 
 class FirePHP {
-  
+
   const LOG = 'LOG';
   const INFO = 'INFO';
   const WARN = 'WARN';
@@ -60,23 +60,23 @@ class FirePHP {
   const TRACE = 'TRACE';
   const EXCEPTION = 'EXCEPTION';
   const TABLE = 'TABLE';
-  
+
   protected static $instance = null;
-  
-  
+
+
   public static function getInstance($AutoCreate=false) {
     if($AutoCreate===true && !self::$instance) {
       self::init();
     }
     return self::$instance;
   }
-   
+
   public static function init() {
     return self::$instance = new self();
-  } 
-  
-  
-    
+  }
+
+
+
   public function setProcessorUrl($URL)
   {
     $this->setHeader('X-FirePHP-ProcessorURL', $URL);
@@ -86,35 +86,35 @@ class FirePHP {
   {
     $this->setHeader('X-FirePHP-RendererURL', $URL);
   }
-  
+
 
   public function log() {
     $args = func_get_args();
     call_user_func_array(array($this,'fb'),array($args,FirePHP::LOG));
-  } 
+  }
 
   public function dump($Key, $Variable) {
     $args = func_get_args();
     call_user_func_array(array($this,'fb'),array($Variable,$Key,FirePHP::DUMP));
-  } 
-  
+  }
+
   public function detectClientExtension() {
     /* Check if FirePHP is installed on client */
     if(!@preg_match_all('/\sFirePHP\/([\.|\d]*)\s?/si',$this->getUserAgent(),$m) ||
        !version_compare($m[1][0],'0.0.6','>=')) {
       return false;
     }
-    return true;    
+    return true;
   }
- 
+
   public function fb($Object) {
-  
+
     if (headers_sent($filename, $linenum)) {
         throw $this->newException('Headers already sent in '.$filename.' on line '.$linenum.'. Cannot send log data to FirePHP. You must have Output Buffering enabled via ob_start() or output_buffering ini directive.');
     }
-  
+
     $Type = null;
-  
+
     if(func_num_args()==1) {
     } else
     if(func_num_args()==2) {
@@ -140,14 +140,14 @@ class FirePHP {
     } else {
       throw $this->newException('Wrong number of arguments to fb() function!');
     }
-  
-  
+
+
     if(!$this->detectClientExtension()) {
       return false;
     }
-  
+
     if($Object instanceof Exception) {
-      
+
       $Object = array('Class'=>get_class($Object),
                       'Message'=>$Object->getMessage(),
                       'File'=>$this->_escapeTraceFile($Object->getFile()),
@@ -155,14 +155,14 @@ class FirePHP {
                       'Type'=>'throw',
                       'Trace'=>$this->_escapeTrace($Object->getTrace()));
       $Type = self::EXCEPTION;
-      
+
     } else
     if($Type==self::TRACE) {
-      
+
       $trace = debug_backtrace();
       if(!$trace) return false;
       for( $i=0 ; $i<sizeof($trace) ; $i++ ) {
-        
+
         if($trace[$i]['class']=='FirePHP' &&
            substr($this->_standardizePath($trace[$i+1]['file']),-18,18)=='FirePHPCore/fb.php') {
           /* Skip */
@@ -185,7 +185,7 @@ class FirePHP {
         $Type = self::LOG;
       }
     }
-  
+
   	$this->setHeader('X-FirePHP-Data-100000000001','{');
     if($Type==self::DUMP) {
     	$this->setHeader('X-FirePHP-Data-200000000001','"FirePHP.Dump":{');
@@ -195,48 +195,48 @@ class FirePHP {
     	$this->setHeader('X-FirePHP-Data-399999999999','["__SKIP__"]],');
     }
   	$this->setHeader('X-FirePHP-Data-999999999999','"__SKIP__":"__SKIP__"}');
-  
+
     if($Type==self::DUMP) {
     	$msg = '"'.$Object[0].'":'.$this->json_encode($Object[1]).',';
     } else {
     	$msg = '["'.$Type.'",'.$this->json_encode($Object).'],';
     }
-   
+
   	foreach( explode("\n",chunk_split($msg, 5000, "\n")) as $part ) {
-  	  
+
       if($part) {
 
         usleep(1); /* Ensure microtime() increments with each loop. Not very elegant but it works */
-    
+
     		$mt = explode(' ',microtime());
     		$mt = substr($mt[1],7).substr($mt[0],2);
-    
+
         $this->setHeader('X-FirePHP-Data-'.(($Type==self::DUMP)?'2':'3').$mt, $part);
       }
   	}
-    
+
     return true;
   }
-  
+
   protected function _standardizePath($Path) {
-    return preg_replace('/\\\\+/','/',$Path);    
+    return preg_replace('/\\\\+/','/',$Path);
   }
-  
+
   protected function _escapeTrace($Trace) {
     if(!$Trace) return $Trace;
     for( $i=0 ; $i<sizeof($Trace) ; $i++ ) {
       $Trace[$i]['file'] = $this->_escapeTraceFile($Trace[$i]['file']);
     }
-    return $Trace;    
+    return $Trace;
   }
-  
+
   protected function _escapeTraceFile($File) {
     /* Check if we have a windows filepath */
     if(strpos($File,'\\')) {
       /* First strip down to single \ */
-      
+
       $file = preg_replace('/\\\\+/','\\',$File);
-      
+
       return $file;
     }
     return $File;
@@ -255,7 +255,7 @@ class FirePHP {
     return new Exception($Message);
   }
 
-    
+
   /**
    * Converts to and from JSON format.
    *
@@ -311,8 +311,8 @@ class FirePHP {
    * @license     http://www.opensource.org/licenses/bsd-license.php
    * @link        http://pear.php.net/pepr/pepr-proposal-show.php?id=198
    */
-   
-     
+
+
   /**
    * Keep a list of objects as we descend into the array so we can detect recursion.
    */
@@ -376,13 +376,13 @@ class FirePHP {
   */
   private function json_encode($var)
   {
-    
+
     if(is_object($var)) {
       if(in_array($var,$this->json_objectStack)) {
         return '"** Recursion **"';
       }
     }
-          
+
       switch (gettype($var)) {
           case 'boolean':
               return $var ? 'true' : 'false';
@@ -523,7 +523,7 @@ class FirePHP {
 
               // treat as a JSON object
               if (is_array($var) && count($var) && (array_keys($var) !== range(0, sizeof($var) - 1))) {
-                  
+
                   $this->json_objectStack[] = $var;
 
                   $properties = array_map(array($this, 'json_name_value'),
@@ -566,7 +566,7 @@ class FirePHP {
                                       array_values($vars));
 
               array_pop($this->json_objectStack);
-              
+
               foreach($properties as $property) {
                   if($property instanceof Exception) {
                       return $property;

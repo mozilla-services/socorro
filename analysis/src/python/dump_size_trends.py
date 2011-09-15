@@ -48,7 +48,7 @@ products = [ "Firefox", "Firefox-4.0", "Fennec", "Thunderbird", "SeaMonkey" ]
 
 def printable(input):
     return ''.join(filter(lambda x:x in string.printable, input))
-    
+
 def plot_product_version_total(product_version, dates, raw, processed):
     plt.clf()
     plt.plot(raw, 'b-o', label='raw')
@@ -56,9 +56,9 @@ def plot_product_version_total(product_version, dates, raw, processed):
     plt.xlabel("Date")
     plt.ylabel("Size (in GBs)")
     plt.title("Crash Dump Total Size Trend for %s" % (product_version))
-    
+
     plt.plot(processed, 'g-s', label='processed', linewidth=2)
-    
+
     plt.legend()
     plt.savefig("%s Total.png" % (product_version))
 
@@ -74,7 +74,7 @@ def plot_product_version_median(product_version, dates, raw, processed):
 
     plt.legend()
     plt.savefig("%s Median.png" % (product_version))
-    
+
 data = {}
 size_kb = float(1024)
 size_gb = float(1073741824)
@@ -95,27 +95,27 @@ for line in fin:
         version = splits[2].strip()
         if printable(product_name) not in products:
             continue
-            
+
         if not valid_version.match(version):
             continue
-            
+
         product_version = splits[1] + " " + splits[2]
         data_type = splits[3].strip()
         day_count = int(splits[4].strip())
         median_size = float(splits[5].strip()) / size_kb
         total_size = long(splits[6].strip()) / size_gb
-        
+
         date_set.add(day)
-        
+
         product = data.setdefault(product_version, [])
         product.append({ 'product': product_name, 'version': version, 'date': day, 'type': data_type, 'median': median_size, 'total': total_size })
         data[product_version] = product
-        
+
         if median_size < median_min:
             median_min = median_size
         elif median_size > median_max:
             median_max = median_size
-        
+
         if total_size < total_min:
             total_min = total_size
         elif total_size > total_max:
@@ -128,7 +128,7 @@ dates = sorted(list(date_set))
 for product_version,data_list in data.iteritems():
     if len(data_list) <= 2:
         continue
-    
+
     print "Plotting Product Version Totals: " + product_version
     raw_totals = np.zeros(len(dates))
     processed_totals = np.zeros(len(dates))
@@ -141,13 +141,13 @@ for product_version,data_list in data.iteritems():
                     processed_totals[i] = d['total']
 
                 break
-                
+
     plot_product_version_total(product_version, dates, raw_totals, processed_totals)
 
 for product_version,data_list in data.iteritems():
     if len(data_list) <= 2:
         continue
-    
+
     print "Plotting Product Version Medians: " + product_version
     raw_medians = np.zeros(len(dates))
     processed_medians = np.zeros(len(dates))

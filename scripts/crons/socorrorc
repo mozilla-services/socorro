@@ -71,7 +71,7 @@ function pyjob {
   fi
   NAME=$1
   SCRIPT=$2
-  
+
   if [ ! -e "${APPDIR}/scripts/${SCRIPT}.py" ]
   then
     echo "error: job ${APPDIR}/scripts/${SCRIPT}.py does not exist"

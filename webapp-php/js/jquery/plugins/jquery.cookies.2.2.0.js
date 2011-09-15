@@ -414,7 +414,7 @@ jaaulde.utils.cookies = ( function()
 										$this.html( value );
 									}
 								}
-								
+
 								break;
 							}
 						}

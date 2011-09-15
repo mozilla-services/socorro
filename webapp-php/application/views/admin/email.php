@@ -33,7 +33,7 @@
 
      <label for="email_body" class="<?php if (isset($errors) && array_key_exists('email_body', $errors)) { echo 'form_error'; }; ?>">Email Body</label><textarea name="email_body" row="10" cols="80"><?= out::H($email_body) ?></textarea>
 
-        <label for="email_start_date" class="<?php if (isset($errors) && array_key_exists('email_start_date', $errors)) { echo 'form_error'; }; ?>">Start Date</label> 
+        <label for="email_start_date" class="<?php if (isset($errors) && array_key_exists('email_start_date', $errors)) { echo 'form_error'; }; ?>">Start Date</label>
         <div class="input"><input name="email_start_date" type="text" value="<?= out::H($email_start_date) ?>" size="8" /></div>
 
         <label for="email_end_date" class="<?php if (isset($errors) && array_key_exists('email_end_date', $errors)) { echo 'form_error'; }; ?>">End Date</label> <div class="input"><input name="email_end_date" type="text" value="<?= out::H($email_end_date) ?>" size="8" /></div>

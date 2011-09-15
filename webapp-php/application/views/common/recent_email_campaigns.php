@@ -12,5 +12,5 @@
       </table>
     <?php } else { ?>
       <p>No campaigns yet.</p>
-    <?php } ?>    
+    <?php } ?>
   </div><!-- .sidebar -->

@@ -6,7 +6,7 @@ views code checked in 2009, August.
 Small amount of testing can be done, as follows:
 
 From the unittest/cron directory, run fillDB -a [your choice of fill options] # note use -a
- Note: fillDB --help gives a list of options. I usually use values like  
+ Note: fillDB --help gives a list of options. I usually use values like
    -P55 -R4 -S111 but feel free.
 
 From the command line, do the  "get database results" step:
@@ -35,10 +35,10 @@ Now, do the "get database results" step again, this time using a different csv n
 
 Compare the interal versus the external results.
 
-You can do similar things for two other tables   
+You can do similar things for two other tables
   'top_crashes_by_url_signature': "SELECT * from top_crashes_by_url_signature order by signature;",
   'topcrashurlfactsreports':      "SELECT * from topcrashurlfactsreports order by uuid;",
-But beware that there WILL be diffs because there were bulk insert statments that created ids in different orders. 
+But beware that there WILL be diffs because there were bulk insert statments that created ids in different orders.
 You may be able to help by selecting only some columns, but you will then lose correlation data.
 
 

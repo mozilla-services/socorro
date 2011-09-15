@@ -14,7 +14,7 @@ class expires_Core {
 	/**
 	 * Sets the amount of time before a page expires
 	 *
-	 * @param  integer Seconds before the page expires 
+	 * @param  integer Seconds before the page expires
 	 * @return boolean
 	 */
 	public static function set($seconds = 60)

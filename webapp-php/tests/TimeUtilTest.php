@@ -8,7 +8,7 @@ require_once dirname(__FILE__).'/../application/libraries/timeutil.php';
  */
 class  TimeUtilTest extends PHPUnit_Framework_TestCase
 {
-    public function testCrashFilename() 
+    public function testCrashFilename()
     {
         // set the default timezone to use. Available since PHP 5.1
         date_default_timezone_set('UTC');
@@ -20,10 +20,10 @@ class  TimeUtilTest extends PHPUnit_Framework_TestCase
         $this->assertEquals('2009-12-01T04:36:00T+0000', $actual, "We round down to 36 minutes");
 
         // 2009-11-30T20:32:40T+0000
-        $a_time = 1259641960; 
+        $a_time = 1259641960;
         $actual = date('o-m-d\TH:i:s\T+0000', TimeUtil::roundOffByMinutes(12, $a_time));
         $this->assertEquals('2009-12-01T04:36:00T+0000', $actual, "We round up to 36 minutes");
-        
+
         // 2009-11-30T21:00:00T+0000
         $c_time = 1259643600;
         $actual = TimeUtil::roundOffByMinutes(12, $c_time);

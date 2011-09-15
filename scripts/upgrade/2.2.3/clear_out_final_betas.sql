@@ -45,19 +45,19 @@ SELECT product_version_id FROM product_versions
 WHERE beta_number = 999
 AND NOT EXISTS (SELECT 1 FROM product_version_builds
 	WHERE product_versions.product_version_id = product_version_builds.product_version_id );
-	
-DELETE FROM signature_products WHERE product_version_id IN 
+
+DELETE FROM signature_products WHERE product_version_id IN
 	( SELECT product_version_id FROM drop_betas );
-	
-DELETE FROM tcbs WHERE product_version_id 
+
+DELETE FROM tcbs WHERE product_version_id
 	IN ( SELECT product_version_id FROM drop_betas );
 
 DELETE FROM daily_crashes WHERE productdims_id IN
 	( SELECT product_version_id FROM drop_betas );
-	
+
 DELETE FROM product_adu WHERE product_version_id IN
 	(SELECT product_version_id FROM drop_betas );
-	
+
 DELETE FROM product_versions WHERE product_version_id IN
 	(SELECT product_version_id FROM drop_betas );
 END;

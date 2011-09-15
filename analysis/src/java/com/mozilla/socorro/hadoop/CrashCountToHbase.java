@@ -18,7 +18,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  *   Xavier Stevens <xstevens@mozilla.com>, Mozilla Corporation (original author)
  *
  * Alternatively, the contents of this file may be used under the terms of
@@ -62,7 +62,7 @@ import org.apache.hadoop.util.ToolRunner;
 public class CrashCountToHbase implements Tool {
 
 	private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(CrashCountToHbase.class);
-	
+
 	private static final String NAME = "CrashCountToHbase";
 	private Configuration conf;
 
@@ -73,32 +73,32 @@ public class CrashCountToHbase implements Tool {
 	private static final String OS = "os";
 	private static final String SIGNATURE = "signature";
 	private static final String QUALIFIER_NAME = "name";
-	
+
 	private static final String KEY_DELIMITER = "\u0001";
 	private static final String COLUMN_DELIMITER = "\u0003";
 	private static final String COUNT_DELIMITER = "\u0004";
-	
+
 	public static class CrashCountToHBaseMapper extends Mapper<LongWritable, Text, Text, Text> {
 
 		public enum ReportStats { UNEXPECTED_KV_LENGTH, UNEXPECTED_KEY_SPLIT_LENGTH, PROCESSED }
 
 		private Text outputKey;
 		private Text outputValue;
-		
+
 		private Pattern tabPattern;
 		private Pattern keyPattern;
-		
+
 		/* (non-Javadoc)
 		 * @see org.apache.hadoop.mapreduce.Mapper#setup(org.apache.hadoop.mapreduce.Mapper.Context)
 		 */
 		public void setup(Context context) {
 			outputKey = new Text();
 			outputValue = new Text();
-			
+
 			tabPattern = Pattern.compile("\t");
 			keyPattern = Pattern.compile(KEY_DELIMITER);
 		}
-		
+
 		/* (non-Javadoc)
 		 * @see org.apache.hadoop.mapreduce.Mapper#map(KEYIN, VALUEIN, org.apache.hadoop.mapreduce.Mapper.Context)
 		 */
@@ -120,17 +120,17 @@ public class CrashCountToHbase implements Tool {
 				LOG.error("KV length unexpected: " + value.toString());
 			}
 		}
-		
-	}	
-	
+
+	}
+
 	public static class CrashCountToHBaseReducer extends Reducer<Text, Text, Text, Text> {
-		
+
 		public enum ReportStats { UNEXPECTED_VALUE_SPLIT_LENGTH, UNEXPECTED_COLUMN_SPLIT_LENGTH, NUMBER_FORMAT_EXCEPTION, PROCESSED, PUT_EXCEPTION }
-		
+
 		private Pattern columnPattern;
 		private Pattern valuePattern;
 		private HTable table;
-		
+
 		/* (non-Javadoc)
 		 * @see org.apache.hadoop.mapreduce.Reducer#setup(org.apache.hadoop.mapreduce.Reducer.Context)
 		 */
@@ -144,7 +144,7 @@ public class CrashCountToHbase implements Tool {
 				throw new RuntimeException("Could not instantiate HTable", e);
 			}
 		}
-		
+
 		/* (non-Javadoc)
 		 * @see org.apache.hadoop.mapreduce.Reducer#cleanup(org.apache.hadoop.mapreduce.Reducer.Context)
 		 */
@@ -158,7 +158,7 @@ public class CrashCountToHbase implements Tool {
 				e.printStackTrace();
 			}
 		}
-		
+
 		/* (non-Javadoc)
 		 * @see org.apache.hadoop.mapreduce.Reducer#reduce(KEYIN, java.lang.Iterable, org.apache.hadoop.mapreduce.Reducer.Context)
 		 */
@@ -171,10 +171,10 @@ public class CrashCountToHbase implements Tool {
 				String[] valueSplits = valuePattern.split(v);
 				if (valueSplits.length == 2) {
 					String[] familyQualifierSplits = columnPattern.split(valueSplits[0]);
-					if (valueSplits.length == 2) {			
+					if (valueSplits.length == 2) {
 						String family = familyQualifierSplits[0];
 						String qualifier = familyQualifierSplits[1];
-						
+
 						byte[] valueBytes = null;
 						if ((SIGNATURE.equals(family) && QUALIFIER_NAME.equals(qualifier)) ||
 							(OS.equals(family) && QUALIFIER_NAME.equals(qualifier)) ||
@@ -182,9 +182,9 @@ public class CrashCountToHbase implements Tool {
 							if (p.has(Bytes.toBytes(family), Bytes.toBytes(qualifier))) {
 								continue;
 							}
-							
+
 							if (SIGNATURE.equals(family) && QUALIFIER_NAME.equals(qualifier)) {
-								valueBytes = Bytes.toBytes(valueSplits[1]);	
+								valueBytes = Bytes.toBytes(valueSplits[1]);
 							} else {
 								valueBytes = Bytes.toBytes(true);
 							}
@@ -198,7 +198,7 @@ public class CrashCountToHbase implements Tool {
 								continue;
 							}
 						}
-						
+
 						try {
 							p.add(Bytes.toBytes(family), Bytes.toBytes(qualifier), valueBytes);
 						} catch (IllegalArgumentException e) {
@@ -212,7 +212,7 @@ public class CrashCountToHbase implements Tool {
 					context.getCounter(ReportStats.UNEXPECTED_VALUE_SPLIT_LENGTH).increment(1L);
 				}
 			}
-			
+
 			try {
 				table.put(p);
 				context.getCounter(ReportStats.PROCESSED).increment(1L);
@@ -224,14 +224,14 @@ public class CrashCountToHbase implements Tool {
 				e.printStackTrace();
 			}
 		}
-		
+
 	}
-	
+
 	/**
 	 * @param args
 	 * @return
 	 * @throws IOException
-	 * @throws ParseException 
+	 * @throws ParseException
 	 */
 	public Job initJob(String[] args) throws IOException {
 		Job job = new Job(getConf());
@@ -239,16 +239,16 @@ public class CrashCountToHbase implements Tool {
 		job.setJarByClass(CrashCountToHbase.class);
 
 		FileInputFormat.addInputPath(job, new Path(args[0]));
-		
+
 		job.setMapperClass(CrashCountToHBaseMapper.class);
 		job.setReducerClass(CrashCountToHBaseReducer.class);
 		job.setMapOutputKeyClass(Text.class);
 		job.setMapOutputValueClass(Text.class);
 		job.setOutputKeyClass(Text.class);
 		job.setOutputValueClass(Text.class);
-		
+
 		FileOutputFormat.setOutputPath(job, new Path(args[1]));
-		
+
 		return job;
 	}
 
@@ -259,10 +259,10 @@ public class CrashCountToHbase implements Tool {
 		System.out.println("Usage: " + NAME + " <input-path> <output-path>");
 		System.out.println();
 		GenericOptionsParser.printGenericCommandUsage(System.out);
-		
+
 		return -1;
 	}
-	
+
 	/* (non-Javadoc)
 	 * @see org.apache.hadoop.util.Tool#run(java.lang.String[])
 	 */
@@ -270,7 +270,7 @@ public class CrashCountToHbase implements Tool {
 		if (args.length != 2) {
 			return printUsage();
 		}
-		
+
 		int rc = -1;
 		Job job = initJob(args);
 		job.waitForCompletion(true);
@@ -294,7 +294,7 @@ public class CrashCountToHbase implements Tool {
 	public void setConf(Configuration conf) {
 		this.conf = conf;
 	}
-	
+
 	/**
 	 * @param args
 	 * @throws Exception
@@ -303,6 +303,6 @@ public class CrashCountToHbase implements Tool {
 		int res = ToolRunner.run(new Configuration(), new CrashCountToHbase(), args);
 		System.exit(res);
 	}
-	
+
 
 }

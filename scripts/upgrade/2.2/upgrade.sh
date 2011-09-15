@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # update script for 2.1 --> 2.2
-# suitable for both dev instances and prod 
+# suitable for both dev instances and prod
 
 set -e
 set -u
@@ -26,7 +26,7 @@ psql -f support_functions.sql breakpad
 
 echo 'load new tables'
 psql -f new_tcbs_tables.sql breakpad
-ADU 
+ADU
 echo 'load product information'
 psql -f product_migration.sql breakpad
 

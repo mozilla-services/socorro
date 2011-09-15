@@ -68,7 +68,7 @@ class Model extends Model_Core {
      * Create the hash key that will be used to store the query in cache.
      *
      * @param string The $sql statement
-     * @param  array Parameters to be escaped and bound in the SQL using Kohana Database query method. 
+     * @param  array Parameters to be escaped and bound in the SQL using Kohana Database query method.
      * @return string A query hash string
      */
     public function queryHashKey($sql, $binds=NULL) {

@@ -155,7 +155,7 @@ class request_Core {
 		// Exact match
 		if (isset(self::$accept_types[$type[0]][$type[1]]))
 			return self::$accept_types[$type[0]][$type[1]];
-        
+
 		// Wildcard match (if not checking explicitly)
 		if ($explicit_check === FALSE AND isset(self::$accept_types[$type[0]]['*']))
 			return self::$accept_types[$type[0]]['*'];

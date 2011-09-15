@@ -74,12 +74,12 @@ for line in results:
     if len(kv) != 2:
         print "Bad line: %s" % (line)
         continue
-    
+
     key_splits = key_pattern.split(kv[0])
     count = long(kv[1])
     if len(key_splits) == 1:
         osname = key_splits[0]
-        osys = osyses.setdefault(osname, 
+        osys = osyses.setdefault(osname,
                                 { "count": 0,
                                   "signatures": {},
                                   "module_counts": {} })
@@ -87,12 +87,12 @@ for line in results:
     elif len(key_splits) == 2:
         osname = key_splits[0]
         sigreason = key_splits[1]
-        osys = osyses.setdefault(osname, 
+        osys = osyses.setdefault(osname,
                                 { "count": 0,
                                   "signatures": {},
                                   "module_counts": {} })
-        signature = osys["signatures"].setdefault(sigreason, 
-                                                  { "count": 0, 
+        signature = osys["signatures"].setdefault(sigreason,
+                                                  { "count": 0,
                                                     "module_counts": {} })
         signature["count"] = count
     elif len(key_splits) == 3:
@@ -103,23 +103,23 @@ for line in results:
         version = None
         if len(info_splits) == 2:
             version = info_splits[1]
-            
-        osys = osyses.setdefault(osname, 
+
+        osys = osyses.setdefault(osname,
                                 { "count": 0,
                                   "signatures": {},
                                   "module_counts": {} })
-                                  
+
         if sigreason == '' and libname != '':
-            modinfo = osys["module_counts"].setdefault(libname, 
-                                                       { "count": 0, 
+            modinfo = osys["module_counts"].setdefault(libname,
+                                                       { "count": 0,
                                                          "version_counts": {} })
             if version == None:
                 modinfo["count"] = count
             else:
                 modinfo["version_counts"][version] = count
         elif sigreason != '' and libname != '':
-            signature = osys["signatures"].setdefault(sigreason, 
-                                                      { "count": 0, 
+            signature = osys["signatures"].setdefault(sigreason,
+                                                      { "count": 0,
                                                         "module_counts": {} })
             modinfo = signature["module_counts"].setdefault(libname,
                                                             { "count": 0,

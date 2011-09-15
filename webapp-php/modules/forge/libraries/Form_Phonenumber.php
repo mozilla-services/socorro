@@ -80,7 +80,7 @@ class Form_Phonenumber_Core extends Form_Input {
 					$input .= form::input(array_merge(array('value' => $val), $temp));
 					break;
 			}
-			
+
 		}
 
 		return $input;

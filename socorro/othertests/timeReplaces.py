@@ -24,7 +24,7 @@ def loop(counting = False):
   else:
     display(stop-start,'empty:')
     return ret
-    
+
 def useRE(counting = False):
   ret = 0
   start = time.time()

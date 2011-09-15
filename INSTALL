@@ -4,14 +4,14 @@ Requirements:
 * PostgreSQL 9.0
 * Python 2.6
 
-These install instructions are a work-in-progress. 
+These install instructions are a work-in-progress.
 
 KNOWN ISSUES
 ---
 * aggregate reports (top crashers, etc) do not work without existing data
 ** https://bugzilla.mozilla.org/show_bug.cgi?id=653362
 
-You can build a standalone Socorro development VM - 
+You can build a standalone Socorro development VM -
 see the vagrant/README file for more info. The config files
 and puppet manifests in vagrant/ can be a useful reference
 when setting up Socorro for the first time, too.
@@ -30,7 +30,7 @@ Choose "minimal" as install option.
 
 Install postgresql 9.x yum repo from http://www.postgresql.org/download/linux#yum
 
-yum install python-psycopg2 simplejson httpd mod_ssl mod_wsgi postgresql-server postgresql-plperl perl-pgsql_perl5 postgresql-contrib subversion make rsync php-pecl-memcache memcached php-pgsql subversion gcc-c++ curl-devel ant python-virtualenv php-phpunit-PHPUnit 
+yum install python-psycopg2 simplejson httpd mod_ssl mod_wsgi postgresql-server postgresql-plperl perl-pgsql_perl5 postgresql-contrib subversion make rsync php-pecl-memcache memcached php-pgsql subversion gcc-c++ curl-devel ant python-virtualenv php-phpunit-PHPUnit
 
 Disable SELinux:
   Edit /etc/sysconfig/selinux and set "SELINUX=disabled"
@@ -44,7 +44,7 @@ RHEL/CentOS - Initialize and enable on startup (not needed for Ubuntu):
   service postgresql initdb
   service postgresql start
   chkconfig postgresql on
-    
+
 Edit /var/lib/pgsql/data/pg_hba.conf
 Change IPv4/IPv6 connection from "ident" to "md5"
 Edit /var/lib/pgsql/data/postgresql.conf
@@ -99,7 +99,7 @@ Load PostgrSQL Schema
   export PYTHONPATH=.:thirdparty
   export PGPASSWORD="aPassword"
   psql -h localhost -U postgres -f scripts/schema/2.2/breakpad_roles.sql
-  psql -h localhost -U postgres breakpad -f scripts/schema/2.2/breakpad_schema.sql 
+  psql -h localhost -U postgres breakpad -f scripts/schema/2.2/breakpad_schema.sql
   cp scripts/config/createpartitionsconfig.py.dist scripts/config/createpartitionsconfig.py
   python scripts/createPartitions.py
 
@@ -139,7 +139,7 @@ Install startup scripts
 
 Install Socorro cron jobs
   ln -s /data/socorro/application/scripts/crons/socorrorc /etc/socorro/
-  crontab /data/socorro/application/scripts/crons/example.crontab 
+  crontab /data/socorro/application/scripts/crons/example.crontab
 
 Configure Apache
   edit /etc/httpd/conf.d/socorro.conf
@@ -166,7 +166,7 @@ Hadoop+HBase install
   Install Hadoop 0.20 + HBase 0.89
     Refer to https://ccp.cloudera.com/display/CDHDOC/HBase+Installation
 Note - this is just a standalone setup, read the above for info on a real, distributed setup!
-  Install startup scripts 
+  Install startup scripts
     RHEL/CentOS only (not needed for Ubuntu
       service hadoop-hbase-master start
       chkconfig hadoop-hbase-master on
@@ -180,11 +180,18 @@ Load Hbase schema
 
 System Test
 ---
-  In a Socorro checkout:
+  In a Socorro checkout (TODO - include instructions for generating test crash):
     virtualenv socorro-virtualenv
     . socorro-virtualenv/bin/activate
     pip install poster
     cp scripts/config/submitterconfig.py.dist scripts/config/submitterconfig.py
     export PYTHONPATH=.:thirdparty
-i   python scripts/submitter.py -u https://crash-reports-dev.allizom.org/submit -j ~/Downloads/1c11af84-3fb7-4196-a864-cf0622110911.json -d ~/Downloads/1c11af84-3fb7-4196-a864-cf0622110911.dump
+    python scripts/submitter.py -u https://crash-reports-dev.allizom.org/submit -j ~/Downloads/1c11af84-3fb7-4196-a864-cf0622110911.json -d ~/Downloads/1c11af84-3fb7-4196-a864-cf0622110911.dump
+  
+  Check syslog logs for user.*, should see the CrashID returned being collected
 
+  Attempt to pull up the newly inserted crash:
+    https://crash-stats.mozilla.com/report/index/0f3f3360-40a6-4188-8659-b2a5c2110808
+
+  The logs should show this new crash being inserted for priority processing, 
+  and it should be available shortly thereafter.

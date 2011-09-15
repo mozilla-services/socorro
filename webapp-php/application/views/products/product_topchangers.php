@@ -8,15 +8,15 @@
 <div class="page-heading">
     <h2>
         Top Changers for <?php out::H($product) ?>
-        <?php 
+        <?php
             if (isset($version) && !empty($version)) {
-                out::H($version);  
+                out::H($version);
             } elseif (isset($versions) && !empty($versions)) {
                 out::H(implode(", ", $versions));
             }
         ?>
     </h2>
-    
+
     <ul class="options">
         <li><a href="<?php out::H($url_base); ?>/topchangers?duration=3" <?php if ($duration == 3) echo ' class="selected"'; ?>>3 days</a></li>
         <li><a href="<?php out::H($url_base); ?>/topchangers?duration=7" <?php if ($duration == 7) echo ' class="selected"'; ?>>7 days</a></li>

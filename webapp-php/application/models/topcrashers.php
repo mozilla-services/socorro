@@ -8,7 +8,7 @@ class Topcrashers_Model extends Model {
      * Return the trendClass value that will be used with this top crasher.
      *
      * @param   int     The changeInRank value
-     * @return  string  The class name 
+     * @return  string  The class name
      */
     public function addTrendClass($change) {
 		$trendClass = "new";
@@ -24,14 +24,14 @@ class Topcrashers_Model extends Model {
 		}
 		return $trendClass;
 	}
-    
+
     /**
      * Utility method for checking for expected properties
      * in the output of a web service call. If any are missing
      * then an alert will be logged and a default value will be set.
      * @param object - The object that is the result of a web service call
      * @param array - An assocative array where the key is a property and the value is a default
-     * @param string - A useful log msg for tracking down which 
+     * @param string - A useful log msg for tracking down which
      *                 part of the results object was missing parameters
      * @void - logs on missing properties, $crash is altered when missing properties
      */
@@ -50,14 +50,14 @@ class Topcrashers_Model extends Model {
  	        Kohana::log('alert', "Required properites are missing from $log_msg - " . implode(', ', $missing_prop_names));
  	    }
      }
-    
+
     /**
      * Fetch the top crashers data via a web service call.
      *
      * @param   string      The product name
      * @param   string      The version number
      * @param   int         The number of days
-     * @return  array       Returns 
+     * @return  array       Returns
      */
     public function getTopCrashersViaWebService($product, $version, $duration)
     {
@@ -75,36 +75,34 @@ class Topcrashers_Model extends Model {
     	$lifetime = Kohana::config('products.cache_expires');
     	$p = urlencode($product);
     	$v = urlencode($version);
-        
+
         $resp = $service->get("${host}/201010/topcrash/sig/trend/rank/p/${p}/v/${v}/type/browser/end/${end_date}/duration/${dur}/listsize/${limit}",'json', $lifetime);
     	if($resp) {
     	    $this->ensureProperties(
-    	        $resp, 
+    	        $resp,
     	        array(
                     'start_date' => '',
                     'end_date' => '',
                     'totalPercentage' => 0,
                     'crashes' => array(),
                     'totalNumberOfCrashes' => 0
-                ), 
+                ),
                 'top crash sig overall'
             );
-    	
+
             $signatures = array();
-            $req_props = array( 
-                'signature' => '', 
-                'count' => 0, 
-            	'win_count' => 0, 
-            	'mac_count' => 0, 
-            	'linux_count' => 0,
-                'versions' => '', 
-                'versions_count' => 0,
-            	'currentRank' => 0, 
-            	'previousRank' => 0, 
-            	'changeInRank' => 0, 
-            	'percentOfTotal' => 0, 
-            	'previousPercentOfTotal' => 0, 
-            	'changeInPercentOfTotal' => 0
+            $req_props = array(
+                'signature' => '',
+                'count' => 0,
+                'win_count' => 0,
+                'mac_count' => 0,
+                'linux_count' => 0,
+                'currentRank' => 0,
+                'previousRank' => 0,
+                'changeInRank' => 0,
+                'percentOfTotal' => 0,
+                'previousPercentOfTotal' => 0,
+                'changeInPercentOfTotal' => 0
             );
 
             foreach($resp->crashes as $crasher) {
@@ -134,16 +132,16 @@ class Topcrashers_Model extends Model {
 				}
             }
 
-            if (!empty($signatures)) { 
+            if (!empty($signatures)) {
 			    $sql = "
-			    	SELECT DISTINCT 
+			    	SELECT DISTINCT
 			    	  sd.signature,
 			    	  array_to_string(array_agg(pd.version ORDER BY pd.sort_key DESC),', ') as versions,
-			    	  min(sd.first_report) as first_report 
-                    FROM signature_productdims sd 
-                    INNER JOIN productdims pd ON sd.productdims_id = pd.id 
-                    WHERE sd.signature IN (" . implode(", ", $signatures) . ") 
-                    AND pd.product = ? 
+			    	  min(sd.first_report) as first_report
+                    FROM signature_productdims sd
+                    INNER JOIN productdims pd ON sd.productdims_id = pd.id
+                    WHERE sd.signature IN (" . implode(", ", $signatures) . ")
+                    AND pd.product = ?
                     GROUP BY sd.signature
                 ";
 	            if ($rows = $this->fetchRows($sql, TRUE, array($product))) {
@@ -152,14 +150,14 @@ class Topcrashers_Model extends Model {
 		                $result->versions = null;
 		                $result->versions_array = array();
 		                $result->versions_count = 0;
-		                
+
 			    		$versions = array();
 		            	foreach($rows as $row) {
                             if ($row->signature == $result->signature) {
         			            if (!empty($row->first_report)) {
         			                $result->first_report = date("Y-m-d", strtotime($row->first_report));
                                     $result->first_report_exact = $row->first_report;
-        			            }			            
+        			            }
         			            if (!empty($row->versions)) {
         			                $result->versions = $row->versions;
         			    			$result->versions_array = explode(",", $row->versions);

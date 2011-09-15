@@ -26,10 +26,10 @@ logger.setLevel(logging.DEBUG)
 
 sutil.setupLoggingHandlers(logger, config)
 sutil.echoConfig(logger, config)
-  
+
 try:
   config["endDate"] = config.startDate + dt.timedelta(config.weeksIntoFuture * 7)
-  print 
+  print
   schema.createPartitions(config, logger)
 finally:
   logger.info("done.")
