@@ -17,7 +17,7 @@
                     <th><?php out::H(substr($platform->name, 0, 3)) ?></th>
                 <?php } ?>
                 <?php if (isset($sig2bugs)) { ?>
-                    <th class="bugzilla_numbers">Bugzilla Ids</th>
+                    <th class="bugzilla_numbers">Bugzilla IDs</th>
                 <?php } ?>
             </tr>
         </thead>
