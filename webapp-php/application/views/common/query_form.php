@@ -95,7 +95,7 @@
             </p>
 
             <p class="advanced">
-            <label for="build_id">Build Id</label>
+            <label for="build_id">Build ID</label>
             <?php echo form::input(
                 array('size' => '14', 'name'=>'build_id', 'id'=>'build_id'),
                 trim($params['build_id'])
