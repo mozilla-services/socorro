@@ -115,10 +115,10 @@ class Report_Controller extends Controller {
             $index += 1;
         }
         $bug_model = new Bug_Model;
-        $rows = $bug_model->bugsForSignatures(array($params['signature']));
-
-        $bugzilla = new Bugzilla;
-        $signature_to_bugzilla = $bugzilla->signature2bugzilla($rows, Kohana::config('codebases.bugTrackingUrl'));
+        $signature_to_bugzilla = $bug_model->bugsForSignatures(
+                                     array($params['signature']),
+                                     Kohana::config('codebases.bugTrackingUrl')
+                                 );
 
         list($correlation_product, $correlation_version) = $this->_correlationProdVers($reports);
 
@@ -410,9 +410,10 @@ class Report_Controller extends Controller {
 		$report->{'display_signature'} = $report->signature;
 		$report->sumo_signature = $this->_makeSumoSignature($report->signature);
 		$bug_model = new Bug_Model;
-		$rows = $bug_model->bugsForSignatures(array($report->signature));
-	    	$bugzilla = new Bugzilla;
-	    	$signature_to_bugzilla = $bugzilla->signature2bugzilla($rows, Kohana::config('codebases.bugTrackingUrl'));
+	    	$signature_to_bugzilla = $bug_model->bugsForSignatures(
+                                             array($report->signature),
+                                             Kohana::config('codebases.bugTrackingUrl')
+                                         );
                 $comments = $this->common_model->getCommentsBySignature($report->signature);
 	    }
 
