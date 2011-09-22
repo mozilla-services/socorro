@@ -5,11 +5,8 @@ $(document).ready(function() {
   		mode: 'time',
   		timeformat: "%b %d",
   		minTickSize: [1, "day"],
-  		autoscaleMargin: .1
   		},
-  	yaxis: {
-  		autoscaleMargin: .05
-  		},
+  	yaxis: {},
   	series: {
   		lines: { show: true },
   		points: { show: false },
@@ -22,8 +19,7 @@ $(document).ready(function() {
   		borderColor: '#c0c0c0',
   		borderWidth: 0
   		},
-  	legend: {
-  	}
+  	legend: {}
   };
 
   if (window.socGraphByReportType === true) {
