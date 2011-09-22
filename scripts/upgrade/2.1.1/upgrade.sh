@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # update script for 2.1 --> 2.2
-# suitable for both dev instances and prod 
+# suitable for both dev instances and prod
 
 set -e
 set -u

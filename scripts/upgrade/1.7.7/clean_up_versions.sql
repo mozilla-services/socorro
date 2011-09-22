@@ -62,14 +62,14 @@ create table productdims_version_sort (
 	sec3_string2 text,
 	extra text,
 	constraint productdims_version_sort_key primary key (product, version),
-	constraint productdims_product_version_fkey foreign key ( product, version ) 
+	constraint productdims_product_version_fkey foreign key ( product, version )
 		references productdims(product, version) on delete cascade on update cascade
 );
 
 ALTER TABLE productdims_version_sort OWNER TO breakpad_rw;
 
-INSERT INTO productdims_version_sort 
-SELECT id, product, version, 
+INSERT INTO productdims_version_sort
+SELECT id, product, version,
 	(tokenize_version(version)).*
 FROM productdims
 ORDER BY product, version;
@@ -77,7 +77,7 @@ ORDER BY product, version;
 update productdims
 	set sort_key = running_count
 from (
-	select product, version, 
+	select product, version,
 		row_number() over ( partition by product
 			order by sec1_num1 ASC NULLS FIRST,
 					sec1_string1 ASC NULLS LAST,
@@ -109,7 +109,7 @@ BEGIN
 -- work for the database and more foolproof.
 
 UPDATE productdims SET sort_key = new_sort
-FROM  ( SELECT product, version, 
+FROM  ( SELECT product, version,
 		row_number() over ( partition by product
 			order by sec1_num1 ASC NULLS FIRST,
 					sec1_string1 ASC NULLS LAST,
@@ -152,14 +152,14 @@ INSERT INTO productdims_version_sort (
 	sec2_num1,	sec2_string1,	sec2_num2,	sec2_string2,
 	sec3_num1,	sec3_string1,	sec3_num2,	sec3_string2,
 	extra )
-SELECT 
+SELECT
 	NEW.id,
 	NEW.product,
 	NEW.version,
 	s1n1,	s1s1,	s1n2,	s1s2,
 	s2n1,	s2s1,	s2n2,	s2s2,
 	s3n1,	s3s1,	s3n2,	s3s2,
-	ext 
+	ext
 FROM tokenize_version(NEW.version);
 
 -- update sort key
@@ -172,7 +172,7 @@ CREATE TRIGGER version_sort_insert_trigger AFTER INSERT
 ON productdims FOR EACH ROW EXECUTE PROCEDURE version_sort_insert_trigger();
 
 CREATE OR REPLACE FUNCTION version_sort_update_trigger_before ()
-RETURNS TRIGGER 
+RETURNS TRIGGER
 LANGUAGE plpgsql AS $f$
 BEGIN
 -- updates productdims_version_sort
@@ -183,7 +183,7 @@ SELECT 	s1n1,	s1s1,	s1n2,	s1s2,
 	s2n1,	s2s1,	s2n2,	s2s2,
 	s3n1,	s3s1,	s3n2,	s3s2,
 	ext
-INTO 
+INTO
 	NEW.sec1_num1,	NEW.sec1_string1,	NEW.sec1_num2,	NEW.sec1_string2,
 	NEW.sec2_num1,	NEW.sec2_string1,	NEW.sec2_num2,	NEW.sec2_string2,
 	NEW.sec3_num1,	NEW.sec3_string1,	NEW.sec3_num2,	NEW.sec3_string2,
@@ -194,7 +194,7 @@ RETURN NEW;
 END; $f$;
 
 CREATE OR REPLACE FUNCTION version_sort_update_trigger_after ()
-RETURNS TRIGGER 
+RETURNS TRIGGER
 LANGUAGE plpgsql AS $f$
 BEGIN
 -- update sort keys
@@ -203,11 +203,11 @@ RETURN NEW;
 END; $f$;
 
 CREATE TRIGGER version_sort_update_trigger_before BEFORE UPDATE
-ON productdims_version_sort FOR EACH ROW 
+ON productdims_version_sort FOR EACH ROW
 EXECUTE PROCEDURE version_sort_update_trigger_before();
 
 CREATE TRIGGER version_sort_update_trigger_after AFTER UPDATE
-ON productdims_version_sort FOR EACH ROW 
+ON productdims_version_sort FOR EACH ROW
 EXECUTE PROCEDURE version_sort_update_trigger_after();
 
 COMMIT;
