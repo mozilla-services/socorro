@@ -1,7 +1,7 @@
 create or replace function update_tcbs (
 	updateday date )
 RETURNS BOOLEAN
-LANGUAGE plpgsql 
+LANGUAGE plpgsql
 SET work_mem = '512MB'
 SET temp_buffers = '512MB'
 AS $f$
@@ -38,11 +38,11 @@ GROUP BY signature, product, version, build,
 	release_channel, os_name, os_version,
 	process_type;
 
-PERFORM 1 FROM new_tcbs LIMIT 1;	
+PERFORM 1 FROM new_tcbs LIMIT 1;
 IF NOT FOUND THEN
 	RAISE EXCEPTION 'no report data found for TCBS for date %', updateday;
 END IF;
-	
+
 ANALYZE new_tcbs;
 
 -- clean process_type
@@ -51,13 +51,13 @@ UPDATE new_tcbs
 SET process_type = 'Browser'
 WHERE process_type IS NULL
 	OR process_type = '';
-	
+
 -- clean release_channel
 
-UPDATE new_tcbs 
+UPDATE new_tcbs
 SET real_release_channel = release_channels.release_channel
 FROM release_channels
-	JOIN release_channel_matches ON 
+	JOIN release_channel_matches ON
 		release_channels.release_channel = release_channel_matches.release_channel
 WHERE new_tcbs.release_channel ILIKE match_string;
 
@@ -72,29 +72,33 @@ WHERE COALESCE(new_tcbs.signature,'') = signatures.signature;
 
 -- populate product_version_id for betas
 
-UPDATE new_tcbs 
+UPDATE new_tcbs
 SET product_version_id = product_versions.product_version_id
 FROM product_versions
 	JOIN product_version_builds ON product_versions.product_version_id = product_version_builds.product_version_id
 WHERE product_versions.build_type = 'Beta'
+    AND new_tcbs.real_release_channel = 'Beta'
 	AND new_tcbs.product = product_versions.product_name
 	AND new_tcbs.version = product_versions.release_version
 	AND build_numeric(new_tcbs.build) = product_version_builds.build_id;
 
 -- populate product_version_id for other builds
 
-UPDATE new_tcbs 
+UPDATE new_tcbs
 SET product_version_id = product_versions.product_version_id
 FROM product_versions
 WHERE product_versions.build_type <> 'Beta'
+    AND new_tcbs.real_release_channel <> 'Beta'
 	AND new_tcbs.product = product_versions.product_name
 	AND new_tcbs.version = product_versions.release_version
 	AND new_tcbs.product_version_id = 0;
 
--- if there's no product and version still, discard
+-- if there's no product and version still, or no
+-- signature, discard
 -- since we can't report on it
 
-DELETE FROM new_tcbs WHERE product_version_id = 0;
+DELETE FROM new_tcbs WHERE product_version_id = 0
+  OR signature_id = 0;
 
 -- fix os_name
 
@@ -112,12 +116,11 @@ INSERT INTO tcbs (
 SELECT signature_id, updateday, product_version_id,
 	process_type, real_release_channel,
 	sum(report_count),
-	sum(case when os_name = 'Windows' THEN 1 else 0 END),
-	sum(case when os_name = 'Mac OS X' THEN 1 else 0 END),
-	sum(case when os_name = 'Linux' THEN 1 else 0 END),
+	sum(case when os_name = 'Windows' THEN report_count else 0 END),
+	sum(case when os_name = 'Mac OS X' THEN report_count else 0 END),
+	sum(case when os_name = 'Linux' THEN report_count else 0 END),
     sum(hang_count)
 FROM new_tcbs
-WHERE signature_id <> 0
 GROUP BY signature_id, updateday, product_version_id,
 	process_type, real_release_channel;
 
@@ -129,8 +132,8 @@ ANALYZE tcbs;
 -- all crashes
 
 INSERT INTO tcbs_ranking (
-	product_version_id, signature_id, 
-	process_type, release_channel, 
+	product_version_id, signature_id,
+	process_type, release_channel,
 	aggregation_level,
 	total_reports, rank_report_count )
 SELECT product_version_id, signature_id,
@@ -149,8 +152,8 @@ FROM (
 -- group by process_type
 
 INSERT INTO tcbs_ranking (
-	product_version_id, signature_id, 
-	process_type, release_channel, 
+	product_version_id, signature_id,
+	process_type, release_channel,
 	aggregation_level,
 	total_reports, rank_report_count )
 SELECT product_version_id, signature_id,
@@ -170,8 +173,8 @@ FROM (
 -- group by release_channel
 
 INSERT INTO tcbs_ranking (
-	product_version_id, signature_id, 
-	process_type, release_channel, 
+	product_version_id, signature_id,
+	process_type, release_channel,
 	aggregation_level,
 	total_reports, rank_report_count )
 SELECT product_version_id, signature_id,
@@ -190,8 +193,8 @@ FROM (
 -- group by process_type and release_channel
 
 INSERT INTO tcbs_ranking (
-	product_version_id, signature_id, 
-	process_type, release_channel, 
+	product_version_id, signature_id,
+	process_type, release_channel,
 	aggregation_level,
 	total_reports, rank_report_count )
 SELECT product_version_id, signature_id,
@@ -208,7 +211,7 @@ FROM (
 	GROUP BY product_version_id, signature_id,
 		process_type, release_channel
 ) as tcbs_r;
-	
+
 -- done
 RETURN TRUE;
 END;
@@ -222,18 +225,20 @@ DECLARE tcdate DATE;
 BEGIN
 
 tcdate := '2011-04-17';
-enddate := current_date;
+enddate := '2011-08-09';
 -- timelimited version for stage/dev
---tcdate := '2011-07-20';
---enddate := '2011-07-27;
+--tcdate := '2011-07-25';
+--enddate := '2011-08-12';
 
 WHILE tcdate < enddate LOOP
 
 	PERFORM update_tcbs(tcdate);
 	tcdate := tcdate + 1;
-	
+    RAISE INFO 'updated %',tcdate;
+    DROP TABLE new_tcbs;
+
 END LOOP;
-END; $f$
+END; $f$;
 
 
 
@@ -241,6 +246,7 @@ END; $f$
 
 
 
-	
-	
-	
+
+
+
+

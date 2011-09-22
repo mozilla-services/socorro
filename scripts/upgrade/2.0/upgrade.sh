@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # update script for 1.7.8 --> 2.0
-# suitable for both dev instances and prod 
+# suitable for both dev instances and prod
 
 set -e
 set -u

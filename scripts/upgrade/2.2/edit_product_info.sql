@@ -19,7 +19,7 @@ DECLARE which_t text;
 
 -- this function allows the admin UI to edit product and version
 -- information regardless of which table it appears in
--- currently editing the new products is limited to 
+-- currently editing the new products is limited to
 -- visibility dates and featured because of the need to supply
 -- build numbers, and that we're not sure it will ever
 -- be required.
@@ -30,7 +30,7 @@ DECLARE which_t text;
 
 BEGIN
 
-IF prod_id IS NULL THEN
+IF prod_id IS NULL AND prod_version THEN
 -- new entry
 -- adding rows is only allowed to the old table since the new
 -- table is populated automatically
@@ -39,10 +39,10 @@ IF prod_id IS NULL THEN
 	FROM products
 	WHERE product_name = prod_name
 		AND major_version_sort(prod_version) >= major_version_sort(rapid_release_version);
-	IF FOUND THEN
+	IF FOUND AND prod_version NOT LIKE '%a%' THEN
 		RAISE EXCEPTION 'Product % version % will be automatically updated by the new system.  As such, you may not add this product & version manually.',prod_name,prod_version;
 	ELSE
-		
+
 		INSERT INTO productdims ( product, version, branch, release )
 		VALUES ( prod_name, prod_version, '2.2',
 			CASE WHEN prod_channel ILIKE 'beta' THEN 'milestone'::release_enum
@@ -51,10 +51,10 @@ IF prod_id IS NULL THEN
 				ELSE 'major' END )
 		RETURNING id
 		INTO new_id;
-		
+
 		INSERT INTO product_visibility ( productdims_id, start_date, end_date, featured, throttle )
 		VALUES ( new_id, begin_visibility, end_visibility, is_featured, crash_throttle );
-	
+
 	END IF;
 
 ELSE
@@ -62,11 +62,11 @@ ELSE
 -- first, find out whether we're dealing with the old or new table
 	SELECT which_table INTO which_t
 	FROM product_info WHERE product_version_id = prod_id;
-	
+
 	IF NOT FOUND THEN
 		RAISE EXCEPTION 'No product with that ID was found.  Database Error.';
 	END IF;
-	
+
 	IF which_t = 'new' THEN
 		-- note that changes to the product name or version will be ignored
 		-- only changes to featured and visibility dates will be taken
@@ -75,12 +75,12 @@ ELSE
 			build_date = begin_visibility,
 			sunset_date = end_visibility
 		WHERE product_version_id = prod_id;
-		
+
 		UPDATE product_release_channels
 		SET throttle = crash_throttle / 100
 		WHERE product_name = prod_name
 			AND release_channel = prod_channel;
-		
+
 		new_id := prod_id;
 	ELSE
 		UPDATE productdims SET
@@ -91,14 +91,14 @@ ELSE
 				WHEN prod_channel ILIKE 'nightly' THEN 'development'::release_enum
 				ELSE 'major' END )
 		WHERE id = prod_id;
-			
+
 		UPDATE product_visibility SET
 			featured = is_featured,
 			start_date = begin_visibility,
 			end_date = end_visibility,
 			throttle = crash_throttle
 		WHERE productdims_id = prod_id;
-		
+
 		new_id := prod_id;
 	END IF;
 END IF;
