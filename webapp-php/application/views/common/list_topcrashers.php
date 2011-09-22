@@ -39,7 +39,7 @@
                     <th>Ver</th>
                     <th>First Appearance</th>
            <?php if (isset($sig2bugs)) {?>
-               <th class="bugzilla_numbers">Bugzilla Ids</th>
+               <th class="bugzilla_numbers">Bugzilla IDs</th>
            <?php } ?>
                     <th title="Does not imply Causation">Correlation</th>
                 </tr>
