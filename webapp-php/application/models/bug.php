@@ -114,22 +114,18 @@ class Bug_Model extends Model {
             )",
             TRUE)->result_array(FALSE);
 
-        $bug_hash = array(); // bug objects indexed by id
-        foreach ($rows as $row) {
-            $bug_hash[$row['id']] = array_merge($this->defaultBug, $row);
-        }
-
         $signature_to_bugzilla = array();
-        foreach ($bug_hash as $row) {
-            if ( ! array_key_exists($row['signature'], $signature_to_bugzilla)) {
-	        $signature_to_bugzilla[$row['signature']] = array();
+        foreach ($rows as $row) {
+            if (!array_key_exists($row['signature'], $signature_to_bugzilla)) {
+                $signature_to_bugzilla[$row['signature']] = array();
 	    }
 
+            $row = array_merge($this->defaultBug, $row);
             $row['open'] = (array_key_exists($row['status'], $this->open_statuses)) ? true : false;
-	    $row['url'] = $bugzillaUrl . $row['id'];
-	    $row['summary'] = $row['summary'];
+            $row['url'] = $bugzillaUrl . $row['id'];
+            $row['summary'] = $row['summary'];
 
-	    array_push($signature_to_bugzilla[$row['signature']], $row);
+            array_push($signature_to_bugzilla[$row['signature']], $row);
 	}
 
         foreach ($signature_to_bugzilla as $k => $v) {
@@ -140,4 +136,3 @@ class Bug_Model extends Model {
     }
 }
 ?>
-
