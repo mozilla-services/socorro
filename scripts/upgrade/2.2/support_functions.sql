@@ -8,7 +8,7 @@
 
 create domain major_version AS text
 	CHECK ( VALUE ~ $x$^\d+\.\d+$x$ );
-	
+
 alter domain major_version owner to breakpad_rw;
 
 create or replace function build_date (
@@ -45,7 +45,7 @@ create or replace function version_number_elements(
 	version_string text )
 returns text[]
 language SQL immutable as $f$
--- breaks up the parts of a version string 
+-- breaks up the parts of a version string
 -- into an array of elements
 select regexp_matches($1,$x$^(\d+)\.(\d+)([a-zA-Z]?)(\d*)\.?(\d*)$x$);
 $f$;
@@ -54,10 +54,10 @@ create or replace function version_number_elements(
 	version text,  beta_number int )
 returns text[]
 language SQL as $f$
--- breaks up the parts of a version string into an 
+-- breaks up the parts of a version string into an
 -- array of elements.  if a beta number is present
 -- includes that
-select case when $2 <> 0 then 
+select case when $2 <> 0 then
 	   regexp_matches($1,$x$^(\d+)\.(\d+)$x$) || ARRAY [ 'b', $2::text, '' ]
     else
        regexp_matches($1,$x$^(\d+)\.(\d+)([a-zA-Z]?)(\d*)\.?(\d*)$x$)
@@ -70,7 +70,7 @@ returns text
 language sql immutable as $f$
 -- converts an individual part of a version number
 -- into a three-digit sortable string
-SELECT CASE WHEN $1 <> '' THEN 
+SELECT CASE WHEN $1 <> '' THEN
 	to_char($1::INT,'FM000')
 	ELSE '000' END;
 $f$;
@@ -79,7 +79,7 @@ create or replace function version_sort(
 	version_string text )
 returns text
 language sql immutable as $f$
--- converts a version string into a padded 
+-- converts a version string into a padded
 -- sortable string
 select version_sort_digit(vne[1])
 	|| version_sort_digit(vne[2])
@@ -94,7 +94,7 @@ create or replace function version_sort(
 returns text
 language sql immutable as $f$
 -- converts a version string with a beta number
--- into a padded 
+-- into a padded
 -- sortable string
 select version_sort_digit(vne[1])
 	|| version_sort_digit(vne[2])
@@ -108,7 +108,7 @@ create or replace function major_version_sort(
 	version text )
 returns text
 language sql immutable strict as $f$
--- converts a major_version string into a padded, 
+-- converts a major_version string into a padded,
 -- sortable string
 select version_sort_digit( substring($1 from $x$^(\d+)$x$) )
 	|| version_sort_digit( substring($1 from $x$^\d+\.(\d+)$x$) );
@@ -151,7 +151,7 @@ immutable strict as $f$
 -- for the end of the day
 SELECT ( $1::timestamp without time zone at time zone 'Etc/UTC' at time zone 'America/Los_Angeles' ) + interval '1 day'
 $f$;
-	
+
 create or replace function build_numeric (
 	varchar )
 returns numeric
@@ -166,7 +166,7 @@ ELSE
 END;
 
 create or replace function plugin_count_state ( running_count int, process_type citext, crash_count int )
-returns int 
+returns int
 language sql
 immutable as $f$
 -- allows us to do a plugn count horizontally

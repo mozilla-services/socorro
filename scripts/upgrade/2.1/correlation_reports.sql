@@ -2,10 +2,10 @@
 
 BEGIN;
 
-create table os_names ( 
-    os_name text not null primary key 
+create table os_names (
+    os_name text not null primary key
     );
-    
+
 alter table os_names OWNER TO breakpad_rw;
 
 insert into os_names values ( 'Windows NT' ) , ( 'Linux' ), ('Mac OS X' ), ('Solaris');
@@ -24,7 +24,7 @@ create table correlation_crash_counts (
 
 alter table correlation_crash_counts OWNER TO breakpad_rw;
 
---This table contains the counts of crashes for that module/OS for that day. These rows are the same for both reports and are shared; as a result, attempts to insert duplicate rows will be silently ignored (trigger). 
+--This table contains the counts of crashes for that module/OS for that day. These rows are the same for both reports and are shared; as a result, attempts to insert duplicate rows will be silently ignored (trigger).
 
 create table correlation_core_counts (
   correlation_id integer not null references correlation_crash_counts(correlation_id),
@@ -81,7 +81,7 @@ BEGIN
 -- it checks that nothing is NULL, and then returns the SERIAL ID
 -- for either an existing or a new row
 
-IF n_date IS NULL OR n_os_name IS NULL OR n_signature IS NULL 
+IF n_date IS NULL OR n_os_name IS NULL OR n_signature IS NULL
 	OR n_reason IS NULL OR n_count IS NULL THEN
 	RAISE EXCEPTION 'no correlation_crash_count field may be NULL';
 END IF;
@@ -94,14 +94,14 @@ WHERE date = n_date
 	AND os_name = n_os_name
 	AND signature = n_signature
 	AND reason = n_reason;
-	
+
 IF new_id IS NULL THEN
 	-- its a new correlation record, lets add it
-	INSERT INTO correlation_crash_counts 
+	INSERT INTO correlation_crash_counts
 		( date, os_name, signature, reason, crash_count )
 	VALUES
 		( n_date, n_os_name, n_signature, n_reason, n_crash_count );
-		
+
 	new_id := currval('correlation_crash_counts_correlation_id_seq');
 END IF;
 
