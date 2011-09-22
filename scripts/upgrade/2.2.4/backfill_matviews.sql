@@ -42,6 +42,8 @@ WHILE thisday <= lastday LOOP
 	DROP TABLE IF EXISTS new_tcbs;
 	RAISE INFO 'daily crashes';
 	PERFORM backfill_daily_crashes(thisday, forproduct);
+	RAISE INFO 'signatures';
+	PERFORM update_signatures(thisday);
 
 	thisday := thisday + 1;
 
