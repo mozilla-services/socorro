@@ -26,7 +26,7 @@ IF firstday > current_date OR lastday > current_date or firstday > lastday THEN
 	RAISE EXCEPTION 'date parameter error: cannot backfill into the future';
 END IF;
 IF forproduct <> '' THEN
-	SELECT 1 FROM products WHERE product_name = forproduct;
+	PERFORM 1 FROM products WHERE product_name = forproduct;
 	IF NOT FOUND THEN
 		RAISE EXCEPTION 'product % does not exist or is misspelled',forproduct;
 	END IF;

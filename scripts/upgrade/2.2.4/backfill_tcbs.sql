@@ -32,6 +32,7 @@ SELECT signature, product, version, build,
 FROM reports
 WHERE date_processed >= utc_day_begins_pacific(updateday)
 	and date_processed <= utc_day_begins_pacific((updateday + 1))
+	and ( lower(product) = lower(forproduct) or forproduct = '' )
 GROUP BY signature, product, version, build,
 	release_channel, os_name, os_version,
 	process_type;
