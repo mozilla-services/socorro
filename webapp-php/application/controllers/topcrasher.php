@@ -219,11 +219,11 @@ class Topcrasher_Controller extends Controller {
 		}
 		$top_crasher->trendClass = $this->topcrashers_model->addTrendClass($top_crasher->changeInRank);
             }
-            $unique_signatures = array_unique($signatures);
-	    $rows = $this->bug_model->bugsForSignatures($unique_signatures);
-	    $bugzilla = new Bugzilla;
-	    $signature_to_bugzilla = $bugzilla->signature2bugzilla($rows, Kohana::config('codebases.bugTrackingUrl'));
- 
+	    $signature_to_bugzilla = $this->bug_model->bugsForSignatures(
+                                         array_unique($signatures),
+                                         Kohana::config('codebases.bugTrackingUrl')
+                                     );
+
         // Fetch versions associated with top crashers
         $resp->crashes = $this->topcrashers_model->fetchTopcrasherVersions($product, $resp->crashes);
 
