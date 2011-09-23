@@ -7,6 +7,7 @@ LANGUAGE plpgsql
 SET work_mem = '512MB'
 SET temp_buffers = '512MB'
 AS $f$
+DECLARE myproduct CITEXT := forproduct::citext;
 BEGIN
 -- deletes and replaces daily_crashes for selected dates and optional products
 -- intended to be called administratively by backfill_matviews
@@ -19,13 +20,13 @@ DELETE FROM daily_crashes
 USING product_versions
 WHERE adu_day = updateday
   AND productdims_id = product_version_id
-  AND ( product_name = forproduct or forproduct = '' );
+  AND ( product_name = myproduct or myproduct = '' );
 
 DELETE FROM daily_crashes
 USING productdims
 WHERE adu_day = updateday
   AND daily_crashes.productdims_id = productdims.id
-  AND ( product = forproduct or forproduct = '' );
+  AND ( product = myproduct or myproduct = '' );
 
 -- insert old browser crashes
 -- for most crashes
@@ -41,7 +42,7 @@ WHERE NOT cfg.ignore AND
 		AND date_processed < utc_day_ends_pacific(updateday)
 	AND updateday BETWEEN cfg.start_date and cfg.end_date
     AND lower(substring(os_name, 1, 3)) IN ('win','lin','mac')
-    AND ( p.product = forproduct or forproduct = '' )
+    AND ( p.product = myproduct or myproduct = '' )
 GROUP BY p.id, crash_code, os_short_name;
 
  -- insert HANGS_NORMALIZED from old data
@@ -59,7 +60,7 @@ FROM (
 				AND updateday BETWEEN cfg.start_date and cfg.end_date
 				AND hangid IS NOT NULL
                 AND lower(substring(os_name, 1, 3)) IN ('win','lin','mac')
-                AND ( p.product = forproduct or forproduct = '' )
+                AND ( p.product = myproduct or myproduct = '' )
 		 ) AS subr
 GROUP BY subr.prod_id, subr.os_short_name;
 
@@ -71,8 +72,8 @@ SELECT COUNT(*) as count, daily_crash_code(process_type, hangid) as crash_code,
 	substring(os_name, 1, 3) AS os_short_name,
 	updateday
 FROM product_versions
-JOIN reports on product_versions.product_name = reports.product
-	AND product_versions.version_string = reports.version
+JOIN reports on product_versions.product_name = reports.product::citext
+	AND product_versions.version_string = reports.version::citext
 WHERE
 	date_processed >= utc_day_begins_pacific(updateday)
 		AND date_processed < utc_day_ends_pacific(updateday)
@@ -81,7 +82,7 @@ WHERE
 	AND updateday BETWEEN product_versions.build_date and sunset_date
     AND lower(substring(os_name, 1, 3)) IN ('win','lin','mac')
     AND product_versions.build_type <> 'beta'
-    AND ( product_name = forproduct or forproduct = '' )
+    AND ( product_name = myproduct or myproduct = '' )
 GROUP BY product_version_id, crash_code, os_short_name;
 
 -- insert crash counts for new products
@@ -92,8 +93,8 @@ SELECT COUNT(*) as count, daily_crash_code(process_type, hangid) as crash_code,
 	substring(os_name, 1, 3) AS os_short_name,
 	updateday
 FROM product_versions
-JOIN reports on product_versions.product_name = reports.product
-	AND product_versions.release_version = reports.version
+JOIN reports on product_versions.product_name = reports.product::citext
+	AND product_versions.release_version = reports.version::citext
 WHERE date_processed >= utc_day_begins_pacific(updateday)
 		AND date_processed < utc_day_ends_pacific(updateday)
     AND release_channel ILIKE 'beta'
@@ -104,7 +105,7 @@ WHERE date_processed >= utc_day_begins_pacific(updateday)
         WHERE product_versions.product_version_id = product_version_builds.product_version_id
           AND product_version_builds.build_id = build_numeric(reports.build) )
     AND product_versions.build_type = 'beta'
-    AND ( product_name = forproduct or forproduct = '' )
+    AND ( product_name = myproduct or myproduct = '' )
 GROUP BY product_version_id, crash_code, os_short_name;
 
 -- insert normalized hangs for new products
@@ -115,15 +116,15 @@ SELECT count(subr.hangid) as count, 'H', subr.prod_id, subr.os_short_name,
 FROM (
 		   SELECT distinct hangid, product_version_id AS prod_id, substring(os_name, 1, 3) AS os_short_name
 			FROM product_versions
-			JOIN reports on product_versions.product_name = reports.product
-				AND product_versions.version_string = reports.version
+			JOIN reports on product_versions.product_name = reports.product::citext
+				AND product_versions.version_string = reports.version::citext
 			WHERE date_processed >= utc_day_begins_pacific(updateday)
 					AND date_processed < utc_day_ends_pacific(updateday)
                 AND ( lower(release_channel) NOT IN ( 'nightly', 'beta', 'aurora' )
                       or release_channel is null )
 				AND updateday BETWEEN product_versions.build_date and sunset_date
 			AND product_versions.build_type <> 'beta'
-            AND ( product_name = forproduct or forproduct = '' )
+            AND ( product_name = myproduct or myproduct = '' )
             AND lower(substring(os_name, 1, 3)) IN ('win','lin','mac')
 		 ) AS subr
 GROUP BY subr.prod_id, subr.os_short_name;
@@ -136,8 +137,8 @@ SELECT count(subr.hangid) as count, 'H', subr.prod_id, subr.os_short_name,
 FROM (
 		   SELECT distinct hangid, product_version_id AS prod_id, substring(os_name, 1, 3) AS os_short_name
 			FROM product_versions
-			JOIN reports on product_versions.product_name = reports.product
-				AND product_versions.release_version = reports.version
+			JOIN reports on product_versions.product_name = reports.product::citext
+				AND product_versions.release_version = reports.version::citext
 			WHERE date_processed >= utc_day_begins_pacific(updateday)
 					AND date_processed < utc_day_ends_pacific(updateday)
                 AND release_channel ILIKE 'beta'
@@ -147,7 +148,7 @@ FROM (
                     WHERE product_versions.product_version_id = product_version_builds.product_version_id
                       AND product_version_builds.build_id = build_numeric(reports.build) )
 			AND product_versions.build_type = 'beta'
-            AND ( product_name = forproduct or forproduct = '' )
+            AND ( product_name = myproduct or myproduct = '' )
             AND lower(substring(os_name, 1, 3)) IN ('win','lin','mac')
 		 ) AS subr
 GROUP BY subr.prod_id, subr.os_short_name;

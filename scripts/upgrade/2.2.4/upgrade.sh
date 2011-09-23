@@ -7,7 +7,7 @@ echo 'add new support functions'
 psql -f support_functions.sql breakpad
 
 echo 'fix case sensitivity issues'
-psql -f case_sensitive_fix.sql breakpad
+psql -f fix_case_sensitive_matviews.sql breakpad
 
 echo 'new version of update_products'
 psql -f update_products.sql breakpad
