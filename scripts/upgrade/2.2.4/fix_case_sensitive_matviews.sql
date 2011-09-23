@@ -1,7 +1,7 @@
-
+DROP FUNCTION update_signatures(DATE);
 
 CREATE OR REPLACE FUNCTION update_signatures (
-	updateday DATE )
+	updateday DATE, checkdata BOOLEAN DEFAULT TRUE )
 RETURNS BOOLEAN
 LANGUAGE plpgsql
 SET work_mem = '512MB'
@@ -30,7 +30,9 @@ group by signature, product, version, build;
 
 PERFORM 1 FROM new_signatures;
 IF NOT FOUND THEN
-	RAISE EXCEPTION 'no signature data found in reports for date %',updateday;
+	IF checkdata THEN
+		RAISE EXCEPTION 'no signature data found in reports for date %',updateday;
+	END IF;
 END IF;
 
 analyze new_signatures;

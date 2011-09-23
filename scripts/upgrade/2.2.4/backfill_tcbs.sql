@@ -38,7 +38,7 @@ SELECT signature,
 FROM reports
 WHERE date_processed >= utc_day_begins_pacific(updateday)
 	and date_processed <= utc_day_begins_pacific((updateday + 1))
-		and ( product::citext = myproduct or myproduct = '' )
+		and ( product::citext = forproduct::citext or forproduct = '' )
 GROUP BY signature, product::citext, version::citext, build,
 	release_channel::citext, os_name::citext, os_version::citext,
 	process_type::citext;

@@ -43,7 +43,8 @@ WHILE thisday <= lastday LOOP
 	RAISE INFO 'daily crashes';
 	PERFORM backfill_daily_crashes(thisday, forproduct);
 	RAISE INFO 'signatures';
-	PERFORM update_signatures(thisday);
+	PERFORM update_signatures(thisday, FALSE);
+	DROP TABLE IF EXISTS new_signatures;
 
 	thisday := thisday + 1;
 
