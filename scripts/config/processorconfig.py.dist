@@ -124,6 +124,15 @@ irrelevantSignatureRegEx.default = '|'.join([
   '___TERMINATING_DUE_TO_UNCAUGHT_EXCEPTION___',
   '_NSRaiseError',
   'mozcrt19.dll@0x.*',
+  'linux-gate\.so@0x.*',
+  'libdvm\.so\s*@\s*0x.*',
+  'dalvik-LinearAlloc\s*@0x.*',
+  'dalvik-heap\s*@0x.*',
+  'data@app@org\.mozilla\.fennec-1\.apk@classes\.dex@0x.*',
+  'libc\.so@.*',
+  'libEGL\.so@.*',
+  'libc-2\.5\.so@.*',
+  'RtlpAdjustHeapLookasideDepth',
   ])
 
 prefixSignatureRegEx = cm.Option()
