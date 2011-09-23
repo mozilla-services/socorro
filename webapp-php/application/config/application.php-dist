@@ -1,4 +1,6 @@
-pplication-specific settings separate from installation concerns.
+<?php
+/**
+ * Appplication-specific settings separate from installation concerns.
  */
 
 
@@ -15,7 +17,7 @@ $config['amo_api'] = 'https://services.addons.mozilla.org/';
 $config['amo_url'] = 'http://addons.mozilla.org/';
 
 /**
- * The amount of time in seconds in which the Alexa topsites file will be valid. Originally set 
+ * The amount of time in seconds in which the Alexa topsites file will be valid. Originally set
  * to 604,800 seconds (7 days).
  */
 $config['topsites_validity'] = 604800;
@@ -36,13 +38,13 @@ $config['crash_dump_local_url']  = 'http://crash-stats/dumps/%1$s.jsonz';
 $config['crash_dump_public_url'] = 'http://crash-stats/dumps/%1$s.jsonz';
 
 /**
- * The amount of time in seconds which the raw dump will be accessible. Originally set 
+ * The amount of time in seconds which the raw dump will be accessible. Originally set
  * to 604,800 seconds (7 days).
  */
 $config['raw_dump_availability'] = 604800;
 
 /**
- * The PHP app will provide links to the raw crash dump files (.jsonz and 
+ * The PHP app will provide links to the raw crash dump files (.jsonz and
  * .dump) to logged in users.  In production this link must be prefixed with https://.
  */
 $config['raw_dump_url']  = 'https://crash-stats/rawdumps/';
@@ -51,13 +53,13 @@ $config['dumpIDPrefix'] = 'bp-';
 
 // Mappings of source code types to web links
 $config['vcsMappings'] = array(
-    'cvs' => array( 
-        'cvs.mozilla.org/cvsroot' => 
-          'http://bonsai.mozilla.org/cvsblame.cgi?file=%(file)s&rev=%(revision)s&mark=%(line)s#%(line)s' 
+    'cvs' => array(
+        'cvs.mozilla.org/cvsroot' =>
+          'http://bonsai.mozilla.org/cvsblame.cgi?file=%(file)s&rev=%(revision)s&mark=%(line)s#%(line)s'
     ),
-    'hg' => array( 
-        'hg.mozilla.org/mozilla-central' => 
-            'http://hg.mozilla.org/mozilla-central/annotate/%(revision)s/%(file)s#l%(line)s' 
+    'hg' => array(
+        'hg.mozilla.org/mozilla-central' =>
+            'http://hg.mozilla.org/mozilla-central/annotate/%(revision)s/%(file)s#l%(line)s'
     )
 );
 
@@ -71,7 +73,7 @@ $config['query_range_defaults'] = array(
       'range_default_value' => 14,
       'range_default_unit' => 'days',
         'range_limit_value_in_days' => 120
-    ),    
+    ),
     'user' => array(
       'range_default_value' => 14,
       'range_default_unit' => 'days',

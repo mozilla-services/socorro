@@ -47,7 +47,7 @@ hbaseStorageClass.fromStringConverter = cm.classConverter
 
 hbaseHost = cm.Option()
 hbaseHost.doc = 'Hostname for hbase hadoop cluster. May be a VIP or load balancer'
-hbaseHost.default = 'vagrantup'
+hbaseHost.default = 'crash-stats'
 
 hbasePort = cm.Option()
 hbasePort.doc = 'hbase port number'

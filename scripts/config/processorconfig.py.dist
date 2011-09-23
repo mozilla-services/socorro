@@ -45,8 +45,8 @@ numberOfThreads.doc = 'the number of threads to use'
 numberOfThreads.default = 4
 
 processorId = cm.Option()
-processorId.doc = 'the id number for the processor (must already exist in database) (0 for create new Id, "auto" for autodetection)'
-processorId.default = "auto"
+processorId.doc = 'the id number for the processor (must already exist) (0 for create new Id, "auto" for autodetection, "host" for same host)'
+processorId.default = "host"
 
 stackwalkCommandLine = cm.Option()
 stackwalkCommandLine.doc = 'the template for the command to invoke minidump_stackwalk'
@@ -126,6 +126,15 @@ irrelevantSignatureRegEx.default = '|'.join([
   '___TERMINATING_DUE_TO_UNCAUGHT_EXCEPTION___',
   '_NSRaiseError',
   'mozcrt19.dll@0x.*',
+  'linux-gate\.so@0x.*',
+  'libdvm\.so\s*@\s*0x.*',
+  'dalvik-LinearAlloc\s*@0x.*',
+  'dalvik-heap\s*@0x.*',
+  'data@app@org\.mozilla\.fennec-1\.apk@classes\.dex@0x.*',
+  'libc\.so@.*',
+  'libEGL\.so@.*',
+  'libc-2\.5\.so@.*',
+  'RtlpAdjustHeapLookasideDepth',
   ])
 
 prefixSignatureRegEx = cm.Option()
@@ -137,10 +146,15 @@ prefixSignatureRegEx = '|'.join([
   'strlen',
   'PL_strlen',
   'strcmp',
+  'strcpy',
+  'strncpy',
+  '.*strdup',
   'wcslen',
   'memcpy',
   'memmove',
   'memcmp',
+  'memset',
+  '.*calloc',
   'malloc',
   'realloc',
   '.*free',
@@ -178,6 +192,16 @@ prefixSignatureRegEx = '|'.join([
   'NS_DebugBreak_P.*',
   'PR_AtomicIncrement',
   'PR_AtomicDecrement',
+  'moz_xmalloc',
+  '__libc_android_abort',
+  'mozilla::ipc::RPCChannel::EnteredCxxStack',
+  '__libc_android_abort',
+  'mozilla::ipc::RPCChannel::EnteredCxxStack',
+  'mozilla::ipc::RPCChannel::CxxStackFrame::CxxStackFrame',
+  'mozilla::ipc::RPCChannel::Send',
+  'mozilla::ipc::RPCChannel::Call',
+  'RtlDeleteCriticalSection',
+  'PR_DestroyLock',
   ])
 
 signaturesWithLineNumbersRegEx = cm.Option()
