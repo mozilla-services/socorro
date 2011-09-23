@@ -1,6 +1,6 @@
 <?php
 /**
- * Application-specific settings separate from installation concerns.
+ * Appplication-specific settings separate from installation concerns.
  */
 
 
@@ -28,14 +28,14 @@ $config['topsites_validity'] = 604800;
  * single quoted string which includes the following variables:
  * %1$s - UUID of the crash
  */
-$config['crash_dump_local_url']  = 'http://aking.khan.mozilla.org/reporter/dumps/%1$s.jsonz';
+$config['crash_dump_local_url']  = 'http://crash-stats/dumps/%1$s.jsonz';
 
 /**
  * Exactly like local_url but is used for public links
  * to the processed dumps files
  * %1$s - UUID of the crash
  */
-$config['crash_dump_public_url'] = 'http://aking.khan.mozilla.org/reporter/dumps/%1$s.jsonz';
+$config['crash_dump_public_url'] = 'http://crash-stats/dumps/%1$s.jsonz';
 
 /**
  * The amount of time in seconds which the raw dump will be accessible. Originally set
@@ -47,7 +47,7 @@ $config['raw_dump_availability'] = 604800;
  * The PHP app will provide links to the raw crash dump files (.jsonz and
  * .dump) to logged in users.  In production this link must be prefixed with https://.
  */
-$config['raw_dump_url']  = 'https://rsnyder.khan.mozilla.org/reporter/rawdumps/';
+$config['raw_dump_url']  = 'https://crash-stats/rawdumps/';
 
 $config['dumpIDPrefix'] = 'bp-';
 
@@ -70,18 +70,19 @@ $config['vcsMappings'] = array(
  */
 $config['query_range_defaults'] = array(
     'admin' => array(
-	    'range_default_value' => 14,
-	    'range_default_unit' => 'days',
+      'range_default_value' => 14,
+      'range_default_unit' => 'days',
         'range_limit_value_in_days' => 120
     ),
     'user' => array(
-	    'range_default_value' => 14,
-	    'range_default_unit' => 'days',
+      'range_default_value' => 14,
+      'range_default_unit' => 'days',
         'range_limit_value_in_days' => 30
-	)
+  )
 );
 
 /**
  * Base URL to which bugs will be submitted.
  */
 $config['report_bug_url'] = 'https://bugzilla.mozilla.org/enter_bug.cgi?';
+
