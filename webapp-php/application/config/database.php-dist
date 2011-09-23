@@ -21,25 +21,26 @@
  *  table_prefix  - Database table prefix
  *  object        - Enable or disable object results
  *  cache         - Enable or disable query caching
- *	escape        - Enable automatic query builder escaping
+ *  escape        - Enable automatic query builder escaping
  */
 $config['default'] = array
 (
-	'benchmark'     => TRUE,
-	'persistent'    => FALSE,
-	'connection'    => array
-	(
-		'type'     => 'pgsql',
-		'user'     => 'lorchard',
-		'pass'     => '',
-		'host'     => '127.0.0.1',
-		'port'     => FALSE,
-		'socket'   => FALSE,
-		'database' => 'socorro'
-	),
-	'character_set' => 'utf8',
-	'table_prefix'  => '',
-	'object'        => TRUE,
-	'cache'         => TRUE,
-	'escape'        => TRUE
+  'benchmark'     => TRUE,
+  'persistent'    => FALSE,
+  'connection'    => array
+  (
+    'type'     => 'pgsql',
+    'user'     => 'breakpad_rw',
+    'pass'     => 'aPassword',
+    'host'     => '127.0.0.1',
+    'port'     => FALSE,
+    'socket'   => FALSE,
+    'database' => 'breakpad'
+  ),
+  'character_set' => 'utf8',
+  'table_prefix'  => '',
+  'object'        => TRUE,
+  'cache'         => TRUE,
+  'escape'        => TRUE
 );
+

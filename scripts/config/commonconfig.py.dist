@@ -15,15 +15,15 @@ databasePort.default = 5432
 
 databaseName = cm.Option()
 databaseName.doc = 'the name of the database within the server'
-databaseName.default = ''
+databaseName.default = 'breakpad'
 
 databaseUserName = cm.Option()
 databaseUserName.doc = 'the user name for the database servers'
-databaseUserName.default = ''
+databaseUserName.default = 'breakpad_rw'
 
 databasePassword = cm.Option()
 databasePassword.doc = 'the password for the database user'
-databasePassword.default = ''
+databasePassword.default = 'aPassword'
 
 #---------------------------------------------------------------------------
 # Crash storage system
@@ -47,7 +47,7 @@ hbaseStorageClass.fromStringConverter = cm.classConverter
 
 hbaseHost = cm.Option()
 hbaseHost.doc = 'Hostname for hbase hadoop cluster. May be a VIP or load balancer'
-hbaseHost.default = 'localhost'
+hbaseHost.default = 'crash-stats'
 
 hbasePort = cm.Option()
 hbasePort.doc = 'hbase port number'
