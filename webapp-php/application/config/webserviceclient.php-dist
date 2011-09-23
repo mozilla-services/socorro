@@ -2,7 +2,7 @@
 /**
  * The hostname for backend data access
  */
-$config['socorro_hostname'] = 'http://localhost:8083';
+$config['socorro_hostname'] = 'http://socorro-api/bpapi';
 
 /**
  * Default settings for web service clients
@@ -33,4 +33,3 @@ $config['topcrash_vers_rank_cache_minutes'] = 60;
  */
 $config['middleware_implementation'] = 'PG';
 
-?>
