@@ -67,6 +67,8 @@ import socorro.services.emailSender as emailsend
 import socorro.services.schedulePriorityJob as schedule
 import socorro.services.search as search
 import socorro.services.bugzilla as bugzilla
+import socorro.services.currentVersions as cv
+import socorro.services.versions_info as vi
 
 servicesList = cm.Option()
 servicesList.doc = 'a python list of classes to offer as services'
