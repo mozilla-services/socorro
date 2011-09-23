@@ -22,7 +22,7 @@ echo 'clean up product definitions and backfill all matviews.  will take a while
 
 psql -f clear_out_final_betas.sql breakpad
 
-echo '2.2.3. upgrade done'
+echo '2.2.4. upgrade done'
 
 date
 

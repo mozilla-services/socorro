@@ -227,6 +227,24 @@ BEGIN
 
 -- note: we are currently excluding crashes which are missing an OS_Name from the count
 
+-- check if there are crashes for that day
+
+PERFORM 1 FROM reports
+WHERE	date_processed >= utc_day_begins_pacific(updateday)
+		AND date_processed < utc_day_ends_pacific(updateday)
+LIMIT 1;
+IF NOT FOUND THEN 
+	RAISE EXCEPTION 'No crash reports found for date %',updateday;
+END IF;
+
+-- check if daily_crashes has already been run for that day
+PERFORM 1 FROM daily_crashes
+WHERE adu_day = updateday
+LIMIT 1;
+IF FOUND THEN
+	RAISE EXCEPTION 'Daily crashes appears to have already been run for %.  If you want to run it again, please use backfill_daily_crashes().',updateday;
+END IF;
+	
 -- insert old browser crashes
 -- for most crashes
 INSERT INTO daily_crashes (count, report_type, productdims_id, os_short_name, adu_day)
