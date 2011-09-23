@@ -47,7 +47,7 @@ $config['session_key'] = 'auth_user';
  */
 $config['users'] = array
 (
-	// 'admin' => 'b3154acf3a344170077d11bdb5fff31532f679a1919e716a02',
+  // 'admin' => 'b3154acf3a344170077d11bdb5fff31532f679a1919e716a02',
 );
 
 /**
@@ -65,9 +65,10 @@ $config['site_name'] = 'Mozilla Crash Reports';
  * Authentication protocol, typically https. Useful for development
  * or other test environments which don't support https.
  */
-$config['proto'] = 'https';
+$config['proto'] = 'http';
 
 /**
  * Setting to true will force every page on the site to use https; else set to false.
  */
-$config['force_https'] = true;
+$config['force_https'] = false;
+

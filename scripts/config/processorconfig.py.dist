@@ -29,7 +29,7 @@ from config.commonconfig import secondaryHbaseTimeout
 
 temporaryFileSystemStoragePath = cm.Option()
 temporaryFileSystemStoragePath.doc = 'a local filesystem path where processor can write dumps temporarily for processing'
-temporaryFileSystemStoragePath.default = './'
+temporaryFileSystemStoragePath.default = '/home/socorro/temp'
 
 #---------------------------------------------------------------------------
 # local processor config
@@ -56,7 +56,7 @@ stackwalkCommandLine.default = '$minidump_stackwalkPathname -m $dumpfilePathname
 
 minidump_stackwalkPathname = cm.Option()
 minidump_stackwalkPathname.doc = 'the full pathname of the extern program minidump_stackwalk (quote path with embedded spaces)'
-minidump_stackwalkPathname.default = '/usr/local/bin/minidump_stackwalk'
+minidump_stackwalkPathname.default = '/data/socorro/stackwalk/bin/minidump_stackwalk'
 
 symbolCachePath = cm.Option()
 symbolCachePath.doc = 'the path where the symbol cache is found (quote path with embedded spaces)'
@@ -283,3 +283,4 @@ knownFlashIdentifiers.default = {
                               'BF6B3B51ACB255B38FCD8AA5AEB9F1030':'9.0.28.0',
                               '83CF4DC03621B778E931FC713889E8F10':'9.0.16.0',
                               }
+
