@@ -51,7 +51,7 @@ primaryStorageClass.fromStringConverter = cm.classConverter
 
 localFS = cm.Option()
 localFS.doc = 'a path to a local file system'
-localFS.default = './'
+localFS.default = '/home/socorro/primaryCrashStore'
 
 localFSDumpDirCount = cm.Option()
 localFSDumpDirCount.doc = 'the number of dumps to be stored in a single directory in the local file system'
@@ -71,7 +71,7 @@ localFSDirPermissions = stat.S_IRGRP | stat.S_IXGRP | stat.S_IWGRP | stat.S_IRUS
 
 fallbackFS = cm.Option()
 fallbackFS.doc = 'a path to a local file system to use if local store fails'
-fallbackFS.default = './fallback'
+fallbackFS.default = '/home/socorro/fallback'
 
 fallbackDumpDirCount = cm.Option()
 fallbackDumpDirCount.doc = 'the number of dumps to be stored in a single directory in the fallback File System'
@@ -103,7 +103,7 @@ hbaseFallbackDirPermissions = fallbackDirPermissions
 
 modwsgiInstallation = cm.Option()
 modwsgiInstallation.doc = 'True or False, this app is installed under mod_wsgi'
-modwsgiInstallation.default = False
+modwsgiInstallation.default = True
 
 serverIPAddress = cm.Option()
 serverIPAddress.doc = 'the IP address from which to accept submissions if not installed under mod_wsgi'
@@ -140,6 +140,7 @@ throttleConditions.default = throttleConditions.default = [
     ("ProductName", lambda x: x[0] in 'TSC', 100), # 100% of Thunderbird, SeaMonkey & Camino
     (None, True, 0) # reject everything else
 ]
+
 
 minimalVersionForUnderstandingRefusal = cm.Option()
 minimalVersionForUnderstandingRefusal.default = { 'Firefox': '3.5.4' }
@@ -183,5 +184,4 @@ syslogLineFormatString.default = 'Socorro Collector (pid %(process)d): %(asctime
 syslogErrorLoggingLevel = cm.Option()
 syslogErrorLoggingLevel.doc = 'logging level for the log file (10 - DEBUG, 20 - INFO, 30 - WARNING, 40 - ERROR, 50 - CRITICAL)'
 syslogErrorLoggingLevel.default = 10
-
 
