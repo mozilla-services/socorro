@@ -30,7 +30,7 @@ DECLARE which_t text;
 
 BEGIN
 
-IF prod_id IS NULL AND prod_version THEN
+IF prod_id IS NULL THEN
 -- new entry
 -- adding rows is only allowed to the old table since the new
 -- table is populated automatically
@@ -38,8 +38,10 @@ IF prod_id IS NULL AND prod_version THEN
 	PERFORM 1
 	FROM products
 	WHERE product_name = prod_name
-		AND major_version_sort(prod_version) >= major_version_sort(rapid_release_version);
-	IF FOUND AND prod_version NOT LIKE '%a%' THEN
+		AND major_version_sort(prod_version) >= major_version_sort(rapid_release_version)
+-- remove this line when we move over nightly/aurora to newtcbs:
+		AND prod_version NOT LIKE '%a%' and lower(prod_channel) IN ( 'release', 'beta' );
+	IF FOUND THEN
 		RAISE EXCEPTION 'Product % version % will be automatically updated by the new system.  As such, you may not add this product & version manually.',prod_name,prod_version;
 	ELSE
 
