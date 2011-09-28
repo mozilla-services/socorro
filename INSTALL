@@ -183,7 +183,15 @@ Load Hbase schema
 
 System Test
 ---
-  In a Socorro checkout (TODO - include instructions for generating test crash):
+  Generate a test crash
+    Install http://code.google.com/p/crashme/ add-on for Firefox
+    Point your Firefox install at http://crash-reports/submit
+      https://developer.mozilla.org/en/Environment_variables_affecting_crash_reporting
+ 
+  If you already have a crash available and wish to submit it, you can
+  use the standalone submitter tool:
+
+  In a Socorro checkout
     virtualenv socorro-virtualenv
     . socorro-virtualenv/bin/activate
     pip install poster
