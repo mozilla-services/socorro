@@ -119,7 +119,13 @@ class Products_Controller extends Controller {
      */    
     private function _determineDuration()
     {
-        return (isset($this->parameters['duration']) && in_array($this->parameters['duration'], $this->duration_options)) ? $this->parameters['duration'] : Kohana::config('products.duration');
+        if (isset($this->parameters['duration'])) {
+            $duration = (int)$this->parameters['duration'];
+            if (in_array($duration, $this->duration_options)) {
+                return $duration;
+            }
+        }
+        return Kohana::config('products.duration');
     }
 
     /**
