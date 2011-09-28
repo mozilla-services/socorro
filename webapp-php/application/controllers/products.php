@@ -119,7 +119,7 @@ class Products_Controller extends Controller {
      */
     private function _determineDuration()
     {
-        if (isset($this->parameters['duration']) {
+        if (isset($this->parameters['duration'])) {
             $duration = (int)$this->parameters['duration'];
             if (in_array($duration, $this->duration_options)) {
                 return $duration;
