@@ -2,12 +2,12 @@
 
 BEGIN;
 
-DROP TABLE last_tcbsig;
-DROP TABLE last_tcburl;
-DROP TABLE last_urlsig;
-DROP TABLE priorityjobs_log_sjc_backup;
-DROP TABLE sequence_numbers;
-DROP TABLE drop_fks;
+DROP TABLE IF EXISTS last_tcbsig;
+DROP TABLE IF EXISTS last_tcburl;
+DROP TABLE IF EXISTS last_urlsig;
+DROP TABLE IF EXISTS priorityjobs_log_sjc_backup;
+DROP TABLE IF EXISTS sequence_numbers;
+DROP TABLE IF EXISTS drop_fks;
 
 END;
 

@@ -2,7 +2,7 @@
 
 BEGIN;
 
-DROP TABLE topcrashurlfactsreports;
+DROP TABLE IF EXISTS topcrashurlfactsreports;
 
 END;
 

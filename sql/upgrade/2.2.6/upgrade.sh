@@ -12,6 +12,9 @@ psql -f remove_server_migration_tables.sql breakpad
 echo 'remove depreciated top url matview'
 psql -f remove_topurlcrashreports.sql breakpad
 
+echo 'grant read-only access to all tables to metrics user'
+psql -f grant_ro_metrics_access.sql breakpad
+
 echo '2.2.6. upgrade done'
 
 date
