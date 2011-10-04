@@ -751,12 +751,13 @@ class Daily_Model extends Model {
      */
     public function prepareDates($date_end, $duration) {
         $dates = array();
-        $date_diff = TimeUtil::determineDayDifferential($date_end, date('Y-m-d', mktime(0, 0, 0, date("m"), date("d")-1, date("Y"))));
+        $date_diff = TimeUtil::determineDayDifferential($date_end, date('Y-m-d', mktime(0, 0, 0, date("m"), date("d"), date("Y"))));
+        $timestamp = time();
         for($i = 0; $i <= $duration; $i++) {
             $date = date('Y-m-d', mktime(0, 0, 0, date("m"), date("d")-($i+$date_diff), date("Y")));
-            if (strtotime($date) < $this->today) {
+            if (strtotime($date) <= $timestamp) {
         	    $dates[] = $date;
-        	}
+            }
         }
         return $dates;
     }
