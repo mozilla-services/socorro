@@ -181,7 +181,7 @@ def testCrashStorageSystemForHBase___init__():
   fakeHbaseConnection = exp.DummyObjectWithExpectations('fakeHbaseConnection')
   fakeHbaseModule = exp.DummyObjectWithExpectations('fakeHbaseModule')
   fakeHbaseModule.expect('HBaseConnectionForCrashReports', (d.hbaseHost, d.hbasePort, d.hbaseTimeout), {"logger":d.logger}, fakeHbaseConnection, None)
-  fakeHbaseModule.expect('hbaseThriftExceptions', None, None, (), None)
+  fakeHbaseConnection.expect('hbaseThriftExceptions', None, None, (), None)
   fakeHbaseModule.expect('NoConnectionException', None, None, hbc.NoConnectionException, None)
   fakeJsonDumpStore = exp.DummyObjectWithExpectations('fakeJsonDumpStore')
   fakeJsonDumpModule = exp.DummyObjectWithExpectations('fakeJsonDumpModule')
@@ -214,11 +214,11 @@ def testCrashStorageSystemForHBase_save_1():
   d.logger = util.SilentFakeLogger()
 
   fakeHbaseConnection = exp.DummyObjectWithExpectations('fakeHbaseConnection')
+  fakeHbaseConnection.expect('hbaseThriftExceptions', None, None, (), None)
   fakeHbaseConnection.expect('put_json_dump', ('uuid', jdict, expectedDumpResult), {"number_of_retries":2}, None, None)
 
   fakeHbaseModule = exp.DummyObjectWithExpectations('fakeHbaseModule')
   fakeHbaseModule.expect('HBaseConnectionForCrashReports', (d.hbaseHost, d.hbasePort, d.hbaseTimeout), {"logger":d.logger}, fakeHbaseConnection, None)
-  fakeHbaseModule.expect('hbaseThriftExceptions', None, None, (), None)
   fakeHbaseModule.expect('NoConnectionException', None, None, hbc.NoConnectionException, None)
 
   fakeJsonDumpStore = exp.DummyObjectWithExpectations('fakeJsonDumpStore')
@@ -254,11 +254,11 @@ def testCrashStorageSystemForHBase_save_2():
   j.logger = d.logger = util.SilentFakeLogger()
 
   fakeHbaseConnection = exp.DummyObjectWithExpectations('fakeHbaseConnection')
+  fakeHbaseConnection.expect('hbaseThriftExceptions', None, None, (), None)
   fakeHbaseConnection.expect('put_json_dump', ('uuid', jdict, expectedDumpResult), {"number_of_retries":2}, None, Exception())
 
   fakeHbaseModule = exp.DummyObjectWithExpectations('fakeHbaseModule')
   fakeHbaseModule.expect('HBaseConnectionForCrashReports', (d.hbaseHost, d.hbasePort, d.hbaseTimeout), {"logger":d.logger}, fakeHbaseConnection, None)
-  fakeHbaseModule.expect('hbaseThriftExceptions', None, None, (), None)
   fakeHbaseModule.expect('NoConnectionException', None, None, hbc.NoConnectionException, None)
 
 
@@ -304,11 +304,11 @@ def testCrashStorageSystemForHBase_save_3():
   d.logger = util.SilentFakeLogger()
 
   fakeHbaseConnection = exp.DummyObjectWithExpectations('fakeHbaseConnection')
+  fakeHbaseConnection.expect('hbaseThriftExceptions', None, None, (), None)
   fakeHbaseConnection.expect('put_json_dump', ('uuid', jdict, expectedDumpResult), {"number_of_retries":2}, None, Exception())
 
   fakeHbaseModule = exp.DummyObjectWithExpectations('fakeHbaseModule')
   fakeHbaseModule.expect('HBaseConnectionForCrashReports', (d.hbaseHost, d.hbasePort, d.hbaseTimeout), {"logger":d.logger}, fakeHbaseConnection, None)
-  fakeHbaseModule.expect('hbaseThriftExceptions', None, None, (), None)
   fakeHbaseModule.expect('NoConnectionException', None, None, hbc.NoConnectionException, None)
 
   fakeJsonDumpModule = exp.DummyObjectWithExpectations('fakeJsonDumpModule')
@@ -344,11 +344,11 @@ def testCrashStorageSystemForHBase_save_4():
   d.logger = util.SilentFakeLogger()
 
   fakeHbaseConnection = exp.DummyObjectWithExpectations('fakeHbaseConnection')
+  fakeHbaseConnection.expect('hbaseThriftExceptions', None, None, (), None)
   fakeHbaseConnection.expect('put_json_dump', ('uuid', jdict, expectedDumpResult), {"number_of_retries":2}, None, hbc.NoConnectionException(Exception()))
 
   fakeHbaseModule = exp.DummyObjectWithExpectations('fakeHbaseModule')
   fakeHbaseModule.expect('HBaseConnectionForCrashReports', (d.hbaseHost, d.hbasePort, d.hbaseTimeout), {"logger":d.logger}, fakeHbaseConnection, None)
-  fakeHbaseModule.expect('hbaseThriftExceptions', None, None, (), None)
   fakeHbaseModule.expect('NoConnectionException', None, None, hbc.NoConnectionException, None)
 
   fakeJsonDumpModule = exp.DummyObjectWithExpectations('fakeJsonDumpModule')
@@ -404,16 +404,16 @@ def testCrashStorageForDualHbaseCrashStorageSystem01():
   j.logger = d.logger = util.SilentFakeLogger()
   fakeHbaseConnection1 = exp.DummyObjectWithExpectations('fakeHbaseConnection1')
   fakeHbaseConnection2 = exp.DummyObjectWithExpectations('fakeHbaseConnection2')
+  fakeHbaseConnection1.expect('hbaseThriftExceptions', None, None, (), None)
   fakeHbaseConnection1.expect('get_json', ('fakeOoid1',), {'number_of_retries':2}, 'fake_json1')
   import socorro.storage.hbaseClient as hbc
   fakeHbaseConnection1.expect('get_json', ('fakeOoid2',), {'number_of_retries':2}, None, hbc.OoidNotFoundException())
+  fakeHbaseConnection2.expect('hbaseThriftExceptions', None, None, (), None)
   fakeHbaseConnection2.expect('get_json', ('fakeOoid2',), {'number_of_retries':2}, 'fake_json2')
   fakeHbaseModule = exp.DummyObjectWithExpectations('fakeHbaseModule')
   fakeHbaseModule.expect('HBaseConnectionForCrashReports', (d.hbaseHost, d.hbasePort, d.hbaseTimeout), {"logger":d.logger}, fakeHbaseConnection1, None)
-  fakeHbaseModule.expect('hbaseThriftExceptions', None, None, (), None)
   fakeHbaseModule.expect('NoConnectionException', None, None, hbc.NoConnectionException, None)
   fakeHbaseModule.expect('HBaseConnectionForCrashReports', (d.secondaryHbaseHost, d.secondaryHbasePort, d.secondaryHbaseTimeout), {"logger":d.logger}, fakeHbaseConnection2, None)
-  fakeHbaseModule.expect('hbaseThriftExceptions', None, None, (), None)
   fakeHbaseModule.expect('NoConnectionException', None, None, hbc.NoConnectionException, None)
   fakeJsonDumpStore = exp.DummyObjectWithExpectations('fakeJsonDumpStore')
   fakeJsonDumpModule = exp.DummyObjectWithExpectations('fakeJsonDumpModule')
