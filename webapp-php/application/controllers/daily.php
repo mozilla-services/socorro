@@ -62,78 +62,6 @@ class Daily_Controller extends Controller {
     }
 
     /**
-     * Request for a CSV file displaying ADU statistics
-     *
-     * @param 	string 	The product name
-     * @param 	array 	An array of versions
-     * @param 	array  	An array of operating systems
-     * @param 	array 	An array of dates
-     * @param 	array  	The array of results from the API
-     * @param 	array 	The array of statistics processed in the model
-     * @param 	string 	The type of results display - "by_version" or "by_os"
-     * @param   array   The effective trottling rate (client throttle * server throttle) for each version
-     * @return 	file
-     */
-    private function csv($product, $versions, $operating_systems, $dates, $results, $statistics, $form_selection, $throttle) {
-        $title = "ADU_" . $product . "_" . implode("_", $versions) . "_" . $form_selection;
-
-        $this->auto_render = FALSE;
-        header('Content-type: text/csv; charset=utf-8');
-        header("Content-disposition: attachment; filename=${title}.csv");
-
-        $view = new View('daily/daily_csv_' . $form_selection);
-        $view->dates = $dates;
-        $view->form_selection = $form_selection;
-        $view->operating_systems = $operating_systems;
-        $view->product = $product;
-        $view->results = $results;
-        $view->statistics = $statistics;
-        $view->throttle = $throttle;
-        $view->versions = $versions;
-
-        echo $view->render();
-        exit;
-    }
-
-    /**
-     * Format the URL for a CSV file.
-     *
-     * @param 	string 	The product name
-     * @param 	array 	An array of versions
-     * @param 	array 	An array of dates
-     * @param 	array  	An array of operating systems
-     * @param 	string 	The start date for the query
-     * @param 	string 	The end date for the query
-     * @param 	string 	The type of results display - "by_version" or "by_os"
-     * @return 	string 	The url to download this CSV
-     */
-    private function csvURL($product, $versions, $operating_systems, $date_start, $date_end, $hang_type, $form_selection, $throttle) {
-        $url = $this->_commonCsvURL($product, $versions, $operating_systems, $date_start, $date_end, $form_selection, $throttle);
-        $url .= "&hang_type=" . html::specialchars($hang_type);
-        return $url;
-    }
-
-     /**
-      * Format the URL for a CSV file.
-      *
-      * @param 	string 	The product name
-      * @param 	array 	An array of versions
-      * @param 	array 	An array of dates
-      * @param 	array  	An array of operating systems
-      * @param 	string 	The start date for the query
-      * @param 	string 	The end date for the query
-      * @param 	string 	The type of results display - "by_version" or "by_os"
-      * @return 	string 	The url to download this CSV
-      */
-    private function csvReportTypeURL($product, $versions, $operating_systems, $date_start, $date_end, $report_types, $form_selection, $throttle) {
-        $url = $this->_commonCsvURL($product, $versions, $operating_systems, $date_start, $date_end, $form_selection, $throttle);
-        foreach ($report_types as $rt) {
-            $url .= "&report_type[]=" . html::specialchars($rt);
-        }
-        return $url;
-    }
-
-    /**
      * Common path for Formatting the URL for a CSV file.
      *
      * @param 	string 	The product name
@@ -167,43 +95,6 @@ class Daily_Controller extends Controller {
         $url .= "&csv=1";
 
         return $url;
-	}
-
-
-    /**
-     * Helper funciton produces a CSV friendly array
-     * @param $product      string The product name
-     * @param $report_types array  An array of crash report types
-     * @param $dates        array  An array of dates
-     * @param $stats        array  Stats results from aduByDayDetails webservice call
-     *
-     * @return array
-     */
-    private function _convertCSV($product, $report_types, $dates, $stats)
-    {
-        $heading = array("$product Version", 'Date', 'ADU', 'Throttle');
-        foreach ($report_types as $rt) {
-	        array_push($heading, $rt);
-	        array_push($heading, "$rt ratio");
-	    }
-            $csvData = array($heading);
-            foreach ($stats['versions'] as $version => $version_stats) {
-                foreach ($dates as $date) {
-	    	        if (array_key_exists($date, $version_stats)) {
-	    	            $date_stat = $version_stats[$date];
-                        $line = array($version, $date, $date_stat['users'], $date_stat['throttle']);
-	    	            foreach ($report_types as $rt) {
-
-	    	            if (array_key_exists("${rt}_ratio", $date_stat)){
-	    		            array_push($line, $date_stat[$rt]);
-	    		            array_push($line, $date_stat["${rt}_ratio"]);
-	    	            }
-	    	        }
-	    	        array_push($csvData, $line);
-	    	    }
-	        }
-	    }
-        return $csvData;
     }
 
     /**
@@ -241,7 +132,19 @@ class Daily_Controller extends Controller {
 
         // If no version is available, include the most recent version of this product
         if (isset($parameters['v']) && !empty($parameters['v'])){
-            $versions = $this->_filterInvalidVersions($product, $parameters['v']);
+            $version_inputs = $parameters['v'];
+            $versions = false;
+            if ($valid_versions = $this->branch_model->verifyVersions($product, $version_inputs)) {
+                $versions = array();
+                foreach ($version_inputs as $v) {
+                    foreach ($valid_versions as $vv) {
+                        if ($v == $vv) {
+                            $versions[] = $v;
+                            break;
+                        }
+                    }
+                }
+            }
         }
         if (!isset($versions) || count($versions) == 0 || empty($versions[0])) {
             $versions = array();
@@ -254,7 +157,10 @@ class Daily_Controller extends Controller {
         }
 
         if (isset($parameters['form_selection']) && $parameters['form_selection'] == 'by_report_type') {
-            $url_csv = $this->csvReportTypeURL($product, $versions, $operating_systems, $date_start, $date_end, $chosen_report_types, $form_selection, $throttle);
+            $url_csv = $this->_commonCsvURL($product, $versions, $operating_systems, $date_start, $date_end, $form_selection, $throttle);
+            foreach ($chosen_report_types as $rt) {
+                $url_csv .= "&report_type[]=" . html::specialchars($rt);
+            }
 
             // Statistics on crashes for time period
             $results = $this->model->getDetailsByReportType($product, $versions, $operating_system,
@@ -264,13 +170,36 @@ class Daily_Controller extends Controller {
 
             // Download the CSV, if applicable
             if (isset($parameters['csv'])) {
+                $heading = array("$product Version", 'Date', 'ADU', 'Throttle');
+                foreach ($report_types as $rt) {
+                    array_push($heading, $rt);
+                    array_push($heading, "$rt ratio");
+                }
+                $csvData = array($heading);
+                foreach ($stats['versions'] as $version => $version_stats) {
+                    foreach ($dates as $date) {
+                        if (array_key_exists($date, $version_stats)) {
+                            $date_stat = $version_stats[$date];
+                            $line = array($version, $date, $date_stat['users'], $date_stat['throttle']);
+                            foreach ($report_types as $rt) {
+                                if (array_key_exists("${rt}_ratio", $date_stat)){
+                                    array_push($line, $date_stat[$rt]);
+                                    array_push($line, $date_stat["${rt}_ratio"]);
+                                }
+                            }
+                            array_push($csvData, $line);
+                        }
+                    }
+                }
+
                 $view = new View('common/csv');
-                $this->setViewData(array('top_crashers' => $this->_convertCSV($product, $chosen_report_types, $dates, $statistics)));
+                $this->setViewData(array('top_crashers' => $csvData));
                 $this->renderCSV("ADU_" . $product . "_" . implode("_", $versions) . "_" . implode("_", $chosen_report_types) . '_' . $form_selection);
             }
 
         } else { // by_version or by_os
-            $url_csv = $this->csvURL($product, $versions, $operating_systems, $date_start, $date_end, $hang_type, $form_selection, $throttle);
+            $url_csv = $this->_commonCsvURL($product, $versions, $operating_systems, $date_start, $date_end, $form_selection, $throttle);
+            $url_csv .= "&hang_type=" . html::specialchars($hang_type);
 
             // Statistics on crashes for time period
             $results = $this->model->get($product, $versions, $operating_system, $date_start, $date_end, $hang_type);
@@ -279,7 +208,24 @@ class Daily_Controller extends Controller {
 
             // Download the CSV, if applicable
             if (isset($parameters['csv'])) {
-                return $this->csv($product, $versions, $operating_systems, $dates, $results, $statistics, $form_selection, $throttle);
+                $title = "ADU_" . $product . "_" . implode("_", $versions) . "_" . $form_selection;
+
+                $this->auto_render = FALSE;
+                header('Content-type: text/csv; charset=utf-8');
+                header("Content-disposition: attachment; filename=${title}.csv");
+
+                $view = new View('daily/daily_csv_' . $form_selection);
+                $view->dates = $dates;
+                $view->form_selection = $form_selection;
+                $view->operating_systems = $operating_systems;
+                $view->product = $product;
+                $view->results = $results;
+                $view->statistics = $statistics;
+                $view->throttle = $throttle;
+                $view->versions = $versions;
+
+                echo $view->render();
+                exit;
             }
         }
 
@@ -313,30 +259,5 @@ class Daily_Controller extends Controller {
             'url_nav' => url::site('products/'.$this->chosen_version['product']),
             'versions' => $versions,
         ));
-    }
-
-
-   /**
-     * Removes invalid version numbers
-     *
-     * @param string $product        - Name of a product
-     * @param array  $version_inputs - List of version numbers (string)
-     *
-     * @return array An array of version strings
-     */
-    private function _filterInvalidVersions($product, $version_inputs)
-    {
-        if ($valid_versions = $this->branch_model->verifyVersions($product, $version_inputs)) {
-            $versions = array();
-            foreach ($version_inputs as $v) {
-                foreach ($valid_versions as $vv) {
-                    if ($v == $vv) {
-                        $versions[] = $v;
-                    }
-                }
-            }
-            return $versions;
-        }
-        return false;
     }
 }
