@@ -28,7 +28,7 @@ abstract class Auth_Driver {
     {
 	// Load Session
 	$this->session = Session::instance();
-	
+
 	// Store config
 	$this->config = $config;
     }
@@ -57,7 +57,7 @@ abstract class Auth_Driver {
 	{
 	    return $this->session->get($this->config['session_key']);
 	}
-	
+
 	return FALSE;
     }
 
@@ -134,7 +134,7 @@ abstract class Auth_Driver {
 
 	// Store username in session
 	$this->session->set($this->config['session_key'], $user);
-	
+
 	return TRUE;
     }
 } // End Auth_Driver

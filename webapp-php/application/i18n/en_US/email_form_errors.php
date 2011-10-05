@@ -3,7 +3,7 @@
   * Strings for the form on /admin/email
   *
   * PHP Version 5
-  * 
+  *
   * @category Admin
   * @package  Admin.Email
   * @author   Ozten <ozten@mozilla.com>

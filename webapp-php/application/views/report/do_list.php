@@ -22,7 +22,7 @@
    .clear {
     clear: both;
    }
-  </style>    
+  </style>
 
 <?php slot::end() ?>
 
@@ -31,7 +31,7 @@
 	<h2><?= $correlation_os ?>
         <?php if (isset($display_signature)) { ?>
             - Crash Reports for <?php out::H($display_signature) ?>
-        <?php } ?>	    
+        <?php } ?>
 	</h2>
 	<div>
 	    <ul class="options">
@@ -66,20 +66,20 @@ foreach($options[$type] as $k => $readable) {
     <div class="body notitle">
 
 <p>
-<?php 
+<?php
     View::factory('common/prose_params', array(
         'params'    => $params,
         'platforms' => $all_platforms
-    ))->render(TRUE) 
+    ))->render(TRUE)
 ?>
 </p>
-<?php if(count($reports) > 0): ?> 
+<?php if(count($reports) > 0): ?>
 <div id="report-list">
     <ul id="report-list-nav">
         <li><a href="#graph"><span>Graph</span></a></li>
         <li><a href="#table"><span>Table</span></a></li>
         <li><a href="#reports"><span>Reports</span></a></li>
-<?php if (array_key_exists($params['signature'], $sig2bugs)) { ?>    
+<?php if (array_key_exists($params['signature'], $sig2bugs)) { ?>
 	<li><a href="#bugzilla"><span>Bugzilla (<?= count($sig2bugs[$params['signature']])?>)</span></a></li>
 <?php } ?>
 	<li><a href="#comments"><span>Comments (<?= count($comments) ?>)</span></a></li>
@@ -115,7 +115,7 @@ foreach($options[$type] as $k => $readable) {
                     <?php endif ?>
                     <?php foreach ($all_platforms as $platform): ?>
                         <td>
-                            <?php out::H($build->{"count_$platform->id"}) ?> - 
+                            <?php out::H($build->{"count_$platform->id"}) ?> -
                             <?php printf("%.3f%%", ($build->{"frequency_$platform->id"} * 100)) ?>
                         </td>
                     <?php endforeach ?>
@@ -128,14 +128,14 @@ foreach($options[$type] as $k => $readable) {
     <div id="reports">
 	<?php View::factory('moz_pagination/nav')->render(TRUE); ?>
         <?php View::factory('common/list_reports', array(
-            'reports' => $reports 
+            'reports' => $reports
         ))->render(TRUE) ?>
 	<?php View::factory('moz_pagination/nav')->render(TRUE); ?>
         <br />
     </div>
 
-<?php if (array_key_exists($params['signature'], $sig2bugs)) { ?>    
-    <div id="bugzilla">      
+<?php if (array_key_exists($params['signature'], $sig2bugs)) { ?>
+    <div id="bugzilla">
         <?php View::factory('common/list_bugs', array(
 		     'signature' => $params['signature'],
                      'bugs' => $sig2bugs[$params['signature']],
@@ -157,7 +157,7 @@ foreach($options[$type] as $k => $readable) {
         <br class="cb" />
     </div>
 
-<?php } 
+<?php }
     View::factory('common/comments')->render(TRUE);
     View::factory('common/correlation', array(
 		      'current_signature' => $params['signature'],
@@ -178,7 +178,7 @@ foreach($options[$type] as $k => $readable) {
 <!-- end content -->
 <script id="source" type="text/javascript">
 //<![CDATA[
-      $(document).ready(function() { 
+      $(document).ready(function() {
           var shouldDrawPlot = true;
 	  <?php if( count($builds) > 1){ ?>
 	    $("#buildid-graph").width(<?php echo max( min(50 * count($builds), 800), 200) ?>);
@@ -192,12 +192,12 @@ foreach($options[$type] as $k => $readable) {
     });
 
     var drawPlot = function(){
-      $.plot($("#buildid-graph"), 
-             [<?php for($i = 0; $i < count($all_platforms); $i += 1){ 
+      $.plot($("#buildid-graph"),
+             [<?php for($i = 0; $i < count($all_platforms); $i += 1){
 		      $platform = $all_platforms[$i]; ?>
 			{ label: <?php echo json_encode($platformLabels[$i]['label']) ?>,
 		          data: <?php  echo json_encode($platformLabels[$i]['data']) ?>,
-			  color: <?php echo json_encode($platformLabels[$i]['color']); 
+			  color: <?php echo json_encode($platformLabels[$i]['color']);
 			  if($i != (count($all_platforms) -1 )){ echo '},';}else{ echo '}';} ?>
 	       <?php } ?> ],
              { // options
@@ -219,7 +219,7 @@ foreach($options[$type] as $k => $readable) {
    	         tickFormatter: function(n, o){ return ""; }
 	       },
 	       legend: { show: true, container: $("#graph-legend"), noColumns: 4 }
-	     <?php } ?>		 
+	     <?php } ?>
              }
      );
     }//drawPlot

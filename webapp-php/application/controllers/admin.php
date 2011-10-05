@@ -33,7 +33,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the MPL, the GPL or the LGPL.
  *
- * ***** END LICENSE BLOCK ***** 
+ * ***** END LICENSE BLOCK *****
  *
  */
 
@@ -41,9 +41,9 @@
  * Handles all Admin related pages.
  *
  * TODO - This screen is one of the few read/write webservices. Our current
- *        cache clearing strategy is to not cache. This page is used 
+ *        cache clearing strategy is to not cache. This page is used
  *        infrequently. If it becomes an issue, we should change Web_Services
- *        to have a more predictable cache key and do proper caching for the 
+ *        to have a more predictable cache key and do proper caching for the
  *        three web service calls below.
  *
  * @package    SocorroUI
@@ -51,7 +51,7 @@
  * @author     Ryan Snyder <ryan@foodgeeks.com>
  * @version    v.0.2
  */
-class Admin_Controller extends Controller 
+class Admin_Controller extends Controller
 {
     /**
     * Class constructor.  Instantiate the Template and Database classes.
@@ -68,7 +68,7 @@ class Admin_Controller extends Controller
         if ($this->auth_is_active) {
             Auth::instance()->login_required(); // Login required will be enough for now
         }
-        
+
         $this->js = html::script(array('js/jquery/date.js',
                                        'js/jquery/plugins/ui/jquery.datePicker.js',
                                        'js/socorro/admin.js',
@@ -77,7 +77,7 @@ class Admin_Controller extends Controller
     }
 
     /**
-     * Validate the 'featured' field for a product / version.   
+     * Validate the 'featured' field for a product / version.
      *
      * @param string The product name
      * @param string The version name
@@ -87,14 +87,14 @@ class Admin_Controller extends Controller
     {
         $featured = 'f';
         if (
-            (isset($_POST['featured']) && $_POST['featured'] == 't') || 
+            (isset($_POST['featured']) && $_POST['featured'] == 't') ||
             (isset($_POST['update_featured']) && $_POST['update_featured'] == 't')
         ) {
             $featured = 't';
             $featuredCount = $this->branch_model->getFeaturedVersionsExcludingVersionCount($product, $version);
             if ($featuredCount >= 4) {
                 client::messageSend("There are already 4 featured versions of this product. "
-                                    ."Set 1 of the featured products to not be featured, then try again.", 
+                                    ."Set 1 of the featured products to not be featured, then try again.",
                                     E_USER_WARNING);
                 $featured = 'f';
             }
@@ -107,7 +107,7 @@ class Admin_Controller extends Controller
         }
         return $featured;
     }
-    
+
     /**
      * Display the branch data sources admin page.
      *
@@ -118,31 +118,31 @@ class Admin_Controller extends Controller
     {
                 if (isset($_POST['action_add_version'])) {
                         if (
-                                !empty($_POST['product']) && 
-                                !empty($_POST['version']) && 
-                                !empty($_POST['branch']) && 
+                                !empty($_POST['product']) &&
+                                !empty($_POST['version']) &&
+                                !empty($_POST['branch']) &&
                                 !empty($_POST['start_date']) &&
                                 !empty($_POST['end_date']) &&
                                 !empty($_POST['throttle'])
                         ) {
                             $featured = $this->_branch_data_sources_featured(
-                                $_POST['product'], 
+                                $_POST['product'],
                                 $_POST['version'],
                                 $_POST['start_date'],
                                 $_POST['end_date']
                             );
                             $throttle = (!is_numeric($_POST['throttle']) || $_POST['throttle'] > 100) ? 100 : $_POST['throttle'];
                                 if ($rv = $this->branch_model->add(
-                        trim($_POST['product']), 
-                        trim($_POST['version']), 
-                        trim($_POST['branch']), 
-                        trim($_POST['start_date']), 
+                        trim($_POST['product']),
+                        trim($_POST['version']),
+                        trim($_POST['branch']),
+                        trim($_POST['start_date']),
                         trim($_POST['end_date']),
                         $featured,
                         $throttle
                 )) {
                                         client::messageSend("This new product/version has been added to the database.", E_USER_NOTICE);
-                                        url::redirect('admin/branch_data_sources'); 
+                                        url::redirect('admin/branch_data_sources');
                                 } else {
                                         client::messageSend("There was an error adding this product/version to the database.", E_USER_WARNING);
                                 }
@@ -152,29 +152,29 @@ class Admin_Controller extends Controller
                 }
                 elseif (isset($_POST['action_update_version'])) {
                         if (
-                                !empty($_POST['update_product']) && 
-                                !empty($_POST['update_version']) && 
-                                !empty($_POST['update_start_date']) && 
+                                !empty($_POST['update_product']) &&
+                                !empty($_POST['update_version']) &&
+                                !empty($_POST['update_start_date']) &&
                                 !empty($_POST['update_end_date']) &&
                                 !empty($_POST['update_throttle'])
                         ) {
                             $featured = $this->_branch_data_sources_featured(
-                                $_POST['update_product'], 
+                                $_POST['update_product'],
                                 $_POST['update_version'],
                                 $_POST['update_start_date'],
                                 $_POST['update_end_date']
                             );
                             $throttle = (!is_numeric($_POST['update_throttle']) || $_POST['update_throttle'] > 100) ? 100 : $_POST['update_throttle'];
                                 if ($rv = $this->branch_model->update(
-                    trim($_POST['update_product']), 
-                    trim($_POST['update_version']), 
-                    trim($_POST['update_start_date']), 
+                    trim($_POST['update_product']),
+                    trim($_POST['update_version']),
+                    trim($_POST['update_start_date']),
                     trim($_POST['update_end_date']),
                     $featured,
                     $throttle
                 )) {
                                         client::messageSend("This product/version has been updated in the database.", E_USER_NOTICE);
-                                        url::redirect('admin/branch_data_sources');                                     
+                                        url::redirect('admin/branch_data_sources');
                                 } else {
                                         client::messageSend("There was an error updating this product/version.", E_USER_WARNING);
                                 }
@@ -186,7 +186,7 @@ class Admin_Controller extends Controller
                         if (!empty($_POST['delete_product']) && !empty($_POST['delete_version'])) {
                                 if ($rv = $this->branch_model->delete(trim($_POST['delete_product']), trim($_POST['delete_version']))) {
                                         client::messageSend("This product/version has been deleted from the database.", E_USER_NOTICE);
-                                        url::redirect('admin/branch_data_sources');                                     
+                                        url::redirect('admin/branch_data_sources');
                                 } else {
                                         client::messageSend("There was an error deleting this product/version.", E_USER_WARNING);
                                 }
@@ -201,8 +201,8 @@ class Admin_Controller extends Controller
                 $this->prepareVersions(true);
 
                 $branch_data = $this->branch_model->getBranchData(false, true, true);
-                
-                $this->setView('admin/branch_data_sources');    
+
+                $this->setView('admin/branch_data_sources');
                 $this->setViewData(
                         array(
                                 'branches' => $branch_data['branches'],
@@ -210,13 +210,13 @@ class Admin_Controller extends Controller
                                 'versions' => $branch_data['versions'],
                                 'missing_entries' => $this->branch_model->findMissingEntries(),
                                 'missing_visibility_entries' => $this->branch_model->getProductVersionsWithoutVisibility(),
-                                'non_current_versions' => $this->branch_model->getNonCurrentProductVersions(true), 
+                                'non_current_versions' => $this->branch_model->getNonCurrentProductVersions(true),
                                 'default_start_date' => date('Y-m-d'),
                                 'default_end_date' => date('Y-m-d', (time()+7776000)), // time() + 90 days
                                 'throttle_default' => Kohana::config('daily.throttle_default'),
   								'url_base' => url::site('products/'.$product),
 								'url_nav' => url::site('products/'.$product)
-                        )                       
+                        )
                 );
     }
 
@@ -228,12 +228,12 @@ class Admin_Controller extends Controller
      */
     public function index ()
     {
-                $this->setView('admin/index');  
+                $this->setView('admin/index');
     }
 
     /**
      * Kohana handler
-     * TODO: Web Service data is paginated, use next, previous, etc 
+     * TODO: Web Service data is paginated, use next, previous, etc
      *
      * @return HTML repsonse
      */
@@ -257,7 +257,7 @@ class Admin_Controller extends Controller
             $this->setViewData(array('csrf_token' => $csrf_token));
             $this->setViewData(array('campaign' => $resp->campaign));
             $this->setViewData(array('counts' => $resp->counts));
-        }        
+        }
     }
 
     /**
@@ -284,12 +284,12 @@ class Admin_Controller extends Controller
             'email_end_date' => '',
             'campaigns' => $campaigns,
             'products' => $this->branch_model->getProducts(),
-        ));              
+        ));
     }
 
     /**
      * Helper method retrieves recent campaigns
-     * 
+     *
      * @return JSON object or FALSE if there wasn an error
      */
     private function _recentCampaigns()
@@ -301,7 +301,7 @@ class Admin_Controller extends Controller
         }
         $service = new Web_Service($config);
         $host = Kohana::config('webserviceclient.socorro_hostname');
-        
+
         $resp = $service->get("${host}/201103/emailcampaigns/campaigns/page/1", 'json');
         if (! $resp) {
             client::messageSend("Error loading recent email campaigns", E_USER_ERROR);
@@ -384,12 +384,12 @@ class Admin_Controller extends Controller
     }
 
     /**
-     * Helper method prepares an instance of the Validation 
+     * Helper method prepares an instance of the Validation
      * library
-     * 
+     *
      * @return object
      */
-    private function _validateEmailCampaign() 
+    private function _validateEmailCampaign()
     {
         $validation = new Validation($this->input->post(array(), null, true));
         $validation->pre_filter('trim');
@@ -446,12 +446,12 @@ class Admin_Controller extends Controller
                     } else {
                         Kohana::log('error', "No Response");
                         client::messageSend("Unknown systems error. Investigate before trying again.", E_USER_ERROR);
-                        return url::redirect('admin/email'); 
+                        return url::redirect('admin/email');
                     }
                 } else {
-                    Kohana::log('alert', "CSRF token didn't match session[" . $token . 
+                    Kohana::log('alert', "CSRF token didn't match session[" . $token .
                                          "] params[" . $params['token'] . "]");
-                    return url::redirect('admin/email'); 
+                    return url::redirect('admin/email');
                 }
             }
         } else {
@@ -532,9 +532,9 @@ class Admin_Controller extends Controller
                     }
                 }
             } else {
-                Kohana::log('alert', "CSRF token didn't match session[" . $token . 
+                Kohana::log('alert', "CSRF token didn't match session[" . $token .
                                      "] params[" . $params['token'] . "]");
-                return url::redirect('admin/email'); 
+                return url::redirect('admin/email');
             }
         } else {
             Kohana::log('error', 'Form did not validate');
@@ -578,11 +578,11 @@ class Admin_Controller extends Controller
     /* Custom Validation */
     /**
      * Validaton callback compatible with JS datePicker
-     * format. 
+     * format.
      *
      * @param object $validation An instance of Validation
      * @param string $field      The form field
-     * 
+     *
      * @return void
      */
     public function validDate($validation, $field)
@@ -600,7 +600,7 @@ class Admin_Controller extends Controller
             $validation->add_error($field, 'valid_date');
         } else {
             $raw_start = trim($validation['email_start_date']);
-            $raw_end   = trim($validation['email_end_date']);                
+            $raw_end   = trim($validation['email_end_date']);
             if ('email_end_date' == $field && preg_match($date_regex, $raw_start)) {
                 $start = strtotime($this->_convertDateForBackend($raw_start));
                 $end   = strtotime($this->_convertDateForBackend($raw_end));
@@ -619,7 +619,7 @@ class Admin_Controller extends Controller
      *
      * The backend will swap these variables out with personalized
      * values.
-     * 
+     *
      * @param object $validation The validator
      * @param string $field      The field being evaluated
      *
@@ -652,12 +652,12 @@ class Admin_Controller extends Controller
         if (! $unsubscribe_seen) {
 
             $validation->add_error($field, 'valid_no_unsubscribe');
-        } 
+        }
     }
 
     /**
      * Helper method for parsing JS datePicker style Dates
-     * 
+     *
      * @param string $date A date Example: 28/04/2010
      *
      * @return A three element array list($year, $month, $day)
@@ -671,14 +671,14 @@ class Admin_Controller extends Controller
     }
 
     /**
-     * Simple conversion from frontend friendly date format to 
+     * Simple conversion from frontend friendly date format to
      * backend friendly format
-     * 
+     *
      * @param staring $adate A JS datePicker formatted date Example: 04/28/2010
      *
      * @return string suitable for Hoopsnake call (YYYY-MM-DD) Example: 2010/04/28
      */
-    private function _convertDateForBackend($adate) 
+    private function _convertDateForBackend($adate)
     {
         list($year, $month, $day) = $this->_splitDate($adate);
         $m = $month;

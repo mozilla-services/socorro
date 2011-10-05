@@ -33,7 +33,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the MPL, the GPL or the LGPL.
  *
- * ***** END LICENSE BLOCK ***** 
+ * ***** END LICENSE BLOCK *****
  *
  */
 
@@ -43,14 +43,54 @@
  */
 class Bug_Model extends Model {
 
+    public $resolutionOrder = array('', 'WORKSFORME', 'WONTFIX', 'DUPLICATE', 'INVALID', 'FIXED', 'INCOMPLETE');
+
+    /**
+     * An array of all of the statuses that define an open bug,
+     * hashed to provide a quick lookup.
+     */
+    public $open_statuses = array(
+                                'UNCONFIRMED' => true,
+                                'NEW' => true,
+                                'ASSIGNED' => true,
+                                'REOPENED' => true,
+                                ' ' => true // default status
+                            );
+
+    /**
+     * A template array for representing a bug.
+     */
+    public $defaultBug = array(
+                             'signature' => "",
+                             'id' => "",
+                             'status' => " ",
+                             'resolution' => "",
+                             'summary' => "",
+                             'open' => true,
+                             'url' => "#"
+                         );
+
+
+    /**
+     * Comparator function for sorting arrays of bugs by resolution
+     */
+    public function _sortByResolution($thisBug, $thatBug)
+    {
+      $thisPos = (is_array($thisBug['resolution'])) ? -1 : array_search(trim($thisBug['resolution']), $this->resolutionOrder);
+      $thatPos = (is_array($thatBug['resolution'])) ? -1 : array_search(trim($thatBug['resolution']), $this->resolutionOrder);
+      return $thisPos - $thatPos; 
+    }
+
    /**
-    * Given a list of signatures, retrieves bug information
-    * associated with these signatures. Example output
-    * ( 'arena_dalloc_small' => ('bug_id' => 23423323, 'status' => 'RESOLVED', 'resolution' => 'FIXED') )
+    * Given a list of signatures, retrieves bug information associated with
+    * these signatures and creates a signature to bugzilla bug associative
+    * array suitable for display.
+    *
     * @param array - A list of strings, each one being a crash signature
+    * @param string - a URL to prepend for generating links to the bugtracker
     * @return array - an associative array of bug infos keyed by signature
     */
-    public function bugsForSignatures($signatures)
+    public function bugsForSignatures($signatures, $bugzillaUrl)
     {
         $sigs = array();
         foreach ($signatures as $sig) {
@@ -58,20 +98,41 @@ class Bug_Model extends Model {
 	        array_push($sigs, $this->db->escape($sig));
 	    }
         }
+
 	if (count($sigs) == 0) {
 	    return array();
 	}
-            
-        return $report = $this->db->query(
-"/* soc.web bugsForSigs */
-SELECT ba.signature, bugs.id FROM bugs
-JOIN bug_associations AS ba ON bugs.id = ba.bug_id
-WHERE EXISTS( 
-    SELECT 1 FROM bug_associations
-    WHERE bug_associations.bug_id = bugs.id AND 
-          signature IN (" . implode(", ", $sigs) . "))", 
-             TRUE)->result_array(FALSE);
+
+        $rows = $this->db->query(
+            "/* soc.web bugsForSigs */
+            SELECT ba.signature, bugs.id FROM bugs
+            JOIN bug_associations AS ba ON bugs.id = ba.bug_id
+            WHERE EXISTS(
+                SELECT 1 FROM bug_associations
+                WHERE bug_associations.bug_id = bugs.id
+                AND signature IN (" . implode(", ", $sigs) . ")
+            )",
+            TRUE)->result_array(FALSE);
+
+        $signature_to_bugzilla = array();
+        foreach ($rows as $row) {
+            if (!array_key_exists($row['signature'], $signature_to_bugzilla)) {
+                $signature_to_bugzilla[$row['signature']] = array();
+	    }
+
+            $row = array_merge($this->defaultBug, $row);
+            $row['open'] = (array_key_exists($row['status'], $this->open_statuses)) ? true : false;
+            $row['url'] = $bugzillaUrl . $row['id'];
+            $row['summary'] = $row['summary'];
+
+            array_push($signature_to_bugzilla[$row['signature']], $row);
+	}
+
+        foreach ($signature_to_bugzilla as $k => $v) {
+            usort($signature_to_bugzilla[$k], array($this, '_sortByResolution')); 
+        }
+
+        return $signature_to_bugzilla;
     }
 }
 ?>
-

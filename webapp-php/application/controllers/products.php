@@ -36,7 +36,7 @@
  * the terms of any one of the MPL, the GPL or the LGPL.
  *
  * ***** END LICENSE BLOCK ***** */
- 
+
 require_once(Kohana::find_file('libraries', 'release', TRUE, 'php'));
 
 /**
@@ -77,7 +77,7 @@ class Products_Controller extends Controller {
             'expires' => time() + Kohana::config('products.cache_expires')
         ));
     }
-    
+
     /**
      * Display RSS feeds for nightly builds.
      *
@@ -87,9 +87,9 @@ class Products_Controller extends Controller {
      * @return  void
      */
     public function _buildsRSS($product, $version=null, $builds)
-    {        
+    {
         $title = "Crash Stats for Mozilla Nightly Builds for " . $product;
-        if (isset($version) && !empty($version)) { 
+        if (isset($version) && !empty($version)) {
             $title .= " " . $version;
         }
         $info = array("title" => $title);
@@ -105,8 +105,8 @@ class Products_Controller extends Controller {
                     'link' => html::specialchars($link),
                     'description' => $title,
                     'pubDate' => $pubdate
-                );  
-            }         
+                );
+            }
         }
         echo feed::create($info, $items);
         exit;
@@ -116,17 +116,23 @@ class Products_Controller extends Controller {
      * Determine the value for $this->duration for a given page.
      *
      * @return  int    The $this->duration value in days
-     */    
+     */
     private function _determineDuration()
     {
-        return (isset($this->parameters['duration']) && in_array($this->parameters['duration'], $this->duration_options)) ? $this->parameters['duration'] : Kohana::config('products.duration');
+        if (isset($this->parameters['duration'])) {
+            $duration = (int)$this->parameters['duration'];
+            if (in_array($duration, $this->duration_options)) {
+                return $duration;
+            }
+        }
+        return Kohana::config('products.duration');
     }
 
     /**
      * Determine the starting date used in a web service call.
      *
      * @return  string  Y-M-D
-     */    
+     */
     private function _determineDateStart()
     {
         return date('Y-m-d', mktime(0, 0, 0, date("m"), date("d")-($this->duration+1), date("Y")));
@@ -136,10 +142,10 @@ class Products_Controller extends Controller {
      * Determine the ending date used in a web service call.
      *
      * @return  string  Y-M-D
-     */    
+     */
     private function _determineDateEnd()
     {
-        return date('Y-m-d', mktime(0, 0, 0, date("m"), date("d")-1, date("Y")));    
+        return date('Y-m-d', mktime(0, 0, 0, date("m"), date("d")-1, date("Y")));
     }
 
     /**
@@ -148,7 +154,7 @@ class Products_Controller extends Controller {
       * @param   string  Product name
       * @param   string  Verison name
       * @return  int     The throttle value
-      */    
+      */
      private function _determineThrottle($product, $version)
      {
          $throttle = 100;
@@ -170,29 +176,29 @@ class Products_Controller extends Controller {
      }
 
     /**
-     * Determine the number of top changing top crashes that should be 
+     * Determine the number of top changing top crashes that should be
      * displayed on the dashboard.
      *
      * @return  int
-     */    
+     */
     private function _determineTopchangersCountDashboard()
     {
         $topchangers_count = Kohana::config('products.topchangers_count_dashboard');
         return (!empty($topchangers_count)) ? $topchangers_count : 15;
     }
-    
+
     /**
-     * Determine the number of top changing top crashes that should be 
+     * Determine the number of top changing top crashes that should be
      * displayed on the full page.
      *
      * @return  int
-     */    
+     */
     private function _determineTopchangersCountPage()
     {
         $topchangers_count = Kohana::config('products.topchangers_count_page');
         return (!empty($topchangers_count)) ? $topchangers_count : 50;
     }
-    
+
     /**
      * Determine which signatures are the top crashers for this product
      *
@@ -205,17 +211,17 @@ class Products_Controller extends Controller {
         $i = 0;
         foreach($this->featured_versions as $featured_version) {
             $top_crashers[$i] = $this->topcrashers_model->getTopCrashersViaWebService(
-                $product, 
-                $featured_version->version, 
-                $this->duration                    
+                $product,
+                $featured_version->version,
+                $this->duration
             );
             $top_crashers[$i]->product = $product;
             $top_crashers[$i]->version = $featured_version->version;
             $i++;
         }
-        return $top_crashers;        
+        return $top_crashers;
     }
-    
+
     /**
      * Determine which signatures are the top changers given
      * an array of top crashers.
@@ -244,31 +250,31 @@ class Products_Controller extends Controller {
 	        }
 
             if (!empty($changers)) {
-	            $top_changers = array('up' => array()); 
-	            krsort($changers); 
+	            $top_changers = array('up' => array());
+	            krsort($changers);
                 for ($i = 1; $i <= $topchangers_count; $i++) {
                     $top_changers['up'][] = array_shift($changers);
 	            }
 
                 if ($trend_down) {
                     $top_changers['down'] = array();
-	                ksort($changers); 
+	                ksort($changers);
                     for ($i = 1; $i <= $topchangers_count; $i++) {
                         $top_changers['down'][] = array_shift($changers);
 	                }
 	            }
-            
+
                 return $top_changers;
             }
         }
         return false;
     }
-    
+
     /**
      * Prepare top changers data for top crashers that have more than one version.
      *
      * @param   string  The product name
-     * @param   array   An array of top crashers     
+     * @param   array   An array of top crashers
      * @param   int     The number of versions being displayed on this page
      * @param   bool    TRUE to include the downward trending topcrashers; FALSE if not
      * @param   int     The total number of topchangers to include
@@ -277,7 +283,7 @@ class Products_Controller extends Controller {
     private function _determineTopchangersProduct($product, $top_crashers, $versions_count, $trend_down=true, $topchangers_count) {
         $crashes = array();
         $changers = array();
-        
+
         foreach ($top_crashers as $top_crasher) {
             if (isset($top_crasher->crashes) && !empty($top_crasher->crashes)) {
                 $top_changers = array();
@@ -299,7 +305,7 @@ class Products_Controller extends Controller {
                         }
                     }
     	        }
-    	        
+
     	        foreach($top_changers as $top_changer) {
                     if (!in_array($top_changer['changeInRank'], array('new', 0))) {
     	                $tc_key = $top_changer['changeInRank'].'.'.$key;
@@ -317,14 +323,14 @@ class Products_Controller extends Controller {
 
         if (isset($changers) && !empty($changers)) {
             $top_changers = array('up' => array());
-            krsort($changers); 
+            krsort($changers);
             for ($i = 1; $i <= $topchangers_count; $i++) {
                 $top_changers['up'][] = array_shift($changers);
             }
-            
+
             if ($trend_down) {
                 $top_changers['down'] = array();
-                ksort($changers); 
+                ksort($changers);
                 for ($i = 1; $i <= $topchangers_count; $i++) {
                     $top_changers['down'][] = array_shift($changers);
                 }
@@ -334,7 +340,7 @@ class Products_Controller extends Controller {
         }
         return false;
     }
-    
+
     /**
      * Format the URL for a top changer signature.
      *
@@ -350,18 +356,18 @@ class Products_Controller extends Controller {
 
         $sigParams = array(
             'range_value' => $range_value,
-            'range_unit'  => $range_unit, 
+            'range_unit'  => $range_unit,
             'signature' => $top_crasher->signature,
             'version' => $product
         );
-    
+
         if (!empty($version)) {
             $sigParams['version'] .= ":" . $version;
         }
 
         return url::base() . 'report/list?' . html::query_string($sigParams);
     }
-    
+
     /**
      * Verify that this product on this page is stored in $this->chosen_version;  If so, proceed.
      * If not, ensure that this product is stored in session and redirect the user so that My_Controller
@@ -381,7 +387,7 @@ class Products_Controller extends Controller {
         );
         $this->prepareVersions(); // Update the featured and unfeatured versions
     }
-    
+
     /**
       * Display CSV file for a product / version.
       *
@@ -401,9 +407,9 @@ class Products_Controller extends Controller {
             foreach ($top_changers as $tc) {
                 foreach ($tc as $top_changer) {
                     array_push($csvData, array(
-                        $top_changer['currentRank'], 
+                        $top_changer['currentRank'],
                         $top_changer['changeInRank'],
-                        strtr($top_changer['signature'], array(',' => ' ', '\n' => ' ', '"' => '&quot;'))     
+                        strtr($top_changer['signature'], array(',' => ' ', '\n' => ' ', '"' => '&quot;'))
                     ));
                 }
             }
@@ -413,7 +419,7 @@ class Products_Controller extends Controller {
         $this->setViewData(array('top_crashers' => $csvData));
         $this->renderCSV($title);
     }
-    
+
     /**
      * Display RSS feeds for top changing top crashers.
      *
@@ -425,7 +431,7 @@ class Products_Controller extends Controller {
     private function _topchangersRSS($product, $version=null, $top_changers)
     {
         $title = "Top Changing Top Crashers for " . $product . " for the past " . $this->duration . " days";
-        if (isset($version) && !empty($version)) { 
+        if (isset($version) && !empty($version)) {
             $title .= " " . $version;
         }
         $info = array("title" => $title);
@@ -441,9 +447,9 @@ class Products_Controller extends Controller {
                         'link' => html::specialchars($top_changer['url']),
                         'description' => $title,
                         'pubDate' => $pubdate
-                    ); 
-                } 
-            }         
+                    );
+                }
+            }
         }
         echo feed::create($info, $items);
         exit;
@@ -489,14 +495,14 @@ class Products_Controller extends Controller {
             $this->products();
         } elseif (in_array($product, $this->current_products)) {
             $this->_productSelected($product);
-            
+
             if (!empty($version)) {
                 $this->_versionSelected($product, $version);
                 if ($this->versionExists($version)) {
                     if ($call == 'builds') {
-                        $this->productVersionBuilds($product, $version, $rss);                            
+                        $this->productVersionBuilds($product, $version, $rss);
                     } elseif ($call == 'topchangers') {
-                        $this->productVersionTopchangers($product, $version, $rss);                            
+                        $this->productVersionTopchangers($product, $version, $rss);
                     } else {
                         $this->productVersion($product, $version);
                     }
@@ -506,9 +512,9 @@ class Products_Controller extends Controller {
             } else {
                 $this->_productSelected($product);
                 if ($call == 'builds') {
-                    $this->productBuilds($product, $rss);                            
+                    $this->productBuilds($product, $rss);
                 } elseif ($call == 'topchangers') {
-                    $this->productTopchangers($product, $rss);                            
+                    $this->productTopchangers($product, $rss);
                 } else {
                     $this->product($product);
                 }
@@ -516,8 +522,8 @@ class Products_Controller extends Controller {
         } else {
             Kohana::show_404();
         }
-    }  
-    
+    }
+
     /**
      * Display the dashboard for a product.
      *
@@ -553,29 +559,29 @@ class Products_Controller extends Controller {
         }
         foreach($this->featured_versions as $featured_version) {
             $top_crashers[$i] = $this->topcrashers_model->getTopCrashersViaWebService(
-                $product, 
-                $featured_version->version, 
-                $this->duration                    
+                $product,
+                $featured_version->version,
+                $this->duration
             );
             $top_crashers[$i]->product = $product;
             $top_crashers[$i]->version = $featured_version->version;
-            
+
             $daily_versions[] = $featured_version->version;
             $throttle[] = $featured_version->throttle;
             $i++;
         }
         $top_changers = $this->_determineTopchangersProduct($product, $top_crashers, count($this->featured_versions), true, $this->_determineTopchangersCountDashboard());
-        
+
         $results = $this->daily_model->get($product, $daily_versions, $operating_systems, $date_start, $date_end, 'any');
         $statistics = $this->daily_model->prepareStatistics($results, 'by_version', $product, $daily_versions, $operating_systems, $date_start, $date_end, $throttle);
         $graph_data = $this->daily_model->prepareGraphData($statistics, 'by_version', $date_start, $date_end, $dates, $operating_systems, $daily_versions);
-        
+
         $this->setView('products/product');
         $this->setViewData(
             array(
                'dates' => $dates,
-               'duration' => $this->duration,  
-               'graph_data' => $graph_data,                       
+               'duration' => $this->duration,
+               'graph_data' => $graph_data,
                'nav_selection' => 'overview',
                'num_signatures' => $num_signatures,
                'operating_systems' => $operating_systems,
@@ -598,7 +604,7 @@ class Products_Controller extends Controller {
    	        )
    	    );
     }
-    
+
     /**
      * Display the nightly builds page.
      *
@@ -623,10 +629,10 @@ class Products_Controller extends Controller {
                     }
                 }
             }
-            
+
             $date_end = date('Y-m-d', mktime(0, 0, 0, date("m"), date("d"), date("Y")));
             $dates = $Build_Model->prepareDates($date_end, $this->duration);
-            
+
             $this->setView('products/product_builds');
             $this->setViewData(
                 array(
@@ -642,7 +648,7 @@ class Products_Controller extends Controller {
             );
         }
     }
-    
+
     /**
      * Display the top changing top crashers for a product.
      *
@@ -664,7 +670,7 @@ class Products_Controller extends Controller {
             foreach ($this->featured_versions as $featured_version) {
                 $versions[] = $featured_version->version;
             }
-            
+
             $this->setView('products/product_topchangers');
             $this->setViewData(
                 array(
@@ -682,7 +688,7 @@ class Products_Controller extends Controller {
             );
         }
     }
-    
+
     /**
      * Display the dashboard for a product and version.
      *
@@ -704,26 +710,26 @@ class Products_Controller extends Controller {
         foreach ($productVersions as $productVersion) {
             $versions[] = $productVersion->version;
         }
-        
+
         $results = $this->daily_model->get($product, array($version), $operating_systems, $date_start, $date_end, 'any');
         $statistics = $this->daily_model->prepareStatistics($results, 'by_version', $product, array($version), $operating_systems, $date_start, $date_end, array($throttle));
         $graph_data = $this->daily_model->prepareGraphData($statistics, 'by_version', $date_start, $date_end, $dates, $operating_systems, array($version));
-        
+
         $num_signatures = Kohana::config("products.topcrashers_count");
 
         $tc = $this->topcrashers_model->getTopCrashersViaWebService($product, $version, $this->duration);
         $top_crashers = array(0 => $tc);
         $top_crashers[0]->product = $product;
         $top_crashers[0]->version = $version;
-        
+
         $top_changers = $this->_determineTopchangersProductVersion($product, $version, $tc, true, $this->_determineTopchangersCountDashboard());
-        
+
         $this->setView('products/product_version');
         $this->setViewData(
             array(
                'dates' => $dates,
-               'duration' => $this->duration,  
-               'graph_data' => $graph_data,                       
+               'duration' => $this->duration,
+               'graph_data' => $graph_data,
                'nav_selection' => 'overview',
                'num_signatures' => $num_signatures,
                'operating_systems' => $operating_systems,
@@ -746,13 +752,13 @@ class Products_Controller extends Controller {
    	        )
    	    );
     }
-    
+
     /**
      * Display the dashboard for the nightly builds for a product and version.
      *
      * @param   string  The product name
      * @param   string  The version number
-     * @param   bool    True if requesting rss feed of data; false if not     
+     * @param   bool    True if requesting rss feed of data; false if not
      * @return  void
      */
     public function productVersionBuilds($product, $version, $rss)
@@ -765,7 +771,7 @@ class Products_Controller extends Controller {
         } else {
             $date_end = date('Y-m-d');
             $dates = $Build_Model->prepareDates($date_end, $this->duration);
-            
+
             $this->setView('products/product_version_builds');
             $this->setViewData(
                 array(
@@ -777,12 +783,12 @@ class Products_Controller extends Controller {
                     'url_nav' => url::site('products/'.$product),
                     'url_rss' => 'products/'.$product.'/versions/'.$version.'/builds.rss',
                     'version' => $version,
-                    'versions' => array($version)         
+                    'versions' => array($version)
                 )
             );
         }
     }
-    
+
     /**
      * Display the top changing top crashers for a version of a product.
      *
@@ -798,16 +804,16 @@ class Products_Controller extends Controller {
         $top_crashers[0]->product = $product;
         $top_crashers[0]->version = $version;
         $top_changers = $this->_determineTopchangersProductVersion($product, $version, $tc, false, $this->_determineTopchangersCountPage());
-        
+
         if ($extension == 'rss') {
             $this->_topchangersRSS($product, null, $top_changers);
         } elseif ($extension == 'csv') {
             $this->_topchangersCSV($product, null, $top_changers);
-        } else {        
+        } else {
             $this->setView('products/product_topchangers');
             $this->setViewData(
                 array(
-                   'duration' => $this->duration,  
+                   'duration' => $this->duration,
                    'nav_selection' => 'top_crashers',
                    'product' => $product,
                    'top_changers' => $top_changers,
@@ -825,7 +831,7 @@ class Products_Controller extends Controller {
    	        );
         }
     }
-    
+
     /**
      * When no products have been selected, show a list of all current products to choose from.
      *
@@ -833,7 +839,7 @@ class Products_Controller extends Controller {
      */
     public function products()
     {
-        $this->setView('products/products'); 
+        $this->setView('products/products');
         $this->setViewData(
             array(
                'base_url' => url::site('products'),
@@ -842,6 +848,6 @@ class Products_Controller extends Controller {
    	        )
    	    );
     }
-    
+
     /* */
 }

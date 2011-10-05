@@ -28,13 +28,13 @@ from config.smtpconfig import unsubscribeBaseUrl
 
 wsgiInstallation = cm.Option()
 wsgiInstallation.doc = 'True or False, this app is installed under WSGI'
-wsgiInstallation.default = False
+wsgiInstallation.default = True
 
 # Implementation class for the Search API
 # Can be socorro.search.elasticsearch.ElasticSearchAPI or socorro.search.postgresql.PostgresAPI
 searchImplClass = cm.Option()
 searchImplClass.doc = 'String, the name of the class that implement the Search API.'
-searchImplClass.default = 'socorro.search.elasticsearch.ElasticSearchAPI'
+searchImplClass.default = 'socorro.search.postgresql.PostgresAPI'
 searchImplClass.fromStringConverter = cm.classConverter
 
 # Elastic Search configuration
@@ -76,7 +76,7 @@ servicesList.default = [search.Search, tcbst.TopCrashBySignatureTrends, sighist.
 
 crashBaseUrl = cm.Option()
 crashBaseUrl.doc = 'The base url for linking to crash-stats. This will be used in email templates'
-crashBaseUrl.default = "http://crash-stats.mozilla.com/report/index/%s"
+crashBaseUrl.default = "http://crash-stats/report/index/%s"
 
 #---------------------------------------------------------------------------
 # Logging
@@ -122,3 +122,4 @@ platforms.default = (
         "name" : "Solaris"
     }
 )
+

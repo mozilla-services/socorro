@@ -54,7 +54,7 @@ class Report_Controller extends Controller {
 
     /**
      * List reports for the given search query parameters.
-	 * 
+	 *
 	 * @access	public
 	 * @return 	void
      */
@@ -115,10 +115,10 @@ class Report_Controller extends Controller {
             $index += 1;
         }
         $bug_model = new Bug_Model;
-        $rows = $bug_model->bugsForSignatures(array($params['signature']));
-         
-        $bugzilla = new Bugzilla;
-        $signature_to_bugzilla = $bugzilla->signature2bugzilla($rows, Kohana::config('codebases.bugTrackingUrl'));
+        $signature_to_bugzilla = $bug_model->bugsForSignatures(
+                                     array($params['signature']),
+                                     Kohana::config('codebases.bugTrackingUrl')
+                                 );
 
         list($correlation_product, $correlation_version) = $this->_correlationProdVers($reports);
 
@@ -166,10 +166,10 @@ class Report_Controller extends Controller {
      * of crashes. Useful for search results that may have mixed
      * products and versions
      *
-     * @param array $reports Database results for top crashes which is an array 
+     * @param array $reports Database results for top crashes which is an array
      *              of objects
      *
-     * @return array An array of strings. The product and version with the most 
+     * @return array An array of strings. The product and version with the most
      *              crashes. Example: ['Firefox', '3.6']
      */
     private function _correlationProdVers($reports)
@@ -196,8 +196,8 @@ class Report_Controller extends Controller {
     }
 
     /**
-     * Determines the crashiest Operating System for a 
-     * given set of builds. Useful for search results which 
+     * Determines the crashiest Operating System for a
+     * given set of builds. Useful for search results which
      * may contain multiple builds.
      *
      * @param array $builds Database results for builds. An array of objects
@@ -219,36 +219,36 @@ class Report_Controller extends Controller {
 
     /**
      * Prepare the link by which the bug will be submitted.
-     * 
+     *
      * @param   object     The $report object.
      * @return  void
      */
     private function _prepReportBugURL($report)
     {
         $report_bug_url = Kohana::config('application.report_bug_url');
-    
+
         if (empty($report_bug_url)) {
           $report_bug_url = $this->report_bug_url_default;
-        }        
+        }
 
         $report_bug_url .= 'advanced=1&bug_severity=critical&keywords=crash&';
-        
+
         if (isset($report->product) && !empty($report->product)) {
             $report_bug_url .= 'product='.rawurlencode($report->product) . '&';
         }
-        
+
         if (isset($report->os_name) && !empty($report->os_name)) {
             $report_bug_url .= 'op_sys='.rawurlencode($report->os_name) . '&';
         }
-        
+
         if (isset($report->cpu_name) && !empty($report->cpu_name)) {
             $report_bug_url .= 'rep_platform='.rawurlencode($report->cpu_name) . '&';
-        } 
-        
+        }
+
         if (isset($report->signature) && !empty($report->signature)) {
-            $report_bug_url .= '&cf_crash_signature='; 
+            $report_bug_url .= '&cf_crash_signature=';
             $report_bug_url .= rawurlencode('[@ ' . $report->signature . ']') . '&';
-             
+
             preg_match('/[A-Za-z0-9_:@]+/' , $report->signature, $matches, PREG_OFFSET_CAPTURE);
             $report_bug_url .= 'short_desc=' . rawurlencode('crash ' . $matches[0][0]) . '&';
         }
@@ -258,7 +258,7 @@ class Report_Controller extends Controller {
             "report bp-" . $report->uuid . " .\r\n".
             "============================================================= \r\n"
         );
-        
+
         return $report_bug_url;
     }
 
@@ -267,9 +267,9 @@ class Report_Controller extends Controller {
 	if (array_key_exists('missing_sig', $params) &&
 	    ! empty($params['missing_sig'])) {
 	    if ($params['missing_sig'] == Crash::$empty_sig_code) {
-		$signature =  Crash::$empty_sig;		
+		$signature =  Crash::$empty_sig;
 	    } else {
-		$signature = Crash::$null_sig;		
+		$signature = Crash::$null_sig;
 	    }
 	} else if (array_key_exists('signature', $params)) {
 	    $signature = $params['signature'];
@@ -329,7 +329,7 @@ class Report_Controller extends Controller {
 
     /**
      * Generate crashes by the OS
-	 * 
+	 *
      * @param 	array 	An array of platform objects
  	 * @param	array 	An array of builds
 	 * @return 	void
@@ -337,11 +337,11 @@ class Report_Controller extends Controller {
     private function generateCrashesByOS($platforms, $builds){
         $platLabels = array();
         $plotData =   array();
-	
+
         for($i = 0; $i < count($platforms); $i += 1){
 			$platform = $platforms[$i];
 			$plotData[$platform->id] = array($i, 0);
-			for($j = 0; $j  < count($builds); $j = $j + 1){ 
+			for($j = 0; $j  < count($builds); $j = $j + 1){
 				$plotData[$platform->id][1] += intval($builds[$j]->{"count_$platform->id"});
 			}
 			$platLabels[] = array(
@@ -357,7 +357,7 @@ class Report_Controller extends Controller {
      * Fetch and display a single report.
      *
      * Note: Correlation tab is populated via /correlation/ajax/cpu/{product}/{version}/{os_name}/{signature}/
-     * 
+     *
      * @param 	string 	The uuid
      * @return 	void
      */
@@ -373,11 +373,11 @@ class Report_Controller extends Controller {
 	$raw_dump_urls = $this->report_model->formatRawDumpURLs($uuid);
 
 	$report = $this->report_model->getByUUID($uuid, $crash_uri);
-	
+
         if ( is_bool($report) && $report == true) {
 	    return url::redirect('report/pending/'.$uuid);
         } else if ( (is_bool($report) && $report == false) || is_null($report) ) {
-            $this->setView('report/notfound'); 
+            $this->setView('report/notfound');
             $this->setViewData(
                 array(
                     'base_url' => url::site('products'),
@@ -410,12 +410,13 @@ class Report_Controller extends Controller {
 		$report->{'display_signature'} = $report->signature;
 		$report->sumo_signature = $this->_makeSumoSignature($report->signature);
 		$bug_model = new Bug_Model;
-		$rows = $bug_model->bugsForSignatures(array($report->signature));
-	    	$bugzilla = new Bugzilla;
-	    	$signature_to_bugzilla = $bugzilla->signature2bugzilla($rows, Kohana::config('codebases.bugTrackingUrl'));
+	    	$signature_to_bugzilla = $bug_model->bugsForSignatures(
+                                             array($report->signature),
+                                             Kohana::config('codebases.bugTrackingUrl')
+                                         );
                 $comments = $this->common_model->getCommentsBySignature($report->signature);
-	    }	    	
-        	
+	    }
+
             $Extension_Model = new Extension_Model;
             $extensions = $Extension_Model->getExtensionsForReport($uuid, $report->date_processed, $report->product);
 
@@ -440,7 +441,7 @@ class Report_Controller extends Controller {
 
     /**
      * Helper method for formatting the Hang Type
-     * 
+     *
      * @param object $report
      *
      * @return string Examples: 'Plugin' or 'Browser'
@@ -463,8 +464,8 @@ class Report_Controller extends Controller {
      * crash status.
      *
      * @param object $report
-     * 
-     * @return array with keys 'hangtype' and possibly 
+     *
+     * @return array with keys 'hangtype' and possibly
      *         'other_uuid', 'pair_error', 'pair_label'
      */
     private function _makeOoppDetails($report)
@@ -496,7 +497,7 @@ class Report_Controller extends Controller {
 
     /**
      * Wait while a pending job is processed.
-     * 
+     *
      * @access  public
      * @param   int     The UUID for this report
      * @return  void
@@ -509,13 +510,13 @@ class Report_Controller extends Controller {
             Kohana::log('alert', "Improper UUID format for $uuid doing 404");
             return Event::run('system.404');
         }
-        
+
         // If the YYMMDD date on the end of the $uuid string is over 3 years ago, fail.
         if (!$this->report_model->isReportValid($id)) {
             Kohana::log('alert', "UUID indicates report for $id is greater than 3 years of age.");
-            header("HTTP/1.0 410 Gone"); 
+            header("HTTP/1.0 410 Gone");
 			$status = intval(410);
-        }        
+        }
 
         // Check for the report
 	$crash_uri = sprintf(Kohana::config('application.crash_dump_local_url'), $uuid);
@@ -525,17 +526,17 @@ class Report_Controller extends Controller {
 	    return url::redirect('report/index/'.$uuid);
 	}
 
-        // Fetch Job 
+        // Fetch Job
         $this->job_model = new Job_Model();
         $job = $this->job_model->getByUUID($uuid);
-        
+
         $product = (isset($product) && !empty($product)) ? $product : Kohana::config('products.default_product');
         $this->setViewData(array(
             'uuid' => $uuid,
             'job'  => $job,
 			'status' => $status,
 			'url_ajax' => url::site() . 'report/pending_ajax/' . $uuid,
-            'url_nav' => url::site('products/'.$product),			
+            'url_nav' => url::site('products/'.$product),
         ));
     }
 
@@ -578,7 +579,7 @@ class Report_Controller extends Controller {
     {
         if(is_null($uuid)) {
             Kohana::show_404();
-        } 
+        }
         $this->auto_render = false;
 
         $rs = $this->report_model->getAllPairedUUIDByUUid($uuid);

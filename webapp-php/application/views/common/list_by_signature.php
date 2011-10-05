@@ -1,4 +1,4 @@
-<?php if (isset($reports) && !empty($reports)) { ?>    
+<?php if (isset($reports) && !empty($reports)) { ?>
     <table id="signatureList" class="tablesorter">
         <thead>
             <tr>
@@ -22,8 +22,8 @@
             </tr>
         </thead>
         <tbody>
-            <?php 
-            $row = (isset($page) && isset($items_per_page) && $page > 1) 
+            <?php
+            $row = (isset($page) && isset($items_per_page) && $page > 1)
                     ? (1 + (($page-1) * $items_per_page)) : 1;
             foreach ($reports as $report) { ?>
                 <tr class="<?php echo ( ($row-1) % 2) == 0 ? 'even' : 'odd' ?>">
@@ -42,7 +42,7 @@
                             unset($url_params['build_id']);
                         }
                     }
-                    $url = url::base() . 'report/list?' 
+                    $url = url::base() . 'report/list?'
                         . html::query_string($url_params);
                     ?>
                     <a href="<?php echo $url ?>">
@@ -64,7 +64,7 @@
                 </td>
                 <?php if ($showPluginName) { ?>
                     <td>
-                        <?php out::H($report->pluginname . ' ' 
+                        <?php out::H($report->pluginname . ' '
                             . $report->pluginversion) ?>
                     </td>
                 <?php } ?>
@@ -79,8 +79,8 @@
                 <?php } ?>
                 <?php if (isset($sig2bugs)) {?>
                     <td>
-                    <?php 
-                    if (array_key_exists($report->signature, $sig2bugs)) { 
+                    <?php
+                    if (array_key_exists($report->signature, $sig2bugs)) {
                         $bugs = $sig2bugs[$report->signature];
                         for ($i = 0; $i < 3 and $i < count($bugs); $i++) {
                             $bug = $bugs[$i];
@@ -89,8 +89,8 @@
                         echo ", ";
                         } ?>
                         <div class="bug_ids_extra">
-                            <?php 
-                            for ($i = 3; $i < count($bugs); $i++) { 
+                            <?php
+                            for ($i = 3; $i < count($bugs); $i++) {
                                 $bug = $bugs[$i];
                                 View::factory('common/bug_number')
                                     ->set('bug', $bug)
@@ -98,10 +98,10 @@
                             } ?>
                         </div>
                         <?php if (count($bugs) > 0) { ?>
-                            <a href='#' 
-                               title="Click to See all likely bug numbers" 
+                            <a href='#'
+                               title="Click to See all likely bug numbers"
                                class="bug_ids_more">More</a>
-                            <?php 
+                            <?php
                             View::factory('common/list_bugs', array(
                                 'signature' => $report->signature,
                                 'bugs' => $bugs,
@@ -118,7 +118,7 @@
     </table>
 
 <?php } else { ?>
-   
+
     <p>No results were found.</p>
-    
+
 <?php } ?>

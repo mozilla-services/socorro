@@ -21,7 +21,7 @@ productIdCount = None # may become {(product_name,version_string): count_of_cach
 #signatureIdCount = None  # may become {(signature,): count_of_cache_hits}
 uriIdCache = None     # may become {(domain,url): urldims_id}
 uriIdCount = None     # may become {(domain,url): count_of_cache_hits}
-  
+
 # Retain the trailing $ needed to force a match on the full value
 #-----------------------------------------------------------------------------------------------------------------
 majorPattern = re.compile(r'(\d+\.)+\d+$')
@@ -57,7 +57,7 @@ def initializeProductBranchCache(idMap,cursor):
   data = cursor.fetchall()
   cursor.connection.rollback()
   return dict(data)
-  
+
 #-----------------------------------------------------------------------------------------------------------------
 def clearCache():
   global productIdCache,productIdCount,productBranchCache,uriIdCache,uriIdCount,osIdCache,osIdCount
@@ -102,7 +102,7 @@ class IdCache:
       self.truncateUrlLength = int(self.truncateUrlLength)
     self.cursor = databaseCursor
     self.initializeCache()
-    
+
   def initializeCache(self):
     global maxOsIdCacheLength, maxProductIdCacheLength, maxUriIdCacheLength
     global productIdCache,productIdCount,productBranchCache
@@ -179,7 +179,7 @@ class IdCache:
     'http', 'https', 'icap', 'im', 'imap', 'info', 'ipp', 'iris', 'iris.beep', 'iris.xpc', 'iris.xpcs', 'iris.lws', 'ldap',
     'mailto', 'mid', 'modem', 'msrp', 'msrps', 'mtqp', 'mupdate', 'news', 'nfs', 'nntp', 'pop', 'pres', 'prospero', 'rtsp',
     'service', 'shttp', 'sip', 'sips', 'snmp', 'soap.beep', 'soap.beeps', 'tag', 'tel', 'telnet', 'tftp', 'tip', 'tv', 'urn',
-    'vemmi', 'wais', 'xmlrpc.beep', 'xmpp', 'z39.50r', 'z39.50s', 
+    'vemmi', 'wais', 'xmlrpc.beep', 'xmpp', 'z39.50r', 'z39.50s',
     # 'unofficial but common'
     'about', 'afp', 'aim', 'apt', 'aw', 'bolo', 'bzr', 'callto', 'cel', 'chrome', 'content', 'cvs', 'daap', 'doi', 'ed2k',
     'feed', 'finger', 'fish', 'gg', 'git', 'gizmoproject', 'iax2', 'irc', 'ircs', 'itms', 'jar', 'javascript', 'lastfm',
@@ -309,7 +309,7 @@ class IdCache:
         if origVersion == m:
           ret = ''
     return ret
-    
+
   #-----------------------------------------------------------------------------------------------------------------
   def getOsId(self,osName,osVersion):
     """
@@ -319,7 +319,7 @@ class IdCache:
     osId = None
     if None != osName:
       osName = osName.strip()
-    if None != osVersion: 
+    if None != osVersion:
       osVersion = osVersion.strip()
     key = (osName,self.getAppropriateOsVersion(osName,osVersion))
     osId = self.assureAndGetId(key,'osdims',

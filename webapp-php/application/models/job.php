@@ -1,6 +1,6 @@
 <?php
 /**
- * 
+ *
  */
 class Job_Model extends Model {
 
@@ -17,7 +17,7 @@ class Job_Model extends Model {
         )->current();
 
         if (!$job) return FALSE;
-        
+
         return $job;
     }
 

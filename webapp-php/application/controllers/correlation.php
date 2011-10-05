@@ -45,7 +45,7 @@ require_once Kohana::find_file('libraries', 'Correlation', true, 'php');
  */
 class Correlation_Controller extends Controller
 {
-   
+
     public function __construct()
     {
         parent::__construct();
@@ -53,12 +53,12 @@ class Correlation_Controller extends Controller
     }
 
     /**
-     * Gets the full report name given the type code in ajax path. 
-     * 
-     * @param string $type The short name used in Ajax urls for the report 
+     * Gets the full report name given the type code in ajax path.
+     *
+     * @param string $type The short name used in Ajax urls for the report
      *               type
      *
-     * @return string, boolean Full name of report or the boolean false if 
+     * @return string, boolean Full name of report or the boolean false if
      *               there is no valid mapping.
      */
     private function _reportType($type)
@@ -76,14 +76,14 @@ class Correlation_Controller extends Controller
     }
 
     /**
-     * Handel an AJAX request based on various parameters. 
+     * Handel an AJAX request based on various parameters.
      * Respond with an HTML fragment suitable for loading in the page.
      *
-     * @param string $type      Must be a valid short name for reports. 
+     * @param string $type      Must be a valid short name for reports.
      *                          (see _reportType function)
      * @param string $product   A Product name
      * @param string $version   A Product Version
-     * @param string $platform  A Platform, must be one of Mac OS X, Windows, 
+     * @param string $platform  A Platform, must be one of Mac OS X, Windows,
                                 Windows NT, Linux
      * @param string $signature A top crashing signature
      */
@@ -104,13 +104,13 @@ class Correlation_Controller extends Controller
     }
 
     /**
-     * Handle an AJAX request based on various parameters. Respond with an 
+     * Handle an AJAX request based on various parameters. Respond with an
      * HTML fragment suitable for loading in the page.
      *
-     * $.post('/reporter/correlation/bulk_ajax/cpu/Firefox/3.6/Windows%20NT/', 
+     * $.post('/reporter/correlation/bulk_ajax/cpu/Firefox/3.6/Windows%20NT/',
      *            {'signatures[]': ['UserCallWinProcCheckWow', '_PR_MD_SEND']});
      *
-     * @param string $type    Must be a valid short name for reports. 
+     * @param string $type    Must be a valid short name for reports.
      *                        (see _reportType function)
      * @param string $product A Product name
      * @param string $version A Product Version
@@ -127,9 +127,9 @@ class Correlation_Controller extends Controller
             }
 
             set_time_limit(Kohana::config('correlation.file_processing_timeout'));
-   
+
             $report_name = $this->_reportType($type);
-            if (false !== $report_name) {               
+            if (false !== $report_name) {
                 $response = array();
                 for ($i = 0; $i < count($signatures); $i++) {
                     $platform = $osnames[$i];
@@ -180,7 +180,7 @@ class Correlation_Controller extends Controller
         $day = //'20100224';
                date('Ymd'); //
         $correlation = new Correlation;
- 
+
         $cache_key = $this->_getCacheKey($day, $product, $version, $report_name, $signature);
         $data = $this->cache->get($cache_key);
         if ($data) {
@@ -192,12 +192,12 @@ class Correlation_Controller extends Controller
         } else {
             $report = Kohana::config('correlation.path') . "${day}/${day}_${product}_${version}-${report_name}";
 
-            // Depending on file size, the report will be text or 
+            // Depending on file size, the report will be text or
             // gzipped text. Try both
             $data = $correlation->getTxt($report . '.txt');
             if ($data === false) {
                 $data = $correlation->getGz($report . '.txt.gz');
-            } 
+            }
 
             if ($data !== false) {
                 if (array_key_exists($signature, $data)) {
@@ -218,7 +218,7 @@ class Correlation_Controller extends Controller
             }
             $err = "ERROR: No reports generated on $day for $product ${version}. Looked at ${report}.txt and ${report}.txt.gz";
             return array(false, $err);
-        }        
+        }
     }
 
     /**
@@ -228,16 +228,16 @@ class Correlation_Controller extends Controller
      *                            Example: '20100218' for Feb 18th, 2010
      * @param string $product     A Product name
      * @param string $version     A product Version
-     * @param string $report_name The name of a reports dbaron generates. 
+     * @param string $report_name The name of a reports dbaron generates.
      *                            Based on his filenames
      *                            Examples: 'core-counts', 'interesting-addons'
      * @param string $signature   A top crashing signature
-     * 
+     *
      * @return string The formatted cache key
      */
     private function _getCacheKey($day, $product, $version, $report_name, $signature)
     {
-        return "correlate_" . md5("${day}_${product}_${version}_${report_name}_${signature}"); 
+        return "correlate_" . md5("${day}_${product}_${version}_${report_name}_${signature}");
     }
 
     /**
@@ -249,10 +249,10 @@ class Correlation_Controller extends Controller
      *                            Example: '20100218' for Feb 18th, 2010
      * @param string $product     A Product name
      * @param string $version     A product Version
-     * @param string $report_name The name of a reports dbaron generates. 
+     * @param string $report_name The name of a reports dbaron generates.
      *                            Based on his filenames not including date.
      *                            Examples: 'core-counts', 'interesting-addons'
-     * 
+     *
      * @return string The formatted cache key
      */
     private function _getGeneralCacheKey($day, $product, $version, $report_name)
@@ -272,7 +272,7 @@ class Correlation_Controller extends Controller
     {
         $crash_reason = $correlation_details['crash_reason'];
         $count = $correlation_details['count'];
-                
+
         $correlations = join("\n", $correlation_details['correlations']);
         return "<div class='correlation'><h3>${crash_reason} (${count})</h3><pre>${correlations}</pre></div>";
     }
@@ -281,14 +281,14 @@ class Correlation_Controller extends Controller
      * Outputs the HTML Response when we have data for a successful
      * ajax request.
      *
-     * @param string $type      Must be a valid short name for reports. 
+     * @param string $type      Must be a valid short name for reports.
      *                          (see _reportType function)
      * @param string $product   A Product name
      * @param string $version   A Product Version
-     * @param string $platform  A Platform, must be one of Mac OS X, Windows, 
+     * @param string $platform  A Platform, must be one of Mac OS X, Windows,
                                 Windows NT, Linux
      * @param string $signature A top crashing signature
-     * @param array  $data      An array of Platforms which are a key 
+     * @param array  $data      An array of Platforms which are a key
      *                          into an strings which contains the report
      *             Example: { 'Mac OS X' => ['99% (6026/6058) vs.   6% (6245/102490) overlapp32.dll',
      *                                       '66% (4010/6058) vs.  20% (20236/102490) MSCTFIME.IME'] }
@@ -310,7 +310,7 @@ class Correlation_Controller extends Controller
     }
 
     /**
-     * Outputs HTML for when we have no data. THis happens when we can find the 
+     * Outputs HTML for when we have no data. THis happens when we can find the
      * general report, but this sig probably is not a top crasher and isn't in the first 2MB of data
      *
      * @param string $message The Message to display

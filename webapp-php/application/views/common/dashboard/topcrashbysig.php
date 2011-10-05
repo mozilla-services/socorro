@@ -10,7 +10,7 @@
                          'signature'   => $topcrash->signature
                      ));
 ?>
-	        <dt><?php echo ($i + 1); ?> <a href="<?php out::H($link_url) ?>" 
+	        <dt><?php echo ($i + 1); ?> <a href="<?php out::H($link_url) ?>"
                                                                      title="View reports with this crasher signature."><?php echo out::H($topcrash->signature); ?></a></dt>
                 <dd><?php echo $topcrash->total; ?></dd>
 <?php
@@ -22,11 +22,11 @@
     $product = $widgetData[$j]['name'];
     $version = $widgetData[$j]['version'];
 ?>
-            <a href='<?php echo url::base() . "topcrasher/byversion/" . $product . "/" . $version; ?>' 
+            <a href='<?php echo url::base() . "topcrasher/byversion/" . $product . "/" . $version; ?>'
                  class='full-report'
                  title='View the full <?php echo $product . " " . $version; ?> report'>Full Report</a>
-           
+
   </div>
-<?php 
+<?php
 
 ?>

@@ -17,7 +17,7 @@
         </tr>
     </thead>
     <tbody>
-        <?php 
+        <?php
            $i = 0;
            foreach ($reports as $report): ?>
             <tr>
@@ -28,10 +28,10 @@
                         $url = url::base().'report/index/'.out::H($report->uuid, FALSE);
                     ?><a href="<?php out::H($url) ?>">
                         <?php echo date('M d, Y H:i', $date) ?>
-                    </a>        
+                    </a>
         <div class="hang-pair"></div>
-                </td> 
-                <td><?php if (isset($report->duplicate_of) && !empty($report->duplicate_of)) { 
+                </td>
+                <td><?php if (isset($report->duplicate_of) && !empty($report->duplicate_of)) {
                     echo '<a href="'.url::site("report/".html::specialchars($report->duplicate_of)).'"
                           title="This has been flagged as a possible duplicate crash report of '.html::specialchars($report->duplicate_of).'."
                           >dup</a>';
@@ -53,7 +53,7 @@
                 <td><?php out::H(date("Y-m-d H:i:s", strtotime($report->install_time))); ?></td>
                 <td class="comments"><?php out::H($report->user_comments) ?></td>
             </tr>
-        <?php 
+        <?php
 	       $i++;
            endforeach ?>
     </tbody>

@@ -5,7 +5,7 @@
      <p>Error: Unable to find your email address. Are you sure we sent you this code?</p>
 <?php } else { ?>
   <form action="../update_status" method="post">
-    <label for="subscribe_status">You are currently 
+    <label for="subscribe_status">You are currently
        <input type="radio" name="subscribe_status" value="true"  <?php if ($status)   echo 'CHECKED' ?>   >Subscribed</input>
        <input type="radio" name="subscribe_status" value="false" <?php if (! $status) echo 'CHECKED' ?> >Not Subscribed</input>
     to crash report emails.</label>

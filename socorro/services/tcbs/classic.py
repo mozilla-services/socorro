@@ -4,7 +4,7 @@ logger = logging.getLogger("webapi")
 import socorro.database.database as db
 
 import socorro.lib.util as util
-import socorro.lib.productVersionCache as pvc                                   
+import socorro.lib.productVersionCache as pvc
 
 import datetime
 
@@ -77,7 +77,7 @@ def getListOfTopCrashersBySignature(aCursor, databaseParameters, totalNumberOfCr
     where = "WHERE tcbs.plugin_count = 0 AND tcbs.hang_count = 0"
   if databaseParameters["crashType"] == 'plugin':
     where = "WHERE tcbs.plugin_count > 0 OR tcbs.hang_count > 0"
-    
+
   sql = """
   select
       tcbs.signature,

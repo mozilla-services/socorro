@@ -201,12 +201,10 @@ class Query_Controller extends Controller {
                 if ($totalCount > 0) {
                     $reports = $this->crash->prepareCrashReports($reportsData->hits);
                     $meta = $this->crash->prepareCrashReportsMeta($reports);
-
-                    $bugzilla = new Bugzilla;
-                    $signature_to_bugzilla = $bugzilla->signature2bugzilla(
-                        $this->bug_model->bugsForSignatures($meta['signatures']),
-                        Kohana::config('codebases.bugTrackingUrl')
-                    );
+                    $signature_to_bugzilla = $this->bug_model->bugsForSignatures(
+                                                 $meta['signatures'],
+                                                 Kohana::config('codebases.bugTrackingUrl')
+                                             );
                 }
             }
         }

@@ -18,7 +18,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  *   Xavier Stevens <xstevens@mozilla.com>, Mozilla Corporation (original author)
  *
  * Alternatively, the contents of this file may be used under the terms of
@@ -47,14 +47,14 @@ import org.apache.pig.data.Tuple;
 import org.apache.pig.data.TupleFactory;
 
 public class ModuleBag extends EvalFunc<DataBag> {
-	
+
 	private static final String MODULE_PATTERN = "Module|";
-	
+
 	private static final Pattern newlinePattern = Pattern.compile("\n");
 	private static final Pattern pipePattern = Pattern.compile("\\|");
 	private static final BagFactory bagFactory = BagFactory.getInstance();
 	private static final TupleFactory tupleFactory = TupleFactory.getInstance();
-	
+
 	public DataBag exec(Tuple input) throws IOException {
 		if (input == null || input.size() == 0) {
 			return null;

@@ -1,4 +1,4 @@
-register './akela-0.1.jar'                                                                                                               
+register './akela-0.1.jar'
 register './socorro-analysis.jar'
 register '/usr/lib/hbase/hbase-0.90.1-cdh3u0.jar'
 

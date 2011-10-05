@@ -5,10 +5,10 @@ General Utilities
 """
 
 __all__ = [
-  "Storage", "storage", "storify", 
+  "Storage", "storage", "storify",
   "Counter", "counter",
-  "iters", 
-  "rstrips", "lstrips", "strips", 
+  "iters",
+  "rstrips", "lstrips", "strips",
   "safeunicode", "safestr", "utf8",
   "TimeoutError", "timelimit",
   "Memoize", "memoize",
@@ -34,7 +34,7 @@ import re, sys, time, threading, itertools, traceback, os
 
 try:
     import subprocess
-except ImportError: 
+except ImportError:
     subprocess = None
 
 try: import datetime
@@ -48,7 +48,7 @@ class Storage(dict):
     """
     A Storage object is like a dictionary except `obj.foo` can be used
     in addition to `obj['foo']`.
-    
+
         >>> o = storage(a=1)
         >>> o.a
         1
@@ -62,24 +62,24 @@ class Storage(dict):
         Traceback (most recent call last):
             ...
         AttributeError: 'a'
-    
+
     """
-    def __getattr__(self, key): 
+    def __getattr__(self, key):
         try:
             return self[key]
         except KeyError, k:
             raise AttributeError, k
-    
-    def __setattr__(self, key, value): 
+
+    def __setattr__(self, key, value):
         self[key] = value
-    
+
     def __delattr__(self, key):
         try:
             del self[key]
         except KeyError, k:
             raise AttributeError, k
-    
-    def __repr__(self):     
+
+    def __repr__(self):
         return '<Storage ' + dict.__repr__(self) + '>'
 
 storage = Storage
@@ -87,16 +87,16 @@ storage = Storage
 def storify(mapping, *requireds, **defaults):
     """
     Creates a `storage` object from dictionary `mapping`, raising `KeyError` if
-    d doesn't have all of the keys in `requireds` and using the default 
+    d doesn't have all of the keys in `requireds` and using the default
     values for keys found in `defaults`.
 
     For example, `storify({'a':1, 'c':3}, b=2, c=0)` will return the equivalent of
     `storage({'a':1, 'b':2, 'c':3})`.
-    
-    If a `storify` value is a list (e.g. multiple values in a form submission), 
-    `storify` returns the last element of the list, unless the key appears in 
+
+    If a `storify` value is a list (e.g. multiple values in a form submission),
+    `storify` returns the last element of the list, unless the key appears in
     `defaults` as a list. Thus:
-    
+
         >>> storify({'a':[1, 2]}).a
         2
         >>> storify({'a':[1, 2]}, a=[]).a
@@ -105,19 +105,19 @@ def storify(mapping, *requireds, **defaults):
         [1]
         >>> storify({}, a=[]).a
         []
-    
+
     Similarly, if the value has a `value` attribute, `storify will return _its_
     value, unless the key appears in `defaults` as a dictionary.
-    
+
         >>> storify({'a':storage(value=1)}).a
         1
         >>> storify({'a':storage(value=1)}, a={}).a
         <Storage {'value': 1}>
         >>> storify({}, a={}).a
         {}
-        
+
     Optionally, keyword parameter `_unicode` can be passed to convert all values to unicode.
-    
+
         >>> storify({'x': 'a'}, _unicode=True)
         <Storage {'x': u'a'}>
         >>> storify({'x': storage(value='a')}, x={}, _unicode=True)
@@ -129,7 +129,7 @@ def storify(mapping, *requireds, **defaults):
     def unicodify(s):
         if _unicode and isinstance(s, str): return safeunicode(s)
         else: return s
-        
+
     def getvalue(x):
         if hasattr(x, 'file') and hasattr(x, 'value'):
             return x.value
@@ -137,7 +137,7 @@ def storify(mapping, *requireds, **defaults):
             return unicodify(x.value)
         else:
             return unicodify(x)
-    
+
     stor = Storage()
     for key in requireds + tuple(mapping.keys()):
         value = mapping[key]
@@ -154,17 +154,17 @@ def storify(mapping, *requireds, **defaults):
 
     for (key, value) in defaults.iteritems():
         result = value
-        if hasattr(stor, key): 
+        if hasattr(stor, key):
             result = stor[key]
-        if value == () and not isinstance(result, tuple): 
+        if value == () and not isinstance(result, tuple):
             result = (result,)
         setattr(stor, key, result)
-    
+
     return stor
 
 class Counter(storage):
     """Keeps count of how many times something is added.
-        
+
         >>> c = counter()
         >>> c.add('x')
         >>> c.add('x')
@@ -180,12 +180,12 @@ class Counter(storage):
     def add(self, n):
         self.setdefault(n, 0)
         self[n] += 1
-    
+
     def most(self):
         """Returns the keys with maximum count."""
         m = max(self.itervalues())
         return [k for k, v in self.iteritems() if v == m]
-        
+
     def least(self):
         """Returns the keys with mininum count."""
         m = min(self.itervalues())
@@ -205,10 +205,10 @@ class Counter(storage):
            0.25
        """
        return float(self[key])/sum(self.values())
-             
+
     def sorted_keys(self):
         """Returns keys sorted by value.
-             
+
              >>> c = counter()
              >>> c.add('x')
              >>> c.add('x')
@@ -217,10 +217,10 @@ class Counter(storage):
              ['x', 'y']
         """
         return sorted(self.keys(), key=lambda k: self[k], reverse=True)
-    
+
     def sorted_values(self):
         """Returns values sorted by value.
-            
+
             >>> c = counter()
             >>> c.add('x')
             >>> c.add('x')
@@ -229,10 +229,10 @@ class Counter(storage):
             [2, 1]
         """
         return [self[k] for k in self.sorted_keys()]
-    
+
     def sorted_items(self):
         """Returns items sorted by value.
-            
+
             >>> c = counter()
             >>> c.add('x')
             >>> c.add('x')
@@ -241,10 +241,10 @@ class Counter(storage):
             [('x', 2), ('y', 1)]
         """
         return [(k, self[k]) for k in self.sorted_keys()]
-    
+
     def __repr__(self):
         return '<Counter ' + dict.__repr__(self) + '>'
-       
+
 counter = Counter
 
 iters = [list, tuple]
@@ -257,9 +257,9 @@ if sys.version_info < (2,6): # sets module deprecated in 2.6
     try:
         from sets import Set
         iters.append(Set)
-    except ImportError: 
+    except ImportError:
         pass
-    
+
 class _hack(tuple): pass
 iters = _hack(iters)
 iters.__doc__ = """
@@ -268,13 +268,13 @@ of lists, tuples, sets, and Sets are available in this version of Python.
 """
 
 def _strips(direction, text, remove):
-    if direction == 'l': 
-        if text.startswith(remove): 
+    if direction == 'l':
+        if text.startswith(remove):
             return text[len(remove):]
     elif direction == 'r':
-        if text.endswith(remove):   
+        if text.endswith(remove):
             return text[:-len(remove)]
-    else: 
+    else:
         raise ValueError, "Direction needs to be r or l."
     return text
 
@@ -284,17 +284,17 @@ def rstrips(text, remove):
 
         >>> rstrips("foobar", "bar")
         'foo'
-    
+
     """
     return _strips('r', text, remove)
 
 def lstrips(text, remove):
     """
     removes the string `remove` from the left of `text`
-    
+
         >>> lstrips("foobar", "foo")
         'bar'
-    
+
     """
     return _strips('l', text, remove)
 
@@ -304,14 +304,14 @@ def strips(text, remove):
 
         >>> strips("foobarfoo", "foo")
         'bar'
-    
+
     """
     return rstrips(lstrips(text, remove), remove)
 
 def safeunicode(obj, encoding='utf-8'):
     r"""
     Converts any given object to unicode string.
-    
+
         >>> safeunicode('hello')
         u'hello'
         >>> safeunicode(2)
@@ -331,11 +331,11 @@ def safeunicode(obj, encoding='utf-8'):
             return unicode(obj)
         else:
             return str(obj).decode(encoding)
-    
+
 def safestr(obj, encoding='utf-8'):
     r"""
-    Converts any given object to utf-8 encoded string. 
-    
+    Converts any given object to utf-8 encoded string.
+
         >>> safestr('hello')
         'hello'
         >>> safestr(u'\u1234')
@@ -354,18 +354,18 @@ def safestr(obj, encoding='utf-8'):
 
 # for backward-compatibility
 utf8 = safestr
-    
+
 class TimeoutError(Exception): pass
 def timelimit(timeout):
     """
     A decorator to limit a function to `timeout` seconds, raising `TimeoutError`
     if it takes longer.
-    
+
         >>> import time
         >>> def meaningoflife():
         ...     time.sleep(.2)
         ...     return 42
-        >>> 
+        >>>
         >>> timelimit(.1)(meaningoflife)()
         Traceback (most recent call last):
             ...
@@ -373,7 +373,7 @@ def timelimit(timeout):
         >>> timelimit(1)(meaningoflife)()
         42
 
-    _Caveat:_ The function isn't stopped after `timeout` seconds but continues 
+    _Caveat:_ The function isn't stopped after `timeout` seconds but continues
     executing in a separate thread. (There seems to be no way to kill a thread.)
 
     inspired by <http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/473878>
@@ -410,7 +410,7 @@ class Memoize:
     'Memoizes' a function, caching its return values for each input.
     If `expires` is specified, values are recalculated after `expires` seconds.
     If `background` is specified, values are recalculated in a separate thread.
-    
+
         >>> calls = 0
         >>> def howmanytimeshaveibeencalled():
         ...     global calls
@@ -456,13 +456,13 @@ class Memoize:
         >>> fastcalls()
         9
     """
-    def __init__(self, func, expires=None, background=True): 
+    def __init__(self, func, expires=None, background=True):
         self.func = func
         self.cache = {}
         self.expires = expires
         self.background = background
         self.running = {}
-    
+
     def __call__(self, *args, **keywords):
         key = (args, tuple(keywords.items()))
         if not self.running.get(key):
@@ -473,8 +473,8 @@ class Memoize:
                     self.cache[key] = (self.func(*args, **keywords), time.time())
                 finally:
                     self.running[key].release()
-        
-        if key not in self.cache: 
+
+        if key not in self.cache:
             update(block=True)
         elif self.expires and (time.time() - self.cache[key][1]) > self.expires:
             if self.background:
@@ -491,16 +491,16 @@ A memoized version of re.compile.
 """
 
 class _re_subm_proxy:
-    def __init__(self): 
+    def __init__(self):
         self.match = None
-    def __call__(self, match): 
+    def __call__(self, match):
         self.match = match
         return ''
 
 def re_subm(pat, repl, string):
     """
     Like re.sub, but returns the replacement _and_ the match object.
-    
+
         >>> t, m = re_subm('g(oo+)fball', r'f\\1lish', 'goooooofball')
         >>> t
         'foooooolish'
@@ -512,7 +512,7 @@ def re_subm(pat, repl, string):
     compiled_pat.sub(proxy.__call__, string)
     return compiled_pat.sub(repl, string), proxy.match
 
-def group(seq, size): 
+def group(seq, size):
     """
     Returns an iterator over a series of lists of length size from iterable.
 
@@ -525,9 +525,9 @@ def group(seq, size):
         for i in xrange(n):
             yield seq.next()
 
-    if not hasattr(seq, 'next'):  
+    if not hasattr(seq, 'next'):
         seq = iter(seq)
-    while True: 
+    while True:
         x = list(take(seq, size))
         if x:
             yield x
@@ -599,11 +599,11 @@ def iterview(x):
 
 class IterBetter:
     """
-    Returns an object that can be used as an iterator 
-    but can also be used via __getitem__ (although it 
-    cannot go backwards -- that is, you cannot request 
+    Returns an object that can be used as an iterator
+    but can also be used via __getitem__ (although it
+    cannot go backwards -- that is, you cannot request
     `iterbetter[0]` after requesting `iterbetter[1]`).
-    
+
         >>> import itertools
         >>> c = iterbetter(itertools.count())
         >>> c[1]
@@ -628,31 +628,31 @@ class IterBetter:
         >>> list(c)
         []
     """
-    def __init__(self, iterator): 
+    def __init__(self, iterator):
         self.i, self.c = iterator, 0
 
-    def __iter__(self): 
+    def __iter__(self):
         if hasattr(self, "_head"):
             yield self._head
 
-        while 1:    
+        while 1:
             yield self.i.next()
             self.c += 1
 
     def __getitem__(self, i):
         #todo: slices
-        if i < self.c: 
+        if i < self.c:
             raise IndexError, "already passed "+str(i)
         try:
-            while i > self.c: 
+            while i > self.c:
                 self.i.next()
                 self.c += 1
             # now self.c == i
             self.c += 1
             return self.i.next()
-        except StopIteration: 
+        except StopIteration:
             raise IndexError, str(i)
-            
+
     def __nonzero__(self):
         if hasattr(self, "__len__"):
             return len(self) != 0
@@ -685,7 +685,7 @@ def safeiter(it, cleanup=None, ignore_errors=True):
         yield next()
 
 def safewrite(filename, content):
-    """Writes the content to a temp file and then moves the temp file to 
+    """Writes the content to a temp file and then moves the temp file to
     given filename to avoid overwriting the existing file in case of errors.
     """
     f = file(filename + '.tmp', 'w')
@@ -696,7 +696,7 @@ def safewrite(filename, content):
 def dictreverse(mapping):
     """
     Returns a new dictionary with keys and values swapped.
-    
+
         >>> dictreverse({1: 2, 3: 4})
         {2: 1, 4: 3}
     """
@@ -704,23 +704,23 @@ def dictreverse(mapping):
 
 def dictfind(dictionary, element):
     """
-    Returns a key whose value in `dictionary` is `element` 
+    Returns a key whose value in `dictionary` is `element`
     or, if none exists, None.
-    
+
         >>> d = {1:2, 3:4}
         >>> dictfind(d, 4)
         3
         >>> dictfind(d, 5)
     """
     for (key, value) in dictionary.iteritems():
-        if element is value: 
+        if element is value:
             return key
 
 def dictfindall(dictionary, element):
     """
     Returns the keys whose values in `dictionary` are `element`
     or, if none exists, [].
-    
+
         >>> d = {1:4, 3:4}
         >>> dictfindall(d, 4)
         [1, 3]
@@ -735,9 +735,9 @@ def dictfindall(dictionary, element):
 
 def dictincr(dictionary, element):
     """
-    Increments `element` in `dictionary`, 
+    Increments `element` in `dictionary`,
     setting it to one if it doesn't exist.
-    
+
         >>> d = {1:2, 3:4}
         >>> dictincr(d, 1)
         3
@@ -756,7 +756,7 @@ def dictadd(*dicts):
     """
     Returns a dictionary consisting of the keys in the argument dictionaries.
     If they share a key, the value from the last argument is used.
-    
+
         >>> dictadd({1: 0, 2: 0}, {2: 1, 3: 1})
         {1: 0, 2: 1, 3: 1}
     """
@@ -794,21 +794,21 @@ def restack(stack, index=0):
 def listget(lst, ind, default=None):
     """
     Returns `lst[ind]` if it exists, `default` otherwise.
-    
+
         >>> listget(['a'], 0)
         'a'
         >>> listget(['a'], 1)
         >>> listget(['a'], 1, 'b')
         'b'
     """
-    if len(lst)-1 < ind: 
+    if len(lst)-1 < ind:
         return default
     return lst[ind]
 
 def intget(integer, default=None):
     """
     Returns `integer` as an int or `default` if it can't.
-    
+
         >>> intget('3')
         3
         >>> intget('3a')
@@ -823,7 +823,7 @@ def intget(integer, default=None):
 def datestr(then, now=None):
     """
     Converts a (UTC) datetime object to a nice string representation.
-    
+
         >>> from datetime import datetime, timedelta
         >>> d = datetime(1970, 5, 1)
         >>> datestr(d, now=d)
@@ -904,12 +904,12 @@ def datestr(then, now=None):
 def numify(string):
     """
     Removes all non-digit characters from `string`.
-    
+
         >>> numify('800-555-1212')
         '8005551212'
         >>> numify('800.555.1212')
         '8005551212'
-    
+
     """
     return ''.join([c for c in str(string) if c.isdigit()])
 
@@ -917,10 +917,10 @@ def denumify(string, pattern):
     """
     Formats `string` according to `pattern`, where the letter X gets replaced
     by characters from `string`.
-    
+
         >>> denumify("8005551212", "(XXX) XXX-XXXX")
         '(800) 555-1212'
-    
+
     """
     out = []
     for c in pattern:
@@ -996,7 +996,7 @@ def nthstr(n):
         ['111th', '112th', '113th', '114th', '115th']
 
     """
-    
+
     assert n >= 0
     if n % 100 in [11, 12, 13]: return '%sth' % n
     return {1: '%sst', 2: '%snd', 3: '%srd'}.get(n % 10, '%sth') % n
@@ -1004,7 +1004,7 @@ def nthstr(n):
 def cond(predicate, consequence, alternative=None):
     """
     Function replacement for if-else to use in expressions.
-        
+
         >>> x = 2
         >>> cond(x % 2 == 0, "even", "odd")
         'even'
@@ -1019,15 +1019,15 @@ def cond(predicate, consequence, alternative=None):
 class CaptureStdout:
     """
     Captures everything `func` prints to stdout and returns it instead.
-    
+
         >>> def idiot():
         ...     print "foo"
         >>> capturestdout(idiot)()
         'foo\\n'
-    
+
     **WARNING:** Not threadsafe!
     """
-    def __init__(self, func): 
+    def __init__(self, func):
         self.func = func
     def __call__(self, *args, **keywords):
         from cStringIO import StringIO
@@ -1035,9 +1035,9 @@ class CaptureStdout:
         out = StringIO()
         oldstdout = sys.stdout
         sys.stdout = out
-        try: 
+        try:
             self.func(*args, **keywords)
-        finally: 
+        finally:
             sys.stdout = oldstdout
         return out.getvalue()
 
@@ -1047,20 +1047,20 @@ class Profile:
     """
     Profiles `func` and returns a tuple containing its output
     and a string with human-readable profiling information.
-        
+
         >>> import time
         >>> out, inf = profile(time.sleep)(.001)
         >>> out
         >>> inf[:10].strip()
         'took 0.0'
     """
-    def __init__(self, func): 
+    def __init__(self, func):
         self.func = func
     def __call__(self, *args): ##, **kw):   kw unused
         import hotshot, hotshot.stats, os, tempfile ##, time already imported
         f, filename = tempfile.mkstemp()
         os.close(f)
-        
+
         prof = hotshot.Profile(filename)
 
         stime = time.time()
@@ -1085,7 +1085,7 @@ class Profile:
             os.remove(filename)
         except IOError:
             pass
-            
+
         return result, x
 
 profile = Profile
@@ -1103,31 +1103,31 @@ if not hasattr(traceback, 'format_exc'):
 
 def tryall(context, prefix=None):
     """
-    Tries a series of functions and prints their results. 
-    `context` is a dictionary mapping names to values; 
+    Tries a series of functions and prints their results.
+    `context` is a dictionary mapping names to values;
     the value will only be tried if it's callable.
-    
+
         >>> tryall(dict(j=lambda: True))
         j: True
         ----------------------------------------
         results:
            True: 1
 
-    For example, you might have a file `test/stuff.py` 
-    with a series of functions testing various things in it. 
+    For example, you might have a file `test/stuff.py`
+    with a series of functions testing various things in it.
     At the bottom, have a line:
 
         if __name__ == "__main__": tryall(globals())
 
-    Then you can run `python test/stuff.py` and get the results of 
+    Then you can run `python test/stuff.py` and get the results of
     all the tests.
     """
     context = context.copy() # vars() would update
     results = {}
     for (key, value) in context.iteritems():
-        if not hasattr(value, '__call__'): 
+        if not hasattr(value, '__call__'):
             continue
-        if prefix and not key.startswith(prefix): 
+        if prefix and not key.startswith(prefix):
             continue
         print key + ':',
         try:
@@ -1138,16 +1138,16 @@ def tryall(context, prefix=None):
             print 'ERROR'
             dictincr(results, 'ERROR')
             print '   ' + '\n   '.join(traceback.format_exc().split('\n'))
-        
+
     print '-'*40
     print 'results:'
     for (key, value) in results.iteritems():
         print ' '*2, str(key)+':', value
-        
+
 class ThreadedDict:
     """
     Thread local storage.
-    
+
         >>> d = ThreadedDict()
         >>> d.x = 1
         >>> d.x
@@ -1170,7 +1170,7 @@ class ThreadedDict:
     def __delattr__(self, key):
         return delattr(self._getd(), key)
 
-    def __hash__(self): 
+    def __hash__(self):
         return id(self)
 
     def _getd(self):
@@ -1190,25 +1190,25 @@ threadeddict = ThreadedDict
 def autoassign(self, locals):
     """
     Automatically assigns local variables to `self`.
-    
+
         >>> self = storage()
         >>> autoassign(self, dict(a=1, b=2))
         >>> self
         <Storage {'a': 1, 'b': 2}>
-    
+
     Generally used in `__init__` methods, as in:
 
         def __init__(self, foo, bar, baz=1): autoassign(self, locals())
     """
     for (key, value) in locals.iteritems():
-        if key == 'self': 
+        if key == 'self':
             continue
         setattr(self, key, value)
 
 def to36(q):
     """
     Converts an integer to base 36 (a useful scheme for human-sayable IDs).
-    
+
         >>> to36(35)
         'z'
         >>> to36(119292)
@@ -1219,9 +1219,9 @@ def to36(q):
         '0'
         >>> to36(-393)
         Traceback (most recent call last):
-            ... 
+            ...
         ValueError: must supply a positive integer
-    
+
     """
     if q < 0: raise ValueError, "must supply a positive integer"
     letters = "0123456789abcdefghijklmnopqrstuvwxyz"
@@ -1252,17 +1252,17 @@ def safemarkdown(text):
 def sendmail(from_address, to_address, subject, message, headers=None, **kw):
     """
     Sends the email message `message` with mail and envelope headers
-    for from `from_address_` to `to_address` with `subject`. 
-    Additional email headers can be specified with the dictionary 
+    for from `from_address_` to `to_address` with `subject`.
+    Additional email headers can be specified with the dictionary
     `headers.
-    
+
     Optionally cc, bcc and attachments can be specified as keyword arguments.
-    Attachments must be an iterable and each attachment can be either a 
-    filename or a file object or a dictionary with filename, content and 
+    Attachments must be an iterable and each attachment can be either a
+    filename or a file object or a dictionary with filename, content and
     optionally content_type keys.
 
     If `web.config.smtp_server` is set, it will send the message
-    to that SMTP server. Otherwise it will look for 
+    to that SMTP server. Otherwise it will look for
     `/usr/sbin/sendmail`, the typical location for the sendmail-style
     binary. To use sendmail from a different path, set `web.config.sendmail_path`.
     """
@@ -1284,9 +1284,9 @@ def sendmail(from_address, to_address, subject, message, headers=None, **kw):
             mail.attach(filename, content, None)
         else:
             raise ValueError, "Invalid attachment: %s" % repr(a)
-            
+
     mail.send()
-        
+
 class _EmailMessage:
     def __init__(self, from_address, to_address, subject, message, headers=None, **kw):
         def listify(x):
@@ -1294,20 +1294,20 @@ class _EmailMessage:
                 return [safestr(x)]
             else:
                 return [safestr(a) for a in x]
-    
+
         subject = safestr(subject)
         message = safestr(message)
 
         from_address = safestr(from_address)
-        to_address = listify(to_address)    
+        to_address = listify(to_address)
         cc = listify(kw.get('cc', []))
         bcc = listify(kw.get('bcc', []))
         recipients = to_address + cc + bcc
 
         import email.Utils
         self.from_address = email.Utils.parseaddr(from_address)[1]
-        self.recipients = [email.Utils.parseaddr(r)[1] for r in recipients]        
-    
+        self.recipients = [email.Utils.parseaddr(r)[1] for r in recipients]
+
         self.headers = dictadd({
           'From': from_address,
           'To': ", ".join(to_address),
@@ -1316,18 +1316,18 @@ class _EmailMessage:
 
         if cc:
             self.headers['Cc'] = ", ".join(cc)
-    
+
         self.message = self.new_message()
         self.message.add_header("Content-Transfer-Encoding", "7bit")
         self.message.add_header("Content-Disposition", "inline")
         self.message.add_header("MIME-Version", "1.0")
         self.message.set_payload(message, 'utf-8')
         self.multipart = False
-        
+
     def new_message(self):
         from email.Message import Message
         return Message()
-        
+
     def attach(self, filename, content, content_type=None):
         if not self.multipart:
             msg = self.new_message()
@@ -1335,40 +1335,40 @@ class _EmailMessage:
             msg.attach(self.message)
             self.message = msg
             self.multipart = True
-                        
+
         import mimetypes
         try:
             from email import encoders
         except:
             from email import Encoders as encoders
-            
+
         content_type = content_type or mimetypes.guess_type(filename)[0] or "applcation/octet-stream"
-        
+
         msg = self.new_message()
         msg.set_payload(content)
         msg.add_header('Content-Type', content_type)
         msg.add_header('Content-Disposition', 'attachment', filename=filename)
-        
+
         if not content_type.startswith("text/"):
             encoders.encode_base64(msg)
-            
+
         self.message.attach(msg)
-    
+
     def send(self):
         try:
             import webapi
         except ImportError:
             webapi = Storage(config=Storage())
-            
+
         for k, v in self.headers.iteritems():
             self.message.add_header(k, v)
-            
+
         message_text = self.message.as_string()
-    
+
         if webapi.config.get('smtp_server'):
             server = webapi.config.get('smtp_server')
             port = webapi.config.get('smtp_port', 0)
-            username = webapi.config.get('smtp_username') 
+            username = webapi.config.get('smtp_username')
             password = webapi.config.get('smtp_password')
             debug_level = webapi.config.get('smtp_debuglevel', None)
             starttls = webapi.config.get('smtp_starttls', False)
@@ -1391,11 +1391,11 @@ class _EmailMessage:
             smtpserver.quit()
         else:
             sendmail = webapi.config.get('sendmail_path', '/usr/sbin/sendmail')
-        
+
             assert not self.from_address.startswith('-'), 'security'
             for r in self.recipients:
                 assert not r.startswith('-'), 'security'
-                
+
             cmd = [sendmail, '-f', self.from_address] + self.recipients
 
             if subprocess:
@@ -1409,10 +1409,10 @@ class _EmailMessage:
                 i.close()
                 o.close()
                 del i, o
-                
+
     def __repr__(self):
         return "<EmailMessage>"
-    
+
     def __str__(self):
         return self.message.as_string()
 

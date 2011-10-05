@@ -18,7 +18,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  *   Xavier Stevens <xstevens@mozilla.com>, Mozilla Corporation (original author)
  *
  * Alternatively, the contents of this file may be used under the terms of
@@ -70,7 +70,7 @@ public class HazelcastQueueResource extends ResourceBase {
 		cacheControl.setNoCache(true);
 		cacheControl.setNoTransform(false);
 	}
-	  
+
 	private final String queueName;
 	private final BlockingQueue<String> q;
 

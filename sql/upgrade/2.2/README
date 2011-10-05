@@ -1,0 +1,93 @@
+Updating Database Objects for the 2.2 Release
+----------------------------------------------
+Updated as of 2011-08-09
+
+Unlike the releases since 1.7.7, many of the steps in the 2.2 release involve a lot of backfilling.  As such, they need to be deployed over the course of at least a day before 2.2 goes live.  As such, the complex documentation.
+
+In generally, "backfill" means to populate (or in a few cases re-populate) data back to 4/17, which is approximately when we began dealing with the new releases.
+
+upgrade.sh
+----------
+Because of the backfilling, upgrade.sh for this release is not really feasible to just run.  It's provided here more as an example of the order of execution for the various scripts.
+
+1. release_channel
+------------------
+All of the release_channel upgrading below has already been run on DevDB, StageDB, and Master01.  It does not need to be run again.
+
+add_releasechannel.py :
+	adds the release_channel column to reports
+releasechannel_backfill.py :
+	populates the releasechannel from a CSV file.  updating reports using this script did not work in performance
+releasechannel_backfill-dev.py :
+	same as above, except for dev only, and backfilling ony a few days
+	this does work for backfilling a dev instance
+update_releasechannel.py :
+	semifinal script for updating releasechannel in production.
+	has already been run.
+
+2. raw_adu.sql
+--------------
+Adds two new columns to the raw_adu table.  Has already been applied in production.  After this is applied, then Metrics needs to actually backfill the new version of the table, which they have already begun doing.
+
+Since Metrics can only backfill Prod and StageDB, the way to populate a dev instance is to copy the raw_adu table from StageDB.
+
+3. releases_raw.sql
+-------------------
+Creates a new table to hold FTP-scraping information.  After it is installed, Robert Helmer needs to backfill the data for this table before proceeding past step 5.
+
+4. support_functions.sql
+------------------------
+Creates a whole slew of tiny database functions, most of them meant for formatting various kinds of data or doing comparisons between different data types.  Should run very quickly.
+
+5. new_tcbs_tables.sql
+-----------------------
+Creates a large number of new tables and views to support the new release data.  Note that the current file may not be in proper dependency order due to heavy editing; needs repeated testing on a clean database.
+
+6. product_migration.sql
+-------------------------
+Populates all of the new product tables and creates the cronjob function which updates them daily.  Backfilling on this is light and should not take very long.
+
+NOTE: releases_raw needs to be populated first.
+
+7. os_migration.sql
+--------------------
+Fills in OS and OS version information.  Creates function for maintaining os-version data.  Backfill should be fast.
+
+8. signature_migration.sql
+--------------------------
+Fills in all signature-product information, and creates the function for maintaining signature information and rollups.  Backfill will take a while.
+
+9. daily_adu.sql
+----------------
+Fills in product_adu with backfill data, which includes both old and new products.  Creates function for maintaining this data.
+
+NOTE: requires new columns on raw_adu to be populated first.
+NOTE: you should time-limit the backfill code for Dev/Stage or it won't complete.
+
+10. update_tcbs.sql
+-------------------
+Creates function for backfilling/maintaining the new "tcbs" table.  Backfills the table.
+
+NOTE: you need to time-limit the backfill on Stage/Dev or it will take way too long.
+
+11. daily_crashes.sql
+---------------------
+Creates function for maintaining daily_crashes table using a mixture of old and new data crashes.  Executes procudure in a loop to backfill.
+
+NOTE: backfill should be time-limited on stage and dev.
+NOTE: backfill can cause locking; watch the backfill process and
+	abort if it's blocking.
+
+12. edit_product_info.sql
+-------------------------
+Creates function for editing productdims and product_version, for the admin interface.  No backfill.
+
+
+
+
+
+
+
+
+
+

@@ -1,6 +1,6 @@
-/*jslint browser:true, regexp:false, plusplus:false */ 
+/*jslint browser:true, regexp:false, plusplus:false */
 /*global window, $, socSortCorrelation, SocReport */
-$(document).ready(function () { 
+$(document).ready(function () {
     var osnames = [],
         signatures = [],
         ranks = [],
@@ -13,13 +13,13 @@ $(document).ready(function () {
         i;
 
     $("#signatureList").tablesorter({
-        headers: { 
-            0: { sorter: false }, 
-            1: { sorter: false }, 
-            5: { sorter: 'digit' }, 
-            6: { sorter: 'digit' }, 
-            7: { sorter: 'digit' }, 
-            8: { sorter: 'digit' }, 
+        headers: {
+            0: { sorter: false },
+            1: { sorter: false },
+            5: { sorter: 'digit' },
+            6: { sorter: 'digit' },
+            7: { sorter: 'digit' },
+            8: { sorter: 'digit' },
             9: { sorter: 'digit' }
         }
     });
@@ -69,8 +69,8 @@ $(document).ready(function () {
             rank = row.find('td.rank').text();
 
         osnames.push(osname);
-        signatures.push(sig);   
-        ranks.push(rank);            
+        signatures.push(sig);
+        ranks.push(rank);
     });
 
     $('td a.signature').girdle({previewClass: 'signature-preview', fullviewClass: 'signature-popup'});
@@ -93,7 +93,7 @@ $(document).ready(function () {
             panel;
         $('.correlation-cell .top span').html(SocReport.loading);
         $('.correlation-cell .correlation-toggler').toggle(expandCorrelation, contractCorrelation);
-        
+
         $.ajaxSetup({
             error: function() {
                 $('.correlation-cell .top span').html('Error loading correlation report');
@@ -107,7 +107,7 @@ $(document).ready(function () {
                     $('.' + type + 's',  panel).html(json[i].correlation);
                 }
                 callbackFn();
-            }, 
+            },
            'json');
     };
 
@@ -124,7 +124,7 @@ $(document).ready(function () {
                         highest = window.socDetermineHighestCorrelation(panel);
                         $('.top span', panel).text(highest);
 
-                        if (highest.indexOf('UNKNOWN') === 0) {                            
+                        if (highest.indexOf('UNKNOWN') === 0) {
                             $('.correlation-toggler', panel).remove();
                         } else {
                             // Make these guys presentable.... add span tag for girdle
@@ -146,13 +146,13 @@ $(document).ready(function () {
 
             for (i = 0; i < ranks.length; i++) {
 	        //TODO left off here - make an 'makeUpdateRowFn' function...
-                
+
 
                 setTimeout(captureRankFn(ranks[i]), 100);
             }//end for
         }//end if
     };//end correlationCallback
-    
+
     for (i = 0; i < correlations.length; i++) {
         loadCorrelations(correlations[i], correlationCallback);
     }

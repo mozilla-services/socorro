@@ -15,7 +15,7 @@
 
 <?php
 echo html::stylesheet(array(
-		'css/daily.css',				
+		'css/daily.css',
 	), array('screen', 'screen'));
 echo '<script>var data = ' . json_encode($graph_data) . '</script>';
 echo html::script(array(

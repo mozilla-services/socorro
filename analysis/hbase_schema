@@ -9,4 +9,4 @@ create 'crash_reports_index_priority_processed', {NAME => 'ids', COMPRESSION => 
 create 'crash_reports_index_signature_ooid', {NAME => 'ids', COMPRESSION => 'LZO', VERSIONS => '1', TTL => '2147483647', BLOCKSIZE => '65536', IN_MEMORY => 'false', BLOCKCACHE => 'true'}
 create 'crash_reports_index_submitted_time', {NAME => 'ids', COMPRESSION => 'LZO', VERSIONS => '1', TTL => '2147483647', BLOCKSIZE => '65536', IN_MEMORY => 'false', BLOCKCACHE => 'true'}
 create 'crash_reports_index_unprocessed_flag', {NAME => 'ids', VERSIONS => '1', COMPRESSION => 'NONE', TTL => '2147483647', BLOCKSIZE => '65536', IN_MEMORY => 'false', BLOCKCACHE => 'true'}, {NAME => 'processor_state', COMPRESSION => 'NONE', VERSIONS => '5', TTL => '2147483647', BLOCKSIZE => '65536', IN_MEMORY => 'false', BLOCKCACHE => 'true'}
-create 'metrics', {NAME => 'counters', COMPRESSION => 'LZO', VERSIONS => '1', TTL => '2147483647', BLOCKSIZE => '65536', IN_MEMORY => 'false', BLOCKCACHE => 'true'} 
+create 'metrics', {NAME => 'counters', COMPRESSION => 'LZO', VERSIONS => '1', TTL => '2147483647', BLOCKSIZE => '65536', IN_MEMORY => 'false', BLOCKCACHE => 'true'}

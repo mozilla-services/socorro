@@ -15,7 +15,7 @@
     </div>
     <div class="body">
       <table
-        class="tablesorter" 
+        class="tablesorter"
         summary="List of top crashes for <?php out::H($prodversion['product'].' '.$prodversion['version'])?>">
         <thead>
         <tr>
@@ -52,7 +52,7 @@
         <?php endforeach; ?>
         </tbody>
       </table>
-    
+
       <?php $url = url::base() . "topcrasher/byversion/{$prodversion['product']}/{$prodversion['version']}" ?>
       <p><a href="<?php out::H($url)?>">View all current crashers</a></p>
     </div>

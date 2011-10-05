@@ -40,16 +40,16 @@ from scipy import stats
 
 def read_data(srcfile):
     data = []
-    
+
     fin = open(srcfile, "r")
     for line in fin:
         splits = line.split('\t')
         data.append(int(splits[1]))
-        
+
     fin.close()
-    
+
     return data
-    
+
 class Usage(Exception):
     def __init__(self, msg):
         self.msg = msg
@@ -59,7 +59,7 @@ if __name__ == "__main__":
     try:
         try:
             opts, args = getopt.getopt(sys.argv[1:], "hs:", ["help"])
-            
+
             for o, a in opts:
                 if o in ("-h", "--help"):
                     print __doc__
@@ -72,8 +72,8 @@ if __name__ == "__main__":
     except Usage, err:
         print >>sys.stderr, err.msg
         print >>sys.stderr, "for help use --help"
-    
+
     data = read_data(src_file)
     mean = stats.mean(data)
     median = stats.median(data)
-    
+

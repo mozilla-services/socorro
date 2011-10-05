@@ -18,7 +18,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  *   Xavier Stevens <xstevens@mozilla.com>, Mozilla Corporation (original author)
  *
  * Alternatively, the contents of this file may be used under the terms of
@@ -34,7 +34,7 @@
  * the terms of any one of the MPL, the GPL or the LGPL.
  *
  * ***** END LICENSE BLOCK ***** */
- 
+
 package com.mozilla.socorro.hadoop;
 
 import static com.mozilla.socorro.hadoop.CrashReportJob.*;
@@ -69,22 +69,22 @@ import com.mozilla.util.DateUtil;
 public class CrashReportStats implements Tool {
 
 	private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(CrashReportStats.class);
-	
+
 	private static final String NAME = "CrashReportStats";
 	private Configuration conf;
-	
+
 	private static final String PLUGIN = "plugin";
 	private static final String KEY_DELIMITER = "\t";
-	
+
 	public static class CrashReportStatsMapper extends TableMapper<Text, LongWritable> {
 
-		public enum ReportStats { JSON_PARSE_EXCEPTION, JSON_MAPPING_EXCEPTION, META_JSON_BYTES_NULL, 
-								  PROCESSED_JSON_BYTES_NULL, PROCESSED, PRODUCT_FILTERED, RELEASE_FILTERED, 
+		public enum ReportStats { JSON_PARSE_EXCEPTION, JSON_MAPPING_EXCEPTION, META_JSON_BYTES_NULL,
+								  PROCESSED_JSON_BYTES_NULL, PROCESSED, PRODUCT_FILTERED, RELEASE_FILTERED,
 								  TIME_FILTERED, CRASH_TIME_NULL, CRASH_TIME_PARSE_FAILED }
 
 		private Text outputKey;
 		private LongWritable one;
-		
+
 		private String productFilter;
 		private String releaseFilter;
 
@@ -92,27 +92,27 @@ public class CrashReportStats implements Tool {
 		private SimpleDateFormat outputSdf;
 		private long startTime;
 		private long endTime;
-		
+
 		/* (non-Javadoc)
 		 * @see org.apache.hadoop.mapreduce.Mapper#setup(org.apache.hadoop.mapreduce.Mapper.Context)
 		 */
 		public void setup(Context context) {
 			outputKey = new Text();
 			one = new LongWritable(1);
-			
+
 			jsonMapper = new ObjectMapper();
-			
+
 			Configuration conf = context.getConfiguration();
 
 			productFilter = conf.get(PRODUCT_FILTER);
 			releaseFilter = conf.get(RELEASE_FILTER);
-			
+
 			outputSdf = new SimpleDateFormat("yyyyMMdd");
-			
+
 			startTime = DateUtil.getTimeAtResolution(conf.getLong(START_TIME, 0), Calendar.DATE);
 			endTime = DateUtil.getEndTimeAtResolution(conf.getLong(END_TIME, System.currentTimeMillis()), Calendar.DATE);
 		}
-		
+
 		/* (non-Javadoc)
 		 * @see org.apache.hadoop.mapreduce.Mapper#map(KEYIN, VALUEIN, org.apache.hadoop.mapreduce.Mapper.Context)
 		 */
@@ -123,10 +123,10 @@ public class CrashReportStats implements Tool {
 					context.getCounter(ReportStats.META_JSON_BYTES_NULL).increment(1L);
 					return;
 				}
-				
+
 				// This is an untyped parse so the caller is expected to know the types
 				Map<String,Object> meta = jsonMapper.readValue(new String(valueBytes), new TypeReference<Map<String,Object>>() { });
-				
+
 				String product = null;
 				String productVersion = null;
 				if (meta.containsKey(META_JSON_PRODUCT_NAME)) {
@@ -135,26 +135,26 @@ public class CrashReportStats implements Tool {
 				if (meta.containsKey(META_JSON_PRODUCT_VERSION)) {
 					productVersion = (String)meta.get(META_JSON_PRODUCT_VERSION);
 				}
-				
+
 				// Filter row if filter(s) are set and it doesn't match
 				if (!StringUtils.isBlank(productFilter)) {
 					if (product == null || !product.equals(productFilter)) {
 						context.getCounter(ReportStats.PRODUCT_FILTERED).increment(1L);
 						return;
 					}
-				} 
+				}
 				if (!StringUtils.isBlank(releaseFilter)) {
 					if (productVersion == null || !productVersion.equals(releaseFilter)) {
 						context.getCounter(ReportStats.RELEASE_FILTERED).increment(1L);
 						return;
 					}
 				}
-				
+
 				String crashTimeStr = (String)meta.get(META_JSON_CRASH_TIME);
 				if (!meta.containsKey(META_JSON_CRASH_TIME)) {
 					context.getCounter(ReportStats.CRASH_TIME_NULL).increment(1L);
 				}
-				
+
 				long crashTime = 0L;
 				try {
 					crashTime = Long.parseLong(crashTimeStr) * 1000L;
@@ -167,59 +167,59 @@ public class CrashReportStats implements Tool {
 					context.getCounter(ReportStats.TIME_FILTERED).increment(1L);
 					return;
 				}
-				
+
 				String hangId = (String)meta.get(META_JSON_HANG_ID);
 				if (!StringUtils.isBlank(hangId)) {
 				}
-				
+
 				Calendar cal = Calendar.getInstance();
 				cal.setTimeInMillis(crashTime);
 				StringBuilder keyPrefix = new StringBuilder();
 				keyPrefix.append(outputSdf.format(cal.getTime())).append(KEY_DELIMITER);
 				keyPrefix.append(product).append(KEY_DELIMITER);
 				keyPrefix.append(productVersion).append(KEY_DELIMITER);
-				
+
 				outputKey.set(keyPrefix.toString() + "submission");
 				context.write(outputKey, one);
-				
+
 				if (meta.containsKey(META_JSON_PROCESS_TYPE) && (PLUGIN.equalsIgnoreCase((String)meta.get(META_JSON_PROCESS_TYPE)))) {
 					outputKey.set(keyPrefix.toString() + "oopp");
 					context.write(outputKey, one);
 				}
-				
+
 				byte[] processedJsonBytes = result.getValue(PROCESSED_DATA_BYTES, JSON_BYTES);
 				if (processedJsonBytes != null) {
 					Map<String,Object> processed = jsonMapper.readValue(new String(valueBytes), new TypeReference<Map<String,Object>>() { });
-					
+
 					context.getCounter(ReportStats.PROCESSED).increment(1L);
-					
+
 					outputKey.set(keyPrefix.toString() + "processed");
 					context.write(outputKey, one);
 				} else {
 					context.getCounter(ReportStats.PROCESSED_JSON_BYTES_NULL).increment(1L);
 				}
-				
+
 			} catch (JsonParseException e) {
 				context.getCounter(ReportStats.JSON_PARSE_EXCEPTION).increment(1L);
 			} catch (JsonMappingException e) {
 				context.getCounter(ReportStats.JSON_MAPPING_EXCEPTION).increment(1L);
 			}
 		}
-		
-	}	
-	
+
+	}
+
 	/**
 	 * @param args
 	 * @return
 	 * @throws IOException
-	 * @throws ParseException 
+	 * @throws ParseException
 	 */
-	public Job initJob(String[] args) throws IOException, ParseException {		
+	public Job initJob(String[] args) throws IOException, ParseException {
 		Map<byte[], byte[]> columns = new HashMap<byte[], byte[]>();
 		columns.put(META_DATA_BYTES, JSON_BYTES);
 		columns.put(PROCESSED_DATA_BYTES, JSON_BYTES);
 		Job job = CrashReportJob.initJob(NAME, getConf(), CrashReportStats.class, CrashReportStatsMapper.class, LongSumReducer.class, LongSumReducer.class, columns, Text.class, LongWritable.class, new Path(args[0]));
-		
+
 		return job;
 	}
 
@@ -236,10 +236,10 @@ public class CrashReportStats implements Tool {
 		System.out.println(END_DATE + "=<yyyyMMdd>");
 		System.out.println();
 		GenericOptionsParser.printGenericCommandUsage(System.out);
-		
+
 		return -1;
 	}
-	
+
 	/* (non-Javadoc)
 	 * @see org.apache.hadoop.util.Tool#run(java.lang.String[])
 	 */
@@ -247,7 +247,7 @@ public class CrashReportStats implements Tool {
 		if (args.length != 1) {
 			return printUsage();
 		}
-		
+
 		int rc = -1;
 		Job job = initJob(args);
 		job.waitForCompletion(true);
@@ -271,7 +271,7 @@ public class CrashReportStats implements Tool {
 	public void setConf(Configuration conf) {
 		this.conf = conf;
 	}
-	
+
 	/**
 	 * @param args
 	 * @throws Exception
@@ -280,5 +280,5 @@ public class CrashReportStats implements Tool {
 		int res = ToolRunner.run(new Configuration(), new CrashReportStats(), args);
 		System.exit(res);
 	}
-	
+
 }

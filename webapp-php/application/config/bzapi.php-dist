@@ -12,6 +12,6 @@ $config['url'] = 'https://api-dev.bugzilla.mozilla.org/0.9/';
 
 // How long to cache REST calls, in seconds, if different from global cache.
 // Setting the time out to 0 disables it.
-$config['timeout'] = 900; // default 15 minutes 
+$config['timeout'] = 900; // default 15 minutes
 
 
