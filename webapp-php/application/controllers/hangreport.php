@@ -137,13 +137,11 @@ class HangReport_Controller extends Controller {
             $this->setViewData(array(
                 'resp'           => $resp,
                 'duration_url'   => url::site(implode($duration_url_path, '/') . '/'),
-                #'last_updated'   => $resp->end_date,
                 'duration'       => $duration,
                 'durations'      => $durations,
                 'product'        => $product,
                 'version'        => $version,
                 'nav_selection'  => 'hang_report',
-                #'start'          => $resp->start_date,
                 'end_date'       => $resp->end_date,
                 'url_nav'        => url::site('products/'.$product),
             ));
