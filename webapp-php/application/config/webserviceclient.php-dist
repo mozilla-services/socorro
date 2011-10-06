@@ -25,6 +25,7 @@ $config['basic_auth'] = array('username' => 'example',
  * This materialized views is updated every 60 minutes, so we'll cache the results for that long
  */
 $config['topcrash_vers_rank_cache_minutes'] = 60;
+$config['hang_report_cache_minutes'] = 60;
 
 /**
  * What implementation is used in the Middleware.
