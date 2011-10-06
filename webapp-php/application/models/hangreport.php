@@ -12,7 +12,7 @@ class HangReport_Model extends Model {
      * @param   int         The number of days
      * @return  array       Returns
      */
-    public function getHangReportViaWebService($product, $version, $duration)
+    public function getHangReportViaWebService($product, $version, $duration, $page)
     {
         $config = array();
        $credentials = Kohana::config('webserviceclient.basic_auth');
@@ -27,8 +27,9 @@ class HangReport_Model extends Model {
        $lifetime = Kohana::config('products.cache_expires');
        $p = urlencode($product);
        $v = urlencode($version);
+       $pg = urlencode($page);
 
-       $resp = $service->get("${host}/201109/reports/hang/p/${p}/v/${v}/end/${end_date}/duration/${duration}/listsize/${limit}");
+       $resp = $service->get("${host}/201109/reports/hang/p/${p}/v/${v}/end/${end_date}/duration/${duration}/listsize/${limit}/page/${pg}");
        if($resp) {
            return $resp;
         }
