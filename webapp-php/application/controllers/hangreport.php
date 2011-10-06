@@ -95,7 +95,7 @@ class HangReport_Controller extends Controller {
      * @param   string  The crash type to query by
      * @return  void
      */
-    public function byversion($product=null, $version=null, $duration=null, $crash_type=null)
+    public function byversion($product=null, $version=null)
     {
         if(is_null($product)) {
           Kohana::show_404();
@@ -107,12 +107,13 @@ class HangReport_Controller extends Controller {
             $this->_versionExists($version);
         }
 
+        $duration = (int)Input::instance()->get('duration');
         if (empty($duration)) {
             $duration = Kohana::config('products.duration');
         }
 
-        $duration_url_path = array(Router::$controller, Router::$method, $product, $version);
-        $durations = Kohana::config('hang_report.durations');
+        $page = (int)Input::instance()->get('page');
+        $page = (!empty($page) && $page > 0) ? $page : 1;
 
         $config = array();
         $credentials = Kohana::config('webserviceclient.basic_auth');
@@ -131,19 +132,24 @@ class HangReport_Controller extends Controller {
 
         $p = urlencode($product);
         $v = urlencode($version);
-        $resp = $this->hangreport_model->getHangReportViaWebService($p, $v, $duration);
+        $pg = urlencode($page);
+        $resp = $this->hangreport_model->getHangReportViaWebService($p, $v, $duration, $pg);
 
         if ($resp) {
+            $pager = new MozPager(Kohana::config('hang_report.byversion_limit'), $resp->totalCount, $resp->currentPage);
+
             $this->setViewData(array(
                 'resp'           => $resp,
-                'duration_url'   => url::site(implode($duration_url_path, '/') . '/'),
                 'duration'       => $duration,
-                'durations'      => $durations,
                 'product'        => $product,
                 'version'        => $version,
                 'nav_selection'  => 'hang_report',
-                'end_date'       => $resp->end_date,
+                'end_date'       => $resp->endDate,
+                'url_base'       => url::site('hangreport/byversion/'.$product.'/'.$version),
                 'url_nav'        => url::site('products/'.$product),
+                'pager'          => $pager,
+                'totalItemText' => " Results",
+                'navPathPrefix' => url::site('hangreport/byversion/'.$product.'/'.$version) . '?duration=' . $duration . '&page=',
             ));
         } else {
             header("Data access error", TRUE, 500);
