@@ -16,6 +16,11 @@
     <ul class="options">
         <li><a href="<?php echo url::base(); ?>hangreport/byversion/<?php echo $product ?>/<?php echo $version ?>" class="selected">By Product/Version</a></li>
     </ul>
+    <ul class="options">
+      <li><a href="<?php out::H($url_base); ?>?duration=3" <?php if ($duration == 3) echo ' class="selected"'; ?>>3 days</a></li>
+      <li><a href="<?php out::H($url_base); ?>?duration=7" <?php if ($duration == 7) echo ' class="selected"'; ?>>7 days</a></li>
+      <li><a href="<?php out::H($url_base); ?>?duration=14" <?php if ($duration == 14) echo ' class="selected"'; ?>>14 days</a></li>
+    </ul>
 </div>
 
 
@@ -36,30 +41,28 @@ if (false) {
 }
 ?>
           <th class="header">OOID</th>
-          <th class="header">Duplicates</th>
           <th class="header">Report Day</th>
         </tr>
       </thead>
       <tbody>
 <?php
 if ($resp) {
+    View::factory('moz_pagination/nav')->render(TRUE);
     foreach ($resp->hangReport as $entry) {
-    $sigParams = array(
-        #'range_value' => $range_value,
-        #'range_unit'  => $range_unit,
-        'date'        => $end_date,
-        'signature'   => $entry->browser_signature
-    );
-    if (property_exists($entry, 'branch')) {
-        $sigParams['branch'] = $entry->branch;
-    } else {
-        $sigParams['version'] = $product . ':' . $version;
-    }
-
-    $browser_link_url =  url::base() . 'report/list?' . html::query_string($sigParams);
-    $sigParams['signature'] = $entry->plugin_signature;
-    $plugin_link_url =  url::base() . 'report/list?' . html::query_string($sigParams);
-    $uuid_link_url = url::base() . 'report/index/' . $entry->uuid;
+        $sigParams = array(
+            'date'        => $end_date,
+            'signature'   => $entry->browser_signature
+        );
+        if (property_exists($entry, 'branch')) {
+            $sigParams['branch'] = $entry->branch;
+        } else {
+            $sigParams['version'] = $product . ':' . $version;
+        }
+    
+        $browser_link_url =  url::base() . 'report/list?' . html::query_string($sigParams);
+        $sigParams['signature'] = $entry->plugin_signature;
+        $plugin_link_url =  url::base() . 'report/list?' . html::query_string($sigParams);
+        $uuid_link_url = url::base() . 'report/index/' . $entry->uuid;
 ?>
         <tr>
           <td>
@@ -85,25 +88,19 @@ if ($resp) {
             <a href="<?php out::H($uuid_link_url)?>"><?php out::H($entry->uuid) ?></a>
           </td>
           <td>
-<?php 
-foreach ($entry->duplicates as $dup) {
-?>
-            <?php out::H($dup) ?>
-<?php
-        }
-?>
-          </td>
-          <td>
             <?php out::H($entry->report_day) ?>
           </td>
         </tr>
 <?php
     }
+?>
+      <tbody>
+    </table>
+<?php
+    View::factory('moz_pagination/nav')->render(TRUE);
 } else {
     View::factory('common/data_access_error')->render(TRUE);
 }
 ?>
-      <tbody>
-    </table>
   </div>
 </div>

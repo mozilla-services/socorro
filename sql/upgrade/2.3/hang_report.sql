@@ -22,7 +22,7 @@ CREATE OR REPLACE FUNCTION update_hang_report(updateday DATE) RETURNS BOOLEAN
     -- created for bug 637661
 
     INSERT INTO hang_report (
-        SELECT
+        SELECT DISTINCT
             product_name AS product,
             version_string AS version,
             browser.signature AS browser_signature,
