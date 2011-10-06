@@ -198,6 +198,8 @@ prefixSignatureRegEx = '|'.join([
   'mozilla::ipc::RPCChannel::Call',
   'RtlDeleteCriticalSection',
   'PR_DestroyLock',
+  '.*abort',
+  '_ZdaPvRKSt9nothrow_t\"', 
   ])
 
 signaturesWithLineNumbersRegEx = cm.Option()
