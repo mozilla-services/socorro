@@ -25,7 +25,7 @@ def move (conf,
     yielding the ooids of every new entry in the filelsystem.  If there
     are no new entries, it yields None"""
     destinationCrashStore = crashStoragePoolForDest.crashStorage()
-    for dir,dirs,files in os.walk(conf.localFS):
+    for dir,dirs,files in os.walk(conf.seachRoot):
       print dir, files
       for aFile in files:
         if aFile.endswith('json'):
