@@ -11,6 +11,7 @@ CREATE TABLE hang_report(
     report_day DATE);
 
 GRANT ALL ON hang_report TO breakpad_rw;
+ALTER TABLE hang_report OWNER TO breakpad_rw;
 
 CREATE OR REPLACE FUNCTION update_hang_report(updateday DATE) RETURNS BOOLEAN
     LANGUAGE plpgsql
@@ -28,7 +29,7 @@ CREATE OR REPLACE FUNCTION update_hang_report(updateday DATE) RETURNS BOOLEAN
             browser.signature AS browser_signature,
             plugin.signature AS plugin_signature,
             browser.hangid AS browser_hangid,
-            browser.flash_version AS flash_version,
+            plugin.flash_version AS flash_version,
             browser.url AS url,
             browser.uuid AS uuid,
             ARRAY(
