@@ -2,17 +2,6 @@ import stat
 import socorro.lib.ConfigurationManager as cm
 
 #-------------------------------------------------------------------------------
-# general
-
-numberOfThreads = cm.Option()
-numberOfThreads.doc = 'the number of threads to use'
-numberOfThreads.default = 4
-
-dryrun = cm.Option()
-dryrun.doc = "if True, don't actually move things into destination"
-dryrun.default = False
-
-#-------------------------------------------------------------------------------
 # source storage
 
 sourceStorageClass = cm.Option()
@@ -45,6 +34,21 @@ destinationStorageClass.fromStringConverter = cm.classConverter
 from config.commonconfig import hbaseHost
 from config.commonconfig import hbasePort
 from config.commonconfig import hbaseTimeout
+
+#-------------------------------------------------------------------------------
+# general
+
+seachRoot = cm.Option()
+seachRoot.doc = 'the file system root to start the orphan search'
+seachRoot.default = localFS.default
+
+numberOfThreads = cm.Option()
+numberOfThreads.doc = 'the number of threads to use'
+numberOfThreads.default = 4
+
+dryrun = cm.Option()
+dryrun.doc = "if True, don't actually move things into destination"
+dryrun.default = False
 
 #-------------------------------------------------------------------------------
 # logging
