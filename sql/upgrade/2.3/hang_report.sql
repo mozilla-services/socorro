@@ -1,7 +1,7 @@
 CREATE TABLE hang_report(
     product TEXT,
     version TEXT,
-    browser_signature TEXT,
+    browser_signature TEXT PRIMARY KEY,
     plugin_signature TEXT,
     browser_hangid TEXT,
     flash_version TEXT,
@@ -9,6 +9,7 @@ CREATE TABLE hang_report(
     uuid TEXT,
     duplicates TEXT[],
     report_day DATE);
+CREATE INDEX hang_report_report_day on hang_report(report_day);
 
 GRANT ALL ON hang_report TO breakpad_rw;
 ALTER TABLE hang_report OWNER TO breakpad_rw;
@@ -49,8 +50,10 @@ CREATE OR REPLACE FUNCTION update_hang_report(updateday DATE) RETURNS BOOLEAN
         AND browser.process_type IS NULL
         AND plugin.process_type = 'plugin'
         AND browser.signature != plugin.signature
-        AND browser.date_processed > utc_day_begins_pacific(updateday)
+        AND browser.date_processed >= utc_day_begins_pacific(updateday)
         AND browser.date_processed < utc_day_ends_pacific(updateday)
+        AND plugin.date_processed >= utc_day_begins_pacific(updateday - 1)
+        AND plugin.date_processed < utc_day_ends_pacific(updateday + 1)
     );
 
     ANALYZE hang_report;
