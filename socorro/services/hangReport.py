@@ -27,7 +27,7 @@ class HangReport(webapi.JsonServiceBase):
           FROM hang_report
           WHERE product = %(product)s
           AND version = %(version)s
-          AND report_day > utc_day_begins_pacific(((%(end)s)::timestamp - interval '%(duration)s days')::date)
+          AND date_processed > utc_day_begins_pacific(((%(end)s)::timestamp - interval '%(duration)s days')::date)
     """
 
     logger.debug(cursor.mogrify(hangReportCountSql, parameters))
@@ -46,13 +46,14 @@ class HangReport(webapi.JsonServiceBase):
           /* socorro.services.HangReport */
           SELECT browser_signature, plugin_signature, 
                  browser_hangid, flash_version, url,
-                 uuid, duplicates, report_day
+                 uuid, duplicates, date_processed
           FROM hang_report
           WHERE product = %(product)s
           AND version = %(version)s
-          AND report_day > utc_day_begins_pacific(((%(end)s)::timestamp - interval '%(duration)s days')::date)
+          AND date_processed > utc_day_begins_pacific(((%(end)s)::timestamp - interval '%(duration)s days')::date)
           LIMIT %(listsize)s
-          OFFSET %(offset)s"""
+          OFFSET %(offset)s
+          ORDER BY date_processed"""
   
     logger.debug(cursor.mogrify(hangReportSql, parameters))
     cursor.execute(hangReportSql, parameters)
@@ -60,7 +61,7 @@ class HangReport(webapi.JsonServiceBase):
     result = []
     for row in cursor.fetchall():
       (browser_signature, plugin_signature, browser_hangid, flash_version,
-       url, uuid, duplicates, report_day) = row
+       url, uuid, duplicates, date_processed) = row
       result.append({'browser_signature': browser_signature,
                      'plugin_signature': plugin_signature,
                      'browser_hangid': browser_hangid,
@@ -68,6 +69,6 @@ class HangReport(webapi.JsonServiceBase):
                      'url': url,
                      'uuid': uuid,
                      'duplicates': duplicates,
-                     'report_day': str(report_day)})
+                     'date_processed': str(date_processed)})
     return {'hangReport': result, 'endDate': str(parameters['end']), 'totalPages': totalPages, 'currentPage': page,
             'totalCount': hangReportCount}

@@ -41,7 +41,7 @@ if (false) {
 }
 ?>
           <th class="header">OOID</th>
-          <th class="header">Report Day</th>
+          <th class="header">Date Processed</th>
         </tr>
       </thead>
       <tbody>
@@ -88,7 +88,7 @@ if ($resp) {
             <a href="<?php out::H($uuid_link_url)?>"><?php out::H($entry->uuid) ?></a>
           </td>
           <td>
-            <?php out::H($entry->report_day) ?>
+            <?php out::H($entry->date_processed) ?>
           </td>
         </tr>
 <?php
