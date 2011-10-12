@@ -275,8 +275,10 @@ class ProcessorWithExternalBreakpad (processor.Processor):
               pass
           thisFramesSignature = self.signatureUtilities.normalize_signature(module_name, function, source, source_line, instruction)
           signatureList.append(thisFramesSignature)
-          if frameCounter < 10:
-            self.framesTable.insert(databaseCursor, (reportId, frame_num, date_processed, thisFramesSignature[:255]), self.databaseConnectionPool.connectionCursorPair, date_processed=date_processed)
+          # Bug681476 - stop writing to frames table
+          # leaving code in place incase we wish to revert the change
+          #if frameCounter < 10:
+            #self.framesTable.insert(databaseCursor, (reportId, frame_num, date_processed, thisFramesSignature[:255]), self.databaseConnectionPool.connectionCursorPair, date_processed=date_processed)
         if frameCounter == self.config.crashingThreadFrameThreshold:
           processorErrorMessages.append("This dump is too long and has triggered the automatic truncation routine")
           #logger.debug("starting secondary cache with framecount = %d", frameCounter)
