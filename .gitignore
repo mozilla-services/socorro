@@ -1,3 +1,15 @@
 # exclude config overrides to prevent accidental check-ins
 webapp-php/application/config/*.php
 socorro/unittest/config/*.py 
+*.pyc
+*.swp
+distribute*.tar.gz
+analysis/build/
+google-breakpad
+nosetests.xml
+scripts/config/*.py
+socorro/unittest/config/*.py
+socorro-virtualenv
+socorro/unittest/database/logs/
+socorro/unittest/testlib/logs/
+stackwalk/
