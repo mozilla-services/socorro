@@ -1515,3 +1515,8 @@ table.recent-campaigns .signature:first-child td{
     white-space: pre-wrap;
 }
 /* END Post Crash Email */
+
+/* espressive */
+table.tablesorter tbody tr.odd {
+    background-color: #edecec;
+}
