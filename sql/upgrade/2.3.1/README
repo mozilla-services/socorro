@@ -1,0 +1,9 @@
+2.3.1 is the first set of upgrade scripts which support relative directories.  This is to enable calling them as part of an external deployment script.  Note that the scripts still need to be run as the "postgres" user, and the postgres user must have the postgres binaries in his PATH, as well as passwordless login to the breakpad database.
+
+Calling from a deployment script would look like:
+
+sudo su - postgres -c 'sql/upgrade/2.3.1/upgrade.sh'
+
+The current upgrades include:
+
+1. altering the releases_raw table to support nightlies
