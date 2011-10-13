@@ -9,6 +9,7 @@ This script can be run as often as desired, and will automatically backfill.
 
 import logging
 import logging.handlers
+from datetime import datetime
 
 try:
     import config.ftpscraperconfig as configModule
@@ -27,6 +28,7 @@ assert "databaseUserName" in config, "databaseUserName missing from config"
 assert "databasePassword" in config, "databasePassword missing from config"
 assert "base_url" in config, "base_url missing from config"
 assert "products" in config, "products missing from config"
+assert "backfillDate" in config, "backfillDate missing from config"
 
 logger = logging.getLogger("ftpscraper")
 logger.setLevel(logging.DEBUG)
@@ -37,6 +39,9 @@ sutil.echoConfig(logger, config)
 config.logger = logger
 
 try:
-    ftpscraper.recordBuilds(config)
+    backfill_date = None
+    if config.backfillDate != None:
+        backfill_date = datetime.strptime(config.backfillDate, '%Y-%m-%d')
+    ftpscraper.recordBuilds(config, backfill_date=backfill_date)
 finally:
     logger.info("Done.")
