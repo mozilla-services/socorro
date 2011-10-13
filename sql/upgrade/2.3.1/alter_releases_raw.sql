@@ -1,4 +1,4 @@
-\set ON_ERROR_STOP yes
+\set ON_ERROR_STOP 1
 
 DO $f$
 BEGIN
