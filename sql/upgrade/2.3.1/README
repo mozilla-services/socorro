@@ -7,3 +7,13 @@ sudo su - postgres -c 'sql/upgrade/2.3.1/upgrade.sh'
 The current upgrades include:
 
 1. altering the releases_raw table to support nightlies
+
+2. altering update_products to integrate aurora/nightlies into newtcbs
+
+3. adding a bunch of generic plumbing functions, including list management and timestamp functions
+
+4. adding tables and functions to support the new reports_clean view
+
+5. backfilling everything to 9/1 in order to put in the adjusted data
+
+While the rest of the steps will take minutes, step 5. is expected to take hours.  
