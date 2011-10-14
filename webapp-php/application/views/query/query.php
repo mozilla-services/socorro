@@ -30,6 +30,7 @@
 
     <div class="page-heading">
         <h2>Query Results</h2>
+		<ul class="adv-search-rss"></ul>
     </div>
 
     <div class="panel">
