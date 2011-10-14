@@ -42,6 +42,9 @@ psql -f ${CURDIR}/backfill_reports_clean.sql breakpad
 echo 'fix gap in backfill_matviews'
 psql -f ${CURDIR}/backfill_matviews.sql breakpad
 
+echo 'add hang reports'
+psql -f ${CURDIR}/hang_report.sql breakpad
+
 echo 'now backfill data back to 9/1.  This will take hours'
 psql -f ${CURDIR}/backfill_everything.sql breakpad
 

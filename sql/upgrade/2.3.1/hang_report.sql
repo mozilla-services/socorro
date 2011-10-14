@@ -60,19 +60,19 @@ SELECT
     plugin.signature_id AS plugin_signature_id,
     plugin.hang_id,
     plugin.flash_version_id,
-    array_agg(browser.duplicate_of),
+    nullif(array_agg(browser.duplicate_of) || plugin.duplicate_of,'{NULL}'),
     min(browser_info.url)
 FROM reports_clean AS browser
     JOIN reports_clean AS plugin ON plugin.hang_id = browser.hang_id
-    JOIN reports_user_info AS browser_info ON browser.uuid = browser_info.uuid
-    JOIN signatures AS sig_plugin
-        ON sig_plugin.signature_id = plugin.signature_id
-WHERE sig_plugin.signature LIKE 'hang | %'
+    LEFT OUTER JOIN reports_user_info AS browser_info ON browser.uuid = browser_info.uuid
+    JOIN signatures AS sig_browser
+        ON sig_browser.signature_id = browser.signature_id
+WHERE sig_browser.signature LIKE 'hang | %'
     AND browser.hang_id != ''
     AND browser.process_type = 'browser'
     AND plugin.process_type = 'plugin'
-    AND utc_day_is(browser.date_processed, updateday)
-    AND utc_day_near(plugin.date_processed, updateday)
+    AND utc_day_near(browser.date_processed, updateday)
+    AND utc_day_is(plugin.date_processed, updateday)
     AND utc_day_is(browser_info.date_processed, updateday)
 GROUP BY plugin.uuid, plugin.signature_id, plugin.hang_id, plugin.flash_version_id;
     

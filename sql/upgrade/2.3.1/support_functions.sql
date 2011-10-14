@@ -72,7 +72,7 @@ returns boolean
 language sql
 immutable strict as
 $f$
-select $1 > ( $2 AT TIME ZONE 'UTC' + INTERVAL '1 day' )
+select $1 > ( $2 AT TIME ZONE 'UTC' - INTERVAL '1 day' )
 	AND $1 < ( $2 AT TIME ZONE 'UTC' + INTERVAL '2 days' )
 $f$;
 	
