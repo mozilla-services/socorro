@@ -417,10 +417,11 @@ html.production .page-footer { margin-top: 80px; }
 .page-heading {
 	font-family: Arial, Helvetica, sans-serif;
 	}
-	.page-heading h2 {
-		margin-bottom: .7em;
-		font-size: 21px;
-		}
+.page-heading h2 {
+	display: inline;
+	margin-bottom: .7em;
+	font-size: 21px;
+}
 	.page-heading .options {
 		display: inline;
 		list-style: none;
