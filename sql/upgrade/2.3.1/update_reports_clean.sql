@@ -74,6 +74,7 @@ IF NOT FOUND THEN
 	IF checkdata THEN
 		RAISE EXCEPTION 'no report data found for period %',fromtime;
 	ELSE
+		DROP TABLE new_reports;
 		RETURN TRUE;
 	END IF;
 END IF;

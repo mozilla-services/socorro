@@ -31,7 +31,7 @@ BEGIN
 		WHERE date_processed >= cur_time 
 			AND date_processed < ( cur_time + cyclesize );
 		
-		PERFORM update_reports_clean( cur_time, cyclesize, true );
+		PERFORM update_reports_clean( cur_time, cyclesize, false );
 		
 		cur_time := cur_time + cyclesize;
 	END LOOP;
