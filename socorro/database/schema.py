@@ -1454,13 +1454,17 @@ class ReleasesRawTable(Table):
                                             CREATE TABLE releases_raw (
                                                 product_name citext not null,
                                                 version text,
+                                                platform text,
                                                 build_id numeric,
                                                 build_type text,
                                                 beta_number int,
-                                                platform text
+                                                repository text
                                             );
                                         """)
-    self.insertSql = """INSERT INTO TABLENAME (product, version, buildid, buildtype, beta_number, platform) values (%s, %s, %s, %s, %s, %s )"""
+    self.insertSql = """INSERT INTO TABLENAME
+                        (product, version, platform, buildid, buildtype,
+                         beta_number, repository)
+                        VALUES (%s, %s, %s, %s, %s, %s, %s)"""
 
   #-----------------------------------------------------------------------------------------------------------------
   def updateDefinition(self, databaseCursor):
