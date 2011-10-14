@@ -50,7 +50,7 @@ if ($resp) {
     View::factory('moz_pagination/nav')->render(TRUE);
     foreach ($resp->hangReport as $entry) {
         $sigParams = array(
-            'date'        => $end_date,
+            'date'        => $entry->report_day,
             'signature'   => $entry->browser_signature
         );
         if (property_exists($entry, 'branch')) {
