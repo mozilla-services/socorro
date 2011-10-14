@@ -16,6 +16,10 @@ products.doc = 'a comma-delimited list of uris for each product'
 products.default = 'firefox,mobile,thunderbird,seamonkey'
 products.fromStringConverter = lambda x: tuple(x.split(','))
 
+backfillDate = cm.Option()
+backfillDate.doc = 'Date to backfill from, for example 2011-09-01'
+backfillDate.default = None
+
 #
 # Logging
 #
