@@ -7,8 +7,7 @@ import sys
 import logging
 import urllib2
 import lxml.html
-
-from datetime import datetime, timedelta
+import datetime
 
 import socorro.lib.psycopghelper as psy
 import socorro.lib.util as util
@@ -97,19 +96,19 @@ def recordBuilds(config, backfill_date):
       logger)
 
     try:
+        connection, cursor = databaseConnectionPool.connectionCursorPair()
         for product_name in config.products:
-            connection, cursor = databaseConnectionPool.connectionCursorPair()
 
             scrapeReleases(config, cursor, product_name)
 
-            today = datetime.today()
-            if backfill_date != None:
+            today = datetime.datetime.today()
+            if backfill_date is not None:
                 currentdate = backfill_date
                 while currentdate <= today:
                     logger.debug('backfilling for date ' + str(currentdate))
                     scrapeNightlies(config, cursor, product_name,
                                     date=currentdate)
-                    currentdate += timedelta(days=1)
+                    currentdate += datetime.timedelta(days=1)
             else:
                 scrapeNightlies(config, cursor, product_name, date=today)
     finally:
@@ -141,7 +140,7 @@ def buildExists(cursor, product_name, version, platform, build_id, build_type,
     cursor.execute(sql, params)
     exists = cursor.fetchone()
 
-    return exists != None
+    return exists is not None
 
 
 def insertBuild(cursor, product_name, version, platform, build_id, build_type,
@@ -170,12 +169,12 @@ def scrapeReleases(config, cursor, product_name, urllib=urllib2):
 
     # releases are sometimes in nightly, sometimes in candidates dir.
     # look in both.
-    for dir in ('nightly', 'candidates'):
-        if not getLinks(prod_url, startswith=dir, urllib=urllib):
-            logger.debug('Dir %s not found for %s' % (dir, product_name))
+    for directory in ('nightly', 'candidates'):
+        if not getLinks(prod_url, startswith=directory, urllib=urllib):
+            logger.debug('Dir %s not found for %s' % (directory, product_name))
             continue
 
-        url = '%s/%s/%s/' % (config.base_url, product_name, dir)
+        url = '%s/%s/%s/' % (config.base_url, product_name, directory)
 
         try:
             releases = getLinks(url, endswith='-candidates/',
@@ -194,38 +193,31 @@ def scrapeReleases(config, cursor, product_name, urllib=urllib2):
                     insertBuild(cursor, product_name, version, platform,
                                 build_id, build_type, beta_number,
                                 repository)
-        except urllib.URLError, e:
-            if not hasattr(e, "code"):
-                raise
-            resp = e
-            print >> sys.stderr, 'HTTP code %s' %  \
-              (resp.code)
+        except urllib.URLError:
+            util.reportExceptionAndContinue(logger)
 
 
 def scrapeNightlies(config, cursor, product_name, urllib=urllib2, date=None):
-        year, month, day = date.strftime('%Y,%m,%d').split(',')
-        nightly_url = '%s/%s/%s/%s/%s/' % (config.base_url, product_name,
-                                           'nightly', year, month)
+    month = date.strftime('%m')
+    nightly_url = '%s/%s/%s/%s/%s/' % (config.base_url, product_name,
+                       'nightly', date.year, month)
 
-        try:
+    try:
 
-            dir_prefix = '%s-%s-%s' % (year, month, day)
-            nightlies = getLinks(nightly_url, startswith=dir_prefix,
-                                 urllib=urllib)
-            for nightly in nightlies:
-                for info in getNightly(nightly, nightly_url):
-                    (platform, repository, version, kvpairs) = info
-                    build_id = kvpairs['buildID']
-                    build_type = 'Nightly'
-                    if version.endswith('a2'):
-                        build_type = 'Aurora'
+        day = date.strftime('%d')
+        dir_prefix = '%s-%s-%s' % (date.year, date.month, day)
+        nightlies = getLinks(nightly_url, startswith=dir_prefix,
+                 urllib=urllib)
+        for nightly in nightlies:
+            for info in getNightly(nightly, nightly_url):
+                (platform, repository, version, kvpairs) = info
+                build_id = kvpairs['buildID']
+                build_type = 'Nightly'
+                if version.endswith('a2'):
+                    build_type = 'Aurora'
                     version = version.split('a')[0]
                     insertBuild(cursor, product_name, version, platform,
                                 build_id, build_type, None, repository)
 
-        except urllib.URLError, e:
-            if not hasattr(e, "code"):
-                raise
-            resp = e
-            print >> sys.stderr, 'HTTP code %s' %  \
-                (resp.code)
+    except urllib.URLError:
+        util.reportExceptionAndContinue(logger)

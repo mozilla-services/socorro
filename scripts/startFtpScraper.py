@@ -9,7 +9,7 @@ This script can be run as often as desired, and will automatically backfill.
 
 import logging
 import logging.handlers
-from datetime import datetime
+import datetime
 
 try:
     import config.ftpscraperconfig as configModule
@@ -41,7 +41,8 @@ config.logger = logger
 try:
     backfill_date = None
     if config.backfillDate != None:
-        backfill_date = datetime.strptime(config.backfillDate, '%Y-%m-%d')
+        backfill_date = datetime.datetime.strptime(config.backfillDate,
+                                                   '%Y-%m-%d')
     ftpscraper.recordBuilds(config, backfill_date=backfill_date)
 finally:
     logger.info("Done.")
