@@ -14,6 +14,8 @@ The current upgrades include:
 
 4. adding tables and functions to support the new reports_clean view
 
-5. backfilling everything to 9/1 in order to put in the adjusted data
+5. adding new hang_report matview
 
-While the rest of the steps will take minutes, step 5. is expected to take hours.  
+6. backfilling everything to 9/1 in order to put in the adjusted data
+
+While the rest of the steps will take minutes, step 6. is expected to take hours.  

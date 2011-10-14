@@ -26,8 +26,8 @@ begin
 	END IF;
 	
 	EXECUTE 'CREATE TABLE ' || this_part || $$
-		( CONSTRAINT date_processed_week CHECK ( date_processed >= '$$ || begin_week || $$' AT TIME ZONE 'UTC'
-			AND date_processed < '$$ || end_week || $$' AT TIME ZONE 'UTC' ) )
+		( CONSTRAINT date_processed_week CHECK ( date_processed >= '$$ || begin_week || $$'::timestamp AT TIME ZONE 'UTC'
+			AND date_processed < '$$ || end_week || $$'::timestamp AT TIME ZONE 'UTC' ) )
 		INHERITS ( $$ || which_table || $$ );$$;
 	EXECUTE 'CREATE UNIQUE INDEX ' || this_part || '_uuid ON ' || this_part || '(uuid);';
 

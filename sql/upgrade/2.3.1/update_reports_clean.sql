@@ -9,12 +9,13 @@ set client_min_messages = 'ERROR'
 as $f$
 declare rc_part TEXT;
 	rui_part TEXT;
+	newfortime INTERVAL;
 begin
 -- this function creates a reports_clean fact table and all associated dimensions
 -- intended to be run hourly for a target time three hours ago or so
 -- eventually to be replaced by code for the processors to run
 
--- VERSION: 0.1
+-- VERSION: 0.2
 
 -- accepts a timestamptz, so be careful that the calling script is sending 
 -- something appropriate
@@ -22,9 +23,13 @@ begin
 -- since we do allow dynamic timestamps, check if we split over a week
 -- boundary.  if so, call self recursively for the first half of the period
 
-IF ( week_begins_utc(fromtime) <> week_begins_utc( fromtime + fortime ) ) THEN
-	PERFORM update_reports_clean( fromtime, week_begins_utc( fromtime + fortime ) );
-	fortime := ( week_begins_utc - fromtime );
+IF ( week_begins_utc(fromtime) <> 
+	week_begins_utc( fromtime + fortime - interval '1 second' ) ) THEN
+	PERFORM update_reports_clean( fromtime, 
+		( week_begins_utc( fromtime + fortime ) - fromtime ), checkdata );
+	newfortime := ( fromtime + fortime ) - week_begins_utc( fromtime + fortime );
+	fromtime := week_begins_utc( fromtime + fortime );
+	fortime := newfortime;
 END IF;
 
 -- prevent calling for a period of more than one day
@@ -62,13 +67,17 @@ where date_processed >= tz2pac_ts(fromtime) and date_processed < tz2pac_ts( from
 	and completed_datetime is not null;
 	
 -- check for no data
-IF checkdata THEN
-	SELECT 1 FROM new_reports
-	LIMIT 1;
-	IF NOT FOUND THEN
-			RAISE EXCEPTION 'no report data found for period %',fromtime;
+
+PERFORM 1 FROM new_reports
+LIMIT 1;
+IF NOT FOUND THEN
+	IF checkdata THEN
+		RAISE EXCEPTION 'no report data found for period %',fromtime;
+	ELSE
+		RETURN TRUE;
 	END IF;
 END IF;
+
 	
 create index new_reports_uuid on new_reports(uuid);
 create index new_reports_signature on new_reports(signature);
@@ -275,6 +284,8 @@ hang_id, flash_version_id, process_type, release_channel,
 duplicate_of, domain_id 
 FROM reports_clean_buffer;';
 
+EXECUTE 'ANALYZE ' || rc_part;
+
 -- copy to reports_user_info
 
 EXECUTE 'INSERT INTO ' || rui_part || $$
@@ -284,6 +295,8 @@ SELECT new_reports.uuid, ts2pacific(new_reports.date_processed),
 FROM new_reports JOIN reports_clean_buffer USING ( uuid )
 WHERE email <> '' OR user_comments <> ''
 	OR url <> '' OR app_notes <> '';$$;
+	
+EXECUTE 'ANALYZE ' || rui_part;
 
 -- exit
 DROP TABLE new_reports;

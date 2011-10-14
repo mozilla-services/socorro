@@ -5,7 +5,8 @@
 CREATE OR REPLACE FUNCTION backfill_matviews (
 	firstday date,
 	forproduct text default '',
-	lastday date default NULL )
+	lastday date default NULL,
+	reportsclean boolean default true )
 RETURNS BOOLEAN
 LANGUAGE plpgsql
 AS $f$
@@ -36,9 +37,17 @@ IF forproduct <> '' THEN
 	END IF;
 END IF;
 
+-- backfill reports_clean.  this takes a while,  and isn't limited
+-- by product so if it's not needed
+-- we provide a switch to disable it
+IF reportsclean THEN
+	RAISE INFO 'backfilling reports_clean';
+	PERFORM backfill_reports_clean_by_date( firstday, lastday );
+END IF;
+
 -- loop through the days, backfilling one at a time
 WHILE thisday <= lastday LOOP
-	RAISE INFO 'backfilling for %',thisday;
+	RAISE INFO 'backfilling other matviews for %',thisday;
 	RAISE INFO 'adu';
 	PERFORM backfill_adu(thisday, forproduct);
 	RAISE INFO 'tcbs';
@@ -49,6 +58,8 @@ WHILE thisday <= lastday LOOP
 	RAISE INFO 'signatures';
 	PERFORM update_signatures(thisday, FALSE);
 	DROP TABLE IF EXISTS new_signatures;
+	RAISE INFO 'hang report';
+	PERFORM backfill_hang_report(thisday);
 
 	thisday := thisday + 1;
 

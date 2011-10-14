@@ -1,5 +1,7 @@
 \set ON_ERROR_STOP 1
 
+
+
 create or replace function update_product_versions()
 returns boolean
 language plpgsql
@@ -28,9 +30,9 @@ insert into product_versions (
 select products.product_name,
 	major_version(version),
 	version,
-	version_string(version, releases_raw.beta_number),
+	version_string(version, releases_raw.beta_number, releases_raw.build_type),
 	releases_raw.beta_number,
-	version_sort(version, releases_raw.beta_number),
+	version_sort(version, releases_raw.beta_number, releases_raw.build_type),
 	build_date(min(build_id)),
 	sunset_date(min(build_id), releases_raw.build_type ),
 	releases_raw.build_type::citext
@@ -82,35 +84,39 @@ group by products.product_name, version;
 -- add build ids
 
 insert into product_version_builds
-	select product_versions.product_version_id,
+select distinct product_versions.product_version_id,
 		releases_raw.build_id,
 		releases_raw.platform
 from releases_raw
+	join products ON releases_raw.product_name = products.release_name
 	join product_versions
-		ON releases_raw.product_name = product_versions.product_name
+		ON products.product_name = product_versions.product_name
 		AND releases_raw.version = product_versions.release_version
 		AND releases_raw.build_type = product_versions.build_type
 		AND ( releases_raw.beta_number IS NOT DISTINCT FROM product_versions.beta_number )
 	left outer join product_version_builds ON
 		product_versions.product_version_id = product_version_builds.product_version_id
 		AND releases_raw.build_id = product_version_builds.build_id
+		AND releases_raw.platform = product_version_builds.platform
 where product_version_builds.product_version_id is null;
 
 -- add build ids for final beta
 
 insert into product_version_builds
-	select product_versions.product_version_id,
+select distinct product_versions.product_version_id,
 		releases_raw.build_id,
 		releases_raw.platform
 from releases_raw
+	join products ON releases_raw.product_name = products.release_name
 	join product_versions
-		ON releases_raw.product_name = product_versions.product_name
+		ON products.product_name = product_versions.product_name
 		AND releases_raw.version = product_versions.release_version
 		AND releases_raw.build_type ILIKE 'release'
 		AND product_versions.beta_number = 999
 	left outer join product_version_builds ON
 		product_versions.product_version_id = product_version_builds.product_version_id
 		AND releases_raw.build_id = product_version_builds.build_id
+		AND releases_raw.platform = product_version_builds.platform
 where product_version_builds.product_version_id is null;
 
 return true;

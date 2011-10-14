@@ -15,7 +15,10 @@ psql -f $(CURDIR)/update_products.sql breakpad
 echo 'create table if not exists function'
 psql -f $(CURDIR)/create_table_if_not_exists.sql breakpad
 
-echo 'new tables and minor functions for reports_clean'
+echo 'new support functions, mostly timestamp conversion'
+psql -f $(CURDIR)/support_functions.sql breakpad
+
+echo 'new tables for reports_clean'
 psql -f $(CURDIR)/reports_clean_new_tables.sql breakpad
 
 echo 'lookup list populating function'
@@ -33,8 +36,11 @@ psql -f $(CURDIR)/reports_clean_weekly.sql breakpad
 echo 'update function for reports_clean'
 psql -f $(CURDIR)/alter_releases_raw.sql breakpad
 
+echo 'backfill function for reports clean'
+psql -f $(CURDIR)/backfill_reports_clean.sql breakpad
+
 echo 'fix gap in backfill_matviews'
-psql -f $(CURDIR)/alter_releases_raw.sql breakpad
+psql -f $(CURDIR)/backfill_matviews.sql breakpad
 
 echo 'now backfill data back to 9/1.  This will take hours'
 psql -f $(CURDIR)/backfill_everything.sql breakpad
