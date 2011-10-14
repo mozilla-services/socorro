@@ -1,5 +1,5 @@
 create or replace function backfill_reports_clean (
-	begin_time timestamptz, end_time timestamptz )
+	begin_time timestamptz, end_time timestamptz default now() )
 returns boolean 
 language plpgsql as
 $f$
@@ -40,7 +40,7 @@ BEGIN
 END;$f$;
 
 CREATE OR REPLACE FUNCTION backfill_reports_clean_by_date (
-	starts DATE, ends DATE )
+	starts DATE, ends DATE default CURRENT_DATE )
 returns boolean
 language sql as
 $f$
