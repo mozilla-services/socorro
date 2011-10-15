@@ -4,6 +4,10 @@
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
     <link href="<?php echo url::base() ?>css/screen.css?v=1.7.6" rel="stylesheet" type="text/css" media="screen" />
     <link href="<?php echo url::base() ?>favicon.ico" rel="icon" type="image/png" />
+	<script src="/js/jquery/jquery-1.6.4.min.js"></script>
+	<script>
+		var jQ = jQuery.noConflict();
+	</script>
     <?php
     	echo html::script(
     	    array(
