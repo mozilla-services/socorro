@@ -45,6 +45,9 @@ psql -f ${CURDIR}/backfill_matviews.sql breakpad
 echo 'add hang reports'
 psql -f ${CURDIR}/hang_report.sql breakpad
 
+echo 'update product views'
+psql -f ${CURDIR}/product_views.sql breakpad
+
 echo 'now backfill data back to 9/1.  This will take hours'
 psql -f ${CURDIR}/backfill_everything.sql breakpad
 

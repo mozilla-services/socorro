@@ -60,7 +60,8 @@ SELECT
     plugin.signature_id AS plugin_signature_id,
     plugin.hang_id,
     plugin.flash_version_id,
-    nullif(array_agg(browser.duplicate_of) || plugin.duplicate_of,'{NULL}'),
+    nullif(array_agg(browser.duplicate_of) 
+    	|| COALESCE(ARRAY[plugin.duplicate_of], '{}'),'{NULL}'),
     min(browser_info.url)
 FROM reports_clean AS browser
     JOIN reports_clean AS plugin ON plugin.hang_id = browser.hang_id
@@ -74,7 +75,8 @@ WHERE sig_browser.signature LIKE 'hang | %'
     AND utc_day_near(browser.date_processed, updateday)
     AND utc_day_is(plugin.date_processed, updateday)
     AND utc_day_is(browser_info.date_processed, updateday)
-GROUP BY plugin.uuid, plugin.signature_id, plugin.hang_id, plugin.flash_version_id;
+GROUP BY plugin.uuid, plugin.signature_id, plugin.hang_id, plugin.flash_version_id,
+	plugin.duplicate_of;
     
 ANALYZE daily_hangs;
 RETURN TRUE;
