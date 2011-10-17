@@ -55,6 +55,16 @@ $(document).ready(function(){
 		dateFormat: "yy-mm-dd"
 	});
 	
+	/* Add new */
+	$("#start_date, #end_date").datepicker({
+		dateFormat: "yy-mm-dd"
+	});
+	
+	/* Update */
+	$("#update_start_date, #update_end_date").datepicker({
+		dateFormat: "yy-mm-dd"
+	});
+	
     $('input[name=submit][type=submit][value="OK, Send Emails"]').click(function(){
       postData = {token: $('input[name=token]').val(),
                   campaign_id: $('input[name=campaign_id]').val(),
