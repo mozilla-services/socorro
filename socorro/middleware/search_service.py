@@ -1,6 +1,6 @@
 import logging
 
-import socorro.middleware.service
+import socorro.middleware.service as service
 
 logger = logging.getLogger("webapi")
 
