@@ -1,7 +1,6 @@
 \set ON_ERROR_STOP 1
 
 
-
 create or replace function update_product_versions()
 returns boolean
 language plpgsql
@@ -30,9 +29,9 @@ insert into product_versions (
 select products.product_name,
 	major_version(version),
 	version,
-	version_string(version, releases_raw.beta_number, releases_raw.build_type),
+	version_string(version, releases_raw.beta_number),
 	releases_raw.beta_number,
-	version_sort(version, releases_raw.beta_number, releases_raw.build_type),
+	version_sort(version, releases_raw.beta_number),
 	build_date(min(build_id)),
 	sunset_date(min(build_id), releases_raw.build_type ),
 	releases_raw.build_type::citext

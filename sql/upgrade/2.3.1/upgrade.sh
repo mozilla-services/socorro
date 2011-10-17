@@ -48,6 +48,9 @@ psql -f ${CURDIR}/hang_report.sql breakpad
 echo 'update product views'
 psql -f ${CURDIR}/product_views.sql breakpad
 
+echo 'fix adu for nightly/aurora'
+psql -f ${CURDIR}/daily_adu.sql breakpad
+
 echo 'now backfill data back to 9/1.  This will take hours'
 psql -f ${CURDIR}/backfill_everything.sql breakpad
 
