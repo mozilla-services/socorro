@@ -1,7 +1,7 @@
 import postgresql as pg
 
 
-class Search(pg.Search):
+class Search(pg.PostgresAPI):
 
     def search(self, types, **kwargs):
         """
