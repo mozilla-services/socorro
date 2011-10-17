@@ -16,7 +16,7 @@ class ElasticSearchAPI(co.Common):
     """
     Base class for ElasticSearch based service implementations.
 
-    See https://wiki.mozilla.org/Socorro/ElasticSearch_API
+    See https://wiki.mozilla.org/Socorro/Middleware
 
     """
 
@@ -36,7 +36,7 @@ class ElasticSearchAPI(co.Common):
     def query(self, from_date, to_date, json_query):
         """
         Send a query directly to ElasticSearch and return the result.
-        See https://wiki.mozilla.org/Socorro/ElasticSearch_API#Query
+        See https://wiki.mozilla.org/Socorro/Middleware#Query
 
         """
         # Default dates

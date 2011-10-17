@@ -10,7 +10,8 @@ class Search(es.ElasticSearchAPI):
     def search(self, types, **kwargs):
         """
         Search for crashes and return them.
-        See https://wiki.mozilla.org/Socorro/ElasticSearch_API#Search
+
+        See https://wiki.mozilla.org/Socorro/Middleware#Search
 
         Keyword arguments:
         types -- Type of data to return. Can be "crashes" or "signatures".
