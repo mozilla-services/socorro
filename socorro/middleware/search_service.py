@@ -1,13 +1,11 @@
 import logging
 
-import socorro.middleware.service
-import socorro.search.elasticsearch as es
-import socorro.search.postgresql as pg
+from socorro.middleware.service import DataAPIService
 
 logger = logging.getLogger("webapi")
 
 
-class Search(service.DataAPIService):
+class Search(DataAPIService):
 
     """
     Search API interface
@@ -17,8 +15,8 @@ class Search(service.DataAPIService):
 
     """
     default_service_order = [
-        "external.elasticsearch",
-        "external.postgresql"
+        "socorro.external.elasticsearch",
+        "socorro.external.postgresql"
     ]
     service_name = "search"
     uri = "/search/([^/.]*)/(.*)"
@@ -36,9 +34,9 @@ class Search(service.DataAPIService):
         """
         # Parse parameters
         params = self.parse_query_string(args[1])
-        params["type"] = args[0]
+        params["data_type"] = args[0]
 
-        module = self.get_module()
-        impl = module.Search(self.config)
+        module = self.get_module(params)
+        impl = module.Search(self.context)
 
         return impl.search(**params)

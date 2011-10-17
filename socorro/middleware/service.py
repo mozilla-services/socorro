@@ -1,12 +1,12 @@
 import logging
 import sys
 
-import socorro.webapi.webapiService as webapi
+from socorro.webapi.webapiService import JsonServiceBase
 
 logger = logging.getLogger("webapi")
 
 
-class DataAPIService(webapi.JsonServiceBase):
+class DataAPIService(JsonServiceBase):
 
     """
     Search API interface
@@ -16,16 +16,16 @@ class DataAPIService(webapi.JsonServiceBase):
 
     """
     default_service_order = []
+    service_name = ""
 
     def __init__(self, config):
         """
         Constructor
         """
         super(DataAPIService, self).__init__(config)
-        self.api_impl = config.searchImplClass(config)
         logger.debug('DataAPIService __init__')
 
-    def get_module(self):
+    def get_module(self, params):
         """
         Find the external module to use and return it.
 
@@ -39,24 +39,31 @@ class DataAPIService(webapi.JsonServiceBase):
 
         # First use user value if it exists
         if "force_api_impl" in params:
-            module_name = ".".join(("external", params["force_api_impl"],
+            module_name = ".".join(("socorro.external", params["force_api_impl"],
                                     self.service_name))
             impl = self._import(module_name)
+            if impl:
+                logger.debug("Service %s uses forced implementation module: %s"
+                             % (self.service_name, module_name))
 
         # Second use config value
         if not impl:
-            module_name = ".".join((self.config.serviceImplementationModule,
+            module_name = ".".join((self.context.serviceImplementationModule,
                                     self.service_name))
             impl = self._import(module_name)
+            if impl:
+                logger.debug("Service %s uses config module: %s"
+                             % (self.service_name, module_name))
 
         # Third use module values in order of preference
         if not impl:
             for m in self.default_service_order:
-                module_name = ".".join((self.default_service_order[m],
-                                        self.service_name))
+                module_name = "%s.%s" % (m, self.service_name)
                 impl = self._import(module_name)
                 if impl:
-                    continue
+                    logger.debug("Service %s uses default module: %s"
+                                 % (self.service_name, module_name))
+                    break
 
         # If no implementation was found raise an error
         if not impl:
@@ -89,8 +96,11 @@ class DataAPIService(webapi.JsonServiceBase):
 
         params = {}
         for i in xrange(0, len(args), 2):
-            if args[i] and args[i + 1]:
-                params[args[i]] = args[i + 1]
+            try:
+                if args[i]:
+                    params[args[i]] = args[i + 1]
+            except IndexError:
+                pass
 
         for i in params:
             if params[i].find(terms_sep) > -1:

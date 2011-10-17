@@ -1,16 +1,33 @@
+import logging
+
+from datetime import timedelta, datetime
+
+import socorro.database.database as db
+import socorro.lib.datetimeutil as dtutil
+import socorro.lib.util as util
 import postgresql as pg
 
+logger = logging.getLogger("webapi")
 
-class Search(pg.Search):
 
-    def search(self, types, **kwargs):
+class Search(pg.PostgresAPI):
+
+    """
+    Implement the /search service with PostgreSQL.
+
+    """
+
+    def __init__(self, config):
+        """
+        Default constructor
+        """
+        super(Search, self).__init__(config)
+
+    def search(self, **kwargs):
         """
         Search for crashes and return them.
 
         See https://wiki.mozilla.org/Socorro/Middleware#Search
-
-        Keyword arguments:
-        types -- Type of data to return. Only "signatures" is supported for postgres.
 
         Optional arguments: see socorro.external.common.Common.get_parameters
         """
@@ -135,25 +152,25 @@ class Search(pg.Search):
                 else:
                     comp = "LIKE"
 
-                sql_where.append( "".join( ( "(", Search.array_to_string(xrange(len(terms)), " OR ", "r.signature"+comp+"%(term", ")s"), ")" ) ) )
+                sql_where.append( "".join( ( "(", Search.list_to_string(xrange(len(terms)), " OR ", "r.signature"+comp+"%(term", ")s"), ")" ) ) )
 
         ## Adding products to where clause
         if type(products) is list:
-            sql_where.append( "".join( ( "(", Search.array_to_string(xrange(len(products)), " OR ", "r.product=%(product", ")s"), ")" ) ) )
+            sql_where.append( "".join( ( "(", Search.list_to_string(xrange(len(products)), " OR ", "r.product=%(product", ")s"), ")" ) ) )
         else:
             sql_where.append("r.product=%(product)s" )
 
         ## Adding OS to where clause
         if os != "_all":
             if type(os) is list:
-                sql_where.append( "".join( ( "(", Search.array_to_string(xrange(len(os)), " OR ", "r.os_name=%(os", ")s"), ")" ) ) )
+                sql_where.append( "".join( ( "(", Search.list_to_string(xrange(len(os)), " OR ", "r.os_name=%(os", ")s"), ")" ) ) )
             else:
                 sql_where.append("r.os_name=%(os)s")
 
         ## Adding branches to where clause
         if branches:
             if type(branches) is list:
-                sql_where.append( "".join( ( "(", Search.array_to_string(xrange(len(branches)), " OR ", "branches.branch=%(branch", ")s"), ")" ) ) )
+                sql_where.append( "".join( ( "(", Search.list_to_string(xrange(len(branches)), " OR ", "branches.branch=%(branch", ")s"), ")" ) ) )
             else:
                 sql_where.append("branches.branch=%(branch)s")
 
@@ -227,14 +244,14 @@ class Search(pg.Search):
         ## Adding build id to where clause
         if build_id:
             if type(build_id) is list:
-                sql_where.append( "".join( ( "(", Search.array_to_string(xrange(len(build_id)), " OR ", "r.build=%(build", ")s"), ")" ) ) )
+                sql_where.append( "".join( ( "(", Search.list_to_string(xrange(len(build_id)), " OR ", "r.build=%(build", ")s"), ")" ) ) )
             else:
                 sql_where.append("r.build=%(build)s")
 
         ## Adding reason to where clause
         if reason:
             if type(reason) is list:
-                sql_where.append( "".join( ( "(", Search.array_to_string(xrange(len(reason)), " OR ", "r.reason=%(reason", ")s"), ")" ) ) )
+                sql_where.append( "".join( ( "(", Search.list_to_string(xrange(len(reason)), " OR ", "r.reason=%(reason", ")s"), ")" ) ) )
             else:
                 sql_where.append("r.reason=%(reason)s")
 
@@ -259,12 +276,15 @@ class Search(pg.Search):
                     field = "plugins.filename"
 
                 if type(plugin_term) is list:
-                    sql_where.append( "".join( ( "(", Search.array_to_string(xrange(len(plugin_term)), " OR ", field + comp +"%(plugin_term", ")s"), ")" ) ) )
+                    sql_where.append( "".join( ( "(", Search.list_to_string(xrange(len(plugin_term)), " OR ", field + comp +"%(plugin_term", ")s"), ")" ) ) )
                 else:
                     sql_where.append( "".join( ( field, comp, "%(plugin_term)s" ) ) )
 
         elif report_process == "browser":
             sql_where.append("r.process_type IS NULL")
+
+        elif report_process == "content":
+            sql_where.append("r.process_type = 'content'")
 
         sql_where = " AND ".join(sql_where)
 

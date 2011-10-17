@@ -30,12 +30,11 @@ wsgiInstallation = cm.Option()
 wsgiInstallation.doc = 'True or False, this app is installed under WSGI'
 wsgiInstallation.default = True
 
-# Implementation class for the Search API
-# Can be socorro.search.elasticsearch.ElasticSearchAPI or socorro.search.postgresql.PostgresAPI
-searchImplClass = cm.Option()
-searchImplClass.doc = 'String, the name of the class that implement the Search API.'
-searchImplClass.default = 'socorro.search.postgresql.PostgresAPI'
-searchImplClass.fromStringConverter = cm.classConverter
+# Implementation class for the Middleware services implementations
+# Can be socorro.external.elasticsearch or socorro.external.postgresql
+serviceImplementationModule = cm.Option()
+serviceImplementationModule.doc = 'String, name of the module that implements the services.'
+serviceImplementationModule.default = 'socorro.external.postgresql'
 
 # Elastic Search configuration
 elasticSearchHostname = cm.Option()
@@ -65,11 +64,11 @@ import socorro.services.emailCampaignVolume as emailvolume
 import socorro.services.emailSubscription as emailsub
 import socorro.services.emailSender as emailsend
 import socorro.services.schedulePriorityJob as schedule
-import socorro.services.search as search
 import socorro.services.bugzilla as bugzilla
 import socorro.services.currentVersions as cv
 import socorro.services.versions_info as vi
 import socorro.services.hangReport as hr
+import socorro.middleware.search_service as search
 
 servicesList = cm.Option()
 servicesList.doc = 'a python list of classes to offer as services'

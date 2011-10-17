@@ -9,12 +9,17 @@ class Common(object):
     Common functions for external modules.
     """
 
+    def __init__(self, config):
+        self.context = config
+
     @staticmethod
     def get_parameters(kwargs):
         """
         Return a dictionary of parameters with default values.
 
         Optional arguments:
+        data_type -- Type of data to return.
+            Default is None, to be determined by each service if needed.
         for -- Terms to search for.
             Can be a string or a list of strings.
             Default is none.
@@ -77,6 +82,7 @@ class Common(object):
         lastweek = now - timedelta(7)
 
         # Getting parameters that have default values
+        args["data_type"] = kwargs.get("type", None)
         args["terms"] = kwargs.get("for", None)
         args["products"] = kwargs.get("product", "Firefox")
         args["from_date"] = kwargs.get("from", lastweek)
@@ -109,9 +115,9 @@ class Common(object):
         args["result_offset"] = int(kwargs.get("result_offset", 0))
 
         # Handling dates
-        from_date = SearchAPI.format_date(args["from_date"])
+        from_date = Common.format_date(args["from_date"])
         args["from_date"] = from_date or lastweek
-        to_date = SearchAPI.format_date(args["to_date"])
+        to_date = Common.format_date(args["to_date"])
         args["to_date"] = to_date or now
 
         # Do not search in the future
@@ -119,14 +125,14 @@ class Common(object):
             args["to_date"] = now
 
         # Securing fields
-        args["fields"] = SearchAPI.secure_fields(args["fields"])
+        args["fields"] = Common.restrict_fields(args["fields"])
 
         return args
 
     @staticmethod
-    def secure_fields(fields):
+    def restrict_fields(fields):
         """
-        Secure given fields and return them.
+        Restrict fields and return them.
 
         Secure by allowing only some specific values. If a value is not valid
         it is simply removed. If there end up being no more fields, return a
@@ -152,17 +158,22 @@ class Common(object):
 
         return secured_fields
 
+    # ---
+    # Following methods will go into socorro.lib.util or
+    # socorro.lib.datetimeutil as soon as it is PEP8'd
+    # ---
+
     @staticmethod
-    def array_to_string(array, separator, prefix="", suffix=""):
+    def list_to_string(array, separator, prefix="", suffix=""):
         """
-        Transform a list to a string.
+        Transform a list into a string and return it.
         """
         return separator.join("%s%s%s" % (prefix, x, suffix) for x in array)
 
     @staticmethod
     def date_to_string(date):
         """
-        Return a string from a datetime object.
+        Transform a datetime object into a string and return it.
         """
         date_format = "%Y-%m-%d %H:%M:%S.%f"
         return date.strftime(date_format)
@@ -185,15 +196,6 @@ class Common(object):
         return date
 
     @staticmethod
-    def encode_array(array):
-        """
-        URL-encode each element of a given array, and returns this array.
-        """
-        for i in xrange(len(array)):
-            array[i] = urllib.quote(array[i])
-        return array
-
-    @staticmethod
     def lower(var):
         """
         Turn a string or a list of strings to lower case.
@@ -204,11 +206,11 @@ class Common(object):
             for i in xrange(len(var)):
                 try:
                     var[i] = var[i].lower()
-                except Exception:
+                except AttributeError:
                     pass
         else:
             try:
                 var = var.lower()
-            except Exception:
+            except AttributeError:
                 pass
         return var

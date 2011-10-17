@@ -6,7 +6,6 @@ from datetime import timedelta, datetime
 
 import socorro.external.common as co
 import socorro.lib.httpclient as httpc
-import socorro.services.versions_info as vi
 
 logger = logging.getLogger("webapi")
 
@@ -23,7 +22,6 @@ class ElasticSearchAPI(co.Common):
     def __init__(self, config):
         """
         Default constructor
-
         """
         super(ElasticSearchAPI, self).__init__(config)
         self.http = httpc.HttpClient(config.elasticSearchHostname,
@@ -36,8 +34,8 @@ class ElasticSearchAPI(co.Common):
     def query(self, from_date, to_date, json_query):
         """
         Send a query directly to ElasticSearch and return the result.
-        See https://wiki.mozilla.org/Socorro/Middleware#Query
 
+        See https://wiki.mozilla.org/Socorro/Middleware#Query
         """
         # Default dates
         now = datetime.today()
