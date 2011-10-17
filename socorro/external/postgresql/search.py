@@ -1,9 +1,12 @@
-import postgresql as pg
+import logging
 
 from datetime import timedelta, datetime
 
 import socorro.lib.datetimeutil as dtutil
 import socorro.lib.util as util
+import postgresql as pg
+
+logger = logging.getLogger("webapi")
 
 
 class Search(pg.PostgresAPI):
