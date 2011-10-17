@@ -22,7 +22,6 @@ class DataAPIService(webapi.JsonServiceBase):
         Constructor
         """
         super(DataAPIService, self).__init__(config)
-        self.api_impl = config.searchImplClass(config)
         logger.debug('DataAPIService __init__')
 
     def get_module(self, params):
@@ -45,7 +44,7 @@ class DataAPIService(webapi.JsonServiceBase):
 
         # Second use config value
         if not impl:
-            module_name = ".".join((self.config.serviceImplementationModule,
+            module_name = ".".join((self.context.serviceImplementationModule,
                                     self.service_name))
             impl = self._import(module_name)
 
