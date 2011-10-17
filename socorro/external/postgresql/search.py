@@ -3,7 +3,7 @@ import postgresql as pg
 
 class Search(pg.PostgresAPI):
 
-    def search(self, types, **kwargs):
+    def search(self, **kwargs):
         """
         Search for crashes and return them.
 
