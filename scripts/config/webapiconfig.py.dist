@@ -69,7 +69,7 @@ import socorro.services.bugzilla as bugzilla
 import socorro.services.currentVersions as cv
 import socorro.services.versions_info as vi
 import socorro.services.hangReport as hr
-import socorro.middleware.search as search
+import socorro.middleware.search_service as search
 
 servicesList = cm.Option()
 servicesList.doc = 'a python list of classes to offer as services'
