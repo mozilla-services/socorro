@@ -51,7 +51,8 @@ $(document).ready(function(){
     $('input[name=email_start_date][type=text], input[name=email_end_date][type=text]').datepicker({
 		showOn: "button",
 		buttonImage: "../../img/icons/calendar.png",
-		buttonImageOnly: true
+		buttonImageOnly: true,
+		dateFormat: "yy-mm-dd"
 	});
 	
     $('input[name=submit][type=submit][value="OK, Send Emails"]').click(function(){
