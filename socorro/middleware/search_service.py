@@ -37,6 +37,6 @@ class Search(service.DataAPIService):
         params["type"] = args[0]
 
         module = self.get_module(params)
-        impl = module.Search(self.config)
+        impl = module.Search(self.context)
 
         return impl.search(**params)
