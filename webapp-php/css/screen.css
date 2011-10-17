@@ -1417,6 +1417,28 @@ div.query_removemargin { /* Removes margin from the main content area */
 	font-size: 80%;
 	width: 85px !important;
 }
+.adv-search-rss {
+	float: right;
+	margin: 0;
+	padding: 0;
+}
+.adv-search-rss li {
+	float: left;
+	list-style: none;
+}
+.adv-search-rss a:link,
+.adv-search-rss a:visited {
+	display: inline-block;
+	background-color: #60A0C0;
+	color: #fff;
+	margin-left: 10px;
+	padding: .5em;
+	border-radius: 6px;
+	text-decoration: none;
+}
+.adv-search-rss a:focus {
+	border-bottom: 1px dotted #fff;
+}
 #build-id-el {
 	clear: left;
 	margin-top: 1em;
