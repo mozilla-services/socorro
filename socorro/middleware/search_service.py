@@ -36,7 +36,7 @@ class Search(service.DataAPIService):
         params = self.parse_query_string(args[1])
         params["type"] = args[0]
 
-        module = self.get_module()
+        module = self.get_module(params)
         impl = module.Search(self.config)
 
         return impl.search(**params)

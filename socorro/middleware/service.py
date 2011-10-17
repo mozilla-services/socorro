@@ -25,7 +25,7 @@ class DataAPIService(webapi.JsonServiceBase):
         self.api_impl = config.searchImplClass(config)
         logger.debug('DataAPIService __init__')
 
-    def get_module(self):
+    def get_module(self, params):
         """
         Find the external module to use and return it.
 
