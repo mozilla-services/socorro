@@ -1,8 +1,6 @@
 import logging
 
 import socorro.middleware.service
-import socorro.search.elasticsearch as es
-import socorro.search.postgresql as pg
 
 logger = logging.getLogger("webapi")
 
