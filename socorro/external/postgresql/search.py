@@ -3,6 +3,7 @@ import postgresql as pg
 from datetime import timedelta, datetime
 
 import socorro.lib.datetimeutil as dtutil
+import socorro.lib.util as util
 
 
 class Search(pg.PostgresAPI):
