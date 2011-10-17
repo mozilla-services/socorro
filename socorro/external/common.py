@@ -9,6 +9,9 @@ class Common(object):
     Common functions for external modules.
     """
 
+    def __init__(self, config):
+        self.context = config
+
     @staticmethod
     def get_parameters(kwargs):
         """
