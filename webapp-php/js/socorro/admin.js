@@ -48,9 +48,12 @@ function hideShow(hideId, showId) {
 }
 
 $(document).ready(function(){
-    $('input[name=email_start_date][type=text], input[name=email_end_date][type=text]').datePicker({
-        startDate: '01/01/2008',
-    });
+    $('input[name=email_start_date][type=text], input[name=email_end_date][type=text]').datepicker({
+		showOn: "button",
+		buttonImage: "../../img/icons/calendar.png",
+		buttonImageOnly: true
+	});
+	
     $('input[name=submit][type=submit][value="OK, Send Emails"]').click(function(){
       postData = {token: $('input[name=token]').val(),
                   campaign_id: $('input[name=campaign_id]').val(),

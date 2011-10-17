@@ -70,10 +70,10 @@ class Admin_Controller extends Controller
         }
 
         $this->js = html::script(array('js/jquery/date.js',
-                                       'js/jquery/plugins/ui/jquery.datePicker.js',
-                                       'js/socorro/admin.js',
-                                       ));
-        $this->css = '<link href="' . url::base() . 'css/datePicker.css" rel="stylesheet" type="text/css" media="screen" />';
+			'js/jquery/plugins/ui/jquery-ui-1.8.16.custom.min.js',
+			'js/socorro/admin.js',
+		));
+        $this->css = '<link href="' . url::base() . 'css/jquery-ui-1.8.16/flick/jquery-ui-1.8.16.custom.css" rel="stylesheet" type="text/css" media="screen" />';
     }
 
     /**
