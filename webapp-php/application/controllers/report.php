@@ -101,7 +101,7 @@ class Report_Controller extends Controller {
         $builds  = $this->common_model->queryFrequency($params);
 
         if (count($builds) > 1){
-            $crashGraphLabel = "Crashes By Build";
+            $crashGraphLabel = "Crashes By Build Date";
             $platLabels = $this->generateCrashesByBuild($platforms, $builds);
         } else {
             $crashGraphLabel = "Crashes By OS";
