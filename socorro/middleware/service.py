@@ -15,6 +15,7 @@ class DataAPIService(webapi.JsonServiceBase):
     call the API implementation to execute the query.
 
     """
+    default_service_order = []
 
     def __init__(self, config):
         """
@@ -26,6 +27,13 @@ class DataAPIService(webapi.JsonServiceBase):
 
     def get_module(self):
         """
+        Find the external module to use and return it.
+
+        Find the external module that will be called by the service to execute
+        the required action. If one exists and is valid, use user input first,
+        then configuration, then default_service_order of the service.
+
+        Return the imported module.
         """
         impl = None
 
@@ -58,6 +66,11 @@ class DataAPIService(webapi.JsonServiceBase):
         return impl
 
     def _import(self, module):
+        """
+        Import a module, check it exists and return it.
+
+        Return the module if it exists, False otherwise.
+        """
         try:
             __import__(module)
             return sys.modules[module]

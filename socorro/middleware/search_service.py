@@ -16,6 +16,10 @@ class Search(service.DataAPIService):
     call the API implementation to execute the query.
 
     """
+    default_service_order = [
+        "external.elasticsearch",
+        "external.postgresql"
+    ]
     service_name = "search"
     uri = "/201105/search/([^/.]*)/(.*)"
 
