@@ -70,10 +70,10 @@ class Admin_Controller extends Controller
         }
 
         $this->js = html::script(array('js/jquery/date.js',
-                                       'js/jquery/plugins/ui/jquery.datePicker.js',
-                                       'js/socorro/admin.js',
-                                       ));
-        $this->css = '<link href="' . url::base() . 'css/datePicker.css" rel="stylesheet" type="text/css" media="screen" />';
+			'js/jquery/plugins/ui/jquery-ui-1.8.16.custom.min.js',
+			'js/socorro/admin.js',
+		));
+        $this->css = '<link href="' . url::base() . 'css/jquery-ui-1.8.16/flick/jquery-ui-1.8.16.custom.css" rel="stylesheet" type="text/css" media="screen" />';
     }
 
     /**
@@ -118,9 +118,8 @@ class Admin_Controller extends Controller
     {
                 if (isset($_POST['action_add_version'])) {
                         if (
-                                !empty($_POST['product']) &&
-                                !empty($_POST['version']) &&
-                                !empty($_POST['branch']) &&
+                                !empty($_POST['product']) && 
+                                !empty($_POST['version']) && 
                                 !empty($_POST['start_date']) &&
                                 !empty($_POST['end_date']) &&
                                 !empty($_POST['throttle'])
@@ -133,10 +132,9 @@ class Admin_Controller extends Controller
                             );
                             $throttle = (!is_numeric($_POST['throttle']) || $_POST['throttle'] > 100) ? 100 : $_POST['throttle'];
                                 if ($rv = $this->branch_model->add(
-                        trim($_POST['product']),
-                        trim($_POST['version']),
-                        trim($_POST['branch']),
-                        trim($_POST['start_date']),
+                        trim($_POST['product']), 
+                        trim($_POST['version']), 
+                        trim($_POST['start_date']), 
                         trim($_POST['end_date']),
                         $featured,
                         $throttle
@@ -152,9 +150,9 @@ class Admin_Controller extends Controller
                 }
                 elseif (isset($_POST['action_update_version'])) {
                         if (
-                                !empty($_POST['update_product']) &&
-                                !empty($_POST['update_version']) &&
-                                !empty($_POST['update_start_date']) &&
+                                !empty($_POST['update_product']) && 
+                                !empty($_POST['update_version']) && 
+                                !empty($_POST['update_start_date']) && 
                                 !empty($_POST['update_end_date']) &&
                                 !empty($_POST['update_throttle'])
                         ) {
@@ -166,9 +164,9 @@ class Admin_Controller extends Controller
                             );
                             $throttle = (!is_numeric($_POST['update_throttle']) || $_POST['update_throttle'] > 100) ? 100 : $_POST['update_throttle'];
                                 if ($rv = $this->branch_model->update(
-                    trim($_POST['update_product']),
-                    trim($_POST['update_version']),
-                    trim($_POST['update_start_date']),
+                    trim($_POST['update_product']), 
+                    trim($_POST['update_version']), 
+                    trim($_POST['update_start_date']), 
                     trim($_POST['update_end_date']),
                     $featured,
                     $throttle

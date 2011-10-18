@@ -1272,7 +1272,27 @@ th.bugzilla_numbers {
 }
 
 #buildid-graph{
-    width: 200px; height: 200px;
+    width: 600px; 
+	height: 200px;
+}
+
+#graph-legend table {
+    margin: 10px;
+}
+
+#graph-legend table td {
+	padding: .4em;
+	border: 0;
+}
+
+#graph-tooltip {
+	position: absolute;
+	display: none;
+	background-color: rgba(113, 159, 183, .8);
+	color: #333;
+	padding: 5px;
+	border: 1px solid #406A80;
+	font-weight: bold;
 }
 
 #server-status-graph-comb,
@@ -1505,6 +1525,7 @@ a.builds {
 }
 .postcrash label .help { font-size: 9pt; }
 .postcrash input, .postcrash textarea, .postcrash .input{
+    position: relative;
     float: left;
     margin-bottom: 10px;
     width: 500px;
@@ -1520,6 +1541,14 @@ a.builds {
 }
 .postcrash textarea[name=body] {
     height: 300px;
+}
+.postcrash input.hasDatepicker {
+	width: 200px;
+}
+.ui-datepicker-trigger {
+	position: absolute;
+	margin: -5px 10px;
+	cursor: pointer;
 }
 table.recent-campaigns {
     border: solid 1px grey;

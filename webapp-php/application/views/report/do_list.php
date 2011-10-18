@@ -89,8 +89,9 @@ foreach($options[$type] as $k => $readable) {
       <div class="crashes-by-platform">
         <h3 id="by_platform_graph"><?php echo $crashGraphLabel ?></h3>
         <div id="graph-legend" class="crash-plot-label"></div>
-        <div id="buildid-graph"></div>
+        <div id="buildid-graph"></div>		
       </div>
+	  <h3>Hover over a point above the see the crash build date.</h3>
       <div class="clear"></div>
     </div>
     <div id="table">
@@ -181,7 +182,8 @@ foreach($options[$type] as $k => $readable) {
       $(document).ready(function() {
           var shouldDrawPlot = true;
 	  <?php if( count($builds) > 1){ ?>
-	    $("#buildid-graph").width(<?php echo max( min(50 * count($builds), 800), 200) ?>);
+	  
+	    $("#buildid-graph").width(<?php echo max( min(300 * count($builds), 1200), 200) ?>);
 	  <? } ?>
 
       $('#report-list > ul').bind('tabsshow', function(event, ui, data){
@@ -190,9 +192,42 @@ foreach($options[$type] as $k => $readable) {
             shouldDrawPlot = false;
         }
     });
+	
+	function showTooltip(x, y, contents) {
+		$('<div id="graph-tooltip">' + contents + '</div>').css({
+			top: y + 5,
+			left: x + 5
+		}).appendTo("body").fadeIn(200);
+	}
 
-    var drawPlot = function(){
-      $.plot($("#buildid-graph"),
+	var previousPoint = null;
+	
+	$("#buildid-graph").bind("plothover", function (event, pos, item) {
+		$("#x").text(pos.x.toFixed(2));
+		$("#y").text(pos.y.toFixed(2));
+		
+		if (item) {
+
+			if (previousPoint != item.dataIndex) {
+			
+				previousPoint = item.dataIndex;
+				
+				$("#graph-tooltip").remove();
+				
+				var x = item.datapoint[0].toFixed(2),
+				y = item.datapoint[1].toFixed(2);
+				
+				showTooltip(item.pageX, item.pageY, "Crash build date: " + item.series.xaxis.ticks[previousPoint].label);
+			}
+		} else {
+			$("#graph-tooltip").remove();
+			previousPoint = null;
+		}
+	});
+
+    var drawPlot = function() {
+	
+      var buildIdGraph = $.plot($("#buildid-graph"),
              [<?php for($i = 0; $i < count($all_platforms); $i += 1){
 		      $platform = $all_platforms[$i]; ?>
 			{ label: <?php echo json_encode($platformLabels[$i]['label']) ?>,
@@ -203,13 +238,23 @@ foreach($options[$type] as $k => $readable) {
              { // options
 
              <?php if( count($builds) > 1){ ?>
-	       // Crashes by development builds Frequency over build day
-               lines: { show: true }, points: { show: true},
-	       xaxis:{
-                 labelWidth: 55,
- 	         ticks: <?php echo json_encode( $buildTicks ) ?>
-	       },
-	       legend: { show: true, container: $("#graph-legend"), noColumns: 4 }
+	        // Crashes by development builds Frequency over build day
+            lines: { 
+				show: true 
+			}, 
+			points: { 
+				show: true
+			},
+	        xaxis: {
+                labelWidth: 55,
+				ticks: <?php echo json_encode( $buildTicks ) ?>
+	        },
+		    grid: { hoverable: true },
+	        legend: { 
+				show: true, 
+				container: $("#graph-legend"), 
+				noColumns: 4 
+			}
 
 	     <?php }else{ ?>
 	       //Crashes for production build OS bar chart
@@ -220,9 +265,15 @@ foreach($options[$type] as $k => $readable) {
 	       },
 	       legend: { show: true, container: $("#graph-legend"), noColumns: 4 }
 	     <?php } ?>
-             }
+             }	
      );
-    }//drawPlot
+	 
+		/* Hiding dates if they exceed a number > 20 to avoid overlap */
+		if(buildIdGraph.getAxes().xaxis.ticks.length > 20) {
+			$(".xAxis").hide();
+		}
+	 
+    }//drawPlot	
 
 });
 //]]>

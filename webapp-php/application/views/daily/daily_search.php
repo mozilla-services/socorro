@@ -70,7 +70,7 @@
 	    				</td>
 	    			</tr>
 
-	    			<tr>
+	    			<tr class="datepicker-daily">
 	    				<th>When</th>
 	    				<td>
 	    				<input class="date" type="text" name="date_start" value="<?php out::H($date_start); ?>" />
@@ -133,7 +133,7 @@
 	    				<td><input id="throttle4" class="version" type="text" name="throttle[]" value="<?php if (isset($throttle[0]) && !empty($throttle[0])) out::H($throttle[0]); ?>" title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling." />%</td>
 	    			</tr>
 
-	    			<tr>
+	    			<tr class="datepicker-daily">
 	    				<th>When</th>
 	    				<td>
 	    				<input class="date" type="text" name="date_start" value="<?php out::H($date_start); ?>" />
@@ -216,7 +216,7 @@
  	    				</td>
  	    			</tr>
 
- 	    			<tr>
+ 	    			<tr class="datepicker-daily">
  	    				<th>When</th>
  	    				<td>
  	    				<input class="date" type="text" name="date_start" value="<?php out::H($date_start); ?>" />

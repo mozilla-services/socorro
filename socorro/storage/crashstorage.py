@@ -288,7 +288,9 @@ class CrashStorageSystemForHBase(CrashStorageSystem):
                 config[hbasePort],
                 config[hbaseTimeout],
                 logger=self.logger)
-    self.exceptionsEligibleForRetry = self.hbaseConnection.hbaseThriftExceptions
+    retry_exceptions_list = list(self.hbaseConnection.hbaseThriftExceptions)
+    retry_exceptions_list.append(hbaseClient.NoConnectionException)
+    self.exceptionsEligibleForRetry = tuple(retry_exceptions_list)
 
   #-----------------------------------------------------------------------------------------------------------------
   def close (self):

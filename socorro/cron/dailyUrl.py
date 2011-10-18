@@ -50,7 +50,7 @@ sql = """
         r.process_type, --24
         r.app_notes, --25
         r.install_age, --26
-        rd.duplicate_of --27
+        rd.duplicate_of, --27
         r.release_channel --28
       from
         reports r left join productdims pd on r.product = pd.product and r.version = pd.version

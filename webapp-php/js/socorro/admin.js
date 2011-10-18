@@ -48,9 +48,21 @@ function hideShow(hideId, showId) {
 }
 
 $(document).ready(function(){
-    $('input[name=email_start_date][type=text], input[name=email_end_date][type=text]').datePicker({
-        startDate: '01/01/2008',
-    });
+	/* Emails */
+    $('input[name=email_start_date][type=text], input[name=email_end_date][type=text]').datepicker({
+		dateFormat: "yy-mm-dd"
+	});
+	
+	/* Add new */
+	$("#start_date, #end_date").datepicker({
+		dateFormat: "yy-mm-dd"
+	});
+	
+	/* Update */
+	$("#update_start_date, #update_end_date").datepicker({
+		dateFormat: "yy-mm-dd"
+	});
+	
     $('input[name=submit][type=submit][value="OK, Send Emails"]').click(function(){
       postData = {token: $('input[name=token]').val(),
                   campaign_id: $('input[name=campaign_id]').val(),

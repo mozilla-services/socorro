@@ -5,7 +5,7 @@ NOSE = $(VIRTUALENV)/bin/nosetests socorro -s --with-xunit
 COVEROPTS = --with-coverage --cover-package=socorro
 COVERAGE = $(VIRTUALENV)/bin/coverage
 PYLINT = $(VIRTUALENV)/bin/pylint
-DEPS = nose psycopg2 simplejson coverage web.py pylint poster mock
+DEPS = nose psycopg2 simplejson coverage web.py pylint poster mock lxml
 
 .PHONY: all build install stage coverage hudson-coverage lint test
 
