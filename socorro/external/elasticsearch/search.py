@@ -7,14 +7,14 @@ class Search(es.ElasticSearchAPI):
 
     """
 
-    def search(self, types, **kwargs):
+    def search(self, **kwargs):
         """
         Search for crashes and return them.
 
         See https://wiki.mozilla.org/Socorro/Middleware#Search
 
         Keyword arguments:
-        types -- Type of data to return. Can be "crashes" or "signatures".
+        type -- Type of data to return. Can be "crashes" or "signatures".
 
         Optional arguments: see socorro.external.common.Common.get_parameters
         """
@@ -27,6 +27,7 @@ class Search(es.ElasticSearchAPI):
         query = ElasticSearchAPI.build_query_from_params(params)
 
         # For signatures mode, we need to collect more data with facets
+        types = params["type"]
         if types == "signatures":
             # No need to get crashes, we only want signatures
             query["size"] = 0
