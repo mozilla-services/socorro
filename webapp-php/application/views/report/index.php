@@ -33,7 +33,7 @@
     <div class="body notitle">
 
 <div id="sumo-link"><?php
-if (is_null($report->signature) || empty($report->signature)) { ?>
+if (is_null($report->sumo_signature) || strlen($report->sumo_signature)) { ?>
 <a href="http://support.mozilla.com">Visit Mozilla Support for Help</a>
 <?php } else { ?>
 <a href="http://support.mozilla.com/search?q=<?=urlencode($report->sumo_signature) ?>" title="Find more answers at support.mozilla.com!">Search Mozilla Support for Help</a>
