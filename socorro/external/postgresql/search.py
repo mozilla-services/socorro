@@ -2,6 +2,7 @@ import logging
 
 from datetime import timedelta, datetime
 
+import socorro.database.database as db
 import socorro.lib.datetimeutil as dtutil
 import socorro.lib.util as util
 import postgresql as pg
