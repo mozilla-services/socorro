@@ -1,6 +1,13 @@
-import elasticsearch as es
+import json
+import logging
 
-class Search(es.ElasticSearchAPI):
+import elasticsearch as es
+import socorro.services.versions_info as vi
+
+logger = logging.getLogger("webapi")
+
+
+class Search(es.Search):
 
     """
     Implement the /search service with ElasticSearch.
@@ -18,13 +25,13 @@ class Search(es.ElasticSearchAPI):
 
         Optional arguments: see socorro.external.common.Common.get_parameters
         """
-        params = ElasticSearchAPI.get_parameters(kwargs)
+        params = Search.get_parameters(kwargs)
 
         # Get information about the versions
         versions_service = vi.VersionsInfo(self.context)
         params["versions_info"] = versions_service.versions_info(params)
 
-        query = ElasticSearchAPI.build_query_from_params(params)
+        query = Search.build_query_from_params(params)
 
         # For signatures mode, we need to collect more data with facets
         types = params["type"]
@@ -36,7 +43,7 @@ class Search(es.ElasticSearchAPI):
             # Using a fixed number instead of the needed number.
             # This hack limits the number of distinct signatures to process,
             # and hugely improves performances with long queries.
-            query["facets"] = ElasticSearchAPI.get_signatures_facet(
+            query["facets"] = Search.get_signatures_facet(
                             self.context.searchMaxNumberOfDistinctSignatures)
 
         json_query = json.dumps(query)
@@ -67,13 +74,13 @@ class Search(es.ElasticSearchAPI):
                           params["result_number"] + params["result_offset"])
 
             if maxsize > params["result_offset"]:
-                signatures = ElasticSearchAPI.get_signatures(
+                signatures = Search.get_signatures(
                                                 es_data["facets"],
                                                 maxsize,
                                                 self.context.platforms)
 
                 count_by_os_query = query
-                facets = ElasticSearchAPI.get_count_facets(
+                facets = Search.get_count_facets(
                                             signatures,
                                             params["result_offset"],
                                             maxsize)
@@ -93,7 +100,7 @@ class Search(es.ElasticSearchAPI):
                     raise
 
                 count_sign = count_data["facets"]
-                signatures = ElasticSearchAPI.get_counts(
+                signatures = Search.get_counts(
                                                 signatures,
                                                 count_sign,
                                                 params["result_offset"],

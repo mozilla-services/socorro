@@ -6,7 +6,6 @@ from datetime import timedelta, datetime
 
 import socorro.external.common as co
 import socorro.lib.httpclient as httpc
-import socorro.services.versions_info as vi
 
 logger = logging.getLogger("webapi")
 
