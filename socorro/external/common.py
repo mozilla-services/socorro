@@ -18,6 +18,8 @@ class Common(object):
         Return a dictionary of parameters with default values.
 
         Optional arguments:
+        data_type -- Type of data to return.
+            Default is None, to be determined by each service if needed.
         for -- Terms to search for.
             Can be a string or a list of strings.
             Default is none.
@@ -80,6 +82,7 @@ class Common(object):
         lastweek = now - timedelta(7)
 
         # Getting parameters that have default values
+        args["data_type"] = kwargs.get("type", None)
         args["terms"] = kwargs.get("for", None)
         args["products"] = kwargs.get("product", "Firefox")
         args["from_date"] = kwargs.get("from", lastweek)

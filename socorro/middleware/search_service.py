@@ -34,7 +34,7 @@ class Search(service.DataAPIService):
         """
         # Parse parameters
         params = self.parse_query_string(args[1])
-        params["type"] = args[0]
+        params["data_type"] = args[0]
 
         module = self.get_module(params)
         impl = module.Search(self.context)
