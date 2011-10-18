@@ -88,6 +88,10 @@ $(document).ready(function() {
       $("#throttle"+key).val(throttle_default);
     });
   }
+  
+	$(".datepicker-daily input").datepicker({
+		dateFormat: "yy-mm-dd"
+	});
 
 });
 

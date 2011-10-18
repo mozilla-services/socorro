@@ -2,12 +2,10 @@
     <title>Query Results - Mozilla Crash Reports</title>
     <?php echo html::stylesheet(array(
         'css/jquery.tooltip.css',
-        'css/datePicker.css',
         'css/flora/flora.tablesorter.css',
     ),  'screen'); ?>
 
     <?php echo html::script(array(
-        'js/jquery/plugins/ui/jquery.datePicker.js',
         'js/jquery/plugins/ui/jquery.ui.all.js',       /* ui.accordion.js */
         'js/jquery/plugins/ui/jquery.tablesorter.min.js',       /* old school not ui.sortable.js */
         'js/jquery/plugins/jquery.dimensions.min.js',
