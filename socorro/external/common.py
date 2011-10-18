@@ -112,9 +112,9 @@ class Common(object):
         args["result_offset"] = int(kwargs.get("result_offset", 0))
 
         # Handling dates
-        from_date = SearchAPI.format_date(args["from_date"])
+        from_date = Common.format_date(args["from_date"])
         args["from_date"] = from_date or lastweek
-        to_date = SearchAPI.format_date(args["to_date"])
+        to_date = Common.format_date(args["to_date"])
         args["to_date"] = to_date or now
 
         # Do not search in the future
@@ -122,7 +122,7 @@ class Common(object):
             args["to_date"] = now
 
         # Securing fields
-        args["fields"] = SearchAPI.secure_fields(args["fields"])
+        args["fields"] = Common.secure_fields(args["fields"])
 
         return args
 
