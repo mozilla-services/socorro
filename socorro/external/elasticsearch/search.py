@@ -7,7 +7,7 @@ import socorro.services.versions_info as vi
 logger = logging.getLogger("webapi")
 
 
-class Search(es.Search):
+class Search(es.ElasticSearchAPI):
 
     """
     Implement the /search service with ElasticSearch.
