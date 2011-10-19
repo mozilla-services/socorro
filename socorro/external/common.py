@@ -1,53 +1,25 @@
 import urllib
-import abc
 
 from datetime import timedelta, datetime
 
 import socorro.lib.datetimeutil as dtutil
 
-
-class SearchAPI(object):
+class Common(object):
     """
-    Base class for the search API, implements some useful functions.
-
+    Common functions for external modules.
     """
-    __metaclass__ = abc.ABCMeta
 
     def __init__(self, config):
-        """
-        Default contructor.
-
-        """
         self.context = config
-
-    @abc.abstractmethod
-    def query(self):
-        """
-        Execute a given query against the database.
-
-        """
-        raise NotImplemented
-
-    @abc.abstractmethod
-    def search(self):
-        """
-        Search into the database given different parameters.
-
-        """
-        raise NotImplemented
-
-    @abc.abstractmethod
-    def report(self):
-        """
-        Return the results of a asked report.
-
-        """
-        raise NotImplemented
 
     @staticmethod
     def get_parameters(kwargs):
         """
+        Return a dictionary of parameters with default values.
+
         Optional arguments:
+        data_type -- Type of data to return.
+            Default is None, to be determined by each service if needed.
         for -- Terms to search for.
             Can be a string or a list of strings.
             Default is none.
@@ -102,7 +74,6 @@ class SearchAPI(object):
             Default is 100.
         result_offset -- Get results from this offset.
             Default is 0.
-
         """
         args = {}
 
@@ -111,6 +82,7 @@ class SearchAPI(object):
         lastweek = now - timedelta(7)
 
         # Getting parameters that have default values
+        args["data_type"] = kwargs.get("type", None)
         args["terms"] = kwargs.get("for", None)
         args["products"] = kwargs.get("product", "Firefox")
         args["from_date"] = kwargs.get("from", lastweek)
@@ -143,9 +115,9 @@ class SearchAPI(object):
         args["result_offset"] = int(kwargs.get("result_offset", 0))
 
         # Handling dates
-        from_date = SearchAPI.format_date(args["from_date"])
+        from_date = Common.format_date(args["from_date"])
         args["from_date"] = from_date or lastweek
-        to_date = SearchAPI.format_date(args["to_date"])
+        to_date = Common.format_date(args["to_date"])
         args["to_date"] = to_date or now
 
         # Do not search in the future
@@ -153,12 +125,19 @@ class SearchAPI(object):
             args["to_date"] = now
 
         # Securing fields
-        args["fields"] = SearchAPI.secure_fields(args["fields"])
+        args["fields"] = Common.secure_fields(args["fields"])
 
         return args
 
     @staticmethod
     def secure_fields(fields):
+        """
+        Secure given fields and return them.
+
+        Secure by allowing only some specific values. If a value is not valid
+        it is simply removed. If there end up being no more fields, return a
+        default one.
+        """
         secured_fields = []
         # To be moved into a config file?
         authorized_fields = [
@@ -183,7 +162,6 @@ class SearchAPI(object):
     def array_to_string(array, separator, prefix="", suffix=""):
         """
         Transform a list to a string.
-
         """
         return separator.join("%s%s%s" % (prefix, x, suffix) for x in array)
 
@@ -191,7 +169,6 @@ class SearchAPI(object):
     def date_to_string(date):
         """
         Return a string from a datetime object.
-
         """
         date_format = "%Y-%m-%d %H:%M:%S.%f"
         return date.strftime(date_format)
@@ -200,7 +177,6 @@ class SearchAPI(object):
     def format_date(date):
         """
         Take a string and return a datetime object.
-
         """
         if not date:
             return None
@@ -218,7 +194,6 @@ class SearchAPI(object):
     def encode_array(array):
         """
         URL-encode each element of a given array, and returns this array.
-
         """
         for i in xrange(len(array)):
             array[i] = urllib.quote(array[i])
@@ -228,8 +203,8 @@ class SearchAPI(object):
     def lower(var):
         """
         Turn a string or a list of strings to lower case.
-        Don't modify non-string elements.
 
+        Don't modify non-string elements.
         """
         if type(var) is list:
             for i in xrange(len(var)):

@@ -4,24 +4,24 @@ import urllib
 
 from datetime import timedelta, datetime
 
+import socorro.external.common as co
 import socorro.lib.httpclient as httpc
-import socorro.services.versions_info as vi
-import searchapi as sapi
 
 logger = logging.getLogger("webapi")
 
 
-class ElasticSearchAPI(sapi.SearchAPI):
+class ElasticSearchAPI(co.Common):
+
     """
-    Implements the search API using ElasticSearch.
-    See https://wiki.mozilla.org/Socorro/ElasticSearch_API
+    Base class for ElasticSearch based service implementations.
+
+    See https://wiki.mozilla.org/Socorro/Middleware
 
     """
 
     def __init__(self, config):
         """
         Default constructor
-
         """
         super(ElasticSearchAPI, self).__init__(config)
         self.http = httpc.HttpClient(config.elasticSearchHostname,
@@ -34,8 +34,8 @@ class ElasticSearchAPI(sapi.SearchAPI):
     def query(self, from_date, to_date, json_query):
         """
         Send a query directly to ElasticSearch and return the result.
-        See https://wiki.mozilla.org/Socorro/ElasticSearch_API#Query
 
+        See https://wiki.mozilla.org/Socorro/Middleware#Query
         """
         # Default dates
         now = datetime.today()
@@ -98,127 +98,10 @@ class ElasticSearchAPI(sapi.SearchAPI):
 
         return (http_response, "text/json")
 
-    def search(self, types, **kwargs):
-        """
-        Search for crashes and return them.
-        See https://wiki.mozilla.org/Socorro/ElasticSearch_API#Search
-
-        Keyword arguments:
-        types -- Type of data to return. Can be "crashes" or "signatures".
-
-        Optional arguments: see SearchAPI.get_parameters
-        """
-        params = ElasticSearchAPI.get_parameters(kwargs)
-
-        # Get information about the versions
-        versions_service = vi.VersionsInfo(self.context)
-        params["versions_info"] = versions_service.versions_info(params)
-
-        query = ElasticSearchAPI.build_query_from_params(params)
-
-        # For signatures mode, we need to collect more data with facets
-        if types == "signatures":
-            # No need to get crashes, we only want signatures
-            query["size"] = 0
-            query["from"] = 0
-
-            # Using a fixed number instead of the needed number.
-            # This hack limits the number of distinct signatures to process,
-            # and hugely improves performances with long queries.
-            query["facets"] = ElasticSearchAPI.get_signatures_facet(
-                            self.context.searchMaxNumberOfDistinctSignatures)
-
-        json_query = json.dumps(query)
-        logger.debug("Query the crashes or signatures: %s", json_query)
-
-        es_result = self.query(params["from_date"],
-                               params["to_date"],
-                               json_query)
-
-        # Executing the query and returning the result
-        if types != "signatures":
-            return es_result
-        else:
-            try:
-                es_data = json.loads(es_result[0])
-            except Exception:
-                logger.debug("ElasticSearch returned something wrong: %s",
-                             es_result[0])
-                raise
-
-            # Making sure we have a real result before using it
-            if not es_data:
-                signature_count = 0
-            else:
-                signature_count = len(es_data["facets"]["signatures"]["terms"])
-
-            maxsize = min(signature_count,
-                          params["result_number"] + params["result_offset"])
-
-            if maxsize > params["result_offset"]:
-                signatures = ElasticSearchAPI.get_signatures(
-                                                es_data["facets"],
-                                                maxsize,
-                                                self.context.platforms)
-
-                count_by_os_query = query
-                facets = ElasticSearchAPI.get_count_facets(
-                                            signatures,
-                                            params["result_offset"],
-                                            maxsize)
-                count_by_os_query["facets"] = facets
-                count_by_os_query_json = json.dumps(count_by_os_query)
-                logger.debug("Query the OS by signature: %s",
-                             count_by_os_query_json)
-
-                count_result = self.query(params["from_date"],
-                                          params["to_date"],
-                                          count_by_os_query_json)
-                try:
-                    count_data = json.loads(count_result[0])
-                except Exception:
-                    logger.debug("ElasticSearch returned something wrong: %s",
-                                 count_result[0])
-                    raise
-
-                count_sign = count_data["facets"]
-                signatures = ElasticSearchAPI.get_counts(
-                                                signatures,
-                                                count_sign,
-                                                params["result_offset"],
-                                                maxsize,
-                                                self.context.platforms)
-
-            results = {
-                "total": signature_count,
-                "hits": []
-            }
-
-            for i in xrange(params["result_offset"], maxsize):
-                results["hits"].append(signatures[i])
-
-            return results
-
-    def report(self, name, **kwargs):
-        """
-        Not implemented yet.
-
-        """
-        if name == "top_crashers_by_signature":
-            return self.report_top_crashers_by_signature(kwargs)
-
-    def report_top_crashers_by_signature(self, kwargs):
-        """
-        Not implemented yet.
-
-        """
-        return None
-
     @staticmethod
     def get_signatures_facet(size):
         """
         Generate the facets for the search query.
-
         """
         # Get distinct signatures and count
         facets = {
@@ -236,7 +119,6 @@ class ElasticSearchAPI(sapi.SearchAPI):
     def get_signatures(facets, maxsize, platforms):
         """
         Generate the result of search by signature from the facets ES returns.
-
         """
         signatures = facets["signatures"]["terms"]
 
@@ -259,7 +141,6 @@ class ElasticSearchAPI(sapi.SearchAPI):
     def get_count_facets(signatures, result_offset, maxsize):
         """
         Generate the facets to count the number of each OS for each signature.
-
         """
         facets = {}
 
@@ -304,7 +185,6 @@ class ElasticSearchAPI(sapi.SearchAPI):
         """
         Generate the complementary information about signatures
         (count by OS, number of plugins and of hang).
-
         """
         # Transform the results into something we can return
         for i in xrange(result_offset, maxsize):
@@ -326,8 +206,9 @@ class ElasticSearchAPI(sapi.SearchAPI):
     def build_query_from_params(params):
         """
         Build and return an ES query given a list of parameters.
-        See searchUtil.get_parameters for parameters and default values.
 
+        See socorro.external.common.Common.get_parameters for parameters and
+        default values.
         """
         # Dates need to be strings for ES
         params["from_date"] = ElasticSearchAPI.date_to_string(
@@ -523,7 +404,6 @@ class ElasticSearchAPI(sapi.SearchAPI):
         """
         Build and return an object containing a term or terms query
         for ElasticSearch.
-
         """
         if not terms or not fields:
             return None
@@ -550,7 +430,6 @@ class ElasticSearchAPI(sapi.SearchAPI):
         """
         Build and return an object containing a wildcard query
         for ElasticSearch.
-
         """
         if not terms or not fields:
             return None
@@ -574,11 +453,12 @@ class ElasticSearchAPI(sapi.SearchAPI):
     @staticmethod
     def format_versions(versions):
         """
-        Format the versions, separating by ":".
-        Return a string if there was only one product,
-                a dict if there was only one product:versionm
-                a list of dicts if there was several product:version.
+        Format the versions and return them.
 
+        Separate versions parts by ":".
+        Return  a string if there was only one product,
+                a dict if there was only one product:version,
+                a list of dicts if there was several product:version.
         """
         if not versions:
             return None
@@ -619,7 +499,6 @@ class ElasticSearchAPI(sapi.SearchAPI):
         """
         Prepare the list of terms by adding wildcard where needed,
         depending on the search mode.
-
         """
         if type(terms) is list:
             if search_mode == "contains":

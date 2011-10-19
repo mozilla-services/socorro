@@ -2,51 +2,23 @@ import logging
 
 from datetime import timedelta, datetime
 
-import socorro.lib.util as util
 import socorro.database.database as db
-import searchapi as sapi
+import socorro.lib.datetimeutil as dtutil
+import socorro.lib.util as util
+import postgresql as pg
 
 logger = logging.getLogger("webapi")
 
 
-class PostgresAPI(sapi.SearchAPI):
-    """
-    Implements the search API using PostgreSQL.
-    See https://wiki.mozilla.org/Socorro/ElasticSearch_API
+class Search(pg.PostgresAPI):
 
-    """
-
-    def __init__(self, config):
-        """
-        Default constructor
-
-        """
-        super(PostgresAPI, self).__init__(config)
-        try:
-            self.database = db.Database(config)
-        except (AttributeError, KeyError):
-            util.reportExceptionAndContinue(logger)
-
-        self.connection = None
-
-    def query(self, types, sql_query):
-        """
-        This method is not implemented for PostgreSQL.
-        See https://wiki.mozilla.org/Socorro/ElasticSearch_API#Query
-
-        """
-        raise NotImplementedError("Method query() is not implemented "
-                                  "for PostgreSQL. ")
-
-    def search(self, types, **kwargs):
+    def search(self, **kwargs):
         """
         Search for crashes and return them.
-        See https://wiki.mozilla.org/Socorro/ElasticSearch_API#Search
 
-        Keyword arguments:
-        types -- Type of data to return. Only "signatures" is supported for postgres.
+        See https://wiki.mozilla.org/Socorro/Middleware#Search
 
-        Optional arguments: see SearchAPI.get_parameters
+        Optional arguments: see socorro.external.common.Common.get_parameters
         """
         # Creating the connection to the DB
         self.connection = self.database.connection()
@@ -84,8 +56,8 @@ class PostgresAPI(sapi.SearchAPI):
             plugin_search_mode = "starts_with"
 
         # Handling dates
-        from_date = PostgresAPI.format_date(from_date)
-        to_date = PostgresAPI.format_date(to_date)
+        from_date = Search.format_date(from_date)
+        to_date = Search.format_date(to_date)
 
         # For Postgres, we never search for a list of terms
         if type(terms) is list:
@@ -95,14 +67,14 @@ class PostgresAPI(sapi.SearchAPI):
         is_terms_a_list = type(terms) is list
 
         if terms:
-            terms = PostgresAPI.prepare_terms(terms, is_terms_a_list, search_mode)
+            terms = Search.prepare_terms(terms, is_terms_a_list, search_mode)
 
         # Searching for terms in plugins
         if report_process == "plugin" and plugin_term:
-            plugin_term = PostgresAPI.prepare_terms(plugin_term, (type(plugin_term) is list), plugin_search_mode)
+            plugin_term = Search.prepare_terms(plugin_term, (type(plugin_term) is list), plugin_search_mode)
 
         # Parsing the versions
-        (versions, products) = PostgresAPI.parse_versions(versions_list, products)
+        (versions, products) = Search.parse_versions(versions_list, products)
 
         # Changing the OS ids to OS names
         if type(os) is list:
@@ -122,14 +94,14 @@ class PostgresAPI(sapi.SearchAPI):
             "limit" : int(result_number),
             "offset" : int(result_offset)
         }
-        params = PostgresAPI.dispatch_params(params, "term", terms)
-        params = PostgresAPI.dispatch_params(params, "product", products)
-        params = PostgresAPI.dispatch_params(params, "os", os)
-        params = PostgresAPI.dispatch_params(params, "version", versions)
-        params = PostgresAPI.dispatch_params(params, "build", build_id)
-        params = PostgresAPI.dispatch_params(params, "reason", reason)
-        params = PostgresAPI.dispatch_params(params, "plugin_term", plugin_term)
-        params = PostgresAPI.dispatch_params(params, "branch", branches)
+        params = Search.dispatch_params(params, "term", terms)
+        params = Search.dispatch_params(params, "product", products)
+        params = Search.dispatch_params(params, "os", os)
+        params = Search.dispatch_params(params, "version", versions)
+        params = Search.dispatch_params(params, "build", build_id)
+        params = Search.dispatch_params(params, "reason", reason)
+        params = Search.dispatch_params(params, "plugin_term", plugin_term)
+        params = Search.dispatch_params(params, "branch", branches)
 
         # Preparing the different parts of the sql query
 
@@ -169,25 +141,25 @@ class PostgresAPI(sapi.SearchAPI):
                 else:
                     comp = "LIKE"
 
-                sql_where.append( "".join( ( "(", PostgresAPI.array_to_string(xrange(len(terms)), " OR ", "r.signature"+comp+"%(term", ")s"), ")" ) ) )
+                sql_where.append( "".join( ( "(", Search.array_to_string(xrange(len(terms)), " OR ", "r.signature"+comp+"%(term", ")s"), ")" ) ) )
 
         ## Adding products to where clause
         if type(products) is list:
-            sql_where.append( "".join( ( "(", PostgresAPI.array_to_string(xrange(len(products)), " OR ", "r.product=%(product", ")s"), ")" ) ) )
+            sql_where.append( "".join( ( "(", Search.array_to_string(xrange(len(products)), " OR ", "r.product=%(product", ")s"), ")" ) ) )
         else:
             sql_where.append("r.product=%(product)s" )
 
         ## Adding OS to where clause
         if os != "_all":
             if type(os) is list:
-                sql_where.append( "".join( ( "(", PostgresAPI.array_to_string(xrange(len(os)), " OR ", "r.os_name=%(os", ")s"), ")" ) ) )
+                sql_where.append( "".join( ( "(", Search.array_to_string(xrange(len(os)), " OR ", "r.os_name=%(os", ")s"), ")" ) ) )
             else:
                 sql_where.append("r.os_name=%(os)s")
 
         ## Adding branches to where clause
         if branches:
             if type(branches) is list:
-                sql_where.append( "".join( ( "(", PostgresAPI.array_to_string(xrange(len(branches)), " OR ", "branches.branch=%(branch", ")s"), ")" ) ) )
+                sql_where.append( "".join( ( "(", Search.array_to_string(xrange(len(branches)), " OR ", "branches.branch=%(branch", ")s"), ")" ) ) )
             else:
                 sql_where.append("branches.branch=%(branch)s")
 
@@ -274,14 +246,14 @@ class PostgresAPI(sapi.SearchAPI):
         ## Adding build id to where clause
         if build_id:
             if type(build_id) is list:
-                sql_where.append( "".join( ( "(", PostgresAPI.array_to_string(xrange(len(build_id)), " OR ", "r.build=%(build", ")s"), ")" ) ) )
+                sql_where.append( "".join( ( "(", Search.array_to_string(xrange(len(build_id)), " OR ", "r.build=%(build", ")s"), ")" ) ) )
             else:
                 sql_where.append("r.build=%(build)s")
 
         ## Adding reason to where clause
         if reason:
             if type(reason) is list:
-                sql_where.append( "".join( ( "(", PostgresAPI.array_to_string(xrange(len(reason)), " OR ", "r.reason=%(reason", ")s"), ")" ) ) )
+                sql_where.append( "".join( ( "(", Search.array_to_string(xrange(len(reason)), " OR ", "r.reason=%(reason", ")s"), ")" ) ) )
             else:
                 sql_where.append("r.reason=%(reason)s")
 
@@ -306,7 +278,7 @@ class PostgresAPI(sapi.SearchAPI):
                     field = "plugins.filename"
 
                 if type(plugin_term) is list:
-                    sql_where.append( "".join( ( "(", PostgresAPI.array_to_string(xrange(len(plugin_term)), " OR ", field + comp +"%(plugin_term", ")s"), ")" ) ) )
+                    sql_where.append( "".join( ( "(", Search.array_to_string(xrange(len(plugin_term)), " OR ", field + comp +"%(plugin_term", ")s"), ")" ) ) )
                 else:
                     sql_where.append( "".join( ( field, comp, "%(plugin_term)s" ) ) )
 
@@ -340,10 +312,10 @@ class PostgresAPI(sapi.SearchAPI):
 
         # Assembling the query
         sql_from = " JOIN ".join(sql_from)
-        sql_query = " ".join( ( "/* socorro.search.postgresAPI search */", sql_select, sql_from, sql_where, sql_group, sql_order, sql_limit ) )
+        sql_query = " ".join( ( "/* socorro.search.Search search */", sql_select, sql_from, sql_where, sql_group, sql_order, sql_limit ) )
 
         # Query for counting the results
-        sql_count_query = " ".join( ( "/* socorro.search.postgresAPI search.count */ SELECT count(DISTINCT r.signature) ", sql_from, sql_where ) )
+        sql_count_query = " ".join( ( "/* socorro.search.Search search.count */ SELECT count(DISTINCT r.signature) ", sql_from, sql_where ) )
 
         # Querying the DB
         try:
@@ -378,13 +350,6 @@ class PostgresAPI(sapi.SearchAPI):
         self.connection.close()
 
         return json_result
-
-    def report(self, name, **kwargs):
-        """
-        Not implemented yet.
-
-        """
-        raise NotImplemented
 
     def generate_sql_select(self, report_process):
         """
@@ -451,8 +416,8 @@ class PostgresAPI(sapi.SearchAPI):
             versions.append(product_version_list[x + 1])
 
         params = {}
-        params = PostgresAPI.dispatch_params(params, "product", products)
-        params = PostgresAPI.dispatch_params(params, "version", versions)
+        params = Search.dispatch_params(params, "product", products)
+        params = Search.dispatch_params(params, "version", versions)
 
         where = []
         for i in xrange(len(products)):
@@ -461,7 +426,7 @@ class PostgresAPI(sapi.SearchAPI):
                                      ")s AND pi.version_string = %(version",
                                      ")s)")))
 
-        sql = """/* socorro.search.postgresql.PostgresAPI.get_product_info */
+        sql = """/* socorro.external.postgresql.search.Search.get_product_info */
         SELECT pi.version_string, which_table, major_version, pi.product_name
         FROM product_info pi
             JOIN product_versions pv ON
@@ -482,77 +447,3 @@ class PostgresAPI(sapi.SearchAPI):
             res[":".join((row["product_name"], row["version_string"]))] = row
 
         return res
-
-    @staticmethod
-    def dispatch_params(params, key, value):
-        """
-        Dispatch a parameter or a list of parameters into the params array.
-
-        """
-        if type(value) is not list:
-            params[key] = value
-        else:
-            for i in xrange(len(value)):
-                params[key+str(i)] = value[i]
-        return params
-
-    @staticmethod
-    def append_to_var(value, array):
-        """
-        Append a value to a list or array.
-        If array is not a list, create a new one containing array
-        and value.
-
-        """
-        if type(array) is list:
-            array.append(value)
-        elif array == "_all" or array == None:
-            array = value
-        elif array != value:
-            array = [array, value]
-        return array
-
-    @staticmethod
-    def parse_versions(versions_list, products):
-        """
-        Parses the versions, separating by ":" and returning versions
-        and products.
-
-        """
-        versions = []
-        if type(versions_list) is list:
-            for v in versions_list:
-                if v.find(":") > -1:
-                    pv = v.split(":")
-                    versions = PostgresAPI.append_to_var(pv[0], versions)
-                    versions = PostgresAPI.append_to_var(pv[1], versions)
-                else:
-                    products = PostgresAPI.append_to_var(v, products)
-        elif versions_list != "_all":
-            if versions_list.find(":") > -1:
-                pv = versions_list.split(":")
-                versions = PostgresAPI.append_to_var(pv[0], versions)
-                versions = PostgresAPI.append_to_var(pv[1], versions)
-            else:
-                products = PostgresAPI.append_to_var(versions_list, products)
-
-        return (versions, products)
-
-    @staticmethod
-    def prepare_terms(terms, is_terms_a_list, search_mode):
-        """
-        Prepare terms for search, adding '%' where needed,
-        given the search mode.
-
-        """
-        if search_mode == "contains" and is_terms_a_list:
-            for i in xrange(len(terms)):
-                terms[i] = "%" + terms[i] + "%"
-        elif search_mode == "contains":
-            terms = "%" + terms + "%"
-        elif search_mode == "starts_with" and is_terms_a_list:
-            for i in xrange(len(terms)):
-                terms[i] = terms[i] + "%"
-        elif search_mode == "starts_with":
-            terms = terms + "%"
-        return terms
