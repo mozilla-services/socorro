@@ -89,6 +89,8 @@ $(document).ready(function() {
     });
   }
   
+	var datepickerDaily = $(".datepicker-daily").length;
+  
 	if(datepickerDaily > 0) {
 		$(".datepicker-daily input").datepicker({
 			dateFormat: "yy-mm-dd"
