@@ -228,7 +228,7 @@ class ProcessorWithExternalBreakpad (processor.Processor):
     return version
 
 #-----------------------------------------------------------------------------------------------------------------
-  def analyzeFrames(self, reportId, isHang, lowercaseModules, dumpAnalysisLineIterator, databaseCursor, date_processed, crashedThread, processorErrorMessages):
+  def analyzeFrames(self, reportId, hangType, lowercaseModules, dumpAnalysisLineIterator, databaseCursor, date_processed, crashedThread, processorErrorMessages):
     """ After the header information, the dump file consists of just frame information.  This function
           cycles through the frame information looking for frames associated with the crashed thread
           (determined in analyzeHeader).  Each frame from that thread is written to the database until
@@ -242,7 +242,9 @@ class ProcessorWithExternalBreakpad (processor.Processor):
 
            input parameters:
              reportId - the primary key from the 'reports' table for this crash report
-             isHang - boolean, is this a hang crash?
+             hangType -  0: if this is not a hang
+                        -1: if "HangID" present in json,but "Hang" was not present
+                        "Hang" value: if "Hang" present - probably 1
              lowerCaseModules - boolean, should modules be forced to lower case for signature generation?
              dumpAnalysisLineIterator - an iterator that cycles through lines from the crash dump
              databaseCursor - for database insertions
@@ -255,6 +257,10 @@ class ProcessorWithExternalBreakpad (processor.Processor):
     analyzeReturnedLines = False
     signatureList = []
     topmost_sourcefiles = []
+    if hangType == 1:
+      thread_for_signature = 0
+    else:
+      thread_for_signature = crashedThread
     max_topmost_sourcefiles = 1 # Bug 519703 calls for just one. Lets build in some flex
     for line in dumpAnalysisLineIterator:
       analyzeReturnedLines = True
@@ -266,7 +272,7 @@ class ProcessorWithExternalBreakpad (processor.Processor):
       (thread_num, frame_num, module_name, function, source, source_line, instruction) = [socorro.lib.util.emptyFilter(x) for x in line.split("|")]
       if len(topmost_sourcefiles) < max_topmost_sourcefiles and source:
         topmost_sourcefiles.append(source)
-      if crashedThread == int(thread_num):
+      if thread_for_signature == int(thread_num):
         if frameCounter < 30:
           if lowercaseModules:
             try:
@@ -288,7 +294,7 @@ class ProcessorWithExternalBreakpad (processor.Processor):
       elif frameCounter:
         break
     dumpAnalysisLineIterator.stopUsingSecondaryCache()
-    signature = self.signatureUtilities.generate_signature_from_list(signatureList, isHang=isHang)
+    signature = self.signatureUtilities.generate_signature_from_list(signatureList, hangType=hangType)
     if signature == '' or signature is None:
       if crashedThread is None:
         message = "No signature could be created because we do not know which thread crashed"
