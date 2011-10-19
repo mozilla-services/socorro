@@ -215,9 +215,8 @@ def scrapeNightlies(config, cursor, product_name, urllib=urllib2, date=None):
                 build_type = 'Nightly'
                 if version.endswith('a2'):
                     build_type = 'Aurora'
-                    version = version.split('a')[0]
-                    insertBuild(cursor, product_name, version, platform,
-                                build_id, build_type, None, repository)
+                insertBuild(cursor, product_name, version, platform,
+                            build_id, build_type, None, repository)
 
     except urllib.URLError:
         util.reportExceptionAndContinue(logger)

@@ -4,6 +4,7 @@
 
 <?php
 echo html::stylesheet(array(
+		'css/jquery-ui-1.8.16/flick/jquery-ui-1.8.16.custom.css',
 		'css/daily.css',
 	), array('screen', 'screen'));
 ?>
@@ -19,6 +20,7 @@ if ($form_selection == 'by_report_type') {?>
 </script>
 <?php
 echo html::script(array(
+		'js/jquery/plugins/ui/jquery-ui-1.8.16.custom.min.js',
 		'js/flot-0.7/jquery.flot.pack.js',
 		'js/socorro/daily.js',
 	));
