@@ -89,9 +89,11 @@ $(document).ready(function() {
     });
   }
   
-	$(".datepicker-daily input").datepicker({
-		dateFormat: "yy-mm-dd"
-	});
+	if(datepickerDaily > 0) {
+		$(".datepicker-daily input").datepicker({
+			dateFormat: "yy-mm-dd"
+		});
+	}
 
 });
 
