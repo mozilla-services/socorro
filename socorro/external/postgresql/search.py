@@ -18,9 +18,6 @@ class Search(pg.PostgresAPI):
 
         See https://wiki.mozilla.org/Socorro/Middleware#Search
 
-        Keyword arguments:
-        types -- Type of data to return. Only "signatures" is supported for postgres.
-
         Optional arguments: see socorro.external.common.Common.get_parameters
         """
         # Creating the connection to the DB
