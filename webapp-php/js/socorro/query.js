@@ -110,4 +110,72 @@ $(document).ready(function() {
       $('#searchform').submit();
     });
     window.updateVersion = updateVersion;
+	
+	/* Advanced search RSS feeds by product and platform */
+	var selectedProduct = jQ("#product").val(),
+	selectedVersion = jQ("#version").val().toString(),
+	selectedPlatform = jQ("#platform").val(),
+	protocol = "http://",
+	baseURL = "crash-stats.mozilla.com/feed/",
+	byProduct = "crashes_by_product/",
+	byPlatform = "crashes_by_platform/",
+	feedLinkContainer = jQ(".adv-search-rss");
+	
+	var buildProductFeed = function() {
+		var productFeed = {},
+		productFeedURL = protocol + baseURL + byProduct + selectedProduct,
+		productFeedMsg = "Most recent 500 crashes for " + selectedProduct
+		extractedVersionNr = 0;
+		
+		// If the first index in the version select field is selected we do not want to add 
+		// a version number to the feed nor the message
+		if(jQ("#version option").filter(":selected").index()) {
+			extractedVersionNr = selectedVersion.substring(selectedVersion.indexOf(":") + 1);
+		
+			productFeedURL = productFeedURL + "/" + extractedVersionNr;
+			productFeedMsg = productFeedMsg + " " + extractedVersionNr;
+		}
+		
+		// If no OS is selected, do not add it to the URL nor the message
+		if(selectedPlatform !== null) {
+			productFeedURL = productFeedURL + "/" + selectedPlatform;
+			productFeedMsg = productFeedMsg + " on " + selectedPlatform;
+		}
+		
+		productFeed.url = productFeedURL;
+		productFeed.msg = productFeedMsg;
+		
+		return productFeed;
+	},
+	buildPlatformFeed = function() {
+		var platformFeed = {};
+		
+		platformFeed.url = protocol + baseURL + byPlatform + selectedPlatform;
+		platformFeed.msg = "Most recent 500 crashes for " + selectedPlatform;
+
+		return platformFeed;
+	},
+	buildListItem = function(linkData) {
+		var listItem = document.createElement("li"),
+		link = document.createElement("a");
+		
+		link.setAttribute("href", linkData.url);
+		link.appendChild(document.createTextNode(linkData.msg));
+		
+		listItem.appendChild(link);
+		
+		return listItem;
+	}
+	buildHTML = function() {
+		var byProduct = buildProductFeed(),
+		byPlatform = {};	
+		
+		feedLinkContainer.append(buildListItem(byProduct));
+		if(selectedPlatform !== null) {
+			byPlatform = buildPlatformFeed();
+			feedLinkContainer.append(buildListItem(byPlatform));
+		}
+	};
+	
+	buildHTML();
 });
