@@ -90,12 +90,22 @@ def testGenerate2():
     s, c = setupSigUtil('a|b|c', 'd|e|f')
     a = [x for x in 'abcdefghijklmnopqrstuvwxyz']
     e = 'hang | d | e | f | g'
-    r = s.generate_signature_from_list(a, isHang=True)
+    r = s.generate_signature_from_list(a, hangType=-1)
     assert_expected(e,r)
 
     a = [x for x in 'abcdaeafagahijklmnopqrstuvwxyz']
     e = 'hang | d | e | f | g'
-    r = s.generate_signature_from_list(a, isHang=True)
+    r = s.generate_signature_from_list(a, hangType=-1)
+    assert_expected(e,r)
+
+    a = [x for x in 'abcdaeafagahijklmnopqrstuvwxyz']
+    e = 'd | e | f | g'
+    r = s.generate_signature_from_list(a, hangType=0)
+    assert_expected(e,r)
+
+    a = [x for x in 'abcdaeafagahijklmnopqrstuvwxyz']
+    e = 'chromehang | d | e | f | g'
+    r = s.generate_signature_from_list(a, hangType=1)
     assert_expected(e,r)
 
 
@@ -118,7 +128,7 @@ def testGenerate2():
         "ddddddddd | eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee" \
         "eeeeeeeeeeeeee | fffffffffffffffffffffffffffffffffffffffffffffffffff" \
         "fffffffffffffffffff | gggggggggggggggggggggggggg..."
-    r = s.generate_signature_from_list(a, isHang=True)
+    r = s.generate_signature_from_list(a, hangType=-1)
     assert_expected(e,r)
 
 def testGenerate3():

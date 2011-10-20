@@ -1,5 +1,9 @@
 import re
 
+hang_prefixes = { -1: "hang",
+                   1: "chromehang"
+                }
+
 #===============================================================================
 class SignatureUtilities (object):
     _config_requirements = ("irrelevantSignatureRegEx",
@@ -54,7 +58,7 @@ class SignatureUtilities (object):
     #---------------------------------------------------------------------------
     def generate_signature_from_list(self,
                                      signatureList,
-                                     isHang=False,
+                                     hangType=0,
                                      escapeSingleQuote=True,
                                      maxLen=255,
                                      signatureDelimeter=' | '):
@@ -91,9 +95,9 @@ class SignatureUtilities (object):
             newSignatureList.append(aSignature)
             if not self.prefixSignatureRegEx.match(aSignature):
                 break
+        if hangType:
+            newSignatureList.insert(0, hang_prefixes[hangType])
         signature = signatureDelimeter.join(newSignatureList)
-        if isHang:
-            signature = "hang | %s" % signature
         if len(signature) > maxLen:
             signature = "%s..." % signature[:maxLen - 3]
         if escapeSingleQuote:
