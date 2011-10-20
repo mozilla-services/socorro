@@ -829,7 +829,7 @@ def testProcessJob07():
                                              (reportId,
                                               ooid1,
                                               dump_pathname,
-                                              True,
+                                              -1,
                                               c.fakeCursor,
                                               date_processed,
                                               proc_err_msg_list),
