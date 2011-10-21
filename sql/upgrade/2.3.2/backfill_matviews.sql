@@ -2,6 +2,8 @@
 
 -- function
 
+DROP FUNCTION backfill_matviews( date, text, date );
+
 CREATE OR REPLACE FUNCTION backfill_matviews (
 	firstday date,
 	forproduct text default '',

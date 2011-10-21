@@ -1,5 +1,7 @@
 \set ON_ERROR_STOP 1
 
+DROP TABLE IF EXISTS hang_report;
+
 SELECT create_table_if_not_exists ( 'daily_hangs', $x$
 CREATE TABLE daily_hangs (
 	uuid text not null,
