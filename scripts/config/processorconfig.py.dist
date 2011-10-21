@@ -106,7 +106,8 @@ signatureSentinels = cm.Option()
 signatureSentinels.doc = 'a list of frame signatures that should always be considered top of the stack if present in the stack'
 signatureSentinels.default = ['_purecall',
                               ('mozilla::ipc::RPCChannel::Call(IPC::Message*, IPC::Message*)',
-                                  lambda x: 'CrashReporter::CreatePairedMinidumps(void*, unsigned long, nsAString_internal*, nsILocalFile**, nsILocalFile**)' in x)]
+                                  lambda x: 'CrashReporter::CreatePairedMinidumps(void*, unsigned long, nsAString_internal*, nsILocalFile**, nsILocalFile**)' in x),
+                              'Java_org_mozilla_gecko_GeckoAppShell_reportJavaCrash']
 
 irrelevantSignatureRegEx = cm.Option()
 irrelevantSignatureRegEx.doc = 'a regular expression matching frame signatures that should be ignored when generating an overall signature'
@@ -199,7 +200,7 @@ prefixSignatureRegEx = '|'.join([
   'RtlDeleteCriticalSection',
   'PR_DestroyLock',
   '.*abort',
-  '_ZdaPvRKSt9nothrow_t\"', 
+  '_ZdaPvRKSt9nothrow_t\"',
   ])
 
 signaturesWithLineNumbersRegEx = cm.Option()

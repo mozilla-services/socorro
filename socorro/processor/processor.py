@@ -507,7 +507,8 @@ class Processor(object):
         # hangType values: -1 if old style hang with hangid and Hang not present
         #                  else hangType == jsonDocument.Hang
         hangType = int(jsonDocument.get("Hang", -1 if isHang else 0))
-        additionalReportValuesAsDict = self.doBreakpadStackDumpAnalysis(reportId, jobUuid, dumpfilePathname, hangType, threadLocalCursor, date_processed, processorErrorMessages)
+        app_notes = newReportRecordAsDict['app_notes']
+        additionalReportValuesAsDict = self.doBreakpadStackDumpAnalysis(reportId, jobUuid, dumpfilePathname, hangType, app_notes, threadLocalCursor, date_processed, processorErrorMessages)
         newReportRecordAsDict.update(additionalReportValuesAsDict)
       finally:
         newReportRecordAsDict["completeddatetime"] = completedDateTime = self.nowFunc()
@@ -800,7 +801,7 @@ class Processor(object):
     return crashProcesOutputDict
 
   #-----------------------------------------------------------------------------------------------------------------
-  def doBreakpadStackDumpAnalysis (self, reportId, uuid, dumpfilePathname, hangType, databaseCursor, date_processed, processorErrorMessages):
+  def doBreakpadStackDumpAnalysis (self, reportId, uuid, dumpfilePathname, hangType, app_notes, databaseCursor, date_processed, processorErrorMessages):
     """ This function is run only by a worker thread.
         This function must be overriden in a subclass - this method will invoke the breakpad_stackwalk process
         (if necessary) and then do the anaylsis of the output
