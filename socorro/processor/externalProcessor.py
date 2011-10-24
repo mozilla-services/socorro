@@ -14,6 +14,12 @@ import socorro.lib.util
 
 import processor
 
+# a constant to use to trigger Java signature generation
+# could be replaced with a config parameter if more flexibility is desired.
+# remember, though, this value must also appear as a "signatureSentinel"
+# in the processor configuration.
+java_signature_sentinel = 'Java_org_mozilla_gecko_GeckoAppShell_reportJavaCrash'
+
 #=================================================================================================================
 class ProcessorWithExternalBreakpad (processor.Processor):
   """
@@ -61,7 +67,7 @@ class ProcessorWithExternalBreakpad (processor.Processor):
     return (socorro.lib.util.StrCachingIterator(subprocessHandle.stdout), subprocessHandle)
 
 #-----------------------------------------------------------------------------------------------------------------
-  def doBreakpadStackDumpAnalysis (self, reportId, uuid, dumpfilePathname, isHang, databaseCursor, date_processed, processorErrorMessages):
+  def doBreakpadStackDumpAnalysis (self, reportId, uuid, dumpfilePathname, isHang, app_notes, databaseCursor, date_processed, processorErrorMessages):
     """ This function overrides the base class version of this function.  This function coordinates the six
           steps of running the breakpad_stackdump process and analyzing the textual output for insertion
           into the database.
@@ -74,6 +80,7 @@ class ProcessorWithExternalBreakpad (processor.Processor):
             uuid - the unique string identifier for the crash report
             dumpfilePathname - the complete pathname for the =crash dump file
             isHang - boolean, is this a hang crash?
+            app_notes - a source for java signatures info
             databaseCursor - the cursor to use for insertion into the database
             date_processed
             processorErrorMessages
@@ -88,7 +95,7 @@ class ProcessorWithExternalBreakpad (processor.Processor):
         lowercaseModules = additionalReportValuesAsDict['os_name'] in ('Windows NT')
       except KeyError:
         lowercaseModules = True
-      evenMoreReportValuesAsDict = self.analyzeFrames(reportId, isHang, lowercaseModules, dumpAnalysisLineIterator, databaseCursor, date_processed, crashedThread, processorErrorMessages)
+      evenMoreReportValuesAsDict = self.analyzeFrames(reportId, isHang, app_notes, lowercaseModules, dumpAnalysisLineIterator, databaseCursor, date_processed, crashedThread, processorErrorMessages)
       additionalReportValuesAsDict.update(evenMoreReportValuesAsDict)
       for x in dumpAnalysisLineIterator:
         pass  #need to spool out the rest of the stream so the cache doesn't get truncated
@@ -228,7 +235,7 @@ class ProcessorWithExternalBreakpad (processor.Processor):
     return version
 
 #-----------------------------------------------------------------------------------------------------------------
-  def analyzeFrames(self, reportId, hangType, lowercaseModules, dumpAnalysisLineIterator, databaseCursor, date_processed, crashedThread, processorErrorMessages):
+  def analyzeFrames(self, reportId, hangType, app_notes, lowercaseModules, dumpAnalysisLineIterator, databaseCursor, date_processed, crashedThread, processorErrorMessages):
     """ After the header information, the dump file consists of just frame information.  This function
           cycles through the frame information looking for frames associated with the crashed thread
           (determined in analyzeHeader).  Each frame from that thread is written to the database until
@@ -245,6 +252,7 @@ class ProcessorWithExternalBreakpad (processor.Processor):
              hangType -  0: if this is not a hang
                         -1: if "HangID" present in json,but "Hang" was not present
                         "Hang" value: if "Hang" present - probably 1
+             app_notes - a source for java lang signature information
              lowerCaseModules - boolean, should modules be forced to lower case for signature generation?
              dumpAnalysisLineIterator - an iterator that cycles through lines from the crash dump
              databaseCursor - for database insertions
@@ -294,18 +302,8 @@ class ProcessorWithExternalBreakpad (processor.Processor):
       elif frameCounter:
         break
     dumpAnalysisLineIterator.stopUsingSecondaryCache()
-    signature = self.signatureUtilities.generate_signature_from_list(signatureList, hangType=hangType)
-    if signature == '' or signature is None:
-      if crashedThread is None:
-        message = "No signature could be created because we do not know which thread crashed"
-      else:
-        message = "No proper signature could be created because no good data for the crashing thread (%d) was found" % crashedThread
-        try:
-          signature = signatureList[0]
-        except IndexError:
-          pass
-      processorErrorMessages.append(message)
-      logger.warning("%s", message)
+    signature = self.generate_signature(signatureList, app_notes, hangType,
+                                        crashedThread, processorErrorMessages)
     #logger.debug("  %s", (signature, '; '.join(processorErrorMessages), reportId, date_processed))
     if not analyzeReturnedLines:
       message = "%s returned no frame lines for reportid: %s" % (self.config.minidump_stackwalkPathname, reportId)
@@ -319,3 +317,29 @@ class ProcessorWithExternalBreakpad (processor.Processor):
              "topmost_filenames":topmost_sourcefiles,
            }
 
+  def generate_signature(self,
+                         signature_list,
+                         app_notes,
+                         hang_type,
+                         crashed_thread,
+                         processor_notes_list):
+    signature = self.signatureUtilities.generate_signature_from_list(
+                                                     signature_list,
+                                                     hangType=hang_type)
+    if signature == java_signature_sentinel:
+      # generate a Java signature
+      signature = app_notes[:app_notes.find('{')].strip()
+    if signature == '' or signature is None:
+      if crashedThread is None:
+        message = ("No signature could be created because we do not know which"
+                   " thread crashed")
+      else:
+        message = ("No proper signature could be created because no good data "
+                   "for the crashing thread (%d) was found" % crashed_thread)
+        try:
+          signature = signature_list[0]
+        except IndexError:
+          pass
+      processor_notes_list.append(message)
+      logger.warning("%s", message)
+    return signature

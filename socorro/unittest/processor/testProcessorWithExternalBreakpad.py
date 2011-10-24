@@ -1,3 +1,48 @@
+import unittest
+
+import socorro.processor.externalProcessor as xp
+
+class SignatureUtilities(object):
+    def generate_signature_from_list(self, sig_list, hangType):
+        return sig_list[0]
+
+class TestExternalProcessor(xp.ProcessorWithExternalBreakpad):
+    def __init__(self):
+        # skipping parent class initialization
+        self.signatureUtilities = SignatureUtilities()
+
+class TestCase(unittest.TestCase):
+    def test_generate_signature_1(self):
+        p = TestExternalProcessor()
+        signature_list = [ 'a', 'b', 'c' ]
+        app_notes = ''
+        hang_type = 0
+        crashed_thread = 0
+        processor_notes_list = []
+        sig = p.generate_signature(signature_list,
+                                   app_notes,
+                                   hang_type,
+                                   crashed_thread,
+                                   processor_notes_list)
+        assert sig == 'a'
+
+    def test_generate_signature_2(self):
+        p = TestExternalProcessor()
+        signature_list = [ xp.java_signature_sentinel, 'b', 'c' ]
+        app_notes = 'java signature {thrilling, eh?}'
+        hang_type = 0
+        crashed_thread = 0
+        processor_notes_list = []
+        sig = p.generate_signature(signature_list,
+                                   app_notes,
+                                   hang_type,
+                                   crashed_thread,
+                                   processor_notes_list)
+        assert sig == 'java signature'
+
+
+
+
 # This entire file needs to be rewritten to not depend on ProcessedDumpStorage and JsonDumpStorage
 ## 1 (KEEP THESE as first two lines in file: Used for a test)
 ## 2 (KEEP THESE as first two lines in file: Used for a test)
@@ -866,3 +911,4 @@
     #for data,expected in cases:
       #got = p.getVersionIfFlashModule(data)
       #assert expected == got, 'At %s: Given "%s", expected "%s" but got "%s"'%(data[-1],data[1],expected,got)
+
