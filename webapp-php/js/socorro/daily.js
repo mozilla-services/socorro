@@ -9,7 +9,10 @@ $(function() {
             yaxis: {},
             series: {
                 lines: { show: true },
-                points: { show: false },
+                points: {
+                    show: true,
+                    radius: 1,
+                },
                 shadowSize: 0,
             },
             colors: colours,
