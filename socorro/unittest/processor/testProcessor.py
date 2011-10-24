@@ -701,6 +701,7 @@ def testProcessJob06():
     reportId = 345
     proc_err_msg_list = []
     new_report_record = { 'id': reportId,
+                          'app_notes': '',
                         }
     fakeInsertReportIntoDatabaseFn.expect('__call__',
                                           (c.fakeCursor,
@@ -726,7 +727,8 @@ def testProcessJob06():
                                              (reportId,
                                               ooid1,
                                               dump_pathname,
-                                              False,
+                                              0,
+                                              '',
                                               c.fakeCursor,
                                               date_processed,
                                               proc_err_msg_list),
@@ -798,6 +800,7 @@ def testProcessJob07():
     proc_err_msg_list = []
     new_report_record = { 'id': reportId,
                           'hangid': 'hang00001',
+                          'app_notes': '',
                         }
     fakeInsertReportIntoDatabaseFn.expect('__call__',
                                           (c.fakeCursor,
@@ -830,6 +833,7 @@ def testProcessJob07():
                                               ooid1,
                                               dump_pathname,
                                               -1,
+                                              '',
                                               c.fakeCursor,
                                               date_processed,
                                               proc_err_msg_list),
@@ -890,6 +894,7 @@ def testProcessJob07():
                         'sssssssssssssssssssssssssssssssssssssssssssssssssssss'
                         'ssssssssssssssssssssssssssssssssssssssss...',
             'hangid': 'hang00001',
+            'app_notes': '',
             'processor_notes': '',
             'topmost_filenames': ['myfile.cpp'],
             'id': 345,
