@@ -37,7 +37,6 @@ config.logger = logger
 
 try:
   builds.recordNightlyBuilds(config)
-  # replaced by ftpscraper.py
-  #builds.recordReleaseBuilds(config)
+  builds.recordReleaseBuilds(config)
 finally:
   logger.info("Done.")
