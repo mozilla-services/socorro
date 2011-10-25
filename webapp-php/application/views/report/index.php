@@ -139,10 +139,10 @@ if (is_null($report->sumo_signature) || strlen($report->sumo_signature)) { ?>
                 <th>OS Version</th><td><?php out::H($report->os_version) ?></td>
             </tr>
             <tr>
-                <th>CPU</th><td><?php out::H($report->cpu_name) ?></td>
+                <th>Build Architecture</th><td><?php out::H($report->cpu_name) ?></td>
             </tr>
             <tr>
-                <th>CPU Info</th><td><?php out::H($report->cpu_info) ?></td>
+                <th>Build Architecture Info</th><td><?php out::H($report->cpu_info) ?></td>
             </tr>
             <tr>
                 <th>Crash Reason</th><td><?php out::H($report->reason) ?></td>
