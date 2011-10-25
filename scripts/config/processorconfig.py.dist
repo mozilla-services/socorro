@@ -201,6 +201,7 @@ prefixSignatureRegEx = '|'.join([
   'PR_DestroyLock',
   '.*abort',
   '_ZdaPvRKSt9nothrow_t\"',
+  '__swrite',
   ])
 
 signaturesWithLineNumbersRegEx = cm.Option()
