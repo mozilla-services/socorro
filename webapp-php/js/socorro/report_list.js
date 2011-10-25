@@ -66,6 +66,7 @@ $(document).ready(function () {
     $('#reportsList').tablesorter({
         textExtraction: "complex",
         headers: {
+			3: { sorter: "floating" }, //version
             8: { sorter: "hexToInt" },  // Address
             10: { sorter: "digit" }      // Uptime
         },
