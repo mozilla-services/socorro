@@ -59,7 +59,27 @@
 				</optgroup>
                 <?php if (isset($featured_versions) && !empty($featured_versions)) { ?>
 				    <optgroup label=" ">
-				    	<?php foreach ($featured_versions as $featured_version) { ?>
+				    	<?php 
+						
+							// sort top crashers from highest to lowest
+							function compare_versions($prod1, $prod2) {
+
+								$firstProdVersion = $prod1->version;
+								$secondProdVersion = $prod2->version;
+
+								// get only the number from the string avoiding decimals and string characters
+								$firstVerNumber = (int) substr($firstProdVersion, 0, strrpos($firstProdVersion, "."));
+								$secondVerNumber = (int) substr($secondProdVersion, 0, strrpos($secondProdVersion, "."));
+
+								if($firstVerNumber == $secondVerNumber) {
+									return 0;
+								}
+								return $secondVerNumber - $firstVerNumber;
+							}
+
+							usort($featured_versions, "compare_versions");
+						
+							foreach ($featured_versions as $featured_version) { ?>
                             <option value="<?php out::H($featured_version->version); ?>"
                             	<?php if ($featured_version->version == $chosen_version['version']) echo 'SELECTED'; ?>
                             ><?php out::H($featured_version->version); ?></option>
@@ -68,7 +88,11 @@
 			    <?php } ?>
 			    <?php if (isset($unfeatured_versions) && !empty($unfeatured_versions)) { ?>
 				    <optgroup label=" ">
-				    	<?php foreach ($unfeatured_versions as $unfeatured_version) { ?>
+				    	<?php 
+							usort($unfeatured_versions, "compare_versions");
+							
+							foreach ($unfeatured_versions as $unfeatured_version) { 
+						?>
                             <option value="<?php out::H($unfeatured_version->version); ?>"
                             	<?php if ($unfeatured_version->version == $chosen_version['version']) echo 'SELECTED'; ?>
                             ><?php out::H($unfeatured_version->version); ?></option>
