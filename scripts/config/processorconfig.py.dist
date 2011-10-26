@@ -135,6 +135,7 @@ irrelevantSignatureRegEx.default = '|'.join([
   'libEGL\.so@.*',
   'libc-2\.5\.so@.*',
   'RtlpAdjustHeapLookasideDepth',
+  'google_breakpad::ExceptionHandler::HandleInvalidParameter.*',
   ])
 
 prefixSignatureRegEx = cm.Option()
