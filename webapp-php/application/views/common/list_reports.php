@@ -7,7 +7,7 @@
             <th>Version</th>
             <th>Build</th>
             <th>OS</th>
-            <th>CPU</th>
+            <th>Build Arch</th>
             <th>Reason</th>
             <th>Address</th>
             <th>Hang</th>
