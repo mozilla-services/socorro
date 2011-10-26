@@ -108,7 +108,7 @@ signatureSentinels.default = ['_purecall',
                               ('mozilla::ipc::RPCChannel::Call(IPC::Message*, IPC::Message*)',
                                   lambda x: 'CrashReporter::CreatePairedMinidumps(void*, unsigned long, nsAString_internal*, nsILocalFile**, nsILocalFile**)' in x),
                               'Java_org_mozilla_gecko_GeckoAppShell_reportJavaCrash',
-                              'google_breakpad::ExceptionHandler::HandleInvalidParameter(wchar_t const*,wchar_t const*,wchar_t const*,unsigned int,unsigned int)']
+                              'google_breakpad::ExceptionHandler::HandleInvalidParameter(wchar_t const*, wchar_t const*, wchar_t const*, unsigned int, unsigned int)']
 
 irrelevantSignatureRegEx = cm.Option()
 irrelevantSignatureRegEx.doc = 'a regular expression matching frame signatures that should be ignored when generating an overall signature'
