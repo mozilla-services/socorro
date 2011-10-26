@@ -69,7 +69,7 @@ matviews = { 'raw_adu' : """SELECT * FROM raw_adu WHERE raw_adu.date >= '%s'""" 
    'top_crashes_by_url' : """SELECT * FROM top_crashes_by_url WHERE window_end >= '%s'""" % cutoff_date,
    'top_crashes_by_url_signature' :
       """SELECT tcbus.* FROM top_crashes_by_url_signature tcbus JOIN top_crashes_by_url ON top_crashes_by_url_signature_id = top_crashes_by_url_signature.id WHERE top_crashes_by_url.window_end >= '%s'""" % cutoff_date,
-   'releases_raw' : """SELECT releases_raw.* FROM releases_raw WHERE build_date(build_id) >= '%s'""" % cutoff_date,
+   'releases_raw' : """SELECT releases_raw.* FROM releases_raw WHERE build_date(build_id) >= ( '%s' - interval '6 months' ) """ % cutoff_date,
    'product_adu' : """SELECT product_adu.* FROM product_adu WHERE adu_date >= '%s'""" %cutoff_date,
    'daily_crashes' : """SELECT daily_crashes.* FROM daily_crashes WHERE adu_day >= '%s'""" % cutoff_date,
    'tcbs' : """SELECT tcbs.* FROM tcbs WHERE report_date >= '%s'""" % cutoff_date }

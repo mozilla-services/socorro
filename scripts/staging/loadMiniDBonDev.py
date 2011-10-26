@@ -131,6 +131,7 @@ runload('rm *.dump')
 
 # analyze
 
+cur.execute("""SET maintenance_work_mem = '512MB'""")
 cur.execute('ANALYZE')
 
 print 'done loading database.'
