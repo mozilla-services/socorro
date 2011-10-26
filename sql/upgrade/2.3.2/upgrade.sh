@@ -25,10 +25,13 @@ echo 'partition manager for reports_clean'
 psql -f ${CURDIR}/reports_clean_weekly.sql breakpad
 
 echo 'update function for reports_clean'
-psql -f ${CURDIR}/alter_releases_raw.sql breakpad
+psql -f ${CURDIR}/update_reports_clean.sql breakpad
 
 echo 'backfill function for reports clean'
 psql -f ${CURDIR}/backfill_reports_clean.sql breakpad
+
+echo 'remove tcbs_ranking from update_tcbs.sql'
+psql -f ${CURDIR}/update_tcbs.sql breakpad
 
 echo 'fix gap in backfill_matviews'
 psql -f ${CURDIR}/backfill_matviews.sql breakpad
