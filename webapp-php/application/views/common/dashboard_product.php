@@ -36,6 +36,25 @@
         <div id="release_channels">
     <?php
 	$i = 0;
+	
+	 // sort top crashers from highest to lowest
+	function compare($prod1, $prod2) {
+
+		$firstProdVersion = $prod1->version;
+		$secondProdVersion = $prod2->version;
+
+		// get only the number from the string avoiding decimals and string characters
+		$firstVerNumber = (int) substr($firstProdVersion, 0, strrpos($firstProdVersion, "."));
+		$secondVerNumber = (int) substr($secondProdVersion, 0, strrpos($secondProdVersion, "."));
+
+		if($firstVerNumber == $secondVerNumber) {
+			return 0;
+		}
+		return $secondVerNumber - $firstVerNumber;
+	}
+
+	usort($top_crashers, "compare");
+	
         foreach ($top_crashers as $prodversion) {
             $num_columns = count($top_crashers);
             $i++;
