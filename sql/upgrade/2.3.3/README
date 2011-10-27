@@ -1,0 +1,11 @@
+2.3.3 Contains some new matview reports.  These reports depend on the new reports_clean, and their structure and generation and backfill functions should be taken as a template for new matviews.  Also contains:
+
+os_version_string supplies a new function for providing a user-friendly format for operating systems and versions, according to the following rules:
+	windows: consult windows_versions table (also created in 2.3.3) to determine windows name
+	OS X: format as "OS X #.#" for reasonable values of #.#
+	Linux: format only as "Linux"
+update_os_versions and update_os_versions_new_reports are both updated to support this new function.
+
+The new matviews are os_signature_counts, product_signature_counts, and uptime_signature_counts.
+
+****NO upgrade.sh is currently supplied because the 2.3.3 changes are not tested yet.******
