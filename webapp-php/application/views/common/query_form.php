@@ -80,8 +80,11 @@
                     $option_types,
                     $params['query_type']
                 ) ?>
-                <?php echo form::input(
-                    array('size' => '25', 'name'=>'query', 'id'=>'query'),
+                <?php 
+                // check whether the signature was passed to the query
+                $q_signature = (isset($_GET['signature']) ? $_GET['signature'] : '');
+                echo form::input(
+                    array('size' => '25', 'name'=>'query', 'id'=>'query', 'value'=>$q_signature),
                     trim($params['query'])
                 )?>
             </p>
