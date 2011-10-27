@@ -109,8 +109,7 @@ class ProcessorWithExternalBreakpad (processor.Processor):
       processorErrorMessages.append("%s failed with return code %s when processing dump %s" %(self.config.minidump_stackwalkPathname, subprocessHandle.returncode, uuid))
       additionalReportValuesAsDict['success'] = False
       if additionalReportValuesAsDict["signature"].startswith("EMPTY"):
-        additionalReportValuesAsDict["signature"] = \
-          additionalReportValuesAsDict["signature"] + "; corrupt dump"
+        additionalReportValuesAsDict["signature"] += "; corrupt dump"
     return additionalReportValuesAsDict
 
 
@@ -172,7 +171,7 @@ class ProcessorWithExternalBreakpad (processor.Processor):
         reportUpdateSqlParts.extend(['reason = %(reason)s','address = %(address)s'])
         try:
           crashedThread = int(values[3])
-        except Exception:
+        except (ValueError, IndexError):
           crashedThread = None
       elif values[0] == 'Module':
         # grab only the flash version, which is not quite as easy as it looks
