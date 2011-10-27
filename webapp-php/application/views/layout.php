@@ -134,7 +134,7 @@
 		</ul>
 
 		<div class="search">
-			<a href="<?php out::H(url::site()); ?>query">Advanced Search</a>
+			<a href="<?php out::H(url::site()); ?>query?advanced=1">Advanced Search</a>
 		</div>
 	</div>
 
