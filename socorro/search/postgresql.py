@@ -313,6 +313,9 @@ class PostgresAPI(sapi.SearchAPI):
         elif report_process == "browser":
             sql_where.append("r.process_type IS NULL")
 
+        elif report_process == "content":
+            sql_where.append("r.process_type = 'content'")
+
         sql_where = " AND ".join(sql_where)
 
         #---------------------------------------------------------------
