@@ -22,7 +22,7 @@ $config['durations'] = array(1, 3, 7, 14, 28);
  * The list of crash types that appear on the top crasher
  * by version page.
  */
-$config['crash_types'] = array('all', 'browser', 'plugin');
+$config['crash_types'] = array('all', 'browser', 'plugin', 'content');
 
 /**
  * The default crash type to select on the top crasher by
