@@ -61,7 +61,8 @@ def getListOfTopCrashersBySignature(aCursor, dbParams):
         sum(lin_count) as lin_count,
         sum(mac_count) as mac_count,
         sum(hang_count) as hang_count,
-        plugin_count(process_type,report_count) as plugin_count
+        plugin_count(process_type,report_count) as plugin_count,
+        content_count(process_type,report_count) as content_count
     FROM tcbs JOIN signatures USING (signature_id)
       JOIN product_versions USING (product_version_id)
     WHERE product_name = '%s'
@@ -84,6 +85,7 @@ def getListOfTopCrashersBySignature(aCursor, dbParams):
            mac_count,
            hang_count,
            plugin_count,
+           content_count,
         report_count / total_crashes::float
         as percent_of_total
     FROM tcbs_window
@@ -145,7 +147,7 @@ def listOfListsWithChangeInRank(listOfQueryResultsIterable):
       prevRowAsDict = aRowAsDict
       aRowAsDict = dict(zip(['signature', 'count', 'win_count', 'linux_count',
                              'mac_count', 'hang_count', 'plugin_count',
-                             'percentOfTotal'], aRow))
+                             'content_count', 'percentOfTotal'], aRow))
       aRowAsDict['currentRank'] = rank
       try:
         (aRowAsDict['previousRank'],
