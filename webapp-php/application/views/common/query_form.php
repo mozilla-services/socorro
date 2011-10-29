@@ -108,11 +108,10 @@
         <span class="radio-item"><label><?= form::radio('process_type', 'browser', $params['process_type'] == 'browser'); ?>
             Browser</label></span>
         <span class="radio-item"><label><?= form::radio('process_type', 'plugin',  $params['process_type'] == 'plugin'); ?>
-            Plugins Only</label></span>
-        <?php /* When out of process plugins support content as a type, we can add:
-               <span class="radio-item disabled"><label>Content Only form::radio('process_type', 'plugin', $params['process_type'] == 'plugin'); </label></span> */ ?>
-
-            </p>
+            Plugins</label></span>
+        <span class="radio-item"><label><?= form::radio('process_type', 'content', $params['process_type'] == 'content'); ?>
+            Content</label></span>
+        </p>
 
         <p class="advanced">
             <span class="label">Report Type:</span>
