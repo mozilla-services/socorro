@@ -48,6 +48,31 @@ require_once(Kohana::find_file('libraries', 'versioncompare', TRUE, 'php'));
  */
 class Branch_Model extends Model {
 
+    protected static $_CACHE = array();
+
+    protected function _getValues(array $order_by = array(), $ignore_cache = false) {
+        $order_by = implode(",", $order_by);
+        if(!$ignore_cache) {
+            if(isset(self::$_CACHE[md5($order_by)])) {
+                return self::$_CACHE[md5($order_by)];
+            }
+        }
+
+        $config = array();
+        $credentials = Kohana::config('webserviceclient.basic_auth');
+        if($credentials) {
+            $config['basic_auth'] = $credentials;
+        }
+        $service = new Web_Service($config);
+        $host = Kohana::config('webserviceclient.socorro_hostname');
+        $from = rawurlencode($order_by);
+        $resp = $service->get("${host}/201106/current/versions/${from}");
+        if($order_by && !$ignore_cache) {
+            self::$_CACHE[md5($order_by)] = $resp->currentversions;
+        }
+        return $resp->currentversions;
+    }
+
     /**
      * Take an array of version objects, and return an array of sorted version numbers.  Return
      * array in reverse order.
@@ -290,18 +315,8 @@ class Branch_Model extends Model {
 	 * @return bool     True if you want to delete the previously cached data first; used by admin panel
 	 * @return array 	An array of version objects
      */
-    public function getProductVersions($delete_cache=false) {
-        $sql = '/* soc.web branch.prodversions */
-			SELECT DISTINCT pd.product_name as product, pd.version_string as version, is_featured as featured, build_type as release, start_date, end_date, throttle
-			FROM product_info
-			ORDER BY product_name, version_string
-		';
-
-        if ($delete_cache) {
-            $this->cache->delete($this->queryHashKey($sql));
-        }
-
-        return $this->fetchRows($sql);
+    public function getProductVersions() {
+        return $this->_getValues(array('product_name', 'version_string'));
     }
 
     /**
@@ -312,20 +327,16 @@ class Branch_Model extends Model {
      * @return array  An array of version objects
      */
     public function getNonCurrentProductVersions($delete_cache=false) {
-        $date = date("Y-m-d");
-        $sql = "/* soc.web branch.getCurrentProductVersions */
-			SELECT DISTINCT pd.product_name as product, pd.version_string as version, is_featured as featured, build_type as release, start_date, end_date, throttle
-			FROM product_info pd
-			WHERE pd.start_date > timestamp without time zone '".$date."'
-			OR pd.end_date < timestamp without time zone '".$date."'
-			ORDER BY pd.product_name ASC, pd.version_string DESC
-		";
+        $resp = $this->_getValues(array('product_name', '-version_string'));
 
-        if ($delete_cache) {
-            $this->cache->delete($this->queryHashKey($sql));
+        $time = time();
+        $response = array();
+        foreach($resp as $item) {
+            if(strtotime($item->start_date) > $time OR strtotime($item->end_date) < $time) {
+                $response[] = $item;
+            }
         }
-
-        return $this->fetchRows($sql);
+        return $response;
     }
 
     /**
@@ -336,20 +347,16 @@ class Branch_Model extends Model {
      * @return array    An array of version objects
      */
     public function getCurrentProductVersions($delete_cache=false) {
-        $date = date("Y-m-d");
-        $sql = "/* soc.web branch.getCurrentProductVersions */ 
-			SELECT DISTINCT pd.product_name as product, pd.version_string as version, is_featured as featured, build_type as release, start_date, end_date, throttle
-			FROM product_info pd
-			WHERE pd.start_date <= timestamp without time zone '".$date."'
-			AND pd.end_date >= timestamp without time zone '".$date."'
-			ORDER BY pd.product_name ASC, pd.version_string DESC
-		";
-
-        if ($delete_cache) {
-            $this->cache->delete($this->queryHashKey($sql));
+        $resp = $this->_getValues(array('product_name', '-version_string'));
+        $now = time();
+        $result = array();
+        foreach($resp as $item) {
+            if(strtotime($item->start_date) <= $now AND strtotime($item->end_date) >= $now) {
+                $result[] = $item;
+            }
         }
 
-        return $this->fetchRows($sql);
+        return $result;
     }
 
     /**
@@ -360,16 +367,19 @@ class Branch_Model extends Model {
      * @return array    An array of version objects
      */
     public function getCurrentProductVersionsByProduct($product) {
-        $date = date("Y-m-d");
-        return $this->fetchRows(
-			'/* soc.web branch.prodversions */
-				SELECT DISTINCT pd.product_name as product, pd.version_string as version, is_featured as featured, build_type as release, start_date, end_date, throttle
-				FROM product_info pd
-				WHERE pd.product_name = ?
-				AND pd.start_date <= ?
-				AND pd.end_date >= ?
-				ORDER BY pd.product_name, pd.version_string
-			', true, array($product, $date, $date));
+       
+        $resp = $this->_getValues(array('product_name', 'version_string'));
+        $now = time();
+        $result = array();
+        foreach($resp as $item) {
+            if(strtotime($item->start_date) <= $now AND
+               strtotime($item->end_date) >= $now AND
+               $item->product == $product) {
+                $result[] = $item;
+            }
+        }
+
+        return $result;
     }
 
     /**
@@ -383,16 +393,21 @@ class Branch_Model extends Model {
 	 * @return 	array 	An array of version objects
      */
     public function getProductVersionsByDate($product, $start_date, $end_date) {
-        return $this->fetchRows(
-			'/* soc.web branch.prodversions */
-				SELECT DISTINCT pd.product_name as product, pd.version_string as version, is_featured as featured, build_type as release, start_date, end_date, throttle
-				FROM product_info pd
-				WHERE pd.product_name = ?
-				AND (pd.build_type = ? OR pd.build_type = ?)
-				AND pd.start_date >= ?
-				AND pd.end_date <= ?
-				ORDER BY pd.product_name, pd.version_string
-			', true, array($product, "Release", "Beta", $start_date, $end_date));
+        $resp = $this->_getValues(array('product_name', 'version_string'));
+        $start_date = strtotime($start_date);
+        $end_date = strtotime($end_date);
+        $result = array();
+        foreach($resp as $item) {
+            if( strtotime($item->start_date) >= $start_date AND
+                strtotime($item->end_date) <= $end_date AND
+                $item->product == $product AND
+                ($item->release == 'Release' OR $item->release == 'Beta')) {
+                $result[] = $item;
+            }
+        }
+
+        return $result;
+
     }
 
     /**
@@ -402,13 +417,17 @@ class Branch_Model extends Model {
 	 * @return 	array 	An array of version objects
      */
     public function getProductVersionsByProduct($product) {
-        return $this->fetchRows(
-			'/* soc.web branch.prodversions */
-				SELECT DISTINCT pd.product_name as product, pd.version_string as version, is_featured as featured, build_type as release, start_date, end_date, throttle
-				FROM product_info pd
-				WHERE pd.product_name = ?
-				ORDER BY pd.product_name, pd.version_string
-			', true, array($product));
+        
+
+        $resp = $this->_getValues(array('product_name', 'version_string'));
+        $products = array();
+        foreach($resp as $item) {
+            if($item->product == $product) {
+                $products[] = $item;
+            }
+        }
+
+        return $products;
     }
 
 	/**
@@ -418,12 +437,14 @@ class Branch_Model extends Model {
 	 * @return arary 	An array of version objects
 	 */
 	public function getProductVersionsWithoutVisibility () {
-        return $this->fetchRows('/* soc.web branch.getProductVersionsWithoutVisibility */
-			SELECT DISTINCT pd.product_name as product, pd.version_string as version, is_featured as featured, build_type as release, start_date, end_date, throttle
-			FROM product_info pd
-			WHERE pd.start_date IS NULL and pd.end_date IS NULL
-			ORDER BY pd.product_name, pd.version_string
-		');
+        $resp = $this->_getValues(array('product_name', 'version_string'));
+        foreach($resp as $k => $item) {
+            if($item->start_date OR $item->end_date) {
+                unset($resp[$k]);
+            }
+        }
+
+        return $resp;
 	}
 
     /**
@@ -461,19 +482,14 @@ class Branch_Model extends Model {
      * @return object Branch data
      */
     public function getByProductVersion($product, $version) {
-        $result = $this->db->query(
-				'/* soc.web branch.prodbyvers */
-				SELECT pd.product_version_id as id, pd.product_name as product, pd.version_string as version, is_featured as featured, build_type as release, start_date, end_date, throttle
-				FROM product_info pd
-				WHERE product_name = ?
-				AND version_string = ?
-				LIMIT 1'
-				, trim($product), trim($version)
-			);
-		if (isset($result[0]->id)) {
-			return $result[0];
-		}
-		return false;
+        $resp = $this->_getValues(array('product_name', 'version_string')); // Use a known one to trigger cache response
+        foreach ($resp as $item) {
+            if($item->product == $product AND $item->version == $version) {
+                return $item; // Essentially a LIMIT 1, per old query
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -483,23 +499,17 @@ class Branch_Model extends Model {
      * @return object Branch data
      */
     public function getRecentProductVersion($product) {
-        $date = date("Y-m-d");
-        $result = $this->db->query(
-				'/* soc.web branch.prodbyvers */
-				SELECT pd.product_name as product, pd.version_string as version, is_featured as featured, build_type as release, start_date, end_date, throttle
-				FROM product_info pd
-				WHERE pd.product_name = ?
-				AND pd.build_type = ?
-				AND pd.start_date <= ?
-				AND pd.end_date >= ?
-				ORDER BY pd.version_string DESC
-				LIMIT 1'
-				, trim($product), "Release", $date, $date
-			);
-		if (isset($result[0]->id)) {
-			return $result[0];
-		}
-		return false;
+        $resp = $this->_getValues(array('product name', 'version_string')); // Use a known ORDER BY for cached response
+        $date = time();
+        foreach($resp as $item) {
+            if( $item->product == $product AND
+                $item->build_type == 'Release' AND
+                strtotime($item->start_date) <= $date AND
+                strtotime($item->end_date) >= $date) {
+                return $item; // Essentially a LIMIT 1, per old query
+            }
+        }
+        return false;
     }
 
     /**
@@ -511,28 +521,24 @@ class Branch_Model extends Model {
      */
     public function getFeaturedVersions($product, $delete_cache=false)
     {
-        $date = date("Y-m-d");
-        $sql = '/* soc.web branch.getFeaturedVersions */
-			SELECT DISTINCT pd.product_name as product, pd.version_string as version, is_featured as featured, build_type as release, start_date, end_date, throttle
-			FROM product_info pd
-			WHERE pd.product_name = ' . $this->db->escape($product) . '
-			AND pd.start_date <= ' . $this->db->escape($date) . '
-			AND pd.end_date >= ' . $this->db->escape($date) . '
-			AND pd.is_featured = true
-			ORDER BY pd.product_name, pd.version_string
-		';
-
-        if ($delete_cache) {
-            $this->cache->delete($this->queryHashKey($sql));
+        $resp = $this->_getValues(array('product_name', 'version_string'));
+        $result = array();
+        $now = time();
+        foreach($resp as $item) {
+            if( $item->product == $product AND
+                $item->featured AND
+                strtotime($item->start_date) <= $now AND
+                strtotime($item->end_date) >= $now) {
+                $result[] = $item;
+            }
         }
 
-        $versions = $this->fetchRows($sql);
-        if (isset($versions[0])) {
-            rsort($versions);
-            return $versions;
+        if(count($result) > 0) {
+            return $result;
         } else {
             return $this->getFeaturedVersionsDefault($product);
         }
+
         return 0;
     }
 
@@ -593,6 +599,22 @@ class Branch_Model extends Model {
             return $result[0]->versions_count;
         }
         return 0;
+
+        $resp = $this->_getValues(array('product_name', 'version_string')); // Make sure we hit the cache
+        $result = 0;
+        $date = time();
+        foreach($resp as $item) {
+            if( $item->product == $product AND
+                $item->version != $version AND
+                $item->featured AND
+                strtotime($item->start_date) <= $date AND
+                strtotime($item->end_date) >= $date) {
+                $result++;
+            }
+        }
+
+        return $result;
+
     }
 
     /**
