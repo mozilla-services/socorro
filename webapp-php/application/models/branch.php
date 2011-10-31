@@ -501,9 +501,10 @@ class Branch_Model extends Model {
     public function getRecentProductVersion($product) {
         $resp = $this->_getValues(array('product name', 'version_string')); // Use a known ORDER BY for cached response
         $date = time();
+
         foreach($resp as $item) {
             if( $item->product == $product AND
-                $item->build_type == 'Release' AND
+                $item->release == 'Release' AND
                 strtotime($item->start_date) <= $date AND
                 strtotime($item->end_date) >= $date) {
                 return $item; // Essentially a LIMIT 1, per old query
