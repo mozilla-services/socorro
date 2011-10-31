@@ -5,9 +5,9 @@ import logging
 import logging.handlers
 
 try:
-  import config.reportsCleanconfig as configModule
+  import config.reportscleanconfig as configModule
 except ImportError:
-  import reportsCleanconfig as configModule
+  import reportscleanconfig as configModule
 
 import socorro.lib.ConfigurationManager as configurationManager
 import socorro.cron.reportsClean as reportsClean
@@ -27,7 +27,7 @@ sutil.setupLoggingHandlers(logger, config)
 sutil.echoConfig(logger, config)
 
 try:
-  reportsClean.run(config)
+  reportsClean.update_reports_clean(config)
 finally:
   logger.info("done.")
 
