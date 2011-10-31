@@ -6,6 +6,9 @@ set -e
 
 CURDIR=$(dirname $0)
 
+echo 'add function for content crash count'
+psql -f ${CURDIR}/content_count_state.sql breakpad
+
 echo 'update products now with aurora and nightlies'
 psql -f ${CURDIR}/update_products.sql breakpad
 
