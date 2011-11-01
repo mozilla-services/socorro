@@ -1,8 +1,10 @@
+-- function to sum up content crash count
+
 --
 -- Name: content_count_state(integer, citext, integer); Type: FUNCTION; Schema: public: Owner: postgres
 --
 
-CREATE FUNCTION content_count_state(running_count integer, process_type citext, crash_count integer) RETURNS integer
+CREATE OR REPLACE FUNCTION content_count_state(running_count integer, process_type citext, crash_count integer) RETURNS integer
     LANGUAGE sql IMMUTABLE
     AS $_$
 -- allows us to do a content crash count
@@ -27,3 +29,8 @@ CREATE AGGREGATE content_count(citext, integer) (
 );
 
 ALTER AGGREGATE public.content_count(citext, integer) OWNER TO breakpad_rw;
+
+-- done
+RETURN TRUE;
+END;
+$f$;
