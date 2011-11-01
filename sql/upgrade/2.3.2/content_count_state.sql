@@ -30,7 +30,7 @@ CREATE AGGREGATE content_count(citext, integer) (
 
 ALTER AGGREGATE public.content_count(citext, integer) OWNER TO breakpad_rw;
 
--- done
-RETURN TRUE;
-END;
-$f$;
+
+
+
+

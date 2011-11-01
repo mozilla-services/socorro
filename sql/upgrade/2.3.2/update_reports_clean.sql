@@ -307,3 +307,11 @@ RETURN TRUE;
 END;
 $f$;
 
+
+CREATE OR REPLACE FUNCTION update_reports_clean_cron ( 
+	crontime timestamptz )
+RETURNS BOOLEAN
+LANGUAGE sql
+AS $f$
+SELECT update_reports_clean( date_trunc('hour', $1) - interval '1 hour' );
+$f$;
