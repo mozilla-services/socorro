@@ -5,9 +5,9 @@ import logging
 import logging.handlers
 
 try:
-  import config.reportscleanconfig as configModule
+  import config.reportsclean as configModule
 except ImportError:
-  import reportscleanconfig as configModule
+  import reportsclean as configModule
 
 import socorro.lib.ConfigurationManager as configurationManager
 import socorro.cron.reportsClean as reportsClean
