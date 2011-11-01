@@ -83,7 +83,10 @@
 							if (isset($crasher->{'link'}) && !empty($crasher->{'link'})) {
 							    $linked = true;
 							}
-							if ($crasher->{'hang_count'} > 0) { ?>
+							if (isset($crasher->{'content_count'}) && $crasher->{'content_count'} > 0) { ?>
+							    <?php if ($linked) { ?><a href="<?= $crasher->{'link'} ?>" class="content-btn" title="Content Crash"><?php } ?><img src="<?= url::site('/img/3rdparty/fatcow/content16x16.png')?>" width="16" height="16" alt="Content Crash" title="Content Crash" class="content" /><?php if ($linked) { echo '</a>'; } ?>
+							<?php } ?>
+							<?php if ($crasher->{'hang_count'} > 0) { ?>
 							    <?php if ($linked) { ?><a href="<?= $crasher->{'link'} ?>" class="hang-pair-btn" title="Hanged Crash"><?php } ?><img src="<?= url::site('/img/3rdparty/fatcow/stop16x16.png')?>" width="16" height="16" alt="Hanged Crash" title="Hanged Crash" class="hang" /><?php if ($linked) { echo '</a>'; } ?>
 							<?php } ?>
 						    <?php if ($crasher->{'plugin_count'} > 0) {?>
