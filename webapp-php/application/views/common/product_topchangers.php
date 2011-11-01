@@ -34,5 +34,5 @@
     <br class="clear">
     </div>
 <?php } else { ?>
-    <p>Top changers currently unavailable.</p>
+    <p>There were no top changers that matched the criteria you specified.</p>
 <?php } ?>
