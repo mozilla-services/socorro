@@ -6,7 +6,7 @@ CREATE TABLE os_signature_counts (
 	os_version_string citext not null,
 	report_date date not null,
 	report_count int not null default 0,
-	constraint os_signature_count_key ( signature_id, report_date, os_version_string )
+	constraint os_signature_count_key primary key ( signature_id, report_date, os_version_string )
 );$x$, 'breakpad_rw', ARRAY [ 'os_version_string', 'report_date' ] );
 
 
@@ -30,7 +30,7 @@ IF checkdata THEN
 	IF FOUND THEN
 		RAISE EXCEPTION 'OS-signature counts have already been run for %.',updateday;
 	END IF;
-END IF:
+END IF;
 
 -- check if there's any data
 PERFORM 1 FROM reports_clean
@@ -60,7 +60,7 @@ CREATE OR REPLACE FUNCTION backfill_os_signature_counts(
 RETURNS BOOLEAN
 LANGUAGE plpgsql AS
 $f$
-BEGIN;
+BEGIN
 
 DELETE FROM os_signature_counts WHERE report_date = updateday;
 PERFORM update_os_signature_counts(updateday, false);

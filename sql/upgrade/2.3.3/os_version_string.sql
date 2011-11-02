@@ -1,11 +1,12 @@
 \set ON_ERROR_STOP 1
 
+BEGIN;
+
 SELECT create_table_if_not_exists ( 'windows_versions', $x$
 CREATE TABLE windows_versions (
 	windows_version_name citext not null,
 	major_version INT not null,
 	minor_version INT not null,
-	constraint version_range_check check ( begins_version <= ends_version ),
 	constraint windows_version_key unique ( major_version, minor_version )
 );$x$, 'breakpad_rw' );
 
@@ -21,7 +22,7 @@ INSERT INTO windows_versions VALUES
 
 ALTER TABLE os_versions ADD COLUMN os_version_string citext;
 	
-CREATE OR REPLACE FUNCTION create_os_version_string
+CREATE OR REPLACE FUNCTION create_os_version_string (
 	osname citext, major int, minor int)
 RETURNS citext 
 LANGUAGE plpgsql
@@ -54,12 +55,13 @@ BEGIN
 END; $f$;
 		
 UPDATE os_versions SET os_version_string 
-	= create_os_version_string( osname, major_version, minor_version )
+	= create_os_version_string( os_name, major_version, minor_version )
 WHERE os_version_string IS NULL;
 	
 ANALYZE os_versions;
+ANALYZE windows_versions;
 
-
+END;
 
 
 

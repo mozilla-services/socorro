@@ -6,7 +6,7 @@ CREATE TABLE product_signature_counts (
 	product_version_id int not null,
 	report_date date not null,
 	report_count int not null default 0,
-	constraint product_signature_count_key ( signature_id, report_date, product_version_id )
+	constraint product_signature_count_key primary key ( signature_id, report_date, product_version_id )
 );$x$, 'breakpad_rw', ARRAY [ 'product_version_id', 'report_date' ] );
 
 

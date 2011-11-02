@@ -14,17 +14,17 @@ VALUES ( '< 1 min', '0 seconds', '1 minute' ),
 	( '1-5 min', '1 minute', '5 minutes' ),
 	( '5-15 min', '5 minutes', '15 minutes' ),
 	( '15-60 min', '15 minutes', '60 minutes' ),
-	( '> 1 hour', '60 minutes', 'infinity' );
+	( '> 1 hour', '60 minutes', '1 year' );
 $x$, 'breakpad_rw' );
 
 
 select create_table_if_not_exists( 'uptime_signature_counts', $x$
 CREATE TABLE uptime_signature_counts (
+	signature_id int not null,
 	uptime_level int not null,
-	os_version_id int not null,
 	report_date date not null,
 	report_count int not null default 0,
-	constraint uptime_signature_count_key ( signature_id, report_date, uptime_level )
+	constraint uptime_signature_count_key primary key ( signature_id, report_date, uptime_level )
 );$x$, 'breakpad_rw', ARRAY [ 'uptime_level', 'report_date' ] );
 
 
@@ -48,7 +48,7 @@ IF checkdata THEN
 	IF FOUND THEN
 		RAISE EXCEPTION 'Uptime-signature counts have already been run for %.',updateday;
 	END IF;
-END IF:
+END IF;
 
 -- check if there's any data
 PERFORM 1 FROM reports_clean
@@ -79,7 +79,7 @@ CREATE OR REPLACE FUNCTION backfill_uptime_signature_counts(
 RETURNS BOOLEAN
 LANGUAGE plpgsql AS
 $f$
-BEGIN;
+BEGIN
 
 DELETE FROM uptime_signature_counts WHERE report_date = updateday;
 PERFORM update_uptime_signature_counts(updateday, false);

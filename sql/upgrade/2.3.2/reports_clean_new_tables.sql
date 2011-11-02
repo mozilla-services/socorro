@@ -56,7 +56,7 @@ create table reports_clean (
   client_crash_date timestamptz,
   product_version_id int,
   build numeric,
-  signature_id int,
+  signature_id int not null,
   install_age interval,
   uptime interval,
   reason_id int not null, 

@@ -181,7 +181,7 @@ ts2pacific(new_reports.date_processed),
 	domains.domain_id
 FROM new_reports
 LEFT OUTER JOIN release_channel_matches ON new_reports.release_channel ILIKE release_channel_matches.match_string
-LEFT OUTER JOIN signatures ON new_reports.signature = signatures.signature
+LEFT OUTER JOIN signatures ON COALESCE(new_reports.signature, '') = signatures.signature
 LEFT OUTER JOIN reasons ON new_reports.reason = reasons.reason
 LEFT OUTER JOIN addresses ON new_reports.address = addresses.address
 LEFT OUTER JOIN flash_versions ON new_reports.flash_version = flash_versions.flash_version
@@ -260,7 +260,8 @@ WHERE product_version_id = 0
 DELETE FROM reports_clean_buffer
 WHERE product_version_id = 0
 	OR os_name IS NULL
-	OR release_channel IS NULL;
+	OR release_channel IS NULL
+	OR signature_id IS NULL;
 	
 -- check if the right reports_clean partition exists, or create it
 
