@@ -1,12 +1,10 @@
-import socorro.search.searchapi as sapi
-import socorro.search.elasticsearch as es
+import socorro.external.elasticsearch.elasticsearch as es
 import socorro.lib.util as util
 
 
 def get_dummy_context():
     """
     Create a dummy config object to use when testing.
-
     """
     context = util.DotDict()
     context.elasticSearchHostname = ""
@@ -27,7 +25,6 @@ def get_dummy_context():
 def test_get_signatures():
     """
     Test ElasticSearchAPI.get_signatures()
-
     """
     context = get_dummy_context()
     facets = {
@@ -67,7 +64,6 @@ def test_get_signatures():
 def test_get_counts():
     """
     Test ElasticSearchAPI.get_counts()
-
     """
     context = get_dummy_context()
     signatures = [
@@ -132,11 +128,10 @@ def test_get_counts():
 def test_build_query_from_params():
     """
     Test ElasticSearchAPI.build_query_from_params()
-
     """
     # Test with all default parameters
     params = {}
-    params = sapi.SearchAPI.get_parameters(params)
+    params = es.ElasticSearchAPI.get_parameters(params)
     query = es.ElasticSearchAPI.build_query_from_params(params)
     assert query, "build_query_from_params returned a bad value: %s" % query
     assert "query" in query, (
@@ -153,7 +148,7 @@ def test_build_query_from_params():
         "search_mode": "contains",
         "product": "fennec"
     }
-    params = sapi.SearchAPI.get_parameters(params)
+    params = es.ElasticSearchAPI.get_parameters(params)
     query = es.ElasticSearchAPI.build_query_from_params(params)
     assert query, "build_query_from_params returned a bad value: %s" % query
     assert "query" in query, (
@@ -181,7 +176,6 @@ def test_build_query_from_params():
 def test_build_terms_query():
     """
     Test ElasticSearchAPI.build_terms_query()
-
     """
     # Empty query
     fields = ""
@@ -236,7 +230,6 @@ def test_build_terms_query():
 def test_build_wildcard_query():
     """
     Test ElasticSearchAPI.build_wildcard_query()
-
     """
     # Empty query
     fields = ""
@@ -291,7 +284,6 @@ def test_build_wildcard_query():
 def test_format_versions():
     """
     Test ElasticSearchAPI.format_versions()
-
     """
     # Empty versions
     versions = None
@@ -348,7 +340,6 @@ def test_format_versions():
 def test_prepare_terms():
     """
     Test ElasticSearchAPI.prepare_terms()
-
     """
     # Empty terms
     terms = ""

@@ -3,9 +3,8 @@ import logging
 from datetime import timedelta, datetime
 
 import socorro.database.database as db
+import socorro.external.common as co
 import socorro.lib.util as util
-import socorro.services.versions_info as vi
-import searchapi as sapi
 
 logger = logging.getLogger("webapi")
 

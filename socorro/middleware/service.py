@@ -39,7 +39,8 @@ class DataAPIService(JsonWebServiceBase):
 
         # First use user value if it exists
         if "force_api_impl" in params:
-            module_name = ".".join(("socorro.external", params["force_api_impl"],
+            module_name = ".".join(("socorro.external",
+                                    params["force_api_impl"],
                                     self.service_name))
             impl = self._import(module_name)
             if impl:
@@ -48,8 +49,8 @@ class DataAPIService(JsonWebServiceBase):
 
         # Second use config value
         if not impl:
-            module_name = ".".join((self.context.serviceImplementationModule,
-                                    self.service_name))
+            module_name = "%s.%s" % (self.context.serviceImplementationModule,
+                                     self.service_name)
             impl = self._import(module_name)
             if impl:
                 logger.debug("Service %s uses config module: %s"
@@ -72,16 +73,18 @@ class DataAPIService(JsonWebServiceBase):
         # Else return the implementation module
         return impl
 
-    def _import(self, module):
+    def _import(self, module_name):
         """
         Import a module, check it exists and return it.
 
         Return the module if it exists, False otherwise.
         """
+        logger.debug("Try to import %s" % module_name)
         try:
-            __import__(module)
-            return sys.modules[module]
+            __import__(module_name)
+            return sys.modules[module_name]
         except ImportError:
+            logger.debug("Could not import %s" % module_name)
             return False
         return False
 

@@ -5,6 +5,7 @@ from datetime import timedelta, datetime
 import socorro.database.database as db
 import socorro.lib.datetimeutil as dtutil
 import socorro.lib.util as util
+import socorro.services.versions_info as vi
 import postgresql as pg
 
 logger = logging.getLogger("webapi")
