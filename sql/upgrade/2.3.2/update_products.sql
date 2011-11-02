@@ -1,5 +1,23 @@
 \set ON_ERROR_STOP 1
 
+-- function to check that the version number matches the release
+-- channel so that we can exclude special builds from the 
+-- product_version list
+create or replace function version_matches_channel (
+	version text, channel citext )
+returns boolean
+language sql
+immutable strict
+as $f$
+SELECT CASE WHEN $1 ILIKE '%a1' AND $2 ILIKE 'nightly%'
+	THEN TRUE
+WHEN $1 ILIKE '%a2' AND $2 = 'aurora' 
+	THEN TRUE
+WHEN $1 NOT ILIKE '%a%' AND $2 IN ( 'beta', 'release' )
+	THEN TRUE
+ELSE FALSE END;
+$f$;
+
 
 create or replace function update_product_versions()
 returns boolean
@@ -44,7 +62,7 @@ from releases_raw
 			AND releases_raw.beta_number IS NOT DISTINCT FROM product_versions.beta_number )
 where major_version_sort(version) >= major_version_sort(rapid_release_version)
 	AND product_versions.product_name IS NULL
---	AND releases_raw.build_type IN ('release','beta')
+	AND version_matches_channel(releases_raw.version, releases_raw.build_type)
 group by products.product_name, version, releases_raw.beta_number, releases_raw.build_type::citext;
 
 -- insert final betas as a copy of the release version
