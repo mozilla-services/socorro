@@ -205,7 +205,7 @@ def scrapeNightlies(config, cursor, product_name, urllib=urllib2, date=None):
     try:
 
         day = date.strftime('%d')
-        dir_prefix = '%s-%s-%s' % (date.year, date.month, day)
+        dir_prefix = '%s-%s-%s' % (date.year, month, day)
         nightlies = getLinks(nightly_url, startswith=dir_prefix,
                  urllib=urllib)
         for nightly in nightlies:
