@@ -93,6 +93,11 @@ class SearchReportHelper{
      * @param array An array of $_GET parameters
      */
     public function normalizeDateUnitAndValue(&$params){
+
+        if(isset($params['range_value'])) {
+            $params['range_value'] = (int)$params['range_value'];
+        }
+
 		$range_defaults = Kohana::config('application.query_range_defaults');
 		$range_key = (isset($params['admin']) && $params['admin']) ? 'admin' : 'user';
 
