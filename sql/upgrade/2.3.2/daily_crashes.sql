@@ -217,12 +217,12 @@ SELECT COUNT(*) as count, daily_crash_code(process_type, hangid) as crash_code,
 	substring(os_name, 1, 3) AS os_short_name,
 	updateday
 FROM product_versions
-JOIN reports on product_versions.product_name = reports.product
-	AND product_versions.version_string = reports.version
+JOIN reports on product_versions.product_name = reports.product::citext
+	AND product_versions.version_string = reports.version::citext
 WHERE
 	date_processed >= utc_day_begins_pacific(updateday)
 		AND date_processed < utc_day_ends_pacific(updateday)
-    AND ( lower(release_channel) NOT IN ( 'nightly', 'beta', 'aurora' )
+    AND ( lower(release_channel) <> 'beta'
         OR release_channel IS NULL )
 	AND updateday BETWEEN product_versions.build_date and sunset_date
     AND lower(substring(os_name, 1, 3)) IN ('win','lin','mac')
@@ -237,8 +237,8 @@ SELECT COUNT(*) as count, daily_crash_code(process_type, hangid) as crash_code,
 	substring(os_name, 1, 3) AS os_short_name,
 	updateday
 FROM product_versions
-JOIN reports on product_versions.product_name = reports.product
-	AND product_versions.release_version = reports.version
+JOIN reports on product_versions.product_name = reports.product::citext
+	AND product_versions.release_version = reports.version::citext
 WHERE date_processed >= utc_day_begins_pacific(updateday)
 		AND date_processed < utc_day_ends_pacific(updateday)
     AND release_channel ILIKE 'beta'
@@ -259,11 +259,11 @@ SELECT count(subr.hangid) as count, 'H', subr.prod_id, subr.os_short_name,
 FROM (
 		   SELECT distinct hangid, product_version_id AS prod_id, substring(os_name, 1, 3) AS os_short_name
 			FROM product_versions
-			JOIN reports on product_versions.product_name = reports.product
-				AND product_versions.version_string = reports.version
+			JOIN reports on product_versions.product_name = reports.product::citext
+				AND product_versions.version_string = reports.version::citext
 			WHERE date_processed >= utc_day_begins_pacific(updateday)
 					AND date_processed < utc_day_ends_pacific(updateday)
-                AND ( lower(release_channel) NOT IN ( 'nightly', 'beta', 'aurora' )
+                AND ( lower(release_channel) <> 'beta'
                       or release_channel is null )
 				AND updateday BETWEEN product_versions.build_date and sunset_date
 			AND product_versions.build_type <> 'beta'
@@ -279,8 +279,8 @@ SELECT count(subr.hangid) as count, 'H', subr.prod_id, subr.os_short_name,
 FROM (
 		   SELECT distinct hangid, product_version_id AS prod_id, substring(os_name, 1, 3) AS os_short_name
 			FROM product_versions
-			JOIN reports on product_versions.product_name = reports.product
-				AND product_versions.release_version = reports.version
+			JOIN reports on product_versions.product_name = reports.product::citext
+				AND product_versions.release_version = reports.version::citext
 			WHERE date_processed >= utc_day_begins_pacific(updateday)
 					AND date_processed < utc_day_ends_pacific(updateday)
                 AND release_channel ILIKE 'beta'

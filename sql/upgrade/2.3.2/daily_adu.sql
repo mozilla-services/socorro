@@ -42,9 +42,9 @@ SELECT product_version_id, coalesce(os_name,'Unknown') as os,
 	coalesce(sum(raw_adu.adu_count), 0)
 FROM product_versions
 	LEFT OUTER JOIN raw_adu
-		ON product_versions.product_name = raw_adu.product_name
-		AND product_versions.version_string = raw_adu.product_version
-		AND product_versions.build_type ILIKE raw_adu.build_channel
+		ON product_versions.product_name = raw_adu.product_name::citext
+		AND product_versions.version_string = raw_adu.product_version::citext
+		AND product_versions.build_type ILIKE raw_adu.build_channel::citext
 		AND raw_adu.date = updateday
 	LEFT OUTER JOIN os_name_matches
     	ON raw_adu.product_os_platform ILIKE os_name_matches.match_string
@@ -62,8 +62,8 @@ SELECT product_version_id, coalesce(os_name,'Unknown') as os,
     coalesce(sum(raw_adu.adu_count), 0)
 FROM product_versions
     JOIN raw_adu
-        ON product_versions.product_name = raw_adu.product_name
-        AND product_versions.release_version = raw_adu.product_version
+        ON product_versions.product_name = raw_adu.product_name::citext
+        AND product_versions.release_version = raw_adu.product_version::citext
         AND raw_adu.date = updateday
     JOIN os_name_matches
     	ON raw_adu.product_os_platform ILIKE os_name_matches.match_string
@@ -86,8 +86,8 @@ SELECT productdims_id, coalesce(os_name,'Unknown') as os,
 FROM productdims
 	JOIN product_visibility ON productdims.id = product_visibility.productdims_id
 	LEFT OUTER JOIN raw_adu
-		ON productdims.product = raw_adu.product_name
-		AND productdims.version = raw_adu.product_version
+		ON productdims.product = raw_adu.product_name::citext
+		AND productdims.version = raw_adu.product_version::citext
 		AND raw_adu.date = updateday
     LEFT OUTER JOIN os_name_matches
     	ON raw_adu.product_os_platform ILIKE os_name_matches.match_string
