@@ -312,9 +312,14 @@ class Common_Model extends Model {
                         $version_string = $result[0]->version_string;
                         $which_table = $result[0]->which_table;
                         $major_version = $result[0]->major_version;
+
                         if (strpos($version_string, 'b')) {
                             $channel = 'beta';
                             $reports_version = $major_version;
+                        } else if (strpos($version_string, 'a1')) {
+                            $channel = 'nightly';
+                        } else if (strpos($version_string, 'a2')) {
+                            $channel = 'aurora';
                         } else {
                             $channel = 'release';
                         }
@@ -332,12 +337,22 @@ class Common_Model extends Model {
                                " AND reports.release_channel ILIKE 'beta'" .
                                " AND product_versions.build_type = 'Beta'" .
                                " AND EXISTS ( SELECT 1 FROM product_version_builds WHERE product_versions.product_version_id = product_version_builds.product_version_id AND build_numeric(reports.build) = product_version_builds.build_id ))";
-                        } else if ($channel = 'release') {
+                        } else if ($channel == 'release') {
                             $or[] =
                                 "(reports.product = " . $this->db->escape($product) .
                                 "AND reports.version = " . $this->db->escape($reports_version) .
                                 "AND product_versions.build_type = 'Release'" .
                                 "AND reports.release_channel NOT IN ('nightly', 'aurora', 'beta'))";
+                        } else if ($channel == 'aurora') {
+                            $or[] =
+                                "(reports.product = " . $this->db->escape($product) .
+                                "AND reports.version = " . $this->db->escape($reports_version) .
+                                "AND product_versions.build_type = 'Aurora')";
+                        } else if ($channel == 'nightly') {
+                            $or[] =
+                                "(reports.product = " . $this->db->escape($product) .
+                                "AND reports.version = " . $this->db->escape($reports_version) .
+                                "AND product_versions.build_type = 'Nightly')";
                         }
                     } else {
 
