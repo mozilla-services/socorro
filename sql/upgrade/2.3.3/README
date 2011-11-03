@@ -8,4 +8,8 @@ update_os_versions and update_os_versions_new_reports are both updated to suppor
 
 The new matviews are os_signature_counts, product_signature_counts, and uptime_signature_counts.
 
-****NO upgrade.sh is currently supplied because the 2.3.3 changes are not tested yet.******
+There is also a fix_permissions.sql script to make sure that read permissions on any object created by "breakpad_rw" is automatically inherited by "breakpad_ro".  This script has already been run on production, and is provided here for reference.
+
+support functions include reports_clean_done, a utility function to check that reports_clean has been filled in to the end of the day, before running any matviews which depend on it.
+
+update_tcbs replaces the update_tcbs stored procedure with a new one which populates the matview based on reports_clean.

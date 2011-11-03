@@ -50,12 +50,10 @@ IF checkdata THEN
 	END IF;
 END IF;
 
--- check if there's any data
-PERFORM 1 FROM reports_clean
-WHERE utc_day_is(date_processed, updateday) LIMIT 1;
-IF NOT FOUND THEN
+-- check if reports_clean is complete
+IF NOT reports_clean_done(updateday) THEN
 	IF checkdata THEN
-		RAISE EXCEPTION 'No reports_clean data found for %',updateday;
+		RAISE EXCEPTION 'Reports_clean has not been updated to the end of %',updateday;
 	ELSE
 		RETURN TRUE;
 	END IF;
@@ -67,7 +65,9 @@ SELECT signature_id, uptime_level, updateday, count(*) as report_count
 FROM reports_clean
 	JOIN uptime_levels ON reports_clean.uptime >= uptime_levels.min_uptime
 		AND reports_clean.uptime < uptime_levels.max_uptime
-	WHERE utc_day_is(date_processed, updateday)
+	JOIN product_versions USING (product_version_id)
+WHERE utc_day_is(date_processed, updateday)
+	AND tstz_between(date_processed, build_date, sunset_date)
 GROUP BY signature_id, uptime_level;
 
 RETURN TRUE;

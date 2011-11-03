@@ -54,7 +54,7 @@ create table reports_clean (
   uuid text not null primary key,
   date_processed timestamptz not null,
   client_crash_date timestamptz,
-  product_version_id int,
+  product_version_id int not null,
   build numeric,
   signature_id int not null,
   install_age interval,

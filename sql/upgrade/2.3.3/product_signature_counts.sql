@@ -32,22 +32,23 @@ IF checkdata THEN
 	END IF;
 END IF:
 
--- check if there's any data
-PERFORM 1 FROM reports_clean
-WHERE utc_day_is(date_processed, updateday) LIMIT 1;
-IF NOT FOUND THEN
+-- check if reports_clean is complete
+IF NOT reports_clean_done(updateday) THEN
 	IF checkdata THEN
-		RAISE EXCEPTION 'No reports_clean data found for %',updateday;
+		RAISE EXCEPTION 'Reports_clean has not been updated to the end of %',updateday;
 	ELSE
 		RETURN TRUE;
 	END IF;
 END IF;
 
+
 INSERT INTO product_signature_counts 
 	( signature_id, product_version_id, report_date, report_count )
 SELECT signature_id, product_version_id, updateday, count(*) as report_count
-FROM reports_clean
-	WHERE utc_day_is(date_processed, updateday)
+FROM reports_clean 
+	JOIN product_versions USING (product_version_id)
+WHERE utc_day_is(date_processed, updateday)
+	AND tstz_between(date_processed, build_date, sunset_date)
 GROUP BY signature_id, os_version_id;
 
 RETURN TRUE;
