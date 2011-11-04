@@ -21,13 +21,13 @@ class EmailSubscription(webapi.JsonServiceBase):
 
   #-----------------------------------------------------------------------------------------------------------------
   # GET
-  # curl http://localhost:8085/201103/emailcampaigns/subscription/e8aaa82c-c762-11df-a2ce-001cc4d80ee4
-  "/201103/emailcampaigns/subscription/{token}"
+  # curl http://localhost:8085/emailcampaigns/subscription/e8aaa82c-c762-11df-a2ce-001cc4d80ee4
+  "/emailcampaigns/subscription/{token}"
   #
   # POST (status can be 'true' or 'false'
   #  curl -v -F token=e8aaa82c-c762-11df-a2ce-001cc4d80ee4 -F status=false \
-  #             http://localhost:8085/201103/emailcampaigns/subscription/e8aaa82c-c762-11df-a2ce-001cc4d80ee4
-  uri = '/201103/emailcampaigns/subscription/(.*)'
+  #             http://localhost:8085/emailcampaigns/subscription/e8aaa82c-c762-11df-a2ce-001cc4d80ee4
+  uri = '/emailcampaigns/subscription/(.*)'
 
   #-----------------------------------------------------------------------------------------------------------------
   def get(self, *args):

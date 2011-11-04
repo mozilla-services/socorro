@@ -11,8 +11,8 @@ class HangReport(webapi.JsonServiceBase):
     super(HangReport, self).__init__(configContext)
     logger.debug('HangReport __init__')
 
-  # http://socorro-api/bpapi/201109/reports/hang/p/Firefox/v/9.0a1/end/2011-09-20T15%3A00%3A00T%2B0000/days/1/listsize/300/page/1
-  uri = '/201109/reports/hang/p/(.*)/v/(.*)/end/(.*)/duration/(.*)/listsize/(.*)/page/(.*)'
+  # http://socorro-api/bpapi/reports/hang/p/Firefox/v/9.0a1/end/2011-09-20T15%3A00%3A00T%2B0000/days/1/listsize/300/page/1
+  uri = '/reports/hang/p/(.*)/v/(.*)/end/(.*)/duration/(.*)/listsize/(.*)/page/(.*)'
 
   def get(self, *args):
     convertedArgs = webapi.typeConversion([str, str, dtutil.datetimeFromISOdateString, int, int, int], args)

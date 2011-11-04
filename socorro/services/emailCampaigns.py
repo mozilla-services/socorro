@@ -17,9 +17,9 @@ class EmailCampaigns(webapi.JsonServiceBase):
     self.database = db.Database(configContext)
 
   #-----------------------------------------------------------------------------------------------------------------
-  # curl -v http://localhost:8085/201103/email_campaigns
-  "/201103/emailcampaigns/campaigns/page/{page_number}"
-  uri = '/201103/emailcampaigns/campaigns/page/(.*)'
+  # curl -v http://localhost:8085/email_campaigns
+  "/emailcampaigns/campaigns/page/{page_number}"
+  uri = '/emailcampaigns/campaigns/page/(.*)'
 
   #-----------------------------------------------------------------------------------------------------------------
   def get(self, *args):

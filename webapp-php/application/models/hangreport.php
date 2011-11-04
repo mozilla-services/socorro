@@ -29,7 +29,7 @@ class HangReport_Model extends Model {
        $v = urlencode($version);
        $pg = urlencode($page);
 
-       $resp = $service->get("${host}/201109/reports/hang/p/${p}/v/${v}/end/${end_date}/duration/${duration}/listsize/${limit}/page/${pg}");
+       $resp = $service->get("${host}/reports/hang/p/${p}/v/${v}/end/${end_date}/duration/${duration}/listsize/${limit}/page/${pg}");
        if($resp) {
            return $resp;
         }
