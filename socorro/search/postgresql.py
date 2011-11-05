@@ -2,8 +2,9 @@ import logging
 
 from datetime import timedelta, datetime
 
-import socorro.lib.util as util
 import socorro.database.database as db
+import socorro.lib.util as util
+import socorro.services.versions_info as vi
 import searchapi as sapi
 
 logger = logging.getLogger("webapi")
@@ -193,11 +194,15 @@ class PostgresAPI(sapi.SearchAPI):
 
         ## Adding versions to where clause
         if versions != "_all" and len(versions):
-            contains_beta = False
+
+            # Get information about the versions
+            versions_service = vi.VersionsInfo(self.context)
+            fakeparams = {}
+            fakeparams["version"] = versions_list
+            versions_info = versions_service.versions_info(fakeparams)
 
             if type(versions) is list:
                 versions_where = []
-                versions_info = self.get_versions_info(cur, versions)
 
                 for x in xrange(0, len(versions), 2):
                     version_where = []
@@ -211,37 +216,27 @@ class PostgresAPI(sapi.SearchAPI):
                     else:
                         version_info = None
 
-                    if version_info and version_info["which_table"] == "new":
-                        if "b" in version_info["version_string"]:
-                            # it's a beta
-                            version_where.append(str(x + 1).join((
-                                  "product_versions.version_string=%(version",
-                                  ")s")))
-                            version_where.append("""r.version = product_versions.release_version
-                                AND r.release_channel ILIKE 'beta'
-                                AND product_versions.build_type = 'beta'
-                                AND EXISTS ( SELECT 1 FROM product_version_builds
-                                        WHERE product_versions.product_version_id = product_version_builds.product_version_id
-                                        AND build_numeric(r.build) = product_version_builds.build_id )
-                            """)
-                            contains_beta = True
+                    if version_info and version_info["release_channel"]:
+                        if version_info["release_channel"] in ("Beta", "Aurora", "Nightly"):
+                            # Use major_version instead of full version
+                            params["version%s" % (x + 1)] = version_info["major_version"]
+                            # Restrict by release_channel
+                            version_where.append("r.release_channel ILIKE '%s'" % version_info["release_channel"])
+                            if version_info["release_channel"] == "Beta":
+                                # Restrict to a list of build_id
+                                version_where.append("r.build IN ('%s')" % "', '".join([str(bid) for bid in version_info["build_id"]]))
+
                         else:
                             # it's a release
-                            version_where.append(str(x + 1).join((
-                                                "r.version=%(version", ")s")))
                             version_where.append("r.release_channel NOT IN ('nightly', 'aurora', 'beta')")
-                    else:
-                        version_where.append(str(x + 1).join((
-                                                "r.version=%(version", ")s")))
 
+                    version_where.append(str(x + 1).join((
+                                            "r.version=%(version", ")s")))
                     versions_where.append("(%s)" % " AND ".join(version_where))
 
-                sql_where.append("".join(("(",
-                                          " OR ".join(versions_where),
-                                          ")")))
+                sql_where.append("(%s)" % " OR ".join(versions_where))
 
             else:
-                versions_info = self.get_versions_info(cur, (products, versions))
                 # Original product:value
                 key = ":".join((products, versions))
                 if key in versions_info:
@@ -250,26 +245,19 @@ class PostgresAPI(sapi.SearchAPI):
                     version_info = None
 
                 if version_info and version_info["which_table"] == "new":
-                    if "b" in version_info["version_string"]:
-                        # it's a beta
-                        sql_where.append("product_versions.version_string=%(version)s")
-                        sql_where.append("""r.version = product_versions.release_version
-                            AND r.release_channel ILIKE 'beta'
-                            AND product_versions.build_type = 'beta'
-                            AND EXISTS ( SELECT 1 FROM product_version_builds
-                                    WHERE product_versions.product_version_id = product_version_builds.product_version_id
-                                    AND build_numeric(r.build) = product_version_builds.build_id )
-                        """)
-                        contains_beta = True
+                    if version_info["release_channel"] in ("Beta", "Aurora", "Nightly"):
+                        # Use major_version instead of full version
+                        params["version"] = version_info["major_version"]
+                        # Restrict by release_channel
+                        version_where.append("r.release_channel ILIKE '%s'" % version_info["release_channel"])
+                        # Restrict to a list of build_id
+                        version_where.append("r.build IN (%s)" % ", ".join([str(bid) for bid in version_info["build_id"]]))
+
                     else:
                         # it's a release
-                        sql_where.append("r.version=%(version)s")
-                        sql_where.append("r.release_channel NOT IN ('nightly', 'aurora', 'beta')")
-                else:
-                    sql_where.append("r.version=%(version)s")
+                        version_where.append("r.release_channel NOT IN ('nightly', 'aurora', 'beta')")
 
-            if contains_beta:
-                sql_from.append("product_versions ON r.version = product_versions.release_version AND r.product = product_versions.product_name")
+                sql_where.append("r.version=%(version)s")
 
         ## Adding build id to where clause
         if build_id:
@@ -439,52 +427,6 @@ class PostgresAPI(sapi.SearchAPI):
             sql_group.append("pluginName, pluginVersion, pluginFilename ")
 
         return ", ".join(sql_group)
-
-    def get_versions_info(self, cur, product_version_list):
-        """
-
-        """
-        if not product_version_list:
-            return None
-
-        versions = []
-        products = []
-        for x in xrange(0, len(product_version_list), 2):
-            products.append(product_version_list[x])
-            versions.append(product_version_list[x + 1])
-
-        params = {}
-        params = PostgresAPI.dispatch_params(params, "product", products)
-        params = PostgresAPI.dispatch_params(params, "version", versions)
-
-        where = []
-        for i in xrange(len(products)):
-            index = str(i)
-            where.append(index.join(("(pi.product_name = %(product",
-                                     ")s AND pi.version_string = %(version",
-                                     ")s)")))
-
-        sql = """/* socorro.search.postgresql.PostgresAPI.get_product_info */
-        SELECT pi.version_string, which_table, major_version, pi.product_name
-        FROM product_info pi
-            JOIN product_versions pv ON
-                (pv.product_version_id = pi.product_version_id)
-        WHERE %s
-        """ % " OR ".join(where)
-
-        try:
-            results = db.execute(cur, sql, params)
-        except Exception:
-            results = []
-            util.reportExceptionAndContinue(logger)
-
-        res = {}
-        for line in results:
-            row = dict(zip(("version_string", "which_table",
-                            "major_version", "product_name"), line))
-            res[":".join((row["product_name"], row["version_string"]))] = row
-
-        return res
 
     @staticmethod
     def dispatch_params(params, key, value):
