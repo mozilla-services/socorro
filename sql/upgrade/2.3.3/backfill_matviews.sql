@@ -42,7 +42,7 @@ END IF;
 -- we provide a switch to disable it
 IF reportsclean THEN
 	RAISE INFO 'backfilling reports_clean';
-	PERFORM backfill_reports_clean_by_date( firstday, lastday );
+	PERFORM backfill_reports_clean_by_date( firstday, lastday + 1 );
 END IF;
 
 -- loop through the days, backfilling one at a time

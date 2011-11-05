@@ -46,7 +46,7 @@ SELECT signature_id, updateday, product_version_id,
 FROM reports_clean
 	JOIN product_versions
 	WHERE utc_day_is(date_processed, updateday)
-		AND date_processed
+		AND tstz_between(date_processed, build_date, sunset_date)
 GROUP BY signature_id, updateday, product_version_id,
 	process_type, release_channel;
 
