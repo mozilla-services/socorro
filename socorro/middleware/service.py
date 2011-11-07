@@ -1,12 +1,12 @@
 import logging
 import sys
 
-from socorro.webapi.webapiService import JsonServiceBase
+from socorro.webapi.webapiService import JsonWebServiceBase
 
 logger = logging.getLogger("webapi")
 
 
-class DataAPIService(JsonServiceBase):
+class DataAPIService(JsonWebServiceBase):
 
     """
     Search API interface
