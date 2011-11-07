@@ -1,8 +1,14 @@
-import socorro.external.elasticsearch.elasticsearch as es
-import socorro.external.postgresql.postgresql as pg
+import unittest
+
+import socorro.external.elasticsearch.common as es
+import socorro.external.postgresql.common as pg
 import socorro.middleware.service as serv
 import socorro.lib.util as util
+import socorro.unittest.testlib.util as tutil
 
+
+def setup_module():
+    tutil.nosePrintModule(__file__)
 
 def get_dummy_context():
     """
@@ -18,7 +24,6 @@ def get_dummy_context():
     context.elasticSearchHostname = "localhost"
     context.elasticSearchPort = "9200"
     return context
-
 
 def test_get_module():
     """
@@ -45,8 +50,8 @@ def test_get_module():
     except AttributeError:
         assert False, "The imported module does not contain the needed class"
 
-    assert isinstance(search, es.ElasticSearchAPI), ("Imported module is not"
-                                                     " the right one")
+    assert isinstance(search, es.ElasticSearchCommon), (
+                "Imported module is not the right one")
 
     # Test forced module
     import_failed = False
@@ -65,8 +70,8 @@ def test_get_module():
     except AttributeError:
         assert False, "The imported module does not contain the needed class"
 
-    assert isinstance(search, pg.PostgresAPI), ("Imported module is not the "
-                                                "right one")
+    assert isinstance(search, pg.PostgreSQLCommon), (
+                "Imported module is not the right one")
 
     # Test default module
     import_failed = False
@@ -90,8 +95,8 @@ def test_get_module():
     except AttributeError:
         assert False, "The imported module does not contain the needed class"
 
-    assert isinstance(search, es.ElasticSearchAPI), ("Imported module is not"
-                                                     " the right one")
+    assert isinstance(search, es.ElasticSearchCommon), (
+                "Imported module is not the right one")
 
     # Test no valid module to import
     import_failed = False

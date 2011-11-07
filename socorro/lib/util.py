@@ -228,3 +228,29 @@ def parseIsoDateTimeString(dtstring):
   splitter = re.compile("[_:T. -]")
   # note: Allow double, leading and trailing delimiters by the use of ... if x
   return datetime.datetime(*[int(x.strip()) for x in splitter.split(dtstring)[:7] if x])
+
+
+def list_to_string(array, separator, prefix="", suffix=""):
+    """
+    Transform a list into a string and return it.
+    """
+    return separator.join("%s%s%s" % (prefix, x, suffix) for x in array)
+
+def lower(var):
+    """
+    Turn a string or a list of strings to lower case.
+
+    Don't modify non-string elements.
+    """
+    if type(var) is list:
+        for i in xrange(len(var)):
+            try:
+                var[i] = var[i].lower()
+            except AttributeError:
+                pass
+    else:
+        try:
+            var = var.lower()
+        except AttributeError:
+            pass
+    return var

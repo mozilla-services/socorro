@@ -2,16 +2,17 @@ import logging
 
 from datetime import timedelta, datetime
 
+from socorro.external.postgresql.common import PostgreSQLCommon
 import socorro.database.database as db
 import socorro.lib.datetimeutil as dtutil
+from socorro.lib.search_common import SearchCommon
 import socorro.lib.util as util
 import socorro.services.versions_info as vi
-import postgresql as pg
 
 logger = logging.getLogger("webapi")
 
 
-class Search(pg.PostgresAPI):
+class Search(PostgreSQLCommon, SearchCommon):
 
     """
     Implement the /search service with PostgreSQL.
@@ -22,7 +23,8 @@ class Search(pg.PostgresAPI):
         """
         Default constructor
         """
-        super(Search, self).__init__(config)
+        PostgreSQLCommon.__init__(self, config)
+        SearchCommon.__init__(self, config)
 
     def search(self, **kwargs):
         """
@@ -68,8 +70,8 @@ class Search(pg.PostgresAPI):
             plugin_search_mode = "starts_with"
 
         # Handling dates
-        from_date = Search.format_date(from_date)
-        to_date = Search.format_date(to_date)
+        from_date = dtutil.string_to_datetime(from_date)
+        to_date = dtutil.string_to_datetime(to_date)
 
         # For Postgres, we never search for a list of terms
         if type(terms) is list:
@@ -153,25 +155,25 @@ class Search(pg.PostgresAPI):
                 else:
                     comp = "LIKE"
 
-                sql_where.append( "".join( ( "(", Search.list_to_string(xrange(len(terms)), " OR ", "r.signature"+comp+"%(term", ")s"), ")" ) ) )
+                sql_where.append( "".join( ( "(", util.list_to_string(xrange(len(terms)), " OR ", "r.signature"+comp+"%(term", ")s"), ")" ) ) )
 
         ## Adding products to where clause
         if type(products) is list:
-            sql_where.append( "".join( ( "(", Search.list_to_string(xrange(len(products)), " OR ", "r.product=%(product", ")s"), ")" ) ) )
+            sql_where.append( "".join( ( "(", util.list_to_string(xrange(len(products)), " OR ", "r.product=%(product", ")s"), ")" ) ) )
         else:
             sql_where.append("r.product=%(product)s" )
 
         ## Adding OS to where clause
         if os != "_all":
             if type(os) is list:
-                sql_where.append( "".join( ( "(", Search.list_to_string(xrange(len(os)), " OR ", "r.os_name=%(os", ")s"), ")" ) ) )
+                sql_where.append( "".join( ( "(", util.list_to_string(xrange(len(os)), " OR ", "r.os_name=%(os", ")s"), ")" ) ) )
             else:
                 sql_where.append("r.os_name=%(os)s")
 
         ## Adding branches to where clause
         if branches:
             if type(branches) is list:
-                sql_where.append( "".join( ( "(", Search.list_to_string(xrange(len(branches)), " OR ", "branches.branch=%(branch", ")s"), ")" ) ) )
+                sql_where.append( "".join( ( "(", util.list_to_string(xrange(len(branches)), " OR ", "branches.branch=%(branch", ")s"), ")" ) ) )
             else:
                 sql_where.append("branches.branch=%(branch)s")
 
@@ -245,14 +247,14 @@ class Search(pg.PostgresAPI):
         ## Adding build id to where clause
         if build_id:
             if type(build_id) is list:
-                sql_where.append( "".join( ( "(", Search.list_to_string(xrange(len(build_id)), " OR ", "r.build=%(build", ")s"), ")" ) ) )
+                sql_where.append( "".join( ( "(", util.list_to_string(xrange(len(build_id)), " OR ", "r.build=%(build", ")s"), ")" ) ) )
             else:
                 sql_where.append("r.build=%(build)s")
 
         ## Adding reason to where clause
         if reason:
             if type(reason) is list:
-                sql_where.append( "".join( ( "(", Search.list_to_string(xrange(len(reason)), " OR ", "r.reason=%(reason", ")s"), ")" ) ) )
+                sql_where.append( "".join( ( "(", util.list_to_string(xrange(len(reason)), " OR ", "r.reason=%(reason", ")s"), ")" ) ) )
             else:
                 sql_where.append("r.reason=%(reason)s")
 
@@ -277,7 +279,7 @@ class Search(pg.PostgresAPI):
                     field = "plugins.filename"
 
                 if type(plugin_term) is list:
-                    sql_where.append( "".join( ( "(", Search.list_to_string(xrange(len(plugin_term)), " OR ", field + comp +"%(plugin_term", ")s"), ")" ) ) )
+                    sql_where.append( "".join( ( "(", util.list_to_string(xrange(len(plugin_term)), " OR ", field + comp +"%(plugin_term", ")s"), ")" ) ) )
                 else:
                     sql_where.append( "".join( ( field, comp, "%(plugin_term)s" ) ) )
 
@@ -449,3 +451,35 @@ class Search(pg.PostgresAPI):
             res[":".join((row["product_name"], row["version_string"]))] = row
 
         return res
+
+    @staticmethod
+    def prepare_terms(terms, is_terms_a_list, search_mode):
+        """
+        Prepare terms for search, adding '%' where needed,
+        given the search mode.
+
+        """
+        if search_mode == "contains" and is_terms_a_list:
+            for i in xrange(len(terms)):
+                terms[i] = "%" + terms[i] + "%"
+        elif search_mode == "contains":
+            terms = "%" + terms + "%"
+        elif search_mode == "starts_with" and is_terms_a_list:
+            for i in xrange(len(terms)):
+                terms[i] = terms[i] + "%"
+        elif search_mode == "starts_with":
+            terms = terms + "%"
+        return terms
+
+    @staticmethod
+    def dispatch_params(params, key, value):
+        """
+        Dispatch a parameter or a list of parameters into the params array.
+
+        """
+        if type(value) is not list:
+            params[key] = value
+        else:
+            for i in xrange(len(value)):
+                params[key+str(i)] = value[i]
+        return params

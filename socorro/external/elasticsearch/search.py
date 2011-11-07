@@ -1,13 +1,14 @@
 import json
 import logging
 
-import elasticsearch as es
+from common import ElasticSearchCommon
+from socorro.lib.search_common import SearchCommon
 import socorro.services.versions_info as vi
 
 logger = logging.getLogger("webapi")
 
 
-class Search(es.ElasticSearchAPI):
+class Search(ElasticSearchCommon, SearchCommon):
 
     """
     Implement the /search service with ElasticSearch.
@@ -18,7 +19,9 @@ class Search(es.ElasticSearchAPI):
         """
         Default constructor
         """
-        super(Search, self).__init__(config)
+        #~ super(Search, self).__init__(config)
+        ElasticSearchCommon.__init__(self, config)
+        SearchCommon.__init__(self, config)
 
     def search(self, **kwargs):
         """
@@ -119,3 +122,107 @@ class Search(es.ElasticSearchAPI):
                 results["hits"].append(signatures[i])
 
             return results
+
+    @staticmethod
+    def get_signatures_facet(size):
+        """
+        Generate the facets for the search query.
+        """
+        # Get distinct signatures and count
+        facets = {
+            "signatures": {
+                "terms": {
+                    "field": "signature.full",
+                    "size": size
+                }
+            }
+        }
+
+        return facets
+
+    @staticmethod
+    def get_signatures(facets, maxsize, platforms):
+        """
+        Generate the result of search by signature from the facets ES returns.
+        """
+        signatures = facets["signatures"]["terms"]
+
+        results = []
+        sign_list = {}
+
+        for i in xrange(maxsize):
+            results.append({
+                "signature": signatures[i]["term"],
+                "count": signatures[i]["count"]
+            })
+            for platform in platforms:
+                results[i]["_".join(("is", platform["id"]))] = 0
+
+            sign_list[signatures[i]["term"]] = results[i]
+
+        return results
+
+    @staticmethod
+    def get_count_facets(signatures, result_offset, maxsize):
+        """
+        Generate the facets to count the number of each OS for each signature.
+        """
+        facets = {}
+
+        for i in xrange(result_offset, maxsize):
+            sign = signatures[i]["signature"]
+            sign_hang = "_".join((sign, "hang"))
+            sign_plugin = "_".join((sign, "plugin"))
+
+            facet_filter = {
+                "term": {
+                    "signature.full": sign
+                }
+            }
+
+            facets[sign] = {
+                "terms": {
+                    "field": "os_name"
+                },
+                "facet_filter": facet_filter
+            }
+            facets[sign_hang] = {
+                "filter": {
+                    "exists": {
+                        "field": "hangid"
+                    }
+                },
+                "facet_filter": facet_filter
+            }
+            facets[sign_plugin] = {
+                "filter": {
+                    "exists": {
+                        "field": "process_type"
+                    }
+                },
+                "facet_filter": facet_filter
+            }
+
+        return facets
+
+    @staticmethod
+    def get_counts(signatures, count_sign, result_offset, maxsize, platforms):
+        """
+        Generate the complementary information about signatures
+        (count by OS, number of plugins and of hang).
+        """
+        # Transform the results into something we can return
+        for i in xrange(result_offset, maxsize):
+            # OS count
+            for term in count_sign[signatures[i]["signature"]]["terms"]:
+                for os in platforms:
+                    if term["term"] == os["id"]:
+                        osid = "is_%s" % os["id"]
+                        signatures[i][osid] = term["count"]
+            # Hang count
+            sign_hang = "_".join((signatures[i]["signature"], "hang"))
+            signatures[i]["numhang"] = count_sign[sign_hang]["count"]
+            # Plugin count
+            sign_plugin = "_".join((signatures[i]["signature"], "plugin"))
+            signatures[i]["numplugin"] = count_sign[sign_plugin]["count"]
+        return signatures

@@ -4,9 +4,9 @@ from datetime import timedelta, datetime
 
 import socorro.lib.datetimeutil as dtutil
 
-class Common(object):
+class SearchCommon(object):
     """
-    Common functions for external modules.
+    Common functions for search-related external modules.
     """
 
     def __init__(self, config):
@@ -115,9 +115,9 @@ class Common(object):
         args["result_offset"] = int(kwargs.get("result_offset", 0))
 
         # Handling dates
-        from_date = Common.format_date(args["from_date"])
+        from_date = dtutil.string_to_datetime(args["from_date"])
         args["from_date"] = from_date or lastweek
-        to_date = Common.format_date(args["to_date"])
+        to_date = dtutil.string_to_datetime(args["to_date"])
         args["to_date"] = to_date or now
 
         # Do not search in the future
@@ -125,7 +125,7 @@ class Common(object):
             args["to_date"] = now
 
         # Securing fields
-        args["fields"] = Common.restrict_fields(args["fields"])
+        args["fields"] = SearchCommon.restrict_fields(args["fields"])
 
         return args
 
@@ -157,60 +157,3 @@ class Common(object):
             secured_fields = "signature"
 
         return secured_fields
-
-    # ---
-    # Following methods will go into socorro.lib.util or
-    # socorro.lib.datetimeutil as soon as it is PEP8'd
-    # ---
-
-    @staticmethod
-    def list_to_string(array, separator, prefix="", suffix=""):
-        """
-        Transform a list into a string and return it.
-        """
-        return separator.join("%s%s%s" % (prefix, x, suffix) for x in array)
-
-    @staticmethod
-    def date_to_string(date):
-        """
-        Transform a datetime object into a string and return it.
-        """
-        date_format = "%Y-%m-%d %H:%M:%S.%f"
-        return date.strftime(date_format)
-
-    @staticmethod
-    def format_date(date):
-        """
-        Take a string and return a datetime object.
-        """
-        if not date:
-            return None
-
-        if type(date) is not datetime:
-            if type(date) is list:
-                date = " ".join(date)
-            try:
-                date = dtutil.datetimeFromISOdateString(date)
-            except Exception:
-                date = None
-        return date
-
-    @staticmethod
-    def lower(var):
-        """
-        Turn a string or a list of strings to lower case.
-
-        Don't modify non-string elements.
-        """
-        if type(var) is list:
-            for i in xrange(len(var)):
-                try:
-                    var[i] = var[i].lower()
-                except AttributeError:
-                    pass
-        else:
-            try:
-                var = var.lower()
-            except AttributeError:
-                pass
-        return var

@@ -4,26 +4,23 @@ import urllib
 
 from datetime import timedelta, datetime
 
-import socorro.external.common as co
+import socorro.lib.datetimeutil as dtutil
 import socorro.lib.httpclient as httpc
+import socorro.lib.util as util
 
 logger = logging.getLogger("webapi")
 
 
-class ElasticSearchAPI(co.Common):
+class ElasticSearchCommon(object):
 
     """
     Base class for ElasticSearch based service implementations.
-
-    See https://wiki.mozilla.org/Socorro/Middleware
-
     """
 
     def __init__(self, config):
         """
         Default constructor
         """
-        super(ElasticSearchAPI, self).__init__(config)
         self.http = httpc.HttpClient(config.elasticSearchHostname,
                                      config.elasticSearchPort)
 
@@ -41,8 +38,8 @@ class ElasticSearchAPI(co.Common):
         now = datetime.today()
         lastweek = now - timedelta(7)
 
-        from_date = ElasticSearchAPI.format_date(from_date) or lastweek
-        to_date = ElasticSearchAPI.format_date(to_date) or now
+        from_date = dtutil.string_to_datetime(from_date) or lastweek
+        to_date = dtutil.string_to_datetime(to_date) or now
 
         # Create the indexes to use for querying.
         daterange = []
@@ -99,110 +96,6 @@ class ElasticSearchAPI(co.Common):
         return (http_response, "text/json")
 
     @staticmethod
-    def get_signatures_facet(size):
-        """
-        Generate the facets for the search query.
-        """
-        # Get distinct signatures and count
-        facets = {
-            "signatures": {
-                "terms": {
-                    "field": "signature.full",
-                    "size": size
-                }
-            }
-        }
-
-        return facets
-
-    @staticmethod
-    def get_signatures(facets, maxsize, platforms):
-        """
-        Generate the result of search by signature from the facets ES returns.
-        """
-        signatures = facets["signatures"]["terms"]
-
-        results = []
-        sign_list = {}
-
-        for i in xrange(maxsize):
-            results.append({
-                "signature": signatures[i]["term"],
-                "count": signatures[i]["count"]
-            })
-            for platform in platforms:
-                results[i]["_".join(("is", platform["id"]))] = 0
-
-            sign_list[signatures[i]["term"]] = results[i]
-
-        return results
-
-    @staticmethod
-    def get_count_facets(signatures, result_offset, maxsize):
-        """
-        Generate the facets to count the number of each OS for each signature.
-        """
-        facets = {}
-
-        for i in xrange(result_offset, maxsize):
-            sign = signatures[i]["signature"]
-            sign_hang = "_".join((sign, "hang"))
-            sign_plugin = "_".join((sign, "plugin"))
-
-            facet_filter = {
-                "term": {
-                    "signature.full": sign
-                }
-            }
-
-            facets[sign] = {
-                "terms": {
-                    "field": "os_name"
-                },
-                "facet_filter": facet_filter
-            }
-            facets[sign_hang] = {
-                "filter": {
-                    "exists": {
-                        "field": "hangid"
-                    }
-                },
-                "facet_filter": facet_filter
-            }
-            facets[sign_plugin] = {
-                "filter": {
-                    "exists": {
-                        "field": "process_type"
-                    }
-                },
-                "facet_filter": facet_filter
-            }
-
-        return facets
-
-    @staticmethod
-    def get_counts(signatures, count_sign, result_offset, maxsize, platforms):
-        """
-        Generate the complementary information about signatures
-        (count by OS, number of plugins and of hang).
-        """
-        # Transform the results into something we can return
-        for i in xrange(result_offset, maxsize):
-            # OS count
-            for term in count_sign[signatures[i]["signature"]]["terms"]:
-                for os in platforms:
-                    if term["term"] == os["id"]:
-                        osid = "is_%s" % os["id"]
-                        signatures[i][osid] = term["count"]
-            # Hang count
-            sign_hang = "_".join((signatures[i]["signature"], "hang"))
-            signatures[i]["numhang"] = count_sign[sign_hang]["count"]
-            # Plugin count
-            sign_plugin = "_".join((signatures[i]["signature"], "plugin"))
-            signatures[i]["numplugin"] = count_sign[sign_plugin]["count"]
-        return signatures
-
-    @staticmethod
     def build_query_from_params(params):
         """
         Build and return an ES query given a list of parameters.
@@ -211,9 +104,9 @@ class ElasticSearchAPI(co.Common):
         default values.
         """
         # Dates need to be strings for ES
-        params["from_date"] = ElasticSearchAPI.date_to_string(
+        params["from_date"] = dtutil.date_to_string(
                                                     params["from_date"])
-        params["to_date"] = ElasticSearchAPI.date_to_string(params["to_date"])
+        params["to_date"] = dtutil.date_to_string(params["to_date"])
 
         # Preparing the different elements of the json query
         query = {
@@ -229,39 +122,39 @@ class ElasticSearchAPI(co.Common):
         if (params["search_mode"] == "default" and
             params["terms"] and params["fields"]):
             filters["and"].append(
-                            ElasticSearchAPI.build_terms_query(
+                            ElasticSearchCommon.build_terms_query(
                                 params["fields"],
-                                ElasticSearchAPI.lower(params["terms"])))
+                                util.lower(params["terms"])))
 
         elif params["terms"]:
-            params["terms"] = ElasticSearchAPI.prepare_terms(
+            params["terms"] = ElasticSearchCommon.prepare_terms(
                                                     params["terms"],
                                                     params["search_mode"])
-            queries.append(ElasticSearchAPI.build_wildcard_query(
+            queries.append(ElasticSearchCommon.build_wildcard_query(
                                                 params["fields"],
                                                 params["terms"]))
 
         # Generating the filters
         if params["products"]:
             filters["and"].append(
-                            ElasticSearchAPI.build_terms_query(
+                            ElasticSearchCommon.build_terms_query(
                                 "product.full",
                                 params["products"]))
         if params["os"]:
             filters["and"].append(
-                            ElasticSearchAPI.build_terms_query(
+                            ElasticSearchCommon.build_terms_query(
                                 "os_name",
-                                ElasticSearchAPI.lower(params["os"])))
+                                util.lower(params["os"])))
         if params["build_id"]:
             filters["and"].append(
-                            ElasticSearchAPI.build_terms_query(
+                            ElasticSearchCommon.build_terms_query(
                                 "build",
-                                ElasticSearchAPI.lower(params["build_id"])))
+                                util.lower(params["build_id"])))
         if params["reason"]:
             filters["and"].append(
-                            ElasticSearchAPI.build_terms_query(
+                            ElasticSearchCommon.build_terms_query(
                                 "reason",
-                                ElasticSearchAPI.lower(params["reason"])))
+                                util.lower(params["reason"])))
 
         filters["and"].append({
                 "range": {
@@ -273,7 +166,7 @@ class ElasticSearchAPI(co.Common):
             })
 
         if params["report_process"] == "plugin":
-            filters["and"].append(ElasticSearchAPI.build_terms_query(
+            filters["and"].append(ElasticSearchCommon.build_terms_query(
                                                         "process_type",
                                                         "plugin"))
         if params["report_type"] == "crash":
@@ -285,7 +178,7 @@ class ElasticSearchAPI(co.Common):
 
         # Generating the filters for versions
         if params["version"]:
-            versions = ElasticSearchAPI.format_versions(params["version"])
+            versions = ElasticSearchCommon.format_versions(params["version"])
             versions_type = type(versions)
             versions_info = params["versions_info"]
 
@@ -294,9 +187,9 @@ class ElasticSearchAPI(co.Common):
                 # Otherwise consider this as a product
                 if not params["products"]:
                     filters["and"].append(
-                                    ElasticSearchAPI.build_terms_query(
+                                    ElasticSearchCommon.build_terms_query(
                                         "product",
-                                        ElasticSearchAPI.lower(versions)))
+                                        util.lower(versions)))
 
             elif versions_type is dict:
                 # There is only one pair product:version
@@ -309,31 +202,31 @@ class ElasticSearchAPI(co.Common):
                     versions["version"] = versions_info[key]["major_version"]
                     # then make sure it's a beta
                     filters["and"].append(
-                            ElasticSearchAPI.build_terms_query(
+                            ElasticSearchCommon.build_terms_query(
                                                     "ReleaseChannel", "beta"))
                     # last use the right build id
                     filters["and"].append(
-                            ElasticSearchAPI.build_terms_query(
+                            ElasticSearchCommon.build_terms_query(
                                     "build", versions_info[key]["build_id"]))
                 elif (key in versions_info and
                         versions_info[key]["release_channel"]):
                     # this version is a release
                     filters["and"].append({
                         "not":
-                            ElasticSearchAPI.build_terms_query(
+                            ElasticSearchCommon.build_terms_query(
                                     "ReleaseChannel",
                                     ["nightly", "aurora", "beta"])
                     })
 
                 filters["and"].append(
-                                ElasticSearchAPI.build_terms_query(
+                                ElasticSearchCommon.build_terms_query(
                                         "product",
-                                        ElasticSearchAPI.lower(
+                                        util.lower(
                                                     versions["product"])))
                 filters["and"].append(
-                                ElasticSearchAPI.build_terms_query(
+                                ElasticSearchCommon.build_terms_query(
                                         "version",
-                                        ElasticSearchAPI.lower(
+                                        util.lower(
                                                     versions["version"])))
 
             elif versions_type is list:
@@ -350,11 +243,11 @@ class ElasticSearchAPI(co.Common):
                         v["version"] = versions_info[key]["major_version"]
                         # then make sure it's a beta
                         and_filter.append(
-                                ElasticSearchAPI.build_terms_query(
+                                ElasticSearchCommon.build_terms_query(
                                                     "ReleaseChannel", "beta"))
                         # last use the right build id
                         and_filter.append(
-                                ElasticSearchAPI.build_terms_query(
+                                ElasticSearchCommon.build_terms_query(
                                     "build", versions_info[key]["build_id"]))
 
                     elif (key in versions_info and
@@ -362,18 +255,18 @@ class ElasticSearchAPI(co.Common):
                         # this version is a release
                         and_filter.append({
                             "not":
-                                ElasticSearchAPI.build_terms_query(
+                                ElasticSearchCommon.build_terms_query(
                                         "ReleaseChannel",
                                         ["nightly", "aurora", "beta"])
                         })
 
-                    and_filter.append(ElasticSearchAPI.build_terms_query(
+                    and_filter.append(ElasticSearchCommon.build_terms_query(
                                             "product",
-                                            ElasticSearchAPI.lower(
+                                            util.lower(
                                                         v["product"])))
-                    and_filter.append(ElasticSearchAPI.build_terms_query(
+                    and_filter.append(ElasticSearchCommon.build_terms_query(
                                             "version",
-                                            ElasticSearchAPI.lower(
+                                            util.lower(
                                                         v["version"])))
                     or_filter.append({"and": and_filter})
                 filters["and"].append({"or": or_filter})
