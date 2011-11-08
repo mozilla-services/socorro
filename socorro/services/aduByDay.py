@@ -20,8 +20,8 @@ class AduByDay(webapi.JsonServiceBase):
 
 
   #-----------------------------------------------------------------------------------------------------------------
-  "/201005/adu/byday/p/{product}/v/{versions}/report_type/{report_type}/os/{os_names}/start/{start_date}/end/{end_date} "
-  uri = '/201005/adu/byday/p/(.*)/v/(.*)/rt/(.*)/os/(.*)/start/(.*)/end/(.*)'
+  "/adu/byday/p/{product}/v/{versions}/report_type/{report_type}/os/{os_names}/start/{start_date}/end/{end_date} "
+  uri = '/adu/byday/p/(.*)/v/(.*)/rt/(.*)/os/(.*)/start/(.*)/end/(.*)'
   #-----------------------------------------------------------------------------------------------------------------
   def get(self, *args):
     convertedArgs = webapi.typeConversion([str, semicolonStringToListSanitized, str, semicolonStringToListSanitized, dtutil.datetimeFromISOdateString, dtutil.datetimeFromISOdateString], args)
@@ -150,14 +150,3 @@ class AduByDay(webapi.JsonServiceBase):
 
     return result
 
-class AduByDay200912(AduByDay):
-  """ Deprecated Web Service, uses 201005 with report_type set to 'any' """
-  def __init__(self, configContext):
-    super(AduByDay200912, self).__init__(configContext)
-
-  "/200912/adu/byday/p/{product}/v/{versions}/os/{os_names}/start/{start_date}/end/{end_date} "
-  uri = '/200912/adu/byday/p/(.*)/v/(.*)/os/(.*)/start/(.*)/end/(.*)'
-
-  def get(self, *args):
-    logger.info("child get called %s" % str(args))
-    return AduByDay.get(self, args[0], args[1], 'any', args[2],  args[3], args[4])

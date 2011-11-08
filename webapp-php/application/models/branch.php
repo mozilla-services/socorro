@@ -66,7 +66,7 @@ class Branch_Model extends Model {
         $service = new Web_Service($config);
         $host = Kohana::config('webserviceclient.socorro_hostname');
         $from = rawurlencode($order_by);
-        $resp = $service->get("${host}/201106/current/versions/${from}");
+        $resp = $service->get("${host}/current/versions/${from}");
         if($order_by && !$ignore_cache) {
             self::$_CACHE[md5($order_by)] = $resp->currentversions;
         }

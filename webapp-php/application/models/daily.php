@@ -509,7 +509,7 @@ class Daily_Model extends Model {
      * @return      string  The URL.
      */
     private function formatADUOverviewURL ($product, $versions, $hang_type, $operating_systems, $start_date, $end_date) {
-        return $this->formatURL("/201005/adu/byday/p/", $product, $versions, $hang_type, $operating_systems, $start_date, $end_date);
+        return $this->formatURL("/adu/byday/p/", $product, $versions, $hang_type, $operating_systems, $start_date, $end_date);
     }
 
     /**
@@ -525,7 +525,7 @@ class Daily_Model extends Model {
      */
     private function formatADUDetailsByReportTypeURL ($product, $versions, $report_types, $operating_systems, $start_date, $end_date) {
         $rt = $this->encodeArray($report_types);
-        return $this->formatURL("/201006/adu/byday/details/p/", $product, $versions, $rt, $operating_systems, $start_date, $end_date);
+        return $this->formatURL("/adu/byday/details/p/", $product, $versions, $rt, $operating_systems, $start_date, $end_date);
     }
 
 	/**

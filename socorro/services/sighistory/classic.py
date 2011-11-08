@@ -15,7 +15,7 @@ class SignatureHistoryClassic(webapi.JsonServiceBase):
     super(SignatureHistoryClassic, self).__init__(configContext)
     logger.debug('SignatureHistoryClassic __init__')
   #-----------------------------------------------------------------------------------------------------------------
-  uri = '/200911/topcrash/sig/trend/history/p/(.*)/v/(.*)/sig/(.*)/end/(.*)/duration/(.*)/steps/(.*)'
+  uri = '/topcrash/sig/trend/history/p/(.*)/v/(.*)/sig/(.*)/end/(.*)/duration/(.*)/steps/(.*)'
   #-----------------------------------------------------------------------------------------------------------------
   def fetchTotalsForRange(self, params):
     sql = """
