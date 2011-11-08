@@ -48,5 +48,7 @@ begin
 		dex := dex + 1;
 	END LOOP;
 	
+	EXECUTE 'ALTER TABLE ' || this_part || ' OWNER TO breakpad_rw';
+	
 	RETURN this_part;
 end;$f$;

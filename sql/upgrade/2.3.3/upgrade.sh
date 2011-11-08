@@ -4,8 +4,9 @@ set -e
 
 CURDIR=$(dirname $0)
 
-echo 'new support functions'
+echo 'new support functions, and reload some old ones with code fixes'
 psql -f ${CURDIR}/support_functions.sql breakpad
+psql -f ${CURDIR}/support_functions_fix.sql breakpad
 
 echo 'os_version_string formatting function and populating os_versions table'
 psql -f ${CURDIR}/os_version_string.sql breakpad

@@ -13,3 +13,7 @@ There is also a fix_permissions.sql script to make sure that read permissions on
 support functions include reports_clean_done, a utility function to check that reports_clean has been filled in to the end of the day, before running any matviews which depend on it.
 
 update_tcbs replaces the update_tcbs stored procedure with a new one which populates the matview based on reports_clean.
+
+daily_crashes replaces the update_daily_crashes() function with one based partly on reports_clean.
+
+reports_weekly_partitioning replaces the current python code on spadmin with new stored procedures which regulate the creation of partitions.

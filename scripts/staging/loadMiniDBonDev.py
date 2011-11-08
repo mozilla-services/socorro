@@ -40,7 +40,9 @@ def runload(load_command):
 
 matviews = ['raw_adu', 'releases_raw', 'product_adu', 'daily_crashes',
             'top_crashes_by_signature', 'top_crashes_by_url',
-            'top_crashes_by_url_signature', 'tcbs']
+            'top_crashes_by_url_signature', 'tcbs', 'sessions',
+            'server_status', 'reports_bad', 'reports_duplicates',
+            'daily_hangs']
 
 # untar the file
 runload('tar -xzf %s' % tar_file)
@@ -111,8 +113,6 @@ conn = psycopg2.connect("dbname=%s user=postgres" % database_name)
 conn.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
 
 cur = conn.cursor()
-
-cur.execute('TRUNCATE tcbs_ranking')
 
 cur.execute("""
             DO $f$

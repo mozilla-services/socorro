@@ -68,12 +68,12 @@ cutoff_date = str(cur.fetchone()[0])
 matviews = {'raw_adu'
     : """SELECT * FROM raw_adu WHERE raw_adu.date >= '%s'""" % cutoff_date,
     'top_crashes_by_signature'
-    : """SELECT * FROM top_crashes_by_signature WHERE window_end >= '%s'""",
+    : """SELECT * FROM top_crashes_by_signature WHERE window_end >= '%s'""" % cutoff_date,
     'top_crashes_by_url'
     : """SELECT * FROM top_crashes_by_url WHERE window_end >= '%s'""" % cutoff_date,
     'top_crashes_by_url_signature'
     : """SELECT tcbus.* FROM top_crashes_by_url_signature tcbus JOIN top_crashes_by_url
-        ON top_crashes_by_url_signature_id = top_crashes_by_url_signature.id
+        ON top_crashes_by_url_id = top_crashes_by_url.id
         WHERE top_crashes_by_url.window_end >= '%s'""" % cutoff_date,
     'releases_raw'
     : """SELECT releases_raw.* FROM releases_raw WHERE build_date(build_id)
@@ -83,9 +83,16 @@ matviews = {'raw_adu'
     : """SELECT daily_crashes.* FROM daily_crashes WHERE adu_day >= '%s'""" % cutoff_date,
     'tcbs'
     : """SELECT tcbs.* FROM tcbs WHERE report_date >= '%s'"""
-        % cutoff_date }
+        % cutoff_date,
+    'sessions' : """SELECT * FROM sessions WHERE false""",
+    'server_status' : """SELECT * FROM server_status WHERE false""",
+    'reports_bad' : """SELECT * FROM reports_bad WHERE false""",
+    'reports_duplicates'
+    : """SELECT * FROM reports_duplicates WHERE date_processed >= '%s'""" % cutoff_date,
+    'daily_hangs'
+    : """SELECT * FROM daily_hangs WHERE report_date >= '%s'""" % cutoff_date}
 
-no_dump_all = no_dump + ' -T "priority_jobs_*" -T tcbs_ranking ' + ' -T '.join(matviews)
+no_dump_all = no_dump + ' -T "priority_jobs_*" -T ' + ' -T '.join(matviews)
 # don't dump priority jobs queues either
 
 print "truncating all data before %s" % cutoff_date
@@ -102,7 +109,7 @@ for matview in matviews:
         rundump(dumpstring)
 
 # dump the schema for the matviews:
-rundump('pg_dump -Fc -s' + ' -t '.join(matviews) + ' -t tcbs_ranking -f matview_schemas.dump breakpad')
+rundump('pg_dump -Fc -s -t' + ' -t '.join(matviews) + ' -f matview_schemas.dump breakpad')
 
 #DUMP the users and logins
 
