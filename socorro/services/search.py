@@ -25,7 +25,7 @@ class Search(webapi.JsonServiceBase):
         self.api_impl = config.searchImplClass(config)
         logger.debug('Search __init__')
 
-    uri = '/201105/search/([^/.]*)/(.*)'
+    uri = '/search/([^/.]*)/(.*)'
 
     def get(self, *args):
         """

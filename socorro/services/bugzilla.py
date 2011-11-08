@@ -12,8 +12,8 @@ class Bugzilla(webapi.JsonServiceBase):
     logger.debug('Bugzilla __init__')
 
   # use HTTP POST with multiple "id" args
-  # curl -X POST -F id='js::mjit::EnterMethodJIT(JSContext*, JSStackFrame*, void*, js::Value*)' -F id='js::gc::MarkObject' 'http://localhost:8085/201106/bugs/by/signatures'
-  uri = '/201106/bugs/by/signatures'
+  # curl -X POST -F id='js::mjit::EnterMethodJIT(JSContext*, JSStackFrame*, void*, js::Value*)' -F id='js::gc::MarkObject' 'http://localhost:8085/bugs/by/signatures'
+  uri = '/bugs/by/signatures'
 
   def post(self, *args):
     columns = ['signature','bug_id']

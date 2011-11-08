@@ -9,7 +9,7 @@ class SchedulePriorityJob(webapi.JsonServiceBase):
   def __init__(self, configContext):
     super(SchedulePriorityJob, self).__init__(configContext)
 
-  uri = '/201105/schedule/priority/job/(.*)'
+  uri = '/schedule/priority/job/(.*)'
 
   def post(self, *args):
     convertedArgs = webapi.typeConversion([str], args)

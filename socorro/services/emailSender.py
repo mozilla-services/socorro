@@ -40,11 +40,11 @@ class EmailSender(webapi.JsonServiceBase):
       form.Textbox('status',         form.notnull))
 
   #-----------------------------------------------------------------------------------------------------------------
-  "/201103/email"
-  uri = '/201103/email'
+  "/email"
+  uri = '/email'
 
   #-----------------------------------------------------------------------------------------------------------------
-  #  curl -v http://localhost:8085/201009/email/
+  #  curl -v http://localhost:8085/email/
   #
   def get(self, *args):
     """ return list of campaigns and their status (started/stopped) """
@@ -52,7 +52,7 @@ class EmailSender(webapi.JsonServiceBase):
 
 
   #-----------------------------------------------------------------------------------------------------------------
-  #  curl -v -F campaign_id=1 -F status=start http://localhost:8085/201009/email
+  #  curl -v -F campaign_id=1 -F status=start http://localhost:8085/email
   #
   def post(self, *args):
     " Webpy method receives inputs from uri "

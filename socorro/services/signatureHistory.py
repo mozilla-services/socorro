@@ -19,7 +19,7 @@ class SignatureHistory(webapi.JsonServiceBase):
     self.configContext = configContext
     logger.debug('SignatureHistory __init__')
 
-  uri = ('/200911/topcrash/sig/trend/history/p/(.*)/v/(.*)/sig/(.*)/end/(.*)/'
+  uri = ('/topcrash/sig/trend/history/p/(.*)/v/(.*)/sig/(.*)/end/(.*)/'
          'duration/(.*)/steps/(.*)')
 
   def get(self, *args):

@@ -73,7 +73,7 @@ import socorro.services.hangReport as hr
 
 servicesList = cm.Option()
 servicesList.doc = 'a python list of classes to offer as services'
-servicesList.default = [search.Search, tcbst.TopCrashBySignatureTrends, sighist.SignatureHistory, adubd.AduByDay, adubd.AduByDay200912, adudetails.AduByDayDetails, crash.GetCrash, emailcampaign.EmailCampaign, emailcreate.EmailCampaignCreate, emaillist.EmailCampaigns, emailvolume.EmailCampaignVolume, emailsub.EmailSubscription, emailsend.EmailSender, schedule.SchedulePriorityJob, bugzilla.Bugzilla, cv.CurrentVersions, vi.VersionsInfo, hr.HangReport]
+servicesList.default = [search.Search, tcbst.TopCrashBySignatureTrends, sighist.SignatureHistory, adubd.AduByDay, adudetails.AduByDayDetails, crash.GetCrash, emailcampaign.EmailCampaign, emailcreate.EmailCampaignCreate, emaillist.EmailCampaigns, emailvolume.EmailCampaignVolume, emailsub.EmailSubscription, emailsend.EmailSender, schedule.SchedulePriorityJob, bugzilla.Bugzilla, cv.CurrentVersions, vi.VersionsInfo, hr.HangReport]
 
 crashBaseUrl = cm.Option()
 crashBaseUrl.doc = 'The base url for linking to crash-stats. This will be used in email templates'

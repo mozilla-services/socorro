@@ -17,8 +17,8 @@ class AduByDayDetails(AduByDayBase):
     self.connection = None
 
   #-----------------------------------------------------------------------------------------------------------------
-  "/201006/adu/byday/details/p/{product}/v/{versions}/rt/{report_types}/os/{os_names}/start/{start_date}/end/{end_date} "
-  uri = '/201006/adu/byday/details/p/(.*)/v/(.*)/rt/(.*)/os/(.*)/start/(.*)/end/(.*)'
+  "/adu/byday/details/p/{product}/v/{versions}/rt/{report_types}/os/{os_names}/start/{start_date}/end/{end_date} "
+  uri = '/adu/byday/details/p/(.*)/v/(.*)/rt/(.*)/os/(.*)/start/(.*)/end/(.*)'
   #-----------------------------------------------------------------------------------------------------------------
   def get(self, *args):
     convertedArgs = webapi.typeConversion([str, semicolonStringToListSanitized, semicolonStringToListSanitized, semicolonStringToListSanitized, dtutil.datetimeFromISOdateString, dtutil.datetimeFromISOdateString], args)

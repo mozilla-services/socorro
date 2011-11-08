@@ -24,7 +24,7 @@ class VersionsInfo(webapi.JsonServiceBase):
             util.reportExceptionAndContinue(logger)
         logger.debug('VersionsInfo __init__')
 
-    uri = '/201105/util/versions_info/(.*)'
+    uri = '/util/versions_info/(.*)'
 
     def get(self, *args):
         """
