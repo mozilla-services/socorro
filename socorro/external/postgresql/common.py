@@ -1,7 +1,5 @@
 import logging
 
-from datetime import timedelta, datetime
-
 import socorro.database.database as db
 import socorro.lib.util as util
 
@@ -9,17 +7,14 @@ logger = logging.getLogger("webapi")
 
 
 class PostgreSQLCommon(object):
+
     """
     Base class for PostgreSQL based service implementations.
-
-    See https://wiki.mozilla.org/Socorro/Middleware
-
     """
 
     def __init__(self, config):
         """
         Default constructor
-
         """
         super(PostgreSQLCommon, self).__init__(config)
         try:
@@ -33,6 +28,7 @@ class PostgreSQLCommon(object):
     def append_to_var(value, array):
         """
         Append a value to a list or array.
+
         If array is not a list, create a new one containing array
         and value.
 
@@ -50,7 +46,6 @@ class PostgreSQLCommon(object):
         """
         Parses the versions, separating by ":" and returning versions
         and products.
-
         """
         versions = []
         if type(versions_list) is list:
@@ -67,6 +62,7 @@ class PostgreSQLCommon(object):
                 versions = PostgreSQLCommon.append_to_var(pv[0], versions)
                 versions = PostgreSQLCommon.append_to_var(pv[1], versions)
             else:
-                products = PostgreSQLCommon.append_to_var(versions_list, products)
+                products = PostgreSQLCommon.append_to_var(versions_list,
+                                                          products)
 
         return (versions, products)

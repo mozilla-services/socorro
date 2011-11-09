@@ -9,12 +9,13 @@ logger = logging.getLogger("webapi")
 class DataAPIService(JsonWebServiceBase):
 
     """
-    Search API interface
+    Common API interface
 
     Handle the /search API entry point, parse the parameters, and
     call the API implementation to execute the query.
 
     """
+
     default_service_order = []
     service_name = ""
 
@@ -33,7 +34,10 @@ class DataAPIService(JsonWebServiceBase):
         the required action. If one exists and is valid, use user input first,
         then configuration, then default_service_order of the service.
 
+        Raise a NotImplementedError if no implementation was found.
+
         Return the imported module.
+
         """
         impl = None
 
@@ -91,6 +95,32 @@ class DataAPIService(JsonWebServiceBase):
     def parse_query_string(self, query_string):
         """
         Take a string of parameters and return a dictionary of key, value.
+
+        Example 1:
+            "param/value/"
+            =>
+            {
+                "param": "value"
+            }
+
+        Example 2:
+            "param1/value1/param2/value21+value22+value23/"
+            =>
+            {
+                "param1": "value1",
+                "param2": [
+                    "value21",
+                    "value22",
+                    "value23"
+                ]
+            }
+
+        Example 3:
+            "param1/value1/param2/"
+            =>
+            {
+                "param1": "value1"
+            }
         """
         terms_sep = "+"
         params_sep = "/"

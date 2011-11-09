@@ -82,7 +82,7 @@ class SearchCommon(object):
         lastweek = now - timedelta(7)
 
         # Getting parameters that have default values
-        args["data_type"] = kwargs.get("type", None)
+        args["data_type"] = kwargs.get("data_type", None)
         args["terms"] = kwargs.get("for", None)
         args["products"] = kwargs.get("product", "Firefox")
         args["from_date"] = kwargs.get("from", lastweek)

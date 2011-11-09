@@ -14,6 +14,7 @@ class Search(DataAPIService):
     call the API implementation to execute the query.
 
     """
+
     default_service_order = [
         "socorro.external.postgresql",
         "socorro.external.elasticsearch"
@@ -30,7 +31,7 @@ class Search(DataAPIService):
 
     def get(self, *args):
         """
-        Called when a get HTTP request is executed to /search
+        Call a Search API implementation and return the result.
         """
         # Parse parameters
         params = self.parse_query_string(args[1])

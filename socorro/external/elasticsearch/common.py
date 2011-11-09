@@ -1,6 +1,4 @@
-import json
 import logging
-import urllib
 
 from datetime import timedelta, datetime
 
@@ -31,8 +29,6 @@ class ElasticSearchCommon(object):
     def query(self, from_date, to_date, json_query):
         """
         Send a query directly to ElasticSearch and return the result.
-
-        See https://wiki.mozilla.org/Socorro/Middleware#Query
         """
         # Default dates
         now = datetime.today()
@@ -100,8 +96,9 @@ class ElasticSearchCommon(object):
         """
         Build and return an ES query given a list of parameters.
 
-        See socorro.external.common.Common.get_parameters for parameters and
-        default values.
+        See socorro.lib.search_common.SearchCommon.get_parameters() for
+        parameters and default values.
+
         """
         # Dates need to be strings for ES
         params["from_date"] = dtutil.date_to_string(
@@ -349,9 +346,10 @@ class ElasticSearchCommon(object):
         Format the versions and return them.
 
         Separate versions parts by ":".
-        Return  a string if there was only one product,
+        Return: a string if there was only one product,
                 a dict if there was only one product:version,
                 a list of dicts if there was several product:version.
+
         """
         if not versions:
             return None

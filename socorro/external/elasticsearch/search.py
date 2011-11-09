@@ -12,7 +12,6 @@ class Search(ElasticSearchCommon, SearchCommon):
 
     """
     Implement the /search service with ElasticSearch.
-
     """
 
     def __init__(self, config):
@@ -27,9 +26,10 @@ class Search(ElasticSearchCommon, SearchCommon):
         """
         Search for crashes and return them.
 
-        See https://wiki.mozilla.org/Socorro/Middleware#Search
+        See http://socorro.readthedocs.org/en/latest/middleware.html#search
 
-        Optional arguments: see socorro.external.common.Common.get_parameters
+        Optional arguments: see SearchCommon.get_parameters()
+
         """
         params = Search.get_parameters(kwargs)
 
