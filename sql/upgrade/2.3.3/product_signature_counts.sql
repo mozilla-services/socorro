@@ -30,7 +30,7 @@ IF checkdata THEN
 	IF FOUND THEN
 		RAISE EXCEPTION 'product-signature counts have already been run for %.',updateday;
 	END IF;
-END IF:
+END IF;
 
 -- check if reports_clean is complete
 IF NOT reports_clean_done(updateday) THEN
@@ -49,7 +49,7 @@ FROM reports_clean
 	JOIN product_versions USING (product_version_id)
 WHERE utc_day_is(date_processed, updateday)
 	AND tstz_between(date_processed, build_date, sunset_date)
-GROUP BY signature_id, os_version_id;
+GROUP BY signature_id, product_version_id;
 
 RETURN TRUE;
 END; $f$;
@@ -60,7 +60,7 @@ CREATE OR REPLACE FUNCTION backfill_product_signature_counts(
 RETURNS BOOLEAN
 LANGUAGE plpgsql AS
 $f$
-BEGIN;
+BEGIN
 
 DELETE FROM product_signature_counts WHERE report_date = updateday;
 PERFORM update_product_signature_counts(updateday, false);

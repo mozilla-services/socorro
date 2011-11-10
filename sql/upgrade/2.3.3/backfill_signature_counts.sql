@@ -8,6 +8,8 @@ BEGIN
 
 WHILE thisdate <= enddate LOOP
 
+	RAISE INFO 'backfilling %',thisdate;
+
 	DELETE FROM os_signature_counts WHERE report_date = thisdate;
 	DELETE FROM product_signature_counts WHERE report_date = thisdate;
 	DELETE FROM uptime_signature_counts WHERE report_date = thisdate;
