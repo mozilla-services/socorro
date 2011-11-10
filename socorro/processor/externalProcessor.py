@@ -171,7 +171,7 @@ class ProcessorWithExternalBreakpad (processor.Processor):
         reportUpdateSqlParts.extend(['reason = %(reason)s','address = %(address)s'])
         try:
           crashedThread = int(values[3])
-        except (ValueError, IndexError):
+        except Exception:
           crashedThread = None
       elif values[0] == 'Module':
         # grab only the flash version, which is not quite as easy as it looks
