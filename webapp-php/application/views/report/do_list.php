@@ -33,6 +33,10 @@
             - Crash Reports for <?php out::H($display_signature) ?>
         <?php } ?>
 	</h2>
+    <?php
+        $sigParams = array('duration' => 7, 'signature' => $params['signature']);
+    ?>
+    <a href="<?= url::site('signature_summary') . '?' . html::query_string($sigParams) ?>">Signature Summary</a>
 	<div>
 	    <ul class="options">
 <?php
