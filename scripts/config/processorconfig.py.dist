@@ -207,6 +207,7 @@ prefixSignatureRegEx = '|'.join([
   '__swrite',
   'dvmAbort',
   'JNI_CreateJavaVM',
+  'dvmStringLen',
   ])
 
 signaturesWithLineNumbersRegEx = cm.Option()
