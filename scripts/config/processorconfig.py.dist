@@ -136,6 +136,7 @@ irrelevantSignatureRegEx.default = '|'.join([
   'libc-2\.5\.so@.*',
   'RtlpAdjustHeapLookasideDepth',
   'google_breakpad::ExceptionHandler::HandleInvalidParameter.*',
+  'libicudata.so@.*',
   ])
 
 prefixSignatureRegEx = cm.Option()
@@ -206,6 +207,7 @@ prefixSignatureRegEx = '|'.join([
   '__swrite',
   'dvmAbort',
   'JNI_CreateJavaVM',
+  'dvmStringLen',
   ])
 
 signaturesWithLineNumbersRegEx = cm.Option()
