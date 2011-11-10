@@ -374,8 +374,12 @@ class Report_Controller extends Controller {
 
 	$report = $this->report_model->getByUUID($uuid, $crash_uri);
 
+    $uuid_timestamp = $this->report_model->uuidTimestamp($id);
+
         if ( is_bool($report) && $report == true) {
 	    return url::redirect('report/pending/'.$uuid);
+        } else if ( date('n/j/Y', $uuid_timestamp) == date('n/j/Y')) {
+            return url::redirect('report/pending/'.$uuid);
         } else if ( (is_bool($report) && $report == false) || is_null($report) ) {
             $this->setView('report/notfound');
             $this->setViewData(

@@ -20,9 +20,9 @@ class EmailCampaign(webapi.JsonServiceBase):
     self.database = db.Database(configContext)
 
   #-----------------------------------------------------------------------------------------------------------------
-  # curl http://localhost:8085/201103/emailcampaigns/campaign/1
-  "/201103/emailcampaigns/campaign/{id}"
-  uri = '/201103/emailcampaigns/campaign/(.*)'
+  # curl http://localhost:8085/emailcampaigns/campaign/1
+  "/emailcampaigns/campaign/{id}"
+  uri = '/emailcampaigns/campaign/(.*)'
 
   #-----------------------------------------------------------------------------------------------------------------
   def get(self, *args):

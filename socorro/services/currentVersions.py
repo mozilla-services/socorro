@@ -45,8 +45,8 @@ class CurrentVersions(webapi.JsonServiceBase):
         super(CurrentVersions, self).__init__(configContext)
         logger.debug('CurrentVersions __init__')
 
-    # curl 'http://localhost:8085/201106/current/versions'
-    uri = '/201106/current/versions/(.*)'
+    # curl 'http://localhost:8085/current/versions'
+    uri = '/current/versions/(.*)'
 
     def get(self, *args):
         convertedArgs = webapi.typeConversion([str], args)

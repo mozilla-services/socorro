@@ -176,7 +176,7 @@ class Topcrasher_Controller extends Controller {
 
 	$p = urlencode($product);
 	$v = urlencode($version);
-        $resp = $service->get("${host}/201010/topcrash/sig/trend/rank/p/${p}/v/${v}/type/${crash_type}/end/${end_date}/duration/${dur}/listsize/${limit}", 'json', $lifetime);
+        $resp = $service->get("${host}/topcrash/sig/trend/rank/p/${p}/v/${v}/type/${crash_type}/end/${end_date}/duration/${dur}/listsize/${limit}", 'json', $lifetime);
 	if($resp) {
 	    $this->topcrashers_model->ensureProperties($resp, array(
 				     'start_date' => '',
@@ -324,7 +324,7 @@ class Topcrasher_Controller extends Controller {
         }
 	$rsig = rawurlencode($signature); //NPSWF32.dll%400x136a29
 	// Every 3 hours
-        $resp = $service->get("${host}/200911/topcrash/sig/trend/history/p/${p}/v/${v}/sig/${rsig}/end/${end_date}/duration/${duration}/steps/60", 'json', $lifetime);
+        $resp = $service->get("${host}/topcrash/sig/trend/history/p/${p}/v/${v}/sig/${rsig}/end/${end_date}/duration/${duration}/steps/60", 'json', $lifetime);
 
 
 	if($resp) {
