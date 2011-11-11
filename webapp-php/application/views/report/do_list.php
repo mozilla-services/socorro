@@ -2,9 +2,19 @@
     <title>Crash Reports in <?php out::H($params['signature']) ?></title>
 
     <?php echo html::stylesheet(array(
-        'css/flora/flora.all.css'
+        'css/flora/flora.all.css',
+        'css/signature_summary.css'
     ), 'screen')?>
     <!--[if IE]><?php echo html::script('js/flot-0.7/excanvas.pack.js') ?><![endif]-->
+
+    <?php 
+        $sigParams = array('duration' => 7, 'signature' => $params['signature']);
+        $data_url = url::site('signature_summary/json_data') . '?' . html::query_string($sigParams) 
+    ?>
+    
+    <script type="text/javascript">
+        var json_path = "<?= $data_url ?>";
+    </script>
 
     <?php echo html::script(array(
         'js/jquery/plugins/ui/jquery.ui.all.js',
@@ -12,7 +22,10 @@
         'js/flot-0.7/jquery.flot.pack.js',
         'js/socorro/correlation.js',
         'js/socorro/report_list.js',
-        'js/socorro/bugzilla.js'
+        'js/socorro/bugzilla.js',
+        'js/jquery/mustache.js',
+        'js/socorro/signature_summary.js',
+        'js/socorro/socorro.dashboard.js'
     ))?>
 
   <style type="text/css">
@@ -26,19 +39,14 @@
 
 <?php slot::end() ?>
 
-
-<div class="page-heading">
-	<h2><?= $correlation_os ?>
-        <?php if (isset($display_signature)) { ?>
-            - Crash Reports for <?php out::H($display_signature) ?>
-        <?php } ?>
-	</h2>
-    <?php
-        $sigParams = array('duration' => 7, 'signature' => $params['signature']);
-    ?>
-    <a href="<?= url::site('signature_summary') . '?' . html::query_string($sigParams) ?>">Signature Summary</a>
-	<div>
-	    <ul class="options">
+    <div class="page-heading">
+        <h2><?= $correlation_os ?>
+            <?php if (isset($display_signature)) { ?>
+                - Crash Reports for <?php out::H($display_signature) ?>
+            <?php } ?>
+        </h2>
+    <div>
+    <ul class="options">
 <?php
 
 $options = array(
@@ -80,6 +88,7 @@ foreach($options[$type] as $k => $readable) {
 <?php if(count($reports) > 0): ?>
 <div id="report-list">
     <ul id="report-list-nav">
+        <li><a href="#sigsummary"><span>Signature Summary</span></a></li>
         <li><a href="#graph"><span>Graph</span></a></li>
         <li><a href="#table"><span>Table</span></a></li>
         <li><a href="#reports"><span>Reports</span></a></li>
@@ -89,6 +98,11 @@ foreach($options[$type] as $k => $readable) {
 	<li><a href="#comments"><span>Comments (<?= count($comments) ?>)</span></a></li>
         <li><a href="#correlation"><span>Correlations</span></a></li>
     </ul>
+    
+    <div id="sigsummary">
+        <?php View::factory('signature_summary/index', array('duration' => 7, 'signature' => $params['signature']))->render(TRUE) ?>
+    </div>
+    
     <div id="graph">
       <div class="crashes-by-platform">
         <h3 id="by_platform_graph"><?php echo $crashGraphLabel ?></h3>

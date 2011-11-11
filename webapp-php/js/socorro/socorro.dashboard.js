@@ -3,7 +3,13 @@ $(function() {
 	var zebra = function(table) {
 	    table.find("tbody tr:odd").addClass("odd");
 	}, 
-	toStripe = false;
+	toStripe = false,
+    ajaxLoader = new Image(),
+    dashTables = $(".sig-dashboard-tbl", "#sig-dashboard-body");
+    
+    ajaxLoader.src = "../img/icons/ajax-loader.gif";
+    ajaxLoader.setAttribute("id", "dash-loader");
+    $(".sig-dashboard-body").append(ajaxLoader);
 	
 	$.getJSON(json_path, function(data) {
 		var socorroDashBoardData = data,
@@ -18,6 +24,10 @@ $(function() {
 		$(percentageByOsHtml).appendTo("#percentageByOsBody");
 		$(uptimeRangeHtml).appendTo("#uptimeRangeBody");
 		$(productVersionsHtml).appendTo("#productVersionsBody");
+        
+        $("#dash-loader").remove();
+        
+        dashTables.show();
 		
 		/* Rows are dynamically added ofter DOM ready so have to move striping code here */
 		toStripe = !!$(".zebra").length;
