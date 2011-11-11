@@ -73,5 +73,5 @@ $(document).ready(function () {
         sortList : [[12,1]]
     });
 
-    $('#report-list-nav').tabs({selected: 2}).show();
+    $('#report-list-nav').tabs({selected: 0}).show();
 });
