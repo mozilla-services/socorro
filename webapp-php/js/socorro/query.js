@@ -1,7 +1,10 @@
 $(document).ready(function() {
-      var dateFormat = 'mm/dd/yyyy hh:mm:ss';
-      var showAdvFilter = $.cookies.get('advfilter');
-      var showAdvFilterCookieOpts = {};
+    var dateFormat = 'mm/dd/yyyy hh:mm:ss',
+    queryParams = window.location.search,
+    // if either the cookie is set with a value of true or the advanced=1 string is in
+    // the query parameters show the advanced fields.
+    showAdvFilter = $.cookies.get('advfilter') || queryParams.indexOf("advanced=1") > -1,
+    showAdvFilterCookieOpts = {};
 
       if (showAdvFilter === null) {
 	  showAdvFilter = false;
