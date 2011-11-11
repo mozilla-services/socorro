@@ -44,13 +44,13 @@ require_once(Kohana::find_file('libraries', 'timeutil', TRUE, 'php'));
 /**
  * Model class for Nightly Builds.
  *
- * @package 	SocorroUI
- * @subpackage 	Models
- * @author 		Ryan Snyder <rsnyder@mozilla.com>
+ * @package     SocorroUI
+ * @subpackage  Models
+ * @author      Ryan Snyder <rsnyder@mozilla.com>
  */
 class Build_Model extends Model {
 
-	/**
+    /**
      * Class Constructor
      */
     public function __construct()
@@ -60,59 +60,75 @@ class Build_Model extends Model {
 
     /**
      * Get all of the nightly builds for a product for a specific time period.
-	 *
-	 * @access 	public
-	 * @param 	string	The product name
+     *
+     * @access  public
+     * @param   string  The product name
      * @param   int     The number of days to pull builds from; default 7 days
-	 * @return 	array 	An array of build objects
+     * @return  array   An array of build objects
      */
-	public function getBuildsByProduct ($product, $days=7)
-	{
-		$start_date = date('Y-m-d', (time()-($days*86400)));
+    public function getBuildsByProduct ($product, $days=7)
+    {
+        $start_date = date('Y-m-d', (time()-($days*86400)));
 
-	    $sql = "/* soc.web builds.getBuilds */
-            SELECT *
-            FROM builds
-            WHERE product = ?
-            AND date >= timestamp without time zone ?
-            ORDER BY date DESC, product ASC, version ASC, platform ASC
+        $sql = "/* soc.web builds.getBuilds */
+            SELECT  product_name as product,
+                    version,
+                    platform,
+                    build_id as buildid,
+                    build_type,
+                    beta_number,
+                    repository,
+                    build_date(build_id) as date
+            FROM releases_raw
+            WHERE product_name = ?
+            AND build_date(build_id) >= timestamp without time zone ?
+            AND repository IN ('mozilla-central', 'mozilla-1.9.2', 'comm-central', 'comm-1.9.2', 'comm-central-trunk')
+            ORDER BY build_date(build_id) DESC, product_name ASC, version ASC, platform ASC
         ";
         $builds = $this->fetchRows($sql, true, array(strtolower($product), $start_date));
         if (!empty($builds)) {
             return $builds;
         }
         return false;
-	}
+    }
 
-	/**
+    /**
      * Get all of the nightly builds for a product / version for a specific time period.
-	 *
-	 * @access 	public
-	 * @param 	string	The product name
-	 * @param   string  The version name
+     *
+     * @access  public
+     * @param   string  The product name
+     * @param   string  The version name
      * @param   int     The number of days to pull builds from; default 7 days
-	 * @return 	array 	An array of build objects
+     * @return  array   An array of build objects
      */
-	public function getBuildsByProductAndVersion ($product, $version, $days=7)
-	{
-		$start_date = date('Y-m-d', (time()-($days*86400)));
+    public function getBuildsByProductAndVersion ($product, $version, $days=7)
+    {
+        $start_date = date('Y-m-d', (time()-($days*86400)));
 
-	    $sql = "/* soc.web builds.getBuilds */
-            SELECT *
-            FROM builds
-            WHERE product = ?
+        $sql = "/* soc.web builds.getBuilds */
+            SELECT  product_name as product,
+                    version,
+                    platform,
+                    build_id as buildid,
+                    build_type,
+                    beta_number,
+                    repository,
+                    build_date(build_id) as date
+            FROM releases_raw
+            WHERE product_name = ?
             AND version = ?
-            AND date >= timestamp without time zone ?
-            ORDER BY date DESC, product ASC, version ASC, platform ASC
+            AND build_date(build_id) >= timestamp without time zone ?
+            AND repository IN ('mozilla-central', 'mozilla-1.9.2', 'comm-central', 'comm-1.9.2', 'comm-central-trunk')
+            ORDER BY build_date(build_id) DESC, product_name ASC, version ASC, platform ASC
         ";
         $builds = $this->fetchRows($sql, true, array(strtolower($product), strtolower($version), $start_date));
         if (!empty($builds)) {
             return $builds;
         }
         return false;
-	}
+    }
 
-	/**
+    /**
      * Prepare the dates that will be used for build display.
      *
      * @param   string  The end date
@@ -126,11 +142,11 @@ class Build_Model extends Model {
         for($i = 0; $i <= $duration; $i++) {
             $date = date('Y-m-d', mktime(0, 0, 0, date("m"), date("d")-($i+$date_diff), date("Y")));
             if (strtotime($date) <= $timestamp) {
-        	    $dates[] = $date;
-        	}
+                $dates[] = $date;
+            }
         }
         return $dates;
     }
 
-	/* */
+    /* */
 }
