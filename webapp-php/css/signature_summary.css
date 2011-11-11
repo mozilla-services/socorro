@@ -1,0 +1,61 @@
+body {
+	color: #333;
+	font-family: sans-serif;
+	font-size: 12px;
+}
+
+table {
+	margin: 1.5em;
+	border-collapse: collapse;
+	box-shadow: 5px 5px 6px #ccc;
+}
+table.sig-dashboard-tbl {
+	clear: both;
+	position: relative;
+}
+th, td {
+	padding: .5em .5em .5em 1em;
+	text-align: left;
+	width: 50%;
+}
+th {
+	background-color: #406A80;
+	color: #fff;
+	border-left: 1px solid #fff;
+}
+
+td {
+	border-top: 1px solid #999;
+	border-left: 1px solid #999;
+	min-width: 200px;
+}
+tbody {
+	border-right: 1px solid #999;
+	border-bottom: 1px solid #999;
+}
+tfoot {
+	background-color: #edecec;
+	border: 1px solid #999;
+}
+.range-selector {
+	margin: 0;
+	padding: 0;
+}
+.range-selector li {
+	float: left;
+	list-style: none;
+}
+.range-selector a:link, 
+.range-selector a:visited {
+	background-color: #C5D8E2;
+	color: #223744;
+	display: inline-block;
+	margin-right: .7em;
+	padding: .4em .7em .4em .7em;
+	border-radius: 6px;
+	font-weight: bold;
+	text-decoration: none;
+}
+.odd {
+	background-color: #C5D8E2;
+}

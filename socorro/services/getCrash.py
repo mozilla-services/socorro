@@ -33,7 +33,7 @@ class GetCrash(webapi.JsonServiceBase):
     super(GetCrash, self).__init__(configContext)
     logger.debug('GetCrash __init__')
   #-----------------------------------------------------------------------------------------------------------------
-  uri = '/201005/crash/(.*)/by/uuid/(.*)'
+  uri = '/crash/(.*)/by/uuid/(.*)'
   #-----------------------------------------------------------------------------------------------------------------
   def get(self, *args):
     convertedArgs = webapi.typeConversion([dataTypeOptions,str], args)

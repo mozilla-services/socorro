@@ -1,0 +1,19 @@
+2.3.3 Contains some new matview reports.  These reports depend on the new reports_clean, and their structure and generation and backfill functions should be taken as a template for new matviews.  Also contains:
+
+os_version_string supplies a new function for providing a user-friendly format for operating systems and versions, according to the following rules:
+	windows: consult windows_versions table (also created in 2.3.3) to determine windows name
+	OS X: format as "OS X #.#" for reasonable values of #.#
+	Linux: format only as "Linux"
+update_os_versions and update_os_versions_new_reports are both updated to support this new function.
+
+The new matviews are os_signature_counts, product_signature_counts, and uptime_signature_counts.
+
+There is also a fix_permissions.sql script to make sure that read permissions on any object created by "breakpad_rw" is automatically inherited by "breakpad_ro".  This script has already been run on production, and is provided here for reference.
+
+support functions include reports_clean_done, a utility function to check that reports_clean has been filled in to the end of the day, before running any matviews which depend on it.
+
+update_tcbs replaces the update_tcbs stored procedure with a new one which populates the matview based on reports_clean.
+
+daily_crashes replaces the update_daily_crashes() function with one based partly on reports_clean.
+
+reports_weekly_partitioning replaces the current python code on spadmin with new stored procedures which regulate the creation of partitions.

@@ -32,14 +32,17 @@ else:
 
 print "Loading data"
 
+
 def runload(load_command):
     load_result = os.system(load_command)
     if load_result != 0:
         sys.exit(load_result)
-        
+
 matviews = ['raw_adu', 'releases_raw', 'product_adu', 'daily_crashes',
-            'top_crashes_by_signature', 'top_crashes_by_url', 'top_crashes_by_url_signature',
-            'tcbs']
+            'top_crashes_by_signature', 'top_crashes_by_url',
+            'top_crashes_by_url_signature', 'tcbs', 'sessions',
+            'server_status', 'reports_bad', 'reports_duplicates',
+            'daily_hangs']
 
 # untar the file
 runload('tar -xzf %s' % tar_file)
@@ -55,16 +58,17 @@ print 'drop and recreate the database'
 
 # drop the database and recreate it
 try:
-    cur.execute("""DROP DATABASE %s;""" % database_name  )
+    cur.execute("""DROP DATABASE %s;""" % database_name)
 except psycopg2.Error as exc:
     code = exc.pgcode
     if code == '3D000':
         pass
     else:
         # if this failed, check why.
-        sys.exit('unable to drop database %s probably because connections to it are still open: %s' % (database_name, code, ) )
+        sys.exit('unable to drop database %s probably because connections to it are still open: %s'
+                 % (database_name, code,))
 
-cur.execute("""CREATE DATABASE %s""" % database_name )
+cur.execute("""CREATE DATABASE %s""" % database_name)
 
 print 'load users.  please ignore any errors you see here'
 
@@ -77,20 +81,22 @@ print 'load most of the database'
 # load everything else but not indexes and constraints
 # needs to ignore errors
 
-os.system('/usr/local/pgsql/bin/pg_restore -j 3 -Fc --no-post-data -U postgres minidb.dump -d %s' % database_name)
+os.system('/usr/local/pgsql/bin/pg_restore -j 3 -Fc --no-post-data -U postgres minidb.dump -d %s'
+          % database_name)
 
 print 'load the truncated materialized views'
 
 # restore the matview schema
 # needs to ignore errors
 
-os.system('/usr/local/pgsql/bin/pg_restore -Fc --no-post-data -U postgres matview_schemas.dump -d %s' % database_name)
+os.system('/usr/local/pgsql/bin/pg_restore -Fc --no-post-data -U postgres matview_schemas.dump -d %s'
+          % database_name)
 
 # restore matview data, one matview at a time
 
 for matview in matviews:
     print "loading %s" % matview
-    runload("""psql -c "\copy %s FROM %s.dump" -U postgres %s""" % ( matview, matview, database_name, ) )
+    runload("""psql -c "\copy %s FROM %s.dump" -U postgres %s""" % (matview, matview, database_name,))
 
 # restore indexes and constraints
 
@@ -100,15 +106,13 @@ runload('/usr/local/pgsql/bin/pg_restore -j 3 -Fc --post-data-only -U postgres m
 runload('/usr/local/pgsql/bin/pg_restore -j 3 -Fc --post-data-only -U postgres matview_schemas.dump -d %s' % database_name)
 
 # truncate soon-to-be-dropped tables
-conn.disconnect();
+conn.disconnect()
 
 conn = psycopg2.connect("dbname=%s user=postgres" % database_name)
 
 conn.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
 
 cur = conn.cursor()
-
-cur.execute('TRUNCATE tcbs_ranking')
 
 cur.execute("""
             DO $f$
@@ -117,13 +121,24 @@ cur.execute("""
                 FOR tab IN SELECT relname
                     FROM pg_stat_user_tables
                     WHERE relname LIKE 'frames%' LOOP
-                    
+
                     EXECUTE 'TRUNCATE ' || tab;
-                    
+
                 END LOOP;
             END; $f$;
         """)
-                
+
+
+# add performance_check_1 so that ganglia will stop complaining about it
+
+cur.execute("""
+            CREATE VIEW performance_check_1
+            AS SELECT 1;
+            """)
+
+cur.execute("""
+            GRANT SELECT ON performance_check_1 to ganglia;
+            """)
 
 #delete all the dump files
 
@@ -131,8 +146,7 @@ runload('rm *.dump')
 
 # analyze
 
+cur.execute("""SET maintenance_work_mem = '512MB'""")
 cur.execute('ANALYZE')
 
 print 'done loading database.'
-
-

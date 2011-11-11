@@ -50,10 +50,10 @@ class EmailCampaignCreate(webapi.JsonServiceBase):
 
   #-----------------------------------------------------------------------------------------------------------------
   #  curl -v -F product=Firefox -F versions=4.0b6,3.0.11 -F signature=js_FinishSharingTitle -F subject='Good News' -F body='Test Email' \
-  #       -F start_date=2010-06-14 -F end_date=2010-06-15 -F author=tester http://localhost:8085/201103/emailcampaigns/create
+  #       -F start_date=2010-06-14 -F end_date=2010-06-15 -F author=tester http://localhost:8085/emailcampaigns/create
   #
-  "/201103/emailcampaigns/create"
-  uri = '/201103/emailcampaigns/create'
+  "/emailcampaigns/create"
+  uri = '/emailcampaigns/create'
 
   #-----------------------------------------------------------------------------------------------------------------
   def post(self, *args):

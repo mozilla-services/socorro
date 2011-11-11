@@ -72,7 +72,7 @@ class Email_Controller extends Controller
         } else {
             list($host, $service) = $this->_webService();
             $resp = $service->get(
-                "${host}/201103/emailcampaigns/subscription/${token}", 'json'
+                "${host}/emailcampaigns/subscription/${token}", 'json'
             );
             if ($resp) {
                 if ('true' == $resp->found) {
@@ -127,7 +127,7 @@ class Email_Controller extends Controller
                         'status' => $status,
                         );
                     list($host, $service) = $this->_webService();
-                    $resp = $service->post("${host}/201103/emailcampaigns/subscription/${token}", $backend_data, 'json');
+                    $resp = $service->post("${host}/emailcampaigns/subscription/${token}", $backend_data, 'json');
                     if ($resp) {
                         $success = 'true';
                     } else {

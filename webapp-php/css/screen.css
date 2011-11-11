@@ -433,13 +433,14 @@ html.production .page-footer { margin-top: 80px; }
 			display: inline;
 			list-style: none;
 			}
-		.page-heading .options a {
-			padding: .25em .5em;
-			list-style: none;
-			color: #60A0C0;
-			-moz-border-radius: .5em;
-			text-decoration: none;
-			}
+.page-heading .options a {
+    padding: .25em .5em;
+    list-style: none;
+    color: #60A0C0;
+    -moz-border-radius: .5em;
+    text-decoration: none;
+    white-space: nowrap;
+}
 		.page-heading .options a:hover {
 			background: #DFECF2;
 			}
@@ -992,6 +993,13 @@ div.pendingStatus p.pendingProcessing {
 }
 .graph-icon {
     visibility: hidden;
+}
+a.open-external { 
+    background: url(/img/icons/external.png) no-repeat scroll left top transparent;
+    color: #0A2533;
+    margin-left: 20px;
+    padding: 2px 0 2px 20px;
+    text-decoration: underline;
 }
 .tcburl-toggler {
   display: inline;

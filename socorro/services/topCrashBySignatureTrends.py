@@ -58,7 +58,7 @@ class TopCrashBySignatureTrends(webapi.JsonServiceBase):
     super(TopCrashBySignatureTrends, self).__init__(configContext)
     logger.debug('TopCrashBySignatureTrends __init__')
 
-  uri = ('/201010/topcrash/sig/trend/rank/p/(.*)/v/(.*)/type/(.*)/end/(.*)'
+  uri = ('/topcrash/sig/trend/rank/p/(.*)/v/(.*)/type/(.*)/end/(.*)'
          '/duration/(.*)/listsize/(.*)')
 
   def get(self, *args):

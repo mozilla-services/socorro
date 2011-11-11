@@ -50,7 +50,7 @@ as select uuid,
 	uptime,
 	install_age,
 	build,
-	COALESCE(signature, '')::citext as signature,
+	COALESCE(signature, '')::text as signature,
 	COALESCE(reason, '')::citext as reason,
 	COALESCE(address, '')::citext as address,
 	COALESCE(flash_version, '')::citext as flash_version,
@@ -181,7 +181,7 @@ ts2pacific(new_reports.date_processed),
 	domains.domain_id
 FROM new_reports
 LEFT OUTER JOIN release_channel_matches ON new_reports.release_channel ILIKE release_channel_matches.match_string
-LEFT OUTER JOIN signatures ON new_reports.signature = signatures.signature
+LEFT OUTER JOIN signatures ON COALESCE(new_reports.signature, '') = signatures.signature
 LEFT OUTER JOIN reasons ON new_reports.reason = reasons.reason
 LEFT OUTER JOIN addresses ON new_reports.address = addresses.address
 LEFT OUTER JOIN flash_versions ON new_reports.flash_version = flash_versions.flash_version
@@ -260,7 +260,8 @@ WHERE product_version_id = 0
 DELETE FROM reports_clean_buffer
 WHERE product_version_id = 0
 	OR os_name IS NULL
-	OR release_channel IS NULL;
+	OR release_channel IS NULL
+	OR signature_id IS NULL;
 	
 -- check if the right reports_clean partition exists, or create it
 
@@ -307,3 +308,11 @@ RETURN TRUE;
 END;
 $f$;
 
+
+CREATE OR REPLACE FUNCTION update_reports_clean_cron ( 
+	crontime timestamptz )
+RETURNS BOOLEAN
+LANGUAGE sql
+AS $f$
+SELECT update_reports_clean( date_trunc('hour', $1) - interval '1 hour' );
+$f$;

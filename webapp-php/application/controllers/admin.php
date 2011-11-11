@@ -245,7 +245,7 @@ class Admin_Controller extends Controller
         $service = new Web_Service($config);
         $host = Kohana::config('webserviceclient.socorro_hostname');
         $campaign_id = intval($id);
-        $resp = $service->get("${host}/201103/emailcampaigns/campaign/${campaign_id}", 'json');
+        $resp = $service->get("${host}/emailcampaigns/campaign/${campaign_id}", 'json');
         if (! $resp) {
             client::messageSend("Error loading recent email campaigns", E_USER_ERROR);
         } else {
@@ -300,7 +300,7 @@ class Admin_Controller extends Controller
         $service = new Web_Service($config);
         $host = Kohana::config('webserviceclient.socorro_hostname');
 
-        $resp = $service->get("${host}/201103/emailcampaigns/campaigns/page/1", 'json');
+        $resp = $service->get("${host}/emailcampaigns/campaigns/page/1", 'json');
         if (! $resp) {
             client::messageSend("Error loading recent email campaigns", E_USER_ERROR);
         }
@@ -333,7 +333,7 @@ class Admin_Controller extends Controller
         $s_date = urlencode($this->_convertDateForBackend($start_date));
         $e_date = urlencode($this->_convertDateForBackend($end_date));
 
-        return  $service->get("${host}/201103/emailcampaigns/volume/p/${p}/v/${v}/sig/${sig}/start/${s_date}/end/${e_date}", 'json');
+        return  $service->get("${host}/emailcampaigns/volume/p/${p}/v/${v}/sig/${sig}/start/${s_date}/end/${e_date}", 'json');
     }
 
     /**
@@ -497,7 +497,7 @@ class Admin_Controller extends Controller
             'author' => $author
             );
 
-        return $service->post("${host}/201103/emailcampaigns/create", $data, 'json');
+        return $service->post("${host}/emailcampaigns/create", $data, 'json');
 
     }
 
@@ -570,7 +570,7 @@ class Admin_Controller extends Controller
             'author' => $author
             );
 
-        return $service->post("${host}/201103/email", $data, 'json');
+        return $service->post("${host}/email", $data, 'json');
     }
 
     /* Custom Validation */

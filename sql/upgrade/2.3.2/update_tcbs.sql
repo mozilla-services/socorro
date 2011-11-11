@@ -27,9 +27,15 @@ END IF;
 
 CREATE TEMPORARY TABLE new_tcbs
 ON COMMIT DROP AS
-SELECT signature, product, version, build,
-	release_channel, os_name, os_version,
-	process_type, count(*) as report_count,
+SELECT signature, 
+	product::citext as product, 
+	version::citext as version, 
+	build,
+	release_channel::citext as release_channel, 
+	os_name::citext as os_name, 
+	os_version::citext as os_version,
+	process_type::citext as process_type, 
+	count(*) as report_count,
 	0::int as product_version_id,
 	0::int as signature_id,
 	null::citext as real_release_channel,
@@ -37,9 +43,9 @@ SELECT signature, product, version, build,
 FROM reports
 WHERE date_processed >= utc_day_begins_pacific(updateday)
 	and date_processed <= utc_day_begins_pacific((updateday + 1))
-GROUP BY signature, product, version, build,
-	release_channel, os_name, os_version,
-	process_type;
+GROUP BY signature, product::citext, version::citext, build,
+	release_channel::citext, os_name::citext, os_version::citext,
+	process_type::citext;
 
 PERFORM 1 FROM new_tcbs LIMIT 1;
 IF NOT FOUND THEN

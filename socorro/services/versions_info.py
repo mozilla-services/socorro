@@ -2,7 +2,6 @@ import logging
 
 import socorro.lib.util as util
 import socorro.database.database as db
-import socorro.search.postgresql as pg
 import socorro.webapi.webapiService as webapi
 
 logger = logging.getLogger("webapi")
@@ -25,7 +24,7 @@ class VersionsInfo(webapi.JsonServiceBase):
             util.reportExceptionAndContinue(logger)
         logger.debug('VersionsInfo __init__')
 
-    uri = '/201105/util/versions_info/(.*)'
+    uri = '/util/versions_info/(.*)'
 
     def get(self, *args):
         """
@@ -60,7 +59,7 @@ class VersionsInfo(webapi.JsonServiceBase):
             return None
 
         products_list = []
-        (versions_list, products_list) = pg.PostgresAPI.parse_versions(
+        (versions_list, products_list) = VersionsInfo.parse_versions(
                                                             params["version"],
                                                             products_list)
 
@@ -74,8 +73,8 @@ class VersionsInfo(webapi.JsonServiceBase):
             versions.append(versions_list[x + 1])
 
         params = {}
-        params = pg.PostgresAPI.dispatch_params(params, "product", products)
-        params = pg.PostgresAPI.dispatch_params(params, "version", versions)
+        params = VersionsInfo.dispatch_params(params, "product", products)
+        params = VersionsInfo.dispatch_params(params, "version", versions)
 
         where = []
         for i in xrange(len(products)):
@@ -85,8 +84,8 @@ class VersionsInfo(webapi.JsonServiceBase):
                                      ")s)")))
 
         sql = """/* socorro.middleware.postgresql.util.Util.versions_info */
-        SELECT pi.version_string, pi.product_name, which_table, major_version,
-               pv.build_type, pvb.build_id
+        SELECT pi.version_string, pi.product_name, which_table,
+               pv.release_version, pv.build_type, pvb.build_id
         FROM product_info pi
             LEFT JOIN product_versions pv ON
                 (pv.product_version_id = pi.product_version_id)
@@ -147,3 +146,64 @@ class VersionsInfo(webapi.JsonServiceBase):
                 params[i] = params[i].split(terms_sep)
 
         return params
+
+    # ---
+    # Those methods are a dup from socorro.search.postgresql and will be moved
+    # by the middleware reorg (bug 681112).
+    # This is ugly but will be solved soon.
+    # ---
+
+    @staticmethod
+    def dispatch_params(params, key, value):
+        """
+        Dispatch a parameter or a list of parameters into the params array.
+
+        """
+        if type(value) is not list:
+            params[key] = value
+        else:
+            for i in xrange(len(value)):
+                params[key+str(i)] = value[i]
+        return params
+
+    @staticmethod
+    def append_to_var(value, array):
+        """
+        Append a value to a list or array.
+        If array is not a list, create a new one containing array
+        and value.
+
+        """
+        if type(array) is list:
+            array.append(value)
+        elif array == "_all" or array == None:
+            array = value
+        elif array != value:
+            array = [array, value]
+        return array
+
+    @staticmethod
+    def parse_versions(versions_list, products):
+        """
+        Parses the versions, separating by ":" and returning versions
+        and products.
+
+        """
+        versions = []
+        if type(versions_list) is list:
+            for v in versions_list:
+                if v.find(":") > -1:
+                    pv = v.split(":")
+                    versions = VersionsInfo.append_to_var(pv[0], versions)
+                    versions = VersionsInfo.append_to_var(pv[1], versions)
+                else:
+                    products = VersionsInfo.append_to_var(v, products)
+        elif versions_list != "_all":
+            if versions_list.find(":") > -1:
+                pv = versions_list.split(":")
+                versions = VersionsInfo.append_to_var(pv[0], versions)
+                versions = VersionsInfo.append_to_var(pv[1], versions)
+            else:
+                products = VersionsInfo.append_to_var(versions_list, products)
+
+        return (versions, products)

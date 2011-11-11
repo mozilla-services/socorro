@@ -28,18 +28,17 @@ class Search_Model extends Model {
         $params['result_number'] = $result_number;
         $params['result_offset'] = $result_offset;
 
-        $uri = $this->buildURI($params, '201105', 'search');
+        $uri = $this->buildURI($params, 'search');
         $res = $this->service->get($uri);
         //echo '<pre>',var_dump($uri),'</pre>';
         return $res;
     }
 
-    private function buildURI($params, $apiVersion, $apiEntry)
+    private function buildURI($params, $apiEntry)
     {
         $separator = '/';
         $apiData = array(
             Kohana::config('webserviceclient.socorro_hostname'),
-            $apiVersion,
             $apiEntry,
             'signatures',
         );

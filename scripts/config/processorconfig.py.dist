@@ -107,7 +107,8 @@ signatureSentinels.doc = 'a list of frame signatures that should always be consi
 signatureSentinels.default = ['_purecall',
                               ('mozilla::ipc::RPCChannel::Call(IPC::Message*, IPC::Message*)',
                                   lambda x: 'CrashReporter::CreatePairedMinidumps(void*, unsigned long, nsAString_internal*, nsILocalFile**, nsILocalFile**)' in x),
-                              'Java_org_mozilla_gecko_GeckoAppShell_reportJavaCrash']
+                              'Java_org_mozilla_gecko_GeckoAppShell_reportJavaCrash',
+                              'google_breakpad::ExceptionHandler::HandleInvalidParameter(wchar_t const*, wchar_t const*, wchar_t const*, unsigned int, unsigned int)']
 
 irrelevantSignatureRegEx = cm.Option()
 irrelevantSignatureRegEx.doc = 'a regular expression matching frame signatures that should be ignored when generating an overall signature'
@@ -134,6 +135,8 @@ irrelevantSignatureRegEx.default = '|'.join([
   'libEGL\.so@.*',
   'libc-2\.5\.so@.*',
   'RtlpAdjustHeapLookasideDepth',
+  'google_breakpad::ExceptionHandler::HandleInvalidParameter.*',
+  'libicudata.so@.*',
   ])
 
 prefixSignatureRegEx = cm.Option()
@@ -201,6 +204,10 @@ prefixSignatureRegEx = '|'.join([
   'PR_DestroyLock',
   '.*abort',
   '_ZdaPvRKSt9nothrow_t\"',
+  '__swrite',
+  'dvmAbort',
+  'JNI_CreateJavaVM',
+  'dvmStringLen',
   ])
 
 signaturesWithLineNumbersRegEx = cm.Option()
