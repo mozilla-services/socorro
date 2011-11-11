@@ -976,6 +976,13 @@ div.pendingStatus p.pendingProcessing {
 .graph-icon {
     visibility: hidden;
 }
+a.open-external { 
+    background: url(/img/icons/external.png) no-repeat scroll left top transparent;
+    color: #0A2533;
+    margin-left: 20px;
+    padding: 2px 0 2px 20px;
+    text-decoration: underline;
+}
 .tcburl-toggler {
   display: inline;
   color: white;
