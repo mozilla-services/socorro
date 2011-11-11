@@ -40,7 +40,7 @@
                 <td>
                 <?php if (!strstr($crash->url, '_detected_BLOCKED')) { ?>
                     <div id="url-to-sig<?php echo $row; ?>" class="tcburl-toggler tcburl-urlToggler">+</div> <a id="tcburl-url<?php echo $row ?>" class="tcburl-urlToggler" href="#"><span class="label tcburl-urlToggler">Expand</span> <span class="url tcburl-urlToggler"><?php out::H($crash->url) ?></span></a>
-                    <a  href="<?php out::H($crash->url) ?>">Open This URL</a>
+                    <a class="open-external" href="<?php out::H($crash->url) ?>">Open This URL</a>
                 <?php } else { ?>
                     <?php out::h($crash->url); ?>
                 <?php } ?>
