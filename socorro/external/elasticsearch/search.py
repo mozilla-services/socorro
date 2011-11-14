@@ -1,26 +1,25 @@
 import json
 import logging
 
-from common import ElasticSearchCommon
-from socorro.lib.search_common import SearchCommon
+from socorro.external.elasticsearch.base import ElasticSearchBase
+
+import socorro.lib.search_common as scommon
 import socorro.services.versions_info as vi
 
 logger = logging.getLogger("webapi")
 
 
-class Search(ElasticSearchCommon, SearchCommon):
+class Search(ElasticSearchBase):
 
     """
     Implement the /search service with ElasticSearch.
     """
 
-    def __init__(self, config):
+    def __init__(self, **kwargs):
         """
         Default constructor
         """
-        #~ super(Search, self).__init__(config)
-        ElasticSearchCommon.__init__(self, config)
-        SearchCommon.__init__(self, config)
+        super(Search, self).__init__(**kwargs)
 
     def search(self, **kwargs):
         """
@@ -31,7 +30,7 @@ class Search(ElasticSearchCommon, SearchCommon):
         Optional arguments: see SearchCommon.get_parameters()
 
         """
-        params = Search.get_parameters(kwargs)
+        params = scommon.get_parameters(kwargs)
 
         # Get information about the versions
         versions_service = vi.VersionsInfo(self.context)
@@ -40,8 +39,7 @@ class Search(ElasticSearchCommon, SearchCommon):
         query = Search.build_query_from_params(params)
 
         # For signatures mode, we need to collect more data with facets
-        types = params["data_type"]
-        if types == "signatures":
+        if params["data_type"] == "signatures":
             # No need to get crashes, we only want signatures
             query["size"] = 0
             query["from"] = 0
@@ -60,68 +58,66 @@ class Search(ElasticSearchCommon, SearchCommon):
                                json_query)
 
         # Executing the query and returning the result
-        if types != "signatures":
-            return es_result
+        if params["data_type"] == "signatures":
+            return self.search_for_signatures(params, es_result, query)
         else:
+            return es_result
+
+    def search_for_signatures(self, params, es_result, query):
+        """
+        """
+        try:
+            es_data = json.loads(es_result[0])
+        except Exception:
+            logger.debug("ElasticSearch returned something wrong: %s",
+                         es_result[0])
+            raise
+
+        # Making sure we have a real result before using it
+        if not es_data:
+            signature_count = 0
+        else:
+            signature_count = len(es_data["facets"]["signatures"]["terms"])
+
+        maxsize = min(signature_count,
+                      params["result_number"] + params["result_offset"])
+
+        if maxsize > params["result_offset"]:
+            signatures = Search.get_signatures(es_data["facets"], maxsize,
+                                               self.context.platforms)
+
+            count_by_os_query = query
+            facets = Search.get_count_facets(signatures,
+                                             params["result_offset"],
+                                             maxsize)
+            count_by_os_query["facets"] = facets
+            count_by_os_query_json = json.dumps(count_by_os_query)
+            logger.debug("Query the OS by signature: %s",
+                         count_by_os_query_json)
+
+            count_result = self.query(params["from_date"], params["to_date"],
+                                      count_by_os_query_json)
             try:
-                es_data = json.loads(es_result[0])
+                count_data = json.loads(count_result[0])
             except Exception:
                 logger.debug("ElasticSearch returned something wrong: %s",
-                             es_result[0])
+                             count_result[0])
                 raise
 
-            # Making sure we have a real result before using it
-            if not es_data:
-                signature_count = 0
-            else:
-                signature_count = len(es_data["facets"]["signatures"]["terms"])
+            count_sign = count_data["facets"]
+            signatures = Search.get_counts(signatures, count_sign,
+                                            params["result_offset"], maxsize,
+                                            self.context.platforms)
 
-            maxsize = min(signature_count,
-                          params["result_number"] + params["result_offset"])
+        results = {
+            "total": signature_count,
+            "hits": []
+        }
 
-            if maxsize > params["result_offset"]:
-                signatures = Search.get_signatures(
-                                                es_data["facets"],
-                                                maxsize,
-                                                self.context.platforms)
+        for i in xrange(params["result_offset"], maxsize):
+            results["hits"].append(signatures[i])
 
-                count_by_os_query = query
-                facets = Search.get_count_facets(
-                                            signatures,
-                                            params["result_offset"],
-                                            maxsize)
-                count_by_os_query["facets"] = facets
-                count_by_os_query_json = json.dumps(count_by_os_query)
-                logger.debug("Query the OS by signature: %s",
-                             count_by_os_query_json)
-
-                count_result = self.query(params["from_date"],
-                                          params["to_date"],
-                                          count_by_os_query_json)
-                try:
-                    count_data = json.loads(count_result[0])
-                except Exception:
-                    logger.debug("ElasticSearch returned something wrong: %s",
-                                 count_result[0])
-                    raise
-
-                count_sign = count_data["facets"]
-                signatures = Search.get_counts(
-                                                signatures,
-                                                count_sign,
-                                                params["result_offset"],
-                                                maxsize,
-                                                self.context.platforms)
-
-            results = {
-                "total": signature_count,
-                "hits": []
-            }
-
-            for i in xrange(params["result_offset"], maxsize):
-                results["hits"].append(signatures[i])
-
-            return results
+        return results
 
     @staticmethod
     def get_signatures_facet(size):

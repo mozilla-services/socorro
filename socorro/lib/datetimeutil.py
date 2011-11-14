@@ -59,7 +59,7 @@ def string_to_datetime(date):
     Take a string and return a datetime object.
     """
     if not date:
-        return None
+        raise ValueError
 
     if type(date) is not dt.datetime:
         if type(date) is list:
@@ -67,7 +67,7 @@ def string_to_datetime(date):
         try:
             date = datetimeFromISOdateString(date)
         except ValueError:
-            date = None
+            raise
     return date
 
 def date_to_string(date):

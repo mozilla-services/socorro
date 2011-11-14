@@ -1,29 +1,27 @@
 import logging
 
-from datetime import timedelta, datetime
+from socorro.external.postgresql.base import PostgreSQLBase
 
-from socorro.external.postgresql.common import PostgreSQLCommon
 import socorro.database.database as db
 import socorro.lib.datetimeutil as dtutil
-from socorro.lib.search_common import SearchCommon
+import socorro.lib.search_common as scommon
 import socorro.lib.util as util
 import socorro.services.versions_info as vi
 
 logger = logging.getLogger("webapi")
 
 
-class Search(PostgreSQLCommon, SearchCommon):
+class Search(PostgreSQLBase):
 
     """
     Implement the /search service with PostgreSQL.
     """
 
-    def __init__(self, config):
+    def __init__(self, **kwargs):
         """
         Default constructor
         """
-        PostgreSQLCommon.__init__(self, config)
-        SearchCommon.__init__(self, config)
+        super(Search, self).__init__(**kwargs)
 
     def search(self, **kwargs):
         """
@@ -38,86 +36,71 @@ class Search(PostgreSQLCommon, SearchCommon):
         self.connection = self.database.connection()
         cur = self.connection.cursor()
 
-        # Default dates
-        now = datetime.today()
-        lastweek = now - timedelta(7)
-
-        # Getting parameters that have default values
-        terms = kwargs.get("for", "")
-        products = kwargs.get("product", "Firefox")
-        from_date = kwargs.get("from", lastweek)
-        to_date = kwargs.get("to", now)
-        os = kwargs.get("os", "_all")
-        branches = kwargs.get("branches", None)
-        build_id = kwargs.get("build", None)
-        reason = kwargs.get("crash_reason", None)
-        report_type = kwargs.get("report_type", None)
-        versions_list = kwargs.get("version", "_all")
-
-        report_process = kwargs.get("report_process", None)
-        plugin_in = kwargs.get("plugin_in", None)
-        plugin_search_mode = kwargs.get("plugin_search_mode", None)
-        plugin_term = kwargs.get("plugin_term", "")
-
-        search_mode = kwargs.get("search_mode", "starts_with")
-        result_number = kwargs.get("result_number", 100)
-        result_offset = kwargs.get("result_offset", 0)
+        params = scommon.get_parameters(kwargs)
 
         # Default mode falls back to starts_with for postgres
-        if search_mode == "default":
-            search_mode = "starts_with"
-        if plugin_search_mode == "default":
-            plugin_search_mode = "starts_with"
+        if params["search_mode"] == "default":
+            params["search_mode"] = "starts_with"
+        if params["plugin_search_mode"] == "default":
+            params["plugin_search_mode"] = "starts_with"
 
         # Handling dates
-        from_date = dtutil.string_to_datetime(from_date)
-        to_date = dtutil.string_to_datetime(to_date)
+        params["from_date"] = dtutil.string_to_datetime(params["from_date"])
+        params["to_date"] = dtutil.string_to_datetime(params["to_date"])
 
         # For Postgres, we never search for a list of terms
-        if type(terms) is list:
-            terms = " ".join(terms)
-
-        # Searching for terms in signature
-        is_terms_a_list = type(terms) is list
-
-        if terms:
-            terms = Search.prepare_terms(terms, is_terms_a_list, search_mode)
+        if params["terms"]:
+            params["terms"] = " ".join(params["terms"])
+            params["terms"] = Search.prepare_terms(params["terms"],
+                                                   params["search_mode"])
 
         # Searching for terms in plugins
-        if report_process == "plugin" and plugin_term:
-            plugin_term = Search.prepare_terms(plugin_term,
-                                               (type(plugin_term) is list),
-                                               plugin_search_mode)
+        if params["report_process"] == "plugin" and params["plugin_terms"]:
+            params["plugin_terms"] = " ".join(params["plugin_terms"])
+            params["plugin_terms"] = Search.prepare_terms(
+                                                params["plugin_terms"],
+                                                params["plugin_search_mode"])
 
         # Parsing the versions
-        (versions, products) = Search.parse_versions(versions_list, products)
+        params["versions_string"] = params["versions"]
+        (params["versions"], params["products"]) = Search.parse_versions(
+                                                            params["versions"],
+                                                            params["products"])
 
         # Changing the OS ids to OS names
-        if type(os) is list:
-            for i in xrange(len(os)):
+        if isinstance(params["os"], list):
+            for i in xrange(len(params["os"])):
                 for platform in self.context.platforms:
-                    if platform["id"] == os[i]:
-                        os[i] = platform["name"]
+                    if platform["id"] == params["os"][i]:
+                        params["os"][i] = platform["name"]
         else:
             for platform in self.context.platforms:
-                if platform["id"] == os:
-                    os = platform["name"]
+                if platform["id"] == params["os"]:
+                    params["os"] = platform["name"]
 
         # Creating the parameters for the sql query
-        params = {
-            "from_date": from_date,
-            "to_date": to_date,
-            "limit": int(result_number),
-            "offset": int(result_offset)
+        sql_params = {
+            "from_date": params["from_date"],
+            "to_date": params["to_date"],
+            "limit": params["result_number"],
+            "offset": params["result_offset"]
         }
-        params = Search.dispatch_params(params, "term", terms)
-        params = Search.dispatch_params(params, "product", products)
-        params = Search.dispatch_params(params, "os", os)
-        params = Search.dispatch_params(params, "version", versions)
-        params = Search.dispatch_params(params, "build", build_id)
-        params = Search.dispatch_params(params, "reason", reason)
-        params = Search.dispatch_params(params, "plugin_term", plugin_term)
-        params = Search.dispatch_params(params, "branch", branches)
+        sql_params = Search.dispatch_params(sql_params, "term",
+                                            params["terms"])
+        sql_params = Search.dispatch_params(sql_params, "product",
+                                            params["products"])
+        sql_params = Search.dispatch_params(sql_params, "os",
+                                            params["os"])
+        sql_params = Search.dispatch_params(sql_params, "version",
+                                            params["versions"])
+        sql_params = Search.dispatch_params(sql_params, "build",
+                                            params["build_ids"])
+        sql_params = Search.dispatch_params(sql_params, "reason",
+                                            params["reasons"])
+        sql_params = Search.dispatch_params(sql_params, "plugin_term",
+                                            params["plugin_terms"])
+        sql_params = Search.dispatch_params(sql_params, "branch",
+                                            params["branches"])
 
         # Preparing the different parts of the sql query
 
@@ -125,17 +108,17 @@ class Search(PostgreSQLCommon, SearchCommon):
         # SELECT
         #---------------------------------------------------------------
 
-        sql_select = self.generate_sql_select(report_process)
+        sql_select = self.generate_sql_select(params)
 
         # Adding count for each OS
         for i in self.context.platforms:
-            params["os_%s" % i["id"]] = i["name"]
+            sql_params["os_%s" % i["id"]] = i["name"]
 
         #---------------------------------------------------------------
         # FROM
         #---------------------------------------------------------------
 
-        sql_from = self.generate_sql_from(report_process, branches)
+        sql_from = self.generate_sql_from(params)
 
         #---------------------------------------------------------------
         # WHERE
@@ -146,69 +129,54 @@ class Search(PostgreSQLCommon, SearchCommon):
         """]
 
         ## Adding terms to where clause
-        if terms:
-            if not is_terms_a_list and search_mode == "is_exactly":
+        if params["terms"]:
+            if params["search_mode"] == "is_exactly":
                 sql_where.append("r.signature=%(term)s")
-            elif not is_terms_a_list:
-                sql_where.append("r.signature LIKE %(term)s")
             else:
-                if search_mode == "is_exactly":
-                    comp = "="
-                else:
-                    comp = "LIKE"
-
-                sql_where.append("(%s)" % (
-                                    util.list_to_string(xrange(len(terms)),
-                                    " OR ", "r.signature" + comp + "%(term",
-                                    ")s")))
+                sql_where.append("r.signature LIKE %(term)s")
 
         ## Adding products to where clause
-        if type(products) is list:
-            sql_where.append("(%s)" % (
-                                util.list_to_string(xrange(len(products)),
-                                " OR ", "r.product=%(product", ")s")))
-        else:
-            sql_where.append("r.product=%(product)s")
+        if params["products"]:
+            products_list = ("r.product=%(product" + str(x) + ")s"
+                             for x in xrange(len(params["products"])))
+            sql_where.append("(%s)" % (" OR ".join(products_list)))
 
         ## Adding OS to where clause
-        if os != "_all":
-            if type(os) is list:
-                sql_where.append("(%s)" % (util.list_to_string(xrange(len(os)),
-                                           " OR ", "r.os_name=%(os", ")s")))
-            else:
-                sql_where.append("r.os_name=%(os)s")
+        if params["os"]:
+            os_list = ("r.os_name=%(os" + str(x) + ")s"
+                       for x in xrange(len(params["os"])))
+            sql_where.append("(%s)" % (" OR ".join(os_list)))
 
         ## Adding branches to where clause
-        if branches:
-            if type(branches) is list:
-                sql_where.append("(%s)" % (
-                                    util.list_to_string(xrange(len(branches)),
-                                    " OR ", "branches.branch=%(branch", ")s")))
-            else:
-                sql_where.append("branches.branch=%(branch)s")
+        if params["branches"]:
+            branches_list = ("branches.branch=%(branch" + str(x) + ")s"
+                             for x in xrange(len(params["branches"])))
+            sql_where.append("(%s)" % (" OR ".join(branches_list)))
 
         ## Adding versions to where clause
-        if versions != "_all" and len(versions):
+        if params["versions"]:
 
             # Get information about the versions
             versions_service = vi.VersionsInfo(self.context)
-            fakeparams = {}
-            fakeparams["version"] = versions_list
+            fakeparams = {
+                "versions": params["versions_string"]
+            }
             versions_info = versions_service.versions_info(fakeparams)
 
-            if type(versions) is list:
+            if isinstance(params["versions"], list):
                 versions_where = []
 
-                for x in xrange(0, len(versions), 2):
+                for x in xrange(0, len(params["versions"]), 2):
                     version_where = []
                     version_where.append(str(x).join(("r.product=%(version",
                                                       ")s")))
 
-                    key = "%s:%s" % (versions[x], versions[x + 1])
-                    version_where = self.generate_version_where(key, versions,
-                                                                versions_info,
-                                                                x, params,
-                                                                version_where)
+                    key = "%s:%s" % (params["versions"][x],
+                                     params["versions"][x + 1])
+                    version_where = self.generate_version_where(
+                                            key, params["versions"],
+                                            versions_info, x, sql_params,
+                                            version_where)
 
                     version_where.append(str(x + 1).join((
                                             "r.version=%(version", ")s")))
@@ -218,67 +186,62 @@ class Search(PostgreSQLCommon, SearchCommon):
 
             else:
                 # Original product:value
-                key = "%s:%s" % (products, versions)
+                key = "%s:%s" % (params["products"], params["versions"])
                 version_where = []
 
-                version_where = self.generate_version_where(key, versions,
-                                                            versions_info,
-                                                            None, params,
-                                                            version_where)
+                version_where = self.generate_version_where(
+                                            key, params["versions"],
+                                            versions_info, None, sql_params,
+                                            version_where)
 
                 version_where.append("r.version=%(version)s")
                 sql_where.append("(%s)" % " AND ".join(version_where))
 
         ## Adding build id to where clause
-        if build_id:
-            if type(build_id) is list:
-                sql_where.append("(%s)" % (
-                                    util.list_to_string(xrange(len(build_id)),
-                                    " OR ", "r.build=%(build", ")s")))
-            else:
-                sql_where.append("r.build=%(build)s")
+        if params["build_ids"]:
+            build_ids_list = ("r.build=%(build" + str(x) + ")s"
+                              for x in xrange(len(params["build_ids"])))
+            sql_where.append("(%s)" % (" OR ".join(build_ids_list)))
 
         ## Adding reason to where clause
-        if reason:
-            if type(reason) is list:
-                sql_where.append("(%s)" % (
-                                    util.list_to_string(xrange(len(reason)),
-                                    " OR ", "r.reason=%(reason", ")s")))
-            else:
-                sql_where.append("r.reason=%(reason)s")
+        if params["reasons"]:
+            reasons_list = ("r.reason=%(reason" + str(x) + ")s"
+                            for x in xrange(len(params["reasons"])))
+            sql_where.append("(%s)" % (" OR ".join(reasons_list)))
 
-        if report_type == "crash":
+        if params["report_type"] == "crash":
             sql_where.append("r.hangid IS NULL")
-        elif report_type == "hang":
+        elif params["report_type"] == "hang":
             sql_where.append("r.hangid IS NOT NULL")
 
         ## Searching through plugins
-        if report_process == "plugin":
+        if params["report_process"] == "plugin":
             sql_where.append("r.process_type = 'plugin'")
             sql_where.append(("plugins_reports.date_processed BETWEEN "
                               "%(from_date)s AND %(to_date)s"))
 
-            if plugin_term:
+            if params["plugin_terms"]:
                 comp = "="
 
-                if plugin_search_mode in ("contains", "starts_with"):
+                if params["plugin_search_mode"] in ("contains", "starts_with"):
                     comp = " LIKE "
 
-                field = "plugins.name"
-                if plugin_in == "filename":
-                    field = "plugins.filename"
+                sql_where_plugin_in = []
+                for f in params["plugin_in"]:
+                    if f == "name":
+                        field = "plugins.name"
+                    elif f == "filename":
+                        field = "plugins.filename"
 
-                if type(plugin_term) is list:
-                    sql_where.append("(%s)" % (
-                                util.list_to_string(xrange(len(plugin_term)),
-                                " OR ", field + comp + "%(plugin_term", ")s")))
-                else:
-                    sql_where.append("".join((field, comp, "%(plugin_term)s")))
+                    sql_where_plugin_in.append(comp.join((field,
+                                                          "%(plugin_term)s")))
 
-        elif report_process == "browser":
+                sql_where.append("(%s)" % " OR ".join(sql_where_plugin_in))
+
+        elif params["report_process"] == "browser":
             sql_where.append("r.process_type IS NULL")
 
-        elif report_process == "content":
+        elif params["report_process"] == "content":
             sql_where.append("r.process_type = 'content'")
 
         sql_where = " AND ".join(sql_where)
@@ -287,7 +250,7 @@ class Search(PostgreSQLCommon, SearchCommon):
         # GROUP BY
         #---------------------------------------------------------------
 
-        sql_group = self.generate_sql_group(report_process)
+        sql_group = self.generate_sql_group(params)
 
         #---------------------------------------------------------------
         # ORDER BY
@@ -317,9 +280,12 @@ class Search(PostgreSQLCommon, SearchCommon):
                 "/* socorro.external.postgresql.search.Search search.count */",
                 "SELECT count(DISTINCT r.signature)", sql_from, sql_where))
 
+        # Debug
+        logger.debug(cur.mogrify(sql_query, sql_params))
+
         # Querying the DB
         try:
-            total = db.singleValueSql(cur, sql_count_query, params)
+            total = db.singleValueSql(cur, sql_count_query, sql_params)
         except Exception:
             total = 0
             util.reportExceptionAndContinue(logger)
@@ -327,7 +293,7 @@ class Search(PostgreSQLCommon, SearchCommon):
         # No need to call Postgres if we know there will be no results
         if total != 0:
             try:
-                results = db.execute(cur, sql_query, params)
+                results = db.execute(cur, sql_query, sql_params)
             except Exception:
                 results = []
                 util.reportExceptionAndContinue(logger)
@@ -341,7 +307,7 @@ class Search(PostgreSQLCommon, SearchCommon):
 
         # Transforming the results into what we want
         for crash in results:
-            if report_process == "plugin":
+            if params["report_process"] == "plugin":
                 row = dict(zip(("signature", "count", "is_windows", "is_mac",
                                 "is_linux", "numhang", "numplugin",
                                 "pluginname", "pluginversion",
@@ -355,7 +321,7 @@ class Search(PostgreSQLCommon, SearchCommon):
 
         return json_result
 
-    def generate_sql_select(self, report_process):
+    def generate_sql_select(self, params):
         """
         Generate and return the SELECT part of the final SQL query.
         """
@@ -373,77 +339,74 @@ class Search(PostgreSQLCommon, SearchCommon):
                            "ELSE 1 END) AS numplugin"))
 
         ## Searching through plugins
-        if report_process == "plugin":
+        if params["report_process"] == "plugin":
             sql_select.append(("plugins.name AS pluginName, "
                                "plugins_reports.version AS pluginVersion, "
                                "plugins.filename AS pluginFilename"))
 
         return ", ".join(sql_select)
 
-    def generate_sql_from(self, report_process, branches):
+    def generate_sql_from(self, params):
         """
         Generate and return the FROM part of the final SQL query.
         """
         sql_from = ["FROM reports r"]
 
         ## Searching through plugins
-        if report_process == "plugin":
+        if params["report_process"] == "plugin":
             sql_from.append(("plugins_reports ON "
                              "plugins_reports.report_id = r.id"))
             sql_from.append(("plugins ON "
                              "plugins_reports.plugin_id = plugins.id"))
 
         ## Searching through branches
-        if branches:
+        if params["branches"]:
             sql_from.append(("branches ON (branches.product = r.product "
                              "AND branches.version = r.version)"))
 
         return sql_from
 
-    def generate_sql_group(self, report_process):
+    def generate_sql_group(self, params):
         """
         Generate and return the GROUP BY part of the final SQL query.
         """
         sql_group = ["GROUP BY r.signature"]
 
         # Searching through plugins
-        if report_process == "plugin":
+        if params["report_process"] == "plugin":
             sql_group.append("pluginName, pluginVersion, pluginFilename ")
 
         return ", ".join(sql_group)
 
     @staticmethod
-    def prepare_terms(terms, is_terms_a_list, search_mode):
+    def prepare_terms(terms, search_mode):
         """
         Prepare terms for search, adding '%' where needed,
         given the search mode.
         """
-        if search_mode == "contains" and is_terms_a_list:
-            for i in xrange(len(terms)):
-                terms[i] = "%" + terms[i] + "%"
-        elif search_mode == "contains":
+        if search_mode in ("contains", "starts_with"):
+            terms = terms.replace("_", "\_").replace("%", "\%")
+
+        if search_mode == "contains":
             terms = "%" + terms + "%"
-        elif search_mode == "starts_with" and is_terms_a_list:
-            for i in xrange(len(terms)):
-                terms[i] = terms[i] + "%"
         elif search_mode == "starts_with":
             terms = terms + "%"
         return terms
 
     @staticmethod
-    def dispatch_params(params, key, value):
+    def dispatch_params(sql_params, key, value):
         """
         Dispatch a parameter or a list of parameters into the params array.
         """
-        if type(value) is not list:
-            params[key] = value
+        if not isinstance(value, list):
+            sql_params[key] = value
         else:
             for i in xrange(len(value)):
-                params[key + str(i)] = value[i]
-        return params
+                sql_params[key + str(i)] = value[i]
+        return sql_params
 
     @staticmethod
-    def generate_version_where(key, versions, versions_info, x, params,
+    def generate_version_where(key, versions, versions_info, x, sql_params,
                                version_where):
         """
         Return a list of strings for version restrictions.
@@ -462,7 +425,7 @@ class Search(PostgreSQLCommon, SearchCommon):
             if version_info["release_channel"] in ("Beta", "Aurora",
                                                    "Nightly"):
                 # Use major_version instead of full version
-                params[version_param] = version_info["major_version"]
+                sql_params[version_param] = version_info["major_version"]
                 # Restrict by release_channel
                 version_where.append("r.release_channel ILIKE '%s'" % (
                                             version_info["release_channel"]))

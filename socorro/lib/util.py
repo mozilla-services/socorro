@@ -230,15 +230,9 @@ def parseIsoDateTimeString(dtstring):
   return datetime.datetime(*[int(x.strip()) for x in splitter.split(dtstring)[:7] if x])
 
 
-def list_to_string(array, separator, prefix="", suffix=""):
-    """
-    Transform a list into a string and return it.
-    """
-    return separator.join("%s%s%s" % (prefix, x, suffix) for x in array)
-
 def lower(var):
     """
-    Turn a string or a list of strings to lower case.
+    Turn a string or a list of strings to lower case and return it.
 
     Don't modify non-string elements.
     """

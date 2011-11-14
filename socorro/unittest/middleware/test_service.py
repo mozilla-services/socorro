@@ -1,7 +1,7 @@
 import unittest
 
-import socorro.external.elasticsearch.common as es
-import socorro.external.postgresql.common as pg
+import socorro.external.elasticsearch.base as es
+import socorro.external.postgresql.base as pg
 import socorro.middleware.service as serv
 import socorro.lib.util as util
 import socorro.unittest.testlib.util as tutil
@@ -46,11 +46,11 @@ def test_get_module():
     assert mod != False, "Result of get_module is not a module"
 
     try:
-        search = mod.Search(config)
+        search = mod.Search(config=config)
     except AttributeError:
         assert False, "The imported module does not contain the needed class"
 
-    assert isinstance(search, es.ElasticSearchCommon), (
+    assert isinstance(search, es.ElasticSearchBase), (
                 "Imported module is not the right one")
 
     # Test forced module
@@ -66,11 +66,11 @@ def test_get_module():
     assert mod != False, "Result of get_module is not a module"
 
     try:
-        search = mod.Search(config)
+        search = mod.Search(config=config)
     except AttributeError:
         assert False, "The imported module does not contain the needed class"
 
-    assert isinstance(search, pg.PostgreSQLCommon), (
+    assert isinstance(search, pg.PostgreSQLBase), (
                 "Imported module is not the right one")
 
     # Test default module
@@ -91,11 +91,11 @@ def test_get_module():
     assert mod != False, "Result of get_module is not a module"
 
     try:
-        search = mod.Search(config)
+        search = mod.Search(config=config)
     except AttributeError:
         assert False, "The imported module does not contain the needed class"
 
-    assert isinstance(search, es.ElasticSearchCommon), (
+    assert isinstance(search, es.ElasticSearchBase), (
                 "Imported module is not the right one")
 
     # Test no valid module to import

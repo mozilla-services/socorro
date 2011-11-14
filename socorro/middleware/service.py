@@ -90,7 +90,6 @@ class DataAPIService(JsonWebServiceBase):
         except ImportError:
             logger.debug("Could not import %s" % module_name)
             return False
-        return False
 
     def parse_query_string(self, query_string):
         """

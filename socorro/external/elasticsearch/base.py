@@ -9,18 +9,21 @@ import socorro.lib.util as util
 logger = logging.getLogger("webapi")
 
 
-class ElasticSearchCommon(object):
+class ElasticSearchBase(object):
 
     """
     Base class for ElasticSearch based service implementations.
     """
 
-    def __init__(self, config):
+    def __init__(self, **kwargs):
         """
         Default constructor
         """
-        self.http = httpc.HttpClient(config.elasticSearchHostname,
-                                     config.elasticSearchPort)
+        super(ElasticSearchBase, self).__init__()
+
+        self.context = kwargs.get("config")
+        self.http = httpc.HttpClient(self.context.elasticSearchHostname,
+                                     self.context.elasticSearchPort)
 
         # A simulation of cache, good enough for the current needs,
         # but wouldn't mind to be replaced.
@@ -52,8 +55,7 @@ class ElasticSearchCommon(object):
         # -
         # This code is here to avoid failing queries caused by missing
         # indexes. It should not happen on prod, but doing this makes
-        # sure users will never see a 500 Error because of this
-        # eventuality.
+        # sure users will never see a 500 Error because of this eventuality.
         # -
 
         # Iterate until we can return an actual result and not an error
@@ -70,7 +72,7 @@ class ElasticSearchCommon(object):
 
             # If there has been an error,
             # then we get a dict instead of some json.
-            if type(http_response) is dict:
+            if isinstance(http_response, dict):
                 data = http_response["error"]["data"]
 
                 # If an index is missing,
@@ -101,8 +103,7 @@ class ElasticSearchCommon(object):
 
         """
         # Dates need to be strings for ES
-        params["from_date"] = dtutil.date_to_string(
-                                                    params["from_date"])
+        params["from_date"] = dtutil.date_to_string(params["from_date"])
         params["to_date"] = dtutil.date_to_string(params["to_date"])
 
         # Preparing the different elements of the json query
@@ -119,39 +120,36 @@ class ElasticSearchCommon(object):
         if (params["search_mode"] == "default" and
             params["terms"] and params["fields"]):
             filters["and"].append(
-                            ElasticSearchCommon.build_terms_query(
+                            ElasticSearchBase.build_terms_query(
                                 params["fields"],
                                 util.lower(params["terms"])))
 
         elif params["terms"]:
-            params["terms"] = ElasticSearchCommon.prepare_terms(
+            params["terms"] = ElasticSearchBase.prepare_terms(
                                                     params["terms"],
                                                     params["search_mode"])
-            queries.append(ElasticSearchCommon.build_wildcard_query(
+            queries.append(ElasticSearchBase.build_wildcard_query(
                                                 params["fields"],
                                                 params["terms"]))
 
         # Generating the filters
         if params["products"]:
             filters["and"].append(
-                            ElasticSearchCommon.build_terms_query(
-                                "product.full",
-                                params["products"]))
+                            ElasticSearchBase.build_terms_query(
+                                                        "product.full",
+                                                        params["products"]))
         if params["os"]:
             filters["and"].append(
-                            ElasticSearchCommon.build_terms_query(
-                                "os_name",
-                                util.lower(params["os"])))
-        if params["build_id"]:
+                            ElasticSearchBase.build_terms_query("os_name",
+                                                    util.lower(params["os"])))
+        if params["build_ids"]:
             filters["and"].append(
-                            ElasticSearchCommon.build_terms_query(
-                                "build",
-                                util.lower(params["build_id"])))
-        if params["reason"]:
+                            ElasticSearchBase.build_terms_query("build",
+                                            util.lower(params["build_ids"])))
+        if params["reasons"]:
             filters["and"].append(
-                            ElasticSearchCommon.build_terms_query(
-                                "reason",
-                                util.lower(params["reason"])))
+                            ElasticSearchBase.build_terms_query("reason",
+                                            util.lower(params["reasons"])))
 
         filters["and"].append({
                 "range": {
@@ -163,7 +161,7 @@ class ElasticSearchCommon(object):
             })
 
         if params["report_process"] == "plugin":
-            filters["and"].append(ElasticSearchCommon.build_terms_query(
+            filters["and"].append(ElasticSearchBase.build_terms_query(
                                                         "process_type",
                                                         "plugin"))
         if params["report_type"] == "crash":
@@ -174,8 +172,8 @@ class ElasticSearchCommon(object):
             filters["and"].append({"missing": {"field": "process_type"}})
 
         # Generating the filters for versions
-        if params["version"]:
-            versions = ElasticSearchCommon.format_versions(params["version"])
+        if params["versions"]:
+            versions = ElasticSearchBase.format_versions(params["versions"])
             versions_type = type(versions)
             versions_info = params["versions_info"]
 
@@ -184,7 +182,7 @@ class ElasticSearchCommon(object):
                 # Otherwise consider this as a product
                 if not params["products"]:
                     filters["and"].append(
-                                    ElasticSearchCommon.build_terms_query(
+                                    ElasticSearchBase.build_terms_query(
                                         "product",
                                         util.lower(versions)))
 
@@ -199,32 +197,30 @@ class ElasticSearchCommon(object):
                     versions["version"] = versions_info[key]["major_version"]
                     # then make sure it's a beta
                     filters["and"].append(
-                            ElasticSearchCommon.build_terms_query(
+                            ElasticSearchBase.build_terms_query(
                                                     "ReleaseChannel", "beta"))
                     # last use the right build id
                     filters["and"].append(
-                            ElasticSearchCommon.build_terms_query(
+                            ElasticSearchBase.build_terms_query(
                                     "build", versions_info[key]["build_id"]))
                 elif (key in versions_info and
                         versions_info[key]["release_channel"]):
                     # this version is a release
                     filters["and"].append({
                         "not":
-                            ElasticSearchCommon.build_terms_query(
+                            ElasticSearchBase.build_terms_query(
                                     "ReleaseChannel",
                                     ["nightly", "aurora", "beta"])
                     })
 
                 filters["and"].append(
-                                ElasticSearchCommon.build_terms_query(
+                                ElasticSearchBase.build_terms_query(
                                         "product",
-                                        util.lower(
-                                                    versions["product"])))
+                                        util.lower(versions["product"])))
                 filters["and"].append(
-                                ElasticSearchCommon.build_terms_query(
+                                ElasticSearchBase.build_terms_query(
                                         "version",
-                                        util.lower(
-                                                    versions["version"])))
+                                        util.lower(versions["version"])))
 
             elif versions_type is list:
                 # There are several pairs product:version
@@ -240,11 +236,11 @@ class ElasticSearchCommon(object):
                         v["version"] = versions_info[key]["major_version"]
                         # then make sure it's a beta
                         and_filter.append(
-                                ElasticSearchCommon.build_terms_query(
+                                ElasticSearchBase.build_terms_query(
                                                     "ReleaseChannel", "beta"))
                         # last use the right build id
                         and_filter.append(
-                                ElasticSearchCommon.build_terms_query(
+                                ElasticSearchBase.build_terms_query(
                                     "build", versions_info[key]["build_id"]))
 
                     elif (key in versions_info and
@@ -252,19 +248,17 @@ class ElasticSearchCommon(object):
                         # this version is a release
                         and_filter.append({
                             "not":
-                                ElasticSearchCommon.build_terms_query(
+                                ElasticSearchBase.build_terms_query(
                                         "ReleaseChannel",
                                         ["nightly", "aurora", "beta"])
                         })
 
-                    and_filter.append(ElasticSearchCommon.build_terms_query(
+                    and_filter.append(ElasticSearchBase.build_terms_query(
                                             "product",
-                                            util.lower(
-                                                        v["product"])))
-                    and_filter.append(ElasticSearchCommon.build_terms_query(
+                                            util.lower(v["product"])))
+                    and_filter.append(ElasticSearchBase.build_terms_query(
                                             "version",
-                                            util.lower(
-                                                        v["version"])))
+                                            util.lower(v["version"])))
                     or_filter.append({"and": and_filter})
                 filters["and"].append({"or": or_filter})
 
@@ -298,7 +292,7 @@ class ElasticSearchCommon(object):
         if not terms or not fields:
             return None
 
-        if type(terms) is list:
+        if isinstance(terms, list):
             query_type = "terms"
         else:
             query_type = "term"
@@ -307,7 +301,7 @@ class ElasticSearchCommon(object):
             query_type: {}
         }
 
-        if type(fields) is list:
+        if isinstance(fields, list):
             for field in fields:
                 query[query_type][field] = terms
         else:
@@ -328,7 +322,7 @@ class ElasticSearchCommon(object):
             "wildcard": {}
         }
 
-        if type(fields) is list:
+        if isinstance(fields, list):
             for i in fields:
                 if i == "signature":
                     i = "signature.full"
@@ -346,9 +340,17 @@ class ElasticSearchCommon(object):
         Format the versions and return them.
 
         Separate versions parts by ":".
-        Return: a string if there was only one product,
-                a dict if there was only one product:version,
-                a list of dicts if there was several product:version.
+        Return a list of dicts.
+
+        Example 1:
+            ["Firefox:10.0a1"]
+            =>
+            [
+                {
+                    "product": "Firefox",
+                    "version": "10.0a1"
+                }
+            ]
 
         """
         if not versions:
@@ -356,32 +358,17 @@ class ElasticSearchCommon(object):
 
         versions_list = []
 
-        if type(versions) is list:
-            for v in versions:
-                try:
-                    (product, version) = v.split(":")
-                except ValueError:
-                    product = v
-                    version = None
-
-                versions_list.append({
-                    "product": product,
-                    "version": version
-                })
-        else:
+        for v in versions:
             try:
-                (product, version) = versions.split(":")
+                (product, version) = v.split(":")
             except ValueError:
-                product = versions
+                product = v
                 version = None
 
-            if version:
-                versions_list = {
-                    "product": product,
-                    "version": version
-                }
-            else:
-                versions_list = product
+            versions_list.append({
+                "product": product,
+                "version": version
+            })
 
         return versions_list
 
@@ -391,16 +378,10 @@ class ElasticSearchCommon(object):
         Prepare the list of terms by adding wildcard where needed,
         depending on the search mode.
         """
-        if type(terms) is list:
-            if search_mode == "contains":
-                terms = "".join(("*", " ".join(terms), "*"))
-            elif search_mode == "starts_with":
-                terms = "".join((" ".join(terms), "*"))
-            elif search_mode == "is_exactly":
-                terms = " ".join(terms)
-        elif search_mode == "contains":
-            terms = "".join(("*", terms, "*"))
+        if search_mode == "contains":
+            terms = "*%s*" % " ".join(terms)
         elif search_mode == "starts_with":
-            terms = "".join((terms, "*"))
-
+            terms = "%s*" % " ".join(terms)
+        elif search_mode == "is_exactly":
+            terms = " ".join(terms)
         return terms

@@ -37,7 +37,23 @@ class Search(DataAPIService):
         params = self.parse_query_string(args[1])
         params["data_type"] = args[0]
 
+        params = self._bind_params(params)
+
         module = self.get_module(params)
-        impl = module.Search(self.context)
+        impl = module.Search(config=self.context)
 
         return impl.search(**params)
+
+    def _bind_params(self, params):
+        """
+        Return parameters with names adaptated for the implementation API.
+        """
+        params["terms"] = params.get("for")
+        params["products"] = params.get("product")
+        params["from_date"] = params.get("from")
+        params["to_date"] = params.get("to")
+        params["fields"] = params.get("in")
+        params["versions"] = params.get("version")
+        params["build_ids"] = params.get("build")
+        params["plugin_terms"] = params.get("plugin_term")
+        return params

@@ -55,12 +55,12 @@ class VersionsInfo(webapi.JsonServiceBase):
         }
 
         """
-        if "version" not in params or not params["version"]:
+        if "versions" not in params or not params["versions"]:
             return None
 
         products_list = []
         (versions_list, products_list) = VersionsInfo.parse_versions(
-                                                            params["version"],
+                                                            params["versions"],
                                                             products_list)
 
         if not versions_list:

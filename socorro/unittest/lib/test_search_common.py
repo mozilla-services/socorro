@@ -15,12 +15,12 @@ def test_get_parameters():
     Test SearchCommon.get_parameters()
     """
     # Empty params, only default values are returned
-    params = co.SearchCommon.get_parameters({})
+    params = co.get_parameters({})
     assert params, (
             "SearchCommon.get_parameters() returned something empty or null.")
     for i in params:
         typei = type(params[i])
-        if i == "from_date" or i == "to_date":
+        if i in ("from_date", "to_date", "build_from", "build_to"):
             assert typei is datetime, (
                         "The parameter %s is of a non expected type %s, "
                         "should be datetime" % (i, typei))
@@ -31,29 +31,29 @@ def test_get_parameters():
                         (i, typei))
 
     # Empty params
-    params = co.SearchCommon.get_parameters({
-        "for": "",
-        "in": "",
-        "product": "",
-        "from": "",
-        "to": "",
-        "version": "",
-        "reason": "",
+    params = co.get_parameters({
+        "terms": "",
+        "fields": "",
+        "products": "",
+        "from_date": "",
+        "to_date": "",
+        "versions": "",
+        "reasons": "",
         "os": "",
         "branches": "",
         "search_mode": "",
-        "build": "",
+        "build_ids": "",
         "report_process": "",
         "report_type": "",
         "plugin_in": "",
         "plugin_search_mode": "",
-        "plugin_term": ""
+        "plugin_terms": ""
     })
     assert params, (
             "SearchCommon.get_parameters() returned something empty or null.")
     for i in params:
         typei = type(params[i])
-        if i == "from_date" or i == "to_date":
+        if i in ("from_date", "to_date", "build_from", "build_to"):
             assert typei is datetime, (
                         "The parameter %s is of a non expected type %s, "
                         "should be datetime" % (i, typei))
@@ -71,28 +71,28 @@ def test_restrict_fields():
     fields = ["signatute", "signature", "123456sfdgerw&$%#&", "dump",
               None, "dump"]
     theoric_fields = ["signature", "dump"]
-    restricted_fields = co.SearchCommon.restrict_fields(fields)
+    restricted_fields = co.restrict_fields(fields)
     assert restricted_fields == theoric_fields, (
                 "Restricted fields expected %s, received %s" %
                 (theoric_fields, restricted_fields))
 
     fields = []
     theoric_fields = "signature"
-    restricted_fields = co.SearchCommon.restrict_fields(fields)
+    restricted_fields = co.restrict_fields(fields)
     assert restricted_fields == theoric_fields, (
                 "Restricted fields expected %s, received %s" %
                 (theoric_fields, restricted_fields))
 
     fields = None
     theoric_fields = "signature"
-    restricted_fields = co.SearchCommon.restrict_fields(fields)
+    restricted_fields = co.restrict_fields(fields)
     assert restricted_fields == theoric_fields, (
                 "Restricted fields expected %s, received %s" %
                 (theoric_fields, restricted_fields))
 
     fields = ["nothing"]
     theoric_fields = "signature"
-    restricted_fields = co.SearchCommon.restrict_fields(fields)
+    restricted_fields = co.restrict_fields(fields)
     assert restricted_fields == theoric_fields, (
                 "Restricted fields expected %s, received %s" %
                 (theoric_fields, restricted_fields))

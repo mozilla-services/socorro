@@ -6,19 +6,21 @@ import socorro.lib.util as util
 logger = logging.getLogger("webapi")
 
 
-class PostgreSQLCommon(object):
+class PostgreSQLBase(object):
 
     """
     Base class for PostgreSQL based service implementations.
     """
 
-    def __init__(self, config):
+    def __init__(self, **kwargs):
         """
         Default constructor
         """
-        super(PostgreSQLCommon, self).__init__(config)
+        super(PostgreSQLBase, self).__init__()
+
+        self.context = kwargs.get("config")
         try:
-            self.database = db.Database(config)
+            self.database = db.Database(self.context)
         except (AttributeError, KeyError):
             util.reportExceptionAndContinue(logger)
 
@@ -33,9 +35,9 @@ class PostgreSQLCommon(object):
         and value.
 
         """
-        if type(array) is list:
+        if isinstance(array, list):
             array.append(value)
-        elif array == "_all" or array == None:
+        elif array is None:
             array = value
         elif array != value:
             array = [array, value]
@@ -48,21 +50,21 @@ class PostgreSQLCommon(object):
         and products.
         """
         versions = []
-        if type(versions_list) is list:
+        if isinstance(versions_list, list):
             for v in versions_list:
                 if v.find(":") > -1:
                     pv = v.split(":")
-                    versions = PostgreSQLCommon.append_to_var(pv[0], versions)
-                    versions = PostgreSQLCommon.append_to_var(pv[1], versions)
+                    versions = PostgreSQLBase.append_to_var(pv[0], versions)
+                    versions = PostgreSQLBase.append_to_var(pv[1], versions)
                 else:
-                    products = PostgreSQLCommon.append_to_var(v, products)
-        elif versions_list != "_all":
+                    products = PostgreSQLBase.append_to_var(v, products)
+        elif versions_list:
             if versions_list.find(":") > -1:
                 pv = versions_list.split(":")
-                versions = PostgreSQLCommon.append_to_var(pv[0], versions)
-                versions = PostgreSQLCommon.append_to_var(pv[1], versions)
+                versions = PostgreSQLBase.append_to_var(pv[0], versions)
+                versions = PostgreSQLBase.append_to_var(pv[1], versions)
             else:
-                products = PostgreSQLCommon.append_to_var(versions_list,
+                products = PostgreSQLBase.append_to_var(versions_list,
                                                           products)
 
         return (versions, products)

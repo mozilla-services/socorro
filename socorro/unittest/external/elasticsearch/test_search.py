@@ -1,6 +1,7 @@
 import unittest
 
 from socorro.external.elasticsearch.search import Search
+
 import socorro.lib.util as util
 import socorro.unittest.testlib.util as tutil
 
@@ -54,8 +55,7 @@ def test_get_signatures():
     }
     size = 3
     expected = ["hang", "js", "ws"]
-    signatures = Search.get_signatures(facets, size,
-                                                    context.platforms)
+    signatures = Search.get_signatures(facets, size, context.platforms)
     res_signs = []
     for sign in signatures:
         assert sign["signature"] in expected, (
@@ -117,8 +117,7 @@ def test_get_counts():
             "count": 0
         }
     }
-    res = Search.get_counts(signatures, count_sign, 0, 2,
-                                         context.platforms)
+    res = Search.get_counts(signatures, count_sign, 0, 2, context.platforms)
 
     assert type(res) is list, "Not a list"
     for sign in res:
@@ -130,53 +129,3 @@ def test_get_counts():
 
     assert "is_linux" in res[0], "no linux"
     assert "is_linux" not in res[1], "need no linux"
-
-
-def test_prepare_terms():
-    """
-    Test Search.prepare_terms()
-    """
-    # Empty terms
-    terms = ""
-    search_mode = None
-    newterms = Search.prepare_terms(terms, search_mode)
-    assert not newterms, "Terms are %s, null or empty expected." % newterms
-
-    # Contains mode, single term
-    terms = "test"
-    search_mode = "contains"
-    newterms = Search.prepare_terms(terms, search_mode)
-    assert newterms == terms.join(("*", "*")), (
-                "Terms are not well prepared, missing stars around: %s" %
-                newterms)
-
-    # Contains mode, multiple terms
-    terms = ["test", "hang"]
-    search_mode = "contains"
-    newterms = Search.prepare_terms(terms, search_mode)
-    assert newterms == "*test hang*", (
-                "Terms are not well prepared, missing stars around: %s" %
-                newterms)
-
-    # Starts with mode, multiple terms
-    terms = ["test", "hang"]
-    search_mode = "starts_with"
-    newterms = Search.prepare_terms(terms, search_mode)
-    assert newterms == "test hang*", (
-                "Terms are not well prepared, missing stars after: %s" %
-                newterms)
-
-    # Is exactly mode, multiple terms
-    terms = ["test", "hang"]
-    search_mode = "is_exactly"
-    newterms = Search.prepare_terms(terms, search_mode)
-    assert newterms == " ".join(terms), (
-                "Terms should be concatenated when using a is_exactly mode.")
-
-    # Random unexisting mode, multiple terms
-    terms = ["test", "hang"]
-    search_mode = "random_unexisting_mode"
-    newterms = Search.prepare_terms(terms, search_mode)
-    assert newterms == terms, (
-                "Terms should not be changed when using a mode other than "
-                "is_exactly, starts_with or contains.")
