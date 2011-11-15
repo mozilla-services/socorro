@@ -27,7 +27,6 @@ Contents:
    processor
    middleware
    ui
-   requirements
    uiinstallation
    uitroubleshooting
    server
