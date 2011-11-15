@@ -1,6 +1,6 @@
 
 
-<div class="panel daily_">
+<div class="panel daily_ content-wrap">
 	<div class="title">
 		<h2>Crashes per ADU</h2>
 		<div class="choices">

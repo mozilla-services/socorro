@@ -19,7 +19,7 @@
 <?php $stat = $server_stats[0] ?>
 
 
-<div class="panel">
+<div class="panel content-wrap">
     <div class="title">At a Glance</div>
     <div class="body">
         <table class="server_status">
@@ -59,7 +59,7 @@
     </div>
 </div>
 
-<div class="panel">
+<div class="panel content-wrap">
     <div class="title">Graphs</div>
     <div class="body">
 
@@ -103,7 +103,7 @@
 </div>
 
 
-<div class="panel">
+<div class="panel content-wrap">
     <div class="title">Latest Raw Stats</div>
     <div class="body">
 
