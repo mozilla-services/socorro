@@ -8,7 +8,7 @@
     <!--[if IE]><?php echo html::script('js/flot-0.7/excanvas.pack.js') ?><![endif]-->
 
     <?php 
-        $sigParams = array('duration' => 7, 'signature' => $params['signature']);
+        $sigParams = array('range_value' => $params['range_value'], 'range_unit' => $params['range_unit'], 'signature' => $params['signature']);
         $data_url = url::site('signature_summary/json_data') . '?' . html::query_string($sigParams) 
     ?>
     
@@ -100,7 +100,7 @@ foreach($options[$type] as $k => $readable) {
     </ul>
     
     <div id="sigsummary">
-        <?php View::factory('signature_summary/index', array('duration' => 7, 'signature' => $params['signature']))->render(TRUE) ?>
+        <?php View::factory('signature_summary/index', array('range_unit' => $type, 'range_value' => $current, 'signature' => $params['signature']))->render(TRUE) ?>
     </div>
     
     <div id="graph">
