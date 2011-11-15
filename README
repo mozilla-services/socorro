@@ -1,9 +1,8 @@
 Socorro
 A server for collecting, processing, and displaying crash reports from
-clients using the Breakpad libraries.
+clients using the Breakpad libraries - http://code.google.com/p/google-breakpad/
 
-https://github.com/mozilla/socorro
-http://code.google.com/p/google-breakpad/
+See http://socorro.readthedocs.org/en/latest/installation.html for installation instructions.
 
 Socorro mailing list:
 https://lists.mozilla.org/listinfo/tools-socorro
@@ -11,4 +10,5 @@ https://lists.mozilla.org/listinfo/tools-socorro
 Socorro/Breakpad IRC channel:
 irc://irc.mozilla.org/breakpad
 
-See the INSTALL file for installation instructions.
+You can find the Socorro documentation online at http://socorro.readthedocs.org
+The documentation source is in ./docs/

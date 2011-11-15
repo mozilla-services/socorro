@@ -1,31 +1,43 @@
+.. index:: installation
+
+.. _installation-chapter:
+
+Installation
+============
+
 Requirements:
+------------
 * Linux (tested on Ubuntu Lucid and RHEL/CentOS 6)
+
 * HBase (Cloudera CDH3)
+
 * PostgreSQL 9.0
+
 * Python 2.6
 
-These install instructions are a work-in-progress.
 
-KNOWN ISSUES
----
-* aggregate reports (top crashers, etc) do not work without existing data
-** https://bugzilla.mozilla.org/show_bug.cgi?id=653362
+Socorro VM (built with Vagrant + Puppet)
+------------
 
 You can build a standalone Socorro development VM -
-see the vagrant/README file for more info. The config files
-and puppet manifests in vagrant/ can be a useful reference
+see https://github.com/rhelmer/socorro-vagrant/ for more info. 
+
+The config files and puppet manifests in vagrant/ can be a useful reference
 when setting up Socorro for the first time, too.
 
 Ubuntu
----
-  Add PostgreSQL 9.0 PPA from https://launchpad.net/~pitti/+archive/postgresql
-  Add Cloudera apt source from https://ccp.cloudera.com/display/CDHDOC/CDH3+Installation#CDH3Installation-InstallingCDH3onUbuntuSystems
+------------
+1) Add PostgreSQL 9.0 PPA from https://launchpad.net/~pitti/+archive/postgresql
+2) Add Cloudera apt source from https://ccp.cloudera.com/display/CDHDOC/CDH3+Installation#CDH3Installation-InstallingCDH3onUbuntuSystems
+3) Install dependencies
 
+Using apt-get:
+::
   apt-get install supervisor rsyslog libcurl4-openssl-dev build-essential sun-java6-jdk ant python-software-properties subversion libpq-dev python-virtualenv python-dev libcrypt-ssleay-perl phpunit php5-tidy python-psycopg2 python-simplejson apache2 libapache2-mod-wsgi memcached php5-pgsql php5-curl php5-dev php-pear php5-common php5-cli php5-memcache php5 php5-gd php5-mysql php5-ldap hadoop-hbase hadoop-hbase-master hadoop-hbase-thrift curl liblzo2-dev postgresql-9.0 postgresql-plperl-9.0 postgresql-contrib
 
 RHEL/Centos
----
-Do not use "easy install", suggest "text install"
+------------
+Use "text install"
 Choose "minimal" as install option.
 
 Add Cloudera yum repo from https://ccp.cloudera.com/display/CDHDOC/CDH3+Installation#CDH3Installation-InstallingCDH3onRedHatSystems
@@ -34,27 +46,31 @@ Add PostgreSQL 9.0 yum repo from http://www.postgresql.org/download/linux#yum
 Install Sun Java JDK version JDK 6u16
   Download appropriate package from http://www.oracle.com/technetwork/java/javase/downloads/index.html
 
-yum install python-psycopg2 simplejson httpd mod_ssl mod_wsgi postgresql-server postgresql-plperl perl-pgsql_perl5 postgresql-contrib subversion make rsync php-pecl-memcache memcached php-pgsql subversion gcc-c++ curl-devel ant python-virtualenv php-phpunit-PHPUnit hadoop-0.20 hadoop-hbase
+Install dependencies using YUM:
+::
+  yum install python-psycopg2 simplejson httpd mod_ssl mod_wsgi postgresql-server postgresql-plperl perl-pgsql_perl5 postgresql-contrib subversion make rsync php-pecl-memcache memcached php-pgsql subversion gcc-c++ curl-devel ant python-virtualenv php-phpunit-PHPUnit hadoop-0.20 hadoop-hbase
 
 Disable SELinux:
   Edit /etc/sysconfig/selinux and set "SELINUX=disabled"
 
 Reboot
+::
   shutdown -r now
 
 PostgreSQL Config
----
+------------
 RHEL/CentOS - Initialize and enable on startup (not needed for Ubuntu):
+::
   service postgresql initdb
   service postgresql start
   chkconfig postgresql on
 
-Edit /var/lib/pgsql/data/pg_hba.conf
-Change IPv4/IPv6 connection from "ident" to "md5"
-Edit /var/lib/pgsql/data/postgresql.conf
-Uncomment # listen_addresses = 'localhost'
+Edit /var/lib/pgsql/data/pg_hba.conf and change IPv4/IPv6 connection from "ident" to "md5"
+
+Edit /var/lib/pgsql/data/postgresql.conf and uncomment # listen_addresses = 'localhost'
 
 Create databases
+::
   su - postgres
   psql
   postgres=# CREATE DATABASE breakpad;
@@ -87,18 +103,23 @@ Create databases
   psql -d breakpad -f /usr/share/pgsql/contrib/citext.sql
 
 Download and install Socorro
----
+------------
 Clone from github
+::
   git clone https://github.com/mozilla/socorro
   cd socorro
   cp scripts/config/commonconfig.py.dist scripts/config/commonconfig.py
+
 Edit scripts/config/commonconfig.py
+::
   databaseName.default = 'breakpad'
   databaseUserName.default = 'breakpad_rw'
   databasePassword.default = 'secret'
 
-Load PostgrSQL Schema
----
+Load PostgreSQL Schema
+------------
+From inside the Socorro checkout:
+::
   cp scripts/config/setupdatabaseconfig.py.dist scripts/config/setupdatabaseconfig.py
   export PYTHONPATH=.:thirdparty
   export PGPASSWORD="aPassword"
@@ -108,12 +129,15 @@ Load PostgrSQL Schema
   python scripts/createPartitions.py
 
 Run unit/functional tests, and generate report
----
+------------
+From inside the Socorro checkout:
+::
   make coverage
 
 Install Socorro
----
+------------
 Set up directories and permissions
+::
   mkdir /etc/socorro
   mkdir /var/log/socorro
   mkdir -p /data/socorro
@@ -121,17 +145,33 @@ Set up directories and permissions
   chown socorro:socorro /var/log/socorro
   mkdir /home/socorro/primaryCrashStore /home/socorro/fallback
 Note - use www-data instead of apache for debian/ubuntu
+::
   chown apache /home/socorro/primaryCrashStore /home/socorro/fallback
   chmod 2775 /home/socorro/primaryCrashStore /home/socorro/fallback
 
 Compile minidump_stackwalk
+::
   make minidump_stackwalk
 
 Install socorro
+------------
+From inside the Socorro checkout:
+::
   make install
 
+Configure Socorro 
+------------
+* Start configuration with :ref:`commonconfig-chapter`
+* On the machine(s) to run collector, setup :ref:`collector-chapter`
+* On the machine to run monitor, setup :ref:`monitor-chapter`
+* On same machine that runs monitor, setup :ref:`deferredcleanup-chapter`
+* On the machine(s) to run processor, setup :ref:`processor-chapter`
+
 Install startup scripts
-  RHEL/CentOS only (Ubuntu TODO - see vagrant/ for supervisord example)
+RHEL/CentOS only (Ubuntu TODO - see vagrant/ for supervisord example)
+------------
+From inside the Socorro checkout:
+::
     ln -s /data/socorro/application/scripts/init.d/socorro-{monitor,processor,crashmover} /etc/init.d/
     chkconfig socorro-monitor on
     chkconfig socorro-processor on
@@ -142,67 +182,85 @@ Install startup scripts
     chkconfig memcached on
 
 Install Socorro cron jobs
+------------
+From inside the Socorro checkout:
+::
   ln -s /data/socorro/application/scripts/crons/socorrorc /etc/socorro/
   crontab /data/socorro/application/scripts/crons/example.crontab
 
 Configure Apache
+------------
+From inside the Socorro checkout:
+::
   edit /etc/httpd/conf.d/socorro.conf
   cp config/socorro.conf /etc/httpd/conf.d/socorro.conf
   mkdir /var/log/httpd/{crash-stats,crash-reports,socorro-api}.example.com
 Note - use www-data instead of apache for debian/ubuntu
+::
   chown apache /data/socorro/htdocs/application/logs/
 
-Enable PHP short_open_tag
-  edit /etc/php.ini
-  Make the following changes:
-    short_open_tag = On
-    date.timezone = 'America/Los_Angeles'
+Enable PHP short_open_tag:
+------------
+edit /etc/php.ini and make the following changes:
+::
+  short_open_tag = On
+  date.timezone = 'America/Los_Angeles'
 
 Configure Kohana (PHP/web UI)
-  Refer to https://wiki.mozilla.org/Socorro/SocorroUI/Installation (deprecated as of 2.2, new docs TODO)
-  Edit /data/socorro/htdocs/application/config/*.php
+------------
+Refer to :ref:`uiinstallation-chapter` (deprecated as of 2.2, new docs TODO)
+
+Edit /data/socorro/htdocs/application/config/`*`.php
 
 Hadoop+HBase install
----
-  Configure Hadoop 0.20 + HBase 0.89
-    Refer to https://ccp.cloudera.com/display/CDHDOC/HBase+Installation
+------------
+Configure Hadoop 0.20 + HBase 0.89
+  Refer to https://ccp.cloudera.com/display/CDHDOC/HBase+Installation
 
 Note - you can start with a standalone setup, but read all of the above for info on a real, distributed setup!
 
-  RHEL/CentOS only (not needed for Ubuntu)
-    Install startup scripts
-      service hadoop-hbase-master start
-      chkconfig hadoop-hbase-master on
-      service hadoop-hbase-thrift start
-      chkconfig hadoop-hbase-thrift on
+RHEL/CentOS only (not needed for Ubuntu)
+Install startup scripts
+::
+  service hadoop-hbase-master start
+  chkconfig hadoop-hbase-master on
+  service hadoop-hbase-thrift start
+  chkconfig hadoop-hbase-thrift on
 
 Load Hbase schema
----
-  FIXME this skips LZO suport, remove the "sed" command if you have it installed
+------------
+FIXME this skips LZO suport, remove the "sed" command if you have it installed
+::
   cat analysis/hbase_schema | sed 's/LZO/NONE/g' | hbase shell
 
 System Test
----
-  Generate a test crash
-    Install http://code.google.com/p/crashme/ add-on for Firefox
-    Point your Firefox install at http://crash-reports/submit
-      https://developer.mozilla.org/en/Environment_variables_affecting_crash_reporting
+------------
+Generate a test crash:
+1) Install http://code.google.com/p/crashme/ add-on for Firefox
+2) Point your Firefox install at http://crash-reports/submit
+
+See: https://developer.mozilla.org/en/Environment_variables_affecting_crash_reporting
+
+If you already have a crash available and wish to submit it, you can
+use the standalone submitter tool:
+
+In a Socorro checkout
+::
+  virtualenv socorro-virtualenv
+  . socorro-virtualenv/bin/activate
+  pip install poster
+  cp scripts/config/submitterconfig.py.dist scripts/config/submitterconfig.py
+  export PYTHONPATH=.:thirdparty
+  python scripts/submitter.py -u https://crash-reports-dev.allizom.org/submit -j ~/Downloads/1c11af84-3fb7-4196-a864-cf0622110911.json -d ~/Downloads/1c11af84-3fb7-4196-a864-cf0622110911.dump
  
-  If you already have a crash available and wish to submit it, you can
-  use the standalone submitter tool:
+Check syslog logs for user.*, should see the CrashID returned being collected
 
-  In a Socorro checkout
-    virtualenv socorro-virtualenv
-    . socorro-virtualenv/bin/activate
-    pip install poster
-    cp scripts/config/submitterconfig.py.dist scripts/config/submitterconfig.py
-    export PYTHONPATH=.:thirdparty
-    python scripts/submitter.py -u https://crash-reports-dev.allizom.org/submit -j ~/Downloads/1c11af84-3fb7-4196-a864-cf0622110911.json -d ~/Downloads/1c11af84-3fb7-4196-a864-cf0622110911.dump
-  
-  Check syslog logs for user.*, should see the CrashID returned being collected
+Attempt to pull up the newly inserted crash: https://crash-stats/report/index/0f3f3360-40a6-4188-8659-b2a5c2110808
 
-  Attempt to pull up the newly inserted crash:
-    https://crash-stats.mozilla.com/report/index/0f3f3360-40a6-4188-8659-b2a5c2110808
+The (syslog user.*) logs should show this new crash being inserted for priority processing, 
+and it should be available shortly thereafter.
 
-  The logs should show this new crash being inserted for priority processing, 
-  and it should be available shortly thereafter.
+Known Issues
+------------
+* aggregate reports (top crashers, etc) do not work without existing data https://bugzilla.mozilla.org/show_bug.cgi?id=653362
+
