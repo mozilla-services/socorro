@@ -11,7 +11,7 @@ class Signature_Summary_Controller extends Controller {
 
     public function index()
     {
-        $d = array('signature' => '', 'duration' => '7',);
+        $d = array('signature' => '', 'range_value' => '7', 'range_unit' => 'days');
         $params = $this->getRequestParameters($d);
         $signature = $params['signature'];
         $duration = $params['duration'];
@@ -19,7 +19,7 @@ class Signature_Summary_Controller extends Controller {
             Event::run('system.404');
         }
          
-        $urlParams = array('signature' => $signature, 'duration' => $duration);
+        $urlParams = array('signature' => $signature, 'range_value' => $range_value, 'range_unit' => $range_unit,);
         $this->setViewData(array(
             'signature' => $signature,
             'duration' => $duration,
@@ -30,12 +30,13 @@ class Signature_Summary_Controller extends Controller {
 
     public function json_data()
     {
-        $d = array('signature' => '', 'duration' => '',);
+        $d = array('signature' => '', 'range_value' => '7', 'range_unit' => 'days',);
         $params = $this->getRequestParameters($d);
         $signature = $params['signature'];
-        $duration = (int)$params['duration'];
+        $range_value = (int)$params['range_value'];
+        $range_unit = $params['range_unit'];
         $end = date('Y-m-d');
-        $start = date('Y-m-d', strtotime("Today - $duration day"));
+        $start = date('Y-m-d', strtotime("Today - $range_value $range_unit"));
 
         $uptime = $this->summary_model->getUptimeCounts($signature, $start, $end);
         $products = $this->summary_model->getProductCounts($signature, $start, $end);
