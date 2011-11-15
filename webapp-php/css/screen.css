@@ -448,16 +448,18 @@ html.production .page-footer { margin-top: 80px; }
 			background: #60A0C0;
 			color: #fff;
 			}
-
+/* set to inline-block to ensure it always wraps it's contents */
 .panel {
-	color: #303030;
-        -webkit-box-shaow: 0 1px 5px -1px #888;
-        -moz-box-shadow: 0 1px 5px -1px #888;
-        box-shadow: 0 1px 5px -1px #888;
-        -webkit-border-radius: 8px;
-        -moz-border-radius: 8px;
-        border-radius: 8px;
-	}
+    display: inline-block;
+    color: #303030;
+    min-width: 1024px;
+    -webkit-box-shaow: 0 1px 5px -1px #888;
+    -moz-box-shadow: 0 1px 5px -1px #888;
+    box-shadow: 0 1px 5px -1px #888;
+    -webkit-border-radius: 8px;
+    -moz-border-radius: 8px;
+    border-radius: 8px;
+}
 	.panel .title {
 		background-color: #f0f0f0;
 		background-image: url(../img/2.0/panel-bg.png);
@@ -1036,7 +1038,6 @@ tr{ z-index: 50; }
 .correlation-preview {
     display: block;
     overflow: hidden;
-    white-space: nowrap;
 }
 .correlation-popup {
     position: absolute;
