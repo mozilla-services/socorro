@@ -70,3 +70,24 @@ you configure in webapp-php/application/config/webserviceclient.php
 This will use whichever database you configured in commonconfig.py
 
 
+Pulling crash reports from production
+----------------
+If you have imported a database from a production instance, you may want
+to pull individual crash reports from production (so URLs such as https://crash-stats.mozilla.com/report/index/0f3f3360-40a6-4188-8659-b2a5c2110808 work). 
+
+The /report/index page actually pulls it's data from a URL such as:
+https://crash-stats.mozilla.com/dumps/0f3f3360-40a6-4188-8659-b2a5c2110808.jsonz
+
+You can simply point your dev instance to production by modifying:
+::
+  webapp-php/application/config/application.php
+
+Change the URL in this config value to point to your desired production instance:
+
+.. code-block:: php
+
+  <?php
+  $config['crash_dump_local_url'] = 'http://crash-stats/dumps/%1$s.jsonz';
+  ?>
+
+See https://github.com/mozilla/socorro/blob/master/webapp-php/application/config/application.php-dist 
