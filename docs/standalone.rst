@@ -47,6 +47,7 @@ Install and configure UI
 
 2) configure webapp (also see :ref:`uiinstallation-chapter` and :ref:`uitroubleshooting-chapter`)
 ::
+  cd ~/public_html
   cp htaccess-dist .htaccess
   pushd webapp-php/application/config/
   for file in *.php-dist; do cp $file `basename $file -dist`; done
