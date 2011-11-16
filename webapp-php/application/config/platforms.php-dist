@@ -14,10 +14,4 @@ $config['lin_id'] = "linux";
 $config['lin_name'] = "Linux";
 $config['lin_os_name'] = "Linux";
 $config['lin_color'] = "#E50";
-
-
-$config['sol_id'] = "solaris";
-$config['sol_name'] = "Solaris";
-$config['sol_os_name'] = "Solaris";
-$config['sol_color'] = "#40A";
 ?>

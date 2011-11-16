@@ -361,9 +361,9 @@ class PostgresAPI(sapi.SearchAPI):
         # Transforming the results into what we want
         for crash in results:
             if report_process == "plugin":
-                row = dict( zip( ("signature", "count", "is_windows", "is_mac", "is_linux", "is_solaris", "numhang", "numplugin", "pluginname", "pluginversion", "pluginfilename"), crash ) )
+                row = dict( zip( ("signature", "count", "is_windows", "is_mac", "is_linux", "numhang", "numplugin", "pluginname", "pluginversion", "pluginfilename"), crash ) )
             else:
-                row = dict( zip( ("signature", "count", "is_windows", "is_mac", "is_linux", "is_solaris", "numhang", "numplugin"), crash ) )
+                row = dict( zip( ("signature", "count", "is_windows", "is_mac", "is_linux", "numhang", "numplugin"), crash ) )
             json_result["hits"].append(row)
 
         self.connection.close()
