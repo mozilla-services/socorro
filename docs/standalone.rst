@@ -41,8 +41,10 @@ Setting up
 Install and configure UI
 ----------------
 
-1) copy contents of webapp-php/ to HTDOCS area
+1) symlink webapp-php/ to HTDOCS area
 ::
+  mv ~/public_html ~/public_html.old
+  ln -s ./webapp-php ~/public_html
   rsync -av ./webapp-php/ ~/public_html/
 
 2) configure webapp (also see :ref:`uiinstallation-chapter` and :ref:`uitroubleshooting-chapter`)
