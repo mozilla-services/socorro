@@ -23,42 +23,12 @@ versions.
   need for branch support, just enter "1.0" as the branch number for
   your product / version.
 
-To start, add a product and version to your database. To enter your
-first product into the database, simply write an Insert statement for
-your database, such as::
-
- INSERT INTO productdims (product, version, branch)
- VALUES ('Firefox', '3.6.5', '2.0');
-
-Then add an entry to the product_visibility table, which will depict
-the date range for which your product is valid.::
-
- INSERT INTO product_visibility (productdims_id, start_date, end_date, featured)
- VALUES (1, '2010-11-05', '2011-02-05', true);
-
-Create the sessions table for Kohana::
-
- CREATE TABLE sessions (
-   session_id varchar(127) NOT NULL,
-   last_activity integer NOT NULL,
-   data text NOT NULL,
-   CONSTRAINT session_id_pkey PRIMARY KEY (session_id),
-   CONSTRAINT last_activity_check CHECK (last_activity >= 0)
- );
-
 Apache
 ------
 
 Set up Apache with a vhost as you see fit. You will either need
 AllowOverride to enable .htaccess files or you may paste the .htaccess
 rules into your vhost.
-
-Subversion Checkout
--------------------
-
-Check out the code and place it in your DocumentRoot::
-
- svn checkout http://socorro.googlecode.com/svn/trunk/webapp-php /data/www/mycrashreporter
 
 KohanaPHP Installation
 ----------------------

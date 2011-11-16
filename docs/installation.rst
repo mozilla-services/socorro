@@ -223,10 +223,6 @@ Configure Kohana (PHP/web UI)
 ------------
 Refer to :ref:`uiinstallation-chapter` (deprecated as of 2.2, new docs TODO)
 
-As *root*:
-
-edit /data/socorro/htdocs/application/config/`*`.php and customize
-
 Hadoop+HBase install
 ------------
 Configure Hadoop 0.20 + HBase 0.89
