@@ -29,9 +29,9 @@ Ubuntu
 ------------
 1) Add PostgreSQL 9.0 PPA from https://launchpad.net/~pitti/+archive/postgresql
 2) Add Cloudera apt source from https://ccp.cloudera.com/display/CDHDOC/CDH3+Installation#CDH3Installation-InstallingCDH3onUbuntuSystems
-3) Install dependencies
+3) Install dependencies using apt-get
 
-Using apt-get:
+As *root*:
 ::
   apt-get install supervisor rsyslog libcurl4-openssl-dev build-essential sun-java6-jdk ant python-software-properties subversion libpq-dev python-virtualenv python-dev libcrypt-ssleay-perl phpunit php5-tidy python-psycopg2 python-simplejson apache2 libapache2-mod-wsgi memcached php5-pgsql php5-curl php5-dev php-pear php5-common php5-cli php5-memcache php5 php5-gd php5-mysql php5-ldap hadoop-hbase hadoop-hbase-master hadoop-hbase-thrift curl liblzo2-dev postgresql-9.0 postgresql-plperl-9.0 postgresql-contrib
 
@@ -40,36 +40,43 @@ RHEL/Centos
 Use "text install"
 Choose "minimal" as install option.
 
-Add Cloudera yum repo from https://ccp.cloudera.com/display/CDHDOC/CDH3+Installation#CDH3Installation-InstallingCDH3onRedHatSystems
-Add PostgreSQL 9.0 yum repo from http://www.postgresql.org/download/linux#yum
+1) Add Cloudera yum repo from https://ccp.cloudera.com/display/CDHDOC/CDH3+Installation#CDH3Installation-InstallingCDH3onRedHatSystems
+2) Add PostgreSQL 9.0 yum repo from http://www.postgresql.org/download/linux#yum
+3) Install Sun Java JDK version JDK 6u16 - Download appropriate package from http://www.oracle.com/technetwork/java/javase/downloads/index.html
+4) Install dependencies using YUM:
 
-Install Sun Java JDK version JDK 6u16
-  Download appropriate package from http://www.oracle.com/technetwork/java/javase/downloads/index.html
-
-Install dependencies using YUM:
+As *root*:
 ::
   yum install python-psycopg2 simplejson httpd mod_ssl mod_wsgi postgresql-server postgresql-plperl perl-pgsql_perl5 postgresql-contrib subversion make rsync php-pecl-memcache memcached php-pgsql subversion gcc-c++ curl-devel ant python-virtualenv php-phpunit-PHPUnit hadoop-0.20 hadoop-hbase
 
-Disable SELinux:
+5) Disable SELinux
+
+As *root*:
   Edit /etc/sysconfig/selinux and set "SELINUX=disabled"
 
-Reboot
+6) Reboot
+
+As *root*:
 ::
   shutdown -r now
 
 PostgreSQL Config
 ------------
-RHEL/CentOS - Initialize and enable on startup (not needed for Ubuntu):
+RHEL/CentOS - Initialize and enable on startup (not needed for Ubuntu)
+
+As *root*:
 ::
   service postgresql initdb
   service postgresql start
   chkconfig postgresql on
 
-Edit /var/lib/pgsql/data/pg_hba.conf and change IPv4/IPv6 connection from "ident" to "md5"
+As *root*:
 
-Edit /var/lib/pgsql/data/postgresql.conf and uncomment # listen_addresses = 'localhost'
+* edit /var/lib/pgsql/data/pg_hba.conf and change IPv4/IPv6 connection from "ident" to "md5"
+* edit /var/lib/pgsql/data/postgresql.conf and uncomment # listen_addresses = 'localhost'
+* create databases
 
-Create databases
+As the *postgres* user:
 ::
   su - postgres
   psql
@@ -104,13 +111,15 @@ Create databases
 
 Download and install Socorro
 ------------
-Clone from github
+Clone from github, as the *socorro* user:
 ::
   git clone https://github.com/mozilla/socorro
   cd socorro
   cp scripts/config/commonconfig.py.dist scripts/config/commonconfig.py
 
 Edit scripts/config/commonconfig.py
+
+From inside the Socorro checkout, as the *socorro* user, change:
 ::
   databaseName.default = 'breakpad'
   databaseUserName.default = 'breakpad_rw'
@@ -118,7 +127,7 @@ Edit scripts/config/commonconfig.py
 
 Load PostgreSQL Schema
 ------------
-From inside the Socorro checkout:
+From inside the Socorro checkout, as the *socorro* user:
 ::
   cp scripts/config/setupdatabaseconfig.py.dist scripts/config/setupdatabaseconfig.py
   export PYTHONPATH=.:thirdparty
@@ -130,13 +139,13 @@ From inside the Socorro checkout:
 
 Run unit/functional tests, and generate report
 ------------
-From inside the Socorro checkout:
+From inside the Socorro checkout, as the *socorro* user:
 ::
   make coverage
 
-Install Socorro
-------------
 Set up directories and permissions
+------------
+As *root*:
 ::
   mkdir /etc/socorro
   mkdir /var/log/socorro
@@ -144,18 +153,20 @@ Set up directories and permissions
   useradd socorro
   chown socorro:socorro /var/log/socorro
   mkdir /home/socorro/primaryCrashStore /home/socorro/fallback
-Note - use www-data instead of apache for debian/ubuntu
-::
   chown apache /home/socorro/primaryCrashStore /home/socorro/fallback
   chmod 2775 /home/socorro/primaryCrashStore /home/socorro/fallback
 
+Note - use www-data instead of apache for debian/ubuntu
+
 Compile minidump_stackwalk
+
+From inside the Socorro checkout, as the *socorro* user:
 ::
   make minidump_stackwalk
 
 Install socorro
 ------------
-From inside the Socorro checkout:
+From inside the Socorro checkout, as the *socorro* user:
 ::
   make install
 
@@ -170,7 +181,7 @@ Configure Socorro
 Install startup scripts
 RHEL/CentOS only (Ubuntu TODO - see vagrant/ for supervisord example)
 ------------
-From inside the Socorro checkout:
+As *root*:
 ::
     ln -s /data/socorro/application/scripts/init.d/socorro-{monitor,processor,crashmover} /etc/init.d/
     chkconfig socorro-monitor on
@@ -183,24 +194,26 @@ From inside the Socorro checkout:
 
 Install Socorro cron jobs
 ------------
-From inside the Socorro checkout:
+As *root*:
 ::
   ln -s /data/socorro/application/scripts/crons/socorrorc /etc/socorro/
   crontab /data/socorro/application/scripts/crons/example.crontab
 
 Configure Apache
 ------------
-From inside the Socorro checkout:
+As *root*:
 ::
   edit /etc/httpd/conf.d/socorro.conf
   cp config/socorro.conf /etc/httpd/conf.d/socorro.conf
   mkdir /var/log/httpd/{crash-stats,crash-reports,socorro-api}.example.com
-Note - use www-data instead of apache for debian/ubuntu
-::
   chown apache /data/socorro/htdocs/application/logs/
+
+Note - use www-data instead of apache for debian/ubuntu
 
 Enable PHP short_open_tag:
 ------------
+As *root*:
+
 edit /etc/php.ini and make the following changes:
 ::
   short_open_tag = On
@@ -210,7 +223,9 @@ Configure Kohana (PHP/web UI)
 ------------
 Refer to :ref:`uiinstallation-chapter` (deprecated as of 2.2, new docs TODO)
 
-Edit /data/socorro/htdocs/application/config/`*`.php
+As *root*:
+
+edit /data/socorro/htdocs/application/config/`*`.php and customize
 
 Hadoop+HBase install
 ------------
@@ -221,6 +236,8 @@ Note - you can start with a standalone setup, but read all of the above for info
 
 RHEL/CentOS only (not needed for Ubuntu)
 Install startup scripts
+
+As *root*:
 ::
   service hadoop-hbase-master start
   chkconfig hadoop-hbase-master on
@@ -230,12 +247,15 @@ Install startup scripts
 Load Hbase schema
 ------------
 FIXME this skips LZO suport, remove the "sed" command if you have it installed
+
+From inside the Socorro checkout, as the *socorro* user:
 ::
   cat analysis/hbase_schema | sed 's/LZO/NONE/g' | hbase shell
 
 System Test
 ------------
 Generate a test crash:
+
 1) Install http://code.google.com/p/crashme/ add-on for Firefox
 2) Point your Firefox install at http://crash-reports/submit
 
@@ -244,7 +264,7 @@ See: https://developer.mozilla.org/en/Environment_variables_affecting_crash_repo
 If you already have a crash available and wish to submit it, you can
 use the standalone submitter tool:
 
-In a Socorro checkout
+From inside the Socorro checkout, as the *socorro* user:
 ::
   virtualenv socorro-virtualenv
   . socorro-virtualenv/bin/activate
@@ -257,10 +277,9 @@ Check syslog logs for user.*, should see the CrashID returned being collected
 
 Attempt to pull up the newly inserted crash: https://crash-stats/report/index/0f3f3360-40a6-4188-8659-b2a5c2110808
 
-The (syslog user.*) logs should show this new crash being inserted for priority processing, 
-and it should be available shortly thereafter.
+The (syslog "user" facility) logs should show this new crash being inserted for priority processing, and it should be available shortly thereafter.
 
 Known Issues
 ------------
-* aggregate reports (top crashers, etc) do not work without existing data https://bugzilla.mozilla.org/show_bug.cgi?id=653362
+* aggregate reports (top crashers, etc) do not work without existing data https://bugzilla.mozilla.org/show_bug.cgi?id=698943
 
