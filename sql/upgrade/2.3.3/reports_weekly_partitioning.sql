@@ -1,7 +1,9 @@
 create or replace function create_weekly_partition(
-	tablename text, theweek date, partcol text default 'date_processed', 
-	tableowner text default '', uniques text[] default '{}',
-	indexes text[] default '{}', fkeys text[] not null default '{}',
+	tablename citext, theweek date, partcol text default 'date_processed', 
+	tableowner text default '', 
+	uniques text[] default '{}',
+	indexes text[] default '{}', 
+	fkeys text[] default '{}',
 	is_utc BOOLEAN default false,
 	timetype text default 'TIMESTAMP' )
 returns boolean
@@ -34,8 +36,9 @@ BEGIN
 	
 	EXECUTE 'CREATE TABLE ' || thispart || ' ( CONSTRAINT ' || thispart 
 		|| '_date_check CHECK ( ' || partcol || ' BETWEEN ' 
-		|| timetype || ' ' || to_char(theweek, 'YYYY-MM-DD')
-		|| ' AND ' || timetype || ' ' || to_char(theweek + 7, 'YYYY-MM-DD')
+		|| timetype || ' ' || quote_literal(to_char(theweek, 'YYYY-MM-DD'))
+		|| ' AND ' || timetype || ' ' 
+		|| quote_literal(to_char(theweek + 7, 'YYYY-MM-DD'))
 		|| ' ) ) INHERITS ( ' || tablename || ');';
 	
 	IF tableowner <> '' THEN
@@ -45,7 +48,7 @@ BEGIN
 	dex := 1;
 	WHILE uniques[dex] IS NOT NULL LOOP
 		EXECUTE 'CREATE UNIQUE INDEX ' || thispart || '_'
-		|| regexp_replace(uniques[dex], $$[,\s]*$$, '_', 'g') 
+		|| regexp_replace(uniques[dex], $$[,\s]+$$, '_', 'g') 
 		|| ' ON ' || thispart || '(' || uniques[dex] || ')';
 		dex := dex + 1;
 	END LOOP;
@@ -53,7 +56,7 @@ BEGIN
 	dex := 1;
 	WHILE indexes[dex] IS NOT NULL LOOP
 		EXECUTE 'CREATE INDEX ' || thispart || '_' 
-		|| regexp_replace(indexes[dex], $$[,\s]*$$, '_', 'g') 
+		|| regexp_replace(indexes[dex], $$[,\s]+$$, '_', 'g') 
 		|| ' ON ' || thispart || '(' || indexes[dex] || ')';
 		dex := dex + 1;
 	END LOOP;
@@ -63,7 +66,7 @@ BEGIN
 		fkstring := regexp_replace(fkeys[dex], 'WEEKNUM', to_char(theweek, 'YYYYMMDD'), 'g');
 		EXECUTE 'ALTER TABLE ' || thispart || ' ADD CONSTRAINT ' 
 			|| thispart || '_fk_' || dex || ' FOREIGN KEY '
-			|| fkstring || ' ON DELETE CASCADE ON UPDATE CASCADE'
+			|| fkstring || ' ON DELETE CASCADE ON UPDATE CASCADE';
 		dex := dex + 1;
 	END LOOP;
 	
@@ -83,7 +86,7 @@ CREATE TABLE report_partition_info (
 
 INSERT INTO report_partition_info 
 VALUES ( 'reports', 1, ARRAY [ 'id', 'uuid' ], 
-	ARRAY [ 'date_processed', 'hangid', 'product,version', 'reason', 'signature','url' ], null ),
+	ARRAY [ 'date_processed', 'hangid', 'product,version', 'reason', 'signature','url' ], '{}' ),
 	( 'plugins_reports', 2, ARRAY [ 'report_id,plugin_id' ],
 	ARRAY [ 'report_id,date_processed' ],
 	ARRAY [ '(plugin_id) REFERENCES plugins(id)', '(report_id) REFERENCES reports_WEEKNUM(id)'] ),
@@ -116,12 +119,12 @@ BEGIN
 	targetdate := COALESCE(targetdate, now());
 	thisweek := date_trunc('week', targetdate)::date;
 	
-	WHILE weeknum < numweeks LOOP
-		WHILE tabinfo IN SELECT * FROM report_partition_info
+	WHILE weeknum <= numweeks LOOP
+		FOR tabinfo IN SELECT * FROM report_partition_info
 			ORDER BY build_order LOOP
 			
 			PERFORM create_weekly_partition ( 
-				tablename := tabinfo.tablename,
+				tablename := tabinfo.table_name,
 				theweek := thisweek,
 				uniques := tabinfo.keys,
 				indexes := tabinfo.indexes,

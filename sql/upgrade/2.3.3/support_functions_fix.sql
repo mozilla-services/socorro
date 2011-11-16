@@ -1,15 +1,7 @@
-\set ON_ERROR_STOP = 1
+\set ON_ERROR_STOP 1
 
 -- a large set of small functions which help with date calculations
 -- version string conversion, and similar tasks.
-
--- new domain major_version just checks that we don't have
--- garbage in this field
-
-create domain major_version AS text
-	CHECK ( VALUE ~ $x$^\d+\.\d+$x$ );
-
-alter domain major_version owner to breakpad_rw;
 
 create or replace function build_date (
 	build_id numeric )
@@ -25,7 +17,7 @@ returns major_version
 language sql immutable as $f$
 -- turns a version string into a major version
 -- i.e. "6.0a2" into "6.0"
-SELECT substring($1 from $x$^(\d+.\d+)$x$);
+SELECT substring($1 from $x$^(\d+.\d+)$x$)::major_version;
 $f$;
 
 create or replace function version_string(
@@ -163,22 +155,5 @@ SELECT CASE WHEN $1 ~ $x$^\d+$$x$ THEN
 	$1::numeric
 ELSE
 	NULL::numeric
-END;
+END;$f$;
 
-create or replace function plugin_count_state ( running_count int, process_type citext, crash_count int )
-returns int
-language sql
-immutable as $f$
--- allows us to do a plugn count horizontally
--- as well as vertically on tcbs
-SELECT CASE WHEN $2 = 'plugin' THEN
-  coalesce($3,0) + $1
-ELSE
-  $1
-END; $f$;
-
-CREATE AGGREGATE plugin_count(citext, int)(
-    SFUNC=plugin_count_state,
-    STYPE=int,
-    INITCOND=0
-);

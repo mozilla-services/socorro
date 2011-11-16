@@ -2,6 +2,22 @@
 
 DROP FUNCTION backfill_daily_crashes( date, text );
 
+-- update code-mapping function
+CREATE OR REPLACE FUNCTION daily_crash_code (
+	process_type text, hangid text )
+RETURNS char(1)
+LANGUAGE SQL
+IMMUTABLE AS $f$
+SELECT CASE
+	WHEN $1 ILIKE 'content' THEN 'T'
+	WHEN ( $1 IS NULL OR $1 ILIKE 'browser' ) AND $2 IS NULL THEN 'C'
+	WHEN ( $1 IS NULL OR $1 ILIKE 'browser' ) AND $2 IS NOT NULL THEN 'c'
+	WHEN $1 ILIKE 'plugin' AND $2 IS NULL THEN 'P'
+	WHEN $1 ILIKE 'plugin' AND $2 IS NOT NULL THEN 'p'
+	ELSE 'C'
+	END
+$f$;
+
 CREATE OR REPLACE FUNCTION backfill_daily_crashes (
 	updateday date )
 RETURNS BOOLEAN
@@ -9,7 +25,6 @@ LANGUAGE plpgsql
 SET work_mem = '512MB'
 SET temp_buffers = '512MB'
 AS $f$
-DECLARE myproduct CITEXT := forproduct::citext;
 BEGIN
 -- VERSION 4
 -- deletes and replaces daily_crashes for selected dates
@@ -74,7 +89,6 @@ WHERE NOT cfg.ignore AND
 		AND date_processed < utc_day_ends_pacific(updateday)
 	AND updateday BETWEEN cfg.start_date and cfg.end_date
     AND lower(substring(os_name, 1, 3)) IN ('win','lin','mac')
-    AND ( p.product = myproduct or myproduct = '' )
 GROUP BY p.id, crash_code, os_short_name;
 
  -- insert HANGS_NORMALIZED from old data
@@ -92,7 +106,6 @@ FROM (
 				AND updateday BETWEEN cfg.start_date and cfg.end_date
 				AND hangid IS NOT NULL
                 AND lower(substring(os_name, 1, 3)) IN ('win','lin','mac')
-                AND ( p.product = myproduct or myproduct = '' )
 		 ) AS subr
 GROUP BY subr.prod_id, subr.os_short_name;
 
@@ -106,19 +119,17 @@ FROM reports_clean JOIN product_versions USING (product_version_id)
 WHERE utc_day_is(date_processed, updateday)
 	AND updateday BETWEEN product_versions.build_date and sunset_date
     AND lower(substring(os_name, 1, 3)) IN ('win','lin','mac')
-    AND ( product_name = myproduct or myproduct = '' )
 GROUP BY product_version_id, crash_code, os_short_name;
 
 -- insert normalized hangs for new products
 INSERT INTO daily_crashes (count, report_type, productdims_id, os_short_name, adu_day)
-SELECT count(DISTINCT subr.hang_id) as count, 'H', 
+SELECT count(DISTINCT hang_id) as count, 'H', 
 	product_version_id, substring(os_name, 1, 3) AS os_short_name,
 	updateday
 FROM product_versions
 	JOIN reports_clean USING ( product_version_id )
 	WHERE utc_day_is(date_processed, updateday)
 		AND updateday BETWEEN product_versions.build_date and sunset_date
-		AND ( product_name = myproduct or myproduct = '' )
 		AND lower(substring(os_name, 1, 3)) IN ('win','lin','mac')
 GROUP BY product_version_id, os_short_name;
 

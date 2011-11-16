@@ -60,11 +60,11 @@ WHILE thisday <= lastday LOOP
 	DROP TABLE IF EXISTS new_signatures;
 	RAISE INFO 'hang report';
 	PERFORM backfill_hang_report(thisday);
-	RAISE INFO 'os-signature-counts'
+	RAISE INFO 'os-signature-counts';
 	PERFORM backfill_os_signature_counts(thisday);
-	RAISE INFO 'product-signature-counts'
+	RAISE INFO 'product-signature-counts';
 	PERFORM backfill_product_signature_counts(thisday);
-	RAISE INFO 'uptime-signature-counts'
+	RAISE INFO 'uptime-signature-counts';
 	PERFORM backfill_uptime_signature_counts(thisday);
 
 	thisday := thisday + 1;

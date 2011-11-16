@@ -24,8 +24,9 @@ create or replace function tstz_between(
 	tstz timestamp with time zone, bdate date, fdate date)
 returns boolean
 language sql
-immutable strict
+immutable
 as $f$
 SELECT $1 BETWEEN ( $2::timestamp AT TIME ZONE 'UTC' ) 
 	AND ( $3::timestamp AT TIME ZONE 'UTC' + INTERVAL '1 day' );
 $f$;
+

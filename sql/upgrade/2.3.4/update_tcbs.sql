@@ -44,7 +44,7 @@ SELECT signature_id, updateday, product_version_id,
 	sum(case when os_name = 'Linux' THEN 1 else 0 END),
     count(hang_id)
 FROM reports_clean
-	JOIN product_versions
+	JOIN product_versions USING (product_version_id)
 	WHERE utc_day_is(date_processed, updateday)
 		AND tstz_between(date_processed, build_date, sunset_date)
 GROUP BY signature_id, updateday, product_version_id,
