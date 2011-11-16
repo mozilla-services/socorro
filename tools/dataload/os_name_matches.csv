@@ -1,0 +1,4 @@
+os_name,match_string
+Windows,Windows%
+Mac OS X,Mac%
+Linux,Linux%
