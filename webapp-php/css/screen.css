@@ -776,7 +776,7 @@ span.push_right {
   background-color: #fff;
 }
 .list tr td {
-  padding:.2em;
+  padding:.5em;
   text-align:left;
 }
 .list td label {
@@ -799,6 +799,23 @@ span.push_right {
 }
 .record th {
   text-align: right;
+}
+.sig-overview,
+.sig-search {
+    background: transparent url(/img/icons/external.png) left top no-repeat;
+    display: inline-block;
+    color: #333;
+    margin-left: .5em;
+    padding-left: 17px;
+    font-size: 12px;
+    font-weight: bold;
+}
+.sig-overview:link,
+.sig-overview:visited,
+.sig-search:link, 
+.sig-search:visited {
+    color: #081C26;
+    text-decoration: none;
 }
 div.code {
   background-color: #eee;

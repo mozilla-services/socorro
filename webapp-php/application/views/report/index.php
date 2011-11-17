@@ -71,7 +71,11 @@ if (isset($report->sumo_signature) && !empty($report->signature)) { ?>
     <div id="details">
         <table class="list record">
             <tr>
-<th>Signature</th><td><?php out::H($report->signature) ?></td>
+<th>Signature</th>
+<td><?php out::H($report->signature) ?> 
+  <a href="/report/list?signature=<?php urlencode(out::H($report->signature)) ?>" class="sig-overview" title="View more reports of this type">More Reports</a> 
+  <a href="/query?advanced=1&amp;signature=<?php urlencode(out::H($report->signature)) ?>" class="sig-search" title="Search for more reports of this type">Search</a>
+</td>
             </tr>
             <tr>
                 <th>UUID</th><td><?php out::H($report->uuid) ?></td>
