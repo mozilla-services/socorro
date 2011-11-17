@@ -3,26 +3,20 @@
     Top <?php echo count($top_crashers) ?> Crashing Signatures.
     <span class="start-date"><?= $start ?></span> through
     <span class="end-date"><?= $last_updated ?></span>.
-	  The  report covers <span class="percentage" title="<?=$percentTotal?>"><?= number_format($percentTotal * 100, 2)?>%</span> of all <?= $percentTotal > 0 ? round($total_crashes / $percentTotal) : $total_crashes ?> crashes during this period. Graphs below are dual-axis, having <strong>Count</strong> (Number of Crashes) on the left X axis and <strong>Percent</strong> of total of Crashes on the right X axis.
+	<p>The report covers <span class="percentage" title="<?=$percentTotal?>"><?= number_format($percentTotal * 100, 2)?>%</span> of all <?= $percentTotal > 0 ? round($total_crashes / $percentTotal) : $total_crashes ?> crashes during this period. Graphs below are dual-axis, having <strong>Count</strong> (Number of Crashes) on the left X axis and <strong>Percent</strong> of total of Crashes on the right X axis.</p>
 
-	<div id="duration-nav">
-  	  <h3>Days:</h3>
-  	  <ul>
-	<?php foreach ($durations as $d) { ?>
-	    <li><a href="<?= $duration_url . '/' . $d . '/' . $crash_type; ?>"
-		  <?php if ($d == $duration) echo 'class="bold"'; ?>
-		><?= $d ?></a></li>
-	<?php }?>
-	</ul></div>
-	<div id="duration-nav">
-  	  <h3>Type:</h3>
-  	  <ul>
-	<?php foreach ($crash_types as $ct) { ?>
-	    <li><a href="<?= $crash_type_url . '/' . $ct ?>"
-		  <?php if ($ct == $crash_type) echo 'class="bold"'; ?>
-		><?php echo ucfirst($ct); ?></a></li>
-	<?php }?>
-	</ul></div>
+    <ul class="tc-duration-type">
+        <li class="tc-duration-heading">Type:</li>
+        <?php foreach ($crash_types as $ct) { ?>
+            <li><a href="<?= $crash_type_url . '/' . $ct ?>" <?php if ($ct == $crash_type) echo 'class="selected"'; ?>><?php echo ucfirst($ct); ?></a></li>
+        <?php }?>
+    </ul>
+    <ul class="tc-duration-days">
+        <li class="tc-duration-heading">Days:</li>
+        <?php foreach ($durations as $d) { ?>
+            <li><a href="<?= $duration_url . '/' . $d . '/' . $crash_type; ?>" <?php if ($d == $duration) echo 'class="selected"'; ?>><?= $d ?></a></li>
+        <?php }?>
+    </ul>
 
         <table id="signatureList" class="tablesorter">
             <thead>
