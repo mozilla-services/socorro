@@ -802,20 +802,19 @@ span.push_right {
 }
 .sig-overview,
 .sig-search {
+    background: transparent url(/img/icons/external.png) left top no-repeat;
     display: inline-block;
-    background-color: #081C26;
     color: #333;
     margin-left: .5em;
-    padding: .5em .7em .5em .7em;
-    border-radius: 6px;
+    padding-left: 17px;
     font-size: 12px;
-    box-shadow: 0 1px 2px #D8EA90;
+    font-weight: bold;
 }
 .sig-overview:link,
 .sig-overview:visited,
 .sig-search:link, 
 .sig-search:visited {
-    color: #fff;
+    color: #081C26;
     text-decoration: none;
 }
 div.code {
