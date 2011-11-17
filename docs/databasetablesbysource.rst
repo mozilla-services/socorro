@@ -5,7 +5,7 @@
 PostgreSQL Database Tables by Data Source
 =========================================
 
-Last updated: 2011-11-11
+Last updated: 2011-11-15
 
 This document breaks down the tables in the Socorro PostgreSQL database by where their data comes from, rather than by what the table contains.  This is a prerequisite to populating a brand-new socorro database or creating synthetic testing workloads.
 
@@ -47,39 +47,67 @@ reports
 Automatically Populated Reference Tables
 ========================================
 
-Lookup lists and dimension tables, populated by cron jobs and/or processors based on the above tables. 
+Lookup lists and dimension tables, populated by cron jobs and/or processors based on the above tables.  Most are annotated with the job or process which populates them.  Where the populating process is marked with an @, that indicates a job which is due to be phased out.
 
-* addresses
-* domains
-* flash_versions
-* os_versions
-* plugins
-* product_version_builds
-* product_versions
-* reasons
-* reports_bad
-* signatures
+addresses
+  cron job, part of update_reports_clean based on reports
+domains
+  cron job, part of update_reports_clean based on reports
+flash_versions
+  cron job, part of update_reports_clean based on reports
+os_versions
+  cron job, update_os_versions based on reports@
+  cron job, update_reports_clean based on reports
+plugins
+  populated by processors based on crash data
+product_version_builds
+  cron job, update_product_versions, based on releases_raw
+product_versions
+  cron job, update_product_versions, based on releases_raw
+reasons
+  cron job, update_reports_clean, based on reports
+reports_bad
+  cron job, update_reports_clean, based on reports
+  future cron job to delete data from this table
+signatures
+  cron job, update_signatures, based on reports@
+  cron job, update_reports_clean, based on reports
 
 Matviews
 ========
 
-Reporting tables, designed to be called directly by the mware/UI/reports.  Populated by cron job batch.
+Reporting tables, designed to be called directly by the mware/UI/reports.  Populated by cron job batch.  Where populating functions are marked with a @, they are due to be replaced with new jobs.
 
-* bug_associations
-* daily_crashes
-* daily_hangs
-* os_signature_counts
-* product_adu
-* product_signature_counts
-* reports_clean
-* reports_user_info
-* reports_duplicates
-* signature_bugs_rollup
-* signature_first
-* signature_products
-* signature_products_rollup
-* tcbs
-* uptime_signature_counts
+bug_associations
+  not sure
+daily_crashes
+  daily_crashes based on reports
+daily_hangs
+  update_hang_report based on reports
+os_signature_counts
+  update_os_signature_counts based on reports
+product_adu
+  daily_adu based on raw_adu
+product_signature_counts
+  update_product_signature_counts based on reports
+reports_clean
+  update_reports_clean based on reports
+reports_user_info
+  update_reports_clean based on reports
+reports_duplicates
+  find_reports_duplicates based don reports
+signature_bugs_rollup
+  not sure
+signature_first@
+  update_signatures based on reports@
+signature_products
+  update_signatures based on reports@
+signature_products_rollup
+  update_signatures based on reports@
+tcbs
+  update_tcbs based on reports
+uptime_signature_counts
+  update_uptime_signature_counts based on reports
 
 Application Management Tables
 =============================
