@@ -71,6 +71,24 @@ $config['log_threshold'] = 4;
 $config['log_directory'] = APPPATH.'logs';
 
 /**
+ * Log level for arecibo. Only logs of this type will be sent.
+ */
+
+$config['arecibo_log_threshold'] = 0;
+
+/**
+ * Arecibo logging server address. Leave blank to disable remote logging. 
+ */
+
+$config['arecibo_log_host'] = "";
+
+/**
+ * Timeout for arecibo error POST requests.
+ */
+
+$config['arecibo_timeout'] = "1";
+
+/**
  * Enable or disable displaying of Kohana error pages. This will not affect
  * logging. Turning this off will disable ALL error pages.
  */
