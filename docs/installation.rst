@@ -5,7 +5,7 @@
 Installation
 ============
 
-Requirements:
+Requirements
 ------------
 * Linux (tested on Ubuntu Lucid and RHEL/CentOS 6)
 
@@ -60,55 +60,6 @@ As *root*:
 ::
   shutdown -r now
 
-PostgreSQL Config
-------------
-RHEL/CentOS - Initialize and enable on startup (not needed for Ubuntu)
-
-As *root*:
-::
-  service postgresql initdb
-  service postgresql start
-  chkconfig postgresql on
-
-As *root*:
-
-* edit /var/lib/pgsql/data/pg_hba.conf and change IPv4/IPv6 connection from "ident" to "md5"
-* edit /var/lib/pgsql/data/postgresql.conf and uncomment # listen_addresses = 'localhost'
-* create databases
-
-As the *postgres* user:
-::
-  su - postgres
-  psql
-  postgres=# CREATE DATABASE breakpad;
-  CREATE DATABASE
-  # note - set this to something random!
-  postgres=# CREATE USER breakpad_rw WITH PASSWORD 'secret';
-  CREATE ROLE
-  postgres=# GRANT ALL ON DATABASE breakpad TO breakpad_rw;
-  GRANT
-  postgres=# \c breakpad
-  You are now connected to database "breakpad".
-  breakpad=# CREATE LANGUAGE plpgsql;
-  CREATE LANGUAGE
-  breakpad=# CREATE LANGUAGE plperl;
-  CREATE LANGUAGE
-  postgres=# CREATE DATABASE test;
-  CREATE DATABASE
-  postgres=# CREATE USER test WITH PASSWORD 'aPassword';
-  CREATE ROLE
-  postgres=# GRANT ALL ON DATABASE test TO test;
-  GRANT
-  postgres=# \c test
-  You are now connected to database "test".
-  test=# CREATE LANGUAGE plpgsql;
-  CREATE LANGUAGE
-  test=# CREATE LANGUAGE plperl;
-  CREATE LANGUAGE
-  test=# \q
-  psql -d test -f /usr/share/pgsql/contrib/citext.sql
-  psql -d breakpad -f /usr/share/pgsql/contrib/citext.sql
-
 Download and install Socorro
 ------------
 Clone from github, as the *socorro* user:
@@ -124,18 +75,6 @@ From inside the Socorro checkout, as the *socorro* user, change:
   databaseName.default = 'breakpad'
   databaseUserName.default = 'breakpad_rw'
   databasePassword.default = 'secret'
-
-Load PostgreSQL Schema
-------------
-From inside the Socorro checkout, as the *socorro* user:
-::
-  cp scripts/config/setupdatabaseconfig.py.dist scripts/config/setupdatabaseconfig.py
-  export PYTHONPATH=.:thirdparty
-  export PGPASSWORD="aPassword"
-  psql -h localhost -U postgres -f scripts/schema/2.2/breakpad_roles.sql
-  psql -h localhost -U postgres breakpad -f scripts/schema/2.2/breakpad_schema.sql
-  cp scripts/config/createpartitionsconfig.py.dist scripts/config/createpartitionsconfig.py
-  python scripts/createPartitions.py
 
 Run unit/functional tests, and generate report
 ------------
@@ -199,6 +138,60 @@ As *root*:
   ln -s /data/socorro/application/scripts/crons/socorrorc /etc/socorro/
   crontab /data/socorro/application/scripts/crons/example.crontab
 
+PostgreSQL Config
+------------
+RHEL/CentOS - Initialize and enable on startup (not needed for Ubuntu)
+
+As *root*:
+::
+  service postgresql initdb
+  service postgresql start
+  chkconfig postgresql on
+
+As *root*:
+
+* edit /var/lib/pgsql/data/pg_hba.conf and change IPv4/IPv6 connection from "ident" to "md5"
+* edit /var/lib/pgsql/data/postgresql.conf and uncomment # listen_addresses = 'localhost'
+* create test database
+
+As the *postgres* user:
+::
+  su - postgres
+  psql
+  postgres=# CREATE DATABASE test;
+  CREATE DATABASE
+  postgres=# CREATE USER test WITH PASSWORD 'aPassword';
+  CREATE ROLE
+  postgres=# GRANT ALL ON DATABASE test TO test;
+  GRANT
+  postgres=# \c test
+  You are now connected to database "test".
+  test=# CREATE LANGUAGE plpgsql;
+  CREATE LANGUAGE
+  test=# CREATE LANGUAGE plperl;
+  CREATE LANGUAGE
+  test=# \q
+  psql -d test -f /usr/share/pgsql/contrib/citext.sql
+
+Load PostgreSQL Schema
+------------
+From inside the Socorro checkout, as the *socorro* user:
+::
+  cp scripts/config/setupdatabaseconfig.py.dist scripts/config/setupdatabaseconfig.py
+  export PYTHONPATH=.:thirdparty
+  export PGPASSWORD="aPassword"
+  psql -h localhost -U postgres -f scripts/schema/2.2/breakpad_roles.sql
+  psql -h localhost -U postgres breakpad -f scripts/schema/2.2/breakpad_schema.sql
+  cp scripts/config/createpartitionsconfig.py.dist scripts/config/createpartitionsconfig.py
+  python scripts/createPartitions.py
+
+
+Populate PostgreSQL Database
+------------
+Refer to :ref:`populatepostgres-chapter` for information about
+populating the database.
+
+
 Configure Apache
 ------------
 As *root*:
@@ -210,7 +203,7 @@ As *root*:
 
 Note - use www-data instead of apache for debian/ubuntu
 
-Enable PHP short_open_tag:
+Enable PHP short_open_tag
 ------------
 As *root*:
 
