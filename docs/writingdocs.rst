@@ -58,16 +58,16 @@ files in raw mode and send in a pull request.
 Or, just edit the documentation online
 --------------------------------------
 
-The simplest way to edit the documentation is to just edit it inside the Github editor. To get started, 
-go to https://github.com/mozilla/socorro-docs and browse in the `docs <https://github.com/mozilla/socorro-docs/tree/master/docs>`_ 
-directory to find the file you want to edit. 
+The simplest way to edit the documentation is to just edit it inside the Github editor. To get started,
+go to https://github.com/mozilla/socorro and browse in the `docs <https://github.com/mozilla/socorro/tree/master/docs>`_
+directory to find the file you want to edit.
 
-Then click the "Edit this file" button in the upper right-hand corner and type away. 
+Then click the "Edit this file" button in the upper right-hand corner and type away.
 
-When you're done, write a comment underneath and click "Commit Changes". 
+When you're done, write a comment underneath and click "Commit Changes".
 
 If you are unsure about how to edit reStructuredText and don't want to trial-and-error your way through the editing,
 then one thing you can do is to copy the text into an `online reStructuredText editor <http://rst.ninjs.org/>`_
-and see if you get the syntax right. Obviously you'll receive warnings and errors about broken 
-internal references but at least you'll know if syntax is correct. 
+and see if you get the syntax right. Obviously you'll receive warnings and errors about broken
+internal references but at least you'll know if syntax is correct.
 

@@ -13,7 +13,7 @@ http://wiki.mozilla.org/Breakpad for more information.
 Socorro mailing list https://lists.mozilla.org/listinfo/tools-socorro
 
 `This documentation is available on Github
-<https://github.com/mozilla/socorro-docs>`_, and if you want to, feel
+<https://github.com/mozilla/socorro/tree/master/docs>`_, and if you want to, feel
 free to  clone the repo, make some changes in a fork and send us a pull request.
 
 Contents:
