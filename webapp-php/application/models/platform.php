@@ -31,7 +31,7 @@ class Platform_Model extends Model {
         parent::__construct();
 
         $platforms = array();
-        foreach(array('win', 'mac', 'lin', 'sol') as $os):
+        foreach(array('win', 'mac', 'lin') as $os):
  	    $platforms[] = new Platform(
                 Kohana::config("platforms.${os}_id"),
 		Kohana::config("platforms.${os}_name"),
