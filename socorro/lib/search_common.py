@@ -115,11 +115,16 @@ def get_parameters(kwargs):
     if params["plugin_search_mode"] not in authorized_modes:
         params["plugin_search_mode"] = "default"
 
-    # Do not search in the future
-    if params["to_date"] > now:
+    # Do not search in the future and make sure we have dates where expected
+    if params["to_date"] is None or params["to_date"] > now:
         params["to_date"] = now
-    if params["build_to"] > now:
+    if params["from_date"] is None:
+        params["from_date"] = lastweek
+
+    if params["build_to"] is None or params["build_to"] > now:
         params["build_to"] = now
+    if params["build_from"] is None:
+        params["build_from"] = lastweek
 
     # Securing fields
     params["fields"] = restrict_fields(params["fields"])
@@ -141,15 +146,14 @@ def restrict_fields(fields):
         "dump"
     ]
 
-    if isinstance(fields, list):
+    try:
         for field in fields:
             if field in authorized_fields and field not in secured_fields:
                 secured_fields.append(field)
-    else:
-        if authorized_fields.count(fields):
-            secured_fields = fields
+    except TypeError:
+        pass
 
     if len(secured_fields) == 0:
-        secured_fields = "signature"
+        secured_fields.append("signature")
 
     return secured_fields

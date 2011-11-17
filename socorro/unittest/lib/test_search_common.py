@@ -77,21 +77,21 @@ def test_restrict_fields():
                 (theoric_fields, restricted_fields))
 
     fields = []
-    theoric_fields = "signature"
+    theoric_fields = ["signature"]
     restricted_fields = co.restrict_fields(fields)
     assert restricted_fields == theoric_fields, (
                 "Restricted fields expected %s, received %s" %
                 (theoric_fields, restricted_fields))
 
     fields = None
-    theoric_fields = "signature"
+    theoric_fields = ["signature"]
     restricted_fields = co.restrict_fields(fields)
     assert restricted_fields == theoric_fields, (
                 "Restricted fields expected %s, received %s" %
                 (theoric_fields, restricted_fields))
 
     fields = ["nothing"]
-    theoric_fields = "signature"
+    theoric_fields = ["signature"]
     restricted_fields = co.restrict_fields(fields)
     assert restricted_fields == theoric_fields, (
                 "Restricted fields expected %s, received %s" %

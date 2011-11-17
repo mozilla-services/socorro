@@ -12,12 +12,14 @@ class PostgreSQLBase(object):
     Base class for PostgreSQL based service implementations.
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, *args, **kwargs):
         """
-        Default constructor
-        """
-        super(PostgreSQLBase, self).__init__()
+        Store the config and create a connection to the database.
 
+        Keyword arguments:
+        config -- Configuration of the application.
+
+        """
         self.context = kwargs.get("config")
         try:
             self.database = db.Database(self.context)
@@ -27,44 +29,19 @@ class PostgreSQLBase(object):
         self.connection = None
 
     @staticmethod
-    def append_to_var(value, array):
-        """
-        Append a value to a list or array.
-
-        If array is not a list, create a new one containing array
-        and value.
-
-        """
-        if isinstance(array, list):
-            array.append(value)
-        elif array is None:
-            array = value
-        elif array != value:
-            array = [array, value]
-        return array
-
-    @staticmethod
     def parse_versions(versions_list, products):
         """
         Parses the versions, separating by ":" and returning versions
         and products.
         """
         versions = []
-        if isinstance(versions_list, list):
-            for v in versions_list:
-                if v.find(":") > -1:
-                    pv = v.split(":")
-                    versions = PostgreSQLBase.append_to_var(pv[0], versions)
-                    versions = PostgreSQLBase.append_to_var(pv[1], versions)
-                else:
-                    products = PostgreSQLBase.append_to_var(v, products)
-        elif versions_list:
-            if versions_list.find(":") > -1:
-                pv = versions_list.split(":")
-                versions = PostgreSQLBase.append_to_var(pv[0], versions)
-                versions = PostgreSQLBase.append_to_var(pv[1], versions)
+
+        for v in versions_list:
+            if v.find(":") > -1:
+                pv = v.split(":")
+                versions.append(pv[0])
+                versions.append(pv[1])
             else:
-                products = PostgreSQLBase.append_to_var(versions_list,
-                                                          products)
+                products.append(v)
 
         return (versions, products)

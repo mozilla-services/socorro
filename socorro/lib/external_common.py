@@ -78,7 +78,7 @@ def check_type(param, datatype):
     if param is None:
         return param
 
-    if datatype == "str" and not isinstance(param, str):
+    if datatype == "str" and not isinstance(param, basestring):
         try:
             param = str(param)
         except ValueError:
@@ -94,6 +94,6 @@ def check_type(param, datatype):
         try:
             param = dtutil.string_to_datetime(param)
         except ValueError:
-            param = datetime.utcnow()
+            param = None
 
     return param

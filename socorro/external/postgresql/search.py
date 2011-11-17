@@ -1,12 +1,12 @@
 import logging
 
 from socorro.external.postgresql.base import PostgreSQLBase
+from socorro.services.versions_info import VersionsInfo
 
 import socorro.database.database as db
 import socorro.lib.datetimeutil as dtutil
-import socorro.lib.search_common as scommon
+import socorro.lib.search_common as search_common
 import socorro.lib.util as util
-import socorro.services.versions_info as vi
 
 logger = logging.getLogger("webapi")
 
@@ -17,11 +17,8 @@ class Search(PostgreSQLBase):
     Implement the /search service with PostgreSQL.
     """
 
-    def __init__(self, **kwargs):
-        """
-        Default constructor
-        """
-        super(Search, self).__init__(**kwargs)
+    def __init__(self, *args, **kwargs):
+        super(Search, self).__init__(*args, **kwargs)
 
     def search(self, **kwargs):
         """
@@ -36,7 +33,7 @@ class Search(PostgreSQLBase):
         self.connection = self.database.connection()
         cur = self.connection.cursor()
 
-        params = scommon.get_parameters(kwargs)
+        params = search_common.get_parameters(kwargs)
 
         # Default mode falls back to starts_with for postgres
         if params["search_mode"] == "default":
@@ -68,15 +65,10 @@ class Search(PostgreSQLBase):
                                                             params["products"])
 
         # Changing the OS ids to OS names
-        if isinstance(params["os"], list):
-            for i in xrange(len(params["os"])):
-                for platform in self.context.platforms:
-                    if platform["id"] == params["os"][i]:
-                        params["os"][i] = platform["name"]
-        else:
+        for i, elem in enumerate(params["os"]):
             for platform in self.context.platforms:
-                if platform["id"] == params["os"]:
-                    params["os"] = platform["name"]
+                if platform["id"] == elem:
+                    params["os"][i] = platform["name"]
 
         # Creating the parameters for the sql query
         sql_params = {
@@ -137,27 +129,27 @@ class Search(PostgreSQLBase):
 
         ## Adding products to where clause
         if params["products"]:
-            products_list = ("r.product=%(product" + str(x) + ")s"
-                             for x in xrange(len(params["products"])))
+            products_list = ["r.product=%(product" + str(x) + ")s"
+                             for x in range(len(params["products"]))]
             sql_where.append("(%s)" % (" OR ".join(products_list)))
 
         ## Adding OS to where clause
         if params["os"]:
-            os_list = ("r.os_name=%(os" + str(x) + ")s"
-                       for x in xrange(len(params["os"])))
+            os_list = ["r.os_name=%(os" + str(x) + ")s"
+                       for x in range(len(params["os"]))]
             sql_where.append("(%s)" % (" OR ".join(os_list)))
 
         ## Adding branches to where clause
         if params["branches"]:
-            branches_list = ("branches.branch=%(branch" + str(x) + ")s"
-                             for x in xrange(len(params["branches"])))
+            branches_list = ["branches.branch=%(branch" + str(x) + ")s"
+                             for x in range(len(params["branches"]))]
             sql_where.append("(%s)" % (" OR ".join(branches_list)))
 
         ## Adding versions to where clause
         if params["versions"]:
 
             # Get information about the versions
-            versions_service = vi.VersionsInfo(self.context)
+            versions_service = VersionsInfo(self.context)
             fakeparams = {
                 "versions": params["versions_string"]
             }
@@ -166,7 +158,7 @@ class Search(PostgreSQLBase):
             if isinstance(params["versions"], list):
                 versions_where = []
 
-                for x in xrange(0, len(params["versions"]), 2):
+                for x in range(0, len(params["versions"]), 2):
                     version_where = []
                     version_where.append(str(x).join(("r.product=%(version",
                                                       ")s")))
@@ -199,14 +191,14 @@ class Search(PostgreSQLBase):
 
         ## Adding build id to where clause
         if params["build_ids"]:
-            build_ids_list = ("r.build=%(build" + str(x) + ")s"
-                              for x in xrange(len(params["build_ids"])))
+            build_ids_list = ["r.build=%(build" + str(x) + ")s"
+                              for x in range(len(params["build_ids"]))]
             sql_where.append("(%s)" % (" OR ".join(build_ids_list)))
 
         ## Adding reason to where clause
         if params["reasons"]:
-            reasons_list = ("r.reason=%(reason" + str(x) + ")s"
-                            for x in xrange(len(params["reasons"])))
+            reasons_list = ["r.reason=%(reason" + str(x) + ")s"
+                            for x in range(len(params["reasons"]))]
             sql_where.append("(%s)" % (" OR ".join(reasons_list)))
 
         if params["report_type"] == "crash":
@@ -401,8 +393,8 @@ class Search(PostgreSQLBase):
         if not isinstance(value, list):
             sql_params[key] = value
         else:
-            for i in xrange(len(value)):
-                sql_params[key + str(i)] = value[i]
+            for i, elem in enumerate(value):
+                sql_params[key + str(i)] = elem
         return sql_params
 
     @staticmethod

@@ -15,18 +15,20 @@ class ElasticSearchBase(object):
     Base class for ElasticSearch based service implementations.
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, *args, **kwargs):
         """
-        Default constructor
-        """
-        super(ElasticSearchBase, self).__init__()
+        Store the config and create a connection to the database.
 
+        Keyword arguments:
+        config -- Configuration of the application.
+
+        """
         self.context = kwargs.get("config")
         self.http = httpc.HttpClient(self.context.elasticSearchHostname,
                                      self.context.elasticSearchPort)
 
         # A simulation of cache, good enough for the current needs,
-        # but wouldn't mind to be replaced.
+        # but wouldn't mind being replaced.
         self.cache = {}
 
     def query(self, from_date, to_date, json_query):
@@ -43,7 +45,7 @@ class ElasticSearchBase(object):
         # Create the indexes to use for querying.
         daterange = []
         delta_day = to_date - from_date
-        for delta in xrange(0, delta_day.days + 1):
+        for delta in range(0, delta_day.days + 1):
             day = from_date + timedelta(delta)
             index = "socorro_%s" % day.strftime("%y%m%d")
             # Cache protection for limitating the number of HTTP calls
@@ -122,7 +124,7 @@ class ElasticSearchBase(object):
             filters["and"].append(
                             ElasticSearchBase.build_terms_query(
                                 params["fields"],
-                                util.lower(params["terms"])))
+                                [x.lower() for x in params["terms"]]))
 
         elif params["terms"]:
             params["terms"] = ElasticSearchBase.prepare_terms(
@@ -135,21 +137,20 @@ class ElasticSearchBase(object):
         # Generating the filters
         if params["products"]:
             filters["and"].append(
-                            ElasticSearchBase.build_terms_query(
-                                                        "product.full",
+                            ElasticSearchBase.build_terms_query("product.full",
                                                         params["products"]))
         if params["os"]:
             filters["and"].append(
                             ElasticSearchBase.build_terms_query("os_name",
-                                                    util.lower(params["os"])))
+                                    [x.lower() for x in params["os"]]))
         if params["build_ids"]:
             filters["and"].append(
                             ElasticSearchBase.build_terms_query("build",
-                                            util.lower(params["build_ids"])))
+                                                        params["build_ids"]))
         if params["reasons"]:
             filters["and"].append(
                             ElasticSearchBase.build_terms_query("reason",
-                                            util.lower(params["reasons"])))
+                                    [x.lower() for x in params["reasons"]]))
 
         filters["and"].append({
                 "range": {
@@ -174,93 +175,47 @@ class ElasticSearchBase(object):
         # Generating the filters for versions
         if params["versions"]:
             versions = ElasticSearchBase.format_versions(params["versions"])
-            versions_type = type(versions)
             versions_info = params["versions_info"]
 
-            if versions_type is str:
-                # If there is already a product,don't do anything
-                # Otherwise consider this as a product
-                if not params["products"]:
-                    filters["and"].append(
-                                    ElasticSearchBase.build_terms_query(
-                                        "product",
-                                        util.lower(versions)))
+            # There are several pairs product:version
+            or_filter = []
+            for v in versions:
+                if not v["version"]:
+                    continue
 
-            elif versions_type is dict:
-                # There is only one pair product:version
-                key = ":".join((versions["product"], versions["version"]))
+                and_filter = []
+                key = ":".join((v["product"], v["version"]))
 
                 if (key in versions_info and
                         versions_info[key]["release_channel"] == "Beta"):
                     # this version is a beta
                     # first use the major version instead
-                    versions["version"] = versions_info[key]["major_version"]
+                    v["version"] = versions_info[key]["major_version"]
                     # then make sure it's a beta
-                    filters["and"].append(
+                    and_filter.append(
                             ElasticSearchBase.build_terms_query(
-                                                    "ReleaseChannel", "beta"))
+                                                "ReleaseChannel", "beta"))
                     # last use the right build id
-                    filters["and"].append(
+                    and_filter.append(
                             ElasticSearchBase.build_terms_query(
-                                    "build", versions_info[key]["build_id"]))
+                                "build", versions_info[key]["build_id"]))
+
                 elif (key in versions_info and
                         versions_info[key]["release_channel"]):
                     # this version is a release
-                    filters["and"].append({
+                    and_filter.append({
                         "not":
                             ElasticSearchBase.build_terms_query(
                                     "ReleaseChannel",
                                     ["nightly", "aurora", "beta"])
                     })
 
-                filters["and"].append(
-                                ElasticSearchBase.build_terms_query(
-                                        "product",
-                                        util.lower(versions["product"])))
-                filters["and"].append(
-                                ElasticSearchBase.build_terms_query(
-                                        "version",
-                                        util.lower(versions["version"])))
-
-            elif versions_type is list:
-                # There are several pairs product:version
-                or_filter = []
-                for v in versions:
-                    and_filter = []
-                    key = ":".join((v["product"], v["version"]))
-
-                    if (key in versions_info and
-                            versions_info[key]["release_channel"] == "Beta"):
-                        # this version is a beta
-                        # first use the major version instead
-                        v["version"] = versions_info[key]["major_version"]
-                        # then make sure it's a beta
-                        and_filter.append(
-                                ElasticSearchBase.build_terms_query(
-                                                    "ReleaseChannel", "beta"))
-                        # last use the right build id
-                        and_filter.append(
-                                ElasticSearchBase.build_terms_query(
-                                    "build", versions_info[key]["build_id"]))
-
-                    elif (key in versions_info and
-                            versions_info[key]["release_channel"]):
-                        # this version is a release
-                        and_filter.append({
-                            "not":
-                                ElasticSearchBase.build_terms_query(
-                                        "ReleaseChannel",
-                                        ["nightly", "aurora", "beta"])
-                        })
-
-                    and_filter.append(ElasticSearchBase.build_terms_query(
-                                            "product",
-                                            util.lower(v["product"])))
-                    and_filter.append(ElasticSearchBase.build_terms_query(
-                                            "version",
-                                            util.lower(v["version"])))
-                    or_filter.append({"and": and_filter})
-                filters["and"].append({"or": or_filter})
+                and_filter.append(ElasticSearchBase.build_terms_query(
+                                        "product", v["product"].lower()))
+                and_filter.append(ElasticSearchBase.build_terms_query(
+                                        "version", v["version"].lower()))
+                or_filter.append({"and": and_filter})
+            filters["and"].append({"or": or_filter})
 
         if len(queries) > 1:
             query = {

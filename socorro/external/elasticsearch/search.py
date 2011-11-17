@@ -2,9 +2,9 @@ import json
 import logging
 
 from socorro.external.elasticsearch.base import ElasticSearchBase
+from socorro.services.versions_info import VersionsInfo
 
-import socorro.lib.search_common as scommon
-import socorro.services.versions_info as vi
+import socorro.lib.search_common as search_common
 
 logger = logging.getLogger("webapi")
 
@@ -15,11 +15,8 @@ class Search(ElasticSearchBase):
     Implement the /search service with ElasticSearch.
     """
 
-    def __init__(self, **kwargs):
-        """
-        Default constructor
-        """
-        super(Search, self).__init__(**kwargs)
+    def __init__(self, *args, **kwargs):
+        super(Search, self).__init__(*args, **kwargs)
 
     def search(self, **kwargs):
         """
@@ -30,10 +27,10 @@ class Search(ElasticSearchBase):
         Optional arguments: see SearchCommon.get_parameters()
 
         """
-        params = scommon.get_parameters(kwargs)
+        params = search_common.get_parameters(kwargs)
 
         # Get information about the versions
-        versions_service = vi.VersionsInfo(self.context)
+        versions_service = VersionsInfo(self.context)
         params["versions_info"] = versions_service.versions_info(params)
 
         query = Search.build_query_from_params(params)
@@ -65,12 +62,13 @@ class Search(ElasticSearchBase):
 
     def search_for_signatures(self, params, es_result, query):
         """
+        Return a list of signatures and their counts.
         """
         try:
             es_data = json.loads(es_result[0])
-        except Exception:
-            logger.debug("ElasticSearch returned something wrong: %s",
-                         es_result[0])
+        except ValueError:
+            logger.error("ElasticSearch returned something wrong: %s",
+                         es_result[0], exc_info=True)
             raise
 
         # Making sure we have a real result before using it
@@ -99,9 +97,9 @@ class Search(ElasticSearchBase):
                                       count_by_os_query_json)
             try:
                 count_data = json.loads(count_result[0])
-            except Exception:
-                logger.debug("ElasticSearch returned something wrong: %s",
-                             count_result[0])
+            except ValueError:
+                logger.error("ElasticSearch returned something wrong: %s",
+                             count_result[0], exc_info=True)
                 raise
 
             count_sign = count_data["facets"]
@@ -114,7 +112,7 @@ class Search(ElasticSearchBase):
             "hits": []
         }
 
-        for i in xrange(params["result_offset"], maxsize):
+        for i in range(params["result_offset"], maxsize):
             results["hits"].append(signatures[i])
 
         return results
@@ -146,7 +144,7 @@ class Search(ElasticSearchBase):
         results = []
         sign_list = {}
 
-        for i in xrange(maxsize):
+        for i in range(maxsize):
             results.append({
                 "signature": signatures[i]["term"],
                 "count": signatures[i]["count"]
@@ -165,7 +163,7 @@ class Search(ElasticSearchBase):
         """
         facets = {}
 
-        for i in xrange(result_offset, maxsize):
+        for i in range(result_offset, maxsize):
             sign = signatures[i]["signature"]
             sign_hang = "_".join((sign, "hang"))
             sign_plugin = "_".join((sign, "plugin"))
@@ -208,7 +206,7 @@ class Search(ElasticSearchBase):
         (count by OS, number of plugins and of hang).
         """
         # Transform the results into something we can return
-        for i in xrange(result_offset, maxsize):
+        for i in range(result_offset, maxsize):
             # OS count
             for term in count_sign[signatures[i]["signature"]]["terms"]:
                 for os in platforms:

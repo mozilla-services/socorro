@@ -9,10 +9,9 @@ logger = logging.getLogger("webapi")
 class DataAPIService(JsonWebServiceBase):
 
     """
-    Common API interface
+    Base class for new-style REST API services.
 
-    Handle the /search API entry point, parse the parameters, and
-    call the API implementation to execute the query.
+    Provide methods for arguments parsing and implementation finding.
 
     """
 
@@ -21,7 +20,10 @@ class DataAPIService(JsonWebServiceBase):
 
     def __init__(self, config):
         """
-        Constructor
+        Contruct that object, init parent class.
+
+        Parameters:
+        config -- Configuration of the application.
         """
         super(DataAPIService, self).__init__(config)
         logger.debug('DataAPIService __init__')
@@ -47,41 +49,40 @@ class DataAPIService(JsonWebServiceBase):
                                     params["force_api_impl"],
                                     self.service_name))
             impl = self._import(module_name)
-            if impl:
-                logger.debug("Service %s uses forced implementation module: %s"
-                             % (self.service_name, module_name))
+
+        if impl:
+            logger.debug("Service %s uses forced implementation module: %s" %
+                         (self.service_name, module_name))
+            return impl
 
         # Second use config value
-        if not impl:
-            module_name = "%s.%s" % (self.context.serviceImplementationModule,
-                                     self.service_name)
-            impl = self._import(module_name)
-            if impl:
-                logger.debug("Service %s uses config module: %s"
-                             % (self.service_name, module_name))
+        module_name = "%s.%s" % (self.context.serviceImplementationModule,
+                                 self.service_name)
+        impl = self._import(module_name)
+
+        if impl:
+            logger.debug("Service %s uses config module: %s" %
+                         (self.service_name, module_name))
+            return impl
 
         # Third use module values in order of preference
-        if not impl:
-            for m in self.default_service_order:
-                module_name = "%s.%s" % (m, self.service_name)
-                impl = self._import(module_name)
-                if impl:
-                    logger.debug("Service %s uses default module: %s"
-                                 % (self.service_name, module_name))
-                    break
+        for m in self.default_service_order:
+            module_name = "%s.%s" % (m, self.service_name)
+            impl = self._import(module_name)
+            if impl:
+                logger.debug("Service %s uses default module: %s" %
+                             (self.service_name, module_name))
+                return impl
 
-        # If no implementation was found raise an error
-        if not impl:
-            raise NotImplementedError
-
-        # Else return the implementation module
-        return impl
+        # No implementation was found, raise an error
+        raise NotImplementedError
 
     def _import(self, module_name):
         """
         Import a module, check it exists and return it.
 
         Return the module if it exists, False otherwise.
+
         """
         logger.debug("Try to import %s" % module_name)
         try:
@@ -120,6 +121,7 @@ class DataAPIService(JsonWebServiceBase):
             {
                 "param1": "value1"
             }
+
         """
         terms_sep = "+"
         params_sep = "/"
@@ -127,7 +129,7 @@ class DataAPIService(JsonWebServiceBase):
         args = query_string.split(params_sep)
 
         params = {}
-        for i in xrange(0, len(args), 2):
+        for i in range(0, len(args), 2):
             try:
                 if args[i]:
                     params[args[i]] = args[i + 1]
