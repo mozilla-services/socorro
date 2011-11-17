@@ -23,7 +23,7 @@ From inside the Socorro checkout, as the *socorro* user:
   edit *.csv
   ./import.sh
 
-See ref:`databasetablesbysource-chapter` for a complete explanation
+See :ref:`databasetablesbysource-chapter` for a complete explanation
 of each table.
 
 Run nightly aggregate cron job
