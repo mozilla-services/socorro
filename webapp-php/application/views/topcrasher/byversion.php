@@ -27,7 +27,7 @@
 </div>
 
 
-<div class="panel">
+<div class="panel content-wrap">
     <div class="body notitle">
 <?php
 if ($resp) {
