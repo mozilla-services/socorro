@@ -414,9 +414,7 @@ html.production .page-footer { margin-top: 80px; }
     color: #fff;
 }
 .panel {
-    display: inline-block;
     color: #303030;
-    min-width: 1024px;
     -webkit-box-shaow: 0 1px 5px -1px #888;
     -moz-box-shadow: 0 1px 5px -1px #888;
     box-shadow: 0 1px 5px -1px #888;
@@ -558,6 +556,10 @@ html.production .page-footer { margin-top: 80px; }
 .panel .notitle {
     border: 1px solid #c0c0c0;
     -moz-border-radius: 8px;
+}
+.content-wrap {
+    display: inline-block;
+    min-width: 800px;
 }
 .page-footer {
     height: 44px;

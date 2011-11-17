@@ -74,7 +74,7 @@ foreach($options[$type] as $k => $readable) {
 
 </div>
 
-<div class="panel">
+<div class="panel content-wrap">
     <div class="body notitle">
 
 <p>
