@@ -8,21 +8,6 @@ UI Installation
 
 Follow these steps to get the Socorro UI up and running.
 
-Populate the Database
----------------------
-
-Socorro supports multiple products, each of which may contain multiple
-versions.
-
-* A product is a global product name, such as Firefox, Thunderbird,
-  Fennec, etc.
-* A version is a revision of a particular product, such as Firefox
-  3.6.6 or Firefox 3.6.5
-* A branch is the indicator for the Gecko platform used in a Mozilla
-  product / version. If your crash reporting project does not have a
-  need for branch support, just enter "1.0" as the branch number for
-  your product / version.
-
 Apache
 ------
 
