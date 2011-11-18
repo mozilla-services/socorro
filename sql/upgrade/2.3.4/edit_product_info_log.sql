@@ -1,23 +1,28 @@
+\SET ON_ERROR_STOP 1
+
 -- add logging to edit_product_info
 -- so that we can see who's been changing dates
 
 -- we're using a composite record type to represent the 
 -- before and after records
-create type product_info_change (
-	begin_date date
+create type product_info_change as (
+	begin_date date,
 	end_date date,
 	featured boolean,
 	crash_throttle numeric
 );
 
-create or replace table product_info_changelog (
+alter type product_info_change owner to breakpad_rw;
+
+create_table_if_not_exists( 'product_info_changelog', $x$
+create table product_info_changelog (
 	product_version_id int not null,
 	user_name text not null,
 	changed_on timestamptz not null,
 	oldrec product_info_change,
 	newrec product_info_change,
 	constraint product_info_changelog_key primary key (product_version_id, changed_on, user_name )
-);
+);$x$, 'breakpad_rw' );
 
 
 create or replace function edit_product_info (
@@ -36,7 +41,8 @@ LANGUAGE plpgsql
 AS $f$
 DECLARE which_t text;
 	new_id INT;
-
+	oldrec product_info_change;
+	newrec product_info_change;
 -- this function allows the admin UI to edit product and version
 -- information regardless of which table it appears in
 -- currently editing the new products is limited to
@@ -50,7 +56,7 @@ DECLARE which_t text;
 
 BEGIN
 
-IF prod_id IS NULL AND prod_version THEN
+IF prod_id IS NULL THEN
 -- new entry
 -- adding rows is only allowed to the old table since the new
 -- table is populated automatically
@@ -98,9 +104,9 @@ ELSE
 			oldrec, newrec )
 		SELECT prod_id, user_name, now(),
 			row( build_date, sunset_date,
-				featured_version, throttle )
-			row( begin_visibility, end_visiblity, 
-				is_featured, crash_throttle )
+				featured_version, throttle )::product_info_change,
+			row( begin_visibility, end_visibility, 
+				is_featured, crash_throttle/100 )::product_info_change
 		FROM product_versions JOIN product_release_channels
 			ON product_versions.product_name = product_release_channels.product_name
 			AND product_versions.build_type = product_release_channels.release_channel
