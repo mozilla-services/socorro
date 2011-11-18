@@ -118,9 +118,5 @@ platforms.default = (
         "id" : "linux",
         "name" : "Linux"
     },
-    {
-        "id" : "solaris",
-        "name" : "Solaris"
-    }
 )
 

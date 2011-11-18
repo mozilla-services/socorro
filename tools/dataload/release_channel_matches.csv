@@ -1,0 +1,6 @@
+release_channel,match_string
+Release,release
+Release,default
+Beta,beta
+Aurora,aurora
+Nightly,nightly%
