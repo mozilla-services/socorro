@@ -1,0 +1,3 @@
+
+TRUNCATE reports_bad;
+
