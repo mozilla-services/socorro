@@ -69,11 +69,12 @@ class TestCase(unittest.TestCase):
         newtcbs.psycopg2 = mock_psycopg2(cursor)
         with patch('socorro.cron.newtcbs.logger') as mock_logger:
             newtcbs.update(self.config, 'some date')
-            self.assertEqual(cursor.called, [
-              'update_product_versions', 'update_signatures',
-              'update_os_versions', 'update_adu', 'update_daily_crashes'
-            ])
-            self.assertEqual(mock_logger.info.call_count, 5)
+            self.assertEqual(cursor.called, ['update_product_versions',
+              'update_signatures', 'update_os_versions', 'update_adu',
+              'update_daily_crashes', 'update_os_signature_counts',
+              'update_uptime_signature_counts',
+              'update_product_signature_counts'])
+            self.assertEqual(mock_logger.info.call_count, 8)
             self.assertEqual(mock_logger.warn.call_count, 2)
             self.assertEqual(mock_logger.error.call_count, 0)
 
@@ -82,7 +83,7 @@ class TestCase(unittest.TestCase):
         newtcbs.psycopg2 = mock_psycopg2(cursor)
         with patch('socorro.cron.newtcbs.logger') as mock_logger:
             newtcbs.update(self.config, 'some date')
-            self.assertEqual(mock_logger.info.call_count, 6)
+            self.assertEqual(mock_logger.info.call_count, 9)
             self.assertEqual(mock_logger.warn.call_count, 0)
             self.assertEqual(mock_logger.error.call_count, 0)
 
@@ -93,7 +94,7 @@ class TestCase(unittest.TestCase):
         newtcbs.psycopg2 = mock_psycopg2(cursor)
         with patch('socorro.cron.newtcbs.logger') as mock_logger:
             newtcbs.update(self.config, 'some date')
-            self.assertEqual(mock_logger.info.call_count, 5)
+            self.assertEqual(mock_logger.info.call_count, 8)
             self.assertEqual(mock_logger.warn.call_count, 1)
             self.assertEqual(mock_logger.error.call_count, 1)
 
@@ -164,6 +165,24 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
  CREATE OR REPLACE FUNCTION update_daily_crashes(timestamp without time zone)
+RETURNS boolean AS $$
+BEGIN
+        RETURN true;
+END;
+$$ LANGUAGE plpgsql;
+ CREATE OR REPLACE FUNCTION update_os_signature_counts(timestamp without time zone)
+RETURNS boolean AS $$
+BEGIN
+        RETURN true;
+END;
+$$ LANGUAGE plpgsql;
+ CREATE OR REPLACE FUNCTION update_uptime_signature_counts(timestamp without time zone)
+RETURNS boolean AS $$
+BEGIN
+        RETURN true;
+END;
+$$ LANGUAGE plpgsql;
+ CREATE OR REPLACE FUNCTION update_product_signature_counts(timestamp without time zone)
 RETURNS boolean AS $$
 BEGIN
         RETURN true;
