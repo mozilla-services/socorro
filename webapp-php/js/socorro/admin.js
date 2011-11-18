@@ -50,7 +50,7 @@ function hideShow(hideId, showId) {
 $(document).ready(function(){
 	/* Emails */
     $('input[name=email_start_date][type=text], input[name=email_end_date][type=text]').datepicker({
-		dateFormat: "yy-mm-dd"
+		dateFormat: "dd-mm-yy"
 	});
 	
 	/* Add new */
