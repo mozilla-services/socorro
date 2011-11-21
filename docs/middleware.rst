@@ -138,6 +138,57 @@ If an error occured, the API will return something like this::
     Well, for the moment it doesn't return anything but an Internal Error
     HTTP header... We will improve that soon! :)
 
+Versions Info
+-------------
+
+Return information about one or several couples product:version.
+
+API specifications
+^^^^^^^^^^^^^^^^^^
+
++----------------+--------------------------------------------------------------------------------+
+| HTTP method    | GET                                                                            |
++----------------+--------------------------------------------------------------------------------+
+| URL schema     | /util/versions_info/(optional_parameters)                                      |
++----------------+--------------------------------------------------------------------------------+
+| Full URL       | /util/versions_info/version/(version)/                                         |
++----------------+--------------------------------------------------------------------------------+
+| Example        | http://socorro-api/bpapi/util/versions_info/versions/Firefox:9.0a1+Fennec:7.0/ |
++----------------+--------------------------------------------------------------------------------+
+
+Mandatory parameters
+^^^^^^^^^^^^^^^^^^^^
+
+None.
+
+Optional parameters
+^^^^^^^^^^^^^^^^^^^
+
++----------------+------------------+-------------------+--------------------+
+| Name           | Type of value    | Default value     | Description        |
++================+==================+===================+====================+
+| versions       | String or list   | None              | Product:Versions   |
+|                | of strings       |                   | couples for which  |
+|                |                  |                   | information is     |
+|                |                  |                   | asked.             |
++----------------+------------------+-------------------+--------------------+
+
+Return value
+^^^^^^^^^^^^
+
+If parameter ``versions`` is unvalid, return value is ``None``. Otherwise it
+looks like this::
+
+    {
+        "product_name:version_string": {
+            "version_string": "string",
+            "product_name": "string",
+            "major_version": "string" or None,
+            "release_channel": "string" or None,
+            "build_id": [list, of, decimals] or None
+        }
+    }
+
 Forcing an implementation
 -------------------------
 
