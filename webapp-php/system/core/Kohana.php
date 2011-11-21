@@ -515,6 +515,42 @@ final class Kohana {
 		{
 			self::$log[] = array(date('Y-m-d H:i:s P'), $type, $message);
 		}
+		if (self::$log_levels[$type] == self::$configuration['core']['arecibo_log_threshold'])
+		{
+			$arecibo_url = self::$configuration['core']['arecibo_log_host'];
+			if (empty($arecibo_url))
+				return;
+
+			$status = '';
+			if (strstr($message, '[404 Page Not Found]')) {
+				$status = '404';
+			} else if (strstr($message, '[5xx Error]')) {
+				$status = '500';
+			}
+
+			$url = url::base() . url::current();
+
+			$ch = curl_init();
+			$payload = http_build_query(
+				array(
+					'type' => $type,
+					'msg' => $message,
+					'status' => $status,
+					'url' => $url,
+				)
+			);
+
+			curl_setopt($ch, CURLOPT_URL, $arecibo_url);
+			curl_setopt($ch, CURLOPT_POST, 1);
+			curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
+
+			$timeout = self::$configuration['core']['arecibo_timeout'];
+			if (!empty($timeout))
+				curl_setopt($ch, CURLOPT_TIMEOUT, $timeout);
+
+			$result = curl_exec($ch);
+			curl_close($ch);
+		}
 	}
 
 	/**
