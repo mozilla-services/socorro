@@ -9,7 +9,7 @@ Socorro VM (built with Vagrant + Puppet)
 ------------
 
 You can build a standalone Socorro development VM -
-see https://github.com/rhelmer/socorro-vagrant/ for more info. 
+see :ref:`setupdevenv-chapter` for more info. 
 
 The config files and puppet manifests in vagrant/ can be a useful reference
 when setting up Socorro for the first time, too.
@@ -120,8 +120,8 @@ Configure Socorro
 * On the machine(s) to run processor, setup :ref:`processor-chapter`
 
 Install startup scripts
-RHEL/CentOS only (Ubuntu TODO - see vagrant/ for supervisord example)
 ````````````
+RHEL/CentOS only (Ubuntu TODO - see vagrant/ for supervisord example)
 As *root*:
 ::
     ln -s /data/socorro/application/scripts/init.d/socorro-{monitor,processor,crashmover} /etc/init.d/
