@@ -515,7 +515,7 @@ final class Kohana {
 		{
 			self::$log[] = array(date('Y-m-d H:i:s P'), $type, $message);
 		}
-		if (self::$log_levels[$type] == self::$configuration['core']['arecibo_log_threshold'])
+		if (self::$log_levels[$type] == self::$configuration['core']['arecibo_log_level'])
 		{
 			$arecibo_url = self::$configuration['core']['arecibo_log_host'];
 			if (empty($arecibo_url))
@@ -543,6 +543,7 @@ final class Kohana {
 			curl_setopt($ch, CURLOPT_URL, $arecibo_url);
 			curl_setopt($ch, CURLOPT_POST, 1);
 			curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
+			curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
 
 			$timeout = self::$configuration['core']['arecibo_timeout'];
 			if (!empty($timeout))
