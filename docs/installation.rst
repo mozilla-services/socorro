@@ -5,17 +5,6 @@
 Installation
 ============
 
-Requirements
-------------
-* Linux (tested on Ubuntu Lucid and RHEL/CentOS 6)
-
-* HBase (Cloudera CDH3)
-
-* PostgreSQL 9.0
-
-* Python 2.6
-
-
 Socorro VM (built with Vagrant + Puppet)
 ------------
 
@@ -25,8 +14,21 @@ see https://github.com/rhelmer/socorro-vagrant/ for more info.
 The config files and puppet manifests in vagrant/ can be a useful reference
 when setting up Socorro for the first time, too.
 
-Ubuntu
+Manual Install
 ------------
+
+Requirements
+````````````
+* Linux (tested on Ubuntu Lucid and RHEL/CentOS 6)
+
+* HBase (Cloudera CDH3)
+
+* PostgreSQL 9.0
+
+* Python 2.6
+
+Ubuntu
+````````````
 1) Add PostgreSQL 9.0 PPA from https://launchpad.net/~pitti/+archive/postgresql
 2) Add Cloudera apt source from https://ccp.cloudera.com/display/CDHDOC/CDH3+Installation#CDH3Installation-InstallingCDH3onUbuntuSystems
 3) Install dependencies using apt-get
@@ -36,7 +38,7 @@ As *root*:
   apt-get install supervisor rsyslog libcurl4-openssl-dev build-essential sun-java6-jdk ant python-software-properties subversion libpq-dev python-virtualenv python-dev libcrypt-ssleay-perl phpunit php5-tidy python-psycopg2 python-simplejson apache2 libapache2-mod-wsgi memcached php5-pgsql php5-curl php5-dev php-pear php5-common php5-cli php5-memcache php5 php5-gd php5-mysql php5-ldap hadoop-hbase hadoop-hbase-master hadoop-hbase-thrift curl liblzo2-dev postgresql-9.0 postgresql-plperl-9.0 postgresql-contrib
 
 RHEL/Centos
-------------
+````````````
 Use "text install"
 Choose "minimal" as install option.
 
@@ -61,7 +63,7 @@ As *root*:
   shutdown -r now
 
 Download and install Socorro
-------------
+````````````
 Clone from github, as the *socorro* user:
 ::
   git clone https://github.com/mozilla/socorro
@@ -77,13 +79,13 @@ From inside the Socorro checkout, as the *socorro* user, change:
   databasePassword.default = 'secret'
 
 Run unit/functional tests, and generate report
-------------
+````````````
 From inside the Socorro checkout, as the *socorro* user:
 ::
   make coverage
 
 Set up directories and permissions
-------------
+````````````
 As *root*:
 ::
   mkdir /etc/socorro
@@ -104,13 +106,13 @@ From inside the Socorro checkout, as the *socorro* user:
   make minidump_stackwalk
 
 Install socorro
-------------
+````````````
 From inside the Socorro checkout, as the *socorro* user:
 ::
   make install
 
 Configure Socorro 
-------------
+````````````
 * Start configuration with :ref:`commonconfig-chapter`
 * On the machine(s) to run collector, setup :ref:`collector-chapter`
 * On the machine to run monitor, setup :ref:`monitor-chapter`
@@ -119,7 +121,7 @@ Configure Socorro
 
 Install startup scripts
 RHEL/CentOS only (Ubuntu TODO - see vagrant/ for supervisord example)
-------------
+````````````
 As *root*:
 ::
     ln -s /data/socorro/application/scripts/init.d/socorro-{monitor,processor,crashmover} /etc/init.d/
@@ -132,14 +134,14 @@ As *root*:
     chkconfig memcached on
 
 Install Socorro cron jobs
-------------
+````````````
 As *root*:
 ::
   ln -s /data/socorro/application/scripts/crons/socorrorc /etc/socorro/
   crontab /data/socorro/application/scripts/crons/example.crontab
 
 PostgreSQL Config
-------------
+````````````
 RHEL/CentOS - Initialize and enable on startup (not needed for Ubuntu)
 
 As *root*:
@@ -174,7 +176,7 @@ As the *postgres* user:
   psql -d test -f /usr/share/pgsql/contrib/citext.sql
 
 Load PostgreSQL Schema
-------------
+````````````
 From inside the Socorro checkout, as the *socorro* user:
 ::
   cp scripts/config/setupdatabaseconfig.py.dist scripts/config/setupdatabaseconfig.py
@@ -187,13 +189,13 @@ From inside the Socorro checkout, as the *socorro* user:
 
 
 Populate PostgreSQL Database
-------------
+````````````
 Refer to :ref:`populatepostgres-chapter` for information about
 populating the database.
 
 
 Configure Apache
-------------
+````````````
 As *root*:
 ::
   edit /etc/httpd/conf.d/socorro.conf
@@ -204,7 +206,7 @@ As *root*:
 Note - use www-data instead of apache for debian/ubuntu
 
 Enable PHP short_open_tag
-------------
+````````````
 As *root*:
 
 edit /etc/php.ini and make the following changes:
@@ -213,11 +215,11 @@ edit /etc/php.ini and make the following changes:
   date.timezone = 'America/Los_Angeles'
 
 Configure Kohana (PHP/web UI)
-------------
+````````````
 Refer to :ref:`uiinstallation-chapter` (deprecated as of 2.2, new docs TODO)
 
 Hadoop+HBase install
-------------
+````````````
 Configure Hadoop 0.20 + HBase 0.89
   Refer to https://ccp.cloudera.com/display/CDHDOC/HBase+Installation
 
@@ -234,7 +236,7 @@ As *root*:
   chkconfig hadoop-hbase-thrift on
 
 Load Hbase schema
-------------
+````````````
 FIXME this skips LZO suport, remove the "sed" command if you have it installed
 
 From inside the Socorro checkout, as the *socorro* user:
@@ -242,7 +244,7 @@ From inside the Socorro checkout, as the *socorro* user:
   cat analysis/hbase_schema | sed 's/LZO/NONE/g' | hbase shell
 
 System Test
-------------
+````````````
 Generate a test crash:
 
 1) Install http://code.google.com/p/crashme/ add-on for Firefox
