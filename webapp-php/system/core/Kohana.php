@@ -543,6 +543,7 @@ final class Kohana {
 			curl_setopt($ch, CURLOPT_URL, $arecibo_url);
 			curl_setopt($ch, CURLOPT_POST, 1);
 			curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
+			curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
 
 			$timeout = self::$configuration['core']['arecibo_timeout'];
 			if (!empty($timeout))
