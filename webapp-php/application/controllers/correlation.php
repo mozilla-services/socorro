@@ -199,6 +199,9 @@ class Correlation_Controller extends Controller
                 $data = $correlation->getGz($report . '.txt.gz');
             }
 
+            //Record general access
+            $this->cache->set($this->_getGeneralCacheKey($day, $product, $version, $report_name), true);
+
             if ($data !== false) {
                 if (array_key_exists($signature, $data)) {
                     $results = array(true, $data[$signature]);
@@ -212,8 +215,6 @@ class Correlation_Controller extends Controller
                     $this->cache->set($cache_key, $sig_data);
                 }
 
-                //Record general access
-                $this->cache->set($this->_getGeneralCacheKey($day, $product, $version, $report_name), true);
                 return $results;
             }
             $err = "ERROR: No reports generated on $day for $product ${version}. Looked at ${report}.txt and ${report}.txt.gz";
