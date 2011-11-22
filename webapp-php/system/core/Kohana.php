@@ -515,7 +515,7 @@ final class Kohana {
 		{
 			self::$log[] = array(date('Y-m-d H:i:s P'), $type, $message);
 		}
-		if (self::$log_levels[$type] == self::$configuration['core']['arecibo_log_threshold'])
+		if (self::$log_levels[$type] == self::$configuration['core']['arecibo_log_level'])
 		{
 			$arecibo_url = self::$configuration['core']['arecibo_log_host'];
 			if (empty($arecibo_url))
