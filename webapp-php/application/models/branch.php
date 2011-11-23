@@ -49,6 +49,22 @@ require_once(Kohana::find_file('libraries', 'versioncompare', TRUE, 'php'));
 class Branch_Model extends Model {
 
     protected static $_CACHE = array();
+    protected $_cache_obj;
+
+    public function __construct()
+    {
+        parent::__construct();
+        $this->_cache_obj = Cache::instance();
+        $c = $this->_cache_obj->get('branch.cache.objects');
+        if($c) {
+            self::$_CACHE = $c;
+        }
+    }
+
+    public function __destruct()
+    {
+        $this->_cache_obj->set('branch.cache.objects', self::$_CACHE, NULL, 1800);
+    }
 
     protected function _getValues(array $order_by = array(), $ignore_cache = false) {
         $order_by = implode(",", $order_by);
@@ -94,6 +110,11 @@ class Branch_Model extends Model {
         return $versions_array;
     }
 
+    protected function _clear_cache()
+    {
+        self::$_CACHE = array();
+    }
+
     /**
      * Add a new record to the branches view, via the productdims and product_visibility tables.
 	 *
@@ -118,6 +139,7 @@ class Branch_Model extends Model {
 			} catch (Exception $e) {
 				Kohana::log('error', "Could not add \"$product\" \"$version\" in soc.web branch.add \r\n " . $e->getMessage());
 			}
+            $this->_clear_cache(); // We have changed the data, so we need to reload it.
 			return $rv;
 		}
 	}
@@ -140,6 +162,7 @@ class Branch_Model extends Model {
 					AND	version = ?
 			 	", $product, $version
 			);
+            $this->_clear_cache(); // We have changed the data, so we need to reload it.
 			return $rv;
 		}
 	}
