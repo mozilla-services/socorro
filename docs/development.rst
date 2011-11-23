@@ -9,6 +9,7 @@ Development Discussions
    :maxdepth: 2
 
    codingconventions
+   newdeveloperguide
    glossary
    standalone
    unittesting

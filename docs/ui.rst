@@ -7,7 +7,9 @@ Socorro UI
 
 The Socorro UI is a KohanaPHP implementation that will operate the
 frontend website for the Crash Reporter website.
+
 Coding Standards
+----------------
 
 Maintaining coding standards will encourage current developers and
 future developers to implement clean and consistent code throughout
@@ -37,7 +39,7 @@ for the Socorro UI coding standards.
   must have the Mozilla Public License at the top of the file.
 
 Adding new reports
------------
+------------------
 
 Here is an example of a new report which uses a web service to fetch data
 (JSON via HTTP) and displays the result as an HTML table.
@@ -49,7 +51,7 @@ Create model, view(s) and controller for new report (substituting "newreport"
 for something more appropriate):
 
 Configuration (optional)
-^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^
 webapp-php/application/config/new_report.php
 
 .. code-block:: php
@@ -65,7 +67,7 @@ webapp-php/application/config/new_report.php
 
 
 Model
-^^^^^^^^^^^^
+^^^^^
 webapp-php/application/models/newreport.php
 
 .. code-block:: php
@@ -99,7 +101,7 @@ webapp-php/application/models/newreport.php
     ?>
 
 View
-^^^^^^^^^^^^
+^^^^
 webapp-php/application/views/newreport/byversion.php
 
 .. code-block:: html+php
@@ -194,7 +196,7 @@ webapp-php/application/views/newreport/byversion.php
     ?>
 
 Controller
-^^^^^^^^^^^^
+^^^^^^^^^^
 webapp-php/application/controllers/newreport.php
 
 .. code-block:: php

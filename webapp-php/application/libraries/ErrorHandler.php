@@ -45,16 +45,20 @@ class ErrorHandler
     public $error_reading_file = FALSE;
 
     /**
-     * Handels errors in the getJsonZ method.
-     * Callers must rest $this->error_reading_file to FALSE
+     * Handles errors fetching Correlation reports
+     * Callers must reset $this->error_reading_file to FALSE
      * before use and then check it after IO calls.
-     * @see getJsonZ
      * @see set_error_handler
      */
     public function handleError($errno, $errstr, $errfile, $errline)
     {
-	Kohana::log('error', "$errstr $errfile line $errline");
-	$this->error_reading_file = TRUE;
+        $severity = 'error';
+        if (strstr($errstr, 'HTTP/1.1 404 Not Found')) {
+            $severity = 'warning';
+        }
+
+        Kohana::log($severity, "$errstr $errfile line $errline");
+        $this->error_reading_file = TRUE;
     }
 }
 ?>

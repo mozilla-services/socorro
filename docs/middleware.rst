@@ -30,10 +30,10 @@ Mandatory parameters
 +----------------+------------------+-------------------+--------------------+
 | Name           | Type of value    | Default value     | Description        |
 +================+==================+===================+====================+
-| data_type      | String           | `signatures`      | Type of data we    |
+| data\_type     | String           | '`signatures`'    | Type of data we    |
 |                |                  |                   | are looking for.   |
-|                |                  |                   | Can be `crashes`   |
-|                |                  |                   | or `signatures`.   |
+|                |                  |                   | Can be '`crashes`' |
+|                |                  |                   | or '`signatures`'. |
 +----------------+------------------+-------------------+--------------------+
 
 Optional parameters
@@ -44,11 +44,11 @@ Optional parameters
 +========================+===============================+================+=========================================================================================================================================================+
 | for                    | String or list of strings     | None           | Terms we are searching for. Each term must be URL encoded. Several terms can be specified, separated by a + symbol.                                     |
 +------------------------+-------------------------------+----------------+---------------------------------------------------------------------------------------------------------------------------------------------------------+
-| product                | String or list of strings     | \`Firefox\`    | The product we are interested in. (e.g. Firefox, Fennec, Thunderbird… )                                                                                 |
+| product                | String or list of strings     | '`Firefox`'    | The product we are interested in. (e.g. Firefox, Fennec, Thunderbird… )                                                                                 |
 +------------------------+-------------------------------+----------------+---------------------------------------------------------------------------------------------------------------------------------------------------------+
-| from                   | Date                          | Now - 7 days   | Search for crashes that happened after this date. Can use the following formats: “yyyy-MM-dd”, “yyyy-MM-dd HH:ii:ss” or “yyyy-MM-dd HH:ii:ss.S”.        |
+| from                   | Date                          | Now - 7 days   | Search for crashes that happened after this date. Can use the following formats: '`yyyy-MM-dd`', '`yyyy-MM-dd HH:ii:ss`' or '`yyyy-MM-dd HH:ii:ss.S`'.  |
 +------------------------+-------------------------------+----------------+---------------------------------------------------------------------------------------------------------------------------------------------------------+
-| to                     | Date                          | Now            | Search for crashes that happened before this date. Can use the following formats: “yyyy-MM-dd”, “yyyy-MM-dd HH:ii:ss” or “yyyy-MM-dd HH:ii:ss.S”.       |
+| to                     | Date                          | Now            | Search for crashes that happened before this date. Can use the following formats: '`yyyy-MM-dd`', '`yyyy-MM-dd HH:ii:ss`' or '`yyyy-MM-dd HH:ii:ss.S`'. |
 +------------------------+-------------------------------+----------------+---------------------------------------------------------------------------------------------------------------------------------------------------------+
 | in                     | String or list of strings     | All            | Fields we are searching in. Several fields can be specified, separated by a + symbol. This is NOT implemented for PostgreSQL.                           |
 +------------------------+-------------------------------+----------------+---------------------------------------------------------------------------------------------------------------------------------------------------------+
@@ -58,7 +58,7 @@ Optional parameters
 +------------------------+-------------------------------+----------------+---------------------------------------------------------------------------------------------------------------------------------------------------------+
 | branches               | String or list of strings     | None           | Restrict to a branch of the product. Several branches can be specified, separated by a + symbol.                                                        |
 +------------------------+-------------------------------+----------------+---------------------------------------------------------------------------------------------------------------------------------------------------------+
-| search\_mode           | String                        | \`default\`    | Set how to search. Can be either \`default\`, \`is\_exactly\`, \`contains\` or \`starts\_with\`.                                                        |
+| search\_mode           | String                        | '`default`'    | Set how to search. Can be either '`default`', '`is\_exactly`', '`contains`' or '`starts\_with`'.                                                        |
 +------------------------+-------------------------------+----------------+---------------------------------------------------------------------------------------------------------------------------------------------------------+
 | reason                 | String or list of strings     | None           | Restricts search to crashes caused by this reason.                                                                                                      |
 +------------------------+-------------------------------+----------------+---------------------------------------------------------------------------------------------------------------------------------------------------------+
@@ -68,13 +68,13 @@ Optional parameters
 +------------------------+-------------------------------+----------------+---------------------------------------------------------------------------------------------------------------------------------------------------------+
 | build\_to              | Integer or list of integers   | None           | Restricts search to crashes with a build id lower than this.                                                                                            |
 +------------------------+-------------------------------+----------------+---------------------------------------------------------------------------------------------------------------------------------------------------------+
-| report\_process        | String                        | \`any\`        | Can be \`any\`, \`browser\` or \`plugin\`.                                                                                                              |
+| report\_process        | String                        | '`any`'        | Can be '`any`', '`browser`' or '`plugin`'.                                                                                                              |
 +------------------------+-------------------------------+----------------+---------------------------------------------------------------------------------------------------------------------------------------------------------+
-| report\_type           | String                        | \`any\`        | Can be \`any\`, \`crash\` or \`hang\`.                                                                                                                  |
+| report\_type           | String                        | '`any`'        | Can be '`any`', '`crash`' or '`hang`'.                                                                                                                  |
 +------------------------+-------------------------------+----------------+---------------------------------------------------------------------------------------------------------------------------------------------------------+
-| plugin\_in             | String or list of strings     | \`name\`       | Search for a plugin in this field. \`report\_process\` has to be set to \`plugin\`.                                                                     |
+| plugin\_in             | String or list of strings     | '`name`'       | Search for a plugin in this field. '`report\_process`' has to be set to '`plugin`'.                                                                     |
 +------------------------+-------------------------------+----------------+---------------------------------------------------------------------------------------------------------------------------------------------------------+
-| plugin\_search\_mode   | String                        | \`default\`    | How to search for this plugin. report\_process has to be set to plugin. Can be either \`default\`, \`is\_exactly\`, \`contains\` or \`starts\_with\`.   |
+| plugin\_search\_mode   | String                        | '`default`'    | How to search for this plugin. report\_process has to be set to plugin. Can be either '`default`', '`is\_exactly`', '`contains`' or '`starts\_with`'.   |
 +------------------------+-------------------------------+----------------+---------------------------------------------------------------------------------------------------------------------------------------------------------+
 | plugin\_term           | String or list of strings     | None           | Terms to search for. Several terms can be specified, separated by a + symbol. report\_process has to be set to plugin.                                  |
 +------------------------+-------------------------------+----------------+---------------------------------------------------------------------------------------------------------------------------------------------------------+
@@ -126,11 +126,10 @@ If `data_type` is `signatures`, return value looks like::
                 "date_processed": "2011-03-16 06:54:56.385843",
                 "reason": "EXC_BAD_ACCESS / KERN_INVALID_ADDRESS",
                 "address": "0x1d3aff03",
-                ...
-            },
-            ...
+                "...": "..."
+            }
         ],
-        "total": 2
+        "total": 1
     }
 
 If an error occured, the API will return something like this::
@@ -138,11 +137,62 @@ If an error occured, the API will return something like this::
     Well, for the moment it doesn't return anything but an Internal Error
     HTTP header... We will improve that soon! :)
 
+Versions Info
+-------------
+
+Return information about one or several couples product:version.
+
+API specifications
+^^^^^^^^^^^^^^^^^^
+
++----------------+--------------------------------------------------------------------------------+
+| HTTP method    | GET                                                                            |
++----------------+--------------------------------------------------------------------------------+
+| URL schema     | /util/versions_info/(optional_parameters)                                      |
++----------------+--------------------------------------------------------------------------------+
+| Full URL       | /util/versions_info/version/(version)/                                         |
++----------------+--------------------------------------------------------------------------------+
+| Example        | http://socorro-api/bpapi/util/versions_info/versions/Firefox:9.0a1+Fennec:7.0/ |
++----------------+--------------------------------------------------------------------------------+
+
+Mandatory parameters
+^^^^^^^^^^^^^^^^^^^^
+
+None.
+
+Optional parameters
+^^^^^^^^^^^^^^^^^^^
+
++----------------+------------------+-------------------+--------------------+
+| Name           | Type of value    | Default value     | Description        |
++================+==================+===================+====================+
+| versions       | String or list   | None              | Product:Versions   |
+|                | of strings       |                   | couples for which  |
+|                |                  |                   | information is     |
+|                |                  |                   | asked.             |
++----------------+------------------+-------------------+--------------------+
+
+Return value
+^^^^^^^^^^^^
+
+If parameter ``versions`` is unvalid, return value is ``None``. Otherwise it
+looks like this::
+
+    {
+        "product_name:version_string": {
+            "version_string": "string",
+            "product_name": "string",
+            "major_version": "string" or None,
+            "release_channel": "string" or None,
+            "build_id": [list, of, decimals] or None
+        }
+    }
+
 Forcing an implementation
 -------------------------
 
 For debuging reasons, you can add a parameter to force the API to use a
-specific implementation module. That module must be inside *socorro.external*
+specific implementation module. That module must be inside `socorro.external`
 and contain the needed service implementation.
 
 +----------------+---------------+---------------+---------------------------+
@@ -153,6 +203,6 @@ and contain the needed service implementation.
 +----------------+---------------+---------------+---------------------------+
 
 For example, if you want to force search to be executed with ElasticSearch,
-you can add to the middleware call \`force_api_impl/elasticsearch/\`. If
-*socorro.external.elasticsearch* exists and contains a \`search\` module, it
+you can add to the middleware call `force\_api\_impl/elasticsearch/`. If
+`socorro.external.elasticsearch` exists and contains a `search` module, it
 will get loaded and used.
