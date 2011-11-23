@@ -57,7 +57,7 @@ WHERE sig_browser.signature LIKE 'hang | %'
     AND plugin.process_type = 'plugin'
     AND utc_day_near(browser.date_processed, updateday)
     AND utc_day_is(plugin.date_processed, updateday)
-    AND utc_day_is(browser_info.date_processed, updateday)
+    AND utc_day_is(plugin_info.date_processed, updateday)
 GROUP BY plugin.uuid, plugin.signature_id, plugin.hang_id, plugin.flash_version_id,
 	plugin.duplicate_of;
     

@@ -15,7 +15,7 @@ begin
 -- intended to be run hourly for a target time three hours ago or so
 -- eventually to be replaced by code for the processors to run
 
--- VERSION: 0.2
+-- VERSION: 0.3
 
 -- accepts a timestamptz, so be careful that the calling script is sending 
 -- something appropriate
@@ -51,12 +51,12 @@ as select uuid,
 	install_age,
 	build,
 	COALESCE(signature, '')::text as signature,
-	COALESCE(reason, '')::citext as reason,
-	COALESCE(address, '')::citext as address,
-	COALESCE(flash_version, '')::citext as flash_version,
+	COALESCE(reason, 'unknown')::citext as reason,
+	COALESCE(address, 'unknown')::citext as address,
+	COALESCE(flash_version, 'unknown')::citext as flash_version,
 	COALESCE(product, '')::citext as product,
 	COALESCE(version, '')::citext as version,
-	COALESCE(os_name, '')::citext as os_name,
+	COALESCE(os_name, 'unknown')::citext as os_name,
 	os_version::citext as os_version,
 	coalesce(process_type, 'browser') as process_type,
 	COALESCE(url2domain(url),'') as domain,
@@ -83,6 +83,7 @@ create index new_reports_uuid on new_reports(uuid);
 create index new_reports_signature on new_reports(signature);
 create index new_reports_address on new_reports(address);
 create index new_reports_domain on new_reports(domain);
+create index new_reports_reason on new_reports(reason);
 analyze new_reports;
 
 -- trim reports_bad
@@ -94,8 +95,8 @@ WHERE date_processed < ( now() - interval '2 days' );
 delete from new_reports
 using reports_clean
 where new_reports.uuid = reports_clean.uuid
-and reports_clean.date_processed between ( fromtime - interval '1 hour' )
-and ( fromtime + fortime + interval '1 hour' );
+and reports_clean.date_processed between ( fromtime - interval '1 day' )
+and ( fromtime + fortime + interval '1 day' );
 
 -- insert signatures into signature list
 
@@ -258,12 +259,11 @@ INSERT INTO reports_bad ( uuid, date_processed )
 SELECT uuid, date_processed 
 FROM reports_clean_buffer
 WHERE product_version_id = 0
-	OR os_name IS NULL
-	OR release_channel IS NULL;
+	OR release_channel IS NULL
+	OR signature_id IS NULL;
 	
 DELETE FROM reports_clean_buffer
 WHERE product_version_id = 0
-	OR os_name IS NULL
 	OR release_channel IS NULL
 	OR signature_id IS NULL;
 	
@@ -310,13 +310,4 @@ DROP TABLE reports_clean_buffer;
 RETURN TRUE;
 
 END;
-$f$;
-
-
-CREATE OR REPLACE FUNCTION update_reports_clean_cron ( 
-	crontime timestamptz )
-RETURNS BOOLEAN
-LANGUAGE sql
-AS $f$
-SELECT update_reports_clean( date_trunc('hour', $1) - interval '1 hour' );
 $f$;

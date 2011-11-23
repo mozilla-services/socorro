@@ -12,6 +12,7 @@ This batch makes the following database changes:
 701255
 	daily_crashes.sql
 	update_tcbs.sql
+	backfill_matviews.sql
 	
 	Switch the tcbs and daily_crashes cron jobs to use reports_clean
 	instead of reports.
@@ -25,8 +26,22 @@ This batch makes the following database changes:
 	
 703429
 	truncate_reports_bad.sql
-	update_reports_clean.sql
+	update_reports_clean.sql*
 	
 	Add automated trimming of the reports_bad audit table.
+	
+703731
+	fix_tz_functions.sql
+	
+	Fix date-tz conversion functions to work on days when
+	DST is beginning or ending.
+	
+704630
+	unknown.sql
+	update_reports_clean.sql*
+	
+	Fix reports_clean to count corrupt dumps.
 
 None of the above require backfilling, so this should be a fast migration.
+
+* this script is called by more than one feature, so removing one of the two features will require some rewriting.

@@ -1,6 +1,6 @@
-\set ON_ERROR_STOP 1
-
 DROP FUNCTION backfill_daily_crashes( date, text );
+
+\set ON_ERROR_STOP 1
 
 -- update code-mapping function
 CREATE OR REPLACE FUNCTION daily_crash_code (

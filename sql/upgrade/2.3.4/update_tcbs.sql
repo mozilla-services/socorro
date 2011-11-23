@@ -1,6 +1,25 @@
+drop function backfill_tcbs(date, text);
+
+\set ON_ERROR_STOP 1
+
+create or replace function backfill_tcbs (
+	updateday date )
+returns boolean
+language plpgsql
+as $f$
+BEGIN
+-- function for administrative backfilling of TCBS
+-- designed to be called by backfill_matviews
+DELETE FROM tcbs WHERE report_date = updateday;
+PERFORM update_tcbs(updateday, false);
+
+RETURN TRUE;
+END;$f$;
+
+
 
 create or replace function update_tcbs (
-	updateday date )
+	updateday date, checkdata boolean default true )
 RETURNS BOOLEAN
 LANGUAGE plpgsql
 SET work_mem = '512MB'
@@ -14,10 +33,12 @@ BEGIN
 
 -- check that it hasn't already been run
 
-PERFORM 1 FROM tcbs
-WHERE report_date = updateday LIMIT 1;
-IF FOUND THEN
-	RAISE EXCEPTION 'TCBS has already been run for the day %.',updateday;
+IF checkdata THEN
+	PERFORM 1 FROM tcbs
+	WHERE report_date = updateday LIMIT 1;
+	IF FOUND THEN
+		RAISE EXCEPTION 'TCBS has already been run for the day %.',updateday;
+	END IF;
 END IF;
 
 -- check if reports_clean is complete
