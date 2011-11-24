@@ -77,7 +77,7 @@
                 <p>Something bad happened.  It's not you, it's me.</p>
                 <p>Please
             <?php } ?>
-                submit a <a href="https://bugzilla.mozilla.org/enter_bug.cgi?product=Webtools&component=Socorro&bug_file_loc=<?php echo urlencode($_SERVER['SCRIPT_URI']); ?>">Bugzilla ticket</a> describing what happened, and please include the URL for this page.</p>
+                file an <a href="https://bugzilla.mozilla.org/enter_bug.cgi?product=Webtools&component=Socorro&bug_file_loc=<?php echo urlencode($_SERVER['SCRIPT_URI']); ?>">issue in Bugzilla</a> describing what happened, and please include the URL for this page.</p>
 	        </div>
 	    </div>
     </div>
