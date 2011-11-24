@@ -14,7 +14,6 @@ Development Discussions
    standalone
    unittesting
    crashreprofilteringreport
-   databasepartitioning
    diskperformancetests
    dumpingdumptables
    jsondumpstorage
