@@ -87,31 +87,7 @@ class Query_Controller extends Controller {
             'startswith' => 'starts with'
         );
     }
-
-    /**
-     * Handle a quick search query for either a OOID or stack signature.
-     *
-     * @param  array    An array of _GET parameters
-     * @return array    An array of updated _GET parameters
-     */
-    public function _simple($params)
-    {
-        if (!empty($params['query'])) {
-            $crash = new Crash();
-            $ooid = $crash->parseOOID($params['query']);
-
-            if ($ooid !== FALSE) {
-                return url::redirect('report/index/' . $ooid);
-            } else {
-                $params['query_search'] = 'signature';
-                $params['query_type'] = 'exact';
-                $params['range_value'] = 1;
-                $params['range_unit'] = 'weeks';
-            }
-        }
-        return $params;
-    }
-
+     
     /**
      * Update search parameters as needed.
      *
@@ -171,7 +147,19 @@ class Query_Controller extends Controller {
 
         // Handle simple queries.  Determine if searching for OOID or Signature.
         if (isset($_GET['query_type']) && $_GET['query_type'] == 'simple') {
-            $params = $this->_simple($params);
+            if (!empty($params['query'])) {
+                $crash = new Crash();
+                $ooid = $crash->parseOOID($params['query']);
+
+                if ($ooid !== FALSE) {
+                    return url::redirect('report/index/' . $ooid);
+                } else {
+                    $params['query_search'] = 'signature';
+                    $params['query_type'] = 'exact';
+                    $params['range_value'] = 1;
+                    $params['range_unit'] = 'weeks';
+                }
+            }
         }
 
         $queryFormData = $this->queryFormHelper->prepareCommonViewData($this->branch_model, $this->platform_model);
