@@ -6,17 +6,20 @@
 UI Installation
 ===============
 
+Installation
+---------------
+
 Follow these steps to get the Socorro UI up and running.
 
 Apache
-------
+````````````
 
 Set up Apache with a vhost as you see fit. You will either need
 AllowOverride to enable .htaccess files or you may paste the .htaccess
 rules into your vhost.
 
 KohanaPHP Installation
-----------------------
+``````````````````````
 
 1. Copy .htaccess file and edit the host path if your webapp is not at
    the domain root.::
@@ -79,7 +82,7 @@ $config['display_errors'] to FALSE.
      a+rw application/logs application/cache
 
 Dump Files
-----------
+````````````
 
 Socorro UI needs to access the processed dump files via HTTP. You will
 need to setup Apache or some other system to ensure that dump files
@@ -95,7 +98,7 @@ application/config/application.php to point to the proper directory.
 
 
 Raw Dump Files
---------------
+```````````````
 
 When a user is logged in to Socorro UI as an admin, they may view raw
 crash dump files. These raw crashes can be served up by Apache by
@@ -111,13 +114,13 @@ Next, update the $config['raw_dump_url'] value in
 application/config/application.php to point to the proper directory.
 
 Web Services
-------------
+````````````
 
 Many parts of Socorro UI rely on web services provided by the
 Python-based middleware layer.
 
 Middleware
-----------
+````````````
 
 Copy the scripts/config/webapiconfig.py file, edit it accordingly and
 execute the script to listen on the indicated port.::
@@ -127,7 +130,7 @@ execute the script to listen on the indicated port.::
  python scripts/webservices.py 8083
 
 Socorro UI
-----------
+````````````
 
 Copy application/config/webserviceclient.php, edit the file and change
 $config['socorro_hostname'] to contain the proper hostname and port
@@ -137,12 +140,12 @@ number. If necessary, update $config['basic_auth']::
  vim application/config/webserviceclient.php
 
 Testing Your Setup
-------------------
+```````````````````
 
 There are 2 ways in which you can test your Socorro UI setup.
 
 Search
-------
+````````````
 
 Visit the website containing the Socorro UI, and click Advanced
 Search. Perform a search for the product you've added to the site,
@@ -151,9 +154,43 @@ table in your database.
 
 
 Report
-------
+````````````
 
 Within the search results set you received, click a signature in the
 results set. Next click the timestamp for a particular signature,
 which will take you to a page that displays an individual crash
 report.
+
+
+Trouble Shooting
+-----------------
+
+println the sql
+````````````````
+
+To see what SQL queries are being executed: Edit
+'webapp-php/system/libraries/Database.php' line 443 Kohana::log('debug', $sql);
+Do a svn ignore on this file, if you plan on checking in code.
+
+This will show up in the debug log 'application/logs/date.log.php'
+
+Examine your database and see why you don't get the expected results.
+
+404?
+````````````
+
+Is your '.htaccess' properly setup?
+
+/report/pending never goes to /report/index?
+`````````````````````````````````````````````
+
+If you see a pending screen and didn't expect one this means that the
+record in report and dumps couldn't be joined so it's waiting for the
+processor on the backend to populate one or both tables. Investigate
+with the uuid and look at reports and dump tables.
+
+Config Files
+````````````
+
+Ensure that the appropriate config files in webapp/application/config
+have been copied from ``.php-dist`` to ``.php``
