@@ -15,10 +15,6 @@ class Search(DataAPIService):
 
     """
 
-    default_service_order = [
-        "socorro.external.postgresql",
-        "socorro.external.elasticsearch"
-    ]
     service_name = "search"
     uri = "/search/([^/.]*)/(.*)"
 

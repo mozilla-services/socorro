@@ -20,6 +20,7 @@ def get_dummy_context():
     context.databaseUserName = 'ricky'
     context.databasePassword = 'lucy'
     context.databasePort = 127
+    context.searchImplementationModule = "socorro.external.postgresql"
     context.serviceImplementationModule = "socorro.external.elasticsearch"
     context.elasticSearchHostname = "localhost"
     context.elasticSearchPort = "9200"
@@ -34,28 +35,8 @@ def test_get_module():
     service.service_name = "search"
     params = {}
 
-    # Test config module
+    # Test service config module
     import_failed = False
-    try:
-        mod = service.get_module(params)
-    except NotImplementedError:
-        import_failed = True
-
-    assert not import_failed, ("NotImplementedError exception raised when"
-                               " trying to get config implementation")
-    assert mod != False, "Result of get_module is not a module"
-
-    try:
-        search = mod.Search(config=config)
-    except AttributeError:
-        assert False, "The imported module does not contain the needed class"
-
-    assert isinstance(search, es.ElasticSearchBase), (
-                "Imported module is not the right one")
-
-    # Test forced module
-    import_failed = False
-    params["force_api_impl"] = "postgresql"
     try:
         mod = service.get_module(params)
     except NotImplementedError:
@@ -73,14 +54,30 @@ def test_get_module():
     assert isinstance(search, pg.PostgreSQLBase), (
                 "Imported module is not the right one")
 
-    # Test default module
+    # Test forced module
+    import_failed = False
+    params["force_api_impl"] = "elasticsearch"
+    try:
+        mod = service.get_module(params)
+    except NotImplementedError:
+        import_failed = True
+
+    assert not import_failed, ("NotImplementedError exception raised when"
+                               " trying to get config implementation")
+    assert mod != False, "Result of get_module is not a module"
+
+    try:
+        search = mod.Search(config=config)
+    except AttributeError:
+        assert False, "The imported module does not contain the needed class"
+
+    assert isinstance(search, es.ElasticSearchBase), (
+                "Imported module is not the right one")
+
+    # Test default config module
     import_failed = False
     params = {}
-    service.default_service_order = [
-        "socorro.external.elasticsearch",
-        "socorro.external.postgresql",
-    ]
-    config.serviceImplementationModule = "unknownmodule"
+    del config.searchImplementationModule
     try:
         mod = service.get_module(params)
     except NotImplementedError:
@@ -101,11 +98,10 @@ def test_get_module():
     # Test no valid module to import
     import_failed = False
     params = {}
-    service.default_service_order = []
     config.serviceImplementationModule = "unknownmodule"
     try:
         mod = service.get_module(params)
-    except NotImplementedError:
+    except AttributeError: # catching the exception raised by web.InternalError
         import_failed = True
 
     assert import_failed, "Impossible import succeeded: %s" % mod

@@ -30,12 +30,6 @@ wsgiInstallation = cm.Option()
 wsgiInstallation.doc = 'True or False, this app is installed under WSGI'
 wsgiInstallation.default = True
 
-# Implementation class for the Middleware services implementations
-# Can be socorro.external.elasticsearch or socorro.external.postgresql
-serviceImplementationModule = cm.Option()
-serviceImplementationModule.doc = 'String, name of the module that implements the services.'
-serviceImplementationModule.default = 'socorro.external.postgresql'
-
 # Elastic Search configuration
 elasticSearchHostname = cm.Option()
 elasticSearchHostname.doc = 'String containing the URI of the Elastic Search instance.'
@@ -44,6 +38,23 @@ elasticSearchHostname.default = 'localhost'
 elasticSearchPort = cm.Option()
 elasticSearchPort.doc = 'String containing the port on which calling the Elastic Search instance.'
 elasticSearchPort.default = '9200'
+
+#---------------------------------------------------------------------------
+# Configuration for middleware services
+
+# Default implementation class for the Middleware services implementations
+# If a module doesn't define it's own value, use that one.
+# Can be socorro.external.elasticsearch or socorro.external.postgresql
+serviceImplementationModule = cm.Option()
+serviceImplementationModule.doc = ("String, name of the default module that "
+                                   "services use.")
+serviceImplementationModule.default = "socorro.external.postgresql"
+
+# Search service config
+searchImplementationModule = cm.Option()
+searchImplementationModule.doc = ("String, name of the module the search "
+                                  "service uses.")
+searchImplementationModule.default = 'socorro.external.postgresql'
 
 searchMaxNumberOfDistinctSignatures = cm.Option()
 searchMaxNumberOfDistinctSignatures.doc = (
@@ -72,7 +83,25 @@ import socorro.middleware.search_service as search
 
 servicesList = cm.Option()
 servicesList.doc = 'a python list of classes to offer as services'
-servicesList.default = [search.Search, tcbst.TopCrashBySignatureTrends, sighist.SignatureHistory, adubd.AduByDay, adudetails.AduByDayDetails, crash.GetCrash, emailcampaign.EmailCampaign, emailcreate.EmailCampaignCreate, emaillist.EmailCampaigns, emailvolume.EmailCampaignVolume, emailsub.EmailSubscription, emailsend.EmailSender, schedule.SchedulePriorityJob, bugzilla.Bugzilla, cv.CurrentVersions, vi.VersionsInfo, hr.HangReport]
+servicesList.default = [
+    tcbst.TopCrashBySignatureTrends,
+    sighist.SignatureHistory,
+    adubd.AduByDay,
+    adudetails.AduByDayDetails,
+    crash.GetCrash,
+    emailcampaign.EmailCampaign,
+    emailcreate.EmailCampaignCreate,
+    emaillist.EmailCampaigns,
+    emailvolume.EmailCampaignVolume,
+    emailsub.EmailSubscription,
+    emailsend.EmailSender,
+    schedule.SchedulePriorityJob,
+    bugzilla.Bugzilla,
+    cv.CurrentVersions,
+    vi.VersionsInfo,
+    hr.HangReport,
+    search.Search,
+]
 
 crashBaseUrl = cm.Option()
 crashBaseUrl.doc = 'The base url for linking to crash-stats. This will be used in email templates'
