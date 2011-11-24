@@ -28,7 +28,6 @@ Contents:
    middleware
    ui
    uiinstallation
-   uitroubleshooting
    server
    throttling
    deployment

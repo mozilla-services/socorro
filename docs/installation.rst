@@ -270,7 +270,3 @@ Attempt to pull up the newly inserted crash: https://crash-stats/report/index/0f
 
 The (syslog "user" facility) logs should show this new crash being inserted for priority processing, and it should be available shortly thereafter.
 
-Known Issues
-------------
-* aggregate reports (top crashers, etc) do not work without existing data https://bugzilla.mozilla.org/show_bug.cgi?id=698943
-
