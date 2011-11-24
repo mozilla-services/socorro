@@ -161,16 +161,17 @@ class ElasticSearchBase(object):
                 }
             })
 
-        if params["report_process"] == "plugin":
-            filters["and"].append(ElasticSearchBase.build_terms_query(
-                                                        "process_type",
-                                                        "plugin"))
-        if params["report_type"] == "crash":
-            filters["and"].append({"missing": {"field": "hangid"}})
-        if params["report_type"] == "hang":
-            filters["and"].append({"exists": {"field": "hangid"}})
         if params["report_process"] == "browser":
             filters["and"].append({"missing": {"field": "process_type"}})
+        elif params["report_process"] in ("plugin", "content"):
+            filters["and"].append(ElasticSearchBase.build_terms_query(
+                                                    "process_type",
+                                                    params["report_process"]))
+
+        if params["report_type"] == "crash":
+            filters["and"].append({"missing": {"field": "hangid"}})
+        elif params["report_type"] == "hang":
+            filters["and"].append({"exists": {"field": "hangid"}})
 
         # Generating the filters for versions
         if params["versions"]:
