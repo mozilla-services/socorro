@@ -52,3 +52,27 @@ class UTC(dt.tzinfo):
   #-----------------------------------------------------------------------------------------------------------------
   def dst(self, dt):
     return UTC.ZERO
+
+
+def string_to_datetime(date):
+    """
+    Take a string and return a datetime object.
+    """
+    if not date:
+        raise ValueError
+
+    if type(date) is not dt.datetime:
+        if type(date) is list:
+            date = " ".join(date)
+        try:
+            date = datetimeFromISOdateString(date)
+        except ValueError:
+            raise
+    return date
+
+def date_to_string(date):
+    """
+    Transform a datetime object into a string and return it.
+    """
+    date_format = "%Y-%m-%d %H:%M:%S.%f"
+    return date.strftime(date_format)
