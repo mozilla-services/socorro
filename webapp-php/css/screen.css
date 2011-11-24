@@ -1620,3 +1620,8 @@ table.recent-campaigns .signature:first-child td{
 table.tablesorter tbody tr.odd {
     background-color: #edecec;
 }
+/* top crashers no results */
+.no-results {
+    clear: both;
+    padding: 1.2em 0 1em 1em;
+}
