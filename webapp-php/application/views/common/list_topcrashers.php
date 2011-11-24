@@ -4,7 +4,7 @@
     <span class="start-date"><?= $start ?></span> through
     <span class="end-date"><?= $last_updated ?></span>.
 	<p>The report covers <span class="percentage" title="<?=$percentTotal?>"><?= number_format($percentTotal * 100, 2)?>%</span> of all <?= $percentTotal > 0 ? round($total_crashes / $percentTotal) : $total_crashes ?> crashes during this period. Graphs below are dual-axis, having <strong>Count</strong> (Number of Crashes) on the left X axis and <strong>Percent</strong> of total of Crashes on the right X axis.</p>
-
+<?php } ?>
     <ul class="tc-duration-type">
         <li class="tc-duration-heading">Type:</li>
         <?php foreach ($crash_types as $ct) { ?>
@@ -17,7 +17,7 @@
             <li><a href="<?= $duration_url . '/' . $d . '/' . $crash_type; ?>" <?php if ($d == $duration) echo 'class="selected"'; ?>><?= $d ?></a></li>
         <?php }?>
     </ul>
-
+<?php if (count($top_crashers) > 0) { ?>
         <table id="signatureList" class="tablesorter">
             <thead>
                 <tr>
@@ -173,5 +173,5 @@
 //]]></script>
     <?php View::factory('common/csv_link_copy')->render(TRUE); ?>
 <?php } else { ?>
-    <p>No results were found.</p>
+    <p class="no-results">No crashing signatures found for the period <time><?= $start ?></time> to <time><?= $last_updated ?></time></p>
 <?php } ?>
