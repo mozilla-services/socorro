@@ -152,9 +152,12 @@ $(document).ready(function () {
             }//end for
         }//end if
     };//end correlationCallback
-
-    for (i = 0; i < correlations.length; i++) {
-        loadCorrelations(correlations[i], correlationCallback);
+    
+    /* ensure there are correlations to load before calling the function */
+    if($('.correlation-cell').length > 0) {
+        for (i = 0; i < correlations.length; i++) {
+            loadCorrelations(correlations[i], correlationCallback);
+        }
     }
 
     $('.top').girdle({previewClass: 'correlation-preview', fullviewClass: 'correlation-popup'});
