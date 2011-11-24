@@ -25,3 +25,7 @@ Development Discussions
    schema
    databasesetup
    commonconfig
+   creatingmatviews
+   databaseadminfunctions
+   databasetablesbysource
+   populatepostgres
