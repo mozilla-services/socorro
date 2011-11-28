@@ -41,3 +41,5 @@ from productdims join product_visibility
 			or productdims.version = product_versions.version_string )
 where product_versions.product_name is null
 order by product_name, version_string;
+
+alter view product_info owner to breakpad_rw;
