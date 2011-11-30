@@ -24,7 +24,6 @@ class HangReport_Model extends Model {
        $cache_in_minutes = Kohana::config('webserviceclient.hang_report_cache_minutes', 60);
        $end_date = urlencode(date('Y-m-d\TH:i:s\T+0000', TimeUtil::roundOffByMinutes($cache_in_minutes)));
        $limit = Kohana::config('hang_report.byversion_limit', 300);
-       $lifetime = Kohana::config('products.cache_expires');
        $p = urlencode($product);
        $v = urlencode($version);
        $pg = urlencode($page);
