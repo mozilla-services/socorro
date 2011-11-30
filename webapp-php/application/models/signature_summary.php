@@ -37,7 +37,7 @@ class Signature_Summary_Model extends Model {
        } 
        $start_c = $this->db->escape($start);
        $end_c = $this->db->escape($end);
-        $sql = "WITH counts AS (
+       $sql = "WITH counts AS (
             SELECT uptime_level, report_count,
                     sum(report_count) over () as total_count
                         FROM uptime_signature_counts
@@ -46,12 +46,12 @@ class Signature_Summary_Model extends Model {
                                     )
         SELECT uptime_string, 
             round(sum(report_count)*100/max(total_count)::numeric, 1) as report_percent,
-                sum(report_count) as report_count
+                sum(report_count) as report_count, min_uptime
                 FROM counts
                     JOIN uptime_levels USING (uptime_level)
-                    GROUP BY uptime_string
+                    GROUP BY uptime_string, min_uptime
                     HAVING sum(report_count)*100/max(total_count)::numeric >= 1.0
-                    ORDER BY report_count DESC";
+                    ORDER BY min_uptime";
 
         return $this->db->query($sql)->as_array();
     }
