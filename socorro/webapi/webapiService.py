@@ -35,7 +35,7 @@ class Timeout(web.webapi.HTTPError):
         super(Timeout, self).__init__(self, status, headers, self.message)
 
 
-class JsonServiceBase(object):
+class JsonWebServiceBase(object):
 
     """
     Provide an interface for JSON-based web services.
@@ -46,13 +46,7 @@ class JsonServiceBase(object):
         """
         Set the DB and the pool up and store the config.
         """
-        try:
-            self.context = config
-            self.database = db.Database(config)
-            self.crashStoragePool = cs.CrashStoragePool(config,
-                                        storageClass=config.hbaseStorageClass)
-        except (AttributeError, KeyError):
-            util.reportExceptionAndContinue(logger)
+        self.context = config
 
     def GET(self, *args):
         """
@@ -106,3 +100,23 @@ class JsonServiceBase(object):
     def post(self, *args):
         raise NotImplementedError(
                     "The POST function has not been implemented.")
+
+
+class JsonServiceBase(JsonWebServiceBase):
+
+    """
+    Provide an interface for JSON-based web services.
+
+    """
+
+    def __init__(self, config):
+        """
+        Set the DB and the pool up and store the config.
+        """
+        super(JsonServiceBase, self).__init__(config)
+        try:
+            self.database = db.Database(config)
+            self.crashStoragePool = cs.CrashStoragePool(config,
+                                        storageClass=config.hbaseStorageClass)
+        except (AttributeError, KeyError):
+            util.reportExceptionAndContinue(logger)

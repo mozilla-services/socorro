@@ -1088,7 +1088,52 @@ tr{ z-index: 50; }
 #duration-nav {
     float: right;
 }
-
+/* duration and os selectors on top crashers */
+.tc-duration-heading {
+    margin-right: .7em;
+    font-weight: bold;
+}
+.tc-duration-type, 
+.tc-duration-days {
+    float: left;
+    margin: 0.3em 1em 0.3em 0;
+    padding: 0;
+}
+.tc-duration-type a:link,
+.tc-duration-type a:visited, 
+.tc-duration-days  a:link, 
+.tc-duration-days  a:visited {
+    display: inline-block;
+    background-color: #e0e0e0;
+    color: #333;
+    margin-right: .2em;
+    padding: .3em;
+    border-radius: 6px;
+    text-decoration: none;
+    text-align: center;
+    -moz-transition: background-color 1s;
+    transition: background-color 1s;
+}
+.tc-duration-type a:hover, 
+.tc-duration-days a:hover {
+    background-color: #B6D3E2;
+}
+.tc-duration-type a {
+    min-width: 65px;
+}
+.tc-duration-days  a {
+    min-width: 30px;
+}
+.tc-duration-type a.selected, 
+.tc-duration-days a.selected {
+    background-color: #60A0C0;
+    color: #fff;
+    font-weight: bold;
+}
+.tc-duration-type li, 
+.tc-duration-days li {
+    display: inline;
+}
 #duration-nav ul li {
     float: left;
     list-style-type: none;
@@ -1574,4 +1619,9 @@ table.recent-campaigns .signature:first-child td{
 /* espressive */
 table.tablesorter tbody tr.odd {
     background-color: #edecec;
+}
+/* top crashers no results */
+.no-results {
+    clear: both;
+    padding: 1.2em 0 1em 1em;
 }

@@ -14,7 +14,6 @@ Development Discussions
    standalone
    unittesting
    crashreprofilteringreport
-   databasepartitioning
    diskperformancetests
    dumpingdumptables
    jsondumpstorage
@@ -26,3 +25,7 @@ Development Discussions
    schema
    databasesetup
    commonconfig
+   creatingmatviews
+   databaseadminfunctions
+   databasetablesbysource
+   populatepostgres
