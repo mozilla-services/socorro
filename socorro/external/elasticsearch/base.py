@@ -119,12 +119,17 @@ class ElasticSearchBase(object):
         }
 
         # Creating the terms depending on the way we should search
-        if (params["search_mode"] == "default" and
-            params["terms"] and params["fields"]):
+        if params["terms"] and params["search_mode"] == "default":
             filters["and"].append(
                             ElasticSearchBase.build_terms_query(
                                 params["fields"],
                                 [x.lower() for x in params["terms"]]))
+
+        elif (params["terms"] and params["search_mode"] == "is_exactly" and
+              params["fields"] == ["signature"]):
+            filters["and"].append(
+                            ElasticSearchBase.build_terms_query(
+                                            "signature.full", params["terms"]))
 
         elif params["terms"]:
             params["terms"] = ElasticSearchBase.prepare_terms(

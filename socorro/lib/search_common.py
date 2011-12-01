@@ -69,6 +69,9 @@ def get_parameters(kwargs):
         Must be one of the following:
             "contains", "is_exactly" or "starts_with".
         Default to "contains".
+    use_full_days -- Boolean, transform dates to use full days (from 00:00:00
+        to 23:59:59) or keep precise datetimes.
+        Default is False.
     result_number -- Number of results to get.
         Default is 100.
     result_offset -- Get results from this offset.
@@ -85,7 +88,7 @@ def get_parameters(kwargs):
         ("search_mode", "default", "str"),
         ("from_date", lastweek, "datetime"),
         ("to_date", now, "datetime"),
-        ("products", "Firefox", ["list", "str"]),
+        ("products", None, ["list", "str"]),
         ("versions", None, ["list", "str"]),
         ("os", None, ["list", "str"]),
         ("branches", None, ["list", "str"]),
@@ -98,11 +101,16 @@ def get_parameters(kwargs):
         ("plugin_terms", None, ["list", "str"]),
         ("plugin_in", "name", ["list", "str"]),
         ("plugin_search_mode", "default", "str"),
+        ("use_full_days", False, "bool"),
         ("result_number", 100, "int"),
         ("result_offset", 0, "int")
     ]
 
     params = extern.parse_arguments(filters, kwargs)
+
+    # If there is no product nor version, use Firefox as the default product
+    if not params["products"] and not params["versions"]:
+        params["products"] = ["Firefox"]
 
     # To be moved into a config file?
     authorized_modes = [
