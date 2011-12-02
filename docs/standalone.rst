@@ -30,12 +30,13 @@ Setting up
   make virtualenv
   . socorro-virtualenv/bin/activate
 
-4) configure Socorro (also see :ref:`commonconfig-chapter`)
+4) copy default Socorro config (also see :ref:`commonconfig-chapter`)
 ::
   pushd scripts/config
   for file in *.py.dist; do cp $file `basename $file .dist`; done
   edit commonconfig.py (...)
   popd
+
 
 
 Install and configure UI
@@ -46,7 +47,7 @@ Install and configure UI
   mv ~/public_html ~/public_html.old
   ln -s ./webapp-php ~/public_html
 
-2) configure webapp (also see :ref:`uiinstallation-chapter`)
+2) copy default webapp config (also see :ref:`uiinstallation-chapter`)
 ::
   cp htaccess-dist .htaccess
   pushd webapp-php/application/config/
@@ -61,6 +62,12 @@ Install and configure UI
 
 Launch standalone Middleware instance
 ----------------
+
+Edit scripts/config/webapiconfig.py and change wsgiInstallation to
+False (this allows the middleware to run in standalone mode):
+::
+  wsgiInstallation.default = False
+
 NOTE - make sure to use an unused port, it should be the same as whatever
 you configure in webapp-php/application/config/webserviceclient.php
 ::
