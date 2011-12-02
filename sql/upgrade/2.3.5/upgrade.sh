@@ -5,9 +5,9 @@ set -e
 
 CURDIR=$(dirname $0)
 
-echo 'add appid column to reports'
+echo 'add productid column to reports'
 echo 'bug 706807'
-psql -f ${CURDIR}/appid.sql breakpad
+psql -f ${CURDIR}/productid.sql breakpad
 
 echo '2.3.5 upgrade done'
 
