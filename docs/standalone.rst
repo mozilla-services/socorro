@@ -78,8 +78,13 @@ This will use whichever database you configured in commonconfig.py
 
 Pulling crash reports from production
 ----------------
+The Socorro PostgreSQL database only contains a small subset of the information 
+about individual crashes (enough to run aggregate reports). For instance the
+full stack is only available in long-term storage (such as HBase).
+
 If you have imported a database from a production instance, you may want
-to pull individual crash reports from production (so URLs such as https://crash-stats.mozilla.com/report/index/0f3f3360-40a6-4188-8659-b2a5c2110808 work). 
+to configure the web UI to pull individual crash reports from production via 
+the web service (so URLs such as https://crash-stats.mozilla.com/report/index/0f3f3360-40a6-4188-8659-b2a5c2110808 will work). 
 
 The /report/index page actually pulls it's data from a URL such as:
 https://crash-stats.mozilla.com/dumps/0f3f3360-40a6-4188-8659-b2a5c2110808.jsonz
