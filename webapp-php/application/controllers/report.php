@@ -368,11 +368,10 @@ class Report_Controller extends Controller {
             return Event::run('system.404');
         }
 
-	$crash_uri = sprintf(Kohana::config('application.crash_dump_local_url'), $uuid);
 	$reportJsonZUri = sprintf(Kohana::config('application.crash_dump_public_url'), $uuid);
 	$raw_dump_urls = $this->report_model->formatRawDumpURLs($uuid);
 
-	$report = $this->report_model->getByUUID($uuid, $crash_uri);
+	$report = $this->fetchUUID($uuid);
 
         if ( is_bool($report) && $report == true) {
 	        return url::redirect('report/pending/'.$uuid);
@@ -480,7 +479,7 @@ class Report_Controller extends Controller {
                 $reportJsonZUri = sprintf(Kohana::config('application.crash_dump_public_url'), $otherUuid);
                 $raw_dump_urls = $this->report_model->formatRawDumpURLs($otherUuid);
 
-                $otherReport = $this->report_model->getByUUID($otherUuid, $crash_uri);
+                $otherReport = $this->fetchUUID($uuid);
 	    } else {
 		$details['pair_error'] = "Hang ID " . $report->hangid . " but no other UUID pair found";
                 return $details;
@@ -519,8 +518,7 @@ class Report_Controller extends Controller {
         }
 
         // Check for the report
-	$crash_uri = sprintf(Kohana::config('application.crash_dump_local_url'), $uuid);
-	$report = $this->report_model->getByUUID($uuid, $crash_uri);
+        $report = $this->fetchUUID($uuid);
 
         if (! is_null($report) && ! is_bool($report)) {
 	    return url::redirect('report/index/'.$uuid);
@@ -552,8 +550,7 @@ class Report_Controller extends Controller {
     {
 	$status = array();
         // Check for the report
-	$crash_uri = sprintf(Kohana::config('application.crash_dump_local_url'), $uuid);
-	$report = $this->report_model->getByUUID($uuid, $crash_uri);
+        $report = $this->fetchUUID($uuid);
 
         if (! is_null($report)) {
 	    $status['status'] = 'ready';
@@ -586,7 +583,7 @@ class Report_Controller extends Controller {
         $crashes = array();
         foreach ($rs as $row) {
             $crash_uri = sprintf(Kohana::config('application.crash_dump_local_url'), $row->uuid);
-            $report = $this->report_model->getByUUID($row->uuid, $crash_uri);
+            $report = $this->fetchUUID($row->uuid);
             if ($report && property_exists($report, 'date_processed' )) {
                 $d = strtotime($report->{'date_processed'});
                 $report->{'display_date_processed'} = date('M d, Y H:i', $d);
@@ -612,5 +609,23 @@ class Report_Controller extends Controller {
         } else {
 	    return substr($signature, 0, $memory_addr);
         }
+    }
+
+    /**
+     * Attempt to fetch the processed report (jsonz), optionally
+     * falling back.
+     *
+     * @uuid    string  The UUID to look up 
+     */
+    protected function fetchUUID($uuid) {
+        $crash_uri = sprintf(Kohana::config('application.crash_dump_local_url'), $uuid);
+        $crash_uri_fallback = sprintf(Kohana::config('application.crash_dump_local_url_fallback'), $uuid);
+
+        $report = $this->report_model->getByUUID($uuid, $crash_uri);
+        if (empty($report) && !empty($crash_uri_fallback)) {
+            $report = $this->report_model->getByUUID($uuid, $crash_uri_fallback);
+        }
+
+        return $report;
     }
 }

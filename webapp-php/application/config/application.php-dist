@@ -23,12 +23,18 @@ $config['amo_url'] = 'http://addons.mozilla.org/';
 $config['topsites_validity'] = 604800;
 
 /**
- * The PHP app access the processed crash dump files (jsonz)
+ * The PHP app accesses the processed crash dump files (jsonz)
  * via an HTTP request. The php_access config variable is a
  * single quoted string which includes the following variables:
  * %1$s - UUID of the crash
  */
 $config['crash_dump_local_url']  = 'http://crash-stats/dumps/%1$s.jsonz';
+
+/**
+ * If the above fails for any reason, fall back to this one. This
+ * is mostly useful for dev/staging environments.
+ */
+$config['crash_dump_local_url_fallback']  = '';
 
 /**
  * Exactly like local_url but is used for public links
