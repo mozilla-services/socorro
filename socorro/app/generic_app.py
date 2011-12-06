@@ -4,10 +4,60 @@ import ConfigParser
 import getopt
 import os.path
 import inspect
+import logging
+import logging.handlers
+import functools
 
 import configman as cm
 import configman.converters as conv
 
+def logging_required_config(app_name):
+    lc = cm.Namespace()
+    lc.add_option('syslog_host',
+              doc='syslog hostname',
+              default='localhost')
+    lc.add_option('syslog_port',
+              doc='syslog port',
+              default=514)
+    lc.add_option('syslog_facility_string',
+              doc='syslog facility string ("user", "local0", etc)',
+              default='user')
+    lc.add_option('syslog_line_format_string',
+              doc='python logging system format for syslog entries',
+              default='%s (pid %%(process)d): '
+                      '%%(asctime)s %%(levelname)s - %%(threadName)s - '
+                      '%%(message)s' % app_name)
+    lc.add_option('syslog_error_logging_level',
+              doc='logging level for the log file (10 - DEBUG, 20 '
+                  '- INFO, 30 - WARNING, 40 - ERROR, 50 - CRITICAL)',
+              default=40)
+    lc.add_option('stderr_line_format_string',
+              doc='python logging system format for logging to stderr',
+              default='%(asctime)s %(levelname)s - %(threadName)s - '
+                      '%(message)s')
+    lc.add_option('stderr_error_logging_level',
+              doc='logging level for the logging to stderr (10 - '
+                  'DEBUG, 20 - INFO, 30 - WARNING, 40 - ERROR, '
+                  '50 - CRITICAL)',
+              default=10)
+    return lc
+
+
+def setup_logger(app_name, config, local_unused, args_unused):
+    logger = logging.getLogger(app_name)
+    logger.setLevel(logging.DEBUG)
+    stderr_log = logging.StreamHandler()
+    stderr_log.setLevel(config.stderr_error_logging_level)
+    stderr_log_formatter = logging.Formatter(config.stderr_line_format_string)
+    stderr_log.setFormatter(stderr_log_formatter)
+    logger.addHandler(stderr_log)
+
+    syslog = logging.handlers.SysLogHandler(
+                                        facility=config.syslog_facility_string)
+    syslog.setLevel(config.syslog_error_logging_level)
+    syslog_formatter = logging.Formatter(config.syslog_line_format_string)
+    syslog.setFormatter(syslog_formatter)
+    logger.addHandler(syslog)
 
 # This main function will load an application object, initialize it and then
 # call its 'main' function
@@ -32,29 +82,18 @@ def main(app_object=None):
     app_name = getattr(app_object, 'app_name', 'unknown')
     app_version = getattr(app_object, 'app_version', '0.0')
     app_description = getattr(app_object, 'app_description', 'no idea')
+    app_definition.add_aggregation('logger',
+                                   functools.partial(setup_logger,
+                                                     app_name))
 
     definitions = (app_definition,
-                   lc.required_config(app_name))
-
-
-    # create an iterable collection of value sources
-    # the order is important as these will supply values for the sources
-    # defined in the_definition_source. The values will be overlain in turn.
-    # First the os.environ values will be applied.  Then any values from an ini
-    # file parsed by getopt.  Finally any values supplied on the command line
-    # will be applied.
-    value_sources = (cm.ConfigFileFutureProxy,  # alias for allowing the user
-                                                # to specify a config file on
-                                                # the command line
-                     cm.environment,  # alias for os.environ
-                     cm.command_line) # alias for getopt
+                   logging_required_config(app_name))
 
     # set up the manager with the definitions and values
     # it isn't necessary to provide the app_name because the
     # app_object passed in or loaded by the ConfigurationManager will alredy
     # have that information.
     config_manager = cm.ConfigurationManager(definitions,
-                                             value_sources,
                                              app_name=app_name,
                                              app_version=app_version,
                                              app_description=app_description,
@@ -77,57 +116,3 @@ def main(app_object=None):
 if __name__ == '__main__':
     main()
 
-
-import socorro.lib.config_manager as cm
-import socorro.lib.logging_config as lc
-import socorro.lib.util as sutil
-
-def main(application_class):
-    if isinstance(application_class, str):
-        application_class = cm.class_converter(application_class)
-    try:
-        application_name = application_class.app_name
-    except AttributeError:
-        application_name = 'Socorro Unknown App'
-    try:
-        application_version = application_class.version
-    except AttributeError:
-        application_version = ''
-    try:
-        application_doc = application_class.doc
-    except AttributeError:
-        application_doc = ''
-    application_main = application_class.main
-
-    app_definition = cm.Namespace()
-    app_definition.option('_application',
-                          doc='the fully qualified module or '
-                              'class of the application',
-                          default=application_class,
-                          from_string_converter=cm.class_converter
-                         )
-    definition_list = [ app_definition,
-                        lc.required_config(application_name),
-                      ]
-
-    config_manager = cm.ConfigurationManager(definition_list,
-                                        application_name=application_name,
-                                        application_version=application_version,
-                                        application_doc=application_doc,
-                                             )
-    config = config_manager.get_config()
-
-    logger = logging.getLogger(config._application.app_name)
-    logger.setLevel(logging.DEBUG)
-    lc.setupLoggingHandlers(logger, config)
-    config.logger = logger
-
-    config_manager.log_config(logger)
-
-    try:
-        application_main(config)
-    finally:
-        logger.info("done.")
-
-if __name__ == '__main__':
-    main()
