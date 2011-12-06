@@ -112,7 +112,7 @@ class Search_Model extends Model {
                         $value = implode('+', $value);
                         break;
                     case 'reason':
-                        $apiData[] = 'crash_reason';
+                        $apiData[] = 'reason';
                         break;
                     case 'branch':
                         $apiData[] = 'branches';

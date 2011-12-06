@@ -50,6 +50,7 @@ class Search(DataAPIService):
         params["to_date"] = params.get("to")
         params["fields"] = params.get("in")
         params["versions"] = params.get("version")
+        params["reasons"] = params.get("reason")
         params["build_ids"] = params.get("build")
         params["plugin_terms"] = params.get("plugin_term")
         return params
