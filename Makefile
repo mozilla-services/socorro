@@ -17,7 +17,10 @@ test: virtualenv phpunit
 phpunit:
 	phpunit webapp-php/tests/
 
-install: java_analysis
+install: java_analysis deploy
+
+# this a dev-only option, `java_analysis` needs to be run at least once in the checkout (or after `make clean`)
+deploy:
 	mkdir -p $(PREFIX)/htdocs
 	mkdir -p $(PREFIX)/application
 	git rev-parse HEAD > $(PREFIX)/revision.txt
