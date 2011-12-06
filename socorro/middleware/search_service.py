@@ -45,12 +45,7 @@ class Search(DataAPIService):
         Return parameters with names adaptated for the implementation API.
         """
         params["terms"] = params.get("for")
-        params["products"] = params.get("product")
         params["from_date"] = params.get("from")
         params["to_date"] = params.get("to")
         params["fields"] = params.get("in")
-        params["versions"] = params.get("version")
-        params["reasons"] = params.get("reason")
-        params["build_ids"] = params.get("build")
-        params["plugin_terms"] = params.get("plugin_term")
         return params
