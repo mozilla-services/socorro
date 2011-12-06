@@ -58,6 +58,7 @@ def setup_logger(app_name, config, local_unused, args_unused):
     syslog_formatter = logging.Formatter(config.syslog_line_format_string)
     syslog.setFormatter(syslog_formatter)
     logger.addHandler(syslog)
+    return logger
 
 # This main function will load an application object, initialize it and then
 # call its 'main' function
@@ -99,6 +100,7 @@ def main(app_object=None):
                                              app_description=app_description,
                                             )
     config = config_manager.config
+    config_manager.log_config(config.logger)
 
     app_object = config.admin.application
 
