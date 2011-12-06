@@ -112,6 +112,7 @@ def main(app_object=None):
     elif inspect.isfunction(app_object):
         # invocation of the app if the app_object was a function
         app_object(config)
+    return 0
 
 if __name__ == '__main__':
     main()
