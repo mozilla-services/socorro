@@ -63,6 +63,11 @@ searchMaxNumberOfDistinctSignatures.doc = (
         "Used mainly for performances in ElasticSearch")
 searchMaxNumberOfDistinctSignatures.default = 1000
 
+# Util service config
+utilImplementationModule = cm.Option()
+utilImplementationModule.doc = "String, name of the module util services use."
+utilImplementationModule.default = 'socorro.external.postgresql'
+
 import socorro.services.topCrashBySignatureTrends as tcbst
 import socorro.services.signatureHistory as sighist
 import socorro.services.aduByDay as adubd
@@ -77,9 +82,9 @@ import socorro.services.emailSender as emailsend
 import socorro.services.schedulePriorityJob as schedule
 import socorro.services.bugzilla as bugzilla
 import socorro.services.currentVersions as cv
-import socorro.services.versions_info as vi
 import socorro.services.hangReport as hr
 import socorro.middleware.search_service as search
+import socorro.middleware.versions_info_service as versions_info
 
 servicesList = cm.Option()
 servicesList.doc = 'a python list of classes to offer as services'
@@ -98,9 +103,9 @@ servicesList.default = [
     schedule.SchedulePriorityJob,
     bugzilla.Bugzilla,
     cv.CurrentVersions,
-    vi.VersionsInfo,
     hr.HangReport,
     search.Search,
+    versions_info.VersionsInfo
 ]
 
 crashBaseUrl = cm.Option()

@@ -1,3 +1,6 @@
 [submodule "vagrant"]
 	path = vagrant
 	url = git://github.com/rhelmer/socorro-vagrant.git
+[submodule "configman"]
+	path = configman
+	url = git://github.com/mozilla/configman.git

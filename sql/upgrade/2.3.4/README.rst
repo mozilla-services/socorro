@@ -10,12 +10,7 @@ This batch makes the following database changes:
 	it's users causing the outages.
 	
 701255
-	daily_crashes.sql
-	update_tcbs.sql
-	backfill_matviews.sql
-	
-	Switch the tcbs and daily_crashes cron jobs to use reports_clean
-	instead of reports.
+	removed from 2.3.4; not ready for freeze
 	
 697669
 	version_sort_prep.sql

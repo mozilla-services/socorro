@@ -1,7 +1,7 @@
 import logging
 
 from socorro.external.postgresql.base import PostgreSQLBase
-from socorro.services.versions_info import VersionsInfo
+from socorro.external.postgresql.util import Util
 
 import socorro.database.database as db
 import socorro.lib.datetimeutil as dtutil
@@ -149,11 +149,11 @@ class Search(PostgreSQLBase):
         if params["versions"]:
 
             # Get information about the versions
-            versions_service = VersionsInfo(self.context)
+            versions_service = Util(config=self.context)
             fakeparams = {
                 "versions": params["versions_string"]
             }
-            versions_info = versions_service.versions_info(fakeparams)
+            versions_info = versions_service.versions_info(**fakeparams)
 
             if isinstance(params["versions"], list):
                 versions_where = []
@@ -384,18 +384,6 @@ class Search(PostgreSQLBase):
         elif search_mode == "starts_with":
             terms = terms + "%"
         return terms
-
-    @staticmethod
-    def dispatch_params(sql_params, key, value):
-        """
-        Dispatch a parameter or a list of parameters into the params array.
-        """
-        if not isinstance(value, list):
-            sql_params[key] = value
-        else:
-            for i, elem in enumerate(value):
-                sql_params[key + str(i)] = elem
-        return sql_params
 
     @staticmethod
     def generate_version_where(key, versions, versions_info, x, sql_params,

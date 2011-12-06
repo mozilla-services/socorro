@@ -45,3 +45,15 @@ class PostgreSQLBase(object):
                 products.append(v)
 
         return (versions, products)
+
+    @staticmethod
+    def dispatch_params(sql_params, key, value):
+        """
+        Dispatch a parameter or a list of parameters into the params array.
+        """
+        if not isinstance(value, list):
+            sql_params[key] = value
+        else:
+            for i, elem in enumerate(value):
+                sql_params[key + str(i)] = elem
+        return sql_params

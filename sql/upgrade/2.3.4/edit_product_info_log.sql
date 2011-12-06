@@ -1,4 +1,4 @@
-\SET ON_ERROR_STOP 1
+\set ON_ERROR_STOP 1
 
 -- add logging to edit_product_info
 -- so that we can see who's been changing dates
@@ -14,7 +14,7 @@ create type product_info_change as (
 
 alter type product_info_change owner to breakpad_rw;
 
-create_table_if_not_exists( 'product_info_changelog', $x$
+SELECT create_table_if_not_exists( 'product_info_changelog', $x$
 create table product_info_changelog (
 	product_version_id int not null,
 	user_name text not null,

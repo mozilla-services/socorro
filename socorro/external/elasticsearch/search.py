@@ -2,7 +2,7 @@ import json
 import logging
 
 from socorro.external.elasticsearch.base import ElasticSearchBase
-from socorro.services.versions_info import VersionsInfo
+from socorro.external.postgresql.util import Util
 
 import socorro.lib.search_common as search_common
 
@@ -30,8 +30,8 @@ class Search(ElasticSearchBase):
         params = search_common.get_parameters(kwargs)
 
         # Get information about the versions
-        versions_service = VersionsInfo(self.context)
-        params["versions_info"] = versions_service.versions_info(params)
+        versions_service = Util(config=self.context)
+        params["versions_info"] = versions_service.versions_info(**params)
 
         query = Search.build_query_from_params(params)
 

@@ -14,3 +14,4 @@ socorro/unittest/database/logs/
 socorro/unittest/testlib/logs/
 stackwalk/
 docs/_build/
+*~
