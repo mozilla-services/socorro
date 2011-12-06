@@ -19,6 +19,14 @@ Manual Install
 
 Requirements
 ````````````
+
+.. sidebar:: Breakpad client and symbols
+
+   Socorro aggregates and reports on Breakpad crashes.
+   Read more about `getting started with Breakpad <http://code.google.com/p/google-breakpad/wiki/GettingStartedWithBreakpad>`_.
+
+   You will need to `produce symbols for your application <http://code.google.com/p/google-breakpad/wiki/LinuxStarterGuide#Producing_symbols_for_your_application>`_ and make these files available to Socorro.
+
 * Linux (tested on Ubuntu Lucid and RHEL/CentOS 6)
 
 * HBase (Cloudera CDH3)
@@ -49,7 +57,7 @@ Choose "minimal" as install option.
 
 As *root*:
 ::
-  yum install python-psycopg2 simplejson httpd mod_ssl mod_wsgi postgresql-server postgresql-plperl perl-pgsql_perl5 postgresql-contrib subversion make rsync php-pecl-memcache memcached php-pgsql subversion gcc-c++ curl-devel ant python-virtualenv php-phpunit-PHPUnit hadoop-0.20 hadoop-hbase
+  yum install python-psycopg2 simplejson httpd mod_ssl mod_wsgi postgresql-server postgresql-plperl perl-pgsql_perl5 postgresql-contrib subversion make rsync php-pecl-memcache memcached php-pgsql subversion gcc-c++ curl-devel ant python-virtualenv php-phpunit-PHPUnit hadoop-0.20 hadoop-hbase daemonize
 
 5) Disable SELinux
 
