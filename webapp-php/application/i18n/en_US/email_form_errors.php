@@ -27,15 +27,15 @@ $lang = array(
         'valid_no_unsubscribe' => "The email body doesn't contain an un-subscribe from this email url variable. This is required.",
     ),
     'email_start_date' => array(
-        'required' => 'An Start Date is required',
-        'length' => 'An Start Datsce must be exactly 10 characters',
-        'valid_date' => 'An Start Date must be in the format dd/mm/yyyy',
+        'required' => 'Start Date is required',
+        'length' => 'Start Date must be exactly 10 characters',
+        'valid_date' => 'Start Date must be in the format dd/mm/yyyy',
     ),
     'email_end_date' => array(
         'end_before_start_date' => 'Start Date must be before End Date',
-        'required' => 'An End Date is required',
-        'length' => 'An End Date must be exactly 10 characters',
-        'valid_date' => 'An End Date must be in the format dd/mm/yyyy',
+        'required' => 'End Date is required',
+        'length' => 'End Date must be exactly 10 characters',
+        'valid_date' => 'End Date must be in the format dd/mm/yyyy',
     ),
     'email_versions' => array(
         'required' => 'One or more versions are required',
