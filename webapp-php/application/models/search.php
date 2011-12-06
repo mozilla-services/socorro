@@ -61,11 +61,11 @@ class Search_Model extends Model {
                         $apiData[] = 'in';
                         break;
                     case 'product':
-                        $apiData[] = 'product';
+                        $apiData[] = 'products';
                         $value = implode('+', $value);
                         break;
                     case 'version':
-                        $apiData[] = 'version';
+                        $apiData[] = 'versions';
                         $value = implode('+', $value);
                         break;
                     case 'query_type':
@@ -112,14 +112,14 @@ class Search_Model extends Model {
                         $value = implode('+', $value);
                         break;
                     case 'reason':
-                        $apiData[] = 'crash_reason';
+                        $apiData[] = 'reasons';
                         break;
                     case 'branch':
                         $apiData[] = 'branches';
                         $value = implode('+', $value);
                         break;
                     case 'build_id':
-                        $apiData[] = 'build';
+                        $apiData[] = 'build_ids';
                         break;
                     case 'hang_type':
                         $apiData[] = 'report_type';
@@ -143,7 +143,7 @@ class Search_Model extends Model {
                         }
                         break;
                     case 'plugin_query':
-                        $apiData[] = 'plugin_term';
+                        $apiData[] = 'plugin_terms';
                         break;
                     case 'result_offset':
                         $apiData[] = 'result_offset';
