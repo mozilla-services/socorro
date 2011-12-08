@@ -148,3 +148,6 @@ END IF;
 
 RETURN new_id;
 END; $f$;
+
+drop function edit_product_info(int, citext, text, text, date, date, boolean, numeric);
+
