@@ -1,7 +1,10 @@
 2.3.5 Upgrade
 =============
 
-This upgrade focuses entirely on creating the FennecAndroid "product" and related required database changes.  None of the below require backfilling, and as such should run quite quickly, with one noted exception.
+This upgrade focuses entirely on creating the FennecAndroid "product" 
+and related required database changes.  None of the below require 
+backfilling, and as such should run quite quickly, with one noted 
+exception.
 
 706807
 	Add productID column to reports.
