@@ -155,7 +155,7 @@
 
         <div id="query_waiting" class="hidden">
             <p class="advanced">
-                <img src="<?php echo url::base(); ?>img/loading.png" />
+                <img src="<?php echo url::base(); ?>img/loading.png" alt="Loading animation" />
                 <i>processing query, please wait...</i>
             </p>
         </div>
