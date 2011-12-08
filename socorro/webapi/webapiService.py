@@ -61,6 +61,7 @@ class JsonWebServiceBase(object):
             if isinstance(result, tuple):
                 web.header('Content-Type', result[1])
                 return result[0]
+            web.header('Content-Type', 'application/json')
             return json.dumps(result)
         except web.webapi.HTTPError:
             raise
@@ -90,6 +91,7 @@ class JsonWebServiceBase(object):
             if isinstance(result, tuple):
                 web.header('Content-Type', result[1])
                 return result[0]
+            web.header('Content-Type', 'application/json')
             return json.dumps(result)
         except web.HTTPError:
             raise

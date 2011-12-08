@@ -21,7 +21,7 @@ class Report_Model extends Model {
 	    $crashReportDump = new CrashReportDump;
 	    $crash_report_json = $crashReportDump->getJsonZ($crash_uri);
 	    if($crash_report_json === false){
-                Kohana::log('info', "$uuid does not exist, and no raw crash report could be found (404)");
+                Kohana::log('info', "$uuid could not fetch processed JSON");
                 return false;
         } else if ($crash_report_json === true) {
                 Kohana::log('info', "$uuid was reported but not processed; a priority job has been scheduled.");
@@ -43,7 +43,8 @@ class Report_Model extends Model {
 		                IS NOT NULL
 		            ", $uuid)->current();
 	            if(!$report) {
-	                throw new Exception("The report was processed but does not exist in the reports table");
+                        Kohana::log('info', "$uuid processed crash exists in HBase but does not exist in the reports table");
+                        return false;
 	            }
 
       	        $crashReportDump->populate($report, $crash_report_json);
