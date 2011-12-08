@@ -1,4 +1,5 @@
-<?php /* Hang widget used from individual reports or aggregate views.
+<?php
+/* Hang widget used from individual reports or aggregate views.
 Requires: array named crash with keys
 * is_hang - Is this crash a hang report
 * is_plugin - Is this crash a plugin (oopp) or hang report, plugin part
@@ -11,16 +12,12 @@ $linked = false;
 if (array_key_exists('link', $crash)) {
     $linked = true;
 }
-if ($crash['is_hang'] == true) { ?>
-    <?php if ($linked) { ?><a href="<?= $crash['link'] ?>" class="hang-pair-btn" title="Hanged Crash"><?php } ?><img src="<?= url::site('/img/3rdparty/fatcow/stop16x16.png')?>" width="16" height="16" alt="Hanged Crash" title="Hanged Crash" class="hang" /><?php if ($linked) { echo '</a>'; } ?>
-    <?php if ($crash['is_plugin'] == true) {?>
-	      <?php if ($linked) { ?><a href="<?= $crash['link'] ?>" class="hang-pair-btn" title="Plugin Crash"><?php } ?><img src="<?= url::site('/img/3rdparty/fatcow/brick16x16.png')?>" width="16" height="16" alt="Plugin Crash" title="Plugin Crash" class="plugin" /><?php if ($linked) { echo '</a>'; } ?>
-     <?php } else { ?>
-	      <?php if ($linked) { ?><a href="<?= $crash['link'] ?>" class="hang-pair-btn" title="Browser Crash"><?php } ?><img src="<?= url::site('/img/3rdparty/fatcow/application16x16.png')?>" width="16" height="16" alt="Browser Crash" title="Browser Crash" class="browser" /><?php if ($linked) { echo '</a>'; } ?>
-    <?php }
-} else { ?>
-    <?php if ($crash['is_plugin'] == true) {?>
-              <?php if ($linked) { ?><a href="<?= $crash['link'] ?>" class="plugin-btn" title="Plugin Crash"><?php } ?><img src="<?= url::site('/img/3rdparty/fatcow/brick16x16.png')?>" width="16" height="16" alt="Plugin Crash" title="Plugin Crash" class="plugin" class="plugin" /><?php if ($linked) { echo '</a>'; } ?>
-     <?php } ?>
-<?php }
-?>
+if ($crash['is_hang'] == true) {
+    if ($linked) { ?><a href="<?= $crash['link'] ?>" class="hang-pair-btn" title="Hanged Crash"><?php } ?><img src="<?= url::site('/img/3rdparty/fatcow/stop16x16.png')?>" width="16" height="16" alt="Hanged Crash" title="Hanged Crash" class="hang" /> <?php if ($linked) { echo '</a>'; }
+}
+if ($crash['is_plugin'] == true) {
+    if ($linked) { ?><a href="<?= $crash['link'] ?>" class="plugin-pair-btn" title="Plugin Crash"><?php } ?><img src="<?= url::site('/img/3rdparty/fatcow/brick16x16.png')?>" width="16" height="16" alt="Plugin Crash" title="Plugin Crash" class="plugin" /> <?php if ($linked) { echo '</a>'; }
+}
+if ($crash['is_content'] == true) {
+    if ($linked) { ?><a href="<?= $crash['link'] ?>" class="content-pair-btn" title="Content Crash"><?php } ?><img src="<?= url::site('/img/3rdparty/fatcow/content16x16.png')?>" width="16" height="16" alt="Content Crash" title="Content Crash" class="content" /> <?php if ($linked) { echo '</a>'; }
+} ?>
