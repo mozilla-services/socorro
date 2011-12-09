@@ -10,7 +10,7 @@
             <th>Build Arch</th>
             <th>Reason</th>
             <th>Address</th>
-            <th>Hang</th>
+            <th>Crash Type</th>
             <th>Uptime</th>
             <th>Install Time</th>
             <th>Comments</th>
