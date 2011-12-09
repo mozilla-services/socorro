@@ -55,6 +55,7 @@ Setting up a new database
 ----------------
 If you do not have an existing production database to import, or wish to 
 create a new standalone database for testing, see :ref:`populatepostgres-chapter` 
+or :ref:`populateelasticsearch-chapter`.
 
 Pulling crash reports from production
 ----------------
