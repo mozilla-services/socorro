@@ -159,8 +159,9 @@ class Crash
         }
 
         $hang_details = array();
-        $hang_details['is_hang'] = (isset($report->numhang) && $report->numhang > 0) ? true : false;
-        $hang_details['is_plugin'] =  (isset($report->numplugin) && $report->numplugin > 0) ? true : false;;
+        $hang_details['is_hang'] = (isset($report->numhang) && $report->numhang > 0);
+        $hang_details['is_plugin'] =  (isset($report->numplugin) && $report->numplugin > 0);
+        $hang_details['is_content'] = (isset($report->numcontent) && $report->numcontent >0);
         $report->{'hang_details'} = $hang_details;
         $report->sumo_signature = $this->_prepareSumoSignature($report->signature);
 
