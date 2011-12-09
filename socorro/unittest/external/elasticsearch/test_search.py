@@ -115,6 +115,12 @@ def test_get_counts():
         },
         "js_plugin": {
             "count": 0
+        },
+        "hang_content": {
+            "count": 0
+        },
+        "js_content": {
+            "count": 0
         }
     }
     res = Search.get_counts(signatures, count_sign, 0, 2, context.platforms)
@@ -126,6 +132,7 @@ def test_get_counts():
         assert "is_windows" in sign, "no windows"
         assert "numhang" in sign, "no hang"
         assert "numplugin" in sign, "no plugin"
+        assert "numcontent" in sign, "no content"
 
     assert "is_linux" in res[0], "no linux"
     assert "is_linux" not in res[1], "need no linux"
