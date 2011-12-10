@@ -42,7 +42,7 @@ editing ``/etc/sysctl.conf`` and adding at the end::
 After you saved and closed the file, run ``sysctl -p``, then
 ``cat /proc/sys/fs/file-max`` to verify it worked. No restart is required here.
 
-`Note: I am not sure wether restarting the VM is necessary, or if ElasticSearch
+`Note: I am not sure whether restarting the VM is necessary, or if ElasticSearch
 only is needed. Don't hesitate to make this more precise with the result
 of your experiments.`
 
