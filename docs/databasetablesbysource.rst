@@ -24,6 +24,7 @@ The following tables have no code to populate them automatically.  Initial popul
 * release_channels
 * uptime_levels
 * windows_versions
+* product_productid_map
 
 Tables Receiving External Data
 ==============================

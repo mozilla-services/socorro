@@ -25,6 +25,10 @@ import socorro.storage.hbaseClient as hbc
 import socorro.processor.signatureUtilities as sig
 import socorro.processor.registration as reg
 
+# NOTE - this will be cached for the lifetime of the process
+# restart processor to refresh from the database
+productIdMap = {}
+
 #=================================================================================================================
 class DuplicateEntryException(Exception):
   pass
@@ -365,6 +369,9 @@ class Processor(object):
         If it detects that some thread has received a Keyboard Interrupt, it stops its looping,
         waits for the threads to stop and then closes all the database connections.
     """
+    # load once per process and cache in memory
+    self.loadProductIdMap()
+
     sqlErrorCounter = 0
     while (True):
       try:
@@ -471,6 +478,18 @@ class Processor(object):
       threadLocalDatabaseConnection.commit()
 
       jsonDocument = threadLocalCrashStorage.get_meta(jobUuid)
+
+      # some products report under the same name but have a different product ID.
+      # rename the product if there is an override in the productIdMap
+      if 'ProductID' in jsonDocument:
+        productId = jsonDocument['ProductID']
+        if productId in productIdMap:
+          oldProductName = jsonDocument['ProductName']
+          newProductName = productIdMap[productId]['product_name']
+          jsonDocument['ProductName'] = newProductName
+          logger.debug('product name changed from %s to %s based on productID %s',
+                       oldProductName, newProductName, productId)
+
       try:
         date_processed = sdt.datetimeFromISOdateString(jsonDocument["submitted_timestamp"])
       except KeyError:
@@ -836,3 +855,27 @@ class Processor(object):
                                            showTraceback=False)
     except KeyError:
       self.config.logger.info('no Elastic Search URL has been configured')
+
+
+  #-----------------------------------------------------------------------------------------------------------------
+  def loadProductIdMap(self):
+    db_conn, db_cur = self.databaseConnectionPool.connectionCursorPair()
+    columns = ('product_name', 'productid', 'rewrite', 'version_began', 'version_ended')
+
+    try:
+      logger.debug("attempting to get product_productid_map from postgres")
+      sql = "SELECT %s FROM product_productid_map WHERE rewrite IS TRUE" % ','.join(columns)
+      db_cur.execute(sql)
+      productIdList = db_cur.fetchall()
+      logger.debug("done loading product_productid_map from postgres")
+      db_conn.commit()
+    except:
+      logger.error('Unable to load product_productid_map from postgres', exc_info=True)
+      db_conn.rollback()
+      raise
+    
+    for result in productIdList:
+      resultDict = dict(x for x in zip(columns, result))
+      key = resultDict['productid']
+      del resultDict['productid']
+      productIdMap[key] = resultDict
