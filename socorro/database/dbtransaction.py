@@ -43,8 +43,8 @@ class StoredProcedureApp(DBTransactionApp):
             cursor = transaction.cursor()
             parameters = self.stored_procedure_parameters()
             cursor.callproc(self.stored_procedure_name,
-                            self.stored_procedure_parameters())
-            connection.commit()
+                            parameters)
+            transaction.commit()
 
     #--------------------------------------------------------------------------
     # **** this value should be overridden in a derived class
