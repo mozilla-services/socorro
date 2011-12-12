@@ -4,6 +4,7 @@ import sys
 import os
 import psycopg2
 import psycopg2.extensions
+from optparse import OptionParser
 
 # loads a file created with extractminidb.py
 
@@ -18,20 +19,21 @@ import psycopg2.extensions
 
 # note that this script will fail unless you first kick
 # all users off the database system.  on stagedb, try
-# running kick_off_users.sh as root first
+# running beforeload.sh first
 
-if len(sys.argv) < 2:
-    tar_file = 'extractdb.tgz'
-else:
-    tar_file = sys.argv[1]
-
-if len(sys.argv) > 2:
-    database_name = sys.argv[2]
-else:
-    database_name = 'breakpad'
+parser = OptionParser()
+parser.add_option("-f", "--file", dest="tar_file",
+                  help="extractdb tarball to be loaded", metavar="FILE",
+                  default="extractdb.tgz")
+parser.add_option("-d", "--database", dest="database_name",
+                  help="database to be loaded", metavar="DBNAME",
+                  default="breakpad")
+parser.add_option("-P", "--postscript", dest="postsql",
+                  help="post-load shell script",
+                  default="/data/socorro/application/scripts/staging/postsql/postsql.sh")
+(options, args) = parser.parse_args()
 
 print "Loading data"
-
 
 def runload(load_command):
     load_result = os.system(load_command)
@@ -45,7 +47,7 @@ matviews = ['raw_adu', 'releases_raw', 'product_adu', 'daily_crashes',
             'daily_hangs']
 
 # untar the file
-runload('tar -xzf %s' % tar_file)
+runload('tar -xzf %s' % options.tar_file)
 
 #connect to postgresql
 conn = psycopg2.connect("dbname=postgres user=postgres")
@@ -58,7 +60,7 @@ print 'drop and recreate the database'
 
 # drop the database and recreate it
 try:
-    cur.execute("""DROP DATABASE %s;""" % database_name)
+    cur.execute("""DROP DATABASE %s;""" % options.database_name)
 except psycopg2.Error as exc:
     code = exc.pgcode
     if code == '3D000':
@@ -68,11 +70,11 @@ except psycopg2.Error as exc:
         sys.exit('unable to drop database %s probably because connections to it are still open: %s'
                  % (database_name, code,))
 
-cur.execute("""CREATE DATABASE %s""" % database_name)
+cur.execute("""CREATE DATABASE %s""" % options.database_name)
 
 print 'load users.  please ignore any errors you see here'
 
-os.system('psql -q -v verbosity=terse -U postgres -f users.dump %s' % database_name)
+os.system('psql -q -v verbosity=terse -U postgres -f users.dump %s' % options.database_name)
 
 print 'load most of the database'
 
@@ -82,7 +84,7 @@ print 'load most of the database'
 # needs to ignore errors
 
 os.system('/usr/local/pgsql/bin/pg_restore -j 3 -Fc --no-post-data -U postgres minidb.dump -d %s'
-          % database_name)
+          % options.database_name)
 
 print 'load the truncated materialized views'
 
@@ -90,25 +92,25 @@ print 'load the truncated materialized views'
 # needs to ignore errors
 
 os.system('/usr/local/pgsql/bin/pg_restore -Fc --no-post-data -U postgres matview_schemas.dump -d %s'
-          % database_name)
+          % options.database_name)
 
 # restore matview data, one matview at a time
 
 for matview in matviews:
     print "loading %s" % matview
-    runload("""psql -c "\copy %s FROM %s.dump" -U postgres %s""" % (matview, matview, database_name,))
+    runload("""psql -c "\copy %s FROM %s.dump" -U postgres %s""" % (matview, matview, options.database_name,))
 
 # restore indexes and constraints
 
 print 'restore indexes and constraints'
 
-runload('/usr/local/pgsql/bin/pg_restore -j 3 -Fc --post-data-only -U postgres minidb.dump -d %s' % database_name)
-runload('/usr/local/pgsql/bin/pg_restore -j 3 -Fc --post-data-only -U postgres matview_schemas.dump -d %s' % database_name)
+runload('/usr/local/pgsql/bin/pg_restore -j 3 -Fc --post-data-only -U postgres minidb.dump -d %s' % options.database_name)
+runload('/usr/local/pgsql/bin/pg_restore -j 3 -Fc --post-data-only -U postgres matview_schemas.dump -d %s' % options.database_name)
 
 # truncate soon-to-be-dropped tables
 conn.disconnect()
 
-conn = psycopg2.connect("dbname=%s user=postgres" % database_name)
+conn = psycopg2.connect("dbname=%s user=postgres" % options.database_name)
 
 conn.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
 
@@ -128,17 +130,9 @@ cur.execute("""
             END; $f$;
         """)
 
+# load views which break on pg_restore, such as hang_report
 
-# add performance_check_1 so that ganglia will stop complaining about it
-
-cur.execute("""
-            CREATE VIEW performance_check_1
-            AS SELECT 1;
-            """)
-
-cur.execute("""
-            GRANT SELECT ON performance_check_1 to ganglia;
-            """)
+runload(options.postsql)
 
 #delete all the dump files
 

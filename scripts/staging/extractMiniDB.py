@@ -1,26 +1,28 @@
 #!/usr/bin/python
+
 import sys
 import os
 import psycopg2
 import psycopg2.extensions
+from optparse import OptionParser
 
 # extracts a database from a copy of production breakpad
 # consisting of only the last # weeks of data, more or less
 # the resulting tgz file needs to be loaded with loadMiniDBonDev.py
 # does not currently dump users
 
-if len(sys.argv) > 1:
-    num_weeks = sys.argv[1]
-else:
-    #extract two weeks if not given a parameter
-    num_weeks = 2
+parser = OptionParser()
+parser.add_option("-w", "--weeks", dest="num_weeks", type="int",
+                  help="number of weeks to extract", metavar="#",
+                  default=2)
+parser.add_option("-d", "--database", dest="database_name",
+                  help="database to be extracted", metavar="DBNAME",
+                  default="breakpad")
+parser.add_option("-f", "--file", dest="tar_file",
+                  help="extractdb tarball to be created", metavar="FILE",
+                  default="extractdb.tgz")
 
-if len(sys.argv) > 2:
-    clean_data = 1
-else:
-    #extract two weeks if not given a parameter
-    clean_data = 0
-
+(options, args) = parser.parse_args()
 
 # simple shell command runner
 def rundump(dump_command):
@@ -28,10 +30,10 @@ def rundump(dump_command):
     if dump_result != 0:
         sys.exit(dump_result)
 
-print "Extracting %s weeks of data" % num_weeks
+print "Extracting %s weeks of data" % options.num_weeks
 
 #connect to postgresql
-conn = psycopg2.connect("dbname=breakpad user=postgres")
+conn = psycopg2.connect("dbname=%s user=postgres" % options.database_name)
 
 cur = conn.cursor()
 
@@ -42,7 +44,7 @@ SELECT array_to_string( array_agg ( ' -T ' || relname ), ' ' )
         WHERE relname ~* $x$_20\d+$$x$
 AND substring(relname FROM $x$_(20\d+)$$x$) <
  to_char( ( now() - ( ( %s + 1 ) * interval '1 week') ), 'YYYYMMDD');
-   """, (num_weeks,))
+   """, (options.num_weeks,))
 
 no_dump = str(cur.fetchone()[0])
 
@@ -54,7 +56,7 @@ cur.execute("""
          AND substring(relname FROM $x$_(20\d+)$$x$) >=
 to_char( ( now() - ( ( %s + 1 ) * interval '1 week') ), 'YYYYMMDD')
             ORDER BY relname LIMIT 1;
-             """, (num_weeks,))
+             """, (options.num_weeks,))
 
 cutoff_date = str(cur.fetchone()[0])
 
@@ -119,7 +121,7 @@ rundump('pg_dumpall -U postgres -r -f users.dump')
 
 rundump('sed -i "s/PASSWORD \'.*\'//" users.dump')
 
-rundump('tar -cvzf extractdb.tgz *.dump')
+rundump("tar -cvzf %s *.dump" % options.tar_file)
 rundump('rm *.dump')
 
 print 'done extracting database'
