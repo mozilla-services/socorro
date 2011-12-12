@@ -18,5 +18,7 @@ JOIN signatures as browser_signatures ON browser_signature_id = browser_signatur
 JOIN signatures AS plugin_signatures ON plugin_signature_id = plugin_signatures.signature_id
 LEFT OUTER JOIN flash_versions USING (flash_version_id);
 
+ALTER VIEW hang_report OWNER TO breakpad_rw;
+
 
 

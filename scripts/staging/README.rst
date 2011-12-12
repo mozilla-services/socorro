@@ -12,9 +12,17 @@ Purpose: create the raw data for a "mini" version of the breakpad database, cont
 
 ::
 
-	./extractMiniDB.py <numweeks>
+	extractMiniDB.py --weeks 2 --database breakpad --file extractdb.tgz
+	extractMiniDB.py -w 2 -d breakpad -f extractdb.tgz
 	
-<numweeks> the number of weeks of data to extract.  Optional, defaults to 2.
+weeks
+	the number of weeks of data to extract.  Optional, defaults to 2.
+	
+database
+	database to connect to.  optional, defaults to 'breakpad'
+	
+file
+	tarball file to create.  optional, defaults to 'extractdb.tgz'
 
 Notes: Produces a file called "extractdb.tgz" which must be loaded using LoadMiniDBonDev.py.  May take a couple hours to run.
 
@@ -25,11 +33,17 @@ Purpose: loads the file created by ExtractMiniDB.py onto DevDB.
 
 ::
 
-	./loadMiniDBonDev.py <filename> <dbname> <postsqlscript>
+	loadMiniDBonDev.py --file extractdb.tgz --database breakpad --postscript postsql.sh
+	loadMiniDBonDev.py -f extractdb.tgz -d breakpad -P postsql.sh
 	
-<filename>: file to load from.   Defaults to exractdb.tgz in the current directory.
-<dbname>: database to load into.  Defaults to "breakpad".
-<postsqlscript>: location of script to run after load.  contains database objects not automatically created by load.  Defaults to /data/socorro/application/scripts/staging/postsql/postsql.sh
+file
+	file to load from.   Defaults to exractdb.tgz in the current directory.
+	
+database
+	database to load into.  Defaults to "breakpad".
+	
+postscript
+	location of script to run after load.  contains database objects not automatically created by load.  Defaults to "/data/socorro/application/scripts/staging/postsql/postsql.sh"
 
 Notes: the extractdb.tgz file will be uncompressed into the current directory, creating several GB of files.  If the script errors out, these files will need to be cleaned up manually; for convenience they are all named *.dump.  Can take several hours to complete.
 
@@ -55,7 +69,7 @@ Creates a copy of /pgdata/9.0/data for backup so that it can be restored later f
 postsql directory
 -----------------
 
-Contains several SQL scripts which create database objects which error out during load due to broken dependencies, particularly views based on matviews.  postdata.sh shell script calls these.  Intended to be called by loadMiniDB.py.
+Contains several SQL scripts which create database objects which error out during load due to broken dependencies, particularly views based on matviews.  postsql.sh shell script calls these.  Intended to be called by loadMiniDBonDev.py.
 
 other scripts
 -------------
