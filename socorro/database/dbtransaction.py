@@ -26,7 +26,7 @@ class DBTransactionApp(cm.RequiredConfig):
         self.config = config
 
     #--------------------------------------------------------------------------
-    # **** this function should be overridden in a base class
+    # **** this function should be overridden in a derived class
     def main(self):
         pass
 
@@ -47,11 +47,11 @@ class StoredProcedureApp(DBTransactionApp):
             connection.commit()
 
     #--------------------------------------------------------------------------
-    # **** this value should be overridden in a base class
+    # **** this value should be overridden in a derived class
     stored_procedure_name = ''
 
     #--------------------------------------------------------------------------
-    # **** this method should be overridden in a base class
+    # **** this method should be overridden in a derived class
     def stored_procedure_parameters(self):
         return ()
 
