@@ -480,7 +480,7 @@ class Report_Controller extends Controller {
                 $reportJsonZUri = sprintf(Kohana::config('application.crash_dump_public_url'), $otherUuid);
                 $raw_dump_urls = $this->report_model->formatRawDumpURLs($otherUuid);
 
-                $otherReport = $this->fetchUUID($uuid);
+                $otherReport = $this->fetchUUID($otherUuid);
 	    } else {
 		$details['pair_error'] = "Hang ID " . $report->hangid . " but no other UUID pair found";
                 return $details;
