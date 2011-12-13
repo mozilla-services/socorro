@@ -50,6 +50,7 @@ class Branch_Model extends Model {
 
     protected static $_CACHE = array();
     protected $_cache_obj;
+    protected $cache_changed = false;
 
     public function __construct()
     {
@@ -63,7 +64,9 @@ class Branch_Model extends Model {
 
     public function __destruct()
     {
-        $this->_cache_obj->set('branch.cache.objects', self::$_CACHE, NULL, 1800);
+        if($this->cache_changed) {
+            $this->_cache_obj->set('branch.cache.objects', self::$_CACHE, NULL, 1800);
+        }
     }
 
     protected function _getValues(array $order_by = array(), $ignore_cache = false) {
@@ -85,6 +88,7 @@ class Branch_Model extends Model {
         $resp = $service->get("${host}/current/versions/${from}");
         if($order_by && !$ignore_cache) {
             self::$_CACHE[md5($order_by)] = $resp->currentversions;
+            $this->cache_changed = true;
         }
         return $resp->currentversions;
     }
