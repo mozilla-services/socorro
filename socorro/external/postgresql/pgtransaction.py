@@ -1,7 +1,9 @@
 import psycopg2
 import psycopg2.extensions
+import contextlib
 
 import configman.config_manager as cm
+
 
 #------------------------------------------------------------------------------
 def transaction_context_factory(config_unused,
@@ -23,6 +25,7 @@ def transaction_context_factory(config_unused,
            "port=%(database_port)s "
            "user=%(database_user)s "
            "password=%(database_password)s") % local_namespace
+
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     @contextlib.contextmanager
     def transaction_context():
@@ -82,6 +85,3 @@ class PGTransaction(cm.RequiredConfig):
     def __init__(self, config):
         super(PGTransaction, self).__init__()
         self.config = config
-
-
-

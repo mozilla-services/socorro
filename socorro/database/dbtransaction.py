@@ -1,6 +1,7 @@
 import configman.config_manager as cm
 import configman.converters as cnv
 
+
 #==============================================================================
 class DBTransactionApp(cm.RequiredConfig):
     """implementation of an app that does one database transaction and quits"""
