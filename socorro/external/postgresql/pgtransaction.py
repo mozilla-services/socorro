@@ -3,15 +3,27 @@ import psycopg2.extensions
 
 import configman.config_manager as cm
 
-
+#------------------------------------------------------------------------------
 def transaction_context_factory(config_unused,
                                 local_namespace,
                                 args_unused):
+    """a configman aggregating function for Postgres transactions wrapped in
+    a contextlib context.
+
+    parameters:
+        config_usused - a dict representing the app's entire configuration.
+                        this implementation doesn't use them
+        local_namespace - a dict representintg the configman Namespace at the
+                          local level.
+        args_unused - a sequence of commandline arguments.  This implementation
+                      doesn't use them"""
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     dsn = ("host=%(database_host)s "
            "dbname=%(database_name)s "
            "port=%(database_port)s "
            "user=%(database_user)s "
            "password=%(database_password)s") % local_namespace
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     @contextlib.contextmanager
     def transaction_context():
         conn = psycopg2.connect(dsn)
@@ -24,10 +36,15 @@ def transaction_context_factory(config_unused,
             conn.close()
     return transaction_context
 
+
+#==============================================================================
 class PGTransaction(cm.RequiredConfig):
-    required_config = cm.Namespace()
+    """a configman complient class for setup of a Postgres transaction"""
+    #--------------------------------------------------------------------------
+    # configman parameter definition section
     # here we're setting up the minimal parameters required for connecting
     # to a database.
+    required_config = cm.Namespace()
     required_config.add_option(
       name='database_host',
       default='localhost',
@@ -53,11 +70,15 @@ class PGTransaction(cm.RequiredConfig):
       default='secrets',
       doc='the name of the database',
     )
+
+    # this aggregation takes the preceeding Option definitions and produces a
+    # a transaction context object suitable for use in a 'with' statement.
     required_config.add_aggregation(
       name='db_transaction',
       function=transaction_context_factory
     )
 
+    #--------------------------------------------------------------------------
     def __init__(self, config):
         super(PGTransaction, self).__init__()
         self.config = config

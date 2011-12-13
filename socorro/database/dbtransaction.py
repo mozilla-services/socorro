@@ -1,6 +1,3 @@
-import psycopg2
-import psycopg2.extensions
-
 import configman.config_manager as cm
 import configman.converters as cnv
 
@@ -26,25 +23,35 @@ class DBTransactionApp(cm.RequiredConfig):
         self.config = config
 
     #--------------------------------------------------------------------------
-    # **** this function should be overridden in a derived class
     def main(self):
-        pass
+        with self.config.db_transaction() as transaction:
+            self.do_transaction(transaction)
+            transaction.commit()
+
+    #--------------------------------------------------------------------------
+    # **** this function should be overridden in a derived class
+    # If this function returns without raising an excption, then the
+    # transaction is considered to be successful and is commited.
+    # If an exception is raised, then the transactions is considered failed
+    # and is automatically rolled back.
+    def do_transaction(transaction):
+        raise Exception('no actions taken in transaction')
 
 
 #==============================================================================
 class StoredProcedureApp(DBTransactionApp):
-    """implementation of an app that invokes a stored procedure and quits"""
+    """implementation of an app that invokes a stored procedure within a
+    transaction and then quits"""
     #--------------------------------------------------------------------------
     def __init__(self, config):
         super(StoredProcedureApp, self).__init__(config)
 
     #--------------------------------------------------------------------------
-    def main(self):
-            cursor = transaction.cursor()
-            parameters = self.stored_procedure_parameters()
-            cursor.callproc(self.stored_procedure_name,
-                            parameters)
-            transaction.commit()
+    def do_transaction(self, transaction):
+        cursor = transaction.cursor()
+        parameters = self.stored_procedure_parameters()
+        cursor.callproc(self.stored_procedure_name,
+                        parameters)
 
     #--------------------------------------------------------------------------
     # **** this value should be overridden in a derived class
