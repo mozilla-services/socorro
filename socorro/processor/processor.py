@@ -860,7 +860,7 @@ class Processor(object):
   #-----------------------------------------------------------------------------------------------------------------
   def loadProductIdMap(self):
     db_conn, db_cur = self.databaseConnectionPool.connectionCursorPair()
-    columns = ('product_name', 'productid', 'rewrite', 'version_began', 'version_ended')
+    columns = ('product_name', 'productid', 'rewrite')
 
     try:
       logger.debug("attempting to get product_productid_map from postgres")
