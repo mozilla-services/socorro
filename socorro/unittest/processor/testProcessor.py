@@ -454,7 +454,7 @@ def testStart():
     c.fakeDatabaseConnectionPool.expect('connectionCursorPair', (), {},
                                         (c.fakeConnection, c.fakeCursor))
     c.fakeCursor.expect('execute',
-                        ('SELECT product_name,productid,rewrite,version_began,version_ended FROM product_productid_map WHERE rewrite IS TRUE',), {})
+                        ('SELECT product_name,productid,rewrite FROM product_productid_map WHERE rewrite IS TRUE',), {})
     c.fakeCursor.expect('fetchall', (), {}, [('WaterWolf', 'abcdefg', True, None, None)])
     c.fakeConnection.expect('commit', (), {}, None)
 
