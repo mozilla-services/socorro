@@ -56,7 +56,7 @@ class Status_Controller extends Controller {
      */
     public function index() {
         $server_status_model = new Server_Status_Model();
-        $serverStats = $server_status_model->loadStats();
+        $serverStats = $server_status_model->getStats();
         cachecontrol::set(array(
             'last-modified' => time(),
             'expires' => time() + (120) // 120 seconds
@@ -65,9 +65,8 @@ class Status_Controller extends Controller {
         $product = $this->chosen_version['product'];
 
         $this->setViewData(array(
-            'server_stats'            => $serverStats->data,
-            'plotData'                => $serverStats->getPlotData(),
-            'status'                  => $serverStats->status(),
+            'server_stats'            => $serverStats['data'],
+            'plotData'                => $serverStats['plotData'],
             'url_base'                => url::site('products/'.$product),
             'url_nav'                 => url::site('products/'.$product)
         ));
