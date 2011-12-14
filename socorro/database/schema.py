@@ -2003,6 +2003,29 @@ class ReportsDuplicatesTable(Table):
 
 databaseDependenciesForSetup[ReportsDuplicatesTable] = []
 
+#=================================================================================================================
+class ProductIdMapTable(Table):
+  """Define the table 'product_productid_map'
+     Notes: Provides override mapping for product name based on productID
+  """
+  #-----------------------------------------------------------------------------------------------------------------
+  def __init__ (self, logger, **kwargs):
+    super(ProductIdMapTable, self).__init__(name = "product_productid_map", logger=logger,
+                                        creationSql = """
+                                            CREATE TABLE product_productid_map (
+                                              product_name citext NOT NULL,
+                                              productid text NOT NULL,
+                                              rewrite boolean NOT NULL DEFAULT FALSE,
+                                              version_began numeric NOT NULL,
+                                              version_ended numeric
+                                            );
+                                        """)
+    self.insertSql = """INSERT INTO product_productid_map (product_name, productid, rewrite, version_began,
+                        version_ended) values (%s, %s, %s, %s, %s)"""
+
+databaseDependenciesForSetup[ProductIdMapTable] = []
+
+
 #-----------------------------------------------------------------------------------------------------------------
 def connectToDatabase(config, logger):
   databaseDSN = "host=%(databaseHost)s dbname=%(databaseName)s user=%(databaseUserName)s password=%(databasePassword)s" % config

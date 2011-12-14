@@ -167,6 +167,7 @@ class Search(ElasticSearchBase):
             sign = signatures[i]["signature"]
             sign_hang = "_".join((sign, "hang"))
             sign_plugin = "_".join((sign, "plugin"))
+            sign_content = "_".join((sign, "content"))
 
             facet_filter = {
                 "term": {
@@ -196,6 +197,14 @@ class Search(ElasticSearchBase):
                 },
                 "facet_filter": facet_filter
             }
+            facets[sign_content] = {
+                "filter": {
+                    "term": {
+                        "process_type": "content"
+                    }
+                },
+                "facet_filter": facet_filter
+            }
 
         return facets
 
@@ -219,4 +228,7 @@ class Search(ElasticSearchBase):
             # Plugin count
             sign_plugin = "_".join((signatures[i]["signature"], "plugin"))
             signatures[i]["numplugin"] = count_sign[sign_plugin]["count"]
+            # Content count
+            sign_content = "_".join((signatures[i]["signature"], "content"))
+            signatures[i]["numcontent"] = count_sign[sign_content]["count"]
         return signatures

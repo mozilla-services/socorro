@@ -126,6 +126,7 @@ class Report_Controller extends Controller {
             $hang_details = array();
             $hang_details['is_hang'] = ! empty($report->hangid);
             $hang_details['is_plugin'] = ! empty($report->plugin_id);
+            $hang_details['is_content'] = $report->process_type == "content";
             $hang_details['link'] = '#';//Crash level view, linkify widgets
             $hang_details['uuid'] = $report->uuid;
             $hang_details['hangid'] = $report->hangid;
@@ -479,7 +480,7 @@ class Report_Controller extends Controller {
                 $reportJsonZUri = sprintf(Kohana::config('application.crash_dump_public_url'), $otherUuid);
                 $raw_dump_urls = $this->report_model->formatRawDumpURLs($otherUuid);
 
-                $otherReport = $this->fetchUUID($uuid);
+                $otherReport = $this->fetchUUID($otherUuid);
 	    } else {
 		$details['pair_error'] = "Hang ID " . $report->hangid . " but no other UUID pair found";
                 return $details;

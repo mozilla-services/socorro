@@ -302,11 +302,12 @@ class Search(PostgreSQLBase):
             if params["report_process"] == "plugin":
                 row = dict(zip(("signature", "count", "is_windows", "is_mac",
                                 "is_linux", "numhang", "numplugin",
-                                "pluginname", "pluginversion",
+                                "numcontent", "pluginname", "pluginversion",
                                 "pluginfilename"), crash))
             else:
                 row = dict(zip(("signature", "count", "is_windows", "is_mac",
-                                "is_linux", "numhang", "numplugin"), crash))
+                                "is_linux", "numhang", "numplugin",
+                                "numcontent"), crash))
             json_result["hits"].append(row)
 
         self.connection.close()
@@ -329,6 +330,8 @@ class Search(PostgreSQLBase):
                            "END) AS numhang"))
         sql_select.append(("SUM (CASE WHEN r.process_type IS NULL THEN 0  "
                            "ELSE 1 END) AS numplugin"))
+        sql_select.append(("SUM (CASE WHEN r.process_type='content' THEN 1"
+                           "ELSE 0 END) as numcontent"))
 
         ## Searching through plugins
         if params["report_process"] == "plugin":
