@@ -51,7 +51,8 @@ sql = """
         r.app_notes, --25
         r.install_age, --26
         rd.duplicate_of, --27
-        r.release_channel --28
+        r.release_channel, --28
+        r.productid --29
       from
         reports r left join productdims pd on r.product = pd.product and r.version = pd.version
             left join reports_duplicates rd on r.uuid = rd.uuid
