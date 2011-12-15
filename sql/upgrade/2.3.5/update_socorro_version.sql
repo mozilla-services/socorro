@@ -5,9 +5,9 @@ CREATE TABLE socorro_db_version (
 	current_version text primary key 
 	);
 	
-INSERT INTO socorro_version VALUES ( '2.3.4' );
+INSERT INTO socorro_db_version VALUES ( '2.3.4' );
 
-GRANT SELECT ON current_version TO breakpad;$x$,
+GRANT SELECT ON socorro_db_version TO breakpad;$x$,
 'postgres');
 
 SELECT create_table_if_not_exists( 'socorro_db_version_history', $x$
@@ -20,7 +20,7 @@ CREATE TABLE socorro_db_version_history (
 INSERT INTO socorro_db_version_history 
 VALUES ( '2.3.4', '2011-12-13 12:00:00', NULL );
 
-GRANT SELECT on socorro_version_history TO breakpad;$x$,
+GRANT SELECT on socorro_db_version_history TO breakpad;$x$,
 'postgres');
 
 CREATE OR REPLACE FUNCTION update_socorro_db_version (

@@ -24,7 +24,7 @@ psql -f ${CURDIR}/productid.sql breakpad
 echo '*********************************************'
 echo 'add FennecAndroid to products list'
 echo 'bug 706893'
-psql -f ${CURDIR}/adu_fennec_android.sql breakpad
+psql -f ${CURDIR}/add_fennec_android.sql breakpad
 
 echo '*********************************************'
 echo 'add support for fennecandroid to ADU'
@@ -43,7 +43,7 @@ echo 'bug 706899'
 psql -f ${CURDIR}/productid_mapping_table.sql breakpad
 
 #change version in DB
-psql -c "SELECT update_socorro_db_version( $VERSION )" breakpad
+psql -c "SELECT update_socorro_db_version( '$VERSION' )" breakpad
 
 echo "$VERSION upgrade done"
 

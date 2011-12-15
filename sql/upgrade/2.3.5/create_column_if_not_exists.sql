@@ -1,9 +1,10 @@
 create or replace function add_column_if_not_exists (
-	coltable text, colname text, create_statement text,
+	coltable text, colname text, declaration text,
 	indexed boolean default false)
 returns boolean
+language plpgsql
 as $f$
-DECLARE 
+DECLARE dex INT := 1;
 	scripts TEXT[] := '{}';
 BEGIN
 -- this function allows you to send an add column script to the backend 
@@ -11,7 +12,7 @@ BEGIN
 -- there and also optionally creates and index on it
 
 	PERFORM 1 FROM information_schema.columns
-	WHERE table_name = coltable;
+	WHERE table_name = coltable
 		AND column_name = colname;
 	IF FOUND THEN
 		RETURN TRUE;
@@ -26,7 +27,7 @@ BEGIN
 	IF indexed THEN
 		EXECUTE 'CREATE INDEX ' || coltable || '_' || colname || 
 			' ON ' || coltable || '(' || colname || ')';
-	END LOOP;
+	END IF;
 	
 	RETURN TRUE;
 END;
