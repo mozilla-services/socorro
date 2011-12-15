@@ -14,6 +14,9 @@ exception.
 	even abort.  If it aborts, re-run the upgrade after waiting a
 	few minutes.
 	
+710866
+	Add product_guid column to raw_adu and modify ADU aggregation
+	
 706893
 	Add FennecAndroid to products list.
 	
@@ -23,4 +26,6 @@ exception.
 706899
 	Modify update_product_versions to pull FennecAndroid builds
 	from releases_raw.
+	
+
 	

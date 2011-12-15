@@ -10,6 +10,8 @@ BEGIN
 		
 		thisdate := thisdate + 1;
 		
+		RAISE INFO 'backfilled %',thisdate;
+		
 	END LOOP;
 	
 END; $f$;

@@ -6,15 +6,20 @@ SELECT create_table_if_not_exists (
 	$x$
 	CREATE TABLE special_product_platforms (
 		platform citext not null,
+		repository citext not null,
+		release_channel citext not null,
 		release_name citext not null,
 		product_name citext not null,
 		constraint special_product_platforms_key 
-			primary key ( platform, release_name )
+			primary key ( release_name, platform, repository, release_channel )
 	);
 	
 	INSERT INTO special_product_platforms
-	VALUES ( 'linux-android', 'mobile', 'FennecAndroid' ),
-		( 'linux-android-arm', 'mobile', 'FennecAndroid' );
+	VALUES ( 'android', 'mozilla-release', 'release', 'mobile', 'FennecAndroid' ),
+		( 'android', 'mozilla-release', 'beta', 'mobile', 'FennecAndroid' ),
+		( 'android', 'mozilla-beta', 'beta', 'mobile', 'FennecAndroid' ),
+		( 'android-arm', 'mozilla-central-android', 'nightly', 'mobile', 'FennecAndroid' ),
+		( 'android-arm', 'mozilla-central-android', 'aurora', 'mobile', 'FennecAndroid' );
 	$x$,
 	'breakpad_rw' );
 
@@ -30,8 +35,6 @@ BEGIN
 -- reads data from releases_raw, cleans it
 -- and puts data corresponding to the new versions into
 -- product_versions and related tables
-
--- VERSION 0.4
 
 -- is cumulative and can be run repeatedly without issues
 -- now covers FennecAndroid
@@ -50,12 +53,15 @@ select COALESCE ( specials.product_name, products.product_name )
 	releases_raw.build_id,
 	releases_raw.build_type
 from releases_raw
-	JOIN products ON releases_raw.release_name = products.release_name
-	LEFT OUTER JOIN special_product_plaftorms AS specials
-		ON releases_raw.platform = specials.platform
-			AND releases_raw.product_name = specials.release_name
+	JOIN products ON releases_raw.product_name = products.release_name
+	LEFT OUTER JOIN special_product_platforms AS specials
+		ON releases_raw.platform::citext = specials.platform
+		AND releases_raw.product_name = specials.release_name
+		AND releases_raw.repository = specials.repository
+		AND releases_raw.build_type = specials.release_channel
 where build_date(build_id) > ( current_date - 30 )
-	AND version_matches_channel(releases_raw.version, releases_raw.build_type);
+	AND version_matches_channel(releases_raw.version, releases_raw.build_type)
+	AND repository NOT LIKE '%debug%';
 
 insert into product_versions (
     product_name,
