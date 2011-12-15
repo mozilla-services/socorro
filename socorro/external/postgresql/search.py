@@ -396,7 +396,7 @@ class Search(PostgreSQLBase):
         else:
             version_info = None
 
-        if not x:
+        if x is None:
             version_param = "version"
         else:
             version_param = "version%s" % (x + 1)
