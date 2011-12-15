@@ -46,7 +46,6 @@
               <li class="emphatic"><a href="<?php echo url::base() . "topcrasher/byversion/" . $prodversion->product . "/" . $prodversion->version . "/" . $duration; ?>">Top Crashers</a></li>
               <li class="emphatic"><a href="<?php echo url::base() . "products/" . $prodversion->product . "/versions/" . $prodversion->version . "/topchangers" . "?duration=" . $duration; ?>">Top Changers</a></li>
               <li><a href="<?php echo url::base() . "topcrasher/byversion/" . $prodversion->product . "/" . $prodversion->version . "/" . $duration . "/plugin"; ?>">Top Plugin Crashers</a></li>
-              <li><a href="<?php echo url::base() . "topcrasher/byurl/" . $prodversion->product . "/" . $prodversion->version; ?>">Top Crashes by URL</a></li>
               <li><a href="<?php echo url::base() . "topcrasher/bydomain/" . $prodversion->product . "/" . $prodversion->version; ?>">Top Crashes by Domain</a></li>
               <li><a href="<?php echo url::base() . "topcrasher/bytopsite/" . $prodversion->product . "/" . $prodversion->version; ?>">Top Crashes by Topsite</a></li>
             </ul>
