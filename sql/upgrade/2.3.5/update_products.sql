@@ -10,16 +10,17 @@ SELECT create_table_if_not_exists (
 		release_channel citext not null,
 		release_name citext not null,
 		product_name citext not null,
+		min_version major_version not null,
 		constraint special_product_platforms_key 
 			primary key ( release_name, platform, repository, release_channel )
 	);
 	
 	INSERT INTO special_product_platforms
-	VALUES ( 'android', 'mozilla-release', 'release', 'mobile', 'FennecAndroid' ),
-		( 'android', 'mozilla-release', 'beta', 'mobile', 'FennecAndroid' ),
-		( 'android', 'mozilla-beta', 'beta', 'mobile', 'FennecAndroid' ),
-		( 'android-arm', 'mozilla-central-android', 'nightly', 'mobile', 'FennecAndroid' ),
-		( 'android-arm', 'mozilla-central-android', 'aurora', 'mobile', 'FennecAndroid' );
+	VALUES ( 'android', 'mozilla-release', 'release', 'mobile', 'FennecAndroid', '9.0' ),
+		( 'android', 'mozilla-release', 'beta', 'mobile', 'FennecAndroid', '9.0' ),
+		( 'android', 'mozilla-beta', 'beta', 'mobile', 'FennecAndroid', '9.0' ),
+		( 'android-arm', 'mozilla-central-android', 'nightly', 'mobile', 'FennecAndroid', '9.0' ),
+		( 'android-arm', 'mozilla-central-android', 'aurora', 'mobile', 'FennecAndroid', '9.0' );
 	$x$,
 	'breakpad_rw' );
 
@@ -51,7 +52,9 @@ select COALESCE ( specials.product_name, products.product_name )
 	releases_raw.version,
 	releases_raw.beta_number,
 	releases_raw.build_id,
-	releases_raw.build_type
+	releases_raw.build_type,
+	releases_raw.platform,
+	major_version_sort(version) >= major_version_sort(rapid_release_version) as is_rapid
 from releases_raw
 	JOIN products ON releases_raw.product_name = products.release_name
 	LEFT OUTER JOIN special_product_platforms AS specials
@@ -59,9 +62,10 @@ from releases_raw
 		AND releases_raw.product_name = specials.release_name
 		AND releases_raw.repository = specials.repository
 		AND releases_raw.build_type = specials.release_channel
+		AND major_version_sort(version) >= major_version_sort(min_version)
 where build_date(build_id) > ( current_date - 30 )
 	AND version_matches_channel(releases_raw.version, releases_raw.build_type)
-	AND repository NOT LIKE '%debug%';
+	AND releases_raw.repository NOT LIKE '%debug%';
 
 insert into product_versions (
     product_name,
@@ -87,9 +91,9 @@ from releases_recent
 		( releases_recent.product_name = product_versions.product_name
 			AND releases_recent.version = product_versions.release_version
 			AND releases_recent.beta_number IS NOT DISTINCT FROM product_versions.beta_number )
-where major_version_sort(version) >= major_version_sort(rapid_release_version)
-	AND product_versions.product_name IS NULL
-group by products.product_name, version, 
+where is_rapid
+    AND product_versions.product_name IS NULL
+group by releases_recent.product_name, version, 
 	releases_recent.beta_number, 
 	releases_recent.build_type::citext;
 
@@ -120,8 +124,8 @@ from releases_recent
         ( releases_recent.product_name = product_versions.product_name
             AND releases_recent.version = product_versions.release_version
             AND product_versions.beta_number = 999 )
-where major_version_sort(version) >= major_version_sort(rapid_release_version)
-    AND product_versions.product_name IS NULL
+where is_rapid
+    AND releases_recent.product_name IS NULL
     AND releases_recent.build_type ILIKE 'release'
 group by products.product_name, version;
 

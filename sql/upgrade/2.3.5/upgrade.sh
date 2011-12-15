@@ -40,7 +40,7 @@ psql -f ${CURDIR}/productid_mapping_table.sql breakpad
 echo '*********************************************'
 echo 'modify update_products to pull FennecAndroid'
 echo 'bug 706899'
-psql -f ${CURDIR}/productid_mapping_table.sql breakpad
+psql -f ${CURDIR}/update_products.sql breakpad
 
 #change version in DB
 psql -c "SELECT update_socorro_db_version( '$VERSION' )" breakpad

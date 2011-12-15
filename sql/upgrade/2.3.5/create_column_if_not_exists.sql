@@ -16,7 +16,7 @@ BEGIN
 		AND column_name = colname;
 	IF FOUND THEN
 		RETURN TRUE;
-	END;	
+	END IF;	
 	
 	scripts := string_to_array(declaration, ';');
 	WHILE scripts[dex] IS NOT NULL LOOP
