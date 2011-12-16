@@ -191,8 +191,8 @@ class Search(ElasticSearchBase):
             }
             facets[sign_plugin] = {
                 "filter": {
-                    "exists": {
-                        "field": "process_type"
+                    "term": {
+                        "process_type": "plugin"
                     }
                 },
                 "facet_filter": facet_filter
