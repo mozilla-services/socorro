@@ -41,9 +41,9 @@
 <?php slot::end() ?>
 
     <div class="page-heading">
-        <h2><?= $correlation_os ?>
+        <h2>
             <?php if (isset($display_signature)) { ?>
-                - Crash Reports for <?php out::H($display_signature) ?>
+                Crash Reports for <?php out::H($display_signature) ?>
             <?php } ?>
         </h2>
     <div>
