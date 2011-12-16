@@ -52,6 +52,3 @@
         ))->render(TRUE);
 
     endif ?>
-            <br />
-        </div>
-    </div>
