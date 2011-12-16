@@ -17,7 +17,8 @@
     </script>
 
     <?php echo html::script(array(
-        'js/jquery/plugins/ui/jquery.ui.all.js',
+        'js/jquery/plugins/ui/jquery-ui-1.8.16.tabs.min.js',
+        'js/jquery/plugins/jquery.cookie.js',
         'js/jquery/plugins/ui/jquery.tablesorter.min.js',
         'js/flot-0.7/jquery.flot.pack.js',
         'js/socorro/correlation.js',
@@ -197,53 +198,15 @@ foreach($options[$type] as $k => $readable) {
 <!-- end content -->
 <script id="source" type="text/javascript">
 //<![CDATA[
-      $(document).ready(function() {
-          var shouldDrawPlot = true;
+      $(document).ready(function() {      
+          var shouldDrawPlot = true,
+          currentActiveTab = $("#report-list-nav").find("li.ui-tabs-selected");
 	  <?php if( count($builds) > 1){ ?>
 	  
 	    $("#buildid-graph").width(<?php echo max( min(300 * count($builds), 1200), 200) ?>);
 	  <? } ?>
-
-      $('#report-list > ul').bind('tabsshow', function(event, ui, data){
-	  if (shouldDrawPlot && $(data.panel).attr('id') == "graph") {
-            drawPlot();
-            shouldDrawPlot = false;
-        }
-    });
-	
-	function showTooltip(x, y, contents) {
-		$('<div id="graph-tooltip">' + contents + '</div>').css({
-			top: y + 5,
-			left: x + 5
-		}).appendTo("body").fadeIn(200);
-	}
-
-	var previousPoint = null;
-	
-	$("#buildid-graph").bind("plothover", function (event, pos, item) {
-		$("#x").text(pos.x.toFixed(2));
-		$("#y").text(pos.y.toFixed(2));
-		
-		if (item) {
-
-			if (previousPoint != item.dataIndex) {
-			
-				previousPoint = item.dataIndex;
-				
-				$("#graph-tooltip").remove();
-				
-				var x = item.datapoint[0].toFixed(2),
-				y = item.datapoint[1].toFixed(2);
-				
-				showTooltip(item.pageX, item.pageY, "Crash build date: " + item.series.xaxis.ticks[previousPoint].label);
-			}
-		} else {
-			$("#graph-tooltip").remove();
-			previousPoint = null;
-		}
-	});
-
-    var drawPlot = function() {
+      
+      var drawPlot = function() {
 	
       var buildIdGraph = $.plot($("#buildid-graph"),
              [<?php for($i = 0; $i < count($all_platforms); $i += 1){
@@ -291,8 +254,55 @@ foreach($options[$type] as $k => $readable) {
 			$(".xAxis").hide();
 		}
 	 
-    }//drawPlot	
+    }//drawPlot
+    
+    // If the last selected tab was the graph, we need to ensure that the graph
+    // is plotted on document ready.
+    if(shouldDrawPlot && currentActiveTab.find("a").attr("href") === "#graph") {
+        drawPlot();
+        shouldDrawPlot = false;
+    }
 
+    // if the last selected tab was not the graph, we need to ensure the graph 
+    // is plotted once the graph tab is clicked.
+    $('#report-list').bind('tabsselect, tabsshow', function(event, ui) {
+        if (shouldDrawPlot && $(ui.panel).attr('id') == "graph") {
+            drawPlot();
+            shouldDrawPlot = false;
+        }
+    });
+	
+	function showTooltip(x, y, contents) {
+		$('<div id="graph-tooltip">' + contents + '</div>').css({
+			top: y + 5,
+			left: x + 5
+		}).appendTo("body").fadeIn(200);
+	}
+
+	var previousPoint = null;
+	
+	$("#buildid-graph").bind("plothover", function (event, pos, item) {
+		$("#x").text(pos.x.toFixed(2));
+		$("#y").text(pos.y.toFixed(2));
+		
+		if (item) {
+
+			if (previousPoint != item.dataIndex) {
+			
+				previousPoint = item.dataIndex;
+				
+				$("#graph-tooltip").remove();
+				
+				var x = item.datapoint[0].toFixed(2),
+				y = item.datapoint[1].toFixed(2);
+				
+				showTooltip(item.pageX, item.pageY, "Crash build date: " + item.series.xaxis.ticks[previousPoint].label);
+			}
+		} else {
+			$("#graph-tooltip").remove();
+			previousPoint = null;
+		}
+	});
 });
 //]]>
 </script>
