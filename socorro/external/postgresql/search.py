@@ -328,8 +328,8 @@ class Search(PostgreSQLBase):
 
         sql_select.append(("SUM (CASE WHEN r.hangid IS NULL THEN 0  ELSE 1 "
                            "END) AS numhang"))
-        sql_select.append(("SUM (CASE WHEN r.process_type IS NULL THEN 0  "
-                           "ELSE 1 END) AS numplugin"))
+        sql_select.append(("SUM (CASE WHEN r.process_type='plugin' THEN 1"
+                           "ELSE 0 END) as numplugin"))
         sql_select.append(("SUM (CASE WHEN r.process_type='content' THEN 1"
                            "ELSE 0 END) as numcontent"))
 
