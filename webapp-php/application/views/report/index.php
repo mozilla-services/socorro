@@ -175,8 +175,8 @@ if (isset($report->sumo_signature) && !empty($report->signature)) { ?>
 <?php if (isset($report->app_notes)) { ?>
             <tr>
 	    <th title="Notes added by the application's code during crash">App Notes</th>
-            <td><?php echo nl2br( out::H($report->app_notes
-, FALSE))  ?></td>
+            <td><pre><?php echo nl2br( out::H($report->app_notes
+, FALSE))  ?></pre></td>
             </tr>
 <?php } ?>
 <?php if (isset($report->processor_notes)) { ?>
@@ -200,7 +200,7 @@ if (isset($report->sumo_signature) && !empty($report->signature)) { ?>
 	    <th>EMCheckCompatibility</th><td><?php if ($report->addons_checked) { echo 'True'; } else { echo 'False'; } ?></td>
             </tr>
 <?php } ?>
-        <tr><th>Winsock LSP</th><td><?php if (isset($report->Winsock_LSP)) nl2br(out::H($report->Winsock_LSP)) ?></td></tr>
+        <tr><th>Winsock LSP</th><td><pre><?php if (isset($report->Winsock_LSP)) nl2br(out::H($report->Winsock_LSP)) ?></pre></td></tr>
         <tr><th>Adapter Vendor ID</th><td><?php if (isset($report->AdapterVendorID)) out::H($report->AdapterVendorID) ?></td></tr>
         <tr><th>Adapter Device ID</th><td><?php if (isset($report->AdapterDeviceID)) out::H($report->AdapterDeviceID) ?></td></tr>
         </table>
