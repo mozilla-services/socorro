@@ -1,6 +1,7 @@
 \set ON_ERROR_STOP 1
 
 DO $f$
+DECLARE newprod INT;
 BEGIN
 PERFORM 1 FROM products WHERE product_name = 'FennecAndroid';
 IF NOT FOUND THEN
@@ -15,6 +16,16 @@ IF NOT FOUND THEN
 	( 'FennecAndroid', 'Aurora', 1.0 ),
 	( 'FennecAndroid', 'Beta', 1.0 ),
 	( 'FennecAndroid', 'Release', 1.0 );
+	
+	newprod := nextval('productdims_id_seq1');
+	-- insert fake productdims record as workaround for UI bug
+	INSERT INTO productdims ( id, product, version, branch, release )
+	VALUES ( newprod, 'FennecAndroid', '0.0', '2.0', 'major' );
+	
+	INSERT INTO product_visibility ( productdims_id, 
+		start_date, end_date, ignore, featured, throttle )
+	VALUES ( newprod, '2011-01-01', '2011-02-01', true, false, 100.0 ); 
+	
 END IF;
 END;
 $f$;
