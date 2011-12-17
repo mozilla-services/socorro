@@ -73,5 +73,11 @@ $(document).ready(function () {
         sortList : [[12,1]]
     });
 
-    $('#report-list-nav').tabs({selected: 0}).show();
+    // load the tabs and use a cookie to keep state.
+    // the cookie will live for 1 day
+    $('#report-list').tabs({
+        cookie: {
+            expires: 1
+        }
+    }).show();
 });

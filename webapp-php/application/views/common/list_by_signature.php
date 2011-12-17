@@ -117,8 +117,14 @@
         </tbody>
     </table>
 
+    </div>
+</div>
+
 <?php } else { ?>
 
     <p>No results were found.</p>
+    
+    </div>
+</div>
 
 <?php } ?>

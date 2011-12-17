@@ -89,8 +89,8 @@
     		</div>
     		<ul>
                 <li><a href="<?php echo url::base() ?>status">Server Status</a></li>
-                <li><a href="http://code.google.com/p/socorro/">Project Info</a></li>
-                <li><a href="http://code.google.com/p/socorro/source">Source Code</a></li>
+                <li><a href="http://socorro.readthedocs.org/">Project Info</a></li>
+                <li><a href="https://github.com/mozilla/socorro">Source Code</a></li>
                 <li><a href="http://wiki.mozilla.org/Breakpad">Breakpad Wiki</a></li>
                 <li><a href="http://www.mozilla.org/about/policies/privacy-policy.html">Privacy Policy</a></li>
     		</ul>

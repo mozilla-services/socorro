@@ -97,8 +97,6 @@
                             value="<?= url::base() ?>products/<?= $chosen_version['product'] ?><?php if (isset($chosen_version['version']) && !empty($chosen_version['version'])) echo '/versions/'.html::specialchars($chosen_version['version']); ?>/topchangers">Top Changers</option>
                         <option <?php if (isset($nav_selection) && $nav_selection == 'top_crashes') echo 'selected'; ?>
                             value="<?= url::base() ?>topcrasher/byversion/<?= $chosen_version['product'] ?>/<?= $chosen_version['version'] ?>">Top Crashers</option>
-                        <option <?php if (isset($nav_selection) && $nav_selection == 'top_url') echo 'selected'; ?>
-                            value="<?= url::base() ?>topcrasher/byurl/<?= $chosen_version['product'] ?>/<?= $chosen_version['version'] ?>">Top Crashers by URL</option>
                         <option <?php if (isset($nav_selection) && $nav_selection == 'top_domain') echo 'selected'; ?>
                             value="<?= url::base() ?>topcrasher/bydomain/<?= $chosen_version['product'] ?>/<?= $chosen_version['version'] ?>">Top Crashers by Domain</option>
                         <option <?php if (isset($nav_selection) && $nav_selection == 'top_topsite') echo 'selected'; ?>

@@ -15,9 +15,17 @@ Customize CSV files
 ------------
 
 Socorro comes with a set of CSV files you can customize and use to bootstrap
-your database:
+your database.
 
-From inside the Socorro checkout, as the *socorro* user:
+Shut down all Socorro services, drop your database (if needed) and load 
+the schema.
+From inside the Socorro checkout, as *postgres* user:
+::
+  dropdb breakpad # skip this if you haven't created a db yet
+  createdb -E 'utf8' -l 'en_US.utf8' -T template0 breakpad
+  psql -f sql/schema/2.3/breakpad_schema.sql breakpad
+
+From inside the Socorro checkout, as the *postgres* user:
 ::
   cd tools/dataload
   edit *.csv
