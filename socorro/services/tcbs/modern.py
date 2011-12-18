@@ -54,7 +54,7 @@ def getListOfTopCrashersBySignature(aCursor, dbParams):
     WITH tcbs_r as (
     SELECT signature_id,
         signature,
-        product_name,
+        pv.product_name,
         version_string,
         sum(report_count) as report_count,
         sum(win_count) as win_count,
@@ -62,14 +62,18 @@ def getListOfTopCrashersBySignature(aCursor, dbParams):
         sum(mac_count) as mac_count,
         sum(hang_count) as hang_count,
         plugin_count(process_type,report_count) as plugin_count,
-        content_count(process_type,report_count) as content_count
-    FROM tcbs JOIN signatures USING (signature_id)
-      JOIN product_versions USING (product_version_id)
-    WHERE product_name = '%s'
+        content_count(process_type,report_count) as content_count,
+        first_report,
+        version_list
+    FROM tcbs
+      JOIN signatures USING (signature_id)
+      JOIN signature_products_rollup USING (signature_id)
+      JOIN product_versions AS pv USING (product_version_id)
+    WHERE pv.product_name = '%s'
       AND version_string = '%s'
       AND report_date BETWEEN '%s' AND '%s'
       %s
-    GROUP BY signature_id, signature, product_name, version_string
+    GROUP BY signature_id, signature, pv.product_name, version_string, first_report, signature_products_rollup.version_list
     ),
     tcbs_window AS (
       SELECT tcbs_r.*,
@@ -86,6 +90,8 @@ def getListOfTopCrashersBySignature(aCursor, dbParams):
            hang_count,
            plugin_count,
            content_count,
+           first_report,
+           version_list,
         report_count / total_crashes::float
         as percent_of_total
     FROM tcbs_window
@@ -145,10 +151,16 @@ def listOfListsWithChangeInRank(listOfQueryResultsIterable):
     aRowAsDict = prevRowAsDict = None
     for rank, aRow in enumerate(aListOfTopCrashers):
       prevRowAsDict = aRowAsDict
+      logger.debug(aRowAsDict)
       aRowAsDict = dict(zip(['signature', 'count', 'win_count', 'linux_count',
                              'mac_count', 'hang_count', 'plugin_count',
-                             'content_count', 'percentOfTotal'], aRow))
+                             'content_count', 'first_report_exact', 'versions', 'percentOfTotal'], aRow))
       aRowAsDict['currentRank'] = rank
+      aRowAsDict['first_report'] = aRowAsDict['first_report_exact'].strftime('%Y-%m-%d')
+      aRowAsDict['first_report_exact'] = aRowAsDict['first_report_exact'].strftime('%Y-%m-%d %H:%M:%S')
+      versions = aRowAsDict['versions']
+      aRowAsDict['versions_count'] = len(versions)
+      aRowAsDict['versions'] = ', '.join(versions)
       try:
         (aRowAsDict['previousRank'],
          aRowAsDict['previousPercentOfTotal']) = previousList.find(
