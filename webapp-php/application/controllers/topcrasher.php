@@ -196,7 +196,11 @@ class Topcrasher_Controller extends Controller {
                 'changeInRank' => 0,
                 'percentOfTotal' => 0,
                 'previousPercentOfTotal' => 0,
-                'changeInPercentOfTotal' => 0
+                'changeInPercentOfTotal' => 0,
+                'versions' => '',
+                'versions_count' => '',
+                'first_report' => '',
+                'first_report_exact' => ''
             );
 
 	    foreach($resp->crashes as $top_crasher) {
@@ -231,9 +235,6 @@ class Topcrasher_Controller extends Controller {
                                          array_unique($signatures),
                                          Kohana::config('codebases.bugTrackingUrl')
                                      );
-
-        // Fetch versions associated with top crashers
-        $resp->crashes = $this->topcrashers_model->fetchTopcrasherVersions($product, $resp->crashes);
 
 	    if ($this->input->get('format') == "csv") {
 		$this->setViewData(array('top_crashers' => $this->_csvFormatArray($resp->crashes)));
