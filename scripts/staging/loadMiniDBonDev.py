@@ -108,7 +108,7 @@ runload('/usr/local/pgsql/bin/pg_restore -j 3 -Fc --post-data-only -U postgres m
 runload('/usr/local/pgsql/bin/pg_restore -j 3 -Fc --post-data-only -U postgres matview_schemas.dump -d %s' % options.database_name)
 
 # truncate soon-to-be-dropped tables
-conn.disconnect()
+# conn.disconnect()
 
 conn = psycopg2.connect("dbname=%s user=postgres" % options.database_name)
 
