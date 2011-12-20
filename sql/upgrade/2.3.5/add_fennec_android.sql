@@ -9,7 +9,7 @@ IF NOT FOUND THEN
 	UPDATE products SET sort = sort + 1 WHERE sort >= 4;
 	
 	INSERT INTO products ( product_name, sort, rapid_release_version, release_name )
-	VALUES ( 'FennecAndroid', 4, '5.0', 'mobile' );
+	VALUES ( 'FennecAndroid', 4, '5.0', '**SPECIAL**' );
 	
 	INSERT INTO product_release_channels ( product_name, release_channel, throttle )
 	VALUES ( 'FennecAndroid', 'Nightly', 1.0 ),
@@ -29,3 +29,7 @@ IF NOT FOUND THEN
 END IF;
 END;
 $f$;
+
+SELECT update_product_versions();
+
+UPDATE product_versions SET featured = true WHERE product_name = 'FennecAndroid' AND version_string = '11.0a1';

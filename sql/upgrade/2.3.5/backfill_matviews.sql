@@ -72,3 +72,7 @@ END LOOP;
 
 RETURN true;
 END; $f$;
+
+\set ON_ERROR_STOP 0
+
+DROP FUNCTION backfill_matviews(date, text, date, boolean);

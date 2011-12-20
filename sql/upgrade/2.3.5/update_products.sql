@@ -16,11 +16,11 @@ SELECT create_table_if_not_exists (
 	);
 	
 	INSERT INTO special_product_platforms
-	VALUES ( 'android', 'mozilla-release', 'release', 'mobile', 'FennecAndroid', '9.0' ),
-		( 'android', 'mozilla-release', 'beta', 'mobile', 'FennecAndroid', '9.0' ),
-		( 'android', 'mozilla-beta', 'beta', 'mobile', 'FennecAndroid', '9.0' ),
-		( 'android-arm', 'mozilla-central-android', 'nightly', 'mobile', 'FennecAndroid', '9.0' ),
-		( 'android-arm', 'mozilla-central-android', 'aurora', 'mobile', 'FennecAndroid', '9.0' );
+	VALUES ( 'android', 'mozilla-release', 'release', 'mobile', 'FennecAndroid', '10.0' ),
+		( 'android', 'mozilla-release', 'beta', 'mobile', 'FennecAndroid', '10.0' ),
+		( 'android', 'mozilla-beta', 'beta', 'mobile', 'FennecAndroid', '10.0' ),
+		( 'android-arm', 'mozilla-central-android', 'nightly', 'mobile', 'FennecAndroid', '10.0' ),
+		( 'android-arm', 'mozilla-central-android', 'aurora', 'mobile', 'FennecAndroid', '10.0' );
 	$x$,
 	'breakpad_rw' );
 
