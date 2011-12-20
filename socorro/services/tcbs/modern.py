@@ -52,7 +52,7 @@ def getListOfTopCrashersBySignature(aCursor, dbParams):
 
   sql = """
     WITH tcbs_r as (
-    SELECT signature_id,
+    SELECT tcbs.signature_id,
         signature,
         pv.product_name,
         version_string,
@@ -67,13 +67,15 @@ def getListOfTopCrashersBySignature(aCursor, dbParams):
         version_list
     FROM tcbs
       JOIN signatures USING (signature_id)
-      JOIN signature_products_rollup USING (signature_id)
       JOIN product_versions AS pv USING (product_version_id)
+      JOIN signature_products_rollup AS spr
+        ON spr.signature_id = tcbs.signature_id
+        AND spr.product_name = pv.product_name
     WHERE pv.product_name = '%s'
       AND version_string = '%s'
       AND report_date BETWEEN '%s' AND '%s'
       %s
-    GROUP BY signature_id, signature, pv.product_name, version_string, first_report, signature_products_rollup.version_list
+    GROUP BY tcbs.signature_id, signature, pv.product_name, version_string, first_report, spr.version_list
     ),
     tcbs_window AS (
       SELECT tcbs_r.*,
