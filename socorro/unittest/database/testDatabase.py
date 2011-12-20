@@ -148,96 +148,110 @@ class TestDatabase(unittest.TestCase):
     assert d.logger == 1, 'logger passed with dictionary was not overridden by logger passed as a parameter, got %s instead' % d.logger
 
 
-  #def testConnectionPoolConstructor(self):
-    ## just test some variations on constructor calls
-    #logger = self.logger
-    #logger.clear()
-    #try:
-      #cp = db.DatabaseConnectionPool()
-      #assert False, 'expected a raised TypeError, not to get here'
-    #except TypeError,x:
-      #pass
-    #except Exception,x:
-      #assert False, 'expected a TypeError, not %s: %s'%(type(x),x)
-    #try:
-      #cp = db.DatabaseConnectionPool(*self.connectionData0)
-    #except Exception,x:
-      #assert False, 'expected the non-logger constructor to succeed, got %s: %s'%(type(x),x)
-    #try:
-      #cp = db.DatabaseConnectionPool(*self.connectionDataL)
-    #except Exception,x:
-      #assert False, 'expected the with-logger constructor to succeed, got %s: %s'%(type(x),x)
+  def testConnectionPoolConstructor(self):
+    # just test some variations on constructor calls
+    logger = self.logger
+    logger.clear()
+    try:
+      cp = db.DatabaseConnectionPool()
+      assert False, 'expected a raised TypeError, not to get here'
+    except TypeError,x:
+      pass
+    except Exception,x:
+      assert False, 'expected a TypeError, not %s: %s'%(type(x),x)
+    try:
+      cp = db.DatabaseConnectionPool(config)
+    except Exception,x:
+      assert False, 'expected the non-logger constructor to succeed, got %s: %s'%(type(x),x)
+    try:
+      cp = db.DatabaseConnectionPool(config, self.logger)
+    except Exception,x:
+      assert False, 'expected the with-logger constructor to succeed, got %s: %s'%(type(x),x)
 
-  #def testConnectionPoolConnectToDatabase(self):
-    #logger = self.logger
-    #logger.clear()
-    #cp = db.DatabaseConnectionPool(config.databaseHost,config.databaseName,config.databaseUserName,config.databasePassword,logger)
-    #logger.clear()
-    #try:
-      #connection,cursor = cp.connectToDatabase()
-      #assert connection
-      #assert cursor
-    #except Exception,x:
-      #assert False, 'expected nothing, got %s: %s'%(type(x),x)
-    #assert logger.levels[0] == logging.INFO
-    #assert logger.buffer[0] == '%s - connecting to database' %threading.currentThread().getName()
+  def testConnectionPoolConnectToDatabase(self):
+    logger = self.logger
+    logger.clear()
+    cp = db.DatabaseConnectionPool(config, logger)
+    logger.clear()
+    try:
+      connection,cursor = cp.connectionCursorPair()
+      assert connection
+      assert cursor
+    except Exception,x:
+      assert False, 'expected no exceptions, got %s: %s'%(type(x),x)
 
-  #def testConnectionPoolConnectionCursorPairNoTest(self):
-    #logger = self.logger
-    #logger.clear()
-    #cp = db.DatabaseConnectionPool(config.databaseHost,config.databaseName,config.databaseUserName,config.databasePassword,logger)
-    #connection0 = cursor0 = None
-    #try:
-      #connection0,cursor0 = cp.connectionCursorPairNoTest()
-      #assert connection0
-      #assert cursor0
-    #except Exception,x:
-      #assert False, 'expected nothing, got %s: %s'%(type(x),x)
-    #connection1,cursor1 = cp.connectionCursorPairNoTest()
-    #assert 1 == len(logger.buffer) # only logged one actual connection attempt
-    #assert connection0 == connection1
-    #assert cursor0 == cursor1
+  def testConnectionPoolConnectionCursorPair(self):
+    logger = self.logger
+    logger.clear()
+    cp = db.DatabaseConnectionPool(config, logger)
+    connection0 = cursor0 = None
+    try:
+      connection0, cursor0 = cp.connectionCursorPair()
+      assert connection0
+      assert cursor0
+    except Exception,x:
+      assert False, 'expected nothing, got %s: %s'%(type(x),x)
+    connection1, cursor1 = cp.connectionCursorPair()
+    assert connection0 == connection1
+    assert cursor0 != cursor1
 
-  #def testConnectionPoolConnectionCursorPair(self):
-    #logger = self.logger
-    #logger.clear()
-    #cp = db.DatabaseConnectionPool(config.databaseHost,config.databaseName,config.databaseUserName,config.databasePassword,logger)
-    #connection0 = cursor0 = None
-    #try:
-      #connection0,cursor0 = cp.connectionCursorPair()
-      #assert connection0
-      #assert cursor0
-    #except Exception,x:
-      #assert False, 'expected nothing, got %s: %s'%(type(x),x)
-    #connection1,cursor1 = cp.connectionCursorPair()
-    #assert 1 == len(logger.buffer) # only logged one actual connection attempt
-    #assert connection0 == connection1
-    #assert cursor0 == cursor1
+    logger.clear()
+    cp = db.DatabaseConnectionPool(config, logger)
+    connection0 = cursor0 = None
+    try:
+      connection0,cursor0 = cp.connectionCursorPair()
+    except Exception,x:
+      assert False, 'Expected OperationalError above, got %s: %s' %(type(x),x)
 
-    #logger.clear()
-    #cp = db.DatabaseConnectionPool(config.databaseHost,config.databaseName,config.databaseUserName,config.databasePassword,logger)
-    #connection0 = cursor0 = None
-    #try:
-      #connection0,cursor0 = cp.connectionCursorPair()
-    #except Exception,x:
-      #assert False, 'Expected OperationalError above, got %s: %s' %(type(x),x)
+  def testConnectionPoolCleanup(self):
+    class FakeLogger(object):
+      def __init__(self):
+        self.logs = []
+      def debug(self, *args):
+        self.logs.append(args)
+    logger = FakeLogger()
+    cp = db.DatabaseConnectionPool(config, logger)
+    conn = cp.connection()
+    cp.cleanup()
+    conn = cp.connection()
+    conn = cp.connection('fred')
+    cp.cleanup()
+    expected = [('%s - killing database connections', 'MainThread'),
+                ('%s - connection %s closed', 'MainThread', 'MainThread'),
+                ('%s - killing database connections', 'MainThread'),
+                ('%s - connection %s already closed', 'MainThread', 'MainThread'),
+                ('%s - connection %s closed', 'MainThread', 'fred')]
+    assert len(expected) == len(logger.logs)
+    for e, a in zip(expected, logger.logs):
+      assert e == a
 
-  #def testConnectionPoolCleanup(self):
-    #logger = self.logger
-    #logger.clear()
-    #cp = db.DatabaseConnectionPool(config.databaseHost,config.databaseName,config.databaseUserName,config.databasePassword,logger)
-    #conn,cur = cp.connectionCursorPairNoTest()
-    #logger.clear()
-    #cp.cleanup()
-    #assert [logging.DEBUG,logging.DEBUG] == logger.levels
-    #expected = ["%s - killing thread database connections"% threading.currentThread().getName(),"%s - connection %s closed"% (threading.currentThread().getName(),threading.currentThread().getName())]
-    #assert expected == logger.buffer, "Expected %s got %s"%(expected, logger.buffer)
+  def test_connection_attempt_count(self):
+    logger = self.logger
+    logger.clear()
+    class ConnectionCountingFakeDatabase(object):
+      def __init__(self, config, logger=None):
+        self.connect_counter = 0
+      def connection(self, database_module=None):
+        self.connect_counter += 1
+        return 17
+      logger = self.logger
+    temp_Database = db.Database
+    db.Database = ConnectionCountingFakeDatabase
+    try:
+      db_pool = db.DatabaseConnectionPool(config, logger)
+      c1 = db_pool.connection()
+      assert db_pool.database.connect_counter == 1
+      c1 = db_pool.connection()
+      assert db_pool.database.connect_counter == 1
+      c1 = db_pool.connection('fred')
+      assert db_pool.database.connect_counter == 2
+      c1 = db_pool.connection()
+      assert db_pool.database.connect_counter == 2
+      c1 = db_pool.connection('fred')
+      assert db_pool.database.connect_counter == 2
+    finally:
+      db.Database = temp_Database
 
-    #logger.clear()
-    #cp.cleanup()
-    #assert [logging.DEBUG,logging.DEBUG] == logger.levels
-    #expected = ["%s - killing thread database connections"% threading.currentThread().getName(),"%s - connection %s already closed"% (threading.currentThread().getName(),threading.currentThread().getName())]
-    #assert expected == logger.buffer, "Expected %s got %s"%(expected, logger.buffer)
 
   def testLoggingCursorExecute(self):
     logCursor = self.connection.cursor(cursor_factory=db.LoggingCursor)
