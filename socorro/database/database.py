@@ -180,37 +180,14 @@ class DatabaseConnectionPool(dict):
     self.logger = self.database.logger
 
   #-----------------------------------------------------------------------------------------------------------------
-  #def connectionWithoutTest(self, name=None):
   def connection(self, name=None):
     """Try to re-use this named connection, else create one and use that"""
     if not name:
       name = threading.currentThread().getName()
-    return self.setdefault(name, self.database.connection())
-
-  #-----------------------------------------------------------------------------------------------------------------
-  #def connection(self, name=None):
-    #"""Like connecionCursorPairNoTest, but test that the specified connection actually works"""
-    #connection = self.connectionWithoutTest(name)
-    #try:
-      #cursor = connection.cursor()
-      #cursor.execute("select 1")
-      #cursor.fetchall()
-      #return connection
-    #except psycopg2.Error:
-      ## did the connection time out?
-      #self.logger.info("%s - trying to re-establish a database connection", threading.currentThread().getName())
-      #try:
-        #del self[name]
-      #except KeyError:
-        #pass
-      #try:
-        #connection = self.connectionWithoutTest(name)
-        #cursor.execute("select 1")
-        #cursor.fetchall()
-        #return connection
-      #except Exception, x:
-        #self.logger.critical("%s - something's gone horribly wrong with the database connection", threading.currentThread().getName())
-        #raise CannotConnectToDatabase(x)
+    if name in self:
+      return self[name]
+    self[name] = self.database.connection()
+    return self[name]
 
   #-----------------------------------------------------------------------------------------------------------------
   def connectionCursorPair(self, name=None):
