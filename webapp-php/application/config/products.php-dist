@@ -25,6 +25,7 @@ $config['product_weights'] = array(
    'Camino' => 3,
    'SeaMonkey' => 4,
    'Fennec' => 5,
+   'FennecAndroid' => 6,
 );
 
 /**
