@@ -40,6 +40,35 @@ class TestCase(unittest.TestCase):
                                    processor_notes_list)
         assert sig == 'java signature'
 
+    def test_generate_signature_3(self):
+        p = TestExternalProcessor()
+        signature_list = [ xp.java_signature_sentinel, 'b', 'c' ]
+        app_notes = 'java signature'*100
+        hang_type = 0
+        crashed_thread = 0
+        processor_notes_list = []
+        sig = p.generate_signature(signature_list,
+                                   app_notes,
+                                   hang_type,
+                                   crashed_thread,
+                                   processor_notes_list)
+        assert sig == 'EMPTY: java stack not in expected format'
+
+    def test_generate_signature_3(self):
+        p = TestExternalProcessor()
+        signature_list = [ xp.java_signature_sentinel, 'b', 'c' ]
+        app_notes = 'java signature'*100 + '{'
+        hang_type = 0
+        crashed_thread = 0
+        processor_notes_list = []
+        sig = p.generate_signature(signature_list,
+                                   app_notes,
+                                   hang_type,
+                                   crashed_thread,
+                                   processor_notes_list,
+                                   signature_max_len=17)
+        assert sig == 'java signature...'
+
 
 
 
