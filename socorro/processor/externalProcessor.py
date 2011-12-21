@@ -323,13 +323,19 @@ class ProcessorWithExternalBreakpad (processor.Processor):
                          app_notes,
                          hang_type,
                          crashed_thread,
-                         processor_notes_list):
+                         processor_notes_list,
+                         signature_max_len=255):
     signature = self.signatureUtilities.generate_signature_from_list(
                                                      signature_list,
                                                      hangType=hang_type)
     if signature == java_signature_sentinel:
       # generate a Java signature
-      signature = app_notes[:app_notes.find('{')].strip()
+      if '{' not in app_notes:
+        signature = 'EMPTY: java stack not in expected format'
+      else:
+        signature = app_notes[:app_notes.find('{')].strip()
+        if len(signature) > signature_max_len:
+          signature = "%s..." % signature[:signature_max_len - 3]
     if signature == '' or signature is None:
       if crashed_thread is None:
         message = ("No signature could be created because we do not know which"
