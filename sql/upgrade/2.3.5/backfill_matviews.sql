@@ -35,13 +35,6 @@ END IF;
 -- fill in products
 PERFORM update_product_versions();
 
-IF forproduct <> '' THEN
-	PERFORM 1 FROM products WHERE product_name = forproduct;
-	IF NOT FOUND THEN
-		RAISE EXCEPTION 'product % does not exist or is misspelled',forproduct;
-	END IF;
-END IF;
-
 -- backfill reports_clean.  this takes a while,  and isn't limited
 -- by product so if it's not needed
 -- we provide a switch to disable it
