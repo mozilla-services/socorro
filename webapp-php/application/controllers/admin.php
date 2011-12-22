@@ -73,7 +73,11 @@ class Admin_Controller extends Controller
 			'js/jquery/plugins/ui/jquery-ui-1.8.16.custom.min.js',
 			'js/socorro/admin.js',
 		));
-        $this->css = '<link href="' . url::base() . 'css/jquery-ui-1.8.16/flick/jquery-ui-1.8.16.custom.css" rel="stylesheet" type="text/css" media="screen" />';
+		
+		$this->css = html::stylesheet(array(
+	        'css/flora/flora.tabs.css',
+	        'css/jquery-ui-1.8.16/flick/jquery-ui-1.8.16.custom.css'
+	    ), 'screen');
     }
 
     /**
