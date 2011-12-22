@@ -5,6 +5,66 @@
 Middleware API
 ==============
 
+Products Builds
+---------------
+
+Return information about nightly builds of one or several products.
+
+API specifications
+^^^^^^^^^^^^^^^^^^
+
++----------------+--------------------------------------------------------------------------------+
+| HTTP method    | GET                                                                            |
++----------------+--------------------------------------------------------------------------------+
+| URL schema     | /products/builds/(optional_parameters)                                         |
++----------------+--------------------------------------------------------------------------------+
+| Full URL       | /products/builds/product/(product)/version/(version)/date_from/(date_from)/    |
++----------------+--------------------------------------------------------------------------------+
+| Example        | http://socorro-api/bpapi/products/builds/product/Firefox/version/9.0a1/        |
++----------------+--------------------------------------------------------------------------------+
+
+Mandatory parameters
+^^^^^^^^^^^^^^^^^^^^
+
++---------+---------------+---------------+-----------------------------------+
+| Name    | Type of value | Default value | Description                       |
++=========+===============+===============+===================================+
+| product | String        | None          | Product for which to get nightly  |
+|         |               |               | builds.                           |
++---------+---------------+---------------+-----------------------------------+
+
+Optional parameters
+^^^^^^^^^^^^^^^^^^^
+
++------------+---------------+------------------+-----------------------------+
+| Name       | Type of value | Default value    | Description                 |
++============+===============+==================+=============================+
+| version    | String        | None             | Version of the product for  |
+|            |               |                  | which to get nightly builds.|
++------------+---------------+------------------+-----------------------------+
+| from_date  | Date          | Now - 7 days     | Date from which to get      |
+|            |               |                  | nightly builds.             |
++------------+---------------+------------------+-----------------------------+
+
+Return value
+^^^^^^^^^^^^
+
+Return an array of objects::
+
+    [
+        {
+            "product": "string",
+            "version": "string",
+            "platform": "string",
+            "buildid": "integer",
+            "build_type": "string",
+            "beta_number": "string",
+            "repository": "string",
+            "date": "string"
+        },
+        ...
+    ]
+
 Search
 ------
 
