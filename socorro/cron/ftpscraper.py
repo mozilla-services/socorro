@@ -51,6 +51,10 @@ def parseInfoFile(url, nightly=False, urllib=urllib2):
 def getRelease(dirname, url, urllib=urllib2):
     candidate_url = '%s/%s' % (url, dirname)
     builds = getLinks(candidate_url, startswith='build', urllib=urllib)
+    if not builds:
+        logger.info('No build dirs in %s' % candidate_url)
+        return
+
     latest_build = builds.pop()
     build_url = '%s/%s' % (candidate_url, latest_build)
 
