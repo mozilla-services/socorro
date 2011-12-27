@@ -43,6 +43,7 @@ deploy:
 virtualenv:
 	virtualenv $(VIRTUALENV)
 	$(VIRTUALENV)/bin/pip install -r requirements.txt
+	$(VIRTUALENV)/bin/python configman/setup.py install
 
 coverage: virtualenv phpunit
 	rm -f coverage.xml
