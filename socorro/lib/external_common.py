@@ -2,7 +2,8 @@
 Common functions for external modules.
 """
 
-from datetime import datetime
+from datetime import datetime, timedelta
+from socorro.lib.util import DotDict
 
 import socorro.lib.datetimeutil as dtutil
 
@@ -31,7 +32,7 @@ def parse_arguments(filters, arguments):
             "param3": ["list", "of", "4", "values"]
         }
     """
-    params = {}
+    params = DotDict()
 
     for i in filters:
         count = len(i)
@@ -93,6 +94,12 @@ def check_type(param, datatype):
     elif datatype == "datetime" and not isinstance(param, datetime):
         try:
             param = dtutil.string_to_datetime(param)
+        except ValueError:
+            param = None
+
+    elif datatype == "timedelta" and not isinstance(param, timedelta):
+        try:
+            param = dtutil.strHoursToTimeDelta(param)
         except ValueError:
             param = None
 
