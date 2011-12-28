@@ -11,7 +11,7 @@ import configman.config_manager as cm
 import datetime
 
 
-class SampleApp(cm.RequiredConfig):
+class ExampleApp(cm.RequiredConfig):
     app_name = 'sample'
     app_version = '0.1'
     app_doc = __doc__
@@ -25,7 +25,7 @@ class SampleApp(cm.RequiredConfig):
                                doc='the time of day')
 
     def __init__(self, config):
-        super(SampleApp, self).__init__()
+        super(ExampleApp, self).__init__()
         self.config = config
 
     def main(self):
@@ -36,4 +36,4 @@ class SampleApp(cm.RequiredConfig):
 
 if __name__ == '__main__':
     import socorro.app.generic_app as gapp
-    gapp.main(SampleApp)
+    gapp.main(ExampleApp)

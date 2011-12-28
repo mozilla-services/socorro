@@ -1,8 +1,5 @@
 #! /usr/bin/env python
 
-import ConfigParser
-import getopt
-import os.path
 import inspect
 import logging
 import logging.handlers
@@ -10,6 +7,7 @@ import functools
 
 import configman as cm
 import configman.converters as conv
+
 
 def logging_required_config(app_name):
     lc = cm.Namespace()
@@ -59,6 +57,7 @@ def setup_logger(app_name, config, local_unused, args_unused):
     syslog.setFormatter(syslog_formatter)
     logger.addHandler(syslog)
     return logger
+
 
 # This main function will load an application object, initialize it and then
 # call its 'main' function
@@ -119,4 +118,3 @@ def main(app_object=None):
 
 if __name__ == '__main__':
     main()
-
