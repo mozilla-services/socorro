@@ -4,7 +4,7 @@
 
 NAME=`basename $0 .sh`
 lock $NAME
-pyjob $NAME startNewTCBS
+pyjob $NAME startDailyMatviews
 EXIT_CODE=$?
 unlock $NAME
 
