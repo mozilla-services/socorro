@@ -1,8 +1,8 @@
 import datetime
 import unittest
 import psycopg2
-import socorro.cron.newtcbs  # needed for Mock
-import socorro.cron.newtcbs as newtcbs
+import socorro.cron.dailyMatviews  # needed for Mock
+import socorro.cron.dailyMatviews as dailyMatviews
 
 from socorro.unittest.config.commonconfig import databaseHost
 from socorro.unittest.config.commonconfig import databaseName
@@ -66,9 +66,9 @@ class TestCase(unittest.TestCase):
         cursor = mock_cursor({
           'update_product_versions': (False,),
         })
-        newtcbs.psycopg2 = mock_psycopg2(cursor)
-        with patch('socorro.cron.newtcbs.logger') as mock_logger:
-            newtcbs.update(self.config, 'some date')
+        dailyMatviews.psycopg2 = mock_psycopg2(cursor)
+        with patch('socorro.cron.dailyMatviews.logger') as mock_logger:
+            dailyMatviews.update(self.config, 'some date')
             self.assertEqual(cursor.called, ['update_product_versions',
               'update_signatures', 'update_os_versions', 'update_adu',
               'update_daily_crashes', 'update_os_signature_counts',
@@ -80,9 +80,9 @@ class TestCase(unittest.TestCase):
 
     def test_all_works(self):
         cursor = mock_cursor({})
-        newtcbs.psycopg2 = mock_psycopg2(cursor)
-        with patch('socorro.cron.newtcbs.logger') as mock_logger:
-            newtcbs.update(self.config, 'some date')
+        dailyMatviews.psycopg2 = mock_psycopg2(cursor)
+        with patch('socorro.cron.dailyMatviews.logger') as mock_logger:
+            dailyMatviews.update(self.config, 'some date')
             self.assertEqual(mock_logger.info.call_count, 9)
             self.assertEqual(mock_logger.warn.call_count, 0)
             self.assertEqual(mock_logger.error.call_count, 0)
@@ -91,9 +91,9 @@ class TestCase(unittest.TestCase):
         cursor = mock_cursor({
           'update_signatures': psycopg2.InternalError,
         })
-        newtcbs.psycopg2 = mock_psycopg2(cursor)
-        with patch('socorro.cron.newtcbs.logger') as mock_logger:
-            newtcbs.update(self.config, 'some date')
+        dailyMatviews.psycopg2 = mock_psycopg2(cursor)
+        with patch('socorro.cron.dailyMatviews.logger') as mock_logger:
+            dailyMatviews.update(self.config, 'some date')
             self.assertEqual(mock_logger.info.call_count, 8)
             self.assertEqual(mock_logger.warn.call_count, 1)
             self.assertEqual(mock_logger.error.call_count, 1)
@@ -128,12 +128,12 @@ CREATE TABLE cronjobs (
   last_failure TIMESTAMP NULL,
   failure_message VARCHAR NULL
 );
-INSERT INTO cronjobs (cronjob) VALUES ('newtcbs:update_product_versions');
-INSERT INTO cronjobs (cronjob) VALUES ('newtcbs:update_os_versions');
-INSERT INTO cronjobs (cronjob) VALUES ('newtcbs:update_tcbs');
-INSERT INTO cronjobs (cronjob) VALUES ('newtcbs:update_signatures');
-INSERT INTO cronjobs (cronjob) VALUES ('newtcbs:update_adu');
-INSERT INTO cronjobs (cronjob) VALUES ('newtcbs:update_daily_crashes');
+INSERT INTO cronjobs (cronjob) VALUES ('dailyMatviews:update_product_versions');
+INSERT INTO cronjobs (cronjob) VALUES ('dailyMatviews:update_os_versions');
+INSERT INTO cronjobs (cronjob) VALUES ('dailyMatviews:update_tcbs');
+INSERT INTO cronjobs (cronjob) VALUES ('dailyMatviews:update_signatures');
+INSERT INTO cronjobs (cronjob) VALUES ('dailyMatviews:update_adu');
+INSERT INTO cronjobs (cronjob) VALUES ('dailyMatviews:update_daily_crashes');
  CREATE OR REPLACE FUNCTION update_product_versions()
 RETURNS boolean AS $$
 BEGIN
@@ -205,14 +205,14 @@ $$ LANGUAGE plpgsql;
         self.connection.commit()
 
     def test_all_works_without_errors(self):
-        with patch('socorro.cron.newtcbs.logger'):
-            newtcbs.update(self.config, datetime.datetime.today())
+        with patch('socorro.cron.dailyMatviews.logger'):
+            dailyMatviews.update(self.config, datetime.datetime.today())
             cursor = self.connection.cursor()
-            for each in ('newtcbs:update_product_versions',
-                         'newtcbs:update_os_versions',
-                         'newtcbs:update_adu',
-                         'newtcbs:update_tcbs',
-                         'newtcbs:update_signatures',
+            for each in ('dailyMatviews:update_product_versions',
+                         'dailyMatviews:update_os_versions',
+                         'dailyMatviews:update_adu',
+                         'dailyMatviews:update_tcbs',
+                         'dailyMatviews:update_signatures',
                          ):
                 cursor.execute(
                   'select last_success from cronjobs where cronjob=%s',
@@ -222,7 +222,7 @@ $$ LANGUAGE plpgsql;
                 self.assertTrue(last_success)
 
     def test_fail__update_product_versions(self):
-        with patch('socorro.cron.newtcbs.logger'):
+        with patch('socorro.cron.dailyMatviews.logger'):
             cursor = self.connection.cursor()
             cursor.execute("""
             CREATE OR REPLACE FUNCTION update_product_versions()
@@ -234,11 +234,11 @@ $$ LANGUAGE plpgsql;
             """)
             self.connection.commit()
 
-            newtcbs.update(self.config, datetime.datetime.today())
+            dailyMatviews.update(self.config, datetime.datetime.today())
             cursor = self.connection.cursor()
-            for each in ('newtcbs:update_os_versions',
-                         'newtcbs:update_adu',
-                         'newtcbs:update_signatures',
+            for each in ('dailyMatviews:update_os_versions',
+                         'dailyMatviews:update_adu',
+                         'dailyMatviews:update_signatures',
                          ):
                 cursor.execute(
                   'select last_success from cronjobs where cronjob=%s',
@@ -247,8 +247,8 @@ $$ LANGUAGE plpgsql;
                 last_success = cursor.fetchone()[0]
                 self.assertTrue(last_success)
 
-            for each in ('newtcbs:update_product_versions',
-                         'newtcbs:update_tcbs',
+            for each in ('dailyMatviews:update_product_versions',
+                         'dailyMatviews:update_tcbs',
                          ):
                 cursor.execute(
                   'select last_success from cronjobs where cronjob=%s',

@@ -5,7 +5,7 @@ import logging
 import datetime
 import psycopg2
 
-logger = logging.getLogger('newtcbs')
+logger = logging.getLogger('dailyMatviews')
 logger.addHandler(logging.StreamHandler(sys.stderr))
 
 
@@ -68,7 +68,7 @@ def update(config, targetDate):
         else:
             connection.rollback()
             failed.add(funcname)
-        updateCronjobsTable(connection, 'newtcbs:%s' % funcname,
+        updateCronjobsTable(connection, 'dailyMatviews:%s' % funcname,
                             success, targetDate,
                             failureMessage=failureMessage)
 
@@ -83,7 +83,7 @@ def updateCronjobsTable(connection, cronjobName, success, lastTargetTime,
     if success:
         params.append(datetime.datetime.utcnow())
         sql = """
-          /* socorro.cron.newtcbs updateCronjobsTable */
+          /* socorro.cron.dailyMatviews updateCronjobsTable */
           UPDATE cronjobs
           SET
             last_target_time = %s,
@@ -94,7 +94,7 @@ def updateCronjobsTable(connection, cronjobName, success, lastTargetTime,
         params.append(datetime.datetime.utcnow())
         params.append(failureMessage)
         sql = """
-          /* socorro.cron.newtcbs updateCronjobsTable */
+          /* socorro.cron.dailyMatviews updateCronjobsTable */
           UPDATE cronjobs
           SET
             last_target_time = %s,
