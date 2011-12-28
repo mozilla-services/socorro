@@ -9,8 +9,6 @@
 
 import configman.config_manager as cm
 import datetime
-import configman.converters as conv
-import socorro.lib.util as sutil
 
 
 class SampleApp(cm.RequiredConfig):
