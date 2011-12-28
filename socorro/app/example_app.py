@@ -1,6 +1,5 @@
 #! /usr/bin/env python
-
-"""demonstrates using configman to fetch algorithms and implementations"""
+"""demonstrates using configman to make a Socorro app"""
 
 # This app can be invoked like this:
 #     .../socorro/app/sampleApp.py --help
@@ -14,7 +13,7 @@ import datetime
 class ExampleApp(cm.RequiredConfig):
     app_name = 'sample'
     app_version = '0.1'
-    app_doc = __doc__
+    app_description = __doc__
 
     required_config = cm.Namespace()
     required_config.add_option('name',
