@@ -5,12 +5,12 @@ import logging
 import logging.handlers
 import functools
 
-import configman as cm
-import configman.converters as conv
+from configman import ConfigurationManager, Namespace
+from configman.converters import class_converter
 
 
 def logging_required_config(app_name):
-    lc = cm.Namespace()
+    lc = Namespace()
     lc.add_option('syslog_host',
               doc='syslog hostname',
               default='localhost')
@@ -63,7 +63,7 @@ def setup_logger(app_name, config, local_unused, args_unused):
 # call its 'main' function
 def main(initial_app_type=None):
     if isinstance(initial_app_type, basestring):
-        initial_app_type = conv.class_converter(initial_app_type)
+        initial_app_type = class_converter(initial_app_type)
 
     # the only config parameter is a special one that refers to a class or
     # module that defines an application.  In order to qualify, a class must
@@ -71,13 +71,13 @@ def main(initial_app_type=None):
     # input parameter.  It must also have a 'main' function that accepts no
     # parameters.  For a module to be acceptable, it must have a main
     # function that accepts a DotDict derivative as its input parameter.
-    app_definition = cm.Namespace()
-    app_definition.admin = admin = cm.Namespace()
+    app_definition = Namespace()
+    app_definition.admin = admin = Namespace()
     admin.add_option('application',
                      doc='the fully qualified module or class of the '
                          'application',
                      default=initial_app_type,
-                     from_string_converter=conv.class_converter
+                     from_string_converter=class_converter
                     )
     app_name = getattr(initial_app_type, 'app_name', 'unknown')
     app_version = getattr(initial_app_type, 'app_version', '0.0')
@@ -94,11 +94,11 @@ def main(initial_app_type=None):
     # it isn't necessary to provide the app_name because the
     # app_object passed in or loaded by the ConfigurationManager will alredy
     # have that information.
-    config_manager = cm.ConfigurationManager(definitions,
-                                             app_name=app_name,
-                                             app_version=app_version,
-                                             app_description=app_description,
-                                            )
+    config_manager = ConfigurationManager(definitions,
+                                          app_name=app_name,
+                                          app_version=app_version,
+                                          app_description=app_description,
+                                         )
 
     with config_manager.context() as config:
         config_manager.log_config(config.logger)
