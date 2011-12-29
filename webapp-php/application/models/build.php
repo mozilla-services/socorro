@@ -51,11 +51,24 @@ require_once(Kohana::find_file('libraries', 'timeutil', TRUE, 'php'));
 class Build_Model extends Model {
 
     /**
+     * The Web Service class.
+     */
+    protected $service = null;
+
+    /**
      * Class Constructor
      */
     public function __construct()
     {
         parent::__construct();
+
+        $config = array();
+        $credentials = Kohana::config('webserviceclient.basic_auth');
+        if ($credentials) {
+            $config['basic_auth'] = $credentials;
+        }
+
+        $this->service = new Web_Service($config);
     }
 
     /**
@@ -68,25 +81,13 @@ class Build_Model extends Model {
      */
     public function getBuildsByProduct ($product, $days=7)
     {
-        $start_date = date('Y-m-d', (time()-($days*86400)));
+        $start_date = date('Y-m-d', (time() - ($days * 86400)));
 
-        $sql = "/* soc.web builds.getBuilds */
-            SELECT  product_name as product,
-                    version,
-                    platform,
-                    build_id as buildid,
-                    build_type,
-                    beta_number,
-                    repository,
-                    build_date(build_id) as date
-            FROM releases_raw
-            WHERE product_name = ?
-            AND build_date(build_id) >= timestamp without time zone ?
-            AND repository IN ('mozilla-central', 'mozilla-1.9.2', 'comm-central', 'comm-1.9.2', 'comm-central-trunk')
-            ORDER BY build_date(build_id) DESC, product_name ASC, version ASC, platform ASC
-        ";
-        $builds = $this->fetchRows($sql, true, array(strtolower($product), $start_date));
-        if (!empty($builds)) {
+        $uri = $this->buildURI($product, null, $start_date);
+        $builds = $this->service->get($uri);
+
+        if (!empty($builds))
+        {
             return $builds;
         }
         return false;
@@ -101,31 +102,54 @@ class Build_Model extends Model {
      * @param   int     The number of days to pull builds from; default 7 days
      * @return  array   An array of build objects
      */
-    public function getBuildsByProductAndVersion ($product, $version, $days=7)
+    public function getBuildsByProductAndVersion ($product, $version, $days = 7)
     {
-        $start_date = date('Y-m-d', (time()-($days*86400)));
+        $start_date = date('Y-m-d', (time() - ($days * 86400)));
 
-        $sql = "/* soc.web builds.getBuilds */
-            SELECT  product_name as product,
-                    version,
-                    platform,
-                    build_id as buildid,
-                    build_type,
-                    beta_number,
-                    repository,
-                    build_date(build_id) as date
-            FROM releases_raw
-            WHERE product_name = ?
-            AND version = ?
-            AND build_date(build_id) >= timestamp without time zone ?
-            AND repository IN ('mozilla-central', 'mozilla-1.9.2', 'comm-central', 'comm-1.9.2', 'comm-central-trunk')
-            ORDER BY build_date(build_id) DESC, product_name ASC, version ASC, platform ASC
-        ";
-        $builds = $this->fetchRows($sql, true, array(strtolower($product), strtolower($version), $start_date));
-        if (!empty($builds)) {
+        $uri = $this->buildURI($product, $version, $start_date);
+        $builds = $this->service->get($uri);
+
+        if (!empty($builds))
+        {
             return $builds;
         }
         return false;
+    }
+
+    /**
+     * Build the URI to call to retrieve data about nightly builds.
+     *
+     * @access  private
+     * @param   string  The product name
+     * @param   string  The version name if any
+     * @param   string  Retrieve builds from this date to now
+     * @return  string  A URL to call
+     */
+    private function buildURI($product, $version = null, $from_date = null)
+    {
+        $separator = '/';
+        $apiData = array(
+            Kohana::config('webserviceclient.socorro_hostname'),
+            'products/builds',
+            'product',
+            $product
+        );
+
+        if ($version)
+        {
+            $apiData[] = 'version';
+            $apiData[] = $version;
+        }
+
+        if ($from_date)
+        {
+            $apiData[] = 'from_date';
+            $apiData[] = $from_date;
+        }
+
+        $apiData[] = '';    // Trick to have the closing '/'
+
+        return implode($separator, $apiData);
     }
 
     /**
