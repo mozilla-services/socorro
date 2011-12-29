@@ -1,0 +1,21 @@
+#nightly_crash_trends {
+    float: left;
+    margin-right: 15px;
+    width: 250px;
+}
+#nightly_crash_trends_graph {
+    float: left;
+    width: 700px;
+    height: 300px;
+}
+#graph_legend table {
+    float: left;
+    margin-left: 40px;
+    margin-bottom: 10px;
+}
+#graph_legend td {
+    padding: 0 2px 0 2px;
+}
+.field {
+    margin: 1.2em 1.2em 1.2em 0;
+}

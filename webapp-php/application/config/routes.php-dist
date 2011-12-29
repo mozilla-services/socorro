@@ -83,3 +83,6 @@ $config['/signature_summary'] =
 
 $config['/signature_summary/json_data'] = 
     'signature_summary/json_data';
+    
+$config['/crash_trends'] = 
+    'crash_trends/index';
