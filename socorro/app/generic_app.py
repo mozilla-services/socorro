@@ -5,10 +5,25 @@ import logging
 import logging.handlers
 import functools
 
-from configman import ConfigurationManager, Namespace
+from configman import ConfigurationManager, Namespace, RequiredConfig
 from configman.converters import class_converter
 
 
+#==============================================================================
+class App(RequiredConfig):
+    """The base class from which Socorro apps are based"""
+    #--------------------------------------------------------------------------
+    def __init__(self, config):
+        self.config = config
+
+    #--------------------------------------------------------------------------
+    def main(self):
+        """derived classes must override this function with business logic"""
+        raise NotImplementedError("A definition of 'main' in a derived class"
+                                  "is required")
+
+
+#------------------------------------------------------------------------------
 def logging_required_config(app_name):
     lc = Namespace()
     lc.add_option('syslog_host',
@@ -41,6 +56,7 @@ def logging_required_config(app_name):
     return lc
 
 
+#------------------------------------------------------------------------------
 def setup_logger(app_name, config, local_unused, args_unused):
     logger = logging.getLogger(app_name)
     logger.setLevel(logging.DEBUG)
@@ -59,11 +75,12 @@ def setup_logger(app_name, config, local_unused, args_unused):
     return logger
 
 
+#------------------------------------------------------------------------------
 # This main function will load an application object, initialize it and then
 # call its 'main' function
-def main(initial_app_type=None):
-    if isinstance(initial_app_type, basestring):
-        initial_app_type = class_converter(initial_app_type)
+def main(initial_app=None):
+    if isinstance(initial_app, basestring):
+        initial_app = class_converter(initial_app)
 
     # the only config parameter is a special one that refers to a class or
     # module that defines an application.  In order to qualify, a class must
@@ -76,12 +93,12 @@ def main(initial_app_type=None):
     admin.add_option('application',
                      doc='the fully qualified module or class of the '
                          'application',
-                     default=initial_app_type,
+                     default=initial_app,
                      from_string_converter=class_converter
                     )
-    app_name = getattr(initial_app_type, 'app_name', 'unknown')
-    app_version = getattr(initial_app_type, 'app_version', '0.0')
-    app_description = getattr(initial_app_type, 'app_description',
+    app_name = getattr(initial_app, 'app_name', 'unknown')
+    app_version = getattr(initial_app, 'app_version', '0.0')
+    app_description = getattr(initial_app, 'app_description',
                               'no idea')
     app_definition.add_aggregation('logger',
                                    functools.partial(setup_logger,
@@ -103,18 +120,18 @@ def main(initial_app_type=None):
     with config_manager.context() as config:
         config_manager.log_config(config.logger)
 
-        app_type = config.admin.application
+        app = config.admin.application
 
-        if isinstance(app_type, type):
+        if isinstance(app, type):
             # invocation of the app if the app_object was a class
-            instance = app_type(config)
+            instance = app(config)
             instance.main()
-        elif inspect.ismodule(app_type):
+        elif inspect.ismodule(app):
             # invocation of the app if the app_object was a module
-            app_type.main(config)
-        elif inspect.isfunction(app_type):
+            app.main(config)
+        elif inspect.isfunction(app):
             # invocation of the app if the app_object was a function
-            app_type(config)
+            app(config)
         return 0
 
 if __name__ == '__main__':

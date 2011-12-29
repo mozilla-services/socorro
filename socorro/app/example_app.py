@@ -6,16 +6,22 @@
 # set your path to make that simpler
 # set both socorro and configman in your PYTHONPATH
 
-import configman.config_manager as cm
 import datetime
 
+from socorro.app.generic_app import App, main
 
-class ExampleApp(cm.RequiredConfig):
+from configman import Namespace
+
+
+#==============================================================================
+class ExampleApp(App):
     app_name = 'sample'
     app_version = '0.1'
     app_description = __doc__
 
-    required_config = cm.Namespace()
+    #--------------------------------------------------------------------------
+    # in this section, define any configuration requirements
+    required_config = Namespace()
     required_config.add_option('name',
                                default='Wilma',
                                doc='a name to echo')
@@ -23,16 +29,19 @@ class ExampleApp(cm.RequiredConfig):
                                default=datetime.datetime.now(),
                                doc='the time of day')
 
-    def __init__(self, config):
-        super(ExampleApp, self).__init__()
-        self.config = config
+    #--------------------------------------------------------------------------
+    # implementing this constructor is only necessary when there is more
+    # initialization to be done before main can be called
+    #def __init__(self, config):
+        #super(ExampleApp,self).__init__(config)
 
+    #--------------------------------------------------------------------------
     def main(self):
         # this is where we'd implement the app
+        # the configuraton is already setup as
         print 'hello, %s. The time is: %s' % (self.config.name,
                                               self.config.time)
 
 
 if __name__ == '__main__':
-    import socorro.app.generic_app as gapp
-    gapp.main(ExampleApp)
+    main(ExampleApp)
