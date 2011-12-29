@@ -1332,15 +1332,6 @@ th.bugzilla_numbers {
     max-width: 100%;
 }
 
-
-/**
- * Server Status Page
-*/
-
-#toc {
-    margin-left: 10px;
-}
-
 #buildid-graph{
     width: 600px; 
 	height: 200px;
@@ -1365,22 +1356,21 @@ th.bugzilla_numbers {
 	font-weight: bold;
 }
 
-#server-status-graph-comb,
-#server-status-graph-jobs-wait,
-#server-status-graph-proc-count,
-#server-status-graph-avg-proc,
-#server-status-graph-avg-wait {
-    width: 800px;
-    height: 300px;
+/**
+ * Server Status Page
+ */
+.server-status-graph + .server-status-graph {
+    margin: 16px 4px 4px 4px;
 }
 
-#server-status-graph-comb,
-#server-status-graph-jobs-wait,
-#server-status-graph-proc-count,
-#server-status-graph-avg-proc,
-#server-status-graph-avg-wait {
-    width: 800px;
-    height: 300px;
+.server-status-graph > div {
+    width: 100%;
+    height: 100px;
+}
+
+.server-status-graph > h2 {
+    font-size: 16px;
+    font-weight: bold;
 }
 
 table.server_status td {
