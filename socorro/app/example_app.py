@@ -38,7 +38,7 @@ class ExampleApp(App):
     #--------------------------------------------------------------------------
     def main(self):
         # this is where we'd implement the app
-        # the configuraton is already setup as
+        # the configuraton is already setup as self.config
         print 'hello, %s. The time is: %s' % (self.config.name,
                                               self.config.time)
 

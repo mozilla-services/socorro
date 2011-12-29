@@ -96,10 +96,14 @@ def main(initial_app=None):
                      default=initial_app,
                      from_string_converter=class_converter
                     )
-    app_name = getattr(initial_app, 'app_name', 'unknown')
-    app_version = getattr(initial_app, 'app_version', '0.0')
-    app_description = getattr(initial_app, 'app_description',
-                              'no idea')
+    try:
+        app_name = initial_app.app_name
+        app_version = initial_app.app_version
+        app_description = initial_app.app_description
+    except AttributeError:
+        raise Exception("app_name, app_version, app_description are required "
+                        "attributes of the Application object")
+
     app_definition.add_aggregation('logger',
                                    functools.partial(setup_logger,
                                                      app_name))
