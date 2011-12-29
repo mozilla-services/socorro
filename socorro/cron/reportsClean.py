@@ -1,21 +1,36 @@
-import logging
+#!/usr/bin/env python
+"""run the 'update_reports_clean' stored procedure"""
+
+from socorro.database.dbtransaction import DBTransactionApp
+
 from datetime import datetime
 from datetime import timedelta
 
-logger = logging.getLogger("reports_clean")
+#==============================================================================
+class ReportsCleanApp(StoredProcedureApp):
+    #--------------------------------------------------------------------------
+    # configman app definition section
+    app_name = 'reports_clean'
+    app_version = '2.0'
+    app_description = __doc__
 
-import socorro.lib.psycopghelper as psy
-import socorro.lib.util as util
+    #--------------------------------------------------------------------------
+    # configman parameter definition section
+    required_config = cm.Namespace()
+    required_config.add_option(
+      name='hours',
+      default=2,
+      doc='the number of hours into the past',
+    )
 
-#-----------------------------------------------------------------------------------------------------------------
-def update_reports_clean(config):
-  databaseConnectionPool = psy.DatabaseConnectionPool(config.databaseHost, config.databaseName, config.databaseUserName, config.databasePassword, logger)
-  try:
-    connection, cursor= databaseConnectionPool.connectionCursorPair()
+    #--------------------------------------------------------------------------
+    stored_procedure_name = 'update_reports_clean'
 
-    startTime = datetime.now() - timedelta(hours=2)
-    cursor.callproc('update_reports_clean', [startTime])
-    connection.commit()
-  finally:
-    databaseConnectionPool.cleanup()
+    #--------------------------------------------------------------------------
+    def stored_procedure_parameters(self):
+        return (datetime.now() - timedelta(hours=self.config.hours),)
 
+#------------------------------------------------------------------------------
+if __name__ == "__main__":
+    import socorro.app.generic_app as ga
+    sys.exit(ga.main(ReportsCleanApp))
