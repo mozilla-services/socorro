@@ -61,9 +61,9 @@ def setup_logger(app_name, config, local_unused, args_unused):
 
 # This main function will load an application object, initialize it and then
 # call its 'main' function
-def main(app_object=None):
-    if isinstance(app_object, basestring):
-        app_object = conv.class_converter(app_object)
+def main(initial_app_type=None):
+    if isinstance(initial_app_type, basestring):
+        initial_app_type = conv.class_converter(initial_app_type)
 
     # the only config parameter is a special one that refers to a class or
     # module that defines an application.  In order to qualify, a class must
@@ -76,12 +76,13 @@ def main(app_object=None):
     admin.add_option('application',
                      doc='the fully qualified module or class of the '
                          'application',
-                     default=app_object,
+                     default=initial_app_type,
                      from_string_converter=conv.class_converter
                     )
-    app_name = getattr(app_object, 'app_name', 'unknown')
-    app_version = getattr(app_object, 'app_version', '0.0')
-    app_description = getattr(app_object, 'app_description', 'no idea')
+    app_name = getattr(initial_app_type, 'app_name', 'unknown')
+    app_version = getattr(initial_app_type, 'app_version', '0.0')
+    app_description = getattr(initial_app_type, 'app_description',
+                              'no idea')
     app_definition.add_aggregation('logger',
                                    functools.partial(setup_logger,
                                                      app_name))
@@ -102,18 +103,18 @@ def main(app_object=None):
     with config_manager.context() as config:
         config_manager.log_config(config.logger)
 
-        app_object = config.admin.application
+        app_type = config.admin.application
 
-        if isinstance(app_object, type):
+        if isinstance(app_type, type):
             # invocation of the app if the app_object was a class
-            instance = app_object(config)
+            instance = app_type(config)
             instance.main()
-        elif inspect.ismodule(app_object):
+        elif inspect.ismodule(app_type):
             # invocation of the app if the app_object was a module
-            app_object.main(config)
-        elif inspect.isfunction(app_object):
+            app_type.main(config)
+        elif inspect.isfunction(app_type):
             # invocation of the app if the app_object was a function
-            app_object(config)
+            app_type(config)
         return 0
 
 if __name__ == '__main__':
