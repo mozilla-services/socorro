@@ -8,6 +8,9 @@ import functools
 from configman import ConfigurationManager, Namespace, RequiredConfig
 from configman.converters import class_converter
 
+#==============================================================================
+class AppDetailMissingError(AttributeError):
+    pass
 
 #==============================================================================
 class App(RequiredConfig):
@@ -100,9 +103,8 @@ def main(initial_app=None):
         app_name = initial_app.app_name
         app_version = initial_app.app_version
         app_description = initial_app.app_description
-    except AttributeError:
-        raise Exception("app_name, app_version, app_description are required "
-                        "attributes of the Application object")
+    except AttributeError, x:
+        raise AppDetailMissingError(str(x))
 
     app_definition.add_aggregation('logger',
                                    functools.partial(setup_logger,
