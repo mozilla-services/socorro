@@ -724,23 +724,8 @@ div.admin ul li:before {
 #data_sources table {
     width: 100%;
 }
-#data_sources thead:hover {
-    cursor: pointer;
-}
 #data_sources th:last-child {
     width: 80px;
-}
-#data_sources th:last-child span {
-    float: right;
-    background: #ddd url("/img/icons/ui-icons_sprite.png") -19px -130px no-repeat;
-    margin:0 5px 0 10px;
-    padding-left: 10px;
-}
-#data_sources th:last-child span.collapse {
-    background-position: -51px -130px;
-}
-#data_sources .hide_body {
-    display: none;
 }
 #data_sources_nav {
     background: none;
