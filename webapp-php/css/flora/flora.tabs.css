@@ -16,35 +16,41 @@
 
 /* Skin */
 .ui-tabs-nav, .ui-tabs-panel,
-#report-list-nav {
+#report-list-nav,
+#data_sources_nav {
     font-family: Helvetica, Arial, sans-serif;
     font-size: 12px;
 }
 .ui-tabs-nav,
-#report-list-nav {
+#report-list-nav,
+#data_sources_nav {
     list-style: none;
     margin: 0;
     padding: 0 0 0 3px;
 }
 .ui-tabs-nav:after,
-#report-list-nav:after { /* clearing without presentational markup, IE gets extra treatment */
+#report-list-nav:after,
+#data_sources_nav:after { /* clearing without presentational markup, IE gets extra treatment */
     display: block;
     clear: both;
     content: " ";
 }
 .ui-tabs-nav li,
-#report-list-nav li {
+#report-list-nav li,
+#data_sources_nav li {
     float: left;
     margin: 0 0 0 2px;
 }
 .ui-tabs-nav a, .ui-tabs-nav a span,
-#report-list-nav a, #report-list-nav a span {
+#report-list-nav a, #report-list-nav a span,
+#data_sources_nav a, #data_sources_nav a span {
     display: block;
     padding: 0 12px;
     background: url(i/tabs.png) no-repeat;
 }
 .ui-tabs-nav a,
-#report-list-nav a {
+#report-list-nav a,
+#data_sources_nav a {
     margin: 5px 0 0; /* position: relative makes opacity fail for disabled tab in IE */
     padding-left: 0;
     background-position: 100% 0;
@@ -53,11 +59,13 @@
     outline: 0; /* @ Firefox, prevent dotted border after click */
 }
 .ui-tabs-nav a:link, .ui-tabs-nav a:visited,
-#report-list-nav a:link, #report-list-nav a:visited {
+#report-list-nav a:link, #report-list-nav a:visited,
+#data_sources_nav a:link, #data_sources_nav a:visited {
     color: #666;
 }
 .ui-tabs-nav .ui-tabs-selected a,
-#report-list-nav .ui-tabs-selected a {
+#report-list-nav .ui-tabs-selected a,
+#data_sources_nav .ui-tabs-selected a {
     position: relative;
     top: 1px;
     z-index: 2;
@@ -66,7 +74,8 @@
     color: #FFF;
 }
 .ui-tabs-nav a span,
-#report-list-nav a span {
+#report-list-nav a span,
+#data_sources_nav a span {
     padding-top: 1px;
     padding-right: 0;
     height: 20px;
@@ -74,7 +83,8 @@
     line-height: 20px;
 }
 .ui-tabs-nav .ui-tabs-selected a span,
-#report-list-nav .ui-tabs-selected a span {
+#report-list-nav .ui-tabs-selected a span,
+#data_sources_nav .ui-tabs-selected a span {
     padding-top: 0;
     height: 27px;
     background-position: 0 -23px;
@@ -82,13 +92,16 @@
 }
 .ui-tabs-nav .ui-tabs-selected a:link, .ui-tabs-nav .ui-tabs-selected a:visited,
 .ui-tabs-nav .ui-tabs-disabled a:link, .ui-tabs-nav .ui-tabs-disabled a:visited,
-#report-list-nav .ui-tabs-disabled a:link, #report-list-nav .ui-tabs-disabled a:visited { /* @ Opera, use pseudo classes otherwise it confuses cursor... */
+#report-list-nav .ui-tabs-disabled a:link, #report-list-nav .ui-tabs-disabled a:visited,
+#data_sources_nav .ui-tabs-disabled a:link, #data_sources_nav .ui-tabs-disabled a:visited { /* @ Opera, use pseudo classes otherwise it confuses cursor... */
     cursor: text;
 }
 .ui-tabs-nav a:hover, .ui-tabs-nav a:focus, .ui-tabs-nav a:active,
 .ui-tabs-nav .ui-tabs-unselect a:hover, .ui-tabs-nav .ui-tabs-unselect a:focus, .ui-tabs-nav .ui-tabs-unselect a:active,
 #report-list-nav a:hover, #report-list-nav a:focus, #report-list-nav a:active,
-#report-list-nav .ui-tabs-unselect a:hover, #report-list-nav .ui-tabs-unselect a:focus, #report-list-nav .ui-tabs-unselect a:active { /* @ Opera, we need to be explicit again here now... */
+#report-list-nav .ui-tabs-unselect a:hover, #report-list-nav .ui-tabs-unselect a:focus, #report-list-nav .ui-tabs-unselect a:active,
+#data_sources_nav a:hover, #data_sources_nav a:focus, #data_sources_nav a:active,
+#data_sources_nav .ui-tabs-unselect a:hover, #data_sources_nav .ui-tabs-unselect a:focus, #data_sources_nav .ui-tabs-unselect a:active { /* @ Opera, we need to be explicit again here now... */
     cursor: pointer;
 }
 .ui-tabs-disabled {
@@ -96,7 +109,8 @@
     filter: alpha(opacity=40);
 }
 .ui-tabs-nav .ui-tabs-disabled a:link, .ui-tabs-nav .ui-tabs-disabled a:visited,
-#report-list-nav .ui-tabs-disabled a:link, #report-list-nav .ui-tabs-disabled a:visited {
+#report-list-nav .ui-tabs-disabled a:link, #report-list-nav .ui-tabs-disabled a:visited,
+#data_sources_nav .ui-tabs-disabled a:link, #data_sources_nav .ui-tabs-disabled a:visited {
     color: #000;
 }
 .ui-tabs-panel {
@@ -111,10 +125,12 @@
 
 /* Additional IE specific bug fixes... */
 * html .ui-tabs-nav, * html .ui-tabs-nav a, * html .ui-tabs-nav a span,
-* html #report-list-nav, * html #report-list-nav a, * html #report-list-nav a span { /* auto clear and hasLayout, @ IE 6 & IE 7 Quirks Mode */
+* html #report-list-nav, * html #report-list-nav a, * html #report-list-nav a span,
+* html #data_sources_nav, * html #data_sources_nav a, * html #data_sources_nav a span { /* auto clear and hasLayout, @ IE 6 & IE 7 Quirks Mode */
     display: inline-block;
 }
 *:first-child+html .ui-tabs-nav,
-*:first-child+html #report-list-nav  { /* @ IE 7 Standards Mode - do not group selectors, otherwise IE 6 will ignore complete rule (because of the unknown + combinator)... */
+*:first-child+html #report-list-nav,
+*:first-child+html #data_sources_nav  { /* @ IE 7 Standards Mode - do not group selectors, otherwise IE 6 will ignore complete rule (because of the unknown + combinator)... */
     display: inline-block;
 }

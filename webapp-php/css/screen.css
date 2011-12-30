@@ -718,6 +718,69 @@ div.admin ul {
 div.admin ul li:before {
 	content: "\00BB \0020";
 }
+#data_sources {
+    border: 0;
+}
+#data_sources table {
+    width: 100%;
+}
+#data_sources th:last-child {
+    width: 80px;
+}
+#data_sources_nav {
+    background: none;
+    border: 0;
+}
+#data_sources_nav li {
+    background: none;
+    border: 0;
+}
+#data_sources_nav li:before {
+    content: "";
+}
+#add_version,
+#update_product_version,
+#delete_product_version {
+    display: none;
+    min-width: 550px;
+}
+#add_version table,
+#update_product_version table,
+#delete_product_version table {
+    width: 100%;
+}
+#loading-bds {
+    position: absolute;
+    top: 9%;
+    left: 50%;
+}
+/* simplebox css */
+#simplebox {
+    display:none;
+}
+#simplebox_wrapper {
+    background-color:#333;
+    background-color:rgba(51, 51, 51, 0.5);
+    background-color:hsla(0, 0%, 20%, 0.5);
+    position:absolute;
+    top:0;
+    left:0;
+    z-index:9999;
+}
+#close_simplebox {
+    position:absolute;
+    background:transparent url(/img/icons/close_round.png) 0 0 no-repeat;
+    margin-top:-20px;
+    border:0;
+    width:30px;
+    height:30px;
+    text-indent:-99999em;
+    cursor:pointer;
+    cursor:hand;
+}
+.ie7 #close_simplebox {
+    margin-left:40em;
+}
 div.admin div.add_item {
 	border: 2px solid #333;
 	-moz-border-radius: 5px;
