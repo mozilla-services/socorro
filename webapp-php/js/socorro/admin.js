@@ -1,20 +1,13 @@
-
-// Open the add product version form
-function branchAddProductVersion() {
-	$('#add_version').show('fast');
-	$('#product').focus();
-}
-
 // Open the add product version form and fill the fields in with given input
 function branchAddProductVersionFill(product, version) {
-	branchAddProductVersion();
+	$('#add_version').simplebox();
 	$('#product').val(product);
 	$('#version').val(version);
 }
 
 // Open the update product version form and fill the fields in with given input
 function branchUpdateProductVersionFill(product, version, branch, start_date, end_date, featured, throttle) {
-	$('#update_product_version').show('fast');
+	$('#update_product_version').simplebox();
 	$('#update_product').val(product);
 	$('#update_product_display').html(product);
 	$('#update_version').val(version);
@@ -33,7 +26,7 @@ function branchUpdateProductVersionFill(product, version, branch, start_date, en
 
 // Open the delete product version form and fill the fields in with given input
 function branchDeleteProductVersionFill(product, version) {
-	$('#delete_product_version').show('fast');
+	$('#delete_product_version').simplebox();
 	$('#delete_product').val(product);
 	$('#delete_product_display').html(product);
 	$('#delete_version').val(version);
@@ -77,4 +70,13 @@ $(document).ready(function(){
     });
 
     $('.admin tbody tr:odd').css('background-color', '#efefef');
+    
+    $('#data_sources').tabs({
+        cookie: {
+            expires: 1
+        }
+    }).show();
+    
+    //hide the loader
+    $("#loading-bds").hide();
 });
