@@ -20,8 +20,6 @@
 	<h2>Top Crashers for <span id="current-product"><?php out::H($product) ?></span> <span id="current-version"><?php out::H($version) ?></span></h2>
     <ul class="options">
         <li><a href="<?php echo url::base(); ?>topcrasher/byversion/<?php echo $product ?>/<?php echo $version ?>" class="selected">By Signature</a></li>
-        <li><a href="<?php echo url::base(); ?>topcrasher/bydomain/<?php echo $product ?>/<?php echo $version ?>">By Domain</a></li>
-        <li><a href="<?php echo url::base(); ?>topcrasher/bytopsite/<?php echo $product ?>/<?php echo $version ?>">By Topsite</a></li>
     </ul>
 </div>
 
