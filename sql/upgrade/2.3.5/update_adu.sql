@@ -93,7 +93,7 @@ FROM product_versions
 			AND raw_adu.build_channel = 'beta'
 		) as prod_adu
 		ON product_versions.product_name = prod_adu.product_name
-		AND product_versions.version_string = prod_adu.product_version
+		AND product_versions.release_version = prod_adu.product_version
 		AND product_versions.build_type = prod_adu.build_channel	
 WHERE updateday BETWEEN build_date AND ( sunset_date + 1 )
         AND product_versions.build_type = 'Beta'
