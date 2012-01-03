@@ -48,34 +48,19 @@ require_once(Kohana::find_file('libraries', 'versioncompare', TRUE, 'php'));
  */
 class Branch_Model extends Model {
 
-    protected static $_CACHE = array();
-    protected $_cache_obj;
-    protected $cache_changed = false;
+    protected $cache;
 
     public function __construct()
     {
         parent::__construct();
-        $this->_cache_obj = Cache::instance();
-        $c = $this->_cache_obj->get('branch.cache.objects');
-        if($c) {
-            self::$_CACHE = $c;
-        }
+        $this->cache = Cache::instance();
     }
 
-    public function __destruct()
-    {
-        if($this->cache_changed) {
-            $this->_cache_obj->set('branch.cache.objects', self::$_CACHE, NULL, 1800);
-        }
-    }
-
-    protected function _getValues(array $order_by = array(), $ignore_cache = false) {
+    /**
+     * Fetch get current versions via the webservice
+     */
+    protected function _getValues(array $order_by = array()) {
         $order_by = implode(",", $order_by);
-        if(!$ignore_cache) {
-            if(isset(self::$_CACHE[md5($order_by)])) {
-                return self::$_CACHE[md5($order_by)];
-            }
-        }
 
         $config = array();
         $credentials = Kohana::config('webserviceclient.basic_auth');
@@ -86,10 +71,7 @@ class Branch_Model extends Model {
         $host = Kohana::config('webserviceclient.socorro_hostname');
         $from = rawurlencode($order_by);
         $resp = $service->get("${host}/current/versions/${from}");
-        if($order_by && !$ignore_cache) {
-            self::$_CACHE[md5($order_by)] = $resp->currentversions;
-            $this->cache_changed = true;
-        }
+
         return $resp->currentversions;
     }
 
@@ -112,11 +94,6 @@ class Branch_Model extends Model {
         rsort($versions_array);
 
         return $versions_array;
-    }
-
-    protected function _clear_cache()
-    {
-        self::$_CACHE = array();
     }
 
     /**
@@ -143,55 +120,43 @@ class Branch_Model extends Model {
 			} catch (Exception $e) {
 				Kohana::log('error', "Could not add \"$product\" \"$version\" in soc.web branch.add \r\n " . $e->getMessage());
 			}
-            $this->_clear_cache(); // We have changed the data, so we need to reload it.
-			return $rv;
+            $this->cache->delete_all();
+            return $rv;
 		}
 	}
 
     /**
      * Remove an existing record from the branches view, via the productdims tables.
-	 *
-	 * @access 	public
-	 * @param 	string 	The product name (e.g. 'Camino', 'Firefox', 'Seamonkey, 'Thunderbird')
-	 * @param 	string 	The version number (e.g. '3.5', '3.5.1', '3.5.1pre', '3.5.2', '3.5.2pre')
-	 * @return 	void
+     *
+     * @access  public
+     * @param   string  The product name (e.g. 'Camino', 'Firefox', 'Seamonkey, 'Thunderbird')
+     * @param   string  The version number (e.g. '3.5', '3.5.1', '3.5.1pre', '3.5.2', '3.5.2pre')
+     * @return  void
      */
     public function delete($product, $version) {
-		if ($product_version = $this->getByProductVersion($product, $version)) {
-			$this->deleteProductVisibility($product, $version);
+        if ($product_version = $this->getByProductVersion($product, $version)) {
+            if ($product_visibility = $this->getProductVisibility($product_version->id)) {
+                $sql = "/* soc.web branch.deleteProductVisibility */
+                    DELETE FROM product_visibility
+                    WHERE productdims_id = ?
+                ";
+                $this->db->query($sql, $product_version->id);
+            }
 
-			$rv = $this->db->query("/* soc.web branch.delete */
-					DELETE FROM productdims
-					WHERE product = ?
-					AND	version = ?
-			 	", $product, $version
-			);
-            $this->_clear_cache(); // We have changed the data, so we need to reload it.
-			return $rv;
-		}
-	}
+            $rv = $this->db->query("/* soc.web branch.delete */
+                    DELETE FROM productdims
+                    WHERE product = ?
+                    AND version = ?
+                ", $product, $version
+            );
+            $this->cache->delete_all();
+            return $rv;
+        }
+    }
 
-	/**
-     * Remove an existing record from the branches view, via the productdims tables.
-	 *
-	 * @access 	private
-	 * @param 	string 	The product name (e.g. 'Camino', 'Firefox', 'Seamonkey, 'Thunderbird')
-	 * @param 	string 	The version number (e.g. '3.5', '3.5.1', '3.5.1pre', '3.5.2', '3.5.2pre')
-	 * @return 	void
-     */
-	private function deleteProductVisibility ($product, $version) {
-		if ($product_version = $this->getByProductVersion($product, $version)) {
-			if ($product_visibility = $this->getProductVisibility($product_version->id)) {
-				$sql = "/* soc.web branch.deleteProductVisibility */
-					DELETE FROM product_visibility
-					WHERE productdims_id = ?
-				";
-				$this->db->query($sql, $product_version->id);
-			}
-		}
-	}
 
-	/**
+
+    /**
      * Determine what the release is based on the version name given.
 	 *
 	 * @access 	private
@@ -394,7 +359,6 @@ class Branch_Model extends Model {
      * @return array    An array of version objects
      */
     public function getCurrentProductVersionsByProduct($product) {
-       
         $resp = $this->_getValues(array('product_name', 'version_string'));
         $now = time();
         $result = array();
@@ -444,8 +408,6 @@ class Branch_Model extends Model {
 	 * @return 	array 	An array of version objects
      */
     public function getProductVersionsByProduct($product) {
-        
-
         $resp = $this->_getValues(array('product_name', 'version_string'));
         $products = array();
         foreach($resp as $item) {
@@ -509,7 +471,7 @@ class Branch_Model extends Model {
      * @return object Branch data
      */
     public function getByProductVersion($product, $version) {
-        $resp = $this->_getValues(array('product_name', 'version_string')); // Use a known one to trigger cache response
+        $resp = $this->_getValues(array('product_name', 'version_string'));
         foreach ($resp as $item) {
             if($item->product == $product AND $item->version == $version) {
                 return $item; // Essentially a LIMIT 1, per old query
@@ -526,7 +488,7 @@ class Branch_Model extends Model {
      * @return object Branch data
      */
     public function getRecentProductVersion($product) {
-        $resp = $this->_getValues(array('product name', 'version_string')); // Use a known ORDER BY for cached response
+        $resp = $this->_getValues(array('product name', 'version_string'));
         $date = time();
 
         foreach($resp as $item) {
@@ -544,10 +506,9 @@ class Branch_Model extends Model {
      * Fetch the featured versions for a particular product.
      *
      * @param string    The product name
-	 * @param   bool    True if you want to delete the previously cached queries; used by admin panel.
      * @return array    An array of featured versions
      */
-    public function getFeaturedVersions($product, $delete_cache=false)
+    public function getFeaturedVersions($product)
     {
         $resp = $this->_getValues(array('product_name', 'version_string'));
         $result = array();
@@ -628,7 +589,7 @@ class Branch_Model extends Model {
         }
         return 0;
 
-        $resp = $this->_getValues(array('product_name', 'version_string')); // Make sure we hit the cache
+        $resp = $this->_getValues(array('product_name', 'version_string'));
         $result = 0;
         $date = time();
         foreach($resp as $item) {
@@ -703,15 +664,15 @@ class Branch_Model extends Model {
      */
     public function update($product, $version,  $start_date, $end_date, $featured=false, $throttle) {
 		$product_version = $this->getByProductVersion($product, $version);
-                $prod_id = $product_version->id;
-                $channel = $product_version->release;
- 			$release = $this->determine_release($version);
-			$rv = $this->db->query("/* soc.web branch.update */
-				SELECT * FROM edit_product_info(?, ?, ?, ?, ?, ?, ?, ?)", $prod_id, $product,  $version, $channel, $start_date, $end_date, $featured, $throttle);
+        $prod_id = $product_version->id;
+        $channel = $product_version->release;
+        $release = $this->determine_release($version);
+        $rv = $this->db->query("/* soc.web branch.update */
+            SELECT * FROM edit_product_info(?, ?, ?, ?, ?, ?, ?, ?)", $prod_id, $product,  $version, $channel, $start_date, $end_date, $featured, $throttle);
 
-
-			return $rv;
-	}
+        $this->cache->delete_all();
+        return $rv;
+    }
 
     /**
      * Given a list of versions for a product, returns only the
