@@ -26,11 +26,17 @@ From inside the Socorro checkout, as *postgres* user:
   psql -f sql/schema/2.3/breakpad_roles.sql breakpad
   psql -f sql/schema/2.3/breakpad_schema.sql breakpad
 
+Customize CSVs, at minimum you probably need to bump the dates and build IDs in: 
+  raw_adu.csv reports.csv releases_raw.csv
+
+You will probably want to change "WaterWolf" to your own
+product name and version history, if you are setting this up for production.
+
+Also, note that the backfill procedure will ignore build IDs over 30 days old.
+
 From inside the Socorro checkout, as the *postgres* user:
 ::
   cd tools/dataload
-  # customize CSVs, at minimum you need to
-  # bump the dates in raw_adu.csv reports.csv signatures.csv
   edit *.csv
   ./import.sh
 
@@ -48,7 +54,7 @@ but you can simply run the backfill function to bootstrap the system:
 As the *postgres* user:
 ::
   psql -h localhost -U breakpad_rw breakpad
-  breakpad=# select backfill_matviews('2012-01-03', '2012-01-03');
+  breakpad=# select backfill_matviews('2012-01-02', '2012-01-03');
 
 Be sure to use to/from dates that match the CSV data you have entered.
 There should be no failures, and the result should be "true".
