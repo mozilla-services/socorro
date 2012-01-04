@@ -13,6 +13,7 @@ $(function() {
     },
     yaxis: {
       tickDecimals: 0,
+      min: 0,
     },
     grid: {
       color: '#606060',
