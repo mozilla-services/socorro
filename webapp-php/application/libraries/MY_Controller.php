@@ -581,9 +581,11 @@ class Controller extends Controller_Core {
     public function prepareVersions($delete_cache=false)
     {
         $this->featured_versions = $this->_prepareVersionsSort(
-            $this->branch_model->getFeaturedVersions($this->chosen_version['product'], $delete_cache));
+            $this->branch_model->getFeaturedVersions($this->chosen_version['product'])
+        );
         $this->unfeatured_versions = $this->_prepareVersionsSort(
-            $this->branch_model->getUnfeaturedVersions($this->chosen_version['product'], $this->featured_versions, $delete_cache));
+            $this->branch_model->getUnfeaturedVersions($this->chosen_version['product'], $this->featured_versions, $delete_cache)
+        );
     }
 
     /**
