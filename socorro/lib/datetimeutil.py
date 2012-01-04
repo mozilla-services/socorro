@@ -1,74 +1,70 @@
-import datetime as dt
+import re
+import datetime
+import isodate  # 3rd party
 
 
-#-----------------------------------------------------------------------------------------------------------------
+UTC = isodate.UTC
+
+
 def datetimeFromISOdateString(s):
-  """ Take an ISO date string of the form YYYY-MM-DDTHH:MM:SS.S
-      and convert it into an instance of datetime.datetime
-  """
-  year = month = day = hour = minute = second = millisecond = 0
-  try:
-    year = int(s[0:4])
-    month = int(s[5:7])
-    day = int(s[8:10])
-    if len(s) >= 19:
-      hour = int(s[11:13])
-      minute = int(s[14:16])
-      second = int(s[17:19])
-      if len(s) > 19:
-        millisecond = int(s[20:])
-  except Exception, e:
-    raise ValueError('Invalid timestamp - "%s": %s' % (s, str(e)))
-  return dt.datetime(year, month, day, hour, minute, second, millisecond)
+    """Take an ISO date string of the form YYYY-MM-DDTHH:MM:SS.S
+    and convert it into an instance of datetime.datetime
+    """
+    return string_to_datetime(s)
 
 
-#-----------------------------------------------------------------------------------------------------------------
 def strHoursToTimeDelta(hoursAsString):
-  return dt.timedelta(hours=int(hoursAsString))
+    return datetime.timedelta(hours=int(hoursAsString))
 
-#-----------------------------------------------------------------------------------------------------------------
+
 def timeDeltaToSeconds(td):
-  return td.days * 24 * 60 * 60 + td.seconds
+    return td.days * 24 * 60 * 60 + td.seconds
 
 
-#=================================================================================================================
-class UTC(dt.tzinfo):
-  """
-  """
-  ZERO = dt.timedelta(0)
+def string_to_datetime(date, always_tzinfo=True):
+    """Return a datetime.datetime instance with tzinfo.
+    I.e. a timezone aware datetime instance.
 
-  #-----------------------------------------------------------------------------------------------------------------
-  def __init__(self):
-    super(UTC, self).__init__()
+    Acceptable formats for input are:
 
-  #-----------------------------------------------------------------------------------------------------------------
-  def utcoffset(self, dt):
-    return UTC.ZERO
+        * 2012-01-10T12:13:14
+        * 2012-01-10T12:13:14.98765
+        * 2012-01-10T12:13:14.98765+03:00
+        * 2012-01-10T12:13:14.98765Z
+        * 2012-01-10 12:13:14
+        * 2012-01-10 12:13:14.98765
+        * 2012-01-10 12:13:14.98765+03:00
+        * 2012-01-10 12:13:14.98765Z
 
-  #-----------------------------------------------------------------------------------------------------------------
-  def tzname(self, dt):
-    return "UTC"
+    But also, some more odd ones (probably because of legacy):
 
-  #-----------------------------------------------------------------------------------------------------------------
-  def dst(self, dt):
-    return UTC.ZERO
+        * 2012-01-10
+        * ['2012-01-10', '12:13:14']
 
-
-def string_to_datetime(date):
     """
-    Take a string and return a datetime object.
-    """
-    if not date:
-        raise ValueError
+    if isinstance(date, datetime.datetime):
+        if not date.tzinfo:
+            date = date.replace(tzinfo=UTC)
+        return date
+    if isinstance(date, list):
+        date = 'T'.join(date)
+    if isinstance(date, basestring):
+        if len(date) <= len('2000-01-01'):
+            return (datetime.datetime
+                    .strptime(date, '%Y-%m-%d')
+                    .replace(tzinfo=UTC))
+        else:
+            try:
+                parsed = isodate.parse_datetime(date)
+            except ValueError:
+                # e.g. '2012-01-10 12:13:14Z' becomes '2012-01-10T12:13:14Z'
+                parsed = isodate.parse_datetime(
+                  re.sub('(\d)\s(\d)', r'\1T\2', date))
+            if not parsed.tzinfo:
+                parsed = parsed.replace(tzinfo=UTC)
+            return parsed
+    raise ValueError("date not a parsable string")
 
-    if type(date) is not dt.datetime:
-        if type(date) is list:
-            date = " ".join(date)
-        try:
-            date = datetimeFromISOdateString(date)
-        except ValueError:
-            raise
-    return date
 
 def date_to_string(date):
     """
