@@ -1,5 +1,5 @@
-id,product,version,branch,release,sort_key
-1,WaterWolf,1.0,2.2,major,1
-2,WaterWolf,2.0,2.2,development,2
-3,WaterWolf,3.0a2,2.2,development,3
-4,WaterWolf,4.0a1,2.2,milestone,4
+id,product,version,branch,release,sort_key,version_sort
+1,WaterWolf,1.0,2.2,major,1,001000z000000
+2,WaterWolf,2.0,2.2,development,2,002000z000000
+3,WaterWolf,3.0a2,2.2,development,3,003000z000000
+4,WaterWolf,4.0a1,2.2,milestone,4,004000z000000

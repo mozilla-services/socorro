@@ -23,39 +23,47 @@ From inside the Socorro checkout, as *postgres* user:
 ::
   dropdb breakpad # skip this if you haven't created a db yet
   createdb -E 'utf8' -l 'en_US.utf8' -T template0 breakpad
+  psql -f sql/schema/2.3/breakpad_roles.sql breakpad
   psql -f sql/schema/2.3/breakpad_schema.sql breakpad
 
 From inside the Socorro checkout, as the *postgres* user:
 ::
   cd tools/dataload
+  # customize CSVs, at minimum you need to
+  # bump the dates in raw_adu.csv reports.csv signatures.csv
   edit *.csv
   ./import.sh
 
 See :ref:`databasetablesbysource-chapter` for a complete explanation
 of each table.
 
-Run nightly aggregate cron job
+Run backfill function to populate matviews
 ------------
-The "newtcbs" job should be run nightly, and generates all aggregate
-reports ("Top Crashes By Signature", graphs, etc) for the previous day.
+Socorro depends upon materialized views which run nightly, to display
+graphs and show reports such as "Top Crash By Signature".
 
-Run it once by hand to bootstrap the system:
+Normally this is run for the previous day by cron_daily_matviews.sh 
+but you can simply run the backfill function to bootstrap the system:
 
-As the *socorro* user:
-::
-  bash /data/socorro/application/scripts/crons/cron_newtcbs.sh 
-
-Logs will be written to /var/log/socorro/cron_newtcbs.log
-
-
-Enable at least one "featured" product
-------------
-
-As *postgres* user:
+As the *postgres* user:
 ::
   psql -h localhost -U breakpad_rw breakpad
-  UPDATE product_versions SET featured_version = true WHERE product_version_id = 1;
+  breakpad=# select backfill_matviews('2012-01-03', '2012-01-03');
 
-The :ref:`ui-chapter` should now work. You can change settings using the admin
-UI, which will be at http://crash-stats/admin (or the equivalent hostname for
-your install.)
+Be sure to use to/from dates that match the CSV data you have entered.
+There should be no failures, and the result should be "true".
+
+Enable at least one "featured" product, this command will set all 
+current versions to "featured" (this controls which versions appear on the
+front page of the web UI):
+::
+  breakpad=# UPDATE product_versions SET featured_version = true;
+
+Restart memcached as the *root* user:
+::
+  /etc/init.d/memcached restart
+
+Now the :ref:`ui-chapter` should now work. 
+
+You can change settings using the admin UI, which will be at 
+http://crash-stats/admin (or the equivalent hostname for your install.)
