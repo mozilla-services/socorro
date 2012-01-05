@@ -9,6 +9,7 @@ import socorro.lib.util as util
 
 from socorro.unittest.testlib.loggerForTest import TestingLogger
 import socorro.unittest.testlib.util as tutil
+from socorro.lib.datetimeutil import utc_now, UTC, string_to_datetime
 
 def setup_module():
   tutil.nosePrintModule(__file__)
@@ -131,28 +132,6 @@ class TestUtil(unittest.TestCase):
     assert 'SIGKILL' == util.signalNameFromNumberMap.get(9), '...but got %s'%util.signalNameFromNumber(9)
     assert 'SIGHUP' == util.signalNameFromNumberMap.get(1), '...but got %s'%util.signalNameFromNumber(1)
     assert 'SIG_UNKNOWN' == util.signalNameFromNumberMap.get(-1,'SIG_UNKNOWN'), '...but got %s'%util.signalNameFromNumber(-1)
-  def testParseIsoDateTimeString(self):
-    testSet = [
-      {'str':'2009-1-2T3:4:5.0000006','expected':datetime.datetime(2009,1,2,3,4,5,6)},
-      {'str':'2009-1-2 3:4:5.0000006','expected':datetime.datetime(2009,1,2,3,4,5,6)},
-      {'str':'2009-01-02T3:4:5.0000006','expected':datetime.datetime(2009,1,2,3,4,5,6)},
-      {'str':'2009-01-02 03:04:05.0000006','expected':datetime.datetime(2009,1,2,3,4,5,6)},
-      {'str':'2009-01-02T03:04:05','expected':datetime.datetime(2009,1,2,3,4,5)},
-      {'str':'2009-01-02T03:04','expected':datetime.datetime(2009,1,2,3,4)},
-      {'str':'2009-01-02T03','expected':datetime.datetime(2009,1,2,3)},
-      {'str':'2009-01-02','expected':datetime.datetime(2009,1,2)},
-      {'str':'2009-01-02T','expected':datetime.datetime(2009,1,2)},
-      {'str':' 2009 -01-02 ','expected':datetime.datetime(2009,1,2)},
-      {'str':'2009-01-02  3:4','expected':datetime.datetime(2009,1,2,3,4)},
-      {'str':'2009-01-02  3::4','expected':datetime.datetime(2009,1,2,3,4)},
-      ]
-    for ts in testSet:
-      exp = ts['expected']
-      test = ts['str']
-      got = util.parseIsoDateTimeString(test)
-      assert exp == got, "Parsing '%s' expected '%s', got '%s'"%(test,repr(exp),repr(got))
-    assert_raises(ValueError, util.parseIsoDateTimeString,"woot:boot:Fruit")
-    assert_raises(ValueError, util.parseIsoDateTimeString,"2009-23-12")
 
 if __name__ == "__main__":
   unittest.main()
