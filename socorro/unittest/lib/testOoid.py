@@ -3,6 +3,7 @@ import socorro.lib.uuid as uu
 import socorro.lib.ooid as oo
 import datetime as dt
 
+from socorro.lib.datetimeutil import utc_now, UTC
 import socorro.unittest.testlib.util as tutil
 
 def setup_module():
@@ -10,7 +11,7 @@ def setup_module():
 
 class TestOoid(unittest.TestCase):
   def setUp(self):
-    self.baseDate = dt.datetime(2008,12,25)
+    self.baseDate = dt.datetime(2008,12,25, tzinfo=UTC)
     self.rawuuids = []
     self.yyyyoids = []
     self.dyyoids = []
@@ -28,9 +29,9 @@ class TestOoid(unittest.TestCase):
     for i in range(len(self.rawuuids)):
       self.dyyoids.append("%s%d%02d%02d%02d" %(self.rawuuids[i][:-7],self.depths[i],self.baseDate.year%100,self.baseDate.month,self.baseDate.day))
 
-    today = dt.datetime.today()
-    self.nowstamp = dt.datetime(today.year,today.month,today.day)
-    self.xmas05 = dt.datetime(2005,12,25)
+    today = utc_now()
+    self.nowstamp = dt.datetime(today.year,today.month,today.day,tzinfo=UTC)
+    self.xmas05 = dt.datetime(2005,12,25,tzinfo=UTC)
 
 
   def testCreateNewOoid(self):

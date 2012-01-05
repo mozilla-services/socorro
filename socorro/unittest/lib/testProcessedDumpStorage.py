@@ -12,6 +12,8 @@ import socorro.unittest.testlib.util as tutil
 
 import socorro.lib.util as socorro_util
 import socorro.lib.processedDumpStorage as dumpStorage
+from socorro.lib.datetimeutil import utc_now, UTC
+
 
 def setup_module():
   tutil.nosePrintModule(__file__)
@@ -70,7 +72,8 @@ class TestProcessedDumpStorage(unittest.TestCase):
       pass # ok if there is no such test directory
 
   def dailyFromNow(self):
-    return ''.join(datetime.date.today().isoformat().split('-'))
+
+    return ''.join(utc_now().date().isoformat().split('-'))
 
   def dailyFromDate(self,dateString):
     """given "YYYY-mm-dd-hh-mm" return YYYYmmdd string"""
@@ -82,7 +85,7 @@ class TestProcessedDumpStorage(unittest.TestCase):
     slot = int(mm) - int(mm)%minutesPerSlot
     return [hh,"%02d"%slot]
   def hourSlotFromNow(self,minutesPerSlot):
-    hh,mm = datetime.datetime.now().isoformat('T').split('T')[1].split(':')[:2]
+    hh,mm = utc_now().isoformat('T').split('T')[1].split(':')[:2]
     slot = int(mm) - int(mm)%minutesPerSlot
     return hh,"%02d"%slot
 
@@ -147,15 +150,15 @@ class TestProcessedDumpStorage(unittest.TestCase):
     storage = dumpStorage.ProcessedDumpStorage(self.testDir,**self.initKwargs[2])
     ooid = '0bae7049-bbff-49f2-dead-7e9fe2081125' # is coded for depth 2, so no special thought needed
     data = createJDS.jsonFileData[ooid]
-    stamp = datetime.datetime(*[int(x) for x in data[0].split('-')])
+    stamp = datetime.datetime(*[int(x) for x in data[0].split('-')],tzinfo=UTC)
     expectedPath = os.sep.join((storage.root,self.dailyFromNow(),storage.indexName,data[2]))
     expectedFile = os.path.join(expectedPath,ooid+storage.fileSuffix)
     assert not os.path.exists(expectedPath), 'Better not exist at start of test'
     data = {"header":"header","data":['line ONE','lineTWO','last line']}
-    now = datetime.datetime.now()
+    now = utc_now()
     if now.second > 57:
       time.sleep(60-now.second)
-    now = datetime.datetime.now()
+    now = utc_now()
     storage.putDumpToFile(ooid,data,now) # default timestamp
     datePath = None
     seenDirs = set()
@@ -190,7 +193,7 @@ class TestProcessedDumpStorage(unittest.TestCase):
       seqs[ooid] = seq
       expectedDir = os.sep.join((storage.root,self.dailyFromDate(tdate),storage.dateName,hh,"%s_0"%slot))
       expectedPath = os.path.join(expectedDir,"%s%s"%(ooid,storage.fileSuffix))
-      stamp = datetime.datetime(*[int(x) for x in tdate.split('-')])
+      stamp = datetime.datetime(*[int(x) for x in tdate.split('-')],tzinfo=UTC)
       fh = storage.newEntry(ooid,stamp)
       fh.write("Sequence Number %d\n"%seq)
       fh.close()
@@ -207,7 +210,7 @@ class TestProcessedDumpStorage(unittest.TestCase):
   def createDumpSet(self, dumpStorage):
     for ooid,data in createJDS.jsonFileData.items():
       bogusData["uuid"] = ooid
-      stamp = datetime.datetime(*[int(x) for x in data[0].split('-')])
+      stamp = datetime.datetime(*[int(x) for x in data[0].split('-')],tzinfo=UTC)
       dumpStorage.putDumpToFile(ooid,bogusData,stamp)
 
   def testRemoveDumpFile(self):
@@ -246,7 +249,7 @@ class TestProcessedDumpStorage(unittest.TestCase):
   def testSecondNewEntryAfterRemove(self):
     storage = dumpStorage.ProcessedDumpStorage(self.testDir,**self.initKwargs[0])
     ooid,(tdate,ig1,pathprefix,longDatePath) = createJDS.jsonFileData.items()[1]
-    testStamp = datetime.datetime(*[int(x) for x in tdate.split('-')])
+    testStamp = datetime.datetime(*[int(x) for x in tdate.split('-')],tzinfo=UTC)
     fh = storage.newEntry(ooid,testStamp)
     fh.close()
     storage.removeDumpFile(ooid)

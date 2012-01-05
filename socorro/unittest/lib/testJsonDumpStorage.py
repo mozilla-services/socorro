@@ -9,6 +9,7 @@ from nose.tools import *
 
 import socorro.lib.JsonDumpStorage as JDS
 import socorro.lib.util
+from socorro.lib.datetimeutil import utc_now, UTC
 
 import socorro.unittest.testlib.createJsonDumpStore as createJDS
 import socorro.unittest.testlib.util as tutil
@@ -119,7 +120,7 @@ class TestJsonDumpStorage(unittest.TestCase):
     for uuid,data in createJDS.jsonFileData.items():
       datetimedata = [int(x) for x in data[0].split('-')]
       uuid = ''.join((uuid[:-7],'2',uuid[-6:]))
-      stamp = datetime.datetime(*datetimedata)
+      stamp = datetime.datetime(*datetimedata, tzinfo=UTC)
       try:
         fj,fd = storage.newEntry(uuid,webheadHostName=data[1],timestamp = stamp)
       except IOError:
@@ -180,7 +181,7 @@ class TestJsonDumpStorage(unittest.TestCase):
       df.write('dump file: %s\n'%uuid)
       jf.close()
       df.close()
-      stamp = datetime.datetime(*[int(x) for x in stampS.split('-')])
+      stamp = datetime.datetime(*[int(x) for x in stampS.split('-')], tzinfo=UTC)
       newjpath = None
       try:
         ok = storage.copyFrom(uuid,jpath,dpath,head,stamp,doLink,doRm)
@@ -214,7 +215,7 @@ class TestJsonDumpStorage(unittest.TestCase):
     storage = JDS.JsonDumpStorage(self.testDir,**self.initKwargs[0])
     oldStorage = JDS.JsonDumpStorage(self.testMoveFrom, **self.initKwargs[0])
     itemNumber = 0
-    xmas = datetime.datetime(2001,12,25,12,25)
+    xmas = datetime.datetime(2001,12,25,12,25, tzinfo=UTC)
     for id in createJDS.jsonFileData.keys():
       createLinks = 0 == itemNumber%2
       removeOld = 0 == itemNumber%3
@@ -427,9 +428,9 @@ class TestJsonDumpStorage(unittest.TestCase):
 #   def testRemoveOlderThan(self):
 #     createJDS.createTestSet(createJDS.jsonFileData,self.initKwargs[0],self.testDir)
 #     storage = JDS.JsonDumpStorage(self.testDir,**self.initKwargs[0])
-#     cutoff = datetime.datetime(2008,12,26,05,0)
-#     youngkeys = [x for x,d in createJDS.jsonFileData.items() if datetime.datetime(*[int(i) for i in d[0].split('-')]) >= cutoff]
-#     oldkeys = [x for x,d in createJDS.jsonFileData.items() if datetime.datetime(*[int(i) for i in d[0].split('-')]) < cutoff]
+#     cutoff = datetime.datetime(2008,12,26,05,0, tzinfo=UTC)
+#     youngkeys = [x for x,d in createJDS.jsonFileData.items() if datetime.datetime(*[int(i) for i in d[0].split('-')], tzinfo=UTC) >= cutoff]
+#     oldkeys = [x for x,d in createJDS.jsonFileData.items() if datetime.datetime(*[int(i) for i in d[0].split('-')], tzinfo=UTC) < cutoff]
 
 #     for k in youngkeys:
 #       assert k in createJDS.jsonFileData.keys(),"Expected %s in %s"%(k,createJDS.jsonFileData.keys())
@@ -516,7 +517,7 @@ class TestJsonDumpStorage(unittest.TestCase):
 #     storage = JDS.JsonDumpStorage(self.testDir,**self.initKwargs[0])
 #     oldStorage = JDS.JsonDumpStorage(self.testMoveFrom, **self.initKwargs[0])
 #     itemNumber = 0
-#     xmas = datetime.datetime(2001,12,25,12,25)
+#     xmas = datetime.datetime(2001,12,25,12,25, tzinfo=UTC)
 #     for id in createJDS.jsonFileData.keys():
 #       #case 0: copyLinks = True, makeNewDateLinks = False and there are links
 #       #case 1: copyLinks = True, makeNewDateLinks = False  and there are no links
@@ -558,7 +559,7 @@ class TestJsonDumpStorage(unittest.TestCase):
 #     createJDS.createTestSet(createJDS.jsonFileData,self.initKwargs[0],rootDir=self.testMoveFrom)
 #     oldStorage = JDS.JsonDumpStorage(self.testMoveFrom, **self.initKwargs[0])
 #     itemNumber = 0
-#     xmas = datetime.datetime(2001,12,25,12,25)
+#     xmas = datetime.datetime(2001,12,25,12,25, tzinfo=UTC)
 #     hasLinks = {}
 #     for id in createJDS.jsonFileData.keys():
 #       hasLinks[id] = True
