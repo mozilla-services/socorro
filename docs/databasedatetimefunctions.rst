@@ -154,7 +154,63 @@ week_ends_utc
 Given a timestamp or date, returns the timestamp with time zone corresponding to the end of the week in UTC time.  Used for partitioning data by week.
 
 
+week_begins_partition
+---------------------
+
+::
+
+	week_begins_partition (
+		partname TEXT
+		)
+	RETURNS timestamptz
+	
+	SELECT week_begins_partition ( 'reports_20111219' );
+	
+Given a partition table name, returns a timestamptz of the date and time that weekly partition starts.
+
+
+week_ends_partition
+-------------------
+
+::
+
+	week_ends_partition (
+		partname TEXT
+		)
+	RETURNS timestamptz
+	
+	SELECT week_ends_partition ( 'reports_20111219' );
+	
+Given a partition table name, returns a timestamptz of the date and time that weekly partition ends.
 	
 	
+week_begins_partition_string
+----------------------------
+
+::
+
+	week_begins_partition_string (
+		partname TEXT
+		)
+	RETURNS text
+	
+	SELECT week_begins_partition_string ( 'reports_20111219' );
+	
+Given a partition table name, returns a string of the date and time that weekly partition starts in the format 'YYYY-MM-DD HR:MI:SS UTC'.
+
+
+week_ends_partition_string
+--------------------------
+
+::
+
+	week_ends_partition_string (
+		partname TEXT
+		)
+	RETURNS text
+	
+	SELECT week_ends_partition_string ( 'reports_20111219' );
+	
+Given a partition table name, returns a string of the date and time that weekly partition ends in the format 'YYYY-MM-DD HR:MI:SS UTC'.
 	
 	
