@@ -15,6 +15,7 @@ insert into timestamp_tables values
 	( 'raw_adu' ),
 	( 'reports' ),
 	( 'reports_2%' ),
+	( 'reports_duplicates' ),
 	( 'server_status' ),
 	( 'signature_build' ),
 	( 'signature_first' ),
@@ -27,6 +28,9 @@ DECLARE frame_name TEXT;
 	curtab TEXT;
 	currel INT;
 	curcol TEXT;
+	indmeth TEXT;
+	indmetharray INT[];
+	arrayct INT;
 BEGIN
 
 SET timezone = 'UTC';
@@ -107,6 +111,23 @@ FOR currel, curcol IN
 	UPDATE pg_attribute SET atttypid = 1184
 	WHERE attrelid = currel
 		AND attname::text = curcol;
+		
+	SELECT indclass::text INTO indmeth
+	FROM pg_index
+	WHERE indexrelid = currel;
+	
+	indmetharray := string_to_array(indmeth, ' ');
+	arrayct := 1;
+	WHILE arrayct <= array_upper(indmetharray, 1) LOOP
+		IF indmetharray[arrayct] = 10053 THEN
+			indmetharray[arrayct] := 10046;
+		END IF;
+		arrayct := arrayct + 1;
+	END LOOP;
+	indmeth := quote_literal(array_to_string(indmetharray, ' '));
+	
+	EXECUTE 'UPDATE pg_index SET indclass := ' || indmeth || 
+		' WHERE indexrelid = ' || currel;
 
 END LOOP;
 
@@ -121,5 +142,5 @@ $f$;
 
 
 
-
+10053 to 10046
 
