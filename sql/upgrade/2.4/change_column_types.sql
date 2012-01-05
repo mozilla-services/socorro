@@ -49,7 +49,7 @@ SELECT 'ALTER TABLE ' || relname || ' ADD CONSTRAINT ' || relname
 	|| '_date_check CHECK  ( date_processed >= ' 
 	|| quote_literal(week_begins_partition_string( relname ))
 	|| ' AND date_processed < ' 
-	|| quote_literal(week_begins_partition_string( relname ))
+	|| quote_literal(week_ends_partition_string( relname ))
 	|| ');'
 FROM timestamp_tables JOIN pg_stat_user_tables
 	ON relname ILIKE tablename
