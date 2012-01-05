@@ -5,7 +5,6 @@ NOSE = $(VIRTUALENV)/bin/nosetests socorro -s --with-xunit
 COVEROPTS = --with-coverage --cover-package=socorro
 COVERAGE = $(VIRTUALENV)/bin/coverage
 PYLINT = $(VIRTUALENV)/bin/pylint
-DEPS = nose psycopg2 simplejson coverage web.py pylint poster mock lxml
 
 .PHONY: all build install stage coverage hudson-coverage lint test
 
@@ -43,7 +42,7 @@ deploy:
 
 virtualenv:
 	virtualenv $(VIRTUALENV)
-	$(VIRTUALENV)/bin/easy_install $(DEPS)
+	$(VIRTUALENV)/bin/pip install -r requirements.txt
 
 coverage: virtualenv phpunit
 	rm -f coverage.xml
