@@ -21,7 +21,29 @@ def timeDeltaToSeconds(td):
     return td.days * 24 * 60 * 60 + td.seconds
 
 
-def string_to_datetime(date, always_tzinfo=True):
+def utc_now():
+    """Return a timezone aware datetime instance in UTC timezone
+
+    This funciton is mainly for convenience. Compare:
+
+        >>> from datetimeutil import utc_now
+        >>> utc_now()
+        datetime.datetime(2012, 1, 5, 16, 42, 13, 639834,
+          tzinfo=<isodate.tzinfo.Utc object at 0x101475210>)
+
+    Versus:
+
+        >>> import datetime
+        >>> from datetimeutil import UTC
+        >>> datetime.datetime.now(UTC)
+        datetime.datetime(2012, 1, 5, 16, 42, 13, 639834,
+          tzinfo=<isodate.tzinfo.Utc object at 0x101475210>)
+
+    """
+    return datetime.datetime.now(UTC)
+
+
+def string_to_datetime(date):
     """Return a datetime.datetime instance with tzinfo.
     I.e. a timezone aware datetime instance.
 

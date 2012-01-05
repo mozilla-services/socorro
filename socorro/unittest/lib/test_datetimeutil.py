@@ -11,6 +11,16 @@ def setup_module():
     tutil.nosePrintModule(__file__)
 
 
+def test_utc_now():
+    """
+    Test datetimeutil.utc_now()
+    """
+    res = datetimeutil.utc_now()
+    eq_(res.strftime('%Z'), 'UTC')
+    eq_(res.strftime('%z'), '+0000')
+    ok_(res.tzinfo)
+
+
 def test_string_to_datetime():
     """
     Test datetimeutil.string_to_datetime()
