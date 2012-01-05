@@ -13,6 +13,9 @@ import socorro.lib.util as socorro_util
 import socorro.unittest.testlib.util as test_util
 import socorro.unittest.testlib.createJsonDumpStore as createJDS
 
+from socorro.lib.datetimeutil import utc_now, UTC
+
+
 def setup_module():
   print test_util.getModuleFromFile(__file__)
 
@@ -21,12 +24,12 @@ class TestDumpStorage:
     self.expectedTestDir = os.path.join('.','TEST-DUMP')
     self.testDir = self.expectedTestDir+os.sep
     self.testData = {
-      '0bba61c5-dfc3-43e7-dead-8afd22081225': ['0b/ba',datetime.datetime(2008,12,25,12,0, 0),'12/00'],
-      '0bba929f-8721-460c-dead-a43c20081225': ['0b/ba/92/9f',datetime.datetime(2008,12,25,12,0, 1),'12/00'],
-      '0b9ff107-8672-4aac-dead-b2bd22081225': ['0b/9f',datetime.datetime(2008,12,25,12,0,59),'12/00'],
-      '22adfb61-f75b-11dc-dead-001322081225': ['22/ad',datetime.datetime(2008,12,25,12,55,0),'12/55'],
-      'b965de73-ae90-a935-dead-03ae22080101': ['b9/65',datetime.datetime(2008, 1, 1,1,20,31),'01/20'],
-      '0b781b88-ecbe-4cc4-dead-6bbb20080203': ['0b/78/1b/88',datetime.datetime(2008, 2, 3, 4,1,45),'04/00'],
+      '0bba61c5-dfc3-43e7-dead-8afd22081225': ['0b/ba',datetime.datetime(2008,12,25,12,0, 0, tzinfo=UTC),'12/00'],
+      '0bba929f-8721-460c-dead-a43c20081225': ['0b/ba/92/9f',datetime.datetime(2008,12,25,12,0, 1, tzinfo=UTC),'12/00'],
+      '0b9ff107-8672-4aac-dead-b2bd22081225': ['0b/9f',datetime.datetime(2008,12,25,12,0,59, tzinfo=UTC),'12/00'],
+      '22adfb61-f75b-11dc-dead-001322081225': ['22/ad',datetime.datetime(2008,12,25,12,55,0, tzinfo=UTC),'12/55'],
+      'b965de73-ae90-a935-dead-03ae22080101': ['b9/65',datetime.datetime(2008, 1, 1,1,20,31, tzinfo=UTC),'01/20'],
+      '0b781b88-ecbe-4cc4-dead-6bbb20080203': ['0b/78/1b/88',datetime.datetime(2008, 2, 3, 4,1,45, tzinfo=UTC),'04/00'],
       }
     self.ctorData = {
       0:{'dateName':'otherDate','logger':logging.getLogger('otherLogger')},
@@ -179,10 +182,10 @@ class TestDumpStorage:
   def testDailyPart(self):
     d = dumpStorage.DumpStorage(self.testDir)
     testData = [
-      ('12345678-dead-beef-feeb-daed20081225',datetime.datetime(2008,12,25,1,2,3),'20081225'),
-      ('12345678-dead-beef-feeb-daed20081225',datetime.datetime(2008,12,26,1,2,3),'20081226'),
+      ('12345678-dead-beef-feeb-daed20081225',datetime.datetime(2008,12,25,1,2,3, tzinfo=UTC),'20081225'),
+      ('12345678-dead-beef-feeb-daed20081225',datetime.datetime(2008,12,26,1,2,3, tzinfo=UTC),'20081226'),
       ('12345678-dead-beef-feeb-daed20081225',None,'20081225'),
-      ('',datetime.datetime(2008,12,25,1,2,3),'20081225'),
+      ('',datetime.datetime(2008,12,25,1,2,3, tzinfo=UTC),'20081225'),
       (None,None,None),
       ('',None,None),
       ]
@@ -191,7 +194,7 @@ class TestDumpStorage:
         got = d.dailyPart(ooid,date)
         assert expected == got, 'Expected "%s" but got "%s"'%(expected,got)
       else:
-        now = datetime.date.today()
+        now = utc_now()
         expected = "%4d%02d%02d"%(now.year,now.month,now.day)
         assert expected == d.dailyPart(ooid,date), 'From (%s,%s) Expected "%s" but got "%s"'%(ooid,date,expected,got)
   def testPathToDate(self):
@@ -211,7 +214,7 @@ class TestDumpStorage:
     for (pathInfo,dateParts) in testCases:
       path = os.sep.join(pathInfo)
       if dateParts:
-        expected = datetime.datetime(*dateParts)
+        expected = datetime.datetime(*dateParts, tzinfo=UTC)
         got = d.pathToDate(path)
         assert expected == got, 'Expected: %s but got %s'%(expected,got)
       else:
@@ -224,7 +227,7 @@ class TestDumpStorage:
     for ooid,v in createJDS.jsonFileData.items():
       dateS = v[0]
       if 0 == count%2:
-        nd,dd = d.newEntry(ooid,datetime.datetime(*[int(x) for x in dateS.split('-')]))
+        nd,dd = d.newEntry(ooid,datetime.datetime(*[int(x) for x in dateS.split('-')], tzinfo=UTC))
         expected[ooid] = nd
       elif 0 == count%5:
         expected[ooid] = None
@@ -235,7 +238,7 @@ class TestDumpStorage:
       count += 1
     for ooid,v in createJDS.jsonFileData.items():
       dateS = v[0]
-      testDate = datetime.datetime(*[int(x) for x in dateS.split('-')])
+      testDate = datetime.datetime(*[int(x) for x in dateS.split('-')], tzinfo=UTC)
       got,ignore =  d.lookupNamePath(ooid,testDate)
       assert expected[ooid] == got, 'For %s, expected path %s, got %s'%(ooid,expected,got)
 
@@ -349,7 +352,7 @@ class TestDumpStorage:
     for ooid,v in createJDS.jsonFileData.items():
       dateS = v[0]
       if 0 == count%2:
-        nd,dd = d.newEntry(ooid,datetime.datetime(*[int(x) for x in dateS.split('-')]))
+        nd,dd = d.newEntry(ooid,datetime.datetime(*[int(x) for x in dateS.split('-')], tzinfo=UTC))
         expected[ooid] = dd
       elif 0 == count%5:
         expected[ooid] = None
@@ -363,8 +366,8 @@ class TestDumpStorage:
     for ooid in createJDS.jsonFileData.keys():
       dateS = v[0]
       if expected[ooid]:
-        exEnd = datetime.datetime(*[int(x) for x in dateS.split('-')])
-        passDate = datetime.datetime.now()
+        exEnd = datetime.datetime(*[int(x) for x in dateS.split('-')], tzinfo=UTC)
+        passDate = utc_now()
         if 0 == count%3:
           passDate = None
         else:

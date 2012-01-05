@@ -9,6 +9,8 @@ import threading
 
 import socorro.lib.filesystem as socorro_fs
 import socorro.lib.ooid as socorro_ooid
+from socorro.lib.datetimeutil import utc_now, UTC
+
 
 class DumpStorage(object):
   """
@@ -85,7 +87,7 @@ class DumpStorage(object):
     if not timestamp:
       timestamp = socorro_ooid.dateFromOoid(ooid)
       if not timestamp:
-        timestamp = datetime.datetime.now()
+        timestamp = utc_now()
     if not self.osModule.path.isdir(self.root):
       um = self.osModule.umask(0)
       try:
@@ -138,7 +140,7 @@ class DumpStorage(object):
     if not timestamp:
       timestamp = socorro_ooid.dateFromOoid(ooid)
     if not timestamp:
-      timestamp = datetime.datetime.now()
+      timestamp = utc_now()
     (year,month,day) = (timestamp.year,timestamp.month,timestamp.day)
     return "%4d%02d%02d"%(year,month,day)
 
@@ -164,7 +166,7 @@ class DumpStorage(object):
         hour = int(parts[-3])
       except ValueError:
         pass
-    return datetime.datetime(int(parts[1][:4]),int(parts[1][4:6]),int(parts[1][-2:]),int(hour),minute)
+    return datetime.datetime(int(parts[1][:4]),int(parts[1][4:6]),int(parts[1][-2:]),int(hour),minute,tzinfo=UTC)
 
   def lookupNamePath(self,ooid,timestamp=None):
     """

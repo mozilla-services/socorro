@@ -2,6 +2,8 @@
 import datetime as dt
 import socorro.lib.uuid as uu
 
+from socorro.lib.datetimeutil import utc_now, UTC
+
 defaultDepth = 2
 oldHardDepth = 4
 
@@ -27,7 +29,7 @@ def uuidToOoid(uuid,timestamp=None, depth= None):
   returns a new opaque id string holding the first 24 digits of the provided uuid and encoded date and depth info
   """
   if not timestamp:
-    timestamp = dt.datetime.today()
+    timestamp = utc_now().date()
   if not depth:
     depth = defaultDepth
   assert depth <= 4 and depth >=1
@@ -51,7 +53,7 @@ def dateAndDepthFromOoid(ooid):
     year = 2000 + int(ooid[-6:-4])
     depth = int(ooid[-7])
     if not depth: depth = oldHardDepth
-    return (dt.datetime(year,month,day),depth)
+    return (dt.datetime(year,month,day,tzinfo=UTC),depth)
   except:
     return None,None
   return None,None

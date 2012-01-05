@@ -217,14 +217,3 @@ import signal
 # Don't know why this isn't available by importing signal, but not.
 signalNameFromNumberMap = dict( ( (getattr(signal,x),x) for x in dir(signal) if (x.startswith('SIG') and not x.startswith('SIG_')) ) )
 
-#-----------------------------------------------------------------------------------------------------------------
-import re
-# This isn't all that hard. Why isn't it part of the python datetime library?
-def parseIsoDateTimeString(dtstring):
-  """
-  Expects one of '2000-02-13', '2000-02-13 12:13:14.15' or '2000-02-13T12:13:14.15'.
-  returns apropriate datetime object (even if dtstring represents only a date)
-  """
-  splitter = re.compile("[_:T. -]")
-  # note: Allow double, leading and trailing delimiters by the use of ... if x
-  return datetime.datetime(*[int(x.strip()) for x in splitter.split(dtstring)[:7] if x])
