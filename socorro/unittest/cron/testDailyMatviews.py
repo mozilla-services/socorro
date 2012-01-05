@@ -73,7 +73,8 @@ class TestCase(unittest.TestCase):
               'update_signatures', 'update_os_versions', 'update_adu',
               'update_daily_crashes', 'update_os_signature_counts',
               'update_uptime_signature_counts',
-              'update_product_signature_counts'])
+              'update_product_signature_counts',
+              'update_hang_report'])
             self.assertEqual(mock_logger.info.call_count, 8)
             self.assertEqual(mock_logger.warn.call_count, 2)
             self.assertEqual(mock_logger.error.call_count, 0)
@@ -183,6 +184,12 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
  CREATE OR REPLACE FUNCTION update_product_signature_counts(timestamp without time zone)
+RETURNS boolean AS $$
+BEGIN
+        RETURN true;
+END;
+$$ LANGUAGE plpgsql;
+ CREATE OR REPLACE FUNCTION update_hang_report(timestamp without time zone)
 RETURNS boolean AS $$
 BEGIN
         RETURN true;
