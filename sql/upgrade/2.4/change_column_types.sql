@@ -117,7 +117,7 @@ RAISE INFO 'done with datatype changes.  Now run the restore for the constraints
 END;
 $f$;
 
-\copy partition_constraints to partition_constraints.txt
+\copy partition_constraints to '/tmp/partition_constraints.txt'
 
 
 
