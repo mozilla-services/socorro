@@ -1,31 +1,29 @@
-2.3.5 Upgrade
-=============
+2.4 Upgrade
+===========
 
-This upgrade focuses entirely on creating the FennecAndroid "product" 
-and related required database changes.  None of the below require 
-backfilling, and as such should run quite quickly, with one noted 
-exception.
+This upgrade focuses entirely on the shift to using consistent
+TIMESTAMP WITH TIME ZONE and UTC dates and times throughout the
+code.
 
-706807
-	Add productID column to reports.
+701255
+	Move TCBS and daily_crashes updates to depending on reports_clean
+	rather than reports.
 	
-	WARNING: this requires obtaining a lock on the reports table. 
-	As such, it may take up to several minutes to get that lock or
-	even abort.  If it aborts, re-run the upgrade after waiting a
-	few minutes.
+715333
+	change all columns in all non-depricated tables to timestamptz
+	instead of timestamp-without-timezone
 	
-710866
-	Add product_guid column to raw_adu and modify ADU aggregation
+	Note: this change requires a 2-hour downtime window, since
+	it must be done with no concurrent access to the database 
+	system.  It can take up to 2 hours to run.
 	
-706893
-	Add FennecAndroid to products list.
+715335
+	Fix all matview generators to be UTC/timestamptz correct.
 	
-706900
-	Add Product-AppID mapping table for use of processors.
+715342
+	Drop timezone conversion functions which are no longer useful
+	after conversion to default UTC.
 	
-706899
-	Modify update_product_versions to pull FennecAndroid builds
-	from releases_raw.
 	
 
 	
