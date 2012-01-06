@@ -69,7 +69,7 @@ class Topcrashers_Model extends Model {
     	$service = new Web_Service($config);
     	$host = Kohana::config('webserviceclient.socorro_hostname');
     	$cache_in_minutes = Kohana::config('webserviceclient.topcrash_vers_rank_cache_minutes', 60);
-    	$end_date = urlencode(date('Y-m-d\TH:i:s\T+0000', TimeUtil::roundOffByMinutes($cache_in_minutes)));
+    	$end_date = urlencode(date('Y-m-d\TH:i:s+0000', TimeUtil::roundOffByMinutes($cache_in_minutes)));
     	$dur = $duration * 24;
     	$limit = Kohana::config('topcrashbysig.byversion_limit', 300);
     	$lifetime = Kohana::config('products.cache_expires');
