@@ -3,7 +3,6 @@ try:
 except ImportError:
   from email import MIMEText as MIMETextClass
 
-import datetime
 import logging
 import socket
 import sys
@@ -14,7 +13,6 @@ from web import form
 
 from socorro.lib import uuid
 import socorro.database.database as db
-import socorro.lib.datetimeutil as dtutil
 import socorro.lib.util as sutil
 import socorro.webapi.webapiService as webapi
 
@@ -100,7 +98,7 @@ class EmailSender(webapi.JsonServiceBase):
           self.stop_campaign(cursor, campaign_id)
           connection.commit()
         else:
-          raise Exception ('unknown status: %s' % s)
+          raise Exception ('unknown status: %s' % status)
       finally:
         connection.close()
     else:
