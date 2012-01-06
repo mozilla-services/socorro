@@ -26,7 +26,7 @@ echo '*********************************************'
 echo 'rebuild constraints.  this may take up to 2 hours,'
 echo 'and will produce LOTS of output while its working'
 echo 'bug 715333'
-/data/socorro/application/scripts/parallel_sql_execute.py --dbname breakpad -j 8 --stop < /tmp/partition_constraints.txt
+/data/socorro/application/scripts/parallel_sql_jobs.py --dbname breakpad -j 8 --stop < /tmp/partition_constraints.txt
 
 echo '*********************************************'
 echo 'fix matview generators to work with UTC'

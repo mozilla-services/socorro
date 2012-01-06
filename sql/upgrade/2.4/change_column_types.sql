@@ -126,7 +126,7 @@ FOR currel, curcol IN
 	END LOOP;
 	indmeth := quote_literal(array_to_string(indmetharray, ' '));
 	
-	EXECUTE 'UPDATE pg_index SET indclass := ' || indmeth || 
+	EXECUTE 'UPDATE pg_index SET indclass = ' || indmeth || 
 		' WHERE indexrelid = ' || currel;
 
 END LOOP;
