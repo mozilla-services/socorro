@@ -16,6 +16,8 @@ import socorro.cron.bugzilla as bug
 import socorro.database.schema as sch
 import socorro.database.database as sdatabase
 
+from socorro.lib.datetimeutil import UTC
+
 #from createTables import createCronTables, dropCronTables
 import socorro.unittest.testlib.dbtestutil as dbtestutil
 from   socorro.unittest.testlib.loggerForTest import TestingLogger
@@ -28,11 +30,11 @@ def makeBogusReports (connection, cursor, logger):
   # make some bogus data in the reports table
   reportsTable = sch.ReportsTable(logger)
                     # ( uuid,    client_crash_date,   date_processed,             product,   version,   build,   url,              install_age,   last_crash,   uptime,   email,   build_date,   user_id,   user_comments,   app_notes,   distributor,   distributor_version, topmost_filenames, addons_checked, flash_version, hangid, process_type) values
-  fakeReportData = [ (( "uuid1", None,                dt.datetime(2009, 05, 04),  "bogus",   "1.0",     "xxx",   "http://cnn.com", 100,           14,           10,       None,    None,         None,      "bogus",         "",          "",            ",",                 None,              None,           None,          None,   None,         'release'), "BogusClass::bogus_signature (const char**, void *)"),
-                     (( "uuid2", None,                dt.datetime(2009, 05, 04),  "bogus",   "1.0",     "xxx",   "http://cnn.com", 100,           14,           10,       None,    None,         None,      "bogus",         "",          "",            ",",                 None,              None,           None,          None,   None,         'release'), "js3250.dll@0x6cb96"),
-                     (( "uuid3", None,                dt.datetime(2009, 05, 04),  "bogus",   "1.0",     "xxx",   "http://cnn.com", 100,           14,           10,       None,    None,         None,      "bogus",         "",          "",            ",",                 None,              None,           None,          None,   None,         'release'), "libobjc.A.dylib@0x1568c"),
-                     (( "uuid4", None,                dt.datetime(2009, 05, 04),  "bogus",   "1.0",     "xxx",   "http://cnn.com", 100,           14,           10,       None,    None,         None,      "bogus",         "",          "",            ",",                 None,              None,           None,          None,   None,         'release'), "nanojit::LIns::isTramp()"),
-                     (( "uuid5", None,                dt.datetime(2009, 05, 04),  "bogus",   "1.0",     "xxx",   "http://cnn.com", 100,           14,           10,       None,    None,         None,      "bogus",         "",          "",            ",",                 None,              None,           None,          None,   None,         'release'), "libobjc.A.dylib@0x1568c"),
+  fakeReportData = [ (( "uuid1", None,                dt.datetime(2009, 05, 04, tzinfo=UTC),  "bogus",   "1.0",     "xxx",   "http://cnn.com", 100,           14,           10,       None,    None,         None,      "bogus",         "",          "",            ",",                 None,              None,           None,          None,   None,         'release'), "BogusClass::bogus_signature (const char**, void *)"),
+                     (( "uuid2", None,                dt.datetime(2009, 05, 04, tzinfo=UTC),  "bogus",   "1.0",     "xxx",   "http://cnn.com", 100,           14,           10,       None,    None,         None,      "bogus",         "",          "",            ",",                 None,              None,           None,          None,   None,         'release'), "js3250.dll@0x6cb96"),
+                     (( "uuid3", None,                dt.datetime(2009, 05, 04, tzinfo=UTC),  "bogus",   "1.0",     "xxx",   "http://cnn.com", 100,           14,           10,       None,    None,         None,      "bogus",         "",          "",            ",",                 None,              None,           None,          None,   None,         'release'), "libobjc.A.dylib@0x1568c"),
+                     (( "uuid4", None,                dt.datetime(2009, 05, 04, tzinfo=UTC),  "bogus",   "1.0",     "xxx",   "http://cnn.com", 100,           14,           10,       None,    None,         None,      "bogus",         "",          "",            ",",                 None,              None,           None,          None,   None,         'release'), "nanojit::LIns::isTramp()"),
+                     (( "uuid5", None,                dt.datetime(2009, 05, 04, tzinfo=UTC),  "bogus",   "1.0",     "xxx",   "http://cnn.com", 100,           14,           10,       None,    None,         None,      "bogus",         "",          "",            ",",                 None,              None,           None,          None,   None,         'release'), "libobjc.A.dylib@0x1568c"),
                    ]
   try:
     #altconn = psycopg2.connect(me.dsn)
@@ -269,10 +271,10 @@ class TestBugzilla(unittest.TestCase):
     except OSError, x:
       pass
     def a_fixed_date():
-      return dt.datetime(2009,05,04,15,10)
-    assert bug.get_last_run_date(self.testConfig, a_fixed_date) == dt.datetime(2009, 4, 4, 15, 10)
+      return dt.datetime(2009,05,04,15,10, tzinfo=UTC)
+    assert bug.get_last_run_date(self.testConfig, a_fixed_date) == dt.datetime(2009, 4, 4, 15, 10, tzinfo=UTC)
     def another_fixed_date():
-      return dt.datetime(2009,06,14,15,10)
+      return dt.datetime(2009,06,14,15,10, tzinfo=UTC)
     bug.save_last_run_date(self.testConfig, another_fixed_date)
     assert bug.get_last_run_date(self.testConfig) == another_fixed_date()
     try:

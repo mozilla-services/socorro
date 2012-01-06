@@ -1,6 +1,8 @@
 import datetime as dt
 
 import socorro.lib.JsonDumpStorage as jds
+import socorro.lib.util
+from socorro.lib.datetimeutil import utc_now
 
 def deferredJobStorageCleanup (config, logger):
   """
@@ -9,7 +11,7 @@ def deferredJobStorageCleanup (config, logger):
     logger.info("beginning deferredJobCleanup")
     j = jds.JsonDumpStorage(root = config.deferredStorageRoot)
     numberOfDaysAsTimeDelta = dt.timedelta(days=int(config.maximumDeferredJobAge))
-    threshold = dt.datetime.now() - numberOfDaysAsTimeDelta
+    threshold = utc_now() - numberOfDaysAsTimeDelta
     logger.info("  removing older than: %s", threshold)
     j.removeOlderThan(threshold)
   except (KeyboardInterrupt, SystemExit):

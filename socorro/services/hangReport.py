@@ -15,7 +15,7 @@ class HangReport(webapi.JsonServiceBase):
   uri = '/reports/hang/p/(.*)/v/(.*)/end/(.*)/duration/(.*)/listsize/(.*)/page/(.*)'
 
   def get(self, *args):
-    convertedArgs = webapi.typeConversion([str, str, dtutil.datetimeFromISOdateString, int, int, int], args)
+    convertedArgs = webapi.typeConversion([str, str, dtutil.string_to_datetime, int, int, int], args)
     parameters = util.DotDict(zip(['product', 'version', 'end', 'duration', 'listsize', 'page'], convertedArgs))
 
     connection = self.database.connection()
@@ -44,7 +44,7 @@ class HangReport(webapi.JsonServiceBase):
 
     hangReportSql = """
           /* socorro.services.HangReport */
-          SELECT browser_signature, plugin_signature, 
+          SELECT browser_signature, plugin_signature,
                  browser_hangid, flash_version, url,
                  uuid, duplicates, report_day
           FROM hang_report
@@ -53,7 +53,7 @@ class HangReport(webapi.JsonServiceBase):
           AND report_day > utc_day_begins_pacific(((%(end)s)::timestamp - interval '%(duration)s days')::date)
           LIMIT %(listsize)s
           OFFSET %(offset)s"""
-  
+
     logger.debug(cursor.mogrify(hangReportSql, parameters))
     cursor.execute(hangReportSql, parameters)
 

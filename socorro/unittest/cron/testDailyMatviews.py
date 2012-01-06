@@ -4,6 +4,8 @@ import psycopg2
 import socorro.cron.dailyMatviews  # needed for Mock
 import socorro.cron.dailyMatviews as dailyMatviews
 
+from socorro.lib.datetimeutil import utc_now
+
 from socorro.unittest.config.commonconfig import databaseHost
 from socorro.unittest.config.commonconfig import databaseName
 from socorro.unittest.config.commonconfig import databaseUserName
@@ -73,8 +75,9 @@ class TestCase(unittest.TestCase):
               'update_signatures', 'update_os_versions', 'update_adu',
               'update_daily_crashes', 'update_os_signature_counts',
               'update_uptime_signature_counts',
-              'update_product_signature_counts'])
-            self.assertEqual(mock_logger.info.call_count, 8)
+              'update_product_signature_counts',
+              'update_hang_report'])
+            self.assertEqual(mock_logger.info.call_count, 9)
             self.assertEqual(mock_logger.warn.call_count, 2)
             self.assertEqual(mock_logger.error.call_count, 0)
 
@@ -83,7 +86,7 @@ class TestCase(unittest.TestCase):
         dailyMatviews.psycopg2 = mock_psycopg2(cursor)
         with patch('socorro.cron.dailyMatviews.logger') as mock_logger:
             dailyMatviews.update(self.config, 'some date')
-            self.assertEqual(mock_logger.info.call_count, 9)
+            self.assertEqual(mock_logger.info.call_count, 10)
             self.assertEqual(mock_logger.warn.call_count, 0)
             self.assertEqual(mock_logger.error.call_count, 0)
 
@@ -94,7 +97,7 @@ class TestCase(unittest.TestCase):
         dailyMatviews.psycopg2 = mock_psycopg2(cursor)
         with patch('socorro.cron.dailyMatviews.logger') as mock_logger:
             dailyMatviews.update(self.config, 'some date')
-            self.assertEqual(mock_logger.info.call_count, 8)
+            self.assertEqual(mock_logger.info.call_count, 9)
             self.assertEqual(mock_logger.warn.call_count, 1)
             self.assertEqual(mock_logger.error.call_count, 1)
 
@@ -188,6 +191,12 @@ BEGIN
         RETURN true;
 END;
 $$ LANGUAGE plpgsql;
+ CREATE OR REPLACE FUNCTION update_hang_report(timestamp without time zone)
+RETURNS boolean AS $$
+BEGIN
+        RETURN true;
+END;
+$$ LANGUAGE plpgsql;
 
         """)
         self.connection.commit()
@@ -206,7 +215,7 @@ $$ LANGUAGE plpgsql;
 
     def test_all_works_without_errors(self):
         with patch('socorro.cron.dailyMatviews.logger'):
-            dailyMatviews.update(self.config, datetime.datetime.today())
+            dailyMatviews.update(self.config, utc_now().date())
             cursor = self.connection.cursor()
             for each in ('dailyMatviews:update_product_versions',
                          'dailyMatviews:update_os_versions',
@@ -234,7 +243,7 @@ $$ LANGUAGE plpgsql;
             """)
             self.connection.commit()
 
-            dailyMatviews.update(self.config, datetime.datetime.today())
+            dailyMatviews.update(self.config, utc_now().date())
             cursor = self.connection.cursor()
             for each in ('dailyMatviews:update_os_versions',
                          'dailyMatviews:update_adu',

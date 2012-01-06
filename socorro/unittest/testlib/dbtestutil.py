@@ -8,6 +8,8 @@ import time
 import psycopg2
 import socorro.unittest.testlib.createJsonDumpStore as createJDS
 
+from socorro.lib.datetimeutil import utc_now
+
 def datetimeNow(cursor):
   cursor.execute("SELECT LOCALTIMESTAMP(6)")
   return cursor.fetchone()[0]
@@ -22,7 +24,7 @@ def fillProcessorTable(cursor, processorCount, stamp=None, processorMap = {},log
   if not logger:
     logger = logging.getLogger()
 
-  if not stamp: stamp = dt.datetime.now()
+  if not stamp: stamp = utc_now()
   if not processorCount and not processorMap: return
   sql = "INSERT INTO processors (name,startdatetime,lastseendatetime) VALUES (%s,%s,%s);"
   data = []

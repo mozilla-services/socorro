@@ -1,85 +1,86 @@
 import socorro.unittest.testlib.expectations as expect
 import socorro.services.aduByDay as abd
 import socorro.lib.util as util
+from socorro.lib.datetimeutil import UTC
 from nose.plugins.skip import SkipTest
 
 import datetime as dt
 
-singleQueryReturn1 = [(dt.datetime(2009,12,1), 'Windows', 1000),
-                      (dt.datetime(2009,12,1), 'Linux', 999),
-                      (dt.datetime(2009,12,2), 'Windows', 900),
-                      (dt.datetime(2009,12,2), 'Linux', 899),
-                      (dt.datetime(2009,12,3), 'Windows', 800),
-                      (dt.datetime(2009,12,3), 'Linux', 799),
-                      (dt.datetime(2009,12,4), 'Windows', 700),
-                      (dt.datetime(2009,12,4), 'Linux', 699),
-                      (dt.datetime(2009,12,5), 'Windows', 600),
-                      (dt.datetime(2009,12,5), 'Linux', 599),
+singleQueryReturn1 = [(dt.datetime(2009,12,1,tzinfo=UTC), 'Windows', 1000),
+                      (dt.datetime(2009,12,1,tzinfo=UTC), 'Linux', 999),
+                      (dt.datetime(2009,12,2,tzinfo=UTC), 'Windows', 900),
+                      (dt.datetime(2009,12,2,tzinfo=UTC), 'Linux', 899),
+                      (dt.datetime(2009,12,3,tzinfo=UTC), 'Windows', 800),
+                      (dt.datetime(2009,12,3,tzinfo=UTC), 'Linux', 799),
+                      (dt.datetime(2009,12,4,tzinfo=UTC), 'Windows', 700),
+                      (dt.datetime(2009,12,4,tzinfo=UTC), 'Linux', 699),
+                      (dt.datetime(2009,12,5,tzinfo=UTC), 'Windows', 600),
+                      (dt.datetime(2009,12,5,tzinfo=UTC), 'Linux', 599),
                      ]
-singleQueryReturn2 = [(dt.datetime(2009,12,1), 'Windows', 10),
-                      (dt.datetime(2009,12,1), 'Linux', 11),
-                      (dt.datetime(2009,12,2), 'Windows', 12),
-                      (dt.datetime(2009,12,2), 'Linux', 13),
-                      (dt.datetime(2009,12,3), 'Windows', 14),
-                      (dt.datetime(2009,12,3), 'Linux', 15),
-                      (dt.datetime(2009,12,4), 'Windows', 16),
-                      (dt.datetime(2009,12,4), 'Linux', 17),
-                      (dt.datetime(2009,12,5), 'Windows', 18),
-                      (dt.datetime(2009,12,5), 'Linux', 19),
+singleQueryReturn2 = [(dt.datetime(2009,12,1,tzinfo=UTC), 'Windows', 10),
+                      (dt.datetime(2009,12,1,tzinfo=UTC), 'Linux', 11),
+                      (dt.datetime(2009,12,2,tzinfo=UTC), 'Windows', 12),
+                      (dt.datetime(2009,12,2,tzinfo=UTC), 'Linux', 13),
+                      (dt.datetime(2009,12,3,tzinfo=UTC), 'Windows', 14),
+                      (dt.datetime(2009,12,3,tzinfo=UTC), 'Linux', 15),
+                      (dt.datetime(2009,12,4,tzinfo=UTC), 'Windows', 16),
+                      (dt.datetime(2009,12,4,tzinfo=UTC), 'Linux', 17),
+                      (dt.datetime(2009,12,5,tzinfo=UTC), 'Windows', 18),
+                      (dt.datetime(2009,12,5,tzinfo=UTC), 'Linux', 19),
                      ]
-singleQueryReturn3 = [(dt.datetime(2009,12,1), 'Windows', 10),
-                      (dt.datetime(2009,12,1), 'Linux', 11),
-                      (dt.datetime(2009,12,1), 'Mac', 111),
-                      (dt.datetime(2009,12,2), 'Windows', 12),
-                      (dt.datetime(2009,12,2), 'Linux', 13),
-                      (dt.datetime(2009,12,2), 'Mac', 113),
-                      (dt.datetime(2009,12,3), 'Windows', 14),
-                      (dt.datetime(2009,12,3), 'Linux', 15),
-                      (dt.datetime(2009,12,3), 'Mac', 115),
-                      (dt.datetime(2009,12,4), 'Windows', 16),
-                      (dt.datetime(2009,12,4), 'Linux', 17),
-                      (dt.datetime(2009,12,4), 'Mac', 117),
-                      (dt.datetime(2009,12,5), 'Windows', 18),
-                      (dt.datetime(2009,12,5), 'Linux', 19),
-                      (dt.datetime(2009,12,5), 'Mac', 119),
+singleQueryReturn3 = [(dt.datetime(2009,12,1,tzinfo=UTC), 'Windows', 10),
+                      (dt.datetime(2009,12,1,tzinfo=UTC), 'Linux', 11),
+                      (dt.datetime(2009,12,1,tzinfo=UTC), 'Mac', 111),
+                      (dt.datetime(2009,12,2,tzinfo=UTC), 'Windows', 12),
+                      (dt.datetime(2009,12,2,tzinfo=UTC), 'Linux', 13),
+                      (dt.datetime(2009,12,2,tzinfo=UTC), 'Mac', 113),
+                      (dt.datetime(2009,12,3,tzinfo=UTC), 'Windows', 14),
+                      (dt.datetime(2009,12,3,tzinfo=UTC), 'Linux', 15),
+                      (dt.datetime(2009,12,3,tzinfo=UTC), 'Mac', 115),
+                      (dt.datetime(2009,12,4,tzinfo=UTC), 'Windows', 16),
+                      (dt.datetime(2009,12,4,tzinfo=UTC), 'Linux', 17),
+                      (dt.datetime(2009,12,4,tzinfo=UTC), 'Mac', 117),
+                      (dt.datetime(2009,12,5,tzinfo=UTC), 'Windows', 18),
+                      (dt.datetime(2009,12,5,tzinfo=UTC), 'Linux', 19),
+                      (dt.datetime(2009,12,5,tzinfo=UTC), 'Mac', 119),
                      ]
-expectedHistory1 = { (dt.datetime(2009,12,1), 'Windows'): 1000,
-                     (dt.datetime(2009,12,1), 'Linux'): 999,
-                     (dt.datetime(2009,12,2), 'Windows'): 900,
-                     (dt.datetime(2009,12,2), 'Linux'): 899,
-                     (dt.datetime(2009,12,3), 'Windows'): 800,
-                     (dt.datetime(2009,12,3), 'Linux'): 799,
-                     (dt.datetime(2009,12,4), 'Windows'): 700,
-                     (dt.datetime(2009,12,4), 'Linux'): 699,
-                     (dt.datetime(2009,12,5), 'Windows'): 600,
-                     (dt.datetime(2009,12,5), 'Linux'): 599,
+expectedHistory1 = { (dt.datetime(2009,12,1,tzinfo=UTC), 'Windows'): 1000,
+                     (dt.datetime(2009,12,1,tzinfo=UTC), 'Linux'): 999,
+                     (dt.datetime(2009,12,2,tzinfo=UTC), 'Windows'): 900,
+                     (dt.datetime(2009,12,2,tzinfo=UTC), 'Linux'): 899,
+                     (dt.datetime(2009,12,3,tzinfo=UTC), 'Windows'): 800,
+                     (dt.datetime(2009,12,3,tzinfo=UTC), 'Linux'): 799,
+                     (dt.datetime(2009,12,4,tzinfo=UTC), 'Windows'): 700,
+                     (dt.datetime(2009,12,4,tzinfo=UTC), 'Linux'): 699,
+                     (dt.datetime(2009,12,5,tzinfo=UTC), 'Windows'): 600,
+                     (dt.datetime(2009,12,5,tzinfo=UTC), 'Linux'): 599,
                    }
-expectedHistory2 = { (dt.datetime(2009,12,1), 'Windows'): 10,
-                     (dt.datetime(2009,12,1), 'Linux'): 11,
-                     (dt.datetime(2009,12,2), 'Windows'): 12,
-                     (dt.datetime(2009,12,2), 'Linux'): 13,
-                     (dt.datetime(2009,12,3), 'Windows'): 14,
-                     (dt.datetime(2009,12,3), 'Linux'): 15,
-                     (dt.datetime(2009,12,4), 'Windows'): 16,
-                     (dt.datetime(2009,12,4), 'Linux'): 17,
-                     (dt.datetime(2009,12,5), 'Windows'): 18,
-                     (dt.datetime(2009,12,5), 'Linux'): 19,
+expectedHistory2 = { (dt.datetime(2009,12,1,tzinfo=UTC), 'Windows'): 10,
+                     (dt.datetime(2009,12,1,tzinfo=UTC), 'Linux'): 11,
+                     (dt.datetime(2009,12,2,tzinfo=UTC), 'Windows'): 12,
+                     (dt.datetime(2009,12,2,tzinfo=UTC), 'Linux'): 13,
+                     (dt.datetime(2009,12,3,tzinfo=UTC), 'Windows'): 14,
+                     (dt.datetime(2009,12,3,tzinfo=UTC), 'Linux'): 15,
+                     (dt.datetime(2009,12,4,tzinfo=UTC), 'Windows'): 16,
+                     (dt.datetime(2009,12,4,tzinfo=UTC), 'Linux'): 17,
+                     (dt.datetime(2009,12,5,tzinfo=UTC), 'Windows'): 18,
+                     (dt.datetime(2009,12,5,tzinfo=UTC), 'Linux'): 19,
                   }
-expectedHistory3 = { (dt.datetime(2009,12,1), 'Windows'): 10,
-                     (dt.datetime(2009,12,1), 'Linux'): 11,
-                     (dt.datetime(2009,12,1), 'Mac'): 111,
-                     (dt.datetime(2009,12,2), 'Windows'): 12,
-                     (dt.datetime(2009,12,2), 'Linux'): 13,
-                     (dt.datetime(2009,12,2), 'Mac'): 113,
-                     (dt.datetime(2009,12,3), 'Windows'): 14,
-                     (dt.datetime(2009,12,3), 'Linux'): 15,
-                     (dt.datetime(2009,12,3), 'Mac'): 115,
-                     (dt.datetime(2009,12,4), 'Windows'): 16,
-                     (dt.datetime(2009,12,4), 'Linux'): 17,
-                     (dt.datetime(2009,12,4), 'Mac'): 117,
-                     (dt.datetime(2009,12,5), 'Windows'): 18,
-                     (dt.datetime(2009,12,5), 'Linux'): 19,
-                     (dt.datetime(2009,12,5), 'Mac'): 119,
+expectedHistory3 = { (dt.datetime(2009,12,1,tzinfo=UTC), 'Windows'): 10,
+                     (dt.datetime(2009,12,1,tzinfo=UTC), 'Linux'): 11,
+                     (dt.datetime(2009,12,1,tzinfo=UTC), 'Mac'): 111,
+                     (dt.datetime(2009,12,2,tzinfo=UTC), 'Windows'): 12,
+                     (dt.datetime(2009,12,2,tzinfo=UTC), 'Linux'): 13,
+                     (dt.datetime(2009,12,2,tzinfo=UTC), 'Mac'): 113,
+                     (dt.datetime(2009,12,3,tzinfo=UTC), 'Windows'): 14,
+                     (dt.datetime(2009,12,3,tzinfo=UTC), 'Linux'): 15,
+                     (dt.datetime(2009,12,3,tzinfo=UTC), 'Mac'): 115,
+                     (dt.datetime(2009,12,4,tzinfo=UTC), 'Windows'): 16,
+                     (dt.datetime(2009,12,4,tzinfo=UTC), 'Linux'): 17,
+                     (dt.datetime(2009,12,4,tzinfo=UTC), 'Mac'): 117,
+                     (dt.datetime(2009,12,5,tzinfo=UTC), 'Windows'): 18,
+                     (dt.datetime(2009,12,5,tzinfo=UTC), 'Linux'): 19,
+                     (dt.datetime(2009,12,5,tzinfo=UTC), 'Mac'): 119,
                   }
 combineAduCrashHistoryResult = [
                      util.DotDict({'date': '2009-12-01',
@@ -168,8 +169,8 @@ def testAduByDay_get1():
   expectedResult = { 'product': 'Firefox',
                      'listOfVersions': [ '3.5.5' ],
                      'listOfOs_names': [ 'Windows'],
-                     'start_date': dt.datetime(2009, 12, 15),
-                     'end_date': dt.datetime(2009, 12, 31),
+                     'start_date': dt.datetime(2009, 12, 15,tzinfo=UTC),
+                     'end_date': dt.datetime(2009, 12, 31,tzinfo=UTC),
                      'productdims_idList': [ 149 ],
                    }
 
@@ -199,8 +200,8 @@ def testAduByDay_get2():
   expectedResult = { 'product': 'Firefox',
                      'listOfVersions': [ '3.5.5', '3.5.4' ],
                      'listOfOs_names': [ 'Windows', 'Linux'],
-                     'start_date': dt.datetime(2009, 12, 15),
-                     'end_date': dt.datetime(2009, 12, 31),
+                     'start_date': dt.datetime(2009, 12, 15,tzinfo=UTC),
+                     'end_date': dt.datetime(2009, 12, 31,tzinfo=UTC),
                      'productdims_idList': [ 149, 666 ],
                    }
 
@@ -230,8 +231,8 @@ def testAduByDay_get3():
   expectedResult = { 'product': 'Firefox',
                      'listOfVersions': [ '3.5.5', '3.5.4' ],
                      'listOfOs_names': [ 'Windows', 'Linux'],
-                     'start_date': dt.datetime(2009, 12, 15),
-                     'end_date': dt.datetime(2009, 12, 31),
+                     'start_date': dt.datetime(2009, 12, 15,tzinfo=UTC),
+                     'end_date': dt.datetime(2009, 12, 31,tzinfo=UTC),
                      'productdims_idList': [ 149, 666 ],
                    }
 
@@ -240,8 +241,8 @@ def testAduByDay_get3():
 #-----------------------------------------------------------------------------------------------------------------
 def testAduByDay_fetchAduHistory1():
   raise SkipTest("FIXME")
-  parameters = util.DotDict({ 'start_date': dt.datetime(2009, 12, 1),
-                              'end_date': dt.datetime(2009, 12, 15),
+  parameters = util.DotDict({ 'start_date': dt.datetime(2009, 12, 1,tzinfo=UTC),
+                              'end_date': dt.datetime(2009, 12, 15,tzinfo=UTC),
                               'product': 'Firefox',
                               'version': '3.5.5',
                               'listOfOs_names': ['Windows', 'Mac'],
@@ -289,8 +290,8 @@ def testAduByDay_fetchAduHistory1():
 #-----------------------------------------------------------------------------------------------------------------
 def testAduByDay_fetchAduHistory2():
   raise SkipTest("FIXME")
-  parameters = util.DotDict({ 'start_date': dt.datetime(2009, 12, 1),
-                              'end_date': dt.datetime(2009, 12, 15),
+  parameters = util.DotDict({ 'start_date': dt.datetime(2009, 12, 1,tzinfo=UTC),
+                              'end_date': dt.datetime(2009, 12, 15,tzinfo=UTC),
                               'product': 'Firefox',
                               'version': '3.5.5',
                               'listOfOs_names': [''],
@@ -339,8 +340,8 @@ def testAduByDay_fetchAduHistory2():
 #-----------------------------------------------------------------------------------------------------------------
 def testAduByDay_fetchCrashHistory():
   raise SkipTest("FIXME")
-  parameters = util.DotDict({ 'start_date': dt.datetime(2009, 12, 1),
-                              'end_date': dt.datetime(2009, 12, 15),
+  parameters = util.DotDict({ 'start_date': dt.datetime(2009, 12, 1,tzinfo=UTC),
+                              'end_date': dt.datetime(2009, 12, 15,tzinfo=UTC),
                               'product': 'Firefox',
                               'version': '3.5.5',
                               'listOfOs_names': ['Windows', 'Mac'],
@@ -349,7 +350,7 @@ def testAduByDay_fetchCrashHistory():
                            })
   sql = """
       select
-          CAST(ceil(EXTRACT(EPOCH FROM (window_end - timestamp without time zone %(start_date)s - interval %(socorroTimeToUTCInterval)s)) / 86400) AS INT) * interval '24 hours' + timestamp without time zone %(start_date)s as day,
+          CAST(ceil(EXTRACT(EPOCH FROM (window_end - timestamp with time zone %(start_date)s - interval %(socorroTimeToUTCInterval)s)) / 86400) AS INT) * interval '24 hours' + timestamp with time zone %(start_date)s as day,
           case when os.os_name = 'Windows NT' then
             'Windows'
           when os.os_name = 'Mac OS X' then
@@ -363,8 +364,8 @@ def testAduByDay_fetchCrashHistory():
               join osdims os on tcbs.osdims_id = os.id
                   and os.os_name in ('Windows','Mac OS X','Windows NT')
       where
-          (timestamp without time zone %(start_date)s - interval %(socorroTimeToUTCInterval)s) < window_end
-          and window_end <= (timestamp without time zone %(end_date)s - interval %(socorroTimeToUTCInterval)s)
+          (timestamp with time zone %(start_date)s - interval %(socorroTimeToUTCInterval)s) < window_end
+          and window_end <= (timestamp with time zone %(end_date)s - interval %(socorroTimeToUTCInterval)s)
           and productdims_id = %(productdims_id)s
       group by
           1, 2
@@ -415,8 +416,8 @@ def testAduByDay_aduByDay1():
   parameters = util.DotDict({ 'product': 'Firefox',
                               'listOfVersions': [ '3.5.5' ],
                               'listOfOs_names': [ 'Windows', 'Linux'],
-                              'start_date': dt.datetime(2009, 12, 15),
-                              'end_date': dt.datetime(2009, 12, 31),
+                              'start_date': dt.datetime(2009, 12, 15,tzinfo=UTC),
+                              'end_date': dt.datetime(2009, 12, 31,tzinfo=UTC),
                               'productdims_idList': [ 149 ],
                            })
 
@@ -448,8 +449,8 @@ def testAduByDay_aduByDay2():
   parameters = util.DotDict({ 'product': 'Firefox',
                               'listOfVersions': [ '3.5.5', '3.5.4' ],
                               'listOfOs_names': [ 'Windows', 'Linux'],
-                              'start_date': dt.datetime(2009, 12, 15),
-                              'end_date': dt.datetime(2009, 12, 31),
+                              'start_date': dt.datetime(2009, 12, 15,tzinfo=UTC),
+                              'end_date': dt.datetime(2009, 12, 31,tzinfo=UTC),
                               'productdims_idList': [ 149, 666 ],
                            })
 

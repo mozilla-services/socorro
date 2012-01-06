@@ -29,7 +29,9 @@ def testInit():
     fixupComma = re.compile(r',(?! )')
     fixupInteger = re.compile(r'(<|, )(\d+)([uUlL]?)([^\w])')
 
-    s, c = setupSigUtil()
+    s, c = setupSigUtil(expectedRegEx.irrelevantSignatureRegEx,
+                        expectedRegEx.prefixSignatureRegEx,
+                        expectedRegEx.signaturesWithLineNumbersRegEx)
 
     assert_expected(c, s.config)
     assert_expected(expectedRegEx.irrelevantSignatureRegEx,
@@ -109,8 +111,8 @@ def testGenerate2():
     assert_expected(e,r)
 
 
-def testGenerate2():
-    """testGenerate2: way too long"""
+def testGenerate2a():
+    """testGenerate2a: way too long"""
     s, c = setupSigUtil('a|b|c', 'd|e|f')
     a = [x for x in 'abcdefghijklmnopqrstuvwxyz']
     a[3] = a[3] * 70

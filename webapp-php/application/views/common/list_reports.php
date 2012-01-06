@@ -23,11 +23,11 @@
             <tr>
                 <td class="report-date_processed">
                     <?php
-                        $date = strtotime($report->date_processed);
+                        $date = new DateTime($report->date_processed);
                         // TODO: Find out why this is not $date = strtotime($report->date);
                         $url = url::base().'report/index/'.out::H($report->uuid, FALSE);
                     ?><a href="<?php out::H($url) ?>">
-                        <?php echo date('M d, Y H:i', $date) ?>
+                        <?php out::H($date->format('M d, Y H:i')) ?>
                     </a>
         <div class="hang-pair"></div>
                 </td>
@@ -50,7 +50,9 @@
         <input type="hidden" name="url<?= $i ?>" value="<?= url::site('/report/hang_pairs/' . $report->uuid) ?>" class="ajax_endpoint" />
         </div></td>
                 <td><?php out::H($report->uptime) ?></td>
-                <td><?php out::H(date("Y-m-d H:i:s", strtotime($report->install_time))); ?></td>
+                <td><?php 
+                     $install_time = new DateTime($report->install_time);
+                    out::H($install_time->format("Y-m-d H:i:s")); ?></td>
                 <td class="comments"><?php out::H($report->user_comments) ?></td>
             </tr>
         <?php

@@ -81,7 +81,9 @@ if (isset($report->sumo_signature) && !empty($report->signature)) { ?>
                 <th>UUID</th><td><?php out::H($report->uuid) ?></td>
             </tr>
             <tr>
-              <th>Date Processed</th><td><?php out::H($report->date_processed); ?></td>
+              <th>Date Processed</th><td><?php 
+                $date = new DateTime($report->date_processed); 
+                out::H($date->format('Y-m-d H:i:s')); ?></td>
             </tr>
 <?php if (property_exists($report, 'processType')) { ?>
             <tr><th>Process Type</th><td><?= out::H($report->processType) ?>

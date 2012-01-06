@@ -2,7 +2,6 @@ import unittest
 import socorro.database.database as db
 import psycopg2
 import psycopg2.extensions
-import datetime as DT
 import logging
 import threading
 

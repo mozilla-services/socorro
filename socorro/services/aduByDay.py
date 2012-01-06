@@ -24,7 +24,7 @@ class AduByDay(webapi.JsonServiceBase):
   uri = '/adu/byday/p/(.*)/v/(.*)/rt/(.*)/os/(.*)/start/(.*)/end/(.*)'
   #-----------------------------------------------------------------------------------------------------------------
   def get(self, *args):
-    convertedArgs = webapi.typeConversion([str, semicolonStringToListSanitized, str, semicolonStringToListSanitized, dtutil.datetimeFromISOdateString, dtutil.datetimeFromISOdateString], args)
+    convertedArgs = webapi.typeConversion([str, semicolonStringToListSanitized, str, semicolonStringToListSanitized, dtutil.string_to_datetime, dtutil.string_to_datetime], args)
     parameters = util.DotDict(zip(['product', 'listOfVersions', 'report_type', 'listOfOs_names',  'start_date', 'end_date'], convertedArgs))
     parameters.productdims_idList = [self.context['productVersionCache'].getId(parameters.product, x) for x in parameters.listOfVersions]
     self.connection = self.database.connection()
@@ -88,8 +88,8 @@ class AduByDay(webapi.JsonServiceBase):
     sql = """
       SELECT adu_day::DATE, os_short_name, SUM(count)
       FROM daily_crashes
-      WHERE timestamp without time zone %%(start_date)s <= adu_day AND
-            adu_day <= timestamp without time zone %%(end_date)s AND
+      WHERE timestamp with time zone %%(start_date)s <= adu_day AND
+            adu_day <= timestamp with time zone %%(end_date)s AND
             productdims_id = %%(productdims_id)s AND
              %(os_phrase)s AND
              %(report_type_phrase)s

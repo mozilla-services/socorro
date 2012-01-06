@@ -12,9 +12,10 @@ from web import form
 
 from socorro.lib import uuid
 import socorro.database.database as db
-import socorro.lib.datetimeutil as dtutil
 import socorro.lib.util as sutil
 import socorro.webapi.webapiService as webapi
+
+from socorro.lib.datetimeutil import UTC, string_to_datetime
 
 from socorro.database.schema import EmailCampaignsTable
 from socorro.database.schema import EmailContactsTable
@@ -66,8 +67,8 @@ class EmailCampaignCreate(webapi.JsonServiceBase):
       signature  = email_form['signature'].value
       subject    = email_form['subject'].value
       body       = email_form['body'].value
-      start_date = dtutil.datetimeFromISOdateString(email_form['start_date'].value)
-      end_date   = dtutil.datetimeFromISOdateString(email_form['end_date'].value)
+      start_date = string_to_datetime(email_form['start_date'].value)
+      end_date   = string_to_datetime(email_form['end_date'].value)
       author     = email_form['author'].value
 
       logger.info("%s is creating an email campaign for %s %s crashes in [%s] Between %s and %s" %(author, product, versions, signature, start_date, end_date))
@@ -112,7 +113,7 @@ class EmailCampaignCreate(webapi.JsonServiceBase):
         Error Conditions: SMTP DOWN, DB DOWN
 
     """
-    end_date = datetime.datetime(end_date.year, end_date.month, end_date.day, 23, 59, 59)
+    end_date = datetime.datetime(end_date.year, end_date.month, end_date.day, 23, 59, 59, tzinfo=UTC)
 
     # choose only unique email addresses.
     # in the case of duplicates, pick the latest crash_date.
@@ -144,8 +145,8 @@ class EmailCampaignCreate(webapi.JsonServiceBase):
         SELECT DISTINCT contacts.id, reports.email, reports.client_crash_date AS crash_date, reports.uuid AS ooid, contacts.subscribe_token
         FROM reports
         LEFT JOIN email_contacts AS contacts ON reports.email = contacts.email
-        WHERE TIMESTAMP WITHOUT TIME ZONE '%s' <= reports.date_processed AND
-              TIMESTAMP WITHOUT TIME ZONE '%s' > reports.date_processed AND
+        WHERE TIMESTAMP WITH TIME ZONE '%s' <= reports.date_processed AND
+              TIMESTAMP WITH TIME ZONE '%s' > reports.date_processed AND
               reports.product = %%(product)s AND
               %s
               reports.signature = %%(signature)s AND

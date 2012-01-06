@@ -13,9 +13,11 @@ except ImportError:
   from commonconfig import databaseUserName
   from commonconfig import databasePassword
 
+from socorro.lib.datetimeutil import utc_now
+
 day = cm.Option()
 day.doc = 'the date to dump (YYYY-MM-DD)'
-day.default = datetime.date.today().isoformat()
+day.default = utc_now().date()
 day.fromStringConverter = cm.dateTimeConverter
 
 outputPath = cm.Option()

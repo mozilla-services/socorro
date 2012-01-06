@@ -6,6 +6,8 @@ import socorro.database.postgresql as db_postgresql
 import socorro.database.schema as db_schema
 import socorro.database.database as sdatabase
 
+from socorro.lib.datetimeutil import UTC, utc_now
+
 from nose.tools import *
 from socorro.unittest.testlib.testDB import TestDB
 import libTestconfig as testConfig
@@ -92,14 +94,14 @@ def testFillProcessorTable_NoMap():
   ssql = "SELECT id,name,startdatetime,lastseendatetime FROM processors"
   dsql = "DELETE FROM processors"
   dropSql = "DROP TABLE IF EXISTS %s"
-  stamps = [None,None,dt.datetime(2008,1,2,3,4,5,666),dt.datetime(2009,1,2,3), None, dt.datetime(2010,12,11,10,9,8,777)]
+  stamps = [None,None,dt.datetime(2008,1,2,3,4,5,666,tzinfo=UTC),dt.datetime(2009,1,2,3,tzinfo=UTC), None, dt.datetime(2010,12,11,10,9,8,777,tzinfo=UTC)]
   try:
     for i in range(len(stamps)):
-      before = dt.datetime.now()
+      before = utc_now()
       time.sleep(.01)
       dbtu.fillProcessorTable(cursor,i,stamp=stamps[i])
       time.sleep(.01)
-      after =  dt.datetime.now()
+      after =  utc_now()
       cursor.execute(ssql)
       data = cursor.fetchall()
       assert i == len(data)
@@ -133,17 +135,17 @@ def testFillProcessorTable_WithMap():
   ssql = "SELECT id,name,startdatetime,lastseendatetime FROM processors"
   dsql = "DELETE FROM processors"
   dropSql = "DROP TABLE IF EXISTS %s"
-  tmap = {12:dt.datetime(2008,3,4,5,6,12),37:dt.datetime(2009,5,6,7,8,37)}
+  tmap = {12:dt.datetime(2008,3,4,5,6,12,tzinfo=UTC),37:dt.datetime(2009,5,6,7,8,37,tzinfo=UTC)}
   try:
-    dbtu.fillProcessorTable(cursor,7,stamp=dt.datetime(2009,4,5,6,7),processorMap=tmap)
+    dbtu.fillProcessorTable(cursor,7,stamp=dt.datetime(2009,4,5,6,7,tzinfo=UTC),processorMap=tmap)
     cursor.execute(ssql)
     data = cursor.fetchall()
     me.connection.commit()
     assert 2 == len(data)
-    expectSet = set([dt.datetime(2008,3,4,5,6,12),dt.datetime(2009,5,6,7,8,37)])
+    expectSet = set([dt.datetime(2008,3,4,5,6,12,tzinfo=UTC),dt.datetime(2009,5,6,7,8,37,tzinfo=UTC)])
     gotSet = set()
     for d in data:
-      assert dt.datetime(2009,4,5,6,7) == d[2]
+      assert dt.datetime(2009,4,5,6,7,tzinfo=UTC) == d[2]
       gotSet.add(d[3])
       assert d[0] in [1,2]
     assert expectSet == gotSet
@@ -215,7 +217,7 @@ def testSetPriority_Jobs():
   global me
   cursor = me.connection.cursor()
   try:
-    dbtu.fillProcessorTable(cursor,3,stamp=dt.datetime(2008,3,4,5,6,7))
+    dbtu.fillProcessorTable(cursor,3,stamp=dt.datetime(2008,3,4,5,6,7,tzinfo=UTC))
     cursor.execute("SELECT id FROM processors")
     me.connection.commit()
     counts = dict((x[0],x[0]) for x in cursor.fetchall())
@@ -247,7 +249,7 @@ def testSetPriority_PriorityJobs():
   global me
   cursor = me.connection.cursor()
   try:
-    dbtu.fillProcessorTable(cursor,3,stamp=dt.datetime(2008,3,4,5,6,7))
+    dbtu.fillProcessorTable(cursor,3,stamp=dt.datetime(2008,3,4,5,6,7,tzinfo=UTC))
     cursor.execute("SELECT id FROM processors")
     counts = dict((x[0],x[0]) for x in cursor.fetchall())
     dbtu.addSomeJobs(cursor,counts,logger)

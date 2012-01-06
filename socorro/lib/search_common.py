@@ -5,6 +5,7 @@ Common functions for search-related external modules.
 import logging
 
 from datetime import timedelta, datetime
+from socorro.lib.datetimeutil import utc_now
 
 import socorro.lib.external_common as extern
 
@@ -74,7 +75,7 @@ def get_parameters(kwargs):
         Default is 0.
     """
     # Default dates
-    now = datetime.utcnow()
+    now = utc_now()
     lastweek = now - timedelta(7)
 
     filters = [
