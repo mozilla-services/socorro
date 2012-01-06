@@ -5,6 +5,8 @@ import logging
 import datetime
 import psycopg2
 
+from socorro.lib.datetimeutil import utc_now
+
 logger = logging.getLogger('dailyMatviews')
 logger.addHandler(logging.StreamHandler(sys.stderr))
 
@@ -82,7 +84,7 @@ def updateCronjobsTable(connection, cronjobName, success, lastTargetTime,
 
     params = [lastTargetTime]
     if success:
-        params.append(datetime.datetime.utcnow())
+        params.append(utc_now())
         sql = """
           /* socorro.cron.dailyMatviews updateCronjobsTable */
           UPDATE cronjobs
@@ -92,7 +94,7 @@ def updateCronjobsTable(connection, cronjobName, success, lastTargetTime,
           WHERE cronjob = %s
         """
     else:
-        params.append(datetime.datetime.utcnow())
+        params.append(utc_now())
         params.append(failureMessage)
         sql = """
           /* socorro.cron.dailyMatviews updateCronjobsTable */
