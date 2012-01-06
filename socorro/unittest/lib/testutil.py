@@ -9,7 +9,6 @@ import socorro.lib.util as util
 
 from socorro.unittest.testlib.loggerForTest import TestingLogger
 import socorro.unittest.testlib.util as tutil
-from socorro.lib.datetimeutil import utc_now, UTC, string_to_datetime
 
 def setup_module():
   tutil.nosePrintModule(__file__)

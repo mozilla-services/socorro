@@ -13,7 +13,7 @@ from socorro.lib.util import SilentFakeLogger
 import socorro.lib.filesystem as socorro_fs
 
 import socorro.unittest.testlib.util as tutil
-from socorro.lib.datetimeutil import utc_now, UTC
+from socorro.lib.datetimeutil import UTC
 
 def setup_module():
   tutil.nosePrintModule(__file__)
