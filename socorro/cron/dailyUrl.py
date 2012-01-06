@@ -17,7 +17,6 @@ import socorro.database.database as sdb
 import socorro.lib.util as util
 
 from socorro.database.cachedIdAccess import IdCache
-from socorro.lib.datetimeutil import utc_now
 
 sql = """
       select
