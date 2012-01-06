@@ -4,7 +4,6 @@ from socorro.external.postgresql.base import PostgreSQLBase
 from socorro.external.postgresql.util import Util
 
 import socorro.database.database as db
-import socorro.lib.datetimeutil as dtutil
 import socorro.lib.search_common as search_common
 import socorro.lib.util as util
 
@@ -40,10 +39,6 @@ class Search(PostgreSQLBase):
             params["search_mode"] = "starts_with"
         if params["plugin_search_mode"] == "default":
             params["plugin_search_mode"] = "starts_with"
-
-        # Handling dates
-        params["from_date"] = dtutil.string_to_datetime(params["from_date"])
-        params["to_date"] = dtutil.string_to_datetime(params["to_date"])
 
         # For Postgres, we never search for a list of terms
         if params["terms"]:

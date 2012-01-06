@@ -1,8 +1,9 @@
 import logging
 import web
 
-from datetime import datetime, timedelta
+from datetime import timedelta
 from socorro.external.postgresql.base import PostgreSQLBase
+from socorro.lib.datetimeutil import utc_now
 
 import socorro.database.database as db
 import socorro.lib.external_common as external_common
@@ -68,7 +69,7 @@ class ProductsBuilds(PostgreSQLBase):
 
         """
         # Default value for from_date
-        lastweek = datetime.utcnow() - timedelta(7)
+        lastweek = utc_now() - timedelta(7)
 
         # Parse arguments
         filters = [

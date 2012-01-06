@@ -4,7 +4,6 @@ logger = logging.getLogger("webapi")
 import socorro.database.database as db
 import socorro.webapi.webapiService as webapi
 import socorro.lib.util as util
-import socorro.lib.datetimeutil as dtutil
 
 import psycopg2.extensions as psyext2
 import datetime

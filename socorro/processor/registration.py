@@ -6,6 +6,8 @@ import socorro.database.database as sdb
 import socorro.lib.ConfigurationManager as scm
 import socorro.lib.util as sutil
 
+from socorro.lib.datetimeutil import utc_now, UTC
+
 
 #==============================================================================
 class RegistrationError(Exception):
@@ -31,7 +33,7 @@ class ProcessorRegistrationAgent(object):
     NOW_SQL = "select now() - interval %s"
 
     #--------------------------------------------------------------------------
-    def __init__(self, config, db_conn_source, now_func=dt.datetime.now,
+    def __init__(self, config, db_conn_source, now_func=utc_now,
                  os_module=os, sdb_module=sdb):
         """constructor for a registration object.
 
@@ -56,7 +58,7 @@ class ProcessorRegistrationAgent(object):
                          pass in a mocked object."""
         self.config = config
         self.db_pool = db_conn_source
-        self.last_checkin_ts = dt.datetime(1999, 1, 1)
+        self.last_checkin_ts = dt.datetime(1999, 1, 1, tzinfo=UTC)
         self.logger = config.logger
         self.now_func = now_func
         self.os_module = os_module

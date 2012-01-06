@@ -13,6 +13,7 @@ from socorro.lib.util import SilentFakeLogger
 import socorro.lib.filesystem as socorro_fs
 
 import socorro.unittest.testlib.util as tutil
+from socorro.lib.datetimeutil import UTC
 
 def setup_module():
   tutil.nosePrintModule(__file__)
@@ -76,7 +77,7 @@ class TestJsonDumpStoragePermissions(unittest.TestCase):
     fd = open(dopath,'w')
     fj.close()
     fd.close()
-    j.copyFrom(u,jopath,dopath,'w', DT.datetime(2008,8,8,8,8),createLinks = True)
+    j.copyFrom(u,jopath,dopath,'w', DT.datetime(2008,8,8,8,8, tzinfo=UTC),createLinks = True)
 
     jpath = j.getJson(u)
     gotPermissions = stat.S_IMODE(os.stat(jpath)[0])

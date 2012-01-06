@@ -5,12 +5,13 @@ import logging
 import datetime as dt
 import cPickle
 import csv
-import time
 
 logger = logging.getLogger("bugzilla")
 
 import socorro.lib.psycopghelper as psy
 import socorro.lib.util as util
+
+from socorro.lib.datetimeutil import utc_now
 
 #-----------------------------------------------------------------------------------------------------------------
 
@@ -98,7 +99,7 @@ def insert_or_update_bug_in_database(bugId, statusFromBugzilla, resolutionFromBu
     raise
 
 #-----------------------------------------------------------------------------------------------------------------
-def get_last_run_date(config, now_function=dt.datetime.now):
+def get_last_run_date(config, now_function=utc_now):
   if config.daysIntoPast == 0:
     try:
       f = open(config.persistentDataPathname)
@@ -112,7 +113,7 @@ def get_last_run_date(config, now_function=dt.datetime.now):
     return now_function() - dt.timedelta(days=config.daysIntoPast)
 
 #-----------------------------------------------------------------------------------------------------------------
-def save_last_run_date(config, now_function=dt.datetime.now):
+def save_last_run_date(config, now_function=utc_now):
   try:
     f = open(config.persistentDataPathname, "w")
     try:
@@ -120,7 +121,7 @@ def save_last_run_date(config, now_function=dt.datetime.now):
     finally:
       f.close()
   except IOError:
-    reportExceptionAndContinue(logger)
+    util.reportExceptionAndContinue(logger)
 
 #-----------------------------------------------------------------------------------------------------------------
 def record_associations(config):

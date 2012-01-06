@@ -1,7 +1,6 @@
 
 import psycopg2
 import psycopg2.extensions
-import datetime
 import time
 import threading
 import functools as ft
