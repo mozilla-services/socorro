@@ -1,9 +1,7 @@
 import datetime as dt
-import urllib2 as u2
 import logging
 logger = logging.getLogger("webapi")
 
-import socorro.lib.util as util
 import socorro.webapi.webapiService as webapi
 import socorro.database.database as db
 import socorro.lib.datetimeutil as dtutil

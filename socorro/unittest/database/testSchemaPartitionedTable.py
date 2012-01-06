@@ -13,6 +13,8 @@ import socorro.lib.datetimeutil as dtutil
 import socorro.database.schema as schema
 import socorro.database.postgresql as socorro_psg
 
+from socorro.lib.datetimeutil import utc_now, UTC
+
 from socorro.unittest.testlib.testDB import TestDB
 import socorro.unittest.testlib.util as tutil
 import socorro.unittest.testlib.dbtestutil as dbtestutil
@@ -94,8 +96,8 @@ class TestPartitionedTable:
       - check that the constructor works as expected
     """
     # make sure we don't fail if we are being run 'too close for comfort' to midnight
-    now = dt.datetime.now()
-    midnight = dt.datetime(now.year,now.month,now.day,0,0,00)
+    now = utc_now()
+    midnight = dt.datetime(now.year,now.month,now.day,0,0,0,tzinfo=UTC)
     midnight += dt.timedelta(days=1)
     middiff = midnight - now
     if middiff < dt.timedelta(0,2):
@@ -178,16 +180,16 @@ class TestPartitionedTable:
     - check that we automagically create the needed partition on insert
     """
     global me
-    tz = dtutil.UTC()
+    tz = UTC
     cursor = self.connection.cursor()
     me.logger.debug("DEBUG before createDB")
     # test in this order, because other things depend on reports
     insertRows = [              # uuid,                                 client_crash_date,                 date_processed,            install_age,last_crash,uptime,user_comments, app_notes, distributor, distributor_version,productdims_id,urldims_id
-      #[schema.CrashReportsTable,['0bba61c5-dfc3-43e7-dead-8afd20071025',dt.datetime(2007,12,25,5,4,3,21,tz),dt.datetime(2007,12,25,5,4,3,33),10000,100,110,"","","","",1,1]],
-      [schema.ReportsTable, ['0bba61c5-dfc3-43e7-dead-8afd20071025',dt.datetime(2007,12,25,5,4,3,21,tz),dt.datetime(2007,12,25,5,4,3,33),'Firefox','1.0b4', '200403041354','http://www.a.com', 10000,       100,        110,    "",    dt.datetime(2004,3,4,13,54),"",      "",            "",        "",          "",None,None,None,'bogus_hangid',None,'some_chonnel']],
-      [schema.ExtensionsTable,[1,dt.datetime(2007,12,25,5,4,3,33),1,'extensionid','version']],
-      [schema.FramesTable,[1,2,dt.datetime(2007,12,25,5,4,3,33),'somesignature']],
-      #[schema.DumpsTable,[1,dt.datetime(2007,12,25,5,4,3,33),"data"]],
+      #[schema.CrashReportsTable,['0bba61c5-dfc3-43e7-dead-8afd20071025',dt.datetime(2007,12,25,5,4,3,21,tz),dt.datetime(2007,12,25,5,4,3,33,tz),10000,100,110,"","","","",1,1]],
+      [schema.ReportsTable, ['0bba61c5-dfc3-43e7-dead-8afd20071025',dt.datetime(2007,12,25,5,4,3,21,tz),dt.datetime(2007,12,25,5,4,3,33,tz),'Firefox','1.0b4', '200403041354','http://www.a.com', 10000,       100,        110,    "",    dt.datetime(2004,3,4,13,54),"",      "",            "",        "",          "",None,None,None,'bogus_hangid',None,'some_chonnel']],
+      [schema.ExtensionsTable,[1,dt.datetime(2007,12,25,5,4,3,33,tz),1,'extensionid','version']],
+      [schema.FramesTable,[1,2,dt.datetime(2007,12,25,5,4,3,33,tz),'somesignature']],
+      #[schema.DumpsTable,[1,dt.datetime(2007,12,25,5,4,3,33,tz),"data"]],
       ]
     # call insert, expecting auto-creation of partitions
     me.dsn = "host=%s dbname=%s user=%s password=%s" % (me.config.databaseHost,me.config.databaseName,
@@ -197,7 +199,7 @@ class TestPartitionedTable:
     before = set([x for x in socorro_psg.tablesMatchingPattern('%',cursor) if not 'pg_toast' in x])
     for t in insertRows:
       obj = t[0](logger=me.logger)
-      obj.insert(cursor,t[1],self.altConnectionCursor,date_processed=dt.datetime(2007,12,25,5,4,3,33))
+      obj.insert(cursor,t[1],self.altConnectionCursor,date_processed=dt.datetime(2007,12,25,5,4,3,33,tz))
       self.connection.commit()
       current = set([x for x in socorro_psg.tablesMatchingPattern('%',cursor) if not 'pg_toast' in x])
       diff = current - before
