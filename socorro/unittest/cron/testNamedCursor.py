@@ -19,6 +19,8 @@ from nose.tools import *
 import socorro.lib.ConfigurationManager as configurationManager
 import socorro.database.database as sdatabase
 
+from socorro.lib.datetimeutil import UTC
+
 from   socorro.unittest.testlib.testDB import TestDB
 import socorro.unittest.testlib.dbtestutil as dbtestutil
 import socorro.unittest.testlib.util as tutil
@@ -98,12 +100,12 @@ class TestNamedCursor(unittest.TestCase):
 
   def reportDataGenerator(self,sizePerDay,numDays):
     idGen = dbtestutil.moreUuid()
-    initialDate = dt.datetime(2008,1,1,1,1,1,1)
-    currentDate = dt.datetime(2008,1,1,1,1,1,1)
+    initialDate = dt.datetime(2008,1,1,1,1,1,1,tzinfo=UTC)
+    currentDate = dt.datetime(2008,1,1,1,1,1,1,tzinfo=UTC)
     milli5 = dt.timedelta(milliseconds=5)
     milli10 = dt.timedelta(milliseconds=10)
     buildStrings = ['200712312355','200712302355','200712292355']
-    buildDates =   [dt.datetime(2007,12,31,23,55),dt.datetime(2007,12,30,23,55),dt.datetime(2007,12,29,23,55)]
+    buildDates =   [dt.datetime(2007,12,31,23,55,tzinfo=UTC),dt.datetime(2007,12,30,23,55,tzinfo=UTC),dt.datetime(2007,12,29,23,55,tzinfo=UTC)]
     osNameVersions = [('Windows NT','6.6.6'),('Windows NT','6.6.6'),('Windows','v.v.v'),('Windows','v.v.v'),('Windows','v.v.v'),('Windows','v.v.v'),
                       ('Mac OS X','10.5.5'),('Mac OS X','10.5.6'),('Mac OS X','10.5.6'),
                       ('Linux','10.10.10'),('Linux','10.10.11'),

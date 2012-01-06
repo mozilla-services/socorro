@@ -36,7 +36,7 @@ class ElasticSearchBase(object):
         Send a query directly to ElasticSearch and return the result.
         """
         # Default dates
-        now = datetime.today()
+        now = dtutil.utc_now().date()
         lastweek = now - timedelta(7)
 
         from_date = dtutil.string_to_datetime(from_date) or lastweek
