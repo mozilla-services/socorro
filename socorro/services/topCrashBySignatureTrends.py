@@ -9,11 +9,6 @@ import socorro.lib.datetimeutil as dtutil
 import socorro.services.tcbs.modern as modern
 import socorro.services.tcbs.classic as classic
 
-import psycopg2.extras as psyext
-
-import datetime
-import web
-
 # theoretical sample output
 #  [ [ (key, rank, rankDelta, ...), ... ], ... ]
 #{
@@ -64,7 +59,7 @@ class TopCrashBySignatureTrends(webapi.JsonServiceBase):
   def get(self, *args):
     logger.debug('TopCrashBySignatureTrends get')
     convertedArgs = webapi.typeConversion([str, str, str,
-                                          dtutil.datetimeFromISOdateString,
+                                          dtutil.string_to_datetime,
                                           dtutil.strHoursToTimeDelta, int],
                                           args)
     parameters = util.DotDict(zip(['product','version','crashType','endDate',
