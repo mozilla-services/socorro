@@ -153,7 +153,7 @@ def testEnsureContacts():
   full_email_rows = campaign.ensure_contacts(dummyCursor, email_rows)
   assert full_email_rows == [{'token': 'hijklmn', 'crash_date': '2011-09-01 00:00', 'id': '1234', 'ooid': 'abcdefg', 'email': 'me@example.com'}]
 
-  # with dbID set
+  # without dbID set
   # FIXME this now returns the token which is unpredictable, need to make this more testable
   #email_rows = [(None, 'me@example.com', '2011-09-01 00:00', 'abcdefg', 'hijklmn')]
   #full_email_rows = campaign.ensure_contacts(dummyCursor, email_rows)
