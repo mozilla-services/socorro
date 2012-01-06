@@ -119,7 +119,7 @@ class TestProcessedDumpStorage(unittest.TestCase):
       hourPart,slot = self.relativeDateParts(tdate,storage.minutesPerSlot)
       datepart = "%s_0"%(os.path.join(hourPart,slot))
       expectedDateDir = os.sep.join((storage.root,dailyPart,storage.dateName,datepart))
-      testStamp = datetime.datetime(*[int(x) for x in tdate.split('-')])
+      testStamp = datetime.datetime(*[int(x) for x in tdate.split('-')],tzinfo=UTC)
       fh = None
       try:
         fh = storage.newEntry(ooid,testStamp)

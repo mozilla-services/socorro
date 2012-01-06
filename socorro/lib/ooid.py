@@ -14,7 +14,7 @@ def createNewOoid(timestamp=None, depth=None):
   returns a new opaque id string holding 24 random hex digits and encoded date and depth info
   """
   if not timestamp:
-    timestamp = dt.datetime.today()
+    timestamp = utc_now().date()
   if not depth:
     depth = defaultDepth
   assert depth <= 4 and depth >=1

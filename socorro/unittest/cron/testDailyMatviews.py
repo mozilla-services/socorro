@@ -4,6 +4,8 @@ import psycopg2
 import socorro.cron.dailyMatviews  # needed for Mock
 import socorro.cron.dailyMatviews as dailyMatviews
 
+from socorro.lib.datetimeutil import utc_now
+
 from socorro.unittest.config.commonconfig import databaseHost
 from socorro.unittest.config.commonconfig import databaseName
 from socorro.unittest.config.commonconfig import databaseUserName
@@ -213,7 +215,7 @@ $$ LANGUAGE plpgsql;
 
     def test_all_works_without_errors(self):
         with patch('socorro.cron.dailyMatviews.logger'):
-            dailyMatviews.update(self.config, datetime.datetime.today())
+            dailyMatviews.update(self.config, utc_now().date())
             cursor = self.connection.cursor()
             for each in ('dailyMatviews:update_product_versions',
                          'dailyMatviews:update_os_versions',
@@ -241,7 +243,7 @@ $$ LANGUAGE plpgsql;
             """)
             self.connection.commit()
 
-            dailyMatviews.update(self.config, datetime.datetime.today())
+            dailyMatviews.update(self.config, utc_now().date())
             cursor = self.connection.cursor()
             for each in ('dailyMatviews:update_os_versions',
                          'dailyMatviews:update_adu',

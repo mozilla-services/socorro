@@ -2,11 +2,8 @@
 """
 Just set up the database and exit. Assume we can get config details from the test config file, but allow sys.argv to override
 """
-import datetime
 import logging
 import os
-import psycopg2
-import sys
 
 import socorro.lib.ConfigurationManager as configurationManager
 import socorro.database.cachedIdAccess as socorro_cia

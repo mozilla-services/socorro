@@ -2,6 +2,7 @@ import socorro.unittest.testlib.expectations as expect
 import socorro.services.emailSender as es
 import socorro.lib.util as util
 
+from socorro.lib.datetimeutil import string_to_datetime
 from datetime import datetime, timedelta
 
 #-----------------------------------------------------------------------------------------------------------------
@@ -25,7 +26,7 @@ def testSendAllEmails():
   context = getDummyContext()
 
   testContacts = ['1@example.com', '2@example.com']
-  crash_date = datetime.strptime('2011-09-01', '%Y-%m-%d')
+  crash_date = string_to_datetime('2011-09-01')
   contacts = [
     (0, testContacts[0], 'abc', 'ooid1', crash_date),
     (0, testContacts[1], 'abc', 'ooid2', crash_date)
@@ -43,7 +44,7 @@ def testSendAllEmails():
   contacted_emails = sender.send_all_emails(contacts, subject, body, dummySmtp)
   assert contacted_emails == {0: 'sent'}
 
-# FIXME 
+# FIXME
 #  # unsubscribe variable
 #  unsubVarBody1 = 'Content-Type: text/plain; charset="utf-8"\nMIME-Version: 1.0\nContent-Transfer-Encoding: base64\nFrom: from@example.com\nSubject: email subject\nTo: %s\n\nZW1haWwgYm9keSBodHRwOi8vZXhhbXBsZS5jb20vdW5zdWJzY3JpYmUvYWJj\n'
 #  unsubVarBody2 = 'Content-Type: text/plain; charset="utf-8"\nMIME-Version: 1.0\nContent-Transfer-Encoding: base64\nFrom: from@example.com\nSubject: email subject\nTo: %s\n\nZW1haWwgYm9keSBodHRwOi8vZXhhbXBsZS5jb20vdW5zdWJzY3JpYmUvZGVm\n'

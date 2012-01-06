@@ -4,6 +4,8 @@ import math
 import threading
 import time
 
+from socorro.lib.datetimeutil import utc_now
+
 class UndefinedCounterActionException(Exception):
     pass
 
@@ -145,7 +147,7 @@ class DurationAccumulatorOverTime(CounterOverTime):
     def __init__(self,
                  historyLengthInMinutes,
                  timeFunction=time.time,
-                 datetimeNowFunction=dt.datetime.now):
+                 datetimeNowFunction=utc_now):
         super(DurationAccumulatorOverTime,
               self).__init__(historyLengthInMinutes,
                              timeFunction)
