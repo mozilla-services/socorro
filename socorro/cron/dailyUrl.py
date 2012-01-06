@@ -15,7 +15,9 @@ logger = logging.getLogger("dailyUrlDump")
 
 import socorro.database.database as sdb
 import socorro.lib.util as util
+
 from socorro.database.cachedIdAccess import IdCache
+from socorro.lib.datetimeutil import utc_now
 
 sql = """
       select
@@ -65,9 +67,9 @@ sql = """
 #-------------------------------------------------------------------------------
 def setup_query_parameters(config):
     now = config.day + dt.timedelta(1)
-    now_str = "%4d-%02d-%02d" % now.timetuple()[:3]
+    now_str = now.strftime('%Y-%m-%d')
     yesterday = config.day
-    yesterday_str = "%4d-%02d-%02d" % yesterday.timetuple()[:3]
+    yesterday_str = yesterday.strftime('%Y-%m-%d')
     logger.debug("config.day = %s; now = %s; yesterday = %s",
                  config.day,
                  now,
@@ -103,8 +105,8 @@ def setup_query_parameters(config):
 #-------------------------------------------------------------------------------
 @contextlib.contextmanager
 def gzipped_csv_files(config, gzip=gzip, csv=csv):
-    private_out_filename = ("%4d%02d%02d-crashdata.csv.gz"
-                            % config.day.timetuple()[:3])
+    private_out_filename = ("%s-crashdata.csv.gz"
+                            % config.day.strftime('%Y%m%d'))
     private_out_pathname = os.path.join(config.outputPath,
                                         private_out_filename)
     private_gzip_file_handle = gzip.open(private_out_pathname, "w")
@@ -112,8 +114,8 @@ def gzipped_csv_files(config, gzip=gzip, csv=csv):
                                          delimiter='\t',
                                          lineterminator='\n')
 
-    pubic_out_filename = ("%4d%02d%02d-pub-crashdata.csv.gz"
-                          % config.day.timetuple()[:3])
+    pubic_out_filename = ("%s-pub-crashdata.csv.gz"
+                          % config.day.strftime('%Y%m%d'))
     public_out_pathname = None
     public_out_directory = config.get('publicOutputPath')
     public_gzip_file_handle = None
