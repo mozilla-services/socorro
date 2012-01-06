@@ -10,6 +10,8 @@ import socorro.storage.crashstorage as cstore
 import socorro.lib.util as sutil
 import socorro.lib.ooid as ooid
 
+from socorro.lib.datetimeutil import utc_now
+
 #-----------------------------------------------------------------------------------------------------------------
 if __name__ != "__main__":
   from mod_python import apache
@@ -44,7 +46,7 @@ def handler(req):
       dump = dump.file.read()
       #dump = cstore.RepeatableStreamReader(dump.file)
 
-      currentTimestamp = dt.datetime.now()
+      currentTimestamp = utc_now()
 
       jsonDataDictionary = crashStorage.makeJsonDictFromForm(theform)
       jsonDataDictionary.submitted_timestamp = currentTimestamp.isoformat()

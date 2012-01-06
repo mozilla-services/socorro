@@ -1,19 +1,12 @@
 import web
-import datetime as dt
-import urllib2 as u2
 import logging
 
 logger = logging.getLogger("collector")
 
-import socorro.lib.datetimeutil as sdt
-import socorro.lib.util as util
-import socorro.webapi.webapiService as webapi
-import socorro.lib.datetimeutil as dtutil
-import socorro.lib.util as sutil
 import socorro.lib.ooid as sooid
 import socorro.storage.crashstorage as cstore
 
-#utctz = sdt.UTC()
+from socorro.lib.datetimeutil import utc_now
 
 #===============================================================================
 class Collector(object):
@@ -33,8 +26,7 @@ class Collector(object):
     theform = web.input()
 
     dump = theform[self.context.dumpField]
-    #currentTimestamp = dt.datetime.now(utctz)
-    currentTimestamp = dt.datetime.now()
+    currentTimestamp = utc_now()
     jsonDataDictionary = crashStorage.makeJsonDictFromForm(theform)
     jsonDataDictionary.submitted_timestamp = currentTimestamp.isoformat()
     #for future use when we start sunsetting products

@@ -21,7 +21,6 @@ import socorro.lib.ver_tools as vtl
 import socorro.storage.hbaseClient as hbc
 
 import os
-import datetime as dt
 import time as tm
 import re
 import random
