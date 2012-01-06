@@ -140,7 +140,3 @@ $f$;
 
 \copy partition_constraints to '/tmp/partition_constraints.txt'
 
-
-
-10053 to 10046
-
