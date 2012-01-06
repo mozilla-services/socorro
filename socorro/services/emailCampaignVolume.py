@@ -5,7 +5,7 @@ import urllib
 import socorro.lib.util as util
 import socorro.webapi.webapiService as webapi
 import socorro.database.database as db
-import socorro.lib.datetimeutil as dtutil
+from socorro.lib.datetimeutil import UTC, string_to_datetime
 
 logger = logging.getLogger("webapi")
 
@@ -33,7 +33,7 @@ class EmailCampaignVolume(webapi.JsonServiceBase):
   def get(self, *args):
     " Webpy method receives inputs from uri "
     stringListFromCSV = lambda s: tuple([x.strip() for x in s.split(',')])
-    convertedArgs = webapi.typeConversion([str, stringListFromCSV, str, dtutil.datetimeFromISOdateString, dtutil.datetimeFromISOdateString], args)
+    convertedArgs = webapi.typeConversion([str, stringListFromCSV, str, string_to_datetime, string_to_datetime], args)
     parameters = util.DotDict(zip(['product', 'versions', 'signature', 'start_date', 'end_date'], convertedArgs))
 
     connection = self.database.connection()
@@ -49,7 +49,7 @@ class EmailCampaignVolume(webapi.JsonServiceBase):
     # Yeah, it isn't a half day or anything like that -- lumbergh
     # start date at 00:00:00 and end date at 23:59:59
     end_date = parameters['end_date']
-    parameters['end_date'] = datetime.datetime(end_date.year, end_date.month, end_date.day, 23, 59, 59)
+    parameters['end_date'] = datetime.datetime(end_date.year, end_date.month, end_date.day, 23, 59, 59, tzinfo=UTC)
 
     encoded_signature = parameters['signature']
     parameters['signature'] = urllib.unquote_plus(encoded_signature)
@@ -60,8 +60,8 @@ class EmailCampaignVolume(webapi.JsonServiceBase):
 
     sql = """
         SELECT count(distinct email) as total FROM reports
-        WHERE TIMESTAMP WITHOUT TIME ZONE '%(start_date)s' <= reports.date_processed AND
-              TIMESTAMP WITHOUT TIME ZONE '%(end_date)s' > reports.date_processed AND
+        WHERE TIMESTAMP WITH TIME ZONE '%(start_date)s' <= reports.date_processed AND
+              TIMESTAMP WITH TIME ZONE '%(end_date)s' > reports.date_processed AND
               product = %%(product)s AND
               %(version_clause)s
               signature = %%(signature)s AND
