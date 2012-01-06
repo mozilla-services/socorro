@@ -47,6 +47,8 @@
 #from   socorro.unittest.testlib.util import runInOtherProcess
 #import socorro.unittest.testlib.util as tutil
 
+#from socorro.lib.datetimeutil import utc_now
+
 #import monitorTestconfig as testConfig
 #import socorro.database.schema as schema
 
@@ -505,7 +507,7 @@
 ##     global me
 ##     m = monitor.Monitor(me.config)
 ##     dbCon,dbCur = m.getDatabaseConnectionPair()
-##     stamp = dt.datetime.now() - dt.timedelta(minutes=10)
+##     stamp = utc_now() - dt.timedelta(minutes=10)
 ##     dbtestutil.fillProcessorTable(dbCur, 5, stamp=stamp)
 ##     iter = m.jobSchedulerIter(dbCur)
 ##     assert_raises(WhatKind? iter.next)
@@ -584,7 +586,7 @@
 ##     global me
 ##     m = monitor.Monitor(me.config)
 ##     dbCon,dbCur = m.etDatabaseConnectionPair() error: try:...(dbCon)...finally m.databaseConnectionPool.cleanup()
-##     now = dt.datetime.now() error: Use dbtestutil.datetimeNow(aCursor)
+##     now = utc_now() error: Use dbtestutil.datetimeNow(aCursor)
 ##     then = now - dt.timedelta(minutes=10)
 ##     dbtestutil.fillProcessorTable(dbCur, None, processorMap = {1:then,2:then,3:now,4:then,5:then })
 ##     iter = m.jobScheduleIter(dbCur)
