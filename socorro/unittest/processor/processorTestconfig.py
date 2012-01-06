@@ -1,5 +1,4 @@
 import socorro.lib.ConfigurationManager as cm
-import datetime
 import stat
 
 from socorro.unittest.config.commonconfig import databaseHost

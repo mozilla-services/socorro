@@ -1,7 +1,6 @@
 #!/usr/bin/python
 
 import time as tm
-import datetime as dt
 import json
 import os
 import signal

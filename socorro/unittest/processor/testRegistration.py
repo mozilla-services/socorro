@@ -4,6 +4,8 @@ import socorro.lib.util as sutil
 import socorro.unittest.testlib.expectations as exp
 import socorro.lib.ConfigurationManager as scm
 
+from socorro.lib.datetimeutil import utc_now, UTC
+
 import datetime as dt
 
 
@@ -27,9 +29,9 @@ def test_constructor():
     r = MyRegister(conf, db_conn_source)
     expected_assert(conf, r.config)
     expected_assert(db_conn_source, r.db_pool)
-    expected_assert(dt.datetime(1999, 1, 1), r.last_checkin_ts)
+    expected_assert(dt.datetime(1999, 1, 1, tzinfo=UTC), r.last_checkin_ts)
     expected_assert(17, r.logger)
-    expected_assert(dt.datetime.now, r.now_func)
+    expected_assert(utc_now, r.now_func)
     assert not r.registration_called, 'registration function not called'
 
 
@@ -60,7 +62,7 @@ class MockedRegister(reg.ProcessorRegistrationAgent):
 
 
 def now_func():
-    return dt.datetime(2011, 8, 23, 10, 0, 0)
+    return dt.datetime(2011, 8, 23, 10, 0, 0, tzinfo=UTC)
 
 
 def setup_mocked_register(register_class):
@@ -629,7 +631,7 @@ def test_requested_processor_id():
 
 def test_checkin():
     def now_func():
-        return dt.datetime(2011, 1, 1, 0, 6, 0)
+        return dt.datetime(2011, 1, 1, 0, 6, 0, tzinfo=UTC)
     conf = sutil.DotDict()
     conf.processorCheckInTime = dt.timedelta(0, 300)
     conf.processorCheckInFrequency = dt.timedelta(0, 300)
@@ -664,17 +666,17 @@ def test_checkin():
     r = MockedRegister(conf, db_pool, now_func, os_module, sdb_module)
     r.checkin()
     expected_assert(now_func(), r.last_checkin_ts)
-    r.last_checkin_ts = dt.datetime(2011, 1, 1, 0, 6, 0)
+    r.last_checkin_ts = dt.datetime(2011, 1, 1, 0, 6, 0, tzinfo=UTC)
     r.checkin()
-    r.last_checkin_ts = dt.datetime(2011, 1, 1, 0, 5, 0)
+    r.last_checkin_ts = dt.datetime(2011, 1, 1, 0, 5, 0, tzinfo=UTC)
     r.checkin()
-    r.last_checkin_ts = dt.datetime(2011, 1, 1, 0, 4, 0)
+    r.last_checkin_ts = dt.datetime(2011, 1, 1, 0, 4, 0, tzinfo=UTC)
     r.checkin()
-    r.last_checkin_ts = dt.datetime(2011, 1, 1, 0, 3, 0)
+    r.last_checkin_ts = dt.datetime(2011, 1, 1, 0, 3, 0, tzinfo=UTC)
     r.checkin()
-    r.last_checkin_ts = dt.datetime(2011, 1, 1, 0, 2, 0)
+    r.last_checkin_ts = dt.datetime(2011, 1, 1, 0, 2, 0, tzinfo=UTC)
     r.checkin()
-    r.last_checkin_ts = dt.datetime(2011, 1, 1, 0, 1, 0)
+    r.last_checkin_ts = dt.datetime(2011, 1, 1, 0, 1, 0, tzinfo=UTC)
     r.checkin()
     fake_logger.expect('debug', ("updating 'processor' table registration",),
                        {})
@@ -682,6 +684,6 @@ def test_checkin():
     db_cur.expect('execute', ("update processors set lastseendatetime = %s "
                   "where id = %s", (now_func(), 17)), {})
     db_conn.expect('commit', (), {})
-    r.last_checkin_ts = dt.datetime(2011, 1, 1, 0, 0, 0)
+    r.last_checkin_ts = dt.datetime(2011, 1, 1, 0, 0, 0, tzinfo=UTC)
     r.checkin()
     expected_assert(now_func(), r.last_checkin_ts)

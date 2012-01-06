@@ -7,6 +7,8 @@ import socorro.storage.crashstorage as cstore
 import socorro.lib.datetimeutil as sdt
 import socorro.database.schema as sch
 
+from socorro.lib.datetimeutil import utc_now, UTC
+
 
 import datetime as dt
 import threading as thr
@@ -271,25 +273,25 @@ def testQuitCheck():
 #def testCheckin1():
     #"""testCheckin1: update registration"""
     #p, c = getMockedProcessorAndContext()
-    #c.fakeNowFunc.expect('__call__', (), {}, dt.datetime(2011, 2, 15))
-    #c.fakeNowFunc.expect('__call__', (), {}, dt.datetime(2011, 2, 15))
+    #c.fakeNowFunc.expect('__call__', (), {}, dt.datetime(2011, 2, 15, tzinfo=UTC))
+    #c.fakeNowFunc.expect('__call__', (), {}, dt.datetime(2011, 2, 15, tzinfo=UTC))
     #c.fakeDatabaseConnectionPool.expect('connectionCursorPair', (), {},
                                         #(c.fakeConnection, c.fakeCursor))
     #c.fakeCursor.expect('execute',
                         #("update processors set lastseendatetime = %s "
                          #"where id = %s",
-                         #(dt.datetime(2011, 2, 15), 288)),
+                         #(dt.datetime(2011, 2, 15, tzinfo=UTC), 288)),
                         #{},
                         #None)
     #c.fakeConnection.expect('commit', (), {})
-    #c.fakeNowFunc.expect('__call__', (), {}, dt.datetime(2011, 2, 15))
+    #c.fakeNowFunc.expect('__call__', (), {}, dt.datetime(2011, 2, 15, tzinfo=UTC))
     #p.checkin()
-    #assert p.lastCheckInTimestamp == dt.datetime(2011, 2, 15)
+    #assert p.lastCheckInTimestamp == dt.datetime(2011, 2, 15, tzinfo=UTC)
 
 #def testCheckin2():
     #"""testCheckin2: check in off schedule"""
     #p, c = getMockedProcessorAndContext()
-    #c.fakeNowFunc.expect('__call__', (), {}, dt.datetime(1950, 1, 1))
+    #c.fakeNowFunc.expect('__call__', (), {}, dt.datetime(1950, 1, 1, tzinfo=UTC))
     #p.checkin()
 
 def testCleanup():
@@ -316,12 +318,12 @@ def testSubmitJobToThreads():
     """testSubmitJobToThreads: accept a new job"""
     p, c = getMockedProcessorAndContext()
     fakeJobTuple = ('a Job', 'stuff', 'other')
-    c.fakeNowFunc.expect('__call__', (), {}, dt.datetime(2011, 2, 15))
+    c.fakeNowFunc.expect('__call__', (), {}, dt.datetime(2011, 2, 15, tzinfo=UTC))
     c.fakeDatabaseModule.expect('transaction_execute_with_retry',
                                 (c.fakeDatabaseConnectionPool,
                                  "update jobs set starteddatetime = %s where "
                                  "id = %s",
-                                 (dt.datetime(2011, 2, 15), fakeJobTuple[0])),
+                                 (dt.datetime(2011, 2, 15, tzinfo=UTC), fakeJobTuple[0])),
                                  {})
     c.fakeThreadManager.expect('newTask',
                                (p.processJobWithRetry, fakeJobTuple),
@@ -355,7 +357,7 @@ def testNewPriorityJobsIter2():
     """testNewPriorityJobsIter1: two priority jobs, one already started"""
     p, c = getMockedProcessorAndContext()
     priorityJobsList1 = [(15,'ooid1',1,None),
-                         (16,'ooid2',1,dt.datetime(2011,1,1)) ]
+                         (16,'ooid2',1,dt.datetime(2011,1,1, tzinfo=UTC)) ]
     priorityQuery(c, priorityJobsList1)
     c.fakeDatabaseModule.expect('transaction_execute_with_retry',
                                 (c.fakeDatabaseConnectionPool,
@@ -477,9 +479,9 @@ def testConvertDatesInDictToString():
     d = { 'a': 1,
           'b': 2,
           'c': 3,
-          'd': dt.datetime(2011, 2, 15, 11, 31, 22),
+          'd': dt.datetime(2011, 2, 15, 11, 31, 22, tzinfo=UTC),
           'e': 5,
-          'f': dt.datetime(2011, 2, 15, 11, 31, 22),
+          'f': dt.datetime(2011, 2, 15, 11, 31, 22, tzinfo=UTC),
         }
     proc.Processor.convertDatesInDictToString(d)
     assert d['a'] == 1
@@ -510,9 +512,9 @@ def testSaveProcessedDumpJson():
     p, c = getMockedProcessorAndContext()
     d = { 'a': 1,
           'c': 3,
-          'd': dt.datetime(2011, 2, 15, 11, 31, 22),
+          'd': dt.datetime(2011, 2, 15, 11, 31, 22, tzinfo=UTC),
           'e': 5,
-          'f': dt.datetime(2011, 2, 15, 11, 31, 22),
+          'f': dt.datetime(2011, 2, 15, 11, 31, 22, tzinfo=UTC),
           'g': 7,
           'uuid': 'uuid1'
         }
@@ -655,7 +657,7 @@ def testProcessJob05():
     c.fakeCrashStorage = exp.DummyObjectWithExpectations()
     c.fakeCrashStoragePool.expect('crashStorage', (threadName,), {},
                                   c.fakeCrashStorage)
-    startedDatetime = dt.datetime(2011, 2, 15, 1, 0, 0)
+    startedDatetime = dt.datetime(2011, 2, 15, 1, 0, 0, tzinfo=UTC)
     c.fakeNowFunc.expect('__call__', (), {}, startedDatetime)
     c.fakeCursor.expect('execute',
                         ('update jobs set starteddatetime = %s where id = %s',
@@ -695,7 +697,7 @@ def testProcessJob06():
     c.fakeCrashStorage = exp.DummyObjectWithExpectations()
     c.fakeCrashStoragePool.expect('crashStorage', (threadName,), {},
                                   c.fakeCrashStorage)
-    startedDatetime = dt.datetime(2011, 2, 15, 1, 0, 0)
+    startedDatetime = dt.datetime(2011, 2, 15, 1, 0, 0, tzinfo=UTC)
     c.fakeNowFunc.expect('__call__', (), {}, startedDatetime)
     c.fakeCursor.expect('execute',
                         ('update jobs set starteddatetime = %s where id = %s',
@@ -748,7 +750,7 @@ def testProcessJob06():
                               {})
 
     c.fakeConnection.expect('rollback', (), {}, None)
-    failedDatetime = dt.datetime(2011,2,15,1,1,0)
+    failedDatetime = dt.datetime(2011,2,15,1,1,0, tzinfo=UTC)
     c.fakeNowFunc.expect('__call__', (), {}, failedDatetime)
     c.fakeNowFunc.expect('__call__', (), {}, failedDatetime)
     c.fakeNowFunc.expect('__call__', (), {}, failedDatetime)
@@ -792,7 +794,7 @@ def testProcessJob07():
     c.fakeCrashStorage = exp.DummyObjectWithExpectations()
     c.fakeCrashStoragePool.expect('crashStorage', (threadName,), {},
                                   c.fakeCrashStorage)
-    startedDatetime = dt.datetime(2011, 2, 15, 1, 0, 0)
+    startedDatetime = dt.datetime(2011, 2, 15, 1, 0, 0, tzinfo=UTC)
     c.fakeNowFunc.expect('__call__', (), {}, startedDatetime)
     c.fakeCursor.expect('execute',
                         ('update jobs set starteddatetime = %s where id = %s',
@@ -851,7 +853,7 @@ def testProcessJob07():
                               (ooid1, c.config.temporaryFileSystemStoragePath),
                               {})
 
-    completedDateTime = dt.datetime(2011,2,15,1,1,0)
+    completedDateTime = dt.datetime(2011,2,15,1,1,0, tzinfo=UTC)
     c.fakeNowFunc.expect('__call__', (), {}, completedDateTime)
     c.fakeCursor.expect('execute',
                         ("update jobs set completeddatetime = %s, success = %s "
@@ -894,7 +896,7 @@ def testProcessJob07():
            'flash_version': 'all.bad',
            'success': True,
            'dump': '',
-           'startedDateTime': dt.datetime(2011, 2, 15, 1, 0),
+           'startedDateTime': dt.datetime(2011, 2, 15, 1, 0, tzinfo=UTC),
            'truncated': False,
            'signature': 'hang | ssssssssssssssssssssssssssssssssssssssssssssss'
                         'sssssssssssssssssssssssssssssssssssssssssssssssssssss'
@@ -906,7 +908,7 @@ def testProcessJob07():
             'processor_notes': '',
             'topmost_filenames': ['myfile.cpp'],
             'id': 345,
-            'completeddatetime': dt.datetime(2011, 2, 15, 1, 1),
+            'completeddatetime': dt.datetime(2011, 2, 15, 1, 1, tzinfo=UTC),
             'ReleaseChannel': 'release',
            }
     fakeSaveProcessedDumpJson.expect('__call__',
@@ -932,7 +934,7 @@ def testProcessJobProductIdOverride():
     c.fakeCrashStorage = exp.DummyObjectWithExpectations()
     c.fakeCrashStoragePool.expect('crashStorage', (threadName,), {},
                                   c.fakeCrashStorage)
-    startedDatetime = dt.datetime(2011, 2, 15, 1, 0, 0)
+    startedDatetime = dt.datetime(2011, 2, 15, 1, 0, 0, tzinfo=UTC)
     c.fakeNowFunc.expect('__call__', (), {}, startedDatetime)
     c.fakeCursor.expect('execute',
                         ('update jobs set starteddatetime = %s where id = %s',
@@ -999,7 +1001,7 @@ def testProcessJobProductIdOverride():
                               (ooid1, c.config.temporaryFileSystemStoragePath),
                               {})
 
-    completedDateTime = dt.datetime(2011,2,15,1,1,0)
+    completedDateTime = dt.datetime(2011,2,15,1,1,0, tzinfo=UTC)
     c.fakeNowFunc.expect('__call__', (), {}, completedDateTime)
     c.fakeCursor.expect('execute',
                         ("update jobs set completeddatetime = %s, success = %s "
@@ -1042,7 +1044,7 @@ def testProcessJobProductIdOverride():
            'flash_version': 'all.bad',
            'success': True,
            'dump': '',
-           'startedDateTime': dt.datetime(2011, 2, 15, 1, 0),
+           'startedDateTime': dt.datetime(2011, 2, 15, 1, 0, tzinfo=UTC),
            'truncated': False,
            'signature': 'hang | ssssssssssssssssssssssssssssssssssssssssssssss'
                         'sssssssssssssssssssssssssssssssssssssssssssssssssssss'
@@ -1054,7 +1056,7 @@ def testProcessJobProductIdOverride():
             'processor_notes': '',
             'topmost_filenames': ['myfile.cpp'],
             'id': 345,
-            'completeddatetime': dt.datetime(2011, 2, 15, 1, 1),
+            'completeddatetime': dt.datetime(2011, 2, 15, 1, 1, tzinfo=UTC),
             'ReleaseChannel': 'release',
            }
     fakeSaveProcessedDumpJson.expect('__call__',
@@ -1095,9 +1097,8 @@ def testGetJsonOrWarn():
     assert "subscriptable" in message_list[0]
 
 expected_report_tuple = ('ooid1',
-                         dt.datetime(2011, 2, 16, 4, 44, 52,
-                                     tzinfo=proc.Processor.utctz),
-                         dt.datetime(2011, 2, 15, 1, 0),
+                         dt.datetime(2011, 2, 16, 4, 44, 52, tzinfo=UTC),
+                         dt.datetime(2011, 2, 15, 1, 0, tzinfo=UTC),
                          'Firefox',
                          '3.6.6',
                          '20100625231939',
@@ -1106,7 +1107,7 @@ expected_report_tuple = ('ooid1',
                          439,
                          2,
                          'nobody@mozilla.com',
-                         dt.datetime(2010, 6, 25, 23, 0),
+                         dt.datetime(2010, 6, 25, 23, 0, tzinfo=UTC),
                          '',
                          None,
                          None,
@@ -1120,15 +1121,14 @@ expected_report_tuple = ('ooid1',
                          'release')
 
 expected_report_dict =  {'client_crash_date':
-                                       dt.datetime(2011, 2, 16, 4, 44, 52,
-                                                   tzinfo=proc.Processor.utctz),
+                                       dt.datetime(2011, 2, 16, 4, 44, 52, tzinfo=UTC),
                          'product': 'Firefox',
                          'install_age': 20069290,
                          'distributor': None,
                          'topmost_filenames': None,
                          'id': 234,
                          'user_comments': None,
-                         'build_date': dt.datetime(2010, 6, 25, 23, 0),
+                         'build_date': dt.datetime(2010, 6, 25, 23, 0, tzinfo=UTC),
                          'uptime': 2,
                          'user_id': '',
                          'uuid': 'ooid1',
@@ -1142,7 +1142,7 @@ expected_report_dict =  {'client_crash_date':
                          'addons_checked': None,
                          'app_notes': None,
                          'last_crash': 439,
-                         'date_processed': dt.datetime(2011, 2, 15, 1, 0),
+                         'date_processed': dt.datetime(2011, 2, 15, 1, 0, tzinfo=UTC),
                          'url': 'http://mozilla.com',
                          'release_channel': 'release'}
 
@@ -1150,7 +1150,7 @@ def testInsertReportIntoDatabase01():
     """testInsertReportIntoDatabase01: success"""
     p, c = getMockedProcessorAndContext()
     ooid1 = 'ooid1'
-    date_processed = dt.datetime(2011,2,15,1,0,0)
+    date_processed = dt.datetime(2011,2,15,1,0,0, tzinfo=UTC)
     json_doc = sample_meta_json
     error_list = []
     c.fakeDatabaseConnectionPool.expect('connectionCursorPair', None, None,
@@ -1170,7 +1170,7 @@ def testInsertReportIntoDatabase01():
                                 (c.fakeCursor,
                                  "select id from reports where uuid = "
                                  "'ooid1' and date_processed = timestamp "
-                                 "without time zone '2011-02-15 01:00:00'"),
+                                 "without time zone '2011-02-15 01:00:00+00:00'"),
                                 {},
                                 234)
 
@@ -1186,7 +1186,7 @@ def testInsertAdddonsIntoDatabase1():
     """testInsertAdddonsIntoDatabase1: no addons"""
     p, c = getMockedProcessorAndContext()
     reportId = 123
-    date_processed = dt.datetime(2011,2,15,1,0,0)
+    date_processed = dt.datetime(2011,2,15,1,0,0, tzinfo=UTC)
     error_list = []
     r = p.insertAdddonsIntoDatabase(c.fakeCursor,
                                     reportId,
@@ -1205,7 +1205,7 @@ def testInsertAdddonsIntoDatabase2():
                     "8.5,jqs@sun.com:1.0,{20a82645-c095-46ed-80e3-08825" \
                     "760534b}:1.1,avg@igeared:2.507.024.001,{972ce4c6-7" \
                     "e08-4474-a285-3208198ce6fd}:3.5.3"
-    date_processed = dt.datetime(2011,2,15,1,0,0)
+    date_processed = dt.datetime(2011,2,15,1,0,0, tzinfo=UTC)
     error_list = []
     c.fakeDatabaseConnectionPool.expect('connectionCursorPair', None, None,
                                         17)
@@ -1284,7 +1284,7 @@ def testInsertAdddonsIntoDatabase3():
     jd = sample_meta_json.copy()
     jd['Add-ons'] = "jqs@sun.com:1.0,this_addon_is_missing_its_version," \
                     "avg@igeared:2.507.024.001"
-    date_processed = dt.datetime(2011,2,15,1,0,0)
+    date_processed = dt.datetime(2011,2,15,1,0,0, tzinfo=UTC)
     error_list = []
     c.fakeDatabaseConnectionPool.expect('connectionCursorPair', None, None,
                                         17)
@@ -1340,7 +1340,7 @@ def testInsertCrashProcess1():
     p, c = getMockedProcessorAndContext()
     reportId = 123
     jd = sample_meta_json.copy()
-    date_processed = dt.datetime(2011,2,15,1,0,0)
+    date_processed = dt.datetime(2011,2,15,1,0,0, tzinfo=UTC)
     error_list = []
 
     r = p.insertCrashProcess(c.fakeCursor,
@@ -1357,7 +1357,7 @@ def testInsertCrashProcess2():
     reportId = 123
     jd = sample_meta_json.copy()
     jd['ProcessType'] = 'other'
-    date_processed = dt.datetime(2011,2,15,1,0,0)
+    date_processed = dt.datetime(2011,2,15,1,0,0, tzinfo=UTC)
     error_list = []
 
     r = p.insertCrashProcess(c.fakeCursor,
@@ -1377,7 +1377,7 @@ def testInsertCrashProcess3():
     jd['PluginFilename'] = 'aplugin.so'
     jd['PluginName'] = 'a plugin name'
     jd['PluginVersion'] = '1.0'
-    date_processed = dt.datetime(2011,2,15,1,0,0)
+    date_processed = dt.datetime(2011,2,15,1,0,0, tzinfo=UTC)
     error_list = []
 
     c.fakeDatabaseModule.expect('singleRowSql',
@@ -1424,7 +1424,7 @@ def testInsertCrashProcess4():
     jd['PluginFilename'] = 'aplugin.so'
     jd['PluginName'] = 'a plugin name'
     jd['PluginVersion'] = '1.0'
-    date_processed = dt.datetime(2011,2,15,1,0,0)
+    date_processed = dt.datetime(2011,2,15,1,0,0, tzinfo=UTC)
     error_list = []
 
     c.fakeDatabaseModule.expect('singleRowSql',
