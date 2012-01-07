@@ -482,7 +482,7 @@ class Common_Model extends Model {
             if (!$params['date']) {
                 $interval = $this->db->escape($params['range_value'] . ' ' . $params['range_unit']);
                 $now = date('Y-m-d');
-                $where[] = "reports.date_processed BETWEEN utc_day_begins_pacific(('$now'::DATE - $interval::INTERVAL)::DATE) AND utc_day_ends_pacific('$now')";
+                $where[] = "reports.date_processed BETWEEN date_trunc('day', (TIMESTAMPTZ '$now' - INTERVAL $interval)) AND '$now'";
                 if (array_key_exists('process_type', $params) &&
                     'plugin' == $params['process_type'] ) {
                         $where[] = "plugins_reports.date_processed BETWEEN TIMESTAMP '$now' - CAST($interval AS INTERVAL) AND TIMESTAMP '$now'";
@@ -490,10 +490,10 @@ class Common_Model extends Model {
             } else {
                 $date = $this->db->escape($params['date']);
                 $interval = $this->db->escape($params['range_value'] . ' ' . $params['range_unit']);
-                $where[] = "reports.date_processed BETWEEN utc_day_begins_pacific(($date::DATE - $interval::INTERVAL)::DATE) AND utc_day_ends_pacific($date)";
+                $where[] = "reports.date_processed BETWEEN date_trunc('day', (TIMESTAMPTZ $date - INTERVAL $interval )) AND $date";
                 if (array_key_exists('process_type', $params) &&
                     'plugin' == $params['process_type'] ) {
-                        $where[] = "plugins_reports.date_processed BETWEEN utc_day_begins_pacific(($date::DATE - $interval::INTERVAL)::DATE) AND utc_day_ends_pacific($date)";
+                        $where[] = "plugins_reports.date_processed BETWEEN date_trunc('day', (TIMESTAMPTZ $date - INTERVAL $interval)) AND $date";
                 }
             }
         }

@@ -4,6 +4,8 @@ import signal
 import socorro.lib.ConfigurationManager as socorro_config
 from socorro.lib.ConfigurationManager import ConfigFileMissingError, ConfigFileOptionNameMissingError, NotAnOptionError, OptionError, CannotConvert, Option
 from socorro.lib.ConfigurationManager import ioConverter, dateTimeConverter, timeDeltaConverter, booleanConverter
+from socorro.lib.datetimeutil import utc_now
+
 
 def newConfiguration(**kwargs):
   """ This used as an alternate constructor for class Config so that applications can
@@ -130,7 +132,7 @@ class DynamicConfig(socorro_config.Config):
     if self.internal.updateDelta:
       if self.internal.updateDelta < datetime.timedelta(0):
         raise ValueError("updateInterval must be non-negative, but %s"%self.internal.updateDelta)
-      self.internal.nextUpdate = datetime.datetime.now() + self.internal.updateDelta
+      self.internal.nextUpdate = utc_now() + self.internal.updateDelta
 
     # finally: make sure we are current
     if self.internal.signalNumber:
@@ -156,7 +158,7 @@ class DynamicConfig(socorro_config.Config):
     try:
       nu = self.internal.nextUpdate
       if nu:
-        now = datetime.datetime.now()
+        now = utc_now()
         if now >= nu:
           DynamicConfig.doUpdate(self) # as does this line
           self.internal.nextUpdate = now + self.internal.updateDelta

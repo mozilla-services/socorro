@@ -29,6 +29,8 @@ import sys
 import cStringIO
 import datetime
 
+from socorro.lib.datetimeutil import string_to_datetime
+
 #============================================================================================
 class ConfigFileMissingError (IOError):
   pass
@@ -425,21 +427,7 @@ def ioConverter(inputString):
 def dateTimeConverter(inputString):
   """ a conversion function for datetimes
   """
-  if type(inputString) is str:
-    year = int(inputString[:4])
-    month = int(inputString[5:7])
-    day = int(inputString[8:10])
-    hour = 0
-    minute = 0
-    second = 0
-    try:
-      hour = int(inputString[11:13])
-      minute = int(inputString[14:16])
-      second = int(inputString[17:19])
-    except ValueError:
-      pass
-    return datetime.datetime(year, month, day, hour, minute, second)
-  return inputString
+  return string_to_datetime(inputString)
 
 #------------------------------------------------------------------------------------------
 def timeDeltaConverter(inputString):

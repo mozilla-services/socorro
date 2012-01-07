@@ -1,11 +1,9 @@
-import datetime as dt
 import urllib2 as u2
 import logging
 logger = logging.getLogger("webapi")
 
 import socorro.lib.util as util
 import socorro.webapi.webapiService as webapi
-import socorro.database.database as db
 import socorro.lib.datetimeutil as dtutil
 
 from socorro.services.topCrashBySignatureTrends import whichTCBS
@@ -24,7 +22,7 @@ class SignatureHistory(webapi.JsonServiceBase):
 
   def get(self, *args):
     convertedArgs = webapi.typeConversion([str, str, u2.unquote,
-                                           dtutil.datetimeFromISOdateString,
+                                           dtutil.string_to_datetime,
                                            dtutil.strHoursToTimeDelta, int],
                                           args)
     parameters = util.DotDict(zip(['product', 'version', 'signature',

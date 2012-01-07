@@ -74,7 +74,7 @@
     #fd = open(dopath,'w')
     #fj.close()
     #fd.close()
-    #j.copyFrom(u,jopath,dopath,'w', DT.datetime(2008,8,8,8,8),createLinks = True)
+    #j.copyFrom(u,jopath,dopath,'w', DT.datetime(2008,8,8,8,8, tzinfo=UTC),createLinks = True)
     #jpath = j.getJson(u)
     #gotGid = os.stat(jpath)[stat.ST_GID]
     #assert self.newGid ==  gotGid, "%s: Expected %o, got %o" % (jpath, self.newGid, gotGid)

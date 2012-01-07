@@ -3,16 +3,8 @@
 import psycopg2
 
 import time
-import datetime
-import os
-import os.path
-import dircache
-import shutil
 import signal
 import threading
-import collections
-
-import Queue
 
 import logging
 
@@ -22,11 +14,10 @@ import socorro.lib.util
 import socorro.lib.filesystem
 import socorro.lib.psycopghelper as psy
 import socorro.database.database as sdb
-import socorro.lib.JsonDumpStorage as jds
-import socorro.lib.threadlib as thr
-import socorro.lib.ooid as ooid
 import socorro.storage.crashstorage as cstore
 import socorro.storage.hbaseClient as hbc
+
+from socorro.lib.datetimeutil import utc_now
 
 #=================================================================================================================
 class UuidNotFoundException(Exception):
@@ -287,7 +278,7 @@ class Monitor (object):
     processorIdAssignedToThisJob = processorIdSequenceGenerator.next()
     try:
       databaseCursor.execute("insert into jobs (pathname, uuid, owner, priority, queuedDateTime) values (%s, %s, %s, %s, %s)",
-                             ('', uuid, processorIdAssignedToThisJob, priority, datetime.datetime.now()))
+                             ('', uuid, processorIdAssignedToThisJob, priority, utc_now()))
       logger.debug("executed insert for %s", uuid)
       databaseCursor.connection.commit()
     except:

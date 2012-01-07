@@ -4,6 +4,8 @@ import socorro.lib.util as util
 
 from socorro.database.schema import EmailCampaignsTable
 
+from socorro.lib.datetimeutil import UTC, utc_now
+
 from datetime import datetime, timedelta
 
 #-----------------------------------------------------------------------------------------------------------------
@@ -29,10 +31,11 @@ def testCreateEmailCampaign():
   product = 'Foobar'
   versions = '5'
   signature = 'JohnHancock'
-  start_date = datetime.now()
-  end_date = datetime.now() + timedelta(hours=1)
+  start_date = utc_now()
+  end_date = start_date + timedelta(hours=1)
   # FIXME where should this go?
-  end_date = datetime(end_date.year, end_date.month, end_date.day, 23, 59, 59)
+  end_date = datetime(end_date.year, end_date.month, end_date.day, 23, 59, 59,
+                      tzinfo=UTC)
   subject = 'test subject'
   body = 'test body'
   author = 'John Doe'
@@ -52,8 +55,8 @@ def testCreateEmailCampaign():
         SELECT DISTINCT contacts.id, reports.email, reports.client_crash_date AS crash_date, reports.uuid AS ooid, contacts.subscribe_token
         FROM reports
         LEFT JOIN email_contacts AS contacts ON reports.email = contacts.email
-        WHERE TIMESTAMP WITHOUT TIME ZONE '%s' <= reports.date_processed AND
-              TIMESTAMP WITHOUT TIME ZONE '%s' > reports.date_processed AND
+        WHERE TIMESTAMP WITH TIME ZONE '%s' <= reports.date_processed AND
+              TIMESTAMP WITH TIME ZONE '%s' > reports.date_processed AND
               reports.product = %%(product)s AND
               %s
               reports.signature = %%(signature)s AND
@@ -92,8 +95,8 @@ def testDetermineEmails():
   product = 'Foobar'
   versions = '5'
   signature = 'JohnHancock'
-  start_date = datetime.now()
-  end_date = datetime.now() + timedelta(hours=1)
+  start_date = utc_now()
+  end_date = start_date + timedelta(hours=1)
 
   parameters = {
     'product': product,
@@ -109,8 +112,8 @@ def testDetermineEmails():
         SELECT DISTINCT contacts.id, reports.email, reports.client_crash_date AS crash_date, reports.uuid AS ooid, contacts.subscribe_token
         FROM reports
         LEFT JOIN email_contacts AS contacts ON reports.email = contacts.email
-        WHERE TIMESTAMP WITHOUT TIME ZONE '%s' <= reports.date_processed AND
-              TIMESTAMP WITHOUT TIME ZONE '%s' > reports.date_processed AND
+        WHERE TIMESTAMP WITH TIME ZONE '%s' <= reports.date_processed AND
+              TIMESTAMP WITH TIME ZONE '%s' > reports.date_processed AND
               reports.product = %%(product)s AND
               %s
               reports.signature = %%(signature)s AND
@@ -164,8 +167,8 @@ def testSaveCampaign():
   signature = 'JohnHancock'
   subject = 'email subject'
   body = 'email body'
-  start_date = datetime.now()
-  end_date = datetime.now() + timedelta(hours=1)
+  start_date = utc_now()
+  end_date = start_date + timedelta(hours=1)
   author = 'me@example.com'
   email_count = 0
 
