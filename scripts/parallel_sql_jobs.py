@@ -1,21 +1,25 @@
-#!/usr/bin/python
-
 import sys
 import datetime
 import threading
 import Queue
-from optparse import OptionParser
+from optparse import OptionParser, OptionGroup
 
 import psycopg2
 
-parser = OptionParser()
+usage = "usage: %prog [options] file..."
+parser = OptionParser(usage=usage)
 
 parser.add_option('-j', '--jobs', action='store', type='int', dest='jobs', help='Number of parallel jobs (default 6)', default=6)
-parser.add_option('', '--host', action='store', type='string', dest='host', help='Database host (default localhost)', default='localhost')
-parser.add_option('', '--port', action='store', type='int', dest='port', help='Database port (default 5432)', default=5432)
-parser.add_option('', '--username', action='store', type='string', dest='user', help='Database username (default "postgres")', default='postgres')
-parser.add_option('', '--dbname', action='store', type='string', dest='dbname', help='Database (default "postgres")', default='postgres')
 parser.add_option('', '--stop', action='store_true', dest='stop_on_error', help='Stop on error (default is to continue)', default=False)
+
+conn_opts = OptionGroup(parser, "Database Connection Options")
+
+conn_opts.add_option('', '--host', action='store', type='string', dest='host', help='Database host (default connect via socket)', default='')
+conn_opts.add_option('', '--port', action='store', type='int', dest='port', help='Database port (default 5432 for TCP/IP)', default=None)
+conn_opts.add_option('', '--username', action='store', type='string', dest='user', help='Database username (default "postgres")', default='postgres')
+conn_opts.add_option('', '--dbname', action='store', type='string', dest='dbname', help='Database (default "postgres")', default='postgres')
+
+parser.add_option_group(conn_opts)
 
 (options, args) = parser.parse_args()
 
@@ -41,15 +45,21 @@ class Worker(threading.Thread):
         self._ordinal = ordinal
         
     def run(self):
+        self._connection = None
+        
         try:
-            self._connection = psycopg2.connect(
-                """host=%(host)s
-                   port=%(port)s
-                   user=%(user)s
-                   dbname=%(dbname)s""" % { 'host': options.host,
-                                            'port': options.port,
-                                            'user': options.user,
-                                            'dbname': options.dbname } )
+            connection_string = """
+                user=%(user)s
+                dbname=%(dbname)s""" %  { 'user': options.user,
+                                          'dbname': options.dbname }
+            
+            if options.host != '':
+                connection_string += " host=%(host)s" % { 'host': options.host }
+                
+            if options.port is not None:
+                connection_string += " port=%(port)s" % { 'port': options.port }
+                
+            self._connection = psycopg2.connect(connection_string)
             
             # We want to run each statement in its own transaction, so there's no reason to pay the
             # overhead of BEGIN/COMMITs.
@@ -86,7 +96,9 @@ class Worker(threading.Thread):
             
             log('Done: ' + work_item, self._ordinal)
             q.task_done()
-
+        
+        if self._connection is not None:
+            self._connection.close()
 
 log("Started")
 
@@ -96,9 +108,22 @@ for worker_number in range(options.jobs):
     th = Worker(worker_number + 1)
     th.start()
     workers.append(th)
-    
-for line in sys.stdin.readlines():
-    q.put(line.strip())
+
+if (not args) or (args[0].strip()) == '-':
+    for line in sys.stdin.readlines():
+        q.put(line.strip())
+else:
+    for filename in args:
+        try:
+            with open(filename, 'r') as file:
+                log('File: ' + filename, 0)
+                for line in file.readlines():
+                    q.put(line.strip())
+        except Exception as e:
+            log('Exception: ' + str(e), 0)
+            if options.stop_on_error:
+                error_occurred.set()
+                break
 
 q.join()
     # Wait until the queue drains before continuing.
@@ -117,3 +142,6 @@ for worker in workers:
         # all be killed when the program terminates, anyway.
         
 log("Finished")
+
+if error_occurred.is_set():
+    sys.exit(1)
