@@ -143,55 +143,55 @@ BEGIN
         RETURN true;
 END;
 $$ LANGUAGE plpgsql;
- CREATE OR REPLACE FUNCTION update_signatures(timestamp without time zone)
+ CREATE OR REPLACE FUNCTION update_signatures(timestamp with time zone)
 RETURNS boolean AS $$
 BEGIN
         RETURN true;
 END;
 $$ LANGUAGE plpgsql;
- CREATE OR REPLACE FUNCTION update_os_versions(timestamp without time zone)
+ CREATE OR REPLACE FUNCTION update_os_versions(timestamp with time zone)
 RETURNS boolean AS $$
 BEGIN
         RETURN true;
 END;
 $$ LANGUAGE plpgsql;
- CREATE OR REPLACE FUNCTION update_tcbs(timestamp without time zone)
+ CREATE OR REPLACE FUNCTION update_tcbs(timestamp with time zone)
 RETURNS boolean AS $$
 BEGIN
         RETURN true;
 END;
 $$ LANGUAGE plpgsql;
- CREATE OR REPLACE FUNCTION update_adu(timestamp without time zone)
+ CREATE OR REPLACE FUNCTION update_adu(timestamp with time zone)
 RETURNS boolean AS $$
 BEGIN
         RETURN true;
 END;
 $$ LANGUAGE plpgsql;
- CREATE OR REPLACE FUNCTION update_daily_crashes(timestamp without time zone)
+ CREATE OR REPLACE FUNCTION update_daily_crashes(timestamp with time zone)
 RETURNS boolean AS $$
 BEGIN
         RETURN true;
 END;
 $$ LANGUAGE plpgsql;
- CREATE OR REPLACE FUNCTION update_os_signature_counts(timestamp without time zone)
+ CREATE OR REPLACE FUNCTION update_os_signature_counts(timestamp with time zone)
 RETURNS boolean AS $$
 BEGIN
         RETURN true;
 END;
 $$ LANGUAGE plpgsql;
- CREATE OR REPLACE FUNCTION update_uptime_signature_counts(timestamp without time zone)
+ CREATE OR REPLACE FUNCTION update_uptime_signature_counts(timestamp with time zone)
 RETURNS boolean AS $$
 BEGIN
         RETURN true;
 END;
 $$ LANGUAGE plpgsql;
- CREATE OR REPLACE FUNCTION update_product_signature_counts(timestamp without time zone)
+ CREATE OR REPLACE FUNCTION update_product_signature_counts(timestamp with time zone)
 RETURNS boolean AS $$
 BEGIN
         RETURN true;
 END;
 $$ LANGUAGE plpgsql;
- CREATE OR REPLACE FUNCTION update_hang_report(timestamp without time zone)
+ CREATE OR REPLACE FUNCTION update_hang_report(timestamp with time zone)
 RETURNS boolean AS $$
 BEGIN
         RETURN true;
@@ -206,10 +206,10 @@ $$ LANGUAGE plpgsql;
         cursor = self.connection.cursor()
         cursor.execute("""DROP TABLE cronjobs;
         DROP FUNCTION update_product_versions () ;
-        DROP FUNCTION update_os_versions (timestamp without time zone) ;
-        DROP FUNCTION update_signatures (timestamp without time zone) ;
-        DROP FUNCTION update_tcbs (timestamp without time zone) ;
-        DROP FUNCTION update_adu (timestamp without time zone) ;
+        DROP FUNCTION update_os_versions (timestamp with time zone) ;
+        DROP FUNCTION update_signatures (timestamp with time zone) ;
+        DROP FUNCTION update_tcbs (timestamp with time zone) ;
+        DROP FUNCTION update_adu (timestamp with time zone) ;
         """)
         self.connection.commit()
 

@@ -65,7 +65,7 @@ def setup_module():
 def teardown_module():
   pass
 
-tptCreationSql = "CREATE TABLE %s (id serial not null primary key, date_col timestamp without time zone)"
+tptCreationSql = "CREATE TABLE %s (id serial not null primary key, date_col timestamp with time zone)"
 partitionSql = "CREATE table %%(partitionName)s () INHERITS (%s)"
 tptPartitionCreationSqlTemplate = partitionSql%'tpt'
 tpt3PartitionCreationSqlTemplate = partitionSql%'tpt3'
