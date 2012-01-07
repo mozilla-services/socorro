@@ -41,6 +41,10 @@ echo 'drop and fix timezone conversion functions'
 echo 'bugs 715342'
 psql -f ${CURDIR}/drop_tz_conversion_functions.sql breakpad
 
+echo '*********************************************'
+echo 'drop temporary tables created for conversion'
+psql -f ${CURDIR}/drop_transitional_tables.sql breakpad
+
 #change version in DB
 psql -c "SELECT update_socorro_db_version( '$VERSION' )" breakpad
 
