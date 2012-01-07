@@ -198,7 +198,7 @@ class ProcessorWithExternalBreakpad (processor.Processor):
     #logger.info('reportUpdateValues: %s', str(reportUpdateValues))
     #logger.info('reportUpdateSqlParts: %s', str(reportUpdateSqlParts))
     if len(reportUpdateSqlParts) > 1:
-      reportUpdateSQL = """update reports set %s where id=%%(id)s AND date_processed = timestamp without time zone '%s'"""%(",".join(reportUpdateSqlParts),date_processed)
+      reportUpdateSQL = """update reports set %s where id=%%(id)s AND date_processed = timestamp with time zone '%s'"""%(",".join(reportUpdateSqlParts),date_processed)
       databaseCursor.execute(reportUpdateSQL, reportUpdateValues)
 
     if crashedThread is None:
@@ -310,7 +310,7 @@ class ProcessorWithExternalBreakpad (processor.Processor):
       processorErrorMessages.append(message)
       logger.warning("%s", message)
     #processor_notes = '; '.join(processorErrorMessages)
-    #databaseCursor.execute("update reports set signature = %%s, processor_notes = %%s where id = %%s and date_processed = timestamp without time zone '%s'" % (date_processed),(signature, processor_notes,reportId))
+    #databaseCursor.execute("update reports set signature = %%s, processor_notes = %%s where id = %%s and date_processed = timestamp with time zone '%s'" % (date_processed),(signature, processor_notes,reportId))
     #logger.debug ("topmost_sourcefiles  %s", topmost_sourcefiles)
     return { "signature": signature,
              "truncated": truncated,

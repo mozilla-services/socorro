@@ -1384,7 +1384,7 @@ class AlexaTopsitesTable(Table):
                                               CREATE TABLE alexa_topsites (
                                                 domain text NOT NULL PRIMARY KEY,
                                                 rank integer DEFAULT 10000,
-                                                last_updated timestamp without time zone
+                                                last_updated timestamp with time zone
                                                 );
                                               """
                                             )
@@ -1427,7 +1427,7 @@ class BuildsTable(Table):
                                                 buildid BIGINT,
                                                 platform_changeset text,
                                                 filename text,
-                                                date timestamp without time zone DEFAULT now(),
+                                                date timestamp with time zone DEFAULT now(),
                                                 app_changeset_1 text,
                                                 app_changeset_2 text
                                             );
@@ -1627,12 +1627,12 @@ class EmailCampaignsTable(Table):
                                                 signature TEXT NOT NULL,
                                                 subject TEXT NOT NULL,
                                                 body TEXT NOT NULL,
-                                                start_date timestamp without time zone NOT NULL,
-                                                end_date timestamp without time zone NOT NULL,
+                                                start_date timestamp with time zone NOT NULL,
+                                                end_date timestamp with time zone NOT NULL,
                                                 email_count INTEGER DEFAULT 0,
                                                 author TEXT NOT NULL,
                                                 status TEXT NOT NULL DEFAULT 'stopped',
-                                                date_created timestamp without time zone NOT NULL DEFAULT now());
+                                                date_created timestamp with time zone NOT NULL DEFAULT now());
                                             CREATE INDEX email_campaigns_product_signature_key ON email_campaigns (product, signature);
                                         """)
     self.insertSql = """INSERT INTO email_campaigns (product, versions, signature, subject, body, start_date, end_date, email_count, author)

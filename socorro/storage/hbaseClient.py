@@ -177,6 +177,8 @@ def guid_to_timestamped_row_id(id, timestamp):
   easily scan through a time specific region of the index.
   Finally, we append the normal ooid string for uniqueness.
   """
+  if timestamp[-6] in "-+":
+    return "%s%s%s" % (id[0], timestamp[:-6], id)
   return "%s%s%s" % (id[0], timestamp, id)
 
 @exception_wrapper(BadOoidException)
