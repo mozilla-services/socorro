@@ -24,6 +24,12 @@ code.
 	Drop timezone conversion functions which are no longer useful
 	after conversion to default UTC.
 	
+IMPORTANT:  While applying these migrations, the database must be
+inaccessible to users and processors (i.e.application down).
+
+IMPORTANT: After applying changes, you must change the default timezone
+for PostgreSQL to 'UTC'.
+	
 	
 
 	

@@ -103,7 +103,7 @@ and ( fromtime + fortime + interval '1 day' );
 insert into signatures ( signature, first_report, first_build )
 select newsigs.* from (
 	select signature::citext as signature, 
-		ts2pacific(min(date_processed)) as first_report, 
+		min(date_processed) as first_report, 
 		min(build_numeric(build)) as first_build
 	from new_reports
 	group by signature::citext ) as newsigs
@@ -191,7 +191,7 @@ LEFT OUTER JOIN reasons ON new_reports.reason = reasons.reason
 LEFT OUTER JOIN addresses ON new_reports.address = addresses.address
 LEFT OUTER JOIN flash_versions ON new_reports.flash_version = flash_versions.flash_version
 LEFT OUTER JOIN reports_duplicates ON new_reports.uuid = reports_duplicates.uuid
-	AND reports_duplicates.date_processed BETWEEN tz2pac_ts(fromtime - interval '1 day') AND tz2pac_ts(fromtime + interval '1 day' )
+	AND reports_duplicates.date_processed BETWEEN (fromtime - interval '1 day') AND (fromtime + interval '1 day' )
 LEFT OUTER JOIN domains ON new_reports.domain = domains.domain
 ORDER BY new_reports.uuid;
 

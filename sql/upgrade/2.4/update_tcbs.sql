@@ -1,4 +1,5 @@
 drop function backfill_tcbs(date, text);
+drop function update_tcbs(date);
 
 \set ON_ERROR_STOP 1
 

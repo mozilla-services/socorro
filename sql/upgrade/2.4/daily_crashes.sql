@@ -85,8 +85,8 @@ FROM product_visibility cfg
 JOIN productdims p on cfg.productdims_id = p.id
 JOIN reports r on p.product = r.product AND p.version = r.version
 WHERE NOT cfg.ignore AND
-	date_processed >= utc_day_begins_pacific(updateday)
-		AND date_processed < utc_day_ends_pacific(updateday)
+	date_processed >= ( updateday::timestamptz )
+		AND date_processed < ( updateday + 1 )::timestamptz
 	AND updateday BETWEEN cfg.start_date and cfg.end_date
     AND lower(substring(os_name, 1, 3)) IN ('win','lin','mac')
 GROUP BY p.id, crash_code, os_short_name;
@@ -101,8 +101,8 @@ FROM (
 		   JOIN productdims p on cfg.productdims_id = p.id
 		   JOIN reports r on p.product = r.product AND p.version = r.version
 		   WHERE NOT cfg.ignore AND
-				date_processed >= utc_day_begins_pacific(updateday)
-					AND date_processed < utc_day_ends_pacific(updateday)
+			date_processed >= ( updateday::timestamptz )
+				AND date_processed < ( updateday + 1 )::timestamptz
 				AND updateday BETWEEN cfg.start_date and cfg.end_date
 				AND hangid IS NOT NULL
                 AND lower(substring(os_name, 1, 3)) IN ('win','lin','mac')
