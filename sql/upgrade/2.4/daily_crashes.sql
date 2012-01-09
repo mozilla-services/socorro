@@ -1,4 +1,5 @@
 DROP FUNCTION backfill_daily_crashes( date, text );
+DROP FUNCTION update_daily_crashes(date);
 
 \set ON_ERROR_STOP 1
 
