@@ -29,12 +29,19 @@ echo 'bug 715333'
 /data/socorro/application/scripts/parallel_sql_jobs.py --dbname breakpad -j 8 --stop < /tmp/partition_constraints.txt
 
 echo '*********************************************'
+echo 'change data type on raw_adu'
+echo 'this can take up to 20 min'
+echo 'bug 715333'
+psql -f ${CURDIR}/fix_adu_date.sql breakpad
+
+echo '*********************************************'
 echo 'fix matview generators to work with UTC'
 echo 'bugs 715335'
 psql -f ${CURDIR}/update_os_versions.sql breakpad
 psql -f ${CURDIR}/update_reports_duplicates.sql breakpad
 psql -f ${CURDIR}/update_reports_clean.sql breakpad
 psql -f ${CURDIR}/update_signatures.sql breakpad
+psql -f ${CURDIR}/insert_into_lookup_lists.sql breakpad
 
 echo '*********************************************'
 echo 'drop and fix timezone conversion functions'

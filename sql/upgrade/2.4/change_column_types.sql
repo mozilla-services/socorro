@@ -6,13 +6,13 @@ drop table if exists timestamp_tables;
 create table timestamp_tables ( tablename text );
 insert into timestamp_tables values 
 	( 'daily_crashes' ),
+	( 'email_campaigns' ),
 	( 'extensions' ),
 	( 'extensions_2%' ),
 	( 'frames' ),
 	( 'jobs' ),
 	( 'plugins_reports' ),
 	( 'plugins_reports_2%'),
-	( 'raw_adu' ),
 	( 'reports' ),
 	( 'reports_2%' ),
 	( 'reports_duplicates' ),
