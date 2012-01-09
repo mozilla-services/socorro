@@ -763,10 +763,10 @@ def testProcessJob06():
     c.fakeConnection.expect('commit', (), {}, None)
     c.fakeCursor.expect('execute',
                         ("update reports set started_datetime = timestamp "
-                         "without time zone %s, completed_datetime = "
-                         "timestamp without time zone %s, success = False, "
+                         "with time zone %s, completed_datetime = "
+                         "timestamp with time zone %s, success = False, "
                          "processor_notes = %s where id = %s and "
-                         "date_processed = timestamp without time zone %s",
+                         "date_processed = timestamp with time zone %s",
                          (startedDatetime, failedDatetime, message, reportId,
                           date_processed)),
                         {})
@@ -866,14 +866,14 @@ def testProcessJob07():
       update reports set
         signature = %%s,
         processor_notes = %%s,
-        started_datetime = timestamp without time zone %%s,
-        completed_datetime = timestamp without time zone %%s,
+        started_datetime = timestamp with time zone %%s,
+        completed_datetime = timestamp with time zone %%s,
         success = %%s,
         truncated = %%s,
         topmost_filenames = %%s,
         addons_checked = %%s,
         flash_version = %%s
-      where id = %s and date_processed = timestamp without time zone '%s'
+      where id = %s and date_processed = timestamp with time zone '%s'
       """ % (reportId, date_processed)
     c.fakeCursor.expect('execute',
                         (reportsSql,
@@ -1014,14 +1014,14 @@ def testProcessJobProductIdOverride():
       update reports set
         signature = %%s,
         processor_notes = %%s,
-        started_datetime = timestamp without time zone %%s,
-        completed_datetime = timestamp without time zone %%s,
+        started_datetime = timestamp with time zone %%s,
+        completed_datetime = timestamp with time zone %%s,
         success = %%s,
         truncated = %%s,
         topmost_filenames = %%s,
         addons_checked = %%s,
         flash_version = %%s
-      where id = %s and date_processed = timestamp without time zone '%s'
+      where id = %s and date_processed = timestamp with time zone '%s'
       """ % (reportId, date_processed)
     c.fakeCursor.expect('execute',
                         (reportsSql,
@@ -1170,7 +1170,7 @@ def testInsertReportIntoDatabase01():
                                 (c.fakeCursor,
                                  "select id from reports where uuid = "
                                  "'ooid1' and date_processed = timestamp "
-                                 "without time zone '2011-02-15 01:00:00+00:00'"),
+                                 "with time zone '2011-02-15 01:00:00+00:00'"),
                                 {},
                                 234)
 

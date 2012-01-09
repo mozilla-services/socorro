@@ -103,7 +103,7 @@ class ProductsBuilds(PostgreSQLBase):
 
         sql.append("""
             AND build_date(build_id) >=
-                timestamp without time zone %(from_date)s
+                timestamp with time zone %(from_date)s
             AND repository IN ('mozilla-central', 'mozilla-1.9.2',
                                'comm-central', 'comm-1.9.2',
                                'comm-central-trunk')

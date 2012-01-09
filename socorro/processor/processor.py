@@ -545,14 +545,14 @@ class Processor(object):
       update reports set
         signature = %%s,
         processor_notes = %%s,
-        started_datetime = timestamp without time zone %%s,
-        completed_datetime = timestamp without time zone %%s,
+        started_datetime = timestamp with time zone %%s,
+        completed_datetime = timestamp with time zone %%s,
         success = %%s,
         truncated = %%s,
         topmost_filenames = %%s,
         addons_checked = %%s,
         flash_version = %%s
-      where id = %s and date_processed = timestamp without time zone '%s'
+      where id = %s and date_processed = timestamp with time zone '%s'
       """ % (reportId,date_processed)
       #logger.debug("newReportRecordAsDict %s, %s", newReportRecordAsDict['topmost_filenames'], newReportRecordAsDict['flash_version'])
       #topmost_filenames = "|".join(jsonDocument.get('topmost_filenames',[]))
@@ -614,7 +614,7 @@ class Processor(object):
       threadLocalCursor.execute("update jobs set completeddatetime = %s, success = False, message = %s where id = %s", (self.nowFunc(), message, jobId))
       threadLocalDatabaseConnection.commit()
       try:
-        threadLocalCursor.execute("update reports set started_datetime = timestamp without time zone %s, completed_datetime = timestamp without time zone %s, success = False, processor_notes = %s where id = %s and date_processed = timestamp without time zone %s", (startedDateTime, self.nowFunc(), message, reportId, date_processed))
+        threadLocalCursor.execute("update reports set started_datetime = timestamp with time zone %s, completed_datetime = timestamp with time zone %s, success = False, processor_notes = %s where id = %s and date_processed = timestamp with time zone %s", (startedDateTime, self.nowFunc(), message, reportId, date_processed))
         threadLocalDatabaseConnection.commit()
         self.saveProcessedDumpJson(newReportRecordAsDict, threadLocalCrashStorage)
       except Exception, x:
@@ -731,13 +731,13 @@ class Processor(object):
       logger.debug("replacing record that already exsited: %s", uuid)
       threadLocalCursor.connection.rollback()
       # the following code fragment can prevent a crash from being processed a second time
-      #previousTrialWasSuccessful = self.sdb.singleValueSql(threadLocalCursor, "select success from reports where uuid = '%s' and date_processed = timestamp without time zone '%s'" % (uuid, date_processed))
+      #previousTrialWasSuccessful = self.sdb.singleValueSql(threadLocalCursor, "select success from reports where uuid = '%s' and date_processed = timestamp with time zone '%s'" % (uuid, date_processed))
       #if previousTrialWasSuccessful:
         #raise DuplicateEntryException(uuid)
-      threadLocalCursor.execute("delete from reports where uuid = '%s' and date_processed = timestamp without time zone '%s'" % (uuid, date_processed))
+      threadLocalCursor.execute("delete from reports where uuid = '%s' and date_processed = timestamp with time zone '%s'" % (uuid, date_processed))
       processorErrorMessages.append("INFO: This record is a replacement for a previous record with the same uuid")
       self.reportsTable.insert(threadLocalCursor, newReportRecordAsTuple, self.databaseConnectionPool.connectionCursorPair, date_processed=date_processed)
-    newReportRecordAsDict["id"] = self.sdb.singleValueSql(threadLocalCursor, "select id from reports where uuid = '%s' and date_processed = timestamp without time zone '%s'" % (uuid, date_processed))
+    newReportRecordAsDict["id"] = self.sdb.singleValueSql(threadLocalCursor, "select id from reports where uuid = '%s' and date_processed = timestamp with time zone '%s'" % (uuid, date_processed))
 
     return newReportRecordAsDict
 

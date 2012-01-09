@@ -64,6 +64,8 @@ def string_to_datetime(date):
         * ['2012-01-10', '12:13:14']
 
     """
+    if date is None:
+        return None
     if isinstance(date, datetime.datetime):
         if not date.tzinfo:
             date = date.replace(tzinfo=UTC)
