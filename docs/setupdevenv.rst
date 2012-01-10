@@ -34,7 +34,7 @@ do the following::
     cd /home/socorro/dev/socorro
     git checkout my-dev-branch
     make install
-    sudo /etc/init.d/apache restart
+    sudo /etc/init.d/apache2 restart
     sudo /etc/init.d/supervisor force-stop && sudo /etc/init.d/supervisor start
 
 And then from your browser access http://crash-stats/ for the UI, or
@@ -47,8 +47,8 @@ If you don't like vim or you want to use your favorite IDE, you can easily
 create a shared folder between your OS and your VM. You can then work in your
 OS and have all your changes automatically passed to the VM.
 
-The best solution is to use NFS. There is a good documentation on Vagrant's
-website that explain it all: http://vagrantup.com/docs/nfs.html
+The best solution is to use NFS. There is good documentation on the Vagrant
+website that explains it all: http://vagrantup.com/docs/nfs.html
 
 
 Setting up a new database
