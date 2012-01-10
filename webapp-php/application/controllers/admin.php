@@ -67,7 +67,7 @@ class Admin_Controller extends Controller
         // Auth::instance()->login_required('admin'); // Once more than admins are on the system, can probably switch to this
         if ($this->auth_is_active) {
             Auth::instance()->login_required(); // Login required will be enough for now
-            $this->session->regenerate();
+            Session::instance()->regenerate();
         }
 
         $this->js = html::script(array('js/jquery/date.js',
