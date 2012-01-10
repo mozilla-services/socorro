@@ -22,7 +22,7 @@ class HangReport_Model extends Model {
        $service = new Web_Service($config);
        $host = Kohana::config('webserviceclient.socorro_hostname');
        $cache_in_minutes = Kohana::config('webserviceclient.hang_report_cache_minutes', 60);
-       $end_date = urlencode(date('Y-m-d\TH:i:s\T+0000', TimeUtil::roundOffByMinutes($cache_in_minutes)));
+       $end_date = date('Y-m-d', TimeUtil::roundOffByMinutes($cache_in_minutes));
        $limit = Kohana::config('hang_report.byversion_limit', 300);
        $p = urlencode($product);
        $v = urlencode($version);
