@@ -208,6 +208,7 @@ prefixSignatureRegEx = '|'.join([
   'dvmAbort',
   'JNI_CreateJavaVM',
   'dvmStringLen',
+  '(libxul\.so|xul\.dll|XUL)@0x.*',
   ])
 
 signaturesWithLineNumbersRegEx = cm.Option()
