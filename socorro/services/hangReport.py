@@ -27,7 +27,7 @@ class HangReport(webapi.JsonServiceBase):
           FROM hang_report
           WHERE product = %(product)s
           AND version = %(version)s
-          AND report_day > utc_day_begins_pacific(((%(end)s)::timestamp - interval '%(duration)s days')::date)
+          AND report_day >= ((%(end)s::DATE - %(duration)s))
     """
 
     logger.debug(cursor.mogrify(hangReportCountSql, parameters))
@@ -50,7 +50,7 @@ class HangReport(webapi.JsonServiceBase):
           FROM hang_report
           WHERE product = %(product)s
           AND version = %(version)s
-          AND report_day > utc_day_begins_pacific(((%(end)s)::timestamp - interval '%(duration)s days')::date)
+          AND report_day > ((%(end)s)::DATE -%(duration)s)
           LIMIT %(listsize)s
           OFFSET %(offset)s"""
 
