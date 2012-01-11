@@ -114,7 +114,7 @@ GROUP BY subr.prod_id, subr.os_short_name;
 INSERT INTO daily_crashes (count, report_type, productdims_id, os_short_name, adu_day)
 SELECT COUNT(*) as count, daily_crash_code(process_type, hang_id) as crash_code,
 	product_version_id, 
-	os_short_name,
+	initcap(os_short_name),
 	updateday
 FROM reports_clean JOIN product_versions USING (product_version_id)
 	JOIN os_names USING (os_name)
@@ -125,7 +125,7 @@ GROUP BY product_version_id, crash_code, os_short_name;
 -- insert normalized hangs for new products
 INSERT INTO daily_crashes (count, report_type, productdims_id, os_short_name, adu_day)
 SELECT count(DISTINCT hang_id) as count, 'H', 
-	product_version_id, os_short_name,
+	product_version_id, initcap(os_short_name),
 	updateday
 FROM product_versions
 	JOIN reports_clean USING ( product_version_id )
