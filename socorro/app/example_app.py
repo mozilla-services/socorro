@@ -15,7 +15,7 @@ from configman import Namespace
 
 #==============================================================================
 class ExampleApp(App):
-    app_name = 'sample'
+    app_name = 'example'
     app_version = '0.1'
     app_description = __doc__
 

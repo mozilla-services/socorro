@@ -8,9 +8,11 @@ import functools
 from configman import ConfigurationManager, Namespace, RequiredConfig
 from configman.converters import class_converter
 
+
 #==============================================================================
 class AppDetailMissingError(AttributeError):
     pass
+
 
 #==============================================================================
 class App(RequiredConfig):
@@ -81,7 +83,7 @@ def setup_logger(app_name, config, local_unused, args_unused):
 #------------------------------------------------------------------------------
 # This main function will load an application object, initialize it and then
 # call its 'main' function
-def main(initial_app=None):
+def main(initial_app):
     if isinstance(initial_app, basestring):
         initial_app = class_converter(initial_app)
 
@@ -100,7 +102,8 @@ def main(initial_app=None):
                      from_string_converter=class_converter
                     )
     try:
-        app_name = initial_app.app_name
+        app_name = initial_app.app_name  # this will be used as the default
+                                         # b
         app_version = initial_app.app_version
         app_description = initial_app.app_description
     except AttributeError, x:
@@ -113,10 +116,6 @@ def main(initial_app=None):
     definitions = (app_definition,
                    logging_required_config(app_name))
 
-    # set up the manager with the definitions and values
-    # it isn't necessary to provide the app_name because the
-    # app_object passed in or loaded by the ConfigurationManager will alredy
-    # have that information.
     config_manager = ConfigurationManager(definitions,
                                           app_name=app_name,
                                           app_version=app_version,
@@ -126,6 +125,11 @@ def main(initial_app=None):
     with config_manager.context() as config:
         config_manager.log_config(config.logger)
 
+        # get the app class from configman.  Why bother since we have it aleady
+        # with the 'initial_app' name?  In most cases initial_app == app,
+        # it might not always be that way.  The user always has the ability
+        # to specify on the command line a new app class that will override
+        # 'initial_app'.
         app = config.admin.application
 
         if isinstance(app, type):
@@ -139,6 +143,3 @@ def main(initial_app=None):
             # invocation of the app if the app_object was a function
             app(config)
         return 0
-
-if __name__ == '__main__':
-    main()
