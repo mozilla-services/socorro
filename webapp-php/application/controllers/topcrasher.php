@@ -303,10 +303,13 @@ class Topcrasher_Controller extends Controller {
 
 	$host = Kohana::config('webserviceclient.socorro_hostname');
 
+
 	$cache_in_minutes = Kohana::config('webserviceclient.topcrash_vers_rank_cache_minutes', 60);
-	$start_date = str_replace(" ", "T", $start_date.'+0000', TimeUtil::roundOffByMinutes($cache_in_minutes));
-	$end_date = str_replace(" ", "T", $end_date.'+0000', TimeUtil::roundOffByMinutes($cache_in_minutes));
-	$duration = TimeUtil::determineHourDifferential($start_date, $end_date); // Number of hours
+
+    $start_date = date('c', strtotime($start_date)); 
+    $end_date = date('c', strtotime($end_date)); 
+    $duration = TimeUtil::determineHourDifferential($start_date, $end_date); // Number of hours
+
 
 	$start_date = urlencode($start_date);
 	$end_date = urlencode($end_date);
