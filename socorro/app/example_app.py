@@ -2,7 +2,7 @@
 """demonstrates using configman to make a Socorro app"""
 
 # This app can be invoked like this:
-#     .../socorro/app/sampleApp.py --help
+#     .../socorro/app/example_app.py --help
 # set your path to make that simpler
 # set both socorro and configman in your PYTHONPATH
 
