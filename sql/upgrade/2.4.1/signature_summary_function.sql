@@ -122,6 +122,8 @@ ELSE
 	$q$;
 END IF;
 
+RAISE INFO 'search query is: %',query_string;
+
 RETURN QUERY EXECUTE query_string;
 
 RETURN;

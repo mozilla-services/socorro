@@ -5,7 +5,7 @@ BEGIN
 	SET maintenance_work_mem = '512MB';
 
 	FOR rc_part IN SELECT relname FROM pg_stat_user_tables
-		WHERE relname LIKE 'reports_clean_2011%'
+		WHERE relname LIKE 'reports_clean_201%'
 		ORDER BY relname
 		LOOP
 		
