@@ -50,7 +50,7 @@ class HangReport(webapi.JsonServiceBase):
           FROM hang_report
           WHERE product = %(product)s
           AND version = %(version)s
-          AND report_day > ((%(end)s)::DATE -%(duration)s)
+          AND report_day >= ((%(end)s)::DATE -%(duration)s)
           LIMIT %(listsize)s
           OFFSET %(offset)s"""
 
