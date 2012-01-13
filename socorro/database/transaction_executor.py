@@ -92,7 +92,6 @@ class TransactionExecutorWithBackoff(TransactionExecutor):
                     trans.commit()
                     break
             except self.config.db_transaction.operational_exceptions:
-                raise
                 pass
             print ('failure in transaction - retry in %s seconds' %
                    wait_in_seconds)
