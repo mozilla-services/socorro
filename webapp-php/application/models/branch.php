@@ -70,7 +70,8 @@ class Branch_Model extends Model {
         $service = new Web_Service($config);
         $host = Kohana::config('webserviceclient.socorro_hostname');
         $from = rawurlencode($order_by);
-        $resp = $service->get("${host}/current/versions/${from}");
+        $lifetime = Kohana::config('webserviceclient.branch_model_cache_in_minutes', 60) * 60;
+        $resp = $service->get("${host}/current/versions/${from}", 'json', $lifetime);
 
         return $resp->currentversions;
     }
