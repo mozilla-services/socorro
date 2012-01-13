@@ -1,5 +1,6 @@
 import threading
 import socket
+import contextlib
 import psycopg2
 import psycopg2.extensions
 
