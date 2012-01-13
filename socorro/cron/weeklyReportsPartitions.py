@@ -22,12 +22,11 @@ class WeeklyReportsPartitions(App):
     app_description = __doc__
 
     required_config = Namespace()
-    required_config.add_option('wilma', default='Wilma')
     required_config.add_option('transaction_executor_class',
                                #default=TransactionExecutorWithBackoff,
                                default=TransactionExecutor,
                                doc='a class that will execute transactions')
-                               
+
     def run_query(self, connection):
         cursor = connection.cursor()
         print "cursor created"
@@ -36,7 +35,7 @@ class WeeklyReportsPartitions(App):
     def main(self):
         executor = self.config.transaction_executor_class(self.config)
         executor.do_transaction(self.run_query)
-        
+
 
 if __name__ == '__main__':
     main(WeeklyReportsPartitions)
