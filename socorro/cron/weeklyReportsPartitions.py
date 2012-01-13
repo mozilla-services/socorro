@@ -27,22 +27,16 @@ class WeeklyReportsPartitions(App):
                                #default=TransactionExecutorWithBackoff,
                                default=TransactionExecutor,
                                doc='a class that will execute transactions')
-
+                               
     def run_query(self, connection):
-        connection.query('select * from pg_class')
-        #connection.query('SELECT weekly_report_partitions();')
+        cursor = connection.cursor()
+        print "cursor created"
+        cursor.execute('SELECT weekly_report_partitions()')
 
     def main(self):
-        #print self.config
-        #print self.config.keys()
         executor = self.config.transaction_executor_class(self.config)
         executor.do_transaction(self.run_query)
-        #return 
-        #with self.context() as config:
-        #    # the configuration has a class that can execute transactions
-        #    # we instantiate it here.
-        #    executor = config.transaction_executor_class(config)
-        #    executor.do_transaction(run_query)
+        
 
 if __name__ == '__main__':
     main(WeeklyReportsPartitions)

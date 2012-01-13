@@ -83,7 +83,7 @@ def setup_logger(app_name, config, local_unused, args_unused):
 #------------------------------------------------------------------------------
 # This main function will load an application object, initialize it and then
 # call its 'main' function
-def main(initial_app):
+def main(initial_app, values_source_list=None):
     if isinstance(initial_app, basestring):
         initial_app = class_converter(initial_app)
 
@@ -120,6 +120,7 @@ def main(initial_app):
                                           app_name=app_name,
                                           app_version=app_version,
                                           app_description=app_description,
+                                          values_source_list=values_source_list,
                                          )
 
     with config_manager.context() as config:
