@@ -93,7 +93,7 @@ def get_parameters(kwargs):
         ("os", None, ["list", "str"]),
         ("branches", None, ["list", "str"]),
         ("reasons", None, ["list", "str"]),
-        ("build_ids", None, ["list", "int"]),
+        ("build_ids", None, ["list", "str"]),
         ("build_from", lastweek, "datetime"),
         ("build_to", now, "datetime"),
         ("report_process", "any", "str"),
@@ -107,10 +107,6 @@ def get_parameters(kwargs):
     ]
 
     params = extern.parse_arguments(filters, kwargs)
-
-    # If there is no product nor version, use Firefox as the default product
-    if not params["products"] and not params["versions"]:
-        params["products"] = ["Firefox"]
 
     # To be moved into a config file?
     authorized_modes = [
