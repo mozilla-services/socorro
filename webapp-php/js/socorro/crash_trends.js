@@ -1,9 +1,11 @@
+/*global socorro:false */
 $(function() {
     
     /* 
      * Mock for drawCrashTrends
-     * Crash data for build one to three days old are displayed separately but,
-     * crash data for builds four days and over are binned togther.
+     * Crash data for build one to seven days old are displayed as separate bar segments but,
+     * crash data for builds eight days and over are binned togther and displayed as the last bar segment.
+     * ----- PLEASE REMOVE ONE MOCK IS NO LONGER NEEDED ------
      */
     $.mockjax({
         url: "/webservice/nightlytrends",
@@ -45,11 +47,13 @@ $(function() {
             ]
         }
     });
-    
+    "use strict";
     var fromDate, toDate,
     graph, graphData,
     previousPoint = null,
     previousSeriesIndex = null,
+    errorMsg = "The 'To' date should be greater than the 'From' date.",
+    dateFields = $("#nightly_crash_trends input[type='date']"),
     dateSupported = function() {
         var inputElem = document.createElement("input");
         inputElem.setAttribute("type", "date");
@@ -73,7 +77,7 @@ $(function() {
         }).appendTo("body").fadeIn(200);
     },
     validateDateRange = function(fromDate, toDate) {
-        
+        return socorro.date.convertToDateObj(fromDate) < socorro.date.convertToDateObj(toDate);
     };
     
     var drawCrashTrends = function() {
@@ -123,12 +127,12 @@ $(function() {
     };
     
     var init = function() {
-        toDate = new Date();
-        fromDate = new Date(toDate - (socorro.date.ONE_DAY * 6));
+        toDate = socorro.date.formatDate(socorro.date.now(), "US_NUMERICAL");
+        fromDate = socorro.date.formatDate(new Date(socorro.date.now() - (socorro.date.ONE_DAY * 6)), "US_NUMERICAL");
         
         //set the value of the input fields
-        $("#from_date").val(socorro.date.formatDate(fromDate, "US_NUMERICAL"));
-        $("#to_date").val(socorro.date.formatDate(toDate, "US_NUMERICAL"));
+        $("#from_date").val(fromDate);
+        $("#to_date").val(toDate);
         
         //set the dates on the figcaption
         $("#fromdate").empty().append(fromDate);
@@ -167,16 +171,30 @@ $(function() {
         event.preventDefault();
         fromDate = $("#from_date").val();
         toDate = $("#to_date").val();
-        //set the dates on the figcaption
-        $("#fromdate").empty().append(fromDate);
-        $("#todate").empty().append(toDate);
-        // add the loading animation
-        setLoader();
-        drawCrashTrends();
+        
+        //validate that toDate is after fromDate
+        if(validateDateRange(fromDate, toDate)) {
+            //remove any previous validation messages
+            dateFields.removeClass("error-field");
+            $(".error").hide();
+            
+            //set the dates on the figcaption
+            $("#fromdate").empty().append(fromDate);
+            $("#todate").empty().append(toDate);
+            
+            // add the loading animation
+            setLoader();
+            drawCrashTrends();
+        } else {
+            //validation failed raise validation message and highlight fields
+            dateFields.addClass("error-field");
+            $(".error").empty().append(errorMsg).show();
+        }
     });
     
+    //check if the HTML5 date type is supported else, fallback to jQuery UI
     if(!dateSupported()) {
-        $("#nightly_crash_trends input[type='date']").datepicker({
+        dateFields.datepicker({
             dateFormat: "dd/mm/yy"
         });
     }

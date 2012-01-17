@@ -13,6 +13,7 @@
 <div class="crash_stats_panel report_criteria">
     <form name="nightly_crash_trends" id="nightly_crash_trends" action="/" method="get">
         <h3 class="crash_stats_panel_title">Select Report Criteria</h3>
+        <div class="error"></div>
         <fieldset class="crash_stats_body">
             <div class="field">
                 <label for="from_date">From</label>

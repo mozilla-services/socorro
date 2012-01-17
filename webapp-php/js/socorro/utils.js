@@ -3,6 +3,12 @@
     var socorro = {
         date: {
             ONE_DAY: 1000 * 60 * 60 * 24,
+            now: function() {
+                return new Date();
+            },
+            //this will be more generic, for now, it expects a date string of the format mm/dd/yyyy
+            // it converts this into the formate new Date expects, and returns a unformatted JavaScript 
+            // date object
             convertToDateObj: function(dateString) {
                 var dateStringSplit = dateString.split("/");
                 return new Date(dateStringSplit[2], dateStringSplit[1] - 1, dateStringSplit[0]);
