@@ -16,3 +16,7 @@ END IF;
 
 END;$f$;
 
+-- finally, analyze the whole database
+-- this takes a while
+ANALYSE VERBOSE;
+

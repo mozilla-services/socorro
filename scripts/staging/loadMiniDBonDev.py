@@ -68,7 +68,7 @@ except psycopg2.Error as exc:
     else:
         # if this failed, check why.
         sys.exit('unable to drop database %s probably because connections to it are still open: %s'
-                 % (database_name, code,))
+                 % (options.database_name, code,))
 
 cur.execute("""CREATE DATABASE %s""" % options.database_name)
 

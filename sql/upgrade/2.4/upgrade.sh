@@ -29,8 +29,8 @@ echo 'bug 715333'
 /data/socorro/application/scripts/parallel_sql_jobs.py --dbname breakpad -j 8 --stop < /tmp/partition_constraints.txt
 
 echo '*********************************************'
-echo 'change data type on raw_adu'
-echo 'this can take up to 20 min'
+echo 'change data type on raw_adu and analyze the database'
+echo 'this can take up to 40 min'
 echo 'bug 715333'
 psql -f ${CURDIR}/fix_adu_date.sql breakpad
 
