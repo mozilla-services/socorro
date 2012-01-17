@@ -12,10 +12,12 @@ psql -f ${CURDIR}/create_table_if_not_exists.sql breakpad
 
 echo '*********************************************************'
 echo 'create new signature summaries index and function'
+echo 'and remove the obsolete matviews'
 echo 'may take quite a while for index creation'
 echo 'bug 714338 and '
 psql -f ${CURDIR}/new_rc_index.sql breakpad
 psql -f ${CURDIR}/reports_clean_weekly.sql breakpad
+psql -f ${CURDIR}/clean_up_sig_summary.sql breakpad
 
 # not needed, doing in middelware instead
 # psql -f ${CURDIR}/signature_summary_function.sql breakpad
