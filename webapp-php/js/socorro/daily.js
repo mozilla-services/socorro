@@ -1,12 +1,14 @@
 $(function() {
-    var colours = ['#058DC7', '#ED561B', '#50B432', '#990099'], 
+    var colours = ['#058DC7', '#ED561B', '#50B432', '#990099'],
         chartOpts = {
             xaxis: {
               mode: 'time',
               timeformat: "%b %d",
               minTickSize: [1, "day"],
             },
-            yaxis: {},
+            yaxis: {
+              min: 0,
+            },
             series: {
                 lines: { show: true },
                 points: {
