@@ -210,6 +210,18 @@ prefixSignatureRegEx = '|'.join([
   'dvmStringLen',
   '(libxul\.so|xul\.dll|XUL)@0x.*',
   '_VEC_memzero',
+  'arena_malloc_small',
+  'arena_ralloc',
+  'arena_run_reg_alloc',
+  'arena_run_tree_insert',
+  'ialloc',
+  'isalloc',
+  'moz_xreallocx',
+  'arena_malloc',
+  'arena_run_reg_dalloc',
+  'arena_run_dalloc',
+  'je_malloc',
+  'je_realloc',
   ])
 
 signaturesWithLineNumbersRegEx = cm.Option()
