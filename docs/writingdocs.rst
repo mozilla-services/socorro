@@ -38,6 +38,11 @@ and you can preview it locally like this (on OS X for example)::
 
  open _build/html/index.html
 
+To modify the index itself, edit index.rst and (for instance you may want to
+add or remove a document filename, without the rst extension, from the
+".. toctree::" section)
+
+
 Making it appear on ReadTheDocs
 -------------------------------
 
