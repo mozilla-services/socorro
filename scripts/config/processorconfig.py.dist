@@ -209,6 +209,7 @@ prefixSignatureRegEx = '|'.join([
   'JNI_CreateJavaVM',
   'dvmStringLen',
   '(libxul\.so|xul\.dll|XUL)@0x.*',
+  '_VEC_memzero',
   ])
 
 signaturesWithLineNumbersRegEx = cm.Option()
