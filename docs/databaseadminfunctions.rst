@@ -58,8 +58,8 @@ the backfill to a week at a time in order to prevent it from running
 too long before committing.
 
 
-backfill_all_matviews
----------------------
+backfill_matviews
+-----------------
 
 Purpose: backfills data for all matviews for a specific range of dates.
 For use when data is either missing or needs to be retroactively 
@@ -69,14 +69,14 @@ Called By: manually by admin as needed
 
 ::
 
-  backfill_all_matviews (
+  backfill_matviews (
     startdate DATE,
     optional enddate DATE default current_date,
     optional reportsclean BOOLEAN default true 
   )
 
-  SELECT backfill_all_matviews( '2011-11-01', '2011-11-27', false );
-  SELECT backfill_all_matviews( '2011-11-01' );
+  SELECT backfill_matviews( '2011-11-01', '2011-11-27', false );
+  SELECT backfill_matviews( '2011-11-01' );
 
 startdate
   the first date to backfill
@@ -239,6 +239,38 @@ checkdata
 	
 Notes: updates only "new"-style versions.  Until 2.4, update_daily_crashes pulled data directly from reports and not reports_clean.  Probably the slowest of the regular update functions; can date up to 4 minutes to do one day.
 
+update_rank_compare, backfill_rank_compare
+------------------------------------------
+
+Purpose: updates "rank_compare" based on the contents of the reports_clean table
+
+Called By: daily cron job
+
+::
+
+	update_rank_compare (
+		updateday DATE optional default yesterday,
+		checkdata BOOLEAN optional default true
+		)
+		
+	SELECT update_rank_compare ( '2011-11-26' );
+	
+	backfill_rank_compare (
+		updateday DATE optional default yesterday
+		)
+		
+	SELECT backfill_rank_compare ( '2011-11-26' );
+	
+updateday
+	UTC day to pull data for.  Optional; defaults to ( CURRENT_DATE - 1 ).
+checkdata
+	whether or not to check dependant data and throw an error if it's not found.
+	
+Note: this matview is not historical, but contains only one day of data.  As
+such, running either the update or backfill function replaces all existing data.
+Since it needs an exclusive lock on the matview, it is possible (though 
+unlikely) for it to fail to obtain the lock and error out.
+
 
 Schema Management Functions
 ===========================
@@ -269,4 +301,92 @@ numweeks
 targetdate
 	date for the starting week, if not today
 	
+	
+try_lock_table
+--------------
+
+Purpose: attempt to get a lock on a table, looping with sleeps until
+the lock is obtained.
+
+Called by: various functions internally
+
+::
+
+	try_lock_table (
+		tabname TEXT,
+		mode TEXT optional default 'EXCLUSIVE',
+		attempts INT optional default 20
+	) returns BOOLEAN
+	
+	IF NOT try_lock_table('rank_compare', 'ACCESS EXCLUSIVE') THEN
+		RAISE EXCEPTION 'unable to lock the rank_compare table for update.';
+	END IF;
+	
+tabname 
+	the table name to lock
+mode
+	the lock mode per PostgreSQL docs.  Defaults to 'EXCLUSIVE'.
+attempts
+	the number of attempts to make, with 3 second sleeps between each.
+	optional, defaults to 20.
+
+Returns TRUE for table locked, FALSE for unable to lock.
+
+
+create_table_if_not_exists
+--------------------------
+
+Purpose: creates a new table, skipping if the table is found to already
+exist.
+
+Called By: upgrade scripts
+
+::
+
+	create_table_if_not_exists (
+		tablename TEXT,
+		declaration TEXT,
+		tableowner TEXT optional default 'breakpad_rw',
+		indexes TEXT ARRAY default empty list
+	)
+	
+	SELECT create_table_if_not_exists ( 'rank_compare', $q$
+		create table rank_compare (
+			product_version_id int not null,
+			signature_id int not null,
+			rank_days int not null,
+			report_count int,
+			total_reports bigint,
+			rank_report_count int,
+			percent_of_total numeric,
+			constraint rank_compare_key primary key ( product_version_id, signature_id, rank_days )
+		);$q$, 'breakpad_rw', 
+		ARRAY [ 'product_version_id,rank_report_count', 'signature_id' ]);
+	
+tablename
+	name of the new table to create
+declaration
+	full CREATE TABLE sql statement, plus whatever other SQL statements you
+	only want to run on table creation such as priming it with a few 
+	records and creating the primary key.  If running more than one 
+	SQL statement, separate them with semicolons.
+tableowner
+	the ROLE which owns the table.  usually 'breakpad_rw'.  optional.
+indexes
+	an array of sets of columns to create regular btree indexes on.
+	use the array declaration as demonstrated above.  default is 
+	to create no indexes.
+	
+Note: this is the best way to create new tables in migration scripts, since
+it allows you to rerun the script multiple times without erroring out.
+However, be aware that it only checks for the existance of the table, not
+its definition, so if you modify the table definition you'll need to 
+manually drop and recreate it.
+		
+		
+		
+
+
+
+
 

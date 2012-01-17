@@ -1,12 +1,14 @@
-2.4 Database Updates
-====================
+2.4.1 Database Updates
+======================
 
 This batch makes the following database changes:
 
-701255
-    daily_crashes.sql
-    update_tcbs.sql
-    backfill_matviews.sql
-    
-    Switch the tcbs and daily_crashes cron jobs to use reports_clean
-    instead of reports.
+bug 714338
+	Add signature summaries for process type and flash version.
+	
+bug 702384
+	Fix signature summary to match with product-version filtering.
+	
+bug 640237
+	Add rank_compare reports to Socorro
+
