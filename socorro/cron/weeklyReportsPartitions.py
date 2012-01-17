@@ -6,8 +6,8 @@ logger = logging.getLogger("weeklyReportsPartitions")
 
 from configman import Namespace, ConfigurationManager
 import socorro
-#from socorro.database.transaction_executor import TransactionExecutorWithBackoff
-from socorro.database.transaction_executor import TransactionExecutor
+from socorro.database.transaction_executor import TransactionExecutorWithBackoff
+#from socorro.database.transaction_executor import TransactionExecutor
 from socorro.app.generic_app import App, main
 
 """
@@ -23,13 +23,12 @@ class WeeklyReportsPartitions(App):
 
     required_config = Namespace()
     required_config.add_option('transaction_executor_class',
-                               #default=TransactionExecutorWithBackoff,
-                               default=TransactionExecutor,
+                               default=TransactionExecutorWithBackoff,
+                               #default=TransactionExecutor,
                                doc='a class that will execute transactions')
 
     def run_query(self, connection):
         cursor = connection.cursor()
-        print "cursor created"
         cursor.execute('SELECT weekly_report_partitions()')
 
     def main(self):

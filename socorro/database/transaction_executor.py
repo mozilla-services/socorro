@@ -15,6 +15,15 @@ def transaction_factory(config, local_config, args):
     of Postgres or PostgresPooled from above.  This function will
     instantiate the class
     """
+    print "CONFIG"
+    print repr(config)
+    print config.keys()
+    print "LOCAL_CONFIG"
+    print repr(local_config)
+    print local_config.keys()
+    print "local_config.database_class"
+    print repr(local_config.database_class)
+    print
     return local_config.database_class(config, local_config)
 
 

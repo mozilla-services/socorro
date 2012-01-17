@@ -17,13 +17,19 @@ import configman
 #  3, TRANSACTION_STATUS_INERROR
 #  4, TRANSACTION_STATUS_UNKNOWN
 
+DSN = {
+  "database_host": databaseHost.default,
+  "database_name": databaseName.default,
+  "database_user": databaseUserName.default,
+  "database_password": databasePassword.default
+}
+
 class TestClass:
     
     def setUp(self):
         assert 'test' in databaseName.default, databaseName.default
-        dsn = ('host=%s dbname=%s user=%s password=%s' % (
-                databaseHost.default, databaseName.default,
-                databaseUserName.default, databasePassword.default))
+        dsn = ('host=%(database_host)s dbname=%(database_name)s '
+               'user=%(database_user)s password=%(database_password)s' % DSN)
         self.conn = psycopg2.connect(dsn)
         # Create a mock function named 'weekly_report_partitions'
         cursor = self.conn.cursor()
@@ -36,14 +42,15 @@ class TestClass:
             insert into mock_bucket values (now());
             return;
           END; $$ LANGUAGE plpgsql;
-        COMMIT;
         """)
-        self.conn.get_transaction_status() == TRANSACTION_STATUS_IDLE        
+        self.conn.commit()
+        assert self.conn.get_transaction_status() == TRANSACTION_STATUS_IDLE        
         
     def tearDown(self):
         self.conn.cursor().execute("""
         DROP TABLE IF EXISTS mock_bucket;
         """)
+        self.conn.commit()
         
     def test_run_weeklyReportsPartitions(self):
         """Create a mock function named exactly like the stored procedure in the
@@ -52,16 +59,10 @@ class TestClass:
         """
              
         # provide values for the config to pick up
-        dsn = {
-          "database_host": databaseHost.default,
-          "database_name": databaseName.default,
-          "database_user": databaseUserName.default,
-          "database_password": databasePassword.default
-        }
         
         # use the `values_source_list=[configman.environment]` to 
         # avoid configman picking up nosetests arguments
-        app = main(WeeklyReportsPartitions, values_source_list=[dsn])
+        app = main(WeeklyReportsPartitions, values_source_list=[DSN])
 
         # check that something was written to the mock_bucket
         cursor = self.conn.cursor()
