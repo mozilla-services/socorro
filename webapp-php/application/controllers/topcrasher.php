@@ -176,7 +176,7 @@ class Topcrasher_Controller extends Controller {
 
 	$p = urlencode($product);
 	$v = urlencode($version);
-        $resp = $service->get("${host}/topcrash/sig/trend/rank/p/${p}/v/${v}/type/${crash_type}/end/${end_date}/duration/${dur}/listsize/${limit}", 'json', $lifetime);
+        $resp = $service->get("${host}/crashes/signatures/product/${p}/version/${v}/crash_type/${crash_type}/to_date/${end_date}/duration/${dur}/limit/${limit}", 'json', $lifetime);
 	if($resp) {
 	    $this->topcrashers_model->ensureProperties($resp, array(
 				     'start_date' => '',

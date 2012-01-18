@@ -32,9 +32,9 @@ def totalNumberOfCrashesForPeriod (aCursor, databaseParameters):
   """
   """
   where = ""
-  if databaseParameters["crashType"] == 'browser':
+  if databaseParameters["crash_type"] == 'browser':
     where = "AND tcbs.plugin_count = 0 AND tcbs.hang_count = 0"
-  if databaseParameters["crashType"] == 'plugin':
+  if databaseParameters["crash_type"] == 'plugin':
     where = "AND tcbs.plugin_count > 0 OR tcbs.hang_count > 0"
 
   sql = """
@@ -47,7 +47,7 @@ def totalNumberOfCrashesForPeriod (aCursor, databaseParameters):
         and tcbs.window_end <= '%s'
         and tcbs.productdims_id = %d
         %s
-    """ % (databaseParameters["startDate"], databaseParameters["endDate"], \
+    """ % (databaseParameters["startDate"], databaseParameters["to_date"], \
             databaseParameters["productdims_id"], where)
   #logger.debug(aCursor.mogrify(sql, databaseParameters))
   return db.singleValueSql(aCursor, sql, databaseParameters)
@@ -64,18 +64,18 @@ def getListOfTopCrashersBySignature(aCursor, databaseParameters, totalNumberOfCr
   assertPairs = {
    'totalNumberOfCrashes': long,
    'startDate': datetime.datetime,
-   'endDate': datetime.datetime,
+   'to_date': datetime.datetime,
    'productdims_id': int,
-   'listSize': int
+   'limit': int
   }
   for param in assertPairs.keys():
     assert type(databaseParameters[param]) is assertPairs[param], \
     "Expected %s for %s, actual type is %s" % (assertPairs[param], param, type(databaseParameters[param]))
 
   where = ""
-  if databaseParameters["crashType"] == 'browser':
+  if databaseParameters["crash_type"] == 'browser':
     where = "WHERE tcbs.plugin_count = 0 AND tcbs.hang_count = 0"
-  if databaseParameters["crashType"] == 'plugin':
+  if databaseParameters["crash_type"] == 'plugin':
     where = "WHERE tcbs.plugin_count > 0 OR tcbs.hang_count > 0"
 
   sql = """
@@ -100,8 +100,8 @@ def getListOfTopCrashersBySignature(aCursor, databaseParameters, totalNumberOfCr
   order by
     2 desc
   limit %d""" % (databaseParameters["totalNumberOfCrashes"], databaseParameters["startDate"], \
-                    databaseParameters["endDate"], databaseParameters["productdims_id"], where, \
-                    databaseParameters["listSize"])
+                    databaseParameters["to_date"], databaseParameters["productdims_id"], where, \
+                    databaseParameters["limit"])
 
   #logger.debug(aCursor.mogrify(sql, databaseParameters))
   return db.execute(aCursor, sql)
@@ -111,13 +111,13 @@ def rangeOfQueriesGenerator(aCursor, databaseParameters, queryExecutionFunction)
   """  returns a list of the results of multiple queries.
   """
   i = databaseParameters.startDate
-  endDate = databaseParameters.endDate
-  while i < endDate:
+  to_date = databaseParameters.to_date
+  while i < to_date:
     parameters = {}
     parameters.update(databaseParameters)
     parameters["startDate"] = i
-    parameters["endDate"] = i + databaseParameters.duration
-    databaseParameters.logger.debug('rangeOfQueriesGenerator for %s to %s', parameters["startDate"], parameters["endDate"])
+    parameters["to_date"] = i + databaseParameters.duration
+    databaseParameters.logger.debug('rangeOfQueriesGenerator for %s to %s', parameters["startDate"], parameters["to_date"])
     yield queryExecutionFunction(aCursor, parameters)
     i += databaseParameters.duration
 
@@ -188,21 +188,21 @@ def twoPeriodTopCrasherComparison (databaseCursor, context, closestEntryFunction
     context['logger'].debug('entered twoPeriodTopCrasherComparison')
   except KeyError:
     context['logger'] = util.SilentFakeLogger()
-  assert "endDate" in context, "endDate is missing from the configuration"
+  assert "to_date" in context, "to_date is missing from the configuration"
   assert "duration" in context, "duration is missing from the configuration"
   assert "product" in context, "product is missing from the configuration"
   assert "version" in context, "version is missing from the configuration"
-  assert "listSize" in context, "listSize is missing from the configuration"
+  assert "limit" in context, "limit is missing from the configuration"
   context.productdims_id = context['productVersionCache'].getId(
                              context.product,
                              context.version)
   context['numberOfComparisonPoints'] = 2
-  if not context['listSize']:
-    context['listSize'] = 100
+  if not context['limit']:
+    context['limit'] = 100
   #context['logger'].debug('about to latestEntryBeforeOrEqualTo')
-  context['endDate'] = closestEntryFunction(databaseCursor, context['endDate'], context['productdims_id'])
-  context['logger'].debug('endDate %s' % context['endDate'])
-  context['startDate'] = context.endDate - context.duration * context.numberOfComparisonPoints
+  context['to_date'] = closestEntryFunction(databaseCursor, context['to_date'], context['productdims_id'])
+  context['logger'].debug('to_date %s' % context['to_date'])
+  context['startDate'] = context.to_date - context.duration * context.numberOfComparisonPoints
   #context['logger'].debug('after %s' % context)
   listOfTopCrashers = listOfListsWithChangeInRank(rangeOfQueriesGenerator(databaseCursor, context, listOfTopCrashersFunction))[0]
   #context['logger'].debug('listOfTopCrashers %s' % listOfTopCrashers)
@@ -211,8 +211,8 @@ def twoPeriodTopCrasherComparison (databaseCursor, context, closestEntryFunction
     totalNumberOfCrashes += x['count']
     totalPercentOfTotal += x['percentOfTotal']
   result = { 'crashes': listOfTopCrashers,
-             'start_date': str(context.endDate - context.duration),
-             'end_date': str(context.endDate),
+             'start_date': str(context.to_date - context.duration),
+             'end_date': str(context.to_date),
              'totalNumberOfCrashes': totalNumberOfCrashes,
              'totalPercentage': totalPercentOfTotal,
            }

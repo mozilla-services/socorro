@@ -5,6 +5,88 @@
 Middleware API
 ==============
 
+Crashes Signatures
+------------------
+
+Return top crashers by signatures.
+
+API specifications
+^^^^^^^^^^^^^^^^^^
+
++----------------+--------------------------------------------------------------------------------+
+| HTTP method    | GET                                                                            |
++----------------+--------------------------------------------------------------------------------+
+| URL schema     | /crashes/signatures/(optional_parameters)                                      |
++----------------+--------------------------------------------------------------------------------+
+| Full URL       | /crashes/signatures/product/(product)/version/(version)/to_from/(to_date)/     |
+|                | duration/(number_of_days)/crash_type/(crash_type)/limit/(number_of_results)/   |
++----------------+--------------------------------------------------------------------------------+
+| Example        | http://socorro-api/bpapi/crashes/signatures/product/Firefox/version/9.0a1/     |
++----------------+--------------------------------------------------------------------------------+
+
+Mandatory parameters
+^^^^^^^^^^^^^^^^^^^^
+
++------------+---------------+------------------------------------------------+
+| Name       | Type of value | Description                                    |
++============+===============+================================================+
+| product    | String        | Product for which to get top crashes by        |
+|            |               | signatures.                                    |
++------------+---------------+------------------------------------------------+
+| version    | String        | Version of the product for which to get top    |
+|            |               | crashes.                                       |
++------------+---------------+------------------------------------------------+
+
+Optional parameters
+^^^^^^^^^^^^^^^^^^^
+
++------------+---------------+---------------+--------------------------------+
+| Name       | Type of value | Default value | Description                    |
++============+===============+===============+================================+
++------------+---------------+---------------+--------------------------------+
+| crash_type | String        | all           | Type of crashes to get, can be |
+|            |               |               | "browser", "plugin", "content" |
+|            |               |               | or "all".                      |
++------------+---------------+---------------+--------------------------------+
+| end_date   | Date          | Now           | Date before which to get       |
+|            |               |               | top crashes.                   |
++------------+---------------+---------------+--------------------------------+
+| duration   | Int           | One week      | Number of hours during which   |
+|            |               |               | to get crashes.                |
++------------+---------------+---------------+--------------------------------+
+| limit      | Int           | 100           | Number of results to retrieve. |
++------------+---------------+---------------+--------------------------------+
+
+Return value
+^^^^^^^^^^^^
+
+Return an object like the following::
+
+    {
+        "totalPercentage": 0.9999999999999994,
+        "end_date": "2011-12-08 00:00:00",
+        "start_date": "2011-12-07 17:00:00",
+        "crashes": [
+            {
+                "count": 3,
+                "mac_count": 3,
+                "changeInRank": 11,
+                "currentRank": 0,
+                "previousRank": 11,
+                "percentOfTotal": 0.142857142857143,
+                "win_count": 0,
+                "changeInPercentOfTotal": 0.117857142857143,
+                "linux_count": 0,
+                "hang_count": 0,
+                "signature": "objc_msgSend | __CFXNotificationPost",
+                "previousPercentOfTotal": 0.025,
+                "plugin_count": 0
+            }
+        ],
+        "totalNumberOfCrashes": 1
+    }
+
+
 Products Builds
 ---------------
 
