@@ -129,7 +129,7 @@ irrelevantSignatureRegEx.default = '|'.join([
   'linux-gate\.so@0x.*',
   'libdvm\.so\s*@\s*0x.*',
   'dalvik-LinearAlloc\s*@0x.*',
-  'dalvik-heap\s*@0x.*',
+  'dalvik-heap',
   'data@app@org\.mozilla\.fennec-1\.apk@classes\.dex@0x.*',
   'libc\.so@.*',
   'libEGL\.so@.*',
