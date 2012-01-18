@@ -224,6 +224,8 @@ prefixSignatureRegEx = '|'.join([
   'je_malloc',
   'je_realloc',
   '_JNIEnv::CallObjectMethod',
+  'kill',
+  'raise',
   ])
 
 signaturesWithLineNumbersRegEx = cm.Option()
