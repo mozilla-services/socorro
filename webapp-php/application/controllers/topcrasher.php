@@ -286,7 +286,7 @@ class Topcrasher_Controller extends Controller {
 	 * @param string	The end date by which to end the plot
      * @return responds with JSON suitable for plotting
      */
-    public function plot_signature($product, $version, $signature, $start_date, $end_date)
+    public function plot_signature($product, $version, $start_date, $end_date, $signature)
     {
 	//Bug#532434 Kohana is escaping some characters with html entity encoding for security purposes
 	$signature = html_entity_decode($signature);

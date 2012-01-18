@@ -38,8 +38,7 @@ $(document).ready(function () {
             legend = button.parents('tr').find('.sig-history-legend');
         button.get(0).disabled = true;
         legend.html("<img src='" + window.SocImg + "ajax-loader.gif' alt='Loading Graph' />");
-
-        $.getJSON(window.SocAjax + encodeURI(sig) + window.SocAjaxStartEnd, function (data) {
+        $.getJSON(window.SocAjax + window.SocAjaxStartEnd + encodeURI(sig), function (data) {
             graph.show();
 	    button.remove();
             var tr = button.parents('tr');
