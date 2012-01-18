@@ -59,9 +59,7 @@ class Branch_Model extends Model {
     /**
      * Fetch get current versions via the webservice
      */
-    protected function _getValues(array $order_by = array()) {
-        $order_by = implode(",", $order_by);
-
+    protected function _getValues() {
         $config = array();
         $credentials = Kohana::config('webserviceclient.basic_auth');
         if($credentials) {
@@ -69,9 +67,8 @@ class Branch_Model extends Model {
         }
         $service = new Web_Service($config);
         $host = Kohana::config('webserviceclient.socorro_hostname');
-        $from = rawurlencode($order_by);
         $lifetime = Kohana::config('webserviceclient.branch_model_cache_in_minutes', 60) * 60;
-        $resp = $service->get("${host}/current/versions/${from}", 'json', $lifetime);
+        $resp = $service->get("${host}/current/versions/", 'json', $lifetime);
 
         return $resp->currentversions;
     }
@@ -118,7 +115,9 @@ class Branch_Model extends Model {
         $release = $this->determine_release($version);
         try {
             $rv = $this->db->query("/* soc.web branch.add */
-                SELECT * FROM edit_product_info(null, ?, ?, ?, ?, ?, ?, ?)", $product, $version, $release, $start_date, $end_date, $featured, $throttle);       
+                SELECT * FROM edit_product_info(null, ?, ?, ?, ?, ?, ?, ?)",
+                $product, $version, $release, $start_date, $end_date,
+                $featured, $throttle);
         } catch (Exception $e) {
             Kohana::log('error', "Could not add \"$product\" \"$version\" in soc.web branch.add \r\n " . $e->getMessage());
         }
@@ -307,7 +306,7 @@ class Branch_Model extends Model {
      * @return array    An array of version objects
      */
     public function getProductVersions() {
-        return $this->_getValues(array('product_name', 'version_string'));
+        return $this->_getValues();
     }
 
     /**
@@ -318,7 +317,7 @@ class Branch_Model extends Model {
      * @return array  An array of version objects
      */
     public function getNonCurrentProductVersions($delete_cache=false) {
-        $resp = $this->_getValues(array('product_name', '-version_string'));
+        $resp = $this->_getValues();
 
         $time = time();
         $response = array();
@@ -338,7 +337,7 @@ class Branch_Model extends Model {
      * @return array    An array of version objects
      */
     public function getCurrentProductVersions($delete_cache=false) {
-        $resp = $this->_getValues(array('product_name', '-version_string'));
+        $resp = $this->_getValues();
         $now = time();
         $result = array();
         foreach($resp as $item) {
@@ -358,7 +357,7 @@ class Branch_Model extends Model {
      * @return array    An array of version objects
      */
     public function getCurrentProductVersionsByProduct($product) {
-        $resp = $this->_getValues(array('product_name', 'version_string'));
+        $resp = $this->_getValues();
         $now = time();
         $result = array();
         foreach($resp as $item) {
@@ -383,7 +382,7 @@ class Branch_Model extends Model {
      * @return  array   An array of version objects
      */
     public function getProductVersionsByDate($product, $start_date, $end_date) {
-        $resp = $this->_getValues(array('product_name', 'version_string'));
+        $resp = $this->_getValues();
         $start_date = strtotime($start_date);
         $end_date = strtotime($end_date);
         $result = array();
@@ -406,7 +405,7 @@ class Branch_Model extends Model {
      * @return  array   An array of version objects
      */
     public function getProductVersionsByProduct($product) {
-        $resp = $this->_getValues(array('product_name', 'version_string'));
+        $resp = $this->_getValues();
         $products = array();
         foreach($resp as $item) {
             if($item->product == $product) {
@@ -424,7 +423,7 @@ class Branch_Model extends Model {
      * @return arary    An array of version objects
      */
     public function getProductVersionsWithoutVisibility () {
-        $resp = $this->_getValues(array('product_name', 'version_string'));
+        $resp = $this->_getValues();
         foreach($resp as $k => $item) {
             if($item->start_date OR $item->end_date) {
                 unset($resp[$k]);
@@ -469,7 +468,7 @@ class Branch_Model extends Model {
      * @return object Branch data
      */
     public function getByProductVersion($product, $version) {
-        $resp = $this->_getValues(array('product_name', 'version_string'));
+        $resp = $this->_getValues();
         foreach ($resp as $item) {
             if($item->product == $product AND $item->version == $version) {
                 return $item; // Essentially a LIMIT 1, per old query
@@ -486,7 +485,7 @@ class Branch_Model extends Model {
      * @return object Branch data
      */
     public function getRecentProductVersion($product) {
-        $resp = $this->_getValues(array('product name', 'version_string'));
+        $resp = $this->_getValues();
         $date = time();
 
         foreach($resp as $item) {
@@ -508,7 +507,7 @@ class Branch_Model extends Model {
      */
     public function getFeaturedVersions($product)
     {
-        $resp = $this->_getValues(array('product_name', 'version_string'));
+        $resp = $this->_getValues();
         $result = array();
         $now = time();
         foreach($resp as $item) {
@@ -584,7 +583,7 @@ class Branch_Model extends Model {
         }
         return 0;
 
-        $resp = $this->_getValues(array('product_name', 'version_string'));
+        $resp = $this->_getValues();
         $result = 0;
         $date = time();
         foreach($resp as $item) {
@@ -613,13 +612,15 @@ class Branch_Model extends Model {
     {
         $date = date('Y-m-d');
         $sql = '/* soc.web branch.getFeaturedVersions */
-                SELECT DISTINCT pd.product_name as product, pd.version_string as version, is_featured as featured, build_type as release, start_date, end_date, throttle
-                FROM product_info pd
-                WHERE pd.product_name = ' . $this->db->escape($product) . '
-                AND pd.start_date <= ' . $this->db->escape($date) . '
-                AND pd.end_date >= ' . $this->db->escape($date) . '
-                AND pd.is_featured = false
-                ORDER BY pd.product_name, pd.version_string
+                SELECT product_name as product,
+                    version_string as version, is_featured as featured,
+                    build_type as release, start_date, end_date, throttle
+                FROM product_info
+                WHERE product_name = ' . $this->db->escape($product) . '
+                AND start_date <= ' . $this->db->escape($date) . '
+                AND end_date >= ' . $this->db->escape($date) . '
+                AND is_featured = false
+                ORDER BY product_version_id, version_sort
         ';
 
         if ($delete_cache) {
@@ -684,7 +685,9 @@ class Branch_Model extends Model {
         foreach ($versions as $version) {
             array_push($prep, '?');
         }
-        $sql = "SELECT version_string as version FROM product_info WHERE product_name = ? AND version_string IN (" . join(', ', $prep) . ")";
+        $sql = "SELECT version_string as version FROM product_info
+                WHERE product_name = ?
+                AND version_string IN (" . join(', ', $prep) . ")";
         $bind_params = array_merge(array($product), $versions);
         return $this->fetchSingleColumn($sql, 'version', $bind_params);
     }
