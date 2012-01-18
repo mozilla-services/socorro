@@ -302,7 +302,8 @@ class Common_Model extends Model {
                            "SELECT pi.version_string, which_table, major_version FROM product_info pi" .
                            " JOIN product_versions pv ON (pv.product_version_id = pi.product_version_id)" .
                            " WHERE pi.product_name = " . $this->db->escape($product) .
-                           " AND pi.version_string = " . $this->db->escape($version) ."";
+                           " AND pi.version_string = " . $this->db->escape($version) .
+                           " ORDER BY pv.version_sort";
                     $result = $this->fetchRows($sql);
                     $which_table = 'old';
                     $channel = '';

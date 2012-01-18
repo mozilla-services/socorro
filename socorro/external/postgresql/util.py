@@ -83,6 +83,7 @@ class Util(PostgreSQLBase):
             JOIN product_version_builds pvb ON
                 (pv.product_version_id = pvb.product_version_id)
         WHERE %s
+        ORDER BY pv.version_sort
         """ % " OR ".join(where)
 
         # Creating the connection to the DB
