@@ -222,6 +222,7 @@ prefixSignatureRegEx = '|'.join([
   'arena_run_dalloc',
   'je_malloc',
   'je_realloc',
+  '_JNIEnv::CallObjectMethod',
   ])
 
 signaturesWithLineNumbersRegEx = cm.Option()
