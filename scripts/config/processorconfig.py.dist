@@ -226,6 +226,9 @@ prefixSignatureRegEx = '|'.join([
   '_JNIEnv::CallObjectMethod',
   'kill',
   'raise',
+  'sigprocmask',
+  'sigblock',
+  'setjmp',
   ])
 
 signaturesWithLineNumbersRegEx = cm.Option()
