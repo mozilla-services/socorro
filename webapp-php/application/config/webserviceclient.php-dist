@@ -20,7 +20,7 @@ $config['basic_auth'] = array('username' => 'example',
                           'password' => 'sekrit');
 /**
  * Number of minutes to cache results to the
- * /topcrash/sig/trend/rank/p/${product}/v/${version}/end/${end_date}/duration/${dur}/listsize/${limit}
+ * /crashes/signatures/product/${product}/version/${version}/to_date/${end_date}/duration/${dur}/limit/${limit}
  * service call.
  * This materialized views is updated every 60 minutes, so we'll cache the results for that long
  */

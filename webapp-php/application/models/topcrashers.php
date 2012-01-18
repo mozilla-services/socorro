@@ -76,7 +76,7 @@ class Topcrashers_Model extends Model {
     	$p = urlencode($product);
     	$v = urlencode($version);
 
-        $resp = $service->get("${host}/topcrash/sig/trend/rank/p/${p}/v/${v}/type/browser/end/${end_date}/duration/${dur}/listsize/${limit}",'json', $lifetime);
+        $resp = $service->get("${host}/crashes/signatures/product/${p}/version/${v}/crash_type/browser/to_date/${end_date}/duration/${dur}/limit/${limit}",'json', $lifetime);
     	if($resp) {
     	    $this->ensureProperties(
     	        $resp,
