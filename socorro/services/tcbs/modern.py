@@ -182,10 +182,13 @@ def latestEntryBeforeOrEqualTo(aCursor, aDate, product, version):
   """
   Retrieve the closest report date containing the provided product and
   version that does not exceed the provided date.
+
+  We append a day to the max(report_date) to ensure that we 
+  capture reports to the end of the day, not the beginning.
   """
   sql = """
         SELECT
-          max(report_date)
+          max(report_date) + 1
         FROM
           tcbs JOIN product_versions USING (product_version_id)
         WHERE
