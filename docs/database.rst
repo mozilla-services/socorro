@@ -2,11 +2,11 @@
 
 .. _database-chapter:
 
-Development Discussions
-=======================
+PostgreSQL Database
+===================
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
    databasetablesbysource
    creatingmatviews
