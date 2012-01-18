@@ -230,6 +230,9 @@ foreach($options[$type] as $k => $readable) {
                 labelWidth: 55,
 				ticks: <?php echo json_encode( $buildTicks ) ?>
 	        },
+            yaxis: {
+                min: 0,
+            },
 		    grid: { hoverable: true },
 	        legend: { 
 				show: true, 
@@ -244,6 +247,9 @@ foreach($options[$type] as $k => $readable) {
                  labelWidth: 55,
    	         tickFormatter: function(n, o){ return ""; }
 	       },
+            yaxis: {
+                min: 0,
+            },
 	       legend: { show: true, container: $("#graph-legend"), noColumns: 4 }
 	     <?php } ?>
              }	
