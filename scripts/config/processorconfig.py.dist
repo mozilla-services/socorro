@@ -137,6 +137,7 @@ irrelevantSignatureRegEx.default = '|'.join([
   'RtlpAdjustHeapLookasideDepth',
   'google_breakpad::ExceptionHandler::HandleInvalidParameter.*',
   'libicudata.so@.*',
+  '_ZdlPv',
   ])
 
 prefixSignatureRegEx = cm.Option()
