@@ -129,7 +129,7 @@ irrelevantSignatureRegEx.default = '|'.join([
   'linux-gate\.so@0x.*',
   'libdvm\.so\s*@\s*0x.*',
   'dalvik-LinearAlloc\s*@0x.*',
-  'dalvik-heap\s*@0x.*',
+  'dalvik-heap',
   'data@app@org\.mozilla\.fennec-1\.apk@classes\.dex@0x.*',
   'libc\.so@.*',
   'libEGL\.so@.*',
@@ -137,6 +137,7 @@ irrelevantSignatureRegEx.default = '|'.join([
   'RtlpAdjustHeapLookasideDepth',
   'google_breakpad::ExceptionHandler::HandleInvalidParameter.*',
   'libicudata.so@.*',
+  '_ZdlPv',
   ])
 
 prefixSignatureRegEx = cm.Option()
@@ -209,6 +210,25 @@ prefixSignatureRegEx = '|'.join([
   'JNI_CreateJavaVM',
   'dvmStringLen',
   '(libxul\.so|xul\.dll|XUL)@0x.*',
+  '_VEC_memzero',
+  'arena_malloc_small',
+  'arena_ralloc',
+  'arena_run_reg_alloc',
+  'arena_run_tree_insert',
+  'ialloc',
+  'isalloc',
+  'moz_xreallocx',
+  'arena_malloc',
+  'arena_run_reg_dalloc',
+  'arena_run_dalloc',
+  'je_malloc',
+  'je_realloc',
+  '_JNIEnv::CallObjectMethod',
+  'kill',
+  'raise',
+  'sigprocmask',
+  'sigblock',
+  'setjmp',
   ])
 
 signaturesWithLineNumbersRegEx = cm.Option()
