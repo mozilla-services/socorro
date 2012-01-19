@@ -37,9 +37,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 set_include_path(APPPATH . 'vendor' . PATH_SEPARATOR . get_include_path());
-require_once(Kohana::find_file('libraries', 'MY_QueryFormHelper', TRUE, 'php'));
 require_once(Kohana::find_file('libraries', 'socorro_cookies', TRUE, 'php'));
-require_once(Kohana::find_file('libraries', 'versioncompare', TRUE, 'php'));
 
 /**
  * Custom controller subclass used throughout application
@@ -282,34 +280,6 @@ class Controller extends Controller_Core {
         $this->setViewData('unfeatured_versions', $this->unfeatured_versions);
     }
 
-    private $_current_products;
-    protected function currentProducts()
-    {
-        if (is_null($this->_current_products)) {
-            $queryFormHelper = new QueryFormHelper;
-            $p2vs = $queryFormHelper->prepareAllProducts($this->branch_model);
-            $this->_current_products = $queryFormHelper->currentProducts($p2vs);
-        }
-
-        // Resort the products array according to product order importance.
-        $product_weights = Kohana::config('products.product_weights');
-        asort($product_weights);
-
-        $products = array();
-        foreach($product_weights as $product => $weight) {
-            if (isset($this->_current_products[$product])) {
-                $products[$product] = $this->_current_products[$product];
-            }
-        }
-        foreach($this->_current_products as $product => $versions) {
-            if (!isset($products[$product])) {
-                $products[$product] = $versions;
-            }
-        }
-
-        return $products;
-    }
-
     /**
      * Prepare an array of products for the site navbar.
      *
@@ -461,7 +431,9 @@ class Controller extends Controller_Core {
     */
     protected function navigationChooseVersion($product, $version)
     {
-        $this->ensureChosenVersion($this->currentProducts(), FALSE);
+        // Grab an array of current products, ensure that 1 is chosen, and grab the featured versions for that product.
+        $this->current_products = $this->prepareCurrentProducts();
+        $this->ensureChosenVersion($this->current_products, FALSE);
         if ($this->chosen_version['version'] != $version || $this->chosen_version['product'] != $product) {
             $this->chooseVersion(array('product' => $product, 'version' => $version));
             $this->prepareVersions();
@@ -580,41 +552,8 @@ class Controller extends Controller_Core {
      */
     public function prepareVersions($delete_cache=false)
     {
-        $this->featured_versions = $this->_prepareVersionsSort(
-            $this->branch_model->getFeaturedVersions($this->chosen_version['product'])
-        );
-        $this->unfeatured_versions = $this->_prepareVersionsSort(
-            $this->branch_model->getUnfeaturedVersions($this->chosen_version['product'], $this->featured_versions, $delete_cache)
-        );
-    }
-
-    /**
-     * Sort the featured and unfeatured versions.
-     *
-     * @param  array    An array of product/version objects
-     * @return array    A sorted array of product/version objects
-     */
-    private function _prepareVersionsSort($versions=null)
-    {
-        if (isset($versions) && !empty($versions)) {
-            $vc = new VersioncompareComponent();
-            $v = array();
-            foreach ($versions as $version) {
-                $v[] = $version->version;
-            }
-            $vc->sortAppversionArray($v);
-            rsort($v);
-            $new_versions = array();
-            foreach ($v as $new_version) {
-                foreach ($versions as $version) {
-                    if ($new_version == $version->version) {
-                        $new_versions[] = $version;
-                    }
-                }
-            }
-            return $new_versions;
-        }
-        return null;
+        $this->featured_versions = $this->branch_model->getFeaturedVersions($this->chosen_version['product']);
+        $this->unfeatured_versions = $this->branch_model->getUnfeaturedVersions($this->chosen_version['product']);
     }
 
     /**

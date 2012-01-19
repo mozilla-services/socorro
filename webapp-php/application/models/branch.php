@@ -38,7 +38,6 @@
  * ***** END LICENSE BLOCK ***** */
 
 require_once(Kohana::find_file('libraries', 'release', TRUE, 'php'));
-require_once(Kohana::find_file('libraries', 'versioncompare', TRUE, 'php'));
 
 /**
  * Common model class managing the branches table.
@@ -71,27 +70,6 @@ class Branch_Model extends Model {
         $resp = $service->get("${host}/current/versions/", 'json', $lifetime);
 
         return $resp->currentversions;
-    }
-
-    /**
-     * Take an array of version objects, and return an array of sorted version numbers.  Return
-     * array in reverse order.
-     *
-     * @param array An array of version objects
-     * @param array An array of version numbers
-     */
-    private function _sortVersions($versions)
-    {
-        $versions_array = array();
-        foreach ($versions as $version) {
-            $versions_array[] = $version->version;
-        }
-
-        $vc = new VersioncompareComponent();
-        $vc->sortAppversionArray($versions_array);
-        rsort($versions_array);
-
-        return $versions_array;
     }
 
     /**
@@ -519,41 +497,7 @@ class Branch_Model extends Model {
             }
         }
 
-        if(count($result) > 0) {
-            return $result;
-        }
-        return $this->getFeaturedVersionsDefault($product);
-    }
-
-    /**
-     * Determine the featured versions for a particular product if there are no
-     * versions that have been declared featured versions.
-     *
-     * @param string    The product name
-     * @return array    An array of featured versions
-     */
-    private function getFeaturedVersionsDefault($product)
-    {
-        if ($versions = $this->getCurrentProductVersionsByProduct($product)) {
-            $versions_array = $this->_sortVersions($versions);
-            $featured_versions = array();
-            foreach (array(Release::MAJOR, Release::MILESTONE, Release::DEVELOPMENT) as $release) {
-                foreach ($versions_array as $va) {
-                    foreach ($versions as $version) {
-                        if (
-                            !isset($featured_versions[$release]) &&
-                            $version->version == $va &&
-                            $version->release == $release
-                        ) {
-                            $featured_versions[$release] = $version;
-                        }
-                    }
-                }
-            }
-            rsort($featured_versions);
-            return $featured_versions;
-        }
-        return false;
+        return $result;
     }
 
     /**
@@ -604,11 +548,8 @@ class Branch_Model extends Model {
      * Fetch all of the versions for a particular product that are not featured.
      *
      * @param string    The product name
-     * @param array     An array of featured versions
-     * @param bool      True if you want to delete the previously cached queries; used by admin panel.
-     * @return array    An array of unfeatured versions
      */
-    public function getUnfeaturedVersions($product, $featured_versions, $delete_cache=false)
+    public function getUnfeaturedVersions($product)
     {
         $date = date('Y-m-d');
         $sql = '/* soc.web branch.getFeaturedVersions */
@@ -620,28 +561,9 @@ class Branch_Model extends Model {
                 AND start_date <= ' . $this->db->escape($date) . '
                 AND end_date >= ' . $this->db->escape($date) . '
                 AND is_featured = false
-                ORDER BY product_version_id, version_sort
-        ';
+                ORDER BY product_version_id, version_sort';
 
-        if ($delete_cache) {
-            $this->cache->delete($this->queryHashKey($sql));
-        }
-
-        $versions = $this->fetchRows($sql);
-        if (isset($versions[0])) {
-            if (isset($featured_versions) && !empty($featured_versions)) {
-                foreach($featured_versions as $featured_version) {
-                    foreach ($versions as $key => $version) {
-                        if ($featured_version->version == $version->version) {
-                            unset($versions[$key]);
-                        }
-                    }
-                }
-            }
-            rsort($versions);
-            return $versions;
-        }
-        return false;
+        return $this->fetchRows($sql);
     }
 
     /**
