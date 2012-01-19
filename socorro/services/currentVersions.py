@@ -31,7 +31,7 @@ class CurrentVersions(webapi.JsonServiceBase):
                            start_date, end_date, build_type, throttle
                        FROM product_info
                        ORDER BY
-                           product_name, version_sort
+                           product_name, version_sort DESC
                        """
         cursor.execute(currentVersions)
 

@@ -561,7 +561,7 @@ class Branch_Model extends Model {
                 AND start_date <= ' . $this->db->escape($date) . '
                 AND end_date >= ' . $this->db->escape($date) . '
                 AND is_featured = false
-                ORDER BY product_version_id, version_sort';
+                ORDER BY version_sort DESC';
 
         return $this->fetchRows($sql);
     }
