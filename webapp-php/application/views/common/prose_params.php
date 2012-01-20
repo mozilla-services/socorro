@@ -54,7 +54,7 @@
         if (array_key_exists('process_type', $params) &&
             'all' != $params['process_type']) {
             if ('any' == $params['process_type']) {
-                $msg .= " and the crashing process was of any type";
+                $msg .= " and the crashing process was of any type (including unofficial release channels)";
             } else {
                 $msg .= " and the crashing process was a " . $params['process_type'];
                 if ('plugin' == $params['process_type'] && trim($params['plugin_query']) != '') {
