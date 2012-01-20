@@ -91,14 +91,18 @@ class Postgres(RequiredConfig):
         try:
             yield conn
         except self.operational_exceptions:
-            # we need to close the connection
-            print "Postgres - operational exception caught"
-            exception_raised = True
+            exception_raised = False
         except Exception:
-            print "Postgres - non operational exception caught"
+            # we need to close the connection
             exception_raised = True
         finally:
-            if not exception_raised:
+            if exception_raised:
+                try:
+                    self.close_connection(conn, force=True)
+                except self.operational_exceptions:
+                    pass
+                raise
+            else:
                 try:
                     if conn.get_transaction_status() == psycopg2.extensions.TRANSACTION_STATUS_INTRANS:  # ug. ly!
                     #if conn.in_transaction:
@@ -106,12 +110,6 @@ class Postgres(RequiredConfig):
                     self.close_connection(conn)
                 except self.operational_exceptions:
                     exception_raised = True
-            if exception_raised:
-                try:
-                    self.close_connection(conn, force=True)
-                except self.operational_exceptions:
-                    pass
-                raise
 
     #--------------------------------------------------------------------------
     def close_connection(self, connection, force=False):
@@ -124,7 +122,7 @@ class Postgres(RequiredConfig):
             connection - the database connection object
             force - unused boolean to force closure; used in derived classes
         """
-        print "Postgres - requestng connection to close"
+        #print "Postgres - requestng connection to close"
         connection.close()
 
     #--------------------------------------------------------------------------

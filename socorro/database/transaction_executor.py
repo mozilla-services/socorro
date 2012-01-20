@@ -1,4 +1,5 @@
 import time
+import logging
 from configman.config_manager import RequiredConfig
 from configman import Namespace
 
@@ -15,15 +16,6 @@ def transaction_factory(config, local_config, args):
     of Postgres or PostgresPooled from above.  This function will
     instantiate the class
     """
-    print "CONFIG"
-    print repr(config)
-    print config.keys()
-    print "LOCAL_CONFIG"
-    print repr(local_config)
-    print local_config.keys()
-    print "local_config.database_class"
-    print repr(local_config.database_class)
-    print
     return local_config.database_class(config, local_config)
 
 
@@ -51,9 +43,9 @@ class TransactionExecutor(RequiredConfig):
     #--------------------------------------------------------------------------
     def do_transaction(self, function, *args, **kwargs):
         """execute a function within the context of a transaction"""
-        with self.config.db_transaction() as trans:
-            function(trans, *args, **kwargs)
-
+        with self.config.db_transaction() as connection:
+            function(connection, *args, **kwargs)
+            connection.commit()
 
 #==============================================================================
 class TransactionExecutorWithBackoff(TransactionExecutor):
@@ -86,9 +78,8 @@ class TransactionExecutorWithBackoff(TransactionExecutor):
         for x in xrange(int(seconds)):
             if (self.config.wait_log_interval and
                 not x % self.config.wait_log_interval):
-                print '%s: %dsec of %dsec' % (wait_reason,
-                                              x,
-                                              seconds)
+                logging.debug('%s: %dsec of %dsec' % 
+                              (wait_reason, x, seconds))
             time.sleep(1.0)
 
     #--------------------------------------------------------------------------
@@ -96,14 +87,14 @@ class TransactionExecutorWithBackoff(TransactionExecutor):
         """execute a function within the context of a transaction"""
         for wait_in_seconds in self.backoff_generator():
             try:
-                with self.config.db_transaction() as trans:
-                    function(trans, *args, **kwargs)
-                    trans.commit()
+                with self.config.db_transaction() as connection:
+                    function(connection, *args, **kwargs)
+                    connection.commit()
                     break
             except self.config.db_transaction.operational_exceptions:
                 pass
-            print ('failure in transaction - retry in %s seconds' %
-                   wait_in_seconds)
+            logging.debug('failure in transaction - retry in %s seconds' %
+                          wait_in_seconds)
             self.responsive_sleep(wait_in_seconds,
                                   "waiting for retry after failure in "
                                   "transaction")
