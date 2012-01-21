@@ -104,8 +104,8 @@ class Postgres(RequiredConfig):
                 raise
             else:
                 try:
-                    if conn.get_transaction_status() == psycopg2.extensions.TRANSACTION_STATUS_INTRANS:  # ug. ly!
-                    #if conn.in_transaction:
+                    if conn.get_transaction_status() == \
+                      psycopg2.extensions.TRANSACTION_STATUS_INTRANS:
                         conn.rollback()
                     self.close_connection(conn)
                 except self.operational_exceptions:
