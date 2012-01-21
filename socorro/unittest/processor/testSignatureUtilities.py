@@ -1,5 +1,10 @@
+import unittest
+
 import socorro.processor.signatureUtilities as sig
 import socorro.lib.util as sutil
+
+from socorro.lib.util import DotDict
+from socorro.processor.signatureUtilities import JavaSignatureTool
 
 import re
 
@@ -16,7 +21,7 @@ def setupSigUtil(ig='ignored1', pr='pre1|pre2', si='fnNeedNumber'):
     config.signatureSentinels = ('sentinel',
                                  ('sentinel2', lambda x: 'ff' in x),
                                 )
-    s = sig.SignatureUtilities(config)
+    s = sig.CSignatureTool(config)
     return s, config
 
 def testInit():
@@ -79,36 +84,36 @@ def testGenerate1():
     s, c = setupSigUtil('a|b|c', 'd|e|f')
     a = [x for x in 'abcdefghijklmnopqrstuvwxyz']
     e = 'd | e | f | g'
-    r = s.generate_signature_from_list(a)
-    assert_expected(e,r)
+    sig, notes = s.generate(a)
+    assert_expected(e,sig)
 
     a = [x for x in 'abcdaeafagahijklmnopqrstuvwxyz']
     e = 'd | e | f | g'
-    r = s.generate_signature_from_list(a)
-    assert_expected(e,r)
+    sig, notes = s.generate(a)
+    assert_expected(e,sig)
 
 def testGenerate2():
     """testGenerate2: hang"""
     s, c = setupSigUtil('a|b|c', 'd|e|f')
     a = [x for x in 'abcdefghijklmnopqrstuvwxyz']
     e = 'hang | d | e | f | g'
-    r = s.generate_signature_from_list(a, hangType=-1)
-    assert_expected(e,r)
+    sig, notes = s.generate(a, hang_type=-1)
+    assert_expected(e,sig)
 
     a = [x for x in 'abcdaeafagahijklmnopqrstuvwxyz']
     e = 'hang | d | e | f | g'
-    r = s.generate_signature_from_list(a, hangType=-1)
-    assert_expected(e,r)
+    sig, notes = s.generate(a, hang_type=-1)
+    assert_expected(e,sig)
 
     a = [x for x in 'abcdaeafagahijklmnopqrstuvwxyz']
     e = 'd | e | f | g'
-    r = s.generate_signature_from_list(a, hangType=0)
-    assert_expected(e,r)
+    sig, notes = s.generate(a, hang_type=0)
+    assert_expected(e,sig)
 
     a = [x for x in 'abcdaeafagahijklmnopqrstuvwxyz']
     e = 'chromehang | d | e | f | g'
-    r = s.generate_signature_from_list(a, hangType=1)
-    assert_expected(e,r)
+    sig, notes = s.generate(a, hang_type=1)
+    assert_expected(e,sig)
 
 
 def testGenerate2a():
@@ -124,14 +129,14 @@ def testGenerate2a():
         "dd | eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee" \
         "eeeeeee | ffffffffffffffffffffffffffffffffffffffffffffffffffffffffff" \
         "ffffffffffff | ggggggggggggggggggggggggggggggggg..."
-    r = s.generate_signature_from_list(a)
-    assert_expected(e,r)
+    sig, notes = s.generate(a)
+    assert_expected(e,sig)
     e = "hang | ddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd" \
         "ddddddddd | eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee" \
         "eeeeeeeeeeeeee | fffffffffffffffffffffffffffffffffffffffffffffffffff" \
         "fffffffffffffffffff | gggggggggggggggggggggggggg..."
-    r = s.generate_signature_from_list(a, hangType=-1)
-    assert_expected(e,r)
+    sig, notes = s.generate(a, hang_type=-1)
+    assert_expected(e,sig)
 
 def testGenerate3():
     """testGenerate3: simple sentinel"""
@@ -139,13 +144,13 @@ def testGenerate3():
     a = [x for x in 'abcdefghabcfaeabdijklmnopqrstuvwxyz']
     a[7] = 'sentinel'
     e = 'sentinel'
-    r = s.generate_signature_from_list(a)
-    assert_expected(e,r)
+    sig, notes = s.generate(a)
+    assert_expected(e,sig)
 
     s, c  = setupSigUtil('a|b|c|sentinel', 'd|e|f')
     e = 'f | e | d | i'
-    r = s.generate_signature_from_list(a)
-    assert_expected(e,r)
+    sig, notes = s.generate(a)
+    assert_expected(e,sig)
 
 def testGenerate4():
     """testGenerate4: tuple sentinel"""
@@ -153,22 +158,159 @@ def testGenerate4():
     a = [x for x in 'abcdefghabcfaeabdijklmnopqrstuvwxyz']
     a[7] = 'sentinel2'
     e = 'd | e | f | g'
-    r = s.generate_signature_from_list(a)
-    assert_expected(e,r)
+    sig, notes = s.generate(a)
+    assert_expected(e,sig)
 
     s, c = setupSigUtil('a|b|c', 'd|e|f')
     a = [x for x in 'abcdefghabcfaeabdijklmnopqrstuvwxyz']
     a[7] = 'sentinel2'
     a[22] = 'ff'
     e = 'sentinel2'
-    r = s.generate_signature_from_list(a)
-    assert_expected(e,r)
+    sig, notes = s.generate(a)
+    assert_expected(e,sig)
 
     s, c = setupSigUtil('a|b|c|sentinel2', 'd|e|f')
     a = [x for x in 'abcdefghabcfaeabdijklmnopqrstuvwxyz']
     a[7] = 'sentinel2'
     a[22] = 'ff'
     e = 'f | e | d | i'
-    r = s.generate_signature_from_list(a)
-    assert_expected(e,r)
+    sig, notes = s.generate(a)
+    assert_expected(e,sig)
+
+
+class TestCase(unittest.TestCase):
+    def test_generate_signature_1(self):
+        config = DotDict()
+        j = JavaSignatureTool(config)
+        java_stack_trace = 17
+        sig, notes = j.generate(java_stack_trace, delimiter=' ')
+        e = "EMPTY: Java stack trace not in expected format"
+        assert_expected(e, sig)
+        e = ['JavaSignatureTool: stack trace not '
+             'in expected format']
+        assert_expected(e, notes)
+
+    def test_generate_signature_2(self):
+        config = DotDict()
+        j = JavaSignatureTool(config)
+        java_stack_trace = ('SomeJavaException: totally made up  \n'
+                            'at org.mozilla.lars.myInvention('
+                            'larsFile.java:666)')
+        sig, notes = j.generate(java_stack_trace, delimiter=' ')
+        e = ('SomeJavaException: totally made up '
+             'at org.mozilla.lars.myInvention('
+             'larsFile.java)')
+        assert_expected(e, sig)
+        e = []
+        assert_expected(e, notes)
+
+    def test_generate_signature_3(self):
+        config = DotDict()
+        j = JavaSignatureTool(config)
+        java_stack_trace = ('SomeJavaException: totally made up  \n'
+                            'at org.mozilla.lars.myInvention('
+                            'larsFile.java)')
+        sig, notes = j.generate(java_stack_trace, delimiter=' ')
+        e = ('SomeJavaException: totally made up '
+             'at org.mozilla.lars.myInvention('
+             'larsFile.java)')
+        assert_expected(e, sig)
+        e = []
+        assert_expected(e, notes)
+
+    def test_generate_signature_4(self):
+        config = DotDict()
+        j = JavaSignatureTool(config)
+        java_stack_trace = ('   SomeJavaException: %s  \n'
+                            'at org.mozilla.lars.myInvention('
+                            'larsFile.java)' % ('t'*1000))
+        sig, notes = j.generate(java_stack_trace, delimiter=' ')
+        e = ('SomeJavaException: '
+             'at org.mozilla.lars.myInvention('
+             'larsFile.java)')
+        assert_expected(e, sig)
+        e = ['JavaSignatureTool: dropped Java exception description due to '
+             'length']
+        assert_expected(e, notes)
+
+    def test_generate_signature_4(self):
+        config = DotDict()
+        j = JavaSignatureTool(config)
+        java_stack_trace = ('   SomeJavaException: %s  \n'
+                            'at org.mozilla.lars.myInvention('
+                            'larsFile.java:1234)' % ('t'*1000))
+        sig, notes = j.generate(java_stack_trace, delimiter=' ')
+        e = ('SomeJavaException: '
+             'at org.mozilla.lars.myInvention('
+             'larsFile.java)')
+        assert_expected(e, sig)
+        e = ['JavaSignatureTool: dropped Java exception description due to '
+             'length']
+        assert_expected(e, notes)
+
+    def test_generate_signature_5(self):
+        config = DotDict()
+        j = JavaSignatureTool(config)
+        java_stack_trace = ('   SomeJavaException\n'
+                            'at org.mozilla.lars.myInvention('
+                            'larsFile.java:1234)')
+        sig, notes = j.generate(java_stack_trace, delimiter=' ')
+        e = ('SomeJavaException: '
+             'at org.mozilla.lars.myInvention('
+             'larsFile.java)')
+        assert_expected(e, sig)
+        e = ['JavaSignatureTool: stack trace line 1 is '
+             'not in the expected format']
+        assert_expected(e, notes)
+
+    def test_generate_signature_6(self):
+        config = DotDict()
+        j = JavaSignatureTool(config)
+        java_stack_trace = 'SomeJavaException: totally made up  \n'
+        sig, notes = j.generate(java_stack_trace, delimiter=' ')
+        e = 'SomeJavaException: totally made up'
+        assert_expected(e, sig)
+        e = ['JavaSignatureTool: stack trace line 2 is empty']
+        assert_expected(e, notes)
+
+    def test_generate_signature_7(self):
+        config = DotDict()
+        j = JavaSignatureTool(config)
+        java_stack_trace = 'SomeJavaException: totally made up  '
+        sig, notes = j.generate(java_stack_trace, delimiter=' ')
+        e = 'SomeJavaException: totally made up'
+        assert_expected(e, sig)
+        e = ['JavaSignatureTool: stack trace line 2 is missing']
+        assert_expected(e, notes)
+
+    def test_generate_signature_8(self):
+        config = DotDict()
+        j = JavaSignatureTool(config)
+        java_stack_trace = 'SomeJavaException: totally made up  '
+        sig, notes = j.generate(java_stack_trace, delimiter=' ')
+        e = 'SomeJavaException: totally made up'
+        assert_expected(e, sig)
+        e = ['JavaSignatureTool: stack trace line 2 is missing']
+        assert_expected(e, notes)
+
+    def test_generate_signature_9(self):
+        config = DotDict()
+        j = JavaSignatureTool(config)
+        java_stack_trace = ('   SomeJavaException: totally made up  \n'
+                            'at org.mozilla.lars.myInvention('
+                            '%slarsFile.java:1234)' % ('t'*1000))
+        sig, notes = j.generate(java_stack_trace, delimiter=' ')
+        e = ('SomeJavaException: '
+             'at org.mozilla.lars.myInvention('
+             '%s...' % ('t' * 201))
+        assert_expected(e, sig)
+        e = ['JavaSignatureTool: dropped Java exception description due to '
+             'length',
+             'SignatureTool: signature truncated due to length']
+        assert_expected(e, notes)
+
+
+
+
+
 

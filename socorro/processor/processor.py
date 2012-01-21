@@ -134,7 +134,8 @@ class Processor(object):
     self.pluginsTable = sch.PluginsTable(logger=config.logger)
     self.pluginsReportsTable = sch.PluginsReportsTable(logger=config.logger)
 
-    self.signatureUtilities = sig.SignatureUtilities(config)
+    self.c_signature_tool = sig.CSignatureTool(config)
+    self.java_signature_tool = sig.JavaSignatureTool(config)
     self.processorId = None
 
     self.registration()
@@ -530,8 +531,8 @@ class Processor(object):
         # hangType values: -1 if old style hang with hangid and Hang not present
         #                  else hangType == jsonDocument.Hang
         hangType = int(jsonDocument.get("Hang", -1 if isHang else 0))
-        app_notes = newReportRecordAsDict['app_notes']
-        additionalReportValuesAsDict = self.doBreakpadStackDumpAnalysis(reportId, jobUuid, dumpfilePathname, hangType, app_notes, threadLocalCursor, date_processed, processorErrorMessages)
+        java_stack_trace = jsonDocument.setdefault('JavaStackTrace', None)
+        additionalReportValuesAsDict = self.doBreakpadStackDumpAnalysis(reportId, jobUuid, dumpfilePathname, hangType, java_stack_trace, threadLocalCursor, date_processed, processorErrorMessages)
         newReportRecordAsDict.update(additionalReportValuesAsDict)
       finally:
         newReportRecordAsDict["completeddatetime"] = completedDateTime = self.nowFunc()
@@ -824,7 +825,7 @@ class Processor(object):
     return crashProcesOutputDict
 
   #-----------------------------------------------------------------------------------------------------------------
-  def doBreakpadStackDumpAnalysis (self, reportId, uuid, dumpfilePathname, hangType, app_notes, databaseCursor, date_processed, processorErrorMessages):
+  def doBreakpadStackDumpAnalysis (self, reportId, uuid, dumpfilePathname, hangType, java_stack_trace, databaseCursor, date_processed, processorErrorMessages):
     """ This function is run only by a worker thread.
         This function must be overriden in a subclass - this method will invoke the breakpad_stackwalk process
         (if necessary) and then do the anaylsis of the output
