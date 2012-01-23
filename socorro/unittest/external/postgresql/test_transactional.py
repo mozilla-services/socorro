@@ -73,8 +73,10 @@ class TestPostgres(unittest.TestCase):
                   psycopg2.extensions.TRANSACTION_STATUS_INTRANS
                 raise psycopg2.OperationalError('crap!')
             # OperationalError's aren't bubbled up
-        finally:
-            self.assertEqual(_closes, 3)
-            self.assertEqual(_commits, 0)
-            self.assertEqual(_rollbacks, 1)
+        except psycopg2.OperationalError:
+            pass
+        
+        self.assertEqual(_closes, 3)
+        self.assertEqual(_commits, 0)
+        self.assertEqual(_rollbacks, 0)
             

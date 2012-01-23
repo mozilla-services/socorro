@@ -87,8 +87,6 @@ class TestTransactionExecutor(unittest.TestCase):
             
 
     def test_operation_error_with_postgres_with_backoff(self):
-        
-            
         required_config = Namespace()
         required_config.add_option('transaction_executor_class',
                                    default=TransactionExecutorWithBackoff,

@@ -36,5 +36,5 @@ class WeeklyReportsPartitions(App):
         executor.do_transaction(self.run_query)
 
 
-if __name__ == '__main__':
+if __name__ == '__main__':  # pragma: no cover
     main(WeeklyReportsPartitions)

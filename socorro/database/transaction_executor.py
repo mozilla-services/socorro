@@ -93,6 +93,9 @@ class TransactionExecutorWithBackoff(TransactionExecutor):
                     break
             except self.config.db_transaction.operational_exceptions:
                 pass
+#            except:
+#                import sys
+#                print sys.exc_info()
             logging.debug('failure in transaction - retry in %s seconds' %
                           wait_in_seconds)
             self.responsive_sleep(wait_in_seconds,

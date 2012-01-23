@@ -22,7 +22,7 @@ class App(RequiredConfig):
         self.config = config
 
     #--------------------------------------------------------------------------
-    def main(self):
+    def main(self):  # pragma: no cover
         """derived classes must override this function with business logic"""
         raise NotImplementedError("A definition of 'main' in a derived class"
                                   "is required")

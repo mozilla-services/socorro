@@ -78,38 +78,41 @@ class Postgres(RequiredConfig):
     def __call__(self, name=None):
         """returns a database connection wrapped in a contextmanager.
 
-        This function allows database connections to be used in a with
-        statement.  Connection/transaction objects will automatically be
-        rolled back if they weren't explicitly committed within the context of
-        the 'with' statement.  Additionally, it is equipped with the ability to
-        automatically close the connection when leaving the 'with' block.
-
+        The context manager will assure that the connection is closed but will
+        not try to commit or rollback lingering transactions.
+        
         parameters:
             name - an optional name for the database connection"""
-        exception_raised = False
         conn = self.connection(name)
         try:
             yield conn
-        except self.operational_exceptions:
-            exception_raised = False
-        except Exception:
-            # we need to close the connection
-            exception_raised = True
         finally:
-            if exception_raised:
-                try:
-                    self.close_connection(conn, force=True)
-                except self.operational_exceptions:
-                    pass
-                raise
-            else:
-                try:
-                    if conn.get_transaction_status() == \
-                      psycopg2.extensions.TRANSACTION_STATUS_INTRANS:
-                        conn.rollback()
-                    self.close_connection(conn)
-                except self.operational_exceptions:
-                    exception_raised = True
+            self.close_connection(conn)
+        
+#        exception_raised = False
+#        conn = self.connection(name)
+#        try:
+#            yield conn
+#        except self.operational_exceptions:
+#            exception_raised = False
+#        except Exception:
+#            # we need to close the connection
+#            exception_raised = True
+#        finally:
+#            if exception_raised:
+#                try:
+#                    self.close_connection(conn, force=True)
+#                except self.operational_exceptions:
+#                    pass
+#                raise
+#            else:
+#                try:
+#                    if conn.get_transaction_status() == \
+#                      psycopg2.extensions.TRANSACTION_STATUS_INTRANS:
+#                        conn.rollback()
+#                    self.close_connection(conn)
+#                except self.operational_exceptions:
+#                    exception_raised = True
 
     #--------------------------------------------------------------------------
     def close_connection(self, connection, force=False):
@@ -134,7 +137,10 @@ class Postgres(RequiredConfig):
 
 
 #==============================================================================
-class PostgresPooled(Postgres):
+# This code is NOT in use and is left here intentionally as inspiration 
+# towards how to write a pooled postgres class.
+# If we don't use this code at the end of 2012, just delete it :)
+class PostgresPooled(Postgres):  # pragma: no cover
     """a configman compliant class that pools Postgres database connections"""
     #--------------------------------------------------------------------------
     def __init__(self, config, local_config):
