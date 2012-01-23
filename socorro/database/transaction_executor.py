@@ -7,7 +7,7 @@ from socorro.external.postgresql.transactional import Postgres
 
 
 #------------------------------------------------------------------------------
-def transaction_factory(config, local_config, args):
+def connection_context_factory(config, local_config, args):
     """instantiate a transaction object that will create database
     connections
 
@@ -33,19 +33,21 @@ class TransactionExecutor(RequiredConfig):
     # 'db_transaction'.  It will then be used as a source of database
     # connections cloaked as a context.
     required_config.add_aggregation(
-        name='db_transaction',
-        function=transaction_factory)
+        name='db_connection_context',
+        function=connection_context_factory)
 
     #--------------------------------------------------------------------------
     def __init__(self, config):
         self.config = config
 
     #--------------------------------------------------------------------------
-    def do_transaction(self, function, *args, **kwargs):
+    #def do_transaction(self, function, *args, **kwargs):
+    def __call__(self, function, *args, **kwargs):
         """execute a function within the context of a transaction"""
-        with self.config.db_transaction() as connection:
+        with self.config.db_connection_context() as connection:
             function(connection, *args, **kwargs)
             connection.commit()
+
 
 #==============================================================================
 class TransactionExecutorWithBackoff(TransactionExecutor):
@@ -78,24 +80,24 @@ class TransactionExecutorWithBackoff(TransactionExecutor):
         for x in xrange(int(seconds)):
             if (self.config.wait_log_interval and
                 not x % self.config.wait_log_interval):
-                logging.debug('%s: %dsec of %dsec' % 
+                logging.debug('%s: %dsec of %dsec' %
                               (wait_reason, x, seconds))
             time.sleep(1.0)
 
     #--------------------------------------------------------------------------
-    def do_transaction(self, function, *args, **kwargs):
+    #def do_transaction(self, function, *args, **kwargs):
+    def __call__(self, function, *args, **kwargs):
         """execute a function within the context of a transaction"""
         for wait_in_seconds in self.backoff_generator():
             try:
-                with self.config.db_transaction() as connection:
+                # self.config.db_connection_context is an instance of a
+                # wrapper class on the actual connection driver
+                with self.config.db_connection_context() as connection:
                     function(connection, *args, **kwargs)
                     connection.commit()
                     break
-            except self.config.db_transaction.operational_exceptions:
+            except self.config.db_connection_context.operational_exceptions:
                 pass
-#            except:
-#                import sys
-#                print sys.exc_info()
             logging.debug('failure in transaction - retry in %s seconds' %
                           wait_in_seconds)
             self.responsive_sleep(wait_in_seconds,

@@ -1,11 +1,9 @@
-import sys
 import psycopg2
 from psycopg2.extensions import TRANSACTION_STATUS_IDLE
 from socorro.app.generic_app import main
 from socorro.cron.weeklyReportsPartitions import WeeklyReportsPartitions
 from socorro.unittest.config.commonconfig import (
   databaseHost, databaseName, databaseUserName, databasePassword)
-import configman
 
 
 # Notes:
@@ -24,8 +22,9 @@ DSN = {
   "database_password": databasePassword.default
 }
 
+
 class TestClass:
-    
+
     def setUp(self):
         assert 'test' in databaseName.default, databaseName.default
         dsn = ('host=%(database_host)s dbname=%(database_name)s '
@@ -44,28 +43,27 @@ class TestClass:
           END; $$ LANGUAGE plpgsql;
         """)
         self.conn.commit()
-        assert self.conn.get_transaction_status() == TRANSACTION_STATUS_IDLE        
-        
+        assert self.conn.get_transaction_status() == TRANSACTION_STATUS_IDLE
+
     def tearDown(self):
         self.conn.cursor().execute("""
         DROP TABLE IF EXISTS mock_bucket;
         """)
         self.conn.commit()
-        
+
     def test_run_weeklyReportsPartitions(self):
-        """Create a mock function named exactly like the stored procedure in the
-        cron script we want to functionally test. 
-        That way we can assert that it was run. 
+        """Create a mock function named exactly like the stored procedure in
+        the cron script we want to functionally test.
+        That way we can assert that it was run.
         """
-             
+
         # provide values for the config to pick up
-        
-        # use the `values_source_list=[configman.environment]` to 
+
+        # be explicit about the values_source_list to
         # avoid configman picking up nosetests arguments
-        app = main(WeeklyReportsPartitions, values_source_list=[DSN])
+        main(WeeklyReportsPartitions, values_source_list=[DSN])
 
         # check that something was written to the mock_bucket
         cursor = self.conn.cursor()
         cursor.execute('select count(*) from mock_bucket;')
         assert cursor.fetchone()
-        

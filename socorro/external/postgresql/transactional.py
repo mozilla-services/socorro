@@ -80,7 +80,7 @@ class Postgres(RequiredConfig):
 
         The context manager will assure that the connection is closed but will
         not try to commit or rollback lingering transactions.
-        
+
         parameters:
             name - an optional name for the database connection"""
         conn = self.connection(name)
@@ -88,7 +88,7 @@ class Postgres(RequiredConfig):
             yield conn
         finally:
             self.close_connection(conn)
-        
+
 #        exception_raised = False
 #        conn = self.connection(name)
 #        try:
@@ -137,7 +137,7 @@ class Postgres(RequiredConfig):
 
 
 #==============================================================================
-# This code is NOT in use and is left here intentionally as inspiration 
+# This code is NOT in use and is left here intentionally as inspiration
 # towards how to write a pooled postgres class.
 # If we don't use this code at the end of 2012, just delete it :)
 class PostgresPooled(Postgres):  # pragma: no cover
