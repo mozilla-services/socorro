@@ -28,6 +28,7 @@ echo 'should take around 3 minutes'
 echo 'bug 640237'
 psql -f ${CURDIR}/rank_compare.sql breakpad
 psql -f ${CURDIR}/populate_rank_compare.sql breakpad
+psql -f ${CURDIR}/backfill_matviews.sql breakpad
 
 #change version in DB
 psql -c "SELECT update_socorro_db_version( '$VERSION' )" breakpad
