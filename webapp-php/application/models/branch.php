@@ -38,7 +38,6 @@
  * ***** END LICENSE BLOCK ***** */
 
 require_once(Kohana::find_file('libraries', 'release', TRUE, 'php'));
-require_once(Kohana::find_file('libraries', 'versioncompare', TRUE, 'php'));
 
 /**
  * Common model class managing the branches table.
@@ -59,9 +58,7 @@ class Branch_Model extends Model {
     /**
      * Fetch get current versions via the webservice
      */
-    protected function _getValues(array $order_by = array()) {
-        $order_by = implode(",", $order_by);
-
+    protected function _getValues() {
         $config = array();
         $credentials = Kohana::config('webserviceclient.basic_auth');
         if($credentials) {
@@ -69,32 +66,10 @@ class Branch_Model extends Model {
         }
         $service = new Web_Service($config);
         $host = Kohana::config('webserviceclient.socorro_hostname');
-        $from = rawurlencode($order_by);
         $lifetime = Kohana::config('webserviceclient.branch_model_cache_in_minutes', 60) * 60;
-        $resp = $service->get("${host}/current/versions/${from}", 'json', $lifetime);
+        $resp = $service->get("${host}/current/versions/", 'json', $lifetime);
 
         return $resp->currentversions;
-    }
-
-    /**
-     * Take an array of version objects, and return an array of sorted version numbers.  Return
-     * array in reverse order.
-     *
-     * @param array An array of version objects
-     * @param array An array of version numbers
-     */
-    private function _sortVersions($versions)
-    {
-        $versions_array = array();
-        foreach ($versions as $version) {
-            $versions_array[] = $version->version;
-        }
-
-        $vc = new VersioncompareComponent();
-        $vc->sortAppversionArray($versions_array);
-        rsort($versions_array);
-
-        return $versions_array;
     }
 
     /**
@@ -118,7 +93,9 @@ class Branch_Model extends Model {
         $release = $this->determine_release($version);
         try {
             $rv = $this->db->query("/* soc.web branch.add */
-                SELECT * FROM edit_product_info(null, ?, ?, ?, ?, ?, ?, ?)", $product, $version, $release, $start_date, $end_date, $featured, $throttle);       
+                SELECT * FROM edit_product_info(null, ?, ?, ?, ?, ?, ?, ?)",
+                $product, $version, $release, $start_date, $end_date,
+                $featured, $throttle);
         } catch (Exception $e) {
             Kohana::log('error', "Could not add \"$product\" \"$version\" in soc.web branch.add \r\n " . $e->getMessage());
         }
@@ -307,7 +284,7 @@ class Branch_Model extends Model {
      * @return array    An array of version objects
      */
     public function getProductVersions() {
-        return $this->_getValues(array('product_name', 'version_string'));
+        return $this->_getValues();
     }
 
     /**
@@ -318,7 +295,7 @@ class Branch_Model extends Model {
      * @return array  An array of version objects
      */
     public function getNonCurrentProductVersions($delete_cache=false) {
-        $resp = $this->_getValues(array('product_name', '-version_string'));
+        $resp = $this->_getValues();
 
         $time = time();
         $response = array();
@@ -338,7 +315,7 @@ class Branch_Model extends Model {
      * @return array    An array of version objects
      */
     public function getCurrentProductVersions($delete_cache=false) {
-        $resp = $this->_getValues(array('product_name', '-version_string'));
+        $resp = $this->_getValues();
         $now = time();
         $result = array();
         foreach($resp as $item) {
@@ -358,7 +335,7 @@ class Branch_Model extends Model {
      * @return array    An array of version objects
      */
     public function getCurrentProductVersionsByProduct($product) {
-        $resp = $this->_getValues(array('product_name', 'version_string'));
+        $resp = $this->_getValues();
         $now = time();
         $result = array();
         foreach($resp as $item) {
@@ -383,7 +360,7 @@ class Branch_Model extends Model {
      * @return  array   An array of version objects
      */
     public function getProductVersionsByDate($product, $start_date, $end_date) {
-        $resp = $this->_getValues(array('product_name', 'version_string'));
+        $resp = $this->_getValues();
         $start_date = strtotime($start_date);
         $end_date = strtotime($end_date);
         $result = array();
@@ -406,7 +383,7 @@ class Branch_Model extends Model {
      * @return  array   An array of version objects
      */
     public function getProductVersionsByProduct($product) {
-        $resp = $this->_getValues(array('product_name', 'version_string'));
+        $resp = $this->_getValues();
         $products = array();
         foreach($resp as $item) {
             if($item->product == $product) {
@@ -424,7 +401,7 @@ class Branch_Model extends Model {
      * @return arary    An array of version objects
      */
     public function getProductVersionsWithoutVisibility () {
-        $resp = $this->_getValues(array('product_name', 'version_string'));
+        $resp = $this->_getValues();
         foreach($resp as $k => $item) {
             if($item->start_date OR $item->end_date) {
                 unset($resp[$k]);
@@ -469,7 +446,7 @@ class Branch_Model extends Model {
      * @return object Branch data
      */
     public function getByProductVersion($product, $version) {
-        $resp = $this->_getValues(array('product_name', 'version_string'));
+        $resp = $this->_getValues();
         foreach ($resp as $item) {
             if($item->product == $product AND $item->version == $version) {
                 return $item; // Essentially a LIMIT 1, per old query
@@ -486,7 +463,7 @@ class Branch_Model extends Model {
      * @return object Branch data
      */
     public function getRecentProductVersion($product) {
-        $resp = $this->_getValues(array('product name', 'version_string'));
+        $resp = $this->_getValues();
         $date = time();
 
         foreach($resp as $item) {
@@ -508,7 +485,7 @@ class Branch_Model extends Model {
      */
     public function getFeaturedVersions($product)
     {
-        $resp = $this->_getValues(array('product_name', 'version_string'));
+        $resp = $this->_getValues();
         $result = array();
         $now = time();
         foreach($resp as $item) {
@@ -520,41 +497,7 @@ class Branch_Model extends Model {
             }
         }
 
-        if(count($result) > 0) {
-            return $result;
-        }
-        return $this->getFeaturedVersionsDefault($product);
-    }
-
-    /**
-     * Determine the featured versions for a particular product if there are no
-     * versions that have been declared featured versions.
-     *
-     * @param string    The product name
-     * @return array    An array of featured versions
-     */
-    private function getFeaturedVersionsDefault($product)
-    {
-        if ($versions = $this->getCurrentProductVersionsByProduct($product)) {
-            $versions_array = $this->_sortVersions($versions);
-            $featured_versions = array();
-            foreach (array(Release::MAJOR, Release::MILESTONE, Release::DEVELOPMENT) as $release) {
-                foreach ($versions_array as $va) {
-                    foreach ($versions as $version) {
-                        if (
-                            !isset($featured_versions[$release]) &&
-                            $version->version == $va &&
-                            $version->release == $release
-                        ) {
-                            $featured_versions[$release] = $version;
-                        }
-                    }
-                }
-            }
-            rsort($featured_versions);
-            return $featured_versions;
-        }
-        return false;
+        return $result;
     }
 
     /**
@@ -584,7 +527,7 @@ class Branch_Model extends Model {
         }
         return 0;
 
-        $resp = $this->_getValues(array('product_name', 'version_string'));
+        $resp = $this->_getValues();
         $result = 0;
         $date = time();
         foreach($resp as $item) {
@@ -605,42 +548,22 @@ class Branch_Model extends Model {
      * Fetch all of the versions for a particular product that are not featured.
      *
      * @param string    The product name
-     * @param array     An array of featured versions
-     * @param bool      True if you want to delete the previously cached queries; used by admin panel.
-     * @return array    An array of unfeatured versions
      */
-    public function getUnfeaturedVersions($product, $featured_versions, $delete_cache=false)
+    public function getUnfeaturedVersions($product)
     {
         $date = date('Y-m-d');
         $sql = '/* soc.web branch.getFeaturedVersions */
-                SELECT DISTINCT pd.product_name as product, pd.version_string as version, is_featured as featured, build_type as release, start_date, end_date, throttle
-                FROM product_info pd
-                WHERE pd.product_name = ' . $this->db->escape($product) . '
-                AND pd.start_date <= ' . $this->db->escape($date) . '
-                AND pd.end_date >= ' . $this->db->escape($date) . '
-                AND pd.is_featured = false
-                ORDER BY pd.product_name, pd.version_string
-        ';
+                SELECT product_name as product,
+                    version_string as version, is_featured as featured,
+                    build_type as release, start_date, end_date, throttle
+                FROM product_info
+                WHERE product_name = ' . $this->db->escape($product) . '
+                AND start_date <= ' . $this->db->escape($date) . '
+                AND end_date >= ' . $this->db->escape($date) . '
+                AND is_featured = false
+                ORDER BY version_sort DESC';
 
-        if ($delete_cache) {
-            $this->cache->delete($this->queryHashKey($sql));
-        }
-
-        $versions = $this->fetchRows($sql);
-        if (isset($versions[0])) {
-            if (isset($featured_versions) && !empty($featured_versions)) {
-                foreach($featured_versions as $featured_version) {
-                    foreach ($versions as $key => $version) {
-                        if ($featured_version->version == $version->version) {
-                            unset($versions[$key]);
-                        }
-                    }
-                }
-            }
-            rsort($versions);
-            return $versions;
-        }
-        return false;
+        return $this->fetchRows($sql);
     }
 
     /**
@@ -684,7 +607,9 @@ class Branch_Model extends Model {
         foreach ($versions as $version) {
             array_push($prep, '?');
         }
-        $sql = "SELECT version_string as version FROM product_info WHERE product_name = ? AND version_string IN (" . join(', ', $prep) . ")";
+        $sql = "SELECT version_string as version FROM product_info
+                WHERE product_name = ?
+                AND version_string IN (" . join(', ', $prep) . ")";
         $bind_params = array_merge(array($product), $versions);
         return $this->fetchSingleColumn($sql, 'version', $bind_params);
     }

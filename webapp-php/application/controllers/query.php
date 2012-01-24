@@ -42,7 +42,6 @@
 require_once(Kohana::find_file('libraries', 'bugzilla', TRUE, 'php'));
 require_once(Kohana::find_file('libraries', 'crash', TRUE, 'php'));
 require_once(Kohana::find_file('libraries', 'MY_SearchReportHelper', TRUE, 'php'));
-require_once(Kohana::find_file('libraries', 'MY_QueryFormHelper', TRUE, 'php'));
 
 /**
  * The controller for simple and advanced search queries.
@@ -61,7 +60,6 @@ class Query_Controller extends Controller {
         $this->bug_model = new Bug_Model;
         $this->search_model = new Search_Model;
         $this->crash = new Crash;
-        $this->queryFormHelper = new QueryFormHelper;
         $this->searchReportHelper = new SearchReportHelper;
     }
 
@@ -162,8 +160,29 @@ class Query_Controller extends Controller {
             }
         }
 
-        $queryFormData = $this->queryFormHelper->prepareCommonViewData($this->branch_model, $this->platform_model);
-        $this->setViewData($queryFormData);
+        $branch_data = $this->branch_model->getBranchData();
+        $platforms   = $this->platform_model->getAll();
+
+        $versions_by_product = array();
+        foreach($branch_data['versions'] as $version){
+            if (!array_key_exists($version->product, $versions_by_product)) {
+                $versions_by_product[$version->product] = array();
+            }
+            array_push($versions_by_product[$version->product], $version);
+        }
+
+        $versions_by_product_reversed = array();
+        foreach ($versions_by_product as $product => $versions) {
+            $versions_by_product_reversed[$product] = array_reverse($versions);
+        }
+
+        $this->setViewData(array(
+            'all_products'  => $branch_data['products'],
+            'all_branches'  => $branch_data['branches'],
+            'all_versions'  => $branch_data['versions'],
+            'versions_by_product'  => $versions_by_product,
+            'all_platforms' => $platforms
+        ));
 
         cachecontrol::set(array(
             'etag'     => $params,
