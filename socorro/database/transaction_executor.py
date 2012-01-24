@@ -44,8 +44,13 @@ class TransactionExecutor(RequiredConfig):
     def __call__(self, function, *args, **kwargs):
         """execute a function within the context of a transaction"""
         with self.config.db_connection_context() as connection:
-            function(connection, *args, **kwargs)
-            connection.commit()
+            try:
+                function(connection, *args, **kwargs)
+                connection.commit()
+            except:
+                connection.rollback()
+                raise
+                    
 
 
 #==============================================================================

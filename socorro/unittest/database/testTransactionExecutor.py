@@ -25,15 +25,20 @@ class MockConnection(object):
         global commit_count
         commit_count += 1
 
+    def rollback(self):
+        global rollback_count
+        rollback_count += 1
+        
 
 commit_count = 0
-
+rollback_count = 0
 
 class TestTransactionExecutor(unittest.TestCase):
 
     def setUp(self):
-        global commit_count
+        global commit_count, rollback_count
         commit_count = 0
+        rollback_count = 0
 
     def test_basic_usage_with_postgres(self):
         required_config = Namespace()
@@ -62,6 +67,38 @@ class TestTransactionExecutor(unittest.TestCase):
             executor(mock_function)
             self.assertTrue(_function_calls)
             self.assertEqual(commit_count, 1)
+            
+    def test_rollback_exceptions_with_postgres(self):
+        required_config = Namespace()
+        required_config.add_option(
+          'transaction_executor_class',
+          default=TransactionExecutor,
+          doc='a class that will execute transactions'
+        )
+
+        config_manager = ConfigurationManager(
+          [required_config],
+          app_name='testapp',
+          app_version='1.0',
+          app_description='app description',
+          values_source_list=[{'database_class': MockPostgres}],
+        )
+        with config_manager.context() as config:
+            executor = config.transaction_executor_class(config)
+            _function_calls = []  # some mutable
+
+            def mock_function(connection):
+                assert isinstance(connection, MockConnection)
+                raise NameError('crap!')
+                
+            try:
+                executor(mock_function)
+                assert 0
+            except NameError:
+                pass
+            
+            self.assertEqual(commit_count, 0)
+            self.assertEqual(rollback_count, 1)
 
     def test_basic_usage_with_postgres_with_backoff(self):
         required_config = Namespace()
@@ -99,8 +136,17 @@ class TestTransactionExecutor(unittest.TestCase):
           #default=TransactionExecutor,
           doc='a class that will execute transactions'
         )
-        import logging
-        required_config.add_option('logger', default=logging)
+        
+        _debug_loggings = []
+        _warn_loggings = []
+        class MockLogging:
+            def debug(self, msg):
+                _debug_loggings.append(msg)
+            def warn(self, msg):
+                _warn_loggings.append(msg)
+                
+        mock_logging = MockLogging()
+        required_config.add_option('logger', default=mock_logging)
 
         config_manager = ConfigurationManager(
           [required_config],
