@@ -235,7 +235,12 @@ class Report_Controller extends Controller {
         $report_bug_url .= 'advanced=1&bug_severity=critical&keywords=crash&';
 
         if (isset($report->product) && !empty($report->product)) {
-            $report_bug_url .= 'product='.rawurlencode($report->product) . '&';
+            if($report->product == 'FennecAndroid') {
+                $rp = 'Fennec Native';
+            } else {
+                $rp = $report->product;
+            }
+            $report_bug_url .= 'product='.rawurlencode($rp) . '&';
         }
 
         if (isset($report->os_name) && !empty($report->os_name)) {
