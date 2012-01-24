@@ -205,6 +205,12 @@ if (isset($report->sumo_signature) && !empty($report->signature)) { ?>
         <tr><th>Winsock LSP</th><td><pre><?php if (isset($report->Winsock_LSP)) nl2br(out::H($report->Winsock_LSP)) ?></pre></td></tr>
         <tr><th>Adapter Vendor ID</th><td><?php if (isset($report->AdapterVendorID)) out::H($report->AdapterVendorID) ?></td></tr>
         <tr><th>Adapter Device ID</th><td><?php if (isset($report->AdapterDeviceID)) out::H($report->AdapterDeviceID) ?></td></tr>
+<?php if (property_exists($report, 'JavaStackTrace')) { ?>
+            <tr>
+	    <th>Java Stack Trace</th><td><?php out::H($report->JavaStackTrace) ?></td>
+            </tr>
+<?php } ?>
+
         </table>
 
 
