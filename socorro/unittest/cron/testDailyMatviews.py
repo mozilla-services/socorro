@@ -76,8 +76,9 @@ class TestCase(unittest.TestCase):
               'update_daily_crashes', 'update_os_signature_counts',
               'update_uptime_signature_counts',
               'update_product_signature_counts',
-              'update_hang_report'])
-            self.assertEqual(mock_logger.info.call_count, 9)
+              'update_hang_report',
+              'rank_compare'])
+            self.assertEqual(mock_logger.info.call_count, 10)
             self.assertEqual(mock_logger.warn.call_count, 2)
             self.assertEqual(mock_logger.error.call_count, 0)
 
@@ -86,7 +87,7 @@ class TestCase(unittest.TestCase):
         dailyMatviews.psycopg2 = mock_psycopg2(cursor)
         with patch('socorro.cron.dailyMatviews.logger') as mock_logger:
             dailyMatviews.update(self.config, 'some date')
-            self.assertEqual(mock_logger.info.call_count, 10)
+            self.assertEqual(mock_logger.info.call_count, 11)
             self.assertEqual(mock_logger.warn.call_count, 0)
             self.assertEqual(mock_logger.error.call_count, 0)
 
@@ -97,7 +98,7 @@ class TestCase(unittest.TestCase):
         dailyMatviews.psycopg2 = mock_psycopg2(cursor)
         with patch('socorro.cron.dailyMatviews.logger') as mock_logger:
             dailyMatviews.update(self.config, 'some date')
-            self.assertEqual(mock_logger.info.call_count, 9)
+            self.assertEqual(mock_logger.info.call_count, 10)
             self.assertEqual(mock_logger.warn.call_count, 1)
             self.assertEqual(mock_logger.error.call_count, 1)
 
@@ -197,6 +198,12 @@ BEGIN
         RETURN true;
 END;
 $$ LANGUAGE plpgsql;
+ CREATE OR REPLACE FUNCTION rank_compare(timestamp with time zone)
+RETURNS boolean AS $$
+BEGIN
+        RETURN true;
+END;
+$$ LANGUAGE plpgsql;
 
         """)
         self.connection.commit()
@@ -210,6 +217,12 @@ $$ LANGUAGE plpgsql;
         DROP FUNCTION update_signatures (timestamp with time zone) ;
         DROP FUNCTION update_tcbs (timestamp with time zone) ;
         DROP FUNCTION update_adu (timestamp with time zone) ;
+        DROP FUNCTION update_daily_crashes (timestamp with time zone) ;
+        DROP FUNCTION update_os_signature_counts(timestamp with time zone) ;
+        DROP FUNCTION update_uptime_signature_counts(timestamp with time zone) ;
+        DROP FUNCTION update_product_signature_counts(timestamp with time zone) ;
+        DROP FUNCTION update_hang_report(timestamp with time zone) ;
+        DROP FUNCTION rank_compare(timestamp with time zone) ;
         """)
         self.connection.commit()
 
