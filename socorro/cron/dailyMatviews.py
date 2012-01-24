@@ -22,9 +22,6 @@ def update(config, targetDate):
       ('update_adu', [targetDate], []),
       ('update_daily_crashes', [targetDate],
        ['update_product_versions' 'update_signatures']),
-      ('update_os_signature_counts', [targetDate], []),
-      ('update_uptime_signature_counts', [targetDate], []),
-      ('update_product_signature_counts', [targetDate], []),
       ('update_hang_report', [targetDate], []),
       ('rank_compare', [targetDate], []),
     )
