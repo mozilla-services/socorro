@@ -38,4 +38,43 @@
             
         </tbody>
     </table>
+    
+    <!--<table class="sig-dashboard-tbl zebra">
+        <thead>
+            <tr>
+                <th>Architecture</th>
+                <th>Percentage</th>
+                <th>Number Of Crashes</th>
+            </tr>
+        </thead>
+        <tbody id="architectureBody">
+            
+        </tbody>
+    </table>!-->
+    
+    <table class="sig-dashboard-tbl zebra">
+        <thead>
+            <tr>
+                <th>Process Type</th>
+                <th>Percentage</th>
+                <th>Number Of Crashes</th>
+            </tr>
+        </thead>
+        <tbody id="processTypeBody">
+            
+        </tbody>
+    </table>
+    
+    <table class="sig-dashboard-tbl zebra">
+        <thead>
+            <tr>
+                <th>Flash Version</th>
+                <th>Percentage</th>
+                <th>Number Of Crashes</th>
+            </tr>
+        </thead>
+        <tbody id="flashVersionBody">
+            
+        </tbody>
+    </table>
 </div>

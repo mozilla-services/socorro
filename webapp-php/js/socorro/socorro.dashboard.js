@@ -15,16 +15,25 @@ $(function() {
 		var socorroDashBoardData = data,
 		percentageByOsHtml = "",
 		uptimeRangeHtml = "",
-		productVersionsHtml = "";
+		productVersionsHtml = "",
+		architectureHtml = "",
+		processTypeHtml = "",
+		flashVersionHtml = "";
         
         if(!$.isArray(socorroDashBoardData)) {
             percentageByOsHtml = Mustache.to_html(percentageByOsTmpl, socorroDashBoardData);
             uptimeRangeHtml = Mustache.to_html(uptimeRangeTmpl, socorroDashBoardData);
             productVersionsHtml = Mustache.to_html(productVersionsTmpl, socorroDashBoardData);
+            architectureHtml = Mustache.to_html(architectureTmpl, socorroDashBoardData);
+            processTypeHtml = Mustache.to_html(processTypeTmpl, socorroDashBoardData);
+            flashVersionHtml = Mustache.to_html(flashVersionTmpl, socorroDashBoardData);
             
             $(percentageByOsHtml).appendTo("#percentageByOsBody");
             $(uptimeRangeHtml).appendTo("#uptimeRangeBody");
             $(productVersionsHtml).appendTo("#productVersionsBody");
+            $(architectureHtml).appendTo("#architectureBody");
+            $(processTypeHtml).appendTo("#processTypeBody");
+            $(flashVersionHtml).appendTo("#flashVersionBody");
             
              dashTables.show();
              
