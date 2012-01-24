@@ -14,7 +14,7 @@ class CurrentVersions(webapi.JsonServiceBase):
         logger.debug('CurrentVersions __init__')
 
     # curl 'http://socorro-api/bpapi/current/versions'
-    uri = '/current/versions/(.*)'
+    uri = '/current/versions/'
 
     def get(self, *args):
         convertedArgs = webapi.typeConversion([str], args)
@@ -24,7 +24,7 @@ class CurrentVersions(webapi.JsonServiceBase):
 
         # use the last date that we have data for as the end
         currentVersions = """
-                        /* socorro.services.CurrentVersions curentVersions */
+                        /* socorro.services.CurrentVersions currentVersions */
                        SELECT
                            product_name, product_version_id,
                            version_string, is_featured,
