@@ -329,7 +329,8 @@ class ProcessorWithExternalBreakpad (processor.Processor):
     if java_stack_trace:
       # generate a Java signature
       signature, \
-        signature_notes = self.java_signature_tool.generate(java_stack_trace)
+        signature_notes = self.java_signature_tool.generate(java_stack_trace,
+                                                            delimiter=' ')
       return signature
     else:
       # generate a C signature
