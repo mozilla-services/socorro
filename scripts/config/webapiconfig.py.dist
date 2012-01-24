@@ -73,7 +73,11 @@ products_buildsImplementationModule = cm.Option()
 products_buildsImplementationModule.doc = "String, name of the module util services use."
 products_buildsImplementationModule.default = 'socorro.external.postgresql'
 
-import socorro.services.topCrashBySignatureTrends as tcbst
+# TCBS service config
+tcbsImplementationModule = cm.Option()
+tcbsImplementationModule.doc = "String, name of the module tcbs services use."
+tcbsImplementationModule.default = 'socorro.external.postgresql'
+
 import socorro.services.signatureHistory as sighist
 import socorro.services.aduByDay as adubd
 import socorro.services.aduByDayDetails as adudetails
@@ -91,11 +95,11 @@ import socorro.services.hangReport as hr
 import socorro.middleware.search_service as search
 import socorro.middleware.versions_info_service as versions_info
 import socorro.middleware.products_builds_service as products_builds
+import socorro.middleware.tcbs_service as tcbs
 
 servicesList = cm.Option()
 servicesList.doc = 'a python list of classes to offer as services'
 servicesList.default = [
-    tcbst.TopCrashBySignatureTrends,
     sighist.SignatureHistory,
     adubd.AduByDay,
     adudetails.AduByDayDetails,
@@ -113,6 +117,7 @@ servicesList.default = [
     search.Search,
     versions_info.VersionsInfo,
     products_builds.ProductsBuilds,
+    tcbs.TCBS,
 ]
 
 crashBaseUrl = cm.Option()

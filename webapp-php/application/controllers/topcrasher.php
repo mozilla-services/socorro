@@ -176,7 +176,7 @@ class Topcrasher_Controller extends Controller {
 
 	$p = urlencode($product);
 	$v = urlencode($version);
-        $resp = $service->get("${host}/topcrash/sig/trend/rank/p/${p}/v/${v}/type/${crash_type}/end/${end_date}/duration/${dur}/listsize/${limit}", 'json', $lifetime);
+        $resp = $service->get("${host}/crashes/signatures/product/${p}/version/${v}/crash_type/${crash_type}/to_date/${end_date}/duration/${dur}/limit/${limit}", 'json', $lifetime);
 	if($resp) {
 	    $this->topcrashers_model->ensureProperties($resp, array(
 				     'start_date' => '',
@@ -286,7 +286,7 @@ class Topcrasher_Controller extends Controller {
 	 * @param string	The end date by which to end the plot
      * @return responds with JSON suitable for plotting
      */
-    public function plot_signature($product, $version, $signature, $start_date, $end_date)
+    public function plot_signature($product, $version, $start_date, $end_date, $signature)
     {
 	//Bug#532434 Kohana is escaping some characters with html entity encoding for security purposes
 	$signature = html_entity_decode($signature);
