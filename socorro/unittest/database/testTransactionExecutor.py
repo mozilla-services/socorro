@@ -12,6 +12,23 @@ class MockPostgres(Postgres):
     def connection(self, __=None):
         return MockConnection()
 
+    
+
+class MockLogging:
+    def __init__(self):
+        self.debugs = []
+        self.warnings = []
+        self.errors = []
+        
+    def debug(self, *args, **kwargs):
+        self.debugs.append((args, kwargs))
+        
+    def warning(self, *args, **kwargs):
+        self.warnings.append((args, kwargs))
+        
+    def error(self, *args, **kwargs):
+        self.errors.append((args, kwargs))
+
 
 class MockConnection(object):
 
@@ -67,6 +84,7 @@ class TestTransactionExecutor(unittest.TestCase):
             executor(mock_function)
             self.assertTrue(_function_calls)
             self.assertEqual(commit_count, 1)
+            self.assertEqual(rollback_count, 0)
             
     def test_rollback_exceptions_with_postgres(self):
         required_config = Namespace()
@@ -75,6 +93,8 @@ class TestTransactionExecutor(unittest.TestCase):
           default=TransactionExecutor,
           doc='a class that will execute transactions'
         )
+        mock_logging = MockLogging()
+        required_config.add_option('logger', default=mock_logging)
 
         config_manager = ConfigurationManager(
           [required_config],
@@ -91,14 +111,11 @@ class TestTransactionExecutor(unittest.TestCase):
                 assert isinstance(connection, MockConnection)
                 raise NameError('crap!')
                 
-            try:
-                executor(mock_function)
-                assert 0
-            except NameError:
-                pass
+            self.assertRaises(NameError, executor, mock_function)
             
             self.assertEqual(commit_count, 0)
             self.assertEqual(rollback_count, 1)
+            self.assertTrue(mock_logging.errors)
 
     def test_basic_usage_with_postgres_with_backoff(self):
         required_config = Namespace()
@@ -136,15 +153,7 @@ class TestTransactionExecutor(unittest.TestCase):
           #default=TransactionExecutor,
           doc='a class that will execute transactions'
         )
-        
-        _debug_loggings = []
-        _warn_loggings = []
-        class MockLogging:
-            def debug(self, msg):
-                _debug_loggings.append(msg)
-            def warn(self, msg):
-                _warn_loggings.append(msg)
-                
+                        
         mock_logging = MockLogging()
         required_config.add_option('logger', default=mock_logging)
 
@@ -180,4 +189,7 @@ class TestTransactionExecutor(unittest.TestCase):
             executor(mock_function)
             self.assertTrue(_function_calls)
             self.assertEqual(commit_count, 1)
+            self.assertEqual(rollback_count, 5)
+            self.assertTrue(mock_logging.warnings)
+            self.assertEqual(len(mock_logging.warnings), 5)
             self.assertTrue(len(_sleep_count) > 10)

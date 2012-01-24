@@ -49,6 +49,7 @@ class TransactionExecutor(RequiredConfig):
                 connection.commit()
             except:
                 connection.rollback()
+                self.config.logger.error("Exception raised", exc_info=True)
                 raise
                     
 
@@ -97,9 +98,15 @@ class TransactionExecutorWithBackoff(TransactionExecutor):
                 # self.config.db_connection_context is an instance of a
                 # wrapper class on the actual connection driver
                 with self.config.db_connection_context() as connection:
-                    function(connection, *args, **kwargs)
-                    connection.commit()
-                    break
+                    try:
+                        function(connection, *args, **kwargs)
+                        connection.commit()
+                        break
+                    except:
+                        connection.rollback()
+                        self.config.logger.warning("Exception raised", 
+                                                   exc_info=True)
+                        raise
             except self.config.db_connection_context.operational_exceptions:
                 pass
             self.config.logger.debug(
