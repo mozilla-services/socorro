@@ -30,24 +30,28 @@ class Signature_Summary_Controller extends Controller {
 
     public function json_data()
     {
-        $d = array('signature' => '', 'range_value' => '7', 'range_unit' => 'days',);
+        $d = array('signature' => '', 'range_value' => '7', 'range_unit' => 'days', 'product' => 'Firefox', 'version' => array(), 'date' => date('Y-m-d'));
         $params = $this->getRequestParameters($d);
         $signature = $params['signature'];
-        $range_value = (int)$params['range_value'];
-        $range_unit = $params['range_unit'];
-        $end = date('Y-m-d');
-        $start = date('Y-m-d', strtotime("Today - $range_value $range_unit"));
+        $start = date('Y-m-d', strtotime($params['date'] . 
+                    " - {$params['range_value']} {$params['range_unit']}"));
+        $end = date('Y-m-d', strtotime($params['date']));
+        if(!empty($params['version'])) {
+            $versions = $params['version'];
+        } else {
+            $versions = array();
+        }
 
-        $uptime = $this->summary_model->getUptimeCounts($signature, $start, $end);
-        $products = $this->summary_model->getProductCounts($signature, $start, $end);
-        $oses = $this->summary_model->getOSCounts($signature, $start, $end);
-
+        $uptime = $this->summary_model->getSummary('uptime', $signature, $start, $end, $params['product'], $versions);
+        $products = $this->summary_model->getSummary('products', $signature, $start, $end);
+        $oses = $this->summary_model->getSummary('os', $signature, $start, $end, $params['product'], $versions);
+        $processes = $this->summary_model->getSummary('process_type', $signature, $start, $end, $params['product'], $versions);
+        $flashes = $this->summary_model->getSummary('flash_version', $signature, $start, $end, $params['product'], $versions);
         $results = array();
-        
         foreach($oses as $os) {
             $obj = new stdClass();
-            $obj->os = $os->os_version_string;
-            $obj->percentage = $os->report_percent;
+            $obj->os = $os->category;
+            $obj->percentage = $os->percentage*100;
             $obj->numberOfCrashes = $os->report_count;
             $results['percentageByOs'][] = $obj;
         }
@@ -56,18 +60,35 @@ class Signature_Summary_Controller extends Controller {
             $obj = new stdClass();
             $obj->product = $product->product_name;
             $obj->version = $product->version_string;
-            $obj->percentage = $product->report_percent;
+            $obj->percentage = $product->percentage;
             $obj->numberOfCrashes = $product->report_count;
             $results['productVersions'][] = $obj;
         }
 
         foreach ($uptime as $up) {
             $obj = new stdClass();
-            $obj->range = $up->uptime_string;
-            $obj->percentage = $up->report_percent;
+            $obj->range = $up->category;
+            $obj->percentage = $up->percentage*100;
             $obj->numberOfCrashes = $up->report_count;
             $results['uptimeRange'][] = $obj;
         }
+
+        foreach($processes as $process) {
+            $obj = new stdClass();
+            $obj->processType = $process->category;
+            $obj->numberOfCrashes = $process->report_count;
+            $obj->percentage = $process->percentage*100;
+            $results['processTypes'] = $obj;
+        }
+
+        foreach($flashes as $flash) {
+            $obj = new StdClass();
+            $obj->flashVersion = $flash->category;
+            $obj->numberOfCrashes = $flash->report_count;
+            $obj->percentage = $flash->percentage*100;
+            $results['flashVersions'][] = $obj;
+        }
+
 
         echo json_encode($results); exit; // We can halt processing here.
     }
