@@ -1,5 +1,4 @@
 import time
-import logging
 from configman.config_manager import RequiredConfig
 from configman import Namespace
 
@@ -80,8 +79,8 @@ class TransactionExecutorWithBackoff(TransactionExecutor):
         for x in xrange(int(seconds)):
             if (self.config.wait_log_interval and
                 not x % self.config.wait_log_interval):
-                logging.debug('%s: %dsec of %dsec' %
-                              (wait_reason, x, seconds))
+                self.config.logger.debug(
+                  '%s: %dsec of %dsec' % (wait_reason, x, seconds))
             time.sleep(1.0)
 
     #--------------------------------------------------------------------------
@@ -98,8 +97,8 @@ class TransactionExecutorWithBackoff(TransactionExecutor):
                     break
             except self.config.db_connection_context.operational_exceptions:
                 pass
-            logging.debug('failure in transaction - retry in %s seconds' %
-                          wait_in_seconds)
+            self.config.logger.debug(
+              'failure in transaction - retry in %s seconds' % wait_in_seconds)
             self.responsive_sleep(wait_in_seconds,
                                   "waiting for retry after failure in "
                                   "transaction")

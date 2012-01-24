@@ -99,6 +99,8 @@ class TestTransactionExecutor(unittest.TestCase):
           #default=TransactionExecutor,
           doc='a class that will execute transactions'
         )
+        import logging
+        required_config.add_option('logger', default=logging)
 
         config_manager = ConfigurationManager(
           [required_config],
