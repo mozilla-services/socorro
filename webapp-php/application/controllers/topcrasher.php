@@ -42,7 +42,6 @@ require_once(Kohana::find_file('libraries', 'Correlation', TRUE, 'php'));
 require_once(Kohana::find_file('libraries', 'crash', TRUE, 'php'));
 require_once(Kohana::find_file('libraries', 'release', TRUE, 'php'));
 require_once(Kohana::find_file('libraries', 'timeutil', TRUE, 'php'));
-require_once(Kohana::find_file('libraries', 'versioncompare', TRUE, 'php'));
 
 /**
  * Reports based on top crashing signatures
