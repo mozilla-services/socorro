@@ -5,6 +5,7 @@ table.sig-dashboard-tbl {
 	margin: 1em;
 	border-collapse: collapse;
 	box-shadow: 5px 5px 6px #ccc;
+	width: 98%;
 }
 table.sig-dashboard-tbl th, 
 table.sig-dashboard-tbl td {

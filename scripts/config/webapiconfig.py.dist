@@ -95,6 +95,7 @@ import socorro.services.hangReport as hr
 import socorro.middleware.search_service as search
 import socorro.middleware.versions_info_service as versions_info
 import socorro.middleware.products_builds_service as products_builds
+import socorro.middleware.signature_summary_service as signature_summary
 import socorro.middleware.tcbs_service as tcbs
 
 servicesList = cm.Option()
@@ -117,6 +118,7 @@ servicesList.default = [
     search.Search,
     versions_info.VersionsInfo,
     products_builds.ProductsBuilds,
+    signature_summary.SignatureSummary,
     tcbs.TCBS,
 ]
 
