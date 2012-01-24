@@ -142,7 +142,7 @@ foreach($options[$type] as $k => $readable) {
             <tbody>
                 <?php foreach ($builds as $build): ?>
                 <tr>
-	   <td class="human-buildid"><?php out::H(date('YmdH', strtotime($build->build_date))) ?></td>
+	   <td class="human-buildid"><?php out::H(gmdate('YmdH', strtotime($build->build_date))) ?></td>
                     <?php if (count($all_platforms) != 1): ?>
                     <td class="crash-count">
 		    <?php out::H($build->count) ?> - <?php printf("%.3f%%", ($build->frequency * 100) ) ?>

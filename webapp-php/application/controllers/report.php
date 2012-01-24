@@ -111,7 +111,7 @@ class Report_Controller extends Controller {
         $buildTicks = array();
         $index = 0;
         for($i = count($builds) - 1; $i  >= 0 ; $i = $i - 1) {
-            $buildTicks[] = array($index, date('m/d', strtotime($builds[$i]->build_date)));
+            $buildTicks[] = array($index, gmdate('m/d', strtotime($builds[$i]->build_date)));
             $index += 1;
         }
         $bug_model = new Bug_Model;
