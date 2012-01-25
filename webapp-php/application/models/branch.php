@@ -48,11 +48,16 @@ require_once(Kohana::find_file('libraries', 'release', TRUE, 'php'));
 class Branch_Model extends Model {
 
     protected $cache;
+    protected $admin_username;
 
     public function __construct()
     {
         parent::__construct();
         $this->cache = Cache::instance();
+        $this->admin_username = "NoAuth";
+        if (Kohana::config('auth.driver') !== "NoAuth") {
+            $this->admin_username = Auth::instance()->get_user();
+        }
     }
 
     /**
@@ -95,7 +100,7 @@ class Branch_Model extends Model {
             $rv = $this->db->query("/* soc.web branch.add */
                 SELECT * FROM edit_product_info(null, ?, ?, ?, ?, ?, ?, ?)",
                 $product, $version, $release, $start_date, $end_date,
-                $featured, $throttle);
+                $featured, $throttle, $this->admin_username);
         } catch (Exception $e) {
             Kohana::log('error', "Could not add \"$product\" \"$version\" in soc.web branch.add \r\n " . $e->getMessage());
         }
@@ -586,8 +591,9 @@ class Branch_Model extends Model {
         $channel = $product_version->release;
         $release = $this->determine_release($version);
         $rv = $this->db->query("/* soc.web branch.update */
-            SELECT * FROM edit_product_info(?, ?, ?, ?, ?, ?, ?, ?)", $prod_id, $product,  $version, $channel, $start_date, $end_date, $featured, $throttle);
-
+            SELECT * FROM edit_product_info(?, ?, ?, ?, ?, ?, ?, ?)",
+            $prod_id, $product, $version, $channel, $start_date, $end_date,
+            $featured, $throttle, $this->admin_username);
         $this->cache->delete_all();
         return $rv;
     }
