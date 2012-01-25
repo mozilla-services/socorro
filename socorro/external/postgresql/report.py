@@ -1,5 +1,6 @@
 import logging
 import datetime
+import psycopg2
 
 from socorro.external.postgresql.base import PostgreSQLBase
 from socorro.external.postgresql.util import Util
@@ -45,7 +46,7 @@ class Report(PostgreSQLBase):
         # Limiting to a signature
         if params["terms"]:
             params["terms"] = self.prepare_terms(params["terms"],
-                                                   params["search_mode"])
+                                                 params["search_mode"])
 
         # Searching for terms in plugins
         if params["report_process"] == "plugin" and params["plugin_terms"]:
@@ -134,19 +135,18 @@ class Report(PostgreSQLBase):
         # Querying the DB
         try:
             total = db.singleValueSql(cur, sql_count_query, sql_params)
-        except Exception:
+        except db.SQLDidNotReturnSingleValue:
             total = 0
             util.reportExceptionAndContinue(logger)
+
+        results = []
 
         # No need to call Postgres if we know there will be no results
         if total != 0:
             try:
                 results = db.execute(cur, sql_query, sql_params)
-            except Exception:
-                results = []
+            except psycopg2.Error:
                 util.reportExceptionAndContinue(logger)
-        else:
-            results = []
 
         json_result = {
             "total": total,
@@ -257,18 +257,6 @@ class Report(PostgreSQLBase):
         elif search_mode == "starts_with":
             terms = terms + "%"
         return terms
-
-    @staticmethod
-    def dispatch_params(sql_params, key, value):
-        """
-        Dispatch a parameter or a list of parameters into the params array.
-        """
-        if not isinstance(value, list):
-            sql_params[key] = value
-        else:
-            for i, elem in enumerate(value):
-                sql_params[key + str(i)] = elem
-        return sql_params
 
     @staticmethod
     def generate_version_where(key, versions, versions_info, x, sql_params,

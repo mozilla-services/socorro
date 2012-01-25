@@ -1,4 +1,5 @@
 import logging
+import psycopg2
 
 from socorro.external.postgresql.base import PostgreSQLBase
 from socorro.external.postgresql.util import Util
@@ -109,19 +110,18 @@ class Search(PostgreSQLBase):
         # Querying the DB
         try:
             total = db.singleValueSql(cur, sql_count_query, sql_params)
-        except Exception:
+        except db.SQLDidNotReturnSingleValue:
             total = 0
             util.reportExceptionAndContinue(logger)
+
+        results = []
 
         # No need to call Postgres if we know there will be no results
         if total != 0:
             try:
                 results = db.execute(cur, sql_query, sql_params)
-            except Exception:
-                results = []
+            except psycopg2.Error:
                 util.reportExceptionAndContinue(logger)
-        else:
-            results = []
 
         json_result = {
             "total": total,

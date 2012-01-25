@@ -92,10 +92,7 @@ def check_type(param, datatype):
             param = int()
 
     elif datatype == "bool" and not isinstance(param, bool):
-        try:
-            param = param.lower() in ("true", "t", "1", "y", "yes")
-        except AttributeError:
-            param = False
+        param = str(param).lower() in ("true", "t", "1", "y", "yes")
 
     elif datatype == "datetime" and not isinstance(param, datetime):
         try:
