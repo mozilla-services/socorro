@@ -183,6 +183,7 @@ class TestTransactionExecutor(unittest.TestCase):
             executor(mock_function)
             self.assertTrue(_function_calls)
             self.assertEqual(commit_count, 1)
+            self.assertEqual(rollback_count, 0)
 
     def test_operation_error_with_postgres_with_backoff(self):
         required_config = Namespace()
@@ -229,7 +230,60 @@ class TestTransactionExecutor(unittest.TestCase):
             executor(mock_function)
             self.assertTrue(_function_calls)
             self.assertEqual(commit_count, 1)
+            self.assertEqual(rollback_count, 0)
+            self.assertTrue(mock_logging.warnings)
+            self.assertEqual(len(mock_logging.warnings), 5)
+            self.assertTrue(len(_sleep_count) > 10)
+
+    def test_operation_error_with_postgres_with_backoff_with_rollback(self):
+        required_config = Namespace()
+        required_config.add_option(
+          'transaction_executor_class',
+          default=TransactionExecutorWithBackoff,
+          #default=TransactionExecutor,
+          doc='a class that will execute transactions'
+        )
+
+        mock_logging = MockLogging()
+        required_config.add_option('logger', default=mock_logging)
+
+        config_manager = ConfigurationManager(
+          [required_config],
+          app_name='testapp',
+          app_version='1.0',
+          app_description='app description',
+          values_source_list=[{'database_class': MockConnectionContext,
+                               'backoff_delays': [2, 4, 6, 10, 15]}],
+        )
+        with config_manager.context() as config:
+            executor = config.transaction_executor_class(config)
+            _function_calls = []  # some mutable
+
+            _sleep_count = []
+
+            def mock_function(connection):
+                assert isinstance(connection, MockConnection)
+                connection.transaction_status = \
+                  psycopg2.extensions.TRANSACTION_STATUS_INTRANS
+                _function_calls.append(connection)
+                # the default sleep times are going to be,
+                # 2, 4, 6, 10, 15
+                # so after 2 + 4 + 6 + 10 + 15 seconds
+                # all will be exhausted
+                if sum(_sleep_count) < sum([2, 4, 6, 10, 15]):
+                    raise psycopg2.OperationalError('Arh!')
+
+            def mock_sleep(n):
+                _sleep_count.append(n)
+
+            # monkey patch the sleep function from inside transaction_executor
+            socorro.database.transaction_executor.time.sleep = mock_sleep
+
+            executor(mock_function)
+            self.assertTrue(_function_calls)
+            self.assertEqual(commit_count, 1)
             self.assertEqual(rollback_count, 5)
             self.assertTrue(mock_logging.warnings)
             self.assertEqual(len(mock_logging.warnings), 5)
             self.assertTrue(len(_sleep_count) > 10)
+            

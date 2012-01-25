@@ -103,7 +103,9 @@ class TransactionExecutorWithBackoff(TransactionExecutor):
                         connection.commit()
                         break
                     except:
-                        connection.rollback()
+                        if connection.get_transaction_status() == \
+                          psycopg2.extensions.TRANSACTION_STATUS_INTRANS:
+                            connection.rollback()
                         self.config.logger.warning(
                           'Exception raised during transaction',
                           exc_info=True)
