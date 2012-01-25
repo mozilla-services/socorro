@@ -7,8 +7,23 @@
     ), 'screen')?>
     <!--[if IE]><?php echo html::script('js/flot-0.7/excanvas.pack.js') ?><![endif]-->
 
-    <?php 
-        $sigParams = array('range_value' => $params['range_value'], 'range_unit' => $params['range_unit'], 'signature' => $params['signature']);
+    <?php
+        $vl = array();
+        $vs = 'Firefox';
+        if(!empty($params['version'])) {
+            foreach($params['version'] as $v) {
+                $pv = explode(':', $v);
+                $vl[] = $pv[1];
+                $vs = $pv[0];
+            }
+        }    
+        $sigParams = array('range_value' => $params['range_value'], 'range_unit' => $params['range_unit'], 'signature' => $params['signature'], 'product' => $vs);
+        if(!empty($vl)) {
+            $sigParams['version'] = $vl;
+        }
+        if(isset($params['date']) && !empty($params['date'])) {
+            $sigParams['date'] = $params['date'];
+        }
         $data_url = url::site('signature_summary/json_data') . '?' . html::query_string($sigParams) 
     ?>
     
@@ -127,7 +142,7 @@ foreach($options[$type] as $k => $readable) {
             <tbody>
                 <?php foreach ($builds as $build): ?>
                 <tr>
-	   <td class="human-buildid"><?php out::H(date('YmdH', strtotime($build->build_date))) ?></td>
+	   <td class="human-buildid"><?php out::H(gmdate('YmdH', strtotime($build->build_date))) ?></td>
                     <?php if (count($all_platforms) != 1): ?>
                     <td class="crash-count">
 		    <?php out::H($build->count) ?> - <?php printf("%.3f%%", ($build->frequency * 100) ) ?>

@@ -230,7 +230,7 @@ class Common_Model extends Model {
         $signature = $this->db->escape($params['signature']);
 
         $columns = array(
-            "date_trunc('day', reports.build_date) AS build_date",
+            "reports.build_date AS build_date",
             "count(CASE WHEN (reports.signature = $signature) THEN 1 END) AS count",
             "CAST(count(CASE WHEN (reports.signature = $signature) THEN 1 END) AS FLOAT(10)) / count(reports.id) AS frequency",
             "count(reports.id) AS total"
@@ -256,8 +256,8 @@ class Common_Model extends Model {
         }
 
 	$sql .= " WHERE  " . join(' AND ', $where) .
-                " GROUP BY date_trunc('day', reports.build_date) ".
-                " ORDER BY date_trunc('day', reports.build_date) DESC";
+                " GROUP BY reports.build_date ".
+                " ORDER BY reports.build_date DESC";
 
         return $this->fetchRows($sql);
     }
@@ -302,7 +302,8 @@ class Common_Model extends Model {
                            "SELECT pi.version_string, which_table, major_version FROM product_info pi" .
                            " JOIN product_versions pv ON (pv.product_version_id = pi.product_version_id)" .
                            " WHERE pi.product_name = " . $this->db->escape($product) .
-                           " AND pi.version_string = " . $this->db->escape($version) ."";
+                           " AND pi.version_string = " . $this->db->escape($version) .
+                           " ORDER BY pv.version_sort DESC";
                     $result = $this->fetchRows($sql);
                     $which_table = 'old';
                     $channel = '';

@@ -4,83 +4,49 @@ class Signature_Summary_Model extends Model {
 
     protected $_sig_cache = array();
 
-    public function getOSCounts($signature, $start, $end)
+    public function getSummary($report_type, $signature, $start, $end, $product = 'Firefox', $versions = array())
     {
-        $signature_c = $this->search_signature_table($signature);
-        if(!is_numeric($signature_c)) {
-            return FALSE;
+        if(!empty($versions)) {
+            $versions = $this->_calculateVersionIds($product, $versions);
         }
-        $start_c = $this->db->escape($start);
-        $end_c = $this->db->escape($end);
-        $sql = "WITH counts AS (
-            SELECT os_version_string, report_count,
-                    sum(report_count) over () as total_count
-                        FROM os_signature_counts
-                            WHERE signature_id = $signature_c
-                                    AND report_date BETWEEN $start_c and $end_c
-                                    )
-        SELECT os_version_string, 
-            round(sum(report_count)*100/max(total_count)::numeric, 1) as report_percent,
-                sum(report_count) as report_count
-                FROM counts
-                GROUP BY os_version_string
-                HAVING sum(report_count)*100/max(total_count)::numeric >= 1.0
-                ORDER BY report_count DESC";
-        return $this->db->query($sql)->as_array();
+
+        $config = array();
+        $credentials = Kohana::config('webserviceclient.basic_auth');
+        if($credentials) {
+            $config['basic_auth'] = $credentials;
+        }
+        $service = new Web_Service($config);
+        $host = Kohana::config('webserviceclient.socorro_hostname');
+        $report_type = rawurlencode($report_type);
+        $signature = rawurlencode($signature);
+        $product = rawurlencode($product);
+        $url = "{$host}/signaturesummary/report_type/{$report_type}/signature/{$signature}/start_date/{$start}/end_date/{$end}/product/{$product}";
+
+        if($versions) {
+            $url .= "/versions/{$versions}";
+        }
+        $resp = $service->get($url);
+        return $resp;
     }
 
-    public function getUptimeCounts($signature, $start, $end)
+    protected function _calculateVersionIds($product, array $versions)
     {
-       $signature_c = $this->search_signature_table($signature);
-       if(!is_numeric($signature_c)) {
-           return FALSE;
-       } 
-       $start_c = $this->db->escape($start);
-       $end_c = $this->db->escape($end);
-       $sql = "WITH counts AS (
-            SELECT uptime_level, report_count,
-                    sum(report_count) over () as total_count
-                        FROM uptime_signature_counts
-                            WHERE signature_id = $signature_c
-                                    AND report_date BETWEEN $start_c and $end_c
-                                    )
-        SELECT uptime_string, 
-            round(sum(report_count)*100/max(total_count)::numeric, 1) as report_percent,
-                sum(report_count) as report_count, min_uptime
-                FROM counts
-                    JOIN uptime_levels USING (uptime_level)
-                    GROUP BY uptime_string, min_uptime
-                    HAVING sum(report_count)*100/max(total_count)::numeric >= 1.0
-                    ORDER BY min_uptime";
+        $versions_new = array();
+        $product = $this->db->escape($product);
+        foreach($versions as $version) {
+            $version = $this->db->escape($version);
+            if (isset($this->_sig_cache[$version])) {
+                $versions_new[] = $this->_sig_cache[$version];
+            } else {
+                $sql = "SELECT product_version_id FROM product_versions WHERE product_name = {$product} AND version_string = {$version}";
 
-        return $this->db->query($sql)->as_array();
-    }
-
-    public function getProductCounts($signature, $start, $end)
-    {
-       $signature_c = $this->search_signature_table($signature);
-       if(!is_numeric($signature_c)) {
-            return FALSE;
+                $version_id = $this->db->query($sql)->as_array();
+                $version_id = $version_id[0]->product_version_id;
+                $this->_sig_cache[$version] = $version_id;
+                $versions_new[] = $version_id;
+            }
         }
-        $start_c = $this->db->escape($start);
-        $end_c = $this->db->escape($end);
-        $sql = "WITH counts AS (
-            SELECT product_version_id, report_count,
-                    sum(report_count) over () as total_count
-                        FROM product_signature_counts
-                            WHERE signature_id = $signature_c
-                                    AND report_date BETWEEN $start_c and $end_c
-                                    )
-        SELECT product_name,  version_string, 
-            round(sum(report_count)*100/max(total_count)::numeric, 1) as report_percent,
-                sum(report_count) as report_count
-                FROM counts
-                    JOIN product_versions USING (product_version_id)
-                    GROUP BY product_name, version_string
-                    HAVING sum(report_count)*100/max(total_count)::numeric >= 1.0
-                    ORDER BY report_percent DESC";
-
-        return $this->db->query($sql)->as_array();
+        return implode('+', $versions_new);
     }
 
     public function search_signature_table($signature_string)
