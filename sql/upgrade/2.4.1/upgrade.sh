@@ -14,7 +14,7 @@ echo '*********************************************************'
 echo 'create new signature summaries index and function'
 echo 'and remove the obsolete matviews'
 echo 'may take quite a while for index creation'
-echo 'bug 714338 and '
+echo 'bug 714338 and 702384'
 psql -f ${CURDIR}/new_rc_index.sql breakpad
 psql -f ${CURDIR}/reports_clean_weekly.sql breakpad
 psql -f ${CURDIR}/clean_up_sig_summary.sql breakpad
@@ -29,6 +29,11 @@ echo 'bug 640237'
 psql -f ${CURDIR}/rank_compare.sql breakpad
 psql -f ${CURDIR}/populate_rank_compare.sql breakpad
 psql -f ${CURDIR}/backfill_matviews.sql breakpad
+
+echo '*********************************************************'
+echo 'fix version sorting for old versions'
+echo 'bug 697669'
+psql -f ${CURDIR}/fix_old_version_sort.sql breakpad
 
 #change version in DB
 psql -c "SELECT update_socorro_db_version( '$VERSION' )" breakpad

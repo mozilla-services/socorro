@@ -11,6 +11,9 @@ bug 702384
 	
 bug 640237
 	Add rank_compare reports to Socorro
+	
+bug 697669
+	Fix integrated sort of old versions with new ones.
 
 The above changes may take up to an hour to deploy.  
 This does not require a downtime.
