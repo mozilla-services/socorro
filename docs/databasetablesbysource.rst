@@ -25,6 +25,7 @@ The following tables have no code to populate them automatically.  Initial popul
 * uptime_levels
 * windows_versions
 * product_productid_map
+* report_partition_info
 
 Tables Receiving External Data
 ==============================
