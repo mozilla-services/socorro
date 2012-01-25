@@ -8,8 +8,8 @@ from configman.config_manager import RequiredConfig
 from configman import Namespace
 
 
-class Postgres(RequiredConfig):
-    """a configman compliant class for setup of Postgres transactions"""
+class ConnectionContext(RequiredConfig):
+    """a configman compliant class for setup of Postgres connections"""
     #--------------------------------------------------------------------------
     # configman parameter definition section
     # here we're setting up the minimal parameters required for connecting
@@ -51,7 +51,7 @@ class Postgres(RequiredConfig):
                      found.
             local_config - this is the namespace within the complete config
                            where the actual database parameters are found"""
-        super(Postgres, self).__init__()
+        super(ConnectionContext, self).__init__()
         self.dsn = ("host=%(database_host)s "
                     "dbname=%(database_name)s "
                     "port=%(database_port)s "
@@ -125,7 +125,6 @@ class Postgres(RequiredConfig):
             connection - the database connection object
             force - unused boolean to force closure; used in derived classes
         """
-        #print "Postgres - requestng connection to close"
         connection.close()
 
     #--------------------------------------------------------------------------
@@ -140,11 +139,11 @@ class Postgres(RequiredConfig):
 # This code is NOT in use and is left here intentionally as inspiration
 # towards how to write a pooled postgres class.
 # If we don't use this code at the end of 2012, just delete it :)
-class PostgresPooled(Postgres):  # pragma: no cover
+class ConnectionContextPooled(ConnectionContext):  # pragma: no cover
     """a configman compliant class that pools Postgres database connections"""
     #--------------------------------------------------------------------------
     def __init__(self, config, local_config):
-        super(PostgresPooled, self).__init__(config, local_config)
+        super(ConnectionContextPooled, self).__init__(config, local_config)
         print "PostgresPooled - setting up connection pool"
         self.pool = {}
 

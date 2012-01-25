@@ -1,8 +1,9 @@
 import time
+import psycopg2.extensions
 from configman.config_manager import RequiredConfig
 from configman import Namespace
 
-from socorro.external.postgresql.transactional import Postgres
+from socorro.external.postgresql.connection_context import ConnectionContext
 
 
 #------------------------------------------------------------------------------
@@ -21,16 +22,14 @@ def connection_context_factory(config, local_config, args):
 #==============================================================================
 class TransactionExecutor(RequiredConfig):
     required_config = Namespace()
-    # setup the option that will specify which database connection/transaction
-    # factory will be used.  Config man will query the class for additional
-    # config options for the database connection parameters.
+
+    # setup the option that will specify which database connector
+    # will be used.
     required_config.add_option('database_class',
-                               default=Postgres,
+                               default=ConnectionContext,
                                doc='the database connection source')
-    # this Aggregation will actually instantiate the class in the preceding
-    # option called 'database'.  Once instantiated, it will be available as
-    # 'db_transaction'.  It will then be used as a source of database
-    # connections cloaked as a context.
+
+    # add an aggregator whose function will set up the database_class above
     required_config.add_aggregation(
         name='db_connection_context',
         function=connection_context_factory)
@@ -40,7 +39,6 @@ class TransactionExecutor(RequiredConfig):
         self.config = config
 
     #--------------------------------------------------------------------------
-    #def do_transaction(self, function, *args, **kwargs):
     def __call__(self, function, *args, **kwargs):
         """execute a function within the context of a transaction"""
         with self.config.db_connection_context() as connection:
@@ -48,10 +46,13 @@ class TransactionExecutor(RequiredConfig):
                 function(connection, *args, **kwargs)
                 connection.commit()
             except:
-                connection.rollback()
-                self.config.logger.error("Exception raised", exc_info=True)
+                if connection.get_transaction_status() == \
+                  psycopg2.extensions.TRANSACTION_STATUS_INTRANS:
+                    connection.rollback()
+                self.config.logger.error(
+                  'Exception raised during transaction',
+                  exc_info=True)
                 raise
-                    
 
 
 #==============================================================================
@@ -59,7 +60,7 @@ class TransactionExecutorWithBackoff(TransactionExecutor):
     # back off times
     required_config = Namespace()
     required_config.add_option('backoff_delays',
-                               default=[2, 4, 6, 10, 15],
+                               default=[10, 30, 60, 120, 300],
                                doc='delays in seconds between retries',
                                from_string_converter=eval)
     # wait_log_interval
@@ -90,7 +91,6 @@ class TransactionExecutorWithBackoff(TransactionExecutor):
             time.sleep(1.0)
 
     #--------------------------------------------------------------------------
-    #def do_transaction(self, function, *args, **kwargs):
     def __call__(self, function, *args, **kwargs):
         """execute a function within the context of a transaction"""
         for wait_in_seconds in self.backoff_generator():
@@ -104,8 +104,9 @@ class TransactionExecutorWithBackoff(TransactionExecutor):
                         break
                     except:
                         connection.rollback()
-                        self.config.logger.warning("Exception raised", 
-                                                   exc_info=True)
+                        self.config.logger.warning(
+                          'Exception raised during transaction',
+                          exc_info=True)
                         raise
             except self.config.db_connection_context.operational_exceptions:
                 pass

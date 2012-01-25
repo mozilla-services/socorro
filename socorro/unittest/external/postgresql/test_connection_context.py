@@ -1,6 +1,6 @@
 import unittest
 import psycopg2
-from socorro.external.postgresql.transactional import Postgres
+from socorro.external.postgresql.connection_context import ConnectionContext
 from configman import Namespace
 
 
@@ -25,7 +25,7 @@ class MockConnection(object):
         _rollbacks += 1
 
 
-class TestPostgres(unittest.TestCase):
+class TestConnectionContext(unittest.TestCase):
 
     def setUp(self):
         # reset global variables so each test can run separately
@@ -34,7 +34,7 @@ class TestPostgres(unittest.TestCase):
 
     def test_basic_postgres_usage(self):
 
-        class Sneak(Postgres):
+        class Sneak(ConnectionContext):
             def connection(self, __=None):
                 assert self.dsn
                 return MockConnection(self.dsn)
