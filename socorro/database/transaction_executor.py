@@ -106,14 +106,15 @@ class TransactionExecutorWithBackoff(TransactionExecutor):
                         if connection.get_transaction_status() == \
                           psycopg2.extensions.TRANSACTION_STATUS_INTRANS:
                             connection.rollback()
-                        self.config.logger.warning(
-                          'Exception raised during transaction',
-                          exc_info=True)
                         raise
             except self.config.db_connection_context.operational_exceptions:
-                pass
+                self.config.logger.warning(
+                  'Database exception',
+                  exc_info=True)
             self.config.logger.debug(
-              'failure in transaction - retry in %s seconds' % wait_in_seconds)
-            self.responsive_sleep(wait_in_seconds,
-                                  "waiting for retry after failure in "
-                                  "transaction")
+              'retry in %s seconds' % wait_in_seconds
+            )
+            self.responsive_sleep(
+              wait_in_seconds,
+              'waiting for retry after failure in transaction'
+            )
