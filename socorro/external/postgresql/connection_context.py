@@ -89,31 +89,6 @@ class ConnectionContext(RequiredConfig):
         finally:
             self.close_connection(conn)
 
-#        exception_raised = False
-#        conn = self.connection(name)
-#        try:
-#            yield conn
-#        except self.operational_exceptions:
-#            exception_raised = False
-#        except Exception:
-#            # we need to close the connection
-#            exception_raised = True
-#        finally:
-#            if exception_raised:
-#                try:
-#                    self.close_connection(conn, force=True)
-#                except self.operational_exceptions:
-#                    pass
-#                raise
-#            else:
-#                try:
-#                    if conn.get_transaction_status() == \
-#                      psycopg2.extensions.TRANSACTION_STATUS_INTRANS:
-#                        conn.rollback()
-#                    self.close_connection(conn)
-#                except self.operational_exceptions:
-#                    exception_raised = True
-
     #--------------------------------------------------------------------------
     def close_connection(self, connection, force=False):
         """close the connection passed in.
@@ -174,8 +149,8 @@ class ConnectionContextPooled(ConnectionContext):  # pragma: no cover
         if force:
             print 'PostgresPooled - delegating connection closure'
             try:
-                super(PostgresPooled, self).close_connection(connection,
-                                                                  force)
+                (super(ConnectionContextPooled, self)
+                  .close_connection(connection, force))
             except self.operational_exceptions:
                 print 'PostgresPooled - failed closing'
             for name, conn in self.pool.iteritems():
