@@ -78,6 +78,12 @@ tcbsImplementationModule = cm.Option()
 tcbsImplementationModule.doc = "String, name of the module tcbs services use."
 tcbsImplementationModule.default = 'socorro.external.postgresql'
 
+# Report service config
+reportImplementationModule = cm.Option()
+reportImplementationModule.doc = (
+                        "String, name of the module report services use.")
+reportImplementationModule.default = 'socorro.external.postgresql'
+
 import socorro.services.signatureHistory as sighist
 import socorro.services.aduByDay as adubd
 import socorro.services.aduByDayDetails as adudetails
@@ -92,6 +98,7 @@ import socorro.services.schedulePriorityJob as schedule
 import socorro.services.bugzilla as bugzilla
 import socorro.services.currentVersions as cv
 import socorro.services.hangReport as hr
+import socorro.middleware.report_list_service as report_list
 import socorro.middleware.search_service as search
 import socorro.middleware.versions_info_service as versions_info
 import socorro.middleware.products_builds_service as products_builds
@@ -115,6 +122,7 @@ servicesList.default = [
     bugzilla.Bugzilla,
     cv.CurrentVersions,
     hr.HangReport,
+    report_list.ReportList,
     search.Search,
     versions_info.VersionsInfo,
     products_builds.ProductsBuilds,
