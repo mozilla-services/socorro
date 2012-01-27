@@ -225,15 +225,20 @@ class TestTransactionExecutor(unittest.TestCase):
                 _sleep_count.append(n)
 
             # monkey patch the sleep function from inside transaction_executor
+            _orig_sleep = socorro.database.transaction_executor.time.sleep
             socorro.database.transaction_executor.time.sleep = mock_sleep
 
-            executor(mock_function)
-            self.assertTrue(_function_calls)
-            self.assertEqual(commit_count, 1)
-            self.assertEqual(rollback_count, 0)
-            self.assertTrue(mock_logging.warnings)
-            self.assertEqual(len(mock_logging.warnings), 5)
-            self.assertTrue(len(_sleep_count) > 10)
+            try:
+                executor(mock_function)
+                self.assertTrue(_function_calls)
+                self.assertEqual(commit_count, 1)
+                self.assertEqual(rollback_count, 0)
+                self.assertTrue(mock_logging.warnings)
+                self.assertEqual(len(mock_logging.warnings), 5)
+                self.assertTrue(len(_sleep_count) > 10)
+            finally:
+                socorro.database.transaction_executor.time.sleep = _orig_sleep
+
 
     def test_operation_error_with_postgres_with_backoff_with_rollback(self):
         required_config = Namespace()
@@ -277,13 +282,16 @@ class TestTransactionExecutor(unittest.TestCase):
                 _sleep_count.append(n)
 
             # monkey patch the sleep function from inside transaction_executor
+            _orig_sleep = socorro.database.transaction_executor.time.sleep
             socorro.database.transaction_executor.time.sleep = mock_sleep
 
-            executor(mock_function)
-            self.assertTrue(_function_calls)
-            self.assertEqual(commit_count, 1)
-            self.assertEqual(rollback_count, 5)
-            self.assertTrue(mock_logging.warnings)
-            self.assertEqual(len(mock_logging.warnings), 5)
-            self.assertTrue(len(_sleep_count) > 10)
-            
+            try:
+                executor(mock_function)
+                self.assertTrue(_function_calls)
+                self.assertEqual(commit_count, 1)
+                self.assertEqual(rollback_count, 5)
+                self.assertTrue(mock_logging.warnings)
+                self.assertEqual(len(mock_logging.warnings), 5)
+                self.assertTrue(len(_sleep_count) > 10)
+            finally:
+                socorro.database.transaction_executor.time.sleep = _orig_sleep
