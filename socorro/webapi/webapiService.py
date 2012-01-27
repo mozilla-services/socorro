@@ -32,7 +32,7 @@ class Timeout(web.webapi.HTTPError):
     def __init__(self):
         status = "408 Request Timeout"
         headers = {'Content-Type': 'text/html'}
-        super(Timeout, self).__init__(self, status, headers, self.message)
+        super(Timeout, self).__init__(status, headers, self.message)
 
 
 class JsonWebServiceBase(object):
