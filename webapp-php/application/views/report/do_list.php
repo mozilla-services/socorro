@@ -13,6 +13,9 @@
         if(!empty($params['version'])) {
             foreach($params['version'] as $v) {
                 $pv = explode(':', $v);
+                if(count($pv) != 2) {
+                    continue;
+                }
                 $vl[] = $pv[1];
                 $vs = $pv[0];
             }
