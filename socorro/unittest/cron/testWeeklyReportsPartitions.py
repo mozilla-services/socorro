@@ -1,3 +1,4 @@
+import unittest
 import psycopg2
 from psycopg2.extensions import TRANSACTION_STATUS_IDLE
 from socorro.app.generic_app import main
@@ -23,7 +24,7 @@ DSN = {
 }
 
 
-class TestClass:
+class TestClass(unittest.TestCase):
 
     def setUp(self):
         assert 'test' in databaseName.default, databaseName.default
@@ -66,4 +67,4 @@ class TestClass:
         # check that something was written to the mock_bucket
         cursor = self.conn.cursor()
         cursor.execute('select count(*) from mock_bucket;')
-        assert cursor.fetchone()
+        self.assertTrue(cursor.fetchone())
