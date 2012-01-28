@@ -86,10 +86,12 @@ class Report_Controller extends Controller {
 	if ($page === NULL) {
 	    $page = 1;
 	}
-        $totalCount = $this->common_model->totalNumberReports($params);
-        $pager = new MozPager(Kohana::config('search.number_report_list'), $totalCount, $page);
+        $items_per_page = Kohana::config('search.number_report_list');
 
-        $reports = $this->common_model->queryReports($params, $pager);
+        $serviceResult = $this->report_model->crashesList($params, $items_per_page, ( $page - 1 ) * $items_per_page);
+        $totalCount = $serviceResult->total;
+        $reports = $serviceResult->hits;
+        $pager = new MozPager($items_per_page, $totalCount, $page);
 
         // Code for $secureUrl should stay in sync with code for $currentPath above
         $currentPath = url::site('report/list') . '?' . html::query_string($params) . '&page=';

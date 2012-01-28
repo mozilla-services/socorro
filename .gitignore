@@ -15,3 +15,5 @@ socorro/unittest/testlib/logs/
 stackwalk/
 docs/_build/
 *~
+.coverage
+cover/

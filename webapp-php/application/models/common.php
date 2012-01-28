@@ -166,63 +166,6 @@ class Common_Model extends Model {
     }
 
     /**
-     * Find all crash reports for the given search parameters and
-     * paginate the results.
-     *
-     * @param array Parameters that vary
-     * @pager object optional MozPager instance
-     * @return array of objects
-     */
-    public function queryReports($params, $pager=NULL) {
-        if ($pager === NULL) {
-            $pager = new stdClass;
-            $pager->offset = 0;
-            $pager->itemsPerPage = Kohana::config('search.number_report_list');
-            $pager->currentPage = 1;
-        }
-
-        list($from_tables, $join_tables, $where, $outer_join_tables) = $this->_buildCriteriaFromSearchParams($params);
-
-        $sql = "/* soc.web common.queryReports */ " .
-               "SELECT
-                       reports.date_processed,
-                       reports.uptime,
-                       reports.user_comments,
-                       reports.uuid,
-                       reports.product,
-                       reports.version,
-                       reports.build,
-                       reports.signature,
-                       reports.url,
-                       reports.os_name,
-                       reports.os_version,
-                       reports.cpu_name,
-                       reports.cpu_info,
-                       reports.address,
-                       reports.reason,
-                       reports.last_crash,
-                       reports.install_age,
-                       reports.hangid,
-                       reports.process_type,
-                       ( reports.client_crash_date - ( reports.install_age * INTERVAL '1 second' ) ) as install_time,
-                       reports_duplicates.duplicate_of
-                   FROM   " . join(', ', $from_tables);
-        if (count($join_tables) > 0) {
-            $sql .= " JOIN  " . join("\nJOIN ", $join_tables);
-        }
-        if (count($outer_join_tables) > 0) {
-            $sql .= " LEFT OUTER JOIN  " . join("\nJOIN ", $outer_join_tables);
-        }
-        $sql .= " WHERE  " . join(' AND ', $where) .
-    	        " ORDER BY reports.date_processed DESC " .
-                " LIMIT ? OFFSET ?";
-
-        Kohana::log('debug', $sql);
-
-        return $this->fetchRows($sql, TRUE, array($pager->itemsPerPage, $pager->offset));
-    }
-
-    /**
      * Calculate frequency of crashes across builds and platforms.
      */
     public function queryFrequency($params) {

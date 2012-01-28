@@ -91,6 +91,9 @@ def check_type(param, datatype):
         except ValueError:
             param = int()
 
+    elif datatype == "bool" and not isinstance(param, bool):
+        param = str(param).lower() in ("true", "t", "1", "y", "yes")
+
     elif datatype == "datetime" and not isinstance(param, datetime):
         try:
             param = dtutil.string_to_datetime(param)
