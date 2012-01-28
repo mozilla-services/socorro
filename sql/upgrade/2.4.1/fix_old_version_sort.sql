@@ -18,3 +18,12 @@ $f$;
 
 UPDATE productdims SET version_sort = old_version_sort(version);
 
+UPDATE product_visibility 
+	SET end_date = CURRENT_DATE
+FROM productdims
+WHERE productdims.id = product_visibility.productdims_id
+	AND product = 'Firefox'
+	AND version IN ( '3.6.3','3.6.4pre' );
+	
+
+
