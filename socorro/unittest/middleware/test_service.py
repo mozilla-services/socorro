@@ -4,165 +4,163 @@ import socorro.external.elasticsearch.base as es
 import socorro.external.postgresql.base as pg
 import socorro.middleware.service as serv
 import socorro.lib.util as util
-import socorro.unittest.testlib.util as tutil
+import socorro.unittest.testlib.util as testutil
 
 
+#------------------------------------------------------------------------------
 def setup_module():
-    tutil.nosePrintModule(__file__)
+    testutil.nosePrintModule(__file__)
 
-def get_dummy_context():
-    """
-    Create a dummy config object to use when testing.
-    """
-    context = util.DotDict()
-    context.databaseHost = 'fred'
-    context.databaseName = 'wilma'
-    context.databaseUserName = 'ricky'
-    context.databasePassword = 'lucy'
-    context.databasePort = 127
-    context.searchImplementationModule = "socorro.external.postgresql"
-    context.serviceImplementationModule = "socorro.external.elasticsearch"
-    context.elasticSearchHostname = "localhost"
-    context.elasticSearchPort = "9200"
-    return context
 
-def test_get_module():
-    """
-    Test Service.get_module
-    """
-    config = get_dummy_context()
-    service = serv.DataAPIService(config)
-    service.service_name = "search"
-    params = {}
+#==============================================================================
+class TestMiddlewareService(unittest.TestCase):
+    """Test the base class for all middleware services. """
 
-    # Test service config module
-    import_failed = False
-    try:
-        mod = service.get_module(params)
-    except NotImplementedError:
-        import_failed = True
+    #--------------------------------------------------------------------------
+    def get_dummy_context(self):
+        """
+        Create a dummy config object to use when testing.
+        """
+        context = util.DotDict()
+        context.databaseHost = 'fred'
+        context.databaseName = 'wilma'
+        context.databaseUserName = 'ricky'
+        context.databasePassword = 'lucy'
+        context.databasePort = 127
+        context.searchImplementationModule = "socorro.external.postgresql"
+        context.serviceImplementationModule = "socorro.external.elasticsearch"
+        context.elasticSearchHostname = "localhost"
+        context.elasticSearchPort = "9200"
+        return context
 
-    assert not import_failed, ("NotImplementedError exception raised when"
-                               " trying to get config implementation")
-    assert mod != False, "Result of get_module is not a module"
+    #--------------------------------------------------------------------------
+    def test_get_module(self):
+        """
+        Test Service.get_module
+        """
+        config = self.get_dummy_context()
+        service = serv.DataAPIService(config)
+        service.service_name = "search"
+        params = {}
 
-    try:
-        search = mod.Search(config=config)
-    except AttributeError:
-        assert False, "The imported module does not contain the needed class"
+        # Test service config module
+        import_failed = False
+        try:
+            mod = service.get_module(params)
+        except NotImplementedError:
+            import_failed = True
 
-    assert isinstance(search, pg.PostgreSQLBase), (
-                "Imported module is not the right one")
+        self.assertFalse(import_failed)
+        self.assertTrue(mod)
 
-    # Test forced module
-    import_failed = False
-    params["force_api_impl"] = "elasticsearch"
-    try:
-        mod = service.get_module(params)
-    except NotImplementedError:
-        import_failed = True
+        try:
+            search = mod.Search(config=config)
+        except AttributeError:
+            assert False, "Imported module does not contain the needed class"
 
-    assert not import_failed, ("NotImplementedError exception raised when"
-                               " trying to get config implementation")
-    assert mod != False, "Result of get_module is not a module"
+        self.assertTrue(isinstance(search, pg.PostgreSQLBase))
 
-    try:
-        search = mod.Search(config=config)
-    except AttributeError:
-        assert False, "The imported module does not contain the needed class"
+        # Test forced module
+        import_failed = False
+        params["force_api_impl"] = "elasticsearch"
+        try:
+            mod = service.get_module(params)
+        except NotImplementedError:
+            import_failed = True
 
-    assert isinstance(search, es.ElasticSearchBase), (
-                "Imported module is not the right one")
+        self.assertFalse(import_failed)
+        self.assertTrue(mod)
 
-    # Test default config module
-    import_failed = False
-    params = {}
-    del config.searchImplementationModule
-    try:
-        mod = service.get_module(params)
-    except NotImplementedError:
-        import_failed = True
+        try:
+            search = mod.Search(config=config)
+        except AttributeError:
+            assert False, "Imported module does not contain the needed class"
 
-    assert not import_failed, ("NotImplementedError exception raised when"
-                               " trying to get config implementation")
-    assert mod != False, "Result of get_module is not a module"
+        self.assertTrue(isinstance(search, es.ElasticSearchBase))
 
-    try:
-        search = mod.Search(config=config)
-    except AttributeError:
-        assert False, "The imported module does not contain the needed class"
+        # Test default config module
+        import_failed = False
+        params = {}
+        del config.searchImplementationModule
+        try:
+            mod = service.get_module(params)
+        except NotImplementedError:
+            import_failed = True
 
-    assert isinstance(search, es.ElasticSearchBase), (
-                "Imported module is not the right one")
+        self.assertFalse(import_failed)
+        self.assertTrue(mod)
 
-    # Test no valid module to import
-    import_failed = False
-    params = {}
-    config.serviceImplementationModule = "unknownmodule"
-    try:
-        mod = service.get_module(params)
-    except AttributeError: # catching the exception raised by web.InternalError
-        import_failed = True
+        try:
+            search = mod.Search(config=config)
+        except AttributeError:
+            assert False, "Imported module does not contain the needed class"
 
-    assert import_failed, "Impossible import succeeded: %s" % mod
+        self.assertTrue(isinstance(search, es.ElasticSearchBase))
 
-def test_parse_query_string():
-    """
-    Test Service.parse_query_string
-    """
-    config = get_dummy_context()
-    service = serv.DataAPIService(config)
+        # Test no valid module to import
+        import_failed = False
+        params = {}
+        config.serviceImplementationModule = "unknownmodule"
+        try:
+            mod = service.get_module(params)
+        except AttributeError:  # catching web.InternalError
+            import_failed = True
 
-    # Test simple query string
-    url = "param/value/"
-    result = service.parse_query_string(url)
-    expected = {
-        "param": "value"
-    }
+        self.assertTrue(import_failed)
 
-    assert result == expected, "Parse error, expected: %s, returned: %s" % (
-                               expected, result)
+    #--------------------------------------------------------------------------
+    def test_parse_query_string(self):
+        """
+        Test Service.parse_query_string
+        """
+        config = self.get_dummy_context()
+        service = serv.DataAPIService(config)
 
-    # Test complex query string
-    url = "product/firefox/from/yesterday/build/12+33+782/version/7.0.1b4/"
-    result = service.parse_query_string(url)
-    expected = {
-        "product": "firefox",
-        "from": "yesterday",
-        "build": ["12", "33", "782"],
-        "version": "7.0.1b4"
-    }
+        # Test simple query string
+        url = "param/value/"
+        result = service.parse_query_string(url)
+        expected = {
+            "param": "value"
+        }
 
-    assert result == expected, "Parse error, expected: %s, returned: %s" % (
-                               expected, result)
+        self.assertEqual(result, expected)
 
-    # Test incorrect query string
-    url = "product/firefox/for"
-    result = service.parse_query_string(url)
-    expected = {
-        "product": "firefox"
-    }
+        # Test complex query string
+        url = "product/firefox/from/yesterday/build/12+33+782/version/7.0.1b4/"
+        result = service.parse_query_string(url)
+        expected = {
+            "product": "firefox",
+            "from": "yesterday",
+            "build": ["12", "33", "782"],
+            "version": "7.0.1b4"
+        }
 
-    assert result == expected, "Parse error, expected: %s, returned: %s" % (
-                               expected, result)
+        self.assertEqual(result, expected)
 
-    # Test empty value
-    url = "product/firefox/for//"
-    result = service.parse_query_string(url)
-    expected = {
-        "product": "firefox",
-        "for": ""
-    }
+        # Test incorrect query string
+        url = "product/firefox/for"
+        result = service.parse_query_string(url)
+        expected = {
+            "product": "firefox"
+        }
 
-    assert result == expected, "Parse error, expected: %s, returned: %s" % (
-                               expected, result)
+        self.assertEqual(result, expected)
 
-    # Test empty param
-    url = "product/firefox//bla/"
-    result = service.parse_query_string(url)
-    expected = {
-        "product": "firefox"
-    }
+        # Test empty value
+        url = "product/firefox/for//"
+        result = service.parse_query_string(url)
+        expected = {
+            "product": "firefox",
+            "for": ""
+        }
 
-    assert result == expected, "Parse error, expected: %s, returned: %s" % (
-                               expected, result)
+        self.assertEqual(result, expected)
+
+        # Test empty param
+        url = "product/firefox//bla/"
+        result = service.parse_query_string(url)
+        expected = {
+            "product": "firefox"
+        }
+
+        self.assertEqual(result, expected)
