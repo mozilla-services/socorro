@@ -217,7 +217,7 @@ prefixSignatureRegEx = '|'.join([
   'arena_run_tree_insert',
   'ialloc',
   'isalloc',
-  'moz_xreallocx',
+  'moz_xrealloc',
   'arena_malloc',
   'arena_run_reg_dalloc',
   'arena_run_dalloc',
