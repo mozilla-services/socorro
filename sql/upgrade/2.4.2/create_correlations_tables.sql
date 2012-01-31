@@ -34,7 +34,20 @@ CREATE TABLE correlation_modules (
 	module_signature text not null,
 	module_version text not null,
 	crash_count INT NOT NULL default 0,
-	CONSTRAINT correlation_modules_key UNIQUE ( correlation_id, module_key, module_version )
+	CONSTRAINT correlation_modules_key UNIQUE ( correlation_id, module_signature, module_version )
+);
+$x$,
+'breakpad_rw');
+
+
+SELECT create_table_if_not_exists( 'correlation_cores',
+$x$
+CREATE TABLE correlation_cores (
+	correlation_id not null references correlations(correlation_id),
+	architecture citext not null,
+	cores int not null,
+	crash_count INT NOT NULL default 0,
+	CONSTRAINT correlation_cores_key UNIQUE ( correlation_id, architecture, cores )
 );
 $x$,
 'breakpad_rw');
