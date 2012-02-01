@@ -312,6 +312,7 @@ class Monitor (object):
       raise
     try:
       try:
+        databaseConnection = None
         while (True):
           databaseConnection, databaseCursor = self.getDatabaseConnectionPair()
           self.cleanUpDeadProcessors(databaseCursor)
@@ -344,15 +345,18 @@ class Monitor (object):
       except hbc.FatalException, x:
         logger.debug("somethings gone horribly wrong with HBase")
         socorro.lib.util.reportExceptionAndContinue(logger, loggingLevel=logging.CRITICAL)
-        databaseConnection.rollback()
+        if databaseConnection is not None:
+          databaseConnection.rollback()
         self.quit = True
       except (KeyboardInterrupt, SystemExit):
         logger.debug("outer detects quit")
-        databaseConnection.rollback()
+        if databaseConnection is not None:
+          databaseConnection.rollback()
         self.quit = True
         raise
     finally:
-      databaseConnection.close()
+      if databaseConnection is not None:
+        databaseConnection.close()
       logger.debug("standardLoop done.")
 
   #-----------------------------------------------------------------------------------------------------------------
@@ -423,6 +427,7 @@ class Monitor (object):
     #deferredSymLinkIndexPath = os.path.join(self.config.deferredStorageRoot, "index")
     try:
       try:
+        databaseConnection = None
         while (True):
           databaseConnection, databaseCursor = self.getDatabaseConnectionPair()
           try:
@@ -439,7 +444,8 @@ class Monitor (object):
           except hbc.FatalException:
             raise
           except:
-            databaseConnection.rollback()
+            if databaseConnection is not None:
+              databaseConnection.rollback()
             socorro.lib.util.reportExceptionAndContinue(logger)
           self.quitCheck()
           logger.debug("sleeping")
@@ -447,11 +453,13 @@ class Monitor (object):
       except hbc.FatalException, x:
         logger.debug("somethings gone horribly wrong with HBase")
         socorro.lib.util.reportExceptionAndContinue(logger, loggingLevel=logging.CRITICAL)
-        databaseConnection.rollback()
+        if databaseConnection is not None:
+          databaseConnection.rollback()
         self.quit = True
       except (KeyboardInterrupt, SystemExit):
         logger.debug("outer detects quit")
-        databaseConnection.rollback()
+        if databaseConnection is not None:
+          databaseConnection.rollback()
         self.quit = True
     finally:
       logger.info("priorityLoop done.")
