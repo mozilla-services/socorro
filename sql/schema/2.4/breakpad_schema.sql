@@ -206,7 +206,7 @@ BEGIN
 DELETE FROM product_adu 
 WHERE adu_date = updateday;
 
-PERFORM update_adu(updateday);
+PERFORM update_adu(updateday, false);
 
 RETURN TRUE;
 END; $$;
@@ -308,8 +308,12 @@ ALTER FUNCTION public.backfill_hang_report(backfilldate date) OWNER TO postgres;
 
 CREATE FUNCTION backfill_matviews(firstday date, lastday date DEFAULT NULL::date, reportsclean boolean DEFAULT true) RETURNS boolean
     LANGUAGE plpgsql
+    SET "TimeZone" TO 'UTC'
     AS $$
 DECLARE thisday DATE := firstday;
+	last_rc timestamptz;
+	first_rc timestamptz;
+	last_adu DATE;
 BEGIN
 -- this producedure is meant to be called manually
 -- by administrators in order to clear and backfill
@@ -320,46 +324,64 @@ BEGIN
 -- optionally disable reports_clean backfill
 -- since that takes a long time
 
--- VERSION 0.3
-
--- set optional end date
-lastday := coalesce(lastday, current_date );
+-- set start date for r_c
+first_rc := firstday AT TIME ZONE 'UTC';
 
 -- check parameters
-IF firstday > current_date OR lastday > current_date or firstday > lastday THEN
-RAISE EXCEPTION 'date parameter error: cannot backfill into the future';
+IF firstday > current_date OR lastday > current_date THEN
+	RAISE EXCEPTION 'date parameter error: cannot backfill into the future';
 END IF;
 
+-- set optional end date
+IF lastday IS NULL or lastday = current_date THEN
+	last_rc := date_trunc('hour', now()) - INTERVAL '3 hours'; 
+ELSE 
+	last_rc := ( lastday + 1 ) AT TIME ZONE 'UTC';
+END IF;
+
+-- check if lastday is after we have ADU;
+-- if so, adjust lastday
+SELECT max("date") 
+INTO last_adu
+FROM raw_adu;
+
+IF lastday > last_adu THEN
+	RAISE INFO 'last day of backfill period is after final day of ADU.  adjusting last day to %',last_adu;
+	lastday := last_adu;
+END IF;
+	
 -- fill in products
 PERFORM update_product_versions();
 
--- backfill reports_clean.  this takes a while,  and isn't limited
--- by product so if it's not needed
+-- backfill reports_clean.  this takes a while
 -- we provide a switch to disable it
 IF reportsclean THEN
-RAISE INFO 'backfilling reports_clean';
-PERFORM backfill_reports_clean_by_date( firstday, lastday );
+	RAISE INFO 'backfilling reports_clean';
+	PERFORM backfill_reports_clean( first_rc, last_rc );
 END IF;
 
 -- loop through the days, backfilling one at a time
 WHILE thisday <= lastday LOOP
-RAISE INFO 'backfilling other matviews for %',thisday;
-RAISE INFO 'adu';
-PERFORM backfill_adu(thisday);
-RAISE INFO 'tcbs';
-PERFORM backfill_tcbs(thisday);
-DROP TABLE IF EXISTS new_tcbs;
-RAISE INFO 'daily crashes';
-PERFORM backfill_daily_crashes(thisday);
-RAISE INFO 'signatures';
-PERFORM update_signatures(thisday, FALSE);
-DROP TABLE IF EXISTS new_signatures;
-RAISE INFO 'hang report';
-PERFORM backfill_hang_report(thisday);
+	RAISE INFO 'backfilling other matviews for %',thisday;
+	RAISE INFO 'adu';
+	PERFORM backfill_adu(thisday);
+	RAISE INFO 'tcbs';
+	PERFORM backfill_tcbs(thisday);
+	DROP TABLE IF EXISTS new_tcbs;
+	RAISE INFO 'daily crashes';
+	PERFORM backfill_daily_crashes(thisday);
+	RAISE INFO 'signatures';
+	PERFORM update_signatures(thisday, FALSE);
+	DROP TABLE IF EXISTS new_signatures;
+	RAISE INFO 'hang report';
+	PERFORM backfill_hang_report(thisday);
 
-thisday := thisday + 1;
+	thisday := thisday + 1;
 
 END LOOP;
+
+-- finally rank_compare, which doesn't need to be filled in for each day
+PERFORM backfill_rank_compare(lastday);
 
 RETURN true;
 END; $$;
@@ -470,40 +492,21 @@ END; $$;
 ALTER FUNCTION public.backfill_one_day(bkdate date) OWNER TO postgres;
 
 --
--- Name: backfill_os_signature_counts(date); Type: FUNCTION; Schema: public; Owner: postgres
+-- Name: backfill_rank_compare(date); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
-CREATE FUNCTION backfill_os_signature_counts(updateday date) RETURNS boolean
+CREATE FUNCTION backfill_rank_compare(updateday date DEFAULT NULL::date) RETURNS boolean
     LANGUAGE plpgsql
     AS $$
 BEGIN
 
-DELETE FROM os_signature_counts WHERE report_date = updateday;
-PERFORM update_os_signature_counts(updateday, false);
+PERFORM update_rank_compare(updateday, false);
 
 RETURN TRUE;
 END; $$;
 
 
-ALTER FUNCTION public.backfill_os_signature_counts(updateday date) OWNER TO postgres;
-
---
--- Name: backfill_product_signature_counts(date); Type: FUNCTION; Schema: public; Owner: postgres
---
-
-CREATE FUNCTION backfill_product_signature_counts(updateday date) RETURNS boolean
-    LANGUAGE plpgsql
-    AS $$
-BEGIN
-
-DELETE FROM product_signature_counts WHERE report_date = updateday;
-PERFORM update_product_signature_counts(updateday, false);
-
-RETURN TRUE;
-END; $$;
-
-
-ALTER FUNCTION public.backfill_product_signature_counts(updateday date) OWNER TO postgres;
+ALTER FUNCTION public.backfill_rank_compare(updateday date) OWNER TO postgres;
 
 --
 -- Name: backfill_reports_clean(timestamp with time zone, timestamp with time zone); Type: FUNCTION; Schema: public; Owner: postgres
@@ -550,20 +553,6 @@ END;$$;
 
 
 ALTER FUNCTION public.backfill_reports_clean(begin_time timestamp with time zone, end_time timestamp with time zone) OWNER TO postgres;
-
---
--- Name: backfill_reports_clean_by_date(date, date); Type: FUNCTION; Schema: public; Owner: postgres
---
-
-CREATE FUNCTION backfill_reports_clean_by_date(starts date, ends date DEFAULT ('now'::text)::date) RETURNS boolean
-    LANGUAGE sql
-    AS $_$
-SELECT backfill_reports_clean( $1::timestamp AT TIME ZONE 'UTC',
-	$2::timestamp AT TIME ZONE 'UTC' );
-$_$;
-
-
-ALTER FUNCTION public.backfill_reports_clean_by_date(starts date, ends date) OWNER TO postgres;
 
 --
 -- Name: backfill_reports_duplicates(timestamp without time zone, timestamp without time zone); Type: FUNCTION; Schema: public; Owner: postgres
@@ -706,24 +695,6 @@ END;$$;
 
 
 ALTER FUNCTION public.backfill_tcbs(updateday date) OWNER TO postgres;
-
---
--- Name: backfill_uptime_signature_counts(date); Type: FUNCTION; Schema: public; Owner: postgres
---
-
-CREATE FUNCTION backfill_uptime_signature_counts(updateday date) RETURNS boolean
-    LANGUAGE plpgsql
-    AS $$
-BEGIN
-
-DELETE FROM uptime_signature_counts WHERE report_date = updateday;
-PERFORM update_uptime_signature_counts(updateday, false);
-
-RETURN TRUE;
-END; $$;
-
-
-ALTER FUNCTION public.backfill_uptime_signature_counts(updateday date) OWNER TO postgres;
 
 --
 -- Name: build_date(numeric); Type: FUNCTION; Schema: public; Owner: postgres
@@ -1008,6 +979,7 @@ CREATE FUNCTION create_table_if_not_exists(tablename text, declaration text, tab
     AS $$
 DECLARE dex INT := 1;
 	scripts TEXT[] := '{}';
+	indexname TEXT;
 BEGIN
 -- this function allows you to send a create table script to the backend 
 -- multiple times without erroring.  it checks if the table is already
@@ -1032,7 +1004,9 @@ BEGIN
 	dex := 1;
 	
 	WHILE indexes[dex] IS NOT NULL LOOP
-		EXECUTE 'CREATE INDEX ' || tablename || '_' || indexes[dex] || 
+		indexname := replace( indexes[dex], ',', '_' );
+		indexname := replace ( indexname, ' ', '' );
+		EXECUTE 'CREATE INDEX ' || tablename || '_' || indexname || 
 			' ON ' || tablename || '(' || indexes[dex] || ')';
 		dex := dex + 1;
 	END LOOP;
@@ -1414,7 +1388,7 @@ SELECT to_char( matched[1]::int, 'FM000' )
 		ELSE 'z' END
 	|| '000'
 	|| to_char( coalesce( matched[4]::int, 0 ), 'FM000' )
-FROM ( SELECT regexp_matches($1, $x$^(\d+).*?\.(\d+)(b?)[^\.]*(?:\.(\d+))*$x$) as matched) as match 
+FROM ( SELECT regexp_matches($1, $x$^(\d+)[^\d]*\.(\d+)(b?)[^\.]*(?:\.(\d+))*$x$) as matched) as match 
 LIMIT 1;
 $_$;
 
@@ -1675,48 +1649,51 @@ CREATE FUNCTION reports_clean_weekly_partition(this_date timestamp with time zon
 -- otherwise it creates it
 -- returns the name of the partition
 declare this_part text;
-begin_week text;
-end_week text;
-rc_indexes text[];
-dex int := 1;
+	begin_week text;
+	end_week text;
+	rc_indexes text[];
+	dex int := 1;
 begin
-this_part := which_table || '_' || to_char(date_trunc('week', this_date), 'YYYYMMDD');
-begin_week := to_char(date_trunc('week', this_date), 'YYYY-MM-DD');
-end_week := to_char(date_trunc('week', this_date) + interval '1 week', 'YYYY-MM-DD');
+	this_part := which_table || '_' || to_char(date_trunc('week', this_date), 'YYYYMMDD');
+	begin_week := to_char(date_trunc('week', this_date), 'YYYY-MM-DD');
+	end_week := to_char(date_trunc('week', this_date) + interval '1 week', 'YYYY-MM-DD');
+	
+	PERFORM 1
+	FROM pg_stat_user_tables
+	WHERE relname = this_part;
+	IF FOUND THEN
+		RETURN this_part;
+	END IF;
+	
+	EXECUTE 'CREATE TABLE ' || this_part || $$
+		( CONSTRAINT date_processed_week CHECK ( date_processed >= '$$ || begin_week || $$'::timestamp AT TIME ZONE 'UTC'
+			AND date_processed < '$$ || end_week || $$'::timestamp AT TIME ZONE 'UTC' ) )
+		INHERITS ( $$ || which_table || $$ );$$;
+	EXECUTE 'CREATE UNIQUE INDEX ' || this_part || '_uuid ON ' || this_part || '(uuid);';
 
-PERFORM 1
-FROM pg_stat_user_tables
-WHERE relname = this_part;
-IF FOUND THEN
-RETURN this_part;
-END IF;
+	IF which_table = 'reports_clean' THEN
 
-EXECUTE 'CREATE TABLE ' || this_part || $$
-( CONSTRAINT date_processed_week CHECK ( date_processed >= '$$ || begin_week || $$'::timestamp AT TIME ZONE 'UTC'
-AND date_processed < '$$ || end_week || $$'::timestamp AT TIME ZONE 'UTC' ) )
-INHERITS ( $$ || which_table || $$ );$$;
-EXECUTE 'CREATE UNIQUE INDEX ' || this_part || '_uuid ON ' || this_part || '(uuid);';
-
-IF which_table = 'reports_clean' THEN
-
-rc_indexes := ARRAY[ 'date_processed', 'product_version_id', 'os_name', 'os_version_id', 
-'signature_id', 'address_id', 'flash_version_id', 'hang_id', 'process_type', 'release_channel', 'domain_id' ];
-
-ELSEIF which_table = 'reports_user_info' THEN
-
-rc_indexes := '{}';
-
-END IF;
-
-WHILE rc_indexes[dex] IS NOT NULL LOOP
-EXECUTE 'CREATE INDEX ' || this_part || '_' || rc_indexes[dex]
-|| ' ON ' || this_part || '(' || rc_indexes[dex] || ');';
-dex := dex + 1;
-END LOOP;
-
-EXECUTE 'ALTER TABLE ' || this_part || ' OWNER TO breakpad_rw';
-
-RETURN this_part;
+		rc_indexes := ARRAY[ 'date_processed', 'product_version_id', 'os_name', 'os_version_id', 
+			'signature_id', 'address_id', 'flash_version_id', 'hang_id', 'process_type', 'release_channel', 'domain_id' ];
+			
+		EXECUTE 'CREATE INDEX ' || this_part || '_sig_prod_date ON ' || this_part 
+			|| '( signature_id, product_version_id, date_processed )';
+			
+	ELSEIF which_table = 'reports_user_info' THEN
+	
+		rc_indexes := '{}';
+	
+	END IF;
+	
+	WHILE rc_indexes[dex] IS NOT NULL LOOP
+		EXECUTE 'CREATE INDEX ' || this_part || '_' || rc_indexes[dex]
+			|| ' ON ' || this_part || '(' || rc_indexes[dex] || ');';
+		dex := dex + 1;
+	END LOOP;
+	
+	EXECUTE 'ALTER TABLE ' || this_part || ' OWNER TO breakpad_rw';
+	
+	RETURN this_part;
 end;$_$;
 
 
@@ -2335,55 +2312,6 @@ end; $$;
 ALTER FUNCTION public.update_lookup_new_reports(column_name text) OWNER TO postgres;
 
 --
--- Name: update_os_signature_counts(date, boolean); Type: FUNCTION; Schema: public; Owner: postgres
---
-
-CREATE FUNCTION update_os_signature_counts(updateday date, checkdata boolean DEFAULT true) RETURNS boolean
-    LANGUAGE plpgsql
-    SET work_mem TO '512MB'
-    SET temp_buffers TO '512MB'
-    AS $$
-BEGIN
--- this function populates a daily matview
--- for os-version and signature counts
--- depends on the new reports_clean
-
--- check if we've been run
-IF checkdata THEN
-	PERFORM 1 FROM os_signature_counts
-	WHERE report_date = updateday
-	LIMIT 1;
-	IF FOUND THEN
-		RAISE EXCEPTION 'OS-signature counts have already been run for %.',updateday;
-	END IF;
-END IF;
-
--- check if reports_clean is complete
-IF NOT reports_clean_done(updateday) THEN
-	IF checkdata THEN
-		RAISE EXCEPTION 'Reports_clean has not been updated to the end of %',updateday;
-	ELSE
-		RETURN TRUE;
-	END IF;
-END IF;
-
-INSERT INTO os_signature_counts 
-	( signature_id, os_version_string, report_date, report_count )
-SELECT signature_id, os_version_string, updateday, count(*) as report_count
-FROM reports_clean 
-	JOIN product_versions USING (product_version_id)
-	JOIN os_versions USING (os_version_id)
-WHERE utc_day_is(date_processed, updateday)
-	AND tstz_between(date_processed, build_date, sunset_date)
-GROUP BY signature_id, os_version_string;
-
-RETURN TRUE;
-END; $$;
-
-
-ALTER FUNCTION public.update_os_signature_counts(updateday date, checkdata boolean) OWNER TO postgres;
-
---
 -- Name: update_os_versions(date); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -2528,55 +2456,6 @@ END; $_$;
 
 
 ALTER FUNCTION public.update_os_versions_new_reports() OWNER TO postgres;
-
---
--- Name: update_product_signature_counts(date, boolean); Type: FUNCTION; Schema: public; Owner: postgres
---
-
-CREATE FUNCTION update_product_signature_counts(updateday date, checkdata boolean DEFAULT true) RETURNS boolean
-    LANGUAGE plpgsql
-    SET work_mem TO '512MB'
-    SET temp_buffers TO '512MB'
-    AS $$
-BEGIN
--- this function populates a daily matview
--- for product-version and signature counts
--- depends on the new reports_clean
-
--- check if we've been run
-IF checkdata THEN
-	PERFORM 1 FROM product_signature_counts
-	WHERE report_date = updateday
-	LIMIT 1;
-	IF FOUND THEN
-		RAISE EXCEPTION 'product-signature counts have already been run for %.',updateday;
-	END IF;
-END IF;
-
--- check if reports_clean is complete
-IF NOT reports_clean_done(updateday) THEN
-	IF checkdata THEN
-		RAISE EXCEPTION 'Reports_clean has not been updated to the end of %',updateday;
-	ELSE
-		RETURN TRUE;
-	END IF;
-END IF;
-
-
-INSERT INTO product_signature_counts 
-	( signature_id, product_version_id, report_date, report_count )
-SELECT signature_id, product_version_id, updateday, count(*) as report_count
-FROM reports_clean 
-	JOIN product_versions USING (product_version_id)
-WHERE utc_day_is(date_processed, updateday)
-	AND tstz_between(date_processed, build_date, sunset_date)
-GROUP BY signature_id, product_version_id;
-
-RETURN TRUE;
-END; $$;
-
-
-ALTER FUNCTION public.update_product_signature_counts(updateday date, checkdata boolean) OWNER TO postgres;
 
 --
 -- Name: update_product_versions(); Type: FUNCTION; Schema: public; Owner: postgres
@@ -2726,6 +2605,82 @@ end; $$;
 
 
 ALTER FUNCTION public.update_product_versions() OWNER TO postgres;
+
+--
+-- Name: update_rank_compare(date, boolean); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION update_rank_compare(updateday date DEFAULT NULL::date, checkdata boolean DEFAULT true) RETURNS boolean
+    LANGUAGE plpgsql
+    SET work_mem TO '512MB'
+    SET temp_buffers TO '512MB'
+    SET client_min_messages TO 'ERROR'
+    AS $$
+BEGIN
+-- this function populates a daily matview
+-- for rankings of signatures on TCBS
+-- depends on the new reports_clean
+
+-- run for yesterday if not set
+updateday := COALESCE(updateday, ( CURRENT_DATE -1 ));
+
+-- don't care if we've been run
+-- since there's no historical data
+
+-- check if reports_clean is complete
+IF NOT reports_clean_done(updateday) THEN
+	IF checkdata THEN
+		RAISE EXCEPTION 'Reports_clean has not been updated to the end of %',updateday;
+	ELSE
+		RETURN TRUE;
+	END IF;
+END IF;
+
+-- obtain a lock on the matview so that we can TRUNCATE
+IF NOT try_lock_table('rank_compare', 'ACCESS EXCLUSIVE') THEN
+	RAISE EXCEPTION 'unable to lock the rank_compare table for update.';
+END IF;
+
+-- create temporary table with totals from reports_clean
+
+CREATE TEMPORARY TABLE prod_sig_counts 
+AS SELECT product_version_id, signature_id, count(*) as report_count
+FROM reports_clean
+WHERE utc_day_is(date_processed, updateday)
+GROUP BY product_version_id, signature_id;
+
+-- truncate rank_compare since we don't need the old data
+
+TRUNCATE rank_compare CASCADE;
+
+-- now insert the new records
+INSERT INTO rank_compare (
+	product_version_id, signature_id,
+	rank_days,
+	report_count,
+	total_reports, 
+	rank_report_count,
+	percent_of_total)
+SELECT product_version_id, signature_id,
+	1, 
+	report_count,
+	total_count,
+	count_rank,
+	round(( report_count::numeric / total_count ),5)
+FROM (
+	SELECT product_version_id, signature_id,
+		report_count,
+		sum(report_count) over (partition by product_version_id) as total_count,
+		dense_rank() over (partition by product_version_id 
+							order by report_count desc) as count_rank
+	FROM prod_sig_counts
+) as initrank;
+
+RETURN TRUE;
+END; $$;
+
+
+ALTER FUNCTION public.update_rank_compare(updateday date, checkdata boolean) OWNER TO postgres;
 
 --
 -- Name: update_reports_clean(timestamp with time zone, interval, boolean); Type: FUNCTION; Schema: public; Owner: postgres
@@ -3456,56 +3411,6 @@ $$;
 
 
 ALTER FUNCTION public.update_tcbs(updateday date, checkdata boolean) OWNER TO postgres;
-
---
--- Name: update_uptime_signature_counts(date, boolean); Type: FUNCTION; Schema: public; Owner: postgres
---
-
-CREATE FUNCTION update_uptime_signature_counts(updateday date, checkdata boolean DEFAULT true) RETURNS boolean
-    LANGUAGE plpgsql
-    SET work_mem TO '512MB'
-    SET temp_buffers TO '512MB'
-    AS $$
-BEGIN
--- this function populates a daily matview
--- for uptime buckets and signature counts
--- depends on the new reports_clean
-
--- check if we've been run
-IF checkdata THEN
-	PERFORM 1 FROM uptime_signature_counts
-	WHERE report_date = updateday
-	LIMIT 1;
-	IF FOUND THEN
-		RAISE EXCEPTION 'Uptime-signature counts have already been run for %.',updateday;
-	END IF;
-END IF;
-
--- check if reports_clean is complete
-IF NOT reports_clean_done(updateday) THEN
-	IF checkdata THEN
-		RAISE EXCEPTION 'Reports_clean has not been updated to the end of %',updateday;
-	ELSE
-		RETURN TRUE;
-	END IF;
-END IF;
-
-INSERT INTO uptime_signature_counts 
-	( signature_id, uptime_level, report_date, report_count )
-SELECT signature_id, uptime_level, updateday, count(*) as report_count
-FROM reports_clean
-	JOIN uptime_levels ON reports_clean.uptime >= uptime_levels.min_uptime
-		AND reports_clean.uptime < uptime_levels.max_uptime
-	JOIN product_versions USING (product_version_id)
-WHERE utc_day_is(date_processed, updateday)
-	AND tstz_between(date_processed, build_date, sunset_date)
-GROUP BY signature_id, uptime_level;
-
-RETURN TRUE;
-END; $$;
-
-
-ALTER FUNCTION public.update_uptime_signature_counts(updateday date, checkdata boolean) OWNER TO postgres;
 
 --
 -- Name: url2domain(text); Type: FUNCTION; Schema: public; Owner: postgres
@@ -5017,6 +4922,30 @@ INHERITS (extensions);
 ALTER TABLE public.extensions_20120213 OWNER TO breakpad_rw;
 
 --
+-- Name: extensions_20120220; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+CREATE TABLE extensions_20120220 (
+    CONSTRAINT extensions_20120220_date_check CHECK ((('2012-02-20 00:00:00+00'::timestamp with time zone <= date_processed) AND (date_processed < '2012-02-27 00:00:00+00'::timestamp with time zone)))
+)
+INHERITS (extensions);
+
+
+ALTER TABLE public.extensions_20120220 OWNER TO breakpad_rw;
+
+--
+-- Name: extensions_20120227; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+CREATE TABLE extensions_20120227 (
+    CONSTRAINT extensions_20120227_date_check CHECK ((('2012-02-27 00:00:00+00'::timestamp with time zone <= date_processed) AND (date_processed < '2012-03-05 00:00:00+00'::timestamp with time zone)))
+)
+INHERITS (extensions);
+
+
+ALTER TABLE public.extensions_20120227 OWNER TO breakpad_rw;
+
+--
 -- Name: flash_versions; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -5123,6 +5052,30 @@ INHERITS (frames);
 
 
 ALTER TABLE public.frames_20120213 OWNER TO breakpad_rw;
+
+--
+-- Name: frames_20120220; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+CREATE TABLE frames_20120220 (
+    CONSTRAINT frames_20120220_date_check CHECK ((('2012-02-20 00:00:00+00'::timestamp with time zone <= date_processed) AND (date_processed < '2012-02-27 00:00:00+00'::timestamp with time zone)))
+)
+INHERITS (frames);
+
+
+ALTER TABLE public.frames_20120220 OWNER TO breakpad_rw;
+
+--
+-- Name: frames_20120227; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+CREATE TABLE frames_20120227 (
+    CONSTRAINT frames_20120227_date_check CHECK ((('2012-02-27 00:00:00+00'::timestamp with time zone <= date_processed) AND (date_processed < '2012-03-05 00:00:00+00'::timestamp with time zone)))
+)
+INHERITS (frames);
+
+
+ALTER TABLE public.frames_20120227 OWNER TO breakpad_rw;
 
 --
 -- Name: signatures; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
@@ -5247,20 +5200,6 @@ CREATE TABLE os_names (
 
 
 ALTER TABLE public.os_names OWNER TO breakpad_rw;
-
---
--- Name: os_signature_counts; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
---
-
-CREATE TABLE os_signature_counts (
-    signature_id integer NOT NULL,
-    os_version_string citext NOT NULL,
-    report_date date NOT NULL,
-    report_count integer DEFAULT 0 NOT NULL
-);
-
-
-ALTER TABLE public.os_signature_counts OWNER TO breakpad_rw;
 
 --
 -- Name: os_versions; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
@@ -5509,6 +5448,63 @@ INHERITS (plugins_reports);
 ALTER TABLE public.plugins_reports_20120213 OWNER TO breakpad_rw;
 
 --
+-- Name: plugins_reports_20120220; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+CREATE TABLE plugins_reports_20120220 (
+    CONSTRAINT plugins_reports_20120220_date_check CHECK ((('2012-02-20 00:00:00+00'::timestamp with time zone <= date_processed) AND (date_processed < '2012-02-27 00:00:00+00'::timestamp with time zone)))
+)
+INHERITS (plugins_reports);
+
+
+ALTER TABLE public.plugins_reports_20120220 OWNER TO breakpad_rw;
+
+--
+-- Name: plugins_reports_20120227; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+CREATE TABLE plugins_reports_20120227 (
+    CONSTRAINT plugins_reports_20120227_date_check CHECK ((('2012-02-27 00:00:00+00'::timestamp with time zone <= date_processed) AND (date_processed < '2012-03-05 00:00:00+00'::timestamp with time zone)))
+)
+INHERITS (plugins_reports);
+
+
+ALTER TABLE public.plugins_reports_20120227 OWNER TO breakpad_rw;
+
+--
+-- Name: priority_jobs_2204; Type: TABLE; Schema: public; Owner: processor; Tablespace: 
+--
+
+CREATE TABLE priority_jobs_2204 (
+    uuid character varying(50) NOT NULL
+);
+
+
+ALTER TABLE public.priority_jobs_2204 OWNER TO processor;
+
+--
+-- Name: priority_jobs_2205; Type: TABLE; Schema: public; Owner: processor; Tablespace: 
+--
+
+CREATE TABLE priority_jobs_2205 (
+    uuid character varying(50) NOT NULL
+);
+
+
+ALTER TABLE public.priority_jobs_2205 OWNER TO processor;
+
+--
+-- Name: priority_jobs_2206; Type: TABLE; Schema: public; Owner: processor; Tablespace: 
+--
+
+CREATE TABLE priority_jobs_2206 (
+    uuid character varying(50) NOT NULL
+);
+
+
+ALTER TABLE public.priority_jobs_2206 OWNER TO processor;
+
+--
 -- Name: priorityjobs; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -5693,20 +5689,6 @@ CREATE VIEW product_selector AS
 ALTER TABLE public.product_selector OWNER TO breakpad_rw;
 
 --
--- Name: product_signature_counts; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
---
-
-CREATE TABLE product_signature_counts (
-    signature_id integer NOT NULL,
-    product_version_id integer NOT NULL,
-    report_date date NOT NULL,
-    report_count integer DEFAULT 0 NOT NULL
-);
-
-
-ALTER TABLE public.product_signature_counts OWNER TO breakpad_rw;
-
---
 -- Name: product_version_builds; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -5758,6 +5740,23 @@ CREATE TABLE products (
 
 
 ALTER TABLE public.products OWNER TO breakpad_rw;
+
+--
+-- Name: rank_compare; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+CREATE TABLE rank_compare (
+    product_version_id integer NOT NULL,
+    signature_id integer NOT NULL,
+    rank_days integer NOT NULL,
+    report_count integer,
+    total_reports bigint,
+    rank_report_count integer,
+    percent_of_total numeric
+);
+
+
+ALTER TABLE public.rank_compare OWNER TO breakpad_rw;
 
 --
 -- Name: raw_adu; Type: TABLE; Schema: public; Owner: breakpad_metrics; Tablespace: 
@@ -6057,6 +6056,30 @@ INHERITS (reports);
 ALTER TABLE public.reports_20120213 OWNER TO breakpad_rw;
 
 --
+-- Name: reports_20120220; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+CREATE TABLE reports_20120220 (
+    CONSTRAINT reports_20120220_date_check CHECK ((('2012-02-20 00:00:00+00'::timestamp with time zone <= date_processed) AND (date_processed < '2012-02-27 00:00:00+00'::timestamp with time zone)))
+)
+INHERITS (reports);
+
+
+ALTER TABLE public.reports_20120220 OWNER TO breakpad_rw;
+
+--
+-- Name: reports_20120227; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+CREATE TABLE reports_20120227 (
+    CONSTRAINT reports_20120227_date_check CHECK ((('2012-02-27 00:00:00+00'::timestamp with time zone <= date_processed) AND (date_processed < '2012-03-05 00:00:00+00'::timestamp with time zone)))
+)
+INHERITS (reports);
+
+
+ALTER TABLE public.reports_20120227 OWNER TO breakpad_rw;
+
+--
 -- Name: reports_bad; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -6169,6 +6192,18 @@ INHERITS (reports_clean);
 ALTER TABLE public.reports_clean_20120123 OWNER TO breakpad_rw;
 
 --
+-- Name: reports_clean_20120130; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+CREATE TABLE reports_clean_20120130 (
+    CONSTRAINT date_processed_week CHECK (((date_processed >= timezone('UTC'::text, '2012-01-30 00:00:00'::timestamp without time zone)) AND (date_processed < timezone('UTC'::text, '2012-02-06 00:00:00'::timestamp without time zone))))
+)
+INHERITS (reports_clean);
+
+
+ALTER TABLE public.reports_clean_20120130 OWNER TO breakpad_rw;
+
+--
 -- Name: reports_duplicates; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -6268,6 +6303,18 @@ INHERITS (reports_user_info);
 
 
 ALTER TABLE public.reports_user_info_20120123 OWNER TO breakpad_rw;
+
+--
+-- Name: reports_user_info_20120130; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+CREATE TABLE reports_user_info_20120130 (
+    CONSTRAINT date_processed_week CHECK (((date_processed >= timezone('UTC'::text, '2012-01-30 00:00:00'::timestamp without time zone)) AND (date_processed < timezone('UTC'::text, '2012-02-06 00:00:00'::timestamp without time zone))))
+)
+INHERITS (reports_user_info);
+
+
+ALTER TABLE public.reports_user_info_20120130 OWNER TO breakpad_rw;
 
 --
 -- Name: seq_reports_id; Type: SEQUENCE; Schema: public; Owner: breakpad_rw
@@ -6629,20 +6676,6 @@ ALTER TABLE public.uptime_levels_uptime_level_seq OWNER TO breakpad_rw;
 
 ALTER SEQUENCE uptime_levels_uptime_level_seq OWNED BY uptime_levels.uptime_level;
 
-
---
--- Name: uptime_signature_counts; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
---
-
-CREATE TABLE uptime_signature_counts (
-    signature_id integer NOT NULL,
-    uptime_level integer NOT NULL,
-    report_date date NOT NULL,
-    report_count integer DEFAULT 0 NOT NULL
-);
-
-
-ALTER TABLE public.uptime_signature_counts OWNER TO breakpad_rw;
 
 --
 -- Name: urldims; Type: TABLE; Schema: public; Owner: breakpad_rw; Tablespace: 
@@ -7040,6 +7073,22 @@ ALTER TABLE ONLY extensions_20120213
 
 
 --
+-- Name: extensions_20120220_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+ALTER TABLE ONLY extensions_20120220
+    ADD CONSTRAINT extensions_20120220_pkey PRIMARY KEY (report_id, extension_key);
+
+
+--
+-- Name: extensions_20120227_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+ALTER TABLE ONLY extensions_20120227
+    ADD CONSTRAINT extensions_20120227_pkey PRIMARY KEY (report_id, extension_key);
+
+
+--
 -- Name: filename_name_key; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -7104,6 +7153,22 @@ ALTER TABLE ONLY frames_20120213
 
 
 --
+-- Name: frames_20120220_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+ALTER TABLE ONLY frames_20120220
+    ADD CONSTRAINT frames_20120220_pkey PRIMARY KEY (report_id, frame_num);
+
+
+--
+-- Name: frames_20120227_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+ALTER TABLE ONLY frames_20120227
+    ADD CONSTRAINT frames_20120227_pkey PRIMARY KEY (report_id, frame_num);
+
+
+--
 -- Name: jobs_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -7133,14 +7198,6 @@ ALTER TABLE ONLY os_name_matches
 
 ALTER TABLE ONLY os_names
     ADD CONSTRAINT os_names_pkey PRIMARY KEY (os_name);
-
-
---
--- Name: os_signature_count_key; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
---
-
-ALTER TABLE ONLY os_signature_counts
-    ADD CONSTRAINT os_signature_count_key PRIMARY KEY (signature_id, report_date, os_version_string);
 
 
 --
@@ -7248,6 +7305,46 @@ ALTER TABLE ONLY plugins_reports_20120213
 
 
 --
+-- Name: plugins_reports_20120220_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+ALTER TABLE ONLY plugins_reports_20120220
+    ADD CONSTRAINT plugins_reports_20120220_pkey PRIMARY KEY (report_id, plugin_id);
+
+
+--
+-- Name: plugins_reports_20120227_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+ALTER TABLE ONLY plugins_reports_20120227
+    ADD CONSTRAINT plugins_reports_20120227_pkey PRIMARY KEY (report_id, plugin_id);
+
+
+--
+-- Name: priority_jobs_2204_pkey; Type: CONSTRAINT; Schema: public; Owner: processor; Tablespace: 
+--
+
+ALTER TABLE ONLY priority_jobs_2204
+    ADD CONSTRAINT priority_jobs_2204_pkey PRIMARY KEY (uuid);
+
+
+--
+-- Name: priority_jobs_2205_pkey; Type: CONSTRAINT; Schema: public; Owner: processor; Tablespace: 
+--
+
+ALTER TABLE ONLY priority_jobs_2205
+    ADD CONSTRAINT priority_jobs_2205_pkey PRIMARY KEY (uuid);
+
+
+--
+-- Name: priority_jobs_2206_pkey; Type: CONSTRAINT; Schema: public; Owner: processor; Tablespace: 
+--
+
+ALTER TABLE ONLY priority_jobs_2206
+    ADD CONSTRAINT priority_jobs_2206_pkey PRIMARY KEY (uuid);
+
+
+--
 -- Name: priorityjobs_logging_switch_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -7309,14 +7406,6 @@ ALTER TABLE ONLY product_productid_map
 
 ALTER TABLE ONLY product_release_channels
     ADD CONSTRAINT product_release_channels_key PRIMARY KEY (product_name, release_channel);
-
-
---
--- Name: product_signature_count_key; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
---
-
-ALTER TABLE ONLY product_signature_counts
-    ADD CONSTRAINT product_signature_count_key PRIMARY KEY (signature_id, report_date, product_version_id);
 
 
 --
@@ -7389,6 +7478,14 @@ ALTER TABLE ONLY product_productid_map
 
 ALTER TABLE ONLY products
     ADD CONSTRAINT products_pkey PRIMARY KEY (product_name);
+
+
+--
+-- Name: rank_compare_key; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+ALTER TABLE ONLY rank_compare
+    ADD CONSTRAINT rank_compare_key PRIMARY KEY (product_version_id, signature_id, rank_days);
 
 
 --
@@ -7592,6 +7689,38 @@ ALTER TABLE ONLY reports_20120213
 
 
 --
+-- Name: reports_20120220_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+ALTER TABLE ONLY reports_20120220
+    ADD CONSTRAINT reports_20120220_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: reports_20120220_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+ALTER TABLE ONLY reports_20120220
+    ADD CONSTRAINT reports_20120220_unique_uuid UNIQUE (uuid);
+
+
+--
+-- Name: reports_20120227_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+ALTER TABLE ONLY reports_20120227
+    ADD CONSTRAINT reports_20120227_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: reports_20120227_unique_uuid; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+ALTER TABLE ONLY reports_20120227
+    ADD CONSTRAINT reports_20120227_unique_uuid UNIQUE (uuid);
+
+
+--
 -- Name: reports_clean_pkey; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -7759,14 +7888,6 @@ ALTER TABLE ONLY uptime_levels
 
 ALTER TABLE ONLY uptime_levels
     ADD CONSTRAINT uptime_levels_uptime_string_key UNIQUE (uptime_string);
-
-
---
--- Name: uptime_signature_count_key; Type: CONSTRAINT; Schema: public; Owner: breakpad_rw; Tablespace: 
---
-
-ALTER TABLE ONLY uptime_signature_counts
-    ADD CONSTRAINT uptime_signature_count_key PRIMARY KEY (signature_id, report_date, uptime_level);
 
 
 --
@@ -7975,6 +8096,34 @@ CREATE INDEX extensions_20120213_report_id_date_key ON extensions_20120213 USING
 
 
 --
+-- Name: extensions_20120220_extension_id_extension_version_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+CREATE INDEX extensions_20120220_extension_id_extension_version_idx ON extensions_20120220 USING btree (extension_id, extension_version);
+
+
+--
+-- Name: extensions_20120220_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+CREATE INDEX extensions_20120220_report_id_date_key ON extensions_20120220 USING btree (report_id, date_processed, extension_key);
+
+
+--
+-- Name: extensions_20120227_extension_id_extension_version_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+CREATE INDEX extensions_20120227_extension_id_extension_version_idx ON extensions_20120227 USING btree (extension_id, extension_version);
+
+
+--
+-- Name: extensions_20120227_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+CREATE INDEX extensions_20120227_report_id_date_key ON extensions_20120227 USING btree (report_id, date_processed, extension_key);
+
+
+--
 -- Name: frames_20120116_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -8010,6 +8159,20 @@ CREATE INDEX frames_20120213_report_id_date_key ON frames_20120213 USING btree (
 
 
 --
+-- Name: frames_20120220_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+CREATE INDEX frames_20120220_report_id_date_key ON frames_20120220 USING btree (report_id, date_processed);
+
+
+--
+-- Name: frames_20120227_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+CREATE INDEX frames_20120227_report_id_date_key ON frames_20120227 USING btree (report_id, date_processed);
+
+
+--
 -- Name: idx_bug_associations_bug_id; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -8037,20 +8200,6 @@ CREATE INDEX jobs_completeddatetime_queueddatetime_key ON jobs USING btree (comp
 CREATE INDEX jobs_owner_starteddatetime_key ON jobs USING btree (owner, starteddatetime);
 
 ALTER TABLE jobs CLUSTER ON jobs_owner_starteddatetime_key;
-
-
---
--- Name: os_signature_counts_os_version_string; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
---
-
-CREATE INDEX os_signature_counts_os_version_string ON os_signature_counts USING btree (os_version_string);
-
-
---
--- Name: os_signature_counts_report_date; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
---
-
-CREATE INDEX os_signature_counts_report_date ON os_signature_counts USING btree (report_date);
 
 
 --
@@ -8124,17 +8273,17 @@ CREATE INDEX plugins_reports_20120213_report_id_date_key ON plugins_reports_2012
 
 
 --
--- Name: product_signature_counts_product_version_id; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20120220_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
-CREATE INDEX product_signature_counts_product_version_id ON product_signature_counts USING btree (product_version_id);
+CREATE INDEX plugins_reports_20120220_report_id_date_key ON plugins_reports_20120220 USING btree (report_id, date_processed, plugin_id);
 
 
 --
--- Name: product_signature_counts_report_date; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+-- Name: plugins_reports_20120227_report_id_date_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
-CREATE INDEX product_signature_counts_report_date ON product_signature_counts USING btree (report_date);
+CREATE INDEX plugins_reports_20120227_report_id_date_key ON plugins_reports_20120227 USING btree (report_id, date_processed, plugin_id);
 
 
 --
@@ -8191,6 +8340,20 @@ CREATE UNIQUE INDEX productdims_product_version_key ON productdims USING btree (
 --
 
 CREATE INDEX productdims_sort_key ON productdims USING btree (product, sort_key);
+
+
+--
+-- Name: rank_compare_product_version_id_rank_report_count; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+CREATE INDEX rank_compare_product_version_id_rank_report_count ON rank_compare USING btree (product_version_id, rank_report_count);
+
+
+--
+-- Name: rank_compare_signature_id; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+CREATE INDEX rank_compare_signature_id ON rank_compare USING btree (signature_id);
 
 
 --
@@ -8712,6 +8875,118 @@ CREATE INDEX reports_20120213_uuid_key ON reports_20120213 USING btree (uuid);
 
 
 --
+-- Name: reports_20120220_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+CREATE INDEX reports_20120220_build_key ON reports_20120220 USING btree (build);
+
+
+--
+-- Name: reports_20120220_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+CREATE INDEX reports_20120220_date_processed_key ON reports_20120220 USING btree (date_processed);
+
+
+--
+-- Name: reports_20120220_hangid_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+CREATE INDEX reports_20120220_hangid_idx ON reports_20120220 USING btree (hangid);
+
+
+--
+-- Name: reports_20120220_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+CREATE INDEX reports_20120220_product_version_key ON reports_20120220 USING btree (product, version);
+
+
+--
+-- Name: reports_20120220_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+CREATE INDEX reports_20120220_reason ON reports_20120220 USING btree (reason);
+
+
+--
+-- Name: reports_20120220_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+CREATE INDEX reports_20120220_signature_date_processed_build_key ON reports_20120220 USING btree (signature, date_processed, build);
+
+
+--
+-- Name: reports_20120220_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+CREATE INDEX reports_20120220_url_key ON reports_20120220 USING btree (url);
+
+
+--
+-- Name: reports_20120220_uuid_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+CREATE INDEX reports_20120220_uuid_key ON reports_20120220 USING btree (uuid);
+
+
+--
+-- Name: reports_20120227_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+CREATE INDEX reports_20120227_build_key ON reports_20120227 USING btree (build);
+
+
+--
+-- Name: reports_20120227_date_processed_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+CREATE INDEX reports_20120227_date_processed_key ON reports_20120227 USING btree (date_processed);
+
+
+--
+-- Name: reports_20120227_hangid_idx; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+CREATE INDEX reports_20120227_hangid_idx ON reports_20120227 USING btree (hangid);
+
+
+--
+-- Name: reports_20120227_product_version_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+CREATE INDEX reports_20120227_product_version_key ON reports_20120227 USING btree (product, version);
+
+
+--
+-- Name: reports_20120227_reason; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+CREATE INDEX reports_20120227_reason ON reports_20120227 USING btree (reason);
+
+
+--
+-- Name: reports_20120227_signature_date_processed_build_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+CREATE INDEX reports_20120227_signature_date_processed_build_key ON reports_20120227 USING btree (signature, date_processed, build);
+
+
+--
+-- Name: reports_20120227_url_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+CREATE INDEX reports_20120227_url_key ON reports_20120227 USING btree (url);
+
+
+--
+-- Name: reports_20120227_uuid_key; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+CREATE INDEX reports_20120227_uuid_key ON reports_20120227 USING btree (uuid);
+
+
+--
 -- Name: reports_clean_20111219_address_id; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -8779,6 +9054,13 @@ CREATE INDEX reports_clean_20111219_product_version_id ON reports_clean_20111219
 --
 
 CREATE INDEX reports_clean_20111219_release_channel ON reports_clean_20111219 USING btree (release_channel);
+
+
+--
+-- Name: reports_clean_20111219_sig_prod_date; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+CREATE INDEX reports_clean_20111219_sig_prod_date ON reports_clean_20111219 USING btree (signature_id, product_version_id, date_processed);
 
 
 --
@@ -8866,6 +9148,13 @@ CREATE INDEX reports_clean_20111226_release_channel ON reports_clean_20111226 US
 
 
 --
+-- Name: reports_clean_20111226_sig_prod_date; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+CREATE INDEX reports_clean_20111226_sig_prod_date ON reports_clean_20111226 USING btree (signature_id, product_version_id, date_processed);
+
+
+--
 -- Name: reports_clean_20111226_signature_id; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -8947,6 +9236,13 @@ CREATE INDEX reports_clean_20120102_product_version_id ON reports_clean_20120102
 --
 
 CREATE INDEX reports_clean_20120102_release_channel ON reports_clean_20120102 USING btree (release_channel);
+
+
+--
+-- Name: reports_clean_20120102_sig_prod_date; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+CREATE INDEX reports_clean_20120102_sig_prod_date ON reports_clean_20120102 USING btree (signature_id, product_version_id, date_processed);
 
 
 --
@@ -9034,6 +9330,13 @@ CREATE INDEX reports_clean_20120109_release_channel ON reports_clean_20120109 US
 
 
 --
+-- Name: reports_clean_20120109_sig_prod_date; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+CREATE INDEX reports_clean_20120109_sig_prod_date ON reports_clean_20120109 USING btree (signature_id, product_version_id, date_processed);
+
+
+--
 -- Name: reports_clean_20120109_signature_id; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -9115,6 +9418,13 @@ CREATE INDEX reports_clean_20120116_product_version_id ON reports_clean_20120116
 --
 
 CREATE INDEX reports_clean_20120116_release_channel ON reports_clean_20120116 USING btree (release_channel);
+
+
+--
+-- Name: reports_clean_20120116_sig_prod_date; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+CREATE INDEX reports_clean_20120116_sig_prod_date ON reports_clean_20120116 USING btree (signature_id, product_version_id, date_processed);
 
 
 --
@@ -9202,6 +9512,13 @@ CREATE INDEX reports_clean_20120123_release_channel ON reports_clean_20120123 US
 
 
 --
+-- Name: reports_clean_20120123_sig_prod_date; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+CREATE INDEX reports_clean_20120123_sig_prod_date ON reports_clean_20120123 USING btree (signature_id, product_version_id, date_processed);
+
+
+--
 -- Name: reports_clean_20120123_signature_id; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
 --
 
@@ -9213,6 +9530,97 @@ CREATE INDEX reports_clean_20120123_signature_id ON reports_clean_20120123 USING
 --
 
 CREATE UNIQUE INDEX reports_clean_20120123_uuid ON reports_clean_20120123 USING btree (uuid);
+
+
+--
+-- Name: reports_clean_20120130_address_id; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+CREATE INDEX reports_clean_20120130_address_id ON reports_clean_20120130 USING btree (address_id);
+
+
+--
+-- Name: reports_clean_20120130_date_processed; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+CREATE INDEX reports_clean_20120130_date_processed ON reports_clean_20120130 USING btree (date_processed);
+
+
+--
+-- Name: reports_clean_20120130_domain_id; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+CREATE INDEX reports_clean_20120130_domain_id ON reports_clean_20120130 USING btree (domain_id);
+
+
+--
+-- Name: reports_clean_20120130_flash_version_id; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+CREATE INDEX reports_clean_20120130_flash_version_id ON reports_clean_20120130 USING btree (flash_version_id);
+
+
+--
+-- Name: reports_clean_20120130_hang_id; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+CREATE INDEX reports_clean_20120130_hang_id ON reports_clean_20120130 USING btree (hang_id);
+
+
+--
+-- Name: reports_clean_20120130_os_name; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+CREATE INDEX reports_clean_20120130_os_name ON reports_clean_20120130 USING btree (os_name);
+
+
+--
+-- Name: reports_clean_20120130_os_version_id; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+CREATE INDEX reports_clean_20120130_os_version_id ON reports_clean_20120130 USING btree (os_version_id);
+
+
+--
+-- Name: reports_clean_20120130_process_type; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+CREATE INDEX reports_clean_20120130_process_type ON reports_clean_20120130 USING btree (process_type);
+
+
+--
+-- Name: reports_clean_20120130_product_version_id; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+CREATE INDEX reports_clean_20120130_product_version_id ON reports_clean_20120130 USING btree (product_version_id);
+
+
+--
+-- Name: reports_clean_20120130_release_channel; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+CREATE INDEX reports_clean_20120130_release_channel ON reports_clean_20120130 USING btree (release_channel);
+
+
+--
+-- Name: reports_clean_20120130_sig_prod_date; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+CREATE INDEX reports_clean_20120130_sig_prod_date ON reports_clean_20120130 USING btree (signature_id, product_version_id, date_processed);
+
+
+--
+-- Name: reports_clean_20120130_signature_id; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+CREATE INDEX reports_clean_20120130_signature_id ON reports_clean_20120130 USING btree (signature_id);
+
+
+--
+-- Name: reports_clean_20120130_uuid; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+CREATE UNIQUE INDEX reports_clean_20120130_uuid ON reports_clean_20120130 USING btree (uuid);
 
 
 --
@@ -9269,6 +9677,13 @@ CREATE UNIQUE INDEX reports_user_info_20120116_uuid ON reports_user_info_2012011
 --
 
 CREATE UNIQUE INDEX reports_user_info_20120123_uuid ON reports_user_info_20120123 USING btree (uuid);
+
+
+--
+-- Name: reports_user_info_20120130_uuid; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
+--
+
+CREATE UNIQUE INDEX reports_user_info_20120130_uuid ON reports_user_info_20120130 USING btree (uuid);
 
 
 --
@@ -9395,20 +9810,6 @@ CREATE INDEX top_crashes_by_url2_urldims_key ON top_crashes_by_url USING btree (
 --
 
 CREATE INDEX top_crashes_by_url2_window_end_window_size_key ON top_crashes_by_url USING btree (window_end, window_size);
-
-
---
--- Name: uptime_signature_counts_report_date; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
---
-
-CREATE INDEX uptime_signature_counts_report_date ON uptime_signature_counts USING btree (report_date);
-
-
---
--- Name: uptime_signature_counts_uptime_level; Type: INDEX; Schema: public; Owner: breakpad_rw; Tablespace: 
---
-
-CREATE INDEX uptime_signature_counts_uptime_level ON uptime_signature_counts USING btree (uptime_level);
 
 
 --
@@ -9543,6 +9944,22 @@ ALTER TABLE ONLY extensions_20120213
 
 
 --
+-- Name: extensions_20120220_report_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: breakpad_rw
+--
+
+ALTER TABLE ONLY extensions_20120220
+    ADD CONSTRAINT extensions_20120220_report_id_fkey FOREIGN KEY (report_id) REFERENCES reports_20120220(id) ON DELETE CASCADE;
+
+
+--
+-- Name: extensions_20120227_report_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: breakpad_rw
+--
+
+ALTER TABLE ONLY extensions_20120227
+    ADD CONSTRAINT extensions_20120227_report_id_fkey FOREIGN KEY (report_id) REFERENCES reports_20120227(id) ON DELETE CASCADE;
+
+
+--
 -- Name: frames_20120116_report_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: breakpad_rw
 --
 
@@ -9580,6 +9997,22 @@ ALTER TABLE ONLY frames_20120206
 
 ALTER TABLE ONLY frames_20120213
     ADD CONSTRAINT frames_20120213_report_id_fkey FOREIGN KEY (report_id) REFERENCES reports_20120213(id) ON DELETE CASCADE;
+
+
+--
+-- Name: frames_20120220_report_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: breakpad_rw
+--
+
+ALTER TABLE ONLY frames_20120220
+    ADD CONSTRAINT frames_20120220_report_id_fkey FOREIGN KEY (report_id) REFERENCES reports_20120220(id) ON DELETE CASCADE;
+
+
+--
+-- Name: frames_20120227_report_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: breakpad_rw
+--
+
+ALTER TABLE ONLY frames_20120227
+    ADD CONSTRAINT frames_20120227_report_id_fkey FOREIGN KEY (report_id) REFERENCES reports_20120227(id) ON DELETE CASCADE;
 
 
 --
@@ -9748,6 +10181,38 @@ ALTER TABLE ONLY plugins_reports_20120213
 
 ALTER TABLE ONLY plugins_reports_20120213
     ADD CONSTRAINT plugins_reports_20120213_report_id_fkey FOREIGN KEY (report_id) REFERENCES reports_20120213(id) ON DELETE CASCADE;
+
+
+--
+-- Name: plugins_reports_20120220_plugin_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: breakpad_rw
+--
+
+ALTER TABLE ONLY plugins_reports_20120220
+    ADD CONSTRAINT plugins_reports_20120220_plugin_id_fkey FOREIGN KEY (plugin_id) REFERENCES plugins(id) ON DELETE CASCADE;
+
+
+--
+-- Name: plugins_reports_20120220_report_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: breakpad_rw
+--
+
+ALTER TABLE ONLY plugins_reports_20120220
+    ADD CONSTRAINT plugins_reports_20120220_report_id_fkey FOREIGN KEY (report_id) REFERENCES reports_20120220(id) ON DELETE CASCADE;
+
+
+--
+-- Name: plugins_reports_20120227_plugin_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: breakpad_rw
+--
+
+ALTER TABLE ONLY plugins_reports_20120227
+    ADD CONSTRAINT plugins_reports_20120227_plugin_id_fkey FOREIGN KEY (plugin_id) REFERENCES plugins(id) ON DELETE CASCADE;
+
+
+--
+-- Name: plugins_reports_20120227_report_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: breakpad_rw
+--
+
+ALTER TABLE ONLY plugins_reports_20120227
+    ADD CONSTRAINT plugins_reports_20120227_report_id_fkey FOREIGN KEY (report_id) REFERENCES reports_20120227(id) ON DELETE CASCADE;
 
 
 --
@@ -10279,6 +10744,26 @@ GRANT SELECT ON TABLE extensions_20120213 TO breakpad;
 
 
 --
+-- Name: extensions_20120220; Type: ACL; Schema: public; Owner: breakpad_rw
+--
+
+REVOKE ALL ON TABLE extensions_20120220 FROM PUBLIC;
+REVOKE ALL ON TABLE extensions_20120220 FROM breakpad_rw;
+GRANT ALL ON TABLE extensions_20120220 TO breakpad_rw;
+GRANT SELECT ON TABLE extensions_20120220 TO breakpad;
+
+
+--
+-- Name: extensions_20120227; Type: ACL; Schema: public; Owner: breakpad_rw
+--
+
+REVOKE ALL ON TABLE extensions_20120227 FROM PUBLIC;
+REVOKE ALL ON TABLE extensions_20120227 FROM breakpad_rw;
+GRANT ALL ON TABLE extensions_20120227 TO breakpad_rw;
+GRANT SELECT ON TABLE extensions_20120227 TO breakpad;
+
+
+--
 -- Name: flash_versions; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -10350,6 +10835,26 @@ REVOKE ALL ON TABLE frames_20120213 FROM PUBLIC;
 REVOKE ALL ON TABLE frames_20120213 FROM breakpad_rw;
 GRANT ALL ON TABLE frames_20120213 TO breakpad_rw;
 GRANT SELECT ON TABLE frames_20120213 TO breakpad;
+
+
+--
+-- Name: frames_20120220; Type: ACL; Schema: public; Owner: breakpad_rw
+--
+
+REVOKE ALL ON TABLE frames_20120220 FROM PUBLIC;
+REVOKE ALL ON TABLE frames_20120220 FROM breakpad_rw;
+GRANT ALL ON TABLE frames_20120220 TO breakpad_rw;
+GRANT SELECT ON TABLE frames_20120220 TO breakpad;
+
+
+--
+-- Name: frames_20120227; Type: ACL; Schema: public; Owner: breakpad_rw
+--
+
+REVOKE ALL ON TABLE frames_20120227 FROM PUBLIC;
+REVOKE ALL ON TABLE frames_20120227 FROM breakpad_rw;
+GRANT ALL ON TABLE frames_20120227 TO breakpad_rw;
+GRANT SELECT ON TABLE frames_20120227 TO breakpad;
 
 
 --
@@ -10444,18 +10949,6 @@ GRANT ALL ON TABLE os_names TO breakpad_rw;
 GRANT SELECT ON TABLE os_names TO breakpad_ro;
 GRANT SELECT ON TABLE os_names TO breakpad;
 GRANT ALL ON TABLE os_names TO monitor;
-
-
---
--- Name: os_signature_counts; Type: ACL; Schema: public; Owner: breakpad_rw
---
-
-REVOKE ALL ON TABLE os_signature_counts FROM PUBLIC;
-REVOKE ALL ON TABLE os_signature_counts FROM breakpad_rw;
-GRANT ALL ON TABLE os_signature_counts TO breakpad_rw;
-GRANT SELECT ON TABLE os_signature_counts TO breakpad_ro;
-GRANT SELECT ON TABLE os_signature_counts TO breakpad;
-GRANT ALL ON TABLE os_signature_counts TO monitor;
 
 
 --
@@ -10652,6 +11145,56 @@ GRANT SELECT ON TABLE plugins_reports_20120213 TO breakpad;
 
 
 --
+-- Name: plugins_reports_20120220; Type: ACL; Schema: public; Owner: breakpad_rw
+--
+
+REVOKE ALL ON TABLE plugins_reports_20120220 FROM PUBLIC;
+REVOKE ALL ON TABLE plugins_reports_20120220 FROM breakpad_rw;
+GRANT ALL ON TABLE plugins_reports_20120220 TO breakpad_rw;
+GRANT SELECT ON TABLE plugins_reports_20120220 TO breakpad;
+
+
+--
+-- Name: plugins_reports_20120227; Type: ACL; Schema: public; Owner: breakpad_rw
+--
+
+REVOKE ALL ON TABLE plugins_reports_20120227 FROM PUBLIC;
+REVOKE ALL ON TABLE plugins_reports_20120227 FROM breakpad_rw;
+GRANT ALL ON TABLE plugins_reports_20120227 TO breakpad_rw;
+GRANT SELECT ON TABLE plugins_reports_20120227 TO breakpad;
+
+
+--
+-- Name: priority_jobs_2204; Type: ACL; Schema: public; Owner: processor
+--
+
+REVOKE ALL ON TABLE priority_jobs_2204 FROM PUBLIC;
+REVOKE ALL ON TABLE priority_jobs_2204 FROM processor;
+GRANT ALL ON TABLE priority_jobs_2204 TO processor;
+GRANT ALL ON TABLE priority_jobs_2204 TO breakpad_rw;
+
+
+--
+-- Name: priority_jobs_2205; Type: ACL; Schema: public; Owner: processor
+--
+
+REVOKE ALL ON TABLE priority_jobs_2205 FROM PUBLIC;
+REVOKE ALL ON TABLE priority_jobs_2205 FROM processor;
+GRANT ALL ON TABLE priority_jobs_2205 TO processor;
+GRANT ALL ON TABLE priority_jobs_2205 TO breakpad_rw;
+
+
+--
+-- Name: priority_jobs_2206; Type: ACL; Schema: public; Owner: processor
+--
+
+REVOKE ALL ON TABLE priority_jobs_2206 FROM PUBLIC;
+REVOKE ALL ON TABLE priority_jobs_2206 FROM processor;
+GRANT ALL ON TABLE priority_jobs_2206 TO processor;
+GRANT ALL ON TABLE priority_jobs_2206 TO breakpad_rw;
+
+
+--
 -- Name: priorityjobs; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -10820,18 +11363,6 @@ GRANT ALL ON TABLE product_selector TO monitor;
 
 
 --
--- Name: product_signature_counts; Type: ACL; Schema: public; Owner: breakpad_rw
---
-
-REVOKE ALL ON TABLE product_signature_counts FROM PUBLIC;
-REVOKE ALL ON TABLE product_signature_counts FROM breakpad_rw;
-GRANT ALL ON TABLE product_signature_counts TO breakpad_rw;
-GRANT SELECT ON TABLE product_signature_counts TO breakpad_ro;
-GRANT SELECT ON TABLE product_signature_counts TO breakpad;
-GRANT ALL ON TABLE product_signature_counts TO monitor;
-
-
---
 -- Name: product_version_builds; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -10864,6 +11395,18 @@ GRANT ALL ON TABLE products TO breakpad_rw;
 GRANT SELECT ON TABLE products TO breakpad_ro;
 GRANT SELECT ON TABLE products TO breakpad;
 GRANT ALL ON TABLE products TO monitor;
+
+
+--
+-- Name: rank_compare; Type: ACL; Schema: public; Owner: breakpad_rw
+--
+
+REVOKE ALL ON TABLE rank_compare FROM PUBLIC;
+REVOKE ALL ON TABLE rank_compare FROM breakpad_rw;
+GRANT ALL ON TABLE rank_compare TO breakpad_rw;
+GRANT SELECT ON TABLE rank_compare TO breakpad;
+GRANT SELECT ON TABLE rank_compare TO breakpad_ro;
+GRANT ALL ON TABLE rank_compare TO monitor;
 
 
 --
@@ -11065,6 +11608,26 @@ GRANT SELECT ON TABLE reports_20120213 TO breakpad;
 
 
 --
+-- Name: reports_20120220; Type: ACL; Schema: public; Owner: breakpad_rw
+--
+
+REVOKE ALL ON TABLE reports_20120220 FROM PUBLIC;
+REVOKE ALL ON TABLE reports_20120220 FROM breakpad_rw;
+GRANT ALL ON TABLE reports_20120220 TO breakpad_rw;
+GRANT SELECT ON TABLE reports_20120220 TO breakpad;
+
+
+--
+-- Name: reports_20120227; Type: ACL; Schema: public; Owner: breakpad_rw
+--
+
+REVOKE ALL ON TABLE reports_20120227 FROM PUBLIC;
+REVOKE ALL ON TABLE reports_20120227 FROM breakpad_rw;
+GRANT ALL ON TABLE reports_20120227 TO breakpad_rw;
+GRANT SELECT ON TABLE reports_20120227 TO breakpad;
+
+
+--
 -- Name: reports_bad; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -11149,6 +11712,16 @@ GRANT SELECT ON TABLE reports_clean_20120123 TO breakpad;
 
 
 --
+-- Name: reports_clean_20120130; Type: ACL; Schema: public; Owner: breakpad_rw
+--
+
+REVOKE ALL ON TABLE reports_clean_20120130 FROM PUBLIC;
+REVOKE ALL ON TABLE reports_clean_20120130 FROM breakpad_rw;
+GRANT ALL ON TABLE reports_clean_20120130 TO breakpad_rw;
+GRANT SELECT ON TABLE reports_clean_20120130 TO breakpad;
+
+
+--
 -- Name: reports_duplicates; Type: ACL; Schema: public; Owner: breakpad_rw
 --
 
@@ -11229,6 +11802,16 @@ REVOKE ALL ON TABLE reports_user_info_20120123 FROM PUBLIC;
 REVOKE ALL ON TABLE reports_user_info_20120123 FROM breakpad_rw;
 GRANT ALL ON TABLE reports_user_info_20120123 TO breakpad_rw;
 GRANT SELECT ON TABLE reports_user_info_20120123 TO breakpad;
+
+
+--
+-- Name: reports_user_info_20120130; Type: ACL; Schema: public; Owner: breakpad_rw
+--
+
+REVOKE ALL ON TABLE reports_user_info_20120130 FROM PUBLIC;
+REVOKE ALL ON TABLE reports_user_info_20120130 FROM breakpad_rw;
+GRANT ALL ON TABLE reports_user_info_20120130 TO breakpad_rw;
+GRANT SELECT ON TABLE reports_user_info_20120130 TO breakpad;
 
 
 --
@@ -11468,18 +12051,6 @@ GRANT ALL ON TABLE uptime_levels TO breakpad_rw;
 GRANT SELECT ON TABLE uptime_levels TO breakpad_ro;
 GRANT SELECT ON TABLE uptime_levels TO breakpad;
 GRANT ALL ON TABLE uptime_levels TO monitor;
-
-
---
--- Name: uptime_signature_counts; Type: ACL; Schema: public; Owner: breakpad_rw
---
-
-REVOKE ALL ON TABLE uptime_signature_counts FROM PUBLIC;
-REVOKE ALL ON TABLE uptime_signature_counts FROM breakpad_rw;
-GRANT ALL ON TABLE uptime_signature_counts TO breakpad_rw;
-GRANT SELECT ON TABLE uptime_signature_counts TO breakpad_ro;
-GRANT SELECT ON TABLE uptime_signature_counts TO breakpad;
-GRANT ALL ON TABLE uptime_signature_counts TO monitor;
 
 
 --
