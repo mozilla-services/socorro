@@ -8,10 +8,12 @@ bug 722935
 	
 bug 722934
 	adds architecture, and number of cores to reports clean
+	supports signature_summary report for architecture
 	in order to backfill several weeks, it may take hours to run
 	
 bug 722936
 	adds tables for correlation reports
+	adds update function for addons and cores
 
 The above changes may take up to 4 hours to deploy.
 This does not require a downtime, although it may cause the reports_clean hourly cronjob to fail and require backfill.

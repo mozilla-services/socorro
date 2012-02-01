@@ -65,7 +65,7 @@ for partition in partitions:
     cur.execute("""VACUUM ANALYZE %s""" % partition['rcname'])
     
     #build the index
-    indsql = "CREATE INDEX %s_arch_cores ON %s (archtecture, cores)" % (partition['rcname'], partition['rcname'],)
+    indsql = "CREATE INDEX %s_arch_cores ON %s (architecture, cores)" % (partition['rcname'], partition['rcname'],)
     cur.execute(indsql)
     
 print 'done backfilling archtecture and cores'
