@@ -20,11 +20,10 @@ do
   done
 done
 
-MANUAL_VERSION_OVERRIDE="4.0b7pre 3.6.9"
+MANUAL_VERSION_OVERRIDE="11.0 12.0a2 13.0a1"
 for I in Firefox
 do
-  VERSIONS=`psql -t -U $databaseUserName -h $databaseHost $databaseName -c "select version, count(*) as counts from reports_${WEEK}  where completed_datetime < NOW() and completed_datetime > (NOW() - interval '24 hours') and product = '${I}' and version like '%b%' group by version order by counts desc limit 2" | awk '{print $1}'`
-  for J in $VERSIONS $MANUAL_VERSION_OVERRIDE
+  for J in $MANUAL_VERSION_OVERRIDE
   do
     psql -t psql -t -U $databaseUserName -h $databaseHost $databaseName -c "select uuid from reports_${WEEK} where completed_datetime < NOW() and completed_datetime > (NOW() - interval '24 hours') and product = '${I}' and version = '${J}'" | $PYTHON ${APPDIR}/socorro/storage/hbaseClient.py -h $hbaseHost export_jsonz_tarball_for_ooids /tmp /tmp/${I}_${J}.tar > /tmp/${I}_${J}.log 2>&1
     $PYTHON /data/crash-data-tools/per-crash-core-count.py -p ${I} -r ${J} -f /tmp/${I}_${J}.tar > /tmp/${DATE}_${I}_${J}-core-counts.txt
