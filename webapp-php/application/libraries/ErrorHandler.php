@@ -54,7 +54,7 @@ class ErrorHandler
     {
         $severity = 'error';
         if (strstr($errstr, 'HTTP/1.1 404 Not Found')) {
-            $severity = 'warning';
+            $severity = 'alert';
         }
 
         Kohana::log($severity, "$errstr $errfile line $errline");
