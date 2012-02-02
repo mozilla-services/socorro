@@ -553,22 +553,23 @@ class Branch_Model extends Model {
      * Fetch all of the versions for a particular product that are not featured.
      *
      * @param string    The product name
+     * @return array    An array of unfeatured versions
      */
     public function getUnfeaturedVersions($product)
     {
-        $date = date('Y-m-d');
-        $sql = '/* soc.web branch.getFeaturedVersions */
-                SELECT product_name as product,
-                    version_string as version, is_featured as featured,
-                    build_type as release, start_date, end_date, throttle
-                FROM product_info
-                WHERE product_name = ' . $this->db->escape($product) . '
-                AND start_date <= ' . $this->db->escape($date) . '
-                AND end_date >= ' . $this->db->escape($date) . '
-                AND is_featured = false
-                ORDER BY version_sort DESC';
+        $resp = $this->_getValues();
+        $result = array();
+        $now = time();
+        foreach($resp as $item) {
+            if( $item->product == $product AND
+                ! $item->featured AND
+                strtotime($item->start_date) <= $now AND
+                strtotime($item->end_date) >= $now) {
+                $result[] = $item;
+            }
+        }
 
-        return $this->fetchRows($sql);
+        return $result;
     }
 
     /**
