@@ -49,4 +49,199 @@ In general, each matview will have the following things:
 
 If they are available, all columns should use surrogate keys to lookup lists (i.e. use signature_id, not the full text of the signature).  Generally the primary key of the matview will be the combination of all grouping columns plus the report date.
 
+So, as an example, we're going to create a simple matview for summarizing crashes per product, web domain.  While it's unlikely that such a matview would be useful in practice (we could just query reports_clean directly) it makes a good example.   Here's the model for the table:
+
+::
+
+	table product_domain_counts
+		product_version
+		domain
+		report_date
+		report_count
+		key product_version, domain, report_date
+	
+We actually use the custom procedure create_table_if_not_exists() to create this.  This function handles idempotence, permissions, and secondary indexes for us, like so:
+
+::
+
+	SELECT create_table_if_not_exists('product_domain_counts'
+		$x$
+		CREATE TABLE product_domain_counts (
+			product_version_id INT NOT NULL,
+			domain_id INT NOT NULL,
+			report_date DATE NOT NULL,
+			report_count INT NOT NULL DEFAULT 0,
+			constraint product_domain_counts_key (
+				product_version_id, domain_id, report_date )
+			);
+		$x$, 
+		'breakpad_rw', ARRAY['domain_id'] );
+		
+See DatabaseAdminFunctions in the docs for more information about the function.
+
+You'll notice that the resulting matview uses the surrogate keys of the corresponsing lookup lists rather than the actual values.  This is to keep matview sizes down and improve performance.  You'll also notice that there are no foriegn keys to the various lookup list tables; this is partly a performance optimization, but mostly because, since matviews are populated by stored procedure, validating input is not critical.  We also don't expect to need cascading updates or deletes on the lookup lists.
+
+Creating The Update Function
+----------------------------
+
+Once you have the table, you'll need to write a function to be called by cron once per day in order to populate the matview with new data.  
+
+This function will:
+
+* be named update_{name_of_matview}
+* take two parameters, a date and a boolean
+* return a boolean, with true = success and ERROR = failure
+* check if data it depends on is available
+* check if it's already been run for the day
+* pull its data from reports_clean, reports_user_info, and/or other matviews (_not_ reports or other raw data tables)
+
+So, here's our update function for the product_domains table:
+
+::
+
+	CREATE OR REPLACE FUNCTION update_product_domain_counts (
+		updateday DATE, checkdata BOOLEAN default TRUE )
+	RETURNS BOOLEAN
+	LANGUAGE plpgsql
+	SET work_mem = '512MB'
+	SET temp_buffers = '512MB'
+	SET client_min_messages = 'ERROR'
+	AS $f$
+	BEGIN
+	-- this function populates a daily matview
+	-- for crash counts by product and domain
+	-- depends on reports_clean
+	
+	-- check if we've been run
+	IF checkdata THEN
+		PERFORM 1 FROM product_domain_counts
+		WHERE report_date = updateday
+		LIMIT 1;
+		IF FOUND THEN
+			RAISE EXCEPTION 'product_domain_counts has already been run for %.',updateday;
+		END IF;
+	END IF;
+	
+	-- check if reports_clean is complete
+	IF NOT reports_clean_done(updateday) THEN
+		IF checkdata THEN
+			RAISE EXCEPTION 'Reports_clean has not been updated to the end of %',updateday;
+		ELSE
+			RETURN TRUE;
+		END IF;
+	END IF;
+	
+	-- now insert the new records
+	-- this should be some appropriate query, this simple group by
+	-- is just provided as an example
+	INSERT INTO product_domain_counts 
+		( product_version_id, domain_id, report_date, report_count )
+	SELECT product_version_id, domain_id,
+		updateday,
+		count(*)
+	FROM reports_clean
+	WHERE domain_id IS NOT NULL
+		AND date_processed >= updateday::timestamptz
+		AND date_processed < ( updateday + 1 )::timestamptz
+	GROUP BY product_version_id, domain_id;
+	
+	RETURN TRUE;
+	END; $f$;
+	
+Note that the update functions could be written in PL/python if you wish; however, there isn't yet a template for that.
+
+Creating The Backfill Function
+------------------------------
+
+The second function which needs to be created is one for backfilling data
+for specific dates, for when we need to backfill missing or corrected data.
+This function will also be used to fill in data when we first deploy
+the matview.
+
+The backfill function will generally be very simple; it just calls
+a delete for the days data and then the update function, with the
+"checkdata" flag disabled:
+
+::
+
+	CREATE OR REPLACE FUNCTION backfill_product_domain_counts(
+		updateday DATE )
+	RETURNS BOOLEAN
+	LANGUAGE plpgsql AS
+	$f$
+	BEGIN
+	
+	DELETE FROM product_domain_counts WHERE report_date = updateday;
+	PERFORM update_product_domain_counts(updateday, false);
+	
+	RETURN TRUE;
+	END; $f$;
+
+
+Adding The Function To The Omnibus Backfill
+-------------------------------------------
+
+Usually when we backfill data we recreate all matview data for
+the period affected.  This is accomplished by inserting it into
+the backfill_matviews table:
+
+::
+
+	INSERT INTO backfill_matviews ( matview, function_name, frequency )
+	VALUES ( 'product_domain_counts', 'backfill_product_domain_counts', 'daily' );
+	
+NOTE: the above is not yet active.  Until it is, send a request to Josh Berkus to add your new backfill to the omnibus backfill function.
+
+Filling in Initial Data
+-----------------------
+
+Generally when creating a new matview, we want to fill in 
+two weeks or so of data.  This can be done with either a Python 
+or a PL/pgSQL script.  A PL/pgSQL script would be created as a SQL
+file and look like this:
+
+::
+
+	DO $f$
+	DECLARE 
+		thisday DATE := '2012-01-14';
+		lastday DATE;
+	BEGIN
+	
+		-- set backfill to the last day we have ADU for
+		SELECT max("date") 
+		INTO lastday
+		FROM raw_adu;
+		
+		WHILE thisday <= lastday LOOP
+		
+			RAISE INFO 'backfilling %', thisday;
+		
+			PERFORM backfill_product_domain_counts(thisday);
+			
+			thisday := thisday + 1;
+			
+		END LOOP;
+		
+	END;$f$;
+	
+This script would then be checked into the set of upgrade scripts 
+for that version of the database.
+		
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
