@@ -103,6 +103,7 @@ As *root*:
   chown socorro:socorro /var/log/socorro
   mkdir /home/socorro/primaryCrashStore /home/socorro/fallback
   chown apache /home/socorro/primaryCrashStore /home/socorro/fallback
+  chgrp socorro /home/socorro/primaryCrashStore /home/socorro/fallback
   chmod 2775 /home/socorro/primaryCrashStore /home/socorro/fallback
 
 Note - use www-data instead of apache for debian/ubuntu
