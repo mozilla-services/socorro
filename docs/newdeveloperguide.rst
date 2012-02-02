@@ -13,3 +13,4 @@ If you are new to Socorro, you will find here good resources to start hacking:
    generalarchitecture
    setupdevenv
    addaservice
+   reviewprocess
