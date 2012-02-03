@@ -534,6 +534,8 @@ class Processor(object):
         java_stack_trace = jsonDocument.setdefault('JavaStackTrace', None)
         additionalReportValuesAsDict = self.doBreakpadStackDumpAnalysis(reportId, jobUuid, dumpfilePathname, hangType, java_stack_trace, threadLocalCursor, date_processed, processorErrorMessages)
         newReportRecordAsDict.update(additionalReportValuesAsDict)
+      except Exception:
+        logger.exception("breakpad analysis exception")
       finally:
         newReportRecordAsDict["completeddatetime"] = completedDateTime = self.nowFunc()
         threadLocalCrashStorage.cleanUpTempDumpStorage(jobUuid, self.config.temporaryFileSystemStoragePath)
