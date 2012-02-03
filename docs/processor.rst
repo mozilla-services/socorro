@@ -15,5 +15,14 @@ with stackwalk_server, is computationally intensive. Multiple
 instances of the processor can be run simultaneously from different
 machines.
 
+Important note
+--------------
+
+Processor uses temorary storage for dump files. Path to the storage
+is specified by the ``temporaryFileSystemStoragePath`` param.
+
+Please, make sure, that this folder (by default ``/home/socorro/temp``
+exists, and the socorro user have the rwx permission to it).
+
 `See sample config code on Github
 <https://github.com/mozilla/socorro/blob/master/scripts/config/processorconfig.py.dist>`_
