@@ -335,7 +335,7 @@ class JsonDumpStorage(socorro_dumpStorage.DumpStorage):
             if r:
               yield r
         # after finishing a given directory...
-        socorro_fs.cleanEmptySubdirectories(os.path.join(self.root,daily),dir,self.osModule)
+        socorro_fs.cleanEmptySubdirectories(os.path.join(self.root,daily,self.dateName),dir,self.osModule)
 
   #-----------------------------------------------------------------------------------------------------------------
   def remove (self,ooid, timestamp=None):
