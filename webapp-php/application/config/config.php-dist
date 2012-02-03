@@ -1,6 +1,11 @@
 <?php defined('SYSPATH') or die('No direct script access.');
 
 /**
+ * Default timezone for all dates.
+ */
+date_default_timezone_set('UTC');
+
+/**
  * Base path of the web site. If this includes a domain, eg: localhost/kohana/
  * then a full URL will be used, eg: http://localhost/kohana/. If it only includes
  * the path, and a site_protocol is specified, the domain will be auto-detected.
