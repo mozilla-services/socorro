@@ -39,7 +39,7 @@
         </tbody>
     </table>
     
-    <!--<table class="sig-dashboard-tbl zebra">
+    <table class="sig-dashboard-tbl zebra">
         <thead>
             <tr>
                 <th>Architecture</th>
@@ -50,7 +50,7 @@
         <tbody id="architectureBody">
             
         </tbody>
-    </table>!-->
+    </table>
     
     <table class="sig-dashboard-tbl zebra">
         <thead>
