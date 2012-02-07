@@ -23,6 +23,11 @@ report_type_sql = {
         'first_col_format': 'category',
     },
 
+    'architecture' : {
+        'first_col': 'architecture',
+        'first_col_format': 'category',
+    },
+
     'flash_version' : {
         'first_col': 'flash_version',
         'first_col_format': '''CASE WHEN category = '' THEN 'Unknown/No Flash' ELSE category END''',
