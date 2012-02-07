@@ -73,7 +73,8 @@ class TestCase(unittest.TestCase):
             dailyMatviews.update(self.config, 'some date')
             self.assertEqual(cursor.called, ['update_product_versions',
               'update_signatures', 'update_os_versions', 'update_adu',
-              'update_daily_crashes', 'update_hang_report', 'rank_compare'])
+              'update_daily_crashes', 'update_hang_report',
+              'update_rank_compare'])
             self.assertEqual(mock_logger.info.call_count, 7)
             self.assertEqual(mock_logger.warn.call_count, 2)
             self.assertEqual(mock_logger.error.call_count, 0)
@@ -176,7 +177,7 @@ BEGIN
         RETURN true;
 END;
 $$ LANGUAGE plpgsql;
- CREATE OR REPLACE FUNCTION rank_compare(timestamp with time zone)
+ CREATE OR REPLACE FUNCTION update_rank_compare(timestamp with time zone)
 RETURNS boolean AS $$
 BEGIN
         RETURN true;
@@ -197,7 +198,7 @@ $$ LANGUAGE plpgsql;
         DROP FUNCTION update_adu (timestamp with time zone) ;
         DROP FUNCTION update_daily_crashes (timestamp with time zone) ;
         DROP FUNCTION update_hang_report(timestamp with time zone) ;
-        DROP FUNCTION rank_compare(timestamp with time zone) ;
+        DROP FUNCTION update_rank_compare(timestamp with time zone) ;
         """)
         self.connection.commit()
 
