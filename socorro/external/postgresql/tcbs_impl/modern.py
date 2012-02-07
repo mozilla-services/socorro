@@ -152,7 +152,7 @@ def listOfListsWithChangeInRank(listOfQueryResultsIterable):
     aRowAsDict = prevRowAsDict = None
     for rank, aRow in enumerate(aListOfTopCrashers):
       prevRowAsDict = aRowAsDict
-      logger.debug(aRowAsDict)
+      #logger.debug(aRowAsDict)
       aRowAsDict = dict(zip(['signature', 'count', 'win_count', 'linux_count',
                              'mac_count', 'hang_count', 'plugin_count',
                              'content_count', 'first_report_exact', 'versions', 'percentOfTotal'], aRow))
