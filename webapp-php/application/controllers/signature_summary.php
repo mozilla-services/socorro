@@ -47,7 +47,17 @@ class Signature_Summary_Controller extends Controller {
         $oses = $this->summary_model->getSummary('os', $signature, $start, $end, $params['product'], $versions);
         $processes = $this->summary_model->getSummary('process_type', $signature, $start, $end, $params['product'], $versions);
         $flashes = $this->summary_model->getSummary('flash_version', $signature, $start, $end, $params['product'], $versions);
+        $architecture = $this->summary_model->getSummary('architecture', $signature, $start, $end, $params['product'], $versions);
         $results = array();
+
+        foreach($architecture as $arch) {
+            $obj = new stdClass();
+            $obj->architecture = $arch->category;
+            $obj->percentage = $arch->percentage*100;
+            $obj->numberOfCrashes = $arch->report_count;
+            $results['architectures'][] = $obj;
+        }
+
         foreach($oses as $os) {
             $obj = new stdClass();
             $obj->os = $os->category;
