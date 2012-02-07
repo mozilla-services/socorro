@@ -13,7 +13,7 @@ cronjoblist := ARRAY[ 'update_product_versions','update_signatures',
 -- loop through list, initializing each cronjob which doesn't yet exist	
 WHILE cronjoblist[arrinc] IS NOT NULL LOOP
 
-	PERFORM 1 FROM cronjobs WHERE cronjob = cronjoblist[arrinc];
+	PERFORM 1 FROM cronjobs WHERE cronjob = 'dailyMatviews:' || cronjoblist[arrinc];
 	
 	IF NOT FOUND THEN
 	

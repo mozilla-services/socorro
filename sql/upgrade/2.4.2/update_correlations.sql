@@ -31,40 +31,52 @@ END IF;
 DELETE FROM correlations;
 
 --create the correlations list
-INSERT INTO correlations ( signature_id, product_version_id
+INSERT INTO correlations ( signature_id, product_version_id,
 	os_name, reason_id, crash_count )
 SELECT signature_id, product_version_id,
 	os_name, reason_id, count(*)
 FROM reports_clean
 	JOIN product_versions USING ( product_version_id )
-WHERE updateday BETWEEN release_date and sunset_date
+WHERE updateday BETWEEN build_date and sunset_date
 	and utc_day_is(date_processed, updateday)
 GROUP BY product_version_id, os_name, reason_id, signature_id
 ORDER BY product_version_id, os_name, reason_id, signature_id;
 
 ANALYZE correlations;
 
+-- create list of UUID-report_id correspondences for the day
+CREATE TEMPORARY TABLE uuid_repid
+AS
+SELECT uuid, id as report_id
+FROM reports
+WHERE utc_day_is(date_processed, updateday)
+ORDER BY uuid, report_id;
+CREATE INDEX uuid_repid_key on uuid_repid(uuid, report_id);
+ANALYZE uuid_repid;
+
 --create the correlation-addons list
-INSERT INTO correlations_addons (
-	correlation_id, addon_key, addon_version, count(*) )
-SELECT correlation_id, addon_key, addon_version, count(*)
+INSERT INTO correlation_addons (
+	correlation_id, addon_key, addon_version, crash_count )
+SELECT correlation_id, extension_id, extension_version, count(*)
 FROM correlations 
 	JOIN reports_clean 
 		USING ( product_version_id, os_name, reason_id, signature_id )
-	JOIN extensions 
+	JOIN uuid_repid 
 		USING ( uuid )
+	JOIN extensions 
+		USING ( report_id )
 	JOIN product_versions 
 		USING ( product_version_id )
 WHERE utc_day_is(reports_clean.date_processed, updateday)
 	AND utc_day_is(extensions.date_processed, updateday)
-	AND updateday BETWEEN release_date AND sunset_date
-GROUP BY correlation_id, addon_key, addon_version;
+	AND updateday BETWEEN build_date AND sunset_date
+GROUP BY correlation_id, extension_id, extension_version;
 
-ANALYZE correlations_addons;
+ANALYZE correlation_addons;
 
 --create correlations-cores list
-INSERT INTO correlations_cores (
-	correlation_id, architecture, cores, count(*) )
+INSERT INTO correlation_cores (
+	correlation_id, architecture, cores, crash_count )
 SELECT correlation_id, architecture, cores, count(*)
 FROM correlations 
 	JOIN reports_clean 
@@ -72,10 +84,11 @@ FROM correlations
 	JOIN product_versions 
 		USING ( product_version_id )
 WHERE utc_day_is(reports_clean.date_processed, updateday)
-	AND updateday BETWEEN release_date AND sunset_date
+	AND updateday BETWEEN build_date AND sunset_date
+	AND architecture <> '' AND cores >= 0
 GROUP BY correlation_id, architecture, cores;
 
-ANALYZE correlations_cores;
+ANALYZE correlation_cores;
 
 RETURN TRUE;
 END; $f$;
