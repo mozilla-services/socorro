@@ -23,7 +23,7 @@ def update(config, targetDate):
       ('update_daily_crashes', [targetDate],
        ['update_product_versions' 'update_signatures']),
       ('update_hang_report', [targetDate], []),
-      ('rank_compare', [targetDate], []),
+      ('update_rank_compare', [targetDate], []),
     )
 
     failed = set()
