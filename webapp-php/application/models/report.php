@@ -35,9 +35,10 @@ class Report_Model extends Model {
     public function getByUUID($uuid, $crash_uri)
     {
 
-
 	    $crashReportDump = new CrashReportDump;
 	    $crash_report_json = $crashReportDump->getJsonZ($crash_uri);
+            $raw_json = $this->getRawJson($uuid);
+
 	    if($crash_report_json === false){
                 Kohana::log('info', "$uuid could not fetch processed JSON");
                 return false;
@@ -65,7 +66,7 @@ class Report_Model extends Model {
                         return false;
 	            }
 
-      	        $crashReportDump->populate($report, $crash_report_json);
+      	        $crashReportDump->populate($report, $crash_report_json, $raw_json);
 		        return $report;
         } else {
 		Kohana::log('info', "$uuid doesn't exist (404)");
@@ -73,6 +74,14 @@ class Report_Model extends Model {
         }
 
     }
+
+    public function getRawJson($uuid){
+        $uri = Kohana::config('webserviceclient.socorro_hostname').'/crash/meta/by/uuid/'.$uuid;
+        $result = $this->service->get($uri);
+        return $result;
+    }
+
+
 
 	/**
 	 * Determine whether or not the raw dumps are still on the system and return the URLs
