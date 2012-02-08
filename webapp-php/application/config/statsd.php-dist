@@ -1,0 +1,17 @@
+<?php defined('SYSPATH') or die('No direct script access.');
+/**
+ * StatsD connection settings.
+ * More information about statsd is available here:
+ * https://github.com/etsy/statsd
+ */
+
+/**
+ * 0 or false to disable StatsD
+ */
+$config['enabled'] = FALSE;
+
+/**
+ * Where to send StatsD packets
+ */
+$config['host'] = "";
+$config['port'] = "";
