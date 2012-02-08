@@ -207,7 +207,7 @@ if (isset($report->sumo_signature) && !empty($report->signature)) { ?>
         <tr><th>Adapter Device ID</th><td><?php if (isset($report->AdapterDeviceID)) out::H($report->AdapterDeviceID) ?></td></tr>
 <?php if (property_exists($report, 'JavaStackTrace')) { ?>
             <tr>
-	    <th>Java Stack Trace</th><td><?php out::H($report->JavaStackTrace) ?></td>
+	    <th>Java Stack Trace</th><td><pre><?php out::H($report->JavaStackTrace) ?></pre></td>
             </tr>
 <?php } ?>
 
