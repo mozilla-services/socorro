@@ -9,7 +9,7 @@ CREATE TABLE correlations (
 	reason_id INT NOT NULL,
 	signature_id INT NOT NULL,
 	crash_count INT NOT NULL default 0,
-	CONSTRAINT correlations_key UNIQUE ( product_version_id os_name, reason_id, signature_id )
+	CONSTRAINT correlations_key UNIQUE ( product_version_id, os_name, reason_id, signature_id )
 );
 
 ALTER SEQUENCE correlations_correlation_id_seq CYCLE;

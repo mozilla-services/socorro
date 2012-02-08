@@ -44,7 +44,7 @@ cur.execute("""SELECT count(*) FROM (
 	
 if cur.fetchone()[0] > 50:
 	print "architecture and cores are already backfilled, exiting"
-	exit
+	sys.exit(0)
 
 cur.execute("""SELECT rcparts.relname as rcname, repparts.relname as repname
 FROM pg_stat_user_tables AS rcparts
