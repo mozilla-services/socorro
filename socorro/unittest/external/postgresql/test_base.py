@@ -356,10 +356,10 @@ class TestPostgreSQLBase(unittest.TestCase):
 
         sql_exp = "WHERE r.date_processed BETWEEN %(from_date)s AND " \
                   "%(to_date)s AND ((r.product=%(version0)s AND " \
-                  "r.release_channel ILIKE 'Nightly' AND " \
+                  "r.release_channel ILIKE 'nightly' AND " \
                   "r.version=%(version1)s) OR (r.product=%(version2)s AND " \
                   "r.version=%(version3)s) OR (r.product=%(version4)s AND " \
-                  "r.release_channel ILIKE 'Beta' AND r.build IN " \
+                  "r.release_channel ILIKE 'beta' AND r.build IN " \
                   "('20120101123456', '20120101098765') AND " \
                   "r.version=%(version5)s))"
         sql_params_exp = {
@@ -484,7 +484,7 @@ class TestPostgreSQLBase(unittest.TestCase):
             "version1": "13.0"
         }
         version_where = []
-        version_where_exp = ["r.release_channel ILIKE 'Beta'",
+        version_where_exp = ["r.release_channel ILIKE 'beta'",
                              "r.build IN ('20120101123456', '20120101098765')"]
 
         version_where = pgbase.build_reports_sql_version_where(
