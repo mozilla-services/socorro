@@ -10,7 +10,8 @@ $(document).ready(function () {
         correlations,
         correlationsLoaded,
         correlationCallback,
-        i;
+        i,
+        perosTbl = $("#peros-tbl");
 
     $("#signatureList").tablesorter({
         headers: {
@@ -23,29 +24,42 @@ $(document).ready(function () {
             9: { sorter: 'digit' }
         }
     });
-    $("#signatureList tr").each(function() {
+    
+    perosTbl.tablesorter({
+        headers: {
+            0: { sorter: false },
+            1: { sorter: false },
+            4: { sorter: 'text' },
+            5: { sorter: 'digit' },
+            6: { sorter: 'digit' },
+            7: { sorter: 'digit' }
+        }
+    });
+    
+    $("#signatureList tr, #peros-tbl tr").each(function() {
 	$.data(this, 'graphable', true);
     });
-    $("#signatureList tr").hover(function(){
+    $("#signatureList tr, #peros-tbl tr").hover(function(){
             $('.graph-icon', this).css('visibility', 'visible');
         }, function(){
             $('.graph-icon', this).css('visibility', 'hidden');
     });
-      $("#signatureList .graph-icon").click(function (e) {
+      $("#signatureList .graph-icon, #peros-tbl .graph-icon").click(function (e) {
         var button = $(this),
             sig = button.parents('tr').find('input').val(),
             graph = button.parents('tr').find('.sig-history-graph'),
-            legend = button.parents('tr').find('.sig-history-legend');
+            legend = button.parents('tr').find('.sig-history-legend'),
+            currentCtx = $(this).parents("td");
+            
         button.get(0).disabled = true;
         legend.html("<img src='" + window.SocImg + "ajax-loader.gif' alt='Loading Graph' />");
         $.getJSON(window.SocAjax + window.SocAjaxStartEnd + encodeURI(sig), function (data) {
+            currentCtx.find(".graph-close").removeClass("hide");
             graph.show();
-	    button.remove();
-            var tr = button.parents('tr');
-            $.plot(graph,
-               [{ data: data.counts,   label: 'Count',  yaxis: 1},
-                { data: data.percents, label: 'Percent',   yaxis: 2}],
-               {//options
+            legend.show();
+	    button.hide();
+            var tr = button.parents('tr'),
+            defaultOptions = {
                 xaxis: {mode: 'time'},
                 legend: {container: legend, margin: 0, labelBoxBorderColor: '#FFF'},
                 series: {
@@ -53,9 +67,39 @@ $(document).ready(function () {
                     points: { show: false },
                     shadowSize: 0
                 }
-            });
+            },
+            perosOptions= {
+                xaxis: {mode: 'time'},
+                legend: {
+                    noColumns: 4,
+                    container: legend, 
+                    margin: 0, 
+                    labelBoxBorderColor: '#FFF'},
+                series: {
+                    lines: { show: true },
+                    points: { show: false },
+                    shadowSize: 0
+                }
+            },
+            options = perosTbl.length ? perosOptions : defaultOptions;
+            
+            $.plot(graph,
+               [{ data: data.counts,   label: 'Count',  yaxis: 1},
+                { data: data.percents, label: 'Percent',   yaxis: 2}],
+               options);
         });
 	return false;
+    });
+    
+    // on click close the current graph
+    $(".graph-close").click(function(event) {
+        event.preventDefault();
+        var currentCtx = $(this).parents("td");
+        
+        currentCtx.find(".graph-close").addClass("hide");
+        
+        currentCtx.find(".sig-history-legend, .sig-history-graph").hide();
+        currentCtx.find(".graph-icon").show();
     });
 
     // Grab the div.rank....
@@ -71,8 +115,10 @@ $(document).ready(function () {
         signatures.push(sig);
         ranks.push(rank);
     });
-
-    $('td a.signature').girdle({previewClass: 'signature-preview', fullviewClass: 'signature-popup'});
+    
+    if($("#peros-tbl").length === 0) {
+        $('td a.signature').girdle({previewClass: 'signature-preview', fullviewClass: 'signature-popup'});
+    }
     expandCorrelation = function () {
         var row = $(this).parents('tr');
         $('.correlation-cell div div.complete', row).show();
@@ -158,6 +204,7 @@ $(document).ready(function () {
             loadCorrelations(correlations[i], correlationCallback);
         }
     }
-
-    $('.top').girdle({previewClass: 'correlation-preview', fullviewClass: 'correlation-popup'});
+    if($("#peros-tbl").length === 0) {
+        $('.top').girdle({previewClass: 'correlation-preview', fullviewClass: 'correlation-popup'});
+    }
 });

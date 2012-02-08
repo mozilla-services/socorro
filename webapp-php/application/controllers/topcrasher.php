@@ -48,6 +48,11 @@ require_once(Kohana::find_file('libraries', 'versioncompare', TRUE, 'php'));
  * Reports based on top crashing signatures
  */
 class Topcrasher_Controller extends Controller {
+    
+    public $service = "";
+    public $host = "";
+    
+    public $tcbInitParams = null;
 
     /**
      * Constructor
@@ -148,8 +153,9 @@ class Topcrasher_Controller extends Controller {
         if (empty($duration)) {
             $duration = Kohana::config('products.duration');
         }
-
 	$duration_url_path = array(Router::$controller, Router::$method, $product, $version);
+    $platform_url_path = array(Router::$controller, "byos", $product, $version);
+
 	$durations = Kohana::config('topcrashbysig.durations');
 
 	$config = array();
@@ -249,6 +255,7 @@ class Topcrasher_Controller extends Controller {
                 'percentTotal'   => $resp->totalPercentage,
                 'product'        => $product,
                 'version'        => $version,
+                'platforms'      => Kohana::config('topcrashers.platforms'),
                 'nav_selection'  => 'top_crashes',
                 'sig2bugs'       => $signature_to_bugzilla,
                 'start'          => $resp->start_date,
@@ -256,6 +263,7 @@ class Topcrasher_Controller extends Controller {
                 'crash_types'    => $crash_types,
                 'crash_type'     => $crash_type,
                 'crash_type_url' => url::site(implode($duration_url_path, '/') . '/' . $duration . '/'),
+                'platform_url'   => url::site(implode($platform_url_path, '/') . '/'),
                 'range_unit'     => 'days',
                 'range_value'    => $duration,
                 'top_crashers'   => $resp->crashes,
@@ -275,6 +283,186 @@ class Topcrasher_Controller extends Controller {
 			    )
             );
 	     }
+    }
+    
+    public function setupWebservice() {
+        $config = array();
+        $credentials = Kohana::config('webserviceclient.basic_auth');
+        if ($credentials) {
+            $config['basic_auth'] = $credentials;
+        }
+        $this->service = new Web_Service($config);
+        $this->host = Kohana::config('webserviceclient.socorro_hostname');
+    }
+    
+    /**
+     * Returns the correct UI string for the provided OS
+     * 
+     * @param string    operating system name
+     * @return string   correctly formatted OS string
+     */
+    private function getOSDisplayName($os) 
+    {
+        $formattedOS = "";
+        
+        if(stripos($os, "win") !== false) {
+            $formattedOS = "Windows";
+        } else if(stripos($os, "mac") !== false) {
+            $formattedOS = "Mac OS X";
+        } else if(stripos($os, "lin") !== false) {
+            $formattedOS = "Linux";
+        } else {
+            $formattedOS = "Unsupported OS Name.";
+        }
+        
+        return $formattedOS;
+    }
+    
+    /**
+     * @param   string  The name of the product
+     * @param   version The version  number for this product
+     * @param   string  The operating system
+     * @param   int     The number of days for which to display results
+     * @param   string  The crash type to query by
+     * @return  object  Contains parameters needed by individual top crasher functions
+     */
+    public function initTopCrasher($product=null, $version=null, $os=null, $duration=null, $crash_type=null) 
+    {
+        if(is_null($product)) {
+            Kohana::show_404();
+        }
+
+        $this->navigationChooseVersion($product, $version);
+        if (empty($version)) {
+            $this->_handleEmptyVersion($product, 'byversion');
+        } else {
+            $this->_versionExists($version);
+        }
+        
+        $this->tcbInitParams->{'version'} = $version;
+
+        /**
+         * If no duration is specified, use the default from the configuration file
+         */
+        if (empty($duration)) {
+            $duration = Kohana::config('products.duration');
+        }
+
+        $this->tcbInitParams->{'duration'} = $duration;
+
+        $this->tcbInitParams->{'duration_url_path'} =  $this->tcbInitParams->{'platform_url_path'} = array(Router::$controller, Router::$method, $product, $version);
+        $this->tcbInitParams->{'durations'} = Kohana::config('topcrashbysig.durations');
+
+        $this->tcbInitParams->{'cache_in_minutes'} = Kohana::config('webserviceclient.topcrash_vers_rank_cache_minutes', 60);
+        $this->tcbInitParams->{'end_date'} = urlencode(date('Y-m-d\TH:i:s+0000', TimeUtil::roundOffByMinutes($this->tcbInitParams->{'cache_in_minutes'})));
+        // $dur is number of hours
+        $this->tcbInitParams->{'dur'} = $duration * 24;
+        $this->tcbInitParams->{'limit'} = Kohana::config('topcrashbysig.byversion_limit', 300);
+        // lifetime in seconds
+        $this->tcbInitParams->{'lifetime'} = $this->tcbInitParams->{'cache_in_minutes'} * 60;
+  
+        $this->tcbInitParams->{'crash_types'} = Kohana::config('topcrashbysig.crash_types');
+        if (empty($crash_type) || !in_array($crash_type, $this->tcbInitParams->{'crash_types'})) {
+            $crash_type = Kohana::config('topcrashbysig.crash_types_default');
+        }
+        
+        $this->tcbInitParams->{'crash_type'} = $crash_type;
+
+        $this->tcbInitParams->{'p'} = urlencode($product);
+        $this->tcbInitParams->{'v'} = urlencode($version);
+        
+        $this->tcbInitParams->{'platforms'} = Kohana::config('topcrashers.platforms');
+        $this->tcbInitParams->{'os_display_name'} = $this->getOSDisplayName($os);
+        
+        return $this->tcbInitParams;
+    }
+
+    /**
+     * Display the top crashers by product and OS
+     *
+     * @param   string  The name of the product
+     * @param   version The version  number for this product
+     * @param   string  The operating system
+     * @param   int     The number of days for which to display results
+     * @param   string  The crash type to query by
+     * @return  void
+     */
+    public function byos($product=null, $version=null, $os=null, $duration=null, $crash_type=null)
+    {
+        if(is_null($os)) {
+            Kohana::show_404();
+        }
+        
+        $params = $this->initTopCrasher($product, $version, $os, $duration, $crash_type);
+        
+        $this->setupWebservice();
+        
+        $resp = $this->service->get("$this->host/crashes/signatures/product/{$params->{'p'}}/version/{$params->{'v'}}/os/{$os}/crash_type/{$params->crash_type}/to_date/{$params->{'end_date'}}/duration/{$params->dur}/limit/{$params->limit}", 'json', $params->lifetime);
+        
+        if($resp) {
+            $signatures = array();
+            foreach($resp->crashes as $top_crasher) {
+                
+                if ($this->input->get('format') != "csv") {
+                
+                    if (is_null($top_crasher->signature)) {
+                        $top_crasher->{'display_signature'} = Crash::$null_sig;
+                        $top_crasher->{'display_null_sig_help'} = TRUE;
+                        $top_crasher->{'missing_sig_param'} = Crash::$null_sig_code;
+                    } else if(empty($top_crasher->signature)) {
+                        $top_crasher->{'display_signature'} = Crash::$empty_sig;
+                        $top_crasher->{'display_null_sig_help'} = TRUE;
+                        $top_crasher->{'missing_sig_param'} = Crash::$empty_sig_code;
+                    } else {
+                        $top_crasher->{'display_full_signature'} = $top_crasher->signature;
+                        $top_crasher->{'display_signature'} = substr($top_crasher->signature, 0, 80);
+                        $top_crasher->{'display_null_sig_help'} = FALSE;
+                    }
+                    
+                    $top_crasher->{'display_percent'} = number_format($top_crasher->percentOfTotal * 100, 2) . "%";
+                    $top_crasher->{'display_previous_percent'} = number_format($top_crasher->previousPercentOfTotal * 100, 2) . "%";
+                    $top_crasher->{'display_change_percent'} = number_format($top_crasher->changeInPercentOfTotal * 100, 2) . "%";
+                    
+                    array_push($signatures, $top_crasher->signature);
+                    $top_crasher->{'correlation_os'} = Correlation::correlationOsName($top_crasher->win_count, $top_crasher->mac_count, $top_crasher->linux_count);
+                    
+                    $top_crasher->trendClass = $this->topcrashers_model->addTrendClass($top_crasher->changeInRank);
+                }
+            }
+                
+            $signature_to_bugzilla = $this->bug_model->bugsForSignatures(
+                array_unique($signatures),
+                Kohana::config('codebases.bugTrackingUrl')
+            );
+            
+            if ($this->input->get('format') == "csv") {
+                $this->setViewData(array('top_crashers' => $this->_csvFormatArray($resp->crashes)));
+                $this->renderCSV("${product}_${version}_" . date("Y-m-d"));
+            } else {
+                $this->setViewData(array(
+                    'resp'           => $resp,
+                    'product'        => $product,
+                    'version'        => $params->version,
+                    'os'             => $params->{'os_display_name'},
+                    'platforms'      => $params->{'platforms'},
+                    'top_crashers'   => $resp->crashes,
+                    'crash_types'    => $params->crash_types,
+                    'crash_type'     => $params->crash_type,
+                    'duration'       => $params->{'duration'},
+                    'durations'      => $params->{'durations'},
+                    'crash_type_url' => url::site(implode($params->{'duration_url_path'}, '/') . '/' . $os . '/' . $params->{'duration'} . '/'),
+                    'duration_url'   => url::site(implode($params->{'duration_url_path'}, '/') . '/' . $os . '/'),
+                    'platform_url'   => url::site(implode($params->{'platform_url_path'}, '/') . '/'),
+                    'start_date'     => $resp->start_date,
+                    'end_date'       => $resp->end_date,
+                    'range_unit'     => 'days',
+                    'range_value'    => $params->{'duration'},
+                    'sig2bugs'       => $signature_to_bugzilla
+                ));
+            }
+        } else {
+            header("Data access error", TRUE, 500);
+        }
     }
 
     /**

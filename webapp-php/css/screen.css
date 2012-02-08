@@ -92,10 +92,14 @@ table thead tr th,
 table tbody tr td {
     border: solid 1px #CCC;
 }
-
 th {
     font-weight: bold;
     padding: 0 .25em;
+}
+
+table tr:nth-child(odd),
+table.tablesorter tr:nth-child(odd) {
+    background-color: #edecec;
 }
 
 .bold {
@@ -1084,11 +1088,10 @@ table.tablesorter tbody tr td.in2 {
 td.in1 ul, td.in2 ul{
     padding-left: 15px;
 }
-
 .trend {
+    padding-right: 18px;
     font-weight: 900;
     text-align: right;
-    padding-right: 18px;
 }
 .trend.static {
     font-weight: 600;
@@ -1098,6 +1101,29 @@ td.in1 ul, td.in2 ul{
     font-weight: 900;
     text-align: right;
     -moz-border-radius: 7px;
+}
+.trend.up {
+    background: url("../img/up_arrow.png") no-repeat scroll right top #DD0000;
+}
+.trend.down {
+    background: url("../img/down_arrow.png") no-repeat scroll right top #008800;
+}
+.moving-up, 
+.moving-down {
+    position: absolute;
+    left: 6px;
+    display: inline-block;
+    margin-top: -5px;
+    padding: 1.1em;
+    border-top-left-radius: 6px;
+    border-bottom-left-radius: 6px;
+}
+.moving-up {
+    background: rgba(211,52,25, 0.9) url("../img/up_arrow.png") 8px 4px no-repeat;
+}
+
+.moving-down {
+    background: rgba(125, 141, 49, 0.9) url("../img/down_arrow.png") 8px 4px no-repeat;
 }
 
 .signature-preview {
@@ -1152,20 +1178,20 @@ tr{ z-index: 50; }
     float: right;
 }
 /* duration and os selectors on top crashers */
-.tc-duration-heading {
+.tc-duration-heading,
+.tc-per-platform-heading {
     margin-right: .7em;
     font-weight: bold;
 }
 .tc-duration-type, 
-.tc-duration-days {
+.tc-duration-days,
+.tc-per-platform {
     float: left;
-    margin: 0.3em 1em 0.3em 0;
+    margin: 0.3em 1em 1em 0;
     padding: 0;
 }
-.tc-duration-type a:link,
-.tc-duration-type a:visited, 
-.tc-duration-days  a:link, 
-.tc-duration-days  a:visited {
+.tc-filter a:link,
+.tc-filter a:visited {
     display: inline-block;
     background-color: #e0e0e0;
     color: #333;
@@ -1177,24 +1203,24 @@ tr{ z-index: 50; }
     -moz-transition: background-color 1s;
     transition: background-color 1s;
 }
-.tc-duration-type a:hover, 
-.tc-duration-days a:hover {
+.tc-filter a:hover {
     background-color: #B6D3E2;
 }
-.tc-duration-type a {
+.tc-duration-type a,
+.tc-per-platform a {
     min-width: 65px;
 }
 .tc-duration-days  a {
     min-width: 30px;
 }
-.tc-duration-type a.selected, 
-.tc-duration-days a.selected {
+.tc-filter a.selected {
     background-color: #60A0C0;
     color: #fff;
     font-weight: bold;
 }
 .tc-duration-type li, 
-.tc-duration-days li {
+.tc-duration-days li,
+.tc-per-platform li {
     display: inline;
 }
 #duration-nav ul li {
@@ -1213,27 +1239,43 @@ tr{ z-index: 50; }
     display: none;
     float: left
 }
-
+#peros-tbl .sig-history-graph {
+    float: none;
+}
 .sig-history-legend {
     width: 1em;
     float: left;
 }
-
+#peros-tbl .sig-history-legend {
+    float: none;
+    margin-top: 1em; 
+}
+#peros-tbl .sig-history-legend tbody tr td {
+    border: 0;
+}
 #signatureList button {
     float: right;
 }
-
+.graph-close {
+    position: relative;
+    top: -10px;
+    display: inline-block;
+    margin: 0;
+    width: 400px;
+    height: 5px;
+    text-align: right;
+}
+.graph-close a {
+    color: #333;
+    padding: 2px 5px 2px 5px;
+    border: 1px solid #333;
+    font-weight: bold;
+    text-decoration: none;
+    border-radius: 5px;
+}
 div.expandable-menu, div.each-sparkline {
     margin-left: 12px;
     border: none;
-}
-
-.trend.up {
-    background: #D00 url('../img/up_arrow.png') no-repeat top right;
-}
-
-.trend.down {
-    background: #080 url('../img/down_arrow.png') no-repeat top right;
 }
 
 .correlation-cell div div.complete {
@@ -1677,4 +1719,7 @@ table.tablesorter tbody tr.odd {
 .no-results {
     clear: both;
     padding: 1.2em 0 1em 1em;
+}
+.hide {
+    display: none;
 }
