@@ -34,6 +34,18 @@ cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
 cur.execute("""SET maintenance_work_mem = %s""", ( options.dbmemory, ) )
 
+#check if we've already been run
+cur.execute("""SELECT count(*) FROM (
+	SELECT architecture, cores 
+	FROM reports_clean 
+	WHERE date_processed > %s 
+	LIMIT 100) 
+	WHERE architecture IS NOT NULL""")
+	
+if cur.fetchone()[0] > 50:
+	print "architecture and cores are already backfilled, exiting"
+	exit
+
 cur.execute("""SELECT rcparts.relname as rcname, repparts.relname as repname
 FROM pg_stat_user_tables AS rcparts
 	JOIn pg_stat_user_tables AS repparts
