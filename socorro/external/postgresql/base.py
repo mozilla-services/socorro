@@ -243,14 +243,14 @@ class PostgreSQLBase(object):
             version_param = "version%s" % (x + 1)
 
         if version_info and version_info["release_channel"]:
-            if version_info["release_channel"] in ("Beta", "Aurora",
-                                                   "Nightly"):
+            channel = version_info["release_channel"].lower()
+            if channel in ("beta", "aurora", "nightly"):
                 # Use major_version instead of full version
                 sql_params[version_param] = version_info["major_version"]
                 # Restrict by release_channel
-                version_where.append("r.release_channel ILIKE '%s'" % (
-                                            version_info["release_channel"]))
-                if version_info["release_channel"] == "Beta":
+                version_where.append("r.release_channel ILIKE '%s'" % channel)
+
+                if channel == "beta":
                     # Restrict to a list of build_id
                     version_where.append("r.build IN ('%s')" % (
                         "', '".join([
@@ -259,6 +259,7 @@ class PostgreSQLBase(object):
             else:
                 # it's a release
                 version_where.append(("r.release_channel NOT IN ('nightly', "
-                                      "'aurora', 'beta')"))
+                                      "'Nightly', 'aurora', 'Aurora', 'beta', "
+                                      "'Beta')"))
 
         return version_where
