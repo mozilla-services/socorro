@@ -78,9 +78,16 @@ class CrashReportDump {
         if ($raw_json) {
             //note: $raw_json? not actually json, but a PHP object.
             // put it in the report, but only the selected fields...
-            $whitelist = array('JavaStackTrace');
+            $whitelist = array('JavaStackTrace', 
+                               'TotalVirtualMemory',
+                               'AvailableVirtualMemory',
+                               'SystemMemoryUsePercentage',
+                               'AvailablePageFile',
+                               'AvailablePhysicalMemory'
+                              );
             foreach ($whitelist as $key) {
-               $report->{$key} = $raw_json->{$key}; 
+               if (isset($raw_json->{$key}))
+                   $report->{$key} = $raw_json->{$key}; 
             }
         }
 

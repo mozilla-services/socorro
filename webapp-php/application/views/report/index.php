@@ -210,7 +210,21 @@ if (isset($report->sumo_signature) && !empty($report->signature)) { ?>
 	    <th>Java Stack Trace</th><td><pre><?php out::H($report->JavaStackTrace) ?></pre></td>
             </tr>
 <?php } ?>
-
+<?php if (property_exists($report, 'TotalVirtualMemory')) { ?>
+        <tr><th>Total Virtual Memory</th><td><?php out::H($report->TotalVirtualMemory) ?></td></tr>
+<?php } ?>
+<?php if (property_exists($report, 'AvailableVirtualMemory')) { ?>
+        <tr><th>Available Virtual Memory</th><td><?php out::H($report->AvailableVirtualMemory) ?></td></tr>
+<?php } ?>
+<?php if (property_exists($report, 'SystemMemoryUsePercentage')) { ?>
+        <tr><th>System Memory Use Percentage</th><td><?php out::H($report->SystemMemoryUsePercentage) ?></td></tr>
+<?php } ?>
+<?php if (property_exists($report, 'AvailablePageFile')) { ?>
+        <tr><th>Available Page File</th><td><?php out::H($report->AvailablePageFile) ?></td></tr>
+<?php } ?>
+<?php if (property_exists($report, 'AvailablePhysicalMemory')) { ?>
+        <tr><th>Available Physical Memory</th><td><?php out::H($report->AvailablePhysicalMemory) ?></td></tr>
+<?php } ?>
         </table>
 
 
