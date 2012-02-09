@@ -1,4 +1,4 @@
-<?php
+<?php defined('SYSPATH') or die('No direct script access.');
 
 /**
  * Copyright (c) 2010 Etsy
@@ -116,8 +116,9 @@ class StatsD {
             $port = Kohana::config('statsd.port');
             $fp = fsockopen("udp://$host", $port, $errno, $errstr);
             if (! $fp) { return; }
+            $prefix = Kohana::config('statsd.prefix');
             foreach ($sampledData as $stat => $value) {
-                fwrite($fp, "$stat:$value");
+                fwrite($fp, "$prefix.$stat:$value");
             }
             fclose($fp);
         } catch (Exception $e) {

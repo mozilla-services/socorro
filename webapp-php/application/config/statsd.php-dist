@@ -11,6 +11,11 @@
 $config['enabled'] = FALSE;
 
 /**
+ * Optional prefix to distinguish this client
+ */
+$config['prefix'] = "socorro";
+
+/**
  * Where to send StatsD packets
  */
 $config['host'] = "";

@@ -97,8 +97,10 @@ class Web_Service
             $cache_key = 'webservice_' . md5($url . $response_type);
             $data = $cache->get($cache_key);
             if ($data) {
+                StatsD::increment("webservice.cache.hits");
                 return $data;
             } else {
+                StatsD::increment("webservice.cache.misses");
                 $data = $this->_get($url, $response_type);
                 if ($data) {
                     if ($cache_lifetime == 'default') {
@@ -140,6 +142,8 @@ class Web_Service
         $message = curl_error($curl);
         curl_close($curl);
 
+        StatsD::increment("webservice.responses.post.".$status_code);
+
         if ($status_code == 200 || $status_code == 202) {
             if ($response_type == 'json') {
                 $data = json_decode($curl_response);
@@ -180,6 +184,8 @@ class Web_Service
         $code = curl_errno($curl);
         $message = curl_error($curl);
         curl_close($curl);
+
+        StatsD::increment("webservice.responses.get.".$this->status_code);
 
         if ($this->status_code == 200 || $this->status_code == 202) {
             if ($response_type == 'json') {
