@@ -53,6 +53,12 @@ $config['topcrasher/byversion/([a-zA-Z.]+)/([0-9a-zA-Z.]+)'] =
 
 $config['topcrasher'] =
     'topcrasher/index';
+    
+$config['topcrasher/byos/([a-zA-Z.]+)/([0-9a-zA-Z.]+)/([a-zA-Z.]+)/([0-9]+)/([a-zA-Z.]+)'] = 
+    'topcrasher/byos/$1/$2/$3/$4/$5';
+    
+$config['topcrasher/byos/([a-zA-Z.]+)/([0-9a-zA-Z.]+)'] = 
+    'topcrasher/byos/$1/$2';
 
 $config['error/(.*)/(.*)'] =
     'error/$1/$2';

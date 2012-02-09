@@ -59,6 +59,7 @@ class TCBS(PostgreSQLBase):
             ("crash_type", "all", "str"),
             ("to_date", lastweek, "datetime"),
             ("duration", oneweek, "timedelta"),
+            ("os", None, "str"),
             ("limit", 100, "int")
         ]
 
@@ -70,6 +71,7 @@ class TCBS(PostgreSQLBase):
             connection = self.database.connection()
             cursor = connection.cursor()
             table_type = which_tcbs(cursor, {}, params.product, params.version)
+            logger.debug("Using %s TCBS implementation" % table_type)
             impl = {
                 "old": classic,
                 "new": modern,

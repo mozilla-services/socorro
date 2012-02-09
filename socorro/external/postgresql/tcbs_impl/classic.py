@@ -72,11 +72,18 @@ def getListOfTopCrashersBySignature(aCursor, databaseParameters, totalNumberOfCr
     assert type(databaseParameters[param]) is assertPairs[param], \
     "Expected %s for %s, actual type is %s" % (assertPairs[param], param, type(databaseParameters[param]))
 
-  where = ""
+  where = []
   if databaseParameters["crash_type"] == 'browser':
-    where = "WHERE tcbs.plugin_count = 0 AND tcbs.hang_count = 0"
+    where.append("tcbs.plugin_count = 0 AND tcbs.hang_count = 0")
   if databaseParameters["crash_type"] == 'plugin':
-    where = "WHERE tcbs.plugin_count > 0 OR tcbs.hang_count > 0"
+    where.append("tcbs.plugin_count > 0 OR tcbs.hang_count > 0")
+  if databaseParameters['os']:
+    where.append("os.os_name ILIKE '%s%%'" % databaseParameters['os'])
+
+  if where:
+    where = "where %s" % " AND ".join(where)
+  else:
+    where = ""
 
   sql = """
   select

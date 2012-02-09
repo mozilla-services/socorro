@@ -45,9 +45,14 @@ def getListOfTopCrashersBySignature(aCursor, dbParams):
     if not isinstance(dbParams[param], assertPairs[param]):
       raise ValueError(type(dbParams[param]))
 
-  where = ""
+  where = [''] # trick for the later join
   if dbParams['crash_type'] != 'all':
-    where = "AND process_type = '%s'" % (dbParams['crash_type'],)
+    where.append("process_type = '%s'" % (dbParams['crash_type'],))
+  if dbParams['os']:
+    field = '%s_count' % dbParams['os'][0:3].lower()
+    where.append("%s > 0" % field)
+
+  where = ' AND '.join(where)
 
   sql = """
     WITH tcbs_r as (

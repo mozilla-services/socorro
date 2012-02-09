@@ -4,3 +4,5 @@
  * The number of signatures to display.
  */
 $config['numberofsignatures'] = 20;
+
+?>
