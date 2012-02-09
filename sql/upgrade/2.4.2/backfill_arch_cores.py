@@ -39,8 +39,8 @@ cur.execute("""SELECT count(*) FROM (
 	SELECT architecture, cores 
 	FROM reports_clean 
 	WHERE date_processed > %s 
-	LIMIT 100) 
-	WHERE architecture IS NOT NULL""")
+	LIMIT 100) as sample
+	WHERE architecture IS NOT NULL""", (options.startdate,))
 	
 if cur.fetchone()[0] > 50:
 	print "architecture and cores are already backfilled, exiting"
