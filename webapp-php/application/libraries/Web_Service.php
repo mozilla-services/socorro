@@ -92,27 +92,28 @@ class Web_Service
         if (is_null($cache_lifetime)) {
             $this->status_code = 200;
             return $this->_get($url, $response_type);
-        } else {
-            $cache = new Cache();
-            $cache_key = 'webservice_' . md5($url . $response_type);
-            $data = $cache->get($cache_key);
-            if ($data) {
-                StatsD::increment("webservice.cache.hits");
-                return $data;
+        }
+
+        $cache = new Cache();
+        $cache_key = 'webservice_' . md5($url . $response_type);
+        $data = $cache->get($cache_key);
+        if ($data) {
+            StatsD::increment("webservice.cache.hits");
+            return $data;
+        }
+
+        StatsD::increment("webservice.cache.misses");
+        $data = $this->_get($url, $response_type);
+        if ($data) {
+            if ($cache_lifetime == 'default') {
+                $cache->set($cache_key, $data);
             } else {
-                StatsD::increment("webservice.cache.misses");
-                $data = $this->_get($url, $response_type);
-                if ($data) {
-                    if ($cache_lifetime == 'default') {
-                        $cache->set($cache_key, $data);
-                    } else {
-                        $cache->set($cache_key, $data, null, $cache_lifetime);
-                    }
-                }
-                return $data;
+                $cache->set($cache_key, $data, null, $cache_lifetime);
             }
         }
+        return $data;
     }
+
     /**
      * Makes a POST request for the resource and parses the response based
      * on the expected type.
@@ -151,19 +152,16 @@ class Web_Service
                 $data = $curl_response;
             }
             return $data;
-        } else {
-            // See http://curl.haxx.se/libcurl/c/libcurl-errors.html
-            Kohana::log('error', "Web_Service $code $message while retrieving $url which was HTTP status $this->status_code");
-            return false;
         }
+
+        // See http://curl.haxx.se/libcurl/c/libcurl-errors.html
+        Kohana::log('error', "Web_Service $code $message while retrieving $url which was HTTP status $this->status_code");
+        return false;
     }
 
     /**
      * Makes a GET request for the resource and parses the response based
      * on the expected type
-     *
-     * @todo This needs to be rewritten to return http status codes to the calling libraries.  Please rewrite in Socorro 1.9.
-     * @see https://bugzilla.mozilla.org/show_bug.cgi?id=588083
      *
      * @param string - the url for the web service including any paramters
      * @param string - the expected response type - xml, json, etc
@@ -194,11 +192,11 @@ class Web_Service
                 $data = $curl_response;
             }
             return $data;
-        } else {
-            // See http://curl.haxx.se/libcurl/c/libcurl-errors.html
-            Kohana::log('error', "Web_Service $code $message while retrieving $url which was HTTP status $this->status_code");
-            return FALSE;
         }
+
+        // See http://curl.haxx.se/libcurl/c/libcurl-errors.html
+        Kohana::log('error', "Web_Service $code $message while retrieving $url which was HTTP status $this->status_code");
+        return FALSE;
     }
 
     /**
