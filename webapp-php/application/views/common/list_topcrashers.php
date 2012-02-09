@@ -5,16 +5,22 @@
     <span class="end-date"><?= $last_updated ?></span>.
 	<p>The report covers <span class="percentage" title="<?=$percentTotal?>"><?= number_format($percentTotal * 100, 2)?>%</span> of all <?= $percentTotal > 0 ? round($total_crashes / $percentTotal) : $total_crashes ?> crashes during this period. Graphs below are dual-axis, having <strong>Count</strong> (Number of Crashes) on the left X axis and <strong>Percent</strong> of total of Crashes on the right X axis.</p>
 <?php } ?>
-    <ul class="tc-duration-type">
+    <ul class="tc-duration-type tc-filter">
         <li class="tc-duration-heading">Type:</li>
         <?php foreach ($crash_types as $ct) { ?>
             <li><a href="<?= $crash_type_url . '/' . $ct ?>" <?php if ($ct == $crash_type) echo 'class="selected"'; ?>><?php echo ucfirst($ct); ?></a></li>
         <?php }?>
     </ul>
-    <ul class="tc-duration-days">
+    <ul class="tc-duration-days tc-filter">
         <li class="tc-duration-heading">Days:</li>
         <?php foreach ($durations as $d) { ?>
             <li><a href="<?= $duration_url . '/' . $d . '/' . $crash_type; ?>" <?php if ($d == $duration) echo 'class="selected"'; ?>><?= $d ?></a></li>
+        <?php }?>
+    </ul>
+    <ul class="tc-per-platform tc-filter">
+        <li class="tc-per-platform-heading">OS:</li>
+        <?php foreach ($platforms as $p) { ?>
+            <li><a href="<?= $platform_url . '/' . $p . '/' . $duration . '/' . $crash_type; ?>"><?= $p ?></a></li>
         <?php }?>
     </ul>
 <?php if (count($top_crashers) > 0) { ?>
@@ -60,7 +66,7 @@
 
                         $link_url =  url::base() . 'report/list?' . html::query_string($sigParams);
                     ?>
-                    <tr class="<?php echo ( ($row-1) % 2) == 0 ? 'even' : 'odd' ?>">
+                    <tr>
                         <td class="rank"><?php out::H($row) ?></td>
                         <td><div class="trend <?= $crasher->trendClass ?>"><?php echo $crasher->changeInRank ?></div></td>
 			 <td><span class="percentOfTotal"><?php out::H($crasher->{'display_percent'}) ?></span></td>

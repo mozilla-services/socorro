@@ -14,4 +14,6 @@ $config['lin_id'] = "linux";
 $config['lin_name'] = "Linux";
 $config['lin_os_name'] = "Linux";
 $config['lin_color'] = "#E50";
+
+$config['platforms'] = array('Windows', 'Linux', 'Mac OS X');
 ?>
