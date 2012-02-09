@@ -48,9 +48,9 @@ class Common_Model extends Model {
         $sql =
 	    "/* soc.web report.getCommentsBySignature */ " .
             " SELECT
-				reports.client_crash_date,
+				reports.date_processed,
 				reports.user_comments,
-                                reports.uuid,
+                reports.uuid,
 				CASE
 					WHEN reports.email = '' THEN null
 					WHEN reports.email IS NULL THEN null
@@ -63,7 +63,7 @@ class Common_Model extends Model {
 
         $sql .= " WHERE reports.user_comments IS NOT NULL " .
 	        " AND " . join(' AND ', $where) .
-	        " ORDER BY email ASC, reports.client_crash_date ASC ";
+	        " ORDER BY email ASC, reports.date_processed ASC ";
 	return $this->fetchRows($sql);
     }
 
