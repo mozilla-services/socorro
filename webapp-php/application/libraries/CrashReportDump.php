@@ -58,7 +58,7 @@ class CrashReportDump {
      * @param string JSON encoded processed crash report
      * @return void report will be altered
      */
-    public function populate($report, $json) {
+    public function populate($report, $json, $raw_json=NULL) {
         $data = json_decode($json);
 
         foreach ($data as $key => $val) {
@@ -74,6 +74,16 @@ class CrashReportDump {
             }
             $report->{$key} = $val;
         }
+
+        if ($raw_json) {
+            //note: $raw_json? not actually json, but a PHP object.
+            // put it in the report, but only the selected fields...
+            $whitelist = array('JavaStackTrace');
+            foreach ($whitelist as $key) {
+               $report->{$key} = $raw_json->{$key}; 
+            }
+        }
+
         $this->_parseDump($report);
 
         //Bulletproofing against bad JSON files
@@ -145,6 +155,7 @@ class CrashReportDump {
             return false;
         }
     }
+
 
     /**
      * Parses the 'dump' property which is a string
