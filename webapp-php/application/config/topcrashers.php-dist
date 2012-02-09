@@ -5,4 +5,4 @@
  */
 $config['numberofsignatures'] = 20;
 
-$config['platforms'] = array('Windows', 'Linux', 'Mac OS X');
+?>

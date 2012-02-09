@@ -255,7 +255,7 @@ class Topcrasher_Controller extends Controller {
                 'percentTotal'   => $resp->totalPercentage,
                 'product'        => $product,
                 'version'        => $version,
-                'platforms'      => Kohana::config('topcrashers.platforms'),
+                'platforms'      => Kohana::config('platforms.platforms'),
                 'nav_selection'  => 'top_crashes',
                 'sig2bugs'       => $signature_to_bugzilla,
                 'start'          => $resp->start_date,
@@ -296,6 +296,26 @@ class Topcrasher_Controller extends Controller {
     }
     
     /**
+     * Raises a HTTP 500 error and populates view with response
+     * @param string current selected product
+     * @param string current selected version
+     * @param object the response object
+     * @return void
+     */
+    private function raise500Error($product=null, $version=null, $resp=null) {
+        header("Data access error", TRUE, 500);
+            $this->setViewData(
+            array(
+                'nav_selection' => 'top_crashes',
+                'product'       => $product,
+                'url_nav'       => url::site('products/'.$product),
+                'version'       => $version,
+                'resp'          => $resp
+            )
+        );
+    }
+    
+    /**
      * Returns the correct UI string for the provided OS
      * 
      * @param string    operating system name
@@ -306,11 +326,11 @@ class Topcrasher_Controller extends Controller {
         $formattedOS = "";
         
         if(stripos($os, "win") !== false) {
-            $formattedOS = "Windows";
+            $formattedOS = Kohana::config('platforms.win_name');
         } else if(stripos($os, "mac") !== false) {
-            $formattedOS = "Mac OS X";
+            $formattedOS = Kohana::config('platforms.mac_name');
         } else if(stripos($os, "lin") !== false) {
-            $formattedOS = "Linux";
+            $formattedOS = Kohana::config('platforms.lin_name');
         } else {
             $formattedOS = "Unsupported OS Name.";
         }
@@ -371,7 +391,7 @@ class Topcrasher_Controller extends Controller {
         $this->tcbInitParams->{'p'} = urlencode($product);
         $this->tcbInitParams->{'v'} = urlencode($version);
         
-        $this->tcbInitParams->{'platforms'} = Kohana::config('topcrashers.platforms');
+        $this->tcbInitParams->{'platforms'} = Kohana::config('platforms.platforms');
         $this->tcbInitParams->{'os_display_name'} = $this->getOSDisplayName($os);
         
         return $this->tcbInitParams;
@@ -435,6 +455,8 @@ class Topcrasher_Controller extends Controller {
                 Kohana::config('codebases.bugTrackingUrl')
             );
             
+            $byverion_url_path = array(Router::$controller, "byversion", $product, $version);
+            
             if ($this->input->get('format') == "csv") {
                 $this->setViewData(array('top_crashers' => $this->_csvFormatArray($resp->crashes)));
                 $this->renderCSV("${product}_${version}_" . date("Y-m-d"));
@@ -450,6 +472,7 @@ class Topcrasher_Controller extends Controller {
                     'crash_type'     => $params->crash_type,
                     'duration'       => $params->{'duration'},
                     'durations'      => $params->{'durations'},
+                    'byverion_url'   => url::site(implode($byverion_url_path, '/')),
                     'crash_type_url' => url::site(implode($params->{'duration_url_path'}, '/') . '/' . $os . '/' . $params->{'duration'} . '/'),
                     'duration_url'   => url::site(implode($params->{'duration_url_path'}, '/') . '/' . $os . '/'),
                     'platform_url'   => url::site(implode($params->{'platform_url_path'}, '/') . '/'),
@@ -461,7 +484,7 @@ class Topcrasher_Controller extends Controller {
                 ));
             }
         } else {
-            header("Data access error", TRUE, 500);
+            $this->raise500Error($product, $version, $resp);
         }
     }
 
