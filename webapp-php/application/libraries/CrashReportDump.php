@@ -83,7 +83,8 @@ class CrashReportDump {
                                'AvailableVirtualMemory',
                                'SystemMemoryUsePercentage',
                                'AvailablePageFile',
-                               'AvailablePhysicalMemory'
+                               'AvailablePhysicalMemory',
+                               'OOMAllocationSize'
                               );
             foreach ($whitelist as $key) {
                if (isset($raw_json->{$key}))
