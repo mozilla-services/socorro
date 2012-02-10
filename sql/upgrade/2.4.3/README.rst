@@ -14,6 +14,9 @@ bug 687906
 	NOTE: for this to be useful, the analyst user needs to be added
 		to pgbouncer, and a password needs to be set for the user
 		These need to be done in manual post-upgrade steps.
+		
+bug 681476
+	Remove Frames table.
 
 The above changes should take only a few minutes to deploy.
 This upgrade does not require a downtime.

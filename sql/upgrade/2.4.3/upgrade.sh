@@ -27,6 +27,11 @@ echo 'bug 687906'
 psql -f ${CURDIR}/create_user_analyst.sql breakpad
 
 echo '*********************************************************'
+echo 'drop frames table'
+echo 'bug 681476'
+psql -f ${CURDIR}/drop_frames_table.sql breakpad
+
+echo '*********************************************************'
 echo 'NOTICE: for the new analyst user you must do two additional,'
 echo 'manual upgrade steps if they have not been done already:'
 echo '1. create analyst user in pgbouncer-processor.ini'
