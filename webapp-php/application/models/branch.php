@@ -592,7 +592,7 @@ class Branch_Model extends Model {
         $channel = $product_version->release;
         $release = $this->determine_release($version);
         $rv = $this->db->query("/* soc.web branch.update */
-            SELECT * FROM edit_product_info(?, ?, ?, ?, ?, ?, ?, ?)",
+            SELECT * FROM edit_product_info(?, ?, ?, ?, ?, ?, ?, ?, ?)",
             $prod_id, $product, $version, $channel, $start_date, $end_date,
             $featured, $throttle, $this->admin_username);
         $this->cache->delete_all();
