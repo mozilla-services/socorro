@@ -17,6 +17,9 @@ bug 687906
 		
 bug 681476
 	Remove Frames table.
+	
+bug 725732
+	Exclude ESR releases from product_versions (for the time being).
 
 The above changes should take only a few minutes to deploy.
 This upgrade does not require a downtime.
