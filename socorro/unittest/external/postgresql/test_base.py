@@ -29,6 +29,9 @@ class TestPostgreSQLBase(unittest.TestCase):
                 "name": "Linux"
             }
         )
+        context.channels = ['Beta', 'Aurora', 'Nightly', 'beta', 'aurora',
+                            'nightly']
+        context.restricted_channels = ['Beta', 'beta']
         return context
 
     #--------------------------------------------------------------------------
@@ -137,6 +140,7 @@ class TestPostgreSQLBase(unittest.TestCase):
     #--------------------------------------------------------------------------
     def test_build_reports_sql_where(self):
         """ Test PostgreSQLBase.build_reports_sql_where()."""
+        config = self.get_dummy_context()
         pgbase = self.get_instance()
         params = search_common.get_parameters({})  # Get default search params
         default_params = util.DotDict(params.copy())
@@ -151,7 +155,8 @@ class TestPostgreSQLBase(unittest.TestCase):
             "to_date": params.to_date
         }
 
-        (sql, sql_params) = pgbase.build_reports_sql_where(params, sql_params)
+        (sql, sql_params) = pgbase.build_reports_sql_where(params, sql_params,
+                                                           config)
         sql = " ".join(sql.split())  # squeeze all \s, \r, \t...
 
         self.assertEqual(sql, sql_exp)
@@ -171,7 +176,8 @@ class TestPostgreSQLBase(unittest.TestCase):
             "term": params.terms
         }
 
-        (sql, sql_params) = pgbase.build_reports_sql_where(params, sql_params)
+        (sql, sql_params) = pgbase.build_reports_sql_where(params, sql_params,
+                                                           config)
         sql = " ".join(sql.split())  # squeeze all \s, \r, \t...
 
         self.assertEqual(sql, sql_exp)
@@ -191,7 +197,8 @@ class TestPostgreSQLBase(unittest.TestCase):
             "term": params.terms
         }
 
-        (sql, sql_params) = pgbase.build_reports_sql_where(params, sql_params)
+        (sql, sql_params) = pgbase.build_reports_sql_where(params, sql_params,
+                                                           config)
         sql = " ".join(sql.split())  # squeeze all \s, \r, \t...
 
         self.assertEqual(sql, sql_exp)
@@ -214,7 +221,8 @@ class TestPostgreSQLBase(unittest.TestCase):
             "product1": "Fennec"
         }
 
-        (sql, sql_params) = pgbase.build_reports_sql_where(params, sql_params)
+        (sql, sql_params) = pgbase.build_reports_sql_where(params, sql_params,
+                                                           config)
         sql = " ".join(sql.split())  # squeeze all \s, \r, \t...
 
         self.assertEqual(sql, sql_exp)
@@ -234,7 +242,8 @@ class TestPostgreSQLBase(unittest.TestCase):
             "os0": "Windows"
         }
 
-        (sql, sql_params) = pgbase.build_reports_sql_where(params, sql_params)
+        (sql, sql_params) = pgbase.build_reports_sql_where(params, sql_params,
+                                                           config)
         sql = " ".join(sql.split())  # squeeze all \s, \r, \t...
 
         self.assertEqual(sql, sql_exp)
@@ -257,7 +266,8 @@ class TestPostgreSQLBase(unittest.TestCase):
             "branch2": "4.0"
         }
 
-        (sql, sql_params) = pgbase.build_reports_sql_where(params, sql_params)
+        (sql, sql_params) = pgbase.build_reports_sql_where(params, sql_params,
+                                                           config)
         sql = " ".join(sql.split())  # squeeze all \s, \r, \t...
 
         self.assertEqual(sql, sql_exp)
@@ -277,7 +287,8 @@ class TestPostgreSQLBase(unittest.TestCase):
             "build0": "20120101123456"
         }
 
-        (sql, sql_params) = pgbase.build_reports_sql_where(params, sql_params)
+        (sql, sql_params) = pgbase.build_reports_sql_where(params, sql_params,
+                                                           config)
         sql = " ".join(sql.split())  # squeeze all \s, \r, \t...
 
         self.assertEqual(sql, sql_exp)
@@ -299,7 +310,8 @@ class TestPostgreSQLBase(unittest.TestCase):
             "reason1": "OVERFLOW"
         }
 
-        (sql, sql_params) = pgbase.build_reports_sql_where(params, sql_params)
+        (sql, sql_params) = pgbase.build_reports_sql_where(params, sql_params,
+                                                           config)
         sql = " ".join(sql.split())  # squeeze all \s, \r, \t...
 
         self.assertEqual(sql, sql_exp)
@@ -318,7 +330,8 @@ class TestPostgreSQLBase(unittest.TestCase):
             "to_date": params.to_date
         }
 
-        (sql, sql_params) = pgbase.build_reports_sql_where(params, sql_params)
+        (sql, sql_params) = pgbase.build_reports_sql_where(params, sql_params,
+                                                           config)
         sql = " ".join(sql.split())  # squeeze all \s, \r, \t...
 
         self.assertEqual(sql, sql_exp)
@@ -373,7 +386,8 @@ class TestPostgreSQLBase(unittest.TestCase):
             "version5": "13.0"
         }
 
-        (sql, sql_params) = pgbase.build_reports_sql_where(params, sql_params)
+        (sql, sql_params) = pgbase.build_reports_sql_where(params, sql_params,
+                                                           config)
         sql = " ".join(sql.split())  # squeeze all \s, \r, \t...
 
         self.assertEqual(sql, sql_exp)
@@ -395,7 +409,8 @@ class TestPostgreSQLBase(unittest.TestCase):
             "to_date": params.to_date
         }
 
-        (sql, sql_params) = pgbase.build_reports_sql_where(params, sql_params)
+        (sql, sql_params) = pgbase.build_reports_sql_where(params, sql_params,
+                                                           config)
         sql = " ".join(sql.split())  # squeeze all \s, \r, \t...
 
         self.assertEqual(sql, sql_exp)
@@ -413,7 +428,8 @@ class TestPostgreSQLBase(unittest.TestCase):
             "to_date": params.to_date
         }
 
-        (sql, sql_params) = pgbase.build_reports_sql_where(params, sql_params)
+        (sql, sql_params) = pgbase.build_reports_sql_where(params, sql_params,
+                                                           config)
         sql = " ".join(sql.split())  # squeeze all \s, \r, \t...
 
         self.assertEqual(sql, sql_exp)
@@ -438,7 +454,8 @@ class TestPostgreSQLBase(unittest.TestCase):
             "plugin_term": params.plugin_terms
         }
 
-        (sql, sql_params) = pgbase.build_reports_sql_where(params, sql_params)
+        (sql, sql_params) = pgbase.build_reports_sql_where(params, sql_params,
+                                                           config)
         sql = " ".join(sql.split())  # squeeze all \s, \r, \t...
 
         self.assertEqual(sql, sql_exp)
@@ -447,11 +464,13 @@ class TestPostgreSQLBase(unittest.TestCase):
     #--------------------------------------------------------------------------
     def test_build_reports_sql_version_where(self):
         """Test PostgreSQLBase.build_reports_sql_version_where()."""
+        config = self.get_dummy_context()
         pgbase = self.get_instance()
 
         key = "Firefox:13.0(beta)"
-        versions = ["Firefox", "13.0(beta)"]
-        versions_info = {
+        params = util.DotDict()
+        versions = params["versions"] = ["Firefox", "13.0(beta)"]
+        versions_info = params["versions_info"] = {
             "Firefox:12.0a1": {
                 "version_string": "12.0a1",
                 "product_name": "Firefox",
@@ -489,8 +508,8 @@ class TestPostgreSQLBase(unittest.TestCase):
 
         version_where = pgbase.build_reports_sql_version_where(
             key,
-            versions,
-            versions_info,
+            params,
+            config,
             x,
             sql_params,
             version_where

@@ -109,7 +109,8 @@ class Report(PostgreSQLBase):
         """ % sql_from
 
         (sql_where, sql_params) = self.build_reports_sql_where(params,
-                                                               sql_params)
+                                                               sql_params,
+                                                               self.context)
 
         sql_order = """
             ORDER BY r.date_processed DESC
@@ -257,40 +258,3 @@ class Report(PostgreSQLBase):
         elif search_mode == "starts_with":
             terms = terms + "%"
         return terms
-
-    @staticmethod
-    def generate_version_where(key, versions, versions_info, x, sql_params,
-                               version_where):
-        """
-        Return a list of strings for version restrictions.
-        """
-        if key in versions_info:
-            version_info = versions_info[key]
-        else:
-            version_info = None
-
-        if not x:
-            version_param = "version"
-        else:
-            version_param = "version%s" % (x + 1)
-
-        if version_info and version_info["release_channel"]:
-            if version_info["release_channel"] in ("Beta", "Aurora",
-                                                   "Nightly"):
-                # Use major_version instead of full version
-                sql_params[version_param] = version_info["major_version"]
-                # Restrict by release_channel
-                version_where.append("r.release_channel ILIKE '%s'" % (
-                                            version_info["release_channel"]))
-                if version_info["release_channel"] == "Beta":
-                    # Restrict to a list of build_id
-                    version_where.append("r.build IN ('%s')" % (
-                        "', '".join([
-                            str(bid) for bid in version_info["build_id"]])))
-
-            else:
-                # it's a release
-                version_where.append(("r.release_channel NOT IN ('nightly', "
-                                      "'aurora', 'beta')"))
-
-        return version_where

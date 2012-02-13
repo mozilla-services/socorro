@@ -90,7 +90,7 @@ class PostgreSQLBase(object):
         return sql_from
 
     @staticmethod
-    def build_reports_sql_where(params, sql_params):
+    def build_reports_sql_where(params, sql_params, config):
         """
         """
         sql_where = ["""
@@ -147,9 +147,13 @@ class PostgreSQLBase(object):
                 key = "%s:%s" % (params["versions"][x],
                                  params["versions"][x + 1])
                 version_where = PostgreSQLBase.build_reports_sql_version_where(
-                                        key, params["versions"],
-                                        versions_info, x, sql_params,
-                                        version_where)
+                    key,
+                    params,
+                    config,
+                    x,
+                    sql_params,
+                    version_where
+                )
 
                 version_where.append(str(x + 1).join((
                                         "r.version=%(version", ")s")))
@@ -227,13 +231,13 @@ class PostgreSQLBase(object):
         return (sql_limit, sql_params)
 
     @staticmethod
-    def build_reports_sql_version_where(key, versions, versions_info, x,
-                                        sql_params, version_where):
+    def build_reports_sql_version_where(key, params, config, x, sql_params,
+                                        version_where):
         """
         Return a list of strings for version restrictions.
         """
-        if key in versions_info:
-            version_info = versions_info[key]
+        if key in params["versions_info"]:
+            version_info = params["versions_info"][key]
         else:
             version_info = None
 
@@ -244,13 +248,13 @@ class PostgreSQLBase(object):
 
         if version_info and version_info["release_channel"]:
             channel = version_info["release_channel"].lower()
-            if channel in ("beta", "aurora", "nightly"):
+            if channel in config.channels:
                 # Use major_version instead of full version
                 sql_params[version_param] = version_info["major_version"]
                 # Restrict by release_channel
                 version_where.append("r.release_channel ILIKE '%s'" % channel)
 
-                if channel == "beta":
+                if channel in config.restricted_channels:
                     # Restrict to a list of build_id
                     version_where.append("r.build IN ('%s')" % (
                         "', '".join([
@@ -258,8 +262,7 @@ class PostgreSQLBase(object):
 
             else:
                 # it's a release
-                version_where.append(("r.release_channel NOT IN ('nightly', "
-                                      "'Nightly', 'aurora', 'Aurora', 'beta', "
-                                      "'Beta')"))
+                version_where.append(("r.release_channel NOT IN %s" %
+                                      config.channels))
 
         return version_where

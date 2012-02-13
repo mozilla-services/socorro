@@ -96,7 +96,7 @@ class ElasticSearchBase(object):
         return (http_response, "text/json")
 
     @staticmethod
-    def build_query_from_params(params):
+    def build_query_from_params(params, config):
         """
         Build and return an ES query given a list of parameters.
 
@@ -193,14 +193,16 @@ class ElasticSearchBase(object):
                 key = ":".join((v["product"], v["version"]))
 
                 if (key in versions_info and
-                        versions_info[key]["release_channel"] == "Beta"):
+                        versions_info[key]["release_channel"] in
+                        config.restricted_channels):
                     # this version is a beta
                     # first use the major version instead
                     v["version"] = versions_info[key]["major_version"]
                     # then make sure it's a beta
                     and_filter.append(
                             ElasticSearchBase.build_terms_query(
-                                                "ReleaseChannel", "beta"))
+                                                "ReleaseChannel",
+                                                config.restricted_channels))
                     # last use the right build id
                     and_filter.append(
                             ElasticSearchBase.build_terms_query(
@@ -213,7 +215,7 @@ class ElasticSearchBase(object):
                         "not":
                             ElasticSearchBase.build_terms_query(
                                     "ReleaseChannel",
-                                    ["nightly", "aurora", "beta"])
+                                    config.channels)
                     })
 
                 and_filter.append(ElasticSearchBase.build_terms_query(

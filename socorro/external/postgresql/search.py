@@ -83,7 +83,8 @@ class Search(PostgreSQLBase):
         sql_from = self.build_reports_sql_from(params)
 
         (sql_where, sql_params) = self.build_reports_sql_where(params,
-                                                               sql_params)
+                                                               sql_params,
+                                                               self.context)
 
         sql_group = self.generate_sql_group(params)
 
