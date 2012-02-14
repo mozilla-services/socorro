@@ -321,8 +321,7 @@ class Processor(object):
       if not normalJobsList:
         normalJobsList = self.sdb.transaction_execute_with_retry( \
           self.databaseConnectionPool,
-          getNormalJobSql
-        )
+          getNormalJobSql)
       if normalJobsList:
         while normalJobsList:
           yield normalJobsList.pop(-1)
@@ -434,6 +433,7 @@ class Processor(object):
         if result in (Processor.ok, Processor.quit):
           return
         waitInSeconds = backoffGenerator.next()
+        self.databaseConnectionPool.dump_connection()
         logger.critical('major failure in crash storage - retry in %s seconds', waitInSeconds)
         self.responsiveSleep(waitInSeconds, 10, "waiting for retry after failure in crash storage")
     except KeyboardInterrupt:
@@ -881,3 +881,5 @@ class Processor(object):
       key = resultDict['productid']
       del resultDict['productid']
       productIdMap[key] = resultDict
+
+
