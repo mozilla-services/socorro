@@ -35,11 +35,11 @@ class Report_Model extends Model {
     public function getByUUID($uuid, $crash_uri)
     {
 
-	    $crashReportDump = new CrashReportDump;
-	    $crash_report_json = $crashReportDump->getJsonZ($crash_uri);
+        $crashReportDump = new CrashReportDump;
+        $crash_report_json = $crashReportDump->getJsonZ($crash_uri);
             $raw_json = $this->getRawJson($uuid);
 
-	    if($crash_report_json === false){
+        if($crash_report_json === false){
                 Kohana::log('info', "$uuid could not fetch processed JSON");
                 return false;
         } else if ($crash_report_json === true) {
@@ -70,12 +70,12 @@ class Report_Model extends Model {
 	            if(!$report) {
                         Kohana::log('info', "$uuid processed crash exists in HBase but does not exist in the reports table");
                         return false;
-	            }
+                }
 
-      	        $crashReportDump->populate($report, $crash_report_json, $raw_json);
-		        return $report;
+                $crashReportDump->populate($report, $crash_report_json, $raw_json);
+                return $report;
         } else {
-		Kohana::log('info', "$uuid doesn't exist (404)");
+        Kohana::log('info', "$uuid doesn't exist (404)");
                 return NULL;
         }
 
@@ -89,26 +89,26 @@ class Report_Model extends Model {
 
 
 
-	/**
-	 * Determine whether or not the raw dumps are still on the system and return the URLs
-	 * by which they may be downloaded.  UUID must contain a timestamp that is within the given
-	 * acceptable timeframe found in Kohana::config('application.raw_dump_availability').
-	 *
-	 * @param 	string	The $uuid for the dump
-	 * @return  array|bool 	Return an array containing the dump and json urls for download; else
-	 *					return false if unavailable
-	 */
-	public function formatRawDumpURLs ($uuid) {
-		if ($uuid_timestamp = $this->uuidTimestamp($uuid)) {
-			if ($uuid_timestamp > (time() - Kohana::config('application.raw_dump_availability'))) {
-				return array(
-					Kohana::config('application.raw_dump_url') . $uuid . '.dump',
-					Kohana::config('application.raw_dump_url') . $uuid . '.json',
-				);
-			}
- 		}
-		return false;
-	}
+    /**
+     * Determine whether or not the raw dumps are still on the system and return the URLs
+     * by which they may be downloaded.  UUID must contain a timestamp that is within the given
+     * acceptable timeframe found in Kohana::config('application.raw_dump_availability').
+     *
+     * @param   string  The $uuid for the dump
+     * @return  array|bool  Return an array containing the dump and json urls for download; else
+     *                  return false if unavailable
+     */
+    public function formatRawDumpURLs ($uuid) {
+        if ($uuid_timestamp = $this->uuidTimestamp($uuid)) {
+            if ($uuid_timestamp > (time() - Kohana::config('application.raw_dump_availability'))) {
+                return array(
+                    Kohana::config('application.raw_dump_url') . $uuid . '.dump',
+                    Kohana::config('application.raw_dump_url') . $uuid . '.json',
+                );
+            }
+        }
+        return false;
+    }
 
     /**
      * Check the UUID to determine if this report is still valid.
@@ -119,13 +119,13 @@ class Report_Model extends Model {
      */
     public function isReportValid ($uuid)
     {
-		if ($uuid_timestamp = $this->uuidTimestamp($uuid)) {
+        if ($uuid_timestamp = $this->uuidTimestamp($uuid)) {
             if ($uuid_timestamp < (mktime(0, 0, 0, date("m"), date("d"), date("Y")-3))) {
                 return false;
             } else {
                 return true;
             }
-		}
+        }
 
         // Can't determine just by looking at the UUID. Return TRUE.
         return true;
@@ -147,10 +147,10 @@ class Report_Model extends Model {
                     LIMIT 1
                 ", $signature)->current();
         if ($rs) {
-	    return TRUE;
+        return TRUE;
         } else {
-	    return FALSE;
-	}
+        return FALSE;
+    }
     }
 
     /**
@@ -158,7 +158,7 @@ class Report_Model extends Model {
      *
      * @access  public
      * @param   string  The $uuid for this report
-     * @return  int    	The timestamp for this report.
+     * @return  int     The timestamp for this report.
      */
     public function uuidTimestamp ($uuid)
     {
@@ -169,7 +169,7 @@ class Report_Model extends Model {
                 return mktime(0, 0, 0, $uuid_date[1], $uuid_date[2], $uuid_date[0]);
             }
         }
-	return false;
+    return false;
     }
 
     /**
@@ -249,6 +249,38 @@ class Report_Model extends Model {
         $res = $this->service->get($uri);
         //~ echo '<pre>',var_dump($uri),'</pre>';
         return $res;
+    }
+
+   /**
+     * Fetch all of the comments associated with a particular Crash Signature.
+     *
+     * @access  public
+     * @param   string A Crash Signature
+     * @return  array   An array of comments
+     * @see getCommentsBySignature
+     */
+    public function getCommentsBySignature($signature) {
+        $params = array('signature' => $signature);
+        return $this->getCommentsByParams($params);
+    }
+
+    /**
+     * Fetch all of the comments associated with a particular Crash Signature.
+     *
+     * @access  public
+     * @param   array   An array of parameters
+     * @return  array   An array of comments
+     */
+    public function getCommentsByParams($params) {
+        $uri = $this->buildURI($params, 'crashes/comments');
+        $res = $this->service->get($uri);
+        //~ echo '<pre>',var_dump($uri),'</pre>';
+
+        if (!$res) {
+            return null;
+        }
+
+        return $res->hits;
     }
 
     private function buildURI($params, $apiEntry)

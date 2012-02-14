@@ -156,7 +156,7 @@ class Report_Controller extends Controller {
             'platformLabels'  => $platLabels,
 
             'sig2bugs' => $signature_to_bugzilla,
-            'comments' => $this->common_model->getCommentsByParams($params),
+            'comments' => $this->report_model->getCommentsByParams($params),
             'correlation_product' => $correlation_product,
             'correlation_version' => $correlation_version,
             'correlation_os' => $this->_correlations($builds),
@@ -421,7 +421,7 @@ class Report_Controller extends Controller {
                                              array($report->signature),
                                              Kohana::config('codebases.bugTrackingUrl')
                                          );
-                $comments = $this->common_model->getCommentsBySignature($report->signature);
+                $comments = $this->report_model->getCommentsBySignature($report->signature);
 	    }
 
             $Extension_Model = new Extension_Model;
