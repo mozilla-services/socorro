@@ -27,6 +27,7 @@ class CannotConnectToDatabase(Exception):
 # that mean trouble in the database server or that the server is offline.
 exceptions_eligible_for_retry = (psycopg2.OperationalError,
                                  psycopg2.InterfaceError,
+                                 psycopg2.ProgrammingError,
                                  CannotConnectToDatabase)
 
 #-----------------------------------------------------------------------------------------------------------------
@@ -56,7 +57,7 @@ def db_transaction_retry_wrapper(fn):
             pass
           try:
             self.responsiveSleep(waitInSeconds,
-                                 10,
+                                 2, # TODO: restore to 10
                                  "waiting for retry after failure in db "
                                  "transaction")
           except AttributeError:
