@@ -42,7 +42,7 @@ $(document).ready(function() {
     // Bugzilla Integration
     $('.bug_ids_more').hover(function(){
 	var inset = 10,
-	    cell = $(this).parents('td'),
+	    cell = $(this),
 	    bugList = cell.find('.bug_ids_expanded_list');
 	bugList.show()
           .css({top: cell.position().top - inset,
