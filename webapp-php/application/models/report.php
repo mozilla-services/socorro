@@ -65,7 +65,7 @@ class Report_Model extends Model {
 		                WHERE reports.uuid=?
 		                AND reports.success
 		                IS NOT NULL
-                                AND reports.date_processed between (date ? - interval '1 day') and (date ? + interval '1 day')
+                                AND tstz_between( reports.date_processed,  ( date ? - 1 ), ( date ? + 1 ))
 		            ", $uuid, $report_date_sql, $report_date_sql)->current();
 	            if(!$report) {
                         Kohana::log('info', "$uuid processed crash exists in HBase but does not exist in the reports table");
