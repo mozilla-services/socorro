@@ -43,8 +43,8 @@
         <div class="release_channel <?php if ($i < $num_columns) echo ' border_right'; ?>">
             <h4><?=$prodversion->product?> <?=$prodversion->version?></h4>
             <ul>
-              <li class="emphatic"><a href="<?php echo url::base() . "topcrasher/byversion/" . $prodversion->product . "/" . $prodversion->version . "/" . $duration; ?>">Top Crashers</a></li>
-              <li class="emphatic"><a href="<?php echo url::base() . "products/" . $prodversion->product . "/versions/" . $prodversion->version . "/topchangers" . "?duration=" . $duration; ?>">Top Changers</a></li>
+              <li><a href="<?php echo url::base() . "topcrasher/byversion/" . $prodversion->product . "/" . $prodversion->version . "/" . $duration; ?>">Top Crashers</a></li>
+              <li><a href="<?php echo url::base() . "products/" . $prodversion->product . "/versions/" . $prodversion->version . "/topchangers" . "?duration=" . $duration; ?>">Top Changers</a></li>
               <li><a href="<?php echo url::base() . "topcrasher/byversion/" . $prodversion->product . "/" . $prodversion->version . "/" . $duration . "/plugin"; ?>">Top Plugin Crashers</a></li>
             </ul>
         </div>
