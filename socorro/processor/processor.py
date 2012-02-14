@@ -175,7 +175,9 @@ class Processor(object):
                      "primary key)" % self.priorityJobsTableName)
       logger.debug("success")
       db_conn.commit()
-    except sdb.exceptions_eligible_for_retry:
+    except sdb.exceptions_eligible_for_retry, x:
+      if not sdb.programming_error_eligible_for_retry(x):
+        raise
       logger.debug("timout trouble")
       raise
     except sdb.db_module.ProgrammingError, x:
@@ -321,8 +323,7 @@ class Processor(object):
       if not normalJobsList:
         normalJobsList = self.sdb.transaction_execute_with_retry( \
           self.databaseConnectionPool,
-          getNormalJobSql
-        )
+          getNormalJobSql)
       if normalJobsList:
         while normalJobsList:
           yield normalJobsList.pop(-1)
@@ -434,6 +435,7 @@ class Processor(object):
         if result in (Processor.ok, Processor.quit):
           return
         waitInSeconds = backoffGenerator.next()
+        self.databaseConnectionPool.dump_connection()
         logger.critical('major failure in crash storage - retry in %s seconds', waitInSeconds)
         self.responsiveSleep(waitInSeconds, 10, "waiting for retry after failure in crash storage")
     except KeyboardInterrupt:
@@ -456,7 +458,9 @@ class Processor(object):
     try:
       threadLocalDatabaseConnection, threadLocalCursor = self.databaseConnectionPool.connectionCursorPair()
       threadLocalCrashStorage = self.crashStorePool.crashStorage(threadName)
-    except sdb.exceptions_eligible_for_retry:
+    except sdb.exceptions_eligible_for_retry, x:
+      if not sdb.programming_error_eligible_for_retry(x):
+        raise
       logger.critical("something's gone horribly wrong with the database connection")
       sutil.reportExceptionAndContinue(logger, loggingLevel=logging.CRITICAL)
       return Processor.criticalError
@@ -595,7 +599,9 @@ class Processor(object):
       threadLocalCursor.execute('delete from jobs where id = %s', (jobId,))
       threadLocalDatabaseConnection.commit()
       return Processor.ok
-    except sdb.exceptions_eligible_for_retry:
+    except sdb.exceptions_eligible_for_retry, x:
+      if not sdb.programming_error_eligible_for_retry(x):
+        raise
       logger.critical("something's gone horribly wrong with the database connection")
       sutil.reportExceptionAndContinue(logger, loggingLevel=logging.CRITICAL)
       return Processor.criticalError
