@@ -67,6 +67,7 @@
                 <span id="dateHelp">
                     <label for="date"> before </label>
                     <input type="text" name="date" id="date" size="20" title="This field must be formatted as MM/DD/YYYY HH:MM:SS" value="<?php out::H($params['date']); ?>" />
+                    (<?php echo Kohana::config('config.timezone'); ?>)
                 </span>
             </p>
 
