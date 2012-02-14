@@ -250,7 +250,8 @@ class Processor(object):
     self.sdb.transaction_execute_with_retry(
       self.databaseConnectionPool,
       "update jobs set starteddatetime = %s where id = %s",
-      (self.nowFunc(), aJobTuple[0]))
+      (self.nowFunc(), aJobTuple[0]),
+      logger=logger)
     #logger.info("queuing job %d, %s, %s",
                 #aJobTuple[0], aJobTuple[2],  aJobTuple[1])
     self.threadManager.newTask(self.processJobWithRetry, aJobTuple)
@@ -279,13 +280,16 @@ class Processor(object):
       if not fullJobsList:
         fullJobsList = self.sdb.transaction_execute_with_retry(
           self.databaseConnectionPool,
-          getPriorityJobsSql)
+          getPriorityJobsSql,
+          None,
+          logger=logger)
       if fullJobsList:
         while fullJobsList:
           aFullJobTuple = fullJobsList.pop(-1)
           self.sdb.transaction_execute_with_retry(self.databaseConnectionPool,
                                                   deleteOnePriorityJobSql,
-                                                  (aFullJobTuple[1],))
+                                                  (aFullJobTuple[1],),
+                                                  logger=logger,)
           if aFullJobTuple[0] is not None:
             if aFullJobTuple[3]:
               continue # the job already started via normal channels
@@ -321,7 +325,9 @@ class Processor(object):
       if not normalJobsList:
         normalJobsList = self.sdb.transaction_execute_with_retry( \
           self.databaseConnectionPool,
-          getNormalJobSql
+          getNormalJobSql,
+          None,
+          logger=logger
         )
       if normalJobsList:
         while normalJobsList:
@@ -418,7 +424,8 @@ class Processor(object):
   #-----------------------------------------------------------------------------------------------------------------
   @staticmethod
   def backoffSecondsGenerator():
-    seconds = [10, 30, 60, 120, 300]
+    # seconds = [10, 30, 60, 120, 300]  #TODO: restore
+    seconds = [10]
     for x in seconds:
       yield x
     while True:
@@ -434,6 +441,7 @@ class Processor(object):
         if result in (Processor.ok, Processor.quit):
           return
         waitInSeconds = backoffGenerator.next()
+        self.databaseConnectionPool.dump_connection()
         logger.critical('major failure in crash storage - retry in %s seconds', waitInSeconds)
         self.responsiveSleep(waitInSeconds, 10, "waiting for retry after failure in crash storage")
     except KeyboardInterrupt:
@@ -881,3 +889,5 @@ class Processor(object):
       key = resultDict['productid']
       del resultDict['productid']
       productIdMap[key] = resultDict
+
+
