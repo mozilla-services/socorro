@@ -1,4 +1,5 @@
 PREFIX=/data/socorro
+ABS_PREFIX = $(shell readlink -f $(PREFIX))
 VIRTUALENV=$(CURDIR)/socorro-virtualenv
 PYTHONPATH = ".:thirdparty"
 NOSE = $(VIRTUALENV)/bin/nosetests socorro -s --with-xunit
@@ -6,7 +7,8 @@ COVEROPTS = --with-coverage --cover-package=socorro
 COVERAGE = $(VIRTUALENV)/bin/coverage
 PYLINT = $(VIRTUALENV)/bin/pylint
 
-.PHONY: all build install stage coverage hudson-coverage lint test
+.PHONY: all test phpunit install reinstall install-socorro install-web virtualenv coverage lint clean minidump_stackwalk java_analysis
+
 
 all:	test
 
@@ -16,28 +18,32 @@ test: virtualenv phpunit
 phpunit:
 	phpunit webapp-php/tests/
 
-install: java_analysis deploy
+install: java_analysis reinstall
 
 # this a dev-only option, `java_analysis` needs to be run at least once in the checkout (or after `make clean`)
-deploy:
+reinstall: install-socorro install-web
 	mkdir -p $(PREFIX)/htdocs
 	mkdir -p $(PREFIX)/application
 	git rev-parse HEAD > $(PREFIX)/revision.txt
-	rsync -a --exclude=".svn" thirdparty $(PREFIX)
-	rsync -a --exclude=".svn" socorro $(PREFIX)/application
-	rsync -a --exclude=".svn" scripts $(PREFIX)/application
-	rsync -a --exclude=".svn" tools $(PREFIX)/application
-	rsync -a --exclude=".svn" sql $(PREFIX)/application
-	rsync -a --exclude=".svn" --exclude="tests" webapp-php/ $(PREFIX)/htdocs
-	rsync -a --exclude=".svn" stackwalk $(PREFIX)/
-	rsync -a --exclude=".svn" scripts/stackwalk.sh $(PREFIX)/stackwalk/bin/
-	rsync -a --exclude=".svn" analysis/build/lib/socorro-analysis-job.jar $(PREFIX)/analysis/
-	rsync -a --exclude=".svn" analysis/bin/modulelist.sh $(PREFIX)/analysis/
+	REV=`cat $(PREFIX)/revision.txt` && sed -ibak "s/CURRENT_SOCORRO_REVISION/$$REV/" $(PREFIX)/htdocs/application/config/revision.php
+
+install-socorro:
+	rsync -a thirdparty $(PREFIX)
+	rsync -a socorro $(PREFIX)/application
+	rsync -a scripts $(PREFIX)/application
+	rsync -a tools $(PREFIX)/application
+	rsync -a sql $(PREFIX)/application
+	rsync -a stackwalk $(PREFIX)/
+	rsync -a scripts/stackwalk.sh $(PREFIX)/stackwalk/bin/
+	rsync -a analysis/build/lib/socorro-analysis-job.jar $(PREFIX)/analysis/
+	rsync -a analysis/bin/modulelist.sh $(PREFIX)/analysis/
 	cd $(PREFIX)/application/scripts/config; for file in *.py.dist; do cp $$file `basename $$file .dist`; done
+
+install-web:
+	rsync -a --exclude="tests" webapp-php/ $(PREFIX)/htdocs
 	cd $(PREFIX)/htdocs/modules/auth/config/; for file in *.php-dist; do cp $$file `basename $$file -dist`; done
 	cd $(PREFIX)/htdocs/modules/recaptcha/config; for file in *.php-dist; do cp $$file `basename $$file -dist`; done
 	cd $(PREFIX)/htdocs/application/config; for file in *.php-dist; do cp $$file `basename $$file -dist`; done
-	REV=`cat $(PREFIX)/revision.txt` && sed -ibak "s/CURRENT_SOCORRO_REVISION/$$REV/" $(PREFIX)/htdocs/application/config/revision.php
 	cd $(PREFIX)/htdocs; cp htaccess-dist .htaccess
 
 virtualenv:
@@ -67,3 +73,4 @@ minidump_stackwalk:
 
 java_analysis:
 	cd analysis && ant hadoop-jar
+
