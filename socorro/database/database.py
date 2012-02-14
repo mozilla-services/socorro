@@ -46,6 +46,7 @@ def db_transaction_retry_wrapper(fn):
           result = fn(self, *args, **kwargs)
           return result
         except exceptions_eligible_for_retry:
+          util.reportExceptionAndContinue(logger=self.logger)
           waitInSeconds = backoffGenerator.next()
           try:
             self.logger.critical('server failure in db transaction - '
@@ -94,10 +95,13 @@ def execute (aCursor, sql, parameters=None):
 
 #-----------------------------------------------------------------------------------------------------------------
 @db_transaction_retry_wrapper
-def transaction_execute_with_retry (database_connection_pool, sql, parameters=None):
+def transaction_execute_with_retry (database_connection_pool,
+                                    sql,
+                                    parameters=None,
+                                    logger=None):
   connection = database_connection_pool.connection()
-  cursor = connection.cursor()
   try:
+    cursor = connection.cursor()
     cursor.execute(sql, parameters)
     try:
       result = cursor.fetchall()
@@ -105,6 +109,9 @@ def transaction_execute_with_retry (database_connection_pool, sql, parameters=No
       result = []
     connection.commit()
   except exceptions_eligible_for_retry:
+    if logger:
+      util.reportExceptionAndContinue(logger=logger)
+    database_connection_pool.dump_connection()
     raise
   except db_module.Error:
     connection.rollback()
@@ -195,6 +202,14 @@ class DatabaseConnectionPool(dict):
     return (connection, connection.cursor())
 
   #-----------------------------------------------------------------------------------------------------------------
+  def dump_connection(self, name=None):
+    """remove this connection to force a new one later"""
+    if not name:
+      name = threading.currentThread().getName()
+    if name in self:
+      del self[name]
+
+  #-----------------------------------------------------------------------------------------------------------------
   def cleanup (self):
     self.logger.debug("%s - killing database connections", threading.currentThread().getName())
     for name, aConnection in self.iteritems():
@@ -205,4 +220,3 @@ class DatabaseConnectionPool(dict):
         self.logger.debug("%s - connection %s already closed", threading.currentThread().getName(), name)
       except:
         util.reportExceptionAndContinue(self.logger)
-
