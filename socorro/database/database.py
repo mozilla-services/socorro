@@ -57,7 +57,7 @@ def db_transaction_retry_wrapper(fn):
             pass
           try:
             self.responsiveSleep(waitInSeconds,
-                                 2, # TODO: restore to 10
+                                 10,
                                  "waiting for retry after failure in db "
                                  "transaction")
           except AttributeError:
