@@ -67,7 +67,7 @@ localFSDumpPermissions.default = stat.S_IRGRP | stat.S_IWGRP | stat.S_IRUSR | st
 
 localFSDirPermissions = cm.Option()
 localFSDirPermissions.doc = "a number used for permissions for directories in the local file system"
-localFSDirPermissions = stat.S_IRGRP | stat.S_IXGRP | stat.S_IWGRP | stat.S_IRUSR | stat.S_IXUSR | stat.S_IWUSR
+localFSDirPermissions.default = stat.S_IRGRP | stat.S_IXGRP | stat.S_IWGRP | stat.S_IRUSR | stat.S_IXUSR | stat.S_IWUSR
 
 fallbackFS = cm.Option()
 fallbackFS.doc = 'a path to a local file system to use if local store fails'
@@ -87,7 +87,7 @@ fallbackDumpPermissions.default = stat.S_IRGRP | stat.S_IWGRP | stat.S_IRUSR | s
 
 fallbackDirPermissions = cm.Option()
 fallbackDirPermissions.doc = "a number used for permissions for directories in the fallback File System"
-fallbackDirPermissions = stat.S_IRGRP | stat.S_IXGRP | stat.S_IWGRP | stat.S_IRUSR | stat.S_IXUSR | stat.S_IWUSR
+fallbackDirPermissions.default = stat.S_IRGRP | stat.S_IXGRP | stat.S_IWGRP | stat.S_IRUSR | stat.S_IXUSR | stat.S_IWUSR
 
 from config.commonconfig import hbaseHost
 from config.commonconfig import hbasePort
@@ -184,4 +184,3 @@ syslogLineFormatString.default = 'Socorro Collector (pid %(process)d): %(asctime
 syslogErrorLoggingLevel = cm.Option()
 syslogErrorLoggingLevel.doc = 'logging level for the log file (10 - DEBUG, 20 - INFO, 30 - WARNING, 40 - ERROR, 50 - CRITICAL)'
 syslogErrorLoggingLevel.default = 10
-
