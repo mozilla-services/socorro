@@ -89,6 +89,7 @@ class Web_Service
      */
     public function get($url, $response_type='json', $cache_lifetime=null)
     {
+
         if (is_null($cache_lifetime)) {
             $this->status_code = 200;
             return $this->_get($url, $response_type);
