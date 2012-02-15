@@ -118,7 +118,7 @@
     <div class="page-footer">
     	<div class="nav">
     		<div class="about">
-    			<strong>Mozilla Crash Reports</strong> - Powered by <a href="http://code.google.com/p/socorro/">Socorro</a>
+                <strong>Mozilla Crash Reports</strong> - Powered by <a href="https://github.com/mozilla/socorro">Socorro</a>
     		</div>
 
     		<ul>
