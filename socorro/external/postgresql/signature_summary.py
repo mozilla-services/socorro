@@ -46,7 +46,7 @@ class SignatureSummary(PostgreSQLBase):
             ("signature", None, "str"),
             ("start_date", None, "datetime"),
             ("end_date", None, "datetime"),
-            ("product", None, "str"),
+            ("product", None, ["list", "str"]),
             ("versions", None, ["list", "str"]),
             ]
 
@@ -57,6 +57,12 @@ class SignatureSummary(PostgreSQLBase):
             version_search = version_search %  glue.join(params['versions'])
         else:
             version_search = ''
+
+        if params['product'] and params['report_type'] is not 'products':
+            glue = ','
+            product_list = ' AND product_name IN %s'
+        else:
+            product_list = ''
 
         query_params = report_type_sql.get(params['report_type'], {})
         if params['report_type'] != 'products' and 'first_col' not in query_params:
@@ -107,8 +113,8 @@ class SignatureSummary(PostgreSQLBase):
                                     WHERE signature = %s)
                     AND date_processed >= %s
                     AND date_processed < %s
-        			AND product_name = %s
         			""")
+            query_string.append(product_list)
             query_string.append(version_search)
             query_string.append(""" GROUP BY """)
             query_string.append(query_params['first_col'])
@@ -127,12 +133,16 @@ class SignatureSummary(PostgreSQLBase):
         	ORDER BY report_count DESC""")
             query_string = " ".join(query_string)
             
-            query_parameters =  (params['signature'],
+            query_parameters =  [params['signature'],
                                  params['start_date'],
                                  params['end_date'],
-                                 params['product'],
-                                 )
+                                 ]
 
+            if(product_list):
+                # This MUST be a tuple otherwise it gets cast to an array.
+                query_parameters.append(tuple(params['product']))
+
+            query_parameters = tuple(query_parameters)
         sql_results = db.execute(cursor, query_string, query_parameters)
         results = []
         for row in sql_results:

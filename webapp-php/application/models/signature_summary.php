@@ -4,10 +4,11 @@ class Signature_Summary_Model extends Model {
 
     protected $_sig_cache = array();
 
-    public function getSummary($report_type, $signature, $start, $end, $product = 'Firefox', $versions = array())
+    public function getSummary($report_type, $signature, $start, $end, $versions = array())
     {
+
         if(!empty($versions)) {
-            $versions = $this->_calculateVersionIds($product, $versions);
+            $versions = $this->_calculateVersionIds($versions);
         }
 
         $config = array();
@@ -19,34 +20,55 @@ class Signature_Summary_Model extends Model {
         $host = Kohana::config('webserviceclient.socorro_hostname');
         $report_type = rawurlencode($report_type);
         $signature = rawurlencode($signature);
-        $product = rawurlencode($product);
-        $url = "{$host}/signaturesummary/report_type/{$report_type}/signature/{$signature}/start_date/{$start}/end_date/{$end}/product/{$product}";
+        $url = "{$host}/signaturesummary/report_type/{$report_type}/signature/{$signature}/start_date/{$start}/end_date/{$end}";
 
-        if($versions) {
-            $url .= "/versions/{$versions}";
+        if(isset($versions['products']) && !empty($versions['products'])) {
+            $url .= "/product/{$versions['products']}";
         }
+
+                if(isset($versions['versions']) && !empty($versions['versions'])) {
+                                $url .= "/versions/{$versions['versions']}";
+                                        }  
+
         $resp = $service->get($url);
+
         return $resp;
     }
 
-    protected function _calculateVersionIds($product, array $versions)
+    protected function _calculateVersionIds(array $versions)
     {
         $versions_new = array();
-        $product = $this->db->escape($product);
+        $products_new = array();
+
         foreach($versions as $version) {
-            $version = $this->db->escape($version);
-            if (isset($this->_sig_cache[$version])) {
-                $versions_new[] = $this->_sig_cache[$version];
+            $vs = explode(':', $version);
+            if(count($vs) != 2) {
+                $products_new[] = $version; // Just in case we get a single product.
+                continue;
+            }
+            $product = $vs[0];
+            $version = $this->db->escape($vs[1]);
+            if (isset($this->_sig_cache[$product . $version])) {
+                $versions_new[] = $this->_sig_cache[$product . $version];
+                $products_new[] = $product;
             } else {
-                $sql = "SELECT product_version_id FROM product_versions WHERE product_name = {$product} AND version_string = {$version}";
+                $sql = "SELECT product_version_id FROM product_versions WHERE product_name = ";
+                $sql .= $this->db->escape($product);
+                $sql .= " AND version_string = {$version}";
 
                 $version_id = $this->db->query($sql)->as_array();
                 $version_id = $version_id[0]->product_version_id;
-                $this->_sig_cache[$version] = $version_id;
+                $this->_sig_cache[$product . $version] = $version_id;
                 $versions_new[] = $version_id;
+                if(!in_array($product, $products_new)) {
+                    $products_new[] = $product;
+                }
             }
         }
-        return implode('+', $versions_new);
+        $results = array();
+        $results['products'] = implode('+', $products_new);
+        $results['versions'] = implode('+', $versions_new);
+        return $results;
     }
 
     public function search_signature_table($signature_string)

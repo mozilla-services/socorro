@@ -6,24 +6,8 @@
         'css/signature_summary.css'
     ), 'screen')?>
     <!--[if IE]><?php echo html::script('js/flot-0.7/excanvas.pack.js') ?><![endif]-->
-
     <?php
-        $vl = array();
-        $vs = 'Firefox';
-        if(!empty($params['version'])) {
-            foreach($params['version'] as $v) {
-                $pv = explode(':', $v);
-                if(count($pv) != 2) {
-                    continue;
-                }
-                $vl[] = $pv[1];
-                $vs = $pv[0];
-            }
-        }    
-        $sigParams = array('range_value' => $params['range_value'], 'range_unit' => $params['range_unit'], 'signature' => $params['signature'], 'product' => $vs);
-        if(!empty($vl)) {
-            $sigParams['version'] = $vl;
-        }
+        $sigParams = array('range_value' => $params['range_value'], 'range_unit' => $params['range_unit'], 'signature' => $params['signature'], 'version' => $params['version']);
         if(isset($params['date']) && !empty($params['date'])) {
             $sigParams['date'] = $params['date'];
         }
