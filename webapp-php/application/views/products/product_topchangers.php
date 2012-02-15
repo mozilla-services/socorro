@@ -1,6 +1,5 @@
 
 <?php slot::start('head') ?>
-    <?php echo html::link(array($url_rss), 'alternate', array('application/rss+xml'), FALSE); ?>
     <title>Top Changing Top Crashers for <?php out::H($product) ?></title>
 <?php slot::end() ?>
 
