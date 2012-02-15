@@ -19,6 +19,7 @@
     </ul>
     <ul class="tc-per-platform tc-filter">
         <li class="tc-per-platform-heading">OS:</li>
+        <li><a href="<?= $duration_url . '/' . $duration . '/' . $crash_type; ?>" class="selected">All</a></li>
         <?php foreach ($platforms as $p) { ?>
             <li><a href="<?= $platform_url . '/' . $p . '/' . $duration . '/' . $crash_type; ?>"><?= $p ?></a></li>
         <?php }?>
