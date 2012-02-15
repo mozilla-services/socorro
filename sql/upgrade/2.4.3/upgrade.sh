@@ -34,6 +34,7 @@ psql -f ${CURDIR}/drop_frames_table.sql breakpad
 echo '*********************************************************'
 echo 'exclude ESR releases from all reports'
 echo 'bug 725732'
+psql -f ${CURDIR}/fix_product_version_fks.sql breakpad
 psql -f ${CURDIR}/update_products_no_esr.sql breakpad
 
 echo '*********************************************************'
