@@ -13,7 +13,7 @@
 
     <?php if (isset($results->versions) && isset($versions) && !empty($versions)) { ?>
 
-        <table class="crash_data">
+        <table class="crash_data zebra">
             <tr>
                 <th class="date" rowspan="2">Date</th>
                 <?php foreach ($operating_systems as $key => $os) { ?>

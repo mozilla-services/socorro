@@ -97,8 +97,8 @@ th {
     padding: 0 .25em;
 }
 
-table tr:nth-child(odd),
-table.tablesorter tr:nth-child(odd) {
+table.tablesorter tbody tr:nth-child(odd),
+table.zebra tbody tr:nth-child(odd) {
     background-color: #edecec;
 }
 
