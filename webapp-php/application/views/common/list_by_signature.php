@@ -26,7 +26,7 @@
             $row = (isset($page) && isset($items_per_page) && $page > 1)
                     ? (1 + (($page-1) * $items_per_page)) : 1;
             foreach ($reports as $report) { ?>
-                <tr class="<?php echo ( ($row-1) % 2) == 0 ? 'even' : 'odd' ?>">
+                <tr>
                 <td><?php out::H($row) ?></td>
                 <td>
                     <?php

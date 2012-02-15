@@ -29,8 +29,6 @@
                     </tr>
                 <?php } ?>
             </table>
-            <p><a href="<?php echo url::base() . $url_csv; ?>">Download CSV</a></p>
-            <p><a href="<?php echo url::base() . $url_rss; ?>">Subscribe to RSS</a></p>
         </div>
     <?php } ?>
     <br class="clear">

@@ -97,8 +97,8 @@ th {
     padding: 0 .25em;
 }
 
-table tr:nth-child(odd),
-table.tablesorter tr:nth-child(odd) {
+table.tablesorter tbody tr:nth-child(odd),
+table.zebra tbody tr:nth-child(odd) {
     background-color: #edecec;
 }
 
@@ -1324,9 +1324,6 @@ div.release_channel ul {
 
 div.release_channel li {
     padding: 0 0 12px 0;
-}
-
-div.release_channel li.emphatic {
     font-size: 16px;
 }
 

@@ -34,14 +34,18 @@ class TestElasticSearchBase(unittest.TestCase):
                 "name": "Linux"
             }
         )
+        context.channels = ['Beta', 'Aurora', 'Nightly', 'beta', 'aurora',
+                            'nightly']
+        context.restricted_channels = ['Beta', 'beta']
         return context
 
     #--------------------------------------------------------------------------
     def test_build_query_from_params(self):
         # Test with all default parameters
+        config = self.get_dummy_context()
         params = {}
         params = scommon.get_parameters(params)
-        query = ElasticSearchBase.build_query_from_params(params)
+        query = ElasticSearchBase.build_query_from_params(params, config)
         self.assertTrue(query)
         self.assertTrue("query" in query)
         self.assertTrue("size" in query)
@@ -55,7 +59,7 @@ class TestElasticSearchBase(unittest.TestCase):
             "products": "fennec"
         }
         params = scommon.get_parameters(params)
-        query = ElasticSearchBase.build_query_from_params(params)
+        query = ElasticSearchBase.build_query_from_params(params, config)
         self.assertTrue(query)
         self.assertTrue("query" in query)
         self.assertTrue("filtered" in query["query"])
