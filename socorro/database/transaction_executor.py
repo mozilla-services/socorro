@@ -107,6 +107,18 @@ class TransactionExecutorWithBackoff(TransactionExecutor):
                           psycopg2.extensions.TRANSACTION_STATUS_INTRANS:
                             connection.rollback()
                         raise
+            except psycopg2.ProgrammingError, msg:
+                # let this fly if the exception is of a special kind
+                if msg.pgerror in ('SSL SYSCALL error: EOF detected',):
+                    # Ideally we'd like to check against msg.pgcode values
+                    # but certain odd ProgrammingError exceptions don't have
+                    # pgcodes so we have to rely on reading the pgerror :(
+                    self.config.logger.warning(
+                      'Exceptional database ProgrammingError exception',
+                      exc_info=True)
+                else:
+                    raise
+
             except self.config.db_connection_context.operational_exceptions:
                 self.config.logger.warning(
                   'Database exception',

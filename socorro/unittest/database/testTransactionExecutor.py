@@ -239,7 +239,6 @@ class TestTransactionExecutor(unittest.TestCase):
             finally:
                 socorro.database.transaction_executor.time.sleep = _orig_sleep
 
-
     def test_operation_error_with_postgres_with_backoff_with_rollback(self):
         required_config = Namespace()
         required_config.add_option(
@@ -295,3 +294,75 @@ class TestTransactionExecutor(unittest.TestCase):
                 self.assertTrue(len(_sleep_count) > 10)
             finally:
                 socorro.database.transaction_executor.time.sleep = _orig_sleep
+
+    def test_programming_error_with_postgres_with_backoff_with_rollback(self):
+        required_config = Namespace()
+        required_config.add_option(
+          'transaction_executor_class',
+          default=TransactionExecutorWithBackoff,
+          doc='a class that will execute transactions'
+        )
+
+        mock_logging = MockLogging()
+        required_config.add_option('logger', default=mock_logging)
+
+        config_manager = ConfigurationManager(
+          [required_config],
+          app_name='testapp',
+          app_version='1.0',
+          app_description='app description',
+          values_source_list=[{'database_class': MockConnectionContext,
+                               'backoff_delays': [2, 4, 6, 10, 15]}],
+        )
+        with config_manager.context() as config:
+            executor = config.transaction_executor_class(config)
+            _function_calls = []  # some mutable
+
+            _sleep_count = []
+
+            def mock_function_struggling(connection):
+                assert isinstance(connection, MockConnection)
+                connection.transaction_status = \
+                  psycopg2.extensions.TRANSACTION_STATUS_INTRANS
+                _function_calls.append(connection)
+                # the default sleep times are going to be,
+                # 2, 4, 6, 10, 15
+                # so after 2 + 4 + 6 + 10 + 15 seconds
+                # all will be exhausted
+                if sum(_sleep_count) < sum([2, 4, 6, 10, 15]):
+                    exp = psycopg2.ProgrammingError()
+                    exp.pgerror = 'SSL SYSCALL error: EOF detected'
+                    raise exp
+
+            def mock_sleep(n):
+                _sleep_count.append(n)
+
+            # monkey patch the sleep function from inside transaction_executor
+            _orig_sleep = socorro.database.transaction_executor.time.sleep
+            socorro.database.transaction_executor.time.sleep = mock_sleep
+
+            try:
+                executor(mock_function_struggling)
+                self.assertTrue(_function_calls)
+                self.assertEqual(commit_count, 1)
+                self.assertEqual(rollback_count, 5)
+                self.assertTrue(mock_logging.warnings)
+                self.assertEqual(len(mock_logging.warnings), 5)
+                self.assertTrue(len(_sleep_count) > 10)
+            finally:
+                socorro.database.transaction_executor.time.sleep = _orig_sleep
+
+        # this time, simulate an actual code bug where a callable function
+        # raises a ProgrammingError() exception by, for example, a syntax error
+        with config_manager.context() as config:
+            executor = config.transaction_executor_class(config)
+
+            def mock_function_developer_mistake(connection):
+                assert isinstance(connection, MockConnection)
+                connection.transaction_status = \
+                  psycopg2.extensions.TRANSACTION_STATUS_INTRANS
+                raise psycopg2.ProgrammingError("syntax error")
+
+            self.assertRaises(psycopg2.ProgrammingError,
+                              executor,
+                              mock_function_developer_mistake)
