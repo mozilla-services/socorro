@@ -52,6 +52,11 @@ class Report_Model extends Model {
 		                 the publically accessable jsonz file. Anything here will be
 		                 merged into the model object + jsonz data */
 		        // Added addons_checked since that's not in the jsonz - bug 590245
+                        // Extract the date of crash so we can limit query to the appropriate partition - bug 718224 
+                        $day = substr($uuid, -2);
+                        $month = substr($uuid, -4, 2);
+                        $year = substr($uuid, -6, 2);
+                        $report_date_sql = '20'.$year.'-'.$month.'-'.$day; // assume we won't be using this code in 88 years :D
 		        $report = $this->db->query(
 		            "/* soc.web report.dateProcessed */
 		                SELECT reports.email, reports.url, reports.addons_checked,
@@ -60,7 +65,8 @@ class Report_Model extends Model {
 		                WHERE reports.uuid=?
 		                AND reports.success
 		                IS NOT NULL
-		            ", $uuid)->current();
+                                AND tstz_between( reports.date_processed,  ( date ? - 1 ), ( date ? + 1 ))
+		            ", $uuid, $report_date_sql, $report_date_sql)->current();
 	            if(!$report) {
                         Kohana::log('info', "$uuid processed crash exists in HBase but does not exist in the reports table");
                         return false;
