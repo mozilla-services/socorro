@@ -175,3 +175,12 @@ platforms.default = (
     },
 )
 
+#---------------------------------------------------------------------------
+# Release Channels
+channels = cm.Option()
+channels.doc = 'List of release channels, excluding the `release` one.'
+channels.default = ['Beta', 'Aurora', 'Nightly', 'beta', 'aurora', 'nightly']
+
+restricted_channels = cm.Option()
+restricted_channels.doc = 'List of release channels to restrict based on build ids.'
+restricted_channels.default = ['Beta', 'beta']
