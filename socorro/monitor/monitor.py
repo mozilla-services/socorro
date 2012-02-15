@@ -89,21 +89,21 @@ class Monitor (object):
       time.sleep(1.0)
 
   #-----------------------------------------------------------------------------------------------------------------
-  def getDatabaseConnectionPair (self):
-    try:
-      connection = self.databaseConnectionPool.connection()
-      cursor = connection.cursor()
-      return (connection, cursor)
-    except self.sdb.CannotConnectToDatabase:
-      self.quit = True
-      self.databaseConnectionPool.cleanup()
-      socorro.lib.util.reportExceptionAndAbort(logger) # can't continue without a database connection
+  #def getDatabaseConnectionPair (self):
+    #try:
+      #connection = self.databaseConnectionPool.connection()
+      #cursor = connection.cursor()
+      #return (connection, cursor)
+    #except self.sdb.CannotConnectToDatabase:
+      #self.quit = True
+      #self.databaseConnectionPool.cleanup()
+      #socorro.lib.util.reportExceptionAndAbort(logger) # can't continue without a database connection
 
   #-----------------------------------------------------------------------------------------------------------------
   def cleanUpCompletedAndFailedJobs (self):
     logger.debug("dealing with completed and failed jobs")
     # check the jobs table to and deal with the completed and failed jobs
-    databaseConnection, databaseCursor = self.getDatabaseConnectionPair()
+    databaseConnection, databaseCursor = self.databaseConnectionPool.connectionCursorPair()
     try:
       logger.debug("starting deletion")
       databaseCursor.execute("""delete from jobs
@@ -196,6 +196,11 @@ class Monitor (object):
     except Monitor.NoProcessorsRegisteredException:
       self.quit = True
       socorro.lib.util.reportExceptionAndAbort(logger, showTraceback=False)
+    except sdb.exceptions_eligible_for_retry, x:
+      socorro.lib.util.reportExceptionAndContinue(logger)
+      if not sdb.programming_error_eligible_for_retry(x):
+        raise
+      self.databaseConnectionPool.dump_connection()
     except:
       socorro.lib.util.reportExceptionAndContinue(logger)
 
@@ -314,14 +319,14 @@ class Monitor (object):
       try:
         databaseConnection = None
         while (True):
-          databaseConnection, databaseCursor = self.getDatabaseConnectionPair()
-          self.cleanUpDeadProcessors(databaseCursor)
-          self.quitCheck()
-          # walk the dump indexes and assign jobs
-          logger.debug("getting jobSchedulerIter")
-          processorIdSequenceGenerator = self.jobSchedulerIter(databaseCursor)
-          logger.debug("beginning index scan")
           try:
+            databaseConnection, databaseCursor = self.databaseConnectionPool.connectionCursorPair()
+            self.cleanUpDeadProcessors(databaseCursor)
+            self.quitCheck()
+            # walk the dump indexes and assign jobs
+            logger.debug("getting jobSchedulerIter")
+            processorIdSequenceGenerator = self.jobSchedulerIter(databaseCursor)
+            logger.debug("beginning index scan")
             logger.debug("starting destructiveDateWalk")
             for uuid in crashStorage.newUuids():
               try:
@@ -332,13 +337,13 @@ class Monitor (object):
                 logger.debug("inner detects quit")
                 self.quit = True
                 raise
-              except:
-                socorro.lib.util.reportExceptionAndContinue(logger)
             logger.debug("ended destructiveDateWalk")
-          except hbc.FatalException:
-            raise
-          except:
+          except sdb.exceptions_eligible_for_retry, x:
+            if not sdb.programming_error_eligible_for_retry(x):
+              raise
             socorro.lib.util.reportExceptionAndContinue(logger, loggingLevel=logging.CRITICAL)
+            logger.info('will attempt to connect again at next iteration')
+            self.databaseConnectionPool.dump_connection()
           logger.debug("end of loop - about to sleep")
           self.quitCheck()
           self.responsiveSleep(self.standardLoopDelay)
@@ -429,8 +434,8 @@ class Monitor (object):
       try:
         databaseConnection = None
         while (True):
-          databaseConnection, databaseCursor = self.getDatabaseConnectionPair()
           try:
+            databaseConnection, databaseCursor = self.databaseConnectionPool.connectionCursorPair()
             self.quitCheck()
             setOfPriorityUuids = self.getPriorityUuids(databaseCursor)
             if setOfPriorityUuids:
@@ -441,12 +446,12 @@ class Monitor (object):
           except KeyboardInterrupt:
             logger.debug("inner detects quit")
             raise
-          except hbc.FatalException:
-            raise
-          except:
-            if databaseConnection is not None:
-              databaseConnection.rollback()
+          except sdb.exceptions_eligible_for_retry, x:
+            if not sdb.programming_error_eligible_for_retry(x):
+              raise
             socorro.lib.util.reportExceptionAndContinue(logger)
+            self.databaseConnectionPool.dump_connection()
+            logger.info('will attempt to connect again on next iteration')
           self.quitCheck()
           logger.debug("sleeping")
           self.responsiveSleep(self.priorityLoopDelay)
@@ -473,7 +478,14 @@ class Monitor (object):
         #self.responsiveSleep(self.cleanupJobsLoopDelay)
         while True:
           logger.info("beginning jobCleanupLoop cycle.")
-          self.cleanUpCompletedAndFailedJobs()
+          try:
+            self.cleanUpCompletedAndFailedJobs()
+          except sdb.exceptions_eligible_for_retry, x:
+            if not sdb.programming_error_eligible_for_retry(x):
+              raise
+            socorro.lib.util.reportExceptionAndContinue(logger)
+            logger.info('will attempt to connect again on next iteration')
+            self.databaseConnectionPool.dump_connection()
           self.responsiveSleep(self.cleanupJobsLoopDelay)
       except (KeyboardInterrupt, SystemExit):
         logger.debug("got quit message")
@@ -503,6 +515,3 @@ class Monitor (object):
     except KeyboardInterrupt:
       logger.debug("KeyboardInterrupt.")
       raise SystemExit
-
-
-
