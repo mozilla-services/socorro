@@ -32,10 +32,9 @@ echo 'bug 681476'
 psql -f ${CURDIR}/drop_frames_table.sql breakpad
 
 echo '*********************************************************'
-echo 'exclude ESR releases from all reports'
-echo 'bug 725732'
+echo 'Fix FKs so that we can delete product/versions'
+echo 'No bug #'
 psql -f ${CURDIR}/fix_product_version_fks.sql breakpad
-psql -f ${CURDIR}/update_products_no_esr.sql breakpad
 
 echo '*********************************************************'
 echo 'NOTICE: for the new analyst user you must do two additional,'
