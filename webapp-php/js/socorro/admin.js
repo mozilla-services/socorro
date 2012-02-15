@@ -41,6 +41,9 @@ function hideShow(hideId, showId) {
 }
 
 $(document).ready(function(){
+    
+    var dataSourcesTabs = $('#data_sources');
+    
 	/* Emails */
     $('input[name=email_start_date][type=text], input[name=email_end_date][type=text]').datepicker({
 		dateFormat: "dd/mm/yy"
@@ -71,11 +74,13 @@ $(document).ready(function(){
 
     $('.admin tbody tr:odd').css('background-color', '#efefef');
     
-    $('#data_sources').tabs({
-        cookie: {
-            expires: 1
-        }
-    }).show();
+    if(dataSourcesTabs.length) {
+        dataSourcesTabs.tabs({
+            cookie: {
+                expires: 1
+            }
+        }).show();
+    }
     
     //hide the loader
     $("#loading-bds").hide();
