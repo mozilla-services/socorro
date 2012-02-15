@@ -196,8 +196,10 @@ class Monitor (object):
     except Monitor.NoProcessorsRegisteredException:
       self.quit = True
       socorro.lib.util.reportExceptionAndAbort(logger, showTraceback=False)
-    except sdb.exceptions_eligible_for_retry:
+    except sdb.exceptions_eligible_for_retry, x:
       socorro.lib.util.reportExceptionAndContinue(logger)
+      if not sdb.programming_error_eligible_for_retry(x):
+        raise
       self.databaseConnectionPool.dump_connection()
     except:
       socorro.lib.util.reportExceptionAndContinue(logger)
@@ -336,7 +338,9 @@ class Monitor (object):
                 self.quit = True
                 raise
             logger.debug("ended destructiveDateWalk")
-          except sdb.exceptions_eligible_for_retry:
+          except sdb.exceptions_eligible_for_retry, x:
+            if not sdb.programming_error_eligible_for_retry(x):
+              raise
             socorro.lib.util.reportExceptionAndContinue(logger, loggingLevel=logging.CRITICAL)
             logger.info('will attempt to connect again at next iteration')
             self.databaseConnectionPool.dump_connection()
@@ -442,7 +446,9 @@ class Monitor (object):
           except KeyboardInterrupt:
             logger.debug("inner detects quit")
             raise
-          except sdb.exceptions_eligible_for_retry:
+          except sdb.exceptions_eligible_for_retry, x:
+            if not sdb.programming_error_eligible_for_retry(x):
+              raise
             socorro.lib.util.reportExceptionAndContinue(logger)
             self.databaseConnectionPool.dump_connection()
             logger.info('will attempt to connect again on next iteration')
@@ -474,7 +480,9 @@ class Monitor (object):
           logger.info("beginning jobCleanupLoop cycle.")
           try:
             self.cleanUpCompletedAndFailedJobs()
-          except sdb.exceptions_eligible_for_retry:
+          except sdb.exceptions_eligible_for_retry, x:
+            if not sdb.programming_error_eligible_for_retry(x):
+              raise
             socorro.lib.util.reportExceptionAndContinue(logger)
             logger.info('will attempt to connect again on next iteration')
             self.databaseConnectionPool.dump_connection()

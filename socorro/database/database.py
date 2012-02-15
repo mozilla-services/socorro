@@ -31,6 +31,12 @@ exceptions_eligible_for_retry = (psycopg2.OperationalError,
                                  CannotConnectToDatabase)
 
 #-----------------------------------------------------------------------------------------------------------------
+def programming_error_eligible_for_retry(an_exception):
+  if isinstance(an_exception, psycopg2.ProgrammingError):
+    return an_exception.pgerror.strip() in ('SSL SYSCALL error: EOF detected',)
+  return True
+
+#-----------------------------------------------------------------------------------------------------------------
 def db_transaction_retry_wrapper(fn):
   """a decorator to add backing off retry symantics to any a method that does
   a database transaction.  When using this decorator, it is vital that any
@@ -46,7 +52,9 @@ def db_transaction_retry_wrapper(fn):
         try:
           result = fn(self, *args, **kwargs)
           return result
-        except exceptions_eligible_for_retry:
+        except exceptions_eligible_for_retry, x:
+          if not programming_error_eligible_for_retry(x):
+            raise
           util.reportExceptionAndContinue(logger=self.logger)
           waitInSeconds = backoffGenerator.next()
           try:
@@ -57,7 +65,7 @@ def db_transaction_retry_wrapper(fn):
             pass
           try:
             self.responsiveSleep(waitInSeconds,
-                                 10,
+                                 2, # TODO: restore to 10
                                  "waiting for retry after failure in db "
                                  "transaction")
           except AttributeError:
@@ -109,7 +117,9 @@ def transaction_execute_with_retry (database_connection_pool,
     except db_module.ProgrammingError:
       result = []
     connection.commit()
-  except exceptions_eligible_for_retry:
+  except exceptions_eligible_for_retry, x:
+    if not programming_error_eligible_for_retry(x):
+      raise
     if logger:
       util.reportExceptionAndContinue(logger=logger)
     database_connection_pool.dump_connection()

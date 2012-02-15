@@ -175,7 +175,9 @@ class Processor(object):
                      "primary key)" % self.priorityJobsTableName)
       logger.debug("success")
       db_conn.commit()
-    except sdb.exceptions_eligible_for_retry:
+    except sdb.exceptions_eligible_for_retry, x:
+      if not sdb.programming_error_eligible_for_retry(x):
+        raise
       logger.debug("timout trouble")
       raise
     except sdb.db_module.ProgrammingError, x:
@@ -456,7 +458,9 @@ class Processor(object):
     try:
       threadLocalDatabaseConnection, threadLocalCursor = self.databaseConnectionPool.connectionCursorPair()
       threadLocalCrashStorage = self.crashStorePool.crashStorage(threadName)
-    except sdb.exceptions_eligible_for_retry:
+    except sdb.exceptions_eligible_for_retry, x:
+      if not sdb.programming_error_eligible_for_retry(x):
+        raise
       logger.critical("something's gone horribly wrong with the database connection")
       sutil.reportExceptionAndContinue(logger, loggingLevel=logging.CRITICAL)
       return Processor.criticalError
@@ -595,7 +599,9 @@ class Processor(object):
       threadLocalCursor.execute('delete from jobs where id = %s', (jobId,))
       threadLocalDatabaseConnection.commit()
       return Processor.ok
-    except sdb.exceptions_eligible_for_retry:
+    except sdb.exceptions_eligible_for_retry, x:
+      if not sdb.programming_error_eligible_for_retry(x):
+        raise
       logger.critical("something's gone horribly wrong with the database connection")
       sutil.reportExceptionAndContinue(logger, loggingLevel=logging.CRITICAL)
       return Processor.criticalError
@@ -881,5 +887,3 @@ class Processor(object):
       key = resultDict['productid']
       del resultDict['productid']
       productIdMap[key] = resultDict
-
-
