@@ -1324,9 +1324,6 @@ div.release_channel ul {
 
 div.release_channel li {
     padding: 0 0 12px 0;
-}
-
-div.release_channel li.emphatic {
     font-size: 16px;
 }
 
