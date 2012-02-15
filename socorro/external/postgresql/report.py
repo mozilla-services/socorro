@@ -243,18 +243,3 @@ class Report(PostgreSQLBase):
             sql_group.append("pluginName, pluginVersion, pluginFilename ")
 
         return ", ".join(sql_group)
-
-    @staticmethod
-    def prepare_terms(terms, search_mode):
-        """
-        Prepare terms for search, adding '%' where needed,
-        given the search mode.
-        """
-        if search_mode in ("contains", "starts_with"):
-            terms = terms.replace("_", "\_").replace("%", "\%")
-
-        if search_mode == "contains":
-            terms = "%" + terms + "%"
-        elif search_mode == "starts_with":
-            terms = terms + "%"
-        return terms
