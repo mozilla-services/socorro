@@ -336,7 +336,8 @@ class ProcessorWithExternalBreakpad (processor.Processor):
       # generate a C signature
       signature, \
         signature_notes = self.c_signature_tool.generate(signature_list,
-                                                         hang_type=hang_type)
+                                                         hang_type,
+                                                         crashed_thread)
     if signature_notes:
       processor_notes_list.extend(signature_notes)
 
