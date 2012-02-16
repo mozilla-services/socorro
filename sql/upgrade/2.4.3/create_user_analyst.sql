@@ -10,6 +10,10 @@ BEGIN
 	END IF;
 END; $f$;
 
+ALTER USER analyst SET statement_timeout = '15min';
+ALTER USER analyst SET work_mem = '128MB';
+ALTER USER analyst SET temp_buffers = '128MB';
+
  GRANT SELECT ON TABLE addresses TO analyst;
  GRANT SELECT ON TABLE bug_associations TO analyst;
  GRANT SELECT ON TABLE bugs TO analyst;
