@@ -1,6 +1,7 @@
 #! /bin/sh
 
 . /etc/socorro/socorrorc
+. /etc/socorro/socorro-monitor.conf
 PGPASSWORD=$databasePassword
 export PGPASSWORD
 
