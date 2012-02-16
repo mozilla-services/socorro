@@ -30,7 +30,7 @@ class Signature_Summary_Controller extends Controller {
 
     public function json_data()
     {
-        $d = array('signature' => '', 'range_value' => '7', 'range_unit' => 'days', 'product' => 'Firefox', 'version' => array(), 'date' => date('Y-m-d'));
+        $d = array('signature' => '', 'range_value' => '7', 'range_unit' => 'days', 'version' => array(), 'date' => date('Y-m-d'));
         $params = $this->getRequestParameters($d);
         $signature = $params['signature'];
         $start = date('Y-m-d', strtotime($params['date'] . 
@@ -42,12 +42,12 @@ class Signature_Summary_Controller extends Controller {
             $versions = array();
         }
 
-        $uptime = $this->summary_model->getSummary('uptime', $signature, $start, $end, $params['product'], $versions);
+        $uptime = $this->summary_model->getSummary('uptime', $signature, $start, $end, $versions);
         $products = $this->summary_model->getSummary('products', $signature, $start, $end);
-        $oses = $this->summary_model->getSummary('os', $signature, $start, $end, $params['product'], $versions);
-        $processes = $this->summary_model->getSummary('process_type', $signature, $start, $end, $params['product'], $versions);
-        $flashes = $this->summary_model->getSummary('flash_version', $signature, $start, $end, $params['product'], $versions);
-        $architecture = $this->summary_model->getSummary('architecture', $signature, $start, $end, $params['product'], $versions);
+        $oses = $this->summary_model->getSummary('os', $signature, $start, $end, $versions);
+        $processes = $this->summary_model->getSummary('process_type', $signature, $start, $end, $versions);
+        $flashes = $this->summary_model->getSummary('flash_version', $signature, $start, $end, $versions);
+        $architecture = $this->summary_model->getSummary('architecture', $signature, $start, $end, $versions);
         $results = array();
 
         foreach($architecture as $arch) {

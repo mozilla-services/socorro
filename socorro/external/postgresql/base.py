@@ -56,6 +56,21 @@ class PostgreSQLBase(object):
         return (versions, products)
 
     @staticmethod
+    def prepare_terms(terms, search_mode):
+        """
+        Prepare terms for search, adding '%' where needed,
+        given the search mode.
+        """
+        if search_mode in ("contains", "starts_with"):
+            terms = terms.replace("_", "\_").replace("%", "\%")
+
+        if search_mode == "contains":
+            terms = "%" + terms + "%"
+        elif search_mode == "starts_with":
+            terms = terms + "%"
+        return terms
+
+    @staticmethod
     def dispatch_params(sql_params, key, value):
         """
         Dispatch a parameter or a list of parameters into the params array.

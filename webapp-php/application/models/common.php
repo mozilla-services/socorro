@@ -18,55 +18,6 @@ class Common_Model extends Model {
         $this->platform_model = new Platform_Model();
     }
 
-   /**
-     * Fetch all of the comments associated with a particular Crash Signature.
-     *
-     * @access 	public
-     * @param   string A Crash Signature
-     * @return  array 	An array of comments
-     * @see getCommentsBySignature
-     */
-    public function getCommentsBySignature($signature) {
-        $params = array('signature' => $signature,
-			'range_value' => 2, 'range_unit' => 'weeks',
-			'product' => NULL,  'version' => NULL,
-			'branch' => NULL,   'platform' => NULL,
-			'query' => NULL, 'date' => NULL);
-	return $this->getCommentsByParams($params);
-    }
-
-    /**
-     * Fetch all of the comments associated with a particular Crash Signature.
-     *
-     * @access 	public
-     * @param	array 	An array of parameters
-     * @return  array 	An array of comments
-     */
-    public function getCommentsByParams($params) {
-        list($from_tables, $join_tables, $where) = $this->_buildCriteriaFromSearchParams($params);
-
-        $sql =
-	    "/* soc.web report.getCommentsBySignature */ " .
-            " SELECT
-				reports.date_processed,
-				reports.user_comments,
-                reports.uuid,
-				CASE
-					WHEN reports.email = '' THEN null
-					WHEN reports.email IS NULL THEN null
-					ELSE reports.email
-					END " .
-            " FROM  " . join(', ', $from_tables);
-        if(count($join_tables) > 0) {
-	    $sql .= " JOIN  " . join("\nJOIN ", $join_tables);
-        }
-
-        $sql .= " WHERE reports.user_comments IS NOT NULL " .
-	        " AND " . join(' AND ', $where) .
-	        " ORDER BY email ASC, reports.date_processed ASC ";
-	return $this->fetchRows($sql);
-    }
-
     /**
      * Calculate frequency of crashes across builds and platforms.
      */
@@ -75,7 +26,7 @@ class Common_Model extends Model {
         $signature = $this->db->escape($params['signature']);
 
         $columns = array(
-            "reports.build_date AS build_date",
+            "reports.build AS build_date",
             "count(CASE WHEN (reports.signature = $signature) THEN 1 END) AS count",
             "CAST(count(CASE WHEN (reports.signature = $signature) THEN 1 END) AS FLOAT(10)) / count(reports.id) AS frequency",
             "count(reports.id) AS total"
@@ -101,8 +52,8 @@ class Common_Model extends Model {
         }
 
 	$sql .= " WHERE  " . join(' AND ', $where) .
-                " GROUP BY reports.build_date ".
-                " ORDER BY reports.build_date DESC";
+                " GROUP BY reports.build ".
+                " ORDER BY reports.build DESC";
 
         return $this->fetchRows($sql);
     }
