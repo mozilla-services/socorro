@@ -84,6 +84,12 @@ reportImplementationModule.doc = (
                         "String, name of the module report services use.")
 reportImplementationModule.default = 'socorro.external.postgresql'
 
+# Crashes service config
+crashesImplementationModule = cm.Option()
+crashesImplementationModule.doc = (
+                        "String, name of the module crashes services use.")
+crashesImplementationModule.default = 'socorro.external.postgresql'
+
 import socorro.services.signatureHistory as sighist
 import socorro.services.aduByDay as adubd
 import socorro.services.aduByDayDetails as adudetails
@@ -104,6 +110,7 @@ import socorro.middleware.versions_info_service as versions_info
 import socorro.middleware.products_builds_service as products_builds
 import socorro.middleware.signature_summary_service as signature_summary
 import socorro.middleware.tcbs_service as tcbs
+import socorro.middleware.crashes_comments_service as crashes_comments
 
 servicesList = cm.Option()
 servicesList.doc = 'a python list of classes to offer as services'
@@ -128,6 +135,7 @@ servicesList.default = [
     products_builds.ProductsBuilds,
     signature_summary.SignatureSummary,
     tcbs.TCBS,
+    crashes_comments.CrashesComments,
 ]
 
 crashBaseUrl = cm.Option()
