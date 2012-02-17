@@ -8,6 +8,7 @@ bug 721456
 	
 no bug
 	Fix issue with rerunnability of the socorro version update function.
+	Fix foriegn keys so that bad product-versions can be deleted
 	
 bug 687906 
 	Add new user "analyst" with read-only permissions to many tables
@@ -17,9 +18,6 @@ bug 687906
 		
 bug 681476
 	Remove Frames table.
-	
-bug 725732
-	Exclude ESR releases from product_versions (for the time being).
 
 The above changes should take only a few minutes to deploy.
 This upgrade does not require a downtime.
