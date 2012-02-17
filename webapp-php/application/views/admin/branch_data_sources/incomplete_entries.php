@@ -1,4 +1,4 @@
-<?php if (isset($missing_entries) && !empty($missing_entries)) { ?>
+<?php if (isset($missing_visibility_entries) && !empty($missing_visibility_entries)) { ?>
 	<p>The following entries appear in the productdims table but do not have corresponding entries in the product_visibility table.</p>
 	<table class="branch">
         <thead>
