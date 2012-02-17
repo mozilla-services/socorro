@@ -69,6 +69,7 @@ INSERT INTO nightly_builds (
 	days_out, report_count )
 SELECT product_version_id, 
 	build_date(reports_clean.build) as build_date, 
+	date_processed::date as report_date,
 	date_processed::date 
 		- build_date(reports_clean.build) as days_out,
 	count(*)
