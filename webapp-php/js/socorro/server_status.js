@@ -49,5 +49,5 @@ $(function() {
     graphOpts
   );
   $('#server-stats-table').tablesorter();
-  $('abbr.timeago').timeago();
+  $('time.timeago').timeago();
 });

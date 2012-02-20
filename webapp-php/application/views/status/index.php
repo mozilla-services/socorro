@@ -17,19 +17,21 @@
 	<h2>Server Status</h2>
 </div>
 
-<?php $stat = $server_stats[0] ?>
+<?php 
+    $stat = $server_stats[0];
+?>
 <div class="panel">
-<div class="title">As of <abbr class="timeago" title="<?php echo $stat->date_created ?>"><?php echo $stat->date_created ?></abbr></div>
+<div class="title">As of <time class="timeago" datetime="<?php echo $stat->date_created ?>"><?php echo $stat->date_created ?></time></div>
     <div class="body">
         <table class="server_status">
             <tr>
                 <td>Socorro revision</td><td><a href="https://github.com/mozilla/socorro/commit/<?php echo Kohana::config('revision.socorro_revision')?>"><?php echo Kohana::config('revision.socorro_revision')?></a></td>
             </tr>
             <tr>
-                <td>Oldest job entered the queue</td><td><abbr class="timeago" title="<?php echo $stat->date_oldest_job_queued ?>"><?php echo $stat->date_oldest_job_queued ?></abbr></td>
+                <td>Oldest job entered the queue</td><td><time class="timeago" datetime="<?php echo $stat->date_oldest_job_queued ?>"><?php echo $stat->date_oldest_job_queued ?></time></td>
             </tr>
             <tr>
-                <td>Most recent job was completed</td><td><abbr class="timeago" title="<?php echo $stat->date_recently_completed ?>"><?php echo $stat->date_recently_completed ?></abbr></td>
+                <td>Most recent job was completed</td><td><time class="timeago" datetime="<?php echo $stat->date_recently_completed ?>"><?php echo $stat->date_recently_completed ?></time></td>
             </tr>
         </table>
     </div>
