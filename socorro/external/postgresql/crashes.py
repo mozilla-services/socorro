@@ -108,13 +108,10 @@ class Crashes(PostgreSQLBase):
 
         sql_order = "ORDER BY email ASC, r.date_processed ASC"
 
-        (sql_limit, sql_params) = self.build_reports_sql_limit(params,
-                                                               sql_params)
-
         # Assembling the query
         sql_query = " ".join((
                 "/* external.postgresql.crashes.Crashes.get_comments */",
-                sql_select, sql_from, sql_where, sql_order, sql_limit))
+                sql_select, sql_from, sql_where, sql_order))
 
         # Query for counting the results
         sql_count_query = " ".join((
