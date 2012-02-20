@@ -278,6 +278,6 @@ class PostgreSQLBase(object):
             else:
                 # it's a release
                 version_where.append(("r.release_channel NOT IN %s" %
-                                      config.channels))
+                                      (tuple(config.channels),)))
 
         return version_where
