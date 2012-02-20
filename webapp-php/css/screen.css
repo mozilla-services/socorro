@@ -1626,6 +1626,7 @@ a.builds {
 .postcrash.panel {
     min-width: 1150px;
     background-color: #fff;
+    padding: 20px;
 }
 
 .postcrash strong {
@@ -1719,4 +1720,21 @@ table.tablesorter tbody tr.odd {
 }
 .hide {
     display: none;
+}
+/* standard table styles for data tables */
+.data-table {
+    width: 100%;
+}
+.data-table th {
+    background-color: #D9D9D9;
+}
+.data-table th, 
+.data-table td {
+    padding: .5em;
+}
+.data-table tbody tr:nth-child(odd) {
+    background-color: #edecec;
+}
+.data-table tbody tr:hover {
+    background-color: #D9D9D9;
 }
