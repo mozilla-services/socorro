@@ -23,62 +23,44 @@ class Report_Model extends Model {
         $this->service = new Web_Service($config);
     }
 
-     /**
-      * Checks to see if this crash report has been processed and if so
-      * what was the date/time. If crash has not been processed yet
-      * NULL is returned.
-      *
-      * @param  string UUID by which to look up report
-      * @param  string uri for retrieving the crash dump
-      * @return object Report data and dump data OR NULL
-      */
+    /**
+     * Checks to see if this crash report has been processed and if so
+     * what was the date/time. If crash has not been processed yet
+     * NULL is returned.
+     *
+     * @param  string UUID by which to look up report
+     * @param  string uri for retrieving the crash dump
+     * @return object Report data and dump data OR NULL
+     */
     public function getByUUID($uuid, $crash_uri)
     {
 
         $crashReportDump = new CrashReportDump;
         $crash_report_json = $crashReportDump->getJsonZ($crash_uri);
-            $raw_json = $this->getRawJson($uuid);
+        $raw_json = $this->getRawJson($uuid);
 
-        if($crash_report_json === false){
-                Kohana::log('info', "$uuid could not fetch processed JSON");
-                return false;
+        if ($crash_report_json === false) {
+            Kohana::log('info', "$uuid could not fetch processed JSON");
+            return false;
         } else if ($crash_report_json === true) {
-                Kohana::log('info', "$uuid was reported but not processed; a priority job has been scheduled.");
-                return true;
-        } else if( !is_bool($crash_report_json) ){
-			/* Note: 99% of our data comes from the processed crash dump
-			         jsonz file. Only select columns that aren't in the json file
-			         such as email which is SENSITIVE and should never appear in
-		                 the publically accessable jsonz file. Anything here will be
-		                 merged into the model object + jsonz data */
-		        // Added addons_checked since that's not in the jsonz - bug 590245
-                        // Extract the date of crash so we can limit query to the appropriate partition - bug 718224 
-                        $day = substr($uuid, -2);
-                        $month = substr($uuid, -4, 2);
-                        $year = substr($uuid, -6, 2);
-                        $report_date_sql = '20'.$year.'-'.$month.'-'.$day; // assume we won't be using this code in 88 years :D
-		        $report = $this->db->query(
-		            "/* soc.web report.dateProcessed */
-		                SELECT reports.email, reports.url, reports.addons_checked,
-			            ( SELECT reports_duplicates.duplicate_of FROM reports_duplicates WHERE reports_duplicates.uuid = reports.uuid) as duplicate_of
-		                FROM reports
-		                WHERE reports.uuid=?
-		                AND reports.success
-		                IS NOT NULL
-                                AND tstz_between( reports.date_processed,  ( date ? - 1 ), ( date ? + 1 ))
-		            ", $uuid, $report_date_sql, $report_date_sql)->current();
-	            if(!$report) {
-                        Kohana::log('info', "$uuid processed crash exists in HBase but does not exist in the reports table");
-                        return false;
-                }
+            Kohana::log('info', "$uuid was reported but not processed; a priority job has been scheduled.");
+            return true;
+        } else if ( !is_bool($crash_report_json) ) {
+            $uri = Kohana::config('webserviceclient.socorro_hostname') . '/crash/uuid/' . urlencode($uuid);
+            $report = $this->service->get($uri);
+            if (!$report || $report->total == 0) {
+                Kohana::log('info', "$uuid processed crash exists in HBase but does not exist in the reports table");
+                return false;
+            }
 
-                $crashReportDump->populate($report, $crash_report_json, $raw_json);
-                return $report;
+            $report = $report->hits[0]; // Use only crash data sent back from the service
+
+            $crashReportDump->populate($report, $crash_report_json, $raw_json);
+            return $report;
         } else {
-        Kohana::log('info', "$uuid doesn't exist (404)");
-                return NULL;
+            Kohana::log('info', "$uuid doesn't exist (404)");
+            return NULL;
         }
-
     }
 
     public function getRawJson($uuid){
