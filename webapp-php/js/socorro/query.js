@@ -29,7 +29,6 @@ $(document).ready(function() {
       });
 
       //Process/Plugin area
-      $('[name=process_type]').cookieBind();
       $('[name=plugin_field]').cookieBind();
       $('[name=plugin_query_type]').cookieBind();
 
