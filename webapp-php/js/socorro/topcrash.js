@@ -59,16 +59,7 @@ $(document).ready(function () {
             legend.show();
 	    button.hide();
             var tr = button.parents('tr'),
-            defaultOptions = {
-                xaxis: {mode: 'time'},
-                legend: {container: legend, margin: 0, labelBoxBorderColor: '#FFF'},
-                series: {
-                    lines: { show: true },
-                    points: { show: false },
-                    shadowSize: 0
-                }
-            },
-            perosOptions= {
+            options = {
                 xaxis: {mode: 'time'},
                 legend: {
                     noColumns: 4,
@@ -80,8 +71,7 @@ $(document).ready(function () {
                     points: { show: false },
                     shadowSize: 0
                 }
-            },
-            options = perosTbl.length ? perosOptions : defaultOptions;
+            };
             
             $.plot(graph,
                [{ data: data.counts,   label: 'Count',  yaxis: 1},
@@ -116,9 +106,6 @@ $(document).ready(function () {
         ranks.push(rank);
     });
     
-    if($("#peros-tbl").length === 0) {
-        $('td a.signature').girdle({previewClass: 'signature-preview', fullviewClass: 'signature-popup'});
-    }
     expandCorrelation = function () {
         var row = $(this).parents('tr');
         $('.correlation-cell div div.complete', row).show();
@@ -203,8 +190,5 @@ $(document).ready(function () {
         for (i = 0; i < correlations.length; i++) {
             loadCorrelations(correlations[i], correlationCallback);
         }
-    }
-    if($("#peros-tbl").length === 0) {
-        $('.top').girdle({previewClass: 'correlation-preview', fullviewClass: 'correlation-popup'});
     }
 });

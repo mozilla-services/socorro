@@ -20,7 +20,10 @@
 
 <div class="panel">
     <div class="body notitle">
+    <?php if (count($top_crashers) > 0) { ?>
         <p>Top <?php echo count($top_crashers) ?> Crashing Signatures from <time class="start-date"><?= $start_date ?></time> through <time class="end-date"><?= $end_date ?></time>.</p>
+        <p>Graphs below are dual-axis, having <strong>Count</strong> (Number of Crashes) on the left X axis and <strong>Percent</strong> of total of Crashes on the right X axis.</p>
+    <?php } ?>
         <ul class="tc-duration-type tc-filter">
             <li class="tc-duration-heading">Type:</li>
             <?php foreach ($crash_types as $ct) { ?>
@@ -35,15 +38,15 @@
         </ul>
         <ul class="tc-per-platform tc-filter">
             <li class="tc-per-platform-heading">OS:</li>
-            <li><a href="<?= $byverion_url . '/' . $duration . '/' . $crash_type; ?>">All</a></li>
+            <li><a href="<?= $byverion_url; ?>">All</a></li>
             <?php foreach ($platforms as $p) { ?>
                 <li><a href="<?= $platform_url . '/' . $p . '/' . $duration . '/' . $crash_type; ?>" <?php if ($p == $os) echo 'class="selected"'; ?>><?= $p ?></a></li>
             <?php }?>
         </ul>
+    <?php if (count($top_crashers) > 0) { ?>
         <table id="peros-tbl" class="tablesorter">
             <thead>
                 <th>Rank</th>
-                <th title="Movement in Rank since the <?= $start_date ?> report">Trend</th>
                 <th title="The percentage of crashes against overall crash volume">%</th>
                 <th title="The change in percentage since the <?= $start_date ?> report">Diff</th>
                 <th>Signature</th>
@@ -64,7 +67,7 @@
                         $diff = substr($crasher->changeInPercentOfTotal, 0, 4);
                         $signature = $crasher->signature;
                         $total_count = $crasher->{'count'};
-                        $versions_count = $crasher->versions_count;
+                        $versions_count = (isset($crasher->versions_count) && !empty($crasher->versions_count)) ? $crasher->versions_count : "-";
                         $first_appeared = $crasher->first_report;
 
                         $sigParams = array(
@@ -86,14 +89,14 @@
                         $link_url =  url::base() . 'report/list?' . html::query_string($sigParams);
                 ?>
                 <tr>
-                    <td><?php echo $row; 
+                    <td>
+                        <?php out::H($row);
                         if ($crasher->trendClass == "up") { ?>
-                            <span class="moving-up"></span>
+                            <span title="Movement in Rank since the <?= $start_date ?> report" class="moving-up"><?php echo $crasher->changeInRank ?></span>
                         <?php } else if($crasher->trendClass == "down") { ?>
-                            <span class="moving-down"></span>
+                            <span title="Movement in Rank since the <?= $start_date ?> report" class="moving-down"><?php echo $crasher->changeInRank ?></span>
                         <?php } ?>
-                        </td>
-                    <td><?= $changeInRank ?></td>
+                    </td>
                     <td><?= $crasher->{'display_percent'} ?></td>
                     <td title="A change of <?php out::H($crasher->{'display_change_percent'})?> from <?php out::H($crasher->{'display_previous_percent'}) ?>">
                         <?php out::H($crasher->{'display_change_percent'}) ?>
@@ -117,7 +120,9 @@
                     </td>
                     <td><?= $total_count ?></td>
                     <td><?= $versions_count ?></td>
-                    <td><?= $first_appeared ?></td>
+                    <td <?php if (isset($crasher->first_report_exact)) { ?>title="This crash signature first appeared at <?php out::H($crasher->first_report_exact); ?>" <?php } ?>>
+                        <?php if (isset($first_appeared)) { out::H($first_appeared); } ?>
+                    </td>
                     
                     <?php 
                         if (isset($sig2bugs)) {
@@ -141,7 +146,9 @@
         </table>
         
         <?php View::factory('common/csv_link_copy')->render(TRUE); ?>
-        
+    <?php } else { ?>
+        <p class="no-results">No crashing signatures found for the period <time><?= $start_date ?></time> to <time><?= $end_date ?></time></p>
+    <?php } ?>
     </div>
 </div>
 
