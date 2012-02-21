@@ -14,10 +14,15 @@
 
         <p>The following nightly builds were scraped from the <a href="http://ftp.mozilla.org/pub/mozilla.org/firefox/nightly/">Mozilla Nightly Builds FTP site</a>.</p>
 
-        <table class="builds">
-            <th>Date</th>
-            <th>Version</th>
-            <th>Platforms</th>
+        <table class="builds data-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Version</th>
+                    <th>Platforms</th>
+                </tr>
+            </thead>
+            <tbody>
     <?php
             foreach ($dates as $date) {
                 foreach ($versions as $version) {
@@ -52,8 +57,8 @@
                 }
             }
         ?>
-
-            </table>
+            </tbody>
+        </table>
 
             <p>
                 <a href="<?php echo url::base() . $url_rss; ?>"><img src="<?php echo url::base(); ?>img/feed-icon16x16.png"></a>

@@ -2,7 +2,6 @@
   <h2>Post Crash Email</h2>
 </div>
 <div class="panel postcrash">
-  <?php View::factory('common/recent_email_campaigns')->render(TRUE); ?>
   <div class="body notitle">
     <div class="admin">
       <h3>Confirm Email</h3>
@@ -39,4 +38,7 @@
       <br class="clear" />
     </div><!-- .admin -->
   </div><!-- .body .notitle -->
+  
+  <?php View::factory('common/recent_email_campaigns')->render(TRUE); ?>
+  
 </div><!-- .panel -->
