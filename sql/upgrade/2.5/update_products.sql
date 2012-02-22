@@ -45,7 +45,8 @@ where build_date(build_id) > ( current_date - 30 )
 --fix ESR versions
 
 UPDATE releases_recent
-SET build_type = 'ESR' where build_type ILIKE 'Release'
+SET build_type = 'ESR'
+WHERE build_type ILIKE 'Release'
 	AND version ILIKE '%esr';
 	
 -- now put it in product_versions
