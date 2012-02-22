@@ -127,162 +127,6 @@ class Topcrasher_Controller extends Controller {
 
         return url::redirect('/topcrasher/byversion/' . $product->product . '/' . $product->version);
     }
-
-    /**
-     * Display the top crashers by product & version.
-     *
-     * @param   string  The name of the product
-     * @param   version The version  number for this product
-     * @param   int     The number of days for which to display results
-     * @param   string  The crash type to query by
-     * @return  void
-     */
-    public function byversion($product=null, $version=null, $duration=null, $crash_type=null)
-    {
-        if(is_null($product)) {
-          Kohana::show_404();
-        }
-        $this->navigationChooseVersion($product, $version);
-        if (empty($version)) {
-            $this->_handleEmptyVersion($product, 'byversion');
-        } else {
-            $this->_versionExists($version);
-        }
-
-        if (empty($duration)) {
-            $duration = Kohana::config('products.duration');
-        }
-	$duration_url_path = array(Router::$controller, Router::$method, $product, $version);
-    $platform_url_path = array(Router::$controller, "byos", $product, $version);
-
-	$durations = Kohana::config('topcrashbysig.durations');
-
-	$config = array();
-	$credentials = Kohana::config('webserviceclient.basic_auth');
-	if ($credentials) {
-	    $config['basic_auth'] = $credentials;
-	}
-	$service = new Web_Service($config);
-
-	$host = Kohana::config('webserviceclient.socorro_hostname');
-
-	$cache_in_minutes = Kohana::config('webserviceclient.topcrash_vers_rank_cache_minutes', 60);
-	$end_date = urlencode(date('Y-m-d\TH:i:s+0000', TimeUtil::roundOffByMinutes($cache_in_minutes)));
-	// $dur is number of hours
-	$dur = $duration * 24;
-	$limit = Kohana::config('topcrashbysig.byversion_limit', 300);
-	// lifetime in seconds
-	$lifetime = $cache_in_minutes * 60;
-
-	$crash_types = Kohana::config('topcrashbysig.crash_types');
-	if (empty($crash_type) || !in_array($crash_type, $crash_types)) {
-		$crash_type = Kohana::config('topcrashbysig.crash_types_default');
-	}
-
-	$p = urlencode($product);
-	$v = urlencode($version);
-        $resp = $service->get("${host}/crashes/signatures/product/${p}/version/${v}/crash_type/${crash_type}/to_date/${end_date}/duration/${dur}/limit/${limit}", 'json', $lifetime);
-	if($resp) {
-	    $this->topcrashers_model->ensureProperties($resp, array(
-				     'start_date' => '',
-				     'end_date' => '',
-				     'totalPercentage' => 0,
-				     'crashes' => array(),
-				     'totalNumberOfCrashes' => 0), 'top crash sig overall');
-	    $signatures = array();
-	    $req_props = array(
-                'signature' => '',
-                'count' => 0,
-                'win_count' => 0,
-                'mac_count' => 0,
-                'linux_count' => 0,
-                'currentRank' => 0,
-                'previousRank' => 0,
-                'changeInRank' => 0,
-                'percentOfTotal' => 0,
-                'previousPercentOfTotal' => 0,
-                'changeInPercentOfTotal' => 0,
-                'versions' => '',
-                'versions_count' => '',
-                'first_report' => '',
-                'first_report_exact' => ''
-            );
-
-	    foreach($resp->crashes as $top_crasher) {
-		$this->topcrashers_model->ensureProperties($top_crasher, $req_props, 'top crash sig trend crashes');
-
-		if ($this->input->get('format') != "csv") {
-                    //$top_crasher->{'missing_sig_param'} - optional param, used for formating url to /report/list
-		    if (is_null($top_crasher->signature)) {
-			$top_crasher->{'display_signature'} = Crash::$null_sig;
-			$top_crasher->{'display_null_sig_help'} = TRUE;
-		        $top_crasher->{'missing_sig_param'} = Crash::$null_sig_code;
-		    } else if(empty($top_crasher->signature)) {
-			$top_crasher->{'display_signature'} = Crash::$empty_sig;
-			$top_crasher->{'display_null_sig_help'} = TRUE;
-		        $top_crasher->{'missing_sig_param'} = Crash::$empty_sig_code;
-		    } else {
-			$top_crasher->{'display_signature'} = $top_crasher->signature;
-			$top_crasher->{'display_null_sig_help'} = FALSE;
-		    }
-
-		    $top_crasher->{'display_percent'} = number_format($top_crasher->percentOfTotal * 100, 2) . "%";
-		    $top_crasher->{'display_previous_percent'} = number_format($top_crasher->previousPercentOfTotal * 100, 2) . "%";
-		    $top_crasher->{'display_change_percent'} = number_format($top_crasher->changeInPercentOfTotal * 100, 2) . "%";
-
-		    array_push($signatures, $top_crasher->signature);
-
-                    $top_crasher->{'correlation_os'} = Correlation::correlationOsName($top_crasher->win_count, $top_crasher->mac_count, $top_crasher->linux_count);
-		}
-		$top_crasher->trendClass = $this->topcrashers_model->addTrendClass($top_crasher->changeInRank);
-            }
-	    $signature_to_bugzilla = $this->bug_model->bugsForSignatures(
-                                         array_unique($signatures),
-                                         Kohana::config('codebases.bugTrackingUrl')
-                                     );
-
-	    if ($this->input->get('format') == "csv") {
-		$this->setViewData(array('top_crashers' => $this->_csvFormatArray($resp->crashes)));
-		$this->renderCSV("${product}_${version}_" . date("Y-m-d"));
-	    } else {
-            $this->setViewData(array(
-                'resp'           => $resp,
-                'duration_url'   => url::site(implode($duration_url_path, '/') . '/'),
-                'last_updated'   => $resp->end_date,
-                'duration'       => $duration,
-                'durations'      => $durations,
-                'percentTotal'   => $resp->totalPercentage,
-                'product'        => $product,
-                'version'        => $version,
-                'platforms'      => Kohana::config('platforms.platforms'),
-                'nav_selection'  => 'top_crashes',
-                'sig2bugs'       => $signature_to_bugzilla,
-                'start'          => $resp->start_date,
-                'end_date'       => $resp->end_date,
-                'crash_types'    => $crash_types,
-                'crash_type'     => $crash_type,
-                'crash_type_url' => url::site(implode($duration_url_path, '/') . '/' . $duration . '/'),
-                'platform_url'   => url::site(implode($platform_url_path, '/') . '/'),
-                'range_unit'     => 'days',
-                'range_value'    => $duration,
-                'top_crashers'   => $resp->crashes,
-                'total_crashes'  => $resp->totalNumberOfCrashes,
-                'url_nav'        => url::site('products/'.$product),
-            ));
-	    }
-	} else {
-	    header("Data access error", TRUE, 500);
-	    $this->setViewData(
-	        array(
-           	       'nav_selection' => 'top_crashes',
-                   'product'        => $product,
-                   'url_nav'        => url::site('products/'.$product),
-				   'version'      => $version,
-				   'resp'         => $resp
-			    )
-            );
-	     }
-    }
     
     public function setupWebservice() {
         $config = array();
@@ -391,9 +235,132 @@ class Topcrasher_Controller extends Controller {
         $this->tcbInitParams->{'v'} = urlencode($version);
         
         $this->tcbInitParams->{'platforms'} = Kohana::config('platforms.platforms');
-        $this->tcbInitParams->{'os_display_name'} = $this->getOSDisplayName($os);
+        
+        if($os != null) {
+            $this->tcbInitParams->{'os_display_name'} = $this->getOSDisplayName($os);
+        }
         
         return $this->tcbInitParams;
+    }
+
+    /**
+     * Display the top crashers by product & version.
+     *
+     * @param   string  The name of the product
+     * @param   version The version  number for this product
+     * @param   int     The number of days for which to display results
+     * @param   string  The crash type to query by
+     * @return  void
+     */
+    public function byversion($product=null, $version=null, $duration=null, $crash_type=null)
+    {
+        if(is_null($product)) {
+          Kohana::show_404();
+        }
+        
+        $params = $this->initTopCrasher($product, $version, $duration, $crash_type);
+
+        $platform_url_path = array(Router::$controller, "byos", $product, $version);
+
+        $this->setupWebservice();
+
+        $resp = $this->service->get("$this->host/crashes/signatures/product/{$params->{'p'}}/version/{$params->{'v'}}/crash_type/{$params->crash_type}/to_date/{$params->{'end_date'}}/duration/{$params->dur}/limit/{$params->limit}", 'json', $params->lifetime);
+	
+        if($resp) {
+            $this->topcrashers_model->ensureProperties($resp, array(
+				     'start_date' => '',
+				     'end_date' => '',
+				     'totalPercentage' => 0,
+				     'crashes' => array(),
+				     'totalNumberOfCrashes' => 0), 'top crash sig overall');
+            $signatures = array();
+            $req_props = array(
+                'signature' => '',
+                'count' => 0,
+                'win_count' => 0,
+                'mac_count' => 0,
+                'linux_count' => 0,
+                'currentRank' => 0,
+                'previousRank' => 0,
+                'changeInRank' => 0,
+                'percentOfTotal' => 0,
+                'previousPercentOfTotal' => 0,
+                'changeInPercentOfTotal' => 0,
+                'versions' => '',
+                'versions_count' => '',
+                'first_report' => '',
+                'first_report_exact' => ''
+            );
+
+            foreach($resp->crashes as $top_crasher) {
+                
+                $this->topcrashers_model->ensureProperties($top_crasher, $req_props, 'top crash sig trend crashes');
+
+                if ($this->input->get('format') != "csv") {
+                    //$top_crasher->{'missing_sig_param'} - optional param, used for formating url to /report/list
+                    if (is_null($top_crasher->signature)) {
+                    $top_crasher->{'display_signature'} = Crash::$null_sig;
+                    $top_crasher->{'display_null_sig_help'} = TRUE;
+                    $top_crasher->{'missing_sig_param'} = Crash::$null_sig_code;
+                    } else if(empty($top_crasher->signature)) {
+                    $top_crasher->{'display_signature'} = Crash::$empty_sig;
+                    $top_crasher->{'display_null_sig_help'} = TRUE;
+                    $top_crasher->{'missing_sig_param'} = Crash::$empty_sig_code;
+                    } else {
+                    $top_crasher->{'display_full_signature'} = $top_crasher->signature;
+                    $top_crasher->{'display_signature'} = substr($top_crasher->signature, 0, 80);
+                    $top_crasher->{'display_null_sig_help'} = FALSE;
+                    }
+                    
+                    $top_crasher->{'display_percent'} = number_format($top_crasher->percentOfTotal * 100, 2) . "%";
+                    $top_crasher->{'display_previous_percent'} = number_format($top_crasher->previousPercentOfTotal * 100, 2) . "%";
+                    $top_crasher->{'display_change_percent'} = number_format($top_crasher->changeInPercentOfTotal * 100, 2) . "%";
+                    
+                    array_push($signatures, $top_crasher->signature);
+                    
+                    $top_crasher->{'correlation_os'} = Correlation::correlationOsName($top_crasher->win_count, $top_crasher->mac_count, $top_crasher->linux_count);
+                }
+
+                $top_crasher->trendClass = $this->topcrashers_model->addTrendClass($top_crasher->changeInRank);
+            }
+
+            $signature_to_bugzilla = $this->bug_model->bugsForSignatures(
+                array_unique($signatures),
+                Kohana::config('codebases.bugTrackingUrl')
+            );
+
+            if ($this->input->get('format') == "csv") {
+                $this->setViewData(array('top_crashers' => $this->_csvFormatArray($resp->crashes)));
+                $this->renderCSV("${product}_${version}_" . date("Y-m-d"));
+            } else {
+                $this->setViewData(array(
+                    'resp'           => $resp,
+                    'duration_url'   => url::site(implode($params->{'duration_url_path'}, '/') . '/'),
+                    'last_updated'   => $resp->end_date,
+                    'duration'       => $params->{'duration'},
+                    'durations'      => $params->{'durations'},
+                    'percentTotal'   => $resp->totalPercentage,
+                    'product'        => $product,
+                    'version'        => $version,
+                    'platforms'      => Kohana::config('platforms.platforms'),
+                    'nav_selection'  => 'top_crashes',
+                    'sig2bugs'       => $signature_to_bugzilla,
+                    'start'          => $resp->start_date,
+                    'end_date'       => $resp->end_date,
+                    'crash_types'    => $params->crash_types,
+                    'crash_type'     => $params->crash_type,
+                    'crash_type_url' => url::site(implode($params->{'duration_url_path'}, '/') . '/' . $duration . '/'),
+                    'platform_url'   => url::site(implode($platform_url_path, '/') . '/'),
+                    'range_unit'     => 'days',
+                    'range_value'    => $params->{'duration'},
+                    'top_crashers'   => $resp->crashes,
+                    'total_crashes'  => $resp->totalNumberOfCrashes,
+                    'url_nav'        => url::site('products/'.$product),
+                ));
+            }
+        } else {
+            $this->raise500Error($product, $version, $resp);
+        }
     }
 
     /**

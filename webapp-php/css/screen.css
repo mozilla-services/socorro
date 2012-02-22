@@ -1111,19 +1111,22 @@ td.in1 ul, td.in2 ul{
 .moving-up, 
 .moving-down {
     position: absolute;
-    left: 6px;
+    left: 3px;
     display: inline-block;
-    margin-top: -5px;
-    padding: 1.1em;
+    color: #fff;
+    margin-top: -4px;
+    padding: 1.9em 0.5em 0.6em 0.5em;
     border-top-left-radius: 6px;
     border-bottom-left-radius: 6px;
+    width: 15px;
+    text-align: center;
 }
 .moving-up {
-    background: rgba(211,52,25, 0.9) url("../img/up_arrow.png") 8px 4px no-repeat;
+    background: rgba(211,52,25, 0.9) url("../img/up_arrow.png") 9px 4px no-repeat;
 }
 
 .moving-down {
-    background: rgba(125, 141, 49, 0.9) url("../img/down_arrow.png") 8px 4px no-repeat;
+    background: rgba(85, 183, 52, 0.9) url("../img/down_arrow.png") 9px 4px no-repeat;
 }
 
 .signature-preview {
@@ -1239,18 +1242,11 @@ tr{ z-index: 50; }
     display: none;
     float: left
 }
-#peros-tbl .sig-history-graph {
-    float: none;
-}
 .sig-history-legend {
-    width: 1em;
-    float: left;
-}
-#peros-tbl .sig-history-legend {
-    float: none;
     margin-top: 1em; 
+    width: 1em;
 }
-#peros-tbl .sig-history-legend tbody tr td {
+.sig-history-legend tbody tr td {
     border: 0;
 }
 #signatureList button {
