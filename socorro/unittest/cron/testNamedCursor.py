@@ -37,12 +37,12 @@ def addReportData(cursor, dataToAdd):
   # dataToAdd is [{},...] for dictionaries of values as shown in sql below
   sql = """INSERT INTO reports
      (uuid,     client_crash_date,    date_processed,    product,    version,    build,    url,    install_age,    last_crash,   uptime,
-      email,    os_name,    os_version,    build_date,
+      email,    os_name,    os_version,
       user_id,                                            -- ignored (no longer collected)
       user_comments,
       app_notes, distributor, distributor_version) VALUES -- These are ignored for testing purposes
     (%(uuid)s,%(client_crash_date)s,%(date_processed)s,%(product)s,%(version)s,%(build)s,%(url)s,%(install_age)s,%(last_crash)s,%(uptime)s,
-    %(email)s,%(os_name)s,%(os_version)s,%(build_date)s,
+    %(email)s,%(os_name)s,%(os_version)s,
       0,
     %(user_comments)s,
     %(app_notes)s,        %(distributor)s,          %(distributor_version)s)"""
@@ -129,7 +129,7 @@ class TestNamedCursor(unittest.TestCase):
           'email':None,
           'os_name': os_name,
           'os_version': os_version,
-          'build_date': buildDates[count%len(buildDates)],
+          #'build_date': buildDates[count%len(buildDates)],
           'user_comments': 'oh help',
           'app_notes':"",
           'distributor':"",
