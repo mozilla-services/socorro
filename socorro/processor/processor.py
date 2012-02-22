@@ -483,7 +483,13 @@ class Processor(object):
       threadLocalCursor.execute("update jobs set starteddatetime = %s where id = %s", (startedDateTime, jobId))
       threadLocalDatabaseConnection.commit()
 
-      jsonDocument = threadLocalCrashStorage.get_meta(jobUuid)
+      try:
+        jsonDocument = threadLocalCrashStorage.get_meta(jobUuid)
+      except:
+        # if HBase database is corrupted, it's OK to report missing job as done
+        # but report on this accident as on error
+        logger.error("can not load document %s from HBase", jobUuid)
+        return Processor.ok
 
       # some products report under the same name but have a different product ID.
       # rename the product if there is an override in the productIdMap
