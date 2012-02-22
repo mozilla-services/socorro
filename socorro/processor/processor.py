@@ -709,14 +709,6 @@ class Processor(object):
       logger.warning("no 'crash_time' calculated in %s: Using date_processed", uuid)
       #sutil.reportExceptionAndContinue(logger, logging.WARNING)
       processorErrorMessages.append("WARNING: No 'client_crash_date' could be determined from the Json file")
-    build_date = None
-    if buildID:
-      try:
-        build_date = datetime.datetime(*[int(x) for x in Processor.buildDatePattern.match(str(buildID)).groups()], tzinfo=UTC)
-      except (AttributeError, ValueError, KeyError):
-        logger.warning("no 'build_date' calculated in %s", uuid)
-        processorErrorMessages.append("WARNING: No 'build_date' could be determined from the Json file")
-        sutil.reportExceptionAndContinue(logger, logging.WARNING)
     try:
       last_crash = int(jsonDocument['SecondsSinceLastCrash'])
     except:
@@ -724,7 +716,7 @@ class Processor(object):
 
     release_channel = jsonDocument.get('ReleaseChannel','unknown')
 
-    newReportRecordAsTuple = (uuid, crash_date, date_processed, product, version, buildID, url, install_age, last_crash, uptime, email, build_date, user_id, user_comments, app_notes, distributor, distributor_version,None,None,None,hangid,process_type,release_channel)
+    newReportRecordAsTuple = (uuid, crash_date, date_processed, product, version, buildID, url, install_age, last_crash, uptime, email, user_id, user_comments, app_notes, distributor, distributor_version,None,None,None,hangid,process_type,release_channel)
     newReportRecordAsDict = dict(x for x in zip(self.reportsTable.columns, newReportRecordAsTuple))
     if not product or not version:
       msgTemplate = "Skipping report: Missing product&version: ["+", ".join(["%s:%%s"%x for x in self.reportsTable.columns])+"]"

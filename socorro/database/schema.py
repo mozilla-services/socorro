@@ -307,7 +307,6 @@ class ReportsTable(PartitionedTable):
                                               os_name character varying(100),
                                               os_version character varying(100),
                                               email character varying(100),
-                                              build_date timestamp with time zone,
                                               user_id character varying(50),
                                               started_datetime timestamp with time zone,
                                               completed_datetime timestamp with time zone,
@@ -345,10 +344,10 @@ class ReportsTable(PartitionedTable):
                                           CREATE INDEX %(partitionName)s_reason ON %(partitionName)s (reason);
                                           """
                                       )
-    self.columns = ("uuid", "client_crash_date", "date_processed", "product", "version", "build", "url", "install_age", "last_crash", "uptime", "email", "build_date", "user_id", "user_comments", "app_notes", "distributor", "distributor_version", "topmost_filenames", "addons_checked", "flash_version", "hangid", "process_type", "release_channel")
+    self.columns = ("uuid", "client_crash_date", "date_processed", "product", "version", "build", "url", "install_age", "last_crash", "uptime", "email", "user_id", "user_comments", "app_notes", "distributor", "distributor_version", "topmost_filenames", "addons_checked", "flash_version", "hangid", "process_type", "release_channel")
     self.insertSql = """insert into TABLENAME
-                            (uuid, client_crash_date, date_processed, product, version, build, url, install_age, last_crash, uptime, email, build_date, user_id, user_comments, app_notes, distributor, distributor_version, topmost_filenames, addons_checked, flash_version, hangid, process_type, release_channel) values
-                            (%s,   %s,                %s,             %s,      %s,      %s,    %s,  %s,          %s,         %s,     %s,    %s,         %s,      %s,            %s,        %s,          %s,                  %s,                %s,             %s,            %s,     %s,           %s)"""
+                            (uuid, client_crash_date, date_processed, product, version, build, url, install_age, last_crash, uptime, email, user_id, user_comments, app_notes, distributor, distributor_version, topmost_filenames, addons_checked, flash_version, hangid, process_type, release_channel) values
+                            (%s,   %s,                %s,             %s,      %s,      %s,    %s,  %s,          %s,         %s,     %s,    %s,      %s,            %s,        %s,          %s,                  %s,                %s,             %s,            %s,     %s,           %s)"""
   #-----------------------------------------------------------------------------------------------------------------
   def additionalCreationProcedures(self, databaseCursor):
     pass
@@ -865,7 +864,6 @@ databaseDependenciesForSetup[OsDimsTable] = []
 #                                               cpu_info TEXT, -- varchar(100)
 #                                               reason TEXT,   -- varchar(255)
 #                                               address TEXT,  -- varchar(20)
-#                                               build_date TIMESTAMP without time zone,
 #                                               started_datetime TIMESTAMP without time zone,
 #                                               completed_datetime TIMESTAMP without time zone,
 #                                               date_processed TIMESTAMP without time zone,
