@@ -93,11 +93,12 @@ class TransactionExecutorWithBackoff(TransactionExecutor):
     #--------------------------------------------------------------------------
     def __call__(self, function, *args, **kwargs):
         """execute a function within the context of a transaction"""
+        connection_context = self.config.db_connection_context
         for wait_in_seconds in self.backoff_generator():
             try:
-                # self.config.db_connection_context is an instance of a
+                # connection_context is an instance of a
                 # wrapper class on the actual connection driver
-                with self.config.db_connection_context() as connection:
+                with connection_context() as connection:
                     try:
                         function(connection, *args, **kwargs)
                         connection.commit()
@@ -107,19 +108,16 @@ class TransactionExecutorWithBackoff(TransactionExecutor):
                           psycopg2.extensions.TRANSACTION_STATUS_INTRANS:
                             connection.rollback()
                         raise
-            except psycopg2.ProgrammingError, msg:
-                # let this fly if the exception is of a special kind
-                if msg.pgerror in ('SSL SYSCALL error: EOF detected',):
-                    # Ideally we'd like to check against msg.pgcode values
-                    # but certain odd ProgrammingError exceptions don't have
-                    # pgcodes so we have to rely on reading the pgerror :(
-                    self.config.logger.warning(
-                      'Exceptional database ProgrammingError exception',
-                      exc_info=True)
-                else:
+            #except psycopg2.ProgrammingError, msg:
+            except connection_context.conditional_exceptions, msg:
+                if not connection_context.is_operational_exception(msg):
                     raise
-
-            except self.config.db_connection_context.operational_exceptions:
+                
+                self.config.logger.warning(
+                  'Exceptional database ProgrammingError exception',
+                  exc_info=True)                
+                  
+            except connection_context.operational_exceptions:
                 self.config.logger.warning(
                   'Database exception',
                   exc_info=True)

@@ -62,6 +62,9 @@ class ConnectionContext(RequiredConfig):
           psycopg2.InterfaceError,
           socket.timeout
         )
+        self.conditional_exceptions = (
+          psycopg2.ProgrammingError,
+        )
 
     #--------------------------------------------------------------------------
     def connection(self, name_unused=None):
@@ -109,6 +112,26 @@ class ConnectionContext(RequiredConfig):
         classes may implement it."""
         pass
 
+    #--------------------------------------------------------------------------
+    def is_operational_exception(self, msg):
+        """return True if a conditional exception is actually an operational
+        error. Return False if it's a genuine error that should probably be 
+        raised and propagate up.
+        
+        Some conditional exceptions might be actually be some form of 
+        operational exception "labelled" wrong by the psycopg2 code error 
+        handler.
+        """
+        if msg.pgerror in ('SSL SYSCALL error: EOF detected',):
+            # Ideally we'd like to check against msg.pgcode values
+            # but certain odd ProgrammingError exceptions don't have
+            # pgcodes so we have to rely on reading the pgerror :(
+            return True
+        
+        # at the of writing, the list of exceptions is short but this would be
+        # where you add more as you discover more odd cases of psycopg2
+        
+        return False
 
 #==============================================================================
 # This code is NOT in use and is left here intentionally as inspiration
