@@ -27,12 +27,9 @@ class Crashes(PostgreSQLBase):
         filtering.
         """
         params = search_common.get_parameters(kwargs)
-        params["signature"] = kwargs.get("signature")
 
         if params["signature"] is None:
             return None
-        elif isinstance(params["signature"], list):
-            params["signature"] = " ".join(params["signature"])
 
         params["terms"] = params["signature"]
         params["search_mode"] = "is_exactly"

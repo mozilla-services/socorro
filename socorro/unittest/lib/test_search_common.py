@@ -61,6 +61,17 @@ class TestSearchCommon(unittest.TestCase):
                 self.assertTrue(not params[i] or typei is int or typei is str
                                 or typei is list)
 
+        # Test with encoded slashes in terms and signature
+        params = co.get_parameters({
+            "terms": ["some", "terms%2Fsig"],
+            "signature": "my%2Flittle%2Fsignature"
+        })
+
+        self.assertTrue("signature" in params)
+        self.assertTrue("terms" in params)
+        self.assertEqual(params["terms"], ["some", "terms/sig"])
+        self.assertEqual(params["signature"], "my/little/signature")
+
     #--------------------------------------------------------------------------
     def test_restrict_fields(self):
         """
