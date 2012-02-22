@@ -301,6 +301,16 @@ class JsonDumpStorage(socorro_dumpStorage.DumpStorage):
         #print '        handleLink 3'
         return name
       #print '        handleLink off end'
+
+    def reportTraversalProblem(exceptionObject):
+      """
+      os.walk calls this method to notice about problem on self.root traversal
+      """
+      self.logger.warning("Error while searching for unprocessed dumps: "
+                          "%s. Script is running with uid: %s",
+                          str(exceptionObject), os.getuid())
+      return
+
     dailyParts = []
     try:
       dailyParts = self.osModule.listdir(self.root)
@@ -309,7 +319,8 @@ class JsonDumpStorage(socorro_dumpStorage.DumpStorage):
       return
     for daily in dailyParts:
       #print 'daily: %s' % daily
-      for dir,dirs,files in self.osModule.walk(os.sep.join((self.root,daily,self.dateName))):
+      for dir,dirs,files in self.osModule.walk(os.sep.join((self.root,daily,self.dateName)),
+                                               onerror=reportTraversalProblem, followlinks=False):
         #print dir,dirs,files
         if os.path.split(dir)[0] == os.path.split(self.datePath(utc_now())[0]):
           #print 'skipping dir %s' % dir
@@ -324,7 +335,7 @@ class JsonDumpStorage(socorro_dumpStorage.DumpStorage):
             if r:
               yield r
         # after finishing a given directory...
-        socorro_fs.cleanEmptySubdirectories(os.path.join(self.root,daily),dir,self.osModule)
+        socorro_fs.cleanEmptySubdirectories(os.path.join(self.root,daily,self.dateName),dir,self.osModule)
 
   #-----------------------------------------------------------------------------------------------------------------
   def remove (self,ooid, timestamp=None):
