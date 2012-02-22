@@ -38,17 +38,15 @@ $(document).ready(function() {
         }
       });
     }
-
-    // Bugzilla Integration
-    $('.bug_ids_more').hover(function(){
-	var inset = 10,
-	    cell = $(this),
-	    bugList = cell.find('.bug_ids_expanded_list');
-	bugList.show()
-          .css({top: cell.position().top - inset,
-                 left: cell.position().left - bugList.width() + cell.width() - inset - 3
-          })
-	  .hover(function(){}, function(){ bugList.hide(); });
-        return false;
-      }, function(){});
+    
+    $('.bug_ids_more').hover(function() {
+        var inset = 10,
+        cell = $(this),
+        bugList = cell.find('.bug_ids_expanded_list');
+        
+        bugList.css({
+            top: cell.position().top - inset,
+            left: cell.position().left - (bugList.width() + inset)
+        }).toggle();
+    });
 });
