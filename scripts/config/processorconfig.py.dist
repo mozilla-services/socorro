@@ -229,6 +229,7 @@ prefixSignatureRegEx = '|'.join([
   'sigprocmask',
   'sigblock',
   'setjmp',
+  'fastcopy_I',
   ])
 
 signaturesWithLineNumbersRegEx = cm.Option()
