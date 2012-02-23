@@ -118,7 +118,8 @@
     <div class="page-footer">
     	<div class="nav">
     		<div class="about">
-                <strong>Mozilla Crash Reports</strong> - Powered by <a href="https://github.com/mozilla/socorro">Socorro</a>
+                <strong>Mozilla Crash Reports</strong> - Powered by <a href="https://github.com/mozilla/socorro">Socorro</a> -
+                All dates are <?php echo Kohana::config('config.timezone'); ?>
     		</div>
 
     		<ul>

@@ -3,7 +3,8 @@
 /**
  * Default timezone for all dates.
  */
-date_default_timezone_set('UTC');
+$config['timezone'] = 'UTC';
+date_default_timezone_set($config['timezone']);
 
 /**
  * Base path of the web site. If this includes a domain, eg: localhost/kohana/
