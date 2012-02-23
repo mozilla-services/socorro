@@ -132,28 +132,6 @@ class Report_Model extends Model {
     }
 
     /**
-     * Determine whether or not this signature exists within the `reports` table.
-     *
-     * @param   ?       The signature for the report
-     * @return  bool    Return TRUE if exists; return FALSE if does not exist
-     */
-    public function sig_exists($signature)
-    {
-        $rs = $this->db->query(
-                "/* soc.web report sig exists */
-                    SELECT signature
-                    FROM reports
-                    WHERE signature = ?
-                    LIMIT 1
-                ", $signature)->current();
-        if ($rs) {
-        return TRUE;
-        } else {
-        return FALSE;
-    }
-    }
-
-    /**
      * Determine the timestamp for this report by the given UUID.
      *
      * @access  public
