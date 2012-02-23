@@ -359,11 +359,6 @@ class Monitor (object):
           databaseConnection.rollback()
         self.quit = True
         raise
-      except Exception:
-        if databaseConnection is not None:
-          databaseConnection.rollback()
-        socorro.lib.util.reportExceptionAndContinue(logger, loggingLevel=logging.CRITICAL)
-        self.quit = True
     finally:
       if databaseConnection is not None:
         databaseConnection.close()
