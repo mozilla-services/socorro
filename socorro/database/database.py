@@ -33,7 +33,8 @@ exceptions_eligible_for_retry = (psycopg2.OperationalError,
 #-----------------------------------------------------------------------------------------------------------------
 def programming_error_eligible_for_retry(an_exception):
   if isinstance(an_exception, psycopg2.ProgrammingError):
-    return an_exception.pgerror.strip() in ('SSL SYSCALL error: EOF detected',)
+    return an_exception.pgerror.strip() in ('SSL SYSCALL error: EOF detected',
+                                            'server closed the connection unexpectedly')
   return True
 
 #-----------------------------------------------------------------------------------------------------------------
