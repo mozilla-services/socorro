@@ -115,22 +115,23 @@ class ConnectionContext(RequiredConfig):
     #--------------------------------------------------------------------------
     def is_operational_exception(self, msg):
         """return True if a conditional exception is actually an operational
-        error. Return False if it's a genuine error that should probably be 
+        error. Return False if it's a genuine error that should probably be
         raised and propagate up.
-        
-        Some conditional exceptions might be actually be some form of 
-        operational exception "labelled" wrong by the psycopg2 code error 
+
+        Some conditional exceptions might be actually be some form of
+        operational exception "labelled" wrong by the psycopg2 code error
         handler.
         """
-        if msg.pgerror in ('SSL SYSCALL error: EOF detected',):
+        if msg.pgerror in ('SSL SYSCALL error: EOF detected',
+                           'server closed the connection unexpectedly'):
             # Ideally we'd like to check against msg.pgcode values
             # but certain odd ProgrammingError exceptions don't have
             # pgcodes so we have to rely on reading the pgerror :(
             return True
-        
+
         # at the of writing, the list of exceptions is short but this would be
         # where you add more as you discover more odd cases of psycopg2
-        
+
         return False
 
 #==============================================================================
