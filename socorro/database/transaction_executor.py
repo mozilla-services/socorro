@@ -108,15 +108,14 @@ class TransactionExecutorWithBackoff(TransactionExecutor):
                           psycopg2.extensions.TRANSACTION_STATUS_INTRANS:
                             connection.rollback()
                         raise
-            #except psycopg2.ProgrammingError, msg:
             except connection_context.conditional_exceptions, msg:
                 if not connection_context.is_operational_exception(msg):
                     raise
-                
+
                 self.config.logger.warning(
                   'Exceptional database ProgrammingError exception',
-                  exc_info=True)                
-                  
+                  exc_info=True)
+
             except connection_context.operational_exceptions:
                 self.config.logger.warning(
                   'Database exception',
