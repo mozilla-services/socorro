@@ -232,6 +232,8 @@ prefixSignatureRegEx = '|'.join([
   'fastcopy_I',
   '_RTC_Terminate',
   'CrashInJS',
+  'fastzero_I',
+  'VEC_memcpy',
   ])
 
 signaturesWithLineNumbersRegEx = cm.Option()
