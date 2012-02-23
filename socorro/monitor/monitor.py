@@ -130,7 +130,7 @@ class Monitor (object):
     logger.info("looking for dead processors")
     try:
       logger.info("threshold %s", self.config.processorCheckInTime)
-      threshold = psy.singleValueSql(aCursor, "select now() - interval '%s' * 2" % self.config.processorCheckInTime)
+      threshold = psy.singleValueSql(aCursor, "select now() at time zone 'utc' - interval '%s' * 2" % self.config.processorCheckInTime)
       #sql = "select id from processors where lastSeenDateTime < '%s'" % (threshold,)
       #logger.info("dead processors sql: %s", sql)
       aCursor.execute("select id from processors where lastSeenDateTime < '%s'" % (threshold,))
@@ -227,7 +227,7 @@ class Monitor (object):
                   count(j.owner)
                from
                   processors p left join jobs j on p.id = j.owner
-                                                   and p.lastSeenDateTime > now() - interval %s
+                                                   and p.lastSeenDateTime > now() at time zone 'utc' - interval %s
                                                    and j.success is null
               group by p.id"""
       try:
@@ -265,7 +265,7 @@ class Monitor (object):
     """
     logger.debug("unbalancedJobSchedulerIter: compiling list of active processors")
     try:
-      threshold = psy.singleValueSql( aCursor, "select now() - interval '%s'" % self.config.processorCheckInTime)
+      threshold = psy.singleValueSql( aCursor, "select now() at time zone 'utc' - interval '%s'" % self.config.processorCheckInTime)
       aCursor.execute("select id from processors where lastSeenDateTime > '%s'" % threshold)
       listOfProcessorIds = [aRow[0] for aRow in aCursor.fetchall()]
       if not listOfProcessorIds:

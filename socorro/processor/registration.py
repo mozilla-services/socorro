@@ -30,7 +30,7 @@ class ProcessorRegistrationAgent(object):
     in that column plus the 'processorCheckInTime' is less than 'now', then
     the processor is considered to be dead."""
 
-    NOW_SQL = "select now() - interval %s"
+    NOW_SQL = "select now() at time zone 'utc' - interval %s"
 
     #--------------------------------------------------------------------------
     def __init__(self, config, db_conn_source, now_func=utc_now,
@@ -285,8 +285,8 @@ class ProcessorRegistrationAgent(object):
                                               "values"
                                               "    (default,"
                                               "     %s,"
-                                              "     now(),"
-                                              "     now()) "
+                                              "     now() at time zone 'utc',"
+                                              "     now() at time zone 'utc') "
                                               "returning id",
                                               (self.processor_name,))
 
@@ -300,9 +300,10 @@ class ProcessorRegistrationAgent(object):
             req_id - the id of the processor that is to be taken over.  This
                      is the 'id' column of the 'processors' table."""
         self.logger.debug("taking over a dead processor")
-        cursor.execute("update processors set name = %s, "
-                       "startdatetime = now(), lastseendatetime = now()"
-                       " where id = %s",
+        cursor.execute("update processors set name = %s,"
+                       "       startdatetime = now() at time zone 'utc', "
+                       "       lastseendatetime = now() at time zone 'utc'"
+                       "where id = %s",
                        (self.processor_name, req_id))
         cursor.execute("update jobs set"
                        "    starteddatetime = NULL,"
