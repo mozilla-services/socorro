@@ -81,6 +81,7 @@ def get_parameters(kwargs):
     filters = [
         ("data_type", "signatures", "str"),
         ("terms", None, ["list", "str"]),
+        ("signature", None, "str"),
         ("fields", "signature", ["list", "str"]),
         ("search_mode", "default", "str"),
         ("from_date", lastweek, "datetime"),
@@ -103,6 +104,12 @@ def get_parameters(kwargs):
     ]
 
     params = extern.parse_arguments(filters, kwargs)
+
+    # Decode double-encoded slashes in terms and signture
+    if params["signature"] is not None:
+        params["signature"] = params["signature"].replace("%2F", "/")
+    if params["terms"] is not None:
+        params["terms"] = [x.replace("%2F", "/") for x in params["terms"]]
 
     # To be moved into a config file?
     authorized_modes = [
