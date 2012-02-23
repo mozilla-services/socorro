@@ -122,7 +122,8 @@ class ConnectionContext(RequiredConfig):
         operational exception "labelled" wrong by the psycopg2 code error 
         handler.
         """
-        if msg.pgerror in ('SSL SYSCALL error: EOF detected',):
+        if msg.pgerror in ('SSL SYSCALL error: EOF detected',
+                           'server closed the connection unexpectedly'):
             # Ideally we'd like to check against msg.pgcode values
             # but certain odd ProgrammingError exceptions don't have
             # pgcodes so we have to rely on reading the pgerror :(
