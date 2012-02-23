@@ -231,6 +231,7 @@ prefixSignatureRegEx = '|'.join([
   'setjmp',
   'fastcopy_I',
   '_RTC_Terminate',
+  'CrashInJS',
   ])
 
 signaturesWithLineNumbersRegEx = cm.Option()
