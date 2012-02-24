@@ -4,7 +4,7 @@ Common functions for search-related external modules.
 
 import logging
 
-from datetime import timedelta, datetime
+from datetime import timedelta
 from socorro.lib.datetimeutil import utc_now
 
 import socorro.lib.external_common as extern
@@ -138,6 +138,7 @@ def get_parameters(kwargs):
     params["fields"] = restrict_fields(params["fields"])
 
     return params
+
 
 def restrict_fields(fields):
     """
