@@ -22,7 +22,7 @@ class Util(PostgreSQLBase):
         """
         Return information about versions of a product.
 
-        See http://socorro.readthedocs.org/en/latest/middleware.html#versions-info
+        See http://socorro.readthedocs.org/en/latest/middleware.html
 
         Keyword arguments:
         versions - List of products and versions.

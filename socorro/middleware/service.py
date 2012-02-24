@@ -71,8 +71,8 @@ class DataAPIService(JsonWebServiceBase):
             return sys.modules[module_name]
         except ImportError:
             logger.debug("Could not import %s" % module_name)
-            raise web.webapi.InternalError(message=("Improper configuration, could not find "
-                                     "module %s" % module_name))
+            raise web.webapi.InternalError(message=("Improper configuration, "
+                                     "could not find module %s" % module_name))
 
     def parse_query_string(self, query_string):
         """
