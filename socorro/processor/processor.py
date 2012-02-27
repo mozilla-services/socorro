@@ -27,9 +27,7 @@ import socorro.processor.registration as reg
 
 from socorro.lib.datetimeutil import utc_now, UTC
 
-# NOTE - this will be cached for the lifetime of the process
-# restart processor to refresh from the database
-productIdMap = {}
+from socorro.lib.transform_rules import TransformRuleSystem
 
 #=================================================================================================================
 class DuplicateEntryException(Exception):
@@ -142,6 +140,13 @@ class Processor(object):
 
     self.create_priority_jobs_table()
 
+    # NOTE - this will be cached for the lifetime of the process
+    # restart processor to refresh from the database
+    self.productIdMap = {}
+
+    self.json_transform_rule_system = TransformRuleSystem()
+    self.load_json_transform_rules()
+
     # start the thread manager with the number of threads specified in the configuration.  The second parameter controls the size
     # of the internal task queue within the thread manager.  It is constrained so that the queue remains starved.  This means that tasks
     # remain queued in the database until the last minute.  This allows some external process to change the priority of a job by changing
@@ -182,6 +187,35 @@ class Processor(object):
       logger.debug('the priority jobs table (%s) already exists',
                   self.priorityJobsTableName)
       db_conn.rollback()
+
+  #----------------------------------------------------------------------------
+  def load_json_transform_rules(self):
+    sql = ("select predicate, predicate_args, predicate_kwargs, "
+           "       action, action_args, action_kwargs "
+           "from transform_rules "
+           "where "
+           "  category = 'processor.json_rewrite'")
+    try:
+      rules = sdb.transaction_execute_with_retry(self.databaseConnectionPool,
+                                                 sql)
+    except Exception:
+      sutil.reportExceptionAndContinue(logger)
+      rules = [('socorro.processor.processor.json_equal_predicate',
+                    '',
+                    'key="ReleaseChannel", value="esr"',
+                    'socorro.processor.processor.json_reformat_action',
+                    '',
+                    'key="Version", format_str="%(Version)sesr"'),
+               ('socorro.processor.processor.json_ProductID_predicate',
+                    '',
+                    '',
+                    'socorro.processor.processor.json_Product_rewrite_action',
+                    '',
+                    '') ]
+
+    self.json_transform_rule_system.load_rules(rules)
+    self.config.logger.info('done loading rules: %s',
+                            str(self.json_transform_rule_system.rules))
 
   #-----------------------------------------------------------------------------
   def quitCheck(self):
@@ -481,16 +515,9 @@ class Processor(object):
 
       jsonDocument = threadLocalCrashStorage.get_meta(jobUuid)
 
-      # some products report under the same name but have a different product ID.
-      # rename the product if there is an override in the productIdMap
-      if 'ProductID' in jsonDocument:
-        productId = jsonDocument['ProductID']
-        if productId in productIdMap:
-          oldProductName = jsonDocument['ProductName']
-          newProductName = productIdMap[productId]['product_name']
-          jsonDocument['ProductName'] = newProductName
-          logger.debug('product name changed from %s to %s based on productID %s',
-                       oldProductName, newProductName, productId)
+      self.config.logger.debug('about to apply rules')
+      self.json_transform_rule_system.apply_all_rules(jsonDocument, self)
+      self.config.logger.debug('done applying transform rules')
 
       try:
         date_processed = sdt.datetimeFromISOdateString(jsonDocument["submitted_timestamp"])
@@ -872,4 +899,101 @@ class Processor(object):
       resultDict = dict(x for x in zip(columns, result))
       key = resultDict['productid']
       del resultDict['productid']
-      productIdMap[key] = resultDict
+      self.productIdMap[key] = resultDict
+
+    logger.debug('productIdMap: %s', str(self.productIdMap))
+
+
+#==============================================================================
+# TransformRules predicate and action function section
+#    * these function are used for the rewriting of the json file before it is
+#          put into Postgres.
+#    * these functions are used in the processor.json_rewrite category
+#------------------------------------------------------------------------------
+def json_equal_predicate(json_doc, processor, key, value):
+  """a TransformRule predicate function that tests if a key in the json
+  is equal to a certain value.  In a rule definition, use of this function
+  could look like this:
+
+  r = TransformRule('socorro.processor.processor.json_equal_predicate',
+                    '',
+                    'key="ReleaseChannel", value="esr",
+                    ...)
+
+  parameters:
+      json_doc - the source mapping from which to test
+      processor - not used in this context, present for api consistency
+      key - the key into the json_doc mapping to test.
+      value - the value to compare
+  """
+  try:
+    return json_doc[key] == value
+  except KeyError:
+    return False
+
+#------------------------------------------------------------------------------
+def json_reformat_action(json_doc, processor, key, format_str):
+  """a TransformRule action function that allows a single key in the target
+  json file to be rewritten using a format string.  The json itself is used
+  as a dict to feed to the format string.  This allows a key's value to be
+  rewritten in term of the content of the rest of the json.  The first example
+  of this is rewriting the Version string to have a suffix of 'esr' if the
+  'ReleaseChannel' value is 'esr'.  The rule to accomplish this looks like
+  this:
+
+  r = TransformRule('socorro.processor.processor.json_equal_predicate',
+                    '',
+                    'key="ReleaseChannel", value="esr",  # check for 'esr'
+                    'socorro.processor.processor.json_reformat_action',
+                    '',
+                    'key="Version", format_str="%(Version)sesr"')
+
+  In this example, the predicate 'processor.json_equal_predicate' will test to
+  see if 'esr' is the value of 'ReleaseChannel'. If true, then the action will
+  trigger, using the format string to assign a new value to 'Version'.
+
+  parameters:
+      json_doc - the source and destination of changes
+      processor - not used, present for parellelism with other functions
+      key - the key to the entry in the json_doc to change.
+      format_str - a standard python format string that will serve as the
+                   template for the replacement entry
+  """
+  json_doc[key] = format_str % json_doc
+
+#------------------------------------------------------------------------------
+def json_ProductID_predicate(json_doc, processor):
+  """a TransformRule predicate that tests if the value of the json field,
+  'ProductID' is present in the processor's productIdMap.  If it is, then
+  the action part of the rule will be triggered.
+
+  parameters:
+     json_doc - the source mapping that will be tested
+     processor - not used in this context, present only for api consistency"""
+  try:
+    return json_doc['ProductID'] in processor.productIdMap
+  except KeyError:
+    return False
+
+#------------------------------------------------------------------------------
+def json_Product_rewrite_action(json_doc, processor):
+  """a TransformRule action function that will change the name of a product. It
+  finds the new name in by looking up the 'ProductID' in the processor's
+  'productIdMap'.
+
+  parameters:
+      json_doc - the destination mapping for the rewrite
+      processor - a source for a logger"""
+  try:
+    product_id = json_doc['ProductID']
+  except KeyError:
+    processor.config.logger.debug('ProductID not in json_doc')
+    return False
+  old_product_name = json_doc['ProductName']
+  new_product_name = processor.productIdMap[product_id]['product_name']
+  json_doc['ProductName'] = new_product_name
+  processor.config.logger.info('product name changed from %s to %s based '
+                                    'on productID %s',
+                                old_product_name,
+                                new_product_name,
+                                product_id)

@@ -8,10 +8,14 @@ import socorro.lib.datetimeutil as sdt
 import socorro.database.schema as sch
 
 from socorro.lib.datetimeutil import utc_now, UTC
-
+import socorro.unittest.testlib.util as testutil
 
 import datetime as dt
 import threading as thr
+
+def setup_module():
+    testutil.nosePrintModule(__file__)
+
 
 sample_meta_json = {"submitted_timestamp": "2011-02-15T00:45:00.000000",
                     "Version": "3.6.6",
@@ -105,6 +109,21 @@ def getMockedProcessorAndContext():
             self.processorName = 'fred_288'
         def create_priority_jobs_table (self):
             self.priorityJobsTableName = 'fred'
+        def load_json_transform_rules(self):
+            rules = [('socorro.processor.processor.json_equal_predicate',
+                          '',
+                          'key="ReleaseChannel", value="esr"',
+                          'socorro.processor.processor.json_reformat_action',
+                          '',
+                          'key="Version", format_str="%(Version)sesr"'),
+                     ('socorro.processor.processor.json_ProductID_predicate',
+                          '',
+                          '',
+                          'socorro.processor.processor.json_Product_rewrite_action',
+                          '',
+                          '') ]
+            self.json_transform_rule_system.load_rules(rules)
+
         def checkin(self):
             pass
 
@@ -925,6 +944,8 @@ def testProcessJobProductIdOverride():
     """testProcessJob07: success"""
     threadName = thr.currentThread().getName()
     p, c = getMockedProcessorAndContext()
+    p.productIdMap = {'abcdefg':{'product_name':'WaterWolf',
+                                 'rewrite': True}}
     p.submitOoidToElasticSearch = lambda x: None   # eliminate this call
     ooid1 = 'ooid1'
     jobId = 123
