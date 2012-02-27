@@ -423,6 +423,12 @@ class Topcrasher_Controller extends Controller {
             
             $byverion_url_path = array(Router::$controller, "byversion", $product, $version);
             
+            $os_id = Kohana::config('platforms.'.substr(strtolower($os), 0, 3).'_id');
+            // Sadly we are not consistent in our naming conventions, so we have to use ugly hacks...
+            if ($os_id == 'windows') {
+                $os_id = 'win';
+            }
+
             if ($this->input->get('format') == "csv") {
                 $this->setViewData(array('top_crashers' => $this->_csvFormatArray($resp->crashes)));
                 $this->renderCSV("${product}_${version}_" . date("Y-m-d"));
@@ -432,6 +438,7 @@ class Topcrasher_Controller extends Controller {
                     'product'        => $product,
                     'version'        => $params->version,
                     'os'             => $params->{'os_display_name'},
+                    'os_id'          => $os_id,
                     'platforms'      => $params->{'platforms'},
                     'top_crashers'   => $resp->crashes,
                     'crash_types'    => $params->crash_types,
