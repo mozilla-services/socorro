@@ -141,7 +141,9 @@ html.production .page-footer { margin-top: 80px; }
 	.choices .more {
 		text-decoration: none;
 		padding: .25em .5em;
+		-webkit-border-radius: .5em;
 		-moz-border-radius: .5em;
+		border-radius: .5em;
 		}
 	.choices .more {
 		font-weight: normal;
@@ -267,7 +269,9 @@ html.production .page-footer { margin-top: 80px; }
 			font-size: 12px;
 			color: #808080;
 			background: #fff url(../img/2.0/search.png) no-repeat 5px center;
+			-webkit-border-radius: .5em;
 			-moz-border-radius: .5em;
+			border-radius: .5em;
 			}
 		.page-header form input:focus {
 			color: #303030;
@@ -301,7 +305,9 @@ html.production .page-footer { margin-top: 80px; }
 		padding: 4px 12px;
 		border: 1px solid transparent;
 		border-bottom: 0;
+		-webkit-border-radius: 6px 6px 0 0;
 		-moz-border-radius: 6px 6px 0 0;
+		border-radius: 6px 6px 0 0;
 		}
 	.product-nav > ul > li:hover > a,
 	.product-nav > ul > li > a.selected {
@@ -409,7 +415,9 @@ html.production .page-footer { margin-top: 80px; }
 			color: #edf1f3;
 			padding: .25em .5em;
 			margin: 0 .25em;
+			-webkit-border-radius: .5em;
 			-moz-border-radius: .5em;
+			border-radius: .5em;
 			}
 		.version-nav .filter > a:hover {
 			background: rgba(179, 205, 218, .5);
@@ -441,7 +449,9 @@ html.production .page-footer { margin-top: 80px; }
     padding: .25em .5em;
     list-style: none;
     color: #60A0C0;
+    -webkit-border-radius: .5em;
     -moz-border-radius: .5em;
+    border-radius: .5em;
     text-decoration: none;
     white-space: nowrap;
 }
@@ -454,21 +464,21 @@ html.production .page-footer { margin-top: 80px; }
 			}
 
 .panel {
-	color: #303030;
-        -webkit-box-shaow: 0 1px 5px -1px #888;
-        -moz-box-shadow: 0 1px 5px -1px #888;
-        box-shadow: 0 1px 5px -1px #888;
-        -webkit-border-radius: 8px;
-        -moz-border-radius: 8px;
-        border-radius: 8px;
-	}
+    color: #303030;
+    -webkit-box-shadow: 0 1px 5px -1px #888;
+    -moz-box-shadow: 0 1px 5px -1px #888;
+    box-shadow: 0 1px 5px -1px #888;
+    -webkit-border-radius: 8px;
+    -moz-border-radius: 8px;
+    border-radius: 8px;
+}
 	.panel .title {
 		background-color: #f0f0f0;
 		background-image: url(../img/2.0/panel-bg.png);
 		border: 1px solid #c0c0c0;
-                border-radius: 8px 8px 0 0;
-                -webkit-border-radius: 8px 8px 0 0;
+		-webkit-border-radius: 8px 8px 0 0;
 		-moz-border-radius: 8px 8px 0 0;
+		border-radius: 8px 8px 0 0;
 		padding: 0 8px;
 		line-height: 32px;
 		}
@@ -498,9 +508,9 @@ html.production .page-footer { margin-top: 80px; }
 		border-top: 0;
 		padding: 8px;
 		min-height: 4em;
-                -webkit-border-radius: 0 0 8px 8px;
-                -moz-border-radius: 0 0 8px 8px;
-                border-radius: 0 0 8px 8px;
+		-webkit-border-radius: 8px 8px 0 0;
+		-moz-border-radius: 8px 8px 0 0;
+		border-radius: 0 0 8px 8px;
 		}
 	.panel .table {
 		font-size: 10px;
@@ -602,8 +612,10 @@ html.production .page-footer { margin-top: 80px; }
 			display: none;
 			}
     .panel .notitle {
-    	border: 1px solid #c0c0c0;
+        border: 1px solid #c0c0c0;
+        -webkit-border-radius: 8px;
         -moz-border-radius: 8px;
+        border-radius: 8px;
     }
 
 .page-footer {
@@ -674,9 +686,10 @@ div#message {
 	margin: 1em;
 }
 div.error, div.success {
-	padding: 1em;
-    -moz-border-radius: .25em;
+    padding: 1em;
     -webkit-border-radius: .25em;
+    -moz-border-radius: .25em;
+    border-radius: .25em;
 }
 div.error {
 	background-color: #fc0;
@@ -787,8 +800,9 @@ div.admin ul li:before {
 }
 div.admin div.add_item {
 	border: 2px solid #333;
-	-moz-border-radius: 5px;
-	-webkit-border-radius: 5px;
+	-webkit-border-radius: 5em;
+	-moz-border-radius: 5em;
+	border-radius: 5px;
 	background-color: #ccc;
 	margin-top: 10px;
 	padding: 5px;
@@ -917,7 +931,9 @@ th a.expand {
     font-weight: bold;
     border: 1px solid #ccc;
     padding: 5px;
-    -moz-border-radius: 5px;
+    -webkit-border-radius: 5em;
+    -moz-border-radius: 5em;
+    border-radius: 5px;
     text-decoration: none;
 }
 
@@ -960,7 +976,9 @@ div.pendingStatus {
     text-align: center;
     margin: 20px auto;
     padding: 10px;
+    -webkit-border-radius: 25px;
     -moz-border-radius: 25px;
+    border-radius: 25px;
     width: 400px;
 }
 div.pendingStatus p {
@@ -989,8 +1007,8 @@ div.pendingStatus p.pendingProcessing {
     margin-left: 1em;
     padding: .3em;
     vertical-align: middle;
-    -moz-border-radius: 5px;
     -webkit-border-radius: 5px;
+    -moz-border-radius: 5px;
     border-radius: 5px;
     background-color: #f8f8f8;
     border: 1px solid #d5d5d5;
@@ -1100,7 +1118,9 @@ td.in1 ul, td.in2 ul{
     color: white;
     font-weight: 900;
     text-align: right;
+    -webkit-border-radius: 7px;
     -moz-border-radius: 7px;
+    border-radius: 7px;
 }
 .trend.up {
     background: url("../img/up_arrow.png") no-repeat scroll right top #DD0000;
@@ -1108,7 +1128,7 @@ td.in1 ul, td.in2 ul{
 .trend.down {
     background: url("../img/down_arrow.png") no-repeat scroll right top #008800;
 }
-.moving-up, 
+.moving-up,
 .moving-down {
     position: absolute;
     left: 3px;
@@ -1200,10 +1220,11 @@ tr{ z-index: 50; }
     color: #333;
     margin-right: .2em;
     padding: .3em;
+    -webkit-border-radius: 6px;
+    -moz-border-radius: 6px;
     border-radius: 6px;
     text-decoration: none;
     text-align: center;
-    -moz-transition: background-color 1s;
     transition: background-color 1s;
 }
 .tc-filter a:hover {
@@ -1267,6 +1288,8 @@ tr{ z-index: 50; }
     border: 1px solid #333;
     font-weight: bold;
     text-decoration: none;
+    -webkit-border-radius: 5px;
+    -moz-border-radius: 5px;
     border-radius: 5px;
 }
 div.expandable-menu, div.each-sparkline {
@@ -1385,7 +1408,9 @@ th.bugzilla_numbers {
     max-width: 300px;
     top: 0px;
     left: 0px;
+    -webkit-border-radius: 3px;
     -moz-border-radius: 3px;
+    border-radius: 3px;
 }
 
 .bug_ids_expanded_list h3 {
@@ -1530,8 +1555,9 @@ div.query_removemargin { /* Removes margin from the main content area */
 	width: 3em;
 }
 #searchform fieldset {
-	-moz-border-radius: 5px;
 	-webkit-border-radius: 5px;
+	-moz-border-radius: 5px;
+	border-radius: 5px;
 	padding: 1em 1em 0 1em;
 }
 #searchform ul {
@@ -1585,9 +1611,6 @@ div.query_removemargin { /* Removes margin from the main content area */
 #within, #range_value, .wrong-name {
 	width: 2em;
 	text-align: center;
-}
-*|*:-moz-any-link:focus {
-    outline-width: 0;
 }
 p.advanced {
 	border-top: 1px dashed #999;
