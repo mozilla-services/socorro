@@ -41,9 +41,10 @@ class TransactionExecutor(RequiredConfig):
     #--------------------------------------------------------------------------
     def __call__(self, function, *args, **kwargs):
         """execute a function within the context of a transaction"""
+        result = None
         with self.config.db_connection_context() as connection:
             try:
-                function(connection, *args, **kwargs)
+                result = function(connection, *args, **kwargs)
                 connection.commit()
             except:
                 if connection.get_transaction_status() == \
@@ -53,6 +54,7 @@ class TransactionExecutor(RequiredConfig):
                   'Exception raised during transaction',
                   exc_info=True)
                 raise
+        return result
 
 
 #==============================================================================
@@ -93,6 +95,7 @@ class TransactionExecutorWithBackoff(TransactionExecutor):
     #--------------------------------------------------------------------------
     def __call__(self, function, *args, **kwargs):
         """execute a function within the context of a transaction"""
+        result = None
         connection_context = self.config.db_connection_context
         for wait_in_seconds in self.backoff_generator():
             try:
@@ -100,7 +103,7 @@ class TransactionExecutorWithBackoff(TransactionExecutor):
                 # wrapper class on the actual connection driver
                 with connection_context() as connection:
                     try:
-                        function(connection, *args, **kwargs)
+                        result = function(connection, *args, **kwargs)
                         connection.commit()
                         break
                     except:
@@ -112,11 +115,11 @@ class TransactionExecutorWithBackoff(TransactionExecutor):
             except connection_context.conditional_exceptions, msg:
                 if not connection_context.is_operational_exception(msg):
                     raise
-                
+
                 self.config.logger.warning(
                   'Exceptional database ProgrammingError exception',
-                  exc_info=True)                
-                  
+                  exc_info=True)
+
             except connection_context.operational_exceptions:
                 self.config.logger.warning(
                   'Database exception',
@@ -128,3 +131,4 @@ class TransactionExecutorWithBackoff(TransactionExecutor):
               wait_in_seconds,
               'waiting for retry after failure in transaction'
             )
+        return result

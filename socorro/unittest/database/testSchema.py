@@ -102,6 +102,7 @@ def setup_module():
     schema.SignatureBuildTable:[False, set(['signature_build'])],
     schema.SignatureFirstTable:[False, set(['signature_first'])],
     schema.ProductIdMapTable:[False, set(['product_productid_map'])],
+    schema.TransformRules:[False, set(['transform_rules'])],
     }
   me.expectedTableNames = set()
   for tableStuff in me.hardCodedSchemaClasses.values():
