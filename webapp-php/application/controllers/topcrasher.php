@@ -47,10 +47,9 @@ require_once(Kohana::find_file('libraries', 'timeutil', TRUE, 'php'));
  * Reports based on top crashing signatures
  */
 class Topcrasher_Controller extends Controller {
-    
     public $service = "";
     public $host = "";
-    
+
     public $tcbInitParams = null;
 
     /**
@@ -127,7 +126,7 @@ class Topcrasher_Controller extends Controller {
 
         return url::redirect('/topcrasher/byversion/' . $product->product . '/' . $product->version);
     }
-    
+
     public function setupWebservice() {
         $config = array();
         $credentials = Kohana::config('webserviceclient.basic_auth');
@@ -137,7 +136,7 @@ class Topcrasher_Controller extends Controller {
         $this->service = new Web_Service($config);
         $this->host = Kohana::config('webserviceclient.socorro_hostname');
     }
-    
+
     /**
      * Raises a HTTP 500 error and populates view with response
      * @param string current selected product
@@ -147,7 +146,7 @@ class Topcrasher_Controller extends Controller {
      */
     private function raise500Error($product=null, $version=null, $resp=null) {
         header("Data access error", TRUE, 500);
-            $this->setViewData(
+        $this->setViewData(
             array(
                 'nav_selection' => 'top_crashes',
                 'product'       => $product,
@@ -157,17 +156,17 @@ class Topcrasher_Controller extends Controller {
             )
         );
     }
-    
+
     /**
      * Returns the correct UI string for the provided OS
-     * 
+     *
      * @param string    operating system name
      * @return string   correctly formatted OS string
      */
-    private function getOSDisplayName($os) 
+    private function getOSDisplayName($os)
     {
         $formattedOS = "";
-        
+
         if(stripos($os, "win") !== false) {
             $formattedOS = Kohana::config('platforms.win_name');
         } else if(stripos($os, "mac") !== false) {
@@ -177,10 +176,9 @@ class Topcrasher_Controller extends Controller {
         } else {
             $formattedOS = "Unsupported OS Name.";
         }
-        
         return $formattedOS;
     }
-    
+
     /**
      * @param   string  The name of the product
      * @param   version The version  number for this product
@@ -189,7 +187,7 @@ class Topcrasher_Controller extends Controller {
      * @param   string  The crash type to query by
      * @return  object  Contains parameters needed by individual top crasher functions
      */
-    public function initTopCrasher($product=null, $version=null, $duration=null, $crash_type=null, $os=null) 
+    public function initTopCrasher($product=null, $version=null, $duration=null, $crash_type=null, $os=null)
     {
         if(is_null($product)) {
             Kohana::show_404();
@@ -201,12 +199,9 @@ class Topcrasher_Controller extends Controller {
         } else {
             $this->_versionExists($version);
         }
-        
+
         $this->tcbInitParams->{'version'} = $version;
 
-        /**
-         * If no duration is specified, use the default from the configuration file
-         */
         if (empty($duration)) {
             $duration = Kohana::config('products.duration');
         }
@@ -223,23 +218,23 @@ class Topcrasher_Controller extends Controller {
         $this->tcbInitParams->{'limit'} = Kohana::config('topcrashbysig.byversion_limit', 300);
         // lifetime in seconds
         $this->tcbInitParams->{'lifetime'} = $this->tcbInitParams->{'cache_in_minutes'} * 60;
-  
+
         $this->tcbInitParams->{'crash_types'} = Kohana::config('topcrashbysig.crash_types');
         if (empty($crash_type) || !in_array($crash_type, $this->tcbInitParams->{'crash_types'})) {
             $crash_type = Kohana::config('topcrashbysig.crash_types_default');
         }
-        
+
         $this->tcbInitParams->{'crash_type'} = $crash_type;
 
         $this->tcbInitParams->{'p'} = urlencode($product);
         $this->tcbInitParams->{'v'} = urlencode($version);
-        
+
         $this->tcbInitParams->{'platforms'} = Kohana::config('platforms.platforms');
-        
+
         if($os != null) {
             $this->tcbInitParams->{'os_display_name'} = $this->getOSDisplayName($os);
         }
-        
+
         return $this->tcbInitParams;
     }
 
@@ -257,7 +252,7 @@ class Topcrasher_Controller extends Controller {
         if(is_null($product)) {
           Kohana::show_404();
         }
-        
+
         $params = $this->initTopCrasher($product, $version, $duration, $crash_type);
 
         $platform_url_path = array(Router::$controller, "byos", $product, $version);
@@ -265,7 +260,7 @@ class Topcrasher_Controller extends Controller {
         $this->setupWebservice();
 
         $resp = $this->service->get("$this->host/crashes/signatures/product/{$params->{'p'}}/version/{$params->{'v'}}/crash_type/{$params->crash_type}/to_date/{$params->{'end_date'}}/duration/{$params->dur}/limit/{$params->limit}", 'json', $params->lifetime);
-	
+
         if($resp) {
             $this->topcrashers_model->ensureProperties($resp, array(
 				     'start_date' => '',
@@ -293,31 +288,30 @@ class Topcrasher_Controller extends Controller {
             );
 
             foreach($resp->crashes as $top_crasher) {
-                
                 $this->topcrashers_model->ensureProperties($top_crasher, $req_props, 'top crash sig trend crashes');
 
                 if ($this->input->get('format') != "csv") {
                     //$top_crasher->{'missing_sig_param'} - optional param, used for formating url to /report/list
                     if (is_null($top_crasher->signature)) {
-                    $top_crasher->{'display_signature'} = Crash::$null_sig;
-                    $top_crasher->{'display_null_sig_help'} = TRUE;
-                    $top_crasher->{'missing_sig_param'} = Crash::$null_sig_code;
+                        $top_crasher->{'display_signature'} = Crash::$null_sig;
+                        $top_crasher->{'display_null_sig_help'} = TRUE;
+                        $top_crasher->{'missing_sig_param'} = Crash::$null_sig_code;
                     } else if(empty($top_crasher->signature)) {
-                    $top_crasher->{'display_signature'} = Crash::$empty_sig;
-                    $top_crasher->{'display_null_sig_help'} = TRUE;
-                    $top_crasher->{'missing_sig_param'} = Crash::$empty_sig_code;
+                        $top_crasher->{'display_signature'} = Crash::$empty_sig;
+                        $top_crasher->{'display_null_sig_help'} = TRUE;
+                        $top_crasher->{'missing_sig_param'} = Crash::$empty_sig_code;
                     } else {
-                    $top_crasher->{'display_full_signature'} = $top_crasher->signature;
-                    $top_crasher->{'display_signature'} = substr($top_crasher->signature, 0, 80);
-                    $top_crasher->{'display_null_sig_help'} = FALSE;
+                        $top_crasher->{'display_full_signature'} = $top_crasher->signature;
+                        $top_crasher->{'display_signature'} = substr($top_crasher->signature, 0, 80);
+                        $top_crasher->{'display_null_sig_help'} = FALSE;
                     }
-                    
+
                     $top_crasher->{'display_percent'} = number_format($top_crasher->percentOfTotal * 100, 2) . "%";
                     $top_crasher->{'display_previous_percent'} = number_format($top_crasher->previousPercentOfTotal * 100, 2) . "%";
                     $top_crasher->{'display_change_percent'} = number_format($top_crasher->changeInPercentOfTotal * 100, 2) . "%";
-                    
+
                     array_push($signatures, $top_crasher->signature);
-                    
+
                     $top_crasher->{'correlation_os'} = Correlation::correlationOsName($top_crasher->win_count, $top_crasher->mac_count, $top_crasher->linux_count);
                 }
 
@@ -378,19 +372,19 @@ class Topcrasher_Controller extends Controller {
         if(is_null($os)) {
             Kohana::show_404();
         }
-        
+
         $params = $this->initTopCrasher($product, $version, $duration, $crash_type, $os);
-        
+
         $this->setupWebservice();
-        
+
         $resp = $this->service->get("$this->host/crashes/signatures/product/{$params->{'p'}}/version/{$params->{'v'}}/os/{$os}/crash_type/{$params->crash_type}/to_date/{$params->{'end_date'}}/duration/{$params->dur}/limit/{$params->limit}", 'json', $params->lifetime);
-        
+
         if($resp) {
             $signatures = array();
             foreach($resp->crashes as $top_crasher) {
-                
+
                 if ($this->input->get('format') != "csv") {
-                
+
                     if (is_null($top_crasher->signature)) {
                         $top_crasher->{'display_signature'} = Crash::$null_sig;
                         $top_crasher->{'display_null_sig_help'} = TRUE;
@@ -404,25 +398,25 @@ class Topcrasher_Controller extends Controller {
                         $top_crasher->{'display_signature'} = substr($top_crasher->signature, 0, 80);
                         $top_crasher->{'display_null_sig_help'} = FALSE;
                     }
-                    
+
                     $top_crasher->{'display_percent'} = number_format($top_crasher->percentOfTotal * 100, 2) . "%";
                     $top_crasher->{'display_previous_percent'} = number_format($top_crasher->previousPercentOfTotal * 100, 2) . "%";
                     $top_crasher->{'display_change_percent'} = number_format($top_crasher->changeInPercentOfTotal * 100, 2) . "%";
-                    
+
                     array_push($signatures, $top_crasher->signature);
                     $top_crasher->{'correlation_os'} = Correlation::correlationOsName($top_crasher->win_count, $top_crasher->mac_count, $top_crasher->linux_count);
-                    
+
                     $top_crasher->trendClass = $this->topcrashers_model->addTrendClass($top_crasher->changeInRank);
                 }
             }
-                
+
             $signature_to_bugzilla = $this->bug_model->bugsForSignatures(
                 array_unique($signatures),
                 Kohana::config('codebases.bugTrackingUrl')
             );
-            
+
             $byverion_url_path = array(Router::$controller, "byversion", $product, $version);
-            
+
             $os_id = Kohana::config('platforms.'.substr(strtolower($os), 0, 3).'_id');
             // Sadly we are not consistent in our naming conventions, so we have to use ugly hacks...
             if ($os_id == 'windows') {
@@ -472,65 +466,66 @@ class Topcrasher_Controller extends Controller {
      */
     public function plot_signature($product, $version, $start_date, $end_date, $signature)
     {
-	//Bug#532434 Kohana is escaping some characters with html entity encoding for security purposes
-	$signature = html_entity_decode($signature);
+        //Bug#532434 Kohana is escaping some characters with html entity encoding for security purposes
+        $signature = html_entity_decode($signature);
 
-	header('Content-Type: text/javascript');
-	$this->auto_render = FALSE;
+        header('Content-Type: text/javascript');
+        $this->auto_render = FALSE;
 
-	$config = array();
-	$credentials = Kohana::config('webserviceclient.basic_auth');
-	if ($credentials) {
-	    $config['basic_auth'] = $credentials;
-	}
-	$service = new Web_Service($config);
-
-	$host = Kohana::config('webserviceclient.socorro_hostname');
-
-
-	$cache_in_minutes = Kohana::config('webserviceclient.topcrash_vers_rank_cache_minutes', 60);
-
-    $start_date = date('c', strtotime($start_date)); 
-    $end_date = date('c', strtotime($end_date)); 
-    $duration = TimeUtil::determineHourDifferential($start_date, $end_date); // Number of hours
-
-
-	$start_date = urlencode($start_date);
-	$end_date = urlencode($end_date);
-
-	$limit = Kohana::config('topcrashbysig.byversion_limit', 300);
-	$lifetime = $cache_in_minutes * 60; // Lifetime in seconds
-
-	$p = urlencode($product);
-	$v = urlencode($version);
-
-	//Bug#534063
-	if ($signature == Crash::$null_sig) {
-	    $signature = Crash::$null_sig_api_value;
-        } else if($signature == Crash::$empty_sig) {
-	    $signature = Crash::$empty_sig_api_value;
+        $config = array();
+        $credentials = Kohana::config('webserviceclient.basic_auth');
+        if ($credentials) {
+            $config['basic_auth'] = $credentials;
         }
-	$rsig = rawurlencode($signature); //NPSWF32.dll%400x136a29
-	// Every 3 hours
+        $service = new Web_Service($config);
+
+        $host = Kohana::config('webserviceclient.socorro_hostname');
+
+
+        $cache_in_minutes = Kohana::config('webserviceclient.topcrash_vers_rank_cache_minutes', 60);
+
+        $start_date = date('c', strtotime($start_date));
+        $end_date = date('c', strtotime($end_date));
+        $duration = TimeUtil::determineHourDifferential($start_date, $end_date); // Number of hours
+
+
+        $start_date = urlencode($start_date);
+        $end_date = urlencode($end_date);
+
+        $limit = Kohana::config('topcrashbysig.byversion_limit', 300);
+        $lifetime = $cache_in_minutes * 60; // Lifetime in seconds
+
+        $p = urlencode($product);
+        $v = urlencode($version);
+
+        //Bug#534063
+        if ($signature == Crash::$null_sig) {
+            $signature = Crash::$null_sig_api_value;
+        } else if($signature == Crash::$empty_sig) {
+            $signature = Crash::$empty_sig_api_value;
+        }
+        $rsig = rawurlencode($signature);
+        // Every 3 hours
         $resp = $service->get("${host}/topcrash/sig/trend/history/p/${p}/v/${v}/sig/${rsig}/end/${end_date}/duration/${duration}/steps/60", 'json', $lifetime);
 
 
-	if($resp) {
-	    $data = array('startDate' => $resp->{'start_date'},
-			  'endDate'   => $resp->{'end_date'},
-			  'signature' => $resp->signature,
-		          'counts'    => array(),
-			  'percents'  => array());
-	    for ($i =0; $i < count($resp->signatureHistory); $i++) {
-
-		$item = $resp->signatureHistory[$i];
-		array_push($data['counts'], array(strtotime($item->date) * 1000, $item->count));
-		array_push($data['percents'], array(strtotime($item->date) * 1000, $item->percentOfTotal * 100));
-	    }
-	    echo json_encode($data);
-	} else {
-	    echo json_encode(array('error' => 'There was an error loading the data'));
-	}
+        if ($resp) {
+            $data = array(
+                  'startDate' => $resp->{'start_date'},
+                  'endDate'   => $resp->{'end_date'},
+                  'signature' => $resp->signature,
+                  'counts'    => array(),
+                  'percents'  => array()
+            );
+            for ($i =0; $i < count($resp->signatureHistory); $i++) {
+                $item = $resp->signatureHistory[$i];
+                array_push($data['counts'], array(strtotime($item->date) * 1000, $item->count));
+                array_push($data['percents'], array(strtotime($item->date) * 1000, $item->percentOfTotal * 100));
+            }
+            echo json_encode($data);
+        } else {
+            echo json_encode(array('error' => 'There was an error loading the data'));
+        }
     }
 
     /**
@@ -569,209 +564,5 @@ class Topcrasher_Controller extends Controller {
             $i++;
         }
       return $csvData;
-    }
-
-    /**
-     * Helper method for formatting a topcrashers list of objects into data
-     * suitable for CSV output
-     * @param array of topCrashersBySignature object
-     * @return array of strings
-     * @see Topcrashers_Model
-     */
-    private function _csvFormatOldArray($topcrashers)
-    {
-        $csvData = array(array('Rank, Percentage of All Crashes, Signature, Total, Win, Linux, Mac'));
-	$i = 0;
-        foreach ($topcrashers as $crash) {
-	    $line = array();
-	    $sig = strtr($crash->signature, array(
-                    ',' => ' ',
-                    '\n' => ' ',
-		    '"' => '&quot;'
-            ));
-	    array_push($line, $i);
-	    array_push($line, $crash->percent);
-	    array_push($line, $sig);
-	    array_push($line, $crash->total);
-	    array_push($line, $crash->win);
-	    array_push($line, $crash->mac);
-	    array_push($line, $crash->linux);
-	    array_push($csvData, $line);
-	    $i++;
-	}
-      return $csvData;
-    }
-
-    /**
-     * Generates the report from a URI perspective.
-     * URLs are truncated after the query string
-     *
-     * @param   string product name
-     * @param   string version Example: 3.7a1pre
-     * @return  null
-     */
-    public function byurl($product=null, $version=null) {
-        if(is_null($product)) {
-	        Kohana::show_404();
-        }
-        $this->navigationChooseVersion($product, $version);
-        if (empty($version)) {
-            $this->_handleEmptyVersion($product, 'byurl');
-        } else {
-            $this->_versionExists($version);
-        }
-
-        $by_url_model = new TopcrashersByUrl_Model();
-        list($start_date, $end_date, $top_crashers) =
-        $by_url_model->getTopCrashersByUrl($product, $version);
-
-        cachecontrol::set(array(
-            'expires' => time() + (60 * 60)
-        ));
-
-        $this->setViewData(array(
-            'beginning'     => $start_date,
-            'ending_on'     => $end_date,
-            'nav_selection' => 'top_url',
-            'product'       => $product,
-            'top_crashers'  => $top_crashers,
-            'url_nav'       => url::site('products/'.$product),
-            'version'       => $version,
-        ));
-    }
-
-    /**
-     * Generates the report from a domain name perspective
-     *
-     * @param string product name
-     * @param string version Example: 3.7a1pre
-     */
-    public function bydomain($product=null, $version=null) {
-        if(is_null($product)) {
-            Kohana::show_404();
-        }
-        $this->navigationChooseVersion($product, $version);
-        if (empty($version)) {
-            $this->_handleEmptyVersion($product, 'bydomain');
-        } else {
-            $this->_versionExists($version);
-        }
-
-        $by_url_model = new TopcrashersByUrl_Model();
-        list($start_date, $end_date, $top_crashers) =
-	    $by_url_model->getTopCrashersByDomain($product, $version);
-
-        cachecontrol::set(array(
-            'expires' => time() + (60 * 60)
-        ));
-
-        $this->setViewData(array(
-            'beginning'     => $start_date,
-            'ending_on'     => $end_date,
-    	    'nav_selection' => 'top_domain',
-            'product'       => $product,
-            'top_crashers'  => $top_crashers,
-            'url_nav'       => url::site('products/'.$product),
-            'version'       => $version,
-        ));
-    }
-
-    /**
-     * List the top 100 (x) Alexa top site domains, ordered by site ranking, and
- 	 * show the bugs that affect them.
-     *
-	 * @access 	public
-     * @param 	string 	The product name (e.g. 'Firefox')
-     * @param 	string 	The version (e.g. '3.7a1pre')
- 	 * @return 	void
-     */
-    public function bytopsite($product=null, $version=null) {
-        if(is_null($product)) {
-            Kohana::show_404();
-        }
-
-        $this->navigationChooseVersion($product, $version);
-         if (empty($version)) {
-             $this->_handleEmptyVersion($product, 'bytopsite');
-         } else {
-             $this->_versionExists($version);
-         }
-
-         $by_url_model = new TopcrashersByUrl_Model();
-         list($start_date, $end_date, $top_crashers) = $by_url_model->getTopCrashersByTopsiteRank($product, $version);
-
-         cachecontrol::set(array(
-             'expires' => time() + (60 * 60)
-         ));
-
-         $this->setViewData(array(
-         	'beginning' 	=> $start_date,
-             'ending_on' 	=> $end_date,
-             'nav_selection' => 'top_topsite',
-             'product'       => $product,
-             'top_crashers'  => $top_crashers,
-             'url_nav' => url::site('products/'.$product),
-             'version'       => $version,
-         ));
-    }
-
-    /**
-     * AJAX GET method which returns last 2 weeks of
-     * Aggregated crash signatures based on
-     * signaturesforurl/{product}/{version}?url={url_encoded_url}&page={page}
-     * product - Firefox
-     * version - 3.0.3
-     * url - http://www.youtube.com/watch
-     * page - page offset, defaults to 1
-     */
-    public function signaturesforurl($product, $version){
-      $url = urldecode( $_GET['url']);
-      $page = 1;
-      if( array_key_exists('page', $_GET)){
-        $page = intval($_GET['page']);
-      }
-
-      header('Content-Type: text/javascript');
-      $this->auto_render = false;
-      $by_url_model =  new TopcrashersByUrl_Model();
-
-        cachecontrol::set(array(
-            'expires' => time() + (60 * 60)
-        ));
-
-      $signatures = $by_url_model->getSignaturesByUrl($product, $version, $url, $page);
-      foreach($signatures as $signature) {
-        $sig = $signature->signature;
-        $signature->signature = urlencode($sig);
-        $signature->label = htmlentities($sig);
-      }
-
-      echo json_encode($signatures);
-    }
-
-    /**
-     * AJAX GET method which returns all urls under this domain
-     * which have had crash reports in the last 2 weeks.
-     * urlsfordomain/{product}/{version}?domain={url_encoded_domain}&page={page}
-     * product - Firefox
-     * version - 3.0.3
-     * domain - www.youtube.com
-     * page - page offset, defaults to 1
-     */
-    public function urlsfordomain($product, $version){
-      $domain = urldecode( $_GET['domain']);
-      $page = 1;
-      if( array_key_exists('page', $_GET)){
-        $page = intval($_GET['page']);
-      }
-      header('Content-Type: text/javascript');
-      $this->auto_render = false;
-      $by_url_model =  new TopcrashersByUrl_Model();
-
-      cachecontrol::set(array(
-          'expires' => time() + (60 * 60)
-      ));
-
-      echo json_encode($by_url_model->getUrlsByDomain($product, $version, $domain, $page));
     }
 }

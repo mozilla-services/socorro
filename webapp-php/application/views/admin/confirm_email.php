@@ -38,7 +38,7 @@
       <br class="clear" />
     </div><!-- .admin -->
   </div><!-- .body .notitle -->
-  
+
   <?php View::factory('common/recent_email_campaigns')->render(TRUE); ?>
-  
+
 </div><!-- .panel -->
