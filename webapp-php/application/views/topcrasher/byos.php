@@ -66,7 +66,7 @@
                         $percentageOfTotal = substr($crasher->percentOfTotal, 0, 4);
                         $diff = substr($crasher->changeInPercentOfTotal, 0, 4);
                         $signature = $crasher->signature;
-                        $total_count = $crasher->{'count'};
+                        $os_count = $crasher->{$os_id . '_count'};
                         $versions_count = (isset($crasher->versions_count) && !empty($crasher->versions_count)) ? $crasher->versions_count : "-";
                         $first_appeared = $crasher->first_report;
 
@@ -118,7 +118,7 @@
                         <div class="sig-history-graph"></div>
                         <input type="hidden" class='ajax-signature' name="ajax-signature-<?= $row ?>" value="<?= $crasher->{'display_signature'}?>" />
                     </td>
-                    <td><?= $total_count ?></td>
+                    <td><?= $os_count ?></td>
                     <td><?= $versions_count ?></td>
                     <td <?php if (isset($crasher->first_report_exact)) { ?>title="This crash signature first appeared at <?php out::H($crasher->first_report_exact); ?>" <?php } ?>>
                         <?php if (isset($first_appeared)) { out::H($first_appeared); } ?>

@@ -45,12 +45,13 @@ def getListOfTopCrashersBySignature(aCursor, dbParams):
     if not isinstance(dbParams[param], assertPairs[param]):
       raise ValueError(type(dbParams[param]))
 
+  order_by = 'report_count'  # default order field
   where = [''] # trick for the later join
   if dbParams['crash_type'] != 'all':
     where.append("process_type = '%s'" % (dbParams['crash_type'],))
   if dbParams['os']:
-    field = '%s_count' % dbParams['os'][0:3].lower()
-    where.append("%s > 0" % field)
+    order_by = '%s_count' % dbParams['os'][0:3].lower()
+    where.append("%s > 0" % order_by)
 
   where = ' AND '.join(where)
 
@@ -98,13 +99,13 @@ def getListOfTopCrashersBySignature(aCursor, dbParams):
            content_count,
            first_report,
            version_list,
-        report_count / total_crashes::float
+        %s / total_crashes::float
         as percent_of_total
     FROM tcbs_window
-    ORDER BY report_count DESC
+    ORDER BY %s DESC
     LIMIT %s
     """ % (dbParams["product"], dbParams["version"], dbParams["startDate"],
-           dbParams["to_date"],  where, dbParams["limit"])
+           dbParams["to_date"],  where, order_by, order_by, dbParams["limit"])
   #logger.debug(aCursor.mogrify(sql, dbParams))
   return db.execute(aCursor, sql)
 
