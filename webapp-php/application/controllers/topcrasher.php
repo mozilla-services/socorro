@@ -189,7 +189,7 @@ class Topcrasher_Controller extends Controller {
      * @param   string  The crash type to query by
      * @return  object  Contains parameters needed by individual top crasher functions
      */
-    public function initTopCrasher($product=null, $version=null, $os=null, $duration=null, $crash_type=null) 
+    public function initTopCrasher($product=null, $version=null, $duration=null, $crash_type=null, $os=null) 
     {
         if(is_null($product)) {
             Kohana::show_404();
@@ -349,7 +349,7 @@ class Topcrasher_Controller extends Controller {
                     'end_date'       => $resp->end_date,
                     'crash_types'    => $params->crash_types,
                     'crash_type'     => $params->crash_type,
-                    'crash_type_url' => url::site(implode($params->{'duration_url_path'}, '/') . '/' . $duration . '/'),
+                    'crash_type_url' => url::site(implode($params->{'duration_url_path'}, '/') . '/' . $params->{'duration'} . '/'),
                     'platform_url'   => url::site(implode($platform_url_path, '/') . '/'),
                     'range_unit'     => 'days',
                     'range_value'    => $params->{'duration'},
@@ -379,7 +379,7 @@ class Topcrasher_Controller extends Controller {
             Kohana::show_404();
         }
         
-        $params = $this->initTopCrasher($product, $version, $os, $duration, $crash_type);
+        $params = $this->initTopCrasher($product, $version, $duration, $crash_type, $os);
         
         $this->setupWebservice();
         
@@ -421,7 +421,7 @@ class Topcrasher_Controller extends Controller {
                 Kohana::config('codebases.bugTrackingUrl')
             );
             
-            $byverion_url_path = array(Router::$controller, "byversion", $product, $version);
+            $byversion_url_path = array(Router::$controller, "byversion", $product, $version);
             
             if ($this->input->get('format') == "csv") {
                 $this->setViewData(array('top_crashers' => $this->_csvFormatArray($resp->crashes)));
@@ -438,7 +438,7 @@ class Topcrasher_Controller extends Controller {
                     'crash_type'     => $params->crash_type,
                     'duration'       => $params->{'duration'},
                     'durations'      => $params->{'durations'},
-                    'byverion_url'   => url::site(implode($byverion_url_path, '/')),
+                    'byversion_url'   => url::site(implode($byversion_url_path, '/')),
                     'crash_type_url' => url::site(implode($params->{'duration_url_path'}, '/') . '/' . $os . '/' . $params->{'duration'} . '/'),
                     'duration_url'   => url::site(implode($params->{'duration_url_path'}, '/') . '/' . $os . '/'),
                     'platform_url'   => url::site(implode($params->{'platform_url_path'}, '/') . '/'),
