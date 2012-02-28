@@ -202,6 +202,7 @@ class Processor(object):
       rules = sdb.transaction_execute_with_retry(self.databaseConnectionPool,
                                                  sql)
     except Exception:
+      sutil.reportExceptionAndContinue(logger)
       rules = [('socorro.processor.processor.json_equal_predicate',
                     '',
                     'key="ReleaseChannel", value="esr"',
