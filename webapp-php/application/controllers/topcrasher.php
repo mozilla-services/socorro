@@ -421,7 +421,7 @@ class Topcrasher_Controller extends Controller {
                 Kohana::config('codebases.bugTrackingUrl')
             );
             
-            $byverion_url_path = array(Router::$controller, "byversion", $product, $version);
+            $byversion_url_path = array(Router::$controller, "byversion", $product, $version);
             
             $os_id = Kohana::config('platforms.'.substr(strtolower($os), 0, 3).'_id');
             // Sadly we are not consistent in our naming conventions, so we have to use ugly hacks...
@@ -445,7 +445,7 @@ class Topcrasher_Controller extends Controller {
                     'crash_type'     => $params->crash_type,
                     'duration'       => $params->{'duration'},
                     'durations'      => $params->{'durations'},
-                    'byverion_url'   => url::site(implode($byverion_url_path, '/')),
+                    'byversion_url'   => url::site(implode($byversion_url_path, '/')),
                     'crash_type_url' => url::site(implode($params->{'duration_url_path'}, '/') . '/' . $os . '/' . $params->{'duration'} . '/'),
                     'duration_url'   => url::site(implode($params->{'duration_url_path'}, '/') . '/' . $os . '/'),
                     'platform_url'   => url::site(implode($params->{'platform_url_path'}, '/') . '/'),
