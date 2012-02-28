@@ -7,7 +7,7 @@
     <?php
     	echo html::script(
     	    array(
-                'js/jquery/jquery-1.3.2.min.js',
+                'js/jquery/jquery-1.6.4.min.js',
                 'js/jquery/plugins/jquery.cookies.2.2.0.js',
                 'js/socorro/nav.js?v=1.7.6'
             )
@@ -77,7 +77,20 @@
                 <p>Something bad happened.  It's not you, it's me.</p>
                 <p>Please
             <?php } ?>
-                file an <a href="https://bugzilla.mozilla.org/enter_bug.cgi?product=Socorro&component=General&bug_file_loc=<?php echo urlencode($_SERVER['SCRIPT_URI']); ?>">issue in Bugzilla</a> describing what happened, and please include the URL for this page.</p>
+            <?php
+                /**
+                 * The only of the $_SERVER elements that keeps the correct protocol 
+                 * i.e. http(s) is the referer constant but, that does not work for our 
+                 * requirements here hence, we use the method below to ensure our bug_file_loc 
+                 * URL's protocol matches the protocol it was served on.
+                 */
+                $protocol = (!empty($_SERVER['HTTPS']) ? "https://" : "http://");
+                $server_name = $_SERVER['SERVER_NAME'];
+                $path = $_SERVER['REQUEST_URI'];
+                
+                $current_url = $protocol . $server_name . $path;
+            ?>
+                file an <a href="https://bugzilla.mozilla.org/enter_bug.cgi?product=Socorro&component=General&bug_file_loc=<?php echo urlencode($current_url); ?>">issue in Bugzilla</a> describing what happened, and please include the URL for this page.</p>
 	        </div>
 	    </div>
     </div>

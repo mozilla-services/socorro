@@ -8,7 +8,7 @@ logger = logging.getLogger("webapi")
 class CrashesComments(DataAPIService):
 
     """
-    Return all comments of some crash reports. 
+    Return all comments of some crash reports.
     """
 
     service_name = "crashes"

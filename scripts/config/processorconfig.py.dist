@@ -233,7 +233,7 @@ prefixSignatureRegEx = '|'.join([
   '_RTC_Terminate',
   'CrashInJS',
   'fastzero_I',
-  'VEC_memcpy',
+  '_VEC_memcpy',
   '_chkstk',
   '_alloca_probe.*',
   ])
