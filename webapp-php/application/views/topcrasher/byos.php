@@ -38,7 +38,7 @@
         </ul>
         <ul class="tc-per-platform tc-filter">
             <li class="tc-per-platform-heading">OS:</li>
-            <li><a href="<?= $byversion_url; ?>">All</a></li>
+            <li><a href="<?= $byverion_url; ?>">All</a></li>
             <?php foreach ($platforms as $p) { ?>
                 <li><a href="<?= $platform_url . '/' . $p . '/' . $duration . '/' . $crash_type; ?>" <?php if ($p == $os) echo 'class="selected"'; ?>><?= $p ?></a></li>
             <?php }?>
