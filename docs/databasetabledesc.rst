@@ -50,6 +50,11 @@ bugs
 
 Contains lists of bugs thought to be related to crash reports, for linking to crashes.  Populated by a daily cronjob.
 
+bug_associations
+----------------
+
+Links bugs from the bugs table to crash signatures.  Populated by daily cronjob.
+
 raw_adu
 -------
 
@@ -104,64 +109,147 @@ The normalized version of raw_adu, contains summarized estimated counts of users
 Dimensions
 ==========
 
-* daily_crash_codes
-* os_name_matches
-* os_names
-* process_types
-* product_release_channels
-* products
-* release_channel_matches
-* release_channels
-* uptime_levels
-* windows_versions
+These tables contain lookup lists and taxonomy for the fact tables in Socorro.  Generally they are auto-populated based on encountering new values in the raw data, on an hourly basis.  A few tables below are manually populated and change extremely seldom, if at all.
+
+Dimensions which are lookup lists of short values join to the fact tables by natural key, although it is not actually necessary to reference them (e.g. os_name, release_channel).  Dimension lists which have long values or are taxonomies or heirarchies join to the fact tables using a surrogate key (e.g. product_version_id, reason_id).
+
+Some dimensions which come from raw crash data have a "first_seen" column which displays when that value was first encountered in a crash and added to the dimension table.  Since the first_seen columns were added in September 2011, most of these will have the value '2011-01-01' which is not meaningful.  Only dates after 2011-09-15 actually indicate a first appearance.
 
 addresses
-  cron job, part of update_reports_clean based on reports
+---------
+
+Contains a list of crash location "addresses", extracted hourly from the raw data.  Surrogate key: address_id.
+
+daily_crash_codes
+-----------------
+
+Reference list for the cryptic single-character codes in the daily_crashes table.  Legacy, to be eventually restructured.  Natural key: crash_code.  Manually populated.
+
 domains
-  cron job, part of update_reports_clean based on reports
+-------
+
+List of HTTP domains extracted from raw reports by applying a truncation regex to the crashing URL.  These should contain no personal information.  Contains a "first seen" column.  Surrogate key: domain_id
+
 flash_versions
-  cron job, part of update_reports_clean based on reports
+--------------
+
+List of Abobe Flash version numbers harvested from crashes. Has a "first_seen" column.  Surrogate key: flash_version_id.
+
+os_names
+--------
+
+Canonical list of OS names used in Sorocco.  Natural key.  Fixed list, manually populated.
+
 os_versions
-  cron job, update_os_versions based on reports@
-  cron job, update_reports_clean based on reports
+-----------
+
+List of versions for each OS based on data harvested from crashes.  Contains some garbage versions because we cannot validate.  Surrogate key: os_version_id.
+
 plugins
-  populated by processors based on crash data
-product_version_builds
-  cron job, update_product_versions, based on releases_raw
+-------
+
+List of "interesting modules" harvested from raw crashes, populated by the processors.  Surrogate key: ID.  Links to plugins_reports.
+
+process_types
+-------------
+
+Standing list of crashing process types (browser, plugin and hang).  Manually input.  Natural key.
+
+products
+--------
+
+List of supported products, along with the first version on rapid release.  Manually maintained.  Natural key: product_name.
+
 product_versions
-  cron job, update_product_versions, based on releases_raw
+----------------
+
+Contains a list of versions for each product, since the beginning of rapid release (i.e. since Firefox 5.0).  Version numbers are available expressed several different ways, and there is a sort column for sorting versions.  Also contains build_date/sunset_date visibility information and the featured_version flag.  "build_type" means the same thing as "release_channel".  Surrogate key: product_version_id.
+
+product_version_builds
+----------------------
+
+Contains a list of builds for each product-version.  Note that platform information is not at all normalized.  Natural key: product_version_id, build_id.
+
+product_release_channels
+------------------------
+
+Contains an intersection of products and release channels, mainly in order to store throttle values.  Manually populated.  Natural key: product_name, release_channel.
+
 reasons
-  cron job, update_reports_clean, based on reports
+-------
+
+Contains a list of "crash reason" values harvested from raw crashes.  Has a "first seen" column.  Surrogate key: reason_id.
+
+release_channels
+----------------
+
+Contains a list of available Release Channels.  Manually populated.  Natural key.  See "note on release channel columns" below.
+
 signatures
-  cron job, update_signatures, based on reports@
-  cron job, update_reports_clean, based on reports
+----------
+
+List of crash signatures harvested from incoming raw data.  Populated by hourly cronjob.  Has a first_seen column.  Surrogate key: signature_id.
+
+uptime_levels
+-------------
+
+Reference list of uptime "levels" for use in reports, primarily the Signature Summary.  Manually populated.
+
+windows_versions
+----------------
+
+Reference list of Window major/minor versions with their accompanying common names for reports.  Manually populated.
 
 Matviews
 ========
 
-bug_associations
-  not sure
-daily_crashes
-  daily_crashes based on reports
-daily_hangs
-  update_hang_report based on reports
-signature_products
-  update_signatures based on reports@
-signature_products_rollup
-  update_signatures based on reports@
-tcbs
-  update_tcbs based on reports
+These data summaries are derived data from the fact tables and/or the raw data tables.  They are populated by hourly or daily cronjobs, and are frequently regenerated if historical data needs to be corrected.  If these matviews contain the data you need, you should use them first because they are smaller and more efficient than the fact tables or the raw tables.
 
+daily_crashes
+-------------
+
+Stores crash counts per product-version, OS, and day.  This is probably the oldest matview, and has unintuitive and historical column names; it will probably be overhauled or replaced.  The report_type column defines 5 different sets of counts, see daily_crash_codes above.
+
+daily_hangs and hang_report
+---------------------------
+
+daily_hangs contains a correlation of hang crash reports with their related hang pair crashes, plus additional summary data.  Duplicates contains an array of UUIDs of possible duplicates.
+
+hang_report is a dynamic view which flattens daily_hangs and its related dimension tables.
+
+product_info
+------------
+
+dynamic view which suppies the most essential information about each product version for both old and new products.  
+
+signature_products and signature_products_rollup
+------------------------------------------------
+
+Summary of which signatures appear in which product_version_ids, with first appearance dates.
+
+The rollup contains an array-style summary of the signatures with lists of product-versions.
+
+tcbs
+----
+
+Short for "Top Crashes By Signature", tcbs contains counts of crashes per day, signature, product-version, and columns counting each OS.
+
+Note On Release Channel Columns
+===============================
+
+Due to a historical error, the column name for the Release Channel in various tables may be named "release_channel", "build_type", or "build_channel".  While we regret the confusion, it has not been thought to be worth the refactoring effort to clean it up.  
 
 Application Support Tables
 ==========================
-These tables are used by various parts of the application to do other things than reporting.  They are populated/managed by those applications. 
+These tables are used by various parts of the application to do other things than reporting.  They are populated/managed by those applications.   Most are not accessible to the various reporting users; as such, they will be documented sometime later.
 
 * data processing control tables
 
 	* product_productid_map
 	* reports_bad
-
+	* os_name_matches
+	* release_channel_matches
+	
 * email campaign tables 
 
 	* email_campaigns
