@@ -1,4 +1,3 @@
-
 <div class="page-heading">
 	<h2><?php out::H($product); ?>
         <?php if (isset($version) && !empty($version)) { ?>
@@ -11,7 +10,6 @@
         	<li><a href="<?php out::H($url_base); ?>?duration=14" <?php if ($duration == 14) echo ' class="selected"'; ?>>14 days</a></li>
         </ul>
 </div>
-
 
 <div class="panel">
     <div class="title">

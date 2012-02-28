@@ -47,11 +47,12 @@ class Common_Model extends Model {
             "/* soc.web common.queryFreq */ " .
             " SELECT " . join(', ', $columns) .
             " FROM   " . join(', ', $from_tables);
+
         if(count($join_tables) > 0) {
-	    $sql .= " JOIN  " . join("\nJOIN ", $join_tables);
+            $sql .= " JOIN  " . join("\nJOIN ", $join_tables);
         }
 
-	$sql .= " WHERE  " . join(' AND ', $where) .
+    	$sql .= " WHERE  " . join(' AND ', $where) .
                 " GROUP BY reports.build ".
                 " ORDER BY reports.build DESC";
 
@@ -64,20 +65,20 @@ class Common_Model extends Model {
      *     Example: [['reports'], ['plugins_reports], ['reports.uuid = "blah"]}
      */
     public function _buildCriteriaFromSearchParams($params) {
-	$join_tables = array();
-	$outer_join_tables = array();
+        $join_tables = array();
+        $outer_join_tables = array();
 
         $from_tables = array('reports');
-	$where  = array();
-	// Bug#518144 - Support retrieving NULL or Empty signatures
-	if (isset($params['missing_sig'])) {
-	    if ($params['missing_sig'] == Crash::$empty_sig_code) {
-		$params['signature'] = '';
-	    } else if ($params['missing_sig'] == Crash::$null_sig_code) {
-		$where[] = 'reports.signature IS NULL';
-		unset($params['signature']);
-	    }
-	}
+        $where  = array();
+        // Bug#518144 - Support retrieving NULL or Empty signatures
+        if (isset($params['missing_sig'])) {
+            if ($params['missing_sig'] == Crash::$empty_sig_code) {
+                $params['signature'] = '';
+            } else if ($params['missing_sig'] == Crash::$null_sig_code) {
+                $where[] = 'reports.signature IS NULL';
+                unset($params['signature']);
+            }
+        }
 
         if (isset($params['signature'])) {
             $where[] = 'reports.signature = ' . $this->db->escape($params['signature']);
@@ -178,8 +179,6 @@ class Common_Model extends Model {
                 $or[] = "branches.branch = " . $this->db->escape($branch);
             }
             $where[] = '(' . join(' OR ', $or) . ')';
-            #$where[] = 'branches.product = reports.product';
-            #$where[] = 'branches.version = reports.version';
         }
 
         if ($params['platform']) {
@@ -203,36 +202,27 @@ class Common_Model extends Model {
 	        $where[] = 'reports.build = ' . $this->db->escape($params['build_id']);
         }
 
-        /* Bug#562375 - Add search support for Hang and OOPP
-
-              | ANY Report Type   | CRASH                | OOPP HANG
-  ------------+-------------------+----------------------+---------------
-  ANY PROCESS | hang=Any proc=Any | hangid=null proc=Any | hangid = 123 Proc=Any
-  ------------+-------------------+----------------------+---------------
-      BROWSER | hang=Any proc=Bro | hangid=null proc=Bro | hangid=123 Proc=Bro
-  ------------+-------------------+----------------------+---------------
-      PLUG-IN | hang=Any proc=Plu | hangid=null proc=Plu | hangid=123 Proc=Plu
-	*/
-
         // Report Type hang_type - [any|crash|hang]
         if (array_key_exists('hang_type', $params) &&
-            'crash' == $params['hang_type']) {
-                $where[] = 'reports.hangid IS NULL';
-	} elseif (array_key_exists('hang_type', $params) &&
-		  'hang' == $params['hang_type']) {
-                      $where[] = 'reports.hangid IS NOT NULL';
-	} // else hang_type is ANY
+        'crash' == $params['hang_type']) {
+            $where[] = 'reports.hangid IS NULL';
+	    } elseif (array_key_exists('hang_type', $params) &&
+		'hang' == $params['hang_type']) {
+            $where[] = 'reports.hangid IS NOT NULL';
+	    } // else hang_type is ANY
 
         // Report Process process_type - [any|browser|plugin|
         if (array_key_exists('process_type', $params) &&
 	    'plugin' == $params['process_type'] ) {
             $where[] = "reports.process_type = 'plugin'";
 
-	    array_push($join_tables, 'plugins_reports ON plugins_reports.report_id = reports.id');
-	    array_push($join_tables, 'plugins ON plugins_reports.plugin_id = plugins.id');
+            array_push($join_tables,
+                'plugins_reports ON plugins_reports.report_id = reports.id');
+            array_push($join_tables,
+                'plugins ON plugins_reports.plugin_id = plugins.id');
 
-        if (trim($params['plugin_query']) != '') {
-            switch ($params['plugin_query_type']) {
+            if (trim($params['plugin_query']) != '') {
+                switch ($params['plugin_query_type']) {
                 case 'exact':
                     $plugin_query_term = ' = ' . $this->db->escape($params['plugin_query']);
                     break;
@@ -243,20 +233,19 @@ class Common_Model extends Model {
                 default:
                     $plugin_query_term = ' LIKE ' . $this->db->escape('%'.$params['plugin_query'].'%');
                     break;
+                }
+                if ('filename' == $params['plugin_field']) {
+                    $where[] = 'plugins.filename ' . $plugin_query_term;
+                } else {
+                    $where[] = 'plugins.name ' . $plugin_query_term;
+                }
             }
-            if ('filename' == $params['plugin_field']) {
-                $where[] = 'plugins.filename ' . $plugin_query_term;
-            } else {
-                $where[] = 'plugins.name ' . $plugin_query_term;
-            }
-        }
-	} elseif (array_key_exists('process_type', $params) &&
-	          'browser' == $params['process_type']) {
-                      $where[] = 'reports.process_type IS NULL';
-	} // else process_type is ANY
+        } elseif (array_key_exists('process_type', $params) &&
+	    'browser' == $params['process_type']) {
+            $where[] = 'reports.process_type IS NULL';
+	    } // else process_type is ANY
 
         if ($params['query']) {
-
             $term = FALSE;
 
             switch ($params['query_type']) {
@@ -272,7 +261,6 @@ class Common_Model extends Model {
             if ($params['query_search'] == 'signature') {
                 $where[] = 'reports.signature ' . $term;
             }
-
         }
 
         if ($params['range_value'] && $params['range_unit']) {
@@ -281,15 +269,15 @@ class Common_Model extends Model {
                 $now = date('Y-m-d');
                 $where[] = "reports.date_processed BETWEEN date_trunc('day', (TIMESTAMPTZ '$now' - INTERVAL $interval)) AND '$now'";
                 if (array_key_exists('process_type', $params) &&
-                    'plugin' == $params['process_type'] ) {
-                        $where[] = "plugins_reports.date_processed BETWEEN TIMESTAMP '$now' - CAST($interval AS INTERVAL) AND TIMESTAMP '$now'";
+                'plugin' == $params['process_type'] ) {
+                    $where[] = "plugins_reports.date_processed BETWEEN TIMESTAMP '$now' - CAST($interval AS INTERVAL) AND TIMESTAMP '$now'";
                 }
             } else {
                 $date = $this->db->escape($params['date']);
                 $interval = $this->db->escape($params['range_value'] . ' ' . $params['range_unit']);
                 $where[] = "reports.date_processed BETWEEN date_trunc('day', (TIMESTAMPTZ $date - INTERVAL $interval )) AND $date";
                 if (array_key_exists('process_type', $params) &&
-                    'plugin' == $params['process_type'] ) {
+                'plugin' == $params['process_type'] ) {
                         $where[] = "plugins_reports.date_processed BETWEEN date_trunc('day', (TIMESTAMPTZ $date - INTERVAL $interval)) AND $date";
                 }
             }
@@ -297,5 +285,4 @@ class Common_Model extends Model {
 
         return array($from_tables, $join_tables, $where, $outer_join_tables);
     }
-
 }
