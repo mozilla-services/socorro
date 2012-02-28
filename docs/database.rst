@@ -9,6 +9,7 @@ PostgreSQL Database
    :maxdepth: 1
 
    databasetablesbysource
+   databasetabledesc
    creatingmatviews
    databaseadminfunctions
    databasedatetimefunctions

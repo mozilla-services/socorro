@@ -5,7 +5,7 @@
 PostgreSQL Database Tables by Data Source
 =========================================
 
-Last updated: 2011-11-15
+Last updated: 2011-01-15
 
 This document breaks down the tables in the Socorro PostgreSQL database by where their data comes from, rather than by what the table contains.  This is a prerequisite to populating a brand-new socorro database or creating synthetic testing workloads.
 
@@ -143,8 +143,8 @@ These tables are used by various parts of the application to do other things tha
 	* cronjobs
 	* report_partition_info
 
-Depreciated Tables
-==================
+Deprecated Tables
+=================
 
 These tables are supporting functionality which is scheduled to be removed over the next few versions of Socorro. As such, we are ignoring them.
 
