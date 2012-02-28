@@ -596,9 +596,6 @@ class Products_Controller extends Controller {
                'url_csv' => $url_csv,
                'url_nav' => url::site('products/'.$product),
                'url_top_crashers' => url::site('topcrasher/byversion/'.$product),
-               'url_top_domains' => url::site('topcrasher/bydomain/'.$product),
-               'url_top_topsites' => url::site('topcrasher/bytopsite/'.$product),
-               'url_top_urls' => url::site('topcrasher/byurl/'.$product),
                'version' => null,
                'versions' => $versions
    	        )
@@ -744,9 +741,6 @@ class Products_Controller extends Controller {
                'url_csv' => $url_csv,
                'url_nav' => url::site('products/'.$product),
                'url_top_crashers' => url::site('topcrasher/byversion/'.$product.'/'.$version),
-               'url_top_domains' => url::site('topcrasher/bydomain/'.$product.'/'.$version),
-               'url_top_topsites' => url::site('topcrasher/bytopsite/'.$product.'/'.$version),
-               'url_top_urls' => url::site('topcrasher/byurl/'.$product.'/'.$version),
                'version' => $version,
                'versions' => $versions
    	        )
@@ -821,9 +815,6 @@ class Products_Controller extends Controller {
                    'url_base' => url::site('products/'.$product.'/versions/'.$version),
                    'url_nav' => url::site('products/'.$product),
                    'url_top_crashers' => url::site('topcrasher/byversion/'.$product.'/'.$version),
-                   'url_top_domains' => url::site('topcrasher/bydomain/'.$product.'/'.$version),
-                   'url_top_topsites' => url::site('topcrasher/bytopsite/'.$product.'/'.$version),
-                   'url_top_urls' => url::site('topcrasher/byurl/'.$product.'/'.$version),
                    'version' => $version
    	            )
    	        );
@@ -846,6 +837,4 @@ class Products_Controller extends Controller {
    	        )
    	    );
     }
-
-    /* */
 }

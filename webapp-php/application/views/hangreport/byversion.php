@@ -58,7 +58,7 @@ if ($resp) {
         } else {
             $sigParams['version'] = $product . ':' . $version;
         }
-    
+
         $browser_link_url =  url::base() . 'report/list?' . html::query_string($sigParams);
         $sigParams['signature'] = $entry->plugin_signature;
         $plugin_link_url =  url::base() . 'report/list?' . html::query_string($sigParams);
