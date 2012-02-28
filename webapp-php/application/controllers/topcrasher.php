@@ -421,7 +421,7 @@ class Topcrasher_Controller extends Controller {
                 Kohana::config('codebases.bugTrackingUrl')
             );
             
-            $byversion_url_path = array(Router::$controller, "byversion", $product, $version);
+            $byverion_url_path = array(Router::$controller, "byversion", $product, $version);
             
             if ($this->input->get('format') == "csv") {
                 $this->setViewData(array('top_crashers' => $this->_csvFormatArray($resp->crashes)));
@@ -438,7 +438,7 @@ class Topcrasher_Controller extends Controller {
                     'crash_type'     => $params->crash_type,
                     'duration'       => $params->{'duration'},
                     'durations'      => $params->{'durations'},
-                    'byversion_url'   => url::site(implode($byversion_url_path, '/')),
+                    'byverion_url'   => url::site(implode($byverion_url_path, '/')),
                     'crash_type_url' => url::site(implode($params->{'duration_url_path'}, '/') . '/' . $os . '/' . $params->{'duration'} . '/'),
                     'duration_url'   => url::site(implode($params->{'duration_url_path'}, '/') . '/' . $os . '/'),
                     'platform_url'   => url::site(implode($params->{'platform_url_path'}, '/') . '/'),
