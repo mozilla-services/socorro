@@ -935,18 +935,23 @@ th a.expand {
     float: right;
     font-weight: 900;
     padding-left: 20px;
+    height: 16px;
 }
 .oopp-hang .current .type {
     color: #303030;
 }
 .oopp-hang .pair {
     clear: right;
+    padding: 0.5em 0 0.5em 0.5em;
 }
 .oopp-hang .pair a {
     text-decoration: none;
 }
 #report-index {
     clear: right;
+}
+#allthreads {
+    display: none;
 }
 /**
  * Report Pending Status page
