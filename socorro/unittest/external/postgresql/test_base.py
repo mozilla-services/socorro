@@ -469,8 +469,8 @@ class TestPostgreSQLBase(unittest.TestCase):
 
         key = "Firefox:13.0(beta)"
         params = util.DotDict()
-        versions = params["versions"] = ["Firefox", "13.0(beta)"]
-        versions_info = params["versions_info"] = {
+        params["versions"] = ["Firefox", "13.0(beta)"]
+        params["versions_info"] = {
             "Firefox:12.0a1": {
                 "version_string": "12.0a1",
                 "product_name": "Firefox",

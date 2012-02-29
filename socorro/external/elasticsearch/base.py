@@ -1,10 +1,9 @@
 import logging
 
-from datetime import timedelta, datetime
+from datetime import timedelta
 
 import socorro.lib.datetimeutil as dtutil
 import socorro.lib.httpclient as httpc
-import socorro.lib.util as util
 
 logger = logging.getLogger("webapi")
 

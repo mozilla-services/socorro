@@ -150,7 +150,6 @@ class PostgreSQLBase(object):
         if params["versions"]:
             sql_params = add_param_to_dict(sql_params, "version",
                                            params["versions"])
-            versions_info = params["versions_info"]
 
             versions_where = []
 
