@@ -88,10 +88,8 @@ class TestTransactionExecutor(unittest.TestCase):
             def mock_function(connection):
                 assert isinstance(connection, MockConnection)
                 _function_calls.append(connection)
-                return 17
 
             result = executor(mock_function)
-            self.assertTrue(result, 17)
             self.assertTrue(_function_calls)
             self.assertEqual(commit_count, 1)
             self.assertEqual(rollback_count, 0)

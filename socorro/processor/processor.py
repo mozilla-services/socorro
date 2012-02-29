@@ -28,9 +28,6 @@ import socorro.processor.registration as reg
 from socorro.lib.datetimeutil import utc_now, UTC
 
 from socorro.lib.transform_rules import TransformRuleSystem
-from socorro.external.postgresql.connection_context import ConnectionContext
-from socorro.database.transaction_executor \
-     import TransactionExecutorWithBackoff
 
 #=================================================================================================================
 class DuplicateEntryException(Exception):

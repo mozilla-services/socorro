@@ -44,7 +44,7 @@ class TransactionExecutor(RequiredConfig):
         result = None
         with self.config.db_connection_context() as connection:
             try:
-                result = function(connection, *args, **kwargs)
+                function(connection, *args, **kwargs)
                 connection.commit()
             except:
                 if connection.get_transaction_status() == \
@@ -54,7 +54,6 @@ class TransactionExecutor(RequiredConfig):
                   'Exception raised during transaction',
                   exc_info=True)
                 raise
-        return result
 
 
 #==============================================================================
@@ -103,7 +102,7 @@ class TransactionExecutorWithBackoff(TransactionExecutor):
                 # wrapper class on the actual connection driver
                 with connection_context() as connection:
                     try:
-                        result = function(connection, *args, **kwargs)
+                        function(connection, *args, **kwargs)
                         connection.commit()
                         break
                     except:
@@ -131,4 +130,3 @@ class TransactionExecutorWithBackoff(TransactionExecutor):
               wait_in_seconds,
               'waiting for retry after failure in transaction'
             )
-        return result
