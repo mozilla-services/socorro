@@ -102,7 +102,7 @@
                         <?php out::H($crasher->{'display_change_percent'}) ?>
                     </td>
                     <td>
-                        <a class="signature" href="<?php out::H($link_url) ?>" title="<?= $crasher->display_full_signature; ?>"><?= $crasher->display_signature; ?></a>
+                        <a class="signature" href="<?php out::H($link_url) ?>" title="<?php if (isset($crasher->display_full_signature)) out::H($crasher->display_full_signature); ?>"><?= $crasher->display_signature; ?></a>
                         <?php 
                         if ($crasher->{'display_null_sig_help'}) {
                             echo " <a href='http://code.google.com/p/socorro/wiki/NullOrEmptySignatures' class='inline-help'>Learn More</a> ";
