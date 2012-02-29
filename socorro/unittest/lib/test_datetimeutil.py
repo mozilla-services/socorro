@@ -1,4 +1,4 @@
-from nose.tools import eq_, ok_
+from nose.tools import eq_, ok_, raises
 import datetime
 
 from socorro.lib import datetimeutil
@@ -124,3 +124,28 @@ def test_string_datetime_with_timezone():
         res = datetimeutil.string_to_datetime(example)
         ok_(res.tzinfo)
         ok_(isinstance(res, datetime.datetime))
+
+
+def test_date_to_string():
+    # Datetime with timezone
+    date = datetime.datetime(2012, 1, 3, 12, 23, 34, tzinfo=UTC)
+    res_exp = '2012-01-03T12:23:34.000000+00:00'
+    res = datetimeutil.date_to_string(date)
+    eq_(res, res_exp)
+
+    # Datetime without timezone
+    date = datetime.datetime(2012, 1, 3, 12, 23, 34)
+    res_exp = '2012-01-03T12:23:34.000000'
+    res = datetimeutil.date_to_string(date)
+    eq_(res, res_exp)
+
+    # Date (no time, no timezone)
+    date = datetime.date(2012, 1, 3)
+    res_exp = '2012-01-03'
+    res = datetimeutil.date_to_string(date)
+    eq_(res, res_exp)
+
+
+@raises(TypeError)
+def test_date_to_string_fail():
+    res = datetimeutil.date_to_string('2012-01-03')

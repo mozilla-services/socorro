@@ -8,6 +8,24 @@
  */
 class Extension_Model extends Model {
 
+    /**
+     * The Web Service class.
+     */
+    protected $service = null;
+
+    public function __construct()
+    {
+        parent::__construct();
+
+        $config = array();
+        $credentials = Kohana::config('webserviceclient.basic_auth');
+        if ($credentials) {
+            $config['basic_auth'] = $credentials;
+        }
+
+        $this->service = new Web_Service($config);
+    }
+
 	/**
 	* Cache the results from the AMO API call.
 	*
@@ -156,15 +174,9 @@ class Extension_Model extends Model {
      */
     public function getExtensionsForReport($uuid, $date, $product='firefox')
     {
-		$sql = "/* soc.web extensions.getExtensions */
-            SELECT extensions.*
-			FROM extensions
-			INNER JOIN reports ON extensions.report_id = reports.id
-            WHERE reports.uuid = ?
-			AND reports.date_processed = ?
-			AND extensions.date_processed = ?
-        ";
-		$extensions = $this->fetchRows($sql, true, array($uuid, $date, $date));
+        $uri = Kohana::config('webserviceclient.socorro_hostname') . '/extensions/uuid/' . urlencode($uuid) . '/date/' . urlencode($date) . '/';
+        $res = $this->service->get($uri);
+        $extensions = $res->hits;
 
 		if (!empty($extensions)) {
 			return $this->combineExtensionData($extensions, $product);
