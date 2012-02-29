@@ -12,7 +12,6 @@
     <?php echo html::script(array(
         'js/jquery/plugins/ui/jquery.ui.all.js',
         'js/jquery/plugins/ui/jquery.tablesorter.min.js',
-	'js/socorro/report.js',
         'js/socorro/bugzilla.js'
     ))?>
 
@@ -60,7 +59,7 @@ if (isset($report->sumo_signature) && !empty($report->signature)) { ?>
 </div>
 <div id="report-index" class="flora">
 
-    <ul>
+    <ul class="ui-tabs-nav">
         <li><a href="#details"><span>Details</span></a></li>
         <li><a href="#modules"><span>Modules</span></a></li>
         <li><a href="#rawdump"><span>Raw Dump</span></a></li>
@@ -68,7 +67,7 @@ if (isset($report->sumo_signature) && !empty($report->signature)) { ?>
         <li><a href="#comments"><span>Comments</span></a></li>
         <li><a href="#correlation"><span>Correlations</span></a></li>
     </ul>
-    <div id="details">
+    <div id="details" class="ui-tabs-panel">
         <table class="list record">
             <tr>
 <th>Signature</th>
@@ -294,14 +293,12 @@ if (isset($report->sumo_signature) && !empty($report->signature)) { ?>
                 <?php endfor ?>
             </div>
 
-            <script type="text/javascript">document.getElementById("allthreads").style.display="none";</script>
-
         <?php endif ?>
       </div><!-- /frames -->
     </div><!-- /details -->
 
 
-    <div id="modules">
+    <div id="modules" class="ui-tabs-hide">
         <?php if (count($report->modules)): ?>
         <table class="list tablesorter" id="modules-list">
 	<thead>
@@ -329,7 +326,7 @@ if (isset($report->sumo_signature) && !empty($report->signature)) { ?>
     </div><!-- /modules -->
 
 
-    <div id="rawdump">
+    <div id="rawdump" class="ui-tabs-hide">
         <div class="code"><?php out::H($report->dump) ?></div>
 
 		<?php if ($logged_in && !empty($raw_dump_urls)) { ?>
@@ -341,7 +338,7 @@ if (isset($report->sumo_signature) && !empty($report->signature)) { ?>
     </div><!-- /rawdump -->
 
 
-    <div id="extensions">
+    <div id="extensions" class="ui-tabs-hide">
         <?php if (!empty($extensions)) { ?>
 	        <table class="list">
 	            <tr>
@@ -391,7 +388,7 @@ if (isset($report->sumo_signature) && !empty($report->signature)) { ?>
 
     <?php echo html::script(
 	array(
-	   // 'js/socorro/report.js',
+	    'js/socorro/report.js',
 	    'js/socorro/correlation.js'
 	    ));
     ?>
