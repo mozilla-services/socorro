@@ -7,7 +7,6 @@ import socorro.database.database as db
 import socorro.external.postgresql.tcbs_impl.classic as classic
 import socorro.external.postgresql.tcbs_impl.modern as modern
 import socorro.lib.external_common as external_common
-import socorro.lib.util as util
 
 logger = logging.getLogger("webapi")
 
@@ -28,7 +27,7 @@ def which_tcbs(db_cursor, sql_params, product, version):
     except db.SQLDidNotReturnSingleValue:
         logger.info("No record in product_selector for %s %s."
             % (product, version))
-        raise ValueError, "No record of %s %s" % (product, version)
+        raise ValueError("No record of %s %s" % (product, version))
 
 
 class TCBS(PostgreSQLBase):
