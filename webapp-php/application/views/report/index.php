@@ -278,12 +278,17 @@ if (isset($report->sumo_signature) && !empty($report->signature)) { ?>
                     <?php endforeach ?>
                 </table>
             <?php } ?>
-
-            <h2>Crashing Thread</h2>
-            <?php if (isset($report->threads) && count($report->threads) > $report->crashed_thread ){
+            
+            <?php 
+            /* First ensure that a crashing thread was identified by testing that $report->crashed_thread is not -1 */
+            if ($report->crashed_thread != -1) {
+                if (isset($report->threads) && count($report->threads) > $report->crashed_thread ) {
+            ?>
+                    <h2>Crashing Thread</h2>
+            <?php   
                     stack_trace( $report->threads[$report->crashed_thread] );
-                  } ?>
-
+                }
+            } ?>
 
             <p id="showallthreads" class="hidden"><a href="#allthreads">Show/hide other threads</a></p>
             <div id="allthreads">
