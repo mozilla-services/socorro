@@ -1,5 +1,5 @@
 <?php if (isset($reports) && !empty($reports)) { ?>
-    <table id="signatureList" class="tablesorter">
+    <table id="signatureList" class="tablesorter data-table">
         <thead>
             <tr>
                 <th>Rank</th>
