@@ -7,9 +7,7 @@ PostgreSQL Database Table Descriptions
 
 This document describes the various tables in PostgreSQL by their purpose and essentially what data each contains.  This is intended as a reference for socorro developers and analytics users.
 
-Tables which are in the database but not listed below are probably legacy tables which are slated for removal in future Socorro releases.
-
-CURRENTLY IN PROGRESS.  NOT COMPLETE AS OF 2012-02-27
+Tables which are in the database but not listed below are probably legacy tables which are slated for removal in future Socorro releases.  Certainly if the tables are not described, they should not be used for new features or reports.
 
 Raw Data Tables
 ===============
@@ -92,6 +90,68 @@ Because reports_clean is much smaller than reports and is normalized into unequi
 * corrupt reports, including ones which indicate a breakpad bug
 
 Populated hourly, 3 hours behind the current time, from data in reports via cronjob.  The UUID column is the primary key.  There is one row per crash report, although some crash reports are suspected to be duplicates.
+
+Columns:
+
+uuid
+	artificial unique identifier assigned by the collectors to the crash at collection time.  Contains the date collected plus a random string.
+
+date_processed
+	timestamp (with time zone) at which the crash was received by the collectors.  Also the partition key for partitioning reports_clean. Note that the time will be 7-8 hours off for crashes before February 2012 due to a shift from PST to UTC.
+	
+client_crash_date
+	timestamp with time zone at which the users' crashing machine though the crash was happening.  Often innacurrate due to clock issues, is primarily supplied as an anchor timestamp for uptime and install_age.
+	
+product_version_id
+	foreign key to the product_versions table.
+	
+build
+	numeric build identifier as supplied by the client.  Might not match any real build in product_version_builds for a variety of reasons.
+	
+signature_id
+	foreign key to the signatures dimension table.
+	
+install_age
+	time interval between installation and crash, as reported by the client.  To get the reported install date, do ( SELECT client_crash_date - install_age ).
+	
+uptime
+	time interval between program start and crash, as reported by the client.
+	
+reason_id
+	foreign key to the reasons table.
+	
+address_id
+	foreign key to the addresses table.
+	
+os_name
+	name of the OS of the crashing host, for OSes which match known OSes.
+	
+os_version_id
+	foreign key to the os_versions table.
+	
+hang_id
+	UUID assigned to the hang pair grouping for hang pairs.  May not match anything if the hang pair was broken by sampling or lost crash reports.
+	
+flash_version_id
+	foreign key to the flash_versions table
+	
+process_type
+	Crashing process type, linked to process_types dimension.
+	
+release_channel
+	release channel from which the crashing product was obtained, unless altered by the user (this happens more than you'd think).  Note that non-Mozilla builds are usually lumped into the "release" channel.
+	
+duplicate_of
+	UUID of the "leader" of the duplicate group if this crash is marked as a possible duplicate.  If UUID and duplicate_of are the same, this crash is the "leader".  Selection of leader is arbitrary.
+	
+domain_id
+	foreign key to the domains dimension
+	
+architecture
+	CPU architecture of the client as reported (e.g. 'x86', 'arm').
+	
+cores
+	number of CPU cores on the client, as reported.
 
 reports_user_info
 -----------------

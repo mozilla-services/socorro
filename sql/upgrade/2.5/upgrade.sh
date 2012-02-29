@@ -30,11 +30,9 @@ psql -f ${CURDIR}/update_products.sql breakpad
 psql -f ${CURDIR}/update_reports_clean.sql breakpad
 
 echo '*********************************************************'
-echo 'backfill matviews for ESR data to 2012-02-10'
-echo 'will take several hours'
-echo 'socorro can go live again while this is running'
-echo 'bug 729195'
-psql -f ${CURDIR}/backfill_matviews_for_esr.sql breakpad
+echo 'add table for rule-based transforms to database'
+echo 'bug 731000'
+psql -f ${CURDIR}/transform_rules.sql breakpad
 
 #change version in DB
 psql -c "SELECT update_socorro_db_version( '$VERSION' )" breakpad
