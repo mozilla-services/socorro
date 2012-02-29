@@ -2023,6 +2023,30 @@ class ProductIdMapTable(Table):
 databaseDependenciesForSetup[ProductIdMapTable] = []
 
 
+#=================================================================================================================
+class TransformRules(Table):
+  """a single source for transformation rules based on the TransformRules classes
+  """
+  #-----------------------------------------------------------------------------------------------------------------
+  def __init__ (self, logger, **kwargs):
+    super(TransformRules, self).__init__(name = "transform_rules", logger=logger,
+                                        creationSql = """
+                                            CREATE TABLE transform_rules (
+                                              category citext NOT NULL,
+                                              predicate text NOT NULL,
+                                              predicate_args text NOT NULL,
+                                              predicate_kwargs text NOT NULL,
+                                              action text NOT NULL,
+                                              action_args text NOT NULL,
+                                              action_kwargs text NOT NULL
+                                            );
+                                        """)
+    self.insertSql = """INSERT INTO transform_rules (category, predicate, predicate_args, predicate_kwargs,
+                        action, action_args, action_args) values (%s, %s, %s, %s, %s)"""
+
+databaseDependenciesForSetup[TransformRules] = []
+
+
 #-----------------------------------------------------------------------------------------------------------------
 def connectToDatabase(config, logger):
   databaseDSN = "host=%(databaseHost)s dbname=%(databaseName)s user=%(databaseUserName)s password=%(databasePassword)s" % config
