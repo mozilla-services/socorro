@@ -116,7 +116,7 @@ foreach($options[$type] as $k => $readable) {
       <div class="clear"></div>
     </div>
     <div id="table">
-        <table id="buildid-table" class="tablesorter">
+        <table id="buildid-table" class="tablesorter data-table">
             <thead>
                 <tr>
                     <th>Build ID</th>

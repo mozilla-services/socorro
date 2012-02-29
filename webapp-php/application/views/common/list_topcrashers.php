@@ -25,7 +25,7 @@
         <?php }?>
     </ul>
 <?php if (count($top_crashers) > 0) { ?>
-        <table id="signatureList" class="tablesorter">
+        <table id="signatureList" class="tablesorter data-table">
             <thead>
                 <tr>
                     <th>Rank</th>
