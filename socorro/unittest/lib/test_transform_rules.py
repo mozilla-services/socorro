@@ -62,8 +62,8 @@ class TestTransformRules(unittest.TestCase):
         assert_expected(r.action_args, ())
         assert_expected(r.action_kwargs, {})
 
-        r = transform_rules.TransformRule('test_transform_rules.foo', '', '',
-                             'test_transform_rules.bar', '', '')
+        r = transform_rules.TransformRule('socorro.unittest.lib.test_transform_rules.foo', '', '',
+                        'socorro.unittest.lib.test_transform_rules.bar', '', '')
         repr_pred = repr(r.predicate)
         assert 'foo' in repr_pred, 'expected "foo" in %s' % repr_pred
         assert_expected(r.predicate_args, ())
@@ -73,10 +73,10 @@ class TestTransformRules(unittest.TestCase):
         assert_expected(r.action_args, ())
         assert_expected(r.action_kwargs, {})
 
-        r = transform_rules.TransformRule('test_transform_rules.foo',
+        r = transform_rules.TransformRule('socorro.unittest.lib.test_transform_rules.foo',
                                           (1,),
                                           {'a':13},
-                                          'test_transform_rules.bar',
+                                          'socorro.unittest.lib.test_transform_rules.bar',
                                           '',
                                           '')
         repr_pred = repr(r.predicate)
@@ -88,10 +88,10 @@ class TestTransformRules(unittest.TestCase):
         assert_expected(r.action_args, ())
         assert_expected(r.action_kwargs, {})
 
-        r = transform_rules.TransformRule('test_transform_rules.foo',
+        r = transform_rules.TransformRule('socorro.unittest.lib.test_transform_rules.foo',
                                           '1, 2',
                                           'a=13',
-                                          'test_transform_rules.bar',
+                                          'socorro.unittest.lib.test_transform_rules.bar',
                                           '',
                                           '')
         repr_pred = repr(r.predicate)
