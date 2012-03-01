@@ -1,4 +1,4 @@
-	<div id="comments">
+	<div id="comments" class="ui-tabs-hide">
 	     <h2>Comments</h2>
 		<?php if (!empty($comments)) { ?>
 			<?php foreach ($comments as $comment) { ?>
