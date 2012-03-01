@@ -83,7 +83,7 @@ class TransformRule(object):
 
     #--------------------------------------------------------------------------
     @staticmethod
-    def function_or_constant(fn, args, kwargs):
+    def function_invocation_proxy(fn, proxy_args, proxy_kwargs):
         """execute the fuction if it is one, else evaluate the fn as a boolean
         and return that value.
 
@@ -91,7 +91,7 @@ class TransformRule(object):
         True.  This is shorthand for writing a predicate that always returns
         true."""
         try:
-            return fn(*args, **kwargs)
+            return fn(*proxy_args, **proxy_kwargs)
         except TypeError:
             return bool(fn)
 
@@ -107,20 +107,17 @@ class TransformRule(object):
                (True, True) - the predicate and action functions succeeded
                (True, False) - the predicate succeeded, but the action function
                                failed"""
-        # print 'act - args:', args, 'kwargs:', kwargs
         pred_args = tuple(args) + tuple(self.predicate_args)
-        # print 'act - pred_args:', pred_args
         pred_kwargs = kwargs.copy()
         pred_kwargs.update(self.predicate_kwargs)
-        # print 'act - pred_kwargs:', pred_kwargs
-        if self.function_or_constant(self.predicate, pred_args, pred_kwargs):
+        if self.function_invocation_proxy(self.predicate,
+                                          pred_args,
+                                          pred_kwargs):
             act_args = tuple(args) + tuple(self.action_args)
-            # print 'act - act_args:', act_args
             act_kwargs = kwargs.copy()
             act_kwargs.update(self.action_kwargs)
-            # print 'act - act_kwargs:', act_kwargs
-            bool_result = self.function_or_constant(self.action, act_args,
-                                                    act_kwargs)
+            bool_result = self.function_invocation_proxy(self.action, act_args,
+                                                         act_kwargs)
             return (True, bool_result)
         else:
             return (False, None)
@@ -128,19 +125,9 @@ class TransformRule(object):
     #--------------------------------------------------------------------------
     def __eq__(self, another):
         if isinstance(another, TransformRule):
-            return (self.predicate == another.predicate and
-                    self.predicate_args == another.predicate_args and
-                    self.predicate_kwargs == another.predicate_kwargs and
-                    self.action == another.action and
-                    self.action_args == another.action_args and
-                    self.action_kwargs == another.action_kwargs)
+            return self.__dict__ == another.__dict__
         else:
             return False
-
-
-#------------------------------------------------------------------------------
-def rule_from_6_tuple(a_tuple):
-    return TransformRule(*a_tuple)
 
 
 #==============================================================================
@@ -154,12 +141,12 @@ class TransformRuleSystem(object):
     def load_rules(self, an_iterable):
         """cycle through a collection of Transform rule tuples loading them
         into the TransformRuleSystem"""
-        self.rules = [TransformRule(*x) for x in iter(an_iterable)]
+        self.rules = [TransformRule(*x) for x in an_iterable]
 
     #--------------------------------------------------------------------------
     def append_rules(self, an_iterable):
         """add rules to the TransformRuleSystem"""
-        self.rules.extend(TransformRule(*x) for x in iter(an_iterable))
+        self.rules.extend(TransformRule(*x) for x in an_iterable)
 
     #--------------------------------------------------------------------------
     def apply_all_rules(self, *args, **kwargs):
@@ -170,7 +157,7 @@ class TransformRuleSystem(object):
              True - since success or failure is ignored"""
         # print 'args:', args, 'kwargs:', kwargs
         for x in self.rules:
-            predicate_result, action_result = x.act(*args, **kwargs)
+            x.act(*args, **kwargs)
         return True
 
     #--------------------------------------------------------------------------
@@ -209,7 +196,6 @@ class TransformRuleSystem(object):
             None - no predicate ever succeeded"""
         for x in self.rules:
             predicate_result, action_result = x.act(*args, **kwargs)
-            print predicate_result, action_result
             if predicate_result:
                 return action_result
         return None

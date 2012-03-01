@@ -1,7 +1,7 @@
 import unittest
 import socorro.unittest.testlib.util as testutil
 
-import socorro.lib.transform_rules as tr
+from socorro.lib import transform_rules
 
 
 def assert_expected(actual, expected):
@@ -28,17 +28,17 @@ class TestTransformRules(unittest.TestCase):
 
     def test_kw_str_parse(self):
         a = 'a=1, b=2'
-        actual = tr.kw_str_parse(a)
+        actual = transform_rules.kw_str_parse(a)
         expected = {'a':1, 'b':2}
         assert_expected(expected, actual)
 
         a = 'a="fred", b=3.1415'
-        actual = tr.kw_str_parse(a)
+        actual = transform_rules.kw_str_parse(a)
         expected = {'a':'fred', 'b':3.1415}
         assert_expected(expected, actual)
 
     def test_TransfromRule_init(self):
-        r = tr.TransformRule(True, (), {}, True, (), {})
+        r = transform_rules.TransformRule(True, (), {}, True, (), {})
         assert_expected(r.predicate, True)
         assert_expected(r.predicate_args, ())
         assert_expected(r.predicate_kwargs, {})
@@ -46,7 +46,7 @@ class TestTransformRules(unittest.TestCase):
         assert_expected(r.action_args, ())
         assert_expected(r.action_kwargs, {})
 
-        r = tr.TransformRule(True, '', '', True, '', '')
+        r = transform_rules.TransformRule(True, '', '', True, '', '')
         assert_expected(r.predicate, True)
         assert_expected(r.predicate_args, ())
         assert_expected(r.predicate_kwargs, {})
@@ -54,7 +54,7 @@ class TestTransformRules(unittest.TestCase):
         assert_expected(r.action_args, ())
         assert_expected(r.action_kwargs, {})
 
-        r = tr.TransformRule(foo, '', '', bar, '', '')
+        r = transform_rules.TransformRule(foo, '', '', bar, '', '')
         assert_expected(r.predicate, foo)
         assert_expected(r.predicate_args, ())
         assert_expected(r.predicate_kwargs, {})
@@ -62,7 +62,7 @@ class TestTransformRules(unittest.TestCase):
         assert_expected(r.action_args, ())
         assert_expected(r.action_kwargs, {})
 
-        r = tr.TransformRule('test_transform_rules.foo', '', '',
+        r = transform_rules.TransformRule('test_transform_rules.foo', '', '',
                              'test_transform_rules.bar', '', '')
         repr_pred = repr(r.predicate)
         assert 'foo' in repr_pred, 'expected "foo" in %s' % repr_pred
@@ -73,8 +73,12 @@ class TestTransformRules(unittest.TestCase):
         assert_expected(r.action_args, ())
         assert_expected(r.action_kwargs, {})
 
-        r = tr.TransformRule('test_transform_rules.foo', (1,), {'a':13},
-                             'test_transform_rules.bar', '', '')
+        r = transform_rules.TransformRule('test_transform_rules.foo',
+                                          (1,),
+                                          {'a':13},
+                                          'test_transform_rules.bar',
+                                          '',
+                                          '')
         repr_pred = repr(r.predicate)
         assert 'foo' in repr_pred, 'expected "foo" in %s' % repr_pred
         assert_expected(r.predicate_args, (1,))
@@ -84,8 +88,12 @@ class TestTransformRules(unittest.TestCase):
         assert_expected(r.action_args, ())
         assert_expected(r.action_kwargs, {})
 
-        r = tr.TransformRule('test_transform_rules.foo', '1, 2', 'a=13',
-                             'test_transform_rules.bar', '', '')
+        r = transform_rules.TransformRule('test_transform_rules.foo',
+                                          '1, 2',
+                                          'a=13',
+                                          'test_transform_rules.bar',
+                                          '',
+                                          '')
         repr_pred = repr(r.predicate)
         assert 'foo' in repr_pred, 'expected "foo" in %s' % repr_pred
         assert_expected(r.predicate_args, (1,2))
@@ -97,37 +105,53 @@ class TestTransformRules(unittest.TestCase):
 
 
     def test_TransfromRule_function_or_constant(self):
-        r = tr.TransformRule.function_or_constant(True, (), {})
+        r = transform_rules.TransformRule.function_invocation_proxy(True,
+                                                                    (),
+                                                                    {})
         assert_expected(r, True)
-        r = tr.TransformRule.function_or_constant(False, (), {})
+        r = transform_rules.TransformRule.function_invocation_proxy(False,
+                                                                    (),
+                                                                    {})
         assert_expected(r, False)
 
-        r = tr.TransformRule.function_or_constant(True, (1, 2, 3), {})
+        r = transform_rules.TransformRule.function_invocation_proxy(True,
+                                                                    (1, 2, 3),
+                                                                    {})
         assert_expected(r, True)
-        r = tr.TransformRule.function_or_constant(False, (), {'a':13})
+        r = transform_rules.TransformRule.function_invocation_proxy(False,
+                                                                    (),
+                                                                    {'a':13})
         assert_expected(r, False)
 
-        r = tr.TransformRule.function_or_constant('True', (1, 2, 3), {})
+        r = transform_rules.TransformRule.function_invocation_proxy('True',
+                                                                    (1, 2, 3),
+                                                                    {})
         assert_expected(r, True)
-        r = tr.TransformRule.function_or_constant(None, (), {'a':13})
+        r = transform_rules.TransformRule.function_invocation_proxy(None,
+                                                                    (),
+                                                                    {'a':13})
         assert_expected(r, False)
 
         def fn1(*args, **kwargs):
             return (args, kwargs)
 
-        r = tr.TransformRule.function_or_constant(fn1, (1, 2, 3), {})
+        r = transform_rules.TransformRule.function_invocation_proxy(fn1,
+                                                                    (1, 2, 3),
+                                                                    {})
         assert_expected(r, ((1, 2, 3), {}))
-        r = tr.TransformRule.function_or_constant(fn1, (1, 2, 3), {'a':13})
+        r = transform_rules.TransformRule.function_invocation_proxy(fn1,
+                                                                    (1, 2, 3),
+                                                                    {'a':13})
         assert_expected(r, ((1, 2, 3), {'a':13}))
 
 
     def test_TransfromRule_act(self):
-        rule = tr.TransformRule(True, (), {}, True, (), {})
-        r = rule.act(*(), **{})
+        rule = transform_rules.TransformRule(True, (), {}, True, (), {})
+        r = rule.act()
         assert_expected(r, (True, True))
 
-        rule = tr.TransformRule(True, (), {}, False, (), {})
-        r = rule.act(*(), **{})
+        rule = transform_rules.TransformRule(True, (), {}, False, (), {})
+        r = rule.act()
         assert_expected(r, (True, False))
 
         def pred1(s, d, fred):
@@ -135,15 +159,17 @@ class TestTransformRules(unittest.TestCase):
         s = {'dwight': 96}
         d = {}
 
-        rule = tr.TransformRule(pred1, (True), {}, False, (), {})
+        rule = transform_rules.TransformRule(pred1, (True), {}, False, (), {})
         r = rule.act(s, d)
         assert_expected(r, (True, False))
 
-        rule = tr.TransformRule(pred1, (), {'fred':True}, False, (), {})
+        rule = transform_rules.TransformRule(pred1, (), {'fred':True},
+                                             False, (), {})
         r = rule.act(s, d)
         assert_expected(r, (True, False))
 
-        rule = tr.TransformRule(pred1, (), {'fred':False}, False, (), {})
+        rule = transform_rules.TransformRule(pred1, (), {'fred':False},
+                                             False, (), {})
         r = rule.act(s, d)
         assert_expected(r, (False, None))
 
@@ -151,8 +177,9 @@ class TestTransformRules(unittest.TestCase):
             d[d_key] = s[s_key]
             return True
 
-        rule = tr.TransformRule(pred1, (), {'fred':True}, copy1, (),
-                                's_key="dwight", d_key="wilma"')
+        rule = transform_rules.TransformRule(pred1, (), {'fred':True},
+                                             copy1, (),
+                                               's_key="dwight", d_key="wilma"')
         r = rule.act(s, d)
         assert_expected(r, (True, True))
         assert_expected(s['dwight'], 96)
@@ -160,25 +187,29 @@ class TestTransformRules(unittest.TestCase):
 
 
     def test_TransformRuleSystem_init(self):
-        rules = tr.TransformRuleSystem()
+        rules = transform_rules.TransformRuleSystem()
         assert_expected(rules.rules, [])
 
     def test_TransformRuleSystem_load_rules(self):
-        rules = tr.TransformRuleSystem()
+        rules = transform_rules.TransformRuleSystem()
         some_rules = [(True, '', '', True, '', ''),
                       (False, '', '', False, '', '')]
         rules.load_rules(some_rules)
-        expected = [tr.TransformRule(*(True, (), {}, True, (), {})),
-                    tr.TransformRule(*(False, (), {}, False, (), {}))]
+        expected = [transform_rules.TransformRule(*(True, (), {},
+                                                    True, (), {})),
+                    transform_rules.TransformRule(*(False, (), {},
+                                                    False, (), {}))]
         assert_expected_same(rules.rules, expected)
 
     def test_TransformRuleSystem_append_rules(self):
-        rules = tr.TransformRuleSystem()
+        rules = transform_rules.TransformRuleSystem()
         some_rules = [(True, '', '', True, '', ''),
                       (False, '', '', False, '', '')]
         rules.append_rules(some_rules)
-        expected = [tr.TransformRule(*(True, (), {}, True, (), {})),
-                    tr.TransformRule(*(False, (), {}, False, (), {}))]
+        expected = [transform_rules.TransformRule(*(True, (), {},
+                                                    True, (), {})),
+                    transform_rules.TransformRule(*(False, (), {},
+                                                    False, (), {}))]
         assert_expected_same(rules.rules, expected)
 
     def test_TransformRuleSystem_apply_all_rules(self):
@@ -199,7 +230,7 @@ class TestTransformRules(unittest.TestCase):
                       (False, '', '', increment_1, '', ''),
                       (True, '', '', increment_1, '', ''),
                      ]
-        rules = tr.TransformRuleSystem()
+        rules = transform_rules.TransformRuleSystem()
         rules.load_rules(some_rules)
         s = {}
         d = {}
@@ -224,7 +255,7 @@ class TestTransformRules(unittest.TestCase):
                       (False, '', '', increment_1, '', ''),
                       (True, '', '', increment_1, '', ''),
                      ]
-        rules = tr.TransformRuleSystem()
+        rules = transform_rules.TransformRuleSystem()
         rules.load_rules(some_rules)
         s = {}
         d = {}
@@ -250,7 +281,7 @@ class TestTransformRules(unittest.TestCase):
                       (False, '', '', increment_1, '', ''),
                       (True, '', '', increment_1, '', ''),
                      ]
-        rules = tr.TransformRuleSystem()
+        rules = transform_rules.TransformRuleSystem()
         rules.load_rules(some_rules)
         s = {}
         d = {}
@@ -276,7 +307,7 @@ class TestTransformRules(unittest.TestCase):
                       (False, '', '', increment_1, '', ''),
                       (True, '', '', increment_1, '', ''),
                      ]
-        rules = tr.TransformRuleSystem()
+        rules = transform_rules.TransformRuleSystem()
         rules.load_rules(some_rules)
         s = {}
         d = {}
@@ -301,7 +332,7 @@ class TestTransformRules(unittest.TestCase):
                       (False, '', '', increment_1, '', ''),
                       (True, '', '', increment_1, '', ''),
                      ]
-        rules = tr.TransformRuleSystem()
+        rules = transform_rules.TransformRuleSystem()
         rules.load_rules(some_rules)
         s = {}
         d = {}
