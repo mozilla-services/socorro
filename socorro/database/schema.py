@@ -2031,15 +2031,19 @@ class TransformRules(Table):
   def __init__ (self, logger, **kwargs):
     super(TransformRules, self).__init__(name = "transform_rules", logger=logger,
                                         creationSql = """
-                                            CREATE TABLE transform_rules (
-                                              category citext NOT NULL,
-                                              predicate text NOT NULL,
-                                              predicate_args text NOT NULL,
-                                              predicate_kwargs text NOT NULL,
-                                              action text NOT NULL,
-                                              action_args text NOT NULL,
-                                              action_kwargs text NOT NULL
-                                            );
+                                        CREATE TABLE transform_rules (
+                                          transform_rule_id SERIAL NOT NULL PRIMARY KEY,
+                                          category CITEXT NOT NULL,
+                                          rule_order INT NOT NULL,
+                                          predicate TEXT NOT NULL DEFAULT '',
+                                          predicate_args TEXT NOT NULL DEFAULT '',
+                                          predicate_kwargs TEXT NOT NULL DEFAULT '',
+                                          action TEXT NOT NULL DEFAULT '',
+                                          action_args TEXT NOT NULL DEFAULT '',
+                                          action_kwargs TEXT NOT NULL DEFAULT '',
+                                          constraint transform_rules_key UNIQUE (category, rule_order)
+                                              DEFERRABLE INITIALLY DEFERRED
+                                        );
                                         """)
     self.insertSql = """INSERT INTO transform_rules (category, predicate, predicate_args, predicate_kwargs,
                         action, action_args, action_args) values (%s, %s, %s, %s, %s)"""
