@@ -14,6 +14,7 @@ New-style, documented services
 * crashes/
     * `crashes/comments/ <#crashes-comments>`_
     * `crashes/signatures/ <#crashes-signatures>`_
+* `extensions/ <#id7>`_
 * products/
     * `products/builds/ <#products-builds>`_
 * report/
@@ -226,6 +227,63 @@ Return an object like the following::
             }
         ],
         "totalNumberOfCrashes": 1
+    }
+
+.. ############################################################################
+   Extensions API
+   ############################################################################
+
+Extensions
+----------
+
+Return a list of extensions associated with a crash's UUID.
+
+API specifications
+^^^^^^^^^^^^^^^^^^
+
++----------------+-----------------------------------------------------------------------------------------+
+| HTTP method    | GET                                                                                     |
++----------------+-----------------------------------------------------------------------------------------+
+| URL schema     | /extensions/(optional_parameters)                                                       |
++----------------+-----------------------------------------------------------------------------------------+
+| Full URL       | /extensions/uuid/(uuid)/date/(crash_date)/                                              |
++----------------+-----------------------------------------------------------------------------------------+
+| Example        | http://socorro-api/bpapi/extensions/uuid/xxxx-xxxx-xxxx/date/2012-02-29T01:23:45+00:00/ |
++----------------+-----------------------------------------------------------------------------------------+
+
+Mandatory parameters
+^^^^^^^^^^^^^^^^^^^^
+
++---------+---------------+---------------+-----------------------------------+
+| Name    | Type of value | Default value | Description                       |
++=========+===============+===============+===================================+
+| uuid    | String        | None          | Unique Identifier of the specific |
+|         |               |               | crash to get extensions from.     |
++---------+---------------+---------------+-----------------------------------+
+| date    | Datetime      | None          | Exact datetime of the crash.      |
++---------+---------------+---------------+-----------------------------------+
+
+Optional parameters
+^^^^^^^^^^^^^^^^^^^
+
+None
+
+Return value
+^^^^^^^^^^^^
+
+Return a list of extensions::
+
+    {
+        "total": 1,
+        "hits": [
+            {
+                "report_id": 1234,
+                "date_processed": "2012-02-29 01:23:45+00:00",
+                "extension_key": 5678,
+                "extension_id": "testpilot@labs.mozilla.com",
+                "extension_version": "1.2"
+            }
+        ]
     }
 
 .. ############################################################################

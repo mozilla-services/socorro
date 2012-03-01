@@ -108,7 +108,6 @@ class TransactionExecutorWithBackoff(TransactionExecutor):
                           psycopg2.extensions.TRANSACTION_STATUS_INTRANS:
                             connection.rollback()
                         raise
-            #except psycopg2.ProgrammingError, msg:
             except connection_context.conditional_exceptions, msg:
                 if not connection_context.is_operational_exception(msg):
                     raise
