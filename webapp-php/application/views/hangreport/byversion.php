@@ -26,7 +26,7 @@
 
 <div class="panel">
   <div class="body notitle">
-    <table id="signatureList" class="tablesorter">
+    <table id="signatureList" class="tablesorter data-table">
       <thead>
         <tr>
           <th class="header">Browser Signature</th>

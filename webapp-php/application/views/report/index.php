@@ -69,7 +69,8 @@ if (isset($report->sumo_signature) && !empty($report->signature)) { ?>
         <li><a href="#correlation"><span>Correlations</span></a></li>
     </ul>
     <div id="details">
-        <table class="list record">
+        <table class="record data-table veritcal">
+            <tbody>
             <tr>
 <th>Signature</th>
 <td><?php out::H($report->signature) ?> 
@@ -228,6 +229,7 @@ if (isset($report->sumo_signature) && !empty($report->signature)) { ?>
 <?php if (property_exists($report, 'OOMAllocationSize')) { ?>
         <tr><th>OOMAllocationSize</th><td><?php out::H($report->OOMAllocationSize) ?></td></tr>
 <?php } ?>
+            </tbody>
         </table>
 
 
@@ -253,13 +255,16 @@ if (isset($report->sumo_signature) && !empty($report->signature)) { ?>
     <?php if (isset($report->threads) && count($report->threads)): ?>
 
             <?php function stack_trace($frames) { ?>
-                <table class="list">
-                    <tr>
-                        <th>Frame</th>
-                        <th>Module</th>
-                        <th class="signature-column">Signature</th>
-                        <th>Source</th>
-                    </tr>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Frame</th>
+                            <th>Module</th>
+                            <th class="signature-column">Signature</th>
+                            <th>Source</th>
+                        </tr>
+                    </thead>
+                    <tbody>
                     <?php $row = 1 ?>
                     <?php foreach ($frames as $frame): ?>
                         <tr>
@@ -276,6 +281,7 @@ if (isset($report->sumo_signature) && !empty($report->signature)) { ?>
                         </tr>
                         <?php $row += 1 ?>
                     <?php endforeach ?>
+                    </tbody>
                 </table>
             <?php } ?>
 
@@ -303,7 +309,7 @@ if (isset($report->sumo_signature) && !empty($report->signature)) { ?>
 
     <div id="modules">
         <?php if (count($report->modules)): ?>
-        <table class="list tablesorter" id="modules-list">
+        <table class="tablesorter data-table" id="modules-list">
 	<thead>
             <tr>
                 <th>Filename</th>
@@ -343,13 +349,16 @@ if (isset($report->sumo_signature) && !empty($report->signature)) { ?>
 
     <div id="extensions">
         <?php if (!empty($extensions)) { ?>
-	        <table class="list">
+	        <table class="data-table">
+	            <thead>
 	            <tr>
 					<th>Extension</th>
 	                <th>Extension Id</th>
 	                <th>Version</th>
 					<th>Current?</th>
 	            </tr>
+	            </thead>
+	            <tbody>
 	            <?php $row = 1 ?>
 	            <?php foreach ($extensions as $extension) { ?>
 	                <tr>
@@ -369,6 +378,7 @@ if (isset($report->sumo_signature) && !empty($report->signature)) { ?>
 					<?php $row += 1; ?>
 					</tr>
 	            <?php } ?>
+	            </tbody>
 	        </table>
 		<?php } else { ?>
 			<p><em>No extensions were installed.</em></p>

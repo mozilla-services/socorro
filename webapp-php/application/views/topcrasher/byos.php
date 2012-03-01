@@ -44,7 +44,7 @@
             <?php }?>
         </ul>
     <?php if (count($top_crashers) > 0) { ?>
-        <table id="peros-tbl" class="tablesorter">
+        <table id="peros-tbl" class="tablesorter data-table">
             <thead>
                 <th>Rank</th>
                 <th title="The percentage of crashes against overall crash volume">%</th>
