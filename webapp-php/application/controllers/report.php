@@ -226,7 +226,7 @@ class Report_Controller extends Controller {
      * @param   object     The $report object.
      * @return  void
      */
-    private function _prepReportBugURL($report)
+    private function _prepReportBugURL($report, $include_product=true)
     {
         $report_bug_url = Kohana::config('application.report_bug_url');
 
@@ -235,7 +235,18 @@ class Report_Controller extends Controller {
         }
 
         $report_bug_url .= 'advanced=1&bug_severity=critical&keywords=crash&';
-
+        
+        if($include_product) {
+            if (isset($report->product) && !empty($report->product)) {
+                if($report->product == 'FennecAndroid') {
+                    $rp = 'Fennec Native';
+                } else {
+                    $rp = $report->product;
+                }
+                $report_bug_url .= 'product='.rawurlencode($rp) . '&';
+            }
+        }
+        
         if (isset($report->os_name) && !empty($report->os_name)) {
             $report_bug_url .= 'op_sys='.rawurlencode($report->os_name) . '&';
         }
@@ -421,6 +432,7 @@ class Report_Controller extends Controller {
             $ooppDetails = $this->_makeOoppDetails($report);
 
             $product = (isset($report->product) && !empty($report->product)) ? $report->product : Kohana::config('products.default_product');
+
         $this->setViewData(array(
                 'branch' => $this->branch_model->getByProductVersion($report->product, $report->version),
                 'comments' => $comments,
@@ -429,7 +441,8 @@ class Report_Controller extends Controller {
                 'raw_dump_urls' => $raw_dump_urls,
                 'reportJsonZUri' => $reportJsonZUri,
                 'report' => $report,
-                'report_bug_url' => $this->_prepReportBugURL($report),
+                'current_product_bug_url' => $this->_prepReportBugURL($report),
+                'report_bug_url' => $this->_prepReportBugURL($report, false),
                 'sig2bugs' => $signature_to_bugzilla,
                     'url_nav' => url::site('products/'.$product),
                     'oopp_details' => $ooppDetails,

@@ -234,8 +234,9 @@ if (isset($report->sumo_signature) && !empty($report->signature)) { ?>
         <div id="bugzilla" class="bugreporter">
             <p><strong>Bugzilla</strong>
             <?php if (isset($report_bug_url)) { ?>
-                - Report this bug in 
-                <a href="<?= $report_bug_url . '&amp;product=Core' ?>" title="submit this bug in Core" target="_NEW">Core</a>, 
+                - Report this bug  
+                <a href="<?= $current_product_bug_url ?>" target="_NEW">in <?php trim(out::H($report->product)); ?></a>, 
+                <a href="<?= $report_bug_url . '&amp;product=Core' ?>" title="submit this bug in Core" target="_NEW"> Core</a>, 
                 <a href="<?= $report_bug_url . '&amp;product=Plugins' ?>" title="submit this bug in Plugins" target="_NEW">Plug-Ins</a> or 
                 <a href="<?= $report_bug_url . '&amp;product=Toolkit' ?>" title="submit this bug in Toolkit" target="_NEW">Toolkit</a>
             <?php } ?>
