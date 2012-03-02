@@ -12,7 +12,7 @@
     <?php echo html::script(array(
         'js/jquery/plugins/ui/jquery.ui.all.js',
         'js/jquery/plugins/ui/jquery.tablesorter.min.js',
-	'js/socorro/report.js',
+    'js/socorro/report.js',
         'js/socorro/bugzilla.js'
     ))?>
 
@@ -22,7 +22,7 @@
 
 
 <div class="page-heading">
-	<h2><?php out::H($report->product) ?> <?php out::H($report->version) ?> Crash Report <?php
+    <h2><?php out::H($report->product) ?> <?php out::H($report->version) ?> Crash Report <?php
     if (! empty($report->signature)) {?>
         [@ <?php out::H($report->signature) ?> ]
     <?php }?></h2>
@@ -41,12 +41,12 @@ if (isset($report->sumo_signature) && !empty($report->signature)) { ?>
 
 <?php if (array_key_exists('hangtype', $oopp_details)) { ?>
       <div class="oopp-hang"><div class="current">Lorentz Hang Minidump <span class="type">(<?= $oopp_details['hangtype'] ?>)</div>
-	  <div class="pair"><?php if (array_key_exists('pair_error', $oopp_details)) { ?>
+      <div class="pair"><?php if (array_key_exists('pair_error', $oopp_details)) { ?>
                                 <?= $oopp_details['pair_error'] ?>
                             <?php } elseif (array_key_exists('pair_label', $oopp_details) &&
                                             array_key_exists('other_uuid', $oopp_details)) { ?>
-	                        <?= $oopp_details['pair_label'] ?> Report: <a href="<?= $oopp_details['other_uuid'] ?>"><?= $oopp_details['other_uuid'] ?></a>
-	                    <?php } ?>
+                            <?= $oopp_details['pair_label'] ?> Report: <a href="<?= $oopp_details['other_uuid'] ?>"><?= $oopp_details['other_uuid'] ?></a>
+                        <?php } ?>
           </div>
       </div><!-- /oopp-hang -->
 <?php } ?>
@@ -88,10 +88,10 @@ if (isset($report->sumo_signature) && !empty($report->signature)) { ?>
 <?php if (property_exists($report, 'processType')) { ?>
             <tr><th>Process Type</th><td><?= out::H($report->processType) ?>
     <?php if (property_exists($report, 'pluginName')) { ?>
-	    <strong class="name"><?= out::H($report->pluginName) ?></strong>
+        <strong class="name"><?= out::H($report->pluginName) ?></strong>
     <?php } ?>
     <?php if (property_exists($report, 'pluginVersion')) { ?>
-	    <span>Version:</span><span class="version"><?= out::H($report->pluginVersion) ?></span>
+        <span>Version:</span><span class="version"><?= out::H($report->pluginVersion) ?></span>
     <?php } ?>
     <?php if (property_exists($report, 'pluginFilename')) { ?>
             <span>Filename:</span> <span class="filename"><?= out::H($report->pluginFilename) ?></span>
@@ -106,7 +106,7 @@ if (isset($report->sumo_signature) && !empty($report->signature)) { ?>
             <?php if ($report->last_crash): ?>
             <tr>
                 <th>Last Crash</th><td><?php
-		     $seconds_in_words = TimeUtil::time_ago_in_words($report->last_crash);
+             $seconds_in_words = TimeUtil::time_ago_in_words($report->last_crash);
                      ?><?= $seconds_in_words ?> before submission</td>
             </tr>
             <?php endif; ?>
@@ -157,49 +157,49 @@ if (isset($report->sumo_signature) && !empty($report->signature)) { ?>
                 <th>Crash Address</th><td><?php out::H($report->address) ?></td>
             </tr>
 <?php if ($logged_in === TRUE) { ?>
-	    <tr>
-	  <th>Email Address</th><td>
-	  <?php if(property_exists($report, 'email') && ! empty($report->email)){?>
+        <tr>
+      <th>Email Address</th><td>
+      <?php if(property_exists($report, 'email') && ! empty($report->email)){?>
                <a href="mailto:<? out::H($report->email) ?>"><? out::H($report->email) ?></a> - Super Sensitive! Don't mess around!
 <?php } ?></td>
-	    </tr>
+        </tr>
             <tr>
-	  <th>URL</th><td>
-	  <?php if(property_exists($report, 'url') && ! empty($report->url)){?>
+      <th>URL</th><td>
+      <?php if(property_exists($report, 'url') && ! empty($report->url)){?>
                <a href="<? out::H($report->url) ?>"><? out::H($report->url) ?></a> - Super Sensitive! Don't mess around!
 <?php } ?></td>
-	    </tr>
+        </tr>
 <?php } ?>
 
             <tr>
-	    <th>User Comments</th><td><?php echo out::H($report->user_comments) ?></td>
+        <th>User Comments</th><td><?php echo out::H($report->user_comments) ?></td>
             </tr>
 <?php if (isset($report->app_notes)) { ?>
             <tr>
-	    <th title="Notes added by the application's code during crash">App Notes</th>
+        <th title="Notes added by the application's code during crash">App Notes</th>
             <td><pre><?php echo nl2br( out::H($report->app_notes
 , FALSE))  ?></pre></td>
             </tr>
 <?php } ?>
 <?php if (isset($report->processor_notes)) { ?>
             <tr>
-	    <th title="Notes added by Socorro when accepting the crash report">Processor Notes</th>
+        <th title="Notes added by Socorro when accepting the crash report">Processor Notes</th>
                              <td><?php echo nl2br( out::H($report->processor_notes, FALSE))  ?></td>
             </tr>
 <?php } ?>
 <?php if (isset($report->distributor)) { ?>
             <tr>
-	    <th>Distributor</th><td><?php out::H($report->distributor) ?></td>
+        <th>Distributor</th><td><?php out::H($report->distributor) ?></td>
             </tr>
 <?php } ?>
 <?php if (isset($report->distributor_version)) { ?>
             <tr>
-	    <th>Distributor Version</th><td><?php out::H($report->distributor_version) ?></td>
+        <th>Distributor Version</th><td><?php out::H($report->distributor_version) ?></td>
             </tr>
 <?php } ?>
 <?php if (property_exists($report, 'addons_checked')) { ?>
             <tr>
-	    <th>EMCheckCompatibility</th><td><?php if ($report->addons_checked) { echo 'True'; } else { echo 'False'; } ?></td>
+        <th>EMCheckCompatibility</th><td><?php if ($report->addons_checked) { echo 'True'; } else { echo 'False'; } ?></td>
             </tr>
 <?php } ?>
         <tr><th>Winsock LSP</th><td><pre><?php if (isset($report->Winsock_LSP)) nl2br(out::H($report->Winsock_LSP)) ?></pre></td></tr>
@@ -207,7 +207,7 @@ if (isset($report->sumo_signature) && !empty($report->signature)) { ?>
         <tr><th>Adapter Device ID</th><td><?php if (isset($report->AdapterDeviceID)) out::H($report->AdapterDeviceID) ?></td></tr>
 <?php if (property_exists($report, 'JavaStackTrace')) { ?>
             <tr>
-	    <th>Java Stack Trace</th><td><pre><?php out::H($report->JavaStackTrace) ?></pre></td>
+        <th>Java Stack Trace</th><td><pre><?php out::H($report->JavaStackTrace) ?></pre></td>
             </tr>
 <?php } ?>
 <?php if (property_exists($report, 'TotalVirtualMemory')) { ?>
@@ -231,12 +231,16 @@ if (isset($report->sumo_signature) && !empty($report->signature)) { ?>
         </table>
 
 
-        <div id="bugzilla">
-            <h2>Bugzilla
+        <div id="bugzilla" class="bugreporter">
+            <p><strong>Bugzilla</strong>
             <?php if (isset($report_bug_url)) { ?>
-                 - <a href="<?php out::H($report_bug_url); ?>" target="_NEW">Report this Crash</a>
+                - Report this bug  
+                <a href="<?= $current_product_bug_url ?>" target="_NEW">in <?php trim(out::H($report->product)); ?></a>, 
+                <a href="<?= $report_bug_url . '&amp;product=Core' ?>" title="submit this bug in Core" target="_NEW"> Core</a>, 
+                <a href="<?= $report_bug_url . '&amp;product=Plugins' ?>" title="submit this bug in Plugins" target="_NEW">Plug-Ins</a> or 
+                <a href="<?= $report_bug_url . '&amp;product=Toolkit' ?>" title="submit this bug in Toolkit" target="_NEW">Toolkit</a>
             <?php } ?>
-            </h2>
+            </p>
 
           <?php if (array_key_exists($report->signature, $sig2bugs)) { ?>
           <h2>Related Bugs</h2>
@@ -304,15 +308,15 @@ if (isset($report->sumo_signature) && !empty($report->signature)) { ?>
     <div id="modules">
         <?php if (count($report->modules)): ?>
         <table class="list tablesorter" id="modules-list">
-	<thead>
+    <thead>
             <tr>
                 <th>Filename</th>
                 <th>Version</th>
                 <th>Debug Identifier</th>
                 <th>Debug Filename</th>
             </tr>
-	</thead>
-	<tbody>
+    </thead>
+    <tbody>
             <?php $row = 1 ?>
             <?php foreach ($report->modules as $module): ?>
                 <tr>
@@ -323,7 +327,7 @@ if (isset($report->sumo_signature) && !empty($report->signature)) { ?>
                 </tr>
                 <?php $row += 1 ?>
             <?php endforeach ?>
-	</tbody>
+    </tbody>
         </table>
     <?php endif ?>
     </div><!-- /modules -->
@@ -332,55 +336,55 @@ if (isset($report->sumo_signature) && !empty($report->signature)) { ?>
     <div id="rawdump">
         <div class="code"><?php out::H($report->dump) ?></div>
 
-		<?php if ($logged_in && !empty($raw_dump_urls)) { ?>
-			<h3>Download the Raw Dump</h3>
-			<?php foreach ($raw_dump_urls as $url) { ?>
-				<p><a href="<?php out::H($url); ?>"><?php out::H($url); ?></a></p>
-			<?php } ?>
-		<?php } ?>
+        <?php if ($logged_in && !empty($raw_dump_urls)) { ?>
+            <h3>Download the Raw Dump</h3>
+            <?php foreach ($raw_dump_urls as $url) { ?>
+                <p><a href="<?php out::H($url); ?>"><?php out::H($url); ?></a></p>
+            <?php } ?>
+        <?php } ?>
     </div><!-- /rawdump -->
 
 
     <div id="extensions">
         <?php if (!empty($extensions)) { ?>
-	        <table class="list">
-	            <tr>
-					<th>Extension</th>
-	                <th>Extension Id</th>
-	                <th>Version</th>
-					<th>Current?</th>
-	            </tr>
-	            <?php $row = 1 ?>
-	            <?php foreach ($extensions as $extension) { ?>
-	                <tr>
-	                    <td><a href="<?php out::H($extension['link']) ?>"><?php out::H($extension['name']) ?></a></td>
-	                    <td><?php if (isset($extension['extension_id'])) out::H($extension['extension_id']) ?></td>
-	                    <td><?php if (isset($extension['extension_version']))  out::H($extension['extension_version']) ?></td>
-						<td><?php
-								if (isset($extension['extension_version']) && isset($extension['latest_version'])) {
-									if ($extension['extension_version'] !== $extension['latest_version']) {
-							?>
-									<strong><?php out::H($extension['latest_version']); ?></strong>
-							<?php } else { ?>
-									current
-								<?php } ?>
-							<?php } ?>
-						</td>
-					<?php $row += 1; ?>
-					</tr>
-	            <?php } ?>
-	        </table>
-		<?php } else { ?>
-			<p><em>No extensions were installed.</em></p>
-		<?php } ?>
+            <table class="list">
+                <tr>
+                    <th>Extension</th>
+                    <th>Extension Id</th>
+                    <th>Version</th>
+                    <th>Current?</th>
+                </tr>
+                <?php $row = 1 ?>
+                <?php foreach ($extensions as $extension) { ?>
+                    <tr>
+                        <td><a href="<?php out::H($extension['link']) ?>"><?php out::H($extension['name']) ?></a></td>
+                        <td><?php if (isset($extension['extension_id'])) out::H($extension['extension_id']) ?></td>
+                        <td><?php if (isset($extension['extension_version']))  out::H($extension['extension_version']) ?></td>
+                        <td><?php
+                                if (isset($extension['extension_version']) && isset($extension['latest_version'])) {
+                                    if ($extension['extension_version'] !== $extension['latest_version']) {
+                            ?>
+                                    <strong><?php out::H($extension['latest_version']); ?></strong>
+                            <?php } else { ?>
+                                    current
+                                <?php } ?>
+                            <?php } ?>
+                        </td>
+                    <?php $row += 1; ?>
+                    </tr>
+                <?php } ?>
+            </table>
+        <?php } else { ?>
+            <p><em>No extensions were installed.</em></p>
+        <?php } ?>
     </div><!-- /extensions -->
 <?php View::factory('common/comments')->render(TRUE); ?>
 
     <?php View::factory('common/correlation', array(
-			    'current_signature' => $report->signature,
-			    'current_product'   => $report->product,
-			    'current_version'   => $report->version,
-			    'current_os'        => $report->os_name))->render(TRUE); ?>
+                'current_signature' => $report->signature,
+                'current_product'   => $report->product,
+                'current_version'   => $report->version,
+                'current_os'        => $report->os_name))->render(TRUE); ?>
 
 </div> <!-- /report-index -->
 
@@ -390,8 +394,8 @@ if (isset($report->sumo_signature) && !empty($report->signature)) { ?>
 
 
     <?php echo html::script(
-	array(
-	   // 'js/socorro/report.js',
-	    'js/socorro/correlation.js'
-	    ));
+    array(
+       // 'js/socorro/report.js',
+        'js/socorro/correlation.js'
+        ));
     ?>
