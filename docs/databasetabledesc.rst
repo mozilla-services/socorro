@@ -225,6 +225,27 @@ product_versions
 
 Contains a list of versions for each product, since the beginning of rapid release (i.e. since Firefox 5.0).  Version numbers are available expressed several different ways, and there is a sort column for sorting versions.  Also contains build_date/sunset_date visibility information and the featured_version flag.  "build_type" means the same thing as "release_channel".  Surrogate key: product_version_id.
 
+Version columns include:
+
+version_string
+	The canonical, complete version number for display to users
+	
+release_version
+	The version number as provided in crash reports (and usually the
+	same as the one on the FTP server).  Can be missing suffixes like "b2" or "esr".
+	
+major_version
+	Just the first two numbers of the version number, e.g. "11.0"
+	
+version_sort
+	An alphanumeric string which allows you to sort version numbers in 
+	the correct order.
+	
+beta_number
+	The sequential beta release number if the product-version is a beta.
+	For "final betas", this number will be 99.
+
+
 product_version_builds
 ----------------------
 
@@ -265,6 +286,27 @@ Matviews
 
 These data summaries are derived data from the fact tables and/or the raw data tables.  They are populated by hourly or daily cronjobs, and are frequently regenerated if historical data needs to be corrected.  If these matviews contain the data you need, you should use them first because they are smaller and more efficient than the fact tables or the raw tables.
 
+correlations
+------------
+
+Summaries crashes by product-version, os, reason and signature.  Populated
+by daily cron job.  Is the root for the other correlations reports.  Correlation reports in the database will not be active/populated until 2.5.2 or later.
+
+correlation_addons
+------------------
+
+Contains crash-count summaries of addons per correlation.  Populated by daily cronjob.
+
+correlation_cores
+-----------------
+
+Contains crash-count summaries of crashes per architecture and number of cores.  Populated by daily cronjob.
+
+correlation_modules
+-------------------
+
+Will contain crash-counts for modules per correlation.  Will be populated daily by pull from Hbase.
+
 daily_crashes
 -------------
 
@@ -276,6 +318,11 @@ daily_hangs and hang_report
 daily_hangs contains a correlation of hang crash reports with their related hang pair crashes, plus additional summary data.  Duplicates contains an array of UUIDs of possible duplicates.
 
 hang_report is a dynamic view which flattens daily_hangs and its related dimension tables.
+
+nightly_builds 
+--------------
+
+contains summaries of crashes-by-age for Nightly and Aurora releases.  Will be populated in Socorro 2.5.1.
 
 product_info
 ------------
@@ -301,38 +348,100 @@ Due to a historical error, the column name for the Release Channel in various ta
 
 Application Support Tables
 ==========================
-These tables are used by various parts of the application to do other things than reporting.  They are populated/managed by those applications.   Most are not accessible to the various reporting users; as such, they will be documented sometime later.
+These tables are used by various parts of the application to do other things than reporting.  They are populated/managed by those applications.   Most are not accessible to the various reporting users, as they do not contain reportable data.
 
-* data processing control tables
+data processing control tables
+------------------------------
 
-	* product_productid_map
-	* reports_bad
-	* os_name_matches
-	* release_channel_matches
+These tables contain data which supports data processing by the
+processors and cronjobs.
+
+product_productid_map
+	maps product names based on productIDs, in cases where the product name
+	supplied by Breakpad is not correct (i.e. FennecAndroid).
 	
-* email campaign tables 
+reports_bad
+	contains the last day of rejected UUIDs for copying from reports to
+	reports_clean.  intended for auditing of the reports_clean code.
+	
+os_name_matches
+	contains regexs for matching commonly found OS names in crashes with
+	canonical OS names.
+	
+release_channel_matches
+	contains LIKE match strings for release channels for channel names 
+	commonly found in crashes with canonical names.
+	
+special_product_platforms
+	contains mapping information for rewriting data from FTP-scraping
+	to have the correct product and platform.  Currently used only 
+	for Fennec.
+	
+transform_rules
+	contains rule data for rewriting crashes by the processors.  May be
+	used in the future for other rule-based rewriting by other components.
+
+email campaign tables 
+---------------------
+
+These tables support the application which emails crash reporters with
+follow-ups.  As such, access to these tables will restricted.
 
 	* email_campaigns
 	* email_campaigns_contacts
 	* email_contacts
 
-* processor management tables
+processor management tables
+---------------------------
 
-	* jobs
-	* priorityjobs
-	* priority_jobs_*
-	* processors
-	* server_status
+These tables are used to coordinate activities of the up-to-120 processors 
+and the monitor.  
 
-* UI management tables
+jobs
+	The current main queue for crashes waiting to be processed.
 
-	* sessions
+priorityjobs
+	The queue for user-requested "priority" crash processing.
+	
+processors
+	The registration list for currently active processors.
+	
+server_status
+	Contains summary statistics on the various processor servers.
+	
+	
+UI management tables
+--------------------
 
-* monitoring tables
+sessions
+	contains session information for people logged into the administration
+	interface for Socorro.
+	
+monitoring tables
+-----------------
 
-	* replication_test
+replication_test
+	Contains a timestamp for ganglia to measure the speed of replication.
 
-* cronjob and database management
+cronjob and database management
+-------------------------------
 
-	* cronjobs
-	* report_partition_info
+These tables support scheduled tasks which are run in Socorro.
+
+cronjobs
+	contains last-completed and success/failure status for each cronjob
+	which affects the database.  Currently does not include all cronjobs.
+
+report_partition_info
+	contains configuration information on how the partitioning cronjob
+	needs to partition the various partitioned database tables.
+	
+socorro_db_version
+	contains the socorro version of the current database.  updated by the
+	upgrade scripts.
+	
+socorro_db_version_history
+	contains the history of version upgrades of the current database.
+	
+
+	
