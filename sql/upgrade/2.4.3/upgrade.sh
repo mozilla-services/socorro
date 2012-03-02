@@ -27,11 +27,6 @@ echo 'bug 687906'
 psql -f ${CURDIR}/create_user_analyst.sql breakpad
 
 echo '*********************************************************'
-echo 'drop frames table'
-echo 'bug 681476'
-psql -f ${CURDIR}/drop_frames_table.sql breakpad
-
-echo '*********************************************************'
 echo 'Fix FKs so that we can delete product/versions'
 echo 'No bug #'
 psql -f ${CURDIR}/fix_product_version_fks.sql breakpad

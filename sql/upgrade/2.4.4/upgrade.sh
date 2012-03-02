@@ -16,6 +16,11 @@ echo 'bug 640238'
 psql -f ${CURDIR}/nightly_builds.sql breakpad
 psql -f ${CURDIR}/backfill_matviews.sql breakpad
 
+echo '*********************************************************'
+echo 'drop frames table'
+echo 'bug 681476'
+psql -f ${CURDIR}/drop_frames_table.sql breakpad
+
 #change version in DB
 psql -c "SELECT update_socorro_db_version( '$VERSION' )" breakpad
 
