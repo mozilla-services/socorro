@@ -13,7 +13,6 @@ class Common_Model extends Model {
      */
     public function __construct() {
         parent::__construct();
-
         $this->branch_model   = new Branch_Model();
         $this->platform_model = new Platform_Model();
     }
@@ -22,7 +21,6 @@ class Common_Model extends Model {
      * Calculate frequency of crashes across builds and platforms.
      */
     public function queryFrequency($params) {
-
         $signature = $this->db->escape($params['signature']);
 
         $columns = array(
@@ -52,7 +50,7 @@ class Common_Model extends Model {
             $sql .= " JOIN  " . join("\nJOIN ", $join_tables);
         }
 
-    	$sql .= " WHERE  " . join(' AND ', $where) .
+        $sql .= " WHERE  " . join(' AND ', $where) .
                 " GROUP BY reports.build ".
                 " ORDER BY reports.build DESC";
 
@@ -118,6 +116,8 @@ class Common_Model extends Model {
                             $channel = 'nightly';
                         } else if (strpos($version_string, 'a2')) {
                             $channel = 'aurora';
+                        } else if (strpos($version_string, 'esr')) {
+                            $channel = 'ESR';
                         } else {
                             $channel = 'release';
                         }
@@ -151,14 +151,17 @@ class Common_Model extends Model {
                                 "(reports.product = " . $this->db->escape($product) .
                                 "AND reports.version = " . $this->db->escape($reports_version) .
                                 "AND product_versions.build_type = 'Nightly')";
+                        } else if ($channel == 'ESR') {
+                            $or[] =
+                                "(reports.product = " . $this->db->escape($product) .
+                                "AND reports.version = " . $this->db->escape($reports_version) .
+                                "AND product_versions.build_type = 'ESR')";
                         }
                     } else {
-
                         $or[] =
                             "(reports.product = " . $this->db->escape($product) . " AND " .
                             "reports.version = " . $this->db->escape($reports_version) . ")";
                     }
-
                 } else {
                     $or[] = "(reports.product = " . $this->db->escape($spec) . ")";
                 }
@@ -199,21 +202,21 @@ class Common_Model extends Model {
         }
 
         if (array_key_exists('build_id', $params) && $params['build_id']) {
-	        $where[] = 'reports.build = ' . $this->db->escape($params['build_id']);
+            $where[] = 'reports.build = ' . $this->db->escape($params['build_id']);
         }
 
         // Report Type hang_type - [any|crash|hang]
         if (array_key_exists('hang_type', $params) &&
         'crash' == $params['hang_type']) {
             $where[] = 'reports.hangid IS NULL';
-	    } elseif (array_key_exists('hang_type', $params) &&
-		'hang' == $params['hang_type']) {
+        } elseif (array_key_exists('hang_type', $params) &&
+        'hang' == $params['hang_type']) {
             $where[] = 'reports.hangid IS NOT NULL';
-	    } // else hang_type is ANY
+        } // else hang_type is ANY
 
         // Report Process process_type - [any|browser|plugin|
         if (array_key_exists('process_type', $params) &&
-	    'plugin' == $params['process_type'] ) {
+        'plugin' == $params['process_type'] ) {
             $where[] = "reports.process_type = 'plugin'";
 
             array_push($join_tables,
@@ -241,9 +244,9 @@ class Common_Model extends Model {
                 }
             }
         } elseif (array_key_exists('process_type', $params) &&
-	    'browser' == $params['process_type']) {
+        'browser' == $params['process_type']) {
             $where[] = 'reports.process_type IS NULL';
-	    } // else process_type is ANY
+        } // else process_type is ANY
 
         if ($params['query']) {
             $term = FALSE;
@@ -278,7 +281,7 @@ class Common_Model extends Model {
                 $where[] = "reports.date_processed BETWEEN date_trunc('day', (TIMESTAMPTZ $date - INTERVAL $interval )) AND $date";
                 if (array_key_exists('process_type', $params) &&
                 'plugin' == $params['process_type'] ) {
-                        $where[] = "plugins_reports.date_processed BETWEEN date_trunc('day', (TIMESTAMPTZ $date - INTERVAL $interval)) AND $date";
+                    $where[] = "plugins_reports.date_processed BETWEEN date_trunc('day', (TIMESTAMPTZ $date - INTERVAL $interval)) AND $date";
                 }
             }
         }

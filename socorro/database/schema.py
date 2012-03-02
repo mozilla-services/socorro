@@ -2023,6 +2023,34 @@ class ProductIdMapTable(Table):
 databaseDependenciesForSetup[ProductIdMapTable] = []
 
 
+#=================================================================================================================
+class TransformRules(Table):
+  """a single source for transformation rules based on the TransformRules classes
+  """
+  #-----------------------------------------------------------------------------------------------------------------
+  def __init__ (self, logger, **kwargs):
+    super(TransformRules, self).__init__(name = "transform_rules", logger=logger,
+                                        creationSql = """
+                                        CREATE TABLE transform_rules (
+                                          transform_rule_id SERIAL NOT NULL PRIMARY KEY,
+                                          category CITEXT NOT NULL,
+                                          rule_order INT NOT NULL,
+                                          predicate TEXT NOT NULL DEFAULT '',
+                                          predicate_args TEXT NOT NULL DEFAULT '',
+                                          predicate_kwargs TEXT NOT NULL DEFAULT '',
+                                          action TEXT NOT NULL DEFAULT '',
+                                          action_args TEXT NOT NULL DEFAULT '',
+                                          action_kwargs TEXT NOT NULL DEFAULT '',
+                                          constraint transform_rules_key UNIQUE (category, rule_order)
+                                              DEFERRABLE INITIALLY DEFERRED
+                                        );
+                                        """)
+    self.insertSql = """INSERT INTO transform_rules (category, predicate, predicate_args, predicate_kwargs,
+                        action, action_args, action_args) values (%s, %s, %s, %s, %s)"""
+
+databaseDependenciesForSetup[TransformRules] = []
+
+
 #-----------------------------------------------------------------------------------------------------------------
 def connectToDatabase(config, logger):
   databaseDSN = "host=%(databaseHost)s dbname=%(databaseName)s user=%(databaseUserName)s password=%(databasePassword)s" % config

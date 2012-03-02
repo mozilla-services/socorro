@@ -14,9 +14,11 @@ $(document).ready(function() {
         dataType: 'json',
         success: function(data) {
           var bugTable = {};
-          $.each(data.bugs, function(i, v) {
-            bugTable[v.id] = v;
-          });
+          if (data.bugs) {
+              $.each(data.bugs, function(i, v) {
+                bugTable[v.id] = v;
+              });
+          }
           $('.bug-link').each(function(i, v) {
             var bug = bugTable[v.innerHTML];
             if (bug) {
@@ -38,12 +40,12 @@ $(document).ready(function() {
         }
       });
     }
-    
+
     $('.bug_ids_more').hover(function() {
         var inset = 10,
         cell = $(this),
         bugList = cell.find('.bug_ids_expanded_list');
-        
+
         bugList.css({
             top: cell.position().top - inset,
             left: cell.position().left - (bugList.width() + inset)
