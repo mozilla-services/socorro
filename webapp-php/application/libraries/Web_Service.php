@@ -89,6 +89,7 @@ class Web_Service
      */
     public function get($url, $response_type='json', $cache_lifetime=null)
     {
+        Kohana::log('debug', 'Trying to get URL: ' . $url);
 
         if (is_null($cache_lifetime)) {
             $this->status_code = 200;
