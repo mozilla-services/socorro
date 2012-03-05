@@ -664,9 +664,13 @@ html.production .page-footer { margin-top: 80px; }
 	width: 99%;
 	height: 200px;
 	}
-
-
-
+#adu-chart-legend table td {
+    border: 0;
+    padding: 0.2em 0.2em 0.7em;
+}
+.update-chart-button {
+    margin: 1em 0 0 0;
+}
 /**
  * Status Messages
  */

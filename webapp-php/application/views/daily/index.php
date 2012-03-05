@@ -58,6 +58,7 @@ echo html::script(array(
         <?php if (!empty($graph_data)) { ?>
 		    <div id="adu-chart"></div>
 		    <p class="adu-chart-help">This graph uses an approximate <a href="https://wiki.mozilla.org/Socorro/SocorroUI/Branches_Admin#Throttle">throttle value</a> for each version, which may not be completely accurate for the entire time period.</p>
+		    <div id="adu-chart-legend"></div>
         <?php } else { ?>
             <p>No Active Daily User crash data is available for this report.</p>
         <?php } ?>
@@ -66,23 +67,41 @@ echo html::script(array(
 
 
 <?php if (!empty($graph_data) && $form_selection == 'by_report_type') { ?>
-<form id="adu-chart-controls"><div class='graph-ratio-checkbox'>
-    <table><tr><th></th><?php
-         foreach ($chosen_report_types as $rt) { ?><th><?= $rt ?></th> <?php } ?></tr><?php
-        for ($i = 0; $i < count($graph_data); $i++){
-	$item = $graph_data[$i];
-	if ($i % count($statistic_keys) == 0) {
-	$version_index = $i / count($statistic_keys);
-	if ($i != 0) {
-	    echo "</tr>\n";
-	} ?><tr><th><?= $versions[$version_index]?></th><?php
-	}
-?><td><input type='checkbox' name='graph_data_<?= $i ?>' id='graph_data_<?= $i ?>' checked="checked" title="<?= $item['label'] ?>" /></td>
-	<?php } ?>
-    </tr></table>
+<div class="panel chart-controls">
+    <div class="title">
+        <h2>ADU Chart Controls</h2>
+    </div>
+    <div class="body">
+        <form id="adu-chart-controls"><div class='graph-ratio-checkbox'>
+            <table class="data-table veritcal">
+                <thead>
+                    <tr>
+                        <th>Version</th>
+                        <?php
+                            foreach ($chosen_report_types as $rt) { ?><th><?= $rt ?></th> 
+                        <?php } ?>
+                     </tr>
+                 </thead>
+                 <tbody>
+                 <?php
+                for ($i = 0; $i < count($graph_data); $i++){
+        	$item = $graph_data[$i];
+        	if ($i % count($statistic_keys) == 0) {
+        	$version_index = $i / count($statistic_keys);
+        	if ($i != 0) {
+        	    echo "</tr>\n";
+        	} ?><tr><th><?= $versions[$version_index]?></th><?php
+        	}
+        ?><td><input type='checkbox' name='graph_data_<?= $i ?>' id='graph_data_<?= $i ?>' checked="checked" title="<?= $item['label'] ?>" /></td>
+        	<?php } ?>
+            </tr>
+            </tbody>
+            </table>
+        </div>
+        <button class="update-chart-button">Update Graph</button>
+        </form>
+    </div>
 </div>
-<div><button>Update Graph</button></div>
-</form>
 <?php } ?>
 
 

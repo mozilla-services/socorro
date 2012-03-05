@@ -29,12 +29,19 @@ $(function() {
 
     if (window.socGraphByReportType === true) {
         $('#adu-chart-controls button').click(function() {
-            var currentData = [];
+            var currentData = [],
+            noOfColumns = 8;
             for (var i=0; i < data.length; i++) {
                 if ($('input[name=graph_data_' + i + ']').attr('checked')) {
                     currentData.push(data[i]);
                 }
             }
+            //if there are more then 8 items in the array we have to starting splittig into two rows
+            if(currentData.length > 8) {
+                noOfColumns = currentData.length / 2;
+            }
+            chartOpts.legend.noColumns = noOfColumns;
+            chartOpts.legend.container = $("#adu-chart-legend");
             $.plot($("#adu-chart"), currentData, chartOpts);
             return false;
         }).trigger('click');
