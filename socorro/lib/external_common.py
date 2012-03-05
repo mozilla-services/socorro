@@ -67,6 +67,7 @@ def parse_arguments(filters, arguments):
         params[i[0]] = param
     return params
 
+
 def check_type(param, datatype):
     """
     Make sure that param is of type datatype and return it.
