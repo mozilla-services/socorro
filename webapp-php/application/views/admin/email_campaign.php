@@ -1,6 +1,10 @@
 <?php if (isset($campaign)) { ?>
   <div class="page-heading">
     <h2>PostCrash Email Campaign</h3>
+    <ul class="options">
+        <li><a href="<?php echo url::base(); ?>admin/branch_data_sources">Branch Data Sources</a></li>
+        <li><a href="<?php echo url::base(); ?>admin/email" class="selected">Email Users</a></li>
+    </ul>
   </div>
   <div class="panel">
     <div class="title">
