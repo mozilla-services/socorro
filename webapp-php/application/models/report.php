@@ -46,7 +46,7 @@ class Report_Model extends Model {
             Kohana::log('info', "$uuid was reported but not processed; a priority job has been scheduled.");
             return true;
         } else if ( !is_bool($crash_report_json) ) {
-            $uri = Kohana::config('webserviceclient.socorro_hostname') . '/crash/uuid/' . urlencode($uuid);
+            $uri = Kohana::config('webserviceclient.socorro_hostname') . '/crash/uuid/' . rawurlencode($uuid);
             $report = $this->service->get($uri);
             if (!$report || $report->total == 0) {
                 Kohana::log('info', "$uuid processed crash exists in HBase but does not exist in the reports table");
@@ -64,7 +64,7 @@ class Report_Model extends Model {
     }
 
     public function getRawJson($uuid){
-        $uri = Kohana::config('webserviceclient.socorro_hostname').'/crash/meta/by/uuid/'.$uuid;
+        $uri = Kohana::config('webserviceclient.socorro_hostname').'/crash/meta/by/uuid/'.rawurlencode($uuid);
         $result = $this->service->get($uri);
         return $result;
     }
@@ -250,7 +250,7 @@ class Report_Model extends Model {
             Kohana::config('webserviceclient.socorro_hostname'),
             $apiEntry,
             'signature',
-            urlencode(str_replace('/', '%2F', $params['signature']))
+            rawurlencode(str_replace('/', '%2F', $params['signature']))
         );
 
         //echo '<pre>',var_dump($params),'</pre>';
@@ -369,7 +369,7 @@ class Report_Model extends Model {
                 {
                     // Securing encoded "/" because of Apache refusing them in URIs
                     $value = str_replace('/', '%2F', $value);
-                    $apiData[] = urlencode($value);
+                    $apiData[] = rawurlencode($value);
                 }
             }
         }

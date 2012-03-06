@@ -20,7 +20,9 @@ class Signature_Summary_Model extends Model {
         $host = Kohana::config('webserviceclient.socorro_hostname');
         $report_type = rawurlencode($report_type);
         $signature = rawurlencode($signature);
-        $url = "{$host}/signaturesummary/report_type/{$report_type}/signature/{$signature}/start_date/{$start}/end_date/{$end}";
+        $start_date = rawurlencode($start);
+        $end_date = rawurlencode($end);
+        $url = "{$host}/signaturesummary/report_type/{$report_type}/signature/{$signature}/start_date/{$start_date}/end_date/{$end_date}";
 
         if(isset($versions['products']) && !empty($versions['products'])) {
             $url .= "/product/{$versions['products']}";

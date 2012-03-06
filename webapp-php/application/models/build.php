@@ -138,13 +138,13 @@ class Build_Model extends Model {
         if ($version)
         {
             $apiData[] = 'version';
-            $apiData[] = $version;
+            $apiData[] = rawurlencode($version);
         }
 
         if ($from_date)
         {
             $apiData[] = 'from_date';
-            $apiData[] = $from_date;
+            $apiData[] = rawurlencode($from_date);
         }
 
         $apiData[] = '';    // Trick to have the closing '/'

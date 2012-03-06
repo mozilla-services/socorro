@@ -60,7 +60,7 @@ class Email_Controller extends Controller
     public function subscription($subscribeToken)
     {
         $subscriptionStatus = true;
-        $token = urlencode($subscribeToken);
+        $token = rawurlencode($subscribeToken);
         $backendError = false;
         $success = $this->input->get('success', false);
         list($recaptchaErrorCode, $recaptchaError) =
