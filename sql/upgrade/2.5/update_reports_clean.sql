@@ -288,12 +288,12 @@ EXECUTE 'INSERT INTO ' || rc_part || '
 	  build, signature_id, install_age, uptime,
 reason_id, address_id, os_name, os_version_id,
 hang_id, flash_version_id, process_type, release_channel, 
-duplicate_of, domain_id )
+duplicate_of, domain_id, architecture, cores )
 SELECT uuid, date_processed, client_crash_date, product_version_id, 
 	  build, signature_id, install_age, uptime,
 reason_id, address_id, os_name, os_version_id,
 hang_id, flash_version_id, process_type, release_channel, 
-duplicate_of, domain_id 
+duplicate_of, domain_id, architecture, cores
 FROM reports_clean_buffer;';
 
 EXECUTE 'ANALYZE ' || rc_part;
