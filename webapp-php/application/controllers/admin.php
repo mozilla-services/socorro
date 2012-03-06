@@ -250,7 +250,7 @@ class Admin_Controller extends Controller
         $service = new Web_Service($config);
         $host = Kohana::config('webserviceclient.socorro_hostname');
         $campaign_id = intval($id);
-        $resp = $service->get("${host}/emailcampaigns/campaign/${campaign_id}", 'json');
+        $resp = $service->get("${host}/emailcampaigns/campaign/rawurlencode(${campaign_id})", 'json');
         if (! $resp) {
             client::messageSend("Error loading recent email campaigns", E_USER_ERROR);
         } else {
@@ -332,11 +332,11 @@ class Admin_Controller extends Controller
         $service = new Web_Service($config);
         $host = Kohana::config('webserviceclient.socorro_hostname');
 
-        $p = urlencode($product);
-        $v = urlencode(str_replace(' ', '', $versions));
-        $sig = urlencode($signature);
-        $s_date = urlencode($this->_convertDateForBackend($start_date));
-        $e_date = urlencode($this->_convertDateForBackend($end_date));
+        $p = rawurlencode($product);
+        $v = rawurlencode(str_replace(' ', '', $versions));
+        $sig = rawurlencode($signature);
+        $s_date = rawurlencode($this->_convertDateForBackend($start_date));
+        $e_date = rawurlencode($this->_convertDateForBackend($end_date));
 
         return  $service->get("${host}/emailcampaigns/volume/p/${p}/v/${v}/sig/${sig}/start/${s_date}/end/${e_date}", 'json');
     }

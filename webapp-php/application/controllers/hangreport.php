@@ -129,10 +129,7 @@ class HangReport_Controller extends Controller {
         // lifetime in seconds
         $lifetime = $cache_in_minutes * 60;
 
-        $p = urlencode($product);
-        $v = urlencode($version);
-        $pg = urlencode($page);
-        $resp = $this->hangreport_model->getHangReportViaWebService($p, $v, $duration, $pg);
+        $resp = $this->hangreport_model->getHangReportViaWebService($product, $version, $duration, $page);
 
         if ($resp) {
             $pager = new MozPager(Kohana::config('hang_report.byversion_limit'), $resp->totalCount, $resp->currentPage);
