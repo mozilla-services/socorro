@@ -49,15 +49,12 @@ class TCBS(PostgreSQLBase):
 
         Return:
         """
-        oneweek = timedelta(7)
-        lastweek = datetime.utcnow() - oneweek
-
         filters = [
             ("product", None, "str"),
             ("version", None, "str"),
             ("crash_type", "all", "str"),
-            ("to_date", lastweek, "datetime"),
-            ("duration", oneweek, "timedelta"),
+            ("to_date", datetime.utcnow(), "datetime"),
+            ("duration", timedelta(7), "timedelta"),
             ("os", None, "str"),
             ("limit", 100, "int")
         ]
