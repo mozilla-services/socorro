@@ -467,7 +467,7 @@ class Daily_Model extends Model {
 				if ($i > 0) {
 					$uri .= ";";
 				}
-				$uri .= urlencode($parameter);
+				$uri .= rawurlencode($parameter);
 			}
 		}
 		return $uri;
@@ -487,11 +487,11 @@ class Daily_Model extends Model {
     private function formatURL ($api, $product, $versions, $hang_type, $operating_systems, $start_date, $end_date) {
         $host = Kohana::config('webserviceclient.socorro_hostname');
 
-        $p = urlencode($product);
+        $p = rawurlencode($product);
         $v = $this->encodeArray($versions);
         $os = $this->encodeArray($operating_systems);
-        $start = urlencode($start_date);
-        $end = urlencode($end_date);
+        $start = rawurlencode($start_date);
+        $end = rawurlencode($end_date);
 
         $url = $host . $api . $p . "/v/" . $v . "/rt/" . $hang_type . "/os/" . $os . "/start/" . $start . "/end/" . $end;
         return $url;

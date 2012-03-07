@@ -3,6 +3,8 @@
  * Manage data in the topcrashers table.
  */
 class Topcrashers_Model extends Model {
+    
+    private $host = "";
 
     /**
      * Return the trendClass value that will be used with this top crasher.
@@ -50,6 +52,34 @@ class Topcrashers_Model extends Model {
  	        Kohana::log('alert', "Required properites are missing from $log_msg - " . implode(', ', $missing_prop_names));
  	    }
      }
+     
+     /**
+     * Build the service URI from the paramters passed and returns the URI with 
+     * all values rawurlencoded.
+     * 
+     * @param array url parameters to append and encode
+     * @param string the main api entry point ex. crashes
+     * @return string service URI with all values encoded
+     */
+    public function buildURI($params, $apiEntry)
+    {
+        $separator = "/";
+        $host = Kohana::config('webserviceclient.socorro_hostname');
+        $apiData = array(
+                $host,
+                $apiEntry,
+                "signatures"
+        );
+        
+        foreach ($params as $key => $value) {
+            $apiData[] = $key;
+            $apiData[] = rawurlencode($value);
+        }
+        
+        $apiData[] = '';    // Trick to have the closing '/'
+
+        return implode($separator, $apiData);
+    }
 
     /**
      * Fetch the top crashers data via a web service call.
@@ -69,12 +99,12 @@ class Topcrashers_Model extends Model {
     	$service = new Web_Service($config);
     	$host = Kohana::config('webserviceclient.socorro_hostname');
     	$cache_in_minutes = Kohana::config('webserviceclient.topcrash_vers_rank_cache_minutes', 60);
-    	$end_date = urlencode(date('Y-m-d\TH:i:s+0000', TimeUtil::roundOffByMinutes($cache_in_minutes)));
-    	$dur = $duration * 24;
-    	$limit = Kohana::config('topcrashbysig.byversion_limit', 300);
+    	$end_date = rawurlencode(date('Y-m-d\TH:i:s+0000', TimeUtil::roundOffByMinutes($cache_in_minutes)));
+    	$dur = rawurlencode($duration * 24);
+    	$limit = rawurlencode(Kohana::config('topcrashbysig.byversion_limit', 300));
     	$lifetime = Kohana::config('products.cache_expires');
-    	$p = urlencode($product);
-    	$v = urlencode($version);
+    	$p = rawurlencode($product);
+    	$v = rawurlencode($version);
 
         $resp = $service->get("${host}/crashes/signatures/product/${p}/version/${v}/crash_type/browser/to_date/${end_date}/duration/${dur}/limit/${limit}",'json', $lifetime);
     	if($resp) {

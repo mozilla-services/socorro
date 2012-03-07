@@ -22,13 +22,14 @@ class HangReport_Model extends Model {
        $service = new Web_Service($config);
        $host = Kohana::config('webserviceclient.socorro_hostname');
        $cache_in_minutes = Kohana::config('webserviceclient.hang_report_cache_minutes', 60);
-       $end_date = date('Y-m-d', TimeUtil::roundOffByMinutes($cache_in_minutes));
-       $limit = Kohana::config('hang_report.byversion_limit', 300);
-       $p = urlencode($product);
-       $v = urlencode($version);
-       $pg = urlencode($page);
+       $end_date = rawurlencode(date('Y-m-d', TimeUtil::roundOffByMinutes($cache_in_minutes)));
+       $limit = rawurlencode(Kohana::config('hang_report.byversion_limit', 300));
+       $p = rawurlencode($product);
+       $v = rawurlencode($version);
+       $pg = rawurlencode($page);
+       $dur = rawurlencode($duration);
 
-       $resp = $service->get("${host}/reports/hang/p/${p}/v/${v}/end/${end_date}/duration/${duration}/listsize/${limit}/page/${pg}");
+       $resp = $service->get("${host}/reports/hang/p/${p}/v/${v}/end/${end_date}/duration/${dur}/listsize/${limit}/page/${pg}");
        if($resp) {
            return $resp;
         }

@@ -162,7 +162,7 @@ class Search_Model extends Model {
                 {
                     // Securing encoded "/" because of Apache refusing them in URIs
                     $value = str_replace('/', '%2F', $value);
-                    $apiData[] = urlencode($value);
+                    $apiData[] = rawurlencode($value);
                 }
             }
         }

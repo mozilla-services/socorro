@@ -126,15 +126,17 @@ class Topcrasher_Controller extends Controller {
 
         return url::redirect('/topcrasher/byversion/' . $product->product . '/' . $product->version);
     }
-
-    public function setupWebservice() {
+    
+    /**
+      * Initialize the web service
+      */
+     public function setupWebservice() {
         $config = array();
         $credentials = Kohana::config('webserviceclient.basic_auth');
         if ($credentials) {
             $config['basic_auth'] = $credentials;
         }
         $this->service = new Web_Service($config);
-        $this->host = Kohana::config('webserviceclient.socorro_hostname');
     }
 
     /**
@@ -212,7 +214,7 @@ class Topcrasher_Controller extends Controller {
         $this->tcbInitParams->{'durations'} = Kohana::config('topcrashbysig.durations');
 
         $this->tcbInitParams->{'cache_in_minutes'} = Kohana::config('webserviceclient.topcrash_vers_rank_cache_minutes', 60);
-        $this->tcbInitParams->{'end_date'} = urlencode(date('Y-m-d\TH:i:s+0000', TimeUtil::roundOffByMinutes($this->tcbInitParams->{'cache_in_minutes'})));
+        $this->tcbInitParams->{'end_date'} = date('Y-m-d\TH:i:s+0000', TimeUtil::roundOffByMinutes($this->tcbInitParams->{'cache_in_minutes'}));
         // $dur is number of hours
         $this->tcbInitParams->{'dur'} = $duration * 24;
         $this->tcbInitParams->{'limit'} = Kohana::config('topcrashbysig.byversion_limit', 300);
@@ -223,17 +225,24 @@ class Topcrasher_Controller extends Controller {
         if (empty($crash_type) || !in_array($crash_type, $this->tcbInitParams->{'crash_types'})) {
             $crash_type = Kohana::config('topcrashbysig.crash_types_default');
         }
-
         $this->tcbInitParams->{'crash_type'} = $crash_type;
-
-        $this->tcbInitParams->{'p'} = urlencode($product);
-        $this->tcbInitParams->{'v'} = urlencode($version);
 
         $this->tcbInitParams->{'platforms'} = Kohana::config('platforms.platforms');
 
+        $params['product'] = $product;
+        $params['version'] = $version;
+        
         if($os != null) {
             $this->tcbInitParams->{'os_display_name'} = $this->getOSDisplayName($os);
+            $params['os'] = $os;
         }
+        
+        $params['crash_type'] = $this->tcbInitParams->crash_type;
+        $params['end_date'] = $this->tcbInitParams->end_date;
+        $params['duration'] = $this->tcbInitParams->dur;
+        $params['limit'] = $this->tcbInitParams->limit;
+        
+        $this->tcbInitParams->{'service_uri'} = $this->topcrashers_model->buildURI($params, "crashes");
 
         return $this->tcbInitParams;
     }
@@ -258,8 +267,7 @@ class Topcrasher_Controller extends Controller {
         $platform_url_path = array(Router::$controller, "byos", $product, $version);
 
         $this->setupWebservice();
-
-        $resp = $this->service->get("$this->host/crashes/signatures/product/{$params->{'p'}}/version/{$params->{'v'}}/crash_type/{$params->crash_type}/to_date/{$params->{'end_date'}}/duration/{$params->dur}/limit/{$params->limit}", 'json', $params->lifetime);
+        $resp = $this->service->get($params->{'service_uri'}, 'json', $params->lifetime);
 
         if($resp) {
             $this->topcrashers_model->ensureProperties($resp, array(
@@ -376,8 +384,7 @@ class Topcrasher_Controller extends Controller {
         $params = $this->initTopCrasher($product, $version, $duration, $crash_type, $os);
 
         $this->setupWebservice();
-
-        $resp = $this->service->get("$this->host/crashes/signatures/product/{$params->{'p'}}/version/{$params->{'v'}}/os/{$os}/crash_type/{$params->crash_type}/to_date/{$params->{'end_date'}}/duration/{$params->dur}/limit/{$params->limit}", 'json', $params->lifetime);
+        $resp = $this->service->get($params->{'service_uri'}, 'json', $params->lifetime);
 
         if($resp) {
             $signatures = array();
@@ -486,17 +493,17 @@ class Topcrasher_Controller extends Controller {
 
         $start_date = date('c', strtotime($start_date));
         $end_date = date('c', strtotime($end_date));
-        $duration = TimeUtil::determineHourDifferential($start_date, $end_date); // Number of hours
+        $duration = rawurlencode(TimeUtil::determineHourDifferential($start_date, $end_date)); // Number of hours
 
 
-        $start_date = urlencode($start_date);
-        $end_date = urlencode($end_date);
+        $start_date = rawurlencode($start_date);
+        $end_date = rawurlencode($end_date);
 
         $limit = Kohana::config('topcrashbysig.byversion_limit', 300);
         $lifetime = $cache_in_minutes * 60; // Lifetime in seconds
 
-        $p = urlencode($product);
-        $v = urlencode($version);
+        $p = rawurlencode($product);
+        $v = rawurlencode($version);
 
         //Bug#534063
         if ($signature == Crash::$null_sig) {
