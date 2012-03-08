@@ -119,17 +119,36 @@ From inside the Socorro checkout, as the *socorro* user:
 ::
   make install
 
+Crash Flow
+````````````
+
+The basic flow of an incoming crash is:
+
+(breakpad client) -> (collector) -> (local file system) -> (newCrashMover.py) -> (hbase)
+
+A single machine will need to run the Monitor service, which watches
+hbase for incoming crashes and queues them up for the Processor service
+(which can run on one or more servers). Monitor and Processor use PostgreSQL
+to coordinate.
+
+Finally, processed jobs are inserted into both hbase and PostgreSQL
+
 Configure Socorro 
 ````````````
+
+These pages show how to start the services manually, please also see the
+next section "Install startup scripts":
+
 * Start configuration with :ref:`commonconfig-chapter`
 * On the machine(s) to run collector, setup :ref:`collector-chapter`
+* On the machine(s) to run  collector setup :ref:`crashmover-chapter`
 * On the machine to run monitor, setup :ref:`monitor-chapter`
 * On same machine that runs monitor, setup :ref:`deferredcleanup-chapter`
 * On the machine(s) to run processor, setup :ref:`processor-chapter`
 
 Install startup scripts
 ````````````
-RHEL/CentOS only (Ubuntu TODO - see vagrant/ for supervisord example)
+RHEL/CentOS only (Ubuntu TODO - see https://github.com/rhelmer/socorro-vagrant/tree/master/files/etc_supervisor for supervisord example)
 As *root*:
 ::
     ln -s /data/socorro/application/scripts/init.d/socorro-{monitor,processor,crashmover} /etc/init.d/
