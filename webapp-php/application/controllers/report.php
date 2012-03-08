@@ -226,7 +226,7 @@ class Report_Controller extends Controller {
      * @param   object     The $report object.
      * @return  void
      */
-    private function _prepReportBugURL($report)
+    private function _prepReportBugURL($report, $include_product=true)
     {
         $report_bug_url = Kohana::config('application.report_bug_url');
 
@@ -236,13 +236,15 @@ class Report_Controller extends Controller {
 
         $report_bug_url .= 'advanced=1&bug_severity=critical&keywords=crash&';
 
-        if (isset($report->product) && !empty($report->product)) {
-            if($report->product == 'FennecAndroid') {
-                $rp = 'Fennec Native';
-            } else {
-                $rp = $report->product;
-            }
+        if($include_product) {
+            if (isset($report->product) && !empty($report->product)) {
+                if($report->product == 'FennecAndroid') {
+                    $rp = 'Fennec Native';
+                } else {
+                    $rp = $report->product;
+                }
             $report_bug_url .= 'product='.rawurlencode($rp) . '&';
+            }
         }
 
         if (isset($report->os_name) && !empty($report->os_name)) {
@@ -258,7 +260,7 @@ class Report_Controller extends Controller {
             $report_bug_url .= rawurlencode('[@ ' . $report->signature . ']') . '&';
 
             preg_match('/[A-Za-z0-9_:@]+/' , $report->signature, $matches, PREG_OFFSET_CAPTURE);
-            $report_bug_url .= 'short_desc=' . rawurlencode('crash ' . $matches[0][0]) . '&';
+            $report_bug_url .= 'short_desc=' . rawurlencode('crash in ' . $matches[0][0]) . '&';
         }
 
         $report_bug_url .= '&comment=' . rawurlencode(
@@ -437,8 +439,9 @@ class Report_Controller extends Controller {
         	    'logged_in' => $this->logged_in,
 				'raw_dump_urls' => $raw_dump_urls,
         	    'reportJsonZUri' => $reportJsonZUri,
+        	    'current_product_bug_url' => $this->_prepReportBugURL($report),
         	    'report' => $report,
-        	    'report_bug_url' => $this->_prepReportBugURL($report),
+        	    'report_bug_url' => $this->_prepReportBugURL($report, false),
         	    'sig2bugs' => $signature_to_bugzilla,
                     'url_nav' => url::site('products/'.$product),
                     'oopp_details' => $ooppDetails,

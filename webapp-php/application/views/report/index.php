@@ -230,12 +230,18 @@ if (isset($report->sumo_signature) && !empty($report->signature)) { ?>
         </table>
 
 
-        <div id="bugzilla">
-            <h2>Bugzilla
+        <div id="bugzilla" class="bugreporter">
+            <p><strong>Bugzilla</strong>
             <?php if (isset($report_bug_url)) { ?>
-                 - <a href="<?php out::H($report_bug_url); ?>" target="_NEW">Report this Crash</a>
+                - Report this bug 
+                <?php if (isset($report->product) && !empty($report->product)) { ?>
+                    <a href="<?= $current_product_bug_url ?>" target="_NEW">in <?php trim(out::H($report->product)); ?></a>, 
+                <?php } ?>
+                <a href="<?= $report_bug_url . '&amp;product=Core' ?>" title="submit this bug in Core" target="_NEW"> Core</a>, 
+                <a href="<?= $report_bug_url . '&amp;product=Plugins' ?>" title="submit this bug in Plugins" target="_NEW">Plug-Ins</a> or 
+                <a href="<?= $report_bug_url . '&amp;product=Toolkit' ?>" title="submit this bug in Toolkit" target="_NEW">Toolkit</a>
             <?php } ?>
-            </h2>
+            </p>
 
           <?php if (array_key_exists($report->signature, $sig2bugs)) { ?>
           <h2>Related Bugs</h2>
