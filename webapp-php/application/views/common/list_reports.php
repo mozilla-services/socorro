@@ -1,4 +1,4 @@
-<table class="tablesorter" id="reportsList">
+<table class="tablesorter data-table" id="reportsList">
     <thead>
         <tr>
             <th>Date</th>
