@@ -8,8 +8,6 @@ Monitor
 
 .. raw:: html
 
-    <font color="red">As of version 1.8, this app is DEPRECATED.</font>
-
 Monitor is a multithreaded application with several mandates. It's
 main job is to find new JSON/dump pairs and queue them for further
 processing. It looks for new JSON/dump pairs in the file system
