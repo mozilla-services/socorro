@@ -13,11 +13,13 @@ h1 {
 /**
  * Search
  */
-div.daily_search, div.daily_graph {
+div.daily_search, div.daily_graph,
+div.chart-controls {
     float: left;
 }
 
-div.daily_graph {
+div.daily_graph,
+div.chart-controls {
     width: 60%;
 }
 
@@ -27,11 +29,6 @@ div.daily_search {
 
 div.daily_graph {
     margin-left: 1em;
-}
-
-#adu-chart-controls {
-    display: table;
-    margin: auto;
 }
 
 #daily_search_version,
