@@ -180,7 +180,10 @@ As *root*:
 As *root*:
 
 * edit /var/lib/pgsql/data/pg_hba.conf and change IPv4/IPv6 connection from "ident" to "md5"
-* edit /var/lib/pgsql/data/postgresql.conf and uncomment # listen_addresses = 'localhost'
+* edit /var/lib/pgsql/data/postgresql.conf and:
+    * uncomment # listen_addresses = 'localhost'
+    * change TimeZone to 'UTC'
+* edit other postgresql.conf paramters per www.postgresql.org community guides
 * create test database
 
 As the *postgres* user:
