@@ -18,3 +18,5 @@ docs/_build/
 .coverage
 cover/
 .vagrant
+crontabber.ini
+socorro/cron/crontabber.json
