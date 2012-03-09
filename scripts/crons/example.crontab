@@ -1,15 +1,14 @@
 MAILTO="cron-socorro@example.com"
-02 * * * * socorro /data/socorro/application/scripts/crons/cron_aggregates.sh
-11 * * * * socorro /data/socorro/application/scripts/crons/cron_bugzilla.sh
-05 07 * * * socorro /data/socorro/application/scripts/crons/cron_builds.sh
-00 02 * * * socorro /data/socorro/application/scripts/crons/cron_tcurl.sh
-55 03 * * * socorro /data/socorro/application/scripts/crons/cron_daily_reports.sh
 */5 * * * * socorro /data/socorro/application/scripts/crons/cron_status.sh
+02 * * * * socorro /data/socorro/application/scripts/crons/cron_aggregates.sh
+02 * * * * socorro /data/socorro/application/scripts/crons/cron_duplicates.sh
+# reportsclean must run after duplicates, see bug 697772
+45 * * * * socorro /data/socorro/application/scripts/crons/cron_reportsclean.sh
+11 * * * * socorro /data/socorro/application/scripts/crons/cron_bugzilla.sh
+22 * * * * socorro /data/socorro/application/scripts/crons/cron_fixbrokendumps.sh
+00 02 * * * socorro /data/socorro/application/scripts/crons/cron_daily_matviews.sh
+05 * * * * socorro /data/socorro/application/scripts/crons/cron_ftpscraper.sh
+00 17 * * * socorro /data/socorro/application/scripts/crons/cron_modulelist.sh
 05 21 * * 2 socorro /data/socorro/application/scripts/crons/cron_create_partitions.sh
-20 02 * * 0 socorro /data/socorro/application/scripts/crons/cron_clean_tcbs.sh
-## production only
-#*/3 * * * * socorro /data/socorro/application/scripts/crons/submit_dumps_to_staging.sh cron >/dev/null 2>&1
-#05 00 * * * socorro /data/socorro/application/scripts/crons/cron_libraries.sh > /tmp/cron_libraries.log 2>&1
-#15 00 * * * socorro /data/socorro/application/scripts/crons/cron_daily_crashes.sh
-## staging only
-#*/5 * * * * socorro /data/socorro/application/scripts/socorro-install.sh https://hudson.mozilla.org/job/socorro/lastSuccessfulBuild/artifact/trunk/socorro.tar.gz > /dev/null 2>&1
+
+05 00 * * * socorro /data/socorro/application/scripts/crons/cron_libraries.sh > /var/log/socorro/cron_libraries.log 2>&1
