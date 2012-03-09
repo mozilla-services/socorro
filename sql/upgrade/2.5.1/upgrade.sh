@@ -15,6 +15,11 @@ echo 'add dynamic views for daily crash ratios for Metrics'
 echo 'bug 733489'
 psql -f ${CURDIR}/product_crash_ratio.sql breakpad
 
+echo '*********************************************************'
+echo 'drop old unused signatures tables'
+echo 'bug 715676'
+psql -f ${CURDIR}/drop_old_sig_tables.sql breakpad
+
 #change version in DB
 psql -c "SELECT update_socorro_db_version( '$VERSION' )" breakpad
 

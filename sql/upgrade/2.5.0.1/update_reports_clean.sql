@@ -1,3 +1,5 @@
+\set ON_ERROR_STOP 1
+
 create or replace function update_reports_clean (
 fromtime timestamptz, fortime interval default '1 hour', checkdata boolean default true)
 returns boolean 
@@ -15,7 +17,7 @@ begin
 -- intended to be run hourly for a target time three hours ago or so
 -- eventually to be replaced by code for the processors to run
 
--- VERSION: 0.5
+-- VERSION: 6
 
 -- accepts a timestamptz, so be careful that the calling script is sending 
 -- something appropriate
@@ -41,6 +43,12 @@ END IF;
 -- create a temporary table from the hour of reports you want to
 -- process.  generally this will be from 3-4 hours ago to
 -- avoid missing reports
+
+-- RULE: replace NULL reason, address, flash_version, os_name with "Unknown"
+-- RULE: replace NULL signature, url with ''
+-- pre-cleaning: replace NULL product, version with ''
+-- RULE: extract number of cores from cpu_info
+-- RULE: convert all reference list TEXT values to CITEXT except Signature
 
 create temporary table new_reports
 on commit drop
@@ -88,8 +96,7 @@ create index new_reports_domain on new_reports(domain);
 create index new_reports_reason on new_reports(reason);
 analyze new_reports;
 
--- trim reports_bad
-
+-- trim reports_bad to 2 days of data
 DELETE FROM reports_bad 
 WHERE date_processed < ( now() - interval '2 days' );
 
@@ -100,8 +107,13 @@ where new_reports.uuid = reports_clean.uuid
 and reports_clean.date_processed between ( fromtime - interval '1 day' )
 and ( fromtime + fortime + interval '1 day' );
 
--- insert signatures into signature list
+-- RULE: strip leading "0.0.0 Linux" from Linux version strings
+UPDATE new_reports 
+SET os_version = regexp_replace(os_version, $x$[0\.]+\s+Linux\s+$x$, '')
+WHERE os_version LIKE '%0.0.0%'
+	AND os_name ILIKE 'Linux%';
 
+-- insert signatures into signature list
 insert into signatures ( signature, first_report, first_build )
 select newsigs.* from (
 	select signature::citext as signature, 
@@ -170,6 +182,12 @@ cores int
 -- hang_id, duplicate_of, reason, address, flash_version,
 -- release_channel
 
+-- RULE: convert install_age, uptime to INTERVAL
+-- RULE: convert reason, address, flash_version, URL domain to lookup list ID
+-- RULE: add possible duplicate UUID link
+-- RULE: convert release_channel to canonical release_channel based on
+--	channel match list
+
 INSERT INTO reports_clean_buffer
 SELECT new_reports.uuid, 
 	new_reports.date_processed,
@@ -192,7 +210,7 @@ SELECT new_reports.uuid,
 	cores
 FROM new_reports
 LEFT OUTER JOIN release_channel_matches ON new_reports.release_channel ILIKE release_channel_matches.match_string
-LEFT OUTER JOIN signatures ON COALESCE(new_reports.signature, '') = signatures.signature
+LEFT OUTER JOIN signatures ON new_reports.signature = signatures.signature
 LEFT OUTER JOIN reasons ON new_reports.reason = reasons.reason
 LEFT OUTER JOIN addresses ON new_reports.address = addresses.address
 LEFT OUTER JOIN flash_versions ON new_reports.flash_version = flash_versions.flash_version
@@ -205,7 +223,8 @@ ANALYZE reports_clean_buffer;
 	
 -- populate product_version
 
-	-- populate releases/aurora/nightlies
+	-- RULE: populate releases/aurora/nightlies based on matching product name
+	-- and version with release_version
 	
 UPDATE reports_clean_buffer
 SET product_version_id = product_versions.product_version_id
@@ -216,7 +235,8 @@ WHERE reports_clean_buffer.uuid = new_reports.uuid
 	AND reports_clean_buffer.release_channel = product_versions.build_type
 	AND reports_clean_buffer.release_channel <> 'beta';
 
-	-- populate betas
+	-- RULE: populate betas based on matching product_name, version with
+	-- release_version, and build number.
 	
 UPDATE reports_clean_buffer
 SET product_version_id = product_versions.product_version_id
@@ -230,29 +250,39 @@ WHERE reports_clean_buffer.uuid = new_reports.uuid
 
 -- populate os_name and os_version
 
+-- RULE: set os_name based on name matching strings
+
 UPDATE reports_clean_buffer SET os_name = os_name_matches.os_name
 FROM new_reports, os_name_matches
 WHERE reports_clean_buffer.uuid = new_reports.uuid
 	AND new_reports.os_name ILIKE os_name_matches.match_string;
 	
+-- RULE: if os_name isn't recognized, set major and minor versions to 0.
 UPDATE reports_clean_buffer SET os_name = 'Unknown',
 	major_version = 0, minor_version = 0
-WHERE os_name IS NULL;
-	
-UPDATE reports_clean_buffer 
-SET major_version = substring(os_version from $x$^(\d+)$x$)::int
-FROM new_reports
-WHERE new_reports.uuid = reports_clean_buffer.uuid
-	AND os_version ~ $x$^\d+$x$
-		and substring(os_version from $x$^(\d+)$x$)::numeric < 1000;
-		
+WHERE os_name IS NULL OR os_name NOT IN ( SELECT os_name FROM os_names );
+
+-- RULE: set minor_version based on parsing the os_version string
+-- for a second decimal between 0 and 1000 if os_name is not Unknown
 UPDATE reports_clean_buffer 
 SET minor_version = substring(os_version from $x$^\d+\.(\d+)$x$)::int
 FROM new_reports
 WHERE new_reports.uuid = reports_clean_buffer.uuid
 	and os_version ~ $x$^\d+$x$
 	and substring(os_version from $x$^(\d+)$x$)::numeric < 1000
-	and substring(os_version from $x$^\d+\.(\d+)$x$)::numeric < 1000;
+	and substring(os_version from $x$^\d+\.(\d+)$x$)::numeric < 1000
+	and reports_clean_buffer.os_name <> 'Unknown';
+	
+-- RULE: set major_version based on parsing the os_vesion string
+-- for a number between 0 and 1000, but there's no minor version
+UPDATE reports_clean_buffer 
+SET major_version = substring(os_version from $x$^(\d+)$x$)::int
+FROM new_reports
+WHERE new_reports.uuid = reports_clean_buffer.uuid
+	AND os_version ~ $x$^\d+$x$
+		and substring(os_version from $x$^(\d+)$x$)::numeric < 1000
+		and reports_clean_buffer.major_version = 0
+		and reports_clean_buffer.os_name <> 'Unknown';
 
 UPDATE reports_clean_buffer
 SET os_version_id = os_versions.os_version_id
@@ -262,8 +292,8 @@ WHERE reports_clean_buffer.os_name = os_versions.os_name
 	AND reports_clean_buffer.minor_version = os_versions.minor_version;
 	
 -- copy to reports_bad and delete bad reports
--- currently we purge reports which have any of the following missing or invalid: 
--- product_version, release_channel, os_name
+-- RULE: currently we purge reports which have any of the following 
+-- missing or invalid: product_version, release_channel, os_name
 
 INSERT INTO reports_bad ( uuid, date_processed )
 SELECT uuid, date_processed 
@@ -321,52 +351,3 @@ RETURN TRUE;
 
 END;
 $f$;
-
-
-
-create or replace function backfill_reports_clean (
-	begin_time timestamptz, end_time timestamptz default NULL )
-returns boolean 
-language plpgsql as
-$f$
--- administrative utility for backfilling reports_clean to the selected date
--- intended to be called on the command line
--- uses a larger cycle (6 hours) if we have to backfill several days of data
--- note that this takes timestamptz as parameters
--- otherwise call backfill_reports_clean_by_date.
-DECLARE cyclesize INTERVAL := '1 hour';
-	stop_time timestamptz;
-	cur_time timestamptz := begin_time;
-BEGIN
-	IF ( COALESCE(end_time, now()) - begin_time ) > interval '15 hours' THEN
-		cyclesize := '6 hours';
-	END IF;
-	
-	IF stop_time IS NULL THEN
-	-- if no end time supplied, then default to three hours ago
-	-- on the hour
-		stop_time := ( date_trunc('hour', now()) - interval '3 hours' );
-	END IF;
-	
-	WHILE cur_time < stop_time LOOP
-		IF cur_time + cyclesize > stop_time THEN
-			cyclesize = stop_time - cur_time;
-		END IF;
-		
-		RAISE INFO 'backfilling % of reports_clean starting at %',cyclesize,cur_time;
-		
-		DELETE FROM reports_clean 
-		WHERE date_processed >= cur_time 
-			AND date_processed < ( cur_time + cyclesize );
-		
-		DELETE FROM reports_user_info
-		WHERE date_processed >= cur_time 
-			AND date_processed < ( cur_time + cyclesize );
-		
-		PERFORM update_reports_clean( cur_time, cyclesize, false );
-		
-		cur_time := cur_time + cyclesize;
-	END LOOP;
-	
-	RETURN TRUE;
-END;$f$;
