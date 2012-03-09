@@ -16,6 +16,7 @@ New-style, documented services
     * `crashes/paireduuid/ <#crashes-paireduuid>`_
     * `crashes/signatures/ <#crashes-signatures>`_
 * `extensions/ <#id7>`_
+* `priorityjobs/ <#priorityjobs>`_
 * products/
     * `products/builds/ <#products-builds>`_
     * `products/versions/ <#products-versions>`_
@@ -345,6 +346,64 @@ Return a list of extensions::
             }
         ]
     }
+
+
+.. ############################################################################
+   Priorityjobs API
+   ############################################################################
+
+Priorityjobs
+------------
+
+Handle the priority jobs queue for crash reports processing.
+
+API specifications
+^^^^^^^^^^^^^^^^^^
+
++----------------+-----------------------------------------------------------------------------------------+
+| HTTP method    | GET, POST                                                                               |
++----------------+-----------------------------------------------------------------------------------------+
+| URL schema     | /priorityjobs/(parameters)                                                              |
++----------------+-----------------------------------------------------------------------------------------+
+| Full GET URL   | /priorityjobs/uuid/(uuid)/                                                              |
++----------------+-----------------------------------------------------------------------------------------+
+| GET Example    | http://socorro-api/bpapi/priorityjobs/uuid/e8820616-1462-49b6-9784-e99a32120201/        |
++----------------+-----------------------------------------------------------------------------------------+
+| POST Example   | http://socorro-api/bpapi/priorityjobs/, data: uuid=e8820616-1462-49b6-9784-e99a32120201 |
++----------------+-----------------------------------------------------------------------------------------+
+
+Mandatory parameters
+^^^^^^^^^^^^^^^^^^^^
+
++----------------+------------------+---------------+-------------------------+
+| Name           | Type of value    | Default value | Description             |
++================+==================+===============+=========================+
+| uuid           | String           | None          | Unique identifier of the|
+|                |                  |               | crash report to mark.   |
++----------------+------------------+---------------+-------------------------+
+
+Optional parameters
+^^^^^^^^^^^^^^^^^^^
+
+None
+
+Return value
+^^^^^^^^^^^^
+
+With a GET HTTP method, the service will return data in the following
+form::
+
+    {
+        "hits": [
+            {"uuid": "e8820616-1462-49b6-9784-e99a32120201"}
+        ],
+        "total": 1
+    }
+
+With a POST HTTP method, it will return true if the uuid has been successfully
+added to the priorityjobs queue, and false if the uuid is already in the queue
+or if there has been a problem.
+
 
 .. ############################################################################
    Products Builds API
