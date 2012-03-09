@@ -18,3 +18,6 @@ docs/_build/
 .coverage
 cover/
 .vagrant
+crontabber.ini
+crontabbers.json
+
