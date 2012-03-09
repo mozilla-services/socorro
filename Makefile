@@ -50,7 +50,7 @@ install-web:
 
 install-submodules:
 	# clone submodule dependencies
-	git submodule update --init --recursive
+	git submodule update --init --recursive configman
 	cd configman; python setup.py install --install-lib=$(ABS_PREFIX)/application
 
 virtualenv:
