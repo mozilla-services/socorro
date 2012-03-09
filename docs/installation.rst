@@ -72,9 +72,12 @@ As *root*:
 
 Download and install Socorro
 ````````````
+Determine the latest release tag from https://wiki.mozilla.org/Socorro:Releases#Previous_Releases
+
 Clone from github, as the *socorro* user:
 ::
   git clone https://github.com/mozilla/socorro
+  git checkout LATEST_TAG_GOES HERE
   cd socorro
   cp scripts/config/commonconfig.py.dist scripts/config/commonconfig.py
 
@@ -130,6 +133,7 @@ Configure Socorro
 Install startup scripts
 ````````````
 RHEL/CentOS only (Ubuntu TODO - see vagrant/ for supervisord example)
+
 As *root*:
 ::
     ln -s /data/socorro/application/scripts/init.d/socorro-{monitor,processor,crashmover} /etc/init.d/
