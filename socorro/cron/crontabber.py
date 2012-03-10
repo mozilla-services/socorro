@@ -253,10 +253,8 @@ class CronTabber(RequiredConfig):
             except KeyError:
                 # the job this one depends on hasn't been run yet!
                 return False
-            if not job_info.get('next_run'):
-                # means it has never successfully run
-                return False
-            if job_info['next_run'] < datetime.datetime.utcnow():
+            if job_info.get('last_error'):
+                # errored last time it ran
                 return False
         # no reason not to stop this class
         return True
