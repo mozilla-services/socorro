@@ -6,52 +6,35 @@ Setup a development environment
 ===============================
 
 The best and easiest way to get started with a complete dev environment is to
-use Vagrant and our installation script. You can find all the instructions
-here: https://github.com/rhelmer/socorro-vagrant
+use Vagrant and our installation script. 
 
-If you don't want to use a virtual machine, you can install everything in your
-own development environment. All steps are described in
-:ref:`standalone-chapter`.
+.. sidebar:: Standalone dev environment in your existing environment
 
-Use your own git repo
----------------------
+    If you don't want to do things the easy way, or can't use a virtual machine,
+    you can install everything in your own development environment. All steps 
+    are described in :ref:`standalone-chapter`.
 
-If you forked our mozilla/socorro repository, you will want to make your repo
-the origin of the repository inside your VM. Once connected through SSH into
-the VM, execute the following commands::
+To get started with Vagrant, simply update the vagrant submodule from your local git checkout::
 
-    sudo su - socorro
-    cd /home/socorro/dev/socorro
-    edit .git/config # change `url = git@github.com:mozilla/socorro.git` with your repo's URL
-    git fetch origin
+    git submodule update --init vagrant
+    cd vagrant/
 
-.. _applychanges-label:
+Check out the README in that directory to get started.
 
 Apply your changes
 ------------------
+By default, your socorro git checkout will be shared into the VM via NFS
+at /home/socorro/dev/socorro
 
-After that, whenever you want to see changes you made in one of your branches,
-do the following::
+To actually make changes take effect, you can run::
 
-    cd /home/socorro/dev/socorro
-    git checkout my-dev-branch
-    make install
-    sudo /etc/init.d/apache2 restart
-    sudo /etc/init.d/supervisor force-stop && sudo /etc/init.d/supervisor start
+    vagrant provision
+
+This reruns puppet inside the VM to deploy the source to /data/socorro and 
+restarts any necessary services.
 
 And then from your browser access http://crash-stats/ for the UI, or
 http://socorro-api/bpapi/ for the middleware API directly.
-
-Use a shared folder
--------------------
-
-If you don't like vim or you want to use your favorite IDE, you can easily
-create a shared folder between your OS and your VM. You can then work in your
-OS and have all your changes automatically passed to the VM.
-
-The best solution is to use NFS. There is good documentation on the Vagrant
-website that explains it all: http://vagrantup.com/docs/nfs.html
-
 
 Setting up a new database
 ----------------
