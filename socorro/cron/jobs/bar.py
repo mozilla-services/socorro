@@ -7,4 +7,5 @@ class BarCronApp(BaseCronApp):
     depends_on = 'foo'  # string, tuple or list
 
     def run(self):
+        raise NameError('doesnotexist')
         print "DOING STUFF bar()"

@@ -19,5 +19,3 @@ docs/_build/
 cover/
 .vagrant
 crontabber.ini
-crontabbers.json
-

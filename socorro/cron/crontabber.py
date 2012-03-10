@@ -3,6 +3,8 @@
 """
 CronTabber is a configman app for executing all Socorro cron jobs.
 """
+import os
+import traceback
 import functools
 import logging
 import logging.handlers
@@ -40,11 +42,8 @@ class JobDatabase(dict):
 class PickleJobDatabase(dict):
 
     def load(self, file_path):
-        try:
+        if os.path.isfile(file_path):
             self.update(cPickle.load(open(file_path)))
-        except IOError:
-            # file doesn't exist yet
-            pass
 
     def save(self, file_path):
         with open(file_path, 'w') as f:
@@ -55,6 +54,57 @@ def job_lister(input_str):
     return [x.strip() for x
             in input_str.splitlines()
             if x.strip()]
+
+def timesince(d, now=None):
+    """
+    Taken from django.utils.timesince
+    """
+    def ungettext(a, b, n):
+        if n == 1:
+            return a
+        return b
+
+    def ugettext(s):
+        return s
+
+    def is_aware(v):
+        return v.tzinfo is not None and v.tzinfo.utcoffset(v) is not None
+
+    chunks = (
+      (60 * 60 * 24 * 365, lambda n: ungettext('year', 'years', n)),
+      (60 * 60 * 24 * 30, lambda n: ungettext('month', 'months', n)),
+      (60 * 60 * 24 * 7, lambda n : ungettext('week', 'weeks', n)),
+      (60 * 60 * 24, lambda n : ungettext('day', 'days', n)),
+      (60 * 60, lambda n: ungettext('hour', 'hours', n)),
+      (60, lambda n: ungettext('minute', 'minutes', n))
+    )
+    # Convert datetime.date to datetime.datetime for comparison.
+    if not isinstance(d, datetime.datetime):
+        d = datetime.datetime(d.year, d.month, d.day)
+    if now and not isinstance(now, datetime.datetime):
+        now = datetime.datetime(now.year, now.month, now.day)
+
+    if not now:
+        now = datetime.datetime.now(utc if is_aware(d) else None)
+
+    delta = now - d
+    # ignore microseconds
+    since = delta.days * 24 * 60 * 60 + delta.seconds
+    if since <= 0:
+        # d is in the future compared to now, stop processing.
+        return u'0 ' + ugettext('minutes')
+    for i, (seconds, name) in enumerate(chunks):
+        count = since // seconds
+        if count != 0:
+            break
+    s = ugettext('%(number)d %(type)s') % {'number': count, 'type': name(count)}
+    if i + 1 < len(chunks):
+        # Now get the second item
+        seconds2, name2 = chunks[i + 1]
+        count2 = (since - (seconds * count)) // seconds2
+        if count2 != 0:
+            s += ugettext(', %(number)d %(type)s') % {'number': count2, 'type': name2(count2)}
+    return s
 
 
 def logging_required_config(app_name):
@@ -138,8 +188,34 @@ class CronTabber(RequiredConfig):
         self.config = config
 
     def list_jobs(self):
-        raise WorkHarder
-        print self.config.jobs
+        _fmt = '%Y-%m-%d %H:%M:%S'
+        _now = datetime.datetime.utcnow()
+        PAD = 12
+        for each in self.config.jobs:
+            freq = each.split(':', 1)[1]
+            job_class, seconds = self._lookup_job(each)
+            class_name = job_class.__module__ + '.' + job_class.__name__
+            print '=== JOB ' + '=' * 72
+            print "Class:".ljust(PAD), class_name
+            print "App name:".ljust(PAD), job_class.app_name
+            print "Frequency:".ljust(PAD), freq
+            try:
+                info = self.database[job_class.app_name]
+            except KeyError:
+                print "*NO PREVIOUS RUN INFO*"
+                continue
+
+            print "Last run:".ljust(PAD),
+            print info['last_run'].strftime(_fmt).ljust(20),
+            print '(%s ago)' % timesince(info['last_run'], _now)
+            print "Next run:".ljust(PAD),
+            print info['next_run'].strftime(_fmt).ljust(20),
+            print '(in %s)' % timesince(_now, info['next_run'])
+            if info.get('last_error'):
+                print "Error!!".ljust(PAD),
+                print "(%s times)" % info['error_count']
+                print info['last_error']['traceback']
+            print
 
     def run_all(self):
         for each in self.config.jobs:
@@ -211,17 +287,20 @@ class CronTabber(RequiredConfig):
         assert inspect.isclass(class_)
         app_name = class_.app_name
         info = {
-          'this_run': datetime.datetime.utcnow(),
+          'last_run': datetime.datetime.utcnow(),
+          'next_run': datetime.datetime.utcnow() + datetime.timedelta(seconds=seconds)
         }
         if exc_type:
+            tb = ''.join(traceback.format_tb(exc_tb))
             info['last_error'] = {
               'type': exc_type,
               'value': exc_value,
-              'traceback': exc_tb,
+              'traceback': tb,
             }
+            info['error_count'] = info.get('error_count', 0) + 1
         else:
             info['last_error'] = {}
-            info['next_run'] = datetime.datetime.utcnow() + datetime.timedelta(seconds=seconds)
+            info['error_count'] = 0
 
         self.database[app_name] = info
         self.database.save(self.config.database)
