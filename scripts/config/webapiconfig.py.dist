@@ -119,7 +119,6 @@ import socorro.services.emailCampaigns as emaillist
 import socorro.services.emailCampaignVolume as emailvolume
 import socorro.services.emailSubscription as emailsub
 import socorro.services.emailSender as emailsend
-import socorro.services.schedulePriorityJob as schedule
 import socorro.services.bugzilla as bugzilla
 import socorro.services.currentVersions as cv
 import socorro.services.hangReport as hr
@@ -150,7 +149,6 @@ servicesList.default = [
     emailvolume.EmailCampaignVolume,
     emailsub.EmailSubscription,
     emailsend.EmailSender,
-    schedule.SchedulePriorityJob,
     bugzilla.Bugzilla,
     cv.CurrentVersions,
     hr.HangReport,

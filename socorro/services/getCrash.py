@@ -5,7 +5,7 @@ import socorro.lib.util as util
 import socorro.webapi.webapiService as webapi
 import web
 
-import socorro.services.schedulePriorityJob as job
+from socorro.external.postgresql.priorityjobs import Priorityjobs
 
 datatype_options = ('meta', 'raw_crash', 'processed')
 crashStorageFunctions = ('fetchMeta', 'fetchRaw', 'fetchProcessed')
@@ -45,8 +45,8 @@ class GetCrash(webapi.JsonServiceBase):
     except Exception:
         try:
             raw = self.fetchRaw(uuid)
-            j = job.SchedulePriorityJob(self.context)
-            j.post(uuid)
+            j = Priorityjobs(self.context)
+            j.create(uuid=uuid)
         except Exception:
             raise web.webapi.NotFound()
         raise webapi.Timeout()
