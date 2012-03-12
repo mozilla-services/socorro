@@ -7,16 +7,13 @@ COVEROPTS = --with-coverage --cover-package=socorro
 COVERAGE = $(VIRTUALENV)/bin/coverage
 PYLINT = $(VIRTUALENV)/bin/pylint
 
-.PHONY: all test phpunit install reinstall install-socorro install-web virtualenv coverage lint clean minidump_stackwalk java_analysis
+.PHONY: all test install reinstall install-socorro install-web virtualenv coverage lint clean minidump_stackwalk java_analysis
 
 
 all:	test
 
-test: virtualenv phpunit
+test: virtualenv
 	PYTHONPATH=$(PYTHONPATH) $(NOSE)
-
-phpunit:
-	phpunit webapp-php/tests/
 
 install: java_analysis reinstall
 
@@ -58,7 +55,7 @@ virtualenv:
 	$(VIRTUALENV)/bin/pip install -r requirements.txt
 	cd configman; $(VIRTUALENV)/bin/python setup.py install
 
-coverage: virtualenv phpunit
+coverage: virtualenv
 	rm -f coverage.xml
 	cd socorro/unittest/config; for file in *.py.dist; do cp $$file `basename $$file .dist`; done
 	PYTHONPATH=$(PYTHONPATH) $(COVERAGE) run $(NOSE); $(COVERAGE) xml
