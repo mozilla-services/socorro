@@ -1,0 +1,32 @@
+# vim: syntax=apache
+<VirtualHost  *:80>
+  ServerName crash-stats
+  DocumentRoot /data/socorro/htdocs
+
+  ReWriteEngine On
+
+  RewriteCond %{REQUEST_URI} /dumps/(\w\w)(\w\w)((?:\w|-)+?)(\d{6}).jsonz
+  ReWriteRule /dumps/(\w\w)(\w\w)((?:\w|-)+?)(\d{6}).jsonz http://socorro-api/crashes/crash/processed/by/uuid/$1$2$3$4 [P]
+
+  RewriteCond %{REQUEST_URI} /rawdumps/(\w\w)(\w\w)((?:\w|-)+?)(\d{6}).dump
+  ReWriteRule /rawdumps/(\w\w)(\w\w)((?:\w|-)+?)(\d{6}).dump http://socorro-api/crashes/crash/raw_crash/by/uuid/$1$2$3$4 [P]
+
+  RewriteCond %{REQUEST_URI} /rawdumps/(\w\w)(\w\w)((?:\w|-)+?)(\d{6}).json
+  ReWriteRule /rawdumps/(\w\w)(\w\w)((?:\w|-)+?)(\d{6}).json http://socorro-api/crashes/crash/meta/by/uuid/$1$2$3$4 [P]
+
+  ReWriteRule /rawdumps/(.*).(json|dump) /missing_dump [L]
+
+  <Directory /data/socorro/htdocs>
+    ReWriteEngine On
+    AllowOverride All
+  </Directory>
+
+  <Proxy *>
+    Order allow,deny
+    Allow from all
+  </Proxy>
+
+  SetEnvIf X-Forwarded-For "^.*\..*\..*\..*" is-forwarded
+  AddDefaultCharset UTF-8
+</VirtualHost>
+

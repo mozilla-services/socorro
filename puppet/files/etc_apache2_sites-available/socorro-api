@@ -1,0 +1,46 @@
+# vim: syntax=apache
+WSGISocketPrefix /var/run/bpapi_s
+WSGISocketPrefix /var/run/bpapi_nossl
+WSGIPythonPath /data/socorro/application:/data/socorro/thirdparty:/data/socorro/application/scripts
+<VirtualHost *:80>
+	ServerName socorro-api
+#	Redirect /bpapi https://socorro-api
+	
+	RewriteEngine On
+	RequestHeader set Accept application/octet-stream
+
+	WSGIDaemonProcess bpapi_nossl user=socorro threads=10 python-path=/data/socorro/application:/data/socorro/thirdparty:/data/socorro/application/scripts
+	WSGIScriptAlias /crashes /data/socorro/application/scripts/webservices.py
+	WSGIProcessGroup bpapi_nossl
+	WSGIApplicationGroup %{GLOBAL}
+	LogLevel info
+
+	WSGIDaemonProcess bpapi_s user=socorro threads=10 python-path=/data/socorro/application:/data/socorro/thirdparty:/data/socorro/application/scripts
+	WSGIScriptAlias /bpapi /data/socorro/application/scripts/webservices.py
+
+</VirtualHost>
+
+#<VirtualHost *:443>
+#	ServerName socorro-api
+#	SSLEngine On
+#        SSLCertificateFile /etc/ssl/certs/ssl-cert-snakeoil.pem
+#        SSLCertificateKeyFile /etc/ssl/private/ssl-cert-snakeoil.key
+#	DocumentRoot /data/socorro/application
+#	WSGIDaemonProcess bpapi_s user=socorro threads=10 python-path=/data/socorro/application:/data/socorro/thirdparty:/data/socorro/application/scripts
+#	WSGIScriptAlias /bpapi /data/socorro/application/scripts/webservices.py
+#	WSGIApplicationGroup %{GLOBAL}
+#	LogLevel info
+#
+#	<Location /bpapi>
+#                Order deny,allow
+#                Deny from all
+#		SSLRequireSSL
+#		AuthType Basic
+#		AuthName "Magic Words Please"
+#		AuthUserFile /data/socorro/application/.htpasswd
+#                # Allow from myserver
+#		Require valid-user
+#                Satisfy Any
+#	</Location>
+#</VirtualHost>
+#
