@@ -11,8 +11,16 @@ Socorro VM (built with Vagrant + Puppet)
 You can build a standalone Socorro development VM -
 see :ref:`setupdevenv-chapter` for more info. 
 
-The config files and puppet manifests in vagrant/ can be a useful reference
-when setting up Socorro for the first time, too.
+The config files and puppet manifests in ./puppet/ are a useful reference
+when setting up Socorro for the first time.
+
+Automated Install using Puppet
+------------
+
+It is possible to use puppet to script an install onto an existing environment.
+This has been tested in EC2 but should work on any regular Ubuntu Lucid install.
+
+See puppet/bootstrap.sh for an example.
 
 Manual Install
 ------------
@@ -122,6 +130,38 @@ From inside the Socorro checkout, as the *socorro* user:
 ::
   make install
 
+By default, this installs files to /data/socorro. You can change this by 
+specifying the PREFIX:
+::
+  make install PREFIX=/usr/local/socorro
+
+.. _howsocorroworks-chapter:
+
+How Socorro Works
+````````````
+
+There are two main parts to Socorro:
+
+1) collects, processes, and allows real-time searches and results for individual crash reports
+
+  This requires both HBase and PostgreSQL, as well as the Collector, Crashmover,
+  Monitor, Processor and Middleware and UI. 
+
+  Individual crash reports are pulled from long-term storage (HBase) using the /report/index/ page, for
+  example: http://crash-stats/report/index/YOUR_CRASH_ID_GOES_HERE
+
+  The search feature is at: http://crash-stats/query
+
+2) a set of batch jobs which compiles aggregate reports and graphs, such as "Top Crashes by Signature"
+
+  This requires PostgreSQL, Middleware and UI. It triggered once per day by the "daily_matviews" cron job, 
+  covering data processed in the previous UTC day.
+
+  Every other page on http://crash-stats is of this type.
+
+
+.. _crashflow-chapter:
+
 Crash Flow
 ````````````
 
@@ -151,7 +191,7 @@ next section "Install startup scripts":
 
 Install startup scripts
 ````````````
-RHEL/CentOS only (Ubuntu TODO - see https://github.com/rhelmer/socorro-vagrant/tree/master/files/etc_supervisor for supervisord example)
+RHEL/CentOS only (Ubuntu TODO - see ./puppet/files/etc_supervisor for supervisord example)
 
 As *root*:
 ::
@@ -227,6 +267,9 @@ Populate PostgreSQL Database
 Refer to :ref:`populatepostgres-chapter` for information about
 populating the database.
 
+This step is *required* to get basic information about existing product names
+and versions into the system.
+
 
 Configure Apache
 ````````````
@@ -277,6 +320,8 @@ From inside the Socorro checkout, as the *socorro* user:
 ::
   cat analysis/hbase_schema | sed 's/LZO/NONE/g' | hbase shell
 
+.. _systemtest-chapter:
+
 System Test
 ````````````
 Generate a test crash:
@@ -296,11 +341,12 @@ From inside the Socorro checkout, as the *socorro* user:
   pip install poster
   cp scripts/config/submitterconfig.py.dist scripts/config/submitterconfig.py
   export PYTHONPATH=.:thirdparty
-  python scripts/submitter.py -u https://crash-reports-dev.allizom.org/submit -j ~/Downloads/1c11af84-3fb7-4196-a864-cf0622110911.json -d ~/Downloads/1c11af84-3fb7-4196-a864-cf0622110911.dump
- 
-Check syslog logs for user.*, should see the CrashID returned being collected
+  python scripts/submitter.py -u http://crash-reports/submit -j ~/Downloads/crash.json -d ~/Downloads/crash.dump
 
-Attempt to pull up the newly inserted crash: https://crash-stats/report/index/0f3f3360-40a6-4188-8659-b2a5c2110808
+You should get a "CrashID" returned.
+Check syslog logs for user.*, should see the CrashID returned being collected.
+
+Attempt to pull up the newly inserted crash: http://crash-stats/report/index/YOUR_CRASH_ID_GOES_HERE
 
 The (syslog "user" facility) logs should show this new crash being inserted for priority processing, and it should be available shortly thereafter.
 
