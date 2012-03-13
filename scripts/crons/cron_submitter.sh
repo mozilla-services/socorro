@@ -1,10 +1,20 @@
+# Pull raw, unprocessed crashes from an existing Socorro install 
+# and re-submit to an existing (dev, staging) instance elsewhere.
+         
 # Import settings
 . /etc/socorro/socorrorc
+export PGPASSWORD=$databasePassword
+        
+if [ $# != 2 ]
+then         
+    echo "Syntax: cron_submitter.sh <crash_reports_url> <number_to_submit>"
+    exit 1
+fi
 
 CRASH_REPORTS_HOST=$1
 CRASH_REPORT_URL="https://$CRASH_REPORTS_HOST/submit"
 LOCK="/var/tmp/$CRASH_REPORTS_HOST.lock"
-LOG="/tmp/submit_$CRASH_REPORTS_HOST.log"
+LOG="/var/log/socorro/cron_submitter-$CRASH_REPORTS_HOST.log"
 NUM_TO_SUBMIT=$2
 
 function submit_dump() {
@@ -27,7 +37,7 @@ then
 
     for UUID in ${UUIDS[@]}
     do
-        submit_dump $UUID
+        submit_dump $UUID >> $LOG 2>&1
         sleep 1
     done 
 fi
