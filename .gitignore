@@ -1,6 +1,6 @@
 # exclude config overrides to prevent accidental check-ins
 webapp-php/application/config/*.php
-socorro/unittest/config/*.py 
+socorro/unittest/config/*.py
 *.pyc
 *.swp
 distribute*.tar.gz
@@ -17,3 +17,7 @@ docs/_build/
 *~
 .coverage
 cover/
+socorro/bin/
+socorro/include/
+socorro/lib/python2.6/
+vagrant/gems/
