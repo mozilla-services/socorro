@@ -6,8 +6,7 @@
 Standalone Development Environment
 ============
 
-You can easily bring up a full Socorro VM:
-https://github.com/rhelmer/socorro-vagrant
+You can easily bring up a full Socorro VM, see :ref:`setupdevenv-chapter` for more info.
 
 However, in some cases it can make sense to run components standalone in 
 a development environment, for example if you want to run just one or 

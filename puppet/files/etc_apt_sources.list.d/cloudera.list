@@ -1,0 +1,2 @@
+deb http://archive.cloudera.com/debian lucid-cdh3 contrib
+deb-src http://archive.cloudera.com/debian lucid-cdh3 contrib

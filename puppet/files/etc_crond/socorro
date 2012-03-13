@@ -1,0 +1,28 @@
+MAILTO="cron-socorro@example.com"
+# update info for /status page
+*/5 * * * * socorro /data/socorro/application/scripts/crons/cron_status.sh
+# run duplicate detection
+02 * * * * socorro /data/socorro/application/scripts/crons/cron_duplicates.sh
+# create "clean" version of incoming reports, only containing valid crashes
+# reportsclean must run after duplicates, see bug 697772
+45 * * * * socorro /data/socorro/application/scripts/crons/cron_reportsclean.sh
+# generate nightly reports for crash-stats UI
+00 02 * * * socorro /data/socorro/application/scripts/crons/cron_daily_matviews.sh
+# pre-create postgresql partitions for larger tables
+05 21 * * 2 socorro /data/socorro/application/scripts/crons/cron_create_partitions.sh
+
+# NOTE - the rest of the jobs in here are very Mozilla-specific, they
+#        are included for reference but you likely do not need or want them.
+
+## annotate crashes with info from bugzilla
+#11 * * * * socorro /data/socorro/application/scripts/crons/cron_bugzilla.sh
+## this works around a mozilla-specific breakpad bug
+#22 * * * * socorro /data/socorro/application/scripts/crons/cron_fixbrokendumps.sh
+## pull product and version info from metadata on an FTP server
+#05 * * * * socorro /data/socorro/application/scripts/crons/cron_ftpscraper.sh
+## runs a nightly matview module map/reduce job
+#00 17 * * * socorro /data/socorro/application/scripts/crons/cron_modulelist.sh
+## mozilla-specific report
+#05 00 * * * socorro /data/socorro/application/scripts/crons/cron_libraries.sh > /var/log/socorro/cron_libraries.log 2>&1
+## deprecated, in favor of reportsclean + daily_matview
+#02 * * * * socorro /data/socorro/application/scripts/crons/cron_aggregates.sh

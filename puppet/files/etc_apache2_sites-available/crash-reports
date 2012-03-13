@@ -1,0 +1,20 @@
+# vim: syntax=apache
+WSGIPythonPath /data/socorro/application:/data/socorro/thirdparty:/data/socorro/application/scripts
+<VirtualHost *:80>
+  ServerName crash-reports
+  DocumentRoot /data/socorro
+
+  Options FollowSymLinks
+  TimeOut 300
+  WSGIScriptAlias / /data/socorro/application/scripts/collector.py
+
+  <Location /submit>
+      LimitRequestBody 20971520
+  </Location>
+
+  ReWriteEngine on
+  RewriteCond %{REQUEST_METHOD} GET
+  RewriteRule .* http://crash-stats
+
+  AddDefaultCharset UTF-8
+</VirtualHost>
