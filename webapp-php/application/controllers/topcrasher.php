@@ -317,7 +317,8 @@ class Topcrasher_Controller extends Controller {
                     $top_crasher->{'display_percent'} = number_format($top_crasher->percentOfTotal * 100, 2) . "%";
                     $top_crasher->{'display_previous_percent'} = number_format($top_crasher->previousPercentOfTotal * 100, 2) . "%";
                     $top_crasher->{'display_change_percent'} = number_format($top_crasher->changeInPercentOfTotal * 100, 2) . "%";
-
+                    $top_crasher->{'startup_crash'} = $this->topcrashers_model->isStartupCrasher($top_crasher->signature, $resp->start_date, $params->end_date);
+                    
                     array_push($signatures, $top_crasher->signature);
 
                     $top_crasher->{'correlation_os'} = Correlation::correlationOsName($top_crasher->win_count, $top_crasher->mac_count, $top_crasher->linux_count);
@@ -409,6 +410,7 @@ class Topcrasher_Controller extends Controller {
                     $top_crasher->{'display_percent'} = number_format($top_crasher->percentOfTotal * 100, 2) . "%";
                     $top_crasher->{'display_previous_percent'} = number_format($top_crasher->previousPercentOfTotal * 100, 2) . "%";
                     $top_crasher->{'display_change_percent'} = number_format($top_crasher->changeInPercentOfTotal * 100, 2) . "%";
+                    $top_crasher->{'startup_crash'} = $this->topcrashers_model->isStartupCrasher($top_crasher->signature, $resp->start_date, $params->end_date);
 
                     array_push($signatures, $top_crasher->signature);
                     $top_crasher->{'correlation_os'} = Correlation::correlationOsName($top_crasher->win_count, $top_crasher->mac_count, $top_crasher->linux_count);
