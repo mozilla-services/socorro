@@ -205,6 +205,7 @@ class socorro-python inherits socorro-base {
             timeout => '3600',
             require => Exec['socorro-install'],
             logoutput => on_failure,
+            notify => [Service['supervisor'], Service['apache2']],
             user => 'socorro';
     }
 }
