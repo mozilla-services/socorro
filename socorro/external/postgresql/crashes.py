@@ -1,24 +1,23 @@
+import datetime
 import logging
 import psycopg2
-import datetime
 
 from socorro.external.postgresql.base import PostgreSQLBase
 from socorro.external.postgresql.util import Util
-from socorro.lib import search_common, util
+from socorro.lib import datetimeutil, external_common, search_common, util
 
 import socorro.database.database as db
 
 logger = logging.getLogger("webapi")
 
 
+class MissingOrBadArgumentException(Exception):
+    pass
+
+
 class Crashes(PostgreSQLBase):
-
+    """Handle retrieval and creation of crash reports data with PostgreSQL.
     """
-    Implement the /crashes service with PostgreSQL.
-    """
-
-    def __init__(self, *args, **kwargs):
-        super(Crashes, self).__init__(*args, **kwargs)
 
     def prepare_search_params(self, **kwargs):
         """Return a dictionary of parameters for a search-like SQL query.
@@ -28,8 +27,9 @@ class Crashes(PostgreSQLBase):
         """
         params = search_common.get_parameters(kwargs)
 
-        if params["signature"] is None:
-            return None
+        if not params["signature"]:
+            raise MissingOrBadArgumentException(
+                        "Mandatory parameter 'signature' is missing or empty")
 
         params["terms"] = params["signature"]
         params["search_mode"] = "is_exactly"
@@ -74,8 +74,6 @@ class Crashes(PostgreSQLBase):
         cur = self.connection.cursor()
 
         params = self.prepare_search_params(**kwargs)
-        if params is None:
-            return None
 
         # Creating the parameters for the sql query
         sql_params = {}
@@ -115,10 +113,6 @@ class Crashes(PostgreSQLBase):
                 "/* external.postgresql.crashes.Crashes.get_comments */",
                 "SELECT count(*)", sql_from, sql_where))
 
-        # Debug
-        logger.debug(sql_count_query)
-        logger.debug(cur.mogrify(sql_count_query, sql_params))
-
         # Querying the DB
         try:
             total = db.singleValueSql(cur, sql_count_query, sql_params)
@@ -135,7 +129,7 @@ class Crashes(PostgreSQLBase):
             except psycopg2.Error:
                 util.reportExceptionAndContinue(logger)
 
-        json_result = {
+        result = {
             "total": total,
             "hits": []
         }
@@ -150,8 +144,84 @@ class Crashes(PostgreSQLBase):
             for i in row:
                 if isinstance(row[i], datetime.datetime):
                     row[i] = str(row[i])
-            json_result["hits"].append(row)
+            result["hits"].append(row)
 
         self.connection.close()
 
-        return json_result
+        return result
+
+    def get_paireduuid(self, **kwargs):
+        """Return paired uuid given a uuid and an optional hangid.
+
+        If a hangid is passed, then return only one result. Otherwise, return
+        all found paired uuids.
+
+        """
+        filters = [
+            ("uuid", None, "str"),
+            ("hangid", None, "str"),
+        ]
+        params = external_common.parse_arguments(filters, kwargs)
+
+        if not params.uuid:
+            raise MissingOrBadArgumentException(
+                        "Mandatory parameter 'uuid' is missing or empty")
+
+        crash_date = datetimeutil.uuid_to_date(params.uuid)
+
+        sql = """
+            /* socorro.external.postgresql.crashes.Crashes.get_paireduuid */
+            SELECT uuid
+            FROM reports r
+            WHERE r.uuid != %(uuid)s
+            AND r.date_processed BETWEEN
+                TIMESTAMP %(crash_date)s - CAST('1 day' AS INTERVAL) AND
+                TIMESTAMP %(crash_date)s + CAST('1 day' AS INTERVAL)
+        """
+        sql_params = {
+            "uuid": params.uuid,
+            "crash_date": crash_date
+        }
+
+        if params.hangid is not None:
+            sql = """%s
+                AND r.hangid = %%(hangid)s
+                LIMIT 1
+            """ % sql
+            sql_params["hangid"] = params.hangid
+        else:
+            sql = """%s
+                AND r.hangid IN (
+                    SELECT hangid
+                    FROM reports r2
+                    WHERE r2.date_processed BETWEEN
+                        TIMESTAMP %%(crash_date)s - CAST('1 day' AS INTERVAL)
+                        AND
+                        TIMESTAMP %%(crash_date)s + CAST('1 day' AS INTERVAL)
+                    AND r2.uuid = %%(uuid)s
+                )
+            """ % sql
+
+        result = {
+            "total": 0,
+            "hits": []
+        }
+
+        try:
+            connection = self.database.connection()
+            cur = connection.cursor()
+            results = db.execute(cur, sql, sql_params)
+
+            # Transforming the results into what we want
+            for report in results:
+                row = dict(zip(("uuid",), report))
+                result["hits"].append(row)
+            result["total"] = len(result["hits"])
+
+        except psycopg2.Error:
+            logger.error("Failed to retrieve paired uuids from database",
+                         exc_info=True)
+        finally:
+            connection.close()
+
+        return result
