@@ -345,6 +345,8 @@ def run():
         default='',
         doc='Run a specific job',
         short_form='j'
+        exclude_from_print_conf=True,
+        exclude_from_dump_conf=True,
     )
 
     definition_source.add_option(
@@ -352,13 +354,17 @@ def run():
         default=False,
         doc='List all jobs',
         short_form='l'
+        exclude_from_print_conf=True,
+        exclude_from_dump_conf=True,
     )
 
     definition_source.add_option(
         name='force',
         default=False,
         doc='Force running a job despite dependencies',
-        short_form='f'
+        short_form='f',
+        exclude_from_print_conf=True,
+        exclude_from_dump_conf=True,
     )
 
     app_name = 'crontabber'
