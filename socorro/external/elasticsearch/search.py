@@ -33,7 +33,7 @@ class Search(ElasticSearchBase):
         versions_service = Util(config=self.context)
         params["versions_info"] = versions_service.versions_info(**params)
 
-        query = Search.build_query_from_params(params)
+        query = Search.build_query_from_params(params, self.context)
 
         # For signatures mode, we need to collect more data with facets
         if params["data_type"] == "signatures":
