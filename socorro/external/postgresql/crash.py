@@ -1,13 +1,16 @@
 import logging
 import psycopg2
-import datetime
 
 from socorro.external.postgresql.base import PostgreSQLBase
-from socorro.lib import external_common, util
+from socorro.lib import datetimeutil, external_common, util
 
 import socorro.database.database as db
 
 logger = logging.getLogger("webapi")
+
+
+class MissingOrBadArgumentException(Exception):
+    pass
 
 
 class Crash(PostgreSQLBase):
@@ -26,12 +29,11 @@ class Crash(PostgreSQLBase):
         ]
         params = external_common.parse_arguments(filters, kwargs)
 
-        day = int(params.uuid[-2:])
-        month = int(params.uuid[-4:-2])
-        # assuming we won't use this after year 2099
-        year = int("20%s" % params.uuid[-6:-4])
+        if params.uuid is None:
+            raise MissingOrBadArgumentException(
+                        "Mandatory parameter 'uuid' is missing or empty")
 
-        crash_date = datetime.date(year=year, month=month, day=day)
+        crash_date = datetimeutil.uuid_to_date(params.uuid)
         logger.debug("Looking for crash %s during day %s" % (params.uuid,
                                                              crash_date))
 

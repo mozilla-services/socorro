@@ -149,3 +149,15 @@ def test_date_to_string():
 @raises(TypeError)
 def test_date_to_string_fail():
     res = datetimeutil.date_to_string('2012-01-03')
+
+
+def test_uuid_to_date():
+    uuid = "e8820616-1462-49b6-9784-e99a32120201"
+    date_exp = datetime.date(year=2012, month=2, day=1)
+    date = datetimeutil.uuid_to_date(uuid)
+    eq_(date, date_exp)
+
+    uuid = "e8820616-1462-49b6-9784-e99a32181223"
+    date_exp = datetime.date(year=1118, month=12, day=23)
+    date = datetimeutil.uuid_to_date(uuid, century=11)
+    eq_(date, date_exp)
