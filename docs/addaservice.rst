@@ -145,7 +145,7 @@ Here is an example of how to use this::
         def versions_info(self, **kwargs):
             # Parse arguments
             filters = [
-                ("product", "Firefox", "str")
+                ("product", "Firefox", "str"),
                 ("versions", None, ["list", "str"])
             ]
             params = external_common.parse_arguments(filters, kwargs)
