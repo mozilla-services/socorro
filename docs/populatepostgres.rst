@@ -23,8 +23,8 @@ From inside the Socorro checkout, as *postgres* user:
 ::
   dropdb breakpad # skip this if you haven't created a db yet
   createdb -E 'utf8' -l 'en_US.utf8' -T template0 breakpad
-  psql -f sql/schema/2.3/breakpad_roles.sql breakpad
-  psql -f sql/schema/2.3/breakpad_schema.sql breakpad
+  psql -f sql/schema/2.5/breakpad_roles.sql breakpad
+  psql -f sql/schema/2.5/breakpad_schema.sql breakpad
 
 Customize CSVs, at minimum you probably need to bump the dates and build IDs in: 
   raw_adu.csv reports.csv releases_raw.csv
@@ -48,13 +48,19 @@ Run backfill function to populate matviews
 Socorro depends upon materialized views which run nightly, to display
 graphs and show reports such as "Top Crash By Signature".
 
+IMPORTANT NOTE - many reports use the reports_clean_done() stored
+procedure to check that reports exist for the last UTC hour of the
+day being processed, as a way to catch problems. If your crash 
+volume is low enough, you may want to modify this function 
+(it is in breakpad_schema.sql referenced above).
+
 Normally this is run for the previous day by cron_daily_matviews.sh 
 but you can simply run the backfill function to bootstrap the system:
 
 As the *postgres* user:
 ::
   psql -h localhost -U breakpad_rw breakpad
-  breakpad=# select backfill_matviews('2012-01-02', '2012-01-03');
+  breakpad=# select backfill_matviews('2012-03-02', '2012-03-03');
 
 Be sure to use to/from dates that match the CSV data you have entered.
 There should be no failures, and the result should be "true".
