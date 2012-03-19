@@ -236,6 +236,7 @@ prefixSignatureRegEx = '|'.join([
   '_VEC_memcpy',
   '_chkstk',
   '_alloca_probe.*',
+  'TouchBadMemory',
   ])
 
 signaturesWithLineNumbersRegEx = cm.Option()
