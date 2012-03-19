@@ -143,18 +143,17 @@ class Report_Model extends Model {
      */
     public function getPairedUUID($hangid, $currentUuid)
     {
-        $uuidDate = date('Y-m-d', $this->uuidTimestamp($currentUuid));
-        $rs = $this->db->query(
-                "/* soc.web report uuid from hangid */
-                    SELECT uuid
-                    FROM reports
-                    WHERE date_processed BETWEEN TIMESTAMP ? - CAST('1 day' AS INTERVAL) AND TIMESTAMP ? + CAST('1 day' AS INTERVAL) AND
-                          hangid = ? AND uuid != ?
-                    LIMIT 1
-                ", array($uuidDate, $uuidDate, $hangid, $currentUuid))->current();
-        if ($rs) {
-            return $rs->uuid;
-        } else {
+        $url = Kohana::config('webserviceclient.socorro_hostname')
+               . '/crashes/paireduuid/uuid/'
+               . rawurldecode($currentUuid)
+               . '/hangid/'
+               . rawurldecode($hangid) . '/';
+        $results = $this->service->get($url);
+
+        if (isset($results->total) && $results->total == 1) {
+            return $results->hits[0]->uuid;
+        }
+        else {
             return false;
         }
     }
@@ -175,20 +174,17 @@ class Report_Model extends Model {
      */
     public function getAllPairedUUIDByUUid($uuid)
     {
-        $uuidDate = date('Y-m-d', $this->uuidTimestamp($uuid));
-        $rs = $this->db->query(
-                "/* soc.web report hangpairs from uuid */
-                 SELECT uuid
-                 FROM reports
-                 WHERE
-                     date_processed BETWEEN TIMESTAMP ? - CAST('1 day' AS INTERVAL) AND TIMESTAMP ? + CAST('1 day' AS INTERVAL) AND
-                     hangid IN (
-                       SELECT hangid
-                       FROM reports
-                       WHERE date_processed BETWEEN TIMESTAMP ? - CAST('1 day' AS INTERVAL) AND TIMESTAMP ? + CAST('1 day' AS INTERVAL) AND
-                             reports.uuid = ?) AND
-                     uuid != ?;", array($uuidDate, $uuidDate, $uuidDate, $uuidDate, $uuid, $uuid));
-        return $rs;
+        $url = Kohana::config('webserviceclient.socorro_hostname')
+               . '/crashes/paireduuid/uuid/'
+               . rawurldecode($currentUuid) . '/';
+        $results = $this->service->get($url);
+
+        if (isset($results->hits)) {
+            return $results->hits;
+        }
+        else {
+            return false;
+        }
     }
 
     /**

@@ -13,6 +13,7 @@ New-style, documented services
 
 * crashes/
     * `crashes/comments/ <#crashes-comments>`_
+    * `crashes/paireduuid/ <#crashes-paireduuid>`_
     * `crashes/signatures/ <#crashes-signatures>`_
 * `extensions/ <#id7>`_
 * products/
@@ -140,6 +141,64 @@ In normal cases, return something like this::
     }
 
 If no signature is passed as a parameter, return null.
+
+
+.. ############################################################################
+   Crashes Paireduuid API
+   ############################################################################
+
+Crashes Paireduuid
+------------------
+
+Return paired uuid given a uuid and an optional hangid.
+
+API specifications
+^^^^^^^^^^^^^^^^^^
+
++----------------+----------------------------------------------------------------------------------------+
+| HTTP method    | GET                                                                                    |
++----------------+----------------------------------------------------------------------------------------+
+| URL schema     | /crashes/paireduuid/(optional_parameters)                                              |
++----------------+----------------------------------------------------------------------------------------+
+| Full URL       | /crashes/paireduuid/uuid/(uuid)/hangid/(hangid)/                                       |
++----------------+----------------------------------------------------------------------------------------+
+| Example        | http://socorro-api/bpapi/crashes/paireduuid/uuid/e8820616-1462-49b6-9784-e99a32120201/ |
++----------------+----------------------------------------------------------------------------------------+
+
+Mandatory parameters
+^^^^^^^^^^^^^^^^^^^^
+
++------------+---------------+------------------------------------------------+
+| Name       | Type of value | Description                                    |
++============+===============+================================================+
+| uuid       | String        | Unique identifier of the crash report.         |
++------------+---------------+------------------------------------------------+
+
+Optional parameters
+^^^^^^^^^^^^^^^^^^^
+
++------------+---------------+---------------+--------------------------------+
+| Name       | Type of value | Default value | Description                    |
++============+===============+===============+================================+
+| hangid     | String        | None          | Hang ID of the crash report.   |
++------------+---------------+---------------+--------------------------------+
+
+Return value
+^^^^^^^^^^^^
+
+Return an object like the following::
+
+    {
+        "hits": [
+            {
+                "uuid": "e8820616-1462-49b6-9784-e99a32120201"
+            }
+        ],
+        "total": 1
+    }
+
+Note that if a hangid is passed to the service, it will always return maximum
+one result. Remove that hangid to get all paired uuid.
 
 
 .. ############################################################################
