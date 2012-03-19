@@ -90,11 +90,17 @@ crashesImplementationModule.doc = (
                         "String, name of the module crashes services use.")
 crashesImplementationModule.default = 'socorro.external.postgresql'
 
-# Crashes service config
+# Crash service config
 crashImplementationModule = cm.Option()
 crashImplementationModule.doc = (
                         "String, name of the module crash service uses.")
 crashImplementationModule.default = 'socorro.external.postgresql'
+
+# Extensions service config
+extensionsImplementationModule = cm.Option()
+extensionsImplementationModule.doc = (
+                        "String, name of the module extensions service uses.")
+extensionsImplementationModule.default = 'socorro.external.postgresql'
 
 import socorro.services.signatureHistory as sighist
 import socorro.services.aduByDay as adubd
@@ -118,6 +124,7 @@ import socorro.middleware.signature_summary_service as signature_summary
 import socorro.middleware.tcbs_service as tcbs
 import socorro.middleware.crashes_comments_service as crashes_comments
 import socorro.middleware.crash_service as crash_new
+import socorro.middleware.extensions_service as extensions
 
 servicesList = cm.Option()
 servicesList.doc = 'a python list of classes to offer as services'
@@ -144,6 +151,7 @@ servicesList.default = [
     tcbs.TCBS,
     crashes_comments.CrashesComments,
     crash_new.Crash,
+    extensions.Extensions,
 ]
 
 crashBaseUrl = cm.Option()
