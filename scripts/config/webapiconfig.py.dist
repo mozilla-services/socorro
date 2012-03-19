@@ -126,6 +126,7 @@ import socorro.middleware.crashes_comments_service as crashes_comments
 import socorro.middleware.crash_service as crash_new
 import socorro.middleware.extensions_service as extensions
 import socorro.middleware.crashes_paireduuid_service as crashes_paireduuid
+import socorro.middleware.products_versions_service as products_versions
 
 servicesList = cm.Option()
 servicesList.doc = 'a python list of classes to offer as services'
@@ -154,6 +155,7 @@ servicesList.default = [
     crash_new.Crash,
     extensions.Extensions,
     crashes_paireduuid.CrashesPaireduuid,
+    products_versions.ProductsVersions,
 ]
 
 crashBaseUrl = cm.Option()
