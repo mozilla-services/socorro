@@ -178,7 +178,7 @@ don't, your service will use the default config key
 
 Then restart Apache and you should be good to go! If you're using a Vagrant VM,
 you can hit the middleware directly by calling
-http://socorro-api/bapi/myservice/params/.
+http://socorro-api/bpapi/myservice/params/.
 
 And then?
 ---------
