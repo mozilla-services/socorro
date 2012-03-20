@@ -60,7 +60,15 @@ get_product_version_ids
 		versions VARIADIC CITEXT
 	)
 	
+	SELECT get_product_version_ids ( 'Firefox','11.0a1' );
+	SELECT get_product_version_ids ( 'Firefox','11.0a1','11.0a2','11.0b1');
 	
+Takes a product name and a list of version_strings, and returns an array (list) of surrogate keys (product_version_ids) which can then be used in queries like:
+
+::
+
+	SELECT * FROM reports_clean WHERE date_processed BETWEEN '2012-03-21' AND '2012-03-38' 
+	WHERE product_version_id = ANY ( $list );
 	
 	
 		
