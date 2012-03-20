@@ -89,7 +89,7 @@ class Search(PostgreSQLBase):
         sql_group = self.generate_sql_group(params)
 
         sql_order = """
-            ORDER BY total DESC
+            ORDER BY total DESC, signature
         """
 
         (sql_limit, sql_params) = self.build_reports_sql_limit(params,
