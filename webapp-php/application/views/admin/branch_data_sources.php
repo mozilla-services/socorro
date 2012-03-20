@@ -4,6 +4,10 @@
 
 <div class="page-heading">
     <h2>Branch Data Sources</h2>
+    <ul class="options">
+        <li><a href="<?php echo url::base(); ?>admin/branch_data_sources" class="selected">Branch Data Sources</a></li>
+        <li><a href="<?php echo url::base(); ?>admin/email">Email Users</a></li>
+    </ul>
 </div>
 
 <div class="panel">

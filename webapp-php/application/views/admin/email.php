@@ -1,6 +1,10 @@
 <!-- TODO(aok) w3c validate each page -->
 <div class="page-heading">
   <h2>Post Crash Email</h2>
+    <ul class="options">
+        <li><a href="<?php echo url::base(); ?>admin/branch_data_sources">Branch Data Sources</a></li>
+        <li><a href="<?php echo url::base(); ?>admin/email" class="selected">Email Users</a></li>
+    </ul>
 </div>
 <div class="panel postcrash">
   <div class="mainbar">
