@@ -42,7 +42,7 @@ start() {
 
 stop() {
 	echo -n $"Stopping ${progname}: "
-	killproc -p ${pidfile} ${python}
+	killproc -t 10 -p ${pidfile} ${python}
 	RETVAL=$?
 	echo
 }
