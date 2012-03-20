@@ -89,27 +89,7 @@ reportsclean
   defaults to true
   supplied because the backfill of reports_clean takes
   a lot of time.
-  
-  
-backfill_signature_counts
--------------------------
-  
-Purpose:  backfill all of the *_signature_counts tables.
-
-Called By: admin as needed
-
-::
-
-	backfill_signature_counts (
-		startdate DATE,
-		enddate DATE
-	)
-	
-	SELECT backfill_signature_counts ( '2011-11-01','2011-12-05' );
-	
-startdate, enddate
-	starting and ending dates for the backfill.  dates are inclusive
-	
+  	
   
 backfill_reports_clean
 ----------------------
@@ -140,7 +120,9 @@ update_adu, backfill_adu
 ------------------------
 
 Purpose: updates or backfills one day of the product_adu table, which
-is one of the two matviews powering the graphs in socorro.
+is one of the two matviews powering the graphs in socorro.  Note that
+if ADU is out of date, it has no dependancies, so you only need to run
+this function.
 
 Called By: update function called by the update_matviews cron job. 
 
@@ -383,8 +365,31 @@ However, be aware that it only checks for the existance of the table, not
 its definition, so if you modify the table definition you'll need to 
 manually drop and recreate it.
 		
-		
-		
+Other Administrative Functions
+==============================
+
+add_old_release
+---------------
+
+Purpose: Allows you to add an old release to productdims/product_visibility.
+
+Called By: on demand by Firefox or Camino teams.
+
+::
+
+	add_old_release (
+			product_name text,
+			new_version text,
+			release_type release_enum default 'major',
+			release_date DATE DEFAULT current_date,
+			is_featured BOOLEAN default FALSE
+	) returns BOOLEAN
+	
+	SELECT add_old_release ('Camino','2.1.1');
+	SELECT add_old_release ('Camino','2.1.2pre','development','2012-03-09',true);
+	
+Notes: if this leads to more than 4 currently featured versions, the oldest 
+featured vesion will be "bumped".
 
 
 
