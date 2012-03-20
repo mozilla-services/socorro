@@ -312,6 +312,8 @@ daily_crashes
 
 Stores crash counts per product-version, OS, and day.  This is probably the oldest matview, and has unintuitive and historical column names; it will probably be overhauled or replaced.  The report_type column defines 5 different sets of counts, see daily_crash_codes above.
 
+We recommended that you use the VIEW daily_crash_ratio instead of using daily_crashes, as the structure of daily_crashes is hard to understand and is likely to change in the future.
+
 daily_hangs and hang_report
 ---------------------------
 
@@ -324,15 +326,25 @@ nightly_builds
 
 contains summaries of crashes-by-age for Nightly and Aurora releases.  Will be populated in Socorro 2.5.1.
 
+product_crash_ratio
+-------------------
+
+Dynamic VIEW which shows crashes, ADU, adjusted crashes, and the crash/100ADU ratio, for each product and versions. Recommended for backing graphs and similar.
+
+product_os_crash_ratio
+----------------------
+
+Dynamic VIEW which shows crashes, ADU, adjusted crashes, and the crash/100ADU ratio for each product, OS and version.  Recommended for backing graphs and similar.
+
 product_info
 ------------
 
-dynamic view which suppies the most essential information about each product version for both old and new products.  
+dynamic VIEW which suppies the most essential information about each product version for both old and new products.  
 
 signature_products and signature_products_rollup
 ------------------------------------------------
 
-Summary of which signatures appear in which product_version_ids, with first appearance dates.
+Summary of which signatures appear in which product_version_ids, with first appearance dates. 
 
 The rollup contains an array-style summary of the signatures with lists of product-versions.
 
@@ -344,7 +356,7 @@ Short for "Top Crashes By Signature", tcbs contains counts of crashes per day, s
 Note On Release Channel Columns
 ===============================
 
-Due to a historical error, the column name for the Release Channel in various tables may be named "release_channel", "build_type", or "build_channel".  While we regret the confusion, it has not been thought to be worth the refactoring effort to clean it up.  
+Due to a historical error, the column name for the Release Channel in various tables may be named "release_channel", "build_type", or "build_channel".  All three of these column names refer to exactly the same thing.  While we regret the confusion, it has not been thought to be worth the refactoring effort to clean it up.  
 
 Application Support Tables
 ==========================
