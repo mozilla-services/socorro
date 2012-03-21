@@ -238,6 +238,7 @@ prefixSignatureRegEx = '|'.join([
   '_alloca_probe.*',
   'TouchBadMemory',
   'pthread_mutex_lock',
+  'mozilla::AndroidBridge::AutoLocalJNIFrame::~AutoLocalJNIFrame',
   ])
 
 signaturesWithLineNumbersRegEx = cm.Option()
