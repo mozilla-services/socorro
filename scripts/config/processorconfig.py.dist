@@ -171,6 +171,7 @@ prefixSignatureRegEx = '|'.join([
   'fastcopy_I',
   'fastzero_I',
   '.*free',
+  'GCGraphBuilder::NoteXPCOMChild',
   'ialloc',
   'isalloc',
   'je_malloc',
