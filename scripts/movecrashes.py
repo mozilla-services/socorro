@@ -20,6 +20,7 @@ Options:
 
 """
 
+import csv
 import datetime
 import json
 import os
@@ -38,6 +39,57 @@ config = configurationManager.newConfiguration(
     configurationModule=configModule,
     applicationName='movecrashes.py'
 )
+
+
+def export_uuids(path, numberofdays):
+    """Export crash report uuids from a PostgreSQL database to a CSV file
+
+    path - Directory where the csv file will be created.
+    numberofdays - Number of days of crash reports to retrieve, before the most
+                   recent crash date.
+
+    """
+    database = db.Database(config)
+    connection = database.connection()
+    cur = connection.cursor()
+
+    # steps
+    # 1. pull all distinct dates
+    sql = """
+        SELECT DISTINCT to_char(date_processed, 'YYYY-MM-DD') as day
+        FROM reports
+        ORDER BY day DESC
+    """
+    if numberofdays:
+        sql = "%s LIMIT %s" % (sql, numberofdays)
+
+    print 'Calculating dates... '
+    days = db.execute(cur, sql)
+
+    days_list = []
+    for day in days:
+        days_list.append(day[0])
+
+    store_filename = 'uuids.csv'
+    store_filename = os.path.normpath('%s/%s' % (path, store_filename))
+    store_file = open(store_filename, 'w')
+    store = csv.writer(store_file, delimiter=',', quotechar='"')
+    print 'Store file created: %s' % store_filename
+
+    for day in days_list:
+        date_from = dtu.datetimeFromISOdateString(day)
+        date_to = date_from + datetime.timedelta(1)
+
+        sql = "SELECT uuid FROM reports WHERE date_processed BETWEEN %s AND %s"
+
+        print 'Getting crash reports for day %s' % date_from.date()
+        crashes_list = db.execute(cur, sql, (date_from, date_to))
+        for crash in crashes_list:
+            store.writerow(crash)
+
+    store_file.close()
+    connection.close()
+    return store_filename
 
 
 def export(path, numberofdays=0):
@@ -300,6 +352,19 @@ if __name__ == '__main__':
 
         cfile = export(path, numberofdays)
         print 'Generated crash file: %s' % cfile
+
+    if cmd == 'export_uuids':
+        # default values
+        path = '.'
+        numberofdays = 0
+
+        if len(args) >= 1:
+            path = args[0]
+        if len(args) >= 2:
+            numberofdays = args[1]
+
+        cfile = export_uuids(path, numberofdays)
+        print 'Generated uuids file: %s' % cfile
 
     elif cmd == 'import':
         if len(args) != 2:
