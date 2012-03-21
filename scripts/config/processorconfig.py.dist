@@ -162,6 +162,7 @@ prefixSignatureRegEx = '|'.join([
   'CFRelease',
   '_chkstk',
   'CrashInJS',
+  '__delayLoadHelper2',
   'dvmAbort',
   'dvmStringLen',
   'EtwEventEnabled',
