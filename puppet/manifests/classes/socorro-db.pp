@@ -1,4 +1,16 @@
 class socorro-db inherits socorro-base {
+    file {
+        '/etc/postgresql/9.0/main/postgresql.conf':
+            alias => 'postgres-config',
+            owner => postgres,
+            group => postgres,
+            mode => 644,
+            ensure => present,
+            require => Package['postgresql-9.0'],
+            notify => Service['postgresql'],
+            source => "/home/socorro/dev/socorro/puppet/files/etc_postgresql_9.0_main/postgresql.conf";
+    }
+
     package {
 	'postgresql-9.0':
             alias => 'postgresql',
@@ -18,7 +30,7 @@ class socorro-db inherits socorro-base {
 
     exec {
         '/usr/bin/createdb -E \'utf-8\' -T template0 breakpad':
-            require => Package['postgresql'],
+            require => [Package['postgresql'], File['postgres-config']],
             unless => '/usr/bin/psql --list breakpad',
             alias => 'create-breakpad-db',
             user => 'postgres';
