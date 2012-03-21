@@ -5,4 +5,14 @@
  */
 $config['numberofsignatures'] = 20;
 
+/**
+ * The category value against which to check for startup crashes
+ */
+$config['total_uptime_condition'] = "< 1 min";
+
+/**
+ * The percentage of crashes that needs to be surpased to be marked 
+ * a startup crasher.
+ */
+ $config['percentage_uptime_condition'] = "50";
 ?>

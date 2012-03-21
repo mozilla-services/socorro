@@ -1,3 +1,6 @@
+<?php if(property_exists($crasher, 'startup_crash') && $crasher->startup_crash) { ?>
+        <img src="<?= url::site('/img/icons/rocket_fly.png')?>" width="16" height="16" alt="Startup Crash" title="Startup Crash" class="startup" />
+<?php } ?>
 <?php
 $linked = false;
 if (isset($crasher->{'link'}) && !empty($crasher->{'link'})) {

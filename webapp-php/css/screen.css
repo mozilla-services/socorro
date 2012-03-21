@@ -1667,6 +1667,9 @@ table.tablesorter tbody tr.odd {
 .hide {
     display: none;
 }
+.startup {
+    margin-right: 1px;
+}
 /* standard table styles for data tables */
 table.data-table {
     width: 100%;
