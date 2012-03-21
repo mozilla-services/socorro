@@ -35,11 +35,6 @@ class Report(ElasticSearchBase):
         if not isinstance(params["signature"], list):
             params["signature"] = [params["signature"]]
 
-        # If using full days, remove the time part of datetimes
-        if params["use_full_days"]:
-            params["from_date"] = params["from_date"].date()
-            params["to_date"] = params["to_date"].date()
-
         # Get information about the versions
         versions_service = VersionsInfo(self.context)
         params["versions_info"] = versions_service.versions_info(params)
@@ -48,7 +43,7 @@ class Report(ElasticSearchBase):
         params["terms"] = params["signature"]
         params["search_mode"] = "is_exactly"
 
-        query = self.build_query_from_params(params)
+        query = self.build_query_from_params(params, self.context)
         json_query = json.dumps(query)
         logger.debug("Query the crashes or signatures: %s", json_query)
 
