@@ -138,6 +138,8 @@ irrelevantSignatureRegEx.default = '|'.join([
   'google_breakpad::ExceptionHandler::HandleInvalidParameter.*',
   'libicudata.so@.*',
   '_ZdlPv',
+  'MOZ_Crash',
+  'MOZ_Assert',
   ])
 
 prefixSignatureRegEx = cm.Option()
