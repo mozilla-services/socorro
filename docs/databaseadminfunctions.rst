@@ -253,6 +253,33 @@ such, running either the update or backfill function replaces all existing data.
 Since it needs an exclusive lock on the matview, it is possible (though 
 unlikely) for it to fail to obtain the lock and error out.
 
+update_nightly_builds, backfill_nightly_builds
+----------------------------------------------
+
+Purpose: updates "nightly_builds" based on the contents of the reports_clean table
+
+Called By: daily cron job
+
+::
+
+	update_nightly_builds (
+		updateday DATE optional default yesterday,
+		checkdata BOOLEAN optional default true
+		)
+		
+	SELECT update_nightly_builds ( '2011-11-26' );
+	
+	backfill_nightly_builds (
+		updateday DATE optional default yesterday
+		)
+		
+	SELECT backfill_nightly_builds ( '2011-11-26' );
+	
+updateday
+	UTC day to pull data for.
+checkdata
+	whether or not to check dependant data and throw an error if it's not found.  Optional.
+
 
 Schema Management Functions
 ===========================
