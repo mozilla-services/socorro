@@ -8,11 +8,12 @@ import traceback
 import functools
 import logging
 import logging.handlers
-import cPickle
 import inspect
 import datetime
 import sys
 import re
+import json
+import copy
 from configman import RequiredConfig, ConfigurationManager, Namespace
 from configman.converters import class_converter
 
@@ -48,6 +49,46 @@ class PickleJobDatabase(dict):
     def save(self, file_path):
         with open(file_path, 'w') as f:
             cPickle.dump(dict(self), f)
+
+
+class JSONJobDatabase(dict):
+
+    _utc_fmt = '%Y-%m-%d %H:%M:%S.%f'
+
+    def load(self, file_path):
+        try:
+            self.update(self._recurse_load(json.load(open(file_path))))
+        except IOError:
+            pass
+
+    def _recurse_load(self, struct):
+        for key, value in struct.items():
+            if isinstance(value, dict):
+                self._recurse_load(value)
+            else:
+                try:
+                    value = datetime.datetime.strptime(value, self._utc_fmt)
+                    struct[key] = value
+                except ValueError:
+                    pass
+        return struct
+
+    def save(self, file_path):
+        with open(file_path, 'w') as f:
+            json.dump(self._recurse_serialize(copy.deepcopy(dict(self))), f, indent=2)
+
+    def _recurse_serialize(self, struct):
+        #print "STRUCT", repr(struct)
+        for key, value in struct.items():
+            if isinstance(value, dict):
+                self._recurse_serialize(value)
+            elif isinstance(value, datetime.datetime):
+                struct[key] = value.strftime(self._utc_fmt)
+            elif not isinstance(value, basestring):
+                struct[key] = unicode(value)
+            #else:
+            #    print "\t", key, repr(value)
+        return struct
 
 
 def job_lister(input_str):
@@ -176,7 +217,8 @@ class CronTabber(RequiredConfig):
     @property
     def database(self):
         if not getattr(self, '_database', None):
-            self._database = PickleJobDatabase()
+            #self._database = PickleJobDatabase()
+            self._database = JSONJobDatabase()
             self._database.load(self.config.database)
         return self._database
 
@@ -344,7 +386,7 @@ def run():
         name='job',
         default='',
         doc='Run a specific job',
-        short_form='j'
+        short_form='j',
         exclude_from_print_conf=True,
         exclude_from_dump_conf=True,
     )
@@ -353,7 +395,7 @@ def run():
         name='list-jobs',
         default=False,
         doc='List all jobs',
-        short_form='l'
+        short_form='l',
         exclude_from_print_conf=True,
         exclude_from_dump_conf=True,
     )
@@ -389,6 +431,18 @@ def run():
             tab.run_job(config['job'], config.get('force'))
         else:
             tab.run_all()
+
+#def test_json():
+#    db=JSONJobDatabase()
+#    db.load('foo-orig.json')
+#    db.update({
+#      'foo': {
+#        'next_run': datetime.datetime.utcnow(),
+#        'error': {},
+#        'name': u'FOO'
+#      }
+#    })
+#    db.save('foo.json')
 
 
 if __name__ == '__main__':
