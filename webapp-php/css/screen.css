@@ -1382,6 +1382,7 @@ th.bugzilla_numbers {
 #bugzilla .bug_ids_expanded_list {
     display: block;
     position: inherit;
+    margin-bottom: .7em;
     max-width: 100%;
 }
 #bugzilla strong {
