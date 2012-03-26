@@ -5,14 +5,14 @@ from socorro.middleware.service import DataAPIService
 logger = logging.getLogger("webapi")
 
 
-class ProductsVersions(DataAPIService):
+class Products(DataAPIService):
 
     service_name = "products"
     uri = "/products/(.*)"
 
     def __init__(self, config):
-        super(ProductsVersions, self).__init__(config)
-        logger.debug('ProductsVersions service __init__')
+        super(Products, self).__init__(config)
+        logger.debug('Products service __init__')
 
     def get(self, *args):
         params = self.parse_query_string(args[0])
@@ -21,4 +21,4 @@ class ProductsVersions(DataAPIService):
 
         impl = module.Products(config=self.context)
 
-        return impl.get_versions(**params)
+        return impl.get(**params)

@@ -6,11 +6,6 @@
  */
 
 /**
- * The products that should be featured in this report.
- */
-$config['products'] = array('Camino', 'Firefox', 'SeaMonkey', 'Thunderbird', 'Fennec', 'FennecAndroid');
-
-/**
  * The operating systems that should be featured in this report.
  */
 $config['operating_systems'] = array('Windows', 'Mac', 'Linux');

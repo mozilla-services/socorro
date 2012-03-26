@@ -14,20 +14,25 @@ class MissingOrBadArgumentException(Exception):
 
 
 class Products(PostgreSQLBase):
-
-    def get_versions(self, **kwargs):
-        """ Return product information for one or more product:version
-        combinations """
+    
+    def get(self, **kwargs):
+        """ Return product information, or version information for one
+         or more product:version combinations """
         filters = [
             ("versions", None, ["list", "str"])
         ]
 
         params = external_common.parse_arguments(filters, kwargs)
-
+        
         if not params.versions or params.versions[0] == '':
-            raise MissingOrBadArgumentException(
-                        "Mandatory parameter 'versions' missing or empty")
+            return self._get_products()
+        else:
+           return self._get_versions(params)
 
+        
+    def _get_versions(self, params):
+        """ Return product information for one or more product:version
+        combinations """
         products = []
         (params["products_versions"],
          products) = self.parse_versions(params["versions"], [])
@@ -92,6 +97,37 @@ class Products(PostgreSQLBase):
                                                     row["end_date"])
             json_result["total"] = len(json_result["hits"])
 
+            return json_result
+        finally:
+            connection.close()
+
+    def _get_products(self):
+        """ Return a list of product names """
+        
+        sql_query = "SELECT * FROM products"
+        
+        json_result = {
+            "total": 0,
+            "hits": []
+        }
+        
+        try:
+            connection = self.database.connection()
+            cur = connection.cursor()
+            results = db.execute(cur, sql_query)
+        except psycopg2.Error:
+            logger.error("Failed to retrieve products list from PostgreSQL",
+                         exc_info=True)
+        else:
+            for product in results:
+                row = dict(zip((
+                            "product_name",
+                            "sort",
+                            "rapid_release_version",
+                            "release_name"), product))
+                json_result["hits"].append(row)
+                json_result["total"] = len(json_result["hits"])
+                
             return json_result
         finally:
             connection.close()
