@@ -54,7 +54,7 @@ class TestProducts(PostgreSQLTestCase):
                 '11.0.1',
                 '%s',
                 '%s',
-                False
+                False,
                 'Release',
                 20.00
             ),
@@ -65,7 +65,7 @@ class TestProducts(PostgreSQLTestCase):
                 '%s',
                 False,
                 'Release',
-               30.00
+                30.00
             );
         """ % (now, now,
                now, now,
@@ -87,7 +87,7 @@ class TestProducts(PostgreSQLTestCase):
     def test_get(self):
         products = Products(config=self.config)
         now = datetimeutil.utc_now()
-        now = datetime.datetime(now.year, now.month, now.day, tzinfo=now.tzinfo)
+        now = datetime.datetime(now.year, now.month, now.day)
         now_str = datetimeutil.date_to_string(now)
 
         #......................................................................
