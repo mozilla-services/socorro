@@ -18,6 +18,7 @@ New-style, documented services
 * `extensions/ <#id7>`_
 * products/
     * `products/builds/ <#products-builds>`_
+    * `products/versions/ <#products-versions>`_
 * report/
     * `report/list/ <#list-report>`_
 * search/
@@ -408,6 +409,55 @@ Return an array of objects::
         },
         ...
     ]
+
+Products Versions
+-----------------
+
+Return information about product(s) and version(s) passed to the service.
+
+API specifications
+^^^^^^^^^^^^^^^^^^
+
++----------------+--------------------------------------------------------------------------------+
+| HTTP method    | GET                                                                            |
++----------------+--------------------------------------------------------------------------------+
+| URL schema     | /products/(.*)                                                                 |
++----------------+--------------------------------------------------------------------------------+
+| Full URL       | /products/versions/(versions)/                                                 |
++----------------+--------------------------------------------------------------------------------+
+| Example        | http://socorro-api/bpapi/products/versions/Firefox:9.0a1/                      |
++----------------+--------------------------------------------------------------------------------+
+
+Mandatory parameters
+^^^^^^^^^^^^^^^^^^^^
+
++----------+---------------------------+---------------+----------------------------------------+
+| Name     | Type of value             | Default value | Description                            |
++==========+===========================+===============+========================================+
+| versions | String or list of strings | None          | Several product:version strings can    |
+|          |                           |               | be specified, separated by a + symbol. |
++----------+---------------------------+---------------+----------------------------------------+
+
+Return value
+^^^^^^^^^^^^
+
+Return an object with an array of results labeled as hits and a total::
+
+    {
+        "hits": [
+            {
+                "is_featured": boolean,
+                "throttle": float,
+                "end_date": "string",
+                "start_date": "integer",
+                "build_type": "string",
+                "product": "string",
+                "version": "string"
+            }
+            ...
+        ],
+        "total": 1
+    }
 
 .. ############################################################################
    Search API
