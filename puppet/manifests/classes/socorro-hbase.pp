@@ -11,14 +11,17 @@ class socorro-hbase {
     exec { '/usr/bin/apt-get install -y hadoop-hbase hadoop-hbase-master hadoop-hbase-thrift liblzo2-dev':
             alias => 'install-hbase',
             logoutput => on_failure,
+            refreshonly => true,
+            subscribe => Exec['apt-get-update-cloudera'],
             require => [Exec['apt-get-update'],Exec['apt-get-update-cloudera']];
     }
 
     exec { 
         'apt-get-update-cloudera':
-            command => '/usr/bin/apt-get update',
+            command => '/usr/bin/apt-get update && touch /tmp/apt-get-update-cloudera',
             require => [Exec['install-oracle-jdk'],
-                        File['/etc/apt/sources.list.d/cloudera.list']];
+                        File['/etc/apt/sources.list.d/cloudera.list']],
+            creates => '/tmp/apt-get-update-cloudera';
     }
 
     exec {
