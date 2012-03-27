@@ -32,7 +32,7 @@ class socorro-hbase {
     exec {
         '/bin/cat /home/socorro/dev/socorro/analysis/hbase_schema | sed \'s/LZO/NONE/g\' | /usr/bin/hbase shell':
             alias => 'hbase-schema',
-            unless => '/bin/echo "describe \'crash_reports\'" | /usr/bin/hbase shell  | grep "1 row"',
+            creates => "/var/lib/hbase/crash_reports",
             logoutput => on_failure,
             require => Exec['install-hbase'];
     }
