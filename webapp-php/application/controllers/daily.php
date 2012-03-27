@@ -155,6 +155,14 @@ class Daily_Controller extends Controller {
                 $throttle[] = $featured_version->throttle;
             }
         }
+        // if a version is provided but no throttle level,
+        // we need to call the products_versions service to get the throttle level
+        if(empty($throttle) && isset($versions)) {
+            $response = $this->model->getVersionInfo($product, $versions);
+            foreach($response->hits as $version) {
+                $throttle[] = $version->throttle;
+            }
+        }
 
         if (isset($parameters['form_selection']) && $parameters['form_selection'] == 'by_report_type') {
             $url_csv = $this->_commonCsvURL($product, $versions, $operating_systems, $date_start, $date_end, $form_selection, $throttle);

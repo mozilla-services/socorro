@@ -552,6 +552,25 @@ class Daily_Model extends Model {
 		}
 		return false;
 	}
+    
+    /**
+     * Get version information that includes throttle level from products_versions service
+     * 
+     * @access public
+     * @param string The product
+     * @param string The version number
+     * @return object The JSON result
+     */
+    public function getVersionInfo($product, $versions) {
+        $host = Kohana::config('webserviceclient.socorro_hostname');
+        $p = rawurlencode($product);
+        $v = $this->encodeArray($versions);
+        $url = $host . "/products/versions/" . $p . ":" . $v;
+        
+        $lifetime = Kohana::config('webserviceclient.topcrash_vers_rank_cache_minutes', 60) * 60;
+        $response = $this->service->get($url, 'json', $lifetime);
+        return $response;
+    }
 
     /**
      * Fetch records for active daily users / installs by crash report type

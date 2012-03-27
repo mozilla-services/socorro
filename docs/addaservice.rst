@@ -189,3 +189,147 @@ use it in the WebApp. If so, have a look at :ref:`ui-chapter`.
 You might also want to document it. We are keeping track of all existing
 services' documentation in our :ref:`middleware-chapter` page. Please add
 yours!
+
+Writing a PostgreSQL middleware unit test
+-----------------------------------------
+
+First create your new test file in the appropriate localtion as specified above,
+for example socorro/unittest/external/postgresql/test_myservice.py
+
+Next you want to import the following:
+::
+    from socorro.external.postgresql.myservice import MyService
+    import socorro.unittest.testlib.util as testutil
+
+As this is a PostgreSQL service unit test we also add:
+::
+    from .unittestbase import PostgreSQLTestCase
+  
+Next item to add is your setup_module function, below is a barebones version that
+would be sufficient for most tests:
+::
+    #------------------------------------------------------------------------------
+    def setup_module():
+        testutil.nosePrintModule(__file__)
+      
+Next is the setup function in which you create and populate your dummy table(s)
+::
+    #==============================================================================
+    class TestMyService(PostgreSQLTestCase):
+  
+      #--------------------------------------------------------------------------
+      def setUp(self):
+
+          super(TestMyService, self).setUp()
+        
+          cursor = self.connection.cursor()
+        
+          #Create table
+          cursor.execute("""
+              CREATE TABLE product_info
+              (
+                  product_version_id integer not null,
+                  product_name citext,
+                  version_string citext,
+              );
+          """)
+        
+          # Insert data
+          cursor.execute("""
+              INSERT INTO product_info VALUES
+              (
+                  1,
+                  '%s',
+                  '%s'
+              );
+          """ % ("Firefox", "8.0"))
+        
+          self.connection.commit()
+        
+For your test table(s) you can include as many, or as few, columns and rows of data as your tests
+will require. Next we add the tearDown function that will clean up after our tests has run, by
+dropping tables we created in the setUp function.
+::
+    #--------------------------------------------------------------------------
+    def tearDown(self):
+        """ Cleanup the database, delete tables and functions """
+        cursor = self.connection.cursor()
+        cursor.execute("""
+            DROP TABLE product_info;
+        """)
+        self.connection.commit()
+        super(TestProducts, self).tearDown()
+        
+Next, we write our actual tests against the dummy data we created in setUp. First step is to create an
+instance of the class we are going to test:
+::
+    #--------------------------------------------------------------------------
+    def test_get(self):
+        products = Products(config=self.config)
+      
+Next we write our first test passing the parameters to our function it expects:
+::
+    #......................................................................
+    # Test 1: find one exact match for one product and one version
+    params = {
+      "versions": "Firefox:8.0"
+    }
+
+Next we call our function passing the above parameters:
+::
+    res = products.get_versions(**params)
+  
+The above will now return a response that we need to test and determine whether it contains what we expect.
+In order to do this we create our expected response:
+::
+    res_expected = {
+          "hits": [
+              {
+                  "product_version_id": 1,
+                  "product_name": "Firefox",
+                  "version_string": "8.0"
+               }
+          ],
+          "total": 1
+      }
+
+And finally we call the assertEquals function to test whether our response matches our expected response:
+::
+    self.assertEqual(res, res_expected)
+    
+Running a PostgreSQL middleware unit test
+-----------------------------------------
+
+If you have not already done so, install nose tests. From the commons line run the command:
+::
+    sudo apt-get install python-nose
+
+Once the installation completes change directory to, socorro/unittest/config/ and run the following:
+::
+    cp commonconfig.py.dist commonconfig.py
+
+Now you can open up the file and edit it's contents to match your testing environment. If you are running this in a VM via
+Socorro Vagrant, you can leave the content of the file as is. Next cd into socorro/unittest. To run all of the unit tests, 
+run the following:
+::
+    nosetests
+
+When writing a new test you most likely are more interested in running your own, and just your own, instead of running all
+of the unit tests that form part of Socorro. If your test is located in, for example unittest/external/postgresql/test_myservice.py
+then you can run your test as follows:
+::
+    nosetests socorro.external.postgresql.test_myservice
+
+Ensuring good style
+-------------------
+
+To ensure that the Python code you wrote passes PEP8 you need to run check.py.
+To do this your first step is to install it. From the terminal run:
+::
+    pip install -e git://github.com/jbalogh/check.git#egg=check
+
+P.S. You may need to sudo the command above
+
+Once installed, run the following:
+::
+    check.py /path/to/your/file
