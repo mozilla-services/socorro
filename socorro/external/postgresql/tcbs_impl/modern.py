@@ -68,7 +68,8 @@ def getListOfTopCrashersBySignature(aCursor, dbParams):
                 plugin_count(process_type,report_count) as plugin_count,
                 content_count(process_type,report_count) as content_count,
                 first_report,
-                version_list
+                version_list,
+                sum(startup_count) as startup_count
         FROM tcbs
             JOIN signatures USING (signature_id)
             JOIN product_versions AS pv USING (product_version_id)
@@ -90,22 +91,22 @@ def getListOfTopCrashersBySignature(aCursor, dbParams):
                 tcbs_r
         )
         SELECT signature,
-                     report_count,
-                     win_count,
-                     lin_count,
-                     mac_count,
-                     hang_count,
-                     plugin_count,
-                     content_count,
-                     first_report,
-                     version_list,
-                %s / total_crashes::float
-                as percent_of_total
+                report_count,
+                win_count,
+                lin_count,
+                mac_count,
+                hang_count,
+                plugin_count,
+                content_count,
+                first_report,
+                version_list,
+                %s / total_crashes::float as percent_of_total,
+                startup_count / %s::float as startup_percent
         FROM tcbs_window
         ORDER BY %s DESC
         LIMIT %s
         """ % (dbParams["product"], dbParams["version"], dbParams["startDate"],
-               dbParams["to_date"], where, order_by, order_by,
+               dbParams["to_date"], where, order_by, order_by, order_by,
                dbParams["limit"])
     #logger.debug(aCursor.mogrify(sql, dbParams))
     return db.execute(aCursor, sql)
@@ -167,7 +168,7 @@ def listOfListsWithChangeInRank(listOfQueryResultsIterable):
                                    'linux_count', 'mac_count', 'hang_count',
                                    'plugin_count', 'content_count',
                                    'first_report_exact', 'versions',
-                                   'percentOfTotal'], aRow))
+                                   'percentOfTotal', 'startup_percent'], aRow))
             aRowAsDict['currentRank'] = rank
             aRowAsDict['first_report'] = (
                 aRowAsDict['first_report_exact'].strftime('%Y-%m-%d'))

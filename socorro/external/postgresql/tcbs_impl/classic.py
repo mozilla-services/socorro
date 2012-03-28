@@ -189,6 +189,7 @@ def listOfListsWithChangeInRank(listOfQueryResultsIterable):
                 'plugin_count'
             ], aRow))
             aRowAsDict['currentRank'] = rank
+            aRowAsDict['startup_percent'] = None
             try:
                 (aRowAsDict['previousRank'],
                 aRowAsDict['previousPercentOfTotal']) = previousList.find(
