@@ -24,6 +24,7 @@ def update(config, targetDate):
        ['update_product_versions' 'update_signatures']),
       ('update_hang_report', [targetDate], []),
       ('update_rank_compare', [targetDate], []),
+      ('update_nightly_builds', [targetDate], []),
     )
 
     failed = set()
