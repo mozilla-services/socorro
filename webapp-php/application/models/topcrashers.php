@@ -80,29 +80,6 @@ class Topcrashers_Model extends Model {
 
         return implode($separator, $apiData);
     }
-    
-    /**
-     * Determined whether the current signature can be labeled as a 
-     * startup crasher based on the total percentage for uptime < 1min
-     * 
-     * @param string the signature
-     * @param date the start date
-     * @param date the end date
-     * @return bool
-     */
-    public function isStartupCrasher($signature, $start_date, $end_date) {
-        $summary_model = new Signature_Summary_Model();
-        $uptime = $summary_model->getSummary('uptime', $signature, $start_date, $end_date);
-        foreach($uptime as $up) {
-            $total_uptime = $up->category;
-            $percentage = round($up->percentage * 100);
-
-            if(($total_uptime === Kohana::config('topcrashers.total_uptime_condition')) && ($percentage > Kohana::config('topcrashers.percentage_uptime_condition'))) {
-                return TRUE;
-            }
-        }
-        return FALSE;
-    }
 
     /**
      * Fetch the top crashers data via a web service call.
