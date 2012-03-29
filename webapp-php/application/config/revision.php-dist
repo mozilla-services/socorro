@@ -6,3 +6,4 @@
  */
 
 $config['socorro_revision'] = 'CURRENT_SOCORRO_REVISION';
+$config['breakpad_revision'] = 'CURRENT_BREAKPAD_REVISION';

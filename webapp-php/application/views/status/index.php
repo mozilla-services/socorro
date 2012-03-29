@@ -28,6 +28,9 @@
                 <td>Socorro revision</td><td><a href="https://github.com/mozilla/socorro/commit/<?php echo Kohana::config('revision.socorro_revision')?>"><?php echo Kohana::config('revision.socorro_revision')?></a></td>
             </tr>
             <tr>
+                <td>Breakpad revision</td><td><a href="http://code.google.com/p/google-breakpad/source/browse/?r=<?php echo Kohana::config('revision.breakpad_revision')?>"><?php echo Kohana::config('revision.breakpad_revision')?></a></td>
+            </tr>
+            <tr>
                 <td>Oldest job entered the queue</td><td><time class="timeago" datetime="<?php echo $stat->date_oldest_job_queued ?>"><?php echo $stat->date_oldest_job_queued ?></time></td>
             </tr>
             <tr>
