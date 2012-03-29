@@ -1509,6 +1509,10 @@ div.query_removemargin { /* Removes margin from the main content area */
     display: block;
     float: left;
 }
+#no_version_info {
+    clear: both;
+    color: #333;
+}
 #advfiltertoggle {
     color: #333;
     display: block;

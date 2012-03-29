@@ -85,21 +85,39 @@ $(document).ready(function() {
   $('select[name=product]').bind('change', productUpdater);
 
   function updateVersion(products, selected){
-    var sel = selected || [];
-    var s = "<option value='ALL:ALL'>All</option>";
+    var sel = selected || [],
+    product = "",
+    featured = "",
+    standard = "";
     for(var j=0; j < products.length; j++){
-      var product = products[j];
-      for(var i=0; i < prodVersMap[product].length; i++){
-        var v = [prodVersMap[product][i]['product'],
-                 prodVersMap[product][i]['version']];
-        var att = "";
-        if($.inArray(v.join(':'), sel) >= 0){
-	  att = " selected='true'";
-	}
-        s += "<option value='" + v.join(':') + "'" + att + ">" + v.join(' ') + "</option>";
+      product = products[j],
+      productInMap = false;
+      if(prodVersMap[product] !== undefined) {
+          productInMap = true;
+          for(var i=0; i < prodVersMap[product].length; i++){
+            var v = [prodVersMap[product][i]['product'],
+                     prodVersMap[product][i]['version']];
+            var att = "";
+            if($.inArray(v.join(':'), sel) >= 0){
+    	  att = " selected='true'";
+    	}
+            if(prodVersMap[product][i]['featured']) {
+                featured += "<option class='featured' value='" + v.join(':') + "'" + att + ">" + v.join(' ') + "</option>";
+            } else if(!prodVersMap[product][i]['featured']) {
+                standard += "<option value='" + v.join(':') + "'" + att + ">" + v.join(' ') + "</option>";
+            }
+    
+          }
       }
     }
-    $('select[name=version]').html(s);
+    if(productInMap) {
+        $("#no_version_info").remove();
+        $("#version optgroup:first").empty().append(featured);
+        $("#version optgroup:last-child").empty().append(standard);
+    } else {
+        $("#searchform").find("fieldset").append("<p id='no_version_info'>No version information found for " + product + "</p>");
+    }
+
     //If nothing was already selected, pick the first item
     if( $('select[name=version]').val() == null ){
       $('select[name=version] option:first').attr('selected', true);
