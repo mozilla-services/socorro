@@ -9,7 +9,7 @@
 
     <ul>
     <li><label class="basic" for="product">Product</label>
-            <select id="product" name="product" size="5" multiple="multiple" class="primary">
+            <select id="product" name="product" size="8" multiple="multiple" class="primary">
                 <?php foreach ($all_products as $product): ?>
                     <option value="<?php out::H($product) ?>" <?php echo in_array($product, $params['product']) ? 'selected="selected"' : '' ?>>
                         <?php out::H($product) ?>
@@ -18,18 +18,14 @@
             </select>
     </li>
     <li><label class="basic" for="version">Version: </label>
-            <select id="version" name="version" size="5" multiple="multiple" class="primary">
-                <option value="ALL:ALL">All</option>
-                <?php foreach ($all_versions as $row): ?>
-                    <?php $row_version  = $row->product . ':' . $row->version; ?>
-                    <option value="<?php out::H($row_version) ?>" <?php echo in_array($row_version, $params['version']) ? 'selected="selected"' : '' ?>>
-                        <?php out::H($row->product . ' ' . $row->version) ?>
-                    </option>
-                <?php endforeach ?>
-            </select>
+        <select id="version" name="version" size="8" multiple="multiple" class="primary">
+            <option value='ALL:ALL'>All</option>
+            <optgroup label="Featured Versions"></optgroup>
+            <optgroup label="Older Versions"></optgroup>
+        </select>
     </li>
     <li><label class="basic" for="platform">Operating System</label>
-            <select id="platform" name="platform" size="5" multiple="multiple" class="primary">
+            <select id="platform" name="platform" size="8" multiple="multiple" class="primary">
                 <?php foreach ($all_platforms as $row): ?>
                     <option value="<?php out::H($row->id) ?>" <?php echo in_array($row->id, $params['platform']) ? 'selected="selected"' : '' ?>>
                         <?php out::H($row->name) ?>
