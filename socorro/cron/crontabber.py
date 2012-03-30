@@ -3,7 +3,6 @@
 """
 CronTabber is a configman app for executing all Socorro cron jobs.
 """
-import os
 import traceback
 import functools
 import logging
@@ -18,48 +17,41 @@ from configman import RequiredConfig, ConfigurationManager, Namespace
 from configman.converters import class_converter
 
 
+class JobNotFoundError(Exception):
+    pass
+
+
+class FrequencyDefinitionError(Exception):
+    pass
+
+
 class BaseCronApp(RequiredConfig):
     """The base class from which Socorro apps are based"""
 
     def __init__(self, config):
         self.config = config
 
-#    def main(self):
-#        if not self._check_dependencies():
-#            return
-#        self.run()
-
     def run(self):
         raise NotImplementedError("Your fault!")
-
-
-class JobDatabase(dict):
-    def save(self, file_path):
-        raise NotImplementedError
-    def load(self, file_path):
-        raise NotImplementedError
-
-
-class PickleJobDatabase(dict):
-
-    def load(self, file_path):
-        if os.path.isfile(file_path):
-            self.update(cPickle.load(open(file_path)))
-
-    def save(self, file_path):
-        with open(file_path, 'w') as f:
-            cPickle.dump(dict(self), f)
 
 
 class JSONJobDatabase(dict):
 
     _utc_fmt = '%Y-%m-%d %H:%M:%S.%f'
+    _day_fmt = '%Y-%m-%d'
 
     def load(self, file_path):
         try:
             self.update(self._recurse_load(json.load(open(file_path))))
         except IOError:
             pass
+        except ValueError:
+            # oh nos! the JSON is broken
+            sys.stderr.write(('JSON PAYLOAD (%s) ' % file_path)
+                             .ljust(79, '-') + '\n')
+            sys.stderr.write(open(file_path).read())
+            sys.stderr.write('\n' + '-' * 79 + '\n')
+            raise
 
     def _recurse_load(self, struct):
         for key, value in struct.items():
@@ -69,25 +61,30 @@ class JSONJobDatabase(dict):
                 try:
                     value = datetime.datetime.strptime(value, self._utc_fmt)
                     struct[key] = value
-                except ValueError:
-                    pass
+                except (ValueError, TypeError):
+                    try:
+                        value = (datetime.datetime
+                                 .strptime(value, self._day_fmt).date())
+                        struct[key] = value
+                    except (ValueError, TypeError):
+                        pass
         return struct
 
     def save(self, file_path):
         with open(file_path, 'w') as f:
-            json.dump(self._recurse_serialize(copy.deepcopy(dict(self))), f, indent=2)
+            json.dump(self._recurse_serialize(copy.deepcopy(dict(self))),
+                      f, indent=2)
 
     def _recurse_serialize(self, struct):
-        #print "STRUCT", repr(struct)
         for key, value in struct.items():
             if isinstance(value, dict):
                 self._recurse_serialize(value)
             elif isinstance(value, datetime.datetime):
                 struct[key] = value.strftime(self._utc_fmt)
+            elif isinstance(value, (int, long, float)):
+                pass
             elif not isinstance(value, basestring):
                 struct[key] = unicode(value)
-            #else:
-            #    print "\t", key, repr(value)
         return struct
 
 
@@ -96,7 +93,8 @@ def job_lister(input_str):
             in input_str.splitlines()
             if x.strip()]
 
-def timesince(d, now=None):
+
+def timesince(d, now=None):  # pragma: no cover
     """
     Taken from django.utils.timesince
     """
@@ -114,8 +112,8 @@ def timesince(d, now=None):
     chunks = (
       (60 * 60 * 24 * 365, lambda n: ungettext('year', 'years', n)),
       (60 * 60 * 24 * 30, lambda n: ungettext('month', 'months', n)),
-      (60 * 60 * 24 * 7, lambda n : ungettext('week', 'weeks', n)),
-      (60 * 60 * 24, lambda n : ungettext('day', 'days', n)),
+      (60 * 60 * 24 * 7, lambda n: ungettext('week', 'weeks', n)),
+      (60 * 60 * 24, lambda n: ungettext('day', 'days', n)),
       (60 * 60, lambda n: ungettext('hour', 'hours', n)),
       (60, lambda n: ungettext('minute', 'minutes', n))
     )
@@ -138,13 +136,15 @@ def timesince(d, now=None):
         count = since // seconds
         if count != 0:
             break
-    s = ugettext('%(number)d %(type)s') % {'number': count, 'type': name(count)}
+    s = ugettext('%(number)d %(type)s') % {
+      'number': count, 'type': name(count)}
     if i + 1 < len(chunks):
         # Now get the second item
         seconds2, name2 = chunks[i + 1]
         count2 = (since - (seconds * count)) // seconds2
         if count2 != 0:
-            s += ugettext(', %(number)d %(type)s') % {'number': count2, 'type': name2(count2)}
+            s += ugettext(', %(number)d %(type)s') % {
+                 'number': count2, 'type': name2(count2)}
     return s
 
 
@@ -203,7 +203,7 @@ class CronTabber(RequiredConfig):
     required_config = Namespace()
     required_config.add_option(
         name='jobs',
-        default=[],#'crontabber.jobs.Foo:12h','crontabber.jobs.Bar:1d'],
+        default=[],
         doc='List of jobs and their frequency separated by `:`',
         from_string_converter=job_lister
     )
@@ -234,7 +234,10 @@ class CronTabber(RequiredConfig):
         _now = datetime.datetime.utcnow()
         PAD = 12
         for each in self.config.jobs:
-            freq = each.split(':', 1)[1]
+            try:
+                freq = each.split('|', 1)[1]
+            except IndexError:
+                raise FrequencyDefinitionError(each)
             job_class, seconds = self._lookup_job(each)
             class_name = job_class.__module__ + '.' + job_class.__name__
             print '=== JOB ' + '=' * 72
@@ -261,25 +264,29 @@ class CronTabber(RequiredConfig):
 
     def run_all(self):
         for each in self.config.jobs:
-            job_class, seconds = self._lookup_job(each)
+            self.run_one(each)
+
+    def run_one(self, description, force=False):
+        job_class, seconds = self._lookup_job(description)
+        if not force:
             if not self.time_to_run(job_class):
                 self.D("skipping %r because it's not time to run", job_class)
-                continue
+                return
             if not self.check_dependencies(job_class):
                 self.D("skipping %r dependencies aren't met", job_class)
-                continue
+                return
 
-            self.D('about to run %r', job_class)
-            try:
-                self.run_job(job_class)
-                self.D('successfully ran %r', job_class)
-                exc_type = exc_value = exc_tb = None
-            except:
-                exc_type, exc_value, exc_tb = sys.exc_info()
-                self.D('error when running %r', job_class, exc_info=True)
-            finally:
-                self.log_run(job_class, seconds,
-                             exc_type, exc_value, exc_tb)
+        self.D('about to run %r', job_class)
+        try:
+            self._run_job(job_class)
+            self.D('successfully ran %r', job_class)
+            exc_type = exc_value = exc_tb = None
+        except:
+            exc_type, exc_value, exc_tb = sys.exc_info()
+            self.D('error when running %r', job_class, exc_info=True)
+        finally:
+            self._log_run(job_class, seconds,
+                         exc_type, exc_value, exc_tb)
 
     def check_dependencies(self, class_):
         try:
@@ -297,6 +304,9 @@ class CronTabber(RequiredConfig):
                 return False
             if job_info.get('last_error'):
                 # errored last time it ran
+                return False
+            if job_info['next_run'] < datetime.datetime.utcnow():
+                # the dependency hasn't recently run
                 return False
         # no reason not to stop this class
         return True
@@ -318,17 +328,18 @@ class CronTabber(RequiredConfig):
             return True
         return False
 
-    def run_job(self, class_):
+    def _run_job(self, class_):
         # here we go!
         instance = class_(self.config)
         instance.run()
 
-    def log_run(self, class_, seconds, exc_type, exc_value, exc_tb):
+    def _log_run(self, class_, seconds, exc_type, exc_value, exc_tb):
         assert inspect.isclass(class_)
         app_name = class_.app_name
         info = {
           'last_run': datetime.datetime.utcnow(),
-          'next_run': datetime.datetime.utcnow() + datetime.timedelta(seconds=seconds)
+          'next_run': (datetime.datetime.utcnow() +
+                       datetime.timedelta(seconds=seconds))
         }
         if exc_type:
             tb = ''.join(traceback.format_tb(exc_tb))
@@ -345,16 +356,27 @@ class CronTabber(RequiredConfig):
         self.database[app_name] = info
         self.database.save(self.config.database)
 
-
     def _lookup_job(self, job_description):
         """return class definition and a frequency in seconds as a tuple pair.
         """
-        class_path, frequency = job_description.split(':')
+        if '|' not in job_description and '.' not in job_description:
+            # the job is described by its app_name
+            for each in self.config.jobs:
+                #freq = each.split('|', 1)[1]
+                job_class, seconds = self._lookup_job(each)
+                if job_class.app_name == job_description:
+                    return job_class, seconds
+
+            # still here! Then it couldn't be found
+            raise JobNotFoundError(job_description)
+
+        class_path, frequency = job_description.split('|')
         seconds = self._convert_frequency(frequency)
         class_ = class_converter(class_path)
 
         if inspect.ismodule(class_):
-            # then it was passed something like "jobs.foo" instead of "jobs.foo.MyClass"
+            # then it was passed something like "jobs.foo" instead
+            # of "jobs.foo.MyClass"
             for name, cls in inspect.getmembers(class_, inspect.isclass):
                 if name == BaseCronApp.__name__:
                     continue
@@ -428,7 +450,7 @@ def run():
         if config.get('list-jobs'):
             tab.list_jobs()
         elif config.get('job'):
-            tab.run_job(config['job'], config.get('force'))
+            tab.run_one(config['job'], config.get('force'))
         else:
             tab.run_all()
 
