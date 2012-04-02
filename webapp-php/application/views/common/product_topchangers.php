@@ -9,25 +9,21 @@
                     <th>Rank</th>
                     <th>Signature</th>
                 </tr>
-                <?php
-                    foreach ($changers as $changer) {
-            	        if (is_null($changer['signature'])) {
-            			    $display_signature = Crash::$null_sig;
-            		    } else if(empty($changer['signature'])) {
-            			    $display_signature = Crash::$empty_sig;
-            		    } else {
-            			    $display_signature = $changer['signature'];
-            		    }
-                    ?>
-
+                <?php function changer_row($top_changer) { ?>
                     <tr>
-                        <td><div class="trend <?= $changer['trendClass'] ?>"><?= $changer['changeInRank']; ?></div></td>
-                        <td><?= ($changer['currentRank']); ?></td>
-                        <td><a class="signature" href="<?= ($changer['url']); ?>"
-                           title="View reports with this crasher."><?php out::H($display_signature); ?></a>
+                        <td><div class="trend <?= $top_changer['trendClass'] ?>"><?= $top_changer['changeInRank']; ?></div></td>
+                        <td><?= ($top_changer['currentRank']); ?></td>
+                        <td><a class="signature" href="<?= ($top_changer['url']); ?>"
+                           title="View reports with this crasher."><?php out::H($top_changer['signature']); ?></a>
                         </td>
                     </tr>
                 <?php } ?>
+                <?php
+                    foreach ($changers as $changer) {
+                        if(!is_null($changer['signature']) and !empty($changer['signature'])) {
+                            changer_row($changer);
+                        }
+                    } ?>
             </table>
         </div>
     <?php } ?>
