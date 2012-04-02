@@ -67,7 +67,7 @@
     <div class="title">Latest Raw Stats</div>
     <div class="body">
 
-<table id="server-stats-table" class="tablesorter">
+<table id="server-stats-table" class="tablesorter data-table">
   <thead>
     <tr>
       <th class="header">Time</th>
