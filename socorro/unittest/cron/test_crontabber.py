@@ -1,9 +1,12 @@
+import re
+import sys
 import datetime
 import shutil
 import os
 import json
 import unittest
 import tempfile
+from cStringIO import StringIO
 import mock
 from socorro.cron import crontabber
 from socorro.unittest.config.commonconfig import (
@@ -88,13 +91,11 @@ class TestJSONJobsDatabase(unittest.TestCase):
         self.assertTrue(isinstance(db2['there']['now'], datetime.date))
 
     def test_loading_broken_json(self):
-        import sys
         file1 = os.path.join(self.tempdir, 'file1.json')
         with open(file1, 'w') as f:
             f.write('{Junk\n')
         db = crontabber.JSONJobDatabase()
 
-        from cStringIO import StringIO
         old_stderr = sys.stderr
         new_stderr = StringIO()
         sys.stderr = new_stderr
@@ -161,7 +162,7 @@ class TestCrontabber(unittest.TestCase):
             information = structure['basic-job']
             self.assertEqual(information['error_count'], 0)
             self.assertEqual(information['last_error'], {})
-            today = datetime.datetime.utcnow()
+            today = datetime.datetime.now()
             one_week = today + datetime.timedelta(days=7)
             self.assertTrue(today.strftime('%Y-%m-%d')
                             in information['last_run'])
@@ -341,7 +342,7 @@ class TestCrontabber(unittest.TestCase):
             infos = [x for x in infos if x.startswith('Ran ')]
             self.assertEqual(infos, infos_before)
 
-    def test_basic_run_job(self):
+    def test_basic_run_job_with_hour(self):
         config_manager, json_file = self._setup_config_manager(
           'socorro.unittest.cron.test_crontabber.BasicJob|7d|03:00\n'
           'socorro.unittest.cron.test_crontabber.FooJob|1:45'
@@ -355,11 +356,194 @@ class TestCrontabber(unittest.TestCase):
 
             assert os.path.isfile(json_file)
             structure = json.load(open(json_file))
-            information = structure['basic-job']
             next_run = structure['basic-job']['next_run']
             self.assertTrue('03:00:00' in next_run)
             next_run = structure['foo']['next_run']
             self.assertTrue('01:45:00' in next_run)
+
+    def test_list_jobs(self):
+        config_manager, json_file = self._setup_config_manager(
+          'socorro.unittest.cron.test_crontabber.SadJob|5h\n'
+          'socorro.unittest.cron.test_crontabber.TroubleJob|1d\n'
+          'socorro.unittest.cron.test_crontabber.BasicJob|7d|03:00\n'
+          'socorro.unittest.cron.test_crontabber.FooJob|2d'
+        )
+
+        with config_manager.context() as config:
+            tab = crontabber.CronTabber(config)
+            old_stdout = sys.stdout
+            new_stdout = StringIO()
+            sys.stdout = new_stdout
+            try:
+                tab.list_jobs()
+            finally:
+                sys.stdout = old_stdout
+            output = new_stdout.getvalue()
+            self.assertEqual(output.count('Class:'), 4)
+            self.assertEqual(4,
+              len(re.findall('App name:\s+(trouble|basic-job|foo|sad)', output, re.I)))
+            self.assertEqual(4,
+              len(re.findall('No previous run info', output, re.I)))
+
+            tab.run_all()
+            assert 'sad' not in tab.database
+            assert 'basic-job' in tab.database
+            assert 'foo' in tab.database
+            assert 'trouble' in tab.database
+            old_stdout = sys.stdout
+            new_stdout = StringIO()
+            sys.stdout = new_stdout
+            try:
+                tab.list_jobs()
+            finally:
+                sys.stdout = old_stdout
+            output = new_stdout.getvalue()
+            # sad job won't be run since its depdendent keeps failing
+            self.assertEqual(1,
+              len(re.findall('No previous run info', output, re.I)))
+
+            # split them up so that we can investigate each block of output
+            outputs = {}
+            for block in re.split('={5,80}', output)[1:]:
+                key = re.findall('App name:\s+([\w-]+)', block)[0]
+                outputs[key] = block
+
+            self.assertTrue(re.findall('No previous run info',
+                                       outputs['sad'], re.I))
+            self.assertTrue(re.findall('Error',
+                                       outputs['trouble'], re.I))
+            self.assertTrue(re.findall('1 time',
+                                       outputs['trouble'], re.I))
+            self.assertTrue(re.findall('raise NameError',
+                                       outputs['trouble'], re.I))
+            self.assertTrue(re.findall('7d @ 03:00',
+                                       outputs['basic-job'], re.I))
+
+    def test_configtest_ok(self):
+        config_manager, json_file = self._setup_config_manager(
+          'socorro.unittest.cron.test_crontabber.FooJob|3d\n'
+          'socorro.unittest.cron.test_crontabber.BarJob|4d'
+        )
+
+        with config_manager.context() as config:
+            tab = crontabber.CronTabber(config)
+            old_stderr = sys.stderr
+            new_stderr = StringIO()
+            sys.stderr = new_stderr
+            old_stdout = sys.stdout
+            new_stdout = StringIO()
+            sys.stdout = new_stdout
+            try:
+                self.assertTrue(tab.configtest())
+            finally:
+                sys.stderr = old_stderr
+                sys.stdout = old_stdout
+            self.assertTrue(not new_stderr.getvalue())
+            self.assertTrue(not new_stdout.getvalue())
+
+    def test_configtest_not_found(self):
+        config_manager, json_file = self._setup_config_manager(
+          'socorro.unittest.cron.test_crontabber.YYYYYY|3d\n'
+          'socorro.unittest.cron.test_crontabber.XXXXXX|4d'
+        )
+
+        with config_manager.context() as config:
+            tab = crontabber.CronTabber(config)
+            old_stderr = sys.stderr
+            new_stderr = StringIO()
+            sys.stderr = new_stderr
+            try:
+                self.assertTrue(not tab.configtest())
+            finally:
+                sys.stderr = old_stderr
+            output = new_stderr.getvalue()
+            self.assertTrue('JobNotFoundError' in output)
+            # twice per not found
+            self.assertEqual(output.count('JobNotFoundError'), 4)
+            self.assertTrue('XXXXXX' in output)
+            self.assertTrue('YYYYYY' in output)
+
+    def test_configtest_definition_error(self):
+        config_manager, json_file = self._setup_config_manager(
+          # missing frequency or time
+          'socorro.unittest.cron.test_crontabber.FooJob'
+        )
+
+        with config_manager.context() as config:
+            tab = crontabber.CronTabber(config)
+            old_stderr = sys.stderr
+            new_stderr = StringIO()
+            sys.stderr = new_stderr
+            try:
+                self.assertTrue(not tab.configtest())
+            finally:
+                sys.stderr = old_stderr
+            output = new_stderr.getvalue()
+            self.assertTrue('JobDescriptionError' in output)
+            # twice per not found
+            self.assertEqual(output.count('JobDescriptionError'), 2)
+            self.assertTrue('test_crontabber.FooJob' in output)
+
+    def test_configtest_bad_frequency(self):
+        config_manager, json_file = self._setup_config_manager(
+          'socorro.unittest.cron.test_crontabber.FooJob|3e'
+        )
+
+        with config_manager.context() as config:
+            tab = crontabber.CronTabber(config)
+            old_stderr = sys.stderr
+            new_stderr = StringIO()
+            sys.stderr = new_stderr
+            try:
+                self.assertTrue(not tab.configtest())
+            finally:
+                sys.stderr = old_stderr
+            output = new_stderr.getvalue()
+            self.assertTrue('FrequencyDefinitionError' in output)
+            # twice per not found
+            self.assertEqual(output.count('FrequencyDefinitionError'), 2)
+            self.assertTrue('Error value: e' in output)
+
+    def test_configtest_bad_time(self):
+        config_manager, json_file = self._setup_config_manager(
+          'socorro.unittest.cron.test_crontabber.FooJob|24:59'
+        )
+
+        with config_manager.context() as config:
+            tab = crontabber.CronTabber(config)
+            old_stderr = sys.stderr
+            new_stderr = StringIO()
+            sys.stderr = new_stderr
+            try:
+                self.assertTrue(not tab.configtest())
+            finally:
+                sys.stderr = old_stderr
+            output = new_stderr.getvalue()
+            self.assertTrue('TimeDefinitionError' in output)
+            # twice per not found
+            self.assertEqual(output.count('TimeDefinitionError'), 2)
+            self.assertTrue('24:59' in output)
+
+    def test_configtest_bad_time_invariance(self):
+        config_manager, json_file = self._setup_config_manager(
+          'socorro.unittest.cron.test_crontabber.FooJob|3h|23:59'
+        )
+
+        with config_manager.context() as config:
+            tab = crontabber.CronTabber(config)
+            old_stderr = sys.stderr
+            new_stderr = StringIO()
+            sys.stderr = new_stderr
+            try:
+                self.assertTrue(not tab.configtest())
+            finally:
+                sys.stderr = old_stderr
+            output = new_stderr.getvalue()
+            self.assertTrue('FrequencyDefinitionError' in output)
+            # twice per not found
+            self.assertEqual(output.count('FrequencyDefinitionError'), 2)
+            self.assertTrue('23:59' in output)
+
 
 
 ## Various mock jobs that the tests depend on

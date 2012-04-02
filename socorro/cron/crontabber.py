@@ -29,6 +29,10 @@ class TimeDefinitionError(Exception):
     pass
 
 
+class JobDescriptionError(Exception):
+    pass
+
+
 class BaseCronApp(RequiredConfig):
     """The base class from which Socorro apps are based"""
 
@@ -41,7 +45,7 @@ class BaseCronApp(RequiredConfig):
 
 class JSONJobDatabase(dict):
 
-    _utc_fmt = '%Y-%m-%d %H:%M:%S.%f'
+    _date_fmt = '%Y-%m-%d %H:%M:%S.%f'
     _day_fmt = '%Y-%m-%d'
 
     def load(self, file_path):
@@ -63,7 +67,7 @@ class JSONJobDatabase(dict):
                 self._recurse_load(value)
             else:
                 try:
-                    value = datetime.datetime.strptime(value, self._utc_fmt)
+                    value = datetime.datetime.strptime(value, self._date_fmt)
                     struct[key] = value
                 except (ValueError, TypeError):
                     try:
@@ -84,7 +88,7 @@ class JSONJobDatabase(dict):
             if isinstance(value, dict):
                 self._recurse_serialize(value)
             elif isinstance(value, datetime.datetime):
-                struct[key] = value.strftime(self._utc_fmt)
+                struct[key] = value.strftime(self._date_fmt)
             elif isinstance(value, (int, long, float)):
                 pass
             elif not isinstance(value, basestring):
@@ -233,38 +237,42 @@ class CronTabber(RequiredConfig):
     def __init__(self, config):
         self.config = config
 
-    def list_jobs(self):
+    def list_jobs(self, stream=None):
+        if not stream:
+            stream = sys.stdout
         _fmt = '%Y-%m-%d %H:%M:%S'
-        _now = datetime.datetime.utcnow()
+        _now = datetime.datetime.now()
         PAD = 12
         for each in self.config.jobs:
             try:
                 freq = each.split('|', 1)[1]
             except IndexError:
                 raise FrequencyDefinitionError(each)
-            job_class, seconds = self._lookup_job(each)
+            if '|' in freq:
+                freq = freq.replace('|', ' @ ')
+            job_class, seconds, time_ = self._lookup_job(each)
             class_name = job_class.__module__ + '.' + job_class.__name__
-            print '=== JOB ' + '=' * 72
-            print "Class:".ljust(PAD), class_name
-            print "App name:".ljust(PAD), job_class.app_name
-            print "Frequency:".ljust(PAD), freq
+            print >>stream, '=== JOB ' + '=' * 72
+            print >>stream, "Class:".ljust(PAD), class_name
+            print >>stream, "App name:".ljust(PAD), job_class.app_name
+            print >>stream, "Frequency:".ljust(PAD), freq
             try:
                 info = self.database[job_class.app_name]
             except KeyError:
-                print "*NO PREVIOUS RUN INFO*"
+                print >>stream, "*NO PREVIOUS RUN INFO*"
                 continue
 
-            print "Last run:".ljust(PAD),
-            print info['last_run'].strftime(_fmt).ljust(20),
-            print '(%s ago)' % timesince(info['last_run'], _now)
-            print "Next run:".ljust(PAD),
-            print info['next_run'].strftime(_fmt).ljust(20),
-            print '(in %s)' % timesince(_now, info['next_run'])
+            print >>stream, "Last run:".ljust(PAD),
+            print >>stream, info['last_run'].strftime(_fmt).ljust(20),
+            print >>stream, '(%s ago)' % timesince(info['last_run'], _now)
+            print >>stream, "Next run:".ljust(PAD),
+            print >>stream, info['next_run'].strftime(_fmt).ljust(20),
+            print >>stream, '(in %s)' % timesince(_now, info['next_run'])
             if info.get('last_error'):
-                print "Error!!".ljust(PAD),
-                print "(%s times)" % info['error_count']
-                print info['last_error']['traceback']
-            print
+                print >>stream, "Error!!".ljust(PAD),
+                print >>stream, "(%s times)" % info['error_count']
+                print >>stream, info['last_error']['traceback']
+            print >>stream, ''
 
     def run_all(self):
         for each in self.config.jobs:
@@ -309,7 +317,7 @@ class CronTabber(RequiredConfig):
             if job_info.get('last_error'):
                 # errored last time it ran
                 return False
-            if job_info['next_run'] < datetime.datetime.utcnow():
+            if job_info['next_run'] < datetime.datetime.now():
                 # the dependency hasn't recently run
                 return False
         # no reason not to stop this class
@@ -328,7 +336,7 @@ class CronTabber(RequiredConfig):
             # no past information, run now
             return True
         next_run = info['next_run']
-        if next_run < datetime.datetime.utcnow():
+        if next_run < datetime.datetime.now():
             return True
         return False
 
@@ -341,8 +349,8 @@ class CronTabber(RequiredConfig):
         assert inspect.isclass(class_)
         app_name = class_.app_name
         info = {
-          'last_run': datetime.datetime.utcnow(),
-          'next_run': (datetime.datetime.utcnow() +
+          'last_run': datetime.datetime.now(),
+          'next_run': (datetime.datetime.now() +
                        datetime.timedelta(seconds=seconds))
         }
         if time_:
@@ -385,8 +393,12 @@ class CronTabber(RequiredConfig):
             class_path, frequency = job_description.split('|')
             time_ = None
         except ValueError:
-            class_path, frequency, time_ = job_description.split('|')
-            self._check_time(time_)
+            try:
+                class_path, frequency, time_ = job_description.split('|')
+                self._check_time(time_)
+            except ValueError:
+                raise JobDescriptionError(job_description)
+
         # because the default is every 1 day, you can write:
         #  path.to.jobclass|04:30
         # to mean 04:30 every day
@@ -394,7 +406,13 @@ class CronTabber(RequiredConfig):
             time_ = frequency
             frequency = '1d'
         seconds = self._convert_frequency(frequency)
-        class_ = class_converter(class_path)
+        if time_ and seconds < 60 * 60 * 24:
+            raise FrequencyDefinitionError(time_)
+
+        try:
+            class_ = class_converter(class_path)
+        except AttributeError, msg:
+            raise JobNotFoundError(msg)
 
         if inspect.ismodule(class_):
             # then it was passed something like "jobs.foo" instead
@@ -419,7 +437,8 @@ class CronTabber(RequiredConfig):
         elif unit == 'd':
             number *= 60 * 60 * 24
         elif unit:
-            raise NotImplementedError(unit)
+            raise FrequencyDefinitionError(unit)
+            #raise NotImplementedError(unit)
         return number
 
     def _check_time(self, value):
@@ -435,6 +454,32 @@ class CronTabber(RequiredConfig):
         except ValueError:
             raise TimeDefinitionError("Invalid definition of time %r" % value)
 
+    def configtest(self):
+        """return true if all configured jobs are configured OK"""
+        # similar to run_all() but don't actually run them
+        failed = 0
+        for each in self.config.jobs:
+            if not self._configtest_one(each):
+                failed += 1
+        return not failed
+
+    def _configtest_one(self, description):
+        try:
+            job_class, seconds, time_ = self._lookup_job(description)
+            if time_:
+                self._check_time(time_)
+                if seconds < 60 * 60 * 24:
+                    raise FrequencyDefinitionError(time_)
+            return True
+        except (JobNotFoundError,
+                JobDescriptionError,
+                FrequencyDefinitionError,
+                TimeDefinitionError), msg:
+            exc_type, exc_value, exc_tb = sys.exc_info()
+            print >>sys.stderr, "Error type:", exc_type
+            print >>sys.stderr, "Error value:", exc_value
+            print >>sys.stderr, ''.join(traceback.format_tb(exc_tb))
+            return False
 
 
 def run():
@@ -467,6 +512,14 @@ def run():
         exclude_from_dump_conf=True,
     )
 
+    definition_source.add_option(
+        name='configtest',
+        default=False,
+        doc='Check that all configured jobs are OK',
+        exclude_from_print_conf=True,
+        exclude_from_dump_conf=True,
+    )
+
     app_name = 'crontabber'
     definition_source.add_aggregation(
         'logger',
@@ -487,21 +540,14 @@ def run():
             tab.list_jobs()
         elif config.get('job'):
             tab.run_one(config['job'], config.get('force'))
+        elif config.get('configtest'):
+            if not tab.configtest():
+                return 1
         else:
             tab.run_all()
 
-#def test_json():
-#    db=JSONJobDatabase()
-#    db.load('foo-orig.json')
-#    db.update({
-#      'foo': {
-#        'next_run': datetime.datetime.utcnow(),
-#        'error': {},
-#        'name': u'FOO'
-#      }
-#    })
-#    db.save('foo.json')
+    return 0
 
 
 if __name__ == '__main__':
-    run()
+    sys.exit(run())
