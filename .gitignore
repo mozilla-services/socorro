@@ -19,3 +19,4 @@ docs/_build/
 cover/
 .vagrant
 crontabber.ini
+socorro/cron/crontabber.json
