@@ -341,6 +341,26 @@ class TestCrontabber(unittest.TestCase):
             infos = [x for x in infos if x.startswith('Ran ')]
             self.assertEqual(infos, infos_before)
 
+    def test_basic_run_job(self):
+        config_manager, json_file = self._setup_config_manager(
+          'socorro.unittest.cron.test_crontabber.BasicJob|7d|03:00\n'
+          'socorro.unittest.cron.test_crontabber.FooJob|1:45'
+        )
+
+        with config_manager.context() as config:
+            tab = crontabber.CronTabber(config)
+            tab.run_all()
+            infos = [x[0][0] for x in config.logger.info.call_args_list]
+            infos = [x for x in infos if x.startswith('Ran ')]
+
+            assert os.path.isfile(json_file)
+            structure = json.load(open(json_file))
+            information = structure['basic-job']
+            next_run = structure['basic-job']['next_run']
+            self.assertTrue('03:00:00' in next_run)
+            next_run = structure['foo']['next_run']
+            self.assertTrue('01:45:00' in next_run)
+
 
 ## Various mock jobs that the tests depend on
 
