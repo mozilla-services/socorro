@@ -1470,11 +1470,14 @@ div.query_removemargin { /* Removes margin from the main content area */
     padding: 0 0 1em 112px;
 }
 #searchform select {
-    width: 12em;
+    width: 13em;
     font-size: 100%;
 }
 #searchform #query_type {
     width: 4em;
+}
+#searchform optgroup option {
+  padding-left: 4px;
 }
 #searchform #range_unit {
     width: 3em;
