@@ -91,8 +91,9 @@ class socorro-base {
     }
 
     exec {
-        '/usr/bin/apt-get update':
-            alias => 'apt-get-update';
+        '/usr/bin/apt-get update && touch /tmp/apt-get-update':
+            alias => 'apt-get-update',
+            creates => '/tmp/apt-get-update';
     }
 
     exec {
@@ -205,7 +206,8 @@ class socorro-python inherits socorro-base {
             timeout => '3600',
             require => Exec['socorro-install'],
             logoutput => on_failure,
-            notify => [Service['supervisor'], Service['apache2']],
+            notify => [Service['supervisor'], Service['apache2'],
+                       Service['memcached']],
             user => 'socorro';
     }
 }
