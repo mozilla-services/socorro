@@ -281,7 +281,7 @@ if (isset($report->sumo_signature) && !empty($report->signature)) { ?>
                                 <?php if ($frame['source_link']): ?>
                                     <a href="<?php out::H($frame['source_link']) ?>"><?php out::H($frame['source_info']) ?></a>
                                 <?php else: ?>
-                                    <?php out::H($frame['source_info']) ?>
+                                    <?php out::H(stripslashes($frame['source_info'])) ?>
                                 <?php endif ?>
                             </td>
                         </tr>
