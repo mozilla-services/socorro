@@ -318,7 +318,7 @@ class Topcrasher_Controller extends Controller {
                     $top_crasher->{'display_previous_percent'} = number_format($top_crasher->previousPercentOfTotal * 100, 2) . "%";
                     $top_crasher->{'display_change_percent'} = number_format($top_crasher->changeInPercentOfTotal * 100, 2) . "%";
                     if(isset($top_crasher->startup_percent) && !empty($top_crasher->startup_percent)) {
-                        $top_crasher->{'startup_crash'} = (round($top_crasher->startup_percent) > 50);
+                        $top_crasher->{'startup_crash'} = (round($top_crasher->startup_percent * 100) > 50);
                     }
                     
                     array_push($signatures, $top_crasher->signature);
@@ -413,7 +413,7 @@ class Topcrasher_Controller extends Controller {
                     $top_crasher->{'display_previous_percent'} = number_format($top_crasher->previousPercentOfTotal * 100, 2) . "%";
                     $top_crasher->{'display_change_percent'} = number_format($top_crasher->changeInPercentOfTotal * 100, 2) . "%";
                     if(isset($top_crasher->startup_percent) && !empty($top_crasher->startup_percent)) {
-                        $top_crasher->{'startup_crash'} = (round($top_crasher->startup_percent) > 50);
+                        $top_crasher->{'startup_crash'} = (round($top_crasher->startup_percent * 100) > 50);
                     }
 
                     array_push($signatures, $top_crasher->signature);
