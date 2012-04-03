@@ -239,6 +239,21 @@ class Report_Model extends Model {
         return $res->hits;
     }
 
+    /**
+     * Calculate frequency of crashes across builds and platforms.
+     */
+    public function queryFrequency($params) {
+        $uri = $this->buildURI($params, 'crashes/frequency');
+        $res = $this->service->get($uri);
+        //~ echo '<pre>',var_dump($uri),'</pre>';
+
+        if (!$res) {
+            return null;
+        }
+
+        return $res->hits;
+    }
+
     private function buildURI($params, $apiEntry)
     {
         $separator = '/';
