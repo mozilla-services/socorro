@@ -4,6 +4,12 @@
     'css/jquery-ui-1.8.16/flick/jquery-ui-1.8.16.custom.css',
     'css/crash_trends.css'), 'screen')?>
     <!--[if IE]><?php echo html::script('js/flot-0.7/excanvas.pack.js') ?><![endif]-->
+    
+    
+    <script type="text/javascript">
+        var json_path = "<?= $data_url ?>";
+    </script>
+    
 <?php slot::end() ?>
 
 <div class="page-heading">
@@ -11,7 +17,7 @@
 </div>
 
 <div class="crash_stats_panel report_criteria">
-    <form name="nightly_crash_trends" id="nightly_crash_trends" action="/" method="get">
+    <form name="nightly_crash_trends" id="nightly_crash_trends" action="<?php echo $data_url ?>" method="get">
         <h3 class="crash_stats_panel_title">Select Report Criteria</h3>
         <div class="error"></div>
         <fieldset class="crash_stats_body">

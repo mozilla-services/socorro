@@ -128,6 +128,7 @@ import socorro.middleware.versions_info_service as versions_info
 import socorro.middleware.products_builds_service as products_builds
 import socorro.middleware.signature_summary_service as signature_summary
 import socorro.middleware.signature_urls_service as signature_urls
+import socorro.middleware.crash_trends_service as crash_trends
 import socorro.middleware.tcbs_service as tcbs
 import socorro.middleware.crashes_comments_service as crashes_comments
 import socorro.middleware.crash_service as crash_new
@@ -160,6 +161,7 @@ servicesList.default = [
     products_builds.ProductsBuilds,
     signature_summary.SignatureSummary,
     signature_urls.SignatureURLs,
+    crash_trends.CrashTrends,
     tcbs.TCBS,
     crashes_comments.CrashesComments,
     crash_new.Crash,
