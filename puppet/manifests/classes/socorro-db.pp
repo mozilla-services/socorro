@@ -103,7 +103,7 @@ class socorro-db inherits socorro-base {
     }
 
     exec {
-        '/usr/bin/psql -c "SELECT backfill_matviews(\'2012-03-02\', \'2012-03-03\'); UPDATE product_versions SET featured_version = true" breakpad':
+        '/usr/bin/psql -c "SELECT backfill_matviews(\'2012-04-02\', \'2012-04-03\'); UPDATE product_versions SET featured_version = true" breakpad':
             alias => 'bootstrap-matviews',
             user => 'postgres',
             onlyif => '/usr/bin/psql -xt breakpad -c "SELECT count(*) FROM product_versions" | grep "count | 0"',
