@@ -284,9 +284,7 @@ class socorro-php inherits socorro-web {
 
         '/data/socorro/htdocs/application/logs':
             require => Exec['socorro-install'],
-            owner => socorro,
-            group => www-data,
-            mode => 664,
+            mode => 777,
             ensure => directory;
 
 # FIXME
