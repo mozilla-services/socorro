@@ -38,8 +38,9 @@ class socorro-db inherits socorro-base {
 
     exec {
        'update-postgres-ppa':
-            command => '/usr/bin/apt-get update',
-            require => Exec['add-postgres-ppa'];
+            command => '/usr/bin/apt-get update && touch /tmp/update-postgres-ppa',
+            require => Exec['add-postgres-ppa'],
+            creates => '/tmp/update-postgres-ppa';
     }
 
     exec {
