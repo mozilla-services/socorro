@@ -14,8 +14,10 @@ import re
 import json
 import copy
 from configman import RequiredConfig, ConfigurationManager, Namespace
-from configman import converters
 from configman.converters import class_converter
+from socorro.database.transaction_executor import (
+  TransactionExecutorWithBackoff, TransactionExecutor)
+
 
 
 class JobNotFoundError(Exception):
@@ -46,10 +48,8 @@ class BaseCronApp(object):
     def run(self):
         raise NotImplementedError("Your fault!")
 
-from socorro.database.transaction_executor import (
-  TransactionExecutorWithBackoff, TransactionExecutor)
 
-class PostgreSQLCronApp(object):
+class PostgreSQLCronApp(BaseCronApp):
 
     def main(self):
         executor = self.config.transaction_executor_class(self.config)
@@ -114,6 +114,7 @@ def job_lister(input_str):
             in input_str.splitlines()
             if x.strip()]
 
+
 def timesince(d, now=None):  # pragma: no cover
     """
     Taken from django.utils.timesince
@@ -168,7 +169,7 @@ def timesince(d, now=None):  # pragma: no cover
     return s
 
 
-def logging_required_config(app_name):
+def logging_required_config(app_name):  # pragma: no cover
     lc = Namespace()
     lc.add_option('syslog_host',
               doc='syslog hostname',
@@ -200,7 +201,8 @@ def logging_required_config(app_name):
     return lc
 
 
-def setup_logger(app_name, config, local_unused, args_unused):
+def setup_logger(app_name, config,
+                 local_unused, args_unused):  # pragma: no cover
     logger = logging.getLogger(app_name)
     logger.setLevel(logging.DEBUG)
     stderr_log = logging.StreamHandler()
@@ -238,7 +240,6 @@ class CronTabber(RequiredConfig):
                                #default=TransactionExecutorWithBackoff,
                                default=TransactionExecutor,
                                doc='a class that will execute transactions')
-
 
     @property
     def database(self):
@@ -406,6 +407,12 @@ class CronTabber(RequiredConfig):
 
             # still here! Then it couldn't be found
             raise JobNotFoundError(job_description)
+        elif '.' in job_description and '|' not in job_description:
+            # e.g. 'some.path.to.JobClass'
+            for each in self.config.jobs:
+                if (each != job_description
+                  and each.startswith(job_description)):
+                    return self._lookup_job(each)
 
         try:
             class_path, frequency = job_description.split('|')
@@ -501,8 +508,7 @@ class CronTabber(RequiredConfig):
             return False
 
 
-
-def run():
+def run():  # pragma: no cover (a bad idea?)
     definition_source = Namespace()
 
     definition_source.add_option(

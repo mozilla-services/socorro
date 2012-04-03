@@ -1,4 +1,3 @@
-from configman import Namespace
 from socorro.cron.crontabber import PostgreSQLCronApp
 
 
@@ -7,4 +6,6 @@ class PGCronApp(PostgreSQLCronApp):
     app_description = 'Does some foo things'
 
     def run(self, connection):
-        print "DOING STUFF in", self.app_name
+        cursor = connection.cursor()
+        cursor.execute('select relname from pg_class')
+        print len(cursor.fetchall()), "relations"

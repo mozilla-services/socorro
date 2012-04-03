@@ -20,6 +20,7 @@ DSN = {
   "database_password": databasePassword.default
 }
 
+
 class TestJSONJobsDatabase(unittest.TestCase):
 
     def setUp(self):
@@ -385,7 +386,8 @@ class TestCrontabber(unittest.TestCase):
             output = new_stdout.getvalue()
             self.assertEqual(output.count('Class:'), 4)
             self.assertEqual(4,
-              len(re.findall('App name:\s+(trouble|basic-job|foo|sad)', output, re.I)))
+              len(re.findall('App name:\s+(trouble|basic-job|foo|sad)',
+                             output, re.I)))
             self.assertEqual(4,
               len(re.findall('No previous run info', output, re.I)))
 
@@ -583,10 +585,12 @@ class TestCrontabber(unittest.TestCase):
             calls = self.psycopg2.mock_calls
             self.assertEqual(calls[-1], mock.call().close())
 
+            self.assertTrue(tab.database['broken-pg-job']['last_error'])
+            self.assertTrue('ProgrammingError' in
+                      tab.database['broken-pg-job']['last_error']['traceback'])
 
 
 ## Various mock jobs that the tests depend on
-
 class _Job(crontabber.BaseCronApp):
 
     def run(self):
@@ -634,8 +638,10 @@ class PostgresSampleJob(_PGJob):
         cursor.execute('INSERT INTO foo (increment) VALUES (1)')
         super(PostgresSampleJob, self).run(connection)
 
+
 class BrokenPostgresSampleJob(_PGJob):
     app_name = 'broken-pg-job'
 
     def run(self, connection):
-        raise psycopg2.exceptions.ProgrammingError("shit!")
+        import psycopg2
+        raise psycopg2.ProgrammingError("shit!")
