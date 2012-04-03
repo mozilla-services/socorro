@@ -20,7 +20,6 @@ DSN = {
   "database_password": databasePassword.default
 }
 
-
 class TestJSONJobsDatabase(unittest.TestCase):
 
     def setUp(self):
@@ -112,8 +111,13 @@ class TestCrontabber(unittest.TestCase):
 
     def setUp(self):
         self.tempdir = tempfile.mkdtemp()
+        self.psycopg2_patcher = mock.patch('psycopg2.connect')
+        self.mocked_connection = mock.Mock()
+        self.psycopg2 = self.psycopg2_patcher.start()
+        #self.psycopg2.connect.return_value = self.mocked_connection
 
     def tearDown(self):
+        self.psycopg2_patcher.stop()
         if os.path.isdir(self.tempdir):
             shutil.rmtree(self.tempdir)
 
@@ -135,7 +139,7 @@ class TestCrontabber(unittest.TestCase):
                 'logger': mock_logging,
                 'jobs': jobs_string,
                 'database': json_file,
-            }]
+            }, DSN]
         )
         return config_manager, json_file
 
@@ -544,6 +548,41 @@ class TestCrontabber(unittest.TestCase):
             self.assertEqual(output.count('FrequencyDefinitionError'), 2)
             self.assertTrue('23:59' in output)
 
+    def test_execute_postgres_based_job(self):
+        config_manager, json_file = self._setup_config_manager(
+          'socorro.unittest.cron.test_crontabber.PostgresSampleJob|1d'
+        )
+
+        with config_manager.context() as config:
+            tab = crontabber.CronTabber(config)
+            tab.run_all()
+            infos = [x[0][0] for x in config.logger.info.call_args_list]
+            infos = [x for x in infos if x.startswith('Ran ')]
+            self.assertTrue('Ran PostgresSampleJob' in infos)
+            self.assertTrue(self.psycopg2.called)
+
+            calls = self.psycopg2.mock_calls
+            self.assertEqual(calls[1], mock.call().cursor())
+            self.assertEqual(calls[2],  mock.call().cursor()
+              .execute('INSERT INTO foo (increment) VALUES (1)'))
+            self.assertEqual(calls[3], mock.call().commit())
+            self.assertEqual(calls[4], mock.call().close())
+
+    def test_execute_failing_postgres_based_job(self):
+        config_manager, json_file = self._setup_config_manager(
+          'socorro.unittest.cron.test_crontabber.BrokenPostgresSampleJob|1d'
+        )
+
+        with config_manager.context() as config:
+            tab = crontabber.CronTabber(config)
+            tab.run_all()
+            infos = [x[0][0] for x in config.logger.info.call_args_list]
+            infos = [x for x in infos if x.startswith('Ran ')]
+            self.assertTrue('Ran PostgresSampleJob' not in infos)
+            self.assertTrue(self.psycopg2.called)
+            calls = self.psycopg2.mock_calls
+            self.assertEqual(calls[-1], mock.call().close())
+
 
 
 ## Various mock jobs that the tests depend on
@@ -553,6 +592,12 @@ class _Job(crontabber.BaseCronApp):
     def run(self):
         assert self.app_name
         self.config.logger.info("Ran %s" % self.__class__.__name__)
+
+
+class _PGJob(crontabber.PostgreSQLCronApp, _Job):
+
+    def run(self, connection):
+        _Job.run(self)
 
 
 class BasicJob(_Job):
@@ -579,3 +624,18 @@ class TroubleJob(_Job):
 class SadJob(_Job):
     app_name = 'sad'
     depends_on = 'trouble',  # <-- note: a tuple
+
+
+class PostgresSampleJob(_PGJob):
+    app_name = 'sample-pg-job'
+
+    def run(self, connection):
+        cursor = connection.cursor()
+        cursor.execute('INSERT INTO foo (increment) VALUES (1)')
+        super(PostgresSampleJob, self).run(connection)
+
+class BrokenPostgresSampleJob(_PGJob):
+    app_name = 'broken-pg-job'
+
+    def run(self, connection):
+        raise psycopg2.exceptions.ProgrammingError("shit!")

@@ -14,6 +14,7 @@ import re
 import json
 import copy
 from configman import RequiredConfig, ConfigurationManager, Namespace
+from configman import converters
 from configman.converters import class_converter
 
 
@@ -33,14 +34,26 @@ class JobDescriptionError(Exception):
     pass
 
 
-class BaseCronApp(RequiredConfig):
+class BaseCronApp(object):
     """The base class from which Socorro apps are based"""
 
     def __init__(self, config):
         self.config = config
 
+    def main(self):
+        self.run()
+
     def run(self):
         raise NotImplementedError("Your fault!")
+
+from socorro.database.transaction_executor import (
+  TransactionExecutorWithBackoff, TransactionExecutor)
+
+class PostgreSQLCronApp(object):
+
+    def main(self):
+        executor = self.config.transaction_executor_class(self.config)
+        executor(self.run)
 
 
 class JSONJobDatabase(dict):
@@ -100,7 +113,6 @@ def job_lister(input_str):
     return [x.strip() for x
             in input_str.splitlines()
             if x.strip()]
-
 
 def timesince(d, now=None):  # pragma: no cover
     """
@@ -212,7 +224,7 @@ class CronTabber(RequiredConfig):
     required_config.add_option(
         name='jobs',
         default=[],
-        doc='List of jobs and their frequency separated by `:`',
+        doc='List of jobs and their frequency separated by `|`',
         from_string_converter=job_lister
     )
 
@@ -221,6 +233,12 @@ class CronTabber(RequiredConfig):
         default='./crontabbers.json',
         doc='Location of file where job execution logs are stored',
     )
+
+    required_config.add_option('transaction_executor_class',
+                               #default=TransactionExecutorWithBackoff,
+                               default=TransactionExecutor,
+                               doc='a class that will execute transactions')
+
 
     @property
     def database(self):
@@ -343,7 +361,7 @@ class CronTabber(RequiredConfig):
     def _run_job(self, class_):
         # here we go!
         instance = class_(self.config)
-        instance.run()
+        instance.main()
 
     def _log_run(self, class_, seconds, time_, exc_type, exc_value, exc_tb):
         assert inspect.isclass(class_)
@@ -471,6 +489,7 @@ class CronTabber(RequiredConfig):
                 if seconds < 60 * 60 * 24:
                     raise FrequencyDefinitionError(time_)
             return True
+
         except (JobNotFoundError,
                 JobDescriptionError,
                 FrequencyDefinitionError,
@@ -480,6 +499,7 @@ class CronTabber(RequiredConfig):
             print >>sys.stderr, "Error value:", exc_value
             print >>sys.stderr, ''.join(traceback.format_tb(exc_tb))
             return False
+
 
 
 def run():
