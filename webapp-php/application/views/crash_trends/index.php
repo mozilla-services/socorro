@@ -60,7 +60,6 @@
    'js/flot-0.7/jquery.flot.pack.js',
    'js/flot-0.7/jquery.flot.stack.js',
    'js/jquery/plugins/ui/jquery-ui-1.8.16.custom.min.js',
-   'js/jquery/plugins/jquery.mockjax.js',
    'js/socorro/utils.js',
    'js/socorro/crash_trends.js'
 ))?>

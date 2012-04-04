@@ -1,52 +1,5 @@
 /*global socorro:false */
 $(function() {
-    
-    /* 
-     * Mock for drawCrashTrends
-     * Crash data for build one to seven days old are displayed as separate bar segments but,
-     * crash data for builds eight days and over are binned togther and displayed as the last bar segment.
-     * ----- PLEASE REMOVE ONE MOCK IS NO LONGER NEEDED ------
-     */
-    $.mockjax({
-        url: "/webservice/nightlytrends",
-        responseTime: 750,
-        responseText: {
-            "nightlyCrashes" : [
-                {
-                    label: "1 Day", 
-                    data: [[518, 0], [555, 1.5], [493, 3], [416, 4.5], [1715, 6], [1132, 7.5], [1121, 9]]
-                },
-                { 
-                    label: "2 Days", 
-                    data: [[1101, 0], [1099, 1.5], [1234, 3], [945, 4.5], [2330, 6], [3174, 7.5], [2310, 9]] 
-                },
-                { 
-                    label: "3 Days", 
-                    data: [[1215, 0], [1265, 1.5], [1370, 3], [1076, 4.5], [2435, 6], [3267, 7.5], [2764, 9]] 
-                },
-                { 
-                    label: "4 Days", 
-                    data: [[1215, 0], [1265, 1.5], [1370, 3], [1076, 4.5], [2435, 6], [3267, 7.5], [2764, 9]] 
-                },
-                { 
-                    label: "5 Days", 
-                    data: [[1215, 0], [1265, 1.5], [1370, 3], [1076, 4.5], [2435, 6], [3267, 7.5], [2764, 9]] 
-                },
-                { 
-                    label: "6 Days", 
-                    data: [[1215, 0], [1265, 1.5], [1370, 3], [1076, 4.5], [2435, 6], [3267, 7.5], [2764, 9]] 
-                },
-                { 
-                    label: "7 Days", 
-                    data: [[1215, 0], [1265, 1.5], [1370, 3], [1076, 4.5], [2435, 6], [3267, 7.5], [2764, 9]] 
-                },
-                { 
-                    label: "8+ Days", 
-                    data: [[1215, 0], [1265, 1.5], [1370, 3], [1076, 4.5], [2435, 6], [3267, 7.5], [2764, 9]] 
-                }
-            ]
-        }
-    });
     "use strict";
     var fromDate, toDate,
     graph, graphData,
@@ -109,7 +62,7 @@ $(function() {
             }
         };
         
-        graphData = $.getJSON("/webservice/nightlytrends", function(data) {
+        graphData = $.getJSON(json_path, function(data) {
             // remove the loading animation
             $("#loading").remove();
             
