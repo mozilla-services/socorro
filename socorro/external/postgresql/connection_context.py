@@ -42,7 +42,7 @@ class ConnectionContext(RequiredConfig):
     )
 
     #--------------------------------------------------------------------------
-    def __init__(self, config, local_config):
+    def __init__(self, config, local_config=None):
         """Initialize the parts needed to start making database connections
 
         parameters:
@@ -52,6 +52,8 @@ class ConnectionContext(RequiredConfig):
             local_config - this is the namespace within the complete config
                            where the actual database parameters are found"""
         super(ConnectionContext, self).__init__()
+        if local_config is None:
+            local_config = config
         self.dsn = ("host=%(database_host)s "
                     "dbname=%(database_name)s "
                     "port=%(database_port)s "
