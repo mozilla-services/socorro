@@ -3,47 +3,28 @@ import psycopg2.extensions
 from configman.config_manager import RequiredConfig
 from configman import Namespace
 
-from socorro.external.postgresql.connection_context import ConnectionContext
-
-
-#------------------------------------------------------------------------------
-def connection_context_factory(config, local_config, args):
-    """instantiate a transaction object that will create database
-    connections
-
-    This function will be associated with an Aggregation object.  It will
-    look at the value of the 'database' option which is a reference to one
-    of Postgres or PostgresPooled from above.  This function will
-    instantiate the class
-    """
-    return local_config.database_class(config, local_config)
-
 
 #==============================================================================
 class TransactionExecutor(RequiredConfig):
     required_config = Namespace()
 
-    # setup the option that will specify which database connector
-    # will be used.
-    required_config.add_option('database_class',
-                               default=ConnectionContext,
-                               doc='the database connection source')
-
-    # add an aggregator whose function will set up the database_class above
-    required_config.add_aggregation(
-        name='db_connection_context',
-        function=connection_context_factory)
-
     #--------------------------------------------------------------------------
-    def __init__(self, config):
+    def __init__(self, config, db_conn_context_source,
+                 abandonment_callback=None):
         self.config = config
+        self.db_conn_context_source = db_conn_context_source
+        if abandonment_callback:
+            self.quit_check = abandonment_callback
+        else:
+            self.quit_check = lambda: False
 
     #--------------------------------------------------------------------------
     def __call__(self, function, *args, **kwargs):
         """execute a function within the context of a transaction"""
-        with self.config.db_connection_context() as connection:
+        self.quit_check()
+        with self.db_conn_context_source() as connection:
             try:
-                function(connection, *args, **kwargs)
+                result = function(connection, *args, **kwargs)
                 connection.commit()
             except:
                 if connection.get_transaction_status() == \
@@ -54,9 +35,11 @@ class TransactionExecutor(RequiredConfig):
                   exc_info=True)
                 raise
 
+        return result
+
 
 #==============================================================================
-class TransactionExecutorWithBackoff(TransactionExecutor):
+class TransactionExecutorWithInfiniteBackoff(TransactionExecutor):
     # back off times
     required_config = Namespace()
     required_config.add_option('backoff_delays',
@@ -67,6 +50,15 @@ class TransactionExecutorWithBackoff(TransactionExecutor):
     required_config.add_option('wait_log_interval',
                                default=1,
                                doc='seconds between log during retries')
+
+    #--------------------------------------------------------------------------
+    def __init__(self, config, db_conn_context_source,
+                 abandonment_callback=None):
+        super(TransactionExecutorWithInfiniteBackoff, self).__init__(
+          config,
+          db_conn_context_source,
+          abandonment_callback
+        )
 
     #--------------------------------------------------------------------------
     def backoff_generator(self):
@@ -88,38 +80,44 @@ class TransactionExecutorWithBackoff(TransactionExecutor):
                 not x % self.config.wait_log_interval):
                 self.config.logger.debug(
                   '%s: %dsec of %dsec' % (wait_reason, x, seconds))
+            self.quit_check()
             time.sleep(1.0)
 
     #--------------------------------------------------------------------------
     def __call__(self, function, *args, **kwargs):
         """execute a function within the context of a transaction"""
-        connection_context = self.config.db_connection_context
         for wait_in_seconds in self.backoff_generator():
             try:
-                # connection_context is an instance of a
+                self.quit_check()
+                # self.db_conn_context_source is an instance of a
                 # wrapper class on the actual connection driver
-                with connection_context() as connection:
+                with self.db_conn_context_source() as connection:
                     try:
-                        function(connection, *args, **kwargs)
+                        result = function(connection, *args, **kwargs)
                         connection.commit()
-                        break
+                        return result
                     except:
                         if connection.get_transaction_status() == \
                           psycopg2.extensions.TRANSACTION_STATUS_INTRANS:
                             connection.rollback()
                         raise
-            #except psycopg2.ProgrammingError, msg:
-            except connection_context.conditional_exceptions, msg:
-                if not connection_context.is_operational_exception(msg):
+            except self.db_conn_context_source.conditional_exceptions, x:
+                # these exceptions may or may not be retriable
+                # the test is for is a last ditch effort to see if
+                # we can retry
+                if not self.db_conn_context_source.is_operational_exception(x):
+                    self.config.logger.critical(
+                      'Unrecoverable transaction error',
+                       exc_info=True
+                    )
                     raise
-
-                self.config.logger.warning(
-                  'Exceptional database ProgrammingError exception',
+                self.config.logger.critical(
+                  'transaction error eligible for retry',
                   exc_info=True)
 
-            except connection_context.operational_exceptions:
-                self.config.logger.warning(
-                  'Database exception',
+            except self.db_conn_context_source.operational_exceptions:
+                self.config.logger.critical(
+                  'transaction error eligible for retry',
                   exc_info=True)
             self.config.logger.debug(
               'retry in %s seconds' % wait_in_seconds
@@ -128,3 +126,14 @@ class TransactionExecutorWithBackoff(TransactionExecutor):
               wait_in_seconds,
               'waiting for retry after failure in transaction'
             )
+        raise
+
+
+#==============================================================================
+class TransactionExecutorWithLimitedBackoff(TransactionExecutor):
+    #--------------------------------------------------------------------------
+    def backoff_generator(self):
+        """Generate a series of integers used for the length of the sleep
+        between retries."""
+        for x in self.config.backoff_delays:
+            yield x

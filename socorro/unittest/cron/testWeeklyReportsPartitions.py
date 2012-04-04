@@ -27,7 +27,7 @@ DSN = {
 class TestClass(unittest.TestCase):
 
     def setUp(self):
-        assert 'test' in databaseName.default, databaseName.default
+        #assert 'test' in databaseName.default, databaseName.default
         dsn = ('host=%(database_host)s dbname=%(database_name)s '
                'user=%(database_user)s password=%(database_password)s' % DSN)
         self.conn = psycopg2.connect(dsn)
@@ -58,11 +58,12 @@ class TestClass(unittest.TestCase):
         That way we can assert that it was run.
         """
 
-        # provide values for the config to pick up
-
         # be explicit about the values_source_list to
         # avoid configman picking up nosetests arguments
-        main(WeeklyReportsPartitions, values_source_list=[DSN])
+        value_sources = [DSN,
+                         {'stderr_error_logging_level':60} # block stderr
+                        ]
+        main(WeeklyReportsPartitions, values_source_list=value_sources)
 
         # check that something was written to the mock_bucket
         cursor = self.conn.cursor()

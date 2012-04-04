@@ -1,9 +1,10 @@
 import unittest
 import psycopg2
-from configman import Namespace, ConfigurationManager
+from configman import Namespace, ConfigurationManager, class_converter
 import socorro.database.transaction_executor
 from socorro.database.transaction_executor import (
-  TransactionExecutor, TransactionExecutorWithBackoff)
+  TransactionExecutor, TransactionExecutorWithInfiniteBackoff)
+
 from socorro.external.postgresql.connection_context import ConnectionContext
 
 
@@ -22,6 +23,7 @@ class MockLogging:
         self.debugs = []
         self.warnings = []
         self.errors = []
+        self.criticals = []
 
     def debug(self, *args, **kwargs):
         self.debugs.append((args, kwargs))
@@ -31,6 +33,9 @@ class MockLogging:
 
     def error(self, *args, **kwargs):
         self.errors.append((args, kwargs))
+
+    def critical(self, *args, **kwargs):
+        self.criticals.append((args, kwargs))
 
 
 class MockConnection(object):
@@ -73,16 +78,23 @@ class TestTransactionExecutor(unittest.TestCase):
           default=TransactionExecutor,
           doc='a class that will execute transactions'
         )
+        required_config.add_option(
+          'database_class',
+          default=MockConnectionContext,
+          from_string_converter=class_converter
+        )
 
         config_manager = ConfigurationManager(
           [required_config],
           app_name='testapp',
           app_version='1.0',
           app_description='app description',
-          values_source_list=[{'database_class': MockConnectionContext}],
+          values_source_list=[],
         )
         with config_manager.context() as config:
-            executor = config.transaction_executor_class(config)
+            mocked_context = config.database_class(config)
+            executor = config.transaction_executor_class(config,
+                                                         mocked_context)
             _function_calls = []  # some mutable
 
             def mock_function(connection):
@@ -101,6 +113,12 @@ class TestTransactionExecutor(unittest.TestCase):
           default=TransactionExecutor,
           doc='a class that will execute transactions'
         )
+        required_config.add_option(
+          'database_class',
+          default=MockConnectionContext,
+          from_string_converter=class_converter
+        )
+
         mock_logging = MockLogging()
         required_config.add_option('logger', default=mock_logging)
 
@@ -109,10 +127,12 @@ class TestTransactionExecutor(unittest.TestCase):
           app_name='testapp',
           app_version='1.0',
           app_description='app description',
-          values_source_list=[{'database_class': MockConnectionContext}],
+          values_source_list=[],
         )
         with config_manager.context() as config:
-            executor = config.transaction_executor_class(config)
+            mocked_context = config.database_class(config)
+            executor = config.transaction_executor_class(config,
+                                                         mocked_context)
 
             def mock_function(connection):
                 assert isinstance(connection, MockConnection)
@@ -131,6 +151,12 @@ class TestTransactionExecutor(unittest.TestCase):
           default=TransactionExecutor,
           doc='a class that will execute transactions'
         )
+        required_config.add_option(
+          'database_class',
+          default=MockConnectionContext,
+          from_string_converter=class_converter
+        )
+
         mock_logging = MockLogging()
         required_config.add_option('logger', default=mock_logging)
 
@@ -139,10 +165,12 @@ class TestTransactionExecutor(unittest.TestCase):
           app_name='testapp',
           app_version='1.0',
           app_description='app description',
-          values_source_list=[{'database_class': MockConnectionContext}],
+          values_source_list=[],
         )
         with config_manager.context() as config:
-            executor = config.transaction_executor_class(config)
+            mocked_context = config.database_class(config)
+            executor = config.transaction_executor_class(config,
+                                                         mocked_context)
 
             def mock_function(connection):
                 assert isinstance(connection, MockConnection)
@@ -160,20 +188,28 @@ class TestTransactionExecutor(unittest.TestCase):
         required_config = Namespace()
         required_config.add_option(
           'transaction_executor_class',
-          default=TransactionExecutorWithBackoff,
+          default=TransactionExecutorWithInfiniteBackoff,
           #default=TransactionExecutor,
           doc='a class that will execute transactions'
         )
+        required_config.add_option(
+          'database_class',
+          default=MockConnectionContext,
+          from_string_converter=class_converter
+        )
+
 
         config_manager = ConfigurationManager(
           [required_config],
           app_name='testapp',
           app_version='1.0',
           app_description='app description',
-          values_source_list=[{'database_class': MockConnectionContext}],
+          values_source_list=[],
         )
         with config_manager.context() as config:
-            executor = config.transaction_executor_class(config)
+            mocked_context = config.database_class(config)
+            executor = config.transaction_executor_class(config,
+                                                         mocked_context)
             _function_calls = []  # some mutable
 
             def mock_function(connection):
@@ -189,10 +225,16 @@ class TestTransactionExecutor(unittest.TestCase):
         required_config = Namespace()
         required_config.add_option(
           'transaction_executor_class',
-          default=TransactionExecutorWithBackoff,
+          default=TransactionExecutorWithInfiniteBackoff,
           #default=TransactionExecutor,
           doc='a class that will execute transactions'
         )
+        required_config.add_option(
+          'database_class',
+          default=MockConnectionContext,
+          from_string_converter=class_converter
+        )
+
 
         mock_logging = MockLogging()
         required_config.add_option('logger', default=mock_logging)
@@ -202,11 +244,12 @@ class TestTransactionExecutor(unittest.TestCase):
           app_name='testapp',
           app_version='1.0',
           app_description='app description',
-          values_source_list=[{'database_class': MockConnectionContext,
-                               'backoff_delays': [2, 4, 6, 10, 15]}],
+          values_source_list=[{'backoff_delays': [2, 4, 6, 10, 15]}],
         )
         with config_manager.context() as config:
-            executor = config.transaction_executor_class(config)
+            mocked_context = config.database_class(config)
+            executor = config.transaction_executor_class(config,
+                                                         mocked_context)
             _function_calls = []  # some mutable
 
             _sleep_count = []
@@ -233,8 +276,8 @@ class TestTransactionExecutor(unittest.TestCase):
                 self.assertTrue(_function_calls)
                 self.assertEqual(commit_count, 1)
                 self.assertEqual(rollback_count, 0)
-                self.assertTrue(mock_logging.warnings)
-                self.assertEqual(len(mock_logging.warnings), 5)
+                self.assertTrue(mock_logging.criticals)
+                self.assertEqual(len(mock_logging.criticals), 5)
                 self.assertTrue(len(_sleep_count) > 10)
             finally:
                 socorro.database.transaction_executor.time.sleep = _orig_sleep
@@ -243,10 +286,16 @@ class TestTransactionExecutor(unittest.TestCase):
         required_config = Namespace()
         required_config.add_option(
           'transaction_executor_class',
-          default=TransactionExecutorWithBackoff,
+          default=TransactionExecutorWithInfiniteBackoff,
           #default=TransactionExecutor,
           doc='a class that will execute transactions'
         )
+        required_config.add_option(
+          'database_class',
+          default=MockConnectionContext,
+          from_string_converter=class_converter
+        )
+
 
         mock_logging = MockLogging()
         required_config.add_option('logger', default=mock_logging)
@@ -256,11 +305,12 @@ class TestTransactionExecutor(unittest.TestCase):
           app_name='testapp',
           app_version='1.0',
           app_description='app description',
-          values_source_list=[{'database_class': MockConnectionContext,
-                               'backoff_delays': [2, 4, 6, 10, 15]}],
+          values_source_list=[{'backoff_delays': [2, 4, 6, 10, 15]}],
         )
         with config_manager.context() as config:
-            executor = config.transaction_executor_class(config)
+            mocked_context = config.database_class(config)
+            executor = config.transaction_executor_class(config,
+                                                         mocked_context)
             _function_calls = []  # some mutable
 
             _sleep_count = []
@@ -289,8 +339,8 @@ class TestTransactionExecutor(unittest.TestCase):
                 self.assertTrue(_function_calls)
                 self.assertEqual(commit_count, 1)
                 self.assertEqual(rollback_count, 5)
-                self.assertTrue(mock_logging.warnings)
-                self.assertEqual(len(mock_logging.warnings), 5)
+                self.assertTrue(mock_logging.criticals)
+                self.assertEqual(len(mock_logging.criticals), 5)
                 self.assertTrue(len(_sleep_count) > 10)
             finally:
                 socorro.database.transaction_executor.time.sleep = _orig_sleep
@@ -299,9 +349,15 @@ class TestTransactionExecutor(unittest.TestCase):
         required_config = Namespace()
         required_config.add_option(
           'transaction_executor_class',
-          default=TransactionExecutorWithBackoff,
+          default=TransactionExecutorWithInfiniteBackoff,
           doc='a class that will execute transactions'
         )
+        required_config.add_option(
+          'database_class',
+          default=MockConnectionContext,
+          from_string_converter=class_converter
+        )
+
 
         mock_logging = MockLogging()
         required_config.add_option('logger', default=mock_logging)
@@ -311,11 +367,12 @@ class TestTransactionExecutor(unittest.TestCase):
           app_name='testapp',
           app_version='1.0',
           app_description='app description',
-          values_source_list=[{'database_class': MockConnectionContext,
-                               'backoff_delays': [2, 4, 6, 10, 15]}],
+          values_source_list=[{'backoff_delays': [2, 4, 6, 10, 15]}],
         )
         with config_manager.context() as config:
-            executor = config.transaction_executor_class(config)
+            mocked_context = config.database_class(config)
+            executor = config.transaction_executor_class(config,
+                                                         mocked_context)
             _function_calls = []  # some mutable
 
             _sleep_count = []
@@ -346,8 +403,8 @@ class TestTransactionExecutor(unittest.TestCase):
                 self.assertTrue(_function_calls)
                 self.assertEqual(commit_count, 1)
                 self.assertEqual(rollback_count, 5)
-                self.assertTrue(mock_logging.warnings)
-                self.assertEqual(len(mock_logging.warnings), 5)
+                self.assertTrue(mock_logging.criticals)
+                self.assertEqual(len(mock_logging.criticals), 5)
                 self.assertTrue(len(_sleep_count) > 10)
             finally:
                 socorro.database.transaction_executor.time.sleep = _orig_sleep
@@ -355,7 +412,9 @@ class TestTransactionExecutor(unittest.TestCase):
         # this time, simulate an actual code bug where a callable function
         # raises a ProgrammingError() exception by, for example, a syntax error
         with config_manager.context() as config:
-            executor = config.transaction_executor_class(config)
+            mocked_context = config.database_class(config)
+            executor = config.transaction_executor_class(config,
+                                                         mocked_context)
 
             def mock_function_developer_mistake(connection):
                 assert isinstance(connection, MockConnection)
