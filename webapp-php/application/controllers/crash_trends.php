@@ -47,23 +47,21 @@ class Crash_Trends_Controller extends Controller {
                                                             $params['start_date'],
                                                             $params['end_date']);
         
-        
         $formatted = array();
         $initial_arr = array('0' => 0, '1' => 0, '2' => 0, '3' => 0, '4' => 0, '5' => 0, '6' => 0, '7' => 0, '8' => 0);
         foreach($values as $value)
         {
-            if(!isset($formatted[$value->build_date])) {
+            if(!isset($formatted[$value->report_date])) {
                 // Initialize a particular build date's data array
-                $formatted[$value->build_date] = $initial_arr;
+                $formatted[$value->report_date] = $initial_arr;
             }
             
             if($value->days_out >= 8) {
-                $formatted[$value->build_date]['8'] += $value->report_count;
+                $formatted[$value->report_date]['8'] += $value->report_count;
             } else {
-                $formatted[$value->build_date][$value->days_out] += $value->report_count;
+                $formatted[$value->report_date][$value->days_out] += $value->report_count;
             }
         }
-        
         ksort($formatted);
 
         #echo json_encode($formatted);
@@ -78,8 +76,14 @@ class Crash_Trends_Controller extends Controller {
                 $increment += '1.5';
             }
             
+            // Make it so that the report displays properly.
+            if($k == 8) {
+                $k = '8+';
+            }
+            
             $graph_format[] = array('label' => $k . ' Days', 'data' => $data_array);
         }
+        
         
         $graph_format = array('nightlyCrashes' => $graph_format);
         
