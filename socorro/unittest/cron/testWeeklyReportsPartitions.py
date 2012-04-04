@@ -27,7 +27,7 @@ DSN = {
 class TestClass(unittest.TestCase):
 
     def setUp(self):
-        #assert 'test' in databaseName.default, databaseName.default
+        assert 'test' in databaseName.default, databaseName.default
         dsn = ('host=%(database_host)s dbname=%(database_name)s '
                'user=%(database_user)s password=%(database_password)s' % DSN)
         self.conn = psycopg2.connect(dsn)

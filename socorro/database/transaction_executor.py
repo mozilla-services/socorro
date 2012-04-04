@@ -26,6 +26,7 @@ class TransactionExecutor(RequiredConfig):
             try:
                 result = function(connection, *args, **kwargs)
                 connection.commit()
+                return result
             except:
                 if connection.get_transaction_status() == \
                   psycopg2.extensions.TRANSACTION_STATUS_INTRANS:
@@ -34,8 +35,6 @@ class TransactionExecutor(RequiredConfig):
                   'Exception raised during transaction',
                   exc_info=True)
                 raise
-
-        return result
 
 
 #==============================================================================
@@ -50,15 +49,6 @@ class TransactionExecutorWithInfiniteBackoff(TransactionExecutor):
     required_config.add_option('wait_log_interval',
                                default=1,
                                doc='seconds between log during retries')
-
-    #--------------------------------------------------------------------------
-    def __init__(self, config, db_conn_context_source,
-                 abandonment_callback=None):
-        super(TransactionExecutorWithInfiniteBackoff, self).__init__(
-          config,
-          db_conn_context_source,
-          abandonment_callback
-        )
 
     #--------------------------------------------------------------------------
     def backoff_generator(self):
@@ -130,7 +120,8 @@ class TransactionExecutorWithInfiniteBackoff(TransactionExecutor):
 
 
 #==============================================================================
-class TransactionExecutorWithLimitedBackoff(TransactionExecutor):
+class TransactionExecutorWithLimitedBackoff(
+                                       TransactionExecutorWithInfiniteBackoff):
     #--------------------------------------------------------------------------
     def backoff_generator(self):
         """Generate a series of integers used for the length of the sleep
