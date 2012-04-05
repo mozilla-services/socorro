@@ -30,7 +30,6 @@ However, it can't be run as daemon. It actually needs to be run by
 UNIX ``crontab`` every, say, 5 minutes. So instead of your ``crontab``
 being a huge list of jobs at different times, all you need is this::
 
-
     */5 * * * * PYTHONPATH="..." socorro/cron/crontabber.py
 
 That's all you need! Obviously the granularity of ``crontabber`` is
@@ -59,7 +58,9 @@ that like this::
     ./crontabber.py --job=BarCronApp --force
 
 Dependencies inside the cron apps are defined by settings a class
-attribute on the cron app. In this example, since ``BarCronApp``
+attribute on the cron app. The attribute is called ``depends_on`` and
+its value can be a string, a tuple or a list.
+In this example, since ``BarCronApp``
 depends on ``FooCronApp`` it's class would look something like this::
 
     from socorro.cron.crontabber import BaseCronApp
@@ -67,6 +68,7 @@ depends on ``FooCronApp`` it's class would look something like this::
     class BarCronApp(BaseCronApp):
         app_name = 'BarCronApp'
         app_description = 'Does some bar things'
+	depends_on = ('FooCronApp',)
 
         def run(self):
             ...
@@ -101,7 +103,7 @@ Manual intervention
 
 First of all, to add a new job all you need to do is add it to the
 config file that ``crontabber`` is reading from. Thanks to being a
-``crontabber`` application it automatically picks up configurations
+``configman`` application it automatically picks up configurations
 from files called ``crontabber.ini``, ``crontabber.conf`` or
 ``crontabber.json``. To create a new config file, use
 ``admin.dump_config`` like this::
@@ -114,9 +116,37 @@ in the JSON database too. If any of your cron apps have an error you
 can see it with::
 
     python socorro/cron/crontabber.py --list-jobs
+    
+Here's a sample output::
+
+    === JOB ========================================================================
+    Class:       socorro.cron.jobs.foo.FooCronApp
+    App name:    foo
+    Frequency:   12h
+    Last run:    2012-04-05 14:49:56  (1 minute ago)
+    Next run:    2012-04-06 02:49:56  (in 11 hours, 58 minutes)
+
+    === JOB ========================================================================
+    Class:       socorro.cron.jobs.bar.BarCronApp
+    App name:    bar
+    Frequency:   1d
+    Last run:    2012-04-05 14:49:56  (1 minute ago)
+    Next run:    2012-04-06 14:49:56  (in 23 hours, 58 minutes)
+    Error!!      (1 times)
+      File "socorro/cron/crontabber.py", line 316, in run_one
+        self._run_job(job_class)
+      File "socorro/cron/crontabber.py", line 369, in _run_job
+        instance.main()
+      File "/Use[snip]orro/socorro/cron/crontabber.py", line 47, in main
+        self.run()
+      File "/Use[snip]orro/socorro/cron/jobs/bar.py", line 10, in run
+        raise NameError('doesnotexist')    
 
 It will only keep the latest error but it will include an
-error count that tells you how many times it has tried and failed.
+error count that tells you how many times it has tried and failed. The
+error count increments every time **any** error happens and is reset
+once no error happens. So, only the latest error is kept and to find
+out about past error you have to inspect the log files. 
 
 NOTE: If a cron app that is configured to run every 2 days runs into
 an error; it will try to run again in 2 days.
@@ -159,3 +189,66 @@ with::
     python socorro/cron/crontabber.py --configtest
 
 which will do nothing if all is OK.
+
+Timezone and UTC
+----------------
+
+No. There is no timezone in any of the dates and times in
+``crontabber``. All is assumed local time. I.e. whatever the server
+it's running on is using. 
+
+The reason for this is the ability to specify exactly when something
+should be run. So if you want something to run at exactly 3AM every
+day, that's 3AM in relation to where the server is located.
+
+
+Writing cron apps (aka. jobs)
+-----------------------------
+
+Because of the configurable nature of the ``crontabber`` the actual
+cron apps can be located anywhere. For example, if it's related to
+``HBase`` it could for example be in
+``socorro/external/hbase/mycronapp.py``. However, for the most part
+it's probably a good idea to write them in ``socorro/cron/jobs/`` and
+write one class per file to make it clear. There are already some
+"sample apps" in there that does nothing except serving as good
+examples. With time, we can hopefully delete these as other, real
+apps, can work as examples and inspiration.
+
+The most common apps will be execution of certain specific pieces of
+SQL against the PostgreSQL database. For those, the
+``socorro/cron/jobs/pgjob.py`` example is good to look at. At the time
+of writing it looks like this::
+
+    from socorro.cron.crontabber import PostgreSQLCronApp
+
+    class PGCronApp(PostgreSQLCronApp):
+        app_name = 'pg-job'
+        app_description = 'Does some foo things'
+
+        def run(self, connection):
+            cursor = connection.cursor()
+            cursor.execute('select relname from pg_class')
+
+Let's pick that a part a bit...
+The most important difference is the different base class. Unlike the
+``BaseCronApp`` class, this one is executing the ``run()`` method with
+a connection instance as the one and only parameter. That connection
+will **automatically take care of transactions!** That means that you
+**don't have to** run something ``connection.commit()`` and if you
+want the transaction to roll back, all you have to do is raise an
+error. For example::
+
+        def run(self, connection):
+            cursor = connection.cursor()
+            today = datetime.datetime.today()
+            cursor.execute('INSERT INTO jobs (room) VALUES (bathroom)')
+            if today.strftime('%A') in ('Saturday', 'Sunday'):
+                raise ValueError("Today is not a good day!")
+            else:
+                cursor.execute('INSERT INTO jobs(tool) VALUES (brush)')
+
+Silly but hopefully it's clear enough.
+
+Raising an error inside a cron app **will not stop the other jobs**
+from running other than the those that depend on it.
