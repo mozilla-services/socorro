@@ -640,6 +640,42 @@ class TestFunctionalCrontabber(TestCaseWithTempDir):
             self.assertTrue(cur.fetchall())
 
 
+    def test_postgres_job_with_broken(self):
+        config_manager, json_file = self._setup_config_manager(
+          'socorro.unittest.cron.test_crontabber.BrokenPostgresSampleJob|1d\n'
+          'socorro.unittest.cron.test_crontabber.PostgresSampleJob|1d'
+        )
+
+        cur = self.conn.cursor()
+        cur.execute('select * from test_cron_victim')
+        self.assertTrue(not cur.fetchall())
+
+        with config_manager.context() as config:
+            tab = crontabber.CronTabber(config)
+            tab.run_all()
+            infos = [x[0][0] for x in config.logger.info.call_args_list]
+            infos = [x for x in infos if x.startswith('Ran ')]
+            self.assertTrue('Ran PostgresSampleJob' in infos)
+
+            cur = self.conn.cursor()
+            cur.execute('select * from test_cron_victim')
+            # Note! The BrokenPostgresSampleJob actually does an insert first
+            # before it raises the ProgrammingError. The following test
+            # makes sure to test that the rollback of the transaction works
+            self.assertEqual(len(cur.fetchall()), 1)
+            out = StringIO()
+            tab.list_jobs(stream=out)
+            output = out.getvalue()
+            outputs = {}
+            for block in re.split('={5,80}', output)[1:]:
+                key = re.findall('App name:\s+([\w-]+)', block)[0]
+                outputs[key] = block
+
+            self.assertTrue('Error' in outputs['broken-pg-job'])
+            self.assertTrue('ProgrammingError' in outputs['broken-pg-job'])
+            self.assertTrue('Error' not in outputs['sample-pg-job'])
+
+
 ## Various mock jobs that the tests depend on
 class _Job(crontabber.BaseCronApp):
 
@@ -693,5 +729,6 @@ class BrokenPostgresSampleJob(_PGJob):
     app_name = 'broken-pg-job'
 
     def run(self, connection):
-        import psycopg2
+        cursor = connection.cursor()
+        cursor.execute('INSERT INTO test_cron_victim (time) VALUES (now())')
         raise psycopg2.ProgrammingError("shit!")
