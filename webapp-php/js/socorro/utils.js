@@ -26,15 +26,16 @@
              */
             formatDate: function(date, format) {
     
-                var returnDate, day, month, year;
+                var returnDate, day, month, full_year;
+                day = this.addLeadingZero(date.getDate());
+                //months are zero based so we need to add one
+                month = this.addLeadingZero(date.getMonth() + 1);
+                full_year = date.getFullYear();
                 
                 if(format === "US_NUMERICAL") {
-                    day = this.addLeadingZero(date.getDate());
-                    //months are zero based so we need to add one
-                    month = this.addLeadingZero(date.getMonth() + 1);
-                    year = date.getFullYear();
-                
-                    returnDate = day + "/" + month + "/" + year;
+                    returnDate = day + "/" + month + "/" + full_year;
+                } else if(format === "ISO") {
+                    returnDate = full_year + "-" + month + "-" + day;
                 }
                 
                return returnDate;

@@ -22,13 +22,21 @@
         <div class="error"></div>
         <fieldset class="crash_stats_body">
             <div class="field">
-                <label for="from_date">From</label>
-                <input type="date" name="from_date" id="from_date" required />
+                <label for="start_date">From</label>
+                <input type="date" name="start_date" id="start_date" required />
             </div>
             
             <div class="field">
-                <label for="to_date">To</label>
-                <input type="date" name="to_date" id="to_date" required />
+                <label for="end_date">To</label>
+                <input type="date" name="end_date" id="end_date" required />
+            </div>
+            
+            <div class="field">
+                <label for="product">Product</label>
+                <select name="product" id="product">
+                    <option value="Firefox">Firefox</option>
+                    <option value="Thunderbird">Thunderbird</option>
+                </select>
             </div>
             
             <div class="field">

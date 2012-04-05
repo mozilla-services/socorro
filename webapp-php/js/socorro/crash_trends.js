@@ -2,7 +2,8 @@
 $(function() {
     "use strict";
     var fromDate, toDate,
-    graph, graphData,
+    graph, graphData, base_url,
+    selectedVersion, selectedProduct,
     previousPoint = null,
     previousSeriesIndex = null,
     errorMsg = "The 'To' date should be greater than the 'From' date.",
@@ -33,15 +34,16 @@ $(function() {
         return socorro.date.convertToDateObj(fromDate) < socorro.date.convertToDateObj(toDate);
     };
     
-    var drawCrashTrends = function() {
+    var drawCrashTrends = function(url) {
         var dates = socorro.date.getAllDatesInRange(fromDate, toDate, "US_NUMERICAL"),
         selectedVersion = $("#version option:selected").val(),
         numberOfDates = dates.length,
+        ajax_path = url === undefined ? json_path : url,
         i = 0,
         options = {
             colors: ["#058DC7", "#ED561B", "#50B432", "#990099"],
             grid: {
-                hoverable: true  
+                hoverable: true
             },
             legend: {
                 noColumns: 8,
@@ -62,7 +64,7 @@ $(function() {
             }
         };
         
-        graphData = $.getJSON(json_path, function(data) {
+        graphData = $.getJSON(ajax_path, function(data) {
             // remove the loading animation
             $("#loading").remove();
             
@@ -84,8 +86,8 @@ $(function() {
         fromDate = socorro.date.formatDate(new Date(socorro.date.now() - (socorro.date.ONE_DAY * 6)), "US_NUMERICAL");
         
         //set the value of the input fields
-        $("#from_date").val(fromDate);
-        $("#to_date").val(toDate);
+        $("#start_date").val(fromDate);
+        $("#end_date").val(toDate);
         
         //set the dates on the figcaption
         $("#fromdate").empty().append(fromDate);
@@ -122,9 +124,17 @@ $(function() {
     
     $("#nightly_crash_trends").submit(function(event) {
         event.preventDefault();
-        fromDate = $("#from_date").val();
-        toDate = $("#to_date").val();
-        
+
+        base_url = "/crash_trends/json_data?";
+        fromDate = $("#start_date").val();
+        toDate = $("#end_date").val();
+        var params = {
+            "product" : $("#product option:selected").val(),
+            "version" : $("#version option:selected").val(),
+            "start_date" : socorro.date.formatDate(socorro.date.convertToDateObj(fromDate), "ISO"),
+            "end_date" : socorro.date.formatDate(socorro.date.convertToDateObj(toDate), "ISO")
+        };
+
         //validate that toDate is after fromDate
         if(validateDateRange(fromDate, toDate)) {
             //remove any previous validation messages
@@ -137,7 +147,7 @@ $(function() {
             
             // add the loading animation
             setLoader();
-            drawCrashTrends();
+            drawCrashTrends(base_url + $.param(params));
         } else {
             //validation failed raise validation message and highlight fields
             dateFields.addClass("error-field");
