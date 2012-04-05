@@ -16,7 +16,8 @@ import copy
 from configman import RequiredConfig, ConfigurationManager, Namespace
 from configman.converters import class_converter
 from socorro.database.transaction_executor import (
-  TransactionExecutorWithBackoff, TransactionExecutor)
+  TransactionExecutorWithInfiniteBackoff, TransactionExecutor)
+from socorro.external.postgresql.connection_context import ConnectionContext
 
 
 
@@ -52,7 +53,9 @@ class BaseCronApp(object):
 class PostgreSQLCronApp(BaseCronApp):
 
     def main(self):
-        executor = self.config.transaction_executor_class(self.config)
+        database = self.config.database_class(self.config)
+        executor = self.config.transaction_executor_class(self.config,
+                                                          database)
         executor(self.run)
 
 
@@ -235,6 +238,10 @@ class CronTabber(RequiredConfig):
         default='./crontabbers.json',
         doc='Location of file where job execution logs are stored',
     )
+
+    required_config.add_option('database_class',
+                               default=ConnectionContext,
+                               from_string_converter=class_converter)
 
     required_config.add_option('transaction_executor_class',
                                #default=TransactionExecutorWithBackoff,

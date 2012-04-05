@@ -8,6 +8,8 @@ import unittest
 import tempfile
 from cStringIO import StringIO
 import mock
+import psycopg2
+from psycopg2.extensions import TRANSACTION_STATUS_IDLE
 from socorro.cron import crontabber
 from socorro.unittest.config.commonconfig import (
   databaseHost, databaseName, databaseUserName, databasePassword)
@@ -20,8 +22,7 @@ DSN = {
   "database_password": databasePassword.default
 }
 
-
-class TestJSONJobsDatabase(unittest.TestCase):
+class TestCaseWithTempDir(unittest.TestCase):
 
     def setUp(self):
         self.tempdir = tempfile.mkdtemp()
@@ -29,6 +30,31 @@ class TestJSONJobsDatabase(unittest.TestCase):
     def tearDown(self):
         if os.path.isdir(self.tempdir):
             shutil.rmtree(self.tempdir)
+
+    def _setup_config_manager(self, jobs_string):
+        mock_logging = mock.Mock()
+        required_config = crontabber.CronTabber.required_config
+        required_config.add_option('logger', default=mock_logging)
+
+        json_file = os.path.join(self.tempdir, 'test.json')
+        assert not os.path.isfile(json_file)
+
+        config_manager = ConfigurationManager(
+            [required_config,
+             #logging_required_config(app_name)
+             ],
+            app_name='crontabber',
+            app_description=__doc__,
+            values_source_list=[{
+                'logger': mock_logging,
+                'jobs': jobs_string,
+                'database': json_file,
+            }, DSN]
+        )
+        return config_manager, json_file
+
+
+class TestJSONJobsDatabase(TestCaseWithTempDir):
 
     def test_loading_existing_file(self):
         db = crontabber.JSONJobDatabase()
@@ -108,41 +134,17 @@ class TestJSONJobsDatabase(unittest.TestCase):
             sys.stderr = old_stderr
 
 
-class TestCrontabber(unittest.TestCase):
+class TestCrontabber(TestCaseWithTempDir):
 
     def setUp(self):
-        self.tempdir = tempfile.mkdtemp()
+        super(TestCrontabber, self).setUp()
         self.psycopg2_patcher = mock.patch('psycopg2.connect')
         self.mocked_connection = mock.Mock()
         self.psycopg2 = self.psycopg2_patcher.start()
-        #self.psycopg2.connect.return_value = self.mocked_connection
 
     def tearDown(self):
+        super(TestCrontabber, self).tearDown()
         self.psycopg2_patcher.stop()
-        if os.path.isdir(self.tempdir):
-            shutil.rmtree(self.tempdir)
-
-    def _setup_config_manager(self, jobs_string):
-        mock_logging = mock.Mock()
-        required_config = crontabber.CronTabber.required_config
-        required_config.add_option('logger', default=mock_logging)
-
-        json_file = os.path.join(self.tempdir, 'test.json')
-        assert not os.path.isfile(json_file)
-
-        config_manager = ConfigurationManager(
-            [required_config,
-             #logging_required_config(app_name)
-             ],
-            app_name='crontabber',
-            app_description=__doc__,
-            values_source_list=[{
-                'logger': mock_logging,
-                'jobs': jobs_string,
-                'database': json_file,
-            }, DSN]
-        )
-        return config_manager, json_file
 
     def test_basic_run_job(self):
         config_manager, json_file = self._setup_config_manager(
@@ -566,7 +568,7 @@ class TestCrontabber(unittest.TestCase):
             calls = self.psycopg2.mock_calls
             self.assertEqual(calls[1], mock.call().cursor())
             self.assertEqual(calls[2],  mock.call().cursor()
-              .execute('INSERT INTO foo (increment) VALUES (1)'))
+              .execute('INSERT INTO test_cron_victim (time) VALUES (now())'))
             self.assertEqual(calls[3], mock.call().commit())
             self.assertEqual(calls[4], mock.call().close())
 
@@ -588,6 +590,54 @@ class TestCrontabber(unittest.TestCase):
             self.assertTrue(tab.database['broken-pg-job']['last_error'])
             self.assertTrue('ProgrammingError' in
                       tab.database['broken-pg-job']['last_error']['traceback'])
+
+
+class TestFunctionalCrontabber(TestCaseWithTempDir):
+
+    def setUp(self):
+        super(TestFunctionalCrontabber, self).setUp()
+        # prep a fake table
+        assert 'test' in databaseName.default, databaseName.default
+        dsn = ('host=%(database_host)s dbname=%(database_name)s '
+               'user=%(database_user)s password=%(database_password)s' % DSN)
+        self.conn = psycopg2.connect(dsn)
+        cursor = self.conn.cursor()
+        cursor.execute("""
+        DROP TABLE IF EXISTS test_cron_victim;
+        CREATE TABLE test_cron_victim (
+          id serial primary key,
+          time timestamp DEFAULT current_timestamp
+        );
+        """)
+        self.conn.commit()
+        assert self.conn.get_transaction_status() == TRANSACTION_STATUS_IDLE
+
+    def tearDown(self):
+        super(TestFunctionalCrontabber, self).tearDown()
+        self.conn.cursor().execute("""
+        DROP TABLE IF EXISTS test_cron_victim;
+        """)
+        self.conn.commit()
+
+    def test_postgres_job(self):
+        config_manager, json_file = self._setup_config_manager(
+          'socorro.unittest.cron.test_crontabber.PostgresSampleJob|1d'
+        )
+
+        cur = self.conn.cursor()
+        cur.execute('select * from test_cron_victim')
+        self.assertTrue(not cur.fetchall())
+
+        with config_manager.context() as config:
+            tab = crontabber.CronTabber(config)
+            tab.run_all()
+            infos = [x[0][0] for x in config.logger.info.call_args_list]
+            infos = [x for x in infos if x.startswith('Ran ')]
+            self.assertTrue('Ran PostgresSampleJob' in infos)
+
+            cur = self.conn.cursor()
+            cur.execute('select * from test_cron_victim')
+            self.assertTrue(cur.fetchall())
 
 
 ## Various mock jobs that the tests depend on
@@ -635,7 +685,7 @@ class PostgresSampleJob(_PGJob):
 
     def run(self, connection):
         cursor = connection.cursor()
-        cursor.execute('INSERT INTO foo (increment) VALUES (1)')
+        cursor.execute('INSERT INTO test_cron_victim (time) VALUES (now())')
         super(PostgresSampleJob, self).run(connection)
 
 
