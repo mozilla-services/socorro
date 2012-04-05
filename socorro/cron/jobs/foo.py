@@ -1,4 +1,3 @@
-from configman import Namespace
 from socorro.cron.crontabber import BaseCronApp
 
 
