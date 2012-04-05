@@ -16,9 +16,9 @@ import copy
 from configman import RequiredConfig, ConfigurationManager, Namespace
 from configman.converters import class_converter
 from socorro.database.transaction_executor import (
-  TransactionExecutorWithInfiniteBackoff, TransactionExecutor)
+  #TransactionExecutorWithInfiniteBackoff,
+  TransactionExecutor)
 from socorro.external.postgresql.connection_context import ConnectionContext
-
 
 
 class JobNotFoundError(Exception):
@@ -466,7 +466,6 @@ class CronTabber(RequiredConfig):
             number *= 60 * 60 * 24
         elif unit:
             raise FrequencyDefinitionError(unit)
-            #raise NotImplementedError(unit)
         return number
 
     def _check_time(self, value):
@@ -501,7 +500,7 @@ class CronTabber(RequiredConfig):
         except (JobNotFoundError,
                 JobDescriptionError,
                 FrequencyDefinitionError,
-                TimeDefinitionError), msg:
+                TimeDefinitionError):
             exc_type, exc_value, exc_tb = sys.exc_info()
             print >>sys.stderr, "Error type:", exc_type
             print >>sys.stderr, "Error value:", exc_value

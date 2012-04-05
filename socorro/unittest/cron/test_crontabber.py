@@ -22,6 +22,7 @@ DSN = {
   "database_password": databasePassword.default
 }
 
+
 class TestCaseWithTempDir(unittest.TestCase):
 
     def setUp(self):
@@ -667,7 +668,6 @@ class TestFunctionalCrontabber(TestCaseWithTempDir):
             cur = self.conn.cursor()
             cur.execute('select * from test_cron_victim')
             self.assertTrue(cur.fetchall())
-
 
     def test_postgres_job_with_broken(self):
         config_manager, json_file = self._setup_config_manager(
