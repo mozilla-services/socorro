@@ -270,10 +270,7 @@ class CronTabber(RequiredConfig):
         _now = datetime.datetime.now()
         PAD = 12
         for each in self.config.jobs:
-            try:
-                freq = each.split('|', 1)[1]
-            except IndexError:
-                raise FrequencyDefinitionError(each)
+            freq = each.split('|', 1)[1]
             if '|' in freq:
                 freq = freq.replace('|', ' @ ')
             job_class, seconds, time_ = self._lookup_job(each)
@@ -456,7 +453,6 @@ class CronTabber(RequiredConfig):
                     # XXX: why oh why can't I use `issubclass(cls, BaseCronApp)` ????
                     class_ = cls
                     break
-
         return class_, seconds, time_
 
     def _convert_frequency(self, frequency):
@@ -500,8 +496,6 @@ class CronTabber(RequiredConfig):
             job_class, seconds, time_ = self._lookup_job(description)
             if time_:
                 self._check_time(time_)
-                if seconds < 60 * 60 * 24:
-                    raise FrequencyDefinitionError(time_)
             return True
 
         except (JobNotFoundError,

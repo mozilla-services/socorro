@@ -194,6 +194,34 @@ class TestCrontabber(TestCaseWithTempDir):
                                             if 'Ran BasicJob' in x])
             self.assertEqual(count_infos_after_second, count_infos + 1)
 
+    def test_run_job_by_class_path(self):
+        config_manager, json_file = self._setup_config_manager(
+          'socorro.unittest.cron.test_crontabber.BasicJob|30m'
+        )
+
+        with config_manager.context() as config:
+            tab = crontabber.CronTabber(config)
+            tab.run_one('socorro.unittest.cron.test_crontabber.BasicJob')
+            infos = [x[0][0] for x in config.logger.info.call_args_list]
+            self.assertTrue('Ran BasicJob' in infos)
+
+    def test_run_job_by_module_path(self):
+        config_manager, json_file = self._setup_config_manager(
+          'socorro.unittest.cron.test_crontabber|7d'
+        )
+
+        with config_manager.context() as config:
+            tab = crontabber.CronTabber(config)
+            # because this module contains multiple classes that are cron apps
+            # we can't predict with certainty which class will be picked up
+            # first, so let's just settle to check that any class was picked up
+            out = StringIO()
+            tab.list_jobs(stream=out)
+            output = out.getvalue()
+            self.assertTrue(re.findall(
+              'Class:\s+socorro.unittest.cron.test_crontabber.[A-Z]\w+',
+              output))
+
     def test_basic_run_all(self):
         config_manager, json_file = self._setup_config_manager(
           'socorro.unittest.cron.test_crontabber.FooJob|3d\n'
@@ -514,7 +542,8 @@ class TestCrontabber(TestCaseWithTempDir):
 
     def test_configtest_bad_time(self):
         config_manager, json_file = self._setup_config_manager(
-          'socorro.unittest.cron.test_crontabber.FooJob|24:59'
+          'socorro.unittest.cron.test_crontabber.FooJob|24:59\n'
+          'socorro.unittest.cron.test_crontabber.BasicJob|23:60'
         )
 
         with config_manager.context() as config:
@@ -529,7 +558,7 @@ class TestCrontabber(TestCaseWithTempDir):
             output = new_stderr.getvalue()
             self.assertTrue('TimeDefinitionError' in output)
             # twice per not found
-            self.assertEqual(output.count('TimeDefinitionError'), 2)
+            self.assertEqual(output.count('TimeDefinitionError'), 2 + 2)
             self.assertTrue('24:59' in output)
 
     def test_configtest_bad_time_invariance(self):
