@@ -91,6 +91,24 @@ class Crash_Trends_Controller extends Controller {
         exit;
     }
     
+    /** Returns JSON **/
+    public function product_versions() {
+        $d = array('product' => 'Firefox');
+        $params = $this->getRequestParameters($d);
+        $result = $this->branch_model->getCurrentProductVersionsByProduct($params['product']);
+        $return = array();
+
+        foreach($result as $version) {
+            if($version->release == 'Nightly' ||
+               $version->release == 'Aurora') {
+                   $return[] = $version->version;
+               }
+        }
+
+        echo json_encode($return);
+        exit;
+    }
+    
     protected function solveForDates(array $params) {
         $dt = new DateTime('today');
         if(empty($params['end_date'])) {

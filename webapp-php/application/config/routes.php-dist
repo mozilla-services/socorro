@@ -89,3 +89,6 @@ $config['/crash_trends'] =
     
 $config['/crash_trends/json_data'] = 
     'crash_trends/json_data';
+
+$config['/crash_trends/product_versions'] = 
+    'crash_trends/product_versions';
