@@ -54,16 +54,28 @@ def respond_to_SIGTERM(signal_number, frame):
 #==============================================================================
 class ThreadedTaskManager(RequiredConfig):
     """Given an iterator over a sequence of job parameters and a function,
-    this class will execute the the function in a set of threads."""
+    this class will execute the function in a set of threads."""
     required_config = Namespace()
     required_config.add_option('idle_delay',
                                default=7,
                                doc='the delay in seconds if no job is found')
+    # how does one choose how many threads to use?  Keep the number low if your
+    # application is compute bound.  You can raise it if your app is i/o
+    # bound.  The best thing to do is to test the through put of your app with
+    # several values.  For Socorro, we've found that setting this value to the
+    # number of processor cores in the system gives the best throughput.
     required_config.add_option('number_of_threads',
-                               default=10,
+                               default=4,
                                doc='the number of threads')
+    # there is wisdom is setting the maximum queue size to be no more than
+    # twice the number of threads.  By keeping the threads starved, the
+    # queing thread will be blocked more more frequently.  Once an item
+    # is in the queue, there may be no way to fetch it again if disaster
+    # strikes and this app quits or fails.  Potentially anything left in
+    # the queue could be lost.  Limiting the queue size insures minimal
+    # damage in a worst case scenario.
     required_config.add_option('maximum_queue_size',
-                               default=10,
+                               default=8,
                                doc='the maximum size of the internal queue')
 
     #--------------------------------------------------------------------------
@@ -95,13 +107,6 @@ class ThreadedTaskManager(RequiredConfig):
 
         self.thread_list = []  # the thread object storage
         self.number_of_threads = config.number_of_threads
-        # there is wisdom is setting the maximum queue size to be no more than
-        # twice the number of threads.  By keeping the threads starved, the
-        # queing thread will be blocked more more frequently.  Once an item
-        # is in the queue, there may be no way to fetch it again if disaster
-        # strikes and this app quits or fails.  Potentially anything left in
-        # the queue could be lost.  Limiting the queue size insures minimal
-        # damage in a worst case scenario.
         self.task_queue = Queue.Queue(config.maximum_queue_size)
         # start each of the task threads.
         for x in range(self.number_of_threads):
@@ -229,7 +234,7 @@ class ThreadedTaskManager(RequiredConfig):
                 if waiting_func:
                     waiting_func()
             except KeyboardInterrupt:
-                self.logger.debug('quit detected by responsiveJoin')
+                self.logger.debug('quit detected by _responsive_join')
                 self.quit = True
 
     #--------------------------------------------------------------------------

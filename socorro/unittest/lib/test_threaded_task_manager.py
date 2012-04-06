@@ -10,21 +10,21 @@ from socorro.lib.util import DotDict, SilentFakeLogger
 class TestFileSystemRawCrashStorage(unittest.TestCase):
 
     def setUp(self):
+        self.logger = SilentFakeLogger()
         pass
 
     def tearDown(self):
         pass
 
     def test_constuctor1(self):
-        logger = SilentFakeLogger()
-        config = DotDict({'logger': logger,
+        config = DotDict({'logger': self.logger,
                           'number_of_threads': 1,
                           'maximum_queue_size': 1,
                          })
         ttm = ThreadedTaskManager(config)
         try:
             self.assertTrue(ttm.config == config)
-            self.assertTrue(ttm.logger == logger)
+            self.assertTrue(ttm.logger == self.logger)
             self.assertTrue(ttm.task_func == default_task_func)
             self.assertTrue(ttm.quit == False)
         finally:
@@ -32,8 +32,7 @@ class TestFileSystemRawCrashStorage(unittest.TestCase):
             ttm._kill_worker_threads()
 
     def test_start1(self):
-        logger = SilentFakeLogger()
-        config = DotDict({'logger': logger,
+        config = DotDict({'logger': self.logger,
                           'number_of_threads': 1,
                           'maximum_queue_size': 1,
                          })
@@ -55,8 +54,7 @@ class TestFileSystemRawCrashStorage(unittest.TestCase):
             ttm.wait_for_completion()
 
     def test_doing_work_with_one_worker(self):
-        logger = SilentFakeLogger()
-        config = DotDict({'logger': logger,
+        config = DotDict({'logger': self.logger,
                           'number_of_threads': 1,
                           'maximum_queue_size': 1,
                          })
@@ -83,8 +81,7 @@ class TestFileSystemRawCrashStorage(unittest.TestCase):
             raise
 
     def test_doing_work_with_two_workers_and_generator(self):
-        logger = SilentFakeLogger()
-        config = DotDict({'logger': logger,
+        config = DotDict({'logger': self.logger,
                           'number_of_threads': 2,
                           'maximum_queue_size': 2,
                          })
@@ -125,8 +122,7 @@ class TestFileSystemRawCrashStorage(unittest.TestCase):
         def insert_into_list(anItem):
             my_list.append(anItem)
 
-        logger = SilentFakeLogger()
-        config = DotDict({'logger': logger,
+        config = DotDict({'logger': self.logger,
                           'number_of_threads': 2,
                           'maximum_queue_size': 2,
                           'job_source_iterator': new_iter,
@@ -171,8 +167,7 @@ class TestFileSystemRawCrashStorage(unittest.TestCase):
                 raise Exception('Unexpected')
             my_list.append(anItem)
 
-        logger = SilentFakeLogger()
-        config = DotDict({'logger': logger,
+        config = DotDict({'logger': self.logger,
                           'number_of_threads': 1,
                           'maximum_queue_size': 1,
                           'job_source_iterator': new_iter,
