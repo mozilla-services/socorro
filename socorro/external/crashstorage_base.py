@@ -1,0 +1,410 @@
+"""This is the base of the crashstorage system - a unified interfaces for
+saving, fetching and iterating over raw crashes, dumps and processed crashes.
+"""
+
+import sys
+import collections
+
+from configman import Namespace,  RequiredConfig
+from configman.converters import classes_in_namespaces_converter, \
+                                 class_converter
+from configman.dotdict import DotDict
+
+
+#==============================================================================
+class OOIDNotFoundException(Exception):
+    pass
+
+
+#==============================================================================
+class CrashStorageBase(RequiredConfig):
+    """the base class for all crash storage classes"""
+    required_config = Namespace()
+
+    #--------------------------------------------------------------------------
+    def __init__(self, config, quit_check_callback=None):
+        """base class constructor
+
+        parameters:
+            config - a configman dot dict holding configuration information
+            quit_check_callback - a function to be called periodically during
+                                  long running operations.  It should check
+                                  whatever the client app uses to detect a
+                                  quit request and raise a KeyboardInterrupt.
+                                  All derived classes should be prepared to
+                                  shut down cleanly on getting such an
+                                  exception from a call to this function
+
+        instance varibles:
+            self.config - a reference to the config mapping
+            self.quit_check - a reference to the quit detecting callback
+            self.logger - convience shortcut to the logger in the config
+            self.exceptions_eligible_for_retry - a collection of non-fatal
+                    exceptions that can be raised by a given storage
+                    implementation.  This may be fetched by a client of the
+                    crashstorge so that it can determine if it can try a failed
+                    storage operation again."""
+        self.config = config
+        if quit_check_callback:
+            self.quit_check = quit_check_callback
+        else:
+            self.quit_check = lambda: False
+        self.logger = config.logger
+        self.exceptions_eligible_for_retry = ()
+
+    #--------------------------------------------------------------------------
+    def close(self):
+        """some implementations may need explicit closing."""
+        pass
+
+    #--------------------------------------------------------------------------
+    def save_raw_crash(self, raw_crash, dump):
+        """this method that saves  both the raw_crash (sometimes called the
+        raw_json) and the dump, must be overridden in any implementation.
+
+        Why is does this base implementation just silently do nothing rather
+        than raise a NotImplementedError?  Implementations of crashstorage
+        are not required to implement the entire api.  Some may save only
+        processed crashes but may be bundled (see the PolyCrashStorage class)
+        with other crashstorage implementations.  Rather than having a non-
+        implenting class raise an exeception that would derail the other
+        bundled operations, the non-implementing storageclass will just
+        quietly do nothing.
+
+        parameters:
+            raw_crash - a mapping containing the raw crash meta data.  It is
+                        often saved as a json file, but here it is in the form
+                        of a dict.
+            dump - a binary blob of data that will eventually fed to minidump-
+                   stackwalk"""
+        pass
+
+    #--------------------------------------------------------------------------
+    def save_processed(self, processed_crash):
+        """this method saves the processed_crash and must be overridden in
+        anything that chooses to implement it.
+
+        Why is does this base implementation just silently do nothing rather
+        than raise a NotImplementedError?  Implementations of crashstorage
+        are not required to implement the entire api.  Some may save only
+        processed crashes but may be bundled (see the PolyCrashStorage class)
+        with other crashstorage implementations.  Rather than having a non-
+        implenting class raise an exeception that would derail the other
+        bundled operations, the non-implementing storageclass will just
+        quietly do nothing.
+
+        parameters:
+            processed_crash - a mapping contianing the processed crash"""
+        pass
+
+    #--------------------------------------------------------------------------
+    def save_raw_and_processed(self, raw_crash, dump, processed_crash):
+        """Mainly for the convenience and efficiency of the processor,
+        this unified method combines saving both raw and processed crashes.
+
+        parameters:
+            raw_crash - a mapping containing the raw crash meta data.  It is
+                        often saved as a json file, but here it is in the form
+                        of a dict.
+             dump - a binary blob of data that will eventually fed to minidump-
+                    stackwalk
+            processed_crash - a mapping contianing the processed crash"""
+        self.save_raw_crash(raw_crash, dump)
+        self.save_processed(processed_crash)
+
+    #--------------------------------------------------------------------------
+    def get_raw_crash(self, ooid):
+        """the default implemntation of fetching a raw_crash
+
+        parameters:
+           ooid - the id of a raw crash to fetch"""
+        raise NotImplementedError("get_raw_crash is not implemented")
+
+    #--------------------------------------------------------------------------
+    def get_raw_dump(self, ooid):
+        """the default implemntation of fetching a dump
+
+        parameters:
+           ooid - the id of a dump to fetch"""
+        raise NotImplementedError("get_raw_dump is not implemented")
+
+    #--------------------------------------------------------------------------
+    def get_processed(self, ooid):
+        """the default implemntation of fetching a processed_crash
+
+        parameters:
+           ooid - the id of a processed_crash to fetch"""
+        raise NotImplementedError("get_processed is not implemented")
+
+    #--------------------------------------------------------------------------
+    def remove(self, ooid):
+        """delete a crash from storage
+
+        parameters:
+           ooid - the id of a crash to fetch"""
+        raise NotImplementedError("remove is not implemented")
+
+    #--------------------------------------------------------------------------
+    def new_ooids(self):
+        """a generator handing out a sequence of ooids of crashes that are
+        considered to be new.  Each implementation can interpret the concept
+        of "new" in an implementation specific way.  To be useful, derived
+        class ought to override this method.
+        """
+        raise StopIteration
+
+
+#==============================================================================
+class PolyStorageError(Exception, collections.MutableSequence):
+    """an exception container holding a sequence of exceptions with tracebacks.
+
+    parameters:
+        message - an optional over all error message
+    """
+    def __init__(self, message=''):
+        super(PolyStorageError, self).__init__(self, message)
+        self.exceptions = []  # the collection
+
+    def gather_current_exception(self):
+        """append the currently active exception to the collection"""
+        self.exceptions.append(sys.exc_info())
+
+    def has_exceptions(self):
+        """the boolean opposite of is_empty"""""
+        return bool(self.exceptions)
+
+    def __len__(self):
+        """how many exceptions are stored?
+        this method is required by the MutableSequence abstract base class"""
+        return len(self.exceptions)
+
+    def __iter__(self):
+        """start an iterator over the squence.
+        this method is required by the MutableSequence abstract base class"""
+        return iter(self.exceptions)
+
+    def __contains__(self, value):
+        """search the sequence for a value and return true if it is present
+        this method is required by the MutableSequence abstract base class"""
+
+        return self.exceptions.__contains__(value)
+
+    def __getitem__(self, index):
+        """fetch a specific exception
+        this method is required by the MutableSequence abstract base class"""
+        return self.exceptions.__getitem__(index)
+
+    def __setitem__(self, index, value):
+        """change the value for an index in the sequence
+        this method is required by the MutableSequence abstract base class"""
+        self.exceptions.__setitem__(index, value)
+
+
+#==============================================================================
+class PolyCrashStorage(CrashStorageBase):
+    """a crashstorage implementation that encapsulates a collection of other
+    crashstorage instances.  Any save operation applied to an instance of this
+    class will be applied to all the crashstorge in the collection.
+
+    This class is useful for 'save' operations only.  It does not implement
+    the 'get' operations.
+
+    The contained crashstorage instances are specified in the configuration.
+    Each class specified in the 'storage_classes' config option will be given
+    its own numbered namespace in the form 'storage%d'.  With in the namespace,
+    the class itself will be referred to as just 'store'.  Any configuration
+    requirements within the class 'store' will be isolated within the local
+    namespace.  That allows multiple instances of the same storageclass to
+    avoid name collisions.
+    """
+    required_config = Namespace()
+    required_config.add_option(
+      'storage_classes',
+      doc='a comma delimited list of storage classes',
+      default='',
+      from_string_converter=classes_in_namespaces_converter(
+          template_for_namespace='storage%d',
+          name_of_class_option='store',
+          instantiate_classes=False,  # we instantiate manually for thread
+                                      # safety
+      )
+    )
+
+    #--------------------------------------------------------------------------
+    def __init__(self, config, quit_check_callback=None):
+        """instantiate all the subordinate crashstorage instances
+
+        parameters:
+            config - a configman dot dict holding configuration information
+            quit_check_callback - a function to be called periodically during
+                                  long running operations.
+
+        instance variables:
+            self.storage_namespaces - the list of the namespaces inwhich the
+                                      subordinate instances are stored.
+            self.stores - instances of the subordinate crash stores
+
+        """
+        super(PolyCrashStorage, self).__init__(config, quit_check_callback)
+        self.storage_namespaces = \
+          config.storage_classes.subordinate_namespace_names
+        self.stores = DotDict()
+        for a_namespace in self.storage_namespaces:
+            self.stores[a_namespace] = \
+              config[a_namespace].store(config[a_namespace])
+
+    #--------------------------------------------------------------------------
+    def close(self):
+        """iterate through the subordinate crash stores and close them.
+        Even though the classes are closed in sequential order, all are
+        assured to close even if an earlier one raises an exception.  When all
+        are closed, any exceptions that were raised are reraised in a
+        PolyStorageError
+
+        raises:
+          PolyStorageError - an exception container holding a list of the
+                             exceptions raised by the subordinate storage
+                             systems"""
+        storage_exception = PolyStorageError()
+        for a_store in self.stores.itervalues():
+            try:
+                a_store.close()
+            except Exception, x:
+                self.logger.error('%s failure: %s', a_store.__class__,
+                                  str(x))
+                storage_exception.gather_current_exception()
+        if storage_exception.has_exceptions():
+            raise storage_exception
+
+    #--------------------------------------------------------------------------
+    def save_raw_crash(self, raw_crash, dump):
+        """iterate through the subordinate crash stores saving the raw_crash
+        and the dump to each of them.
+
+        parameters:
+            raw_crash - the meta data mapping
+            dump - the raw binary crash data"""
+        storage_exception = PolyStorageError()
+        for a_store in self.stores.itervalues():
+            self.quit_check()
+            try:
+                a_store.save_raw_crash(raw_crash, dump)
+            except Exception, x:
+                self.logger.error('%s failure: %s', a_store.__class__,
+                                  str(x))
+                storage_exception.gather_current_exception()
+        if storage_exception.has_exceptions():
+            raise storage_exception
+
+    #--------------------------------------------------------------------------
+    def save_processed(self, processed_crash):
+        """iterate through the subordinate crash stores saving the
+        processed_crash to each of the.
+
+        parameters:
+            processed_crash - a mapping containing the processed crash"""
+        storage_exception = PolyStorageError()
+        for a_store in self.stores.itervalues():
+            self.quit_check()
+            try:
+                a_store.save_processed(processed_crash)
+            except Exception, x:
+                self.logger.error('%s failure: %s', a_store.__class__,
+                                  str(x))
+                storage_exception.gather_current_exception()
+        if storage_exception.has_exceptions():
+            raise storage_exception
+
+    #--------------------------------------------------------------------------
+    def save_raw_and_processed(self, raw_json, dump, processed_json):
+        for a_store in self.stores.itervalues():
+            a_store.save_raw_and_processed(raw_json, dump, processed_json)
+
+
+#==============================================================================
+class FallbackCrashStorage(CrashStorageBase):
+    """This storage system has a primary and fallback subordinate storage
+    systems.  If an exception is raised by the primary storage system during
+    an operation, the operation is repeated on the fallback storage system.
+
+    This class is useful for 'save' operations only.  It does not implement
+    the 'get' operations."""
+    required_config = Namespace()
+    required_config.primary = Namespace()
+    required_config.primary.add_option(
+      'storage_class',
+      doc='storage class for primary storage',
+      default='',
+      from_string_converter=class_converter
+    )
+    required_config.fallback = Namespace()
+    required_config.fallback.add_option(
+      'storage_class',
+      doc='storage class for fallback storage',
+      default='',
+      from_string_converter=class_converter
+    )
+
+    #--------------------------------------------------------------------------
+    def __init__(self, config, quit_check_callback=None):
+        """instantiate the primary and secondary storage systems"""
+        super(FallbackCrashStorage, self).__init__(config, quit_check_callback)
+        self.primary_store = config.primary.storage_class(config.primary)
+        self.fallback_store = config.fallback.storage_class(config.fallback)
+        self.logger = self.config.logger
+
+    #--------------------------------------------------------------------------
+    def close(self):
+        """close both storage systems.  The second will still be closed even
+        if the first raises an exception. """
+        poly_exception = PolyStorageError()
+        for a_store in (self.primary_store, self.fallback_store):
+            try:
+                a_store.close()
+            except NotImplementedError:
+                pass
+            except Exception:
+                poly_exception.gather_current_exception()
+        if len(poly_exception.exceptions) > 1:
+            raise poly_exception
+
+    #--------------------------------------------------------------------------
+    def save_raw_crash(self, raw_json, dump):
+        """save raw crash data to the primary.  If that fails save to the
+        fallback.  If that fails raise the PolyStorageException
+
+        parameters:
+            raw_crash - the meta data mapping
+            dump - the raw binary crash data"""
+        try:
+            self.primary_store.save_raw_crash(raw_json, dump)
+        except Exception:
+            self.logger.critical('error in saving primary', exc_info=True)
+            poly_exception = PolyStorageError()
+            poly_exception.gather_current_exception()
+            try:
+                self.fallback_store.save_raw_crash(raw_json, dump)
+            except Exception:
+                self.logger.critical('error in saving fallback', exc_info=True)
+                poly_exception.gather_current_exception()
+                raise poly_exception
+
+    #--------------------------------------------------------------------------
+    def save_processed(self, processed_json):
+        """save processed crash data to the primary.  If that fails save to the
+        fallback.  If that fails raise the PolyStorageException
+
+        parameters:
+            processed_crash - a mapping containing the processed crash"""
+        try:
+            self.primary_store.save_processed(processed_json)
+        except Exception:
+            self.logger.critical('error in saving primary', exc_info=True)
+            poly_exception = PolyStorageError()
+            poly_exception.gather_current_exception()
+            try:
+                self.fallback_store.save_processed(processed_json)
+            except Exception:
+                self.logger.critical('error in saving fallback', exc_info=True)
+                poly_exception.gather_current_exception()
+                raise poly_exception
