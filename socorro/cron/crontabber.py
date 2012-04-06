@@ -4,21 +4,19 @@
 CronTabber is a configman app for executing all Socorro cron jobs.
 """
 import traceback
-import functools
-import logging
-import logging.handlers
 import inspect
 import datetime
 import sys
 import re
 import json
 import copy
-from configman import RequiredConfig, ConfigurationManager, Namespace
+from configman import Namespace
 from configman.converters import class_converter
 from socorro.database.transaction_executor import (
   #TransactionExecutorWithInfiniteBackoff,
   TransactionExecutor)
 from socorro.external.postgresql.connection_context import ConnectionContext
+from socorro.app.generic_app import App, main
 
 
 class JobNotFoundError(Exception):
@@ -172,58 +170,11 @@ def timesince(d, now=None):  # pragma: no cover
     return s
 
 
-def logging_required_config(app_name):  # pragma: no cover
-    lc = Namespace()
-    lc.add_option('syslog_host',
-              doc='syslog hostname',
-              default='localhost')
-    lc.add_option('syslog_port',
-              doc='syslog port',
-              default=514)
-    lc.add_option('syslog_facility_string',
-              doc='syslog facility string ("user", "local0", etc)',
-              default='user')
-    lc.add_option('syslog_line_format_string',
-              doc='python logging system format for syslog entries',
-              default='%s (pid %%(process)d): '
-                      '%%(asctime)s %%(levelname)s - %%(threadName)s - '
-                      '%%(message)s' % app_name)
-    lc.add_option('syslog_error_logging_level',
-              doc='logging level for the log file (10 - DEBUG, 20 '
-                  '- INFO, 30 - WARNING, 40 - ERROR, 50 - CRITICAL)',
-              default=40)
-    lc.add_option('stderr_line_format_string',
-              doc='python logging system format for logging to stderr',
-              default='%(asctime)s %(levelname)s - %(threadName)s - '
-                      '%(message)s')
-    lc.add_option('stderr_error_logging_level',
-              doc='logging level for the logging to stderr (10 - '
-                  'DEBUG, 20 - INFO, 30 - WARNING, 40 - ERROR, '
-                  '50 - CRITICAL)',
-              default=10)
-    return lc
+class CronTabber(App):
 
-
-def setup_logger(app_name, config,
-                 local_unused, args_unused):  # pragma: no cover
-    logger = logging.getLogger(app_name)
-    logger.setLevel(logging.DEBUG)
-    stderr_log = logging.StreamHandler()
-    stderr_log.setLevel(config.stderr_error_logging_level)
-    stderr_log_formatter = logging.Formatter(config.stderr_line_format_string)
-    stderr_log.setFormatter(stderr_log_formatter)
-    logger.addHandler(stderr_log)
-
-    syslog = logging.handlers.SysLogHandler(
-                                        facility=config.syslog_facility_string)
-    syslog.setLevel(config.syslog_error_logging_level)
-    syslog_formatter = logging.Formatter(config.syslog_line_format_string)
-    syslog.setFormatter(syslog_formatter)
-    logger.addHandler(syslog)
-    return logger
-
-
-class CronTabber(RequiredConfig):
+    app_name = 'crontabber'
+    app_version = '0.1'
+    app_description = __doc__
 
     required_config = Namespace()
     required_config.add_option(
@@ -248,20 +199,59 @@ class CronTabber(RequiredConfig):
                                default=TransactionExecutor,
                                doc='a class that will execute transactions')
 
+    required_config.add_option(
+        name='job',
+        default='',
+        doc='Run a specific job',
+        short_form='j',
+        exclude_from_print_conf=True,
+        exclude_from_dump_conf=True,
+    )
+
+    required_config.add_option(
+        name='list-jobs',
+        default=False,
+        doc='List all jobs',
+        short_form='l',
+        exclude_from_print_conf=True,
+        exclude_from_dump_conf=True,
+    )
+
+    required_config.add_option(
+        name='force',
+        default=False,
+        doc='Force running a job despite dependencies',
+        short_form='f',
+        exclude_from_print_conf=True,
+        exclude_from_dump_conf=True,
+    )
+
+    required_config.add_option(
+        name='configtest',
+        default=False,
+        doc='Check that all configured jobs are OK',
+        exclude_from_print_conf=True,
+        exclude_from_dump_conf=True,
+    )
+
+    def main(self):
+        if self.config.get('list-jobs'):
+            self.list_jobs()
+        elif self.config.get('job'):
+            self.run_one(self.config['job'], self.config.get('force'))
+        elif self.config.get('configtest'):
+            if not self.configtest():
+                return 1
+        else:
+            self.run_all()
+        return 0
+
     @property
     def database(self):
         if not getattr(self, '_database', None):
-            #self._database = PickleJobDatabase()
             self._database = JSONJobDatabase()
             self._database.load(self.config.database)
         return self._database
-
-    def D(self, *args, **kwargs):
-        # saves an aweful lot of typing
-        self.config.logger.debug(*args, **kwargs)
-
-    def __init__(self, config):
-        self.config = config
 
     def list_jobs(self, stream=None):
         if not stream:
@@ -302,23 +292,24 @@ class CronTabber(RequiredConfig):
             self.run_one(each)
 
     def run_one(self, description, force=False):
+        _debug = self.config.logger.debug
         job_class, seconds, time_ = self._lookup_job(description)
         if not force:
             if not self.time_to_run(job_class):
-                self.D("skipping %r because it's not time to run", job_class)
+                _debug("skipping %r because it's not time to run", job_class)
                 return
             if not self.check_dependencies(job_class):
-                self.D("skipping %r dependencies aren't met", job_class)
+                _debug("skipping %r dependencies aren't met", job_class)
                 return
 
-        self.D('about to run %r', job_class)
+        _debug('about to run %r', job_class)
         try:
             self._run_job(job_class)
-            self.D('successfully ran %r', job_class)
+            _debug('successfully ran %r', job_class)
             exc_type = exc_value = exc_tb = None
         except:
             exc_type, exc_value, exc_tb = sys.exc_info()
-            self.D('error when running %r', job_class, exc_info=True)
+            _debug('error when running %r', job_class, exc_info=True)
         finally:
             self._log_run(job_class, seconds, time_,
                          exc_type, exc_value, exc_tb)
@@ -450,7 +441,8 @@ class CronTabber(RequiredConfig):
                 if name == BaseCronApp.__name__:
                     continue
                 if BaseCronApp.__name__ in [x.__name__ for x in cls.__mro__]:
-                    # XXX: why oh why can't I use `issubclass(cls, BaseCronApp)` ????
+                    # XXX: why oh why can't I use
+                    # `issubclass(cls, BaseCronApp)` ????
                     class_ = cls
                     break
         return class_, seconds, time_
@@ -508,72 +500,5 @@ class CronTabber(RequiredConfig):
             return False
 
 
-def run():  # pragma: no cover (a bad idea?)
-    definition_source = Namespace()
-
-    definition_source.add_option(
-        name='job',
-        default='',
-        doc='Run a specific job',
-        short_form='j',
-        exclude_from_print_conf=True,
-        exclude_from_dump_conf=True,
-    )
-
-    definition_source.add_option(
-        name='list-jobs',
-        default=False,
-        doc='List all jobs',
-        short_form='l',
-        exclude_from_print_conf=True,
-        exclude_from_dump_conf=True,
-    )
-
-    definition_source.add_option(
-        name='force',
-        default=False,
-        doc='Force running a job despite dependencies',
-        short_form='f',
-        exclude_from_print_conf=True,
-        exclude_from_dump_conf=True,
-    )
-
-    definition_source.add_option(
-        name='configtest',
-        default=False,
-        doc='Check that all configured jobs are OK',
-        exclude_from_print_conf=True,
-        exclude_from_dump_conf=True,
-    )
-
-    app_name = 'crontabber'
-    definition_source.add_aggregation(
-        'logger',
-        functools.partial(setup_logger, app_name)
-    )
-
-    config_manager = ConfigurationManager(
-        [definition_source,
-         CronTabber.required_config,
-         logging_required_config(app_name)],
-        app_name='crontabber',
-        app_description=__doc__
-    )
-
-    with config_manager.context() as config:
-        tab = CronTabber(config)
-        if config.get('list-jobs'):
-            tab.list_jobs()
-        elif config.get('job'):
-            tab.run_one(config['job'], config.get('force'))
-        elif config.get('configtest'):
-            if not tab.configtest():
-                return 1
-        else:
-            tab.run_all()
-
-    return 0
-
-
 if __name__ == '__main__':
-    sys.exit(run())
+    sys.exit(main(CronTabber))
