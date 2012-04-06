@@ -17,6 +17,7 @@ New-style, documented services
     * `/crashes/paireduuid <#crashes-paireduuid>`_
     * `/crashes/signatures <#crashes-signatures>`_
 * `extensions/ <#id7>`_
+* `job/ <#job>`_
 * `priorityjobs/ <#priorityjobs>`_
 * products/
     * `products/builds/ <#products-builds>`_
@@ -451,6 +452,68 @@ Return a list of extensions::
                 "extension_version": "1.2"
             }
         ]
+    }
+
+
+.. ############################################################################
+   Job API
+   ############################################################################
+
+Job
+---
+
+Handle the jobs queue for crash reports processing.
+
+API specifications
+^^^^^^^^^^^^^^^^^^
+
++----------------+--------------------------------------------------------------------------------+
+| HTTP method    | GET                                                                            |
++----------------+--------------------------------------------------------------------------------+
+| URL schema     | /job/(parameters)                                                              |
++----------------+--------------------------------------------------------------------------------+
+| Full URL       | /job/uuid/(uuid)/                                                              |
++----------------+--------------------------------------------------------------------------------+
+| Example        | http://socorro-api/bpapi/job/uuid/e8820616-1462-49b6-9784-e99a32120201/        |
++----------------+--------------------------------------------------------------------------------+
+
+Mandatory parameters
+^^^^^^^^^^^^^^^^^^^^
+
++----------------+------------------+---------------+-------------------------+
+| Name           | Type of value    | Default value | Description             |
++================+==================+===============+=========================+
+| uuid           | String           | None          | Unique identifier of the|
+|                |                  |               | crash report to find.   |
++----------------+------------------+---------------+-------------------------+
+
+Optional parameters
+^^^^^^^^^^^^^^^^^^^
+
+None
+
+Return value
+^^^^^^^^^^^^
+
+With a GET HTTP method, the service will return data in the following
+form::
+
+    {
+        "hits": [
+            {
+                "id": 1,
+                "pathname": "",
+                "uuid": "e8820616-1462-49b6-9784-e99a32120201",
+                "owner": 3,
+                "priority": 0,
+                "queueddatetime": "2012-02-29T01:23:45+00:00",
+                "starteddatetime": "2012-02-29T01:23:45+00:00",
+                "completeddatetime": "2012-02-29T01:23:45+00:00",
+                "success": True,
+                "message": "Hello"
+            }
+        ],
+        "total": 1
     }
 
 
