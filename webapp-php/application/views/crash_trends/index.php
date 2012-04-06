@@ -34,17 +34,18 @@
             <div class="field">
                 <label for="product">Product</label>
                 <select name="product" id="product">
+                    <option value="none">Select A Product</option>
                     <option value="Firefox">Firefox</option>
                     <option value="Thunderbird">Thunderbird</option>
+                    <option value="Fennec">Fennec</option>
+                    <option value="Camino">Camino</option>
+                    <option value="SeaMonkey">SeaMonkey</option>
                 </select>
             </div>
             
             <div class="field">
                 <label for="version">Version</label>
-                <select name="version" id="version">
-                    <option value="5.0a2">5.0a2</option>
-                    <option value="6.0a2">6.0a2</option>
-                </select>
+                <select name="version" id="version"></select>
             </div>
             
             <input type="submit" name="generate" value="Generate" />
@@ -68,6 +69,7 @@
    'js/flot-0.7/jquery.flot.pack.js',
    'js/flot-0.7/jquery.flot.stack.js',
    'js/jquery/plugins/ui/jquery-ui-1.8.16.custom.min.js',
+   'js/jquery/plugins/jquery.mockjax.js',
    'js/socorro/utils.js',
    'js/socorro/crash_trends.js'
 ))?>
