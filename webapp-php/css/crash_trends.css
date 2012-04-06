@@ -53,14 +53,20 @@ figure {
 #nightly_crash_trends input.error-field[type="date"] {
     border-right: 5px solid #a30;
 }
-#nightly_crash_trends .error {
+#nightly_crash_trends .error,
+#nightly_crash_trends .info {
     display: none;
-    background-color: #a30;
     color: #fff;
     padding: .5em 1em .5em 1em;
     border: 1px solid #333;
     border-radius: 0;
     width: 98%;
+}
+#nightly_crash_trends .error {
+    background-color: #a30;
+}
+#nightly_crash_trends .info {
+    background-color: green;
 }
 #nightly_crash_trends_graph {
     float: left;

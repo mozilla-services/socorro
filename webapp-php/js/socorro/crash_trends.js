@@ -32,6 +32,9 @@ $(function() {
     },
     validateDateRange = function(fromDate, toDate) {
         return socorro.date.convertToDateObj(fromDate) < socorro.date.convertToDateObj(toDate);
+    },
+    showMsg = function(msg, type) {
+        $(type).empty().append(msg).show();
     };
     
     var drawCrashTrends = function(url) {
@@ -74,10 +77,10 @@ $(function() {
             for(i = numberOfDates - 1; i >= 0; i--) {
                 $("#dates").append("<li>" + dates[i] + " " + selectedVersion + "</li>");
             }
-        }).error(function() {
+        }).error(function(jqXHR, textStatus, errorThrown) {
             // remove the loading animation
             $("#loading").remove();
-            $("#nightly_crash_trends_graph").append(graphData.responseText);
+            $("#nightly_crash_trends_graph").append(errorThrown);
         });
     };
     
@@ -151,10 +154,42 @@ $(function() {
         } else {
             //validation failed raise validation message and highlight fields
             dateFields.addClass("error-field");
-            $(".error").empty().append(errorMsg).show();
+            showMsg(errorMsg, ".error");
         }
     });
+
+    $("#product").change(function() {
+        var selectedProduct = $("#product").val(),
+        versions = [],
+        optionElement = "",
+        versionTxt = "",
+        optionElements = [];
+        
+        console.log(selectedProduct);
+            
+        $.getJSON('/crash_trends/product_versions', { product: selectedProduct }, function(data) {
+            
+            if(data.length) {
+                $(".info").hide();
+                versions = [];
     
+                $(data).each(function(i, version) {
+                    optionElement = document.createElement('option')
+                    optionElement.setAttribute("value", version);
+                    versionTxt = document.createTextNode(version);
+                    optionElement.appendChild(versionTxt);
+                    optionElements.push(optionElement);
+                });
+                
+                $("#version").empty().append(optionElements);
+            } else {
+                showMsg("No versions found for product", ".info");
+            }
+        }).error(function(jqXHR, textStatus, errorThrown) {
+            showMsg(errorThrown, ".error");
+        });
+    });
+
     //check if the HTML5 date type is supported else, fallback to jQuery UI
     if(!dateSupported()) {
         dateFields.datepicker({

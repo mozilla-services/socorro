@@ -19,6 +19,7 @@
 <div class="crash_stats_panel report_criteria">
     <form name="nightly_crash_trends" id="nightly_crash_trends" action="<?php echo $data_url ?>" method="get">
         <h3 class="crash_stats_panel_title">Select Report Criteria</h3>
+        <div class="info"></div>
         <div class="error"></div>
         <fieldset class="crash_stats_body">
             <div class="field">
@@ -69,7 +70,6 @@
    'js/flot-0.7/jquery.flot.pack.js',
    'js/flot-0.7/jquery.flot.stack.js',
    'js/jquery/plugins/ui/jquery-ui-1.8.16.custom.min.js',
-   'js/jquery/plugins/jquery.mockjax.js',
    'js/socorro/utils.js',
    'js/socorro/crash_trends.js'
 ))?>
