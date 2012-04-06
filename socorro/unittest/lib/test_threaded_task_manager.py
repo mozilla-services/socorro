@@ -39,7 +39,7 @@ class TestFileSystemRawCrashStorage(unittest.TestCase):
         ttm = ThreadedTaskManager(config)
         try:
             ttm.start()
-            time.sleep(2.0)
+            time.sleep(0.2)
             self.assertTrue(ttm.queuing_thread.isAlive(),
                             "the queing thread is not running")
             self.assertTrue(len(ttm.thread_list) == 1,
@@ -68,7 +68,7 @@ class TestFileSystemRawCrashStorage(unittest.TestCase):
                                  )
         try:
             ttm.start()
-            time.sleep(2.0)
+            time.sleep(0.2)
             self.assertTrue(len(my_list) == 10,
                             'expected to do 10 inserts, '
                                'but %d were done instead' % len(my_list))
@@ -97,7 +97,7 @@ class TestFileSystemRawCrashStorage(unittest.TestCase):
                                  )
         try:
             ttm.start()
-            time.sleep(2.0)
+            time.sleep(0.2)
             self.assertTrue(len(ttm.thread_list) == 2,
                             "expected 2 threads, but found %d"
                               % len(ttm.thread_list))
@@ -131,7 +131,7 @@ class TestFileSystemRawCrashStorage(unittest.TestCase):
         ttm = ThreadedTaskManagerWithConfigSetup(config)
         try:
             ttm.start()
-            time.sleep(2.0)
+            time.sleep(0.2)
             self.assertTrue(len(ttm.thread_list) == 2,
                             "expected 2 threads, but found %d"
                               % len(ttm.thread_list))
@@ -176,7 +176,7 @@ class TestFileSystemRawCrashStorage(unittest.TestCase):
         ttm = ThreadedTaskManagerWithConfigSetup(config)
         try:
             ttm.start()
-            time.sleep(2.0)
+            time.sleep(0.2)
             self.assertTrue(len(ttm.thread_list) == 1,
                             "expected 1 threads, but found %d"
                               % len(ttm.thread_list))
