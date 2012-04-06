@@ -1,3 +1,4 @@
+import os
 import socorro.unittest.testlib.dbtestutil as dbtu
 
 import socorro.lib.psycopghelper as psycopghelper
@@ -70,6 +71,8 @@ def setup_module():
 def teardown_module():
   me.testDB.removeDB(me.config,logger)
   me.connection.close()
+  if os.path.isfile(me.config.logFilePathname):
+    os.remove(me.config.logFilePathname)
 
 # this was a bad test in that it relies on the datetime in the database to be
 # in sync with the datetime on the test machine
