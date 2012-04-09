@@ -42,6 +42,7 @@ class ProcessorWithExternalBreakpad (processor.Processor):
     tmp = toPythonRE.sub(r'%(\1)s',tmp)
     self.commandLine = tmp % config
 
+
 #-----------------------------------------------------------------------------------------------------------------
   def invokeBreakpadStackdump(self, dumpfilePathname):
     """ This function invokes breakpad_stackdump as an external process capturing and returning
@@ -212,22 +213,24 @@ class ProcessorWithExternalBreakpad (processor.Processor):
   flashRE = re.compile(r'NPSWF32_?(.*)\.dll|libflashplayer(.*)\.(.*)|Flash ?Player-?(.*)')
   def getVersionIfFlashModule(self,moduleData):
     """If (we recognize this module as Flash and figure out a version): Returns version; else (None or '')"""
-    #logger.debug(" flash?  %s", moduleData)
+    #logger.debug(" flash? %s", moduleData)
     try:
       module,filename,version,debugFilename,debugId = moduleData[:5]
     except ValueError:
-      logger.debug("bad module line  %s", moduleData)
+      logger.debug("bad module line %s", moduleData)
       return None
     m = ProcessorWithExternalBreakpad.flashRE.match(filename)
     if m:
       if not version:
-        version = m.groups()[0].replace('_', '.')
-      if not version:
-        version = m.groups()[1]
-      if not version:
-        version = m.groups()[3]
-      if not version and 'knownFlashDebugIdentifiers' in self.config:
-        version = self.config.knownFlashDebugIdentifiers.get(debugId) # probably a miss
+        groups = m.groups()
+        if groups[0]:
+          version = groups[0].replace('_', '.')
+        elif groups[1]:
+          version = groups[1]
+        elif groups[3]:
+          version = groups[3]
+        elif 'knownFlashDebugIdentifiers' in self.config:
+          version = self.config.knownFlashDebugIdentifiers.get(debugId) # probably a miss
     else:
       version = None
     return version
