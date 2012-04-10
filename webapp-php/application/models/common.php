@@ -18,46 +18,6 @@ class Common_Model extends Model {
     }
 
     /**
-     * Calculate frequency of crashes across builds and platforms.
-     */
-    public function queryFrequency($params) {
-        $signature = $this->db->escape($params['signature']);
-
-        $columns = array(
-            "reports.build AS build_date",
-            "count(CASE WHEN (reports.signature = $signature) THEN 1 END) AS count",
-            "CAST(count(CASE WHEN (reports.signature = $signature) THEN 1 END) AS FLOAT(10)) / count(reports.id) AS frequency",
-            "count(reports.id) AS total"
-        );
-
-        $platforms = $this->platform_model->getAll();
-        foreach ($platforms as $platform) {
-            $columns[] =
-                "count(CASE WHEN (reports.signature = $signature AND reports.os_name = '{$platform->os_name}') THEN 1 END) AS count_{$platform->id}";
-            $columns[] =
-                "CASE WHEN (count(CASE WHEN (reports.os_name = '{$platform->os_name}') THEN 1 END) > 0) THEN (CAST(count(CASE WHEN (reports.signature = $signature AND reports.os_name = '{$platform->os_name}') THEN 1 END) AS FLOAT(10)) / count(CASE WHEN (reports.os_name = '{$platform->os_name}') THEN 1 END)) ELSE 0.0 END AS frequency_{$platform->id}";
-        }
-
-        list($from_tables, $join_tables, $where) =
-            $this->_buildCriteriaFromSearchParams($params);
-
-        $sql =
-            "/* soc.web common.queryFreq */ " .
-            " SELECT " . join(', ', $columns) .
-            " FROM   " . join(', ', $from_tables);
-
-        if(count($join_tables) > 0) {
-            $sql .= " JOIN  " . join("\nJOIN ", $join_tables);
-        }
-
-        $sql .= " WHERE  " . join(' AND ', $where) .
-                " GROUP BY reports.build ".
-                " ORDER BY reports.build DESC";
-
-        return $this->fetchRows($sql);
-    }
-
-    /**
      * Build the FROM tables, JOIN tables, and WHERE clauses part of a DB query based on search from parameters.
      * @return array of arrays of strings
      *     Example: [['reports'], ['plugins_reports], ['reports.uuid = "blah"]}

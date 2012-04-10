@@ -134,6 +134,7 @@ import socorro.middleware.extensions_service as extensions
 import socorro.middleware.crashes_paireduuid_service as crashes_paireduuid
 import socorro.middleware.products_versions_service as products_versions
 import socorro.middleware.priorityjobs_service as priorityjobs
+import socorro.middleware.crashes_frequency_service as crashes_frequency
 
 
 servicesList = cm.Option()
@@ -164,6 +165,7 @@ servicesList.default = [
     crashes_paireduuid.CrashesPaireduuid,
     products_versions.ProductsVersions,
     priorityjobs.Priorityjobs,
+    crashes_frequency.CrashesFrequency,
 ]
 
 crashBaseUrl = cm.Option()

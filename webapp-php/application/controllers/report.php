@@ -54,9 +54,9 @@ class Report_Controller extends Controller {
 
     /**
      * List reports for the given search query parameters.
-	 *
-	 * @access	public
-	 * @return 	void
+     *
+     * @access  public
+     * @return  void
      */
     public function do_list() {
 
@@ -65,10 +65,10 @@ class Report_Controller extends Controller {
         $branch_data = $this->branch_model->getBranchData();
         $platforms   = $this->platform_model->getAll();
 
-	$d = $helper->defaultParams();
-	// params allowed in the query string
-	$d['signature'] = '';
-	$d['missing_sig'] = '';
+    $d = $helper->defaultParams();
+    // params allowed in the query string
+    $d['signature'] = '';
+    $d['missing_sig'] = '';
 
         $params = $this->getRequestParameters($d);
         $params['admin'] = $this->logged_in;
@@ -80,12 +80,12 @@ class Report_Controller extends Controller {
             'etag'     => $params,
             'expires'  => time() + ( 60 * 60 )
         ));
-	$input = new Input;
+    $input = new Input;
         $page = $input->get('page');
 
-	if ($page === NULL) {
-	    $page = 1;
-	}
+    if ($page === NULL) {
+        $page = 1;
+    }
         $items_per_page = Kohana::config('search.number_report_list');
 
         $serviceResult = $this->report_model->crashesList($params, $items_per_page, ( $page - 1 ) * $items_per_page);
@@ -100,7 +100,7 @@ class Report_Controller extends Controller {
             $this->sensitivePageHTTPSorRedirectAndDie($currentPath . $page);
         }
 
-        $builds  = $this->common_model->queryFrequency($params);
+        $builds  = $this->report_model->queryFrequency($params);
 
         if (count($builds) > 1){
             $crashGraphLabel = "Crashes By Build Date";
@@ -274,23 +274,23 @@ class Report_Controller extends Controller {
 
     private function _setupDisplaySignature($params)
     {
-	if (array_key_exists('missing_sig', $params) &&
-	    ! empty($params['missing_sig'])) {
-	    if ($params['missing_sig'] == Crash::$empty_sig_code) {
-		$signature =  Crash::$empty_sig;
-	    } else {
-		$signature = Crash::$null_sig;
-	    }
-	} else if (array_key_exists('signature', $params)) {
-	    $signature = $params['signature'];
-	} else if (array_key_exists('query_search', $params) &&
-		   $params['query_search'] == 'signature' &&
-	           array_key_exists('query', $params)) {
-	    $signature = $params['query'];
-	}
-	if (isset($signature)) {
-	    $this->setViewData(array('display_signature' => $signature));
-	}
+    if (array_key_exists('missing_sig', $params) &&
+        ! empty($params['missing_sig'])) {
+        if ($params['missing_sig'] == Crash::$empty_sig_code) {
+        $signature =  Crash::$empty_sig;
+        } else {
+        $signature = Crash::$null_sig;
+        }
+    } else if (array_key_exists('signature', $params)) {
+        $signature = $params['signature'];
+    } else if (array_key_exists('query_search', $params) &&
+           $params['query_search'] == 'signature' &&
+               array_key_exists('query', $params)) {
+        $signature = $params['query'];
+    }
+    if (isset($signature)) {
+        $this->setViewData(array('display_signature' => $signature));
+    }
 
     }
 
@@ -311,56 +311,56 @@ class Report_Controller extends Controller {
         }
     }
 
- 	/**
+    /**
      * Generate crashes by given platforms / builds
      *
-	 * @access 	private
-     * @param 	array 	An array of platform objects
- 	 * @param	array 	An array of builds
-	 * @return void
-	 */
+     * @access  private
+     * @param   array   An array of platform objects
+     * @param   array   An array of builds
+     * @return void
+     */
     private function generateCrashesByBuild($platforms, $builds){
-		$platLabels = array();
-		foreach ($platforms as $platform){
-			$plotData = array();
-			$index = 0;
-			for($i = count($builds) - 1; $i  >= 0; $i = $i - 1){
-	  			$plotData[] = array($index, $builds[$i]->{"count_$platform->id"});
-          		$index += 1;
-			}
-			$platLabels[] = array(
-				"label" => substr($platform->name, 0, 3),
-				"data"  => $plotData,
-				"color" => $platform->color
-			);
-		}
-      	return $platLabels;
+        $platLabels = array();
+        foreach ($platforms as $platform){
+            $plotData = array();
+            $index = 0;
+            for($i = count($builds) - 1; $i  >= 0; $i = $i - 1){
+                $plotData[] = array($index, $builds[$i]->{"count_$platform->id"});
+                $index += 1;
+            }
+            $platLabels[] = array(
+                "label" => substr($platform->name, 0, 3),
+                "data"  => $plotData,
+                "color" => $platform->color
+            );
+        }
+        return $platLabels;
     }
 
     /**
      * Generate crashes by the OS
-	 *
-     * @param 	array 	An array of platform objects
- 	 * @param	array 	An array of builds
-	 * @return 	void
+     *
+     * @param   array   An array of platform objects
+     * @param   array   An array of builds
+     * @return  void
      */
     private function generateCrashesByOS($platforms, $builds){
         $platLabels = array();
         $plotData =   array();
 
         for($i = 0; $i < count($platforms); $i += 1){
-			$platform = $platforms[$i];
-			$plotData[$platform->id] = array($i, 0);
-			for($j = 0; $j  < count($builds); $j = $j + 1){
-				$plotData[$platform->id][1] += intval($builds[$j]->{"count_$platform->id"});
-			}
-			$platLabels[] = array(
-				"label" => substr($platform->name, 0, 3),
-				"data" => array($plotData[$platform->id]),
-            	"color" => $platform->color
-			);
+            $platform = $platforms[$i];
+            $plotData[$platform->id] = array($i, 0);
+            for($j = 0; $j  < count($builds); $j = $j + 1){
+                $plotData[$platform->id][1] += intval($builds[$j]->{"count_$platform->id"});
+            }
+            $platLabels[] = array(
+                "label" => substr($platform->name, 0, 3),
+                "data" => array($plotData[$platform->id]),
+                "color" => $platform->color
+            );
         }
-		return $platLabels;
+        return $platLabels;
     }
 
     /**
@@ -368,8 +368,8 @@ class Report_Controller extends Controller {
      *
      * Note: Correlation tab is populated via /correlation/ajax/cpu/{product}/{version}/{os_name}/{signature}/
      *
-     * @param 	string 	The uuid
-     * @return 	void
+     * @param   string  The uuid
+     * @return  void
      */
     public function index($id = null) {
         $crash = new Crash();
@@ -378,13 +378,13 @@ class Report_Controller extends Controller {
             return Event::run('system.404');
         }
 
-	$reportJsonZUri = sprintf(Kohana::config('application.crash_dump_public_url'), $uuid);
-	$raw_dump_urls = $this->report_model->formatRawDumpURLs($uuid);
+    $reportJsonZUri = sprintf(Kohana::config('application.crash_dump_public_url'), $uuid);
+    $raw_dump_urls = $this->report_model->formatRawDumpURLs($uuid);
 
-	$report = $this->fetchUUID($uuid);
+    $report = $this->fetchUUID($uuid);
 
         if ( is_bool($report) && $report == true) {
-	        return url::redirect('report/pending/'.$uuid);
+            return url::redirect('report/pending/'.$uuid);
         } else if ( (is_bool($report) && $report == false) || is_null($report) ) {
             $this->setView('report/notfound');
             $this->setViewData(
@@ -395,36 +395,36 @@ class Report_Controller extends Controller {
                 )
             );
             return;
-	} else {
-	    if ($this->logged_in) {
-		$this->sensitivePageHTTPSorRedirectAndDie('/report/index/' . $id);
-	    }
+    } else {
+        if ($this->logged_in) {
+        $this->sensitivePageHTTPSorRedirectAndDie('/report/index/' . $id);
+        }
 
             cachecontrol::set(array(
                 'etag'          => $uuid,
                 'last-modified' => strtotime($report->date_processed)
             ));
 
-	    $comments = array();
-	    $signature_to_bugzilla = array();
+        $comments = array();
+        $signature_to_bugzilla = array();
 
         // If the signature is NULL in the DB, we will have an empty raw dump
-	    // We can't trust signature, it is empty string for both NULL and Empty String
-	    // To make it easy for pages that don't handel missing or NULL signatures
-	    if (strlen($report->dump) <= 1) {
-		$report->{'display_signature'} = Crash::$null_sig;
-	    } else if (empty($report->signature)) {
-		$report->{'display_signature'} = Crash::$empty_sig;
-	    } else {
-		$report->{'display_signature'} = $report->signature;
-		$report->sumo_signature = $this->_makeSumoSignature($report->signature);
-		$bug_model = new Bug_Model;
-	    	$signature_to_bugzilla = $bug_model->bugsForSignatures(
+        // We can't trust signature, it is empty string for both NULL and Empty String
+        // To make it easy for pages that don't handel missing or NULL signatures
+        if (strlen($report->dump) <= 1) {
+        $report->{'display_signature'} = Crash::$null_sig;
+        } else if (empty($report->signature)) {
+        $report->{'display_signature'} = Crash::$empty_sig;
+        } else {
+        $report->{'display_signature'} = $report->signature;
+        $report->sumo_signature = $this->_makeSumoSignature($report->signature);
+        $bug_model = new Bug_Model;
+            $signature_to_bugzilla = $bug_model->bugsForSignatures(
                                              array($report->signature),
                                              Kohana::config('codebases.bugTrackingUrl')
                                          );
                 $comments = $this->report_model->getCommentsBySignature($report->signature);
-	    }
+        }
 
             $Extension_Model = new Extension_Model;
             $extensions = $Extension_Model->getExtensionsForReport($uuid, $report->date_processed, $report->product);
@@ -432,21 +432,21 @@ class Report_Controller extends Controller {
             $ooppDetails = $this->_makeOoppDetails($report);
 
             $product = (isset($report->product) && !empty($report->product)) ? $report->product : Kohana::config('products.default_product');
-		$this->setViewData(array(
-        	    'branch' => $this->branch_model->getByProductVersion($report->product, $report->version),
-        	    'comments' => $comments,
-        	    'extensions' => $extensions,
-        	    'logged_in' => $this->logged_in,
-				'raw_dump_urls' => $raw_dump_urls,
-        	    'reportJsonZUri' => $reportJsonZUri,
-        	    'current_product_bug_url' => $this->_prepReportBugURL($report),
-        	    'report' => $report,
-        	    'report_bug_url' => $this->_prepReportBugURL($report, false),
-        	    'sig2bugs' => $signature_to_bugzilla,
+        $this->setViewData(array(
+                'branch' => $this->branch_model->getByProductVersion($report->product, $report->version),
+                'comments' => $comments,
+                'extensions' => $extensions,
+                'logged_in' => $this->logged_in,
+                'raw_dump_urls' => $raw_dump_urls,
+                'reportJsonZUri' => $reportJsonZUri,
+                'current_product_bug_url' => $this->_prepReportBugURL($report),
+                'report' => $report,
+                'report_bug_url' => $this->_prepReportBugURL($report, false),
+                'sig2bugs' => $signature_to_bugzilla,
                     'url_nav' => url::site('products/'.$product),
                     'oopp_details' => $ooppDetails,
-        	));
-	}
+            ));
+    }
     }
 
     /**
@@ -484,21 +484,21 @@ class Report_Controller extends Controller {
         if (property_exists($report, 'hangid') && ! empty($report->hangid)) {
             $details['hangtype'] = $this->_hangType($report);
             $otherUuid = $this->report_model->getPairedUUID($report->hangid, $report->uuid);
-	    if ($otherUuid) {
+        if ($otherUuid) {
                 $details['other_uuid'] = $otherUuid;
                 $crash_uri = sprintf(Kohana::config('application.crash_dump_local_url'), $otherUuid);
                 $reportJsonZUri = sprintf(Kohana::config('application.crash_dump_public_url'), $otherUuid);
                 $raw_dump_urls = $this->report_model->formatRawDumpURLs($otherUuid);
 
                 $otherReport = $this->fetchUUID($otherUuid);
-	    } else {
-		$details['pair_error'] = "Hang ID " . $report->hangid . " but no other UUID pair found";
+        } else {
+        $details['pair_error'] = "Hang ID " . $report->hangid . " but no other UUID pair found";
                 return $details;
-	    }
+        }
             if (is_null($otherReport)) {
                 $details['pair_error'] = "Unable to load <a href='$otherUuid'>$otherUuid</a> please reload this page in a few minutes";
             } else {
-		$details['pair_label'] = $this->_hangType($otherReport);
+        $details['pair_label'] = $this->_hangType($otherReport);
             }
         }
 
@@ -514,7 +514,7 @@ class Report_Controller extends Controller {
      */
     public function pending($id) {
         $crash = new Crash();
-	$status = null;
+    $status = null;
         $uuid = $crash->parseOOID($id);
         if ($uuid == FALSE) {
             Kohana::log('alert', "Improper UUID format for $uuid doing 404");
@@ -525,15 +525,15 @@ class Report_Controller extends Controller {
         if (!$this->report_model->isReportValid($id)) {
             Kohana::log('alert', "UUID indicates report for $id is greater than 3 years of age.");
             header("HTTP/1.0 410 Gone");
-			$status = intval(410);
+            $status = intval(410);
         }
 
         // Check for the report
         $report = $this->fetchUUID($uuid);
 
         if (! is_null($report) && ! is_bool($report)) {
-	    return url::redirect('report/index/'.$uuid);
-	}
+        return url::redirect('report/index/'.$uuid);
+    }
 
         // Fetch Job
         $this->job_model = new Job_Model();
@@ -543,8 +543,8 @@ class Report_Controller extends Controller {
         $this->setViewData(array(
             'uuid' => $uuid,
             'job'  => $job,
-			'status' => $status,
-			'url_ajax' => url::site() . 'report/pending_ajax/' . $uuid,
+            'status' => $status,
+            'url_ajax' => url::site() . 'report/pending_ajax/' . $uuid,
             'url_nav' => url::site('products/'.$product),
         ));
     }
@@ -559,21 +559,21 @@ class Report_Controller extends Controller {
    */
     public function pending_ajax ($uuid)
     {
-	$status = array();
+    $status = array();
         // Check for the report
         $report = $this->fetchUUID($uuid);
 
         if (! is_null($report)) {
-	    $status['status'] = 'ready';
-	    $status['status_message'] = 'The report for ' . $uuid . ' is now available.';
-	    $status['url_redirect'] = url::site('report/index/'.$uuid);
-	} else {
-	    $status['status'] = 'error';
-	    $status['status_message'] = 'The report for ' . $uuid . ' is not available yet.';
-	    $status['url_redirect'] = '';
-	}
-	echo json_encode($status);
-	exit;
+        $status['status'] = 'ready';
+        $status['status_message'] = 'The report for ' . $uuid . ' is now available.';
+        $status['url_redirect'] = url::site('report/index/'.$uuid);
+    } else {
+        $status['status'] = 'error';
+        $status['status_message'] = 'The report for ' . $uuid . ' is not available yet.';
+        $status['url_redirect'] = '';
+    }
+    echo json_encode($status);
+    exit;
     }
 
     /**
@@ -599,7 +599,7 @@ class Report_Controller extends Controller {
                 $d = strtotime($report->{'date_processed'});
                 $report->{'display_date_processed'} = date('M d, Y H:i', $d);
                 array_push($crashes, $report);
-	        }
+            }
         }
         echo json_encode($crashes);
         exit;
@@ -616,9 +616,9 @@ class Report_Controller extends Controller {
     private function _makeSumoSignature($signature) {
         $memory_addr = strpos($signature, '@');
         if ($memory_addr === FALSE) {
-	    return $signature;
+        return $signature;
         } else {
-	    return substr($signature, 0, $memory_addr);
+        return substr($signature, 0, $memory_addr);
         }
     }
 
@@ -626,7 +626,7 @@ class Report_Controller extends Controller {
      * Attempt to fetch the processed report (jsonz), optionally
      * falling back.
      *
-     * @uuid    string  The UUID to look up 
+     * @uuid    string  The UUID to look up
      */
     protected function fetchUUID($uuid) {
         $crash_uri = sprintf(Kohana::config('application.crash_dump_local_url'), $uuid);
