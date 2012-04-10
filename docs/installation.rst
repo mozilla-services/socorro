@@ -249,23 +249,10 @@ As the *postgres* user:
   test=# \q
   psql -d test -f /usr/share/pgsql/contrib/citext.sql
 
-Load PostgreSQL Schema
-````````````
-From inside the Socorro checkout, as the *socorro* user:
-::
-  cp scripts/config/setupdatabaseconfig.py.dist scripts/config/setupdatabaseconfig.py
-  export PYTHONPATH=.:thirdparty
-  export PGPASSWORD="aPassword"
-  psql -h localhost -U postgres -f scripts/schema/2.2/breakpad_roles.sql
-  psql -h localhost -U postgres breakpad -f scripts/schema/2.2/breakpad_schema.sql
-  cp scripts/config/createpartitionsconfig.py.dist scripts/config/createpartitionsconfig.py
-  python scripts/createPartitions.py
-
-
 Populate PostgreSQL Database
 ````````````
 Refer to :ref:`populatepostgres-chapter` for information about
-populating the database.
+loading the schema and populating the database.
 
 This step is *required* to get basic information about existing product names
 and versions into the system.
