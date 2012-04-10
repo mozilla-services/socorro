@@ -85,8 +85,12 @@ class Priorityjobs(PostgreSQLBase):
             # Verifying that the uuid is not already in the queue
             cur.execute(sql_exists, params)
             if cur.rowcount:
+                logger.debug('The uuid %s is already in the priorityjobs '
+                             'table' % params.uuid)
                 return False
 
+            logger.debug('Adding the uuid %s to the priorityjobs table' %
+                         params.uuid)
             cur.execute(sql, params)
         except psycopg2.Error:
             logger.error("Failed inserting priorityjobs data into PostgreSQL",
