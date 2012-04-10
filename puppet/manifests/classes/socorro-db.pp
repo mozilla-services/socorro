@@ -97,7 +97,7 @@ class socorro-db inherits socorro-base {
             alias => 'dataload',
             user => 'postgres',
             cwd => '/home/socorro/dev/socorro/tools/dataload/',
-            onlyif => '/usr/bin/psql -xt breakpad -c "SELECT count(*) FROM reports" | grep "count | 0"',
+            onlyif => '/usr/bin/psql -xt breakpad -c "SELECT count(*) FROM products" | grep "count | 0"',
             logoutput => on_failure,
             require => Exec['setup-schema'];
     }

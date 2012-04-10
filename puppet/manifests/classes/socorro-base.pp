@@ -53,18 +53,12 @@ class socorro-base {
 	    notify => Service[rsyslog],
 	    source => "/home/socorro/dev/socorro/puppet/files/rsyslog.conf";
 
-	 'hbase-configs':
-            path => "/etc/hbase/conf/",
-            recurse => true,
-            require => Exec['install-hbase'],
-            source => "/home/socorro/dev/socorro/puppet/files/etc_hbase_conf";
-
 # FIXME break this out to separate classes
 	 'etc_supervisor':
             path => "/etc/supervisor/conf.d/",
             recurse => true,
             require => [Package['supervisor'], Exec['socorro-install']],
-	    notify => Service[supervisor],
+	    #notify => Service[supervisor],
             source => "/home/socorro/dev/socorro/puppet/files/etc_supervisor";
 
         '/var/log/socorro':
@@ -96,30 +90,23 @@ class socorro-base {
             creates => '/tmp/apt-get-update';
     }
 
-    exec {
-        '/usr/bin/curl http://download.oracle.com/otn-pub/java/jdk/7u3-b04/jdk-7u3-linux-x64.tar.gz | tar -C /data -zxf -':
-            alias => 'install-oracle-jdk',
-            creates => '/data/jdk1.7.0_03/',
-            require => Package['curl'];
-    }   
-
     package {
         ['rsyslog', 'libcurl4-openssl-dev', 'libxslt1-dev', 'build-essential',
          'supervisor', 'ant', 'python-software-properties', 'python-pip',
-         'curl', 'git-core', 'openjdk-6-jre-headless']:
+         'curl', 'git-core', 'openjdk-6-jdk']:
             ensure => latest,
             require => Exec['apt-get-update'];
     }
 
     service {
-        supervisor:
-            enable => true,
-            stop => '/usr/bin/service supervisor force-stop',
-            hasstatus => true,
-            require => [Package['supervisor'], Service['postgresql'],
-                        Exec['setup-schema'], Exec['hbase-schema']],
-            subscribe => Exec['socorro-install'],
-            ensure => running;
+#        supervisor:
+#            enable => true,
+#            stop => '/usr/bin/service supervisor force-stop',
+#            hasstatus => true,
+#            require => [Package['supervisor'], Service['postgresql'],
+#                        Exec['setup-schema']],
+#            subscribe => Exec['socorro-install'],
+#            ensure => running;
 
         rsyslog:
             enable => true,
@@ -206,8 +193,7 @@ class socorro-python inherits socorro-base {
             timeout => '3600',
             require => Exec['socorro-install'],
             logoutput => on_failure,
-            notify => [Service['supervisor'], Service['apache2'],
-                       Service['memcached']],
+            notify => [Service['apache2'], Service['memcached']],
             user => 'socorro';
     }
 }
