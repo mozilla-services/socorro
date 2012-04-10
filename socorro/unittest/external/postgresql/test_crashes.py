@@ -1,6 +1,5 @@
 import unittest
 import datetime
-import psycopg2
 
 from socorro.external.postgresql.crashes import Crashes
 from socorro.external.postgresql.crashes import MissingOrBadArgumentException
@@ -117,19 +116,24 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
             CREATE TABLE reports
             (
                 date_processed timestamp with time zone,
-                uuid character varying(50) NOT NULL,
-                hangid character varying(50)
+                uuid character varying(50),
+                hangid character varying(50),
+                id serial,
+                build character varying(30),
+                signature character varying(255),
+                os_name character varying(100)
             );
         """)
 
-        # Insert data
+        # Insert data for paireduuid test
         now = datetimeutil.utc_now()
         yesterday = now - datetime.timedelta(days=1)
         uuid = "%%s-%s" % now.strftime("%y%m%d")
         yesterday_uuid = "%%s-%s" % yesterday.strftime("%y%m%d")
 
         cursor.execute("""
-            INSERT INTO reports VALUES
+            INSERT INTO reports (date_processed, uuid, hangid)
+            VALUES
             ('%s', '%s', '%s'),
             ('%s', '%s', '%s'),
             ('%s', '%s', '%s'),
@@ -144,6 +148,16 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
                now, uuid % "c1", "cb1",
                now, yesterday_uuid % "c2", "cb1"))
 
+        # Insert data for frequency test
+        cursor.execute("""
+            INSERT INTO reports (id, build, signature, os_name, date_processed)
+            VALUES
+            (1, '2012033116', 'js', 'Windows NT', '%(now)s'),
+            (2, '2012033116', 'js', 'Linux', '%(now)s'),
+            (3, '2012033117', 'js', 'Windows NT', '%(now)s'),
+            (4, '2012033117', 'blah', 'Unknown', '%(now)s')
+        """ % {"now": now})
+
         self.connection.commit()
         cursor.close()
 
@@ -157,6 +171,78 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
         self.connection.commit()
         cursor.close()
         super(IntegrationTestCrashes, self).tearDown()
+
+    #--------------------------------------------------------------------------
+    def test_get_frequency(self):
+        self.config.platforms = (
+            {
+                "id": "windows",
+                "name": "Windows NT"
+            },
+            {
+                "id": "linux",
+                "name": "Linux"
+            }
+        )
+        crashes = Crashes(config=self.config)
+
+        #......................................................................
+        # Test 1
+        params = {
+            "signature": "js"
+        }
+        res_expected = {
+            "hits": [
+                {
+                    "build_date": "2012033117",
+                    "count": 1,
+                    "frequency": 1.0,
+                    "total": 1,
+                    "count_windows": 1,
+                    "frequency_windows": 1.0,
+                    "count_linux": 0,
+                    "frequency_linux": 0
+                },
+                {
+                    "build_date": "2012033116",
+                    "count": 2,
+                    "frequency": 1.0,
+                    "total": 2,
+                    "count_windows": 1,
+                    "frequency_windows": 1.0,
+                    "count_linux": 1,
+                    "frequency_linux": 1.0
+                }
+            ],
+            "total": 2
+        }
+        res = crashes.get_frequency(**params)
+
+        self.assertEqual(res, res_expected)
+
+        #......................................................................
+        # Test 2
+        params = {
+            "signature": "blah"
+        }
+        res_expected = {
+            "hits": [
+                {
+                    "build_date": "2012033117",
+                    "count": 1,
+                    "frequency": 1.0,
+                    "total": 1,
+                    "count_windows": 0,
+                    "frequency_windows": 0.0,
+                    "count_linux": 0,
+                    "frequency_linux": 0.0
+                }
+            ],
+            "total": 1
+        }
+        res = crashes.get_frequency(**params)
+
+        self.assertEqual(res, res_expected)
 
     #--------------------------------------------------------------------------
     def test_get_paireduuid(self):

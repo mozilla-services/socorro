@@ -150,6 +150,90 @@ class Crashes(PostgreSQLBase):
 
         return result
 
+    def get_frequency(self, **kwargs):
+        """Return the number and frequency of crashes on each OS.
+
+        See socorro.lib.search_common.get_parameters() for all filters.
+        """
+        params = self.prepare_search_params(**kwargs)
+
+        # Creating the parameters for the sql query
+        sql_params = {
+            "signature": params.signature
+        }
+
+        # Preparing the different parts of the sql query
+        sql_select = ["""
+            SELECT
+                r.build AS build_date,
+                COUNT(CASE WHEN (r.signature = %(signature)s) THEN 1 END)
+                    AS count,
+                CAST(COUNT(CASE WHEN (r.signature = %(signature)s) THEN 1 END)
+                    AS FLOAT(10)) / count(r.id) AS frequency,
+                COUNT(r.id) AS total
+        """]
+
+        ## Adding count for each OS
+        for i in self.context.platforms:
+            sql_select.append("""
+                COUNT(CASE WHEN (r.signature = %%(signature)s
+                      AND r.os_name = '%s') THEN 1 END) AS count_%s
+            """ % (i["name"], i["id"]))
+            sql_select.append("""
+                CASE WHEN (COUNT(CASE WHEN (r.os_name = '%s') THEN 1 END)
+                > 0) THEN (CAST(COUNT(CASE WHEN (r.signature = '%s'
+                AND r.os_name = '%s') THEN 1 END) AS FLOAT(10)) /
+                COUNT(CASE WHEN (r.os_name = '%s') THEN 1 END)) ELSE 0.0
+                END AS frequency_%s
+            """ % (i["name"], params.signature, i["name"], i["name"], i["id"]))
+
+        sql_select = ", ".join(sql_select)
+
+        sql_from = self.build_reports_sql_from(params)
+
+        (sql_where, sql_params) = self.build_reports_sql_where(params,
+                                                               sql_params,
+                                                               self.context)
+
+        sql_group = "GROUP BY r.build"
+        sql_order = "ORDER BY r.build DESC"
+
+        # Assembling the query
+        sql = " ".join((
+                "/* external.postgresql.crashes.Crashes.get_fequency */",
+                sql_select, sql_from, sql_where, sql_group, sql_order))
+        sql = str(" ".join(sql.split())) #  better formatting of the sql string
+
+        result = {
+            "total": 0,
+            "hits": []
+        }
+
+        connection = None
+        try:
+            connection = self.database.connection()
+            cur = connection.cursor()
+            logger.debug(cur.mogrify(sql, sql_params))
+            results = db.execute(cur, sql, sql_params)
+        except psycopg2.Error:
+            logger.error("Failed retrieving extensions data from PostgreSQL",
+                         exc_info=True)
+        else:
+            fields = ["build_date", "count", "frequency", "total"]
+            for i in self.context.platforms:
+                fields.append("count_%s" % i["id"])
+                fields.append("frequency_%s" % i["id"])
+
+            for crash in results:
+                row = dict(zip(fields, crash))
+                result["hits"].append(row)
+            result["total"] = len(result["hits"])
+        finally:
+            if connection:
+                connection.close()
+
+        return result
+
     def get_paireduuid(self, **kwargs):
         """Return paired uuid given a uuid and an optional hangid.
 
