@@ -93,3 +93,53 @@ for his or her bug and that review process doesn't mean he or she shouldn't
 go through all these steps. The reviewer is here to make sure the developer
 didn't miss something, but it's easier to fix something before a review
 process than after. Please test your code before opening a pull request!
+
+Committing the code
+-------------------
+
+The **reviewer** does nothing to the code. He or she leaves comments and
+then ultimately, if all is good, leaves a comment that says ``r+``.
+Either in the Github Pull Request UI or on Bugzilla if it's uploaded
+as a patch there. 
+
+
+The **author** of the code awaits the ``r+`` comment and then goes back to
+wrap things up. This means:
+
+* rebasing all commits within the topic branch to **one** commit
+
+    * ``git rebase master`` first update against master
+
+    * ``git rebase -i master`` to start the interactive tool to squash
+      commits and re-write commit messages
+
+* changes the final commit message to contain:
+
+    * the bugnumber (e.g. ``bug6789123 - fixed the thing``)
+    
+    * the name of the reviewer who gave the ``r+`` 
+      (e.g. ``bug6789123 - fixed the thing, r=rhelmer``)
+      
+* merges it to master and pushes upstream
+
+* Tip! when merging, always make sure your master is up to date first:
+
+    * ``git checkout master``
+    
+    * ``git pull --rebase origin master``
+    
+    * ``git merge bug6789123-the-thing``
+    
+    * ``git push origin master``
+    
+    * (optional) ``git branch -d bug6789123-the-thing``
+    
+    * (optional) ``git push myrepo :bug6789123-the-thing``
+    
+* Lastly, if there was an original Githug Pull Request discussion...
+
+    * add a comment with a link to the commit on master
+    
+    * close the pull request
+    
+    
