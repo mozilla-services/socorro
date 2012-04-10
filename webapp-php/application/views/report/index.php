@@ -276,12 +276,19 @@ if (isset($report->sumo_signature) && !empty($report->signature)) { ?>
                         <tr>
                             <td><?php out::H($frame['frame_num']) ?></td>
                             <td><?php out::H($frame['module_name']) ?></td>
+                            <?php
+                                //often even the short signtaure is as long as 200+ characters, breaking the
+                                //layout. Here we simply ensure this never happens.
+                                if (strlen($frame['short_signature']) > 80) {
+                                    $frame['short_signature'] = substr($frame['short_signature'], 0, 80);
+                                }
+                            ?>
                             <td title="<?php out::H($frame['signature']) ?>"><?php out::H($frame['short_signature']) ?></td>
                             <td>
                                 <?php if ($frame['source_link']): ?>
                                     <a href="<?php out::H($frame['source_link']) ?>"><?php out::H($frame['source_info']) ?></a>
                                 <?php else: ?>
-                                    <?php out::H($frame['source_info']) ?>
+                                    <?php out::H(stripslashes($frame['source_info'])) ?>
                                 <?php endif ?>
                             </td>
                         </tr>

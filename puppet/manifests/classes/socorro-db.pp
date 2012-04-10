@@ -38,8 +38,9 @@ class socorro-db inherits socorro-base {
 
     exec {
        'update-postgres-ppa':
-            command => '/usr/bin/apt-get update',
-            require => Exec['add-postgres-ppa'];
+            command => '/usr/bin/apt-get update && touch /tmp/update-postgres-ppa',
+            require => Exec['add-postgres-ppa'],
+            creates => '/tmp/update-postgres-ppa';
     }
 
     exec {
@@ -48,12 +49,12 @@ class socorro-db inherits socorro-base {
             creates => '/etc/apt/sources.list.d/pitti-postgresql-lucid.list',
             require => Package['python-software-properties'];
 
-        '/usr/bin/psql -f /home/socorro/dev/socorro/sql/schema/2.4/breakpad_roles.sql breakpad':
+        '/usr/bin/psql -f /home/socorro/dev/socorro/sql/schema/2.5/breakpad_roles.sql breakpad':
             alias => 'create-breakpad-roles',
             user => 'postgres',
             require => Exec['create-breakpad-db'];
 
-        '/usr/bin/psql -f /home/socorro/dev/socorro/sql/schema/2.4/breakpad_schema.sql breakpad':
+        '/usr/bin/psql -f /home/socorro/dev/socorro/sql/schema/3/breakpad_schema.sql breakpad':
             alias => 'setup-schema',
             user => 'postgres',
             require => Exec['create-breakpad-roles'],
@@ -102,7 +103,7 @@ class socorro-db inherits socorro-base {
     }
 
     exec {
-        '/usr/bin/psql -c "SELECT backfill_matviews(\'2012-03-02\', \'2012-03-03\'); UPDATE product_versions SET featured_version = true" breakpad':
+        '/usr/bin/psql -c "SELECT backfill_matviews(\'2012-04-02\', \'2012-04-03\'); UPDATE product_versions SET featured_version = true" breakpad':
             alias => 'bootstrap-matviews',
             user => 'postgres',
             onlyif => '/usr/bin/psql -xt breakpad -c "SELECT count(*) FROM product_versions" | grep "count | 0"',
