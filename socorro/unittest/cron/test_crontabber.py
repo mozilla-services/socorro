@@ -13,7 +13,7 @@ from psycopg2.extensions import TRANSACTION_STATUS_IDLE
 from socorro.cron import crontabber
 from socorro.unittest.config.commonconfig import (
   databaseHost, databaseName, databaseUserName, databasePassword)
-from configman import ConfigurationManager
+from configman import ConfigurationManager, Namespace
 
 DSN = {
   "database_host": databaseHost.default,
@@ -32,7 +32,9 @@ class TestCaseWithTempDir(unittest.TestCase):
         if os.path.isdir(self.tempdir):
             shutil.rmtree(self.tempdir)
 
-    def _setup_config_manager(self, jobs_string):
+    def _setup_config_manager(self, jobs_string, extra_value_source=None):
+        if not extra_value_source:
+            extra_value_source = {}
         mock_logging = mock.Mock()
         required_config = crontabber.CronTabber.required_config
         required_config.add_option('logger', default=mock_logging)
@@ -50,7 +52,7 @@ class TestCaseWithTempDir(unittest.TestCase):
                 'logger': mock_logging,
                 'jobs': jobs_string,
                 'database': json_file,
-            }, DSN]
+            }, DSN, extra_value_source]
         )
         return config_manager, json_file
 
@@ -205,23 +207,6 @@ class TestCrontabber(TestCaseWithTempDir):
             tab.run_one('socorro.unittest.cron.test_crontabber.BasicJob')
             infos = [x[0][0] for x in config.logger.info.call_args_list]
             self.assertTrue('Ran BasicJob' in infos)
-
-    def test_run_job_by_module_path(self):
-        config_manager, json_file = self._setup_config_manager(
-          'socorro.unittest.cron.test_crontabber|7d'
-        )
-
-        with config_manager.context() as config:
-            tab = crontabber.CronTabber(config)
-            # because this module contains multiple classes that are cron apps
-            # we can't predict with certainty which class will be picked up
-            # first, so let's just settle to check that any class was picked up
-            out = StringIO()
-            tab.list_jobs(stream=out)
-            output = out.getvalue()
-            self.assertTrue(re.findall(
-              'Class:\s+socorro.unittest.cron.test_crontabber.[A-Z]\w+',
-              output))
 
     def test_basic_run_all(self):
         config_manager, json_file = self._setup_config_manager(
@@ -479,47 +464,18 @@ class TestCrontabber(TestCaseWithTempDir):
             self.assertTrue(not new_stdout.getvalue())
 
     def test_configtest_not_found(self):
-        config_manager, json_file = self._setup_config_manager(
-          'socorro.unittest.cron.test_crontabber.YYYYYY|3d\n'
-          'socorro.unittest.cron.test_crontabber.XXXXXX|4d'
+        self.assertRaises(
+            crontabber.JobNotFoundError,
+            self._setup_config_manager,
+            'socorro.unittest.cron.test_crontabber.YYYYYY|3d'
         )
-
-        with config_manager.context() as config:
-            tab = crontabber.CronTabber(config)
-            old_stderr = sys.stderr
-            new_stderr = StringIO()
-            sys.stderr = new_stderr
-            try:
-                self.assertTrue(not tab.configtest())
-            finally:
-                sys.stderr = old_stderr
-            output = new_stderr.getvalue()
-            self.assertTrue('JobNotFoundError' in output)
-            # twice per not found
-            self.assertEqual(output.count('JobNotFoundError'), 4)
-            self.assertTrue('XXXXXX' in output)
-            self.assertTrue('YYYYYY' in output)
 
     def test_configtest_definition_error(self):
-        config_manager, json_file = self._setup_config_manager(
-          # missing frequency or time
-          'socorro.unittest.cron.test_crontabber.FooJob'
+        self.assertRaises(
+            crontabber.JobDescriptionError,
+            self._setup_config_manager,
+            'socorro.unittest.cron.test_crontabber.FooJob'
         )
-
-        with config_manager.context() as config:
-            tab = crontabber.CronTabber(config)
-            old_stderr = sys.stderr
-            new_stderr = StringIO()
-            sys.stderr = new_stderr
-            try:
-                self.assertTrue(not tab.configtest())
-            finally:
-                sys.stderr = old_stderr
-            output = new_stderr.getvalue()
-            self.assertTrue('JobDescriptionError' in output)
-            # twice per not found
-            self.assertEqual(output.count('JobDescriptionError'), 2)
-            self.assertTrue('test_crontabber.FooJob' in output)
 
     def test_configtest_bad_frequency(self):
         config_manager, json_file = self._setup_config_manager(
@@ -579,7 +535,7 @@ class TestCrontabber(TestCaseWithTempDir):
             output = new_stderr.getvalue()
             self.assertTrue('FrequencyDefinitionError' in output)
             # twice per not found
-            self.assertEqual(output.count('FrequencyDefinitionError'), 2)
+            self.assertTrue(output.count('FrequencyDefinitionError'))
             self.assertTrue('23:59' in output)
 
     def test_execute_postgres_based_job(self):
@@ -620,6 +576,39 @@ class TestCrontabber(TestCaseWithTempDir):
             self.assertTrue(tab.database['broken-pg-job']['last_error'])
             self.assertTrue('ProgrammingError' in
                       tab.database['broken-pg-job']['last_error']['traceback'])
+
+    def test_own_required_config_job(self):
+        config_manager, json_file = self._setup_config_manager(
+         'socorro.unittest.cron.test_crontabber.OwnRequiredConfigSampleJob|1d'
+        )
+
+        with config_manager.context() as config:
+            tab = crontabber.CronTabber(config)
+            tab.run_all()
+            infos = [x[0][0] for x in config.logger.info.call_args_list]
+            infos = [x for x in infos if x.startswith('Ran ')]
+            self.assertTrue(
+              'Ran OwnRequiredConfigSampleJob(%r)' % 'bugz.mozilla.org'
+              in infos
+            )
+
+    def test_own_required_config_job_overriding_config(self):
+        config_manager, json_file = self._setup_config_manager(
+         'socorro.unittest.cron.test_crontabber.OwnRequiredConfigSampleJob|1d',
+          extra_value_source={
+            'class-OwnRequiredConfigSampleJob.bugsy_url': 'bugs.peterbe.com'
+          }
+        )
+
+        with config_manager.context() as config:
+            tab = crontabber.CronTabber(config)
+            tab.run_all()
+            infos = [x[0][0] for x in config.logger.info.call_args_list]
+            infos = [x for x in infos if x.startswith('Ran ')]
+            self.assertTrue(
+              'Ran OwnRequiredConfigSampleJob(%r)' % 'bugs.peterbe.com'
+              in infos
+            )
 
 
 class TestFunctionalCrontabber(TestCaseWithTempDir):
@@ -761,3 +750,19 @@ class BrokenPostgresSampleJob(_PGJob):
         cursor = connection.cursor()
         cursor.execute('INSERT INTO test_cron_victim (time) VALUES (now())')
         raise psycopg2.ProgrammingError("shit!")
+
+
+class OwnRequiredConfigSampleJob(_Job):
+    app_name = 'bugsy'
+    app_description = 'has its own config'
+
+    required_config = Namespace()
+    required_config.add_option(
+        'bugsy_url',
+        default='bugz.mozilla.org'
+    )
+
+    def run(self):
+        self.config.logger.info("Ran %s(%r)" %
+          (self.__class__.__name__, self.config.bugsy_url)
+        )

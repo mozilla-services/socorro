@@ -11,7 +11,7 @@ import re
 import json
 import copy
 from configman import Namespace, RequiredConfig
-from configman.converters import class_converter
+from configman.converters import class_converter, py_obj_to_str
 from socorro.database.transaction_executor import (
   #TransactionExecutorWithInfiniteBackoff,
   TransactionExecutor)
@@ -171,23 +171,19 @@ def timesince(d, now=None):  # pragma: no cover
     return s
 
 
-## lars =======================================================================
-from configman.converters import class_converter, py_obj_to_str
-
 #------------------------------------------------------------------------------
 def _default_list_splitter(class_list_str):
     return [x.strip() for x in class_list_str.split(',')]
 
-#------------------------------------------------------------------------------
+
 def _default_class_extractor(list_element):
     return list_element
 
-#------------------------------------------------------------------------------
+
 def _default_extra_extractor(list_element):
     raise NotImplementedError()
 
 
-#------------------------------------------------------------------------------
 def classes_in_namespaces_converter_with_compression(
       reference_namespace={},
       template_for_namespace="class-%(name)s",
@@ -233,18 +229,29 @@ def classes_in_namespaces_converter_with_compression(
             """
             # we're dynamically creating a class here.  The following block of
             # code is actually adding class level attributes to this new class
-            required_config = Namespace()  # 1st requirement for configman
-            subordinate_namespace_names = []  # to help the programmer know
-                                              # what Namespaces we added
-            namespace_template = template_for_namespace  # save the template
-                                                         # for future reference
-            original_input = class_list_str.replace('\n', '\\n') # for display
+
+            # 1st requirement for configman
+            required_config = Namespace()
+
+            # to help the programmer know what Namespaces we added
+            subordinate_namespace_names = []
+
+            # save the template for future reference
+            namespace_template = template_for_namespace
+
+            # for display
+            original_input = class_list_str.replace('\n', '\\n')
+
             # for each class in the class list
-            class_dict = {}
+            class_list = []
             for namespace_index, class_list_element in enumerate(
                                                                class_str_list):
-                a_class = class_converter(class_extractor(class_list_element))
-                class_dict[a_class.__name__] = a_class
+                try:
+                    a_class = class_converter(
+                                           class_extractor(class_list_element))
+                except AttributeError:
+                    raise JobNotFoundError(class_list_element)
+                class_list.append((a_class.__name__, a_class))
                 # figure out the Namespace name
                 namespace_name_dict = {'name': a_class.__name__,
                                        'index': namespace_index}
@@ -262,10 +269,9 @@ def classes_in_namespaces_converter_with_compression(
                 # add options frr the classes required config
                 try:
                     for k, v in a_class.get_required_config().iteritems():
-                        print reference_namespace
                         if k not in reference_namespace:
                             a_class_namespace[k] = v
-                except AttributeError: # a_class has no get_required_config
+                except AttributeError:  # a_class has no get_required_config
                     pass
 
             @classmethod
@@ -284,10 +290,12 @@ def classes_in_namespaces_converter_with_compression(
 
 
 def get_extra_as_options(input_str):
+    if '|' not in input_str:
+        raise JobDescriptionError("No frequency and/or time defined")
     metadata = input_str.split('|')[1:]
     if len(metadata) == 1:
         if ':' in metadata[0]:
-            frequency = None
+            frequency = '1d'
             time_ = metadata[0]
         else:
             frequency = metadata[0]
@@ -310,7 +318,7 @@ def get_extra_as_options(input_str):
                  exclude_from_dump_conf=True
                  )
     return n
-## /lars ------------------------------------------------------------
+
 
 class CronTabber(App):
 
@@ -319,12 +327,7 @@ class CronTabber(App):
     app_description = __doc__
 
     required_config = Namespace()
-#    required_config.add_option(
-#        name='jobs',
-#        default=[],
-#        doc='List of jobs and their frequency separated by `|`',
-#        from_string_converter=job_lister
-#    )
+    # the most important option, 'jobs', is defined last
 
     required_config.add_option(
         name='database',
@@ -378,8 +381,7 @@ class CronTabber(App):
 
     required_config.add_option(
       'jobs',
-      default='',#'socorro.cron.jobs.foo.FooCronApp|3|00:00:10\n'
-              #'socorro.cron.jobs.bar.BarCronApp|4|00:00:00',
+      default='',
       from_string_converter=
         classes_in_namespaces_converter_with_compression(
           reference_namespace=required_config,
@@ -414,28 +416,12 @@ class CronTabber(App):
         _fmt = '%Y-%m-%d %H:%M:%S'
         _now = datetime.datetime.now()
         PAD = 12
-        from pprint import pprint
-        pprint( self.config.items())
-        print dir(self.config.jobs)
-        print self.config.jobs.class_dict
-        _jobs = [v for (k, v) in self.config.items() if k.startswith('class-')]
-
-        print "JOBS"
-        print _jobs
-        for each in _jobs:#self.config.jobs:
-            #freq = each.split('|', 1)[1]
-            freq = each.frequency
-            if '|' in freq:
-                freq = freq.replace('|', ' @ ')
-            #job_class, seconds, time_ = self._lookup_job(each)
-            job_class = each
-            time_ = each.time
-            seconds = self._convert_frequency(each.frequency)
-            print (job_class, seconds, time_)
-            print type(job_class)
-            print job_class.keys()
-            class_name = 'BLABLA'
-            #class_name = job_class.__module__ + '.' + job_class.__name__
+        for class_name, job_class in self.config.jobs.class_list:
+            class_config = self.config['class-%s' % class_name]
+            freq = class_config.frequency
+            if class_config.time:
+                freq += ' @ %s' % class_config.time
+            class_name = job_class.__module__ + '.' + job_class.__name__
             print >>stream, '=== JOB ' + '=' * 72
             print >>stream, "Class:".ljust(PAD), class_name
             print >>stream, "App name:".ljust(PAD), job_class.app_name
@@ -459,12 +445,25 @@ class CronTabber(App):
             print >>stream, ''
 
     def run_all(self):
-        for each in self.config.jobs:
-            self.run_one(each)
+        for class_name, job_class in self.config.jobs.class_list:
+            class_config = self.config['class-%s' % class_name]
+            self._run_one(job_class, class_config)
 
     def run_one(self, description, force=False):
+        # the description in this case is either the app_name or the full
+        # module/class reference
+        for class_name, job_class in self.config.jobs.class_list:
+            if (job_class.app_name == description or
+              description == job_class.__module__ + '.' + job_class.__name__):
+                class_config = self.config['class-%s' % class_name]
+                self._run_one(job_class, class_config, force=force)
+                return
+        raise JobNotFoundError(description)
+
+    def _run_one(self, job_class, config, force=False):
         _debug = self.config.logger.debug
-        job_class, seconds, time_ = self._lookup_job(description)
+        seconds = self._convert_frequency(config.frequency)
+        time_ = config.time
         if not force:
             if not self.time_to_run(job_class):
                 _debug("skipping %r because it's not time to run", job_class)
@@ -475,7 +474,7 @@ class CronTabber(App):
 
         _debug('about to run %r', job_class)
         try:
-            self._run_job(job_class)
+            self._run_job(job_class, config)
             _debug('successfully ran %r', job_class)
             exc_type = exc_value = exc_tb = None
         except:
@@ -525,9 +524,9 @@ class CronTabber(App):
             return True
         return False
 
-    def _run_job(self, class_):
+    def _run_job(self, class_, config):
         # here we go!
-        instance = class_(self.config)
+        instance = class_(config)
         instance.main()
 
     def _log_run(self, class_, seconds, time_, exc_type, exc_value, exc_tb):
@@ -570,7 +569,6 @@ class CronTabber(App):
                 job_class, seconds, time_ = self._lookup_job(each)
                 if job_class.app_name == job_description:
                     return job_class, seconds, time_
-
             # still here! Then it couldn't be found
             raise JobNotFoundError(job_description)
         elif '.' in job_description and '|' not in job_description:
@@ -648,16 +646,21 @@ class CronTabber(App):
         """return true if all configured jobs are configured OK"""
         # similar to run_all() but don't actually run them
         failed = 0
-        for each in self.config.jobs:
-            if not self._configtest_one(each):
+        for class_name, __ in self.config.jobs.class_list:
+            class_config = self.config['class-%s' % class_name]
+            if not self._configtest_one(class_config):
                 failed += 1
         return not failed
 
-    def _configtest_one(self, description):
+    def _configtest_one(self, config):
         try:
-            job_class, seconds, time_ = self._lookup_job(description)
+            seconds = self._convert_frequency(config.frequency)
+            time_ = config.time
             if time_:
                 self._check_time(time_)
+                # if less than 1 day, it doesn't make sense to specify hour
+                if seconds < 60 * 60 * 24:
+                    raise FrequencyDefinitionError(config.time)
             return True
 
         except (JobNotFoundError,

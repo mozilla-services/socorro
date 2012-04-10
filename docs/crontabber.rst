@@ -73,6 +73,48 @@ depends on ``FooCronApp`` it's class would look something like this::
         def run(self):
             ...
 
+Own configurations
+------------------
+
+Each cron app can have its own configuration(s). Obviously they must
+always have a good default that is good enough otherwise you can't run
+``crontabber`` to run all jobs that are due. To make overrideable
+configuration options add the ``required_config`` class attribute.
+Here's an example::
+
+    from configman import Namespace
+    from socorro.cron.crontabber import BaseCronApp
+
+    class FooCronApp(BaseCronApp):
+        app_name = 'foo'
+
+        required_config = Namespace()
+        required_config.add_option(
+            'bugzilla_url',
+            default='https://bugs.mozilla.org',
+            doc='Base URL for bugzilla'
+        )
+
+        def run(self):
+            ...
+            print self.config.bugzilla_url
+            ...
+
+Note: Inside that `run()` method in that example, the `self.config`
+object is a special one. It's basically a reference to the
+configuration specifically for this class but it has access to all
+configuration objects defined in the "root". I.e. you can access
+things like ``self.config.logger`` here too but other cron app won't
+have access to ``self.config.bugzilla_url`` since that's unique to
+this app.
+
+To override cron app specific options on the command line you need to
+use a special syntax to associate it with this cron app class.
+Usually, the best hint of how to do this is to use ``python
+crontabber.py --help``. In this example it would be::
+
+    python crontabber.py --job=foo --class-FooCronApp.bugzilla_url=...
+
 App names versus/or class names
 -------------------------------
 
@@ -116,7 +158,7 @@ in the JSON database too. If any of your cron apps have an error you
 can see it with::
 
     python socorro/cron/crontabber.py --list-jobs
-    
+
 Here's a sample output::
 
     === JOB ========================================================================
@@ -140,13 +182,13 @@ Here's a sample output::
       File "/Use[snip]orro/socorro/cron/crontabber.py", line 47, in main
         self.run()
       File "/Use[snip]orro/socorro/cron/jobs/bar.py", line 10, in run
-        raise NameError('doesnotexist')    
+        raise NameError('doesnotexist')
 
 It will only keep the latest error but it will include an
 error count that tells you how many times it has tried and failed. The
 error count increments every time **any** error happens and is reset
 once no error happens. So, only the latest error is kept and to find
-out about past error you have to inspect the log files. 
+out about past error you have to inspect the log files.
 
 NOTE: If a cron app that is configured to run every 2 days runs into
 an error; it will try to run again in 2 days.
@@ -195,7 +237,7 @@ Timezone and UTC
 
 No. There is no timezone in any of the dates and times in
 ``crontabber``. All is assumed local time. I.e. whatever the server
-it's running on is using. 
+it's running on is using.
 
 The reason for this is the ability to specify exactly when something
 should be run. So if you want something to run at exactly 3AM every
