@@ -45,7 +45,7 @@ class GetCrash(webapi.JsonServiceBase):
     except Exception:
         try:
             raw = self.fetchRaw(uuid)
-            j = Priorityjobs(self.context)
+            j = Priorityjobs(config=self.context)
             j.create(uuid=uuid)
         except Exception:
             raise web.webapi.NotFound()
