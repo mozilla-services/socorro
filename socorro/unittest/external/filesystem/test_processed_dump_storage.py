@@ -11,7 +11,7 @@ import socorro.unittest.testlib.createJsonDumpStore as createJDS
 import socorro.unittest.testlib.util as tutil
 
 import socorro.lib.util as socorro_util
-import socorro.lib.processedDumpStorage as dumpStorage
+import socorro.external.filesystem.processed_dump_storage as dumpStorage
 from socorro.lib.datetimeutil import utc_now, UTC
 
 
