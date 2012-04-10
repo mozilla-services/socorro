@@ -8,7 +8,7 @@ class socorro-elasticsearch inherits socorro-base {
     }
 
     package { "elasticsearch":
-        require => [Package["openjdk-6-jre-headless"], Exec["download-elasticsearch"]],
+        require => [Package["openjdk-6-jdk"], Exec["download-elasticsearch"]],
         source => "/home/socorro/elasticsearch-${es_version}.deb",
         provider => dpkg,
         ensure => latest;
