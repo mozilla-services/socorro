@@ -284,15 +284,31 @@ def classes_in_namespaces_converter_with_compression(
 
 
 def get_extra_as_options(input_str):
-    frequency, time = input_str.split('|')[1:]
+    metadata = input_str.split('|')[1:]
+    if len(metadata) == 1:
+        if ':' in metadata[0]:
+            frequency = None
+            time_ = metadata[0]
+        else:
+            frequency = metadata[0]
+            time_ = None
+    else:
+        frequency, time_ = metadata
+
     n = Namespace()
     n.add_option('frequency',
                  doc='frequency',
                  default=frequency,
-                 from_string_converter=int)
+                 #from_string_converter=int
+                 exclude_from_print_conf=True,
+                 exclude_from_dump_conf=True
+                 )
     n.add_option('time',
                  doc='time',
-                 default=time)
+                 default=time_,
+                 exclude_from_print_conf=True,
+                 exclude_from_dump_conf=True
+                 )
     return n
 ## /lars ------------------------------------------------------------
 
@@ -398,12 +414,28 @@ class CronTabber(App):
         _fmt = '%Y-%m-%d %H:%M:%S'
         _now = datetime.datetime.now()
         PAD = 12
-        for each in self.config.jobs:
-            freq = each.split('|', 1)[1]
+        from pprint import pprint
+        pprint( self.config.items())
+        print dir(self.config.jobs)
+        print self.config.jobs.class_dict
+        _jobs = [v for (k, v) in self.config.items() if k.startswith('class-')]
+
+        print "JOBS"
+        print _jobs
+        for each in _jobs:#self.config.jobs:
+            #freq = each.split('|', 1)[1]
+            freq = each.frequency
             if '|' in freq:
                 freq = freq.replace('|', ' @ ')
-            job_class, seconds, time_ = self._lookup_job(each)
-            class_name = job_class.__module__ + '.' + job_class.__name__
+            #job_class, seconds, time_ = self._lookup_job(each)
+            job_class = each
+            time_ = each.time
+            seconds = self._convert_frequency(each.frequency)
+            print (job_class, seconds, time_)
+            print type(job_class)
+            print job_class.keys()
+            class_name = 'BLABLA'
+            #class_name = job_class.__module__ + '.' + job_class.__name__
             print >>stream, '=== JOB ' + '=' * 72
             print >>stream, "Class:".ljust(PAD), class_name
             print >>stream, "App name:".ljust(PAD), job_class.app_name
