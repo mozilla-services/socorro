@@ -7,7 +7,7 @@ import time
 import types
 
 from nose.tools import *
-import socorro.lib.filesystem as f
+import socorro.external.filesystem.filesystem as f
 import socorro.unittest.testlib.util as tutil
 
 def setup_module():
