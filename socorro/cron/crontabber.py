@@ -111,12 +111,6 @@ class JSONJobDatabase(dict):
         return struct
 
 
-def job_lister(input_str):
-    return [x.strip() for x
-            in input_str.splitlines()
-            if x.strip()]
-
-
 def timesince(d, now=None):  # pragma: no cover
     """
     Taken from django.utils.timesince
@@ -559,63 +553,6 @@ class CronTabber(App):
         self.database[app_name] = info
         self.database.save(self.config.database)
 
-    def _lookup_job(self, job_description):
-        """return class definition and a frequency in seconds as a tuple pair.
-        """
-        if '|' not in job_description and '.' not in job_description:
-            # the job is described by its app_name
-            for each in self.config.jobs:
-                #freq = each.split('|', 1)[1]
-                job_class, seconds, time_ = self._lookup_job(each)
-                if job_class.app_name == job_description:
-                    return job_class, seconds, time_
-            # still here! Then it couldn't be found
-            raise JobNotFoundError(job_description)
-        elif '.' in job_description and '|' not in job_description:
-            # e.g. 'some.path.to.JobClass'
-            for each in self.config.jobs:
-                if (each != job_description
-                  and each.startswith(job_description)):
-                    return self._lookup_job(each)
-
-        try:
-            class_path, frequency = job_description.split('|')
-            time_ = None
-        except ValueError:
-            try:
-                class_path, frequency, time_ = job_description.split('|')
-                self._check_time(time_)
-            except ValueError:
-                raise JobDescriptionError(job_description)
-
-        # because the default is every 1 day, you can write:
-        #  path.to.jobclass|04:30
-        # to mean 04:30 every day
-        if not time_ and ':' in frequency:
-            time_ = frequency
-            frequency = '1d'
-        seconds = self._convert_frequency(frequency)
-        if time_ and seconds < 60 * 60 * 24:
-            raise FrequencyDefinitionError(time_)
-
-        try:
-            class_ = class_converter(class_path)
-        except AttributeError, msg:
-            raise JobNotFoundError(msg)
-
-        if inspect.ismodule(class_):
-            # then it was passed something like "jobs.foo" instead
-            # of "jobs.foo.MyClass"
-            for name, cls in inspect.getmembers(class_, inspect.isclass):
-                if name == BaseCronApp.__name__:
-                    continue
-                if BaseCronApp.__name__ in [x.__name__ for x in cls.__mro__]:
-                    # XXX: why oh why can't I use
-                    # `issubclass(cls, BaseCronApp)` ????
-                    class_ = cls
-                    break
-        return class_, seconds, time_
-
     def _convert_frequency(self, frequency):
         number = int(re.findall('\d+', frequency)[0])
         unit = re.findall('[^\d]+', frequency)[0]
@@ -674,5 +611,5 @@ class CronTabber(App):
             return False
 
 
-if __name__ == '__main__':
+if __name__ == '__main__':  # pragma: no cover
     sys.exit(main(CronTabber))
