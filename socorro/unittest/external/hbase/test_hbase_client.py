@@ -1,4 +1,4 @@
-import socorro.storage.hbaseClient as hbc
+import socorro.external.hbase.hbase_client as hbc
 import socorro.unittest.testlib.expectations as exp
 
 import re
