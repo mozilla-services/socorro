@@ -9,8 +9,8 @@ create table explosiveness (
 	product_version_id INT NOT NULL,
 	signature_id INT NOT NULL,
 	report_date DATE not null,
-	oneday NUMERIC NOT NULL DEFAULT 0,
-	threeday NUMERIC NOT NULL DEFAULT 0,
+	oneday NUMERIC,
+	threeday NUMERIC,
 	constraint explosiveness_key primary key ( product_version_id, signature_id, report_date )
 );$q$, 
 -- owner of table; always breakpad_rw
@@ -37,6 +37,11 @@ DECLARE
 	-- mostly corresponds to Kairo "clampperadu"
 	mindiv_one INT := 30;
 	mindiv_three INT := 15;
+	mes_edate DATE;
+	mes_b3date DATE;
+	comp_e1date DATE;
+	comp_e3date DATE;
+	comp_bdate DATE;
 BEGIN
 -- this function populates a daily matview
 -- for explosiveness
@@ -53,7 +58,7 @@ IF checkdata THEN
 END IF;
 
 -- check if product_adu and tcbs are updated
-SELECT 1
+PERFORM 1
 FROM tcbs JOIN product_adu
    ON tcbs.report_date = product_adu.adu_date
 WHERE tcbs.report_date = updateday
@@ -63,7 +68,7 @@ IF NOT FOUND THEN
 	IF checkdata THEN
 		RAISE EXCEPTION 'Either product_adu or tcbs have not been updated to the end of %',updateday;
 	ELSE
-		RAISE NOTICE 'Either product_adu or tcbs has not been updated, skipping.'
+		RAISE NOTICE 'Either product_adu or tcbs has not been updated, skipping.';
 		RETURN TRUE;
 	END IF;
 END IF;
@@ -134,6 +139,8 @@ SELECT sum1day.signature_id,
 	as explosive_1day
 FROM sum1day 
 	LEFT OUTER JOIN agg9day USING ( signature_id, product_version_id );
+	
+ANALYZE explosive_oneday;
 
 -- create threeday temp table
 CREATE TEMPORARY TABLE explosive_threeday
@@ -190,15 +197,17 @@ SELECT avg3day.signature_id,
 FROM avg3day LEFT OUTER JOIN agg7day 
 	USING ( signature_id, product_version_id );
 	
+ANALYZE explosive_threeday;
+	
 -- truncate explosiveness
 DELETE FROM explosiveness;
 
 -- merge the two tables and insert
 INSERT INTO explosiveness (
 	report_date, signature_id, product_version_id, 
-	oneday, threeday
-SELECT signature_id, product_version_id, explosive_1day, explosive_3day
-FROM explosive_oneday FULL OUTER JOIN explosive_threeday
+	oneday, threeday )
+SELECT updateday, signature_id, product_version_id, explosive_1day, explosive_3day
+FROM explosive_oneday LEFT OUTER JOIN explosive_threeday
 	USING ( signature_id, product_version_id )
 ORDER BY product_version_id;
 	
