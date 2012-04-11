@@ -28,8 +28,7 @@ class TransactionExecutor(RequiredConfig):
                 connection.commit()
                 return result
             except:
-                if connection.get_transaction_status() == \
-                  psycopg2.extensions.TRANSACTION_STATUS_INTRANS:
+                if self.db_conn_context_source.in_transaction(connection):
                     connection.rollback()
                 self.config.logger.error(
                   'Exception raised during transaction',
@@ -87,8 +86,8 @@ class TransactionExecutorWithInfiniteBackoff(TransactionExecutor):
                         connection.commit()
                         return result
                     except:
-                        if connection.get_transaction_status() == \
-                          psycopg2.extensions.TRANSACTION_STATUS_INTRANS:
+                        if self.db_conn_context_source.in_transaction(
+                                                                   connection):
                             connection.rollback()
                         raise
             except self.db_conn_context_source.conditional_exceptions, x:
