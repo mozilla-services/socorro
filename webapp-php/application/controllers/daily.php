@@ -106,7 +106,7 @@ class Daily_Controller extends Controller {
         $Branch_Model = new Branch_Model;
 
         // Prepare variables
-        $products = Kohana::config('daily.products');
+        $products = $this->model->get_products();
         $operating_systems = Kohana::config('daily.operating_systems');
         $report_types = array('crash', 'oopp', 'hang_browser', 'hang_plugin');
 

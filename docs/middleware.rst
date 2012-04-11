@@ -19,9 +19,8 @@ New-style, documented services
 * `extensions/ <#id7>`_
 * `job/ <#job>`_
 * `priorityjobs/ <#priorityjobs>`_
-* products/
-    * `products/builds/ <#products-builds>`_
-    * `products/versions/ <#products-versions>`_
+* `products/ <#products>`_
+* `products/builds/ <#products-builds>`_
 * report/
     * `report/list/ <#list-report>`_
 * search/
@@ -573,6 +572,74 @@ With a POST HTTP method, it will return true if the uuid has been successfully
 added to the priorityjobs queue, and false if the uuid is already in the queue
 or if there has been a problem.
 
+.. ############################################################################
+   Products API
+   ############################################################################
+
+Products
+--------
+
+Return information about product(s) and version(s) depending on the parameters the service is
+called with.
+
+API specifications
+^^^^^^^^^^^^^^^^^^
+
++----------------+--------------------------------------------------------------------------------+
+| HTTP method    | GET                                                                            |
++----------------+--------------------------------------------------------------------------------+
+| URL schema     | /products/(optional_parameters)                                                |
++----------------+--------------------------------------------------------------------------------+
+| Full URL       | /products/versions/(versions)                                                  |
++----------------+--------------------------------------------------------------------------------+
+| Example        | http://socorro-api/bpapi/products/versions/Firefox:9.0a1/                      |
++----------------+--------------------------------------------------------------------------------+
+
+Optional parameters
+^^^^^^^^^^^^^^^^^^^^
+
++----------+---------------------------+---------------+----------------------------------------+
+| Name     | Type of value             | Default value | Description                            |
++==========+===========================+===============+========================================+
+| versions | String or list of strings | None          | Several product:version strings can    |
+|          |                           |               | be specified, separated by a + symbol. |
++----------+---------------------------+---------------+----------------------------------------+
+
+Return value
+^^^^^^^^^^^^
+
+If the service is called with the optional versions parameter, the service returns an object with an array of results
+labeled as hits and a total::
+
+    {
+        "hits": [
+            {
+                "is_featured": boolean,
+                "throttle": float,
+                "end_date": "string",
+                "start_date": "integer",
+                "build_type": "string",
+                "product": "string",
+                "version": "string"
+            }
+            ...
+        ],
+        "total": 1
+    }
+
+If the service is called with no parameters, it returns an object containing a list of products as well as a
+total, indicating the number of products returned::
+
+    {"hits": [
+        {
+            "sort": 1,
+            "release_name": "firefox",
+            "rapid_release_version": "5.0",
+            "product_name": "Firefox"
+        },
+        ...
+        ], "total": 6
+    }
 
 .. ############################################################################
    Products Builds API
@@ -637,55 +704,6 @@ Return an array of objects::
         },
         ...
     ]
-
-Products Versions
------------------
-
-Return information about product(s) and version(s) passed to the service.
-
-API specifications
-^^^^^^^^^^^^^^^^^^
-
-+----------------+--------------------------------------------------------------------------------+
-| HTTP method    | GET                                                                            |
-+----------------+--------------------------------------------------------------------------------+
-| URL schema     | /products/(.*)                                                                 |
-+----------------+--------------------------------------------------------------------------------+
-| Full URL       | /products/versions/(versions)/                                                 |
-+----------------+--------------------------------------------------------------------------------+
-| Example        | http://socorro-api/bpapi/products/versions/Firefox:9.0a1/                      |
-+----------------+--------------------------------------------------------------------------------+
-
-Mandatory parameters
-^^^^^^^^^^^^^^^^^^^^
-
-+----------+---------------------------+---------------+----------------------------------------+
-| Name     | Type of value             | Default value | Description                            |
-+==========+===========================+===============+========================================+
-| versions | String or list of strings | None          | Several product:version strings can    |
-|          |                           |               | be specified, separated by a + symbol. |
-+----------+---------------------------+---------------+----------------------------------------+
-
-Return value
-^^^^^^^^^^^^
-
-Return an object with an array of results labeled as hits and a total::
-
-    {
-        "hits": [
-            {
-                "is_featured": boolean,
-                "throttle": float,
-                "end_date": "string",
-                "start_date": "integer",
-                "build_type": "string",
-                "product": "string",
-                "version": "string"
-            }
-            ...
-        ],
-        "total": 1
-    }
 
 .. ############################################################################
    Search API
