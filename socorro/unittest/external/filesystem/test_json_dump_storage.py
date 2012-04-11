@@ -7,7 +7,7 @@ import sys
 
 from nose.tools import *
 
-import socorro.lib.JsonDumpStorage as JDS
+import socorro.external.filesystem.json_dump_storage as JDS
 import socorro.lib.util
 from socorro.lib.datetimeutil import utc_now, UTC
 
