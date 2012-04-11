@@ -15,6 +15,11 @@ echo 'data source for explosiveness'
 echo 'bug 733021'
 psql -f ${CURDIR}/explosive_crashes.sql breakpad
 
+echo '*********************************************************'
+echo 'make crash ratio views match UI'
+echo 'bug 738394'
+psql -f ${CURDIR}/product_crash_ratio.sql breakpad
+
 #change version in DB
 psql -c "SELECT update_socorro_db_version( '$VERSION' )" breakpad
 
