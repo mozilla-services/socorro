@@ -132,11 +132,10 @@ import socorro.middleware.crashes_comments_service as crashes_comments
 import socorro.middleware.crash_service as crash_new
 import socorro.middleware.extensions_service as extensions
 import socorro.middleware.crashes_paireduuid_service as crashes_paireduuid
-import socorro.middleware.products_versions_service as products_versions
+import socorro.middleware.products_service as products
 import socorro.middleware.priorityjobs_service as priorityjobs
 import socorro.middleware.crashes_frequency_service as crashes_frequency
 import socorro.middleware.job_service as job
-
 
 servicesList = cm.Option()
 servicesList.doc = 'a python list of classes to offer as services'
@@ -164,7 +163,7 @@ servicesList.default = [
     crash_new.Crash,
     extensions.Extensions,
     crashes_paireduuid.CrashesPaireduuid,
-    products_versions.ProductsVersions,
+    products.Products,
     priorityjobs.Priorityjobs,
     crashes_frequency.CrashesFrequency,
     job.Job,

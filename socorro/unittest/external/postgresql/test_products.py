@@ -34,6 +34,12 @@ class TestProducts(PostgreSQLTestCase):
                 build_type citext,
                 throttle numeric(5,2)
             );
+            CREATE TABLE products
+            (
+                product_name text not null,
+                sort smallint not null,
+                rapid_release_version text not null
+            );
         """)
         
         # Insert data
@@ -67,10 +73,29 @@ class TestProducts(PostgreSQLTestCase):
                 'Release',
                 30.00
             );
+            INSERT INTO products VALUES
+            (
+                '%s',
+                %d,
+                '%s'
+            ),
+            (
+                '%s',
+                %d,
+                '%s'
+            ),
+            (
+                '%s',
+                %d,
+                '%s'
+            );
         """ % (now, now,
                now, now,
-               now, now))
-        
+               now, now,
+               "Firefox", 1, "firefox",
+               "Fennec", 3, "mobile",
+               "Thunderbird", 2, "thunderbird"))
+
         self.connection.commit()
         
     #--------------------------------------------------------------------------
@@ -79,6 +104,7 @@ class TestProducts(PostgreSQLTestCase):
         cursor = self.connection.cursor()
         cursor.execute("""
             DROP TABLE product_info;
+            DROP TABLE products;
         """)
         self.connection.commit()
         super(TestProducts, self).tearDown()
@@ -95,7 +121,7 @@ class TestProducts(PostgreSQLTestCase):
         params = {
             "versions": "Firefox:8.0"
         }
-        res = products.get_versions(**params)
+        res = products.get(**params)
         res_expected = {
             "hits": [
                 {
@@ -118,7 +144,7 @@ class TestProducts(PostgreSQLTestCase):
         params = {
             "versions": ["Firefox:11.0.1", "Thunderbird:10.0.2b"]
         }
-        res = products.get_versions(**params)
+        res = products.get(**params)
         res_expected = {
             "hits": [
                 {
@@ -150,7 +176,7 @@ class TestProducts(PostgreSQLTestCase):
         params = {
             "versions": "Firefox:14.0"
         }
-        res = products.get_versions(**params)
+        res = products.get(**params)
         res_expected = {
             "hits": [],
             "total": 0
@@ -159,10 +185,28 @@ class TestProducts(PostgreSQLTestCase):
         self.assertEqual(res, res_expected)
 
         #......................................................................
-        # Test 4: exception when no parameter is passed
-        params = {
-            "versions": ['']
+        # Test 4: Test products list is returned with no parameters
+        params = {}
+        res = products.get(**params)
+        res_expected = {
+                "hits": [
+                    {
+                        "product_name": "Firefox",
+                        "sort": 1,
+                        "rapid_release_version": "firefox"
+                     },
+                    {
+                        "product_name": "Fennec",
+                        "sort": 3,
+                        "rapid_release_version": "mobile"
+                     },
+                    {
+                        "product_name": "Thunderbird",
+                        "sort": 2,
+                        "rapid_release_version": "thunderbird"
+                     }
+                ],
+                "total": 3
         }
-        self.assertRaises(MissingOrBadArgumentException,
-                          products.get_versions,
-                          **params)
+        
+        self.assertEqual(res, res_expected)
