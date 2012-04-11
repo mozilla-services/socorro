@@ -1,4 +1,4 @@
-/*global socorro:false */
+/*global socorro:false, json_path:false */
 $(function() {
     "use strict";
     var fromDate, toDate,
@@ -6,8 +6,11 @@ $(function() {
     selectedVersion, selectedProduct,
     previousPoint = null,
     previousSeriesIndex = null,
-    errorMsg = "The 'To' date should be greater than the 'From' date.",
+    incorrectDateRange = "<p>The 'To' date should be greater than the 'From' date.</p>",
+    noProductSelected = "<p>Please select a product below.</p>",
     dateFields = $("#nightly_crash_trends input[type='date']"),
+    endDateWrapper = $("#end_date").parents(".field"),
+    productsWrapper = $("#product").parents(".field"),
     dateSupported = function() {
         var inputElem = document.createElement("input");
         inputElem.setAttribute("type", "date");
@@ -35,8 +38,33 @@ $(function() {
     },
     showMsg = function(msg, type) {
         $(type).empty().append(msg).show();
+    },
+    resetForm = function() {
+        $("p", endDateWrapper).remove();
+        endDateWrapper.removeClass("error-field");
+
+        $("p", productsWrapper).remove();
+        productsWrapper.removeClass("error-field");
+    },
+    validateForm = function(start, end, product) {
+        var formValid = true;
+
+        //remove any previous validation messages
+        resetForm();
+
+        if(!validateDateRange(fromDate, toDate)) {
+            endDateWrapper.addClass("error-field").append(incorrectDateRange);
+            formValid = false;
+        }
+
+        if(product === "none") {
+            productsWrapper.addClass("error-field").append(noProductSelected);
+            formValid = false;
+        }
+
+        return formValid;
     };
-    
+
     var drawCrashTrends = function(url) {
         var dates = socorro.date.getAllDatesInRange(fromDate, toDate, "US_NUMERICAL"),
         selectedVersion = $("#version option:selected").val(),
@@ -49,7 +77,7 @@ $(function() {
                 hoverable: true
             },
             legend: {
-                noColumns: 8,
+                noColumns: 9,
                 container: "#graph_legend"
             },
             series: {
@@ -70,17 +98,21 @@ $(function() {
         graphData = $.getJSON(ajax_path, function(data) {
             // remove the loading animation
             $("#loading").remove();
-            
-            graph = $.plot("#nightly_crash_trends_graph", data.nightlyCrashes, options);
-            //emty the ul before appending the new dates
-            $("#dates").empty();
-            for(i = numberOfDates - 1; i >= 0; i--) {
-                $("#dates").append("<li>" + dates[i] + " " + selectedVersion + "</li>");
+
+            if(data.nightlyCrashes.length > 0) {
+                graph = $.plot("#nightly_crash_trends_graph", data.nightlyCrashes, options);
+                //emty the ul before appending the new dates
+                $("#dates").empty();
+                for(i = numberOfDates - 1; i >= 0; i--) {
+                    $("#dates").append("<li>" + dates[i] + " " + selectedVersion + "</li>");
+                }
+            } else {
+                $("#nightly_crash_trends_graph").empty().append("No data found for selected criteria");
             }
         }).error(function(jqXHR, textStatus, errorThrown) {
             // remove the loading animation
             $("#loading").remove();
-            $("#nightly_crash_trends_graph").append(errorThrown);
+            $("#nightly_crash_trends_graph").empty().append(errorThrown);
         });
     };
     
@@ -124,26 +156,25 @@ $(function() {
             previousPoint = null;
         }
     });
-    
+
     $("#nightly_crash_trends").submit(function(event) {
         event.preventDefault();
+
+        selectedProduct = $("#product").val();
+        selectedVersion = $("#version").val();
 
         base_url = "/crash_trends/json_data?";
         fromDate = $("#start_date").val();
         toDate = $("#end_date").val();
         var params = {
-            "product" : $("#product option:selected").val(),
-            "version" : $("#version option:selected").val(),
+            "product" : selectedProduct,
+            "version" : selectedVersion,
             "start_date" : socorro.date.formatDate(socorro.date.convertToDateObj(fromDate), "ISO"),
             "end_date" : socorro.date.formatDate(socorro.date.convertToDateObj(toDate), "ISO")
         };
 
-        //validate that toDate is after fromDate
-        if(validateDateRange(fromDate, toDate)) {
-            //remove any previous validation messages
-            dateFields.removeClass("error-field");
-            $(".error").hide();
-            
+        //validate that toDate is after fromDate and a product is selected
+        if(validateForm(fromDate, toDate, selectedProduct)) {
             //set the dates on the figcaption
             $("#fromdate").empty().append(fromDate);
             $("#todate").empty().append(toDate);
@@ -151,43 +182,52 @@ $(function() {
             // add the loading animation
             setLoader();
             drawCrashTrends(base_url + $.param(params));
-        } else {
-            //validation failed raise validation message and highlight fields
-            dateFields.addClass("error-field");
-            showMsg(errorMsg, ".error");
         }
     });
 
+    /*
+     * when a selection is made from the product drop-down we need to call
+     * the product_versions service to get the appropriate versions for the
+     * selected product.
+     */
     $("#product").change(function() {
-        var selectedProduct = $("#product").val(),
-        versions = [],
+        var versions = [],
+        versionSelector = $("#version"),
+        selectedProduct = $("#product").val(),
         optionElement = "",
         versionTxt = "",
         optionElements = [];
+
+        // clear any info messages
+        $(".info").hide();
+        // empty versions selector before loading new versions
+        versionSelector.empty();
+        // remove error class from field
+        $("p", productsWrapper).remove();
+        productsWrapper.removeClass("error-field");
+
+        //only make the ajax call if an actual product was selected.
+        if(selectedProduct !== "none") {
+            $.getJSON('/crash_trends/product_versions', { product: selectedProduct }, function(data) {
+                if(data.length) {
+                    versions = [];
         
-        console.log(selectedProduct);
-            
-        $.getJSON('/crash_trends/product_versions', { product: selectedProduct }, function(data) {
-            
-            if(data.length) {
-                $(".info").hide();
-                versions = [];
-    
-                $(data).each(function(i, version) {
-                    optionElement = document.createElement('option')
-                    optionElement.setAttribute("value", version);
-                    versionTxt = document.createTextNode(version);
-                    optionElement.appendChild(versionTxt);
-                    optionElements.push(optionElement);
-                });
-                
-                $("#version").empty().append(optionElements);
-            } else {
-                showMsg("No versions found for product", ".info");
-            }
-        }).error(function(jqXHR, textStatus, errorThrown) {
-            showMsg(errorThrown, ".error");
-        });
+                    $(data).each(function(i, version) {
+                        optionElement = document.createElement('option');
+                        optionElement.setAttribute("value", version);
+                        versionTxt = document.createTextNode(version);
+                        optionElement.appendChild(versionTxt);
+                        optionElements.push(optionElement);
+                    });
+                    
+                    versionSelector.empty().append(optionElements);
+                } else {
+                    showMsg("No versions found for product", ".info");
+                }
+            }).error(function(jqXHR, textStatus, errorThrown) {
+                showMsg(errorThrown, ".error");
+            });
+        }
     });
 
     //check if the HTML5 date type is supported else, fallback to jQuery UI

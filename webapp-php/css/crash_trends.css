@@ -50,9 +50,6 @@ figure {
     border: 1px solid #999;
     width: 20em;
 }
-#nightly_crash_trends input.error-field[type="date"] {
-    border-right: 5px solid #a30;
-}
 #nightly_crash_trends .error,
 #nightly_crash_trends .info {
     display: none;
@@ -71,6 +68,7 @@ figure {
 #nightly_crash_trends_graph {
     float: left;
     width: 89%;
+    width: 715px;
     height: 300px;
 }
 #graph_legend table {
@@ -113,4 +111,10 @@ figure {
 }
 .field {
     margin: 1.2em 1.2em 1.2em 0;
+}
+.error-field {
+    background-color: rgba(170, 51, 0, 0.3);
+    background-color: #e5c1b2;
+    padding: 0.5em;
+    border: 1px solid #a30;
 }
