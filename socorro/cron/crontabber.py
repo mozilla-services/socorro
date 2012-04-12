@@ -35,6 +35,10 @@ class JobDescriptionError(Exception):
     pass
 
 
+class BrokenJSONError(ValueError):
+    pass
+
+
 class BaseCronApp(RequiredConfig):
     """The base class from which Socorro apps are based"""
     required_config = Namespace()
@@ -68,6 +72,8 @@ class JSONJobDatabase(dict):
             self.update(self._recurse_load(json.load(open(file_path))))
         except IOError:
             pass
+        except ValueError, msg:
+            raise BrokenJSONError(msg)
 
     def _recurse_load(self, struct):
         for key, value in struct.items():

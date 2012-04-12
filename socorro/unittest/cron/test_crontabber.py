@@ -124,17 +124,7 @@ class TestJSONJobsDatabase(TestCaseWithTempDir):
         with open(file1, 'w') as f:
             f.write('{Junk\n')
         db = crontabber.JSONJobDatabase()
-
-        old_stderr = sys.stderr
-        new_stderr = StringIO()
-        sys.stderr = new_stderr
-        try:
-            self.assertRaises(ValueError, db.load, file1)
-            output = new_stderr.getvalue()
-            self.assertTrue(file1 in output)
-            self.assertTrue('{Junk' in output)
-        finally:
-            sys.stderr = old_stderr
+        self.assertRaises(crontabber.BrokenJSONError, db.load, file1)
 
 
 class TestCrontabber(TestCaseWithTempDir):
