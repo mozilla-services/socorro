@@ -5,4 +5,13 @@ TABLES="daily_crash_codes os_names os_name_matches process_types products releas
 for table in $TABLES
 do
   psql -c "COPY $table FROM '`pwd`/${table}.csv' WITH CSV HEADER" breakpad
+  exit_code=$?
+  if [ $exit_code != 0 ]
+  then
+    echo "Failed to import ${table}"
+    exit $exit_code
+  fi
 done
+
+psql -c "SELECT backfill_matviews('2012-04-02', '2012-04-03')" breakpad
+psql -c "UPDATE product_versions SET featured_version = true" breakpad

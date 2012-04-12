@@ -54,7 +54,7 @@ class socorro-db inherits socorro-base {
             user => 'postgres',
             require => Exec['create-breakpad-db'];
 
-        '/usr/bin/psql -f /home/socorro/dev/socorro/sql/schema/3/breakpad_schema.sql breakpad':
+        '/usr/bin/psql -f /home/socorro/dev/socorro/sql/schema/5/breakpad_schema.sql breakpad':
             alias => 'setup-schema',
             user => 'postgres',
             require => Exec['create-breakpad-roles'],
@@ -100,14 +100,6 @@ class socorro-db inherits socorro-base {
             onlyif => '/usr/bin/psql -xt breakpad -c "SELECT count(*) FROM products" | grep "count | 0"',
             logoutput => on_failure,
             require => Exec['setup-schema'];
-    }
-
-    exec {
-        '/usr/bin/psql -c "SELECT backfill_matviews(\'2012-04-02\', \'2012-04-03\'); UPDATE product_versions SET featured_version = true" breakpad':
-            alias => 'bootstrap-matviews',
-            user => 'postgres',
-            onlyif => '/usr/bin/psql -xt breakpad -c "SELECT count(*) FROM product_versions" | grep "count | 0"',
-            require => Exec['dataload'];
     }
 
     exec {
