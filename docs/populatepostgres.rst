@@ -67,19 +67,12 @@ volume is low enough, you may want to modify this function
 Normally this is run for the previous day by cron_daily_matviews.sh 
 but you can simply run the backfill function to bootstrap the system:
 
-As the *postgres* user:
-::
-  psql -h localhost -U breakpad_rw breakpad
-  breakpad=# select backfill_matviews('2012-03-02', '2012-03-03');
+This is normally run by the import.sh, so take a look in there if
+you need to make adjustments.
 
-Be sure to use to/from dates that match the CSV data you have entered.
-There should be no failures, and the result should be "true".
-
-Enable at least one "featured" product, this command will set all 
-current versions to "featured" (this controls which versions appear on the
-front page of the web UI):
-::
-  breakpad=# UPDATE product_versions SET featured_version = true;
+There also needs to be at least one featured version, which is
+controlled by setting "featured_version" column to "true" for one
+or more rows in the product_version table.
 
 Restart memcached as the *root* user:
 ::
