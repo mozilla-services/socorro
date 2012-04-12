@@ -12,3 +12,6 @@ do
     exit $exit_code
   fi
 done
+
+psql -c "SELECT backfill_matviews('2012-04-02', '2012-04-03')" breakpad
+psql -c "UPDATE product_versions SET featured_version = true" breakpad
