@@ -68,13 +68,6 @@ class JSONJobDatabase(dict):
             self.update(self._recurse_load(json.load(open(file_path))))
         except IOError:
             pass
-        except ValueError:
-            # oh nos! the JSON is broken
-            sys.stderr.write(('JSON PAYLOAD (%s) ' % file_path)
-                             .ljust(79, '-') + '\n')
-            sys.stderr.write(open(file_path).read())
-            sys.stderr.write('\n' + '-' * 79 + '\n')
-            raise
 
     def _recurse_load(self, struct):
         for key, value in struct.items():
