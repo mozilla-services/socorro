@@ -260,7 +260,9 @@ if (isset($report->sumo_signature) && !empty($report->signature)) { ?>
       <div id="frames">
     <?php if (isset($report->threads) && count($report->threads)): ?>
 
-            <?php function stack_trace($frames) { ?>
+            <?php function stack_trace($frames, $truncated) { 
+                $highlight = FALSE;
+            ?>
                 <table class="data-table">
                     <thead>
                         <tr>
@@ -271,9 +273,22 @@ if (isset($report->sumo_signature) && !empty($report->signature)) { ?>
                         </tr>
                     </thead>
                     <tbody>
-                    <?php $row = 1 ?>
-                    <?php foreach ($frames as $frame): ?>
-                        <tr>
+                        <?php $row = 1;
+                            foreach ($frames as $frame): 
+                                if($truncated) {
+                                    $current_frame_number = $frame['frame_num'];
+                                    $previous_frame_number = $frames[($row > 1 ? $row - 2 : 0)]['frame_num'];
+                                    //if there is not a next element in the array set $next_frame_number == $current_frame_number
+                                    //to avoid incorrect highlighting and invalid offset.
+                                    $next_frame_number = (sizeof($frames) >= $row + 1) ? $frames[$row]['frame_num'] : $current_frame_number;
+                                    if (($current_frame_number - $previous_frame_number) > 1 || ($next_frame_number - $current_frame_number) > 1) {
+                                        $highlight = TRUE;
+                                    } else {
+                                        $highlight = FALSE;
+                                    }
+                                }
+                        ?>
+                        <tr <?php if ($highlight) {?>class="truncated-frame" title="Some frames have been removed as the automatic truncation routine was invoked."<?php } ?>>
                             <td><?php out::H($frame['frame_num']) ?></td>
                             <td><?php out::H($frame['module_name']) ?></td>
                             <?php
@@ -292,8 +307,10 @@ if (isset($report->sumo_signature) && !empty($report->signature)) { ?>
                                 <?php endif ?>
                             </td>
                         </tr>
-                        <?php $row += 1 ?>
-                    <?php endforeach ?>
+                        <?php
+                            $row += 1;
+                            endforeach 
+                        ?>
                     </tbody>
                 </table>
             <?php } ?>
@@ -303,7 +320,7 @@ if (isset($report->sumo_signature) && !empty($report->signature)) { ?>
             /* First ensure that a crashing thread was identified by testing that $report->crashed_thread is not -1 */
             if ($report->crashed_thread != -1) {
                 if (isset($report->threads) && count($report->threads) > $report->crashed_thread ) {
-                    stack_trace( $report->threads[$report->crashed_thread] );
+                    stack_trace( $report->threads[$report->crashed_thread], $is_truncated );
                 }
             } else { ?>
                 <p>No crashing thread identified.</p>
@@ -314,7 +331,7 @@ if (isset($report->sumo_signature) && !empty($report->signature)) { ?>
                 <?php for ($i=0; $i<count($report->threads); $i++): ?>
                     <?php if ($i == $report->crashed_thread) continue; ?>
                     <h2>Thread <?php out::H($i) ?></h2>
-                    <?php stack_trace($report->threads[$i]) ?>
+                    <?php stack_trace($report->threads[$i], FALSE) ?>
                 <?php endfor ?>
             </div>
 
