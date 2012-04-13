@@ -31,9 +31,6 @@ class ReportList(DataAPIService):
         """
         # Parse parameters
         params = self.parse_query_string(args[0])
-        if not "signature" in params:
-            raise web.webapi.BadRequest()
-
         params = self._bind_params(params)
 
         module = self.get_module(params)

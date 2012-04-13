@@ -260,9 +260,12 @@ class Report_Model extends Model {
         $apiData = array(
             Kohana::config('webserviceclient.socorro_hostname'),
             $apiEntry,
-            'signature',
-            rawurlencode(str_replace('/', '%2F', $params['signature']))
         );
+        if (!empty($params['signature']))
+        {
+            $apiData[] = 'signature';
+            $apiData[] = rawurlencode(str_replace('/', '%2F', $params['signature']));
+        }
 
         //echo '<pre>',var_dump($params),'</pre>';
 
