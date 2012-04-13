@@ -93,7 +93,6 @@ class Controller extends Controller_Core {
 
         // Create instances of the commonly used models.
         $this->branch_model   = new Branch_Model();
-        $this->common_model   = new Common_Model();
         $this->report_model   = new Report_Model();
         $this->platform_model = new Platform_Model();
 
