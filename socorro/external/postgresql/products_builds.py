@@ -120,6 +120,12 @@ class ProductsBuilds(PostgreSQLBase):
         else:
             params["release_name"] = params["product"]
 
+        # FIXME this will be moved to the DB in 7, see bug 740829
+        if params["product"].startswith("Fennec"):
+            params["release_name"] = "mobile"
+        else:
+            params["release_name"] = params["product"]
+
         params["from_date"] = params["from_date"].date()
 
         sql = ["""/* socorro.external.postgresql.builds.Builds.builds */
