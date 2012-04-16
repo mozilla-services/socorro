@@ -23,6 +23,7 @@ New-style, documented services
 * `products/builds/ <#products-builds>`_
 * report/
     * `report/list/ <#list-report>`_
+* `signatureurls <#signature-urls>`_
 * search/
     * `search/crashes/ <#search>`_
     * `search/signatures/ <#search>`_
@@ -704,6 +705,61 @@ Return an array of objects::
         },
         ...
     ]
+
+.. ############################################################################
+   Signature URLs API
+   ############################################################################
+
+Signature URLs
+--------------
+
+Returns a list of urls for a specific signature, product(s), version(s)s as well as start and end date. Also includes
+the total number of times this URL has been reported for the parameters specified above.
+
+API specifications
+^^^^^^^^^^^^^^^^^^
+
++----------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| HTTP method    | GET                                                                                                                                                                                                  |
++----------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| URL schema     | /signatureurls/(parameters)                                                                                                                                                                          |
++----------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Full URL       | /signatureurls/signature/(signature)/start_date/(start_date)/end_date/(end_date)/products/(products)/versions/(versions)                                                                             |
++----------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Example        | http://socorro-api/bpapi/signatureurls/signature/samplesignature/start_date/2012-03-01T00:00:00+00:00/end_date/2012-03-31T00:00:00+00:00/products/Firefox+Fennec/versions/Firefox:4.0.1+Fennec:13.0/ |
++----------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+
+Mandatory parameters
+^^^^^^^^^^^^^^^^^^^^
+
++----------------+------------------+-------------------+-------------------------------------------------------------------+
+| Name           | Type of value    | Default value     | Description                                                       |
++================+==================+===================+===================================================================+
+| signature      | String           | None              | The signature for which urls shoud be found                       |
++----------------+------------------+-------------------+-------------------------------------------------------------------+
+| start_date     | Date             | None              | Date from which to collect urls                                   |
++----------------+------------------+-------------------+-------------------------------------------------------------------+
+| end_date       | Date             | None              | Date up to, but not including, for which urls should be collected |
++----------------+------------------+-------------------+-------------------------------------------------------------------+
+| products       | String           | None              | Product(s) for which to find urls                                 |
++----------------+------------------+-------------------+-------------------------------------------------------------------+
+| versions       | String           | None              | Version(s) of the above products to find urls for                 |
++----------------+------------------+-------------------+-------------------------------------------------------------------+
+
+Return value
+^^^^^^^^^^^^
+
+Returns an object with a list of urls and the total count for each, as well as a counter,
+'total', for the total number of results in the result set.
+
+    {
+        "hits": [
+            {"url": "about:blank", 
+            "crash_count": 1936},
+            ...
+        ],
+        "total": 1
+    }
 
 .. ############################################################################
    Search API
