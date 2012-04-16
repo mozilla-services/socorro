@@ -1,4 +1,5 @@
 import logging
+import psycopg2
 import web
 
 from datetime import timedelta
@@ -6,6 +7,7 @@ from socorro.external.postgresql.base import PostgreSQLBase
 from socorro.lib.datetimeutil import utc_now
 
 import socorro.database.database as db
+import socorro.lib.buildutil as buildutil
 import socorro.lib.external_common as external_common
 import socorro.lib.util as util
 
@@ -33,13 +35,44 @@ class ProductsBuilds(PostgreSQLBase):
         Accept the same parameters than builds().
 
         """
+        logger.error("wtf")
         try:
             return self.builds(**kwargs)
-        except MissingOrBadArgumentException:
-            raise web.webapi.BadRequest()
+        except MissingOrBadArgumentException as e:
+            raise web.webapi.BadRequest(e)
         except Exception:
             util.reportExceptionAndContinue(logger)
             raise web.webapi.InternalError()
+
+    def create(self, **kwargs):
+        """
+        Insert a new build given the JSON data provided in the request.
+        This data should match the data accepted by insert_build().  On
+        success, rasises a 303 See Other redirect to the newly-added build.
+        """
+        try:
+            product, version = self.insert_build(**kwargs)
+        except MissingOrBadArgumentException as e:
+            raise web.webapi.BadRequest(e)
+        except Exception:
+            util.reportExceptionAndContinue(logger)
+            raise web.webapi.InternalError()
+
+        raise web.seeother("/products/builds/product/%s/version/%s" %
+                           (product, version))
+
+    def _require_parameters(self, params, *required):
+        """
+        Checks that all required parameters are present in and non-empty in
+        params, where required is a list of strings.
+        
+        Raises MissingOrBadArgumentException if a required parameter is
+        missing or empty.
+        """
+        for p in required:
+            if not params.get(p, None):
+                raise MissingOrBadArgumentException(
+                    "Mandatory parameter '%s' is missing or empty" % p)
 
     def builds(self, **kwargs):
         """
@@ -79,9 +112,7 @@ class ProductsBuilds(PostgreSQLBase):
         ]
         params = external_common.parse_arguments(filters, kwargs)
 
-        if "product" not in params or not params["product"]:
-            raise MissingOrBadArgumentException(
-                        "Mandatory parameter 'product' is missing or empty")
+        self._require_parameters(params, "product")
 
         # FIXME this will be moved to the DB in 7, see bug 740829
         if params["product"].startswith("Fennec"):
@@ -139,3 +170,66 @@ class ProductsBuilds(PostgreSQLBase):
             results[i]["date"] = line["date"].strftime("%Y-%m-%d")
 
         return results
+
+    def insert_build(self, **kwargs):
+        """
+        Create a new build for a product.
+
+        See http://socorro.readthedocs.org/en/latest/middleware.html#builds
+
+        Required keyword arguments:
+        product - Concerned product, e.g. firefox
+        version - Concerned version, e.g. 9.0a1
+        platform - Platform for this build, e.g. win32
+        build_id - Build ID for this build (yyyymmdd######)
+        build_type - Type of build, e.g. Nightly, Beta, Aurora, Release
+
+        Required if build_type is Beta:
+        beta_number - If this is a beta, then
+
+        Optional keyword arguments:
+        repository - Repository this build came from
+
+        Return: (product_name, version)
+        """
+
+        # Parse arguments
+        filters = [
+            ("product", None, "str"),
+            ("version", None, "str"),
+            ("platform", None, "str"),
+            ("build_id", None, "str"),
+            ("build_type", None, "str"),
+            ("beta_number", None, "str"),
+            ("repository", "", "str")
+        ]
+        params = external_common.parse_arguments(filters, kwargs)
+
+        logger.error('Got: %s', str(params))
+
+        self._require_parameters(params, "product", "version", "platform",
+                                     "build_id", "build_type")
+
+        if params["build_type"].lower() == "beta":
+            self._require_parameters(params, "beta_number")
+
+        try:
+            connection = self.database.connection()
+            cursor = connection.cursor()
+        
+            buildutil.insert_build(cursor, params["product"],
+                                   params["version"], params["platform"],
+                                   params["build_id"], params["build_type"],
+                                   params["beta_number"],
+                                   params["repository"])
+        except psycopg2.Error:
+            logger.error("Failed inserting build data into PostgresSQL",
+                         exc_info=True)
+            connection.rollback()
+            raise
+        else:
+            connection.commit()
+        finally:
+            connection.close()
+        
+        return (params["product"], params["version"])
