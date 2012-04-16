@@ -83,11 +83,16 @@ class ProductsBuilds(PostgreSQLBase):
             raise MissingOrBadArgumentException(
                         "Mandatory parameter 'product' is missing or empty")
 
+        # FIXME this will be moved to the DB in 7, see bug 740829
+        if params["product"].startswith("Fennec"):
+            params["release_name"] = "mobile"
+        else:
+            params["release_name"] = params["product"]
+
         params["from_date"] = params["from_date"].date()
 
         sql = ["""/* socorro.external.postgresql.builds.Builds.builds */
-            SELECT  product_name as product,
-                    version,
+            SELECT  version,
                     platform,
                     build_id as buildid,
                     build_type,
@@ -95,7 +100,7 @@ class ProductsBuilds(PostgreSQLBase):
                     repository,
                     build_date(build_id) as date
             FROM releases_raw
-            WHERE product_name = %(product)s
+            WHERE product_name = %(release_name)s
             """]
 
         if params["version"]:
@@ -106,7 +111,7 @@ class ProductsBuilds(PostgreSQLBase):
                 timestamp with time zone %(from_date)s
             AND repository IN ('mozilla-central', 'mozilla-1.9.2',
                                'comm-central', 'comm-1.9.2',
-                               'comm-central-trunk')
+                               'comm-central-trunk', 'mozilla-central-android')
             ORDER BY build_date(build_id) DESC, product_name ASC, version ASC,
                      platform ASC
         """)
@@ -118,16 +123,18 @@ class ProductsBuilds(PostgreSQLBase):
         cur = self.connection.cursor()
 
         try:
+            logger.debug(cur.mogrify(sql_query, params))
             sql_results = db.execute(cur, sql_query, params)
         except Exception:
             sql_results = []
             util.reportExceptionAndContinue(logger)
 
-        results = [dict(zip(("product", "version", "platform", "buildid",
-                            "build_type", "beta_number", "repository", "date"),
+        results = [dict(zip(("version", "platform", "buildid", "build_type",
+                             "beta_number", "repository", "date"),
                             line)) for line in sql_results]
 
         for i, line in enumerate(results):
+            results[i]["product"] = params["product"]
             results[i]["buildid"] = int(line["buildid"])
             results[i]["date"] = line["date"].strftime("%Y-%m-%d")
 
