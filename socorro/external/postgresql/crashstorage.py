@@ -77,13 +77,13 @@ class PostgreSQLCrashStorage(CrashStorageBase):
     def __init__(self, config, quit_check_callback=None):
         super(PostgreSQLCrashStorage, self).__init__(
             config,
-            quit_check_callback
+            quit_check_callback=quit_check_callback
         )
         self.database = config.database(config)
         self.transaction = config.transaction_executor_class(
             config,
             self.database,
-            quit_check_callback
+            abandonment_callback=quit_check_callback
         )
 
     #--------------------------------------------------------------------------

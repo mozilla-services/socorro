@@ -175,7 +175,7 @@ class TestPostgresCrashStorage(unittest.TestCase):
     Tests where the actual PostgreSQL part is mocked.
     """
 
-    def test_basic_postgres_crashstorage1(self):
+    def test_basic_key_error_on_save_processed(self):
 
         mock_logging = mock.Mock()
         mock_postgres = mock.Mock()
@@ -198,14 +198,19 @@ class TestPostgresCrashStorage(unittest.TestCase):
             database = crashstorage.database.return_value = mock.MagicMock()
             self.assertTrue(isinstance(database, mock.Mock))
 
-            raw = ('{"name":"Peter","ooid":"abc123",'
-                   '"submitted_timestamp":"%d"}' % time.time())
+            broken_processed_crash = {
+                "product": "Peter",
+                "version": "1.0B3",
+                "ooid": "abc123",
+                "submitted_timestamp": time.time(),
+                "unknown_field": 'whatever'
+            }
             self.assertRaises(KeyError,
                               crashstorage.save_processed,
-                              json.loads(raw))
+                              broken_processed_crash)
 
 
-    def test_basic_postgres_crashstorage2(self):
+    def test_basic_postgres_save_processed_success(self):
 
         mock_logging = mock.Mock()
         mock_postgres = mock.Mock()
@@ -227,12 +232,6 @@ class TestPostgresCrashStorage(unittest.TestCase):
             crashstorage = PostgreSQLCrashStorage(config)
             database = crashstorage.database.return_value = mock.MagicMock()
             self.assertTrue(isinstance(database, mock.Mock))
-
-            raw = ('{"name":"Peter","ooid":"abc123",'
-                   '"submitted_timestamp":"%d"}' % time.time())
-            self.assertRaises(KeyError,
-                              crashstorage.save_processed,
-                              json.loads(raw))
 
             crashstorage.save_processed(a_processed_crash)
 
@@ -265,7 +264,7 @@ class TestPostgresCrashStorage(unittest.TestCase):
                                         actual_execute_args):
                 self.assertEqual(expected, actual)
 
-    def test_basic_postgres_crashstorage3(self):
+    def test_basic_postgres_save_processed_success2(self):
 
         mock_logging = mock.Mock()
         mock_postgres = mock.Mock()
@@ -319,7 +318,7 @@ class TestPostgresCrashStorage(unittest.TestCase):
                                         actual_execute_args):
                 self.assertEqual(expected, actual)
 
-    def test_basic_postgres_crashstorage5(self):
+    def test_basic_postgres_save_processed_operational_error(self):
 
         mock_logging = mock.Mock()
         mock_postgres = mock.Mock()
@@ -363,7 +362,7 @@ class TestPostgresCrashStorage(unittest.TestCase):
             self.assertEqual(m.cursor.call_count, 3)
 
 
-    def test_basic_postgres_crashstorage6(self):
+    def test_basic_postgres_save_processed_succeed_after_failures(self):
 
         mock_logging = mock.Mock()
         mock_postgres = mock.Mock()
