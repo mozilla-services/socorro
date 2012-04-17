@@ -1,4 +1,5 @@
 import logging
+import web
 
 from socorro.middleware.service import DataAPIService
 
@@ -31,3 +32,18 @@ class ProductsBuilds(DataAPIService):
         impl = module.ProductsBuilds(config=self.context)
 
         return impl.get(**params)
+
+    def post(self, *args):
+        """
+        Insert a new build given the URL-encoded data provided in the request.
+        On success, raises a 303 See Other redirect to the newly-added build.
+        """
+        params = self.parse_query_string(args[0])
+        params.update(web.input())
+
+        module = self.get_module(params)
+        impl = module.ProductsBuilds(config=self.context)
+
+        product, version = impl.create(**params)
+        raise web.seeother("/products/builds/product/%s/version/%s" %
+                           (product, version))
