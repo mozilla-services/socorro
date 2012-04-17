@@ -1,5 +1,7 @@
 <?php defined('SYSPATH') or die('No direct script access.');
 
+require_once(Kohana::find_file('libraries', 'moz_pager', TRUE, 'php'));
+
 /**
  * Common model class managing the branches table.
  */
