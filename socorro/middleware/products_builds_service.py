@@ -1,4 +1,5 @@
 import logging
+import web
 
 from socorro.middleware.service import DataAPIService
 
@@ -31,3 +32,16 @@ class ProductsBuilds(DataAPIService):
         impl = module.ProductsBuilds(config=self.context)
 
         return impl.get(**params)
+
+    def post(self, *args):
+        """Add a new release for a product."""
+        logger.error('Got post: ' + str(args))
+        params = self.parse_query_string(args[0])
+        params.update(web.input())
+
+        logger.error("Updated: " + str(params))
+
+        module = self.get_module(params)
+        impl = module.ProductsBuilds(config=self.context)
+
+        return impl.create(**params)
