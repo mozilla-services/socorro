@@ -9,7 +9,7 @@ from socorro.database.transaction_executor import (
 )
 from socorro.external.postgresql.connection_context import ConnectionContext
 from socorro.lib.datetimeutil import uuid_to_date
-from socorro.external.postgresql.pg_helper import (
+from socorro.external.postgresql.dbapi2_util import (
     SQLDidNotReturnSingleValue,
     single_value_sql,
     execute_no_results
