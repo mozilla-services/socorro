@@ -648,22 +648,25 @@ total, indicating the number of products returned::
 Products Builds
 ---------------
 
-Return information about nightly builds of one or several products.
+Query and update information about builds for products.
 
 API specifications
 ^^^^^^^^^^^^^^^^^^
 
 +----------------+--------------------------------------------------------------------------------+
-| HTTP method    | GET                                                                            |
+| HTTP method    | GET, POST                                                                      |
 +----------------+--------------------------------------------------------------------------------+
 | URL schema     | /products/builds/(optional_parameters)                                         |
 +----------------+--------------------------------------------------------------------------------+
 | Full URL       | /products/builds/product/(product)/version/(version)/date_from/(date_from)/    |
 +----------------+--------------------------------------------------------------------------------+
-| Example        | http://socorro-api/bpapi/products/builds/product/Firefox/version/9.0a1/        |
+| GET Example    | http://socorro-api/bpapi/products/builds/product/Firefox/version/9.0a1/        |
+| POST Example   | http://socorro-api/bpapi/products/builds/product/Firefox/,                     |
+|                |     data: version=10.0&platform=macosx&build_id=20120416012345&                |
+|                |         build_type=Beta&beta_number=2&repository=mozilla-central               |
 +----------------+--------------------------------------------------------------------------------+
 
-Mandatory parameters
+Mandatory GET parameters
 ^^^^^^^^^^^^^^^^^^^^
 
 +---------+---------------+---------------+-----------------------------------+
@@ -673,7 +676,7 @@ Mandatory parameters
 |         |               |               | builds.                           |
 +---------+---------------+---------------+-----------------------------------+
 
-Optional parameters
+Optional GET parameters
 ^^^^^^^^^^^^^^^^^^^
 
 +------------+---------------+------------------+-----------------------------+
@@ -686,7 +689,7 @@ Optional parameters
 |            |               |                  | nightly builds.             |
 +------------+---------------+------------------+-----------------------------+
 
-Return value
+GET return value
 ^^^^^^^^^^^^
 
 Return an array of objects::
@@ -704,6 +707,43 @@ Return an array of objects::
         },
         ...
     ]
+
+Mandatory POST parameters
+^^^^^^^^^^^^^^^^^^^^
+
++-------------+---------------+---------------+-------------------------------------------------------+
+| Name        | Type of value | Default value | Description                                           |
++=============+===============+===============+=======================================================+
+| product     | String        | None          | Product for which to add a build.                     |
++-------------+---------------+---------------+-------------------------------------------------------+
+| version     | String        | None          | Version for new build, e.g. "10.0".                   |
++-------------+---------------+---------------+-------------------------------------------------------+
+| platform    | String        | None          | Platform for new build, e.g. "macosx".                |
++-------------+---------------+---------------+-------------------------------------------------------+
+| build_id    | String        | None          | Build ID for new build (YYYYMMDD######).              |
++-------------+---------------+---------------+-------------------------------------------------------+
+| build_type  | String        | None          | Type of build, e.g. "Release", "Beta", "Aurora", etc. |
++-------------+---------------+---------------+-------------------------------------------------------+
+
+Optional POST parameters
+^^^^^^^^^^^^^^^^^^^
+
++-------------+---------------+---------------+-------------------------------------------------------+
+| Name        | Type of value | Default value | Description                                           |
++=============+===============+===============+=======================================================+
+| beta_number | String        | None          | Beta number if build_type is "Beta".  Mandatory if    |
+|             |               |               | build_type is "Beta", ignored otherwise.              |
++-------------+---------------+---------------+-------------------------------------------------------+
+| repository  | String        | ""            | The repository from which this release came.          |
++-------------+---------------+---------------+-------------------------------------------------------+
+
+POST return value
+^^^^^^^^^^^^
+
+
+On success, returns a 303 See Other redirect to the newly-added build's API page at::
+
+    /products/builds/product/(product)/version/(version)/
 
 .. ############################################################################
    Search API

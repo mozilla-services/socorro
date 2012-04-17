@@ -2,11 +2,11 @@
 import errno
 import logging
 import os
-import urllib2
 
 import psycopg2
 
 import unittest
+import socorro.lib.buildutil as buildutil
 import socorro.lib.ConfigurationManager as cfgManager
 import socorro.lib.util
 import socorro.lib.psycopghelper as psy
@@ -139,23 +139,23 @@ class TestFtpScraper(unittest.TestCase):
     def tearDown(self):
         self.logger.clear()
 
-    def do_buildExists(self, d, correct):
+    def do_build_exists(self, d, correct):
         me.cur = me.conn.cursor(cursor_factory=psy.LoggingCursor)
         me.cur.setLogger(me.fileLogger)
 
-        actual = ftpscraper.buildExists(
+        actual = buildutil.build_exists(
               me.cur, d[0], d[1], d[2], d[3], d[4], d[5], d[6])
         assert actual == correct, "expected %s, got %s " % (correct, actual)
 
-    def test_buildExists(self):
+    def test_build_exists(self):
         d = ("failfailfail", "VERSIONAME1", "PLATFORMNAME1", "1",
              "BUILDTYPE1", "1", "REPO1")
-        self.do_buildExists(d, False)
+        self.do_build_exists(d, False)
         r = ("PRODUCTNAME1", "VERSIONAME1", "PLATFORMNAME1", "1",
              "BUILDTYPE1", "1", "REPO1")
-        self.do_buildExists(r, True)
+        self.do_build_exists(r, True)
 
-    def test_insertBuild(self):
+    def test_insert_build(self):
         me.cur = me.conn.cursor(cursor_factory=psy.LoggingCursor)
         me.cur.setLogger(me.fileLogger)
 
@@ -165,14 +165,14 @@ class TestFtpScraper(unittest.TestCase):
         me.cur.connection.commit()
 
         try:
-            ftpscraper.insertBuild(me.cur, 'PRODUCTNAME5', 'VERSIONAME5',
+            buildutil.insert_build(me.cur, 'PRODUCTNAME5', 'VERSIONAME5',
                   'PLATFORMNAME5', '5', 'BUILDTYPE5', '5', 'REPO5')
-            actual = ftpscraper.buildExists(me.cur, 'PRODUCTNAME5',
+            actual = buildutil.build_exists(me.cur, 'PRODUCTNAME5',
                   'VERSIONAME5', 'PLATFORMNAME5', '5', 'BUILDTYPE5',
                   '5', 'REPO5')
             assert actual == 1, "expected 1, got %s" % (actual)
         except Exception, x:
-            print "Exception in do_insertBuild() ... Error: ", type(x), x
+            print "Exception in do_insert_build() ... Error: ", type(x), x
             socorro.lib.util.reportExceptionAndAbort(me.fileLogger)
         finally:
             me.cur.connection.rollback()
