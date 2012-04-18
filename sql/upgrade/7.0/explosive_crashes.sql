@@ -53,7 +53,7 @@ IF checkdata THEN
 	WHERE report_date = updateday
 	LIMIT 1;
 	IF FOUND THEN
-		RAISE EXCEPTION 'explosiveness has already been run for %.',updateday;
+		RAISE INFO 'explosiveness has already been run for %.',updateday;
 	END IF;
 END IF;
 
@@ -193,7 +193,7 @@ SELECT avg3day.signature_id,
 	round (
 		( avg3day - coalesce(avg7day,0) ) 
 			/
-		GREATEST ( sdv7day - avg7day, avg3day.mindivisor )
+		GREATEST ( sdv7day, avg3day.mindivisor )
 		, 2 )
 	as explosive_3day
 FROM avg3day LEFT OUTER JOIN agg7day 

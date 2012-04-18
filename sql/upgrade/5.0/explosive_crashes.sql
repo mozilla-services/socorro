@@ -106,6 +106,10 @@ reportsum AS (
 	WHERE report_date BETWEEN comp_bdate and mes_edate
 	GROUP BY report_date, product_version_id, signature_id
 ),
+days as (
+	SELECT days
+	FROM generate_series(comp_bdate, mes_edate, 1) AS gs(days)
+)
 crash_madu AS (
 	SELECT ( report_count * 1000000::numeric ) / adu_count AS crash_madu,
 		reportsum.product_version_id, reportsum.signature_id, 
