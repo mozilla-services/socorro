@@ -75,7 +75,8 @@ a_processed_crash = {
 
 
 
-class TestIntegrationPostgresSQLCrashStorage(unittest.TestCase):
+#class TestIntegrationPostgresSQLCrashStorage(unittest.TestCase):
+class DontTestIntegrationPostgresSQLCrashStorage(object):
     """
 
     """
