@@ -4,7 +4,9 @@ import inspect
 import unittest
 import mock
 
+import psycopg2
 from psycopg2 import OperationalError
+from psycopg2.extensions import TRANSACTION_STATUS_IDLE
 
 from configman import ConfigurationManager
 
@@ -73,101 +75,143 @@ a_processed_crash = {
 
 
 
-#class TestIntegrationPostgresSQLCrashStorage(unittest.TestCase):
-    #"""
+class TestIntegrationPostgresSQLCrashStorage(unittest.TestCase):
+    """
 
-    #"""
+    """
 
-    #def tearDown(self):
-        #self._truncate_reports_table()
+    def setUp(self):
+        assert 'test' in databaseName.default, databaseName.default
+        dsn = ('host=%(database_host)s dbname=%(database_name)s '
+               'user=%(database_user)s password=%(database_password)s' % DSN)
+        self.conn = psycopg2.connect(dsn)
+        cursor = self.conn.cursor()
+        date_suffix = PostgreSQLCrashStorage._table_suffix_for_ooid(a_processed_crash['uuid'])
+        self.reports_table_name = 'reports%s' % date_suffix
+        cursor.execute("""
+        DROP TABLE IF EXISTS %(table_name)s;
+        CREATE TABLE %(table_name)s (
+            id integer NOT NULL,
+            client_crash_date timestamp with time zone,
+            date_processed timestamp with time zone,
+            uuid character varying(50) NOT NULL,
+            product character varying(30),
+            version character varying(16),
+            build character varying(30),
+            signature character varying(255),
+            url character varying(255),
+            install_age integer,
+            last_crash integer,
+            uptime integer,
+            cpu_name character varying(100),
+            cpu_info character varying(100),
+            reason character varying(255),
+            address character varying(20),
+            os_name character varying(100),
+            os_version character varying(100),
+            email character varying(100),
+            user_id character varying(50),
+            started_datetime timestamp with time zone,
+            completed_datetime timestamp with time zone,
+            success boolean,
+            truncated boolean,
+            processor_notes text,
+            user_comments character varying(1024),
+            app_notes character varying(1024),
+            distributor character varying(20),
+            distributor_version character varying(20),
+            topmost_filenames text,
+            addons_checked boolean,
+            flash_version text,
+            hangid text,
+            process_type text,
+            release_channel text,
+            productid text
+        );
+        DROP SEQUENCE reports_id_seq;
+        CREATE SEQUENCE reports_id_seq
+            START WITH 1
+            INCREMENT BY 1
+            NO MINVALUE
+            NO MAXVALUE
+            CACHE 1;
 
-    #def _truncate_reports_table(self):
-        #print "WORK HARDER!"
+        ALTER TABLE ONLY %(table_name)s ALTER COLUMN id
+          SET DEFAULT nextval('reports_id_seq'::regclass);
 
-    #def test_basic_hbase_crashstorage(self):
-        #mock_logging = mock.Mock()
-        #required_config = PostgreSQLCrashStorage.required_config
-        #required_config.add_option('logger', default=mock_logging)
+        DROP TABLE IF EXISTS plugins;
+        CREATE TABLE plugins (
+            id serial NOT NULL,
+            filename text NOT NULL,
+            name text NOT NULL
+        );
 
-        #config_manager = ConfigurationManager(
-          #[required_config],
-          #app_name='testapp',
-          #app_version='1.0',
-          #app_description='app description',
-          #values_source_list=[{
-            #'logger': mock_logging,
-            #}, DSN]
-        #)
-        #with config_manager.context() as config:
-            #crashstorage = PostgreSQLCrashStorage(config)
-            ## data doesn't contain an 'ooid' key
-            #raw = '{"name": "Peter"}'
-            #processed = '{"name_length": 5,'\
-                        #' "date_processed": "2012-03-19T12:12:12"}'
-            #print json.loads(processed)
-            #self.assertRaises(
-              #OOIDNotFoundException,
-              #crashstorage.save_raw_and_processed,
-              #json.loads(raw),
-              #raw,
-              #json.loads(processed)
-            #)
+        DROP TABLE IF EXISTS plugins_reports;
+        CREATE TABLE plugins_reports (
+            report_id integer NOT NULL,
+            plugin_id integer NOT NULL,
+            date_processed timestamp with time zone,
+            version text NOT NULL
+        );
 
-            #raw = '{"name":"Peter","ooid":"abc123"}'
-            #self.assertRaises(
-              #ValueError,  # missing the 'submitted_timestamp' key
-              #crashstorage.save_raw_and_processed,
-              #json.loads(raw),
-              #raw,
-              #json.loads(processed)
-            #)
+        DROP TABLE IF EXISTS plugin_%(table_name)s;
+        CREATE TABLE plugin_%(table_name)s (
+            report_id integer NOT NULL,
+            plugin_id integer NOT NULL,
+            date_processed timestamp with time zone,
+            version text NOT NULL
+        );
 
-            #raw = ('{"name":"Peter","ooid":"abc123",'
-                   #'"submitted_timestamp":"%d"}' % time.time())
-            #result = crashstorage.save_raw(json.loads(raw), raw)
-            #self.assertEqual(result, CrashStorageBase.OK)
+        DROP TABLE IF EXISTS extensions;
+        CREATE TABLE extensions (
+            report_id serial NOT NULL,
+            date_processed timestamp with time zone,
+            extension_key integer NOT NULL,
+            extension_id text NOT NULL,
+            extension_version text
+        );
 
-            #assert config.logger.info.called
-            #assert config.logger.info.call_count > 1
-            #msg_tmpl, msg_arg = config.logger.info.call_args_list[1][0]
-            ## ie logging.info(<template>, <arg>)
-            #msg = msg_tmpl % msg_arg
-            #self.assertTrue('saved' in msg)
-            #self.assertTrue('abc123' in msg)
+        DROP TABLE IF EXISTS extensions%(date_suffix)s;
+        CREATE TABLE extensions%(date_suffix)s (
+            report_id serial NOT NULL,
+            date_processed timestamp with time zone,
+            extension_key integer NOT NULL,
+            extension_id text NOT NULL,
+            extension_version text
+        );
 
-            #meta = crashstorage.get_raw_json('abc123')
-            #assert isinstance(meta, dict)
-            #self.assertEqual(meta['name'], 'Peter')
+        """ % dict(table_name=self.reports_table_name,
+                   date_suffix=date_suffix))
+        self.conn.commit()
+        assert self.conn.get_transaction_status() == TRANSACTION_STATUS_IDLE
 
-            #dump = crashstorage.get_raw_dump('abc123')
-            #assert isinstance(dump, basestring)
-            #self.assertTrue('"name":"Peter"' in dump)
+    def test_save_processed(self):
+        mock_logging = mock.Mock()
+        required_config = PostgreSQLCrashStorage.required_config
+        required_config.add_option('logger', default=mock_logging)
 
-            #self.assertTrue(crashstorage.has_ooid('abc123'))
-            ## call it again, just to be sure
-            #self.assertTrue(crashstorage.has_ooid('abc123'))
-            #self.assertTrue(not crashstorage.has_ooid('xyz789'))
+        config_manager = ConfigurationManager(
+          [required_config],
+          app_name='testapp',
+          app_version='1.0',
+          app_description='app description',
+          values_source_list=[{
+            'logger': mock_logging,
+            }, DSN]
+        )
+        with config_manager.context() as config:
+            crashstorage = PostgreSQLCrashStorage(config)
+            # data doesn't contain an 'ooid' key
+            raw = '{"name": "Peter"}'
+            processed = '{"name_length": 5,'\
+                        ' "date_processed": "2012-03-19T12:12:12"}'
+            crashstorage.save_processed(a_processed_crash)
 
-            #return
-
-
-            ## hasn't been processed yet
-            #self.assertRaises(hbaseClient.OoidNotFoundException,
-                              #crashstorage.get_processed_json,
-                              #'abc123')
-
-            #raw = ('{"name":"Peter","ooid":"abc123", '
-                   #'"submitted_timestamp":"%d", '
-                   #'"completeddatetime": "%d"}' %
-                   #(time.time(), time.time()))
-
-            #crashstorage.save_processed('abc123', json.loads(raw))
-            #data = crashstorage.get_processed_json('abc123')
-            #self.assertEqual(data['name'], u'Peter')
-            #assert crashstorage.hbaseConnection.transport.isOpen()
-            #crashstorage.close()
-            #transport = crashstorage.hbaseConnection.transport
-            #self.assertTrue(not transport.isOpen())
+            cursor = self.conn.cursor()
+            cursor.execute('select uuid from %s' % self.reports_table_name)
+            report, = cursor.fetchall()
+            uuid, = report
+            self.assertEqual(uuid, a_processed_crash['uuid'])
 
 
 class TestPostgresCrashStorage(unittest.TestCase):
@@ -433,5 +477,3 @@ class TestPostgresCrashStorage(unittest.TestCase):
             for expected, actual in zip(expected_execute_args,
                                         actual_execute_args):
                 self.assertEqual(expected, actual)
-
-
