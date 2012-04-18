@@ -18,7 +18,6 @@ class Crash_Trends_Model extends Model {
         $url = "{$host}/crashtrends/start_date/{$start_date}/end_date/{$end_date}/product/{$product}/version/{$version}";
     
         $resp = $service->get($url);
-
         return $resp;
     }
     

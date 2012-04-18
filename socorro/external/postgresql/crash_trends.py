@@ -9,8 +9,6 @@ logger = logging.getLogger("webapi")
 
 
 class CrashTrends(PostgreSQLBase):
-    def __init__(self, *args, **kwargs):
-        super(CrashTrends, self).__init__(*args, **kwargs)
 
     def get(self, **kwargs):
         filters = [
@@ -44,8 +42,8 @@ class CrashTrends(PostgreSQLBase):
                          days_out"""
 
         try:
-            self.connection = self.database.connection()
-            cursor = self.connection.cursor()
+            connection = self.database.connection()
+            cursor = connection.cursor()
             sql_results = db.execute(cursor, query_string, params)
         except psycopg2.Error:
             logger.error("Failed retrieving crashtrends data from PostgreSQL",
@@ -64,6 +62,6 @@ class CrashTrends(PostgreSQLBase):
                 row['build_date'] = datetimeutil.date_to_string(row['build_date'])
                 results.append(row)
         finally:
-            self.connection.close()
-
+            connection.close()
+        results = {'crashtrends' : results}
         return results

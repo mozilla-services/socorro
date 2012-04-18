@@ -47,6 +47,13 @@ class Crash_Trends_Controller extends Controller {
                                                             $params['start_date'],
                                                             $params['end_date']);
         
+        $values = $values->crashtrends;
+        
+        if(empty($values)) {
+            echo json_encode(array());
+            exit;
+        }
+        
         $formatted = array();
         $initial_arr = array('0' => 0, '1' => 0, '2' => 0, '3' => 0, '4' => 0, '5' => 0, '6' => 0, '7' => 0, '8' => 0);
         foreach($values as $value)
@@ -95,7 +102,7 @@ class Crash_Trends_Controller extends Controller {
     public function product_versions() {
         $d = array('product' => 'Firefox');
         $params = $this->getRequestParameters($d);
-        $result = $this->branch_model->getCurrentProductVersionsByProduct($params['product']);
+        $result = $this->branch_model->getProductVersionsByProduct($params['product']);
         $return = array();
 
         foreach($result as $version) {
