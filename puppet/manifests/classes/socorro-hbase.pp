@@ -4,22 +4,37 @@ class socorro-hbase {
 	'/etc/apt/sources.list.d/cloudera.list':
             source => '/home/socorro/dev/socorro/puppet/files/etc_apt_sources.list.d/cloudera.list',
             require => Exec['add-cloudera-key'];
+
+        'hbase-configs':
+            path => "/etc/hbase/conf/",
+            recurse => true,
+            require => Package['hadoop-hbase'],
+            source => "/home/socorro/dev/socorro/puppet/files/etc_hbase_conf"
+
     }
 
-    # wish we could use package for this, but we need JAVA_HOME set on first run
-    # see http://projects.puppetlabs.com/issues/6400
-    exec { '/usr/bin/apt-get install -y hadoop-hbase hadoop-hbase-master hadoop-hbase-thrift liblzo2-dev':
-            alias => 'install-hbase',
-            logoutput => on_failure,
-            refreshonly => true,
-            subscribe => Exec['apt-get-update-cloudera'],
-            require => [Exec['apt-get-update'],Exec['apt-get-update-cloudera']];
+    exec { 'package-oracle-jdk':
+        command => '/usr/bin/wget https://raw.github.com/flexiondotorg/oab-java6/master/oab-java6.sh && bash oab-java6.sh',
+        creates => '/etc/apt/sources.list.d/oab.list',
+        cwd => '/home/socorro',
+        timeout => 0
+    }
+
+    package { ['hadoop-hbase', 'hadoop-hbase-master', 'hadoop-hbase-thrift']:
+        require => [Exec['apt-get-update'], Exec['apt-get-update-cloudera']],
+        ensure => latest
+    }
+
+    package { ['sun-java6-jdk']:
+        require => Exec['package-oracle-jdk'],
+        ensure => latest
     }
 
     exec { 
         'apt-get-update-cloudera':
             command => '/usr/bin/apt-get update && touch /tmp/apt-get-update-cloudera',
-            require => [Exec['install-oracle-jdk'],
+            require => [Exec['package-oracle-jdk'],
+                        Package['sun-java6-jdk'],
                         File['/etc/apt/sources.list.d/cloudera.list']],
             creates => '/tmp/apt-get-update-cloudera';
     }
@@ -37,6 +52,14 @@ class socorro-hbase {
             alias => 'hbase-schema',
             creates => "/var/lib/hbase/crash_reports",
             logoutput => on_failure,
-            require => Exec['install-hbase'];
+            require => Package['hadoop-hbase-master']
+    }
+
+    service {
+        ['hadoop-hbase-master', 'hadoop-hbase-thrift']:
+            require => [Package['hadoop-hbase-master'],
+                        Package['hadoop-hbase-thrift'],
+                        File['hbase-configs']],
+            ensure => running
     }
 }

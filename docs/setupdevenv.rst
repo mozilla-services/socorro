@@ -66,6 +66,29 @@ Note that the existing puppet manifests populate PostgreSQL if the "breakpad" da
 does not exist. See :ref:`populatepostgres-chapter` for more information on how this process
 works, and how to customize it.
 
+Enabling HBase
+----------------
+Socorro supports HBase as a long-term storage archive for both raw and
+processed crashes. Since it requires Sun (now Oracle) Java and does not 
+work with OpenJDK, and generally has much higher memory requirements than
+all the other dependencies, it is not enabled by default.
+
+If you wish to enable it, edit the nodes.pp file:
+::
+  vi puppet/manifests/nodes/nodes.pp
+
+And remove the comment ('#') marker from the socorro-hbase include:
+::
+  #    include socorro-hbase
+
+Re-provision vagrant, and HBase will be installed, started and the default Socorro schema
+will be loaded:
+::
+  vagrant provision
+
+NOTE - this will download and install Java from Oracle, which means that
+you will be bound by the terms of their license agreement - http://www.oracle.com/technetwork/java/javase/terms/license/
+
 Debugging
 ------------------
 
