@@ -53,7 +53,7 @@ IF checkdata THEN
 	WHERE report_date = updateday
 	LIMIT 1;
 	IF FOUND THEN
-		RAISE EXCEPTION 'explosiveness has already been run for %.',updateday;
+		RAISE INFO 'explosiveness has already been run for %.',updateday;
 	END IF;
 END IF;
 
@@ -106,10 +106,6 @@ reportsum AS (
 	WHERE report_date BETWEEN comp_bdate and mes_edate
 	GROUP BY report_date, product_version_id, signature_id
 ),
-days as (
-	SELECT days
-	FROM generate_series(comp_bdate, mes_edate, 1) AS gs(days)
-)
 crash_madu AS (
 	SELECT ( report_count * 1000000::numeric ) / adu_count AS crash_madu,
 		reportsum.product_version_id, reportsum.signature_id, 
@@ -127,7 +123,7 @@ sum1day AS (
 ),
 agg9day AS (
 	SELECT product_version_id, signature_id,
-		AVG(crash_madu) AS avg9day,
+		SUM(crash_madu)/9 AS avg9day,
 		MAX(crash_madu) as max9day
 	FROM crash_madu
 	WHERE report_date BETWEEN comp_bdate and comp_e1date
@@ -136,13 +132,14 @@ agg9day AS (
 SELECT sum1day.signature_id,
 	sum1day.product_version_id ,
 	round (
-		( sum1day.sum1day - agg9day.avg9day ) 
+		( sum1day.sum1day - coalesce(agg9day.avg9day,0) ) 
 			/
 		GREATEST ( agg9day.max9day - agg9day.avg9day, sum1day.mindivisor )
 		, 2 )
 	as explosive_1day
 FROM sum1day 
-	LEFT OUTER JOIN agg9day USING ( signature_id, product_version_id );
+	LEFT OUTER JOIN agg9day USING ( signature_id, product_version_id )
+WHERE sum1day.sum1day IS NOT NULL;
 	
 ANALYZE explosive_oneday;
 
@@ -175,8 +172,9 @@ crash_madu AS (
 		AND adusum.product_version_id = reportsum.product_version_id
 ),
 avg3day AS ( 
-	SELECT product_version_id, signature_id, avg(crash_madu) as avg3day,
-		avg(mindivisor) as mindivisor
+	SELECT product_version_id, signature_id, 
+        SUM(crash_madu)/3 as avg3day,
+		SUM(mindivisor)/3 as mindivisor
 	FROM crash_madu
 	WHERE report_date BETWEEN mes_b3date and mes_edate
 	AND crash_madu > 10
@@ -184,8 +182,8 @@ avg3day AS (
 ),
 agg7day AS (
 	SELECT product_version_id, signature_id,
-		AVG(crash_madu) AS avg7day,
-		STDDEV(crash_madu) as sdv7day
+		SUM(crash_madu)/7 AS avg7day,
+		sqrt(( ( 7 * SUM(crash_madu^2) ) - SUM(crash_madu)^2 )/ 49) as sdv7day
 	FROM crash_madu
 	WHERE report_date BETWEEN comp_bdate and comp_e3date
 	GROUP BY product_version_id, signature_id
@@ -193,9 +191,9 @@ agg7day AS (
 SELECT avg3day.signature_id,
 	avg3day.product_version_id ,
 	round (
-		( avg3day - avg7day ) 
+		( avg3day - coalesce(avg7day,0) ) 
 			/
-		GREATEST ( sdv7day - avg7day, avg3day.mindivisor )
+		GREATEST ( sdv7day, avg3day.mindivisor )
 		, 2 )
 	as explosive_3day
 FROM avg3day LEFT OUTER JOIN agg7day 

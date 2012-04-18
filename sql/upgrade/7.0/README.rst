@@ -1,10 +1,10 @@
-#.# Database Updates
+7.0 Database Updates
 ====================
 
 This batch makes the following database changes:
 
-bug #
-	Fix something something something
+bug #744492
+	Fixes math for explosiveness calculation
 	
 ...
 

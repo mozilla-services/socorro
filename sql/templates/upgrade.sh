@@ -4,7 +4,7 @@
 set -e
 
 CURDIR=$(dirname $0)
-VERSION=#.#.#
+VERSION=#.#
 
 #echo '*********************************************************'
 #echo 'support functions'
