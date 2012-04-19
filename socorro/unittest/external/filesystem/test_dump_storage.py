@@ -7,7 +7,7 @@ import time
 
 from nose.tools import *
 
-import socorro.lib.dumpStorage as dumpStorage
+import socorro.external.filesystem.dump_storage as dumpStorage
 import socorro.lib.util as socorro_util
 
 import socorro.unittest.testlib.util as test_util
