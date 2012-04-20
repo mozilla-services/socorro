@@ -11,12 +11,11 @@ import re
 import json
 import copy
 from configman import Namespace, RequiredConfig
-from configman.converters import class_converter, py_obj_to_str
-from socorro.database.transaction_executor import (
-  #TransactionExecutorWithInfiniteBackoff,
-  TransactionExecutor)
+from configman.converters import class_converter
+from socorro.database.transaction_executor import TransactionExecutor
 from socorro.external.postgresql.connection_context import ConnectionContext
 from socorro.app.generic_app import App, main
+from socorro.lib.datetimeutil import utc_now, UTC
 
 
 class JobNotFoundError(Exception):
@@ -43,23 +42,103 @@ class BaseCronApp(RequiredConfig):
     """The base class from which Socorro apps are based"""
     required_config = Namespace()
 
-    def __init__(self, config):
+    def __init__(self, config, job_information):
         self.config = config
+        self.job_information = job_information
 
-    def main(self):
-        self.run()
+# commented out because it doesn't work and I don't know why!
+#    def __repr__(self):  # pragma: no cover
+#        return ('<%s (app_name: %r, app_version:%r)>' % (
+#                self.__class__,
+#                self.app_name,
+#                self.app_version))
 
-    def run(self):
+    def main(self, function=None, once=True):
+        if function is None:
+            function = self._run_proxy
+        now = utc_now()
+        if once or not self.job_information:
+            if once:
+                function()
+            else:
+                function(now)
+            yield now
+        else:
+            # figure out when it was last run
+            last_success = self.job_information.get('last_success',
+              self.job_information.get('first_run'))
+            if not last_success:
+                # either it has never run successfully or it was previously run
+                # before the 'first_run' key was added (legacy).
+                self.config.logger.warning(
+                  'No previous last_success information available')
+                function(now)
+                yield now
+            else:
+                when = last_success
+                seconds = convert_frequency(self.config.frequency)
+                interval = datetime.timedelta(seconds=seconds)
+
+                while (when + interval) < now:
+                    when += interval
+                    function(when)
+                    yield when
+
+    def _run_proxy(self):
+        return self.run()
+
+    def run(self):  # pragma: no cover
         raise NotImplementedError("Your fault!")
 
 
-class PostgreSQLCronApp(BaseCronApp):
+class BaseBackfillCronApp(BaseCronApp):
+
+    def main(self, function=None):
+        return super(BaseBackfillCronApp, self).main(once=False,
+                                                     function=function)
+
+    def _run_proxy(self, date):
+        return self.run(date)
+
+    def run(self, date):  # pragma: no cover
+        raise NotImplementedError("Your fault!")
+
+
+class PostgresCronApp(BaseCronApp):
+
+    def _run_proxy(self):
+        database = self.config.database_class(self.config)
+        with database() as connection:
+            self.run(connection)
+
+    def run(self, connection):  # pragma: no cover
+        raise NotImplementedError("Your fault!")
+
+
+class PostgresBackfillCronApp(BaseBackfillCronApp):
+
+    def _run_proxy(self, date):
+        database = self.config.database_class(self.config)
+        with database() as connection:
+            self.run(connection, date)
+
+    def run(self, connection, date):  # pragma: no cover
+        raise NotImplementedError("Your fault!")
+
+
+class PostgresTransactionManagedCronApp(BaseCronApp):
+
+    # XXX put transaction_executor here?
 
     def main(self):
         database = self.config.database_class(self.config)
         executor = self.config.transaction_executor_class(self.config,
                                                           database)
         executor(self.run)
+        yield utc_now()
+
+    def run(self, connection):  # pragma: no cover
+        raise NotImplementedError("Your fault!")
 
 
 class JSONJobDatabase(dict):
@@ -81,7 +160,9 @@ class JSONJobDatabase(dict):
                 self._recurse_load(value)
             else:
                 try:
-                    value = datetime.datetime.strptime(value, self._date_fmt)
+                    value = (datetime.datetime
+                             .strptime(value, self._date_fmt)
+                             .replace(tzinfo=UTC))
                     struct[key] = value
                 except (ValueError, TypeError):
                     try:
@@ -273,10 +354,6 @@ def classes_in_namespaces_converter_with_compression(
                 into the original string of classnames.  This is used
                 primarily as for the output of the 'help' option"""
                 return cls.original_input
-                #return ', '.join(
-                    #py_obj_to_str(v[name_of_class_option].value)
-                        #for v in cls.get_required_config().values()
-                        #if isinstance(v, Namespace))
 
         return InnerClassList  # result of class_list_converter
     return class_list_converter  # result of classes_in_namespaces_converter
@@ -284,7 +361,7 @@ def classes_in_namespaces_converter_with_compression(
 
 def get_extra_as_options(input_str):
     if '|' not in input_str:
-        raise JobDescriptionError("No frequency and/or time defined")
+        raise JobDescriptionError('No frequency and/or time defined')
     metadata = input_str.split('|')[1:]
     if len(metadata) == 1:
         if ':' in metadata[0]:
@@ -313,10 +390,45 @@ def get_extra_as_options(input_str):
     return n
 
 
+def convert_frequency(frequency):
+    """return the number of seconds that a certain frequency string represents.
+    For example: `1d` means 1 day which means 60 * 60 * 24 seconds.
+    The recognized formats are:
+        10d  : 10 days
+        3m   : 3 minutes
+        12h  : 12 hours
+    """
+    number = int(re.findall('\d+', frequency)[0])
+    unit = re.findall('[^\d]+', frequency)[0]
+    if unit == 'h':
+        number *= 60 * 60
+    elif unit == 'm':
+        number *= 60
+    elif unit == 'd':
+        number *= 60 * 60 * 24
+    elif unit:
+        raise FrequencyDefinitionError(unit)
+    return number
+
+
+def check_time(value):
+    """check that it's a value like 03:45 or 1:1"""
+    try:
+        h, m = value.split(':')
+        h = int(h)
+        m = int(m)
+        if h >= 24 or h < 0:
+            raise ValueError
+        if m >= 60 or m < 0:
+            raise ValueError
+    except ValueError:
+        raise TimeDefinitionError("Invalid definition of time %r" % value)
+
+
 class CronTabber(App):
 
     app_name = 'crontabber'
-    app_version = '0.1'
+    app_version = '1.1'
     app_description = __doc__
 
     required_config = Namespace()
@@ -407,8 +519,8 @@ class CronTabber(App):
         if not stream:
             stream = sys.stdout
         _fmt = '%Y-%m-%d %H:%M:%S'
-        _now = datetime.datetime.now()
-        PAD = 12
+        _now = utc_now()
+        PAD = 15
         for class_name, job_class in self.config.jobs.class_list:
             class_config = self.config['class-%s' % class_name]
             freq = class_config.frequency
@@ -416,24 +528,35 @@ class CronTabber(App):
                 freq += ' @ %s' % class_config.time
             class_name = job_class.__module__ + '.' + job_class.__name__
             print >>stream, '=== JOB ' + '=' * 72
-            print >>stream, "Class:".ljust(PAD), class_name
-            print >>stream, "App name:".ljust(PAD), job_class.app_name
-            print >>stream, "Frequency:".ljust(PAD), freq
+            print >>stream, 'Class:'.ljust(PAD), class_name
+            print >>stream, 'App name:'.ljust(PAD), job_class.app_name
+            print >>stream, 'Frequency:'.ljust(PAD), freq
             try:
                 info = self.database[job_class.app_name]
             except KeyError:
-                print >>stream, "*NO PREVIOUS RUN INFO*"
+                print >>stream, '*NO PREVIOUS RUN INFO*'
                 continue
 
-            print >>stream, "Last run:".ljust(PAD),
+            print >>stream, 'Last run:'.ljust(PAD),
             print >>stream, info['last_run'].strftime(_fmt).ljust(20),
             print >>stream, '(%s ago)' % timesince(info['last_run'], _now)
-            print >>stream, "Next run:".ljust(PAD),
+            print >>stream, 'Last success:'.ljust(PAD),
+            if info.get('last_success'):
+                print >>stream, info['last_success'].strftime(_fmt).ljust(20),
+                print >>stream, ('(%s ago)' %
+                                 timesince(info['last_success'], _now))
+            else:
+                print >>stream, 'no previous successful run'
+            print >>stream, 'Next run:'.ljust(PAD),
             print >>stream, info['next_run'].strftime(_fmt).ljust(20),
-            print >>stream, '(in %s)' % timesince(_now, info['next_run'])
+            if _now > info['next_run']:
+                print >>stream, ('(was %s ago)' %
+                                 timesince(info['next_run'], _now))
+            else:
+                print >>stream, '(in %s)' % timesince(_now, info['next_run'])
             if info.get('last_error'):
-                print >>stream, "Error!!".ljust(PAD),
-                print >>stream, "(%s times)" % info['error_count']
+                print >>stream, 'Error!!'.ljust(PAD),
+                print >>stream, '(%s times)' % info['error_count']
                 print >>stream, info['last_error']['traceback']
             print >>stream, ''
 
@@ -455,7 +578,7 @@ class CronTabber(App):
 
     def _run_one(self, job_class, config, force=False):
         _debug = self.config.logger.debug
-        seconds = self._convert_frequency(config.frequency)
+        seconds = convert_frequency(config.frequency)
         time_ = config.time
         if not force:
             if not self.time_to_run(job_class):
@@ -466,16 +589,27 @@ class CronTabber(App):
                 return
 
         _debug('about to run %r', job_class)
+        app_name = job_class.app_name
+        info = self.database.get(app_name)
+
+        last_success = None
         try:
-            self._run_job(job_class, config)
-            _debug('successfully ran %r', job_class)
+            for last_success in self._run_job(job_class, config, info):
+                _debug('successfully ran %r on %s', job_class, last_success)
             exc_type = exc_value = exc_tb = None
         except:
             exc_type, exc_value, exc_tb = sys.exc_info()
-            _debug('error when running %r', job_class, exc_info=True)
+
+            # when debugging tests that mock logging, uncomment this otherwise
+            # the exc_info=True doesn't compute and record what the exception
+            # was
+            #raise
+
+            _debug('error when running %r on %s',
+                   job_class, last_success, exc_info=True)
         finally:
-            self._log_run(job_class, seconds, time_,
-                         exc_type, exc_value, exc_tb)
+            self._log_run(job_class, seconds, time_, last_success,
+                          exc_type, exc_value, exc_tb)
 
     def check_dependencies(self, class_):
         try:
@@ -494,7 +628,7 @@ class CronTabber(App):
             if job_info.get('last_error'):
                 # errored last time it ran
                 return False
-            if job_info['next_run'] < datetime.datetime.now():
+            if job_info['next_run'] < utc_now():
                 # the dependency hasn't recently run
                 return False
         # no reason not to stop this class
@@ -513,23 +647,28 @@ class CronTabber(App):
             # no past information, run now
             return True
         next_run = info['next_run']
-        if next_run < datetime.datetime.now():
+        if next_run < utc_now():
             return True
         return False
 
-    def _run_job(self, class_, config):
+    def _run_job(self, class_, config, info):
         # here we go!
-        instance = class_(config)
-        instance.main()
+        instance = class_(config, info)
+#        import pdb;pdb.set_trace()
+        return instance.main()
 
-    def _log_run(self, class_, seconds, time_, exc_type, exc_value, exc_tb):
+    def _log_run(self, class_, seconds, time_, last_success,
+                 exc_type, exc_value, exc_tb):
         assert inspect.isclass(class_)
         app_name = class_.app_name
-        info = {
-          'last_run': datetime.datetime.now(),
-          'next_run': (datetime.datetime.now() +
-                       datetime.timedelta(seconds=seconds))
-        }
+        now = utc_now()
+        info = self.database.get(app_name, {})
+        if 'first_run' not in info:
+            info['first_run'] = now
+        info['last_run'] = now
+        info['next_run'] = now + datetime.timedelta(seconds=seconds)
+        if last_success:
+            info['last_success'] = last_success
         if time_:
             h, m = [int(x) for x in time_.split(':')]
             info['next_run'] = info['next_run'].replace(hour=h,
@@ -552,32 +691,6 @@ class CronTabber(App):
         self.database[app_name] = info
         self.database.save(self.config.database)
 
-    def _convert_frequency(self, frequency):
-        number = int(re.findall('\d+', frequency)[0])
-        unit = re.findall('[^\d]+', frequency)[0]
-        if unit == 'h':
-            number *= 60 * 60
-        elif unit == 'm':
-            number *= 60
-        elif unit == 'd':
-            number *= 60 * 60 * 24
-        elif unit:
-            raise FrequencyDefinitionError(unit)
-        return number
-
-    def _check_time(self, value):
-        """check that it's a value like 03:45 or 1:1"""
-        try:
-            h, m = value.split(':')
-            h = int(h)
-            m = int(m)
-            if h >= 24 or h < 0:
-                raise ValueError
-            if m >= 60 or m < 0:
-                raise ValueError
-        except ValueError:
-            raise TimeDefinitionError("Invalid definition of time %r" % value)
-
     def configtest(self):
         """return true if all configured jobs are configured OK"""
         # similar to run_all() but don't actually run them
@@ -590,10 +703,10 @@ class CronTabber(App):
 
     def _configtest_one(self, config):
         try:
-            seconds = self._convert_frequency(config.frequency)
+            seconds = convert_frequency(config.frequency)
             time_ = config.time
             if time_:
-                self._check_time(time_)
+                check_time(time_)
                 # if less than 1 day, it doesn't make sense to specify hour
                 if seconds < 60 * 60 * 24:
                     raise FrequencyDefinitionError(config.time)
