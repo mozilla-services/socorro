@@ -20,3 +20,4 @@ cover/
 .vagrant
 crontabber.ini
 socorro/cron/crontabber.json
+vagrantconfig_local.yaml
