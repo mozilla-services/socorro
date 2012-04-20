@@ -1,10 +1,10 @@
 from configman import Namespace
-from socorro.cron.crontabber import PostgresCronApp
+from socorro.cron.crontabber import PostgresBackfillCronApp
 
 
-class PGCronApp(PostgresCronApp):
-    app_name = 'pg-job'
-    app_description = 'Does some foo things'
+class PGBackfillCronApp(PostgresBackfillCronApp):
+    app_name = 'pg-backfill-job'
+    app_description = 'Uses postgres and backfills if need to'
 
     required_config = Namespace()
     # e.g.
@@ -13,7 +13,7 @@ class PGCronApp(PostgresCronApp):
     #    default='Must have a default',
     #    doc='Explanation of the option')
 
-    def run(self, connection):
+    def run(self, connection, date):
         cursor = connection.cursor()
         cursor.execute('select relname from pg_class')
         print len(cursor.fetchall()), "relations"
