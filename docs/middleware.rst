@@ -1037,6 +1037,7 @@ looks like this::
 
     {
         "product_name:version_string": {
+            "product_version_id": integer,
             "version_string": "string",
             "product_name": "string",
             "major_version": "string" or None,
