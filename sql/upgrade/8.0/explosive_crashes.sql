@@ -11,6 +11,8 @@ create table explosiveness (
 	report_date DATE not null,
 	oneday NUMERIC,
 	threeday NUMERIC,
+	oneday_rate NUMERIC,
+	threeday_rate NUMERIC,
 	constraint explosiveness_key primary key ( product_version_id, signature_id, report_date )
 );$q$, 
 -- owner of table; always breakpad_rw
@@ -136,7 +138,8 @@ SELECT sum1day.signature_id,
 			/
 		GREATEST ( agg9day.max9day - agg9day.avg9day, sum1day.mindivisor )
 		, 2 )
-	as explosive_1day
+	as explosive_1day,
+	round(sum1day,2) as oneday_rate
 FROM sum1day 
 	LEFT OUTER JOIN agg9day USING ( signature_id, product_version_id )
 WHERE sum1day.sum1day IS NOT NULL;
@@ -195,7 +198,8 @@ SELECT avg3day.signature_id,
 			/
 		GREATEST ( sdv7day, avg3day.mindivisor )
 		, 2 )
-	as explosive_3day
+	as explosive_3day,
+	round(avg3day, 2) as threeday_rate
 FROM avg3day LEFT OUTER JOIN agg7day 
 	USING ( signature_id, product_version_id );
 	
@@ -207,8 +211,8 @@ DELETE FROM explosiveness;
 -- merge the two tables and insert
 INSERT INTO explosiveness (
 	report_date, signature_id, product_version_id, 
-	oneday, threeday )
-SELECT updateday, signature_id, product_version_id, explosive_1day, explosive_3day
+	oneday, threeday, oneday_rate, threeday_rate )
+SELECT updateday, signature_id, product_version_id, explosive_1day, explosive_3day, oneday_rate, threeday_rate
 FROM explosive_oneday LEFT OUTER JOIN explosive_threeday
 	USING ( signature_id, product_version_id )
 ORDER BY product_version_id;
