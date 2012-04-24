@@ -6,7 +6,7 @@ try:
   from socorro.unittest.config.commonconfig import databasePort
 except:
   databasePort = 5432
-from socorro.unittest.config.commonconfig import databaseName
+from socorro.unittest.config.commonconfig import oldDatabaseName as databaseName
 from socorro.unittest.config.commonconfig import databaseUserName
 from socorro.unittest.config.commonconfig import databasePassword
 

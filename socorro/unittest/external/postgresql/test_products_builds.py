@@ -27,31 +27,13 @@ class IntegrationTestProductsBuilds(PostgreSQLTestCase):
         data. """
         super(IntegrationTestProductsBuilds, self).setUp()
 
-        cursor = self.connection.cursor()
-
-        # Create tables
-        cursor.execute("""
-            CREATE TABLE releases_raw
-            (
-                product_name citext NOT NULL,
-                version text NOT NULL,
-                platform text NOT NULL,
-                build_id numeric NOT NULL,
-                build_type citext NOT NULL,
-                beta_number integer,
-                repository citext DEFAULT 'mozilla-release'::citext NOT NULL
-            );
-        """)
-
-        self.connection.commit()
-
     #--------------------------------------------------------------------------
     def tearDown(self):
         """Clean up the database, delete tables and functions. """
         cursor = self.connection.cursor()
         cursor.execute("""
-            DROP TABLE releases_raw;
-            DROP FUNCTION build_date(numeric);
+            TRUNCATE releases_raw
+            CASCADE
         """)
         self.connection.commit()
         super(IntegrationTestProductsBuilds, self).tearDown()

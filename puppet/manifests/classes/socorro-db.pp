@@ -29,14 +29,11 @@ class socorro-db inherits socorro-base {
     }
 
     exec {
-        '/usr/bin/createdb -E \'utf-8\' -T template0 breakpad':
-            require => [Package['postgresql'], File['postgres-config']],
-            unless => '/usr/bin/psql --list breakpad',
-            alias => 'create-breakpad-db',
-            user => 'postgres';
-    }
+        'add-postgres-ppa':
+            command => '/usr/bin/sudo /usr/bin/add-apt-repository ppa:pitti/postgresql',
+            creates => '/etc/apt/sources.list.d/pitti-postgresql-lucid.list',
+            require => Package['python-software-properties'];
 
-    exec {
        'update-postgres-ppa':
             command => '/usr/bin/apt-get update && touch /tmp/update-postgres-ppa',
             require => Exec['add-postgres-ppa'],
@@ -44,107 +41,31 @@ class socorro-db inherits socorro-base {
     }
 
     exec {
-        '/usr/bin/sudo /usr/bin/add-apt-repository ppa:pitti/postgresql':
-            alias => 'add-postgres-ppa',
-            creates => '/etc/apt/sources.list.d/pitti-postgresql-lucid.list',
-            require => Package['python-software-properties'];
-
-        '/usr/bin/psql -f /home/socorro/dev/socorro/sql/schema/2.5/breakpad_roles.sql breakpad':
-            alias => 'create-breakpad-roles',
-            user => 'postgres',
-            require => Exec['create-breakpad-db'];
-
-        '/usr/bin/psql -f /home/socorro/dev/socorro/sql/schema/5/breakpad_schema.sql breakpad':
-            alias => 'setup-schema',
-            user => 'postgres',
-            require => Exec['create-breakpad-roles'],
-            onlyif => '/usr/bin/psql breakpad -c "\d reports" 2>&1 | grep "Did not find any relation"';
+        '/home/socorro/dev/socorro/external/postgresql/setupdb_app.py --database=breakpad':
+            require => [Package['postgresql'], File['postgres-config'],
+                        Exec['socorro-reinstall']],
+            unless => '/usr/bin/psql --list breakpad',
+            cwd => '/home/socorro/dev/socorro',
+            environment => 'PYTHONPATH=/data/socorro/application',
+            alias => 'create-breakpad-db',
+            user => 'postgres';
     }
 
     exec {
-        '/usr/bin/psql -c "grant all on database breakpad to breakpad_rw"':
-            alias => 'grant-breakpad-access',
-            user => 'postgres',
-            unless => '/usr/bin/psql breakpad -c "\z " | grep breakpad',
-            require => Exec['create-breakpad-roles'];
-    }
-
-    exec {
-        '/usr/bin/psql breakpad < /usr/share/postgresql/9.0/contrib/citext.sql':
-            user => 'postgres',
-            unless => '/usr/bin/psql breakpad -c "\dT" | grep citext',
-            require => [Exec['create-breakpad-db'], Package['postgresql-contrib']];
-    }
-
-    exec {
-        '/usr/bin/psql -c "create language plpgsql" breakpad':
-            user => 'postgres',
-            unless => '/usr/bin/psql -c "SELECT lanname from pg_language where lanname = \'plpgsql\'" breakpad | grep plpgsql',
-            alias => 'create-language-plpgsql',
-            require => Exec['create-breakpad-db'];
-    }
-
-    exec {
-        '/usr/bin/psql -c "create language plperl" breakpad':
-            user => 'postgres',
-            unless => '/usr/bin/psql -c "SELECT lanname from pg_language where lanname = \'plperl\'" breakpad | grep plperl',
-            alias => 'create-language-plperl',
-            require => [Exec['create-language-plpgsql'], Package['postgresql-plperl']];
+        '/usr/bin/createuser -d -r -s socorro':
+            require => [Package['postgresql'], File['postgres-config']],
+            onlyif => '/usr/bin/psql -xt breakpad -c "SELECT * FROM pg_user WHERE usename = \'socorro\'" | grep "(No rows)"',
+            user => 'postgres'
     }
 
     exec {
         '/bin/bash /home/socorro/dev/socorro/tools/dataload/import.sh':
             alias => 'dataload',
             user => 'postgres',
-            cwd => '/home/socorro/dev/socorro/tools/dataload/',
+            cwd => '/home/socorro/dev/socorro/tools/dataload',
             onlyif => '/usr/bin/psql -xt breakpad -c "SELECT count(*) FROM products" | grep "count | 0"',
             logoutput => on_failure,
-            require => Exec['setup-schema'];
-    }
-
-    exec {
-        '/usr/bin/createdb test':
-            require => Package['postgresql'],
-            unless => '/usr/bin/psql --list test',
-            alias => 'create-test-db',
-            user => 'postgres';
-    }
-
-    exec {
-        '/usr/bin/psql -c "create role test login password \'aPassword\'"':
-            alias => 'create-test-role',
-            unless => '/usr/bin/psql -c "SELECT rolname from pg_roles where rolname = \'test\'" test | grep test',
-            user => 'postgres',
-            require => Exec['create-test-db'];
-    }
-
-    exec {
-        '/usr/bin/psql -c "grant all on database test to test"':
-            alias => 'grant-test-access',
-            user => 'postgres',
-            unless => '/usr/bin/psql breakpad -c "\z " | grep test',
-            require => Exec['create-test-role'];
-    }
-
-    exec {
-        '/usr/bin/psql test < /usr/share/postgresql/9.0/contrib/citext.sql':
-            user => 'postgres',
-            unless => '/usr/bin/psql breakpad -c "\dT" | grep citext',
-            require => [Exec['create-test-db'], Package['postgresql-contrib']];
-    }
-
-    exec {
-        '/usr/bin/psql -c "create language plpgsql" test':
-            user => 'postgres',
-            unless => '/usr/bin/psql -c "SELECT lanname from pg_language where lanname = \'plpgsql\'" test | grep plpgsql',
-            require => Exec['create-test-db'];
-    }
-
-    exec {
-        '/usr/bin/psql -c "create language plperl" test':
-            user => 'postgres',
-            unless => '/usr/bin/psql -c "SELECT lanname from pg_language where lanname = \'plperl\'" test | grep plperl',
-            require => [Exec['create-test-db'], Package['postgresql-plperl']];
+            require => Exec['create-breakpad-db'];
     }
 
     service { 'postgresql':

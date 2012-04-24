@@ -18,66 +18,14 @@ class TestSignatureURLs(PostgreSQLTestCase):
 
         cursor = self.connection.cursor()
 
-        #Create table
-        cursor.execute("""
-            CREATE TABLE reports_clean
-            (
-                uuid text NOT NULL,
-                date_processed timestamp with time zone NOT NULL,
-                client_crash_date timestamp with time zone,
-                product_version_id integer,
-                build numeric,
-                signature_id integer NOT NULL,
-                install_age interval,
-                uptime interval,
-                reason_id integer NOT NULL,
-                address_id integer NOT NULL,
-                os_name citext NOT NULL,
-                os_version_id integer NOT NULL,
-                hang_id text,
-                flash_version_id integer NOT NULL,
-                process_type citext NOT NULL,
-                release_channel citext NOT NULL,
-                duplicate_of text,
-                domain_id integer NOT NULL,
-                architecture citext,
-                cores integer
-            );
-            CREATE TABLE reports_user_info
-            (
-                uuid text NOT NULL,
-                date_processed timestamp with time zone NOT NULL,
-                user_comments citext,
-                app_notes citext,
-                email citext,
-                url text
-            );
-            CREATE TABLE signatures
-            (
-                signature_id integer NOT NULL,
-                signature text,
-                first_report timestamp with time zone,
-                first_build numeric
-            );
-            CREATE TABLE product_versions
-            (
-                product_version_id integer NOT NULL,
-                product_name text NOT NULL,
-                major_version text NOT NULL,
-                release_version text NOT NULL,
-                version_string text NOT NULL,
-                beta_number integer,
-                version_sort text DEFAULT 0 NOT NULL,
-                build_date date NOT NULL,
-                sunset_date date NOT NULL,
-                featured_version boolean DEFAULT false NOT NULL,
-                build_type text DEFAULT 'release' NOT NULL
-            );
-        """)
-
         # Insert data
         now = datetimeutil.utc_now().date()
         cursor.execute("""
+            INSERT INTO products
+            (product_name, sort, rapid_release_version, release_name)
+            VALUES
+            ('Firefox', 1, '8.0', 'firefox');
+
             INSERT INTO reports_clean VALUES
             (
                 '32bcc6e8-c23b-48ce-abf0-70d0e2120323',
@@ -141,10 +89,9 @@ class TestSignatureURLs(PostgreSQLTestCase):
         """ Cleanup the database, delete tables and functions """
         cursor = self.connection.cursor()
         cursor.execute("""
-            DROP TABLE reports_clean;
-            DROP TABLE reports_user_info;
-            DROP TABLE signatures;
-            DROP TABLE product_versions;
+            TRUNCATE reports_clean, reports_user_info, signatures,
+                     product_versions, products
+            CASCADE
         """)
         self.connection.commit()
         super(TestSignatureURLs, self).tearDown()

@@ -22,43 +22,14 @@ class IntegrationTestCrash(PostgreSQLTestCase):
 
         cursor = self.connection.cursor()
 
-        # Create tables
-        cursor.execute("""
-            CREATE TABLE reports
-            (
-                id serial NOT NULL,
-                date_processed timestamp with time zone,
-                uuid character varying(50) NOT NULL,
-                url character varying(255),
-                email character varying(100),
-                success boolean,
-                addons_checked boolean
-            );
-            CREATE TABLE reports_duplicates
-            (
-                uuid text not null primary key,
-                duplicate_of text not null
-            );
-        """)
-
-        # Create needed SQL functions
-        cursor.execute("""
-            CREATE FUNCTION utc_day_is(timestamp with time zone,
-                                       timestamp without time zone)
-            RETURNS boolean
-                LANGUAGE sql IMMUTABLE
-                AS $_$
-            select $1 >= ( $2 AT TIME ZONE 'UTC' )
-                AND $1 < ( ( $2 + INTERVAL '1 day' ) AT TIME ZONE 'UTC'  );
-            $_$;
-        """)
-
         # Insert data
         now = datetimeutil.utc_now()
         uuid = "%%s-%s" % now.strftime("%y%m%d")
 
         cursor.execute("""
-            INSERT INTO reports VALUES
+            INSERT INTO reports 
+            (id, date_processed, uuid, url, email, success, addons_checked)
+            VALUES
             (
                 1,
                 '%s',
@@ -89,12 +60,15 @@ class IntegrationTestCrash(PostgreSQLTestCase):
         """ % (now, uuid % "a1", now, uuid % "a2", now, uuid % "b1"))
 
         cursor.execute("""
-            INSERT INTO reports_duplicates VALUES
+            INSERT INTO reports_duplicates
+            ( uuid, duplicate_of, date_processed)
+            VALUES
             (
                 '%s',
-                'a2'
+                'a2',
+                '%s'
             );
-        """ % (uuid % "a1"))
+        """ % (uuid % "a1", now))
 
         self.connection.commit()
 
@@ -127,7 +101,7 @@ class IntegrationTestCrash(PostgreSQLTestCase):
         #......................................................................
         # Test 2: an invalid crash
         params = {
-            "uuid": uuid % "a2"
+            "uuid": uuid % "a4"
         }
         res = crash.get(**params)
         res_expected = {
@@ -162,10 +136,8 @@ class IntegrationTestCrash(PostgreSQLTestCase):
         """Clean up the database, delete tables and functions. """
         cursor = self.connection.cursor()
         cursor.execute("""
-            DROP TABLE reports_duplicates;
-            DROP TABLE reports;
-            DROP FUNCTION utc_day_is(timestamp with time zone,
-                                     timestamp without time zone);
+            TRUNCATE reports_duplicates, reports
+            CASCADE
         """)
         self.connection.commit()
         super(IntegrationTestCrash, self).tearDown()
