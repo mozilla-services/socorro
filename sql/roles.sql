@@ -7,3 +7,5 @@ CREATE USER monitoring WITH PASSWORD 'aPassword';
 CREATE USER nagiosdaemon WITH PASSWORD 'aPassword';
 CREATE USER postgres WITH PASSWORD 'aPassword';
 CREATE USER processor WITH PASSWORD 'aPassword';
+CREATE USER ganglia WITH PASSWORD 'aPassword';
+CREATE USER analyst WITH PASSWORD 'aPassword';
