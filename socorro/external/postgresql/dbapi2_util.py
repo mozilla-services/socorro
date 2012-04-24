@@ -34,7 +34,7 @@ def single_row_sql(connection, sql, parameters=None):
 
 
 #------------------------------------------------------------------------------
-def execute_query(connection, sql, parameters=None):
+def execute_query_iter(connection, sql, parameters=None):
     a_cursor = connection.cursor()
     a_cursor.execute(sql, parameters)
     while True:
@@ -43,6 +43,13 @@ def execute_query(connection, sql, parameters=None):
             yield aRow
         else:
             break
+
+
+#------------------------------------------------------------------------------
+def execute_query_fetchall(connection, sql, parameters=None):
+    a_cursor = connection.cursor()
+    a_cursor.execute(sql, parameters)
+    return a_cursor.fetchall()
 
 
 #------------------------------------------------------------------------------
