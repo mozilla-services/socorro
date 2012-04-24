@@ -22,79 +22,101 @@ class TestProducts(PostgreSQLTestCase):
         
         cursor = self.connection.cursor()
         
-        #Create table
-        cursor.execute("""
-            CREATE TABLE product_info
-            (
-                product_name citext,
-                version_string citext,
-                start_date timestamp without time zone,
-                end_date timestamp without time zone,
-                is_featured boolean,
-                build_type citext,
-                throttle numeric(5,2)
-            );
-            CREATE TABLE products
-            (
-                product_name text not null,
-                sort smallint not null,
-                rapid_release_version text not null
-            );
-        """)
-        
         # Insert data
         now = datetimeutil.utc_now().date()
+        # throttle in product_release_channels
         cursor.execute("""
-            INSERT INTO product_info VALUES
+            INSERT INTO products
+            (product_name, sort, rapid_release_version, release_name)
+            VALUES
+            (
+                '%s',
+                %d,
+                '%s',
+                '%s'
+            ),
+            (
+                '%s',
+                %d,
+                '%s',
+                '%s'
+            ),
+            (
+                '%s',
+                %d,
+                '%s',
+                '%s'
+            );
+            INSERT INTO release_build_type_map
+            (release, build_type)
+            VALUES
+            (
+                'major', 'Release'
+            ),
+            (
+                'development', 'Beta'
+            ),
+            (
+                'milestone', 'Aurora'
+            );
+            INSERT INTO release_channels
+            (release_channel, sort)
+            VALUES
+            (
+                'Release', 1
+            );
+            INSERT INTO product_release_channels
+            (product_name, release_channel, throttle)
+            VALUES
+            (
+                'Firefox', 'Release', '0.1'
+            ),
+            (
+                'Fennec', 'Release', '0.1'
+            ),
+            (
+                'Thunderbird', 'Release', '0.1'
+            );
+            INSERT INTO product_versions
+            (product_name, major_version, release_version, version_string,
+             build_date, sunset_date, featured_version, build_type)
+            VALUES
             (
                 'Firefox',
+                '8.0',
+                '8.0',
                 '8.0',
                 '%s',
                 '%s',
                 False,
-                'Release',
-                10.00
+                'Release'
             ),
             (
-                'Firefox',
+                'Fennec',
+                '11.0',
+                '11.0',
                 '11.0.1',
                 '%s',
                 '%s',
                 False,
-                'Release',
-                20.00
+                'Release'
             ),
             (
                 'Thunderbird',
+                '10.0',
+                '10.0',
                 '10.0.2b',
                 '%s',
                 '%s',
                 False,
-                'Release',
-                30.00
+                'Release'
             );
-            INSERT INTO products VALUES
-            (
-                '%s',
-                %d,
-                '%s'
-            ),
-            (
-                '%s',
-                %d,
-                '%s'
-            ),
-            (
-                '%s',
-                %d,
-                '%s'
-            );
-        """ % (now, now,
+        """ % ("Firefox", 1, '8.0', "firefox",
+               "Fennec", 3, '11.0', "mobile",
+               "Thunderbird", 2, '10.0', "thunderbird",
                now, now,
                now, now,
-               "Firefox", 1, "firefox",
-               "Fennec", 3, "mobile",
-               "Thunderbird", 2, "thunderbird"))
+               now, now))
 
         self.connection.commit()
         
@@ -103,8 +125,10 @@ class TestProducts(PostgreSQLTestCase):
         """ Cleanup the database, delete tables and functions """
         cursor = self.connection.cursor()
         cursor.execute("""
-            DROP TABLE product_info;
-            DROP TABLE products;
+            TRUNCATE products, product_version_builds, product_versions,
+                     product_release_channels, release_build_type_map,
+                     release_channels, product_versions
+            CASCADE
         """)
         self.connection.commit()
         super(TestProducts, self).tearDown()
@@ -142,19 +166,19 @@ class TestProducts(PostgreSQLTestCase):
         #......................................................................
         # Test 2: Find two different products with their correct verions
         params = {
-            "versions": ["Firefox:11.0.1", "Thunderbird:10.0.2b"]
+            "versions": ["Firefox:8.0", "Thunderbird:10.0.2b"]
         }
         res = products.get(**params)
         res_expected = {
             "hits": [
                 {
                     "product": "Firefox",
-                    "version": "11.0.1",
+                    "version": "8.0",
                     "start_date": now_str,
                     "end_date": now_str,
                     "is_featured": False,
                     "build_type": "Release",
-                    "throttle": 20.0
+                    "throttle": 10.0
                  },
                  {
                     "product": "Thunderbird",
@@ -163,7 +187,7 @@ class TestProducts(PostgreSQLTestCase):
                     "end_date": now_str,
                     "is_featured": False,
                     "build_type": "Release",
-                    "throttle": 30.0
+                    "throttle": 10.0
                  }
             ],
             "total": 2
@@ -192,18 +216,21 @@ class TestProducts(PostgreSQLTestCase):
                 "hits": [
                     {
                         "product_name": "Firefox",
+                        "release_name": "firefox",
                         "sort": 1,
-                        "rapid_release_version": "firefox"
+                        "rapid_release_version": "8.0"
                      },
                     {
                         "product_name": "Fennec",
+                        "release_name": "mobile",
                         "sort": 3,
-                        "rapid_release_version": "mobile"
+                        "rapid_release_version": "11.0"
                      },
                     {
                         "product_name": "Thunderbird",
+                        "release_name": "thunderbird",
                         "sort": 2,
-                        "rapid_release_version": "thunderbird"
+                        "rapid_release_version": "10.0"
                      }
                 ],
                 "total": 3

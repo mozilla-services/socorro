@@ -21,14 +21,6 @@ class IntegrationTestPriorityjobs(PostgreSQLTestCase):
 
         cursor = self.connection.cursor()
 
-        # Create tables
-        cursor.execute("""
-            CREATE TABLE priorityjobs
-            (
-                uuid text not null primary key
-            );
-        """)
-
         # Insert data
         cursor.execute("""
             INSERT INTO priorityjobs (uuid) VALUES
@@ -47,7 +39,8 @@ class IntegrationTestPriorityjobs(PostgreSQLTestCase):
         """Clean up the database, delete tables and functions. """
         cursor = self.connection.cursor()
         cursor.execute("""
-            DROP TABLE priorityjobs;
+            TRUNCATE priorityjobs
+            CASCADE
         """)
         self.connection.commit()
         super(IntegrationTestPriorityjobs, self).tearDown()
