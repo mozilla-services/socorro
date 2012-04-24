@@ -1,5 +1,6 @@
 #! /usr/bin/env python
 
+import re
 import inspect
 import logging
 import logging.handlers
@@ -42,17 +43,17 @@ def logging_required_config(app_name):
               default='user')
     lc.add_option('syslog_line_format_string',
               doc='python logging system format for syslog entries',
-              default='%s (pid %%(process)d): '
-                      '%%(asctime)s %%(levelname)s - %%(threadName)s - '
-                      '%%(message)s' % app_name)
+              default='%s (pid {process}): '
+                      '{asctime} {levelname} - {threadName} - '
+                      '{message}' % app_name)
     lc.add_option('syslog_error_logging_level',
               doc='logging level for the log file (10 - DEBUG, 20 '
                   '- INFO, 30 - WARNING, 40 - ERROR, 50 - CRITICAL)',
               default=40)
     lc.add_option('stderr_line_format_string',
               doc='python logging system format for logging to stderr',
-              default='%(asctime)s %(levelname)s - %(threadName)s - '
-                      '%(message)s')
+              default='{asctime} {levelname} - {threadName} - '
+                      '{message}')
     lc.add_option('stderr_error_logging_level',
               doc='logging level for the logging to stderr (10 - '
                   'DEBUG, 20 - INFO, 30 - WARNING, 40 - ERROR, '
@@ -62,22 +63,30 @@ def logging_required_config(app_name):
 
 
 #------------------------------------------------------------------------------
+
 def setup_logger(app_name, config, local_unused, args_unused):
     logger = logging.getLogger(app_name)
     logger.setLevel(logging.DEBUG)
     stderr_log = logging.StreamHandler()
     stderr_log.setLevel(config.stderr_error_logging_level)
-    stderr_log_formatter = logging.Formatter(config.stderr_line_format_string)
+    stderr_log_formatter = logging.Formatter(
+                      _convert_format_string(config.stderr_line_format_string))
     stderr_log.setFormatter(stderr_log_formatter)
     logger.addHandler(stderr_log)
 
     syslog = logging.handlers.SysLogHandler(
                                         facility=config.syslog_facility_string)
     syslog.setLevel(config.syslog_error_logging_level)
-    syslog_formatter = logging.Formatter(config.syslog_line_format_string)
+    syslog_formatter = logging.Formatter(
+                      _convert_format_string(config.syslog_line_format_string))
     syslog.setFormatter(syslog_formatter)
     logger.addHandler(syslog)
     return logger
+
+
+def _convert_format_string(s):
+    """return '%(foo)s %(bar)s' if the input is '{foo} {bar}'"""
+    return re.sub('{(\w+)}', r'%(\1)s', s)
 
 
 #------------------------------------------------------------------------------
