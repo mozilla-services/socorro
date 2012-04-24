@@ -41,7 +41,25 @@
 /**
  * Bug Model responsible for the bug and bug_associations tables
  */
-class Bug_Model extends Model {
+class Bug_Model extends Model 
+{
+    /**
+     * The Web Service class.
+     */
+    protected $service = null;
+
+    public function __construct()
+    {
+        parent::__construct();
+
+        $config = array();
+        $credentials = Kohana::config('webserviceclient.basic_auth');
+        if ($credentials) {
+            $config['basic_auth'] = $credentials;
+        }
+
+        $this->service = new Web_Service($config);
+    }
 
     public $resolutionOrder = array('', 'WORKSFORME', 'WONTFIX', 'DUPLICATE', 'INVALID', 'FIXED', 'INCOMPLETE');
 
@@ -94,31 +112,29 @@ class Bug_Model extends Model {
     {
         $sigs = array();
         foreach ($signatures as $sig) {
-	    if (trim($sig) != '') {
-	        array_push($sigs, $this->db->escape($sig));
-	    }
+            if (trim($sig) != '') {
+                array_push($sigs, $sig);
+            }
         }
 
-	if (count($sigs) == 0) {
-	    return array();
-	}
-
-        $rows = $this->db->query(
-            "/* soc.web bugsForSigs */
-            SELECT ba.signature, bugs.id FROM bugs
-            JOIN bug_associations AS ba ON bugs.id = ba.bug_id
-            WHERE EXISTS(
-                SELECT 1 FROM bug_associations
-                WHERE bug_associations.bug_id = bugs.id
-                AND signature IN (" . implode(", ", $sigs) . ")
-            )",
-            TRUE)->result_array(FALSE);
+        if (count($sigs) == 0) {
+            return array();
+        }
+        
+        $uri = Kohana::config('webserviceclient.socorro_hostname') . '/bugs/';
+        $data = array('signatures' => implode('+', $sigs));
+        $res = $this->service->post($uri, $data);
+        if (!$res || !isset($res->total) || $res->total <= 0) {
+            return array();
+        }
+        $rows = $res->hits;
 
         $signature_to_bugzilla = array();
         foreach ($rows as $row) {
+            $row = (array) $row;
             if (!array_key_exists($row['signature'], $signature_to_bugzilla)) {
                 $signature_to_bugzilla[$row['signature']] = array();
-	    }
+            }
 
             $row = array_merge($this->defaultBug, $row);
             $row['open'] = (array_key_exists($row['status'], $this->open_statuses)) ? true : false;
@@ -126,7 +142,7 @@ class Bug_Model extends Model {
             $row['summary'] = $row['summary'];
 
             array_push($signature_to_bugzilla[$row['signature']], $row);
-	}
+        }
 
         foreach ($signature_to_bugzilla as $k => $v) {
             usort($signature_to_bugzilla[$k], array($this, '_sortByResolution')); 
@@ -135,4 +151,3 @@ class Bug_Model extends Model {
         return $signature_to_bugzilla;
     }
 }
-?>

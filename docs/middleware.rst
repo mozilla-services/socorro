@@ -11,6 +11,7 @@ API map
 New-style, documented services
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+* `/bugs/ <#bugs>`_
 * /crashes/
     * `/crashes/comments <#crashes-comments>`_
     * `/crashes/frequency  <#crashes-frequency>`_
@@ -50,6 +51,63 @@ See source code in ``.../socorro/services/`` for more details.
 * /schedule/priority/job
 * /topcrash/sig/trend/history
 * /topcrash/sig/trend/rank
+
+.. ############################################################################
+   Bugs API
+   ############################################################################
+
+Bugs
+----
+
+Return a list of signature - bug id associations.
+
+API specifications
+^^^^^^^^^^^^^^^^^^
+
++----------------+-----------------------------------------------------------------------------------+
+| HTTP method    | POST                                                                              |
++----------------+-----------------------------------------------------------------------------------+
+| URL schema     | /bugs/                                                                            |
++----------------+-----------------------------------------------------------------------------------+
+| Full URL       | /bugs/                                                                            |
++----------------+-----------------------------------------------------------------------------------+
+| Example        | http://socorro-api/bpapi/bugs/ data: signatures=mysignature+anothersig+jsCrashSig |
++----------------+-----------------------------------------------------------------------------------+
+
+Mandatory parameters
+^^^^^^^^^^^^^^^^^^^^
+
++----------------+------------------+---------------+-------------------------+
+| Name           | Type of value    | Default value | Description             |
++================+==================+===============+=========================+
+| signatures     | List of strings  | None          | Signatures of bugs      |
+|                |                  |               | to get.                 |
++----------------+------------------+---------------+-------------------------+
+
+Optional parameters
+^^^^^^^^^^^^^^^^^^^
+
+None.
+
+Return value
+^^^^^^^^^^^^
+
+In normal cases, return something like this::
+
+    {
+        "hits": [
+            {
+                "id": "789012",
+                "signature": "mysignature"
+            },
+            {
+                "id": "405060",
+                "signature": "anothersig"
+            }
+        ],
+        "total": 2
+    }
+
 
 .. ############################################################################
    Crashes Comments API
