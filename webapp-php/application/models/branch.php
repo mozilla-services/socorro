@@ -467,13 +467,12 @@ class Branch_Model extends Model {
      * @param  string product
      * @return object Branch data
      */
-    public function getRecentProductVersion($product) {
+    public function getRecentProductVersion($product, $channel = 'Release') {
         $resp = $this->_getValues();
         $date = time();
-
         foreach($resp as $item) {
             if( $item->product == $product AND
-                $item->release == 'Release' AND
+                $item->release == $channel AND
                 strtotime($item->start_date) <= $date AND
                 strtotime($item->end_date) >= $date) {
                 return $item; // Essentially a LIMIT 1, per old query
