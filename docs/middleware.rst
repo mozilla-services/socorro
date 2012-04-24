@@ -18,10 +18,14 @@ New-style, documented services
     * `/crashes/paireduuid <#crashes-paireduuid>`_
     * `/crashes/signatures <#crashes-signatures>`_
 * `extensions/ <#id7>`_
+* `crashtrends/ <#crashtrends>`_
 * `job/ <#job>`_
 * `priorityjobs/ <#priorityjobs>`_
 * `products/ <#products>`_
 * `products/builds/ <#products-builds>`_
+* products/
+    * `products/builds/ <#products-builds>`_
+    * `products/versions/ <#products-versions>`_
 * report/
     * `report/list/ <#list-report>`_
 * `signatureurls <#signature-urls>`_
@@ -514,7 +518,67 @@ Return a list of extensions::
 
 
 .. ############################################################################
-   Job API
+   Crash Trends API
+   ############################################################################
+
+Crash Trends
+----------
+
+Return a list of nightly or aurora crashes that took place between two dates.
+
+API specifications
+^^^^^^^^^^^^^^^^^^
+
++----------------+---------------------------------------------------------------------------------------------------------------+
+| HTTP method    | GET                                                                                                           |
++----------------+---------------------------------------------------------------------------------------------------------------+
+| URL schema     | /crashtrends/(optional_parameters)                                                                            |
++----------------+---------------------------------------------------------------------------------------------------------------+
+| Full URL       | /crashtrends/start_date/(start_date)/end_date/(end_date)/product/(product)/version/(version)                  |
++----------------+---------------------------------------------------------------------------------------------------------------+
+| Example        | http://socorro-api/bpapi/crashtrends/start_date/2012-03-01/end_date/2012-03-15/product/Firefox/version/13.0a1 |
++----------------+---------------------------------------------------------------------------------------------------------------+
+
+Mandatory parameters
+^^^^^^^^^^^^^^^^^^^^
+
++---------------+---------------+---------------+-----------------------------------+
+| Name          | Type of value | Default value | Description                       |
++===============+===============+===============+===================================+
+| start_date    | Datetime      | None          | The earliest date of crashes      |
+|               |               |               | we wish to evaluate               |
++---------------+---------------+---------------+-----------------------------------+
+| end_date      | Datetime      | None          | The latest date of crashes we     |
+|               |               |               | wish to evaluate.                 |  
++---------------+---------------+---------------+-----------------------------------+
+| product       | String        | None          | The product.                      |
++---------------+---------------+---------------+-----------------------------------+
+| version       | String        | None          | The version.                      |
++---------------+---------------+---------------+-----------------------------------+
+Optional parameters
+^^^^^^^^^^^^^^^^^^^
+
+None
+
+Return value
+^^^^^^^^^^^^
+
+Return a total of crashes, along with their build date, by build ID::
+
+    [
+        {
+            "build_date": "2012-02-10", 
+            "version_string": "12.0a2", 
+            "product_version_id": 856, 
+            "days_out": 6, 
+            "report_count": 515, 
+            "report_date": "2012-02-16", 
+            "product_name": "Firefox"
+        }
+    ]
+
+.. ############################################################################
+   Products Builds API
    ############################################################################
 
 Job
