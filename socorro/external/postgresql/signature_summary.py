@@ -1,6 +1,12 @@
+import logging
+
 from socorro.external.postgresql.base import PostgreSQLBase
+from socorro.external.postgresql.util import Util
 import socorro.database.database as db
 from socorro.lib import external_common
+
+logger = logging.getLogger("webapi")
+
 
 report_type_sql = {
     'uptime': {
@@ -47,15 +53,28 @@ class SignatureSummary(PostgreSQLBase):
             ("signature", None, "str"),
             ("start_date", None, "datetime"),
             ("end_date", None, "datetime"),
-            ("product", None, ["list", "str"]),
             ("versions", None, ["list", "str"]),
-            ]
+        ]
 
         params = external_common.parse_arguments(filters, kwargs)
 
         # Decode double-encoded slashes in signature
         if params["signature"] is not None:
             params["signature"] = params["signature"].replace("%2F", "/")
+
+        products = []
+        versions = []
+        # Get information about the versions
+        util_service = Util(config=self.context)
+        versions_info = util_service.versions_info(**params)
+
+        if versions_info:
+            for i, elem in enumerate(versions_info):
+                products.append(versions_info[elem]["product_name"])
+                versions.append(str(versions_info[elem]["product_version_id"]))
+
+        params['versions'] = versions
+        params['product'] = products
 
         if params['versions'] and params['report_type'] is not 'products':
             glue = ','
@@ -154,6 +173,7 @@ class SignatureSummary(PostgreSQLBase):
                 query_parameters.append(tuple(params['product']))
 
             query_parameters = tuple(query_parameters)
+
         sql_results = db.execute(cursor, query_string, query_parameters)
         results = []
         for row in sql_results:
