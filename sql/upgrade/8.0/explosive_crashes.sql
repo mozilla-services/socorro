@@ -1,5 +1,7 @@
 \set ON_ERROR_STOP 1
 
+DROP TABLE IF EXISTS explosiveness;
+
 SELECT create_table_if_not_exists ( 
 -- new table name here
 'explosiveness', 
@@ -8,12 +10,20 @@ $q$
 create table explosiveness (
 	product_version_id INT NOT NULL,
 	signature_id INT NOT NULL,
-	report_date DATE not null,
+	last_date DATE not null,
 	oneday NUMERIC,
 	threeday NUMERIC,
-	oneday_rate NUMERIC,
-	threeday_rate NUMERIC,
-	constraint explosiveness_key primary key ( product_version_id, signature_id, report_date )
+	day0 NUMERIC,
+	day1 NUMERIC,
+	day2 NUMERIC,
+	day3 NUMERIC,
+	day4 NUMERIC,
+	day5 NUMERIC,
+	day6 NUMERIC,
+	day7 NUMERIC,
+	day8 NUMERIC,
+	day9 NUMERIC,
+	constraint explosiveness_key primary key ( product_version_id, signature_id, last_date )
 );$q$, 
 -- owner of table; always breakpad_rw
 'breakpad_rw', 
@@ -52,7 +62,7 @@ BEGIN
 -- check if we've been run
 IF checkdata THEN
 	PERFORM 1 FROM explosiveness
-	WHERE report_date = updateday
+	WHERE last_date = updateday
 	LIMIT 1;
 	IF FOUND THEN
 		RAISE INFO 'explosiveness has already been run for %.',updateday;
@@ -88,11 +98,17 @@ comp_e3date := mes_b3date - 1;
 -- first date of the comparison period
 comp_bdate := mes_edate - 9;
 
--- create oneday temp table
-CREATE TEMPORARY TABLE explosive_oneday
+-- create temp table with all of the crash_madus for each
+-- day, including zeroes
+CREATE TEMPORARY TABLE crash_madu
 ON COMMIT DROP
 AS 
-WITH adusum AS (
+WITH crashdates AS (
+	SELECT report_date::DATE as report_date
+	FROM generate_series(comp_bdate, mes_edate, INTERVAL '1 day')
+		AS gs(report_date)
+),
+adusum AS (
 	SELECT adu_date, sum(adu_count) as adu_count,
 		( mindiv_one * 1000000::numeric / sum(adu_count)) as mindivisor,
 		product_version_id
@@ -108,7 +124,7 @@ reportsum AS (
 	WHERE report_date BETWEEN comp_bdate and mes_edate
 	GROUP BY report_date, product_version_id, signature_id
 ),
-crash_madu AS (
+crash_madu_raw AS (
 	SELECT ( report_count * 1000000::numeric ) / adu_count AS crash_madu,
 		reportsum.product_version_id, reportsum.signature_id, 
 		report_date, mindivisor
@@ -116,7 +132,64 @@ crash_madu AS (
 		ON adu_date = report_date
 		AND adusum.product_version_id = reportsum.product_version_id
 ),
-sum1day AS ( 
+product_sigs AS (
+	SELECT DISTINCT product_version_id, signature_id
+	FROM crash_madu_raw
+)
+SELECT crashdates.report_date, 
+	coalesce(crash_madu, 0) as crash_madu,
+	product_sigs.product_version_id, product_sigs.signature_id,
+	COALESCE(crash_madu_raw.mindivisor, 0) as mindivisor
+FROM crashdates CROSS JOIN product_sigs
+	LEFT OUTER JOIN crash_madu_raw
+	ON crashdates.report_date = crash_madu_raw.report_date
+		AND product_sigs.product_version_id = crash_madu_raw.product_version_id
+		AND product_sigs.signature_id = crash_madu_raw.signature_id;
+
+-- create crosstab with days1-10
+-- create the multiplier table
+
+CREATE TEMPORARY TABLE xtab_mult
+ON COMMIT DROP
+AS
+SELECT report_date,
+	( case when report_date = mes_edate THEN 1::NUMERIC ELSE 0::NUMERIC END ) as day0,
+	( case when report_date = ( mes_edate - 1 ) THEN 1::NUMERIC ELSE 0::NUMERIC END ) as day1,
+	( case when report_date = ( mes_edate - 2 ) THEN 1::NUMERIC ELSE 0::NUMERIC END ) as day2,
+	( case when report_date = ( mes_edate - 3 ) THEN 1::NUMERIC ELSE 0::NUMERIC END ) as day3,
+	( case when report_date = ( mes_edate - 4 ) THEN 1::NUMERIC ELSE 0::NUMERIC END ) as day4,
+	( case when report_date = ( mes_edate - 5 ) THEN 1::NUMERIC ELSE 0::NUMERIC END ) as day5,
+	( case when report_date = ( mes_edate - 6 ) THEN 1::NUMERIC ELSE 0::NUMERIC END ) as day6,
+	( case when report_date = ( mes_edate - 7 ) THEN 1::NUMERIC ELSE 0::NUMERIC END ) as day7,
+	( case when report_date = ( mes_edate - 8 ) THEN 1::NUMERIC ELSE 0::NUMERIC END ) as day8,
+	( case when report_date = ( mes_edate - 9 ) THEN 1::NUMERIC ELSE 0::NUMERIC END ) as day9
+	FROM generate_series(comp_bdate, mes_edate, INTERVAL '1 day')
+		AS gs(report_date);
+
+-- create the crosstab
+CREATE TEMPORARY TABLE crash_xtab
+ON COMMIT DROP
+AS
+SELECT product_version_id, signature_id,
+	round(SUM ( crash_madu * day0 ),2) AS day0,
+	round(SUM ( crash_madu * day1 ),2) AS day1,
+	round(SUM ( crash_madu * day2 ),2) AS day2,
+	round(SUM ( crash_madu * day3 ),2) AS day3,
+	round(SUM ( crash_madu * day4 ),2) AS day4,
+	round(SUM ( crash_madu * day5 ),2) AS day5,
+	round(SUM ( crash_madu * day6 ),2) AS day6,
+	round(SUM ( crash_madu * day7 ),2) AS day7,
+	round(SUM ( crash_madu * day8 ),2) AS day8,
+	round(SUM ( crash_madu * day9 ),2) AS day9
+FROM xtab_mult
+	JOIN crash_madu USING (report_date)
+GROUP BY product_version_id, signature_id;
+
+-- create oneday temp table
+CREATE TEMPORARY TABLE explosive_oneday
+ON COMMIT DROP
+AS 
+WITH sum1day AS ( 
 	SELECT product_version_id, signature_id, crash_madu as sum1day,
 		mindivisor
 	FROM crash_madu
@@ -125,7 +198,7 @@ sum1day AS (
 ),
 agg9day AS (
 	SELECT product_version_id, signature_id,
-		SUM(crash_madu)/9 AS avg9day,
+		AVG(crash_madu) AS avg9day,
 		MAX(crash_madu) as max9day
 	FROM crash_madu
 	WHERE report_date BETWEEN comp_bdate and comp_e1date
@@ -150,43 +223,19 @@ ANALYZE explosive_oneday;
 CREATE TEMPORARY TABLE explosive_threeday
 ON COMMIT DROP
 AS
-WITH adusum AS (
-	SELECT adu_date, sum(adu_count) as adu_count,
-		( mindiv_three * 1000000::numeric / sum(adu_count)) as mindivisor,
-		product_version_id
-	FROM product_adu
-	WHERE adu_date BETWEEN comp_bdate and mes_edate
-		AND adu_count > 0
-	GROUP BY adu_date, product_version_id 
-),
-reportsum AS (
-	SELECT report_date, sum(report_count) as report_count,
-		product_version_id, signature_id
-	FROM tcbs
-	WHERE report_date BETWEEN comp_bdate and mes_edate
-	GROUP BY report_date, product_version_id, signature_id
-),
-crash_madu AS (
-	SELECT ( report_count * 1000000::numeric ) / adu_count AS crash_madu,
-		reportsum.product_version_id, reportsum.signature_id, 
-		report_date, mindivisor
-	FROM adusum JOIN reportsum
-		ON adu_date = report_date
-		AND adusum.product_version_id = reportsum.product_version_id
-),
-avg3day AS ( 
+WITH avg3day AS ( 
 	SELECT product_version_id, signature_id, 
-        SUM(crash_madu)/3 as avg3day,
-		SUM(mindivisor)/3 as mindivisor
+        AVG(crash_madu) as avg3day,
+		AVG(mindivisor) as mindivisor
 	FROM crash_madu
 	WHERE report_date BETWEEN mes_b3date and mes_edate
-	AND crash_madu > 10
 	GROUP BY product_version_id, signature_id
+	HAVING AVG(crash_madu) > 10
 ),
 agg7day AS (
 	SELECT product_version_id, signature_id,
 		SUM(crash_madu)/7 AS avg7day,
-		sqrt(( ( 7 * SUM(crash_madu^2) ) - SUM(crash_madu)^2 )/ 49) as sdv7day
+		COALESCE(STDDEV(crash_madu),0) AS sdv7day
 	FROM crash_madu
 	WHERE report_date BETWEEN comp_bdate and comp_e3date
 	GROUP BY product_version_id, signature_id
@@ -210,11 +259,20 @@ DELETE FROM explosiveness;
 
 -- merge the two tables and insert
 INSERT INTO explosiveness (
-	report_date, signature_id, product_version_id, 
-	oneday, threeday, oneday_rate, threeday_rate )
-SELECT updateday, signature_id, product_version_id, explosive_1day, explosive_3day, oneday_rate, threeday_rate
-FROM explosive_oneday LEFT OUTER JOIN explosive_threeday
+	last_date, signature_id, product_version_id, 
+	oneday, threeday, 
+	day0, day1, day2, day3, day4,
+	day5, day6, day7, day8, day9)
+SELECT updateday, signature_id, product_version_id, 
+	explosive_1day, explosive_3day,
+	day0, day1, day2, day3, day4,
+	day5, day6, day7, day8, day9
+FROM crash_xtab 
+	LEFT OUTER JOIN explosive_oneday
 	USING ( signature_id, product_version_id )
+	LEFT OUTER JOIN explosive_threeday
+	USING ( signature_id, product_version_id )
+WHERE explosive_1day IS NOT NULL or explosive_3day IS NOT NULL
 ORDER BY product_version_id;
 	
 RETURN TRUE;
