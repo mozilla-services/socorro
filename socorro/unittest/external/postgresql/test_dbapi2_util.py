@@ -113,7 +113,7 @@ class TestDBAPI2Helper(unittest.TestCase):
         conn = Mock()
         conn.cursor.return_value = m_cursor
 
-        zipped = zip(dbapi2_util.execute_query(conn,
+        zipped = zip(dbapi2_util.execute_query_iter(conn,
                                                "select * from somewhere"),
                      expected)
         for x, y in zipped:
@@ -137,7 +137,7 @@ class TestDBAPI2Helper(unittest.TestCase):
         conn = Mock()
         conn.cursor.return_value = m_cursor
 
-        zipped = zip(dbapi2_util.execute_query(conn,
+        zipped = zip(dbapi2_util.execute_query_iter(conn,
                                                "select * from somewhere"),
                      expected)
         for x, y in zipped:
