@@ -32,6 +32,7 @@ class Util(PostgreSQLBase):
         Otherwise a dictionary of data about a version, i.e.:
         {
             "product_name:version_string": {
+                "product_version_id": integer,
                 "version_string": "string",
                 "product_name": "string",
                 "major_version": "string" or None,
@@ -75,8 +76,8 @@ class Util(PostgreSQLBase):
                                       ")s)")))
 
         sql = """/* socorro.external.postgresql.util.Util.versions_info */
-        SELECT pi.version_string, pi.product_name, which_table,
-               pv.release_version, pv.build_type, pvb.build_id
+        SELECT pv.product_version_id, pi.version_string, pi.product_name,
+               which_table, pv.release_version, pv.build_type, pvb.build_id
         FROM product_info pi
             LEFT JOIN product_versions pv ON
                 (pv.product_version_id = pi.product_version_id)
@@ -98,9 +99,9 @@ class Util(PostgreSQLBase):
 
         res = {}
         for line in results:
-            row = dict(zip(("version_string", "product_name", "which_table",
-                            "major_version", "release_channel", "build_id"),
-                           line))
+            row = dict(zip(("product_version_id", "version_string",
+                            "product_name", "which_table", "major_version",
+                            "release_channel", "build_id"), line))
 
             key = ":".join((row["product_name"], row["version_string"]))
 
