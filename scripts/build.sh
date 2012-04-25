@@ -5,7 +5,7 @@
 
 # run unit tests
 make clean
-make coverage
+make coverage DB_USER=test DB_HOST=localhost DB_PASSWORD=aPassword
 
 # pull pre-built, known version of breakpad
 make clean
