@@ -8,3 +8,4 @@ poster
 mock 
 lxml
 isodate
+configobj

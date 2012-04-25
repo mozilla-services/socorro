@@ -128,6 +128,8 @@ class Web_Service
      */
     public function post($url, $data, $response_type='json')
     {
+        Kohana::log('debug', 'Trying to post to URL: ' . $url);
+
         $curl = $this->_initCurl($url);
         curl_setopt($curl, CURLOPT_POST, true);
         curl_setopt($curl, CURLOPT_POSTFIELDS, $data);

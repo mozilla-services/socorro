@@ -111,20 +111,6 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
 
         cursor = self.connection.cursor()
 
-        # Create tables
-        cursor.execute("""
-            CREATE TABLE reports
-            (
-                date_processed timestamp with time zone,
-                uuid character varying(50),
-                hangid character varying(50),
-                id serial,
-                build character varying(30),
-                signature character varying(255),
-                os_name character varying(100)
-            );
-        """)
-
         # Insert data for paireduuid test
         now = datetimeutil.utc_now()
         yesterday = now - datetime.timedelta(days=1)
@@ -150,12 +136,13 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
 
         # Insert data for frequency test
         cursor.execute("""
-            INSERT INTO reports (id, build, signature, os_name, date_processed)
+            INSERT INTO reports
+            (id, uuid, build, signature, os_name, date_processed)
             VALUES
-            (1, '2012033116', 'js', 'Windows NT', '%(now)s'),
-            (2, '2012033116', 'js', 'Linux', '%(now)s'),
-            (3, '2012033117', 'js', 'Windows NT', '%(now)s'),
-            (4, '2012033117', 'blah', 'Unknown', '%(now)s')
+            (1, 'abc', '2012033116', 'js', 'Windows NT', '%(now)s'),
+            (2, 'def', '2012033116', 'js', 'Linux', '%(now)s'),
+            (3, 'hij', '2012033117', 'js', 'Windows NT', '%(now)s'),
+            (4, 'klm', '2012033117', 'blah', 'Unknown', '%(now)s')
         """ % {"now": now})
 
         self.connection.commit()
@@ -166,7 +153,8 @@ class IntegrationTestCrashes(PostgreSQLTestCase):
         """Clean up the database, delete tables and functions. """
         cursor = self.connection.cursor()
         cursor.execute("""
-            DROP TABLE reports;
+            TRUNCATE reports
+            CASCADE
         """)
         self.connection.commit()
         cursor.close()

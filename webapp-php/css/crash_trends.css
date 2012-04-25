@@ -1,0 +1,120 @@
+figure {
+    margin: 0;
+}
+.crash_stats_panel {
+    color: #303030;
+    margin: 0 20px;
+    border-radius: 8px;
+    box-shadow: 0 1px 5px -1px #888;  
+}
+.report_criteria,
+.report_graph {
+    float: left;
+}
+.report_criteria {
+    width: 30%;
+}
+.report_graph {
+    position: relative;
+    margin-left: 2em;
+    width: 60%;
+}
+.crash_stats_panel_title {
+    background: #f0f0f0 url(../img/2.0/panel-bg.png) 0 0 repeat-x;
+    margin: 0;
+    padding: 0 6px 0 10px;
+    border: 1px solid #c0c0c0;
+    border-radius: 8px 8px 0 0;
+    font-family: Trebuchet MS,Helvetica,sans-serif;
+    font-size: 12px;
+    line-height: 32px;
+    width: 100%;
+}
+.crash_stats_body {
+    background-color: #fff;
+    padding: 8px;
+    border: 1px solid #c0c0c0;
+    border-top: none;
+    border-radius: 0 0 8px 8px;
+    width: 100%;
+    min-height: 4em;
+    overflow: auto;
+}
+#nightly_crash_trends label {
+    display: inline-block;
+    width: 50px;
+    font-weight: bold;
+}
+#nightly_crash_trends input[type="date"] {
+    padding: .2em;
+    border: 1px solid #999;
+    width: 20em;
+}
+#nightly_crash_trends .error,
+#nightly_crash_trends .info {
+    display: none;
+    color: #fff;
+    padding: .5em 1em .5em 1em;
+    border: 1px solid #333;
+    border-radius: 0;
+    width: 98%;
+}
+#nightly_crash_trends .error {
+    background-color: #a30;
+}
+#nightly_crash_trends .info {
+    background-color: green;
+}
+#nightly_crash_trends_graph {
+    float: left;
+    width: 89%;
+    width: 715px;
+    height: 300px;
+}
+#graph_legend table {
+    float: left;
+    margin-left: 85px;
+    margin-bottom: 10px;
+}
+#graph_legend table thead tr th, 
+#graph_legend table tbody tr td {
+    border: none;
+}
+#graph_legend td {
+    padding: 0 2px 0 2px;
+}
+#loading {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+}
+#dates {
+    clear: left;
+    float: left;
+    margin: 0;
+    padding: 0;
+    font-size: 10px;
+}
+#dates li {
+    margin: 20px 5px 27px 0;
+    list-style: none;
+}
+#graph-tooltip {
+    position: absolute;
+    display: none;
+    background-color: rgba(175, 216, 248, .8);
+    color: #333;
+    padding: 10px 5px 10px 10px;
+    border: 1px solid #406A80;
+    font-weight: bold;
+    width: 140px;
+}
+.field {
+    margin: 1.2em 1.2em 1.2em 0;
+}
+.error-field {
+    background-color: rgba(170, 51, 0, 0.3);
+    background-color: #e5c1b2;
+    padding: 0.5em;
+    border: 1px solid #a30;
+}

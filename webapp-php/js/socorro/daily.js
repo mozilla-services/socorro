@@ -96,6 +96,13 @@ $(function() {
     $('th.version').each(function() {
         $(this).css('color', colours.shift());
     });
+    
+    //color by os table headers according to graph colors
+    if($('th.os').length > 0) {
+      $('th.os').each(function() {
+        $(this).css('color', colours.shift());
+      });
+    }
 
     if ($(".datepicker-daily").length) {
         $(".datepicker-daily input").datepicker({

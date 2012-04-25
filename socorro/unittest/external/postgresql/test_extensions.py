@@ -24,30 +24,14 @@ class IntegrationTestExtensions(PostgreSQLTestCase):
 
         cursor = self.connection.cursor()
 
-        # Create tables
-        cursor.execute("""
-            CREATE TABLE reports
-            (
-                id serial NOT NULL,
-                date_processed timestamp with time zone,
-                uuid character varying(50) NOT NULL
-            );
-            CREATE TABLE extensions
-            (
-                report_id integer not null,
-                date_processed timestamp with time zone,
-                extension_key integer not null,
-                extension_id text not null,
-                extension_version text
-            );
-        """)
-
         # Insert data
         now = datetimeutil.utc_now().date()
         uuid = "%%s-%s" % now.strftime("%y%m%d")
 
         cursor.execute("""
-            INSERT INTO reports VALUES
+            INSERT INTO reports
+            (id, date_processed, uuid)
+            VALUES
             (
                 1,
                 '%s',
@@ -92,8 +76,8 @@ class IntegrationTestExtensions(PostgreSQLTestCase):
         """Clean up the database, delete tables and functions. """
         cursor = self.connection.cursor()
         cursor.execute("""
-            DROP TABLE extensions;
-            DROP TABLE reports;
+            TRUNCATE extensions, reports
+            CASCADE
         """)
         self.connection.commit()
         super(IntegrationTestExtensions, self).tearDown()

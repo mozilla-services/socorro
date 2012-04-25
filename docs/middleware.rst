@@ -11,18 +11,24 @@ API map
 New-style, documented services
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+* `/bugs/ <#bugs>`_
 * /crashes/
     * `/crashes/comments <#crashes-comments>`_
     * `/crashes/frequency  <#crashes-frequency>`_
     * `/crashes/paireduuid <#crashes-paireduuid>`_
     * `/crashes/signatures <#crashes-signatures>`_
 * `extensions/ <#id7>`_
+* `crashtrends/ <#crashtrends>`_
 * `job/ <#job>`_
 * `priorityjobs/ <#priorityjobs>`_
 * `products/ <#products>`_
 * `products/builds/ <#products-builds>`_
+* products/
+    * `products/builds/ <#products-builds>`_
+    * `products/versions/ <#products-versions>`_
 * report/
     * `report/list/ <#list-report>`_
+* `signatureurls <#signature-urls>`_
 * search/
     * `search/crashes/ <#search>`_
     * `search/signatures/ <#search>`_
@@ -49,6 +55,63 @@ See source code in ``.../socorro/services/`` for more details.
 * /schedule/priority/job
 * /topcrash/sig/trend/history
 * /topcrash/sig/trend/rank
+
+.. ############################################################################
+   Bugs API
+   ############################################################################
+
+Bugs
+----
+
+Return a list of signature - bug id associations.
+
+API specifications
+^^^^^^^^^^^^^^^^^^
+
++----------------+-----------------------------------------------------------------------------------+
+| HTTP method    | POST                                                                              |
++----------------+-----------------------------------------------------------------------------------+
+| URL schema     | /bugs/                                                                            |
++----------------+-----------------------------------------------------------------------------------+
+| Full URL       | /bugs/                                                                            |
++----------------+-----------------------------------------------------------------------------------+
+| Example        | http://socorro-api/bpapi/bugs/ data: signatures=mysignature+anothersig+jsCrashSig |
++----------------+-----------------------------------------------------------------------------------+
+
+Mandatory parameters
+^^^^^^^^^^^^^^^^^^^^
+
++----------------+------------------+---------------+-------------------------+
+| Name           | Type of value    | Default value | Description             |
++================+==================+===============+=========================+
+| signatures     | List of strings  | None          | Signatures of bugs      |
+|                |                  |               | to get.                 |
++----------------+------------------+---------------+-------------------------+
+
+Optional parameters
+^^^^^^^^^^^^^^^^^^^
+
+None.
+
+Return value
+^^^^^^^^^^^^
+
+In normal cases, return something like this::
+
+    {
+        "hits": [
+            {
+                "id": "789012",
+                "signature": "mysignature"
+            },
+            {
+                "id": "405060",
+                "signature": "anothersig"
+            }
+        ],
+        "total": 2
+    }
+
 
 .. ############################################################################
    Crashes Comments API
@@ -455,7 +518,67 @@ Return a list of extensions::
 
 
 .. ############################################################################
-   Job API
+   Crash Trends API
+   ############################################################################
+
+Crash Trends
+----------
+
+Return a list of nightly or aurora crashes that took place between two dates.
+
+API specifications
+^^^^^^^^^^^^^^^^^^
+
++----------------+---------------------------------------------------------------------------------------------------------------+
+| HTTP method    | GET                                                                                                           |
++----------------+---------------------------------------------------------------------------------------------------------------+
+| URL schema     | /crashtrends/(optional_parameters)                                                                            |
++----------------+---------------------------------------------------------------------------------------------------------------+
+| Full URL       | /crashtrends/start_date/(start_date)/end_date/(end_date)/product/(product)/version/(version)                  |
++----------------+---------------------------------------------------------------------------------------------------------------+
+| Example        | http://socorro-api/bpapi/crashtrends/start_date/2012-03-01/end_date/2012-03-15/product/Firefox/version/13.0a1 |
++----------------+---------------------------------------------------------------------------------------------------------------+
+
+Mandatory parameters
+^^^^^^^^^^^^^^^^^^^^
+
++---------------+---------------+---------------+-----------------------------------+
+| Name          | Type of value | Default value | Description                       |
++===============+===============+===============+===================================+
+| start_date    | Datetime      | None          | The earliest date of crashes      |
+|               |               |               | we wish to evaluate               |
++---------------+---------------+---------------+-----------------------------------+
+| end_date      | Datetime      | None          | The latest date of crashes we     |
+|               |               |               | wish to evaluate.                 |  
++---------------+---------------+---------------+-----------------------------------+
+| product       | String        | None          | The product.                      |
++---------------+---------------+---------------+-----------------------------------+
+| version       | String        | None          | The version.                      |
++---------------+---------------+---------------+-----------------------------------+
+Optional parameters
+^^^^^^^^^^^^^^^^^^^
+
+None
+
+Return value
+^^^^^^^^^^^^
+
+Return a total of crashes, along with their build date, by build ID::
+
+    [
+        {
+            "build_date": "2012-02-10", 
+            "version_string": "12.0a2", 
+            "product_version_id": 856, 
+            "days_out": 6, 
+            "report_count": 515, 
+            "report_date": "2012-02-16", 
+            "product_name": "Firefox"
+        }
+    ]
+
+.. ############################################################################
+   Products Builds API
    ############################################################################
 
 Job
@@ -744,6 +867,61 @@ POST return value
 On success, returns a 303 See Other redirect to the newly-added build's API page at::
 
     /products/builds/product/(product)/version/(version)/
+
+.. ############################################################################
+   Signature URLs API
+   ############################################################################
+
+Signature URLs
+--------------
+
+Returns a list of urls for a specific signature, product(s), version(s)s as well as start and end date. Also includes
+the total number of times this URL has been reported for the parameters specified above.
+
+API specifications
+^^^^^^^^^^^^^^^^^^
+
++----------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| HTTP method    | GET                                                                                                                                                                                                  |
++----------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| URL schema     | /signatureurls/(parameters)                                                                                                                                                                          |
++----------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Full URL       | /signatureurls/signature/(signature)/start_date/(start_date)/end_date/(end_date)/products/(products)/versions/(versions)                                                                             |
++----------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Example        | http://socorro-api/bpapi/signatureurls/signature/samplesignature/start_date/2012-03-01T00:00:00+00:00/end_date/2012-03-31T00:00:00+00:00/products/Firefox+Fennec/versions/Firefox:4.0.1+Fennec:13.0/ |
++----------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+
+Mandatory parameters
+^^^^^^^^^^^^^^^^^^^^
+
++----------------+------------------+-------------------+-------------------------------------------------------------------+
+| Name           | Type of value    | Default value     | Description                                                       |
++================+==================+===================+===================================================================+
+| signature      | String           | None              | The signature for which urls shoud be found                       |
++----------------+------------------+-------------------+-------------------------------------------------------------------+
+| start_date     | Date             | None              | Date from which to collect urls                                   |
++----------------+------------------+-------------------+-------------------------------------------------------------------+
+| end_date       | Date             | None              | Date up to, but not including, for which urls should be collected |
++----------------+------------------+-------------------+-------------------------------------------------------------------+
+| products       | String           | None              | Product(s) for which to find urls                                 |
++----------------+------------------+-------------------+-------------------------------------------------------------------+
+| versions       | String           | None              | Version(s) of the above products to find urls for                 |
++----------------+------------------+-------------------+-------------------------------------------------------------------+
+
+Return value
+^^^^^^^^^^^^
+
+Returns an object with a list of urls and the total count for each, as well as a counter,
+'total', for the total number of results in the result set.
+
+    {
+        "hits": [
+            {"url": "about:blank", 
+            "crash_count": 1936},
+            ...
+        ],
+        "total": 1
+    }
 
 .. ############################################################################
    Search API
@@ -1037,6 +1215,7 @@ looks like this::
 
     {
         "product_name:version_string": {
+            "product_version_id": integer,
             "version_string": "string",
             "product_name": "string",
             "major_version": "string" or None,

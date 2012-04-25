@@ -70,41 +70,5 @@ def update(config, targetDate):
         else:
             connection.rollback()
             failed.add(funcname)
-        updateCronjobsTable(connection, 'dailyMatviews:%s' % funcname,
-                            success, targetDate,
-                            failureMessage=failureMessage)
 
     return len(failed)
-
-
-def updateCronjobsTable(connection, cronjobName, success, lastTargetTime,
-                        failureMessage=None):
-    cursor = connection.cursor()
-
-    params = [lastTargetTime]
-    if success:
-        params.append(utc_now())
-        sql = """
-          /* socorro.cron.dailyMatviews updateCronjobsTable */
-          UPDATE cronjobs
-          SET
-            last_target_time = %s,
-            last_success = %s
-          WHERE cronjob = %s
-        """
-    else:
-        params.append(utc_now())
-        params.append(failureMessage)
-        sql = """
-          /* socorro.cron.dailyMatviews updateCronjobsTable */
-          UPDATE cronjobs
-          SET
-            last_target_time = %s,
-            last_failure = %s,
-            failure_message = %s
-          WHERE cronjob = %s
-        """
-    params.append(cronjobName)
-
-    cursor.execute(sql, params)
-    connection.commit()

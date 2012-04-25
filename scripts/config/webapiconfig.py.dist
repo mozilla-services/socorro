@@ -127,6 +127,8 @@ import socorro.middleware.search_service as search
 import socorro.middleware.versions_info_service as versions_info
 import socorro.middleware.products_builds_service as products_builds
 import socorro.middleware.signature_summary_service as signature_summary
+import socorro.middleware.signature_urls_service as signature_urls
+import socorro.middleware.crash_trends_service as crash_trends
 import socorro.middleware.tcbs_service as tcbs
 import socorro.middleware.crashes_comments_service as crashes_comments
 import socorro.middleware.crash_service as crash_new
@@ -136,6 +138,7 @@ import socorro.middleware.products_service as products
 import socorro.middleware.priorityjobs_service as priorityjobs
 import socorro.middleware.crashes_frequency_service as crashes_frequency
 import socorro.middleware.job_service as job
+import socorro.middleware.bugs_service as bugs
 
 servicesList = cm.Option()
 servicesList.doc = 'a python list of classes to offer as services'
@@ -158,6 +161,8 @@ servicesList.default = [
     versions_info.VersionsInfo,
     products_builds.ProductsBuilds,
     signature_summary.SignatureSummary,
+    signature_urls.SignatureURLs,
+    crash_trends.CrashTrends,
     tcbs.TCBS,
     crashes_comments.CrashesComments,
     crash_new.Crash,
@@ -167,6 +172,7 @@ servicesList.default = [
     priorityjobs.Priorityjobs,
     crashes_frequency.CrashesFrequency,
     job.Job,
+    bugs.Bugs,
 ]
 
 crashBaseUrl = cm.Option()
