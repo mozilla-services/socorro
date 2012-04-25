@@ -95,7 +95,9 @@ From inside the Socorro checkout, as the *socorro* user, change:
 ::
   databaseName.default = 'breakpad'
   databaseUserName.default = 'breakpad_rw'
-  databasePassword.default = 'secret'
+  databasePassword.default = 'aPassword'
+
+If you change the password, make sure to change it in sql/roles.sql as well.
 
 Run unit/functional tests, and generate report
 ````````````
@@ -228,26 +230,6 @@ As *root*:
     * uncomment # listen_addresses = 'localhost'
     * change TimeZone to 'UTC'
 * edit other postgresql.conf paramters per www.postgresql.org community guides
-* create test database
-
-As the *postgres* user:
-::
-  su - postgres
-  psql
-  postgres=# CREATE DATABASE test;
-  CREATE DATABASE
-  postgres=# CREATE USER test WITH PASSWORD 'aPassword';
-  CREATE ROLE
-  postgres=# GRANT ALL ON DATABASE test TO test;
-  GRANT
-  postgres=# \c test
-  You are now connected to database "test".
-  test=# CREATE LANGUAGE plpgsql;
-  CREATE LANGUAGE
-  test=# CREATE LANGUAGE plperl;
-  CREATE LANGUAGE
-  test=# \q
-  psql -d test -f /usr/share/pgsql/contrib/citext.sql
 
 Populate PostgreSQL Database
 ````````````

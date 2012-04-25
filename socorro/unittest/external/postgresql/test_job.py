@@ -21,25 +21,15 @@ class IntegrationTestJob(PostgreSQLTestCase):
 
         cursor = self.connection.cursor()
 
-        # Create tables
-        cursor.execute("""
-            CREATE TABLE jobs
-            (
-                id serial NOT NULL PRIMARY KEY,
-                pathname character varying(1024) NOT NULL,
-                uuid varchar(50) NOT NULL UNIQUE,
-                owner integer,
-                priority integer DEFAULT 0,
-                queueddatetime timestamp with time zone,
-                starteddatetime timestamp with time zone,
-                completeddatetime timestamp with time zone,
-                success boolean,
-                message text
-            );
-        """)
-
         # Insert data
         cursor.execute("""
+            INSERT INTO processors
+            (id, name, startdatetime, lastseendatetime)
+            VALUES
+            (
+                2, 'processor2', '2012-02-29T01:23:45.000000+00:00',
+                '2012-02-29T01:23:45.000000+00:00'
+            );
             INSERT INTO jobs VALUES
             (
                 1, '', 'a1', 2, 0,
@@ -64,7 +54,8 @@ class IntegrationTestJob(PostgreSQLTestCase):
         """Clean up the database, delete tables and functions. """
         cursor = self.connection.cursor()
         cursor.execute("""
-            DROP TABLE jobs;
+            TRUNCATE jobs
+            CASCADE
         """)
         self.connection.commit()
         super(IntegrationTestJob, self).tearDown()

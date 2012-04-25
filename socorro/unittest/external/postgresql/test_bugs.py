@@ -21,19 +21,6 @@ class IntegrationTestBugs(PostgreSQLTestCase):
 
         cursor = self.connection.cursor()
 
-        # Create tables
-        cursor.execute("""
-            CREATE TABLE bugs
-            (
-                id serial NOT NULL
-            );
-            CREATE TABLE bug_associations
-            (
-                bug_id integer not null,
-                signature text
-            );
-        """)
-
         # Insert data
         cursor.execute("""
             INSERT INTO bugs VALUES
@@ -44,22 +31,24 @@ class IntegrationTestBugs(PostgreSQLTestCase):
         """)
 
         cursor.execute("""
-            INSERT INTO bug_associations VALUES
+            INSERT INTO bug_associations 
+            (signature, bug_id)
+            VALUES
             (
-                1,
                 'sign1'
-            ),
-            (
                 1,
+            ),
+            (
                 'js'
+                1,
             ),
             (
+                'mysignature'
                 2,
-                'mysignature'
             ),
             (
-                3,
                 'mysignature'
+                3,
             );
         """)
 
@@ -70,8 +59,8 @@ class IntegrationTestBugs(PostgreSQLTestCase):
         """Clean up the database, delete tables and functions. """
         cursor = self.connection.cursor()
         cursor.execute("""
-            DROP TABLE bug_associations;
-            DROP TABLE bugs;
+            TRUNCATE bug_associations, bugs
+            CASCADE
         """)
         self.connection.commit()
         super(IntegrationTestBugs, self).tearDown()

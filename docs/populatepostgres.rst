@@ -21,20 +21,7 @@ Shut down all Socorro services, drop your database (if needed) and load
 the schema.
 From inside the Socorro checkout, as *postgres* user:
 ::
-  dropdb breakpad # skip this if you haven't created a db yet
-  createdb -E 'utf8' -l 'en_US.utf8' -T template0 breakpad
-  psql -f sql/schema/2.5/breakpad_roles.sql breakpad
-  psql -f sql/schema/2.5/breakpad_schema.sql breakpad
-
-The tables are partitioned by date (http://www.postgresql.org/docs/8.3/static/ddl-partitioning.html), there is a script to create them initial and they 
-are maintained by cron afterwards.
-From inside the Socorro checkout, as *socorro* user:
-::
-  cp scripts/config/setupdatabaseconfig.py.dist scripts/config/setupdatabaseconfig.py
-  export PYTHONPATH=.:thirdparty
-  export PGPASSWORD="aPassword"
-  cp scripts/config/createpartitionsconfig.py.dist scripts/config/createpartitionsconfig.py
-  python scripts/createPartitions.py
+  ./socorro/external/postgresql/setupdb_app.py --database_name=breakpad_rw
 
 Customize CSVs, at minimum you probably need to bump the dates and build IDs in: 
   raw_adu.csv reports.csv releases_raw.csv

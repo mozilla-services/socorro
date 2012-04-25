@@ -3,6 +3,7 @@ ABS_PREFIX = $(shell readlink -f $(PREFIX))
 VIRTUALENV=$(CURDIR)/socorro-virtualenv
 PYTHONPATH = ".:thirdparty"
 NOSE = $(VIRTUALENV)/bin/nosetests socorro -s --with-xunit
+LOADDB = $(VIRTUALENV)/bin/python ./socorro/external/postgresql/setupdb_app.py
 COVEROPTS = --with-coverage --cover-package=socorro
 COVERAGE = $(VIRTUALENV)/bin/coverage
 PYLINT = $(VIRTUALENV)/bin/pylint
@@ -12,7 +13,12 @@ PYLINT = $(VIRTUALENV)/bin/pylint
 
 all:	test
 
-test: virtualenv phpunit
+setup-test: virtualenv
+	PYTHONPATH=$(PYTHONPATH) $(LOADDB) --database_name=integration_test --dropdb
+	PYTHONPATH=$(PYTHONPATH) $(LOADDB) --database_name=test --dropdb --no_schema
+	cd socorro/unittest/config; for file in *.py.dist; do if [ ! -f `basename $$file .dist` ]; then cp $$file `basename $$file .dist`; fi; done
+
+test: setup-test phpunit
 	PYTHONPATH=$(PYTHONPATH) $(NOSE)
 
 phpunit:
@@ -59,9 +65,8 @@ virtualenv:
 	$(VIRTUALENV)/bin/pip install -r requirements.txt
 	cd configman; $(VIRTUALENV)/bin/python setup.py install
 
-coverage: virtualenv phpunit
+coverage: setup-test phpunit
 	rm -f coverage.xml
-	cd socorro/unittest/config; for file in *.py.dist; do cp $$file `basename $$file .dist`; done
 	PYTHONPATH=$(PYTHONPATH) $(COVERAGE) run $(NOSE); $(COVERAGE) xml
 
 lint:
