@@ -76,7 +76,7 @@ class IntegrationTestExtensions(PostgreSQLTestCase):
         """Clean up the database, delete tables and functions. """
         cursor = self.connection.cursor()
         cursor.execute("""
-            TRUNCATE extensions reports
+            TRUNCATE extensions, reports
             CASCADE
         """)
         self.connection.commit()

@@ -3,10 +3,11 @@ ABS_PREFIX = $(shell readlink -f $(PREFIX))
 VIRTUALENV=$(CURDIR)/socorro-virtualenv
 PYTHONPATH = ".:thirdparty"
 NOSE = $(VIRTUALENV)/bin/nosetests socorro -s --with-xunit
-LOADDB = $(VIRTUALENV)/bin/python ./socorro/external/postgresql/setupdb_app.py
+SETUPDB = $(VIRTUALENV)/bin/python ./socorro/external/postgresql/setupdb_app.py
 COVEROPTS = --with-coverage --cover-package=socorro
 COVERAGE = $(VIRTUALENV)/bin/coverage
 PYLINT = $(VIRTUALENV)/bin/pylint
+CITEXT="/usr/share/postgresql/9.0/contrib/citext.sql"
 
 .PHONY: all test phpunit install reinstall install-socorro install-web virtualenv coverage lint clean minidump_stackwalk java_analysis
 
@@ -14,8 +15,8 @@ PYLINT = $(VIRTUALENV)/bin/pylint
 all:	test
 
 setup-test: virtualenv
-	PYTHONPATH=$(PYTHONPATH) $(LOADDB) --database_name=integration_test --dropdb
-	PYTHONPATH=$(PYTHONPATH) $(LOADDB) --database_name=test --dropdb --no_schema
+	PYTHONPATH=$(PYTHONPATH) $(SETUPDB) --database_name=integration_test --database_username=$(DB_USER) --database_hostname=$(DB_HOST) --database_password=$(DB_PASSWORD) --database_port=$(DB_PORT) --citext=$(CITEXT) --dropdb
+	PYTHONPATH=$(PYTHONPATH) $(SETUPDB) --database_name=test --database_username=$(DB_USER) --database_hostname=$(DB_HOST) --database_password=$(DB_PASSWORD) --database_port=$(DB_PORT) --citext=$(CITEXT) --dropdb --no_schema
 	cd socorro/unittest/config; for file in *.py.dist; do if [ ! -f `basename $$file .dist` ]; then cp $$file `basename $$file .dist`; fi; done
 
 test: setup-test phpunit

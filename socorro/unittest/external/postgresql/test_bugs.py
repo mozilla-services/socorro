@@ -35,20 +35,20 @@ class IntegrationTestBugs(PostgreSQLTestCase):
             (signature, bug_id)
             VALUES
             (
-                'sign1'
-                1,
+                'sign1',
+                1
             ),
             (
-                'js'
-                1,
+                'js',
+                1
             ),
             (
-                'mysignature'
-                2,
+                'mysignature',
+                2
             ),
             (
-                'mysignature'
-                3,
+                'mysignature',
+                3
             );
         """)
 
