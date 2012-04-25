@@ -2,8 +2,7 @@ import unittest
 import mock
 from psycopg2 import ProgrammingError
 from socorro.external.postgresql import setupdb_app
-from socorro.unittest.config.commonconfig import (
-  databaseHost, databaseName, databaseUserName, databasePassword)
+from socorro.unittest.config.commonconfig import databaseName
 from configman import ConfigurationManager
 
 DSN = {
@@ -21,10 +20,9 @@ class TestSetupDB(unittest.TestCase):
 
         with config_manager.context() as config:
             with mock.patch(self.psycopg2_module_path) as psycopg2:
-                with klass('postgres', config.logger) as db:
+                with klass('dbname=postgres', config.logger) as db:
                     db.execute('CREATE DATABASE blah')
 
-                psycopg2.connect.assert_called_with(database='postgres')
                 (psycopg2.connect().cursor()
                  .execute.assert_called_with('CREATE DATABASE blah'))
 

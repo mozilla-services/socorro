@@ -6,7 +6,6 @@ import sys
 import psycopg2
 import psycopg2.extensions
 from psycopg2 import ProgrammingError
-import sys
 import re
 import logging
 
@@ -15,8 +14,8 @@ from configman import Namespace
 
 
 class PostgreSQLManager(object):
-    def __init__(self, database_name, logger):
-        self.conn = psycopg2.connect(database=database_name)
+    def __init__(self, dsn, logger):
+        self.conn = psycopg2.connect(dsn)
         self.conn.set_isolation_level(
             psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
         self.logger = logger
@@ -45,7 +44,7 @@ class PostgreSQLManager(object):
 
 class SocorroDB(App):
     app_name = 'setupdb'
-    app_version = '0.1'
+    app_version = '0.2'
     app_description = __doc__
 
     required_config = Namespace()
@@ -54,6 +53,30 @@ class SocorroDB(App):
         name='database_name',
         default='',
         doc='Name of database to manage',
+    )
+
+    required_config.add_option(
+        name='database_hostname',
+        default='',
+        doc='Hostname to connect to database',
+    )
+
+    required_config.add_option(
+        name='database_username',
+        default='',
+        doc='Username to connect to database',
+    )
+
+    required_config.add_option(
+        name='database_password',
+        default='',
+        doc='Password to connect to database',
+    )
+
+    required_config.add_option(
+        name='database_port',
+        default='',
+        doc='Port to connect to database',
     )
 
     required_config.add_option(
@@ -88,11 +111,28 @@ class SocorroDB(App):
         self.no_schema = self.config.get('no_schema')
         self.citext = self.config.get('citext')
 
-        with PostgreSQLManager('postgres', self.config.logger) as db:
+        dsn_template = 'dbname=%s'
+
+        self.database_username = self.config.get('database_username')
+        if self.database_username:
+            dsn_template += ' user=%s' % self.database_username
+        self.database_password = self.config.get('database_password')
+        if self.database_password:
+            dsn_template += ' password=%s' % self.database_password
+        self.database_hostname = self.config.get('database_hostname')
+        if self.database_hostname:
+            dsn_template += ' host=%s' % self.database_hostname
+        self.database_port = self.config.get('database_port')
+        if self.database_port:
+            dsn_template += ' port=%s' % self.database_port
+
+        dsn = dsn_template % 'template1'
+
+        with PostgreSQLManager(dsn, self.config.logger) as db:
             if self.config.get('dropdb'):
                 if 'test' not in self.database_name:
                     confirm = raw_input(
-                                'drop database %s [y/N]: ' % self.database_name)
+                        'drop database %s [y/N]: ' % self.database_name)
                     if not confirm == "y":
                         logging.warn('NOT dropping table')
                         return 2
@@ -103,7 +143,9 @@ class SocorroDB(App):
             db.execute('CREATE DATABASE %s' % self.database_name,
                        ['database "%s" already exists' % self.database_name])
 
-        with PostgreSQLManager(self.database_name, self.config.logger) as db:
+        dsn = dsn_template % self.database_name
+
+        with PostgreSQLManager(dsn, self.config.logger) as db:
             for line in open('sql/roles.sql'):
                 db.execute(line, [r'role "\w+" already exists'])
 
