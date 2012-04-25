@@ -3,9 +3,18 @@
 # Inspired by Zamboni
 # https://github.com/mozilla/zamboni/blob/master/scripts/build.sh
 
-# run unit tests
 make clean
-make coverage DB_USER=test DB_HOST=localhost DB_PASSWORD=aPassword
+
+# copy default unit test configs
+pushd socorro/unittest/config
+for file in *.py.dist
+do
+  cp $file `basename $file .dist`
+done
+popd
+
+# run unit tests
+make coverage DB_USER=test DB_HOST=localhost DB_PASSWORD=aPassword CITEXT="/usr/pgsql-9.0/share/contrib/citext.sql"
 
 # pull pre-built, known version of breakpad
 make clean
