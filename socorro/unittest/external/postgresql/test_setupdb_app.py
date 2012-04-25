@@ -72,6 +72,24 @@ class TestSetupDB(unittest.TestCase):
                 # that self.conn.close() was called with no arguments:
                 psycopg2.connect().close.assert_called_with()
 
+    def test_setupdb_app_main(self):
+        config_manager = self._setup_config_manager({
+          'database_name': 'foo',
+          'database_hostname': 'heaven',
+        })
+
+        with config_manager.context() as config:
+            with mock.patch(self.psycopg2_module_path) as psycopg2:
+                app = setupdb_app.SocorroDB(config)
+                result = app.main()
+                self.assertEqual(result, 0)
+
+                psycopg2.connect.assert_called_with('dbname=foo host=heaven')
+                (psycopg2.connect().cursor().execute
+                 .assert_any_call('SELECT weekly_report_partitions()'))
+                (psycopg2.connect().cursor().execute
+                 .assert_any_call('CREATE DATABASE foo'))
+
     def _setup_config_manager(self, extra_value_source=None):
         if not extra_value_source:
             extra_value_source = {}
@@ -81,7 +99,6 @@ class TestSetupDB(unittest.TestCase):
 
         config_manager = ConfigurationManager(
             [required_config,
-             #logging_required_config(app_name)
              ],
             app_name='setupdb',
             app_description=__doc__,

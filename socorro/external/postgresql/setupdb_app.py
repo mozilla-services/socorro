@@ -164,6 +164,7 @@ class SocorroDB(App):
                 db.execute(
                     'ALTER DATABASE %s OWNER TO breakpad_rw' %
                     self.database_name)
+        return 0
 
 if __name__ == '__main__':  # pragma: no cover
     sys.exit(main(SocorroDB))
