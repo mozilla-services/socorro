@@ -388,7 +388,7 @@ class HBaseConnectionForCrashReports(HBaseConnection):
     """Return the json metadata for a given ooid as an json data object"""
     jsonColumnOfRow = self.get_json_meta_as_string(ooid,old_format, number_of_retries=number_of_retries)
     #self.logger.debug('jsonColumnOfRow: %s', jsonColumnOfRow)
-    json_data = json.loads(jsonColumnOfRow)
+    json_data = json.loads(jsonColumnOfRow, object_hook=DotDict)
     return json_data
 
   @optional_retry_wrapper
@@ -444,7 +444,7 @@ class HBaseConnectionForCrashReports(HBaseConnection):
     If the ooid doesn't exist, return an empty string.
     """
     jsonColumnOfRow = self.get_processed_json_as_string(ooid, number_of_retries=number_of_retries)
-    json_data = json.loads(jsonColumnOfRow)
+    json_data = json.loads(jsonColumnOfRow, object_hook=DotDict)
     return json_data
 
   @optional_retry_wrapper

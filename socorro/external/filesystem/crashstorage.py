@@ -20,6 +20,7 @@ from socorro.external.filesystem.processed_dump_storage import \
                                                 ProcessedDumpStorage
 from socorro.external.crashstorage_base import (CrashStorageBase,
                                                 OOIDNotFoundException)
+from socorro.lib.util import DotDict
 from socorro.collector.throttler import LegacyThrottler
 
 
@@ -90,7 +91,7 @@ class FileSystemRawCrashStorage(CrashStorageBase):
     #--------------------------------------------------------------------------
     def _load_raw_crash_from_file(self, pathname):
         with open(pathname) as json_file:
-            raw_crash = json.load(json_file)
+            raw_crash = json.load(json_file, object_hook=DotDict)
         return raw_crash
 
     #--------------------------------------------------------------------------

@@ -95,7 +95,7 @@ class ProcessedDumpStorage(socorro_dumpStorage.DumpStorage):
     df = None
     try:
       df = gzip.open(self.getDumpPath(ooid))
-      return json.load(df)
+      return json.load(df, object_hook=socorro_util.DotDict)
     finally:
       if df:
         df.close()
