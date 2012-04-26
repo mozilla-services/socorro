@@ -23,13 +23,15 @@ class TestFetchTransformSaveApp(unittest.TestCase):
                 super(TestFTSAppClass, self).__init__(config)
                 self.the_list = []
 
+            def _setup_source_and_destination(self):
+                pass
+
             def source_iterator(self):
                 for x in xrange(5):
                     yield ((x,), {})
 
             def transform(self, anItem):
                 self.the_list.append(anItem)
-                return OK
 
         logger = SilentFakeLogger()
         config = DotDict({ 'logger': logger,
@@ -49,14 +51,14 @@ class TestFetchTransformSaveApp(unittest.TestCase):
                                                      sorted(fts_app.the_list)))
 
 
-    def test_bogus_source_iter_and_worker(self):
+    def test_bogus_source_and_destination(self):
         class NonInfiniteFTSAppClass(FetchTransformSaveApp):
             def source_iterator(self):
                 for x in self.source.new_ooids():
                     yield ((x,), {})
 
         class FakeStorageSource(object):
-            def __init__(self, config):
+            def __init__(self, config, quit_check_callback):
                 self.store = DotDict({'1234': DotDict({'ooid': '1234',
                                                        'Product': 'FireFloozy',
                                                        'Version': '1.0'}),
@@ -80,13 +82,12 @@ class TestFetchTransformSaveApp(unittest.TestCase):
 
 
         class FakeStorageDestination(object):
-            def __init__(self, config):
+            def __init__(self, config, quit_check_callback):
                 self.store = DotDict()
                 self.dumps = DotDict()
             def save_raw_crash(self, raw_crash, dump):
                 self.store[raw_crash.ooid] = raw_crash
                 self.dumps[raw_crash.ooid] = dump
-                return OK
 
         logger = SilentFakeLogger()
         config = DotDict({ 'logger': logger,
@@ -125,13 +126,12 @@ class TestFetchTransformSaveApp(unittest.TestCase):
 
 
         class FakeStorageDestination(object):
-            def __init__(self, config):
+            def __init__(self, config, quit_check_callback):
                 self.store = DotDict()
                 self.dumps = DotDict()
             def save_raw_crash(self, raw_crash, dump):
                 self.store[raw_crash.ooid] = raw_crash
                 self.dumps[raw_crash.ooid] = dump
-                return OK
 
         logger = SilentFakeLogger()
         config = DotDict({ 'logger': logger,
@@ -165,13 +165,12 @@ class TestFetchTransformSaveApp(unittest.TestCase):
 
     def test_no_source(self):
         class FakeStorageDestination(object):
-            def __init__(self, config):
+            def __init__(self, config, quit_check_callback):
                 self.store = DotDict()
                 self.dumps = DotDict()
             def save_raw_crash(self, raw_crash, dump):
                 self.store[raw_crash.ooid] = raw_crash
                 self.dumps[raw_crash.ooid] = dump
-                return OK
 
         logger = SilentFakeLogger()
         config = DotDict({ 'logger': logger,
@@ -188,9 +187,10 @@ class TestFetchTransformSaveApp(unittest.TestCase):
         self.assertRaises(TypeError, fts_app.main)
 
 
+
     def test_no_destination(self):
         class FakeStorageSource(object):
-            def __init__(self, config):
+            def __init__(self, config, quit_check_callback):
                 self.store = DotDict({'1234': DotDict({'ooid': '1234',
                                                        'Product': 'FireFloozy',
                                                        'Version': '1.0'}),

@@ -108,14 +108,6 @@ class ThreadedTaskManager(RequiredConfig):
         self.thread_list = []  # the thread object storage
         self.number_of_threads = config.number_of_threads
         self.task_queue = Queue.Queue(config.maximum_queue_size)
-        # start each of the task threads.
-        for x in range(self.number_of_threads):
-            # each thread is given the config object as well as a reference to
-            # this manager class.  The manager class is where the queue lives
-            # and the task threads will refer to it to get their next jobs.
-            new_thread = TaskThread(config, self)
-            self.thread_list.append(new_thread)
-            new_thread.start()
 
         self.quit = False
         self.logger.debug('finished init')
@@ -123,10 +115,19 @@ class ThreadedTaskManager(RequiredConfig):
     #--------------------------------------------------------------------------
     def start(self):
         """this function will start the queing thread that executes the
-        iterator and feeds jobs into the queue.  It is a non blocking call
-        and the executing thread is free to do other things while the other
-        threads work."""
+        iterator and feeds jobs into the queue.  It also starts the worker
+        threads that just sit and wait for items to appear on the queue. This
+        is a non blocking call, so the executing thread is free to do other
+        things while the other threads work."""
         self.logger.debug('start')
+        # start each of the task threads.
+        for x in range(self.number_of_threads):
+            # each thread is given the config object as well as a reference to
+            # this manager class.  The manager class is where the queue lives
+            # and the task threads will refer to it to get their next jobs.
+            new_thread = TaskThread(self.config, self)
+            self.thread_list.append(new_thread)
+            new_thread.start()
         self.queuing_thread = threading.Thread(
           name="QueuingThread",
           target=self._queuing_thread_func
@@ -181,7 +182,7 @@ class ThreadedTaskManager(RequiredConfig):
                                    'SIGKILL (kill -9)')
 
     #--------------------------------------------------------------------------
-    def _quit_check(self):
+    def quit_check(self):
         """this is the polling function that the threads periodically look at.
         If they detect that the quit flag is True, then a KeyboardInterrupt
         is raised which will result in the threads dying peacefully"""
@@ -204,13 +205,13 @@ class ThreadedTaskManager(RequiredConfig):
                           sleeping.  This is likely to be a message like:
                           'there is no work to do'."""
         for x in xrange(int(seconds)):
-            self._quit_check()
+            self.quit_check()
             if wait_log_interval and not x % wait_log_interval:
                 self.logger.info('%s: %dsec of %dsec',
                                  wait_reason,
                                  x,
                                  seconds)
-                self._quit_check()
+                self.quit_check()
             time.sleep(1.0)
 
     #--------------------------------------------------------------------------
@@ -285,7 +286,7 @@ class ThreadedTaskManager(RequiredConfig):
                                      self.config.idle_delay)
                     self._responsive_sleep(self.config.idle_delay)
                     continue
-                self._quit_check()
+                self.quit_check()
                 self.logger.debug("queuing standard job %s",
                                   job_params)
                 self.task_queue.put((self.task_func, job_params))
