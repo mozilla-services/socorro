@@ -11,6 +11,7 @@ from socorro.external.filesystem.crashstorage import (
   FileSystemRawCrashStorage,
   FileSystemThrottledCrashStorage,
   FileSystemCrashStorage)
+from socorro.lib.util import DotDict
 from configman import ConfigurationManager
 from mock import Mock
 
@@ -94,12 +95,12 @@ class TestFileSystemRawCrashStorage(unittest.TestCase):
 
         meta = crashstorage.get_raw_crash(
           '114559a5-d8e6-428c-8b88-1c1f22120314')
-        assert isinstance(meta, dict)
+        self.assertTrue(isinstance(meta, DotDict))
         self.assertEqual(meta['name'], 'Peter')
 
         dump = crashstorage.get_raw_dump(
           '114559a5-d8e6-428c-8b88-1c1f22120314')
-        assert isinstance(dump, basestring)
+        self.assertTrue(isinstance(dump, basestring))
         self.assertTrue("fake dump" in dump)
 
         crashstorage.remove('114559a5-d8e6-428c-8b88-1c1f22120314')
@@ -151,12 +152,12 @@ class TestFileSystemRawCrashStorage(unittest.TestCase):
 
         meta = crashstorage.get_raw_crash(
           '114559a5-d8e6-428c-8b88-1c1f22120314')
-        assert isinstance(meta, dict)
+        self.assertTrue(isinstance(meta, DotDict))
         self.assertEqual(meta['name'], 'Peter')
 
         dump = crashstorage.get_raw_dump(
           '114559a5-d8e6-428c-8b88-1c1f22120314')
-        assert isinstance(dump, basestring)
+        self.assertTrue(isinstance(dump, basestring))
         self.assertTrue("fake dump" in dump)
 
         crashstorage.remove('114559a5-d8e6-428c-8b88-1c1f22120314')
@@ -206,8 +207,10 @@ class TestFileSystemRawCrashStorage(unittest.TestCase):
                                }
             ooid = processed_crash['ooid']
             crashstorage.save_processed(processed_crash)
-            returned_procesessed_crash = crashstorage.get_processed(ooid)
-            self.assertEqual(processed_crash, returned_procesessed_crash)
+            returned_processed_crash = crashstorage.get_processed(ooid)
+            self.assertEqual(processed_crash, returned_processed_crash)
+            self.assertTrue(isinstance(returned_processed_crash,
+                                       DotDict))
 
             crashstorage.remove(ooid)
             self.assertRaises(OOIDNotFoundException,

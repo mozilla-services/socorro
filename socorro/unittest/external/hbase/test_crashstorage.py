@@ -10,6 +10,7 @@ from socorro.external.hbase import hbase_client
 
 from socorro.external.crashstorage_base import OOIDNotFoundException
 from socorro.external.hbase.crashstorage import HBaseCrashStorage
+from socorro.lib.util import DotDict
 from socorro.unittest.config import commonconfig
 from socorro.database.transaction_executor import (
   TransactionExecutorWithLimitedBackoff
@@ -365,6 +366,7 @@ class TestHBaseCrashStorage(unittest.TestCase):
                 m = mock.Mock(return_value=raw_crash)
                 klass.get_json = m
                 r = crashstorage.get_raw_crash("abc123")
+                self.assertTrue(isinstance(r, DotDict))
                 a = klass.get_json.call_args
                 self.assertEqual(len(a[0]), 2)
                 self.assertEqual(a[0][1], "abc123")
@@ -385,6 +387,7 @@ class TestHBaseCrashStorage(unittest.TestCase):
                 m = mock.Mock(return_value=expected_processed_crash)
                 klass.get_processed_json = m
                 r = crashstorage.get_processed_crash("abc123")
+                self.assertTrue(isinstance(r, DotDict))
                 a = klass.get_processed_json.call_args
                 self.assertEqual(len(a[0]), 2)
                 self.assertEqual(a[0][1], "abc123")
