@@ -9,12 +9,17 @@ VERSION=8.0
 echo '*********************************************************'
 echo 'fix math for explosive crashes '
 echo 'bug 744492'
-psql -f ${CURDIR}/explosive_crashes.sql breakpad
+psql -f ${CURDIR}/explosive_crashes.sql mpr	breakpad
 
 echo '*********************************************************'
 echo 'restrict product_version_builds to main repositories'
 echo 'bug 748194'
 psql -f ${CURDIR}/update_products_repos.sql breakpad
+
+echo '*********************************************************'
+echo 'fix crash_ratio'
+echo 'bug 749842'
+psql -f ${CURDIR}/product_crash_ratio.sql breakpad
 
 #change version in DB
 psql -c "SELECT update_socorro_db_version( '$VERSION' )" breakpad
