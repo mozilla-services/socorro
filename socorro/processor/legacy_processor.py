@@ -1,0 +1,957 @@
+import re
+import os
+import subprocess
+import datetime
+import time
+
+from configman import Namespace, RequiredConfig
+from configman.converters import class_converter
+
+from socorro.lib.datetimeutil import utc_now
+from socorro.external.postgresql.dbapi2_util import (
+    execute_no_results,
+    execute_query_fetchall,
+)
+from socorro.external.postgresql.connection_context import ConnectionContext
+from socorro.database.transaction_executor import TransactionExecutor
+from socorro.lib.transform_rules import TransformRuleSystem
+from socorro.lib.datetimeutil import datetimeFromISOdateString, UTC
+from socorro.lib.ooid import dateFromOoid
+from socorro.lib.util import (
+    DotDict,
+    emptyFilter,
+    StrCachingIterator
+)
+
+
+#==============================================================================
+class LegacyCrashProcessor(RequiredConfig):
+    required_config = Namespace()
+    required_config.add_option(
+        'database_class',
+        doc="the class of the database",
+        default=ConnectionContext,
+        from_string_converter=class_converter
+    )
+    required_config.add_option(
+        'transaction_executor_class',
+        default=TransactionExecutor,
+        doc='a class that will manage transactions',
+        from_string_converter=class_converter
+    )
+    required_config.add_option(
+        'stackwalk_command_line',
+        doc='the template for the command to invoke minidump_stackwalk',
+        default='$minidump_stackwalkPathname -m $dumpfilePathname '
+        '$processorSymbolsPathnameList 2>/dev/null',
+    )
+    required_config.add_option(
+        'minidump_stackwalkPathname',
+        doc='the full pathname of the extern program minidump_stackwalk '
+        '(quote path with embedded spaces)',
+        default='/data/socorro/stackwalk/bin/minidump_stackwalk',
+    )
+    required_config.add_option(
+        'symbolCachePath',
+        doc='the path where the symbol cache is found (quote path with '
+        'embedded spaces)',
+        default='/mnt/socorro/symbols',
+    )
+    required_config.add_option(
+        'processorSymbolsPathnameList',
+        doc='comma or space separated list of symbol files for '
+        'minidump_stackwalk (quote paths with embedded spaces)',
+        default='/mnt/socorro/symbols/symbols_ffx,'
+        '/mnt/socorro/symbols/symbols_sea,'
+        '/mnt/socorro/symbols/symbols_tbrd,'
+        '/mnt/socorro/symbols/symbols_sbrd,'
+        '/mnt/socorro/symbols/symbols_os',
+        from_string_converter=lambda x: x.replace(',', ' ')
+    )
+    required_config.add_option(
+        'crashingThreadFrameThreshold',
+        doc='the number of frames to keep in the raw dump for the '
+        'crashing thread',
+        default=100,
+    )
+    required_config.add_option(
+        'crashingThreadTailFrameThreshold',
+        doc='the number of frames to keep in the raw dump at the tail of the '
+        'frame list',
+        default=10,
+    )
+    required_config.add_option(
+        'temporaryFileSystemStoragePath',
+        doc='a local filesystem path where processor can write dumps '
+        'temporarily for processing',
+        default='/home/socorro/temp',
+    )
+    required_config.add_option(
+        'c_signature_tool_class',
+        doc='the class that can generate a C signature',
+        default='socorro.processor.signature_utilities.CSignatureTool',
+        from_string_converter=class_converter
+    )
+    required_config.add_option(
+        'java_signature_tool_class',
+        doc='the class that can generate a Java signature',
+        default='socorro.processor.signature_utilities.JavaSignatureTool',
+        from_string_converter=class_converter
+    )
+    required_config.add_option(
+        'knownFlashIdentifiers',
+        doc='A subset of the known "debug identifiers" for flash versions, '
+            'associated to the version',
+        default={
+            '7224164B5918E29AF52365AF3EAF7A500': '10.1.51.66',
+            'C6CDEFCDB58EFE5C6ECEF0C463C979F80': '10.1.51.66',
+            '4EDBBD7016E8871A461CCABB7F1B16120': '10.1',
+            'D1AAAB5D417861E6A5B835B01D3039550': '10.0.45.2',
+            'EBD27FDBA9D9B3880550B2446902EC4A0': '10.0.45.2',
+            '266780DB53C4AAC830AFF69306C5C0300': '10.0.42.34',
+            'C4D637F2C8494896FBD4B3EF0319EBAC0': '10.0.42.34',
+            'B19EE2363941C9582E040B99BB5E237A0': '10.0.32.18',
+            '025105C956638D665850591768FB743D0': '10.0.32.18',
+            '986682965B43DFA62E0A0DFFD7B7417F0': '10.0.23',
+            '937DDCC422411E58EF6AD13710B0EF190': '10.0.23',
+            '860692A215F054B7B9474B410ABEB5300': '10.0.22.87',
+            '77CB5AC61C456B965D0B41361B3F6CEA0': '10.0.22.87',
+            '38AEB67F6A0B43C6A341D7936603E84A0': '10.0.12.36',
+            '776944FD51654CA2B59AB26A33D8F9B30': '10.0.12.36',
+            '974873A0A6AD482F8F17A7C55F0A33390': '9.0.262.0',
+            'B482D3DFD57C23B5754966F42D4CBCB60': '9.0.262.0',
+            '0B03252A5C303973E320CAA6127441F80': '9.0.260.0',
+            'AE71D92D2812430FA05238C52F7E20310': '9.0.246.0',
+            '6761F4FA49B5F55833D66CAC0BBF8CB80': '9.0.246.0',
+            '27CC04C9588E482A948FB5A87E22687B0': '9.0.159.0',
+            '1C8715E734B31A2EACE3B0CFC1CF21EB0': '9.0.159.0',
+            'F43004FFC4944F26AF228334F2CDA80B0': '9.0.151.0',
+            '890664D4EF567481ACFD2A21E9D2A2420': '9.0.151.0',
+            '8355DCF076564B6784C517FD0ECCB2F20': '9.0.124.0',
+            '51C00B72112812428EFA8F4A37F683A80': '9.0.124.0',
+            '9FA57B6DC7FF4CFE9A518442325E91CB0': '9.0.115.0',
+            '03D99C42D7475B46D77E64D4D5386D6D0': '9.0.115.0',
+            '0CFAF1611A3C4AA382D26424D609F00B0': '9.0.47.0',
+            '0F3262B5501A34B963E5DF3F0386C9910': '9.0.47.0',
+            'C5B5651B46B7612E118339D19A6E66360': '9.0.45.0',
+            'BF6B3B51ACB255B38FCD8AA5AEB9F1030': '9.0.28.0',
+            '83CF4DC03621B778E931FC713889E8F10': '9.0.16.0',
+        }
+    )
+
+    #--------------------------------------------------------------------------
+    def __init__(self, config, quit_check_callback=None):
+        super(LegacyCrashProcessor, self).__init__(config)
+
+        if quit_check_callback:
+            self.quit_check = quit_check_callback
+        else:
+            self.quit_check = lambda: False
+        self.transaction = self.config.transaction_executor_class(config)
+        self.database = self.config.database_class(config)
+
+        self.raw_crash_transform_rule_system = TransformRuleSystem()
+        self._load_transform_rules()
+
+        # *** originally from the ExternalProcessor class
+        #preprocess the breakpad_stackwalk command line
+        strip_parens_re = re.compile(r'\$(\()(\w+)(\))')
+        convert_to_python_substitution_format_re = re.compile(r'\$(\w+)')
+        # Canonical form of $(param) is $param. Convert any that are needed
+        tmp = strip_parens_re.sub(r'$\2', config.stackwalkCommandLine)
+        # Convert canonical $dumpfilePathname to DUMPFILEPATHNAME
+        tmp = tmp.replace('$dumpfilePathname', 'DUMPFILEPATHNAME')
+        # Convert canonical $processorSymbolsPathnameList to SYMBOL_PATHS
+        tmp = tmp.replace('$processorSymbolsPathnameList', 'SYMBOL_PATHS')
+        # finally, convert any remaining $param to pythonic %(param)s
+        tmp = convert_to_python_substitution_format_re.sub(r'%(\1)s', tmp)
+        self.command_line = tmp % config
+        # *** end from ExternalProcessor
+
+    #--------------------------------------------------------------------------
+    def convert_raw_crash_to_processed_crash(self, raw_crash, raw_dump):
+        """ This function is run only by a worker thread.
+            Given a job, fetch a thread local database connection and the json
+            document.  Use these to create the record in the 'reports' table,
+            then start the analysis of the dump file.
+
+            input parameters:
+        """
+        try:
+            self.quit_check()
+            ooid = raw_crash.ooid
+            processor_notes = []
+
+            started_timestamp = self._log_job_start(ooid)
+
+            self.config.logger.debug('about to apply rules')
+            self.raw_crash_transform_rule_system.apply_all_rules(raw_crash,
+                                                                 self)
+            self.config.logger.debug('done applying transform rules')
+
+            try:
+                date_processed = datetimeFromISOdateString(
+                  raw_crash.submitted_timestamp
+                )
+            except KeyError:
+                date_processed = dateFromOoid(ooid)
+
+            # formerly the call to 'insertReportIntoDatabase'
+            processed_crash_dict = self._create_basic_processed_crash(
+              ooid,
+              raw_crash,
+              date_processed,
+              started_timestamp,
+              processor_notes
+            )
+
+            try:
+                temp_dump_pathname = self._get_temp_dump_pathname(
+                  ooid,
+                  raw_dump
+                )
+                #logger.debug('about to doBreakpadStackDumpAnalysis')
+                is_hang = (
+                  'hangid' in processed_crash_dict
+                  and bool(processed_crash_dict.hangid)
+                )
+                # hang_type values: -1 if old style hang with hangid
+                #                        and Hang not present
+                #                   else hang_type == jsonDocument.Hang
+                hang_type = int(raw_crash.get("Hang", -1 if is_hang else 0))
+                java_stack_trace = raw_crash.setdefault('JavaStackTrace', None)
+                processed_crash_update_dict = (
+                  self._do_breakpad_stack_dump_analysis(
+                    ooid,
+                    temp_dump_pathname,
+                    hang_type,
+                    java_stack_trace,
+                    date_processed,
+                    processor_notes
+                  )
+                )
+                processed_crash_dict.update(processed_crash_update_dict)
+            finally:
+                self._cleanup_temp_file(temp_dump_pathname)
+
+            processed_crash_dict.topmost_filenames = "|".join(
+                processed_crash_dict.get('topmost_filenames', [])
+            )
+            try:
+                processed_crash_dict.Winsock_LSP = raw_crash.Winsock_LSP
+            except KeyError:
+                pass  # if it's not in the original raw_crash,
+                      # it does get into the jsonz
+
+        except (KeyboardInterrupt, SystemExit):
+            self.config.logger.info("quit request detected")
+        except Exception, x:
+            self.config.logger.warning(
+                'Error while processing %s: %s',
+                ooid,
+                str(x),
+                exc_info=True
+            )
+            processor_notes.append(str(x))
+
+        processor_notes = '; '.join(processor_notes)
+        processed_crash_dict.processor_notes = processor_notes
+        # TODO: shouldn't this be at the end and not here?
+        completedDateTime = utc_now()
+        processed_crash_dict.completeddatetime = completedDateTime
+        self._log_job_end(
+            completedDateTime,
+            processed_crash_dict.success,
+            ooid
+        )
+        return processed_crash_dict
+
+    #--------------------------------------------------------------------------
+    def _create_basic_processed_crash(self, uuid, raw_crash, date_processed,
+                                     started_timestamp, processor_notes):
+        """
+        This function is run only by a worker thread.
+          Create the record for the current job in the 'reports' table
+          input parameters:
+            uuid: the unique id identifying the job - corresponds with the
+                  uuid column in the 'jobs' and the 'reports' tables
+            jsonDocument: an object with a dictionary interface for fetching
+                          the components of the json document
+            date_processed: when job came in (a key used in partitioning)
+            processor_notes: list of strings of error messages
+        """
+        #logger.debug("starting insertReportIntoDatabase")
+        processed_crash = DotDict()
+        processed_crash.uuid = uuid
+        processed_crash.startedDateTime = started_timestamp
+        processed_crash.product = self._get_truncate_or_warn(
+          raw_crash,
+          'ProductName',
+          processor_notes,
+          None,
+          30
+        )
+        processed_crash.version = self._get_truncate_or_warn(
+          raw_crash,
+          'Version',
+          processor_notes,
+          None,
+          16
+        )
+        processed_crash.build = self._get_truncate_or_warn(
+          raw_crash,
+          'BuildID',
+          processor_notes,
+          None,
+          16
+        )
+        processed_crash.url = self._get_truncate_or_none(
+          raw_crash,
+          'URL',
+          255
+        )
+        processed_crash.user_comments = self._get_truncate_or_none(
+          raw_crash,
+          'Comments',
+          500
+        )
+        processed_crash.app_notes = self._get_truncate_or_none(
+          raw_crash,
+          'Notes',
+          1000
+        )
+        processed_crash.distributor = self._get_truncate_or_none(
+          raw_crash,
+          'Distributor',
+          20
+        )
+        processed_crash.distributor_version = self._get_truncate_or_none(
+          raw_crash,
+          'Distributor_version',
+          20
+        )
+        processed_crash.email = self._get_truncate_or_none(
+          raw_crash,
+          'Email',
+          100
+        )
+        processed_crash.hangid = raw_crash.get('HangID', None)
+        processed_crash.process_type = self._get_truncate_or_none(
+          raw_crash,
+          'ProcessType',
+          10
+        )
+        processed_crash.release_channel = raw_crash.get(
+          'ReleaseChannel',
+          'unknown'
+        )
+        # userId is now deprecated and replace with empty string
+        processed_crash.user_id = ""
+
+        # ++++++++++++++++++++
+        # date transformations
+        processed_crash.date_processed = date_processed
+
+        # defaultCrashTime: must have crashed before date processed
+        date_processed_as_epoch = int(time.mktime(date_processed.timetuple()))
+        timestampTime = int(
+          raw_crash.get('timestamp', date_processed_as_epoch)
+        )  # the old name for crash time
+        crash_time = int(
+          self._get_truncate_or_warn(
+            raw_crash,
+            'CrashTime',
+            processor_notes,
+            timestampTime,
+            10
+          )
+        )
+        processed_crash.crash_time = crash_time
+        if crash_time == date_processed_as_epoch:
+            processor_notes.append(
+              "WARNING: No 'client_crash_date' "
+              "could be determined from the raw_crash"
+            )
+        # StartupTime: must have started up some time before crash
+        startupTime = int(raw_crash.get('StartupTime', crash_time))
+        # InstallTime: must have installed some time before startup
+        installTime = int(raw_crash.get('InstallTime', startupTime))
+        processed_crash.client_crash_date = datetime.datetime.fromtimestamp(
+          crash_time,
+          UTC
+        )
+        processed_crash.install_age = crash_time - installTime
+        processed_crash.uptime = max(0, crash_time - startupTime)
+        try:
+            last_crash = int(raw_crash.SecondsSinceLastCrash)
+        except:
+            last_crash = None
+        processed_crash.last_crash = last_crash
+
+        # TODO: not sure how to reimplemnt this
+        #if ooid in self.priority_job_set:
+            #processor_notes.append('Priority Job')
+            #self.priority_job_set.remove(ooid)
+
+        # can't get report id because we don't have the database here
+        #reportId = processed_crash["id"]
+        processed_crash.dump = ''
+
+        try:
+            processed_crash.ReleaseChannel = \
+                raw_crash.ReleaseChannel
+        except KeyError:
+            processed_crash.ReleaseChannel = 'unknown'
+
+        if self.config.collectAddon:
+            #logger.debug("collecting Addons")
+            # formerly 'insertAdddonsIntoDatabase'
+            addonsAsAListOfTuples = self._process_list_of_addons(
+                raw_crash,
+                processor_notes
+            )
+            processed_crash.addons = addonsAsAListOfTuples
+
+        if self.config.collectCrashProcess:
+            #logger.debug("collecting Crash Process")
+            # formerly insertCrashProcess
+            processed_crash.update(
+              self._add_process_type_to_processed_crash(raw_crash)
+            )
+
+        processed_crash.addons_checked = None
+        try:
+            addons_checked_txt = raw_crash.EMCheckCompatibility.lower()
+            processed_crash.addons_checked = False
+            if addons_checked_txt == 'true':
+                processed_crash.addons_checked = True
+        except KeyError:
+            pass  # leaving it as None if not in the document
+
+        return processed_crash
+
+    #--------------------------------------------------------------------------
+    @staticmethod
+    def _addon_split_or_warn(addon_pair, processor_notes):
+        addon_split_pair = addon_pair.split(':')
+        if len(addon_split_pair) != 2:
+            processor_notes.append(
+              '"%s" is deficient as a name and version for an addon' %
+              str(addon_split_pair[0])
+            )
+
+    #--------------------------------------------------------------------------
+    def _process_list_of_addons(self, raw_crash,
+                                processor_notes):
+        original_addon_str = self._get_truncate_or_warn(
+          raw_crash,
+          'Add-ons',
+          processor_notes,
+          ""
+        )
+        if not original_addon_str:
+            return []
+        addon_list = [
+          self._addon_split_or_warn(x, processor_notes)
+          for x in original_addon_str.split(',')
+        ]
+        return addon_list
+
+    #--------------------------------------------------------------------------
+    def _add_process_type_to_processed_crash(self, raw_crash):
+        """ Electrolysis Support - Optional - raw_crash may contain a
+        ProcessType of plugin. In the future this value would be default,
+        content, maybe even Jetpack... This indicates which process was the
+        crashing process.
+        """
+        process_type_additions_dict = DotDict()
+        process_type = self._get_truncate_or_none(raw_crash,
+                                                 'ProcessType',
+                                                 10)
+        if not process_type:
+            return process_type_additions_dict
+        process_type_additions_dict.process_type = process_type
+
+        #logger.debug('processType %s', processType)
+        if process_type == 'plugin':
+            # Bug#543776 We actually will are relaxing the non-null policy...
+            # a null filename, name, and version is OK. We'll use empty strings
+            process_type_additions_dict.PluginFilename = (
+                raw_crash.get('PluginFilename', '')
+            )
+            process_type_additions_dict.PluginName = (
+                raw_crash.get('PluginName', '')
+            )
+            process_type_additions_dict.PluginVersion = (
+                raw_crash.get('PluginVersion', '')
+            )
+
+        return process_type_additions_dict
+
+    #--------------------------------------------------------------------------
+    def _do_breakpad_stack_dump_analysis(self, ooid, dump_pathname,
+                                         is_hang, java_stack_trace,
+                                         date_processed,
+                                         processor_notes):
+        """ This function coordinates the steps of running the
+        breakpad_stackdump process and analyzing the textual output for
+        insertion into the database.
+
+        returns:
+          truncated - boolean: True - due to excessive length the frames of
+                                      the crashing thread have been truncated.
+
+        input parameters:
+          ooid - the unique string identifier for the crash report
+          dump_pathname - the complete pathname for the =crash dump file
+          is_hang - boolean, is this a hang crash?
+          java_stack_trace - a source for java signatures info
+          date_processed
+          processor_notes
+        """
+        dump_analysis_line_iterator, subprocess_handle = \
+            self._invoke_minidump_stackwalk(dump_pathname)
+        dump_analysis_line_iterator.secondaryCacheMaximumSize = \
+            self.config.crashingThreadTailFrameThreshold + 1
+        try:
+            processed_crash_update = self._analyze_header(
+              ooid,
+              dump_analysis_line_iterator,
+              date_processed,
+              processor_notes
+            )
+            crashed_thread = processed_crash_updatecrashedThread
+            try:
+                make_modules_lowercase = \
+                    processed_crash_update.os_name in ('Windows NT')
+            except KeyError:
+                make_modules_lowercase = True
+            processed_crash_from_frames = self._analyze_frames(
+              is_hang,
+              java_stack_trace,
+              make_modules_lowercase,
+              dump_analysis_line_iterator,
+              date_processed,
+              crashed_thread,
+              processor_notes
+            )
+            processed_crash_update.update(processed_crash_from_frames)
+            for x in dump_analysis_line_iterator:
+                pass  # need to spool out the rest of the stream so the
+                      # cache doesn't get truncated
+            pipe_dump_str = ('\n'.join(dump_analysis_line_iterator.cache))
+            processed_crash_update.dump = pipe_dump_str
+        finally:
+            # this is really a handle to a file-like object - got to close it
+            dump_analysis_line_iterator.theIterator.close()
+        return_code = subprocess_handle.wait()
+        if return_code is not None and return_code != 0:
+            processor_notes.append(
+              "%s failed with return code %s when processing dump %s" %
+              (self.config.minidump_stackwalkPathname,
+               subprocess_handle.returncode, ooid)
+            )
+            processed_crash_update.success = False
+            if processed_crash_update.signature.startswith("EMPTY"):
+                processed_crash_update.signature += "; corrupt dump"
+        return processed_crash_update
+
+    #--------------------------------------------------------------------------
+    def _invoke_minidump_stackwalk(self, dump_pathname):
+        """ This function invokes breakpad_stackdump as an external process
+        capturing and returning the text output of stdout.  This version
+        represses the stderr output.
+
+              input parameters:
+                dump_pathname: the complete pathname of the dumpfile to be
+                                  analyzed
+        """
+        #logger.debug("analyzing %s", dumpfilePathname)
+        if isinstance(self.config.processorSymbolsPathnameList, list):
+            symbol_path = ' '.join(
+              ['"%s"' % x for x in self.config.processorSymbolsPathnameList]
+            )
+        else:
+            symbol_path = ' '.join(
+              ['"%s"' % x
+               for x in self.config.processorSymbolsPathnameList.split()]
+            )
+        command_line = self.command_line.replace("DUMPFILEPATHNAME",
+                                                dump_pathname)
+        command_line = command_line.replace("SYMBOL_PATHS", symbol_path)
+        #logger.info("invoking: %s", newCommandLine)
+        subprocess_handle = subprocess.Popen(
+          command_line,
+          shell=True,
+          stdout=subprocess.PIPE
+        )
+        return (StrCachingIterator(subprocess_handle.stdout),
+                subprocess_handle)
+
+    #--------------------------------------------------------------------------
+    def _analyze_header(self, ooid, dump_analysis_line_iterator,
+                        date_processed, processor_notes):
+        """ Scan through the lines of the dump header:
+            - extract data to update the record for this crash in 'reports',
+              including the id of the crashing thread
+            Returns: Dictionary of the various values that were updated in
+                     the database
+            Input parameters:
+            - dump_analysis_line_iterator - an iterator object that feeds lines
+                                            from crash dump data
+            - date_processed
+            - processor_notes
+        """
+        #logger.info("analyzeHeader")
+        crashed_thread = None
+        processed_crash_update = DotDict()
+        processed_crash_update.success = True
+
+        header_lines_were_found = False
+        flash_version = None
+        for line in dump_analysis_line_iterator:
+            line = line.strip()
+            # empty line separates header data from thread data
+            if line == '':
+                break
+            header_lines_were_found = True
+            #logger.debug("[%s]", line)
+            values = map(lambda x: x.strip(), line.split('|'))
+            if len(values) < 3:
+                processor_notes.append('Cannot parse header line "%s"'
+                                       % line)
+                continue
+            values = map(emptyFilter, values)
+            if values[0] == 'OS':
+                name = self._get_truncate_or_none(values[1], 100)
+                version = self._get_truncate_or_none(values[2], 100)
+                processed_crash_update.os_name = name
+                processed_crash_update.os_version = version
+            elif values[0] == 'CPU':
+                processed_crash_update.cpu_name = \
+                    self._get_truncate_or_none(values[1], 100)
+                processed_crash_update.cpu_info = \
+                    self._get_truncate_or_none(values[2], 100)
+                try:
+                    processed_crash_update.cpu_info = (
+                      '%s | %s' % (processed_crash_update.cpu_info,
+                                   self._get_truncate_or_none(values[3], 100)))
+                except IndexError:
+                    pass
+            elif values[0] == 'Crash':
+                processed_crash_update.reason = \
+                    self._get_truncate_or_none(values[1], 255)
+                processed_crash_update.address = \
+                    self._get_truncate_or_none(values[2], 20)
+                try:
+                    crashed_thread = int(values[3])
+                except Exception:
+                    crashed_thread = None
+            elif values[0] == 'Module':
+                # grab only the flash version, which is not quite as easy as
+                # it looks
+                if not flash_version:
+                    flash_version = self._get_flash_version(values)
+        if not header_lines_were_found:
+            message = "%s returned no header lines for ooid: %s" % \
+                (self.config.minidump_stackwalkPathname, ooid)
+            processor_notes.append(message)
+            #self.config.logger.warning("%s", message)
+
+        if crashed_thread is None:
+            message = "No thread was identified as the cause of the crash"
+            processor_notes.append(message)
+            self.config.logger.warning("%s", message)
+        processed_crash_update.crashedThread = crashed_thread
+        if not flash_version:
+            flash_version = '[blank]'
+        processed_crash_update.flash_version = flash_version
+        #logger.debug(" updated values  %s", reportUpdateValues)
+        return processed_crash_update
+
+    #--------------------------------------------------------------------------
+    flash_re = re.compile(r'NPSWF32_?(.*)\.dll|libflashplayer(.*)\.(.*)|'
+                         'Flash ?Player-?(.*)')
+
+    #--------------------------------------------------------------------------
+    def _get_flash_version(self, moduleData):
+        """If (we recognize this module as Flash and figure out a version):
+        Returns version; else (None or '')"""
+        try:
+            module, filename, version, debugFilename, debugId = moduleData[:5]
+        except ValueError:
+            self.config.logger.debug("bad module line %s", moduleData)
+            return None
+        m = self.flash_re.match(filename)
+        if m:
+            if not version:
+                groups = m.groups()
+                if groups[0]:
+                    version = groups[0].replace('_', '.')
+                elif groups[1]:
+                    version = groups[1]
+                elif groups[3]:
+                    version = groups[3]
+                elif 'knownFlashDebugIdentifiers' in self.config:
+                    version = \
+                        self.config.knownFlashDebugIdentifiers.get(debugId)
+        else:
+            version = None
+        return version
+
+    #--------------------------------------------------------------------------
+    def _analyze_frames(self, hang_type, java_stack_trace,
+                        make_modules_lower_case,
+                        dump_analysis_line_iterator, date_processed,
+                        crashed_thread,
+                        processor_notes):
+        """ After the header information, the dump file consists of just frame
+        information.  This function cycles through the frame information
+        looking for frames associated with the crashed thread (determined in
+        analyzeHeader).  Each frame from that thread is written to the database
+        until it has found a maximum of ten frames.
+
+               returns:
+                 a dictionary will various values to be used to update report
+                 in the database, including:
+                   truncated - boolean: True - due to excessive length the
+                                               frames of the crashing thread
+                                               may have been truncated.
+                   signature - string: an overall signature calculated for this
+                                       crash
+                   processor_notes - string: any errors or warnings that
+                                             happened during the processing
+
+               input parameters:
+                 hang_type -  0: if this is not a hang
+                            -1: if "HangID" present in json,
+                                   but "Hang" was not present
+                            "Hang" value: if "Hang" present - probably 1
+                 java_stack_trace - a source for java lang signature
+                                    information
+                 make_modules_lower_case - boolean, should modules be forced to
+                                    lower case for signature generation?
+                 dump_analysis_line_iterator - an iterator that cycles through
+                                            lines from the crash dump
+                 date_processed
+                 crashed_thread - the number of the thread that crashed - we
+                                 want frames only from the crashed thread
+                 processor_notes
+        """
+        #logger.info("analyzeFrames")
+        frame_counter = 0
+        is_truncated = False
+        frame_lines_were_found = False
+        signature_generation_frames = []
+        topmost_sourcefiles = []
+        if hang_type == 1:
+            thread_for_signature = 0
+        else:
+            thread_for_signature = crashed_thread
+        max_topmost_sourcefiles = 1  # Bug 519703 calls for just one.
+                                     # Lets build in some flex
+        for line in dump_analysis_line_iterator:
+            frame_lines_were_found = True
+            #logger.debug("  %s", line)
+            line = line.strip()
+            if line == '':
+                processor_notes.append("An unexpected blank line in "
+                                       "this dump was ignored")
+                continue  # ignore unexpected blank lines
+            (thread_num, frame_num, module_name, function, source, source_line,
+             instruction) = [emptyFilter(x) for x in line.split("|")]
+            if len(topmost_sourcefiles) < max_topmost_sourcefiles and source:
+                topmost_sourcefiles.append(source)
+            if thread_for_signature == int(thread_num):
+                if frame_counter < 30:
+                    if make_modules_lower_case:
+                        try:
+                            module_name = module_name.lower()
+                        except AttributeError:
+                            pass
+                    this_frame_signature = \
+                        self.c_signature_tool.normalize_signature(
+                          module_name,
+                          function,
+                          source,
+                          source_line,
+                          instruction
+                        )
+                    signature_generation_frames.append(this_frame_signature)
+                if frame_counter == self.config.crashingThreadFrameThreshold:
+                    processor_notes.append(
+                      "This dump is too long and has triggered the automatic "
+                      "truncation routine"
+                    )
+                    dump_analysis_line_iterator.useSecondaryCache()
+                    is_truncated = True
+                frame_counter += 1
+            elif frame_counter:
+                break
+        dump_analysis_line_iterator.stopUsingSecondaryCache()
+        signature = self._generate_signature(signature_generation_frames,
+                                            java_stack_trace,
+                                            hang_type,
+                                            crashed_thread,
+                                            processor_notes)
+        if not frame_lines_were_found:
+            message = "No frame data available"
+            processor_notes.append(message)
+            self.config.logger.warning("%s", message)
+        return DotDict({
+          "signature": signature,
+          "truncated": is_truncated,
+          "topmost_filenames": topmost_sourcefiles,
+        })
+
+    #--------------------------------------------------------------------------
+    def _generate_signature(self,
+                            signature_list,
+                            java_stack_trace,
+                            hang_type,
+                            crashed_thread,
+                            processor_notes_list,
+                            signature_max_len=255):
+        if java_stack_trace:
+            # generate a Java signature
+            signature, signature_notes = self.java_signature_tool.generate(
+              java_stack_trace,
+              delimiter=' '
+            )
+            return signature
+        else:
+            # generate a C signature
+            signature, signature_notes = self.c_signature_tool.generate(
+              signature_list,
+              hang_type,
+              crashed_thread
+            )
+        if signature_notes:
+            processor_notes_list.extend(signature_notes)
+
+        return signature
+
+    #--------------------------------------------------------------------------
+    def _load_transform_rules(self):
+        sql = (
+          "select predicate, predicate_args, predicate_kwargs, "
+          "       action, action_args, action_kwargs "
+           "from transform_rules "
+           "where "
+           "  category = 'processor.json_rewrite'"
+        )
+        try:
+            rules = self.transaction(
+              execute_query_fetchall,
+              sql
+            )
+        except Exception:
+            self.config.logger.info(
+              'Unable to load trasform rules from the database, falling back '
+                  'to defaults',
+              exc_info=True
+            )
+            rules = [
+              (  # Version rewrite rule
+                # predicate function
+                'socorro.processor.transform_rules.equal_predicate',
+                # predicate function args
+                '',
+                # predicate function kwargs
+                'key="ReleaseChannel", value="esr"',
+                # action function
+                'socorro.processor.transform_rules.reformat_action',
+                # action function args
+                '',
+                # action function kwargs
+                'key="Version", format_str="%(Version)sesr"'
+              ),
+              (  # Product rewrite rule
+                'socorro.processor.transform_rules.'
+                    'raw_crash_ProductID_predicate',
+                '',
+                '',
+                'socorro.processor.transform_rules.'
+                    'raw_crash_Product_rewrite_action',
+                '',
+                ''
+              )
+            ]
+
+        self.raw_crash_transform_rule_system.load_rules(rules)
+        self.config.logger.info(
+          'done loading rules: %s',
+          str(self.raw_crash_transform_rule_system.rules)
+        )
+
+    #--------------------------------------------------------------------------
+    def _get_temp_dump_pathname(self, ooid, raw_dump):
+        base_path = self.config.temporaryFileSystemStoragePath
+        dump_path = ("%s/%s.dump" % (base_path, ooid)).replace('//', '/')
+        with open(dump_path, "w") as f:
+            f.write(raw_dump)
+        return dump_path
+
+    #--------------------------------------------------------------------------
+    def _cleanup_temp_file(self, pathname):
+        try:
+            os.unlink(pathname)
+        except IOError:
+            self.config.logger.warning(
+                'unable to delete %s. manual deletion is required.',
+                pathname,
+                exc_info=True
+            )
+
+    #--------------------------------------------------------------------------
+    def __call__(self, raw_crash, raw_dump):
+        self.convert_raw_crash_to_processed_crash(raw_crash, raw_dump)
+
+    #--------------------------------------------------------------------------
+    def _log_job_start(self, ooid):
+        self.config.logger.info("starting job: %s", ooid)
+        started_datetime = utc_now()
+        self.transaction(
+            execute_no_results,
+            "update jobs set starteddatetime = %s where uuid = %s",
+            (started_datetime, ooid)
+        )
+        return started_datetime
+
+    #--------------------------------------------------------------------------
+    def _log_job_end(self, completed_datetime, success, ooid):
+        self.config.logger.info(
+            "finishing %s job: %s",
+            'successful' if success else 'failed',
+            ooid
+        )
+        self.transaction(
+            execute_no_results,
+            "update jobs set completeddatetime = %s, success = %s "
+                "where id = %s",
+            (completed_datetime, success, ooid)
+        )
+
+    #--------------------------------------------------------------------------
+    @staticmethod
+    def _get_truncate_or_warn(a_mapping, key, notes_list,
+                      default=None, max_length=10000):
+        try:
+            return a_mapping[key][:max_length]
+        except KeyError:
+            notes_list.append("WARNING: raw_crash missing %s" % key)
+            return default
+        except TypeError, x:
+            notes_list.append(
+              "WARNING: raw_crash [%s] contains unexpected value: %s" %
+                (key, str(x))
+            )
+            return default
+
+    #--------------------------------------------------------------------------
+    @staticmethod
+    def _get_truncate_or_none(a_mapping, key, maxLength=10000):
+        try:
+            return a_mapping[key][:maxLength]
+        except (KeyError, IndexError, TypeError):
+            return None
