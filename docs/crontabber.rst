@@ -140,6 +140,61 @@ Best practice recommendation is this:
 * Make the ``app_name`` value lower case and replace spaces with ``-``.
 
 
+Automatic backfilling
+---------------------
+
+``crontabber`` supports automatic backfilling for cron apps that need
+a date (it's a python ``datetime.datetime`` instance) parameter which,
+if all is well, defaults to the date right now.
+
+To use backfilling your cron app needs to subclass another class.
+Basic example::
+
+    from socorro.crontabber import BaseBackfillCronApp
+
+    class ThumbnailMoverCronApp(BaseBackfillCronApp):
+        app_name = 'thumbnail-mover'
+        app_version = 1.0
+        app_description = 'moves thumbnails into /dev/null'
+
+        def run(self, date):
+            dir_ = '/some/path/' + date.strftime('%Y%m%d-%H%M%S')
+            shutil.rmtree(dir_)
+
+There's also a specific subclass for use with Postgres that uses
+backfill::
+
+    from socorro.crontabber import PostgresBackfillCronApp
+
+    class ThumbnailUpdaterCronApp(PostgresBackfillCronApp):
+        app_name = 'thumbnail-updater'
+        app_version = 1.0
+        app_description = 'marks thumbnails as moved'
+
+        def run(self, connection, date):
+            sql = """UPDATE thumbnails
+            SET removed=true
+            WHERE upload_date=%s
+            """
+            cursor = connection.cursor()
+            cursor.execute(sql, date)
+
+These cron apps are automatically backfilled because whenever they
+wake up to run, they compare when it was last run with when it was
+last successful. By also knowing the frequency it's easy to work out
+how many times "it's behind". So, for example, if a job has a
+frequency of 1 day; today is Friday and the last successful run was
+Monday four days ago. That means, it needs to re-run the
+``run(connection, date)`` method four times. One for Tuesday, one for
+Wednesday, one for Thursday and one for today Friday. If, it fails
+still the same thing will be repeated and re-tried the next day but
+with one more date to re-run.
+
+When backfilling across, say, three failed attempts. If the first of
+those three fail, the ``last_success`` date is moved forward
+accordingly.
+
+
 Manual intervention
 -------------------
 
@@ -235,14 +290,12 @@ which will do nothing if all is OK.
 Timezone and UTC
 ----------------
 
-No. There is no timezone in any of the dates and times in
-``crontabber``. All is assumed local time. I.e. whatever the server
-it's running on is using.
+All dates and times are in UTC. All Python ``datetime.datetime``
+instances as non-native meaning they have a ``tzinfo`` value which is
+set to ``UTC``.
 
-The reason for this is the ability to specify exactly when something
-should be run. So if you want something to run at exactly 3AM every
-day, that's 3AM in relation to where the server is located.
-
+This means that if you're an IT or ops person configuring a job to run
+at 01:00 it's actually at 7pm pacific time.
 
 Writing cron apps (aka. jobs)
 -----------------------------
