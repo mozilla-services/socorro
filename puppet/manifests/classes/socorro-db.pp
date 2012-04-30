@@ -41,7 +41,7 @@ class socorro-db inherits socorro-base {
     }
 
     exec {
-        '/home/socorro/dev/socorro/external/postgresql/setupdb_app.py --database=breakpad':
+        '/home/socorro/dev/socorro/socorro/external/postgresql/setupdb_app.py --database_name=breakpad':
             require => [Package['postgresql'], File['postgres-config'],
                         Exec['socorro-reinstall']],
             unless => '/usr/bin/psql --list breakpad',
