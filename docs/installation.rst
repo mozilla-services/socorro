@@ -269,7 +269,22 @@ Hadoop+HBase install
 Configure Hadoop 0.20 + HBase 0.89
   Refer to https://ccp.cloudera.com/display/CDHDOC/HBase+Installation
 
-Note - you can start with a standalone setup, but read all of the above for info on a real, distributed setup!
+You can start with a standalone setup, but read all of the above for info on a real, distributed setup!
+
+NOTE - HBase stores the database in /tmp by default, which many distributions
+clear out occasionally. You should change this in /etc/hbase/conf/hbase-site.xml like so:
+::
+  <configuration>
+    <property>
+      <name>hbase.rootdir</name>
+      <value>file:///var/lib/hbase</value>
+    </property>
+  </configuration>
+
+Make sure that the above directory exists and is owned by hbase, as *root*:
+::
+  mkdir -p /var/lib/hbase
+  chown hbase:hbase /var/lib/hbase
 
 RHEL/CentOS only (not needed for Ubuntu)
 Install startup scripts
@@ -288,6 +303,7 @@ FIXME this skips LZO suport, remove the "sed" command if you have it installed
 From inside the Socorro checkout, as the *socorro* user:
 ::
   cat analysis/hbase_schema | sed 's/LZO/NONE/g' | hbase shell
+
 
 .. _systemtest-chapter:
 
