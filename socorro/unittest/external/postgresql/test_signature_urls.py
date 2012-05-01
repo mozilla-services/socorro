@@ -48,6 +48,28 @@ class TestSignatureURLs(PostgreSQLTestCase):
                 631719,
                 'x86',
                 2
+            ),
+            (
+                '32bcc6e8-c23b-48ce-abf0-70d0e2120333',
+                '%s',
+                '%s',
+                816,
+                20111228055358,
+                2895542,
+                '384:52:52'::interval,
+                '00:19:45'::interval,
+                245,
+                11427500,
+                'Windows',
+                71,
+                '55',
+                215,
+                'Browser',
+                'Beta',
+                '',
+                631719,
+                'x86',
+                2
             );
             INSERT INTO reports_user_info VALUES
             (
@@ -58,6 +80,15 @@ class TestSignatureURLs(PostgreSQLTestCase):
                 AdapterSubsysID: 05021002, AdapterDriverVersion: 8.920.0.0',
                 '',
                 'http://deusex.wikia.com/wiki/Praxis_kit'
+            ),
+            (
+                '32bcc6e8-c23b-48ce-abf0-70d0e2120333',
+                '%s',
+                '',
+                'AdapterVendorID: 0x1002, AdapterDeviceID: 0x9442,
+                AdapterSubsysID: 05021002, AdapterDriverVersion: 8.920.0.0',
+                '',
+                'http://wikipedia.org/Code_Rush'
             );
             INSERT INTO signatures VALUES
             (
@@ -79,8 +110,21 @@ class TestSignatureURLs(PostgreSQLTestCase):
                 '%s',
                 True,
                 'Release'
+            ),
+            (
+                816,
+                'Firefox',
+                '12.0a2',
+                '12.0a2',
+                '12.0a2',
+                0,
+                '011000000r000',
+                '%s',
+                '%s',
+                True,
+                'Beta'
             );
-        """ % (now, now, now, now, now, now))
+        """ % (now, now, now, now, now, now, now, now, now, now, now))
 
         self.connection.commit()
 
@@ -151,6 +195,32 @@ class TestSignatureURLs(PostgreSQLTestCase):
         res_expected = {
             "hits": [],
             "total": 0
+        }
+
+        self.assertEqual(res, res_expected)
+
+        # Test 4: Return results for all version of Firefox
+        params = {
+            "signature": "EMPTY: no crashing thread identified; corrupt dump",
+            "start_date": now_str,
+            "end_date": now_str,
+            "products": ['Firefox'],
+            "versions": ["ALL"]
+        }
+
+        res = signature_urls.get(**params)
+        res_expected = {
+            "hits": [
+                {
+                    "url": "http://deusex.wikia.com/wiki/Praxis_kit",
+                    "crash_count": 1
+                 },
+                     {
+                    "url": "http://wikipedia.org/Code_Rush",
+                    "crash_count": 1
+                 }
+            ],
+            "total": 2
         }
 
         self.assertEqual(res, res_expected)
