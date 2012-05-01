@@ -294,9 +294,9 @@ END; $f$;
 
 -- sample backfill script
 -- for initialization
-SELECT update_explosiveness(last_tcbs)
-FROM ( SELECT max(report_date) as last_tcbs
-	FROM tcbs );
+SELECT update_explosiveness(last_adu)
+FROM ( SELECT max(adu_date) as last_adu
+	FROM product_adu ) as ladu;
 
 
 
