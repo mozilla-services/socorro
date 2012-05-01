@@ -9,7 +9,7 @@ VERSION=8.0
 echo '*********************************************************'
 echo 'fix math for explosive crashes '
 echo 'bug 744492'
-psql -f ${CURDIR}/explosive_crashes.sql mpr	breakpad
+psql -f ${CURDIR}/explosive_crashes.sql breakpad
 
 echo '*********************************************************'
 echo 'restrict product_version_builds to main repositories'
