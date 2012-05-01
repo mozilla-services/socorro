@@ -905,7 +905,9 @@ Mandatory parameters
 +----------------+------------------+-------------------+-------------------------------------------------------------------+
 | products       | String           | None              | Product(s) for which to find urls                                 |
 +----------------+------------------+-------------------+-------------------------------------------------------------------+
-| versions       | String           | None              | Version(s) of the above products to find urls for                 |
+| versions       | String           | None              | Version(s) of the above products to find urls for or, you can     |
+|                |                  |                   | send the keyword 'ALL' to get results for all version of the      |
+|                |                  |                   | selected products. Versions and 'ALL' cannot be mixed             |
 +----------------+------------------+-------------------+-------------------------------------------------------------------+
 
 Return value
