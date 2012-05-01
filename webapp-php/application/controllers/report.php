@@ -53,6 +53,38 @@ class Report_Controller extends Controller {
     private $report_bug_url_default = 'https://bugzilla.mozilla.org/enter_bug.cgi?';
 
     /**
+     * Class Constructor
+     */
+    public function __construct()
+    {
+        parent::__construct();
+        $this->model = new Report_Model;
+    }
+    
+    private function urls_for_sig($req_params) {
+        //parameters needed to call signature_urls service
+        $service_params['signature'] = $req_params['signature'];
+        $time_ago = $req_params['range_value'] . " " . $req_params['range_unit'];
+        $service_params['start_date'] = date('Y-m-d\TH:i:s+0000', strtotime('-' . $time_ago, strtotime($req_params['date'])));
+        $service_params['end_date'] = date('Y-m-d\TH:i:s+0000', strtotime($req_params['date']));
+        $products_versions = $this->parse_versions($req_params['version']);
+        if (!empty($req_params['version'])) {
+            $service_params['products'] = implode("+", $products_versions[1]);
+            $service_params['versions'] = implode("+", $req_params['version']);
+        } else {
+            $service_params['products'] = implode("+", $req_params['product']);
+            $service_params['versions'] = "ALL";
+        }
+
+        $cache_in_minutes = Kohana::config('webserviceclient.topcrash_vers_rank_cache_minutes', 60);
+        $lifetime = $cache_in_minutes * 60;
+
+        $urls = $this->model->getURLSForSignature($service_params, $lifetime);
+        
+        return $urls->hits;
+    }
+
+    /**
      * List reports for the given search query parameters.
      *
      * @access  public
@@ -161,6 +193,7 @@ class Report_Controller extends Controller {
             'correlation_version' => $correlation_version,
             'correlation_os' => $this->_correlations($builds),
             'logged_in' => $this->logged_in,
+            'urls' => $this->urls_for_sig($params),
         ));
     }
 
