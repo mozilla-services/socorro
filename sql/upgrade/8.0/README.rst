@@ -1,4 +1,4 @@
-7.0 Database Updates
+8.0 Database Updates
 ====================
 
 This batch makes the following database changes:

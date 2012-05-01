@@ -294,7 +294,10 @@ END; $f$;
 
 -- sample backfill script
 -- for initialization
-SELECT update_explosiveness(current_date - 1);
+SELECT update_explosiveness(last_tcbs)
+FROM ( SELECT max(report_date) as last_tcbs
+	FROM tcbs );
+
 
 
 
