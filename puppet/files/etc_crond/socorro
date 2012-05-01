@@ -26,3 +26,5 @@ MAILTO="cron-socorro@example.com"
 #05 00 * * * socorro /data/socorro/application/scripts/crons/cron_libraries.sh > /var/log/socorro/cron_libraries.log 2>&1
 ## deprecated, in favor of reportsclean + daily_matview
 #02 * * * * socorro /data/socorro/application/scripts/crons/cron_aggregates.sh
+# Check for new ADUs (Active Daily Users) entries every hour
+#05 * * * * socorro /data/socorro/application/scripts/crons/cron_update_adus.sh
