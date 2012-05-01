@@ -39,24 +39,6 @@ class SignatureURLs(PostgreSQLBase):
                     "Mandatory parameter(s) '%s' is missing or empty"
                         % ", ".join(missingParams))
 
-        products = []
-        (params["products_versions"],
-         products) = self.parse_versions(params["versions"], [])
-
-        versions_list = []
-        products_list = []
-        for x in range(0, len(params["products_versions"]), 2):
-            products_list.append(params["products_versions"][x])
-            versions_list.append(params["products_versions"][x + 1])
-
-        product_version_list = []
-        for prod in params["products"]:
-            versions = []
-            [versions.append(versions_list[i])
-             for i, x in enumerate(products_list)
-             if x == prod]
-            product_version_list.append(tuple(versions))
-
         # Decode double-encoded slashes in signature
         params["signature"] = params["signature"].replace("%2F", "/")
 
@@ -75,25 +57,57 @@ class SignatureURLs(PostgreSQLBase):
             AND (
         """
 
-        sql_product_version_ids = [
-            "( product_name = %%(product%s)s AND version_string IN %%(version%s)s )"
-            % (x, x) for x in range(len(product_version_list))]
-
-        sql_group_order = """) GROUP BY url
+        sql_group_order = """ GROUP BY url
             ORDER BY crash_count DESC LIMIT 100"""
-
-        sql_query = " ".join((sql, " OR ".join(sql_product_version_ids),
-                              sql_group_order))
-
         sql_params = {
             "start_date": params.start_date,
             "end_date": params.end_date,
             "signature": params.signature
         }
-        sql_params = add_param_to_dict(sql_params, "product",
-                                       params.products)
-        sql_params = add_param_to_dict(sql_params, "version",
+        # if this query is for all versions the 'ALL' keyword will be
+        # the only item in the versions list.
+        if 'ALL' in params['versions']:
+            sql_products = " product_name IN ('%s') )" % (
+                    "', '".join([product for product in params.products]))
+
+            sql_date_range_limit = """AND '%s' BETWEEN
+                product_versions.build_date
+                    AND product_versions.sunset_date""" % params.end_date
+
+            sql_query = " ".join((sql, sql_products,
+                                  sql_date_range_limit, sql_group_order))
+        else:
+            products = []
+            (params["products_versions"],
+             products) = self.parse_versions(params["versions"], [])
+
+            versions_list = []
+            products_list = []
+            for x in range(0, len(params["products_versions"]), 2):
+                products_list.append(params["products_versions"][x])
+                versions_list.append(params["products_versions"][x + 1])
+
+            product_version_list = []
+            for prod in params["products"]:
+                versions = []
+                [versions.append(versions_list[i])
+                 for i, x in enumerate(products_list)
+                 if x == prod]
+                product_version_list.append(tuple(versions))
+
+            sql_product_version_ids = [
+                """( product_name = %%(product%s)s
+                    AND version_string IN %%(version%s)s ) """
+                        % (x, x) for x in range(len(product_version_list))]
+
+            sql_params = add_param_to_dict(sql_params, "version",
                                        product_version_list)
+
+            sql_params = add_param_to_dict(sql_params, "product",
+                                       params.products)
+
+            sql_query = " ".join((sql, " OR ".join(sql_product_version_ids),
+                              " ) " + sql_group_order))
 
         json_result = {
             "total": 0,

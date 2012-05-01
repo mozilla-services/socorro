@@ -7,6 +7,8 @@ require_once(Kohana::find_file('libraries', 'moz_pager', TRUE, 'php'));
  */
 class Report_Model extends Model {
 
+    public $host = "";
+
     /**
      * The Web Service class.
      */
@@ -23,6 +25,39 @@ class Report_Model extends Model {
         }
 
         $this->service = new Web_Service($config);
+    }
+
+     /**
+     * Build the service URI from the paramters passed and returns the URI with 
+     * all values rawurlencoded.
+     * 
+     * @param array url parameters to append and encode
+     * @param string the main api entry point ex. crashes
+     * @return string service URI with all values encoded
+     */
+    private function buildSigURLServiceURI($params, $apiEntry)
+    {
+        $separator = "/";
+        $host = Kohana::config('webserviceclient.socorro_hostname');
+        $apiData = array(
+                $host,
+                $apiEntry
+        );
+        
+        foreach ($params as $key => $value) {
+            $apiData[] = $key;
+            $apiData[] = rawurlencode($value);
+        }
+        
+        $apiData[] = '';    // Trick to have the closing '/'
+
+        return implode($separator, $apiData);
+    }
+
+    public function getURLSForSignature($params, $lifetime) {
+        $service_uri = $this->buildSigURLServiceURI($params, "signatureurls");
+        $resp = $this->service->get($service_uri, 'json', $lifetime);
+        return $resp;
     }
 
     /**
