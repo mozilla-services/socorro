@@ -22,7 +22,7 @@ syslogFacilityString.default = 'user'
 
 syslogLineFormatString = cm.Option()
 syslogLineFormatString.doc = 'python logging system format for syslog entries'
-syslogLineFormatString.default = 'Socorro Reports Clean (pid %(process)d): %(asctime)s %(levelname)s - %(threadName)s - %(message)s'
+syslogLineFormatString.default = 'Socorro Update ADUs (pid %(process)d): %(asctime)s %(levelname)s - %(threadName)s - %(message)s'
 
 syslogErrorLoggingLevel = cm.Option()
 syslogErrorLoggingLevel.doc = 'logging level for the log file (10 - DEBUG, 20 - INFO, 30 - WARNING, 40 - ERROR, 50 - CRITICAL)'
