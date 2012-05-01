@@ -36,8 +36,17 @@ class socorro-base {
             owner => socorro,
             group => socorro,
             mode  => 755,
-	    recurse=> false,
-	    ensure => directory;
+	    recurse=> true,
+	    ensure => directory,
+	    source => "/home/socorro/dev/socorro/puppet/files/etc_socorro";
+
+        '/etc/cron.d':
+            owner => root,
+            group => root,
+            ensure => directory,
+            recurse => true,
+            require => File['/etc/socorro'],
+	    source => "/home/socorro/dev/socorro/puppet/files/etc_crond";
 
 	 '/etc/socorro/socorrorc':
 	    ensure => link,
@@ -62,6 +71,8 @@ class socorro-base {
             source => "/home/socorro/dev/socorro/puppet/files/etc_supervisor";
 
         '/var/log/socorro':
+            owner => socorro,
+            group => socorro,
             mode  => 644,
 	    recurse=> true,
 	    ensure => directory;
@@ -200,14 +211,6 @@ class socorro-python inherits socorro-base {
 
 class socorro-web inherits socorro-base {
 
-    file { '/var/log/httpd':
-        owner => root,
-        group => root,
-        mode  => 755,
-        recurse=> true,
-        ensure => directory;
-    }
-
     package {
         'apache2':
             ensure => latest,
@@ -235,13 +238,6 @@ class socorro-web inherits socorro-base {
 class socorro-php inherits socorro-web {
 
      file { 
-        '/var/log/httpd/crash-stats':
-            require => Package[apache2],
-            owner => root,
-            group => root,
-            mode  => 755,
-            ensure => directory;
-
         '/etc/apache2/sites-available/crash-stats':
             require => Package[apache2],
             alias => 'crash-stats-vhost',
