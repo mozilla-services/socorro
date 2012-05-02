@@ -133,7 +133,8 @@ neverDiscard.fromStringConverter = cm.booleanConverter
 throttleConditions = cm.Option()
 throttleConditions.default = throttleConditions.default = [
     ("Comments", lambda x: x, 100), # 100% of crashes with comments
-    ("ReleaseChannel", lambda x: x in ("nightly", "aurora", "beta"), 100),
+    ("ReleaseChannel", lambda x: x in ("aurora", "beta"), 100),
+    ("ReleaseChannel", lambda x: x.startswith('nightly'), 100),
     ("ProductName", 'Firefox', 10), # 10% of Firefox
     ("ProductName", 'Fennec', 100), # 100% of Fennec
     ("Version", re.compile(r'\..*?[a-zA-Z]+'), 100), # 100% of all alpha, beta or special
