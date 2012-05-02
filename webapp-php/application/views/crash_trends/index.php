@@ -1,5 +1,8 @@
 <?php slot::start('head') ?>
-    <title>New Report for ...</title>
+    <?php
+        $report_for = $report_product . " " . $version;
+    ?>
+    <title>Crash Trends Report For <?= $report_for ?></title>
     <?php echo html::stylesheet(array(
     'css/jquery-ui-1.8.16/flick/jquery-ui-1.8.16.custom.css',
     'css/crash_trends.css'), 'screen')?>
