@@ -99,7 +99,7 @@ $(function() {
             // remove the loading animation
             $("#loading").remove();
 
-            if(data.nightlyCrashes.length > 0) {
+            if(data.nightlyCrashes) {
                 graph = $.plot("#nightly_crash_trends_graph", data.nightlyCrashes, options);
                 //emty the ul before appending the new dates
                 $("#dates").empty();
