@@ -179,6 +179,8 @@ $(function() {
             $("#fromdate").empty().append(fromDate);
             $("#todate").empty().append(toDate);
             
+            $("title").empty().append("Crash Trends Report For " + selectedProduct + " " + selectedVersion);
+            
             // add the loading animation
             setLoader();
             drawCrashTrends(base_url + $.param(params));
