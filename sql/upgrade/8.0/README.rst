@@ -8,6 +8,10 @@ bug #744492
 	
 bug #748194
 	Restrict product_version_builds to primary repositories.
+
+bug #749842
+	Fix math in crash_ratio
+
 	
 ...
 
