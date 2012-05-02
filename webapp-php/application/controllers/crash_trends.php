@@ -25,8 +25,9 @@ class Crash_Trends_Controller extends Controller {
                            'version' => $params['version'], 
                            'start_date' => $params['start_date'], 
                            'end_date' => $params['end_date']);
+                           
         $this->setViewData(array(
-            'product' => $params['product'], 
+            'report_product' => $params['product'], 
             'version' => $params['version'], 
             'start_date' => $params['start_date'], 
             'end_date' => $params['end_date'],
