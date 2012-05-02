@@ -7,7 +7,8 @@
     
     
     <script type="text/javascript">
-        var json_path = "<?= $data_url ?>";
+        var json_path = "<?= $data_url ?>",
+        init_ver = "<?= $version ?>";
     </script>
     
 <?php slot::end() ?>

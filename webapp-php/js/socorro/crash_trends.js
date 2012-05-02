@@ -65,9 +65,9 @@ $(function() {
         return formValid;
     };
 
-    var drawCrashTrends = function(url) {
+    var drawCrashTrends = function(url, init_ver) {
         var dates = socorro.date.getAllDatesInRange(fromDate, toDate, "US_NUMERICAL"),
-        selectedVersion = $("#version option:selected").val(),
+        selectedVersion = init_ver === undefined ? $("#version option:selected").val() : init_ver,
         numberOfDates = dates.length,
         ajax_path = url === undefined ? json_path : url,
         i = 0,
@@ -94,7 +94,7 @@ $(function() {
                 ticks: 0
             }
         };
-        
+
         graphData = $.getJSON(ajax_path, function(data) {
             // remove the loading animation
             $("#loading").remove();
@@ -129,7 +129,7 @@ $(function() {
         $("#todate").empty().append(toDate);
         
         setLoader();
-        drawCrashTrends();
+        drawCrashTrends(undefined, init_ver);
     };
     
     $("#nightly_crash_trends_graph").bind("plothover", function (event, pos, item) {
