@@ -82,19 +82,14 @@ class BaseBackfillCronApp(BaseCronApp):
                 function(now)
                 yield now
             else:
-                backfill = []
                 when = last_success
                 seconds = convert_frequency(self.config.frequency)
                 interval = datetime.timedelta(seconds=seconds)
-                while True:
+
+                while (when + interval) < now:
                     when += interval
-                    if when < now:
-                        backfill.append(when)
-                    else:
-                        break
-                for each in backfill:
-                    function(each)
-                    yield each
+                    function(when)
+                    yield when
 
     def run(self, date):  # pragma: no cover
         raise NotImplementedError("Your fault!")
@@ -381,6 +376,13 @@ def get_extra_as_options(input_str):
 
 
 def convert_frequency(frequency):
+    """return the number of seconds that a certain frequency string represents.
+    For example: `1d` means 1 day which means 60 * 60 * 24 seconds.
+    The recognized formats are:
+        10d  : 10 days
+        3m   : 3 minutes
+        12h  : 12 hours
+    """
     number = int(re.findall('\d+', frequency)[0])
     unit = re.findall('[^\d]+', frequency)[0]
     if unit == 'h':
