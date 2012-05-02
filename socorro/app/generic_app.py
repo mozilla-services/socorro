@@ -94,16 +94,17 @@ def main(initial_app, values_source_list=None):
     # parameters.  For a module to be acceptable, it must have a main
     # function that accepts a DotDict derivative as its input parameter.
     app_definition = Namespace()
-    app_definition.admin = admin = Namespace()
-    admin.add_option('application',
-                     doc='the fully qualified module or class of the '
-                         'application',
-                     default=initial_app,
-                     from_string_converter=class_converter
-                    )
+    app_definition.add_option(
+      'application',
+      doc='the fully qualified module or class of the '
+          'application',
+      default=initial_app,
+      from_string_converter=class_converter,
+      exclude_from_print_conf=True,
+      exclude_from_dump_conf=True,
+    )
     try:
         app_name = initial_app.app_name  # this will be used as the default
-                                         # b
         app_version = initial_app.app_version
         app_description = initial_app.app_description
     except AttributeError, x:
@@ -116,12 +117,13 @@ def main(initial_app, values_source_list=None):
     definitions = (app_definition,
                    logging_required_config(app_name))
 
-    config_manager = ConfigurationManager(definitions,
-                                          app_name=app_name,
-                                          app_version=app_version,
-                                          app_description=app_description,
-                                          values_source_list=values_source_list,
-                                         )
+    config_manager = ConfigurationManager(
+      definitions,
+      app_name=app_name,
+      app_version=app_version,
+      app_description=app_description,
+      values_source_list=values_source_list,
+    )
 
     with config_manager.context() as config:
         config_manager.log_config(config.logger)
@@ -131,7 +133,7 @@ def main(initial_app, values_source_list=None):
         # it might not always be that way.  The user always has the ability
         # to specify on the command line a new app class that will override
         # 'initial_app'.
-        app = config.admin.application
+        app = config.application
 
         if isinstance(app, type):
             # invocation of the app if the app_object was a class
