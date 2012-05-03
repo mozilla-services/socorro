@@ -27,6 +27,10 @@ from config.commonconfig import secondaryHbaseHost
 from config.commonconfig import secondaryHbasePort
 from config.commonconfig import secondaryHbaseTimeout
 
+from config.commonconfig import statsdHost
+from config.commonconfig import statsdPort
+from config.commonconfig import statsdPrefix
+
 temporaryFileSystemStoragePath = cm.Option()
 temporaryFileSystemStoragePath.doc = 'a local filesystem path where processor can write dumps temporarily for processing'
 temporaryFileSystemStoragePath.default = '/home/socorro/temp'
