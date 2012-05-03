@@ -140,6 +140,18 @@ dumpGID = cm.Option()
 dumpGID.doc = 'when saving processed dumps, the group to save the files under (leave blank for file system default)'
 dumpGID.default = ''
 
+statsdHost = cm.Option()
+statsdHost.doc = ''
+statsdHost.default = ''
+
+statsdPort = cm.Option()
+statsdPort.doc = ''
+statsdPort.default = 8125
+
+statsdPrefix = cm.Option()
+statsdPrefix.doc = ''
+statsdPrefix.default = ''
+
 logFilePathname = cm.Option()
 logFilePathname.doc = 'full pathname for the log file'
 logFilePathname.default = '%(testDir)s/logs/processor_test.log'
