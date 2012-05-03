@@ -146,8 +146,8 @@ class SocorroDB(App):
         dsn = dsn_template % self.database_name
 
         with PostgreSQLManager(dsn, self.config.logger) as db:
-            for line in open('sql/roles.sql'):
-                db.execute(line, [r'role "\w+" already exists'])
+            with open('sql/roles.sql') as f:
+                db.execute(f.read())
 
             for lang in ['plpgsql', 'plperl']:
                 db.execute('CREATE LANGUAGE "%s"' % lang,
