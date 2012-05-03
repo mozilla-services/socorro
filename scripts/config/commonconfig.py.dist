@@ -30,15 +30,15 @@ databasePassword.default = 'aPassword'
 
 statsdHost = cm.Option()
 statsdHost.doc = ''
-statsdHost.default = ''
+statsdHost.default = 'localhost'
 
 statsdPort = cm.Option()
-statsdPort.doc = ''
+statsdPort.doc = '8125'
 statsdPort.default = 8125
 
 statsdPrefix = cm.Option()
 statsdPrefix.doc = ''
-statsdPrefix.default = ''
+statsdPrefix.default = None
 
 #---------------------------------------------------------------------------
 # Crash storage system
