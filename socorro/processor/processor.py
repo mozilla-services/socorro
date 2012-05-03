@@ -8,6 +8,7 @@ import signal
 import threading
 import time
 import urllib2
+from statsd import StatsClient
 
 logger = logging.getLogger("processor")
 
@@ -157,6 +158,12 @@ class Processor(object):
     logger.info("I am processor #%d", self.processorId)
     logger.info("my priority jobs table is called: '%s'", self.priorityJobsTableName)
     self.priority_job_set = set()
+
+    self.statsd = StatsClient(config.statsdHost,
+                              config.statsdPort,
+                              config.statsdPrefix)
+    statsd_processor_name = self.get_statsd_processor_name()
+    self.statsd_prefix = 'socorro.processors.' + statsd_processor_name
 
   #--------------------------------------------------------------------------
   def registration(self):
@@ -505,6 +512,7 @@ class Processor(object):
 
     try:
       self.quitCheck()
+      self.statsd.incr(self.statsd_prefix + '.jobs')
       newReportRecordAsDict = {}
       processorErrorMessages = []
       jobId, jobUuid, jobPriority = jobTuple
@@ -903,6 +911,12 @@ class Processor(object):
 
     logger.debug('productIdMap: %s', str(self.productIdMap))
 
+  #----------------------------------------------------------------------------
+  def get_statsd_processor_name(self):
+    short_processor_name = self.processorName.split('-')[0]
+    dashed_processor_name = short_processor_name.replace('.', '-')
+    return dashed_processor_name
+
 
 #==============================================================================
 # TransformRules predicate and action function section
@@ -997,3 +1011,4 @@ def json_Product_rewrite_action(json_doc, processor):
                                 old_product_name,
                                 new_product_name,
                                 product_id)
+
