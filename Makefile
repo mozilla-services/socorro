@@ -28,7 +28,7 @@ phpunit:
 install: java_analysis reinstall
 
 # this a dev-only option, `java_analysis` needs to be run at least once in the checkout (or after `make clean`)
-reinstall: install-socorro install-web install-submodules
+reinstall: install-socorro install-web install-submodules virtualenv
 	# record current git revision in install dir
 	git rev-parse HEAD > $(PREFIX)/revision.txt
 	REV=`cat $(PREFIX)/revision.txt` && sed -ibak "s/CURRENT_SOCORRO_REVISION/$$REV/" $(PREFIX)/htdocs/application/config/revision.php
@@ -39,6 +39,7 @@ install-socorro:
 	mkdir -p $(PREFIX)/htdocs
 	mkdir -p $(PREFIX)/application
 	rsync -a thirdparty $(PREFIX)
+	rsync -a socorro-virtualenv/lib/python2.6/site-packages/ $(PREFIX)/thirdparty/
 	rsync -a socorro $(PREFIX)/application
 	rsync -a scripts $(PREFIX)/application
 	rsync -a tools $(PREFIX)/application
