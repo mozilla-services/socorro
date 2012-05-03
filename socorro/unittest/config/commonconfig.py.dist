@@ -48,7 +48,7 @@ hbaseTimeout.default = 5000
 
 statsdHost = cm.Option()
 statsdHost.doc = ''
-statsdHost.default = ''
+statsdHost.default = '127.0.0.1'
 
 statsdPort = cm.Option()
 statsdPort.doc = ''
