@@ -1,5 +1,3 @@
-\set ON_ERROR_STOP 0
-
 -- analyst role, for read-only connections by analytics users
 CREATE ROLE analyst;
 ALTER ROLE analyst WITH NOSUPERUSER INHERIT NOCREATEROLE NOCREATEDB LOGIN CONNECTION LIMIT 10;
