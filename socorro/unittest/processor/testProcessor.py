@@ -62,9 +62,9 @@ def createExecutionContext ():
                             "hbasePort": "hbport",
                             "hbaseStorageClass": cstore.CrashStorageSystemForHBase,
                             "temporaryFileSystemStoragePath": "/tmp",
-                            "statsdHost": "",
-                            "statsdPort": 1234,
-                            "statsdPrefix": "whatever",
+                            "statsdHost": "localhost",
+                            "statsdPort": 8125,
+                            "statsdPrefix": None,
                             "elasticSearchOoidSubmissionUrl": "%s",})
     c.config = config
 
