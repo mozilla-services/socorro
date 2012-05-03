@@ -43,3 +43,18 @@ hbaseTimeout.doc = 'timeout in milliseconds for an HBase connection'
 hbaseTimeout.default = 5000
 
 
+#---------------------------------------------------------------------------
+# statsd config
+
+statsdHost = cm.Option()
+statsdHost.doc = ''
+statsdHost.default = ''
+
+statsdPort = cm.Option()
+statsdPort.doc = ''
+statsdPort.default = 8125
+
+statsdPrefix = cm.Option()
+statsdPrefix.doc = ''
+statsdPrefix.default = ''
+
