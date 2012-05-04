@@ -12,14 +12,14 @@ class socorro-base {
             ensure => present,
             source => "/home/socorro/dev/socorro/puppet/files/etc_profile.d/java.sh";
             
-	'/etc/hosts':
-	    owner => root,
-	    group => root,
-	    mode => 644,
-	    ensure => present,
-	    source => "/home/socorro/dev/socorro/puppet/files/hosts";
+        '/etc/hosts':
+            owner => root,
+            group => root,
+            mode => 644,
+            ensure => present,
+            source => "/home/socorro/dev/socorro/puppet/files/hosts";
 
-	'/data':
+        '/data':
             owner => root,
             group => root,
             mode  => 755,
@@ -29,47 +29,58 @@ class socorro-base {
             owner => socorro,
             group => socorro,
             mode  => 755,
-	    recurse=> false,
-	    ensure => directory;
+            recurse=> false,
+            ensure => directory;
 
         '/etc/socorro':
             owner => socorro,
             group => socorro,
             mode  => 755,
-	    recurse=> false,
-	    ensure => directory;
+            recurse=> true,
+            ensure => directory,
+            source => "/home/socorro/dev/socorro/puppet/files/etc_socorro";
 
-	 '/etc/socorro/socorrorc':
-	    ensure => link,
+        '/etc/cron.d':
+            owner => root,
+            group => root,
+            ensure => directory,
+            recurse => true,
+            require => File['/etc/socorro'],
+            source => "/home/socorro/dev/socorro/puppet/files/etc_crond";
+
+         '/etc/socorro/socorrorc':
+            ensure => link,
             require => Exec['socorro-install'],
-	    target=> "/data/socorro/application/scripts/crons/socorrorc";
+            target=> "/data/socorro/application/scripts/crons/socorrorc";
 
-	'/etc/rsyslog.conf':
+        '/etc/rsyslog.conf':
             require => Package[rsyslog],
-	    owner => root,
-	    group => root,
-	    mode => 644,
-	    ensure => present,
-	    notify => Service[rsyslog],
-	    source => "/home/socorro/dev/socorro/puppet/files/rsyslog.conf";
+            owner => root,
+            group => root,
+            mode => 644,
+            ensure => present,
+            notify => Service[rsyslog],
+            source => "/home/socorro/dev/socorro/puppet/files/rsyslog.conf";
 
 # FIXME break this out to separate classes
-	 'etc_supervisor':
+         'etc_supervisor':
             path => "/etc/supervisor/conf.d/",
             recurse => true,
             require => [Package['supervisor'], Exec['socorro-install']],
-	    #notify => Service[supervisor],
+            #notify => Service[supervisor],
             source => "/home/socorro/dev/socorro/puppet/files/etc_supervisor";
 
         '/var/log/socorro':
+            owner => socorro,
+            group => socorro,
             mode  => 644,
-	    recurse=> true,
-	    ensure => directory;
+            recurse=> true,
+            ensure => directory;
 
-	'/home/socorro/persistent':
-	    owner => socorro,
-	    group => socorro,
-	    ensure => directory;
+        '/home/socorro/persistent':
+            owner => socorro,
+            group => socorro,
+            ensure => directory;
 
     }
 
@@ -122,40 +133,40 @@ class socorro-base {
 class socorro-python inherits socorro-base {
 
     user { 'socorro':
-	ensure => 'present',
-	uid => '10000',
-	shell => '/bin/bash',
+        ensure => 'present',
+        uid => '10000',
+        shell => '/bin/bash',
         groups => 'admin',
-	managehome => true;
+        managehome => true;
     }
 
     file {
         '/home/socorro':
-	    require => User[socorro],
+            require => User[socorro],
             owner => socorro,
             group => socorro,
             mode  => 775,
-	    recurse=> false,
-	    ensure => directory;
+            recurse=> false,
+            ensure => directory;
     }
 
     file {
         '/home/socorro/dev':
-	    require => File['/home/socorro'],
+            require => File['/home/socorro'],
             owner => socorro,
             group => socorro,
             mode  => 775,
-	    recurse=> false,
-	    ensure => directory;
+            recurse=> false,
+            ensure => directory;
     }
 
 # FIXME
 #        '/etc/logrotate.d/socorro':
 #            ensure => present,
-#	    source => $fqdn ? {
-#		/sjc1.mozilla.com$/ => "puppet://$server/modules/socorro/stage/etc-logrotated/socorro",
-#		default => "puppet://$server/modules/socorro/prod/etc-logrotated/socorro",
-#		};
+#            source => $fqdn ? {
+#                /sjc1.mozilla.com$/ => "puppet://$server/modules/socorro/stage/etc-logrotated/socorro",
+#                default => "puppet://$server/modules/socorro/prod/etc-logrotated/socorro",
+#                };
     package {
         ['python-psycopg2', 'python-simplejson', 'subversion', 'libpq-dev',
          'python-virtualenv', 'python-dev']:
@@ -200,14 +211,6 @@ class socorro-python inherits socorro-base {
 
 class socorro-web inherits socorro-base {
 
-    file { '/var/log/httpd':
-        owner => root,
-        group => root,
-        mode  => 755,
-        recurse=> true,
-        ensure => directory;
-    }
-
     package {
         'apache2':
             ensure => latest,
@@ -235,13 +238,6 @@ class socorro-web inherits socorro-base {
 class socorro-php inherits socorro-web {
 
      file { 
-        '/var/log/httpd/crash-stats':
-            require => Package[apache2],
-            owner => root,
-            group => root,
-            mode  => 755,
-            ensure => directory;
-
         '/etc/apache2/sites-available/crash-stats':
             require => Package[apache2],
             alias => 'crash-stats-vhost',
@@ -249,8 +245,8 @@ class socorro-php inherits socorro-web {
             group => root,
             mode  => 644,
             ensure => present,
-	    notify => Service[apache2],
-	    source => "/home/socorro/dev/socorro/puppet/files/etc_apache2_sites-available/crash-stats";
+            notify => Service[apache2],
+            source => "/home/socorro/dev/socorro/puppet/files/etc_apache2_sites-available/crash-stats";
 
         '/var/log/socorro/kohana':
             require => Package[apache2],
@@ -259,14 +255,14 @@ class socorro-php inherits socorro-web {
             mode  => 755,
             ensure => directory;
 
-	'/etc/php.ini':
+        '/etc/php.ini':
             require => Package[apache2],
-	    owner => root,
-	    group => root,
-	    mode => 644,
-	    ensure => present,
-	    notify => Service[apache2],
-	    source => "/home/socorro/dev/socorro/puppet/files/php.ini";
+            owner => root,
+            group => root,
+            mode => 644,
+            ensure => present,
+            notify => Service[apache2],
+            source => "/home/socorro/dev/socorro/puppet/files/php.ini";
 
         '/data/socorro/htdocs/application/logs':
             require => Exec['socorro-install'],
@@ -276,10 +272,10 @@ class socorro-php inherits socorro-web {
 # FIXME
 #        '/etc/logrotate.d/kohana':
 #            ensure => present,
-#	    source => $fqdn ? {
-#		/sjc1.mozilla.com$/ => "puppet://$server/modules/socorro/stage/etc-logrotated/kohana",
-#		default => "puppet://$server/modules/socorro/prod/etc-logrotated/kohana",
-#		};
+#            source => $fqdn ? {
+#                /sjc1.mozilla.com$/ => "puppet://$server/modules/socorro/stage/etc-logrotated/kohana",
+#                default => "puppet://$server/modules/socorro/prod/etc-logrotated/kohana",
+#                };
 
     }
 
@@ -333,8 +329,8 @@ class socorro-php inherits socorro-web {
 
     package {
         ['memcached', 'libcrypt-ssleay-perl', 'php5-pgsql', 'php5-curl',
-	 'php5-dev', 'php5-tidy', 'php-pear', 'php5-common', 'php5-cli',
-	 'php5-memcache', 'php5', 'php5-gd', 'php5-mysql', 'php5-ldap',
+         'php5-dev', 'php5-tidy', 'php-pear', 'php5-common', 'php5-cli',
+         'php5-memcache', 'php5', 'php5-gd', 'php5-mysql', 'php5-ldap',
          'phpunit']:
             ensure => latest,
             require => Exec['apt-get-update'];
