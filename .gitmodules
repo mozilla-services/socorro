@@ -1,6 +1,0 @@
-[submodule "configman"]
-	path = configman
-	url = git://github.com/mozilla/configman.git
-[submodule "SocorroSearchService"]
-	path = SocorroSearchService
-	url = git://github.com/mozilla/SocorroSearchService.git
