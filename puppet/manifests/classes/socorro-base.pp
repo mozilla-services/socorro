@@ -79,12 +79,6 @@ class socorro-base {
     }
 
     exec {
-        '/usr/bin/pip install isodate':
-            require => Package['python-pip'],
-            creates => '/usr/local/lib/python2.6/dist-packages/isodate';
-    }
-
-    exec {
         '/usr/bin/apt-get update && touch /tmp/apt-get-update':
             alias => 'apt-get-update',
             creates => '/tmp/apt-get-update';
@@ -92,8 +86,8 @@ class socorro-base {
 
     package {
         ['rsyslog', 'libcurl4-openssl-dev', 'libxslt1-dev', 'build-essential',
-         'supervisor', 'ant', 'python-software-properties', 'python-pip',
-         'curl', 'git-core', 'openjdk-6-jdk']:
+         'supervisor', 'ant', 'python-software-properties', 'curl', 'git-core',
+         'openjdk-6-jdk']:
             ensure => latest,
             require => Exec['apt-get-update'];
     }
@@ -157,8 +151,7 @@ class socorro-python inherits socorro-base {
 #		default => "puppet://$server/modules/socorro/prod/etc-logrotated/socorro",
 #		};
     package {
-        ['python-psycopg2', 'python-simplejson', 'subversion', 'libpq-dev',
-         'python-virtualenv', 'python-dev']:
+        ['subversion', 'libpq-dev', 'python-virtualenv', 'python-dev']:
             ensure => latest,
             require => Exec['apt-get-update'];
     }
