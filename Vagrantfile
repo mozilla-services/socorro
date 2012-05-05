@@ -27,7 +27,7 @@ Vagrant::Config.run do |config|
     puppet.manifests_path = "puppet/manifests"
     puppet.manifest_file = "init.pp"
     # enable this to see verbose and debug puppet output
-    if CONF['debug_mode'] == false
+    if CONF['debug_mode'] == true
       puppet.options = "--verbose --debug"
     end
   end
