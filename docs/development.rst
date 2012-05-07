@@ -26,3 +26,5 @@ Development Discussions
    databasesetup
    commonconfig
    populateelasticsearch
+   dependencies
+   
