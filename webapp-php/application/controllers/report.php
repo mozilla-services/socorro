@@ -441,6 +441,7 @@ class Report_Controller extends Controller {
                 'reportJsonZUri' => $reportJsonZUri,
                 'current_product_bug_url' => $this->_prepReportBugURL($report),
                 'report' => $report,
+                'is_truncated' => $report->truncated,
                 'report_bug_url' => $this->_prepReportBugURL($report, false),
                 'sig2bugs' => $signature_to_bugzilla,
                     'url_nav' => url::site('products/'.$product),
