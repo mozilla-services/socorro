@@ -46,7 +46,7 @@ class socorro-db inherits socorro-base {
                         Exec['socorro-reinstall']],
             unless => '/usr/bin/psql --list breakpad',
             cwd => '/home/socorro/dev/socorro',
-            environment => 'PYTHONPATH=/data/socorro/application',
+            environment => 'PYTHONPATH=/data/socorro/application:/data/socorro/thirdparty',
             alias => 'create-breakpad-db',
             user => 'postgres';
     }
