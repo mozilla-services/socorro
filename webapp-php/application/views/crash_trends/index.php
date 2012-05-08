@@ -11,13 +11,14 @@
     
     <script type="text/javascript">
         var json_path = "<?= $data_url ?>",
+        init_prod = "<?= $report_product ?>",
         init_ver = "<?= $version ?>";
     </script>
     
 <?php slot::end() ?>
 
 <div class="page-heading">
-    <h2>Crash Trends</h2>
+    <h2>Nightly Crash Trends For <?php out::H($report_for) ?></h2>
 </div>
 
 <div class="crash_stats_panel report_criteria">

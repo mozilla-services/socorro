@@ -1,4 +1,4 @@
-/*global socorro:false, json_path:false */
+/*global socorro:false, json_path:false, init_ver:false, init_prod:false */
 $(function() {
     "use strict";
     var fromDate, toDate,
@@ -63,6 +63,55 @@ $(function() {
         }
 
         return formValid;
+    },
+    get_versions = function(initialize) {
+        var versions = [],
+        versionSelector = $("#version"),
+        selectedProduct = $("#product").val(),
+        optionElement = "",
+        versionTxt = "",
+        optionElements = [];
+
+        // clear any info messages
+        $(".info").hide();
+        // empty versions selector before loading new versions
+        versionSelector.empty();
+        // remove error class from field
+        $("p", productsWrapper).remove();
+        productsWrapper.removeClass("error-field");
+
+        //only make the ajax call if an actual product was selected.
+        if(selectedProduct !== "none") {
+            $.getJSON('/crash_trends/product_versions', { product: selectedProduct }, function(data) {
+                if(data.length) {
+                    versions = [];
+        
+                    $(data).each(function(i, version) {
+                        optionElement = document.createElement('option');
+                        optionElement.setAttribute("value", version);
+                        //if this is our initial load, set the init version to selected
+                        if(initialize && version === init_ver) {
+                            optionElement.setAttribute("selected", "selected");
+                        }
+                        versionTxt = document.createTextNode(version);
+                        optionElement.appendChild(versionTxt);
+                        optionElements.push(optionElement);
+                    });
+                    
+                    versionSelector.empty().append(optionElements);
+                } else {
+                    showMsg("No versions found for product", ".info");
+                }
+            }).error(function(jqXHR, textStatus, errorThrown) {
+                showMsg(errorThrown, ".error");
+            });
+        }
+    },
+    setProductFilters = function() {
+        $("#product option[value='" + init_prod +"']").attr("selected", "selected");
+        // load the versions for the current product and set
+        // the init version as selected
+        get_versions(true);
     };
 
     var drawCrashTrends = function(url, init_ver) {
@@ -127,7 +176,10 @@ $(function() {
         //set the dates on the figcaption
         $("#fromdate").empty().append(fromDate);
         $("#todate").empty().append(toDate);
-        
+
+        //set the product filters to the intial product and version
+        setProductFilters();
+
         setLoader();
         drawCrashTrends(undefined, init_ver);
     };
@@ -193,43 +245,7 @@ $(function() {
      * selected product.
      */
     $("#product").change(function() {
-        var versions = [],
-        versionSelector = $("#version"),
-        selectedProduct = $("#product").val(),
-        optionElement = "",
-        versionTxt = "",
-        optionElements = [];
-
-        // clear any info messages
-        $(".info").hide();
-        // empty versions selector before loading new versions
-        versionSelector.empty();
-        // remove error class from field
-        $("p", productsWrapper).remove();
-        productsWrapper.removeClass("error-field");
-
-        //only make the ajax call if an actual product was selected.
-        if(selectedProduct !== "none") {
-            $.getJSON('/crash_trends/product_versions', { product: selectedProduct }, function(data) {
-                if(data.length) {
-                    versions = [];
-        
-                    $(data).each(function(i, version) {
-                        optionElement = document.createElement('option');
-                        optionElement.setAttribute("value", version);
-                        versionTxt = document.createTextNode(version);
-                        optionElement.appendChild(versionTxt);
-                        optionElements.push(optionElement);
-                    });
-                    
-                    versionSelector.empty().append(optionElements);
-                } else {
-                    showMsg("No versions found for product", ".info");
-                }
-            }).error(function(jqXHR, textStatus, errorThrown) {
-                showMsg(errorThrown, ".error");
-            });
-        }
+        get_versions();
     });
 
     //check if the HTML5 date type is supported else, fallback to jQuery UI
