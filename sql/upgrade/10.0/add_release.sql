@@ -13,15 +13,16 @@ CREATE OR REPLACE FUNCTION add_new_release (
 RETURNS boolean
 LANGUAGE plpgsql 
 AS $f$
+BEGIN
 -- adds a new release to the releases_raw table
 -- to be picked up by update_products later
 -- does some light format validation
 
 -- check for NULLs, blanks
 IF NOT ( nonzero_string(product) AND nonzero_string(version)
-	nonzero_string(release_channel) and nonzero_string(platform)
+	AND nonzero_string(release_channel) and nonzero_string(platform)
 	AND build_id IS NOT NULL ) THEN
-	RAISE EXCEPTION 'product, version, release_channel, platform and build ID are all required');
+	RAISE EXCEPTION 'product, version, release_channel, platform and build ID are all required';
 END IF;
 
 --validations

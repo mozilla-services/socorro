@@ -28,7 +28,7 @@ BEGIN
 	IF nrows > 0 THEN
 		RETURN true;
 	ELSE 
-		RAISE ERROR '% is not a valid %',lval,lmessage;
+		RAISE EXCEPTION '% is not a valid %',lval,lmessage;
 	END IF;
 END;
 $f$;
