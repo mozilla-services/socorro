@@ -13,6 +13,8 @@ do
 done
 popd
 
+# RHEL postgres 9 RPM installs pg_config here, psycopg2 needs it
+export PATH=$PATH:/usr/pgsql-9.0/bin/
 # run unit tests
 make coverage DB_USER=test DB_HOST=localhost DB_PASSWORD=aPassword CITEXT="/usr/pgsql-9.0/share/contrib/citext.sql"
 
