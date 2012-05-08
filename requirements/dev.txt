@@ -1,0 +1,5 @@
+-r prod.txt
+coverage==3.5.2b1
+nose==1.1.2
+mock==0.8.0
+poster==0.8.1
