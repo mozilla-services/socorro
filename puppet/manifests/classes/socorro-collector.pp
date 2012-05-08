@@ -17,13 +17,6 @@ class socorro-collector inherits socorro-web {
 	    recurse=> false,
 	    ensure => directory;
 
-        '/var/log/httpd/crash-reports':
-            require => Package[apache2],
-            owner => root,
-            group => root,
-            mode  => 755,
-            ensure => directory;
-
         '/etc/apache2/sites-available/crash-reports':
             require => Package[apache2],
             alias => 'crash-reports-vhost',
