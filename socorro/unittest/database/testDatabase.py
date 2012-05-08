@@ -218,7 +218,7 @@ class TestDatabase(unittest.TestCase):
     expected = [('%s - killing database connections', 'MainThread'),
                 ('%s - connection %s closed', 'MainThread', 'MainThread'),
                 ('%s - killing database connections', 'MainThread'),
-                ('%s - connection %s already closed', 'MainThread', 'MainThread'),
+                ('%s - connection %s closed', 'MainThread', 'MainThread'),
                 ('%s - connection %s closed', 'MainThread', 'fred')]
     assert len(expected) == len(logger.logs)
     for e, a in zip(expected, logger.logs):

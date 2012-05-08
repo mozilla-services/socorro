@@ -1,12 +1,5 @@
 class socorro-api inherits socorro-web {
      file { 
-        '/var/log/httpd/socorro-api':
-            require => Package[apache2],
-            owner => root,
-            group => root,
-            mode  => 755,
-            ensure => directory;
-
         '/etc/apache2/sites-available/socorro-api':
             require => Package[apache2],
             alias => 'socorro-api-vhost',
