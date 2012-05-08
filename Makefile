@@ -26,6 +26,7 @@ phpunit:
 	phpunit webapp-php/tests/
 
 thirdparty:
+	virtualenv $(VIRTUALENV)
 	# install production dependencies
 	$(VIRTUALENV)/bin/pip install --use-mirrors --download-cache=pip-cache/ --ignore-installed --install-option="--prefix=`pwd`/thirdparty" --install-option="--install-lib=`pwd`/thirdparty" -r requirements/prod.txt
 
