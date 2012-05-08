@@ -21,7 +21,7 @@ AS $f$
 IF NOT ( nonzero_string(product) AND nonzero_string(version)
 	nonzero_string(release_channel) and nonzero_string(platform)
 	AND build_id IS NOT NULL ) THEN
-	RAISE ERROR 'product, version, release_channel, platform and build ID are all required');
+	RAISE EXCEPTION 'product, version, release_channel, platform and build ID are all required');
 END IF;
 
 --validations
@@ -32,19 +32,30 @@ SELECT validate_lookup('release_channels','release_channel',release_channel,'rel
 --validate build
 IF NOT ( build_date(build_id) BETWEEN '2005-01-01' 
 	AND (current_date + '1 month') ) THEN
-	RAISE ERROR 'invalid buildid';
+	RAISE EXCEPTION 'invalid buildid';
 END IF;
-
 
 --add row
 --duplicate check will occur in the EXECEPTION section
+INSERT INTO releases_raw (
+	product_name, version, platform, build_id,
+	build_type, beta_number, repository )
+VALUES ( product, version, platform, build_id, 
+	release_channel, beta_number, repository );
 
 --call update_products, if desired
+IF update_products THEN
+	SELECT update_product_versions();
+END IF;
 
 --return
+RETURN TRUE;
 
 --exception clause, mainly catches duplicate rows.
-
+EXCEPTION
+	WHEN UNIQUE_VIOLATION THEN
+		RAISE EXCEPTION 'the release you have entered is already present in he database';
+END;$f$;
 
 
 

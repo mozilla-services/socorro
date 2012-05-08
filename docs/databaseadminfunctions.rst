@@ -418,6 +418,60 @@ Called By: on demand by Firefox or Camino teams.
 Notes: if this leads to more than 4 currently featured versions, the oldest 
 featured vesion will be "bumped".
 
+add_new_release
+---------------
+
+Purpose: allows admin users to manually add a release to the
+releases_raw table.
+
+Called By: admin interface
+
+::
+
+	add_new_release (
+		product citext,
+		version citext,
+		release_channel citext,
+		build_id numeric,
+		platform citext,
+		beta_number integer default NULL,
+		repository text default 'release',
+		update_products boolean default false
+	) returns BOOLEAN
+	
+	SELECT add_new_release('Camino','5.0','release',201206271111,'osx');
+	SELECT add_new_release('Camino','6.0','beta',201206271198,'osx',2,
+		'camino-beta',true);
+		
+Notes: validates the contents of the required fields. If update_products=true, will run the update_products hourly job to process the new release into product_versions etc. 
+
+edit_featured_versions
+----------------------
+
+Purpose: let admin users change the featured versions for a specific product.
+
+Called By: admin interface
+
+::
+
+	edit_featured_versions (
+		product citext,
+		featured_versions LIST of text
+	) returns BOOLEAN
+	
+	SELECT edit_featured_versions ( 'Firefox', '15.0a1','14.0a2','13.0b2','12.0' );
+	SELECT edit_featured_versions ( 'SeaMonkey', '2.9.' );
+	
+Notes: completely replaces the list of currently featured versions.  Will check that versions featured have not expired.  Does not validate product names or version numbers, though.
+	
+	
+	
+
+
+
+
+
+
 
 
 
