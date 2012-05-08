@@ -49,6 +49,7 @@ class Branch_Model extends Model {
 
     protected $cache;
     protected $admin_username;
+    protected $service;
 
     public function __construct()
     {
@@ -58,21 +59,41 @@ class Branch_Model extends Model {
         if (Kohana::config('auth.driver') !== "NoAuth") {
             $this->admin_username = Auth::instance()->get_user();
         }
+        
+        $config = array();
+        $credentials = Kohana::config('webserviceclient.basic_auth');
+        if ($credentials) {
+            $config['basic_auth'] = $credentials;
+        }
+
+        $this->service = new Web_Service($config);
+
+    }
+
+    /**
+     * Return a list of all product names in the products table
+     * @return array And array of product names
+     */
+    public function get_products()
+    {
+        $products = array();
+        $host = Kohana::config('webserviceclient.socorro_hostname');
+        $lifetime = Kohana::config('webserviceclient.topcrash_vers_rank_cache_minutes', 60) * 60;
+        $response = $this->service->get($host . '/products/', 'json', $lifetime);
+        
+        foreach ($response->hits as $product) {
+            array_push($products, $product->product_name);
+        }
+        return $products;
     }
 
     /**
      * Fetch get current versions via the webservice
      */
     protected function _getValues() {
-        $config = array();
-        $credentials = Kohana::config('webserviceclient.basic_auth');
-        if($credentials) {
-            $config['basic_auth'] = $credentials;
-        }
-        $service = new Web_Service($config);
         $host = Kohana::config('webserviceclient.socorro_hostname');
         $lifetime = Kohana::config('webserviceclient.branch_model_cache_in_minutes', 60) * 60;
-        $resp = $service->get("${host}/current/versions/", 'json', $lifetime);
+        $resp = $this->service->get("${host}/current/versions/", 'json', $lifetime);
 
         return $resp->currentversions;
     }
