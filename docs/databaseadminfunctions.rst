@@ -391,6 +391,47 @@ it allows you to rerun the script multiple times without erroring out.
 However, be aware that it only checks for the existance of the table, not
 its definition, so if you modify the table definition you'll need to 
 manually drop and recreate it.
+
+add_column_if_not_exists
+------------------------
+
+Purpose: allow idempotent addition of new columns to existing tables.
+
+Called by: upgrade scripts
+
+::
+
+	add_column_if_not_exists (
+		tablename text, 
+		columnname text, 
+		datatype text, 
+		notnull boolean default false,
+		defaultval text default '',
+		constrainttext text default '' 
+	) returns boolean
+	
+	
+	
+tablename
+	name of the existing table to which to add the column
+columname
+	name of the new column to add
+datatype
+	data type of the new column to add
+notnull
+	is the column NOT NULL?  defaults to false.  must have a default 
+	parameter if notnull.
+defaultval
+	default value for the column.  this will cause the table to
+	be rewritten if set; beware of using on large tables.
+constrainttext 
+	any constraint, including foreign keys, to be added to the 
+	column, written as a table constraint.  will cause the whole
+	table to be checked; beware of adding to large tables.
+	
+Note: just checks if the table & column exist, and does nothing if they do.
+does not check if data type, constraints and defaults match.
+
 		
 Other Administrative Functions
 ==============================
