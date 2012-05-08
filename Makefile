@@ -1,7 +1,7 @@
 PREFIX=/data/socorro
 ABS_PREFIX = $(shell readlink -f $(PREFIX))
 VIRTUALENV=$(CURDIR)/socorro-virtualenv
-PYTHONPATH = ".:thirdparty"
+PYTHONPATH = "."
 NOSE = $(VIRTUALENV)/bin/nosetests socorro -s --with-xunit
 SETUPDB = $(VIRTUALENV)/bin/python ./socorro/external/postgresql/setupdb_app.py
 COVEROPTS = --with-coverage --cover-package=socorro
@@ -9,7 +9,7 @@ COVERAGE = $(VIRTUALENV)/bin/coverage
 PYLINT = $(VIRTUALENV)/bin/pylint
 CITEXT="/usr/share/postgresql/9.0/contrib/citext.sql"
 
-.PHONY: all test phpunit install reinstall install-socorro install-web virtualenv coverage lint clean minidump_stackwalk java_analysis
+.PHONY: all test phpunit install reinstall install-socorro install-web virtualenv coverage lint clean minidump_stackwalk java_analysis thirdparty
 
 
 all:	test
@@ -25,10 +25,14 @@ test: setup-test phpunit
 phpunit:
 	phpunit webapp-php/tests/
 
-install: java_analysis reinstall
+thirdparty:
+	# install production dependencies
+	$(VIRTUALENV)/bin/pip install --use-mirrors --download-cache=pip-cache/ --ignore-installed --install-option="--prefix=`pwd`/thirdparty" --install-option="--install-lib=`pwd`/thirdparty" -r requirements/prod.txt
 
-# this a dev-only option, `java_analysis` needs to be run at least once in the checkout (or after `make clean`)
-reinstall: install-socorro install-web install-submodules virtualenv
+install: java_analysis thirdparty reinstall
+
+# this a dev-only option, `make install` needs to be run at least once in the checkout (or after `make clean`)
+reinstall: install-socorro install-web
 	# record current git revision in install dir
 	git rev-parse HEAD > $(PREFIX)/revision.txt
 	REV=`cat $(PREFIX)/revision.txt` && sed -ibak "s/CURRENT_SOCORRO_REVISION/$$REV/" $(PREFIX)/htdocs/application/config/revision.php
@@ -38,9 +42,9 @@ install-socorro:
 	# create base directories
 	mkdir -p $(PREFIX)/htdocs
 	mkdir -p $(PREFIX)/application
+	# copy to install directory
 	rsync -a thirdparty $(PREFIX)
-	rsync -a socorro-virtualenv/lib/python2.6/site-packages/ $(PREFIX)/thirdparty/
-	rsync -a socorro $(PREFIX)/application
+	rsync -a socorro $(PREFIX)/application 
 	rsync -a scripts $(PREFIX)/application
 	rsync -a tools $(PREFIX)/application
 	rsync -a sql $(PREFIX)/application
@@ -48,6 +52,7 @@ install-socorro:
 	rsync -a scripts/stackwalk.sh $(PREFIX)/stackwalk/bin/
 	rsync -a analysis/build/lib/socorro-analysis-job.jar $(PREFIX)/analysis/
 	rsync -a analysis/bin/modulelist.sh $(PREFIX)/analysis/
+	# copy default config files
 	cd $(PREFIX)/application/scripts/config; for file in *.py.dist; do cp $$file `basename $$file .dist`; done
 
 install-web:
@@ -57,15 +62,9 @@ install-web:
 	cd $(PREFIX)/htdocs/application/config; for file in *.php-dist; do cp $$file `basename $$file -dist`; done
 	cd $(PREFIX)/htdocs; cp htaccess-dist .htaccess
 
-install-submodules:
-	# clone submodule dependencies
-	git submodule update --init --recursive
-	cd configman; python setup.py install --install-lib=$(ABS_PREFIX)/application
-
 virtualenv:
 	virtualenv $(VIRTUALENV)
-	$(VIRTUALENV)/bin/pip install -r requirements.txt
-	cd configman; $(VIRTUALENV)/bin/python setup.py install
+	$(VIRTUALENV)/bin/pip install --use-mirrors --download-cache=./pip-cache -r requirements/dev.txt
 
 coverage: setup-test phpunit
 	rm -f coverage.xml
@@ -77,8 +76,8 @@ lint:
 
 clean:
 	find ./socorro/ -type f -name "*.pyc" -exec rm {} \;
-	find ./thirdparty/ -type f -name "*.pyc" -exec rm {} \;
-	rm -rf ./google-breakpad/ ./builds/ ./breakpad/ ./stackwalk
+	rm -rf ./thirdparty/*
+	rm -rf ./google-breakpad/ ./builds/ ./breakpad/ ./stackwalk ./pip-cache
 	rm -rf ./breakpad.tar.gz
 	cd analysis && ant clean
 
