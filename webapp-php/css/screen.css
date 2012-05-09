@@ -672,7 +672,6 @@ div.error h2, div.success h2 {
      min-height: 50em;
      text-align: left;
      margin: 1em 2em;
-     overflow: auto;
 }
 /**
  * Admin

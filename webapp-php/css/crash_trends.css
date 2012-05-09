@@ -16,8 +16,8 @@ figure {
 }
 .report_graph {
     position: relative;
-    margin-left: 2em;
-    width: 60%;
+    margin: 0 0 0 2em;
+    width: 63%;
 }
 .crash_stats_panel_title {
     background: #f0f0f0 url(../img/2.0/panel-bg.png) 0 0 repeat-x;
@@ -67,8 +67,7 @@ figure {
 }
 #nightly_crash_trends_graph {
     float: left;
-    width: 89%;
-    width: 715px;
+    width: 86%;
     height: 300px;
 }
 #graph_legend table {
@@ -117,4 +116,18 @@ figure {
     background-color: #e5c1b2;
     padding: 0.5em;
     border: 1px solid #a30;
+}
+@media screen and (max-width: 1150px) {
+    .report_criteria,
+    .report_graph {
+        min-width: 700px;
+    }
+    .report_criteria {
+        width: 95%;
+    }
+    .report_graph {
+        position: relative;
+        margin-top: 2em;
+        width: 95%;
+    }
 }
