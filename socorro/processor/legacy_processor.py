@@ -188,6 +188,9 @@ class LegacyCrashProcessor(RequiredConfig):
             self.quit_check()
             ooid = raw_crash.uuid
             processor_notes = []
+            processed_crash = DotDict()
+            processed_crash.uuid = raw_crash.uuid
+            processed_crash.success = False
 
             started_timestamp = self._log_job_start(ooid)
 
@@ -204,13 +207,13 @@ class LegacyCrashProcessor(RequiredConfig):
                 submitted_timestamp = dateFromOoid(ooid)
 
             # formerly the call to 'insertReportIntoDatabase'
-            processed_crash_dict = self._create_basic_processed_crash(
+            processed_crash.update(self._create_basic_processed_crash(
               ooid,
               raw_crash,
               submitted_timestamp,
               started_timestamp,
               processor_notes
-            )
+            ))
 
             try:
                 temp_dump_pathname = self._get_temp_dump_pathname(
@@ -218,13 +221,16 @@ class LegacyCrashProcessor(RequiredConfig):
                   raw_dump
                 )
                 #logger.debug('about to doBreakpadStackDumpAnalysis')
+                # TODO: it appears that the use of "Hang" within raw_crash
+                #       is deprecated.  This code block could be simplfied
+                #       and moved into _create_basic_processed_crash
                 is_hang = (
-                  'hangid' in processed_crash_dict
-                  and bool(processed_crash_dict.hangid)
+                  'hangid' in processed_crash
+                  and bool(processed_crash.hangid)
                 )
                 # hang_type values: -1 if old style hang with hangid
                 #                        and Hang not present
-                #                   else hang_type == jsonDocument.Hang
+                #                   else hang_type == raw_crash.Hang
                 hang_type = int(raw_crash.get("Hang", -1 if is_hang else 0))
                 java_stack_trace = raw_crash.setdefault('JavaStackTrace', None)
                 processed_crash_update_dict = (
@@ -237,15 +243,15 @@ class LegacyCrashProcessor(RequiredConfig):
                     processor_notes
                   )
                 )
-                processed_crash_dict.update(processed_crash_update_dict)
+                processed_crash.update(processed_crash_update_dict)
             finally:
                 self._cleanup_temp_file(temp_dump_pathname)
 
-            processed_crash_dict.topmost_filenames = "|".join(
-                processed_crash_dict.get('topmost_filenames', [])
+            processed_crash.topmost_filenames = "|".join(
+                processed_crash.get('topmost_filenames', [])
             )
             try:
-                processed_crash_dict.Winsock_LSP = raw_crash.Winsock_LSP
+                processed_crash.Winsock_LSP = raw_crash.Winsock_LSP
             except KeyError:
                 pass  # if it's not in the original raw_crash,
                       # it does get into the jsonz
@@ -262,16 +268,16 @@ class LegacyCrashProcessor(RequiredConfig):
             processor_notes.append(str(x))
 
         processor_notes = '; '.join(processor_notes)
-        processed_crash_dict.processor_notes = processor_notes
+        processed_crash.processor_notes = processor_notes
         # TODO: shouldn't this be at the end and not here?
         completed_datetime = utc_now()
-        processed_crash_dict.completeddatetime = completed_datetime
+        processed_crash.completeddatetime = completed_datetime
         self._log_job_end(
             completed_datetime,
-            processed_crash_dict.success,
+            processed_crash.success,
             ooid
         )
-        return processed_crash_dict
+        return processed_crash
 
     #--------------------------------------------------------------------------
     def _create_basic_processed_crash(self, uuid, raw_crash,
@@ -291,6 +297,7 @@ class LegacyCrashProcessor(RequiredConfig):
         """
         #logger.debug("starting insertReportIntoDatabase")
         processed_crash = DotDict()
+        processed_crash.success = False
         processed_crash.uuid = uuid
         processed_crash.startedDateTime = started_timestamp
         processed_crash.product = self._get_truncate_or_warn(

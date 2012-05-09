@@ -99,12 +99,14 @@ class TestLegacyProcessor(unittest.TestCase):
 
                 leg_proc._cleanup_temp_file = mock.Mock()
 
+                 # Here's the call being tested
                 processed_crash = \
                     leg_proc.convert_raw_crash_to_processed_crash(
                       raw_crash,
                       raw_dump
                     )
 
+                # test the result
                 self.assertEqual(1, leg_proc._log_job_start.call_count)
                 leg_proc._log_job_start.assert_called_with(raw_crash.uuid)
 
@@ -172,4 +174,77 @@ class TestLegacyProcessor(unittest.TestCase):
                   processed_crash,
                   epc
                 )
+
+    def test_convert_raw_crash_to_processed_crash_unexpected_error(self):
+        config = setup_config_with_mocks()
+        mocked_transform_rules_str = \
+            'socorro.processor.legacy_processor.TransformRuleSystem'
+        with mock.patch(mocked_transform_rules_str) as m_transform_class:
+            m_transform = mock.Mock()
+            m_transform_class.return_value = m_transform
+            m_transform.attach_mock(mock.Mock(), 'apply_all_rules')
+            utc_now_str = 'socorro.processor.legacy_processor.utc_now'
+            with mock.patch(utc_now_str) as m_utc_now:
+                m_utc_now.return_value = datetime(2012, 5, 4, 15, 11)
+
+                raw_crash = DotDict()
+                raw_crash.uuid = '3bc4bcaa-b61d-4d1f-85ae-30cb32120504'
+                raw_crash.submitted_timestamp = '2012-05-04T15:33:33'
+                raw_dump = 'abcdef'
+                leg_proc = LegacyCrashProcessor(config, config.mock_quit_fn)
+
+                started_timestamp = datetime(2012, 5, 4, 15, 10)
+                leg_proc._log_job_start = mock.Mock(
+                  return_value=started_timestamp
+                )
+
+                basic_processed_crash = DotDict()
+                basic_processed_crash.uuid = raw_crash.uuid
+                basic_processed_crash.success = False
+                leg_proc._create_basic_processed_crash = mock.Mock(
+                  return_value=basic_processed_crash)
+
+                leg_proc._get_temp_dump_pathname = mock.Mock(
+                  return_value='/tmp/x'
+                )
+
+                leg_proc._log_job_end = mock.Mock()
+
+                processed_crash_update_dict = DotDict()
+                processed_crash_update_dict.success = True
+                leg_proc._do_breakpad_stack_dump_analysis = mock.Mock(
+                  side_effect=Exception('no body expects the spanish '
+                                        'inquisition')
+                )
+
+                leg_proc._cleanup_temp_file = mock.Mock()
+
+                 # Here's the call being tested
+                processed_crash = \
+                    leg_proc.convert_raw_crash_to_processed_crash(
+                      raw_crash,
+                      raw_dump
+                    )
+
+                self.assertEqual(
+                  1,
+                  leg_proc._cleanup_temp_file.call_count
+                )
+                leg_proc._cleanup_temp_file.assert_called_with('/tmp/x')
+
+                self.assertEqual(1, leg_proc._log_job_end.call_count)
+                leg_proc._log_job_end.assert_called_with(
+                  datetime(2012, 5, 4, 15, 11),
+                  False,
+                  raw_crash.uuid
+                )
+
+                e = {
+                  'processor_notes': 'no body expects the spanish inquisition',
+                  'completeddatetime': datetime(2012, 5, 4, 15, 11),
+                  'success': False,
+                  'uuid': raw_crash.uuid
+                }
+                self.assertEqual(e, processed_crash)
+
 
