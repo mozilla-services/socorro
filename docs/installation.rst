@@ -103,7 +103,9 @@ Run unit/functional tests, and generate report
 ````````````
 From inside the Socorro checkout, as the *socorro* user:
 ::
-  make coverage
+  # only need install-submodules for pre-9.0 versions of Socorro
+  make install-submodules
+  make test
 
 Set up directories and permissions
 ````````````
