@@ -56,11 +56,6 @@ class Daily_Model extends Model {
  	public $today = 0;
 
 	/**
-	 * The Web Service class.
-	 */
- 	protected $service = '';
-
-	/**
      * Class Constructor
      */
     public function __construct()
@@ -77,22 +72,6 @@ class Daily_Model extends Model {
 		$this->today = strtotime(date('Y-m-d'));
     }
 
-    /**
-     * Return a list of all product names in the products table
-     * @return array And array of product names
-     */
-    public function get_products()
-    {
-        $products = array();
-        $host = Kohana::config('webserviceclient.socorro_hostname');
-        $lifetime = Kohana::config('webserviceclient.topcrash_vers_rank_cache_minutes', 60) * 60;
-        $response = $this->service->get($host . '/products/', 'json', $lifetime);
-        
-        foreach ($response->hits as $product) {
-            array_push($products, $product->product_name);
-        }
-        return $products;
-    }
     /**
      * Determine which stats are present in the given results
      *

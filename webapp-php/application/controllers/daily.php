@@ -103,17 +103,17 @@ class Daily_Controller extends Controller {
      * @return void
      */
     public function index() {
-        $Branch_Model = new Branch_Model;
+        $branch_model = new Branch_Model;
 
         // Prepare variables
-        $products = $this->model->get_products();
+        $products = $branch_model->get_products();
         $operating_systems = Kohana::config('daily.operating_systems');
         $report_types = array('crash', 'oopp', 'hang_browser', 'hang_plugin');
 
         // Fetch $_GET variables.
         $parameters = $this->input->get();
         $product = (isset($parameters['p']) && in_array($parameters['p'], $products)) ? $parameters['p'] : $this->chosen_version['product'];
-        $product_versions = $Branch_Model->getCurrentProductVersionsByProduct($product);
+        $product_versions = $branch_model->getCurrentProductVersionsByProduct($product);
         $operating_system = (isset($parameters['os'])) ? $parameters['os'] : $operating_systems;
         $chosen_report_types = (isset($parameters['report_type'])) ? $parameters['report_type'] : $report_types;
         $date_start = (isset($parameters['date_start'])) ? $parameters['date_start'] : date('Y-m-d', mktime(0, 0, 0, date("m"), date("d")-15, date("Y")));
@@ -149,7 +149,7 @@ class Daily_Controller extends Controller {
         if (!isset($versions) || count($versions) == 0 || empty($versions[0])) {
             $versions = array();
             $throttle = array();
-            $featured_versions = $Branch_Model->getFeaturedVersions($product);
+            $featured_versions = $branch_model->getFeaturedVersions($product);
             foreach ($featured_versions as $featured_version) {
                 $versions[] = $featured_version->version;
                 $throttle[] = $featured_version->throttle;
