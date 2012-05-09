@@ -74,7 +74,7 @@ class Branch_Model extends Model {
      * Return a list of all product names in the products table
      * @return array And array of product names
      */
-    public function get_products()
+    public function getProducts()
     {
         $products = array();
         $host = Kohana::config('webserviceclient.socorro_hostname');
@@ -260,34 +260,6 @@ class Branch_Model extends Model {
     }
 
     /**
-     * Fetch the names of all unique products.
-     *
-     * @param  bool     True if we should remove the cached query results, used in admin panel
-     * @return array    An array of products
-     */
-    public function getProducts($delete_cache=false) {
-        $sql = '/* soc.web branch.products */
-            SELECT DISTINCT product
-            FROM branches
-            ORDER BY product
-        ';
-
-        if ($delete_cache) {
-            $this->cache->delete($this->queryHashKey($sql));
-        }
-
-        $results = $this->fetchRows($sql);
-        if (isset($results[0])) {
-            $products = array();
-            foreach ($results as $result) {
-                array_push($products, $result->product);
-            }
-            return $products;
-        }
-        return false;
-    }
-
-    /**
      * Fetch a record from the product_visibility table by its productdims_id.
      *
      * @param   int     The id for the product/version record.
@@ -455,7 +427,7 @@ class Branch_Model extends Model {
 
         if (!$data || !$cache) {
             $data = array(
-                'products' => $this->getProducts($delete_cache),
+                'products' => $this->getProducts(),
                 'branches' => $this->getBranches($delete_cache),
                 'versions' => ($current_versions) ? $this->getCurrentProductVersions($delete_cache) : $this->getProductVersions($delete_cache)
             );
