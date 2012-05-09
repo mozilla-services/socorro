@@ -405,12 +405,13 @@ Called by: upgrade scripts
 		tablename text, 
 		columnname text, 
 		datatype text, 
-		notnull boolean default false,
+		nonnull boolean default false,
 		defaultval text default '',
 		constrainttext text default '' 
 	) returns boolean
 	
-	
+	SELECT add_column_if_not_exists (
+		'product_version_builds','repository','citext' );
 	
 tablename
 	name of the existing table to which to add the column
@@ -418,7 +419,7 @@ columname
 	name of the new column to add
 datatype
 	data type of the new column to add
-notnull
+nonnull
 	is the column NOT NULL?  defaults to false.  must have a default 
 	parameter if notnull.
 defaultval

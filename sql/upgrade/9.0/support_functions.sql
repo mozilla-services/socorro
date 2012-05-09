@@ -33,10 +33,12 @@ BEGIN
 END;
 $f$;
 
+DROP FUNCTION IF EXISTS add_column_if_not_exists ( text, text, text, boolean );
+
 CREATE OR REPLACE FUNCTION add_column_if_not_exists (
 	tablename text, columnname text, 
 	datatype text, 
-	notnull boolean default false,
+	nonnull boolean default false,
 	defaultval text default '',
 	constrainttext text default '' )
 RETURNS boolean
@@ -51,7 +53,7 @@ BEGIN
 -- the constraints and defaults
 
 -- validate input
-IF notnull AND defaultval = '' THEN
+IF nonnull AND ( defaultval = '' ) THEN
 	RAISE EXCEPTION 'for NOT NULL columns, you must add a default';
 END IF;
 
@@ -60,7 +62,7 @@ IF defaultval <> '' THEN
 END IF;
 
 -- check if the column already exists.
-SELECT 1 
+PERFORM 1 
 FROM information_schema.columns
 WHERE table_name = tablename
 	AND column_name = columnname;
@@ -70,25 +72,23 @@ IF FOUND THEN
 END IF;
 
 EXECUTE 'ALTER TABLE ' || tablename ||
-	|| ' ADD COLUMN ' || columname ||
+	' ADD COLUMN ' || columnname ||
 	' ' || datatype || defaultval;
 
-IF notnull THEN
+IF nonnull THEN
 	EXECUTE 'ALTER TABLE ' || tablename ||
-		|| ' ALTER COLUMN ' || columname ||
-		|| ' SET NOT NULL;'
+		' ALTER COLUMN ' || columnname ||
+		|| ' SET NOT NULL;';
 END IF;
 
 IF constrainttext <> '' THEn
 	EXECUTE 'ALTER TABLE ' || tablename ||
-		|| ' ADD CONSTRAINT ' || constrainttext;
+		' ADD CONSTRAINT ' || constrainttext;
 END IF;
 
 RETURN TRUE;
 
 END;$f$;
-
-
 
 
 
