@@ -20,7 +20,7 @@ someroles := ARRAY['analyst','breakpad','breakpad_ro','breakpad_rw',
 	
 rolepass := ARRAY['breakpad_ro','breakpad_rw','processor','monitor'];
 
-WHILE iter < array_upper(someroles, 1) LOOP
+WHILE iter <= array_upper(someroles, 1) LOOP
 	PERFORM 1 FROM information_schema.enabled_roles
 	WHERE role_name = someroles[iter];
 	
