@@ -287,6 +287,17 @@ class Controller extends Controller_Core {
     private function prepareCurrentProducts()
     {
         $current_products = $this->branch_model->getProducts();
+        return $this->sortProductsByWeight($current_products);
+    }
+    
+    /**
+     * Sorts a given array of products by weight
+     * 
+     * @param array products to sort
+     * @return array products sorted by weight or original array if $product_weights is empty
+     */
+    public function sortProductsByWeight($current_products)
+    {
         $product_weights = Kohana::config('products.product_weights');
         if (!empty($product_weights)) {
             asort($product_weights);
