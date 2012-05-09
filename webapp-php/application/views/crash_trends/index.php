@@ -41,11 +41,9 @@
                 <label for="product">Product</label>
                 <select name="product" id="product">
                     <option value="none">Select A Product</option>
-                    <option value="Firefox">Firefox</option>
-                    <option value="Thunderbird">Thunderbird</option>
-                    <option value="Fennec">Fennec</option>
-                    <option value="Camino">Camino</option>
-                    <option value="SeaMonkey">SeaMonkey</option>
+                    <?php foreach ($report_products as $product_name) { ?>
+                    <option value="<?php out::H($product_name) ?>"><?php out::H($product_name) ?></option>
+                    <?php } ?>
                 </select>
             </div>
             
