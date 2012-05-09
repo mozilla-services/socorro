@@ -70,7 +70,38 @@ Takes a product name and a list of version_strings, and returns an array (list) 
 	SELECT * FROM reports_clean WHERE date_processed BETWEEN '2012-03-21' AND '2012-03-38' 
 	WHERE product_version_id = ANY ( $list );
 	
+Internal Functions
+==================
+
+These functions are designed to be called by other functions, so are sparsely documented.
+
+nonzero_string
+--------------
+
+::
+
+	nonzero_string (
+		TEXT or CITEXT 
+	) returns boolean
+		
+Returns FALSE if the string consists of '', only spaces, or NULL.  True otherwise.
+
+validate_lookup
+---------------
+
+::
+
+	validate_lookup (
+		ltable TEXT,  -- lookup table name
+		lcol TEXT, -- lookup column name
+		lval TEXT, -- value to look up
+		lmessage TEXT -- name of the entity in error messages
+	) returns boolean
 	
+Returns TRUE if the value is present in the named lookup table.  Raises a custom ERROR if it's not present. 
+
+
+
 		
 		
 
