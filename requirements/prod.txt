@@ -1,5 +1,5 @@
 # configman moves too fast for pypi right now
-git+git://github.com/mozilla/configman@3d74ae9#egg=configman
+git+git://github.com/mozilla/configman@1d67ba8abb#egg=configman
 configobj==4.7.2
 hbase-thrift==0.20.4
 isodate==0.4.7
