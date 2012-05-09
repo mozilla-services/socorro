@@ -38,3 +38,31 @@ END LOOP;
 
 END;$d$;
 
+-- analyst role, for read-only connections by analytics users
+ALTER ROLE analyst CONNECTION LIMIT 10;
+ALTER ROLE analyst SET statement_timeout TO '15min';
+ALTER ROLE analyst SET work_mem TO '128MB';
+ALTER ROLE analyst SET temp_buffers TO '128MB';
+
+-- breakpad group and RW and RO users
+-- these are our main users
+ALTER ROLE breakpad WITH NOLOGIN;
+GRANT breakpad TO breakpad_ro GRANTED BY postgres;
+GRANT breakpad TO breakpad_rw GRANTED BY postgres;
+
+-- breakpad_metrics user for nightly batch updates from metrics
+GRANT breakpad TO breakpad_metrics GRANTED BY postgres;
+
+-- monitor and processor roles for data processing
+GRANT breakpad_rw TO processor GRANTED BY postgres;
+GRANT breakpad_rw TO monitor GRANTED BY postgres;
+GRANT processor TO monitor GRANTED BY postgres;
+
+-- monitoring group and separate users for ganglia and nagios
+ALTER ROLE monitoring WITH NOLOGIN;
+GRANT monitoring TO ganglia GRANTED BY postgres;
+GRANT monitoring TO nagiosdaemon GRANTED BY postgres;
+
+-- replicator role for replication
+ALTER ROLE replicator WITH SUPERUSER;
+

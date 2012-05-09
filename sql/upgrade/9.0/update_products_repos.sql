@@ -1,5 +1,6 @@
 \set ON_ERROR_STOP 1
 
+-- create table of canonical release repositories for filtering
 SELECT create_table_if_not_exists('release_repositories',
 	$x$
 	CREATE TABLE release_repositories (
@@ -14,6 +15,12 @@ SELECT create_table_if_not_exists('release_repositories',
             ( 'mozilla-aurora' ), ('mozilla-aurora-android'),
             ( 'mozilla-esr10' ), ( 'mozilla-esr10-android' );
     $x$,'breakpad_rw');
+    
+DO $f$
+
+-- add repository column to product_version_builds
+SELECT add_column_if_not_exists (
+	'product_version_builds','repository','citext' );
     
 create or replace function update_product_versions()
 returns boolean
@@ -45,7 +52,8 @@ select COALESCE ( specials.product_name, products.product_name )
 	releases_raw.build_id,
 	releases_raw.build_type,
 	releases_raw.platform,
-	major_version_sort(version) >= major_version_sort(rapid_release_version) as is_rapid
+	major_version_sort(version) >= major_version_sort(rapid_release_version) as is_rapid,
+	releases_raw.repository
 from releases_raw
 	JOIN products ON releases_raw.product_name = products.release_name
 	JOIN release_repositories ON releases_raw.repository = release_repositories.repository
@@ -134,7 +142,8 @@ group by products.product_name, version;
 insert into product_version_builds
 select distinct product_versions.product_version_id,
 		releases_recent.build_id,
-		releases_recent.platform
+		releases_recent.platform,
+		releases_recent.repository
 from releases_recent
 	join product_versions
 		ON releases_recent.product_name = product_versions.product_name
