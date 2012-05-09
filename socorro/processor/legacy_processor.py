@@ -24,6 +24,13 @@ from socorro.lib.util import (
 )
 
 
+#------------------------------------------------------------------------------
+def create_symbol_path_str(input_str):
+    symbols_sans_commas = input_str.replace(',', ' ')
+    quoted_symbols_list = ['"%s"' % x for x in symbols_sans_commas.split()]
+    return ' '.join(quoted_symbols_list)
+
+
 #==============================================================================
 class LegacyCrashProcessor(RequiredConfig):
     required_config = Namespace()
@@ -66,7 +73,7 @@ class LegacyCrashProcessor(RequiredConfig):
         '/mnt/socorro/symbols/symbols_tbrd,'
         '/mnt/socorro/symbols/symbols_sbrd,'
         '/mnt/socorro/symbols/symbols_os',
-        from_string_converter=lambda x: x.replace(',', ' ')
+        from_string_converter=create_symbol_path_str
     )
     required_config.add_option(
         'crashingThreadFrameThreshold',
@@ -141,7 +148,9 @@ class LegacyCrashProcessor(RequiredConfig):
 
     #--------------------------------------------------------------------------
     def __init__(self, config, quit_check_callback=None):
-        super(LegacyCrashProcessor, self).__init__(config)
+        super(LegacyCrashProcessor, self).__init__()
+
+        self.config = config
 
         if quit_check_callback:
             self.quit_check = quit_check_callback
@@ -161,8 +170,6 @@ class LegacyCrashProcessor(RequiredConfig):
         tmp = strip_parens_re.sub(r'$\2', config.stackwalkCommandLine)
         # Convert canonical $dumpfilePathname to DUMPFILEPATHNAME
         tmp = tmp.replace('$dumpfilePathname', 'DUMPFILEPATHNAME')
-        # Convert canonical $processorSymbolsPathnameList to SYMBOL_PATHS
-        tmp = tmp.replace('$processorSymbolsPathnameList', 'SYMBOL_PATHS')
         # finally, convert any remaining $param to pythonic %(param)s
         tmp = convert_to_python_substitution_format_re.sub(r'%(\1)s', tmp)
         self.command_line = tmp % config
@@ -179,7 +186,7 @@ class LegacyCrashProcessor(RequiredConfig):
         """
         try:
             self.quit_check()
-            ooid = raw_crash.ooid
+            ooid = raw_crash.uuid
             processor_notes = []
 
             started_timestamp = self._log_job_start(ooid)
@@ -190,17 +197,17 @@ class LegacyCrashProcessor(RequiredConfig):
             self.config.logger.debug('done applying transform rules')
 
             try:
-                date_processed = datetimeFromISOdateString(
+                submitted_timestamp = datetimeFromISOdateString(
                   raw_crash.submitted_timestamp
                 )
             except KeyError:
-                date_processed = dateFromOoid(ooid)
+                submitted_timestamp = dateFromOoid(ooid)
 
             # formerly the call to 'insertReportIntoDatabase'
             processed_crash_dict = self._create_basic_processed_crash(
               ooid,
               raw_crash,
-              date_processed,
+              submitted_timestamp,
               started_timestamp,
               processor_notes
             )
@@ -226,7 +233,7 @@ class LegacyCrashProcessor(RequiredConfig):
                     temp_dump_pathname,
                     hang_type,
                     java_stack_trace,
-                    date_processed,
+                    submitted_timestamp,
                     processor_notes
                   )
                 )
@@ -257,18 +264,20 @@ class LegacyCrashProcessor(RequiredConfig):
         processor_notes = '; '.join(processor_notes)
         processed_crash_dict.processor_notes = processor_notes
         # TODO: shouldn't this be at the end and not here?
-        completedDateTime = utc_now()
-        processed_crash_dict.completeddatetime = completedDateTime
+        completed_datetime = utc_now()
+        processed_crash_dict.completeddatetime = completed_datetime
         self._log_job_end(
-            completedDateTime,
+            completed_datetime,
             processed_crash_dict.success,
             ooid
         )
         return processed_crash_dict
 
     #--------------------------------------------------------------------------
-    def _create_basic_processed_crash(self, uuid, raw_crash, date_processed,
-                                     started_timestamp, processor_notes):
+    def _create_basic_processed_crash(self, uuid, raw_crash,
+                                      submitted_timestamp,
+                                      started_timestamp,
+                                      processor_notes):
         """
         This function is run only by a worker thread.
           Create the record for the current job in the 'reports' table
@@ -277,7 +286,7 @@ class LegacyCrashProcessor(RequiredConfig):
                   uuid column in the 'jobs' and the 'reports' tables
             jsonDocument: an object with a dictionary interface for fetching
                           the components of the json document
-            date_processed: when job came in (a key used in partitioning)
+            submitted_timestamp: when job came in (a key used in partitioning)
             processor_notes: list of strings of error messages
         """
         #logger.debug("starting insertReportIntoDatabase")
@@ -350,12 +359,14 @@ class LegacyCrashProcessor(RequiredConfig):
 
         # ++++++++++++++++++++
         # date transformations
-        processed_crash.date_processed = date_processed
+        processed_crash.date_processed = submitted_timestamp
 
         # defaultCrashTime: must have crashed before date processed
-        date_processed_as_epoch = int(time.mktime(date_processed.timetuple()))
+        submitted_timestamp_as_epoch = int(
+          time.mktime(submitted_timestamp.timetuple())
+        )
         timestampTime = int(
-          raw_crash.get('timestamp', date_processed_as_epoch)
+          raw_crash.get('timestamp', submitted_timestamp_as_epoch)
         )  # the old name for crash time
         crash_time = int(
           self._get_truncate_or_warn(
@@ -367,7 +378,7 @@ class LegacyCrashProcessor(RequiredConfig):
           )
         )
         processed_crash.crash_time = crash_time
-        if crash_time == date_processed_as_epoch:
+        if crash_time == submitted_timestamp_as_epoch:
             processor_notes.append(
               "WARNING: No 'client_crash_date' "
               "could be determined from the raw_crash"
@@ -491,7 +502,7 @@ class LegacyCrashProcessor(RequiredConfig):
     #--------------------------------------------------------------------------
     def _do_breakpad_stack_dump_analysis(self, ooid, dump_pathname,
                                          is_hang, java_stack_trace,
-                                         date_processed,
+                                         submitted_timestamp,
                                          processor_notes):
         """ This function coordinates the steps of running the
         breakpad_stackdump process and analyzing the textual output for
@@ -506,7 +517,7 @@ class LegacyCrashProcessor(RequiredConfig):
           dump_pathname - the complete pathname for the =crash dump file
           is_hang - boolean, is this a hang crash?
           java_stack_trace - a source for java signatures info
-          date_processed
+          submitted_timestamp
           processor_notes
         """
         dump_analysis_line_iterator, subprocess_handle = \
@@ -517,10 +528,10 @@ class LegacyCrashProcessor(RequiredConfig):
             processed_crash_update = self._analyze_header(
               ooid,
               dump_analysis_line_iterator,
-              date_processed,
+              submitted_timestamp,
               processor_notes
             )
-            crashed_thread = processed_crash_updatecrashedThread
+            crashed_thread = processed_crash_update.crashedThread
             try:
                 make_modules_lowercase = \
                     processed_crash_update.os_name in ('Windows NT')
@@ -531,7 +542,7 @@ class LegacyCrashProcessor(RequiredConfig):
               java_stack_trace,
               make_modules_lowercase,
               dump_analysis_line_iterator,
-              date_processed,
+              submitted_timestamp,
               crashed_thread,
               processor_notes
             )
@@ -567,18 +578,8 @@ class LegacyCrashProcessor(RequiredConfig):
                                   analyzed
         """
         #logger.debug("analyzing %s", dumpfilePathname)
-        if isinstance(self.config.processorSymbolsPathnameList, list):
-            symbol_path = ' '.join(
-              ['"%s"' % x for x in self.config.processorSymbolsPathnameList]
-            )
-        else:
-            symbol_path = ' '.join(
-              ['"%s"' % x
-               for x in self.config.processorSymbolsPathnameList.split()]
-            )
         command_line = self.command_line.replace("DUMPFILEPATHNAME",
                                                 dump_pathname)
-        command_line = command_line.replace("SYMBOL_PATHS", symbol_path)
         #logger.info("invoking: %s", newCommandLine)
         subprocess_handle = subprocess.Popen(
           command_line,
@@ -590,7 +591,7 @@ class LegacyCrashProcessor(RequiredConfig):
 
     #--------------------------------------------------------------------------
     def _analyze_header(self, ooid, dump_analysis_line_iterator,
-                        date_processed, processor_notes):
+                        submitted_timestamp, processor_notes):
         """ Scan through the lines of the dump header:
             - extract data to update the record for this crash in 'reports',
               including the id of the crashing thread
@@ -599,7 +600,7 @@ class LegacyCrashProcessor(RequiredConfig):
             Input parameters:
             - dump_analysis_line_iterator - an iterator object that feeds lines
                                             from crash dump data
-            - date_processed
+            - submitted_timestamp
             - processor_notes
         """
         #logger.info("analyzeHeader")
@@ -702,7 +703,7 @@ class LegacyCrashProcessor(RequiredConfig):
     #--------------------------------------------------------------------------
     def _analyze_frames(self, hang_type, java_stack_trace,
                         make_modules_lower_case,
-                        dump_analysis_line_iterator, date_processed,
+                        dump_analysis_line_iterator, submitted_timestamp,
                         crashed_thread,
                         processor_notes):
         """ After the header information, the dump file consists of just frame
@@ -733,7 +734,7 @@ class LegacyCrashProcessor(RequiredConfig):
                                     lower case for signature generation?
                  dump_analysis_line_iterator - an iterator that cycles through
                                             lines from the crash dump
-                 date_processed
+                 submitted_timestamp
                  crashed_thread - the number of the thread that crashed - we
                                  want frames only from the crashed thread
                  processor_notes

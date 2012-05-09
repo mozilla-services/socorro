@@ -24,9 +24,8 @@ def sequencer(*args):
         return value
     return foo
 
-class TestPostgresCrashStorage(unittest.TestCase):
+class TestLegacyOoidSource(unittest.TestCase):
     """
-    Tests where the urllib part is mocked.
     """
 
     def test_legacy_ooid_source_basics(self):
