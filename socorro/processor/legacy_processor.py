@@ -3,6 +3,7 @@ import os
 import subprocess
 import datetime
 import time
+from urllib import unquote_plus
 
 from configman import Namespace, RequiredConfig
 from configman.converters import class_converter
@@ -189,7 +190,7 @@ class LegacyCrashProcessor(RequiredConfig):
             ooid = raw_crash.uuid
             processor_notes = []
             processed_crash = DotDict()
-            processed_crash.uuid = raw_crash.uuid
+            processed_crash.uuid = raw_crash.uuid  #TODO: uuid NOT IN raw_crash
             processed_crash.success = False
 
             started_timestamp = self._log_job_start(ooid)
@@ -207,42 +208,30 @@ class LegacyCrashProcessor(RequiredConfig):
                 submitted_timestamp = dateFromOoid(ooid)
 
             # formerly the call to 'insertReportIntoDatabase'
-            processed_crash.update(self._create_basic_processed_crash(
+            processed_crash_update = self._create_basic_processed_crash(
               ooid,
               raw_crash,
               submitted_timestamp,
               started_timestamp,
               processor_notes
-            ))
+            )
+            processed_crash.update(processed_crash_update)
 
+            temp_dump_pathname = self._get_temp_dump_pathname(
+              ooid,
+              raw_dump
+            )
             try:
-                temp_dump_pathname = self._get_temp_dump_pathname(
-                  ooid,
-                  raw_dump
-                )
                 #logger.debug('about to doBreakpadStackDumpAnalysis')
-                # TODO: it appears that the use of "Hang" within raw_crash
-                #       is deprecated.  This code block could be simplfied
-                #       and moved into _create_basic_processed_crash
-                is_hang = (
-                  'hangid' in processed_crash
-                  and bool(processed_crash.hangid)
-                )
-                # hang_type values: -1 if old style hang with hangid
-                #                        and Hang not present
-                #                   else hang_type == raw_crash.Hang
-                hang_type = int(raw_crash.get("Hang", -1 if is_hang else 0))
-                java_stack_trace = raw_crash.setdefault('JavaStackTrace', None)
-                processed_crash_update_dict = (
+                processed_crash_update_dict = \
                   self._do_breakpad_stack_dump_analysis(
                     ooid,
                     temp_dump_pathname,
-                    hang_type,
-                    java_stack_trace,
+                    processed_crash.hang_type,
+                    processed_crash.java_stack_trace,
                     submitted_timestamp,
                     processor_notes
                   )
-                )
                 processed_crash.update(processed_crash_update_dict)
             finally:
                 self._cleanup_temp_file(temp_dump_pathname)
@@ -280,7 +269,9 @@ class LegacyCrashProcessor(RequiredConfig):
         return processed_crash
 
     #--------------------------------------------------------------------------
-    def _create_basic_processed_crash(self, uuid, raw_crash,
+    def _create_basic_processed_crash(self,
+                                      uuid,
+                                      raw_crash,
                                       submitted_timestamp,
                                       started_timestamp,
                                       processor_notes):
@@ -351,7 +342,6 @@ class LegacyCrashProcessor(RequiredConfig):
           'Email',
           100
         )
-        processed_crash.hangid = raw_crash.get('HangID', None)
         processed_crash.process_type = self._get_truncate_or_none(
           raw_crash,
           'ProcessType',
@@ -424,11 +414,11 @@ class LegacyCrashProcessor(RequiredConfig):
         if self.config.collectAddon:
             #logger.debug("collecting Addons")
             # formerly 'insertAdddonsIntoDatabase'
-            addonsAsAListOfTuples = self._process_list_of_addons(
+            addons_as_a_list_of_tuples = self._process_list_of_addons(
                 raw_crash,
                 processor_notes
             )
-            processed_crash.addons = addonsAsAListOfTuples
+            processed_crash.addons = addons_as_a_list_of_tuples
 
         if self.config.collectCrashProcess:
             #logger.debug("collecting Crash Process")
@@ -446,17 +436,30 @@ class LegacyCrashProcessor(RequiredConfig):
         except KeyError:
             pass  # leaving it as None if not in the document
 
+        processed_crash.hangid = raw_crash.get('HangID', None)
+        if 'Hang' in raw_crash:
+            processed_crash.hang_type = raw_crash.Hang
+        elif processed_crash.hangid:
+            processed_crash.hang_type = -1
+        else:
+            processed_crash.hang_type = 0
+
+        processed_crash.java_stack_trace = \
+            raw_crash.setdefault('JavaStackTrace', None)
+
         return processed_crash
 
     #--------------------------------------------------------------------------
     @staticmethod
     def _addon_split_or_warn(addon_pair, processor_notes):
-        addon_split_pair = addon_pair.split(':')
-        if len(addon_split_pair) != 2:
+        addon_splits = addon_pair.split(':', 1)
+        if len(addon_splits) == 1:
             processor_notes.append(
               '"%s" is deficient as a name and version for an addon' %
-              str(addon_split_pair[0])
+              addon_pair
             )
+            addon_splits.append('')
+        return tuple(unquote_plus(x) for x in addon_splits)
 
     #--------------------------------------------------------------------------
     def _process_list_of_addons(self, raw_crash,
@@ -471,7 +474,7 @@ class LegacyCrashProcessor(RequiredConfig):
             return []
         addon_list = [
           self._addon_split_or_warn(x, processor_notes)
-          for x in original_addon_str.split(',')
+            for x in original_addon_str.split(',')
         ]
         return addon_list
 
