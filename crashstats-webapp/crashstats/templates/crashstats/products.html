@@ -1,0 +1,53 @@
+{% extends "crashstats_base.html" %}
+
+{% block content %}<div id="mainbody">
+    <div class="page-heading">
+        <h2>{{ product }} Crash Data</h2>
+         <ul class="options">
+                <li><a href="/products/{{ product }}?duration=3" >3 days</a></li>
+                <li><a href="/products/{{ product }}?duration=7"  class="selected">7 days</a></li>
+                <li><a href="/products/{{ product }}?duration=14" >14 days</a></li>
+            </ul>
+    </div>
+
+    <div class="panel">
+        <div class="title">
+            <h2>Crashes per 100  Active Daily Users</h2>
+        </div>
+    
+        <div class="body">
+            <div id="adu-chart"></div>
+        </div>
+    </div>
+
+    <div class="panel">
+        <div class="title">
+            <h2>Crash Reports</h2>
+        </div>
+    
+        <div class="body">
+            <div id="release_channels">
+            {% for r in currentversions|groupby('product') %}
+                {% if r[0] == product %}
+                    {% for v in r[1] %}
+                        {% if v.featured %}
+                <div class="release_channel  border_right">
+                    <h4>{{ r[0] }} {{ v.version }}</h4>
+                    <ul>
+                      <li><a href="/topcrasher/byversion/{{ r[0] }}/{{ v.version }}/7">Top Crashers</a></li>
+                      <li><a href="/products/{{ r[0] }}/{{ v.version }}/15.0a1/topchangers?duration=7">Top Changers</a></li>
+                      <li><a href="/topcrasher/byversion/{{ r[0] }}/{{ v.version }}/7/plugin">Top Plugin Crashers</a></li>
+                    </ul>
+                </div>
+                        {% endif %}
+                    {% endfor %}
+                {% endif %}
+            {% endfor %}
+            </div>
+        <br class="clear" />
+    </div>
+    </div>
+    <br class="clear" />
+    </div>
+
+{% endblock %}

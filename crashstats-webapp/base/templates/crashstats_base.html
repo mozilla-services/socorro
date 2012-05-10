@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html LANG="{{ LANG }}" dir="{{ DIR }}" class="production">
+    <head>
+        <meta content="text/html; charset=UTF-8" http-equiv="Content-Type">
+        <title>{% block page_title %}Crash Data for {{ product }}{% endblock %}</title>
+
+<!--
+    {% block site_css %}
+      {{ css('example_css') }}
+    {% endblock %}
+-->
+        <link href="https://crash-stats.mozilla.com/css/screen.css?v=1.7.6" rel="stylesheet" type="text/css" media="screen" />
+        <link href="https://crash-stats.mozilla.com/favicon.ico" rel="icon" type="image/png" />
+        <title>Crash Data for {{ product }}</title>
+        <link rel="stylesheet" type="text/css" href="https://crash-stats.mozilla.com/css/daily.css" media="screen" />
+    </head>
+    <body>
+    <div class="page-header">
+        <h1>
+            <a href="/">
+                <span class="icon"></span>
+                <span class="title">Mozilla Crash Reports</span>
+            </a>
+        </h1>
+
+        <form id="simple_search" method="get" action="/query/query">
+            <input type="hidden" name="query_type" value="simple" />
+            <input type="hidden" name="do_query" value="1">
+            <input type="text" id="q" name="query" value="Find Crash ID or Signature" />
+            <input type="submit" class="hidden" />
+        </form>
+    </div>
+
+
+    <h1>Product Navigation</h1>
+
+    <div class="version-nav">
+        <input type="hidden" id="url_base" name="url_base" value="/products/{{ product }}" />
+        <input type="hidden" id="url_site" name="url_site" value="/" />
+
+        <ul class="filter">
+            <li>
+                Product:
+                <select id="products_select">
+                {% for r in currentversions|groupby('product') %}
+                    {% if r[0] == product %}
+                    <option value="{{ r[0] }}" SELECTED>{{ r[0] }}</option>
+                    {% else %}
+                    <option value="{{ r[0] }}">{{ r[0] }}</option>
+                    {% endif %}
+                {% endfor %}
+                </select>
+            </li>
+            <li class="version_select">
+                <select id="product_version_select" >
+                    <optgroup label=" ">
+                        <option value="Current Versions">Current Versions</option>
+                    </optgroup>
+                    <optgroup label=" ">
+                    {% for r in currentversions|groupby('product') %}
+                        {% if r[0] == product %}
+                            {% for v in r[1] %}
+                                {% if v.featured %}
+                                    <option value="{{ v.version }}">{{ v.version }}</option>
+                                {% endif %}
+                            {% endfor  %}
+                        {% endif  %}
+                    {% endfor %}
+                    </optgroup>
+                    <optgroup label=" ">
+                    {% for r in currentversions|groupby('product') %}
+                        {% if r[0] == product %}
+                            {% for v in r[1] %}
+                                {% if not v.featured %}
+                                    <option value="{{ v.version }}">{{ v.version }}</option>
+                                {% endif %}
+                            {% endfor  %}
+                        {% endif  %}
+                    {% endfor %}
+                    </optgroup>
+                </select>
+            </li>
+            <li>
+                <label>Report:</label>
+                <select id="report_select" >
+                    <optgroup label=" ">
+                        <option selected value="/products/{{ product }}">Overview</option>
+                    </optgroup>
+                    <optgroup label=" ">
+                        <option value="/daily?p={{ product }}&amp;v[]=">Crashes per User</option>
+                        <option value="/products/{{ product }}/builds">Nightly Builds</option>
+                        <option value="/hangreport/byversion/{{ product }}/">Hang Report</option>
+                    </optgroup>
+                    <optgroup label=" ">
+                        <option value="/products/{{ product }}/topchangers">Top Changers</option>
+                        <option value="/topcrasher/byversion/{{ product }}/">Top Crashers</option>
+                    </optgroup>
+                </select>
+            </li>
+        </ul>
+
+        <div class="search">
+            <a href="/query?advanced=1">Advanced Search</a>
+        </div>
+    </div>
+
+
+        {% block content %}{% endblock %}
+        <div id="footer" class="page-footer">
+            <div class="nav">
+            <div class="about">
+                <strong>Mozilla Crash Reports</strong> - Powered by <a href="https://github.com/mozilla/socorro">Socorro</a> - All dates are UTC
+            </div>
+            <ul>
+                <li><a href="/status">Server Status</a></li>
+                <li><a href="http://socorro.readthedocs.org/">Project Info</a></li>
+                <li><a href="https://github.com/mozilla/socorro">Source Code</a></li>
+                <li><a href="http://wiki.mozilla.org/Breakpad">Breakpad Wiki</a></li>
+                <li><a href="http://www.mozilla.org/about/policies/privacy-policy.html">Privacy Policy</a></li>
+            </ul>
+        </div>
+
+
+        <div class="login">
+            <ul>
+                <li><a href="/auth/login">Log In</a></li>
+            </ul>
+        </div>
+    </div>
+
+<!--
+    {% block site_js %}
+      {{ js('example_js') }}
+    {% endblock %}
+-->
+    <script type="text/javascript" src="https://crash-stats.mozilla.com/js/jquery/jquery-1.6.4.min.js"></script>
+    <script type="text/javascript" src="https://crash-stats.mozilla.com/js/jquery/plugins/jquery.cookies.2.2.0.js"></script>
+    <script type="text/javascript" src="https://crash-stats.mozilla.com/js/socorro/nav.js?v=1.7.6.js"></script>
+    <script>var data = {"startDate":"2012-05-02","endDate":"2012-05-09","count":4,"item1":"15.0a1","ratio1":[[1336521600000,null],[1336435200000,3.0568450556188],[1336348800000,3.5724239276394],[1336262400000,3.9753392279982],[1336176000000,4.0546856742229],[1336089600000,2.4260074500508],[1336003200000,1.8478976135799],[1335916800000,2.0915945266685]],"item2":"14.0a2","ratio2":[[1336521600000,null],[1336435200000,1.8376001256479],[1336348800000,2.1430905841695],[1336262400000,2.7123769051608],[1336176000000,2.2917448796563],[1336089600000,2.1899090333748],[1336003200000,2.1066536883821],[1335916800000,3.5274627246081]],"item3":"13.0b2","ratio3":[[1336521600000,null],[1336435200000,1.9262256322959],[1336348800000,1.9746387595053],[1336262400000,2.3477913837698],[1336176000000,2.5596180094954],[1336089600000,4.6100033849675],[1336003200000,6.3520871143376],[1335916800000,5.8394160583942]],"item4":"12.0","ratio4":[[1336521600000,null],[1336435200000,1.3939946549558],[1336348800000,1.4290227450811],[1336262400000,1.6883402384247],[1336176000000,1.753960814288],[1336089600000,1.5441650689372],[1336003200000,1.4704392283275],[1335916800000,1.5884634634467]]}</script><script type="text/javascript" src="https://crash-stats.mozilla.com/js/flot-0.7/jquery.flot.pack.js"></script>
+    <script type="text/javascript" src="https://crash-stats.mozilla.com/js/socorro/daily.js"></script>
+  </body>
+</html>
