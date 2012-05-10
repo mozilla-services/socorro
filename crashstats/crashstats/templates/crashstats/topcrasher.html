@@ -1,0 +1,132 @@
+{% extends "crashstats_base.html" %}
+{% block content %}
+    <div id="mainbody">
+        <div class="page-heading">
+            <h2>Top Crashers for <span id="current-product">Firefox</span> <span id="current-version">15.0a1</span></h2>
+            <ul class="options">
+                <li><a href="/topcrasher/byversion/Firefox/15.0a1" class="selected">By Signature</a></li>
+            </ul>
+        </div>
+
+        <div class="panel">
+            <div class="body notitle">
+            <div>
+                Top 300 Crashing Signatures.
+                <time class="start-date">{{ tcbs.start_date }}</time> through
+                <time class="end-date">{{ tcbs.end_date }}</time>.
+                <p>The report covers <span class="percentage" title="{{ tcbs.totalPercentage }}">{{ tcbs.totalPercentage }}</span> of all {{ tcbs.totalNumberOfCrashes }} crashes during this period. Graphs below are dual-axis, having <strong>Count</strong> (Number of Crashes) on the left X axis and <strong>Percent</strong> of total of Crashes on the right X axis.</p>
+                <ul class="tc-duration-type tc-filter">
+                <li class="tc-duration-heading">Type:</li>
+                <li><a href="/topcrasher/byversion/Firefox/15.0a1/7/all" >All</a></li>
+                <li><a href="/topcrasher/byversion/Firefox/15.0a1/7/browser" class="selected">Browser</a></li>
+                <li><a href="/topcrasher/byversion/Firefox/15.0a1/7/plugin" >Plugin</a></li>
+                <li><a href="/topcrasher/byversion/Firefox/15.0a1/7/content" >Content</a></li>
+            </ul>
+            <ul class="tc-duration-days tc-filter">
+                <li class="tc-duration-heading">Days:</li>
+                <li><a href="/topcrasher/byversion/Firefox/15.0a1/1/browser" >1</a></li>
+                <li><a href="/topcrasher/byversion/Firefox/15.0a1/3/browser" >3</a></li>
+                <li><a href="/topcrasher/byversion/Firefox/15.0a1/7/browser" class="selected">7</a></li>
+                <li><a href="/topcrasher/byversion/Firefox/15.0a1/14/browser" >14</a></li>
+                <li><a href="/topcrasher/byversion/Firefox/15.0a1/28/browser" >28</a></li>
+            </ul>
+            <ul class="tc-per-platform tc-filter">
+                <li class="tc-per-platform-heading">OS:</li>
+                <li><a href="/topcrasher/byversion/Firefox/15.0a1/7/browser" class="selected">All</a></li>
+                <li><a href="/topcrasher/byos/Firefox/15.0a1/Windows/7/browser">Windows</a></li>
+                <li><a href="/topcrasher/byos/Firefox/15.0a1/Linux/7/browser">Linux</a></li>
+                <li><a href="/topcrasher/byos/Firefox/15.0a1/Mac OS X/7/browser">Mac OS X</a></li>
+            </ul>
+            <table id="signatureList" class="tablesorter data-table">
+                <thead>
+                    <tr>
+                        <th>Rank</th>
+                        <th title="The percentage of crashes against overall crash volume">%</th>
+                        <th title="The change in percentage since the {{ tcbs.start_date }} report">Diff</th>
+                        <th>Signature</th>
+                        <th title="Crashes across platforms">Count</th>
+                        <th>Win</th>
+                        <th>Mac</th>
+                        <th>Lin</th>
+                        <th>Ver</th>
+                        <th>First Appearance</th>
+                        <th class="bugzilla_numbers">Bugzilla IDs</th>
+                        <th title="Does not imply Causation">Correlation</th>
+                    </tr>
+                </thead>
+                <tbody>
+{% for crash in tcbs.crashes %}
+                    <tr>
+                        <td class="rank">{{ crash.currentRankk }}</td>
+                        <td>{{ crash.percentOfTotal }}%</td>
+                        <td title="A change of {{ crash.changeInPercentOfTotal}}% from {{ crash.previousPercentOfTotal }}%">{{ crash.changeInPercentOfTotal }}%</td>
+                        <td>
+                            <a class="signature" href="/report/list?range_value=7&amp;range_unit=days&amp;date={{ tcbs.end_date }}&amp;signature={{ crash.signature }}&amp;version=Firefox%3A15.0a1" title="{{ crash.signature }}">{{ crash.signature }}</a>
+                            <div class="signature-icons">
+                                <img src="https://crash-stats.mozilla.com/img/3rdparty/fatcow/application16x16.png" width="16" height="16" alt="Browser Crash" title="Browser Crash" class="browser" />
+                                <a href="#" title="Load graph data"><img src="https://crash-stats.mozilla.com/img/3rdparty/silk/chart_curve.png" width="16" height="16" alt="Graph this" class="graph-icon" /></a>
+                            </div>
+                            <div class="sig-history-legend"></div>
+                            <p class="graph-close hide"><a href="javascript:void" title="Close graph">close x</a></p>
+                            <div class="sig-history-graph"></div>
+                            <input type="hidden" class='ajax-signature' name="ajax-signature-1" value="{{ crash.signature }}" />
+                        </td>
+                        <td>{{ crash.count }}</td>
+                        <td>{{ crash.count_win }}</td>
+                        <td>{{ crash.count_mac }}</td>
+                        <td>{{ crash.count_lin }}</td>
+                        <td><span title="{{ crash.versions }}">{{ crash.versions|count}}</span></td>
+                        <td title="This crash signature first appeared at {{ crash.first_appeared }}" >{{ crash.first_appeared }}</td> 
+                        <td class="bug_ids_more">
+                            {% for bug in crash.bugs %}
+                            <a href="https://bugzilla.mozilla.org/show_bug.cgi?id={{ bug.id }}"
+                                title="Find more information in Bugzilla"
+                                class="bug-link" >{{ bug.id }}</a>
+                            {% endfor %}
+                                <div class="bug_ids_expanded_list">
+                                <h3>Bugs for <code>{{ crash.signature }}</code></h3>
+                                <ul class="bug_ids_expanded full_bug_ids popup">
+                                    {% for bug in crash.bugs %}
+                                    <li><a href="https://bugzilla.mozilla.org/show_bug.cgi?id={{ bug.id }}"
+                                           title="Find more information in Bugzilla"
+                                           class="bug-link" >{{ bug.id }}</a></li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        </td>
+                        <td class="correlation-cell">
+                            <div id="correlation-panel1">
+                                <div class="top"><span></span></div><a class="correlation-toggler" href="#">Show More</a>
+                                <div class="complete">
+                                    <h3>Based on <span class='osname'>Windows NT</span> crashes</h3>
+                                    <div class="correlation-module"><h3>CPU</h3><div class="cpus"></div></div>
+                                    <div class="correlation-module"><h3>Add-ons</h3><div class="addons"></div></div>
+                                    <div class="correlation-module"><h3>Modules</h3><div class="modules"></div></div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    <!--[if IE]><script type="text/javascript" src="https://crash-stats.mozilla.com/js/flot-0.7/excanvas.pack.js"></script>
+<![endif]-->
+                <script type="text/javascript" src="https://crash-stats.mozilla.com/js/flot-0.7/jquery.flot.pack.js"></script>
+
+                <script type="text/javascript">//<![CDATA[
+var SocAjax = 'https://crash-stats.mozilla.com/topcrasher/plot_signature/Firefox/15.0a1/';
+var SocAjaxStartEnd = '/{{ tcbs.start_date }}/{{ tcbs.end_date }}/';
+var SocImg = 'https://crash-stats.mozilla.com/img/';
+var SocReport = {
+    base: 'https://crash-stats.mozilla.com/correlation/bulk_ajax/',
+    path: '/Firefox/15.0a1/',
+    loading: 'Loading <img src="https://crash-stats.mozilla.com/img/loading.png" width="16" height="17" />'
+};
+//]]>
+                </script>
+                <p>Want to slice and dice? <a href="?format=csv">CSV-Formatted Raw Data</a></p>
+            </div>
+        </div>
+    </div>
+{% endblock %}
