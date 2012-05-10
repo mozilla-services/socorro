@@ -22,7 +22,7 @@ urlpatterns = patterns('',
         name='crashstats.reportlist'),
     url(r'^report/index/\w+$', views.reportindex,
         name='crashstats.reportindex'),
-    url(r'^query/query$', views.query,
+    url(r'^query$', views.query,
         name='crashstats.query'),
     url(r'^$', redirect_to, {'url': '/products/Firefox'}),
 )
