@@ -7,7 +7,7 @@ from funfactory.settings_base import *
 # If you did not install Playdoh with the funfactory installer script
 # you may need to edit this value. See the docs about installing from a
 # clone.
-PROJECT_MODULE = 'socorro-webapp'
+PROJECT_MODULE = 'crashstats-webapp'
 
 # Bundles is a dictionary of two dictionaries, css and js, which list css files
 # and js files that can be bundled together by the minify app.

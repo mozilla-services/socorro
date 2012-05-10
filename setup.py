@@ -3,7 +3,7 @@ import os
 from setuptools import setup, find_packages
 
 
-setup(name='socorro-webapp',
+setup(name='crashstats-webapp',
       version='1.0',
       description='Django application.',
       long_description='',
