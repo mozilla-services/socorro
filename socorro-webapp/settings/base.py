@@ -14,17 +14,17 @@ PROJECT_MODULE = 'socorro-webapp'
 MINIFY_BUNDLES = {
     'css': {
         'example_css': (
-            'css/examples/main.css',
+            'css/crashstats/main.css',
         ),
         'example_mobile_css': (
-            'css/examples/mobile.css',
+            'css/crashstats/mobile.css',
         ),
     },
     'js': {
         'example_js': (
-            'js/examples/libs/jquery-1.4.4.min.js',
-            'js/examples/libs/jquery.cookie.js',
-            'js/examples/init.js',
+            'js/crashstats/libs/jquery-1.4.4.min.js',
+            'js/crashstats/libs/jquery.cookie.js',
+            'js/crashstats/init.js',
         ),
     }
 }
@@ -36,7 +36,7 @@ INSTALLED_APPS = list(INSTALLED_APPS) + [
     # Application base, containing global templates.
     '%s.base' % PROJECT_MODULE,
     # Example code. Can (and should) be removed for actual projects.
-    '%s.examples' % PROJECT_MODULE,
+    '%s.crashstats' % PROJECT_MODULE,
 ]
 
 
