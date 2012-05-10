@@ -13,19 +13,26 @@ PROJECT_MODULE = 'crashstats'
 # and js files that can be bundled together by the minify app.
 MINIFY_BUNDLES = {
     'css': {
-        'example_css': (
-            'css/crashstats/main.css',
+        'screen_css': (
+            'css/crashstats/screen.css',
+        ),
+        'daily_css': (
+            'css/crashstats/screen.css',
         ),
         'example_mobile_css': (
             'css/crashstats/mobile.css',
         ),
     },
     'js': {
-        'example_js': (
-            'js/crashstats/libs/jquery-1.4.4.min.js',
-            'js/crashstats/libs/jquery.cookie.js',
-            'js/crashstats/init.js',
+        'crashstats_js': (
+            'js/crashstats/libs/jquery-1.6.4.min.js',
+            'js/crashstats/libs/jquery.cookies.2.2.0.js',
+            'js/crashstats/daily.js',
+            'js/crashstats/nav.js',
         ),
+       'crashstats_flot': (
+           'js/crashstats/libs/flot-0.7/jquery.flot.pack.js',
+       ),
     }
 }
 

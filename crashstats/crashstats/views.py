@@ -77,6 +77,11 @@ def reportindex(request, template=None):
 
 @mobile_template('crashstats/{mobile/}query.html')
 def query(request, template=None):
+    # e.g. curl -H "Host: socorro-mware-zlb.webapp.phx1.mozilla.com" -u dbrwaccess 'http://localhost/bpapi/search/signatures/products/Firefox/in/signature/search_mode/contains/to/2012-04-22%2011%3A09%3A37/from/2012-04-15%2011%3A09%3A37/report_type/any/report_process/any/result_number/100/'
 
     data = _basedata(request)
+    with open('query.json') as f:
+        data['query'] = json.loads(f.read())
+    log.debug(data['query'])
     return render(request, template, data)
+
