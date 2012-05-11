@@ -694,13 +694,6 @@ a top crasher, then we should be able to load it from <a href="http://people.moz
         </ul>
         </div><!-- /correlation -->
 
-  <script type="text/javascript">//<![CDATA[
-      var SocReport = {
-          base: 'https://crash-stats.mozilla.com/correlation/ajax/',
-	  path: '/Firefox/15.0a1/Windows%20NT/wcslen%20%7C%20HostentBlob_WriteNameOrAlias/',
-	  loading: 'Loading <img src="https://crash-stats.mozilla.com/img/loading.png" width="16" height="17" />'
-      };
-//]]></script>
 
 
         </div>
@@ -709,6 +702,18 @@ a top crasher, then we should be able to load it from <a href="http://people.moz
 
 
 <!-- end content -->
+    {% block site_js %}
+    {{ super() }}
+    <!--[if IE]><script type="text/javascript" src="https://crash-stats.mozilla.com/js/flot-0.7/excanvas.pack.js"></script><![endif]-->
+    {{ js('crashstats_flot') }}
+
+  <script type="text/javascript">//<![CDATA[
+      var SocReport = {
+          base: 'https://crash-stats.mozilla.com/correlation/ajax/',
+	  path: '/Firefox/15.0a1/Windows%20NT/wcslen%20%7C%20HostentBlob_WriteNameOrAlias/',
+	  loading: 'Loading <img src="https://crash-stats.mozilla.com/img/loading.png" width="16" height="17" />'
+      };
+//]]></script>
 <script id="source" type="text/javascript">
 //<![CDATA[
       $(document).ready(function() {      
@@ -809,5 +814,6 @@ a top crasher, then we should be able to load it from <a href="http://people.moz
 });
 //]]>
 </script>
+{% endblock%} 
     </div>
 {% endblock %}
