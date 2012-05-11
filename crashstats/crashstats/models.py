@@ -6,7 +6,7 @@ from requests.auth import HTTPBasicAuth
 class SocorroMiddleware(object):
     def fetch(self, url):
         headers = {'Host': 'socorro-api-dev-internal'}
-        resp = requests.get(url, auth=('dbrwaccess', 'rauYi4Ow'),
+        resp = requests.get(url, auth=('dbrwaccess', ''),
                             headers=headers)
         return json.loads(resp.content)
 
