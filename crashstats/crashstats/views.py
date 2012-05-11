@@ -36,7 +36,9 @@ def home(request, product=None, versions=None, template=None):
     data['product'] = product
     mware = SocorroMiddleware()
     data['currentversions'] = mware.current_versions()
-    data['adubyday'] = mware.adu_by_day()
+    data['adubyday'] = mware.adu_by_day(product='Firefox',
+        versions='13.0a1;14.0a2;13.0b2;12.0', os_names='Windows;Mac;Linux',
+        start_date='2012-05-03', end_date='2012-05-10')
 
     return render(request, template, data)
 
@@ -51,7 +53,9 @@ def topcrasher(request, product=None, version=None, days=None, crash_type=None,
     data['os_name'] = os_name
     mware = SocorroMiddleware()
     data['currentversions'] = mware.current_versions()
-    data['tcbs'] = mware.tcbs()
+    data['tcbs'] = mware.tcbs(product='Firefox', version='14.0a1',
+        end_date='2012-05-10T11%3A00%3A00%2B0000', duration='168', limit='300')
+
 
     return render(request, template, data)
 
@@ -60,7 +64,9 @@ def daily(request, template=None):
     data = {}
     mware = SocorroMiddleware()
     data['currentversions'] = mware.current_versions()
-    data['adubyday'] = mware.adu_by_day()
+    data['adubyday'] = mware.adu_by_day(product='Firefox',
+        versions='13.0a1;14.0a2;13.0b2;12.0', os_names='Windows;Mac;Linux',
+        start_date='2012-05-03', end_date='2012-05-10')
 
     return render(request, template, data)
 
@@ -114,7 +120,9 @@ def query(request, template=None):
     data = {}
     mware = SocorroMiddleware()
     data['currentversions'] = mware.current_versions()
-    data['query'] = mware.search()
+    data['query'] = mware.search(product='Firefox', 
+        versions='13.0a1;14.0a2;13.0b2;12.0', os_names='Windows;Mac;Linux',
+        start_date='2012-05-03', end_date='2012-05-10', limit='100')
 
     return render(request, template, data)
 

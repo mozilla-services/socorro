@@ -4,25 +4,60 @@ import json
 from requests.auth import HTTPBasicAuth
 
 class SocorroMiddleware(object):
+    def __init__(self):
+        self.base_url = 'http://localhost:8080/bpapi'
+        self.http_host = 'socorro-api-dev-internal'
+        self.username = 'dbrwaccess'
+        self.password = ''
+  
     def fetch(self, url):
-        headers = {'Host': 'socorro-api-dev-internal'}
-        resp = requests.get(url, auth=('dbrwaccess', ''),
+        headers = {'Host': self.http_host}
+        resp = requests.get(url, auth=(self.username, self.password),
                             headers=headers)
+        print resp
         return json.loads(resp.content)
 
     def current_versions(self):
-        url = 'http://localhost:8080/bpapi/current/versions/'
+        url = '%s/current/versions/' % self.base_url
+        print url
         return self.fetch(url)['currentversions']
 
-    def adu_by_day(self):
-        url = 'http://localhost:8080/bpapi/adu/byday/p/Firefox/v/13.0a1;14.0a2;13.0b2;12.0/rt/any/os/Windows;Mac;Linux/start/2012-05-03/end/2012-05-10'
+    def adu_by_day(self, product, versions, os_names, start_date, end_date):
+        params = {
+            'base_url': self.base_url,
+            'product': product,
+            'versions': versions,
+            'os_names': os_names,
+            'start_date': start_date,
+            'end_date': end_date,
+        }
+        url = '%(base_url)s/adu/byday/p/%(product)s/v/%(versions)s/rt/any/os/%(os_names)s/start/%(start_date)s/end/%(end_date)s' % params
         return self.fetch(url)
 
-    def tcbs(self):
-        url = 'http://localhost:8080/bpapi/crashes/signatures/product/Firefox/version/14.0a1/crash_type/browser/end_date/2012-05-10T11%3A00%3A00%2B0000/duration/168/limit/300/'
+    def tcbs(self, product, version, end_date, duration, limit=300):
+        params = {
+            'base_url': self.base_url,
+            'product': product,
+            'version': version,
+            'end_date': end_date,
+            'duration': duration,
+            'limit': limit,
+        }
+
+        url = '%(base_url)s/crashes/signatures/product/%(product)s/version/%(version)s/crash_type/browser/end_date/%(end_date)s/duration/%(duration)s/limit/%(limit)s/' % params
         return self.fetch(url)
 
-    def search(self):
-        url = 'http://localhost:8080/bpapi/search/signatures/products/Firefox/in/signature/search_mode/contains/to/2012-04-22%2011%3A09%3A37/from/2012-04-15%2011%3A09%3A37/report_type/any/report_process/any/result_number/100/'
+    def search(self, product, versions, os_names, start_date, end_date,
+               limit=100):
+        params = {
+            'base_url': self.base_url,
+            'product': product,
+            'versions': versions,
+            'os_names': os_names,
+            'start_date': start_date,
+            'end_date': end_date,
+            'limit': limit,
+        }
+        url = '%(base_url)s/search/signatures/products/%(product)s/in/signature/search_mode/contains/to/%(end_date)s/from/%(start_date)s/report_type/any/report_process/any/result_number/%(limit)s/' % params
         return self.fetch(url)
 
