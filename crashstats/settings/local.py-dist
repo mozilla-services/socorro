@@ -5,26 +5,32 @@
 #from . import base
 #INSTALLED_APPS = base.INSTALLED_APPS + ['debug_toolbar']
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'playdoh_app',
-        'USER': 'root',
-        'PASSWORD': '',
-        'HOST': '',
-        'PORT': '',
-        'OPTIONS': {
-            'init_command': 'SET storage_engine=InnoDB',
-            'charset' : 'utf8',
-            'use_unicode' : True,
-        },
-        'TEST_CHARSET': 'utf8',
-        'TEST_COLLATION': 'utf8_general_ci',
-    },
-    # 'slave': {
-    #     ...
-    # },
-}
+# Socorro middleware instance to use
+MWARE_BASE_URL = 'http://localhost:8080/bpapi'
+MWARE_USERNAME = 'dbrwaccess'
+MWARE_PASSWORD = ''
+# HTTP/1.1 Host header to pass - in case this is a VHost
+MWARE_HTTP_HOST = 'socorro-mware-stage-zlb.webapp.phx1.mozilla.com'
+
+# We don't currently use a database, here is a working postgres+psycopg2 
+# example in case we need it.
+#DATABASES = {
+#    'default': {
+#        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+#        'NAME': 'playdoh_app',
+#        'USER': '',
+#        'PASSWORD': '',
+#        'HOST': '',
+#        'PORT': '',
+#        'OPTIONS': {
+#        },
+#        'TEST_CHARSET': 'utf8',
+#        'TEST_COLLATION': 'utf8_general_ci',
+#    },
+#    # 'slave': {
+#    #     ...
+#    # },
+#}
 
 # Uncomment this and set to all slave DBs in use on the site.
 # SLAVE_DATABASES = ['slave']
