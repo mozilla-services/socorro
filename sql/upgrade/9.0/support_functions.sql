@@ -22,7 +22,7 @@ $f$
 DECLARE nrows INT;
 BEGIN
 	EXECUTE 'SELECT 1 FROM ' || ltable ||
-		' WHERE ' || lcol || ' = ' || quote_literal(lcol)
+		' WHERE ' || lcol || ' = ' || quote_literal(lval)
 	INTO nrows;
 	
 	IF nrows > 0 THEN

@@ -27,9 +27,9 @@ END IF;
 
 --validations
 -- validate product
-SELECT validate_lookup('products','product_name',product,'product');
+PERFORM validate_lookup('products','product_name',product,'product');
 --validate channel
-SELECT validate_lookup('release_channels','release_channel',release_channel,'release channel');
+PERFORM validate_lookup('release_channels','release_channel',release_channel,'release channel');
 --validate build
 IF NOT ( build_date(build_id) BETWEEN '2005-01-01' 
 	AND (current_date + '1 month') ) THEN
@@ -46,7 +46,7 @@ VALUES ( product, version, platform, build_id,
 
 --call update_products, if desired
 IF update_products THEN
-	SELECT update_product_versions();
+	PERFORM update_product_versions();
 END IF;
 
 --return
