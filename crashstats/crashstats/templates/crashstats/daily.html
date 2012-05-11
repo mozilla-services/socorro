@@ -1,16 +1,154 @@
-{% extends "crashstats_base.html" %}
-{% block content %}<div id="mainbody">
-                  
-    {% block site_js %}
-    {{ super() }}
-    <!--[if IE]><script type="text/javascript" src="https://crash-stats.mozilla.com/js/flot-0.7/excanvas.pack.js"></script><![endif]--> 
-    {{ js('crashstats_flot') }}
-    {{ js('crashstats_daily') }}
-    <script>
-    var data = {"startDate":"2012-04-25","endDate":"2012-05-09","count":1,"item1":"15.0a1","ratio1":[[1336521600000,2.964041496581],[1336435200000,3.0568450556188],[1336348800000,3.5724239276394],[1336262400000,3.9753392279982],[1336176000000,4.0546856742229],[1336089600000,2.4260074500508],[1336003200000,1.8478976135799],[1335916800000,2.0915945266685],[1335830400000,2.3758066010065],[1335744000000,4.6023789695322],[1335657600000,6.0974319175956],[1335571200000,4.3769895407003],[1335484800000,14.678169602036],[1335398400000,8.127084018222],[1335312000000,3.0801087097192]]};
-    window.socGraphByReportType = false;
+<!DOCTYPE html>
+<html class="production">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link href="https://crash-stats.mozilla.com/css/screen.css?v=1.7.6" rel="stylesheet" type="text/css" media="screen" />
+    <link href="https://crash-stats.mozilla.com/favicon.ico" rel="icon" type="image/png" />
+    <script type="text/javascript" src="https://crash-stats.mozilla.com/js/jquery/jquery-1.6.4.min.js"></script>
+<script type="text/javascript" src="https://crash-stats.mozilla.com/js/jquery/plugins/jquery.cookies.2.2.0.js"></script>
+<script type="text/javascript" src="https://crash-stats.mozilla.com/js/socorro/nav.js?v=1.7.6.js"></script>
+
+<title>Crashes per Active Daily User for Firefox</title>
+    <link title="CSV formatted Crashes per Active Daily User for Firefox" type="text/csv" rel="alternate" href="daily?p=Firefox&amp;v[]=15.0a1&amp;v[]=14.0a2&amp;v[]=13.0b2&amp;v[]=12.0&amp;throttle[]=100.00&amp;throttle[]=100.00&amp;throttle[]=100.00&amp;throttle[]=10.00&amp;os[]=Windows&amp;os[]=Mac&amp;os[]=Linux&amp;date_start=2012-04-26&amp;date_end=2012-05-10&amp;form_selection=by_version&amp;csv=1&amp;hang_type=any" />
+
+<link rel="stylesheet" type="text/css" href="https://crash-stats.mozilla.com/css/jquery-ui-1.8.16/flick/jquery-ui-1.8.16.custom.css" media="screen" />
+<link rel="stylesheet" type="text/css" href="https://crash-stats.mozilla.com/css/daily.css" media="screen" /></head>
+
+<body>
+    <div class="page-header">
+    	<h1>
+    		<a href="https://crash-stats.mozilla.com/">
+    			<span class="icon"></span>
+    			<span class="title">Mozilla Crash Reports</span>
+    		</a>
+    	</h1>
+
+        <form id="simple_search" method="get" action="https://crash-stats.mozilla.com/query/query">
+            <input type="hidden" name="query_type" value="simple" />
+            <input type="hidden" name="do_query" value="1">
+            <input type="text" id="q" name="query" value="Find Crash ID or Signature" />
+            <input type="submit" class="hidden" />
+        </form>
+    </div>
+
+
+	<h1>Product Navigation</h1>
+
+	<div class="version-nav">
+
+		<input type="hidden" id="url_base" name="url_base" value="https://crash-stats.mozilla.com/products/Firefox" />
+		<input type="hidden" id="url_site" name="url_site" value="https://crash-stats.mozilla.com/" />
+
+		<ul class="filter">
+    		<li>
+			Product:
+			<select id="products_select">
+							<option SELECTED value="Firefox">Firefox</option>
+							<option  value="Thunderbird">Thunderbird</option>
+							<option  value="Camino">Camino</option>
+							<option  value="SeaMonkey">SeaMonkey</option>
+							<option  value="Fennec">Fennec</option>
+							<option  value="FennecAndroid">FennecAndroid</option>
+						</select>
+			</li>
+			<li class="version_select">
+			<select id="product_version_select" >
+				<optgroup label=" ">
+					<option value="Current Versions">Current Versions</option>
+				</optgroup>
+                				    <optgroup label=" ">
+				    	                            <option value="15.0a1"
+                            	                            >15.0a1</option>
+                                                    <option value="14.0a2"
+                            	                            >14.0a2</option>
+                                                    <option value="13.0b2"
+                            	                            >13.0b2</option>
+                                                    <option value="12.0"
+                            	                            >12.0</option>
+                        				    </optgroup>
+			    			    				    <optgroup label=" ">
+				    	                            <option value="14.0a1"
+                            	                            >14.0a1</option>
+                                                    <option value="13.0b3"
+                            	                            >13.0b3</option>
+                                                    <option value="13.0b1"
+                            	                            >13.0b1</option>
+                                                    <option value="13.0a2"
+                            	                            >13.0a2</option>
+                                                    <option value="12.0b6"
+                            	                            >12.0b6</option>
+                                                    <option value="12.0b5"
+                            	                            >12.0b5</option>
+                                                    <option value="12.0b4"
+                            	                            >12.0b4</option>
+                                                    <option value="12.0b3"
+                            	                            >12.0b3</option>
+                                                    <option value="12.0b2"
+                            	                            >12.0b2</option>
+                                                    <option value="12.0b1"
+                            	                            >12.0b1</option>
+                                                    <option value="11.0"
+                            	                            >11.0</option>
+                                                    <option value="11.0b8"
+                            	                            >11.0b8</option>
+                                                    <option value="10.0.4esr"
+                            	                            >10.0.4esr</option>
+                                                    <option value="10.0.3esr"
+                            	                            >10.0.3esr</option>
+                                                    <option value="10.0.2esr"
+                            	                            >10.0.2esr</option>
+                                                    <option value="10.0.2"
+                            	                            >10.0.2</option>
+                                                    <option value="10.0.1esr"
+                            	                            >10.0.1esr</option>
+                                                    <option value="10.0.1"
+                            	                            >10.0.1</option>
+                                                    <option value="10.0esr"
+                            	                            >10.0esr</option>
+                                                    <option value="10.0"
+                            	                            >10.0</option>
+                                                    <option value="3.5.14pre"
+                            	                            >3.5.14pre</option>
+                                                    <option value="3.5.13"
+                            	                            >3.5.13</option>
+                        				    </optgroup>
+							</select>
+			</li>
+            <li>
+                <label>Report:</label>
+                <select id="report_select" >
+                    <optgroup label=" ">
+                        <option 							value="https://crash-stats.mozilla.com/products/Firefox">Overview</option>
+                    </optgroup>
+                    <optgroup label=" ">
+                        <option selected							value="https://crash-stats.mozilla.com/daily?p=Firefox&amp;v[]=">Crashes per User</option>
+                        <option 							value="https://crash-stats.mozilla.com/products/Firefox/builds">Nightly Builds</option>
+                        <option 							value="https://crash-stats.mozilla.com/hangreport/byversion/Firefox/">Hang Report</option>
+                    </optgroup>
+                    <optgroup label=" ">
+                        <option                             value="https://crash-stats.mozilla.com/products/Firefox/topchangers">Top Changers</option>
+                        <option                             value="https://crash-stats.mozilla.com/topcrasher/byversion/Firefox/">Top Crashers</option>
+                    </optgroup>
+				</select>
+            </li>
+
+		</ul>
+
+		<div class="search">
+			<a href="https://crash-stats.mozilla.com/query?advanced=1">Advanced Search</a>
+		</div>
+	</div>
+
+
+    <div id="mainbody">
+      	    	
+<script>var data = {"startDate":"2012-04-26","endDate":"2012-05-10","count":4,"item1":"15.0a1","ratio1":[[1336608000000,null],[1336521600000,2.964041496581],[1336435200000,3.0568450556188],[1336348800000,3.5724239276394],[1336262400000,3.9753392279982],[1336176000000,4.0546856742229],[1336089600000,2.4260074500508],[1336003200000,1.8478976135799],[1335916800000,2.0915945266685],[1335830400000,2.3758066010065],[1335744000000,4.6023789695322],[1335657600000,6.0974319175956],[1335571200000,4.3769895407003],[1335484800000,14.678169602036],[1335398400000,8.127084018222]],"item2":"14.0a2","ratio2":[[1336608000000,null],[1336521600000,1.8834330226735],[1336435200000,1.8376001256479],[1336348800000,2.1430905841695],[1336262400000,2.7123769051608],[1336176000000,2.2917448796563],[1336089600000,2.1899090333748],[1336003200000,2.1066536883821],[1335916800000,3.5274627246081],[1335830400000,2.4803538702156],[1335744000000,2.7069531965315],[1335657600000,2.7268040518887],[1335571200000,3.8218194254446],[1335484800000,11.750154607297],[1335398400000,12.022900763359]],"item3":"13.0b2","ratio3":[[1336608000000,null],[1336521600000,2.0040702724293],[1336435200000,1.9262256322959],[1336348800000,1.9746387595053],[1336262400000,2.3477913837698],[1336176000000,2.5596180094954],[1336089600000,4.6100033849675],[1336003200000,6.3520871143376],[1335916800000,5.8394160583942],[1335830400000,null],[1335744000000,null],[1335657600000,null],[1335571200000,null],[1335484800000,null],[1335398400000,null]],"item4":"12.0","ratio4":[[1336608000000,null],[1336521600000,1.4346973893366],[1336435200000,1.3939946549558],[1336348800000,1.4290227450811],[1336262400000,1.6883402384247],[1336176000000,1.753960814288],[1336089600000,1.5441650689372],[1336003200000,1.4704392283275],[1335916800000,1.5884634634467],[1335830400000,1.6725363046497],[1335744000000,1.6263119998398],[1335657600000,1.8439606911614],[1335571200000,1.8703307092095],[1335484800000,1.8843163776322],[1335398400000,1.9201094789001]]};
+        window.socGraphByReportType = false;
     </script>
-    {% endblock %}
+<script type="text/javascript" src="https://crash-stats.mozilla.com/js/jquery/plugins/ui/jquery-ui-1.8.16.custom.min.js"></script>
+<script type="text/javascript" src="https://crash-stats.mozilla.com/js/flot-0.7/jquery.flot.pack.js"></script>
+<script type="text/javascript" src="https://crash-stats.mozilla.com/js/socorro/daily.js"></script>
+
 
 <div class="page-heading">
     <h2>Crashes per Active Daily User</h2>
@@ -18,7 +156,7 @@
 
 
 <div class="panel daily_search">
-    <div class="title daily_search_title">
+	<div class="title daily_search_title">
         <h2>Select a Report</h2>
     </div>
 
@@ -27,11 +165,11 @@
         <div id="daily_search_version">
             <h3><a href="#" id="click_by_version">Crashes per ADU by Version</a></h3>
             <p>All ADU ratios are generated per 100 ADUs, not per single ADU. "3.5 crashes/ADU" means that there are 3.5 crashes per 100 users, not per user. This ratio also does not distinguish between users who crash multiple times and multiple crashing users.</p>
-            <form id="daily_search_version_form" name="daily_search_version_form" action="/daily" method="get" >
+            <form id="daily_search_version_form" name="daily_search_version_form" action="https://crash-stats.mozilla.com/daily" method="get" >
 
-                <input type="hidden" name="form_selection" value="by_version">
+	    		<input type="hidden" name="form_selection" value="by_version">
 
-                <table class="by_version">
+	    		<table class="by_version">
                     <tr>
                     <th>Product</th>
                     <td>
@@ -53,8 +191,8 @@
                     </td>
                     </tr>
 
-                    <tr>
-                        <th rowspan="4" valign="top">Versions</th>
+	    			<tr>
+	    				<th rowspan="4" valign="top">Versions</th>
                         
                         <td><select id="version0" name="v[]">
                                 <option value="">-- versions --</option>
@@ -110,7 +248,7 @@
                                                                             >3.5.14pre</option>
                                                                     <option value="3.5.13" throttle="10.00" key="0"
                                                                             >3.5.13</option>
-                                                            </select> throttle <input id="throttle0" class="version" type="text" name="throttle[]" value="100"  title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling." />%</td>
+                                                            </select> throttle <input id="throttle0" class="version" type="text" name="throttle[]" value="100.00"  title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling." />%</td>
                         </td>
                         </tr>
                         <tr>
@@ -119,7 +257,7 @@
                                                                     <option value="15.0a1" throttle="100.00" key="1"
                                                                             >15.0a1</option>
                                                                     <option value="14.0a2" throttle="100.00" key="1"
-                                                                            >14.0a2</option>
+                                        SELECTED                                    >14.0a2</option>
                                                                     <option value="14.0a1" throttle="100.00" key="1"
                                                                             >14.0a1</option>
                                                                     <option value="13.0b3" throttle="100.00" key="1"
@@ -168,7 +306,7 @@
                                                                             >3.5.14pre</option>
                                                                     <option value="3.5.13" throttle="10.00" key="1"
                                                                             >3.5.13</option>
-                                                            </select> throttle <input id="throttle1" class="version" type="text" name="throttle[]" value="10.00"  title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling." />%</td>
+                                                            </select> throttle <input id="throttle1" class="version" type="text" name="throttle[]" value="100.00"  title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling." />%</td>
                         </td>
                         </tr>
                         <tr>
@@ -183,7 +321,7 @@
                                                                     <option value="13.0b3" throttle="100.00" key="2"
                                                                             >13.0b3</option>
                                                                     <option value="13.0b2" throttle="100.00" key="2"
-                                                                            >13.0b2</option>
+                                        SELECTED                                    >13.0b2</option>
                                                                     <option value="13.0b1" throttle="100.00" key="2"
                                                                             >13.0b1</option>
                                                                     <option value="13.0a2" throttle="100.00" key="2"
@@ -226,7 +364,7 @@
                                                                             >3.5.14pre</option>
                                                                     <option value="3.5.13" throttle="10.00" key="2"
                                                                             >3.5.13</option>
-                                                            </select> throttle <input id="throttle2" class="version" type="text" name="throttle[]" value="10.00"  title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling." />%</td>
+                                                            </select> throttle <input id="throttle2" class="version" type="text" name="throttle[]" value="100.00"  title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling." />%</td>
                         </td>
                         </tr>
                         <tr>
@@ -247,7 +385,7 @@
                                                                     <option value="13.0a2" throttle="100.00" key="3"
                                                                             >13.0a2</option>
                                                                     <option value="12.0" throttle="10.00" key="3"
-                                                                            >12.0</option>
+                                        SELECTED                                    >12.0</option>
                                                                     <option value="12.0b6" throttle="100.00" key="3"
                                                                             >12.0b6</option>
                                                                     <option value="12.0b5" throttle="100.00" key="3"
@@ -290,74 +428,74 @@
                                             </tr>
 
 
-                    <tr>
-                        <th>Type:</th>
-                        <td>
+	    			<tr>
+				        <th>Type:</th>
+	    				<td>
                             <span class="radio-item"><label><input type="radio" name="hang_type" value="any" checked="checked"  /> Any</label></span>
                             <span class="radio-item"><label><input type="radio" name="hang_type" value="crash"  /> Crash</label></span>
                             <span class="radio-item"><label><input type="radio" name="hang_type" value="hang"  /> Hang</label></span>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th>O/S</th>
-                        <td>
-                                                            <input id="os_Windows_check" type="checkbox" name="os[]" value="Windows"
-                                                                            CHECKED
-                                                                    /> Windows &nbsp;&nbsp;
-                                                            <input id="os_Mac_check" type="checkbox" name="os[]" value="Mac"
-                                                                            CHECKED
-                                                                    /> Mac &nbsp;&nbsp;
-                                                            <input id="os_Linux_check" type="checkbox" name="os[]" value="Linux"
-                                                                            CHECKED
-                                                                    /> Linux &nbsp;&nbsp;
-                                                    </td>
-                    </tr>
+	    				</td>
+	    			</tr>
+	    			<tr>
+	    				<th>O/S</th>
+	    				<td>
+	    						    						<input id="os_Windows_check" type="checkbox" name="os[]" value="Windows"
+	    								    								CHECKED
+	    								    						/> Windows &nbsp;&nbsp;
+	    						    						<input id="os_Mac_check" type="checkbox" name="os[]" value="Mac"
+	    								    								CHECKED
+	    								    						/> Mac &nbsp;&nbsp;
+	    						    						<input id="os_Linux_check" type="checkbox" name="os[]" value="Linux"
+	    								    								CHECKED
+	    								    						/> Linux &nbsp;&nbsp;
+	    						    				</td>
+	    			</tr>
 
-                    <tr class="datepicker-daily">
-                        <th>When</th>
-                        <td>
-                        <input class="date" type="text" name="date_start" value="2012-04-25" />
-                        &nbsp; to &nbsp;
-                        <input class="date" type="text" name="date_end" value="2012-05-09" />
-                        </td>
-                    </tr>
-                </table>
+	    			<tr class="datepicker-daily">
+	    				<th>When</th>
+	    				<td>
+	    				<input class="date" type="text" name="date_start" value="2012-04-26" />
+	    				&nbsp; to &nbsp;
+	    				<input class="date" type="text" name="date_end" value="2012-05-10" />
+	    				</td>
+	    			</tr>
+	    		</table>
 
-                <input id="daily_search_version_form_submit" type="submit" name="submit" value="Generate">
-            </form>
-        </div>
+	    		<input id="daily_search_version_form_submit" type="submit" name="submit" value="Generate">
+	    	</form>
+	    </div>
 
-        <div id="daily_search_os">
-            <h3><a href="#" id="click_by_os">Crashes per ADU by O/S</a></h3>
-            <form id="daily_search_os_form" action="/daily" method="get" style="display: none">
-                <input type="hidden" name="form_selection" value="by_os">
+	    <div id="daily_search_os">
+	    	<h3><a href="#" id="click_by_os">Crashes per ADU by O/S</a></h3>
+	    	<form id="daily_search_os_form" action="https://crash-stats.mozilla.com/daily" method="get" style="display: none">
+	    		<input type="hidden" name="form_selection" value="by_os">
 
-                <table class="by_version">
-                    <tr>
-                    <th>Product</th>
-                    <td>
-                    <select id="daily_search_os_form_products" name="p">
-                                                    <option value="Firefox"
-                                                                    SELECTED
-                                                            >Firefox</option>
-                                                    <option value="Fennec"
-                                                            >Fennec</option>
-                                                    <option value="Camino"
-                                                            >Camino</option>
-                                                    <option value="Thunderbird"
-                                                            >Thunderbird</option>
-                                                    <option value="SeaMonkey"
-                                                            >SeaMonkey</option>
-                                                    <option value="FennecAndroid"
-                                                            >FennecAndroid</option>
-                                            </select>
-                    </td>
-                    </tr>
+	    		<table class="by_version">
+	    			<tr>
+	    			<th>Product</th>
+	    			<td>
+	    			<select id="daily_search_os_form_products" name="p">
+	    					    					<option value="Firefox"
+	    							    							SELECTED
+	    							    					>Firefox</option>
+	    					    					<option value="Fennec"
+	    							    					>Fennec</option>
+	    					    					<option value="Camino"
+	    							    					>Camino</option>
+	    					    					<option value="Thunderbird"
+	    							    					>Thunderbird</option>
+	    					    					<option value="SeaMonkey"
+	    							    					>SeaMonkey</option>
+	    					    					<option value="FennecAndroid"
+	    							    					>FennecAndroid</option>
+	    					    			</select>
+	    			</td>
+	    			</tr>
 
-                    <tr>
-                        <th>Version</th>
-                        <td>
-                                                        <select id="version4" name="v[]">
+	    			<tr>
+	    				<th>Version</th>
+	    				<td>
+	    				    	    				    <select id="version4" name="v[]">
                                 <option value="">-- versions --</option>
                                                                     <option value="15.0a1" throttle="100.00" key="4"
                                         SELECTED                                    >15.0a1</option>
@@ -413,65 +551,65 @@
                                                                             >3.5.13</option>
                                                             </select>
                         </td>
-                    </tr>
+	    			</tr>
 
-                    <tr>
+	    			<tr>
                     <th>Type:</th>
-                        <td>
+	    				<td>
                            <span class="radio-item"><label><input type="radio" name="hang_type" value="any" checked="checked"  /> Any</label></span>
                            <span class="radio-item"><label><input type="radio" name="hang_type" value="crash"  /> Crash</label></span>
                            <span class="radio-item"><label><input type="radio" name="hang_type" value="hang"  /> Hang</label></span>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th>Throttle</th>
-                        <td><input id="throttle4" class="version" type="text" name="throttle[]" value="100" title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling." />%</td>
-                    </tr>
+	    				</td>
+	    			</tr>
+	    			<tr>
+	    				<th>Throttle</th>
+	    				<td><input id="throttle4" class="version" type="text" name="throttle[]" value="100.00" title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling." />%</td>
+	    			</tr>
 
-                    <tr class="datepicker-daily">
-                        <th>When</th>
-                        <td>
-                        <input class="date" type="text" name="date_start" value="2012-04-25" />
-                        &nbsp; to &nbsp;
-                        <input class="date" type="text" name="date_end" value="2012-05-09" />
-                        </td>
-                    </tr>
-                </table>
+	    			<tr class="datepicker-daily">
+	    				<th>When</th>
+	    				<td>
+	    				<input class="date" type="text" name="date_start" value="2012-04-26" />
+	    				&nbsp; to &nbsp;
+	    				<input class="date" type="text" name="date_end" value="2012-05-10" />
+	    				</td>
+	    			</tr>
+	    		</table>
 
-                <input type="submit" name="submit" value="Generate">
-            </form>
-        </div>
+	    		<input type="submit" name="submit" value="Generate">
+	    	</form>
+	    </div>
 
         <div id="daily_search_report_type">
              <h3><a href="#" id="click_by_report_type">Crashes per ADU by Type</a></h3>
-             <form id="daily_search_report_type_form" action="/daily" method="get" style="display: none">
+             <form id="daily_search_report_type_form" action="https://crash-stats.mozilla.com/daily" method="get" style="display: none">
 
-                 <input type="hidden" name="form_selection" value="by_report_type">
+ 	    		<input type="hidden" name="form_selection" value="by_report_type">
 
-                 <table class="by_version by_report_type">
-                     <tr>
-                     <th>Product</th>
-                     <td>
-                     <select name="p">
-                                                      <option value="Firefox"
-                                                                      SELECTED
-                                                              >Firefox</option>
-                                                      <option value="Fennec"
-                                                              >Fennec</option>
-                                                      <option value="Camino"
-                                                              >Camino</option>
-                                                      <option value="Thunderbird"
-                                                              >Thunderbird</option>
-                                                      <option value="SeaMonkey"
-                                                              >SeaMonkey</option>
-                                                      <option value="FennecAndroid"
-                                                              >FennecAndroid</option>
-                                              </select>
-                     </td>
-                     </tr>
+ 	    		<table class="by_version by_report_type">
+ 	    			<tr>
+ 	    			<th>Product</th>
+ 	    			<td>
+ 	    			<select name="p">
+ 	    				 	    					<option value="Firefox"
+ 	    						 	    							SELECTED
+ 	    						 	    					>Firefox</option>
+ 	    				 	    					<option value="Fennec"
+ 	    						 	    					>Fennec</option>
+ 	    				 	    					<option value="Camino"
+ 	    						 	    					>Camino</option>
+ 	    				 	    					<option value="Thunderbird"
+ 	    						 	    					>Thunderbird</option>
+ 	    				 	    					<option value="SeaMonkey"
+ 	    						 	    					>SeaMonkey</option>
+ 	    				 	    					<option value="FennecAndroid"
+ 	    						 	    					>FennecAndroid</option>
+ 	    				 	    			</select>
+ 	    			</td>
+ 	    			</tr>
 
-                    <tr>
-                        <th rowspan="4" valign="top">Versions</th>
+	    			<tr>
+	    				<th rowspan="4" valign="top">Versions</th>
                         
                         <td><select id="version5" name="v[]">
                                 <option value="">-- versions --</option>
@@ -527,7 +665,7 @@
                                                                             >3.5.14pre</option>
                                                                     <option value="3.5.13" throttle="10.00" key="5"
                                                                             >3.5.13</option>
-                                                            </select> throttle <input id="throttle5" class="version" type="text" name="throttle[]" value="100"  title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling." />%</td>
+                                                            </select> throttle <input id="throttle5" class="version" type="text" name="throttle[]" value="100.00"  title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling." />%</td>
                         </td>
                     </tr>
                 <tr>
@@ -536,7 +674,7 @@
                                                                     <option value="15.0a1" throttle="100.00" key="6"
                                                                             >15.0a1</option>
                                                                     <option value="14.0a2" throttle="100.00" key="6"
-                                                                            >14.0a2</option>
+                                        SELECTED                                    >14.0a2</option>
                                                                     <option value="14.0a1" throttle="100.00" key="6"
                                                                             >14.0a1</option>
                                                                     <option value="13.0b3" throttle="100.00" key="6"
@@ -585,7 +723,7 @@
                                                                             >3.5.14pre</option>
                                                                     <option value="3.5.13" throttle="10.00" key="6"
                                                                             >3.5.13</option>
-                                                            </select> throttle <input id="throttle6" class="version" type="text" name="throttle[]" value="10.00"  title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling." />%</td>
+                                                            </select> throttle <input id="throttle6" class="version" type="text" name="throttle[]" value="100.00"  title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling." />%</td>
                         </td>
                     </tr>
                 <tr>
@@ -600,7 +738,7 @@
                                                                     <option value="13.0b3" throttle="100.00" key="7"
                                                                             >13.0b3</option>
                                                                     <option value="13.0b2" throttle="100.00" key="7"
-                                                                            >13.0b2</option>
+                                        SELECTED                                    >13.0b2</option>
                                                                     <option value="13.0b1" throttle="100.00" key="7"
                                                                             >13.0b1</option>
                                                                     <option value="13.0a2" throttle="100.00" key="7"
@@ -643,7 +781,7 @@
                                                                             >3.5.14pre</option>
                                                                     <option value="3.5.13" throttle="10.00" key="7"
                                                                             >3.5.13</option>
-                                                            </select> throttle <input id="throttle7" class="version" type="text" name="throttle[]" value="10.00"  title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling." />%</td>
+                                                            </select> throttle <input id="throttle7" class="version" type="text" name="throttle[]" value="100.00"  title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling." />%</td>
                         </td>
                     </tr>
                 <tr>
@@ -664,7 +802,7 @@
                                                                     <option value="13.0a2" throttle="100.00" key="8"
                                                                             >13.0a2</option>
                                                                     <option value="12.0" throttle="10.00" key="8"
-                                                                            >12.0</option>
+                                        SELECTED                                    >12.0</option>
                                                                     <option value="12.0b6" throttle="100.00" key="8"
                                                                             >12.0b6</option>
                                                                     <option value="12.0b5" throttle="100.00" key="8"
@@ -707,52 +845,52 @@
                                 </tr>
 
 
-                 <tr>
-                     <th>Type:</th>
-                         <td>
-                                                     <input id="report_type_crash_check" type="checkbox" name="report_type[]" value="crash"
-                                                                              CHECKED
-                                                                      /> <label for="report_type_crash_check">crash</label>
-                                                          <input id="report_type_oopp_check" type="checkbox" name="report_type[]" value="oopp"
-                                                                              CHECKED
-                                                                      /> <label for="report_type_oopp_check">oopp</label>
-                                                          <input id="report_type_hang_browser_check" type="checkbox" name="report_type[]" value="hang_browser"
-                                                                              CHECKED
-                                                                      /> <label for="report_type_hang_browser_check">hang_browser</label>
-                                                          <input id="report_type_hang_plugin_check" type="checkbox" name="report_type[]" value="hang_plugin"
-                                                                              CHECKED
-                                                                      /> <label for="report_type_hang_plugin_check">hang_plugin</label>
-                                                                      <!-- span class="checkbox-item"><label><input type="checkbox" id="hang_type" name="hang_type" value="crash"  />Browser Crash</label></span -->
-                         </td>
-                     </tr>
-                     <tr>
-                         <th>O/S</th>
-                         <td>
-                                                              <input id="os_Windows_check" type="checkbox" name="os[]" value="Windows"
-                                                                              CHECKED
-                                                                      /> Windows &nbsp;&nbsp;
-                                                              <input id="os_Mac_check" type="checkbox" name="os[]" value="Mac"
-                                                                              CHECKED
-                                                                      /> Mac &nbsp;&nbsp;
-                                                              <input id="os_Linux_check" type="checkbox" name="os[]" value="Linux"
-                                                                              CHECKED
-                                                                      /> Linux &nbsp;&nbsp;
-                                                      </td>
-                     </tr>
+ 	    		<tr>
+ 				    <th>Type:</th>
+ 	    				<td>
+                         	    					<input id="report_type_crash_check" type="checkbox" name="report_type[]" value="crash"
+ 	    							 	    								CHECKED
+ 	    							 	    						/> <label for="report_type_crash_check">crash</label>
+ 	    					 	    					<input id="report_type_oopp_check" type="checkbox" name="report_type[]" value="oopp"
+ 	    							 	    								CHECKED
+ 	    							 	    						/> <label for="report_type_oopp_check">oopp</label>
+ 	    					 	    					<input id="report_type_hang_browser_check" type="checkbox" name="report_type[]" value="hang_browser"
+ 	    							 	    								CHECKED
+ 	    							 	    						/> <label for="report_type_hang_browser_check">hang_browser</label>
+ 	    					 	    					<input id="report_type_hang_plugin_check" type="checkbox" name="report_type[]" value="hang_plugin"
+ 	    							 	    								CHECKED
+ 	    							 	    						/> <label for="report_type_hang_plugin_check">hang_plugin</label>
+ 	    					                                 	    <!-- span class="checkbox-item"><label><input type="checkbox" id="hang_type" name="hang_type" value="crash"  />Browser Crash</label></span -->
+ 	    				</td>
+ 	    			</tr>
+ 	    			<tr>
+ 	    				<th>O/S</th>
+ 	    				<td>
+ 	    					 	    						<input id="os_Windows_check" type="checkbox" name="os[]" value="Windows"
+ 	    							 	    								CHECKED
+ 	    							 	    						/> Windows &nbsp;&nbsp;
+ 	    					 	    						<input id="os_Mac_check" type="checkbox" name="os[]" value="Mac"
+ 	    							 	    								CHECKED
+ 	    							 	    						/> Mac &nbsp;&nbsp;
+ 	    					 	    						<input id="os_Linux_check" type="checkbox" name="os[]" value="Linux"
+ 	    							 	    								CHECKED
+ 	    							 	    						/> Linux &nbsp;&nbsp;
+ 	    					 	    				</td>
+ 	    			</tr>
 
-                     <tr class="datepicker-daily">
-                         <th>When</th>
-                         <td>
-                         <input class="date" type="text" name="date_start" value="2012-04-25" />
-                         &nbsp; to &nbsp;
-                         <input class="date" type="text" name="date_end" value="2012-05-09" />
-                         </td>
-                     </tr>
-                 </table>
+ 	    			<tr class="datepicker-daily">
+ 	    				<th>When</th>
+ 	    				<td>
+ 	    				<input class="date" type="text" name="date_start" value="2012-04-26" />
+ 	    				&nbsp; to &nbsp;
+ 	    				<input class="date" type="text" name="date_end" value="2012-05-10" />
+ 	    				</td>
+ 	    			</tr>
+ 	    		</table>
 
-                 <input id="daily_search_report_type_form_submit" type="submit" name="submit" value="Generate">
-             </form>
-         </div><!-- daily_search_report_type -->
+ 	    		<input id="daily_search_report_type_form_submit" type="submit" name="submit" value="Generate">
+ 	    	</form>
+ 	    </div><!-- daily_search_report_type -->
 
         </div>
     </div>
@@ -777,182 +915,466 @@
 
 
 <div class="panel daily_">
-    <div class="title">
-        <h2>Crashes per ADU</h2>
-        <div class="choices">
-            <ul>
-                <li><a href="daily?p=Firefox&v[]=15.0a1&throttle[]=100&os[]=Windows&os[]=Mac&os[]=Linux&date_start=2012-04-25&date_end=2012-05-09&form_selection=by_version&csv=1&hang_type=any">csv</a></li>
-            </ul>
-        </div>
+	<div class="title">
+		<h2>Crashes per ADU</h2>
+		<div class="choices">
+			<ul>
+				<li><a href="daily?p=Firefox&v[]=15.0a1&v[]=14.0a2&v[]=13.0b2&v[]=12.0&throttle[]=100.00&throttle[]=100.00&throttle[]=100.00&throttle[]=10.00&os[]=Windows&os[]=Mac&os[]=Linux&date_start=2012-04-26&date_end=2012-05-10&form_selection=by_version&csv=1&hang_type=any">csv</a></li>
+			</ul>
+		</div>
     </div>
 
     <div class="body">
 
-    
-        <table id="crash_data" class="crash_data zebra">
-            <tr>
-                <th class="date" rowspan="2">Date</th>
-                                                            <th class="version" colspan="4">15.0a1</th>
-                                                    </tr>
-                <tr>
-                                                            <th class="stat">Crashes</th>
-                        <th class="stat">ADU</th>
-                        <th class="stat" title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling.">Throttle</th>
-                        <th class="stat">Ratio</th>
-                                                </tr>
+	
+		<table id="crash_data" class="crash_data zebra">
+			<tr>
+				<th class="date" rowspan="2">Date</th>
+															<th class="version" colspan="4">15.0a1</th>
+																				<th class="version" colspan="4">14.0a2</th>
+																				<th class="version" colspan="4">13.0b2</th>
+																				<th class="version" colspan="4">12.0</th>
+													</tr>
+				<tr>
+															<th class="stat">Crashes</th>
+						<th class="stat">ADU</th>
+						<th class="stat" title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling.">Throttle</th>
+						<th class="stat">Ratio</th>
+																				<th class="stat">Crashes</th>
+						<th class="stat">ADU</th>
+						<th class="stat" title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling.">Throttle</th>
+						<th class="stat">Ratio</th>
+																				<th class="stat">Crashes</th>
+						<th class="stat">ADU</th>
+						<th class="stat" title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling.">Throttle</th>
+						<th class="stat">Ratio</th>
+																				<th class="stat">Crashes</th>
+						<th class="stat">ADU</th>
+						<th class="stat" title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling.">Throttle</th>
+						<th class="stat">Ratio</th>
+												</tr>
 
-                            <tr>
-                    <td>2012-05-09</td>
+							<tr>
+					<td>2012-05-10</td>
 
-                    
-                                <td>2,280</td>
-                                <td>76,922</td>
-                                <td title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling.">100%</td>
-                                <td>2.96%</td>
-                                    </tr>
-                            <tr>
-                    <td>2012-05-08</td>
+					
+								<td>-</td>
+								<td>-</td>
+								<td title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling.">-</td>
+								<td>-</td>
+					
+								<td>-</td>
+								<td>-</td>
+								<td title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling.">-</td>
+								<td>-</td>
+					
+								<td>-</td>
+								<td>-</td>
+								<td title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling.">-</td>
+								<td>-</td>
+					
+								<td>-</td>
+								<td>-</td>
+								<td title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling.">-</td>
+								<td>-</td>
+									</tr>
+							<tr>
+					<td>2012-05-09</td>
 
-                    
-                                <td>2,443</td>
-                                <td>79,919</td>
-                                <td title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling.">100%</td>
-                                <td>3.06%</td>
-                                    </tr>
-                            <tr>
-                    <td>2012-05-07</td>
+					
+								<td>2,280</td>
+								<td>76,922</td>
+								<td title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling.">100%</td>
+								<td>2.96%</td>
+					
+								<td>2,708</td>
+								<td>143,780</td>
+								<td title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling.">100%</td>
+								<td>1.88%</td>
+					
+								<td>25,288</td>
+								<td>1,261,832</td>
+								<td title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling.">100%</td>
+								<td>2%</td>
+					
+								<td>1,055,320</td>
+								<td>73,556,975</td>
+								<td title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling.">10%</td>
+								<td>1.43%</td>
+									</tr>
+							<tr>
+					<td>2012-05-08</td>
 
-                    
-                                <td>2,820</td>
-                                <td>78,938</td>
-                                <td title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling.">100%</td>
-                                <td>3.57%</td>
-                                    </tr>
-                            <tr>
-                    <td>2012-05-06</td>
+					
+								<td>2,443</td>
+								<td>79,919</td>
+								<td title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling.">100%</td>
+								<td>3.06%</td>
+					
+								<td>2,691</td>
+								<td>146,441</td>
+								<td title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling.">100%</td>
+								<td>1.84%</td>
+					
+								<td>23,423</td>
+								<td>1,216,005</td>
+								<td title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling.">100%</td>
+								<td>1.93%</td>
+					
+								<td>1,027,020</td>
+								<td>73,674,601</td>
+								<td title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling.">10%</td>
+								<td>1.39%</td>
+									</tr>
+							<tr>
+					<td>2012-05-07</td>
 
-                    
-                                <td>2,792</td>
-                                <td>70,233</td>
-                                <td title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling.">100%</td>
-                                <td>3.98%</td>
-                                    </tr>
-                            <tr>
-                    <td>2012-05-05</td>
+					
+								<td>2,820</td>
+								<td>78,938</td>
+								<td title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling.">100%</td>
+								<td>3.57%</td>
+					
+								<td>3,082</td>
+								<td>143,811</td>
+								<td title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling.">100%</td>
+								<td>2.14%</td>
+					
+								<td>21,231</td>
+								<td>1,075,184</td>
+								<td title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling.">100%</td>
+								<td>1.97%</td>
+					
+								<td>1,000,700</td>
+								<td>70,026,877</td>
+								<td title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling.">10%</td>
+								<td>1.43%</td>
+									</tr>
+							<tr>
+					<td>2012-05-06</td>
 
-                    
-                                <td>2,776</td>
-                                <td>68,464</td>
-                                <td title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling.">100%</td>
-                                <td>4.05%</td>
-                                    </tr>
-                            <tr>
-                    <td>2012-05-04</td>
+					
+								<td>2,792</td>
+								<td>70,233</td>
+								<td title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling.">100%</td>
+								<td>3.98%</td>
+					
+								<td>3,319</td>
+								<td>122,365</td>
+								<td title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling.">100%</td>
+								<td>2.71%</td>
+					
+								<td>18,590</td>
+								<td>791,808</td>
+								<td title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling.">100%</td>
+								<td>2.35%</td>
+					
+								<td>896,410</td>
+								<td>53,094,156</td>
+								<td title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling.">10%</td>
+								<td>1.69%</td>
+									</tr>
+							<tr>
+					<td>2012-05-05</td>
 
-                    
-                                <td>1,791</td>
-                                <td>73,825</td>
-                                <td title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling.">100%</td>
-                                <td>2.43%</td>
-                                    </tr>
-                            <tr>
-                    <td>2012-05-03</td>
+					
+								<td>2,776</td>
+								<td>68,464</td>
+								<td title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling.">100%</td>
+								<td>4.05%</td>
+					
+								<td>2,747</td>
+								<td>119,865</td>
+								<td title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling.">100%</td>
+								<td>2.29%</td>
+					
+								<td>15,996</td>
+								<td>624,937</td>
+								<td title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling.">100%</td>
+								<td>2.56%</td>
+					
+								<td>852,170</td>
+								<td>48,585,464</td>
+								<td title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling.">10%</td>
+								<td>1.75%</td>
+									</tr>
+							<tr>
+					<td>2012-05-04</td>
 
-                    
-                                <td>1,376</td>
-                                <td>74,463</td>
-                                <td title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling.">100%</td>
-                                <td>1.85%</td>
-                                    </tr>
-                            <tr>
-                    <td>2012-05-02</td>
+					
+								<td>1,791</td>
+								<td>73,825</td>
+								<td title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling.">100%</td>
+								<td>2.43%</td>
+					
+								<td>2,872</td>
+								<td>131,147</td>
+								<td title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling.">100%</td>
+								<td>2.19%</td>
+					
+								<td>8,580</td>
+								<td>186,117</td>
+								<td title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling.">100%</td>
+								<td>4.61%</td>
+					
+								<td>834,720</td>
+								<td>54,056,397</td>
+								<td title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling.">10%</td>
+								<td>1.54%</td>
+									</tr>
+							<tr>
+					<td>2012-05-03</td>
 
-                    
-                                <td>1,498</td>
-                                <td>71,620</td>
-                                <td title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling.">100%</td>
-                                <td>2.09%</td>
-                                    </tr>
-                            <tr>
-                    <td>2012-05-01</td>
+					
+								<td>1,376</td>
+								<td>74,463</td>
+								<td title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling.">100%</td>
+								<td>1.85%</td>
+					
+								<td>2,727</td>
+								<td>129,447</td>
+								<td title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling.">100%</td>
+								<td>2.11%</td>
+					
+								<td>630</td>
+								<td>9,918</td>
+								<td title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling.">100%</td>
+								<td>6.35%</td>
+					
+								<td>699,050</td>
+								<td>47,540,217</td>
+								<td title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling.">10%</td>
+								<td>1.47%</td>
+									</tr>
+							<tr>
+					<td>2012-05-02</td>
 
-                    
-                                <td>1,539</td>
-                                <td>64,778</td>
-                                <td title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling.">100%</td>
-                                <td>2.38%</td>
-                                    </tr>
-                            <tr>
-                    <td>2012-04-30</td>
+					
+								<td>1,498</td>
+								<td>71,620</td>
+								<td title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling.">100%</td>
+								<td>2.09%</td>
+					
+								<td>4,152</td>
+								<td>117,705</td>
+								<td title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling.">100%</td>
+								<td>3.53%</td>
+					
+								<td>32</td>
+								<td>548</td>
+								<td title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling.">100%</td>
+								<td>5.84%</td>
+					
+								<td>591,370</td>
+								<td>37,229,059</td>
+								<td title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling.">10%</td>
+								<td>1.59%</td>
+									</tr>
+							<tr>
+					<td>2012-05-01</td>
 
-                    
-                                <td>2,929</td>
-                                <td>63,641</td>
-                                <td title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling.">100%</td>
-                                <td>4.6%</td>
-                                    </tr>
-                            <tr>
-                    <td>2012-04-29</td>
+					
+								<td>1,539</td>
+								<td>64,778</td>
+								<td title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling.">100%</td>
+								<td>2.38%</td>
+					
+								<td>2,585</td>
+								<td>104,219</td>
+								<td title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling.">100%</td>
+								<td>2.48%</td>
+					
+								<td>-</td>
+								<td>-</td>
+								<td title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling.">-</td>
+								<td>-</td>
+					
+								<td>539,970</td>
+								<td>32,284,501</td>
+								<td title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling.">10%</td>
+								<td>1.67%</td>
+									</tr>
+							<tr>
+					<td>2012-04-30</td>
 
-                    
-                                <td>3,457</td>
-                                <td>56,696</td>
-                                <td title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling.">100%</td>
-                                <td>6.1%</td>
-                                    </tr>
-                            <tr>
-                    <td>2012-04-28</td>
+					
+								<td>2,929</td>
+								<td>63,641</td>
+								<td title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling.">100%</td>
+								<td>4.6%</td>
+					
+								<td>2,513</td>
+								<td>92,835</td>
+								<td title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling.">100%</td>
+								<td>2.71%</td>
+					
+								<td>-</td>
+								<td>-</td>
+								<td title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling.">-</td>
+								<td>-</td>
+					
+								<td>532,030</td>
+								<td>32,713,895</td>
+								<td title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling.">10%</td>
+								<td>1.63%</td>
+									</tr>
+							<tr>
+					<td>2012-04-29</td>
 
-                    
-                                <td>2,310</td>
-                                <td>52,776</td>
-                                <td title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling.">100%</td>
-                                <td>4.38%</td>
-                                    </tr>
-                            <tr>
-                    <td>2012-04-27</td>
+					
+								<td>3,457</td>
+								<td>56,696</td>
+								<td title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling.">100%</td>
+								<td>6.1%</td>
+					
+								<td>1,957</td>
+								<td>71,769</td>
+								<td title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling.">100%</td>
+								<td>2.73%</td>
+					
+								<td>-</td>
+								<td>-</td>
+								<td title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling.">-</td>
+								<td>-</td>
+					
+								<td>483,420</td>
+								<td>26,216,394</td>
+								<td title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling.">10%</td>
+								<td>1.84%</td>
+									</tr>
+							<tr>
+					<td>2012-04-28</td>
 
-                    
-                                <td>7,384</td>
-                                <td>50,306</td>
-                                <td title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling.">100%</td>
-                                <td>14.68%</td>
-                                    </tr>
-                            <tr>
-                    <td>2012-04-26</td>
+					
+								<td>2,310</td>
+								<td>52,776</td>
+								<td title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling.">100%</td>
+								<td>4.38%</td>
+					
+								<td>1,341</td>
+								<td>35,088</td>
+								<td title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling.">100%</td>
+								<td>3.82%</td>
+					
+								<td>-</td>
+								<td>-</td>
+								<td title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling.">-</td>
+								<td>-</td>
+					
+								<td>463,220</td>
+								<td>24,766,743</td>
+								<td title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling.">10%</td>
+								<td>1.87%</td>
+									</tr>
+							<tr>
+					<td>2012-04-27</td>
 
-                    
-                                <td>3,461</td>
-                                <td>42,586</td>
-                                <td title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling.">100%</td>
-                                <td>8.13%</td>
-                                    </tr>
-                            <tr>
-                    <td>2012-04-25</td>
+					
+								<td>7,384</td>
+								<td>50,306</td>
+								<td title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling.">100%</td>
+								<td>14.68%</td>
+					
+								<td>190</td>
+								<td>1,617</td>
+								<td title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling.">100%</td>
+								<td>11.75%</td>
+					
+								<td>-</td>
+								<td>-</td>
+								<td title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling.">-</td>
+								<td>-</td>
+					
+								<td>479,120</td>
+								<td>25,426,728</td>
+								<td title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling.">10%</td>
+								<td>1.88%</td>
+									</tr>
+							<tr>
+					<td>2012-04-26</td>
 
-                    
-                                <td>476</td>
-                                <td>15,454</td>
-                                <td title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling.">100%</td>
-                                <td>3.08%</td>
-                                    </tr>
-            
-            <tr>
-                <td class="date"><strong>Total</strong></td>
-                            <td class="stat"><strong>39,332</strong></td>
-                <td class="stat"><strong>940,621</strong></td>
-                <td class="stat" title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling."><strong>100%</strong></td>
-                <td class="stat"><strong>4.18%</strong></td>
+					
+								<td>3,461</td>
+								<td>42,586</td>
+								<td title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling.">100%</td>
+								<td>8.13%</td>
+					
+								<td>63</td>
+								<td>524</td>
+								<td title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling.">100%</td>
+								<td>12.02%</td>
+					
+								<td>-</td>
+								<td>-</td>
+								<td title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling.">-</td>
+								<td>-</td>
+					
+								<td>416,830</td>
+								<td>21,708,658</td>
+								<td title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling.">10%</td>
+								<td>1.92%</td>
+									</tr>
+			
+			<tr>
+				<td class="date"><strong>Total</strong></td>
+							<td class="stat"><strong>38,856</strong></td>
+				<td class="stat"><strong>925,167</strong></td>
+				<td class="stat" title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling."><strong>100%</strong></td>
+				<td class="stat"><strong>4.2%</strong></td>
 
 
-                            </tr>
+								<td class="stat"><strong>32,947</strong></td>
+				<td class="stat"><strong>1,360,613</strong></td>
+				<td class="stat" title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling."><strong>100%</strong></td>
+				<td class="stat"><strong>2.42%</strong></td>
 
-        </table>
 
-    
+								<td class="stat"><strong>113,770</strong></td>
+				<td class="stat"><strong>5,166,349</strong></td>
+				<td class="stat" title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling."><strong>100%</strong></td>
+				<td class="stat"><strong>2.2%</strong></td>
+
+
+								<td class="stat"><strong>9,871,350</strong></td>
+				<td class="stat"><strong>620,880,665</strong></td>
+				<td class="stat" title="The throttle rate is the effective throttle rate - the combined throttle rate for client-side throttling and server-side throttling."><strong>10%</strong></td>
+				<td class="stat"><strong>1.59%</strong></td>
+
+
+							</tr>
+
+		</table>
+
+	
 
     </div>
 
 </div>
     </div>
-{% endblock %}
+
+
+    <div class="page-footer">
+    	<div class="nav">
+    		<div class="about">
+                <strong>Mozilla Crash Reports</strong> - Powered by <a href="https://github.com/mozilla/socorro">Socorro</a> -
+                All dates are UTC    		</div>
+
+    		<ul>
+                <li><a href="https://crash-stats.mozilla.com/status">Server Status</a></li>
+                <li><a href="http://socorro.readthedocs.org/">Project Info</a></li>
+                <li><a href="https://github.com/mozilla/socorro">Source Code</a></li>
+                <li><a href="http://wiki.mozilla.org/Breakpad">Breakpad Wiki</a></li>
+                <li><a href="http://www.mozilla.org/about/policies/privacy-policy.html">Privacy Policy</a></li>
+    		</ul>
+    	</div>
+
+
+    	<div class="login">
+		<ul>
+                            <li><a href="https://crash-stats.mozilla.com/auth/login">Log In</a></li>
+            		</ul>
+    	</div>
+    </div>
+
+</body>
+</html>
