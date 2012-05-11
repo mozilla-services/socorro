@@ -2,13 +2,14 @@ import requests
 import json
 
 from requests.auth import HTTPBasicAuth
+from django.conf import settings
 
 class SocorroMiddleware(object):
     def __init__(self):
-        self.base_url = 'http://localhost:8080/bpapi'
-        self.http_host = 'socorro-api-dev-internal'
-        self.username = 'dbrwaccess'
-        self.password = ''
+        self.base_url = settings.MWARE_BASE_URL
+        self.http_host = settings.MWARE_HTTP_HOST
+        self.username = settings.MWARE_USERNAME
+        self.password = settings.MWARE_PASSWORD
   
     def fetch(self, url):
         headers = {'Host': self.http_host}
