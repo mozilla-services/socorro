@@ -637,5 +637,94 @@ class TestLegacyProcessor(unittest.TestCase):
                 )
                 self.assertEqual(processor_notes, [])
 
+    #def test_invoke_minidump_stackwalk(self):
+        #class MyProcessor(LegacyCrashProcessor):
+            #pass
+        #config = setup_config_with_mocks()
+        #config.collectAddon = False
+        #config.collectCrashProcess = True
+        #mocked_transform_rules_str = \
+            #'socorro.processor.legacy_processor.TransformRuleSystem'
+        #with mock.patch(mocked_transform_rules_str) as m_transform_class:
+            #m_transform = mock.Mock()
+            #m_transform_class.return_value = m_transform
+            #m_transform.attach_mock(mock.Mock(), 'apply_all_rules')
+            #utc_now_str = 'socorro.processor.legacy_processor.utc_now'
+            #with mock.patch(utc_now_str) as m_utc_now:
+                #m_utc_now.return_value = datetime(2012, 5, 4, 15, 11)
+                #leg_proc = MyProcessor(config, config.mock_quit_fn)
+
+    def test_do_breakpad_stack_dump_analysis(self):
+        m_iter = mock.MagicMock()
+        m_iter.return_value = m_iter
+        m_iter.__iter__.return_value = iter(xrange(20))
+        m_iter.cache = ['a', 'b', 'c']
+        m_iter.theIterator = mock.Mock()
+
+        m_subprocess = mock.MagicMock()
+        m_subprocess.wait = mock.MagicMock(return_value=0)
+        class MyProcessor(LegacyCrashProcessor):
+            def _invoke_minidump_stackwalk(self, dump_pathname):
+                return m_iter, mock.Mock()
+            def _analyze_header(self, ooid, dump_analysis_line_iterator,
+                                submitted_timestamp, processor_notes):
+                for x in zip(xrange(5), dump_analysis_line_iterator):
+                    pass
+                dump_analysis_line_iterator.next()
+                processed_crash_update = DotDict()
+                processed_crash_update.crashedThread = 17
+                processed_crash_update.os_name = 'Windows NT'
+                return processed_crash_update
+
+            def _analyze_frames(self, hang_type, java_stack_trace,
+                                make_modules_lower_case,
+                                dump_analysis_line_iterator, submitted_timestamp,
+                                crashed_thread,
+                                processor_notes):
+                for x in zip(xrange(5), dump_analysis_line_iterator):
+                    pass
+                return DotDict({
+                  "signature": 'signature',
+                  "truncated": False,
+                  "topmost_filenames": 'topmost_sourcefiles',
+                })
+
+        config = setup_config_with_mocks()
+        config.crashingThreadTailFrameThreshold = 5
+        mocked_transform_rules_str = \
+            'socorro.processor.legacy_processor.TransformRuleSystem'
+        with mock.patch(mocked_transform_rules_str) as m_transform_class:
+            m_transform = mock.Mock()
+            m_transform_class.return_value = m_transform
+            m_transform.attach_mock(mock.Mock(), 'apply_all_rules')
+            utc_now_str = 'socorro.processor.legacy_processor.utc_now'
+            with mock.patch(utc_now_str) as m_utc_now:
+                m_utc_now.return_value = datetime(2012, 5, 4, 15, 11)
+                leg_proc = MyProcessor(config, config.mock_quit_fn)
+
+                processor_notes = []
+                processed_crash_update = \
+                    leg_proc._do_breakpad_stack_dump_analysis(
+                      '3bc4bcaa-b61d-4d1f-85ae-30cb32120504',
+                      'some_path',
+                      0,
+                      None,
+                      datetime(2012, 5, 4, 15, 11),
+                      processor_notes
+                    )
+
+                e_pcu = DotDict({
+                  'os_name': 'Windows NT',
+                  'success': False,
+                  'dump': 'a\nb\nc',
+                  'truncated': False,
+                  'crashedThread': 17,
+                  'signature': 'signature',
+                  'topmost_filenames': 'topmost_sourcefiles'
+                })
+                self.assertEqual(e_pcu, processed_crash_update)
+                excess = list(m_iter)
+                self.assertEqual(len(excess), 0)
+
 
 

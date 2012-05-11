@@ -510,6 +510,28 @@ class LegacyCrashProcessor(RequiredConfig):
         return process_type_additions_dict
 
     #--------------------------------------------------------------------------
+    def _invoke_minidump_stackwalk(self, dump_pathname):
+        """ This function invokes breakpad_stackdump as an external process
+        capturing and returning the text output of stdout.  This version
+        represses the stderr output.
+
+              input parameters:
+                dump_pathname: the complete pathname of the dumpfile to be
+                                  analyzed
+        """
+        #logger.debug("analyzing %s", dumpfilePathname)
+        command_line = self.command_line.replace("DUMPFILEPATHNAME",
+                                                dump_pathname)
+        #logger.info("invoking: %s", newCommandLine)
+        subprocess_handle = subprocess.Popen(
+          command_line,
+          shell=True,
+          stdout=subprocess.PIPE
+        )
+        return (StrCachingIterator(subprocess_handle.stdout),
+                subprocess_handle)
+
+    #--------------------------------------------------------------------------
     def _do_breakpad_stack_dump_analysis(self, ooid, dump_pathname,
                                          is_hang, java_stack_trace,
                                          submitted_timestamp,
@@ -576,28 +598,6 @@ class LegacyCrashProcessor(RequiredConfig):
             if processed_crash_update.signature.startswith("EMPTY"):
                 processed_crash_update.signature += "; corrupt dump"
         return processed_crash_update
-
-    #--------------------------------------------------------------------------
-    def _invoke_minidump_stackwalk(self, dump_pathname):
-        """ This function invokes breakpad_stackdump as an external process
-        capturing and returning the text output of stdout.  This version
-        represses the stderr output.
-
-              input parameters:
-                dump_pathname: the complete pathname of the dumpfile to be
-                                  analyzed
-        """
-        #logger.debug("analyzing %s", dumpfilePathname)
-        command_line = self.command_line.replace("DUMPFILEPATHNAME",
-                                                dump_pathname)
-        #logger.info("invoking: %s", newCommandLine)
-        subprocess_handle = subprocess.Popen(
-          command_line,
-          shell=True,
-          stdout=subprocess.PIPE
-        )
-        return (StrCachingIterator(subprocess_handle.stdout),
-                subprocess_handle)
 
     #--------------------------------------------------------------------------
     def _analyze_header(self, ooid, dump_analysis_line_iterator,
