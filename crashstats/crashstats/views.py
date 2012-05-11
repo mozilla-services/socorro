@@ -31,9 +31,9 @@ def unixtime(value, millis=False, format='%Y-%m-%d'):
         return epoch_seconds
 
 @mobile_template('crashstats/{mobile/}products.html')
-def home(request, product, versions, template=None):
+def home(request, product=None, versions=None, template=None):
     data = {}
-    data['product']  = product
+    data['product'] = product
     mware = SocorroMiddleware()
     data['currentversions'] = mware.current_versions()
     data['adubyday'] = mware.adu_by_day()
@@ -41,10 +41,14 @@ def home(request, product, versions, template=None):
     return render(request, template, data)
 
 @mobile_template('crashstats/{mobile/}topcrasher.html')
-def topcrasher(request, product, version, template=None):
+def topcrasher(request, product=None, version=None, days=None, crash_type=None,
+               os_name=None, template=None):
     data = {}
     data['product'] = product
     data['version'] = version
+    data['days'] = days
+    data['crash_type'] = crash_type
+    data['os_name'] = os_name
     mware = SocorroMiddleware()
     data['currentversions'] = mware.current_versions()
     data['tcbs'] = mware.tcbs()
@@ -54,8 +58,6 @@ def topcrasher(request, product, version, template=None):
 @mobile_template('crashstats/{mobile/}daily.html')
 def daily(request, template=None):
     data = {}
-    data['product']  = request.path.split('/')[-1]
-
     mware = SocorroMiddleware()
     data['currentversions'] = mware.current_versions()
     data['adubyday'] = mware.adu_by_day()
@@ -63,27 +65,27 @@ def daily(request, template=None):
     return render(request, template, data)
 
 @mobile_template('crashstats/{mobile/}builds.html')
-def builds(request, product, template=None):
+def builds(request, product=None, template=None):
     data = {}
-    data['product']  = product
+    data['product'] = product
     mware = SocorroMiddleware()
     data['currentversions'] = mware.current_versions()
 
     return render(request, template, data)
 
 @mobile_template('crashstats/{mobile/}hangreport.html')
-def hangreport(request, product, template=None):
+def hangreport(request, product=None, template=None):
     data = {}
-    data['product']  = product
+    data['product'] = product
     mware = SocorroMiddleware()
     data['currentversions'] = mware.current_versions()
 
     return render(request, template, data)
 
 @mobile_template('crashstats/{mobile/}topchangers.html')
-def topchangers(request, product, template=None):
+def topchangers(request, product=None, template=None):
     data = {}
-    data['product']  = product
+    data['product'] = product
     mware = SocorroMiddleware()
     data['currentversions'] = mware.current_versions()
 
@@ -92,8 +94,6 @@ def topchangers(request, product, template=None):
 @mobile_template('crashstats/{mobile/}reportlist.html')
 def reportlist(request, template=None):
     data = {}
-    data['product']  = request.path.split('/')[-1]
-
     mware = SocorroMiddleware()
     data['currentversions'] = mware.current_versions()
 
@@ -102,8 +102,6 @@ def reportlist(request, template=None):
 @mobile_template('crashstats/{mobile/}reportindex.html')
 def reportindex(request, template=None):
     data = {}
-    data['product']  = request.path.split('/')[-1]
-
     mware = SocorroMiddleware()
     data['currentversions'] = mware.current_versions()
 
@@ -112,8 +110,6 @@ def reportindex(request, template=None):
 @mobile_template('crashstats/{mobile/}query.html')
 def query(request, template=None):
     data = {}
-    data['product']  = request.path.split('/')[-1]
-
     mware = SocorroMiddleware()
     data['currentversions'] = mware.current_versions()
     data['query'] = mware.search()
