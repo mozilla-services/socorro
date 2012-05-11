@@ -19,6 +19,9 @@ MINIFY_BUNDLES = {
         'daily_css': (
             'css/crashstats/screen.css',
         ),
+        'topcrash_css': (
+            'css/crashstats/flora/flora.tablesorter.css',
+        ),
         'example_mobile_css': (
             'css/crashstats/mobile.css',
         ),
@@ -28,6 +31,7 @@ MINIFY_BUNDLES = {
             'js/crashstats/libs/jquery-1.6.4.min.js',
             'js/crashstats/libs/jquery.cookies.2.2.0.js',
             'js/crashstats/libs/jquery-ui-1.8.16.custom.min.js',
+            'js/crashstats/libs/jquery.tablesorter.min.js',
             'js/crashstats/nav.js',
         ),
        'crashstats_flot': (
@@ -35,6 +39,15 @@ MINIFY_BUNDLES = {
        ),
        'crashstats_daily': (
             'js/crashstats/daily.js',
+       ),
+       'crashstats_topcrash': (
+            'js/crashstats/topcrash.js',
+       ),
+       'crashstats_bugzilla': (
+            'js/crashstats/bugzilla.js',
+       ),
+       'crashstats_correlation': (
+            'js/crashstats/correlation.js',
        ),
     }
 }

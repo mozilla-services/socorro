@@ -1,4 +1,8 @@
 {% extends "crashstats_base.html" %}
+{% block site_css %}
+  {{ super() }}
+  {{ css('topcrash_css') }}
+{% endblock %}
 {% block content %}
     <div id="mainbody">
         <div class="page-heading">
@@ -14,7 +18,7 @@
                 Top 300 Crashing Signatures.
                 <time class="start-date">{{ tcbs.start_date }}</time> through
                 <time class="end-date">{{ tcbs.end_date }}</time>.
-                <p>The report covers <span class="percentage" title="{{ tcbs.totalPercentage }}">{{ tcbs.totalPercentage }}</span> of all {{ tcbs.totalNumberOfCrashes }} crashes during this period. Graphs below are dual-axis, having <strong>Count</strong> (Number of Crashes) on the left X axis and <strong>Percent</strong> of total of Crashes on the right X axis.</p>
+                <p>The report covers <span class="percentage" title="{{ tcbs.totalPercentage }}">{{ (tcbs.totalPercentage * 100) | round(2) }}</span> of all {{ tcbs.totalNumberOfCrashes }} crashes during this period. Graphs below are dual-axis, having <strong>Count</strong> (Number of Crashes) on the left X axis and <strong>Percent</strong> of total of Crashes on the right X axis.</p>
                 <ul class="tc-duration-type tc-filter">
                 <li class="tc-duration-heading">Type:</li>
                 <li><a href="/topcrasher/byversion/Firefox/15.0a1/7/all" >All</a></li>
@@ -57,9 +61,16 @@
                 <tbody>
 {% for crash in tcbs.crashes %}
                     <tr>
-                        <td class="rank">{{ crash.currentRankk }}</td>
-                        <td>{{ crash.percentOfTotal }}%</td>
-                        <td title="A change of {{ crash.changeInPercentOfTotal}}% from {{ crash.previousPercentOfTotal }}%">{{ crash.changeInPercentOfTotal }}%</td>
+                        <td class="rank">
+                            {{ crash.currentRank + 1 }}
+                            <span {% if crash.changeInRank == 'new' %} {% elif crash.changeInRank > 1 %} class="moving-up" {% elif crash.changeInRank < -1 %} class="moving-down" {% endif %} title="Movement in rank since the {{ tcbs.start_date }} report">{{ crash.changeInRank }}</span>
+                        </td>
+                        <td>{{ (crash.percentOfTotal * 100) | round(2) }}%</td>
+                        {% if crash.changeInPercentOfTotal == 'new' %}
+                        <td title="This is a new signature">new</td>
+                        {% else %}
+                        <td title="A change of {{ (crash.changeInPercentOfTotal * 100) | round(2) }}% from {{ (crash.previousPercentOfTotal * 100) | round(2) }}%">{{ (crash.changeInPercentOfTotal * 100) | round(2) }}%</td>
+                        {% endif %}
                         <td>
                             <a class="signature" href="/report/list?range_value=7&amp;range_unit=days&amp;date={{ tcbs.end_date }}&amp;signature={{ crash.signature }}&amp;version=Firefox%3A15.0a1" title="{{ crash.signature }}">{{ crash.signature }}</a>
                             <div class="signature-icons">
@@ -72,11 +83,11 @@
                             <input type="hidden" class='ajax-signature' name="ajax-signature-1" value="{{ crash.signature }}" />
                         </td>
                         <td>{{ crash.count }}</td>
-                        <td>{{ crash.count_win }}</td>
-                        <td>{{ crash.count_mac }}</td>
-                        <td>{{ crash.count_lin }}</td>
+                        <td>{{ crash.win_count }}</td>
+                        <td>{{ crash.mac_count }}</td>
+                        <td>{{ crash.linux_count }}</td>
                         <td><span title="{{ crash.versions }}">{{ crash.versions|count}}</span></td>
-                        <td title="This crash signature first appeared at {{ crash.first_appeared }}" >{{ crash.first_appeared }}</td> 
+                        <td title="This crash signature first appeared at {{ crash.first_report_exact }}" >{{ crash.first_report }}</td> 
                         <td class="bug_ids_more">
                             {% for bug in crash.bugs %}
                             <a href="https://bugzilla.mozilla.org/show_bug.cgi?id={{ bug.id }}"
@@ -110,7 +121,15 @@
                 </tbody>
             </table>
         </div>
-                <script type="text/javascript">//<![CDATA[
+{% block site_js %}
+  {{ super() }}
+  <!--[if IE]><script type="text/javascript" src="/media/js/flot-0.7/excanvas.pack.js"></script><![endif]-->
+  {{ js('crashstats_flot') }}
+  {{ js('crashstats_topcrash') }}
+  {{ js('crashstats_bugzilla') }}
+  {{ js('crashstats_correlation') }}
+
+<script type="text/javascript">//<![CDATA[
 var SocAjax = '/topcrasher/plot_signature/Firefox/15.0a1/';
 var SocAjaxStartEnd = '/{{ tcbs.start_date }}/{{ tcbs.end_date }}/';
 var SocImg = '/img/';
@@ -120,7 +139,8 @@ var SocReport = {
     loading: 'Loading <img src="/media/img/loading.png" width="16" height="17" />'
 };
 //]]>
-                </script>
+</script>
+{% endblock %}
                 <p>Want to slice and dice? <a href="?format=csv">CSV-Formatted Raw Data</a></p>
             </div>
         </div>
