@@ -74,18 +74,20 @@ def builds(request, product=None, template=None):
     return render(request, template, data)
 
 @mobile_template('crashstats/{mobile/}hangreport.html')
-def hangreport(request, product=None, template=None):
+def hangreport(request, product=None, version=None, template=None):
     data = {}
     data['product'] = product
+    data['version'] = version
     mware = SocorroMiddleware()
     data['currentversions'] = mware.current_versions()
 
     return render(request, template, data)
 
 @mobile_template('crashstats/{mobile/}topchangers.html')
-def topchangers(request, product=None, template=None):
+def topchangers(request, product=None, versions=None, template=None):
     data = {}
     data['product'] = product
+    data['versions'] = versions
     mware = SocorroMiddleware()
     data['currentversions'] = mware.current_versions()
 
@@ -100,7 +102,7 @@ def reportlist(request, template=None):
     return render(request, template, data)
 
 @mobile_template('crashstats/{mobile/}reportindex.html')
-def reportindex(request, template=None):
+def reportindex(request, crash_id=None, template=None):
     data = {}
     mware = SocorroMiddleware()
     data['currentversions'] = mware.current_versions()
