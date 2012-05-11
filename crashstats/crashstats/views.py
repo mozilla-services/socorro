@@ -31,7 +31,7 @@ def unixtime(value, millis=False, format='%Y-%m-%d'):
         return epoch_seconds
 
 @mobile_template('crashstats/{mobile/}products.html')
-def home(request, product, template=None):
+def home(request, product, versions, template=None):
     data = {}
     data['product']  = product
     mware = SocorroMiddleware()
@@ -41,10 +41,10 @@ def home(request, product, template=None):
     return render(request, template, data)
 
 @mobile_template('crashstats/{mobile/}topcrasher.html')
-def topcrasher(request, template=None):
+def topcrasher(request, product, version, template=None):
     data = {}
-    data['product'] = request.path.split('/')[-2]
-
+    data['product'] = product
+    data['version'] = version
     mware = SocorroMiddleware()
     data['currentversions'] = mware.current_versions()
     data['tcbs'] = mware.tcbs()
@@ -81,10 +81,9 @@ def hangreport(request, product, template=None):
     return render(request, template, data)
 
 @mobile_template('crashstats/{mobile/}topchangers.html')
-def topchangers(request, template=None):
+def topchangers(request, product, template=None):
     data = {}
-    data['product']  = request.path.split('/')[-1]
-
+    data['product']  = product
     mware = SocorroMiddleware()
     data['currentversions'] = mware.current_versions()
 
