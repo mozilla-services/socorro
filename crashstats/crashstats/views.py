@@ -1,19 +1,34 @@
 """Example views. Feel free to delete this app."""
 
 import logging
+import json
+import datetime
+import time
+import os
 
 from django import http
 from django.shortcuts import render
 
 import bleach
 import commonware
+
+from jingo import env, register
 from funfactory.log import log_cef
 from mobility.decorators import mobile_template
 from session_csrf import anonymous_csrf
 
-import json
-
 log = commonware.log.getLogger('playdoh')
+
+@register.filter
+def unixtime(value, millis=False, format='%Y-%m-%d'):
+    log.debug(value)
+    d = datetime.datetime.strptime(value, format)
+    epoch_seconds = time.mktime(d.timetuple())
+    if millis:
+        return epoch_seconds * 1000 + d.microsecond/1000
+    else:
+        return epoch_seconds
+
 
 def _basedata(request):
     data = {}
@@ -25,8 +40,12 @@ def _basedata(request):
 
 @mobile_template('crashstats/{mobile/}products.html')
 def home(request, template=None):
-
+    # e.g. curl -H "Host: socorro-mware-zlb.webapp.phx1.mozilla.com" -u dbrwaccess 'http://localhost/bpapi/adu/byday/p/Firefox/v/15.0a1;14.0a2;13.0b2;12.0/rt/any/os/Windows;Mac;Linux/start/2012-05-03/end/2012-05-10'
     data = _basedata(request)
+
+    with open('adubyday.json') as f:
+        data['adubyday'] = json.loads(f.read())
+
     return render(request, template, data)
 
 @mobile_template('crashstats/{mobile/}topcrasher.html')
