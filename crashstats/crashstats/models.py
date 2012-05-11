@@ -15,22 +15,20 @@ class SocorroMiddleware(object):
         headers = {'Host': self.http_host}
         resp = requests.get(url, auth=(self.username, self.password),
                             headers=headers)
-        print resp
         return json.loads(resp.content)
 
     def current_versions(self):
         url = '%s/current/versions/' % self.base_url
-        print url
         return self.fetch(url)['currentversions']
 
     def adu_by_day(self, product, versions, os_names, start_date, end_date):
         params = {
             'base_url': self.base_url,
             'product': product,
-            'versions': versions,
-            'os_names': os_names,
-            'start_date': start_date,
-            'end_date': end_date,
+            'versions': ';'.join(versions),
+            'os_names': ';'.join(os_names),
+            'start_date': start_date.strftime('%Y-%m-%d'),
+            'end_date': end_date.strftime('%Y-%m-%d'),
         }
         url = '%(base_url)s/adu/byday/p/%(product)s/v/%(versions)s/rt/any/os/%(os_names)s/start/%(start_date)s/end/%(end_date)s' % params
         return self.fetch(url)

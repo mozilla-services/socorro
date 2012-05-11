@@ -50,10 +50,29 @@ def _basedata(product=None, version=None):
 def home(request, product, versions=None, template=None):
     data = _basedata(product)
 
+    # FIXME hardcoded default, find a better place for this to live
+    os_names = ['Windows', 'Mac', 'Linux']
+
+    duration = int(request.GET.get('duration'))
+    if duration is None or duration not in [3,7,14]:
+        duration = 7
+    data['duration'] = duration
+    
+    if versions is None:
+        versions = []
+        for release in data['currentversions']:
+            if release['product'] == product and release['featured']:
+                versions.append(release['version'])
+
+    end_date = datetime.datetime.utcnow()
+    start_date = end_date - datetime.timedelta(days=duration)
+ 
+    log.debug(start_date)
+    log.debug(end_date)
+
     mware = SocorroMiddleware()
-    data['adubyday'] = mware.adu_by_day(product='Firefox',
-        versions='13.0a1;13.0b2;12.0', os_names='Windows;Mac;Linux',
-        start_date='2012-05-03', end_date='2012-05-10')
+    data['adubyday'] = mware.adu_by_day(product, versions, os_names,
+                                        start_date, end_date)
 
     return render(request, template, data)
 

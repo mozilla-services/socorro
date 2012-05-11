@@ -26,9 +26,9 @@
     <div class="page-heading">
         <h2>{{ product }} Crash Data</h2>
          <ul class="options">
-                <li><a href="/products/{{ product }}?duration=3" >3 days</a></li>
-                <li><a href="/products/{{ product }}?duration=7"  class="selected">7 days</a></li>
-                <li><a href="/products/{{ product }}?duration=14" >14 days</a></li>
+                <li><a href="/products/{{ product }}?duration=3" {% if duration == 3 %} class="selected" {% endif %}>3 days</a></li>
+                <li><a href="/products/{{ product }}?duration=7" {% if duration == 7 %} class="selected" {% endif %}>7 days</a></li>
+                <li><a href="/products/{{ product }}?duration=14" {% if duration == 14 %} class="selected" {% endif %}>14 days</a></li>
             </ul>
     </div>
 
