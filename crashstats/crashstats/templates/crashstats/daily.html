@@ -5,10 +5,6 @@
 <script>var data = {"startDate":"2012-04-26","endDate":"2012-05-10","count":4,"item1":"15.0a1","ratio1":[[1336608000000,null],[1336521600000,2.964041496581],[1336435200000,3.0568450556188],[1336348800000,3.5724239276394],[1336262400000,3.9753392279982],[1336176000000,4.0546856742229],[1336089600000,2.4260074500508],[1336003200000,1.8478976135799],[1335916800000,2.0915945266685],[1335830400000,2.3758066010065],[1335744000000,4.6023789695322],[1335657600000,6.0974319175956],[1335571200000,4.3769895407003],[1335484800000,14.678169602036],[1335398400000,8.127084018222]],"item2":"14.0a2","ratio2":[[1336608000000,null],[1336521600000,1.8834330226735],[1336435200000,1.8376001256479],[1336348800000,2.1430905841695],[1336262400000,2.7123769051608],[1336176000000,2.2917448796563],[1336089600000,2.1899090333748],[1336003200000,2.1066536883821],[1335916800000,3.5274627246081],[1335830400000,2.4803538702156],[1335744000000,2.7069531965315],[1335657600000,2.7268040518887],[1335571200000,3.8218194254446],[1335484800000,11.750154607297],[1335398400000,12.022900763359]],"item3":"13.0b2","ratio3":[[1336608000000,null],[1336521600000,2.0040702724293],[1336435200000,1.9262256322959],[1336348800000,1.9746387595053],[1336262400000,2.3477913837698],[1336176000000,2.5596180094954],[1336089600000,4.6100033849675],[1336003200000,6.3520871143376],[1335916800000,5.8394160583942],[1335830400000,null],[1335744000000,null],[1335657600000,null],[1335571200000,null],[1335484800000,null],[1335398400000,null]],"item4":"12.0","ratio4":[[1336608000000,null],[1336521600000,1.4346973893366],[1336435200000,1.3939946549558],[1336348800000,1.4290227450811],[1336262400000,1.6883402384247],[1336176000000,1.753960814288],[1336089600000,1.5441650689372],[1336003200000,1.4704392283275],[1335916800000,1.5884634634467],[1335830400000,1.6725363046497],[1335744000000,1.6263119998398],[1335657600000,1.8439606911614],[1335571200000,1.8703307092095],[1335484800000,1.8843163776322],[1335398400000,1.9201094789001]]};
         window.socGraphByReportType = false;
     </script>
-<script type="text/javascript" src="https://crash-stats.mozilla.com/js/jquery/plugins/ui/jquery-ui-1.8.16.custom.min.js"></script>
-<script type="text/javascript" src="https://crash-stats.mozilla.com/js/flot-0.7/jquery.flot.pack.js"></script>
-<script type="text/javascript" src="https://crash-stats.mozilla.com/js/socorro/daily.js"></script>
-
 
 <div class="page-heading">
     <h2>Crashes per Active Daily User</h2>
@@ -25,7 +21,7 @@
         <div id="daily_search_version">
             <h3><a href="#" id="click_by_version">Crashes per ADU by Version</a></h3>
             <p>All ADU ratios are generated per 100 ADUs, not per single ADU. "3.5 crashes/ADU" means that there are 3.5 crashes per 100 users, not per user. This ratio also does not distinguish between users who crash multiple times and multiple crashing users.</p>
-            <form id="daily_search_version_form" name="daily_search_version_form" action="https://crash-stats.mozilla.com/daily" method="get" >
+            <form id="daily_search_version_form" name="daily_search_version_form" action="/daily" method="get" >
 
 	    		<input type="hidden" name="form_selection" value="by_version">
 
@@ -327,7 +323,7 @@
 
 	    <div id="daily_search_os">
 	    	<h3><a href="#" id="click_by_os">Crashes per ADU by O/S</a></h3>
-	    	<form id="daily_search_os_form" action="https://crash-stats.mozilla.com/daily" method="get" style="display: none">
+	    	<form id="daily_search_os_form" action="/daily" method="get" style="display: none">
 	    		<input type="hidden" name="form_selection" value="by_os">
 
 	    		<table class="by_version">
@@ -442,7 +438,7 @@
 
         <div id="daily_search_report_type">
              <h3><a href="#" id="click_by_report_type">Crashes per ADU by Type</a></h3>
-             <form id="daily_search_report_type_form" action="https://crash-stats.mozilla.com/daily" method="get" style="display: none">
+             <form id="daily_search_report_type_form" action="/daily" method="get" style="display: none">
 
  	    		<input type="hidden" name="form_selection" value="by_report_type">
 

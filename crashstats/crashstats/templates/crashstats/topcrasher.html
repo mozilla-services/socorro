@@ -63,8 +63,8 @@
                         <td>
                             <a class="signature" href="/report/list?range_value=7&amp;range_unit=days&amp;date={{ tcbs.end_date }}&amp;signature={{ crash.signature }}&amp;version=Firefox%3A15.0a1" title="{{ crash.signature }}">{{ crash.signature }}</a>
                             <div class="signature-icons">
-                                <img src="https://crash-stats.mozilla.com/img/3rdparty/fatcow/application16x16.png" width="16" height="16" alt="Browser Crash" title="Browser Crash" class="browser" />
-                                <a href="#" title="Load graph data"><img src="https://crash-stats.mozilla.com/img/3rdparty/silk/chart_curve.png" width="16" height="16" alt="Graph this" class="graph-icon" /></a>
+                                <img src="/media/img/3rdparty/fatcow/application16x16.png" width="16" height="16" alt="Browser Crash" title="Browser Crash" class="browser" />
+                                <a href="#" title="Load graph data"><img src="/media/img/3rdparty/silk/chart_curve.png" width="16" height="16" alt="Graph this" class="graph-icon" /></a>
                             </div>
                             <div class="sig-history-legend"></div>
                             <p class="graph-close hide"><a href="javascript:void" title="Close graph">close x</a></p>
@@ -111,13 +111,13 @@
             </table>
         </div>
                 <script type="text/javascript">//<![CDATA[
-var SocAjax = 'https://crash-stats.mozilla.com/topcrasher/plot_signature/Firefox/15.0a1/';
+var SocAjax = '/topcrasher/plot_signature/Firefox/15.0a1/';
 var SocAjaxStartEnd = '/{{ tcbs.start_date }}/{{ tcbs.end_date }}/';
-var SocImg = 'https://crash-stats.mozilla.com/img/';
+var SocImg = '/img/';
 var SocReport = {
-    base: 'https://crash-stats.mozilla.com/correlation/bulk_ajax/',
+    base: '/correlation/bulk_ajax/',
     path: '/Firefox/15.0a1/',
-    loading: 'Loading <img src="https://crash-stats.mozilla.com/img/loading.png" width="16" height="17" />'
+    loading: 'Loading <img src="/media/img/loading.png" width="16" height="17" />'
 };
 //]]>
                 </script>
