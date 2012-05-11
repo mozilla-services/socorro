@@ -30,14 +30,29 @@ def unixtime(value, millis=False, format='%Y-%m-%d'):
     else:
         return epoch_seconds
 
-@mobile_template('crashstats/{mobile/}products.html')
-def home(request, product=None, versions=None, template=None):
+# FIXME validate/scrub all info
+# TODO would be better as a decorator
+def _basedata(product=None, version=None):
     data = {}
-    data['product'] = product
     mware = SocorroMiddleware()
     data['currentversions'] = mware.current_versions()
+    for release in data['currentversions']:
+        if product == release['product']:
+            data['product'] = product
+            break
+    for release in data['currentversions']:
+        if version == release['version']:
+            data['version'] = product
+            break
+    return data
+
+@mobile_template('crashstats/{mobile/}products.html')
+def home(request, product, versions=None, template=None):
+    data = _basedata(product)
+
+    mware = SocorroMiddleware()
     data['adubyday'] = mware.adu_by_day(product='Firefox',
-        versions='13.0a1;14.0a2;13.0b2;12.0', os_names='Windows;Mac;Linux',
+        versions='13.0a1;13.0b2;12.0', os_names='Windows;Mac;Linux',
         start_date='2012-05-03', end_date='2012-05-10')
 
     return render(request, template, data)
@@ -45,14 +60,14 @@ def home(request, product=None, versions=None, template=None):
 @mobile_template('crashstats/{mobile/}topcrasher.html')
 def topcrasher(request, product=None, version=None, days=None, crash_type=None,
                os_name=None, template=None):
-    data = {}
-    data['product'] = product
-    data['version'] = version
+
+    data = _basedata(product, version)
+
     data['days'] = days
     data['crash_type'] = crash_type
     data['os_name'] = os_name
+
     mware = SocorroMiddleware()
-    data['currentversions'] = mware.current_versions()
     data['tcbs'] = mware.tcbs(product='Firefox', version='14.0a1',
         end_date='2012-05-10T11%3A00%3A00%2B0000', duration='168', limit='300')
 
@@ -61,9 +76,9 @@ def topcrasher(request, product=None, version=None, days=None, crash_type=None,
 
 @mobile_template('crashstats/{mobile/}daily.html')
 def daily(request, template=None):
-    data = {}
+    data = _basedata()
+
     mware = SocorroMiddleware()
-    data['currentversions'] = mware.current_versions()
     data['adubyday'] = mware.adu_by_day(product='Firefox',
         versions='13.0a1;14.0a2;13.0b2;12.0', os_names='Windows;Mac;Linux',
         start_date='2012-05-03', end_date='2012-05-10')
@@ -72,54 +87,39 @@ def daily(request, template=None):
 
 @mobile_template('crashstats/{mobile/}builds.html')
 def builds(request, product=None, template=None):
-    data = {}
-    data['product'] = product
-    mware = SocorroMiddleware()
-    data['currentversions'] = mware.current_versions()
+    data = _basedata(product)
 
     return render(request, template, data)
 
 @mobile_template('crashstats/{mobile/}hangreport.html')
 def hangreport(request, product=None, version=None, template=None):
-    data = {}
-    data['product'] = product
-    data['version'] = version
-    mware = SocorroMiddleware()
-    data['currentversions'] = mware.current_versions()
+    data = _basedata(product, version)
 
     return render(request, template, data)
 
 @mobile_template('crashstats/{mobile/}topchangers.html')
 def topchangers(request, product=None, versions=None, template=None):
-    data = {}
-    data['product'] = product
-    data['versions'] = versions
-    mware = SocorroMiddleware()
-    data['currentversions'] = mware.current_versions()
+    data = _basedata(product, versions)
 
     return render(request, template, data)
 
 @mobile_template('crashstats/{mobile/}reportlist.html')
 def reportlist(request, template=None):
-    data = {}
-    mware = SocorroMiddleware()
-    data['currentversions'] = mware.current_versions()
+    data = _basedata()
 
     return render(request, template, data)
 
 @mobile_template('crashstats/{mobile/}reportindex.html')
 def reportindex(request, crash_id=None, template=None):
-    data = {}
-    mware = SocorroMiddleware()
-    data['currentversions'] = mware.current_versions()
+    data = _basedata(product, versions)
 
     return render(request, template, data)
 
 @mobile_template('crashstats/{mobile/}query.html')
 def query(request, template=None):
-    data = {}
+    data = _basedata()
+
     mware = SocorroMiddleware()
-    data['currentversions'] = mware.current_versions()
     data['query'] = mware.search(product='Firefox', 
         versions='13.0a1;14.0a2;13.0b2;12.0', os_names='Windows;Mac;Linux',
         start_date='2012-05-03', end_date='2012-05-10', limit='100')
