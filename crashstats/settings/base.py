@@ -27,11 +27,14 @@ MINIFY_BUNDLES = {
         'crashstats_js': (
             'js/crashstats/libs/jquery-1.6.4.min.js',
             'js/crashstats/libs/jquery.cookies.2.2.0.js',
-            'js/crashstats/daily.js',
+            'js/crashstats/libs/jquery-ui-1.8.16.custom.min.js',
             'js/crashstats/nav.js',
         ),
        'crashstats_flot': (
            'js/crashstats/libs/flot-0.7/jquery.flot.pack.js',
+       ),
+       'crashstats_daily': (
+            'js/crashstats/daily.js',
        ),
     }
 }

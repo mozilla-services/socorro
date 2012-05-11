@@ -1,13 +1,16 @@
 {% extends "crashstats_base.html" %}
 {% block content %}<div id="mainbody">
                   
-<script>var data = {"startDate":"2012-04-25","endDate":"2012-05-09","count":1,"item1":"15.0a1","ratio1":[[1336521600000,2.964041496581],[1336435200000,3.0568450556188],[1336348800000,3.5724239276394],[1336262400000,3.9753392279982],[1336176000000,4.0546856742229],[1336089600000,2.4260074500508],[1336003200000,1.8478976135799],[1335916800000,2.0915945266685],[1335830400000,2.3758066010065],[1335744000000,4.6023789695322],[1335657600000,6.0974319175956],[1335571200000,4.3769895407003],[1335484800000,14.678169602036],[1335398400000,8.127084018222],[1335312000000,3.0801087097192]]};
-        window.socGraphByReportType = false;
+    {% block site_js %}
+    {{ super() }}
+    <!--[if IE]><script type="text/javascript" src="https://crash-stats.mozilla.com/js/flot-0.7/excanvas.pack.js"></script><![endif]--> 
+    {{ js('crashstats_flot') }}
+    {{ js('crashstats_daily') }}
+    <script>
+    var data = {"startDate":"2012-04-25","endDate":"2012-05-09","count":1,"item1":"15.0a1","ratio1":[[1336521600000,2.964041496581],[1336435200000,3.0568450556188],[1336348800000,3.5724239276394],[1336262400000,3.9753392279982],[1336176000000,4.0546856742229],[1336089600000,2.4260074500508],[1336003200000,1.8478976135799],[1335916800000,2.0915945266685],[1335830400000,2.3758066010065],[1335744000000,4.6023789695322],[1335657600000,6.0974319175956],[1335571200000,4.3769895407003],[1335484800000,14.678169602036],[1335398400000,8.127084018222],[1335312000000,3.0801087097192]]};
+    window.socGraphByReportType = false;
     </script>
-<script type="text/javascript" src="https://crash-stats.mozilla.com/js/jquery/plugins/ui/jquery-ui-1.8.16.custom.min.js"></script>
-<script type="text/javascript" src="https://crash-stats.mozilla.com/js/flot-0.7/jquery.flot.pack.js"></script>
-<script type="text/javascript" src="https://crash-stats.mozilla.com/js/socorro/daily.js"></script>
-
+    {% endblock %}
 
 <div class="page-heading">
     <h2>Crashes per Active Daily User</h2>
@@ -24,7 +27,7 @@
         <div id="daily_search_version">
             <h3><a href="#" id="click_by_version">Crashes per ADU by Version</a></h3>
             <p>All ADU ratios are generated per 100 ADUs, not per single ADU. "3.5 crashes/ADU" means that there are 3.5 crashes per 100 users, not per user. This ratio also does not distinguish between users who crash multiple times and multiple crashing users.</p>
-            <form id="daily_search_version_form" name="daily_search_version_form" action="https://crash-stats.mozilla.com/daily" method="get" >
+            <form id="daily_search_version_form" name="daily_search_version_form" action="/daily" method="get" >
 
                 <input type="hidden" name="form_selection" value="by_version">
 
@@ -326,7 +329,7 @@
 
         <div id="daily_search_os">
             <h3><a href="#" id="click_by_os">Crashes per ADU by O/S</a></h3>
-            <form id="daily_search_os_form" action="https://crash-stats.mozilla.com/daily" method="get" style="display: none">
+            <form id="daily_search_os_form" action="/daily" method="get" style="display: none">
                 <input type="hidden" name="form_selection" value="by_os">
 
                 <table class="by_version">
@@ -441,7 +444,7 @@
 
         <div id="daily_search_report_type">
              <h3><a href="#" id="click_by_report_type">Crashes per ADU by Type</a></h3>
-             <form id="daily_search_report_type_form" action="https://crash-stats.mozilla.com/daily" method="get" style="display: none">
+             <form id="daily_search_report_type_form" action="/daily" method="get" style="display: none">
 
                  <input type="hidden" name="form_selection" value="by_report_type">
 
