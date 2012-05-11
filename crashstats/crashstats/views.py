@@ -53,9 +53,13 @@ def home(request, product, versions=None, template=None):
     # FIXME hardcoded default, find a better place for this to live
     os_names = ['Windows', 'Mac', 'Linux']
 
-    duration = int(request.GET.get('duration'))
-    if duration is None or duration not in [3,7,14]:
+    duration = request.GET.get('duration')
+
+    if duration is None or duration not in ['3','7','14']:
         duration = 7
+    else:
+       duration = int(duration)
+        
     data['duration'] = duration
     
     if versions is None:
