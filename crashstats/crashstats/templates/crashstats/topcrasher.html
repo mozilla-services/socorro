@@ -21,25 +21,22 @@
                 <p>The report covers <span class="percentage" title="{{ tcbs.totalPercentage }}">{{ (tcbs.totalPercentage * 100) | round(2) }}</span> of all {{ tcbs.totalNumberOfCrashes }} crashes during this period. Graphs below are dual-axis, having <strong>Count</strong> (Number of Crashes) on the left X axis and <strong>Percent</strong> of total of Crashes on the right X axis.</p>
                 <ul class="tc-duration-type tc-filter">
                 <li class="tc-duration-heading">Type:</li>
-                <li><a href="/topcrasher/byversion/{{ product }}/{{ version }}/{{ days }}/all" >All</a></li>
-                <li><a href="/topcrasher/byversion/{{ product }}/{{ version }}/{{ days }}/browser" class="selected">Browser</a></li>
-                <li><a href="/topcrasher/byversion/{{ product }}/{{ version }}/{{ days }}/plugin" >Plugin</a></li>
-                <li><a href="/topcrasher/byversion/{{ product }}/{{ version }}/{{ days }}/content" >Content</a></li>
+                {% for c in ['all', 'browser', 'plugin', 'content'] %}
+                <li><a href="/topcrasher/byversion/{{ product }}/{{ version }}/{{ days }}/{{ c }}" {% if crash_type == c %} class="selected" {% endif %} >{{ c|capitalize }}</a></li>
+                {% endfor %}
             </ul>
             <ul class="tc-duration-days tc-filter">
                 <li class="tc-duration-heading">Days:</li>
-                <li><a href="/topcrasher/byversion/{{ product }}/{{ version }}/1/browser" >1</a></li>
-                <li><a href="/topcrasher/byversion/{{ product }}/{{ version }}/3/browser" >3</a></li>
-                <li><a href="/topcrasher/byversion/{{ product }}/{{ version }}/7/browser" class="selected">7</a></li>
-                <li><a href="/topcrasher/byversion/{{ product }}/{{ version }}/14/browser" >14</a></li>
-                <li><a href="/topcrasher/byversion/{{ product }}/{{ version }}/28/browser" >28</a></li>
+                {% for d in [1, 3, 7, 14, 28] %}
+                <li><a href="/topcrasher/byversion/{{ product }}/{{ version }}/{{ d }}/browser" {% if days == d %} class="selected" {% endif %}>{{ d }}</a></li>
+                {% endfor %}
             </ul>
             <ul class="tc-per-platform tc-filter">
                 <li class="tc-per-platform-heading">OS:</li>
-                <li><a href="/topcrasher/byversion/{{ product }}/{{ version }}/7/browser" class="selected">All</a></li>
-                <li><a href="/topcrasher/byos/{{ product }}/{{ version }}/Windows/7/browser">Windows</a></li>
-                <li><a href="/topcrasher/byos/{{ product }}/{{ version }}/Linux/7/browser">Linux</a></li>
-                <li><a href="/topcrasher/byos/{{ product }}/{{ version }}/Mac OS X/7/browser">Mac OS X</a></li>
+                <li><a href="/topcrasher/byversion/{{ product }}/{{ version }}/{{ days }}/browser" {% if os_name == None %} class="selected" {% endif %}>All</a></li>
+                {% for os in ['Windows', 'Linux', 'Mac OS X'] %}
+                <li><a href="/topcrasher/byos/{{ product }}/{{ version }}/{{ os }}/{{ days }}/browser" {% if os_name == os %} class="selected" {% endif %}>{{ os }}</a></li>
+                {% endfor %}
             </ul>
             <table id="signatureList" class="tablesorter data-table">
                 <thead>

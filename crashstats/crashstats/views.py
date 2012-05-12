@@ -91,19 +91,24 @@ def topcrasher(request, product=None, version=None, days=None, crash_type=None,
 
     data = _basedata(product, version)
 
-    if days is None or days not in [1,3,7,14,28]:
+    if days is None or days not in ['1', '3', '7', '14', '28']:
         days = 7
+    days = int(days)
     data['days'] = days
 
     end_date = datetime.datetime.utcnow()
     start_date = end_date - datetime.timedelta(days=days)
+
+    if crash_type is None or \
+       crash_type not in ['all', 'browser', 'plugin', 'content']:
+        crash_type = 'browser'
 
     data['crash_type'] = crash_type
     data['os_name'] = os_name
 
     mware = SocorroMiddleware()
     data['tcbs'] = mware.tcbs(product, version, end_date,
-                              duration='168', limit='300')
+                              duration=(days * 24), limit='300')
 
 
     return render(request, template, data)
