@@ -52,7 +52,7 @@ $(document).ready(function () {
             currentCtx = $(this).parents("td");
             
         button.get(0).disabled = true;
-        legend.html("<img src='" + window.SocImg + "ajax-loader.gif' alt='Loading Graph' />");
+        legend.html("<img src='/media/" + window.SocImg + "ajax-loader.gif' alt='Loading Graph' />");
         $.getJSON(window.SocAjax + window.SocAjaxStartEnd + encodeURI(sig), function (data) {
             currentCtx.find(".graph-close").removeClass("hide");
             graph.show();
