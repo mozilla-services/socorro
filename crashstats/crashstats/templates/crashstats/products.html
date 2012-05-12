@@ -56,18 +56,18 @@
                 <div class="release_channel  border_right">
                     <h4>{{ r[0] }} {{ v.version }}</h4>
                     <ul>
-                      <li><a href="/topcrasher/byversion/{{ r[0] }}/{{ v.version }}/7">Top Crashers</a></li>
-                      <li><a href="/products/{{ r[0] }}/{{ v.version }}/15.0a1/topchangers?duration=7">Top Changers</a></li>
-                      <li><a href="/topcrasher/byversion/{{ r[0] }}/{{ v.version }}/7/plugin">Top Plugin Crashers</a></li>
+                      <li><a href="/topcrasher/byversion/{{ r[0] }}/{{ v.version }}/{{ duration }}">Top Crashers</a></li>
+                      <li><a href="/products/{{ r[0] }}/{{ v.version }}/15.0a1/topchangers?duration={{ duration }}">Top Changers</a></li>
+                      <li><a href="/topcrasher/byversion/{{ r[0] }}/{{ v.version }}/{{ duration }}/plugin">Top Plugin Crashers</a></li>
                     </ul>
                 </div>
                         {% elif not version and v.featured %}
                 <div class="release_channel  border_right">
                     <h4>{{ r[0] }} {{ v.version }}</h4>
                     <ul>
-                      <li><a href="/topcrasher/byversion/{{ r[0] }}/{{ v.version }}/7">Top Crashers</a></li>
-                      <li><a href="/products/{{ r[0] }}/{{ v.version }}/15.0a1/topchangers?duration=7">Top Changers</a></li>
-                      <li><a href="/topcrasher/byversion/{{ r[0] }}/{{ v.version }}/7/plugin">Top Plugin Crashers</a></li>
+                      <li><a href="/topcrasher/byversion/{{ r[0] }}/{{ v.version }}/{{ duration }}">Top Crashers</a></li>
+                      <li><a href="/products/{{ r[0] }}/{{ v.version }}/15.0a1/topchangers?duration={{ duration }}">Top Changers</a></li>
+                      <li><a href="/topcrasher/byversion/{{ r[0] }}/{{ v.version }}/{{ duration }}/plugin">Top Plugin Crashers</a></li>
                     </ul>
                 </div>
                         {% endif %}
