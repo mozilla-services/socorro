@@ -17,7 +17,7 @@ MINIFY_BUNDLES = {
             'css/crashstats/screen.css',
         ),
         'daily_css': (
-            'css/crashstats/screen.css',
+            'css/crashstats/daily.css',
         ),
         'topcrash_css': (
             'css/crashstats/flora/flora.tablesorter.css',

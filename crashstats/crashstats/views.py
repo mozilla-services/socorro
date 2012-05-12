@@ -76,9 +76,6 @@ def home(request, product, versions=None, template=None):
     end_date = datetime.datetime.utcnow()
     start_date = end_date - datetime.timedelta(days=duration)
  
-    log.debug(start_date)
-    log.debug(end_date)
-
     mware = SocorroMiddleware()
     data['adubyday'] = mware.adu_by_day(product, versions, os_names,
                                         start_date, end_date)
@@ -119,10 +116,24 @@ def topcrasher(request, product=None, version=None, days=None, crash_type=None,
 def daily(request, template=None):
     data = _basedata()
 
+    product = request.GET.get('p')
+    if product is None:
+        product = 'Firefox'
+    data['product'] = product
+
+    versions = []
+    for release in data['currentversions']:
+        if release['product'] == product and release['featured']:
+            versions.append(release['version'])
+
+    os_names = ['Windows', 'Mac', 'Linux']
+
+    end_date = datetime.datetime.utcnow()
+    start_date = end_date - datetime.timedelta(days=7)
+
     mware = SocorroMiddleware()
-    data['adubyday'] = mware.adu_by_day(product='Firefox',
-        versions='13.0a1;14.0a2;13.0b2;12.0', os_names='Windows;Mac;Linux',
-        start_date='2012-05-03', end_date='2012-05-10')
+    data['adubyday'] = mware.adu_by_day(product, versions, os_names,
+                                        start_date, end_date)
 
     return render(request, template, data)
 
