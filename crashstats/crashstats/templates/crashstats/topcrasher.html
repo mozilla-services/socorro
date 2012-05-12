@@ -72,7 +72,7 @@
                         <td title="A change of {{ (crash.changeInPercentOfTotal * 100) | round(2) }}% from {{ (crash.previousPercentOfTotal * 100) | round(2) }}%">{{ (crash.changeInPercentOfTotal * 100) | round(2) }}%</td>
                         {% endif %}
                         <td>
-                            <a class="signature" href="/report/list?range_value=7&amp;range_unit=days&amp;date={{ tcbs.end_date }}&amp;signature={{ crash.signature }}&amp;version=Firefox%3A15.0a1" title="{{ crash.signature }}">{{ crash.signature }}</a>
+                            <a class="signature" href="/report/list?range_value=7&amp;range_unit=days&amp;date={{ tcbs.end_date }}&amp;signature={{ crash.signature }}&amp;version=Firefox%3A15.0a1" title="{{ crash.signature }}">{{ crash.signature|truncate(length=80) }}</a>
                             <div class="signature-icons">
                                 <img src="/media/img/3rdparty/fatcow/application16x16.png" width="16" height="16" alt="Browser Crash" title="Browser Crash" class="browser" />
                                 <a href="#" title="Load graph data"><img src="/media/img/3rdparty/silk/chart_curve.png" width="16" height="16" alt="Graph this" class="graph-icon" /></a>
