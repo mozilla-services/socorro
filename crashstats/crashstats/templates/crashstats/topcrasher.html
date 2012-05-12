@@ -6,9 +6,9 @@
 {% block content %}
     <div id="mainbody">
         <div class="page-heading">
-            <h2>Top Crashers for <span id="current-product">Firefox</span> <span id="current-version">15.0a1</span></h2>
+            <h2>Top Crashers for <span id="current-product">{{ product }}</span> <span id="current-version">{{ version }}</span></h2>
             <ul class="options">
-                <li><a href="/topcrasher/byversion/Firefox/15.0a1" class="selected">By Signature</a></li>
+                <li><a href="/topcrasher/byversion/{{ product }}/{{ version }}" class="selected">By Signature</a></li>
             </ul>
         </div>
 
@@ -21,25 +21,25 @@
                 <p>The report covers <span class="percentage" title="{{ tcbs.totalPercentage }}">{{ (tcbs.totalPercentage * 100) | round(2) }}</span> of all {{ tcbs.totalNumberOfCrashes }} crashes during this period. Graphs below are dual-axis, having <strong>Count</strong> (Number of Crashes) on the left X axis and <strong>Percent</strong> of total of Crashes on the right X axis.</p>
                 <ul class="tc-duration-type tc-filter">
                 <li class="tc-duration-heading">Type:</li>
-                <li><a href="/topcrasher/byversion/Firefox/15.0a1/7/all" >All</a></li>
-                <li><a href="/topcrasher/byversion/Firefox/15.0a1/7/browser" class="selected">Browser</a></li>
-                <li><a href="/topcrasher/byversion/Firefox/15.0a1/7/plugin" >Plugin</a></li>
-                <li><a href="/topcrasher/byversion/Firefox/15.0a1/7/content" >Content</a></li>
+                <li><a href="/topcrasher/byversion/{{ product }}/{{ version }}/{{ days }}/all" >All</a></li>
+                <li><a href="/topcrasher/byversion/{{ product }}/{{ version }}/{{ days }}/browser" class="selected">Browser</a></li>
+                <li><a href="/topcrasher/byversion/{{ product }}/{{ version }}/{{ days }}/plugin" >Plugin</a></li>
+                <li><a href="/topcrasher/byversion/{{ product }}/{{ version }}/{{ days }}/content" >Content</a></li>
             </ul>
             <ul class="tc-duration-days tc-filter">
                 <li class="tc-duration-heading">Days:</li>
-                <li><a href="/topcrasher/byversion/Firefox/15.0a1/1/browser" >1</a></li>
-                <li><a href="/topcrasher/byversion/Firefox/15.0a1/3/browser" >3</a></li>
-                <li><a href="/topcrasher/byversion/Firefox/15.0a1/7/browser" class="selected">7</a></li>
-                <li><a href="/topcrasher/byversion/Firefox/15.0a1/14/browser" >14</a></li>
-                <li><a href="/topcrasher/byversion/Firefox/15.0a1/28/browser" >28</a></li>
+                <li><a href="/topcrasher/byversion/{{ product }}/{{ version }}/1/browser" >1</a></li>
+                <li><a href="/topcrasher/byversion/{{ product }}/{{ version }}/3/browser" >3</a></li>
+                <li><a href="/topcrasher/byversion/{{ product }}/{{ version }}/7/browser" class="selected">7</a></li>
+                <li><a href="/topcrasher/byversion/{{ product }}/{{ version }}/14/browser" >14</a></li>
+                <li><a href="/topcrasher/byversion/{{ product }}/{{ version }}/28/browser" >28</a></li>
             </ul>
             <ul class="tc-per-platform tc-filter">
                 <li class="tc-per-platform-heading">OS:</li>
-                <li><a href="/topcrasher/byversion/Firefox/15.0a1/7/browser" class="selected">All</a></li>
-                <li><a href="/topcrasher/byos/Firefox/15.0a1/Windows/7/browser">Windows</a></li>
-                <li><a href="/topcrasher/byos/Firefox/15.0a1/Linux/7/browser">Linux</a></li>
-                <li><a href="/topcrasher/byos/Firefox/15.0a1/Mac OS X/7/browser">Mac OS X</a></li>
+                <li><a href="/topcrasher/byversion/{{ product }}/{{ version }}/7/browser" class="selected">All</a></li>
+                <li><a href="/topcrasher/byos/{{ product }}/{{ version }}/Windows/7/browser">Windows</a></li>
+                <li><a href="/topcrasher/byos/{{ product }}/{{ version }}/Linux/7/browser">Linux</a></li>
+                <li><a href="/topcrasher/byos/{{ product }}/{{ version }}/Mac OS X/7/browser">Mac OS X</a></li>
             </ul>
             <table id="signatureList" class="tablesorter data-table">
                 <thead>
@@ -74,7 +74,7 @@
                         <td title="A change of {{ (crash.changeInPercentOfTotal * 100) | round(2) }}% from {{ (crash.previousPercentOfTotal * 100) | round(2) }}%">{{ (crash.changeInPercentOfTotal * 100) | round(2) }}%</td>
                         {% endif %}
                         <td>
-                            <a class="signature" href="/report/list?range_value=7&amp;range_unit=days&amp;date={{ tcbs.end_date }}&amp;signature={{ crash.signature }}&amp;version=Firefox%3A15.0a1" title="{{ crash.signature }}">{{ crash.signature|truncate(length=80) }}</a>
+                            <a class="signature" href="/report/list?range_value=7&amp;range_unit=days&amp;date={{ tcbs.end_date }}&amp;signature={{ crash.signature }}&amp;version={{ product }}%3A{{ version }}" title="{{ crash.signature }}">{{ crash.signature|truncate(length=80) }}</a>
                             <div class="signature-icons">
                                 <img src="/media/img/3rdparty/fatcow/application16x16.png" width="16" height="16" alt="Browser Crash" title="Browser Crash" class="browser" />
                                 <a href="#" title="Load graph data"><img src="/media/img/3rdparty/silk/chart_curve.png" width="16" height="16" alt="Graph this" class="graph-icon" /></a>
@@ -132,12 +132,12 @@
   {{ js('crashstats_correlation') }}
 
 <script type="text/javascript">//<![CDATA[
-var SocAjax = '/topcrasher/plot_signature/Firefox/15.0a1/';
+var SocAjax = '/topcrasher/plot_signature/{{ product }}/{{ version }}/';
 var SocAjaxStartEnd = '/{{ tcbs.start_date }}/{{ tcbs.end_date }}/';
 var SocImg = '/img/';
 var SocReport = {
     base: '/correlation/bulk_ajax/',
-    path: '/Firefox/15.0a1/',
+    path: '/{{ product }}/{{ version }}/',
     loading: 'Loading <img src="/media/img/loading.png" width="16" height="17" />'
 };
 //]]>
