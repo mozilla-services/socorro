@@ -63,7 +63,9 @@
                     <tr>
                         <td class="rank">
                             {{ crash.currentRank + 1 }}
-                            <span {% if crash.changeInRank == 'new' %} {% elif crash.changeInRank > 1 %} class="moving-up" {% elif crash.changeInRank < -1 %} class="moving-down" {% endif %} title="Movement in rank since the {{ tcbs.start_date }} report">{{ crash.changeInRank }}</span>
+                            {% if crash.changeInRank != 'new' and crash.changeInRank not in [-1,0,1] %}
+                            <span {% if crash.changeInRank > 1 %} class="moving-up" {% elif crash.changeInRank < -1 %} class="moving-down" {% endif %} title="Movement in rank since the {{ tcbs.start_date }} report">{{ crash.changeInRank }}</span>
+                            {% endif %}
                         </td>
                         <td>{{ (crash.percentOfTotal * 100) | round(2) }}%</td>
                         {% if crash.changeInPercentOfTotal == 'new' %}
