@@ -15,6 +15,8 @@ class SocorroMiddleware(object):
         headers = {'Host': self.http_host}
         resp = requests.get(url, auth=(self.username, self.password),
                             headers=headers)
+        print url
+        print resp
         return json.loads(resp.content)
 
     def current_versions(self):

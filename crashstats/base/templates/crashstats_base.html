@@ -56,7 +56,7 @@
                         {% if r[0] == product %}
                             {% for v in r[1] %}
                                 {% if v.featured %}
-                                    <option value="{{ v.version }}">{{ v.version }}</option>
+                                    <option value="{{ v.version }}" {% if v.version == version %} SELECTED {% endif %}>{{ v.version }}</option>
                                 {% endif %}
                             {% endfor  %}
                         {% endif  %}

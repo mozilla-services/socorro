@@ -67,6 +67,11 @@ def home(request, product, versions=None, template=None):
         for release in data['currentversions']:
             if release['product'] == product and release['featured']:
                 versions.append(release['version'])
+    else:
+        versions = versions.split(';')
+
+    if len(versions) == 1:
+        data['version'] = versions[0]
 
     end_date = datetime.datetime.utcnow()
     start_date = end_date - datetime.timedelta(days=duration)

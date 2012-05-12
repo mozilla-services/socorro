@@ -52,7 +52,16 @@
             {% for r in currentversions|groupby('product') %}
                 {% if r[0] == product %}
                     {% for v in r[1] %}
-                        {% if v.featured %}
+                        {% if version == v.version %}
+                <div class="release_channel  border_right">
+                    <h4>{{ r[0] }} {{ v.version }}</h4>
+                    <ul>
+                      <li><a href="/topcrasher/byversion/{{ r[0] }}/{{ v.version }}/7">Top Crashers</a></li>
+                      <li><a href="/products/{{ r[0] }}/{{ v.version }}/15.0a1/topchangers?duration=7">Top Changers</a></li>
+                      <li><a href="/topcrasher/byversion/{{ r[0] }}/{{ v.version }}/7/plugin">Top Plugin Crashers</a></li>
+                    </ul>
+                </div>
+                        {% elif not version and v.featured %}
                 <div class="release_channel  border_right">
                     <h4>{{ r[0] }} {{ v.version }}</h4>
                     <ul>
