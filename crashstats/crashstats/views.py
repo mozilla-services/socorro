@@ -42,7 +42,7 @@ def _basedata(product=None, version=None):
             break
     for release in data['currentversions']:
         if version == release['version']:
-            data['version'] = product
+            data['version'] = version
             break
     return data
 
