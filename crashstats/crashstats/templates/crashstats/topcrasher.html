@@ -45,18 +45,25 @@
                         <th title="The percentage of crashes against overall crash volume">%</th>
                         <th title="The change in percentage since the {{ tcbs.start_date }} report">Diff</th>
                         <th>Signature</th>
+                        {% if os_name == None %}
                         <th title="Crashes across platforms">Count</th>
                         <th>Win</th>
                         <th>Mac</th>
                         <th>Lin</th>
                         <th>Ver</th>
+                        {% else %}
+                        <th>{{ os_name }}</th>
+                        {% endif %}
                         <th>First Appearance</th>
                         <th class="bugzilla_numbers">Bugzilla IDs</th>
                         <th title="Does not imply Causation">Correlation</th>
                     </tr>
                 </thead>
                 <tbody>
-{% for crash in tcbs.crashes %}
+{% for crash in tcbs.crashes
+       if (os_name == 'Windows' and crash.win_count != 0) or
+          (os_name == 'Linux' and crash.linux_count != 0) or
+          (os_name == 'Mac OS X' and crash.mac_count != 0) %}
                     <tr>
                         <td class="rank">
                             {{ crash.currentRank + 1 }}
@@ -81,10 +88,18 @@
                             <div class="sig-history-graph"></div>
                             <input type="hidden" class='ajax-signature' name="ajax-signature-1" value="{{ crash.signature }}" />
                         </td>
+                        {% if os_name == None %}
                         <td>{{ crash.count }}</td>
                         <td>{{ crash.win_count }}</td>
                         <td>{{ crash.mac_count }}</td>
                         <td>{{ crash.linux_count }}</td>
+                        {% elif os_name == 'Windows' %}
+                        <td>{{ crash.win_count }}</td>
+                        {% elif os_name == 'Linux' %}
+                        <td>{{ crash.linux_count }}</td>
+                        {% elif os_name == 'Mac OS X' %}
+                        <td>{{ crash.mac_count }}</td>
+                        {% endif %}
                         <td><span title="{{ crash.versions }}">{{ crash.versions|count}}</span></td>
                         <td title="This crash signature first appeared at {{ crash.first_report_exact }}" >{{ crash.first_report }}</td> 
                         <td class="bug_ids_more">

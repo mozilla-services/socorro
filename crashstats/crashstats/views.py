@@ -97,19 +97,21 @@ def topcrasher(request, product=None, version=None, days=None, crash_type=None,
     data['days'] = days
 
     end_date = datetime.datetime.utcnow()
-    start_date = end_date - datetime.timedelta(days=days)
 
     if crash_type is None or \
        crash_type not in ['all', 'browser', 'plugin', 'content']:
         crash_type = 'browser'
 
     data['crash_type'] = crash_type
+
+    if os_name is None or os_name not in ['Windows', 'Linux', 'Mac OS X']:
+        os_name = None
+
     data['os_name'] = os_name
 
     mware = SocorroMiddleware()
-    data['tcbs'] = mware.tcbs(product, version, end_date,
+    data['tcbs'] = mware.tcbs(product, version, crash_type, end_date,
                               duration=(days * 24), limit='300')
-
 
     return render(request, template, data)
 

@@ -35,17 +35,19 @@ class SocorroMiddleware(object):
         url = '%(base_url)s/adu/byday/p/%(product)s/v/%(versions)s/rt/any/os/%(os_names)s/start/%(start_date)s/end/%(end_date)s' % params
         return self.fetch(url)
 
-    def tcbs(self, product, version, end_date, duration, limit=300):
+    def tcbs(self, product, version, crash_type, end_date, duration,
+             limit=300):
         params = {
             'base_url': self.base_url,
             'product': product,
             'version': version,
+            'crash_type': crash_type,
             'end_date': end_date,
             'duration': duration,
             'limit': limit,
         }
 
-        url = '%(base_url)s/crashes/signatures/product/%(product)s/version/%(version)s/crash_type/browser/end_date/%(end_date)s/duration/%(duration)s/limit/%(limit)s/' % params
+        url = '%(base_url)s/crashes/signatures/product/%(product)s/version/%(version)s/crash_type/%(crash_type)s/end_date/%(end_date)s/duration/%(duration)s/limit/%(limit)s/' % params
         return self.fetch(url)
 
     def search(self, product, versions, os_names, start_date, end_date,
