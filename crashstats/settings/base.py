@@ -22,6 +22,9 @@ MINIFY_BUNDLES = {
         'topcrash_css': (
             'css/crashstats/flora/flora.tablesorter.css',
         ),
+        'reportindex_css': (
+            'css/crashstats/flora/flora.all.css',
+        ),
         'example_mobile_css': (
             'css/crashstats/mobile.css',
         ),
@@ -48,6 +51,16 @@ MINIFY_BUNDLES = {
        ),
        'crashstats_correlation': (
             'js/crashstats/correlation.js',
+       ),
+       'crashstats_report': (
+            'js/crashstats/libs/jquery-1.6.4.min.js',
+            'js/crashstats/libs/jquery.cookies.2.2.0.js',
+            'js/crashstats/libs/jquery.ui.all.js',
+            'js/crashstats/libs/jquery.tablesorter.min.js',
+            'js/crashstats/nav.js',
+            'js/crashstats/bugzilla.js',
+            'js/crashstats/correlation.js',
+            'js/crashstats/report.js',
        ),
     }
 }
