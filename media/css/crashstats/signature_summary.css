@@ -1,0 +1,55 @@
+table.sig-dashboard-tbl {
+    display: none;
+    clear: both;
+    position: relative;
+    margin: 1em;
+    border-collapse: collapse;
+    width: 98%;
+    -webkit-box-shadow: 5px 5px 6px #ccc;
+    -moz-box-shadow: 5px 5px 6px #ccc;
+    box-shadow: 5px 5px 6px #ccc;
+}
+table.sig-dashboard-tbl th,
+table.sig-dashboard-tbl td {
+    padding: .5em .5em .5em 1em;
+    text-align: left;
+    width: 47%;
+}
+table.sig-dashboard-tbl th {
+    background-color: #406A80;
+    color: #fff;
+    border-left: 1px solid #406A80;
+}
+table.sig-dashboard-tbl td {
+    border-top: 1px solid #999;
+    border-left: 1px solid #999;
+    min-width: 200px;
+}
+table.sig-dashboard-tbl tbody {
+    border-right: 1px solid #999;
+    border-bottom: 1px solid #999;
+}
+.range-selector {
+    margin: 0;
+    padding: 0;
+}
+.range-selector li {
+    float: left;
+    list-style: none;
+}
+.range-selector a:link, 
+.range-selector a:visited {
+    background-color: #C5D8E2;
+    color: #223744;
+    display: inline-block;
+    margin-right: .7em;
+    padding: .4em .7em .4em .7em;
+    font-weight: bold;
+    text-decoration: none;
+    -webkit-border-radius: 6px;
+    -moz-border-radius: 6px;
+    border-radius: 6px;
+}
+.odd {
+    background-color: #C5D8E2;
+}
