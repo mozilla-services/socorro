@@ -7,7 +7,7 @@ $(function() {
     ajaxLoader = new Image(),
     dashTables = $(".sig-dashboard-tbl", "#sig-dashboard-body");
     
-    ajaxLoader.src = "../img/icons/ajax-loader.gif";
+    ajaxLoader.src = "/media/img/icons/ajax-loader.gif";
     ajaxLoader.setAttribute("id", "dash-loader");
     $("#sig-dashboard-body").append(ajaxLoader);
 	

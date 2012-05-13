@@ -33,8 +33,6 @@ MINIFY_BUNDLES = {
         'crashstats_js': (
             'js/crashstats/jquery/jquery-1.6.4.min.js',
             'js/crashstats/jquery/plugins/jquery.cookies.2.2.0.js',
-            'js/crashstats/jquery/plugins/ui/jquery-ui-1.8.16.custom.min.js',
-            'js/crashstats/jquery/plugins/ui/jquery.tablesorter.min.js',
             'js/crashstats/socorro/nav.js',
         ),
        'crashstats_flot': (
