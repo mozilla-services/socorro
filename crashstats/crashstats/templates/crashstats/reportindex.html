@@ -1,151 +1,8 @@
-<!DOCTYPE html>
-<html class="production">
-<head>
-    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <link href="https://crash-stats.allizom.org/css/screen.css?v=1.7.6" rel="stylesheet" type="text/css" media="screen" />
-    <link href="https://crash-stats.allizom.org/favicon.ico" rel="icon" type="image/png" />
-    <script type="text/javascript" src="https://crash-stats.allizom.org/js/jquery/jquery-1.6.4.min.js"></script>
-<script type="text/javascript" src="https://crash-stats.allizom.org/js/jquery/plugins/jquery.cookies.2.2.0.js"></script>
-<script type="text/javascript" src="https://crash-stats.allizom.org/js/socorro/nav.js?v=1.7.6.js"></script>
+{% extends "crashstats_base.html" %}
+{% block content %}
+<link rel="stylesheet" type="text/css" href="/media/css/crashstats/flora/flora.all.css" media="screen" />
 
-<title>[@ hang | WaitForSingleObjectEx | WaitForSingleObject | google_breakpad::ExceptionHandler::WriteMinidumpOnHandlerThread(_EXCEPTION_POINTERS*, MDRawAssertionInfo*)] -  Firefox 15.0a1 Crash Report - Report ID: a7c135e2-b7ea-4d7d-93b9-612752120505</title>
-
-    <link rel='alternate' type='application/json' href='http://crash-stats.allizom.org/dumps/a7c135e2-b7ea-4d7d-93b9-612752120505.jsonz' />
-
-    <link rel="stylesheet" type="text/css" href="https://crash-stats.allizom.org/css/flora/flora.all.css" media="screen" />
-
-
-    <script type="text/javascript" src="https://crash-stats.allizom.org/js/jquery/plugins/ui/jquery.ui.all.js"></script>
-<script type="text/javascript" src="https://crash-stats.allizom.org/js/jquery/plugins/ui/jquery.tablesorter.min.js"></script>
-<script type="text/javascript" src="https://crash-stats.allizom.org/js/socorro/bugzilla.js"></script></head>
-
-<body>
-    <div class="page-header">
-    	<h1>
-    		<a href="https://crash-stats.allizom.org/">
-    			<span class="icon"></span>
-    			<span class="title">Mozilla Crash Reports</span>
-    		</a>
-    	</h1>
-
-        <form id="simple_search" method="get" action="https://crash-stats.allizom.org/query/query">
-            <input type="hidden" name="query_type" value="simple" />
-            <input type="hidden" name="do_query" value="1">
-            <input type="text" id="q" name="query" value="Find Crash ID or Signature" />
-            <input type="submit" class="hidden" />
-        </form>
-    </div>
-
-
-	<h1>Product Navigation</h1>
-
-	<div class="version-nav">
-
-		<input type="hidden" id="url_base" name="url_base" value="https://crash-stats.allizom.org/products/Firefox" />
-		<input type="hidden" id="url_site" name="url_site" value="https://crash-stats.allizom.org/" />
-
-		<ul class="filter">
-    		<li>
-			Product:
-			<select id="products_select">
-							<option SELECTED value="Firefox">Firefox</option>
-							<option  value="Thunderbird">Thunderbird</option>
-							<option  value="Camino">Camino</option>
-							<option  value="SeaMonkey">SeaMonkey</option>
-							<option  value="Fennec">Fennec</option>
-							<option  value="FennecAndroid">FennecAndroid</option>
-						</select>
-			</li>
-			<li class="version_select">
-			<select id="product_version_select" >
-				<optgroup label=" ">
-					<option value="Current Versions">Current Versions</option>
-				</optgroup>
-                				    <optgroup label=" ">
-				    	                            <option value="15.0a1"
-                            	                            >15.0a1</option>
-                                                    <option value="13.0b1"
-                            	                            >13.0b1</option>
-                                                    <option value="13.0a2"
-                            	                            >13.0a2</option>
-                                                    <option value="12.0"
-                            	                            >12.0</option>
-                        				    </optgroup>
-			    			    				    <optgroup label=" ">
-				    	                            <option value="14.0a2"
-                            	                            >14.0a2</option>
-                                                    <option value="14.0a1"
-                            	                            >14.0a1</option>
-                                                    <option value="13.0b3"
-                            	                            >13.0b3</option>
-                                                    <option value="13.0b2"
-                            	                            >13.0b2</option>
-                                                    <option value="12.0b6"
-                            	                            >12.0b6</option>
-                                                    <option value="12.0b5"
-                            	                            >12.0b5</option>
-                                                    <option value="12.0b4"
-                            	                            >12.0b4</option>
-                                                    <option value="12.0b3"
-                            	                            >12.0b3</option>
-                                                    <option value="12.0b2"
-                            	                            >12.0b2</option>
-                                                    <option value="12.0b1"
-                            	                            >12.0b1</option>
-                                                    <option value="11.0"
-                            	                            >11.0</option>
-                                                    <option value="10.0.4esr"
-                            	                            >10.0.4esr</option>
-                                                    <option value="10.0.3esr"
-                            	                            >10.0.3esr</option>
-                                                    <option value="10.0.2esr"
-                            	                            >10.0.2esr</option>
-                                                    <option value="10.0.2"
-                            	                            >10.0.2</option>
-                                                    <option value="10.0.1esr"
-                            	                            >10.0.1esr</option>
-                                                    <option value="10.0.1"
-                            	                            >10.0.1</option>
-                                                    <option value="10.0esr"
-                            	                            >10.0esr</option>
-                                                    <option value="10.0"
-                            	                            >10.0</option>
-                                                    <option value="3.5.14pre"
-                            	                            >3.5.14pre</option>
-                                                    <option value="3.5.13"
-                            	                            >3.5.13</option>
-                        				    </optgroup>
-							</select>
-			</li>
-            <li>
-                <label>Report:</label>
-                <select id="report_select" >
-                    <optgroup label=" ">
-                        <option 							value="https://crash-stats.allizom.org/products/Firefox">Overview</option>
-                    </optgroup>
-                    <optgroup label=" ">
-                        <option 							value="https://crash-stats.allizom.org/daily?p=Firefox&amp;v[]=">Crashes per User</option>
-                        <option 							value="https://crash-stats.allizom.org/products/Firefox/builds">Nightly Builds</option>
-                        <option 							value="https://crash-stats.allizom.org/hangreport/byversion/Firefox/">Hang Report</option>
-                    </optgroup>
-                    <optgroup label=" ">
-                        <option                             value="https://crash-stats.allizom.org/products/Firefox/topchangers">Top Changers</option>
-                        <option                             value="https://crash-stats.allizom.org/topcrasher/byversion/Firefox/">Top Crashers</option>
-                    </optgroup>
-				</select>
-            </li>
-
-		</ul>
-
-		<div class="search">
-			<a href="https://crash-stats.allizom.org/query?advanced=1">Advanced Search</a>
-		</div>
-	</div>
-
-
-    <div id="mainbody">
-      	    	
-
+<div id="mainbody">
 <div class="page-heading">
 	<h2>Firefox 15.0a1 Crash Report         [@ hang | WaitForSingleObjectEx | WaitForSingleObject | google_breakpad::ExceptionHandler::WriteMinidumpOnHandlerThread(_EXCEPTION_POINTERS*, MDRawAssertionInfo*) ]
     </h2>
@@ -4288,13 +4145,6 @@ a top crasher, then we should be able to load it from <a href="http://people.moz
         </ul>
         </div><!-- /correlation -->
 
-  <script type="text/javascript">//<![CDATA[
-      var SocReport = {
-          base: 'https://crash-stats.allizom.org/correlation/ajax/',
-	  path: '/Firefox/15.0a1/Windows%20NT/hang%20%7C%20WaitForSingleObjectEx%20%7C%20WaitForSingleObject%20%7C%20google_breakpad%3A%3AExceptionHandler%3A%3AWriteMinidumpOnHandlerThread%28_EXCEPTION_POINTERS%2A%2C%20MDRawAssertionInfo%2A%29/',
-	  loading: 'Loading <img src="https://crash-stats.allizom.org/img/loading.png" width="16" height="17" />'
-      };
-//]]></script>
 
 </div> <!-- /report-index -->
 
@@ -4303,34 +4153,21 @@ a top crasher, then we should be able to load it from <a href="http://people.moz
 </div>
 
 
-    <script type="text/javascript" src="https://crash-stats.allizom.org/js/socorro/report.js"></script>
-<script type="text/javascript" src="https://crash-stats.allizom.org/js/socorro/correlation.js"></script>
 
     </div>
-
-
-    <div class="page-footer">
-    	<div class="nav">
-    		<div class="about">
-                <strong>Mozilla Crash Reports</strong> - Powered by <a href="https://github.com/mozilla/socorro">Socorro</a> -
-                All dates are UTC    		</div>
-
-    		<ul>
-                <li><a href="https://crash-stats.allizom.org/status">Server Status</a></li>
-                <li><a href="http://socorro.readthedocs.org/">Project Info</a></li>
-                <li><a href="https://github.com/mozilla/socorro">Source Code</a></li>
-                <li><a href="http://wiki.mozilla.org/Breakpad">Breakpad Wiki</a></li>
-                <li><a href="http://www.mozilla.org/about/policies/privacy-policy.html">Privacy Policy</a></li>
-    		</ul>
-    	</div>
-
-
-    	<div class="login">
-		<ul>
-                            <li><a href="https://crash-stats.allizom.org/auth/login">Log In</a></li>
-            		</ul>
-    	</div>
-    </div>
-
-</body>
-</html>
+{% endblock %}
+{% block site_js %}
+  {{ super() }}
+  <script type="text/javascript">//<![CDATA[
+      var SocReport = {
+          base: '/correlation/ajax/',
+	  path: '/Firefox/15.0a1/Windows%20NT/hang%20%7C%20WaitForSingleObjectEx%20%7C%20WaitForSingleObject%20%7C%20google_breakpad%3A%3AExceptionHandler%3A%3AWriteMinidumpOnHandlerThread%28_EXCEPTION_POINTERS%2A%2C%20MDRawAssertionInfo%2A%29/',
+	  loading: 'Loading <img src="/media/img/loading.png" width="16" height="17" />'
+      };
+//]]></script>
+  <script type="text/javascript" src="/media/js/crashstats/jquery/plugins/ui/jquery.ui.all.js"></script>
+  <script type="text/javascript" src="/media/js/crashstats/jquery/plugins/ui/jquery.tablesorter.min.js"></script>
+  <script type="text/javascript" src="/media/js/crashstats/socorro/bugzilla.js"></script></head>
+  <script type="text/javascript" src="/media/js/crashstats/socorro/report.js"></script>
+  <script type="text/javascript" src="/media/js/crashstats/socorro/correlation.js"></script>
+{% endblock %}

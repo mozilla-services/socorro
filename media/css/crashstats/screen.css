@@ -844,7 +844,7 @@ span.push_right {
 }
 .sig-overview,
 .sig-search {
-    background: transparent url(/img/icons/external.png) left top no-repeat;
+    background: transparent url(/media/img/icons/external.png) left top no-repeat;
     display: inline-block;
     color: #333;
     margin-left: .5em;
