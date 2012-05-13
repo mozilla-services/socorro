@@ -163,7 +163,7 @@ def reportlist(request, template=None):
 
 @mobile_template('crashstats/{mobile/}reportindex.html')
 def reportindex(request, crash_id=None, template=None):
-    data = _basedata(product, versions)
+    data = _basedata()
 
     return render(request, template, data)
 
