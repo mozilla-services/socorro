@@ -31,36 +31,29 @@ MINIFY_BUNDLES = {
     },
     'js': {
         'crashstats_js': (
-            'js/crashstats/libs/jquery-1.6.4.min.js',
-            'js/crashstats/libs/jquery.cookies.2.2.0.js',
-            'js/crashstats/libs/jquery-ui-1.8.16.custom.min.js',
-            'js/crashstats/libs/jquery.tablesorter.min.js',
-            'js/crashstats/nav.js',
+            'js/crashstats/jquery/jquery-1.6.4.min.js',
+            'js/crashstats/jquery/plugins/jquery.cookies.2.2.0.js',
+            'js/crashstats/jquery/plugins/ui/jquery-ui-1.8.16.custom.min.js',
+            'js/crashstats/jquery/plugins/ui/jquery.tablesorter.min.js',
+            'js/crashstats/socorro/nav.js',
         ),
        'crashstats_flot': (
-           'js/crashstats/libs/flot-0.7/jquery.flot.pack.js',
+           'js/crashstats/flot-0.7/jquery.flot.pack.js',
        ),
        'crashstats_daily': (
-            'js/crashstats/daily.js',
+            'js/crashstats/socorro/daily.js',
        ),
        'crashstats_topcrash': (
-            'js/crashstats/topcrash.js',
+            'js/crashstats/socorro/topcrash.js',
        ),
        'crashstats_bugzilla': (
-            'js/crashstats/bugzilla.js',
+            'js/crashstats/socorro/bugzilla.js',
        ),
        'crashstats_correlation': (
-            'js/crashstats/correlation.js',
+            'js/crashstats/socorro/correlation.js',
        ),
        'crashstats_report': (
-            'js/crashstats/libs/jquery-1.6.4.min.js',
-            'js/crashstats/libs/jquery.cookies.2.2.0.js',
-            'js/crashstats/libs/jquery.ui.all.js',
-            'js/crashstats/libs/jquery.tablesorter.min.js',
-            'js/crashstats/nav.js',
-            'js/crashstats/bugzilla.js',
-            'js/crashstats/correlation.js',
-            'js/crashstats/report.js',
+            'js/crashstats/socorro/report.js',
        ),
     }
 }
