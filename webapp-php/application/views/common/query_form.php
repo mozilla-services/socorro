@@ -36,16 +36,6 @@
     <li><span class="basic label"><a href="#" id="advfiltertoggle" class="not-toggled">Advanced Filters</a></span>
 
         <div id="advfilter">
-            <?php if ($middlewareImplementation != 'ES') { ?>
-            <p class="advanced">
-                <span class="label">Branch</span>
-                <?php foreach ($all_branches as $row): ?>
-                    <input type="checkbox" name="branch" value="<?php out::H($row->branch) ?>" <?php echo in_array($row->branch, $params['branch']) ? 'checked' : '' ?>>
-                    <?php out::H($row->branch) ?> &nbsp;
-                <?php endforeach ?>
-            </p>
-            <?php } /* end if */ ?>
-
             <p class="advanced">
                <label for="range_value">For the period of </label>
                   <?php echo form::input(
