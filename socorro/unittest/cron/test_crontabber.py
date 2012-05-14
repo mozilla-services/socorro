@@ -931,7 +931,12 @@ class TestFunctionalCrontabber(_TestCaseBase):
         )
 
         def fmt(d):
-            return d.split('.')[0]
+            wo_microseconds = d.split('.')[0]
+            # because it has happened, it can happen again.
+            # the number of microseconds between 'last_run' and 'last_success'
+            # can be so many it rounds to a different second, so let's drop
+            # the last second too
+            return wo_microseconds[:-1]
 
         # first just run it as is
         with config_manager.context() as config:
