@@ -1,0 +1,207 @@
+import re
+import sys
+import datetime
+import shutil
+import os
+import json
+import unittest
+import tempfile
+from cStringIO import StringIO
+import mock
+import psycopg2
+from psycopg2.extensions import TRANSACTION_STATUS_IDLE
+from socorro.cron import crontabber
+from socorro.unittest.config.commonconfig import (
+  databaseHost, databaseName, databaseUserName, databasePassword)
+from socorro.lib.datetimeutil import utc_now
+from configman import ConfigurationManager, Namespace
+
+DSN = {
+  "database_host": databaseHost.default,
+  "database_name": databaseName.default,
+  "database_user": databaseUserName.default,
+  "database_password": databasePassword.default
+}
+
+
+SAMPLE_CSV = [
+   'bug_id,"bug_status","resolution","short_desc","cf_crash_signature"',
+   '1,"RESOLVED",,"this is a comment","This sig, while bogus, has a ] bracket"',
+   '2,"CLOSED","WONTFIX","comments are not too important","single [@ BogusClass::bogus_sig (const char**) ] signature"',
+   '3,"ASSIGNED",,"this is a comment. [@ nanojit::LIns::isTramp()]","[@ js3250.dll@0x6cb96] [@ valid.sig@0x333333]"',
+   '4,"CLOSED","RESOLVED","two sigs enter, one sig leaves","[@ layers::Push@0x123456] [@ layers::Push@0x123456]"',
+   '5,"ASSIGNED","INCOMPLETE",,"[@ MWSBAR.DLL@0x2589f] and a broken one [@ sadTrombone.DLL@0xb4s455"',
+   '6,"ASSIGNED",,"empty crash sigs should not throw errors",""',
+   '7,"CLOSED",,"gt 525355 gt","[@gfx::font(nsTArray<nsRefPtr<FontEntry> > const&)]"',
+   '8,"CLOSED","RESOLVED","newlines in sigs","[@ legitimate(sig)] \n junk \n [@ another::legitimate(sig) ]"'
+]
+
+
+
+
+class _TestCaseBase(unittest.TestCase):
+
+    def setUp(self):
+        self.tempdir = tempfile.mkdtemp()
+
+    def tearDown(self):
+        if os.path.isdir(self.tempdir):
+            shutil.rmtree(self.tempdir)
+
+    def _setup_config_manager(self, jobs_string, extra_value_source=None):
+        if not extra_value_source:
+            extra_value_source = {}
+        mock_logging = mock.Mock()
+        required_config = crontabber.CronTabber.required_config
+        required_config.add_option('logger', default=mock_logging)
+
+        json_file = os.path.join(self.tempdir, 'test.json')
+        assert not os.path.isfile(json_file)
+
+        config_manager = ConfigurationManager(
+            [required_config,
+             #logging_required_config(app_name)
+             ],
+            app_name='crontabber',
+            app_description=__doc__,
+            values_source_list=[{
+                'logger': mock_logging,
+                'jobs': jobs_string,
+                'database': json_file,
+            }, DSN, extra_value_source]
+        )
+        return config_manager, json_file
+
+
+
+#==============================================================================
+class TestBugzilla(_TestCaseBase):
+
+    def setUp(self):
+        super(TestBugzilla, self).setUp()
+        self.psycopg2_patcher = mock.patch('psycopg2.connect')
+        self.mocked_connection = mock.Mock()
+        self.psycopg2 = self.psycopg2_patcher.start()
+
+    def tearDown(self):
+        super(TestBugzilla, self).tearDown()
+        self.psycopg2_patcher.stop()
+
+
+#==============================================================================
+class TestFunctionalBugzilla(_TestCaseBase):
+
+    def setUp(self):
+        super(TestFunctionalBugzilla, self).setUp()
+        # prep a fake table
+        assert 'test' in databaseName.default, databaseName.default
+        dsn = ('host=%(database_host)s dbname=%(database_name)s '
+               'user=%(database_user)s password=%(database_password)s' % DSN)
+        self.conn = psycopg2.connect(dsn)
+        cursor = self.conn.cursor()
+#        cursor.execute("""
+#        DROP TABLE IF EXISTS test_cron_victim;
+#        CREATE TABLE test_cron_victim (
+#          id serial primary key,
+#          time timestamp DEFAULT current_timestamp
+#        );
+#        """)
+#        self.conn.commit()
+        assert self.conn.get_transaction_status() == TRANSACTION_STATUS_IDLE
+
+    def tearDown(self):
+        super(TestFunctionalBugzilla, self).tearDown()
+        self.conn.cursor().execute("""
+        TRUNCATE TABLE reports CASCADE;
+        TRUNCATE TABLE bugs CASCADE;
+        TRUNCATE TABLE bug_associations CASCADE;
+        """)
+        self.conn.commit()
+
+    def _setup_config_manager(self, days_into_past):
+        datestring = ((datetime.datetime.utcnow() - datetime.timedelta(days=days_into_past))
+                       .strftime('%Y-%m-%d'))
+        filename = os.path.join(self.tempdir, 'sample-%s.csv' % datestring)
+        with open(filename, 'w') as f:
+            f.write('\n'.join(SAMPLE_CSV))
+
+#        print filename
+        query = 'file://' + filename.replace(datestring, '%s')
+
+        _super = super(TestFunctionalBugzilla, self)._setup_config_manager
+        config_manager, json_file = _super(
+          'socorro.cron.jobs.bugzilla.BugzillaCronApp|1d',
+          extra_value_source={
+            'class-BugzillaCronApp.query': query,
+            'class-BugzillaCronApp.days_into_past': days_into_past,
+          }
+        )
+        return config_manager, json_file
+
+
+    def test_basic_run_job_without_reports(self):
+        config_manager, json_file = self._setup_config_manager(3)
+
+        cursor = self.conn.cursor()
+        cursor.execute('select count(*) from reports')
+        count, = cursor.fetchone()
+        assert count == 0, "reports table not cleaned"
+        cursor.execute('select count(*) from bugs')
+        count, = cursor.fetchone()
+        assert count == 0, "'bugs' table not cleaned"
+        cursor.execute('select count(*) from bug_associations')
+        count, = cursor.fetchone()
+        assert count == 0, "'bug_associations' table not cleaned"
+
+        with config_manager.context() as config:
+            tab = crontabber.CronTabber(config)
+            tab.run_all()
+
+            information = json.load(open(json_file))
+            assert information['bugzilla-associations']
+            assert not information['bugzilla-associations']['last_error']
+            assert information['bugzilla-associations']['last_success']
+
+        # now, because there we no matching signatures in the reports table
+        # it means that all bugs are rejected
+        cursor.execute('select count(*) from bugs')
+        count, = cursor.fetchone()
+        self.assertTrue(not count)
+        cursor.execute('select count(*) from bug_associations')
+        count, = cursor.fetchone()
+        self.assertTrue(not count)
+
+    def test_basic_run_job_without_some_reports(self):
+        config_manager, json_file = self._setup_config_manager(3)
+
+        cursor = self.conn.cursor()
+        # these are matching the SAMPLE_CSV above
+        cursor.execute("""insert into reports
+        (uuid,signature)
+        values
+        ('123', 'legitimate(sig)');
+        """)
+        cursor.execute("""insert into reports
+        (uuid,signature)
+        values
+        ('456', 'MWSBAR.DLL@0x2589f');
+        """)
+
+        with config_manager.context() as config:
+            tab = crontabber.CronTabber(config)
+            tab.run_all()
+
+            information = json.load(open(json_file))
+            assert information['bugzilla-associations']
+            assert not information['bugzilla-associations']['last_error']
+            assert information['bugzilla-associations']['last_success']
+            print config.logger.info.mock_calls
+
+        # now, because there we no matching signatures in the reports table
+        # it means that all bugs are rejected
+        cursor.execute('select count(*) from bugs')
+        count, = cursor.fetchone()
+        self.assertTrue(not count)
+        cursor.execute('select count(*) from bug_associations')
+        count, = cursor.fetchone()
+        self.assertTrue(not count)
