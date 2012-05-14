@@ -54,7 +54,7 @@ MINIFY_BUNDLES = {
             'js/crashstats/socorro/report.js',
        ),
        'crashstats_tablesorter': (
-            'crashstats/jquery/plugins/ui/jquery.tablesorter.min.js',
+            'js/crashstats/jquery/plugins/ui/jquery.tablesorter.min.js',
        ),
     }
 }
