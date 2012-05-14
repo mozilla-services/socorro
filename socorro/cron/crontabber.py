@@ -53,21 +53,14 @@ class BaseCronApp(RequiredConfig):
 #                self.app_name,
 #                self.app_version))
 
-    def main(self):
-        self.run()
-        yield utc_now()
-
-    def run(self):  # pragma: no cover
-        raise NotImplementedError("Your fault!")
-
-
-class BaseBackfillCronApp(BaseCronApp):
-
-    def main(self, function=None):
+    def main(self, function=None, once=True):
         if function is None:
             function = self.run
         now = utc_now()
-        if not self.job_information:
+        if once:
+            function()
+            yield now
+        elif not self.job_information:
             function(now)
             yield now
         else:
@@ -91,6 +84,16 @@ class BaseBackfillCronApp(BaseCronApp):
                     function(when)
                     yield when
 
+    def run(self):  # pragma: no cover
+        raise NotImplementedError("Your fault!")
+
+
+class BaseBackfillCronApp(BaseCronApp):
+
+    def main(self, function=None):
+        return super(BaseBackfillCronApp, self).main(once=False,
+                                                     function=function)
+
     def run(self, date):  # pragma: no cover
         raise NotImplementedError("Your fault!")
 
@@ -103,6 +106,9 @@ class PostgresCronApp(BaseCronApp):
             self.run(connection)
             yield utc_now()
 
+    def run(self, connection):  # pragma: no cover
+        raise NotImplementedError("Your fault!")
+
 
 class PostgresBackfillCronApp(BaseBackfillCronApp):
 
@@ -113,6 +119,9 @@ class PostgresBackfillCronApp(BaseBackfillCronApp):
               function=lambda date: self.run(connection, date))
             results = list(results)
         return results
+
+    def run(self, connection, date):  # pragma: no cover
+        raise NotImplementedError("Your fault!")
 
 
 class PostgresTransactionManagedCronApp(BaseCronApp):
@@ -125,6 +134,9 @@ class PostgresTransactionManagedCronApp(BaseCronApp):
                                                           database)
         executor(self.run)
         yield utc_now()
+
+    def run(self, connection):  # pragma: no cover
+        raise NotImplementedError("Your fault!")
 
 
 class JSONJobDatabase(dict):
