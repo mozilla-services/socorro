@@ -30,11 +30,11 @@ MINIFY_BUNDLES = {
         ),
     },
     'js': {
-        'crashstats_js': (
+       'crashstats_js': (
             'js/crashstats/jquery/jquery-1.6.4.min.js',
             'js/crashstats/jquery/plugins/jquery.cookies.2.2.0.js',
             'js/crashstats/socorro/nav.js',
-        ),
+       ),
        'crashstats_flot': (
            'js/crashstats/flot-0.7/jquery.flot.pack.js',
        ),
@@ -52,6 +52,9 @@ MINIFY_BUNDLES = {
        ),
        'crashstats_report': (
             'js/crashstats/socorro/report.js',
+       ),
+       'crashstats_tablesorter': (
+            'crashstats/jquery/plugins/ui/jquery.tablesorter.min.js',
        ),
     }
 }
