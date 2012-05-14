@@ -64,3 +64,14 @@ class SocorroMiddleware(object):
         url = '%(base_url)s/search/signatures/products/%(product)s/in/signature/search_mode/contains/to/%(end_date)s/from/%(start_date)s/report_type/any/report_process/any/result_number/%(limit)s/' % params
         return self.fetch(url)
 
+    def report_list(self, signature, product_versions, start_date,
+                    result_number):
+        params = {
+            'base_url': self.base_url,
+            'signature': signature,
+            'product_versions': product_versions,
+            'start_date': start_date,
+            'result_number': result_number,
+        }
+        url = '%(base_url)s/report/list/signature/%(signature)s/versions/%(product_versions)s/fields/signature/search_mode/contains/from/%(start_date)s/report_type/any/report_process/any/result_number/%(result_number)s/' % params
+        return self.fetch(url)

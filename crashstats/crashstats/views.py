@@ -155,9 +155,18 @@ def topchangers(request, product=None, versions=None, template=None):
 
     return render(request, template, data)
 
-@mobile_template('crashstats/{mobile/}reportlist.html')
-def reportlist(request, template=None):
+@mobile_template('crashstats/{mobile/}report_list.html')
+def report_list(request, template=None):
     data = _basedata()
+
+    signature = request.GET.get('signature')
+    product_version = request.GET.get('version')
+    start_date = request.GET.get('date')
+    result_number = 250
+
+    mware = SocorroMiddleware()
+    data['report_list'] = mware.report_list(signature, product_version,
+                                            start_date, result_number)
 
     return render(request, template, data)
 
