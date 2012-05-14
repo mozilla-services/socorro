@@ -170,8 +170,8 @@ def report_list(request, template=None):
 
     return render(request, template, data)
 
-@mobile_template('crashstats/{mobile/}reportindex.html')
-def reportindex(request, crash_id=None, template=None):
+@mobile_template('crashstats/{mobile/}report_index.html')
+def report_index(request, crash_id=None, template=None):
     data = _basedata()
 
     return render(request, template, data)
