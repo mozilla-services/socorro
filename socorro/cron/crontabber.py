@@ -57,11 +57,11 @@ class BaseCronApp(RequiredConfig):
         if function is None:
             function = self.run
         now = utc_now()
-        if once:
-            function()
-            yield now
-        elif not self.job_information:
-            function(now)
+        if once or not self.job_information:
+            if once:
+                function()
+            else:
+                function(now)
             yield now
         else:
             # figure out when it was last run
