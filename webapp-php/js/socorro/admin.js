@@ -24,16 +24,6 @@ function branchUpdateProductVersionFill(product, version, branch, start_date, en
 	$('#update_branch').focus();
 }
 
-// Open the delete product version form and fill the fields in with given input
-function branchDeleteProductVersionFill(product, version) {
-	$('#delete_product_version').simplebox();
-	$('#delete_product').val(product);
-	$('#delete_product_display').html(product);
-	$('#delete_version').val(version);
-	$('#delete_version_display').html(version);
-	$('#delete_product').focus();
-}
-
 // Replace the submit button with a progress icon
 function hideShow(hideId, showId) {
 	$('#'+hideId).hide();
