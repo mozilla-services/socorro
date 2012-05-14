@@ -123,7 +123,8 @@ class PostgresTransactionManagedCronApp(BaseCronApp):
         database = self.config.database_class(self.config)
         executor = self.config.transaction_executor_class(self.config,
                                                           database)
-        return executor(self.run)
+        executor(self.run)
+        yield utc_now()
 
 
 class JSONJobDatabase(dict):
