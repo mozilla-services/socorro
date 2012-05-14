@@ -211,7 +211,6 @@ class Admin_Controller extends Controller
                                 'branches' => $branch_data['branches'],
                                 'products' => $branch_data['products'],
                                 'versions' => $branch_data['versions'],
-                                'missing_entries' => $this->branch_model->findMissingEntries(),
                                 'missing_visibility_entries' => $this->branch_model->getProductVersionsWithoutVisibility(),
                                 'non_current_versions' => $this->branch_model->getNonCurrentProductVersions(true),
                                 'default_start_date' => date('Y-m-d'),
