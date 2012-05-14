@@ -10,7 +10,7 @@ MWARE_BASE_URL = 'http://localhost:8080/bpapi'
 MWARE_USERNAME = 'dbrwaccess'
 MWARE_PASSWORD = ''
 # HTTP/1.1 Host header to pass - in case this is a VHost
-MWARE_HTTP_HOST = 'socorro-mware-stage-zlb.webapp.phx1.mozilla.com'
+MWARE_HTTP_HOST = 'socorro-api-dev-internal'
 
 # We don't currently use a database, here is a working postgres+psycopg2 
 # example in case we need it.
